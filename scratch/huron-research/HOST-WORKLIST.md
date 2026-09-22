@@ -12,7 +12,7 @@
 |---|---|
 | **North Coast Boating** `huro-lst-0243` | _identity_correction: ⛔ A third-party aggregator (slipstreamboating.com) describes North Coast Boating as a 'boat club' offering 'exclusive memberships and access to luxury boats'. The operator's own si |
 | **Cornell's Foods** `huro-lst-0050` | _duplicate: huro-lst-0029 "Huron Iga" is the SAME REAL PLACE - identical address (408 Cleveland Rd E) and identical phone (+14194337733). Cornell's is an IGA member store (cornells.iga.com). T |
-| **Hello Gorgeous Beauty Bar** `huro-lst-0204` | _duplicate: huro-lst-0049 is named "Review Phim Hay" (Vietnamese for 'watch good films' - SEO/junk text), sits at 521 Main St, and carries the SAME website http://Hellogorgeousbeautybarllc.com |
+| **Hello Gorgeous Beauty Bar** `huro-lst-0204` | "NOT ESTABLISHED" — EXT OR A CAPTION, so what each shows is NOT ESTABLISHED from the markup - a human must look before one is used on a card. |
 | **Angles Hair Design** `huro-lst-0174` | _duplicate_relocation: ⭐ huro-lst-0076 is ALSO named "Angles Hair Design" with the SAME phone (+14194335757) at a DIFFERENT address (816 Williams St vs 358 Main St). Same name + same phone + different ad |
 | **Bennett's Novelties** `huro-lst-0093` | _name_mismatch: Listing name "Bennett's Novelties"; the site's title is "Bennett's Designs LLC". Overture categorises it as sign_making. Rename or two trading names - NOT ESTABLISHED. |
 | **Breakwater Cottages** `huro-lst-0229` | _category_wrong: Listed as historic/landmark. It is a private residential cottage subdivision. Ship only if private residential streets are wanted. |
@@ -40,18 +40,18 @@
 | **Huron Health Care Center** `huro-lst-0179` | the researcher wrote "no longer trades" — ⚠️ Name finding: this facility no longer trades as 'Huron Health Care Center.' At the same address (1920 Cleveland Rd W) it now operates first-party as 'Admiral's Pointe Nursing and |
 | **Huron Lake Front Market** `huro-lst-0045` | the researcher wrote "NOT A BUSINESS" — This is NOT A BUSINESS WITH PREMISES — it is a recurring open-air market held in Lake Front Park, which is itself a separate listing (huro-lst-0178 / huro-lst |
 
-## Merged, but the researcher hedged — 105 places worth confirming
+## Merged, but the researcher hedged — 106 places worth confirming
 
 *These are live on the map now. Each carries the hedge in `_confidence` in the overrides file. ⭐ The commonest by far is **unmarked seasonal hours** — correct for the month they were sampled and silently wrong the rest of the year, which on a Lake Erie town is half the calendar.*
 
 | listing | fields | what to confirm |
 |---|---|---|
 | **Huron Sports Academy** `huro-lst-0021` | hours, phone, description | _assumption: The site prints "715 AM - 3:15 PM" as building hours WITHOUT enumerating days. Monday-Friday below is the school-week reading, not a quoted fact. Drop the days if that is not accep |
-| **Christ Episcopal Church** `huro-lst-0236` | phone, description | "unverified" — ast-updated date, so treat the times as unverified against a first-party source. |
+| **Christ Episcopal Church** `huro-lst-0236` | phone, description, history, amenities | "⚠" — mber are from Wikipedia's NRHP infobox. ⚠️ I could NOT retrieve the NRHP nomination document itself (npgallery.nps.gov returned 404 for both the _text and _photos asset patterns for ref 7500 |
 | **Huron High School** `huro-lst-0276` | hours, phone, description | _assumption: The site prints office hours 6:30 AM - 3:30 PM without enumerating days. Monday-Friday below is the school-week reading, not a quoted fact. |
 | **Bowling Green State University, Firelands College** `huro-lst-0195` | hours, description, amenities | _seasonal: Hours below are the FALL/SPRING semester set (in force on the fetch date). The same page publishes a separate SUMMER set: Mon-Thu 08:00-17:00, Fri 08:00-14:00, weekends closed. The |
 | **the Vikings Den - Huron, Ohio** `huro-lst-0266` | hours, description, amenities | _phone_conflict: The marina's own restaurant page says 'Call us at 419-616-3336'. Yahoo Local lists (419) 433-7649 for Viking's Den. NOT RESOLVED — do not treat either as authoritative. |
-| **Berardi's Restaurant** `huro-lst-0252` | hours, description, amenities, menu | _hours_note: Footer, verbatim: 'Monday: Closed / Tuesday - Saturday: 7:00am - 8:00pm / Sunday: 7:00am - 1:00pm (Serving Breakfast Only)'. Monday omitted per the schema. ⚠️ SUNDAY IS BREAKFAST O |
+| **Berardi's Restaurant** `huro-lst-0252` | hours, description, amenities, menu, history, reservation_url, menu_url | "⛔" — ardi's hazard was checked, not assumed. ⛔ No web search was available this session (session search budget exhausted before the first query), so press mentions, local 'best of' wins and Histo |
 | **Marconi's Italian Restaurant - Huron, OH** `huro-lst-0239` | hours, description, amenities, menu | _hours_note: Footer, verbatim: 'Monday - Thursday: 4:00 PM - 8:00 PM / Friday - Saturday: 4:00 PM - 9:00 PM / Sunday: 4:00 PM - 8: 00 PM'. Open seven days; dinner service only. |
 | **Sand Bar** `huro-lst-0198` | hours, description, amenities, phone | "⛔" — egated listing hours (Yelp, June 2026). ⛔ THE LISTING'S website FIELD IS THE WRONG ENTITY: thesandbar.com resolves to The Sandbar in Lawrence, Kansas - see overnight-NOVEL.md. ⚠ SEASONAL: a |
 | **Rippin Lips Lake Erie Charters** `huro-lst-0157` | description, amenities, phone | _seasonal: NOT STATED. The site names no months, no open/close dates and no season for the charter. It does sell duck hunts ('this fall') and a spring Arkansas snow-goose season, but those ar |
@@ -147,6 +147,7 @@
 | **Chapter 50** `huro-lst-0278` | description, amenities, phone | "NOT ESTABLISHED" — ntifier 88D) in Huron. MEETING SCHEDULE NOT ESTABLISHED: the chapter page lists programs but no meeting day or time that I could read. The listing's name 'Chapter 50' is a fragment |
 | **City of Huron - Government** `huro-lst-0065` | description, amenities, phone | "⚠" — te from the City Manager's Office page. ⚠️ THE CITY PUBLISHES NO CITY HALL OFFICE HOURS ANYWHERE I could find — not on the contact page, the departments index or the city manager's page. No |
 | **Usgs Lake Erie Biological Station** `huro-lst-0121` | description, amenities, phone | "⚠" — at the level the center itself states. ⚠️ The listing's URL https://www.usgs.gov/newsroom/article.asp is a dead generic stub and must not ship; the locations page above is the live first-pa |
+| **Cedar Point Center** `huro-lst-0226` | description, amenities | "NOT ESTABLISHED" — capacities, year built and hours remain NOT ESTABLISHED. This supersedes the previous beat's 'NOT ESTABLISHED beyond the campus it sits on' — the building now has a confirmed funct |
 | **Subconscious Sarah** `huro-lst-0216` | description, amenities, phone | "unverified" — e 103 Wall St address on the listing is unverified and no hours are recorded. |
 | **Pabodie Design Studios** `huro-lst-0265` | description, amenities, phone | "NOT established" — ther there is a walk-in studio there is NOT established. |
 | **CrystalMic Premium Audio** `huro-lst-0030` | description, amenities, phone | "NOT established" — r that address is a premises at all, is NOT established. |

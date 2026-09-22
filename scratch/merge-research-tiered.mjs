@@ -2,7 +2,12 @@ import fs from 'node:fs'
 const rd = p => JSON.parse(fs.readFileSync(p, 'utf8'))
 const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 
-const BEATS = ['civic', 'dining', 'waterfront', 'retail', 'shopping', 'overnight', 'dining2', 'services2', 'community']
+// ⭐ ORDER IS PRECEDENCE: a later beat's record wins a collision on equal footing, so
+// the targeted deep passes go LAST. `berardis` is a second pass over one listing the
+// `dining` beat already covered — it adds photos, history and links and must not be
+// outranked by the thinner first record.
+const DEEP = new Set(['berardis', 'civic-deep', 'prominent-photos'])
+const BEATS = ['civic', 'dining', 'waterfront', 'retail', 'shopping', 'overnight', 'dining2', 'services2', 'community', 'berardis', 'civic-deep', 'prominent-photos']
 const SHIPPING = new Set(['hours', 'description', 'amenities', 'phone', 'menu', 'menu_url', 'history', 'website', 'reservation_url'])
 
 // A place whose EXISTENCE or IDENTITY is in doubt. ⛔ Merging hours onto one of these is
@@ -55,7 +60,71 @@ const ovt = rd('cartograph/data/huron/raw/overture-places.json').places
 // with nowhere to live, not junk. Dropped here rather than shipped dead; recorded in
 // the research files, which is where it can be picked up when the card grows a home
 // for it.
+
+// ⛔⛔ A DEEP PASS ADDS; A FIELD-LEVEL SPREAD REPLACES, AND THAT IS NOT THE SAME THING.
+// `{...first, ...second}` looked additive and silently destroyed two things on the very
+// first record it touched: the Berardi's pass carries `menu: { sections: [] }` (it proved
+// the catering and dessert menus DO NOT EXIST, so it added none), and the spread swapped
+// 19 real sections for an empty array — the demo card lost its entire menu. Its two new
+// amenities likewise replaced the first pass's seven.
+// ⭐ THE TELL: a second pass reporting "nothing new here" is the case that breaks a
+// naive merge, because an empty result and an absent one look identical to a spread.
+function mergeDeepPass(a, b) {
+  const out = { ...a }
+  for (const [k, v] of Object.entries(b)) {
+    const prev = a[k]
+    if (k === 'menu' && prev && prev.sections) {
+      // Sections are concatenated and de-duplicated by name; a later pass may REPLACE a
+      // section it re-transcribed, and adds the rest.
+      const byName = new Map((prev.sections || []).map(s => [s.name, s]))
+      for (const s of v.sections || []) byName.set(s.name, s)
+      out.menu = { ...prev, ...v, sections: [...byName.values()] }
+    } else if (Array.isArray(prev) && Array.isArray(v)) {
+      const seen = new Set(prev.map(x => JSON.stringify(x)))
+      out[k] = [...prev, ...v.filter(x => !seen.has(JSON.stringify(x)))]
+    } else if (v !== undefined && v !== null && !(Array.isArray(v) && !v.length)) {
+      out[k] = v
+    }
+  }
+  return out
+}
+
+// ⛔ AND THE STRIP HAS TO BE DEEP. `stripMeta` clears the top level of a patch only, and
+// my first deep-clean reached into `menu` alone — so a photo object's `_confirmed_huron`,
+// `_rights_caution` and `_basis` rode into the slab. Provenance hides wherever the
+// researcher put it, which is everywhere useful. One recursive rule, no exceptions.
+function stripDeep(v) {
+  if (Array.isArray(v)) return v.map(stripDeep)
+  if (v && typeof v === 'object') {
+    return Object.fromEntries(Object.entries(v).filter(([k]) => !k.startsWith('_')).map(([k, x]) => [k, stripDeep(x)]))
+  }
+  return v
+}
+
 function menuToCents(menu) {
+  // ⛔ A MENU CAN BE A LINK RATHER THAN A TRANSCRIPTION, and this used to flatten the
+  // difference. Several beats recorded `menu: { url: "…" }` for a restaurant whose menu
+  // is a PDF or a JS app — an honest "it exists, here it is" — and unconditionally
+  // rebuilding `sections` stamped an empty array onto it, which read downstream as "this
+  // place has a menu with nothing in it" and cost six restaurants their ranking.
+  if (!Array.isArray(menu.sections)) return { ...menu }
+  // ⛔⛔ AND THE CONVERSION IS NOT IDEMPOTENT, SO IT REFUSES RATHER THAN RUNS TWICE.
+  // ×100 on a menu already in cents turns $13.50 into $1,350.00 — a number that is an
+  // integer and well over a dollar, so `claims-a-menu-price-is-in-cents` would have
+  // passed it clean. The hazard is live: the research files still hold DOLLARS while
+  // the merged listings hold cents, and the obvious tidy-up ("fix the research file
+  // too") is exactly what would double-convert on the next run. ⭐ A transform that
+  // must run exactly once has to be able to tell whether it already has.
+  const all = []
+  for (const s of menu.sections || []) for (const i of s.items || []) if (typeof i.price === 'number') all.push(i.price)
+  const nonZero = all.filter(v => v > 0)
+  if (nonZero.length && nonZero.every(Number.isInteger) && nonZero.every(v => v >= 100)) {
+    throw new Error(
+      `menuToCents: this menu is ALREADY in cents (${nonZero.length} prices, all whole, all >= 100) ` +
+      `and converting again would multiply it by 100.\n` +
+      `   ▶ Research files hold PRINTED-MENU DOLLARS by convention; if one has been ` +
+      `rewritten to cents, drop the ×100 for that file rather than running this twice.`)
+  }
   const toCents = (v) => (typeof v === 'number' ? Math.round(v * 100) : v)
   const clean = (o) => Object.fromEntries(Object.entries(o).filter(([k]) => !k.startsWith('_')))
   return {
@@ -96,6 +165,16 @@ for (const beat of BEATS) {
     const cand = { beat, rec, tier: c.tier, why: c.why, n: shippingFields(rec).length }
     const cur = best.get(id)
     if (!cur) { best.set(id, cand); continue }
+    // ⛔ A TARGETED SECOND PASS ADDS, IT DOES NOT REPLACE. The Berardi's pass carries
+    // photos, history and links but no `hours` — taking it whole would have dropped the
+    // hours the first pass found. Fields present in BOTH go to the later record; fields
+    // only the earlier one has are kept.
+    if (DEEP.has(beat)) {
+      best.set(id, { ...cur, rec: mergeDeepPass(cur.rec, rec), beat: `${cur.beat}+${beat}`,
+        tier: c.tier === 'HOLD' || cur.tier === 'HOLD' ? 'HOLD' : (c.tier === 'CAVEATED' || cur.tier === 'CAVEATED' ? 'CAVEATED' : 'CLEAN'),
+        why: c.why || cur.why, n: shippingFields(mergeDeepPass(cur.rec, rec)).length })
+      continue
+    }
     // ⭐ COLLISION RULE, stated once: a record whose place is in doubt never wins; then
     // prefer the un-hedged one; then the one carrying more fields; ties keep the first.
     const rank = c => (c.tier === 'HOLD' ? 2 : c.tier === 'CAVEATED' ? 1 : 0)
@@ -147,6 +226,9 @@ for (const [id, { beat, rec, tier, why, n }] of best) {
   }
   const payload = { ...rec, _beat: beat, _tier: tier, _display_id_at_research: id, _match_name: base.name }
   if (payload.menu) payload.menu = menuToCents(payload.menu)
+  // Strip nested provenance from every SHIPPING field; the top-level `_` keys stay in
+  // the overrides file (that is where a human reads them) and `stripMeta` drops those.
+  for (const k of Object.keys(payload)) if (!k.startsWith('_')) payload[k] = stripDeep(payload[k])
   for (const c of cands) { ov.patches[`ovt-${c.id}`] = payload; keys++ }
   merged++
 }

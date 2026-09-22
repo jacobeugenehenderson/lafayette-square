@@ -1,0 +1,310 @@
+{
+  "huro-lst-0093": {
+    "_match_name": "Bennett's Novelties",
+    "_source": "https://www.bennettsdesigns.com/ and https://www.bennettsdesigns.com/contact",
+    "_fetched": "2026-09-22",
+    "_confidence": "IDENTITY CONFIRMED. The site's own contact page gives 2408 Cleveland Rd. West, Huron, Ohio 44839 and 419-433-3569 - the exact address and phone on our listing. A previous beat read this site as empty (client-rendered); it is a Square Online site whose full page model is embedded in the served HTML as JSON, so the content and the photo set ARE first-party-readable. See prominent-photos-NOVEL.md #1.",
+    "_name_finding": "The business trades as \"Bennetts Designs\" / \"Bennett's Designs LLC\" on its own site and describes itself as a print and sign shop. Our listing name is \"Bennett's Novelties\". Whether Novelties is a retired name, a second trading name or a directory error is NOT ESTABLISHED - a person in Huron should read the sign.",
+    "photos": [
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260216_164655727_HDR_1787632832.jpg",
+        "what": "Home-page banner image, 3500x2635, captioned \"Your Trusted Local Print Shop in Huron Since 1999\"",
+        "credit": "Bennett's Designs LLC (own website)",
+        "credit_url": "https://www.bennettsdesigns.com/"
+      },
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20251009_141802038_HDR_1787629065.jpg",
+        "what": "Illustrates the \"Quality Printing Services\" section",
+        "credit": "Bennett's Designs LLC (own website)",
+        "credit_url": "https://www.bennettsdesigns.com/"
+      },
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260310_145748038_HDR_1787629388.jpg",
+        "what": "Illustrates the \"Fast Turnaround Time\" section",
+        "credit": "Bennett's Designs LLC (own website)",
+        "credit_url": "https://www.bennettsdesigns.com/"
+      },
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20250111_150700671_HDR_AE_1787630552.jpg",
+        "what": "Illustrates \"Top-Quality Materials\"",
+        "credit": "Bennett's Designs LLC (own website)",
+        "credit_url": "https://www.bennettsdesigns.com/"
+      },
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260128_110214618_HDR_1787629726.jpg",
+        "what": "Illustrates \"Banners and Rigid Signs\"",
+        "credit": "Bennett's Designs LLC (own website)",
+        "credit_url": "https://www.bennettsdesigns.com/"
+      },
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/Resized_20161125_183758_1787631164.jpg",
+        "what": "Illustrates \"Vehicle Graphics\"",
+        "credit": "Bennett's Designs LLC (own website)",
+        "credit_url": "https://www.bennettsdesigns.com/"
+      },
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/MAX_1787632159.jpg",
+        "what": "Illustrates \"Business Branding\"",
+        "credit": "Bennett's Designs LLC (own website)",
+        "credit_url": "https://www.bennettsdesigns.com/"
+      }
+    ],
+    "_photos_note": "None of these is confirmed to be the STOREFRONT at 2408 Cleveland Rd W. They are the shop's own photographs of its own work and premises-adjacent subjects, published by the operator on its own site; the exact subject of each is not stated in markup (all altText fields are empty). A human should pick. Verified servable: HEAD on the banner image returns 200 image/jpeg.",
+    "_photos_rights_unclear": [
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/FB_IMG_1716862463704_1787629966.jpg",
+        "what": "Image on the shop's own page whose filename (FB_IMG_...) shows it was saved out of Facebook",
+        "why": "Re-uploaded from Facebook; original photographer not established"
+      },
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/orafol_1787629267.jpeg",
+        "what": "Named for ORAFOL, a vinyl-film manufacturer",
+        "why": "Almost certainly a supplier's product/brand image, not the shop's own photograph"
+      },
+      {
+        "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/01BENNETTSDESIGNS_1770058629.png",
+        "what": "The shop's logo, not a photograph",
+        "why": "A logo, not an image of the place; included only because a card may want a mark"
+      }
+    ],
+    "hours": {
+      "tuesday": {
+        "open": "12:00",
+        "close": "17:00"
+      },
+      "wednesday": {
+        "open": "12:00",
+        "close": "17:00"
+      },
+      "thursday": {
+        "open": "12:00",
+        "close": "17:00"
+      },
+      "friday": {
+        "open": "12:00",
+        "close": "17:00"
+      }
+    },
+    "_hours_source": "Verbatim from the shop's contact page: \"Tuesday to Friday: 12:00 PM to 5:00 PM (Eastern Time)\" / \"Closed Saturday, Sunday, and Monday.\" Monday, Saturday and Sunday are omitted, i.e. closed.",
+    "description": "A Huron print and sign shop going since 1999. Banners, rigid signs, vehicle graphics and team apparel.",
+    "amenities": [
+      "Indoor and outdoor signage",
+      "Banners and rigid signs",
+      "Vehicle graphics",
+      "Custom apparel and team spirit wear",
+      "Custom design services",
+      "Business branding"
+    ],
+    "phone": "+14194333569",
+    "_email": "sales@bennettsdesigns.com"
+  },
+  "huro-lst-0059": {
+    "_match_name": "Beagle Bay Knot Works",
+    "_source": "https://www.beaglebayknotworks.com/ · https://www.beaglebayknotworks.com/products.json · https://www.beaglebayknotworks.com/pages/contact-us",
+    "_fetched": "2026-09-22",
+    "_confidence": "First-party Shopify shop, confirmed Huron OH by the 507 Main St address on its own site (established by the earlier retail beat). NO STOREFRONT OR INTERIOR PHOTO EXISTS ANYWHERE ON THE SITE - the only site-chrome image is the logo. What the shop does publish is PRODUCT photography, first-party, high quality, on its own Shopify CDN.",
+    "photos": [
+      {
+        "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8677.jpg",
+        "what": "Product photo: \"Lake Erie Love Bracelet\" - a hand-tied cotton-cord bracelet",
+        "credit": "Beagle Bay Knot Works (own Shopify shop)",
+        "credit_url": "https://www.beaglebayknotworks.com/"
+      },
+      {
+        "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8673.jpg",
+        "what": "Product photo: \"Back to the Bay Bracelet\"",
+        "credit": "Beagle Bay Knot Works (own Shopify shop)",
+        "credit_url": "https://www.beaglebayknotworks.com/"
+      },
+      {
+        "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/products/KelseyWreath.jpg",
+        "what": "Product photo: \"Kelsey\" nautical rope wreath - the most card-legible object in the catalogue",
+        "credit": "Beagle Bay Knot Works (own Shopify shop)",
+        "credit_url": "https://www.beaglebayknotworks.com/"
+      },
+      {
+        "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8698.jpg",
+        "what": "Product photo: lacing-needle (fid) assortment - marlin-spike supplies",
+        "credit": "Beagle Bay Knot Works (own Shopify shop)",
+        "credit_url": "https://www.beaglebayknotworks.com/"
+      },
+      {
+        "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/Liberty250.jpg",
+        "what": "Product photo: \"Liberty 250 Bracelet\", red/white/blue cord",
+        "credit": "Beagle Bay Knot Works (own Shopify shop)",
+        "credit_url": "https://www.beaglebayknotworks.com/"
+      },
+      {
+        "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/BBKW_Logo_22.jpg",
+        "what": "The shop's logo - not a photograph, but it is the only branded image on the site",
+        "credit": "Beagle Bay Knot Works (own Shopify shop)",
+        "credit_url": "https://www.beaglebayknotworks.com/"
+      }
+    ],
+    "_no_storefront_photo_reason": "Looked at the home page, /pages/contact-us, /pages/bracelet-sizing, /pages/our-favorite-links and the products feed. No exterior, interior or Main Street image is published. The site links NO Facebook or Instagram account, so there is no social account to look in either - unusual for a retail shop and worth a Host note.",
+    "_url_note": "Held website http://www.beaglebayknotworks.com/ is correct. The linked /contact page 404s; the working one is /pages/contact-us."
+  },
+  "huro-lst-0204": {
+    "_match_name": "Hello Gorgeous Beauty Bar",
+    "_source": "https://www.hellogorgeousbeautybarllc.com/ · https://www.hellogorgeousbeautybarllc.com/our-family",
+    "_fetched": "2026-09-22",
+    "_confidence": "First-party Wix site; page title is \"About Us | Hello Gorgeous Beauty Bar | Huron, OH\", so the town is confirmed on the site itself. Two large photographs are published on the home page (2048x1365 originals on the salon's own Wix media account, prefix 823c34_). NEITHER CARRIES ALT TEXT OR A CAPTION, so what each shows is NOT ESTABLISHED from the markup - a human must look before one is used on a card.",
+    "photos": [
+      {
+        "url": "https://static.wixstatic.com/media/823c34_8858aba644124233b9cdedefca3a3f29~mv2.jpg",
+        "what": "Full-bleed home-page photograph, original 2048x1365. Subject not established - no alt text.",
+        "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+        "credit_url": "https://www.hellogorgeousbeautybarllc.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/823c34_c98ab5c3ba5c4a5cbc4ae8374fda12bb~mv2.jpg",
+        "what": "Second home-page photograph, portrait crop. Subject not established - no alt text.",
+        "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+        "credit_url": "https://www.hellogorgeousbeautybarllc.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/823c34_740fd9da116d44ce976f59c467164d2a~mv2.jpg",
+        "what": "On /our-family - a team page, so this is very likely a staff portrait rather than the premises",
+        "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+        "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/823c34_79609e93adac461792ffee22510e44a8~mv2.jpg",
+        "what": "On /our-family - very likely a staff portrait",
+        "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+        "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.wixstatic.com/media/d7cb80_f075cdee7e3a46278a8ac7749a13ee1c~mv2.png",
+        "what": "One of ten images on the page under the Wix media prefix d7cb80_, a DIFFERENT account from the salon's own 823c34_",
+        "why": "A different Wix media account from the salon's own means these are template/stock decorations shipped with the Wix theme, not the operator's photographs. Do not use. See prominent-photos-NOVEL.md #2 for the prefix test."
+      }
+    ],
+    "_a_person_could_get_more": "The salon links an Instagram (instagram.com/hellogorgeousbeautybarllc) and a Facebook page (facebook.com/HelloGorgeousBeautyBarLLC). Neither serves image URLs to an unauthenticated fetch. That is where its storefront and work photos will be.",
+    "_address_finding": "Carried forward from the retail beat: the salon's own site says 521 Main Street; our listing says 519 Main St."
+  },
+  "huro-lst-0097": {
+    "_match_name": "South Shore Marine",
+    "_source": "https://www.southshoremarine.com/contact · https://www.southshoremarine.com/about-us",
+    "_fetched": "2026-09-22",
+    "_confidence": "Two large first-party AERIAL photographs published by the dealership on its own site, one as the /contact page hero and one on /about-us. Both filenames are raw DJI drone captures (DJI_20251013...) dated 13 Oct 2025 and uploaded to the dealer's own CDN space, so they are the operator's own commissioned imagery. The /contact hero's alt text is only \"Contact page\", so the SUBJECT is not stated; for a boatyard on Sawmill Pkwy an October drone shot is near-certainly the yard and the Huron River basin, but that is inference and should be eye-checked.",
+    "photos": [
+      {
+        "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013145538_0021_D_1771730175513.JPG?w=1900&format=webp",
+        "what": "Full-width hero on the dealership's own /contact page. Drone capture, 13 Oct 2025. Subject almost certainly the Sawmill Pkwy yard/marina but not stated in markup.",
+        "credit": "South Shore Marine (own website)",
+        "credit_url": "https://www.southshoremarine.com/contact"
+      },
+      {
+        "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013150821_0036_D_1771730226170.JPG?w=1900&format=webp",
+        "what": "Hero on the dealership's own /about-us page. Same drone session, 13 Oct 2025.",
+        "credit": "South Shore Marine (own website)",
+        "credit_url": "https://www.southshoremarine.com/about-us"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/assets/images/home/home-img-16.webp?w=800&format=webp",
+        "what": "Home-page image, alt text \"Axis\"",
+        "why": "Named for the Axis boat brand - a MANUFACTURER'S product image, not this location. This is the chain-brand-stock trap in dealer form."
+      },
+      {
+        "url": "https://cdn.mdsbrand.com/mean-south-shore-marine-owm/assets/images/about/our%20mission.jpg",
+        "what": "Illustrates the \"Our Mission\" block on /about-us",
+        "why": "Generic site-furniture graphic supplied by the web agency (mdsbrand); provenance not stated"
+      }
+    ],
+    "_also": "The home page embeds a first-party promotional film at cdn.mdsbrand.com/vimeo/South+Shore+Marine/south_shore_4.0_-_v2_v1 (1080p). Video, not a photo - flagged, not recorded as a photo.",
+    "_url_finding": "Carried forward: held website is the dealer's YouTube channel. Correct site https://www.southshoremarine.com/ ."
+  },
+  "huro-lst-0212": {
+    "_match_name": "The Huron Historical Society",
+    "_source": "http://www.thehuronhistoricalsociety.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The society publishes a captioned carousel of its own photographs of Huron's Ohio historical markers, each caption naming the marker and each image linking to that marker's page on the society's own site. Captions are read straight from the markup, so what each shows IS established - unusually good for this beat. NOTE: none of these is a photo of the society's own premises (the lower level of the library at 333 Williams St); they are pictures of the town. For a history-society card that is arguably better.",
+    "photos": [
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide12.jpg",
+        "what": "Historical marker: \"Old Main Street\"",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide4.jpg",
+        "what": "Historical marker: \"Huron's Lighthouses\"",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide11.jpg",
+        "what": "Historical marker: \"The Wright House\"",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide1.jpg",
+        "what": "Historical marker: \"Cedar Point Roadway\"",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/cedar-point-roadway/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide2.jpg",
+        "what": "Historical marker: \"Old Woman Creek\"",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide3.jpg",
+        "what": "Historical marker: \"Huron's First Inhabitants\"",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/hurons-first-inhabitants-marker-12-22/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide5.jpg",
+        "what": "Historical marker: \"Christ Episcopal Church\" - note this is huro-lst-0236, prominence rank 2, also photoless",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/christ-episcopal-church/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide6.jpg",
+        "what": "Historical marker: \"The Firelands of Ohio\"",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-firelands-of-ohio/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide7.jpg",
+        "what": "Historical marker: \"Huron's Lighthouses\" (second view)",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide8.jpg",
+        "what": "Historical marker: \"The Huron Playhouse\"",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-huron-playhouse/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide9.jpg",
+        "what": "Historical marker: \"John Babtise Flemmond\" (society's spelling; the linked page spells it Baptise)",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/john-baptise-flemmond/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide10.jpg",
+        "what": "Historical marker: \"Old Woman Creek\" (second view)",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/"
+      },
+      {
+        "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/lighthouse.png",
+        "what": "Home-page illustration, alt text \"huron lighthouse\" - a cut-out of the Huron pier lighthouse, 212x397",
+        "credit": "Huron Historical Society (own website)",
+        "credit_url": "https://www.thehuronhistoricalsociety.org/"
+      }
+    ],
+    "_reusable_for_other_listings": "slide5.jpg is the Christ Episcopal Church marker and slide8.jpg is the Huron Playhouse marker. Both name places that are separate listings in this directory. A human may want to cross-post them, with the society credited.",
+    "_no_premises_photo_reason": "The society's site publishes no photograph of 333 Williams St or of its own rooms in the library's lower level."
+  }
+}

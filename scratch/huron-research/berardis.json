@@ -1,0 +1,202 @@
+{
+  "huro-lst-0252": {
+    "_match_name": "Berardi's Restaurant",
+    "_source": "https://berardisrestauranthuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Every field below is taken from the operator's own live site (raw HTML of /, /about/, /contact/, /catering/, /specials/, /breakfast/, /dinner-lunch/, plus the site's WordPress REST API at /wp-json/wp/v2/pages and /wp-json/wp/v2/media). Nothing is inferred from a third-party directory. Every image listed under `photos` was downloaded and VISUALLY INSPECTED to confirm it depicts the Huron location's building or food before being recorded — the Huron-vs-other-Berardi's hazard was checked, not assumed. ⛔ No web search was available this session (session search budget exhausted before the first query), so press mentions, local 'best of' wins and Historical Society material were NOT searched and are recorded as 'not established' rather than as absent.",
+    "_scope": "This file holds ONLY what was missing from scratch/huron-research/dining.json. Hours, description, the 19 existing menu sections and the 7 existing amenities are NOT repeated.",
+
+    "_website_correction": "listings.json currently holds website = 'http://www.berardisrestaurant.com/'. That host 301-redirects to https://berardisrestauranthuron.com/ — the canonical live site, which is also the host of every asset below. Recommend updating the field.",
+
+    "photos": [
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Front.jpg",
+        "what": "Exterior of the restaurant at dusk — brick building with dark standing-seam gable roof and a cream script 'Berardi's' sign, parking lot in foreground.",
+        "_confirmed_huron": "Inspected. Matches the 218 Cleveland Rd E building; filename and host are the Huron operator's own site.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-History.jpg",
+        "what": "Archival black-and-white photograph: an older woman and a man in white shirts standing among stacked burlap potato sacks, each holding a hand tool.",
+        "_confirmed_huron": "Published by the operator on its own /about/ history section. ⚠️ The site prints NO caption for this image, so the people in it are NOT identified by the source. Do not caption it as Eurosia and Albert Berardi — that identification is not established.",
+        "_rights_caution": "Operator-published, but it is an archival photo that may have an earlier photographer/owner. Worth an explicit ask before use.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/about/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Porkchop.jpg",
+        "what": "Plated pork chop with herb-and-shallot butter, mashed potatoes with gravy, and steamed broccoli.",
+        "_confirmed_huron": "Inspected.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Chicken-Bruschetta-lg.jpg",
+        "what": "Close-up of sliced grilled chicken over fettuccine in cream sauce with diced tomato, parsley and shredded parmesan.",
+        "_confirmed_huron": "Inspected.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Cranberry-Nut-French-Toast-lg.jpg",
+        "what": "Cranberry-nut French toast dusted with powdered sugar, topped with whipped cream, served with bacon, a pitcher of syrup and a cup of butter.",
+        "_confirmed_huron": "Inspected.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Fruit-Nut-Salad-lg.jpg",
+        "what": "Mixed-greens salad with sliced strawberries, green apple, dried cranberries, candied nuts and crumbled feta.",
+        "_confirmed_huron": "Inspected.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Haddock-Lemon-Wine-lg.jpg",
+        "what": "Baked haddock fillet with capers and a lemon-wine sauce over rice pilaf, with green beans and a lemon wedge.",
+        "_confirmed_huron": "Inspected.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Chipotle-Burger-lg.jpg",
+        "what": "Open-faced chipotle burger with melted white cheese, jalapeños and tortilla strips, with lettuce, tomato and red onion, a pickle spear, fries, a bread basket and a bottle of malt vinegar.",
+        "_confirmed_huron": "Inspected.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-French-Fries.jpg",
+        "what": "Overhead studio flat-lay of hand-cut skin-on french fries on a white plate against a slate surface.",
+        "_confirmed_huron": "Operator-published on its own site. ⚠️ Styling is a clean studio flat-lay unlike the other (clearly in-house) food photos. Whether it was shot at Berardi's or licensed is NOT established.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Dessert.jpg",
+        "what": "Chocolate chip cookies cooling on a wire rack. Small file (400 px wide).",
+        "_confirmed_huron": "Operator-published on its own site; filename is the Huron naming convention.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-FamilyMenu.jpg",
+        "what": "Baked fish fillet with capers over rice pilaf with green beans and a lemon wedge. Small file (400 px wide). ⚠️ The FILENAME says 'FamilyMenu' but the image is a seafood plate — it is a crop of the Haddock photo above. Do not trust the filename as a caption.",
+        "_confirmed_huron": "Inspected.",
+        "credit": "Berardi's Restaurant",
+        "credit_url": "https://berardisrestauranthuron.com/"
+      }
+    ],
+    "_photos_note": "Three further files in the media library are smaller crops of photos already listed and were deliberately excluded as duplicates: .../2021/09/Berardis-Restaurant-Huron-Breakfast.jpg (crop of the cranberry French toast), .../2021/09/Berardis-Restaurant-Huron-LunchDinner.jpg (crop of the pork chop), .../2021/10/Berardis-Restaurant-Huron-French-Fries-Cropped.jpg (crop of the fries). The full media library was enumerated via https://berardisrestauranthuron.com/wp-json/wp/v2/media?per_page=100 — 33 items, all accounted for.",
+
+    "_photos_rights_unclear": [
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/CoE-500x500-1.png",
+        "what": "TripAdvisor 'Certificate of Excellence' badge, displayed in the operator's site footer.",
+        "why": "Third-party trademark and brand asset. The operator displaying it does not give us a licence to reproduce it, and the badge carries no year. Use the award as TEXT, not as this image."
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2025/11/Flower-elegant-address-label-personal-card-2.jpg",
+        "what": "Gift-card / seasonal promo graphic on the home page.",
+        "why": "The filename is a stock design-template name ('Flower elegant address label personal card'), so this is very likely a licensed template the operator used, not an original work. Also perishable promo art, not a depiction of the business."
+      },
+      {
+        "url": "https://berardisrestauranthuron.com/wp-content/uploads/2025/11/Brardis-Pie-Order-2025.jpg",
+        "what": "'Thanksgiving Pies — Order Here' promo image (300x200). Its linked PDF reads, verbatim: 'Thanksgiving Pies / Order Here / Pickup on Wednesday, November 26th from 10am-7pm'.",
+        "why": "Perishable seasonal promotion for 2025, already expired. Not rights-unclear so much as time-expired — recorded here so nobody picks it up as evergreen dessert imagery."
+      },
+      {
+        "url": "https://www.yelp.com/biz/berardis-restaurant-huron-3",
+        "what": "Third-party review-site photo galleries (Yelp, and https://www.tripadvisor.com/Restaurant_Review-g50467-d419737-Reviews-Berardi_s_Family_Restaurant-Huron_Ohio.html, and https://www.facebook.com/BerardisFamilyRestaurant/).",
+        "why": "These three profiles are linked by the operator itself from /contact/ ('Find Us On…'), so they are the CORRECT profiles for this business — but their photo galleries are largely user-submitted and no licence can be stated. Not enumerated. Listed as a pointer only."
+      }
+    ],
+    "_photos_commons": "Wikimedia Commons was queried directly via its API (action=query&list=search, namespace 6) for 'Berardi's Huron' and 'Berardi restaurant': ZERO relevant files. There is no tier-2 open-licence imagery for this business.",
+
+    "history": "The Berardi family's food business began in 1942, when Eurosia \"Mama\" Berardi and her son Albert started selling fresh-cut french fries at the Midway at Cedar Point, working from Idaho potatoes and a hand-held potato peeler. The fries became as popular as the park itself and, in the family's telling, were a driving factor in the park's early days; they were sold there until Cedar Point stopped allowing private concessions in 1978. In 1979 Albert and Roseanne Berardi opened Berardi's Restaurant in Huron, focusing on fresh home-cooked food. It has remained family owned ever since and is now in the hands of the fourth generation, with many recipes in the family for more than three decades and nearly everything made from scratch.",
+    "_history_source": "https://berardisrestauranthuron.com/about/ (section 'Berardi's History – How It Started') for 1942, Eurosia/Mama Berardi, Albert, the Midway at Cedar Point, the hand-held peeler, the 1978 end of private concessions, the 1979 Huron opening, 4th generation, and 'made from scratch'. The names 'Albert and Roseanne Berardi' come from the operator's HOME page ('Berardi's Restaurant in Huron was opened in 1979 by Albert and Roseanne Berardi and it is still family owned to this day.') — ⚠️ the /about/ page credits the 1979 opening to Albert alone; both are the operator's own words and they differ on whether Roseanne is named. Every clause above traces to one of those two pages. No local-press, Sandusky Register or Huron Historical Society material was consulted (no search available) — additional history is NOT ESTABLISHED, not absent.",
+
+    "menu": {
+      "sections": []
+    },
+    "_menu_finding": "⛔ ZERO new menu sections. The catering menu and the dessert menu that dining.json's `_menu_note` said 'exist and were not transcribed' DO NOT EXIST as published item lists. This was established three independent ways, not assumed: (1) https://berardisrestauranthuron.com/catering/ contains only a services blurb and an inquiry form — no items, no prices; (2) the footer tile reading 'Dessert' is a Divi `et_pb_text` module that, unlike its neighbours 'Breakfast', 'Lunch & Dinner' and 'Catering', carries NO `et_clickable` class and no url in the page's Divi config — it links nowhere, and dining.json's claim that a dessert menu is 'linked in the footer' is wrong; (3) the site's complete page list from https://berardisrestauranthuron.com/wp-json/wp/v2/pages?per_page=100 is exactly 8 pages — apply, catering, contact, about, specials, breakfast, dinner-lunch, home — with no dessert page, published or otherwise. The /dinner-lunch/ page was also re-read end to end and has no dessert section; the existing 19-section transcription of it is complete. The Toast online-ordering menu could not be read (see `_online_ordering_status`).",
+    "_catering_content": "The /catering/ page's entire substantive text, verbatim: 'We are available for full service custom catering for your next home gathering, office meeting, or event. From appetizers to fresh baked desserts and everything in between, we can provide you with al a carte servings or a full buffet. Pickup or delivery available (Free delivery in Huron).' Catering is requested through an on-page form (name, phone, email, number of guests, event date, message) — there is no published price list, minimum, or deposit.",
+    "_specials_dated": {
+      "_why_not_in_menu": "This is the operator's daily-specials board, stamped with a single date. It is real, sourced content but it is perishable and would be stale on the card within days, so it is deliberately NOT filed as a menu section. Recorded here as provenance only. See berardis-NOVEL.md.",
+      "_date_on_page": "September 19th, 2026",
+      "_fetched": "2026-09-22",
+      "_source": "https://berardisrestauranthuron.com/specials/ and https://berardisrestauranthuron.com/todays-specials/ (identical content; the second is the blog post, the first is the page that embeds it)",
+      "_disclaimer_verbatim": "*Subject to availability to promote freshness.",
+      "soup": "Tomato basil",
+      "lunch": [
+        { "name": "Petite Egg Salad Croissant Pick 2", "price": 1000 },
+        { "name": "Chipotle Beef Wrap with Fries or Slaw", "price": 1400 },
+        { "name": "Fried Clam Strips with Fries and Slaw", "price": 1600 }
+      ],
+      "dinner": [
+        { "name": "Panko Crusted Haddock with Garlic Mashed Potatoes, Vegetable", "price": 1650 },
+        { "name": "Bourbon Pork Chop with Twice Baked, Beans", "price": 1700 }
+      ],
+      "dessert": "Blueberry Pie, Pumpkin Cream Cheese Sheetcake",
+      "beer": "Truth IPA, Blakes Triple Berry Cider",
+      "wine": "Check out our new beer and wine list!",
+      "other_verbatim": "Try our NEW BLOODY MARY'S available on the weekends!"
+    },
+    "_dessert_evidence": "Desserts are REAL at this business but are not published as a priced list. The evidence, all operator's own words: /about/ says 'Stop by and enjoy our family recipes and award winning desserts today!'; /catering/ offers 'fresh baked desserts'; the 2026-09-19 specials board names 'Blueberry Pie, Pumpkin Cream Cheese Sheetcake'; and the media library holds a Thanksgiving pie pre-order promo. ⛔ A dessert menu section CANNOT be built from these without inventing prices. Getting one requires asking the operator or photographing the in-house dessert case.",
+
+    "logo": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Logo-500x234-1.png",
+    "_logo_variants": {
+      "dark_on_light_500x234": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Logo-500x234-1.png",
+      "white_reversed_300x144": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Logo-300x144-white.png",
+      "square_icon_512": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Icon-512x512-1.jpg"
+    },
+
+    "reservation_url": "https://www.google.com/maps/reserve/v/waitlist?c=mFm9RpRW1wo",
+    "_reservation_note": "This is a Google Maps WAITLIST, not a table reservation — the operator labels the link 'Waitlist'. The URL on the site carries a long tail of Google search-session tracking parameters (source, opi, gei, sourceurl, ihs, ps); those were stripped and the bare `c=mFm9RpRW1wo` form was fetched and returns HTTP 200. Use the stripped form — the full one embeds a captured search session from May 2025 and will rot.",
+
+    "order_url": "https://order.toasttab.com/online/berardis-huron",
+    "_online_ordering_status": "⚠️ OBSERVED 2026-09-22: loading this page in a real browser renders only 'Online ordering is currently unavailable. Please contact the restaurant to place an order.' Plain HTTP fetches return 403. Whether this is a temporary outage, an out-of-hours state, or online ordering having been discontinued is NOT ESTABLISHED. The 'Online ordering' amenity already on the card should be re-checked before the card is shown to a client. This also blocked reading the Toast menu for dessert items.",
+    "gift_card_url": "https://www.toasttab.com/berardis-huron/giftcards",
+    "gift_card_balance_url": "https://www.toasttab.com/berardis-huron/findcard",
+    "_gift_card_note": "Both URLs are Divi click-through targets, not <a> hrefs, and were read out of the page's Divi module config. As authored on the site they carry trailing URL-encoded spaces ('giftcards%20', 'findcard%20%20') — an operator typo; the cleaned forms above resolve (HTTP 302 to the Toast gift-card flow).",
+    "employment_url": "https://www.indeed.com/cmp/Berardi's-Family-Restaurant",
+    "menu_url": "https://berardisrestauranthuron.com/dinner-lunch/",
+
+    "email": "info.berardis@gmail.com",
+    "_email_note": "Printed in the site header bar on every page as 'INFO.BERARDIS@GMAIL.COM'. Lowercased here.",
+
+    "social": {
+      "facebook": "https://www.facebook.com/BerardisFamilyRestaurant/",
+      "yelp": "https://www.yelp.com/biz/berardis-restaurant-huron-3",
+      "tripadvisor": "https://www.tripadvisor.com/Restaurant_Review-g50467-d419737-Reviews-Berardi_s_Family_Restaurant-Huron_Ohio.html"
+    },
+    "_social_note": "⭐ All three are OPERATOR-DECLARED — they are the links under 'Find Us On…' on https://berardisrestauranthuron.com/contact/, not profiles matched by name. That matters here: the business trades on the website as 'Berardi's Restaurant' but on TripAdvisor as 'Berardi's Family Restaurant', and on Indeed as 'Berardi's Family Restaurant'. A name-matching crawler would have missed or mismatched these. No Instagram, X or TikTok account is linked anywhere on the site.",
+
+    "awards": [
+      {
+        "name": "TripAdvisor Certificate of Excellence",
+        "year": null,
+        "_basis": "The operator displays the TripAdvisor Certificate of Excellence badge in the footer of every page of its own site (image inspected to read the badge). ⛔ The badge image carries NO year and the site prints no caption or link, so the year(s) awarded are NOT ESTABLISHED. The badge has been on the site since at least 2021-09 (media library upload date)."
+      }
+    ],
+    "_awards_not_established": "The /about/ page's phrase 'award winning desserts' is the operator's own marketing copy with no award named. ⛔ It is NOT evidence of an award and must not be turned into one. No local 'best of' win, press mention, or Historical Society citation was confirmed — no web search was available this session, so these are UNSEARCHED, not absent.",
+
+    "amenities": [
+      "Catering delivery (free in Huron)",
+      "On-site parking"
+    ],
+    "_amenities_basis": {
+      "Catering delivery (free in Huron)": "https://berardisrestauranthuron.com/catering/ verbatim: 'Pickup or delivery available (Free delivery in Huron).' Note this is stated on the CATERING page and applies to catering orders; it is not a claim of general restaurant delivery.",
+      "On-site parking": "⚠️ WEAKEST ITEM HERE. Basis is visual only: the operator's own exterior photo (Berardis-Restaurant-Huron-Front.jpg, inspected) shows a striped, marked parking lot directly in front of the building with cars in it. The site never states parking in words. Drop this if photo-derived amenities are not acceptable."
+    },
+    "_amenities_not_established": "OUTDOOR SEATING — not established. The site says nothing, and the exterior photo shows a bench beside the entrance but no patio or outdoor dining setup; a bench is not outdoor seating and must not be recorded as such. ACCESSIBILITY — not established. Nothing on the site addresses it and the exterior photo is not sufficient evidence about the entrance. RESERVATIONS — the operator offers a Google WAITLIST only; whether they take reservations is not established. DINE-IN — the /about/ page says 'Our dining room is warm and inviting to create a family friendly experience', which does establish a dining room; add 'Dine-in' / 'Family friendly' if the schema wants them.",
+
+    "_contradictions_with_existing_data": [
+      "dining.json `_menu_note` says 'Two further menus exist that were NOT transcribed: /catering/ and a Dessert menu linked in the footer.' BOTH halves are wrong. /catering/ is a service blurb plus an inquiry form, not a menu. And there is no dessert menu anywhere on the site — the footer 'Dessert' tile links nowhere (no `et_clickable`, no url), and the site's full page list is 8 pages with no dessert page. See `_menu_finding`.",
+      "listings.json `website` is 'http://www.berardisrestaurant.com/', which 301-redirects. Canonical is https://berardisrestauranthuron.com/.",
+      "listings.json carries the amenity 'Online ordering'. As of 2026-09-22 the linked Toast page renders 'Online ordering is currently unavailable.' Cause not established — but this is the demo card, so verify before showing it.",
+      "The business name differs across the operator's own channels: 'Berardi's Restaurant' (website), 'Berardi's Family Restaurant' (TripAdvisor, Indeed, Facebook handle BerardisFamilyRestaurant). listings.json uses 'Berardi's Restaurant', which matches the operator's own site — correct as-is, recorded so nobody 'fixes' it."
+    ]
+  }
+}

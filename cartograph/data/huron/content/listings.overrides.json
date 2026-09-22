@@ -106,15 +106,53 @@
     },
     "ovt-dd08d3fb-ddf1-4f03-ac77-3ca00fad5aef": {
       "_match_name": "Christ Episcopal Church",
-      "_source": "https://www.episcopalassetmap.org/dioceses/diocese-ohio/list/christ-episcopal-church",
-      "_fetched": "2026-09-21",
-      "_confidence": "NOT the org's own site - the parish's own site is DOWN. Data is from the Episcopal Church's diocesan asset map, which parishes maintain themselves; it carries no last-updated date, so treat the times as unverified against a first-party source.",
+      "_source": "https://en.wikipedia.org/wiki/Christ_Episcopal_Church_(Huron,_Ohio) ; https://www.thehuronhistoricalsociety.org/historical-markers/christ-episcopal-church/ ; Wikimedia Commons Category:Christ Episcopal Church (Huron, Ohio)",
+      "_fetched": "2026-09-22",
+      "_confidence": "HIGH for history. The 1838 cornerstone, the 1837 founding and the 40-year Marks rectorship are the transcribed text of the Huron Historical Society's own sesquicentennial marker; the NRHP listing date and reference number are from Wikipedia's NRHP infobox. ⚠️ I could NOT retrieve the NRHP nomination document itself (npgallery.nps.gov returned 404 for both the _text and _photos asset patterns for ref 75001379), so the architect and the architectural style are NOT ESTABLISHED. The parish's own website is still dead (confirmed by the 2026-09-21 beat; unchanged).",
       "_url_finding": "The held URL http://christchurchhuron.com/ does not resolve: christchurchhuron.com has no A record and no NS records at 8.8.8.8 or 1.1.1.1 (NXDOMAIN) as of 2026-09-21. The alternate domain christchurchhuron.org DOES resolve but 301-redirects straight to the dead .com, so the parish site is unreachable by either name. Search engines still index cached pages (christchurchhuron.com/services.html); those are stale, not live.",
       "_service_times": "Sunday 10:00 (Holy Eucharist, with Facebook livestream); Wednesday 09:00 (Morning Prayer). Recorded here and NOT in `hours`: these are service START times with no published end, and writing a close time would be inventing one.",
       "_notfound_hours": "No opening or office hours published by any source consulted.",
       "phone": "419-433-4701",
       "description": "An Episcopal parish at 120 Ohio Street whose congregation has gathered since 1837, in the Episcopal Diocese of Ohio. It describes itself as \"A Place of Grace\" with a mission to \"engage with Christ and our community to spread God's promise of hope, peace, joy, and love to the world.\"",
-      "_beat": "civic",
+      "_geo_verified": "The Commons photos carry coordinates 41.395833, -82.555 — Huron, Erie County, Ohio. NOT Port Huron MI, not Huron SD, not Huron County OH.",
+      "photos": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Christ_Episcopal_Church_Huron_Ohio.jpg",
+          "what": "Front/tower elevation of the church, colour, 3456x5184. Shot for Wiki Loves Monuments 2012.",
+          "credit": "LeeG7144 (own work), via Wikimedia Commons",
+          "credit_url": "https://commons.wikimedia.org/wiki/File:Christ_Episcopal_Church_Huron_Ohio.jpg",
+          "license": "CC BY-SA 3.0",
+          "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+          "date": "2012-09-10"
+        },
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg",
+          "what": "Side elevation of the same church, colour, 5184x3456, taken two minutes after the front view.",
+          "credit": "LeeG7144 (own work), via Wikimedia Commons",
+          "credit_url": "https://commons.wikimedia.org/wiki/File:Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg",
+          "license": "CC BY-SA 3.0",
+          "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+          "date": "2012-09-10"
+        }
+      ],
+      "_photos_rights_unclear": [
+        {
+          "url": "http://www.thehuronhistoricalsociety.org/wp-content/uploads/2012/05/christepiscopalchurch.jpeg",
+          "what": "Photo of the church on the Huron Historical Society's marker page.",
+          "why": "No credit and no licence stated anywhere on the page, and the society is a private nonprofit, not a government body. Also served over plain HTTP."
+        }
+      ],
+      "history": "The Episcopal Society of Huron was organized in 1837 under the Rev. F. M. Levenworth, and the cornerstone of the present building was laid on 23 May 1838 — making it the oldest church building in Huron, standing near what had been the original southern limit of the village. The Rev. Samuel Marks became pastor in 1839 and served for over forty years. The building was added to the National Register of Historic Places on 4 March 1975 (reference no. 75001379), and the congregation marked its sesquicentennial in 1988.",
+      "_history_sources": "Sentences 1-3 are a close paraphrase of the Huron Historical Society marker transcription; sentence 4's NRHP date and reference number are from the Wikipedia article's NRHP infobox.",
+      "amenities": [
+        "On the National Register of Historic Places (1975)",
+        "Oldest church building in Huron (1838)",
+        "Episcopal Diocese of Ohio"
+      ],
+      "_extra_schedules": {
+        "_note": "No premises/office hours are published by any source consulted, so `hours` stays empty. Service times were established by the 2026-09-21 beat and are reproduced here unchanged, as INSTANTS: Sunday 10:00 Holy Eucharist (with Facebook livestream); Wednesday 09:00 Morning Prayer."
+      },
+      "_beat": "civic+civic-deep",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0236"
     },
@@ -245,8 +283,8 @@
       "_match_name": "Berardi's Restaurant",
       "_source": "https://berardisrestauranthuron.com/",
       "_source_note": "The supplied URL http://www.berardisrestaurant.com/ 301-redirects to https://berardisrestauranthuron.com/ — the operator's live site. All facts below are from that site.",
-      "_fetched": "2026-09-21",
-      "_confidence": "ALL fields are verbatim or near-verbatim from the restaurant's OWN site. Hours are printed in the site footer on every page. Menu was parsed from the HTML text of /breakfast/ and /dinner-lunch/, not from a PDF or image — item names, descriptions and printed prices are transcribed, none inferred.",
+      "_fetched": "2026-09-22",
+      "_confidence": "Every field below is taken from the operator's own live site (raw HTML of /, /about/, /contact/, /catering/, /specials/, /breakfast/, /dinner-lunch/, plus the site's WordPress REST API at /wp-json/wp/v2/pages and /wp-json/wp/v2/media). Nothing is inferred from a third-party directory. Every image listed under `photos` was downloaded and VISUALLY INSPECTED to confirm it depicts the Huron location's building or food before being recorded — the Huron-vs-other-Berardi's hazard was checked, not assumed. ⛔ No web search was available this session (session search budget exhausted before the first query), so press mentions, local 'best of' wins and Historical Society material were NOT searched and are recorded as 'not established' rather than as absent.",
       "_address": "218 Cleveland Rd. East, Huron, Ohio 44839 — phone 419-433-4123",
       "hours": {
         "tuesday": {
@@ -284,9 +322,14 @@
         "Gift cards",
         "Beer and wine",
         "Gluten-free bread available",
-        "Waitlist"
+        "Waitlist",
+        "Catering delivery (free in Huron)",
+        "On-site parking"
       ],
-      "_amenities_basis": "Online ordering = the site's own order link https://order.toasttab.com/online/berardis-huron. Catering = /catering/ page in the nav. Gift cards = 'Purchase New Gift Card Here' / 'Check Gift Card Balance Here'. Beer and wine = 'Check out our new beer and wine list!' plus named beers on Today's Specials. Gluten-free bread = printed on the menu ('Gluten Free Bread is available for all sandwiches 1.00'). Waitlist = the site's Google waitlist link. ⛔ 'Takeout' is inferred ONLY from the presence of the Toast online-ordering link; if that is too weak, drop it.",
+      "_amenities_basis": {
+        "Catering delivery (free in Huron)": "https://berardisrestauranthuron.com/catering/ verbatim: 'Pickup or delivery available (Free delivery in Huron).' Note this is stated on the CATERING page and applies to catering orders; it is not a claim of general restaurant delivery.",
+        "On-site parking": "⚠️ WEAKEST ITEM HERE. Basis is visual only: the operator's own exterior photo (Berardis-Restaurant-Huron-Front.jpg, inspected) shows a striped, marked parking lot directly in front of the building with cars in it. The site never states parking in words. Drop this if photo-derived amenities are not acceptable."
+      },
       "_menu_source": [
         "https://berardisrestauranthuron.com/breakfast/",
         "https://berardisrestauranthuron.com/dinner-lunch/"
@@ -884,7 +927,179 @@
         ]
       },
       "_specials_note": "The home page carries a dated daily-specials block ('Today's Specials — September 19th, 2026') with soup, lunch, dinner, dessert, beer and wine lines and their own prices. It is dated, perishable and NOT part of the standing menu, so it is not recorded as menu data. See dining-NOVEL.md §'Dated daily specials'.",
-      "_beat": "dining",
+      "_scope": "This file holds ONLY what was missing from scratch/huron-research/dining.json. Hours, description, the 19 existing menu sections and the 7 existing amenities are NOT repeated.",
+      "_website_correction": "listings.json currently holds website = 'http://www.berardisrestaurant.com/'. That host 301-redirects to https://berardisrestauranthuron.com/ — the canonical live site, which is also the host of every asset below. Recommend updating the field.",
+      "photos": [
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Front.jpg",
+          "what": "Exterior of the restaurant at dusk — brick building with dark standing-seam gable roof and a cream script 'Berardi's' sign, parking lot in foreground.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-History.jpg",
+          "what": "Archival black-and-white photograph: an older woman and a man in white shirts standing among stacked burlap potato sacks, each holding a hand tool.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/about/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Porkchop.jpg",
+          "what": "Plated pork chop with herb-and-shallot butter, mashed potatoes with gravy, and steamed broccoli.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Chicken-Bruschetta-lg.jpg",
+          "what": "Close-up of sliced grilled chicken over fettuccine in cream sauce with diced tomato, parsley and shredded parmesan.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Cranberry-Nut-French-Toast-lg.jpg",
+          "what": "Cranberry-nut French toast dusted with powdered sugar, topped with whipped cream, served with bacon, a pitcher of syrup and a cup of butter.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Fruit-Nut-Salad-lg.jpg",
+          "what": "Mixed-greens salad with sliced strawberries, green apple, dried cranberries, candied nuts and crumbled feta.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Haddock-Lemon-Wine-lg.jpg",
+          "what": "Baked haddock fillet with capers and a lemon-wine sauce over rice pilaf, with green beans and a lemon wedge.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Chipotle-Burger-lg.jpg",
+          "what": "Open-faced chipotle burger with melted white cheese, jalapeños and tortilla strips, with lettuce, tomato and red onion, a pickle spear, fries, a bread basket and a bottle of malt vinegar.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-French-Fries.jpg",
+          "what": "Overhead studio flat-lay of hand-cut skin-on french fries on a white plate against a slate surface.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Dessert.jpg",
+          "what": "Chocolate chip cookies cooling on a wire rack. Small file (400 px wide).",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-FamilyMenu.jpg",
+          "what": "Baked fish fillet with capers over rice pilaf with green beans and a lemon wedge. Small file (400 px wide). ⚠️ The FILENAME says 'FamilyMenu' but the image is a seafood plate — it is a crop of the Haddock photo above. Do not trust the filename as a caption.",
+          "credit": "Berardi's Restaurant",
+          "credit_url": "https://berardisrestauranthuron.com/"
+        }
+      ],
+      "_photos_note": "Three further files in the media library are smaller crops of photos already listed and were deliberately excluded as duplicates: .../2021/09/Berardis-Restaurant-Huron-Breakfast.jpg (crop of the cranberry French toast), .../2021/09/Berardis-Restaurant-Huron-LunchDinner.jpg (crop of the pork chop), .../2021/10/Berardis-Restaurant-Huron-French-Fries-Cropped.jpg (crop of the fries). The full media library was enumerated via https://berardisrestauranthuron.com/wp-json/wp/v2/media?per_page=100 — 33 items, all accounted for.",
+      "_photos_rights_unclear": [
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/CoE-500x500-1.png",
+          "what": "TripAdvisor 'Certificate of Excellence' badge, displayed in the operator's site footer.",
+          "why": "Third-party trademark and brand asset. The operator displaying it does not give us a licence to reproduce it, and the badge carries no year. Use the award as TEXT, not as this image."
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2025/11/Flower-elegant-address-label-personal-card-2.jpg",
+          "what": "Gift-card / seasonal promo graphic on the home page.",
+          "why": "The filename is a stock design-template name ('Flower elegant address label personal card'), so this is very likely a licensed template the operator used, not an original work. Also perishable promo art, not a depiction of the business."
+        },
+        {
+          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2025/11/Brardis-Pie-Order-2025.jpg",
+          "what": "'Thanksgiving Pies — Order Here' promo image (300x200). Its linked PDF reads, verbatim: 'Thanksgiving Pies / Order Here / Pickup on Wednesday, November 26th from 10am-7pm'.",
+          "why": "Perishable seasonal promotion for 2025, already expired. Not rights-unclear so much as time-expired — recorded here so nobody picks it up as evergreen dessert imagery."
+        },
+        {
+          "url": "https://www.yelp.com/biz/berardis-restaurant-huron-3",
+          "what": "Third-party review-site photo galleries (Yelp, and https://www.tripadvisor.com/Restaurant_Review-g50467-d419737-Reviews-Berardi_s_Family_Restaurant-Huron_Ohio.html, and https://www.facebook.com/BerardisFamilyRestaurant/).",
+          "why": "These three profiles are linked by the operator itself from /contact/ ('Find Us On…'), so they are the CORRECT profiles for this business — but their photo galleries are largely user-submitted and no licence can be stated. Not enumerated. Listed as a pointer only."
+        }
+      ],
+      "_photos_commons": "Wikimedia Commons was queried directly via its API (action=query&list=search, namespace 6) for 'Berardi's Huron' and 'Berardi restaurant': ZERO relevant files. There is no tier-2 open-licence imagery for this business.",
+      "history": "The Berardi family's food business began in 1942, when Eurosia \"Mama\" Berardi and her son Albert started selling fresh-cut french fries at the Midway at Cedar Point, working from Idaho potatoes and a hand-held potato peeler. The fries became as popular as the park itself and, in the family's telling, were a driving factor in the park's early days; they were sold there until Cedar Point stopped allowing private concessions in 1978. In 1979 Albert and Roseanne Berardi opened Berardi's Restaurant in Huron, focusing on fresh home-cooked food. It has remained family owned ever since and is now in the hands of the fourth generation, with many recipes in the family for more than three decades and nearly everything made from scratch.",
+      "_history_source": "https://berardisrestauranthuron.com/about/ (section 'Berardi's History – How It Started') for 1942, Eurosia/Mama Berardi, Albert, the Midway at Cedar Point, the hand-held peeler, the 1978 end of private concessions, the 1979 Huron opening, 4th generation, and 'made from scratch'. The names 'Albert and Roseanne Berardi' come from the operator's HOME page ('Berardi's Restaurant in Huron was opened in 1979 by Albert and Roseanne Berardi and it is still family owned to this day.') — ⚠️ the /about/ page credits the 1979 opening to Albert alone; both are the operator's own words and they differ on whether Roseanne is named. Every clause above traces to one of those two pages. No local-press, Sandusky Register or Huron Historical Society material was consulted (no search available) — additional history is NOT ESTABLISHED, not absent.",
+      "_menu_finding": "⛔ ZERO new menu sections. The catering menu and the dessert menu that dining.json's `_menu_note` said 'exist and were not transcribed' DO NOT EXIST as published item lists. This was established three independent ways, not assumed: (1) https://berardisrestauranthuron.com/catering/ contains only a services blurb and an inquiry form — no items, no prices; (2) the footer tile reading 'Dessert' is a Divi `et_pb_text` module that, unlike its neighbours 'Breakfast', 'Lunch & Dinner' and 'Catering', carries NO `et_clickable` class and no url in the page's Divi config — it links nowhere, and dining.json's claim that a dessert menu is 'linked in the footer' is wrong; (3) the site's complete page list from https://berardisrestauranthuron.com/wp-json/wp/v2/pages?per_page=100 is exactly 8 pages — apply, catering, contact, about, specials, breakfast, dinner-lunch, home — with no dessert page, published or otherwise. The /dinner-lunch/ page was also re-read end to end and has no dessert section; the existing 19-section transcription of it is complete. The Toast online-ordering menu could not be read (see `_online_ordering_status`).",
+      "_catering_content": "The /catering/ page's entire substantive text, verbatim: 'We are available for full service custom catering for your next home gathering, office meeting, or event. From appetizers to fresh baked desserts and everything in between, we can provide you with al a carte servings or a full buffet. Pickup or delivery available (Free delivery in Huron).' Catering is requested through an on-page form (name, phone, email, number of guests, event date, message) — there is no published price list, minimum, or deposit.",
+      "_specials_dated": {
+        "_why_not_in_menu": "This is the operator's daily-specials board, stamped with a single date. It is real, sourced content but it is perishable and would be stale on the card within days, so it is deliberately NOT filed as a menu section. Recorded here as provenance only. See berardis-NOVEL.md.",
+        "_date_on_page": "September 19th, 2026",
+        "_fetched": "2026-09-22",
+        "_source": "https://berardisrestauranthuron.com/specials/ and https://berardisrestauranthuron.com/todays-specials/ (identical content; the second is the blog post, the first is the page that embeds it)",
+        "_disclaimer_verbatim": "*Subject to availability to promote freshness.",
+        "soup": "Tomato basil",
+        "lunch": [
+          {
+            "name": "Petite Egg Salad Croissant Pick 2",
+            "price": 1000
+          },
+          {
+            "name": "Chipotle Beef Wrap with Fries or Slaw",
+            "price": 1400
+          },
+          {
+            "name": "Fried Clam Strips with Fries and Slaw",
+            "price": 1600
+          }
+        ],
+        "dinner": [
+          {
+            "name": "Panko Crusted Haddock with Garlic Mashed Potatoes, Vegetable",
+            "price": 1650
+          },
+          {
+            "name": "Bourbon Pork Chop with Twice Baked, Beans",
+            "price": 1700
+          }
+        ],
+        "dessert": "Blueberry Pie, Pumpkin Cream Cheese Sheetcake",
+        "beer": "Truth IPA, Blakes Triple Berry Cider",
+        "wine": "Check out our new beer and wine list!",
+        "other_verbatim": "Try our NEW BLOODY MARY'S available on the weekends!"
+      },
+      "_dessert_evidence": "Desserts are REAL at this business but are not published as a priced list. The evidence, all operator's own words: /about/ says 'Stop by and enjoy our family recipes and award winning desserts today!'; /catering/ offers 'fresh baked desserts'; the 2026-09-19 specials board names 'Blueberry Pie, Pumpkin Cream Cheese Sheetcake'; and the media library holds a Thanksgiving pie pre-order promo. ⛔ A dessert menu section CANNOT be built from these without inventing prices. Getting one requires asking the operator or photographing the in-house dessert case.",
+      "logo": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Logo-500x234-1.png",
+      "_logo_variants": {
+        "dark_on_light_500x234": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Logo-500x234-1.png",
+        "white_reversed_300x144": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Logo-300x144-white.png",
+        "square_icon_512": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Icon-512x512-1.jpg"
+      },
+      "reservation_url": "https://www.google.com/maps/reserve/v/waitlist?c=mFm9RpRW1wo",
+      "_reservation_note": "This is a Google Maps WAITLIST, not a table reservation — the operator labels the link 'Waitlist'. The URL on the site carries a long tail of Google search-session tracking parameters (source, opi, gei, sourceurl, ihs, ps); those were stripped and the bare `c=mFm9RpRW1wo` form was fetched and returns HTTP 200. Use the stripped form — the full one embeds a captured search session from May 2025 and will rot.",
+      "order_url": "https://order.toasttab.com/online/berardis-huron",
+      "_online_ordering_status": "⚠️ OBSERVED 2026-09-22: loading this page in a real browser renders only 'Online ordering is currently unavailable. Please contact the restaurant to place an order.' Plain HTTP fetches return 403. Whether this is a temporary outage, an out-of-hours state, or online ordering having been discontinued is NOT ESTABLISHED. The 'Online ordering' amenity already on the card should be re-checked before the card is shown to a client. This also blocked reading the Toast menu for dessert items.",
+      "gift_card_url": "https://www.toasttab.com/berardis-huron/giftcards",
+      "gift_card_balance_url": "https://www.toasttab.com/berardis-huron/findcard",
+      "_gift_card_note": "Both URLs are Divi click-through targets, not <a> hrefs, and were read out of the page's Divi module config. As authored on the site they carry trailing URL-encoded spaces ('giftcards%20', 'findcard%20%20') — an operator typo; the cleaned forms above resolve (HTTP 302 to the Toast gift-card flow).",
+      "employment_url": "https://www.indeed.com/cmp/Berardi's-Family-Restaurant",
+      "menu_url": "https://berardisrestauranthuron.com/dinner-lunch/",
+      "email": "info.berardis@gmail.com",
+      "_email_note": "Printed in the site header bar on every page as 'INFO.BERARDIS@GMAIL.COM'. Lowercased here.",
+      "social": {
+        "facebook": "https://www.facebook.com/BerardisFamilyRestaurant/",
+        "yelp": "https://www.yelp.com/biz/berardis-restaurant-huron-3",
+        "tripadvisor": "https://www.tripadvisor.com/Restaurant_Review-g50467-d419737-Reviews-Berardi_s_Family_Restaurant-Huron_Ohio.html"
+      },
+      "_social_note": "⭐ All three are OPERATOR-DECLARED — they are the links under 'Find Us On…' on https://berardisrestauranthuron.com/contact/, not profiles matched by name. That matters here: the business trades on the website as 'Berardi's Restaurant' but on TripAdvisor as 'Berardi's Family Restaurant', and on Indeed as 'Berardi's Family Restaurant'. A name-matching crawler would have missed or mismatched these. No Instagram, X or TikTok account is linked anywhere on the site.",
+      "awards": [
+        {
+          "name": "TripAdvisor Certificate of Excellence",
+          "year": null
+        }
+      ],
+      "_awards_not_established": "The /about/ page's phrase 'award winning desserts' is the operator's own marketing copy with no award named. ⛔ It is NOT evidence of an award and must not be turned into one. No local 'best of' win, press mention, or Historical Society citation was confirmed — no web search was available this session, so these are UNSEARCHED, not absent.",
+      "_amenities_not_established": "OUTDOOR SEATING — not established. The site says nothing, and the exterior photo shows a bench beside the entrance but no patio or outdoor dining setup; a bench is not outdoor seating and must not be recorded as such. ACCESSIBILITY — not established. Nothing on the site addresses it and the exterior photo is not sufficient evidence about the entrance. RESERVATIONS — the operator offers a Google WAITLIST only; whether they take reservations is not established. DINE-IN — the /about/ page says 'Our dining room is warm and inviting to create a family friendly experience', which does establish a dining room; add 'Dine-in' / 'Family friendly' if the schema wants them.",
+      "_contradictions_with_existing_data": [
+        "dining.json `_menu_note` says 'Two further menus exist that were NOT transcribed: /catering/ and a Dessert menu linked in the footer.' BOTH halves are wrong. /catering/ is a service blurb plus an inquiry form, not a menu. And there is no dessert menu anywhere on the site — the footer 'Dessert' tile links nowhere (no `et_clickable`, no url), and the site's full page list is 8 pages with no dessert page. See `_menu_finding`.",
+        "listings.json `website` is 'http://www.berardisrestaurant.com/', which 301-redirects. Canonical is https://berardisrestauranthuron.com/.",
+        "listings.json carries the amenity 'Online ordering'. As of 2026-09-22 the linked Toast page renders 'Online ordering is currently unavailable.' Cause not established — but this is the demo card, so verify before showing it.",
+        "The business name differs across the operator's own channels: 'Berardi's Restaurant' (website), 'Berardi's Family Restaurant' (TripAdvisor, Indeed, Facebook handle BerardisFamilyRestaurant). listings.json uses 'Berardi's Restaurant', which matches the operator's own site — correct as-is, recorded so nobody 'fixes' it."
+      ],
+      "_beat": "dining+berardis",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0252"
     },
@@ -1602,9 +1817,9 @@
     },
     "ovt-40ee2664-68f1-43fa-82d2-e53de03fd0cc": {
       "_match_name": "Beagle Bay Knot Works",
-      "_source": "https://www.beaglebayknotworks.com/",
+      "_source": "https://www.beaglebayknotworks.com/ · https://www.beaglebayknotworks.com/products.json · https://www.beaglebayknotworks.com/pages/contact-us",
       "_fetched": "2026-09-22",
-      "_confidence": "Address (507 Main St Huron OH 44839) and the product description are on the shop's own Shopify site. NO HOURS and NO PHONE are published on it - both omitted. The phone we hold (+13304650890) is a 330 area code, i.e. NOT local to Huron (419/567); unverified, left unchanged.",
+      "_confidence": "First-party Shopify shop, confirmed Huron OH by the 507 Main St address on its own site (established by the earlier retail beat). NO STOREFRONT OR INTERIOR PHOTO EXISTS ANYWHERE ON THE SITE - the only site-chrome image is the logo. What the shop does publish is PRODUCT photography, first-party, high quality, on its own Shopify CDN.",
       "_contact": "beaglebayknots@aol.com is given for wholesale inquiries. The /contact page returns 404 while being linked from the nav.",
       "description": "A Main Street \"boat\"-ique of hand-tied nautical bracelets, knotwork decor and marlin-spike supplies.",
       "amenities": [
@@ -1614,7 +1829,47 @@
         "Online shop",
         "Wholesale"
       ],
-      "_beat": "retail",
+      "photos": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8677.jpg",
+          "what": "Product photo: \"Lake Erie Love Bracelet\" - a hand-tied cotton-cord bracelet",
+          "credit": "Beagle Bay Knot Works (own Shopify shop)",
+          "credit_url": "https://www.beaglebayknotworks.com/"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8673.jpg",
+          "what": "Product photo: \"Back to the Bay Bracelet\"",
+          "credit": "Beagle Bay Knot Works (own Shopify shop)",
+          "credit_url": "https://www.beaglebayknotworks.com/"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/products/KelseyWreath.jpg",
+          "what": "Product photo: \"Kelsey\" nautical rope wreath - the most card-legible object in the catalogue",
+          "credit": "Beagle Bay Knot Works (own Shopify shop)",
+          "credit_url": "https://www.beaglebayknotworks.com/"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8698.jpg",
+          "what": "Product photo: lacing-needle (fid) assortment - marlin-spike supplies",
+          "credit": "Beagle Bay Knot Works (own Shopify shop)",
+          "credit_url": "https://www.beaglebayknotworks.com/"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/Liberty250.jpg",
+          "what": "Product photo: \"Liberty 250 Bracelet\", red/white/blue cord",
+          "credit": "Beagle Bay Knot Works (own Shopify shop)",
+          "credit_url": "https://www.beaglebayknotworks.com/"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/BBKW_Logo_22.jpg",
+          "what": "The shop's logo - not a photograph, but it is the only branded image on the site",
+          "credit": "Beagle Bay Knot Works (own Shopify shop)",
+          "credit_url": "https://www.beaglebayknotworks.com/"
+        }
+      ],
+      "_no_storefront_photo_reason": "Looked at the home page, /pages/contact-us, /pages/bracelet-sizing, /pages/our-favorite-links and the products feed. No exterior, interior or Main Street image is published. The site links NO Facebook or Instagram account, so there is no social account to look in either - unusual for a retail shop and worth a Host note.",
+      "_url_note": "Held website http://www.beaglebayknotworks.com/ is correct. The linked /contact page 404s; the working one is /pages/contact-us.",
+      "_beat": "retail+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0059"
     },
@@ -2169,7 +2424,7 @@
       "_match_name": "The Huron Historical Society",
       "_source": "http://www.thehuronhistoricalsociety.org/",
       "_fetched": "2026-09-22",
-      "_confidence": "Hours, address, phone and mission statement are quoted from the society's own site. The society occupies the LOWER LEVEL OF THE HURON PUBLIC LIBRARY at 333 Williams St, so its two-hour Wednesday window is not the building's hours. No sourced history of the building itself was found; not established.",
+      "_confidence": "The society publishes a captioned carousel of its own photographs of Huron's Ohio historical markers, each caption naming the marker and each image linking to that marker's page on the society's own site. Captions are read straight from the markup, so what each shows IS established - unusually good for this beat. NOTE: none of these is a photo of the society's own premises (the lower level of the library at 333 Williams St); they are pictures of the town. For a history-society card that is arguably better.",
       "hours": {
         "wednesday": {
           "open": "15:00",
@@ -2184,7 +2439,89 @@
         "exhibits"
       ],
       "phone": "+14194335009",
-      "_beat": "shopping",
+      "photos": [
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide12.jpg",
+          "what": "Historical marker: \"Old Main Street\"",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide4.jpg",
+          "what": "Historical marker: \"Huron's Lighthouses\"",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide11.jpg",
+          "what": "Historical marker: \"The Wright House\"",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide1.jpg",
+          "what": "Historical marker: \"Cedar Point Roadway\"",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/cedar-point-roadway/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide2.jpg",
+          "what": "Historical marker: \"Old Woman Creek\"",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide3.jpg",
+          "what": "Historical marker: \"Huron's First Inhabitants\"",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/hurons-first-inhabitants-marker-12-22/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide5.jpg",
+          "what": "Historical marker: \"Christ Episcopal Church\" - note this is huro-lst-0236, prominence rank 2, also photoless",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/christ-episcopal-church/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide6.jpg",
+          "what": "Historical marker: \"The Firelands of Ohio\"",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-firelands-of-ohio/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide7.jpg",
+          "what": "Historical marker: \"Huron's Lighthouses\" (second view)",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide8.jpg",
+          "what": "Historical marker: \"The Huron Playhouse\"",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-huron-playhouse/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide9.jpg",
+          "what": "Historical marker: \"John Babtise Flemmond\" (society's spelling; the linked page spells it Baptise)",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/john-baptise-flemmond/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide10.jpg",
+          "what": "Historical marker: \"Old Woman Creek\" (second view)",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/"
+        },
+        {
+          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/lighthouse.png",
+          "what": "Home-page illustration, alt text \"huron lighthouse\" - a cut-out of the Huron pier lighthouse, 212x397",
+          "credit": "Huron Historical Society (own website)",
+          "credit_url": "https://www.thehuronhistoricalsociety.org/"
+        }
+      ],
+      "_reusable_for_other_listings": "slide5.jpg is the Christ Episcopal Church marker and slide8.jpg is the Huron Playhouse marker. Both name places that are separate listings in this directory. A human may want to cross-post them, with the society credited.",
+      "_no_premises_photo_reason": "The society's site publishes no photograph of 333 Williams St or of its own rooms in the library's lower level.",
+      "_beat": "shopping+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0212"
     },
@@ -2231,9 +2568,9 @@
     },
     "ovt-6846029f-fcb2-456a-bb3f-067187237254": {
       "_match_name": "South Shore Marine",
-      "_source": "https://www.southshoremarine.com/contact",
+      "_source": "https://www.southshoremarine.com/contact · https://www.southshoremarine.com/about-us",
       "_fetched": "2026-09-22",
-      "_confidence": "Hours, phone and address quoted from the dealership's own contact page. SALES and SERVICE keep DIFFERENT Saturday hours (sales to 16:00, service to 14:00); the hours below are the SALES desk. The site also publishes named holiday closures (Labor Day; Thanksgiving 11/26-11/28; Christmas-New Year 12/24-1/3) which this schema cannot hold. 'Over three decades' serving Northern Ohio boaters comes from a search snippet, not a first-party page - founding year not established. The listing's website field points at the dealer's YouTube channel, not its site.",
+      "_confidence": "Two large first-party AERIAL photographs published by the dealership on its own site, one as the /contact page hero and one on /about-us. Both filenames are raw DJI drone captures (DJI_20251013...) dated 13 Oct 2025 and uploaded to the dealer's own CDN space, so they are the operator's own commissioned imagery. The /contact hero's alt text is only \"Contact page\", so the SUBJECT is not stated; for a boatyard on Sawmill Pkwy an October drone shot is near-certainly the yard and the Huron River basin, but that is inference and should be eye-checked.",
       "hours": {
         "monday": {
           "open": "08:00",
@@ -2269,8 +2606,35 @@
         "marine insurance"
       ],
       "phone": "+14197808516",
-      "_url_finding": "WRONG PAGE KIND. Held URL is the dealer's YouTube channel. Correct site: https://www.southshoremarine.com/ (hours at /contact).",
-      "_beat": "shopping",
+      "_url_finding": "Carried forward: held website is the dealer's YouTube channel. Correct site https://www.southshoremarine.com/ .",
+      "photos": [
+        {
+          "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013145538_0021_D_1771730175513.JPG?w=1900&format=webp",
+          "what": "Full-width hero on the dealership's own /contact page. Drone capture, 13 Oct 2025. Subject almost certainly the Sawmill Pkwy yard/marina but not stated in markup.",
+          "credit": "South Shore Marine (own website)",
+          "credit_url": "https://www.southshoremarine.com/contact"
+        },
+        {
+          "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013150821_0036_D_1771730226170.JPG?w=1900&format=webp",
+          "what": "Hero on the dealership's own /about-us page. Same drone session, 13 Oct 2025.",
+          "credit": "South Shore Marine (own website)",
+          "credit_url": "https://www.southshoremarine.com/about-us"
+        }
+      ],
+      "_photos_rights_unclear": [
+        {
+          "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/assets/images/home/home-img-16.webp?w=800&format=webp",
+          "what": "Home-page image, alt text \"Axis\"",
+          "why": "Named for the Axis boat brand - a MANUFACTURER'S product image, not this location. This is the chain-brand-stock trap in dealer form."
+        },
+        {
+          "url": "https://cdn.mdsbrand.com/mean-south-shore-marine-owm/assets/images/about/our%20mission.jpg",
+          "what": "Illustrates the \"Our Mission\" block on /about-us",
+          "why": "Generic site-furniture graphic supplied by the web agency (mdsbrand); provenance not stated"
+        }
+      ],
+      "_also": "The home page embeds a first-party promotional film at cdn.mdsbrand.com/vimeo/South+Shore+Marine/south_shore_4.0_-_v2_v1 (1080p). Video, not a photo - flagged, not recorded as a photo.",
+      "_beat": "shopping+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0097"
     },
@@ -3447,8 +3811,7 @@
       ],
       "phone": "+14196166088",
       "menu": {
-        "url": "http://harborhousebar.com/food-menu",
-        "sections": []
+        "url": "http://harborhousebar.com/food-menu"
       },
       "_beat": "dining2",
       "_tier": "CAVEATED",
@@ -3566,8 +3929,7 @@
       ],
       "phone": "+14196024664",
       "menu": {
-        "url": "https://oldnorthmaineats.com/old-fish-house/",
-        "sections": []
+        "url": "https://oldnorthmaineats.com/old-fish-house/"
       },
       "_beat": "dining2",
       "_tier": "CLEAN",
@@ -3781,8 +4143,7 @@
       ],
       "phone": "+14196160002",
       "menu": {
-        "url": "http://www.gatheringgroundscoffeehouse.com/menu-1",
-        "sections": []
+        "url": "http://www.gatheringgroundscoffeehouse.com/menu-1"
       },
       "_beat": "dining2",
       "_tier": "CAVEATED",
@@ -3802,8 +4163,7 @@
       ],
       "phone": "+14194335751",
       "menu": {
-        "url": "https://www.pizzahousehuron.com/menu/",
-        "sections": []
+        "url": "https://www.pizzahousehuron.com/menu/"
       },
       "_beat": "dining2",
       "_tier": "CLEAN",
@@ -3852,8 +4212,7 @@
       ],
       "phone": "+14194336017",
       "menu": {
-        "url": "https://www.costaazulhuron.com/",
-        "sections": []
+        "url": "https://www.costaazulhuron.com/"
       },
       "_beat": "dining2",
       "_tier": "CLEAN",
@@ -3896,8 +4255,7 @@
       ],
       "phone": "+14194334463",
       "menu": {
-        "url": "https://www.jimspizzabox.com/menus",
-        "sections": []
+        "url": "https://www.jimspizzabox.com/menus"
       },
       "_beat": "dining2",
       "_tier": "CAVEATED",
@@ -3946,8 +4304,7 @@
       ],
       "phone": "+14194330811",
       "menu": {
-        "url": "https://www.cameopizza.com/menu/",
-        "sections": []
+        "url": "https://www.cameopizza.com/menu/"
       },
       "_beat": "dining2",
       "_tier": "CAVEATED",
@@ -3966,8 +4323,7 @@
       ],
       "phone": "+15676239160",
       "menu": {
-        "url": "http://the-tea-bubble.square.site/",
-        "sections": []
+        "url": "http://the-tea-bubble.square.site/"
       },
       "_beat": "dining2",
       "_tier": "CAVEATED",
@@ -6137,9 +6493,9 @@
     },
     "ovt-2cdeade9-e125-4008-a87c-0d92dde91895": {
       "_match_name": "Huron Fire Division",
-      "_source": "https://www.cityofhuron.org/government/safety_services/fire/index.php",
+      "_source": "https://www.cityofhuron.org/government/safety_services/fire/history.php (the division's own history page, on the city's site)",
       "_fetched": "2026-09-22",
-      "_confidence": "Stations, staffing, chief and 2025 call volume are quoted from the city's own fire page. ADDRESS CORRECTION: the division's Station 1 is 413 Main Street (the listing says 417 Main Street, which is the municipal building) and there is a SECOND station at 1830 Bogart Road — one listing, two premises. No `hours`: the division operates 24/7/365, which is a coverage statement, not opening hours, and the page publishes no public-counter hours.",
+      "_confidence": "HIGH — this is a first-party municipal page written by the division about itself, and it is unusually detailed and dated. The 2026-01-05 chief appointment shows the page is currently maintained. Its EXISTENCE was missed by the 2026-09-22 community beat, which reported no history for this listing.",
       "description": "Huron's fire and EMS service, staffed around the clock from two stations. Most of its work is medical: 1,935 of 2,208 responses in 2025 were EMS calls.",
       "amenities": [
         "Station 1, 413 Main Street",
@@ -6149,7 +6505,25 @@
         "Dive Rescue and Recovery Team"
       ],
       "phone": "+14194335000",
-      "_beat": "community",
+      "_photos_rights_unclear": [
+        {
+          "url": "https://www.cityofhuron.org/Images/Government/Safety%20Services/Huron%20Fire.png",
+          "what": "Banner image on the city's fire pages — apparently the division's apparatus/station header graphic.",
+          "why": "Published by the City of Huron, a municipal government, but Ohio municipal works are NOT federal works and the city publishes no licence or reuse terms. Rights cannot be stated. I did not verify the resolved URL (the page gives it as a relative path with a cache-busting query)."
+        },
+        {
+          "url": "https://www.cityofhuron.org/Images/Government/Safety%20Services/Fire/History/Department_Patch.jpg",
+          "what": "The Huron Fire Division's department patch, on the history page.",
+          "why": "A department insignia, not a building photo — and no licence stated. An insignia also carries separate trademark-style concerns that a photo does not."
+        }
+      ],
+      "history": "Huron's fire service was established in 1860 with hand-pumped equipment. In 1915 the village bought a horse-drawn ladder wagon from the City of Elyria, and local horse owners raced their teams to the station when the alarm sounded. Hank Schaffer was appointed the first fire chief in 1920 at $50 a year. Steam whistles served as the fire signal until 1923, when the city bought an electric siren for about $350. The first motorised apparatus, a Buffalo Larrabee pumper, arrived in 1925, followed by a Mack truck in 1934 that its crews nicknamed the \"Blue Goose\" for its blue paint. The division hired its first full-time firefighters in 1969 and bought its first ambulance the same year. In 1974 the station moved from the corner of Main Street and Jim Campbell Boulevard to the north end of Main Street. A fire levy in 1986 paid for four more full-time members and a 22-foot Boston Whaler rescue boat.",
+      "_history_sources": "Every sentence is from the division's own history page; dates and figures are as published there. I left out the 2000 Twine House fire, the 1999 thermal-imaging purchase and the chief succession (2003/2008/2009/2026) — recent operational detail rather than the building's story.",
+      "_extra_schedules": {
+        "_note": "No hours. The 2026-09-22 community beat's reasoning stands and I did not disturb it: 24/7/365 is a COVERAGE statement, not opening hours, and no public-counter hours are published."
+      },
+      "_address_note": "The 2026-09-22 community beat's correction stands: Station 1 is 413 Main Street (the listing says 417, which is the municipal building) and Station 2 is 1830 Bogart Road. The history page's 1974 line — the station moved 'to the north end of Main Street' — is independent support for Station 1 being a Main Street address distinct from city hall.",
+      "_beat": "community+civic-deep",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0035"
     },
@@ -6207,6 +6581,39 @@
       "_beat": "community",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0121"
+    },
+    "ovt-d47787c0-b4e7-47a2-834c-576d7c19ecd2": {
+      "_match_name": "Cedar Point Center",
+      "_source": "https://www.bgsu.edu/firelands/event-hosting.html",
+      "_fetched": "2026-09-22",
+      "_confidence": "WHAT IT IS: now established, but only just. The Cedar Point Center is a building on the BGSU Firelands campus at 1 University Drive, Huron, and BGSU presents it on its event-hosting page as one of the campus venues available for outside events. That is the full extent of what the university publishes about it: I found NO dedicated page, so its rooms, capacities, year built and hours remain NOT ESTABLISHED. This supersedes the previous beat's 'NOT ESTABLISHED beyond the campus it sits on' — the building now has a confirmed function and a confirmed institutional photo.",
+      "_name_collision": "⚠️ Still true and still the main research hazard: the name collides with the Cedar Point amusement park in nearby Sandusky. This building has nothing to do with the amusement park; it is named for the peninsula. Any search for 'Cedar Point Center' lands in the wrong place.",
+      "photos": [
+        {
+          "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/admissions/cedar-point-center.jpg",
+          "what": "BGSU's own photograph of the Cedar Point Center building, used on the Firelands event-hosting page. Verified HTTP 200, image/jpeg, 2.84 MB.",
+          "credit": "Bowling Green State University (BGSU Firelands)",
+          "credit_url": "https://www.bgsu.edu/firelands/event-hosting.html",
+          "license": "NOT STATED — the institution's own published image of its own building. BGSU is a public university but publishes no reuse terms on its site. A human must decide."
+        }
+      ],
+      "_photos_rights_unclear": [
+        {
+          "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/i-HdcLjtR-4K.jpg",
+          "what": "A second large (4.7 MB, '4K') image on the event-hosting page; subject not identified in the page markup.",
+          "why": "I could not establish what building or scene it shows, so I will not assert it depicts the Cedar Point Center."
+        }
+      ],
+      "description": "A building on the BGSU Firelands campus at 1 University Drive. The university lists it among the meeting spaces and auditoriums it makes available for outside events.",
+      "_description_caveat": "Deliberately thin. BGSU publishes no room list, capacity or description for this building; writing one would be inventing it.",
+      "amenities": [
+        "On the BGSU Firelands campus, 1 University Drive",
+        "Available for outside event hosting (Firelands Event Management, 419-372-0685, firelandsevents@bgsu.edu)"
+      ],
+      "_history_note": "NOT ESTABLISHED. No founding, construction or naming date is published for this building by BGSU or anyone else I could reach.",
+      "_beat": "community+civic-deep",
+      "_tier": "CAVEATED",
+      "_display_id_at_research": "huro-lst-0226"
     },
     "ovt-f7c99236-b0f1-4642-a226-068eaaf0e32a": {
       "_match_name": "Clarity Counseling & Wellness",

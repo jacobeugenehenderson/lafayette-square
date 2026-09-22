@@ -1,0 +1,108 @@
+{
+ "_README": {
+  "_ID_CORRECTION": "⛔ EVERY listing id in my assignment brief was wrong. The ids below were re-resolved by matching `name` in cartograph/data/huron/content/listings.json. Brief said -> actual: BGSU Firelands Library 0195->0280 | Christ Episcopal Church 0236->0236 (only one correct) | BGSU Firelands College 0170->0195 | City of Huron - Government 0193->0065 | Huron Fire Division 0134->0035 | Cedar Point Center 0161->0226 | USPS 0263->0104 | Huron Post Office 0100->0085 | Upside Down Art Studio 0173->0146. The brief's ids point at Custom Marine, CUSH Cafe, Corner Cuts, Peace By Piece Pastries, Hph Pizza, Simply Better Realty and Hy-Miler.",
+  "_CONTAMINATION_FOUND": "⛔ huro-lst-0195 (name: 'Bowling Green State University, Firelands College') in the live listings.json ALREADY CARRIES THE LIBRARY'S description, hours and amenities. scratch/huron-research/civic.json also keys huro-lst-0195 with _match_name 'BGSU Firelands Library', which is not that record's name. A prior beat wrote library content onto the college listing. The library is huro-lst-0280 and holds the same content. This needs a human decision; I have not written college content over it, I have recorded the college's own material under huro-lst-0195 separately below.",
+  "_websearch": "⛔ The session's WebSearch budget (200/200) was exhausted before my first search. All research below is direct fetches of known endpoints (Wikimedia APIs, institution sites). Discovery was therefore limited to endpoints I could name in advance."
+ },
+ "huro-lst-0236": {
+  "_match_name": "Christ Episcopal Church",
+  "_source": "https://en.wikipedia.org/wiki/Christ_Episcopal_Church_(Huron,_Ohio) ; https://www.thehuronhistoricalsociety.org/historical-markers/christ-episcopal-church/ ; Wikimedia Commons Category:Christ Episcopal Church (Huron, Ohio)",
+  "_fetched": "2026-09-22",
+  "_confidence": "HIGH for history. The 1838 cornerstone, the 1837 founding and the 40-year Marks rectorship are the transcribed text of the Huron Historical Society's own sesquicentennial marker; the NRHP listing date and reference number are from Wikipedia's NRHP infobox. ⚠️ I could NOT retrieve the NRHP nomination document itself (npgallery.nps.gov returned 404 for both the _text and _photos asset patterns for ref 75001379), so the architect and the architectural style are NOT ESTABLISHED. The parish's own website is still dead (confirmed by the 2026-09-21 beat; unchanged).",
+  "_geo_verified": "The Commons photos carry coordinates 41.395833, -82.555 — Huron, Erie County, Ohio. NOT Port Huron MI, not Huron SD, not Huron County OH.",
+  "photos": [
+   {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Christ_Episcopal_Church_Huron_Ohio.jpg",
+    "what": "Front/tower elevation of the church, colour, 3456x5184. Shot for Wiki Loves Monuments 2012.",
+    "credit": "LeeG7144 (own work), via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Christ_Episcopal_Church_Huron_Ohio.jpg",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "date": "2012-09-10"
+   },
+   {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg",
+    "what": "Side elevation of the same church, colour, 5184x3456, taken two minutes after the front view.",
+    "credit": "LeeG7144 (own work), via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "date": "2012-09-10"
+   }
+  ],
+  "_photos_rights_unclear": [
+   {
+    "url": "http://www.thehuronhistoricalsociety.org/wp-content/uploads/2012/05/christepiscopalchurch.jpeg",
+    "what": "Photo of the church on the Huron Historical Society's marker page.",
+    "why": "No credit and no licence stated anywhere on the page, and the society is a private nonprofit, not a government body. Also served over plain HTTP."
+   }
+  ],
+  "history": "The Episcopal Society of Huron was organized in 1837 under the Rev. F. M. Levenworth, and the cornerstone of the present building was laid on 23 May 1838 — making it the oldest church building in Huron, standing near what had been the original southern limit of the village. The Rev. Samuel Marks became pastor in 1839 and served for over forty years. The building was added to the National Register of Historic Places on 4 March 1975 (reference no. 75001379), and the congregation marked its sesquicentennial in 1988.",
+  "_history_sources": "Sentences 1-3 are a close paraphrase of the Huron Historical Society marker transcription; sentence 4's NRHP date and reference number are from the Wikipedia article's NRHP infobox.",
+  "amenities": [
+   "On the National Register of Historic Places (1975)",
+   "Oldest church building in Huron (1838)",
+   "Episcopal Diocese of Ohio"
+  ],
+  "phone": "419-433-4701",
+  "_extra_schedules": {
+   "_note": "No premises/office hours are published by any source consulted, so `hours` stays empty. Service times were established by the 2026-09-21 beat and are reproduced here unchanged, as INSTANTS: Sunday 10:00 Holy Eucharist (with Facebook livestream); Wednesday 09:00 Morning Prayer."
+  }
+ },
+ "huro-lst-0035": {
+  "_match_name": "Huron Fire Division",
+  "_source": "https://www.cityofhuron.org/government/safety_services/fire/history.php (the division's own history page, on the city's site)",
+  "_fetched": "2026-09-22",
+  "_confidence": "HIGH — this is a first-party municipal page written by the division about itself, and it is unusually detailed and dated. The 2026-01-05 chief appointment shows the page is currently maintained. Its EXISTENCE was missed by the 2026-09-22 community beat, which reported no history for this listing.",
+  "photos": [],
+  "_photos_rights_unclear": [
+   {
+    "url": "https://www.cityofhuron.org/Images/Government/Safety%20Services/Huron%20Fire.png",
+    "what": "Banner image on the city's fire pages — apparently the division's apparatus/station header graphic.",
+    "why": "Published by the City of Huron, a municipal government, but Ohio municipal works are NOT federal works and the city publishes no licence or reuse terms. Rights cannot be stated. I did not verify the resolved URL (the page gives it as a relative path with a cache-busting query)."
+   },
+   {
+    "url": "https://www.cityofhuron.org/Images/Government/Safety%20Services/Fire/History/Department_Patch.jpg",
+    "what": "The Huron Fire Division's department patch, on the history page.",
+    "why": "A department insignia, not a building photo — and no licence stated. An insignia also carries separate trademark-style concerns that a photo does not."
+   }
+  ],
+  "history": "Huron's fire service was established in 1860 with hand-pumped equipment. In 1915 the village bought a horse-drawn ladder wagon from the City of Elyria, and local horse owners raced their teams to the station when the alarm sounded. Hank Schaffer was appointed the first fire chief in 1920 at $50 a year. Steam whistles served as the fire signal until 1923, when the city bought an electric siren for about $350. The first motorised apparatus, a Buffalo Larrabee pumper, arrived in 1925, followed by a Mack truck in 1934 that its crews nicknamed the \"Blue Goose\" for its blue paint. The division hired its first full-time firefighters in 1969 and bought its first ambulance the same year. In 1974 the station moved from the corner of Main Street and Jim Campbell Boulevard to the north end of Main Street. A fire levy in 1986 paid for four more full-time members and a 22-foot Boston Whaler rescue boat.",
+  "_history_sources": "Every sentence is from the division's own history page; dates and figures are as published there. I left out the 2000 Twine House fire, the 1999 thermal-imaging purchase and the chief succession (2003/2008/2009/2026) — recent operational detail rather than the building's story.",
+  "_extra_schedules": {
+   "_note": "No hours. The 2026-09-22 community beat's reasoning stands and I did not disturb it: 24/7/365 is a COVERAGE statement, not opening hours, and no public-counter hours are published."
+  },
+  "_address_note": "The 2026-09-22 community beat's correction stands: Station 1 is 413 Main Street (the listing says 417, which is the municipal building) and Station 2 is 1830 Bogart Road. The history page's 1974 line — the station moved 'to the north end of Main Street' — is independent support for Station 1 being a Main Street address distinct from city hall."
+ },
+ "huro-lst-0226": {
+  "_match_name": "Cedar Point Center",
+  "_source": "https://www.bgsu.edu/firelands/event-hosting.html",
+  "_fetched": "2026-09-22",
+  "_confidence": "WHAT IT IS: now established, but only just. The Cedar Point Center is a building on the BGSU Firelands campus at 1 University Drive, Huron, and BGSU presents it on its event-hosting page as one of the campus venues available for outside events. That is the full extent of what the university publishes about it: I found NO dedicated page, so its rooms, capacities, year built and hours remain NOT ESTABLISHED. This supersedes the previous beat's 'NOT ESTABLISHED beyond the campus it sits on' — the building now has a confirmed function and a confirmed institutional photo.",
+  "_name_collision": "⚠️ Still true and still the main research hazard: the name collides with the Cedar Point amusement park in nearby Sandusky. This building has nothing to do with the amusement park; it is named for the peninsula. Any search for 'Cedar Point Center' lands in the wrong place.",
+  "photos": [
+   {
+    "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/admissions/cedar-point-center.jpg",
+    "what": "BGSU's own photograph of the Cedar Point Center building, used on the Firelands event-hosting page. Verified HTTP 200, image/jpeg, 2.84 MB.",
+    "credit": "Bowling Green State University (BGSU Firelands)",
+    "credit_url": "https://www.bgsu.edu/firelands/event-hosting.html",
+    "license": "NOT STATED — the institution's own published image of its own building. BGSU is a public university but publishes no reuse terms on its site. A human must decide."
+   }
+  ],
+  "_photos_rights_unclear": [
+   {
+    "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/i-HdcLjtR-4K.jpg",
+    "what": "A second large (4.7 MB, '4K') image on the event-hosting page; subject not identified in the page markup.",
+    "why": "I could not establish what building or scene it shows, so I will not assert it depicts the Cedar Point Center."
+   }
+  ],
+  "description": "A building on the BGSU Firelands campus at 1 University Drive. The university lists it among the meeting spaces and auditoriums it makes available for outside events.",
+  "_description_caveat": "Deliberately thin. BGSU publishes no room list, capacity or description for this building; writing one would be inventing it.",
+  "amenities": [
+   "On the BGSU Firelands campus, 1 University Drive",
+   "Available for outside event hosting (Firelands Event Management, 419-372-0685, firelandsevents@bgsu.edu)"
+  ],
+  "history": null,
+  "_history_note": "NOT ESTABLISHED. No founding, construction or naming date is published for this building by BGSU or anyone else I could reach."
+ }
+}

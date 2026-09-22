@@ -33,7 +33,12 @@
 // this needs calibration it has stopped being a presentation order and become a
 // judgment, and a judgment belongs to the operator.
 const DEPTH = [
+  // ⭐ A TRANSCRIBED MENU AND A LINK TO ONE ARE NOT THE SAME THING, and collapsing them
+  // is how six restaurants lost their place. A menu you can read on the card is the
+  // richest thing a listing carries; a `menu.url` is an honest "it exists, here it is"
+  // for a PDF or a JS app, worth real points and not four.
   [l => !!(l.menu && (l.menu.sections || []).length), 4],
+  [l => !!(l.menu && !(l.menu.sections || []).length && l.menu.url), 2],
   [l => !!(l.hours && Object.keys(l.hours).length), 2],
   [l => !!l.description, 1],
   [l => !!(l.photos && l.photos.length), 1],

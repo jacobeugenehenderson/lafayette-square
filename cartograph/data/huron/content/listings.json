@@ -6,7 +6,7 @@
   "generated": "2026-07-07",
   "generator": "bake-content.js",
   "count": 285,
-  "enriched": 196,
+  "enriched": 197,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -1863,7 +1863,7 @@
    "address": "218 Cleveland Rd E",
    "phone": "+14194334123",
    "website": "http://www.berardisrestaurant.com/",
-   "logo": null,
+   "logo": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Logo-500x234-1.png",
    "hours": {
     "tuesday": {
      "open": "07:00",
@@ -1891,7 +1891,74 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Front.jpg",
+     "what": "Exterior of the restaurant at dusk — brick building with dark standing-seam gable roof and a cream script 'Berardi's' sign, parking lot in foreground.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-History.jpg",
+     "what": "Archival black-and-white photograph: an older woman and a man in white shirts standing among stacked burlap potato sacks, each holding a hand tool.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/about/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Porkchop.jpg",
+     "what": "Plated pork chop with herb-and-shallot butter, mashed potatoes with gravy, and steamed broccoli.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Chicken-Bruschetta-lg.jpg",
+     "what": "Close-up of sliced grilled chicken over fettuccine in cream sauce with diced tomato, parsley and shredded parmesan.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Cranberry-Nut-French-Toast-lg.jpg",
+     "what": "Cranberry-nut French toast dusted with powdered sugar, topped with whipped cream, served with bacon, a pitcher of syrup and a cup of butter.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Fruit-Nut-Salad-lg.jpg",
+     "what": "Mixed-greens salad with sliced strawberries, green apple, dried cranberries, candied nuts and crumbled feta.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Haddock-Lemon-Wine-lg.jpg",
+     "what": "Baked haddock fillet with capers and a lemon-wine sauce over rice pilaf, with green beans and a lemon wedge.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Chipotle-Burger-lg.jpg",
+     "what": "Open-faced chipotle burger with melted white cheese, jalapeños and tortilla strips, with lettuce, tomato and red onion, a pickle spear, fries, a bread basket and a bottle of malt vinegar.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-French-Fries.jpg",
+     "what": "Overhead studio flat-lay of hand-cut skin-on french fries on a white plate against a slate surface.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Dessert.jpg",
+     "what": "Chocolate chip cookies cooling on a wire rack. Small file (400 px wide).",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    },
+    {
+     "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-FamilyMenu.jpg",
+     "what": "Baked fish fillet with capers over rice pilaf with green beans and a lemon wedge. Small file (400 px wide). ⚠️ The FILENAME says 'FamilyMenu' but the image is a seafood plate — it is a crop of the Haddock photo above. Do not trust the filename as a caption.",
+     "credit": "Berardi's Restaurant",
+     "credit_url": "https://berardisrestauranthuron.com/"
+    }
+   ],
    "amenities": [
     "Takeout",
     "Online ordering",
@@ -1899,13 +1966,15 @@
     "Gift cards",
     "Beer and wine",
     "Gluten-free bread available",
-    "Waitlist"
+    "Waitlist",
+    "Catering delivery (free in Huron)",
+    "On-site parking"
    ],
    "tags": [],
    "description": "A family-owned Huron restaurant opened in 1979 by Albert and Roseanne Berardi and now in its fourth generation, serving scratch-made American, Italian and Lake Erie seafood dishes for breakfast, lunch and dinner.",
-   "history": null,
-   "menu_url": null,
-   "reservation_url": null,
+   "history": "The Berardi family's food business began in 1942, when Eurosia \"Mama\" Berardi and her son Albert started selling fresh-cut french fries at the Midway at Cedar Point, working from Idaho potatoes and a hand-held potato peeler. The fries became as popular as the park itself and, in the family's telling, were a driving factor in the park's early days; they were sold there until Cedar Point stopped allowing private concessions in 1978. In 1979 Albert and Roseanne Berardi opened Berardi's Restaurant in Huron, focusing on fresh home-cooked food. It has remained family owned ever since and is now in the hands of the fourth generation, with many recipes in the family for more than three decades and nearly everything made from scratch.",
+   "menu_url": "https://berardisrestauranthuron.com/dinner-lunch/",
+   "reservation_url": "https://www.google.com/maps/reserve/v/waitlist?c=mFm9RpRW1wo",
    "status": "unverified",
    "source": "overture",
    "osm_type": null,
@@ -2502,6 +2571,22 @@
      }
     ]
    },
+   "order_url": "https://order.toasttab.com/online/berardis-huron",
+   "gift_card_url": "https://www.toasttab.com/berardis-huron/giftcards",
+   "gift_card_balance_url": "https://www.toasttab.com/berardis-huron/findcard",
+   "employment_url": "https://www.indeed.com/cmp/Berardi's-Family-Restaurant",
+   "email": "info.berardis@gmail.com",
+   "social": {
+    "facebook": "https://www.facebook.com/BerardisFamilyRestaurant/",
+    "yelp": "https://www.yelp.com/biz/berardis-restaurant-huron-3",
+    "tripadvisor": "https://www.tripadvisor.com/Restaurant_Review-g50467-d419737-Reviews-Berardi_s_Family_Restaurant-Huron_Ohio.html"
+   },
+   "awards": [
+    {
+     "name": "TripAdvisor Certificate of Excellence",
+     "year": null
+    }
+   ],
    "enriched": true,
    "prominence_rank": 43
   },
@@ -3315,11 +3400,34 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "photos": [
+    {
+     "url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Christ_Episcopal_Church_Huron_Ohio.jpg",
+     "what": "Front/tower elevation of the church, colour, 3456x5184. Shot for Wiki Loves Monuments 2012.",
+     "credit": "LeeG7144 (own work), via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:Christ_Episcopal_Church_Huron_Ohio.jpg",
+     "license": "CC BY-SA 3.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+     "date": "2012-09-10"
+    },
+    {
+     "url": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg",
+     "what": "Side elevation of the same church, colour, 5184x3456, taken two minutes after the front view.",
+     "credit": "LeeG7144 (own work), via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg",
+     "license": "CC BY-SA 3.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+     "date": "2012-09-10"
+    }
+   ],
+   "amenities": [
+    "On the National Register of Historic Places (1975)",
+    "Oldest church building in Huron (1838)",
+    "Episcopal Diocese of Ohio"
+   ],
    "tags": [],
    "description": "An Episcopal parish at 120 Ohio Street whose congregation has gathered since 1837, in the Episcopal Diocese of Ohio. It describes itself as \"A Place of Grace\" with a mission to \"engage with Christ and our community to spread God's promise of hope, peace, joy, and love to the world.\"",
-   "history": null,
+   "history": "The Episcopal Society of Huron was organized in 1837 under the Rev. F. M. Levenworth, and the cornerstone of the present building was laid on 23 May 1838 — making it the oldest church building in Huron, standing near what had been the original southern limit of the village. The Rev. Samuel Marks became pastor in 1839 and served for over forty years. The building was added to the National Register of Historic Places on 4 March 1975 (reference no. 75001379), and the congregation marked its sesquicentennial in 1988.",
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
@@ -3533,8 +3641,7 @@
    "overture_category": "pizza_restaurant",
    "overture_confidence": 0.9199122190475464,
    "menu": {
-    "url": "https://www.cameopizza.com/menu/",
-    "sections": []
+    "url": "https://www.cameopizza.com/menu/"
    },
    "enriched": true,
    "prominence_rank": 3622
@@ -3813,8 +3920,7 @@
    "overture_category": "bubble_tea",
    "overture_confidence": 0.5914776921272278,
    "menu": {
-    "url": "http://the-tea-bubble.square.site/",
-    "sections": []
+    "url": "http://the-tea-bubble.square.site/"
    },
    "enriched": true,
    "prominence_rank": 24
@@ -4039,7 +4145,20 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013145538_0021_D_1771730175513.JPG?w=1900&format=webp",
+     "what": "Full-width hero on the dealership's own /contact page. Drone capture, 13 Oct 2025. Subject almost certainly the Sawmill Pkwy yard/marina but not stated in markup.",
+     "credit": "South Shore Marine (own website)",
+     "credit_url": "https://www.southshoremarine.com/contact"
+    },
+    {
+     "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013150821_0036_D_1771730226170.JPG?w=1900&format=webp",
+     "what": "Hero on the dealership's own /about-us page. Same drone session, 13 Oct 2025.",
+     "credit": "South Shore Marine (own website)",
+     "credit_url": "https://www.southshoremarine.com/about-us"
+    }
+   ],
    "amenities": [
     "new boats",
     "brokerage and pre-owned",
@@ -4300,10 +4419,21 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "photos": [
+    {
+     "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/admissions/cedar-point-center.jpg",
+     "what": "BGSU's own photograph of the Cedar Point Center building, used on the Firelands event-hosting page. Verified HTTP 200, image/jpeg, 2.84 MB.",
+     "credit": "Bowling Green State University (BGSU Firelands)",
+     "credit_url": "https://www.bgsu.edu/firelands/event-hosting.html",
+     "license": "NOT STATED — the institution's own published image of its own building. BGSU is a public university but publishes no reuse terms on its site. A human must decide."
+    }
+   ],
+   "amenities": [
+    "On the BGSU Firelands campus, 1 University Drive",
+    "Available for outside event hosting (Firelands Event Management, 419-372-0685, firelandsevents@bgsu.edu)"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A building on the BGSU Firelands campus at 1 University Drive. The university lists it among the meeting spaces and auditoriums it makes available for outside events.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4312,6 +4442,7 @@
    "osm_type": null,
    "overture_category": "campus_building",
    "overture_confidence": 0.7235404253005981,
+   "enriched": true,
    "prominence_rank": 14
   },
   {
@@ -4562,8 +4693,7 @@
    "overture_category": "breakfast_and_brunch_restaurant",
    "overture_confidence": 0.9199122190475464,
    "menu": {
-    "url": "https://oldnorthmaineats.com/old-fish-house/",
-    "sections": []
+    "url": "https://oldnorthmaineats.com/old-fish-house/"
    },
    "enriched": true,
    "prominence_rank": 2576
@@ -4934,8 +5064,7 @@
    "overture_category": "american_restaurant",
    "overture_confidence": 0.9686952233314514,
    "menu": {
-    "url": "http://harborhousebar.com/food-menu",
-    "sections": []
+    "url": "http://harborhousebar.com/food-menu"
    },
    "enriched": true,
    "prominence_rank": 44
@@ -6294,7 +6423,86 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide12.jpg",
+     "what": "Historical marker: \"Old Main Street\"",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide4.jpg",
+     "what": "Historical marker: \"Huron's Lighthouses\"",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide11.jpg",
+     "what": "Historical marker: \"The Wright House\"",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide1.jpg",
+     "what": "Historical marker: \"Cedar Point Roadway\"",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/cedar-point-roadway/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide2.jpg",
+     "what": "Historical marker: \"Old Woman Creek\"",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide3.jpg",
+     "what": "Historical marker: \"Huron's First Inhabitants\"",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/hurons-first-inhabitants-marker-12-22/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide5.jpg",
+     "what": "Historical marker: \"Christ Episcopal Church\" - note this is huro-lst-0236, prominence rank 2, also photoless",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/christ-episcopal-church/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide6.jpg",
+     "what": "Historical marker: \"The Firelands of Ohio\"",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-firelands-of-ohio/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide7.jpg",
+     "what": "Historical marker: \"Huron's Lighthouses\" (second view)",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide8.jpg",
+     "what": "Historical marker: \"The Huron Playhouse\"",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-huron-playhouse/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide9.jpg",
+     "what": "Historical marker: \"John Babtise Flemmond\" (society's spelling; the linked page spells it Baptise)",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/john-baptise-flemmond/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide10.jpg",
+     "what": "Historical marker: \"Old Woman Creek\" (second view)",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/"
+    },
+    {
+     "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/lighthouse.png",
+     "what": "Home-page illustration, alt text \"huron lighthouse\" - a cut-out of the Huron pier lighthouse, 212x397",
+     "credit": "Huron Historical Society (own website)",
+     "credit_url": "https://www.thehuronhistoricalsociety.org/"
+    }
+   ],
    "amenities": [
     "local archive",
     "photograph collection",
@@ -6549,8 +6757,7 @@
    "overture_category": "coffee_shop",
    "overture_confidence": 0.9516680836677551,
    "menu": {
-    "url": "http://www.gatheringgroundscoffeehouse.com/menu-1",
-    "sections": []
+    "url": "http://www.gatheringgroundscoffeehouse.com/menu-1"
    },
    "enriched": true,
    "prominence_rank": 89
@@ -6577,7 +6784,7 @@
    ],
    "tags": [],
    "description": "Huron's fire and EMS service, staffed around the clock from two stations. Most of its work is medical: 1,935 of 2,208 responses in 2025 were EMS calls.",
-   "history": null,
+   "history": "Huron's fire service was established in 1860 with hand-pumped equipment. In 1915 the village bought a horse-drawn ladder wagon from the City of Elyria, and local horse owners raced their teams to the station when the alarm sounded. Hank Schaffer was appointed the first fire chief in 1920 at $50 a year. Steam whistles served as the fire signal until 1923, when the city bought an electric siren for about $350. The first motorised apparatus, a Buffalo Larrabee pumper, arrived in 1925, followed by a Mack truck in 1934 that its crews nicknamed the \"Blue Goose\" for its blue paint. The division hired its first full-time firefighters in 1969 and bought its first ambulance the same year. In 1974 the station moved from the corner of Main Street and Jim Campbell Boulevard to the north end of Main Street. A fire levy in 1986 paid for four more full-time members and a 22-foot Boston Whaler rescue boat.",
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
@@ -7562,7 +7769,44 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8677.jpg",
+     "what": "Product photo: \"Lake Erie Love Bracelet\" - a hand-tied cotton-cord bracelet",
+     "credit": "Beagle Bay Knot Works (own Shopify shop)",
+     "credit_url": "https://www.beaglebayknotworks.com/"
+    },
+    {
+     "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8673.jpg",
+     "what": "Product photo: \"Back to the Bay Bracelet\"",
+     "credit": "Beagle Bay Knot Works (own Shopify shop)",
+     "credit_url": "https://www.beaglebayknotworks.com/"
+    },
+    {
+     "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/products/KelseyWreath.jpg",
+     "what": "Product photo: \"Kelsey\" nautical rope wreath - the most card-legible object in the catalogue",
+     "credit": "Beagle Bay Knot Works (own Shopify shop)",
+     "credit_url": "https://www.beaglebayknotworks.com/"
+    },
+    {
+     "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8698.jpg",
+     "what": "Product photo: lacing-needle (fid) assortment - marlin-spike supplies",
+     "credit": "Beagle Bay Knot Works (own Shopify shop)",
+     "credit_url": "https://www.beaglebayknotworks.com/"
+    },
+    {
+     "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/Liberty250.jpg",
+     "what": "Product photo: \"Liberty 250 Bracelet\", red/white/blue cord",
+     "credit": "Beagle Bay Knot Works (own Shopify shop)",
+     "credit_url": "https://www.beaglebayknotworks.com/"
+    },
+    {
+     "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/BBKW_Logo_22.jpg",
+     "what": "The shop's logo - not a photograph, but it is the only branded image on the site",
+     "credit": "Beagle Bay Knot Works (own Shopify shop)",
+     "credit_url": "https://www.beaglebayknotworks.com/"
+    }
+   ],
    "amenities": [
     "Hand-tied nautical bracelets",
     "Home and boat decor",
@@ -8502,8 +8746,7 @@
    "overture_category": "pizza_restaurant",
    "overture_confidence": 0.9695203304290771,
    "menu": {
-    "url": "https://www.jimspizzabox.com/menus",
-    "sections": []
+    "url": "https://www.jimspizzabox.com/menus"
    },
    "enriched": true,
    "prominence_rank": 45
@@ -8599,8 +8842,7 @@
    "overture_category": "pizza_restaurant",
    "overture_confidence": 0.9484351277351379,
    "menu": {
-    "url": "https://www.pizzahousehuron.com/menu/",
-    "sections": []
+    "url": "https://www.pizzahousehuron.com/menu/"
    },
    "enriched": true,
    "prominence_rank": 49
@@ -9452,8 +9694,7 @@
    "overture_category": "mexican_restaurant",
    "overture_confidence": 0.9720896482467651,
    "menu": {
-    "url": "https://www.costaazulhuron.com/",
-    "sections": []
+    "url": "https://www.costaazulhuron.com/"
    },
    "enriched": true,
    "prominence_rank": 48
