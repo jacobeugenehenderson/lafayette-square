@@ -37,6 +37,7 @@ import GatewayArch from '../components/GatewayArch'
 import MountainBackdrop from '../components/MountainBackdrop'
 import CelestialBodies from '../components/CelestialBodies'
 import CascadedShadows, { CSM_ENABLED } from '../components/CascadedShadows.jsx'
+import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import Atmosphere from '../components/Atmosphere'
 import CloudDome from '../components/CloudDome'
 import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
@@ -1448,6 +1449,9 @@ export default function CartographApp() {
                 Preview because Stage is where the operator has camera control and the
                 Look panel; a render change that cannot be driven cannot be judged. */}
             {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><StageCascades /></R3FErrorBoundary>}
+            {/* ⛔ UNGATED. Names the material when a program fails to link — the failure
+                that draws NOTHING and says nothing. See lib/shaderLinkGuard.jsx. */}
+            <ShaderLinkGuard />
             <R3FErrorBoundary name="CelestialBodies"><CelestialBodies
               debugLevel={0}
               lookId={activeLookId}

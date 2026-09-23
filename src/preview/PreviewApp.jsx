@@ -34,6 +34,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import BakedGround from '../components/BakedGround.jsx'
 import CascadedShadows, { CSM_ENABLED } from '../components/CascadedShadows.jsx'
+import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import { INSTANCE } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { sceneExag } from '../utils/terrainShader'
@@ -1365,6 +1366,9 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
       {/* ⚠️ `?csm=1` — cascaded shadow maps, dark by default. Replaces the single
           fitted map with N across the view range. See CascadedShadows.jsx. */}
       {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><CascadedShadowsDriver /></R3FErrorBoundary>}
+      {/* ⛔ UNGATED. Names the material when a program fails to link — the failure
+          that draws NOTHING and says nothing. See lib/shaderLinkGuard.jsx. */}
+      <ShaderLinkGuard />
       <group visible={layers.celestial}>
         <R3FErrorBoundary name="CelestialBodies"><CelestialBodies lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
       </group>

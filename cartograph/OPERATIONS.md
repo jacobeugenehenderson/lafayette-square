@@ -310,6 +310,31 @@ The right panel lists every render layer with a per-layer cost bar; each checkbo
 - **Recording mode** (phone mode) — **event** (a trigger arms a ~5 s capture window) vs. **ambient** (a continuous rolling window, triggers disabled). Persists to `localStorage` (`preview.recMode.v1`).
 - ⚠️ **Three caveats** when reading per-layer cost (`PREVIEW.md §4`): it's *render* cost, not VRAM; deltas **don't sum** (shared overdraw) — trust the all-on total; neon is forced-on.
 
+### ⛔⛔ A BLANK SURFACE MAY BE A SHADER THAT DID NOT LINK — check this FIRST
+
+**`MAX_TEXTURE_IMAGE_UNITS` is 16** on a phone *and on the dev M1*. A material that wants a
+17th fragment texture **does not link, and its surface draws NOTHING** — no degraded mode, no
+visible clue. It reads as a bright shadowless ground, a missing building skin, or (the
+neighbouring `MAX_VERTEX_ATTRIBS` ceiling) every tree vanishing at once. ⭐ **This is the kit's
+signature failure: fine on town #1, dead on town #2** — one more land-use class or one more
+authored map is all it takes, and the operator sees a map and trusts it.
+
+- ▶ **`window.__samplerCensus()`** in any Stage or Preview console. Prints every compiled
+  program, the texture units each really uses (read off the **compiled** program, so nothing
+  is guessed), which ones are **shadow receivers**, the headroom on the tightest one — and
+  **names any program that did not link**. ⚠️ Read the *receiver* row: a fullscreen post pass
+  is usually the tightest program in the scene, but it receives no shadow, so it is not the
+  budget.
+- A link failure also logs on its own, naming the material — you do not have to ask.
+- ▶ **`?unitbomb=1`** deliberately mounts a material 20 samplers over the ceiling. The census
+  must then report `unitbomb` as a program that did not link. ⭐ **Run it once on a new device
+  before you trust a green census there** — a detector nobody has seen fail proves nothing.
+  ⚠️ **It is a self-test, not a mode to leave on:** under the flag the scene has sometimes
+  stuck mid-load (**cause not established**). Drop the flag and reload. The detector itself
+  costs nothing per frame and is always on.
+- ⚠️ **Name your materials.** The attribution reads `material.name`; an unnamed one reports
+  only its class, which narrows a blackout to "one of these forty."
+
 ### Phone frame · soft-reload · trigger bar
 
 - **Phone frame** — in a phone device mode, the canvas renders inside an iPhone bezel at the deployed mobile aspect, so you read the real portrait slice.
