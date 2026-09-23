@@ -365,3 +365,6 @@ public/photos/*/
 # `!public/photos/og-preview.jpg` still reported the file ignored, because git does not
 # descend into an excluded directory and so never reads the negation. The rule above
 # excludes `public/photos/*/` instead.
+
+# Licensed / downloaded reference copies — registry in references/registry.json, never the files.
+references/files/

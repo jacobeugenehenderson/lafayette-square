@@ -1,0 +1,89 @@
+{
+  "_about": "The kit's external reference materials — design standards, manuals, datasets. ONE entry per source. The rules live in references/README.md. ⛔ No agent reads a source whose terms.aiUse is not 'permitted'.",
+  "version": 1,
+  "towns": {
+    "lafayette-square": "MO",
+    "hipointe-demun": "MO",
+    "huron": "OH",
+    "altadena": "CA",
+    "_MA": "Massachusetts — town not yet named in this registry"
+  },
+  "sources": [
+    {
+      "id": "aashto-gdhs-7",
+      "title": "A Policy on Geometric Design of Highways and Streets (the Green Book), 7th Edition",
+      "publisher": "AASHTO",
+      "jurisdiction": "national (US)",
+      "edition": "7th, 2018",
+      "url": "https://store.transportation.org/Item/PublicationDetail?ID=4126",
+      "covers": ["lane/shoulder widths by class", "ramps", "interchanges", "channelising islands"],
+      "terms": {
+        "aiUse": "prohibited",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Jacob (read on the AASHTO store)",
+        "quote": "AASHTO prohibits the use of any AASHTO content in conjunction with an artificial intelligence tool or program, including the training of models on AASHTO content or the entry of AASHTO content into any AI tool."
+      },
+      "status": "NOT ACQUIRED — do not purchase for kit use. Its values reach the kit only via a state or federal source that restates them under its own terms.",
+      "localCopy": null
+    },
+    {
+      "id": "fhwa-public-guidance",
+      "title": "FHWA guidance pages (e.g. Interstate lane/shoulder minimums, Interchange Design Promptlist)",
+      "publisher": "FHWA (US DOT)",
+      "jurisdiction": "federal",
+      "url": "https://highways.dot.gov/field-offices/missouri/interchange-design-promptlist",
+      "covers": ["Interstate minimums: 12 ft lanes, 10 ft right shoulder (as stated on FHWA pages)"],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": null,
+        "note": "Works of the US federal government are generally public domain, BUT some FHWA pages restate AASHTO's 'A Policy on Design Standards — Interstate System', which is AASHTO content. Clear per page: cite FHWA's own text, never an embedded AASHTO document."
+      },
+      "status": "CANDIDATE",
+      "localCopy": null
+    },
+    {
+      "id": "modot-epg",
+      "title": "Engineering Policy Guide (EPG)",
+      "publisher": "Missouri DOT",
+      "jurisdiction": "MO",
+      "url": "https://epg.modot.org/index.php?title=Main_Page",
+      "covers": ["roadway design", "typical sections", "interchanges"],
+      "terms": { "aiUse": "unchecked", "checkedOn": null, "note": "Terms not found by search 2026-09-23; start at https://epg.modot.org/index.php/Engineering_Policy_Guide:About" },
+      "status": "CANDIDATE",
+      "localCopy": null
+    },
+    {
+      "id": "odot-ld1",
+      "title": "Location & Design Manual, Volume 1 — Roadway Design",
+      "publisher": "Ohio DOT",
+      "jurisdiction": "OH",
+      "url": "https://www.transportation.ohio.gov/working/publications/location-design-1",
+      "covers": ["roadway design", "typical sections", "interchanges"],
+      "terms": { "aiUse": "unchecked", "checkedOn": null, "note": "Publicly downloadable; no explicit AI or reuse terms found by search 2026-09-23." },
+      "status": "CANDIDATE",
+      "localCopy": null
+    },
+    {
+      "id": "caltrans-hdm",
+      "title": "Highway Design Manual (HDM)",
+      "publisher": "Caltrans",
+      "jurisdiction": "CA",
+      "url": null,
+      "covers": ["roadway design", "typical sections"],
+      "terms": { "aiUse": "unchecked", "checkedOn": null, "note": "Not yet looked up." },
+      "status": "CANDIDATE — URL and terms owed",
+      "localCopy": null
+    },
+    {
+      "id": "massdot-design-guide",
+      "title": "MassDOT Project Development & Design Guide (and Engineering Directives)",
+      "publisher": "MassDOT",
+      "jurisdiction": "MA",
+      "url": null,
+      "covers": ["roadway design", "typical sections"],
+      "terms": { "aiUse": "unchecked", "checkedOn": null, "note": "Not yet looked up; confirm the current edition." },
+      "status": "CANDIDATE — URL, edition and terms owed",
+      "localCopy": null
+    }
+  ]
+}
