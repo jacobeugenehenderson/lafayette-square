@@ -25,23 +25,6 @@
       "localCopy": null
     },
     {
-      "id": "fhwa-public-guidance",
-      "title": "FHWA guidance pages (e.g. Interstate lane/shoulder minimums, Interchange Design Promptlist)",
-      "publisher": "FHWA (US DOT)",
-      "jurisdiction": "federal",
-      "url": "https://highways.dot.gov/field-offices/missouri/interchange-design-promptlist",
-      "covers": [
-        "Interstate minimums: 12 ft lanes, 10 ft right shoulder (as stated on FHWA pages)"
-      ],
-      "terms": {
-        "aiUse": "unchecked",
-        "checkedOn": null,
-        "note": "Works of the US federal government are generally public domain, BUT some FHWA pages restate AASHTO's 'A Policy on Design Standards — Interstate System', which is AASHTO content. Clear per page: cite FHWA's own text, never an embedded AASHTO document."
-      },
-      "status": "CANDIDATE",
-      "localCopy": null
-    },
-    {
       "id": "modot-epg",
       "title": "Engineering Policy Guide (EPG)",
       "publisher": "Missouri DOT",
@@ -179,6 +162,39 @@
         "source": "https://www.nationalacademies.org/publications/22914"
       },
       "status": "NOT FOR KIT USE without CRP permission (commercial)",
+      "localCopy": null
+    },
+    {
+      "id": "fhwa-interstate-design",
+      "title": "FHWA — Interstate System: Design (programadmin/interstate.cfm)",
+      "publisher": "FHWA (US DOT)",
+      "jurisdiction": "federal — the Interstate System",
+      "url": "https://www.fhwa.dot.gov/programadmin/interstate.cfm",
+      "covers": [
+        "Interstate lane width",
+        "Interstate right/left paved shoulder",
+        "min lanes per direction"
+      ],
+      "values": {
+        "laneWidth_ft": 12,
+        "rightPavedShoulder_ft": 10,
+        "leftPavedShoulder_ft": 4,
+        "minLanesEachDirection": 2
+      },
+      "quotes": [
+        "12-foot lane widths",
+        "10-foot right paved shoulder, and 4-foot left paved shoulder",
+        "a minimum of two travel lanes in each direction"
+      ],
+      "scope": "⚠️ States the INTERSTATE standard only. Applying it to a non-Interstate freeway (e.g. Huron's SR 2) is an ASSUMPTION the pour must disclose. Ramps are NOT covered — ramp sections stay [U]. The page states no 3+-lane left-shoulder rule, so any wider inside shoulder stays [U].",
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Boz",
+        "approvedBy": "Jacob, 2026-09-23 (asked Boz to check FHWA pages for freeway widths)",
+        "note": "FHWA's own summary text on a federal page; no copyright notice. It NAMES the AASHTO source ('A Policy on Design Standards — Interstate System') but does not reproduce it. Cite this page's text only, never the AASHTO document."
+      },
+      "status": "PERMITTED",
       "localCopy": null
     }
   ]
