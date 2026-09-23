@@ -39,12 +39,24 @@ const useTimeOfDay = create((set, get) => ({
   setPaused: (v) => set({ isPaused: v }),
   togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
 
+  // ⭐ BOTH ARE SCRUBS, so both leave live mode and sync the calendar — exactly what the
+  // contract above says ("Only scrub calls (setTime / setHour / setMinuteOfDay) leave live
+  // mode"). ⛔ They did neither. `isLive` stayed true, so `setTimeFromLive`'s guard did not
+  // fire and the next wall-clock tick overwrote the scrub with `now`.
+  // ⚠️ The operator symptom, and it made the Look panel unusable (Jacob, 2026-09-22):
+  // clicking a time-of-day slot chip in a channel's effect slot "goes there, and then
+  // bounces back to current time" — `scrubToTodSlot` routes through `setMinuteOfDay`, so
+  // every chip-click was undone. Authoring a per-ToD look was impossible except by dragging
+  // the main picker, which happens to call `setTime`.
+  // ⛔ They also skipped the `useCalendar` write `setTime` does, so the two parallel Date
+  // views drifted apart on every chip click — the exact lockstep the comment promises.
   setHour: (hour) => {
     const now = new Date()
     const wholeHour = Math.floor(hour)
     const minutes = Math.round((hour - wholeHour) * 60)
     now.setHours(wholeHour, minutes, 0, 0)
-    set({ currentTime: now })
+    set({ currentTime: now, isLive: false })
+    useCalendar.setState({ currentDate: now, isLive: false })
   },
 
   setMinuteOfDay: (minutes) => {
@@ -52,7 +64,8 @@ const useTimeOfDay = create((set, get) => ({
     const hours = Math.floor(minutes / 60)
     const mins = Math.round(minutes % 60)
     now.setHours(hours, mins, 0, 0)
-    set({ currentTime: now })
+    set({ currentTime: now, isLive: false })
+    useCalendar.setState({ currentDate: now, isLive: false })
   },
 
   getMinuteOfDay: () => {

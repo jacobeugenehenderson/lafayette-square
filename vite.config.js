@@ -191,6 +191,21 @@ export default defineConfig(({ command }) => ({
         '**/public/photos/**',
         '**/public/trees/**',
         '**/public/lidar/**',
+        // ⭐⭐ AUTHORING OUTPUTS — WRITTEN BY THE APP WHILE THE OPERATOR WORKS, NEVER EDITED
+        // BY HAND. Vite force-reloads the page on any change under `public/`, so leaving
+        // these watched meant EVERY autosave reloaded the whole scene.
+        // ⚠️ The operator symptom (Jacob, 2026-09-22): "Every time I make an edit in the
+        // panel the scene resets. Makes editing impossible." A look-channel edit calls
+        // `_saveDesignDebounced` → POST /design → `cartograph/serve.js` writes
+        // `public/looks/<id>/design.json` → watcher fires → full reload, ~300 ms after every
+        // slider move. Authoring a per-ToD look was impossible.
+        // ⛔ `public/baked/**` for the same reason at greater scale: one bake writes hundreds
+        // of files and would storm reloads through the whole run.
+        // ⭐ Nothing is lost — both are fetched at RUNTIME with a cache-bust
+        // (`?t=${bakeLastMs}` / `scene.bakedAt`), never imported by the bundle, and Preview
+        // already carries a deliberate Reload button for picking a re-bake up.
+        '**/public/looks/**',
+        '**/public/baked/**',
         '**/botanica/**',
         '**/.git/**',
         '**/node_modules/**',
