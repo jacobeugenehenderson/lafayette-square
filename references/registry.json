@@ -87,8 +87,34 @@
         "approvedBy": "Jacob, 2026-09-23"
       },
       "status": "PERMITTED — skip anything credited to a third party",
-      "localCopy": null,
-      "edition": "7th Edition, combined chapters updated 2025-08-08"
+      "localCopy": "references/files/caltrans-hdm-2025-08-08.pdf",
+      "edition": "7th Edition, combined chapters updated 2025-08-08",
+      "localCopySha256": "a844e5c90a7eecbb3afedb088e21a9c4a07f0581b2373fec25daebbf01d9c3e8",
+      "localCopyFrom": "https://dot.ca.gov/-/media/dot-media/programs/design/documents/hdmcombined-882025.pdf (fetched by Quire 2026-09-23; 110 MB, \"All HDM Chapters - Complete Download Version (Updated 08/08/2025)\")",
+      "extracted": {
+        "on": "2026-09-23",
+        "by": "Quire",
+        "read": [
+          "Topic 105",
+          "Chapter 300 (Topics 301–303, 305–308)",
+          "Chapter 400 (Topics 403–405)",
+          "Topic 504",
+          "Index 62.3–62.4 nomenclature"
+        ],
+        "notRead": "Topic 304 (side slopes), 309 (clearances), Ch 600–1100 (pavement, drainage, landscape, bikeways, noise) — not kit topics. No figure was read.",
+        "note": "Text extracted with pdftotext: the HDM marks mandatory standards in BOLDFACE and advisory ones UNDERLINED; that styling is lost, so each quote keeps its own \"shall\"/\"should\"."
+      },
+      "aashtoPassages": [
+        "§105.2 — pedestrian level-of-service criteria are said to live in the AASHTO Green Book (and the HCM)",
+        "§308.1 — local roads on the NHS take AASHTO standards; minimum lane and shoulder widths for local roads are AASHTO's",
+        "§403.4 — speed-change lane guidance deferred to the Green Book",
+        "§403.6 — offset left-turn lane guidance deferred to the Green Book",
+        "§404.4(3)(b), (4)(b), (5)(b) — the 40-ft bus, 45-ft bus and 60-ft articulated bus design vehicles are \"an AASHTO standard\"",
+        "§405.1 — corner sight distance skew adjustment below 60° deferred to the Green Book",
+        "§405.5(5) — median-opening design deferred to the Green Book",
+        "§405.7(3) — bicycle-path intersection design deferred to the AASHTO bike guide §5.3",
+        "§504.2(2) — lengthening deceleration distance before descending loops, deferred to the Green Book"
+      ]
     },
     {
       "id": "massdot-design-guide",
@@ -344,15 +370,17 @@
       "neededBy": "H-3 ruling (e)",
       "status": "answered",
       "tried": [
-        "fhwa-interstate-design (not stated)"
+        "fhwa-interstate-design (not stated)",
+        "caltrans-hdm → f-caltrans-freeway-shoulders-by-lanes"
       ],
       "nextSources": [
         "state manuals (see q-state-manual-*)"
       ],
       "findings": [
-        "d-left-shoulder-any-lane-count"
+        "d-left-shoulder-any-lane-count",
+        "f-caltrans-freeway-shoulders-by-lanes"
       ],
-      "notes": "Answered by DERIVATION only (no code states a 3+-lane rule): FHWA's 4 ft carries no lane-count condition. A state manual's own lane-count rule would supersede it — Quire's extraction may find one."
+      "notes": "Answered by DERIVATION only (no code states a 3+-lane rule): FHWA's 4 ft carries no lane-count condition. A state manual's own lane-count rule would supersede it — Quire's extraction may find one. ⸻ Caltrans (CA only, Quire 2026-09-23): YES by lane count — left shoulder 5 ft at 4 lanes total, 10 ft at 6+ lanes total (Table 302.1, both directions). This answers for CA; for MO/OH/MA the derivation d-left-shoulder-any-lane-count still stands."
     },
     {
       "id": "q-ramp-section",
@@ -360,11 +388,18 @@
       "neededBy": "H-3 ruling (e)",
       "status": "open",
       "tried": [
-        "fhwa-interstate-design (ramps not covered)"
+        "fhwa-interstate-design (ramps not covered)",
+        "caltrans-hdm → f-caltrans-ramp-lane-width, f-caltrans-ramp-shoulders, f-caltrans-connector-shoulders"
       ],
       "nextSources": [
         "FHWA Interchange Design Promptlist (Missouri field office) — add as a source and clear its terms"
-      ]
+      ],
+      "findings": [
+        "f-caltrans-ramp-lane-width",
+        "f-caltrans-ramp-shoulders",
+        "f-caltrans-connector-shoulders"
+      ],
+      "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): 12 ft lane (widened by radius, Table 504.3), shoulders 4 ft left / 8 ft right, connectors 5/10. Left open: the other states are not answered, and a CA value can only reach them as a derived value."
     },
     {
       "id": "q-island-min-size",
@@ -373,13 +408,18 @@
       "status": "open",
       "tried": [
         "mutcd-11r1 → f-mutcd-island-criteria-deferred",
-        "fhwa-sa-13-027 → f-sa13027-island-raised-or-flush (no threshold; its numeric island rules are AASHTO-attributed, excluded)"
+        "fhwa-sa-13-027 → f-sa13027-island-raised-or-flush (no threshold; its numeric island rules are AASHTO-attributed, excluded)",
+        "caltrans-hdm → f-caltrans-island-min-size, f-caltrans-island-raised-or-painted"
       ],
       "nextSources": [
         "caltrans-hdm (PERMITTED)",
         "massdot-design-guide (PERMITTED)"
       ],
-      "notes": "No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means."
+      "notes": "No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means. ⸻ Caltrans (CA): a FLOOR for any channelizing island (50 sq ft, preferably 75) but NO size at which raised becomes paint — its raised-vs-painted choice is keyed to posted speed (> 40 mph: curbs discouraged) and setting (rural: paint). The question as asked stays open.",
+      "findings": [
+        "f-caltrans-island-min-size",
+        "f-caltrans-island-raised-or-painted"
+      ]
     },
     {
       "id": "q-island-curbed-or-painted",
@@ -387,9 +427,13 @@
       "neededBy": "H-3 Q8",
       "status": "answered",
       "findings": [
-        "f-mutcd-island-means"
+        "f-mutcd-island-means",
+        "f-caltrans-island-raised-or-painted"
       ],
-      "notes": "Both are compliant; the kit's choice (v1: raised) is ours, not the standard's."
+      "notes": "Both are compliant; the kit's choice (v1: raised) is ours, not the standard's.",
+      "tried": [
+        "caltrans-hdm → f-caltrans-island-raised-or-painted"
+      ]
     },
     {
       "id": "q-gore-treatment",
@@ -397,7 +441,11 @@
       "neededBy": "H-3 Q6/Q8",
       "status": "answered",
       "findings": [
-        "f-mutcd-gore-neutral-area"
+        "f-mutcd-gore-neutral-area",
+        "f-caltrans-gore-contrasting-surface"
+      ],
+      "tried": [
+        "caltrans-hdm → f-caltrans-gore-contrasting-surface"
       ]
     },
     {
@@ -406,8 +454,14 @@
       "neededBy": "H-3 Q6",
       "status": "open",
       "tried": [
-        "mutcd-11r1 (distinguishes them; does not locate the physical gore)"
-      ]
+        "mutcd-11r1 (distinguishes them; does not locate the physical gore)",
+        "caltrans-hdm → f-caltrans-exit-nose-position, f-caltrans-inlet-nose-position"
+      ],
+      "findings": [
+        "f-caltrans-exit-nose-position",
+        "f-caltrans-inlet-nose-position"
+      ],
+      "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): the exit nose sits at the 23-ft separation point between diverging edges of traveled way (may move downstream, paved width ≤ 20 ft); the entrance inlet nose at the 14-ft point. Left open for MO/OH/MA."
     },
     {
       "id": "q-refuge-width",
@@ -415,11 +469,16 @@
       "neededBy": "H-3 Q8 (future ped path through islands)",
       "status": "open",
       "tried": [
-        "mutcd-11r1 §3C.12 (defers to ADA)"
+        "mutcd-11r1 §3C.12 (defers to ADA)",
+        "caltrans-hdm → f-caltrans-refuge-width"
       ],
       "nextSources": [
         "ada-2010-standards"
-      ]
+      ],
+      "findings": [
+        "f-caltrans-refuge-width"
+      ],
+      "notes": "ANSWERED FOR CA ONLY: 6 ft in the direction of travel, \"without exception\" (Index 405.4(3))."
     },
     {
       "id": "q-roundabout-geometry",
@@ -429,7 +488,16 @@
       "blockedBy": "nchrp-672/1043 needs CRP permission (commercial use).",
       "nextSources": [
         "FHWA's own roundabout pages — add and clear"
-      ]
+      ],
+      "findings": [
+        "f-caltrans-roundabout-defers",
+        "f-caltrans-roundabout-icd",
+        "f-caltrans-splitter-island"
+      ],
+      "tried": [
+        "caltrans-hdm → f-caltrans-roundabout-defers, f-caltrans-roundabout-icd, f-caltrans-splitter-island"
+      ],
+      "notes": "Caltrans (CA only) states typical ICD ranges and splitter-island minimums in its own voice; for CA roundabouts those are citable. The design method remains NCHRP 672 (blocked). Other states stay blocked."
     },
     {
       "id": "q-state-manual-MO",
@@ -449,10 +517,16 @@
       "id": "q-state-manual-CA",
       "ask": "A usable California design manual",
       "neededBy": "altadena",
-      "status": "open",
+      "status": "answered",
       "nextSources": [
         "caltrans-hdm (PERMITTED)"
-      ]
+      ],
+      "findings": [
+        "f-caltrans-lane-width",
+        "f-caltrans-freeway-shoulders-by-lanes",
+        "f-caltrans-sidewalk-width"
+      ],
+      "notes": "caltrans-hdm is permitted, downloaded and extracted by topic (Quire, 2026-09-23): every f-caltrans-* finding."
     },
     {
       "id": "q-state-manual-MA",
@@ -491,11 +565,16 @@
       "neededBy": "the ped FILL (ADA_SIDEWALK); H-3 JR apron",
       "status": "open",
       "tried": [
-        "OSM-FORENSICS Part 4 attributes it to PROWAG/NACTO — not yet read under this registry"
+        "OSM-FORENSICS Part 4 attributes it to PROWAG/NACTO — not yet read under this registry",
+        "caltrans-hdm → f-caltrans-sidewalk-width"
       ],
       "nextSources": [
         "prowag-2023 (PERMITTED)"
-      ]
+      ],
+      "findings": [
+        "f-caltrans-sidewalk-width"
+      ],
+      "notes": "ANSWERED FOR CA ONLY: 6 ft at the curb, 5 ft behind a planting strip, 8 ft on main streets; excludes curb (Index 105.2)."
     },
     {
       "id": "q-treelawn-default",
@@ -503,12 +582,17 @@
       "neededBy": "the ped FILL (STD_TREELAWN)",
       "status": "open",
       "tried": [
-        "OSM-FORENSICS Part 4 attributes it to NACTO [P]"
+        "OSM-FORENSICS Part 4 attributes it to NACTO [P]",
+        "caltrans-hdm → f-caltrans-planting-strip-defers"
       ],
       "nextSources": [
         "nacto-usdg (terms owed)",
         "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
-      ]
+      ],
+      "findings": [
+        "f-caltrans-planting-strip-defers"
+      ],
+      "notes": "Caltrans: names a planting strip, states no width — defers to local agencies."
     },
     {
       "id": "q-curb-width",
@@ -517,7 +601,14 @@
       "status": "open",
       "nextSources": [
         "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
-      ]
+      ],
+      "findings": [
+        "f-caltrans-curb-width-defers"
+      ],
+      "tried": [
+        "caltrans-hdm → f-caltrans-curb-width-defers"
+      ],
+      "notes": "Caltrans HDM: curb HEIGHTS only (f-caltrans-curb-heights); the width is in the Standard Plans, which are not in this registry."
     },
     {
       "id": "q-highway-model",
@@ -884,6 +975,825 @@
       "quote": "-",
       "foundOn": "2026-09-23",
       "foundBy": "Grader (plan), recorded by Boz"
+    },
+    {
+      "id": "f-caltrans-traveled-way-excludes",
+      "topic": "highway cross-section",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "traveledWayIncludes": "lanes only",
+        "excludes": [
+          "shoulders",
+          "sidewalks",
+          "curbs",
+          "dikes",
+          "gutters",
+          "gutter pans"
+        ]
+      },
+      "source": "caltrans-hdm",
+      "where": "Topic 301",
+      "quote": "The traveled way width includes the width of all lanes, but does not include the width of shoulders, sidewalks, curbs, dikes, gutters, or gutter pans.",
+      "scope": "all State highways",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-lane-width",
+      "topic": "highway cross-section",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "minLaneWidth_ft": 12
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 301.1 (boldface standard)",
+      "quote": "The minimum lane width on two-lane and multilane highways, ramps, collector-distributor roads, and other appurtenant roadways shall be 12 feet, except as follows:",
+      "scope": "California State highways, including ramps and collector-distributor roads",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-lane-width-urban-11",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "minLaneWidth_ft": 11,
+        "preferredLaneWidth_ft": 12
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 301.1, first exception",
+      "quote": "For conventional State highways with posted speeds less than or equal to 40 miles per hour and AADTT (truck volume) less than 250 per lane that are in urban areas or rural towns (rural main streets), the minimum lane width shall be 11 feet. The preferred lane width is 12 feet.",
+      "scope": "conventional State highways, posted ≤ 40 mph, AADTT < 250/lane, urban or rural main street",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-freeway-shoulders-by-lanes",
+      "topic": "highway cross-section",
+      "question": "q-freeway-inside-shoulder-3plus",
+      "kind": "value",
+      "value": {
+        "lanesCountedBothDirections": true,
+        "2 lanes": {
+          "left_ft": null,
+          "right_ft": 8,
+          "rightPreferred_ft": 10
+        },
+        "4 lanes": {
+          "left_ft": 5,
+          "right_ft": 10
+        },
+        "6+ lanes": {
+          "left_ft": 10,
+          "right_ft": 10
+        },
+        "auxiliaryLane": {
+          "right_ft": 10
+        },
+        "collectorDistributor": {
+          "left_ft": 5,
+          "right_ft": 10
+        },
+        "multilaneUndivided": {
+          "right_ft": 10
+        }
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 302.1 + Table 302.1 (Freeways & Expressways rows) + note (1)",
+      "quote": "The shoulder widths given in Table 302.1 shall be the minimum continuous usable width of paved shoulder on highways. … (1) Total number of lanes in both directions including separate roadways (see Index 305.6).",
+      "scope": "CA freeways and expressways; lane count is the TOTAL in both directions, so \"6 or more lanes\" = 3+ lanes per carriageway",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-ramp-shoulders",
+      "topic": "highway cross-section",
+      "question": "q-ramp-section",
+      "kind": "value",
+      "value": {
+        "singleLaneRamp": {
+          "left_ft": 4,
+          "right_ft": 8
+        },
+        "multilaneRamp": {
+          "left_ft": 4,
+          "right_ft": 8
+        },
+        "leftReducibleTo_ft": 2,
+        "rightReducibleTo_ft_3plusLaneRamp": 2,
+        "condition": "reductions only on concurrence that a restrictive situation exists"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.3(1)(c); Table 302.1 rows \"Single-lane ramps\", \"Multilane ramps\", notes (2)–(3)",
+      "quote": "Shoulder Width. Shoulder widths for ramps shall be as indicated in Table 302.1. Typical ramp shoulder widths are 4 feet on the left and 8 feet on the right.",
+      "scope": "CA freeway ramps",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-ramp-lane-width",
+      "topic": "highway cross-section",
+      "question": "q-ramp-section",
+      "kind": "value",
+      "value": {
+        "minRampLane_ft": 12,
+        "widenedLaneByRadius_ft": {
+          "<150": 20,
+          "150-179": 17,
+          "180-209": 16,
+          "210-249": 15,
+          "250-299": 14,
+          "300-350": 13,
+          ">350": 12
+        },
+        "widenCondition": "radius ≤ 350 ft with central angle > 60°; single lane, or rightmost lane of a multilane ramp"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.3(1)(b) (boldface standard) + Table 504.3",
+      "quote": "Ramp lanes shall be a minimum of 12 feet in width. Where ramps have curve radii of 350 feet or less, measured along the outside edge of traveled way for single lane ramps or along the outside lane line for multilane ramps, with a central angle greater than 60 degrees, the single ramp lane, or the lane furthest to the right if the ramp is multilane, shall be widened in accordance with Table 504.3 in order to accommodate large truck wheel paths.",
+      "scope": "CA freeway ramps",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-connector-shoulders",
+      "topic": "highway cross-section",
+      "question": "q-ramp-section",
+      "kind": "value",
+      "value": {
+        "singleOrTwoLaneConnector": {
+          "left_ft": 5,
+          "right_ft": 10
+        },
+        "threeLaneConnector": {
+          "left_ft": 10,
+          "right_ft": 10
+        }
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.4(4) (boldface standard)",
+      "quote": "The width of shoulders on single-lane and two-lane (except as described below) freeway-to-freeway connectors shall be 5 feet on the left and 10 feet on the right. … The width of shoulders on three-lane connectors shall be 10 feet on both the left and right sides.",
+      "scope": "CA freeway-to-freeway connectors",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-loop-ramp-radius",
+      "topic": "highway cross-section",
+      "question": null,
+      "kind": "range",
+      "value": {
+        "loopRadius_ft": {
+          "min": 150,
+          "max": 200
+        },
+        "avoidBelow_ft": 120
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.3(8)",
+      "quote": "Radii for loop ramps should normally range from 150 feet to 200 feet. … Curve radii of less than 120 feet should also be avoided.",
+      "scope": "CA loop ramps",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-conventional-divided-shoulders",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "4 lanes": {
+          "left_ft": 5,
+          "right_ft": 8
+        },
+        "6+ lanes": {
+          "left_ft": 8,
+          "right_ft": 8
+        },
+        "urban ≤45 mph curbed median": {
+          "left_ft": 2,
+          "right_ft": 8
+        },
+        "multilaneUndivided": {
+          "right_ft": 8
+        },
+        "withParking": {
+          "rightPreferred_ft": 10
+        }
+      },
+      "source": "caltrans-hdm",
+      "where": "Table 302.1 (Conventional Highways rows) + notes (4), (7)",
+      "quote": "Typically, on-street parking areas in urbanized areas is included in the shoulder. … (7) Where on-street parking is allowed, 10 feet shoulder width is preferred.",
+      "scope": "CA conventional (non-freeway) multilane highways; left shoulder may be omitted at posted ≤ 35 mph (note 4)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-two-lane-section",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "traveledWay_ft": 24,
+        "shoulder_ft": {
+          "ADT<400": 4,
+          "ADT>400": 8
+        },
+        "minShoulderPaved_ft": 2
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 307.2 + Table 307.2",
+      "quote": "A 2-lane, 2-way roadbed consists of a 24-foot wide traveled way plus paved shoulders. … Shoulder widths based on design year traffic volumes shall conform to the standards given in Table 307.2.",
+      "scope": "CA 2-lane State highways, new construction",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-median-width",
+      "topic": "highway cross-section",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "freewayUrban_ft": {
+          "withManagedLanesOrTransit": 62,
+          "typical": 46,
+          "constrained": 36
+        },
+        "freewayRural_ft": 62,
+        "freewayRestrictiveMin_ft": 22,
+        "conventionalUrban_ft": 12,
+        "conventionalRuralMin_ft": 12
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 305.1(1)–(3)",
+      "quote": "Where there is little or no likelihood of managed lanes or transit facilities planned for the future, the minimum median width should be 46 feet.",
+      "scope": "CA; median width measured between inside edges of traveled way, INCLUDING the inside shoulders",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-paved-median",
+      "topic": "highway cross-section",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "paveIf": {
+          "6+ lanes": "median ≤ 30 ft",
+          "4 lanes": "median ≤ 22 ft (22–30 ft only with barrier)"
+        }
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 305.5(1)",
+      "quote": "6 or More Lanes--Medians 30 feet wide or less should be paved. (b) 4 Lanes--Medians 22 feet or less in width should be paved.",
+      "scope": "CA freeways",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-gore-definition",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "gore": "area between a through roadway and an exit (or converging entrance) ramp"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 62.4(7)",
+      "quote": "Gore. The area between a through roadway and an exit ramp. This term may also refer to the similar area between a through roadway and a converging entrance ramp.",
+      "scope": "CA",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-exit-nose-position",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-physical-gore-position",
+      "kind": "value",
+      "value": {
+        "exitNoseAtSeparation_ft": 23,
+        "noseMayBeDownstream": true,
+        "maxPavedWidthMainlineToRampShoulder_ft": 20
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.2(2) (Figure 504.2B) + 504.2(5)",
+      "quote": "The exit nose shown on Figure 504.2B may be located downstream of the 23-foot dimension; however, the maximum paved width between the mainline and ramp shoulder edges should be 20 feet. … The paved gore area is typically that area between the diverging or converging edge of traveled ways and the 23-foot point.",
+      "scope": "CA freeway exits (single-lane standard design)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-inlet-nose-position",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-physical-gore-position",
+      "kind": "value",
+      "value": {
+        "inletNoseAtSeparation_ft": 14
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.2(3)",
+      "quote": "On entrance ramps the distance from the inlet nose (14-foot point) to the end of the acceleration lane taper should equal the sum of the distances shown on Figure 504.2A.",
+      "scope": "CA freeway entrances",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-gore-contrasting-surface",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-gore-treatment",
+      "kind": "rule",
+      "value": {
+        "beyondPavedGore": "contrasting surface treatment, distinguishable from any pavement meant for vehicles"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.2(2)",
+      "quote": "Contrasting surface treatment beyond the gore pavement should be provided on both entrance and exit ramps as shown on Figures 504.2A, 504.2B, and 504.3K.",
+      "scope": "CA freeway entrances and exits",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-gore-no-curbs",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "curbInOffRampGore": false,
+        "optionalAtInletNose": "B4 curb (3 in)"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.3(11)",
+      "quote": "In general, curbs should not be used on the high side of ramps or in off-ramp gore areas except at collector-distributor roads.",
+      "scope": "CA ramps",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-island-min-size",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-island-min-size",
+      "kind": "value",
+      "value": {
+        "channelizingIslandMinArea_sqft": 50,
+        "channelizingIslandPreferredArea_sqft": 75,
+        "divisionalCurbedIslandMin": {
+          "width_ft": 4,
+          "length_ft": 20
+        }
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.4(1)",
+      "quote": "Channelizing islands should not be less than 50 square feet in area, preferably 75 square feet. Curbed, elongated divisional median islands should not be less than 4 feet wide and 20 feet long.",
+      "scope": "CA intersections; a floor for ANY channelizing island (the text states no size at which an island switches from raised to painted)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-island-raised-or-painted",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-island-curbed-or-painted",
+      "kind": "rule",
+      "value": {
+        "means": [
+          "raised, curbed",
+          "flush, pavement markings",
+          "unpaved (small ones avoided)"
+        ],
+        "curbsDiscouragedAbove_mph": 40,
+        "ruralPrefers": "painted + raised pavement markers",
+        "urbanAtOrBelow40mph": "curbed islands more frequent"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.4(2)",
+      "quote": "On facilities with posted speeds over 40 miles per hour, the use of any type of curb is discouraged. … In rural areas, painted channelization supplemented with raised pavement markers may be more appropriate than a raised curbed channelization. … In urban areas, posted speeds less than or equal to 40 miles per hour allow more frequent use of curbed islands.",
+      "scope": "CA intersections — the raised-vs-painted choice is keyed to SPEED and setting, not island size",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-island-approach-nose",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "noseOffsetLeft_ft": 3,
+        "noseOffsetRight_ft": 5,
+        "flare": "1:15 parabolic",
+        "flareOmittableIfSidesUnder_ft": 25,
+        "offsetsAdditionalToShoulder": true
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.4(1)",
+      "quote": "The approach end of each island should be offset 3 feet to the left and 5 feet to the right of approaching traffic, using standard 1:15 parabolic flares, and clearly delineated so that it does not surprise the motorist or bicyclist. These offsets are in addition to the shoulder widths shown in Table 302.1.",
+      "scope": "CA traffic islands; flares may be omitted on curved alignment for small triangular islands with sides < 25 ft",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-intersection-angle",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "minInteriorAngle_deg": 75,
+        "preferred_deg": 90
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 403.3",
+      "quote": "When a right angle cannot be provided due to physical constraints, the interior angle should be designed as close to 90 degrees as is practical, but should not be less than 75 degrees.",
+      "scope": "CA intersections incl. ramp termini",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-isolated-offramp-return",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "leadingCurbReturnRadius_ft": {
+          "min": 3,
+          "max": 5
+        }
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 504.3(3)",
+      "quote": "If the isolated off-ramp is necessary, the leading curb return from the perspective of a vehicle on the crossroad approaching from the same side as the off-ramp is made with a short radius curve of 3 to 5 feet.",
+      "scope": "CA isolated off-ramp terminals",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-culdesac-no-geometry",
+      "topic": "cul-de-sacs and turnarounds",
+      "question": null,
+      "kind": "defers",
+      "value": null,
+      "source": "caltrans-hdm",
+      "where": "Index 62.3(8) + Index 308.1",
+      "quote": "Cul-de-Sac Street--A local street open at one end only, with special provisions for turning around.",
+      "scope": "The HDM DEFINES a cul-de-sac (and \"Dead End Street/No Outlet … without special provisions for turning around\") but gives no turning-circle geometry; local streets defer to locally adopted standards (Index 308.1).",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-roundabout-defers",
+      "topic": "roundabouts",
+      "question": "q-roundabout-geometry",
+      "kind": "defers",
+      "value": null,
+      "source": "caltrans-hdm",
+      "where": "Index 405.10",
+      "quote": "Roundabout intersections on the State highway system must be developed and evaluated in accordance with National Cooperative Highway Research Program (NCHRP) Report 672 entitled “Roundabouts: An Informational Guide, Second Edition” dated October 2010 and Traffic Operations Policy Directive (TOPD) Number 13-02.",
+      "scope": "CA — the design METHOD is NCHRP 672 (not permitted) and \"performance-based\", Index 405.10(21); the values below are Caltrans's own typical ranges",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-roundabout-icd",
+      "topic": "roundabouts",
+      "question": "q-roundabout-geometry",
+      "kind": "range",
+      "value": {
+        "singleLane_ft": {
+          "caLegal": [
+            105,
+            150
+          ],
+          "staa": [
+            130,
+            180
+          ]
+        },
+        "twoLane_ft": {
+          "caLegal": [
+            150,
+            220
+          ],
+          "staa": [
+            165,
+            220
+          ]
+        },
+        "typicalNotLimits": true
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.10(3)",
+      "quote": "The ICD for a single lane roundabout generally ranges between 105 feet to 150 feet to accommodate the California Legal design vehicle and 130 feet to 180 feet to accommodate the STAA design vehicle.",
+      "scope": "CA roundabouts; \"The ICD ranges given above are typical values; the design may be larger or smaller.\"",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-mini-roundabout",
+      "topic": "roundabouts",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "miniIcdBelow_ft": 90,
+        "centralIsland": "fully traversable"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.10(3)",
+      "quote": "With an inscribed circle diameter of less than 90 feet, the central island will need to be fully traversable to accommodate the design vehicles movements.",
+      "scope": "CA mini-roundabouts (low-volume routes, ramp terminals)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-splitter-island",
+      "topic": "roundabouts",
+      "question": "q-roundabout-geometry",
+      "kind": "value",
+      "value": {
+        "minLength_ft": 50,
+        "desirableLength_ft": 100,
+        "lengthFromIcdWhen45mphOrExitRamp_ft": 200,
+        "minWidthAtPedCrossing_ft": 6
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.10(12)",
+      "quote": "The total length of the raised island should be at least 50 feet although 100 feet is desirable. … The splitter island width should be a minimum of 6 feet at the pedestrian crossing to adequately provide refuge for pedestrians.",
+      "scope": "CA roundabouts — splitter islands required on all legs (may be dropped at a low-volume driveway leg)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-roundabout-ped-ring",
+      "topic": "roundabouts",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "buffer_ft": {
+          "min": 2,
+          "preferred": 3
+        },
+        "sharedSidewalk_ft": {
+          "min": 8,
+          "preferred": 10
+        },
+        "crossingWidth_ft": {
+          "min": 8,
+          "preferred": 10
+        }
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.10(7)(a)v + (7)(b)iii",
+      "quote": "A landscape buffer/strip, detectable by cane and under foot, between the sidewalk and the back of curb for the circular roadway of the roundabout should be a minimum of 2 feet wide, 3 feet is preferred.",
+      "scope": "CA roundabouts",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-central-island-dome",
+      "topic": "roundabouts",
+      "question": null,
+      "kind": "range",
+      "value": {
+        "centralIslandMoundHeight_ft": [
+          3.5,
+          6
+        ]
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.10(9)",
+      "quote": "A domed or mounded central island, between 3.5 to 6 feet high, is needed to focus attention on the approach and through roundabout alignment.",
+      "scope": "CA roundabouts",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-sidewalk-width",
+      "topic": "pedestrian realm",
+      "question": "q-sidewalk-default",
+      "kind": "value",
+      "value": {
+        "mainStreet_ft": 8,
+        "contiguousToCurb_ft": 6,
+        "behindPlantingStrip_ft": 5,
+        "includesCurb": false
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 105.2",
+      "quote": "The minimum width of a sidewalk should be 8 feet between a curb and a building when in urban and rural main street place types. For all other locations the minimum width of sidewalk should be 6 feet when contiguous to a curb or 5 feet when separated by a planting strip. Sidewalk width does not include curbs.",
+      "scope": "CA State highway right of way",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-planting-strip-defers",
+      "topic": "pedestrian realm",
+      "question": "q-treelawn-default",
+      "kind": "defers",
+      "value": null,
+      "source": "caltrans-hdm",
+      "where": "Index 105.2",
+      "quote": "The design of sidewalks and walkways varies depending on the setting, standards, and requirements of local agencies.",
+      "scope": "CA — the HDM names a planting strip (sidewalk 5 ft behind one) but states no planting-strip width",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-curb-heights",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "range",
+      "value": {
+        "vertical_in": [
+          4,
+          8
+        ],
+        "sloped_in": [
+          3,
+          6
+        ],
+        "typeA_in": 6,
+        "typeA8_in": {
+          "height": 8,
+          "only": "posted ≤ 35 mph, on local request"
+        },
+        "adjacentToSidewalk": {
+          "<35mph": "A",
+          "40mph": "A-6",
+          ">45mph": "B-6"
+        }
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 303.2 + Table 303.1",
+      "quote": "Vertical curbs are nearly vertical (approximate batter of 1:4) and vary in height from 4 inches to 8 inches. Sloped curbs (approximate batter of 2:3 or flatter) vary in height from 3 inches to 6 inches.",
+      "scope": "CA State highways",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-curb-width-defers",
+      "topic": "pedestrian realm",
+      "question": "q-curb-width",
+      "kind": "defers",
+      "value": null,
+      "source": "caltrans-hdm",
+      "where": "Index 303.2",
+      "quote": "The curb sections provided on the Standard Plans are approved types to be used as stated below.",
+      "scope": "CA — the HDM gives curb HEIGHTS and types but no top-of-curb width; the sections are in the Caltrans Standard Plans (not in this registry)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-gutter-pan",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "range",
+      "value": {
+        "gutterPanTypical_ft": 2,
+        "gutterPan_ft": [
+          1,
+          4
+        ],
+        "crossSlopeTypical_pct": 8.33,
+        "outsideTraveledWay": true
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 303.2",
+      "quote": "Gutter pans are typically 2 feet wide but may be 1 foot to 4 feet in width, with a cross slope of typically 8.33 percent to increase the hydraulic capacity.",
+      "scope": "CA",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-curb-offset",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "throughLanes": "offset ETW→curb face ≥ Table 302.1 shoulder",
+        "rightTurnLaneUrban_ft": 2,
+        "urbanMedianAtOrBelow35mph": "no offset if no gutter pan"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 303.5(1), (3), (5)",
+      "quote": "The offset from the edge of traveled way to the face of curb or dike flow line should be no less than the shoulder width, as set forth in Table 302.1.",
+      "scope": "CA",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-refuge-width",
+      "topic": "pedestrian realm",
+      "question": "q-refuge-width",
+      "kind": "value",
+      "value": {
+        "minRefugeInDirectionOfTravel_ft": 6,
+        "withoutException": true,
+        "warrant": "unsignalized, crossing 2+ through lanes in one direction"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.4(3)",
+      "quote": "Traffic islands used as pedestrian refuge are to be large enough to provide a minimum of 6 feet in the direction of pedestrian travel, without exception.",
+      "scope": "CA intersections",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-curb-ramps-per-crossing",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "rampsPerCrossing": 1,
+        "cornerWithTwoCrossings": 2
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 105.5(2)",
+      "quote": "When curb ramps are constructed or reconstructed, one curb ramp should be provided for each pedestrian street crossing.",
+      "scope": "CA; ramp design itself defers to the Standard Plans and DIB 82 (Index 105.5(3))",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-bulbout",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "maxPostedSpeed_mph": 35,
+        "curbFaceSetback_ft": 2,
+        "allCorners": true
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 303.4(1)",
+      "quote": "The curb face of the bulbout should be setback a minimum of 2 feet as shown in Figures 303.4A and B.",
+      "scope": "CA; bulbouts only where there is marked on-street parking, posted ≤ 35 mph",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-turn-lane-width",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "leftTurnLane_ft": 12,
+        "leftTurnLaneUrbanLowSpeed_ft": 11,
+        "rightTurnShoulderMin_ft": 4,
+        "rightTurnLaneConstrained_ft": 10
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.2(2)(a), 405.3(2)(a)",
+      "quote": "The lane width for both single and double left-turn lanes on State highways shall be 12 feet.",
+      "scope": "CA; 11 ft under the Index 301.1 urban exception; 10 ft right-turn lane only in severely constrained urban cases < 40 mph",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-twltl-width",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "min_ft": 12,
+        "preferred_ft": 14,
+        "max_ft": 16
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.2(4)",
+      "quote": "The minimum width for a TWLTL shall be 12 feet (see Index 301.1). The preferred width is 14 feet.",
+      "scope": "CA; \"in no case should the width of a TWLTL exceed 16 feet\"",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-corner-radii",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "range",
+      "value": {
+        "minorCrossStreet_ft": [
+          15,
+          25
+        ],
+        "rule": "smallest radius that accommodates the design vehicle"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 405.8",
+      "quote": "Smaller radii of 15 feet to 25 feet are appropriate at minor cross streets where few trucks or buses are turning.",
+      "scope": "CA city-street intersections; larger returns are set by the design-vehicle template, and \"Local agency standards may be appropriate in urban and suburban areas.\"",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-local-streets-defer",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "defers",
+      "value": null,
+      "source": "caltrans-hdm",
+      "where": "Index 308.1",
+      "quote": "The minimum width of local roads and streets that are to be reconstructed as part of a freeway or expressway project should conform to locally adopted standards except as described below.",
+      "scope": "CA — local street cross-sections are not the HDM's; they defer to local agency standards (and, on the NHS, to AASHTO — excluded, rule 5)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
     }
   ]
 }
