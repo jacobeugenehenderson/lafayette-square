@@ -2750,6 +2750,9 @@ export function deriveLayers(highways) {
       ...(s.seed ? { seed: s.seed } : {}),
       ...(s.caps ? { caps: s.caps } : {}),
       ...(s.continuesAs ? { continuesAs: s.continuesAs } : {}),
+      // The skeleton made this name up (an unnamed way, `<highway> <n>`): it is
+      // an id, never a label. Label consumers read this field, not the name.
+      ...(s.synthetic ? { synthetic: true } : {}),
       // [Part 2 grade separation] Carry the frame's grade flag through so the
       // face consumer (tileGround.extractFaces) can exclude grade-separated
       // roads from the planar face walk — the fix for the interchange-triangle /
@@ -5002,6 +5005,8 @@ export function deriveLayers(highways) {
       ...(st.seed ? { seed: st.seed } : {}),
       ...(st.caps ? { caps: st.caps } : {}),
       ...(st.continuesAs ? { continuesAs: st.continuesAs } : {}),
+      // A skeleton-made name (`<highway> <n>`) — an id, never a label.
+      ...(st.synthetic ? { synthetic: true } : {}),
       // [Part 2 grade separation] The operative exclude-from-faces flag + raw
       // facts, surviving the serializer whitelist so they reach ribbons.streets.
       // CONSUMER: tileGround.extractFaces filters `streets.filter(s => !s.gradeSeparated)`

@@ -1750,24 +1750,59 @@ function main() {
     })
   }
 
-  // Unnamed highways: motorway/trunk and their ramps are vehicular and
-  // belong with the streets (they ribbon, accept measure overrides, and
-  // route through the Designer color picker). Everything else (footways,
-  // service drives, paths) stays in `paths` and renders pavement-only.
-  const VEHICULAR_UNNAMED = new Set([
+  // ⭐ CLASS DECIDES, NOT NAME (ROADMAP A19, Jacob 2026-09-20). A public road
+  // is a street whether or not OSM named it — US 6's unnamed expressway through
+  // Huron was dropped into `paths` for want of a name, and nothing drew it. The
+  // test is the OSM `highway` class (a `_link` is its parent's class). `service`
+  // is a path here: it has its own alley handling in derive.js. Not-built
+  // classes (proposed/construction) never get this far — NOT_BUILT above.
+  // ⛔ A class in NEITHER set is printed below, every pour — never dropped quietly.
+  const STREET_CLASSES = new Set([
+    'motorway', 'trunk', 'primary', 'secondary', 'tertiary',
+    'unclassified', 'residential', 'living_street', 'road',
+  ])
+  const PATH_CLASSES = new Set([
+    'footway', 'cycleway', 'path', 'steps', 'pedestrian', 'bridleway',
+    'track', 'corridor', 'elevator', 'service',
+  ])
+  const isStreetClass = (hw) => !!hw && STREET_CLASSES.has(hw.replace(/_link$/, ''))
+  // ⛔⛔ THE SYNTHETIC ID IS POSITIONAL, AND IT IS AN AUTHORING KEY. `<highway> <n>`
+  // numbers by position in `unnamedVehicular`, and the operator's widths are
+  // stored under the slug (HPDM's `primary-link-192`). So the classes promoted
+  // BEFORE A19 keep their numbers — they are ordered first, in raw order, exactly
+  // as they always were — and the classes A19 added are numbered after them.
+  // ▶ node checks/claims-authored-skelids-keep-their-ways.mjs (red on any re-point).
+  const PRE_A19_UNNAMED = new Set([
     'motorway', 'motorway_link', 'trunk', 'trunk_link',
     'primary_link', 'secondary_link', 'tertiary_link',
   ])
   const unnamedVehicular = []
   const unnamedNonVehicular = []
+  const unclassed = new Map()   // highway → count, in neither set
   for (const f of unnamed) {
     const hw = f.tags?.highway
-    if (VEHICULAR_UNNAMED.has(hw)) unnamedVehicular.push(f)
-    else unnamedNonVehicular.push(f)
+    if (isStreetClass(hw)) unnamedVehicular.push(f)
+    else {
+      unnamedNonVehicular.push(f)
+      if (!PATH_CLASSES.has(hw)) unclassed.set(hw, (unclassed.get(hw) || 0) + 1)
+    }
   }
+  unnamedVehicular.sort((a, b) =>
+    (PRE_A19_UNNAMED.has(b.tags.highway) ? 1 : 0) - (PRE_A19_UNNAMED.has(a.tags.highway) ? 1 : 0))
+  // The pour's census: what was promoted, and what is neither street nor path.
+  const promotedBy = new Map()
+  for (const f of unnamedVehicular) promotedBy.set(f.tags.highway, (promotedBy.get(f.tags.highway) || 0) + 1)
+  console.log(`\nUnnamed ways promoted to streets (class decides, not name): ${unnamedVehicular.length}`)
+  console.log(`  ${[...promotedBy].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(' · ') || '(none)'}`)
+  if (unclassed.size) {
+    console.log(`  ⛔ ${[...unclassed.values()].reduce((a, b) => a + b, 0)} unnamed way(s) in a class that is NEITHER street nor path — kept in paths[], decide them:`)
+    for (const [hw, n] of unclassed) console.log(`       highway=${hw} × ${n}`)
+  }
+  if (promotedBy.has('road')) console.log(`  ⚠️ highway=road × ${promotedBy.get('road')} — OSM says "class unknown"; seedSection seeds it as residential.`)
   // Promote unnamed vehicular fragments into streets with synthetic names.
   // Each fragment becomes its own chain (no welding — ramps don't share
   // endpoints reliably and the OSM ways already represent intent).
+  // Array.prototype.sort is stable, so raw order holds within each tier.
   for (let i = 0; i < unnamedVehicular.length; i++) {
     const f = unnamedVehicular[i]
     const hw = f.tags?.highway
@@ -1787,10 +1822,12 @@ function main() {
       sources: [f.osmId],
       tags: f.tags || {},
       seed: seedSection(hw, lanes, oneway),
-      // Grade separation (Part 2). These unnamed vehicular chains (ramps,
-      // motorway/trunk fragments) are exactly the interchange roads — every one
-      // is limited-access, so gradeSeparated is true here; the bridge/tunnel/
-      // layer facts come straight off the single source way.
+      // No real name: the label is made up (serve.js keeps it out of pickers).
+      synthetic: true,
+      // Grade separation (Part 2), computed like any street: true for the
+      // limited-access classes (motorway/trunk + links) or a way wholly on a
+      // bridge/tunnel/layer; an at-grade primary or residential is false and
+      // bounds blocks. The facts come straight off the single source way.
       ...gradeFields(hw, [f.osmId]),
     })
   }
@@ -1823,7 +1860,7 @@ function main() {
     const idxPath = join(CLEAN_DIR, 'street-index.json')
     const slim = streets.map(s2 => ({
       id: s2.id, name: s2.name, corridor: s2.corridor,
-      highway: s2.highway, points: s2.points,
+      highway: s2.highway, points: s2.points, ...(s2.synthetic && { synthetic: true }),
     }))
     const wroteIdx = writeIfChanged(idxPath, JSON.stringify({ streets: slim, junctions: idxJunctions }, null, 2), { touch: false })
     console.log(`\nStreet INDEX (pre-bake lookup, not a frame):`)
@@ -2386,7 +2423,11 @@ function main() {
   console.log('\nPhase metadata (per chain):')
   for (const [k, n] of byKindRole) console.log(`  ${k}: ${n}`)
 
-  const outPath = join(CLEAN_DIR, 'skeleton.json')
+  // `--out=<path>` writes elsewhere and leaves the scene untouched — how
+  // `checks/claims-authored-skelids-keep-their-ways.mjs` runs the current code
+  // against the skeleton the operator authored against.
+  const outArg = process.argv.find(a => a.startsWith('--out='))
+  const outPath = outArg ? outArg.slice('--out='.length) : join(CLEAN_DIR, 'skeleton.json')
   // `junctions` is additive frame metadata (typed nodes). Downstream consumers
   // that read {streets, paths} are unaffected; the cap/corner consumers can
   // start reading it in the Layer-2 follow-on.

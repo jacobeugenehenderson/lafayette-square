@@ -337,12 +337,11 @@ function getOsmLabels(scene) {
 // geographic center) + a circumscribing radius. A pair that shares no junction
 // returns no corner → the polygon won't close → the operator fixes the list by
 // eye. Reads the CURRENT-frame skeleton (reproject-raw + skeleton must be fresh).
-// Synthetic names the skeleton mints for UNNAMED vehicular ways ("primary_link
-// 2", "motorway 3") — noise for a boundary picker. A REAL name (Forest Park
-// Parkway, Daniel Boone Expressway) never matches, so named expressways/parkways
-// — legit boundaries — are kept. (Filtering by highway CLASS wrongly dropped
-// those; filter by the synthetic-name shape instead.)
-const SYNTHETIC_NAME = /^(motorway|trunk|primary|secondary|tertiary)(_link)? \d+$/i
+// A name the skeleton made up for an UNNAMED way ("primary_link 2", "residential
+// 7") is an id, not a place — noise for a boundary picker or a label. The
+// skeleton stamps `synthetic: true` on those streets; this reads that flag and
+// nothing else, so a REAL name (Forest Park Parkway) is never dropped by class.
+const isSynthetic = (s) => s.synthetic === true
 const _streetLookupCache = new Map()   // scene → { mtime, skel }
 // The street lookup the boundary picker reads: names, geometry, junctions.
 //
@@ -365,6 +364,10 @@ function getStreetLookup(scene) {
   const cached = _streetLookupCache.get(scene)
   if (cached && cached.mtime === mtime && cached.path === p) return cached.skel
   const skel = JSON.parse(readFileSync(p, 'utf8'))
+  // ⛔ A skeleton from before `synthetic` was stamped would show its made-up
+  // names in the picker. Say so, loudly, once per load — the fix is a re-run.
+  const stale = (skel.streets || []).filter(s => !s.synthetic && s.highway && new RegExp(`^${s.highway} \\d+$`).test(s.name || '')).length
+  if (stale) console.warn(`⛔ [${scene}] ${stale} skeleton-made street name(s) lack \`synthetic\` — stale ${p.split('/').pop()}; run skeleton.js --scene=${scene}`)
   _streetLookupCache.set(scene, { mtime, path: p, skel })
   return skel
 }
@@ -534,7 +537,7 @@ function streetsGeomFor(scene) {
   const r2 = (v) => Math.round(v * 100) / 100
   const streets = []
   for (const s of skel.streets) {
-    if (!s.name || SYNTHETIC_NAME.test(s.name) || !s.points || s.points.length < 2) continue
+    if (!s.name || isSynthetic(s) || !s.points || s.points.length < 2) continue
     streets.push({ name: s.corridor || s.name, major: MAJOR.has(s.highway || ''), points: s.points.map(p => [r2(p.x), r2(p.z)]) })
   }
   return { streets }
@@ -554,7 +557,7 @@ function skeletonLabelsFor(scene) {
   for (const s of skel.streets) {
     if (!s.name || !s.points || s.points.length < 2) continue
     const hw = s.highway || ''
-    if (SYNTHETIC_NAME.test(s.name)) continue
+    if (isSynthetic(s)) continue
     const label = s.corridor || s.name
     let g = groups.get(label)
     if (!g) { g = { chains: [], major: false }; groups.set(label, g) }
@@ -802,7 +805,7 @@ function streetNamesFor(scene) {
   for (const s of skel.streets) {
     if (!s.name) continue
     const hw = s.highway || ''
-    if (SYNTHETIC_NAME.test(s.name)) continue
+    if (isSynthetic(s)) continue
     const label = s.corridor || s.name
     byLabel.set(label, (byLabel.get(label) || false) || MAJOR.has(hw))
   }
@@ -2306,10 +2309,6 @@ createServer(async (req, res) => {
       // explicit scene is REFUSED (409) — see the block below; it does NOT
       // fall back. (This comment said "fall back to the default" until
       // 2026-08-02, contradicting the code six lines down.)
-      // pipeline.js + promote-ribbons.js + arborist trees are skipped for
-      // non-LS scenes today
-      // (toy doesn't have an OSM-derived pipeline yet — its centerlines
-      // are hand-authored, so the pipeline step is a no-op for now).
       const bakeLookEntry = idx.looks.find(l => l.id === id)
       // ⛔⛔ Was: `|| DEFAULT_MAP` — a bake whose Look carried no scene BAKED OVER
       // Lafayette Square (BRIEF-ls-bleed-excision site 14). This is the destructive
@@ -2339,7 +2338,10 @@ createServer(async (req, res) => {
       ]
       const PIPELINE_SRC = ['pipeline.js', 'derive.js', 'snap.js', 'classify.js', 'standards.js', 'config.js'].map(f => join(here, f))
       const MAP_JSON   = bakePaths.map
-      const RIBBONS    = join(REPO_ROOT, 'src', 'data', 'ribbons.json')
+      // The scene's OWN ribbons: LS's live in the runtime bundle, every other
+      // town's in its clean/ (promote-ribbons.js's rule). ⛔ Comparing a poured
+      // town's map.json against LS's bundle would skip or force it on LS's clock.
+      const RIBBONS    = isDefaultMap ? join(REPO_ROOT, 'src', 'data', 'ribbons.json') : bakePaths.ribbons
       const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')
       const DESIGN    = join(REPO_ROOT, 'public', 'looks', id, 'design.json')
       const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
@@ -2365,23 +2367,31 @@ createServer(async (req, res) => {
       const bakeLayerVis = bakeDesign.layerVis || {}
       const layerOn = (layerId) => bakeLayerVis[layerId] !== false
 
-      // pipeline.js is LS-specific (reads OSM ingest → derives map.json).
-      // For toy we skip — the toy fixture is hand-authored centerlines +
-      // overlay; a future toy-pipeline.js will derive map.json from those.
-      if (isDefaultMap) {
+      // pipeline.js + promote-ribbons.js run for EVERY town poured from OSM —
+      // skeleton.json is a pipeline input, so a re-skeleton reaches Survey
+      // through this Bake. (Until 2026-09-23 this ran on LS only, and Huron's
+      // A19 roads sat in skeleton.json and never reached the ribbons.) A town
+      // with no raw/osm.json (toy: hand-authored centerlines) has nothing to derive.
+      // ▶ node checks/claims-ribbons-are-not-older-than-the-skeleton.mjs
+      const hasOsm = existsSync(join(bakePaths.raw, 'osm.json'))
+      // ⚠️ OWED, not settled: a poured town runs the pipeline exactly as the Pour
+      // does (`--skip-elevation`); only LS reads its elevation cache here. Without
+      // the flag a town with no cache FETCHES from USGS — never inside a Bake.
+      // Whether poured towns should carry pipeline elevation is its own decision.
+      const elevFlag = isDefaultMap ? '' : ' --skip-elevation'
+      if (hasOsm) {
         await runIfDirty('pipeline',
           [...RAW_PATHS, ...PIPELINE_SRC],
           [MAP_JSON],
-          `node pipeline.js ${sceneFlag}`,
-          { cwd: here, timeout: 120000 })
+          `node pipeline.js ${sceneFlag}${elevFlag}`,
+          { cwd: here, timeout: 600000 })
         await runIfDirty('promote-ribbons',
           [MAP_JSON, join(here, 'promote-ribbons.js')],
           [RIBBONS],
           `node promote-ribbons.js ${sceneFlag}`,
           { cwd: here, timeout: 30000 })
       } else {
-        skipped.push('pipeline (scene-specific pipeline not yet implemented)')
-        skipped.push('promote-ribbons (depends on pipeline)')
+        skipped.push(`pipeline + promote-ribbons (${bakeScene} has no raw/osm.json to derive from)`)
       }
       // terrain — the installation's own heightfield (clean/terrain.*), lifted
       // at runtime. Bake from the scene's elevation.tif when present + stale, so
@@ -2421,6 +2431,17 @@ createServer(async (req, res) => {
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
+      // Shore revetment — reads the shoreline (`__water__` runs) out of the
+      // shape.json the ground bake just wrote, so a pour that moves the shore
+      // re-stones it; a stale revetment is stone keyed to a shore that moved.
+      // A town whose terrain datum is not water exits "nothing to build".
+      if (hasOsm) {
+        await runIfDirty('revetment',
+          [join(LOOK_DIR, 'shape.json'), join(bakePaths.raw, 'osm.json'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, join(here, 'bake-revetment.js')],
+          [join(LOOK_DIR, 'revetment.json')],
+          `node bake-revetment.js --look=${id} ${sceneFlag}`,
+          { cwd: here, timeout: 120000 })
+      }
       if (layerOn('building')) {
         await runIfDirty('buildings',
           [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],

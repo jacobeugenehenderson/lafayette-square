@@ -32,9 +32,12 @@ import { requireExplicitMap } from './scene.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-// Synthetic 'motorway_link 13'-style names are skeleton positional indices, not
-// walkable destinations. Doctrine: labels encourage walking.
-const NO_LABEL_HIGHWAY = new Set(['motorway_link', 'trunk_link', 'motorway'])
+// ⛔ NO CLASS IS HIDDEN FROM LABELS. A named highway gets its name on the map
+// like any street (Jacob, 2026-09-23: "not all our towns are going to be
+// walkable. Walking is aspirational and optimal for us."). A class list stood
+// here as a "labels encourage walking" rule — do not restore it. The one thing
+// never labelled is a name the skeleton made up, and the street says so itself:
+// `synthetic` (below). ▶ node checks/claims-no-label-is-a-made-up-name.mjs
 
 function parseArgs() {
   const a = {}
@@ -105,7 +108,9 @@ function computeLabels(ribbons, keepPoint) {
   const labels = []
   for (const st of ribbons.streets || []) {
     if (!st.name || !st.points || st.points.length < 2) continue
-    if (NO_LABEL_HIGHWAY.has(st.highway)) continue
+    // A name the skeleton made up (`primary 90`) is an id, not a place. The
+    // skeleton says so on the street; this reads the flag, never a class list.
+    if (st.synthetic) continue
     const m = st.measure || {}
     const widthM = (m.left?.pavementHW || 0) + (m.right?.pavementHW || 0) || null
     for (const piece of clipToHood(st.points, keepPoint)) {
@@ -145,6 +150,17 @@ function main() {
     console.warn('[bake-labels] no neighborhood_boundary.json — labelling ALL named streets (ungated)')
   }
 
+  // ⛔ A ribbons.json from before the skeleton stamped `synthetic` would label
+  // its made-up names. Spot one by the skeleton's own naming (`<highway> <n>`)
+  // and stop — re-running skeleton.js is the fix, not a filter here.
+  const unflagged = (ribbons.streets || []).filter(st =>
+    !st.synthetic && st.highway && new RegExp(`^${st.highway} \\d+$`).test(st.name || ''))
+  if (unflagged.length) {
+    console.error(`[bake-labels] ⛔ ${unflagged.length} street(s) carry a skeleton-made name but no \`synthetic\` flag — ribbons.json predates the skeleton for ${scene}:`)
+    console.error(`  ${unflagged.slice(0, 6).map(st => st.name).join(' · ')}${unflagged.length > 6 ? ' …' : ''}`)
+    console.error(`  ▶ Pour the town (pipeline.js + promote-ribbons.js; the Bake button skips both off LS) after skeleton.js --scene=${scene}. Nothing was written.`)
+    process.exit(1)
+  }
   const labels = computeLabels(ribbons, keepPoint)
 
   // ⛔⛔ THE STYLE TRAVELS WITH THE ARTIFACT, AND THIS IS A BUG FIX (2026-09-05).

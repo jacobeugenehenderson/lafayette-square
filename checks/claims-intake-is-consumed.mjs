@@ -9,7 +9,7 @@
 // feature becomes in enumerated lists scattered across four files, and no two of
 // them are near each other:
 //   fetch.js      tagPriority          — which bucket a feature lands in
-//   skeleton.js   VEHICULAR_UNNAMED    — which UNNAMED way still becomes a street
+//   skeleton.js   STREET_CLASSES       — which UNNAMED way still becomes a street
 //   derive.js     the path filters     — which highway value becomes a drawn path
 //   derive.js     OSM_TO_LU            — which polygon votes on land use
 //   classify.js   the type block       — which polygon becomes a typed FACE
@@ -101,10 +101,12 @@ const tagPriority = must(
   quoted((fetchSrc.match(/const tagPriority\s*=\s*\[([\s\S]*?)\]/) || [])[1] || ''),
   'tagPriority', 'cartograph/fetch.js')
 
-// skeleton.js — an UNNAMED way becomes a street only if its highway is here.
-const vehicularUnnamed = must(
-  quoted((skelSrc.match(/const VEHICULAR_UNNAMED\s*=\s*new Set\(\[([\s\S]*?)\]\)/) || [])[1] || ''),
-  'VEHICULAR_UNNAMED', 'cartograph/skeleton.js')
+// skeleton.js — an UNNAMED way becomes a street only if its class is here (a `_link`
+// counts as its parent — the same test skeleton.js's isStreetClass applies).
+const streetClasses = must(
+  quoted((skelSrc.match(/const STREET_CLASSES\s*=\s*new Set\(\[([\s\S]*?)\]\)/) || [])[1] || ''),
+  'STREET_CLASSES', 'cartograph/skeleton.js')
+const isStreetClass = (hw) => !!hw && streetClasses.includes(hw.replace(/_link$/, ''))
 
 // derive.js — OSM_TO_LU keys are `category:value`; a polygon not here does not vote.
 const luKeys = must(
@@ -178,7 +180,7 @@ const contentPairs = [...contentSrc.matchAll(/(?:const\s+)?(\w+)\s*===\s*['"]([^
 // ⛔ This is the LIMIT of the claim and it is printed every run. "Unclaimed" means
 // none of THESE claims it — never "nothing in the repo reads it".
 const MODELLED = [
-  'STREET  — named highway, or unnamed in VEHICULAR_UNNAMED (skeleton.js)',
+  'STREET  — named highway, or unnamed in STREET_CLASSES (skeleton.js)',
   'PATH    — highway in the derive.js path filters (footway subtypes excluded)',
   'ALLEY   — highway=service with service=alley (derive.js)',
   'SIDEWALK— footway=sidewalk (derive.js)',
@@ -193,7 +195,7 @@ const claimsOf = (cat, tags) => {
   const c = []
   const hw = tags.highway
   if (hw) {
-    if (tags.name || vehicularUnnamed.includes(hw)) c.push('STREET')
+    if (tags.name || isStreetClass(hw)) c.push('STREET')
     if (pathHighways.includes(hw) && !(hw === 'footway' && footwayExcluded.includes(tags.footway))) c.push('PATH')
     if (hw === 'service' && alleyService.includes(tags.service)) c.push('ALLEY')
   }
@@ -285,7 +287,7 @@ if (JSON_OUT) {
 
 console.log(`\nINTAKE CONSUMED — what each town fetched, and what nothing reads.`)
 console.log(`Vocabularies parsed live from source (never restated here):`)
-console.log(`   tagPriority ${tagPriority.length} · VEHICULAR_UNNAMED ${vehicularUnnamed.length} · OSM_TO_LU ${luKeys.length}` +
+console.log(`   tagPriority ${tagPriority.length} · STREET_CLASSES ${streetClasses.length} · OSM_TO_LU ${luKeys.length}` +
             ` · path highways ${pathHighways.length} · water rules ${waterPairs.length + waterBare.length}` +
             ` · classify.js ${classifyPairs.length + classifyIncludes.length} · bake-content ${contentPairs.length}`)
 console.log(`Consumers modelled — ⛔ "unclaimed" means none of THESE, not "nothing reads it":`)
@@ -307,7 +309,7 @@ for (const [scene, r] of Object.entries(report)) {
 }
 
 console.log(`\n▶ To close a class: a land use goes in OSM_TO_LU (derive.js), a way that`)
-console.log(`  should draw goes in the path filters or VEHICULAR_UNNAMED, water goes in`)
+console.log(`  should draw goes in the path filters or STREET_CLASSES, water goes in`)
 console.log(`  isWaterFeature. Re-run this; the number moves.`)
 console.log(`⛔ A class left open is a decision, not an oversight — but it has to be a`)
 console.log(`  decision someone made, which is what this prints.\n`)

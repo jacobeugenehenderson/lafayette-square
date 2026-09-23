@@ -469,7 +469,7 @@
     one — so the same rule closes both halves: the named footways here AND the unnamed public roads
     dropped for want of a name.
     - ✅ **UNNAMED HALF LANDED 2026-09-23, on Huron** — `skeleton.js` `STREET_CLASSES` decides; US 6's
-      expressway is drawn through the centre (Jacob's eye on huron: PENDING). Guards: `checks/claims-authored-skelids-keep-their-ways.mjs`
+      expressway is drawn through the centre (Jacob's eye on huron: PASSED 2026-09-23, "It's linked."). Guards: `checks/claims-authored-skelids-keep-their-ways.mjs`
       (a positional synthetic id is an authoring key — pre-A19 classes keep their numbers),
       `claims-no-label-is-a-made-up-name.mjs` (`synthetic` is the one label filter) and
       `claims-ribbons-are-not-older-than-the-skeleton.mjs` (the Bake now re-derives every OSM town, not LS only).
