@@ -883,6 +883,21 @@
         "caltrans-hdm → f-caltrans-culdesac-island-silent, f-caltrans-small-unpaved-islands (no cul-de-sac island guidance)",
         "massdot-design-guide → f-massdot-local-roads-municipal, f-massdot-island-planting"
       ]
+    },
+    {
+      "id": "q-revetment-crest-sample",
+      "ask": "Where is a shore revetment's CREST measured — on the shoreline arc itself, or landward of it, and at what distance?",
+      "neededBy": "every coastal town: the crest decides whether a station is armoured at all, and sets the stone size",
+      "status": "answered",
+      "codeSites": [
+        "cartograph/bake-revetment.js — the station loop; was heightAt(x, z) ON the arc, now one grid step landward",
+        "cartograph/shore-armour.mjs — MIN_ARMOUR_D50_M is the threshold the crest is judged against; wetSideOf's maxProbe = 6 * gridM is the same grid-step currency",
+        "src/harness/boulders/huron.js — CREST_PROBE_M, which had this right before the bake did"
+      ],
+      "findings": [
+        "r-revetment-crest-one-grid-step"
+      ],
+      "check": "checks/claims-the-crest-is-measured-behind-the-shore.mjs"
     }
   ],
   "findings": [
@@ -2874,6 +2889,23 @@
       "quote": "-",
       "foundOn": "2026-09-23",
       "foundBy": "Boz, per Jacob's ruling"
+    },
+    {
+      "id": "r-revetment-crest-one-grid-step",
+      "question": "q-revetment-crest-sample",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-23",
+      "quote": "Go",
+      "gist": "The crest is sampled ONE TERRAIN GRID STEP LANDWARD, gridM read from the town's own heightfield, never a literal.",
+      "canon": "shore-armour.mjs's wetSideOf bounds its own probe at 6 * gridM because 'past a handful of grid cells you are no longer describing a shore edge, you are describing the hinterland'. One step is the conservative end of that same range, and the minimum that samples a DIFFERENT heightfield cell.",
+      "why": "A shoreline arc sits AT the water, so the ground under it is ~0 by construction; the wall stands behind it. Reading the crest on the arc gave huron a median crest of 0.433 m against a 0.500 m threshold, so grid noise decided nearly every station and punched 148 one-station holes through the wall. The operator saw 'still totally patchy'. It was never predicate flicker — the predicate was handed a number measured in the wrong place.",
+      "measured": "crest on the arc: median 0.433 m, 46.7% of stations armoured. One grid step landward: median 1.234 m, 62.6%. After the fix on huron: armoured 7957 m to 10538 m; armoured runs 189 to 65; median run 5.0 m to 30.0 m; holes 148 to 38; islands 134 to 28.",
+      "notEstablished": "The distance cannot be derived from the data: sweeping outward raises the crest monotonically (0 m 0.433, 5 m 1.234, 10 m 1.591, 20 m 1.847) because walking inland walks up the bank and then into the hinterland. There is no plateau, so a distance fitted to huron would be a town-#1 constant. The value comes from the instrument's resolution, not from the shore.",
+      "command": "node scratch/boulder-crest-probe.mjs [probeM] — the landward sweep. node scratch/boulder-run-census.mjs — runs, holes and islands.",
+      "check": "checks/claims-the-crest-is-measured-behind-the-shore.mjs",
+      "foundOn": "2026-09-23",
+      "foundBy": "Revetment"
     }
   ]
 }
