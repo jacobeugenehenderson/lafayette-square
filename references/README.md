@@ -35,7 +35,8 @@ A design that uses a value carries the **finding id** into its output. A value w
 
 Every value the kit draws is exactly one of:
 - **finding** (`kind: value | rule | …`) — the code says so: permitted source + section + quote.
-- **derived** (`kind: "derived"`) — started from one or more findings, then adjusted or interpolated **for the map**. ⛔ It MUST name `from` (the finding ids it started at — each ultimately a cited finding) and `derivation` (the stated step: *"scaled ×0.92 for legibility at map scale"*, *"interpolated between f-a and f-b"*). It cites no source of its own; its legitimacy is its ancestry.
+- **derived** (`kind: "derived"`) — started from one or more findings, then adjusted or interpolated **for the map**. ⛔ It MUST name `from` (the finding ids it started at — each ultimately a cited finding or a measurement) and `derivation` (the stated step: *"scaled ×0.92 for legibility at map scale"*, *"interpolated between f-a and f-b"*). It cites no source of its own; its legitimacy is its ancestry.
+- **measured** (`kind: "measured"`) — **arrived at by measuring the world**, not by taste: our own reproducible measurement of the real thing (e.g. aerial imagery). ⛔ It MUST name the `command` that reproduces it (a committed script), the `sites`, and the `tolerance`. A legitimate root, like a finding. *(Added 2026-09-23 — the OSM line's place in the section is measured, and no code states it.)*
 - **[U]** — no code answers it yet. It stays on the dispatch queue. ⛔ **There is no un-anchored "house" value** — where no code speaks, the answer is [U], never taste.
 
 ## Status

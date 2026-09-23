@@ -11,8 +11,9 @@
 // Then prints the DISPATCH QUEUE: every open question, what was tried, and where to look next.
 //
 // ▶ node checks/claims-references-are-sound.mjs
-// Mutation tests: set a cited source's terms.aiUse to 'prohibited' → red; add a kind:'derived' finding with no `from` → red.
+// Mutation tests: a cited source's terms.aiUse → 'prohibited' reds; a kind:'derived' with no `from` reds; a kind:'measured' with no command reds.
 import fs from 'node:fs'
+import { execSync } from 'node:child_process'
 
 const REG = 'references/registry.json'
 const r = JSON.parse(fs.readFileSync(REG, 'utf8'))
@@ -45,6 +46,18 @@ for (const f of findings) {
     while (stack.length) { const a = stack.pop(); if (seenA.has(a)) { if (a === f.id) errs.push(`derived ${f.id} is its own ancestor`); continue } seenA.add(a)
       const af = fById.get(a); if (af?.kind === 'derived') stack.push(...(af.from || [])) }
     if (!qById.has(f.question)) errs.push(`derived ${f.id} answers unknown question "${f.question}"`)
+    continue
+  }
+  if (f.kind === 'measured') {
+    // A measurement is a legitimate ROOT — arrived at, not preferred — iff it can be REPRODUCED.
+    if (!f.command) errs.push(`measured ${f.id} names no command to reproduce it`)
+    if (!f.sites) errs.push(`measured ${f.id} names no sites`)
+    if (!f.tolerance) errs.push(`measured ${f.id} states no tolerance`)
+    if (f.source) errs.push(`measured ${f.id} carries a source — a measurement stands on its command`)
+    const script = (f.command || '').split(/\s+/).find(t => /\.(m?js|py|sh)$/.test(t))
+    if (script && !fs.existsSync(script)) errs.push(`measured ${f.id}: ${script} is not on disk — the measurement cannot be reproduced`)
+    else if (script) { try { execSync(`git ls-files --error-unmatch ${script}`, { stdio: 'ignore' }) } catch { warns.push(`measured ${f.id}: ${script} is not committed — not reproducible from a clean checkout`) } }
+    if (!qById.has(f.question)) errs.push(`measured ${f.id} answers unknown question "${f.question}"`)
     continue
   }
   const s = srcById.get(f.source)

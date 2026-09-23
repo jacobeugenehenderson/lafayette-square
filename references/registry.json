@@ -229,6 +229,49 @@
       },
       "status": "CANDIDATE",
       "localCopy": null
+    },
+    {
+      "id": "prowag-2023",
+      "title": "Accessibility Guidelines for Pedestrian Facilities in the Public Right-of-Way (PROWAG), final rule",
+      "publisher": "US Access Board",
+      "jurisdiction": "federal",
+      "edition": "final rule, Federal Register 2023-08-08, effective 2023-09-07; codified at 36 CFR 1190 (enforceable once adopted by DOJ/DOT)",
+      "url": "https://www.ecfr.gov/current/title-36/chapter-XI/part-1190",
+      "covers": [
+        "pedestrian access route width",
+        "curb ramps",
+        "pedestrian refuges",
+        "cross slope"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Boz",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)",
+        "note": "A federal regulation (US Government work)."
+      },
+      "status": "PERMITTED",
+      "localCopy": null
+    },
+    {
+      "id": "nacto-usdg",
+      "title": "NACTO Urban Street Design Guide (and Urban Bikeway Design Guide)",
+      "publisher": "National Association of City Transportation Officials (private); print edition Island Press",
+      "jurisdiction": "national (US cities)",
+      "url": "https://nacto.org/publication/urban-street-design-guide/",
+      "covers": [
+        "lane widths (urban)",
+        "sidewalk zones incl. furnishing/treelawn",
+        "corner radii"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Boz",
+        "note": "nacto.org returned 403 to fetch; a search showed only a generic 'all rights reserved unless otherwise indicated'. Private publisher — treat as NOT permitted until someone reads its terms on the site or asks NACTO."
+      },
+      "status": "CANDIDATE — terms owed (the kit's ped defaults are attributed to it in OSM-FORENSICS Part 4)",
+      "localCopy": null
     }
   ],
   "questions": [
@@ -372,6 +415,49 @@
       "nextSources": [
         "massdot-design-guide (PERMITTED)"
       ]
+    },
+    {
+      "id": "q-osm-line-placement",
+      "ask": "Where in a carriageway's section does the OSM way run (centre of the travel lanes?)",
+      "neededBy": "H-3 — every drawn highway half-width",
+      "status": "answered",
+      "findings": [
+        "m-osm-line-lane-centre"
+      ]
+    },
+    {
+      "id": "q-sidewalk-default",
+      "ask": "Default sidewalk (pedestrian access route) width",
+      "neededBy": "the ped FILL (ADA_SIDEWALK); H-3 JR apron",
+      "status": "open",
+      "tried": [
+        "OSM-FORENSICS Part 4 attributes it to PROWAG/NACTO — not yet read under this registry"
+      ],
+      "nextSources": [
+        "prowag-2023 (PERMITTED)"
+      ]
+    },
+    {
+      "id": "q-treelawn-default",
+      "ask": "Default treelawn (furnishing zone) width",
+      "neededBy": "the ped FILL (STD_TREELAWN)",
+      "status": "open",
+      "tried": [
+        "OSM-FORENSICS Part 4 attributes it to NACTO [P]"
+      ],
+      "nextSources": [
+        "nacto-usdg (terms owed)",
+        "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
+      ]
+    },
+    {
+      "id": "q-curb-width",
+      "ask": "Curb (top-of-curb) width drawn between roadway and ped band",
+      "neededBy": "curbWidth / CURB_WIDTH",
+      "status": "open",
+      "nextSources": [
+        "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
+      ]
     }
   ],
   "findings": [
@@ -464,6 +550,21 @@
       "quote": "Channelizing islands can be raised or flush with the pavement. … Raised islands have been found to be more effective than flush painted islands at reducing nighttime collisions, because they are easier to see.",
       "foundOn": "2026-09-23",
       "foundBy": "Grader"
+    },
+    {
+      "id": "m-osm-line-lane-centre",
+      "question": "q-osm-line-placement",
+      "kind": "measured",
+      "value": {
+        "osmLineIs": "centre of the travel lanes (shoulders outside it)"
+      },
+      "command": "python3 scratch/h3-aerial-centreline.py",
+      "sites": "4 highway sites (LS + huron) — the script prints them",
+      "tolerance": "±1–2 m",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader",
+      "quote": "(measured, not quoted — see command)",
+      "note": "⚠️ The script is uncommitted until Jacob approves Grader's probe commit; until then this measurement is not reproducible from a clean checkout."
     }
   ]
 }
