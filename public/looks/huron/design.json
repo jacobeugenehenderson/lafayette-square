@@ -447,7 +447,7 @@
     "transitionOut": 0,
     "values": {
       "noon": {
-        "value": 1
+        "value": 0.08
       },
       "night": {
         "value": 2
@@ -515,16 +515,16 @@
     },
     {
       "position": [
-        694,
-        83,
-        -854
+        700,
+        42,
+        -637
       ],
       "target": [
         0,
         40,
         0
       ],
-      "fov": 22
+      "fov": 32
     },
     {
       "position": [
@@ -862,6 +862,10 @@
     },
     {
       "species": "oak_white",
+      "variantId": 1
+    },
+    {
+      "species": "birch",
       "variantId": 1
     }
   ]
