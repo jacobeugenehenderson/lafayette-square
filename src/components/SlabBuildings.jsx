@@ -51,6 +51,16 @@ const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
 // suppression (like frustum culling), not a look channel — so it's automatic,
 // not a knob: there's no value in ever seeing the broken cross-section.
 // DIST/BAND are the feel knobs — tune live with `window.__bldgXray(dist, band)`.
+// ⚠️ Sky-visibility strength, live for the eye-gate: window.__wallAO = 0..1
+// 0 = pre-2026-09-22 behaviour (walls unoccluded), 1 = the full geometric term.
+const _wallAO = { value: 1 }
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, '__wallAO', {
+    get: () => _wallAO.value,
+    set: (v) => { _wallAO.value = Math.max(0, Math.min(1, Number(v) || 0)) },
+    configurable: true,
+  })
+}
 let _dissolveDist = 12   // m: fragments closer than this fully dissolve (camera is "inside")
 let _dissolveBand = 9    // m: soft dither band above the threshold (12→21m fades in)
 if (typeof window !== 'undefined') {
@@ -415,6 +425,37 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       if (!isFoundation) applyWeatherToShader(shader)
 
       shader.uniforms.uExag = terrainExag
+      // ⭐⭐ SKY VISIBILITY — the buildings' missing occlusion term.
+      // ⛔ The ground multiplies its ambient by a BAKED occlusion map (`aoMap`, hemisphere
+      // occlusion out to 80 m, deepest hard against buildings). `SlabBuildings` carried NO
+      // occlusion at all. In a cast shadow the sun contributes nothing, so everything you
+      // see is ambient — ground reads `ambient × AO`, a wall reads `ambient` at full
+      // strength. Same shadow, two different floors.
+      // ⚠️ Operator, 2026-09-22: "the shadows on the buildings aren't as dark as the ones on
+      // the ground… my issue is that the shadows on the building need to be darker."
+      // ⛔ No light slider can close it — ambient/fill/hemi all light wall and ground alike,
+      // and huron runs all three at once (0.92 / 1.0 / 0.95), which is why they feel alike.
+      // ⭐ THE BUILDINGS ARE THE ONES THAT ARE WRONG. A vertical wall sees about HALF the
+      // sky; rendering it with unoccluded ambient over-lights it. So attenuate INDIRECT
+      // light only (never direct — the sun is untouched) by the surface's own sky
+      // visibility, derived from the world normal: roof 1.0, wall 0.5, underside 0.
+      // ⛔ DERIVED, NOT A CONSTANT — the hemisphere integral of the surface's own
+      // orientation, so it ports to town #2 with nothing to tune. `uSkyVis` is the STRENGTH
+      // (0 = prior behaviour, 1 = full geometric term); live via `window.__wallAO` for the
+      // eye-gate, then it wants to be an authored channel beside `ao`.
+      shader.uniforms.uSkyVis = _wallAO
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vSkyNrm;')
+        .replace('#include <beginnormal_vertex>',
+                 '#include <beginnormal_vertex>\n vSkyNrm = normalize(mat3(modelMatrix) * objectNormal);')
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uSkyVis;\nvarying vec3 vSkyNrm;')
+        .replace('#include <aomap_fragment>',
+                 '#include <aomap_fragment>\n'
+               + '{ float skyVis = clamp(0.5 + 0.5 * normalize(vSkyNrm).y, 0.0, 1.0);\n'
+               + '  float occ = mix(1.0, skyVis, clamp(uSkyVis, 0.0, 1.0));\n'
+               + '  reflectedLight.indirectDiffuse *= occ;\n'
+               + '  reflectedLight.indirectSpecular *= occ; }')
       shader.uniforms.uDarkFactor = { value: 0 }
       shader.uniforms.uSelectedId = { value: -1 }
       shader.uniforms.uHoveredId = { value: -1 }
@@ -542,7 +583,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
 
       registerShader(shader)
     }
-    mat.customProgramCacheKey = () => `slab-bldg-${group.kind}-${group.id}-${tex ? 'tex' : 'flat'}`
+    mat.customProgramCacheKey = () => `slab-bldg-${group.kind}-${group.id}-${tex ? 'tex' : 'flat'}-skyvis1`
     return mat
   }, [tex, isRoof, isWall, isFoundation, texStrength, texScale, group.kind, group.id])
 
