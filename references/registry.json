@@ -132,13 +132,14 @@
         "curbed vs painted island treatment"
       ],
       "terms": {
-        "aiUse": "public-domain-presumed",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-23",
         "checkedBy": "Boz",
         "note": "A federal regulation (23 CFR 655 Subpart F) published by FHWA; US Government works are generally public domain (17 USC 105). No explicit copyright/reuse statement found on the MUTCD site. ⚠️ Confirm no embedded third-party figures before quoting any figure.",
-        "source": "https://mutcd.fhwa.dot.gov/"
+        "source": "https://mutcd.fhwa.dot.gov/",
+        "approvedBy": "Jacob, 2026-09-23 — presumed public domain (US Government work) accepted"
       },
-      "status": "LEADING CANDIDATE — Jacob to confirm 'presumed public domain' is enough",
+      "status": "PERMITTED — skip any figure credited to a third party",
       "localCopy": null
     },
     {
@@ -151,13 +152,14 @@
         "geometric design at intersections incl. channelization / channelizing and refuge islands"
       ],
       "terms": {
-        "aiUse": "public-domain-presumed",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-23",
         "checkedBy": "Boz",
         "note": "FHWA-sponsored report; FHWA reports are generally public domain, BUT they are often contractor-written and may embed copyrighted figures. Check the report's own Notice page before use. FHWA's copyright FAQ page returned 403 to fetch.",
-        "source": "https://highways.dot.gov/fed-aid-essentials/disclaimer"
+        "source": "https://highways.dot.gov/fed-aid-essentials/disclaimer",
+        "approvedBy": "Jacob, 2026-09-23 — presumed public domain (US Government work) accepted"
       },
-      "status": "CANDIDATE — read its Notice page first",
+      "status": "PERMITTED — read the report's own Notice page first; skip any figure credited to a third party",
       "localCopy": null
     },
     {
