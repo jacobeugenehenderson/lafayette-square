@@ -161,10 +161,62 @@ export function bakeRevetment({ scene, look }) {
     // has no crest of its own.
     const path = resample(simplify(trace, gridM / 2), gridM)
 
+    // ⛔⛔ THE CREST IS READ LANDWARD, NOT AT THE STATION, AND THAT IS THE WHOLE
+    // DIFFERENCE BETWEEN A WALL AND A PATCHWORK.
+    // This used to be `heightAt(x, z)` — the terrain ON the shoreline arc. But an arc
+    // sits AT the water, so the ground under it is ~0 BY CONSTRUCTION; the wall is what
+    // stands BEHIND it. The harness that proved this geometry always knew (huron.js's
+    // CREST_PROBE_M, with that sentence in its doc comment); the bake dropped it.
+    // ⭐ MEASURED on huron, 2026-09-23 (▶ node scratch/boulder-crest-probe.mjs):
+    //   crest AT the station : median 0.433 m → 46.7% of stations judged armoured
+    //   crest ONE STEP inland: median 1.234 m → 62.6%
+    // The threshold is MIN_ARMOUR_D50_M = 0.5 m, so a median of 0.433 m put nearly every
+    // station within centimetres of the line and let GRID NOISE decide which side it fell
+    // on. That is what punched 148 one-station holes through an otherwise continuous
+    // wall, and it read to the operator as "still totally patchy". ⛔ It was never
+    // flicker in the predicate — the predicate was being handed a number measured in the
+    // wrong place.
+    //
+    // ⭐⭐ THE DISTANCE IS ONE TERRAIN GRID STEP, READ FROM THE TOWN'S OWN HEIGHTFIELD.
+    // ⛔ It cannot come from the data: sweeping the probe outward raises the crest
+    // monotonically forever (0 m → 0.433, 5 → 1.234, 10 → 1.591, 20 → 1.847), because
+    // walking inland walks up the bank and then into the hinterland. There is no plateau
+    // to find, so a "best" distance measured off this town would be a Class D constant —
+    // correct for huron and meaningless for town #2.
+    // ⇒ It comes from the INSTRUMENT'S RESOLUTION instead: one step is the minimum that
+    // samples a DIFFERENT heightfield cell (probe shorter than a cell re-reads the
+    // station's own, which is why 0 m and 2.5 m barely differ), and it is the
+    // conservative end of the range `shore-armour.mjs` already reasons in — wetSideOf
+    // bounds itself at 6 * gridM because "past a handful of grid cells you are no longer
+    // describing a shore edge, you are describing the hinterland." Same currency, same
+    // justification, and it scales to any town's grid without being told.
+    //
+    // ⛔ `both` GETS NO PROBE. An arc with water on both sides — a breakwater, a rubble
+    // mound — has no landward: probing either way walks into water and would read ~0 and
+    // disarm the structure. There the station IS the crest, which is what it was always
+    // measuring correctly.
+    const CREST_PROBE_M = gridM
+    const landSign = wet.side === 'right' ? 1 : wet.side === 'left' ? -1 : 0
     const stations = []
     for (let i = 0; i < path.length; i++) {
       const [x, z] = path[i]
-      const crest = heightAt(x, z)
+      let crest
+      if (!landSign) {
+        crest = heightAt(x, z)
+      } else {
+        // wetSideOf names RIGHT of the walk as (-tz, tx); landward is away from the water.
+        const a0 = path[Math.max(0, i - 1)], b0 = path[Math.min(path.length - 1, i + 1)]
+        const tx = b0[0] - a0[0], tz = b0[1] - a0[1]
+        const m = Math.hypot(tx, tz)
+        if (!m) { crest = heightAt(x, z) }
+        else {
+          const nx = (-tz / m) * landSign, nz = (tx / m) * landSign
+          const h = heightAt(x + nx * CREST_PROBE_M, z + nz * CREST_PROBE_M)
+          // ⛔ Off-grid landward reads fall back to the station rather than to NaN: the
+          // armour predicate has a named `no-height` verdict and must reach it honestly.
+          crest = Number.isFinite(h) ? Math.max(0, h) : heightAt(x, z)
+        }
+      }
       const a = armourAt(x, z, crest)
       // ⛔ `why` is NOT emitted per station. It is a diagnostic string, the player
       // does not read it, and at ~5,000 stations a town it was 60% of the file.
@@ -215,6 +267,12 @@ export function bakeRevetment({ scene, look }) {
     // find the module to know what geometry was ruled.
     material: { minArmourD50M: MIN_ARMOUR_D50_M, riprapReposeDeg: RIPRAP_REPOSE_DEG, tagReachM: TAG_REACH_M },
     gridM: +gridM.toFixed(3),
+    // ⭐ How far LANDWARD the crest was sampled, stamped so a reader — and a check —
+    // can tell what this artifact's heights actually mean. One grid step by ruling
+    // (Jacob, 2026-09-23); see the long note at the station loop for why it cannot be
+    // measured off the data. A value of 0 would mean the crest was read at the
+    // waterline, which is the defect this replaced.
+    crestProbeM: +gridM.toFixed(3),
     waterDatum: tm.datum,
     totals: { ruledM: +ruledM.toFixed(1), armouredM: +armouredM.toFixed(1), refusedM: +refusedM.toFixed(1) },
     // Why each station was ruled as it was — the census, not the per-station string.
