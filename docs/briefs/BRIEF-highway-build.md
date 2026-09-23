@@ -4,7 +4,7 @@
 status: DRAFT (Grader wrote it; Boz reviews against the rulings and canon and writes the dispatch note)
 dispatched: no
 written: 2026-09-23
-supersedes: docs/briefs/BRIEF-highway-positive-object.md (the design review; Boz evicts it when this one dispatches)
+supersedes: cartograph/_archive/BRIEF-highway-positive-object-SUPERSEDED-2026-09-23.md (the design review, retired on dispatch)
 evict-when: the seven checks are green on Huron and LS, and each combed question below carries its `check`
 -->
 
@@ -144,7 +144,7 @@ One pass, **in this order**:
   - ⛔ **No gap-close constant.** The physical-gore position is **[U]**, so the sliver beyond the union stays verge.
   - The pour counts gore slivers by id.
 
-### Step 5 — The joins (`BRIEF-highway-positive-object` Q6)
+### Step 5 — The joins (design review Q6, `cartograph/_archive/BRIEF-highway-positive-object-SUPERSEDED-2026-09-23.md`)
 
 - **At grade** (a ramp end shares a vertex with a town street). H butts at the town centreline. The town asphalt draws over it: 2D `renderOrder` `PRI.residential+1` sits under asphalt's 8, and the 3D stack in `bake-ground.js` has `highway` below the ribbons. Check 5 asserts the butt lies inside the town asphalt.
 - **End-to-end** (Huron US 6: `motorway-35` → `primary-91`, `primary-103` → `motorway-36`, at (−560, −179) / (−524, −195)).
