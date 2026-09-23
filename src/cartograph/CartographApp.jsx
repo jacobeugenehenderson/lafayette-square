@@ -37,6 +37,7 @@ import GatewayArch from '../components/GatewayArch'
 import MountainBackdrop from '../components/MountainBackdrop'
 import CelestialBodies from '../components/CelestialBodies'
 import CascadedShadows, { CSM_ENABLED } from '../components/CascadedShadows.jsx'
+import SlabRevetment from '../components/SlabRevetment.jsx'
 import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import Atmosphere from '../components/Atmosphere'
 import CloudDome from '../components/CloudDome'
@@ -1078,6 +1079,14 @@ function genericSceneConfig(sceneBoundary) {
             />
           </R3FErrorBoundary>
         )}
+        {/* The shore's stone revetment — a look-keyed slab consumer that renders
+            nothing unless /baked/<look>/revetment.json exists, so a town with no
+            coast is untouched and no scene name appears here. ⭐ Mounted with
+            exactly the props Preview will pass, so the two cannot drift
+            (Jacob: "Preview should just mount it identically"). */}
+        <R3FErrorBoundary name="SlabRevetment">
+          <SlabRevetment lookId={lookId} bakeLastMs={bakeLastMs} />
+        </R3FErrorBoundary>
         {/* Landscape backdrop (§10 third hero kind) — a look-keyed slab
             consumer; renders nothing unless /baked/<look>/landscape exists. */}
         <R3FErrorBoundary name="MountainBackdrop">

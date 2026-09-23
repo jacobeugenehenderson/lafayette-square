@@ -14,7 +14,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { loadHuronShore, profileArc, crestFn, bandFolds, arcFaces } from '../src/harness/boulders/huron.js'
 import { revetmentDrape } from '../src/lib/revetmentDrape.js'
-import { shoreContext, chunkStones, verifySeams, CHUNK_M } from '../src/harness/boulders/chunked.js'
+import { shoreContext, chunkStones, verifySeams, CHUNK_M } from '../src/lib/shoreChunks.js'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const local = (url) => path.join(ROOT, url.startsWith('/baked') ? 'public' + url : url.replace(/^\//, ''))

@@ -1,5 +1,10 @@
 /**
- * chunked.js — THE STONES ARE A FUNCTION OF POSITION, NOT A LIST.
+ * shoreChunks.js — THE STONES ARE A FUNCTION OF POSITION, NOT A LIST.
+ *
+ * ⭐ Promoted out of `src/harness/boulders/` 2026-09-23 when the revetment was
+ * installed in the map. ⛔ It was never harness-specific — every input is a
+ * parameter — and the alternative was a second copy in the player, which is the
+ * one thing this project will not have: one painter, not two that agree today.
  *
  * ⭐⭐ WHY: Jacob, 2026-09-21 — *"we build everything anticipating that if it looks
  * nice we'll get close to it to show it off sometimes."* ⇒ "it is only seen from
@@ -29,8 +34,8 @@
  * each margin and that number is the answer.
  */
 
-import { rng, seedAt } from '../../lib/boulderGeometry.js'
-import { MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../../cartograph/shore-armour.mjs'
+import { rng, seedAt } from './boulderGeometry.js'
+import { MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../cartograph/shore-armour.mjs'
 
 const TAN_REPOSE = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
 const d50For = h => Math.max(MIN_ARMOUR_D50_M, Math.min(1.5, h * 0.45))

@@ -305,7 +305,17 @@ function UnitBomb() {
 export function ShaderLinkGuard() {
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
+  // ⭐ The camera and controls are NOT in the scene graph, and a post-processing
+  // composer means `renderer.render` is never called with them either — so from a
+  // console there is otherwise no way to ask "where is the camera actually looking".
+  const camera = useThree((s) => s.camera)
+  const controls = useThree((s) => s.controls)
   useEffect(() => { installShaderLinkGuard(gl) }, [gl])
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.__camera = camera
+    window.__controls = controls || null
+  }, [camera, controls])
   // Read-only handles for measuring the live render from the console. ⭐ They exist
   // because the alternative is reasoning about what the lighting curve OUGHT to
   // produce, and this project's standing rule is to measure the thing rather than

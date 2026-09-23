@@ -11,7 +11,7 @@
  *   ② THE DART OVERSAMPLE — the dominant generation cost, swept against density so
  *     the trade is visible rather than asserted.
  */
-import { shoreContext, chunkStones, verifySeams, CHUNK_M } from '../src/harness/boulders/chunked.js'
+import { shoreContext, chunkStones, verifySeams, CHUNK_M } from '../src/lib/shoreChunks.js'
 import { demoShoreline, huronLikeCrest } from '../src/harness/boulders/heap.js'
 
 const poly = demoShoreline({ length: 120 })

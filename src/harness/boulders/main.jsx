@@ -33,7 +33,7 @@ import { boulderPalette, GENERATORS, triCount } from '../../lib/boulderGeometry.
 import { revetmentDrape, DRAPE_DEFAULT_GATHER } from '../../lib/revetmentDrape.js'
 import { makeRevetmentMaterial } from '../../components/revetmentMaterial.js'
 import { revetmentHeap, demoShoreline, huronLikeCrest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from './heap.js'
-import { shoreContext, chunkStones, CHUNK_M } from './chunked.js'
+import { shoreContext, chunkStones, CHUNK_M } from '../../lib/shoreChunks.js'
 import HuronShore from './HuronShore.jsx'
 
 const SHORE_LENGTH_M = 120

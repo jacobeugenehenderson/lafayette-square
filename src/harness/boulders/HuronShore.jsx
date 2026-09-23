@@ -18,7 +18,7 @@ import { useThree } from '@react-three/fiber'
 import InstancedBoulders from '../../components/InstancedBoulders.jsx'
 import { revetmentDrape, drapeGlobals } from '../../lib/revetmentDrape.js'
 import { loadHuronShore, profileArc, crestFn, arcFaces } from './huron.js'
-import { shoreContext, chunkStones, CHUNK_M } from './chunked.js'
+import { shoreContext, chunkStones, CHUNK_M } from '../../lib/shoreChunks.js'
 
 /** How far from the camera a chunk is built. ⛔ A budget: it sets how much work one
  *  camera move can trigger, for the stone and the drape alike. */
