@@ -69,7 +69,7 @@ evict-when: the plan is ruled by Jacob and a build brief replaces this one (git 
 - **Width is a constant per class, whatever the lane count** (`TYPE_PAVEMENT_HW`): every Huron motorway gets 8.53 m half-width, and every link gets 2.44 m. That is `CLAUDE.md` Class D: a constant that happened to suit town #1.
   - The seed says `seededClass: residential`, because `STD_SECTION` has no highway row.
   - The measure *can* carry different left and right widths. The curb reads it per side; only the stroke collapses it.
-- **The inputs.** Unnamed highways skip welding and divided-road detection (`SKELETON §3` step 7), so they arrive as fragments. Count them; don't quote them:
+- **The inputs.** Unnamed highways skip welding and divided-road detection (`SKELETON §3` step 7). Count them; don't quote them. ⛔ **The `2-pt` column counts CONTROL points, not stubs** *(corrected 2026-09-23 by this review's own agent)*: a two-point chain may be a whole bezier curve (LS 11 of 29, HPDM 32 of 69), and Huron's 24 are straight chains 7–831 m long — so "arrives fragmented" is NOT established:
   ```
   node -e "for(const t of ['huron','lafayette-square','hipointe-demun','altadena']){const g=require('./cartograph/data/'+t+'/clean/skeleton.json').streets.filter(s=>s.gradeSeparated),h=g.filter(s=>/^(motorway|trunk)/.test(s.highway));console.log(t,'GS',g.length,'hwy',h.length,'unnamed',h.filter(s=>/^(motorway|trunk)/.test(s.name||'')).length,'2-pt',h.filter(s=>s.points.length==2).length,'phase',h.filter(s=>s.phase).length,'lanes',h.filter(s=>(s.lanes??s.tags?.lanes)!=null).length,'other',g.length-h.length)}"
   ```
@@ -110,7 +110,7 @@ node -e "const A=r=>{let a=0;for(let i=0;i<r.length;i++){const p=r[i],q=r[(i+1)%
 1. **The typical section from the data.** Lane width, outside and inside shoulders, and ramp sections: cite the standard you use.
    - What does a carriageway with **no lane count** do? It must fail loudly (ruling 3). Propose *how*: refuse to draw it? Draw it with the assumption shown in the pour output **and** in the operator's view? "Silent default" is not an option.
 2. **Where OSM's line sits in the section.** Is the carriageway way at the centre of the travel lanes? **Verify it against the aerial at a few Huron and LS spots.** Don't assume it; `RIBBONS §3.1` records a month lost to a wrong answer to exactly this question for divided streets.
-3. **Welding, in the highway step.** Is it a weld (and on what: continuity plus heading, degree 2), or a union with round joins? Measure the joint defect between fragments either way. Huron has two-point stubs.
+3. **Welding, in the highway step.** Is it a weld (and on what: continuity plus heading, degree 2), or a union with round joins? Measure the joint defect between chains either way (flatten `segments` first — never measure on control points).
 4. **ONE edge (the crux).** The highway polygon's edge must *be* the edge the neighbouring block closes against, from one geometry. Two routes; pick one and say what it costs:
    - (a) The per-side `measure` of a highway chain carries the section's half-widths, so ①'s curb lands on the highway edge. The stroke must then use the same per-side values and the same points: no `max`, and no separate smoothing.
    - (b) The highway polygon is handed to ② as the boundary for highway-owned runs.
@@ -125,7 +125,7 @@ node -e "const A=r=>{let a=0;for(let i=0;i<r.length;i++){const p=r[i],q=r[(i+1)%
 ## The checks: what makes this a kit fix, not a Huron patch
 
 Each is a command that reads the source rather than restating it, and each must be **seen to fail**: mutation-test it.
-1. **One object per carriageway run.** No two-point stub is drawn on its own.
+1. **One object per carriageway run** — no visible joint between consecutive chains of one carriageway.
 2. **Width derives from lane count and section.** No class constant survives, and a missing input is loud.
 3. **The block's edge equals the highway's edge**, as a distance check with a tolerance.
 4. **Side handedness:** the outside shoulder is on the driver's right.
