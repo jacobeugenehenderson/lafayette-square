@@ -72,36 +72,44 @@
       "title": "Highway Design Manual (HDM)",
       "publisher": "Caltrans",
       "jurisdiction": "CA",
-      "url": null,
+      "url": "https://dot.ca.gov/programs/design/manual-highway-design-manual-hdm",
       "covers": [
         "roadway design",
         "typical sections"
       ],
       "terms": {
-        "aiUse": "unchecked",
-        "checkedOn": null,
-        "note": "Not yet looked up."
+        "aiUse": "public-domain-stated — awaiting Jacob",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Boz (fetched the page)",
+        "quote": "In general, information presented on this website, unless otherwise indicated, is considered in the public domain. It may be distributed or copied as permitted by law.",
+        "exception": "Caltrans uses some third-party copyrighted material (e.g. photographs) needing the owner's permission — skip anything credited to a third party.",
+        "source": "https://dot.ca.gov/conditions-of-use"
       },
-      "status": "CANDIDATE — URL and terms owed",
-      "localCopy": null
+      "status": "RECOMMENDED PERMITTED — explicit public-domain statement",
+      "localCopy": null,
+      "edition": "7th Edition, combined chapters updated 2025-08-08"
     },
     {
       "id": "massdot-design-guide",
-      "title": "MassDOT Project Development & Design Guide (and Engineering Directives)",
+      "title": "MassDOT Highway Division — Project Development and Design Guide (PDDG), Active Update Edition",
       "publisher": "MassDOT",
       "jurisdiction": "MA",
-      "url": null,
+      "url": "https://www.mass.gov/manual/massdot-project-development-and-design-guide",
       "covers": [
         "roadway design",
         "typical sections"
       ],
       "terms": {
-        "aiUse": "unchecked",
-        "checkedOn": null,
-        "note": "Not yet looked up; confirm the current edition."
+        "aiUse": "public-record-stated — awaiting Jacob",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Boz (web search; the Mass.gov Terms of Use page 403'd to fetch — Jacob to verify on the page)",
+        "quote": "All material posted on the Commonwealth's websites and available to the public without authentication is public record, and most of this public record can be copied and used for any purpose. … Mass.Gov uses materials copyrighted by third parties, which cannot be copied or used for anything other than \"fair use\" without permission from the copyright owner.",
+        "source": "https://www.mass.gov/massgov-terms-of-use",
+        "note": "The PDDG update was prepared with a consultant (Kittelson & Associates) for MassDOT; check the chapter pages for any third-party copyright notice before reading a figure."
       },
-      "status": "CANDIDATE — URL, edition and terms owed",
-      "localCopy": null
+      "status": "RECOMMENDED PERMITTED — verify the quote on the page (fetch was blocked)",
+      "localCopy": null,
+      "edition": "Active Update Edition, required for all projects from 2024-10-21; web chapters progressively replacing the 2006 edition"
     },
     {
       "id": "mutcd-11r1",
@@ -347,7 +355,7 @@
       "neededBy": "altadena",
       "status": "open",
       "nextSources": [
-        "caltrans-hdm — URL and terms owed"
+        "caltrans-hdm — terms found (public domain stated); awaiting Jacob"
       ]
     },
     {
@@ -356,7 +364,7 @@
       "neededBy": "Provincetown + 3 Outer Cape towns",
       "status": "open",
       "nextSources": [
-        "massdot-design-guide — URL, edition and terms owed"
+        "massdot-design-guide — terms found (public record stated); awaiting Jacob"
       ]
     }
   ],
