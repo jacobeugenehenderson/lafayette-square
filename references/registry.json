@@ -534,11 +534,14 @@
       "id": "q-highway-smoothing",
       "ask": "How much is a highway centreline smoothed, and must it match ①?",
       "neededBy": "H-3 (one edge)",
-      "status": "open",
+      "status": "answered",
       "codeSites": [
         "src/lib/tileGround.js WIDE_SPACING = 1.5 + smoothChain on gradeSep — licensed by 'no curb to fold', a licence the one-edge ruling removes"
       ],
-      "notes": "Unanchored constant. The plan: no separate smoothing; one geometry (the skeleton's flattened segments)."
+      "notes": "Answered by the SSoT ruling: no consumer-side smoothing — the highway draws the skeleton's flattened segments, the same geometry ① reads. Combed when the build retires WIDE_SPACING and a check holds it.",
+      "findings": [
+        "r-ssot-skeleton-geometry"
+      ]
     },
     {
       "id": "q-closed-loop-stroke",
@@ -589,6 +592,18 @@
         "r-cap-round-treelawn-wraps"
       ],
       "canon": "SECTION §6.3, §1 (cap wrap)"
+    },
+    {
+      "id": "q-freeway-lane-count-default",
+      "ask": "How many lanes does a freeway carriageway get when OSM carries no lanes tag?",
+      "neededBy": "H-3 highway build (the 'fails loudly' case: altadena 14 of 34 tagged)",
+      "status": "answered",
+      "findings": [
+        "d-motorway-untagged-two-lanes"
+      ],
+      "codeSites": [
+        "cartograph/skeleton.js seedSection (nLanes default = oneway ? 1 : 2)"
+      ]
     }
   ],
   "findings": [
@@ -773,6 +788,41 @@
       "date": "2026-07-22",
       "quote": "a round dead-end keeps the treelawn wrapping the cap; a blunt cap goes all-SW",
       "canon": "SECTION §1 table (cap wrap) · §3 step 3"
+    },
+    {
+      "id": "f-interstate-min-lanes",
+      "question": "q-freeway-lane-count-default",
+      "kind": "value",
+      "value": {
+        "minLanesEachDirection": 2
+      },
+      "source": "fhwa-interstate-design",
+      "where": "page text",
+      "quote": "a minimum of two travel lanes in each direction",
+      "scope": "Interstate System",
+      "foundOn": "2026-09-23",
+      "foundBy": "Boz; verified on the live page by Grader"
+    },
+    {
+      "id": "d-motorway-untagged-two-lanes",
+      "question": "q-freeway-lane-count-default",
+      "kind": "derived",
+      "from": [
+        "f-interstate-min-lanes"
+      ],
+      "derivation": "the stated Interstate minimum applied as the ASSUMED count for an untagged freeway carriageway; stamped ASSUMED and printed per highway by id",
+      "quote": "-",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader (plan), recorded by Boz"
+    },
+    {
+      "id": "r-ssot-skeleton-geometry",
+      "question": "q-highway-smoothing",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-06",
+      "quote": "All data should skew to SSoT. The skeleton should simplify and make ironclad and foolproof.",
+      "canon": "ORIENTATION step 2 · SKELETON §0.1 — every downstream consumer takes the simplified skeleton geometry"
     }
   ]
 }
