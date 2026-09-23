@@ -248,6 +248,7 @@ scratch/.rev-probe/
 scratch/.lab-probe/
 scratch/.arc-probe/
 scratch/.ramp-probe/
+scratch/.naip-spike/
 scratch/_snapshots/
 
 # ⛔⛔ THE WHOLE BAKED TREE IS UNTRACKED AS OF 2026-09-01 — IT LIVES IN R2.

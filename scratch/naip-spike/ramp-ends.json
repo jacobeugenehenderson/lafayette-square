@@ -1,0 +1,227 @@
+[
+ {
+  "ramp": "south-18th-street-1,south-18th-street-10",
+  "x": 367.41,
+  "z": 266.03,
+  "lat": 38.61360333333333,
+  "lon": -90.2118658976191,
+  "streets": [
+   "South 18th Street"
+  ]
+ },
+ {
+  "ramp": "south-18th-street-1,motorway-link-38",
+  "x": 356.09,
+  "z": 322.7,
+  "lat": 38.61309279279279,
+  "lon": -90.21199635144167,
+  "streets": [
+   "South 18th Street"
+  ]
+ },
+ {
+  "ramp": "south-18th-street-10",
+  "x": 369.78,
+  "z": 250.67,
+  "lat": 38.61374171171171,
+  "lon": -90.21183858529052,
+  "streets": [
+   "Lafayette Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-2",
+  "x": 219.06,
+  "z": 879.25,
+  "lat": 38.60807882882883,
+  "lon": -90.21357551109779,
+  "streets": [
+   "Gravois Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-16",
+  "x": 407.15,
+  "z": 268.25,
+  "lat": 38.61358333333333,
+  "lon": -90.21140792633737,
+  "streets": [
+   "Lafayette Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-23",
+  "x": 678.41,
+  "z": 611.55,
+  "lat": 38.61049054054054,
+  "lon": -90.2082818747551,
+  "streets": [
+   "South Tucker Boulevard"
+  ]
+ },
+ {
+  "ramp": "motorway-link-30",
+  "x": 1149.82,
+  "z": -842.92,
+  "lat": 38.62359387387387,
+  "lon": -90.20284925668979,
+  "streets": [
+   "South 14th Street"
+  ]
+ },
+ {
+  "ramp": "motorway-link-31",
+  "x": -470.13,
+  "z": 342.68,
+  "lat": 38.61291279279279,
+  "lon": -90.22151786710305,
+  "streets": [
+   "South Jefferson Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-32",
+  "x": -427.72,
+  "z": 181.03,
+  "lat": 38.6143690990991,
+  "lon": -90.22102912623596,
+  "streets": [
+   "South Jefferson Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-33",
+  "x": -442.3,
+  "z": 178.52,
+  "lat": 38.61439171171171,
+  "lon": -90.22119714891556,
+  "streets": [
+   "South Jefferson Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-35",
+  "x": 631.35,
+  "z": 706.38,
+  "lat": 38.60963621621622,
+  "lon": -90.20882420310231,
+  "streets": [
+   "South 12th Street",
+   "Geyer Avenue",
+   "primary_link 36"
+  ]
+ },
+ {
+  "ramp": "motorway-link-47",
+  "x": 481.91,
+  "z": 272.07,
+  "lat": 38.613548918918916,
+  "lon": -90.21054637794731,
+  "streets": [
+   "Lafayette Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-48",
+  "x": 593.81,
+  "z": 289.28,
+  "lat": 38.613393873873875,
+  "lon": -90.20925682116763,
+  "streets": [
+   "Lafayette Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-51,motorway-link-64",
+  "x": -467.1,
+  "z": 311.87,
+  "lat": 38.61319036036036,
+  "lon": -90.22148294880955,
+  "streets": [
+   "South Jefferson Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-55",
+  "x": -450.5,
+  "z": 215.74,
+  "lat": 38.61405639639639,
+  "lon": -90.2212916472676,
+  "streets": [
+   "South Jefferson Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-60",
+  "x": 549.72,
+  "z": 282,
+  "lat": 38.613459459459456,
+  "lon": -90.20976492267269,
+  "streets": [
+   "Lafayette Avenue",
+   "Truman Parkway"
+  ]
+ },
+ {
+  "ramp": "motorway-link-62",
+  "x": 196.6,
+  "z": -1139.81,
+  "lat": 38.62626855855856,
+  "lon": -90.21383434438887,
+  "streets": [
+   "South 22nd Street"
+  ]
+ },
+ {
+  "ramp": "motorway-link-63",
+  "x": -439.33,
+  "z": 320.85,
+  "lat": 38.61310945945946,
+  "lon": -90.22116292207343,
+  "streets": [
+   "Geyer Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-64",
+  "x": -445.43,
+  "z": 297.35,
+  "lat": 38.61332117117117,
+  "lon": -90.22123321962799,
+  "streets": [
+   "South Jefferson Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-65",
+  "x": -432.53,
+  "z": 219.25,
+  "lat": 38.61402477477478,
+  "lon": -90.22108455758637,
+  "streets": [
+   "South Jefferson Avenue"
+  ]
+ },
+ {
+  "ramp": "motorway-link-66",
+  "x": 360.36,
+  "z": 848.15,
+  "lat": 38.60835900900901,
+  "lon": -90.21194714315348,
+  "streets": [
+   "Russell Boulevard",
+   "primary_link 39"
+  ]
+ },
+ {
+  "ramp": "motorway-link-69",
+  "x": 536.43,
+  "z": 279.95,
+  "lat": 38.613477927927924,
+  "lon": -90.20991807914812,
+  "streets": [
+   "Lafayette Avenue",
+   "Truman Parkway"
+  ]
+ }
+]
