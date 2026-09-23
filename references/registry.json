@@ -136,8 +136,73 @@
         "approvedBy": "Jacob, 2026-09-23"
       },
       "status": "PERMITTED — skip anything credited to a third party; the Mass.gov quote came via search (fetch blocked) — confirm it on the page if it is ever questioned",
-      "localCopy": null,
-      "edition": "Active Update Edition, required for all projects from 2024-10-21; web chapters progressively replacing the 2006 edition"
+      "localCopy": "references/files/massdot-pddg/",
+      "edition": "Active Update Edition, required for all projects from 2024-10-21; web chapters progressively replacing the 2006 edition",
+      "localCopyFiles": [
+        {
+          "file": "references/files/massdot-pddg/ch03.pdf",
+          "was": "PDDG Chapter 3 - Basic Design Controls _ Mass.gov.pdf",
+          "edition": "Active Update web chapter — Chrome print 2026-09-23 (83 pp.)",
+          "sha256": "8737179cecee79773ca5c1f77cd6081042289d3adc2a7f164ce4dec977005aed",
+          "printDefect": "right-hand column CLIPPED around Figures 3-5/3-6 (pedestrian spatial needs): e.g. \"may require eve\", \"an area of 8 sq\" — re-save to recover"
+        },
+        {
+          "file": "references/files/massdot-pddg/ch05.pdf",
+          "was": "PDDG Chapter 5 Cross-Section & Roadside Elements Mass.gov.pdf",
+          "edition": "2006 EDITION (January 2006; Acrobat PDF, titled \"2006 Project Development and Design Guide - Chapter 5\") — NOT an Active Update chapter",
+          "sha256": "be26dfb34dbb809227ef86a16f5dfa3a83937123c0c656b135f390723f7c50e1"
+        },
+        {
+          "file": "references/files/massdot-pddg/ch06.pdf",
+          "was": "PDDG Chapter 6 - Intersections _ Mass.gov.pdf",
+          "edition": "Active Update web chapter — Chrome print 2026-09-23 (94 pp.)",
+          "sha256": "db8e98cea73f77abd5b7d9dd72a4540a1f3f32e31ee4b94365093007250b0915"
+        },
+        {
+          "file": "references/files/massdot-pddg/ch07.pdf",
+          "was": "PDDG Chapter 7 - Interchanges _ Mass.gov.pdf",
+          "edition": "Active Update web chapter — Chrome print 2026-09-23 (96 pp.)",
+          "sha256": "717d4737b016f02200e8c97944e19d1964a790fcf0f19db19a82d7ab26905051"
+        },
+        {
+          "file": "references/files/massdot-pddg/ch13.pdf",
+          "was": "PDDG Chapter 13 - Landscape Design _ Mass.gov.pdf",
+          "edition": "Active Update web chapter — Chrome print 2026-09-23 (45 pp.)",
+          "sha256": "322fdb748ad891118868c6b20c1a22823f7a8c284ff62a4d63242ec7c68561a2"
+        }
+      ],
+      "access": "mass.gov returns 403 to a non-browser client; Jacob downloaded the chapters by hand 2026-09-23. Quire renamed them into references/files/massdot-pddg/ (originals recorded as `was`).",
+      "extracted": {
+        "on": "2026-09-23",
+        "by": "Quire",
+        "read": [
+          "Ch 3 (§3.3 pedestrian spatial needs, §3.8)",
+          "Ch 5 2006 (§5.3 design elements, §5.5 medians/curbs)",
+          "Ch 6 (§6.2, §6.7 geometric design elements)",
+          "Ch 7 (§7.6 gore, §7.7 ramp cross section)",
+          "Ch 13 (§13.4 street trees, median and island plantings)"
+        ],
+        "notRead": "Ch 5 §5.6 roadside barriers/clear zones, Ch 6 §6.3–6.6 and §6.8 (vehicles, control, performance, spacing), Ch 7 §7.2–7.5 (warrants, types, lane balance), Ch 13 planting selection — not kit topics. No figure was read (image-only in the prints).",
+        "notInHand": [
+          "Ch 16 Speed Management (curb extensions, crossing islands — Ch 5/6 defer there)",
+          "MassDOT Guidelines for the Planning and Design of Roundabouts (roundabouts + their landscaping, §5.7)",
+          "Engineering Directive E-20-001 (controlling criteria)",
+          "MassDOT Construction Standard Details (curb sections, curb ramps)",
+          "Ch 15 Access Management (driveways)"
+        ],
+        "note": "Third-party figures are credited per figure in the prints (AASHTO, NCHRP, NACTO, GDCI, TAC, ITE, CNU, TRB) and were not read; MassDOT-credited figures are image-only."
+      },
+      "aashtoPassages": [
+        "Ch 5 Exhibits 5-7, 5-8 — sidewalk clear path and shy distances (AASHTO pedestrian guide 2004)",
+        "Ch 5 Exhibits 5-11, 5-12, 5-15 — shoulder widths by function and by area/roadway type; median functions (AASHTO Flexibility in Highway Design 2004)",
+        "Ch 5 Exhibits 5-13, 5-14, 5-16 — usable shoulder, lane widths by area/roadway type, curb heights (adapted from the Green Book 2004); Exhibit 5-12 note 1 defers left-shoulder guidance to the Green Book",
+        "Ch 6 Figures 6-4, 6-7 to 6-12, 6-14 — design-vehicle dimensions (Green Book 2018)",
+        "Ch 6 Figure 6-24 + Table 6-3 — corner curve-and-taper radii/offsets by design vehicle and turn angle (Table 6-3 carries no source line but is the figure's table; the figure is adapted from the Green Book 2004) — EXCLUDED, flagged for Jacob",
+        "Ch 6 Figures 6-27 to 6-31, Tables 6-4 to 6-6 — deceleration lengths, left-turn storage and warrants, auxiliary through lanes (Green Book); storage equations deferred to Green Book Ch 9",
+        "Ch 6 Figures 6-32 to 6-36, Table 6-7 — channelization island layouts, minimum island detail, divisional islands, median openings (Green Book 2018)",
+        "Ch 6 Figure 6-37, Table 6-8 — intersection spacing (CNU / AASHTO 2005)",
+        "Ch 7 — most tables and figures (deceleration/acceleration lengths, grade adjustments, weaving, major forks, branch connections) sourced from the Green Book 2018 Ch 10; Figures 7-26/7-27 from the AASHTO bike guide 2012; clear-zone widths deferred to the AASHTO Roadside Design Guide"
+      ]
     },
     {
       "id": "mutcd-11r1",
@@ -371,16 +436,18 @@
       "status": "answered",
       "tried": [
         "fhwa-interstate-design (not stated)",
-        "caltrans-hdm → f-caltrans-freeway-shoulders-by-lanes"
+        "caltrans-hdm → f-caltrans-freeway-shoulders-by-lanes",
+        "massdot-design-guide → f-massdot-freeway-section"
       ],
       "nextSources": [
         "state manuals (see q-state-manual-*)"
       ],
       "findings": [
         "d-left-shoulder-any-lane-count",
-        "f-caltrans-freeway-shoulders-by-lanes"
+        "f-caltrans-freeway-shoulders-by-lanes",
+        "f-massdot-freeway-section"
       ],
-      "notes": "Answered by DERIVATION only (no code states a 3+-lane rule): FHWA's 4 ft carries no lane-count condition. A state manual's own lane-count rule would supersede it — Quire's extraction may find one. ⸻ Caltrans (CA only, Quire 2026-09-23): YES by lane count — left shoulder 5 ft at 4 lanes total, 10 ft at 6+ lanes total (Table 302.1, both directions). This answers for CA; for MO/OH/MA the derivation d-left-shoulder-any-lane-count still stands."
+      "notes": "Answered by DERIVATION only (no code states a 3+-lane rule): FHWA's 4 ft carries no lane-count condition. A state manual's own lane-count rule would supersede it — Quire's extraction may find one. ⸻ Caltrans (CA only, Quire 2026-09-23): YES by lane count — left shoulder 5 ft at 4 lanes total, 10 ft at 6+ lanes total (Table 302.1, both directions). This answers for CA; for MO/OH/MA the derivation d-left-shoulder-any-lane-count still stands. ⸻ MassDOT (MA only, Quire 2026-09-23): YES — left shoulder 4 ft (8 desirable) on four-lane freeways, 10 ft on six-or-more-lane freeways (2006 Ch 5 §5.3.4.1). MA and CA agree on the 6+ step; the derivation still governs MO/OH."
     },
     {
       "id": "q-ramp-section",
@@ -389,7 +456,8 @@
       "status": "open",
       "tried": [
         "fhwa-interstate-design (ramps not covered)",
-        "caltrans-hdm → f-caltrans-ramp-lane-width, f-caltrans-ramp-shoulders, f-caltrans-connector-shoulders"
+        "caltrans-hdm → f-caltrans-ramp-lane-width, f-caltrans-ramp-shoulders, f-caltrans-connector-shoulders",
+        "massdot-design-guide → f-massdot-ramp-width"
       ],
       "nextSources": [
         "FHWA Interchange Design Promptlist (Missouri field office) — add as a source and clear its terms"
@@ -397,9 +465,10 @@
       "findings": [
         "f-caltrans-ramp-lane-width",
         "f-caltrans-ramp-shoulders",
-        "f-caltrans-connector-shoulders"
+        "f-caltrans-connector-shoulders",
+        "f-massdot-ramp-width"
       ],
-      "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): 12 ft lane (widened by radius, Table 504.3), shoulders 4 ft left / 8 ft right, connectors 5/10. Left open: the other states are not answered, and a CA value can only reach them as a derived value."
+      "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): 12 ft lane (widened by radius, Table 504.3), shoulders 4 ft left / 8 ft right, connectors 5/10. Left open: the other states are not answered, and a CA value can only reach them as a derived value. ⸻ MassDOT (MA only): total ramp width 22 ft one-lane / 30 ft two-lane; lateral clearance ≥ 6 ft right (8–10 preferred), ≥ 4 ft left. The lane/shoulder split is in image-only figures."
     },
     {
       "id": "q-island-min-size",
@@ -409,16 +478,19 @@
       "tried": [
         "mutcd-11r1 → f-mutcd-island-criteria-deferred",
         "fhwa-sa-13-027 → f-sa13027-island-raised-or-flush (no threshold; its numeric island rules are AASHTO-attributed, excluded)",
-        "caltrans-hdm → f-caltrans-island-min-size, f-caltrans-island-raised-or-painted"
+        "caltrans-hdm → f-caltrans-island-min-size, f-caltrans-island-raised-or-painted",
+        "massdot-design-guide → f-massdot-island-min-size, f-massdot-island-raised-or-flush"
       ],
       "nextSources": [
         "caltrans-hdm (PERMITTED)",
         "massdot-design-guide (PERMITTED)"
       ],
-      "notes": "No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means. ⸻ Caltrans (CA): a FLOOR for any channelizing island (50 sq ft, preferably 75) but NO size at which raised becomes paint — its raised-vs-painted choice is keyed to posted speed (> 40 mph: curbs discouraged) and setting (rural: paint). The question as asked stays open.",
+      "notes": "No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means. ⸻ Caltrans (CA): a FLOOR for any channelizing island (50 sq ft, preferably 75) but NO size at which raised becomes paint — its raised-vs-painted choice is keyed to posted speed (> 40 mph: curbs discouraged) and setting (rural: paint). The question as asked stays open. ⸻ MassDOT (MA): floors of 50 sq ft urban / 100 sq ft rural with a side ≥ 15 ft, linear islands ≥ 2 ft wide — but again NO size at which raised becomes flush; raised is \"ideal\", flush \"less preferably\" and never a refuge. Open as asked, in both CA and MA.",
       "findings": [
         "f-caltrans-island-min-size",
-        "f-caltrans-island-raised-or-painted"
+        "f-caltrans-island-raised-or-painted",
+        "f-massdot-island-min-size",
+        "f-massdot-island-raised-or-flush"
       ]
     },
     {
@@ -428,11 +500,13 @@
       "status": "answered",
       "findings": [
         "f-mutcd-island-means",
-        "f-caltrans-island-raised-or-painted"
+        "f-caltrans-island-raised-or-painted",
+        "f-massdot-island-raised-or-flush"
       ],
       "notes": "Both are compliant; the kit's choice (v1: raised) is ours, not the standard's.",
       "tried": [
-        "caltrans-hdm → f-caltrans-island-raised-or-painted"
+        "caltrans-hdm → f-caltrans-island-raised-or-painted",
+        "massdot-design-guide → f-massdot-island-raised-or-flush"
       ]
     },
     {
@@ -442,10 +516,12 @@
       "status": "answered",
       "findings": [
         "f-mutcd-gore-neutral-area",
-        "f-caltrans-gore-contrasting-surface"
+        "f-caltrans-gore-contrasting-surface",
+        "f-massdot-gore-area"
       ],
       "tried": [
-        "caltrans-hdm → f-caltrans-gore-contrasting-surface"
+        "caltrans-hdm → f-caltrans-gore-contrasting-surface",
+        "massdot-design-guide → f-massdot-gore-area"
       ]
     },
     {
@@ -455,13 +531,15 @@
       "status": "open",
       "tried": [
         "mutcd-11r1 (distinguishes them; does not locate the physical gore)",
-        "caltrans-hdm → f-caltrans-exit-nose-position, f-caltrans-inlet-nose-position"
+        "caltrans-hdm → f-caltrans-exit-nose-position, f-caltrans-inlet-nose-position",
+        "massdot-design-guide → f-massdot-ramp-terminal-widths"
       ],
       "findings": [
         "f-caltrans-exit-nose-position",
-        "f-caltrans-inlet-nose-position"
+        "f-caltrans-inlet-nose-position",
+        "f-massdot-ramp-terminal-widths"
       ],
-      "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): the exit nose sits at the 23-ft separation point between diverging edges of traveled way (may move downstream, paved width ≤ 20 ft); the entrance inlet nose at the 14-ft point. Left open for MO/OH/MA."
+      "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): the exit nose sits at the 23-ft separation point between diverging edges of traveled way (may move downstream, paved width ≤ 20 ft); the entrance inlet nose at the 14-ft point. Left open for MO/OH/MA. ⸻ MassDOT (MA): the text does NOT locate the nose — it gives the 25-ft exit width held to the nose and the 14-ft entrance width at convergence; nose dimensions are in image-only Figures 7-28–7-33. Still open for MA."
     },
     {
       "id": "q-refuge-width",
@@ -470,15 +548,17 @@
       "status": "open",
       "tried": [
         "mutcd-11r1 §3C.12 (defers to ADA)",
-        "caltrans-hdm → f-caltrans-refuge-width"
+        "caltrans-hdm → f-caltrans-refuge-width",
+        "massdot-design-guide → f-massdot-refuge-island"
       ],
       "nextSources": [
         "ada-2010-standards"
       ],
       "findings": [
-        "f-caltrans-refuge-width"
+        "f-caltrans-refuge-width",
+        "f-massdot-refuge-island"
       ],
-      "notes": "ANSWERED FOR CA ONLY: 6 ft in the direction of travel, \"without exception\" (Index 405.4(3))."
+      "notes": "ANSWERED FOR CA ONLY: 6 ft in the direction of travel, \"without exception\" (Index 405.4(3)). ⸻ MassDOT (MA): 7 ft in the direction of travel, 5 ft clear width — attributed to PROWAG (itself permitted; read it directly to answer for all states)."
     },
     {
       "id": "q-roundabout-geometry",
@@ -492,12 +572,14 @@
       "findings": [
         "f-caltrans-roundabout-defers",
         "f-caltrans-roundabout-icd",
-        "f-caltrans-splitter-island"
+        "f-caltrans-splitter-island",
+        "f-massdot-roundabout-defers"
       ],
       "tried": [
-        "caltrans-hdm → f-caltrans-roundabout-defers, f-caltrans-roundabout-icd, f-caltrans-splitter-island"
+        "caltrans-hdm → f-caltrans-roundabout-defers, f-caltrans-roundabout-icd, f-caltrans-splitter-island",
+        "massdot-design-guide → f-massdot-roundabout-defers"
       ],
-      "notes": "Caltrans (CA only) states typical ICD ranges and splitter-island minimums in its own voice; for CA roundabouts those are citable. The design method remains NCHRP 672 (blocked). Other states stay blocked."
+      "notes": "Caltrans (CA only) states typical ICD ranges and splitter-island minimums in its own voice; for CA roundabouts those are citable. The design method remains NCHRP 672 (blocked). Other states stay blocked. ⸻ MassDOT: defers to its own Guidelines for the Planning and Design of Roundabouts — a MassDOT document, likely under the same Mass.gov terms; not yet in the registry."
     },
     {
       "id": "q-state-manual-MO",
@@ -532,10 +614,16 @@
       "id": "q-state-manual-MA",
       "ask": "A usable Massachusetts design manual",
       "neededBy": "Provincetown + 3 Outer Cape towns",
-      "status": "open",
+      "status": "answered",
       "nextSources": [
         "massdot-design-guide (PERMITTED)"
-      ]
+      ],
+      "findings": [
+        "f-massdot-freeway-section",
+        "f-massdot-sidewalk-width",
+        "f-massdot-island-min-size"
+      ],
+      "notes": "massdot-design-guide is permitted; Ch 3, 5 (2006), 6, 7, 13 downloaded by Jacob and extracted by topic (Quire, 2026-09-23): every f-massdot-* finding. Missing chapters/companion documents are listed on the source under extracted.notInHand."
     },
     {
       "id": "q-osm-line-placement",
@@ -566,15 +654,18 @@
       "status": "open",
       "tried": [
         "OSM-FORENSICS Part 4 attributes it to PROWAG/NACTO — not yet read under this registry",
-        "caltrans-hdm → f-caltrans-sidewalk-width"
+        "caltrans-hdm → f-caltrans-sidewalk-width",
+        "massdot-design-guide → f-massdot-sidewalk-width, f-massdot-walkway-widths"
       ],
       "nextSources": [
         "prowag-2023 (PERMITTED)"
       ],
       "findings": [
-        "f-caltrans-sidewalk-width"
+        "f-caltrans-sidewalk-width",
+        "f-massdot-sidewalk-width",
+        "f-massdot-walkway-widths"
       ],
-      "notes": "ANSWERED FOR CA ONLY: 6 ft at the curb, 5 ft behind a planting strip, 8 ft on main streets; excludes curb (Index 105.2)."
+      "notes": "ANSWERED FOR CA ONLY: 6 ft at the curb, 5 ft behind a planting strip, 8 ft on main streets; excludes curb (Index 105.2). ⸻ ANSWERED FOR MA ONLY (2006 Ch 5): 5 ft minimum excluding curb; unbuffered curb-attached 6 ft residential / 8 ft commercial."
     },
     {
       "id": "q-treelawn-default",
@@ -583,16 +674,19 @@
       "status": "open",
       "tried": [
         "OSM-FORENSICS Part 4 attributes it to NACTO [P]",
-        "caltrans-hdm → f-caltrans-planting-strip-defers"
+        "caltrans-hdm → f-caltrans-planting-strip-defers",
+        "massdot-design-guide → f-massdot-buffer-width, f-massdot-planting-strip-trees"
       ],
       "nextSources": [
         "nacto-usdg (terms owed)",
         "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
       ],
       "findings": [
-        "f-caltrans-planting-strip-defers"
+        "f-caltrans-planting-strip-defers",
+        "f-massdot-buffer-width",
+        "f-massdot-planting-strip-trees"
       ],
-      "notes": "Caltrans: names a planting strip, states no width — defers to local agencies."
+      "notes": "Caltrans: names a planting strip, states no width — defers to local agencies. ⸻ ANSWERED FOR MA ONLY: landscape buffers commonly 2–6 ft, preferably ≥ 5 ft (2006 Ch 5); strips < 3.5 ft too narrow for street trees, aim for ≥ 6 ft (Ch 13)."
     },
     {
       "id": "q-curb-width",
@@ -603,12 +697,14 @@
         "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
       ],
       "findings": [
-        "f-caltrans-curb-width-defers"
+        "f-caltrans-curb-width-defers",
+        "f-massdot-curb-width"
       ],
       "tried": [
-        "caltrans-hdm → f-caltrans-curb-width-defers"
+        "caltrans-hdm → f-caltrans-curb-width-defers",
+        "massdot-design-guide → f-massdot-curb-width"
       ],
-      "notes": "Caltrans HDM: curb HEIGHTS only (f-caltrans-curb-heights); the width is in the Standard Plans, which are not in this registry."
+      "notes": "Caltrans HDM: curb HEIGHTS only (f-caltrans-curb-heights); the width is in the Standard Plans, which are not in this registry. ⸻ ANSWERED FOR MA ONLY: curbs \"typically 6 inches wide\" (Ch 6, in passing)."
     },
     {
       "id": "q-highway-model",
@@ -729,13 +825,16 @@
       "nextSources": [
         "massdot-design-guide (Quire's extraction, topic 3: cul-de-sacs)"
       ],
-      "notes": "Real-world expectation (not a finding): a turning-circle island is curbed planting, not walked. Codes first — no ruling until the manuals are read.",
+      "notes": "Real-world expectation (not a finding): a turning-circle island is curbed planting, not walked. Codes first — no ruling until the manuals are read. ⸻ MassDOT (MA): no cul-de-sac content in Ch 3/5/6/7/13; local roads defer to municipal standards. Nearest statement: urban median/ISLAND planting needs ≥ 10 ft of soil for trees, ≥ 6 ft for shrubs (Ch 13). Still open.",
       "findings": [
         "f-caltrans-culdesac-island-silent",
-        "f-caltrans-small-unpaved-islands"
+        "f-caltrans-small-unpaved-islands",
+        "f-massdot-local-roads-municipal",
+        "f-massdot-island-planting"
       ],
       "tried": [
-        "caltrans-hdm → f-caltrans-culdesac-island-silent, f-caltrans-small-unpaved-islands (no cul-de-sac island guidance)"
+        "caltrans-hdm → f-caltrans-culdesac-island-silent, f-caltrans-small-unpaved-islands (no cul-de-sac island guidance)",
+        "massdot-design-guide → f-massdot-local-roads-municipal, f-massdot-island-planting"
       ]
     }
   ],
@@ -1847,6 +1946,566 @@
       "where": "Index 405.4(2)(c)",
       "quote": "Unpaved areas (small unpaved areas should be avoided).",
       "scope": "CA intersection traffic islands — NOT stated for cul-de-sac islands; the nearest statement the HDM makes"
+    },
+    {
+      "id": "f-massdot-freeway-section",
+      "topic": "highway cross-section",
+      "question": "q-freeway-inside-shoulder-3plus",
+      "kind": "value",
+      "value": {
+        "lane_ft": 12,
+        "rightShoulder_ft": 10,
+        "rightShoulderIfTrucksBusesOver250perHr_ft": 12,
+        "4-lane": {
+          "leftShoulder_ft": 4,
+          "leftShoulderDesirable_ft": 8
+        },
+        "6+ lanes": {
+          "leftShoulder_ft": 10
+        },
+        "leftShoulderIfTrucksBusesOver250perHr_ft": 12,
+        "barrierOffset_ft": 2
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.4.1 Freeways",
+      "quote": "Along the left side of four-lane freeways, 4-foot shoulders should be provided and 8-foot shoulders are desirable. On six (or more) lane freeways, 10-foot left shoulders should be provided.",
+      "scope": "MA freeways; lane counts are the freeway total (\"four-lane\", \"six (or more) lane\"). Right side: \"Along the right side of freeways, 10-foot shoulders should be provided.\"",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-ramp-width",
+      "topic": "highway cross-section",
+      "question": "q-ramp-section",
+      "kind": "value",
+      "value": {
+        "oneLaneRampWidth_ft": 22,
+        "twoLaneRampWidth_ft": 30,
+        "rightLateralClearance_ft": {
+          "min": 6,
+          "preferred": [
+            8,
+            10
+          ]
+        },
+        "leftLateralClearance_ft": 4
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 7 (Active Update web chapter) — §7.7 Ramp Design — Cross Section",
+      "quote": "Ramp Width: The typical width is 22 ft for one-lane ramps and 30 ft for two-lane ramps. … Ramps should have a lateral clearance on the right outside of the edge of traveled way of at least 6 ft and preferably 8-to-10 feet, and a lateral clearance on the left of at least 4 ft beyond the edge of the traveled way.",
+      "scope": "MA freeway ramps; the text gives the total ramp width, and the lane/shoulder split is only in Figures 7-22/7-23 (images)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-ramp-terminal-widths",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "exitDivergeWidth_ft": 25,
+        "heldUntil": "gore nose",
+        "thenTransitionTo_ft": 22,
+        "transitionRate": "12:1",
+        "entranceConvergeWidth_ft": 14
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 7 (Active Update web chapter) — §7.7 Ramp Design — Cross Section",
+      "quote": "Exit Ramp Entrance Width: Where the through lane and exit ramp diverge, the typical width will be 25 ft. This width will be maintained until the gore nose is reached and transitioned to the standard 22 ft width at approximately a 12:1 rate.",
+      "scope": "MA freeway ramps; entrance: \"The standard 22-ft width will be transitioned to 14-ft width at the convergence with the through lane\"",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-raised-median",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "minTotal_ft": 6,
+        "minRaised_ft": 4,
+        "minOffset_ft": 1,
+        "desirable_ft": [
+          8,
+          10
+        ],
+        "desirableRefuge_ft": 6,
+        "withLeftTurnLane_ft": 18,
+        "landscaping_ft": [
+          10,
+          18
+        ]
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.5.1.1 Raised Medians",
+      "quote": "The minimum total width of the raised median should be 6 feet which allows for a 4-foot raised area with a 1-foot offset between the outside edge of the raised area and the travel lane.",
+      "scope": "MA arterials, collectors and local roads, design speed ≤ 45 mph",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-flush-median-twlt",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "flushMedianForLeftTurn_ft": [
+          12,
+          16
+        ],
+        "twltl_ft": [
+          12,
+          16
+        ],
+        "twltlAt30to45mph_ft": 14,
+        "twltlMaxDesignSpeed_mph": 45
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.5.1.2 Flush Medians",
+      "quote": "Lane widths between 12 and 16 feet are suitable for TWLT lanes. On roadways with high volumes, or moderate to high speeds (30 to 45 miles per hour) a 14-foot TWLT lane should be provided.",
+      "scope": "MA",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-depressed-median",
+      "topic": "highway cross-section",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "minWidth_ft": 60
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.5.1.3 Depressed Medians",
+      "quote": "A depressed median is normally a minimum of 60 feet wide, which accommodates most clear zone requirements (see Section 5.6) and allows for two 4-foot left shoulders, 1v:6h or flatter slopes, a 3-foot wide ditch bottom and a 3-foot ditch depth.",
+      "scope": "MA freeways and high-speed multilane arterials",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-gore-area",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-gore-treatment",
+      "kind": "rule",
+      "value": {
+        "gore": [
+          "paved triangular area between through lane and exit lane",
+          "unpaved graded area beyond the gore nose"
+        ],
+        "pavedGoreCrossSlope_pct": 3
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 7 (Active Update web chapter) — §7.6 Freeway/Ramp Junctions — Gore Area; Superelevation",
+      "quote": "Thegore area is normally considered to be both the paved triangular area between the through lane and the exit lane and the unpaved graded area that extends downstream beyond the gore nose.",
+      "scope": "MA freeway exits (the print joins \"The gore\" as \"Thegore\"); the text does not locate the nose — its dimensions are in the standard ramp Figures 7-28 to 7-33, image-only",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-island-min-size",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-island-min-size",
+      "kind": "value",
+      "value": {
+        "triangularMinArea_sqft": {
+          "urban": 50,
+          "rural": 100
+        },
+        "triangularMinSide_ft": 15,
+        "linearMinWidth_ft": 2,
+        "linearWithSignsMinWidth_ft": 4,
+        "linearMinLength_ft": 25
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 6 (Active Update web chapter) — §6.7 Geometric Design Elements — Channelization Islands",
+      "quote": "Triangular islands should be a minimum of 50 square feet in surface area in urban areas and 100 square feet in surface area in rural areas with one side at least 15 feet in length. … Linear islands should be at least 2 feet wide. If they contain signs, they should be at least 4 feet wide.",
+      "scope": "MA channelization islands. Stated in MassDOT's own voice; the adjacent Figures 6-32/6-34 are AASHTO-sourced (excluded). A floor for ANY island, raised or flush; no size at which raised becomes flush",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-island-raised-or-flush",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-island-curbed-or-painted",
+      "kind": "rule",
+      "value": {
+        "preferred": "raised, curb height 3–6 in",
+        "lessPreferred": "flush",
+        "flushIsRefuge": false
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 6 (Active Update web chapter) — §6.7 — Channelization Islands",
+      "quote": "Ideally, channelization islands are raised above pavement level, typically to curb heights between 3 and 6 inches. Raised islands have the ability to serve as a pedestrian refuge if sized appropriately. Less preferably, they may be flush with the pavement level; however, flush islands cannot provide pedestrian refuge.",
+      "scope": "MA channelization islands — raised is preferred and flush is the lesser option; no size threshold between them",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-island-offset",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "islandEdgeOffsetFromTravelLane_ft": 2
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 6 (Active Update web chapter) — §6.7 — Right-Turn Channelization Islands",
+      "quote": "Channelization islands should be set back two feet from the edge of travel lane to accommodate errant road users and snowplow blades.",
+      "scope": "MA",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-corner-truck-apron",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "range",
+      "value": {
+        "apronWidth_ft": [
+          5,
+          15
+        ],
+        "raise_in": [
+          2,
+          3
+        ],
+        "crossSlope_pct": [
+          1,
+          2
+        ],
+        "frontCurb": "mountable",
+        "backCurb": "vertical (to sidewalk)"
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 6 (Active Update web chapter) — §6.7 — Corner Truck Aprons",
+      "quote": "Recommended corner truck apron widths should be between 5 to 15 feet.",
+      "scope": "MA intersection corners, sized by swept path",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-corner-radius-method",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "preferred": "simple single radius sized for the design vehicle",
+        "controlVehicle": "by encroachment and truck apron, not by growing the radius"
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 6 (Active Update web chapter) — §6.7 — Pavement Corner Radius Configurations",
+      "quote": "In most settings, a single radius is the preferred design for the pavement corner.",
+      "scope": "MA; numeric radius/taper values (Table 6-3) are excluded — see aashtoPassages",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-local-roads-municipal",
+      "topic": "cul-de-sacs and turnarounds",
+      "question": "q-culdesac-island-treatment",
+      "kind": "defers",
+      "value": null,
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.4.4 Local Roads",
+      "quote": "Local roads are generally constructed to comply with municipal requirements.",
+      "scope": "MA — none of Ch 3, 5, 6, 7, 13 mentions a cul-de-sac, turnaround or turning circle; local roads (where courts live) defer to municipal standards",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-island-planting",
+      "topic": "cul-de-sacs and turnarounds",
+      "question": "q-culdesac-island-treatment",
+      "kind": "value",
+      "value": {
+        "maxDesignSpeed_mph": 45,
+        "soilWidthForTrees_ft": 10,
+        "soilWidthForShrubs_ft": 6,
+        "shrubMaxHeight_ft": 3,
+        "pavedApronBehindCurb_in": [
+          18,
+          24
+        ],
+        "needsLocalMaintenanceCommitment": true
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 13 (Active Update web chapter) — §13.4 — Median and Island Plantings in Urban Areas",
+      "quote": "From a horticultural standpoint, soil cross section for planted medians should be at least 10 feet for trees, 6 feet for shrubs.",
+      "scope": "MA urban medians AND islands (\"Occasionally communities desire median or island plantings\"); not stated for cul-de-sac islands specifically. \"Median plantings in urban areas should be limited to areas where design speeds are less than 45 mph\"",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-landscaped-median-width",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "landscapedMedianUsualMin_ft": 10
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.5.1.5 — Collectors and Local Roads",
+      "quote": "Medians in these circumstances are usually at least 10 feet wide to improve the health of the landscaping and to facilitate its maintenance.",
+      "scope": "MA collectors and local roads",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-roundabout-defers",
+      "topic": "roundabouts",
+      "question": "q-roundabout-geometry",
+      "kind": "defers",
+      "value": null,
+      "source": "massdot-design-guide",
+      "where": "Ch 6 (Active Update web chapter) — §6.7 — Roundabout Geometric Design Elements",
+      "quote": "Planning and design of roundabouts is detailed in MassDOT’s Guidelines for the Planning and Design of Roundabouts",
+      "scope": "MA — a separate MassDOT document (not yet in this registry); Ch 13 also defers roundabout landscaping to its §5.7",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-sidewalk-width",
+      "topic": "pedestrian realm",
+      "question": "q-sidewalk-default",
+      "kind": "value",
+      "value": {
+        "min_ft": 5,
+        "minIncludingCurb_ft": 5.5,
+        "clearPathMin_ft": 3,
+        "unbufferedDesirable_ft": {
+          "residential": 6,
+          "commercial": 8
+        },
+        "townCenterUrbanPreferred_ft": [
+          6,
+          12
+        ]
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.1.1 Sidewalks and Buffers",
+      "quote": "The minimum width for a sidewalk is 5 feet excluding the width of the curb, although a 3 foot clear width (plus the width of the curb) is sufficient to bypass occasional obstructions, as illustrated in Exhibit 5-7. … If the sidewalk is not buffered from motor vehicle traffic, then the desirable total width for a curb-attached sidewalk is 6 feet in residential areas and 8 feet in commercial areas.",
+      "scope": "MA (2006 edition; Exhibit 5-7 itself is AASHTO-sourced and excluded)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-walkway-widths",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "singleFile_ft": 3,
+        "passing_ft": 5,
+        "twoAbreastDesirable_ft": 6
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 3 (Active Update web chapter) — §3.3 Roadway Users — pedestrian spatial needs",
+      "quote": "A walkway that is at least 5 feet wide and clear of obstructions is required to allow passing clearance.",
+      "scope": "MA",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-buffer-width",
+      "topic": "pedestrian realm",
+      "question": "q-treelawn-default",
+      "kind": "range",
+      "value": {
+        "commonLandscapeBuffer_ft": [
+          2,
+          6
+        ],
+        "preferredMin_ft": 5
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.1.1 Sidewalks and Buffers (text + margin note)",
+      "quote": "Common widths of landscape buffer are between 2 and 6 feet, although larger buffers are possible. … As such, it is preferable that such buffers be at least 5 feet wide.",
+      "scope": "MA (2006 edition)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-planting-strip-trees",
+      "topic": "pedestrian realm",
+      "question": "q-treelawn-default",
+      "kind": "value",
+      "value": {
+        "tooNarrowForStreetTreesBelow_ft": 3.5,
+        "aimForBuffer_ft": 6,
+        "trunkBehindCurbFace_ft": 1.5
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 13 (Active Update web chapter) — §13.4 — Back-of-Curb Planting",
+      "quote": "In general, planting strips less than 3.5 feet wide are too narrow for typical street trees species. … As recommended by urban forestry practices, aim for a buffer of at least 6 feet, preferably more.",
+      "scope": "MA back-of-curb tree planting",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-curb-width",
+      "topic": "pedestrian realm",
+      "question": "q-curb-width",
+      "kind": "value",
+      "value": {
+        "curbWidthTypical_in": 6
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 6 (Active Update web chapter) — §6.7 — Channelization Islands (refuge dimensions)",
+      "quote": "The detectable warning surfaces are typically set at the back of curbs, which are typically 6 inches wide on either side.",
+      "scope": "MA — stated in passing while sizing an island refuge; the only curb-width statement in these chapters",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-curb-heights",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "barrierCurb_in": [
+          6,
+          8
+        ],
+        "typicalRoadwayCurb_in": 6,
+        "bridgeCurb_in": 8,
+        "slopedEdgingOnIslandsAbove_mph": 45,
+        "verticalOnCrossingIslands": true
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.5.3 Curbs, Berms and Edging",
+      "quote": "Barrier curbs range in height from 6-to-8 inches with a batter of 15:1 or steeper. Six inch curbs are typically used along roadways.",
+      "scope": "MA; Exhibit 5-16 (curb heights table) is AASHTO-adapted and excluded",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-refuge-island",
+      "topic": "pedestrian realm",
+      "question": "q-refuge-width",
+      "kind": "value",
+      "value": {
+        "depthInPedTravel_ft": 7,
+        "clearWidth_ft": 5,
+        "maxSlope_pct": 1.5,
+        "leftTurnDelineatorRefugeMin_ft": 6
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 6 (Active Update web chapter) — §6.7 — Channelization Islands; Left-Turn Lane Delineator Islands",
+      "quote": "They must be at least 7 feet wide in the direction of pedestrian travel to provide space for 2-foot-wide detectable warning surfaces with a 2-foot minimum gap between them.",
+      "scope": "MA; the authority MassDOT gives is PROWAG (\"to meet PROWAG requirements\"), itself a permitted source",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-curb-extension",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "maxExtensionFromCurb_ft": 6
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.3.2 On-Street Parking",
+      "quote": "Curb extensions should extend no further than 6 feet from the curb (see Chapter 16 for details).",
+      "scope": "MA; only with active curb-side uses (parking, transit)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-lane-widths",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "range",
+      "value": {
+        "normalRange_ft": [
+          10,
+          12
+        ],
+        "arterialsMajorCollectors_ft": [
+          11,
+          12
+        ],
+        "below10_ft": "local roads and some minor collectors only",
+        "below9_ft": "generally not recommended",
+        "wideLane_ft": [
+          12,
+          14
+        ]
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.3.3 Travel Lanes; §5.3.4.2",
+      "quote": "The normal range of design lane width is between 10 and 12 feet. … Travel lanes narrower than 10 feet are only appropriate for local roadways and some minor collectors with very low traffic volumes and speeds. Lanes narrower than 9 feet are generally not recommended.",
+      "scope": "MA (2006 edition; Exhibit 5-14 is AASHTO-adapted and excluded)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-arterial-shoulders",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "range",
+      "value": {
+        "minRecommended_ft": 4,
+        "desirable_ft": [
+          6,
+          8
+        ],
+        "highSpeedConsider_ft": 10
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.3.1 Shoulders; §5.3.4.2",
+      "quote": "Minimum 4-foot shoulders are recommended for all arterials and collectors because of the value they provide for bicycle and pedestrian (particularly in rural areas) accommodation, and motor vehicle safety.",
+      "scope": "MA arterials and collectors; \"Shoulders do not include on-street parking\"",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-parking-lane",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "min_ft": 7,
+        "highTurnover_ft": 8,
+        "trucksBuses_ft": 10,
+        "max_ft": 12,
+        "notAboveDesignSpeed_mph": 45
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.3.2 On-Street Parking",
+      "quote": "Parallel on-street parking requires a minimum of 7 feet of paved cross-section in addition to the required travel lane width and should not be permitted where this width is not available.",
+      "scope": "MA",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-curb-lane-plus-shoulder",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "min_ft": 14,
+        "minorCollectorShared_ft": 12
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.3.4.2 Arterials and Major Collectors",
+      "quote": "In most cases, the designer should provide a combined shoulder plus curb lane dimension of at least 14 feet so that motor vehicles can pass bicycles without changing lanes or swerving.",
+      "scope": "MA arterials and major collectors",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-massdot-controlling-criteria-defers",
+      "topic": "street cross-section by class",
+      "question": null,
+      "kind": "defers",
+      "value": null,
+      "source": "massdot-design-guide",
+      "where": "Ch 3 (Active Update web chapter) — §3.8 Controlling Criteria",
+      "quote": "MassDOT’s Controlling Criteria are described in Engineering Directive E-20-001",
+      "scope": "MA — the minimum-requirement values (lane width, shoulder width, pedestrian facilities…) live in E-20-001, not in these chapters",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
     }
   ]
 }
