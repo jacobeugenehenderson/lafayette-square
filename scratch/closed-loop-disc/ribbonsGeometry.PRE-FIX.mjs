@@ -1,3 +1,4 @@
+// ⛔ FROZEN COPY of src/lib/ribbonsGeometry.js as it stood BEFORE the closed-loop hole fix (2026-09-23) — the baseline for clip-neutrality*.mjs. Never import from src.
 /**
  * ribbonsGeometry.js — bake-time stencil clipping + canonical land-use
  * palette.
@@ -71,48 +72,46 @@ export function clipAllToStencil(byMaterial, byFaceUse, stencilPolygon) {
     const out = []
     for (const item of rings) {
       if (!item) continue
-      // ⛔⛔ A BARE RING GOES THROUGH THE PolyTree TOO — it used to be clipped into a flat
-      // `Paths` and every path pushed as a bare ring, which cannot say which one is a HOLE.
-      // A polyline buffered by `polylineToRing` along a CLOSED line (a turning-circle stripe,
-      // a fence around a yard) is an ANNULUS: the clip returns its outer edge AND its inner
-      // edge, and both triangulated SOLID — the yellow disc at every Huron court and on the
-      // US 6 roundabout (2026-09-23, `checks/claims-a-closed-stripe-keeps-its-hole.mjs`).
-      // ⭐ NonZero on the bare subject, as before: the buffered ring self-overlaps at its seam
-      // and at sharp bends, and EvenOdd would punch those overlaps out. A hole-free result is
-      // still pushed as a bare ring, so every open line comes out exactly as it did.
-      const bare = Array.isArray(item)
-      const subj = new Paths()
-      if (bare) {
+      if (Array.isArray(item)) {
         if (item.length < 3) continue
-        subj.push(item.map(toClipper))
+        const c = new Clipper()
+        c.AddPath(item.map(toClipper), PolyType.ptSubject, true)
+        c.AddPath(stencilC,            PolyType.ptClip,    true)
+        const sol = new Paths()
+        c.Execute(ClipType.ctIntersection, sol, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+        for (const path of sol) {
+          const w = toWorld(path)
+          if (w.length >= 3) out.push(w)
+        }
       } else if (item.outer && item.outer.length >= 3) {
+        const subj = new Paths()
         subj.push(item.outer.map(toClipper))
         for (const h of (item.holes || [])) {
           if (h.length >= 3) subj.push(h.map(toClipper))
         }
-      } else continue
-      const c = new Clipper()
-      c.AddPaths(subj,    PolyType.ptSubject, true)
-      c.AddPath(stencilC, PolyType.ptClip,    true)
-      const tree = new PolyTree()
-      c.Execute(ClipType.ctIntersection, tree, bare ? PolyFillType.pftNonZero : PolyFillType.pftEvenOdd, PolyFillType.pftNonZero)
-      const stack = tree.Childs().slice()
-      while (stack.length) {
-        const node = stack.shift()
-        if (!node.IsHole()) {
-          const outer = toWorld(node.Contour())
-          if (outer.length < 3) { for (const c2 of node.Childs()) stack.push(c2); continue }
-          const holes = []
-          for (const child of node.Childs()) {
-            if (child.IsHole()) {
-              const h = toWorld(child.Contour())
-              if (h.length >= 3) holes.push(h)
-              for (const gc of child.Childs()) stack.push(gc)
+        const c = new Clipper()
+        c.AddPaths(subj,    PolyType.ptSubject, true)
+        c.AddPath(stencilC, PolyType.ptClip,    true)
+        const tree = new PolyTree()
+        c.Execute(ClipType.ctIntersection, tree, PolyFillType.pftEvenOdd, PolyFillType.pftNonZero)
+        const stack = tree.Childs().slice()
+        while (stack.length) {
+          const node = stack.shift()
+          if (!node.IsHole()) {
+            const outer = toWorld(node.Contour())
+            if (outer.length < 3) { for (const c2 of node.Childs()) stack.push(c2); continue }
+            const holes = []
+            for (const child of node.Childs()) {
+              if (child.IsHole()) {
+                const h = toWorld(child.Contour())
+                if (h.length >= 3) holes.push(h)
+                for (const gc of child.Childs()) stack.push(gc)
+              }
             }
+            out.push({ outer, holes })
+          } else {
+            for (const c2 of node.Childs()) stack.push(c2)
           }
-          out.push(bare && !holes.length ? outer : { outer, holes })
-        } else {
-          for (const c2 of node.Childs()) stack.push(c2)
         }
       }
     }
