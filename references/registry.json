@@ -727,10 +727,16 @@
         "the ②/Section fill on a tiny ① island (a band wider than the island fills it) — tileGround sectionPass; not the bake"
       ],
       "nextSources": [
-        "caltrans-hdm",
         "massdot-design-guide (Quire's extraction, topic 3: cul-de-sacs)"
       ],
-      "notes": "Real-world expectation (not a finding): a turning-circle island is curbed planting, not walked. Codes first — no ruling until the manuals are read."
+      "notes": "Real-world expectation (not a finding): a turning-circle island is curbed planting, not walked. Codes first — no ruling until the manuals are read.",
+      "findings": [
+        "f-caltrans-culdesac-island-silent",
+        "f-caltrans-small-unpaved-islands"
+      ],
+      "tried": [
+        "caltrans-hdm → f-caltrans-culdesac-island-silent, f-caltrans-small-unpaved-islands (no cul-de-sac island guidance)"
+      ]
     }
   ],
   "findings": [
@@ -1808,6 +1814,39 @@
       "scope": "CA — local street cross-sections are not the HDM's; they defer to local agency standards (and, on the NHS, to AASHTO — excluded, rule 5)",
       "foundOn": "2026-09-23",
       "foundBy": "Quire"
+    },
+    {
+      "id": "f-caltrans-culdesac-island-silent",
+      "source": "caltrans-hdm",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire",
+      "topic": "cul-de-sacs and turnarounds",
+      "question": "q-culdesac-island-treatment",
+      "kind": "defers",
+      "value": null,
+      "where": "Index 62.3(8); Topic 405 (islands); Index 308.1",
+      "quote": "Cul-de-Sac Street--A local street open at one end only, with special provisions for turning around.",
+      "scope": "CA — the HDM says nothing about a turning circle's central island (treatment, surface or size); local streets defer to locally adopted standards (Index 308.1)"
+    },
+    {
+      "id": "f-caltrans-small-unpaved-islands",
+      "source": "caltrans-hdm",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire",
+      "topic": "cul-de-sacs and turnarounds",
+      "question": "q-culdesac-island-treatment",
+      "kind": "rule",
+      "value": {
+        "islandMeans": [
+          "raised, curbed",
+          "flush, markings",
+          "unpaved"
+        ],
+        "smallUnpaved": "avoid"
+      },
+      "where": "Index 405.4(2)(c)",
+      "quote": "Unpaved areas (small unpaved areas should be avoided).",
+      "scope": "CA intersection traffic islands — NOT stated for cul-de-sac islands; the nearest statement the HDM makes"
     }
   ]
 }
