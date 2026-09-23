@@ -81,8 +81,14 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // ⭐ Seeded from the slab so two towns do not wear the same rocks and a re-bake
   // does not reshuffle a shore the operator has already looked at.
   const palette = useMemo(() => (doc ? boulderPalette({ seed: doc.seed }) : null), [doc])
-  const material = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
-  useEffect(() => () => material.dispose(), [material])
+  // ⛔ `makeRevetmentMaterial` returns `{ material, uniforms }`, NOT a bare material.
+  // Treating it as one threw on unmount (`material.dispose is not a function`), React
+  // tore the component down through its error boundary, and the shore rendered
+  // nothing — with the artifact loaded and every station correct. ⭐ It failed on the
+  // CLEANUP path, so the first frame looked fine and the failure only appeared once
+  // something remounted: a stone wall that is missing for no visible reason.
+  const { material } = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
+  useEffect(() => () => material.dispose?.(), [material])
   useEffect(() => () => { palette?.forEach(g => g.dispose()) }, [palette])
 
   // ── the buildable faces, and their chunk lattices ──────────────────────────
