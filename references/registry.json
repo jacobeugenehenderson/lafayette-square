@@ -456,7 +456,7 @@
       "id": "q-osm-line-placement",
       "ask": "Where in a carriageway's section does the OSM way run (centre of the travel lanes?)",
       "neededBy": "H-3 — every drawn highway half-width",
-      "status": "open",
+      "status": "answered",
       "candidateMeasurement": {
         "verdict": "OSM line = centre of the travel lanes; shoulders outside it",
         "by": "Grader, 2026-09-23",
@@ -464,10 +464,11 @@
         "command": "arborist/.venv/bin/python scratch/h3-aerial-centreline.py <town> <x> <z> <halfM> <out.png>",
         "sites": "5, halfM 70: huron -750 2350 (SR 2 divided, deck) · huron -1300 -500 (SR 2 at grade) · lafayette-square -470 255 (I-44 deck over Tucker) · lafayette-square 560 640 (I-55/Ozark) · lafayette-square 337 356 (18th×Lafayette ramps); the first two were run on control points and should be re-run on flattened geometry",
         "tolerance": "±1–2 m at grade (imagery registration); decks unresolvable (relief displacement)",
-        "whyNotAFinding": "It measured esri-world-imagery, whose terms are unchecked — a measurement is only a legitimate root if its INPUTS are permitted."
+        "whyNotAFinding": "It measured esri-world-imagery, whose terms are unchecked — a measurement is only a legitimate root if its INPUTS are permitted.",
+        "supersededBy": "m-osm-line-lane-centre (NAIP) — the ArcGIS run and scratch/h3-aerial-centreline.py are NOT to be cited"
       },
-      "nextSources": [
-        "re-run the same 5 sites on naip (PERMITTED; Albedo has LS tiles locally), flattened geometry, same tolerance"
+      "findings": [
+        "m-osm-line-lane-centre"
       ]
     },
     {
@@ -595,6 +596,26 @@
       "quote": "Channelizing islands can be raised or flush with the pavement. … Raised islands have been found to be more effective than flush painted islands at reducing nighttime collisions, because they are easier to see.",
       "foundOn": "2026-09-23",
       "foundBy": "Grader"
+    },
+    {
+      "id": "m-osm-line-lane-centre",
+      "question": "q-osm-line-placement",
+      "kind": "measured",
+      "value": {
+        "osmLineIs": "centre of the travel lanes (lane divider on a 2-lane carriageway); single-lane ramp line on the ramp centre; shoulders outside"
+      },
+      "command": "scratch/.naip-spike/.venv/bin/python scratch/h3-naip-centreline.py <town> <x> <z> 70 <out.png>",
+      "sites": "5 (huron 2, LS 3): huron -750 2350 · huron -1300 -500 · lafayette-square -470 255 · lafayette-square 560 640 · lafayette-square 337 356 — FLATTENED ribbons.json geometry",
+      "inputs": [
+        "naip"
+      ],
+      "flights": "oh_m_4108244_nw_17_030_20230526_20231018 & oh_m_4108236_sw_17_030_20230526_20231018 (2023-05-26); il_m_3809031_nw_15_030_20230818_20231031 (2023-08-18); gsd 0.3 m",
+      "method": "visual",
+      "tolerance": "±1–2 m RELATIVE (line vs pavement in one image) at grade; NAIP's absolute accuracy [U]; bridge decks excluded",
+      "quote": "(measured, not quoted — see command)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader",
+      "reproducibility": "⚠️ depends on the gitignored scratch/.naip-spike/.venv — no committed environment; the script itself is uncommitted until Jacob approves Grader's probe commit."
     }
   ]
 }
