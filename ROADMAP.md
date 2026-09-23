@@ -100,6 +100,7 @@
   - **Ruled:** scope = the `gradeSeparated` class first · *the roadway IS the positive object*, built as designed (alignment + typical section, lanes from the data), not by ①'s negative-space swap · **no authoring, no geometry access** — so a missing input **fails loudly** · no curb, no sidewalk on the highway.
   - ⭐ **Ruled — VERGE (2026-09-23):** land bounded **entirely** by highway (between carriageways, interchange infields) is **verge** — grass, no curb, no sidewalk, no LU choice. Land bounded **partly** by highway is a block with a **bare** highway-facing edge. ⚠️ **Unbuilt**, and it supersedes `PIPELINE §5`'s 2026-09-06 item for all-highway regions only (that item ended *holes*; a verge ends them too) — **amend `PIPELINE §5` when the build lands, not before.**
   - ⭐ **A THIRD SURFACE — the ramp-terminal concrete** *(Jacob, 2026-09-23: "never really gotten those streets right because it's all embedded in the concrete built environment that is neither street nor highway — the concrete the signal lights sit on")*. Paved island / channelisation: not street, highway, verge or block. OSM barely maps it (`area:highway=traffic_island`: LS 1 · HPDM 8 · huron 0), so it must be **derived** as the leftover between the highway object and the town's curbs at an at-grade terminal — ⛔ under the verge rule alone it would stay a *block*. Put to the plan brief as Q8 (by message). LS's South 18th stub sits in it.
+  - ⛔ **NAIP SPIKE: DON'T BUILD (2026-09-23, `c567b771`).** Off-the-shelf models on NAIP cannot see the ramp-end concrete: the Chesapeake paved model called **0.0–0.6%** of known-paved Jefferson highway paved; the road model swung **11.8% → 54.4%** by flight; neither saw an island. Second day on zero-shot SAM **declined** (Jacob). ⇒ the third surface is **derived from geometry** (the plan's Q8), not from imagery. ▶ `scratch/naip-spike/`. The **AASHTO Green Book** ($342, declined 2026-06-01 on an LS-pedestrian rationale — `OSM-FORENSICS` Part 4) is re-proposed: the plan's freeway section values are **uncorroborated in the corpus**.
   - **LS's highways are a known source of visual bugs** — faked for now, ⛔ **owed this fix; the fake is not the finish.** Huron shows first; LS's highway defects are noted as the work passes, not chased.
   - ▶ **Next:** a graphics specialist hammers the plan brief → Jacob rules → a build brief. Nothing is off limits, but ① and the divided/median machinery are **not volunteered** unless the plan proves them germane. M · → `H-2`/`H-4` (water: the same "a boundary that is an object" shape).
 - **H-4 · ⭐⭐ THE PROTOPOLYGON WILL FAIL AT THE WATER'S EDGE — "because it itself is a polygon boundary."** *(Jacob, 2026-09-19.)* ⭐ **And his reading of the difficulty is the part to keep: this should be EASIER than a man-made feature, because a shoreline is absolute and permanent(ish) where a curb is authored and negotiable.** ⛔ Do not file this as a hard case; file it as the case ① was always going to have to meet. Gated on H-2 — but ⛔ **NOT where H-2 said any more: the water IS on disk** (Lake Erie, as a clipped relation ring, verified 2026-09-21). The remaining gate is H-2's CONSUMER half: nothing downstream of `ground.highway` can see a natural feature yet.
@@ -438,8 +439,7 @@
 
 - **⛔⛔ A19 · A NAMED FOOTPATH BECOMES A STREET AND BOUNDS CITY BLOCKS — the canon says it is pavement *inside* one.** *(NEW 2026-09-06, surfaced from the ① injection test; Jacob on the instance: "I have no idea what that is.")*
   **THE CANON IS NOT AMBIGUOUS.** `SKELETON §2` (`paths[]`): *"Non-vehicular **unnamed** ways
-  (footway/cycleway/steps/service) — Render pavement-only, **no measure authoring**."* `§3 step 7`:
-  *"Unnamed vehicular → streets with synthetic names. **Everything else → `paths[]`**."* And a path is
+  (footway/cycleway/steps/service) — Render pavement-only, **no measure authoring**."* And a path is
   stroked by `buildPathRibbons` **clipped to the parcel interior** (`ARCHITECTURE:142`, `BAKE §3`) —
   block − curb − treelawn − sidewalk. A footway is ink **inside** a block. It is not a block boundary
   and it takes no authoring.
@@ -467,7 +467,14 @@
     A way's **highway class** decides whether it is a street. A name does not make a service drive or a
     footway into a block-bounding street, and the ABSENCE of one does not stop a residential road being
     one — so the same rule closes both halves: the named footways here AND the unnamed public roads
-    (huron: 25 `residential` · 5 `primary` · 2 `tertiary` · 1 `unclassified`) dropped for want of a name. ⭐ **The 5 `primary` are US 6's expressway through the middle of Huron — the "highway withers into the grid" Jacob saw by eye on 2026-09-23** (`H-3`). ▶ **The unnamed half is briefed: `docs/briefs/BRIEF-class-decides-unnamed-roads.md`.** ⛔ **Found landing it (2026-09-23): the Bake re-derives streets for LS ONLY** (`serve.js` bake handler, `bakeScene === DEFAULT_MAP` gates `pipeline`+`promote-ribbons`), so huron's new chains reached `skeleton.json` and never `ribbons.json`/Survey. Fixed inside A19 with the scene's own paths (the dirty-check output is LS's `src/data/ribbons.json` — a trap) + a ribbons-not-older-than-skeleton check. ⛔ **Jacob's gate: building ids must not move** — registry sha + `msbfId`s + baked `id`s byte-identical before/after every pour. → `DOC-CODE-COHERENCE` B7 (reclassified).
+    dropped for want of a name.
+    - ✅ **UNNAMED HALF LANDED 2026-09-23, on Huron** — `skeleton.js` `STREET_CLASSES` decides; US 6's
+      expressway is drawn through the centre (Jacob's eye on huron: PENDING). Guards: `checks/claims-authored-skelids-keep-their-ways.mjs`
+      (a positional synthetic id is an authoring key — pre-A19 classes keep their numbers),
+      `claims-no-label-is-a-made-up-name.mjs` (`synthetic` is the one label filter) and
+      `claims-ribbons-are-not-older-than-the-skeleton.mjs` (the Bake now re-derives every OSM town, not LS only).
+      ⛔ **HELD, by Jacob's ruling: the LS and HPDM A19 pours** — pending `BRIEF-closed-loop-disc-forensic.md`
+      and a roundabout brief. HPDM goes from 0 roundabouts drawn to ~24, 21 of them unwelded split pieces.
     ⭐⭐ **READ THE PARENTHESIS — IT LANDS ON THIS DOC.** This line used to read *"the fix is not mine to
     pick… it wants Jacob's ruling before a line is written."* **It was never owed.** Layer 0 answers it
     outright — it is a kit, handle the class — and a name gate is the instance-shaped answer by
