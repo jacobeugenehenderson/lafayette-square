@@ -1,13 +1,6 @@
 {
-  "_about": "The kit's external reference materials — design standards, manuals, datasets. ONE entry per source. The rules live in references/README.md. ⛔ No agent reads a source whose terms.aiUse is not 'permitted'.",
+  "_about": "The kit's external reference materials — design standards, manuals, datasets. ONE entry per source. The rules live in references/README.md. ⛔ No agent reads a source whose terms.aiUse is not 'permitted'. A town's state is DERIVED from its own geography — never listed here (a copy would drift as towns are added: MA Outer Cape ×4, OH ×3).",
   "version": 1,
-  "towns": {
-    "lafayette-square": "MO",
-    "hipointe-demun": "MO",
-    "huron": "OH",
-    "altadena": "CA",
-    "_MA": "Massachusetts — town not yet named in this registry"
-  },
   "sources": [
     {
       "id": "aashto-gdhs-7",
@@ -16,7 +9,12 @@
       "jurisdiction": "national (US)",
       "edition": "7th, 2018",
       "url": "https://store.transportation.org/Item/PublicationDetail?ID=4126",
-      "covers": ["lane/shoulder widths by class", "ramps", "interchanges", "channelising islands"],
+      "covers": [
+        "lane/shoulder widths by class",
+        "ramps",
+        "interchanges",
+        "channelising islands"
+      ],
       "terms": {
         "aiUse": "prohibited",
         "checkedOn": "2026-09-23",
@@ -32,7 +30,9 @@
       "publisher": "FHWA (US DOT)",
       "jurisdiction": "federal",
       "url": "https://highways.dot.gov/field-offices/missouri/interchange-design-promptlist",
-      "covers": ["Interstate minimums: 12 ft lanes, 10 ft right shoulder (as stated on FHWA pages)"],
+      "covers": [
+        "Interstate minimums: 12 ft lanes, 10 ft right shoulder (as stated on FHWA pages)"
+      ],
       "terms": {
         "aiUse": "unchecked",
         "checkedOn": null,
@@ -47,8 +47,18 @@
       "publisher": "Missouri DOT",
       "jurisdiction": "MO",
       "url": "https://epg.modot.org/index.php?title=Main_Page",
-      "covers": ["roadway design", "typical sections", "interchanges"],
-      "terms": { "aiUse": "unchecked", "checkedOn": null, "note": "Terms not found by search 2026-09-23; start at https://epg.modot.org/index.php/Engineering_Policy_Guide:About" },
+      "covers": [
+        "roadway design",
+        "typical sections",
+        "interchanges"
+      ],
+      "terms": {
+        "aiUse": "unchecked-no-terms-found",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Boz",
+        "note": "No copyright or terms-of-use text found on the EPG About or General_disclaimer pages; its Privacy_policy page 404'd; modot.org has public-records pages but no content-reuse terms. Absence of terms is NOT permission.",
+        "route": "Ask MoDOT in writing (Ask MoDOT 888-275-6636, listed on its public-records pages)."
+      },
       "status": "CANDIDATE",
       "localCopy": null
     },
@@ -57,9 +67,20 @@
       "title": "Location & Design Manual, Volume 1 — Roadway Design",
       "publisher": "Ohio DOT",
       "jurisdiction": "OH",
-      "url": "https://www.transportation.ohio.gov/working/publications/location-design-1",
-      "covers": ["roadway design", "typical sections", "interchanges"],
-      "terms": { "aiUse": "unchecked", "checkedOn": null, "note": "Publicly downloadable; no explicit AI or reuse terms found by search 2026-09-23." },
+      "url": "https://www.transportation.ohio.gov/",
+      "covers": [
+        "roadway design",
+        "typical sections",
+        "interchanges"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-pending-waiver",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Boz (web search; the policy page 404'd to fetch — Jacob to verify on the page)",
+        "quote": "Many, but not all, of the products and material [ODOT] produces are public records and are open for non-commercial reuse or duplication… Reuse of any and all material for commercial purposes is generally prohibited. Waivers… will be considered on a case-by-case basis… accreditation to ODOT… is requested.",
+        "source": "https://www.transportation.ohio.gov/help-center/privacy-notice-and-policies",
+        "route": "Request a written waiver from ODOT Division of Communications & External Affairs, describing the use."
+      },
       "status": "CANDIDATE",
       "localCopy": null
     },
@@ -69,8 +90,15 @@
       "publisher": "Caltrans",
       "jurisdiction": "CA",
       "url": null,
-      "covers": ["roadway design", "typical sections"],
-      "terms": { "aiUse": "unchecked", "checkedOn": null, "note": "Not yet looked up." },
+      "covers": [
+        "roadway design",
+        "typical sections"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": null,
+        "note": "Not yet looked up."
+      },
       "status": "CANDIDATE — URL and terms owed",
       "localCopy": null
     },
@@ -80,8 +108,15 @@
       "publisher": "MassDOT",
       "jurisdiction": "MA",
       "url": null,
-      "covers": ["roadway design", "typical sections"],
-      "terms": { "aiUse": "unchecked", "checkedOn": null, "note": "Not yet looked up; confirm the current edition." },
+      "covers": [
+        "roadway design",
+        "typical sections"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": null,
+        "note": "Not yet looked up; confirm the current edition."
+      },
       "status": "CANDIDATE — URL, edition and terms owed",
       "localCopy": null
     }
