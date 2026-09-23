@@ -1,9 +1,40 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
-written: 2026-09-21
-evict-when: node checks/claims-the-shadow-box-has-no-cliff.mjs && RULING: Jacob's eye on a near-level 360 sweep of huron — teeth gone, no flash, no visible shadow horizon
+status: SUPERSEDED 2026-09-22 — read the correction below before anything else
+dispatched: yes
+evict-when: H-24 closes; this brief's live remnant is `docs/briefs/BRIEF-texture-unit-headroom.md`
 -->
+
+# ⛔⛔ THIS BRIEF'S CENTRAL PREMISE WAS WRONG. READ THIS FIRST.
+
+> **It treated the TEETH and the FLASH as one defect** — *"the flash fix pinned the camera
+> to the worst row"*. They are unrelated, and that conflation cost a full day on 2026-09-22.
+
+- ⛔ **THE FLASH WAS NEVER SHADOWS.** It survived `castShadow = false` outright — no shadow
+  map, no frustum, no sampling matrix. Root: `light.position` has two writers and only one ran
+  every frame, so the sun shone from a direction nobody chose. Fixed `5a54ddbc`; see `H-16`.
+  ⭐ The operator's own observation is what found it: *"Sun-hit places are flashing, I don't
+  think the shadows are."* A wrong light DIRECTION re-shades lit surfaces and leaves
+  already-black shadows alone — no shadow-side hypothesis predicts that asymmetry.
+- ✅ **THE TEETH WERE ARITHMETIC, as §1 says**, and are fixed — but by an authored
+  **metres-per-texel cap**, not cascades. §5's "max shadow distance" alternative had the right
+  instinct and the wrong unit: 512 m is a third of LS and a seventh of huron.
+- ⛔ **CASCADES ARE BLOCKED**, and not on cost: 3 cascades = 3 extra fragment samplers on every
+  receiver ⇒ `MAX_TEXTURE_IMAGE_UNITS(16)` exceeded ⇒ the program does not link ⇒
+  **nothing draws**. ▶ **`BRIEF-texture-unit-headroom.md`** is the live successor.
+- ⚠️ **§3's frame-rate warning was aimed at the wrong thing too.** The frame rate was
+  9–13 FPS and it was the TREES — the hero impostor card was 800 tris ×3 layers = 42.18 M
+  tris/frame. The shadow pass costs **0.00 FPS** (measured: 77 full 4096² passes suppressed,
+  no change). See `H-9`.
+
+⭐ **WHAT STANDS:** §1's arithmetic (with the corrected 1.806 m/texel), §2's blast radius,
+and §3's two hard-won properties — texel-snapped focus and power-of-two buckets with
+hysteresis. ⚠️ **§5's "premises deliberately not established" was the most valuable
+section in the file and was under-read.** Everything it refused to assert turned out to be the
+thing that mattered.
+
+---
+
+*(Original brief follows, unedited, as the record of what was believed on 2026-09-21.)*
 
 # One shadow map cannot serve a 7 km town
 
