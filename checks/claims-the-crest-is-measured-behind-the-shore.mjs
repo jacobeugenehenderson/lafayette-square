@@ -61,17 +61,24 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
     // ⛔ A two-faced arc has no landward at all; the station IS its crest there, by
     // ruling. Excluded rather than counted as evidence either way.
     if ((arc.faces || []).length !== 1) continue
-    const sign = arc.faces[0] === 'right' ? 1 : -1
+    // ⛔⛔ THE CHECK DOES NOT USE THE WINDING CONVENTION AT ALL, AND THAT IS DELIBERATE.
+    // My first cut derived landward from `faces` with the same sign expression the baker
+    // used — and I had that sign inverted in BOTH. The check would have agreed with the
+    // bug and called probing INTO the water correct. ⭐ So it asks the ground instead:
+    // landward is, by definition, the HIGHER side. That is independent of any convention,
+    // so a sign error in bake-revetment has nowhere to hide.
     const st = arc.stations
     for (let i = 1; i < st.length - 1; i++) {
       const c = st[i].crest
       if (c == null || !Number.isFinite(c)) continue
       const tx = st[i+1].x - st[i-1].x, tz = st[i+1].z - st[i-1].z
       const m = Math.hypot(tx, tz); if (!m) continue
-      const nx = (-tz / m) * sign, nz = (tx / m) * sign
-      const hLand = heightAt(st[i].x + nx * gridM, st[i].z + nz * gridM)
+      const rx = -tz / m, rz = tx / m
+      const hR = heightAt(st[i].x + rx * gridM, st[i].z + rz * gridM)
+      const hL = heightAt(st[i].x - rx * gridM, st[i].z - rz * gridM)
       const hAt = heightAt(st[i].x, st[i].z)
-      if (!Number.isFinite(hLand) || !Number.isFinite(hAt)) continue
+      if (!Number.isFinite(hR) || !Number.isFinite(hL) || !Number.isFinite(hAt)) continue
+      const hLand = Math.max(hR, hL)   // the land is the high side; no convention needed
       // Only stations where the two readings actually DIFFER can discriminate.
       if (Math.abs(hLand - hAt) < 0.05) continue
       n++

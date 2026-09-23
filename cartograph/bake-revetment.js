@@ -196,7 +196,11 @@ export function bakeRevetment({ scene, look }) {
     // disarm the structure. There the station IS the crest, which is what it was always
     // measuring correctly.
     const CREST_PROBE_M = gridM
-    const landSign = wet.side === 'right' ? 1 : wet.side === 'left' ? -1 : 0
+    // ⛔⛔ SIGN, AND I HAD IT BACKWARDS ON THE FIRST CUT — caught only because the
+    // census moved the WRONG WAY (height-armoured stations 747 → 159 instead of up).
+    // wetSideOf names RIGHT of the walk as (-tz, tx). So water on the RIGHT means
+    // landward is the LEFT, and vice versa: the sign is the OPPOSITE of the side name.
+    const landSign = wet.side === 'right' ? -1 : wet.side === 'left' ? 1 : 0
     const stations = []
     for (let i = 0; i < path.length; i++) {
       const [x, z] = path[i]
