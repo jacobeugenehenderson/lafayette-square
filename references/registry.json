@@ -1,6 +1,6 @@
 {
-  "_about": "The kit's external reference materials — design standards, manuals, datasets. ONE entry per source. The rules live in references/README.md. ⛔ No agent reads a source whose terms.aiUse is not 'permitted'. A town's state is DERIVED from its own geography — never listed here (a copy would drift as towns are added: MA Outer Cape ×4, OH ×3).",
-  "version": 1,
+  "_about": "The kit's research database: SOURCES (what exists + its terms), QUESTIONS (what a design needs), FINDINGS (answers, each quoted from a PERMITTED source). Rules + how to dispatch research: references/README.md. Validate: node checks/claims-references-are-sound.mjs. A town's state is DERIVED from its own geography — never listed here.",
+  "version": 2,
   "sources": [
     {
       "id": "aashto-gdhs-7",
@@ -144,8 +144,9 @@
         "approvedBy": "Jacob, 2026-09-23 — presumed public domain (US Government work) accepted"
       },
       "status": "PERMITTED — read the report's own Notice page first; skip any figure credited to a third party",
-      "localCopy": "references/files/fhwa-sa-13-027.pdf (owed — manual download)",
-      "access": "⚠️ 2026-09-23: highways.dot.gov and safety.fhwa.dot.gov return 403 to a non-browser client — an agent cannot fetch it. Jacob downloads it by hand into references/files/fhwa-sa-13-027.pdf (gitignored); then agents read the local copy."
+      "localCopy": "references/files/fhwa-sa-13-027.pdf",
+      "localCopySha256": "c666c3ac6b7c30e6cc908512e220c213af10431b69c6cffb34ce735dcf6f2d55",
+      "access": "⚠️ 2026-09-23: highways.dot.gov and safety.fhwa.dot.gov return 403 to a non-browser client — an agent cannot fetch it. Jacob downloaded it by hand 2026-09-23 (323 pp., 8.9 MB) into references/files/fhwa-sa-13-027.pdf (gitignored); agents read the local copy."
     },
     {
       "id": "nchrp-672",
@@ -216,6 +217,228 @@
       },
       "status": "CANDIDATE",
       "localCopy": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-freeway-lane-width",
+      "ask": "Lane width on a freeway carriageway",
+      "neededBy": "ROADMAP H-3 highway build, ruling (e)",
+      "status": "answered",
+      "findings": [
+        "f-interstate-lane-width"
+      ],
+      "notes": "Interstate only; non-Interstate freeways use it as a disclosed assumption."
+    },
+    {
+      "id": "q-freeway-shoulders",
+      "ask": "Right (outside) and left (inside) paved shoulder widths on a freeway carriageway",
+      "neededBy": "H-3 ruling (e)",
+      "status": "answered",
+      "findings": [
+        "f-interstate-right-shoulder",
+        "f-interstate-left-shoulder"
+      ]
+    },
+    {
+      "id": "q-freeway-inside-shoulder-3plus",
+      "ask": "Is the inside shoulder wider on carriageways of 3+ lanes, and by how much?",
+      "neededBy": "H-3 ruling (e)",
+      "status": "open",
+      "tried": [
+        "fhwa-interstate-design (not stated)"
+      ],
+      "nextSources": [
+        "state manuals (see q-state-manual-*)"
+      ]
+    },
+    {
+      "id": "q-ramp-section",
+      "ask": "Ramp (motorway_link) lane width and shoulders, by lane count",
+      "neededBy": "H-3 ruling (e)",
+      "status": "open",
+      "tried": [
+        "fhwa-interstate-design (ramps not covered)"
+      ],
+      "nextSources": [
+        "FHWA Interchange Design Promptlist (Missouri field office) — add as a source and clear its terms"
+      ]
+    },
+    {
+      "id": "q-island-min-size",
+      "ask": "How small can a channelising leftover be before it is paint (a flush marked area) rather than a raised island?",
+      "neededBy": "H-3 Q8 (the third surface)",
+      "status": "open",
+      "tried": [
+        "mutcd-11r1 → f-mutcd-island-criteria-deferred"
+      ],
+      "nextSources": [
+        "fhwa-sa-13-027 (local copy present)"
+      ],
+      "notes": "MUTCD defers island sizes to AASHTO (prohibited). fhwa-sa-13-027 is now downloaded locally (2026-09-23) — the next source to read."
+    },
+    {
+      "id": "q-island-curbed-or-painted",
+      "ask": "May an island be raised (curbed) or painted?",
+      "neededBy": "H-3 Q8",
+      "status": "answered",
+      "findings": [
+        "f-mutcd-island-means"
+      ],
+      "notes": "Both are compliant; the kit's choice (v1: raised) is ours, not the standard's."
+    },
+    {
+      "id": "q-gore-treatment",
+      "ask": "What is the surface between a ramp and the mainline at a gore?",
+      "neededBy": "H-3 Q6/Q8",
+      "status": "answered",
+      "findings": [
+        "f-mutcd-gore-neutral-area"
+      ]
+    },
+    {
+      "id": "q-physical-gore-position",
+      "ask": "Where does the physical gore (nose) sit relative to the theoretical gore?",
+      "neededBy": "H-3 Q6",
+      "status": "open",
+      "tried": [
+        "mutcd-11r1 (distinguishes them; does not locate the physical gore)"
+      ]
+    },
+    {
+      "id": "q-refuge-width",
+      "ask": "Minimum width of a pedestrian refuge / island cut-through",
+      "neededBy": "H-3 Q8 (future ped path through islands)",
+      "status": "open",
+      "tried": [
+        "mutcd-11r1 §3C.12 (defers to ADA)"
+      ],
+      "nextSources": [
+        "ada-2010-standards"
+      ]
+    },
+    {
+      "id": "q-roundabout-geometry",
+      "ask": "Roundabout central-island, splitter-island and apron geometry",
+      "neededBy": "the roundabout brief (Huron primary-101 et al.)",
+      "status": "blocked",
+      "blockedBy": "nchrp-672/1043 needs CRP permission (commercial use).",
+      "nextSources": [
+        "FHWA's own roundabout pages — add and clear"
+      ]
+    },
+    {
+      "id": "q-state-manual-MO",
+      "ask": "A usable Missouri design manual (for state-specific sections)",
+      "neededBy": "LS, HPDM",
+      "status": "blocked",
+      "blockedBy": "modot-epg: no terms found — needs written permission."
+    },
+    {
+      "id": "q-state-manual-OH",
+      "ask": "A usable Ohio design manual",
+      "neededBy": "huron + 2 more OH towns",
+      "status": "blocked",
+      "blockedBy": "odot-ld1: commercial reuse needs a waiver."
+    },
+    {
+      "id": "q-state-manual-CA",
+      "ask": "A usable California design manual",
+      "neededBy": "altadena",
+      "status": "open",
+      "nextSources": [
+        "caltrans-hdm — URL and terms owed"
+      ]
+    },
+    {
+      "id": "q-state-manual-MA",
+      "ask": "A usable Massachusetts design manual",
+      "neededBy": "Provincetown + 3 Outer Cape towns",
+      "status": "open",
+      "nextSources": [
+        "massdot-design-guide — URL, edition and terms owed"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "f-interstate-lane-width",
+      "question": "q-freeway-lane-width",
+      "kind": "value",
+      "value": {
+        "laneWidth_ft": 12
+      },
+      "source": "fhwa-interstate-design",
+      "where": "page text",
+      "quote": "12-foot lane widths",
+      "scope": "Interstate System",
+      "foundOn": "2026-09-23",
+      "foundBy": "Boz; verified by Grader"
+    },
+    {
+      "id": "f-interstate-right-shoulder",
+      "question": "q-freeway-shoulders",
+      "kind": "value",
+      "value": {
+        "rightPavedShoulder_ft": 10
+      },
+      "source": "fhwa-interstate-design",
+      "where": "page text",
+      "quote": "10-foot right paved shoulder",
+      "scope": "Interstate System",
+      "foundOn": "2026-09-23",
+      "foundBy": "Boz; verified by Grader"
+    },
+    {
+      "id": "f-interstate-left-shoulder",
+      "question": "q-freeway-shoulders",
+      "kind": "value",
+      "value": {
+        "leftPavedShoulder_ft": 4
+      },
+      "source": "fhwa-interstate-design",
+      "where": "page text",
+      "quote": "4-foot left paved shoulder",
+      "scope": "Interstate System",
+      "foundOn": "2026-09-23",
+      "foundBy": "Boz; verified by Grader"
+    },
+    {
+      "id": "f-mutcd-island-criteria-deferred",
+      "question": "q-island-min-size",
+      "kind": "defers",
+      "value": null,
+      "source": "mutcd-11r1",
+      "where": "§3J.01 ¶01",
+      "quote": "(defers \"definitions, types, sizes, and other criteria for the design of islands\" to the AASHTO Green Book)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader"
+    },
+    {
+      "id": "f-mutcd-island-means",
+      "question": "q-island-curbed-or-painted",
+      "kind": "rule",
+      "value": {
+        "raisedOrPaintedBothCompliant": true
+      },
+      "source": "mutcd-11r1",
+      "where": "§3J.01 ¶04 (Option)",
+      "quote": "An island may be designated by curbs, pavement edges, pavement markings, channelizing devices, or other devices.",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader"
+    },
+    {
+      "id": "f-mutcd-gore-neutral-area",
+      "question": "q-gore-treatment",
+      "kind": "rule",
+      "value": {
+        "goreIsFlushNeutralArea": true
+      },
+      "source": "mutcd-11r1",
+      "where": "§3B.08 ¶05 (Standard)",
+      "quote": "For all exit ramps and for entrance ramps with parallel acceleration lanes, channelizing lines shall be placed on both sides of the neutral area.",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader"
     }
   ]
 }

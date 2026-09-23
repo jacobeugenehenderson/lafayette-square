@@ -12,6 +12,22 @@
 3. **Local copies stay out of git.** They go under `references/files/`, which is gitignored. The registry records the URL, the edition and where the local copy lives.
 4. **Every entry declares a jurisdiction.** When a town is added, check that its state has a manual here.
 
+## The database: three kinds of entry, one file
+
+- **`sources`** — what exists: publisher, jurisdiction, **terms**, access, local copy.
+- **`questions`** — what a design needs: the ask, who needs it, status **`open` / `answered` / `blocked`** (+ `blockedBy`), what was tried, where to look next.
+- **`findings`** — an answer: the value, **the source id, the section, a verbatim quote**, the date, who found it. A finding may only cite a `permitted` source. `kind: "defers"` records that a source points elsewhere — a negative result is a result.
+
+## Dispatching research
+
+A research brief is one line: ***"Answer the open `references/` questions needed by <design>."*** The agent:
+1. runs `node checks/claims-references-are-sound.mjs` — its bottom half is the **dispatch queue**;
+2. reads **only `permitted` sources** (a source that is `unchecked` gets its terms looked up and brought to Jacob to approve — never read first);
+3. writes a **finding** per answer (quote + section), sets the question's status, and lists what it tried when it cannot answer;
+4. re-runs the check, which must pass, and commits `references/registry.json` by pathspec.
+
+A design that uses a value carries the **finding id** into its output. A value with no finding is **[U]**.
+
 ## Status
 
-Read `registry.json`. As of creation: the Green Book is **prohibited**, and the FHWA, MoDOT, ODOT, Caltrans and MassDOT entries are **candidates with unchecked terms**.
+▶ `node checks/claims-references-are-sound.mjs` — never a count written here.
