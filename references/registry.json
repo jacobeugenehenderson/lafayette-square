@@ -149,12 +149,14 @@
         "checkedBy": "Boz",
         "note": "FHWA-sponsored report; FHWA reports are generally public domain, BUT they are often contractor-written and may embed copyrighted figures. Check the report's own Notice page before use. FHWA's copyright FAQ page returned 403 to fetch.",
         "source": "https://highways.dot.gov/fed-aid-essentials/disclaimer",
-        "approvedBy": "Jacob, 2026-09-23 — presumed public domain (US Government work) accepted"
+        "approvedBy": "Jacob, 2026-09-23 — presumed public domain (US Government work) accepted",
+        "noticePage": "Read by Grader 2026-09-23: the report's Notice page places no use restriction."
       },
       "status": "PERMITTED — read the report's own Notice page first; skip any figure credited to a third party",
       "localCopy": "references/files/fhwa-sa-13-027.pdf",
       "localCopySha256": "c666c3ac6b7c30e6cc908512e220c213af10431b69c6cffb34ce735dcf6f2d55",
-      "access": "⚠️ 2026-09-23: highways.dot.gov and safety.fhwa.dot.gov return 403 to a non-browser client — an agent cannot fetch it. Jacob downloaded it by hand 2026-09-23 (323 pp., 8.9 MB) into references/files/fhwa-sa-13-027.pdf (gitignored); agents read the local copy."
+      "access": "⚠️ 2026-09-23: highways.dot.gov and safety.fhwa.dot.gov return 403 to a non-browser client — an agent cannot fetch it. Jacob downloaded it by hand 2026-09-23 (323 pp., 8.9 MB) into references/files/fhwa-sa-13-027.pdf (gitignored); agents read the local copy.",
+      "aashtoPassages": "⛔ Contains numeric island/median rules attributed IN-TEXT to AASHTO — flush-median criteria (§8, p.8-5, ref 3), median-end shapes (ref 3, p.701), refuge widths 6/8/10 ft (ref 26, AASHTO bicycle guide). These inherit AASHTO's prohibition: never a finding."
     },
     {
       "id": "nchrp-672",
@@ -278,12 +280,13 @@
       "neededBy": "H-3 Q8 (the third surface)",
       "status": "open",
       "tried": [
-        "mutcd-11r1 → f-mutcd-island-criteria-deferred"
+        "mutcd-11r1 → f-mutcd-island-criteria-deferred",
+        "fhwa-sa-13-027 → f-sa13027-island-raised-or-flush (no threshold; its numeric island rules are AASHTO-attributed, excluded)"
       ],
       "nextSources": [
-        "fhwa-sa-13-027 (local copy present)"
+        "caltrans-hdm / massdot-design-guide once Jacob permits them — a state manual's OWN text (not an AASHTO-attributed passage)"
       ],
-      "notes": "MUTCD defers island sizes to AASHTO (prohibited). fhwa-sa-13-027 is now downloaded locally (2026-09-23) — the next source to read."
+      "notes": "No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means."
     },
     {
       "id": "q-island-curbed-or-painted",
@@ -445,6 +448,17 @@
       "source": "mutcd-11r1",
       "where": "§3B.08 ¶05 (Standard)",
       "quote": "For all exit ramps and for entrance ramps with parallel acceleration lanes, channelizing lines shall be placed on both sides of the neutral area.",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader"
+    },
+    {
+      "id": "f-sa13027-island-raised-or-flush",
+      "question": "q-island-min-size",
+      "kind": "no-threshold",
+      "value": null,
+      "source": "fhwa-sa-13-027",
+      "where": "§11.1.1 Key Design Features, p.11-20; Visibility, p.11-21",
+      "quote": "Channelizing islands can be raised or flush with the pavement. … Raised islands have been found to be more effective than flush painted islands at reducing nighttime collisions, because they are easier to see.",
       "foundOn": "2026-09-23",
       "foundBy": "Grader"
     }

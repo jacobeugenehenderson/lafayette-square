@@ -11,6 +11,7 @@
 2. **Cite the source the kit actually used.** A value drawn from a manual carries that source's `id` into the pour output. A value no one has cited is marked **[U]** and must never be presented as cited.
 3. **Local copies stay out of git.** They go under `references/files/`, which is gitignored. The registry records the URL, the edition and where the local copy lives.
 4. **Every entry declares a jurisdiction.** When a town is added, check that its state has a manual here.
+5. **⛔ AASHTO passages inside a permitted source stay prohibited.** A state or federal document that quotes or attributes a rule to AASHTO does not launder it — that passage is never a finding. Record it on the source as `aashtoPassages`. *(Grader, 2026-09-23, reading FHWA-SA-13-027.)*
 
 ## The database: three kinds of entry, one file
 
