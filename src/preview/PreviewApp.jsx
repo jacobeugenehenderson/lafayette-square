@@ -33,6 +33,7 @@ import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import BakedGround from '../components/BakedGround.jsx'
+import CascadedShadows, { CSM_ENABLED } from '../components/CascadedShadows.jsx'
 import { INSTANCE } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { sceneExag } from '../utils/terrainShader'
@@ -1128,6 +1129,17 @@ function Row({ k, v, warn }) {
   )
 }
 
+// Feeds CascadedShadows the SAME key vector CelestialBodies publishes — never re-derived.
+function CascadedShadowsDriver() {
+  const keyDirection = useSkyState(st => st.keyDirection)
+  const keyColor = useSkyState(st => st.keyColor)
+  // Intensity comes from the light CelestialBodies zeroed, so the rig is the same
+  // key at the same strength — never a second derivation of the sun.
+  const [key, setKey] = useState({ intensity: 1 })
+  useFrame(() => { const k = window.__csmKey; if (k && k.intensity !== key.intensity) setKey({ intensity: k.intensity }) })
+  return <CascadedShadows lightDirection={keyDirection} keyIntensity={key.intensity} keyColor={keyColor} />
+}
+
 export default function PreviewApp() {
   // ⛔ NOT ALWAYS HERO (2026-09-05). Preview opened on the Hero shot every
   // time, which dates from when arriving on the hero was the emotionally
@@ -1350,6 +1362,9 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
           visible, BasicLights dark = zero contribution) (Vernier Phase 1b).
           BasicLights is a Preview-only inspection fallback (no production
           analog) — held resident-but-hidden, never drawn in the all-on path. */}
+      {/* ⚠️ `?csm=1` — cascaded shadow maps, dark by default. Replaces the single
+          fitted map with N across the view range. See CascadedShadows.jsx. */}
+      {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><CascadedShadowsDriver /></R3FErrorBoundary>}
       <group visible={layers.celestial}>
         <R3FErrorBoundary name="CelestialBodies"><CelestialBodies lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
       </group>

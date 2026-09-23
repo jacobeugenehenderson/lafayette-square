@@ -30,7 +30,8 @@
 import { useRef, useEffect, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { SoftShadows } from '@react-three/drei'
-import { onSceneStencil, shadowMetresPerTexel } from './sceneStencilState'
+import { onSceneStencil, shadowMetresPerTexel, shadowMaxMetresPerTexel } from './sceneStencilState'
+import { CSM_ENABLED } from './CascadedShadows.jsx'
 import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -211,7 +212,33 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   // contact-hardening — and it says so, rather than inventing a radius.
   const [stencil, setStencil] = useState(null)
   useEffect(() => onSceneStencil(setStencil), [])
-  const mPerTexel = shadowMetresPerTexel(stencil)
+  // ⛔⛔ THE DENOMINATOR WAS THE TOWN-WIDE TEXEL, WHICH THE RENDERER STOPPED USING.
+  // `shadowMetresPerTexel(stencil)` is `2·townHalf/4096` — 1.806 m on huron. But the sun's
+  // frustum has been CAMERA-FITTED since 3dcb5dd3, and since 2026-09-22 it is additionally
+  // capped by `__maxMPerTexel`, so the real texel is at most the cap and usually far less.
+  // Converting the authored penumbra against 1.806 asked for 10.11/1.806 ≈ 5.6 texels of
+  // blur; at a real texel of a few centimetres that is a few centimetres of softening —
+  // i.e. a HARD edge, which is why the texel grid stayed visible as fine jags on every
+  // cast-shadow edge even after the box was capped.
+  // ⭐ The cap is the right denominator: it is the COARSEST the texel may be, it is
+  // authored rather than derived from one town's size, and — unlike the live fitted texel —
+  // it does not change per frame. ⚠️ THAT LAST PART IS LOAD-BEARING: drei's `SoftShadows`
+  // bakes `size`/`samples` into `#define`s via THREE.ShaderChunk and calls `reset()` on
+  // change, which disposes EVERY material in the scene and recompiles it. Feeding it a
+  // per-frame texel would be far worse than the bug it fixes.
+  // ⛔ Falls back to the town-wide texel only when no cap is authored, which is the
+  // uncapped fit — the one case where the town-wide value IS the real texel.
+  // ⛔⛔ PCSS AND CASCADES CANNOT BOTH OWN THE SHADOW CHUNK. drei's <SoftShadows>
+  // GLOBALLY overwrites `THREE.ShaderChunk.shadowmap_pars_fragment` to install its Vogel-disk
+  // sampler; three's CSM injects its own cascade selection into that same chunk. Whichever
+  // lands second wins and the other's sampling is silently gone — which reads as NO SHADOWS
+  // AT ALL, not as a subtle difference. Under `?csm=1` the cascade rig owns shadow sampling
+  // and this component stands down; the authored penumbra then rides CSM's own filtering.
+  // ⚠️ OWED: cascades currently give up contact-hardening. Restoring it means a PCSS
+  // sampler written INTO the cascade path, not two libraries fighting over one chunk.
+  if (CSM_ENABLED) return null
+  const capped = shadowMaxMetresPerTexel()
+  const mPerTexel = (capped > 0 && Number.isFinite(capped)) ? capped : shadowMetresPerTexel(stencil)
   if (mPerTexel == null) return null
 
   // ⛔⛔ THE FILTER RADIUS AND THE SAMPLE COUNT ARE ONE DECISION, NOT TWO.

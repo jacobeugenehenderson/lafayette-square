@@ -1,3 +1,4 @@
+import { attachCSM } from './CascadedShadows.jsx'
 /**
  * BakedGround — the shared ground-bake consumer used by both Stage shots
  * and Preview. Reads the per-Look bundle (manifest + binary + AO lightmap)
@@ -324,6 +325,7 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
       // Coplanar groups now separate by baked geometric Y (renderOrder × EPS,
       // bake-ground.js) + renderOrder for transparent draw-order. ARCHITECTURE §8.
     })
+    attachCSM(mat)   // cascades, when `?csm=1` — composes, never replaces onBeforeCompile
     if (fade) mat.transparent = true
     mat.onBeforeCompile = (shader) => {
       applyWeatherToShader(shader)  // Phase 7b/c: wet + snow opt-in

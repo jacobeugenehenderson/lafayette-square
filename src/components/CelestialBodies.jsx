@@ -45,6 +45,7 @@ import { INSTANCE } from '../instance.js'
 import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights.js'
 import { SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
+import { CSM_ENABLED } from './CascadedShadows.jsx'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
 // Production passes no `lookId`; Stage threads the operator's active Look.
@@ -117,6 +118,18 @@ const _WORLD_UP = new THREE.Vector3(0, 1, 0)
 // twilight `visualPosition: blendedLP` "the orb IS the lie", and the orb it
 // described has not existed here for some time.
 
+// ⚠️ Max metres-per-texel for the sun's shadow map — the authored cap on how coarse a
+// shadow edge may get. 0 / Infinity = uncapped (the pre-2026-09-22 town-wide fit).
+// Live for the eye-gate: window.__maxMPerTexel = 0.25
+const _maxMPerTexel = { value: 0.25 }
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, '__maxMPerTexel', {
+    get: () => _maxMPerTexel.value,
+    set: (v) => { _maxMPerTexel.value = Number(v) },
+    configurable: true,
+  })
+}
+
 function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const lightRef = useRef()
 
@@ -147,6 +160,10 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   useEffect(() => {
     const light = lightRef.current
     if (!light) return
+    // ⛔ CASCADES OWN THE SHADOW WHEN THEY ARE ON. Two casters would double-darken every
+    // shadow and fight over the same receivers; `CascadedShadows` mounts its own lights.
+    // This light keeps SHADING (it is still the key) and stops CASTING.
+    if (CSM_ENABLED) { light.castShadow = false; return }
     if (!stencil) {
       // ⛔ SHADOWS OFF UNTIL THE SCENE'S SIZE IS KNOWN — no fallback, by design.
       light.castShadow = false
@@ -212,6 +229,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   useFrame(() => {
     const light = lightRef.current
     const townHalf = townHalfRef.current
+    if (CSM_ENABLED) return   // the cascade rig owns the shadow frusta
     if (!light || !light.castShadow || townHalf == null) return
 
     // Ground point the camera is looking at (ray → y=0).
@@ -255,8 +273,30 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
       : lookingDown
         ? dist * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))
         : Infinity
+    // ⭐⭐ CAP THE BOX BY THE RESOLUTION IT DELIVERS, NOT BY A DISTANCE.
+    // The staircase on every cast-shadow edge is the texel grid: `texel = 2·half/4096`, so
+    // a box fitted to the whole town is 1.806 m/texel on huron (3697.9 m half) and a
+    // building's shadow edge can only land on that grid. At a grazing camera the fit
+    // SATURATES to town-wide — correct for a single map, and it is what pins the hero shot
+    // to the coarsest row.
+    // ⛔ The brief's alternative was "one authored max shadow distance, 512 m". Distance is
+    // the WRONG UNIT for a kit: 512 m is a third of Lafayette Square and a seventh of
+    // huron, so the same number buys a different picture in every town — Layer 0 q1.
+    // ⭐ The thing the operator actually cares about is how coarse a shadow edge may get,
+    // and that IS town-independent. Author METRES PER TEXEL and derive the cap from it:
+    //     half ≤ maxMPerTexel · SHADOW_MAP_SIZE / 2
+    // 0.25 m/texel ⇒ half ≤ 512 m on every town, by arithmetic rather than by coincidence.
+    // ⚠️ THE COST IS A SHADOW HORIZON. Beyond the box nothing is shadowed, so there is a
+    // distance where shadows stop. That is a LOOK decision — how far shadows reach versus
+    // how crisp they are — which is why it is authored and not derived. ⛔ It must never be
+    // a silent default that differs per town.
+    // ⭐ Live for the eye-gate: `window.__maxMPerTexel = 0.25`. Set to 0 or Infinity to
+    // restore the uncapped town-wide fit. Wants to become a `scene.json#shadow` field.
+    const capHalf = (_maxMPerTexel.value > 0 && Number.isFinite(_maxMPerTexel.value))
+      ? (_maxMPerTexel.value * SHADOW_MAP_SIZE) / 2
+      : Infinity
     // 1.6× so shadows CAST FROM OFFSCREEN still land in frame.
-    const rawHalf = Math.min(townHalf, Math.max(60, seen * 1.6))
+    const rawHalf = Math.min(townHalf, capHalf, Math.max(60, seen * 1.6))
 
     // ⛔⛔ QUANTISE THE SIZE, NOT JUST THE POSITION — OR EVERY SHADOW EDGE FLASHES.
     // Texel-snapping the focus stops shadows CRAWLING as the box slides. It does
@@ -394,7 +434,14 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     // TOD-driven sun-light intensity multiplier (Sky&Light · Sun light).
     // Stage threads the operator's live dirSun channel via `dirSunOverride`;
     // production resolves from scene.json. Default 1.0 leaves today behavior.
-    lightRef.current.intensity = intensity * (intensityMulRef?.current ?? 1)
+    // ⛔ Under cascades this light STILL PUBLISHES the key direction but must not shade:
+    // the cascade rig carries the key, and two keys is two suns. Publish `__csmKey` so the
+    // rig can take the exact intensity this light would have had, rather than re-deriving it.
+    const _keyI = intensity * (intensityMulRef?.current ?? 1)
+    if (CSM_ENABLED) {
+      if (typeof window !== 'undefined') window.__csmKey = { intensity: _keyI, color }
+      lightRef.current.intensity = 0
+    } else lightRef.current.intensity = _keyI
 
     // Let autoUpdate run for a few frames so the shadow map captures
     // the full scene, then switch to manual updates.

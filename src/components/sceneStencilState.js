@@ -59,3 +59,17 @@ export function shadowMetresPerTexel(s) {
   const half = shadowHalfExtent(s)
   return half == null ? null : (2 * half) / SHADOW_MAP_SIZE
 }
+
+/**
+ * The authored cap on how coarse a sun-shadow texel may get, in METRES PER TEXEL.
+ * ⭐ Published here because it is now shared vocabulary: `CelestialBodies` derives the
+ * shadow box's maximum half-extent from it, and `PostProcessing` converts the authored
+ * penumbra against it. ⛔ Two derivations of one physical fact is what produced both the
+ * tree-height bug and the capture-frame bug — one publisher, many readers.
+ * 0 / Infinity = uncapped (the town-wide fit).
+ */
+export function shadowMaxMetresPerTexel() {
+  if (typeof window === 'undefined') return 0
+  const v = Number(window.__maxMPerTexel)
+  return Number.isFinite(v) && v > 0 ? v : 0
+}

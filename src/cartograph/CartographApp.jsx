@@ -36,6 +36,7 @@ import SlabBuildings from '../components/SlabBuildings.jsx'
 import GatewayArch from '../components/GatewayArch'
 import MountainBackdrop from '../components/MountainBackdrop'
 import CelestialBodies from '../components/CelestialBodies'
+import CascadedShadows, { CSM_ENABLED } from '../components/CascadedShadows.jsx'
 import Atmosphere from '../components/Atmosphere'
 import CloudDome from '../components/CloudDome'
 import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
@@ -86,6 +87,17 @@ import useSkyState from '../hooks/useSkyState'
 import useCamera from '../hooks/useCamera'
 
 const CAM_KEY = 'cartograph-camera'
+
+// Feeds the cascade rig the SAME key vector CelestialBodies publishes.
+function StageCascades() {
+  const keyDirection = useSkyState(st => st.keyDirection)
+  const keyColor = useSkyState(st => st.keyColor)
+  // Intensity comes from the light CelestialBodies zeroed, so the rig is the same
+  // key at the same strength — never a second derivation of the sun.
+  const [key, setKey] = useState({ intensity: 1 })
+  useFrame(() => { const k = window.__csmKey; if (k && k.intensity !== key.intensity) setKey({ intensity: k.intensity }) })
+  return <CascadedShadows lightDirection={keyDirection} keyIntensity={key.intensity} keyColor={keyColor} />
+}
 
 // Pre-set time to noon so sky starts with daylight
 useTimeOfDay.getState().setHour(12)
@@ -1432,6 +1444,10 @@ export default function CartographApp() {
             heroSubjectOverride={heroSubject}
           />}
           <group visible={!inDesigner}>
+            {/* ⚠️ `?csm=1` — cascaded shadow maps, dark by default. Mounted HERE as well as
+                Preview because Stage is where the operator has camera control and the
+                Look panel; a render change that cannot be driven cannot be judged. */}
+            {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><StageCascades /></R3FErrorBoundary>}
             <R3FErrorBoundary name="CelestialBodies"><CelestialBodies
               debugLevel={0}
               lookId={activeLookId}
