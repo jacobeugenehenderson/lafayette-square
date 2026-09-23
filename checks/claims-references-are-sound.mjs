@@ -54,6 +54,10 @@ for (const f of findings) {
     if (!f.sites) errs.push(`measured ${f.id} names no sites`)
     if (!f.tolerance) errs.push(`measured ${f.id} states no tolerance`)
     if (f.source) errs.push(`measured ${f.id} carries a source — a measurement stands on its command`)
+    if (!f.method) errs.push(`measured ${f.id} states no method (computed | visual)`)
+    const ins = Array.isArray(f.inputs) ? f.inputs : []
+    if (!ins.length) errs.push(`measured ${f.id} names no inputs — what did it measure?`)
+    for (const i of ins) { const s = srcById.get(i); if (!s) errs.push(`measured ${f.id} measured unknown source "${i}"`); else if (s.terms?.aiUse !== 'permitted') errs.push(`measured ${f.id} measured ${i}, whose terms.aiUse is "${s.terms?.aiUse}" — a measurement's inputs must be permitted`) }
     const script = (f.command || '').split(/\s+/).find(t => /\.(m?js|py|sh)$/.test(t))
     if (script && !fs.existsSync(script)) errs.push(`measured ${f.id}: ${script} is not on disk — the measurement cannot be reproduced`)
     else if (script) { try { execSync(`git ls-files --error-unmatch ${script}`, { stdio: 'ignore' }) } catch { warns.push(`measured ${f.id}: ${script} is not committed — not reproducible from a clean checkout`) } }

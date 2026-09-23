@@ -272,6 +272,42 @@
       },
       "status": "CANDIDATE — terms owed (the kit's ped defaults are attributed to it in OSM-FORENSICS Part 4)",
       "localCopy": null
+    },
+    {
+      "id": "esri-world-imagery",
+      "title": "Esri ArcGIS World Imagery (basemap tiles)",
+      "publisher": "Esri (private)",
+      "jurisdiction": "global",
+      "url": "https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9",
+      "covers": [
+        "the aerial the kit DISPLAYS in Survey/Extent"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": null,
+        "note": "Displaying it is one thing; MEASURING or extracting data from it (including an agent judging rendered tiles) is another, and its terms have not been read. Treat as not permitted for measurement."
+      },
+      "status": "CANDIDATE — terms owed before any measurement rests on it",
+      "localCopy": null
+    },
+    {
+      "id": "naip",
+      "title": "NAIP — National Agriculture Imagery Program aerial imagery",
+      "publisher": "USDA (FSA)",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://planetarycomputer.microsoft.com/dataset/naip",
+      "covers": [
+        "0.3–0.6 m 4-band orthoimagery of every US town (dated flights)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-23",
+        "checkedBy": "Boz",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)",
+        "note": "US Government imagery, public domain. Record the flight date — an image of a road under reconstruction measures the wrong road (the NAIP spike excluded MO 2020 for this)."
+      },
+      "status": "PERMITTED",
+      "localCopy": "scratch/.naip-spike/ (Albedo's tiles for the LS sites, gitignored)"
     }
   ],
   "questions": [
@@ -420,9 +456,18 @@
       "id": "q-osm-line-placement",
       "ask": "Where in a carriageway's section does the OSM way run (centre of the travel lanes?)",
       "neededBy": "H-3 — every drawn highway half-width",
-      "status": "answered",
-      "findings": [
-        "m-osm-line-lane-centre"
+      "status": "open",
+      "candidateMeasurement": {
+        "verdict": "OSM line = centre of the travel lanes; shoulders outside it",
+        "by": "Grader, 2026-09-23",
+        "method": "VISUAL (agent judgement on rendered PNGs), not computed",
+        "command": "arborist/.venv/bin/python scratch/h3-aerial-centreline.py <town> <x> <z> <halfM> <out.png>",
+        "sites": "5, halfM 70: huron -750 2350 (SR 2 divided, deck) · huron -1300 -500 (SR 2 at grade) · lafayette-square -470 255 (I-44 deck over Tucker) · lafayette-square 560 640 (I-55/Ozark) · lafayette-square 337 356 (18th×Lafayette ramps); the first two were run on control points and should be re-run on flattened geometry",
+        "tolerance": "±1–2 m at grade (imagery registration); decks unresolvable (relief displacement)",
+        "whyNotAFinding": "It measured esri-world-imagery, whose terms are unchecked — a measurement is only a legitimate root if its INPUTS are permitted."
+      },
+      "nextSources": [
+        "re-run the same 5 sites on naip (PERMITTED; Albedo has LS tiles locally), flattened geometry, same tolerance"
       ]
     },
     {
@@ -550,21 +595,6 @@
       "quote": "Channelizing islands can be raised or flush with the pavement. … Raised islands have been found to be more effective than flush painted islands at reducing nighttime collisions, because they are easier to see.",
       "foundOn": "2026-09-23",
       "foundBy": "Grader"
-    },
-    {
-      "id": "m-osm-line-lane-centre",
-      "question": "q-osm-line-placement",
-      "kind": "measured",
-      "value": {
-        "osmLineIs": "centre of the travel lanes (shoulders outside it)"
-      },
-      "command": "python3 scratch/h3-aerial-centreline.py",
-      "sites": "4 highway sites (LS + huron) — the script prints them",
-      "tolerance": "±1–2 m",
-      "foundOn": "2026-09-23",
-      "foundBy": "Grader",
-      "quote": "(measured, not quoted — see command)",
-      "note": "⚠️ The script is uncommitted until Jacob approves Grader's probe commit; until then this measurement is not reproducible from a clean checkout."
     }
   ]
 }
