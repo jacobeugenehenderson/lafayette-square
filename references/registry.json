@@ -694,7 +694,7 @@
       "id": "q-sidewalk-default",
       "ask": "Default sidewalk (pedestrian access route) width",
       "neededBy": "the ped FILL (ADA_SIDEWALK); H-3 JR apron",
-      "status": "open",
+      "status": "answered",
       "tried": [
         "OSM-FORENSICS Part 4 attributes it to PROWAG/NACTO — not yet read under this registry",
         "caltrans-hdm → f-caltrans-sidewalk-width",
@@ -706,7 +706,9 @@
         "f-caltrans-sidewalk-width",
         "f-massdot-sidewalk-width",
         "f-massdot-walkway-widths",
-        "f-prowag-par-clear-width"
+        "f-prowag-par-clear-width",
+        "r-sidewalk-default-rule",
+        "d-sidewalk-where-manuals-agree"
       ],
       "notes": "ANSWERED FOR CA ONLY: 6 ft at the curb, 5 ft behind a planting strip, 8 ft on main streets; excludes curb (Index 105.2). ⸻ ANSWERED FOR MA ONLY (2006 Ch 5): 5 ft minimum excluding curb; unbuffered curb-attached 6 ft residential / 8 ft commercial. ⸻ PROWAG (federal, all states): the pedestrian access route is 48 in minimum clear, exclusive of curb (R302.2). That is the accessibility FLOOR for the clear route — CA (5–8 ft) and MA (5 ft+) state sidewalk widths above it. Which of these the kit draws as its default is a design choice, not answered by the code."
     },
@@ -2842,6 +2844,36 @@
       },
       "where": "§3J.05 ¶04 (Option)",
       "quote": "Pavement markings for smaller raised islands may be omitted based on engineering judgment."
+    },
+    {
+      "id": "r-sidewalk-default-rule",
+      "question": "q-sidewalk-default",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-23",
+      "quote": "yes to the sidewalk rule",
+      "gist": "Each town uses its OWN state manual where permitted (MA: MassDOT · CA: Caltrans). Where no permitted state manual exists (OH, MO), the width is DERIVED from where the permitted state manuals agree, disclosed. Never below the PROWAG floor.",
+      "canon": "references/README.md (codes first) · Boz's proposal 2026-09-23 in session"
+    },
+    {
+      "id": "d-sidewalk-where-manuals-agree",
+      "question": "q-sidewalk-default",
+      "kind": "derived",
+      "from": [
+        "f-caltrans-sidewalk-width",
+        "f-massdot-sidewalk-width",
+        "f-prowag-par-clear-width"
+      ],
+      "value": {
+        "behindTreelawn_ft": 5,
+        "curbAttached_ft": 6,
+        "floor_in": 48,
+        "excludesCurb": true
+      },
+      "derivation": "for a town whose state manual is not permitted (OH, MO): the value where Caltrans and MassDOT AGREE — 5 ft behind a planting strip, 6 ft curb-attached (both exclude the curb); clamped to never fall below PROWAG's 48 in clear route; disclosed per town as 'derived from CA+MA agreement'",
+      "quote": "-",
+      "foundOn": "2026-09-23",
+      "foundBy": "Boz, per Jacob's ruling"
     }
   ]
 }
