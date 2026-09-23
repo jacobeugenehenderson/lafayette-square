@@ -123,7 +123,8 @@
         "approvedBy": "Jacob, 2026-09-23 — presumed public domain (US Government work) accepted"
       },
       "status": "PERMITTED — skip any figure credited to a third party",
-      "localCopy": null
+      "localCopy": null,
+      "findings": "Read by Grader 2026-09-23 (Part 3 text): §3J.01 ¶01 DEFERS island definitions/types/sizes to the AASHTO Green Book (prohibited here) → the paint-vs-island size minimum has NO permitted source. §3J.01 ¶04 permits curbs OR markings (raised is compliant). §3B.08 ¶01/¶05 cite neutral areas at exit/entrance ramps (theoretical vs physical gore)."
     },
     {
       "id": "fhwa-sa-13-027",
@@ -143,7 +144,8 @@
         "approvedBy": "Jacob, 2026-09-23 — presumed public domain (US Government work) accepted"
       },
       "status": "PERMITTED — read the report's own Notice page first; skip any figure credited to a third party",
-      "localCopy": null
+      "localCopy": "references/files/fhwa-sa-13-027.pdf (owed — manual download)",
+      "access": "⚠️ 2026-09-23: highways.dot.gov and safety.fhwa.dot.gov return 403 to a non-browser client — an agent cannot fetch it. Jacob downloads it by hand into references/files/fhwa-sa-13-027.pdf (gitignored); then agents read the local copy."
     },
     {
       "id": "nchrp-672",
@@ -195,6 +197,24 @@
         "note": "FHWA's own summary text on a federal page; no copyright notice. It NAMES the AASHTO source ('A Policy on Design Standards — Interstate System') but does not reproduce it. Cite this page's text only, never the AASHTO document."
       },
       "status": "PERMITTED",
+      "localCopy": null
+    },
+    {
+      "id": "ada-2010-standards",
+      "title": "2010 ADA Standards for Accessible Design (28 CFR 35 / 36)",
+      "publisher": "US Department of Justice",
+      "jurisdiction": "federal",
+      "url": null,
+      "covers": [
+        "pedestrian refuge / island cut-through width (MUTCD §3C.12 defers to it)",
+        "curb ramps"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": null,
+        "note": "Federal regulation — likely public domain; URL and terms owed."
+      },
+      "status": "CANDIDATE",
       "localCopy": null
     }
   ]
