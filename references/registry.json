@@ -342,13 +342,17 @@
       "id": "q-freeway-inside-shoulder-3plus",
       "ask": "Is the inside shoulder wider on carriageways of 3+ lanes, and by how much?",
       "neededBy": "H-3 ruling (e)",
-      "status": "open",
+      "status": "answered",
       "tried": [
         "fhwa-interstate-design (not stated)"
       ],
       "nextSources": [
         "state manuals (see q-state-manual-*)"
-      ]
+      ],
+      "findings": [
+        "d-left-shoulder-any-lane-count"
+      ],
+      "notes": "Answered by DERIVATION only (no code states a 3+-lane rule): FHWA's 4 ft carries no lane-count condition. A state manual's own lane-count rule would supersede it — Quire's extraction may find one."
     },
     {
       "id": "q-ramp-section",
@@ -604,6 +608,24 @@
       "codeSites": [
         "cartograph/skeleton.js seedSection (nLanes default = oneway ? 1 : 2)"
       ]
+    },
+    {
+      "id": "q-nonInterstate-freeway-section",
+      "ask": "What section does a non-Interstate freeway get?",
+      "neededBy": "H-3 build (huron SR 2, US 6 motorway stretch)",
+      "status": "answered",
+      "findings": [
+        "d-interstate-std-on-non-interstate"
+      ]
+    },
+    {
+      "id": "q-jr-raised-or-painted",
+      "ask": "Is a junction residual (ramp-end island) drawn raised or painted?",
+      "neededBy": "H-3 build step 4",
+      "status": "answered",
+      "findings": [
+        "d-jr-raised"
+      ]
     }
   ],
   "findings": [
@@ -823,6 +845,45 @@
       "date": "2026-09-06",
       "quote": "All data should skew to SSoT. The skeleton should simplify and make ironclad and foolproof.",
       "canon": "ORIENTATION step 2 · SKELETON §0.1 — every downstream consumer takes the simplified skeleton geometry"
+    },
+    {
+      "id": "d-left-shoulder-any-lane-count",
+      "question": "q-freeway-inside-shoulder-3plus",
+      "kind": "derived",
+      "from": [
+        "f-interstate-left-shoulder"
+      ],
+      "derivation": "the stated 4 ft left paved shoulder carries no lane-count condition on the source page; applied at any lane count (disclosed)",
+      "quote": "-",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader (plan), recorded by Boz"
+    },
+    {
+      "id": "d-interstate-std-on-non-interstate",
+      "question": "q-nonInterstate-freeway-section",
+      "kind": "derived",
+      "from": [
+        "f-interstate-lane-width",
+        "f-interstate-right-shoulder",
+        "f-interstate-left-shoulder"
+      ],
+      "derivation": "the Interstate standard applied to a non-Interstate freeway; printed per highway as 'Interstate standard applied to non-Interstate'",
+      "quote": "-",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader (plan), recorded by Boz"
+    },
+    {
+      "id": "d-jr-raised",
+      "question": "q-jr-raised-or-painted",
+      "kind": "derived",
+      "from": [
+        "f-mutcd-island-means",
+        "f-sa13027-island-raised-or-flush"
+      ],
+      "derivation": "MUTCD permits a curbed designation; FHWA states raised islands are more visible at night; v1 draws every JR raised (no painted class until q-island-min-size is answered)",
+      "quote": "-",
+      "foundOn": "2026-09-23",
+      "foundBy": "Grader (plan), recorded by Boz"
     }
   ]
 }
