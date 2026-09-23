@@ -57,7 +57,9 @@ At LS's ramp ends there is a surface that is **neither street, highway, verge no
   - a zero-shot, text-prompted segmenter (SAM plus a grounding model) as the second opinion.
   - Pick **one primary**, say why, and say what the other would have added.
 - **Comparison targets.** Use these rather than rebuilding them:
-  - **The geometry-derived islands:** run `node scratch/h3-terminal-islands.mjs lafayette-square`, the highway review's probe. It reads `public/baked/lafayette-square/shape.json` and prints each terminal-adjacent region's area, thickness, highway share, and a count of the buildings inside it. **The regions with 0 buildings are the island and infield candidates.** Record the timestamps of both files it reads: another agent's re-pours may be rewriting them today.
+  - **The geometry-derived islands:** run `node scratch/h3-terminal-islands.mjs lafayette-square`, the highway review's probe. It reads `public/baked/lafayette-square/shape.json` and prints each terminal-adjacent region's area, thickness, highway share, and a count of the buildings inside it. **The regions with 0 buildings are the island and infield candidates.** The probe is **frozen** by its author, so read it and never edit it.
+    - ⛔ **Its `tile N` numbers are POSITIONAL within that pour's `shape.json`, and a re-pour renumbers them** (Huron's already has). **Match regions by coordinates or ring geometry, never by index.**
+    - Each run prints the timestamps of the files it reads. Record them beside your result. LS was stable at shape `2026-09-21T05:27` when this was written, but its A19 re-pour is coming.
   - **OSM's single `area:highway=traffic_island` in LS**, as a sanity point.
   - **Jacob's eye:** the overlays below.
 
