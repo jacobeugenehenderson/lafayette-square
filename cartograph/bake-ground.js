@@ -43,6 +43,7 @@ import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js
 import { writeIfChanged } from './io.js'
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
+import { conformAndRefine, findTJunctions } from './groundConformity.js'
 import { requireExplicitMap } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
@@ -534,220 +535,15 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
 // It had been dead-in-place since T2 (buildTileBakeShape replaced it); the
 // replace-then-delete second half, per ARCHITECTURE §7.
 
-// Triangulate one polygon (outer ring + optional hole rings) and OPTIONALLY
-// refine the triangulation by iteratively splitting any triangle whose longest
-// edge exceeds `maxEdge` meters. 1-to-4 midpoint subdivision: a triangle with
-// a long edge is split into four child triangles sharing the original
-// winding (preserves CW-facing-up convention so FrontSide shading stays
-// correct). Each midpoint is added as a Steiner point inside the polygon —
-// since midpoints of edges that lie inside the polygon also lie inside, this
-// is geometrically safe for any concave land-use polygon.
+// Triangulation + refinement moved to ./groundConformity.js (2026-09-23, H-21): the
+// per-polygon triangulateAndRefine was crack-free only WITHIN one polygon, and the
+// flattened ground's shared edges run almost entirely BETWEEN groups.
 //
-// Why: per-vertex `patchTerrain` at runtime samples the terrain texture only
-// at each baked vertex; fragments interpolate between them. Face polygons
-// authored at block scale (~50 m corner-to-corner) only sample raw at four
-// places per block, so interior fragments interpolate linearly across a
-// distance where the heightfield actually curves — causing dense overlays
-// (asphalt centerlines, building foundations anchored to footprint vertices)
-// to disagree with the face's interpolated Y at the same XZ. Subdividing
-// face polygons to ~5–8 m edges matches the terrain texture resolution and
-// pulls the face's rendered surface back onto the heightfield.
-//
-// Winding: ShapeUtils emits CCW in (x, z) 2D, which is CW when mapped to
-// (x, 0, z) viewed from +Y. Flip the index order at emit time.
-function triangulateAndRefine(outer, holes, refine, yLift = 0) {
-  // Build position list: contour vertices first, then each hole, in the
-  // order ShapeUtils.triangulateShape expects. yLift = the group's coplanar
-  // Y separation (renderOrder × GROUND_Y_EPS); runtime terrain lift adds on top.
-  const posList = []
-  const pushRing = (ring) => {
-    for (const [x, z] of ring) posList.push(x, yLift, z)
-  }
-  pushRing(outer)
-  for (const h of holes) pushRing(h)
+// Why the ground is refined at all: per-vertex `patchTerrain` samples the terrain
+// only at baked vertices and fragments interpolate between them, so a block-scale
+// face (~50 m corner-to-corner) chords across a heightfield that curves — dense
+// overlays and foundations then disagree with the face's interpolated Y.
 
-  // Initial triangulation
-  const contourV = outer.map(([x, z]) => new THREE.Vector2(x, z))
-  const holesV = holes.map(h => h.map(([x, z]) => new THREE.Vector2(x, z)))
-  const tris = THREE.ShapeUtils.triangulateShape(contourV, holesV)
-  // Apply CCW->CW flip up front; refinement preserves whatever winding it
-  // starts with.
-  let triList = tris.map(t => [t[0], t[2], t[1]])
-
-  // Normalize the refine policy. Back-compat: a bare number (or null) is read
-  // as the legacy uniform maxEdge so any unported caller still works.
-  let mode, maxEdge, tol, minEdge, sampler
-  if (refine && typeof refine === "object") {
-    mode    = refine.mode || "uniform"
-    maxEdge = refine.maxEdge
-    tol     = refine.tol
-    minEdge = refine.minEdge || 0
-    sampler = refine.sampler || null
-  } else {
-    mode    = "uniform"
-    maxEdge = refine
-    minEdge = 0
-  }
-  // Adaptive needs a sampler; without one it degrades to a pure maxEdge cap.
-  if (mode === "adaptive" && (!sampler || !(tol > 0))) mode = "uniform"
-
-  const hasCap = maxEdge && maxEdge > 0 && Number.isFinite(maxEdge)
-  if (mode === "uniform" && !hasCap) {
-    // No refinement requested -- emit the earcut output as-is.
-    const positions = new Float32Array(posList)
-    const indices = new Uint32Array(triList.length * 3)
-    for (let i = 0; i < triList.length; i++) {
-      indices[i * 3]     = triList[i][0]
-      indices[i * 3 + 1] = triList[i][1]
-      indices[i * 3 + 2] = triList[i][2]
-    }
-    return { positions, indices }
-  }
-
-  // Iterative CONFORMING refinement (red-green). Midpoint cache keyed by edge
-  // gives adjacent triangles the same midpoint vertex INDEX; the red-green pass
-  // below guarantees that whenever one triangle bisects a shared edge, its
-  // neighbour conforms (green 1-to-2 closure, or promotion to red) — so no
-  // vertex is ever left in the middle of a neighbour's edge. A plain
-  // per-triangle 1-to-4 split (the old code) left exactly those T-junctions at
-  // every adaptive refined/coarse boundary, opening up-to-`tol` vertical cracks
-  // along the contours — invisible from overhead, glaring at street level.
-  const maxEdgeSq = hasCap ? maxEdge * maxEdge : Infinity
-  const minEdgeSq = minEdge * minEdge
-  const midCache = new Map()
-  function midpointIndex(a, b) {
-    const key = a < b ? a + "-" + b : b + "-" + a
-    let idx = midCache.get(key)
-    if (idx !== undefined) return idx
-    const ax = posList[a * 3],     az = posList[a * 3 + 2]
-    const bx = posList[b * 3],     bz = posList[b * 3 + 2]
-    idx = posList.length / 3
-    posList.push((ax + bx) * 0.5, yLift, (az + bz) * 0.5)
-    midCache.set(key, idx)
-    return idx
-  }
-  function edgeSq(a, b) {
-    const dx = posList[a * 3]     - posList[b * 3]
-    const dz = posList[a * 3 + 2] - posList[b * 3 + 2]
-    return dx * dx + dz * dz
-  }
-  // Terrain-deviation of a triangle (a,b,c): the worst |true terrain lift -
-  // planar interpolation of the three corner lifts| over the three edge
-  // midpoints + the centroid. These are exactly the points a one-level 1-to-4
-  // split would introduce, so this measures the Y error the split would heal.
-  function terrainDev(a, b, c) {
-    const ax = posList[a*3], az = posList[a*3+2]
-    const bx = posList[b*3], bz = posList[b*3+2]
-    const cx = posList[c*3], cz = posList[c*3+2]
-    const ya = sampler(ax, az), yb = sampler(bx, bz), yc = sampler(cx, cz)
-    let d = 0
-    let e
-    e = Math.abs(sampler((ax+bx)/2,(az+bz)/2) - (ya+yb)/2); if (e > d) d = e
-    e = Math.abs(sampler((bx+cx)/2,(bz+cz)/2) - (yb+yc)/2); if (e > d) d = e
-    e = Math.abs(sampler((cx+ax)/2,(cz+az)/2) - (yc+ya)/2); if (e > d) d = e
-    e = Math.abs(sampler((ax+bx+cx)/3,(az+bz+cz)/3) - (ya+yb+yc)/3); if (e > d) d = e
-    return d
-  }
-
-  // Hard iteration cap (guard). A few extra passes for the steep adaptive
-  // micro-spots; the minEdge floor stops genuine runaway.
-  const PASSES = mode === "adaptive" ? 10 : 8
-  const edgeKey = (a, b) => (a < b ? a + "-" + b : b + "-" + a)
-  for (let pass = 0; pass < PASSES; pass++) {
-    // (1) Criterion → initial RED set (triangles to fully 1-to-4 split).
-    const red = new Array(triList.length).fill(false)
-    let anyRed = false
-    for (let i = 0; i < triList.length; i++) {
-      const [v0, v1, v2] = triList[i]
-      const e01 = edgeSq(v0, v1)
-      const e12 = edgeSq(v1, v2)
-      const e20 = edgeSq(v2, v0)
-      const longest = Math.max(e01, e12, e20)
-      let split
-      if (mode === "adaptive") {
-        // Always split monstrous edges (the coarse cap keeps overlays anchored);
-        // otherwise split only where the terrain bends past tol AND the longest
-        // edge is still above the minEdge floor.
-        split = longest > maxEdgeSq ||
-                (longest > minEdgeSq && terrainDev(v0, v1, v2) > tol)
-      } else {
-        split = e01 > maxEdgeSq || e12 > maxEdgeSq || e20 > maxEdgeSq
-      }
-      if (split) { red[i] = true; anyRed = true }
-    }
-    if (!anyRed) break
-
-    // (2) Per-triangle edge keys.
-    const triEdges = triList.map(([v0, v1, v2]) => [
-      edgeKey(v0, v1), edgeKey(v1, v2), edgeKey(v2, v0),
-    ])
-
-    // (3) Conformity: an edge is "bisected" if any owning triangle is red. A
-    // non-red triangle carrying >=2 bisected edges is promoted to red (so it
-    // never needs a 3-way closure). Promotion adds bisected edges → iterate to
-    // a fixpoint. Terminates: each triangle promotes at most once.
-    const bisected = new Set()
-    const markRed = (i) => { for (const k of triEdges[i]) bisected.add(k) }
-    for (let i = 0; i < triList.length; i++) if (red[i]) markRed(i)
-    let promoted = true
-    while (promoted) {
-      promoted = false
-      for (let i = 0; i < triList.length; i++) {
-        if (red[i]) continue
-        let cnt = 0
-        for (const k of triEdges[i]) if (bisected.has(k)) cnt++
-        if (cnt >= 2) { red[i] = true; markRed(i); promoted = true }
-      }
-    }
-
-    // (4) Emit. RED → 1-to-4. Non-red with exactly one bisected edge → GREEN
-    // 1-to-2 closure toward the opposite vertex (the new edge is interior, so
-    // it introduces no fresh T-junction). Non-red with zero → kept as-is.
-    const next = []
-    for (let i = 0; i < triList.length; i++) {
-      const [v0, v1, v2] = triList[i]
-      if (red[i]) {
-        const m01 = midpointIndex(v0, v1)
-        const m12 = midpointIndex(v1, v2)
-        const m20 = midpointIndex(v2, v0)
-        next.push([v0, m01, m20], [m01, v1, m12], [m20, m12, v2], [m01, m12, m20])
-        continue
-      }
-      const [k01, k12, k20] = triEdges[i]
-      if (bisected.has(k01)) {
-        const m = midpointIndex(v0, v1)
-        next.push([v0, m, v2], [m, v1, v2])
-      } else if (bisected.has(k12)) {
-        const m = midpointIndex(v1, v2)
-        next.push([v0, v1, m], [v0, m, v2])
-      } else if (bisected.has(k20)) {
-        const m = midpointIndex(v2, v0)
-        next.push([v0, v1, m], [m, v1, v2])
-      } else {
-        next.push(triList[i])
-      }
-    }
-    triList = next
-  }
-
-  const positions = new Float32Array(posList)
-  const indices = new Uint32Array(triList.length * 3)
-  for (let i = 0; i < triList.length; i++) {
-    indices[i * 3]     = triList[i][0]
-    indices[i * 3 + 1] = triList[i][1]
-    indices[i * 3 + 2] = triList[i][2]
-  }
-  return { positions, indices }
-}
-
-// Group input items into one material's BufferGeometry data. `items` is
-// either an array of rings (ribbon bands — simple polygons) or an array
-// of {outer, holes} faces (land-use fills, post-clip). `opts.maxEdge`
-// triggers per-polygon refinement (face polygons + landscape overlays).
-//
-// Y per vertex = `yLift` (the group's coplanar separation, renderOrder × EPS);
-// the terrain-aware lift adds on top at runtime in the vertex shader (patchTerrain
-// perVertex via texture sampling at each vertex's world XZ).
 // ── Subtract overlays out of the face beneath them ──────────────────────────
 // ⛔⛔ WHY THIS EXISTS. A `wood` or `pitch` overlay is finely tessellated (~8.5 m
 // edges) and hugs the DEM; the land-use face UNDER it is coarse (22–33 m) and cuts
@@ -939,10 +735,11 @@ function subtractOverlaysFromFace(faceItems, overlayRings) {
   return out
 }
 
-function itemsToBuffers(items, { maxEdge = null, refine = null, yLift = 0 } = {}) {
-  // Normalize to {outer, holes} so the rest of the function is uniform.
+// Normalise a group's items (bare rings for ribbon bands, {outer, holes} for faces)
+// to {outer, holes} polygons for conformAndRefine.
+function toPolys(items) {
   const polys = []
-  for (const it of items) {
+  for (const it of items || []) {
     if (!it) continue
     if (Array.isArray(it)) {
       if (it.length >= 3) polys.push({ outer: it, holes: [] })
@@ -950,27 +747,10 @@ function itemsToBuffers(items, { maxEdge = null, refine = null, yLift = 0 } = {}
       polys.push({ outer: it.outer, holes: it.holes || [] })
     }
   }
-  if (polys.length === 0) return { positions: new Float32Array(0), indices: new Uint32Array(0) }
-
-  // Triangulate (and optionally refine) each polygon independently, then
-  // concatenate with vertex offsets.
-  const perPoly = polys.map(p => triangulateAndRefine(p.outer, p.holes, refine || maxEdge, yLift))
-  let totalV = 0, totalI = 0
-  for (const r of perPoly) { totalV += r.positions.length / 3; totalI += r.indices.length }
-
-  const positions = new Float32Array(totalV * 3)
-  const indices = new Uint32Array(totalI)
-  let vOff = 0, iOff = 0
-  for (const r of perPoly) {
-    positions.set(r.positions, vOff * 3)
-    for (let i = 0; i < r.indices.length; i++) indices[iOff + i] = r.indices[i] + vOff
-    vOff += r.positions.length / 3
-    iOff += r.indices.length
-  }
-  return { positions, indices }
+  return polys
 }
 
-export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true } = {}) {
+export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true, outDir: outDirOpt = null } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -998,7 +778,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     : join(ROOT, 'cartograph', 'data', scene, 'clean', 'ribbons.json')
   const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   const designPath  = join(ROOT, 'public', 'looks', look, 'design.json')
-  const outDir      = join(ROOT, 'public', 'baked', look)
+  // outDir: write the slab elsewhere (a scratch A/B) instead of over the live one.
+  const outDir      = outDirOpt || join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   const stencil = loadSceneStencil(scene)
@@ -1215,13 +996,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
     + `(${KEEP_OWN_SLOT.size} keeping their own slot, ${DOES_NOT_CUT.size} not cutting) in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)
 
-  for (const [kind, key] of PAINT_ORDER) {
-    if (bakeLayerVis[groupLayerId(kind, key)] === false) continue
+  const planGroup = (kind, key) => {
+    if (bakeLayerVis[groupLayerId(kind, key)] === false) return null
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
-    // itemsToBuffers normalizes both — holes are honored at triangulation
+    // toPolys normalizes both — holes are honored at triangulation
     // time so the lawn ribbon underneath a clipped face fill stays visible.
     let items = flattened.get(kind + ':' + key) ?? (kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key))
-    if (!items || items.length === 0) continue
+    if (!items || items.length === 0) return null
 
     // ⛔ The pairwise "cut overlays out of faces" that lived here is GONE — the
     // paint-stack flatten above supersedes it and does the whole stack, not one
@@ -1319,8 +1100,57 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // ⚠️ An EXCLUDED layer (water — it tints rather than replaces) still overlaps
     // what is beneath it and keeps a real slot above the plane.
     const onGroundPlane = !KEEP_OWN_SLOT.has(kind + ':' + key)
+    // ⭐ The PARTITION is every layer that cuts — which is not the same set as the
+    // plane: `stripe` keeps its own slot but cuts its shape out of the asphalt, so the
+    // tarmac's hole and the stripe share every edge. Only water, which tints rather
+    // than replaces, lies over the ground instead of in it.
+    const inPartition = !DOES_NOT_CUT.has(kind + ':' + key)
+    return { polys: toPolys(items), refinePolicy, onGroundPlane, inPartition }
+  }
+
+  // ⭐⭐ THE GROUND STRETCHES, IT DOES NOT BREAK (H-21). Every group on the plane is
+  // triangulated and refined TOGETHER, so a vertex one group puts on a shared edge
+  // is a vertex of the group across it too. Refined one group at a time, a fill's
+  // border midpoints sat mid-edge on the unrefined ribbons beside it — tens of
+  // thousands of T-junctions per town, each a crack once the DEM lifts the mesh.
+  // ⛔ Fails loudly: the result is re-checked and any T-junction throws.
+  const planeBuffers = new Map()
+  {
+    const planeKeys = [], planeSpecs = []
+    for (const [kind, key] of PAINT_ORDER) {
+      const plan = planGroup(kind, key)
+      if (!plan || !plan.inPartition) continue
+      planeKeys.push(kind + ':' + key)
+      planeSpecs.push({ polys: plan.polys, refine: plan.refinePolicy, yLift: 0 })
+    }
+    const _tc = Date.now()
+    const cstats = {}
+    const bufs = conformAndRefine(planeSpecs, cstats)
+    planeKeys.forEach((k, i) => planeBuffers.set(k, bufs[i]))
+    const tj = findTJunctions(bufs.map((b, i) => ({ id: planeKeys[i], ...b })))
+    if (tj.total > 0) {
+      const w = tj.found[0]
+      throw new Error(`[bake-ground] the ground partition still has ${tj.total} T-junctions after conformity `
+        + `(${tj.within} within a group, ${tj.cross} across groups) — first at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}), `
+        + `a ${w.vertexGroup} vertex on a ${w.edgeGroup} edge. Refusing to write a ground that cracks.`)
+    }
+    console.log(`  [bake-ground] ground partition conformed as one mesh: ${planeSpecs.length} groups, `
+      + `${cstats.inputTJunctions} input T-junctions closed, ${cstats.closures} refinement closures, ${cstats.refineTJunctions} hairline T-junctions closed after refining (≤${cstats.passes} passes), 0 left `
+      + `in ${((Date.now() - _tc) / 1000).toFixed(1)}s`)
+  }
+
+  for (const [kind, key] of PAINT_ORDER) {
+    const plan = planGroup(kind, key)
+    if (!plan) continue
+    const { onGroundPlane, inPartition } = plan
     const yLift = (onGroundPlane ? 0 : renderOrder) * GROUND_Y_EPS
-    const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy, yLift })
+    // A partition layer was conformed with the rest (at Y 0; its slot lift goes on
+    // here). Water lies OVER the ground, sharing no edge with it, so it is conformed
+    // on its own — which still joins its polygons to each other.
+    const { positions, indices } = inPartition
+      ? planeBuffers.get(kind + ':' + key)
+      : conformAndRefine([{ polys: plan.polys, refine: plan.refinePolicy, yLift }])[0]
+    if (inPartition && yLift) for (let i = 1; i < positions.length; i += 3) positions[i] = yLift
     if (indices.length === 0) continue
 
     // Color resolution: per-Look design.json wins, then the canonical
@@ -1355,6 +1185,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       // path, but it is INERT under the log-depth canvases (the per-group Y above
       // is the real coplanar resolver now). The consumer no longer applies it.
       polygonOffsetUnits: -renderOrder,
+      // Which groups the no-T-junction guarantee spans; the check reads this, so it
+      // cannot drift from the bake's own definition of the partition.
+      partition: inPartition,
       vertexCount: positions.length / 3,
       vertexByteOffset: posByteOffset,
       indexCount: indices.length,
@@ -1512,6 +1345,7 @@ async function main() {
   // env-named bake rebuilt LS. See scene.js's header.
   const scene = requireExplicitMap('bake-ground')
   let look = null, proto = true   // ⭐ ① is the producer by default; --legacy opts out
+  let outDir = null
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
@@ -1529,8 +1363,9 @@ async function main() {
     else if ((m = arg.match(/^--refine-tol=(.+)$/)))     refine.tol     = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-max-edge=(.+)$/)))refine.maxEdge = parseFloat(m[1])
+    else if ((m = arg.match(/^--out-dir=(.+)$/)))  outDir = m[1]   // a scratch A/B, not the live slab
   }
-  await bakeGround({ look, scene, refine, proto })
+  await bakeGround({ look, scene, refine, proto, outDir })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -1,6 +1,6 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
+status: BUILT on huron (2026-09-23, Seam) — awaiting the street-level eye gate; other towns re-bake after it
+dispatched: yes
 written: 2026-09-21
 evict-when: node checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs
 -->
@@ -76,8 +76,9 @@ command.
 
 Make the conformity guarantee span the whole group instead of one polygon.
 
-- Share the edge-keyed midpoint map across every polygon in `perPoly`, and run the red-green
-  fixpoint over the **union** before concatenating with vertex offsets.
+- ⛔ **This premise was wrong, measured 2026-09-23:** `perPoly` is ONE group, and ~99% of the
+  T-junctions were BETWEEN groups (fill ↔ sidewalk ↔ curb). The union that was built is every
+  group that cuts the partition — see `cartograph/groundConformity.js`.
 - ⛔ **"Shared edge" must be established GEOMETRICALLY.** Polygons are triangulated
   independently and concatenated with offsets, so per-polygon vertex indices cannot identify
   a shared edge. Key on quantised world XZ. Pick the quantum deliberately and write down why.
