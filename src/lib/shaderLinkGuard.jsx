@@ -304,6 +304,44 @@ function UnitBomb() {
  */
 export function ShaderLinkGuard() {
   const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
   useEffect(() => { installShaderLinkGuard(gl) }, [gl])
+  // Read-only handles for measuring the live render from the console. ⭐ They exist
+  // because the alternative is reasoning about what the lighting curve OUGHT to
+  // produce, and this project's standing rule is to measure the thing rather than
+  // narrate it. `__lightCensus()` answers "why is it this bright" with numbers.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.__scene = scene
+    window.__renderer = gl
+    window.__lightCensus = () => {
+      const lights = []
+      scene.traverse((o) => {
+        if (!o.isLight) return
+        lights.push({
+          type: o.type,
+          name: o.name || '',
+          intensity: +o.intensity.toFixed(4),
+          color: `#${o.color?.getHexString?.() ?? '??????'}`,
+          groundColor: o.groundColor ? `#${o.groundColor.getHexString()}` : undefined,
+          castShadow: !!o.castShadow,
+          visible: o.visible,
+          // ⛔ An invisible light still contributes nothing, but a VISIBLE one with
+          // intensity 0 and a visible one at 0.4 look identical in a scene graph dump
+          // and completely different on screen. Print both.
+          dir: o.isDirectionalLight
+            ? [o.position.x, o.position.y, o.position.z].map((v) => +v.toFixed(2))
+            : undefined,
+        })
+      })
+      const lit = lights.filter((l) => l.visible && l.intensity > 0)
+      console.log(
+        `[light] ${lights.length} lights, ${lit.length} contributing · ` +
+          `toneMapping=${gl.toneMapping} exposure=${gl.toneMappingExposure}`
+      )
+      console.table(lights)
+      return { lights, toneMappingExposure: gl.toneMappingExposure, toneMapping: gl.toneMapping }
+    }
+  }, [scene, gl])
   return <UnitBomb />
 }
