@@ -11,11 +11,12 @@
 // premise was false. Excised, not bannered.
 //
 // WHAT IS ACTUALLY TRUE, and it is a bigger question than the one I asked:
-//   `resolvePedDepths` (`:2259`) is  tl = custom.treelawn ?? STD_TREELAWN (1.5 m)
-//                                    sw = custom.sidewalk ?? ADA_SIDEWALK (1.5 m)
-// The base measure's own ped fields are NEVER READ. `gleanTreelawn` decides only the
-// ARRANGEMENT (`hasTL`), never whether there is a band at all. ⇒ Every frontage in
-// every town resolves to a standard treelawn and an ADA sidewalk unless an operator
+//   `resolvePedDepths` is  tl = custom.treelawn ?? (pedRealm false ? 0 : STD_TREELAWN)
+//                          sw = custom.sidewalk ?? (pedRealm false ? 0 : ADA_SIDEWALK)
+// The base measure's treelawn/sidewalk/terminal are NEVER READ for depth; `gleanTreelawn`
+// decides only the ARRANGEMENT (`hasTL`). The one data route to "no band" is a side's
+// `pedRealm:false` — today only `expressway=yes` (skeleton.js `isExpressway`, 2026-09-23).
+// Everything else resolves to a standard treelawn and an ADA sidewalk unless an operator
 // has hand-authored both to 0 — a motorway ramp gore included.
 //
 // So this check does not ask "was this block dressed". It asks the kit question:
@@ -44,6 +45,11 @@ for (const scene of feedScenes()) {
   const bcOf = (id, side, ord) => f.blockCustoms?.[id]?.[side]?.[ord] || null
 
   let n = 0, baseSilent = 0, silentButDressed = 0, authoredToZero = 0
+  // ⭐ The one class the DATA says carries no pedestrian realm (`expressway=yes` →
+  // `pedRealm:false` on the side, skeleton.js `isExpressway`). Unauthored, it must
+  // paint zero; authored, the operator's override wins and is not counted.
+  let noRealm = 0, noRealmDressed = 0
+  const noRealmBad = []
   const byMat = {}
   for (const o of owners) {
     const mz = base.get(o.skelId); if (!mz) continue
@@ -60,12 +66,19 @@ for (const scene of feedScenes()) {
       byMat[m] = (byMat[m] || 0) + 1
     }
     if (!paints) authoredToZero++
+    if (side.pedRealm === false && !c) {
+      noRealm++
+      if (paints) { noRealmDressed++; if (noRealmBad.length < 6) noRealmBad.push(`${o.skelId}:${o.side}#${o.segOrd} tl=${d.tl} sw=${d.sw}`) }
+    }
   }
   const pct = (v) => `${(100 * v / (n || 1)).toFixed(1)}%`
   console.log(`\n${scene}  (look ${f.look} · ${f.slots} authored slots)`)
   console.log(`  ① SOURCE: ${tg.protoSource}`)
   console.log(`  ${n} frontage stamps · ${baseSilent} (${pct(baseSilent)}) carry NO ped depth in the data`)
   console.log(`  ⇒ ${silentButDressed ? '⛔ FAIL' : '✅ PASS'}: ${silentButDressed} (${pct(silentButDressed)}) of them are painted a treelawn/sidewalk anyway`)
-  console.log(`  ⇒ ${authoredToZero} stamp(s) reach zero ped depth at all — the ONLY route is a hand override of BOTH fields`)
+  console.log(`  ⇒ ${authoredToZero} stamp(s) reach zero ped depth at all — by a hand override of BOTH fields, or the data's pedRealm:false`)
   console.log(`     by material: ${JSON.stringify(byMat)}`)
+  console.log(`  ${noRealmDressed ? '⛔ FAIL' : '✅ PASS'}: ${noRealm} unauthored frontage(s) whose data says NO pedestrian realm (expressway) · ${noRealmDressed} painted a band anyway`)
+  for (const b of noRealmBad) console.log(`     ⛔ ${b}`)
+  if (noRealmDressed) process.exitCode = 1
 }

@@ -193,6 +193,11 @@ export function measureFromSeed(seed, type) {
     if (!SIDEWALK_ELIGIBLE.has(type)) {
       return { pavementHW, treelawn: 0, sidewalk: 0, terminal: 'none', ...(material ? { material } : {}) }
     }
+    // An expressway carries no pedestrian realm (skeleton.js `isExpressway`). The
+    // flag travels on the side so `resolvePedDepths` — what the map paints — reads it.
+    if (seed.pedRealm === false && !(sd && sd.source !== 'standard')) {
+      return { pavementHW, treelawn: 0, sidewalk: 0, terminal: 'none', pedRealm: false }
+    }
     // Survey-pinned side → sidewalk sits where the survey put it.
     if (sd && sd.source !== 'standard') {
       // ⛔ `tlClamped` travels with the side: its treelawn 0 is the ASPHALT CLAMP's residue, not a

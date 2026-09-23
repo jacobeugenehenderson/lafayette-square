@@ -2421,10 +2421,13 @@ function reportGlean(measures, streets) {
 // widths default to the same standard (STD_TREELAWN == ADA_SIDEWALK), and the
 // ribbon total is uniform whether the edge is Y or N. `hasTL` carries the
 // surveyed Y/N to drive the strip ORDERING / default materials downstream.
+// ⭐ `pedRealm:false` on the side (an expressway — skeleton.js `isExpressway`) makes
+// the DEFAULT zero, not the standard; the operator's override still wins.
 export function resolvePedDepths(baseMeasure, side, custom = null) {
-  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn) : STD_TREELAWN
-  const sw = Number.isFinite(custom?.sidewalk) ? Math.max(0, custom.sidewalk) : ADA_SIDEWALK
-  return { tl, sw, hasTL: gleanTreelawn(baseMeasure, side) }
+  const none = baseMeasure?.[side]?.pedRealm === false
+  const tl = Number.isFinite(custom?.treelawn) ? Math.max(0, custom.treelawn) : (none ? 0 : STD_TREELAWN)
+  const sw = Number.isFinite(custom?.sidewalk) ? Math.max(0, custom.sidewalk) : (none ? 0 : ADA_SIDEWALK)
+  return { tl, sw, hasTL: none ? false : gleanTreelawn(baseMeasure, side) }
 }
 
 // Group a tile's cyclic edges into maximal RUNS of the same (streetIdx, side).

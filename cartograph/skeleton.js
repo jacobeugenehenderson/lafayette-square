@@ -1157,7 +1157,23 @@ const STD_SECTION = {
   secondary:   { lane: 11 * FT, parking: 8 * FT, sidewalk: 6 * FT, treelawn: 4 * FT, curb: 0.15, cornerR: 6.0 },
   primary:     { lane: 11 * FT, parking: 0,      sidewalk: 8 * FT, treelawn: 4 * FT, curb: 0.15, cornerR: 7.5 },
 }
-function seedSection(highway, lanes, oneway) {
+// ⭐ A road OSM tags `expressway=yes` carries NO pedestrian realm — no treelawn,
+// no sidewalk (Jacob, 2026-09-23, on Huron's US 6: "not supposed to have
+// sidewalks"). Read off the data, so it holds in a town nobody has looked at;
+// the curb stays. Every source way must say so — a chain that is only partly
+// expressway keeps its walk. `pedRealm:false` rides the seed into the measure
+// and `resolvePedDepths` honours it; an operator's override still wins.
+function isExpressway(sources) {
+  let n = 0
+  for (const id of sources || []) {
+    const t = WAY_TAGS_BY_ID.get(id)
+    if (!t) continue
+    if (t.expressway !== 'yes') return false
+    n++
+  }
+  return n > 0
+}
+function seedSection(highway, lanes, oneway, { expressway = false } = {}) {
   const base = highway && highway.replace(/_link$/, '')
   const cls = STD_SECTION[base] ? base : 'residential'
   const s = STD_SECTION[cls]
@@ -1165,15 +1181,18 @@ function seedSection(highway, lanes, oneway) {
   // curb-to-curb carriageway: lanes + on-street parking (residential only)
   const carriage = nLanes * s.lane + (cls === 'residential' || cls === 'unclassified' ? 2 * s.parking : 0)
   const pavementHW = +(carriage / 2).toFixed(2)
+  const treelawn = expressway ? 0 : +s.treelawn.toFixed(2)
+  const sidewalk = expressway ? 0 : +s.sidewalk.toFixed(2)
   return {
     seededClass: cls,
     lanesAssumed: nLanes,
     pavementHW,                         // curb-to-curb half width (width residual — 0% OSM)
     curb: s.curb,
-    treelawn: +s.treelawn.toFixed(2),   // PROWAG/NACTO furnishing zone (absent in OSM)
-    sidewalk: +s.sidewalk.toFixed(2),   // PROWAG min (sparse in OSM)
+    treelawn,                           // PROWAG/NACTO furnishing zone (absent in OSM)
+    sidewalk,                           // PROWAG min (sparse in OSM)
     cornerR: s.cornerR,                 // NACTO-by-class curb-return radius
-    rowHalf: +(pavementHW + s.curb + s.treelawn + s.sidewalk).toFixed(2),
+    rowHalf: +(pavementHW + s.curb + treelawn + sidewalk).toFixed(2),
+    ...(expressway && { pedRealm: false }),
   }
 }
 
@@ -1821,7 +1840,7 @@ function main() {
       osmIds: [f.osmId],
       sources: [f.osmId],
       tags: f.tags || {},
-      seed: seedSection(hw, lanes, oneway),
+      seed: seedSection(hw, lanes, oneway, { expressway: isExpressway([f.osmId]) }),
       // No real name: the label is made up (serve.js keeps it out of pickers).
       synthetic: true,
       // Grade separation (Part 2), computed like any street: true for the
@@ -2473,7 +2492,7 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
     points: chain.coords.map(c => ({ x: c.x, z: c.z })),
     sources: chain.sources || [],
     // Standards-seeded default cross-section (Part 2 bucket d / north-star).
-    seed: seedSection(highway, lanes, oneway),
+    seed: seedSection(highway, lanes, oneway, { expressway: isExpressway(chain?.sources) }),
     // Grade separation (Part 2): layer/bridge/tunnel summarized over ALL source
     // ways + the operative `gradeSeparated` flag. Earlier this dropped on named
     // streets (only fragments[0].tags reached here, no grade at all) — fixed by
