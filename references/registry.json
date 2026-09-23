@@ -717,6 +717,20 @@
       "findings": [
         "d-jr-raised"
       ]
+    },
+    {
+      "id": "q-culdesac-island-treatment",
+      "ask": "How is the central island of a turning circle / cul-de-sac treated — curb + planting/grass, or a pedestrian band? (and at what island size does the kit draw no island at all?)",
+      "neededBy": "every town with courts — huron's 9 R≈8–11 m courts currently fill the island with sidewalk (Keel, 2026-09-23, after the disc fix exposed it)",
+      "status": "open",
+      "codeSites": [
+        "the ②/Section fill on a tiny ① island (a band wider than the island fills it) — tileGround sectionPass; not the bake"
+      ],
+      "nextSources": [
+        "caltrans-hdm",
+        "massdot-design-guide (Quire's extraction, topic 3: cul-de-sacs)"
+      ],
+      "notes": "Real-world expectation (not a finding): a turning-circle island is curbed planting, not walked. Codes first — no ruling until the manuals are read."
     }
   ],
   "findings": [
