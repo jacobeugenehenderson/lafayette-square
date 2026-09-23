@@ -11,7 +11,7 @@
 // Then prints the DISPATCH QUEUE: every open question, what was tried, and where to look next.
 //
 // ▶ node checks/claims-references-are-sound.mjs
-// Mutation test: set a cited source's terms.aiUse to 'prohibited' → this goes red.
+// Mutation tests: set a cited source's terms.aiUse to 'prohibited' → red; add a kind:'derived' finding with no `from` → red.
 import fs from 'node:fs'
 
 const REG = 'references/registry.json'
@@ -33,6 +33,20 @@ const qById = new Map(questions.map(q => [q.id, q]))
 const fById = new Map(findings.map(f => [f.id, f]))
 
 for (const f of findings) {
+  if (f.kind === 'derived') {
+    // ⛔ A derived value's legitimacy is its ANCESTRY: it must start from cited findings and state the step.
+    const from = Array.isArray(f.from) ? f.from : []
+    if (!from.length) errs.push(`derived ${f.id} names no 'from' finding — a value with no cited starting point is [U], not a derivation`)
+    if (!f.derivation) errs.push(`derived ${f.id} states no 'derivation' step`)
+    if (f.source) errs.push(`derived ${f.id} carries a source — a derivation cites its ancestors, never a source of its own`)
+    for (const a of from) if (!fById.has(a)) errs.push(`derived ${f.id} starts from unknown finding "${a}"`)
+    // walk the ancestry: every root must be a cited (non-derived) finding
+    const seenA = new Set([f.id]), stack = [...from]
+    while (stack.length) { const a = stack.pop(); if (seenA.has(a)) { if (a === f.id) errs.push(`derived ${f.id} is its own ancestor`); continue } seenA.add(a)
+      const af = fById.get(a); if (af?.kind === 'derived') stack.push(...(af.from || [])) }
+    if (!qById.has(f.question)) errs.push(`derived ${f.id} answers unknown question "${f.question}"`)
+    continue
+  }
   const s = srcById.get(f.source)
   if (!s) errs.push(`finding ${f.id} cites unknown source "${f.source}"`)
   else if (s.terms?.aiUse !== 'permitted') errs.push(`finding ${f.id} cites ${s.id}, whose terms.aiUse is "${s.terms?.aiUse}" — only 'permitted' sources may be cited`)

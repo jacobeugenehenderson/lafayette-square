@@ -29,6 +29,15 @@ A research brief is one line: ***"Answer the open `references/` questions needed
 
 A design that uses a value carries the **finding id** into its output. A value with no finding is **[U]**.
 
+## Codes first — and nothing is "preference" (Jacob, 2026-09-23)
+
+> *"I would rather go by codes always… I'd still want to use the ones which STARTED from a legitimate place rather than some 'I just like a wide street' kind of judgement."*
+
+Every value the kit draws is exactly one of:
+- **finding** (`kind: value | rule | …`) — the code says so: permitted source + section + quote.
+- **derived** (`kind: "derived"`) — started from one or more findings, then adjusted or interpolated **for the map**. ⛔ It MUST name `from` (the finding ids it started at — each ultimately a cited finding) and `derivation` (the stated step: *"scaled ×0.92 for legibility at map scale"*, *"interpolated between f-a and f-b"*). It cites no source of its own; its legitimacy is its ancestry.
+- **[U]** — no code answers it yet. It stays on the dispatch queue. ⛔ **There is no un-anchored "house" value** — where no code speaks, the answer is [U], never taste.
+
 ## Status
 
 ▶ `node checks/claims-references-are-sound.mjs` — never a count written here.
