@@ -342,7 +342,24 @@
         "note": "A federal regulation (US Government work)."
       },
       "status": "PERMITTED",
-      "localCopy": null
+      "localCopy": "references/files/prowag-36cfr1190.xml",
+      "localCopySha256": "ba36963f29ff2aa5a73ef7c536f22eb5d136e7b2278ecd65f3ddd82718e0935c",
+      "localCopyFrom": "https://www.ecfr.gov/api/versioner/v1/full/2026-09-01/title-36.xml?part=1190 (eCFR as of 2026-09-01; fetched by Quire 2026-09-23 — needs Accept-Encoding: compressed)",
+      "extracted": {
+        "on": "2026-09-23",
+        "by": "Quire",
+        "read": [
+          "R203 pedestrian access routes",
+          "R205 detectable warnings",
+          "R302 PAR",
+          "R304 curb ramps",
+          "R305 detectable warning surfaces",
+          "R306 crosswalks incl. roundabouts, channelized turn lanes"
+        ],
+        "notRead": "R1xx administration, R204/R207–R214 and R307–R4xx (signals, push buttons, transit, parking, stairs, ramps) — not kit geometry topics.",
+        "doesNotCover": "sidewalk TOTAL width, planting strip/treelawn, curb width or height, island minimum size, cul-de-sacs, lane widths — PROWAG governs the accessible route, not the street section."
+      },
+      "aashtoPassages": []
     },
     {
       "id": "nacto-usdg",
@@ -545,20 +562,23 @@
       "id": "q-refuge-width",
       "ask": "Minimum width of a pedestrian refuge / island cut-through",
       "neededBy": "H-3 Q8 (future ped path through islands)",
-      "status": "open",
+      "status": "answered",
       "tried": [
         "mutcd-11r1 §3C.12 (defers to ADA)",
         "caltrans-hdm → f-caltrans-refuge-width",
-        "massdot-design-guide → f-massdot-refuge-island"
+        "massdot-design-guide → f-massdot-refuge-island",
+        "prowag-2023 → f-prowag-refuge-clear-width, f-prowag-refuge-warning-layout"
       ],
       "nextSources": [
         "ada-2010-standards"
       ],
       "findings": [
         "f-caltrans-refuge-width",
-        "f-massdot-refuge-island"
+        "f-massdot-refuge-island",
+        "f-prowag-refuge-clear-width",
+        "f-prowag-refuge-warning-layout"
       ],
-      "notes": "ANSWERED FOR CA ONLY: 6 ft in the direction of travel, \"without exception\" (Index 405.4(3)). ⸻ MassDOT (MA): 7 ft in the direction of travel, 5 ft clear width — attributed to PROWAG (itself permitted; read it directly to answer for all states)."
+      "notes": "ANSWERED FOR CA ONLY: 6 ft in the direction of travel, \"without exception\" (Index 405.4(3)). ⸻ MassDOT (MA): 7 ft in the direction of travel, 5 ft clear width — attributed to PROWAG (itself permitted; read it directly to answer for all states). ⸻ PROWAG (federal, all states): the cut-through is 60 in minimum clear WIDTH (R302.2.1); the depth is not stated as a number — only the warning-surface layout within it (24 in surfaces, ≤ 6 in from each edge, ≥ 24 in apart). CA states 6 ft depth and MA 7 ft in their own voices."
     },
     {
       "id": "q-roundabout-geometry",
@@ -573,11 +593,13 @@
         "f-caltrans-roundabout-defers",
         "f-caltrans-roundabout-icd",
         "f-caltrans-splitter-island",
-        "f-massdot-roundabout-defers"
+        "f-massdot-roundabout-defers",
+        "f-prowag-roundabout-edge"
       ],
       "tried": [
         "caltrans-hdm → f-caltrans-roundabout-defers, f-caltrans-roundabout-icd, f-caltrans-splitter-island",
-        "massdot-design-guide → f-massdot-roundabout-defers"
+        "massdot-design-guide → f-massdot-roundabout-defers",
+        "prowag-2023 → f-prowag-roundabout-edge"
       ],
       "notes": "Caltrans (CA only) states typical ICD ranges and splitter-island minimums in its own voice; for CA roundabouts those are citable. The design method remains NCHRP 672 (blocked). Other states stay blocked. ⸻ MassDOT: defers to its own Guidelines for the Planning and Design of Roundabouts — a MassDOT document, likely under the same Mass.gov terms; not yet in the registry."
     },
@@ -655,17 +677,17 @@
       "tried": [
         "OSM-FORENSICS Part 4 attributes it to PROWAG/NACTO — not yet read under this registry",
         "caltrans-hdm → f-caltrans-sidewalk-width",
-        "massdot-design-guide → f-massdot-sidewalk-width, f-massdot-walkway-widths"
+        "massdot-design-guide → f-massdot-sidewalk-width, f-massdot-walkway-widths",
+        "prowag-2023 → f-prowag-par-clear-width"
       ],
-      "nextSources": [
-        "prowag-2023 (PERMITTED)"
-      ],
+      "nextSources": [],
       "findings": [
         "f-caltrans-sidewalk-width",
         "f-massdot-sidewalk-width",
-        "f-massdot-walkway-widths"
+        "f-massdot-walkway-widths",
+        "f-prowag-par-clear-width"
       ],
-      "notes": "ANSWERED FOR CA ONLY: 6 ft at the curb, 5 ft behind a planting strip, 8 ft on main streets; excludes curb (Index 105.2). ⸻ ANSWERED FOR MA ONLY (2006 Ch 5): 5 ft minimum excluding curb; unbuffered curb-attached 6 ft residential / 8 ft commercial."
+      "notes": "ANSWERED FOR CA ONLY: 6 ft at the curb, 5 ft behind a planting strip, 8 ft on main streets; excludes curb (Index 105.2). ⸻ ANSWERED FOR MA ONLY (2006 Ch 5): 5 ft minimum excluding curb; unbuffered curb-attached 6 ft residential / 8 ft commercial. ⸻ PROWAG (federal, all states): the pedestrian access route is 48 in minimum clear, exclusive of curb (R302.2). That is the accessibility FLOOR for the clear route — CA (5–8 ft) and MA (5 ft+) state sidewalk widths above it. Which of these the kit draws as its default is a design choice, not answered by the code."
     },
     {
       "id": "q-treelawn-default",
@@ -2504,6 +2526,210 @@
       "where": "Ch 3 (Active Update web chapter) — §3.8 Controlling Criteria",
       "quote": "MassDOT’s Controlling Criteria are described in Engineering Directive E-20-001",
       "scope": "MA — the minimum-requirement values (lane width, shoulder width, pedestrian facilities…) live in E-20-001, not in these chapters",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-par-clear-width",
+      "topic": "pedestrian realm",
+      "question": "q-sidewalk-default",
+      "kind": "value",
+      "value": {
+        "parClearWidthMin_in": 48,
+        "excludesCurb": true
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R302.2",
+      "quote": "Except as provided in R302.2.1 and R302.2.2, the continuous clear width of pedestrian access routes shall be 48 inches (1220 mm) minimum, exclusive of the width of any curb.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1). The CLEAR route within a sidewalk, not the sidewalk's total width",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-passing-space",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "belowClearWidth_in": 60,
+        "maxInterval_ft": 200,
+        "size_in": [
+          60,
+          60
+        ]
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R302.3",
+      "quote": "Where the clear width of pedestrian access routes is less than 60 inches (1525 mm), passing spaces shall be provided at intervals of 200 feet (61 m) maximum.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-par-slopes",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "gradeMax_pct": 5,
+        "crossSlopeMax_pct": 2.1
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R302.4.1, R302.5.1",
+      "quote": "The cross slope of a pedestrian access route not contained within a crosswalk shall be 1:48 (2.1%) maximum.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1); grade: \"shall not exceed 1:20 (5.0%)\" in highway right-of-way unless the adjacent street is steeper",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-refuge-clear-width",
+      "topic": "pedestrian realm",
+      "question": "q-refuge-width",
+      "kind": "value",
+      "value": {
+        "clearWidthAcrossMedianOrRefuge_in": 60,
+        "sharedUsePath": "max(60 in, crosswalk width)"
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R302.2.1",
+      "quote": "The clear width of pedestrian access routes crossing medians and pedestrian refuge islands shall be 60 inches (1525 mm) minimum",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1). The cut-through's WIDTH across; the refuge's depth in the direction of travel is not stated as a number here (R305.2.4 fixes the warning-surface layout within it)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-refuge-warning-layout",
+      "topic": "pedestrian realm",
+      "question": "q-refuge-width",
+      "kind": "value",
+      "value": {
+        "dwsDepth_in": 24,
+        "dwsFromIslandEdge_in": {
+          "max": 6
+        },
+        "gapBetweenDws_in": {
+          "min": 24
+        }
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R305.1.4, R305.2.4",
+      "quote": "At cut-through pedestrian refuge islands, detectable warning surfaces shall be located no greater than 6 inches (150 mm) from the edges of the pedestrian refuge island or at back of curb and shall be separated by a 24 inch (610 mm) minimum length of surface in the direction of travel without detectable warning surfaces.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1); each surface \"shall extend 24 inches (610 mm) minimum in the direction of pedestrian travel\" (R305.1.4)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-crosswalk-par-through-islands",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "parThroughMediansAndRefuges": true
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R203.4",
+      "quote": "A pedestrian access route complying with R302 shall be provided within and for the full length of a crosswalk, including medians and pedestrian refuge islands.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-curb-ramp-per-crosswalk",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "perCrosswalk": 1,
+        "orOneBlendedTransitionSpanningAll": true,
+        "noneWhereCrossingProhibited": true
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R203.6.1.1",
+      "quote": "At an intersection corner, one curb ramp or blended transition shall be provided for each crosswalk, or a single blended transition that spans all crosswalks at the intersection corner may be provided.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-curb-ramp-geometry",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "value",
+      "value": {
+        "width_in": 48,
+        "runningSlopeMax": "1:12 (8.3%)",
+        "crossSlopeMax": "1:48 (2.1%)",
+        "maxRequiredLength_ft": 15,
+        "clearAreaBelow_in": [
+          48,
+          48
+        ],
+        "topLanding_in": [
+          48,
+          48
+        ],
+        "flareMax": "1:10 (10%)",
+        "blendedTransitionRunningSlopeMax_pct": 5
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R304.2.1–R304.2.6, R304.4.1, R304.5.1.1",
+      "quote": "The clear width of curb ramp runs (excluding any flared sides) and blended transitions not on shared use paths shall be 48 inches (1220 mm) minimum.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1); \"The running slope of the curb ramp shall be 1:12 (8.3%) maximum.\" (R304.2.1)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-prohibited-crossing-edge",
+      "topic": "pedestrian realm",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "separation": [
+          "landscaping or other non-prepared surface",
+          "detectable vertical edge, bottom ≤ 15 in"
+        ]
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R203.6.1.1",
+      "quote": "Where pedestrian crossing is prohibited, curb ramps or blended transitions shall not be provided, and the pedestrian circulation path shall be either (a) separated from the roadway with landscaping or other non-prepared surface or (b) separated from the roadway by a detectable vertical edge treatment with a bottom edge 15 inches maximum above the pedestrian circulation path.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-roundabout-edge",
+      "topic": "roundabouts",
+      "question": "q-roundabout-geometry",
+      "kind": "value",
+      "value": {
+        "landscapedSeparationMin_in": 24,
+        "orVerticalEdgeBottomMax_in": 15,
+        "dwsNotForEdgeDetection": true
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R306.4.1–R306.4.1.2",
+      "quote": "Where pedestrian crossing is not intended, the pedestrian circulation path shall be separated from the curb, crosswalk to crosswalk, with landscaping or other nonprepared surface 24 inches (610 mm) wide minimum.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire"
+    },
+    {
+      "id": "f-prowag-multilane-crossing-treatment",
+      "topic": "gores, ramp terminals, channelization",
+      "question": null,
+      "kind": "rule",
+      "value": {
+        "atMultilaneChannelizedTurnLanesAndRoundabouts": [
+          "signal with ped head",
+          "PHB",
+          "RRFB",
+          "raised crossing"
+        ]
+      },
+      "source": "prowag-2023",
+      "where": "36 CFR 1190 appendix, R306.4.2, R306.5",
+      "quote": "Crosswalks at multi-lane channelized turn lanes shall provide treatments consisting of one or more of the following: a traffic control signal with a pedestrian signal head; a pedestrian hybrid beacon; a pedestrian actuated rectangular rapid flashing beacon; or a raised crossing.",
+      "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
       "foundOn": "2026-09-23",
       "foundBy": "Quire"
     }
