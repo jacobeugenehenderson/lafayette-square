@@ -249,7 +249,13 @@
       "localCopy": "references/files/fhwa-sa-13-027.pdf",
       "localCopySha256": "c666c3ac6b7c30e6cc908512e220c213af10431b69c6cffb34ce735dcf6f2d55",
       "access": "⚠️ 2026-09-23: highways.dot.gov and safety.fhwa.dot.gov return 403 to a non-browser client — an agent cannot fetch it. Jacob downloaded it by hand 2026-09-23 (323 pp., 8.9 MB) into references/files/fhwa-sa-13-027.pdf (gitignored); agents read the local copy.",
-      "aashtoPassages": "⛔ Contains numeric island/median rules attributed IN-TEXT to AASHTO — flush-median criteria (§8, p.8-5, ref 3), median-end shapes (ref 3, p.701), refuge widths 6/8/10 ft (ref 26, AASHTO bicycle guide). These inherit AASHTO's prohibition: never a finding."
+      "aashtoPassages": "⛔ Contains numeric island/median rules attributed IN-TEXT to AASHTO — flush-median criteria (§8, p.8-5, ref 3), median-end shapes (ref 3, p.701), refuge widths 6/8/10 ft (ref 26, AASHTO bicycle guide). These inherit AASHTO's prohibition: never a finding.",
+      "extracted": {
+        "on": "2026-09-23",
+        "by": "Quire",
+        "read": "targeted pass for the six kit topics (Grader had read it for islands); §1.3, §4.4, §4.7, §8 medians",
+        "result": "Only two statements in FHWA's own voice; every numeric geometry value found (median ends, raised left-turn medians, bike-lane and bicycle-refuge widths) is attributed to AASHTO and stays excluded (see aashtoPassages)."
+      }
     },
     {
       "id": "nchrp-672",
@@ -594,7 +600,8 @@
         "f-caltrans-roundabout-icd",
         "f-caltrans-splitter-island",
         "f-massdot-roundabout-defers",
-        "f-prowag-roundabout-edge"
+        "f-prowag-roundabout-edge",
+        "f-sa13027-roundabouts-out-of-scope"
       ],
       "tried": [
         "caltrans-hdm → f-caltrans-roundabout-defers, f-caltrans-roundabout-icd, f-caltrans-splitter-island",
@@ -2732,6 +2739,39 @@
       "scope": "federal — all states, once adopted as standards by DOJ/DOT (36 CFR 1190.1)",
       "foundOn": "2026-09-23",
       "foundBy": "Quire"
+    },
+    {
+      "id": "f-sa13027-corner-radius-method",
+      "source": "fhwa-sa-13-027",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire",
+      "question": null,
+      "topic": "street cross-section by class",
+      "kind": "rule",
+      "value": {
+        "sizeTo": "turning path of the design vehicle",
+        "avoid": [
+          "pedestrian facilities",
+          "opposing lanes"
+        ],
+        "highPedBike": "smaller radii desirable"
+      },
+      "where": "§4.4 Corner Radius, p. 4-12",
+      "quote": "Practitioners should design corner radii to accommodate the turning path of a design vehicle to avoid encroaching on pedestrian facilities and opposing lanes of travel.",
+      "scope": "signalized intersections (federal informational guide); no numeric radius in its own voice"
+    },
+    {
+      "id": "f-sa13027-roundabouts-out-of-scope",
+      "source": "fhwa-sa-13-027",
+      "foundOn": "2026-09-23",
+      "foundBy": "Quire",
+      "question": "q-roundabout-geometry",
+      "topic": "roundabouts",
+      "kind": "defers",
+      "value": null,
+      "where": "§1.3 Scope of the Guide",
+      "quote": "Roundabouts and other alternative intersection designs are not addressed directly in this document",
+      "scope": "defers to NCHRP 672 (Roundabouts: An Informational Guide, 2nd ed.), which is not permitted"
     }
   ]
 }
