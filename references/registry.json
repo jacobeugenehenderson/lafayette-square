@@ -514,8 +514,7 @@
         "mutcd-11r1 → f-mutcd-small-raised-islands"
       ],
       "nextSources": [
-        "caltrans-hdm (PERMITTED)",
-        "massdot-design-guide (PERMITTED)"
+        "none of the permitted sources states a raised-vs-flush size (Caltrans, MassDOT, MUTCD, SA-13-027 all read) — a ruling or a measured value, or a further state manual"
       ],
       "notes": "No permitted source states a paint-vs-raised size. v1 decision (Grader's plan): no painted-island class; every JR raised — rationale cites f-sa13027-island-raised-or-flush + f-mutcd-island-means. ⸻ Caltrans (CA): a FLOOR for any channelizing island (50 sq ft, preferably 75) but NO size at which raised becomes paint — its raised-vs-painted choice is keyed to posted speed (> 40 mph: curbs discouraged) and setting (rural: paint). The question as asked stays open. ⸻ MassDOT (MA): floors of 50 sq ft urban / 100 sq ft rural with a side ≥ 15 ft, linear islands ≥ 2 ft wide — but again NO size at which raised becomes flush; raised is \"ideal\", flush \"less preferably\" and never a refuge. Open as asked, in both CA and MA.",
       "findings": [
@@ -574,7 +573,10 @@
         "f-caltrans-inlet-nose-position",
         "f-massdot-ramp-terminal-widths"
       ],
-      "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): the exit nose sits at the 23-ft separation point between diverging edges of traveled way (may move downstream, paved width ≤ 20 ft); the entrance inlet nose at the 14-ft point. Left open for MO/OH/MA. ⸻ MassDOT (MA): the text does NOT locate the nose — it gives the 25-ft exit width held to the nose and the 14-ft entrance width at convergence; nose dimensions are in image-only Figures 7-28–7-33. Still open for MA."
+      "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): the exit nose sits at the 23-ft separation point between diverging edges of traveled way (may move downstream, paved width ≤ 20 ft); the entrance inlet nose at the 14-ft point. Left open for MO/OH/MA. ⸻ MassDOT (MA): the text does NOT locate the nose — it gives the 25-ft exit width held to the nose and the 14-ft entrance width at convergence; nose dimensions are in image-only Figures 7-28–7-33. Still open for MA.",
+      "nextSources": [
+        "MassDOT PDDG Ch 7 Figures 7-28–7-33 (image-only; MassDOT-credited) for MA"
+      ]
     },
     {
       "id": "q-refuge-width",
@@ -720,7 +722,7 @@
       ],
       "nextSources": [
         "nacto-usdg (terms owed)",
-        "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
+        "Caltrans Standard Plans / local agency standards (not in registry) for CA"
       ],
       "findings": [
         "f-caltrans-planting-strip-defers",
@@ -735,7 +737,8 @@
       "neededBy": "curbWidth / CURB_WIDTH",
       "status": "open",
       "nextSources": [
-        "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
+        "Caltrans Standard Plans A87 (not in registry) for CA",
+        "MassDOT Construction Standard Details (not in registry)"
       ],
       "findings": [
         "f-caltrans-curb-width-defers",
@@ -864,7 +867,8 @@
         "the ②/Section fill on a tiny ① island (a band wider than the island fills it) — tileGround sectionPass; not the bake"
       ],
       "nextSources": [
-        "massdot-design-guide (Quire's extraction, topic 3: cul-de-sacs)"
+        "municipal street standards (both state manuals defer local roads to them)",
+        "MassDOT PDDG Ch 16 Speed Management (not yet downloaded)"
       ],
       "notes": "Real-world expectation (not a finding): a turning-circle island is curbed planting, not walked. Codes first — no ruling until the manuals are read. ⸻ MassDOT (MA): no cul-de-sac content in Ch 3/5/6/7/13; local roads defer to municipal standards. Nearest statement: urban median/ISLAND planting needs ≥ 10 ft of soil for trees, ≥ 6 ft for shrubs (Ch 13). Still open.",
       "findings": [
