@@ -65,10 +65,24 @@ const LONG_EDGE = 1600        // a full-bleed card on a retina phone, and a lapt
 const QUALITY = 82
 const sharp = (await import('sharp')).default
 
+// ⛔⛔ IT WRITES THE OVERRIDES, NOT JUST THE LISTINGS — and the first version did not,
+// which cost the whole localisation. `content/listings.json` is DERIVED: `bake-content`
+// rebuilds it from the Overture base plus `listings.overrides.json` on every run. Writing
+// local paths only into the derived file meant the next re-bake (there were four that
+// evening, each a publish) silently restored every hotlink, and the check caught it the
+// following morning rather than the tool preventing it.
+// ⭐ The rule this violated is the repo's own: a correction belongs in the overrides
+// layer, where git reviews it and a fresh intake cannot destroy it. I wrote that sentence
+// into host/README.md the same day and then did the opposite here.
 const lp = path.join(ROOT, 'cartograph/data', SCENE, 'content/listings.json')
+const op = path.join(ROOT, 'cartograph/data', SCENE, 'content/listings.overrides.json')
 if (!existsSync(lp)) { console.error(`⛔ no content/listings.json for scene "${SCENE}"`); process.exit(2) }
 const doc = JSON.parse(readFileSync(lp, 'utf8'))
 const listings = Array.isArray(doc) ? doc : (doc.listings || [])
+const overrides = existsSync(op) ? JSON.parse(readFileSync(op, 'utf8')) : null
+// A listing's photos may live under several GERS keys (a duplicate pair); rewrite each.
+const patchesFor = (listingName) => !overrides ? []
+  : Object.values(overrides.patches || {}).filter(p => p._match_name === listingName && Array.isArray(p.photos))
 
 const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg', 'image/avif': 'avif' }
 // ⛔ The bytes must agree with the header. A server can label an HTML error page
@@ -161,9 +175,27 @@ for (const l of listings) {
   }
 }
 
+// ⭐ Mirror the rewritten photo arrays back into the durable layer, matched by the
+// ORIGINAL url so a re-run or a partial run cannot mis-pair them.
+let patched = 0
+if (!DRY && overrides) {
+  for (const l of listings) {
+    for (const pt of patchesFor(l.name)) {
+      pt.photos = pt.photos.map((op_) => {
+        const src = typeof op_ === 'string' ? op_ : (op_.source_url || op_.url)
+        const now = (l.photos || []).find(np => np && (np.source_url === src || np.url === src))
+        if (!now || typeof now === 'string') return op_
+        patched++
+        return { ...(typeof op_ === 'string' ? {} : op_), url: now.url, source_url: now.source_url }
+      })
+    }
+  }
+  writeFileSync(op, JSON.stringify(overrides, null, 2) + '\n')
+}
 if (!DRY) writeFileSync(lp, JSON.stringify(doc, null, 1) + '\n')
 console.log(`  ${fetched} fetched · ${kept} already archived · ${skipped} refused`)
-console.log(`  web (ships): ${(bytes / 1e6).toFixed(1)} MB · archive (tracked, never deployed): ${((archived_bytes || du(ARCHIVE)) / 1e6).toFixed(1)} MB`)
+console.log(`  web (ships): ${(bytes / 1e6).toFixed(1)} MB · archive: ${((archived_bytes || du(ARCHIVE)) / 1e6).toFixed(1)} MB`)
+if (!DRY) console.log(`  ${patched} photo url(s) written back to listings.overrides.json — so a re-bake cannot restore the hotlinks`)
 if (problems.length) {
   console.log(`  ⛔ ${problems.length} refused, each for a stated reason:`)
   for (const m of problems.slice(0, 12)) console.log(`     ${m}`)

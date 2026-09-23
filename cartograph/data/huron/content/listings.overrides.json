@@ -117,20 +117,22 @@
       "_geo_verified": "The Commons photos carry coordinates 41.395833, -82.555 — Huron, Erie County, Ohio. NOT Port Huron MI, not Huron SD, not Huron County OH.",
       "photos": [
         {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Christ_Episcopal_Church_Huron_Ohio.jpg",
+          "url": "/photos/huron/huro-lst-0236/01.jpg",
           "what": "Front/tower elevation of the church, colour, 3456x5184. Shot for Wiki Loves Monuments 2012.",
           "credit": "LeeG7144 (own work), via Wikimedia Commons",
           "credit_url": "https://commons.wikimedia.org/wiki/File:Christ_Episcopal_Church_Huron_Ohio.jpg",
           "license": "CC BY-SA 3.0",
-          "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+          "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+          "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Christ_Episcopal_Church_Huron_Ohio.jpg"
         },
         {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg",
+          "url": "/photos/huron/huro-lst-0236/02.jpg",
           "what": "Side elevation of the same church, colour, 5184x3456, taken two minutes after the front view.",
           "credit": "LeeG7144 (own work), via Wikimedia Commons",
           "credit_url": "https://commons.wikimedia.org/wiki/File:Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg",
           "license": "CC BY-SA 3.0",
-          "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+          "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+          "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Christ_Episcopal_Church_Huron_Ohio_Side_View.jpg"
         }
       ],
       "_photos_rights_unclear": [
@@ -233,11 +235,12 @@
       "_rekeyed": "⛔ MIS-KEYED WHEN WRITTEN, corrected 2026-09-22. This record describes BGSU Firelands LIBRARY and was filed under huro-lst-0195, which is 'Bowling Green State University, Firelands College' — a real, separate, occupied listing. The library is huro-lst-0280 and is the town's most prominent listing (rank 1). Consequence while it stood: the college carried the library's website, description and hours, so the college had no description of ITSELF and the defect was invisible to any 'is this field empty?' check. ⭐ The `_match_name` disagreed with the listing's own name the whole time — the detector was firing and was read as a statistic.",
       "photos": [
         {
-          "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/library/1D2-1462.jpg",
+          "url": "/photos/huron/huro-lst-0280/01.jpg",
           "what": "The library's own photograph on its landing page — the only image on that page, so it is the library's chosen self-portrait. Verified HTTP 200, image/jpeg, 8.96 MB (large; likely wants resizing).",
           "credit": "Bowling Green State University (BGSU Firelands Library)",
           "credit_url": "https://www.bgsu.edu/firelands/library.html",
-          "license": "NOT STATED — institution's own published image of itself. BGSU publishes no reuse terms."
+          "license": "NOT STATED — institution's own published image of itself. BGSU publishes no reuse terms.",
+          "source_url": "https://www.bgsu.edu/content/dam/bgsu_firelands/library/1D2-1462.jpg"
         }
       ],
       "_history_note": "NOT ESTABLISHED — see _confidence. Note that the two named special collections (Great Lakes, Holocaust) are a strong history lead, but their origins are nowhere published on bgsu.edu that I could reach.",
@@ -946,70 +949,81 @@
       "_website_correction": "listings.json currently holds website = 'http://www.berardisrestaurant.com/'. That host 301-redirects to https://berardisrestauranthuron.com/ — the canonical live site, which is also the host of every asset below. Recommend updating the field.",
       "photos": [
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Front.jpg",
+          "url": "/photos/huron/huro-lst-0252/01.jpg",
           "what": "Exterior of the restaurant at dusk — brick building with dark standing-seam gable roof and a cream script 'Berardi's' sign, parking lot in foreground.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Front.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-History.jpg",
+          "url": "/photos/huron/huro-lst-0252/02.jpg",
           "what": "Archival black-and-white photograph: an older woman and a man in white shirts standing among stacked burlap potato sacks, each holding a hand tool.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/about/"
+          "credit_url": "https://berardisrestauranthuron.com/about/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-History.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Porkchop.jpg",
+          "url": "/photos/huron/huro-lst-0252/03.jpg",
           "what": "Plated pork chop with herb-and-shallot butter, mashed potatoes with gravy, and steamed broccoli.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Porkchop.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Chicken-Bruschetta-lg.jpg",
+          "url": "/photos/huron/huro-lst-0252/04.jpg",
           "what": "Close-up of sliced grilled chicken over fettuccine in cream sauce with diced tomato, parsley and shredded parmesan.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Chicken-Bruschetta-lg.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Cranberry-Nut-French-Toast-lg.jpg",
+          "url": "/photos/huron/huro-lst-0252/05.jpg",
           "what": "Cranberry-nut French toast dusted with powdered sugar, topped with whipped cream, served with bacon, a pitcher of syrup and a cup of butter.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Cranberry-Nut-French-Toast-lg.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Fruit-Nut-Salad-lg.jpg",
+          "url": "/photos/huron/huro-lst-0252/06.jpg",
           "what": "Mixed-greens salad with sliced strawberries, green apple, dried cranberries, candied nuts and crumbled feta.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Fruit-Nut-Salad-lg.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Haddock-Lemon-Wine-lg.jpg",
+          "url": "/photos/huron/huro-lst-0252/07.jpg",
           "what": "Baked haddock fillet with capers and a lemon-wine sauce over rice pilaf, with green beans and a lemon wedge.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-Haddock-Lemon-Wine-lg.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Chipotle-Burger-lg.jpg",
+          "url": "/photos/huron/huro-lst-0252/08.jpg",
           "what": "Open-faced chipotle burger with melted white cheese, jalapeños and tortilla strips, with lettuce, tomato and red onion, a pickle spear, fries, a bread basket and a bottle of malt vinegar.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Chipotle-Burger-lg.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-French-Fries.jpg",
+          "url": "/photos/huron/huro-lst-0252/09.jpg",
           "what": "Overhead studio flat-lay of hand-cut skin-on french fries on a white plate against a slate surface.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/10/Berardis-Restaurant-Huron-French-Fries.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Dessert.jpg",
+          "url": "/photos/huron/huro-lst-0252/10.jpg",
           "what": "Chocolate chip cookies cooling on a wire rack. Small file (400 px wide).",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-Dessert.jpg"
         },
         {
-          "url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-FamilyMenu.jpg",
+          "url": "/photos/huron/huro-lst-0252/11.jpg",
           "what": "Baked fish fillet with capers over rice pilaf with green beans and a lemon wedge. Small file (400 px wide). ⚠️ The FILENAME says 'FamilyMenu' but the image is a seafood plate — it is a crop of the Haddock photo above. Do not trust the filename as a caption.",
           "credit": "Berardi's Restaurant",
-          "credit_url": "https://berardisrestauranthuron.com/"
+          "credit_url": "https://berardisrestauranthuron.com/",
+          "source_url": "https://berardisrestauranthuron.com/wp-content/uploads/2021/09/Berardis-Restaurant-Huron-FamilyMenu.jpg"
         }
       ],
       "_photos_note": "Three further files in the media library are smaller crops of photos already listed and were deliberately excluded as duplicates: .../2021/09/Berardis-Restaurant-Huron-Breakfast.jpg (crop of the cranberry French toast), .../2021/09/Berardis-Restaurant-Huron-LunchDinner.jpg (crop of the pork chop), .../2021/10/Berardis-Restaurant-Huron-French-Fries-Cropped.jpg (crop of the fries). The full media library was enumerated via https://berardisrestauranthuron.com/wp-json/wp/v2/media?per_page=100 — 33 items, all accounted for.",
@@ -1904,40 +1918,46 @@
       ],
       "photos": [
         {
-          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8677.jpg",
+          "url": "/photos/huron/huro-lst-0059/01.jpg",
           "what": "Product photo: \"Lake Erie Love Bracelet\" - a hand-tied cotton-cord bracelet",
           "credit": "Beagle Bay Knot Works (own Shopify shop)",
-          "credit_url": "https://www.beaglebayknotworks.com/"
+          "credit_url": "https://www.beaglebayknotworks.com/",
+          "source_url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8677.jpg"
         },
         {
-          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8673.jpg",
+          "url": "/photos/huron/huro-lst-0059/02.jpg",
           "what": "Product photo: \"Back to the Bay Bracelet\"",
           "credit": "Beagle Bay Knot Works (own Shopify shop)",
-          "credit_url": "https://www.beaglebayknotworks.com/"
+          "credit_url": "https://www.beaglebayknotworks.com/",
+          "source_url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8673.jpg"
         },
         {
-          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/products/KelseyWreath.jpg",
+          "url": "/photos/huron/huro-lst-0059/03.jpg",
           "what": "Product photo: \"Kelsey\" nautical rope wreath - the most card-legible object in the catalogue",
           "credit": "Beagle Bay Knot Works (own Shopify shop)",
-          "credit_url": "https://www.beaglebayknotworks.com/"
+          "credit_url": "https://www.beaglebayknotworks.com/",
+          "source_url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/products/KelseyWreath.jpg"
         },
         {
-          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8698.jpg",
+          "url": "/photos/huron/huro-lst-0059/04.jpg",
           "what": "Product photo: lacing-needle (fid) assortment - marlin-spike supplies",
           "credit": "Beagle Bay Knot Works (own Shopify shop)",
-          "credit_url": "https://www.beaglebayknotworks.com/"
+          "credit_url": "https://www.beaglebayknotworks.com/",
+          "source_url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/IMG_8698.jpg"
         },
         {
-          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/Liberty250.jpg",
+          "url": "/photos/huron/huro-lst-0059/05.jpg",
           "what": "Product photo: \"Liberty 250 Bracelet\", red/white/blue cord",
           "credit": "Beagle Bay Knot Works (own Shopify shop)",
-          "credit_url": "https://www.beaglebayknotworks.com/"
+          "credit_url": "https://www.beaglebayknotworks.com/",
+          "source_url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/Liberty250.jpg"
         },
         {
-          "url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/BBKW_Logo_22.jpg",
+          "url": "/photos/huron/huro-lst-0059/06.jpg",
           "what": "The shop's logo - not a photograph, but it is the only branded image on the site",
           "credit": "Beagle Bay Knot Works (own Shopify shop)",
-          "credit_url": "https://www.beaglebayknotworks.com/"
+          "credit_url": "https://www.beaglebayknotworks.com/",
+          "source_url": "https://cdn.shopify.com/s/files/1/0127/4511/3659/files/BBKW_Logo_22.jpg"
         }
       ],
       "_no_storefront_photo_reason": "Looked at the home page, /pages/contact-us, /pages/bracelet-sizing, /pages/our-favorite-links and the products feed. No exterior, interior or Main Street image is published. The site links NO Facebook or Instagram account, so there is no social account to look in either - unusual for a retail shop and worth a Host note.",
@@ -1967,28 +1987,32 @@
       ],
       "photos": [
         {
-          "url": "https://static.wixstatic.com/media/823c34_8858aba644124233b9cdedefca3a3f29~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0204/01.jpg",
           "what": "Full-bleed home-page photograph, original 2048x1365. Subject not established - no alt text.",
           "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
-          "credit_url": "https://www.hellogorgeousbeautybarllc.com/"
+          "credit_url": "https://www.hellogorgeousbeautybarllc.com/",
+          "source_url": "https://static.wixstatic.com/media/823c34_8858aba644124233b9cdedefca3a3f29~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/823c34_c98ab5c3ba5c4a5cbc4ae8374fda12bb~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0204/02.jpg",
           "what": "Second home-page photograph, portrait crop. Subject not established - no alt text.",
           "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
-          "credit_url": "https://www.hellogorgeousbeautybarllc.com/"
+          "credit_url": "https://www.hellogorgeousbeautybarllc.com/",
+          "source_url": "https://static.wixstatic.com/media/823c34_c98ab5c3ba5c4a5cbc4ae8374fda12bb~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/823c34_740fd9da116d44ce976f59c467164d2a~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0204/03.jpg",
           "what": "On /our-family - a team page, so this is very likely a staff portrait rather than the premises",
           "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
-          "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family"
+          "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family",
+          "source_url": "https://static.wixstatic.com/media/823c34_740fd9da116d44ce976f59c467164d2a~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/823c34_79609e93adac461792ffee22510e44a8~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0204/04.jpg",
           "what": "On /our-family - very likely a staff portrait",
           "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
-          "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family"
+          "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family",
+          "source_url": "https://static.wixstatic.com/media/823c34_79609e93adac461792ffee22510e44a8~mv2.jpg"
         }
       ],
       "_photos_rights_unclear": [
@@ -2561,46 +2585,53 @@
       "_name_finding": "The business trades as \"Bennetts Designs\" / \"Bennett's Designs LLC\" on its own site and describes itself as a print and sign shop. Our listing name is \"Bennett's Novelties\". Whether Novelties is a retired name, a second trading name or a directory error is NOT ESTABLISHED - a person in Huron should read the sign.",
       "photos": [
         {
-          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260216_164655727_HDR_1787632832.jpg",
+          "url": "/photos/huron/huro-lst-0093/01.jpg",
           "what": "Home-page banner image, 3500x2635, captioned \"Your Trusted Local Print Shop in Huron Since 1999\"",
           "credit": "Bennett's Designs LLC (own website)",
-          "credit_url": "https://www.bennettsdesigns.com/"
+          "credit_url": "https://www.bennettsdesigns.com/",
+          "source_url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260216_164655727_HDR_1787632832.jpg"
         },
         {
-          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20251009_141802038_HDR_1787629065.jpg",
+          "url": "/photos/huron/huro-lst-0093/02.jpg",
           "what": "Illustrates the \"Quality Printing Services\" section",
           "credit": "Bennett's Designs LLC (own website)",
-          "credit_url": "https://www.bennettsdesigns.com/"
+          "credit_url": "https://www.bennettsdesigns.com/",
+          "source_url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20251009_141802038_HDR_1787629065.jpg"
         },
         {
-          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260310_145748038_HDR_1787629388.jpg",
+          "url": "/photos/huron/huro-lst-0093/03.jpg",
           "what": "Illustrates the \"Fast Turnaround Time\" section",
           "credit": "Bennett's Designs LLC (own website)",
-          "credit_url": "https://www.bennettsdesigns.com/"
+          "credit_url": "https://www.bennettsdesigns.com/",
+          "source_url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260310_145748038_HDR_1787629388.jpg"
         },
         {
-          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20250111_150700671_HDR_AE_1787630552.jpg",
+          "url": "/photos/huron/huro-lst-0093/04.jpg",
           "what": "Illustrates \"Top-Quality Materials\"",
           "credit": "Bennett's Designs LLC (own website)",
-          "credit_url": "https://www.bennettsdesigns.com/"
+          "credit_url": "https://www.bennettsdesigns.com/",
+          "source_url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20250111_150700671_HDR_AE_1787630552.jpg"
         },
         {
-          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260128_110214618_HDR_1787629726.jpg",
+          "url": "/photos/huron/huro-lst-0093/05.jpg",
           "what": "Illustrates \"Banners and Rigid Signs\"",
           "credit": "Bennett's Designs LLC (own website)",
-          "credit_url": "https://www.bennettsdesigns.com/"
+          "credit_url": "https://www.bennettsdesigns.com/",
+          "source_url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260128_110214618_HDR_1787629726.jpg"
         },
         {
-          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/Resized_20161125_183758_1787631164.jpg",
+          "url": "/photos/huron/huro-lst-0093/06.jpg",
           "what": "Illustrates \"Vehicle Graphics\"",
           "credit": "Bennett's Designs LLC (own website)",
-          "credit_url": "https://www.bennettsdesigns.com/"
+          "credit_url": "https://www.bennettsdesigns.com/",
+          "source_url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/Resized_20161125_183758_1787631164.jpg"
         },
         {
-          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/MAX_1787632159.jpg",
+          "url": "/photos/huron/huro-lst-0093/07.jpg",
           "what": "Illustrates \"Business Branding\"",
           "credit": "Bennett's Designs LLC (own website)",
-          "credit_url": "https://www.bennettsdesigns.com/"
+          "credit_url": "https://www.bennettsdesigns.com/",
+          "source_url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/MAX_1787632159.jpg"
         }
       ],
       "_photos_note": "None of these is confirmed to be the STOREFRONT at 2408 Cleveland Rd W. They are the shop's own photographs of its own work and premises-adjacent subjects, published by the operator on its own site; the exact subject of each is not stated in markup (all altText fields are empty). A human should pick. Verified servable: HEAD on the banner image returns 200 image/jpeg.",
@@ -2676,82 +2707,95 @@
       "phone": "+14194335009",
       "photos": [
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide12.jpg",
+          "url": "/photos/huron/huro-lst-0212/01.jpg",
           "what": "Historical marker: \"Old Main Street\"",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide12.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide4.jpg",
+          "url": "/photos/huron/huro-lst-0212/02.jpg",
           "what": "Historical marker: \"Huron's Lighthouses\"",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide4.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide11.jpg",
+          "url": "/photos/huron/huro-lst-0212/03.jpg",
           "what": "Historical marker: \"The Wright House\"",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-main-street/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide11.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide1.jpg",
+          "url": "/photos/huron/huro-lst-0212/04.jpg",
           "what": "Historical marker: \"Cedar Point Roadway\"",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/cedar-point-roadway/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/cedar-point-roadway/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide1.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide2.jpg",
+          "url": "/photos/huron/huro-lst-0212/05.jpg",
           "what": "Historical marker: \"Old Woman Creek\"",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide2.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide3.jpg",
+          "url": "/photos/huron/huro-lst-0212/06.jpg",
           "what": "Historical marker: \"Huron's First Inhabitants\"",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/hurons-first-inhabitants-marker-12-22/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/hurons-first-inhabitants-marker-12-22/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide3.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide5.jpg",
+          "url": "/photos/huron/huro-lst-0212/07.jpg",
           "what": "Historical marker: \"Christ Episcopal Church\" - note this is huro-lst-0236, prominence rank 2, also photoless",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/christ-episcopal-church/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/christ-episcopal-church/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide5.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide6.jpg",
+          "url": "/photos/huron/huro-lst-0212/08.jpg",
           "what": "Historical marker: \"The Firelands of Ohio\"",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-firelands-of-ohio/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-firelands-of-ohio/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide6.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide7.jpg",
+          "url": "/photos/huron/huro-lst-0212/09.jpg",
           "what": "Historical marker: \"Huron's Lighthouses\" (second view)",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/huron-lighthouses/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide7.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide8.jpg",
+          "url": "/photos/huron/huro-lst-0212/10.jpg",
           "what": "Historical marker: \"The Huron Playhouse\"",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-huron-playhouse/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/the-huron-playhouse/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide8.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide9.jpg",
+          "url": "/photos/huron/huro-lst-0212/11.jpg",
           "what": "Historical marker: \"John Babtise Flemmond\" (society's spelling; the linked page spells it Baptise)",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/john-baptise-flemmond/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/john-baptise-flemmond/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide9.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide10.jpg",
+          "url": "/photos/huron/huro-lst-0212/12.jpg",
           "what": "Historical marker: \"Old Woman Creek\" (second view)",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/historical-markers/old-woman-creek/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/slide10.jpg"
         },
         {
-          "url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/lighthouse.png",
+          "url": "/photos/huron/huro-lst-0212/13.jpg",
           "what": "Home-page illustration, alt text \"huron lighthouse\" - a cut-out of the Huron pier lighthouse, 212x397",
           "credit": "Huron Historical Society (own website)",
-          "credit_url": "https://www.thehuronhistoricalsociety.org/"
+          "credit_url": "https://www.thehuronhistoricalsociety.org/",
+          "source_url": "https://www.thehuronhistoricalsociety.org/wp-content/themes/huron_historical_society/images/lighthouse.png"
         }
       ],
       "_reusable_for_other_listings": "slide5.jpg is the Christ Episcopal Church marker and slide8.jpg is the Huron Playhouse marker. Both name places that are separate listings in this directory. A human may want to cross-post them, with the society credited.",
@@ -2875,16 +2919,18 @@
       "_url_finding": "Carried forward: held website is the dealer's YouTube channel. Correct site https://www.southshoremarine.com/ .",
       "photos": [
         {
-          "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013145538_0021_D_1771730175513.JPG?w=1900&format=webp",
+          "url": "/photos/huron/huro-lst-0097/01.jpg",
           "what": "Full-width hero on the dealership's own /contact page. Drone capture, 13 Oct 2025. Subject almost certainly the Sawmill Pkwy yard/marina but not stated in markup.",
           "credit": "South Shore Marine (own website)",
-          "credit_url": "https://www.southshoremarine.com/contact"
+          "credit_url": "https://www.southshoremarine.com/contact",
+          "source_url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013145538_0021_D_1771730175513.JPG?w=1900&format=webp"
         },
         {
-          "url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013150821_0036_D_1771730226170.JPG?w=1900&format=webp",
+          "url": "/photos/huron/huro-lst-0097/02.jpg",
           "what": "Hero on the dealership's own /about-us page. Same drone session, 13 Oct 2025.",
           "credit": "South Shore Marine (own website)",
-          "credit_url": "https://www.southshoremarine.com/about-us"
+          "credit_url": "https://www.southshoremarine.com/about-us",
+          "source_url": "https://cdn.mdsbrand.com/resize/mean-south-shore-marine-owm/static-page-content/DJI_20251013150821_0036_D_1771730226170.JPG?w=1900&format=webp"
         }
       ],
       "_photos_rights_unclear": [
@@ -3248,16 +3294,18 @@
       "phone": "+14194337542",
       "photos": [
         {
-          "url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store.jpg",
+          "url": "/photos/huron/huro-lst-0120/01.jpg",
           "what": "Exterior of the Huron Goodwill store at 310 Lake Erie Parkway. 2174x1761, uploaded June 2025 by the operator.",
           "credit": "Goodwill of Erie, Huron, Ottawa and Sandusky Counties (own website)",
-          "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/"
+          "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/",
+          "source_url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store.jpg"
         },
         {
-          "url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store-300x300.jpg",
+          "url": "/photos/huron/huro-lst-0120/02.jpg",
           "what": "Same photograph, 300x300 square crop as used in the store list - useful as a card thumbnail",
           "credit": "Goodwill of Erie, Huron, Ottawa and Sandusky Counties (own website)",
-          "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/"
+          "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/",
+          "source_url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store-300x300.jpg"
         }
       ],
       "_hours_reconfirmed": "The same row reads MON-SAT 10am-8pm, SUN Noon-5pm, which matches the hours already held. No change proposed.",
@@ -6740,63 +6788,72 @@
       ],
       "photos": [
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_ac2e289eb8964c7bb6a49dd4004acf38~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/01.jpg",
           "what": "The studio's full-width banner image on its own home page (served on the page at 980x450; this URL is the untransformed original).",
           "credit": "Upside Down Art Studio LLC",
           "credit_url": "http://www.upsidedownartstudio.com/",
-          "license": "NOT STATED — business's own published image of itself."
+          "license": "NOT STATED — business's own published image of itself.",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_ac2e289eb8964c7bb6a49dd4004acf38~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/02.jpg",
           "what": "The studio's 'youth studio' category image (source filename: youth studio.jpg).",
           "credit": "Upside Down Art Studio LLC",
           "credit_url": "http://www.upsidedownartstudio.com/",
-          "license": "NOT STATED — business's own published image of itself."
+          "license": "NOT STATED — business's own published image of itself.",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/03.jpg",
           "what": "The studio's 'adult studio' category image (source filename: adult studio.jpg).",
           "credit": "Upside Down Art Studio LLC",
           "credit_url": "http://www.upsidedownartstudio.com/",
-          "license": "NOT STATED — business's own published image of itself."
+          "license": "NOT STATED — business's own published image of itself.",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/04.jpg",
           "what": "Category image, source filename 20250222_163919.jpg — an in-studio photograph dated Feb 2025. Subject not labelled beyond its placement.",
           "credit": "Upside Down Art Studio LLC",
           "credit_url": "http://www.upsidedownartstudio.com/",
-          "license": "NOT STATED — business's own published image of itself."
+          "license": "NOT STATED — business's own published image of itself.",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/05.jpg",
           "what": "Category image, source filename 20251004_145702.jpg — an in-studio photograph, filename-dated October 2025, so roughly a year old.",
           "credit": "Upside Down Art Studio LLC",
           "credit_url": "http://www.upsidedownartstudio.com/",
-          "license": "NOT STATED — business's own published image of itself."
+          "license": "NOT STATED — business's own published image of itself.",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/03.jpg",
           "what": "The adult studio room (alt text: \"adult studio.jpg\")",
           "credit": "Upside Down Art Studio LLC (own website)",
-          "credit_url": "https://www.upsidedownartstudio.com/"
+          "credit_url": "https://www.upsidedownartstudio.com/",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/02.jpg",
           "what": "The youth studio room (alt text: \"youth studio.jpg\")",
           "credit": "Upside Down Art Studio LLC (own website)",
-          "credit_url": "https://www.upsidedownartstudio.com/"
+          "credit_url": "https://www.upsidedownartstudio.com/",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/05.jpg",
           "what": "Camera-roll photo, alt text is the capture filename \"20251004_145702.jpg\" - dated 4 Oct 2025; subject not stated",
           "credit": "Upside Down Art Studio LLC (own website)",
-          "credit_url": "https://www.upsidedownartstudio.com/"
+          "credit_url": "https://www.upsidedownartstudio.com/",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg"
         },
         {
-          "url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg",
+          "url": "/photos/huron/huro-lst-0146/04.jpg",
           "what": "Camera-roll photo, alt text \"20250222_163919.jpg\" - 22 Feb 2025; subject not stated",
           "credit": "Upside Down Art Studio LLC (own website)",
-          "credit_url": "https://www.upsidedownartstudio.com/"
+          "credit_url": "https://www.upsidedownartstudio.com/",
+          "source_url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg"
         }
       ],
       "_photos_rights_unclear": [
@@ -6954,10 +7011,11 @@
       "phone": "+14195678962",
       "photos": [
         {
-          "url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/96e6a204-ef03-4213-8454-312de1f03848/Barre+Class+Smiling+Clients.png",
+          "url": "/photos/huron/huro-lst-0206/01.jpg",
           "what": "A barre class in progress, clients smiling. 1080x1080, square - reads as a card thumbnail without cropping. Filename is the operator's own description; no alt text.",
           "credit": "The Barre Collective (own website)",
-          "credit_url": "https://barrecollectivehuron.com/"
+          "credit_url": "https://barrecollectivehuron.com/",
+          "source_url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/96e6a204-ef03-4213-8454-312de1f03848/Barre+Class+Smiling+Clients.png"
         }
       ],
       "_photos_rights_unclear": [
@@ -7089,11 +7147,12 @@
       "_name_collision": "⚠️ Still true and still the main research hazard: the name collides with the Cedar Point amusement park in nearby Sandusky. This building has nothing to do with the amusement park; it is named for the peninsula. Any search for 'Cedar Point Center' lands in the wrong place.",
       "photos": [
         {
-          "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/admissions/cedar-point-center.jpg",
+          "url": "/photos/huron/huro-lst-0226/01.jpg",
           "what": "BGSU's own photograph of the Cedar Point Center building, used on the Firelands event-hosting page. Verified HTTP 200, image/jpeg, 2.84 MB.",
           "credit": "Bowling Green State University (BGSU Firelands)",
           "credit_url": "https://www.bgsu.edu/firelands/event-hosting.html",
-          "license": "NOT STATED — the institution's own published image of its own building. BGSU is a public university but publishes no reuse terms on its site. A human must decide."
+          "license": "NOT STATED — the institution's own published image of its own building. BGSU is a public university but publishes no reuse terms on its site. A human must decide.",
+          "source_url": "https://www.bgsu.edu/content/dam/bgsu_firelands/admissions/cedar-point-center.jpg"
         }
       ],
       "_photos_rights_unclear": [
@@ -7274,35 +7333,39 @@
       "_confidence": "History is from BGSU's own pages. The 1968 founding is stated on the About page; the land-scale, the first dean and the arboretum's 1983 establishment are stated on the university's McBride Arboretum page. ⚠️ The About page URL is /firelands/about.html — /firelands/about-us.html is a 404.",
       "photos": [
         {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/BGSU_Firelands_019_%284411192361%29.jpg",
+          "url": "/photos/huron/huro-lst-0195/01.jpg",
           "what": "Campus pond (Commons categorises it under 'Ponds in Ohio'). ⚠️ Grounds, not a building.",
           "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
           "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_019_(4411192361).jpg",
           "license": "CC BY-SA 2.0",
-          "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+          "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+          "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/BGSU_Firelands_019_%284411192361%29.jpg"
         },
         {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/8/80/BGSU_Firelands_2_080_%284411849086%29.jpg",
+          "url": "/photos/huron/huro-lst-0195/02.jpg",
           "what": "Campus garden with an outdoor bench (Commons: 'Gardens in Ohio', 'Outdoor benches in Ohio') — most likely the McBride Arboretum. ⚠️ Grounds, not a building.",
           "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
           "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_2_080_(4411849086).jpg",
           "license": "CC BY-SA 2.0",
-          "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+          "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+          "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/80/BGSU_Firelands_2_080_%284411849086%29.jpg"
         },
         {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/2/23/BGSU_Firelands_2_011_%284410406311%29.jpg",
+          "url": "/photos/huron/huro-lst-0195/03.jpg",
           "what": "Canada geese and a mute swan on the campus water (Commons: 'Branta canadensis with other species', 'Cygnus olor with other species'). ⚠️ Wildlife, not a building.",
           "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
           "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_2_011_(4410406311).jpg",
           "license": "CC BY-SA 2.0",
-          "license_url": "https://creativecommons.org/licenses/by-sa/2.0"
+          "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+          "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/23/BGSU_Firelands_2_011_%284410406311%29.jpg"
         },
         {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/BGSU_Firelands_wordmark.svg",
+          "url": "/photos/huron/huro-lst-0195/04.svg",
           "what": "The official BGSU Firelands wordmark, SVG. A logo, not a photo — usable as a `logo`, not as a card image.",
           "credit": "Bowling Green State University, BGSU Office of Marketing and Communications",
           "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_wordmark.svg",
-          "license": "Public domain"
+          "license": "Public domain",
+          "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/BGSU_Firelands_wordmark.svg"
         }
       ],
       "_photos_caveat": "⛔ THE OPEN-LICENCE SET FOR THIS COLLEGE CONTAINS NO BUILDING. All eight CC BY-SA photos in Commons' 'Bowling Green State University Firelands' category are one photographer's 2008 walk of the GROUNDS — pond, geese, berries, a bench. Nothing shows Foundation Hall, the Cedar Point Center or any structure. The category name reads like a building set and is not one. For a building portrait, BGSU's own site is the only source: see _photos_rights_unclear.",

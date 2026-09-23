@@ -223,6 +223,26 @@ for (const beat of BEATS) {
 // ── write ─────────────────────────────────────────────────────────────────
 const ovPath = 'cartograph/data/huron/content/listings.overrides.json'
 const ov = rd(ovPath)
+
+// ⛔⛔ CARRY LOCALISED PHOTO URLS FORWARD BEFORE THE PATCH MAP IS REBUILT. The research
+// files hold the photograph's ORIGINAL remote url — that is correct, it is what the
+// researcher found — but `fetch-photos.mjs` has since copied the bytes onto our own server
+// and rewritten the override to `/photos/<scene>/<id>/NN.jpg`. Rebuilding `patches` from
+// the research alone therefore RESTORES EVERY HOTLINK, silently, and the next bake ships
+// them. That happened: four re-bakes one evening put all 63 back, and the check found it
+// the following morning rather than the merge preventing it.
+// ⭐ Matched on `source_url`, which is exactly the record of "this local file came from
+// that remote url" — so a photo that has not been fetched is untouched, and a re-run
+// cannot mis-pair them.
+const localised = new Map()   // original remote url -> { url, source_url }
+for (const p of Object.values(ov.patches || {})) {
+  for (const ph of (p.photos || [])) {
+    if (ph && typeof ph === 'object' && ph.source_url && ph.url?.startsWith('/photos/')) {
+      localised.set(ph.source_url, { url: ph.url, source_url: ph.source_url })
+    }
+  }
+}
+if (localised.size) console.log(`  carrying ${localised.size} already-hosted photo url(s) forward`)
 // ⛔⛔ REBUILT FROM SCRATCH, NOT MERGED INTO. The first (untiered) merge left 9 patches
 // behind, and three of them were places this pass classifies HOLD — Shawnee Elementary,
 // closed by board vote in 2023, and Wink's and Bruno's, whose unit now trades as a third
@@ -292,8 +312,12 @@ for (const [id, { beat, rec, tier, why, n }] of best) {
     if (k.startsWith('_')) { ship[k] = payload[k]; continue }   // provenance: kept HERE, stripped by stripMeta before the slab
     if (!SHIPPING.has(k)) { console.log(`  ⚠️  ${base.name}: dropped unknown field ${JSON.stringify(k)} — not in the shipping allowlist`); continue }
     if (k === 'photos' && Array.isArray(payload[k])) {
-      ship[k] = payload[k].map(p => typeof p === 'string' ? p
-        : Object.fromEntries(Object.entries(p).filter(([f]) => PHOTO_FIELDS.has(f))))
+      ship[k] = payload[k].map(p => {
+        if (typeof p === 'string') return p
+        const clean = Object.fromEntries(Object.entries(p).filter(([f]) => PHOTO_FIELDS.has(f)))
+        const local = localised.get(clean.source_url || clean.url)
+        return local ? { ...clean, ...local } : clean
+      })
       continue
     }
     ship[k] = stripDeep(payload[k])
