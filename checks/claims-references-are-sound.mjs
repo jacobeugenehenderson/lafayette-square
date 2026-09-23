@@ -48,6 +48,13 @@ for (const f of findings) {
     if (!qById.has(f.question)) errs.push(`derived ${f.id} answers unknown question "${f.question}"`)
     continue
   }
+  if (f.kind === 'ruling') {
+    // Jacob's (or a forensic's approved) decision — ARRIVED AT by deliberation, a legitimate root. Must be quotable and dated, with the canon that holds the WHY.
+    for (const k of ['by', 'date', 'quote', 'canon']) if (!f[k]) errs.push(`ruling ${f.id} has no '${k}'`)
+    if (f.source) errs.push(`ruling ${f.id} carries a source — a ruling stands on who ruled and where the why lives`)
+    if (!qById.has(f.question)) errs.push(`ruling ${f.id} answers unknown question "${f.question}"`)
+    continue
+  }
   if (f.kind === 'measured') {
     // A measurement is a legitimate ROOT — arrived at, not preferred — iff it can be REPRODUCED.
     if (!f.command) errs.push(`measured ${f.id} names no command to reproduce it`)
@@ -67,7 +74,8 @@ for (const f of findings) {
   const s = srcById.get(f.source)
   if (!s) errs.push(`finding ${f.id} cites unknown source "${f.source}"`)
   else if (s.terms?.aiUse !== 'permitted') errs.push(`finding ${f.id} cites ${s.id}, whose terms.aiUse is "${s.terms?.aiUse}" — only 'permitted' sources may be cited`)
-  if (!qById.has(f.question)) errs.push(`finding ${f.id} answers unknown question "${f.question}"`)
+  if (f.question != null && !qById.has(f.question)) errs.push(`finding ${f.id} answers unknown question "${f.question}"`)
+  if (f.question == null && !f.topic) errs.push(`finding ${f.id} has neither a question nor a topic`)
   if (!f.quote) errs.push(`finding ${f.id} has no quote`)
 }
 for (const q of questions) {
@@ -76,6 +84,7 @@ for (const q of questions) {
   for (const fid of fs_) if (!fById.has(fid)) errs.push(`question ${q.id} lists unknown finding "${fid}"`)
   if (q.status === 'answered' && !fs_.length) errs.push(`question ${q.id} is 'answered' with no finding`)
   if (q.status === 'blocked' && !q.blockedBy) errs.push(`question ${q.id} is 'blocked' with no blockedBy`)
+  if (q.check && !fs.existsSync(q.check)) errs.push(`question ${q.id} names check ${q.check}, which does not exist`)
 }
 for (const s of sources) {
   const lc = typeof s.localCopy === 'string' ? s.localCopy.split(' ')[0] : null
@@ -83,10 +92,15 @@ for (const s of sources) {
 }
 
 const by = k => questions.filter(q => q.status === k)
-console.log(`references — ${sources.length} sources · ${questions.length} questions (${by('answered').length} answered · ${by('open').length} open · ${by('blocked').length} blocked) · ${findings.length} findings`)
+// A tooth is COMBED only when its answer is HELD in the code by a check — an answered question whose code still carries the old constant is not combed.
+const unc = questions.filter(q => (q.codeSites||[]).length && !q.check).length
+console.log(`references — ${sources.length} sources · ${questions.length} questions (${by('answered').length} answered · ${by('open').length} open · ${by('blocked').length} blocked) · ${findings.length} findings · ${findings.filter(f=>f.kind==='ruling').length} rulings · ${findings.filter(f=>f.question==null).length} extracted-by-topic`)
+console.log(`  COMB: ${unc} tooth/teeth point into the code with no check holding the answer (not yet combed)`)
 console.log(`  permitted sources: ${sources.filter(s => s.terms?.aiUse === 'permitted').map(s => s.id).join(', ') || '—'}`)
 console.log('\n── DISPATCH QUEUE (open) ──')
 for (const q of by('open')) console.log(`  ${q.id}: ${q.ask}\n      needed by ${q.neededBy || '?'} · next: ${(q.nextSources || []).join('; ') || '—'}`)
+console.log('\n── NOT YET COMBED (code sites, no check) ──')
+for (const q of questions.filter(q => (q.codeSites||[]).length && !q.check)) console.log(`  ${q.id} [${q.status}] → ${q.codeSites[0]}`)
 console.log('\n── BLOCKED ──')
 for (const q of by('blocked')) console.log(`  ${q.id}: ${q.blockedBy}`)
 for (const w of warns) console.log(`⚠️  ${w}`)

@@ -1,6 +1,6 @@
 {
   "_about": "The kit's research database: SOURCES (what exists + its terms), QUESTIONS (what a design needs), FINDINGS (answers, each quoted from a PERMITTED source). Rules + how to dispatch research: references/README.md. Validate: node checks/claims-references-are-sound.mjs. A town's state is DERIVED from its own geography — never listed here.",
-  "version": 2,
+  "version": 3,
   "sources": [
     {
       "id": "aashto-gdhs-7",
@@ -319,7 +319,10 @@
       "findings": [
         "f-interstate-lane-width"
       ],
-      "notes": "Interstate only; non-Interstate freeways use it as a disclosed assumption."
+      "notes": "Interstate only; non-Interstate freeways use it as a disclosed assumption.",
+      "codeSites": [
+        "src/cartograph/streetProfiles.js TYPE_PAVEMENT_HW (motorway = 3·12ft/2 + 10ft — a class constant, not lane-derived)"
+      ]
     },
     {
       "id": "q-freeway-shoulders",
@@ -329,6 +332,10 @@
       "findings": [
         "f-interstate-right-shoulder",
         "f-interstate-left-shoulder"
+      ],
+      "codeSites": [
+        "src/cartograph/streetProfiles.js TYPE_PAVEMENT_HW",
+        "src/lib/tileGround.js the `for (const s of gradeSep)` stroke — strokeOpen(sm, max(left,right)): symmetric"
       ]
     },
     {
@@ -469,6 +476,9 @@
       },
       "findings": [
         "m-osm-line-lane-centre"
+      ],
+      "codeSites": [
+        "src/lib/tileGround.js mintProtopolygon (the chain stroked about its points)"
       ]
     },
     {
@@ -504,6 +514,81 @@
       "nextSources": [
         "state manuals (caltrans-hdm, massdot-design-guide — PERMITTED)"
       ]
+    },
+    {
+      "id": "q-highway-model",
+      "ask": "How is a highway (gradeSeparated) built?",
+      "neededBy": "H-3",
+      "status": "answered",
+      "findings": [
+        "r-highway-positive-object",
+        "r-highway-no-authoring",
+        "r-highway-verge"
+      ],
+      "codeSites": [
+        "src/lib/tileGround.js the gradeSep stroke loop (today: a flat symmetric stroke beside ①)"
+      ],
+      "canon": "ROADMAP H-3"
+    },
+    {
+      "id": "q-highway-smoothing",
+      "ask": "How much is a highway centreline smoothed, and must it match ①?",
+      "neededBy": "H-3 (one edge)",
+      "status": "open",
+      "codeSites": [
+        "src/lib/tileGround.js WIDE_SPACING = 1.5 + smoothChain on gradeSep — licensed by 'no curb to fold', a licence the one-edge ruling removes"
+      ],
+      "notes": "Unanchored constant. The plan: no separate smoothing; one geometry (the skeleton's flattened segments)."
+    },
+    {
+      "id": "q-closed-loop-stroke",
+      "ask": "Does a stroked closed loop (stripe/edgeline/fence around a turning circle or roundabout) keep its hole when clipped?",
+      "neededBy": "the bake (every closed line)",
+      "status": "answered",
+      "findings": [
+        "r-closed-stroke-keeps-hole"
+      ],
+      "codeSites": [
+        "src/lib/ribbonsGeometry.js clipAllToStencil (fixed b757717c)"
+      ],
+      "check": "checks/claims-a-closed-stripe-keeps-its-hole.mjs"
+    },
+    {
+      "id": "q-culdesac-representation",
+      "ask": "A turning circle mapped as a closed RING vs as a degree-1 tip — does the kit build both correctly?",
+      "neededBy": "every town with courts (huron 31 closed loops, LS 4)",
+      "status": "open",
+      "codeSites": [
+        "src/lib/tileGround.js [CULDESAC] culDeSacLoops — read only in the per-tile keyhole path, NOT in the ① block (Keel, 2026-09-23)"
+      ],
+      "notes": "The detector's constants — R 3–12 m, fit residual < 0.3 m, ≥ 8 points — are UNANCHORED; 28 of huron's 31 loops have < 8 points (unverified against streetsOrig)."
+    },
+    {
+      "id": "q-cap-default-round-or-blunt",
+      "ask": "Is a dead end's cap round or blunt by default?",
+      "neededBy": "every town",
+      "status": "answered",
+      "findings": [
+        "r-cap-default-from-data"
+      ],
+      "codeSites": [
+        "cartograph/fetch.js — requests node[highway] then ingestElements drops el.tags (turning_circle thrown away)"
+      ],
+      "check": "checks/claims-cap-vs-skeleton.mjs",
+      "canon": "INTAKE §Cul-de-sacs · ROADMAP A09",
+      "notes": "Ruled data-derivable; UNBUILT (the tag is fetched and discarded)."
+    },
+    {
+      "id": "q-cap-ped-treatment",
+      "ask": "How does the pedestrian band behave around a cap?",
+      "neededBy": "Section",
+      "status": "answered",
+      "findings": [
+        "r-cap-bulb-no-halves",
+        "r-cap-every-shoulder-ramp",
+        "r-cap-round-treelawn-wraps"
+      ],
+      "canon": "SECTION §6.3, §1 (cap wrap)"
     }
   ],
   "findings": [
@@ -616,6 +701,78 @@
       "foundOn": "2026-09-23",
       "foundBy": "Grader",
       "reproducibility": "⚠️ depends on the gitignored scratch/.naip-spike/.venv — no committed environment; the script itself is uncommitted until Jacob approves Grader's probe commit."
+    },
+    {
+      "id": "r-highway-positive-object",
+      "question": "q-highway-model",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-23",
+      "quote": "the roadway IS the object … do it like they do it",
+      "canon": "ROADMAP H-3"
+    },
+    {
+      "id": "r-highway-no-authoring",
+      "question": "q-highway-model",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-23",
+      "quote": "no authoring and no geometry access — a highway is to code where a historic street is idiosyncratic; a missing input fails loudly",
+      "canon": "ROADMAP H-3"
+    },
+    {
+      "id": "r-highway-verge",
+      "question": "q-highway-model",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-23",
+      "quote": "land bounded entirely by highway is verge — grass, no curb, no sidewalk, no LU choice",
+      "canon": "ROADMAP H-3"
+    },
+    {
+      "id": "r-closed-stroke-keeps-hole",
+      "question": "q-closed-loop-stroke",
+      "kind": "ruling",
+      "by": "Keel (forensic) — fix approved by Jacob",
+      "date": "2026-09-23",
+      "quote": "(Keel's forensic, fixed b757717c) a clipped annulus must keep its hole; the bare-ring branch dropped it and filled the loop solid",
+      "canon": "docs/briefs/BRIEF-closed-loop-disc-forensic.md"
+    },
+    {
+      "id": "r-cap-default-from-data",
+      "question": "q-cap-default-round-or-blunt",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-06-13",
+      "quote": "the cap IS data-derivable, the chooser is a STOPGAP, the curations are data-defects to automate",
+      "canon": "POLYGON-FIRST §5 · INTAKE §Cul-de-sacs"
+    },
+    {
+      "id": "r-cap-bulb-no-halves",
+      "question": "q-cap-ped-treatment",
+      "kind": "ruling",
+      "by": "Jacob (cap pass)",
+      "date": "2026-07-22",
+      "quote": "The bulb has NO halves. It is one continuous semicircle carrying ONE cross-section",
+      "canon": "SECTION §6.3"
+    },
+    {
+      "id": "r-cap-every-shoulder-ramp",
+      "question": "q-cap-ped-treatment",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-07",
+      "quote": "This same regime applies to end caps.",
+      "canon": "SECTION §6.3 (EVERY SHOULDER GETS A RAMP)"
+    },
+    {
+      "id": "r-cap-round-treelawn-wraps",
+      "question": "q-cap-ped-treatment",
+      "kind": "ruling",
+      "by": "Jacob (cap pass)",
+      "date": "2026-07-22",
+      "quote": "a round dead-end keeps the treelawn wrapping the cap; a blunt cap goes all-SW",
+      "canon": "SECTION §1 table (cap wrap) · §3 step 3"
     }
   ]
 }

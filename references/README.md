@@ -19,6 +19,18 @@
 - **`questions`** — what a design needs: the ask, who needs it, status **`open` / `answered` / `blocked`** (+ `blockedBy`), what was tried, where to look next.
 - **`findings`** — an answer: the value, **the source id, the section, a verbatim quote**, the date, who found it. A finding may only cite a `permitted` source. `kind: "defers"` records that a source points elsewhere — a negative result is a result.
 
+## The comb (Jacob, 2026-09-23)
+
+> *"Each data entry the tooth of a comb, our designed and built world a tangled wig. I would like to comb thru the wig, fixing things as we go."*
+
+A **question is a tooth**; the **code is the wig**. A question carries `codeSites` (where the code answers it today — usually with an unanchored constant) and, once combed, a `check` that holds the answer. **Combing a tooth** = give it a legitimate answer (finding · measured · ruling · derived), point at the code site, fix the code to match, name the check. ⭐ **Comb in the order the work touches things** — the open work supplies the teeth; nobody goes hunting for use cases. The check prints `COMB:` — the count of teeth that point into the code and are not yet answered.
+
+## Extraction first — collate, then look up (Jacob, 2026-09-23)
+
+> *"Looking for an instance and then going looking for textual support for it strikes me as backwards; we should collate what we know."*
+
+A permitted manual is **read once, by topic, and its normative statements extracted as findings with a `topic`** (no question yet). A question that arrives later is then a lookup, not a search. Extraction obeys rule 5 (no finding whose authority is AASHTO) and records section + quote for every statement.
+
 ## Dispatching research
 
 A research brief is one line: ***"Answer the open `references/` questions needed by <design>."*** The agent:
@@ -37,6 +49,7 @@ Every value the kit draws is exactly one of:
 - **finding** (`kind: value | rule | …`) — the code says so: permitted source + section + quote.
 - **derived** (`kind: "derived"`) — started from one or more findings, then adjusted or interpolated **for the map**. ⛔ It MUST name `from` (the finding ids it started at — each ultimately a cited finding or a measurement) and `derivation` (the stated step: *"scaled ×0.92 for legibility at map scale"*, *"interpolated between f-a and f-b"*). It cites no source of its own; its legitimacy is its ancestry.
 - **measured** (`kind: "measured"`) — **arrived at by measuring the world**, not by taste: our own reproducible measurement of the real thing (e.g. aerial imagery). ⛔ It MUST name the `command` that reproduces it (a committed script), the `sites`, the `tolerance`, its `method` (computed or visual), and its `inputs` — ⛔ **every input must itself be a `permitted` source** (measuring an unchecked source launders it, exactly as citing one would). A legitimate root, like a finding. *(Added 2026-09-23 — the OSM line's place in the section is measured, and no code states it.)*
+- **ruling** (`kind: "ruling"`) — **arrived at by deliberation**: Jacob's decision (or a forensic's, once he approves it), with `by`, `date`, his verbatim `quote`, and the `canon` section that holds the WHY. Divided carriageways are the proof this kind is needed: what was won there over weeks were decisions, not code values.
 - **[U]** — no code answers it yet. It stays on the dispatch queue. ⛔ **There is no un-anchored "house" value** — where no code speaks, the answer is [U], never taste.
 
 ## Status
