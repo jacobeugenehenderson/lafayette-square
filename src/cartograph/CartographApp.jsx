@@ -354,6 +354,9 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         let fov = storeShots?.[shot]?.fov ?? s.fov
         let toPos
         let toTarget = [...s.target]
+        // Set when the Hero pose came from the operator's own keyframes, so the
+        // generic poured-scene reframe below knows to keep its hands off.
+        let heroAuthored = false
         if (shot === 'browse') {
           // ⛔⛔ THE HANDOFF WAS ONE-WAY, AND THAT IS THE BUG (2026-09-05).
           // Browse → Designer has carried the view for a long time (see the
@@ -413,6 +416,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
           if (kfs && kfs.length >= 1) {
             toPos = [...kfs[0].position]
             if (kfs[0].fov != null) fov = kfs[0].fov
+            heroAuthored = true
           } else {
             toPos = [...s.position]
           }
@@ -440,8 +444,27 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             toPos = [0, (R * 1.12) / (Math.min(1, aspect) * t), 0]
             toTarget = [0, 0, 0]
           } else if (shot === 'hero') {
-            toPos = [-R * 0.75, R * 0.5, R * 0.75]
-            toTarget = [0, R * 0.02, 0]
+            // ⛔⛔ THE AUTHORED KEYFRAME OUTRANKS THIS, AND IT DID NOT USED TO.
+            // Thirty lines up, Hero already enters at the path start — the
+            // operator's own first keyframe. Then this ran and threw it away on
+            // every town except Lafayette Square, because the guard that
+            // protects Browse's authored frame (`!browseFrame`, above) had no
+            // counterpart here. ⭐ That is the failure shape the Browse comment
+            // already names in so many words: "the feature would work on LS and
+            // be silently overridden in every other town."
+            // ⇒ MEASURED on huron (R ≈ 3353 m): this put the camera at
+            // [-2515, 1677, 2515] — 4.2 km out and 1.7 km up — while the
+            // authored first keyframe is [-456, 91, -17], about NINE TIMES
+            // closer. The operator waited through a long load to arrive at a
+            // distant overview they had not chosen and could not keep.
+            // ⛔ Still the right scaffold for a town nobody has framed yet, which
+            // is exactly when `heroKeyframes` is empty (`HERO_KEYFRAMES_DEFAULT
+            // = []` — the kit stores no camera), so the un-authored path is
+            // unchanged and no town inherits another town's pose.
+            if (!heroAuthored) {
+              toPos = [-R * 0.75, R * 0.5, R * 0.75]
+              toTarget = [0, R * 0.02, 0]
+            }
           } else {
             toPos = [0, 1.73, R * 0.08]
             toTarget = [0, 1.73, R * 0.08 - 0.5]
