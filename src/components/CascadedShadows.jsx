@@ -31,6 +31,14 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CSM } from 'three/examples/jsm/csm/CSM.js'
 
+/**
+ * ⭐ Bias, expressed in the units the defect lives in — TEXELS and METRES, never a raw
+ * float. `CelestialBodies` uses exactly these two numbers for the single-map path; they
+ * are here so the two shadow paths cannot drift apart silently.
+ */
+const SHADOW_NORMAL_BIAS_TEXELS = 1.0   // clear one shadow texel — below this, surfaces self-shadow
+const SHADOW_DEPTH_BIAS_M = 0.5         // metres, converted to NDC against the light frustum depth
+
 /** `?csm=1` → cascades on. Read once, at module load. */
 export const CSM_ENABLED = (() => {
   try { return new URLSearchParams(window.location.search).get('csm') === '1' }
@@ -144,6 +152,38 @@ export default function CascadedShadows({ lightDirection, keyIntensity = 1, keyC
       csm.lightDirection.copy(dirRef.current)
     }
     csm.update()
+    // ⛔⛔ CSM SETS NO NORMAL BIAS, AND THAT IS WHY A BUILDING SHADOWED ITS OWN ROOF.
+    // three's CSM writes `shadow.bias = shadowBias` (default 1e-6, i.e. nothing) and
+    // NEVER TOUCHES `normalBias`, which stays at three's default 0. Meanwhile
+    // `CelestialBodies` bails out entirely under `?csm=1`, so every bias this project
+    // derives is bypassed and nothing replaces it. Its own comment predicts the symptom
+    // exactly: normalBias "has to clear roughly one shadow texel or the surface shadows
+    // itself." At 0 the roof samples its own depth and comes back occluded.
+    // (Operator, 2026-09-22: "the shadow of the building appears on its own roof.")
+    //
+    // ⭐⭐ AND IT MUST BE PER CASCADE, WHICH IS THE WHOLE POINT OF THE FIX.
+    // `updateShadowBounds` sizes each cascade to its own slice of the view, so cascade 0
+    // may be a few metres across and the last one a kilometre — metres-per-texel differs
+    // between them by more than an order of magnitude. ⛔ ONE LITERAL CANNOT BE RIGHT FOR
+    // ALL OF THEM: tuned for the near cascade it does nothing in the far one (acne), tuned
+    // for the far one it detaches near shadows from their casters (peter-panning). This is
+    // the kit's signature trap — a constant with no unit, correct only because something
+    // else happened to be fixed — so the bias is DERIVED FROM THE SCENE, in texels, the
+    // same doctrine `CelestialBodies` already uses (`normalBias = 1.0 * mPerTexel`).
+    // ⛔ Free to do per frame: normalBias is a RECEIVER-side uniform
+    // (`shadowmap_vertex`: worldPosition + normal * shadowNormalBias), not something baked
+    // into the shadow map, so no `needsUpdate` and no re-render. Per frame also means it
+    // stays right when the camera's far plane moves the cascade splits.
+    const lightDepth = csm.lightFar - csm.lightNear
+    for (const l of csm.lights) {
+      const sc = l.shadow.camera
+      const mPerTexel = Math.max(sc.right - sc.left, sc.top - sc.bottom) / csm.shadowMapSize
+      l.shadow.normalBias = SHADOW_NORMAL_BIAS_TEXELS * mPerTexel
+      // `bias` is in NDC depth: the ortho light camera maps `lightDepth` metres onto 2 NDC
+      // units, so a fixed metre offset converts as (2 * metres / lightDepth). Negative
+      // pushes the comparison toward the light.
+      l.shadow.bias = -(2 * SHADOW_DEPTH_BIAS_M) / lightDepth
+    }
     csm.updateUniforms()
     // ⚠️ TEMPORARY DIAGNOSTIC — REVERT. Reports the rig's real state so "no change" can be
     // read instead of guessed at.
@@ -160,6 +200,13 @@ export default function CascadedShadows({ lightDirection, keyIntensity = 1, keyC
         breaks: csm.breaks?.map(b => +b.toFixed(3)),
         camFar: camera.far,
         lightDir: csm.lightDirection.toArray().map(n => +n.toFixed(2)),
+        // Per-cascade metres-per-texel and the bias derived from it — so the fix is
+        // READ, not trusted. A cascade whose mPerTexel is wildly out of line with its
+        // neighbours is a split problem, not a bias problem.
+        cascadeMPerTexel: csm.lights.map(l => +(Math.max(
+          l.shadow.camera.right - l.shadow.camera.left,
+          l.shadow.camera.top - l.shadow.camera.bottom) / csm.shadowMapSize).toFixed(3)),
+        cascadeNormalBias: csm.lights.map(l => +l.shadow.normalBias.toFixed(3)),
       }
     }
   })
