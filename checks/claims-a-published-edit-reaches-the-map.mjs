@@ -31,6 +31,18 @@ if (out.some(l => l.id === 'c')) ok('listings the layer does not name are untouc
 if (JSON.stringify(base) === frozen) ok('the merge mutates nothing'); else bad('applyPublishedLayer mutated its input')
 if (applyPublishedLayer(base, null) === base) ok('no layer, no change'); else bad('a missing layer changed the listings')
 
+// ── places the layer adds ──
+const withBare = [{ id: 'a', name: 'A', building_id: 'b1' }, { id: 'bare-b2', name: '12 Main', building_id: 'b2', _bare: true }, { id: 'bare-b3', name: '14 Main', building_id: 'b3', _bare: true }]
+const frozenBare = JSON.stringify(withBare)
+const added = applyPublishedLayer(withBare, { listings: {}, adds: { 'ovt-1': { name: 'New Cafe', category: 'dining', building_id: 'b2' }, 'ovt-2': { name: 'No Pin', category: 'services' }, a: { name: 'Impostor' } } })
+if (added.find(l => l.id === 'ovt-1')?.name === 'New Cafe' && added.some(l => l.id === 'ovt-2')) ok('a place the layer adds joins the listings, pinned or not'); else bad('an added place did not reach the listings')
+if (!added.some(l => l.id === 'bare-b2')) ok('an added place replaces the zoning stand-in on its building'); else bad('the building shows both the added place and its zoning stand-in')
+if (added.some(l => l.id === 'bare-b3')) ok('other zoning stand-ins stay'); else bad('an add removed a stand-in on another building')
+if (added.filter(l => l.id === 'a').length === 1 && added.find(l => l.id === 'a').name === 'A') ok('an add never duplicates or overwrites a listing the town already has'); else bad('an add for an existing id duplicated or overwrote it')
+if (JSON.stringify(withBare) === frozenBare) ok('adding mutates nothing'); else bad('adding mutated its input')
+const lateBare = readFileSync(path.join(ROOT, 'src/hooks/useListings.js'), 'utf8')
+if (/bareBuildingListings\.filter\(l => !held\.has\(l\.building_id\)\)/.test(lateBare)) ok('zoning stand-ins that arrive late skip a building already held'); else bad('late zoning stand-ins are merged without checking held buildings — an added place gets a twin')
+
 const init = readFileSync(path.join(ROOT, 'src/hooks/useInit.js'), 'utf8')
 const calls = [...init.matchAll(/await applyPublished\(\)/g)].map(m => m.index)
 const merge = init.indexOf('const merged = apiListings.map(')

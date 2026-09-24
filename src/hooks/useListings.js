@@ -143,7 +143,9 @@ Promise.all([_landmarksReady, _buildingsReady]).then(([, { buildings }]) => {
   const state = useListings.getState()
   if (state.fetched) {
     const current = state.listings.filter(l => !l._bare)
-    useListings.setState({ listings: orderListings([...current, ...bareBuildingListings]) })
+    // A place the published layer added may already hold a building the landmarks never named.
+    const held = new Set(current.map(l => l.building_id).filter(Boolean))
+    useListings.setState({ listings: orderListings([...current, ...bareBuildingListings.filter(l => !held.has(l.building_id))]) })
   }
 })
 

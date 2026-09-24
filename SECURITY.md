@@ -533,7 +533,7 @@ what any visitor sees, and the controls are:
   come from `STAFF_EMAILS` in the Worker's config, not from any editable record. **A Host may publish only
   their own Wards, and only to staging; a production publish from a Host is refused (403).** A Host also
   cannot edit a Guardian-claimed listing's fields. `npm test` in that repo asserts all of this.
-- **Nothing personal is in it.** The layer carries edited listing fields and closures only; Guardian
+- **Nothing personal is in it.** The layer carries edited listing fields, closures, and places staff or a Host added to the map (`adds`, whole listings built from Overture and verified research); Guardian
   contacts, outreach notes and research are stored apart and a test searches the published file for them.
 - **Every publish is kept** with who, when and what, and staff can put any earlier one back.
 
