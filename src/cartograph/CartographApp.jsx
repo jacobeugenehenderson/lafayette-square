@@ -691,9 +691,7 @@ function Controls({ controlsRef, heroPlaying = false }) {
       />
     )
   }
-  // Browse is a planar overhead by default — LEFT-drag pans, wheel zooms.
-  // ⌥/Alt+LEFT-drag (and RIGHT-drag) is the hidden 360° orbit easter
-  // egg. See feedback_browse_right_drag_orbit.md.
+  // Browse is a plan view — drag pans, wheel zooms, no orbit (BrowseControls).
   if (shot === 'browse') {
     return (
       <BrowseControls controlsRef={controlsRef} />
@@ -754,7 +752,7 @@ function BrowseControls({ controlsRef }) {
   )
 }
 
-// Shot-mode controls. Left-drag rotates; Option/Alt+drag pans; wheel zooms.
+// Shot-mode controls. Drag orbits; ⌥-drag dollies; ⌃-drag pans; wheel zooms.
 // `enabled` locks them for the Hero runtime preview (see Controls).
 function OrbitControlsShot({ controlsRef, enabled = true }) {
   const localRef = useRef(null)
@@ -778,13 +776,16 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
     }
     wasEnabled.current = enabled
   }, [enabled])
-  // ⭐ ONE BUTTON AND TWO MODIFIERS — the DCC scheme, so a pen or a trackpad can
-  // do all three moves. Alt already panned; Control now dollies, which is the
-  // one that was missing: dolly lived on the MIDDLE button and the wheel, and a
-  // stylus has neither. Jacob: "regular 3D controls with mouse/tablet +
-  // option/control keys."
+  // ⭐ ONE BUTTON AND TWO MODIFIERS, so a pen can do all three moves: drag
+  // orbits · ⌥-drag dollies · ⌃-drag pans. Middle-drag dollies and the wheel
+  // zooms for a mouse. ⌥ is the dolly because the stylus has no middle button or
+  // wheel, and ⌥ is the modifier that doesn't fight the OS.
+  // ⚠️ ⌃ STAYS `ROTATE` ON PURPOSE. OrbitControls swaps ROTATE↔PAN itself when
+  // Ctrl/Meta/Shift is down, so a `PAN` mapping would orbit under ⌃. macOS can
+  // also deliver ⌃-click as a RIGHT click, so RIGHT has to be ROTATE under ⌃
+  // too; the same swap turns both into a pan.
   // ⛔ THE PAN IS THE FRAMING GESTURE. In Hero authoring the camera is free, so
-  // ⌥-dragging moves the subject in the frame — that IS the tilt. The panel's
+  // ⌃-dragging moves the subject in the frame — that IS the tilt. The panel's
   // "From view" then reads where it landed. There is deliberately no keyboard
   // nudge for it: the framing is what you SEE, not a number you type at.
   // ⚠️ Both delivery paths, for the reason BrowseControls documented before it
@@ -796,11 +797,9 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
       const c = localRef.current
       if (!c) return
       c.mouseButtons = {
-        LEFT: mod === 'alt' ? THREE.MOUSE.PAN
-            : mod === 'ctrl' ? THREE.MOUSE.DOLLY
-            : THREE.MOUSE.ROTATE,
+        LEFT: mod === 'alt' ? THREE.MOUSE.DOLLY : THREE.MOUSE.ROTATE,
         MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.PAN,
+        RIGHT: mod === 'ctrl' ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
       }
     }
     const read = (e) => (e.altKey ? 'alt' : (e.ctrlKey || e.metaKey) ? 'ctrl' : null)
@@ -809,10 +808,15 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
     setButtons(null)
     window.addEventListener('keydown', onKey)
     window.addEventListener('keyup', onKey)
+    // ⚠️ The modifier held AT THE PRESS is the one that counts. A key pressed while
+    // focus was elsewhere never sends us a keydown, so re-read it from the press
+    // itself — capture phase, so it lands before OrbitControls picks its action.
+    window.addEventListener('pointerdown', onKey, true)
     window.addEventListener('blur', onBlur)
     return () => {
       window.removeEventListener('keydown', onKey)
       window.removeEventListener('keyup', onKey)
+      window.removeEventListener('pointerdown', onKey, true)
       window.removeEventListener('blur', onBlur)
     }
   }, [])
