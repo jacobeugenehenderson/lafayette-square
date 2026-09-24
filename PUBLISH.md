@@ -343,7 +343,7 @@ Committed on `docs/conformance-2026-09-21`, **none of it pushed or deployed**. O
 - **Lafayette Square has no `prominence_rank`.** `claims-the-directory-has-exactly-one-order` fails on it until LS is re-ranked.
 - **ROADMAP H-29's silent-override half** — an override key that resolves to nothing is still a silent no-op; the check is owed.
 - **Huron's 14 address+phone pairs** — open, as listed in the coordinator's handoff.
-- **Places added to the map** reach it through the published layer's `adds` (`src/lib/publishedLayerApply.js`); nothing is added until someone publishes a Ward from operations.
+- **The staging player predates the published-layer reader.** Operations has published Lafayette Square to staging (Baileys' closed), and `assets.theward.online/staging/live/lafayette-square/listings.json` is up, but staging.theward.online won't lay it over until `node scripts/publish-player-to-staging.mjs` runs (dry run 2026-09-24: 439 files, 50.6 MB, reader included). Added places travel the same way (`adds`).
 - **Parked in operations:** balances via Stripe Connect · the moderation queue and mail · whether staging is gated · Namecheap sync · photos (tabled as the likely courtesy line) · a rewrite of the handbook's "A report is not proof of wrongdoing…" sentence.
 
 ## Troubleshooting
