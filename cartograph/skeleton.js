@@ -1252,14 +1252,52 @@ function gradeFacts(sources) {
 // elevated/buried along its whole length OR a limited-access corridor. Carried
 // alongside the raw facts (layer/bridge/tunnel) so a finer downstream rule can
 // refine if ever needed; the basic filter is just `!s.gradeSeparated`.
+// ⭐ H-3 ruling (a), 2026-09-23: a TWO-WAY `motorway`/`motorway_link` is not
+// limited-access — it bounds blocks like any street unless it is off grade
+// (LS's South 18th ramp). Two-way `trunk` stays highway. ⛔ Two-way means every
+// source way SAYS `oneway=no`: OSM implies oneway=yes on a motorway, so an
+// untagged one is one-way and must not be reclassified. Printed per pour.
+function isTwoWayMotorway(highway, sources) {
+  if (highway !== 'motorway' && highway !== 'motorway_link') return false
+  let n = 0
+  for (const id of sources || []) {
+    const t = WAY_TAGS_BY_ID.get(id)
+    if (!t) continue
+    if (t.oneway !== 'no') return false
+    n++
+  }
+  return n > 0
+}
 function gradeFields(highway, sources) {
   const f = gradeFacts(sources)
+  const twoWay = isTwoWayMotorway(highway, sources)
   return {
     layer: f.layer,
     bridge: f.bridge,
     tunnel: f.tunnel,
-    gradeSeparated: f.entirelyOffGrade || LIMITED_ACCESS.has(highway),
+    gradeSeparated: f.entirelyOffGrade || (LIMITED_ACCESS.has(highway) && !twoWay),
+    ...(twoWay && { twoWayMotorway: true }),
   }
+}
+
+// ⭐ H-3 step 0: `ref` voted over the chain's source ways (the chainLanes shape).
+// A LABEL for choosing a highway's section — ⛔ never a weld key (`US 6;SR 2`
+// concurrencies exist). No source carries one, or the vote ties → `null`, and
+// the pour prints "Interstate status unknown"; ⛔ unknown is never "not an
+// Interstate". ⛔ No first-fragment fallback: on a named group that is another
+// chain's ref.
+function chainRef(sources) {
+  const votes = new Map()
+  for (const id of sources || []) {
+    const r = WAY_TAGS_BY_ID.get(id)?.ref
+    if (typeof r === 'string' && r.trim()) votes.set(r.trim(), (votes.get(r.trim()) || 0) + 1)
+  }
+  let best = null, bestCount = 0, tied = false
+  for (const [r, c] of votes) {
+    if (c > bestCount) { best = r; bestCount = c; tied = false }
+    else if (c === bestCount) tied = true
+  }
+  return tied ? null : best
 }
 
 // [E1] Per-chain lanes vote across all source ways (same WAY_TAGS_BY_ID
@@ -1833,6 +1871,7 @@ function main() {
       name: synthName,
       highway: hw,
       oneway,
+      ref: chainRef([f.osmId]),
       ...(Number.isFinite(lanes) && { lanes }),
       ...(f.tags?.surface && { surface: f.tags.surface }),
       ...(f.tags?.maxspeed && { maxspeed: f.tags.maxspeed }),
@@ -1849,6 +1888,15 @@ function main() {
       // bounds blocks. The facts come straight off the single source way.
       ...gradeFields(hw, [f.osmId]),
     })
+  }
+  // ⭐ H-3 step 0 disclosure, every pour: the frame facts a highway's section is chosen by.
+  {
+    const hwy = streets.filter(s => LIMITED_ACCESS.has(s.highway))
+    const twoWay = streets.filter(s => s.twoWayMotorway)
+    const noRef = hwy.filter(s => s.ref == null)
+    console.log(`\nHighway frame facts (H-3): ${hwy.length} highway-class chain(s), ${hwy.length - noRef.length} with a ref`)
+    if (twoWay.length) console.log(`  ⚠️ ${twoWay.length} two-way motorway(s) are NOT limited-access (ruling a) — gradeSeparated only if off grade: ${twoWay.map(s => `${s.id}${s.gradeSeparated ? ' (off grade)' : ''}`).join(', ')}`)
+    if (noRef.length) console.log(`  ⚠️ Interstate status unknown (no ref, or a tied vote) on ${noRef.length}: ${noRef.map(s => s.id).join(', ')}`)
   }
   const paths = unnamedNonVehicular.map((f, i) => ({
     id: `path-${i}`,
@@ -2484,6 +2532,7 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
     name,
     highway,
     oneway,
+    ref: chainRef(chain?.sources),
     // Attributes present in OSM but dropped at P1 until now — carried so the
     // frame holds the cross-section instead of re-deriving it (Part 2 bucket b).
     ...(Number.isFinite(lanes) && { lanes }),
