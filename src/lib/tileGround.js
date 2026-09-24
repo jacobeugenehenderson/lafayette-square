@@ -1624,7 +1624,13 @@ function sweepHighway(points, leftSec, rightSec) {
   const L = highwayWidthProfile(leftSec, Ltot), R = highwayWidthProfile(rightSec, Ltot)
   if (!L || !R) return null
   // Insert the taper knots as vertices so the width changes exactly where the profile says.
-  const extra = [...new Set([...L.stations, ...R.stations])].filter(t => t > 1e-6 && t < Ltot - 1e-6).sort((a, b) => a - b)
+  // ⛔ MERGED WITHIN A MICRON: the left and right profiles taper at the same station, but their knots
+  // can differ by float noise — two near-equal stations make a ZERO-LENGTH segment, its normal is
+  // (0, 0), and the miter divides by zero (Provincetown's US 6, trunk-45: an Infinity vertex that took
+  // the whole ground build down, live and bake).
+  const extra = []
+  for (const t of [...L.stations, ...R.stations].filter(t => t > 1e-6 && t < Ltot - 1e-6).sort((a, b) => a - b))
+    if (!extra.length || t - extra[extra.length - 1] > 1e-6) extra.push(t)
   const P = [], T = [], SRC = []
   let e = 0
   for (let i = 0; i < pts.length; i++) {
@@ -1635,6 +1641,9 @@ function sweepHighway(points, leftSec, rightSec) {
     if (e < extra.length && Math.abs(extra[e] - cum[i]) <= 1e-6) e++
     P.push(pts[i]); T.push(cum[i]); SRC.push(i)
   }
+  // …and any vertex that still lands within a micron of its predecessor is dropped, so no segment is degenerate.
+  for (let i = P.length - 1; i > 0; i--) if (Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]) <= 1e-6) { P.splice(i, 1); T.splice(i, 1); SRC.splice(i, 1) }
+  if (P.length < 2) return null
   const dir = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1; return [dx / l, dz / l] }
   const right = [], left = [], stamp = []
   for (let i = 0; i < P.length; i++) {
@@ -1652,6 +1661,9 @@ function sweepHighway(points, leftSec, rightSec) {
     stamp.push(SRC[i])
   }
   const ring = [...right, ...left.slice().reverse()]
+  // ⛔ LOUD, never garbage into Clipper: a non-finite vertex is a construction defect, named here.
+  const bad = ring.findIndex(q => !Number.isFinite(q[0]) || !Number.isFinite(q[1]))
+  if (bad >= 0) throw new Error(`[tileGround][H] ⛔ the highway sweep produced a NON-FINITE vertex (ring index ${bad} of ${ring.length}, source index ${stamp[bad]?.toFixed?.(3)}) — refusing to hand Clipper an invalid coordinate`)
   return { ring, stamp: [...stamp.map(i => ({ src: i, side: 'right' })), ...stamp.slice().reverse().map(i => ({ src: i, side: 'left' }))],
            tapers: { left: L.tapers, right: R.tapers }, length: Ltot }
 }
