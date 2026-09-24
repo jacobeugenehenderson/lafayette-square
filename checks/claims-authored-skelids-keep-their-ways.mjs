@@ -15,6 +15,12 @@
 //   MOVED     — resolves, but to different ways: authoring would re-point.   ⛔
 //   GONE      — resolved before, resolves to nothing now.                    ⛔
 //   DANGLING  — already resolves to nothing on disk: authoring on no road.   ⛔
+//   HIGHWAY   — the key's chain is highway class (before OR after). A highway takes no authoring
+//               (`r-highway-no-authoring`), so the key is REFUSED, printed by name with its
+//               `measure.source` — never red, never dropped (Boz, 2026-09-23, for the H-3 weld).
+//               ⛔ A refused key whose source is NOT "seed" is possibly a real operator gesture and
+//               reads loud: "operator authoring on a highway — refused, review". Narrow on purpose:
+//               a non-highway MOVED/GONE stays red.
 //
 // ⭐ THIS READS THE SOURCE, IT DOES NOT RESTATE IT (`CLAUDE.md` PRUNE §1): the ids come from running
 // the code; the scene-keyed design fields are parsed out of `serve.js`'s SCENE_KEYED_DESIGN_FIELDS;
@@ -37,6 +43,12 @@ const DESIGN_FIELDS = [...fieldsBlock[1].matchAll(/'([A-Za-z]+)'/g)].map(m => m[
 
 const looks = readJson(join(ROOT, 'public/looks/index.json')).looks
 
+// The highway classes — read from skeleton.js, never restated.
+const la = readFileSync(join(ROOT, 'cartograph/skeleton.js'), 'utf8').match(/const LIMITED_ACCESS = new Set\(\[([^\]]+)\]\)/)
+if (!la) { console.error('⛔ NOT CHECKED — LIMITED_ACCESS not found in cartograph/skeleton.js'); process.exit(2) }
+const HIGHWAY = new Set([...la[1].matchAll(/'([^']+)'/g)].map(m => m[1]))
+const highwayIds = (skel) => new Set((skel.streets || []).filter(s => HIGHWAY.has(s.highway)).map(s => s.id))
+
 // id → sorted OSM way ids, over streets[] and paths[] (a path id is positional too).
 function waysById(skel) {
   const m = new Map()
@@ -56,7 +68,7 @@ function authoredKeys(scene) {
   const out = new Map()   // skelId → [where]
   const add = (id, where) => { if (!out.has(id)) out.set(id, []); out.get(id).push(where) }
   const ov = join(ROOT, 'cartograph/data', scene, 'clean/overlay.json')
-  if (existsSync(ov)) for (const k of Object.keys(readJson(ov).streets || {})) add(k, 'overlay.streets')
+  if (existsSync(ov)) for (const [k, v] of Object.entries(readJson(ov).streets || {})) add(k, `overlay.streets(source:${v?.measure?.source ?? 'none'})`)
   for (const look of looks.filter(l => l.scene === scene)) {
     const dp = join(ROOT, 'public/looks', look.id, 'design.json')
     if (!existsSync(dp)) continue
@@ -87,18 +99,32 @@ try {
       console.log(`   ⛔ NOT CHECKED — skeleton.js exited ${run.status}\n${(run.stderr || '').slice(-2000)}`)
       red = true; continue
     }
-    const before = waysById(readJson(onDisk))
-    const after = waysById(readJson(outPath))
+    const skelBefore = readJson(onDisk), skelAfter = readJson(outPath)
+    const before = waysById(skelBefore)
+    const after = waysById(skelAfter)
+    const hwyBefore = highwayIds(skelBefore), hwyAfter = highwayIds(skelAfter)
 
-    const tally = { SAME: 0, MOVED: 0, GONE: 0, DANGLING: 0 }
+    const tally = { SAME: 0, MOVED: 0, GONE: 0, DANGLING: 0, HIGHWAY: 0 }
+    const refused = []
     for (const [id, where] of [...keys].sort()) {
       const b = before.get(id), a = after.get(id)
       const status = !b ? 'DANGLING' : !a ? 'GONE' : b.join(',') === a.join(',') ? 'SAME' : 'MOVED'
+      if (status !== 'SAME' && status !== 'DANGLING' && (hwyBefore.has(id) || hwyAfter.has(id))) {
+        tally.HIGHWAY++
+        refused.push({ id, where, status, seed: where.every(w => w.endsWith('(source:seed)')) })
+        continue
+      }
       tally[status]++
       if (status !== 'SAME') {
         red = true
         console.log(`   ⛔ ${status.padEnd(8)} ${id}  [${where.join(', ')}]  ways ${b ? b.join(',') : '—'} → ${a ? a.join(',') : '—'}`)
       }
+    }
+    if (refused.length) {
+      console.log(`   HIGHWAY  ${refused.length} key(s) on a highway chain — refused by r-highway-no-authoring, kept in the file: ${refused.map(r => `${r.id}(${r.status}; ${r.where.join(', ')})`).join(' · ')}`)
+      const gesture = refused.filter(r => !r.seed)
+      if (gesture.length) console.log(`   ⛔ ${gesture.length} operator authoring on a highway — refused, review: ${gesture.map(r => `${r.id} [${r.where.join(', ')}]`).join(' · ')}`)
+      else console.log(`   (all ${refused.length} are seed snapshots — measure.source "seed")`)
     }
     console.log(`   ${Object.entries(tally).map(([k, n]) => `${k} ${n}`).join(' · ')}`)
   }

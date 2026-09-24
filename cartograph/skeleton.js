@@ -1637,6 +1637,92 @@ function buildNodeGraph(streets) {
   return { degree, junctions }
 }
 
+// ⭐ THE HIGHWAY WELD (H-3 ruling f, BRIEF-highway-build step 0.3). OSM cuts a freeway into
+// a way wherever a tag changes (lanes, a bridge, a ref), and each unnamed way became its own
+// chain — so the highway was drawn as fragments with a visible joint at every cut.
+// A joint welds when two chains of the SAME highway class, both grade-separated and the same
+// `oneway`, meet TAIL→HEAD at a node of degree 2. ⛔ NO ANGLE GATE (Boz, 2026-09-23, on the
+// measurement): a degree-2 same-direction joint has nowhere else to go, so it IS one road and
+// the angle there is curvature, not a turn. The 142° joint that motivated a gate is an
+// opposite-direction meeting, excluded by tail→head alone.
+// - Runs AFTER the synthetic numbering, so no other chain's `<highway> <n>` shifts. The
+//   survivor keeps its id (the one named chain if there is one, else the run's head);
+//   member ids stay in `sources`/`osmIds` and are listed in `weldedFrom`.
+// - Lanes are carried PER SPAN: `laneProfile` = [{ s0, s1, lanes, from }] in metres along the
+//   welded (raw) polyline, `length` its total — a consumer after RDP rescales by its own length.
+//   `lanes: null` = no source said; ASSUMED is step 1's decision, not the frame's.
+// - ⛔ NOT WELDED, PRINTED BY NAME: a divided carriageway (`phase.kind === 'divided'` — the
+//   divided machinery is not reopened; bring a weld there to Jacob with its blast radius),
+//   a class change at the joint, and two different REAL names (a name transition).
+function weldHighwayChains(streets) {
+  const isHwy = s => LIMITED_ACCESS.has(s.highway) && s.gradeSeparated && s.points.length >= 2
+  const isSyn = s => !!s.synthetic
+  const { degree } = buildNodeGraph(streets)
+  const byHead = new Map()
+  for (const s of streets) if (isHwy(s)) {
+    const k = vKey(s.points[0])
+    byHead.set(k, byHead.has(k) ? null : s)          // two heads at one node ⇒ not degree 2 anyway
+  }
+  const next = new Map(), prev = new Map()
+  const held = { divided: [], cls: [], name: [], oneway: [] }
+  for (const a of streets) {
+    if (!isHwy(a)) continue
+    const k = vKey(a.points[a.points.length - 1])
+    const b = byHead.get(k)
+    if (!b || b === a || degree.get(k) !== 2) continue
+    const tag = `${a.id}→${b.id}`
+    if (a.phase?.kind === 'divided' || b.phase?.kind === 'divided') { held.divided.push(tag); continue }
+    if (a.highway !== b.highway) { held.cls.push(`${tag} (${a.highway}→${b.highway})`); continue }
+    if (a.oneway !== b.oneway) { held.oneway.push(tag); continue }
+    if (!isSyn(a) && !isSyn(b) && a.name !== b.name) { held.name.push(tag); continue }
+    next.set(a, b); prev.set(b, a)
+  }
+  const gone = new Set(), runs = [], cycles = []
+  let laneSteps = 0
+  for (const s of streets) {
+    if (!next.has(s) || prev.has(s)) continue        // start only at a run's head
+    const run = [s]
+    while (next.has(run[run.length - 1])) run.push(next.get(run[run.length - 1]))
+    runs.push(run)
+  }
+  for (const s of next.keys()) if (!runs.some(r => r.includes(s))) cycles.push(s.id)
+  for (const run of runs) {
+    const named = run.filter(s => !isSyn(s))
+    const keep = named.length ? named[0] : run[0]
+    const points = [], sources = [], osmIds = [], laneProfile = []
+    let s0 = 0
+    for (const m of run) {
+      const pts = points.length ? m.points.slice(1) : m.points
+      const len = polylineLengthXZ(m.points)
+      const n = chainLanes(m.sources)
+      const lanes = Number.isFinite(n) && n > 0 ? n : null
+      if (laneProfile.length && laneProfile[laneProfile.length - 1].lanes !== lanes) laneSteps++
+      laneProfile.push({ s0: +s0.toFixed(2), s1: +(s0 + len).toFixed(2), lanes, from: m.id })
+      s0 += len
+      points.push(...pts)
+      sources.push(...(m.sources || [])); osmIds.push(...(m.osmIds || m.sources || []))
+      if (m !== keep) gone.add(m)
+    }
+    const lanes = chainLanes(sources)
+    Object.assign(keep, {
+      points, sources, osmIds, ref: chainRef(sources),
+      ...(Number.isFinite(lanes) && lanes > 0 ? { lanes } : {}),
+      laneProfile, length: +s0.toFixed(2),
+      weldedFrom: run.map(m => m.id),
+      seed: seedSection(keep.highway, lanes, keep.oneway, { expressway: isExpressway(sources) }),
+      ...gradeFields(keep.highway, sources),
+    })
+  }
+  for (let i = streets.length - 1; i >= 0; i--) if (gone.has(streets[i])) streets.splice(i, 1)
+  const joints = runs.reduce((a, r) => a + r.length - 1, 0)
+  console.log(`\nHighway weld (H-3, no angle gate): ${joints} joint(s) → ${runs.length} chain(s), ${gone.size} chain(s) absorbed · lanes step at ${laneSteps} welded joint(s), carried in laneProfile`)
+  if (held.divided.length) console.log(`  ⚠️ ${held.divided.length} divided-carriageway joint(s) NOT welded (divided machinery not reopened): ${held.divided.join(', ')}`)
+  if (held.cls.length) console.log(`  ⚠️ ${held.cls.length} class-change joint(s) NOT welded: ${held.cls.join(', ')}`)
+  if (held.oneway.length) console.log(`  ⚠️ ${held.oneway.length} oneway-mismatch joint(s) NOT welded: ${held.oneway.join(', ')}`)
+  if (held.name.length) console.log(`  ⚠️ ${held.name.length} name-transition joint(s) NOT welded (two real names): ${held.name.join(', ')}`)
+  if (cycles.length) console.log(`  ⛔ ${cycles.length} chain(s) in a closed all-degree-2 loop NOT welded: ${cycles.join(', ')}`)
+}
+
 // --- Main pipeline --------------------------------------------------------
 
 function main() {
@@ -1857,8 +1943,8 @@ function main() {
   }
   if (promotedBy.has('road')) console.log(`  ⚠️ highway=road × ${promotedBy.get('road')} — OSM says "class unknown"; seedSection seeds it as residential.`)
   // Promote unnamed vehicular fragments into streets with synthetic names.
-  // Each fragment becomes its own chain (no welding — ramps don't share
-  // endpoints reliably and the OSM ways already represent intent).
+  // Each fragment becomes its own chain here; highway fragments are then
+  // joined by `weldHighwayChains`, after the numbering, so no id shifts.
   // Array.prototype.sort is stable, so raw order holds within each tier.
   for (let i = 0; i < unnamedVehicular.length; i++) {
     const f = unnamedVehicular[i]
@@ -1889,6 +1975,7 @@ function main() {
       ...gradeFields(hw, [f.osmId]),
     })
   }
+  weldHighwayChains(streets)
   // ⭐ H-3 step 0 disclosure, every pour: the frame facts a highway's section is chosen by.
   {
     const hwy = streets.filter(s => LIMITED_ACCESS.has(s.highway))
