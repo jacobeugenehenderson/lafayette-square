@@ -752,7 +752,7 @@ function BrowseControls({ controlsRef }) {
   )
 }
 
-// Shot-mode controls. Drag orbits; ⌥-drag slides; ⌃/⌘-drag pans; wheel zooms.
+// Shot-mode controls. Drag orbits; ⌥-drag grabs the ground; ⌃/⌘-drag pans; wheel zooms.
 // `enabled` locks them for the Hero runtime preview (see Controls).
 function OrbitControlsShot({ controlsRef, enabled = true }) {
   const localRef = useRef(null)
@@ -780,16 +780,16 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
     wasEnabled.current = enabled
   }, [enabled])
   // ⭐ ONE BUTTON AND TWO MODIFIERS, so a pen can do all three moves: drag
-  // orbits · ⌥-drag slides · ⌃/⌘-drag pans. Middle-drag dollies and the wheel
-  // zooms for a mouse.
-  // ⭐ ⌥ IS A CAMERA ON A TRACK, not an OrbitControls move. Jacob: "I want to go
-  // left and right." Sideways drag moves the camera left/right, vertical drag
-  // moves it forward/back, both in the ground plane; height and look direction
-  // are untouched and `target` travels with the camera, so orbiting afterwards
-  // still turns about the same relative point. ⛔ Not OrbitControls' DOLLY: that
-  // closes on a fixed target, slowing and stalling as it arrives.
-  // Speed scales with the camera's height over its target, so a drag covers the
-  // same share of the view close in or far out.
+  // orbits · ⌥-drag grabs the ground · ⌃/⌘-drag pans. Middle-drag dollies and
+  // the wheel zooms for a mouse.
+  // ⭐ ⌥ GRABS THE GROUND. Jacob: "I just want to grab the scene and drag it to
+  // the left or to the right." The ground point under the pen at pen-down stays
+  // under the pen: the camera slides across the ground to keep it there, like
+  // dragging a map. Height and look direction are untouched and `target` travels
+  // with the camera, so orbiting afterwards turns about the same relative point.
+  // "Ground" is the horizontal plane through `target` — no scene raycast, so it
+  // costs nothing. ⛔ Not a camera-drive (tried first; the scene went the wrong
+  // way), and not OrbitControls' DOLLY (closes on a fixed target and stalls).
   // ⚠️ ⌃ STAYS `ROTATE` ON PURPOSE. OrbitControls swaps ROTATE↔PAN itself when
   // Ctrl/Meta/Shift is down, so a `PAN` mapping would orbit under ⌃. macOS can
   // also deliver ⌃-click as a RIGHT click, so RIGHT has to be ROTATE under ⌃
@@ -807,7 +807,7 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
       const c = localRef.current
       if (!c) return
       c.mouseButtons = {
-        LEFT: mod === 'alt' ? -1 : THREE.MOUSE.ROTATE,   // -1: ⌥ is ours (slide)
+        LEFT: mod === 'alt' ? -1 : THREE.MOUSE.ROTATE,   // -1: ⌥ is ours (grab)
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: mod === 'ctrl' ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
       }
@@ -816,34 +816,41 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
     const onKey  = (e) => setButtons(read(e))
     const onBlur = () => setButtons(null)
     setButtons(null)
-    // The ⌥ slide. Right/forward are taken from the camera's own right axis, so
-    // they stay defined even looking straight down.
-    let slide = null
-    const right = new THREE.Vector3(), step = new THREE.Vector3()
+    // The ⌥ grab. A press above the horizon grabs nothing; a move whose ray
+    // runs off toward the horizon is skipped rather than flinging the camera.
+    let grab = null
+    const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+    const hit = new THREE.Vector3()
+    const groundAt = (c, e) => {
+      const r = c.domElement.getBoundingClientRect()
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
+      c.object.updateMatrixWorld()
+      ray.setFromCamera(ndc, c.object)
+      if (!ray.ray.intersectPlane(plane, hit)) return null
+      const reach = 50 * Math.max(Math.abs(c.object.position.y + plane.constant), 1)   // 50× height
+      return hit.distanceTo(c.object.position) > reach ? null : hit
+    }
     const onDown = (e) => {
       onKey(e)
       const c = localRef.current
       if (!c || !enabledRef.current || !e.altKey || e.button !== 0) return
       if (!c.domElement.contains(e.target)) return   // R3F's wrapper div, not the <canvas>
-      slide = { x: e.clientX, y: e.clientY }
+      plane.constant = -c.target.y
+      const g = groundAt(c, e)
+      grab = g ? g.clone() : null
     }
     const onMove = (e) => {
       const c = localRef.current
-      if (!slide || !c) return
-      const dx = e.clientX - slide.x, dy = e.clientY - slide.y
-      slide = { x: e.clientX, y: e.clientY }
-      const cam = c.object
-      right.setFromMatrixColumn(cam.matrixWorld, 0).setY(0)
-      if (right.lengthSq() < 1e-8) return
-      right.normalize()
-      const k = 2 * Math.max(Math.abs(cam.position.y - c.target.y), 1) / (c.domElement.clientHeight || 1)
-      // forward on the ground = up × right; dragging up moves forward
-      step.set(right.x * dx * k + right.z * -dy * k, 0, right.z * dx * k - right.x * -dy * k)
-      cam.position.add(step)
+      if (!grab || !c) return
+      const h = groundAt(c, e)
+      if (!h) return
+      const step = grab.clone().sub(h).setY(0)   // move so `grab` is back under the pen
+      c.object.position.add(step)
       c.target.add(step)
       invalidate()
     }
-    const onUp = () => { slide = null }
+    const onUp = () => { grab = null }
     window.addEventListener('keydown', onKey)
     window.addEventListener('keyup', onKey)
     // ⚠️ The modifier held AT THE PRESS is the one that counts. A key pressed while
