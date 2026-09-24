@@ -19,7 +19,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
-const { assignListingIds, idsThatWouldMove } = await import(path.join(ROOT, 'cartograph/listing-identity.js'))
+const { assignListingIds, idsThatWouldMove, guardSeal } = await import(path.join(ROOT, 'cartograph/listing-identity.js'))
 
 let failed = 0
 const bad = (m) => { failed++; console.log(`  ⛔ ${m}`) }
@@ -77,6 +77,18 @@ if (idsThatWouldMove([...twins].reverse(), twins).length === 0) ok('two listings
 else bad('the seal guard paired one twin with the other and reported a move')
 if (idsThatWouldMove([{ id: 'x-9', name: 'School', building_id: 'b' }, twins[1]], twins).length === 1) ok('a real move inside a twin group is reported')
 else bad('a real move inside a twin group went unreported')
+
+// ── the seal guard: a real bake stops, a dry run only reports, and the bake is wired to it ──
+const moves = [{ name: 'X', was: 'a-1', now: 'a-2' }]
+if (throws(() => guardSeal(moves, { dryRun: false }))) ok('a real bake that would move an id throws')
+else bad('a real bake that would move an id did NOT throw — the seal guard is only reporting')
+if (!throws(() => guardSeal(moves, { dryRun: true })) && typeof guardSeal(moves, { dryRun: true }) === 'string') ok('a dry run reports the move instead of throwing')
+else bad('a dry run did not report')
+if (guardSeal([], { dryRun: false }) === null) ok('nothing to move, nothing said')
+else bad('the guard spoke with nothing to move')
+const bakeSrc = readFileSync(path.join(ROOT, 'cartograph/bake-content.js'), 'utf8')
+if (/guardSeal\(\s*idsThatWouldMove\([^)]*\),\s*\{\s*dryRun\s*\}\s*\)/.test(bakeSrc)) ok('bake-content passes its own dryRun flag to the guard')
+else bad('bake-content does not call guardSeal(idsThatWouldMove(…), { dryRun }) — the guard may be bypassed')
 
 // ── every sealed scene agrees with its registry ──
 const dataDir = path.join(ROOT, 'cartograph/data')

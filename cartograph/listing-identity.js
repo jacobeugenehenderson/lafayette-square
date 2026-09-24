@@ -134,3 +134,15 @@ export function idsThatWouldMove(listings, onDisk) {
   }
   return moved
 }
+
+/**
+ * The seal guard's verdict, in one place so it can be tested: a real bake THROWS when sealing would
+ * move an existing id; a dry run writes nothing, so it only returns the warning to print.
+ */
+export function guardSeal(moved, { dryRun }) {
+  if (!moved.length) return null
+  if (dryRun) return `listing-identity: sealing on this input would move ${moved.length} existing listing id(s) — reported only, this is a dry run`
+  throw new Error(`listing-identity: sealing on this input would move ${moved.length} existing listing id(s), and everything keyed by them (claims, Sheet rows, menus, events) would re-point:\n` +
+    moved.slice(0, 12).map(m => `     ${m.was} → ${m.now}  ${m.name}`).join('\n') +
+    `\n   ▶ Seal on the input the current listings.json was baked from (check out its sources), then change the input.`)
+}

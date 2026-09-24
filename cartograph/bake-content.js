@@ -50,7 +50,7 @@ import { readSources, undeclaredMessage, PARCEL_FIELDS } from './sources.js'
 import { classifyZoning } from '../src/tokens/categories.js'
 import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { rankRoster } from './prominence.mjs'
-import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove } from './listing-identity.js'
+import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove, guardSeal } from './listing-identity.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -1236,15 +1236,8 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     // The first sealed bake numbers positionally; that carries today's ids over only if the input
     // is unchanged since the last bake. Prove it against the file on disk before sealing.
     const onDisk = loadJsonOr(join(contentDir(scene), 'listings.json'), { listings: [] }).listings
-    const moved = idsThatWouldMove(merged, onDisk)
-    // The guard protects the WRITE. A dry run writes nothing, so it reports and carries on.
-    if (moved.length && dryRun) {
-      console.warn(`  ⚠️ listing-identity: sealing on this input would move ${moved.length} existing listing id(s) — reported only, this is a dry run`)
-    } else if (moved.length) {
-      throw new Error(`listing-identity: sealing on this input would move ${moved.length} existing listing id(s), and everything keyed by them (claims, Sheet rows, menus, events) would re-point:\n` +
-        moved.slice(0, 12).map(m => `     ${m.was} → ${m.now}  ${m.name}`).join('\n') +
-        `\n   ▶ Seal on the input the current listings.json was baked from (check out its sources), then change the input.`)
-    }
+    const warning = guardSeal(idsThatWouldMove(merged, onDisk), { dryRun })   // a real bake throws inside
+    if (warning) console.warn(`  ⚠️ ${warning}`)
   }
   // The source key stays on the record: it is the listing's identity outside this repo too.
   for (const l of merged) { l.source_key = l._key ?? null; delete l._key }
