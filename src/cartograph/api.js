@@ -157,6 +157,17 @@ export async function discardMap(scene) {
   return j
 }
 
+// Extent hub: move an UNCOMMITTED draft scene to the id its name slugs to. The
+// server refuses a committed scene, and any target that already exists.
+export async function renameDraftScene(scene, to) {
+  const res = await fetch(sceneUrl(scene, 'rename'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to }),
+  })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `rename ${res.status}`)
+  return j
+}
+
 // Extent editor: all named street polylines for the clickable boundary layer.
 export async function fetchStreets(scene) {
   const res = await fetch(sceneUrl(scene, 'streets'))

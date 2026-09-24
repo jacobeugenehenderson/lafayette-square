@@ -39,8 +39,9 @@ import {
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourMap, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeMap, rollbackExtent,
-  fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton,
+  fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton, renameDraftScene,
 } from './api.js'
+import { sceneIdForName, suggestedName, slugifyName } from '../lib/sceneSlug.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import SourcesPanel from './SourcesPanel.jsx'
@@ -803,15 +804,15 @@ function WorkspaceGrid() {
   )
 }
 
-// Slug a searched place into a scene id: primary place name (before the first
-// comma) → lowercase → non-alnum to hyphens → collapse. "Altadena, Los Angeles
-// County…" → "altadena"; "Hi-Pointe + De Mun" → "hi-pointe-de-mun". Falls back
-// to the raw query. This is the NEW neighborhood's own scene — never the active
-// (Lafayette Square) one — so authoring it can't touch any other installation.
-function sluggifyPlace(anchors, query) {
-  const primary = (anchors?.[0]?.displayName || query || '').split(',')[0]
-  const slug = primary.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-  return slug || 'neighborhood'
+// The PROVISIONAL scene id a search gives its draft. The real id is the slug of the
+// operator's Name, settled at Fetch (onFetchView). This one only has to be
+// harmless: the slug of the geocoded locality it also suggests as the name
+// ("02657, Provincetown, …" → provincetown), else `draft-<query>`. ⛔ Never the
+// bare search text — that is how a town came to be called 02657. This is the NEW
+// neighborhood's own scene, never the active one, so authoring it can't touch any
+// other installation.
+function provisionalSceneId(suggestion, query) {
+  return sceneIdForName(suggestion).id || `draft-${slugifyName(query) || 'search'}`
 }
 
 // Neighborhood selector — the persistent switcher at the top of the Extent panel.
@@ -1152,6 +1153,10 @@ export default function ExtentApp() {
   // operator drags radiusM away from this on a committed scene, offer "Re-scope".
   const [committedRadius, setCommittedRadius] = useState(0)
   const draftHydrated = useRef(false)
+  // The name a search suggests, keyed to the draft it made. The [scene] effect
+  // resets `name`, so the suggestion is applied there, after hydration, when the
+  // disk has no name of its own.
+  const suggestedNameFor = useRef(null)
 
   const r2 = (v) => Math.round(v * 100) / 100
   // Stored lon/lat EXCLUSION LOOPS → the x/z loops BezierPen edits + renders. Every
@@ -1450,6 +1455,8 @@ export default function ExtentApp() {
         }
         if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0) }
       }
+      const sug = suggestedNameFor.current
+      if (!nb?.name && sug?.scene === scene && sug.name) setName(sug.name)
       // Load the frame + boundary so an EXISTING hood (committed OR fetched-but-
       // in-progress, like Altadena) shows its aerial + circle on entry. For a fresh
       // SEARCH the store geo is already set (disk has none yet) → we keep it and
@@ -1480,35 +1487,38 @@ export default function ExtentApp() {
   // Draft auto-save (implicit) — sides + radius, debounced. Only writes once the
   // CURRENT scene's data has hydrated (draftHydrated holds the hydrated scene id) —
   // so a mid-switch render can never persist one hood's fields into another's file.
+  // The draft as it stands — also flushed synchronously by Fetch before it moves a
+  // draft to its named id (the debounced save may not have run yet).
+  const buildDraft = () => {
+    const clean = sides.map(s => s.trim()).filter(Boolean)
+    const draft = { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim(), exclusions: exclusionsLL || [] }
+    // The authored disc center (lon/lat) is operator-visible → must survive reload.
+    if (centerLL) draft.center = centerLL
+    // ⭐ The BOUNDARY and the searched place belong in the draft, not just in the
+    // commit. They were client-only state, so reopening a scene from the picker
+    // (rather than re-searching) silently lost both: the inclusion polygon vanished
+    // and the pre-fetch envelope fell back to the raw un-padded bbox. Anything the
+    // operator can see must survive a reload — that's the "keep fixing forever"
+    // contract the exclusion loops already honour.
+    if (Array.isArray(polygonLL) && polygonLL.length >= 3) {
+      draft.polygon = polygonLL
+      draft.polygonSource = polygonSource || 'authored'
+    }
+    // The gazetteer ring persists as `hintRing` — advisory, and the ONLY copy of it
+    // (adopting writes it into `polygon`, after which both exist and mean different
+    // things: what was published, and what the operator decided).
+    if (Array.isArray(hintRing) && hintRing.length >= 3) draft.hintRing = hintRing
+    if (Array.isArray(coverage) && coverage.length) draft.coverage = coverage
+    // The place record stays SMALL — the ring rides in `hintRing`, so storing it
+    // twice would put 815 points in the file for nothing.
+    if (placeEnvelope?.bbox && placeEnvelope.scene === scene) {
+      draft.place = { bbox: placeEnvelope.bbox, label: placeEnvelope.label, cls: placeEnvelope.cls, kind: placeEnvelope.kind, pointish: !!placeEnvelope.pointish }
+    }
+    return draft
+  }
   useEffect(() => {
     if (draftHydrated.current !== scene || !scene) return
-    const clean = sides.map(s => s.trim()).filter(Boolean)
-    const t = setTimeout(() => {
-      const draft = { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim(), exclusions: exclusionsLL || [] }
-      // The authored disc center (lon/lat) is operator-visible → must survive reload.
-      if (centerLL) draft.center = centerLL
-      // ⭐ The BOUNDARY and the searched place belong in the draft, not just in the
-      // commit. They were client-only state, so reopening a scene from the picker
-      // (rather than re-searching) silently lost both: the inclusion polygon vanished
-      // and the pre-fetch envelope fell back to the raw un-padded bbox. Anything the
-      // operator can see must survive a reload — that's the "keep fixing forever"
-      // contract the exclusion loops already honour.
-      if (Array.isArray(polygonLL) && polygonLL.length >= 3) {
-        draft.polygon = polygonLL
-        draft.polygonSource = polygonSource || 'authored'
-      }
-      // The gazetteer ring persists as `hintRing` — advisory, and the ONLY copy of it
-      // (adopting writes it into `polygon`, after which both exist and mean different
-      // things: what was published, and what the operator decided).
-      if (Array.isArray(hintRing) && hintRing.length >= 3) draft.hintRing = hintRing
-      if (Array.isArray(coverage) && coverage.length) draft.coverage = coverage
-      // The place record stays SMALL — the ring rides in `hintRing`, so storing it
-      // twice would put 815 points in the file for nothing.
-      if (placeEnvelope?.bbox && placeEnvelope.scene === scene) {
-        draft.place = { bbox: placeEnvelope.bbox, label: placeEnvelope.label, cls: placeEnvelope.cls, kind: placeEnvelope.kind, pointish: !!placeEnvelope.pointish }
-      }
-      saveNeighborhood(scene, draft).catch(() => {})
-    }, 500)
+    const t = setTimeout(() => { saveNeighborhood(scene, buildDraft()).catch(() => {}) }, 500)
     return () => clearTimeout(t)
   }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope, centerLL, hintRing, coverage])
 
@@ -1589,8 +1599,11 @@ export default function ExtentApp() {
     try {
       const r = await geocodePlace(q)
       if (!r?.bbox) throw new Error('nothing matched')
-      // The authoring target — a slug of the place, NEVER the active render scene.
-      const slug = sluggifyPlace(r.anchors, q)
+      // The authoring target — provisional until Fetch names it; NEVER the active
+      // render scene.
+      const suggestion = suggestedName(r.anchors)
+      const slug = provisionalSceneId(suggestion, q)
+      suggestedNameFor.current = { scene: slug, name: suggestion }
       setSceneLocal(slug)
       setStoreScene(slug)   // clears store geo/boundary; set the fresh frame next
       useCartographStore.setState({ mapGeography: geoFromBbox(r.bbox), sceneBoundary: null })
@@ -1633,7 +1646,7 @@ export default function ExtentApp() {
       // Fresh authoring pass — clear prior work; the [scene] effect restores a
       // committed hood's own extent from disk if this slug already exists.
       setSides([]); setStreetCorners(null); setFetchSources(null)
-      setRadiusM(0); setRadiusTouched(false); setName(''); setBlurb('')
+      setRadiusM(0); setRadiusTouched(false); setName(suggestion); setBlurb('')
       setCommitted(false); setCommittedRadius(0)
       setExclusionsLL([]); setPenActive(false); setSelAnchor(null)
       setLocated(true)
@@ -1702,9 +1715,37 @@ export default function ExtentApp() {
         )
         return   // `finally` clears `seeding`
       }
-      const r = await fetchExtent(scene, bbox)
+      // ⭐ THE SCENE IS NAMED AFTER THE PLACE, at the first write that matters.
+      // Jacob: "Naming the scene from the ZIP isn't acceptable." The id is the slug
+      // of the Name field (kept verbatim for display); the search's id was only
+      // provisional. ⛔ No name, a numeric name, or a name some other neighborhood
+      // already has: refused here, loudly — never patched with a fallback.
+      // A committed hood keeps its id; renaming it is not this button's job.
+      let target = scene
+      if (!committed) {
+        const want = sceneIdForName(name)
+        if (want.error) { setSeedError(want.error); return }
+        if (want.id !== scene) {
+          if (scenesList.some(x => x.id === want.id)) {
+            setSeedError(`A neighborhood '${want.id}' already exists — open it from the picker, or choose another name.`)
+            return
+          }
+          await saveNeighborhood(scene, buildDraft())   // the move must carry the latest draft
+          await renameDraftScene(scene, want.id)
+          target = want.id
+          suggestedNameFor.current = null
+          if (placeEnvelope?.scene === scene) setPlaceEnvelope({ ...placeEnvelope, scene: target })
+          setScenesList(l => [...l.filter(x => x.id !== scene), { id: target, name: name.trim(), committed: false }])
+          // Same hand-off as a search: switch the scene, keep the framed aerial.
+          const keepGeo = useCartographStore.getState().mapGeography
+          setSceneLocal(target)
+          setStoreScene(target)
+          useCartographStore.setState({ mapGeography: keepGeo })
+        }
+      }
+      const r = await fetchExtent(target, bbox)
       setFetchSources(r?.sources || null)
-      const g = await fetchGeography(scene).catch(() => null)
+      const g = await fetchGeography(target).catch(() => null)
       if (g) useCartographStore.setState({ mapGeography: g })
       setSides([]); setStreetCorners(null); setRadiusTouched(false)
       setSeedToken(t => t + 1)
@@ -1760,7 +1801,7 @@ export default function ExtentApp() {
         // existed, or by a script. The FIRST bake out of Extent MUST create one, else
         // bakeLook falls back to the default (lafayette-square) Look and the new hood's
         // slab clobbers LS (Altadena-as-LS, 2026-07-14). Mirrors the first-pour path.
-        if (!lookId) { const r = await createLook({ name: scene, scene }); lookId = r.id }
+        if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene }); lookId = r.id }
         await bakeLook(lookId, { force: true })
         // Switch the Designer to THIS hood's Look — else the pulldown/scene stay on
         // the previous (default LS) Look. Mirrors the first-pour path.
@@ -1817,7 +1858,7 @@ export default function ExtentApp() {
       await pourMap(scene)
       const idx = await fetchLooks().catch(() => null)
       let lookId = idx?.looks?.find(l => l.scene === scene)?.id
-      if (!lookId) { const r = await createLook({ name: scene, scene }); lookId = r.id }
+      if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene }); lookId = r.id }
       const store = useCartographStore.getState()
       if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
       setBuildStage({ label: 'Baking slab', i: 3, n: 3 })
@@ -2110,6 +2151,15 @@ export default function ExtentApp() {
                     </div>
                   )
                 })()}
+                {/* The NAME, before the first fetch — the scene is named after it (the
+                    search only suggests one). Same field as Details below, which takes
+                    over once there are buildings. */}
+                {located && !(keptFit.count > 0 || committed) && (
+                  <div className="carto-row" style={{ marginTop: 6 }}>
+                    <input className="carto-input" value={name} placeholder="neighborhood name (names the scene)" spellCheck={false}
+                      onChange={e => setName(e.target.value)} />
+                  </div>
+                )}
                 <div className="carto-row" style={{ marginTop: 6 }}>
                   <button className="carto-btn carto-btn--grow" disabled={!located || !geo || seeding} onClick={onFetchView}
                     title="Fetch the full data bundle (OSM + buildings + parcels). Sized to the searched place (+ margin) when there is one, otherwise the framed view.">

@@ -69,7 +69,7 @@ For **every** row in `intake-rows.mjs`, decide its fate and justify it:
 Also flag every row whose **definition** is LS-specific (a path like `raw/stl_parcels.json`, a St. Louis dataset baked into the row). That is Layer 0 Class D in the intake itself.
 
 **Prove the method on real towns, read-only:**
-- **Provincetown** (MA), whose scene is currently `02657`, being re-poured as `provincetown`;
+- **Provincetown** (MA), scene `provincetown` (renamed from `02657` on 2026-09-24);
 - **Huron** (OH);
 - one **Outer Cape** neighbour of Provincetown.
 

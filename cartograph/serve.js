@@ -9,11 +9,12 @@
 //     startup would make the server unstartable. Its spawn sites are the reason the guard
 //     works at all; do not guard serve.js itself.
 import { createServer } from 'http'
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync } from 'fs'
 import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
 import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
+import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
 import { intakeStatusForMap, sampleForRow, addAltSource } from './intake-rows.mjs'
 import { writeIfChanged } from './io.js'
@@ -945,9 +946,10 @@ function readLooksIndex() {
   }
 }
 function saveLooksIndex(idx) { writeJson(LOOKS_INDEX, idx) }
+// The same slug as a scene id (src/lib/sceneSlug.js), so a town's Look and its scene
+// agree — and "Księży Młyn" is ksiezy-mlyn here too, not ksi-y-m-yn.
 function slugify(name) {
-  return String(name).toLowerCase().trim()
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'look'
+  return slugifyName(name) || 'look'
 }
 function uniqueLookId(base, existingIds) {
   let id = base, n = 2
@@ -1520,6 +1522,11 @@ createServer(async (req, res) => {
   const fetchExtentMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/fetch-extent$/)
   if (req.method === 'POST' && fetchExtentMatch && !RESERVED_PREFIXES.has(fetchExtentMatch[1])) {
     const scene = fetchExtentMatch[1]
+    if (isNumericId(scene)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: `'${scene}' is a number — name the neighborhood first; a scene is named after the place, never a ZIP.` }))
+      return
+    }
     let body = ''
     req.on('data', c => body += c)
     req.on('end', async () => {
@@ -1669,6 +1676,48 @@ createServer(async (req, res) => {
   //
   // ⛔ The protection is not weakened, it is aimed correctly: what it guards is the
   // COMMITMENT, which is the thing that cost work, not the fetch, which cost minutes.
+  // POST /<scene>/rename — body { to } → move an UNCOMMITTED draft to the id its
+  // NAME slugs to. The Extent panel calls this at Fetch, when the operator's name
+  // no longer matches the provisional id the search gave the draft. A scene is
+  // named after the place, never the search text (Jacob: "Naming the scene from
+  // the ZIP isn't acceptable"). ⛔ Refused, loudly: a committed hood (its id is
+  // load-bearing — Looks, bakes and the registry key off it), a target that is
+  // not a clean non-numeric slug, and a target that already exists.
+  const renameMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/rename$/)
+  if (req.method === 'POST' && renameMatch && !RESERVED_PREFIXES.has(renameMatch[1])) {
+    const scene = renameMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      const fail = (code, error) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error })) }
+      try {
+        const to = String(JSON.parse(body || '{}').to || '')
+        if (!to || to !== slugifyName(to) || isNumericId(to) || RESERVED_PREFIXES.has(to)) {
+          return fail(400, `'${to}' is not a scene id — it must be the slug of a place name (letters, not a ZIP).`)
+        }
+        const src = join(mapCleanDir(scene), '..')
+        const dst = join(mapCleanDir(to), '..')
+        if (!existsSync(src)) return fail(404, `no scene '${scene}' to rename`)
+        const nb = join(src, 'neighborhood.json')
+        let committed = false
+        if (existsSync(nb)) {
+          try { committed = !!JSON.parse(readFileSync(nb, 'utf8')).committed }
+          catch { return fail(409, `'${scene}' has an unreadable neighborhood.json — refusing to rename a scene whose committed state cannot be read.`) }
+        }
+        if (committed) return fail(409, `'${scene}' is a committed neighborhood — its id cannot change here.`)
+        if (existsSync(dst)) return fail(409, `A neighborhood '${to}' already exists — open it from the picker, or choose another name.`)
+        const idx = readLooksIndex()
+        if ((idx.looks || []).some(l => l.scene === scene || l.id === to || l.scene === to)) {
+          return fail(409, `A Look already uses '${scene}' or '${to}' — renaming a scene with a Look is not supported here.`)
+        }
+        renameSync(src, dst)
+        console.log(`[scenes] renamed draft '${scene}' → '${to}'`)
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, id: to }))
+      } catch (err) { fail(400, err.message) }
+    })
+    return
+  }
+
   const dropMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)$/)
   if (req.method === 'DELETE' && dropMatch && !RESERVED_PREFIXES.has(dropMatch[1])) {
     const scene = dropMatch[1]
@@ -1702,6 +1751,12 @@ createServer(async (req, res) => {
   const nbdMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/neighborhood$/)
   if (nbdMatch && !RESERVED_PREFIXES.has(nbdMatch[1])) {
     const scene = nbdMatch[1]
+    // ⛔ A numeric id is a ZIP, not a place: never create a scene under one.
+    if (req.method === 'POST' && isNumericId(scene)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: `'${scene}' is a number — a scene is named after the place, never a ZIP.` }))
+      return
+    }
     const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
     if (req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' })
