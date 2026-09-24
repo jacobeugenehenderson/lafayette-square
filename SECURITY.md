@@ -520,6 +520,23 @@ that reports "no policies" on it is reporting the intent.
 independent locks, deliberately redundant. Do not tidy either away: each one alone still holds if the other
 is restored by mistake.
 
+### The published listings layer · a write path into production content (2026-09-24)
+Operations (`operations.theward.online`, repo `theward-operations`) publishes a town's Host and staff edits
+to `theward-assets` as `live/<look>/listings.json` (production) or `staging/live/<look>/listings.json`, and
+every visitor's player lays it over that town's listings (`src/lib/publishedLayer.js`). ⭐ So it can change
+what any visitor sees, and the controls are:
+- **Credentials never leave the server.** The only writer is the operations Worker, through its R2 binding
+  (`SLABS`); no key is shipped to a browser. It writes exactly two key shapes (`publishKey` in its
+  `src/index.js`) and nothing else in the bucket.
+- **Who may publish is decided on the server, per request.** Every request must carry a valid Cloudflare
+  Access token, which the Worker re-verifies (issuer + audience) rather than trusting Access alone. Staff
+  come from `STAFF_EMAILS` in the Worker's config, not from any editable record. **A Host may publish only
+  their own Wards, and only to staging; a production publish from a Host is refused (403).** A Host also
+  cannot edit a Guardian-claimed listing's fields. `npm test` in that repo asserts all of this.
+- **Nothing personal is in it.** The layer carries edited listing fields and closures only; Guardian
+  contacts, outreach notes and research are stored apart and a test searches the published file for them.
+- **Every publish is kept** with who, when and what, and staff can put any earlier one back.
+
 ### F-18 · MEDIUM (IP / anti-scraping, not data exposure) · The whole slab of every town is bulk-downloadable by anyone, unauthenticated  *(new, 2026-09-21)*
 - **Measured, from a shell, with no browser and no referrer:**
   `curl https://assets.theward.online/baked/lafayette-square/scene.json` → **200**. Same for

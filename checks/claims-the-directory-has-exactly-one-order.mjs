@@ -43,7 +43,10 @@ const walk = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) {
 } }
 walk(path.join(ROOT, 'src'))
 
-const WRITER = /setState\(\s*\{[^}]*\blistings\s*:/g
+// Both forms of writer: an object literal, `setState({ listings: … })`, and a functional updater,
+// `setState(s => ({ listings: … }))` — the published-layer write in useInit is the second kind, and a
+// regex that knew only the first let it pass unexamined.
+const WRITER = /setState\(\s*(?:\(?\s*\w+\s*\)?\s*=>\s*\(\s*)?\{[^}]*\blistings\s*:/g
 const writers = []
 for (const f of files) {
   const src = readFileSync(f, 'utf8')
