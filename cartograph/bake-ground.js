@@ -146,7 +146,7 @@ const TREELAWN_LU_VARIANTS = [
   'institutional', 'recreation', 'industrial', 'park', 'island', 'unknown',
   'underived',
   'brownfield', 'agricultural', 'orchard', 'forest', 'wetland', 'beach',
-  'bare', 'cemetery', 'railway',
+  'bare', 'cemetery', 'railway', 'verge',
 ]
 // OSM's `water=*` refinement of `natural=water`. ⭐ A pond is not a lake is not
 // a settling basin; they are carried separately so a town can shade them
@@ -188,6 +188,7 @@ const PAINT_ORDER = [
   ['face', 'bare'],
   ['face', 'cemetery'],
   ['face', 'railway'],
+  ['face', 'verge'],      // H-3: highway verge + a junction residual's remainder
   // Sub-block overlays — sit on top of LU faces, under street ribbons.
   // Polygon overlays from map.json (parking_lot + leisure + natural).
   ['mat', 'parking_lot'],

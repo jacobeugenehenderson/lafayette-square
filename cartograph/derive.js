@@ -27,7 +27,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH, isHigh
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
-import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon } from '../src/lib/tileGround.js'
+import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon, classifyHighwayBlocks } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { coastRings } from './coastline.mjs'
 
@@ -5316,8 +5316,10 @@ export function deriveLayers(highways) {
     // protopolygon by live-minting with a reason string, which is loud (`CLAUDE.md` Layer 0 q2).
     const skPath = join(CLEAN_DIR, 'skeleton.json')
     let simplified = null
+    let skOffGrade = null                  // H-3 step 4: chains off grade (bridge/tunnel/layer≠0), for the overpass span
     if (existsSync(skPath)) {
       const sk = JSON.parse(readFileSync(skPath, 'utf-8'))
+      skOffGrade = new Set((sk.streets || []).filter(st => st.bridge || st.tunnel || (st.layer | 0) !== 0).map(st => st.id))
       // ⭐⭐⭐ TESSELLATE THE CURVE PRIMITIVE. `st.points` is the CONTROL POLYGON — the smoothness
       // lives in `st.segments`, and reading the anchors alone minted every curve into ① as a
       // straight chord (LS: 225 beziers over 9,948 m, sagitta median 1.34 m / max 20.80 m).
@@ -5368,6 +5370,29 @@ export function deriveLayers(highways) {
                                center: boundaryCenter, discR: boundaryRadius, bb: _bb })
     for (const line of _coast.report) console.log(line)
     const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings, coastArcs: _coast.arcs, bb: _bb })
+    // ⭐ H-3 step 4 — classify every ① block (verge / jr / block) HERE, at the mint: the skeleton's grade facts
+    // and the RAW footprints exist only on this side of the Wall. ⛔ Reads no authoring. Frozen per block.
+    let protoBlockClass = null
+    if (MP.blocks?.length) {
+      const HWY = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
+      const hwySk = new Set(pGradeSep.filter(g => HWY.has(g.highway)).map(g => g.skelId ?? g.name))
+      const msbfPath = join(RAW_DIR, 'msbf.json')
+      // ⛔ RAW intake footprints, NEVER the member/shown set (ruling g: a building the operator hid still fronts).
+      const centroids = existsSync(msbfPath)
+        ? (JSON.parse(readFileSync(msbfPath, 'utf-8')).buildings || []).filter(b => b.coords?.length >= 3)
+            .map(b => { let x = 0, z = 0; for (const c of b.coords) { x += c.x; z += c.z } return [x / b.coords.length, z / b.coords.length] })
+        : null
+      const C = classifyHighwayBlocks(MP, { hwy: hwySk, offGrade: skOffGrade || new Set(), centroids })
+      protoBlockClass = C.cls
+      const where = (k) => { const r = MP.blocks[k]; let x = 0, z = 0; for (const p of r) { x += p[0]; z += p[1] } return `(${Math.round(x / r.length)}, ${Math.round(z / r.length)})` }
+      const nBlock = C.cls.filter(c => c === 'block').length
+      console.log(`    [H-3 ④] regions: ${C.verges.length} verge · ${C.jr.length} junction residual (building-less, raw footprints: ${centroids ? centroids.length : 'NONE'}) · ${nBlock} block`)
+      for (const j of C.jr) console.log(`      JR ${where(j.k)} fronting ${j.streets.join(', ') || '(no town street)'}`)
+      if (C.jrRejected.length) console.log(`      ${C.jrRejected.length} ramp-end block(s) kept as BLOCK — they carry buildings: ${C.jrRejected.map(j => `${where(j.k)} ×${j.inside}`).join(', ')}`)
+      if (C.jrRefused.length) console.warn(`      ⛔ JR REFUSED for ${C.jrRefused.length} ramp-end block(s): NO building layer (raw/msbf.json) — frontage cannot be tested, so they stay blocks: ${C.jrRefused.map(j => where(j.k)).join(', ')}`)
+      if (C.gores.length) console.log(`      gore sliver(s): ${C.gores.length} — ${C.gores.map(g => `${g.chains.join('×')} ${where(g.k)}`).join(' · ')}`)
+      if (!skOffGrade) console.warn(`      ⛔ no skeleton grade facts — no overpass span can be recognised`)
+    }
     protoWaterRings = MP.waterRings || null
     protoWaterMeta = _coast.meta || null
     ribbonsLayer.protopolygon = {
@@ -5395,6 +5420,7 @@ export function deriveLayers(highways) {
       ...(MP.blocks ? {
         blocks: MP.blocks.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
         blockLabels: MP.blockLabels,
+        ...(protoBlockClass ? { blockClass: protoBlockClass } : {}),
         ...(MP.blockHoles ? {
           blockHoles: MP.blockHoles.map(hs => hs.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6]))),
           blockHoleLabels: MP.blockHoleLabels,

@@ -124,7 +124,9 @@ This is A19's file (A19 landed in `9042204a`; coordinate with Wren before editin
   - ⚠️ This deliberately differs from Wren's expressway rule, where an override wins.
 - **Overlay entries that land on a highway-class chain are kept and printed by name, never dropped** (Boz's backstop).
 
-### Step 4 — The region classifier: replace the `isGs` majority vote (`tileGround.js`, ②)
+### Step 4 — The region classifier: replace the `isGs` majority vote
+
+⭐ **Built AT THE MINT, not in ②** (Boz, 2026-09-24): `classifyHighwayBlocks` (`tileGround.js`) runs in `derive.js` right after `mintProtopolygon`, and the class is frozen per ① block as `protopolygon.blockClass`; ② and Section paint by it. The JR test needs the RAW footprints and the overpass test the skeleton's grade facts, which exist only pre-Wall — frozen, live and bake agree by construction. `gradeEnd` is stamped on the ramp's whole LAST SPAN: end-vertex-only stamps reached 0 block rings (the town street's ε swallows them in the union).
 
 One pass, **in this order**:
 
@@ -138,7 +140,7 @@ One pass, **in this order**:
      - highway edges bare (depth 0, − H);
      - town-street edges: a curb at the street's resolved width, then ③ at that street's **own resolved** ped depth, read with authoring loaded, with **both strips concrete** (the strip-swap material fields);
      - remainder land use `verge`.
-   - Measured candidates: LS 19, Huron 9 (`scratch/h3-jr-park-guard.mjs`).
+   - The pour prints every JR by the streets it fronts (`[H-3 ④]`); ▶ `node checks/claims-junction-residual.mjs`.
 3. **Block.** Everything else. Highway-owned edges are bare; `pedRealm:false` handles the ped band, step 3 the curb.
 - **Gore** (`f-mutcd-gore-neutral-area`). Where a ramp's H meets its mainline's H, the union is the flush neutral area.
   - ⛔ **No gap-close constant.** The physical-gore position is **[U]**, so the sliver beyond the union stays verge.

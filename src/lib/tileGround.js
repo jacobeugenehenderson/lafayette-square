@@ -415,6 +415,61 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // ⭐ THE OWNER CARRIES IDENTITY ONLY — {skelId, side, segOrd, gradeSeparated}.
 // Authored values resolve downstream off that identity, so ① is look-agnostic:
 // one scene's ① serves every Look.
+// ⭐⭐ H-3 STEP 4 — THE REGION CLASSIFIER: every ① block is `verge`, `jr` (junction residual) or `block`.
+// Runs AT THE MINT (derive.js), not in ②: it needs the skeleton's grade facts and the RAW building footprints,
+// which no consumer holds, and freezing the class per block makes live and bake identical by construction.
+// ⛔ It reads NO authoring — only the frozen identity (owners/labels) and the raw intake.
+//   VERGE (`r-highway-verge`): every street-owned run is a highway, or an OVERPASS SPAN — a non-highway run
+//     on an off-grade chain (bridge/tunnel/layer≠0) sitting between two highway runs in the ring's cyclic
+//     order. The rim (`__boundary__`) and water (`__water__`) are neutral.
+//   JR (ruling g): not verge, a highway run on the ring, an at-grade ramp end on the ring (`gradeEnd`), and
+//     ZERO raw footprint centroids inside. ⛔ No building layer ⇒ the JR test is REFUSED, by name — the
+//     candidate stays a block; never "no buildings ⇒ everything is JR".
+//   BLOCK: everything else.
+// A GORE SLIVER is reported, not built differently: a verge bounded by exactly two highway chains.
+export function classifyHighwayBlocks({ blocks, blockLabels, blockHoles, blockHoleLabels, owners }, { hwy, offGrade, centroids }) {
+  const neutral = (sk) => typeof sk !== 'string' || sk.startsWith('__')
+  const runsOf = (labs) => {
+    const sks = (labs || []).map(l => owners[l]?.skelId)
+    const out = []
+    for (const sk of sks) if (!out.length || out[out.length - 1] !== sk) out.push(sk)
+    if (out.length > 1 && out[0] === out[out.length - 1]) out.pop()
+    return out.filter(sk => !neutral(sk))
+  }
+  const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+  const cls = [], jr = [], jrRejected = [], jrRefused = [], verges = [], gores = []
+  for (let k = 0; k < (blocks || []).length; k++) {
+    const rings = [blockLabels?.[k] || [], ...((blockHoleLabels?.[k]) || [])]
+    const ringRuns = rings.map(runsOf)
+    const all = ringRuns.flat()
+    const isH = (sk) => hwy.has(sk)
+    const anyH = all.some(isH)
+    const span = (runs, i) => { const n = runs.length; return !isH(runs[i]) && offGrade.has(runs[i]) && isH(runs[(i + n - 1) % n]) && isH(runs[(i + 1) % n]) }
+    const verge = anyH && ringRuns.every(runs => runs.every((sk, i) => isH(sk) || span(runs, i)))
+    const hasGradeEnd = rings.some(L => L.some(l => owners[l]?.gradeEnd))
+    const streets = [...new Set(all.filter(sk => !isH(sk)))]
+    let c = 'block'
+    if (verge) {
+      c = 'verge'; verges.push(k)
+      const hs = [...new Set(all.filter(isH))]
+      if (hs.length === 2 && all.every(isH)) gores.push({ k, chains: hs })
+    } else if (anyH && hasGradeEnd) {
+      if (!centroids) jrRefused.push({ k, streets })
+      else {
+        const outer = blocks[k], holes = blockHoles?.[k] || []
+        let xs = Infinity, xe = -Infinity, zs = Infinity, ze = -Infinity
+        for (const [x, z] of outer) { if (x < xs) xs = x; if (x > xe) xe = x; if (z < zs) zs = z; if (z > ze) ze = z }
+        let inside = 0
+        for (const [x, z] of centroids) if (x >= xs && x <= xe && z >= zs && z <= ze && pip(x, z, outer) && !holes.some(h => pip(x, z, h))) inside++
+        if (inside === 0) { c = 'jr'; jr.push({ k, streets }) } else jrRejected.push({ k, streets, inside })
+      }
+    }
+    cls.push(c)
+  }
+  return { cls, verges, jr, jrRejected, jrRefused, gores }
+}
+
 export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary = null, coast = [], coastArcs = [], bb = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
@@ -453,6 +508,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     .map(a => ({ st: { skelId: WATER_EDGE_SKEL, points: a.map(p => [p[0], p[1]]),
                        hard: a.map(() => false), gradeSeparated: false }, ci: -1 }))
   const chains = [...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 })), ...coastChains]
+  // ⭐ H-3 step 4 — `gradeEnd`, the RAMP-END identity stamp. A grade-separated HIGHWAY chain's endpoint that is
+  // also a vertex of a non-highway street is where the ramp comes down to the town (an at-grade terminal).
+  // Stamped here, by construction, exactly as `tipEnd` is — ⛔ never recovered by proximity afterwards (A15).
+  // The junction-residual classifier (derive.js, at the mint) reads it off the block ring.
+  const HWY_CLASS = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
+  const vKey3 = (p) => `${(+p[0]).toFixed(3)},${(+p[1]).toFixed(3)}`
+  const townVerts = new Set()
+  for (const st of [...streets, ...gradeSep.filter(g => !HWY_CLASS.has(g?.highway))]) for (const p of (st?.points || [])) townVerts.add(vKey3(p))
   // ⛔ COUNTED, NOT ASSUMED. A coast that silently failed to expand would leave the land closing
   // against the lake's clip edge again, which looks identical on screen and is the state this
   // change exists to end.
@@ -483,6 +546,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     const dg0 = st?.caps?.start?.degree, dg1 = st?.caps?.end?.degree
     const lastI = P.length - 1
     const tipOf = (i) => (i === 0 && dg0 === 1) ? 'start' : (i === lastI && dg1 === 1) ? 'end' : null
+    const hwyGs = gs && HWY_CLASS.has(st?.highway)
+    // Stamped on the chain's whole LAST SPAN (the end vertex and the one before it): the town street's own ε
+    // outline swallows the ramp's end vertices in the union, and the ramp edge that survives into the block
+    // ring is the one LEAVING the second-to-last vertex — measured on huron, end-vertex-only stamps reached
+    // 0 block rings. Carried by construction, still: it is the label of the edge that is actually there.
+    const atStart = hwyGs && townVerts.has(vKey3(P[0])), atEnd = hwyGs && townVerts.has(vKey3(P[lastI]))
+    const gradeEndOf = (i) => { const s0 = atStart && i <= 1, e0 = atEnd && i >= lastI - 1
+      return s0 && e0 ? (i === 0 ? 'start' : 'end') : s0 ? 'start' : e0 ? 'end' : null }
     // ⛔⛔ ① HAS NO NODES, AND NOTHING DOWNSTREAM ASKS WHICH ROAD THIS IS. A chain cut and a segOrd
     // boundary are bookkeeping in the CHAIN world; ①'s contour runs straight through them, and the
     // only thing that changes there is the label. So a consumer that mints a CORNER wherever
@@ -501,7 +572,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // ⭐ `water` rides the stamp for the same reason `gradeSeparated` does: downstream tells a
     // shore edge from a street edge by IDENTITY, never by the absence of a measure.
     const isCoast = skelId === WATER_EDGE_SKEL
-    const stamp = (side, i, segI) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(isCoast && { water: true }) }) - 1
+    const stamp = (side, i, segI) => { const ge = gradeEndOf(i)
+      return owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(isCoast && { water: true }), ...(ge && { gradeEnd: ge }) }) - 1 }
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
@@ -4009,8 +4081,11 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     }
   }
   // ⭐ EVERY per-point read goes through the LEG's single resolution (`SECTION §3.3` step 1).
-  const M = (ri, i) => legArr.get(`${ri}|${i}`) ?? null
-  const bareAt = (p, e) => { const r = (stamps[p.si] || [])[e]; return r != null && isHighwayRun(runs[r]) }
+  // ⭐ H-3 step 4: a JR's town frontage is concrete on both strips; a verge is bare on every edge.
+  const M = (ri, i) => { const m = legArr.get(`${ri}|${i}`) ?? null
+    return (m && st.blockClass === 'jr') ? { ...m, matOuter: 'SW', matInner: 'SW' } : m }
+  const bareAt = (p, e) => { if (st.blockClass === 'verge') return true
+    const r = (stamps[p.si] || [])[e]; return r != null && isHighwayRun(runs[r]) }
 
   // ── THE MONO-WIDTH ENVELOPE — one number for the whole block, over every point it has.
   // `RIBBONS §1` invariant 4, and it is SACROSANCT: the outer depth is uniform per block (that is
@@ -6913,7 +6988,9 @@ export function buildTileGround(ribbons, opts = {}) {
              boundaryRing: frozenProto.boundaryRing || null,
              // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped this would lose its
              // waterfront silently — every other field present, the pour looking complete.
-             waterRings: frozenProto.waterRings || null }
+             waterRings: frozenProto.waterRings || null,
+             // H-3 step 4: the region class per block (verge / jr / block), classified at the mint.
+             blockClass: frozenProto.blockClass || null }
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
@@ -7296,7 +7373,11 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ ONE DEPTH RULE, READ OFF WHICHEVER RING'S LABELS ARE IN HAND. A face's holes are
         // bounded by the same ink at the same authored widths as its outer, so the rule cannot
         // differ between them — it is the label array that differs, not the law.
+        // ⭐ H-3 step 4: the block's frozen class (verge / jr / block — classified at the mint).
+        const blockCls = (protoUseBlocks && MP.blockClass?.[k]) || 'block'
         const mkDepth = (L) => (i) => {
+          // A VERGE is ①'s hole − H: its non-highway edges (an overpass span over it) get no offset at all.
+          if (blockCls === 'verge' && !isHwyLab(L[i])) return 0
           // ⭐ H-3: a highway-owned edge is offset to a depth STRICTLY INSIDE H, and the difference below then
           // draws the edge exactly on H's boundary. Any depth in (0, the section's narrowest span) is inside
           // H; both ends of that interval are degenerate, so the MIDPOINT is taken — the one furthest from
@@ -7750,10 +7831,14 @@ export function buildTileGround(ribbons, opts = {}) {
           // hand-written copies produced for a null measure, and it is the ruled answer
           // (`ARCHITECTURE §"The compound shape"`: the drawing has no holes). It is not a
           // fallback: no material is invented, the absent one simply is not concrete.
-          const L = (i) => stripLadder((EC.labs[i] == null ? null : protoMeasureOf(EC.labs[i])) || {}, lim)
+          // ⭐ H-3 step 4: a JR's town-street frontage is CONCRETE on both strips (the channelisation the
+          // signals sit on — ruling g); a VERGE is bare on every edge.
+          const bCls = (protoUseBlocks && MP.blockClass?.[k]) || 'block'
+          const L = (i) => { const m = (EC.labs[i] == null ? null : protoMeasureOf(EC.labs[i])) || {}
+            return stripLadder(bCls === 'jr' ? { ...m, matOuter: 'SW', matInner: 'SW' } : m, lim) }
           // ⭐ H-3: a highway-owned edge is BARE — no curb, no ped band, and the land use runs to H's edge
           // (every depth 0), so the drawing closes against the highway with no strip left unpainted.
-          const bare = (i) => isHwyLab(EC.labs[i])
+          const bare = (i) => bCls === 'verge' || isHwyLab(EC.labs[i])
           const at = (f) => (i) => (bare(i) ? 0 : cw + L(i)[f])
           return {
             ring: EC.ring,
@@ -8145,7 +8230,9 @@ export function buildTileGround(ribbons, opts = {}) {
             // ⭐ `lu` — SUPPLIED. Jacob: "LU is a gettable/knowable datapoint… stamp the LU into the
             // initial ground map and later add overrides." A fact about the world, read off the block
             // itself, not a construction parameter. Overrides are a later layer and not scoped here.
-            lu: luForRing(ring),
+            // ⭐ H-3 step 4: a verge and a JR's remainder are land use `verge` — no land-use choice.
+            lu: ((protoUseBlocks && MP.blockClass?.[k]) === 'verge' || (protoUseBlocks && MP.blockClass?.[k]) === 'jr') ? 'verge' : luForRing(ring),
+            ...((protoUseBlocks && MP.blockClass?.[k] && MP.blockClass[k] !== 'block') ? { blockClass: MP.blockClass[k] } : {}),
             producer: 'proto',
             producerReason: 'offset from ①; bands struck from the curb; runs = identity only',
             // ⛔ THE REFUSALS, RECORDED. A consumer hitting a missing field can read WHY here rather

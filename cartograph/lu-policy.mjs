@@ -110,6 +110,8 @@ export const LU_POLICY = {
   // abandoned industrial lot is colonised by weeds and volunteer trees, which
   // is what makes it read as abandoned rather than as a lot.
   cemetery:            'soft',
+  // H-3 (`r-highway-verge`, 2026-09-24): land bounded by highway — grass, never a land-use choice.
+  verge:               'soft',
   forest:              'soft',
   brownfield:          'soft',
 

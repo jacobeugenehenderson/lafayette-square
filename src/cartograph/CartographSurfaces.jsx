@@ -139,6 +139,8 @@ const TABS = [
       { id: 'bare',              label: 'Bare Ground', kind: 'lu' },
       { id: 'cemetery',          label: 'Cemetery',    kind: 'lu' },
       { id: 'railway',           label: 'Rail Corridor', kind: 'lu' },
+      // H-3 (`r-highway-verge`): land bounded by highway. Classified at the mint, NOT a land-use choice.
+      { id: 'verge',             label: 'Highway Verge', kind: 'lu' },
       // No OSM land-use polygon and no assessor parcel covered the face —
       // derive.js could not classify it (`parcel-landuse.mjs`). A visible row
       // so the operator can find the gaps and paint over them deliberately.
