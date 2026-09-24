@@ -408,7 +408,8 @@ function bboxAreaKm2(b) {
   return latKm * lonKm
 }
 // Keep in sync with `MAX_FETCH_KM2` in cartograph/serve.js.
-const MAX_FETCH_KM2 = 200
+// ⛔ AREA IS THE WRONG UNIT for this bound: it stands in for LOAD, and water carries no geometry — Provincetown's ZIP envelope is 312 km², mostly Cape Cod Bay (Jacob, 2026-09-24, raised 200 → 400). The kit-correct bound is what the fetch RETURNS (features / bytes); filed on ROADMAP by Boz.
+const MAX_FETCH_KM2 = 400
 // The floor on the slack past the tint, in metres.
 //
 // ⛔⛔ THE RATIONALE THAT STOOD HERE WAS WRONG, AND IT SURVIVED A DELIBERATE REVIEW.

@@ -1544,7 +1544,9 @@ createServer(async (req, res) => {
         const latKm = (bbox.maxLat - bbox.minLat) * 111.0
         const lonKm = (bbox.maxLon - bbox.minLon) * 111.32 * Math.cos((midLat * Math.PI) / 180)
         const areaKm2 = latKm * lonKm
-        const MAX_FETCH_KM2 = 200
+        // Keep in sync with `MAX_FETCH_KM2` in src/cartograph/ExtentApp.jsx.
+        // ⛔ AREA IS THE WRONG UNIT for this bound: it stands in for LOAD, and water carries no geometry — Provincetown's ZIP envelope is 312 km², mostly Cape Cod Bay (Jacob, 2026-09-24, raised 200 → 400). The kit-correct bound is what the fetch RETURNS (features / bytes); filed on ROADMAP by Boz.
+        const MAX_FETCH_KM2 = 400
         if (areaKm2 > MAX_FETCH_KM2) {
           throw new Error(`Framed area is ${Math.round(areaKm2)} km² — too large to fetch as one neighborhood (max ${MAX_FETCH_KM2} km²). Search a specific neighborhood, or frame a smaller area.`)
         }
