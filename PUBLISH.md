@@ -343,7 +343,7 @@ Committed on `docs/conformance-2026-09-21`, **none of it pushed or deployed**. O
 - **Lafayette Square has no `prominence_rank`.** `claims-the-directory-has-exactly-one-order` fails on it until LS is re-ranked.
 - **ROADMAP H-29's silent-override half** — an override key that resolves to nothing is still a silent no-op; the check is owed.
 - **Huron's 14 address+phone pairs** — open, as listed in the coordinator's handoff.
-- **The staging player predates the published-layer reader.** Operations has published Lafayette Square to staging (Baileys' closed), and `assets.theward.online/staging/live/lafayette-square/listings.json` is up, but staging.theward.online won't lay it over until `node scripts/publish-player-to-staging.mjs` runs (dry run 2026-09-24: 439 files, 50.6 MB, reader included). Added places travel the same way (`adds`).
+- ✅ **DONE 2026-09-24 — the staging player carries the published-layer reader.** `node scripts/publish-player-to-staging.mjs` ran (439 files, 50.6 MB → `theward-assets/staging/player/`, build stamp 2026-09-24T20:48Z), so staging.theward.online now lays `staging/live/<look>/listings.json` over the Sheet (Baileys' closed on staging LS). ⚠️ That player is built from `docs/conformance-2026-09-21` — the whole unpushed branch is live on STAGING (not production).
 - **Parked in operations:** balances via Stripe Connect · the moderation queue and mail · whether staging is gated · Namecheap sync · photos (tabled as the likely courtesy line) · a rewrite of the handbook's "A report is not proof of wrongdoing…" sentence.
 
 ## Troubleshooting
