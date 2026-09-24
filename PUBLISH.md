@@ -43,6 +43,7 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
 | **Re-poured a town** | nothing to push — the bake uploads the slab to R2 **STAGING** (`staging/baked/…`) and it is live on the staging site immediately. ⛔ **It does NOT reach production.** Verify on staging, then promote: `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` (§6) |
 | **Promote a slab to prod** | `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` — writes the production keys; live on lafayette-square.com immediately, still without a push. ⛔ `--env` is required and has no default. ▶ `node checks/claims-the-slab-envs-do-not-collide.mjs` |
 | **Slab looks stale / canopy missing** | `node scripts/verify-baked-in-r2.mjs` — reads the bucket, compares to disk, names what is absent |
+| **A Host's or staff listing edits** | published from **operations.theward.online** (a Ward → Listings → Publish): a small layer at `<ASSET_BASE>live/<look>/listings.json` (staging under `staging/`), no push. The player lays it over its listings after the Apps Script sheet at boot — `src/lib/publishedLayer.js`. Hosts publish to staging; staff to production. ▶ `node checks/claims-a-published-edit-reaches-the-map.mjs` |
 
 ---
 

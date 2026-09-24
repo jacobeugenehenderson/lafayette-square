@@ -7,6 +7,8 @@ import useHandle from './useHandle'
 import useEvents from './useEvents'
 import useResidence from './useResidence'
 import useCommunityStats from './useCommunityStats'
+import { INSTANCE } from '../instance.js'
+import { loadPublishedLayer, applyPublishedLayer } from '../lib/publishedLayer.js'
 
 // landmarksWithMenus + bareBuildingListings are live bindings from useListings
 // (single source — no duplicate seam load). They fill post-ready; runInit awaits
@@ -19,6 +21,15 @@ let _ran = false
  * from the batch GAS endpoint. Hydrates all three stores.
  * Safe to call multiple times (no-ops after first).
  */
+// The published listings layer (operations) goes over whatever the store holds once the listings are
+// settled — whether or not the sheet answered, since the layer does not depend on it. Idempotent.
+async function applyPublished() {
+  await _landmarksReady
+  const layer = await loadPublishedLayer(INSTANCE.lookId)
+  if (!layer) return
+  useListings.setState(s => ({ listings: orderListings(applyPublishedLayer(s.listings, layer)) }))
+}
+
 export async function runInit() {
   if (_ran) return
   _ran = true
@@ -79,6 +90,8 @@ export async function runInit() {
       useListings.setState({ fetched: true, loading: false })
     }
 
+    await applyPublished()
+
     // Hydrate events store
     const events = Array.isArray(data.events) ? data.events : []
     useEvents.getState().setEvents(events)
@@ -126,6 +139,7 @@ export async function runInit() {
     console.warn('[init] batch fetch failed, using fallbacks:', err?.message)
     useListings.setState({ loading: false })
     useHandle.setState({ loading: false })
+    await applyPublished()
   }
 }
 
