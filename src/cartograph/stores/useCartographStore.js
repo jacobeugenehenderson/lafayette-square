@@ -2119,11 +2119,22 @@ const useCartographStore = create((set, get) => ({
     // Entering a Stage shot clears the panel tool — keep the persisted tool
     // coherent so a reload doesn't restore a stale 'surveyor' (the tool-init
     // also guards this by shot, but don't leave a stale key behind).
-    // ⭐ Extent is a round TRIP: the operator leaves Survey, edits the frame, and
-    // must come back to Survey. So it parks the tool, it does not clear it.
     if (get().shot === 'designer' && isStageShot(shot)) {
       set({ tool: null, selectedStreet: null, selectedNode: null, markerActive: false, markerEraserActive: false })
       try { localStorage.setItem('cartograph-tool', 'design') } catch { /* ignore */ }
+    }
+    // ⭐⭐ EXTENT → DESIGNER LANDS IN SURVEY, by every route. Jacob: "When I click
+    // 'Designer' from the Extent tool, the first stop MUST be the Survey tool."
+    // Survey is SHAPE (chain step 4); whatever tool was open before Extent may be
+    // FILL, and a changed frame means a shape nobody has inspected yet. Enforced
+    // HERE, not at each button: ExtentApp has three exits (the ← Designer nav and
+    // both pour hand-offs) and the nav button was the one that got missed.
+    // ⛔ Set directly, never via setTool — setTool TOGGLES, so it switched Survey
+    // OFF whenever Survey was already the tool.
+    // ▶ node checks/claims-extent-lands-in-survey.mjs
+    if (get().shot === 'extent' && shot === 'designer') {
+      set({ tool: 'surveyor', status: 'Click a street to inspect.' })
+      try { localStorage.setItem('cartograph-tool', 'surveyor') } catch { /* ignore */ }
     }
     try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
     // Remember the last Stage shot so Designer's "Stage →" returns to it.
