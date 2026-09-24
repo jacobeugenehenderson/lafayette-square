@@ -151,6 +151,18 @@ export const ABSENT = {
   FALLBACK: 'documented-fallback',
   /** ⛔ Falls back to LAFAYETTE SQUARE's data, under this town's name. */
   LS_BLEED: 'ls-bleed',
+  /**
+   * ⭐⭐ THE POUR STOPS. Added 2026-09-23 by Jacob's ruling on terrain, because the
+   * vocabulary had no way to say "this input is not optional".
+   * ⛔ FALLBACK means "a documented, town-NEUTRAL default" — OSM tags, AASHTO widths:
+   * things that are defensibly right anywhere. Flat ground is not that. On a dune town
+   * it is a WRONG MAP, and it was declared a documented fallback, so a coastal town
+   * baked as a plane and the only trace was a line in the Bake's skipped array.
+   * ⇒ Where absence produces a map that LIES, the row says REFUSES and the pour fails.
+   * The operator may still proceed, but only by recording `verifiedAbsent` on the town —
+   * a decision with a date and an author, not a silent default.
+   */
+  REFUSES: 'refuses-to-pour',
 }
 
 /**
@@ -312,7 +324,15 @@ export const INTAKE_ROWS = [
     label: 'Elevation',
     path: 'raw/elevation.tif',
     unlocks: 'terrain relief — the ground stops being flat',
-    absent: { kind: ABSENT.FALLBACK, note: 'flat ground (bake-terrain.js exits)' },
+    // ⛔⛔ NOT A FALLBACK, AND THE OLD LINE IS WHY PROVINCETOWN BAKED FLAT IN SILENCE.
+    // It read `{ kind: ABSENT.FALLBACK, note: 'flat ground (bake-terrain.js exits)' }` —
+    // i.e. the row itself declared a flat town to be a documented, town-neutral default.
+    // ⭐ Flat ground is town-neutral only where the town is flat. Provincetown is DUNES;
+    // baking it as a plane is not a degraded map, it is a false one, and the operator saw
+    // a poured town rather than a missing input. Jacob, 2026-09-23: terrain and lidar are
+    // acquired by the pour, and no coverage must be loud.
+    // ▶ node cartograph/fetch-dem.mjs --scene=<id>   acquires it; refuses loudly if none.
+    absent: { kind: ABSENT.REFUSES, note: 'the pour stops — a flat dune town is a false map, not a degraded one' },
     // ⛔ WHAT THE READER ACTUALLY ACCEPTS — rewritten 2026-09-21 when the ingest
     // landed. The three limits recorded here on 2026-09-20 are GONE; do not
     // reinstate them from memory:

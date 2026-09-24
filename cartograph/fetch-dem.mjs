@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 /**
- * fetch-elevation.mjs — ACQUIRE THE TOWN'S DEM, like any other input.
+ * fetch-dem.mjs — ACQUIRE THE TOWN'S DEM RASTER, like any other input.
+ *
+ * ⛔⛔ NOT `cartograph/elevation.js`, AND THE DIFFERENCE IS THE WHOLE POINT — a coordinator
+ * already misread one for the other, which is why the name changed. Two jobs, two
+ * resolutions, both needed:
+ *   · elevation.js — the USGS EPQS POINT QUERY service on a ~55 m grid (GRID_STEP 0.0005°),
+ *     interpolated per vertex. Gives every BUILDING its `b.elev`. ⛔ It cannot make a dune:
+ *     there is no dune inside a 55 m sample.
+ *   · THIS FILE — the 1 m lidar DEM raster. Finds which COG tiles cover the town and writes
+ *     the list `bake-terrain.js` range-reads to build the heightfield. This is what relief
+ *     comes from.
  *
  * ⭐⭐ RULED BY JACOB, 2026-09-23: "Terrain and lidar needs to be added to the fetch pour."
  *
@@ -20,11 +30,16 @@
  *
  * ⛔ AND IT MUST FAIL LOUDLY WHEN THERE IS NO COVERAGE. 1 m lidar does not cover the whole
  * country, so "no DEM" is a real outcome, not an error case to paper over. It exits
- * non-zero and says which datasets it tried; a town may only bake flat if the operator
- * says so in as many words (`--accept-flat`), which is recorded in the file it writes so
- * the decision is visible to whoever reads the town later.
+ * non-zero and names every dataset it tried.
  *
- *   node cartograph/fetch-elevation.mjs --scene=<id> [--accept-flat] [--dry]
+ * ⭐⭐ AND "WE LOOKED AND THERE IS NONE" IS THE KIT'S OWN STATE, NOT A FLAG OF MINE. A first
+ * cut invented `--accept-flat`. `intake-rows.mjs` already has the vocabulary — THREE states,
+ * not two (`BRIEF §2.2d`): filled · empty (never looked) · VERIFIED_ABSENT (searched,
+ * nothing exists). So a refusal writes the town's own `intake.json` mark,
+ * `rows.elevation.verifiedAbsent`, which the Extent panel renders like every other verified
+ * absence. ⛔ A fourth concept would have buried that fact in a comment only I would read.
+ *
+ *   node cartograph/fetch-dem.mjs --scene=<id> [--dry]
  * Writes cartograph/data/<scene>/raw/elevation-sources.txt. Reads raw/osm.json for the bbox.
  */
 import { readFileSync, existsSync, mkdirSync } from 'node:fs'
@@ -123,7 +138,7 @@ export async function findDem(bbox, opts = {}) {
   return { rung: null, items: [], tried }
 }
 
-function render({ scene, bbox, rung, items, tried, acceptFlat, projects = [] }) {
+function render({ scene, bbox, rung, items, tried, projects = [] }) {
   const L = []
   if (rung) {
     L.push(`# ${scene} — ${rung.note}`)
@@ -135,10 +150,10 @@ function render({ scene, bbox, rung, items, tried, acceptFlat, projects = [] }) 
       L.push(`#    two vintages together seams where the ground genuinely changed between them:`)
       for (const p of projects.slice(1)) L.push(`#      ${p.project} — ${p.tiles.length} tile(s), ${(100 * p.coverage).toFixed(0)}% coverage, ${p.newest || '?'}`)
     }
-    L.push(`# Acquired by cartograph/fetch-elevation.mjs. Read by HTTP RANGE REQUEST in`)
+    L.push(`# Acquired by cartograph/fetch-dem.mjs. Read by HTTP RANGE REQUEST in`)
     L.push(`# bake-terrain.js: nothing is downloaded, only the window the grid needs.`)
     L.push(`# ⛔ Re-derive rather than trusting this list — the count here has been wrong before:`)
-    L.push(`#   node cartograph/fetch-elevation.mjs --scene=${scene}`)
+    L.push(`#   node cartograph/fetch-dem.mjs --scene=${scene}`)
     for (const it of items) L.push(it.downloadURL)
   } else {
     // ⛔ A FILE THAT SAYS WHY IT IS EMPTY. An absent file is indistinguishable from a
@@ -146,45 +161,70 @@ function render({ scene, bbox, rung, items, tried, acceptFlat, projects = [] }) 
     L.push(`# ${scene} — NO DEM COVERAGE FOUND. This town has no terrain.`)
     L.push(`# bbox ${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
     for (const t of tried) L.push(`#   tried ${t.name} (${t.gsd}) → ${t.error ? 'ERROR ' + t.error : t.n + ' tiles'}`)
-    if (acceptFlat) {
-      L.push(`# ⚠️ THE OPERATOR ACCEPTED A FLAT TOWN (--accept-flat), ${new Date().toISOString().slice(0, 10)}.`)
-      L.push(`# Everything that stands on the ground stands on a plane. Recorded here so the`)
-      L.push(`# next reader knows it was a decision and not an oversight.`)
-    }
+    L.push(`# ⭐ Recorded as verified-absent in this town's intake.json — searched, nothing`)
+    L.push(`# exists. That is the kit's THIRD state and it is INFORMATION: without it the next`)
+    L.push(`# operator re-spends the hours rediscovering that this town has no DEM.`)
   }
   return L.join('\n') + '\n'
 }
 
+const mapDirOf = (scene) => join(ROOT, 'cartograph', 'data', scene)
+
+/**
+ * ⭐ MERGE into the town's overlay, never replace it. `intake.json` holds EVERY row's
+ * provenance; writing ours wholesale would silently drop the rest. ⛔ A malformed existing
+ * file is reported and left alone rather than clobbered — losing another row's recorded
+ * provenance to fix ours is a bad trade.
+ */
+function markVerifiedAbsent(scene, tried) {
+  const p = join(mapDirOf(scene), 'intake.json')
+  let doc = { rows: {} }
+  if (existsSync(p)) {
+    try { doc = JSON.parse(readFileSync(p, 'utf8')) || { rows: {} } }
+    catch { console.error(`  ⚠️ ${p} is malformed — NOT overwriting it. Record the absence by hand.`); return }
+  }
+  doc.rows = doc.rows || {}
+  doc.rows.elevation = {
+    ...(doc.rows.elevation || {}),
+    verifiedAbsent: true,
+    verifiedOn: new Date().toISOString().slice(0, 10),
+    verifiedBy: 'cartograph/fetch-dem.mjs',
+    note: `no coverage on the National Map: ${tried.map(t => `${t.name} → ${t.error ? 'ERROR' : t.n + ' tiles'}`).join(' · ')}`,
+  }
+  mkdirSync(mapDirOf(scene), { recursive: true })
+  writeIfChanged(p, JSON.stringify(doc, null, 2) + '\n')
+}
+
 async function main() {
   const scene = arg('scene')
-  if (!scene) { console.error('fetch-elevation: --scene=<id> is required'); process.exit(2) }
+  if (!scene) { console.error('fetch-dem: --scene=<id> is required'); process.exit(2) }
   const rawDir = join(ROOT, 'cartograph', 'data', scene, 'raw')
   const osmPath = join(rawDir, 'osm.json')
-  if (!existsSync(osmPath)) { console.error(`fetch-elevation: ${scene} has no raw/osm.json — fetch the town first`); process.exit(2) }
+  if (!existsSync(osmPath)) { console.error(`fetch-dem: ${scene} has no raw/osm.json — fetch the town first`); process.exit(2) }
   // ⭐ The bbox comes from the fetch's own output, so the DEM covers exactly what was
   // acquired. Deriving it a second way is how two frames disagree.
   const bbox = JSON.parse(readFileSync(osmPath, 'utf8')).bbox
-  if (!bbox) { console.error(`fetch-elevation: ${scene}'s raw/osm.json has no bbox`); process.exit(2) }
+  if (!bbox) { console.error(`fetch-dem: ${scene}'s raw/osm.json has no bbox`); process.exit(2) }
 
-  console.log(`[fetch-elevation] ${scene}  bbox ${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
+  console.log(`[fetch-dem] ${scene}  bbox ${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
   const { rung, items, tried, projects } = await findDem(bbox)
   for (const t of tried) console.log(`    ${t.n ? '✅' : '⛔'} ${t.name} (${t.gsd}) → ${t.error ? 'ERROR ' + t.error : t.n + ' tile(s)'}`)
 
-  const acceptFlat = !!arg('accept-flat')
-  const body = render({ scene, bbox, rung, items, tried, acceptFlat, projects })
+  const body = render({ scene, bbox, rung, items, tried, projects })
   const outPath = join(rawDir, 'elevation-sources.txt')
   if (arg('dry')) { console.log('\n--dry, would write:\n' + body); return }
   mkdirSync(rawDir, { recursive: true })
   writeIfChanged(outPath, body)
 
   if (!rung) {
-    if (acceptFlat) {
-      console.log(`\n⚠️ NO DEM for ${scene}. The operator accepted a flat town; recorded in ${outPath}.`)
-      return
-    }
+    // ⭐ Record the search in the town's own overlay, so "we looked and there is none" is a
+    // STATE the panel shows rather than a sentence in a file nobody opens.
+    markVerifiedAbsent(scene, tried)
     console.error(`\n⛔ NO DEM COVERAGE for ${scene}. Every dataset on the ladder came back empty.`)
-    console.error(`   This town would bake FLAT, and a flat town that looks poured is worse than`)
-    console.error(`   a town that refuses to pour. Re-run with --accept-flat to say so deliberately.`)
+    console.error(`   Recorded verified-absent in ${join(mapDirOf(scene), 'intake.json')} — the kit's`)
+    console.error(`   third state: searched, nothing exists, do not search again.`)
+    console.error(`   ⛔ This town bakes FLAT, and a flat town that looks poured is worse than one`)
+    console.error(`      that refuses to pour. The pour must treat this as a decision, not a default.`)
     process.exit(1)
   }
   for (const p of (projects || [])) console.log(`    ${p === projects[0] ? '→ CHOSEN' : '  skipped'}  ${p.project}  ${p.tiles.length} tile(s)  ${(100 * p.coverage).toFixed(0)}% coverage  ${p.newest || '?'}`)
