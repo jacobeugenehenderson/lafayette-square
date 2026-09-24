@@ -149,6 +149,56 @@ function clipToRect(arc, R) {
  *          ε as two-sided ink. ⛔ Same coast, two objects; a caller that takes one and not the
  *          other gets a lake with no landward edge, or a landward edge with no lake.
  */
+/**
+ * ⭐⭐⭐ A SEA IS NOT A LAKE, AND OSM MODELS THEM DIFFERENTLY. THIS IS THAT DIFFERENCE.
+ *
+ * A LAKE is a closed polygon or relation, so a fetch that cannot close it inside the
+ * envelope marks it `clipped` — that is Lake Erie, and it is why huron has water.
+ * A SEA is the GLOBAL COASTLINE: `natural=coastline` OPEN WAYS, arbitrarily fragmented,
+ * with no polygon anywhere and nothing to clip. ⛔ Provincetown fetches 26 such ways for
+ * Cape Cod Bay and every one of them died at the `clipped` gate, so the whole 157 km² disc
+ * baked as ONE land-use face called "beach".
+ * ⇒ Weld the fragments into maximal chains first, and the sea arrives at the same door the
+ * lake does.
+ *
+ * ⛔ WELDED BY SHARED ENDPOINT, NOT BY PROXIMITY. OSM ways that continue one another share
+ * a NODE, so their endpoints are bit-identical after projection; joining anything merely
+ * NEAR another end would bridge a river mouth or a harbour entrance and close water that
+ * is genuinely open. The tolerance below exists for float noise, not for gaps.
+ */
+const WELD_EPS_M = 0.05
+
+export function weldCoastlines(feats) {
+  const key = (p) => `${Math.round(p[0] / WELD_EPS_M)},${Math.round(p[1] / WELD_EPS_M)}`
+  const open = feats.map(f => ({ pts: (f.coords || []).map(c => [c.x ?? c[0], c.z ?? c[1]]), src: [f] }))
+                    .filter(c => c.pts.length >= 2)
+  let merged = true
+  while (merged) {
+    merged = false
+    outer:
+    for (let i = 0; i < open.length; i++) {
+      for (let j = i + 1; j < open.length; j++) {
+        const A = open[i], B = open[j]
+        const a0 = key(A.pts[0]), a1 = key(A.pts[A.pts.length - 1])
+        const b0 = key(B.pts[0]), b1 = key(B.pts[B.pts.length - 1])
+        let joined = null
+        if (a1 === b0) joined = A.pts.concat(B.pts.slice(1))
+        else if (a1 === b1) joined = A.pts.concat([...B.pts].reverse().slice(1))
+        else if (a0 === b1) joined = B.pts.concat(A.pts.slice(1))
+        else if (a0 === b0) joined = [...B.pts].reverse().concat(A.pts.slice(1))
+        if (!joined) continue
+        // ⛔ Keep the SOURCES so the report can name what a chain was made of; a chain
+        // that turns out wrong must be traceable to its ways.
+        open[i] = { pts: joined, src: A.src.concat(B.src) }
+        open.splice(j, 1)
+        merged = true
+        break outer
+      }
+    }
+  }
+  return open
+}
+
 export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   const report = []
   const rings = []
@@ -158,9 +208,32 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   if (!Array.isArray(center) || !(discR > 0) || !bb) return { rings, arcs, meta, report }
   const R = bb
 
+  // ⭐ Coastline ways are welded FIRST and enter as chains; every other water feature
+  // enters as itself. One list, one loop, one set of rules — a sea must not get its own
+  // code path or the two will drift and only one town will ever exercise each.
+  const coastWays = [], others = []
   for (const cat of Object.keys(ground)) for (const f of ground[cat]) {
     if (!isWaterFeature(f)) continue
-    const pts = (f.coords || []).map(c => [c.x ?? c[0], c.z ?? c[1]])
+    if (f.tags?.natural === 'coastline') coastWays.push(f); else others.push(f)
+  }
+  const chains = weldCoastlines(coastWays)
+  if (coastWays.length) {
+    report.push(`    welded ${coastWays.length} natural=coastline way(s) → ${chains.length} chain(s)` +
+                ` (longest ${Math.max(...chains.map(c => c.pts.length))} pts)`)
+  }
+  const candidates = [
+    ...chains.map(c => ({
+      __pts: c.pts,
+      // ⭐ A welded chain IS clipped by construction when it leaves the envelope — see the
+      // gate below, which now computes that rather than trusting a flag only the relation
+      // path ever sets.
+      tags: { natural: 'coastline', name: c.src[0]?.tags?.name || null },
+      osmId: c.src[0]?.osmId, __src: c.src,
+    })),
+    ...others,
+  ]
+  for (const f of candidates) {
+    const pts = f.__pts || (f.coords || []).map(c => [c.x ?? c[0], c.z ?? c[1]])
     if (pts.length < 2) continue
     const name = f.tags?.name || f.tags?.natural || `osm${f.osmId}`
     const d = pts.map(p => Math.hypot(p[0] - center[0], p[1] - center[1]))
@@ -168,7 +241,63 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
     // ⭐⭐ ONLY WATER THAT GOES ON BEYOND WHAT WE FETCHED IS A COAST. A body held WHOLE is a
     // feature inside the map, not the edge of the land. ⛔ Not a size threshold — that would
     // be a skip list wearing a number. Huron: 3 of its 4 rim-crossing bodies are GOLF HAZARDS.
-    if (!f.clipped) { if (d.every(v => v <= discR)) interior++; else held++; continue }
+    // ⛔⛔ THIS GATE USED TO READ `if (!f.clipped)`, AND THAT IS WHY A SEA COULD NOT DRAW.
+    // The INTENT is right and unchanged: only water that goes on BEYOND WHAT WE FETCHED is
+    // a coast; a body held whole is a feature inside the map, not the edge of the land.
+    // ⛔ But `clipped` is a flag the FETCH sets, and it only ever sets it on a RELATION ring
+    // it could not close. An open `natural=coastline` way is never marked, so the ocean was
+    // judged "held whole" — 26 ways, and Cape Cod Bay baked as land use.
+    // ⭐⭐ SO THE GATE ASKS WHAT THE TAG MEANS, and `natural=coastline` means exactly one
+    // thing: THIS IS THE LAND/WATER BOUNDARY. It is a fragment of a globally continuous
+    // line by definition — there is no such thing as a coastline "held whole by the fetch"
+    // — so it is always a coast and needs no flag. Everything else still needs `clipped`,
+    // unchanged, so every relation that worked before works identically.
+    //
+    // ⛔ A FIRST CUT WIDENED THIS TO "any vertex outside the bb" AND IT WAS WRONG, caught
+    // by diffing every town against HEAD rather than by testing the town I was fixing:
+    // Overpass returns WHOLE ways, so a pond near the edge sticks out without being
+    // truncated. huron gained a 281-pt pond and ALTADENA — an inland town with no coast at
+    // all — gained Arroyo Seco and a 21-pt pond. ⇒ "sticks out of the frame" is not
+    // "continues beyond the world", and conflating them made a stream into a sea.
+    const leaves = f.clipped === true || f.tags?.natural === 'coastline'
+    if (!leaves) { if (d.every(v => v <= discR)) interior++; else held++; continue }
+
+    // ⭐⭐⭐ A WELDED COASTLINE CAN ARRIVE ALREADY CLOSED, AND THEN IT IS THE ANSWER.
+    // Provincetown's 26 ways weld into ONE ring of 5,315 points: the coast wraps the whole
+    // hook and meets itself inside the fetch. ⛔ Feeding that to `clipToRect` chops it to
+    // "the longest run inside the bb" and closes THAT against the rectangle — which is not
+    // the bay at all, and the buildings check caught it (22 footprints in the water).
+    // ⭐ The machinery below is written for an OPEN arc, and says so; the canon's own
+    // "we stroke the ARC, never the ring" assumes the coast arrives open. A closed chain is
+    // functionally a LAKE ring, so it takes the lake's treatment: the ring IS the water
+    // face, used whole, with no bb closure invented around it.
+    // ⛔ WHICH SIDE IS WATER IS MEASURED, NOT ASSUMED — a closed coastline may enclose the
+    // sea (a bay) or the land (an island), and OSM's land-on-the-left winding is a
+    // convention this project has already been burned trusting. Buildings are ground truth:
+    // MEASURED on Provincetown, the ring encloses 0 of 4,841 footprints, so its interior is
+    // water. An island ring would enclose nearly all of them and is rejected here by name
+    // rather than silently inverted.
+    const closed = pts.length > 3 &&
+      Math.abs(pts[0][0] - pts[pts.length - 1][0]) < WELD_EPS_M &&
+      Math.abs(pts[0][1] - pts[pts.length - 1][1]) < WELD_EPS_M
+    if (closed) {
+      const bPts = buildings.map(b => { const q = (b.coords || [])[0]; return q ? [q.x ?? q[0], q.z ?? q[1]] : null }).filter(Boolean)
+      const within = bPts.filter(q => pointInRing(q, pts)).length
+      if (bPts.length && within > bPts.length * 0.5) {
+        report.push(`    ⛔ closed coast "${name}" encloses ${within}/${bPts.length} buildings — that ring is LAND (an island), not water. Not applied.`)
+        continue
+      }
+      if (within) {
+        // ⚠️ A handful inside is a pier, a breakwater or a spit building, not an inversion.
+        report.push(`    ⚠️ closed coast "${name}": ${within} footprint(s) sit inside the water ring — piers or spits, not an inversion`)
+      }
+      rings.push(pts)
+      meta.push({ subtype: f.tags?.water || null, name: f.tags?.name || null })
+      // ⛔ NO ARC. The arc exists so ① can expand an OPEN shoreline as two-sided ink; a
+      // closed ring has no landward end to T into and the canon forbids stroking it.
+      report.push(`    coast "${name}" — CLOSED chain of ${pts.length} pts used whole as the water face (${within} building(s) inside)`)
+      continue
+    }
 
     const inside = clipToRect(pts, R)
     if (!inside || inside.length < 2) { report.push(`    ⛔ coast "${name}" does not cross the bb — not applied`); continue }
