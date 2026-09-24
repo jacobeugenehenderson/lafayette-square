@@ -312,7 +312,7 @@ window.populateBizSelect = populateBizSelect;
   // Load API listings + local landmarks, merge so all places appear
   var base = getLsqBaseUrl();
   var apiP = apiUrl
-    ? fetch(apiUrl + '?action=listings', { cache: 'no-store' }).then(function(r) {
+    ? fetch(apiUrl + '?action=listings' + (new URLSearchParams(window.location.search).get('look') ? '&look=' + encodeURIComponent(new URLSearchParams(window.location.search).get('look')) : ''), { cache: 'no-store' }).then(function(r) {
         if (!r.ok) return [];
         return r.json().then(function(d) { return Array.isArray(d.data) ? d.data : []; });
       }).catch(function() { return []; })

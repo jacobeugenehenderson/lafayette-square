@@ -1,5 +1,6 @@
 import { supabase, supabaseConfigured } from './supabase'
 import { getDeviceHash } from './device'
+import { INSTANCE } from '../instance.js'
 
 /**
  * Writes to Cary's commercial state — the price of record, availability, and
@@ -22,7 +23,8 @@ async function invoke(payload) {
   }
   const device_hash = await getDeviceHash()
   const { data, error } = await supabase.functions.invoke('commerce-write', {
-    body: { ...payload, device_hash },
+    // The town, so the Guardian check reads THIS town's Guardians — never Lafayette Square's by default.
+    body: { ...payload, device_hash, look: INSTANCE.lookId },
   })
   // ⛔ A transport failure is reported as a failure. It must never read as a
   // successful no-op — a guardian who believes they confirmed a menu that is

@@ -63,12 +63,15 @@ const json = (body: unknown, status = 200, cors: Record<string, string> = {}) =>
  * missing field — all return false. The one outcome that must never arise is
  * "we could not reach the authority, so we allowed it."
  */
-async function mayEditMenu(listingId: string, deviceHash: string): Promise<boolean> {
+async function mayEditMenu(listingId: string, deviceHash: string, look: string): Promise<boolean> {
   const base = Deno.env.get('GAS_API_URL')
   const secret = Deno.env.get('COMMERCE_SHARED_SECRET')
   if (!base || !secret) return false
 
-  const url = `${base}?action=guardian-check&lid=${encodeURIComponent(listingId)}` +
+  // ⛔ The town is named on every check. Without it the backend used to read Lafayette Square's
+  // Guardians tab for every town's listing — a real Guardian elsewhere refused, and an id shared
+  // across towns checked against the wrong town's claims.
+  const url = `${base}?action=guardian-check&look=${encodeURIComponent(look)}&lid=${encodeURIComponent(listingId)}` +
               `&dh=${encodeURIComponent(deviceHash)}&perm=menu&s=${encodeURIComponent(secret)}`
   try {
     const res = await fetch(url, { redirect: 'follow' })
@@ -97,10 +100,13 @@ Deno.serve(async (req) => {
   const listingId = String(body.listing_id || '').trim()
   const deviceHash = String(body.device_hash || req.headers.get('x-device-hash') || '').trim()
   const op = String(body.op || '').trim()
+  const look = String(body.look || '').trim()
   if (!listingId || !deviceHash) return json({ code: 'bad_request', error: 'listing_id and device_hash are required' }, 400, cors)
+  // ⛔ No town, no write. Never defaulted: a guess here is a write checked against another town.
+  if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(look)) return json({ code: 'bad_request', error: 'look (the town) is required' }, 400, cors)
 
   // ── The gate. Nothing below runs until GAS says yes. ──────────────────────
-  if (!(await mayEditMenu(listingId, deviceHash))) {
+  if (!(await mayEditMenu(listingId, deviceHash, look))) {
     return json({ code: 'unauthorized', error: 'Not a guardian of this listing, or the menu permission is not granted' }, 403, cors)
   }
 

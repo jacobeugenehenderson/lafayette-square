@@ -54,9 +54,18 @@ function _lsqLoadLocal(bizId, type) {
 // =====================================================
 //  API LAYER (background, non-blocking)
 // =====================================================
+// The town CodeDesk was opened for (the app passes ?look=). Every backend call names it, so a
+// design, and a claim secret above all, is read from and written to that town's own tabs.
+function _lsqLookParam() {
+  var look = new URLSearchParams(window.location.search).get('look')
+  return look ? '&look=' + encodeURIComponent(look) : ''
+}
+
 function _lsqSaveRemote(bizId, state, type) {
   if (!bizId || !type || !window.LSQ_API_URL) return;
+  var look = new URLSearchParams(window.location.search).get('look');
   var payload = { action: 'saveDesign', bizId: bizId + '-' + type, design: state };
+  if (look) payload.look = look;
   try {
     fetch(window.LSQ_API_URL, {
       method: 'POST',
@@ -71,7 +80,7 @@ async function _lsqLoadRemote(bizId, type) {
   if (!bizId || !type || !window.LSQ_API_URL) return null;
   try {
     var res = await fetch(
-      window.LSQ_API_URL + '?action=getDesign&bizId=' + encodeURIComponent(bizId + '-' + type)
+      window.LSQ_API_URL + '?action=getDesign&bizId=' + encodeURIComponent(bizId + '-' + type) + _lsqLookParam()
     );
     var data = await res.json();
     return (data && data.data && data.data.design) || null;
@@ -90,7 +99,7 @@ function _lsqFetchClaimSecret(bizId) {
     return;
   }
   var adminToken = sessionStorage.getItem('lsq_admin_token') || '';
-  fetch(window.LSQ_API_URL + '?action=claim-secret&lid=' + encodeURIComponent(bizId) + '&admin=' + encodeURIComponent(adminToken))
+  fetch(window.LSQ_API_URL + '?action=claim-secret&lid=' + encodeURIComponent(bizId) + '&admin=' + encodeURIComponent(adminToken) + _lsqLookParam())
     .then(function(res) { return res.json(); })
     .then(function(data) {
       var secret = data && data.data && data.data.claim_secret;

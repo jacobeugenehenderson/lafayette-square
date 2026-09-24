@@ -503,6 +503,9 @@ construction: it asks the same authority the same question `Code.js` already ask
   which listings a device hash controls. An unconfigured deployment must deny, never allow.
 - **`mayEditMenu` denies on every failure path** — unreachable GAS, non-200, bad JSON, missing secrets. ⛔ The
   one outcome forbidden is "could not reach the authority, so allowed."
+- **The check names the town (2026-09-24).** The app sends `look`; `commerce-write` refuses a request without
+  one and passes it to `guardian-check`. Before, the check carried no town and the backend answered from
+  Lafayette Square's Guardians tab for every town's listing.
 - **`tax_remitter` is not settable through it.** It is a legal determination pending the DOR letter ruling,
   not a restaurant setting; it moves by migration or by an operator holding the service key.
 - ▶ `node checks/claims-commerce-write-gate.mjs` — 17 source-level properties asserting there is no write

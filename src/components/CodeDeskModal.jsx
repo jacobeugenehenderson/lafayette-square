@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { create } from 'zustand'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
+import { INSTANCE } from '../instance.js'
 
 export const useCodeDesk = create((set) => ({
   open: false,
@@ -166,7 +167,7 @@ function CodeDeskModalInner() {
       {/* Iframe */}
       <iframe
         ref={iframeRef}
-        src={`${import.meta.env.BASE_URL}codedesk/?embed${isGuardianMode ? '&guardian' : ''}`}
+        src={`${import.meta.env.BASE_URL}codedesk/?embed${isGuardianMode ? '&guardian' : ''}&look=${encodeURIComponent(INSTANCE.lookId)}`}
         onLoad={handleIframeLoad}
         className="flex-1 min-h-0 w-full border-0"
         style={{ background: 'transparent' }}

@@ -70,6 +70,14 @@ assert(!/create policy[^;]*for\s+(insert|update|delete|all)/i.test(sql), 'no wri
 assert(/revoke\s+insert,\s*update,\s*delete\s+on\s+commerce_items/i.test(sql), 'write verbs revoked on commerce_items', 'the grant-level lock is gone')
 assert(/revoke\s+all\s+on\s+commerce_item_events/i.test(sql), 'audit table fully revoked', 'the audit table is reachable by anon/authenticated')
 
+// ── 5b. The gate asks about THIS town ─────────────────────────────────────
+// Without a town the backend reads Lafayette Square's Guardians tab for every town's listing.
+assert(/action=guardian-check&look=\$\{encodeURIComponent\(look\)\}/.test(body), 'the Guardian check names the town',
+  'mayEditMenu asks guardian-check without look — the backend would answer from the default town')
+assert(/if \(!\/\^\[a-z0-9\]\[a-z0-9-\]\{0,63\}\$\/\.test\(look\)\) return json\(\{ code: 'bad_request'/.test(fn), 'a request with no town is refused',
+  'commerce-write accepts a request without look — it would check a guessed town')
+assert(/look: INSTANCE\.lookId/.test(read('src/lib/commerceApi.js')), 'the app sends its town', 'commerceApi does not send look')
+
 // ── 6. tax_remitter is not guardian-settable ───────────────────────────────
 assert(!/patch\.tax_remitter\s*=/.test(fn) && !/tax_remitter:\s*body\./.test(fn), 'tax_remitter not settable',
   'the edge function lets a guardian set tax_remitter — that is a legal determination pending the DOR ruling, not a restaurant setting')

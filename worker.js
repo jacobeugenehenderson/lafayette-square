@@ -10,7 +10,7 @@ var CACHE_TTL = 5 * 60 * 1000;
 async function fetchListings() {
   if (listingsCache && Date.now() - cacheTime < CACHE_TTL) return listingsCache;
   try {
-    var res = await fetch(GAS_API + "?action=listings");
+    var res = await fetch(GAS_API + "?action=listings&look=lafayette-square");  // this Worker fronts lafayette-square.com; it names its town
     var json = await res.json();
     listingsCache = json.data || [];
     cacheTime = Date.now();
