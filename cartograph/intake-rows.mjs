@@ -38,7 +38,7 @@
  * columns are catalogued in `INTAKE-CATALOGUE.md` §1/§2/§3 and drop in here as
  * additional `domain` values without a schema change.
  */
-import { existsSync, statSync, readFileSync, writeFileSync, mkdirSync, openSync, readSync, closeSync } from 'node:fs'
+import { existsSync, statSync, readFileSync, writeFileSync, mkdirSync, openSync, readSync, closeSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mapDir } from './config.js'
@@ -323,6 +323,42 @@ export const INTAKE_ROWS = [
     id: 'elevation', domain: 'cartograph', tier: 'elective',
     label: 'Elevation',
     path: 'raw/elevation.tif',
+    /**
+     * ⛔⛔ PRESENCE IS NOT "THE FILE EXISTS", AND THAT IS THE WHOLE POINT HERE.
+     * bake-terrain accepts THREE shapes — a single .tif, a directory of tiles, or a list of
+     * COG URLs range-read from `raw/elevation-sources.txt` — so checking `path` alone reports
+     * a town that HAS its DEM as missing.
+     * ⭐⭐ AND THE URL LIST MUST BE READ, NOT COUNTED. `fetch-dem` writes that same filename
+     * when it finds NO COVERAGE, recording the refusal in comments. A file-exists check would
+     * read that refusal as an acquired input — a green light meaning the exact opposite of
+     * what happened, which is the blind-check failure this kit rates worst. ⇒ the list counts
+     * only if it holds at least one non-comment line.
+     */
+    present: (dir) => {
+      const tif = join(dir, 'raw', 'elevation.tif')
+      if (existsSync(tif)) { const st = statSync(tif); if (st.size > 0) return { present: true, bytes: st.size, mtime: st.mtimeMs } }
+      const tileDir = join(dir, 'raw', 'elevation')
+      if (existsSync(tileDir)) {
+        try {
+          const tifs = readdirSync(tileDir).filter(f => /\.tiff?$/i.test(f))
+          if (tifs.length) {
+            const st = statSync(join(tileDir, tifs[0]))
+            return { present: true, bytes: null, mtime: st.mtimeMs }
+          }
+        } catch { /* unreadable — fall through to the URL list */ }
+      }
+      const list = join(dir, 'raw', 'elevation-sources.txt')
+      if (existsSync(list)) {
+        try {
+          const urls = readFileSync(list, 'utf8').split('\n').map(l => l.trim())
+            .filter(l => l && !l.startsWith('#'))
+          const st = statSync(list)
+          // ⛔ Zero URLs = fetch-dem found no coverage and said so. NOT acquired.
+          if (urls.length) return { present: true, bytes: st.size, mtime: st.mtimeMs }
+        } catch { /* unreadable — treat as absent, honestly */ }
+      }
+      return { present: false }
+    },
     unlocks: 'terrain relief — the ground stops being flat',
     // ⛔⛔ NOT A FALLBACK, AND THE OLD LINE IS WHY PROVINCETOWN BAKED FLAT IN SILENCE.
     // It read `{ kind: ABSENT.FALLBACK, note: 'flat ground (bake-terrain.js exits)' }` —
@@ -827,14 +863,20 @@ export function intakeStatusForMap(scene) {
       }
     }
 
+    // ⭐⭐ A ROW MAY DEFINE ITS OWN PRESENCE, because `path` is a DISPLAY name and some
+    // inputs arrive in more than one shape. ⛔ Caught by Tally, 2026-09-23, on the row I had
+    // just changed: the elevation row's path is `raw/elevation.tif`, but `fetch-dem.mjs`
+    // writes `raw/elevation-sources.txt` — so a town acquired the DEM and the panel said
+    // EMPTY. ⚠️ AND HURON HID IT, because huron happens to have BOTH files. The kit's
+    // signature shape again: correct on town #1, wrong on town #2.
     const abs = join(dir, row.path)
-
-    // A zero-byte file is not an acquired input. Treating it as filled is the
-    // hardcoded-green lie in miniature.
     let present = false
     let bytes = null
     let mtime = null
-    if (existsSync(abs)) {
+    if (typeof row.present === 'function') {
+      const r = row.present(dir) || {}
+      present = !!r.present; bytes = r.bytes ?? null; mtime = r.mtime ?? null
+    } else if (existsSync(abs)) {
       try {
         const st = statSync(abs)
         present = st.size > 0
