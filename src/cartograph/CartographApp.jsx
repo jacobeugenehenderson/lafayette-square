@@ -807,17 +807,25 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
       const c = localRef.current
       if (!c) return
       c.mouseButtons = {
-        LEFT: mod === 'alt' ? -1 : THREE.MOUSE.ROTATE,   // -1: ⌥ is ours (grab)
+        LEFT: THREE.MOUSE.ROTATE,
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: mod === 'ctrl' ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
       }
     }
-    const read = (e) => (e.altKey ? 'alt' : (e.ctrlKey || e.metaKey) ? 'ctrl' : null)
-    const onKey  = (e) => setButtons(read(e))
-    const onBlur = () => setButtons(null)
+    // ⌥ is tracked from the KEYBOARD as well as read off the press: a tablet
+    // driver can deliver the pen's pointer events without the modifier flags.
+    let altHeld = false
+    const read = (e) => ((e.ctrlKey || e.metaKey) ? 'ctrl' : null)
+    const onKey  = (e) => { altHeld = e.altKey; setButtons(read(e)) }
+    const onBlur = () => { altHeld = false; setButtons(null) }
     setButtons(null)
-    // The ⌥ grab. A press above the horizon grabs nothing; a move whose ray
-    // runs off toward the horizon is skipped rather than flinging the camera.
+    // The ⌥ grab. ⛔ ⌥ IS A CLAMP: while it is held, the press is swallowed
+    // before OrbitControls sees it, so nothing can orbit, dolly or pan under it
+    // — only the grab moves the camera. (Jacob's stylus "spiralled" the scene
+    // when OrbitControls still got the press: a pen can arrive as a touch,
+    // which OrbitControls tumbles whatever the modifier, and the grab ran on
+    // top of it.) A press above the horizon grabs nothing and moves nothing; a
+    // move whose ray runs off toward the horizon is skipped rather than flung.
     let grab = null
     const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
@@ -832,17 +840,20 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
       return hit.distanceTo(c.object.position) > reach ? null : hit
     }
     const onDown = (e) => {
-      onKey(e)
+      const alt = e.altKey || altHeld
+      setButtons(read(e))
       const c = localRef.current
-      if (!c || !enabledRef.current || !e.altKey || e.button !== 0) return
+      if (!c || !enabledRef.current || !alt) return
       if (!c.domElement.contains(e.target)) return   // R3F's wrapper div, not the <canvas>
+      e.stopPropagation()                            // the clamp: OrbitControls never hears it
+      if (!e.isPrimary) return
       plane.constant = -c.target.y
       const g = groundAt(c, e)
       grab = g ? g.clone() : null
     }
     const onMove = (e) => {
       const c = localRef.current
-      if (!grab || !c) return
+      if (!grab || !c || !e.isPrimary) return
       const h = groundAt(c, e)
       if (!h) return
       const step = grab.clone().sub(h).setY(0)   // move so `grab` is back under the pen
@@ -853,9 +864,8 @@ function OrbitControlsShot({ controlsRef, enabled = true }) {
     const onUp = () => { grab = null }
     window.addEventListener('keydown', onKey)
     window.addEventListener('keyup', onKey)
-    // ⚠️ The modifier held AT THE PRESS is the one that counts. A key pressed while
-    // focus was elsewhere never sends us a keydown, so re-read it from the press
-    // itself — capture phase, so it lands before OrbitControls picks its action.
+    // ⚠️ Capture phase on window, so the press is judged (and, under ⌥,
+    // swallowed) before it reaches OrbitControls on the canvas's wrapper.
     window.addEventListener('pointerdown', onDown, true)
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
