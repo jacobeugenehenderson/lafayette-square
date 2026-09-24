@@ -1,0 +1,553 @@
+{
+ "lmk-002": {
+  "_match_name": "Park Avenue Coffee",
+  "_source": "https://parkavenuecoffee.com/pages/lafayette-square",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address and hours taken from the business's Lafayette Square page. That page gives the phone as 877.621.4020 (toll-free). The 314-621-4020 number on file matches Overture and is probably the local line for the same exchange, so it has not been changed.",
+  "_hours_source": "Own site. The page notes that hours may change without notice because of staffing.",
+  "_description_basis": "Own Lafayette Square location page.",
+  "address": "1919 Park Ave, St. Louis, MO 63104",
+  "hours": {
+   "monday": {
+    "open": "07:00",
+    "close": "14:00"
+   },
+   "tuesday": {
+    "open": "07:00",
+    "close": "18:00"
+   },
+   "wednesday": {
+    "open": "07:00",
+    "close": "18:00"
+   },
+   "thursday": {
+    "open": "07:00",
+    "close": "18:00"
+   },
+   "friday": {
+    "open": "07:00",
+    "close": "18:00"
+   },
+   "saturday": {
+    "open": "07:00",
+    "close": "18:00"
+   },
+   "sunday": {
+    "open": "07:30",
+    "close": "14:00"
+   }
+  },
+  "description": "Coffee shop serving locally roasted coffee along with gooey butter cake and other baked goods. It is one of several Park Avenue Coffee locations in the St. Louis area.",
+  "amenities": [
+   "curbside pickup",
+   "grab-and-go"
+  ]
+ },
+ "lmk-003": {
+  "_match_name": "Extra Wavy",
+  "_source": "https://extrawavystl.com/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours are from the business's own site, which shows no sign of closure. The site asks customers to text the number for the fastest reply.",
+  "_hours_source": "Own site. The close times given are for the bar. The kitchen stops serving an hour earlier (21:00 Tue-Thu, 22:00 Fri-Sat). Closed Sun-Mon.",
+  "_description_basis": "Own site homepage.",
+  "address": "2017 Chouteau Ave, St. Louis, MO 63103",
+  "hours": {
+   "sunday": {
+    "closed": true
+   },
+   "monday": {
+    "closed": true
+   },
+   "tuesday": {
+    "open": "17:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "17:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "17:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "17:00",
+    "close": "23:00"
+   },
+   "saturday": {
+    "open": "17:00",
+    "close": "23:00"
+   }
+  },
+  "description": "Seafood restaurant with a cocktail bar, open for dinner Tuesday through Saturday. It takes online orders for pickup."
+ },
+ "lmk-004": {
+  "_match_name": "Jefferson Chop Suey",
+  "_source": "https://www.yelp.com/biz/jefferson-chop-suey-saint-louis",
+  "_source_secondary": "https://www.groupon.com/biz/saint-louis/jefferson-chop-suey",
+  "_fetched": "2026-09-24",
+  "_confidence": "No website of its own was found. Its existence at 1622 S Jefferson Ave, phone (314) 773-1688, comes only from aggregators: Yelp (updated April 2026), Tripadvisor and Groupon, found by search. Yelp and Groupon both blocked direct fetching (403). One search summary said Mon-Sat 11:30-22:00, closed Sunday, but that could not be traced to a page I could read, so no hours are given. Status is not confirmed from a primary source.",
+  "_status_flag": "unverified",
+  "_answers": "Do not add the Groupon URL as the website. It is a Groupon directory/deal listing, not the restaurant's own site, and it returned 403 when fetched. The restaurant does not appear to have its own website.",
+  "address": "1622 S Jefferson Ave, St. Louis, MO 63104"
+ },
+ "lmk-007": {
+  "_match_name": "Subway",
+  "_source": "https://restaurants.subway.com/united-states/mo/st-louis/1641-s-jefferson-ave",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours are from Subway's official store locator page, which lists the location as open.",
+  "_hours_source": "Official Subway store locator page (the franchisor's site).",
+  "_description_basis": "General knowledge of the chain plus the store page.",
+  "address": "1641 S Jefferson Ave, Suite E, St. Louis, MO 63104",
+  "phone": "(314) 771-1444",
+  "hours": {
+   "monday": {
+    "open": "09:00",
+    "close": "21:00"
+   },
+   "tuesday": {
+    "open": "09:00",
+    "close": "21:00"
+   },
+   "wednesday": {
+    "open": "09:00",
+    "close": "21:00"
+   },
+   "thursday": {
+    "open": "09:00",
+    "close": "21:00"
+   },
+   "friday": {
+    "open": "09:00",
+    "close": "21:00"
+   },
+   "saturday": {
+    "open": "09:00",
+    "close": "21:00"
+   },
+   "sunday": {
+    "open": "09:00",
+    "close": "21:00"
+   }
+  },
+  "description": "Location of the Subway sandwich chain, serving made-to-order subs and salads."
+ },
+ "lmk-010": {
+  "_match_name": "Polite Society",
+  "_source": "https://www.politesocietystl.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address and opening times are from the business's own site, which shows no sign of closure. The homepage does not list a phone number, so the one on file (which matches Overture) was not re-verified.",
+  "_hours_source": "Own site: dinner from 17:00 seven nights a week, with no closing time given. Brunch Sat 10:00-14:00 and Sun 09:00-14:00. Hours are omitted because no close time is stated and each weekend day has two services.",
+  "_answers": "Overture's name is 'Polite Society Restaurant and Bar'. The site brands itself simply as 'Polite Society', so the name on file is fine."
+ },
+ "lmk-011": {
+  "_match_name": "Baileys' Chocolate Bar",
+  "_source": "https://www.stlmag.com/dining/baileys-range-and-baileys-chocolate-bar-to-close-august-1/",
+  "_source_secondary": "https://www.firstalert4.com/2026/08/26/baileys-chocolate-bar-selling-off-furniture-other-items-it-prepares-close/",
+  "_fetched": "2026-09-24",
+  "_confidence": "St. Louis Magazine and KMOV/First Alert 4 (Aug 2026) report that it closed after service on August 1, 2026 and held a closeout sale of its furniture and equipment. The owners said they might host private events in the space for a while and are open to a new operator. The baileyschocolatebar.com domain now redirects to a parked 'lander' page. Overture's 'open' status is out of date.",
+  "_status_flag": "closed",
+  "address": "1915 Park Ave, St. Louis, MO 63104",
+  "_url_finding": "baileyschocolatebar.com has lapsed to a parked lander page since the Aug 2026 closure; a lapsed domain can be re-registered by anyone.",
+  "website": null
+ },
+ "lmk-012": {
+  "_match_name": "33 Wine Shop & Bar",
+  "_source": "https://www.33wine.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone (314) 231-9463 and hours were read from the site's own Location & Hours block (Square Online site). The site has almost no descriptive text, so no new description is given (one already exists on file).",
+  "_hours_source": "Own site. Friday and Saturday close at midnight.",
+  "address": "1913 Park Ave, St. Louis, MO 63104",
+  "hours": {
+   "sunday": {
+    "closed": true
+   },
+   "monday": {
+    "closed": true
+   },
+   "tuesday": {
+    "open": "17:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "17:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "17:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "17:00",
+    "close": "00:00"
+   },
+   "saturday": {
+    "open": "17:00",
+    "close": "00:00"
+   }
+  }
+ },
+ "lmk-014": {
+  "_match_name": "Vicini Pastaria",
+  "_source": "https://www.vicinipastaria.com",
+  "_source_secondary": "https://vicinipastaria.square.site/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone (text preferred) and hours are from the business's own site, which shows no sign of closure. The site notes counter-service lunch until 3pm and events on weekdays.",
+  "_hours_source": "Own site. Closed Mon-Thu, except for special events. The patio is described as open 'for the season'.",
+  "address": "1916 Park Ave, St. Louis, MO 63104",
+  "hours": {
+   "monday": {
+    "closed": true
+   },
+   "tuesday": {
+    "closed": true
+   },
+   "wednesday": {
+    "closed": true
+   },
+   "thursday": {
+    "closed": true
+   },
+   "friday": {
+    "open": "11:30",
+    "close": "18:00"
+   },
+   "saturday": {
+    "open": "11:30",
+    "close": "17:30"
+   },
+   "sunday": {
+    "open": "11:30",
+    "close": "17:30"
+   }
+  },
+  "amenities": [
+   "outdoor patio (seasonal)",
+   "online ordering"
+  ]
+ },
+ "lmk-021": {
+  "_match_name": "Winnie's Wine Bar",
+  "_source": "https://winnieswinebar.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address (2101B Chouteau), phone and hours are from the business's own site, which shows no sign of closure. It shares the 2101 Chouteau building with Hamilton's (same owners).",
+  "_hours_source": "Own site. No Sunday or Monday hours are stated.",
+  "_description_basis": "Own site.",
+  "address": "2101B Chouteau Ave, St. Louis, MO 63103",
+  "hours": {
+   "tuesday": {
+    "open": "15:00",
+    "close": "21:00"
+   },
+   "wednesday": {
+    "open": "15:00",
+    "close": "21:00"
+   },
+   "thursday": {
+    "open": "15:00",
+    "close": "21:00"
+   },
+   "friday": {
+    "open": "15:00",
+    "close": "22:00"
+   },
+   "saturday": {
+    "open": "15:00",
+    "close": "22:00"
+   }
+  },
+  "description": "Wine bar opened in 2022 by Paul and Wendy Hamilton and Jason Arnold, pouring wines from around the world by the glass, bottle and flight. It also serves small plates, cocktails and beer."
+ },
+ "lmk-022": {
+  "_match_name": "Rhone Rum Bar",
+  "_source": "https://www.rhonerumbar.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "The business's own site now calls it a 'private event space' and gives its hours only as 'Inquire with our event coordinators'. Its contact phone is 314-241-4949, not the 314-241-7867 on file. The address is confirmed. There is no evidence of regular public hours.",
+  "_category_wrong": "Now operates as a private event venue, not a bar open to the public. It may belong under events/venues rather than dining/bars.",
+  "_description_basis": "Own site.",
+  "phone": "(314) 241-4949",
+  "address": "2107 Chouteau Ave, St. Louis, MO 63103",
+  "description": "Caribbean-themed rum bar with more than 100 rums, now run as a private event space. It has an indoor sand volleyball court and books events through its coordinators."
+ },
+ "lmk-027": {
+  "_match_name": "SqWires Restaurant & Market",
+  "_source": "https://sqwires.com/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours are from the business's own site, which shows no sign of closure and promotes a 25th-anniversary event (opened 2001).",
+  "_hours_source": "Own site. Closed Monday.",
+  "address": "1415 S 18th St, St. Louis, MO 63104",
+  "hours": {
+   "monday": {
+    "closed": true
+   },
+   "tuesday": {
+    "open": "11:00",
+    "close": "21:00"
+   },
+   "wednesday": {
+    "open": "11:00",
+    "close": "21:00"
+   },
+   "thursday": {
+    "open": "11:00",
+    "close": "21:00"
+   },
+   "friday": {
+    "open": "11:00",
+    "close": "21:00"
+   },
+   "saturday": {
+    "open": "09:00",
+    "close": "21:00"
+   },
+   "sunday": {
+    "open": "09:00",
+    "close": "14:00"
+   }
+  },
+  "amenities": [
+   "live music on weekends",
+   "private events up to 200"
+  ]
+ },
+ "lmk-028": {
+  "_match_name": "Eleven Eleven Mississippi",
+  "_source": "https://www.1111-m.com/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours are from the business's own site, which shows no sign of closure.",
+  "_hours_source": "Own site. Saturday is split: brunch 10:00-13:00, then 16:00-22:00. Saturday is left out of the hours because the format allows only one opening per day.",
+  "_description_basis": "Own site.",
+  "address": "1111 Mississippi Ave, St. Louis, MO 63104",
+  "hours": {
+   "sunday": {
+    "closed": true
+   },
+   "monday": {
+    "closed": true
+   },
+   "tuesday": {
+    "open": "11:00",
+    "close": "21:00"
+   },
+   "wednesday": {
+    "open": "11:00",
+    "close": "21:00"
+   },
+   "thursday": {
+    "open": "11:00",
+    "close": "21:00"
+   },
+   "friday": {
+    "open": "11:00",
+    "close": "22:00"
+   }
+  },
+  "description": "Restaurant serving Tuscan- and California-influenced food since 2003, with Saturday brunch and happy hour in the bar Tuesday through Friday. It takes carryout orders online and has a private wine room for events.",
+  "amenities": [
+   "private wine room",
+   "online carryout ordering"
+  ]
+ },
+ "lmk-032": {
+  "_match_name": "Hamilton's Urban Steakhouse & Bourbon Bar",
+  "_source": "https://www.hamiltonsteak.com/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours are from the business's own site, which shows no sign of closure.",
+  "_hours_source": "Own site.",
+  "_description_basis": "Own site.",
+  "address": "2101 Chouteau Ave, St. Louis, MO 63103",
+  "hours": {
+   "sunday": {
+    "closed": true
+   },
+   "monday": {
+    "closed": true
+   },
+   "tuesday": {
+    "open": "15:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "15:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "15:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "15:00",
+    "close": "22:00"
+   },
+   "saturday": {
+    "open": "15:00",
+    "close": "22:00"
+   }
+  },
+  "description": "Steakhouse and bourbon bar serving heritage-breed Black Angus beef from the Midwest. The site notes a dress code."
+ },
+ "lmk-033": {
+  "_match_name": "Planter's House",
+  "_source": "https://www.plantershousestl.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours are from the business's own site, which shows no sign of closure and promotes an October 2026 Halloween pop-up.",
+  "_hours_source": "Own site. The kitchen closes an hour before the bar (21:00 Sun, Tue-Thu; 22:00 Fri-Sat). A Halloween pop-up, 'The Haunting', runs Oct 1-31, 2026.",
+  "_description_basis": "Own site.",
+  "address": "1000 Mississippi Ave, St. Louis, MO 63104",
+  "hours": {
+   "monday": {
+    "closed": true
+   },
+   "tuesday": {
+    "open": "16:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "16:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "16:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "16:00",
+    "close": "23:00"
+   },
+   "saturday": {
+    "open": "16:00",
+    "close": "23:00"
+   },
+   "sunday": {
+    "open": "16:00",
+    "close": "22:00"
+   }
+  },
+  "description": "Cocktail bar and restaurant open since 2013 at the corner of Chouteau and Mississippi, with drinks and food inspired by historic recipes. It stocks more than 350 spirits and takes reservations through Tock."
+ },
+ "lmk-039": {
+  "_match_name": "Rosé by Peno",
+  "_source": "https://www.stlmag.com/dining/kingside-diner-opens-fifth-restaurant-in-former-rose-by-peno-space/",
+  "_source_secondary": "https://www.yelp.com/biz/ros%C3%A9-by-peno-saint-louis",
+  "_fetched": "2026-09-24",
+  "_confidence": "St. Louis Magazine (Aug 2026) reports that Rosé by Peno closed in about July 2026 and that Kingside Diner is taking over the space at 1463 S. 18th St, due to open in early October 2026. Yelp also marks it CLOSED. rosestl.com returns 404.",
+  "_status_flag": "closed",
+  "_answers": "It has closed, which is why Overture has no record. Kingside Diner (its fifth location) is set to open in the same space at 1463 S 18th St in early October 2026 and could be added as a new listing once it opens.",
+  "address": "1463 S 18th St, St. Louis, MO 63104"
+ },
+ "lmk-040": {
+  "_match_name": "Clementine's Naughty & Nice Creamery",
+  "_source": "https://www.clementinescreamery.com/pages/lafayette-square",
+  "_source_secondary": "https://www.yelp.com/biz/clementines-naughty-and-nice-ice-cream-st-louis",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours are from the business's own Lafayette Square location page. The site gives the phone as (314) 474-5800. (314) 858-6100, the number on file, still appears in some search/aggregator results but not on the business's own page.",
+  "_hours_source": "Own site. No seasonal changes are noted, though an ice cream shop's hours may shift in winter.",
+  "_answers": "(314) 474-5800 is current. That is the number on Clementine's own Lafayette Square page, and it matches Overture. The (314) 858-6100 on file appears only in aggregator results.",
+  "phone": "(314) 474-5800",
+  "address": "1637 S 18th St, St. Louis, MO 63104",
+  "hours": {
+   "sunday": {
+    "open": "12:00",
+    "close": "22:00"
+   },
+   "monday": {
+    "open": "12:00",
+    "close": "22:00"
+   },
+   "tuesday": {
+    "open": "12:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "12:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "12:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "12:00",
+    "close": "23:00"
+   },
+   "saturday": {
+    "open": "12:00",
+    "close": "23:00"
+   }
+  },
+  "_category_wrong": "This is an ice cream shop and would fit better under cafes/desserts than restaurants."
+ },
+ "lmk-049": {
+  "_match_name": "Have A Cow Cattle Co.",
+  "_source": "https://www.haveacow.farm/location-and-hours",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours are from the business's own location-and-hours page, which shows no sign of closure.",
+  "_hours_source": "Own site. The site mentions a wood fireplace in colder months, which points to year-round hours.",
+  "address": "2742 Lafayette Ave, St. Louis, MO 63104",
+  "hours": {
+   "monday": {
+    "open": "07:00",
+    "close": "15:00"
+   },
+   "tuesday": {
+    "open": "07:00",
+    "close": "15:00"
+   },
+   "wednesday": {
+    "open": "07:00",
+    "close": "15:00"
+   },
+   "thursday": {
+    "open": "07:00",
+    "close": "15:00"
+   },
+   "friday": {
+    "open": "07:00",
+    "close": "15:00"
+   },
+   "saturday": {
+    "open": "07:00",
+    "close": "15:00"
+   },
+   "sunday": {
+    "closed": true
+   }
+  }
+ },
+ "lmk-050": {
+  "_match_name": "Prohibition",
+  "_source": "https://www.stlprohibition.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address and hours are from the business's own site ('NOW OPEN'). The site gives the phone as 314-948-5826. The 314-948-4494 on file is the number Overture has under 'Gatsby Events' at the same address, which appears to be a related events business, not the bar. It shares the 2017 Chouteau address with Extra Wavy.",
+  "_hours_source": "Own site. Closes at midnight Tue-Thu and at 1:00 on Fri-Sat nights.",
+  "_answers": "Overture has this address under \"Gatsby Events\", which appears to be an events business at the same address, not the bar. The bar itself still operates as Prohibition and has its own phone.",
+  "phone": "(314) 948-5826",
+  "address": "2017 Chouteau Ave, St. Louis, MO 63103",
+  "hours": {
+   "tuesday": {
+    "open": "17:00",
+    "close": "00:00"
+   },
+   "wednesday": {
+    "open": "17:00",
+    "close": "00:00"
+   },
+   "thursday": {
+    "open": "17:00",
+    "close": "00:00"
+   },
+   "friday": {
+    "open": "17:00",
+    "close": "01:00"
+   },
+   "saturday": {
+    "open": "17:00",
+    "close": "01:00"
+   }
+  },
+  "amenities": [
+   "reservations via Resy",
+   "live jazz Thursdays"
+  ]
+ }
+}

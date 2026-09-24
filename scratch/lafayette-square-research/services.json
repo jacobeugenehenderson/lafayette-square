@@ -1,0 +1,578 @@
+{
+ "lmk-005": {
+  "_match_name": "Master G's Styling Studio",
+  "_source": "https://booksy.com/en-us/261565_master-g-s-styling-studio_hair-salon_117221_st-louis",
+  "_source_secondary": "https://www.fresha.com/lvp/master-gs-styling-studio-south-jefferson-avenue-st-louis-oo2jqx",
+  "_fetched": "2026-09-24",
+  "_confidence": "No own website; Booksy (booking platform, aggregator-type) is live and gives 1618 S Jefferson Ave, St. Louis 63104, with an active service menu. Booksy shows no phone and no hours. Fresha (aggregator) lists (314) 737-6817, matching Overture. The (314) 669-9174 on file appeared only in a search-engine summary; I could not tie it to a primary page. Facebook page (magicstylezs) exists but its content could not be read.",
+  "_answers": "Unresolved. Fresha and Overture both show (314) 737-6817; I found no source I could read that shows (314) 669-9174. Leaning toward 737-6817, but no first-party confirmation, so I left the phone on file unchanged.",
+  "_hours_source": "No hours stated on Booksy or Fresha; bookings are by appointment through Booksy.",
+  "_description_basis": "Booksy business profile and service menu.",
+  "address": "1618 S Jefferson Ave, St. Louis, MO 63104",
+  "description": "A hair studio on South Jefferson doing natural-hair blowouts, sew-ins and quick weaves, relaxers, retwists, braids, updos, and women's and children's cuts. Book through Booksy."
+ },
+ "lmk-009": {
+  "_match_name": "Frontenac Cleaners West End",
+  "_source": "https://local.yahoo.com/info-17676629-frontenac-cleaners-west-end-st-louis",
+  "_source_secondary": "https://www.yelp.com/biz/frontenac-cleaners-west-end-saint-louis-2",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address 1937 Park Ave and phone (314) 436-1355 are confirmed by Yahoo Local, Yelp (updated Feb 2026) and BBB (all aggregators). Its own site, frontenac-westend.com, would not load today: HTTP gives a Cloudflare error 1001 and HTTPS fails the TLS handshake. Search engines still index it as 'Frontenac Cleaners West End - Home'.",
+  "_category_wrong": "This is a dry cleaner and laundry, not a beauty business. It belongs under general services (dry cleaning).",
+  "_answers": "The domain frontenac-westend.com belongs to this business per search indexing, but the site is down (Cloudflare error 1001 / TLS failure), so I have not added it. Recheck later.",
+  "_hours_source": "Aggregator only (search snippet of Yahoo Local/Yelp): Mon-Fri 7:00-19:00, Sat 8:30-16:30, Sun closed. Not confirmed on its own site.",
+  "hours": {
+   "monday": {
+    "open": "07:00",
+    "close": "19:00"
+   },
+   "tuesday": {
+    "open": "07:00",
+    "close": "19:00"
+   },
+   "wednesday": {
+    "open": "07:00",
+    "close": "19:00"
+   },
+   "thursday": {
+    "open": "07:00",
+    "close": "19:00"
+   },
+   "friday": {
+    "open": "07:00",
+    "close": "19:00"
+   },
+   "saturday": {
+    "open": "08:30",
+    "close": "16:30"
+   },
+   "sunday": {
+    "closed": true
+   }
+  }
+ },
+ "lmk-013": {
+  "_match_name": "Acosta Hair Design",
+  "_source": "https://square.site/book/CRZCJ56VT23GC/acosta-hair-design",
+  "_source_secondary": "https://lafayettesquare.org/directory-lafayette_sq/listing/acosta-hair-design/",
+  "_fetched": "2026-09-24",
+  "_confidence": "acostahairdesign.com no longer serves the salon's site; it shows a parked or consent-manager page (Cloudflare 403 via WebFetch). The salon's own Square booking page is live. It calls itself a boutique salon in Lafayette Square and gives phone (317) 507-2218, email josie.acosta@acostahairdesign.com and Instagram @acostahairdesign. The Lafayette Square directory gives 1901 Park Ave #1R and (314) 899-5016. Birdeye shows it open, with its most recent review about 9 months old.",
+  "_answers": "Both numbers appear in current sources. The salon's own Square booking page lists (317) 507-2218, which is also Overture's number. The neighborhood directory, Yelp and Nextdoor list (314) 899-5016. I've put the 317 number in as the one on the business's own page. The 314 number may still work.",
+  "_hours_source": "From the salon's Square booking page, which likely shows bookable hours rather than walk-in hours. Birdeye (aggregator) gives different, longer hours (Tue 12-20, Wed 10-17, Thu 10-20, Fri 10-17, Sat 12-17), so treat these as appointment availability.",
+  "_description_basis": "Square booking page plus search snippets from the salon's Nextdoor/Yelp profiles.",
+  "phone": "(317) 507-2218",
+  "website": "https://square.site/book/CRZCJ56VT23GC/acosta-hair-design",
+  "hours": {
+   "tuesday": {
+    "open": "13:00",
+    "close": "20:00"
+   },
+   "wednesday": {
+    "closed": true
+   },
+   "thursday": {
+    "open": "12:00",
+    "close": "19:00"
+   },
+   "friday": {
+    "open": "09:30",
+    "close": "15:30"
+   },
+   "saturday": {
+    "closed": true
+   },
+   "sunday": {
+    "closed": true
+   },
+   "monday": {
+    "closed": true
+   }
+  },
+  "description": "A small boutique hair salon on Park Avenue run by Josie Acosta, offering color, cuts, extensions and Brazilian blowouts. By appointment, booked online through Square."
+ },
+ "lmk-016": {
+  "_match_name": "Grow Hair Co",
+  "_source": "https://growhairco.glossgenius.com",
+  "_source_secondary": "https://lafayettesquare.org/directory-lafayette_sq/listing/grow-hair-co/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own GlossGenius site is live, with an active subscription and services added as recently as Sept 2026. Its structured data gives 1920 Park Ave, St Louis 63104. The business phone in the site data is 16186605441, i.e. (618) 660-5441. The Lafayette Square directory and Overture give (314) 916-0493, which may belong to an individual stylist. 1920 Park Ave was formerly J. Arthurs Salon (see lmk-051), which Yelp marks closed.",
+  "_answers": "No question raised. The Overture website (linktr.ee/2.24crossingsalon) could not be tied to Grow, so I did not use it.",
+  "_hours_source": "No hours stated. Each provider books separately and there is no front desk, so it is appointment only.",
+  "_description_basis": "The 'about' text on its own GlossGenius site.",
+  "address": "1920 Park Ave, St. Louis, MO 63104",
+  "description": "A woman-owned shared salon where independent stylists and spa professionals offer hair color, cuts, extensions, scalp spa treatments, skin care and medical esthetics. Each provider handles their own bookings; there is no front desk."
+ },
+ "lmk-017": {
+  "_match_name": "Nu Look Cleaners Inc",
+  "_source": "https://www.bbb.org/us/mo/saint-louis/profile/dry-cleaners/nu-look-cleaners-inc-0734-110114671",
+  "_source_secondary": "https://www.yelp.com/biz/nu-look-cleaners-saint-louis",
+  "_fetched": "2026-09-24",
+  "_confidence": "No own website. BBB (aggregator) confirms 1817 Park Ave, (314) 621-1488, in business since 1984. The Yelp listing was updated August 2026 and is not marked closed. Hours are not available from any readable source (Yelp blocked).",
+  "_category_wrong": "This is a dry cleaner, not a beauty business. It belongs under general services (dry cleaning).",
+  "_answers": "Don't add the UPS URL. It's a generic UPS Access Point locator page, not Nu-Look's website, and the link now opens a citywide list. The matching phone suggests the shop may be a UPS drop-off point, but I couldn't confirm that.",
+  "_hours_source": "No source states hours."
+ },
+ "lmk-042": {
+  "_match_name": "Gausnell, O'Keefe & Thomas, LLC",
+  "_source": "https://gotlawstl.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site confirms 1717 Park Avenue, St. Louis 63104, phone (314) 257-9800 (fax 257-9801), with 2026 content. No office hours stated.",
+  "_hours_source": "Own site states no office hours.",
+  "_description_basis": "Practice areas listed on its own website.",
+  "name": "Gausnell, O'Keefe & Thomas, LLC",
+  "description": "A law firm focused on civil litigation, including construction, transportation, premises and product liability, toxic torts, medical and professional malpractice, insurance coverage and business disputes. It also handles appeals and offers mediation and arbitration."
+ },
+ "lmk-043": {
+  "_match_name": "Edward Jones - Financial Advisor: Ryan Ederle",
+  "_source": "https://www.edwardjones.com/us-en/financial-advisor/ryan-ederle",
+  "_fetched": "2026-09-24",
+  "_confidence": "The Edward Jones advisor page confirms Ryan Ederle at 1908 Park Ave, Lafayette Square, (314) 577-0167, with hours. Overture's name for this office (advisor Eric D. Cunningham) looks out of date; the current Edward Jones page names Ederle.",
+  "_hours_source": "Edward Jones's own advisor page: Mon-Fri 8:00-17:00, closed weekends.",
+  "_description_basis": "Edward Jones advisor page and search snippet of the same.",
+  "hours": {
+   "monday": {
+    "open": "08:00",
+    "close": "17:00"
+   },
+   "tuesday": {
+    "open": "08:00",
+    "close": "17:00"
+   },
+   "wednesday": {
+    "open": "08:00",
+    "close": "17:00"
+   },
+   "thursday": {
+    "open": "08:00",
+    "close": "17:00"
+   },
+   "friday": {
+    "open": "08:00",
+    "close": "17:00"
+   },
+   "saturday": {
+    "closed": true
+   },
+   "sunday": {
+    "closed": true
+   }
+  },
+  "description": "The Lafayette Square branch of Edward Jones, run by financial advisor Ryan Ederle. It covers investments, retirement accounts such as IRAs and 401(k) rollovers, 529 college savings and insurance."
+ },
+ "lmk-044": {
+  "_match_name": "Modern Dollar Planning, LLC",
+  "_source": "https://www.modern-dollar.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site confirms 1807 Park Avenue, St. Louis 63104, 314-827-5852. Meetings are scheduled through Calendly; it serves clients virtually nationwide as well as locally.",
+  "_hours_source": "No office hours stated. Meetings are scheduled online (Calendly).",
+  "_description_basis": "Its own website.",
+  "description": "A fee-only fiduciary financial planning firm offering flat-fee planning and investment management, mainly for corporate and medical professionals. It works with clients in person in St. Louis and virtually across the US."
+ },
+ "lmk-045": {
+  "_match_name": "McAvoy Realty",
+  "_source": "https://www.mcavoyrealty.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site confirms 1909 Park Ave, St. Louis 63104, (314) 531-1900, with current listings. No hours stated.",
+  "_hours_source": "Own site states no hours.",
+  "_description_basis": "Its own website.",
+  "description": "A family-owned real estate brokerage that has worked with buyers and sellers across the St. Louis area for more than 40 years."
+ },
+ "lmk-046": {
+  "_match_name": "Rome West Realty LLC",
+  "_source": "http://www.romewestrealtyllc.com/enter.html",
+  "_source_secondary": "https://lafayettesquare.org/directory-lafayette_sq/listing/rome-west-realty/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site (over plain HTTP) confirms 2756 Lafayette, St. Louis 63104, 314-833-5551. Over HTTPS the domain presents an unrelated certificate (acepestcontrolltd.com), so the https:// link fails; the http:// link on file works. Domain registered through Dec 2026.",
+  "_hours_source": "Own site states no hours.",
+  "_description_basis": "The 'About' text on its own website.",
+  "website": "http://www.romewestrealtyllc.com",
+  "description": "A full-service real estate brokerage handling commercial and residential sales and leasing across the St. Louis region, including office, retail, industrial and land."
+ },
+ "lmk-047": {
+  "_match_name": "incite Design Studio",
+  "_source": "https://www.incitedesignstudio.com/contact",
+  "_fetched": "2026-09-24",
+  "_confidence": "The firm's own contact page lists a St. Louis office at 1800 Lafayette Ave, Ste. B, St. Louis, MO 63104, 314.279.4500, alongside Kansas City, Overland Park and Wichita offices. The site is active, with a current St. Louis job posting. The absence from Overture is just a data gap.",
+  "_answers": "Still here. The firm's own contact page lists the St. Louis office at 1800 Lafayette Ave, Ste. B, 314.279.4500.",
+  "_hours_source": "Own site states no hours.",
+  "_description_basis": "Its own services/about page.",
+  "name": "incite Design Studio",
+  "description": "An architecture firm founded in 2001 that designs schools, athletic and recreation facilities, storm safe rooms and government buildings, and helps with long-range facility planning and bond and FEMA grant work. It has offices in St. Louis, Kansas City, Overland Park and Wichita."
+ },
+ "lmk-048": {
+  "_match_name": "Kuhl / Swaine Advertising",
+  "_source": "https://kuhlswaine.com",
+  "_source_secondary": "http://deva.kuhlswaine.com/contact-us/",
+  "_fetched": "2026-09-24",
+  "_confidence": "The own homepage is live but shows no address. A contact page on the firm's own subdomain lists 1016 Mississippi Ave, St. Louis MO 63104, (314) 932-5463. LinkedIn and ZoomInfo agree. The main site's /contact is 404. No hours.",
+  "_hours_source": "No hours stated.",
+  "_description_basis": "Portfolio on its own homepage.",
+  "name": "Kuhl / Swaine Advertising",
+  "description": "An independent advertising and design agency doing branding and campaigns for national and local clients, including Bass Pro Shops and Klipsch."
+ },
+ "lmk-051": {
+  "_match_name": "J Arthur's Salon",
+  "_source": "https://www.yelp.com/biz/j-arthurs-salon-saint-louis",
+  "_fetched": "2026-09-24",
+  "_status_flag": "closed",
+  "_confidence": "Yelp's listing title reads 'J ARTHUR'S SALON - CLOSED - Updated May 2026' (seen in search results; the page itself blocked fetching). The Facebook page (jarthurssalon1920) exists but its content could not be read. Grow Hair Co (lmk-016) now operates at 1920 Park Ave, the same address. No own website found.",
+  "_answers": "Don't add salonmstl.com or (314) 621-6150. The Overture match is Salon M, a different salon at 1901 Park Ave (the Acosta building). salonmstl.com doesn't resolve, and Salon M's Facebook page now gives Clayton, MO. Neither belongs to J. Arthurs, which Yelp marks closed."
+ },
+ "lmk-052": {
+  "_match_name": "Salon One Six One",
+  "_source": "https://www.onesixonestl.com",
+  "_source_secondary": "https://local.yahoo.com/info-188920242-salon-one-six-one-st-louis/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site confirms 2758 Lafayette Avenue, St. Louis 63104, 314-952-7530, with online booking and a current price list. Hours are not on its own site.",
+  "_hours_source": "Aggregator only (search snippet of Yahoo Local/Yelp): Mon-Fri 8:00-20:00, Sat 8:00-14:00, Sun closed, by appointment. Not stated on its own site; likely the outer bounds of stylists' booking hours.",
+  "_description_basis": "Its own website.",
+  "hours": {
+   "monday": {
+    "open": "08:00",
+    "close": "20:00"
+   },
+   "tuesday": {
+    "open": "08:00",
+    "close": "20:00"
+   },
+   "wednesday": {
+    "open": "08:00",
+    "close": "20:00"
+   },
+   "thursday": {
+    "open": "08:00",
+    "close": "20:00"
+   },
+   "friday": {
+    "open": "08:00",
+    "close": "20:00"
+   },
+   "saturday": {
+    "open": "08:00",
+    "close": "14:00"
+   },
+   "sunday": {
+    "closed": true
+   }
+  },
+  "description": "A hair salon on Lafayette Avenue offering cuts, single-process and dimensional color, balayage, keratin smoothing, and curly and textured hair services. Appointments are booked online."
+ },
+ "lmk-053": {
+  "_match_name": "Lafayette Square Chiropractic Centre, LLC",
+  "_source": "https://www.lafayettesquarechiropractic.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site confirms the mailing address 1013 South 18th Street, 63104, and (314) 436-3050, with hours and three doctors listed. The site gives 1800 Chouteau Avenue as the address to use for GPS. Overture's website, STLChiro.com, 301-redirects to lafayettesquarechiropractic.com, so it is the same practice.",
+  "_hours_source": "Own site: Mon 10-18, Tue 10-18, Wed 14-18, Thu 9:30-17:30, Fri by appointment only (omitted), Sat-Sun closed.",
+  "_description_basis": "Its own website.",
+  "hours": {
+   "monday": {
+    "open": "10:00",
+    "close": "18:00"
+   },
+   "tuesday": {
+    "open": "10:00",
+    "close": "18:00"
+   },
+   "wednesday": {
+    "open": "14:00",
+    "close": "18:00"
+   },
+   "thursday": {
+    "open": "09:30",
+    "close": "17:30"
+   },
+   "saturday": {
+    "closed": true
+   },
+   "sunday": {
+    "closed": true
+   }
+  },
+  "amenities": [
+   "parking lot",
+   "ADA accessible",
+   "GPS address: 1800 Chouteau Ave"
+  ],
+  "description": "A family chiropractic practice led by Dr. Crystal Peairs, offering adjustments with several techniques, extremity adjusting, and prenatal, pediatric and wellness care. Fridays are by appointment only."
+ },
+ "lmk-054": {
+  "_match_name": "Associated Counseling & Assessment Services",
+  "_source": "https://www.yelp.com/biz/associated-counseling-and-assessment-services-chesterfield",
+  "_source_secondary": "https://lafayettesquare.org/directory-lafayette_sq/listing/associated-counseling-assessment-services/",
+  "_fetched": "2026-09-24",
+  "_status_flag": "moved",
+  "_confidence": "The only Lafayette Square evidence is the neighborhood association directory (1709 Park Ave), and that entry is stale: its website field points to acostahairdesign.com. The same phone, (636) 536-0022, appears on a Yelp listing (updated Feb 2026) at 17263 Wild Horse Creek Rd, Chesterfield, MO 63005. I found no own website and no current source placing the practice at 1709 Park Ave. It has probably moved to Chesterfield or never had a public office here; I could not confirm it is still operating.",
+  "_answers": "Probably not here. Its phone number now goes with a Chesterfield address (Yelp), and no current source puts it at 1709 Park Ave. Consider removing it from the Lafayette Square listings."
+ },
+ "lmk-060": {
+  "_match_name": "Climb So iLL (Power Plant)",
+  "_source": "https://climbsoill.com",
+  "_source_secondary": "https://stlouis.climbsoill.com/contact-info/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site confirms the flagship 'Power Plant' gym at 1419 Carroll Street, St. Louis 63104, 314-621-1700, in the historic City Hospital complex. Hours were stated on its site and repeated in search results for the Power Plant location. A second gym is in St. Charles.",
+  "_hours_source": "Own site: Mon-Fri 11:00-22:00, Sat 10:00-20:00, Sun 10:00-18:00. Holiday hours may vary.",
+  "_description_basis": "Its own website.",
+  "hours": {
+   "monday": {
+    "open": "11:00",
+    "close": "22:00"
+   },
+   "tuesday": {
+    "open": "11:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "11:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "11:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "11:00",
+    "close": "22:00"
+   },
+   "saturday": {
+    "open": "10:00",
+    "close": "20:00"
+   },
+   "sunday": {
+    "open": "10:00",
+    "close": "18:00"
+   }
+  },
+  "amenities": [
+   "climbing classes",
+   "yoga",
+   "fitness classes",
+   "youth programs and summer camps",
+   "private events"
+  ],
+  "description": "An indoor rock climbing gym in the old City Hospital power plant, with climbing and yoga classes, fitness classes, youth programs and private events."
+ },
+ "lmk-062": {
+  "_match_name": "Comfort Inn & Suites Saint Louis Lafayette Square",
+  "_source": "https://www.choicehotels.com/missouri/saint-louis/comfort-inn-hotels/mo575",
+  "_source_secondary": "https://www.tripadvisor.com/Hotel_Review-g44881-d223483-Reviews-Hotel_Avyan-Saint_Louis_Missouri.html",
+  "_fetched": "2026-09-24",
+  "_confidence": "The Choice Hotels page itself timed out, but search results show it active under this name with 2625 Lafayette Ave and (314) 773-6500. The property was previously Hotel Avyan and before that a Holiday Inn Express (TripAdvisor). Yelp and TripAdvisor still use the old name, Hotel Avyan.",
+  "_hours_source": "Hotel; aggregators note a 24-hour front desk. Breakfast is served 6:30-9:30 per the Choice listing snippet.",
+  "_description_basis": "Choice Hotels listing snippet and travel-site listings.",
+  "name": "Comfort Inn & Suites Saint Louis Lafayette Square",
+  "amenities": [
+   "free hot breakfast 6:30-9:30",
+   "free WiFi",
+   "free parking",
+   "pet-friendly",
+   "fitness center",
+   "meeting space"
+  ],
+  "description": "A roughly 65-room Comfort Inn & Suites near I-44, a short walk from Lafayette Park and about three miles from the Arch and Busch Stadium. It was formerly Hotel Avyan."
+ },
+ "lmk-063": {
+  "_match_name": "The Dreamer's Loft",
+  "_source": "https://www.thedreamersloft.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site is live and confirms 2710 Lafayette Avenue, Saint Louis 63104, phone 314-886-8690, established March 2024, with current memberships and events. The absence from Overture is just a data gap.",
+  "_answers": "Still here. Its own website confirms 2710 Lafayette Ave and shows current memberships and events.",
+  "_hours_source": "Own site: Mon-Thu 9:00-17:00; Fri-Sun closed to the public (reserved for private rentals).",
+  "_description_basis": "Its own website.",
+  "phone": "(314) 886-8690",
+  "hours": {
+   "monday": {
+    "open": "09:00",
+    "close": "17:00"
+   },
+   "tuesday": {
+    "open": "09:00",
+    "close": "17:00"
+   },
+   "wednesday": {
+    "open": "09:00",
+    "close": "17:00"
+   },
+   "thursday": {
+    "open": "09:00",
+    "close": "17:00"
+   },
+   "friday": {
+    "closed": true
+   },
+   "saturday": {
+    "closed": true
+   },
+   "sunday": {
+    "closed": true
+   }
+  },
+  "description": "A creative coworking space and content studio that doubles as an event venue, opened in 2024. Members work there on weekdays, and weekends are for private rentals."
+ },
+ "lmk-075": {
+  "_match_name": "J3 Studio",
+  "_source": "https://www.j3-studio.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site confirms 1128 South 18th Street, St. Louis 63104, (314) 621-6060, and hours, and says it has been in Lafayette Square since 2008. Overture's address (1107 Mississippi Ave Ste 101) differs; I kept the address from its own site.",
+  "_category_wrong": "Arguably skin care and esthetics (waxing, facials, lashes and brows) rather than hair; 'beauty' is still broadly right.",
+  "_hours_source": "Own site: Tue 10-20, Wed 12-20, Thu 12-20, Fri 10-17:30, Sat 11-17, Sun-Mon closed. Booking is by email or phone.",
+  "_description_basis": "Its own website.",
+  "hours": {
+   "monday": {
+    "closed": true
+   },
+   "tuesday": {
+    "open": "10:00",
+    "close": "20:00"
+   },
+   "wednesday": {
+    "open": "12:00",
+    "close": "20:00"
+   },
+   "thursday": {
+    "open": "12:00",
+    "close": "20:00"
+   },
+   "friday": {
+    "open": "10:00",
+    "close": "17:30"
+   },
+   "saturday": {
+    "open": "11:00",
+    "close": "17:00"
+   },
+   "sunday": {
+    "closed": true
+   }
+  },
+  "description": "A skin and waxing studio offering body and face waxing, facials, microdermabrasion, dermaplaning, makeup, and brow and lash tinting, lifts and lamination. Book by phone or at booking@j3-studio.com."
+ },
+ "lmk-076": {
+  "_match_name": "Lafayette Square Wellness",
+  "_source": "https://www.facebook.com/p/Lafayette-Square-Wellness-100083152330092/",
+  "_source_secondary": "https://www.apartments.com/2327-hickory-st-st-louis-mo/hq0m0k0/",
+  "_fetched": "2026-09-24",
+  "_status_flag": "unverified",
+  "_confidence": "Probably closed. Its domain, lafayettesquarewellness.com, is no longer registered: whois returns 'No match' and DNS doesn't resolve. Search engines still show the old site's text (injections, facials, Hydrafacial, infrared sauna, swim spa; 314-449-4696). 2327 Hickory St is currently listed on Apartments.com as a room for rent. The Facebook page exists but its content couldn't be read. I found no evidence it is open today.",
+  "_answers": "Could not confirm it is still here, and the evidence points to closure: the website domain has lapsed and the address is listed as a rental. Treat it as closed unless the owner confirms otherwise."
+ },
+ "lmk-078": {
+  "_match_name": "St. Louis Dental Center – Missouri School of Dentistry and Oral Health (Affinia Healthcare)",
+  "_source": "https://affiniahealthcare.org/department/dental/",
+  "_source_secondary": "https://affiniahealthcare.org/st-louis-dental-education-and-oral-health-center-location/",
+  "_fetched": "2026-09-24",
+  "_confidence": "Affinia's own pages confirm 1500 Park Avenue, St. Louis 63104. The dental department page gives hours and (314) 833-2758. The location page now names it 'St. Louis Dental Center – Missouri School of Dentistry and Oral Health'. Dental care is provided through a partnership with A.T. Still University, with students supervised by licensed dentists. The location page also lists Affinia's system-wide appointment line, 314-814-8700.",
+  "_answers": "(314) 833-2758 is current for dental; Affinia's own dental page lists it. (314) 833-2700 is the building's main Affinia line (per directories), and 314-814-8700 is Affinia's system-wide appointment number. Keep 833-2758 for this listing.",
+  "_hours_source": "Affinia's own dental page: Mon 7-19, Tue 7-17, Wed 7-19, Thu 7-17, Fri 7-17, Sat 8-12, Sun closed. The page lists these as dental urgent care hours. Directory listings give slightly different general dental hours (from 8:30 weekdays).",
+  "_description_basis": "Affinia Healthcare's own location and dental pages.",
+  "name": "Affinia Healthcare – St. Louis Dental Center",
+  "hours": {
+   "monday": {
+    "open": "07:00",
+    "close": "19:00"
+   },
+   "tuesday": {
+    "open": "07:00",
+    "close": "17:00"
+   },
+   "wednesday": {
+    "open": "07:00",
+    "close": "19:00"
+   },
+   "thursday": {
+    "open": "07:00",
+    "close": "17:00"
+   },
+   "friday": {
+    "open": "07:00",
+    "close": "17:00"
+   },
+   "saturday": {
+    "open": "08:00",
+    "close": "12:00"
+   },
+   "sunday": {
+    "closed": true
+   }
+  },
+  "amenities": [
+   "sliding-scale fees",
+   "dental urgent care"
+  ],
+  "description": "A community dental clinic run by Affinia Healthcare with A.T. Still University's Missouri School of Dentistry, where supervised dental students treat patients. Fees are on a sliding scale based on ability to pay."
+ },
+ "lmk-080": {
+  "_match_name": "Fit City Gym",
+  "_source": "https://fitcitystl.com",
+  "_source_secondary": "https://www.yelp.com/biz/fit-city-gym-saint-louis-2",
+  "_fetched": "2026-09-24",
+  "_confidence": "Own site confirms 1601 S Jefferson Ave, St. Louis 63104, 314-300-9202, and a second location in St. Peters. The site calls itself Fit City Gym. It mentions 24/7 member access but gives no staffed hours. Aggregators give Mon-Fri 5-22, Sat 6-20, Sun 8-20, which may be staffed hours; I left hours out because the sources conflict.",
+  "_hours_source": "Not set. The own site mentions 24/7 member access; aggregators list Mon-Fri 5:00-22:00, Sat 6:00-20:00, Sun 8:00-20:00, probably staffed hours. Confirm with the gym.",
+  "_description_basis": "Its own website.",
+  "name": "Fit City Gym",
+  "amenities": [
+   "sauna",
+   "tanning",
+   "kids zone",
+   "personal training",
+   "CrossFit",
+   "day passes"
+  ],
+  "description": "A full gym with free weights and machines, personal training and CrossFit classes, plus a sauna, tanning and a kids' area. Monthly memberships and day passes are available."
+ },
+ "lmk-081": {
+  "_match_name": "H&R Block",
+  "_source": "https://www.hrblock.com/tax-office-near-me/missouri/st-louis/49153/",
+  "_fetched": "2026-09-24",
+  "_confidence": "The H&R Block office page blocked automated access (403). Search results for that page and Yelp (updated Feb 2026) confirm 1601 S Jefferson Ave Ste B, (314) 772-1300. Its status in September (off-season) could not be checked.",
+  "_hours_source": "Not set. Aggregators list Mon-Fri 11-19, Sat 10-16, Sun 12-16, but tax-office hours are seasonal and these can't be tied to the current off-season. Check hrblock.com near filing season.",
+  "_description_basis": "Brand and office listing.",
+  "description": "An H&R Block tax preparation office on South Jefferson. Staffed hours vary by season."
+ },
+ "lmk-082": {
+  "_match_name": "RE/MAX Gold",
+  "_source": "https://www.yelp.com/biz/kristin-killingsworth-re-max-gold-saint-louis-2",
+  "_source_secondary": "https://gold-st-louis-mo.remax.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "The RE/MAX Gold office site is behind a bot check and could not be read. Aggregators confirm 1900 Park Ave, Saint Louis 63104: Yelp agent listings updated March and June 2026, Waze, LoopNet and Nextdoor. The phone 314-329-7800 comes from a search summary. RE/MAX Gold is a regional brokerage headquartered in Fenton; this is its Lafayette Square office. The absence from Overture is likely a data gap, not a closure.",
+  "_answers": "Probably still here. Yelp agent listings updated in 2026 place RE/MAX Gold agents at 1900 Park Ave. The office's own site couldn't be read, so this isn't first-party confirmation.",
+  "_hours_source": "No hours found."
+ },
+ "lmk-083": {
+  "_match_name": "Care Solutions In-Home Services, LLC",
+  "_source": "https://www.caresolutionsihs.com/contactus",
+  "_fetched": "2026-09-24",
+  "_status_flag": "moved",
+  "_confidence": "The agency's own website now gives 1120 South 6th Street, Suite 201, St. Louis, MO 63104 (Soulard, outside Lafayette Square) and doesn't mention 1800 Lafayette Ave. Phone (314) 289-9990 is unchanged. The 1800 Lafayette address survives only on older aggregator listings (Yelp updated Aug 2025, Care.com).",
+  "_hours_source": "Own site: Mon-Fri 9:00-16:00 office hours.",
+  "_description_basis": "Its own website.",
+  "address": "1120 South 6th Street, Suite 201, St. Louis, MO 63104",
+  "hours": {
+   "monday": {
+    "open": "09:00",
+    "close": "16:00"
+   },
+   "tuesday": {
+    "open": "09:00",
+    "close": "16:00"
+   },
+   "wednesday": {
+    "open": "09:00",
+    "close": "16:00"
+   },
+   "thursday": {
+    "open": "09:00",
+    "close": "16:00"
+   },
+   "friday": {
+    "open": "09:00",
+    "close": "16:00"
+   },
+   "saturday": {
+    "closed": true
+   },
+   "sunday": {
+    "closed": true
+   }
+  },
+  "description": "A nurse-owned home care agency providing non-medical help at home, such as personal care, housekeeping, meals, medication reminders and errands, plus care coordination. It serves private-pay, Medicaid and VA clients."
+ }
+}

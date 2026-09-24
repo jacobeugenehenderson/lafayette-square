@@ -1,0 +1,315 @@
+{
+ "lmk-006": {
+  "_match_name": "Save A Lot",
+  "_source": "https://savealot.com/stores/30222",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours confirmed on Save A Lot's own store page, which showed the store open.",
+  "_hours_source": "Save A Lot store page (chain's own site).",
+  "_description_basis": "Chain store page.",
+  "hours": {
+   "monday": {
+    "open": "08:00",
+    "close": "21:00"
+   },
+   "tuesday": {
+    "open": "08:00",
+    "close": "21:00"
+   },
+   "wednesday": {
+    "open": "08:00",
+    "close": "21:00"
+   },
+   "thursday": {
+    "open": "08:00",
+    "close": "21:00"
+   },
+   "friday": {
+    "open": "08:00",
+    "close": "21:00"
+   },
+   "saturday": {
+    "open": "08:00",
+    "close": "21:00"
+   },
+   "sunday": {
+    "open": "08:00",
+    "close": "21:00"
+   }
+  },
+  "description": "Discount grocery store on South Jefferson Avenue selling groceries, meat, produce and household basics."
+ },
+ "lmk-015": {
+  "_match_name": "Chad M. Lawson",
+  "_source": "https://www.chadmlawson.com/about-1",
+  "_source_secondary": "https://www.chadmlawson.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Artist's own site gives 1905 Park Ave, St. Louis and email chadmlawson@gmail.com. The site lists no phone and no public hours, and doesn't say the studio is open to walk-ins. A commercial listing for 1905 Park Ave (MLS 24031156, realty.com) turned up but couldn't be read (403), so whether the space is still his is not confirmed.",
+  "_status_flag": "unverified",
+  "_category_wrong": "This is a working artist's studio, not a gallery with public hours. The 'has_hours' on file has no support on his site and should probably be removed.",
+  "_description_basis": "Artist's own About page.",
+  "address": "1905 Park Avenue",
+  "description": "Studio of St. Louis painter Chad M. Lawson, who paints in oil on salvaged wood, often old doors. He takes a limited number of commissions each year. Contact is by email through his website."
+ },
+ "lmk-055": {
+  "_match_name": "Four Muddy Paws",
+  "_source": "https://fourmuddypaws.com/home",
+  "_source_secondary": "https://www.yelp.com/biz/four-muddy-paws-st-louis-2",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and hours confirmed on the business's own home page. Yelp (aggregator) was updated September 2026 and shows it at 1711 Park Ave. There is also an Edwardsville, IL location.",
+  "_hours_source": "Business's own site. The self-serve dog wash is available until one hour before closing (per the business's own site, via search).",
+  "_description_basis": "Business's own site.",
+  "website": "https://fourmuddypaws.com",
+  "hours": {
+   "monday": {
+    "open": "09:00",
+    "close": "19:00"
+   },
+   "tuesday": {
+    "open": "09:00",
+    "close": "19:00"
+   },
+   "wednesday": {
+    "open": "09:00",
+    "close": "19:00"
+   },
+   "thursday": {
+    "open": "09:00",
+    "close": "19:00"
+   },
+   "friday": {
+    "open": "09:00",
+    "close": "19:00"
+   },
+   "saturday": {
+    "open": "09:00",
+    "close": "17:00"
+   },
+   "sunday": {
+    "open": "10:00",
+    "close": "17:00"
+   }
+  },
+  "description": "Pet store selling natural dog and cat food, treats and supplies. It also does professional grooming for dogs and cats and has a self-serve dog wash.",
+  "amenities": [
+   "grooming",
+   "self-serve dog wash",
+   "local delivery",
+   "curbside pickup"
+  ]
+ },
+ "lmk-056": {
+  "_match_name": "CBD Kratom Lafayette Square",
+  "_source": "https://shopcbdkratom.com/pages/lafayette-square",
+  "_fetched": "2026-09-24",
+  "_confidence": "The chain's own location page lists this store at 1917 Park Ave with the same phone number and current daily hours, and takes online orders for pickup. Nothing on it suggests the store has closed. I found no independent confirmation from a second source.",
+  "_answers": "The business's own location page still lists 1917 Park Ave (same phone, daily hours, online pickup ordering), so it appears to still be there. Overture's lack of a record doesn't show it closed.",
+  "_hours_source": "Chain's own location page.",
+  "_description_basis": "Chain's own location page.",
+  "hours": {
+   "monday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "tuesday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "saturday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "sunday": {
+    "open": "08:00",
+    "close": "22:00"
+   }
+  },
+  "description": "Branch of a local chain selling CBD, kratom and hemp-derived THC products, including oils, gummies, edibles, vapes, drinks and pet CBD.",
+  "amenities": [
+   "online order pickup",
+   "same-day delivery"
+  ]
+ },
+ "lmk-064": {
+  "_match_name": "Walgreens Pharmacy",
+  "_source": "https://www.walgreens.com/locator/walgreens-1530+lafayette+ave-saint+louis-mo-63104/id=11711",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address, phone and store hours confirmed on Walgreens' own store locator page. Pharmacy hours differ between sources: Walgreens' page says weekdays only, while aggregators list weekend hours. I used Walgreens' own page.",
+  "_hours_source": "Walgreens store locator. Store hours shown. The pharmacy is open Mon–Fri 09:00–19:00 (closed 13:30–14:00) and closed Saturday and Sunday, per the same page.",
+  "_description_basis": "Chain store page.",
+  "website": "https://www.walgreens.com/locator/walgreens-1530+lafayette+ave-saint+louis-mo-63104/id=11711",
+  "hours": {
+   "monday": {
+    "open": "07:00",
+    "close": "22:00"
+   },
+   "tuesday": {
+    "open": "07:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "07:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "07:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "07:00",
+    "close": "22:00"
+   },
+   "saturday": {
+    "open": "07:00",
+    "close": "22:00"
+   },
+   "sunday": {
+    "open": "07:00",
+    "close": "22:00"
+   }
+  },
+  "description": "Drugstore at Truman Parkway and Lafayette Avenue. It has a pharmacy that is open on weekdays only.",
+  "amenities": [
+   "pharmacy (weekdays only)"
+  ]
+ },
+ "lmk-068": {
+  "_match_name": "Onyx Dagger Tattoo & Gallery",
+  "_source": "https://www.yelp.com/biz/onyx-dagger-tattoo-and-gallery-st-louis",
+  "_source_secondary": "https://thestl.com/culture/a-broad-canvas/",
+  "_fetched": "2026-09-24",
+  "_confidence": "The business's website on file (onyxdaggerstl.com) no longer resolves; the domain has no DNS records as of today. Yelp (aggregator, last updated November 2025), Giftly and an STLPR 2022 profile place it at 1917 Park Ave. I could not read Facebook or Yelp directly (blocked), and found no report that it closed or moved. Hours from aggregator snippets conflict with 'by appointment only', so I left hours out.",
+  "_status_flag": "unverified",
+  "_answers": "Unconfirmed. Its own website is down (the domain no longer resolves). Aggregators up to November 2025 still show 1917 Park Ave, and I found no closure notice. It needs a phone call or a walk-by.",
+  "_description_basis": "Press coverage (STLPR, thestl.com) and cached copies of the business's former site found in search results.",
+  "description": "By-appointment custom tattoo studio that also shows fine art from local painters. It was founded by tattoo artist Valencia Miller and hosts guest artists."
+ },
+ "lmk-069": {
+  "_match_name": "Lehmann House Bed and Breakfast",
+  "_source": "https://www.lehmannhouse.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Name, address, phone and current bookable rooms confirmed on the B&B's own site. Check-in and check-out times are not stated there.",
+  "_description_basis": "B&B's own site.",
+  "description": "Bed and breakfast in a 26-room Victorian mansion on Benton Place, once the home of lawyer Frederick W. Lehmann. Every guest room has a private bath, and breakfast is served in the formal dining room.",
+  "amenities": [
+   "breakfast included",
+   "private bathrooms",
+   "WiFi",
+   "parking",
+   "air conditioning",
+   "garden"
+  ]
+ },
+ "lmk-070": {
+  "_match_name": "Wildflowers STL",
+  "_source": "https://wildflowersstl.com/pages/contact",
+  "_source_secondary": "https://wildflowersstl.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "Address (2754 Lafayette Ave, rear), phone and email (info@wildflowersstl.com) confirmed on the business's own contact page. The site gives no opening hours. Overture's '1013 Ohio Ave' is not on the business's site; it is probably the side-street entrance of the rear building on the Lafayette/Ohio corner, but that is not confirmed.",
+  "_description_basis": "Business's own site.",
+  "description": "Floral design studio making arrangements, wreaths and flower subscriptions, plus wedding and event flowers and workshops. Weekday orders placed before 10 a.m. can be delivered the same day.",
+  "amenities": [
+   "same-day delivery (weekday orders before 10am)",
+   "workshops",
+   "wedding & event florals"
+  ]
+ },
+ "lmk-071": {
+  "_match_name": "RF Home Co by Rescued Furnishings",
+  "_source": "https://rfhomeco.com/",
+  "_source_secondary": "https://www.stlmag.com/design/rf-home-co-by-rescued-furnishings-opens-large-kirkwood-locat/",
+  "_fetched": "2026-09-24",
+  "_confidence": "rescuedfurnishings.com now redirects (301) to rfhomeco.com, which uses the same phone number. St. Louis Magazine (April 8, 2019) reported that the business left Lafayette Avenue for a 19,000 sq ft building at 11022 Manchester Rd, Kirkwood, and was renamed RF Home Co. The current site advertises cabinetry work and gives no Lafayette Square address. Whether the Kirkwood address is still current is not confirmed.",
+  "_status_flag": "moved",
+  "_category_wrong": "The business now sells cabinet painting, refacing, custom cabinetry and other home carpentry, not furniture retail. It is also no longer in the neighborhood.",
+  "name": "RF Home Co by Rescued Furnishings",
+  "website": "https://rfhomeco.com/",
+  "_answers": "Moved out of Lafayette Square in 2019 to Kirkwood and renamed RF Home Co. The listing should probably be removed."
+ },
+ "lmk-073": {
+  "_match_name": "Architectural Artifacts of St. Louis",
+  "_source": "https://www.artifactsstl.com",
+  "_fetched": "2026-09-24",
+  "_confidence": "The business's own site says: 'Although our physical building has been sold and our inventory has been moved out, we are still actively selling and occasionally purchasing pieces.' The phone (314-771-4442) is confirmed there. There is no storefront at 2711 Lafayette any longer, and the site gives no new public address. Yelp still lists 2711 Lafayette, which is out of date.",
+  "_status_flag": "moved",
+  "_description_basis": "Business's own site.",
+  "description": "Dealer in historic architectural salvage from St. Louis buildings, such as terra cotta ornament and reclaimed lumber. It no longer has a storefront; buyers contact the business by phone or through its website."
+ },
+ "lmk-074": {
+  "_match_name": "Lafayette Park Bed and Breakfast",
+  "_source": "https://www.tripadvisor.com/Hotel_Review-g44881-d618521-Reviews-Lafayette_Park_Bed_and_Breakfast-Saint_Louis_Missouri.html",
+  "_source_secondary": "https://nextdoor.com/pages/lafayette-park-bed-and-breakfast-saint-louis-mo/",
+  "_fetched": "2026-09-24",
+  "_confidence": "No website of its own found. The only traces are aggregators: Tripadvisor (a single review from July 2006, innkeeper Larry Bennett, 5 rooms) and a Nextdoor page. Search snippets disagree on the phone number: (314) 771-7700 in one, (314) 771-9700 in another. Nothing current shows it operating as a B&B. The input's has_hours/has_description have no support I could find.",
+  "_status_flag": "unverified",
+  "_answers": "Could not confirm it is still here. There is no website and no activity since the mid-2000s on any source I found, and aggregators disagree on the phone number. It is likely defunct or a private home now; verify locally before keeping it."
+ },
+ "lmk-079": {
+  "_match_name": "Family Dollar",
+  "_source": "https://locations.familydollar.com/mo/st-louis/1549-s-jefferson-avenue",
+  "_fetched": "2026-09-24",
+  "_confidence": "The chain's own locator page (read from its schema.org data) lists this store with the same phone and daily hours. The page carries no closure notice. Family Dollar has closed many stores since 2024, but I found no evidence this one closed.",
+  "_hours_source": "Family Dollar store locator page (chain's own site).",
+  "_description_basis": "Chain store page and locator amenity list.",
+  "hours": {
+   "monday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "tuesday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "saturday": {
+    "open": "08:00",
+    "close": "22:00"
+   },
+   "sunday": {
+    "open": "08:00",
+    "close": "22:00"
+   }
+  },
+  "description": "Discount variety store selling groceries, cleaning and laundry supplies, and household basics.",
+  "amenities": [
+   "EBT accepted",
+   "ATM",
+   "ice",
+   "propane"
+  ]
+ },
+ "lmk-120": {
+  "_match_name": "Lafayette Square Inn",
+  "_source": "https://www.airbnb.com/rooms/1450478228020546309",
+  "_source_secondary": "https://www.yelp.com/biz/napoleons-retreat-saint-louis",
+  "_fetched": "2026-09-24",
+  "_confidence": "'Napoleon's Retreat' as a B&B appears closed: Yelp and GayCities both mark it CLOSED, and its old domain napoleonsretreat.com is for sale on HugeDomains. The website on file (napoleonsretreatinn.com) is titled 'Lafayette Square Inn' in search results, but it failed to load (TLS error), so I couldn't read it. Airbnb (aggregator) has 'Lafayette Square Inn' rooms named 'Napoleon Room' and 'Lafayette Room' in an 1876 mansard-roof house in Lafayette Square, hosted by 'Matthew' (Superhost). The house matches the old Napoleon's Retreat, but no source ties these listings to 1815 Lafayette Ave. No phone found.",
+  "_status_flag": "renamed",
+  "_category_wrong": "It now appears to be rooms rented through Airbnb rather than a staffed bed and breakfast; no breakfast is mentioned in the Airbnb listing.",
+  "_description_basis": "Airbnb listing (aggregator); owner site unreadable.",
+  "name": "Lafayette Square Inn",
+  "description": "Guest rooms for rent in an 1876 house with a mansard roof, a few minutes' walk from Lafayette Park. Rooms are booked through Airbnb, and guests share gardens and a screened courtyard."
+ }
+}

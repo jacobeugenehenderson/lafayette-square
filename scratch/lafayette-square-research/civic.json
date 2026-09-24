@@ -1,0 +1,474 @@
+{
+ "lmk-025": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Centennial Malt House (Schnaider Malt House)",
+  "_source": "https://hoodline.com/2026/09/fire-scarred-lafayette-square-malt-house-hosts-luxury-runway-show-next-month/",
+  "_source_secondary": "https://www.stlmag.com/dining/vin-de-set-centennial-malt-house-new-ownership/",
+  "_confidence": "Building history (1876 malt mill for Schnaider's Chouteau Avenue Brewery, NRHP 2005, Sept 2022 rooftop fire, 2024 sale to Rich Conyers) from St. Louis Magazine (Aug 2024) and Hoodline (Sept 9, 2026). Current tenants (Gatsby Events, Prohibition bar, Malt House Lofts apartments) from Hoodline and gatsbyeventsstl.com. Website on file (malthousecellar.com) is the old Hamilton Hospitality venue, which still says 'Temporarily Closed' since the 2022 fire, so it no longer represents the building. Duplicate of lmk-104 (same building).",
+  "_status_flag": "renamed",
+  "address": "2017 Chouteau Ave, St. Louis, MO 63103",
+  "_description_basis": "St. Louis Magazine 2024 and Hoodline 2026 articles; NRHP listing year as reported there.",
+  "description": "Built in 1876 as the malt house for Joseph Schnaider's Chouteau Avenue Brewery, this brick building is listed on the National Register of Historic Places. After a 2022 rooftop fire it was renovated and now holds loft apartments, an event venue and a bar.",
+  "_answers": "Website on file points to Malt House Cellar, closed since the Sept 2022 fire; drop it. Street number is 2017 Chouteau."
+ },
+ "lmk-029": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Former Saint Joseph (Lithuanian) Catholic Church / former Church of the Unity",
+  "_source": "https://www.stlouis-mo.gov/archive/neighborhood-histories-norbury-wayman/lafayette/text16.htm",
+  "_source_secondary": "http://www.romeofthewest.com/2009/11/photos-of-former-saint-joseph.html",
+  "_confidence": "City of St. Louis neighborhood history: the Unitarian Church of the Unity built a stone Gothic chapel at Park and Armstrong (now MacKay Place) in 1870 and later sold it to a Lithuanian Catholic parish. Rome of the West (via search snippet; page would not load) says St. Joseph Lithuanian church at Park Ave and MacKay Place operated 1915-1970. Sources disagree on when the Lithuanian parish took over (1915 vs 1926). No active St. Joseph's church exists here today. I could NOT confirm that 2123 Park Ave is exactly the church's address; real-estate listings describe 2123 Park as a private residence. Not an active congregation.",
+  "_status_flag": "closed",
+  "_category_wrong": "Not an active church: the parish closed in 1970. Should be historic/landmark (former church), not community/churches.",
+  "_description_basis": "City of St. Louis Lafayette Square neighborhood history (Norbury Wayman); Rome of the West.",
+  "description": "A former church at Park Avenue and MacKay Place. It was built in 1870 as a stone Gothic chapel for the Unitarian Church of the Unity and later became St. Joseph's Lithuanian Catholic parish, which closed in 1970. It is not an active church today."
+ },
+ "lmk-030": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Lafayette Park United Methodist Church",
+  "_source": "https://www.lp-umc.org",
+  "_source_secondary": "https://www.stlouis-mo.gov/archive/neighborhood-histories-norbury-wayman/lafayette/text16.htm",
+  "_confidence": "Name, address, phone, worship time and office hours from the church's own site. Building history from City of St. Louis neighborhood history. Overture record agrees.",
+  "phone": "(314) 771-9214",
+  "address": "2300 Lafayette Ave, St. Louis, MO 63104",
+  "website": "https://www.lp-umc.org",
+  "hours": {
+   "sunday": {
+    "open": "08:00",
+    "close": "16:00"
+   },
+   "monday": {
+    "open": "08:00",
+    "close": "16:00"
+   },
+   "tuesday": {
+    "open": "09:00",
+    "close": "16:00"
+   },
+   "wednesday": {
+    "open": "08:00",
+    "close": "16:00"
+   },
+   "thursday": {
+    "open": "08:00",
+    "close": "16:00"
+   },
+   "friday": {
+    "open": "08:00",
+    "close": "16:00"
+   }
+  },
+  "_hours_source": "Church office hours as listed on lp-umc.org (the site says to call ahead for meetings). Sunday worship is at 09:30, with fellowship afterward.",
+  "_description_basis": "Church website (self-description, Reconciling Congregation, preschool); City neighborhood history for the building.",
+  "description": "A United Methodist congregation with Sunday worship at 9:30 am. It is a Reconciling Congregation that welcomes everyone, and it runs a preschool. The stone church facing Lafayette Avenue was finished in 1900 to designs by Theodore C. Link.",
+  "amenities": [
+   "Preschool"
+  ]
+ },
+ "lmk-031": {
+  "_fetched": "2026-09-24",
+  "_match_name": "City Church",
+  "_source": "https://citychurchstl.org",
+  "_source_secondary": "https://www.flickr.com/photos/warrenlemay/53280445248/",
+  "_confidence": "Name, service times and address from the church's own site, which gives 1908 Lafayette Ave (not 1916). The site lists no phone. (314) 899-0047 comes only from aggregators (ZoomInfo-style listing, Overture) and is unconfirmed by the church. The building is the former Lafayette Park Baptist Church (per Warren LeMay/Flickr caption; builder date not confirmed from a primary source).",
+  "address": "1908 Lafayette Ave, St. Louis, MO 63104",
+  "phone": "(314) 899-0047",
+  "_hours_source": "Not added as hours: the church site gives start times only (Sunday School 09:00 Sept-May; worship 10:15), with no end times.",
+  "_description_basis": "Church website self-description; building's former name per Flickr/Warren LeMay caption.",
+  "description": "A gospel-centered congregation focused on the city, with Sunday worship at 10:15 am and Sunday School at 9 am from September through May. It meets in the former Lafayette Park Baptist Church at Lafayette and Mississippi.",
+  "_answers": "Phone (314) 899-0047 appears only in aggregators (ZoomInfo, Overture), not on citychurchstl.org; included as aggregator fallback, unconfirmed. Address on file (1916) is wrong: the church site gives 1908 Lafayette Ave."
+ },
+ "lmk-035": {
+  "_fetched": "2026-09-24",
+  "_match_name": "St. Mary's Assumption Church & Priory",
+  "_source": "https://sspx.org/en/st-marys-assumption-church-priory-30224",
+  "_source_secondary": "https://smastl.org/",
+  "_confidence": "Address, phone and Mass schedule confirmed on both sspx.org and the parish site smastl.org (which has bulletins through 2026-09-27, so it is current). WARNING: smastl.org's HTML has an injected script that redirects Japanese-language browsers to a counterfeit-watch shop (kpshop.jp). The site looks compromised, so linking sspx.org is safer. Clergy per smastl.org: Fr. Dennis McDonald, pastor. Chapel of the Society of St. Pius X (SSPX), which is not part of the Archdiocese of St. Louis.",
+  "phone": "(314) 436-4544",
+  "address": "1126 Dolman St, St. Louis, MO 63104",
+  "website": "https://sspx.org/en/st-marys-assumption-church-priory-30224",
+  "_hours_source": "Not added as hours: Mass start times only (no end times). Sun 07:30 Low Mass, 10:00 High Mass; Mon-Fri 07:15; Tue 18:00 devotions; Thu 18:00 Benediction & Mass; First Friday 18:00 Holy Hour + 19:00 Mass; Sat 08:00. Confessions: Sun 06:30-07:25 and 09:00-09:55.",
+  "_description_basis": "smastl.org and sspx.org.",
+  "description": "A traditional Latin Mass church and priory run by the Society of St. Pius X. Sunday Masses are at 7:30 and 10 am, with daily Masses through the week.",
+  "_answers": "Website on file (smastl.org) is the parish's own site and is current, but it contains a malicious language-based redirect. Prefer the sspx.org page.",
+  "_url_finding": "smastl.org's HTML has an injected script that redirects Japanese-language browsers to a counterfeit-watch shop (kpshop.jp) — hijacked. Prefer the sspx.org page."
+ },
+ "lmk-036": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Lafayette Preparatory Academy",
+  "_source": "https://lafayetteprep.org",
+  "_source_secondary": "https://nces.ed.gov/ccd/schoolsearch/school_detail.asp?Search=1&DistrictID=2900606&ID=290060603223",
+  "_confidence": "Name, address, phone and charter status from the school's site. Grades PK-8 and single campus from NCES (via search summary). No office hours published.",
+  "phone": "(314) 880-4458",
+  "address": "1900 Lafayette Ave, St. Louis, MO 63104",
+  "website": "https://lafayetteprep.org",
+  "_description_basis": "School website plus NCES record.",
+  "description": "A free public charter school serving pre-kindergarten through 8th grade. It emphasizes inquiry-based teaching and describes its culture as 'Diverse by Design'."
+ },
+ "lmk-038": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Seib family home, 2323 Lafayette Ave",
+  "_source": "https://dumpsterarcheologist.substack.com/p/dumpster-archeology",
+  "_source_secondary": "https://www.facebook.com/groups/522520461119490/posts/6783385925032881/",
+  "_confidence": "Only weak sources: a Facebook history-group post ('Photos of the Seib family home at 2323 Lafayette') and Lew Blink's 'Dumpster Archeology' essay (a 2001 envelope addressed to George Seib MD at 2323 Lafayette; his mother Carrie Seib described as a spiritualist). Nothing from the City, the NRHP nomination or LSRC establishes a 'Seib House' landmark. Real-estate listings show 2323 Lafayette as a private multi-family home. Address is probably 2323 Lafayette Ave; history unverified.",
+  "_status_flag": "unverified",
+  "address": "2323 Lafayette Ave, St. Louis, MO 63104",
+  "_answers": "Private residence; do not add phone or hours."
+ },
+ "lmk-041": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Holy Trinity Serbian Orthodox Church",
+  "_source": "https://stlserbianchurch.org/",
+  "_source_secondary": "https://www.zumwaltcorporation.com/contact-us/",
+  "_confidence": "The listing mixes two places. 1617 Lafayette Ave, (314) 772-6500 and zumwaltcorporation.com all belong to Zumwalt Corporation, a garage-door and loading-dock company (per its site and Yelp). Holy Trinity Serbian Orthodox Church is at 1910 Serbian Drive (formerly McNair Ave) in McKinley Heights, outside Lafayette Square, per the church's own site. Any hours on file probably came from Zumwalt and should be discarded.",
+  "_status_flag": "moved",
+  "address": "1910 Serbian Dr, St. Louis, MO 63104",
+  "phone": "(314) 776-3262",
+  "website": "https://stlserbianchurch.org/",
+  "_hours_source": "Not added as hours: Sunday Divine Liturgy starts at 10:00 per the church site; no end time stated.",
+  "_description_basis": "Church website; parish history (consecrated 1928) per search summary of the church's 'Our Parish' page.",
+  "description": "A Serbian Orthodox parish with Sunday Divine Liturgy at 10 am in English, Serbian and Slavonic. The current church on Serbian Drive in McKinley Heights was consecrated in 1928.",
+  "_category_wrong": "If the directory covers only Lafayette Square, this church is outside it (McKinley Heights). Zumwalt Corporation at 1617 Lafayette is a business, not a church."
+ },
+ "lmk-057": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Lafayette Square Restoration Committee",
+  "_source": "https://lafayettesquare.org/about/contact/",
+  "_source_secondary": "https://lafayettesquare.org/",
+  "_confidence": "Name and website from lafayettesquare.org. The contact page gives 2023 Lafayette Ave (the Park House, shared with Lafayette Park Conservancy and the Arts Council of Lafayette Square). No phone or public email; the site uses a contact form. No office hours.",
+  "address": "2023 Lafayette Ave, St. Louis, MO 63104",
+  "website": "https://lafayettesquare.org",
+  "_description_basis": "lafayettesquare.org.",
+  "description": "The neighborhood association for Lafayette Square. It supports historic preservation, organizes neighborhood events and house tours, and runs the community garden. It is based at the Park House in Lafayette Park."
+ },
+ "lmk-058": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Barr Library (St. Louis Public Library)",
+  "_source": "https://www.slpl.org/locations/4/",
+  "_source_secondary": "https://theclio.com/entry/164760",
+  "_confidence": "Name, address, phone, hours and amenities from SLPL's own branch page. History (1906, Carnegie-funded, Theodore C. Link) from Clio and St. Louis City Talk via search summary. The library sits on the west side of Jefferson, technically in the Gate District.",
+  "phone": "(314) 241-2288",
+  "address": "1701 S Jefferson Ave, St. Louis, MO 63104",
+  "website": "https://www.slpl.org/locations/4/",
+  "hours": {
+   "monday": {
+    "open": "12:00",
+    "close": "20:00"
+   },
+   "tuesday": {
+    "open": "10:00",
+    "close": "18:00"
+   },
+   "wednesday": {
+    "open": "10:00",
+    "close": "18:00"
+   },
+   "thursday": {
+    "open": "10:00",
+    "close": "18:00"
+   },
+   "friday": {
+    "open": "10:00",
+    "close": "17:00"
+   },
+   "saturday": {
+    "open": "10:00",
+    "close": "17:00"
+   }
+  },
+  "_hours_source": "Library opening hours from SLPL branch page; closed Sunday.",
+  "_description_basis": "SLPL branch page; Clio for history.",
+  "description": "A St. Louis Public Library branch at Jefferson and Lafayette. It opened in 1906 as the first of the city's Carnegie-funded branch libraries, in a Classical Revival building designed by Theodore C. Link.",
+  "amenities": [
+   "Free Wi-Fi",
+   "Public computers and printing",
+   "Meeting rooms",
+   "Parking lot",
+   "Bike racks",
+   "Book drop",
+   "Accessible entry"
+  ],
+  "name": "Barr Library",
+  "_answers": "(314) 241-2288 is current: SLPL's own branch page lists it. The (314) 771-7040 on file is wrong or outdated."
+ },
+ "lmk-059": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Lafayette Park Conservancy",
+  "_source": "https://www.lafayettepark.org",
+  "_confidence": "Name, address (2023 Lafayette Ave, the Park House), founding year 2001 and mission from the conservancy's own site. No phone or email is published.",
+  "address": "2023 Lafayette Ave, St. Louis, MO 63104",
+  "website": "https://www.lafayettepark.org",
+  "_description_basis": "lafayettepark.org.",
+  "description": "A nonprofit founded in 2001 to restore and preserve Lafayette Park and raise money for that work. It also runs programming and rentals of the Park House and the park's pavilions."
+ },
+ "lmk-061": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Moulin Events (defunct); successor at this address is Gatsby Events",
+  "_source": "https://www.stlmag.com/dining/vin-de-set-centennial-malt-house-new-ownership/",
+  "_source_secondary": "https://www.gatsbyeventsstl.com/",
+  "_confidence": "St. Louis Magazine (Aug 2024) lists Moulin Events among the former Hamilton Hospitality tenants of the Centennial Malt House, which was damaged by fire in Sept 2022 and sold in 2024. moulinevents.com now redirects (301) to an unrelated Turkish gambling page, so the domain is abandoned or hijacked; remove the link. The event venue now at 2017 Chouteau is Gatsby Events, (314) 948-4494, info@gatsbyeventsstl.com, per its own site. (314) 241-4949 was the old Hamilton/Malt House Cellar number and is not current for Gatsby.",
+  "_status_flag": "closed",
+  "_answers": "Replace with Gatsby Events (gatsbyeventsstl.com, 314-948-4494) if the directory wants the current venue at this address. Remove the moulinevents.com link now; it points to spam.",
+  "_url_finding": "moulinevents.com now redirects (301) to an unrelated Turkish gambling page, so the domain is abandoned or hijacked. The business closed after the Sept 2022 fire.",
+  "website": null
+ },
+ "lmk-072": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Sognare on Lafayette",
+  "_source": "https://www.sognareonlafayette.com",
+  "_confidence": "Name, address, phone, capacity and description from the venue's own site; currently operating. Note: 2714 Lafayette Ave is west of Jefferson Ave, outside Lafayette Square proper (Jefferson is the neighborhood's western edge).",
+  "phone": "(314) 886-8457",
+  "address": "2714 Lafayette Ave, St. Louis, MO 63104",
+  "website": "https://www.sognareonlafayette.com",
+  "_description_basis": "Venue website.",
+  "description": "An event venue and creative studio in the pink Dream by Design building, with room for about 150 guests at a seated dinner. It has exposed timber beams, whitewashed brick and a prep kitchen.",
+  "_category_wrong": "Category fine (events venue), but the address is outside Lafayette Square (west of Jefferson)."
+ },
+ "lmk-077": {
+  "_fetched": "2026-09-24",
+  "_match_name": "The Grand Hall on Chouteau",
+  "_source": "https://orlandosevents.com/the-grand-hall-on-chouteau/",
+  "_source_secondary": "https://sheetmetal36.org/contact/",
+  "_confidence": "Venue details from Orlando's own page. orlandogardens.com now 301-redirects to orlandosevents.com. The venue is in the Sheet Metal Workers Local 36 complex at Jefferson and Chouteau, and Local 36's address is 2319 Chouteau (per Waze/ZoomInfo search results), which matches the address on file. Phone (314) 638-6660 is Orlando's South County & catering office, the booking contact.",
+  "phone": "(314) 638-6660",
+  "address": "2319 Chouteau Ave, St. Louis, MO 63103",
+  "website": "https://orlandosevents.com/the-grand-hall-on-chouteau/",
+  "_description_basis": "Orlando's Events venue page.",
+  "description": "A large ballroom in the Sheet Metal Workers Local 36 complex at Jefferson and Chouteau, seating up to 500 with a 40-foot stage and a skylit atrium. Orlando's Catering is the exclusive caterer.",
+  "_answers": "(314) 638-6660 is current per Orlando's own page. Overture's '131463866601007' is the same number garbled with an extension (1-314-638-6660 x1007?); ignore it. Update the website to orlandosevents.com."
+ },
+ "lmk-084": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Eden Lofts",
+  "_source": "https://www.apartments.com/eden-lofts-saint-louis-mo/eq7qg2m/",
+  "_source_secondary": "https://stlouispremierlofts.com/downtown-st-louis/eden-lofts/",
+  "_confidence": "Private residential loft building at 1720 Chouteau Ave (63103), confirmed by apartments.com and condo sale listings (aggregators). Units are individually owned condos, some rented out. edenlofts.com returns an empty page. Neither phone could be confirmed from an authoritative source, so no phone added (private residential).",
+  "address": "1720 Chouteau Ave, St. Louis, MO 63103",
+  "_answers": "Private residential: no phone or website added. edenlofts.com returns HTTP 200 but an empty page; do not add it. Phone conflict unresolved and moot for a private building."
+ },
+ "lmk-100": {
+  "_fetched": "2026-09-24",
+  "_match_name": "The Georgian (Georgian Condominiums)",
+  "_source": "https://www.thegeorgian1515.com/our-building-history/",
+  "_source_secondary": "https://www.thegeorgianstl.com",
+  "_confidence": "The condominium association site confirms 1515 Lafayette Ave, built 1912 as part of St. Louis City Hospital (architect Albert Groves), closed 1985, NRHP-listed Dec 2000, now condominiums. thegeorgianstl.com is a leasing site for rental units (blocked by Cloudflare; confirmed by search index only). Overture's 1418 Carroll St address is unverified. Private residential. The building sits east of Lafayette Square proper, in the former City Hospital complex.",
+  "address": "1515 Lafayette Ave, St. Louis, MO 63104",
+  "_description_basis": "Georgian Condominiums Association building-history page.",
+  "description": "A condominium building in a 1912 Georgian Revival structure that was part of St. Louis City Hospital until 1985. It is listed on the National Register of Historic Places.",
+  "_answers": "Private residential: no phone added. Neither (314) 924-9502 nor (844) 683-0676 could be confirmed from the leasing site (blocked)."
+ },
+ "lmk-101": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Wireworks Lofts",
+  "_source": "https://www.apartments.com/wireworks-lofts-saint-louis-mo/tccps4b/",
+  "_source_secondary": "https://www.wireworksstl.com/",
+  "_confidence": "Private apartment community at 1435 S 18th St, confirmed by apartments.com and other aggregators and by the search listing for wireworksstl.com ('WireWorks Lofts'), whose page blocks automated fetch. WARNING: wireworkslofts.com (Overture's website) is now an unrelated mini-excavator spam site; do not use it.",
+  "address": "1435 S 18th St, St. Louis, MO 63104",
+  "website": "https://www.wireworksstl.com",
+  "_answers": "Private residential: no phone added. Neither phone could be confirmed (aggregator lists yet another number, 314-887-9022). Overture's website wireworkslofts.com is spam."
+ },
+ "lmk-102": {
+  "_fetched": "2026-09-24",
+  "_match_name": "The Bordeaux",
+  "_source": "https://bordeaux-stl.com",
+  "_source_secondary": "https://livinglux.co/bordeaux-property-page/",
+  "_confidence": "Own site bordeaux-stl.com confirms the name and location (Park Ave at Truman Parkway, Lafayette Square). The LuxLiving page gives 1330 Dolman St and describes a conversion of a former mop factory, opened spring 2019. Website on file (luxlivingstl.com) no longer resolves; the manager is now at livinglux.co and the property site is bordeaux-stl.com. Private residential.",
+  "address": "1330 Dolman St, St. Louis, MO 63104",
+  "website": "https://bordeaux-stl.com",
+  "_description_basis": "LuxLiving property page.",
+  "description": "An apartment building made from a former mop factory that opened in 2019. It keeps the original wooden beams and has a rooftop deck.",
+  "_answers": "Website on file (luxlivingstl.com) is dead (DNS fails); replaced with bordeaux-stl.com. Private: no phone added."
+ },
+ "lmk-103": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Rutger Lofts",
+  "_source": "https://www.rentalpal.net/rutger-lofts/",
+  "_confidence": "Manager RentalPal's own page confirms Rutger Lofts, 1917 Rutger St, loft apartments, phone (314) 707-9975. Private residential.",
+  "address": "1917 Rutger St, St. Louis, MO 63104",
+  "website": "https://www.rentalpal.net/rutger-lofts/",
+  "_answers": "Confirmed: RentalPal manages Rutger Lofts and has a page for it; use the property page rather than the RentalPal homepage. Phone omitted (private residential)."
+ },
+ "lmk-104": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Malt House Lofts",
+  "_source": "https://hoodline.com/2026/09/fire-scarred-lafayette-square-malt-house-hosts-luxury-runway-show-next-month/",
+  "_source_secondary": "https://www.stlmag.com/dining/vin-de-set-centennial-malt-house-new-ownership/",
+  "_confidence": "Malt House Lofts apartments on the upper floors of the Centennial Malt House, 2017 Chouteau Ave, per St. Louis Magazine (2024: 17 lofts planned) and Hoodline (Sept 2026: renovation completed). Private residential. Same building as lmk-025.",
+  "address": "2017 Chouteau Ave, St. Louis, MO 63103",
+  "_description_basis": "St. Louis Magazine and Hoodline.",
+  "description": "Loft apartments on the upper floors of the 1876 Centennial Malt House, renovated after a 2022 fire. The building also houses an event venue and a bar."
+ },
+ "lmk-105": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Lofts at Lafayette Square",
+  "_source": "https://www.loftsatlafayette.com/",
+  "_source_secondary": "https://www.apartments.com/lofts-at-lafayette-square-saint-louis-mo/05173n3/",
+  "_confidence": "Own site is up but blocked by Cloudflare; confirmed via search listing and apartments.com: 1119 Mississippi Ave, a loft apartment conversion of the former Star Shoe Factory. Star Shoe history comes only from aggregator listing text. Private residential.",
+  "address": "1119 Mississippi Ave, St. Louis, MO 63104",
+  "website": "https://www.loftsatlafayette.com",
+  "_description_basis": "Apartment listing text (aggregator); the shoe-factory origin is not independently verified.",
+  "description": "A loft apartment building in a converted former shoe factory on Mississippi Avenue."
+ },
+ "lmk-106": {
+  "_fetched": "2026-09-24",
+  "_match_name": "The Abbey on the Park",
+  "_source": "https://www.stlmag.com/design/property/how-a-19th-century-church-was-transformed-into-some-of-the-c/",
+  "_source_secondary": "https://www.stlouis-mo.gov/archive/neighborhood-histories-norbury-wayman/lafayette/text16.htm",
+  "_confidence": "Private condominiums at 1505 Missouri Ave in the former Lafayette Park Presbyterian Church (founded 1878, designed by John H. Maurice per the City neighborhood history). Conversion by Gilded Age Development in the 2000s per St. Louis Magazine and Yahoo/realtor listings (about 9 units).",
+  "address": "1505 Missouri Ave, St. Louis, MO 63104",
+  "_description_basis": "City of St. Louis neighborhood history and St. Louis Magazine.",
+  "description": "Condominiums inside the former Lafayette Park Presbyterian Church, a building from 1878 that was damaged in the 1896 tornado. The conversion kept the tall ceilings and original stained glass."
+ },
+ "lmk-107": {
+  "_fetched": "2026-09-24",
+  "_match_name": "M Lofts (also listed as Mississippi Lofts)",
+  "_source": "https://www.rentcafe.com/apartments/mo/st.-louis/m-lofts-apartments/default.aspx",
+  "_source_secondary": "https://www.apartments.com/mississippi-lofts-saint-louis-mo/7yllwdw/",
+  "_confidence": "Aggregators (RentCafe, Redfin, apartments.com) put M Lofts at 1107 (1105-1107) Mississippi Ave, with the Eleven Eleven Mississippi restaurant in the same building. The address on file, 1111 Mississippi, is the restaurant's number. The old site mlofts-stl.com now 301-redirects to loftsatlafayette.com, which suggests shared management with lmk-105 (not confirmed; that site blocks fetch). Private residential.",
+  "address": "1107 Mississippi Ave, St. Louis, MO 63104",
+  "_answers": "Private: no phone added. Address corrected from 1111 to 1107 Mississippi Ave. Website on file (loftsatlafayette.com) belongs to the Lofts at Lafayette Square; mlofts-stl.com redirects there, so it may be the right manager, but this is unconfirmed."
+ },
+ "lmk-121": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Lafayette Park",
+  "_source": "https://www.stlouis-mo.gov/parks/parks/browse-parks/view-park.cfm?parkID=52&parkName=Lafayette+Park",
+  "_source_secondary": "https://www.lafayettepark.org",
+  "_confidence": "City Parks page: 29.95 acres, set aside 1836, dedicated 1851, amenity list. Hours 6am-10pm daily from the Lafayette Park Conservancy site.",
+  "website": "https://www.lafayettepark.org",
+  "hours": {
+   "monday": {
+    "open": "06:00",
+    "close": "22:00"
+   },
+   "tuesday": {
+    "open": "06:00",
+    "close": "22:00"
+   },
+   "wednesday": {
+    "open": "06:00",
+    "close": "22:00"
+   },
+   "thursday": {
+    "open": "06:00",
+    "close": "22:00"
+   },
+   "friday": {
+    "open": "06:00",
+    "close": "22:00"
+   },
+   "saturday": {
+    "open": "06:00",
+    "close": "22:00"
+   },
+   "sunday": {
+    "open": "06:00",
+    "close": "22:00"
+   }
+  },
+  "_hours_source": "Park open hours, 6am-10pm, 365 days a year, per lafayettepark.org.",
+  "_description_basis": "City of St. Louis Parks page; Conservancy site.",
+  "description": "A park of almost 30 acres, set aside in 1836 and often called the oldest urban park west of the Mississippi. It has a lake, a rockery with 1860s iron bridges, statues of George Washington and Thomas Hart Benton, and Revolutionary War-era cannons.",
+  "amenities": [
+   "Lake (fishing)",
+   "Walking paths",
+   "Playground",
+   "Multi-purpose field",
+   "Rockery with iron bridges",
+   "Park House (event rental)",
+   "Kern Lakeside Pavilion",
+   "Betsy Cook Pavilion",
+   "Historic statues and cannons"
+  ],
+  "_answers": "Reject Overture's phone (314-771-9214): it belongs to Lafayette Park United Methodist Church's preschool (the Overture match is 'Lafayette Park Preschool', 2300 Lafayette), not the park."
+ },
+ "lmk-122": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Lafayette Square Community Garden",
+  "_source": "https://lafayettesquare.org/residents/community-garden/",
+  "_confidence": "From the Lafayette Square Restoration Committee's own page: two sites, the main garden at 1701-1707 Park Ave and the north garden at 1319 Dolman. Run with Gateway Greening since 2008. Contact garden@lafayettesquare.org. No hours stated. The address on file ('Dolman Street at Park Avenue') is imprecise.",
+  "address": "1701-1707 Park Ave, St. Louis, MO 63104 (north garden: 1319 Dolman St)",
+  "website": "https://lafayettesquare.org/residents/community-garden/",
+  "_description_basis": "lafayettesquare.org community garden page.",
+  "description": "A neighborhood garden with 46 raised beds across two sites, run by the Lafayette Square Restoration Committee with Gateway Greening. Beds are rented each year by LSRC members, and the main garden has a brick patio and pergola.",
+  "amenities": [
+   "Raised beds (annual fee, LSRC membership required)",
+   "Irrigation (main garden)",
+   "Brick patio and pergola"
+  ],
+  "_answers": "Reject both Overture suggestions: +1-314-502-9633 and lafayettesquareinn.com belong to the Lafayette Square Inn (1815 Lafayette Ave), a bad match. Garden contact is garden@lafayettesquare.org."
+ },
+ "lmk-123": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Lafayette Square Bath & Tennis Club",
+  "_source": "https://www.lafayettesquarebathandtennisclub.com/",
+  "_source_secondary": "https://www.lafayettesquarebathandtennisclub.com/membership",
+  "_confidence": "The club's own site: a private members-only swim club with a tennis court, founded in the 1980s. Membership has a waitlist, $2,500 initiation and $400 annual dues (2026). The site gives no street address or phone. The street number is unresolved: 2224 (file), 2214 (Overture/Waze), 2216 (search summary) and 900 Rutger (Yelp, likely wrong). Phone 314-773-9750 appears only in a search summary; not added.",
+  "name": "Lafayette Square Bath & Tennis Club",
+  "website": "https://www.lafayettesquarebathandtennisclub.com/",
+  "_category_wrong": "A private, members-only swim and tennis club, not a public park or recreation facility.",
+  "_description_basis": "Club website.",
+  "description": "A private, members-only swim club in Lafayette Square with a pool, deck and tennis court. Membership is by household through a waitlist.",
+  "_answers": "Don't add Overture's phone (+1-314-602-8373): it is unconfirmed, and the club lists none. Overture's website (lafayettesquare.org/lafayette-square-bath-and-tennis-club) returns 404; the club's own site is lafayettesquarebathandtennisclub.com. Street number unresolved (2214/2216/2224 Rutger)."
+ },
+ "lmk-124": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Kern Lakeside Pavilion (formerly the Boathouse)",
+  "_source": "https://www.stlouis-mo.gov/government/departments/parks/parks/rent-kern-lakeside-pavilion.cfm",
+  "_source_secondary": "https://www.lafayettepark.org/an-introduction-to-lafayette-park/park-house-and-pavilions/",
+  "_confidence": "City Parks rental page: built 1908 as the Boathouse, on the north side of the lake, restored as the Kern Lakeside Pavilion (2014 per search summary). Receptions only, approved caterers, 60 seated / 100 cocktail, $100/hr with 4-hour minimum. City pages disagree on the reservation phone (289-5372 on the rental page; 289-5330 on the amenity page), so none added.",
+  "name": "Kern Lakeside Pavilion",
+  "hours": {
+   "monday": {
+    "open": "08:00",
+    "close": "23:59"
+   },
+   "tuesday": {
+    "open": "08:00",
+    "close": "23:59"
+   },
+   "wednesday": {
+    "open": "08:00",
+    "close": "23:59"
+   },
+   "thursday": {
+    "open": "08:00",
+    "close": "23:59"
+   },
+   "friday": {
+    "open": "08:00",
+    "close": "23:59"
+   },
+   "saturday": {
+    "open": "08:00",
+    "close": "23:59"
+   },
+   "sunday": {
+    "open": "08:00",
+    "close": "23:59"
+   }
+  },
+  "_hours_source": "Hours when the pavilion can be rented for private receptions (8am-midnight daily) per the City rental page; it is not open to drop-in visitors.",
+  "_description_basis": "City of St. Louis Parks rental page.",
+  "description": "Lafayette Park's 1908 boathouse on the north side of the lake, restored as a rental space for receptions. It has a catering kitchen and a patio over the water, and seats about 60.",
+  "amenities": [
+   "Catering kitchen",
+   "Lakeside patio",
+   "Restrooms",
+   "Accessible",
+   "Rental by permit (receptions only)"
+  ]
+ },
+ "lmk-125": {
+  "_fetched": "2026-09-24",
+  "_match_name": "Elizabeth (Betsy) Cook Pavilion",
+  "_source": "https://www.stlouis-mo.gov/parks/parks/browse-parks/view-park.cfm?parkID=52&parkName=Lafayette+Park&amenitySubTypeID=53",
+  "_source_secondary": "https://www.lafayettepark.org/an-introduction-to-lafayette-park/park-house-and-pavilions/",
+  "_confidence": "City Parks lists it as the Elizabeth Cook Pavilion (gazebo), rentable by permit for wedding ceremonies only. The Conservancy calls it the Betsy Cook Pavilion, an open-air site overlooking the gardens that hosts the free summer concert series. No build date or namesake details found.",
+  "_description_basis": "City Parks and Conservancy pages.",
+  "description": "An open-air gazebo in Lafayette Park that overlooks the gardens. It can be reserved for wedding ceremonies and hosts the park's free summer concerts.",
+  "amenities": [
+   "Open-air gazebo",
+   "Wedding ceremonies by permit",
+   "Summer concert series"
+  ]
+ }
+}
