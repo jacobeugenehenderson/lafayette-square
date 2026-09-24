@@ -1,8 +1,8 @@
 # BRIEF — Build the highway as the positive object (H-3)
 
 <!-- BRIEF-STATE
-status: DRAFT (Grader wrote it; Boz reviews against the rulings and canon and writes the dispatch note)
-dispatched: no
+status: DISPATCHED — builder Gantry, 2026-09-23
+dispatched: yes (Gantry)
 written: 2026-09-23
 supersedes: cartograph/_archive/BRIEF-highway-positive-object-SUPERSEDED-2026-09-23.md (the design review, retired on dispatch)
 evict-when: the seven checks are green on Huron and LS, and each combed question below carries its `check`
