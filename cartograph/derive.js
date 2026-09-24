@@ -23,7 +23,7 @@ import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_MAP, wgs84ToLocal } 
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
-import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
+import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH, isHighwayClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
@@ -35,6 +35,15 @@ const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
 
 const SCALE = 100
+// The highway typical section's cited values (H-3) — read from references/, never restated — and
+// the town's state (voted from its own OSM `addr:state`), which picks the ramp manual. Built once.
+let _hwyStd = null
+function hwyStd() {
+  if (_hwyStd) return _hwyStd
+  const state = townState(JSON.parse(readFileSync(join(RAW_DIR, 'osm.json'), 'utf8')))
+  console.log(`    Highway section: town state ${state.code ?? '⛔ UNKNOWN'} (addr:state vote: ${state.vote}${state.tied ? ', TIED' : ''})`)
+  return (_hwyStd = highwayStandard(JSON.parse(readFileSync(join(CARTOGRAPH_DIR, '..', 'references', 'registry.json'), 'utf8')), state))
+}
 const ARC_TOL = 0.01 * SCALE  // 1cm — smooth arcs
 
 // [curve-primitive] The ONE place a curve becomes points (HANDOFF-curve-primitive-skeleton.md).
@@ -2299,6 +2308,11 @@ export function deriveLayers(highways) {
       const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
       // ⭐ ASPHALT EDGE — pavement + curb. ⛔ NOT `+ treelawn + sidewalk`; see the block above.
       rowHW = Math.max(L.pavementHW + lCurb, R.pavementHW + rCurb)
+    } else if (isHighwayClass(f.tags?.highway)) {
+      // A highway way's reach is its typical section (H-3), from the way's own tags.
+      const n = parseInt(f.tags?.lanes, 10)
+      const hs = highwaySection({ highway: f.tags.highway, oneway: f.tags?.oneway === 'yes', lanes: Number.isFinite(n) ? n : null, ref: f.tags?.ref ?? null }, hwyStd())
+      rowHW = Math.max(hs.left.pavementHW, hs.right.pavementHW)
     } else {
       const hw = f.tags?.highway
       const type = hw === 'motorway' ? 'motorway'
@@ -2566,8 +2580,15 @@ export function deriveLayers(highways) {
    * broadcast them), so the tier could only re-shadow the seed base with
    * stale machine values — South 18th's pavementHW=2 lived there.
    */
-  function computeStreetMeasure(name, tags, seed) {
+  function computeStreetMeasure(name, tags, seed, chain = null) {
     const type = mapHighwayToStreetType(tags?.highway)
+    if (isHighwayClass(tags?.highway)) {
+      if (!chain) throw new Error(`⛔ computeStreetMeasure: highway "${name}" reached without its chain — the section needs lanes/ref/oneway`)
+      const hs = highwaySection(chain, hwyStd())
+      hwyReport.push({ id: chain.id, ...hs.report, sources: hs.right.section.sources })
+      const m = measureFromSeed(seed, type, hs)
+      return { left: m.left, right: m.right, symmetric: m.symmetric, source: 'highway-section' }
+    }
 
     if (seed) {
       const m = measureFromSeed(seed, type)
@@ -2595,6 +2616,7 @@ export function deriveLayers(highways) {
   // no substantive-ratio heuristics. If Park Ave still splits into three
   // chains, that's because it isn't in DIVIDED_PAIRS yet; the signal is
   // visible and correct.
+  const hwyReport = [], hwyRefused = []
   const skelPath = join(CLEAN_DIR, 'skeleton.json')
   if (!existsSync(skelPath)) {
     throw new Error(`skeleton.json not found at ${skelPath}. Run \`node skeleton.js\` first.`)
@@ -2697,10 +2719,14 @@ export function deriveLayers(highways) {
     // facts must not land verbatim on a carriageway's sides — that is the
     // broadcast smear that flooded every LS median, D1). Underscore-prefixed,
     // so the serializer whitelist drops it from the artifact.
-    const ovAuthored = !!(ov?.measure?.left && ov?.measure?.right)
+    // ⛔ A highway takes no authoring (`r-highway-no-authoring`): an overlay measure on one is
+    // REFUSED, kept in the file, and printed by name with its source — never applied, never dropped.
+    const ovOnHighway = isHighwayClass(s.highway) && !!(ov?.measure?.left && ov?.measure?.right)
+    if (ovOnHighway) hwyRefused.push(`${s.id}(source:${ov.measure.source ?? 'none'})`)
+    const ovAuthored = !ovOnHighway && !!(ov?.measure?.left && ov?.measure?.right)
     const measure = ovAuthored
       ? ov.measure
-      : computeStreetMeasure(s.name, { highway: s.highway }, s.seed)
+      : computeStreetMeasure(s.name, { highway: s.highway }, s.seed, s)
     // [curve-primitive] Convert the skeleton's index-referenced curve segments
     // (HANDOFF-curve-primitive-skeleton.md) to SELF-CONTAINED ribbon segments —
     // each carries its own endpoints + handles ([x,z]) so it survives the points
@@ -4177,6 +4203,23 @@ export function deriveLayers(highways) {
   }
   const innerEdgeCount = ribbonStreets.filter(s => s.anchor === 'inner-edge').length
   if (innerEdgeCount) console.log(`    ${innerEdgeCount} chains marked anchor=inner-edge (divided carriageways)`)
+
+  // ⭐ H-3 step 1 disclosure, every pour — the highway section and where each value came from.
+  {
+    const ids = (f) => hwyReport.filter(f).map(r => r.id)
+    const main = hwyReport.filter(r => !r.ramp)
+    console.log(`\n    Highway section (H-3): ${main.length} carriageway(s) + ${hwyReport.length - main.length} ramp(s), composed from lanes + references/registry.json`)
+    const bySrc = new Map(); for (const r of hwyReport) { const k = `${r.ramp ? 'ramp' : 'mainline'}: ${r.sources.join(' + ')}`; bySrc.set(k, (bySrc.get(k) || 0) + 1) }
+    for (const [k, n] of bySrc) console.log(`      ${n} × ${k}`)
+    const a = ids(r => r.assumed && !r.ramp); if (a.length) console.log(`      ⚠️ ASSUMED lanes (untagged → the Interstate minimum per direction) on ${a.length}: ${a.join(', ')}`)
+    const ni = ids(r => !r.ramp && r.interstate === false); if (ni.length) console.log(`      ⚠️ Interstate standard applied to non-Interstate on ${ni.length}: ${ni.join(', ')}`)
+    const un = ids(r => !r.ramp && r.interstate == null); if (un.length) console.log(`      ⚠️ Interstate status unknown (no ref) on ${un.length}: ${un.join(', ')}`)
+    const uv = new Map(); for (const r of hwyReport) for (const u of r.unknowns) { if (!uv.has(u)) uv.set(u, []); uv.get(u).push(r.id) }
+    for (const [u, xs] of uv) console.log(`      ⚠️ ${u} on ${xs.length}: ${xs.join(', ')}`)
+    if (hwyRefused.length) console.log(`      ⚠️ ${hwyRefused.length} overlay measure(s) on a highway REFUSED (r-highway-no-authoring), kept in the file: ${hwyRefused.join(', ')}`)
+    const flat = ribbonStreets.filter(s => s.anchor === 'inner-edge' && isHighwayClass(s.highway)).map(s => s.skelId)
+    if (flat.length) console.log(`      ⚠️ ${flat.length} divided highway carriageway(s): section flattened + anchored inner-edge by the divided pass — Jacob: B now, (A) the highway guard lands WITH the LS pour: ${flat.join(', ')}`)
+  }
 
   // [Brief C — divided "d" curb] OUTER-curb continuity at the divided→undivided
   // transition. The undivided spine is WIDE (asymmetric L/R pavementHW — Lafayette

@@ -37,14 +37,127 @@ const TYPE_PAVEMENT_HW = {
   cycleway:    5 * FT,
   pedestrian:  5 * FT,
   steps:       4 * FT,
-  // Highway / motorway pavement profiles. Wider lanes, no curb-side
-  // pedestrian zone (highways have shoulders + barriers, not sidewalks).
-  // motorway = full freeway carriageway (~12ft × 3 lanes + shoulders).
-  // motorway_link = ramp (~16ft total). trunk ≈ primary.
-  motorway:      3 * 12 * FT / 2 + 10 * FT,
-  motorway_link: 16 * FT / 2,
-  trunk:         4 * 11 * FT / 2 + 8 * FT,
-  trunk_link:    16 * FT / 2,
+}
+
+// ── THE HIGHWAY TYPICAL SECTION (H-3 step 1, `r-highway-positive-object`) ──────────
+// A motorway/trunk carriageway or a ramp is an alignment swept by a typical section, composed
+// from its lanes and the values in `references/registry.json` — READ from the registry at pour
+// time (`highwayStandard`), never restated here. ⛔ No class constant: a highway type that
+// reaches `defaultSideMeasure` throws. Every side carries `section.sources` (registry ids, or a
+// `[U] …` string naming the open question) — "build highways according to code" (Jacob).
+// Composition, anchored by `m-osm-line-lane-centre` (the OSM line is the centre of the travel
+// lanes; a ramp's line is the ramp centre). Point order is the direction of travel, so `right`
+// is the driver's right:
+//   one-way   left = travel/2 + leftShoulder     right = travel/2 + rightShoulder
+//   two-way   both = travel/2 + rightShoulder
+// MAINLINE: travel = n × the Interstate lane; untagged → the Interstate minimum per direction,
+//   ASSUMED; no Interstate `ref` → also cites `d-interstate-std-on-non-interstate`.
+// RAMPS go by the TOWN'S STATE (`townState`, voted from the town's own OSM `addr:state`): CA →
+//   Caltrans · MA → MassDOT · any other or unknown → the smaller of the two
+//   (`r-manuals-disagree-take-smaller`, PER COMPONENT, never a total: 1 lane
+//   `d-ramp-section-no-state-manual`, 2+ lanes `d-ramp-two-lane-no-state-manual`). A case a
+//   manual is silent on (MassDOT ≥ 3 lanes) and an untagged ramp are [U]: drawn, printed by id.
+const HIGHWAY_MAINLINE = new Set(['motorway', 'trunk'])
+const HIGHWAY_RAMP = new Set(['motorway_link', 'trunk_link'])
+export const isHighwayClass = (t) => HIGHWAY_MAINLINE.has(t) || HIGHWAY_RAMP.has(t)
+export const isInterstateRef = (ref) => typeof ref === 'string' && /(^|;)\s*I[\s-]?\d/.test(ref)
+
+// The town's state, voted over the `addr:state` tags in its own OSM (any tag bag in `osm`).
+// Only "is it CA / MA" changes a value, so no table of states is needed.
+export function townState(osm) {
+  const votes = new Map()
+  const walk = (o) => {
+    if (Array.isArray(o)) { o.forEach(walk); return }
+    if (!o || typeof o !== 'object') return
+    const t = o.tags || o.properties
+    const v = t && typeof t === 'object' ? t['addr:state'] : null
+    if (typeof v === 'string' && v.trim()) votes.set(v.trim(), (votes.get(v.trim()) || 0) + 1)
+    for (const x of Object.values(o)) if (x && typeof x === 'object' && x !== t) walk(x)
+  }
+  walk(osm)
+  const ranked = [...votes].sort((a, b) => b[1] - a[1])
+  const raw = ranked[0]?.[0] ?? null
+  const tied = ranked.length > 1 && ranked[0][1] === ranked[1][1]
+  const code = raw == null || tied ? null : /^(CA|california)$/i.test(raw) ? 'CA' : /^(MA|massachusetts)$/i.test(raw) ? 'MA' : raw
+  return { code, vote: ranked.slice(0, 3).map(([k, n]) => `${k}×${n}`).join(' ') || 'none', tied }
+}
+
+export function highwayStandard(registry, state = { code: null }) {
+  const byId = new Map()
+  const walk = (o) => { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') { if (typeof o.id === 'string') byId.set(o.id, o); for (const v of Object.values(o)) if (v && typeof v === 'object') walk(v) } }
+  walk(registry)
+  const val = (id, ...path) => {
+    let v = byId.get(id)?.value
+    for (const k of path) v = v?.[k]
+    if (!Number.isFinite(v)) throw new Error(`⛔ references/registry.json: ${id}.value.${path.join('.')} is missing — the highway section is drawn only from cited values`)
+    return v
+  }
+  for (const id of ['d-left-shoulder-any-lane-count', 'd-interstate-std-on-non-interstate', 'd-motorway-untagged-two-lanes', 'm-osm-line-lane-centre', 'q-ramp-section', 'r-manuals-disagree-take-smaller']) {
+    if (!byId.has(id)) throw new Error(`⛔ references/registry.json: ${id} is missing — the highway section cites it`)
+  }
+  const caLane = val('f-caltrans-ramp-lane-width', 'minRampLane_ft') * FT
+  const U = (why) => `[U] q-ramp-section (${why})`
+  let ramp
+  if (state.code === 'CA') {
+    const one = { l: val('f-caltrans-ramp-shoulders', 'singleLaneRamp', 'left_ft') * FT, r: val('f-caltrans-ramp-shoulders', 'singleLaneRamp', 'right_ft') * FT }
+    const multi = { l: val('f-caltrans-ramp-shoulders', 'multilaneRamp', 'left_ft') * FT, r: val('f-caltrans-ramp-shoulders', 'multilaneRamp', 'right_ft') * FT }
+    ramp = (n) => ({ travel: n * caLane, ...(n === 1 ? one : multi), sources: ['f-caltrans-ramp-lane-width', 'f-caltrans-ramp-shoulders', U('radius widening, Table 504.3, not applied')] })
+  } else if (state.code === 'MA') {
+    const l = val('f-massdot-ramp-width', 'leftLateralClearance_ft') * FT, r = val('f-massdot-ramp-width', 'rightLateralClearance_ft', 'min') * FT
+    const total = { 1: val('f-massdot-ramp-width', 'oneLaneRampWidth_ft') * FT, 2: val('f-massdot-ramp-width', 'twoLaneRampWidth_ft') * FT }
+    ramp = (n) => total[n] ? { travel: total[n] - l - r, l, r, sources: ['f-massdot-ramp-width', U('MassDOT lane/shoulder split is image-only; travel = total − clearances')] }
+      : { travel: n * caLane, l, r, sources: ['f-massdot-ramp-width', 'f-caltrans-ramp-lane-width', U('MassDOT silent on ≥3 lanes; lanes at Caltrans width')] }
+  } else {
+    const d1 = 'd-ramp-section-no-state-manual', d2 = 'd-ramp-two-lane-no-state-manual'
+    const one = { travel: val(d1, 'oneLaneRamp', 'lane_ft') * FT, l: val(d1, 'oneLaneRamp', 'leftShoulder_ft') * FT, r: val(d1, 'oneLaneRamp', 'rightShoulder_ft') * FT }
+    const multi = { lane: val(d2, 'multiLaneRamp', 'lane_ft') * FT, l: val(d2, 'multiLaneRamp', 'leftShoulder_ft') * FT, r: val(d2, 'multiLaneRamp', 'rightShoulder_ft') * FT }
+    const tag = state.code == null ? [U('town state unknown — no-state-manual values')] : []
+    ramp = (n) => n === 1 ? { ...one, sources: [d1, 'r-manuals-disagree-take-smaller', ...tag] }
+      : { travel: n * multi.lane, l: multi.l, r: multi.r, sources: [d2, 'r-manuals-disagree-take-smaller', ...(n >= 3 ? [U('MassDOT silent on ≥3 lanes — cross-check only')] : []), ...tag] }
+  }
+  return {
+    laneW: val('f-interstate-lane-width', 'laneWidth_ft') * FT,
+    rightSh: val('f-interstate-right-shoulder', 'rightPavedShoulder_ft') * FT,
+    leftSh: val('f-interstate-left-shoulder', 'leftPavedShoulder_ft') * FT,
+    minLanes: val('f-interstate-min-lanes', 'minLanesEachDirection'),
+    ramp, state,
+  }
+}
+
+// chain: { highway, oneway, lanes?, laneProfile?, length?, ref? } → { left, right, report }
+export function highwaySection(chain, std) {
+  const isRamp = HIGHWAY_RAMP.has(chain.highway)
+  if (!isRamp && !HIGHWAY_MAINLINE.has(chain.highway)) throw new Error(`⛔ highwaySection: ${chain.highway} is not a highway class`)
+  const oneway = !!chain.oneway
+  const interstate = chain.ref == null ? null : isInterstateRef(chain.ref)
+  // One span's section: { lanes, lanesSource, left, right, sources }.
+  const at = (n) => {
+    const lanes = Number.isFinite(n) && n > 0 ? n : null
+    if (isRamp) {
+      const r = std.ramp(lanes ?? 1)
+      return { lanes, lanesSource: lanes == null ? 'ASSUMED' : 'osm', left: r.travel / 2 + (oneway ? r.l : r.r), right: r.travel / 2 + r.r,
+               sources: ['m-osm-line-lane-centre', ...r.sources, ...(lanes == null ? ['[U] q-ramp-section (untagged ramp lanes → 1)'] : [])] }
+    }
+    const travel = (lanes ?? (oneway ? std.minLanes : 2 * std.minLanes)) * std.laneW
+    return { lanes, lanesSource: lanes == null ? 'ASSUMED' : 'osm', left: travel / 2 + (oneway ? std.leftSh : std.rightSh), right: travel / 2 + std.rightSh,
+             sources: ['m-osm-line-lane-centre', 'f-interstate-lane-width', ...(interstate ? [] : ['d-interstate-std-on-non-interstate']),
+                       ...(lanes == null ? ['d-motorway-untagged-two-lanes'] : [])] }
+  }
+  const spans = (chain.laneProfile?.length ? chain.laneProfile : [{ s0: 0, s1: chain.length ?? null, lanes: chain.lanes, from: null }])
+    .map(sp => ({ sp, v: at(sp.lanes) }))
+  const whole = at(chain.lanes)
+  const srcs = new Set(spans.map(x => x.v.lanesSource))
+  const lanesSource = srcs.size > 1 ? 'mixed' : [...srcs][0]
+  const sideIds = (side) => isRamp ? [] : [side === 'left' && oneway ? 'd-left-shoulder-any-lane-count' : 'f-interstate-right-shoulder']
+  const sources = (side) => [...new Set([...spans.flatMap(x => x.v.sources), ...whole.sources, ...sideIds(side)])]
+  const sectionOf = (side) => ({
+    sources: sources(side), lanesSource, ...(isRamp ? { ramp: true, state: std.state?.code ?? null } : { interstate }),
+    spans: spans.map(({ sp, v }) => ({ s0: sp.s0, s1: sp.s1, lanes: v.lanes, lanesSource: v.lanesSource, hw: +v[side].toFixed(3) })),
+    ...(chain.length != null ? { length: chain.length } : {}),
+  })
+  const hwSide = (side) => ({ pavementHW: +whole[side].toFixed(3), treelawn: 0, sidewalk: 0, terminal: 'none', pedRealm: false, material: 'highway', section: sectionOf(side) })
+  const left = hwSide('left'), right = hwSide('right')
+  return { left, right, report: { ramp: isRamp, lanesSource, interstate, assumed: lanesSource !== 'osm', unknowns: right.section.sources.filter(x => x.startsWith('[U]')) } }
 }
 
 // Types that get a default sidewalk-zone (treelawn + sidewalk, terminal='sidewalk').
@@ -121,14 +234,10 @@ export const SNAP_RADIUS = 0.25
 //     - If neither side has sidewalk data → terminal='sidewalk' with a sane
 //       default so the default rendering still reads as a residential block.
 export function defaultSideMeasure(type, survey, sideKey = 'left') {
+  if (isHighwayClass(type)) throw new Error(`⛔ defaultSideMeasure: a ${type} has no class-constant width — its section is \`highwaySection\` (H-3)`)
   const hw = survey?.pavementHalfWidth || TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential
-  // Highway types carry their own asphalt material so the Designer panel
-  // can recolor them independently of residential streets. The pipeline
-  // (sideToStripes) reads `side.material` and falls back to 'asphalt'.
-  const isHighway = type === 'motorway' || type === 'motorway_link' || type === 'trunk' || type === 'trunk_link'
-  const material = isHighway ? 'highway' : undefined
   if (!SIDEWALK_ELIGIBLE.has(type)) {
-    return { pavementHW: hw, treelawn: 0, sidewalk: 0, terminal: 'none', ...(material ? { material } : {}) }
+    return { pavementHW: hw, treelawn: 0, sidewalk: 0, terminal: 'none' }
   }
   const swDist = sideKey === 'right'
     ? survey?.sidewalkRight
@@ -180,18 +289,18 @@ export function defaultMeasure(type, survey) {
 // This builder turns the seed into the render measure shape. The operator's
 // overlay still wins upstream (overlay = tweaks only); this is what a chain
 // renders when untouched.
-export function measureFromSeed(seed, type) {
-  const isHighway = type === 'motorway' || type === 'motorway_link' || type === 'trunk' || type === 'trunk_link'
-  const material = isHighway ? 'highway' : undefined
+export function measureFromSeed(seed, type, highway = null) {
+  // A highway is its typical section (`highwaySection`), never the seed: seedSection has no
+  // motorway/trunk rows and would read residential lane+parking widths. ⛔ No section → throw.
+  if (isHighwayClass(type)) {
+    if (!highway?.left || !highway?.right) throw new Error(`⛔ measureFromSeed: a ${type} needs its highwaySection (H-3) — there is no class constant to fall back to`)
+    return { left: highway.left, right: highway.right, symmetric: Math.abs(highway.left.pavementHW - highway.right.pavementHW) < 0.01 }
+  }
   const buildSide = (sd, other) => {
-    // Highway classes keep their established profiles: seedSection has no
-    // motorway/trunk/link rows and falls back to residential LANE+PARKING
-    // widths — parking on a ramp inflates a 2.4 m link to 8.5 m.
-    const pavementHW = isHighway ? (TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential)
-      : Number.isFinite(sd?.pavementHW) ? sd.pavementHW
+    const pavementHW = Number.isFinite(sd?.pavementHW) ? sd.pavementHW
       : (Number.isFinite(seed.pavementHW) ? seed.pavementHW : TYPE_PAVEMENT_HW[type] || TYPE_PAVEMENT_HW.residential)
     if (!SIDEWALK_ELIGIBLE.has(type)) {
-      return { pavementHW, treelawn: 0, sidewalk: 0, terminal: 'none', ...(material ? { material } : {}) }
+      return { pavementHW, treelawn: 0, sidewalk: 0, terminal: 'none' }
     }
     // An expressway carries no pedestrian realm (skeleton.js `isExpressway`). The
     // flag travels on the side so `resolvePedDepths` — what the map paints — reads it.

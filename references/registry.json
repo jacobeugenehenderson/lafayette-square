@@ -499,7 +499,8 @@
         "f-caltrans-connector-shoulders",
         "f-massdot-ramp-width",
         "r-manuals-disagree-take-smaller",
-        "d-ramp-section-no-state-manual"
+        "d-ramp-section-no-state-manual",
+        "d-ramp-two-lane-no-state-manual"
       ],
       "notes": "ANSWERED FOR CA ONLY (Caltrans, Quire 2026-09-23): 12 ft lane (widened by radius, Table 504.3), shoulders 4 ft left / 8 ft right, connectors 5/10. Left open: the other states are not answered, and a CA value can only reach them as a derived value. ⸻ MassDOT (MA only): total ramp width 22 ft one-lane / 30 ft two-lane; lateral clearance ≥ 6 ft right (8–10 preferred), ≥ 4 ft left. The lane/shoulder split is in image-only figures."
     },
@@ -2979,6 +2980,28 @@
       "quote": "-",
       "foundOn": "2026-09-24",
       "foundBy": "Boz, per Jacob's ruling"
+    },
+    {
+      "id": "d-ramp-two-lane-no-state-manual",
+      "question": "q-ramp-section",
+      "kind": "derived",
+      "from": [
+        "f-caltrans-ramp-lane-width",
+        "f-caltrans-ramp-shoulders",
+        "f-massdot-ramp-width"
+      ],
+      "value": {
+        "multiLaneRamp": {
+          "lane_ft": 12,
+          "leftShoulder_ft": 4,
+          "rightShoulder_ft": 6,
+          "twoLaneTotal_ft": 34
+        }
+      },
+      "derivation": "for OH/MO (no permitted state manual), a ramp of two or more lanes, per component the smaller of CA/MA (r-manuals-disagree-take-smaller applies to each component, never to a total): lane 12 ft (Caltrans minimum; MassDOT states no lane width, only totals), left 4 ft (both), right 6 ft (MassDOT's minimum, the smaller of CA 8 / MA 6). Two lanes = 2 × 12 + 4 + 6 = 34 ft. ⛔ Taking the smaller TOTAL (MassDOT's 30 ft) would imply 10 ft lanes, below the cited 12 ft minimum, and no source states 10. MassDOT is silent on three or more lanes, so that cross-check is [U], printed per pour.",
+      "quote": "-",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry, per Jacob's ruling (relayed by Boz); per-component correction by Boz"
     }
   ]
 }
