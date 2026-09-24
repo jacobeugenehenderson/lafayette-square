@@ -1,0 +1,31 @@
+{
+ "meta": {
+  "prefix": "alta",
+  "highWater": 23
+ },
+ "ids": {
+  "osm-1064601503": "alta-lst-0001",
+  "osm-1409937851": "alta-lst-0002",
+  "osm-164279953": "alta-lst-0003",
+  "osm-172351677": "alta-lst-0004",
+  "osm-272241914": "alta-lst-0005",
+  "osm-272241915": "alta-lst-0006",
+  "osm-272241916": "alta-lst-0007",
+  "osm-272241917": "alta-lst-0008",
+  "osm-272242287": "alta-lst-0009",
+  "osm-272243318": "alta-lst-0010",
+  "osm-272245253": "alta-lst-0011",
+  "osm-272252214": "alta-lst-0012",
+  "osm-377543474": "alta-lst-0013",
+  "osm-377543475": "alta-lst-0014",
+  "osm-471771830": "alta-lst-0015",
+  "osm-471780839": "alta-lst-0016",
+  "osm-471781336": "alta-lst-0017",
+  "osm-689906201": "alta-lst-0018",
+  "osm-70993504": "alta-lst-0019",
+  "osm-71070198": "alta-lst-0020",
+  "osm-71354221": "alta-lst-0021",
+  "osm-852572684": "alta-lst-0022",
+  "osm-893584890": "alta-lst-0023"
+ }
+}

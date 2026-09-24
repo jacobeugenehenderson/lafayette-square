@@ -42,6 +42,7 @@
    "overture_category": "kitchen_remodeling",
    "overture_confidence": 0.9017539471387863,
    "enriched": true,
+   "source_key": "ovt-3ce3a6f5-8175-44bb-85a5-46564c445456",
    "prominence_rank": 1868
   },
   {
@@ -97,6 +98,7 @@
    "overture_category": "auto_detailing",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-e60239d0-d429-4a1a-9f68-da080d0096e8",
    "prominence_rank": 537
   },
   {
@@ -153,6 +155,7 @@
    "overture_category": "car_wash",
    "overture_confidence": 0.65,
    "enriched": true,
+   "source_key": "ovt-5c85752e-e963-4d46-b862-3cd77cc0a143",
    "prominence_rank": 537
   },
   {
@@ -208,6 +211,7 @@
    "overture_category": "hunting_and_fishing_supplies",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-5df21790-b367-41f8-875b-a0787303e678",
    "prominence_rank": 590
   },
   {
@@ -239,6 +243,7 @@
    "overture_category": "animal_hospital",
    "overture_confidence": 0.9885,
    "enriched": true,
+   "source_key": "ovt-e6a6d930-24ae-4318-ac23-9657ff1c0c8d",
    "prominence_rank": 1670
   },
   {
@@ -265,6 +270,7 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.85,
+   "source_key": "ovt-5e6b5dc8-a92f-49d3-8dda-752ed0d69820",
    "prominence_rank": 1812
   },
   {
@@ -296,6 +302,7 @@
    "overture_category": "fishing_charter",
    "overture_confidence": 0.3068450391292572,
    "enriched": true,
+   "source_key": "ovt-97789695-0854-4500-aa6c-ad6e37ab819e",
    "prominence_rank": 2471
   },
   {
@@ -364,6 +371,7 @@
    "overture_category": "marina",
    "overture_confidence": 0.9722161889076233,
    "enriched": true,
+   "source_key": "ovt-6c36398c-f642-4e35-adb8-c71b5ba8a557",
    "prominence_rank": 3672
   },
   {
@@ -415,6 +423,7 @@
    "overture_category": "restaurant",
    "overture_confidence": 0.5860055088996887,
    "enriched": true,
+   "source_key": "ovt-f475281d-5750-4cfb-8121-37a61584866c",
    "prominence_rank": 239
   },
   {
@@ -441,6 +450,7 @@
    "osm_type": null,
    "overture_category": "boat_service_and_repair",
    "overture_confidence": 0.6581670045852661,
+   "source_key": "ovt-55ca6d9f-d6f5-4e26-96e7-a4fd21f441e2",
    "prominence_rank": 239
   },
   {
@@ -475,6 +485,7 @@
    "overture_category": "caterer",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-adb13f3a-46f2-4dd7-8ba2-7b6441437f55",
    "prominence_rank": 274
   },
   {
@@ -543,6 +554,7 @@
    "overture_category": "marina",
    "overture_confidence": 0.9591095447540283,
    "enriched": true,
+   "source_key": "ovt-626f8f69-34cb-42c2-925c-4c61778541f8",
    "prominence_rank": 1750
   },
   {
@@ -569,6 +581,7 @@
    "osm_type": null,
    "overture_category": "amusement_park",
    "overture_confidence": 0.921627140045166,
+   "source_key": "ovt-8b3c1db8-cbcc-4081-90ea-62179c7b9930",
    "prominence_rank": 902
   },
   {
@@ -595,6 +608,7 @@
    "osm_type": null,
    "overture_category": "boat_rental_and_training",
    "overture_confidence": 0.65,
+   "source_key": "ovt-e4759e09-ee50-4c1f-903a-c84e316910b2",
    "prominence_rank": 902
   },
   {
@@ -672,6 +686,7 @@
    "overture_category": "marina",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-6a43fa32-ceab-4b57-9293-95da77be007e",
    "prominence_rank": 902
   },
   {
@@ -699,6 +714,7 @@
    "overture_category": "industrial_equipment",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-9e8b7aa5-1263-497f-8fa9-8c3d0d0ef698",
    "prominence_rank": 318
   },
   {
@@ -725,6 +741,7 @@
    "osm_type": null,
    "overture_category": "river",
    "overture_confidence": 0.8123106956481934,
+   "source_key": "ovt-d22f1305-ffaf-46ec-87f7-9e2d9ca8138d",
    "prominence_rank": 531
   },
   {
@@ -759,6 +776,7 @@
    "overture_category": "fishing_charter",
    "overture_confidence": 0.85,
    "enriched": true,
+   "source_key": "ovt-4a1485e2-b14f-4d8d-83bd-31c950258ea3",
    "prominence_rank": 1162
   },
   {
@@ -819,6 +837,7 @@
    "overture_category": "contractor",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-e72f0cf9-9259-4ad5-ae42-c28da58c2c46",
    "prominence_rank": 2525
   },
   {
@@ -846,6 +865,7 @@
    "overture_category": "contractor",
    "overture_confidence": 0.1008288711309433,
    "enriched": true,
+   "source_key": "ovt-43bf079b-6f27-4359-b04a-d90d3cec2f78",
    "prominence_rank": 1384
   },
   {
@@ -872,6 +892,7 @@
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-c49a080c-f419-4d1a-9a6a-463161957a3c",
    "prominence_rank": 193
   },
   {
@@ -926,6 +947,7 @@
    "overture_category": "furniture_repair",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-4aac9947-5fa2-4e6f-b879-e14987a41dc4",
    "prominence_rank": 497
   },
   {
@@ -952,6 +974,7 @@
    "osm_type": null,
    "overture_category": "holiday_rental_home",
    "overture_confidence": 0.6761288642883301,
+   "source_key": "ovt-cc70c91d-6280-43ad-8dc3-e03562707a18",
    "prominence_rank": 1410
   },
   {
@@ -978,6 +1001,7 @@
    "osm_type": null,
    "overture_category": "beach",
    "overture_confidence": 0.9384403824806213,
+   "source_key": "ovt-a0548b81-4c41-4c28-a149-2fec3bcf673b",
    "prominence_rank": 704
   },
   {
@@ -1005,6 +1029,7 @@
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-7613ce95-3431-4b48-a8fd-a7ef8334904a",
    "prominence_rank": 38
   },
   {
@@ -1045,6 +1070,7 @@
    "overture_category": "charity_organization",
    "overture_confidence": 0.6219924092292786,
    "enriched": true,
+   "source_key": "ovt-42abdbea-4710-4444-8647-3f0e328f6ab0",
    "prominence_rank": 38
   },
   {
@@ -1093,6 +1119,7 @@
    "overture_category": "elementary_school",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-1961226d-15f9-4845-a4c5-618997855901",
    "prominence_rank": 34
   },
   {
@@ -1119,6 +1146,7 @@
    "osm_type": null,
    "overture_category": "elementary_school",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-7dac6e71-435c-432d-9d45-09fe3a64243d",
    "prominence_rank": 34
   },
   {
@@ -1185,6 +1213,7 @@
    "overture_category": "hardware_store",
    "overture_confidence": 0.9982236878573895,
    "enriched": true,
+   "source_key": "ovt-e47456df-fa8b-4759-9e29-a77149f3cacb",
    "prominence_rank": 236
   },
   {
@@ -1246,6 +1275,7 @@
    "overture_category": "pharmacy",
    "overture_confidence": 0.9902192950248718,
    "enriched": true,
+   "source_key": "ovt-a59a0fcf-4025-45ad-8cb9-119934db3bb3",
    "prominence_rank": 23
   },
   {
@@ -1272,6 +1302,7 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-7823bea4-2b06-46b4-942d-004ef6aff54c",
    "prominence_rank": 23
   },
   {
@@ -1328,6 +1359,7 @@
    "overture_category": "hair_salon",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-d1184b54-a756-4b97-b985-f9f83dc9d1f5",
    "prominence_rank": 23
   },
   {
@@ -1390,6 +1422,7 @@
    "overture_category": "nail_salon",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-f2e8a32d-d995-4f13-943a-fa27a4fcedd8",
    "prominence_rank": 23
   },
   {
@@ -1417,6 +1450,7 @@
    "overture_category": "trusts",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-ece646b2-d5fc-42f5-a1a0-1321094130e8",
    "prominence_rank": 23
   },
   {
@@ -1444,6 +1478,7 @@
    "overture_category": "grocery_store",
    "overture_confidence": 0.908726572394371,
    "enriched": true,
+   "source_key": "ovt-24198e90-69c6-4c68-bfe3-ba5ef90ee68e",
    "prominence_rank": 23
   },
   {
@@ -1470,6 +1505,7 @@
    "osm_type": null,
    "overture_category": "pizza_restaurant",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-f5d8b444-325f-4472-89bc-9b2219d13264",
    "prominence_rank": 23
   },
   {
@@ -1496,6 +1532,7 @@
    "osm_type": null,
    "overture_category": "pizza_restaurant",
    "overture_confidence": 0.77,
+   "source_key": "ovt-cd57c9e8-df51-4dd1-b132-fc5ad8cac1f4",
    "prominence_rank": 23
   },
   {
@@ -1557,6 +1594,7 @@
    "overture_category": "grocery_store",
    "overture_confidence": 0.9583381414413452,
    "enriched": true,
+   "source_key": "ovt-3bfd3b76-275e-409c-931e-729f9ae188cb",
    "prominence_rank": 23
   },
   {
@@ -1583,6 +1621,7 @@
    "osm_type": null,
    "overture_category": "bike_rentals",
    "overture_confidence": 0.2447020411491394,
+   "source_key": "ovt-73f83c4d-735e-4306-a495-22558a5853b8",
    "prominence_rank": 267
   },
   {
@@ -1609,6 +1648,7 @@
    "osm_type": null,
    "overture_category": "ice_cream_shop",
    "overture_confidence": 0.9931,
+   "source_key": "ovt-86020100-6824-4aea-b30a-fdfce0f3db53",
    "prominence_rank": 12
   },
   {
@@ -1635,6 +1675,7 @@
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
    "overture_confidence": 0.9604352116584778,
+   "source_key": "ovt-32ca3887-62cc-4c00-90f5-45b989828617",
    "prominence_rank": 12
   },
   {
@@ -1662,6 +1703,7 @@
    "overture_category": null,
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-12c801f0-a875-4936-b93e-fe77cd53e27f",
    "prominence_rank": 98
   },
   {
@@ -1720,6 +1762,7 @@
    "overture_category": "gas_station",
    "overture_confidence": 0.8,
    "enriched": true,
+   "source_key": "ovt-ed8d97c8-6800-4a61-9406-1320c25663d2",
    "prominence_rank": 98
   },
   {
@@ -1747,6 +1790,7 @@
    "overture_category": "propane_supplier",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-048d4b4b-5cf8-4cfb-8b32-af134cb1af9a",
    "prominence_rank": 98
   },
   {
@@ -1808,6 +1852,7 @@
    "overture_category": "gas_station",
    "overture_confidence": 0.984475,
    "enriched": true,
+   "source_key": "ovt-73bc1e88-3dd3-400a-b600-572cdc44b218",
    "prominence_rank": 98
   },
   {
@@ -1862,6 +1907,7 @@
    "overture_category": "banks",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-91e2b7ed-66d3-4b39-85e0-a3f787abb9db",
    "prominence_rank": 52
   },
   {
@@ -1888,6 +1934,7 @@
    "osm_type": null,
    "overture_category": "gym",
    "overture_confidence": 0.6613802313804626,
+   "source_key": "ovt-393daf96-de44-43a5-a5df-f360b8289817",
    "prominence_rank": 52
   },
   {
@@ -2635,6 +2682,7 @@
     }
    ],
    "enriched": true,
+   "source_key": "ovt-ec05a600-8bb3-4039-bc37-0720d83a3f59",
    "prominence_rank": 43
   },
   {
@@ -2735,6 +2783,7 @@
     ]
    },
    "enriched": true,
+   "source_key": "ovt-ddd944bf-b685-43b8-9548-15ba0a46c2a6",
    "prominence_rank": 41
   },
   {
@@ -2788,6 +2837,7 @@
    "overture_category": null,
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-5e657673-68f6-48d7-a7f2-541f4511ac1a",
    "prominence_rank": 633
   },
   {
@@ -2847,6 +2897,7 @@
    "overture_category": "thrift_store",
    "overture_confidence": 0.989915554523468,
    "enriched": true,
+   "source_key": "ovt-d0d8627a-db73-4fb5-bb5f-d1e12d647a27",
    "prominence_rank": 41
   },
   {
@@ -2903,6 +2954,7 @@
    "overture_category": "eye_care_clinic",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-407ce716-8ac5-439d-a096-46fee19f72ee",
    "prominence_rank": 633
   },
   {
@@ -2929,6 +2981,7 @@
    "osm_type": null,
    "overture_category": "naturopathic_holistic",
    "overture_confidence": 0.8080986738204956,
+   "source_key": "ovt-efa4d059-42ea-4efc-80dc-2be69837ab00",
    "prominence_rank": 1653
   },
   {
@@ -2955,6 +3008,7 @@
    "osm_type": null,
    "overture_category": "beach",
    "overture_confidence": 0.6695507168769836,
+   "source_key": "ovt-27d4c116-337c-434a-81bb-b862d90c4cf1",
    "prominence_rank": 116
   },
   {
@@ -2981,6 +3035,7 @@
    "osm_type": null,
    "overture_category": "beach",
    "overture_confidence": 0.8938100934028625,
+   "source_key": "ovt-0c9b1ba6-ffd4-47f8-b234-c0da51061039",
    "prominence_rank": 55
   },
   {
@@ -3007,6 +3062,7 @@
    "osm_type": null,
    "overture_category": "holiday_rental_home",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-3ce893bc-0acf-4fec-b2f8-9af7656cd2e4",
    "prominence_rank": 1033
   },
   {
@@ -3039,6 +3095,7 @@
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-67e1ae1d-0ef1-4861-947b-85ac4cfe545a",
    "prominence_rank": 1352
   },
   {
@@ -3100,6 +3157,7 @@
    "overture_category": "bar_and_grill_restaurant",
    "overture_confidence": 0.9267725944519043,
    "enriched": true,
+   "source_key": "ovt-bc4f3400-6683-40ef-ad56-b156a55f10bc",
    "prominence_rank": 1216
   },
   {
@@ -3126,6 +3184,7 @@
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
    "overture_confidence": 0.5159870386123657,
+   "source_key": "ovt-d93c9dd4-c7d1-4a6c-aa5a-c0f140da1a4e",
    "prominence_rank": 3329
   },
   {
@@ -3153,6 +3212,7 @@
    "overture_category": "mining",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-2f9e4c4e-57fd-46a2-849e-ebef910c4289",
    "prominence_rank": 1122
   },
   {
@@ -3179,6 +3239,7 @@
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
    "overture_confidence": 0.9714129185676574,
+   "source_key": "ovt-51692aa9-54eb-4f21-bacb-7cb1551c2e03",
    "prominence_rank": 327
   },
   {
@@ -3234,6 +3295,7 @@
    "overture_category": "banks",
    "overture_confidence": 0.9992158419787883,
    "enriched": true,
+   "source_key": "ovt-78b78737-27d3-4f35-8720-b1b20d6df931",
    "prominence_rank": 29
   },
   {
@@ -3260,6 +3322,7 @@
    "osm_type": null,
    "overture_category": "farm",
    "overture_confidence": 0.8417461514472961,
+   "source_key": "ovt-75eb1061-abb2-4f3f-a5de-9eb8534e7fe8",
    "prominence_rank": 341
   },
   {
@@ -3286,6 +3349,7 @@
    "osm_type": null,
    "overture_category": "lake",
    "overture_confidence": 0.7329153418540955,
+   "source_key": "ovt-47c9005a-f738-4e42-8fdb-746466334059",
    "prominence_rank": 428
   },
   {
@@ -3312,6 +3376,7 @@
    "osm_type": null,
    "overture_category": "advertising_agency",
    "overture_confidence": 0.26709333062171936,
+   "source_key": "ovt-d2d319cb-cd56-4d92-84bd-7eb7ee0c6028",
    "prominence_rank": 428
   },
   {
@@ -3370,6 +3435,7 @@
    "overture_category": "discount_store",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-dd79dc7c-bfbb-48aa-8a74-b75ad5614dab",
    "prominence_rank": 168
   },
   {
@@ -3396,6 +3462,7 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.34179285168647766,
+   "source_key": "ovt-3633bd3c-cb92-45bb-899c-7d42d7f9582f",
    "prominence_rank": 2490
   },
   {
@@ -3431,6 +3498,7 @@
    "overture_category": "park",
    "overture_confidence": 0.77,
    "enriched": true,
+   "source_key": "ovt-d60d78a2-1864-48af-8a3d-8d174ce92c22",
    "prominence_rank": 3503
   },
   {
@@ -3466,6 +3534,7 @@
    "overture_category": "park",
    "overture_confidence": 0.9169355630874634,
    "enriched": true,
+   "source_key": "ovt-a6aa2496-a48c-4ac8-895d-351afbd9bf14",
    "prominence_rank": 2490
   },
   {
@@ -3516,6 +3585,7 @@
    "overture_category": "church_cathedral",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-dd08d3fb-ddf1-4f03-ac77-3ca00fad5aef",
    "prominence_rank": 2
   },
   {
@@ -3542,6 +3612,7 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-8a64d0b1-30cf-4534-8eec-d20fdac4824d",
    "prominence_rank": 2125
   },
   {
@@ -3569,6 +3640,7 @@
    "overture_category": "beauty_salon",
    "overture_confidence": 0.7537409663200378,
    "enriched": true,
+   "source_key": "ovt-77c983ae-4222-45b5-be9b-16a575a0f4ca",
    "prominence_rank": 24
   },
   {
@@ -3607,6 +3679,7 @@
    "overture_category": "tanning_salon",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-87124ac6-73e7-43df-bb02-6b16f259bff0",
    "prominence_rank": 3622
   },
   {
@@ -3661,6 +3734,7 @@
    "overture_category": "hair_salon",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-879c9cd9-b7c2-41f2-9f7e-7f84c0409792",
    "prominence_rank": 24
   },
   {
@@ -3724,6 +3798,7 @@
     "url": "https://www.cameopizza.com/menu/"
    },
    "enriched": true,
+   "source_key": "ovt-6f280f91-8e1a-427c-b0f8-ee2125a893de",
    "prominence_rank": 3622
   },
   {
@@ -3772,6 +3847,7 @@
    "overture_category": "high_school",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-f857cf4c-0719-4fcd-a019-cb688a762bd0",
    "prominence_rank": 67
   },
   {
@@ -3834,6 +3910,7 @@
    "overture_category": "gym",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-27eb11cc-71e2-4acd-bf22-25d94f76cc17",
    "prominence_rank": 24
   },
   {
@@ -3860,6 +3937,7 @@
    "osm_type": null,
    "overture_category": "dance_school",
    "overture_confidence": 0.55,
+   "source_key": "ovt-8fdb53e1-c57d-4ecd-81d5-94c42635a6d1",
    "prominence_rank": 24
   },
   {
@@ -3891,6 +3969,7 @@
    "overture_category": "smoothie_juice_bar",
    "overture_confidence": 0.55,
    "enriched": true,
+   "source_key": "ovt-f37eb736-2b90-4324-985a-b6d1e294b8c6",
    "prominence_rank": 24
   },
   {
@@ -3917,6 +3996,7 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.95,
+   "source_key": "ovt-ed6191f2-1622-4507-92ff-994c0f9686b7",
    "prominence_rank": 24
   },
   {
@@ -3943,6 +4023,7 @@
    "osm_type": null,
    "overture_category": "golf_instructor",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-419ecd93-af8d-4eb4-afc0-9d2c2e0d66b8",
    "prominence_rank": 24
   },
   {
@@ -3969,6 +4050,7 @@
    "osm_type": null,
    "overture_category": "liquor_store",
    "overture_confidence": 0.28271639347076416,
+   "source_key": "ovt-0331e6b8-8405-45d1-ab38-0a6a5bdcc11a",
    "prominence_rank": 24
   },
   {
@@ -4003,6 +4085,7 @@
     "url": "http://the-tea-bubble.square.site/"
    },
    "enriched": true,
+   "source_key": "ovt-1374ec7a-d8f7-44a4-92a0-98d3c95c504e",
    "prominence_rank": 24
   },
   {
@@ -4035,6 +4118,7 @@
    "overture_category": "beauty_salon",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-33c8e168-1014-432e-a88b-9c2d6af7ea95",
    "prominence_rank": 24
   },
   {
@@ -4064,6 +4148,7 @@
    "overture_category": "bagel_shop",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-e38b295c-0054-439e-96c0-e77525f25448",
    "prominence_rank": 24
   },
   {
@@ -4121,6 +4206,7 @@
    "overture_category": "auto_parts_and_supply_store",
    "overture_confidence": 0.991375,
    "enriched": true,
+   "source_key": "ovt-18a5af9a-b937-4e5c-aa15-fff90c43b039",
    "prominence_rank": 24
   },
   {
@@ -4186,6 +4272,7 @@
    "overture_category": "convenience_store",
    "overture_confidence": 0.9902192950248718,
    "enriched": true,
+   "source_key": "ovt-e992aaa8-9939-469d-9088-d0faec1edea9",
    "prominence_rank": 24
   },
   {
@@ -4259,6 +4346,7 @@
    "overture_category": "boat_dealer",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-6846029f-fcb2-456a-bb3f-067187237254",
    "prominence_rank": 165
   },
   {
@@ -4292,6 +4380,7 @@
    "overture_category": "freight_and_cargo_service",
    "overture_confidence": 0.8790246486663819,
    "enriched": true,
+   "source_key": "ovt-7455aa1e-e0c4-450d-b759-c01d2820ce13",
    "prominence_rank": 194
   },
   {
@@ -4323,6 +4412,7 @@
    "overture_category": "chiropractor",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-2fa12773-3190-41f1-8288-66b94dc27981",
    "prominence_rank": 1117
   },
   {
@@ -4352,6 +4442,7 @@
    "overture_category": "business_manufacturing_and_supply",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-79791ff8-c24a-4f00-ad5f-06aa5dec010e",
    "prominence_rank": 159
   },
   {
@@ -4424,6 +4515,7 @@
    "overture_category": "library",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-b749730a-95a1-4813-871f-d874f0d1a158",
    "prominence_rank": 7
   },
   {
@@ -4489,6 +4581,7 @@
    "overture_category": "library",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-f91977b1-1ca7-4686-a920-4b38c81a887d",
    "prominence_rank": 1
   },
   {
@@ -4515,6 +4608,7 @@
    "osm_type": null,
    "overture_category": "credit_union",
    "overture_confidence": 0.77,
+   "source_key": "ovt-b735cbaf-87d2-494c-90c2-4289c53169c8",
    "prominence_rank": 1164
   },
   {
@@ -4554,6 +4648,7 @@
    "overture_category": "campus_building",
    "overture_confidence": 0.7235404253005981,
    "enriched": true,
+   "source_key": "ovt-d47787c0-b4e7-47a2-834c-576d7c19ecd2",
    "prominence_rank": 14
   },
   {
@@ -4588,6 +4683,7 @@
    "overture_category": "business_manufacturing_and_supply",
    "overture_confidence": 0.30524274706840515,
    "enriched": true,
+   "source_key": "ovt-3af80886-6d0e-4650-973c-71c54ac3eda8",
    "prominence_rank": 170
   },
   {
@@ -4617,6 +4713,7 @@
    "overture_category": "public_health_clinic",
    "overture_confidence": 0.95,
    "enriched": true,
+   "source_key": "ovt-7492d760-5412-413c-b39f-c482091cbc2d",
    "prominence_rank": 516
   },
   {
@@ -4644,6 +4741,7 @@
    "overture_category": "corporate_office",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-5e04df25-5870-4371-b070-111ce1464a8c",
    "prominence_rank": 186
   },
   {
@@ -4675,6 +4773,7 @@
    "overture_category": "stadium_arena",
    "overture_confidence": 0.7630570530891418,
    "enriched": true,
+   "source_key": "ovt-c89bbf4b-2f47-45c8-b2a1-503174c7a011",
    "prominence_rank": 334
   },
   {
@@ -4710,6 +4809,7 @@
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-56aca30f-3ad6-4cbc-9cf0-d37b94b7de08",
    "prominence_rank": 2274
   },
   {
@@ -4762,6 +4862,7 @@
    "overture_category": "spas",
    "overture_confidence": 0.4602181613445282,
    "enriched": true,
+   "source_key": "ovt-f5432ed9-4aa4-4654-93b7-0aea8009329e",
    "prominence_rank": 287
   },
   {
@@ -4807,6 +4908,7 @@
     "url": "https://oldnorthmaineats.com/old-fish-house/"
    },
    "enriched": true,
+   "source_key": "ovt-05020541-1438-47c4-ab57-66e350d19a3d",
    "prominence_rank": 2576
   },
   {
@@ -4851,6 +4953,7 @@
    "overture_category": "bar_and_grill_restaurant",
    "overture_confidence": 0.9952545166015625,
    "enriched": true,
+   "source_key": "ovt-afd09c60-bcf3-4490-861a-ad39228c9085",
    "prominence_rank": 2576
   },
   {
@@ -4884,6 +4987,7 @@
    "overture_category": "art_gallery",
    "overture_confidence": 0.55,
    "enriched": true,
+   "source_key": "ovt-49378400-531d-4b36-a2d3-7948813446c5",
    "prominence_rank": 287
   },
   {
@@ -4919,6 +5023,7 @@
    "overture_category": "psychologist",
    "overture_confidence": 0.75,
    "enriched": true,
+   "source_key": "ovt-73430d1a-915b-40c4-9671-a892fca82810",
    "prominence_rank": 287
   },
   {
@@ -4945,6 +5050,7 @@
    "osm_type": null,
    "overture_category": "massage_therapy",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-95005a5d-3c98-4230-9ad6-f5d1ae1bc062",
    "prominence_rank": 287
   },
   {
@@ -4978,6 +5084,7 @@
    "overture_category": null,
    "overture_confidence": 0.08619300276041031,
    "enriched": true,
+   "source_key": "ovt-cf3fce97-7ca0-442c-aebe-ca79b2521ef2",
    "prominence_rank": 287
   },
   {
@@ -5004,6 +5111,7 @@
    "osm_type": null,
    "overture_category": "health_and_medical",
    "overture_confidence": 0.95,
+   "source_key": "ovt-4838fdc7-4d8d-4fc8-867e-8c0852177499",
    "prominence_rank": 287
   },
   {
@@ -5059,6 +5167,7 @@
    "overture_category": "sports_and_recreation_venue",
    "overture_confidence": 0.9516571164131165,
    "enriched": true,
+   "source_key": "ovt-d6cbdb70-f065-4eae-9284-b417ba04e69f",
    "prominence_rank": 2464
   },
   {
@@ -5112,6 +5221,7 @@
    "overture_category": "bar_and_grill_restaurant",
    "overture_confidence": 0.9677644968032837,
    "enriched": true,
+   "source_key": "ovt-b2a4e1e8-d97f-4adc-b5f5-6cd6901b024c",
    "prominence_rank": 589
   },
   {
@@ -5178,6 +5288,7 @@
     "url": "http://harborhousebar.com/food-menu"
    },
    "enriched": true,
+   "source_key": "ovt-a0088e30-54e7-428b-b50d-cfa259cac49c",
    "prominence_rank": 44
   },
   {
@@ -5205,6 +5316,7 @@
    "overture_category": "burger_restaurant",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-b6dd7cf6-6b7d-4a3a-adb8-3ad8484a16b9",
    "prominence_rank": 26
   },
   {
@@ -5237,6 +5349,7 @@
    "overture_category": "bowling_alley",
    "overture_confidence": 0.9251940846443176,
    "enriched": true,
+   "source_key": "ovt-dd777dcc-753f-425b-acac-237ba04d3a2d",
    "prominence_rank": 26
   },
   {
@@ -5263,6 +5376,7 @@
    "osm_type": null,
    "overture_category": "cafe",
    "overture_confidence": 0.724886953830719,
+   "source_key": "ovt-bb176d15-eef0-4e8b-873d-c343b20c4421",
    "prominence_rank": 26
   },
   {
@@ -5289,6 +5403,7 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.95,
+   "source_key": "ovt-da2a85cf-8ea7-44a4-beb8-05353d12c53c",
    "prominence_rank": 44
   },
   {
@@ -5315,6 +5430,7 @@
    "osm_type": null,
    "overture_category": "eat_and_drink",
    "overture_confidence": 0.7443719506263733,
+   "source_key": "ovt-39f924bf-078b-43a4-941a-f099e3868f32",
    "prominence_rank": 44
   },
   {
@@ -5381,6 +5497,7 @@
    "overture_category": "hotel",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-6a7b8963-b36b-48db-a3bb-637078989b6e",
    "prominence_rank": 8
   },
   {
@@ -5407,6 +5524,7 @@
    "osm_type": null,
    "overture_category": "bed_and_breakfast",
    "overture_confidence": 0.9374552965164185,
+   "source_key": "ovt-957b81c3-9a1d-4f5c-b74f-f02290779771",
    "prominence_rank": 668
   },
   {
@@ -5459,6 +5577,7 @@
    "overture_category": "high_school",
    "overture_confidence": 0.9722161889076233,
    "enriched": true,
+   "source_key": "ovt-fbbf003e-a5e7-48e3-b0fb-98d2433092ce",
    "prominence_rank": 68
   },
   {
@@ -5491,6 +5610,7 @@
    "overture_category": "private_school",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-7dabe100-f693-420a-91cd-2e688b63c33a",
    "prominence_rank": 70
   },
   {
@@ -5517,6 +5637,7 @@
    "osm_type": null,
    "overture_category": "diagnostic_services",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-4d26ec88-1fee-425b-8b26-60386058b3d7",
    "prominence_rank": 259
   },
   {
@@ -5544,6 +5665,7 @@
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.49442368745803833,
    "enriched": true,
+   "source_key": "ovt-ed611ad4-a913-4d96-aad7-988a075deebf",
    "prominence_rank": 259
   },
   {
@@ -5570,6 +5692,7 @@
    "osm_type": null,
    "overture_category": "sewing_and_alterations",
    "overture_confidence": 0.3147471249103546,
+   "source_key": "ovt-f741a9cd-04dd-4ee6-87a7-a253cceeed45",
    "prominence_rank": 3093
   },
   {
@@ -5603,6 +5726,7 @@
    "overture_category": "preschool",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-69cf32b7-a612-4947-8a87-013ed7be5475",
    "prominence_rank": 36
   },
   {
@@ -5634,6 +5758,7 @@
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.6436288356781006,
    "enriched": true,
+   "source_key": "ovt-d477466e-d49d-45fa-b180-a6e28d8ef3a1",
    "prominence_rank": 321
   },
   {
@@ -5667,6 +5792,7 @@
    "overture_category": "chambers_of_commerce",
    "overture_confidence": 0.75,
    "enriched": true,
+   "source_key": "ovt-84c34534-b06a-4c88-b2e3-c1d29009f7c8",
    "prominence_rank": 1287
   },
   {
@@ -5694,6 +5820,7 @@
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.43328922986984253,
    "enriched": true,
+   "source_key": "ovt-c5adef55-f4b5-4a28-8c26-774b793259a6",
    "prominence_rank": 1287
   },
   {
@@ -5721,6 +5848,7 @@
    "overture_category": "party_and_event_planning",
    "overture_confidence": 0.8949015140533447,
    "enriched": true,
+   "source_key": "ovt-68ea6eef-051d-4c0f-a263-9a93e88f97c4",
    "prominence_rank": 1287
   },
   {
@@ -5748,6 +5876,7 @@
    "overture_category": "installment_loans",
    "overture_confidence": 0.5384074449539185,
    "enriched": true,
+   "source_key": "ovt-2f8c6564-cd0f-48b4-a758-826cf237e057",
    "prominence_rank": 1287
   },
   {
@@ -5774,6 +5903,7 @@
    "osm_type": null,
    "overture_category": "lake",
    "overture_confidence": 0.6028739213943481,
+   "source_key": "ovt-6196ffaa-b952-4427-85c9-ad63657c319b",
    "prominence_rank": 1287
   },
   {
@@ -5828,6 +5958,7 @@
    "overture_category": "dentist",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-d4379cb6-5f99-4cb0-89a1-9e32b03de1c5",
    "prominence_rank": 1287
   },
   {
@@ -5855,6 +5986,7 @@
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.2978995442390442,
    "enriched": true,
+   "source_key": "ovt-c2607a10-b761-418a-8a47-a83c507fd1ae",
    "prominence_rank": 1287
   },
   {
@@ -5882,6 +6014,7 @@
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.8125662207603455,
    "enriched": true,
+   "source_key": "ovt-8f013642-f564-4761-a970-e4ccace5e66a",
    "prominence_rank": 259
   },
   {
@@ -5934,6 +6067,7 @@
    "overture_category": "optometrist",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-47ac1f7e-949e-44a7-9369-a2185a4e06d7",
    "prominence_rank": 259
   },
   {
@@ -5967,6 +6101,7 @@
    "overture_category": null,
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-f7c99236-b0f1-4642-a226-068eaaf0e32a",
    "prominence_rank": 259
   },
   {
@@ -5993,6 +6128,7 @@
    "osm_type": null,
    "overture_category": "alternative_medicine",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-864b71e8-f32b-4065-8324-7e6875e26f36",
    "prominence_rank": 259
   },
   {
@@ -6049,6 +6185,7 @@
    "overture_category": "diagnostic_imaging",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-1c95279c-0d0e-4334-aa5a-0bc0e6fef9d4",
    "prominence_rank": 259
   },
   {
@@ -6075,6 +6212,7 @@
    "osm_type": null,
    "overture_category": "diagnostic_services",
    "overture_confidence": 0.65,
+   "source_key": "ovt-9e8ca820-0655-41e9-a3bf-b144fad979d6",
    "prominence_rank": 259
   },
   {
@@ -6115,6 +6253,7 @@
    "overture_category": "marina",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-c0bb042b-0b87-4c92-89f2-9887a8e15a35",
    "prominence_rank": 99
   },
   {
@@ -6170,6 +6309,7 @@
    "overture_category": "bank_credit_union",
    "overture_confidence": 0.9995984894931317,
    "enriched": true,
+   "source_key": "ovt-59a6bc81-99bf-4f32-bd44-de0e7f6302dc",
    "prominence_rank": 292
   },
   {
@@ -6225,6 +6365,7 @@
    "overture_category": "banks",
    "overture_confidence": 0.9497681260108948,
    "enriched": true,
+   "source_key": "ovt-fde8c514-3961-4615-829d-9dd60ccf87db",
    "prominence_rank": 292
   },
   {
@@ -6251,6 +6392,7 @@
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
    "overture_confidence": 0.6422938108444214,
+   "source_key": "ovt-f807b85e-5df7-4361-9028-f68bda17d065",
    "prominence_rank": 292
   },
   {
@@ -6286,6 +6428,7 @@
    "overture_category": "medical_spa",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-93546fe1-1ac8-44d5-8bf6-268b40a288f7",
    "prominence_rank": 209
   },
   {
@@ -6321,6 +6464,7 @@
    "overture_category": "church_cathedral",
    "overture_confidence": 0.9999402360022068,
    "enriched": true,
+   "source_key": "ovt-918440f0-99aa-40c5-834c-ec1b8b162c04",
    "prominence_rank": 37
   },
   {
@@ -6347,6 +6491,7 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.95,
+   "source_key": "ovt-dca11bda-df0c-4155-a164-f7de63e96c2d",
    "prominence_rank": 206
   },
   {
@@ -6373,6 +6518,7 @@
    "osm_type": null,
    "overture_category": "hair_salon",
    "overture_confidence": 0.416169136762619,
+   "source_key": "ovt-a340929f-bacd-427f-ac7b-bd9cf7254a50",
    "prominence_rank": 206
   },
   {
@@ -6405,6 +6551,7 @@
    "overture_category": null,
    "overture_confidence": 0.85,
    "enriched": true,
+   "source_key": "ovt-f40f6d4a-676e-431e-a330-cdfcd559745c",
    "prominence_rank": 206
   },
   {
@@ -6438,6 +6585,7 @@
    "overture_category": "shopping",
    "overture_confidence": 0.7434737086296082,
    "enriched": true,
+   "source_key": "ovt-3dd9d41f-6f90-45f9-a272-14284c6424ee",
    "prominence_rank": 1763
   },
   {
@@ -6464,6 +6612,7 @@
    "osm_type": null,
    "overture_category": "sports_bar",
    "overture_confidence": 0.9568439722061157,
+   "source_key": "ovt-56738206-21cc-4112-9166-fc2bb358489d",
    "prominence_rank": 206
   },
   {
@@ -6490,6 +6639,7 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.77,
+   "source_key": "ovt-92c6ef1a-b403-4670-be48-e5d661e47b50",
    "prominence_rank": 206
   },
   {
@@ -6516,6 +6666,7 @@
    "osm_type": null,
    "overture_category": "accommodation",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-c05082bb-fa3f-475a-ac05-d48ce973d0e7",
    "prominence_rank": 206
   },
   {
@@ -6644,6 +6795,7 @@
    "overture_category": "history_museum",
    "overture_confidence": 0.8919472694396973,
    "enriched": true,
+   "source_key": "ovt-cb116127-246f-42ba-8481-cb700d0ab582",
    "prominence_rank": 35
   },
   {
@@ -6671,6 +6823,7 @@
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.2614365220069885,
    "enriched": true,
+   "source_key": "ovt-eccb783c-f3e7-4b40-904f-83f60681e5f7",
    "prominence_rank": 2097
   },
   {
@@ -6703,6 +6856,7 @@
    "overture_category": null,
    "overture_confidence": 0.2088703215122223,
    "enriched": true,
+   "source_key": "ovt-27acf59c-35a0-48d9-9c01-48a30065f8fb",
    "prominence_rank": 2412
   },
   {
@@ -6729,6 +6883,7 @@
    "osm_type": null,
    "overture_category": "beach",
    "overture_confidence": 0.39875471591949463,
+   "source_key": "ovt-19007453-d40d-4078-8b7d-3e596b0b8ea7",
    "prominence_rank": 790
   },
   {
@@ -6761,6 +6916,7 @@
    "overture_category": "toy_store",
    "overture_confidence": 0.5163470506668091,
    "enriched": true,
+   "source_key": "ovt-2de3371a-e8d0-4c00-b1a8-2a5d7cdf328d",
    "prominence_rank": 1964
   },
   {
@@ -6787,6 +6943,7 @@
    "osm_type": null,
    "overture_category": "cottage",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-3d2dec16-03d7-46e7-9bf5-b4ffdb695507",
    "prominence_rank": 2149
   },
   {
@@ -6822,6 +6979,7 @@
    "overture_category": "central_government_office",
    "overture_confidence": 0.9846013784408569,
    "enriched": true,
+   "source_key": "ovt-448e6716-f8da-49e1-9e02-909fdc7dc79b",
    "prominence_rank": 13
   },
   {
@@ -6885,6 +7043,7 @@
     "url": "http://www.gatheringgroundscoffeehouse.com/menu-1"
    },
    "enriched": true,
+   "source_key": "ovt-b26ea53c-49ea-444e-9376-0779f226018d",
    "prominence_rank": 89
   },
   {
@@ -6918,6 +7077,7 @@
    "overture_category": "fire_department",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-2cdeade9-e125-4008-a87c-0d92dde91895",
    "prominence_rank": 13
   },
   {
@@ -6948,6 +7108,7 @@
    "overture_category": "central_government_office",
    "overture_confidence": 0.65,
    "enriched": true,
+   "source_key": "ovt-7783ebbb-f98a-4cd6-8b2f-7d7e6760fbc3",
    "prominence_rank": 868
   },
   {
@@ -7009,6 +7170,7 @@
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.9902192950248718,
    "enriched": true,
+   "source_key": "ovt-192851fc-bdf3-498b-b6ab-c1867950d63f",
    "prominence_rank": 308
   },
   {
@@ -7064,6 +7226,7 @@
    "overture_category": "post_office",
    "overture_confidence": 0.9655,
    "enriched": true,
+   "source_key": "ovt-6a808863-ec7d-47d1-b064-132f54870786",
    "prominence_rank": 21
   },
   {
@@ -7119,6 +7282,7 @@
    "overture_category": "post_office",
    "overture_confidence": 0.9722161889076233,
    "enriched": true,
+   "source_key": "ovt-5bf3de0d-940b-47c2-8a4f-0583033941ad",
    "prominence_rank": 21
   },
   {
@@ -7155,6 +7319,7 @@
    "overture_category": "funeral_services_and_cemeteries",
    "overture_confidence": 0.9996699541807175,
    "enriched": true,
+   "source_key": "ovt-9819a500-9fdd-4a92-af63-5dc463b92257",
    "prominence_rank": 46
   },
   {
@@ -7191,6 +7356,7 @@
    "overture_category": "family_practice",
    "overture_confidence": 0.3381790518760681,
    "enriched": true,
+   "source_key": "ovt-d098fe1e-632b-4bbb-93e7-436cca2dbb5d",
    "prominence_rank": 46
   },
   {
@@ -7249,6 +7415,7 @@
    "overture_category": "banks",
    "overture_confidence": 0.77,
    "enriched": true,
+   "source_key": "ovt-aa64c2ad-148a-4ae6-8179-a01b0d1b2cbc",
    "prominence_rank": 401
   },
   {
@@ -7275,6 +7442,7 @@
    "osm_type": null,
    "overture_category": "private_association",
    "overture_confidence": 0.7973589897155762,
+   "source_key": "ovt-a349cf38-6ecf-4242-99d1-1d2e9664f4cd",
    "prominence_rank": 2405
   },
   {
@@ -7309,6 +7477,7 @@
    "overture_category": "sightseeing_tour_agency",
    "overture_confidence": 0.565488338470459,
    "enriched": true,
+   "source_key": "ovt-161507f7-ec0d-4085-b2c9-8f6d2ded634b",
    "prominence_rank": 179
   },
   {
@@ -7346,6 +7515,7 @@
    "overture_category": "marina",
    "overture_confidence": 0.36397066712379456,
    "enriched": true,
+   "source_key": "ovt-84d40264-976f-4d54-9f5d-823c3aaf8af6",
    "prominence_rank": 179
   },
   {
@@ -7409,6 +7579,7 @@
    "overture_category": "caterer",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-5f2c66bf-9efd-465e-96a0-3c0b9125554a",
    "prominence_rank": 53
   },
   {
@@ -7436,6 +7607,7 @@
    "overture_category": "bakery",
    "overture_confidence": 0.9532211422920227,
    "enriched": true,
+   "source_key": "ovt-9d77a8e9-f672-4342-aeef-c42dbb1d6321",
    "prominence_rank": 20
   },
   {
@@ -7470,6 +7642,7 @@
    "overture_category": "youth_organizations",
    "overture_confidence": 0.6349037289619446,
    "enriched": true,
+   "source_key": "ovt-79003dd2-9556-46c6-8b88-195f96c2e74a",
    "prominence_rank": 25
   },
   {
@@ -7528,6 +7701,7 @@
    "overture_category": "car_dealer",
    "overture_confidence": 0.9135563373565674,
    "enriched": true,
+   "source_key": "ovt-eecf2648-8f34-4d4b-95e0-06a48c067465",
    "prominence_rank": 40
   },
   {
@@ -7588,6 +7762,7 @@
    "overture_category": "convenience_store",
    "overture_confidence": 0.9631699323654175,
    "enriched": true,
+   "source_key": "ovt-dc489336-661f-4ec8-84bf-67dc694d034f",
    "prominence_rank": 3
   },
   {
@@ -7614,6 +7789,7 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-306eea62-ea55-45f3-a231-b64bb3eb6833",
    "prominence_rank": 3
   },
   {
@@ -7674,6 +7850,7 @@
    "overture_category": "pizza_restaurant",
    "overture_confidence": 0.9760689735412598,
    "enriched": true,
+   "source_key": "ovt-d39eefba-7c9b-4556-8a73-aa5dbdc3990e",
    "prominence_rank": 3
   },
   {
@@ -7706,6 +7883,7 @@
    "overture_category": "tea_room",
    "overture_confidence": 0.9511064887046814,
    "enriched": true,
+   "source_key": "ovt-0f31376d-6748-4f0b-839a-a7580c799982",
    "prominence_rank": 2920
   },
   {
@@ -7740,6 +7918,7 @@
    "overture_category": "barber",
    "overture_confidence": 0.8974579572677612,
    "enriched": true,
+   "source_key": "ovt-bdfae96f-2af4-4ff8-8c59-7b79769e4ffe",
    "prominence_rank": 2920
   },
   {
@@ -7767,6 +7946,7 @@
    "overture_category": "software_development",
    "overture_confidence": 0.21278509497642517,
    "enriched": true,
+   "source_key": "ovt-71de4fc3-dac2-4d44-8bc8-098bf2b4865d",
    "prominence_rank": 22
   },
   {
@@ -7800,6 +7980,7 @@
    "overture_category": "insurance_agency",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-5b0e7c1f-54d3-4f76-acf0-fb1e8611d1cd",
    "prominence_rank": 22
   },
   {
@@ -7902,6 +8083,7 @@
    "overture_category": "art_school",
    "overture_confidence": 0.553705096244812,
    "enriched": true,
+   "source_key": "ovt-8ca15e90-bdd7-4448-af04-ca9f815314fe",
    "prominence_rank": 22
   },
   {
@@ -7928,6 +8110,7 @@
    "osm_type": null,
    "overture_category": "home_improvement_store",
    "overture_confidence": 0.07049264013767242,
+   "source_key": "ovt-2a73f5f3-5311-44d8-893f-34421748c76d",
    "prominence_rank": 22
   },
   {
@@ -7955,6 +8138,7 @@
    "overture_category": "gas_station",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-aecb49ea-2dc0-4739-add3-5cf6c8b9cab8",
    "prominence_rank": 33
   },
   {
@@ -7981,6 +8165,7 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.8945028185844421,
+   "source_key": "ovt-5816d8bf-5fc4-419b-bccd-54abf9a70384",
    "prominence_rank": 22
   },
   {
@@ -8057,6 +8242,7 @@
    "overture_category": "arts_and_crafts",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-40ee2664-68f1-43fa-82d2-e53de03fd0cc",
    "prominence_rank": 22
   },
   {
@@ -8119,6 +8305,7 @@
    "overture_category": "sport_equipment_rentals",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-43422657-66d7-44d6-b898-0188730a0aba",
    "prominence_rank": 3092
   },
   {
@@ -8152,6 +8339,7 @@
    "overture_category": "catholic_church",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-a41c7768-c74a-42a4-a61e-66951a9e41ac",
    "prominence_rank": 25
   },
   {
@@ -8183,6 +8371,7 @@
    "overture_category": "auction_house",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-e9883427-3ca0-49e3-9a65-497df3abdcbf",
    "prominence_rank": 1873
   },
   {
@@ -8209,6 +8398,7 @@
    "osm_type": null,
    "overture_category": "spas",
    "overture_confidence": 0.882188618183136,
+   "source_key": "ovt-3bb75278-a31b-4f02-9c75-04757ab1b220",
    "prominence_rank": 1814
   },
   {
@@ -8239,6 +8429,7 @@
    "overture_category": "furniture_store",
    "overture_confidence": 0.3453887403011322,
    "enriched": true,
+   "source_key": "ovt-1d3b2b62-76c5-40c0-8469-43822e1ace95",
    "prominence_rank": 1814
   },
   {
@@ -8304,6 +8495,7 @@
    "overture_category": "beauty_salon",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-c1f5688c-1377-4d74-b5f5-f7f7d6658d68",
    "prominence_rank": 1814
   },
   {
@@ -8331,6 +8523,7 @@
    "overture_category": "bail_bonds_service",
    "overture_confidence": 0.21993544697761536,
    "enriched": true,
+   "source_key": "ovt-cd767be5-0de9-4014-a598-92c2942facc2",
    "prominence_rank": 164
   },
   {
@@ -8365,6 +8558,7 @@
    "overture_category": "motorcycle_repair",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-0d57ac3d-6800-47e8-afd2-a0817e552757",
    "prominence_rank": 164
   },
   {
@@ -8391,6 +8585,7 @@
    "osm_type": null,
    "overture_category": "property_management",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-bdda7ca5-8319-4ef5-8c05-aa44f3659ec0",
    "prominence_rank": 3518
   },
   {
@@ -8417,6 +8612,7 @@
    "osm_type": null,
    "overture_category": "construction_services",
    "overture_confidence": 0.9045772761106491,
+   "source_key": "ovt-b4bdb66b-322e-4c01-92ae-fb5147d01dad",
    "prominence_rank": 164
   },
   {
@@ -8466,6 +8662,7 @@
    "overture_category": "flowers_and_gifts_shop",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-a2d0171a-d5a8-4c2c-8581-4522340bc331",
    "prominence_rank": 3439
   },
   {
@@ -8520,6 +8717,7 @@
    "overture_category": "automotive_repair",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-d95fe8f6-fb36-4556-aac2-4a0c6de07b81",
    "prominence_rank": 27
   },
   {
@@ -8576,6 +8774,7 @@
    "overture_category": "bar_and_grill_restaurant",
    "overture_confidence": 0.9991120225191117,
    "enriched": true,
+   "source_key": "ovt-e5b1f1ff-d781-4f18-b771-4a28d0233e52",
    "prominence_rank": 27
   },
   {
@@ -8623,6 +8822,7 @@
    "overture_category": "hair_extensions",
    "overture_confidence": 0.27795276045799255,
    "enriched": true,
+   "source_key": "ovt-f87fedf9-4be2-49ed-b421-2312373cafad",
    "prominence_rank": 3439
   },
   {
@@ -8678,6 +8878,7 @@
    "overture_category": "hair_salon",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-7f916e25-89a0-4028-be4b-5714b403d1ae",
    "prominence_rank": 3439
   },
   {
@@ -8704,6 +8905,7 @@
    "osm_type": null,
    "overture_category": "convenience_store",
    "overture_confidence": 0.9722161889076233,
+   "source_key": "ovt-116ae27c-ef19-4674-97f9-bcc186b70693",
    "prominence_rank": 27
   },
   {
@@ -8741,6 +8943,7 @@
    "overture_category": "marina",
    "overture_confidence": 0.8990850448608398,
    "enriched": true,
+   "source_key": "ovt-b5fb717c-3ee4-49bf-8bb3-5a2a7ff85986",
    "prominence_rank": 3433
   },
   {
@@ -8797,6 +9000,7 @@
    "overture_category": "real_estate_service",
    "overture_confidence": 0.7616450190544128,
    "enriched": true,
+   "source_key": "ovt-f342ae65-452a-4927-a34a-2ae2eb7e9759",
    "prominence_rank": 64
   },
   {
@@ -8827,6 +9031,7 @@
    "overture_category": "theme_restaurant",
    "overture_confidence": 0.9588589072227478,
    "enriched": true,
+   "source_key": "ovt-b4798b30-c047-41f9-a063-dda5b617353d",
    "prominence_rank": 56
   },
   {
@@ -8869,6 +9074,7 @@
    "overture_category": "gym",
    "overture_confidence": 0.7637417316436768,
    "enriched": true,
+   "source_key": "ovt-c47fdabf-258f-40b3-b468-989076cb8e92",
    "prominence_rank": 16
   },
   {
@@ -8926,6 +9132,7 @@
    "overture_category": "car_dealer",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-8c5dbff8-1909-4e88-89a5-615b32470ff9",
    "prominence_rank": 40
   },
   {
@@ -8959,6 +9166,7 @@
    "overture_category": "diagnostic_services",
    "overture_confidence": 0.9831629991531372,
    "enriched": true,
+   "source_key": "ovt-f6c567cd-2f5a-4168-a268-bf5160a829f0",
    "prominence_rank": 542
   },
   {
@@ -9016,6 +9224,7 @@
     "url": "https://www.jimspizzabox.com/menus"
    },
    "enriched": true,
+   "source_key": "ovt-eaac31ef-433f-4be9-a069-8d46f1c49d16",
    "prominence_rank": 45
   },
   {
@@ -9042,6 +9251,7 @@
    "osm_type": null,
    "overture_category": "hair_salon",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-50c16977-60f9-4d92-b485-db2d4b28a06c",
    "prominence_rank": 2051
   },
   {
@@ -9077,6 +9287,7 @@
    "overture_category": "dentist",
    "overture_confidence": 0.9973471701145172,
    "enriched": true,
+   "source_key": "ovt-705ee15c-14b6-42f0-b825-cc95249abcf7",
    "prominence_rank": 1652
   },
   {
@@ -9112,6 +9323,7 @@
     "url": "https://www.pizzahousehuron.com/menu/"
    },
    "enriched": true,
+   "source_key": "ovt-130e61ea-d7b2-4bb2-af05-4e8b6a35908c",
    "prominence_rank": 49
   },
   {
@@ -9138,6 +9350,7 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.95,
+   "source_key": "ovt-69bf7af3-816a-4291-a629-5c2054d923d5",
    "prominence_rank": 49
   },
   {
@@ -9165,6 +9378,7 @@
    "overture_category": "family_practice",
    "overture_confidence": 0.9375893473625183,
    "enriched": true,
+   "source_key": "ovt-21bd6d0a-06fd-4d84-9d3f-f6d841a373ff",
    "prominence_rank": 542
   },
   {
@@ -9220,6 +9434,7 @@
    "overture_category": "automotive_repair",
    "overture_confidence": 0.65,
    "enriched": true,
+   "source_key": "ovt-05dcbfce-400b-4e3e-84fa-ea810d565d7a",
    "prominence_rank": 455
   },
   {
@@ -9246,6 +9461,7 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-a13a3a81-029d-4181-8ff4-bc0e814fdbdb",
    "prominence_rank": 463
   },
   {
@@ -9273,6 +9489,7 @@
    "overture_category": "propane_supplier",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-c9c738d2-64c0-4f5f-b5b7-5d6c434ad096",
    "prominence_rank": 463
   },
   {
@@ -9335,6 +9552,7 @@
    "overture_category": "gas_station",
    "overture_confidence": 0.984475,
    "enriched": true,
+   "source_key": "ovt-413376db-9b0a-4c8f-9fa3-d05dfc121b92",
    "prominence_rank": 1078
   },
   {
@@ -9394,6 +9612,7 @@
    "overture_category": "gas_station",
    "overture_confidence": 0.8,
    "enriched": true,
+   "source_key": "ovt-fa99481e-1a1d-48d8-8393-b9bea0235ca8",
    "prominence_rank": 1078
   },
   {
@@ -9421,6 +9640,7 @@
    "overture_category": "gas_station",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-78ba3737-c417-4e30-be0b-34b414c67359",
    "prominence_rank": 463
   },
   {
@@ -9447,6 +9667,7 @@
    "osm_type": null,
    "overture_category": "tanning_salon",
    "overture_confidence": 0.65,
+   "source_key": "ovt-a277e022-96ff-41b9-a02c-98ea11609ebb",
    "prominence_rank": 352
   },
   {
@@ -9473,6 +9694,7 @@
    "osm_type": null,
    "overture_category": "boat_service_and_repair",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-a2776a37-4aac-4ff1-829e-d05fe446648e",
    "prominence_rank": 352
   },
   {
@@ -9505,6 +9727,7 @@
    "overture_category": "lumber_store",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-94d41661-1e79-453d-9e06-3a7697878515",
    "prominence_rank": 221
   },
   {
@@ -9536,6 +9759,7 @@
    "overture_category": "butcher_shop",
    "overture_confidence": 0.9583381414413452,
    "enriched": true,
+   "source_key": "ovt-4ea976b9-3579-4c5f-9a5b-c8ad7f5a8396",
    "prominence_rank": 651
   },
   {
@@ -9565,6 +9789,7 @@
    "overture_category": "farmers_market",
    "overture_confidence": 0.9425601363182068,
    "enriched": true,
+   "source_key": "ovt-f91adc8e-f31d-4d3a-8c0f-c66cf38829fd",
    "prominence_rank": 2902
   },
   {
@@ -9592,6 +9817,7 @@
    "overture_category": "truck_rentals",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-fe5fb17c-db2c-448a-b375-3660b678e063",
    "prominence_rank": 741
   },
   {
@@ -9648,6 +9874,7 @@
    "overture_category": "propane_supplier",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-04fb7001-7bce-464b-a833-25c4562866be",
    "prominence_rank": 32
   },
   {
@@ -9712,6 +9939,7 @@
    "overture_category": "resort",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-508c7174-8959-469e-aba4-2e210630a5e1",
    "prominence_rank": 19
   },
   {
@@ -9774,6 +10002,7 @@
    "overture_category": "fast_food_restaurant",
    "overture_confidence": 0.9633245468139648,
    "enriched": true,
+   "source_key": "ovt-2cb0fb04-2ad4-427a-ae9a-a09a366e7cc3",
    "prominence_rank": 9
   },
   {
@@ -9842,6 +10071,7 @@
    "overture_category": "gas_station",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-a33596f6-ee0e-430a-a71c-8a3b4bedc6c8",
    "prominence_rank": 30
   },
   {
@@ -9901,6 +10131,7 @@
    "overture_category": "seafood_restaurant",
    "overture_confidence": 0.9902192950248718,
    "enriched": true,
+   "source_key": "ovt-b031fe40-a6ea-4c10-a848-c1ff7e6cc94d",
    "prominence_rank": 31
   },
   {
@@ -9964,6 +10195,7 @@
     "url": "https://www.costaazulhuron.com/"
    },
    "enriched": true,
+   "source_key": "ovt-afe850e8-8fc4-472e-8193-d1bf25d89fc3",
    "prominence_rank": 48
   },
   {
@@ -9995,6 +10227,7 @@
    "overture_category": "restaurant",
    "overture_confidence": 0.9868365526199341,
    "enriched": true,
+   "source_key": "ovt-1bd64760-e6ef-433d-bce2-d8202ec176e0",
    "prominence_rank": 166
   },
   {
@@ -10031,6 +10264,7 @@
    "overture_category": "logging_contractor",
    "overture_confidence": 0.9722161889076233,
    "enriched": true,
+   "source_key": "ovt-01139c87-b9a1-4200-bbe5-593b7f96fe90",
    "prominence_rank": 3152
   },
   {
@@ -10057,6 +10291,7 @@
    "osm_type": null,
    "overture_category": "food_delivery_service",
    "overture_confidence": 0.3115483820438385,
+   "source_key": "ovt-3d6aeb72-56f7-4ddf-96ba-54ccf7f569d2",
    "prominence_rank": 420
   },
   {
@@ -10083,6 +10318,7 @@
    "osm_type": null,
    "overture_category": "contractor",
    "overture_confidence": 0.28225746750831604,
+   "source_key": "ovt-8e463407-07cc-4290-b9e1-231e491e3f1f",
    "prominence_rank": 1276
   },
   {
@@ -10109,6 +10345,7 @@
    "osm_type": null,
    "overture_category": "beach",
    "overture_confidence": 0.9632793068885803,
+   "source_key": "ovt-51750110-b87d-4589-8089-c3e95d1d4b9a",
    "prominence_rank": 382
   },
   {
@@ -10141,6 +10378,7 @@
    "overture_category": "pub",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-84cc0132-59d4-4d61-8fa1-a0cd16618edd",
    "prominence_rank": 42
   },
   {
@@ -10167,6 +10405,7 @@
    "osm_type": null,
    "overture_category": "resort",
    "overture_confidence": 0.9847981333732605,
+   "source_key": "ovt-1b73a0a9-01a8-49d0-8829-2a07b7e94d93",
    "prominence_rank": 216
   },
   {
@@ -10193,6 +10432,7 @@
    "osm_type": null,
    "overture_category": "holiday_rental_home",
    "overture_confidence": 0.5867830514907837,
+   "source_key": "ovt-f6c7ce46-3c60-4756-8aa7-9662556680c9",
    "prominence_rank": 2053
   },
   {
@@ -10220,6 +10460,7 @@
    "overture_category": "general_litigation",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-68f554fb-7d9a-4bfd-bc00-114e2385477e",
    "prominence_rank": 1539
   },
   {
@@ -10272,6 +10513,7 @@
    "overture_category": null,
    "overture_confidence": 0.85,
    "enriched": true,
+   "source_key": "ovt-4d6162c9-d487-492a-99ec-c14ded2bbce7",
    "prominence_rank": 1539
   },
   {
@@ -10298,6 +10540,7 @@
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
    "overture_confidence": 0.5451522469520569,
+   "source_key": "ovt-d2cf9691-140d-4c68-875c-a01975089ad5",
    "prominence_rank": 227
   },
   {
@@ -10352,6 +10595,7 @@
    "overture_category": "financial_service",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-6b78530f-4083-4ff1-b378-b846b5bd0935",
    "prominence_rank": 181
   },
   {
@@ -10414,6 +10658,7 @@
    "overture_category": "sports_bar",
    "overture_confidence": 0.9902192950248718,
    "enriched": true,
+   "source_key": "ovt-9c9e1b4e-ca7b-4b5a-89de-e91d98c1130d",
    "prominence_rank": 181
   },
   {
@@ -10443,6 +10688,7 @@
    "overture_category": "chiropractor",
    "overture_confidence": 0.55,
    "enriched": true,
+   "source_key": "ovt-bbef904b-f7d6-42d9-b0c4-12fcfe608e3f",
    "prominence_rank": 181
   },
   {
@@ -10472,6 +10718,7 @@
    "overture_category": "health_and_medical",
    "overture_confidence": 0.95,
    "enriched": true,
+   "source_key": "ovt-6c6e4272-1e22-4c65-bea8-ce01789b0040",
    "prominence_rank": 181
   },
   {
@@ -10502,6 +10749,7 @@
    "overture_category": "shopping",
    "overture_confidence": 0.6253195405006409,
    "enriched": true,
+   "source_key": "ovt-7cddbbe3-8c3c-4e4b-a0bb-c821e94d5371",
    "prominence_rank": 1928
   },
   {
@@ -10528,6 +10776,7 @@
    "osm_type": null,
    "overture_category": "pet_sitting",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-de9c24ca-e89c-4f7a-9a0a-6e9d56f4089d",
    "prominence_rank": 967
   },
   {
@@ -10554,6 +10803,7 @@
    "osm_type": null,
    "overture_category": "home_cleaning",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-f5da1c4e-d3a5-4d42-be04-0fcd2441e46d",
    "prominence_rank": 967
   },
   {
@@ -10580,6 +10830,7 @@
    "osm_type": null,
    "overture_category": "bakery",
    "overture_confidence": 0.14329273998737335,
+   "source_key": "ovt-9cc7bb49-3194-4f2b-aa80-a3ad4da22736",
    "prominence_rank": 1332
   },
   {
@@ -10606,6 +10857,7 @@
    "osm_type": null,
    "overture_category": "health_and_medical",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-a8ef52e9-8b93-4ea0-b42c-8903954b8696",
    "prominence_rank": 66
   },
   {
@@ -10641,6 +10893,7 @@
    "overture_category": "retirement_home",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-d9feb4f2-deb6-431f-b887-8ba6a6904997",
    "prominence_rank": 66
   },
   {
@@ -10700,6 +10953,7 @@
    "overture_category": "discount_store",
    "overture_confidence": 0.55,
    "enriched": true,
+   "source_key": "ovt-f91046a7-4f23-4152-b31d-59dc92bc7bda",
    "prominence_rank": 2833
   },
   {
@@ -10726,6 +10980,7 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.6443824172019958,
+   "source_key": "ovt-c899d24e-5d73-422a-822c-b5ba8a3dc5ef",
    "prominence_rank": 156
   },
   {
@@ -10778,6 +11033,7 @@
    "overture_category": "elementary_school",
    "overture_confidence": 0.9195,
    "enriched": true,
+   "source_key": "ovt-3111129e-2db9-47d4-adad-faabb4017c17",
    "prominence_rank": 156
   },
   {
@@ -10810,6 +11066,7 @@
    "overture_category": "bakery",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-eae25805-b341-4186-91ab-713fea7cfa08",
    "prominence_rank": 1720
   },
   {
@@ -10836,6 +11093,7 @@
    "osm_type": null,
    "overture_category": "lake",
    "overture_confidence": 0.9722161889076233,
+   "source_key": "ovt-728f1b16-00f2-4ae5-a945-9807d63db4dd",
    "prominence_rank": 389
   },
   {
@@ -10898,6 +11156,7 @@
    "overture_category": "fast_food_restaurant",
    "overture_confidence": 0.980089545249939,
    "enriched": true,
+   "source_key": "ovt-3df49707-019c-481a-a702-b3f2ad544e5d",
    "prominence_rank": 4
   },
   {
@@ -10973,6 +11232,7 @@
    "overture_category": "thrift_store",
    "overture_confidence": 0.85,
    "enriched": true,
+   "source_key": "ovt-776b91d7-6253-43d8-ba16-8ec45790457d",
    "prominence_rank": 11
   },
   {
@@ -11000,6 +11260,7 @@
    "overture_category": "rental_kiosks",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-edaec562-40f0-4a2a-83a9-334168cadfc4",
    "prominence_rank": 231
   },
   {
@@ -11056,6 +11317,7 @@
    "overture_category": "money_transfer_services",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-3d898c9b-1a5c-4f26-8a50-3e1fcfea8af1",
    "prominence_rank": 231
   },
   {
@@ -11157,6 +11419,7 @@
    "overture_category": "sign_making",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-60aee211-977e-4e30-b3a7-cf70dd2c2d8e",
    "prominence_rank": 10
   },
   {
@@ -11189,6 +11452,7 @@
    "overture_category": "airport",
    "overture_confidence": 0.8422932028770447,
    "enriched": true,
+   "source_key": "ovt-5d8f7b23-989b-4f48-a2ee-0195f915c8b2",
    "prominence_rank": 222
   },
   {
@@ -11220,6 +11484,7 @@
    "overture_category": "motorcycle_dealer",
    "overture_confidence": 0.9488615661859512,
    "enriched": true,
+   "source_key": "ovt-77cd915d-9f36-48af-ab7d-872c7f3f24e6",
    "prominence_rank": 222
   },
   {
@@ -11246,6 +11511,7 @@
    "osm_type": null,
    "overture_category": "accommodation",
    "overture_confidence": 0.95,
+   "source_key": "ovt-bf631a53-b803-47ff-bb29-ac2af69a3d6c",
    "prominence_rank": 18
   },
   {
@@ -11309,6 +11575,7 @@
    "overture_category": "fast_food_restaurant",
    "overture_confidence": 0.9902192950248718,
    "enriched": true,
+   "source_key": "ovt-6e4acc89-8027-4aa4-b6a3-d175cab7bc39",
    "prominence_rank": 6
   },
   {
@@ -11374,6 +11641,7 @@
    "overture_category": "motel",
    "overture_confidence": 0.9985466599464417,
    "enriched": true,
+   "source_key": "ovt-14cd6b7e-a4c9-4b9a-81e2-ee6851a2cf1b",
    "prominence_rank": 18
   },
   {
@@ -11408,6 +11676,7 @@
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.5118817090988159,
    "enriched": true,
+   "source_key": "ovt-f8a7ad2f-cadb-4b77-80e9-aa7d1d550845",
    "prominence_rank": 758
   },
   {
@@ -11442,6 +11711,7 @@
    "overture_category": "printing_services",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-1d595125-42c4-493a-b471-ffef0d69914a",
    "prominence_rank": 154
   },
   {
@@ -11495,6 +11765,7 @@
    "overture_category": "lawn_mower_store",
    "overture_confidence": 0.65,
    "enriched": true,
+   "source_key": "ovt-993efaf4-0cd0-4a9e-aa5a-1f5742527666",
    "prominence_rank": 258
   },
   {
@@ -11521,6 +11792,7 @@
    "osm_type": null,
    "overture_category": "bakery",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-ef88b310-645d-4e68-9038-3644c2b30ab9",
    "prominence_rank": 238
   },
   {
@@ -11556,6 +11828,7 @@
    "overture_category": "medical_supply",
    "overture_confidence": 0.9949824810028076,
    "enriched": true,
+   "source_key": "ovt-33f5421f-6115-4ccd-9b6e-df5d1b9ce7a7",
    "prominence_rank": 28
   },
   {
@@ -11591,6 +11864,7 @@
    "overture_category": "boat_service_and_repair",
    "overture_confidence": 0.8752639889717102,
    "enriched": true,
+   "source_key": "ovt-7f5f1ac0-9919-4b04-8bef-d2715503819b",
    "prominence_rank": 28
   },
   {
@@ -11625,6 +11899,7 @@
    "overture_category": "contractor",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-b09dd450-20a7-455b-9a94-c727a454aa9b",
    "prominence_rank": 28
   },
   {
@@ -11663,6 +11938,7 @@
    "overture_category": "roofing",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-b5b9969f-6b72-4237-bd69-61a9d1fe06aa",
    "prominence_rank": 28
   },
   {
@@ -11696,6 +11972,7 @@
    "overture_category": "professional_services",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-a21132dd-6341-45d3-9a7e-9ce0992cc48c",
    "prominence_rank": 2487
   },
   {
@@ -11733,6 +12010,7 @@
    "overture_category": "home_cleaning",
    "overture_confidence": 0.9199122190475464,
    "enriched": true,
+   "source_key": "ovt-9eb456ce-6699-45e8-b569-9661e6679d22",
    "prominence_rank": 1974
   },
   {
@@ -11767,6 +12045,7 @@
    "overture_category": "professional_services",
    "overture_confidence": 0.6127704381942749,
    "enriched": true,
+   "source_key": "ovt-1ad855d0-7647-40db-9337-40fdaa317d30",
    "prominence_rank": 1660
   },
   {
@@ -11793,6 +12072,7 @@
    "osm_type": null,
    "overture_category": "dentist",
    "overture_confidence": 0.9199122190475464,
+   "source_key": "ovt-1256c366-badc-4f72-bf75-1567fc5afd7e",
    "prominence_rank": 506
   },
   {
@@ -11820,6 +12100,7 @@
    "overture_category": "business_advertising",
    "overture_confidence": 0.5434233546257019,
    "enriched": true,
+   "source_key": "ovt-da6f6215-8930-48fc-84d9-29de7e7bcc79",
    "prominence_rank": 2962
   },
   {
@@ -11847,6 +12128,7 @@
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.7048439979553223,
    "enriched": true,
+   "source_key": "ovt-f8487a68-0283-4faa-85f0-6a268b602b3e",
    "prominence_rank": 1098
   },
   {
@@ -11873,6 +12155,7 @@
    "osm_type": null,
    "overture_category": "lake",
    "overture_confidence": 0.9722161889076233,
+   "source_key": "ovt-001ce78a-fa8f-4ad8-ab6a-6b89f2a60bf9",
    "prominence_rank": 346
   },
   {
@@ -11899,6 +12182,7 @@
    "osm_type": null,
    "overture_category": "boating_places",
    "overture_confidence": 0.55,
+   "source_key": "ovt-834555d3-f4ed-45e8-9f2e-530674d90116",
    "prominence_rank": 346
   },
   {
@@ -11925,6 +12209,7 @@
    "osm_type": null,
    "overture_category": "holiday_rental_home",
    "overture_confidence": 0.9722161889076233,
+   "source_key": "ovt-7a2873f5-56d5-4600-9fd9-cb2e65425dc5",
    "prominence_rank": 1639
   }
  ]

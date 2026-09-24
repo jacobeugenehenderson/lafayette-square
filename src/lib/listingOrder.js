@@ -5,9 +5,9 @@
  * `useLandmarkFilter`: 285 listings rendered in whatever order the producer emitted,
  * which for an Overture base is that file's order. huron's directory opened on a
  * remodeling contractor, a detailer and a car wash, with the town's best-documented
- * restaurant at #48. ⚠️ `assignDisplayIds` DOES sort, which made it read as though an
- * ordering discipline existed — it sorts a filtered copy to hand out id numbers and
- * never reorders the array it returns.
+ * restaurant at #48. ⚠️ Id assignment DOES sort (`cartograph/listing-identity.js`), which
+ * made it read as though an ordering discipline existed — it sorts a copy to hand out id
+ * numbers and never reorders the array it returns.
  *
  * ⭐⭐ DEPTH FIRST, PROMINENCE AS TIE-BREAK (ruled by Jacob, 2026-09-22).
  *

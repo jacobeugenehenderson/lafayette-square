@@ -37,6 +37,7 @@
    "source": "osm",
    "osm_type": "sports_hall",
    "enriched": true,
+   "source_key": "osm-112889065",
    "prominence_rank": 68
   },
   {
@@ -61,6 +62,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "fitness_centre",
+   "source_key": "osm-122054466",
    "prominence_rank": 72
   },
   {
@@ -85,6 +87,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "pitch",
+   "source_key": "osm-505141998",
    "prominence_rank": 100
   },
   {
@@ -109,6 +112,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "fitness_centre",
+   "source_key": "osm-631683339",
    "prominence_rank": 20
   },
   {
@@ -133,6 +137,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "parking",
+   "source_key": "osm-75609430",
    "prominence_rank": 39
   },
   {
@@ -157,6 +162,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "library",
+   "source_key": "osm-185357795",
    "prominence_rank": 29
   },
   {
@@ -181,6 +187,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "parking",
+   "source_key": "osm-185357806",
    "prominence_rank": 40
   },
   {
@@ -209,6 +216,7 @@
    "source": "osm",
    "osm_type": "cinema",
    "enriched": true,
+   "source_key": "osm-197251663",
    "prominence_rank": 2
   },
   {
@@ -233,6 +241,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "university",
+   "source_key": "osm-197251693",
    "prominence_rank": 650
   },
   {
@@ -261,6 +270,7 @@
    "source": "osm",
    "osm_type": "cinema",
    "enriched": true,
+   "source_key": "osm-374431745",
    "prominence_rank": 21
   },
   {
@@ -289,6 +299,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "enriched": true,
+   "source_key": "osm-374955860",
    "prominence_rank": 5
   },
   {
@@ -317,6 +328,7 @@
    "source": "osm",
    "osm_type": "pharmacy",
    "enriched": true,
+   "source_key": "osm-374955862",
    "prominence_rank": 19
   },
   {
@@ -341,6 +353,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "library",
+   "source_key": "osm-615415142",
    "prominence_rank": 33
   },
   {
@@ -365,6 +378,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "library",
+   "source_key": "osm-617281833",
    "prominence_rank": 18
   },
   {
@@ -394,6 +408,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "enriched": true,
+   "source_key": "osm-617915147",
    "prominence_rank": 4
   },
   {
@@ -418,6 +433,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "parking",
+   "source_key": "osm-619001721",
    "prominence_rank": 17
   },
   {
@@ -442,6 +458,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "parking",
+   "source_key": "osm-619001723",
    "prominence_rank": 13
   },
   {
@@ -469,6 +486,7 @@
    "source": "osm",
    "osm_type": "bank",
    "enriched": true,
+   "source_key": "osm-619288145",
    "prominence_rank": 26
   },
   {
@@ -496,6 +514,7 @@
    "source": "osm",
    "osm_type": "bank",
    "enriched": true,
+   "source_key": "osm-619322620",
    "prominence_rank": 22
   },
   {
@@ -520,6 +539,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "place_of_worship",
+   "source_key": "osm-620135602",
    "prominence_rank": 12
   },
   {
@@ -548,6 +568,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "enriched": true,
+   "source_key": "osm-631683349",
    "prominence_rank": 21
   },
   {
@@ -572,6 +593,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "fuel",
+   "source_key": "osm-637688853",
    "prominence_rank": 184
   },
   {
@@ -596,6 +618,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "school",
+   "source_key": "osm-664546508",
    "prominence_rank": 55
   },
   {
@@ -620,6 +643,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "events_venue",
+   "source_key": "osm-703993657",
    "prominence_rank": 315
   },
   {
@@ -644,6 +668,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "parking",
+   "source_key": "osm-911296894",
    "prominence_rank": 70
   },
   {
@@ -672,6 +697,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "enriched": true,
+   "source_key": "osm-911656932",
    "prominence_rank": 8
   },
   {
@@ -701,6 +727,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "enriched": true,
+   "source_key": "osm-911656937",
    "prominence_rank": 8
   },
   {
@@ -725,6 +752,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "library",
+   "source_key": "osm-917590742",
    "prominence_rank": 34
   },
   {
@@ -749,6 +777,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "community_centre",
+   "source_key": "osm-1344831389",
    "prominence_rank": 30
   },
   {
@@ -773,6 +802,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-44076320",
    "prominence_rank": 46
   },
   {
@@ -797,6 +827,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-44076461",
    "prominence_rank": 241
   },
   {
@@ -821,6 +852,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-44076776",
    "prominence_rank": 253
   },
   {
@@ -845,6 +877,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-44076778",
    "prominence_rank": 3
   },
   {
@@ -869,6 +902,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-44077043",
    "prominence_rank": 242
   },
   {
@@ -893,6 +927,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-44077048",
    "prominence_rank": 1078
   },
   {
@@ -917,6 +952,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-111861290",
    "prominence_rank": 24
   },
   {
@@ -941,6 +977,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-111861291",
    "prominence_rank": 93
   },
   {
@@ -965,6 +1002,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-111861292",
    "prominence_rank": 248
   },
   {
@@ -989,6 +1027,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-111861293",
    "prominence_rank": 233
   },
   {
@@ -1013,6 +1052,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-111861294",
    "prominence_rank": 95
   },
   {
@@ -1037,6 +1077,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-111861296",
    "prominence_rank": 35
   },
   {
@@ -1061,6 +1102,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-111861297",
    "prominence_rank": 93
   },
   {
@@ -1085,6 +1127,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-111861298",
    "prominence_rank": 95
   },
   {
@@ -1109,6 +1152,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-112889064",
    "prominence_rank": 285
   },
   {
@@ -1133,6 +1177,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-112889068",
    "prominence_rank": 48
   },
   {
@@ -1157,6 +1202,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-112889069",
    "prominence_rank": 97
   },
   {
@@ -1181,6 +1227,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-112889074",
    "prominence_rank": 97
   },
   {
@@ -1205,6 +1252,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125028",
    "prominence_rank": 94
   },
   {
@@ -1229,6 +1277,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125029",
    "prominence_rank": 35
   },
   {
@@ -1253,6 +1302,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125030",
    "prominence_rank": 240
   },
   {
@@ -1277,6 +1327,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125031",
    "prominence_rank": 91
   },
   {
@@ -1301,6 +1352,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "museum",
+   "source_key": "osm-120125032",
    "prominence_rank": 1
   },
   {
@@ -1325,6 +1377,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125035",
    "prominence_rank": 91
   },
   {
@@ -1349,6 +1402,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125036",
    "prominence_rank": 259
   },
   {
@@ -1373,6 +1427,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125037",
    "prominence_rank": 35
   },
   {
@@ -1397,6 +1452,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125038",
    "prominence_rank": 99
   },
   {
@@ -1421,6 +1477,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-120125039",
    "prominence_rank": 94
   },
   {
@@ -1445,6 +1502,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596323",
    "prominence_rank": 8
   },
   {
@@ -1469,6 +1527,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596325",
    "prominence_rank": 52
   },
   {
@@ -1493,6 +1552,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596326",
    "prominence_rank": 260
   },
   {
@@ -1517,6 +1577,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596327",
    "prominence_rank": 96
   },
   {
@@ -1541,6 +1602,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596328",
    "prominence_rank": 254
   },
   {
@@ -1565,6 +1627,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596330",
    "prominence_rank": 264
   },
   {
@@ -1589,6 +1652,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596331",
    "prominence_rank": 277
   },
   {
@@ -1613,6 +1677,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596333",
    "prominence_rank": 258
   },
   {
@@ -1637,6 +1702,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596334",
    "prominence_rank": 256
   },
   {
@@ -1661,6 +1727,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-136596335",
    "prominence_rank": 47
   },
   {
@@ -1685,6 +1752,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357787",
    "prominence_rank": 58
   },
   {
@@ -1709,6 +1777,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357789",
    "prominence_rank": 301
   },
   {
@@ -1733,6 +1802,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357790",
    "prominence_rank": 298
   },
   {
@@ -1757,6 +1827,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357791",
    "prominence_rank": 296
   },
   {
@@ -1781,6 +1852,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357792",
    "prominence_rank": 57
   },
   {
@@ -1805,6 +1877,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357793",
    "prominence_rank": 265
   },
   {
@@ -1829,6 +1902,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357794",
    "prominence_rank": 300
   },
   {
@@ -1853,6 +1927,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357796",
    "prominence_rank": 275
   },
   {
@@ -1877,6 +1952,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357798",
    "prominence_rank": 59
   },
   {
@@ -1901,6 +1977,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357799",
    "prominence_rank": 288
   },
   {
@@ -1925,6 +2002,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357800",
    "prominence_rank": 44
   },
   {
@@ -1949,6 +2027,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357802",
    "prominence_rank": 39
   },
   {
@@ -1973,6 +2052,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357807",
    "prominence_rank": 418
   },
   {
@@ -1997,6 +2077,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357808",
    "prominence_rank": 428
   },
   {
@@ -2021,6 +2102,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357809",
    "prominence_rank": 347
   },
   {
@@ -2045,6 +2127,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357810",
    "prominence_rank": 439
   },
   {
@@ -2069,6 +2152,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357813",
    "prominence_rank": 308
   },
   {
@@ -2093,6 +2177,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357814",
    "prominence_rank": 35
   },
   {
@@ -2117,6 +2202,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-185357815",
    "prominence_rank": 346
   },
   {
@@ -2141,6 +2227,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-197251651",
    "prominence_rank": 250
   },
   {
@@ -2165,6 +2252,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-197251652",
    "prominence_rank": 54
   },
   {
@@ -2189,6 +2277,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-197251653",
    "prominence_rank": 50
   },
   {
@@ -2213,6 +2302,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-197251654",
    "prominence_rank": 276
   },
   {
@@ -2237,6 +2327,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-197251657",
    "prominence_rank": 53
   },
   {
@@ -2261,6 +2352,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-197251660",
    "prominence_rank": 74
   },
   {
@@ -2285,6 +2377,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-197251666",
    "prominence_rank": 257
   },
   {
@@ -2309,6 +2402,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-245729305",
    "prominence_rank": 25
   },
   {
@@ -2333,6 +2427,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "hotel",
+   "source_key": "osm-374955859",
    "prominence_rank": 9
   },
   {
@@ -2357,6 +2452,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-381112555",
    "prominence_rank": 1078
   },
   {
@@ -2381,6 +2477,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-381112558",
    "prominence_rank": 25
   },
   {
@@ -2409,6 +2506,7 @@
    "source": "osm",
    "osm_type": "supermarket",
    "enriched": true,
+   "source_key": "osm-431245488",
    "prominence_rank": 41
   },
   {
@@ -2433,6 +2531,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-461391323",
    "prominence_rank": 249
   },
   {
@@ -2457,6 +2556,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-461391336",
    "prominence_rank": 3
   },
   {
@@ -2481,6 +2581,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-505143103",
    "prominence_rank": 960
   },
   {
@@ -2505,6 +2606,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-505571723",
    "prominence_rank": 737
   },
   {
@@ -2529,6 +2631,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-505571724",
    "prominence_rank": 100
   },
   {
@@ -2553,6 +2656,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-505571725",
    "prominence_rank": 90
   },
   {
@@ -2577,6 +2681,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-505571726",
    "prominence_rank": 227
   },
   {
@@ -2601,6 +2706,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-505573514",
    "prominence_rank": 43
   },
   {
@@ -2625,6 +2731,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-505573515",
    "prominence_rank": 43
   },
   {
@@ -2649,6 +2756,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-505587642",
    "prominence_rank": 56
   },
   {
@@ -2673,6 +2781,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-543845059",
    "prominence_rank": 96
   },
   {
@@ -2697,6 +2806,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-615406534",
    "prominence_rank": 31
   },
   {
@@ -2721,6 +2831,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-615415140",
    "prominence_rank": 272
   },
   {
@@ -2745,6 +2856,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-615415143",
    "prominence_rank": 36
   },
   {
@@ -2769,6 +2881,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-615422640",
    "prominence_rank": 793
   },
   {
@@ -2793,6 +2906,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-615422643",
    "prominence_rank": 27
   },
   {
@@ -2817,6 +2931,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-615422644",
    "prominence_rank": 27
   },
   {
@@ -2841,6 +2956,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-617912881",
    "prominence_rank": 37
   },
   {
@@ -2869,6 +2985,7 @@
    "source": "osm",
    "osm_type": "paint",
    "enriched": true,
+   "source_key": "osm-617915146",
    "prominence_rank": 4
   },
   {
@@ -2893,6 +3010,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-618098735",
    "prominence_rank": 60
   },
   {
@@ -2917,6 +3035,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-618098736",
    "prominence_rank": 60
   },
   {
@@ -2941,6 +3060,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-618098737",
    "prominence_rank": 60
   },
   {
@@ -2965,6 +3085,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-619001713",
    "prominence_rank": 13
   },
   {
@@ -2989,6 +3110,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-619001714",
    "prominence_rank": 82
   },
   {
@@ -3013,6 +3135,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-619001715",
    "prominence_rank": 17
   },
   {
@@ -3037,6 +3160,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-619323288",
    "prominence_rank": 23
   },
   {
@@ -3061,6 +3185,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-631683335",
    "prominence_rank": 23
   },
   {
@@ -3085,6 +3210,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-633120950",
    "prominence_rank": 104
   },
   {
@@ -3109,6 +3235,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-633120959",
    "prominence_rank": 146
   },
   {
@@ -3133,6 +3260,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-639831637",
    "prominence_rank": 32
   },
   {
@@ -3157,6 +3285,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-697027368",
    "prominence_rank": 46
   },
   {
@@ -3181,6 +3310,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-697249227",
    "prominence_rank": 25
   },
   {
@@ -3205,6 +3335,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-697249228",
    "prominence_rank": 25
   },
   {
@@ -3229,6 +3360,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-700923535",
    "prominence_rank": 99
   },
   {
@@ -3253,6 +3385,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-846607740",
    "prominence_rank": 251
   },
   {
@@ -3277,6 +3410,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-846607742",
    "prominence_rank": 46
   },
   {
@@ -3301,6 +3435,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-846607745",
    "prominence_rank": 291
   },
   {
@@ -3325,6 +3460,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-846607752",
    "prominence_rank": 303
   },
   {
@@ -3349,6 +3485,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-899660192",
    "prominence_rank": 48
   },
   {
@@ -3373,6 +3510,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-899660193",
    "prominence_rank": 24
   },
   {
@@ -3397,6 +3535,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-899660194",
    "prominence_rank": 24
   },
   {
@@ -3421,6 +3560,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-911296886",
    "prominence_rank": 48
   },
   {
@@ -3445,6 +3585,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-916169744",
    "prominence_rank": 379
   },
   {
@@ -3469,6 +3610,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-916169745",
    "prominence_rank": 406
   },
   {
@@ -3493,6 +3635,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-917590739",
    "prominence_rank": 102
   },
   {
@@ -3517,6 +3660,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-917590740",
    "prominence_rank": 102
   },
   {
@@ -3541,6 +3685,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-917590741",
    "prominence_rank": 323
   },
   {
@@ -3565,6 +3710,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-966641069",
    "prominence_rank": 367
   },
   {
@@ -3589,6 +3735,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-1336923267",
    "prominence_rank": 25
   },
   {
@@ -3613,6 +3760,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "source_key": "osm-1346061841",
    "prominence_rank": 38
   },
   {
@@ -3663,6 +3811,7 @@
    "denomination": "Episcopal",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 6
   },
   {
@@ -3699,6 +3848,7 @@
    "school_type": "Episcopal parish day school (JK–grade 6)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 6
   },
   {
@@ -3729,6 +3879,7 @@
    "source": "research",
    "price_range": "$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 23
   },
   {
@@ -3793,6 +3944,7 @@
    "photo_credit": "The Cheshire (cheshirestl.com)",
    "price_range": "$$$",
    "order_url": null,
+   "source_key": null,
    "prominence_rank": 9
   },
   {
@@ -3872,6 +4024,7 @@
    "seating_capacity": 414,
    "ticket_url": "https://hipointetheatre.org",
    "order_url": null,
+   "source_key": null,
    "prominence_rank": 21
   },
   {
@@ -3903,6 +4056,7 @@
    "source": "research",
    "price_range": "$$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 7
   },
   {
@@ -3934,6 +4088,7 @@
    "source": "research",
    "price_range": "$$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 63
   },
   {
@@ -3964,6 +4119,7 @@
    "denomination": "Seventh-day Adventist",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 12
   },
   {
@@ -3996,6 +4152,7 @@
    "school_type": "Public elementary (School District of Clayton)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 45
   },
   {
@@ -4033,6 +4190,7 @@
    "denomination": "Hindu (Ramakrishna Order / Vedanta)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 14
   },
   {
@@ -4062,6 +4220,7 @@
    "source": "research",
    "price_range": "$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 294
   },
   {
@@ -4099,6 +4258,7 @@
    "units": 45,
    "price_range": "$$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 79
   },
   {
@@ -4128,6 +4288,7 @@
    "source": "research",
    "price_range": "$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 269
   },
   {
@@ -4196,6 +4357,7 @@
    "photo_credit": "Warren LeMay / Flickr (public domain)",
    "price_range": "$",
    "order_url": null,
+   "source_key": null,
    "prominence_rank": 175
   },
   {
@@ -4227,6 +4389,7 @@
    "denomination": "Presbyterian (PC-USA)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 10
   },
   {
@@ -4272,6 +4435,7 @@
    "school_type": "Independent (JK–grade 6)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 55
   },
   {
@@ -4302,6 +4466,7 @@
    "source": "research",
    "price_range": "$$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 80
   },
   {
@@ -4339,6 +4504,7 @@
    "school_type": "Public middle school (School District of Clayton)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 15
   },
   {
@@ -4368,6 +4534,7 @@
    "source": "research",
    "price_range": "$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 281
   },
   {
@@ -4414,6 +4581,7 @@
    "photo_credit": "Warren LeMay / Flickr (public domain)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 77
   },
   {
@@ -4444,6 +4612,7 @@
    "denomination": "United Church of Christ",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 331
   },
   {
@@ -4474,6 +4643,7 @@
    "denomination": "Lutheran",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 53
   },
   {
@@ -4503,6 +4673,7 @@
    "source": "research",
    "price_range": "$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 286
   },
   {
@@ -4532,6 +4703,7 @@
    "denomination": "Christian Science",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 11
   },
   {
@@ -4560,6 +4732,7 @@
    "source": "research",
    "price_range": "$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 62
   },
   {
@@ -4600,6 +4773,7 @@
    "school_type": "Independent (age 3–grade 6)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 960
   },
   {
@@ -4630,6 +4804,7 @@
    "source": "research",
    "price_range": "$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 627
   },
   {
@@ -4661,6 +4836,7 @@
    "source": "research",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 883
   },
   {
@@ -4692,6 +4868,7 @@
    "denomination": "Roman Catholic (campus ministry)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 28
   },
   {
@@ -4724,6 +4901,7 @@
    "denomination": "Lutheran (LCMS — Concordia Seminary)",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 75
   },
   {
@@ -4754,6 +4932,7 @@
    "denomination": "Lutheran",
    "price_range": null,
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 16
   },
   {
@@ -4781,6 +4960,7 @@
    "source": "research",
    "price_range": "$$",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 243
   },
   {
@@ -4873,6 +5053,7 @@
    "photo_credit": "Kaldi's Coffee (kaldiscoffee.com)",
    "price_range": "$$",
    "order_url": "https://order.kaldiscoffee.com/order/kaldis-coffee-demun",
+   "source_key": null,
    "prominence_rank": 361
   },
   {
@@ -4956,6 +5137,7 @@
    "photo_credit": "Louie (louiedemun.com)",
    "price_range": "$$$",
    "order_url": null,
+   "source_key": null,
    "prominence_rank": 393
   },
   {
@@ -5044,6 +5226,7 @@
    "photo_credit": "Sasha's Wine Bar (sashaswinebar.com)",
    "price_range": "$$",
    "order_url": "https://www.toasttab.com/local/order/sashas-de-mun-706-de-mun-ave",
+   "source_key": null,
    "prominence_rank": 393
   },
   {
@@ -5137,6 +5320,7 @@
    "photo_credit": "Barrio (barrioburgersandtacos.com)",
    "price_range": "$$",
    "order_url": "https://order.toasttab.com/online/barrio-740-demun-ave",
+   "source_key": null,
    "prominence_rank": 362
   },
   {
@@ -5165,6 +5349,7 @@
    "status": "closed",
    "source": "research",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 362
   },
   {
@@ -5255,6 +5440,7 @@
    "photo_credit": "Clementine's Creamery (clementinescreamery.com)",
    "price_range": "$$",
    "order_url": "https://www.clementinescreamery.com/pages/clayton",
+   "source_key": null,
    "prominence_rank": 697
   },
   {
@@ -5282,6 +5468,7 @@
    "status": "active",
    "source": "research",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 141
   },
   {
@@ -5310,6 +5497,7 @@
    "status": "active",
    "source": "research",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 221
   },
   {
@@ -5395,6 +5583,7 @@
    "instagram": "https://www.instagram.com/hipointedrivein",
    "photo_credit": "Hi-Pointe Drive-In (hipointedrivein.com)",
    "price_range": "$$",
+   "source_key": null,
    "prominence_rank": 887
   },
   {
@@ -5422,6 +5611,7 @@
    "status": "active",
    "source": "research",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 965
   },
   {
@@ -5450,6 +5640,7 @@
    "status": "active",
    "source": "research",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 965
   },
   {
@@ -5477,6 +5668,7 @@
    "status": "active",
    "source": "research",
    "enriched": true,
+   "source_key": null,
    "prominence_rank": 455
   }
  ]

@@ -6,9 +6,9 @@
  * ⛔⛔ THE DIRECTORY HAD NO ORDER AT ALL. Not one `.sort()` in `SidePanel`,
  * `useListings` or `useLandmarkFilter` — 285 listings rendered in the producer's
  * emission order, which for an Overture base is that file's order. huron opened on a
- * remodeling contractor, a detailer and a car wash. ⚠️ `assignDisplayIds` DOES sort,
- * which made it read as though a discipline existed: it sorts a filtered copy to hand
- * out id numbers and never reorders the array it returns.
+ * remodeling contractor, a detailer and a car wash. ⚠️ Id assignment DOES sort
+ * (`listing-identity.js`), which made it read as though a discipline existed: it sorts a
+ * copy to hand out id numbers and never reorders the array it returns.
  *
  * ⛔⛔ AND THE TRAP THIS CHECK EXISTS FOR: the store is SEEDED in `useListings` and then
  * REPLACED by the API merge in `useInit`. Ordering only the seed looks correct in a cold

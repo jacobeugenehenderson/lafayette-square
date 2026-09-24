@@ -417,6 +417,12 @@ looks like; the worklist is what to ask about.
 `cartograph/data/<scene>/content/listings.overrides.json`, where it is reviewable in git and a fresh
 intake cannot destroy it. ▶ `host/README.md` · `ROADMAP` H-28.
 
+⭐ **A listing's id is permanent.** `content/listing-identity.json` seals each source key
+(`ovt-<GERS>` / `osm-<id>`) to its `…-lst-NNNN` on the first bake; a new business appends, a closed
+one's number is never reused, and every listing ships its `source_key`. ⛔ Commit the registry and never
+hand-edit it. The bake refuses an authored `id` that would renumber a business the registry numbered.
+▶ `node checks/claims-a-listing-keeps-its-id.mjs`.
+
 ---
 
 ## The town calendar — `content/events.json` *(the knob: authored, no UI)*
@@ -443,7 +449,7 @@ listing-less event would otherwise collide on a single key and they would overwr
 authored per event, and never the key: two festivals sponsored by one marina are still two festivals.
 
 ⛔ **Every `listing_id`/`links_to` must resolve to a listing in that scene or the bake refuses.**
-Listing ids are re-derived on every pour, so this is precisely the reference that rots; a dead one
+A listing id is permanent, but a listing can still leave the base; a dead reference
 would be a ticker headline that clicks through to nothing.
 
 ▶ The file carries its own `_schema` and `_example`. Any `_`-prefixed key is provenance and never

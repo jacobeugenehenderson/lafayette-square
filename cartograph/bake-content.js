@@ -50,6 +50,7 @@ import { readSources, undeclaredMessage, PARCEL_FIELDS } from './sources.js'
 import { classifyZoning } from '../src/tokens/categories.js'
 import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { rankRoster } from './prominence.mjs'
+import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove } from './listing-identity.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -965,24 +966,6 @@ function stripMeta(o) {
   return c
 }
 
-// Deterministic display-id assignment. Override adds keep their pinned id;
-// base listings get the next free hpdm-lst-NNNN in a stable sort — idempotent
-// on unchanged input, and referenced ids (menus/photos) never reassigned.
-function assignDisplayIds(listings, prefix) {
-  const pinned = new Set(listings.filter(l => l.id).map(l => l.id))
-  const unassigned = listings.filter(l => !l.id)
-    .sort((a, b) => (a._key || a.name || '').localeCompare(b._key || b.name || ''))
-  let n = 1
-  for (const l of unassigned) {
-    let id
-    do { id = `${prefix}-lst-${String(n).padStart(4, '0')}`; n++ } while (pinned.has(id))
-    pinned.add(id); l.id = id
-  }
-  // drop internal _key from output
-  for (const l of listings) delete l._key
-  return listings
-}
-
 // ──────────────────────────────────────────────────────────────────────────
 // Layer 1 — roster (one record per baked building)
 // ──────────────────────────────────────────────────────────────────────────
@@ -1246,7 +1229,24 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   const { listings: merged, report } = applyListingOverrides(baseListings, listingOverrides,
     { buildingGrid, bakedIds, parcels, parcelByAddr })
   const prefix = scene.split('-')[0] === 'hipointe' ? 'hpdm' : scene.slice(0, 4)
-  const listings = assignDisplayIds(merged, prefix)
+  // ⭐ PERMANENT LISTING IDS — sealed by the scene's registry (`listing-identity.js`, ROADMAP H-29).
+  const idPath = listingIdPath(contentDir(scene))
+  const { registry: listingIds, report: idReport } = assignListingIds(merged, prefix, loadListingIds(idPath))
+  if (idReport.sealed) {
+    // The first sealed bake numbers positionally; that carries today's ids over only if the input
+    // is unchanged since the last bake. Prove it against the file on disk before sealing.
+    const onDisk = loadJsonOr(join(contentDir(scene), 'listings.json'), { listings: [] }).listings
+    const moved = idsThatWouldMove(merged, onDisk)
+    if (moved.length) {
+      throw new Error(`listing-identity: sealing on this input would move ${moved.length} existing listing id(s), and everything keyed by them (claims, Sheet rows, menus, events) would re-point:\n` +
+        moved.slice(0, 12).map(m => `     ${m.was} → ${m.now}  ${m.name}`).join('\n') +
+        `\n   ▶ Seal on the input the current listings.json was baked from (check out its sources), then change the input.`)
+    }
+  }
+  // The source key stays on the record: it is the listing's identity outside this repo too.
+  for (const l of merged) { l.source_key = l._key ?? null; delete l._key }
+  const listings = merged
+  console.log(`  listing ids: ${idReport.sealed ? `SEALED ${idReport.minted} into ${idPath.split('/').slice(-3).join('/')}` : `${idReport.reused} kept · ${idReport.minted} new (high water ${listingIds.meta.highWater})`}`)
   console.log(`  overrides: +${report.added} adds (${report.add_reanchored} re-anchored, ${report.add_dropped.length} dropped), ${report.patched} patches, ${report.base_superseded} base superseded`)
   if (report.add_dropped.length) for (const d of report.add_dropped) console.log(`    ⚠️ dropped add: ${d.name} (${d.id}) — ${d.reason} → check the Extent`)
 
@@ -1420,7 +1420,10 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   if (ev.present) console.log(`  events.json: ${ev.count} authored (${ev.town} town-wide, ${ev.linked} pointing at a place) — every reference resolves ✓`)
 
   writeIfChanged(join(cdir, 'roster.json'), JSON.stringify(rosterOut, null, 1) + '\n')
-  if (!skipListings) writeIfChanged(join(cdir, 'listings.json'), JSON.stringify(listingsOut, null, 1) + '\n')
+  if (!skipListings) {
+    writeIfChanged(join(cdir, 'listings.json'), JSON.stringify(listingsOut, null, 1) + '\n')
+    writeIfChanged(idPath, serializeListingIds(listingIds))
+  }
   // profile.json is fully authored (Layer 0) — leave it in place; the join
   // does not regenerate it. (It rides the instance/content payload as-is.)
   console.log(`[bake-content] wrote roster.json (${roster.length})${skipListings ? ' — listings.json PRESERVED (external base)' : ` + listings.json (${listings.length})`} in ${Date.now() - t0}ms`)
