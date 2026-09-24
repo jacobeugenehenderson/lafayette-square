@@ -562,6 +562,20 @@
       ]
     },
     {
+      "id": "q-highway-taper",
+      "ask": "How long is the taper where a highway's width steps (a lane added or dropped; a section handing off to an at-grade street), and where along the line does it sit?",
+      "neededBy": "H-3 step 2 (the lane-step taper) and step 5 (the end-to-end taper)",
+      "status": "open",
+      "tried": [
+        "massdot-design-guide → f-massdot-ramp-terminal-widths (a 12:1 transition rate at a ramp terminal)"
+      ],
+      "findings": [
+        "f-massdot-ramp-terminal-widths",
+        "d-lane-step-taper-rate"
+      ],
+      "notes": "LENGTH derived from MassDOT's 12:1 ramp-terminal transition rate (d-lane-step-taper-rate), applied to every width step. PLACEMENT along the line is not stated by any source read: centred on the step, stamped [U], printed per pour."
+    },
+    {
       "id": "q-physical-gore-position",
       "ask": "Where does the physical gore (nose) sit relative to the theoretical gore?",
       "neededBy": "H-3 Q6",
@@ -3002,6 +3016,22 @@
       "quote": "-",
       "foundOn": "2026-09-24",
       "foundBy": "Gantry, per Jacob's ruling (relayed by Boz); per-component correction by Boz"
+    },
+    {
+      "id": "d-lane-step-taper-rate",
+      "question": "q-highway-taper",
+      "topic": "highway cross-section",
+      "kind": "derived",
+      "from": [
+        "f-massdot-ramp-terminal-widths"
+      ],
+      "value": {
+        "taperLengthPerWidthChange": 12
+      },
+      "derivation": "MassDOT transitions a ramp from its 25 ft diverge width to the 22 ft standard 'at approximately a 12:1 rate'; applied to every width step along a highway (a lane-count step, and a section's end-to-end handoff): taper length = 12 × the width change on that side. The taper's placement along the line (the brief's 'side') is not stated by the source: it is centred on the step, stamped [U], and printed per pour.",
+      "quote": "-",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry, per Boz (H-3 build)"
     }
   ]
 }

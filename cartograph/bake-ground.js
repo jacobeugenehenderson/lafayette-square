@@ -465,6 +465,13 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     if (!byMaterial.has(key)) byMaterial.set(key, [])
     for (const p of ringsToHoledPolys(rings)) byMaterial.get(key).push(p)
   }
+  // ⛔ H-3: a highway with NO WIDTH is refused by name — it would freeze as a hole in the road.
+  // A highway whose ribbons predate its section (a town not re-poured since H-3 step 1) freezes at its
+  // old measure — the state every such town ships today — and says so, loudly, every bake: refusing
+  // it would block every other town's bake until each is re-poured.
+  const hd = pr.hwyDisclosure
+  if (hd && (hd.missing.length || hd.gsMissing.length)) throw new Error(`[bake-ground] ⛔ refusing to freeze highway(s) with NO WIDTH: ${[...hd.missing, ...hd.gsMissing].join(', ')}`)
+  if (hd?.legacy.length) console.warn(`  [H] ⛔ ${hd.legacy.length} highway(s) frozen at their PRE-H-3 measure — re-pour ${scene} to build them from their section: ${hd.legacy.join(', ')}`)
   pushClipperRings('asphalt',  pr.asphalt)
   pushClipperRings('highway',  pr.highway)   // grade-separated highway-class roads → own layer/material
   pushClipperRings('curb',     pr.curb)

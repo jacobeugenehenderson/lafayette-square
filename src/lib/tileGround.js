@@ -1569,6 +1569,84 @@ function strokeOpen(polyline, delta) {
   co.Execute(out, delta * SCALE)
   return out.map(p => p.map(fromClipper))
 }
+// ── H-3 step 2: THE HIGHWAY SWEEP — the roadway IS the object (`r-highway-positive-object`) ──
+// A highway is its alignment swept by its typical section: the SAME flattened points ① consumes
+// (never a consumer resample — faceting is the skeleton's curve fit, `r-ssot-skeleton-geometry`),
+// offset RIGHT by right(station) and LEFT by left(station), built as one explicit outline — right
+// boundary forward, left boundary back — not a ClipperOffset, so each vertex knows its source
+// index and side (`RIBBONS §1`). Right = (−dz, dx) of point order, the measure convention.
+// The width is per lane span (`section.spans`, stations on the raw welded line, rescaled to the
+// drawn length). Where it steps, it tapers over `section.taper.rate` × the change, centred on the
+// step (`d-lane-step-taper-rate`; placement [U]); a taper longer than half a neighbouring span is
+// shortened to it and REPORTED. Ends are butt.
+function highwayWidthProfile(sec, drawnLen) {
+  const spans = (sec?.spans || []).filter(sp => Number.isFinite(sp.hw))
+  if (!spans.length) return null
+  const scale = sec.length > 0 ? drawnLen / sec.length : 1
+  const st = (x, dflt) => (Number.isFinite(x) ? x * scale : dflt)
+  const knots = [[0, spans[0].hw]], tapers = []
+  for (let k = 0; k + 1 < spans.length; k++) {
+    const a = spans[k], b = spans[k + 1], d = Math.abs(b.hw - a.hw)
+    if (d < 1e-6) continue
+    const at = st(b.s0, drawnLen * (k + 1) / spans.length)
+    const want = sec.taper.rate * d
+    const room = Math.min(at - st(a.s0, 0), st(b.s1, drawnLen) - at)
+    const half = Math.max(0, Math.min(want / 2, room / 2))
+    knots.push([at - half, a.hw], [at + half, b.hw])
+    tapers.push({ at: +at.toFixed(1), from: a.hw, to: b.hw, length: +(2 * half).toFixed(2), wanted: +want.toFixed(2), shortened: 2 * half < want - 1e-6 })
+  }
+  knots.push([drawnLen, spans[spans.length - 1].hw])
+  const at = (t) => {
+    for (let i = 1; i < knots.length; i++) if (t <= knots[i][0] + 1e-9) {
+      const [t0, v0] = knots[i - 1], [t1, v1] = knots[i]
+      return t1 - t0 < 1e-9 ? v1 : v0 + (v1 - v0) * (t - t0) / (t1 - t0)
+    }
+    return knots[knots.length - 1][1]
+  }
+  return { at, stations: knots.map(k => k[0]), tapers }
+}
+function sweepHighway(points, leftSec, rightSec) {
+  const pts = []
+  for (const p of points) { const q = Array.isArray(p) ? p : [p.x, p.z]; if (!pts.length || Math.hypot(q[0] - pts[pts.length - 1][0], q[1] - pts[pts.length - 1][1]) > 1e-6) pts.push(q) }
+  if (pts.length < 2) return null
+  const cum = [0]
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))
+  const Ltot = cum[cum.length - 1]
+  const L = highwayWidthProfile(leftSec, Ltot), R = highwayWidthProfile(rightSec, Ltot)
+  if (!L || !R) return null
+  // Insert the taper knots as vertices so the width changes exactly where the profile says.
+  const extra = [...new Set([...L.stations, ...R.stations])].filter(t => t > 1e-6 && t < Ltot - 1e-6).sort((a, b) => a - b)
+  const P = [], T = [], SRC = []
+  let e = 0
+  for (let i = 0; i < pts.length; i++) {
+    while (e < extra.length && extra[e] < cum[i] - 1e-6) {
+      const t = extra[e++], j = i - 1, f = (t - cum[j]) / (cum[i] - cum[j])
+      P.push([pts[j][0] + (pts[i][0] - pts[j][0]) * f, pts[j][1] + (pts[i][1] - pts[j][1]) * f]); T.push(t); SRC.push(j + f)
+    }
+    if (e < extra.length && Math.abs(extra[e] - cum[i]) <= 1e-6) e++
+    P.push(pts[i]); T.push(cum[i]); SRC.push(i)
+  }
+  const dir = (a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1; return [dx / l, dz / l] }
+  const right = [], left = [], stamp = []
+  for (let i = 0; i < P.length; i++) {
+    const dIn = i > 0 ? dir(P[i - 1], P[i]) : null, dOut = i < P.length - 1 ? dir(P[i], P[i + 1]) : null
+    const nOf = (d) => [-d[1], d[0]]
+    let n
+    if (dIn && dOut) {
+      const a = nOf(dIn), b = nOf(dOut), m = [a[0] + b[0], a[1] + b[1]], ml = Math.hypot(m[0], m[1])
+      if (ml < 1e-9) n = a
+      else { const u = [m[0] / ml, m[1] / ml], c = u[0] * a[0] + u[1] * a[1]; n = [u[0] / c, u[1] / c] }
+    } else n = nOf(dIn || dOut)
+    const r = R.at(T[i]), l = L.at(T[i])
+    right.push([P[i][0] + n[0] * r, P[i][1] + n[1] * r])
+    left.push([P[i][0] - n[0] * l, P[i][1] - n[1] * l])
+    stamp.push(SRC[i])
+  }
+  const ring = [...right, ...left.slice().reverse()]
+  return { ring, stamp: [...stamp.map(i => ({ src: i, side: 'right' })), ...stamp.slice().reverse().map(i => ({ src: i, side: 'left' }))],
+           tapers: { left: L.tapers, right: R.tapers }, length: Ltot }
+}
+
 function unionRings(rings) {
   if (!rings.length) return []
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -6617,32 +6695,45 @@ export function buildTileGround(ribbons, opts = {}) {
   // side, where reading the chain is legitimate — Jacob's Option 1.)
   const { Wacc, tlByLu, luByLu } = sectionPass(shapeTiles, cw, stripMat, blockCustoms)
 
-  // Grade-separated roads paint as flat strips — excluded from faces above, stroked
-  // here off their own centerline at the frame's pavementHW half-width. One flat level
-  // (no z-separation yet); stencil-clipped with the rest below. HIGHWAY-class ones
-  // route to their OWN `highway` output (its own layer toggle + material, matching the
-  // figure-ground `highway` group) so the freeway can be toggled/shaded apart from
-  // local streets; local grade-sep bridges stay asphalt.
+  // Grade-separated roads are excluded from the face graph above. HIGHWAY-class ones are the
+  // positive object H (H-3 step 2): each is swept by its own typical section (`sweepHighway`) and
+  // routed to the `highway` output. A non-highway grade-separated chain (a bridge, a footbridge)
+  // stays a flat stroke at its own measure and is LISTED BY NAME (ruling i). ⛔ No silent skip:
+  // a highway with no width, or poured before its section existed, is a named error — the live
+  // view still draws a legacy one from its measure, and `bake-ground` refuses to freeze either.
   const HIGHWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
   const Hacc = []
+  const hwyDisclosure = { swept: 0, missing: [], legacy: [], tapers: [], gsOther: [], gsMissing: [] }
   for (const s of gradeSep) {
-    // Tight arc-length sampling (1.5 m vs the ~6 m default): the highway stroke is
-    // wide (W≈17 m), so coarse arcs facet and the offset gaps on tight ramp bends
-    // (RIBBONS §3.3). The 3rd arg is now a spacing override (meters), not a sample
-    // count — see smoothChain. 1.5 m keeps ramp bends kink-free post-RDP.
-    const WIDE_SPACING = 1.5
-    // [G1 quality] ALWAYS resample the grade-sep centerline smooth at WIDE_SPACING,
-    // independent of the global STREET_SMOOTH knob (pinned to 0 for local streets
-    // because smoothing FEEDS the fragile concentric curb offset — POLYGON-FIRST §3).
-    // Highways/ramps stroke FLAT (no concentric ped offset), so they carry none of
-    // that fold-spike risk; smoothing them only removes facets. The smoothed curve
-    // is what the freeze/bake captures → frozen views + slab show clean ramps, no
-    // facets (the brief's "freeze the tessellated curve" bar). The `t` seed (1.5)
-    // is moot here — WIDE_SPACING overrides it as the resample spacing (smoothChain).
-    const sm = smoothChain(s.points, 1.5, WIDE_SPACING, junctionKeys) || s.points
-    const hw = Math.max(s.measure?.left?.pavementHW || 0, s.measure?.right?.pavementHW || 0)
-    if (hw <= 1e-6) continue
-    ;(HIGHWAY_CLASSES.has(s.highway) ? Hacc : Aacc).push(...strokeOpen(sm, hw))
+    const L = s.measure?.left, R = s.measure?.right
+    const id = s.skelId ?? s.name
+    if (!HIGHWAY_CLASSES.has(s.highway)) {
+      const hw = Math.max(L?.pavementHW || 0, R?.pavementHW || 0)
+      if (!(hw > 1e-6)) { hwyDisclosure.gsMissing.push(`${id} (${s.highway})`); continue }
+      Aacc.push(...strokeOpen(s.points, hw))
+      hwyDisclosure.gsOther.push(`${id} (${s.highway})`)
+      continue
+    }
+    if (!L?.section?.taper || !R?.section?.taper) {
+      const hw = Math.max(L?.pavementHW || 0, R?.pavementHW || 0)
+      if (!(hw > 1e-6)) { hwyDisclosure.missing.push(id); continue }
+      hwyDisclosure.legacy.push(id)
+      Hacc.push(...strokeOpen(s.points, hw))
+      continue
+    }
+    const sw = sweepHighway(s.points, L.section, R.section)
+    if (!sw) { hwyDisclosure.missing.push(id); continue }
+    Hacc.push(sw.ring)
+    hwyDisclosure.swept++
+    for (const side of ['left', 'right']) for (const t of sw.tapers[side]) hwyDisclosure.tapers.push({ id, side, ...t })
+  }
+  {
+    const D = hwyDisclosure
+    console.log(`[tileGround][H] highway polygon H: ${D.swept} highway(s) swept by their section · ${D.tapers.length} taper(s) (12:1, centred [U])${D.tapers.some(t => t.shortened) ? ` — ⚠️ ${D.tapers.filter(t => t.shortened).length} SHORTENED to fit their span: ${D.tapers.filter(t => t.shortened).map(t => `${t.id}.${t.side}@${t.at}`).join(', ')}` : ''}`)
+    if (D.missing.length) console.error(`[tileGround][H] ⛔ ${D.missing.length} highway(s) have NO WIDTH and are not drawn: ${D.missing.join(', ')}`)
+    if (D.legacy.length) console.error(`[tileGround][H] ⛔ ${D.legacy.length} highway(s) carry no section — poured before H-3; drawn at their old measure until re-poured: ${D.legacy.join(', ')}`)
+    if (D.gsOther.length) console.log(`[tileGround][H] ${D.gsOther.length} non-highway grade-separated chain(s) drawn as a flat stroke at their own measure (ruling i): ${D.gsOther.join(', ')}`)
+    if (D.gsMissing.length) console.error(`[tileGround][H] ⛔ ${D.gsMissing.length} non-highway grade-separated chain(s) have NO WIDTH and are not drawn: ${D.gsMissing.join(', ')}`)
   }
   // ── [GROUT] ⛔⛔ READ THIS FIRST: WHAT THIS BUILDS IS THE **CURB**, NOT THE PROTOPOLYGON.
   // Corrected 2026-09-05 after Jacob caught the conflation ("so the chains offset
@@ -7120,7 +7211,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // a place two chains crossed. What is gone is the pass that tried to ROUND it afterwards.
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
-      let noWidth = 0, gsSkipped = 0, compoundFaces = 0, compoundUnlabelled = 0
+      let noWidth = 0, compoundFaces = 0, compoundUnlabelled = 0
       let protoShortRuns = 0, compoundNoEase = 0, protoNoCurb = 0, protoNoCurbArea = 0
       const labelCarryLost = { lost: 0 }    // ② points whose ① provenance the union re-resolved
       // ⭐⭐⭐ THE BLOCKS COME FROM `boundary − stroked roads`, NOT FROM ①'s HOLES.
@@ -7203,7 +7294,6 @@ export function buildTileGround(ribbons, opts = {}) {
         // between two ramps 0.6–9 m apart the two curbs meet and the block goes to ZERO. That is
         // the ruled outcome ("if the curbs touch, there's no block"), it is NOT silent — the
         // no-curb disclosure counts it per pour — and it is not a reason to drop the class whole.
-        if (isGs) gsSkipped++
         // ⭐ THE STAMP IS THE CORRESPONDENCE, AND IT ALREADY EXISTS (`A10-③`, `WL`): each ②
         // vertex records which ① ring vertex it was struck from, so the node identity survives
         // the offset without being re-derived from ②'s geometry.
@@ -7398,7 +7488,6 @@ export function buildTileGround(ribbons, opts = {}) {
       if (compoundNoEase) console.warn(`[tileGround][PROTO②] ⛔ ${compoundNoEase} compound face(s) went through SHARP — the vertex correspondence does not survive the hole subtraction, so their corners carry no authored radius.`)
       if (compoundFaces) console.log(`[tileGround][PROTO②] ${compoundFaces} compound face(s) — outer eroded inward, holes dilated into the face, subtracted as one object`)
       if (compoundUnlabelled) console.warn(`[tileGround][PROTO②] ⛔ ${compoundUnlabelled} compound face(s) lost their ① identity across the hole subtraction — ③ cannot resolve a per-edge depth on them.`)
-      if (gsSkipped) console.log(`[tileGround][PROTO②] ${gsSkipped} grade-separated region(s) skipped — a hole bounded by motorways is not a city block, and the shipped path builds no highway curb either.`)
       // ⭐ THE EASE IS DISCLOSED PER POUR. A node that could not resolve its centreline node went
       // through SHARP; that is a real shortfall and must be countable, because on town #2 nobody
       // is looking. ⚠️ `overreach` is NOT an error — it is an authored R too big for its leg,
@@ -8347,7 +8436,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

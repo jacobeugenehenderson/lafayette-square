@@ -120,6 +120,7 @@ export function highwayStandard(registry, state = { code: null }) {
     rightSh: val('f-interstate-right-shoulder', 'rightPavedShoulder_ft') * FT,
     leftSh: val('f-interstate-left-shoulder', 'leftPavedShoulder_ft') * FT,
     minLanes: val('f-interstate-min-lanes', 'minLanesEachDirection'),
+    taperRate: val('d-lane-step-taper-rate', 'taperLengthPerWidthChange'),
     ramp, state,
   }
 }
@@ -154,6 +155,8 @@ export function highwaySection(chain, std) {
     sources: sources(side), lanesSource, ...(isRamp ? { ramp: true, state: std.state?.code ?? null } : { interstate }),
     spans: spans.map(({ sp, v }) => ({ s0: sp.s0, s1: sp.s1, lanes: v.lanes, lanesSource: v.lanesSource, hw: +v[side].toFixed(3) })),
     ...(chain.length != null ? { length: chain.length } : {}),
+    // Where the width steps between spans, H tapers over rate × the change (tileGround's sweep).
+    taper: { rate: std.taperRate, sources: ['d-lane-step-taper-rate', '[U] q-highway-taper (placement: centred on the step)'] },
   })
   const hwSide = (side) => ({ pavementHW: +whole[side].toFixed(3), treelawn: 0, sidewalk: 0, terminal: 'none', pedRealm: false, material: 'highway', section: sectionOf(side) })
   const left = hwSide('left'), right = hwSide('right')
