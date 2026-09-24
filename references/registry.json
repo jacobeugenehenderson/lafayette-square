@@ -898,6 +898,19 @@
         "r-revetment-crest-one-grid-step"
       ],
       "check": "checks/claims-the-crest-is-measured-behind-the-shore.mjs"
+    },
+    {
+      "id": "q-shore-soft-tag-vs-measured-bank",
+      "ask": "When OSM tags a shoreline soft (beach / wetland / scree) but the ground measurably rises, which wins — and is 'soft' even the right reading of those tags on a lakefront?",
+      "neededBy": "huron: 124 in-disc stations (610 m, 24% of all bare shore inside the drawing) are flagged DISPUTED by the kit's own predicate and bared anyway; crests median 1.72 m, max 4.79 m",
+      "status": "open",
+      "codeSites": [
+        "cartograph/shore-armour.mjs — SOFT_TAGS / SOFT_LU, and the ordered rule: structure tag armours, then soft bares (recording a dispute), then height decides",
+        "cartograph/shore-armour.mjs — nearAny (bounded at TAG_REACH_M = 12 m) vs containing (ray-cast, NO distance limit, SOFT_LU only)"
+      ],
+      "findings": [
+        "m-huron-disputed-shore-naip"
+      ]
     }
   ],
   "findings": [
@@ -2904,6 +2917,32 @@
       "notEstablished": "The distance cannot be derived from the data: sweeping outward raises the crest monotonically (0 m 0.433, 5 m 1.234, 10 m 1.591, 20 m 1.847) because walking inland walks up the bank and then into the hinterland. There is no plateau, so a distance fitted to huron would be a town-#1 constant. The value comes from the instrument's resolution, not from the shore.",
       "command": "node scratch/boulder-crest-probe.mjs [probeM] — the landward sweep. node scratch/boulder-run-census.mjs — runs, holes and islands.",
       "check": "checks/claims-the-crest-is-measured-behind-the-shore.mjs",
+      "foundOn": "2026-09-23",
+      "foundBy": "Revetment"
+    },
+    {
+      "id": "m-huron-disputed-shore-naip",
+      "question": "q-shore-soft-tag-vs-measured-bank",
+      "kind": "measured",
+      "method": "visual",
+      "inputs": [
+        "naip"
+      ],
+      "flightDates": [
+        "2023-05-21",
+        "2023-05-26"
+      ],
+      "tolerance": "0.3 m native GSD, drawn at 0.3 m/px; a 70 m radius crop per site. Enough to tell riprap from sand; NOT enough to measure a crest.",
+      "sites": [
+        "-2517,-2187 crest 2.16 m — natural=scree via containing (49 of 124 disputed stations)",
+        "906,-287 crest 2.40 m — natural=beach via tag<=12m (34 stations)",
+        "1297,-303 crest 4.79 m — natural=beach via tag<=12m (33 stations)",
+        "1166,-506 crest 1.28 m — natural=wetland via tag<=12m (4 stations; Jacob's seawall camera 1163,-504)"
+      ],
+      "found": "MIXED, AND THE MIX IS THE ANSWER. (-2517,-2187): a marina with a continuous band of dark blocky riprap along the lake edge — the shore IS armoured, and natural=scree is describing the armour itself, since scree is loose rock. (906,-287): an unmistakable REAL BEACH, sand with a parking lot behind it — the tag is correct and the 2.40 m crest is the bank BEHIND the beach, not a seawall. (1166,-506): a narrow spit with a hard pale built edge, consistent with Jacob's seawall reading; the wetland tag is 6.7-11.1 m away. (1297,-303): inland is clearly industrial spoil rather than beach, but whether the water's edge is armour or eroded bank is NOT legible at this resolution.",
+      "implication": "A blanket rule that a measured bank outranks soft land use would ARMOUR A REAL BEACH at 906,-287 (34 stations). ⛔ So the conditional change must not proceed as written. The evidence instead points at a narrower defect: natural=scree is listed in SOFT_LU, but on a lakefront scree IS riprap — it accounts for 49 of the 124 disputed stations (40%) and the aerial shows armour at that site. Re-reading scree fixes the largest cause without touching real beaches.",
+      "notEstablished": "Whether the beach tag is wrong at 1297,-303 (33 stations). Whether containing's unbounded reach is causing false vetoes elsewhere — it fires for the scree case here, but its lack of a distance limit was not itself tested.",
+      "command": "node scratch/boulder-gap-reasons.mjs; scratch/.naip-spike/.venv/bin/python scratch/h3-naip-centreline.py huron <x> <z> 70 out.png",
       "foundOn": "2026-09-23",
       "foundBy": "Revetment"
     }

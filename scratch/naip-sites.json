@@ -1,0 +1,51 @@
+[
+ {
+  "cause": "natural=scree (containing)|850672993",
+  "x": -2516.51,
+  "z": -2187.03,
+  "crest": 2.159,
+  "n": 49
+ },
+ {
+  "cause": "natural=beach (tag<=12m)|1352941364",
+  "x": 906.45,
+  "z": -287.22,
+  "crest": 2.403,
+  "n": 34
+ },
+ {
+  "cause": "natural=beach (tag<=12m)|1353092333",
+  "x": 1296.99,
+  "z": -303.04,
+  "crest": 4.788,
+  "n": 33
+ },
+ {
+  "cause": "natural=wetland (tag<=12m)|1352941365",
+  "x": 1166.08,
+  "z": -505.86,
+  "crest": 1.284,
+  "n": 4
+ },
+ {
+  "cause": "natural=beach (tag<=12m)|473402339",
+  "x": 424.27,
+  "z": -515.32,
+  "crest": 1.03,
+  "n": 2
+ },
+ {
+  "cause": "natural=beach (tag<=12m)|1352523434",
+  "x": 2047.59,
+  "z": 189.87,
+  "crest": 1.099,
+  "n": 1
+ },
+ {
+  "cause": "below-one-course/other|null",
+  "x": -2565.77,
+  "z": -2210.96,
+  "crest": 1.779,
+  "n": 1
+ }
+]
