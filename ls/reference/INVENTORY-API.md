@@ -83,7 +83,7 @@ Per `PUBLISH.md §2`:
 
 | Sheet | Purpose |
 |---|---|
-| Listings | All landmark/business data (synced from `landmarks.json` on init) |
+| Listings | Guardian/admin edits, laid over the bundled listings (`cartograph/data/<scene>/content/listings.json`) at init |
 | Checkins | Device check-in log per location |
 | Reviews | Star ratings + text reviews |
 | Events | Community calendar events |
@@ -218,7 +218,7 @@ useInit.runInit() fires once on import
   └─ Supabase: auth.getSession() → Cary session (if any)
   ↓
 Hooks hydrate:
-  useListings  ← landmarks.json + menus.json + GAS listings
+  useListings  ← content/listings.json + menus.json + GAS listings
   useEvents    ← GAS events (fallback: seedEvents.json)
   useHandle    ← GAS handle
   useResidence ← GAS residence-status (lazy)

@@ -2435,7 +2435,7 @@ function seedListings() {
       amenities_json: JSON.stringify(["25-seat garden patio","Nitro wine system","Intimate 38-seat dining room","Reservations via Tock","Sunday brunch"]),
       photos_json: JSON.stringify(["/photos/rose-by-peno/01.jpg","/photos/rose-by-peno/02.jpg","/photos/rose-by-peno/03.jpg"]),
     }),
-    // Extra businesses not in landmarks.json
+    // Extra businesses not in LS's bundled listings (cartograph/data/lafayette-square/content/listings.json)
     row('lmk-023', 'bldg-1262', 'Sigel Elementary School', '', 'community', 'schools'),
     row('lmk-024', 'bldg-1366', 'McKinley Classical Leadership Academy', 'Russell Boulevard', 'community', 'schools'),
     row('lmk-026', 'bldg-1244', 'Quoba Masjid', 'Allen Avenue', 'community', 'churches'),

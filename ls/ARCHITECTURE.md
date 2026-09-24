@@ -162,7 +162,7 @@ The rest of this section is payload (1); payloads (2)–(3) are §6 + `SLAB-CONT
 | `src/data/terrain.{json,bin}` | `Terrain.jsx`, `utils/elevation.js`, `utils/terrainShader.js` | ✅ Baked via `cartograph/bake-terrain.js` (clipped to LS_STENCIL, 5 m/sample, paired metadata.json + Float32 .bin payload). Magnitude + consumer-parity sweep landed 2026-05-14: V_EXAG=1.5; foundation/wall anchor = mean of footprint vertex raw (matches `bake-buildings.js`); `mergeBufferGeometries` preserves per-vertex `aCentroidY`; `TERRAIN_DISPLACE_INSTANCED` divides lift by instance Y-scale (lamp/tree fix); trees + glow/halo billboards now patched; LafayettePark switched from rigid-park-group lift to per-item (gravel paths per-vertex, posts/rails rigid-at-mesh-origin, lake/grotto via shared `<PondGroup>` rigid lift, labels via `<ElevatedGroup>`); `bake-ground.js` ground refinement is now **adaptive** (conforming red-green to a `GROUND_REFINE_TOL_M = 0.50 m` tolerance, *not* the old uniform ≤15 m max-edge); ribbon groups skip refinement EXCEPT `park_path`, which gets a dense uniform contour refine (`PATH_CONTOUR_REFINE_MAX_EDGE_M = 6`, 2026-06-29). **2026-06-29 also reconciled CPU↔GPU sampling** (GPU `texture2D` remapped via `_terrainUV` to the CPU grid-corner convention → identical world-Y) and moved lamps/trees to a **baked per-object anchor** (`groundRaw × uExag` via `cartograph/groundSampler.js`, applied by `patchTerrainInstancedBaked`) — the buildings/foundations `aCentroidY` regime generalized to point objects. See `cartograph/ARCHITECTURE.md §8 "Terrain doctrine"` for the full live rule. Per-Look elevation-exag channel still pending. |
 | `src/data/bright_stars.json` | `CelestialBodies` | Static catalog; freeze |
 | `src/data/planetarium/{constellations,named_stars,planets}.json` | `PlanetariumOverlay` (**mounted via `CelestialBodies.jsx:962`, gated + default-off** — [CORRECTED], not unmounted), `CelestialBodies` | Static; freeze |
-| `src/data/landmarks.json` + `src/data/menus.json` | `useInit`, `useListings` | Static catalog merged with GAS state; keep live |
+| `cartograph/data/lafayette-square/content/listings.json` + `src/data/lafayette-square/menus.json` | `useInit`, `useListings` | Static catalog merged with GAS state; keep live |
 | `src/data/seedEvents.json` | `useEvents` | Fallback when GAS events unavailable; keep live |
 
 ### Stripped / quarantined (this session)
@@ -190,7 +190,7 @@ The rest of this section is payload (1); payloads (2)–(3) are §6 + `SLAB-CONT
 **Boot sequence** (`hooks/useInit.js`):
 1. Compute device hash (`getDeviceHash`)
 2. Single batched `getInit(deviceHash)` call to GAS → hydrates `useListings`, `useEvents`, `useHandle`
-3. Merges static `landmarks.json` + `menus.json` into the listings store
+3. Merges the bundled `content/listings.json` + `menus.json` into the listings store
 4. Supabase session check (Cary auth state)
 
 ---

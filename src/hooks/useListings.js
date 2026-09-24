@@ -9,7 +9,7 @@ import { classifyZoning } from '../tokens/categories.js'
 /**
  * Listing data store.
  *
- * Seeded from the bundled landmarks.json so the scene has places to draw, then
+ * Seeded from the town's bundled listings (loadInstanceData 'landmarks') so the scene has places to draw, then
  * hydrated by `useInit.runInit()` — the ONE API ingest path, which merges GAS
  * over the bundle so guardian edits win.
  *

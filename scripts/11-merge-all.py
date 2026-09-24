@@ -10,7 +10,7 @@ Usage: python scripts/11-merge-all.py
 
 Inputs (base):
   src/data/buildings.json   — Overture building footprints (primary)
-  src/data/landmarks.json   — POI landmarks
+  src/data/landmarks.json   — POI landmarks (RETIRED 2026-09-24: LS listings live in cartograph/data/lafayette-square/content/listings.json; with the file absent this step skips)
 
 Inputs (enrichment, from scripts/raw/):
   osm_buildings.json        — OSM building tags

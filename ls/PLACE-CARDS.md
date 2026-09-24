@@ -120,7 +120,7 @@ Procedures + the role/permission matrix live in [`OPERATIONS.md`](OPERATIONS.md)
 
 ## 5. Data flow (at a glance)
 
-- **Boot:** `useInit` / `useListings` load the `listings` action (GAS), then merge bundled `src/data/landmarks.json` + **`src/data/menus.json`** + `seedEvents.json`. The merge attaches `menu` from the bundled file (overriding GAS for the curated 10).
+- **Boot:** `useInit` / `useListings` load the `listings` action (GAS), then merge bundled `cartograph/data/lafayette-square/content/listings.json` + **`src/data/menus.json`** + `seedEvents.json`. The merge attaches `menu` from the bundled file (overriding GAS for the curated 10).
 - **Backend:** Google Apps Script (`apps-script/Code.js`) — `getListings` serializes `*_json` → objects, strips secrets. Guardian writes go through `update-listing` (and friends). Reviews/events are per-listing fetches. Courier state is **Supabase** (Cary).
 - **Auto-cards:** unclaimed buildings draw architectural facts + facade photos from `src/data/facade_mapping.json`.
 

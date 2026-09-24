@@ -12,7 +12,7 @@
  * Lafayette Square's 87 hand-curated landmarks, chosen by people, over years.
  *
  * ⛔ THE SCORE NEVER SEES THEM. `bake-content` reads the baked slab, clean/map.json,
- * raw/osm.json and the assessor parcels. It does not read `src/data/landmarks.json`,
+ * raw/osm.json and the assessor parcels. It does not read LS's listings (`cartograph/data/lafayette-square/content/listings.json`),
  * and LS has no `content/` dir and no override sidecars at all — so the LS run is
  * blind by construction, not by promise. This file is the only thing here that
  * opens the landmark list.
@@ -145,8 +145,8 @@ if (MUTATE === 'filter') {
 }
 
 // ── A4 · THE LS MEASUREMENT — reported in full, asserted only against chance ────
-const lm = JSON.parse(readFileSync(new URL('../src/data/landmarks.json', import.meta.url), 'utf8'))
-const landmarks = lm.landmarks || lm
+const lm = JSON.parse(readFileSync(new URL('../cartograph/data/lafayette-square/content/listings.json', import.meta.url), 'utf8'))
+const landmarks = lm.listings
 const attached = landmarks.filter(l => l.building_id)
 const truth = new Set(attached.map(l => l.building_id))
 const inRoster = [...truth].filter(b => ranked.some(r => r.id === b))

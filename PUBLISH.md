@@ -174,7 +174,7 @@ The Apps Script reads/writes to a Google Sheets workbook. Key sheets:
 
 | Sheet | Purpose |
 |-------|---------|
-| Listings | All landmark/business data (synced from `landmarks.json` on init) |
+| Listings | Guardian/admin edits, laid over the bundled listings (`cartograph/data/<scene>/content/listings.json`) at init |
 | Checkins | Device check-in log per location |
 | Reviews | Star ratings + text reviews |
 | Events | Community calendar events |

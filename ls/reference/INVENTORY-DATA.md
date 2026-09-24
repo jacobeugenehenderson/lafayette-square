@@ -44,7 +44,7 @@ Imported at JS module load, bundled into the JS chunk. No HTTP fetch; immutable 
 | Constellations | `src/data/planetarium/constellations.json` | `CelestialBodies`, `PlanetariumOverlay`, `StageSky` | **Freeze** |
 | Named stars | `src/data/planetarium/named_stars.json` | `PlanetariumOverlay` | **Freeze** |
 | Planets | `src/data/planetarium/planets.json` | `PlanetariumOverlay` | **Freeze** |
-| Landmarks catalog | `src/data/landmarks.json` | `useInit`, `useListings`, `src/cartograph/SurveyorPanel.jsx` | **Keep live** — merged with GAS state at boot |
+| Landmarks catalog | `cartograph/data/lafayette-square/content/listings.json` | `useInit`, `useListings`, `src/cartograph/SurveyorPanel.jsx` | **Keep live** — merged with GAS state at boot |
 | Menus | `src/data/<look>/menus.json` | `useInit`, `useListings` | **Keep live** — the editorial **seed**. ⛔ It does NOT override GAS: `useInit.runInit` takes the API menu whenever it has sections and keeps the bundle only when it does not, i.e. **pour + override, guardian wins**. (This row said the opposite until 2026-09-10.) ⭐ Prices here are **display figures, never chargeable** — the price of record lives in `commerce_items` (migration 018, `src/lib/commerce.js`). Shape + delivery model: [`../PLACE-CARDS.md`](../PLACE-CARDS.md) §3 |
 | Seed events (GAS fallback) | `src/data/seedEvents.json` | `useEvents` | **Keep live** — fallback when GAS unavailable |
 

@@ -47,7 +47,8 @@ const MANIFESTS = {
     buildings:        () => import('./buildings.json'),
     buildingOverrides:() => import('./buildingOverrides.json'),
     streets:          () => import('./streets.json'),
-    landmarks:        () => import('./landmarks.json'),
+    // Installation #1's listings, consolidated 2026-09-24 into its own content dir like every other town.
+    landmarks:        () => import('../../cartograph/data/lafayette-square/content/listings.json'),
     ribbons:          () => import('./ribbons.json'),
     streetLamps:      () => import('./street_lamps.json'),
     parkWater:        () => import('./lafayette-square/park_water.json'),
@@ -117,8 +118,8 @@ const MANIFESTS = {
 // warns and resolves to null, and consumers offer nothing rather than another
 // town's data), so it is a portability limit, not a bleed. Filed, not patched.
 
-// Different installations wrap their content differently (LS: `{landmarks}` / flat
-// menus; HPDM §5.1.1: `{meta,listings}` / `{meta,menus}`). Unwrap to the reader's
+// Different installations wrap their content differently (listings: `{meta,listings}` everywhere;
+// menus: flat for LS, `{meta,menus}` for HPDM §5.1.1). Unwrap to the reader's
 // expected shape here — one place — so consumers stay installation-blind. LS
 // objects pass through unchanged (identity preserved).
 function normalizeEnvelope(name, raw) {

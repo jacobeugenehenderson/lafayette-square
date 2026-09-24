@@ -129,7 +129,7 @@ Comparing the current branch build inventory ([INVENTORY-DATA §G](INVENTORY-DAT
 |---|---|---|
 | `src/data/planetarium/{constellations,named_stars,planets}.json` | `CelestialBodies`, `StageSky`, `PlanetariumOverlay` | ⚠️ **CORRECTED 2026-06-17: `PlanetariumOverlay` IS mounted** — via `CelestialBodies.jsx:962` (gated `viewMode!=browse && constellations×night>0.05`; channel defaults 0). The K.3/RD.3 "unmounted" claim below is **stale** (grepped Scene/LafayetteScene/App, missed the one-level-down mount). **keep all three.** Home: `ls/STREET-VIEW.md §3.2`. |
 | `public/textures/milky_way.jpg` (17 MB) | `CelestialBodies` background star field (TO VERIFY consumer) | **keep + verify gzip/CDN behavior** — 17 MB raw, will be heavy on mobile cellular if not gated |
-| `src/data/landmarks.json` (+31 lines) | `useInit`, `useListings`, cartograph `SurveyorPanel` | keep |
+| `cartograph/data/lafayette-square/content/listings.json` (was `src/data/landmarks.json`, +31 lines) | `useInit`, `useListings`, cartograph `SurveyorPanel` | keep |
 | `src/data/park_species_map.json` (+148) | `arborist/bake-trees.js`, scripts | **strip from prod build** — authoring input, not runtime |
 | `public/clouds/{presets,almanac}.json` (611 lines new) | none in runtime | **strip** unless `CloudDome` is wired to consume in Phase B (K.2 carry-over) |
 | Branch did **not** add open-meteo, GAS, or Supabase deps — those existed on main | — | — |

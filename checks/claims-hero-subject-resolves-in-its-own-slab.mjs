@@ -27,7 +27,7 @@
  * ⛔ READ-ONLY.
  *
  * MUTATION TEST (a check only ever seen to pass is not evidence):
- *   restore `import landmarksData from '../data/landmarks.json'` in SurveyorPanel ⇒ red
+ *   restore a static import of LS's listings (`cartograph/data/lafayette-square/content/listings.json`) in SurveyorPanel ⇒ red
  *   point any listing's building_id at 'nope' ⇒ red, naming the town and the listing
  *
  * Usage: node checks/claims-hero-subject-resolves-in-its-own-slab.mjs

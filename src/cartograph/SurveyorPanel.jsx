@@ -36,7 +36,7 @@ function HeroSubjectPicker() {
   // arch and landscape options beside it are scrupulous about this — each is
   // offered only where the Look installed it — and the landmarks went in flat.
   // ⭐ Now per-installation through the loadInstanceData seam, which exists for
-  // exactly this: LS resolves to landmarks.json, HPDM to its own
+  // exactly this: LS resolves to its own content/listings.json, HPDM to its own
   // content/listings.json, and a look with no manifest entry resolves to NOTHING.
   // ⛔ Nothing is the correct answer — an installation with no landmarks offers
   // the centroid, never another town's.

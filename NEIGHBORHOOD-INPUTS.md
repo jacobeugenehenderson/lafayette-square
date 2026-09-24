@@ -127,7 +127,7 @@ This is the layer Jacob pointed at. LS's content was seeded from **unusually com
 | wall/roof material, color | Mapillary facade match + overrides | ①/③ | coverage-dependent |
 | **historic_status / contributing / architect / style / period** | **National Register nomination** (`inventory/` OCR) | **③** | 🔴 **does not exist for a normal town** — LLM-assist or omit |
 
-### 4.2 Landmarks / listings — `src/data/landmarks.json` (87), tracked in `ls/BUSINESS_LISTINGS.md`
+### 4.2 Landmarks / listings — `cartograph/data/lafayette-square/content/listings.json` (87), tracked in `ls/BUSINESS_LISTINGS.md`
 
 Names, categories, phone, website, hours, photos, amenities, descriptions, history, tags, menus (`menus.json`, ~25% of listings). **All hand-compiled** by the operator over 3–6 months from Google/Yelp/business sites/site visits + historic records. No automated listing discovery; edits flow through the Apps Script → Sheets backend, not a per-place UI in the app (except guardian claims). **Tier ③ throughout.**
 

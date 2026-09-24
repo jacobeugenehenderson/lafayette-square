@@ -1237,7 +1237,10 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     // is unchanged since the last bake. Prove it against the file on disk before sealing.
     const onDisk = loadJsonOr(join(contentDir(scene), 'listings.json'), { listings: [] }).listings
     const moved = idsThatWouldMove(merged, onDisk)
-    if (moved.length) {
+    // The guard protects the WRITE. A dry run writes nothing, so it reports and carries on.
+    if (moved.length && dryRun) {
+      console.warn(`  ⚠️ listing-identity: sealing on this input would move ${moved.length} existing listing id(s) — reported only, this is a dry run`)
+    } else if (moved.length) {
       throw new Error(`listing-identity: sealing on this input would move ${moved.length} existing listing id(s), and everything keyed by them (claims, Sheet rows, menus, events) would re-point:\n` +
         moved.slice(0, 12).map(m => `     ${m.was} → ${m.now}  ${m.name}`).join('\n') +
         `\n   ▶ Seal on the input the current listings.json was baked from (check out its sources), then change the input.`)
