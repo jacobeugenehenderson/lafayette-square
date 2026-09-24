@@ -475,6 +475,7 @@
       `claims-no-label-is-a-made-up-name.mjs` (`synthetic` is the one label filter) and
       `claims-ribbons-are-not-older-than-the-skeleton.mjs` (the Bake now re-derives every OSM town, not LS only).
       ⛔ **HELD, by Jacob's ruling: the LS and HPDM A19 pours** — pending `BRIEF-closed-loop-disc-forensic.md`
+      ⚠️ **Two standing gates are RED AT HEAD, before the highway build (Gantry, 2026-09-23)** — not the build's: (a) `claims-authored-skelids-keep-their-ways` — staging's authored `lasalle-lane` resolves to no street (predates A19); (b) `claims-a-pour-keeps-building-ids` reads **0 buildings in LS's `map.json` vs 1,082 baked** — LS keeps buildings on the legacy default path, so this is probably the CHECK reading the wrong file for LS (inferred, not measured). Owner: the check's author (Wren, window closed) — fix the instrument before trusting its LS verdict.
       and a roundabout brief. HPDM goes from 0 roundabouts drawn to ~24, 21 of them unwelded split pieces.
     ⭐⭐ **READ THE PARENTHESIS — IT LANDS ON THIS DOC.** This line used to read *"the fix is not mine to
     pick… it wants Jacob's ruling before a line is written."* **It was never owed.** Layer 0 answers it
