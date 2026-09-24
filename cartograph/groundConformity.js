@@ -41,6 +41,9 @@ export const WELD_QUANTUM_M = 0.001
 // A vertex within this distance of an edge's interior is ON that edge. 5 mm: well
 // above the weld quantum + float32 noise, well below any crack worth seeing.
 export const ON_EDGE_M = 0.005
+// A SLIVER: area below this fraction of its longest edge squared (an equilateral triangle is ~0.43).
+// A shape ratio, unitless — it describes a triangle, not a town.
+export const SLIVER_RATIO = 0.01
 
 const Q = 1 / WELD_QUANTUM_M
 const KEY_BIAS = 2 ** 23, KEY_MUL = 2 ** 24          // ±8.3 km at 1 mm, exact in a double
@@ -54,9 +57,31 @@ function weldKey(x, z) {
 const EDGE_MUL = 2 ** 26
 const edgeKey = (a, b) => (a < b ? a * EDGE_MUL + b : b * EDGE_MUL + a)
 
+// ⭐ SHARDED MAPS — so no single JS Map reaches its hard 2^24-entry cap. Every map here is keyed per
+// EDGE, VERTEX or TRIANGLE of the whole union, so its size grows with the town: Provincetown's first pour
+// refined to 11.3M triangles (> 16.7M edges) and threw "Map maximum size exceeded" (2026-09-24).
+// ⛔ Byte-identical by construction: the mesh is built only through get/set/has, never by iterating a map,
+// so where an entry lives cannot change what is drawn. (The detector iterates its edge map; its totals are
+// order-free, only the order of its findings — which one an error message names first — can differ.)
+// 64 shards × 2^24 each is far past what the heap can hold, so the heap is the only limit left.
+const SHARDS = 64
+const shardOfNum = (k) => k % SHARDS                  // keys are non-negative integers, exact in a double
+class ShardedMap {
+  constructor(shardOf = shardOfNum) { this.m = Array.from({ length: SHARDS }, () => new Map()); this.of = shardOf }
+  get(k) { return this.m[this.of(k)].get(k) }
+  set(k, v) { this.m[this.of(k)].set(k, v); return this }
+  has(k) { return this.m[this.of(k)].has(k) }
+  *[Symbol.iterator]() { for (const s of this.m) yield* s }
+}
+class ShardedSet {
+  constructor(shardOf = shardOfNum) { this.m = Array.from({ length: SHARDS }, () => new Set()); this.of = shardOf }
+  add(k) { this.m[this.of(k)].add(k); return this }
+  has(k) { return this.m[this.of(k)].has(k) }
+}
+
 // Uniform grid over vertex ids, for "which vertices lie near this edge".
 function makeGrid(PX, PZ, ids, cell) {
-  const grid = new Map()
+  const grid = new ShardedMap()
   const B = 2 ** 20, M = 2 ** 21
   const ck = (cx, cz) => (cx + B) * M + (cz + B)
   for (const i of ids) {
@@ -110,7 +135,7 @@ function normalizePolicy(refine) {
  */
 export function conformAndRefine(groupSpecs, stats = {}) {
   const PX = [], PZ = []
-  const weld = new Map()
+  const weld = new ShardedMap()
   const vid = (x, z) => {
     const k = weldKey(x, z)
     let i = weld.get(k)
@@ -151,6 +176,34 @@ export function conformAndRefine(groupSpecs, stats = {}) {
       }
     }
   })
+  // ⭐ Per-group triangles and SLIVERS, before and after refinement — bookkeeping only (reads T/TG, writes
+  // nothing the mesh uses). Red-green quarters a sliver into four slivers, so refinement MULTIPLYING a group's
+  // slivers is the signature of the Provincetown explosion; `checks/claims-ground-refinement-does-not-breed-slivers`
+  // reads these from ground.json.
+  const shape = (withBoundary = false) => {
+    const out = groupSpecs.map(() => ({ tris: 0, slivers: 0, areaM2: 0, ...(withBoundary ? { boundaryVerts: 0 } : {}) }))
+    if (withBoundary) {
+      // a group's own BOUNDARY vertices (on an edge only one of its triangles uses) — the closure fans'
+      // reach, which grows with a group's perimeter, not its area
+      const use = groupSpecs.map(() => new ShardedMap()), onB = groupSpecs.map(() => new ShardedSet())
+      for (let t = 0; t < TG.length; t++) for (let k = 0; k < 3; k++) {
+        const ek = edgeKey(T[t * 3 + k], T[t * 3 + (k + 1) % 3]), m = use[TG[t]]
+        m.set(ek, (m.get(ek) || 0) + 1)
+      }
+      for (let t = 0; t < TG.length; t++) for (let k = 0; k < 3; k++) {
+        const p = T[t * 3 + k], q = T[t * 3 + (k + 1) % 3], g = TG[t]
+        if (use[g].get(edgeKey(p, q)) === 1) for (const v of [p, q]) if (!onB[g].has(v)) { onB[g].add(v); out[g].boundaryVerts++ }
+      }
+    }
+    for (let t = 0; t < TG.length; t++) {
+      const a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2], r = out[TG[t]]
+      const ar = Math.abs((PX[b] - PX[a]) * (PZ[c] - PZ[a]) - (PX[c] - PX[a]) * (PZ[b] - PZ[a])) / 2
+      const L2 = Math.max((PX[a] - PX[b]) ** 2 + (PZ[a] - PZ[b]) ** 2, (PX[b] - PX[c]) ** 2 + (PZ[b] - PZ[c]) ** 2, (PX[c] - PX[a]) ** 2 + (PZ[c] - PZ[a]) ** 2)
+      r.tris++; r.areaM2 += ar; if (L2 > 0 && ar / L2 < SLIVER_RATIO) r.slivers++
+    }
+    return out
+  }
+  stats.shapeBefore = shape()
   if (PX.length >= EDGE_MUL) throw new Error(`[groundConformity] ${PX.length} vertices exceeds the edge-key range`)
 
   // (2) Close every crack the input already has — exactly the detector's findings: a
@@ -187,7 +240,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
   // split on one group's side of a shared edge is seen by the other group.
   const policies = groupSpecs.map(g => normalizePolicy(g.refine))
   const PASSES = Math.max(0, ...policies.map(p => p.passes))
-  const midCache = new Map()
+  const midCache = new ShardedMap()
   const midpointIndex = (a, b) => {
     const k = edgeKey(a, b)
     let i = midCache.get(k)
@@ -224,12 +277,12 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     if (!anyRed) break
 
     // Edge → triangles, so promotion can propagate by queue instead of by sweeps.
-    const adj = new Map()
+    const adj = new ShardedMap()
     for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) {
       const ek = edgeKey(T[i * 3 + k], T[i * 3 + (k + 1) % 3])
       const a = adj.get(ek); if (a) a.push(i); else adj.set(ek, [i])
     }
-    const bisected = new Set()
+    const bisected = new ShardedSet()
     const queue = []
     const markRed = (i) => {
       for (let k = 0; k < 3; k++) {
@@ -268,6 +321,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
   }
   stats.closures = closures
   stats.refineTJunctions = closeAll('after refinement')
+  stats.shapeAfter = shape(true)
 
   // (4) Back out to per-group buffers.
   return emit(groupSpecs, PX, PZ, T, TG)
@@ -277,7 +331,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
 // Returns null when there is nothing to split.
 function closeBoundaryTJunctions(PX, PZ, T, TG) {
   const n = TG.length
-  const cnt = new Map()
+  const cnt = new ShardedMap()
   for (let t = 0; t < n; t++) for (let k = 0; k < 3; k++) {
     const ek = edgeKey(T[t * 3 + k], T[t * 3 + (k + 1) % 3])
     cnt.set(ek, cnt.has(ek) ? -1 : t)                 // -1 = shared; else the one owner
@@ -295,7 +349,7 @@ function closeBoundaryTJunctions(PX, PZ, T, TG) {
   // near-threshold refine decisions across entire polygons — measured, rejected.
   const FX = Float32Array.from(PX), FZ = Float32Array.from(PZ)
   const { onSegment } = makeGrid(FX, FZ, ids, 4)
-  const splits = new Map()                             // tri → [pts on edge 0, 1, 2]
+  const splits = new ShardedMap()                      // tri → [pts on edge 0, 1, 2]
   let found = 0
   for (let t = 0; t < n; t++) for (let k = 0; k < 3; k++) {
     const p = T[t * 3 + k], q = T[t * 3 + (k + 1) % 3]
@@ -333,7 +387,7 @@ function closeBoundaryTJunctions(PX, PZ, T, TG) {
 
 // A shared vertex is duplicated into each group that draws it, with identical XZ.
 function emit(groupSpecs, PX, PZ, T, TG) {
-  const out = groupSpecs.map(() => ({ local: new Map(), pos: [], idx: [] }))
+  const out = groupSpecs.map(() => ({ local: new ShardedMap(), pos: [], idx: [] }))
   for (let t = 0; t < TG.length; t++) {
     const gi = TG[t], r = out[gi], y = groupSpecs[gi].yLift || 0
     for (let k = 0; k < 3; k++) {
@@ -359,7 +413,7 @@ function emit(groupSpecs, PX, PZ, T, TG) {
  */
 export function findTJunctions(groups, lift = null) {
   const PX = [], PZ = [], PG = []
-  const cnt = new Map()                  // union edge → { n, endpoints, group, opposite corner }
+  const cnt = new ShardedMap((ek) => Number(ek.slice(0, ek.indexOf(':'))) % SHARDS)   // union edge → { n, endpoints, group, opposite corner }
   groups.forEach((g, gi) => {
     const { positions: pos, indices: idx } = g
     const used = new Uint8Array(pos.length / 3)
@@ -378,7 +432,7 @@ export function findTJunctions(groups, lift = null) {
     }
   })
   const edges = []
-  const onBoundary = new Set()
+  const onBoundary = new ShardedSet()
   for (const [ek, e] of cnt) if (e.n === 1) {
     edges.push(e)
     const [ka, kb] = ek.split(':').map(Number); onBoundary.add(ka); onBoundary.add(kb)

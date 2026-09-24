@@ -767,6 +767,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const refineMinEdge = refineOpts.minEdge != null ? refineOpts.minEdge : GROUND_REFINE_MIN_EDGE_M
   const refineMaxEdge = refineOpts.maxEdge != null ? refineOpts.maxEdge : GROUND_REFINE_MAX_EDGE_M
   const refineSampler = refineMode === 'adaptive' ? getTerrainSampler(scene) : null
+  // ⭐ F3 (Jacob, 2026-09-24): REFINEMENT IS DERIVED FROM THE SCENE. Every ground refinement exists to give the
+  // runtime's terrain lift enough vertices to drape the DEM. A scene with NO heightfield is lifted by nothing,
+  // so no group is refined at all — the coarse 64 m cap this replaced was the Provincetown explosion: its bay,
+  // a 157 km² land-use face earcut into 12 km slivers, quartered to 10.3M triangles. The AO lightmap is a
+  // texture, so nothing else reads ground vertex density. A scene WITH terrain is byte-identical.
+  const hasTerrain = !!getTerrainSampler(scene)
+  if (!hasTerrain) console.log(`  [ground] no terrain for ${look} — refinement off (nothing to drape)`)
   // Bake-target guards — phantom-look + SCENE≠LOOK. Both were written here, inline
   // (2026-06-01 and 2026-07-21), each after a lost session; four other bakers never
   // got them. Hoisted to ./bake-target.js so the rule has ONE home. Refuses BEFORE
@@ -1023,14 +1030,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     const isHardOverlay = LANDSCAPE_OVERLAY_KEYS.has(key)
     const isContourRibbon = CONTOUR_REFINE_KEYS.has(key)   // park_path: rides the park hill
     let refinePolicy = null
-    if (isSoftFill) {
-      // GATE THE FINE REFINE ON TERRAIN. Subdividing a flat land-use fill exists ONLY
-      // to give the runtime terrain-lift enough vertices to bend the face over the DEM.
-      // With NO terrain the fill is dead flat, so a fine mesh is pure waste — it blew
-      // Altadena's ground up to 23.6M tris / 432 MB of inert flat squares (2026-07-14).
-      // Terrain present → adaptive (fine, follows the DEM). No sampler → emit only the
-      // coarse structural cap (GROUND_REFINE_MAX_EDGE_M, the overlay-vertex-range floor),
-      // NEVER the fine terrain-seed mesh.
+    if (!hasTerrain) { /* F3: nothing to drape — every group ships as triangulated */ }
+    else if (isSoftFill) {
+      // Terrain present → adaptive (follows the DEM). A sampler-less 'uniform' run (the legacy opt-in)
+      // keeps the coarse cap. ⛔ With NO terrain at all this branch is never reached (F3, above): the
+      // coarse cap it used to emit here bred Provincetown's 10.3M slivers (Altadena, 2026-07-14, was the
+      // first no-terrain blow-up — the fine mesh then; the cap now).
       refinePolicy = refineMode === 'adaptive' && refineSampler
         ? { mode: 'adaptive', sampler: refineSampler, tol: refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge }
         : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
@@ -1122,6 +1127,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // thousands of T-junctions per town, each a crack once the DEM lifts the mesh.
   // ⛔ Fails loudly: the result is re-checked and any T-junction throws.
   const planeBuffers = new Map()
+  let groundShape = null
   {
     const planeKeys = [], planeSpecs = []
     for (const [kind, key] of PAINT_ORDER) {
@@ -1133,6 +1139,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     const _tc = Date.now()
     const cstats = {}
     const bufs = conformAndRefine(planeSpecs, cstats)
+    groundShape = { terrain: hasTerrain, groups: Object.fromEntries(planeKeys.map((k, i) => [k, {
+      refine: planeSpecs[i].refine?.mode ?? 'none',
+      ...(planeSpecs[i].refine?.maxEdge ? { maxEdgeM: planeSpecs[i].refine.maxEdge } : {}),
+      ...(planeSpecs[i].refine?.minEdge ? { minEdgeM: planeSpecs[i].refine.minEdge } : {}),
+      areaM2: Math.round(cstats.shapeAfter[i].areaM2),
+      boundaryVerts: cstats.shapeAfter[i].boundaryVerts,
+      tris: cstats.shapeAfter[i].tris, slivers: cstats.shapeAfter[i].slivers,
+      trisTriangulated: cstats.shapeBefore[i].tris, sliversTriangulated: cstats.shapeBefore[i].slivers }])) }
     planeKeys.forEach((k, i) => planeBuffers.set(k, bufs[i]))
     const tj = findTJunctions(bufs.map((b, i) => ({ id: planeKeys[i], ...b })))
     if (tj.total > 0) {
@@ -1321,6 +1335,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     indexFormat: 'uint32',
     componentsPerVertex: 3,   // x, y, z
     groups,
+    // F3 / F2 disclosure: did this scene have terrain, how was each partition group refined, and how many
+    // slivers it came out with — read by the two ground-shape checks.
+    ...(groundShape ? { groundShape } : {}),
     ...(priorLightmap ? { lightmap: priorLightmap } : {}),
   }
 
