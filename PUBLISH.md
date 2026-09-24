@@ -332,6 +332,20 @@ npx wrangler r2 bucket cors list theward-assets     # the policy, read from the 
 
 ---
 
+## Owed — the operations session's handoff (2026-09-24)
+
+Committed on `docs/conformance-2026-09-21`, **none of it pushed or deployed**. Operations itself (`theward-operations`) is its own repo, pushed and deployed.
+
+- **Genericizing, phase 1 — deploy, not run.** In this order: (1) the app (GitHub Pages), (2) Supabase `commerce-write` (now requires `look`), (3) `worker.js`. Until then the live app still reads LS's tabs for every town's Guardian check, and the Moulin/Baileys link removal and the published-layer reader (edits, closures, added places) are not live.
+- **Genericizing, phase 2 — the Sheet's LS tabs move to `Name__lafayette-square`; not started.** Five conditions: Jacob's explicit go · phase 1 live first · a Drive copy of the Sheet made and its ID recorded here · a dry run printing every tab and row count before and after · a written rollback, with the commit naming SECURITY.md and OPERATIONS. Phase 3 (the bare-tab special case removed from `tabNameFor`) follows it.
+- **Jacob's Sheet decisions (LS).** The 8 rows trimmed in February that the Sheet still resurrects · the 3 empty rows lmk-065/066/067 · the hijacked-link cells (cleared by Jacob; the bundle still carries them until deploy) · whether lmk-061 is settled through the Sheet.
+- **lmk-041 Holy Trinity / bldg-1295** sits outside the Square — keep, move or drop.
+- **Lafayette Square has no `prominence_rank`.** `claims-the-directory-has-exactly-one-order` fails on it until LS is re-ranked.
+- **ROADMAP H-29's silent-override half** — an override key that resolves to nothing is still a silent no-op; the check is owed.
+- **Huron's 14 address+phone pairs** — open, as listed in the coordinator's handoff.
+- **Places added to the map** reach it through the published layer's `adds` (`src/lib/publishedLayerApply.js`); nothing is added until someone publishes a Ward from operations.
+- **Parked in operations:** balances via Stripe Connect · the moderation queue and mail · whether staging is gated · Namecheap sync · photos (tabled as the likely courtesy line) · a rewrite of the handbook's "A report is not proof of wrongdoing…" sentence.
+
 ## Troubleshooting
 
 **Deploy didn't happen after push?**
