@@ -19,7 +19,7 @@ evict-when: every row in cartograph/intake-rows.mjs has a decided fate (auto-acq
   - ⛔ No `src/` or `cartograph/*.js` edits.
   - ⛔ No pours.
   - ⛔ No downloads committed.
-- ⛔ **The `elevation` row is being built by another session (Revetment [a572ba]).** Coordinate with it; don't duplicate it. Its work is the template for the others.
+- ⛔ **The `elevation` row is being built by another session (Revetment [a572ba]).** Coordinate with it; don't duplicate it. Its work is the template: an acquired input, `verifiedAbsent` when searched-and-none, and **no `ABSENT.FALLBACK` for a row whose absence makes a wrong map** (`intake-rows.mjs` elevation row, ruled 2026-09-24).
 
 ## Jacob's ruling and his instruction
 
@@ -97,7 +97,7 @@ Every pour prints **one line per row**:
 
 **Code:**
 - `cartograph/intake-rows.mjs` (the row model, and why status is never stored);
-- the fetchers `cartograph/fetch.js`, `fetch-msbf.js`, **`fetch-elevation.mjs`** (it exists; find out why it isn't wired in), `fetch-parcels.mjs`, `fetch-overture-places.js`;
+- the fetchers `cartograph/fetch.js`, `fetch-msbf.js`, `fetch-dem.mjs` (Revetment's elevation fetcher, 2026-09-24, **the template for every AUTO row**; distinct from the older `elevation.js`, a sparse point-height query for buildings), `fetch-parcels.mjs`, `fetch-overture-places.js`;
 - `bake-lamps.js`, `bake-trees.js` (the tree-bake inputs manifest `tree-bake-inputs.mjs` is this idea for one class);
 - the Pour and Bake routes in `cartograph/serve.js`;
 - `src/cartograph/SourcesPanel.jsx`.
