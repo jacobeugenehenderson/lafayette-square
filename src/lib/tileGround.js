@@ -885,13 +885,21 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
 // touches the frame and neither holds a frame corner, so no drop test can see them.
 // ⭐ Returns `faces: [{ outer, holes: [] }]` — INDICES into `rings`/`labels`, so nothing
 // about the existing return shape moves and a caller that does not ask sees no change.
-function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null, carryEdges = false, asTree = false) {
+// ⭐ `payload` (H-3 step 3, OPT-IN): `{ subject: [[per-vertex value]], clip: [[…]] }`. When given, Z is an
+// index into a record of (label, value) instead of the bare label, so each SURVIVING input vertex carries
+// its value through the boolean — by construction, never recovered from coordinates afterwards — and the
+// result gains `payloads` (null at a minted crossing). ⛔ Callers that pass nothing take the unchanged
+// path: Z = label + 1 exactly as before, so their output is byte-identical.
+function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null, carryEdges = false, asTree = false, payload = null) {
   const { Clipper, PolyType, PolyFillType } = clipperLib
   const prev = clipperLib.use_xyz
   clipperLib.use_xyz = true
   let out = []
   let faces = null
-  const enc = (p, lab) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE), Z: Number.isInteger(lab) ? lab + 1 : 0 })
+  const recs = payload ? [] : null
+  const labOfZ = (z) => (recs ? recs[z - 1].lab : z - 1)
+  const enc = (p, lab, pay) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE),
+    Z: !Number.isInteger(lab) ? 0 : recs ? recs.push({ lab, pay: pay === undefined ? null : pay }) : lab + 1 })
   // ⭐⭐ THE CROSSING LEDGER — who MET here. Additive: `pt.Z` is still left at 0, so every
   // existing caller's labels are byte-identical; this only records what Clipper already
   // hands us and would otherwise throw away.
@@ -925,7 +933,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       let arr = met.get(mkey(pt)); if (!arr) met.set(mkey(pt), arr = [])
       for (const [bo, to] of [[b1, t1], [b2, t2]]) {
         if (!bo || !to) continue
-        const lab = bo.Z > 0 ? bo.Z - 1 : (to.Z > 0 ? to.Z - 1 : -1)
+        const lab = bo.Z > 0 ? labOfZ(bo.Z) : (to.Z > 0 ? labOfZ(to.Z) : -1)
         if (lab < 0) continue
         const dx = to.X - bo.X, dy = to.Y - bo.Y, L = Math.hypot(dx, dy) || 1
         arr.push({ lab, dx: dx / L, dy: dy / L })
@@ -934,14 +942,14 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     let s = 0
     for (let k = 0; k < subjectRings.length; k++) {
       const r = subjectRings[k]; if (!r || r.length < 3) continue
-      const L = subjectLabels?.[k]
-      c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L)), PolyType.ptSubject, true); s++
+      const L = subjectLabels?.[k], PL = payload?.subject?.[k]
+      c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L, PL?.[i])), PolyType.ptSubject, true); s++
     }
     if (!s) return { rings: [], labels: [], refused: null }
     for (let k = 0; k < clipRings.length; k++) {
       const r = clipRings[k]; if (!r || r.length < 3) continue
-      const L = clipLabels?.[k]
-      c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L)), PolyType.ptClip, true)
+      const L = clipLabels?.[k], PL = payload?.clip?.[k]
+      c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L, PL?.[i])), PolyType.ptClip, true)
     }
     if (!asTree) c.Execute(clipType, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
     else {
@@ -968,6 +976,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     }
   } finally { clipperLib.use_xyz = prev }
   const rings = out.map(p => p.map(fromClipper))
+  const payloads = recs ? out.map(p => p.map(q => (q.Z ? recs[q.Z - 1].pay : null))) : undefined
   const labs = []
   // ⭐⭐ PER-VERTEX CROSSING IDENTITY — carried THROUGH the boolean, never recovered after it
   // (`RIBBONS §1`). `met` already records every contributor Clipper hands ZFillFunction; until now
@@ -983,7 +992,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
   // needs from shared code is opt-in at the call site.
   const crossings = carryEdges ? out.map(p => p.map(q => (q.Z ? null : (met.get(mkey(q)) || []).map(e => e.lab)))) : null
   for (const p of out) {
-    const raw = p.map(q => (q.Z ? q.Z - 1 : -1))          // -1 = a crossing
+    const raw = p.map(q => (q.Z ? labOfZ(q.Z) : -1))      // -1 = a crossing
     const n = raw.length
     const res = new Array(n)
     // ⭐⭐⭐ ASK THE CROSSING LEDGER BEFORE THE FORWARD SCAN. The scan below inherits a minted
@@ -1040,7 +1049,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       // ⭐ THE REFUSAL IS THE SHIPPED CONTRACT: a wholly-minted ring has no owner this function
       // can honestly name, so it says so and hands back `labels: null` — and the tile construction
       // branches on exactly that. Guessing an owner instead is what mislabelled the shipped bands.
-      if (v < 0 && !carryEdges) return { rings, labels: null, refused: 'all-vertices-minted', faces }
+      if (v < 0 && !carryEdges) return { rings, labels: null, refused: 'all-vertices-minted', faces, ...(recs ? { payloads } : {}) }
       if (v < 0) { res[i] = -1; continue }        // wholly minted → the edge resolver below
       res[i] = v
     }
@@ -1072,11 +1081,11 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
         }
         ok = false
       }
-      if (!ok) return { rings, labels: null, refused: 'all-vertices-minted', faces }
+      if (!ok) return { rings, labels: null, refused: 'all-vertices-minted', faces, ...(recs ? { payloads } : {}) }
     }
     labs.push(res)
   }
-  return { rings, labels: labs, refused: null, crossings, faces }
+  return { rings, labels: labs, refused: null, crossings, faces, ...(recs ? { payloads } : {}) }
 }
 // The original single-ring union, preserved EXACTLY as a wrapper — the offset path's
 // byte-identity proof (`a03-curb-identity`) covers it and must keep covering it.
@@ -3773,9 +3782,14 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
 // (median 0 across the map); the depth actually painted comes from `resolvePedDepths`. Reading
 // the raw field is a real, repeated error here: it once left three quarters of the map with no
 // ped band, and it manufactured a phantom 3.00 m envelope gap during this ticket.
+// A run the highway owns (H-3), read off the frozen `hwy` stamp — the SAME set the shape pass differenced
+// against H. ⛔ Not `material: 'highway'`: an at-grade two-way ramp (ruling a) has that material and is a
+// street, with its curb.
+const isHighwayRun = (run) => !!run?.hwy
 function stampMeasure(run, blockCustoms, curbWidth) {
   if (!run) return null
-  const c = blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null
+  // ⛔ A highway takes no authoring (`r-highway-no-authoring`) — the shape pass prints the refusal.
+  const c = isHighwayRun(run) ? null : (blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null)
   const mz = run.baseMeasure
   const base = mz?.[run.side]?.pavementHW
   const hw = (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
@@ -3984,6 +3998,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   }
   // ⭐ EVERY per-point read goes through the LEG's single resolution (`SECTION §3.3` step 1).
   const M = (ri, i) => legArr.get(`${ri}|${i}`) ?? null
+  const bareAt = (p, e) => { const r = (stamps[p.si] || [])[e]; return r != null && isHighwayRun(runs[r]) }
 
   // ── THE MONO-WIDTH ENVELOPE — one number for the whole block, over every point it has.
   // `RIBBONS §1` invariant 4, and it is SACROSANCT: the outer depth is uniform per block (that is
@@ -4415,7 +4430,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
       walk: [l.walkFrom, l.walkTo], lawn: [l.lawnFrom, l.lawnTo] })
   }
-  const F = new Map(parts.map(p => [p, mk(p)]))
+  // ⭐ H-3: a highway-owned edge is BARE — every depth 0, so the land use runs to H's edge.
+  const bareMk = (p) => { const g = mk(p), src = p.dsrc
+    return Object.fromEntries(Object.entries(g).map(([k, f]) => [k, (j) => (bareAt(p, src[j]) ? 0 : f(j))])) }
+  const F = new Map(parts.map(p => [p, bareMk(p)]))
   // ⛔ THE RAMP LIVES ON THE DENSIFIED RING, so a check reading the ORIGINAL edges cannot see it and
   // would report the very step it was built to remove. Disclose the densified spans — the depths the
   // offset is actually handed — so the gate measures continuity where continuity is decided.
@@ -4433,7 +4451,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         len: Math.hypot(b[0] - a[0], b[1] - a[1]) })
     }
   }
-  const pedOuter = insAt(cw)
+  const pedOuter = ins((p) => (i) => (bareAt(p, i) ? 0 : cw))
   // ⛔⛔ THE SLIDE IS UNIONED IN — NEVER CUT AND ADDED BACK ALONG THE SAME EDGE. Clipper is
   // integer-space (1 mm); a difference followed by a union on the same boundary leaves the two
   // halves as separate polygon records that merely touch, so the band reads as broken while its
@@ -4451,7 +4469,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     Wacc:   inBlock(W),
     tlByLu: { [key]: inBlock([...band(insD(p => F.get(p).lawnFromD), insD(p => F.get(p).lawnToD)),
                               ...band(insD(p => F.get(p).tailFromD), insD(p => F.get(p).tailToD))]) },
-    luByLu: { [key]: inBlock(insAt(WB)) },
+    luByLu: { [key]: inBlock(ins((p) => (i) => (bareAt(p, i) ? 0 : WB))) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
     feArcs, feRepeat,
@@ -6735,6 +6753,11 @@ export function buildTileGround(ribbons, opts = {}) {
     if (D.gsOther.length) console.log(`[tileGround][H] ${D.gsOther.length} non-highway grade-separated chain(s) drawn as a flat stroke at their own measure (ruling i): ${D.gsOther.join(', ')}`)
     if (D.gsMissing.length) console.error(`[tileGround][H] ⛔ ${D.gsMissing.length} non-highway grade-separated chain(s) have NO WIDTH and are not drawn: ${D.gsMissing.join(', ')}`)
   }
+  // ⭐ H-3 step 3 — ONE EDGE. The union of the sweeps IS the highway's edge; every block beside it is
+  // differenced against this same polygon (ruling b: no max(), no second smoothing).
+  const Hpoly = unionRings(Hacc)
+  const HWY_SKEL = '__highway__'           // the owner of an edge the H difference drew
+  const hwySkel = new Set([HWY_SKEL, ...gradeSep.filter(s => HIGHWAY_CLASSES.has(s.highway)).map(s => s.skelId ?? s.name)])
   // ── [GROUT] ⛔⛔ READ THIS FIRST: WHAT THIS BUILDS IS THE **CURB**, NOT THE PROTOPOLYGON.
   // Corrected 2026-09-05 after Jacob caught the conflation ("so the chains offset
   // polygonization *was* the solution?" — yes, and that was the drift).
@@ -6922,6 +6945,13 @@ export function buildTileGround(ribbons, opts = {}) {
     const protoBase = new Map()          // skelId → the pre-authoring base measure
     streetsOrig.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, measures[i]) })
     for (const st of gradeSep) { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, st?.measure) }
+    // An edge the H difference drew is owned by the highway: bare, no pavement of its own, no ped.
+    { const bare = { pavementHW: 0, treelawn: 0, sidewalk: 0, terminal: 'none', pedRealm: false, material: 'highway' }
+      protoBase.set(HWY_SKEL, { left: bare, right: { ...bare } }) }
+    const isHwyLab = (l) => l != null && hwySkel.has(protoOwners[l]?.skelId)
+    let HWY_LAB = null                    // appended to the owners only when a block meets H
+    const hwyLab = () => (HWY_LAB ??= protoOwners.push({ skelId: HWY_SKEL, side: 'right', segOrd: 0, gradeSeparated: true, srcIdx: -1, highway: true }) - 1)
+    const hwyRefusedCustoms = new Set()
     // ⭐⭐⭐ skelId → the CANONICAL ROAD identity. Supplied because the consumer asks "is this the
     // same ROAD?" and, without an answer, treats every chain cut as a corner.
     // ⛔⛔ `protoRoadKey` EXISTED ONLY IN A COMMENT. Twenty lines downstream a comment states that
@@ -6956,7 +6986,13 @@ export function buildTileGround(ribbons, opts = {}) {
     // the wrong cure: *(Jacob)* "a treelawn swap NEVER happens mid-leg, period. That's what the
     // corners are for — they are designed to accommodate shifts/swaps."
     // ⇒ The chain keeps its own measure; the CONSUMER resolves once per leg (`sectionPassProtoTile`).
-    const bcOf = (skelId, side, segOrd) => blockCustoms?.[skelId]?.[side]?.[segOrd] || null
+    // ⛔ A highway takes no authoring (`r-highway-no-authoring`): an override on one is REFUSED and
+    // printed by name, never applied — the file keeps it. (Differs from the expressway rule on purpose.)
+    const bcOf = (skelId, side, segOrd) => {
+      const c = blockCustoms?.[skelId]?.[side]?.[segOrd] || null
+      if (c && hwySkel.has(skelId)) { hwyRefusedCustoms.add(`${skelId}|${side}|${segOrd}`); return null }
+      return c
+    }
     // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
     // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose default
     // ladder (`gleanTreelawn`) supplies a value where nothing is authored. Reading the raw
@@ -7211,6 +7247,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // a place two chains crossed. What is gone is the pass that tried to ROUND it afterwards.
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
+      let protoHwyBlocks = 0, protoHwyRefused = 0
       let noWidth = 0, compoundFaces = 0, compoundUnlabelled = 0
       let protoShortRuns = 0, compoundNoEase = 0, protoNoCurb = 0, protoNoCurbArea = 0
       const labelCarryLost = { lost: 0 }    // ② points whose ① provenance the union re-resolved
@@ -7248,6 +7285,22 @@ export function buildTileGround(ribbons, opts = {}) {
         // bounded by the same ink at the same authored widths as its outer, so the rule cannot
         // differ between them — it is the label array that differs, not the law.
         const mkDepth = (L) => (i) => {
+          // ⭐ H-3: a highway-owned edge is offset to a depth STRICTLY INSIDE H, and the difference below then
+          // draws the edge exactly on H's boundary. Any depth in (0, the section's narrowest span) is inside
+          // H; both ends of that interval are degenerate, so the MIDPOINT is taken — the one furthest from
+          // both. ⚠️ A construction parameter, disclosed in the H line of every pour; it never reaches the
+          // drawn edge, which is H's. Measured on huron (check 3, off-H highway-owned vertices in the disc):
+          //   0            → 1, but it is 298 m of primary-103 LABELLED motorway-36 — the depth jump beside
+          //                  the street makes the offset's self-union hand the street edge the highway's
+          //                  owner, and the painter would leave that street bare;
+          //   narrowest    → 11 (the offset coincides with H's edge, and overshoots it at chain ends);
+          //   half of it   → 1, at 0.05 m, on a 0.13 m sliver at the motorway-11 × motorway-link-62 gore.
+          if (isHwyLab(L[i])) {
+            const o = protoOwners[L[i]], sd = protoBase.get(o.skelId)?.[o.side]
+            const spans = (sd?.section?.spans || []).map(x => x.hw).filter(Number.isFinite)
+            const hw = spans.length ? Math.min(...spans) : sd?.pavementHW
+            return Number.isFinite(hw) ? Math.max(0, hw / 2 - PROTO_HW) : 0
+          }
           const m = protoMeasureOf(L[i])
           if (!m) return 0
           const hw = m.pavementHW                     // ⛔ resolved off the frozen IDENTITY
@@ -7319,7 +7372,10 @@ export function buildTileGround(ribbons, opts = {}) {
         const turnOf = (g, i) => { const m = g.length, P = g[(i - 1 + m) % m], V = g[i], N = g[(i + 1) % m]
           const t = Math.atan2(N[1] - V[1], N[0] - V[0]) - Math.atan2(V[1] - P[1], V[0] - P[0])
           return Math.abs(Math.atan2(Math.sin(t), Math.cos(t))) * 180 / Math.PI }
-        const rSrc = ring.map((_, i) => protoRAt(labs, i, ring.length, depthAt(i), turnOf(ring, i)))
+        // ⛔ H-3: a highway has no curb return — a corner where a town edge meets a highway edge is SHARP.
+        const touchesH = labs.some(isHwyLab) || (protoBlockHoleLabels?.[k] || []).some(L => L.some(isHwyLab))
+        const rSrc = ring.map((_, i) => (touchesH && (isHwyLab(labs[i]) || isHwyLab(labs[(i - 1 + ring.length) % ring.length])))
+          ? 0 : protoRAt(labs, i, ring.length, depthAt(i), turnOf(ring, i)))
         // ⭐⭐⭐ THE EASE IS ASKED FOR HERE AND HAPPENS INSIDE THE OFFSET, before its self-union —
         // that is where the corner correspondence is still exact. `rSrc` is indexed by ① block-ring
         // vertex, and `easeAt` receives exactly that index off the offset's own stamp.
@@ -7394,6 +7450,27 @@ export function buildTileGround(ribbons, opts = {}) {
             outArc = B.rings.map(rg => rg.map(() => null))
           }
           compoundFaces++
+        }
+        // ⭐⭐ H-3 STEP 3 — ONE EDGE. A block beside a highway is its ② ring MINUS H: the highway-owned
+        // edges were offset by 0 (`mkDepth`), so this difference is what puts them ON H's boundary —
+        // the same polygon the highway is drawn from, never a second offset of the centreline (ruling
+        // b). The corner metadata rides the boolean on the OPT-IN payload channel (Jacob, "B"): a town
+        // corner keeps its eased radius and arc; a vertex H drew is owned by `__highway__`, R 0; a
+        // minted crossing is R 0 (the sharp town↔highway corner). ⛔ Only blocks that touch a highway
+        // take this path — every other block is byte-identical. ⚠️ A compound face's corners are
+        // already lost at the hole subtraction above; the channel could carry those too (later).
+        if (touchesH && Hpoly.length && outRings.length) {
+          const hl = hwyLab()
+          const B = booleanLabelled(clipperLib.ClipType.ctDifference, outRings, outLabs,
+            Hpoly, Hpoly.map(r => r.map(() => hl)), true, false,
+            { subject: outRings.map((rg, ri) => rg.map((_, i) => ({ R: outR[ri]?.[i] || 0, arc: outArc[ri]?.[i] ?? null }))),
+              clip: Hpoly.map(r => r.map(() => ({ R: 0, arc: null }))) })
+          if (B.refused) protoHwyRefused++
+          outRings = B.rings
+          outLabs = B.labels || B.rings.map(rg => rg.map(() => null))
+          outR = B.payloads.map(pl => pl.map(v => v?.R || 0))
+          outArc = B.payloads.map(pl => pl.map(v => v?.arc ?? null))
+          protoHwyBlocks++
         }
         for (let ri = 0; ri < outRings.length; ri++) {
           // ⛔ NO SILENT DEGRADE. Without the correspondence the authored R cannot be placed, and
@@ -7485,6 +7562,7 @@ export function buildTileGround(ribbons, opts = {}) {
         console.warn(`[tileGround][PROTO②] ease: ${sk.eased} corner(s) built · ${sk.straight} vertex/vertices passed through as curve samples.`)
       }
       if (labelCarryLost.lost) console.warn(`[tileGround][PROTO②] ⛔ ${labelCarryLost.lost} contour point(s) lie over MORE THAN ONE ① edge — the union minted or collapsed them. Attributed to the LONGEST ① edge they span, which is the FILL's own tie-break, not a guess at a single owner.`)
+      console.log(`[tileGround][H] one edge: ${protoHwyBlocks} block(s) beside a highway differenced against H (corner metadata carried)${protoHwyRefused ? ` — ⛔ ${protoHwyRefused} came back with NO owner labels (their ped cannot resolve per edge)` : ''}${hwyRefusedCustoms.size ? ` · ⛔ ${hwyRefusedCustoms.size} authored override(s) on a highway REFUSED (r-highway-no-authoring), kept in the file: ${[...hwyRefusedCustoms].join(', ')}` : ''}`)
       if (compoundNoEase) console.warn(`[tileGround][PROTO②] ⛔ ${compoundNoEase} compound face(s) went through SHARP — the vertex correspondence does not survive the hole subtraction, so their corners carry no authored radius.`)
       if (compoundFaces) console.log(`[tileGround][PROTO②] ${compoundFaces} compound face(s) — outer eroded inward, holes dilated into the face, subtracted as one object`)
       if (compoundUnlabelled) console.warn(`[tileGround][PROTO②] ⛔ ${compoundUnlabelled} compound face(s) lost their ① identity across the hole subtraction — ③ cannot resolve a per-edge depth on them.`)
@@ -7661,9 +7739,13 @@ export function buildTileGround(ribbons, opts = {}) {
           // (`ARCHITECTURE §"The compound shape"`: the drawing has no holes). It is not a
           // fallback: no material is invented, the absent one simply is not concrete.
           const L = (i) => stripLadder((EC.labs[i] == null ? null : protoMeasureOf(EC.labs[i])) || {}, lim)
-          const at = (f) => (i) => cw + L(i)[f]
+          // ⭐ H-3: a highway-owned edge is BARE — no curb, no ped band, and the land use runs to H's edge
+          // (every depth 0), so the drawing closes against the highway with no strip left unpainted.
+          const bare = (i) => isHwyLab(EC.labs[i])
+          const at = (f) => (i) => (bare(i) ? 0 : cw + L(i)[f])
           return {
             ring: EC.ring,
+            pedFrom: (i) => (bare(i) ? 0 : cw), luFrom: (i) => (bare(i) ? 0 : WB),
             // ⛔ A HOLE OF THE CURB REGION, read off its winding — the one thing winding is a
             // reliable record of here, because these rings came straight out of one boolean.
             hole: signedArea(EC.ring) < 0,
@@ -7697,9 +7779,9 @@ export function buildTileGround(ribbons, opts = {}) {
         // the two curbs met and the block stopped existing there. ⛔ Found by the offset itself,
         // never by a `2 × curbWidth` test: the curb width is AUTHORED, so a constant would be right
         // on one Look and silently wrong on the next.
-        const pedOuter = ins(() => () => cw)
+        const pedOuter = ins(p => p.pedFrom)
         if (pedOuter.length > outerParts.length) severed++
-        const luEdge = ins(() => () => WB)
+        const luEdge = ins(p => p.luFrom)
         // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, INERT when unset.
         // Two diseases look identical from a thickness histogram and have different cures:
         //   VANISHING PIECE — a block that PINCHES splits under a deeper inset and the sliver falls
@@ -7953,7 +8035,11 @@ export function buildTileGround(ribbons, opts = {}) {
                 // classed as "different roads" and the node census silently read clean. Caught by
                 // the count MOVING THE WRONG WAY (511 → 593 corners) — an invariant that improves
                 // when you did not touch it is the tell.
-                baseMeasure: protoBase.get(o.skelId) || null }; runs.push(cur) }
+                baseMeasure: protoBase.get(o.skelId) || null,
+                // ⭐ H-3: the frozen fact that this run is the HIGHWAY's (the same set the shape pass
+                // differenced against H) — the painter makes it bare. Only on highway runs, so every
+                // other tile's artifact is byte-identical.
+                ...(hwySkel.has(o.skelId) ? { hwy: true } : {}) }; runs.push(cur) }
               iaStamp[ri][i] = runs.length - 1
               cur.poly.push(EC.ring[i])
               cur.iEnd = i                                   // the last EDGE this run owns
@@ -8232,7 +8318,7 @@ export function buildTileGround(ribbons, opts = {}) {
   }
 
   let asphalt = unionRings(Aacc)
-  let highway = unionRings(Hacc)
+  let highway = Hpoly
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
   if (stencil) {
