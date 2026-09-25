@@ -384,15 +384,7 @@ here.** The pour warns by name for each; re-read it from a run, never from this 
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
   name rather than letting the class vanish silently. **A known gap, not a fallback.**
 - ⛔ **47 in-disc blocks bounded by a single street** get ordinary-block treatment.
-- ✅ **CLOSED 2026-09-06 — "grade-separated regions inside the disc draw no panel."** Ruled (Jacob):
-  ***"we need to build these blocks the same way we make the others."*** A region bounded by
-  motorways and ramps **is a block** — real land, with a curb, a sidewalk and a land use — and it was
-  being dropped whole, so ③ had nothing to stroke and the operator saw a hole with no sidewalk.
-  ⭐ **The tag was conflating two things:** the HIGHWAY'S OWN ROADWAY still gets no city curb (a flat
-  stroke through its own accumulator), but the **block between** highways is not the highway's curb.
-  ▶ 43 in-disc regions / 0.293 km² recovered · tiles 117 → 151 · no-curb absence 67 blocks /
-  348,273 m² → 22 / 5,787 m². ⚠️ **Cost, disclosed: in-disc curb spikes 8 → 16** — the thin-run class
-  between close ramps comes with them, and *"if the curbs touch, there's no block"* still applies.
+- **Land beside a highway is classed at the pour** (H-3 step 4, `r-highway-verge`): bounded entirely by highway ⇒ **verge** (bare grass, no curb, no sidewalk); a building-less ramp-end block ⇒ **junction residual**; otherwise a **block** whose highway edge is bare. The highway's own roadway is H, swept by its section (`docs/briefs/BRIEF-highway-build.md`). ▶ `node checks/claims-verge-bare.mjs` · `node checks/claims-junction-residual.mjs`
 - ⛔ **The legs do not run straight through an intersection** — the operator's standing SHAPE ask. Built
   twice and reverted twice; **the defect is the REJOIN, not the intersection test** (an unbounded line
   intersection puts the apex arbitrarily far away on near-parallel legs — the same degeneracy the miter
