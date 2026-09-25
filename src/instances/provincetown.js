@@ -52,6 +52,18 @@ export default {
     contact: true, codedesk: true, sms: true, chat: true, info: true, events: true, society: true, residences: true,
   },
 
+  // The town's set-piece: the Pilgrim Monument, roughed in from the reconstruction dossier
+  // and awaiting the artist's model. Renderer: src/components/PilgrimMonument.jsx. Dossier
+  // table + the drop-in contract: src/setpieces/pilgrimMonument.js.
+  // `footprint` is OSM way 164024699's ring as lon/lat. ▶ node checks/claims-pilgrim-monument-site.mjs
+  // re-reads it against raw/osm.json. `model: null` means the placeholder renders.
+  setPiece: {
+    kind: 'pilgrim-monument',
+    osmWay: 164024699,
+    footprint: [[-70.1886329,42.052274],[-70.1885986,42.052243],[-70.1885667,42.0522142],[-70.1886086,42.0521885],[-70.1886552,42.0521601],[-70.1886889,42.0521904],[-70.1887215,42.0522198],[-70.1886746,42.0522485]],
+    model: null,
+  },
+
   cary: { smsNumber: null, smsNumberDisplay: null, email: null },
   contact: { email: null },
 }
