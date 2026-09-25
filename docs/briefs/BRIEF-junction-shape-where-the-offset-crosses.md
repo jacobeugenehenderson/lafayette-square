@@ -47,7 +47,9 @@ Gantry's reading (**not measured**) is miter spurs off the breakwater's hairpin 
   - (−77.2, 15.9) 0.94 m²
 - Each lies **inside its tile's ② curb ring** (tiles 110 and 108). Running the real frozen painter `sectionPassProtoTile` on that tile, the point is in **none** of its outputs (curb, sidewalk, treelawn, LU).
 - ⇒ **The Section painter does not tile its own block** at those corners. The mechanism inside the painter is **not established**.
-- **It is kit-wide.** In both huron and LS, most tiles leave some area painted by nobody. ⛔ **Re-derive it, never quote it:** run Gantry's check `checks/claims-the-ground-covers-every-block.mjs` (being written 2026-09-24).
+- **It is kit-wide.** In both huron and LS, most tiles leave some area painted by nobody. ⛔ **Re-derive it, never quote it:** run `node checks/claims-the-ground-covers-every-block.mjs` (Gantry, `906d3493`; red on huron + LS; `--selftest`).
+  - ⭐ **A lead, measured only on a synthetic block:** ped bands plus **eased** corners leave one ~5 cm-wide piece **per corner, at the tangent points**. Square corners leave none, and so does a block with no ped bands. So look first at the corner arc and tangent windows in `sectionPassProtoTile`. Whether this is also what causes the real, larger holes is **not established**.
+  - A large single hole is a separate instance: huron tile 120 (`island`), 51.5 m² at (−2364, −244).
   - `claims-t-junctions` reported 0 on this bake because a hole with sound borders on every side has no vertex on a wrong edge. **That check is blind to an absence; this one is the gate.**
 
 ⚠️ The bay is about to become water (Revetment's work), which will delete this face. **That hides the instance; it does not fix the class.** Reproduce it on the current data first, then keep it as a fixture.
