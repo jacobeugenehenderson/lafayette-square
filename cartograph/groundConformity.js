@@ -20,7 +20,7 @@
  *      each polygon exactly as before (rings untouched, so interiors do not move);
  *   2. close every crack the input carries: split each triangle whose unshared edge
  *      has another group's (or another polygon's) boundary vertex on it;
- *   3. run the red-green refinement over the union with ONE midpoint cache keyed by
+ *   3. run the longest-edge bisection over the union with ONE midpoint cache keyed by
  *      welded vertex pairs, each triangle keeping its own group's policy (a ribbon
  *      never splits on its own account but takes the closures its neighbours force),
  *      then close again;
@@ -239,7 +239,10 @@ export function conformAndRefine(groupSpecs, stats = {}) {
   // per-polygon path, but `bisected` and the midpoint cache are GLOBAL, so a
   // split on one group's side of a shared edge is seen by the other group.
   const policies = groupSpecs.map(g => normalizePolicy(g.refine))
-  const PASSES = Math.max(0, ...policies.map(p => p.passes))
+  // ⭐ F1: a 4-way split halved every edge per pass; longest-edge bisection halves ONE per pass, so the same
+  // refinement depth takes TWICE the passes — the budget is the policy's, doubled by the construction.
+  const LEB_PASSES_PER_LEVEL = 2
+  const PASSES = Math.max(0, ...policies.map(p => p.passes * LEB_PASSES_PER_LEVEL))
   const midCache = new ShardedMap()
   const midpointIndex = (a, b) => {
     const k = edgeKey(a, b)
@@ -265,7 +268,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     let anyRed = false
     for (let i = 0; i < n; i++) {
       const pol = policies[TG[i]]
-      if (pol.mode === 'none' || pass >= pol.passes) continue
+      if (pol.mode === 'none' || pass >= pol.passes * LEB_PASSES_PER_LEVEL) continue
       const v0 = T[i * 3], v1 = T[i * 3 + 1], v2 = T[i * 3 + 2]
       const e01 = edgeSq(v0, v1), e12 = edgeSq(v1, v2), e20 = edgeSq(v2, v0)
       const longest = Math.max(e01, e12, e20)
@@ -276,7 +279,17 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     }
     if (!anyRed) break
 
-    // Edge → triangles, so promotion can propagate by queue instead of by sweeps.
+    // ⭐ F1 — LONGEST-EDGE BISECTION (Rivara), not 4-way red-green. A red triangle bisects only its LONGEST
+    // edge; the old 4-way split made four copies of a sliver's shape at every level, so a 12 km earcut
+    // sliver became 4^k slivers (Provincetown's bay: 30,643 → 10.3M). Bisecting the longest edge halves the
+    // long dimension, so a sliver's pieces grow with its LENGTH, not its area, and the minimum angle stays
+    // bounded. CONFORMITY — the closure: every triangle with any bisected edge also bisects its OWN longest
+    // edge (propagated by queue until stable), so a neighbour always splits the shared edge at the same
+    // midpoint (the global cache). Then each triangle splits its longest edge first, and each child splits
+    // the other bisected edge it carries.
+    const longestK = (i) => { let best = 0, bk = 0
+      for (let k = 0; k < 3; k++) { const L = edgeSq(T[i * 3 + k], T[i * 3 + (k + 1) % 3]); if (L > best) { best = L; bk = k } }
+      return bk }
     const adj = new ShardedMap()
     for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) {
       const ek = edgeKey(T[i * 3 + k], T[i * 3 + (k + 1) % 3])
@@ -284,38 +297,32 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     }
     const bisected = new ShardedSet()
     const queue = []
-    const markRed = (i) => {
-      for (let k = 0; k < 3; k++) {
-        const ek = edgeKey(T[i * 3 + k], T[i * 3 + (k + 1) % 3])
-        if (bisected.has(ek)) continue
-        bisected.add(ek)
-        for (const j of adj.get(ek)) if (!red[j]) queue.push(j)
-      }
-    }
-    for (let i = 0; i < n; i++) if (red[i]) markRed(i)
-    // A non-red triangle with ≥2 bisected edges is promoted to red. Terminates:
-    // each triangle promotes at most once.
+    const mark = (ek) => { if (bisected.has(ek)) return; bisected.add(ek); for (const j of adj.get(ek)) queue.push(j) }
+    for (let i = 0; i < n; i++) if (red[i]) { const k = longestK(i); mark(edgeKey(T[i * 3 + k], T[i * 3 + (k + 1) % 3])) }
     while (queue.length) {
       const i = queue.pop()
-      if (red[i]) continue
-      let cnt = 0
-      for (let k = 0; k < 3; k++) if (bisected.has(edgeKey(T[i * 3 + k], T[i * 3 + (k + 1) % 3]))) cnt++
-      if (cnt >= 2) { red[i] = 1; markRed(i) }
+      const k = longestK(i), ek = edgeKey(T[i * 3 + k], T[i * 3 + (k + 1) % 3])
+      if (bisected.has(ek)) continue
+      for (let q = 0; q < 3; q++) if (bisected.has(edgeKey(T[i * 3 + q], T[i * 3 + (q + 1) % 3]))) { mark(ek); break }
     }
 
     const nT = [], nG = []
     const push = (a, b, c, g) => { if (a !== b && b !== c && c !== a) { nT.push(a, b, c); nG.push(g) } }
+    // split triangle (a,b,c) — orientation kept — on its bisected edges; (a,b) is its longest if split at all
+    const splitChild = (a, b, c, g) => {
+      // children of the longest bisection carry at most one more bisected edge, never (a,b) again
+      if (bisected.has(edgeKey(b, c))) { const r = midpointIndex(b, c); push(a, b, r, g); push(a, r, c, g) }
+      else if (bisected.has(edgeKey(c, a))) { const q = midpointIndex(c, a); push(a, b, q, g); push(q, b, c, g) }
+      else push(a, b, c, g)
+    }
     for (let i = 0; i < n; i++) {
-      const v0 = T[i * 3], v1 = T[i * 3 + 1], v2 = T[i * 3 + 2], g = TG[i]
-      if (red[i]) {
-        const m01 = midpointIndex(v0, v1), m12 = midpointIndex(v1, v2), m20 = midpointIndex(v2, v0)
-        push(v0, m01, m20, g); push(m01, v1, m12, g); push(m20, m12, v2, g); push(m01, m12, m20, g)
-        continue
-      }
-      if (bisected.has(edgeKey(v0, v1)))      { const m = midpointIndex(v0, v1); push(v0, m, v2, g); push(m, v1, v2, g); closures++ }
-      else if (bisected.has(edgeKey(v1, v2))) { const m = midpointIndex(v1, v2); push(v0, v1, m, g); push(v0, m, v2, g); closures++ }
-      else if (bisected.has(edgeKey(v2, v0))) { const m = midpointIndex(v2, v0); push(v0, v1, m, g); push(m, v1, v2, g); closures++ }
-      else push(v0, v1, v2, g)
+      const g = TG[i]
+      const k = longestK(i), a = T[i * 3 + k], b = T[i * 3 + (k + 1) % 3], c = T[i * 3 + (k + 2) % 3]
+      if (!bisected.has(edgeKey(a, b))) { push(a, b, c, g); continue }
+      if (!red[i]) closures++
+      const m = midpointIndex(a, b)
+      splitChild(a, m, c, g)          // child (a, m, c): its original edge (c, a) sits in splitChild's (C, A) slot
+      splitChild(m, b, c, g)          // child (m, b, c): its original edge (b, c) sits in the (B, C) slot
     }
     T = nT; TG = nG
   }

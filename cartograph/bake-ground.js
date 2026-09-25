@@ -953,7 +953,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // endpoints, so each straight chord knifes through the rolling grass (the
   // "paths don't follow the contour" artifact, 2026-06-28). Give them a dense
   // uniform sampling (PATH_CONTOUR_REFINE_MAX_EDGE_M) so a vertex lands every
-  // few metres along the run. (Conforming red-green refinement keeps the
+  // few metres along the run. (The conforming refinement keeps the
   // path/grass boundary crack-free.)
   const CONTOUR_REFINE_KEYS = new Set(['park_path'])
 
