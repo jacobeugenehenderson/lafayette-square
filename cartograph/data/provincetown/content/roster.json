@@ -9,7 +9,7 @@
   "parcel_matched": 0,
   "nr_attributed": 0,
   "in_historic_district": 0,
-  "buildings_with_listings": 222,
+  "buildings_with_listings": 237,
   "join_key": "id == slab building id (msbf-* on a US pour, osm-* on an OSM pour, the project id on a curated one)",
   "prominence": {
    "scorer": "prominence.mjs",
@@ -766,12 +766,12 @@
   },
   {
    "id": "msbf-24",
-   "name": "Pilgrim House Inn",
+   "name": "Pilgrim House",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Pilgrim House Inn"
+    "Pilgrim House"
    ],
    "listing_ids": [
     "prov-lst-0327"
@@ -902,11 +902,12 @@
   },
   {
    "id": "msbf-27",
-   "name": "Perry's",
+   "name": "Perry's Fine Wine & Liquors",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
+    "Perry's Fine Wine & Liquors",
     "Perry's"
    ],
    "listing_ids": [
@@ -953,12 +954,16 @@
   },
   {
    "id": "msbf-28",
-   "name": null,
+   "name": "Mussel Beach Health Club",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Mussel Beach Health Club"
+   ],
+   "listing_ids": [
+    "prov-lst-0364"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -974,13 +979,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -2561,12 +2566,12 @@
   },
   {
    "id": "msbf-81",
-   "name": "Waterford Inn",
+   "name": "Waterford Inn Provincetown",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Waterford Inn",
+    "Waterford Inn Provincetown",
     "Helltown Kitchen"
    ],
    "listing_ids": [
@@ -4330,12 +4335,12 @@
   },
   {
    "id": "msbf-133",
-   "name": "Brewhouse 1620",
+   "name": "1620 Brewhouse",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Brewhouse 1620",
+    "1620 Brewhouse",
     "D. Flax",
     "Art House Theater"
    ],
@@ -9407,19 +9412,21 @@
   },
   {
    "id": "msbf-296",
-   "name": "Gaa Gallery",
+   "name": "Outermost Yoga",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
     "Gaa Gallery",
-    "WOMR Radio",
-    "Schoolhouse Gallery"
+    "WOMR 92.1 FM",
+    "Schoolhouse Gallery",
+    "Outermost Yoga"
    ],
    "listing_ids": [
     "prov-lst-0185",
     "prov-lst-0189",
-    "prov-lst-0278"
+    "prov-lst-0278",
+    "prov-lst-0365"
    ],
    "historic_district": null,
    "contributing": null,
@@ -9436,11 +9443,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "arts",
-   "subcategory": "galleries",
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "cultural",
+   "use_subtype": "medical",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -11206,19 +11213,23 @@
   },
   {
    "id": "msbf-358",
-   "name": "Essentials",
+   "name": "Plush",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
     "Essentials",
     "Sparks",
-    "Hilda Neily Gallery"
+    "Hilda Neily Gallery",
+    "Plush",
+    "Sailing For All Provincetown"
    ],
    "listing_ids": [
     "prov-lst-0303",
     "prov-lst-0304",
-    "prov-lst-0325"
+    "prov-lst-0325",
+    "prov-lst-0346",
+    "prov-lst-0357"
    ],
    "historic_district": null,
    "contributing": null,
@@ -11236,7 +11247,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "shopping",
-   "subcategory": "grocery",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -12589,12 +12600,16 @@
   },
   {
    "id": "msbf-396",
-   "name": null,
+   "name": "Gibson Sotheby's International Realty",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Gibson Sotheby's International Realty"
+   ],
+   "listing_ids": [
+    "prov-lst-0373"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -12610,13 +12625,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "services",
+   "subcategory": "financial",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -13293,12 +13308,18 @@
   },
   {
    "id": "msbf-415",
-   "name": null,
+   "name": "Provincetown Art Gallery Association (PAGA)",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Provincetown Art Gallery Association (PAGA)",
+    "Provincetown Commons"
+   ],
+   "listing_ids": [
+    "prov-lst-0351",
+    "prov-lst-0359"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -13314,13 +13335,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "arts",
+   "subcategory": "galleries",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use": "institutional",
+   "use_subtype": "cultural",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -13667,12 +13688,12 @@
   },
   {
    "id": "msbf-427",
-   "name": "Provincetown Museum",
+   "name": "Pilgrim Monument & Provincetown Museum",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Provincetown Museum"
+    "Pilgrim Monument & Provincetown Museum"
    ],
    "listing_ids": [
     "prov-lst-0005"
@@ -15215,7 +15236,7 @@
   },
   {
    "id": "msbf-474",
-   "name": "Provincetown Town Hall",
+   "name": "Red Room",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
@@ -15225,7 +15246,8 @@
     "Saki",
     "Ben & Jerry's",
     "Mamma Matcha",
-    "JD's Sports Bar"
+    "JD's Sports Bar",
+    "Red Room"
    ],
    "listing_ids": [
     "prov-lst-0004",
@@ -15233,7 +15255,8 @@
     "prov-lst-0179",
     "prov-lst-0180",
     "prov-lst-0268",
-    "prov-lst-0311"
+    "prov-lst-0311",
+    "prov-lst-0358"
    ],
    "historic_district": null,
    "contributing": null,
@@ -15250,11 +15273,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "organizations",
+   "category": "dining",
+   "subcategory": "bars",
    "mixed_use": false,
-   "use": "institutional",
-   "use_subtype": "civic",
+   "use": "commercial",
+   "use_subtype": null,
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -17218,12 +17241,12 @@
   },
   {
    "id": "msbf-544",
-   "name": "Adam's",
+   "name": "Adam's Variety",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Adam's",
+    "Adam's Variety",
     "Hennep"
    ],
    "listing_ids": [
@@ -19456,12 +19479,12 @@
   },
   {
    "id": "msbf-621",
-   "name": "Admiral's Landing Inn",
+   "name": "Admiral's Landing",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Admiral's Landing Inn"
+    "Admiral's Landing"
    ],
    "listing_ids": [
     "prov-lst-0056"
@@ -20250,12 +20273,12 @@
   },
   {
    "id": "msbf-654",
-   "name": "Cape Codder",
+   "name": "Cape Codder Guest House",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Cape Codder"
+    "Cape Codder Guest House"
    ],
    "listing_ids": [
     "prov-lst-0037"
@@ -20440,7 +20463,7 @@
    "all_names": [
     "Julie Temblay",
     "Hair By The Sea",
-    "Penney Patch Candies",
+    "The Penney Patch",
     "Lobster Pot Express"
    ],
    "listing_ids": [
@@ -20491,12 +20514,12 @@
   },
   {
    "id": "msbf-659",
-   "name": "Shor",
+   "name": "Shor Home",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Shor",
+    "Shor Home",
     "Wild Hearts",
     "Provincetown Bookshop",
     "Bochick",
@@ -21070,21 +21093,23 @@
   },
   {
    "id": "msbf-674",
-   "name": "Paws And Wiskers",
+   "name": "Coconuts Sunglasses",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Paws And Wiskers",
+    "Paws & Whiskers",
     "The Mayflower",
     "Blu Day Spa",
-    "Seaplane Shirts"
+    "Seaplane Shirts",
+    "Coconuts Sunglasses"
    ],
    "listing_ids": [
     "prov-lst-0144",
     "prov-lst-0145",
     "prov-lst-0292",
-    "prov-lst-0294"
+    "prov-lst-0294",
+    "prov-lst-0345"
    ],
    "historic_district": null,
    "contributing": null,
@@ -22645,12 +22670,12 @@
   },
   {
    "id": "msbf-718",
-   "name": "Anchor Inn",
+   "name": "Anchor Inn Beach House",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Anchor Inn",
+    "Anchor Inn Beach House",
     "Yates & Kennedy",
     "Coffey Men"
    ],
@@ -23097,12 +23122,12 @@
   },
   {
    "id": "msbf-728",
-   "name": "Seaglass Inn",
+   "name": "Seaglass Inn & Spa",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Seaglass Inn"
+    "Seaglass Inn & Spa"
    ],
    "listing_ids": [
     "prov-lst-0099"
@@ -23669,15 +23694,17 @@
   },
   {
    "id": "msbf-747",
-   "name": "Womencrafts",
+   "name": "Radiance Art Gallery",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Womencrafts"
+    "Womencrafts",
+    "Radiance Art Gallery"
    ],
    "listing_ids": [
-    "prov-lst-0021"
+    "prov-lst-0021",
+    "prov-lst-0353"
    ],
    "historic_district": null,
    "contributing": null,
@@ -23694,11 +23721,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "shopping",
-   "subcategory": "retail",
+   "category": "arts",
+   "subcategory": "galleries",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
+   "use": "institutional",
+   "use_subtype": "cultural",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -24803,12 +24830,16 @@
   },
   {
    "id": "msbf-788",
-   "name": null,
+   "name": "Provincetown Arts Society",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Provincetown Arts Society"
+   ],
+   "listing_ids": [
+    "prov-lst-0352"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -24824,13 +24855,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "arts",
+   "subcategory": "galleries",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use": "institutional",
+   "use_subtype": "cultural",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -26127,7 +26158,7 @@
    "jurisdiction": null,
    "all_names": [
     "Cannery Wharf Park",
-    "East End Books"
+    "East End Books Ptown"
    ],
    "listing_ids": [
     "prov-lst-0115",
@@ -27647,9 +27678,9 @@
    "jurisdiction": null,
    "all_names": [
     "Twisted Pizza and Ice Cream",
-    "The Post Office Cafe",
+    "Post Office Cafe & Cabaret",
     "Puzzle Me This",
-    "ASGCC Drop-In Center",
+    "AIDS Support Group of Cape Cod — Provincetown Drop-In Center",
     "Kung Fu Dumplings",
     "Cuffy's",
     "Provincetown Portuguese Bakery"
@@ -29448,12 +29479,12 @@
   },
   {
    "id": "msbf-926",
-   "name": "The Church of Saint Mary of the Harbor",
+   "name": "Church of St. Mary of the Harbor",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "The Church of Saint Mary of the Harbor"
+    "Church of St. Mary of the Harbor"
    ],
    "listing_ids": [
     "prov-lst-0040"
@@ -29722,12 +29753,16 @@
   },
   {
    "id": "msbf-932",
-   "name": null,
+   "name": "Gilmartin Magence LLP",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Gilmartin Magence LLP"
+   ],
+   "listing_ids": [
+    "prov-lst-0378"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -29743,13 +29778,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "services",
+   "subcategory": "financial",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -30332,7 +30367,7 @@
    "jurisdiction": null,
    "all_names": [
     "Cape Tip Sportswear",
-    "Atlantic House"
+    "Atlantic House (A-House)"
    ],
    "listing_ids": [
     "prov-lst-0175",
@@ -30776,7 +30811,7 @@
    "jurisdiction": null,
    "all_names": [
     "PAAM Sculpture Garden",
-    "Provincetown Art Association & Museum;Provincetown Art Association and Museum"
+    "Provincetown Art Association & Museum (PAAM)"
    ],
    "listing_ids": [
     "prov-lst-0111",
@@ -30827,12 +30862,16 @@
   },
   {
    "id": "msbf-971",
-   "name": null,
+   "name": "MacMillan Wharf",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "MacMillan Wharf"
+   ],
+   "listing_ids": [
+    "prov-lst-0375"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -30848,13 +30887,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "parks",
+   "subcategory": "parks",
    "mixed_use": false,
    "use": "unknown",
    "use_subtype": null,
    "use_confidence": "low",
-   "use_source": "none",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -31444,15 +31483,17 @@
   },
   {
    "id": "msbf-992",
-   "name": "Room 68",
+   "name": "The White Hare Home & Holiday",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Room 68"
+    "Room 68",
+    "The White Hare Home & Holiday"
    ],
    "listing_ids": [
-    "prov-lst-0031"
+    "prov-lst-0031",
+    "prov-lst-0349"
    ],
    "historic_district": null,
    "contributing": null,
@@ -33210,12 +33251,12 @@
   },
   {
    "id": "msbf-1042",
-   "name": "Ace Hardware",
+   "name": "Ace Conwell Home Center",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Ace Hardware",
+    "Ace Conwell Home Center",
     "Conwell Home Center"
    ],
    "listing_ids": [
@@ -34104,15 +34145,17 @@
   },
   {
    "id": "msbf-1070",
-   "name": "Sidekicks",
+   "name": "Sniffs of Adventure",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Sidekicks"
+    "Sidekicks",
+    "Sniffs of Adventure"
    ],
    "listing_ids": [
-    "prov-lst-0211"
+    "prov-lst-0211",
+    "prov-lst-0348"
    ],
    "historic_district": null,
    "contributing": null,
@@ -34477,7 +34520,7 @@
    "all_names": [
     "Cabot's Candy",
     "The Shell Shop",
-    "BExclusive",
+    "B.Xclusive",
     "Shop Therapy",
     "Zinnia"
    ],
@@ -34530,14 +34573,13 @@
   },
   {
    "id": "msbf-1081",
-   "name": "Gifford House Inn",
+   "name": "Gifford House",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Gifford House Inn",
     "Gifford House",
-    "Porch Bar"
+    "Porch Bar at Gifford House"
    ],
    "listing_ids": [
     "prov-lst-0008",
@@ -40687,13 +40729,13 @@
   },
   {
    "id": "msbf-1271",
-   "name": "Methodist Church",
+   "name": "Provincetown United Methodist Church",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Methodist Church",
-    "Soup Kitchen of Provincetown",
+    "Provincetown United Methodist Church",
+    "Soup Kitchen in Provincetown (SKIP)",
     "Food Pantry",
     "Thrift Shop"
    ],
@@ -42104,15 +42146,19 @@
   },
   {
    "id": "msbf-1315",
-   "name": "Provicnetown Business Guild",
+   "name": "Esthetics by Evette",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Provicnetown Business Guild"
+    "Provincetown Business Guild",
+    "Esthetics by Evette",
+    "Provincetown Pride Center"
    ],
    "listing_ids": [
-    "prov-lst-0226"
+    "prov-lst-0226",
+    "prov-lst-0362",
+    "prov-lst-0377"
    ],
    "historic_district": null,
    "contributing": null,
@@ -42129,11 +42175,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "organizations",
+   "category": "services",
+   "subcategory": "beauty",
    "mixed_use": false,
-   "use": "institutional",
-   "use_subtype": "civic",
+   "use": "commercial",
+   "use_subtype": null,
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -44958,12 +45004,12 @@
   },
   {
    "id": "msbf-1412",
-   "name": "Mews",
+   "name": "The Mews Restaurant & Café",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Mews"
+    "The Mews Restaurant & Café"
    ],
    "listing_ids": [
     "prov-lst-0028"
@@ -45757,15 +45803,17 @@
   },
   {
    "id": "msbf-1438",
-   "name": "Arcadia Provincetown",
+   "name": "Flyer's Boat Rentals",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Arcadia Provincetown"
+    "Arcadia Provincetown",
+    "Flyer's Boat Rentals"
    ],
    "listing_ids": [
-    "prov-lst-0248"
+    "prov-lst-0248",
+    "prov-lst-0376"
    ],
    "historic_district": null,
    "contributing": null,
@@ -45782,12 +45830,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "shopping",
-   "subcategory": "retail",
+   "category": "parks",
+   "subcategory": "recreation",
    "mixed_use": false,
-   "use": "commercial",
+   "use": "unknown",
    "use_subtype": null,
-   "use_confidence": "high",
+   "use_confidence": "low",
    "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
@@ -45991,12 +46039,16 @@
   },
   {
    "id": "msbf-1443",
-   "name": null,
+   "name": "Land's End Inn",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Land's End Inn"
+   ],
+   "listing_ids": [
+    "prov-lst-0368"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -46012,13 +46064,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -47153,12 +47205,12 @@
   },
   {
    "id": "msbf-1481",
-   "name": "The Provincetown Theater",
+   "name": "Provincetown Theater",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "The Provincetown Theater"
+    "Provincetown Theater"
    ],
    "listing_ids": [
     "prov-lst-0156"
@@ -48623,12 +48675,12 @@
   },
   {
    "id": "msbf-1532",
-   "name": "Bubula's by the Bay",
+   "name": "Bubala's by the Bay",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Bubula's by the Bay",
+    "Bubala's by the Bay",
     "Jimmy's Hideaway",
     "Scott Dinsmore Antiques"
    ],
@@ -49374,13 +49426,13 @@
   },
   {
    "id": "msbf-1559",
-   "name": "Provincetown Bookshop",
+   "name": "The Provincetown Bookshop",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Provincetown Bookshop",
-    "Vorelli's Restaurant"
+    "The Provincetown Bookshop",
+    "Vorelli's"
    ],
    "listing_ids": [
     "prov-lst-0142",
@@ -50550,12 +50602,12 @@
   },
   {
    "id": "msbf-1593",
-   "name": "Benchmark Inn",
+   "name": "The Benchmark",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Benchmark Inn"
+    "The Benchmark"
    ],
    "listing_ids": [
     "prov-lst-0052"
@@ -50687,12 +50739,12 @@
   },
   {
    "id": "msbf-1596",
-   "name": "Provincetown Dental Arts",
+   "name": "Provincetown Dental Arts (Scott A. Allegretti, DDS)",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Provincetown Dental Arts"
+    "Provincetown Dental Arts (Scott A. Allegretti, DDS)"
    ],
    "listing_ids": [
     "prov-lst-0164"
@@ -54382,18 +54434,22 @@
   },
   {
    "id": "msbf-1722",
-   "name": "Sarah Jessica Fine Arts",
+   "name": "Ali Gray Gallery",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
     "Sarah Jessica Fine Arts",
-    "Stewart Clifford Gallery"
+    "Stewart Clifford Gallery",
+    "Ali Gray Gallery",
+    "Baedega"
    ],
    "listing_ids": [
     "prov-lst-0308",
     "prov-lst-0309",
-    "prov-lst-0331"
+    "prov-lst-0331",
+    "prov-lst-0350",
+    "prov-lst-0361"
    ],
    "historic_district": null,
    "contributing": null,
@@ -54438,21 +54494,23 @@
   },
   {
    "id": "msbf-1723",
-   "name": "Provincetown Community Television",
+   "name": "Provincetown Tourism Office",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
     "Provincetown Community Television",
-    "Patio",
+    "Patio American Grill & Cocktail Bar",
     "Kenneth Scott",
-    "Rosie's Mexican Cantina"
+    "Rosie's Mexican Cantina",
+    "Provincetown Tourism Office"
    ],
    "listing_ids": [
     "prov-lst-0154",
     "prov-lst-0218",
     "prov-lst-0296",
-    "prov-lst-0297"
+    "prov-lst-0297",
+    "prov-lst-0370"
    ],
    "historic_district": null,
    "contributing": null,
@@ -54469,11 +54527,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "arts",
-   "subcategory": "studios",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "cultural",
+   "use_subtype": "civic",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -54631,7 +54689,7 @@
    "jurisdiction": null,
    "all_names": [
     "Treadwell Gallery",
-    "Utilities"
+    "Utilities Home"
    ],
    "listing_ids": [
     "prov-lst-0029",
@@ -56119,15 +56177,17 @@
   },
   {
    "id": "msbf-1778",
-   "name": "Provincetown Chamber of Commerce",
+   "name": "Dolphin Fleet Whale Watch",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Provincetown Chamber of Commerce"
+    "Provincetown Chamber of Commerce",
+    "Dolphin Fleet Whale Watch"
    ],
    "listing_ids": [
-    "prov-lst-0003"
+    "prov-lst-0003",
+    "prov-lst-0355"
    ],
    "historic_district": null,
    "contributing": null,
@@ -56144,11 +56204,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "shopping",
-   "subcategory": "retail",
+   "category": "arts",
+   "subcategory": "venues",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
+   "use": "institutional",
+   "use_subtype": "cultural",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -57760,12 +57820,12 @@
   },
   {
    "id": "msbf-1829",
-   "name": "Cape Cod Five",
+   "name": "Cape Cod 5",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Cape Cod Five"
+    "Cape Cod 5"
    ],
    "listing_ids": [
     "prov-lst-0069"
@@ -59239,12 +59299,16 @@
   },
   {
    "id": "msbf-1880",
-   "name": null,
+   "name": "Provincetown Recording Studio",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Provincetown Recording Studio"
+   ],
+   "listing_ids": [
+    "prov-lst-0380"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -59260,13 +59324,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "arts",
+   "subcategory": "studios",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use": "institutional",
+   "use_subtype": "cultural",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -59809,17 +59873,19 @@
   },
   {
    "id": "msbf-1897",
-   "name": "Global Gifts",
+   "name": "SAULT New England",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
     "Global Gifts",
-    "Grab 'n' Go Health Bar"
+    "Grab 'n' Go Health Bar",
+    "SAULT New England"
    ],
    "listing_ids": [
     "prov-lst-0274",
-    "prov-lst-0275"
+    "prov-lst-0275",
+    "prov-lst-0347"
    ],
    "historic_district": null,
    "contributing": null,
@@ -61767,13 +61833,14 @@
   },
   {
    "id": "msbf-1952",
-   "name": "Brass Key",
+   "name": "Brass Key Guesthouse",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
+    "Brass Key Guesthouse",
     "Brass Key",
-    "Shipwreck Lounge"
+    "Shipwreck Lounge at the Brass Key"
    ],
    "listing_ids": [
     "prov-lst-0075",
@@ -61951,12 +62018,16 @@
   },
   {
    "id": "msbf-1956",
-   "name": null,
+   "name": "Coastal Acres Campground",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Coastal Acres Campground"
+   ],
+   "listing_ids": [
+    "prov-lst-0367"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -61972,13 +62043,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "hospitality",
+   "subcategory": "hotels",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -63489,7 +63560,7 @@
    "jurisdiction": null,
    "all_names": [
     "Yesterday's Treasures",
-    "Bayside Betsy's"
+    "Bay Cafe"
    ],
    "listing_ids": [
     "prov-lst-0255",
@@ -64961,12 +65032,16 @@
   },
   {
    "id": "msbf-2060",
-   "name": null,
+   "name": "Watership Inn",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Watership Inn"
+   ],
+   "listing_ids": [
+    "prov-lst-0369"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -64982,13 +65057,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -65478,15 +65553,19 @@
   },
   {
    "id": "msbf-2074",
-   "name": "Ruthie's Boutique",
+   "name": "Provincetown Magazine",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Ruthie's Boutique"
+    "Ruthie's Boutique",
+    "Provincetown Magazine",
+    "La Tanzi, Spaulding & Landreth, LLP"
    ],
    "listing_ids": [
-    "prov-lst-0247"
+    "prov-lst-0247",
+    "prov-lst-0372",
+    "prov-lst-0379"
    ],
    "historic_district": null,
    "contributing": null,
@@ -65503,11 +65582,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "shopping",
-   "subcategory": "retail",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
+   "use": "institutional",
+   "use_subtype": "civic",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -65572,12 +65651,12 @@
   },
   {
    "id": "msbf-2076",
-   "name": "Rose & Crown",
+   "name": "Rose & Crown Guest House",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Rose & Crown"
+    "Rose & Crown Guest House"
    ],
    "listing_ids": [
     "prov-lst-0079"
@@ -68932,7 +69011,7 @@
    "all_names": [
     "Julie Heller Gallery",
     "Shalom's Gift Shop",
-    "Crown & Anchor Box Office"
+    "Crown & Anchor"
    ],
    "listing_ids": [
     "prov-lst-0235",
@@ -69947,12 +70026,12 @@
   },
   {
    "id": "msbf-2216",
-   "name": "Bradford House & Motel",
+   "name": "The Bradford",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Bradford House & Motel"
+    "The Bradford"
    ],
    "listing_ids": [
     "prov-lst-0087"
@@ -70255,12 +70334,12 @@
   },
   {
    "id": "msbf-2224",
-   "name": "Pepe's",
+   "name": "Pepe's Wharf",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Pepe's",
+    "Pepe's Wharf",
     "Go Fish",
     "Bowersock Gallery",
     "Under Glass Custom Framing"
@@ -70855,15 +70934,17 @@
   },
   {
    "id": "msbf-2240",
-   "name": "Bliss",
+   "name": "Sanctum Paranormal",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Bliss"
+    "Bliss",
+    "Sanctum Paranormal"
    ],
    "listing_ids": [
-    "prov-lst-0298"
+    "prov-lst-0298",
+    "prov-lst-0356"
    ],
    "historic_district": null,
    "contributing": null,
@@ -70880,11 +70961,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "desserts",
+   "category": "arts",
+   "subcategory": "museum",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
+   "use": "institutional",
+   "use_subtype": "cultural",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -73627,12 +73708,12 @@
   },
   {
    "id": "msbf-2319",
-   "name": "Mac's Seafood",
+   "name": "Mac's Fish House",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Mac's Seafood"
+    "Mac's Fish House"
    ],
    "listing_ids": [
     "prov-lst-0094"
@@ -75380,12 +75461,16 @@
   },
   {
    "id": "msbf-2379",
-   "name": null,
+   "name": "Provincetown Tennis Club",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Provincetown Tennis Club"
+   ],
+   "listing_ids": [
+    "prov-lst-0366"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -75401,13 +75486,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "parks",
+   "subcategory": "recreation",
    "mixed_use": false,
    "use": "unknown",
    "use_subtype": null,
    "use_confidence": "low",
-   "use_source": "none",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -76869,15 +76954,17 @@
   },
   {
    "id": "msbf-2435",
-   "name": "Front Street",
+   "name": "Grand Central",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Front Street"
+    "Front Street",
+    "Grand Central"
    ],
    "listing_ids": [
-    "prov-lst-0161"
+    "prov-lst-0161",
+    "prov-lst-0360"
    ],
    "historic_district": null,
    "contributing": null,
@@ -77854,12 +77941,16 @@
   },
   {
    "id": "msbf-2466",
-   "name": null,
+   "name": "Snow & Snow",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Snow & Snow"
+   ],
+   "listing_ids": [
+    "prov-lst-0371"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -77875,13 +77966,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "services",
+   "subcategory": "financial",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -78217,12 +78308,16 @@
   },
   {
    "id": "msbf-2474",
-   "name": null,
+   "name": "Provincetown Gym & Fitness",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Provincetown Gym & Fitness"
+   ],
+   "listing_ids": [
+    "prov-lst-0363"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -78238,13 +78333,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -79034,12 +79129,12 @@
   },
   {
    "id": "msbf-2502",
-   "name": "Lobster Pot Restaurant",
+   "name": "The Lobster Pot",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Lobster Pot Restaurant"
+    "The Lobster Pot"
    ],
    "listing_ids": [
     "prov-lst-0129"
@@ -79126,13 +79221,13 @@
   },
   {
    "id": "msbf-2504",
-   "name": "Crowne Pointe",
+   "name": "Crowne Pointe Historic Inn & Spa",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Crowne Pointe",
-    "The Pointe Restaurant + Wine bar"
+    "Crowne Pointe Historic Inn & Spa",
+    "The Pointe Tavern"
    ],
    "listing_ids": [
     "prov-lst-0074",
@@ -80571,12 +80666,12 @@
   },
   {
    "id": "msbf-2545",
-   "name": "8 Dyer",
+   "name": "8 Dyer Hotel",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "8 Dyer"
+    "8 Dyer Hotel"
    ],
    "listing_ids": [
     "prov-lst-0053"
@@ -81570,12 +81665,12 @@
   },
   {
    "id": "msbf-2581",
-   "name": "Scottcakes",
+   "name": "ScottCakes",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Scottcakes",
+    "ScottCakes",
     "Birdie Silkscreen Studio"
    ],
    "listing_ids": [
@@ -81796,12 +81891,12 @@
   },
   {
    "id": "msbf-2590",
-   "name": "Goveror Bradford",
+   "name": "The Governor Bradford",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Goveror Bradford"
+    "The Governor Bradford"
    ],
    "listing_ids": [
     "prov-lst-0126"
@@ -82515,12 +82610,16 @@
   },
   {
    "id": "msbf-2615",
-   "name": null,
+   "name": "Center For Coastal Studies",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Center For Coastal Studies"
+   ],
+   "listing_ids": [
+    "prov-lst-0354"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -82536,13 +82635,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -82731,12 +82830,16 @@
   },
   {
    "id": "msbf-2763",
-   "name": null,
+   "name": "Wood End Light",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Wood End Light"
+   ],
+   "listing_ids": [
+    "prov-lst-0374"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -82752,13 +82855,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "parks",
+   "subcategory": "parks",
    "mixed_use": false,
    "use": "unknown",
    "use_subtype": null,
    "use_confidence": "low",
-   "use_source": "none",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,

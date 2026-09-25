@@ -5,8 +5,8 @@
   "layer": "Layer 2 — listings (business POIs, building_id → slab id, 0..N per building)",
   "generated": "2026-07-07",
   "generator": "bake-content.js",
-  "count": 344,
-  "enriched": 0,
+  "count": 380,
+  "enriched": 145,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -67,21 +67,26 @@
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "161 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-1669",
+   "website": "https://theboatslip.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Tea Dance",
+    "The Buoy Bar",
+    "Beach club"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A waterfront resort in the West End, and home of Tea Dance, the late-afternoon party on the deck that has run since the late 1960s. The Buoy Bar is on site.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "resort",
+   "enriched": true,
    "source_key": "osm-170530726",
    "prominence_rank": 322
   },
@@ -238,100 +243,174 @@
   {
    "id": "prov-lst-0089",
    "building_id": "msbf-27",
-   "name": "Perry's",
+   "name": "Perry's Fine Wine & Liquors",
    "category": "residential",
    "subcategory": "houses",
    "address": "1 Tremont Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-0140",
+   "website": "https://ptownperrys.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "A wine and liquor shop open since 1934, also selling food and gifts, which delivers across the Outer Cape.",
+   "history": [
+    {
+     "year": 1934,
+     "event": "Perry's opens."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "enriched": true,
    "source_key": "osm-215752799",
    "prominence_rank": 155
   },
   {
    "id": "prov-lst-0102",
    "building_id": "msbf-1271",
-   "name": "Methodist Church",
+   "name": "Provincetown United Methodist Church",
    "category": "community",
    "subcategory": "churches",
    "address": "20 Shank Painter Road",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-4925",
+   "website": "https://www.provincetownumc.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A Methodist congregation on Shank Painter Road, with Sunday service at 10 a.m., also carried on 107.7 FM and online.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "place_of_worship",
+   "enriched": true,
    "source_key": "osm-2863275",
    "prominence_rank": 65
   },
   {
    "id": "prov-lst-0005",
    "building_id": "msbf-427",
-   "name": "Provincetown Museum",
+   "name": "Pilgrim Monument & Provincetown Museum",
    "category": "arts",
    "subcategory": "museum",
-   "address": null,
-   "phone": null,
+   "address": "1 High Pole Hill Road",
+   "phone": "508-487-1310",
    "website": "https://www.pilgrim-monument.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": "Apr 1-May Mo [-1] 09:00-17:00;May Mo [-1] - Sep Mo [1] 09:00-19:00;Sep Mo [1] - Nov 30 09:00-17:00;Nov Th[4] off;Dec-Mar off",
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "photos": [
+    {
+     "url": "photos/pilgrim-monument/01.jpg",
+     "what": "Pilgrim Monument and Bas Relief as viewed from Bradford St.",
+     "credit": "Peter Whitlock, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:PilgrimMonumentbasrelief.jpg",
+     "license": "CC BY-SA 3.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/ac/PilgrimMonumentbasrelief.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
+   "amenities": [
+    "Climb to the top (116 steps and 60 ramps)",
+    "Provincetown Museum at the base",
+    "Last ticket 3 p.m.; last climb 3:15 p.m."
+   ],
+   "tags": [
+    "landmark",
+    "museum",
+    "history",
+    "views"
+   ],
+   "description": "The granite tower on High Pole Hill that you can see from almost anywhere on the Outer Cape. At 252 feet it is the tallest all-granite structure in the United States, modelled on the Torre del Mangia in Siena, and it marks the Pilgrims' first landfall in 1620 and the signing of the Mayflower Compact in Provincetown Harbor. Visitors climb 116 steps and 60 ramps to the top; the Provincetown Museum at its base tells the town's maritime story.",
+   "history": [
+    {
+     "year": 1620,
+     "event": "The Mayflower anchors in Provincetown Harbor; the Mayflower Compact is signed aboard."
+    },
+    {
+     "year": 1907,
+     "event": "President Theodore Roosevelt lays the cornerstone on August 20."
+    },
+    {
+     "year": 1910,
+     "event": "President William H. Taft dedicates the finished monument on August 5."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "museum",
+   "enriched": true,
    "source_key": "osm-164024700",
    "prominence_rank": 43
   },
   {
    "id": "prov-lst-0008",
    "building_id": "msbf-1081",
-   "name": "Gifford House Inn",
+   "name": "Gifford House",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "9 Carver Street",
-   "phone": null,
-   "website": "https://www.giffordhouse.com/",
+   "phone": "508-487-0688",
+   "website": "https://www.gifford.house/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Porch Bar",
+    "Purgatory (bar)",
+    "The Wilde Playhouse"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A historic inn a block off Commercial Street that doubles as an entertainment complex, with the Porch Bar, a lounge with a grand piano, and the Club Purgatory dance club downstairs. No breakfast is served (coffee, tea and fruit are set out in the lounge mornings) and pets are not allowed.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-164024920",
    "prominence_rank": 24
   },
@@ -413,25 +492,30 @@
   {
    "id": "prov-lst-0020",
    "building_id": "msbf-81",
-   "name": "Waterford Inn",
+   "name": "Waterford Inn Provincetown",
    "category": "hospitality",
    "subcategory": "hotels",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "386 Commercial Street",
+   "phone": "508-413-9892",
+   "website": "https://www.thewaterfordinn.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "pet-friendly",
+    "breakfast voucher",
+    "no elevator"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A small historic inn on Commercial Street in the East End, updated as a boutique hotel.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "hotel",
+   "enriched": true,
    "source_key": "osm-170530727",
    "prominence_rank": 28
   },
@@ -463,25 +547,30 @@
   {
    "id": "prov-lst-0023",
    "building_id": "msbf-718",
-   "name": "Anchor Inn",
+   "name": "Anchor Inn Beach House",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "175 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-0432",
+   "website": "https://anchorinnbeachhouse.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "waterfront",
+    "continental breakfast",
+    "paid parking"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A waterfront inn on the harbor at the start of the West End, with rooms looking out over Provincetown Harbor.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-170530751",
    "prominence_rank": 35
   },
@@ -517,21 +606,26 @@
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "378 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "774-392-7171",
+   "website": "https://www.somersethouseinn.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "year-round",
+    "breakfast included",
+    "evening wine reception"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A woman-owned guesthouse in a historic house on Commercial Street, open year-round, with complimentary breakfast and evening beer-and-wine receptions.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-170530775",
    "prominence_rank": 178
   },
@@ -592,21 +686,26 @@
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "1 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-9500",
+   "website": "https://www.provincetowninn.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "waterfront pool",
+    "bars and cafe",
+    "pets in designated rooms"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A historic waterfront resort at the far West End where Commercial Street begins, with a large outdoor waterfront pool, the West End Lounge, a pool bar and the Breakwater Cafe. Pets are accepted in designated rooms for a fee.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "hotel",
+   "enriched": true,
    "source_key": "osm-170629405",
    "prominence_rank": 123
   },
@@ -617,21 +716,27 @@
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "698 Commercial Street",
-   "phone": "+1 508-487-1711",
+   "phone": "508-487-1711",
    "website": "https://www.harborhotelptown.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "pool",
+    "poolside bar & grill",
+    "pet-friendly (fee)",
+    "town shuttle"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A waterfront hotel at the East End with a heated outdoor pool, the Cabana Bar & Grill, fire pits, and pet-friendly rooms (fee). A complimentary shuttle runs into town in season.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "hotel",
+   "enriched": true,
    "source_key": "osm-215750806",
    "prominence_rank": 317
   },
@@ -663,25 +768,31 @@
   {
    "id": "prov-lst-0037",
    "building_id": "msbf-654",
-   "name": "Cape Codder",
+   "name": "Cape Codder Guest House",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "570 Commercial Street",
-   "phone": null,
-   "website": "http://capecodderguests.com",
+   "phone": "508-487-0131",
+   "website": "https://www.capecodderguesthouse.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "private beach",
+    "shared and private baths",
+    "no pets",
+    "seasonal"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A beachfront guesthouse in the East End, with a private beach and views over the bay.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215751052",
    "prominence_rank": 587
   },
@@ -691,22 +802,28 @@
    "name": "Surfside Hotel & Suites",
    "category": "hospitality",
    "subcategory": "hotels",
-   "address": "543;545 Commercial Street",
-   "phone": null,
-   "website": null,
+   "address": "543 Commercial Street",
+   "phone": "508-487-1726",
+   "website": "https://www.surfsideinn.cc/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "private beach",
+    "pool bar",
+    "breakfast included",
+    "pet-friendly"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An East End waterfront hotel with a private beach on the bay, an outdoor pool with the Lighthouse Bar, and suites with kitchens. Continental breakfast is included, and it is pet-friendly.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "hotel",
+   "enriched": true,
    "source_key": "osm-215751182",
    "prominence_rank": 158
   },
@@ -742,21 +859,47 @@
    "category": "arts",
    "subcategory": "galleries",
    "address": "208 Bradford Street",
-   "phone": null,
+   "phone": "508-487-6411",
    "website": "https://bertawalkergallery.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A gallery showing the history of American art through Provincetown's artists, from the art colony's founders to painters working today.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "gallery",
+   "enriched": true,
    "source_key": "osm-215751388",
    "prominence_rank": 79
   },
@@ -813,25 +956,82 @@
   {
    "id": "prov-lst-0046",
    "building_id": "msbf-970",
-   "name": "Provincetown Art Association & Museum;Provincetown Art Association and Museum",
+   "name": "Provincetown Art Association & Museum (PAAM)",
    "category": "arts",
    "subcategory": "museum",
    "address": "460 Commercial Street",
-   "phone": "+1-508-487-1750",
+   "phone": "508-487-1750",
    "website": "https://www.paam.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "20:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "photos": [
+    {
+     "url": "photos/paam/01.jpg",
+     "what": "Entrance to the Provincetown Art Association and Museum.",
+     "credit": "Debbie Cohen, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:Aa_museum_entrance.jpg",
+     "license": "CC BY-SA 3.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Aa_museum_entrance.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
+   "amenities": [
+    "Five galleries",
+    "Sculpture garden",
+    "Free for 17 and under"
+   ],
+   "tags": [
+    "landmark",
+    "museum",
+    "art"
+   ],
+   "description": "Founded in 1914 by the artists of what is now the oldest continuous art colony in America, PAAM shows work by Provincetown artists past and present in five galleries. The shows run from traditional Cape Cod landscape to new contemporary work, and they change through the year alongside the permanent collection.",
+   "history": [
+    {
+     "year": 1914,
+     "event": "Founded by the artists of the Provincetown art colony."
+    },
+    {
+     "year": 2014,
+     "event": "Centennial."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "museum",
+   "enriched": true,
    "source_key": "osm-215751438",
    "prominence_rank": 1
   },
@@ -888,36 +1088,45 @@
   {
    "id": "prov-lst-0052",
    "building_id": "msbf-1593",
-   "name": "Benchmark Inn",
+   "name": "The Benchmark",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "6 Dyer Street",
-   "phone": null,
-   "website": "https://benchmarkinn.com/",
+   "phone": "508-487-7440",
+   "website": "https://8dyer.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "adults only (18+)",
+    "pool",
+    "jacuzzi",
+    "sauna",
+    "breakfast included",
+    "no pets",
+    "year-round"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An adults-only inn, now run together with its neighbor, 8 Dyer Hotel.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215751612",
    "prominence_rank": 66
   },
   {
    "id": "prov-lst-0053",
    "building_id": "msbf-2545",
-   "name": "8 Dyer",
+   "name": "8 Dyer Hotel",
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "8 Dyer Street",
-   "phone": null,
+   "phone": "508-487-0880",
    "website": "https://www.8dyer.com/",
    "logo": null,
    "hours": null,
@@ -925,13 +1134,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "An adults-only small hotel on Dyer Street, now run together with its neighbor, the Benchmark Inn.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "hotel",
+   "enriched": true,
    "source_key": "osm-215751621",
    "prominence_rank": 98
   },
@@ -963,25 +1173,30 @@
   {
    "id": "prov-lst-0056",
    "building_id": "msbf-621",
-   "name": "Admiral's Landing Inn",
+   "name": "Admiral's Landing",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "158 Bradford Street",
-   "phone": null,
+   "phone": "508-487-9665",
    "website": "https://admiralslanding.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "8 rooms",
+    "breakfast included",
+    "private baths"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A historic 1860s inn at the corner of Bradford and Pearl, a block from Commercial Street and the bay.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215751742",
    "prominence_rank": 94
   },
@@ -992,21 +1207,25 @@
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "7 Johnson Street",
-   "phone": null,
+   "phone": "508-364-2549",
    "website": "https://whiteporchinn.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "10 rooms",
+    "breakfast delivered"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An art-focused boutique inn on Johnson Street, close to the beaches, galleries and restaurants.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215751770",
    "prominence_rank": 1568
   },
@@ -1117,21 +1336,25 @@
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "6 Conwell Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-1911",
+   "website": "https://salthouseinn.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "15 rooms",
+    "breakfast included"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A small, modern bed & breakfast in the center of town, known for its breakfasts.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215751865",
    "prominence_rank": 115
   },
@@ -1142,21 +1365,51 @@
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "142 Bradford Street",
-   "phone": null,
-   "website": "http://sunsetinnptown.com",
+   "phone": "508-487-9810",
+   "website": "https://www.sunsetinnptown.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "One of Provincetown's oldest guesthouses: a mid-nineteenth-century house that has taken in visitors for more than fifty years.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215751940",
    "prominence_rank": 80
   },
@@ -1238,50 +1491,65 @@
   {
    "id": "prov-lst-0074",
    "building_id": "msbf-2504",
-   "name": "Crowne Pointe",
+   "name": "Crowne Pointe Historic Inn & Spa",
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "82 Bradford Street",
-   "phone": null,
+   "phone": "508-487-6767",
    "website": "https://crownepointe.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "adults only (18+)",
+    "saltwater pool",
+    "spa",
+    "breakfast included",
+    "dog-friendly (fee)"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An adults-only (18+) historic inn on Bradford Street with a saltwater pool and the Shui Spa (soaking tub, steam room, salt sauna). Breakfast is included, and one dog per room is accepted for a nightly fee.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "hotel",
+   "enriched": true,
    "source_key": "osm-215752353",
    "prominence_rank": 27
   },
   {
    "id": "prov-lst-0075",
    "building_id": "msbf-1952",
-   "name": "Brass Key",
+   "name": "Brass Key Guesthouse",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "67 Bradford Street",
-   "phone": null,
+   "phone": "508-487-9005",
    "website": "https://brasskey.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "adults only (21+)",
+    "infinity pool",
+    "hot tub",
+    "breakfast included",
+    "dogs in select rooms",
+    "seasonal"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An adults-only (21+) guesthouse spread over nine restored historic buildings, with an infinity pool, a large spa tub, and a hot breakfast daily. Dogs are accepted in select rooms with advance notice. Seasonal.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215752385",
    "prominence_rank": 89
   },
@@ -1338,25 +1606,29 @@
   {
    "id": "prov-lst-0079",
    "building_id": "msbf-2076",
-   "name": "Rose & Crown",
+   "name": "Rose & Crown Guest House",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "158 Commercial Street",
-   "phone": null,
+   "phone": "508-487-3332",
    "website": "https://www.roseandcrownptown.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "year-round",
+    "light breakfast"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A historic guesthouse in the center of town on Commercial Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215752448",
    "prominence_rank": 108
   },
@@ -1392,21 +1664,26 @@
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "12 Winthrop Street",
-   "phone": null,
+   "phone": "508-487-9603",
    "website": "https://www.mercuryhotelptown.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "rooftop deck",
+    "24-hour coffee",
+    "beach gear"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A boutique hotel on Winthrop Street near the beach, in walking distance of Commercial Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215752482",
    "prominence_rank": 76
   },
@@ -1463,25 +1740,30 @@
   {
    "id": "prov-lst-0087",
    "building_id": "msbf-2216",
-   "name": "Bradford House & Motel",
+   "name": "The Bradford",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "41 Bradford Street",
-   "phone": null,
-   "website": "http://thebradfordhousemotel.com",
+   "phone": "508-487-0173",
+   "website": "https://www.thebradfordptown.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "private baths",
+    "on-site parking",
+    "fire pit"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Quiet lodging on Bradford Street, a few steps from the shops, restaurants and harbor beaches.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215752727",
    "prominence_rank": 82
   },
@@ -1538,25 +1820,30 @@
   {
    "id": "prov-lst-0099",
    "building_id": "msbf-728",
-   "name": "Seaglass Inn",
+   "name": "Seaglass Inn & Spa",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
    "address": "105 Bradford Street Extension",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-1286",
+   "website": "https://www.seaglassinnprovincetown.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "pool",
+    "spa",
+    "bar"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An LGBTQ+- and family-friendly boutique hotel on four acres in the West End, with a pool, a seasonal bar and a spa.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-215753947",
    "prominence_rank": 153
   },
@@ -1616,22 +1903,27 @@
    "name": "Cape Colony Inn",
    "category": "hospitality",
    "subcategory": "hotels",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "280 Bradford Street",
+   "phone": "508-487-1755",
+   "website": "https://www.capecolonyinn.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "heated pool",
+    "pet-friendly",
+    "free parking"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An LGBTQ+-friendly hotel two blocks from the beach on upper Bradford Street, with a heated outdoor pool, fire pit and grills. Pets are allowed, and parking and Wi-Fi are free.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "motel",
+   "enriched": true,
    "source_key": "osm-6102879",
    "prominence_rank": 157
   },
@@ -1642,21 +1934,28 @@
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "59 Province Lands Road",
-   "phone": null,
-   "website": null,
+   "phone": "508-413-9820",
+   "website": "https://www.larkhotels.com/massachusetts/cape-cod/provincetown/awol-provincetown",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "30 rooms",
+    "pool",
+    "fire pits",
+    "dog-friendly (fee)",
+    "seasonal"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A 30-room boutique hotel by the Province Lands moors, about a mile and a half from the town center, run by Lark Hotels. It has a heated pool and fire pits, and takes up to two dogs per room (70 lb or less) for a fee. Seasonal (formerly the Inn at the Moors).",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "motel",
+   "enriched": true,
    "source_key": "osm-16163089",
    "prominence_rank": 239
   },
@@ -1667,21 +1966,66 @@
    "category": "community",
    "subcategory": "organizations",
    "address": "260 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-7000",
+   "website": "https://www.provincetown-ma.gov/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "12:00"
+    }
+   },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/provincetown-town-hall/01.jpg",
+     "what": "Provincetown Town Hall MA1.jpg",
+     "credit": "Acroterion, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:Provincetown_Town_Hall_MA1.jpg",
+     "license": "CC BY-SA 4.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Provincetown_Town_Hall_MA1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "landmark",
+    "civic",
+    "history"
+   ],
+   "description": "The town's seat of government, dedicated in 1886: a Romanesque and Queen Anne building with a clock tower at the center of Commercial Street. Upstairs, its auditorium has been a roller rink, a basketball court and a dance hall, and it still hosts town meeting and performances. A restoration of more than $6 million was finished in 2010.",
+   "history": [
+    {
+     "year": 1886,
+     "event": "Dedicated on August 25, after construction began in September 1885 at a cost of $50,400."
+    },
+    {
+     "year": 2010,
+     "event": "A two-year restoration of more than $6 million is largely completed in November."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "townhall",
+   "enriched": true,
    "source_key": "osm-164023890",
    "prominence_rank": 6
   },
@@ -1692,21 +2036,74 @@
    "category": "community",
    "subcategory": "churches",
    "address": "236 Commercial Street",
-   "phone": "+1-508-487-9344",
-   "website": "https://www.uumh.org/",
+   "phone": "508-487-9344",
+   "website": "https://uumh.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "16:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "16:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "16:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "13:00"
+    }
+   },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "photos/uu-meeting-house/01.jpg",
+     "what": "the First Universalist Church in Provincetown today",
+     "credit": "Peter Whitlock, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:1stUniversalist_Church_Provincetown.jpg",
+     "license": "Public domain",
+     "license_url": null,
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/5c/1stUniversalist_Church_Provincetown.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
    "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "tags": [
+    "landmark",
+    "church",
+    "music"
+   ],
+   "description": "A white meeting house on Commercial Street where the Unitarian Universalist congregation meets for Sunday service at 11 a.m. (also streamed). During the week it hosts concerts, including Great Music Provincetown, and community meetings.",
+   "history": [
+    {
+     "year": 1829,
+     "event": "The Universalist congregation is established in Provincetown."
+    },
+    {
+     "year": 1847,
+     "event": "The present meeting house, designed by Benjamin Hallett, is built; the steeple was added later."
+    },
+    {
+     "year": 1972,
+     "event": "Listed on the National Register of Historic Places as the First Universalist Church."
+    },
+    {
+     "year": 1989,
+     "event": "Included in the Provincetown Historic District."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "place_of_worship",
+   "enriched": true,
    "source_key": "osm-164024901",
    "prominence_rank": 380
   },
@@ -1717,21 +2114,57 @@
    "category": "dining",
    "subcategory": "restaurants",
    "address": "225 Commercial Street",
-   "phone": null,
+   "phone": "508-487-3800",
    "website": "https://www.thecanteenptown.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "sunday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "monday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Beach bar",
+    "Bay-view outdoor seating",
+    "Dog-friendly",
+    "No reservations",
+    "Online ordering"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A casual spot in the center of town for seasonal food, with dog-friendly seating outside, a raw bar, and a beach bar out back. Open year-round.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-164024910",
    "prominence_rank": 205
   },
@@ -1767,21 +2200,39 @@
    "category": "community",
    "subcategory": "churches",
    "address": "11 Prince Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-0095",
+   "website": "https://www.stpeters-ptown.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "The Roman Catholic parish church of Provincetown and Truro, founded in 1874 largely by the town's Portuguese fishing families. The original wooden church burned in 2005, and the present church, keeping one surviving stained-glass window, was dedicated in 2008. Each June the Blessing of the Fleet procession sets out from here to MacMillan Wharf during the Portuguese Festival.",
+   "history": [
+    {
+     "year": 1874,
+     "event": "The first St. Peter's church is dedicated in October; most parishioners are Portuguese fishing families."
+    },
+    {
+     "year": 1947,
+     "event": "Provincetown's Blessing of the Fleet begins, with a procession from St. Peter's to the wharf."
+    },
+    {
+     "year": 2005,
+     "event": "The original church is destroyed by fire in January; one stained-glass window is saved."
+    },
+    {
+     "year": 2008,
+     "event": "The new church is dedicated in July."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "place_of_worship",
+   "enriched": true,
    "source_key": "osm-170523643",
    "prominence_rank": 181
   },
@@ -1888,25 +2339,51 @@
   {
    "id": "prov-lst-0028",
    "building_id": "msbf-1412",
-   "name": "Mews",
+   "name": "The Mews Restaurant & Café",
    "category": "dining",
    "subcategory": "restaurants",
-   "address": "429;433 Commercial Street",
-   "phone": null,
-   "website": null,
+   "address": "429 Commercial Street",
+   "phone": "508-487-1500",
+   "website": "https://mewsptown.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "tuesday": {
+     "open": "17:00",
+     "close": "20:30"
+    },
+    "wednesday": {
+     "open": "17:00",
+     "close": "20:30"
+    },
+    "thursday": {
+     "open": "17:00",
+     "close": "20:30"
+    },
+    "friday": {
+     "open": "17:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "17:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Beachfront",
+    "Upstairs bistro",
+    "Reservations via Resy"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A long-running restaurant with two floors on the beach: an upstairs bistro and a quieter beach-level dining room, serving the same menu.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-170530789",
    "prominence_rank": 198
   },
@@ -1963,25 +2440,35 @@
   {
    "id": "prov-lst-0040",
    "building_id": "msbf-926",
-   "name": "The Church of Saint Mary of the Harbor",
+   "name": "Church of St. Mary of the Harbor",
    "category": "community",
    "subcategory": "churches",
    "address": "517 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-2622",
+   "website": "https://www.stmaryoftheharbor.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "The Episcopal church in the East End, on the water. Services are Sunday at 10 a.m. and Saturday at 8:30 a.m., and it is home to the East End Music concert series.",
+   "history": [
+    {
+     "year": 1919,
+     "event": "A group of Episcopalians raises $2,500 to buy an old house on the harbor and turn it into a church."
+    },
+    {
+     "year": 1933,
+     "event": "The mission calls the Rev. Robert Wood Nicholson as its first vicar; under him local artists furnish and decorate the church."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "place_of_worship",
+   "enriched": true,
    "source_key": "osm-215751281",
    "prominence_rank": 147
   },
@@ -2067,21 +2554,84 @@
    "category": "arts",
    "subcategory": "venues",
    "address": "24 Pearl Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-9960",
+   "website": "https://fawc.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "12:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "12:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "12:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "12:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "12:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "12:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "photos": [
+    {
+     "url": "photos/fine-arts-work-center/01.jpg",
+     "what": "Fine Arts Work Center's outdoor seating area.",
+     "credit": "CastIronSeasoner, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:Fine_Arts_Work_Center,_Provincetown,_Massachusetts.jpg",
+     "license": "CC BY 4.0",
+     "license_url": "https://creativecommons.org/licenses/by/4.0",
+     "source_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2b/Fine_Arts_Work_Center%2C_Provincetown%2C_Massachusetts.jpg/1920px-Fine_Arts_Work_Center%2C_Provincetown%2C_Massachusetts.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+    }
+   ],
+   "amenities": [
+    "Hudson D. Walker Gallery"
+   ],
+   "tags": [
+    "landmark",
+    "art",
+    "writing"
+   ],
+   "description": "A nonprofit residency for emerging visual artists and writers. It is best known for its seven-month winter fellowships, which bring twenty early-career artists and writers to live and work in Provincetown, and for keeping the art colony going year-round.",
+   "history": [
+    {
+     "year": 1914,
+     "event": "Frank A. Days builds artist studios above the lumber bins of his Pearl Street yard; Ross Moffett is among the first tenants."
+    },
+    {
+     "year": 1968,
+     "event": "The Fine Arts Work Center is founded, first based at 135 Bradford Street."
+    },
+    {
+     "year": 1972,
+     "event": "The Center buys the Pearl Street lumberyard property."
+    },
+    {
+     "year": 1988,
+     "event": "First major reconstruction; the coal shed becomes the Stanley Kunitz Common Room."
+    },
+    {
+     "year": 2010,
+     "event": "Reconstruction of the historic studios building is completed (work 2009-2010)."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "arts_centre",
+   "enriched": true,
    "source_key": "osm-215751814",
    "prominence_rank": 9
   },
@@ -2113,25 +2663,51 @@
   {
    "id": "prov-lst-0069",
    "building_id": "msbf-1829",
-   "name": "Cape Cod Five",
+   "name": "Cape Cod 5",
    "category": "services",
    "subcategory": "financial",
    "address": "137 Bradford Street",
-   "phone": null,
-   "website": "https://www.capecodfive.com/",
+   "phone": "508-413-9790",
+   "website": "https://www.capecodfive.com/locations/provincetown",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "tuesday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "wednesday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "thursday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "friday": {
+     "open": "08:30",
+     "close": "17:30"
+    },
+    "saturday": {
+     "open": "08:30",
+     "close": "12:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The Provincetown branch of a community bank serving Cape Cod, the Islands and southeastern Massachusetts.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "bank",
+   "enriched": true,
    "source_key": "osm-215751966",
    "prominence_rank": 125
   },
@@ -2143,20 +2719,34 @@
    "subcategory": "events-venue",
    "address": "2 Mayflower Street",
    "phone": null,
-   "website": null,
+   "website": "https://www.provincetown-ma.gov/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "A town-run community center in the former Veterans Memorial Elementary School, housing the Council on Aging, Recreation and Human Services departments along with meeting rooms, a gym and early-childhood programs. It serves as a multigenerational hub for classes, senior services and public meetings.",
+   "history": [
+    {
+     "year": 1955,
+     "event": "Veterans Memorial Elementary School, designed by Walter M. Gaffney of Hyannis, opens."
+    },
+    {
+     "year": 2011,
+     "event": "The elementary school closes; Town Meeting votes to move the Council on Aging, Human Services, Recreation and DPW offices into the building as the Veterans Memorial Community Center."
+    },
+    {
+     "year": 2013,
+     "event": "In July the Council on Aging joins the school's infant-and-toddler program at the center, creating a multigenerational activity center."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "community_centre",
+   "enriched": true,
    "source_key": "osm-215752660",
    "prominence_rank": 29
   },
@@ -2188,25 +2778,61 @@
   {
    "id": "prov-lst-0094",
    "building_id": "msbf-2319",
-   "name": "Mac's Seafood",
+   "name": "Mac's Fish House",
    "category": "dining",
    "subcategory": "restaurants",
    "address": "85 Shank Painter Road",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-6227",
+   "website": "https://macsseafood.com/restaurant/macs-fish-house-provincetown/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "15:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "15:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "15:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "15:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "15:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Raw bar",
+    "Sushi",
+    "Fish market",
+    "Outdoor beach bar with fire pit",
+    "Event space"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A seafood restaurant and market from the Mac's family, which began with a fish market on the Wellfleet pier in 1995 and still buys much of its catch from local fishing families.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-215753603",
    "prominence_rank": 144
   },
@@ -2417,21 +3043,56 @@
    "category": "shopping",
    "subcategory": "grocery",
    "address": "56 Shank Painter Road",
-   "phone": "+1 508-487-4903",
+   "phone": "508-487-4903",
    "website": "https://stores.stopandshop.com/ma/provincetown/56-shank-painter-road",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "tuesday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "06:00",
+     "close": "22:00"
+    }
+   },
    "opening_hours_raw": "Mo-Sa 07:00-22:00; Su 07:00-21:00",
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "pharmacy (508-487-3738)",
+    "gas station",
+    "deli",
+    "online ordering / pickup"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The town's full-size supermarket, on Shank Painter Road away from Commercial Street, with a deli, an in-store pharmacy and a gas station.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "supermarket",
+   "enriched": true,
    "source_key": "osm-170523644",
    "prominence_rank": 11
   },
@@ -2442,21 +3103,27 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "376 Commercial Street",
-   "phone": "+1-508-487-2501",
-   "website": "http://www.womencrafts.com",
+   "phone": "508-487-2501",
+   "website": "https://www.womencraftsptown.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "A lesbian-owned and -operated feminist book and gift shop, open since 1976 and long a gathering point for activism and community in town.",
+   "history": [
+    {
+     "year": 1976,
+     "event": "Womencrafts opens."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "books",
+   "enriched": true,
    "source_key": "osm-170530729",
    "prominence_rank": 117
   },
@@ -2588,25 +3255,26 @@
   {
    "id": "prov-lst-0071",
    "building_id": "msbf-659",
-   "name": "Shor",
+   "name": "Shor Home",
    "category": "shopping",
    "subcategory": "retail",
    "address": "240 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-7467",
+   "website": "https://www.shorhome.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A home furnishings shop with an interior design studio.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "interior_decoration",
+   "enriched": true,
    "source_key": "osm-215752170",
    "prominence_rank": 32
   },
@@ -2642,21 +3310,51 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "42 Bradford Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-8735",
+   "website": "https://ptownbikes.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Provincetown's bike shop since 1995, renting and selling Trek, Specialized and Electra bikes and doing repairs.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "bicycle",
+   "enriched": true,
    "source_key": "osm-215752813",
    "prominence_rank": 193
   },
@@ -2763,50 +3461,52 @@
   {
    "id": "prov-lst-0156",
    "building_id": "msbf-1481",
-   "name": "The Provincetown Theater",
+   "name": "Provincetown Theater",
    "category": "arts",
    "subcategory": "venues",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "238 Bradford Street",
+   "phone": "508-487-7487",
+   "website": "https://provincetowntheater.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A nonprofit performing-arts venue on Bradford Street that has produced new work and contemporary American theater since 2001, with a full season of shows through the year.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "theatre",
+   "enriched": true,
    "source_key": "osm-n367779475",
    "prominence_rank": 187
   },
   {
    "id": "prov-lst-0333",
    "building_id": "msbf-2504",
-   "name": "The Pointe Restaurant + Wine bar",
+   "name": "The Pointe Tavern",
    "category": "dining",
    "subcategory": "restaurants",
    "address": "82 Bradford Street",
-   "phone": null,
-   "website": "https://provincetown-restaurant.com/",
+   "phone": "508-487-6767",
+   "website": "https://www.crownepointe.com/restaurants/about",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The restaurant and wine bar of the Crowne Pointe Hotel & Spa, serving breakfast and a modern coastal American dinner menu with cocktails and wine; the room looks toward the Pilgrim Monument.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n764434433",
    "prominence_rank": 27
   },
@@ -2967,7 +3667,7 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "200 Commercial Street",
-   "phone": null,
+   "phone": "508-487-6977",
    "website": "https://toysoferos.com/",
    "logo": null,
    "hours": null,
@@ -2975,13 +3675,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "An adult shop that doubles as a small free museum of the history of sex toys, from ancient artifacts and reproductions to modern devices. Opened in 1996; its staff are trained as sex educators. Explicit content — adults only in practice.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "erotic",
+   "enriched": true,
    "source_key": "osm-n764434498",
    "prominence_rank": 33
   },
@@ -2992,28 +3693,58 @@
    "category": "shopping",
    "subcategory": "grocery",
    "address": "150 Bradford Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-0045",
+   "website": "https://farlandprovisions.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "sunday": {
+     "open": "08:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A corner store and deli with its own bakery, prepared foods, and breakfast and lunch sandwiches made to order.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "greengrocer",
+   "enriched": true,
    "source_key": "osm-n850959412",
    "prominence_rank": 190
   },
   {
    "id": "prov-lst-0342",
    "building_id": "msbf-1042",
-   "name": "Ace Hardware",
+   "name": "Ace Conwell Home Center",
    "category": "shopping",
    "subcategory": "retail",
    "address": "21 Conwell Street",
@@ -3025,13 +3756,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The town's Ace Hardware, lumber yard and Benjamin Moore paint store, with garden, grill and tool departments.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "doityourself",
+   "enriched": true,
    "source_key": "osm-n851633152",
    "prominence_rank": 17
   },
@@ -3041,22 +3773,52 @@
    "name": "Yolqueria",
    "category": "dining",
    "subcategory": "restaurants",
-   "address": "401 Commercial Street",
-   "phone": null,
-   "website": "https://www.yolqueria.com/",
+   "address": "401 1/2 Commercial Street",
+   "phone": "508-487-0600",
+   "website": "https://mezzeptown.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "14:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "14:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "14:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "14:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "14:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "14:00"
+    },
+    "sunday": {
+     "open": "08:00",
+     "close": "14:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Brunch and tacos served on a breezy porch or indoors, all season.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n855546122",
    "prominence_rank": 143
   },
@@ -3066,22 +3828,23 @@
    "name": "Victor's",
    "category": "dining",
    "subcategory": "restaurants",
-   "address": "175 Bradford Street",
-   "phone": null,
-   "website": null,
+   "address": "175 Bradford Street Extension",
+   "phone": "508-487-1777",
+   "website": "https://www.victorsptown.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A West End restaurant in a cottage-style building with a cathedral ceiling and stone fireplace, serving New American small plates meant for sharing.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n855550083",
    "prominence_rank": 226
   },
@@ -3113,25 +3876,60 @@
   {
    "id": "prov-lst-0142",
    "building_id": "msbf-1559",
-   "name": "Provincetown Bookshop",
+   "name": "The Provincetown Bookshop",
    "category": "shopping",
    "subcategory": "retail",
    "address": "229 Commercial Street",
-   "phone": null,
+   "phone": "508-487-0964",
    "website": "https://provincetownbookshop.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "The oldest bookstore on Cape Cod, open since 1932, with LGBTQ+ titles, cookbooks, children's books, art and design, vinyl and a bargain table.",
+   "history": [
+    {
+     "year": 1932,
+     "event": "The Provincetown Bookshop opens."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "books",
+   "enriched": true,
    "source_key": "osm-n2940775553",
    "prominence_rank": 77
   },
@@ -3163,11 +3961,11 @@
   {
    "id": "prov-lst-0144",
    "building_id": "msbf-674",
-   "name": "Paws And Wiskers",
+   "name": "Paws & Whiskers",
    "category": "shopping",
    "subcategory": "retail",
-   "address": null,
-   "phone": null,
+   "address": "306 Commercial Street",
+   "phone": "508-487-3441",
    "website": null,
    "logo": null,
    "hours": null,
@@ -3182,6 +3980,7 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "pet",
+   "enriched": true,
    "source_key": "osm-n2940775556",
    "prominence_rank": 23
   },
@@ -3192,46 +3991,123 @@
    "category": "dining",
    "subcategory": "restaurants",
    "address": "300 Commercial Street",
-   "phone": null,
+   "phone": "508-487-0121",
    "website": "https://www.mayflower-ptown.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:30",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "11:30",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:30",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:30",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:30",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "11:30",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "A casual American restaurant on Commercial Street with a long, reasonably priced menu. Brothers Mike and Sam Janoplis opened it in 1929, and it has stayed in the family ever since.",
+   "history": [
+    {
+     "year": 1929,
+     "event": "Mike and Sam Janoplis open the Mayflower."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n2940775557",
    "prominence_rank": 23
   },
   {
    "id": "prov-lst-0146",
    "building_id": "msbf-875",
-   "name": "The Post Office Cafe",
+   "name": "Post Office Cafe & Cabaret",
    "category": "dining",
    "subcategory": "restaurants",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "303 Commercial Street",
+   "phone": "508-487-0008",
+   "website": "https://www.postofficecafe.net/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:30",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "08:30",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "08:30",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "08:30",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "08:30",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "08:30",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "08:30",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Nightly cabaret",
+    "Two bars"
+   ],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "A Commercial Street standby for close to fifty years, with breakfast and an all-day American menu, two bars, and live cabaret most nights. The building was a marine-supply store in 1940 and the Wreck Club from 1960.",
+   "history": [
+    {
+     "year": 1940,
+     "event": "Lands End Marine Supply opens in the building."
+    },
+    {
+     "year": 1960,
+     "event": "Converted into the Wreck Club."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n2940775558",
    "prominence_rank": 8
   },
@@ -3241,22 +4117,28 @@
    "name": "Cabot's Candy",
    "category": "dining",
    "subcategory": "desserts",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "276 Commercial Street",
+   "phone": "508-487-3550",
+   "website": "https://www.cabotscandy.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "A family-run candy maker that has pulled salt water taffy since 1927. It also sells fudge, brittle and bulk candy.",
+   "history": [
+    {
+     "year": 1927,
+     "event": "Cabot's begins making salt water taffy."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "confectionery",
+   "enriched": true,
    "source_key": "osm-n2941234384",
    "prominence_rank": 20
   },
@@ -3388,25 +4270,55 @@
   {
    "id": "prov-lst-0153",
    "building_id": "msbf-658",
-   "name": "Penney Patch Candies",
+   "name": "The Penney Patch",
    "category": "dining",
    "subcategory": "desserts",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "281 Commercial Street",
+   "phone": "508-487-2766",
+   "website": "https://penneypatch.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "23:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A candy shop on Commercial Street selling homemade fudge and salt water taffy, with bulk candy and chocolates for gifts.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "confectionery",
+   "enriched": true,
    "source_key": "osm-n3019268207",
    "prominence_rank": 12
   },
@@ -3416,22 +4328,44 @@
    "name": "Provincetown Community Television",
    "category": "arts",
    "subcategory": "studios",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "330 Commercial Street",
+   "phone": "508-487-0648",
+   "website": "https://www.provincetowntv.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "15:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "15:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "15:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "15:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "15:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The town's community-access television station. It carries live and archived coverage of Provincetown government meetings alongside locally made programs.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "studio",
+   "enriched": true,
    "source_key": "osm-n3430898491",
    "prominence_rank": 10
   },
@@ -3492,21 +4426,22 @@
    "category": "shopping",
    "subcategory": "grocery",
    "address": "212 Bradford Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-2339",
+   "website": "https://www.eastendmarketplace.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "An East End neighborhood market on Bradford Street selling groceries and produce, prepared breakfast and lunch, and wine, beer and spirits.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "convenience",
+   "enriched": true,
    "source_key": "osm-n4174474406",
    "prominence_rank": 161
   },
@@ -3525,38 +4460,40 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Nonprofit founded by comedian Kristen Becker that brings LGBTQ+ young adults (18–20) from unwelcoming places to spend a summer in Provincetown, with subsidized travel, starter housing, job connections and mentoring. Participants live at 210 Bradford Street (the Stowaway Guest House).",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "association",
+   "enriched": true,
    "source_key": "osm-n4176404989",
    "prominence_rank": 124
   },
   {
    "id": "prov-lst-0160",
    "building_id": "msbf-1532",
-   "name": "Bubula's by the Bay",
+   "name": "Bubala's by the Bay",
    "category": "dining",
    "subcategory": "restaurants",
-   "address": "183 Commercial Street",
-   "phone": null,
-   "website": null,
+   "address": "185 Commercial Street",
+   "phone": "508-487-0773",
+   "website": "https://www.bubalas.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A restaurant serving lunch, dinner and cocktails daily on Commercial Street; dinner reservations are taken for groups of five or more.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n4192309619",
    "prominence_rank": 61
   },
@@ -3616,33 +4553,38 @@
    "name": "The Ellery Hotel",
    "category": "hospitality",
    "subcategory": "hotels",
-   "address": "12-14 Johnson Street",
+   "address": "14 Johnson Street",
    "phone": "+1-508-487-4242",
-   "website": "https://carpediemguesthouse.com/",
+   "website": "https://www.elleryhotelptown.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "19 rooms",
+    "jacuzzi",
+    "steam room"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A boutique hotel on Johnson Street, a short walk from Commercial Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "hotel",
+   "enriched": true,
    "source_key": "osm-n4646549478",
    "prominence_rank": 59
   },
   {
    "id": "prov-lst-0164",
    "building_id": "msbf-1596",
-   "name": "Provincetown Dental Arts",
+   "name": "Provincetown Dental Arts (Scott A. Allegretti, DDS)",
    "category": "services",
    "subcategory": "health",
    "address": "135 Bradford Street",
-   "phone": "+1-508-487-2800",
+   "phone": "508-487-2800",
    "website": "https://www.ptowndentalarts.com/",
    "logo": null,
    "hours": null,
@@ -3650,13 +4592,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "General and cosmetic dental practice of Dr. Scott A. Allegretti on Bradford Street, offering cleanings, fillings, whitening, implants and veneers.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "dentist",
+   "enriched": true,
    "source_key": "osm-n4902760092",
    "prominence_rank": 45
   },
@@ -3763,50 +4706,89 @@
   {
    "id": "prov-lst-0169",
    "building_id": "msbf-1952",
-   "name": "Shipwreck Lounge",
+   "name": "Shipwreck Lounge at the Brass Key",
    "category": "dining",
    "subcategory": "bars",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "67 Bradford Street",
+   "phone": "508-487-9005",
+   "website": "https://www.brasskey.com/dining/shipwreck-lounge",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "17:00",
+     "close": "01:00"
+    },
+    "tuesday": {
+     "open": "17:00",
+     "close": "01:00"
+    },
+    "wednesday": {
+     "open": "17:00",
+     "close": "01:00"
+    },
+    "thursday": {
+     "open": "17:00",
+     "close": "01:00"
+    },
+    "friday": {
+     "open": "17:00",
+     "close": "01:00"
+    },
+    "saturday": {
+     "open": "17:00",
+     "close": "01:00"
+    },
+    "sunday": {
+     "open": "17:00",
+     "close": "01:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Open to the public",
+    "Fireplace"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The cocktail lounge of the Brass Key Guesthouse, open to the public, with a large fireplace, wood interiors and handcrafted cocktails.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "bar",
+   "enriched": true,
    "source_key": "osm-n4904032649",
    "prominence_rank": 89
   },
   {
    "id": "prov-lst-0170",
    "building_id": "msbf-1081",
-   "name": "Porch Bar",
+   "name": "Porch Bar at Gifford House",
    "category": "dining",
    "subcategory": "bars",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "9 Carver Street",
+   "phone": "508-487-0688",
+   "website": "https://www.gifford.house/explore/porchbar",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Fireplace",
+    "Pool table",
+    "Porch seating",
+    "Year-round"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The bar of the Gifford House inn, an LGBTQ+ lounge with indoor seating by a fireplace, a pool table and an outdoor porch, serving cocktails, beer and wine. Open all year.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "bar",
+   "enriched": true,
    "source_key": "osm-n4904036631",
    "prominence_rank": 24
   },
@@ -3816,22 +4798,52 @@
    "name": "Kohi Coffee",
    "category": "dining",
    "subcategory": "cafes",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "199 Commercial Street",
+   "phone": "774-538-6467",
+   "website": "https://www.kohicoffee.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "07:00",
+     "close": "19:00"
+    },
+    "tuesday": {
+     "open": "07:00",
+     "close": "19:00"
+    },
+    "wednesday": {
+     "open": "07:00",
+     "close": "19:00"
+    },
+    "thursday": {
+     "open": "07:00",
+     "close": "19:00"
+    },
+    "friday": {
+     "open": "07:00",
+     "close": "19:00"
+    },
+    "saturday": {
+     "open": "07:00",
+     "close": "19:00"
+    },
+    "sunday": {
+     "open": "07:00",
+     "close": "19:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A coffee bar serving espresso and pour-overs.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "cafe",
+   "enriched": true,
    "source_key": "osm-n4904043104",
    "prominence_rank": 40
   },
@@ -3863,25 +4875,26 @@
   {
    "id": "prov-lst-0173",
    "building_id": "msbf-133",
-   "name": "Brewhouse 1620",
+   "name": "1620 Brewhouse",
    "category": "dining",
    "subcategory": "restaurants",
    "address": "214 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-413-9258",
+   "website": "https://www.1620brewhouse.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": "Mo-Su 11:25-21:45",
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A pub and alehouse with 12 draft taps, pub-classic food and live entertainment.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n4904289254",
    "prominence_rank": 26
   },
@@ -3963,50 +4976,81 @@
   {
    "id": "prov-lst-0177",
    "building_id": "msbf-1559",
-   "name": "Vorelli's Restaurant",
+   "name": "Vorelli's",
    "category": "dining",
    "subcategory": "restaurants",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "226 Commercial Street",
+   "phone": "508-487-2778",
+   "website": "https://www.vorellisrestaurant.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A casual restaurant and bar serving burgers, Wellfleet oysters, stuffed clams, deli sandwiches, salads and lobster rolls, and known for its Bloody Marys.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n4904300644",
    "prominence_rank": 77
   },
   {
    "id": "prov-lst-0178",
    "building_id": "msbf-544",
-   "name": "Adam's",
+   "name": "Adam's Variety",
    "category": "shopping",
    "subcategory": "grocery",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "250 Commercial Street",
+   "phone": "508-487-0093",
+   "website": "https://adamsvariety.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "23:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "08:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A variety store on the site of the former Adam's Pharmacy, selling beach and everyday essentials, health and beauty items, snacks, souvenirs, hardware basics, cards, lottery, tobacco and vape products. It stopped being a pharmacy and was rebranded after a 2024 ownership change.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "convenience",
+   "enriched": true,
    "source_key": "osm-n4904310255",
    "prominence_rank": 38
   },
@@ -4113,25 +5157,30 @@
   {
    "id": "prov-lst-0183",
    "building_id": "msbf-2224",
-   "name": "Pepe's",
+   "name": "Pepe's Wharf",
    "category": "dining",
    "subcategory": "restaurants",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "371 Commercial Street",
+   "phone": "508-487-8717",
+   "website": "https://pepeswharf.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Two harbor-view decks",
+    "Indoor and outdoor seating",
+    "Reservations via OpenTable"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A two-story restaurant on the harbor side of Commercial Street, with two decks over the water and dining inside and out.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n4904324434",
    "prominence_rank": 7
   },
@@ -4142,7 +5191,7 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "379A Commercial Street",
-   "phone": null,
+   "phone": "508-487-6600",
    "website": "https://adamsnest.com/",
    "logo": null,
    "hours": null,
@@ -4150,13 +5199,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A queer-owned shop of activist apparel, art, jewelry and books. Ten percent of every cause piece goes back to LGBTQ+ organizations.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "gift",
+   "enriched": true,
    "source_key": "osm-n4904330519",
    "prominence_rank": 140
   },
@@ -4216,22 +5266,23 @@
    "name": "Coffey Men",
    "category": "shopping",
    "subcategory": "retail",
-   "address": null,
+   "address": "173 Commercial Street",
    "phone": null,
-   "website": null,
+   "website": "https://coffeymen.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A menswear shop that makes its own small line of clothing and accessories.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "clothes",
+   "enriched": true,
    "source_key": "osm-n4904352514",
    "prominence_rank": 35
   },
@@ -4263,25 +5314,26 @@
   {
    "id": "prov-lst-0189",
    "building_id": "msbf-296",
-   "name": "WOMR Radio",
+   "name": "WOMR 92.1 FM",
    "category": "arts",
    "subcategory": "studios",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "494 Commercial Street",
+   "phone": "508-487-2619",
+   "website": "https://womr.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Listener-supported community radio station broadcasting from Provincetown on 92.1 FM, with sister station WFMR 91.3 FM; volunteer DJs host a wide mix of music and talk.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "studio",
+   "enriched": true,
    "source_key": "osm-n4904969347",
    "prominence_rank": 5
   },
@@ -4392,7 +5444,7 @@
    "category": "arts",
    "subcategory": "galleries",
    "address": "430 Commercial Street",
-   "phone": null,
+   "phone": "508-487-1052",
    "website": "https://ricepolakgallery.com/",
    "logo": null,
    "hours": null,
@@ -4400,13 +5452,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A contemporary gallery showing painting, photography and sculpture by mid-career and emerging artists.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "gallery",
+   "enriched": true,
    "source_key": "osm-n4904973893",
    "prominence_rank": 84
   },
@@ -4441,22 +5494,52 @@
    "name": "Simie Maryles Gallery",
    "category": "arts",
    "subcategory": "galleries",
-   "address": "435 Commercial Street",
-   "phone": null,
+   "address": "379 Commercial Street",
+   "phone": "508-487-7878",
    "website": "https://www.simiemaryles.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A gallery of traditional painting and sculpture by contemporary artists, from the United States and abroad.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "gallery",
+   "enriched": true,
    "source_key": "osm-n4904975051",
    "prominence_rank": 68
   },
@@ -4588,11 +5671,11 @@
   {
    "id": "prov-lst-0202",
    "building_id": "msbf-1732",
-   "name": "Utilities",
+   "name": "Utilities Home",
    "category": "shopping",
    "subcategory": "retail",
    "address": "393 Commercial Street",
-   "phone": null,
+   "phone": "508-487-6800",
    "website": "https://utilitieshome.com/",
    "logo": null,
    "hours": null,
@@ -4600,13 +5683,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A kitchen, bath and home shop stocking cookware and household basics from brands such as Le Creuset, Staub and Wüsthof.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "houseware",
+   "enriched": true,
    "source_key": "osm-n4904979453",
    "prominence_rank": 78
   },
@@ -4667,21 +5751,22 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "381 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-0714",
+   "website": "https://kidstuffptown.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A children's specialty shop, in business for over 30 years, with clothing, gifts, books and accessories for newborns up to size 14.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "clothes",
+   "enriched": true,
    "source_key": "osm-n4904981741",
    "prominence_rank": 163
   },
@@ -4766,8 +5851,8 @@
    "name": "Yardarm Liquors",
    "category": "shopping",
    "subcategory": "retail",
-   "address": null,
-   "phone": null,
+   "address": "38 Conwell Street",
+   "phone": "508-487-0700",
    "website": null,
    "logo": null,
    "hours": null,
@@ -4775,13 +5860,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A full-service liquor store off Commercial Street, family-run since 1975, with a large hand-picked wine selection plus beer and spirits; sister store to Pamet Valley Liquors in Truro. Case discounts and event delivery offered.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "alcohol",
+   "enriched": true,
    "source_key": "osm-n4905042093",
    "prominence_rank": 191
   },
@@ -4841,8 +5927,8 @@
    "name": "Go Fish",
    "category": "shopping",
    "subcategory": "retail",
-   "address": null,
-   "phone": null,
+   "address": "371 Commercial Street",
+   "phone": "508-487-2992",
    "website": null,
    "logo": null,
    "hours": null,
@@ -4850,13 +5936,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A Commercial Street shop selling women's clothing and accessories alongside gifts and home décor.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "clothes",
+   "enriched": true,
    "source_key": "osm-n4905048367",
    "prominence_rank": 7
   },
@@ -4888,11 +5975,11 @@
   {
    "id": "prov-lst-0214",
    "building_id": "msbf-2581",
-   "name": "Scottcakes",
+   "name": "ScottCakes",
    "category": "shopping",
    "subcategory": "retail",
    "address": "353 Commercial Street",
-   "phone": null,
+   "phone": "508-487-7465",
    "website": "https://scottcakes.com/",
    "logo": null,
    "hours": null,
@@ -4900,13 +5987,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A cupcake shop that makes one kind: classic vanilla with pink buttercream, in minis, classics and gluten-free. It also ships nationwide.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "bakery",
+   "enriched": true,
    "source_key": "osm-n4905050162",
    "prominence_rank": 31
   },
@@ -4918,20 +6006,50 @@
    "subcategory": "retail",
    "address": "353 Commercial Street",
    "phone": null,
-   "website": "https://cloveandcreek.com/pages/hours-location",
+   "website": "https://cloveandcreek.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A lifestyle shop of goods from independent makers for the home, for yourself and for outdoors. Its other shops are in Hudson and Kingston, New York.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "interior_decoration",
+   "enriched": true,
    "source_key": "osm-n4905050990",
    "prominence_rank": 150
   },
@@ -4988,25 +6106,31 @@
   {
    "id": "prov-lst-0218",
    "building_id": "msbf-1723",
-   "name": "Patio",
+   "name": "Patio American Grill & Cocktail Bar",
    "category": "dining",
    "subcategory": "restaurants",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "328 Commercial Street",
+   "phone": "508-487-4003",
+   "website": "https://patioptown.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Outdoor patio seating",
+    "Raw bar",
+    "Cocktail bar",
+    "Reservations via OpenTable"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Commercial Street grill with indoor and outdoor seating, serving local seafood (lobster dishes, a raw bar with oysters) alongside steaks, burgers, pastas and vegetarian plates, plus a cocktail bar.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n4905054766",
    "prominence_rank": 10
   },
@@ -5167,28 +6291,29 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "205 Commercial Street",
-   "phone": null,
-   "website": "https://shop.hrc.org/provincetown-hrc-store",
+   "phone": "508-487-7736",
+   "website": "https://shop.hrc.org/pages/provincetown-hrc-store",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The Human Rights Campaign's Provincetown shop, selling apparel and gifts in support of the national LGBTQ+ civil-rights organization.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "general",
+   "enriched": true,
    "source_key": "osm-n4905061999",
    "prominence_rank": 40
   },
   {
    "id": "prov-lst-0226",
    "building_id": "msbf-1315",
-   "name": "Provicnetown Business Guild",
+   "name": "Provincetown Business Guild",
    "category": "community",
    "subcategory": "organizations",
    "address": "115 Bradford Street",
@@ -5200,24 +6325,30 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "The LGBTQ+ business association founded in 1978, with more than 300 member businesses. It markets Provincetown as a queer travel destination and produces Pride, Carnival, Holly Folly and First Light.",
+   "history": [
+    {
+     "year": 1978,
+     "event": "The Provincetown Business Guild is founded."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "association",
+   "enriched": true,
    "source_key": "osm-n4905062844",
    "prominence_rank": 132
   },
   {
    "id": "prov-lst-0227",
    "building_id": "msbf-1080",
-   "name": "BExclusive",
+   "name": "B.Xclusive",
    "category": "shopping",
    "subcategory": "retail",
-   "address": null,
-   "phone": null,
+   "address": "284 Commercial Street",
+   "phone": "508-487-0088",
    "website": "https://breadandfireworks.com/",
    "logo": null,
    "hours": null,
@@ -5225,13 +6356,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A streetwear boutique, founded in 2007, carrying vintage, made-in-USA goods, its own in-house screen-printed line, emerging brands and a large sock selection.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "clothes",
+   "enriched": true,
    "source_key": "osm-n4905064862",
    "prominence_rank": 20
   },
@@ -5263,25 +6395,26 @@
   {
    "id": "prov-lst-0229",
    "building_id": "msbf-1271",
-   "name": "Soup Kitchen of Provincetown",
+   "name": "Soup Kitchen in Provincetown (SKIP)",
    "category": "community",
    "subcategory": "organizations",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "20 Shank Painter Road",
+   "phone": "508-487-8331",
+   "website": "https://www.skipfood.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "SKIP serves a free hot lunch to Outer Cape residents on weekdays from November through April, the long off-season when the town empties out.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "social_facility",
+   "enriched": true,
    "source_key": "osm-n4906841829",
    "prominence_rank": 65
   },
@@ -5341,22 +6474,23 @@
    "name": "Helping Our Women",
    "category": "community",
    "subcategory": "organizations",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "34 Conwell Street",
+   "phone": "508-487-4357",
+   "website": "https://helpingourwomen.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A women's health resource center for the Outer Cape, offering support for chronic illness, wellness programs and social connection.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "social_facility",
+   "enriched": true,
    "source_key": "osm-n4906846133",
    "prominence_rank": 166
   },
@@ -5492,21 +6626,54 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "246 Commercial Street",
-   "phone": "+1 914 483 9167",
+   "phone": "774-593-5172",
    "website": "https://www.hennep.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "21+ only",
+    "Recreational"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A recreational cannabis dispensary on Commercial Street. The name is Dutch for cannabis.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "cannabis",
+   "enriched": true,
    "source_key": "osm-n5631044225",
    "prominence_rank": 38
   },
@@ -5917,7 +7084,7 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "176 Commercial Street",
-   "phone": null,
+   "phone": "508-487-5920",
    "website": null,
    "logo": null,
    "hours": null,
@@ -5925,13 +7092,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A West End antiques and collectibles shop run as an LGBTQ+-owned dealers' co-op, with a changing mix of vintage finds.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "antiques",
+   "enriched": true,
    "source_key": "osm-n5646355952",
    "prominence_rank": 165
   },
@@ -5988,25 +7156,55 @@
   {
    "id": "prov-lst-0258",
    "building_id": "msbf-2007",
-   "name": "Bayside Betsy's",
+   "name": "Bay Cafe",
    "category": "dining",
    "subcategory": "restaurants",
    "address": "177 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-6566",
+   "website": "https://baysidebetsys.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "sunday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "monday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A waterfront cafe-restaurant at the former Bayside Betsy's, now under new ownership, serving breakfast through dinner with a view over the bay.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n5646355956",
    "prominence_rank": 165
   },
@@ -6042,21 +7240,49 @@
    "category": "dining",
    "subcategory": "restaurants",
    "address": "186 Commercial Street",
-   "phone": null,
-   "website": "https://www.local186.com/",
+   "phone": "508-487-7555",
+   "website": "https://local186.com/enzo-guest-house",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "16:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "16:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "16:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:30",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "11:30",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "11:30",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Enzo Guest House upstairs"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A restaurant on Commercial Street known for its burgers and fries, with the Grotta Bar on the lower level, which hosts live acts and late-night DJ parties.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n5646355965",
    "prominence_rank": 137
   },
@@ -6192,7 +7418,7 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "374 Commercial Street",
-   "phone": null,
+   "phone": "508-413-9580",
    "website": "https://www.botanica-pt.com/",
    "logo": null,
    "hours": null,
@@ -6200,13 +7426,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A gift shop and art gallery selling goods for the home and garden.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "gift",
+   "enriched": true,
    "source_key": "osm-n5648405530",
    "prominence_rank": 112
   },
@@ -6342,21 +7569,22 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "209 Commercial Street",
-   "phone": null,
-   "website": "https://www.facebook.com/Grabngohealthbar/",
+   "phone": "508-487-1969",
+   "website": "https://houseoflarue.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A shop of the owners' own print designs on clothing, swimwear, accessories and home goods, in business since 2009.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "clothes",
+   "enriched": true,
    "source_key": "osm-n5650434274",
    "prominence_rank": 40
   },
@@ -6513,11 +7741,11 @@
   {
    "id": "prov-lst-0279",
    "building_id": "msbf-875",
-   "name": "ASGCC Drop-In Center",
+   "name": "AIDS Support Group of Cape Cod — Provincetown Drop-In Center",
    "category": "community",
    "subcategory": "organizations",
    "address": "301 Commercial Street",
-   "phone": null,
+   "phone": "508-487-8311",
    "website": "https://asgcc.org/",
    "logo": null,
    "hours": null,
@@ -6525,13 +7753,14 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Provincetown drop-in center of the AIDS Support Group of Cape Cod, a Cape-wide nonprofit. It offers HIV and sexual-health services, harm reduction and Narcan training, food and nutrition help, and recovery resources.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "social_facility",
+   "enriched": true,
    "source_key": "osm-n5652635470",
    "prominence_rank": 8
   },
@@ -6542,7 +7771,7 @@
    "category": "dining",
    "subcategory": "desserts",
    "address": "210 Commercial Street",
-   "phone": null,
+   "phone": "508-487-2850",
    "website": "https://ptownfudge.com/",
    "logo": null,
    "hours": null,
@@ -6550,13 +7779,19 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "Fudge made in small batches from the same family recipe since 1984, sold with chocolates and other sweets.",
+   "history": [
+    {
+     "year": 1984,
+     "event": "Starts making fudge in Provincetown."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "confectionery",
+   "enriched": true,
    "source_key": "osm-n5652635477",
    "prominence_rank": 15
   },
@@ -6566,22 +7801,23 @@
    "name": "Shui Spa",
    "category": "shopping",
    "subcategory": "retail",
-   "address": "80 Bradford Street",
-   "phone": null,
-   "website": "https://shuispa.com/",
+   "address": "82 Bradford Street",
+   "phone": "508-487-6767",
+   "website": "https://crownepointe.com/spa",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Day spa at the Crowne Pointe Hotel offering massage, body treatments, energy work and facials, with a Himalayan salt sauna, steam room and hot mineral bath.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "massage",
+   "enriched": true,
    "source_key": "osm-n5652635478",
    "prominence_rank": 128
   },
@@ -6663,25 +7899,56 @@
   {
    "id": "prov-lst-0285",
    "building_id": "msbf-2182",
-   "name": "Crown & Anchor Box Office",
+   "name": "Crown & Anchor",
    "category": "shopping",
    "subcategory": "retail",
    "address": "247 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-1430",
+   "website": "https://onlyatthecrown.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "The Paramount — oceanside dance club (DJs, drag, theme parties)",
+    "The Crown Cabaret — cabaret/drag/comedy stage",
+    "The Wave Bar — harbor-view video bar; Showtunes on Sundays and Wednesdays",
+    "The Vault — underground leather bar",
+    "The Courtyard",
+    "Tryst Beach Club — poolside day club (formerly listed as The Beach Club)",
+    "Hotel rooms",
+    "Box office"
+   ],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "A harborfront hotel and LGBTQ+ nightlife complex, now run by Tryst Hospitality, housing several bars, a dance club, a cabaret stage and a poolside day club under one roof. Tickets for shows are sold through the complex's box office and Tryst Events.",
+   "history": [
+    {
+     "year": 1860,
+     "event": "1860s: the Central House built as a public hall, saloon and entertainment space"
+    },
+    {
+     "year": 1881,
+     "event": "Expanded out over the harbor on pilings; one of the town's largest hotels"
+    },
+    {
+     "year": 1962,
+     "event": "Reopened as the Crown & Anchor Motor Inn, becoming a hub of nightlife and queer culture"
+    },
+    {
+     "year": 1998,
+     "event": "Destroyed by fire"
+    },
+    {
+     "year": 1999,
+     "event": "Rebuilt"
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "ticket",
+   "enriched": true,
    "source_key": "osm-n5652635486",
    "prominence_rank": 13
   },
@@ -7042,21 +8309,22 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "351 Commercial Street",
-   "phone": null,
-   "website": "https://respoke.com",
+   "phone": "774-538-4190",
+   "website": "https://respoke.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A boutique selling footwear, clothing, accessories and furniture made from upcycled designer silk scarves.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "shoes",
+   "enriched": true,
    "source_key": "osm-n5676382382",
    "prominence_rank": 177
   },
@@ -7188,25 +8456,55 @@
   {
    "id": "prov-lst-0306",
    "building_id": "msbf-831",
-   "name": "East End Books",
+   "name": "East End Books Ptown",
    "category": "shopping",
    "subcategory": "retail",
    "address": "389 Commercial Street",
-   "phone": null,
+   "phone": "508-413-7163",
    "website": "https://www.eastendbooksptown.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "An independent bookshop in the East End, strong on LGBTQIA+ titles and art and photography books, which also runs author events.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "books",
+   "enriched": true,
    "source_key": "osm-n5676382389",
    "prominence_rank": 55
   },
@@ -7516,22 +8814,52 @@
    "name": "Bowersock Gallery",
    "category": "arts",
    "subcategory": "galleries",
-   "address": "373 Commercial Street",
-   "phone": null,
+   "address": "371 Commercial Street",
+   "phone": "508-487-4994",
    "website": "https://bowersockgallery.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "20:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A fine-art gallery on Commercial Street showing painting, sculpture, watercolor, photography, printmaking and assemblage by emerging, mid-career and established artists.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "gallery",
+   "enriched": true,
    "source_key": "osm-n5712326913",
    "prominence_rank": 7
   },
@@ -7713,25 +9041,31 @@
   {
    "id": "prov-lst-0327",
    "building_id": "msbf-24",
-   "name": "Pilgrim House Inn",
+   "name": "Pilgrim House",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "336 Commercial Street",
+   "phone": "508-487-6424",
+   "website": "https://pilgrimhouseptown.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "restaurant",
+    "piano bar",
+    "show venue",
+    "small dogs in designated rooms"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A hotel and restaurant on Commercial Street with evening entertainment, named Yankee Magazine's 2023 Editor's Choice for best Outer Cape oasis.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-n6508895790",
    "prominence_rank": 109
   },
@@ -7867,21 +9201,55 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "308 Commercial Street",
-   "phone": "+1 508-413-9477",
-   "website": "https://www.havencenter.me",
+   "phone": "508-413-9477",
+   "website": "https://www.havencenter.me/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "21+ only",
+    "Recreational",
+    "Loyalty program"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A recreational cannabis dispensary with shops in Provincetown and Brewster, selling flower, pre-rolls, vapes and edibles.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "cannabis",
+   "enriched": true,
    "source_key": "osm-n11392407235",
    "prominence_rank": 19
   },
@@ -7923,15 +9291,20 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "breakfast included",
+    "guest bar",
+    "live music"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A musician-owned bed & breakfast on Commercial Street. Each room is different, some with private balconies.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "guest_house",
+   "enriched": true,
    "source_key": "osm-n11463013057",
    "prominence_rank": 49
   },
@@ -7941,47 +9314,87 @@
    "name": "Seamen's Bank",
    "category": "services",
    "subcategory": "financial",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "221 Commercial Street",
+   "phone": "508-487-0035",
+   "website": "https://www.seamensbank.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "tuesday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "wednesday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "thursday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "friday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "saturday": {
+     "open": "08:30",
+     "close": "12:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Main office of Seamen's Bank, the Provincetown-headquartered community savings bank, on Commercial Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "bank",
+   "enriched": true,
    "source_key": "osm-n11463013061",
    "prominence_rank": 182
   },
   {
    "id": "prov-lst-0120",
    "building_id": "msbf-955",
-   "name": "Atlantic House",
+   "name": "Atlantic House (A-House)",
    "category": "dining",
    "subcategory": "bars",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "4-6 Masonic Place",
+   "phone": "508-487-3169",
+   "website": "https://ahouse.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
-   "tags": [],
-   "description": null,
-   "history": null,
+   "amenities": [
+    "Three bars",
+    "Dance floor",
+    "Open year-round"
+   ],
+   "tags": [
+    "landmark",
+    "nightlife",
+    "lgbtq"
+   ],
+   "description": "The A-House is one of the oldest continuously operating gay bars in the country, and the only gay nightclub on Cape Cod open all year. It has three bars, a dance floor with DJs, and themed nights, all in a building that has stood since 1798.",
+   "history": [
+    {
+     "year": 1798,
+     "event": "The building stands on Masonic Place."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "bar",
+   "enriched": true,
    "source_key": "osm-n11463061405",
    "prominence_rank": 3
   },
@@ -8017,21 +9430,43 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "299 Commercial Street",
-   "phone": "+1-508-487-1803",
-   "website": null,
+   "phone": "508-487-1803",
+   "website": "https://www.provincetownportuguesebakery.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "wednesday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "sunday": {
+     "open": "08:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A long-running Portuguese bakery in the center of town, known for malasadas (fried dough) and traditional Portuguese breads and pastries. The bakery marks its 90th season in 2026.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "bakery",
+   "enriched": true,
    "source_key": "osm-n11463061407",
    "prominence_rank": 8
   },
@@ -8113,25 +9548,59 @@
   {
    "id": "prov-lst-0126",
    "building_id": "msbf-2590",
-   "name": "Goveror Bradford",
+   "name": "The Governor Bradford",
    "category": "dining",
    "subcategory": "restaurants",
    "address": "312 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-413-9105",
+   "website": "https://www.thegovernorbradford.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:30",
+     "close": "00:30"
+    },
+    "tuesday": {
+     "open": "11:30",
+     "close": "00:30"
+    },
+    "wednesday": {
+     "open": "11:30",
+     "close": "00:30"
+    },
+    "thursday": {
+     "open": "11:30",
+     "close": "00:30"
+    },
+    "friday": {
+     "open": "11:30",
+     "close": "00:30"
+    },
+    "saturday": {
+     "open": "11:30",
+     "close": "00:30"
+    },
+    "sunday": {
+     "open": "11:30",
+     "close": "00:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Drag karaoke",
+    "Live music",
+    "Sports bar"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A long-running Commercial Street bar and restaurant, reopened in 2026 under new owners with a renovated room and a comfort-food menu (meatloaf, pot pie, burgers). Known for nightly drag karaoke, plus live music and sports on TV.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n11463061440",
    "prominence_rank": 184
   },
@@ -8188,25 +9657,26 @@
   {
    "id": "prov-lst-0129",
    "building_id": "msbf-2502",
-   "name": "Lobster Pot Restaurant",
+   "name": "The Lobster Pot",
    "category": "dining",
    "subcategory": "restaurants",
    "address": "321 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-0842",
+   "website": "https://www.ptownlobsterpot.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A Provincetown seafood institution whose neon lobster sign has drawn people in off Commercial Street for generations, with harbor views from the dining room.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "restaurant",
+   "enriched": true,
    "source_key": "osm-n11463061444",
    "prominence_rank": 228
   },
@@ -8292,21 +9762,22 @@
    "category": "arts",
    "subcategory": "galleries",
    "address": "352 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-665-1988",
+   "website": "https://oncentergallery.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A contemporary gallery, open since 2017, specializing in painting and photography and aiming to make collecting accessible.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": "gallery",
+   "enriched": true,
    "source_key": "osm-n11463239491",
    "prominence_rank": 168
   },
@@ -8517,21 +9988,64 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "307 Commercial Street",
-   "phone": null,
-   "website": null,
+   "phone": "508-487-3424",
+   "website": "https://ptownchamber.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "The visitor welcome center at the foot of MacMillan Pier, where most ferry passengers step ashore. The Chamber has been directing travelers to Provincetown and Outer Cape lodging, dining and things to do since 1899.",
+   "history": [
+    {
+     "year": 1870,
+     "event": "John Atwood Jr. convenes leading citizens at Marine Hall to organize a Board of Trade for Provincetown."
+    },
+    {
+     "year": 1897,
+     "event": "The date the Chamber gives for its start ('Serving Provincetown's Businesses & Community Since 1897')."
+    },
+    {
+     "year": 1950,
+     "event": "On January 9 the Board of Trade dissolves by unanimous vote, giving way to the Provincetown Chamber of Commerce."
+    }
+   ],
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "enriched": true,
    "source_key": "osm-164023888",
    "prominence_rank": 4
   },
@@ -8566,22 +10080,52 @@
    "name": "Conwell Home Center",
    "category": "shopping",
    "subcategory": "retail",
-   "address": null,
-   "phone": null,
-   "website": null,
+   "address": "21 Conwell Street",
+   "phone": "508-487-0150",
+   "website": "https://www.conwellace.com/conwell-home-center",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "07:30",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "07:30",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "07:30",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "07:30",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "07:30",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "An Ace Hardware home center with a lumber yard, Benjamin Moore paint, a seasonal garden center, grills, pet supplies, art and office supplies, and equipment rental; it also offers screen repair and delivery.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
    "osm_type": null,
+   "enriched": true,
    "source_key": "osm-215751980",
    "prominence_rank": 17
   },
@@ -8609,6 +10153,1164 @@
    "osm_type": null,
    "source_key": "osm-215752399",
    "prominence_rank": 206
+  },
+  {
+   "id": "prov-lst-0345",
+   "building_id": "msbf-674",
+   "name": "Coconuts Sunglasses",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "294 Commercial Street",
+   "phone": "508-487-2408",
+   "website": "https://americansunglass.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A sunglasses shop carrying Maui Jim, Ray-Ban, Oakley, Costa and other brands.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 23
+  },
+  {
+   "id": "prov-lst-0346",
+   "building_id": "msbf-358",
+   "name": "Plush",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "364 Commercial Street",
+   "phone": "508-720-5655",
+   "website": "https://plushptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "The Provincetown shop of Daniel Hammond's limited-edition cashmere sweaters and loungewear.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 22
+  },
+  {
+   "id": "prov-lst-0347",
+   "building_id": "msbf-1897",
+   "name": "SAULT New England",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "212 Commercial Street",
+   "phone": null,
+   "website": "https://saultne.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Men's, women's and kids' clothing and accessories, from a small New England chain with shops in Boston's South End and Portsmouth.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 121
+  },
+  {
+   "id": "prov-lst-0348",
+   "building_id": "msbf-1070",
+   "name": "Sniffs of Adventure",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "368a Commercial Street",
+   "phone": "617-645-8208",
+   "website": "https://comesniffaround.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Soy candles scented after places the two Boston owners have traveled, including Provincetown-themed scents.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 110
+  },
+  {
+   "id": "prov-lst-0349",
+   "building_id": "msbf-992",
+   "name": "The White Hare Home & Holiday",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "377 Commercial Street",
+   "phone": "631-220-4666",
+   "website": "https://thewhitehareptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Home décor and holiday decorations, from glassware and decanters to Easter, Halloween and Christmas pieces.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 149
+  },
+  {
+   "id": "prov-lst-0350",
+   "building_id": "msbf-1722",
+   "name": "Ali Gray Gallery",
+   "category": "arts",
+   "subcategory": "galleries",
+   "address": "338 Commercial Street",
+   "phone": "781-975-1033",
+   "website": "https://aligraygallery.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A contemporary art gallery with a schedule of exhibitions and gallery-stroll openings.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 14
+  },
+  {
+   "id": "prov-lst-0351",
+   "building_id": "msbf-415",
+   "name": "Provincetown Art Gallery Association (PAGA)",
+   "category": "arts",
+   "subcategory": "galleries",
+   "address": "46 Bradford Street",
+   "phone": null,
+   "website": "https://provincetownartgalleryassociation.org/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "The association of Provincetown's galleries. It organizes the Friday-evening Gallery Stroll from Memorial Day weekend.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 185
+  },
+  {
+   "id": "prov-lst-0352",
+   "building_id": "msbf-788",
+   "name": "Provincetown Arts Society",
+   "category": "arts",
+   "subcategory": "galleries",
+   "address": "466 Commercial Street",
+   "phone": null,
+   "website": "https://provincetownartssociety.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "An arts nonprofit, part of the Saint Joseph's Arts Foundation, that runs exhibitions, seasonal markets and community events.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 629
+  },
+  {
+   "id": "prov-lst-0353",
+   "building_id": "msbf-747",
+   "name": "Radiance Art Gallery",
+   "category": "arts",
+   "subcategory": "galleries",
+   "address": "376 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 117
+  },
+  {
+   "id": "prov-lst-0354",
+   "building_id": "msbf-2615",
+   "name": "Center For Coastal Studies",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "5 Holway Avenue",
+   "phone": "508-487-3622",
+   "website": "https://coastalstudies.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A marine research, rescue and education organization founded in 1976.",
+   "history": [
+    {
+     "year": 1976,
+     "event": "The Center for Coastal Studies is founded."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 230
+  },
+  {
+   "id": "prov-lst-0355",
+   "building_id": "msbf-1778",
+   "name": "Dolphin Fleet Whale Watch",
+   "category": "arts",
+   "subcategory": "venues",
+   "address": "307 Commercial Street #1",
+   "phone": "508-240-3636",
+   "website": "https://whalewatch.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Whale watches from MacMillan Pier, billed as New England's first. Each trip carries a naturalist and teaches about the whales, other marine life and their habitat.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 4
+  },
+  {
+   "id": "prov-lst-0356",
+   "building_id": "msbf-2240",
+   "name": "Sanctum Paranormal",
+   "category": "arts",
+   "subcategory": "museum",
+   "address": "322 Commercial Street",
+   "phone": "508-413-7623",
+   "website": "https://SanctumParanormal.com",
+   "logo": null,
+   "hours": {
+    "tuesday": {
+     "open": "14:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "14:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "14:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "12:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "12:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "20:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A small museum of haunted objects and a shop, which also runs ghost tours in the evenings (Pirates & Mooncussers, and a cemetery tour).",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 138
+  },
+  {
+   "id": "prov-lst-0357",
+   "building_id": "msbf-358",
+   "name": "Sailing For All Provincetown",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "362 Commercial Street",
+   "phone": "978-906-5986",
+   "website": "https://sailing4allptown.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A nonprofit adult sailing school that aims to make sailing affordable and open to everyone. Its home dock is at the MacMillan Pier dinghy dock.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 22
+  },
+  {
+   "id": "prov-lst-0358",
+   "building_id": "msbf-474",
+   "name": "Red Room",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "258 Commercial Street",
+   "phone": null,
+   "website": "https://redroom.club/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A small performance space and bar, formerly the Velvet Lounge, staging drag, cabaret, stand-up comedy, live music and theater-festival productions; tickets are sold online per show.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 6
+  },
+  {
+   "id": "prov-lst-0359",
+   "building_id": "msbf-415",
+   "name": "Provincetown Commons",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "46 Bradford Street",
+   "phone": "508-257-1748",
+   "website": "https://www.provincetowncommons.org/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "08:30",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "08:30",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "08:30",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "08:30",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "08:30",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "14:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "14:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A shared workspace and event space for artists and other creative professionals, open to the public all year.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 185
+  },
+  {
+   "id": "prov-lst-0360",
+   "building_id": "msbf-2435",
+   "name": "Grand Central",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "5 Masonic Place",
+   "phone": "508-487-7599",
+   "website": "https://grandcentralptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Fresh local seafood and American dishes, served in an early-nineteenth-century ship captain's house on Masonic Place.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 25
+  },
+  {
+   "id": "prov-lst-0361",
+   "building_id": "msbf-1722",
+   "name": "Baedega",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "338 Commercial Street #3",
+   "phone": "774-587-5269",
+   "website": "https://baedega.com",
+   "logo": null,
+   "hours": {
+    "thursday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "17:00",
+     "close": "22:00"
+    },
+    "monday": {
+     "open": "17:00",
+     "close": "22:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "Reservations via Resy",
+    "Vegan and gluten-free options",
+    "Mocktails"
+   ],
+   "tags": [],
+   "description": "A small, dimly lit cocktail lounge serving chef-driven shared plates, owned by women and LGBTQIA+ owners; it moved from Truro in March 2026 and is the first lesbian bar in town since the Pied Piper closed. About 40 seats; reservations through Resy, with limited walk-ins.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 14
+  },
+  {
+   "id": "prov-lst-0362",
+   "building_id": "msbf-1315",
+   "name": "Esthetics by Evette",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "115 Bradford Street",
+   "phone": "508-237-2065",
+   "website": "https://estheticsbyevette.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A facial spa offering skincare treatments, facials and waxing.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 132
+  },
+  {
+   "id": "prov-lst-0363",
+   "building_id": "msbf-2474",
+   "name": "Provincetown Gym & Fitness",
+   "category": "services",
+   "subcategory": "health",
+   "address": "81 Shank Painter Road",
+   "phone": "508-487-2776",
+   "website": "https://ptowngym.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "tuesday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "saturday": {
+     "open": "07:00",
+     "close": "19:00"
+    },
+    "sunday": {
+     "open": "07:00",
+     "close": "19:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A fitness gym on Shank Painter Road.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 368
+  },
+  {
+   "id": "prov-lst-0364",
+   "building_id": "msbf-28",
+   "name": "Mussel Beach Health Club",
+   "category": "services",
+   "subcategory": "health",
+   "address": "35 Bradford Street",
+   "phone": "508-487-0001",
+   "website": "https://www.musselbeach.com/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "tuesday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "06:00",
+     "close": "20:00"
+    },
+    "saturday": {
+     "open": "07:00",
+     "close": "19:00"
+    },
+    "sunday": {
+     "open": "07:00",
+     "close": "19:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A two-floor gym of more than 8,500 square feet with free weights, cardio machines, Peloton bikes and group classes.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 324
+  },
+  {
+   "id": "prov-lst-0365",
+   "building_id": "msbf-296",
+   "name": "Outermost Yoga",
+   "category": "services",
+   "subcategory": "health",
+   "address": "494 Commercial Street, 2nd Floor",
+   "phone": "774-538-9089",
+   "website": "https://outermostyoga.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A yoga and wellness studio with classes, retreats, beach yoga and private sessions.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 5
+  },
+  {
+   "id": "prov-lst-0366",
+   "building_id": "msbf-2379",
+   "name": "Provincetown Tennis Club",
+   "category": "parks",
+   "subcategory": "recreation",
+   "address": "288 Bradford Street",
+   "phone": "508-487-9574",
+   "website": "https://provincetowntennis.org",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A nonprofit, community tennis club with Har-Tru courts, lessons and clinics for every age and level.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 1731
+  },
+  {
+   "id": "prov-lst-0367",
+   "building_id": "msbf-1956",
+   "name": "Coastal Acres Campground",
+   "category": "hospitality",
+   "subcategory": "hotels",
+   "address": "76R Bayberry Avenue",
+   "phone": "508-487-1700",
+   "website": "https://coastalacresprovincetown.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A seasonal campground about a ten-minute walk from Commercial Street. Open mid-April to the start of November.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 433
+  },
+  {
+   "id": "prov-lst-0368",
+   "building_id": "msbf-1443",
+   "name": "Land's End Inn",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "22 Commercial Street",
+   "phone": "508-487-0706",
+   "website": "https://landsendinn.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "Chalice lawn bar (reopens Memorial Day weekend 2027)",
+    "Adults 18+",
+    "Open year-round"
+   ],
+   "tags": [],
+   "description": "A landmark bed & breakfast at the far West End with panoramic views. It is LGBTQ-owned, adults-only (18+) and open all year. Its lawn bar, Chalice, is seasonal.",
+   "history": [
+    {
+     "year": 1904,
+     "event": "Built as a summer bungalow"
+    },
+    {
+     "year": 1926,
+     "event": "Converted to a teahouse and inn"
+    },
+    {
+     "year": 2026,
+     "event": "Marks 100 years of continuous operation as an inn"
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 344
+  },
+  {
+   "id": "prov-lst-0369",
+   "building_id": "msbf-2060",
+   "name": "Watership Inn",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "7 Winthrop Street",
+   "phone": "508-487-0094",
+   "website": "https://watershipinn.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "15 rooms + 2 apartments",
+    "breakfast included"
+   ],
+   "tags": [],
+   "description": "A gay-owned and -operated bed & breakfast on Winthrop Street. Continental breakfast is included.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 455
+  },
+  {
+   "id": "prov-lst-0370",
+   "building_id": "msbf-1723",
+   "name": "Provincetown Tourism Office",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "330 Commercial Street",
+   "phone": "508-487-3298",
+   "website": "https://ptowntourism.com/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "12:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "The town's official visitor office, which publishes the official guide to Provincetown's events and activities.",
+   "history": [
+    {
+     "year": 1873,
+     "event": "Nathan Freeman builds the mansard-topped building as a gift to the town, housing the Public Library, a Y.M.C.A. and a photo studio."
+    },
+    {
+     "year": 1975,
+     "event": "The building is listed on the National Register of Historic Places."
+    },
+    {
+     "year": 1977,
+     "event": "Extensively renovated, with the library by then its sole occupant."
+    },
+    {
+     "year": 2005,
+     "event": "The library moves to 356 Commercial Street; the building later houses the Tourism Office and Provincetown Community Television."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 10
+  },
+  {
+   "id": "prov-lst-0371",
+   "building_id": "msbf-2466",
+   "name": "Snow & Snow",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "90 Harry Kemp Way",
+   "phone": "508-487-1160",
+   "website": "https://snowandsnowlaw.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A law firm founded by John C. Snow in 1949, described as the oldest continuously operating law firm on Cape Cod.",
+   "history": [
+    {
+     "year": 1949,
+     "event": "John C. Snow founds the firm."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 1110
+  },
+  {
+   "id": "prov-lst-0372",
+   "building_id": "msbf-2074",
+   "name": "Provincetown Magazine",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "14 Center Street",
+   "phone": "508-487-1000",
+   "website": "https://provincetownmagazine.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Provincetown's independently owned local magazine.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 73
+  },
+  {
+   "id": "prov-lst-0373",
+   "building_id": "msbf-396",
+   "name": "Gibson Sotheby's International Realty",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "168 Commercial Street",
+   "phone": "508-487-2430",
+   "website": "https://gibsonsothebysrealty.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Provincetown office of the Gibson Sotheby's real-estate brokerage, handling home and commercial sales and vacation rentals in Provincetown, Truro and Wellfleet.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 209
+  },
+  {
+   "id": "prov-lst-0374",
+   "building_id": "msbf-2763",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": null,
+   "phone": null,
+   "website": "https://lighthousefoundation.org/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [
+    {
+     "url": "photos/wood-end-light/01.jpg",
+     "what": "Wood End Lighthouse, Provincetown, Massachusetts, USA",
+     "credit": "U.S. Coast Guard (historic photograph), via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:Wood_End_Lighthouse_MA.JPG",
+     "license": "Public domain",
+     "license_url": null,
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Wood_End_Lighthouse_MA.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
+   "amenities": [],
+   "tags": [
+    "landmark",
+    "lighthouse",
+    "breakwater"
+   ],
+   "description": "A small square lighthouse on the sand spit at the southwest end of Long Point. Most visitors reach it by walking the mile-long West End breakwater. It was first lit in 1872, and in 1981 it became the first lighthouse in Massachusetts to run on solar power.",
+   "history": [
+    {
+     "year": 1872,
+     "event": "First lit on November 20."
+    },
+    {
+     "year": 1961,
+     "event": "Automated; only the tower and oil house remain."
+    },
+    {
+     "year": 1981,
+     "event": "The first Massachusetts lighthouse converted to solar power."
+    },
+    {
+     "year": 1987,
+     "event": "Listed on the National Register of Historic Places."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "name": "Wood End Light",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 1876
+  },
+  {
+   "id": "prov-lst-0375",
+   "building_id": "msbf-971",
+   "name": "MacMillan Wharf",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": "MacMillan Wharf",
+   "phone": "508-487-7030",
+   "website": "https://provincetown-ma.gov/79/Harbor-Pier",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "ferry and excursion landing",
+    "dinghy dock (4-hour free tie-up, under 16 ft)",
+    "courtesy dock (20 minutes free)",
+    "pump-out 8 AM-3 PM daily, weather permitting"
+   ],
+   "tags": [],
+   "description": "Provincetown's town pier, reaching into the harbor from the center of Commercial Street. It is the working base for the commercial fishing fleet and the landing for the Boston ferries, whale-watch boats and harbor excursions, with the Harbormaster's office at 24 MacMillan Wharf. It is named for Arctic explorer Admiral Donald B. MacMillan, a Provincetown native.",
+   "history": [
+    {
+     "year": 1873,
+     "event": "The Old Colony Railroad Wharf is built, where ferry passengers landed and fish were loaded onto rail cars."
+    },
+    {
+     "year": 1955,
+     "event": "Construction begins on a new pier built beside and parallel to the Railroad Wharf."
+    },
+    {
+     "year": 1957,
+     "event": "The new pier is named for Admiral Donald B. MacMillan, who attends the ribbon-cutting with his wife Miriam."
+    },
+    {
+     "year": 1970,
+     "event": "Admiral MacMillan dies; the wharf keeps his name."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 220
+  },
+  {
+   "id": "prov-lst-0376",
+   "building_id": "msbf-1438",
+   "name": "Flyer's Boat Rentals",
+   "category": "parks",
+   "subcategory": "recreation",
+   "address": "131A Commercial Street",
+   "phone": "508-487-0898",
+   "website": "https://www.flyersboats.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Family-owned West End boatyard in business since 1944, renting boats and running the Long Point shuttle, seal tours, sunset and day cruises, plus moorings and a boat shop.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 102
+  },
+  {
+   "id": "prov-lst-0377",
+   "building_id": "msbf-1315",
+   "name": "Provincetown Pride Center",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "115 Bradford Street",
+   "phone": "508-975-6394",
+   "website": "https://ptown.org/pridecenter",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Home of the Provincetown Business Guild, the town's LGBTQ+ business and tourism group, with a public exhibit space on Provincetown's queer history and its role in the national gay-rights story. Opened Pride weekend 2023.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 132
+  },
+  {
+   "id": "prov-lst-0378",
+   "building_id": "msbf-932",
+   "name": "Gilmartin Magence LLP",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "137 Commercial Street",
+   "phone": "508-413-9553",
+   "website": "https://gmlawllp.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Provincetown office of a Massachusetts real-estate law firm handling residential and commercial transactions and condominium development; other offices in Boston and Newton.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 346
+  },
+  {
+   "id": "prov-lst-0379",
+   "building_id": "msbf-2074",
+   "name": "La Tanzi, Spaulding & Landreth, LLP",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "14 Center Street",
+   "phone": "508-255-2133",
+   "website": "https://latanzi.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Cape Cod law firm practicing real estate, business and commercial real estate, and estate planning, estate settlement and elder law.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 73
+  },
+  {
+   "id": "prov-lst-0380",
+   "building_id": "msbf-1880",
+   "name": "Provincetown Recording Studio",
+   "category": "arts",
+   "subcategory": "studios",
+   "address": "74 Shank Painter Road",
+   "phone": "508-789-2438",
+   "website": "https://provincetownrecords.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Recording studio offering recording, mixing, mastering and production, plus podcast and voiceover sessions, by arrangement.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 70
   }
  ]
 }
