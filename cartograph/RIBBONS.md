@@ -271,10 +271,11 @@
 > the threshold — and each fix aims at the previous fix. That pattern is the signal to stop.** The
 > cure is the node's own handle configuration (below): no threshold, no budget, no decline, no revert.
 > Full history: `_archive/RIBBONS-s1-retired-detail-2026-09-06.md §A`.
-> ⛔ **THE ONE CONSTRUCTION STILL OWED: the width STEP at a block boundary** — two adjacent grout edges
-> carrying different `pavementHW`. On the chains that is a datum defect at a through-node (`:178`); on the
-> grout it is an ordinary vertex where `depthAt` jumps, and the `[start,end]` ramp is either the answer or
-> the place that needs a rule.
+> ⭐ **THE WIDTH STEP AT A BLOCK BOUNDARY — RULED 2026-09-24 (Jacob): *"taper".*** Two adjacent grout edges
+> carrying different `pavementHW` meet by a TAPER, not a step and not a miter carried to the lines' meeting
+> (that needed the forbidden fold-spur cleanup). Rate = `f-caltrans-terminal-widening-taper` (10:1), `[U]` for a
+> same-street width change; built with the `[start,end]` `depthAt` ramp in ②'s working copy (Plumb, `BRIEF-junction-shape-where-the-offset-crosses`).
+> Which side gives way, and a leg shorter than the taper, are Plumb's proposal awaiting Jacob.
 > ⚠️ **Cause not established for the offset's fold class under the new subject.** `POLYGON-FIRST D6a` marks
 > the offset NOT robust (the averaged-normal branch; `scratch/fold-branch-forensic.mjs`). Dilating a grout
 > fails by a narrow block **vanishing** — loud — rather than by a fold; **hypothesis, unmeasured.**

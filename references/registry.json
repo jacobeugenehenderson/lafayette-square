@@ -3183,6 +3183,16 @@
       "quote": "-",
       "foundOn": "2026-09-24",
       "foundBy": "Gantry, per Boz (r-ramp-terminal-flares)"
+    },
+    {
+      "id": "r-width-step-tapers",
+      "question": "q-ramp-terminal-flare",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-24",
+      "quote": "taper",
+      "gist": "Where a street's authored width changes at a block boundary, the curb TAPERS between the two widths (not a step, not a miter carried through). Rate reuses f-caltrans-terminal-widening-taper (10:1), [U] for a same-street width change.",
+      "canon": "cartograph/RIBBONS.md §1 (the width step) · docs/briefs/BRIEF-junction-shape-where-the-offset-crosses.md"
     }
   ]
 }
