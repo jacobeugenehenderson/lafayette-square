@@ -2,12 +2,12 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: yes (2026-09-24)
 written: 2026-09-24
 evict-when: the lab runs the real environment on a real baked town; the boulders render identically in lab and map; context maps are baked from the scene and read by a surface; Provincetown's dunes are a surface Jacob has eyed at eye level, mid and overhead
 -->
 
-**Status:** dispatch-ready. Boz drafted it 2026-09-24, and **Jacob dispatches.**
+**Status:** DISPATCHED 2026-09-24 by Jacob (Boz drafted it).
 
 ## Who you are, and the bounds
 
