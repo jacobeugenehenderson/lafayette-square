@@ -472,6 +472,42 @@
       },
       "status": "PERMITTED — fair use: section cite + short quote only",
       "localCopy": null
+    },
+    {
+      "id": "usda-fia",
+      "title": "Forest Inventory & Analysis (FIA) — FIADB-API / EVALIDator",
+      "publisher": "USDA Forest Service",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://apps.fs.usda.gov/fiadb-api/",
+      "covers": [
+        "tree species composition by county (live stems, basal area, volume) from the national forest inventory"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-25",
+        "checkedBy": "Marram (fetched research.fs.usda.gov/programs/fia and /products/dataandtools/evalidator-and-fiadb-api)",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain); FIA named as the source by Jacob 2026-09-25",
+        "note": "Neither page states terms, licence or a use restriction. The one restriction FIA states is that exact plot coordinates are confidential — this kit uses county estimates only. Each response carries its own citation; keep it with the data."
+      },
+      "status": "PERMITTED"
+    },
+    {
+      "id": "us-census-geocoder",
+      "title": "Census Geocoder — geographies by coordinates",
+      "publisher": "US Census Bureau",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://geocoding.geo.census.gov/geocoder/",
+      "covers": [
+        "the state + county FIPS containing a coordinate"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-25",
+        "checkedBy": "Marram (fetched census.gov/about/policies/open-gov/open-data.html)",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)",
+        "note": "The Bureau publishes its public data as open data; no restriction stated."
+      },
+      "status": "PERMITTED"
     }
   ],
   "questions": [
@@ -1102,20 +1138,18 @@
     },
     {
       "id": "q-cape-cod-tree-species-mix",
-      "ask": "The tree species composition of Provincetown / outer Cape Cod — which species, in what proportions, by setting (dune backslope, woodland, town) — for the placement mix",
+      "ask": "The tree species composition of a town's county — ranked by live stems — for its likely-grove mix (every town; first answered for Provincetown / Barnstable County)",
       "neededBy": "Provincetown's tree roster and placement mix (scripts/15-derive-tree-mix.py has no City census to derive it from; OSM's 48 trees carry no species)",
-      "status": "open",
-      "findings": [],
+      "status": "answered",
+      "findings": [
+        "f-barnstable-fia-species-mix"
+      ],
       "tried": [
         "OSM natural=tree: 48 points, 0 with a species tag (raw/osm_trees_raw.json).",
         "No municipal / MassGIS / Cape Cod Commission tree inventory named in INTAKE-CATALOGUE or TREE-INTAKE."
       ],
-      "nextSources": [
-        "National Park Service — vegetation mapping of Cape Cod National Seashore (the Province Lands lie inside it). Terms NOT yet checked — do not read until cleared.",
-        "USDA Forest Service — Forest Inventory & Analysis (FIA), Barnstable County. Terms NOT yet checked — do not read until cleared."
-      ],
       "codeSites": [
-        "scripts/15-derive-tree-mix.py (derives the mix from a City census; none exists for provincetown)"
+        "scripts/15-fia-tree-mix.mjs (town centre → Census county → FIA live stems by species → tree-mix.json)"
       ]
     }
   ],
@@ -3471,6 +3505,58 @@
       "quote": "Lidar",
       "gist": "Where the OSM coastline and the lidar water surface disagree, the revetment trusts the dated lidar (the ground the stone would sit on); the pour states loudly how much mapped shore the lidar calls dry. A shoreline storms reshape is better known from the newer measurement.",
       "canon": "docs/briefs/BRIEF-water-shader.md · ROADMAP status block"
+    },
+    {
+      "id": "f-barnstable-fia-species-mix",
+      "question": "q-cape-cod-tree-species-mix",
+      "kind": "value",
+      "source": "usda-fia",
+      "value": {
+        "evaluation": "252025",
+        "county": "25001",
+        "estimate": "0004 live trees ≥1 in d.b.h., forest land",
+        "rankedTop5": [
+          {
+            "fiaCommon": "pitch pine",
+            "scientific": "Pinus rigida",
+            "share": 0.286631322493044,
+            "plots": 23,
+            "sePct": 32.1
+          },
+          {
+            "fiaCommon": "black oak",
+            "scientific": "Quercus velutina",
+            "share": 0.13835396102086597,
+            "plots": 15,
+            "sePct": 44.1
+          },
+          {
+            "fiaCommon": "scarlet oak",
+            "scientific": "Quercus coccinea",
+            "share": 0.12097377868321667,
+            "plots": 12,
+            "sePct": 37.6
+          },
+          {
+            "fiaCommon": "white oak",
+            "scientific": "Quercus alba",
+            "share": 0.10828498947665285,
+            "plots": 14,
+            "sePct": 37.3
+          },
+          {
+            "fiaCommon": "red maple",
+            "scientific": "Acer rubrum",
+            "share": 0.08535475113254752,
+            "plots": 7,
+            "sePct": 64
+          }
+        ]
+      },
+      "where": "FIADB-API fullreport, rows = species, columns = county; the full ranked table is written to cartograph/data/<scene>/tree-mix.json#fia by scripts/15-fia-tree-mix.mjs",
+      "quote": "USDA Forest Service, Forest Inventory and Analysis Program, Fri, 25 Sep 2026 23:41:32 GMT. Forest Inventory FIADB-API web-application Version 2.0 St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/fiadb-api/ev",
+      "foundOn": "2026-09-25",
+      "foundBy": "Marram"
     }
   ]
 }

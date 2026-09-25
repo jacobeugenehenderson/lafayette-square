@@ -192,7 +192,9 @@ const main = async () => {
       trees.push({
         x: fx, z: fz,
         species: common,
-        shape: shapeFor(common),
+        // The mix's own category when it has one (FIA: conifer = a softwood species code); the
+        // name heuristic only for mixes that carry none.
+        shape: mix.shapeByCommon?.[common] ?? shapeFor(common),
         dbh: 6 + Math.floor(hash01(ix, iz, 3) * 12),
         condition: '',
       })

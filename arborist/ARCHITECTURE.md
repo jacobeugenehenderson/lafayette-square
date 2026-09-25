@@ -121,12 +121,7 @@ truth. It is a per-shot look decision (`scene.shotLooks`), not a geometry one.
 > heightfield (`terrain`); the runtime refuses either mismatch by name.
 > ▶ `node checks/claims-anchors-know-their-terrain.mjs` · tree base vs drawn ground: `node scratch/marram-tree-seating.mjs`
 >
-> ### ⛔⛔ AND THE EYE-GATE WAS BLIND TO THE ONLY TIER IT EXISTS TO CHECK
-> `?heroTierQC=1`'s magenta was wired ONLY into `injectImpostorBillboard` — the **KILLED** octahedral
-> impostor, zero instances on every slab — while a comment claimed it covered the captured billboards.
-> So the QC view painted nothing and **the absence of magenta read as the absence of IMPOSTORS**,
-> costing most of a session. Now on `injectHeroImpostorStamp`, where the live tier is.
-> ⭐ **An instrument's silence is not evidence of absence — prove it REACHES the thing first.**
+> ▶ `?heroTierQC=1` paints the hero-card tier magenta (`injectHeroImpostorStamp`).
 >
 > ### ⚠️ THE IMPOSTOR TIER WAS THE WHOLE FRAME BUDGET — CUT 18× ON 2026-09-22
 > Each card was a **20×20 grid = 800 tris**, ×3 cards/tree. On huron's 17,575 placements
@@ -528,11 +523,13 @@ The boundary lives at the **`bake-look.js` + `bake-trees.js` invocation** — ev
 
 ## The species pipeline — census name → placeable tree, end to end (2026-08-25)
 
-**Every stage either RESOLVES or REFUSES. There is exactly one fallback left in the chain and it is named below.** Written by reading the code, not from memory — the last procedure written from memory invented its own field names.
+**Every stage either RESOLVES or REFUSES. There is exactly one fallback left in the chain and it is named below.**
+
+⭐ **THE LIKELY GROVE (Jacob, 2026-09-25):** *"The point of the Arborist is to create likely groves … list the species in popularity order … if we have pieces to make those trees we should build them."* A town's species come from a census when it has one, and otherwise from the **USDA FIA survey of its county, ranked by live stems** (`scripts/15-fia-tree-mix.mjs` → `tree-mix.json`) — never hand-picked. Species the library cannot build are listed, ranked and red: an honest empty state, never a stand-in.
 
 | # | Stage | Code | Refuses by |
 |---|---|---|---|
-| 1 | **Roster, demand-ordered** | `roster-coverage.js` (`CENSUS_WELLS`) | — |
+| 1 | **Roster, demand-ordered** | `roster-coverage.js` (`CENSUS_WELLS`); no census → FIA by county | — |
 | 2 | **Batch selection** | `scratch/dossier-harvest.mjs` `ROWS` | exclusions, recorded in-source |
 | 3 | **Taxon determination** | `ROWS[].taxon` + `taxonBasis` | `taxonAmbiguous` |
 | 4 | **Harvest** | `dossier-harvest.mjs` | per-source taxon guards |

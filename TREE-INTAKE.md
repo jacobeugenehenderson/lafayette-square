@@ -122,7 +122,7 @@ Everything below is **re-point-and-run** — nothing is Hi-Pointe-specific:
 1. Pour the scene + create `public/looks/<scene>/design.json` (Extent → Pour).
 2. `CARTOGRAPH_SCENE=<scene> python3 scripts/13-fetch-city-trees.py` — if the town has a City ArcGIS Forestry server (else skip; OSM + canopy still work).
 3. `…14-fetch-osm-trees.py` — always available (OSM is global; the divide clip is optional — drop it if the town is single-jurisdiction).
-4. `…15-derive-tree-mix.py` — derives the roster + map + mix from whatever census exists (the `EXACT`/`keyword_collapse` table is STL-flavored — audit it per region). **If no municipal census, the mix is HAND-AUTHORED**, and the rest of this item is what that seed is *for*, because getting it wrong is silent.
+4. `…15-derive-tree-mix.py` — derives the roster + map + mix from the town's census (its `EXACT`/`keyword_collapse` table is STL-flavored — audit it per region). **If no municipal census: `node scripts/15-fia-tree-mix.mjs`** — the county's USDA FIA survey, ranked by live stems (Jacob, 2026-09-25: the likely grove). The rest of this item is what that list is *for*, because getting it wrong is silent.
 
    > ### ⭐⭐ THE MIX IS A DEMAND SIGNAL, NOT A SHIPPING LIST. **NAME WHAT THE TOWN SHOULD HAVE.**
    > A town's mix becomes counts (`roster-coverage.js` reads **all five** census wells), and
@@ -138,9 +138,6 @@ Everything below is **re-point-and-run** — nothing is Hi-Pointe-specific:
    > | **DOSSIER-ONLY** | harvested + minted (`arborist/dossiers/`, `ARCHITECTURE §485`) but never composed | ⭐ **the Salon's work** |
    > | **NO DOSSIER** | nothing at all | the harvest queue |
    >
-   > *Worked example — huron, 2026-09-20: **13 / 7 / 2** of 22 named species.* ⭐ The 7 dossier-only
-   > (N. red oak, honeylocust, hackberry, redbud, serviceberry, ginkgo, white pine) **are the point** —
-   > they became 3,174 placements of visible demand the operator can now see ranked.
    >
    > ### ⛔⛔ THE FAILURE MODE, AND IT READS AS DILIGENCE
    > **PRUNING THE MIX TO WHAT THE GROVE ALREADY HAS DELETES THE OPERATOR'S QUEUE.** It looks careful —
