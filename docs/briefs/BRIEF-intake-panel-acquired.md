@@ -2,12 +2,12 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: yes (2026-09-24, fresh agent)
 written: 2026-09-24
 evict-when: every row in cartograph/intake-rows.mjs has a decided fate (auto-acquired · authored · per-town search) and the pour prints each row's status; Jacob has seen it on a fresh town
 -->
 
-**Status:** dispatch-ready. Boz drafted it 2026-09-24, and **Jacob dispatches.**
+**Status:** DISPATCHED 2026-09-24 by Jacob (Boz drafted it).
 **Phase 1 is research and design, with no code.** Phase 2 builds one row at a time, each with Jacob's go.
 
 ## Who you are, and the bounds

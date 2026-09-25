@@ -2,12 +2,12 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: yes (2026-09-24, fresh agent)
 written: 2026-09-24
 evict-when: claims-the-ground-covers-every-block is green on huron + LS, and each instance below is either fixed at its construction root with a check that goes red on it (mutation-tested), or has a named cause and a ruling; Jacob has eyed Huron's US 6 roundabout and Provincetown's bay
 -->
 
-**Status:** dispatch-ready. Boz drafted it 2026-09-24, and **Jacob dispatches.**
+**Status:** DISPATCHED 2026-09-24 by Jacob (Boz drafted it).
 **Phase 1 is forensic, with no `src/` edits.** You report the cause of each instance and your plan to Jacob, and build only after he agrees.
 
 ## Who you are, and the bounds
