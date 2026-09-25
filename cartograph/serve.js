@@ -2702,6 +2702,14 @@ createServer(async (req, res) => {
           `node bake-revetment.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 120000 })
       }
+      // Context channel: metres from every terrain texel to the nearest shoreline run
+      // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named
+      // absence — so it is never dirty forever.
+      await runIfDirty('coast-distance',
+        [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, join(here, 'bake-coast-distance.js'), join(here, 'shoreRuns.mjs')],
+        [join(LOOK_DIR, 'context.json')],
+        `node bake-coast-distance.js --look=${id} ${sceneFlag}`,
+        { cwd: here })
       if (layerOn('building')) {
         await runIfDirty('buildings',
           [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
