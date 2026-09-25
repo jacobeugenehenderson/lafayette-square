@@ -1,0 +1,14 @@
+{
+  "_comment": "Committed extent — frame origin FROZEN at the fetch center (never moves); hood center stored off-origin on the disc. bbox = the fetch extent; timezone from the hood center.",
+  "lat": 42.05167,
+  "lon": -70.18666,
+  "timezone": "America/New_York",
+  "lonToMeters": 82660,
+  "latToMeters": 111000,
+  "bbox": {
+    "minLat": 41.97211,
+    "maxLat": 42.13123,
+    "minLon": -70.29349,
+    "maxLon": -70.07982
+  }
+}

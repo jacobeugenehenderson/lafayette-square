@@ -1,0 +1,60 @@
+{
+  "name": "Provincetown",
+  "blurb": "Provincetown is a historic seaside town at the tip of Cape Cod, known for its beaches, arts and culture, LGBTQ+ community, restaurants, galleries, and distinctive maritime history.",
+  "draftRadius": 5290,
+  "timezone": "America/New_York",
+  "exclusions": [
+    {
+      "closed": true,
+      "anchors": [
+        {
+          "lon": -70.16086408903944,
+          "lat": 42.063655045045046,
+          "type": "corner"
+        },
+        {
+          "lon": -70.16097684006775,
+          "lat": 42.06253846846847,
+          "type": "corner"
+        },
+        {
+          "lon": -70.16048240503267,
+          "lat": 42.06129144144144,
+          "type": "corner"
+        },
+        {
+          "lon": -70.102226779579,
+          "lat": 42.038180450450454,
+          "type": "corner"
+        },
+        {
+          "lon": -70.10011669005566,
+          "lat": 42.04477972972973,
+          "type": "corner"
+        },
+        {
+          "lon": -70.10882428744254,
+          "lat": 42.05178225225225,
+          "type": "corner"
+        },
+        {
+          "lon": -70.11576416162595,
+          "lat": 42.05772531531532,
+          "type": "corner"
+        },
+        {
+          "lon": -70.14708378417615,
+          "lat": 42.067882432432434,
+          "type": "corner"
+        },
+        {
+          "lon": -70.16024879748367,
+          "lat": 42.06731702702703,
+          "type": "corner"
+        }
+      ]
+    }
+  ],
+  "committed": true,
+  "bakedSig": "{\"r\":5290,\"p\":0,\"p0\":null,\"x\":[9],\"a\":[],\"h\":[],\"c\":null,\"n\":\"Provincetown\",\"b\":\"Provincetown is a historic seaside town at the tip of Cape Cod, known for its beaches, arts and culture, LGBTQ+ community, restaurants, galleries, and distinctive maritime history.\"}"
+}

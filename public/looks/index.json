@@ -51,8 +51,15 @@
       "name": "huron",
       "scene": "huron",
       "createdAt": 1789875167347,
-      "bakedAt": 1790254258189,
+      "bakedAt": 1790304083811,
       "updatedAt": 1790190228850
+    },
+    {
+      "id": "provincetown",
+      "name": "Provincetown",
+      "scene": "provincetown",
+      "createdAt": 1790285800621,
+      "bakedAt": 1790316326315
     }
   ]
 }

@@ -27,6 +27,12 @@ for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['la
   const q = console.log; console.log = console.warn = () => {}
   const tg = buildProto(f, { emitArtifact: true, protoProducer: true, protoArtifact: true }); console.log = q
   const tot = { all: 0, TAG: 0, WAY: 0, EXPWY: 0, none: 0 }, byLu = {}
+  // ⭐ split by WHERE (inside the town's disc vs the fetch margin beyond it) and by STREET CLASS — Jacob: inner-hood
+  // streets are likelier to have walks and better mapped; a town-wide total is dominated by rural road and ramps
+  const disc = JSON.parse(fs.readFileSync(`cartograph/data/${scene}/neighborhood_boundary.json`, 'utf8')).boundary
+  const inDisc = (p) => { let c = false; for (let i = 0, j = disc.length - 1; i < disc.length; j = i++) { const a = disc[i], b = disc[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c } return c }
+  const clsOf = new Map(f.ribbons.streets.map(s => [s.skelId, s.highway || 'unknown']))
+  const cell = {}   // `${where}|${class}` → { all, ans }
   for (const t of tg.protoShapeTiles || []) for (const [ri, r] of (t.iaFull || []).entries()) {
     const st = t.iaStamp?.[ri] || [], n = r.length, inward = (() => { let a = 0; for (let i = 0; i < n; i++) { const p = r[i], w = r[(i + 1) % n]; a += p[0] * w[1] - w[0] * p[1] } return a > 0 ? 1 : -1 })()
     for (let i = 0; i < n; i++) {
@@ -36,6 +42,7 @@ for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['la
       const probe = [m[0] + nx * band / 2, m[1] + nz * band / 2]      // the middle of this frontage's ped band
       const e = expwy.has(run.skelId), tg_ = tagged.has(nameOf.get(run.skelId)), w = near(probe).some(s => dseg(probe, s[0], s[1]) <= band / 2)
       tot.all += L; if (tg_) tot.TAG += L; if (w) tot.WAY += L; if (e) tot.EXPWY += L
+      const ck = `${inDisc(m) ? 'in' : 'out'}|${clsOf.get(run.skelId)}`, cc = (cell[ck] ||= { all: 0, ans: 0 }); cc.all += L; if (e || tg_ || w) cc.ans += L
       if (!e && !tg_ && !w) { tot.none += L; byLu[t.lu] = (byLu[t.lu] || 0) + L }
     }
   }
@@ -43,4 +50,9 @@ for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['la
   console.log(`── ${scene}: ${(tot.all / 1000).toFixed(1)} km of curb frontage · ped band ${band.toFixed(2)} m · ${swSegs.length} sidewalk-way segments · ${tagged.size} street name(s) with a sidewalk tag`)
   console.log(`   answered by TAG ${pct(tot.TAG)} · by a mapped sidewalk WAY ${pct(tot.WAY)} · by EXPWY ${pct(tot.EXPWY)} · UNANSWERED (paint guesses) ${pct(tot.none)}`)
   console.log(`   unanswered by block land use: ` + Object.entries(byLu).sort((x, y) => y[1] - x[1]).slice(0, 8).map(([k, v]) => `${k} ${pct(v)}`).join(' · '))
+  for (const where of ['in', 'out']) {
+    const rows = Object.entries(cell).filter(([k]) => k.startsWith(where + '|')), all = rows.reduce((a, [, v]) => a + v.all, 0), ans = rows.reduce((a, [, v]) => a + v.ans, 0)
+    console.log(`   ${where === 'in' ? 'INSIDE the disc ' : 'OUTSIDE the disc'}: ${(all / 1000).toFixed(1)} km · answered ${all ? (100 * ans / all).toFixed(1) : '—'}% · by class: ` +
+      rows.sort((x, y) => y[1].all - x[1].all).slice(0, 7).map(([k, v]) => `${k.split('|')[1]} ${(v.all / 1000).toFixed(1)} km ${(100 * v.ans / v.all).toFixed(0)}%`).join(' · '))
+  }
 }
