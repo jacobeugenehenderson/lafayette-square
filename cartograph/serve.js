@@ -1656,6 +1656,32 @@ createServer(async (req, res) => {
             ? { ok: true, count: pCount }
             : { ok: false, count: pCount, error: lastLine(pR) }
         }
+        // ── Elevation — the 1 m lidar DEM tile list (Jacob, 2026-09-23: "Terrain and
+        //    lidar needs to be added to the fetch pour").
+        //    ⛔⛔ THIS IS THE STEP THAT DID NOT EXIST, AND ITS ABSENCE IS WHY PROVINCETOWN
+        //    BAKED FLAT. huron has relief only because a human once ran the National Map
+        //    products API by hand and pasted the result into raw/elevation-sources.txt.
+        //    Nobody did that for a DUNE TOWN, the pour said nothing, and the only record
+        //    was "terrain (no elevation.tif — flat)" in a skipped array. ⭐ Acquisition is
+        //    not elective just because the consumer tolerates its absence.
+        //    ⭐ NOTHING IS DOWNLOADED — this writes the tile list bake-terrain range-reads.
+        //    Three outcomes, each said differently, the same shape parcels uses above:
+        //      0 → found, and the count is the tiles it will read
+        //      1 → VERIFIED-ABSENT: searched the whole ladder, this town has no lidar.
+        //          ⛔ An honest zero, NOT a failure — fetch-dem has already written the
+        //          town's own intake.json mark, so the panel shows it as a state.
+        //      other → a real error, and it stays loud.
+        const dR = await runCapture('node fetch-dem.mjs --scene=' + scene, { cwd: here, env, timeout: 300000 })
+        const demList = join(raw, 'elevation-sources.txt')
+        const demTiles = existsSync(demList)
+          ? readFileSync(demList, 'utf8').split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length
+          : 0
+        sources.elevation = dR.code === 0
+          ? { ok: true, count: demTiles }
+          : dR.code === 1
+            ? { ok: true, count: 0, verifiedAbsent: true,
+                note: 'no lidar DEM covers this town — searched the whole ladder and recorded it. ⛔ This town bakes FLAT; that is now a decision on the record, not a default.' }
+            : { ok: false, count: demTiles, error: lastLine(dR) }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox, sources }))
       } catch (err) {
