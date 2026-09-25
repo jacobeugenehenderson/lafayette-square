@@ -124,3 +124,25 @@ This checkout is shared by several sessions: Gantry (highways, ground), Revetmen
 - `scratch/intake-artifact-discovery-probe.mjs` — catalogue search by keyword and bbox (Tally). ⛔ Alone it fails the LS regression.
 - `scratch/intake-jurisdiction-host-probe.mjs <lat> <lon>` → `scratch/intake-server-crawl-probe.mjs <root> <bbox>` — the town's own GIS host, found from its official website. Rediscovers LS's forestry and assessor wells.
 - `scratch/intake-host-discovery-probe.mjs` — ⛔ a NEGATIVE result: harvesting every host near the town returns noise. Recognition must test values, not field names.
+
+## Next phase: the skeletal content pass at intake (Jacob, 2026-09-24)
+
+> *"The entire research 'step' is set off discretely. So far, I've been doing it once we have a 'generally' stable map … but this is another thing that we can anticipate. I'm thinking specifically about zoning-level info, the number of restaurants, etc. and the initial research pass. So that would be skeletal information; a later step would fill out the listings (to fill in the ticker and menus where we can)."*
+
+**The split, and why it holds:** the skeleton is keyed to the **extent**, not to baked buildings. So it runs at intake and survives every re-pour. Only the **join** of a place to its building needs a stable map, and that already happens at content-bake (`bake-content.js`).
+
+**What the skeleton produces, per town, computed from disk and printed on every pour (⛔ never a count in prose):**
+- **Places by category:** dining, bars, shops, civic, worship, schools, lodging. The unioned wells are OSM POIs plus Overture Places, deduplicated (`INTAKE-CATALOGUE §3.3`), with Overture's licence derived per record (`overture-licence.mjs`).
+- **The going-concern share:** website / phone / `opening_hours` (`INTAKE-CATALOGUE §4.1`).
+- **The zoning / land-use mix** where an assessor well exists. The format is declared, never guessed (`§3.2`), else `verified-absent`, loudly.
+- **The address spine's coverage.** This decides whether the Society Pages can be wired (`§3.2`, the roster acceptance test).
+- **The ranked to-do list for the later fill** (`prominence.mjs`). Today it runs only at content-bake: say what it needs that the skeleton lacks.
+
+**The fill stays a later, separate step:** hours, menus, descriptions and photos, worked down that ranked list (`§3.2b`), feeding the ticker (`ROADMAP H-22`/`H-30`) and menus.
+
+**Deliverable first, in chat to Jacob, before building:**
+- which existing producers already compute each line;
+- what has to move earlier, and what can't;
+- the one intake status line per skeleton row.
+
+Prove it on Provincetown and Huron, with LS as the regression.
