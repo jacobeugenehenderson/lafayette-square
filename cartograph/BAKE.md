@@ -30,7 +30,7 @@ Two load-bearing facts:
 
 | | |
 |---|---|
-| **Inputs (per scene)** | `clean/map.json` (skeleton+derive), `src/data/ribbons.json` (First Bake), the raw set (`osm.json`, `measurements.json`, `centerlines.json`, `elevation.json`, `overlay.json`, `skeleton.json`, `src/data/buildings.json`), `park_trees.json` / `park_water.json` / `street_lamps.json` (LS-only) |
+| **Inputs (per scene)** | `clean/map.json` (skeleton+derive), `src/data/ribbons.json` (First Bake), the raw set (`osm.json`, `measurements.json`, `centerlines.json`, the DEM — a `.tif`, an `elevation/` directory or the `elevation-sources.txt` URL list — `overlay.json`, `skeleton.json`, `src/data/buildings.json`), `park_trees.json` / `park_water.json` / `street_lamps.json` (LS-only) |
 | **Input (per Look)** | `public/looks/<id>/design.json` — the operator's authored styling/shape intent (live autosave; see `STAGE.md §4`) |
 | **Who builds it** | the `/looks/:id/bake` route (`serve.js`), every step through `runStep` (`runIfDirty` when it can be dirty-skipped) |
 | **Outputs (the slab)** | everything under `public/baked/<id>/` — see §2 for what each step writes, and **`SLAB-CONTRACT.md`** for the byte format. ⛔ **Written there, but PUBLISHED to R2** — the tree is gitignored and the pour's last step uploads it (below) |
@@ -64,9 +64,26 @@ The steps, in execution order:
 
 On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks index (`serve.js`, at the end of the bake handler) — the canonical `?t=` cache-bust seed (`SLAB-CONTRACT.md §4`).
 
-> **`bake-svg.js` is not in the chain — the script no longer exists at all** (`serve.js` carries only a note where it used to run). The runtime consumes `ground.json`/`bin`/`lightmap` exclusively; a stale `public/looks/lafayette-square/ground.svg` remains on disk, read by nothing.
 >
-> **`bake-terrain.js` IS now in the per-Look bake** (2026-07-02, the HiPointe bake→3D phase). Terrain is a **per-installation** artifact: `bake-terrain.js --scene=<id>` writes the scene's own heightfield to the portable folder `cartograph/data/<scene>/clean/terrain.{json,bin}` (was the global `src/data/terrain.*` — retired; LS bakes byte-identical through the same path, no privilege), and the bake **publishes it into the slab** (`public/baked/<look>/terrain.{json,bin}`) so the runtime fetches it BY lookId like `ground.bin`. `src/utils/terrainShader.js` loads the active look's slab terrain (flat fallback if absent) and re-points live on a Stage scene-switch (`reloadTerrain`). Runs before `ground` (its adaptive refine samples the relief). *(Rationale: `feedback_installations_are_independent` — a poured neighborhood must lift on its OWN relief, and the installation folder is portable.)*
+> **`bake-terrain.js` IS now in the per-Look bake** (2026-07-02, the HiPointe bake→3D phase). Terrain is a **per-installation** artifact: `bake-terrain.js --scene=<id>` writes the scene's own heightfield to the portable folder `cartograph/data/<scene>/clean/terrain.{json,bin}`, and the bake **publishes it into the slab** (`public/baked/<look>/terrain.{json,bin}`) so the runtime fetches it BY lookId like `ground.bin`. `src/utils/terrainShader.js` loads the active look's slab terrain and re-points live on a Stage scene-switch (`reloadTerrain`). Runs before `ground` (its adaptive refine samples the relief). *(Rationale: `feedback_installations_are_independent` — a poured neighborhood must lift on its OWN relief.)*
+>
+> ### ⭐⭐⭐ THE HEIGHTFIELD IS NOT JUST A RESAMPLED DEM — IT DERIVES **WHERE ZERO IS**
+> `bake-terrain` asks `coastline.mjs` where the water is and takes **the sea as y = 0** when the town
+> has a coast; with no coast the datum is the **local minimum**. ⛔ **So the terrain depends on the
+> SHORELINE as much as on the raster**, and that is not an implementation detail — every
+> height-above-water in the town is measured from it. ▶ the datum a town actually got:
+> `cat cartograph/data/<scene>/clean/terrain.json`
+> - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** ⛔ The dirty set is a **computed import closure**
+>   of `bake-terrain.js` — which reaches `coastline.mjs` — plus the town's `raw/osm.json`, never a
+>   hand-listed file: a town's shore can move because the kit learned to read a shape it could not
+>   read before, and a data-only list misses exactly that. (It did, once: a town kept a
+>   `local minimum` datum for hours after its coast closed, and only `bake-revetment` noticed.)
+> - ⛔ **NO DEM ⇒ THE BAKE STOPS.** Elevation is declared `ABSENT.FALSE_MAP`: flat ground is
+>   town-neutral only where the town is flat, and a dune town baked as a plane is a FALSE map, not a
+>   degraded one. The `terrain` step FAILS and prints the command for that town. **The way past it is
+>   to look** — `fetch-dem` records **verified-absent** when it searches the whole ladder and finds
+>   nothing, and a town carrying that mark bakes flat deliberately, on the record.
+>   ▶ `node checks/claims-a-false-map-is-not-a-fallback.mjs`
 
 ---
 
@@ -139,12 +156,7 @@ Harness: **`scratch/tree-lu-exclusion-census.mjs`** (read-only; runs the *same* 
 
 ## 5. Status — done / open / aspirational
 
-**DONE (shipping, verified in code):**
-- ✅ The full chain runs incrementally, dirty-skipped, with mtime discipline (`writeIfChanged`, `serve.js` `runIfDirty`). No-op bakes ~1ms; layer-vis bake-gating live.
-- ✅ `ground` / `buildings` / `lamps` / `scene` / `trees` / `ground-ao` all emit and are consumed by production (the L1.1/L1.3 cutovers — `SLAB-CONTRACT.md §11`).
-- ✅ `shape.json` (WALL artifact) emitted by `bake-ground.js` when `emitArtifact:true`; Section opens it chain-free (`ef460d1`, `PIPELINE.md` §5 (the Wall)).
-- ✅ The slab is **look-complete** for the shipped channels (SC.1–SC.3 + SC.7 baked into `scene.json` — see `STAGE.md §5`).
-- ✅ **Scene-generic bake (2026-07-03/04).** A poured neighborhood bakes a full slab (ground/lightmap/buildings/scene/shape) from its own OSM via the Pour tool; the "scene-specific pipeline not yet implemented" comment was conservative (§1). Poured scenes get **polygon + activate/hide building membership** — applied in `pipeline.js` (the single filtered `map.json` source), belt-and-suspendered in `bake-buildings.js` (step 4; `NEIGHBORHOOD-INPUTS §5.2`). Buildings load via a per-scene **render ledger** (`data/<scene>/buildings.json`), retiring the LS source hardwire.
+**DONE:** retired to `_archive/BAKE-status-done-2026-09-25.md` — canon carries LIVE doctrine and OPEN state; a list of what already shipped is a changelog, and the code is its own record.
 
 **OPEN (the gates + the debt):**
 - 🚧 **Curb-freeze gate (D6b/c, PARKED).** §4 above — the bake **snapshots a curb that was traced from chains** rather than derived from the frozen frame (⚠️ *rescoped 2026-07-31: not "the curb is unfrozen" — the frozen artifact exists and every non-Survey view consumes it; what's red is **Check C**, the producer — `PIPELINE.md` §5 (the Wall) ⚠️ *(was cited as `WALL.md §31` — a section that never existed)**). The blocker to a provably-correct geometry freeze. *(`POLYGON-FIRST.md`, `HANDOFF-freeze-the-curb-in-the-first-bake.md`.)*

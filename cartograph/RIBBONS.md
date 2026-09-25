@@ -1046,21 +1046,39 @@
 > closes the rest of the LU polygons, especially the dead-ends.")*
 > ⭐ **It is still not a street:** no coupler, no `baseMeasure`, no band, no ADA, no cap. It closes
 > faces; nothing offsets a curb from it.
+>
+> ### ⭐⭐⭐ HOW A COAST ARRIVES, AND WHY IT IS **TWO OBJECTS FROM ONE CHAIN**
+> A lake and an open sea are the same shore to the kit and **different things in OSM**: a lake is a
+> closed polygon that arrives `clipped`; a sea is a set of open `natural=coastline` ways, land on the
+> left, which `weldCoastlines` joins by shared endpoints. Either way the result yields **the water
+> FACE** (the shore closed against the bb) and **the INK** (the open, bb-clipped arc ① expands at ε).
+> ⛔ A caller that takes one and not the other gets a lake with no landward edge, or an edge with no
+> lake. ▶ `node checks/claims-a-closed-shore-still-yields-ink.mjs`
+> - ⛔⛔ **THE SAME WAY IS NEVER WELDED TWICE.** An intake can deliver one way more than once, and
+>   welding the pair traces the coast **out and back** — a path that closes on itself and bounds
+>   NOTHING. That ring then passes every test that asks what is *inside* it, because a zero-area ring
+>   contains nothing by definition. The dedupe is direction-free and **reports the count**: the
+>   duplication is upstream and dropping it here does not fix it.
+> - ⛔ **A CHAIN THAT CLOSES IS NOT YET A FACE.** It must ENCLOSE AREA — `|area| / perimeter`, the
+>   ring's mean width, must exceed the weld tolerance, below which its two sides are not two sides.
+>   A chain that fails this is still real shoreline: its arcs become ink, and the sea is rebuilt from
+>   THEM. ▶ `node checks/claims-a-shore-is-not-traced-twice.mjs`
+> - ⭐⭐ **WHICH SIDE IS WATER IS MEASURED AND DISCLOSED.** The arc is closed against the bb both
+>   ways and the water is the candidate the **town's own centre** is not in — never OSM's winding.
+>   That is an ASSUMPTION, and a peninsula or hook town is where a centre can sit oddly, so the pour
+>   PRINTS the choice with both areas (they sum to the frame, which is the check) and **buildings are
+>   the guard**: a MAJORITY of footprints in the water means the sides are inverted and the coast is
+>   refused. ⚠️ A handful is a harbour — wharves, a ferry terminal, building out over the tide — and
+>   is reported, never refused. ⛔ Distance cannot tell those apart; a wharf can be 400 m long.
 > ⛔⛔ **AND THE RADIUS IS UNTOUCHED BY ANY OF IT.** The coast closes against **the bb** — the frozen
 > data extent — and the circle still stamps last, over the result. *(Jacob: "the shoreline is cut and
 > made into a closed polygon by the final radial stamp, it doesn't replace it" · "the water should go
 > to the edge of the bb just like the roads and everything else.")*
 >
-> ⚠️ **THE INSTANCE, because this is the failure this paragraph exists to stop (2026-09-20).** An
-> agent read *"a disc plus a margin is still the circle deciding block geometry"* as *"nothing but a
-> chain may close a block"*, and therefore built the shoreline as a **replacement boundary**: it
-> carved the disc at the head of `derive.js`, pushed the carved ring into `streetPolylines`, and
-> wrote the result into `neighborhood_boundary.json` beside the radius, where the renderer preferred
-> it. **That inverted which one is the SSoT** — a radius edit could no longer reshape the drawing,
-> breaking `EXTENT-DESIGN §3.3` R15, the living boundary — and it minted **19 spurious perimeter
-> blocks**, which is precisely the *"weird odd shapes"* option this section rejects. Reverted at
-> `dcfe9d18`/`9bbc3bc7`. ⭐ **Two readings of one sentence, and the doc did not distinguish them.
-> Now it does.**
+> ⚠️ **It was once read as *"nothing but a chain may close a block"*, and a shoreline was built as a
+> REPLACEMENT boundary — inverting which of radius/ring is the SSoT and minting 19 spurious
+> perimeter blocks. Reverted `dcfe9d18`/`9bbc3bc7`; the full account is
+> `_archive/RIBBONS-shoreline-replacement-boundary-2026-09-20.md`.**
 > ⚠️ **THIS SECTION USED TO SAY the mint "unites the whole grid and then INTERSECTS" and that a rim
 > edge "comes out owned" by `__boundary__`. Both are ROT** — the code carries the explicit counter-note
 > (*"① is NOT cut here"*), and **0 of LS's 275 block faces carry a single `__boundary__` label**: the
