@@ -20,6 +20,7 @@
  * Sources: references/registry.json `usda-fia`, `us-census-geocoder` (federal, permitted).
  *
  * Usage: CARTOGRAPH_SCENE=<scene> node scripts/15-fia-tree-mix.mjs   (or --scene=<scene>)
+ *        --dry-run  print the ranking and the change against the town's current mix; write nothing
  */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
@@ -103,6 +104,21 @@ async function main() {
     commonWeights, shapeByCommon, commonToLibrary,
     _unmapped_is_deliberate: 'Only COMPOSED species are routed. Every other species stays in commonWeights and reads red in the Grove, ranked — the work item.',
     palette: mapped.map(r => ({ libraryId: r.library[0], share: +(r.share / (mappedShare || 1)).toFixed(4) })),
+  }
+  if (process.argv.includes('--dry-run')) {
+    let prev = null
+    try { prev = JSON.parse(readFileSync(path.join(dir, 'tree-mix.json'), 'utf8')) } catch { /* no current mix */ }
+    const was = prev?.commonWeights || {}, wasTotal = Object.values(was).reduce((a, b) => a + b, 0) || 1
+    const nowTotal = Object.values(commonWeights).reduce((a, b) => a + b, 0) || 1
+    console.log(`[fia-mix] DRY RUN — ${scene}: current mix "${prev?.source ?? 'none'}" → FIA ${wc} ${where.name}`)
+    const names = [...new Set([...Object.keys(commonWeights), ...Object.keys(was)])]
+      .sort((a, b) => (commonWeights[b] || 0) - (commonWeights[a] || 0) || (was[b] || 0) - (was[a] || 0))
+    for (const n of names) {
+      const a = 100 * (was[n] || 0) / wasTotal, b = 100 * (commonWeights[n] || 0) / nowTotal
+      const tag = !was[n] ? 'NEW ' : !commonWeights[n] ? 'GONE' : '    '
+      console.log(`  ${tag} ${n.padEnd(26)} ${a.toFixed(1).padStart(5)}% → ${b.toFixed(1).padStart(5)}%   routed: ${(prev?.commonToLibrary?.[n] ?? '—').toString().padEnd(22)} → ${commonToLibrary[n] ?? '—'}`)
+    }
+    return
   }
   writeFileSync(path.join(dir, 'tree-mix.json'), JSON.stringify(mix, null, 2))
   writeFileSync(path.join(dir, 'tree-species-map.json'), JSON.stringify({
