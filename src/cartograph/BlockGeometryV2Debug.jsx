@@ -263,11 +263,13 @@ export default function BlockGeometryV2Debug({
   // branch: one kit default, not a per-town flag.
   // ▶ node checks/claims-the-fade-tracks-the-active-disc.mjs
   const sceneBoundaryRaw = useCartographStore(s => s.sceneBoundary)
-  const isLS = !scene || scene === 'lafayette-square'
+  const isLS = scene === 'lafayette-square'
   const { faceFade, bandFade } = useMemo(() => {
     if (!useBoundary) return { faceFade: null, bandFade: null }
     // LS keeps the module constants verbatim — byte-identical to before.
-    if (isLS || !sceneBoundaryRaw) return { faceFade: FACE_FADE, bandFade: FACE_FADE }
+    if (isLS) return { faceFade: FACE_FADE, bandFade: FACE_FADE }
+    // ⛔ No boundary → no fade. It used to take LS's constants (the B2b pattern).
+    if (!sceneBoundaryRaw) return { faceFade: null, bandFade: null }
     const B = makeBoundary(sceneBoundaryRaw)
     const center = { x: B.center[0], z: B.center[1] }
     // ⭐ One band, handed to both slots. See the BAND_FADE note above.

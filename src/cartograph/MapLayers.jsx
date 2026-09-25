@@ -480,7 +480,9 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // scene-agnostic. This replaces the old `scene === 'lafayette-square'` gate +
   // the thin SceneMapLayers substitute (buildings+LU only) with ONE renderer.
   const scene = useCartographStore(s => s.scene)
-  const isLS = !scene || scene === 'lafayette-square'
+  // ⛔ LS's bundled data is used only when the scene IS LS. `!scene ||` used to put LS's
+  // map on screen before any scene was set; no scene now draws nothing.
+  const isLS = scene === 'lafayette-square'
   const sceneRibbonsRaw = useCartographStore(s => s.sceneRibbons)
   const sceneBoundaryRaw = useCartographStore(s => s.sceneBoundary)
   const sceneMapPrefetch = useCartographStore(s => s.sceneMap)
@@ -489,7 +491,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // memos below guard and render nothing until it lands.
   const [fetchedMap, setFetchedMap] = useState(null)
   useEffect(() => {
-    if (isLS) { setFetchedMap(null); return }
+    if (isLS || !scene) { setFetchedMap(null); return }
     if (sceneMapPrefetch?.scene === scene && sceneMapPrefetch.map) { setFetchedMap(sceneMapPrefetch.map); return }
     let cancelled = false
     fetchMap(scene).then(m => { if (!cancelled) setFetchedMap(m) }).catch(() => {})
@@ -502,9 +504,12 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   const mapData = isLS ? _lsMapData : (fetchedMap || _EMPTY_MAP)
   const ribbonsData = isLS ? _lsRibbonsData : (sceneRibbonsRaw || _EMPTY_RIBBONS)
   const parkWaterData = isLS ? _lsParkWaterData : _EMPTY_MAP   // authored LS content; poured scenes have none
-  // Boundary bundle: LS singleton, or built from the scene's own nb. Same shape.
+  // Boundary bundle: LS singleton for LS, else built from the scene's OWN nb. Same shape.
+  // ⛔ A non-LS scene with no boundary (a fresh pour, or the fetch window) used to get
+  // LS's polygon for its clip and fade (bleed site B2b). makeBoundary(null) is the
+  // neutral answer: no clip, the town's own data (boundary.js: "no boundary = show everything").
   const B = useMemo(
-    () => (isLS || !sceneBoundaryRaw) ? _LS_BUNDLE : makeBoundary(sceneBoundaryRaw),
+    () => isLS ? _LS_BUNDLE : makeBoundary(sceneBoundaryRaw ?? null),
     [isLS, sceneBoundaryRaw],
   )
   const pointInBoundary = B.pointInBoundary
