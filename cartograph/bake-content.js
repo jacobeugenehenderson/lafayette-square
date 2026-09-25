@@ -157,7 +157,10 @@ function loadBuildingGeom(scene, bakedIds) {
     const ring = (b.ring || []).map(p => [Array.isArray(p) ? p[0] : p.x, Array.isArray(p) ? p[1] : p.z])
     if (ring.length < 3) continue
     const [cx, cz] = ringCentroid(ring)
-    out.set(id, { id, ring, cx, cz })
+    // ⭐ `rings` = what a point may be CONTAINED in: the drawn footprint plus any OSM twin's
+    // footprint the union merged into it (building-union.mjs). `ring` stays the drawn one.
+    const rings = [ring, ...(b.joinRings || []).map(r => r.map(p => [Array.isArray(p) ? p[0] : p.x, Array.isArray(p) ? p[1] : p.z]))]
+    out.set(id, { id, ring, rings, cx, cz })
   }
   return out
 }
@@ -616,7 +619,7 @@ function joinParcelToBuilding(b, parcelGrid, maxD = 45) {
 function joinPointToBuilding(x, z, buildingGrid, maxD = 25) {
   const cands = gridNear(buildingGrid, x, z, 1)
   for (const b of cands)
-    if (pointInPolygon(x, z, b.ring)) return b.id
+    if ((b.rings || [b.ring]).some(r => pointInPolygon(x, z, r))) return b.id
   let best = null, bestD = maxD * maxD
   for (const b of cands) {
     const d = dist2(x, z, b.cx, b.cz)

@@ -37,7 +37,7 @@ Opening any place gives a **place card** (`src/components/PlaceCard.jsx`). Its t
 | `description` | string | `"A restaurant, bar & gathering place…"` | optional, long-form |
 | `logo` | string (path) | `"/logos/polite-society.png"` | optional; falls back to initials |
 | `home_based` | boolean | `false` | residential indicator |
-| `status` | string | `"active"` | `pending · active · removed` (removed = hidden from the directory) |
+| `status` | string | `"unverified"` | `unverified · active · closed` (closed = hidden: `LafayetteScene.jsx`, `SceneNeon.jsx`). ⛔ To remove a listing, `drops` it in `listings.overrides.json`. |
 | `rating` | number | `4.7` | external rating (e.g. Google), optional |
 | `review_count` | number | `1555` | external review count, optional |
 

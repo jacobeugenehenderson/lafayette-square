@@ -16,6 +16,7 @@ import { snapAll } from './snap.js'
 import { deriveLayers, deriveBuildings, _lotPaths, registryReadRecord } from './derive.js'
 import { fetchElevationGrid, interpolateElevation } from './elevation.js'
 import { createMembershipFilter, buildingIdOf } from './membership.mjs'
+import { unionFootprints } from './building-union.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('pipeline.js (writes data/<scene>/clean/map.json)')
@@ -36,8 +37,8 @@ async function main() {
   // Building source priority:
   //   1. src/data/buildings.json — curated project data (detailed footprints
   //      with materials, stories, sqft, addresses). Built for the 3D app.
-  //   2. data/raw/msbf.json       — Microsoft Building Footprints (fallback)
-  //   3. osm.buildings            — OSM (lowest quality, historical fallback)
+  //   2. data/raw/msbf.json ∪ osm.buildings — the union of the two footprint wells
+  //   3. osm.buildings            — OSM alone, when a town has no MSBF
   // The curated src/data/buildings.json is the DEFAULT scene's (Lafayette
   // Square) hand-enriched building set — it must NOT be pulled into another
   // scene. A non-default scene uses its own msbf.json / OSM buildings.
@@ -68,9 +69,12 @@ async function main() {
     console.log(`  Using src/data/buildings.json: ${raw.buildings.length} curated buildings`)
     raw.buildingSource = 'project'
   } else if (existsSync(msbfPath)) {
+    // ⭐ THE UNION OF THE WELLS, never MSBF instead of OSM (building-union.mjs): MSBF keeps
+    // the footprint where both have one, OSM adds what MSBF missed. Provenance is the id.
     const msbf = JSON.parse(readFileSync(msbfPath, 'utf-8'))
-    console.log(`  Using Microsoft Building Footprints: ${msbf.buildings.length} buildings`)
-    raw.buildings = msbf.buildings
+    const u = unionFootprints(msbf.buildings, raw.buildings || [])
+    console.log(`  Buildings: MSBF ${u.report.msbf} ∪ OSM ${u.report.osm} → ${u.report.same} the same building, +${u.report.added} from OSM that MSBF lacks = ${u.buildings.length}`)
+    raw.buildings = u.buildings
     raw.buildingSource = 'microsoft'
   } else {
     raw.buildingSource = 'osm'

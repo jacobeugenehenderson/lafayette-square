@@ -20,6 +20,7 @@ import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
 import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
+import { unionFootprints } from './building-union.mjs'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
@@ -938,6 +939,11 @@ function buildingFootprintsFor(scene) {
   const cached = _footprintCache.get(scene)
   if (cached && cached.mtime === mtime && cached.src === src) return cached.payload
   const raw = JSON.parse(readFileSync(src, 'utf-8'))
+  // ⭐ The SAME union the pour uses (building-union.mjs), so Extent shows every building the
+  // pour will: MSBF where it has one, plus what only OSM mapped.
+  if (src === msbfPath && existsSync(osmPath)) {
+    raw.buildings = unionFootprints(raw.buildings || [], JSON.parse(readFileSync(osmPath, 'utf-8')).buildings || []).buildings
+  }
   const buildings = []
   for (const b of (raw.buildings || [])) {
     const ring = (b.coords || []).map(c => [c.x, c.z])

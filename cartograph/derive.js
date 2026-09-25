@@ -5745,6 +5745,9 @@ export function deriveBuildings(buildings, source = 'osm') {
       ring: b.coords.map(c => ({ x: c.x, z: c.z })),
       projectId: b.projectId,
       msbfId: b.msbfId,
+      osmId: b.osmId,   // an OSM footprint the union added (building-union.mjs)
+      // OSM twins' footprints, for containment JOINS only (never drawn): building-union.mjs
+      ...(b.joinRings ? { joinRings: b.joinRings.map(r => r.map(c => ({ x: c.x, z: c.z }))), twinOsmIds: b.twinOsmIds } : {}),
       tags: b.tags,
       elev: b.elev || null,
     })).filter(b => b.ring.length >= 3)
