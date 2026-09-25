@@ -168,10 +168,34 @@ function clipToRect(arc, R) {
  */
 const WELD_EPS_M = 0.05
 
-export function weldCoastlines(feats) {
+export function weldCoastlines(feats, weldNote = []) {
   const key = (p) => `${Math.round(p[0] / WELD_EPS_M)},${Math.round(p[1] / WELD_EPS_M)}`
-  const open = feats.map(f => ({ pts: (f.coords || []).map(c => [c.x ?? c[0], c.z ?? c[1]]), src: [f] }))
-                    .filter(c => c.pts.length >= 2)
+  // ⛔⛔ THE SAME WAY MUST NOT BE WELDED IN TWICE, AND ON PROVINCETOWN EVERY ONE OF THEM WAS.
+  // MEASURED 2026-09-25: the intake hands us 26 `natural=coastline` features that are
+  // THIRTEEN distinct geometries, each present twice, in the SAME direction — 142,947 m of
+  // "coastline" for a ~71 km shore. Welded, they chain out along the coast and back again,
+  // producing a closed path that bounds −0.0 m². That ring was then used as the town's sea:
+  // nothing was inside it, the terrain found zero samples under water, and `bake-terrain`
+  // refused Provincetown outright.
+  // ⭐ Deduping HERE is defensive, not a diagnosis. Two identical ways cannot both be a
+  // shore: whatever produced the pair — a way emitted both standalone and as a relation
+  // member, a double page in the fetch — one of them is not new coastline. ⛔ But the count
+  // is REPORTED rather than swallowed, because a duplicating intake is a real defect
+  // upstream and a silent dedupe here is exactly how it would stay invisible.
+  // ⚠️ Direction-free: the same shore traced the other way is still the same shore.
+  const byShape = new Map()
+  let dropped = 0
+  for (const f of feats) {
+    const pts = (f.coords || []).map(c => [c.x ?? c[0], c.z ?? c[1]])
+    if (pts.length < 2) continue
+    const fwd = pts.map(q => key(q)).join(';')
+    const rev = [...pts].reverse().map(q => key(q)).join(';')
+    const k = fwd < rev ? fwd : rev
+    if (byShape.has(k)) { dropped++; continue }
+    byShape.set(k, { pts, src: [f] })
+  }
+  const open = [...byShape.values()]
+  if (dropped) weldNote.push(`    ⛔ ${dropped} duplicate coastline way(s) dropped before welding — the intake delivered ${feats.length} features that are only ${open.length} distinct shores. Welding the pairs traces the coast out and back and yields a ring of ZERO area. ⚠️ The duplication is UPSTREAM of this file and is not fixed by dropping it here.`)
   let merged = true
   while (merged) {
     merged = false
@@ -206,22 +230,71 @@ export function weldCoastlines(feats) {
  * six runs where there are five.
  */
 export function closedRunsInRect(pts, R) {
-  const inside = (p) => p[0] >= R.x0 && p[0] <= R.x1 && p[1] >= R.z0 && p[1] <= R.z1
   const n = pts.length
-  const flag = pts.map(inside)
+  const flag = pts.map(q => inRect(q, R))
   if (flag.every(Boolean)) return []          // wholly inside ⇒ nothing to clip
   if (!flag.some(Boolean)) return []          // wholly outside ⇒ nothing in frame
   // Start at a vertex that is OUTSIDE, so the first run cannot be a seam-split fragment.
-  let s0 = flag.findIndex(v => !v)
+  const s0 = flag.findIndex(v => !v)
   const runs = []
   let cur = null
-  for (let k = 0; k < n; k++) {
-    const i = (s0 + k) % n
-    if (flag[i]) { (cur ??= []).push(pts[i]) }
-    else if (cur) { runs.push(cur); cur = null }
+  for (let k = 0; k <= n; k++) {
+    const i = (s0 + k) % n, prev = (s0 + k - 1 + n) % n
+    if (k < n && flag[i]) {
+      // ⭐⭐ ENTERING: put the CROSSING POINT on the frame first, not the first inside vertex.
+      // ⛔ This function used to merely FILTER inside vertices, and that was the second half
+      // of the 2026-09-25 defect. A run then began up to one vertex-step INSIDE the frame —
+      // measured at 53 m on Provincetown — so its ends did not lie on the bb, and
+      // `faceFromArc` could not close it into a water face: "an end does not lie on the bb,
+      // so it cannot divide the square." The sea could not be rebuilt from arcs that never
+      // reached the frame. `clipToRect` had done this correctly for the open path all along;
+      // the closed path simply did not reuse it.
+      if (!cur) { cur = []; const x = rectCross(pts[prev], pts[i], R); if (x) cur.push(x) }
+      cur.push(pts[i])
+    } else if (cur) {
+      // LEAVING: and the exit crossing closes the run on the frame.
+      const x = rectCross(pts[prev], pts[(s0 + k) % n], R); if (x) cur.push(x)
+      runs.push(cur); cur = null
+    }
   }
   if (cur) runs.push(cur)
   return runs
+}
+
+function perimeterOf(r) {
+  let p = 0
+  for (let i = 0, n = r.length; i < n; i++) { const u = r[i], v = r[(i + 1) % n]; p += Math.hypot(v[0] - u[0], v[1] - u[1]) }
+  return p
+}
+
+export function ringMeanWidth(r) {
+  if (!Array.isArray(r) || r.length < 3) return 0
+  let a = 0, p = 0
+  for (let i = 0, n = r.length; i < n; i++) {
+    const u = r[i], v = r[(i + 1) % n]
+    a += u[0] * v[1] - v[0] * u[1]
+    p += Math.hypot(v[0] - u[0], v[1] - u[1])
+  }
+  return p > 0 ? Math.abs(a / 2) / p : 0
+}
+
+/**
+ * ⭐ THE SEA FROM ONE ARC: close a bb-crossing shoreline arc against the frame and keep the
+ * side the town is NOT on. Jacob's H-4 wording — "the lake is a discrete polygon made of
+ * shoreline and bb" — and it is the construction the OPEN coast has always used; this is
+ * only its extraction so the closed path can reuse it instead of inventing a second one.
+ * ⛔ Which side is water is MEASURED, never taken from OSM's land-on-the-left winding: the
+ * disc centre is the town, the town is land, so the water is the candidate that excludes it.
+ * @returns the water ring, or null with a reason
+ */
+export function faceFromArc(arc, R, center) {
+  if (!Array.isArray(arc) || arc.length < 2) return { ring: null, why: 'fewer than 2 points' }
+  const A = arc[0], B = arc[arc.length - 1]
+  if (!onRect(A, R) || !onRect(B, R)) return { ring: null, why: 'an end does not lie on the bb, so it cannot divide the square' }
+  const cands = [+1, -1].map(dir => arc.concat(rectWalk(B, A, R, dir)))
+  const water = cands.filter(r => !pointInRing(center, r))
+  if (water.length !== 1) return { ring: null, why: 'the disc centre does not separate the two sides' }
+  return { ring: water[0], why: null }
 }
 
 export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
@@ -241,7 +314,7 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
     if (!isWaterFeature(f)) continue
     if (f.tags?.natural === 'coastline') coastWays.push(f); else others.push(f)
   }
-  const chains = weldCoastlines(coastWays)
+  const chains = weldCoastlines(coastWays, report)
   if (coastWays.length) {
     report.push(`    welded ${coastWays.length} natural=coastline way(s) → ${chains.length} chain(s)` +
                 ` (longest ${Math.max(...chains.map(c => c.pts.length))} pts)`)
@@ -306,6 +379,36 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
       Math.abs(pts[0][0] - pts[pts.length - 1][0]) < WELD_EPS_M &&
       Math.abs(pts[0][1] - pts[pts.length - 1][1]) < WELD_EPS_M
     if (closed) {
+      // ⛔⛔ DOES IT ENCLOSE ANYTHING? ASK BEFORE ASKING ANYTHING ELSE. A welded chain whose
+      // ends meet can still bound nothing — see `ringMeanWidth`. ⭐ This runs FIRST because
+      // the buildings test below cannot survive a zero-area ring: it would report 0 inside
+      // and read that as "the interior is water", which is how a 142,947 m trace around
+      // −0.0 m² came to be Provincetown's sea.
+      const meanW = ringMeanWidth(pts)
+      if (meanW < WELD_EPS_M) {
+        // ⭐⭐ NOT A DEAD END — THE ARCS ARE STILL TRUE. The chain is a real shoreline that
+        // happens to double back; only its use AS A FACE is nonsense. So the clipped runs
+        // become ink as always, and the sea is rebuilt from THEM by the same construction an
+        // open coast uses: close each arc against the bb, keep the side the town is not on.
+        // ⛔ Refusing outright was the first plan and it is not enough — it would leave the
+        // bay painted as sand, the terrain datum at the local minimum and the revetment
+        // refused, i.e. nothing on screen better than before the bug was found.
+        const runs = closedRunsInRect(pts, R)
+        for (const run of runs) if (run.length >= 2) arcs.push(run)
+        report.push(`    ⛔ closed coast "${name}" ENCLOSES NOTHING — ${pts.length} pts, ${Math.round(perimeterOf(pts)).toLocaleString()} m of perimeter around a mean width of ${meanW.toFixed(4)} m (below the ${WELD_EPS_M} m weld tolerance, so its two sides are not two sides). It is a trace that doubles back, NOT a face.`)
+        let made = 0
+        for (const run of runs) {
+          if (run.length < 2) continue
+          const { ring: w, why } = faceFromArc(run, R, center)
+          if (!w) { report.push(`      ⚠️ arc of ${run.length} pts cannot close: ${why}`); continue }
+          rings.push(w)
+          meta.push({ subtype: f.tags?.water || null, name: f.tags?.name || null })
+          made++
+        }
+        report.push(`    ⭐ sea rebuilt from the SHORELINE instead: ${runs.length} clipped arc(s) → ${made} water face(s) closed on the bb, water side chosen by the town's own centre. The arcs remain the ink.`)
+        continue
+      }
+
       const bPts = buildings.map(b => { const q = (b.coords || [])[0]; return q ? [q.x ?? q[0], q.z ?? q[1]] : null }).filter(Boolean)
       const within = bPts.filter(q => pointInRing(q, pts)).length
       if (bPts.length && within > bPts.length * 0.5) {
@@ -379,15 +482,38 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
 
   // ⛔ VERIFY THE SIDE. Buildings are on land; any inside a water ring means it is inverted.
   let wet = 0
+  const bPtsAll = []
   for (const b of buildings) {
     const p = (b.coords || [])[0]; if (!p) continue
     const q = [p.x ?? p[0], p.z ?? p[1]]
+    bPtsAll.push(q)
     if (rings.some(r => pointInRing(q, r))) wet++
   }
-  if (wet) {
-    report.push(`    ⛔ ${wet} building footprint(s) fall INSIDE the water — the land/water sides are inverted. No coast applied.`)
+  // ⛔⛔ AN INVERSION IS A MAJORITY, NOT A HANDFUL — AND THIS FILE ALREADY SAID SO IN ONE
+  // PLACE WHILE CONTRADICTING ITSELF IN THIS ONE. The closed branch above refuses a ring
+  // only when it holds MORE THAN HALF the town's footprints, and warns by name when a few
+  // sit inside ("a pier, a breakwater or a spit building, not an inversion"). This check
+  // refused on ANY building at all. Two rules for one question, and the stricter one is not
+  // the safer one: it rejects a working harbour.
+  // ⭐ MEASURED on Provincetown, 2026-09-25 — 22 of 4,841 footprints (0.45%) fall in the
+  // water, and they are not noise, they are the harbour: three addressed to MacMillan
+  // WHARF, a `ferry_terminal`, the USCG station, and a row on Commercial Street built out
+  // over the tide. They march out from the shore in order — 1.4, 5.5, 7.4, 14, 18, 35, 53,
+  // 76, 88, 106, 124, 140, 158, 167, 177 m — which is the shape of a pier, not of a mistake.
+  // ⛔ AND DISTANCE CANNOT TELL THEM APART: MacMillan Wharf is ~400 m long, so "too far from
+  // shore to be a wharf" is a test that fails on the very thing it is named for. I wrote
+  // that test first and it was wrong.
+  // ⭐⭐ The honest discriminator is the one already in this file: an inversion puts
+  // essentially EVERY building in the water, not 0.45% of them. So both sites now ask the
+  // same question, and the count is always reported — silence about 22 buildings in the sea
+  // would be its own defect.
+  if (bPtsAll.length && wet > bPtsAll.length * 0.5) {
+    report.push(`    ⛔ ${wet}/${bPtsAll.length} building footprint(s) fall INSIDE the water — a MAJORITY, so the land/water sides are inverted. No coast applied.`)
     return { rings: [], arcs: [], meta: [], report }
   }
-  report.push(`    ✅ ${rings.length} water ring(s) + ${arcs.length} shoreline arc(s) to expand as ink; ${buildings.length} footprint(s) checked, none in the water`)
+  if (wet) {
+    report.push(`    ⚠️ ${wet}/${bPtsAll.length} footprint(s) (${(100 * wet / bPtsAll.length).toFixed(2)}%) sit inside the water — piers, wharves and over-tide building, not an inversion. Reported, not refused.`)
+  }
+  report.push(`    ✅ ${rings.length} water ring(s) + ${arcs.length} shoreline arc(s) to expand as ink; ${buildings.length} footprint(s) checked, ${wet} in the water`)
   return { rings, arcs, meta, report }
 }
