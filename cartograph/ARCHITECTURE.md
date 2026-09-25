@@ -444,7 +444,7 @@ The post-FX stack is **declared once and installed identically in production, St
 - **Decision (why):** a fork duplicates the pipeline + the driver and drifts (proven — Preview's DoF rotted). Declaring the pipeline once + installing it by mode makes "add a pass / fix a driver / change an order" touch *one* place, inherited by all three surfaces. The `platform` field also **absorbs `preview-measurement`'s inclusion manifest** (one SSoT, not two). Follow-on Phases 4 (the scene tree onto the same manifest) + 5 (fold render-conformance/preview-measurement in) remain in the HANDOFF.
 
 ### Bake chain — async, cache-bust, dirty-skip
-- **Async handler:** `serve.js` POST `/looks/:id/bake` runs each step via `runShell` (non-blocking); a per-look `_bakesInFlight` set rejects concurrent bakes against the same Look (409) so a double-click can't race two writers.
+- **Async handler:** `serve.js` POST `/looks/:id/bake` runs each step via `runStep` (non-blocking, progress to BakeModal, no clock kill, Cancel — `BAKE.md §2`); a per-look `_bakesInFlight` set rejects concurrent bakes against the same Look (409).
 - **Cache-bust:** `BakedGround`/`InstancedTrees` fetch `?t=${bakeLastMs}`; **`bakeLastMs` must be `Date.now()` on every bake completion**, never the bake duration (reusing a duration value lets the browser serve stale geometry — "I edited days ago, Stage doesn't show it").
 - **Dirty-skip:** `writeIfChanged` (§7) — skip identical bytes, but touch mtime on no-op; **patch another step's output before writing your own** (else the patch is newer than your output and `needsRebuild` reruns you every bake). Input artifacts produced outside serve's graph (e.g. `skeleton.json`) pass `{touch:false}`.
 
@@ -455,13 +455,9 @@ clean/ (skeleton.json ← skeleton.js · overlay.json ← Survey/Measure) ─┤
   node pipeline.js → clean/map.json
   node promote-ribbons.js → src/data/ribbons.json
   node bake-terrain.js → src/data/terrain.{json,bin}
-POST /api/cartograph/looks/<id>/bake  (incremental; ?force=1 forces):
-  pipeline.js (if raw dirty) → promote-ribbons.js (if map dirty)
-  bake-ground.js   → public/baked/<id>/ground.{json,bin}   (reads ribbons + map + design.json)
-  bake-buildings.js→ public/baked/<id>/buildings.{json,bin} (reads terrain pair to anchor Y)
-  bake-lamps.js    → public/baked/<id>/lamps.json
-  bake-scene.js    → public/baked/<id>/scene.json          (sky/light/post-FX/shots/hero/neon — every authored channel)
-  bake-ground-ao.js→ public/baked/<id>/ground.lightmap.png
+POST /api/cartograph/looks/<id>/bake  (incremental; ?force=1 forces) → public/baked/<id>/*
+  the step list is the route's own (`bakePlan()`) — ▶ node checks/claims-bake-progress-shows-the-route.mjs prints it;
+  what each step reads and writes: BAKE.md §2
 Runtime reads public/baked/<id>/* + the live src/data/* (trees/water/paths/lamps/ribbons).
 ```
 
