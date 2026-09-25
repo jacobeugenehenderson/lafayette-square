@@ -24,6 +24,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { waterRuns } from './shoreRuns.mjs'
 import { SURFACES } from './surfaces.mjs'
+import { requireExplicitMap } from './scene.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -140,9 +141,12 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
   return out
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+function main() {
+  // The one resolver for --scene= and CARTOGRAPH_SCENE. Inside main(), never at module
+  // level: checks import this file, and a module-level guard would exit them.
+  const scene = requireExplicitMap('bake-coast-distance.js (writes public/baked/<look>/context.*)')
   const arg = k => process.argv.find(a => a.startsWith(`--${k}=`))?.split('=')[1]
-  const scene = arg('scene')
-  if (!scene) { console.error('bake-coast-distance: --scene=<scene> is required'); process.exit(1) }
   bakeCoastDistance({ scene, look: arg('look'), dataRoot: arg('data-root') || ROOT })
 }
+
+if (import.meta.url === `file://${process.argv[1]}`) main()
