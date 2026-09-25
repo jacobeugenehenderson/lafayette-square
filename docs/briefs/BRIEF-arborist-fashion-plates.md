@@ -39,7 +39,7 @@ The machinery exists: the Salon composes, the Grove holds a town's roster, dossi
    - ⚠️ A sample-size rule is owed (huron's county has one plot per species): widen county → survey unit → state, loudly; the minimum is Jacob's call.
    - ⚠️ So is his ruling on **street trees vs woods** (FIA samples forest).
 3. **Build, then swap:** for each listed species the kit BUILDS it from the best plates by evidence (S > G > T, trusting filenames), marked `auto` with per-plate provenance. The operator swaps any plate later.
-   - ⚠️ **Owed rulings:** does a suggested species ship immediately as **unratified**, or wait for his ratification? And which dossier sources are allowed? (USDA PLANTS + the USFS Urban Tree Database are federal and cleared; NCSU and SelecTree need his OK.)
+   - ⚠️ **Owed ruling:** which dossier sources are allowed? (USDA PLANTS + the USFS Urban Tree Database are federal and cleared; NCSU and SelecTree need his OK.)
 4. **Distinct towns:** show two towns' groves side by side, built only from what the library holds, so the claim that every map can look distinct is **seen**, not asserted.
 
 **Priority for showing Provincetown:** pitch pine, black oak (its exact leaf exists) and scarlet oak. The fastest same-species builds are black locust and white willow.
