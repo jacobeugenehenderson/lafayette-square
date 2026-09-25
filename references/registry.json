@@ -3443,6 +3443,16 @@
       "scope": "MA; prima facie evidence of unreasonable speed \"unless a different speed limit is otherwise posted\". Fair use: cite + short quote.",
       "foundOn": "2026-09-24",
       "foundBy": "Gantry"
+    },
+    {
+      "id": "r-coast-trust-the-lidar",
+      "question": "q-shore-soft-tag-vs-measured-bank",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-25",
+      "quote": "Lidar",
+      "gist": "Where the OSM coastline and the lidar water surface disagree, the revetment trusts the dated lidar (the ground the stone would sit on); the pour states loudly how much mapped shore the lidar calls dry. A shoreline storms reshape is better known from the newer measurement.",
+      "canon": "docs/briefs/BRIEF-water-shader.md · ROADMAP status block"
     }
   ]
 }
