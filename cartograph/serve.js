@@ -2691,10 +2691,6 @@ createServer(async (req, res) => {
           markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab')
         } else { skip('terrain-slab') }
       }
-      // Scene-size-sensitive bake steps get a generous ceiling: a large hood
-      // (a wide extent, tens of thousands of footprints) legitimately needs
-      // minutes for the ground/building/AO bakes. LS/HPDM finish in seconds; the
-      // cap only stops a big scene from being falsely killed at 60 s.
       await runIfDirty('ground',
         [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
