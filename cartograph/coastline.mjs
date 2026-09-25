@@ -199,6 +199,31 @@ export function weldCoastlines(feats) {
   return open
 }
 
+/**
+ * Maximal runs of consecutive vertices lying inside the rect, for a CLOSED ring.
+ * ⭐ Cyclic: a run that spans the array seam is ONE run, not two. Provincetown's ring
+ * starts mid-water, so a non-cyclic reader would split its longest arc in half and report
+ * six runs where there are five.
+ */
+export function closedRunsInRect(pts, R) {
+  const inside = (p) => p[0] >= R.x0 && p[0] <= R.x1 && p[1] >= R.z0 && p[1] <= R.z1
+  const n = pts.length
+  const flag = pts.map(inside)
+  if (flag.every(Boolean)) return []          // wholly inside ⇒ nothing to clip
+  if (!flag.some(Boolean)) return []          // wholly outside ⇒ nothing in frame
+  // Start at a vertex that is OUTSIDE, so the first run cannot be a seam-split fragment.
+  let s0 = flag.findIndex(v => !v)
+  const runs = []
+  let cur = null
+  for (let k = 0; k < n; k++) {
+    const i = (s0 + k) % n
+    if (flag[i]) { (cur ??= []).push(pts[i]) }
+    else if (cur) { runs.push(cur); cur = null }
+  }
+  if (cur) runs.push(cur)
+  return runs
+}
+
 export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   const report = []
   const rings = []
@@ -293,9 +318,35 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
       }
       rings.push(pts)
       meta.push({ subtype: f.tags?.water || null, name: f.tags?.name || null })
-      // ⛔ NO ARC. The arc exists so ① can expand an OPEN shoreline as two-sided ink; a
-      // closed ring has no landward end to T into and the canon forbids stroking it.
-      report.push(`    coast "${name}" — CLOSED chain of ${pts.length} pts used whole as the water face (${within} building(s) inside)`)
+
+      // ⭐⭐⭐ THE RING IS THE FACE; THE BB-CLIP OF IT IS THE INK. TWO OBJECTS FROM ONE CHAIN.
+      // ⛔ The ring itself must never be stroked — measured, and the canon is explicit:
+      // square → filled, circle → annulus, Erie → 3 pieces. But `clipToRect` yields OPEN
+      // polylines, which is precisely the case the same ruling names as safe. So the closed
+      // ring gives the water face, and its clipped runs give the two-sided shoreline ink ①
+      // expands at ε. That is Jacob's H-4 wording — "the lake is a discrete polygon made of
+      // shoreline and bb; the OTHER SIDE is separate, via the protopoly" — reaching a ring
+      // that happens to close inside the frame.
+      //
+      // ⛔⛔ EVERY RUN, NOT THE LONGEST. Provincetown's ring yields FIVE maximal inside-runs:
+      // 62,969 m · 55,145 m · 7,824 m · 104 m · 104 m. A "take the longest" rule — which is
+      // what I first proposed — would have thrown away 55 km of shoreline, nearly half the
+      // town's coast, and nothing would have said so.
+      // ⭐ AND THE FLOOR IS THE ONE THIS FILE ALREADY USES: two points, the same test the
+      // open path applies at `inside.length < 2`. ⛔ I nearly invented a metre threshold to
+      // drop the two 104 m stubs — but they are real shoreline where the ring crosses the bb
+      // corner and comes back, not noise, and a new constant would have been a taste
+      // dressed as a rule.
+      const runs = closedRunsInRect(pts, R)
+      for (const run of runs) if (run.length >= 2) arcs.push(run)
+      if (!runs.length) {
+        // ⛔ A ring wholly inside the frame clips to NOTHING, so this shore gets a water face
+        // and no ink at all: the land closes against the clip edge, which carries one owner
+        // and no landward side. That is the island/small-lake case, it is survivable, and it
+        // must be LOUD — ① prints the same refusal downstream and neither should be silent.
+        report.push(`    ⛔ closed coast "${name}" lies WHOLLY INSIDE the bb — it clips to no arc, so this shore has a water face but NO two-sided ink. Nothing can T into it.`)
+      }
+      report.push(`    coast "${name}" — CLOSED chain of ${pts.length} pts used whole as the water face (${within} building(s) inside) → ${runs.length} clipped arc(s) as ink`)
       continue
     }
 
