@@ -164,6 +164,56 @@ function pathFromClipper(p) {
   return p.map(fromClipper)
 }
 
+/**
+ * ⭐⭐⭐ WHICH LAND USES **COVER** THIS FACE, AND BY HOW MUCH? Returns `{ lu: m² }`.
+ *
+ * ⛔⛔ THE CENTROID VOTE THIS REPLACES WAS BACKWARDS FOR EVERY FEATURE BIGGER THAN A BLOCK.
+ * A land-use polygon voted for exactly ONE face — the one containing its centroid — however
+ * many it actually covered. MEASURED: Provincetown's median block face is 6,148 m² and its
+ * largest `natural=sand` polygon is 4,130,249 m², **672× the median face**;
+ * `leisure=nature_reserve` runs to 29,047×. 391 of 1,406 LU features are larger than the
+ * median face. So a town's beach classified one block and left the hundreds it lay across to
+ * fall through to parcels or `underived`. (`BRIEF-land-use-derivation` item #2;
+ * `BRIEF-field-shader §3` measured the same on huron's farmland.)
+ *
+ * ⭐ HOLES ARE SUBTRACTED, and that is the other half of the ruling: the clip side is filled
+ * `pftEvenOdd`, so an outer ring and its islands arrive as one region with the islands
+ * REMOVED. A pond inside a wood therefore votes nothing for the faces under the pond — the
+ * hole does not inherit its enclosing class, and if nothing else classifies it, it surfaces
+ * as `underived` rather than silently becoming wood.
+ * ⛔ `pftNonZero` on the clip side would fill the holes back in, which is the whole defect.
+ */
+export function luCoverageForFace(faceRing, luPolys) {
+  const out = {}
+  if (!Array.isArray(faceRing) || faceRing.length < 3) return out
+  let fMinX = Infinity, fMaxX = -Infinity, fMinZ = Infinity, fMaxZ = -Infinity
+  for (const p of faceRing) {
+    const x = p[0] ?? p.x, z = p[1] ?? p.z
+    if (x < fMinX) fMinX = x; if (x > fMaxX) fMaxX = x
+    if (z < fMinZ) fMinZ = z; if (z > fMaxZ) fMaxZ = z
+  }
+  const facePath = faceRing.map(p => toClipper(p[0] ?? p.x, p[1] ?? p.z))
+  for (const o of luPolys) {
+    // cheap reject — a boolean op per (face × feature) is the whole cost of this vote
+    if (o.bb[0] > fMaxX || o.bb[1] < fMinX || o.bb[2] > fMaxZ || o.bb[3] < fMinZ) continue
+    const c = new Clipper()
+    c.AddPath(facePath, PolyType.ptSubject, true)
+    c.AddPath(o.ring.map(q => toClipper(q.x ?? q[0], q.z ?? q[1])), PolyType.ptClip, true)
+    for (const h of o.holes || []) c.AddPath(h.map(q => toClipper(q.x ?? q[0], q.z ?? q[1])), PolyType.ptClip, true)
+    const sol = new Paths()
+    if (!c.Execute(ClipType.ctIntersection, sol, PolyFillType.pftNonZero, PolyFillType.pftEvenOdd)) continue
+    // ⛔⛔ SUM THE SIGNED AREAS, THEN TAKE THE MAGNITUDE ONCE. `Math.abs` PER PATH destroys
+    // the hole's sign and ADDS it instead of subtracting — a 40,000 m² wood with a 10,000 m²
+    // pond measured 50,000 m² rather than 30,000, i.e. the hole voted for its own enclosing
+    // class, twice over. ⭐ Caught by this function's own check, not by reading it.
+    let a = 0
+    for (const path of sol) a += Clipper.Area(path) / (SCALE * SCALE)
+    a = Math.abs(a)
+    if (a > 0) out[o.lu] = (out[o.lu] || 0) + a
+  }
+  return out
+}
+
 // Ray-casting point-in-polygon for {x, z} rings (from polygonize output)
 function pointInRing(px, pz, ring) {
   let inside = false
@@ -3281,6 +3331,7 @@ export function deriveLayers(highways) {
     return Math.abs(a / 2)
   }
   const osmLUPolys = []
+  let compoundCount = 0, compoundArea = 0
   let declaredNotLU = 0
   // The SECOND customer of the ingest vocabulary gate. `OSM_TO_LU` is an
   // allow-list, so a tag it lacks was silently not-a-land-use — the same shape
@@ -3299,8 +3350,19 @@ export function deriveLayers(highways) {
       // holed polygon would otherwise contribute its OUTER ring's whole area to the
       // land-use vote — the biggest polygons in the town casting the loudest vote
       // on the strength of a shape we know is wrong.
+      // ⛔ GEOMETRY WE CANNOT READ STILL DOES NOT VOTE — but HOLES ARE READABLE, and calling
+      // them unreadable cost this kit a town. `clipped` (closes outside the fetch) and `open`
+      // (not a closed way) stay refused: their interiors are genuinely undefined.
+      // ⭐⭐ `compound` DOES vote, as OUTER MINUS ITS HOLES. Refusing it was correct only in
+      // the sense that voting the outer ring alone would FILL the hole; the repair is to
+      // subtract, not to drop. MEASURED on Provincetown: 34 compound features carrying
+      // 13,171,887 m², including `natural=sand` ×7 (9.2 km², 56 inner rings) and
+      // `natural=beach` ×3 — a dune town's entire beach, refused on shape while the kit had
+      // mapped the tag since before it was poured. ⛔ And it drops the BIGGEST features by
+      // construction: a large polygon is the one likely to carry an island or a courtyard.
+      // Lafayette Square has no relations at all, so this was invisible on town #1.
       const unreadable = unreadableFace(f)
-      if (unreadable) { luVocabGap.record(`${unreadable}:${cat}=${subtype}`, f.coords, f.tags); continue }
+      if (unreadable && unreadable !== 'compound') { luVocabGap.record(`${unreadable}:${cat}=${subtype}`, f.coords, f.tags); continue }
       const tagKey = `${cat}:${subtype}`
       // ⛔ A DECLARED tag is not a gap. "We looked and decided no" and "nobody has
       // looked" are the same silence unless the decision is written down, so the
@@ -3311,15 +3373,20 @@ export function deriveLayers(highways) {
       const lu = OSM_TO_LU[tagKey]
       if (!lu) { luVocabGap.record(`${cat}=${subtype}`, f.coords, f.tags); continue }
       if (!f.coords || f.coords.length < 3) continue
-      let sx = 0, sz = 0
-      for (const p of f.coords) { sx += p.x; sz += p.z }
+      const holes = (f.holes || []).filter(h => Array.isArray(h) && h.length >= 3)
+      if (holes.length) compoundCount++, compoundArea += ringArea(f.coords) - holes.reduce((a, h) => a + ringArea(h), 0)
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity
+      for (const p of f.coords) { if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x; if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z }
       osmLUPolys.push({
         lu,
-        cx: sx / f.coords.length, cz: sz / f.coords.length,
-        area: ringArea(f.coords),
+        ring: f.coords,
+        holes,                                   // ⭐ even-odd: the hole is NOT this class
+        bb: [minX, maxX, minZ, maxZ],            // cheap reject before any boolean op
+        area: ringArea(f.coords) - holes.reduce((a, h) => a + ringArea(h), 0),
       })
     }
   }
+  if (compoundCount) console.log(`    ⭐ ${compoundCount} COMPOUND feature(s) vote as outer MINUS holes — ${Math.round(compoundArea).toLocaleString()} m² net. Their holes take no class from them.`)
   console.log(`    OSM LU-annotated polygons: ${osmLUPolys.length}` +
               (declaredNotLU ? `; ${declaredNotLU} feature(s) DECLARED not-a-land-use (${Object.keys(OSM_LU_DECLARED).length} tags declared — see OSM_LU_DECLARED)` : ''))
   const luGapReport = luVocabGap.report(SCENE)
@@ -3333,13 +3400,20 @@ export function deriveLayers(highways) {
 
     let use = face.type
     if (face.type === 'block') {
-      // OSM vote by area: for each OSM polygon whose centroid is inside this
-      // face, add its area to the (face, lu) tally.
-      const osmAreas = {}
-      for (const o of osmLUPolys) {
-        if (!pointInRing(o.cx, o.cz, face.ring)) continue
-        osmAreas[o.lu] = (osmAreas[o.lu] || 0) + o.area
-      }
+      // ⭐⭐⭐ A FACE TAKES THE LAND USE OF WHAT **COVERS** IT — by area share of the
+      // overlap, not by whose CENTROID happens to land inside it (Jacob, 2026-09-25).
+      // ⛔⛔ THE CENTROID VOTE WAS BACKWARDS FOR EVERY FEATURE BIGGER THAN A BLOCK, WHICH IS
+      // MOST OF THE ONES THAT MATTER. A land-use polygon voted for exactly ONE face — the one
+      // containing its centroid — however many it actually covered. MEASURED: Provincetown's
+      // median block face is 6,148 m² and its largest `natural=sand` polygon is 4,130,249 m²,
+      // **672× the median face**; `leisure=nature_reserve` runs to 29,047×. 391 of 1,406 LU
+      // features are larger than the median face. So a town's beach classified one block and
+      // left the several hundred it lay across to fall through to parcels or `underived`.
+      // (`BRIEF-land-use-derivation` item #2; `BRIEF-field-shader §3` measured the same on
+      // huron's farmland, 24 of 52 with their centroid in no face at all.)
+      // ⭐ The overlap is computed with the holes SUBTRACTED, so a pond inside a wood does not
+      // vote "wood" for the faces under the pond — that is the even-odd half of the ruling.
+      const osmAreas = luCoverageForFace(face.ring, osmLUPolys)
       let bestLU = null, bestArea = 0
       for (const [u, a] of Object.entries(osmAreas)) {
         if (a > bestArea) { bestArea = a; bestLU = u }
