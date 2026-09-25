@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: yes (2026-09-24, fresh agent)
+dispatched: yes (2026-09-24, Wellhead)
 written: 2026-09-24
 evict-when: every row in cartograph/intake-rows.mjs has a decided fate (auto-acquired · authored · per-town search) and the pour prints each row's status; Jacob has seen it on a fresh town
 -->

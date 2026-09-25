@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: yes (2026-09-24, fresh agent)
+dispatched: yes (2026-09-24, Plumb)
 written: 2026-09-24
 evict-when: claims-the-ground-covers-every-block is green on huron + LS, and each instance below is either fixed at its construction root with a check that goes red on it (mutation-tested), or has a named cause and a ruling; Jacob has eyed Huron's US 6 roundabout and Provincetown's bay
 -->
