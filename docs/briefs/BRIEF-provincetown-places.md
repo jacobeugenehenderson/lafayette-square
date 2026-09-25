@@ -24,7 +24,7 @@ evict-when: Provincetown's listings are matched to the PBG guide, the missing bu
 
 ## The job
 
-1. **Get the Provincetown Business Guild's current guide** (their published visitor guide / member directory; download it) and read it.
+1. **Read the Provincetown Business Guild's 2026 guide:** `/Users/jacobhenderson/Desktop/2026-PBG-GUIDE-REV_smaller.pdf` (Jacob's copy). ⛔ Don't commit the PDF.
 2. **Match** its businesses to the 344 listings.
 3. **Add the ones the map is missing**, as `adds`.
 4. **Fill facts** (hours, phone, website, category) and **write each description in your own words** from the guide and the business's own site. Record provenance per fact (`_source`, `_fetched`) the way huron's research did.
