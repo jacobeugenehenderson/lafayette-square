@@ -38,7 +38,7 @@ import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
 import { revetmentDrape, drapeGlobals } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
-import { revetmentFaces } from '../lib/revetmentFromSlab.js'
+import { revetmentFaces, revetmentResponseKind } from '../lib/revetmentFromSlab.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 /** How far from the camera the DETAILED drape and the stones are built, metres.
@@ -90,9 +90,22 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         // town with no shoreline, or whose terrain datum is not the water. Most towns
         // have none. ⛔ Anything else is loud — a revetment that fails to load must
         // not read as a coast that has no wall.
-        if (r.status === 404) return null
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return r.json()
+        // ⛔⛔ AND THE STATUS ALONE CANNOT DECIDE THAT. vite answers 200-with-index.html
+        // for a missing file, which made `404` unreachable and sent the ORDINARY
+        // no-coast case down the FAILED branch. `revetmentResponseKind` reads the
+        // content type too and returns which of three states this is — the third being
+        // "this server cannot tell me," which must be SAID, not resolved by guessing.
+        const kind = revetmentResponseKind(r.status, r.headers.get('content-type'))
+        if (kind === 'present') return r.json()
+        if (kind === 'absent') return null
+        if (kind === 'unverifiable') {
+          console.warn(`[revetment] ${lookId}: the server answered ${r.status} with ` +
+            `'${r.headers.get('content-type')}' for revetment.json — that is not the artifact, ` +
+            `and it is NOT proof the town has none. Drawing no shore, UNVERIFIED. ` +
+            `(A dev server serving its HTML index for a missing file looks exactly like this.)`)
+          return null
+        }
+        throw new Error(`HTTP ${r.status}`)
       })
       .then(d => { if (!dead) setDoc(d) })
       .catch(e => { console.error(`[revetment] ${lookId}: FAILED to load revetment.json —`, e) })
