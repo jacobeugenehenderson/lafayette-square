@@ -60,6 +60,7 @@ export default {
   setPiece: {
     kind: 'pilgrim-monument',
     osmWay: 164024699,
+    name: 'Pilgrim Monument',         // the way's OSM `name`; printed at the plinth's south face
     footprint: [[-70.1886329,42.052274],[-70.1885986,42.052243],[-70.1885667,42.0522142],[-70.1886086,42.0521885],[-70.1886552,42.0521601],[-70.1886889,42.0521904],[-70.1887215,42.0522198],[-70.1886746,42.0522485]],
     model: null,
   },

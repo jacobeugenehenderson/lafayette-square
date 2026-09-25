@@ -116,14 +116,18 @@ function straightRun(segs, s, idx) {
  * @returns {Array<{name,fullName,street,x,z,angle,fontSize,widthM,runLen}>}
  *   `name` = the placed (possibly abbreviated) text; `street` = group key for LOD.
  */
-export function layoutStreetLabels(polylines, style = {}) {
+/** The size law alone (k × widthM, floored): shared with labels that are not streets. */
+export function labelFontSize(widthM, style = {}) {
   const sizeK = style.sizeK == null ? 1 : style.sizeK   // Auto (absent) = 1× baseline
+  return Math.max(SIZE_FLOOR_M, SIZE_K_AUTO * sizeK * (widthM > 0 ? widthM : DEFAULT_WIDTH_M))
+}
+
+export function layoutStreetLabels(polylines, style = {}) {
   const tracking = style.letterSpacing ?? 0.05
   const out = []
   for (const pl of polylines || []) {
     if (!pl?.points || pl.points.length < 2) continue
-    const widthM = pl.widthM && pl.widthM > 0 ? pl.widthM : DEFAULT_WIDTH_M
-    const fontSize = Math.max(SIZE_FLOOR_M, SIZE_K_AUTO * sizeK * widthM)
+    const fontSize = labelFontSize(pl.widthM, style)
     const { segs, total } = buildSegments(pl.points)
     if (!segs.length) continue
 

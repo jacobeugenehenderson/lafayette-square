@@ -19,11 +19,14 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { INSTANCE } from '../instance.js'
+import SceneLabel from './SceneLabel.jsx'
+import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { labelFontSize } from '../lib/labelLayout.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { getElevationRaw } from '../utils/elevation.js'
 import { onTerrainReload, terrainExag } from '../utils/terrainShader.js'
 import {
-  FT, placeholderStages, siteFromFootprint, seatOnTerrain, southFacingYaw, lonLatToLocal,
+  DOSSIER, FT, placeholderStages, siteFromFootprint, seatOnTerrain, southFacingYaw, lonLatToLocal,
 } from '../setpieces/pilgrimMonument.js'
 
 // Rough split granite (dossier §4: "fresh quarry faces … not dressed ashlar"). The
@@ -79,14 +82,37 @@ export default function PilgrimMonument() {
     () => (site ? seatOnTerrain(getElevationRaw, site).groundRaw : 0),
     [site, terrainGen])
 
-  const ref = useRef()
-  useFrame(() => { if (ref.current) ref.current.position.y = groundRaw * terrainExag.value })
+  // The label: the set-piece's name printed on the ground just off its south face, read
+  // from the south. Sized by the street labels' own law with the plinth as the width, and
+  // styled by the same Labels panel. It rides the terrain at ITS OWN point, not the seat's.
+  const labelStyle = useCartographStore(s => s.labels) || {}
+  const label = useMemo(() => {
+    if (!site || !sp.name) return null
+    const plinthM = DOSSIER.foundationTopSq * FT
+    const fontSize = labelFontSize(plinthM, labelStyle)
+    const dz = plinthM / 2 + fontSize                     // local +Z = the south-facing face
+    const r = southFacingYaw(site)
+    const wx = site.x + dz * Math.sin(r), wz = site.z + dz * Math.cos(r)
+    return { fontSize, dz, dRaw: getElevationRaw(wx, wz) - groundRaw }
+  }, [site, sp, labelStyle, groundRaw])
+
+  const ref = useRef(), labelRef = useRef()
+  useFrame(() => {
+    const e = terrainExag.value
+    if (ref.current) ref.current.position.y = groundRaw * e
+    if (labelRef.current && label) labelRef.current.position.y = label.dRaw * e
+  })
 
   if (!site) return null
   return (
     <group ref={ref} name="pilgrim-monument" position={[site.x, groundRaw * terrainExag.value, site.z]}
            rotation={[0, southFacingYaw(site), 0]}>
       {sp.model ? <Model path={sp.model} /> : <Placeholder />}
+      {label && (
+        <group ref={labelRef}>
+          <SceneLabel text={sp.name} fontSize={label.fontSize} position={[0, 0, label.dz]} rotation={[-Math.PI / 2, 0, 0]} />
+        </group>
+      )}
     </group>
   )
 }

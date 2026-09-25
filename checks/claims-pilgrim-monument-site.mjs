@@ -16,6 +16,7 @@
  *   D. The seat sits on the lidar: Z = 0 is the lowest terrain under the plinth, and the
  *      terrain's spread there fits the plinth's documented 5′ depth. ⛔ Fails loudly if it
  *      doesn't: the site would need grading the kit cannot fake.
+ *   (C also checks the printed label: `setPiece.name` must be the way's OSM `name`.)
  *   E. No slab building stands inside the plinth. That catches the tower extruding as a
  *      plain box beside the set-piece, WHICHEVER source brings it (MSBF, OSM, a pour fix),
  *      with no id list. Fix: add the named ids to `building-overrides.json` `hide`.
@@ -92,13 +93,15 @@ function slabFootprints(look) {
 }
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
 
-function checkSite(inst, { osmRing, terrain, slab }) {
+function checkSite(inst, { osmRing, way, terrain, slab }) {
   const f = [], info = []
   const sp = inst.setPiece
   // C. the ring is OSM's
   if (!osmRing) f.push(`raw/osm.json has no building way ${sp.osmWay}`)
   else if (osmRing.length !== sp.footprint.length || osmRing.some((p, i) => p[0] !== sp.footprint[i][0] || p[1] !== sp.footprint[i][1]))
     f.push(`instance footprint differs from OSM way ${sp.osmWay} — re-copy it from raw/osm.json`)
+  if (!way) f.push(`raw/osm.json has no way ${sp.osmWay}`)
+  else if (sp.name !== way.tags?.name) f.push(`setPiece.name "${sp.name}" ≠ OSM way ${sp.osmWay}'s name "${way.tags?.name}"`)
   const site = siteFromFootprint(sp.footprint.map(([lon, lat]) => lonLatToLocal(inst.geography, lon, lat)))
   const plinthM = DOSSIER.foundationTopSq * FT
   const [shortM, longM] = site.sidesM
@@ -145,7 +148,7 @@ function contextFor(inst) {
   const t = loadSceneTerrain(inst.lookId)
   const meta = JSON.parse(readFileSync(join(ROOT, 'cartograph/data', inst.lookId, 'clean/terrain.json'), 'utf8'))
   const terrain = t && { getElevationRaw: t.getElevationRaw, stepM: (meta.bounds.maxX - meta.bounds.minX) / (meta.width - 1) }
-  return { osmRing, terrain, slab: slabFootprints(inst.lookId) }
+  return { osmRing, way, terrain, slab: slabFootprints(inst.lookId) }
 }
 
 const insts = await loadInstances()
@@ -161,6 +164,7 @@ if (process.argv.includes('--self-test')) {
     ['profile ignores table', () => checkProfile(placeholderStages({ ...DOSSIER, wash1: { z: 17, sq: DOSSIER.wash1.sq } }), DOSSIER).length],
     ['footprint drifted', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, footprint: inst.setPiece.footprint.map(([a, b]) => [a + 1e-6, b]) } }, ctx).f.length],
     ['terrain cliff', () => checkSite(inst, { ...ctx, terrain: { ...ctx.terrain, getElevationRaw: (x) => x > site.x ? 10 : 0 } }).f.length],
+    ['label renamed', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, name: 'Pilgrim Tower' } }, ctx).f.length],
     ['box in plinth', () => checkSite(inst, { ...ctx, slab: [...ctx.slab, { id: 'mutant-box', ring: [[site.x - 1, site.z - 1], [site.x + 1, site.z - 1], [site.x + 1, site.z + 1], [site.x - 1, site.z + 1]] }] }).f.length],
   ]
   let bad = 0
