@@ -214,7 +214,7 @@
 > behaviour) is a third, unauthored place to round — the second mechanism this § already retires.
 > Curvature stays where it is computed today, **for ADA, off the override handles**: nothing new is built,
 > the dial is unchanged, **R=0 stays reachable**. ⭐ **Expand each segment to its own rectangle and
-> unite** — no join style to choose, no miter limit to clamp. ▶ Eye-gate: Benton's joint, one 53° corner.
+> unite** — no join style to choose, no miter limit to clamp. ⚠️ **The union must be WATERTIGHT at the joins** (Plumb, measured 2026-09-25): literal per-segment rectangles leave mm hairlines on the Clipper grid, and blocks leak and merge (huron 238→108). Quads that share each vertex's offset are watertight, and they are what the per-chain mint already builds (LS 336/283 blocks, identical). So today's mint IS this construction. ▶ Eye-gate: Benton's joint, one 53° corner.
 >
 > #### ⭐⭐⭐ WE OFFSET FROM THE GROUT. The corners, the caps and the mouths FALL OUT.
 > ⛔ **`iA = chain ⊕ pavementHW` offsets from the CHAINS, and that is what this replaces.** Offset the
