@@ -29,3 +29,8 @@
     - **NEW CLASS — structures over water** (Provincetown, 2026-09-24): piers (70 footway · 4 service · MacMillan Wharf, Fishermen's Wharf) and the stone **Breakwater** (`man_made=breakwater` + a footway on it). A path/road on a structure, water both sides — **the structure is the positive object** (deck at its width, water under it; the breakwater is STONE — reuse the revetment's rock). Today a service pier may bound blocks over water. Unbuilt; not scoped. → `H-2`/`H-4` (water), `H-3` (positive object).
     - **The fetch cap is in the wrong unit** (Jacob, 2026-09-24): `MAX_FETCH_KM2` bounds AREA, but load is what the fetch RETURNS — water carries no geometry (Provincetown's ZIP envelope 312 km², mostly bay). Raised 200 → 400 as the unblock; the kit fix is a bound on returned features/bytes (terrain is the one area-proportional part). ⛔ A coastal town's search envelope also includes water — size it to the land.
     - **Deploy:** nothing from these two days is pushed; `staging.yml` is gone and `deploy.yml` deploys `main`. A deploy plan (what ships together, LS verification after) is owed before any push. Phase 1/2 of the backend genericizing → the listing agent's handoff.
+
+
+## H-4 sub-bullet retired 2026-09-25
+
+  - ⛔⛔ **MY BRIEF WAS WRONG ABOUT THE SEAM AND STRAND SETTLED IT AGAINST ME.** I wrote that `mintProtopolygon`'s `boundary` param means ① already models a non-street boundary edge. It does not: `derive.js:5113` passes the **DISC**, and `tileGround.js:547` rules *"⭐⭐⭐ THE CIRCLE IS THE STENCIL, NOT A CHAIN"*, citing `RIBBONS §1`'s *"THE RIM BOUNDS, IT DOES NOT OWN."* ⚠️ Also: the **live** path passes no boundary at all; only prebake does.
