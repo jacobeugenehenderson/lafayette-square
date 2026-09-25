@@ -1,0 +1,5 @@
+# Diary — cartograph/INTAKE.md §0.5, the removed re-center guard
+
+Retired from INTAKE.md 2026-09-25 (Wellhead): a correction banner whose subject was removed on 2026-07-23. The live rule is in  (the frame origin never moves) and OPERATIONS Extent step 10.
+
+**⛔ The re-center guard was REMOVED 2026-07-23 — do not count it as a live protection.** It existed to refuse a committed hood whose `center` moved >5 m (409 `recenter-blocked`); under the never-move model there is **no frame move to guard**, so the guard was deleted and `allowRecenter` is now an unused destructured field kept for payload compatibility. `recenter-blocked` occurs **nowhere in the tree**. *(Three docs gave three thresholds — this one said >5 m, `EXTENT-EXCAVATION §A2` said >100 m, and the code re-centers not at all. Corrected 2026-08-04; anyone auditing the destruction surface was counting a guard that isn't there.)* The real protections are the frozen origin itself and the `.prebak` snapshots a failed commit rolls back through (`/rollback-extent` — which **does** still re-run `reproject-raw` + `skeleton`).
