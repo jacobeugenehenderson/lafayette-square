@@ -43,6 +43,7 @@
  * Writes cartograph/data/<scene>/raw/elevation-sources.txt. Reads raw/osm.json for the bbox.
  */
 import { readFileSync, existsSync, mkdirSync } from 'node:fs'
+import { requireExplicitMap } from './scene.js'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
@@ -196,8 +197,17 @@ function markVerifiedAbsent(scene, tried) {
 }
 
 async function main() {
-  const scene = arg('scene')
-  if (!scene) { console.error('fetch-dem: --scene=<id> is required'); process.exit(2) }
+  // ⛔ THE GUARD BELONGS TO EVERY WRITER, AND THIS FILE WRITES `raw/elevation-sources.txt`
+  // plus the town's `intake.json` verified-absent mark. A hand-rolled `--scene=` test was
+  // not a bleed — it already refused — but it read only ONE of the two channels, so
+  // `CARTOGRAPH_SCENE=<id> node fetch-dem.mjs` refused a scene the rest of the kit accepts.
+  // `requireExplicitMap` is the one resolver that reads both. (Found by
+  // `claims-writers-name-the-scene.mjs`, which is the point of having it.)
+  // ⛔⛔ AND IT MUST STAY INSIDE `main()`, NOT AT MODULE LEVEL like pipeline.js's. This
+  // module EXPORTS `findDem`/`tnmProducts`/`bestProject`, and probes and checks import
+  // them; a module-level guard would exit the process on import and take the caller with
+  // it. The `import.meta.url` main-guard at the bottom is what makes that distinction real.
+  const scene = requireExplicitMap('fetch-dem.mjs (writes raw/elevation-sources.txt + the intake mark)')
   const rawDir = join(ROOT, 'cartograph', 'data', scene, 'raw')
   const osmPath = join(rawDir, 'osm.json')
   if (!existsSync(osmPath)) { console.error(`fetch-dem: ${scene} has no raw/osm.json — fetch the town first`); process.exit(2) }
