@@ -1,21 +1,24 @@
 """
 Shared configuration for the Cartograph data pipeline.
 
-Single-scene per process. The DEFAULT scene (Lafayette Square) uses the
-hardcoded geography below. A non-default scene selected via the
-CARTOGRAPH_SCENE env var reads its geography from
-cartograph/data/<scene>/geography.json — the same pre-bake extent/projection
-SSOT the JS backend (cartograph/config.js) reads, so the Python and JS
-fetchers agree. With CARTOGRAPH_SCENE unset, everything below is unchanged (LS)
-and outputs still land in scripts/raw + src/data. When it IS set, RAW_DIR /
-DATA_DIR redirect into the scene's own folder so LS is never clobbered.
+Single-scene per process, and the scene MUST be named (CARTOGRAPH_SCENE). Lafayette
+Square keeps its hardcoded geography and legacy scripts/raw + src/data layout; every
+other scene reads cartograph/data/<scene>/geography.json — the same pre-bake
+extent/projection SSOT the JS backend (cartograph/config.js) reads — and writes into
+its own folder. A scene with no geography.json is refused, never given LS's.
 """
 import os
 import sys
 import json
 
 DEFAULT_SCENE = 'lafayette-square'
-SCENE = os.environ.get('CARTOGRAPH_SCENE', DEFAULT_SCENE)
+# ⛔ NO DEFAULT SCENE. An unset CARTOGRAPH_SCENE used to mean Lafayette Square, so a
+# script run without naming a town wrote into LS's data. Name the town, LS included.
+SCENE = os.environ.get('CARTOGRAPH_SCENE')
+if not SCENE:
+    print("[config] CARTOGRAPH_SCENE is not set — name the scene: "
+          "CARTOGRAPH_SCENE=<id> python3 scripts/<script>.py", file=sys.stderr)
+    sys.exit(2)
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPTS_DIR)
@@ -53,8 +56,12 @@ if SCENE != DEFAULT_SCENE:
             'min_lon': _b['minLon'], 'max_lon': _b['maxLon'],
         }
     else:
-        print(f"[config] CARTOGRAPH_SCENE={SCENE} but no {_geo_path}; "
-              f"using LS geography", file=sys.stderr)
+        # ⛔ Was: print a warning and carry on with LAFAYETTE SQUARE's centre and bbox,
+        # so a town with no frame fetched and projected St. Louis under its own name.
+        print(f"[config] CARTOGRAPH_SCENE={SCENE} has no {_geo_path} — "
+              f"run the Extent fetch for this town first. Refusing to use another town's geography.",
+              file=sys.stderr)
+        sys.exit(2)
 
 # Overture Maps release
 OVERTURE_RELEASE = '2026-01-21.0'
