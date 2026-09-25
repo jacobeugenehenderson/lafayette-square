@@ -34,3 +34,13 @@
 ## H-4 sub-bullet retired 2026-09-25
 
   - ⛔⛔ **MY BRIEF WAS WRONG ABOUT THE SEAM AND STRAND SETTLED IT AGAINST ME.** I wrote that `mintProtopolygon`'s `boundary` param means ① already models a non-street boundary edge. It does not: `derive.js:5113` passes the **DISC**, and `tileGround.js:547` rules *"⭐⭐⭐ THE CIRCLE IS THE STENCIL, NOT A CHAIN"*, citing `RIBBONS §1`'s *"THE RIM BOUNDS, IT DOES NOT OWN."* ⚠️ Also: the **live** path passes no boundary at all; only prebake does.
+
+
+## H-7 as it stood before the 2026-09-25 ruling
+
+- **H-7 · ⭕⭐⭐ RULING OWED — DOES THE HERO-OBJECT PROGRAM BELONG IN THE KIT AT ALL?** *(Jacob, 2026-09-19, opened by the first real pour: "worth delving into now because we're really pouring real hoods now.")*
+  > *"We added the hero object so that scenes could have a hero subject. But I guess fundamentally, we don't **require** one; we set it up so the camera was always looking at the hero object… but is that the right idea? … I wonder if that's actually a St. Louis specific concern? Like, if we were doing the Hollywood sign we wouldn't even try to do it thru the kit, that would just be a custom install. I think we need to either flesh out this part of the hero program or rethink including it in the kit."*
+  - ⭐ **The code already treats "no hero" as first-class** — `heroSubject.js`'s undesignated path resolves to the hood centroid and calls it, in its own comment, *"the answer for every installation that doesn't own a Gateway Arch."* So the kit is not built on the assumption Jacob is questioning; the assumption lives in the **default Look**, which is a St. Louis town.
+  - ⭐⭐ **A framing that may dissolve the question: TWO THINGS WEAR ONE NAME.** A **set-piece** is a modelled object the whole map orients to — the Arch, the Hollywood sign — i.e. *geometry the kit did not pour*, which is what makes it smell like a custom install. A **framing subject** is merely a point the camera favours — Huron's jetty, the water. ⛔ The first needs an asset pipeline; the second needs **a pin**. `heroSubject` is already `{kind, id}`, so a pin is a new `kind`, not a new concept.
+  - ▶ Jacob's own candidate for Huron is *"the water or the jetty that's sort of in the middle of the coastline… maybe we can drop a pin?"* — which is the framing-subject case, and it is the one every town can satisfy.
+  - ⛔ **Not a coordinator call.** ⚠️ Gates nothing today: the kit-default Look stores no camera (his ruling, same night), so a fresh pour needs no hero to open correctly. → `A11`, `src/lib/heroSubject.js`, **H-1**.

@@ -37,7 +37,7 @@ evict-when: Provincetown's monument site is roughed in from the dossier's docume
    Upper-stage I values stay parametric, and are plainly a placeholder for the artist's model, so the hero camera and skyline read at the right scale.
 4. **The area around it:** the grounds, terraces and paths as OSM maps them (the monument is OSM `man_made` + `building`, `height` 77, at 1 High Pole Hill Road; the inclined elevator is mapped too). Draw them from the data; don't invent grounds.
 5. **The drop-in slot:** a clear contract so the artist's model replaces the placeholder: units, origin at the base centre / Z = 0, orientation, and where the file goes.
-   ⭐ The precedent is LS's Gateway Arch (`src/components/GatewayArch.jsx`, `src/lib/heroSubject.js`). ⚠️ Whether the hero-object program belongs in the kit is still Jacob's open ruling (`ROADMAP H-7`: "set-piece" vs "framing subject"). **Build this as Provincetown's set-piece the way LS's Arch is, and say what you'd generalise; don't build a kit framework.**
+   ⭐ The precedent is LS's Gateway Arch (`src/components/GatewayArch.jsx`, `src/lib/heroSubject.js`). ✅ **Ruled 2026-09-25 (`ROADMAP H-7`): "hero" is only the set-piece, and the camera is NOT tied to it.** Build the monument as Provincetown's set-piece (asset slot, placement, label); ⛔ no camera coupling. Say what you'd generalise; don't build a kit framework.
 6. **Its own building footprint** must not also extrude as a plain 77 m box beside the placeholder. The set-piece replaces it; say how.
 
 ## Checks
