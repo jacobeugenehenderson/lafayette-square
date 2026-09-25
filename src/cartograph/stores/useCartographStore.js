@@ -1986,6 +1986,19 @@ const useCartographStore = create((set, get) => ({
       // not unique — incremental bakes can return identical small durations.
       // Use Date.now() to guarantee uniqueness.
       set({ bakeRunning: false, bakeStale: false, bakeLastMs: Date.now(), bakeDurationMs: r.ms })
+      // ⛔ THE 2D MAP IS LIVE, BUILT FROM THE RIBBONS THIS PAGE FETCHED AT SCENE LOAD — and a bake can re-pour
+      // them (it re-runs pipeline + promote when they are dirty), as can a CLI pour. The slab refreshes; the
+      // 2D map would keep drawing the OLD ribbons, silently (measured 2026-09-24: huron's verges drawn as
+      // curbed blocks from pre-re-pour ribbons). So after a bake, compare the server's ribbons with ours and
+      // SAY so if they differ — the loader derives several stores from them, so a hot swap is not attempted.
+      {
+        const sc = get().scene, held = get().sceneRibbons
+        if (!BUNDLED_MAPS.has(sc) && held) {
+          const fresh = await fetchRibbons(sc).catch(() => null)
+          if (!fresh) set({ ribbonsStale: 'the ribbons could not be re-read after the bake — the 2D map may be out of date' })
+          else if (JSON.stringify(fresh) !== JSON.stringify(held)) set({ ribbonsStale: 'the map data (ribbons) changed on disk during or before this bake — the 2D map is still drawing the copy loaded with the page' })
+        }
+      }
       // Optional navigation tied to bake success. Designer's "Stage →"
       // passes navigateTo='browse' so the operator lands at the matching
       // overhead view immediately after the bake.
@@ -2065,6 +2078,8 @@ const useCartographStore = create((set, get) => ({
   // fast-path scenes (default + toy) leave sceneRibbons null and read their
   // static import; every other installation fetches these per-scene.
   sceneRibbons: null,
+  // Set when the server's ribbons no longer match the copy this page loaded (BakeModal shows it, with Reload).
+  ribbonsStale: null,
   mapGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)
   sceneBoundary: null,    // fetched neighborhood_boundary.json (raw)
   setScene: (scene) => {

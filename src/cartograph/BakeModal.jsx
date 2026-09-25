@@ -6,7 +6,19 @@ import useCartographStore from './stores/useCartographStore.js'
 export default function BakeModal() {
   const bakeRunning = useCartographStore(s => s.bakeRunning)
   const bakeError = useCartographStore(s => s.bakeError)
-  if (!bakeRunning && !bakeError) return null
+  const ribbonsStale = useCartographStore(s => s.ribbonsStale)
+  if (!bakeRunning && !bakeError && !ribbonsStale) return null
+  // ⛔ The 2D map is built live from ribbons loaded with the page; after a re-pour it is stale until reload.
+  if (!bakeRunning && !bakeError && ribbonsStale) return (
+    <div className="carto-bake-modal">
+      <div className="carto-bake-modal-card">
+        <div className="carto-bake-modal-title">The 2D map is out of date</div>
+        <div className="carto-bake-modal-msg">Baked. But {ribbonsStale}. Reload to draw what was poured.</div>
+        <button className="carto-bake-modal-dismiss" onClick={() => window.location.reload()}>Reload</button>
+        <button className="carto-bake-modal-dismiss" onClick={() => useCartographStore.setState({ ribbonsStale: null })}>Dismiss</button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="carto-bake-modal">
