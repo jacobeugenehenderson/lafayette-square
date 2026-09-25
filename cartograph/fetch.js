@@ -278,7 +278,17 @@ out body;>;out skel qt;`
   // ever poured. This is not a hole opened by the shop/tourism/office/craft tags
   // added earlier today — those only made it visible.
   const taggedNodes = []
+  // ⭐ A WAY ID IS IDENTITY — one feature per way per bucket. The ground query outputs
+  // tagged ways, then relation MEMBER ways again (`way(r.rels)(bbox); out body`), so a way
+  // that is both (Provincetown's coastline is in the Cape Cod peninsula, the Gulf of Maine
+  // and Cape Cod island) came back twice and was pushed twice: 84 extra natural features
+  // on provincetown, 18 extra landuse on huron (2026-09-24). Deduped per TARGET, not via
+  // `waysById`: ground and buildings are separate buckets and one way may be in both.
+  const dupDropped = new Map()   // target → the dropped repeat elements
+  const seenIn = new Map()       // target → Set(way id)
   function ingestElements(elements, target) {
+    if (!seenIn.has(target)) seenIn.set(target, new Set())
+    const seen = seenIn.get(target)
     for (const el of elements) {
       if (el.type === 'node') {
         nodes[el.id] = [el.lon, el.lat]
@@ -287,7 +297,11 @@ out body;>;out skel qt;`
         if (el.tags) taggedNodes.push(el)
       } else if (el.type === 'way') {
         waysById.set(el.id, el)
-        if (el.tags) target.push(el)
+        if (el.tags) {
+          if (seen.has(el.id)) { if (!dupDropped.has(target)) dupDropped.set(target, []); dupDropped.get(target).push(el); continue }
+          seen.add(el.id)
+          target.push(el)
+        }
       } else if (el.type === 'relation') {
         relations.push(el)
       }
@@ -375,6 +389,17 @@ out body;>;out skel qt;`
     const feat = wayToFeature(way)
     if (!feat) continue
     bucket(feat)
+  }
+  // Duplicate ways dropped at ingest, by the SAME bucket rule. Printed on every fetch,
+  // zeros included, so a regression of the dedupe is visible in the fetch log.
+  {
+    const byCat = {}
+    for (const el of (dupDropped.get(groundWays) || [])) {
+      const cat = tagPriority.find(t => el.tags?.[t]) || 'other'
+      byCat[cat] = (byCat[cat] || 0) + 1
+    }
+    const g = Object.entries(byCat).map(([k, n]) => `${k} ${n}`).join(' · ') || 'none'
+    console.log(`  duplicate ways dropped — ground: ${g} · buildings: ${(dupDropped.get(buildingWays) || []).length}`)
   }
 
   // ⭐⭐⭐ MULTIPOLYGON RELATIONS → FEATURES. A relation's members are bare geometry and
