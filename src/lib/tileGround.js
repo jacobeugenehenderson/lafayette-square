@@ -1660,7 +1660,7 @@ function strokeOpen(polyline, delta) {
 // drawn length). Where it steps, it tapers over `section.taper.rate` × the change, centred on the
 // step (`d-lane-step-taper-rate`; placement [U]); a taper longer than half a neighbouring span is
 // shortened to it and REPORTED. Ends are butt.
-function highwayWidthProfile(sec, drawnLen) {
+function highwayWidthProfile(sec, drawnLen, ends = null) {
   const spans = (sec?.spans || []).filter(sp => Number.isFinite(sp.hw))
   if (!spans.length) return null
   const scale = sec.length > 0 ? drawnLen / sec.length : 1
@@ -1677,6 +1677,25 @@ function highwayWidthProfile(sec, drawnLen) {
     tapers.push({ at: +at.toFixed(1), from: a.hw, to: b.hw, length: +(2 * half).toFixed(2), wanted: +want.toFixed(2), shortened: 2 * half < want - 1e-6 })
   }
   knots.push([drawnLen, spans[spans.length - 1].hw])
+  // ⭐ H-3 step 5 — END-TO-END: where the highway hands off to an at-grade street that CONTINUES it, H tapers
+  // from its section to that street's resolved width, ending exactly at the node (one material handoff), over
+  // the same 12:1 rate (`d-lane-step-taper-rate`, which names this handoff). Too long for the end span ⇒
+  // shortened to it, and REPORTED.
+  const endTaper = (which, w) => {
+    if (!Number.isFinite(w)) return
+    const atEnd = which === 'end', k0 = atEnd ? knots.length - 1 : 0
+    const from = knots[k0][1], d = Math.abs(from - w)
+    if (d < 1e-6) { knots[k0] = [knots[k0][0], w]; return }
+    const want = sec.taper.rate * d
+    const nb = atEnd ? knots[knots.length - 2][0] : knots[1][0]
+    const room = atEnd ? drawnLen - nb : nb
+    const len = Math.max(0, Math.min(want, room))
+    if (atEnd) knots.splice(knots.length - 1, 1, [drawnLen - len, from], [drawnLen, w])
+    else knots.splice(0, 1, [0, w], [len, from])
+    tapers.push({ at: atEnd ? 'end' : 'start', from: +from.toFixed(3), to: +w.toFixed(3), length: +len.toFixed(2), wanted: +want.toFixed(2), shortened: len < want - 1e-6, handoff: true })
+  }
+  if (ends?.start != null) endTaper('start', ends.start)
+  if (ends?.end != null) endTaper('end', ends.end)
   const at = (t) => {
     for (let i = 1; i < knots.length; i++) if (t <= knots[i][0] + 1e-9) {
       const [t0, v0] = knots[i - 1], [t1, v1] = knots[i]
@@ -1686,14 +1705,15 @@ function highwayWidthProfile(sec, drawnLen) {
   }
   return { at, stations: knots.map(k => k[0]), tapers }
 }
-function sweepHighway(points, leftSec, rightSec) {
+function sweepHighway(points, leftSec, rightSec, handoff = null) {
   const pts = []
   for (const p of points) { const q = Array.isArray(p) ? p : [p.x, p.z]; if (!pts.length || Math.hypot(q[0] - pts[pts.length - 1][0], q[1] - pts[pts.length - 1][1]) > 1e-6) pts.push(q) }
   if (pts.length < 2) return null
   const cum = [0]
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]))
   const Ltot = cum[cum.length - 1]
-  const L = highwayWidthProfile(leftSec, Ltot), R = highwayWidthProfile(rightSec, Ltot)
+  const L = highwayWidthProfile(leftSec, Ltot, handoff && { start: handoff.start?.left, end: handoff.end?.left })
+  const R = highwayWidthProfile(rightSec, Ltot, handoff && { start: handoff.start?.right, end: handoff.end?.right })
   if (!L || !R) return null
   // Insert the taper knots as vertices so the width changes exactly where the profile says.
   // ⛔ MERGED WITHIN A MICRON: the left and right profiles taper at the same station, but their knots
@@ -6808,7 +6828,39 @@ export function buildTileGround(ribbons, opts = {}) {
   // view still draws a legacy one from its measure, and `bake-ground` refuses to freeze either.
   const HIGHWAY_CLASSES = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
   const Hacc = []
-  const hwyDisclosure = { swept: 0, missing: [], legacy: [], tapers: [], gsOther: [], gsMissing: [] }
+  const hwyDisclosure = { swept: 0, missing: [], legacy: [], tapers: [], gsOther: [], gsMissing: [], handoffs: [], handoffAmbiguous: [] }
+  // ⭐ H-3 step 5 — which at-grade street CONTINUES a highway end (end-to-end, e.g. US 6 → an at-grade primary).
+  // By IDENTITY of the shared vertex and one-way DIRECTION, never by angle or proximity, and ⛔ never by `ref`
+  // (a label for the section, not a key): at a highway END the continuation is the one-way street that STARTS
+  // there (at a START, the one that ENDS there); a two-way street qualifies only as the node's sole town chain.
+  // A street passing THROUGH the node is a T (a ramp terminal) — H butts there, no taper. Ambiguous ⇒ no taper,
+  // printed by name. Its width is the street's own per-side width at that end, WITH the operator's authoring.
+  const hk = (p) => { const q = Array.isArray(p) ? p : [p.x, p.z]; return `${(+q[0]).toFixed(3)},${(+q[1]).toFixed(3)}` }
+  const segIx = resolveChainSegmentation(streetsOrig)
+  const townAt = new Map()                    // node → [{ st, at: 'start'|'end'|'mid' }]
+  for (const st of streetsOrig) (st.points || []).forEach((p, i, P) => { const k = hk(p); if (!townAt.has(k)) townAt.set(k, [])
+    townAt.get(k).push({ st, at: i === 0 ? 'start' : i === P.length - 1 ? 'end' : 'mid' }) })
+  const widthAt = (st, side, which) => {
+    const n = st.points.length, ix = [...(segIx.get(st) || [])].filter(i => i > 0 && i < n - 1).length
+    const c = blockCustoms?.[st.skelId]?.[side]?.[which === 'start' ? 0 : ix]
+    const hw = (c && Number.isFinite(c.pavementHW)) ? c.pavementHW : st.measure?.[side]?.pavementHW
+    return Number.isFinite(hw) ? hw : null
+  }
+  const handoffOf = (s, which) => {
+    const node = which === 'end' ? s.points[s.points.length - 1] : s.points[0]
+    const at = townAt.get(hk(node)) || []
+    if (!at.length || at.some(x => x.at === 'mid')) return null            // no town street, or a T: a butt
+    const want = which === 'end' ? 'start' : 'end'
+    const cand = at.filter(x => x.st.oneway ? x.at === want : at.length === 1)
+    if (cand.length !== 1) { hwyDisclosure.handoffAmbiguous.push(`${s.skelId ?? s.name}.${which} (${at.map(x => x.st.skelId).join(', ')})`); return null }
+    const { st, at: stAt } = cand[0], same = stAt === want
+    const w = (side) => widthAt(st, same ? side : (side === 'left' ? 'right' : 'left'), stAt)
+    const out = { left: w('left'), right: w('right'), street: st.skelId ?? st.name }
+    // Any OTHER town chain at the handoff node (huron: the US 6 crossover primary-link-54) is FLAGGED, not ruled.
+    const also = at.filter(x => x.st !== st).map(x => x.st.skelId ?? x.st.name)
+    hwyDisclosure.handoffs.push(`${s.skelId ?? s.name}.${which} → ${out.street} (L ${out.left?.toFixed?.(2)} · R ${out.right?.toFixed?.(2)} m)${also.length ? ` [also at this node, flagged not ruled: ${also.join(', ')}]` : ''}`)
+    return out
+  }
   for (const s of gradeSep) {
     const L = s.measure?.left, R = s.measure?.right
     const id = s.skelId ?? s.name
@@ -6826,7 +6878,7 @@ export function buildTileGround(ribbons, opts = {}) {
       Hacc.push(...strokeOpen(s.points, hw))
       continue
     }
-    const sw = sweepHighway(s.points, L.section, R.section)
+    const sw = sweepHighway(s.points, L.section, R.section, { start: handoffOf(s, 'start'), end: handoffOf(s, 'end') })
     if (!sw) { hwyDisclosure.missing.push(id); continue }
     Hacc.push(sw.ring)
     hwyDisclosure.swept++
@@ -6837,6 +6889,8 @@ export function buildTileGround(ribbons, opts = {}) {
     console.log(`[tileGround][H] highway polygon H: ${D.swept} highway(s) swept by their section · ${D.tapers.length} taper(s) (12:1, centred [U])${D.tapers.some(t => t.shortened) ? ` — ⚠️ ${D.tapers.filter(t => t.shortened).length} SHORTENED to fit their span: ${D.tapers.filter(t => t.shortened).map(t => `${t.id}.${t.side}@${t.at}`).join(', ')}` : ''}`)
     if (D.missing.length) console.error(`[tileGround][H] ⛔ ${D.missing.length} highway(s) have NO WIDTH and are not drawn: ${D.missing.join(', ')}`)
     if (D.legacy.length) console.error(`[tileGround][H] ⛔ ${D.legacy.length} highway(s) carry no section — poured before H-3; drawn at their old measure until re-poured: ${D.legacy.join(', ')}`)
+    if (D.handoffs.length) console.log(`[tileGround][H] end-to-end handoff(s), H tapered to the continuing street (12:1): ${D.handoffs.join(' · ')}`)
+    if (D.handoffAmbiguous.length) console.warn(`[tileGround][H] ⚠️ ${D.handoffAmbiguous.length} highway end(s) with an AMBIGUOUS at-grade continuation — butt, no taper: ${D.handoffAmbiguous.join(' · ')}`)
     if (D.gsOther.length) console.log(`[tileGround][H] ${D.gsOther.length} non-highway grade-separated chain(s) drawn as a flat stroke at their own measure (ruling i): ${D.gsOther.join(', ')}`)
     if (D.gsMissing.length) console.error(`[tileGround][H] ⛔ ${D.gsMissing.length} non-highway grade-separated chain(s) have NO WIDTH and are not drawn: ${D.gsMissing.join(', ')}`)
   }
