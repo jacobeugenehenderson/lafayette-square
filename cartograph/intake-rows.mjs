@@ -469,15 +469,10 @@ export const INTAKE_ROWS = [
     acquisition: { kind: ACQUIRE.OPERATOR, note: 'the Designer measure tool' },
     doc: 'cartograph/SURVEY.md',
   },
-  {
-    id: 'render-ledger', domain: 'cartograph', tier: 'elective',
-    label: 'Render ledger',
-    path: 'buildings.json',
-    unlocks: 'the per-scene building render ledger',
-    absent: { kind: ABSENT.FALLBACK, note: 'falls to clean/map.json' },
-    acquisition: { kind: ACQUIRE.DERIVED, note: 'derive-ls-render-ledger.js' },
-    doc: 'NEIGHBORHOOD-INPUTS.md',
-  },
+  // ⛔ No `render-ledger` row — retired 2026-09-24 (Jacob). Its only producer,
+  // derive-ls-render-ledger.js, writes Lafayette Square's path and no other, so it was an
+  // LS artifact filed as a kit input. The same file is still reported, as a hand-authored
+  // ledger, by the `building-fabric` row below.
   {
     id: 'building-overrides', domain: 'cartograph', tier: 'elective',
     label: 'Building overrides',

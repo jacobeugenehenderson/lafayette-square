@@ -7,8 +7,7 @@ written: 2026-09-24
 evict-when: every row in cartograph/intake-rows.mjs has a decided fate (auto-acquired · authored · per-town search) and the pour prints each row's status; Jacob has seen it on a fresh town
 -->
 
-**Status:** DISPATCHED 2026-09-24 by Jacob (Boz drafted it).
-**Phase 1 is research and design, with no code.** Phase 2 builds one row at a time, each with Jacob's go.
+**Status:** phase 1 DONE 2026-09-24 (Wellhead); Jacob's rulings are at the foot. Phase 2 builds one row at a time, each with Jacob's go.
 
 ## Who you are, and the bounds
 
@@ -112,4 +111,16 @@ This checkout is shared by several sessions: Gantry (highways, ground), Revetmen
 - ⛔ No stash, reset, rebase or branch switch.
 - Announce anything that writes `cartograph/data/` or `public/baked/`.
 
-**Stop after phase 1's classification and demonstration.** Jacob rules on it, row by row, before any row is built.
+## Rulings on phase 1 (Jacob, 2026-09-24)
+
+*"Remember this is all a cleaning pass as well."*
+
+1. **The machine SUGGESTS a well; the operator CONFIRMS it** into the town's `sources.json`. Same shape as the gazetteer ring, which is a hint until adopted. The reason is measured: one St. Louis server offers dozens of layers that match "parcels".
+2. **`census-forest-park` merges into one municipal tree-inventory row** that holds every well found. It was one St. Louis layer filed as a row.
+3. **`render-ledger` is retired** (done, `intake-rows.mjs`). Its only producer writes Lafayette Square's path.
+4. **Poles and lamps are different artifacts; list them separately.** A utility-pole layer is not a lamp census unless it marks lighting.
+
+▶ The method and the per-town results, re-runnable (read-only):
+- `scratch/intake-artifact-discovery-probe.mjs` — catalogue search by keyword and bbox (Tally). ⛔ Alone it fails the LS regression.
+- `scratch/intake-jurisdiction-host-probe.mjs <lat> <lon>` → `scratch/intake-server-crawl-probe.mjs <root> <bbox>` — the town's own GIS host, found from its official website. Rediscovers LS's forestry and assessor wells.
+- `scratch/intake-host-discovery-probe.mjs` — ⛔ a NEGATIVE result: harvesting every host near the town returns noise. Recognition must test values, not field names.
