@@ -928,6 +928,17 @@
       "findings": [
         "m-huron-disputed-shore-naip"
       ]
+    },
+    {
+      "id": "q-atgrade-expressway-edge",
+      "ask": "Does an AT-GRADE expressway (OSM highway=primary + expressway=yes, crossings and roundabouts at grade, no ped realm) take a vertical curb at its carriageway edge, or a bare/shouldered edge like a gradeSeparated highway? And is land enclosed between its carriageways a block or a verge?",
+      "codeSites": [
+        "cartograph/derive.js — blockClass at the mint (H-3 classes = motorway/trunk(+_link) only)",
+        "Wren 911d4103 — expressway=yes ⇒ pedRealm:false, curb kept"
+      ],
+      "findings": [],
+      "neededBy": "huron: US 6 through the centre (primary-90/91/101/102/103, roundabout at (−89,53)) — Jacob's eye 2026-09-24 read its curb and ramp wedges as malfunctions; HPDM Forest Park Parkway at its pour",
+      "status": "open"
     }
   ],
   "findings": [
