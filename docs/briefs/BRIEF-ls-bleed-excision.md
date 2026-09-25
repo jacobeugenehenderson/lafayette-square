@@ -89,6 +89,7 @@ scene's name."*
   | 5 | the **ground-layer epsilon** | 2 mm between layers: invisible on a small flat town, and on contoured ground **arithmetically unavailable at any value** (chord error to 1.6 m) |
   | 6 | the **AO / FX map size** | a fixed 1024² over any span — 6.55 m/texel on huron, so a 4.5 m tree-shadow disc landed on **0.69 of a texel** and 18,616 splats smeared into grey |
   | 7 | **`hasHero`** | true for `lafayette-square` only — and it gated the **playback driver**, so ⛔ **no poured town had a hero camera driver at all.** |
+  | 8 | **`FOUNDATION_BELOW_GRADE_M = 8`** *(added 2026-09-24)* | ⭐ **it confesses in its own comment** — *"LS diagnostic (2026-05-04): max (centroidEl − minCornerEl) × V_EXAG across all 1056 buildings = 3.984m… 8m gives ~2× safety."* Sized on town #1 and doubled. On a **waterfront** town the skirt punches past the waterline: **89.1% of huron's 3,678 buildings**, median **3.44 m** below the water plane, and over water there is no ground to hide it — Jacob's *"big underwater blocks."* ⛔ Not a number to shrink (that floats a building on a steeper town); the fix is the water's own depth fade. ▶ `node scratch/revetment-toe-founding.mjs` for the sibling case. |
 
   ### ⭐⭐ THE TELL IS ALWAYS THE SAME, AND IT IS WHAT MAKES THIS A CLASS RATHER THAN SEVEN BUGS
   > **A constant with no unit, or a unit that is only stable because something ELSE is also fixed.**
