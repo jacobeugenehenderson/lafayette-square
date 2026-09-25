@@ -430,6 +430,46 @@
       },
       "status": "PERMITTED",
       "localCopy": "scratch/.naip-spike/ (Albedo's tiles for the LS sites, gitignored)"
+    },
+    {
+      "id": "ohio-revised-code",
+      "title": "Ohio Revised Code (official publication, Legislative Service Commission)",
+      "publisher": "Ohio General Assembly / LSC",
+      "jurisdiction": "OH",
+      "url": "https://codes.ohio.gov/ohio-revised-code",
+      "covers": [
+        "statutory prima facie speed limits (ORC 4511.21)"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-24",
+        "checkedBy": "Gantry (fetched codes.ohio.gov/about and /legal/disclaimer)",
+        "quote": "All users of this service agree to hold the General Assembly of Ohio and its agencies harmless from any and all claims, losses, damages, obligations or liabilities, directly or indirectly relating to this service…",
+        "note": "Neither page states any copyright, reuse or automated-access restriction; the disclaimer is liability-only. Statutes are government edicts. Awaiting Jacob's approval.",
+        "source": "https://codes.ohio.gov/legal/disclaimer"
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob",
+      "localCopy": null
+    },
+    {
+      "id": "mass-general-laws",
+      "title": "General Laws of Massachusetts (malegislature.gov)",
+      "publisher": "Massachusetts General Court",
+      "jurisdiction": "MA",
+      "url": "https://malegislature.gov/Laws/GeneralLaws",
+      "covers": [
+        "statutory speed limits (MGL c.90 §17)"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-24",
+        "checkedBy": "Gantry (fetched malegislature.gov/StateHouse/TermsAndConditions)",
+        "quote": "the General Court forbids any copying or use other than \"fair use\" under the Copyright Act. … \"Fair use\" includes activities such as comment, news reporting, criticism, teaching, research, and other related activities.",
+        "note": "The terms do not address the statute text itself (government edicts), nor automated or AI use. A section cite plus a short quote for research is within the fair use it names — but that is a reading for Jacob to approve, not to assume.",
+        "source": "https://malegislature.gov/StateHouse/TermsAndConditions"
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob",
+      "localCopy": null
     }
   ],
   "questions": [
@@ -1016,6 +1056,20 @@
       "codeSites": [
         "cartograph/surfaces.mjs SURFACES.sand.params.reposeDeg (finding: null — [U], the parameter is ABSENT)"
       ]
+    },
+    {
+      "id": "q-statutory-speed-default",
+      "ask": "Where a street carries no posted speed (no OSM maxspeed), what is its STATUTORY prima facie limit, by state and by context (e.g. inside a municipal corporation vs outside) — derived from data the kit holds, and disclosed per span as \"statutory default, not posted\"?",
+      "neededBy": "q-atgrade-expressway-edge (Boz ruling (a), 2026-09-24): the curb/shoulder rule keys on speed; huron US 6 primary-90/91/101/102/103 (incl. the roundabout) carry no maxspeed",
+      "codeSites": [
+        "cartograph/derive.js — the pour drops OSM maxspeed (not carried to the skeleton/ribbons)"
+      ],
+      "tried": [
+        "ORC 4511.21 and MGL c.90 §17 identified; sources registered as CANDIDATE, NOT READ — terms await Jacob"
+      ],
+      "notes": "Context predicate, from data held: huron raw OSM carries the admin boundary of the City of Huron (relation 183378, admin_level 8, border_type city); every vertex of primary-90/91/101/102/103 lies inside it. No statutory value is recorded until the source is approved and read.",
+      "status": "blocked",
+      "blockedBy": "ohio-revised-code, mass-general-laws: terms await Jacob"
     }
   ],
   "findings": [
