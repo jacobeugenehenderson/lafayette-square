@@ -814,6 +814,18 @@ function readSceneOverlay(scene) {
  * proof: without it the next operator re-spends the hours rediscovering that a
  * thing has no source.
  */
+/**
+ * ⭐ ONE ANSWER TO "DOES THIS TOWN HAVE A DEM", for the panel AND the Bake.
+ * ⛔ Exported because serve.js's Bake was asking a DIFFERENT question — `existsSync(
+ * raw/elevation.tif)` — and so skipped terrain for a town whose DEM is a URL list, while
+ * the panel showed the same row FILLED and `bake-terrain` read the list happily. Three
+ * readers, two answers. A second copy of this logic in serve.js would have made it three.
+ */
+export function hasElevationInput(sceneDir) {
+  const row = INTAKE_ROWS.find(r => r.id === 'elevation')
+  return !!row?.present?.(sceneDir)?.present
+}
+
 export const STATUS = {
   FILLED: 'filled',
   EMPTY: 'empty',

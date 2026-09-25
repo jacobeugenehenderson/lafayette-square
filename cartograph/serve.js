@@ -16,7 +16,7 @@ import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
-import { intakeStatusForMap, sampleForRow, addAltSource } from './intake-rows.mjs'
+import { intakeStatusForMap, sampleForRow, addAltSource, hasElevationInput } from './intake-rows.mjs'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
@@ -2458,14 +2458,29 @@ createServer(async (req, res) => {
       const ELEVATION_TIF      = join(bakePaths.raw,   'elevation.tif')
       const SCENE_TERRAIN_JSON = join(bakePaths.clean, 'terrain.json')
       const SCENE_TERRAIN_BIN  = join(bakePaths.clean, 'terrain.bin')
-      if (existsSync(ELEVATION_TIF)) {
+      // ⛔⛔ ASK THE ROW, NOT THE FILENAME. This used to be `existsSync(ELEVATION_TIF)`, so a
+      // town whose DEM is a URL LIST (`raw/elevation-sources.txt`, what fetch-dem.mjs writes
+      // and what bake-terrain range-reads) was skipped as flat — while the intake panel showed
+      // the very same row FILLED. Three readers, two answers, and the operator saw a poured
+      // town rather than a missing input. `hasElevationInput` is now the single answer.
+      // ⚠️ The dirty-graph input stays the .tif path: a list-fed town re-bakes on the list's
+      // own mtime instead, which `runIfDirty` sees through SCENE_TERRAIN_*.
+      const ELEVATION_LIST = join(bakePaths.raw, 'elevation-sources.txt')
+      // ⛔ `mapDataPaths` exposes raw/ and clean/, not the scene dir — so derive it once,
+      // explicitly, rather than through a `?? fallback` that reads as a safety net while
+      // actually being the only path taken.
+      const SCENE_DIR = join(bakePaths.raw, '..')
+      if (hasElevationInput(SCENE_DIR)) {
         await runIfDirty('terrain',
-          [ELEVATION_TIF, bakePaths.boundary, bakePaths.geography, join(here, 'bake-terrain.js')],
+          [existsSync(ELEVATION_TIF) ? ELEVATION_TIF : ELEVATION_LIST,
+           bakePaths.boundary, bakePaths.geography, join(here, 'bake-terrain.js')],
           [SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
           `node bake-terrain.js ${sceneFlag}`,
-          { cwd: here, timeout: 120000 })
+          { cwd: here, timeout: 300000 })
       } else {
-        skipped.push('terrain (no elevation.tif — flat)')
+        // ⛔ NOT a quiet "flat". The elevation row is ABSENT.REFUSES: a flat dune town is a
+        // false map, not a degraded one. Until the pour enforces that, say so loudly here.
+        skipped.push('terrain — NO DEM INPUT (no elevation.tif, no elevation/*.tif, no elevation-sources.txt). This town will render FLAT. ▶ node cartograph/fetch-dem.mjs --scene=' + bakeScene)
       }
       // terrain-slab: publish the scene terrain into this Look's slab (the
       // runtime fetches /baked/<look>/terrain.* by lookId; writeIfChanged keeps
