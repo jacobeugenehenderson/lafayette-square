@@ -156,9 +156,9 @@ function main() {
   const unflagged = (ribbons.streets || []).filter(st =>
     !st.synthetic && st.highway && new RegExp(`^${st.highway} \\d+$`).test(st.name || ''))
   if (unflagged.length) {
-    console.error(`[bake-labels] ⛔ ${unflagged.length} street(s) carry a skeleton-made name but no \`synthetic\` flag — ribbons.json predates the skeleton for ${scene}:`)
+    console.error(`[bake-labels] ⛔ ${unflagged.length} street(s) carry a skeleton-made name but no \`synthetic\` flag — ${scene}'s skeleton.json predates the \`synthetic\` stamp, and its ribbons inherit that:`)
     console.error(`  ${unflagged.slice(0, 6).map(st => st.name).join(' · ')}${unflagged.length > 6 ? ' …' : ''}`)
-    console.error(`  ▶ Pour the town (pipeline.js + promote-ribbons.js; the Bake button skips both off LS) after skeleton.js --scene=${scene}. Nothing was written.`)
+    console.error(`  ▶ Re-run skeleton.js --scene=${scene}, then pour (the Bake runs pipeline + promote-ribbons for every OSM town; it never re-runs skeleton.js). Nothing was written.`)
     process.exit(1)
   }
   const labels = computeLabels(ribbons, keepPoint)
