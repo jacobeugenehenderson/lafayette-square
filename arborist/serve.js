@@ -1062,20 +1062,6 @@ const server = createServer(async (req, res) => {
       return notImplemented(res, 'DELETE /species/:id')
     }
 
-    // GET /inventory — species histogram from LS's authored park census
-    if (req.method === 'GET' && path === '/inventory') {
-      const trees = readJsonOrNull(join(ROOT, 'cartograph', 'data', 'lafayette-square', 'clean', 'park_census.json'))?.trees || []
-      const counts = {}
-      for (const t of trees) {
-        const k = t.species || 'unknown'
-        counts[k] = (counts[k] || 0) + 1
-      }
-      const sorted = Object.entries(counts)
-        .map(([species, count]) => ({ species, count }))
-        .sort((a, b) => b.count - a.count)
-      return jsonRes(res, 200, { total: trees.length, species: sorted })
-    }
-
     // GET /coverage — roster-anchored "have vs need" join (Brief 24, Cadastre).
     // READ-ONLY. The join itself lives in `roster-coverage.js` (lifted into a
     // shared module for Brief 26, AC5). Each species row carries the Brief 24
