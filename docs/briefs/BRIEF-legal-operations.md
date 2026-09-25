@@ -1,13 +1,13 @@
 # BRIEF — Legal & Compliance in Operations, Phase 1: the records and the coverage matrix
 
 <!-- BRIEF-STATE
-status: Phase 1 DEPLOYED 2026-09-25 (records live, Worker deployed); Phase 2 BUILT (theward-operations 4cee3e1), awaiting Jacob's word to deploy. Jacob's rulings 2026-09-25: all documents stay Draft; Host's Agreement + Host Schedule are the Host instrument (no separate Platform License); Cary and commerce are explicit Ward configuration; no [U] resolved without counsel
+status: Phase 1 DEPLOYED 2026-09-25 (records live, Worker deployed); Phase 2 DEPLOYED 2026-09-25 (theward-operations 6ab366d, Worker 127cbe53); Phase 3 needs its own go. Jacob's rulings 2026-09-25: all documents stay Draft; Host's Agreement + Host Schedule are the Host instrument (no separate Platform License); Cary and commerce are explicit Ward configuration; no [U] resolved without counsel
 dispatched: 2026-09-25, to Ledger (theward-operations 0498e1e)
 written: 2026-09-25
 evict-when: Operations holds every existing legal document as a managed record and every jurisdiction as a managed object, and computes each Ward's coverage (Covered / Review / Uncovered) from the Ward's own configuration; Jacob has reviewed the matrix. Phases 2–3 get their own go.
 -->
 
-**Status:** Phase 1 deployed by Ledger 2026-09-25 (`theward-operations` `0498e1e`, `b93aef7` services); Phase 2 built (`4cee3e1`), awaiting the word to deploy. Matrix: `node scripts/legal-matrix.mjs --remote` there. Boz drafted it 2026-09-25.
+**Status:** Phase 1 deployed by Ledger 2026-09-25 (`theward-operations` `0498e1e`, `b93aef7` services); Phase 2 deployed (`6ab366d`); Phase 3 needs its own go. Matrix: `node scripts/legal-matrix.mjs --remote` there. Boz drafted it 2026-09-25.
 
 ## Who you are, and the bounds
 
