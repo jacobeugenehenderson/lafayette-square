@@ -291,10 +291,22 @@ export function faceFromArc(arc, R, center) {
   if (!Array.isArray(arc) || arc.length < 2) return { ring: null, why: 'fewer than 2 points' }
   const A = arc[0], B = arc[arc.length - 1]
   if (!onRect(A, R) || !onRect(B, R)) return { ring: null, why: 'an end does not lie on the bb, so it cannot divide the square' }
-  const cands = [+1, -1].map(dir => arc.concat(rectWalk(B, A, R, dir)))
-  const water = cands.filter(r => !pointInRing(center, r))
-  if (water.length !== 1) return { ring: null, why: 'the disc centre does not separate the two sides' }
-  return { ring: water[0], why: null }
+  const cands = [+1, -1].map(dir => ({ dir, ring: arc.concat(rectWalk(B, A, R, dir)) }))
+  const water = cands.filter(c => !pointInRing(center, c.ring))
+  if (water.length !== 1) return { ring: null, why: 'the disc centre does not separate the two sides', how: null }
+  // ⭐⭐ SAY WHICH SIDE WAS CHOSEN AND ON WHAT EVIDENCE. "The town's centre is land" is an
+  // ASSUMPTION, and a peninsula or a hook town is exactly where a centre can sit oddly — on
+  // the wrong side of a spit, or in a harbour the land wraps around. It is acceptable only
+  // because the buildings guard downstream refuses a wrong side loudly, and it is only
+  // DEBUGGABLE if the choice is visible. ⛔ A silent side-pick is how an inverted coast
+  // becomes a plausible map.
+  const km2 = (r) => (Math.abs(ringMeanWidth(r) * perimeterOf(r)) / 1e6).toFixed(2)
+  const other = cands.find(c => c !== water[0])
+  return {
+    ring: water[0].ring,
+    why: null,
+    how: `water is the bb-walk ${water[0].dir > 0 ? '+1' : '−1'} side (${km2(water[0].ring)} km²) because the town centre (${center[0].toFixed(0)}, ${center[1].toFixed(0)}) lies in the OTHER side (${km2(other.ring)} km²)`,
+  }
 }
 
 export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
@@ -399,8 +411,9 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
         let made = 0
         for (const run of runs) {
           if (run.length < 2) continue
-          const { ring: w, why } = faceFromArc(run, R, center)
+          const { ring: w, why, how } = faceFromArc(run, R, center)
           if (!w) { report.push(`      ⚠️ arc of ${run.length} pts cannot close: ${why}`); continue }
+          report.push(`      ⭐ side: ${how}`)
           rings.push(w)
           meta.push({ subtype: f.tags?.water || null, name: f.tags?.name || null })
           made++
@@ -462,10 +475,12 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
       report.push(`    ⛔ coast "${name}" ENDS INSIDE the bb — the fetch stops mid-coast, so it cannot close. Not applied.`)
       continue
     }
-    const cands = [+1, -1].map(dir => inside.concat(rectWalk(B, A, R, dir)))
-    const water = cands.filter(r => !pointInRing(center, r))
-    if (water.length !== 1) { report.push(`    ⛔ coast "${name}": the disc centre does not separate the two sides — not applied`); continue }
-    rings.push(water[0])
+    // ⛔ ONE RULE, ONE SITE. This used to inline the same candidate-and-centre test that
+    // `faceFromArc` performs, so the open and closed paths could drift apart on the single
+    // question that decides whether a town's sea is the sea or its land.
+    const { ring: waterRing, why: noSide, how } = faceFromArc(inside, R, center)
+    if (!waterRing) { report.push(`    ⛔ coast "${name}": ${noSide} — not applied`); continue }
+    rings.push(waterRing)
     // ⛔ SAME STATEMENT SITE AS THE RING IT DESCRIBES. The alignment is local and visible
     // here; recovering it later by index across a freeze boundary is the positional coupling
     // this project has already lost twice.
@@ -473,7 +488,8 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
     // ⭐ The ARC, not the ring — the open polyline ① expands at ε. Its two ends sit ON the bb
     // edge, so the ink it becomes is cut by the frame rather than stopping in mid-air.
     arcs.push(inside)
-    report.push(`    coast "${name}" — ${inside.length} pts in the bb, closed on the bb edge → ${water[0].length}-pt water ring, combined with the ink and excluded from the bb`)
+    report.push(`    coast "${name}" — ${inside.length} pts in the bb, closed on the bb edge → ${waterRing.length}-pt water ring, combined with the ink and excluded from the bb`)
+    report.push(`      ⭐ side: ${how}`)
   }
 
   if (interior) report.push(`    ⚠️ ${interior} water bod${interior === 1 ? 'y lies' : 'ies lie'} wholly inside the disc — a pond is not a coast, not applied`)

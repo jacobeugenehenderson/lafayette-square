@@ -107,5 +107,31 @@ const asFeat = (pts) => ({ coords: pts.map(([x, z]) => ({ x, z })), tags: { natu
       `and it SAYS so rather than passing quietly`)
 }
 
+// ── ④ THE SIDE IS AN ASSUMPTION, AND THE GUARD IS WHAT MAKES IT SAFE ───────────
+// ⛔ "The town's centre is land" is an ASSUMPTION (Boz, 2026-09-25). A peninsula or a hook
+// town is exactly where a centre can sit oddly — on the wrong side of a spit, or inside a
+// harbour the land wraps around. It is acceptable ONLY because the buildings guard refuses a
+// wrong side loudly, so this asserts that guard rather than the assumption.
+// ⭐ MUTATION: invert the side test in `faceFromArc` (`!pointInRing` → `pointInRing`) and the
+// second assertion below must go RED — the sea becomes the land, every building lands in the
+// water, and the majority rule must refuse the whole coast.
+{
+  const R = 4000
+  const bb = { x0: -R, x1: R, z0: -R, z1: R }
+  const line = []
+  for (let x = -6000; x <= 6000; x += 250) line.push([x, 1500])   // a straight shore, land to the south
+  const feat = { tags: { natural: 'coastline' }, isClosed: false,
+                 coords: line.map(([x, z]) => ({ x, z })) }
+  // 200 buildings on the LAND side (z < 1500), where the town centre is
+  const buildings = []
+  for (let i = 0; i < 200; i++) buildings.push({ coords: [{ x: -3000 + i * 30, z: -500 }] })
+  const out = coastRings({ ground: { natural: [feat] }, buildings, center: [0, -1000], discR: R * 0.9, bb })
+
+  say((out.rings || []).length === 1, `a straight shore with the town to its south yields 1 water face — got ${(out.rings || []).length}`)
+  say((out.report || []).some(l => /⭐ side:/.test(l)), `and the pour SAYS which side it chose and why`)
+  const wetLine = (out.report || []).find(l => /footprint\(s\)/.test(l)) || ''
+  say(!/MAJORITY/.test(wetLine), `no building is in the water, so nothing is refused — ${wetLine.trim() || '(no footprint line)'}`)
+}
+
 console.log(`\n${failed ? '⛔ RED' : '✅ GREEN — a shore is welded once, and a ring that bounds nothing is not a face.'}`)
 process.exit(failed ? 1 : 0)
