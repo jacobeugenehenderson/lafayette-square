@@ -168,6 +168,11 @@ export function parcelLandUseReport(scene, stats) {
     const pct = (100 * s.underived / s.total).toFixed(1)
     lines.push(`   ${jur.padEnd(7)} ${String(s.total).padStart(6)} parcels · ${String(s.total - s.underived).padStart(6)} classified · ${String(s.underived).padStart(6)} UNREADABLE (${pct}%)`)
   }
+  // Wells whose codes are NOT St. Louis's, by their declared format.
+  for (const [fmt, s] of Object.entries(stats.formats || {})) {
+    const pct = (100 * s.underived / s.total).toFixed(1)
+    lines.push(`   ${fmt} ${String(s.total).padStart(6)} parcels · ${String(s.total - s.underived).padStart(6)} classified · ${String(s.underived).padStart(6)} UNREADABLE (${pct}%)`)
+  }
   if (stats.county?.total && !stats.countyTableSize) {
     lines.push('')
     lines.push(`   ⛔ County parcels are present but county-land-use-codes.csv is MISSING at`)
@@ -182,4 +187,24 @@ export function parcelLandUseReport(scene, stats) {
     lines.push(`      cartograph/parcel-landuse.mjs if it is a real land use.`)
   }
   return lines.join('\n')
+}
+
+// Land-use vocabulary → structural use, from ENGLISH TEXT rather than a code range.
+// ⭐ Shared on purpose: the decode table's `bucket` column (St. Louis) and a
+// self-describing code (Ohio's `500: Res-Vacant Land`), read by bake-content.js AND
+// derive.js, so the two land-use readings of one parcel cannot disagree. One classifier, so a town
+// whose codes explain themselves needs no per-state parser and no acquisition step.
+// ⛔ VACANT IS TESTED FIRST. "Res-Vacant Land" contains both words, and a vacant lot
+// reported as a house is the same confident-wrong failure the ranges above produced.
+export function classifyUseFromText(text) {
+  const t = String(text || '')
+  if (!t.trim()) return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
+  if (/vacant/i.test(t)) return { use: 'vacant', use_subtype: null, use_confidence: 'medium' }
+  if (/industrial|utility|warehouse|manufactur/i.test(t)) return { use: 'industrial', use_subtype: null, use_confidence: 'medium' }
+  if (/exempt|exm|church|school|municipal|government|public|cemetery|hospital/i.test(t)) return { use: 'institutional', use_subtype: null, use_confidence: 'medium' }
+  if (/commercial|retail|office|com-/i.test(t)) return { use: 'commercial', use_subtype: null, use_confidence: 'medium' }
+  if (/single|1-family|one family/i.test(t)) return { use: 'residential', use_subtype: 'single_family', use_confidence: 'medium' }
+  if (/multi|duplex|apartment|two family|2-family/i.test(t)) return { use: 'residential', use_subtype: 'multi_family', use_confidence: 'medium' }
+  if (/^\s*res\b|residential|dwelling|farm|agricultur/i.test(t)) return { use: 'residential', use_subtype: null, use_confidence: 'low' }
+  return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
 }

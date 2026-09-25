@@ -47,6 +47,7 @@ import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { readSources, undeclaredMessage, PARCEL_FIELDS } from './sources.js'
+import { classifyUseFromText } from './parcel-landuse.mjs'
 import { classifyZoning } from '../src/tokens/categories.js'
 import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { rankRoster } from './prominence.mjs'
@@ -463,24 +464,7 @@ function classifyUse(parcel, luMap) {
   return classifyUseFromText((luMap.get(c) || {}).bucket || '')
 }
 
-// Land-use vocabulary → structural use, from ENGLISH TEXT rather than a code range.
-// ⭐ Shared by two callers on purpose: the decode table's `bucket` column (St. Louis)
-// and a self-describing code (Ohio's `500: Res-Vacant Land`). One classifier, so a town
-// whose codes explain themselves needs no per-state parser and no acquisition step.
-// ⛔ VACANT IS TESTED FIRST. "Res-Vacant Land" contains both words, and a vacant lot
-// reported as a house is the same confident-wrong failure the ranges above produced.
-function classifyUseFromText(text) {
-  const t = String(text || '')
-  if (!t.trim()) return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
-  if (/vacant/i.test(t)) return { use: 'vacant', use_subtype: null, use_confidence: 'medium' }
-  if (/industrial|utility|warehouse|manufactur/i.test(t)) return { use: 'industrial', use_subtype: null, use_confidence: 'medium' }
-  if (/exempt|exm|church|school|municipal|government|public|cemetery|hospital/i.test(t)) return { use: 'institutional', use_subtype: null, use_confidence: 'medium' }
-  if (/commercial|retail|office|com-/i.test(t)) return { use: 'commercial', use_subtype: null, use_confidence: 'medium' }
-  if (/single|1-family|one family/i.test(t)) return { use: 'residential', use_subtype: 'single_family', use_confidence: 'medium' }
-  if (/multi|duplex|apartment|two family|2-family/i.test(t)) return { use: 'residential', use_subtype: 'multi_family', use_confidence: 'medium' }
-  if (/^\s*res\b|residential|dwelling|farm|agricultur/i.test(t)) return { use: 'residential', use_subtype: null, use_confidence: 'low' }
-  return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
-}
+// `classifyUseFromText` lives in parcel-landuse.mjs — derive.js reads the same vocabulary.
 
 // Refine the parcel-code use with the building's hosted OSM listing — the
 // original join "refined by OSM tags for named institutions and by spatial

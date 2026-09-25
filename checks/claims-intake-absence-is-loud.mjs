@@ -255,7 +255,7 @@ const MUTATIONS = [
   { name: 'node-poi/tags-kept-at-ingest',
     apply: (S) => ({ ...S, fetchJs: S.fetchJs.replace('if (el.tags) taggedNodes.push(el)', '// discarded') }) },
   { name: 'node-poi/consumed-by-bake',
-    apply: (S) => ({ ...S, bakeContent: S.bakeContent.replace('Array.isArray(j.pois)', 'false') }) },
+    apply: (S) => ({ ...S, bakeContent: S.bakeContent.replaceAll('Array.isArray(j.pois)', 'false') }) },   // ALL: it appears twice, and replacing one left the check green
   { name: 'assessor/no-hardcoded-filenames',
     apply: (S) => ({ ...S, bakeContent: S.bakeContent.replace('function loadParcels(scene) {', "function loadParcels(scene) {\n  for (const [file, jur] of [['stl_parcels.json', 'city']]) {}") }) },
   { name: 'assessor/no-hardcoded-filenames',

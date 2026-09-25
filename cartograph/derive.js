@@ -29,8 +29,8 @@ import { expresswaySpeeds } from './speedContext.mjs'
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
-import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
-import { readSources } from './sources.js'
+import { classifyParcelLandUse, classifyUseFromText, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
+import { readSources, undeclaredMessage } from './sources.js'
 import { coastRings } from './coastline.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
@@ -730,10 +730,9 @@ function detectDividedStreets(streets) {
 // PARCEL, not a bare code — the code alone is ambiguous across the two assessor
 // taxonomies) and is threaded in rather than imported so the pour-time tally in
 // `luStats` counts every parcel exactly once, from one place.
-function clipParcelsToRoundedBlocks(parcels, parkParcelIds, roundedBlocks, classify) {
+function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
   const result = []
   for (const p of parcels) {
-    if (parkParcelIds.has(p.handle)) continue
     if (!p.rings?.length || p.rings[0].length < 3) continue
 
     const parcelPath = p.rings[0].map(pt => toClipper(pt[0], pt[1]))
@@ -1111,39 +1110,37 @@ export function deriveLayers(highways) {
   // scene reads its own, and LS's file sits inside the reproject-on-recenter
   // safety net alongside osm/msbf. (bake-content reads the same location.)
   console.log('  [1/4] Loading parcels...')
-  // ⭐ BOTH assessor files, each tagged with its jurisdiction. This read was
-  // stl_parcels.json ONLY, and the comment below it asserted "St. Louis
-  // City/County" — the author believed both were covered. They were not:
-  // hipointe-demun spans the City/County line, DeMun is in the County, and its
-  // 14,597 County parcels sat on disk unopened while that half of the
-  // neighborhood took derive.js's invented default (BRIEF-land-use-derivation).
-  //
-  // ⚠️ Jurisdiction is carried, not inferred, because the two taxonomies are
-  // NOT compatible — City codes are 4-digit, County 3-digit, and every County
-  // code falls through the City ranges. Unioning the files without the tag maps
-  // the whole County half to a confident wrong answer, which is worse than not
-  // reading it. `parcel-landuse.mjs` owns that fact.
-  //
-  // A region with no wired assessor (Altadena → LA) has neither file — EXPECTED
-  // degradation (no addresses), NOT a fatal error. Missing/unreadable → that
-  // jurisdiction contributes nothing; the scene still pours. (Was an unguarded
-  // read that crashed the pour for every non-STL hood → map.json never
-  // regenerated.) bake-content.js:141 reads the same pair from the same place.
+  // ⭐ THE TOWN'S DECLARED WELLS (`sources.json`), each tagged with its jurisdiction AND
+  // its code format. ⛔ Until 2026-09-24 this walked St. Louis's two filenames, so every
+  // other town poured as if it had no parcels (huron's oh_parcels.json sat unread).
+  // ⚠️ Jurisdiction is carried, not inferred: St. Louis City and County taxonomies are
+  // NOT compatible (`parcel-landuse.mjs` owns that fact), and a town's codes are read
+  // only in the format it DECLARES — never in St. Louis's by default.
   const parcels = []
-  for (const [file, jurisdiction] of [['stl_parcels.json', 'city'], ['stlco_parcels.json', 'county']]) {
-    let parcelData = { parcels: {} }
-    try { parcelData = JSON.parse(readFileSync(join(RAW_DIR, file), 'utf-8')) }
-    catch { continue }
-    for (const p of Object.values(parcelData.parcels || {})) parcels.push({ ...p, jurisdiction })
+  const declared = readSources(SCENE)
+  if (!declared.declared) {
+    console.warn('\n' + undeclaredMessage(SCENE, declared.path) + '\n')
+  } else if (!declared.parcels.length) {
+    console.log(`    DECLARED-NONE — ${declared.absentReason}`)
+  } else {
+    for (const decl of declared.parcels) {
+      const f = join(RAW_DIR, decl.file)
+      // ⛔ A declared well with no file is an error, not a skip (bake-content.js agrees).
+      if (!existsSync(f)) throw new Error(`[parcels] ${SCENE} declares '${decl.id}' → raw/${decl.file}, which is not there. Acquire it: CARTOGRAPH_SCENE=${SCENE} node cartograph/fetch-parcels.mjs`)
+      const parcelData = JSON.parse(readFileSync(f, 'utf-8'))
+      for (const p of Object.values(parcelData.parcels || {})) {
+        parcels.push({ ...p, jurisdiction: decl.jurisdiction, land_use_code_format: decl.land_use_code_format || null })
+      }
+    }
   }
   const countyCodeTable = loadCountyCodeTable(SCENE)
-  const cityN = parcels.filter(p => p.jurisdiction === 'city').length
-  if (!parcels.length) console.log('    (no parcels for this region — St. Louis City/County only)')
-  else console.log(`    ${parcels.length} parcels (${cityN} city + ${parcels.length - cityN} county)`)
+  const byWell = {}
+  for (const p of parcels) { const k = `${p.jurisdiction}/${p.land_use_code_format}`; byWell[k] = (byWell[k] || 0) + 1 }
+  console.log(`    ${parcels.length} parcels${parcels.length ? ` (${Object.entries(byWell).map(([k, n]) => `${n} ${k}`).join(' + ')})` : ''}`)
 
   // The parcel-code join, reported at pour time so a failed one is visible here
   // rather than weeks later on the render (`lu-policy.mjs` report(), same intent).
-  const luStats = { city: { total: 0, underived: 0 }, county: { total: 0, underived: 0 }, countyTableSize: countyCodeTable.size }
+  const luStats = { city: { total: 0, underived: 0 }, county: { total: 0, underived: 0 }, formats: {}, countyTableSize: countyCodeTable.size }
   // Memoized per PARCEL, not per call. Three separate sites classify the same
   // parcels (the parcel faces, the block dominant-use vote, the face-fill vote),
   // so an un-memoized tally counts calls and reports several times more parcels
@@ -1154,34 +1151,34 @@ export function deriveLayers(highways) {
     if (!parcel) return UNDERIVED
     if (luCache.has(parcel)) return luCache.get(parcel)
     const jur = parcel.jurisdiction
+    const fmt = parcel.land_use_code_format
     let lu = null
-    if (jur) {
+    if (fmt === 'stl-assessor-numeric') {
+      // St. Louis's City / County tables — only for a well that declares St. Louis codes.
       lu = classifyParcelLandUse(parcel.land_use_code, jur, countyCodeTable)
       luStats[jur].total++
       if (!lu) luStats[jur].underived++
+    } else {
+      // A self-describing code ("500: Res-Vacant Land") is read as text, with the SAME
+      // classifier bake-content uses. Any other or undeclared format is UNREADABLE and
+      // counted as such, never guessed in another town's taxonomy.
+      if (fmt === 'self-describing' && parcel.land_use_code != null) {
+        const u = classifyUseFromText(String(parcel.land_use_code)).use
+        lu = u === 'unknown' ? null : u
+      }
+      const k = fmt || '(undeclared format)'
+      const st = luStats.formats[k] || (luStats.formats[k] = { total: 0, underived: 0 })
+      st.total++
+      if (!lu) st.underived++
     }
     const out = lu || UNDERIVED
     luCache.set(parcel, out)
     return out
   }
 
-  // Find the park parcel(s) — exclude parcels with park/recreation land use
-  // near the park center, and use the OSM park polygon instead
-  const PARK_CENTER = { x: -15, z: -15 }
-  const PARK_LAND_USE_CODES = new Set([4800, 4810, 4820, 4900])  // park/recreation codes
-  const parkParcelIds = new Set()
-  for (const parcel of parcels) {
-    if (!parcel.centroid) continue
-    const dx = parcel.centroid[0] - PARK_CENTER.x
-    const dz = parcel.centroid[1] - PARK_CENTER.z
-    const dist = Math.sqrt(dx * dx + dz * dz)
-    // Only exclude if land use is actually park/recreation
-    if (dist < 250 && PARK_LAND_USE_CODES.has(parcel.land_use_code)) {
-      parkParcelIds.add(parcel.handle)
-    }
-  }
-
-  console.log(`    Excluding ${parkParcelIds.size} park parcel(s)`)
+  // ⛔ No park-parcel exclusion. It tested LS's park point (-15,-15) and St. Louis codes
+  // 4800–4900 on EVERY town's parcels, and matched nothing even on LS (its 65 parcels
+  // within 250 m carry none of those codes). Deleted 2026-09-24 (bleed site 22).
 
   // Load OSM data (for park polygon fallback)
   const osmData = JSON.parse(readFileSync(join(RAW_DIR, 'osm.json'), 'utf-8'))
@@ -1599,7 +1596,6 @@ export function deriveLayers(highways) {
   // Assign parcels to faces — a parcel contributes to every face it overlaps
   const faceParcelMap = new Map()
   for (const parcel of parcels) {
-    if (parkParcelIds.has(parcel.handle)) continue
     if (!parcel.centroid && !parcel.rings?.[0]) continue
     const assignedFaces = new Set()
     // Check centroid
@@ -5689,7 +5685,7 @@ export function deriveLayers(highways) {
     lot:            toFeats(lotPaths),                                  // block minus sidewalk strips
     parkSidewalk:   parkSidewalkFeats,
     park:           parkFeats,
-    parcel:         clipParcelsToRoundedBlocks(parcels, parkParcelIds, allBlockPaths, classifyLandUse),
+    parcel:         clipParcelsToRoundedBlocks(parcels, allBlockPaths, classifyLandUse),
     alley:          toFeats(alleyUnion),
     centerStripe:   stripeMeta,
     bikeLane:       bikeLanes,
