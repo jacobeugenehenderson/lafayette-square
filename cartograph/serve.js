@@ -17,6 +17,7 @@ import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
 import { intakeStatusForMap, sampleForRow, addAltSource, hasElevationInput } from './intake-rows.mjs'
+import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
@@ -216,7 +217,6 @@ const MEASUREMENTS = DEFAULT_PATHS.measurements
 const CENTERLINES  = DEFAULT_PATHS.centerlines
 const SKELETON     = DEFAULT_PATHS.skeleton
 const OVERLAY      = DEFAULT_PATHS.overlay
-const PARCEL_FILE = join(import.meta.dirname, '..', 'scripts', 'raw', 'stl_parcels.json')
 
 // mtime-based dirty check used by the bake chain. Returns true if any output
 // is missing or any input is newer than the oldest output. Missing inputs
@@ -1148,11 +1148,13 @@ function analyzeMarkers() {
   const bbox = strokeBBox(strokes)
   const result = { strokes: strokes.length, bbox }
 
-  // Find parcels overlapping the marker bbox
-  if (existsSync(PARCEL_FILE)) {
-    const parcelData = JSON.parse(readFileSync(PARCEL_FILE, 'utf-8'))
+  // Find parcels overlapping the marker bbox — from the scene's DECLARED wells.
+  // ⛔ This read `scripts/raw/stl_parcels.json`, which has not existed since LS's copy
+  // moved into its scene dir (2026-07-13), so the parcel half silently did nothing.
+  const parcelFiles = declaredParcelPaths(DEFAULT_MAP).filter(existsSync)
+  if (parcelFiles.length) {
     const overlapping = []
-    for (const p of parcelData.parcels) {
+    for (const p of parcelFiles.flatMap(f => Object.values(JSON.parse(readFileSync(f, 'utf-8')).parcels || {}))) {
       const ring = p.rings?.[0]
       if (!ring || ring.length < 3) continue
       const xs = ring.map(pt => pt[0]), zs = ring.map(pt => pt[1])
@@ -1578,7 +1580,6 @@ createServer(async (req, res) => {
         }
         const geo = writeGeographyFromBbox(scene, bbox)
         const here = import.meta.dirname
-        const scriptsDir = join(here, '..', 'scripts')
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
         const raw = mapRawDir(scene)
         mkdirSync(raw, { recursive: true })
@@ -1604,19 +1605,25 @@ createServer(async (req, res) => {
         sources.buildings = bR.code === 0
           ? { ok: true, count: countJson(join(raw, 'msbf.json')) }
           : { ok: false, error: lastLine(bR) }
-        // ── Parcels (assessor — region-specific authority; the wired wells are
-        //    St. Louis City + County. A region with no wired authority returns
-        //    empty — that's EXPECTED degradation, not an error, and the scene
-        //    still pours: addresses are absent, the per-source status says so. ──
-        await runCapture('python3 03-fetch-stl-parcels.py', { cwd: scriptsDir, env, timeout: 180000 })
-        await runCapture('python3 03b-fetch-stlco-parcels.py', { cwd: scriptsDir, env, timeout: 180000 })
-        const pCount = countJson(join(raw, 'stl_parcels.json')) + countJson(join(raw, 'stlco_parcels.json'))
-        // 0 parcels = EXPECTED degradation when no assessor authority is wired
-        // for the region (the wells are St. Louis City + County). The scene still
-        // pours — addresses are just absent — so this is a soft note, not a fault.
-        sources.parcels = pCount > 0
-          ? { ok: true, count: pCount }
-          : { ok: false, count: 0, note: 'no parcel authority for this region (St. Louis City/County only)' }
+        // ── Parcels — the TOWN'S DECLARED wells (`sources.json`), never a named city's.
+        //    ⛔ This ran the two St. Louis python scripts until 2026-09-24, so every other
+        //    town fetched nothing and printed "St. Louis City/County only".
+        //    Three outcomes, each said differently: fetched · declared-none (an honest
+        //    zero, with the town's reason) · UNDECLARED (nobody has confirmed a well yet —
+        //    the normal state of a fresh town, and it must not read as "no assessor").
+        const decl = readSources(scene)
+        if (!decl.declared) {
+          sources.parcels = { ok: false, count: 0, undeclared: true,
+            note: 'parcels not declared yet — confirm this town\'s assessor well into sources.json' }
+        } else if (!decl.parcels.length) {
+          sources.parcels = { ok: true, count: 0, declaredNone: decl.absentReason }
+        } else {
+          const pR = await runCapture('node fetch-parcels.mjs', { cwd: here, env, timeout: 300000 })
+          const pCount = declaredParcelPaths(scene).reduce((n, p) => n + countJson(p), 0)
+          sources.parcels = pR.code === 0
+            ? { ok: true, count: pCount }
+            : { ok: false, count: pCount, error: lastLine(pR) }
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox, sources }))
       } catch (err) {
@@ -2563,7 +2570,7 @@ createServer(async (req, res) => {
         const CONTENT_DIR = join(bakePaths.raw, '..', 'content')
         await runIfDirty('content',
           [SCENE_BAKED_BUILDINGS, MAP_JSON,
-           join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'stl_parcels.json'), join(bakePaths.raw, 'stlco_parcels.json'),
+           join(bakePaths.raw, 'osm.json'), ...declaredParcelPaths(bakeScene), sourcesPath(bakeScene),
            join(CONTENT_DIR, 'nr-inventory.json'), join(CONTENT_DIR, 'county-land-use-codes.csv'),
            join(CONTENT_DIR, 'listings.overrides.json'), join(CONTENT_DIR, 'roster.overrides.json'),
            join(here, 'bake-content.js')],

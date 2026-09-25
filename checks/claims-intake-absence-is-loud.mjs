@@ -71,7 +71,27 @@ function loadSources() {
     bakeContent: read('cartograph/bake-content.js'),
     placeCard: read('src/components/PlaceCard.jsx'),
     fetchJs: read('cartograph/fetch.js'),
+    consumers: readConsumers(),
   }
+}
+
+/**
+ * ⭐ EVERY code file that could consume a parcel well — not a list of the ones we know
+ * about. Until 2026-09-24 the assessor assertion read `bake-content.js` alone, and the
+ * identical St. Louis tuple sat in `derive.js` and `serve.js` with this check green.
+ */
+function readConsumers() {
+  const out = {}
+  const walk = (rel) => {
+    for (const d of readdirSync(join(ROOT, rel), { withFileTypes: true })) {
+      if (['_archive', 'data', 'node_modules'].includes(d.name)) continue
+      const r = `${rel}/${d.name}`
+      if (d.isDirectory()) walk(r)
+      else if (/\.(m?js|jsx)$/.test(d.name)) out[r] = read(r)
+    }
+  }
+  walk('cartograph'); walk('src')
+  return out
 }
 
 /**
@@ -164,9 +184,11 @@ function run(S) {
   // ── 5. The assessor path is declared, not hardcoded ────────────────────────────
   // ⛔ `INTAKE-CATALOGUE §0`'s LS-bleed in the acquisition path: every non-St-Louis town
   // printed "missing stl_parcels.json" and matched 0 parcels.
+  const hardcoded = Object.entries({ ...S.consumers, 'cartograph/bake-content.js': S.bakeContent })
+    .filter(([, src]) => /['"`](stl|stlco)_parcels\.json['"`]/.test(codeLines(src))).map(([f]) => f)
   assert('assessor/no-hardcoded-filenames',
-    !/\['stl_parcels\.json',\s*'city'\]/.test(codeLines(S.bakeContent)),
-    'bake-content.js#loadParcels still walks hardcoded St. Louis filenames')
+    hardcoded.length === 0,
+    `a St. Louis parcel filename is hardcoded in code, not read from sources.json: ${hardcoded.join(', ')}`)
   assert('assessor/reads-the-declaration',
     /readSources\(scene\)/.test(S.bakeContent) && existsSync(join(ROOT, 'cartograph/sources.js')),
     'bake-content.js does not read a per-town sources declaration')
@@ -236,6 +258,8 @@ const MUTATIONS = [
     apply: (S) => ({ ...S, bakeContent: S.bakeContent.replace('Array.isArray(j.pois)', 'false') }) },
   { name: 'assessor/no-hardcoded-filenames',
     apply: (S) => ({ ...S, bakeContent: S.bakeContent.replace('function loadParcels(scene) {', "function loadParcels(scene) {\n  for (const [file, jur] of [['stl_parcels.json', 'city']]) {}") }) },
+  { name: 'assessor/no-hardcoded-filenames',
+    apply: (S) => ({ ...S, consumers: { ...S.consumers, 'cartograph/serve.js': S.consumers['cartograph/serve.js'] + "\nconst P = join(raw, 'stl_parcels.json')" } }) },
   { name: 'assessor/reads-the-declaration',
     apply: (S) => ({ ...S, bakeContent: S.bakeContent.replace(/readSources\(scene\)/g, 'noSources(scene)') }) },
   { name: 'frame-alignment/zero-match-throws',

@@ -27,6 +27,7 @@ import { join } from 'path'
 import { wgs84ToLocal, mapRawDir, SCENE } from './config.js'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
+import { declaredParcelPaths } from './sources.js'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
@@ -74,8 +75,10 @@ const projectXZ = (lon, lat) => {
   const [x, z] = wgs84ToLocal(lon, lat)
   return [Math.round(x * 100) / 100, Math.round(z * 100) / 100]
 }
-for (const name of ['stl_parcels.json', 'stlco_parcels.json']) {
-  const path = join(mapRawDir(SCENE), name)
+// ⭐ The town's DECLARED wells (`sources.json`). This walked St. Louis's two filenames
+// until 2026-09-24, so a re-center left any other town's parcels in the old frame.
+for (const path of declaredParcelPaths(SCENE)) {
+  const name = path.split('/').pop()
   if (!existsSync(path)) continue
   const data = JSON.parse(readFileSync(path, 'utf8'))
   let n = 0, stale = 0
@@ -88,7 +91,7 @@ for (const name of ['stl_parcels.json', 'stlco_parcels.json']) {
     }
   }
   const wrote = writeIfChanged(path, JSON.stringify(data, null, 2))
-  const warn = stale ? `, ⚠️ ${stale} MISSING centroid_ll (pre-fix fetch — re-run scripts/03*)` : ''
+  const warn = stale ? `, ⚠️ ${stale} MISSING centroid_ll (pre-fix fetch — re-run cartograph/fetch-parcels.mjs)` : ''
   console.log(`[reproject] ${name}: ${n} parcels${warn} → ${wrote ? 'wrote' : 'no change'}`)
 }
 

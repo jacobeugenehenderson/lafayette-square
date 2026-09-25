@@ -44,6 +44,7 @@ import { fileURLToPath } from 'node:url'
 import { mapDir } from './config.js'
 import { jurisdictionForMap } from './intake-jurisdiction.mjs'
 import { licencesForArtifact } from './overture-licence.mjs'
+import { readSources } from './sources.js'
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 
@@ -421,22 +422,29 @@ export const INTAKE_ROWS = [
   {
     id: 'parcels', domain: 'cartograph', tier: 'elective',
     label: 'Assessor parcels',
-    path: 'raw/stl_parcels.json',
+    /**
+     * ⭐ THE TOWN'S DECLARATION ANSWERS, NOT A FILENAME. The wells — endpoint, fields,
+     * output file — are per-town data in `sources.json` (`cartograph/sources.js`), read by
+     * `fetch-parcels.mjs`. ⛔ Until 2026-09-24 this row's path was `raw/stl_parcels.json`,
+     * so every town that was not St. Louis read as missing parcels it had acquired (huron's
+     * `oh_parcels.json`). Filled = every declared file is on disk; declared-none is a
+     * verified absence with the town's own reason; undeclared is empty.
+     * ⚠️ Scope: what an assessor UNIQUELY gives — valuation, zoning, year built, units.
+     * Addresses do not depend on it; they live in OSM `addr:*` (`INTAKE-CATALOGUE §3.2`).
+     */
+    present: (dir, scene) => {
+      const s = readSources(scene)
+      if (!s.declared) return { present: false }
+      if (!s.parcels.length) return { present: false, verifiedAbsent: s.absentReason }
+      const files = s.parcels.map(p => join(dir, 'raw', p.file))
+      if (!files.every(f => existsSync(f) && statSync(f).size > 0)) return { present: false }
+      const st = files.map(f => statSync(f))
+      return { present: true, bytes: st.reduce((n, x) => n + x.size, 0), mtime: Math.max(...st.map(x => x.mtimeMs)) }
+    },
+    path: 'sources.json',
     unlocks: 'land-use codes, zoning, year-built for the content classifier',
     absent: { kind: ABSENT.HONEST_ZERO, note: 'no parcel signal' },
-    // ⚠️ Not universal by nature: every US county has an assessor, most publish
-    // ArcGIS or Socrata. Outside the US this well often does not exist in this
-    // shape — but ADDRESSES do not depend on it, they live in OSM addr:*
-    // (`INTAKE-CATALOGUE §3.2`, the correction, 2026-07-20). Scope this row to
-    // what an assessor UNIQUELY gives — valuation, zoning, year_built, units.
-    //
-    // ⭐ The one row the catalogue explicitly says "needs a per-town endpoint
-    // field" (`§4.2`). The endpoint is per-jurisdiction, so it is per-town data
-    // and lives in the scene overlay's `endpoint`, never here — which is the
-    // kit-global/per-town split doing exactly its job. With an endpoint
-    // recorded the row becomes BUTTON-acquirable; without one it stays a
-    // SOURCE the operator navigates by hand.
-    acquisition: { kind: ACQUIRE.SOURCE, note: 'the county assessor — per-jurisdiction, US-shaped', wantsEndpoint: true },
+    acquisition: { kind: ACQUIRE.BUTTON, note: 'the town\'s declared assessor wells, via fetch-parcels.mjs — per-jurisdiction, US-shaped' },
     doc: 'cartograph/INTAKE.md',
   },
   {
@@ -886,9 +894,13 @@ export function intakeStatusForMap(scene) {
     let present = false
     let bytes = null
     let mtime = null
+    // A row that can tell "searched, none exists" from its own declaration (parcels'
+    // `sources.json`) reports it here; the overlay's mark remains the other way to say it.
+    let declaredAbsent = null
     if (typeof row.present === 'function') {
-      const r = row.present(dir) || {}
+      const r = row.present(dir, scene) || {}
       present = !!r.present; bytes = r.bytes ?? null; mtime = r.mtime ?? null
+      declaredAbsent = r.verifiedAbsent || null
     } else if (existsSync(abs)) {
       try {
         const st = statSync(abs)
@@ -900,7 +912,7 @@ export function intakeStatusForMap(scene) {
 
     const status = present
       ? STATUS.FILLED
-      : (own.verifiedAbsent ? STATUS.VERIFIED_ABSENT : STATUS.EMPTY)
+      : (own.verifiedAbsent || declaredAbsent ? STATUS.VERIFIED_ABSENT : STATUS.EMPTY)
 
     return {
       ...row,
@@ -908,7 +920,7 @@ export function intakeStatusForMap(scene) {
       bytes,
       mtime,
       // Per-town provenance, surfaced but never merged into the definition.
-      provenance: own.source || own.note || null,
+      provenance: own.source || own.note || declaredAbsent || null,
       acquiredAt: own.acquired || null,
       // The per-jurisdiction endpoint (`INTAKE-CATALOGUE §4.2`). Per-town data,
       // so it lives in the overlay. Recorded → the row is one button away;

@@ -144,6 +144,17 @@ export function readSources(scene) {
   }
 }
 
+/**
+ * The files a town's DECLARED parcel wells land at, absolute. `[]` for an undeclared
+ * town and for a declared-none town alike, so a caller that must tell those two apart
+ * reads `readSources` itself. For dirty-checks and counts, never for classification.
+ * ⛔ A malformed declaration THROWS (from `readSources`); it is never read as "no wells".
+ */
+export function declaredParcelPaths(scene) {
+  const s = readSources(scene)
+  return s.declared ? s.parcels.map(p => join(mapDir(scene), 'raw', p.file)) : []
+}
+
 /** The one-line, loud message for an undeclared town. Shared so the bake, the fetcher
  *  and any future operator surface all say the same thing in the same words. */
 export function undeclaredMessage(scene, path) {

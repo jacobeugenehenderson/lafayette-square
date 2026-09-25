@@ -523,7 +523,8 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
   1. **Declare the well** — `data/<scene>/sources.json`. It names the endpoint, maps their column
      names onto ours, and — the part that matters — lists the fields the well **does not have**.
      The shape and a worked example are in `cartograph/sources.js`.
-  2. **Press the button** — `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
+  2. **Fetch** — the Extent's **Fetch this view** now runs it for any town with a declaration, and
+     reports *undeclared* when there is none. By hand: `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
      (`--dry-run` first: it prints the parcel count and one sample row without writing).
   3. **Bake** — `node cartograph/bake-content.js --scene=<id>`. It reports the match rate and, now,
      how much of the town it could **not** classify or address.
