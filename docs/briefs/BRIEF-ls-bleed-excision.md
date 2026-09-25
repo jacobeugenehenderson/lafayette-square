@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: Act 0 landed 2026-09-20 (Kiln)
 written: 2026-07-20
-evict-when: sites 6 · 8 · 12 · 17 · B2-boundary all closed (15/16/18-21 done) AND node checks/claims-writers-name-the-scene.mjs is green
+evict-when: sites 12 · B2b · 22 all closed (15/16/18-21 done) AND node checks/claims-writers-name-the-scene.mjs is green
   AND CLASS D (§1) HAS A DETECTOR — ⛔ the seven LS-sized constants were all found by accident, by people doing other work;
   a class whose only discovery method is luck is not closed however many instances are ticked. The check is the deliverable, not the count.
 -->
@@ -32,6 +32,7 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 | **16** `bake-trees.js` bakes over LS · **18** `pack-impostor-ktx2` · **19** `17-fill-canopy-trees` | `8e90eeb7` — 16 guarded at the CLI entry; 18's `\|\| '--look=lafayette-square'` and 19's **dead refusal** (`\|\| 'lafayette-square'` above an `if (!SCENE)` that could never fire) both now exit 2. ⭐ **18 and 19 were found BY the widened check, not by reading** — which is the argument for §4. |
 | **15** `terrainExag` sized against LS ⭐ *(instance #2 of CLASS D — §1)* | `9378acfb` — now per-town authored in `design.json`, **kit default 1**; LS authors 1.5 and is byte-identical. ⚠️ **Every other town's terrain got shorter — intended, and it is the eye gate.** ⭐ The brief's stated "hard part" (a scene-blind module singleton in `elevation.js`) was already false: the sampler is rebuilt per look on terrain reload. |
 | **20** `generate-procedural` · **21** `generate-salon` roster write | `58a91317` — `syncLookRoster('lafayette-square', …)` was hardcoded, so publishing a variant edited **LS's `design.json`** whichever Look you were in. Both now require `--look` and exit 2. ⛔ **Ruled by Jacob: "there is no reason for LS to be the fallback here EITHER."** |
+| **6** sky at LS's latitude · **8** LS legal + About prose on every installation · **17** species-routing write → LS · `GET /inventory` · `scripts/config.py`'s LS geography default | **6** `e688555c` (the sky follows its town; §3.1's scoping → `_archive/BRIEF-ls-bleed-excision-site6-2026-09-24.md`) · **8** moved VERBATIM into `src/instances/copy/lafayette-square.jsx`; an undeclared installation renders "not declared" (Wellhead) · **17** `ebb4b927` · `/inventory` deleted `ccbe9d06` · config `1ebdac2d`. ⭐ `scripts/config.py` was not on this list; it was found by sweeping for LS coordinates. |
 
 ⭐ **The argument for Act 0, kept because it recurs:** those thirteen dead ones were closed by **six different
 agents, none of whom knew this brief existed.** The class is being closed incidentally and nobody was
@@ -133,35 +134,13 @@ by the consumer, or you have built the same defect wearing a different hat
 
 | # | Site | Class | What bleeds | Sev |
 |---|---|---|---|---|
-| **6** | `cartograph/pipeline/hydrate-anchor-cards.js:28-30` | A | `LAT=38.6160 / LON=-90.2161 / TZ=-6` hardcoded. ⭐⭐ **Every town's sky is St. Louis's sky**, two months after filing. See `§3.1`. | **HIGH** |
-| **8** | `InfoModal.jsx` (0 `INSTANCE` reads) · `src/pages/LegalPage.jsx` · `CourierOnboarding.jsx` | A | LS prose + **State of Missouri governing law** + the LS delivery zone, hardcoded. **`INSTANCE.legal` exists, LS and HPDM both populate it, and it has ZERO consumers** (`git grep 'INSTANCE.legal'` → nothing). ⭐ **Exposure is currently nil** — Łódź was excised 2026-09-19, and HPDM runs `cary:false`. So this is **structural, not urgent**; it becomes urgent the day a second delivery install exists. | MED — legal, latent |
 | **12** | `cartograph/serve.js:1142` | C | `sceneRouteMatch[1] \|\| DEFAULT_MAP` — a scene-less request is served **LS's** artifacts. ⛔ **Deliberately deferred:** `api.js sceneUrl()` emits scene-less URLs for the default scene, so refusing breaks the running app. **Sequence with the client; do not cut it alone.** | MED — blocked |
-| **17** ⭐ | `arborist/serve.js:1107` | C | **NEW, found in Act 0.** `routeScene = routeLook ? … : 'lafayette-square'` — a routing **write** with no `?look=` lands in **LS's species-map.** Soft (authoring only) but it is a write. | LOW |
 | **B2b** ⭐ | `src/cartograph/MapLayers.jsx:507` | A | **NEW, found in Act 0.** `(isLS \|\| !sceneBoundaryRaw) ? _LS_BUNDLE : makeBoundary(…)` — a non-LS scene with **no boundary** gets **LS's boundary polygon** for clip + fade (`:515`, `:520` branch off it). ⚠️ **Latent today** — all 6 scenes have `neighborhood_boundary.json` — so it fires on a **fresh pour** and in the async fetch window. ⭐ The file's own comment at `:102` says this bundle is *"for scene==='lafayette-square'"*; the `\|\| !sceneBoundaryRaw` clause **exceeds its stated intent.** ⛔ The brief previously listed `MapLayers.jsx` under *"verified NOT bleeding"* — that verification covered `:503` (ribbons) and **not this line.** | MED |
+| **22** ⭐ | `cartograph/derive.js` (the park-parcel exclusion, after `Load parcels`) | B | **NEW 2026-09-24.** `PARK_CENTER = { x: -15, z: -15 }` (LS's frame) + `PARK_LAND_USE_CODES` (St. Louis assessor codes 4800–4900) run on **every** town's parcels. Inert elsewhere today (no parcel lands within 250 m of LS's park point with an STL code), so it is dead weight, not a wrong map. ⭐ Blocked with the rest of `derive.js` behind the pour hold; lands with derive reading each town's declared parcels (Jacob ruled yes 2026-09-24). | LOW |
 
-**Soft, authoring-only** (fix opportunistically, don't gate on them): `arborist/serve.js:1056`
-(`GET /inventory` reads LS's census unscoped) · `arborist/serve.js:959,1041` (Salon publish +
+**Soft, authoring-only** (fix opportunistically, don't gate on them): `arborist/serve.js:959,1041` (Salon publish +
 variant-rating re-bake LS unconditionally — now **declared LS-only by design** in their own source,
 so read the comment before calling them defects).
-
-### 3.1 ⚠️ Site 6 is NOT a constant swap — scope it honestly
-
-The generator (`hydrate-anchor-cards.js`) builds the whole 4×24×5 sky table from `lat/lon/tz` +
-SunCalc, so **no data need be acquired** — that half is genuinely easy and the file is re-runnable.
-
-The hard half is **consumption**: `skyGrid.js:160` exports `ANCHOR_CARDS` as a **static module
-constant**, read by pure functions (`buildMosaicForDate`, `resolveSkyAtMinute`, `flankingAnchors`)
-across four files (`CelestialBodies.jsx`, `Atmosphere.jsx`, `SkyGradientGrid.jsx`, `proceduralSky.js`).
-Per-Look means deciding **where per-Look cards live and how the render reaches them** — most likely
-baked into `scene.json` with the consumers rewired to read the slab.
-
-**This is a render-path change and the eye gates it across all seven TOD slots**
-(`feedback_proxy_render_is_not_the_operator_eye`). ⛔ Do not land it on a proxy render. **M–L, not S.**
-
-**Also fix while in there:** `skyGrid.js`'s `SKY_ANCHOR_DOY` / `flankingAnchors(doy)` take **no
-latitude** and hardcode northern solstice/equinox day-numbers, while `useCalendar.js:26` correctly
-inverts seasons for `lat < 0`. A southern-hemisphere town gets a summer calendar against a winter sky.
-Latent; no install affected.
 
 ### 3.3 ⭐⭐ Site 16 — and why the checker missed it. THIS IS THE REAL PRIZE.
 
@@ -208,9 +187,7 @@ not prose.
 
 ## 5. Deliver
 
-1. **Sites 6 · B2b** excised per `§2`. Independent — land separately, smallest first.
-3. **Site 8** — instance-derive the prose. ⚠️ This is `ROADMAP C1` Phase 4
-   (`_handoffs/HANDOFF-blank-app-instance-decoupling.md`), **not intake** — coordinate, don't duplicate.
+1. **Site B2b** excised per `§2`.
 4. **Site 12** — ⛔ blocked on the client. Sequence with `api.js sceneUrl()`.
 5. **`§4`'s checks**, failing before and passing after.
 6. A short writeup: what landed, what deferred and why, and whether any *new* bleed surfaced.
