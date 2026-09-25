@@ -1,7 +1,7 @@
 {
   "name": "Huron OH",
   "blurb": "Explore Huron, Ohio, a Lake Erie waterfront community at the mouth of the Huron River. Discover local businesses, historic places, parks, events, neighborhoods and everyday life in Huron.",
-  "draftRadius": 3539,
+  "draftRadius": 3857,
   "timezone": "America/New_York",
   "exclusions": [
     {
@@ -208,5 +208,6 @@
     }
   ],
   "committed": true,
-  "bakedSig": "{\"r\":3539,\"p\":0,\"p0\":null,\"x\":[33],\"a\":[],\"h\":[],\"c\":null,\"n\":\"Huron OH\",\"b\":\"Explore Huron, Ohio, a Lake Erie waterfront community at the mouth of the Huron River. Discover local businesses, historic places, parks, events, neighborhoods and everyday life in Huron.\"}"
+  "bakedSig": "{\"r\":3539,\"p\":0,\"p0\":null,\"x\":[33],\"a\":[],\"h\":[],\"c\":null,\"n\":\"Huron OH\",\"b\":\"Explore Huron, Ohio, a Lake Erie waterfront community at the mouth of the Huron River. Discover local businesses, historic places, parks, events, neighborhoods and everyday life in Huron.\"}",
+  "sides": []
 }
