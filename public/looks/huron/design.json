@@ -1,8 +1,8 @@
 {
   "layerVis": {
     "street": true,
-    "highway": false,
-    "stripe": true,
+    "highway": true,
+    "stripe": false,
     "edgeline": false,
     "bikelane": false,
     "lot": true,
@@ -20,7 +20,7 @@
     "scrub": true,
     "tree_row": true,
     "alley": true,
-    "footway": false,
+    "footway": true,
     "cycleway": false,
     "steps": false,
     "path": false,
@@ -32,7 +32,7 @@
     "wall": false,
     "retaining_wall": false,
     "hedge": false,
-    "labels": false,
+    "labels": true,
     "centerline": false,
     "park_path": false,
     "parkTitle": false,
@@ -829,7 +829,7 @@
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,
-    "Furniture": true
+    "Furniture": false
   },
   "trees": [
     {
