@@ -64,7 +64,7 @@ Gantry's reading (**not measured**) is miter spurs off the breakwater's hairpin 
 `ORIENTATION` → `README §START HERE` → **`cartograph/RIBBONS.md`**, in particular:
 
 - **`§1` "SHARP. ROUNDING HAPPENS ONCE, DOWNSTREAM"** (2026-09-05): ① is sharp by ruling. **Jacob's "smoothed" is not a request to round ①.**
-- **`§1` "THE ORDER IS OFFSET → UNION → EASE"** (2026-09-06): the reversal-vertex divergence, and why the union performs *"goes to zero"*.
+- **`§1` "② IS ① MINUS ITS DEPTH BANDS, THEN THE EASE"** (2026-09-25; the offset→union→ease construction it replaced is in `cartograph/_archive/RIBBONS-offset-union-ease-2026-09-25.md`).
 - **"SELF-INTERSECTION MEANS THE FEATURE IS GONE, NOT THAT IT DRAWS CROSSED"** (2026-09-06). It goes to zero **where it crosses**.
   - ⭐ This section also names the open gap: *"the current implementation is coarser — a self-intersection anywhere on a ring reverts the whole ring to sharp."*
   - Jacob's *"the self intersection ix isn't working"* may be that gap, or a different one. **Establish which.**

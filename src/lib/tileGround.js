@@ -1363,6 +1363,8 @@ function unionRingLabelled(ring, labels) {
 // direction stated, not inferred. ⛔ One flag on the one expression the whole construction
 // derives from; every existing caller passes nothing and is byte-identical.
 // `easeAt` (optional, opt-in at the call site per `ROADMAP A18`) — realize each node's handle
+// ⛔ ② NO LONGER CALLS THIS — it is `offsetRingByRects` (2026-09-25); ③'s inward strikes still do, and still keep
+// the backwards lobe (pftNonZero). What follows is this function's own history.
 // configuration. ⭐⭐⭐ THE ORDER IS **OFFSET → UNION → EASE** (Jacob, 2026-09-06), and the union
 // must be the LABELLED one. It was offset → ease → union until then; the swap removes a defect
 // class instead of guarding it.
@@ -1457,6 +1459,270 @@ function carryEdgeLabels(rg, src, labs, n, tally = null, ring = null) {
     for (let k = 0; k < span; k++) { const q = (start + k) % n, w = eLen(q); if (w > best) { best = w; win = q } }
     return labs[win]
   })
+}
+
+// ⭐⭐⭐ ② BY ①'s OWN RULE — "EXPAND EACH SEGMENT TO ITS OWN RECTANGLE AND UNITE" (`RIBBONS §1`), at the
+// authored depth instead of ε. Jacob, 2026-09-24: yes. The block is ① MINUS every edge's DEPTH BAND:
+//   · edge i's band is the quad from the edge to its offset line at [dS, dE] (a ramp stays a ramp);
+//   · where two bands leave a gap — the vertex turns AWAY from the offset side — the gap is closed by the
+//     region of that gap on the road side of BOTH offset lines. Where the two lines meet inside the gap that
+//     is exactly the SHARP miter (the corner "full stop"); where they cannot — a width step at a vertex that
+//     barely turns, whose lines meet kilometres away — it is the STEP, and nothing diverges. No limit, no
+//     clamp: the gap itself bounds it.
+// ⇒ Where a block is narrower than its two curbs the bands overlap and the curb goes to ZERO THERE —
+// "self-intersection means the feature is gone" performed by construction, with no fill rule, no fold-spur
+// pass and nothing to detect. The per-vertex miter it replaces (`offsetRingVariable`) had no step for a
+// block collapsing: its self-union kept the lobe that crossed itself (pftNonZero fills winding −1), and a
+// sliver narrower than its curbs threw ② outside the block altogether.
+// ⭐ IDENTITY IS CARRIED, NOT RECOVERED: every side of edge i's band and wedge carries label i through
+// `booleanLabelled`, so each ② edge comes out naming the ① edge it lies on (`edgeLabels`). A ② vertex is
+// the corner of ① vertex v exactly when its two edges are ① edges v−1 and v; anywhere else — a width step,
+// or where two non-adjacent bands met — it has no corner, `vtx` is null and the ease leaves it sharp.
+// `outward` — a HOLE of a compound face: the band grows away from the hole and is UNITED with it.
+// ▶ node checks/claims-the-curb-never-enters-the-road.mjs
+const sameGridPt = (p, q) => Math.abs(Math.round(p[0] * SCALE) - Math.round(q[0] * SCALE)) <= 1 && Math.abs(Math.round(p[1] * SCALE) - Math.round(q[1] * SCALE)) <= 1
+// ⭐⭐ THE WIDTH STEP TAPERS — Jacob, 2026-09-24: "taper". Where one street's authored width changes at a vertex
+// (the same road, the same side, two widths — per-block authoring, `SURVEY §4`), the curb moves between the two at
+// the Caltrans lane-widening rate we already cite, 10:1 (`references/` f-caltrans-terminal-widening-taper; [U] for a
+// same-street change, as trunk-11 is marked). ⭐ ON THE WIDER BLOCK, FROM THE BOUNDARY: the narrower frontage keeps
+// exactly its authored width everywhere, and the wider one reaches its own 10·|Δ| back from the boundary — both are
+// the operator's widths, so the wider gives way. ⭐ A LEG SHORTER THAN ITS TAPER takes the taper over the whole leg,
+// steeper, and is COUNTED with where and how steep (Jacob: option A) — never silently shortened.
+// Built as a WORKING COPY of the ring: the wider leg is split where the taper ends and its pieces carry
+// [start, end] depths, which the band construction draws as a ramp. Each piece keeps its ① edge, each original
+// vertex its ① vertex; a split point is no corner. ⛔ ① itself is untouched.
+const TAPER_RATE = 10                          // run : offset — Caltrans HDM 206.2(3) lane-widening, cited in references/
+const roadOfSkel = (id) => String(id ?? '').replace(/-\d+$/, '')
+function taperWorkingCopy(ringIn, depthOfIn, ownerOfIn, report = null, eps = 0, isHwyEdge = () => false) {
+  const ownerKeyIn = (i) => { const o = ownerOfIn(i); return o ? `${o.skelId}|${o.side}` : null }
+  // ⭐ first, ①'s sub-ε edges fold into the corner they sit in (see `offsetRingByRects`) — a width step is judged
+  // between two LEGS, never against a 2 mm junction residue
+  const keep = []
+  for (let i = 0; i < ringIn.length; i++) { const a = ringIn[i], b = ringIn[(i + 1) % ringIn.length]; if (!(Math.hypot(b[0] - a[0], b[1] - a[1]) < subInkLen(eps))) keep.push(i) }
+  if (keep.length < 3) return { ring: ringIn, depth: ringIn.map((_, i) => depthOfIn(i)), e: ringIn.map((_, i) => i), v: ringIn.map((_, i) => i), hwy: ringIn.map((_, i) => !!isHwyEdge(i)), own: ringIn.map((_, i) => ownerKeyIn(i)) }
+  const ring = keep.map(i => ringIn[i]), depthOf = (r) => depthOfIn(keep[r]), ownerOf = (r) => ownerOfIn(keep[r])
+  const n = ring.length, d = [], len = []
+  for (let i = 0; i < n; i++) { d.push(depthOf(i)); const a = ring[i], b = ring[(i + 1) % n]; len.push(Math.hypot(b[0] - a[0], b[1] - a[1])) }
+  // ⛔ the ROAD only, never `side`: side is relative to each chain's own direction, and two chains of one road can run
+  // opposite ways (chouteau-avenue-0's left is chouteau-avenue-2's right). Two CONSECUTIVE edges of one block ring
+  // lie on the same side of that road by construction.
+  const street = (i) => { const o = ownerOf(i); return (o && !o.gradeSeparated && o.skelId && o.skelId !== '__boundary__') ? roadOfSkel(o.skelId) : null }
+  const specs = Array.from({ length: n }, () => [])       // per edge: ramps { s0, covered, dn, dw, fromEnd }
+  for (let v = 0; v < n; v++) {
+    const a = (v - 1 + n) % n, b = v
+    if (typeof d[a] !== 'number' || typeof d[b] !== 'number' || !(Math.abs(d[a] - d[b]) > 1e-9)) continue
+    // ⭐ A WIDTH STEP is a width change where there is NO CORNER: the same road continuing, OR any vertex that turns
+    // less than `FILLET_TURN_TOL` — the ruled line between a curve sample and a corner (a curved junction changes
+    // street on a sample, and the ease never rounds a sample, so the corner would never absorb the change).
+    const sa = street(a), sb = street(b)
+    if (!sa || !sb) continue
+    // ⛔ a CAP is not a width step: at a dead-end tip one chain's two SIDES meet (the same skelId, the side flipping),
+    // and asymmetric authored widths there are the two sides of one street, not a change along it
+    const oa = ownerOf(a), ob = ownerOf(b)
+    if (oa.skelId === ob.skelId && oa.side !== ob.side) continue
+    const P0 = ring[(v - 1 + n) % n], V0 = ring[v], N0 = ring[(v + 1) % n]
+    const tv = Math.abs(Math.atan2((V0[0] - P0[0]) * (N0[1] - V0[1]) - (V0[1] - P0[1]) * (N0[0] - V0[0]), (V0[0] - P0[0]) * (N0[0] - V0[0]) + (V0[1] - P0[1]) * (N0[1] - V0[1])))
+    if (sa !== sb && tv >= FILLET_TURN_TOL) continue
+    const dn = Math.min(d[a], d[b]), dw = Math.max(d[a], d[b]), back = d[a] > d[b], L = TAPER_RATE * (dw - dn)
+    // the wider LEG: edges of the wider street at the wider depth, walking away from v
+    const sw = back ? sa : sb
+    const leg = []; let tot = 0
+    for (let k = 0; k < n && tot < L; k++) {
+      const e = back ? (a - k + n) % n : (b + k) % n
+      if (street(e) !== sw || d[e] !== dw) break
+      leg.push({ e, s0: tot }); tot += len[e]
+    }
+    if (!leg.length || !(tot > 0)) continue
+    const covered = Math.min(L, tot)
+    if (report) { report.n++; if (covered < L - 1e-9) report.steep.push({ at: ring[v], rate: covered / (dw - dn), need: L, have: tot }) }
+    for (const { e, s0 } of leg) specs[e].push({ s0, covered, dn, dw, fromEnd: back })
+  }
+  const W = [], D = [], E = [], V = []
+  for (let i = 0; i < n; i++) {
+    const a = ring[i], b = ring[(i + 1) % n]
+    if (!specs[i].length) { W.push(a); D.push(d[i]); E.push(keep[i]); V.push(keep[i]); continue }
+    // breakpoints along the edge (t from a to b), at every taper end that falls inside it
+    const ts = new Set([0, 1])
+    for (const sp of specs[i]) { const t = (sp.covered - sp.s0) / len[i]; if (t > 0 && t < 1) ts.add(sp.fromEnd ? 1 - t : t) }
+    if (specs[i].length > 1 && report) report.overlap++
+    const at = (t) => { let best = null
+      for (const sp of specs[i]) { const sdist = sp.s0 + (sp.fromEnd ? (1 - t) : t) * len[i]
+        const val = sdist >= sp.covered ? sp.dw : sp.dn + (sp.dw - sp.dn) * sdist / sp.covered
+        best = best == null ? val : Math.min(best, val) }
+      return best }
+    const T = [...ts].sort((x, y) => x - y)
+    for (let k = 0; k < T.length - 1; k++) {
+      W.push([a[0] + (b[0] - a[0]) * T[k], a[1] + (b[1] - a[1]) * T[k]])
+      D.push([at(T[k]), at(T[k + 1])]); E.push(keep[i]); V.push(k === 0 ? keep[i] : null)
+    }
+  }
+  return { ring: W, depth: D, e: E, v: V, hwy: E.map(e => !!isHwyEdge(e)), own: E.map(e => ownerKeyIn(e)) }
+}
+
+const subInkLen = (eps) => (eps > 0 ? 2 * eps - 2 / SCALE : 0)
+const maxDepthOf = (seg) => seg.reduce((m, x) => Math.max(m, x.dS, x.dE), 0)
+function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, eps = 0, idMap = null) {
+  const nIn = ringIn.length
+  if (nIn < 3) return []
+  // ⭐ ① IS INK EXPANDED BY ε — 2ε WIDE — so no leg of ① is shorter than the ink is wide. A shorter edge is the
+  // rounding residue of its union where two strokes meet (junctions carry 2–5 mm edges), never a leg; given a
+  // direction of its own it would split one corner into two across a noise-direction band. Its two ends are ONE
+  // vertex here: the run keeps the edge that LEAVES it. ⭐ A dead-end tip's butt end IS exactly 2ε (`RIBBONS §1`,
+  // "there are 2 apexes"), so it stays. `subInkLen`: 2ε less two Clipper grid steps for the rounding.
+  const keepV = []
+  for (let i = 0; i < nIn; i++) { const b = ringIn[(i + 1) % nIn], a = ringIn[i]; if (!(Math.hypot(b[0] - a[0], b[1] - a[1]) < subInkLen(eps))) keepV.push(i) }
+  if (keepV.length < 3) return []
+  const ring = keepV.map(v => ringIn[v])                 // reduced vertex r = original vertex keepV[r]
+  const n = ring.length
+  // reduced vertex r is the START of a leg (original edge keepV[r]); the sub-ε edges before it are absorbed, so
+  // reduced edge r IS original edge keepV[r] (to within ε), and the corner at r is original vertex keepV[r].
+  // `idMap` — when the caller hands a WORKING COPY (a taper split an edge), each working edge/vertex names the
+  // ① edge/vertex it came from; a split point names none. Depth is read by WORKING index, identity leaves by ①'s.
+  const origE = keepV.map(k => (idMap ? idMap.e[k] : k)), origV = keepV.map(k => (idMap ? idMap.v[k] : k))
+  const depthAt = (r) => depthAtIn(keepV[r])
+  const ccw = (signedArea(ring) > 0) !== outward
+  const seg = []
+  for (let i = 0; i < n; i++) {
+    const a = ring[i], b = ring[(i + 1) % n]
+    let dx = b[0] - a[0], dy = b[1] - a[1]; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L
+    const nx = ccw ? -dy : dy, ny = ccw ? dx : -dx
+    const raw = depthAt(i)
+    const dS = Math.max(0, (Array.isArray(raw) ? raw[0] : raw) || 0)
+    const dE = Math.max(0, (Array.isArray(raw) ? raw[1] : raw) || 0)
+    const P = [a[0] + nx * dS, a[1] + ny * dS], Q = [b[0] + nx * dE, b[1] + ny * dE]
+    let ex = Q[0] - P[0], ey = Q[1] - P[1]; const eL = Math.hypot(ex, ey) || 1
+    seg.push({ a, b, e: [dx, dy], dir: [ex / eL, ey / eL], nrm: [nx, ny], P, Q, dS, dE })
+  }
+  const clips = []
+  // ⭐ THE CONTRIBUTORS — every segment a ② edge can lie on, with the ① edge it belongs to and what it is:
+  // 1 = a curb line (a band's inner edge, or a corner's miter line), 2 = the ① edge itself, 3 = a band's end cap.
+  const contrib = []
+  const addSeg = (a, b, lab, kind) => { if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-9) contrib.push({ a, b, lab, kind }) }
+  // one orientation for every band, or two overlapping bands of opposite winding would CANCEL (NonZero)
+  const addClip = (poly) => {
+    if (poly.length < 3 || !(Math.abs(signedArea(poly)) > 1e-12)) return
+    clips.push(clipperLib.Clipper.Orientation(poly.map(toClipper)) === true ? poly : [...poly].reverse())
+  }
+  let wedges = 0, bevels = 0
+  for (let i = 0; i < n; i++) {
+    const S = seg[i]
+    addSeg(S.a, S.b, i, 2)
+    if (S.dS > 0 || S.dE > 0) { addClip([S.a, S.b, S.Q, S.P]); addSeg(S.P, S.Q, i, 1); addSeg(S.b, S.Q, i, 3); addSeg(S.a, S.P, i, 3) }
+    const A = seg[(i - 1 + n) % n], v = ring[i], ia = (i - 1 + n) % n
+    const turn = A.e[0] * S.e[1] - A.e[1] * S.e[0]
+    const side = A.e[0] * A.nrm[1] - A.e[1] * A.nrm[0]            // +1: the offset side is to the left
+    if (!(A.dE > 0 || S.dS > 0)) continue
+    if (!(Math.abs(turn) > 1e-12)) continue                        // straight on: the two bands abut exactly
+    // ⭐ ONE JOIN FOR EVERY CORNER, whichever way it turns. Where the two curb lines MEET INSIDE THE CORNER (between the
+    // two bands' end caps) the join is their SHARP MITER — the corner "full stop", the one the ease rounds. Where they
+    // cannot — lines that are nearly parallel (a width change at a vertex that barely turns, a taper's tilt against the
+    // next street, or a tip that turns straight back) meet far away or never — the join is the CHORD between the two
+    // bands' ends. ⭐ No limit and no switch: as the meeting point reaches a band's end cap the miter becomes exactly
+    // that chord, so the two answers join continuously and nothing is left between them.
+    const det = A.dir[0] * S.dir[1] - A.dir[1] * S.dir[0]
+    let X = null
+    if (Math.abs(det) > 1e-12) {
+      const t = ((S.P[0] - A.Q[0]) * A.dir[1] - (S.P[1] - A.Q[1]) * A.dir[0]) / det
+      const Xc = [S.P[0] + S.dir[0] * t, S.P[1] + S.dir[1] * t], u = [Xc[0] - v[0], Xc[1] - v[1]]
+      const c = A.nrm[0] * S.nrm[1] - A.nrm[1] * S.nrm[0]
+      const inCone = (A.nrm[0] * u[1] - A.nrm[1] * u[0]) * c >= 0 && (u[0] * S.nrm[1] - u[1] * S.nrm[0]) * c >= 0 &&
+        u[0] * (A.nrm[0] + S.nrm[0]) + u[1] * (A.nrm[1] + S.nrm[1]) > 0
+      // ⭐ a HIGHWAY-owned edge's depth is a placeholder strictly inside H (the H-3 difference puts the real edge on H's
+      // boundary), so a chord to it would leave a notch of block the difference never removes. There the town curb line
+      // runs on to the miter and H trims it: the sharp town↔highway corner H-3 rules for.
+      const hwyJoin = idMap?.hwy && (idMap.hwy[keepV[ia]] || idMap.hwy[keepV[i]])
+      if (inCone || (hwyJoin && u[0] * (A.nrm[0] + S.nrm[0]) + u[1] * (A.nrm[1] + S.nrm[1]) > 0)) X = Xc
+    }
+    if (X) { addClip([v, A.Q, X, S.P]); addSeg(A.Q, X, ia, 1); addSeg(X, S.P, i, 1) }
+    else { addClip([v, A.Q, S.P]); addSeg(A.Q, S.P, ia, 1); bevels++ }
+    addSeg(v, A.Q, ia, 3); addSeg(S.P, v, i, 3); wedges++
+  }
+  // ⛔ UNITE THE BANDS FIRST, then subtract. One pass (the difference's own NonZero clip fill) leaves a zero-width
+  // slit where two bands share an edge exactly — measured: a 23 m out-and-back spike at an LS highway join.
+  const B = { rings: outward ? unionRings([ring, ...clips]) : (clips.length ? differenceRings([ring], unionRings(clips)) : [ring]) }
+  // ⭐ EACH ② EDGE TAKES THE CONTRIBUTOR IT LIES ON — containment on the Clipper grid, among this block's OWN
+  // bands only (the known contributors; never a lookup against other geometry). A curb line outranks the ①
+  // edge, which outranks an end cap; where one output edge spans several collinear contributors the one it
+  // overlaps MOST wins — the tie-break `SECTION §3.3` step 1 already uses. ⛔ Not the vertex Z: two bands
+  // share their corner points, so a surviving vertex names whichever band Clipper kept, not the edge leaving it.
+  const TOLC = 2 / SCALE, CELL = Math.max(1, 2 * maxDepthOf(seg))
+  const grid = new Map(), gk = (x, y) => Math.floor(x / CELL) + ',' + Math.floor(y / CELL)
+  contrib.forEach((c, id) => { const x0 = Math.floor(Math.min(c.a[0], c.b[0]) / CELL), x1 = Math.floor(Math.max(c.a[0], c.b[0]) / CELL)
+    const y0 = Math.floor(Math.min(c.a[1], c.b[1]) / CELL), y1 = Math.floor(Math.max(c.a[1], c.b[1]) / CELL)
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) > 4096) { (grid.get('*') || grid.set('*', []).get('*')).push(id); return }
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { const k = x + ',' + y; (grid.get(k) || grid.set(k, []).get(k)).push(id) } })
+  const labelOf = (p, q) => {
+    const ids = new Set([...(grid.get(gk((p[0] + q[0]) / 2, (p[1] + q[1]) / 2)) || []), ...(grid.get(gk(p[0], p[1])) || []), ...(grid.get('*') || [])])
+    const ex = q[0] - p[0], ey = q[1] - p[1], eL = Math.hypot(ex, ey); if (!(eL > 0)) return null
+    let best = null
+    for (const id of ids) { const c = contrib[id], dx = c.b[0] - c.a[0], dy = c.b[1] - c.a[1], L = Math.hypot(dx, dy)
+      const off = (r) => Math.abs((r[0] - c.a[0]) * dy - (r[1] - c.a[1]) * dx) / L
+      if (off(p) > TOLC || off(q) > TOLC) continue
+      const tp = ((p[0] - c.a[0]) * dx + (p[1] - c.a[1]) * dy) / L, tq = ((q[0] - c.a[0]) * dx + (q[1] - c.a[1]) * dy) / L
+      const ov = Math.min(L, Math.max(tp, tq)) - Math.max(0, Math.min(tp, tq))
+      if (!(ov > TOLC)) continue
+      if (!best || c.kind < best.kind || (c.kind === best.kind && ov > best.ov)) best = { kind: c.kind, ov, lab: c.lab } }
+    return best ? best.lab : null }
+  B.labels = B.rings.map(rg => rg.map((p, j) => labelOf(p, rg[(j + 1) % rg.length])))
+  if (stamp) { stamp.foldDropped = 0; stamp.wedges = wedges; stamp.bevels = bevels; if (B.refused) stamp.refused = B.refused }
+  let maxD = 0; for (const x of seg) { if (x.dS > maxD) maxD = x.dS; if (x.dE > maxD) maxD = x.dE }
+  const AREA_MIN = Math.max(0.5, maxD * maxD * 0.6)
+  const outR = [], outE = [], outV = [], outA = [], easeArcs = []
+  // ⛔ ONE POINT PER GRID POINT. Two bands' shared corner rounds to NEIGHBOURING grid points, and an arc's tangent
+  // point can land on the vertex beside it: a 0–1 mm edge with no usable direction, which reads as a 90–180° turn
+  // and gives the next inward strike no normal. Vertices within one Clipper grid step (1/SCALE) are the grid's own
+  // rounding of ONE point: merged, keeping the edge that LEAVES the pair (a sub-grid edge owns nothing), the
+  // corner it is part of, and its ① source. Run before the corner test and again after the ease.
+  const mergeGrid = (R0, E0, V0, A0) => {
+    const kR = [], kE = [], kV = [], kA = []
+    for (let j = 0; j < R0.length; j++) {
+      const L = kR.length
+      if (L && sameGridPt(R0[j], kR[L - 1])) { kE[L - 1] = E0[j]; kV[L - 1] = kV[L - 1] ?? V0[j]; kA[L - 1] = kA[L - 1] ?? A0[j]; continue }
+      kR.push(R0[j]); kE.push(E0[j]); kV.push(V0[j]); kA.push(A0[j])
+    }
+    while (kR.length > 3 && sameGridPt(kR[0], kR.at(-1))) { kV[0] = kV[0] ?? kV.at(-1); kA[0] = kA[0] ?? kA.at(-1); kR.pop(); kE.pop(); kV.pop(); kA.pop() }
+    return { R: kR, E: kE, V: kV, A: kA }
+  }
+  for (let k = 0; k < B.rings.length; k++) {
+    if (!(B.rings[k].length >= 3 && Math.abs(signedArea(B.rings[k])) > AREA_MIN)) continue
+    const g0 = mergeGrid(B.rings[k], (B.labels?.[k] || []).map(x => (Number.isInteger(x) && x >= 0 && x < n) ? x : null), B.rings[k].map(() => null), B.rings[k].map(() => null))
+    if (g0.R.length < 3) continue
+    const rg = g0.R, el = g0.E
+    const m = rg.length
+    // the ① vertex this ② vertex is the corner OF — only where its two edges are two consecutive ① edges
+    // the ① vertex a ② corner is the corner OF. Two consecutive ① edges: the vertex between them. Where ① edges were
+    // SWALLOWED between them (a leg shorter than the corner's setback lies wholly inside the next band), the corner is
+    // the one swallowed vertex where the OWNER changes — "a run seam is a CORNER" (`SECTION`, the leg rule). None, or
+    // more than one (two far-apart edges meeting across a collapsed neck), is no single corner: sharp, as ruled.
+    const own = (r) => (idMap?.own ? idMap.own[keepV[r]] : null)
+    const seamBetween = (from, to) => {                 // walk reduced vertices from+1 … to, forward in ring order
+      let hit = null, cnt = 0
+      for (let r = (from + 1) % n; ; r = (r + 1) % n) { if (own((r - 1 + n) % n) !== own(r)) { hit = r; cnt++ } if (r === to) break }
+      return cnt === 1 ? origV[hit] : null
+    }
+    const vs = rg.map((_, j) => {
+      const a = el[(j - 1 + m) % m], b = el[j]
+      if (a == null || b == null || a === b) return null
+      if ((b - a + n) % n === 1) return origV[b]
+      if ((a - b + n) % n === 1) return origV[a]
+      if (!idMap?.own) return null
+      const fwd = (b - a + n) % n, bwd = (a - b + n) % n
+      return fwd <= bwd ? seamBetween(a, b) : seamBetween(b, a)
+    })
+    let R2 = rg, E2 = el, V2 = vs, A2 = rg.map(() => null)
+    if (easeAt) {
+      const arcs = []
+      const e = easeContour(rg, (j) => easeAt(vs[j]) || 0, el, arcs, vs)
+      for (const a of arcs) easeArcs.push({ ...a, src: vs[a.i] })
+      R2 = e.ring; E2 = e.labs; V2 = e.vtx; A2 = e.arc
+    }
+    const g1 = mergeGrid(R2, E2, V2, A2)
+    if (g1.R.length < 3) continue
+    outR.push(g1.R); outE.push(g1.E); outV.push(g1.V); outA.push(g1.A)
+  }
+  // edge labels leave in ORIGINAL ① edge indices, so the caller's `labs[e]` is the owner
+  if (stamp) { stamp.labels = outV; stamp.edgeLabels = outE.map(E => E.map(e => (e == null ? null : origE[e]))); stamp.arcMask = outA; if (easeAt) stamp.easeArcs = easeArcs }
+  return outR
 }
 
 function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false, stamp = null, noMiterClamp = false, outward = false, easeAt = null) {
@@ -2036,9 +2302,9 @@ const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may 
 // boolean — `A15`'s forbidden proximity recovery, wearing a 1 mm grid hash — and it reached only
 // part of the corners (▶ `node checks/claims-the-corner-extent-is-carried.mjs`, which reports the
 // share on any town). ⭐ Identity CARRIED through, never recovered afterward (`RIBBONS §1`).
-function easeContour(ring, rAt, labs = null, arcsOut = null) {
+function easeContour(ring, rAt, labs = null, arcsOut = null, vtx = null) {
   const n = ring.length
-  if (n < 3) return { ring, labs, arc: ring.map(() => null) }
+  if (n < 3) return { ring, labs, arc: ring.map(() => null), vtx }
   const seg = (a, b) => { const dx = b[0]-a[0], dz = b[1]-a[1]; const L = Math.hypot(dx, dz); return { L, d: L > 1e-12 ? [dx/L, dz/L] : [0, 0] } }
   const R_ = new Array(n); for (let i = 0; i < n; i++) R_[i] = Math.max(0, rAt(i) || 0)
   const eLen = new Array(n)
@@ -2162,17 +2428,17 @@ function easeContour(ring, rAt, labs = null, arcsOut = null) {
   }
 
   // ── PASS 2 — emit ──────────────────────────────────────────────────────────────────────────
-  const out = [], outL = [], outA = []
+  const out = [], outL = [], outA = [], outV = []
   for (let i = 0; i < n; i++) {
     const pl = plan.get(i)
     // ⭐ every point of this corner's arc is stamped with the corner's own index, so a consumer
     // reads "these edges are one corner" instead of measuring for it.
-    if (pl) { for (let k = 0; k < pl.pts.length; k++) { out.push(pl.pts[k]); outL.push(k < pl.pts.length / 2 ? pl.lIn : pl.lOut); outA.push(i) } ; continue }
+    if (pl) { for (let k = 0; k < pl.pts.length; k++) { out.push(pl.pts[k]); outL.push(k < pl.pts.length / 2 ? pl.lIn : pl.lOut); outA.push(i); outV.push(vtx ? vtx[i] : null) } ; continue }
     if (covered.has(i)) continue
-    out.push(ring[i]); outL.push(labs ? labs[i] : null); outA.push(null)
+    out.push(ring[i]); outL.push(labs ? labs[i] : null); outA.push(null); outV.push(vtx ? vtx[i] : null)
   }
   const ok = out.length >= 3
-  return { ring: ok ? out : ring, labs: labs ? (ok ? outL : labs) : null, arc: ok ? outA : ring.map(() => null) }
+  return { ring: ok ? out : ring, labs: labs ? (ok ? outL : labs) : null, arc: ok ? outA : ring.map(() => null), vtx: vtx ? (ok ? outV : vtx) : null }
 }
 function signedArea(r) {
   let a = 0
@@ -7410,6 +7676,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // "a corner with no rounding": `isCorner_` requires R > 0, so a zero here DELETES the corner.
     // Four different facts shared that one silence; they are separated and counted now.
     const protoRZero = { noOwner: 0, belowTol: 0, smoothBend: 0, noSrc: 0, fromRAt: 0, foldLost: 0, foldLostCorner: 0 }
+    const protoTaper = { n: 0, steep: [], overlap: 0 }   // width-step tapers built this pour (`taperWorkingCopy`)
     const protoRAt = (labs, i, n, hwHere = 0, turnHere = null) => {
       const a = protoOwners[labs[(i - 1 + n) % n]], b = protoOwners[labs[i]]
       // ⛔⛔ NO OWNER ⇒ NO RADIUS ⇒ `isCorner_` IS FALSE ⇒ THE CORNER DOES NOT EXIST. Counted since
@@ -7625,10 +7892,12 @@ export function buildTileGround(ribbons, opts = {}) {
           if (!(hw > 0)) { noWidth++; return 0 }
           return Math.max(0, hw - PROTO_HW)         // ① already sits ε off the centreline
         }
-        const depthRec = { ring, depth: new Array(ring.length).fill(null), holes: [] }
-        depthByBlock[k] = depthRec
         const depthOf = mkDepth(labs)
-        const depthAt = (i) => (depthRec.depth[i] = depthOf(i))
+        const depthAt = (i) => depthOf(i)
+        // ⭐ the ring ② actually offsets: ① plus the width-step tapers' split points (`taperWorkingCopy`)
+        const WC = taperWorkingCopy(ring, depthOf, (i) => protoOwners[labs[i]], protoTaper, PROTO_HW, (i) => isHwyLab(labs[i]))
+        const depthRec = { ring: WC.ring, depth: new Array(WC.ring.length).fill(null), holes: [] }
+        depthByBlock[k] = depthRec
         // ⭐⭐ THE COMPOUND FACE — outer + its holes, offset as ONE object.
         const holes = protoBlockHoles?.[k] || [], holeLabs = protoBlockHoleLabels?.[k] || []
         // ⛔ Tag each curb ring by whether a GRADE-SEPARATED chain owns most of it. The
@@ -7716,9 +7985,12 @@ export function buildTileGround(ribbons, opts = {}) {
         // returns 0 — and R = 0 is not "a corner with no rounding", it fails `isCorner_` and the
         // corner CEASES TO EXIST. Counted since 2026-09-08 because it was silent, and because it is
         // a different fact from `protoRAt` deciding a vertex is genuinely not a corner.
-        const rings2 = offsetRingVariable(ring, depthAt, () => true, () => null, true, st, true, false,
+        // ⭐⭐⭐ ② IS ① MINUS EVERY EDGE'S DEPTH BAND (`offsetRingByRects`) — where the block is narrower
+        // than its curbs the curb goes to ZERO there, by construction. A null source is now a vertex that is
+        // NOT a ① corner (a width step, or where two non-adjacent bands met) and is left sharp, as ruled.
+        const rings2 = offsetRingByRects(WC.ring, (j) => (depthRec.depth[j] = WC.depth[j]), false, st,
                                           (srcIdx) => { if (srcIdx == null) { protoRZero.noSrc++; return 0 }
-                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r })
+                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r }, PROTO_HW, WC)
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
         // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
         if (st.foldDropped) protoRZero.foldLost += st.foldDropped
@@ -7727,7 +7999,8 @@ export function buildTileGround(ribbons, opts = {}) {
         if (st.foldLostLabels) for (const v of st.foldLostLabels)
           if (v != null && v < ring.length && turnOf(ring, v) >= FILLET_TURN_TOL * 180 / Math.PI) protoRZero.foldLostCorner++
         let outRings = rings2
-        let outLabs = rings2.map((rg, ri) => carryEdgeLabels(rg, st.labels?.[ri], labs, ring.length, labelCarryLost, ring))
+        // ⭐ each ② edge names the ① edge it lies on, carried through the boolean — one hop to its owner
+        let outLabs = rings2.map((rg, ri) => (st.edgeLabels?.[ri] || rg.map(() => null)).map(e => (e == null ? null : labs[e])))
         let outR = rings2.map((rg, ri) => { const src = st.labels?.[ri]; return rg.map((_, i) => (src && src[i] != null ? (rSrc[src[i]] || 0) : 0)) })
         // ⭐⭐⭐ THE CORNER'S EXTENT, CARRIED OFF THE EASE ITSELF. `st.arcMask[ri][i]` names the
         // corner each contour vertex belongs to — the one thing ②'s eased geometry cannot be asked
@@ -7745,14 +8018,14 @@ export function buildTileGround(ribbons, opts = {}) {
           const hRings = [], hLabs = []
           for (let hi = 0; hi < holes.length; hi++) {
             const hSt = {}
-            const hRec = { ring: holes[hi], depth: new Array(holes[hi].length).fill(null) }
-            depthRec.holes.push(hRec)
             const hDepthOf = mkDepth(holeLabs[hi])
-            const hOff = offsetRingVariable(holes[hi], (i) => (hRec.depth[i] = hDepthOf(i)), () => true, () => null, false, hSt, true, true)
+            const HW = taperWorkingCopy(holes[hi], hDepthOf, (i) => protoOwners[holeLabs[hi][i]], protoTaper, PROTO_HW, (i) => isHwyLab(holeLabs[hi][i]))
+            const hRec = { ring: HW.ring, depth: new Array(HW.ring.length).fill(null) }
+            depthRec.holes.push(hRec)
+            const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, PROTO_HW, HW)
             for (let ri = 0; ri < hOff.length; ri++) {
-              const src = hSt.labels?.[ri]
               hRings.push(hOff[ri])
-              hLabs.push(carryEdgeLabels(hOff[ri], src, holeLabs[hi], holes[hi].length, labelCarryLost, holes[hi]))
+              hLabs.push((hSt.edgeLabels?.[ri] || hOff[ri].map(() => null)).map(e => (e == null ? null : holeLabs[hi][e])))
             }
           }
           if (hRings.length) {
@@ -7850,6 +8123,12 @@ export function buildTileGround(ribbons, opts = {}) {
       }
       // ⛔ LOUD, not silent: an edge with no resolvable authored width would erode by ZERO and
       // leave the curb sitting on the centreline — a plausible-looking wrong map.
+      // ⭐ THE WIDTH-STEP TAPERS, disclosed: how many, and every one the leg was too short for (Jacob: option A — the
+      // taper takes the whole leg, steeper, and says so)
+      if (protoTaper.n) console.log(`[tileGround][PROTO②] width steps: ${protoTaper.n} tapered at ${TAPER_RATE}:1 on the wider block`)
+      if (protoTaper.steep.length) console.warn(`[tileGround][PROTO②] ⛔ ${protoTaper.steep.length} width-step taper(s) STEEPER than ${TAPER_RATE}:1 — the wider leg is shorter than the taper, so it takes the whole leg: ` +
+        protoTaper.steep.slice(0, 6).map(t => `(${t.at[0].toFixed(1)}, ${t.at[1].toFixed(1)}) ${t.rate.toFixed(1)}:1`).join(' · ') + (protoTaper.steep.length > 6 ? ` … +${protoTaper.steep.length - 6}` : ''))
+      if (protoTaper.overlap) console.warn(`[tileGround][PROTO②] ⛔ ${protoTaper.overlap} edge(s) carry TWO tapers (a short leg between two width steps) — the narrower of the two is drawn.`)
       if (noWidth) console.warn(`[tileGround][PROTO②] ${noWidth} edge(s) had NO resolvable authored width and were offset by 0 — the curb sits on the centreline there.`)
       console.log(`[tileGround][PROTO②] curb from the proto: ${protoCurb.length} ring(s) offset per-edge at the authored pavementHW`)
       console.log(`[tileGround][PROTO②] corner ease: ${protoCornerN} corner(s) found by OWNER CHANGE (carried identity, never an angle), R=${baseR}×${scale} m` +

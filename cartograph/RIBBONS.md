@@ -174,30 +174,14 @@
 > STAGE FACT, not a principle about protopolygons.
 > ⚠️ **"AND SHARP THROUGH THE OFFSET" IS STRUCK (2026-09-06).** The ease runs INSIDE
 > `offsetRingVariable`. ⭐ Still ONE rounding, still Survey's; what moved is where in the call it happens.
-> ### ⭐⭐⭐ AND THE ORDER IS **OFFSET → UNION → EASE** — ruled and built 2026-09-06 (Jacob)
-> It was offset → ease → union, on the reasoning that only the raw polyline keeps the corner
-> correspondence exact. ⛔ **That order was producing the operator's "protrusions", and the mechanism
-> is `§1`'s own divergent function at a second site:** the raw offset carries near-REVERSAL vertices —
-> self-intersections the offset just made, not corners — and `easeContour` plans `R·tan(θ/2)` at each,
-> which **diverges as θ→180° (11× R at 170°, 57× R at 178°)**. `s = min(want, legBack/2, legFwd/2)`
-> bounds it only by HALF THE LEG, so on a long straight run the bound never bites. The oversized arc
-> overlaps the contour, the union cuts it, and the residue is a sub-half-metre stub turning 146°–161° —
-> **under `SPUR_COS`'s 165°, so nothing catches it.** ⭐⭐ **Same divergence as the miter apex
-> (`hw/sin(θ/2)`); one mechanism, two sites.**
-> ⭐⭐⭐ **THE CURE IS NOT A BOUND ON THE SETBACK** — that is the clamp shape this § retires, and it is
-> how `easeRing` died. **Union FIRST and there is no reversal vertex left to ease**: *self-intersection
-> means the feature goes to ZERO, there*, and the union is what performs it. **No threshold anywhere.**
-> ⛔ **The one condition: the middle union must be `unionRingLabelled`.** The ease resolves R through
-> the ① vertex index carried on the stamp, and the labelled union carries it THROUGH the boolean —
-> identity carried, never recovered. With plain `unionRings` every corner resolves to 0, which is most
-> of what the old *"687 of 893 corners died, survivors at 3.15 m against an authored 4.50 m"* was.
-> ▶ **Measured, LS in-disc:** curb spikes >140° **33 → 10** · arcs planned at a near-reversal **77 → 12**
-> · the operator's marked circles carrying a surviving sharp turn **14 → 3** · achieved corner radius
-> median **4.50 m, unchanged** (the tripwire) · Survey↔Section still agree to **0 m²** · parallelism
-> gate **unchanged both sides**. ⛔ Re-run them, don't quote: `claims-marked-corners` ·
-> `claims-survey-and-section-agree` · `claims-proto-corner-is-authored-radius`.
-> ⚠️ **COST, disclosed: 2 blocks moved into the no-curb class (119 → 117 tiles).** Their curbs meet, so
-> the drop is ruled correct — but see the absence disclosure below, which is the bigger half.
+> ### ⭐⭐⭐ ② IS ① MINUS ITS DEPTH BANDS, THEN THE EASE — built 2026-09-25 (`offsetRingByRects`)
+> The ease must never see a reversal vertex: `R·tan(θ/2)` diverges as θ→180° — the miter apex's `hw/sin(θ/2)`
+> at a second site. ⭐ **By construction, not by a bound:** ② is the block minus each edge's depth band, so where
+> bands overlap the curb is simply gone and no reversal is left to ease; each ② edge names the ① edge it lies on,
+> and a corner eases through its ① vertex. ⛔ Easing ① before offsetting (at R + the half-width) was built and
+> reverted — its setback folds any leg shorter than it. The offset→union→ease construction this replaced, and its
+> measurements: `_archive/RIBBONS-offset-union-ease-2026-09-25.md`. ▶ `claims-marked-corners` ·
+> `claims-proto-corner-is-authored-radius` · `claims-the-curb-never-enters-the-road`.
 > ### ⭐⭐⭐ AND THE CORNERS WERE NOT SKIPPED — THEY WERE DRAWN AT A QUARTER OF THEIR RADIUS (2026-09-06)
 > *Jacob, marking a fresh set: "sharp corners which look to be skipped altogether."* ⛔ **They were
 > being planned, stamped at the authored 4.50 m, and DRAWN at 0.9–1.9 m** — which reads as sharp.
@@ -275,7 +259,9 @@
 > carrying different `pavementHW` meet by a TAPER, not a step and not a miter carried to the lines' meeting
 > (that needed the forbidden fold-spur cleanup). Rate = `f-caltrans-terminal-widening-taper` (10:1), `[U]` for a
 > same-street width change; built with the `[start,end]` `depthAt` ramp in ②'s working copy (Plumb, `BRIEF-junction-shape-where-the-offset-crosses`).
-> Which side gives way, and a leg shorter than the taper, are Plumb's proposal awaiting Jacob.
+> **Built** (`taperWorkingCopy`): the WIDER block gives way from the boundary; a leg shorter than its taper takes the
+> whole leg, steeper, named per pour (Jacob: option A). A width step = a width change with no corner (same road, or a
+> turn under `FILLET_TURN_TOL`); ⛔ a dead-end cap (one chain's two sides) is not one.
 > ⚠️ **Cause not established for the offset's fold class under the new subject.** `POLYGON-FIRST D6a` marks
 > the offset NOT robust (the averaged-normal branch; `scratch/fold-branch-forensic.mjs`). Dilating a grout
 > fails by a narrow block **vanishing** — loud — rather than by a fold; **hypothesis, unmeasured.**
@@ -779,12 +765,12 @@
 > feature goes to **ZERO**: the corner's radius is 0, which is the sharp vertex, the same answer `R=0`
 > already gives. ⛔ Still not the forbidden clamp — nothing is shrunk to a plausible fit.
 > ⚠️ **It goes to zero WHERE it crosses.** A band pinching out mid-block vanishes *there* and continues
-> either side. ⛔⛔ **NOT BUILT — this ruling is ASPIRATION, not state** (Plumb, 2026-09-24). The whole-ring
-> revert once cited here (`6d17b6a6`) was excised in `4bc640f0`, and nothing local replaced it: `offsetRingVariable`'s
-> self-union runs at `pftNonZero`, which FILLS a winding −1 lobe, so where a contour narrower than 2·depth crosses
-> itself the backwards lobe **survives**. The same holds for the OFFSET → UNION → EASE claim that *"the union is
-> what performs it"*. ▶ `node checks/claims-the-curb-never-enters-the-road.mjs` (red until built) ·
-> `BRIEF-junction-shape-where-the-offset-crosses`. **A clamp is a
+> either side. ⭐ **BUILT FOR ② (Plumb, 2026-09-25) — by construction, `offsetRingByRects`:** ② is ① minus every edge's
+> DEPTH BAND (edge → its offset at `[dS, dE]`), each corner joined by the SHARP MITER where the two curb lines meet inside
+> it, else the chord between the band ends (the two coincide at the boundary, so nothing switches). Where a block is
+> narrower than its curbs the bands overlap and ② is gone *there*. It replaced the per-vertex offset, whose `pftNonZero`
+> self-union kept the backwards lobe and whose miter threw a sliver's ② outside its block. ⛔ ③'s strikes still use
+> `offsetRingVariable` and still keep the lobe. ▶ `node checks/claims-the-curb-never-enters-the-road.mjs`. **A clamp is a
 > cleanup patch living inside the construction** — the miter-limit bevel at §3.3's U-seam is the worked
 > example, and it is *the* artifact there.
 >
