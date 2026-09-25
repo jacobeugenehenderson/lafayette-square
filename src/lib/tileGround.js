@@ -1559,6 +1559,69 @@ function taperWorkingCopy(ringIn, depthOfIn, ownerOfIn, report = null, eps = 0, 
   return { ring: W, depth: D, e: E, v: V, hwy: E.map(e => !!isHwyEdge(e)), own: E.map(e => ownerKeyIn(e)) }
 }
 
+// ⭐⭐ THE RAMP-TERMINAL FLARE, DRAWN — one more pass on ②'s working copy (`r-ramp-terminal-flares`). Each frozen flare
+// (derive's `rampTerminalFlares`: street/side/segOrd, node, toward, lateral, along, rate) names the town street that
+// widens to receive a highway end wider than itself. Its working edges are found by IDENTITY (the ① owner of each
+// working edge's original edge, `WC.e`), as a run leaving the flare's node ALONG ITS LEG (`toward`). ⛔ The run must
+// reach the corner's station, or the node's edge carries another label and the flare is REFUSED (① attribution).
+// The overhang is resolved with authoring: o = lateral − the street's resolved half-width (`hwOf`). Along the run the
+// depth gains o out to the corner's station (`along`, the hold), then o → 0 over rate·o (10:1). Every station where
+// that profile bends inside a working edge is a split: the new point has `v = null` (no corner) and keeps its edge's
+// `e`, `hwy`, `own`; the pieces carry [start, end] depths ADDED to whatever depth the edge already had (a width-step
+// taper's pair included). ⛔ ① is untouched. Every refusal, truncation and collision is disclosed by name.
+export function flareWorkingCopy(WC, flares, ownerOfOrig, hwOf, disclosure) {
+  let { ring, depth, e: E, v: V, hwy: H, own: O } = WC
+  for (const f of flares) {
+    const name = `${f.hwy}.${f.end} ${f.corner} → ${f.street} ${f.side}/${f.segOrd}`
+    const n = ring.length, mine = (j) => { const o = ownerOfOrig(E[j]); return !!o && !o.gradeSeparated && o.skelId === f.street && o.side === f.side && o.segOrd === f.segOrd }
+    const nOwn = E.reduce((c, _, j) => c + (mine(j) ? 1 : 0), 0)
+    if (!nOwn) continue                                        // this ring does not carry the flare's street
+    const lx = f.toward[0] - f.node[0], lz = f.toward[1] - f.node[1]
+    let best = null
+    for (let j = 0; j < n; j++) {
+      if (!mine(j) || (nOwn < n ? mine((j - 1 + n) % n) : j > 0)) continue
+      const run = []; for (let q = j, c = 0; mine(q) && c < n; q = (q + 1) % n, c++) run.push(q)
+      const a = ring[run[0]], a2 = ring[(run[0] + 1) % n], b = ring[(run[run.length - 1] + 1) % n], b2 = ring[run[run.length - 1]]
+      for (const [fwd, p, q] of [[true, a, a2], [false, b, b2]]) {
+        if ((q[0] - p[0]) * lx + (q[1] - p[1]) * lz <= 0) continue
+        const d = Math.hypot(p[0] - f.node[0], p[1] - f.node[1]); if (!best || d < best.d) best = { run, fwd, d } }
+    }
+    if (!best) { disclosure.noRun.add(name); continue }
+    if (best.d > (f.along ?? 0)) { disclosure.misattributed.add(`${name}: its run starts ${best.d.toFixed(1)} m from the node, past the corner (${(f.along ?? 0).toFixed(1)} m)`); continue }
+    const o = f.lateral - hwOf(best.run[0], E)
+    if (!(o > 0)) { disclosure.received.add(`${name} (the authored width receives it: o = ${o.toFixed(2)} m)`); continue }
+    const H0 = (f.along ?? 0) + best.d, T = H0 + f.rate * o, ex = (x) => x <= H0 ? o : x < T ? o * (1 - (x - H0) / (T - H0)) : 0
+    const seq = best.fwd ? best.run : [...best.run].reverse(), edits = new Map()
+    let x = 0
+    for (const j of seq) {
+      if (x >= T) break
+      const A = ring[j], B = ring[(j + 1) % n], len = Math.hypot(B[0] - A[0], B[1] - A[1]), x0 = x, x1 = x + len
+      const st = [x0, ...[H0, T].filter(b => b > x0 && b < x1), x1]
+      const tf = st.map(q => len > 0 ? (best.fwd ? (q - x0) / len : 1 - (q - x0) / len) : 0), xs = st.map(ex)
+      if (!best.fwd) { tf.reverse(); xs.reverse() }
+      edits.set(j, { tf, xs }); x = x1
+    }
+    if (x < T) disclosure.truncated.add(`${name}: the span ends ${x.toFixed(1)} m from the node, the flare wants ${T.toFixed(1)} m`)
+    // rebuild the working copy with this flare's splits and extra depth
+    const R = [], D = [], E2 = [], V2 = [], H2 = [], O2 = []
+    for (let j = 0; j < n; j++) {
+      const ed = edits.get(j)
+      if (!ed) { R.push(ring[j]); D.push(depth[j]); E2.push(E[j]); V2.push(V[j]); H2.push(H[j]); O2.push(O[j]); continue }
+      const A = ring[j], B = ring[(j + 1) % n], dj = depth[j]
+      const base = (t) => Array.isArray(dj) ? dj[0] + (dj[1] - dj[0]) * t : dj
+      for (let k = 0; k + 1 < ed.tf.length; k++) {
+        const t0 = ed.tf[k], t1 = ed.tf[k + 1]
+        R.push(k === 0 ? A : [A[0] + (B[0] - A[0]) * t0, A[1] + (B[1] - A[1]) * t0])
+        const d0 = base(t0) + ed.xs[k], d1 = base(t1) + ed.xs[k + 1]
+        D.push(d0 === d1 && !Array.isArray(dj) ? d0 : [d0, d1]); E2.push(E[j]); V2.push(k === 0 ? V[j] : null); H2.push(H[j]); O2.push(O[j])
+      }
+    }
+    ring = R; depth = D; E = E2; V = V2; H = H2; O = O2
+    disclosure.drawn.add(`${name}: +${o.toFixed(2)} m held ${H0.toFixed(1)} m, tapered over ${(T - H0).toFixed(1)} m`)
+  }
+  return { ring, depth, e: E, v: V, hwy: H, own: O }
+}
+
 const subInkLen = (eps) => (eps > 0 ? 2 * eps - 2 / SCALE : 0)
 const maxDepthOf = (seg) => seg.reduce((m, x) => Math.max(m, x.dS, x.dE), 0)
 function offsetRingByRects(ringIn, depthAtIn, outward = false, stamp = null, easeAt = null, eps = 0, idMap = null) {
@@ -7483,7 +7546,9 @@ export function buildTileGround(ribbons, opts = {}) {
              // waterfront silently — every other field present, the pour looking complete.
              waterRings: frozenProto.waterRings || null,
              // H-3 step 4: the region class per block (verge / jr / block), classified at the mint.
-             blockClass: frozenProto.blockClass || null }
+             blockClass: frozenProto.blockClass || null,
+             // H-3: the ramp-terminal flares frozen at the mint — drawn into ②'s working copy (`flareWorkingCopy`)
+             flares: frozenProto.flares || null }
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
@@ -7685,6 +7750,8 @@ export function buildTileGround(ribbons, opts = {}) {
     // Four different facts shared that one silence; they are separated and counted now.
     const protoRZero = { noOwner: 0, belowTol: 0, smoothBend: 0, noSrc: 0, fromRAt: 0, foldLost: 0, foldLostCorner: 0 }
     const protoTaper = { n: 0, steep: [], overlap: 0 }   // width-step tapers built this pour (`taperWorkingCopy`)
+    // the ramp-terminal flares drawn this pour (`flareWorkingCopy`) — Sets, because a flare is tried on every ring
+    const flareDisclosure = { drawn: new Set(), noRun: new Set(), misattributed: new Set(), received: new Set(), truncated: new Set() }
     const protoRAt = (labs, i, n, hwHere = 0, turnHere = null) => {
       const a = protoOwners[labs[(i - 1 + n) % n]], b = protoOwners[labs[i]]
       // ⛔⛔ NO OWNER ⇒ NO RADIUS ⇒ `isCorner_` IS FALSE ⇒ THE CORNER DOES NOT EXIST. Counted since
@@ -7903,7 +7970,8 @@ export function buildTileGround(ribbons, opts = {}) {
         const depthOf = mkDepth(labs)
         const depthAt = (i) => depthOf(i)
         // ⭐ the ring ② actually offsets: ① plus the width-step tapers' split points (`taperWorkingCopy`)
-        const WC = taperWorkingCopy(ring, depthOf, (i) => protoOwners[labs[i]], protoTaper, PROTO_HW, (i) => isHwyLab(labs[i]))
+        const WC0 = taperWorkingCopy(ring, depthOf, (i) => protoOwners[labs[i]], protoTaper, PROTO_HW, (i) => isHwyLab(labs[i]))
+        const WC = MP.flares?.length ? flareWorkingCopy(WC0, MP.flares, (e) => protoOwners[labs[e]], (j, E) => protoMeasureOf(labs[E[j]])?.pavementHW ?? 0, flareDisclosure) : WC0
         const depthRec = { ring: WC.ring, depth: new Array(WC.ring.length).fill(null), holes: [] }
         depthByBlock[k] = depthRec
         // ⭐⭐ THE COMPOUND FACE — outer + its holes, offset as ONE object.
@@ -8027,7 +8095,8 @@ export function buildTileGround(ribbons, opts = {}) {
           for (let hi = 0; hi < holes.length; hi++) {
             const hSt = {}
             const hDepthOf = mkDepth(holeLabs[hi])
-            const HW = taperWorkingCopy(holes[hi], hDepthOf, (i) => protoOwners[holeLabs[hi][i]], protoTaper, PROTO_HW, (i) => isHwyLab(holeLabs[hi][i]))
+            const HW0 = taperWorkingCopy(holes[hi], hDepthOf, (i) => protoOwners[holeLabs[hi][i]], protoTaper, PROTO_HW, (i) => isHwyLab(holeLabs[hi][i]))
+            const HW = MP.flares?.length ? flareWorkingCopy(HW0, MP.flares, (e) => protoOwners[holeLabs[hi][e]], (j, E) => protoMeasureOf(holeLabs[hi][E[j]])?.pavementHW ?? 0, flareDisclosure) : HW0
             const hRec = { ring: HW.ring, depth: new Array(HW.ring.length).fill(null) }
             depthRec.holes.push(hRec)
             const hOff = offsetRingByRects(HW.ring, (j) => (hRec.depth[j] = HW.depth[j]), true, hSt, null, PROTO_HW, HW)
@@ -8134,6 +8203,15 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⭐ THE WIDTH-STEP TAPERS, disclosed: how many, and every one the leg was too short for (Jacob: option A — the
       // taper takes the whole leg, steeper, and says so)
       if (protoTaper.n) console.log(`[tileGround][PROTO②] width steps: ${protoTaper.n} tapered at ${TAPER_RATE}:1 on the wider block`)
+      if (MP.flares?.length) {
+        const D = flareDisclosure, notDrawn = [...MP.flares].filter(f => ![...D.drawn].some(x => x.startsWith(`${f.hwy}.${f.end} ${f.corner} `)) && ![...D.received].some(x => x.startsWith(`${f.hwy}.${f.end} ${f.corner} `)))
+        console.log(`[tileGround][H-3 flare] ${D.drawn.size} of ${MP.flares.length} frozen flare(s) drawn into the town street (10:1, [U])${D.drawn.size ? ': ' + [...D.drawn].join(' · ') : ''}`)
+        if (D.received.size) console.log(`[tileGround][H-3 flare] received by the authored width, not drawn: ${[...D.received].join(' · ')}`)
+        if (D.misattributed.size) console.warn(`[tileGround][H-3 flare] ⛔ NOT DRAWN — ① gives the node's edge along the leg another label: ${[...D.misattributed].join(' · ')}`)
+        if (D.truncated.size) console.warn(`[tileGround][H-3 flare] ⛔ TRUNCATED at the span end: ${[...D.truncated].join(' · ')}`)
+        const lost = notDrawn.filter(f => ![...D.misattributed].some(x => x.startsWith(`${f.hwy}.${f.end} ${f.corner} `)))
+        if (lost.length) console.warn(`[tileGround][H-3 flare] ⛔ ${lost.length} flare(s) found NO ① run carrying their street: ${lost.map(f => `${f.hwy}.${f.end} → ${f.street} ${f.side}/${f.segOrd}`).join(' · ')}`)
+      }
       if (protoTaper.steep.length) console.warn(`[tileGround][PROTO②] ⛔ ${protoTaper.steep.length} width-step taper(s) STEEPER than ${TAPER_RATE}:1 — the wider leg is shorter than the taper, so it takes the whole leg: ` +
         protoTaper.steep.slice(0, 6).map(t => `(${t.at[0].toFixed(1)}, ${t.at[1].toFixed(1)}) ${t.rate.toFixed(1)}:1`).join(' · ') + (protoTaper.steep.length > 6 ? ` … +${protoTaper.steep.length - 6}` : ''))
       if (protoTaper.overlap) console.warn(`[tileGround][PROTO②] ⛔ ${protoTaper.overlap} edge(s) carry TWO tapers (a short leg between two width steps) — the narrower of the two is drawn.`)
