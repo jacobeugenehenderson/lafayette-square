@@ -309,9 +309,9 @@ polygon will be wrong for a stream, and **the next town is a river town** — 20
 on disk in the four towns we have. ⭐ **A flowing ribbon wants direction and speed; a lake wants
 wind fetch and a horizon.** They are different shaders, not one shader with a parameter.
 ▶ **So: name the four kinds in whatever you write, say which one you built for, and leave the
-attachment point keyed by kind** — the way `GRASS_FACES` keys a treatment by class id.
-⚠️ **And per the authoring-model gate at the end of this brief: state the parameters a LINEAR water
-would need** (direction, speed, width) **even though you are not building it.** That is what stops
+attachment point keyed by kind** — the way `cartograph/surfaces.mjs` keys a surface by class id.
+⚠️ **And in the one settings model (`cartograph/surfaces.mjs`, `BRIEF-surface-lab §4`): state the
+parameters a LINEAR water would need** (direction, speed, width) **even though you are not building it.** That is what stops
 the river town discovering the model cannot hold it.
 
 ⚠️ **THE SUBTYPE IS THE CHEAPEST WIN HERE AND IT IS NOT YOURS.** `water=pond|lake|reservoir|basin`
@@ -372,27 +372,6 @@ working time-of-day ramp, caustics and refraction that nobody will rebuild as we
 > is not an aesthetic worry, it is *"the map is lying and nothing says so."* **Protect that. Ignore
 > the rest.**
 >
-> ### ⭐⭐ AND THE QUESTION THAT REPLACES IT — ASK IT EXPLICITLY, IN WRITING
-> *"When I decide that cornfields are a priority, have we paved the way for that or did we screw
-> ourselves? We have color pickers today, but 'color' is hardly what row crops are made of."*
->
-> **MEASURED 2026-09-20 — what a land-use class can carry TODAY:**
-> ```
-> face group in the slab :  kind · id · color · renderOrder · polygonOffsetUnits
-> authorable per class   :  layerColors · luColors          ← COLOUR, and nothing else
->                           materialPhysics · materialColors ← present, EMPTY, and PBR-shaped
-> ```
-> ⇒ ✅ **THE RENDER SIDE IS NOT FORECLOSED.** `BakedGround.jsx`'s `GRASS_FACES` selects a whole
-> shader by class id, so attaching a generator to a class is **purely additive.** The road is paved.
-> ⇒ ⛔ **THE AUTHORING SIDE HAS NO SHAPE FOR IT.** There is nowhere to put row bearing, wave
-> direction or stone grading, and `materialPhysics` is the WRONG SHAPE, not merely empty — a material
-> says *how a surface answers light*; a generator says *what structures exist and how they are laid out.*
->
-> ### ⛔⛔ SO THIS BRIEF OWES ONE THING BEFORE IT BUILDS ANYTHING
-> ▶ **STATE THE PARAMETERS THIS FEATURE NEEDS AUTHORED** — name them, with units — **and say whether
-> today's model can hold them.** ⚠️ **THREE OPEN BRIEFS HIT THIS SAME WALL** (`BRIEF-field-shader`
-> rows/bearing/season · `BRIEF-water-shader` wave scale/turbidity/shoreline band ·
-> `BRIEF-boulder-revetment` stone grading/slope/overlap).
-> ⛔ **DO NOT INVENT A PARAMETER HOME. THREE BRIEFS EACH INVENTING ONE IS THE ACTUAL WAY WE SCREW
-> OURSELVES** — three incompatible authoring models and no panel that can hold them. ▶ **Propose the
-> shape, bring it to Boz, and it gets decided ONCE for all three.**
+> ✅ **THE PARAMETER HOME IS DECIDED (2026-09-24):** `cartograph/surfaces.mjs` — a surface's parameters
+> with unit and source, the operator's layer in `design.json#surfaces` (`BRIEF-surface-lab §4`). This
+> brief names its parameters there.

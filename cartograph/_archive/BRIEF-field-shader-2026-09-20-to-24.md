@@ -1,3 +1,7 @@
+# BRIEF-field-shader — as written before 2026-09-25 (archived)
+
+> Retired for CURRENCY. Superseded in the live brief: the GRASS_FACES mechanism (now `cartograph/surfaces.mjs`), "seasonality OUT" (ruled 2026-09-24: winter barren → spring tilled → summer sprouting), and the open parameter-home question (decided: `BRIEF-surface-lab §4`).
+
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: no
@@ -42,15 +46,24 @@ on a re-poured huron: its face classes went **9 → 12**, with **`agricultural` 
 > ▶ That is `BRIEF-land-use-derivation`'s **open item #2** (the containment direction), not this brief
 > and not the vocabulary one. ⛔ Do not fix it here; measure the polygons, not the faces.
 
-## 4. THE MECHANISM EXISTS — build IN the surface lab
+## 4. THE MECHANISM EXISTS — `grassMaterial.js` IS THE TEMPLATE, NOT AN ANALOGY
 
-- **Which surface a class gets** is one table, `cartograph/surfaces.mjs` (`SURFACE_OF_CLASS`), and a
-  crop's parameters (row bearing, spacing, headland, season) are declared there with a unit and a
-  source — the one settings model (`BRIEF-surface-lab §4`). ⛔ No parameter home elsewhere.
-- **The material** is an albedo chunk in `grassMaterial.js#makeGroundSurfaceMaterial`: every socket
-  (weather, sun, lamp pool, contact shadow) is shared, so a crop inherits the environment. ⛔ No
-  parallel material.
-- **Build and eye it in the lab**: ▶ `lab.html?look=huron&at=class:agricultural` (month = season).
+`src/components/BakedGround.jsx:63-82`:
+```js
+const GRASS_MATERIALS = new Set(['lawn','treelawn','median'])      // by material kind
+const GRASS_FACES     = new Set(['park','residential','recreation']) // by LU class  ⭐
+```
+⇒ **A per-face-kind surface treatment, keyed off the LU class.** A `farmland` class takes a crop
+variant exactly the way `park` takes grass. ⚠️ **And note: another three-entry table holding
+precisely the three faces LS has** — the same shape as `OSM_TO_LU`, `lu-policy`, and the Designer's
+toggle panel. **Adding a fourth should not require a fourth table; establish whether it does.**
+
+`src/components/grassMaterial.js` is **196 lines and already wired into the whole environment** —
+`applyWeatherToShader`, `uSunAltitude`, a clip map, the lamp lightmap and `_lampGlow`.
+⭐⭐ **THAT WIRING IS THE PRIZE AND IT IS WHY THIS IS CHEAPER THAN IT SOUNDS.** A crop material that
+goes through the same sockets inherits **time of day, weather and lamp light for free** — and a field
+that does not change with the sky looks painted no matter how good the geometry is. ⛔ **Extend the
+factory. Do not write a parallel material** (`feedback_no_parallel_pipeline_for_scenes` in spirit).
 
 ### ① WHAT A CROP IS, THAT A LAWN IS NOT
 ⭐ **ROWS.** That is the whole perceptual difference and it is mostly free: the grass noise is
@@ -90,8 +103,8 @@ treatment justified by one town is an instance patch.
   should also be a **generator**, and that generator is the unowned piece. ⛔ Still not yours to
   absorb; it is now *named* rather than open. (`lu-policy.mjs`'s `plantingOf()` is the socket.)
 - **`meadow` vs `grassland` vs `grass`** — three tags, and it is not obvious they are three looks.
-- ✅ **Season — RULED (Jacob, 2026-09-24):** winter barren → spring tilled → summer sprouting. The
-  crop state follows the calendar (the lab's month control); plant impostors come later.
+- **Season.** Is the town's crop state authored, derived from the weather year, or fixed? ⛔ A
+  seasonal field implies a seasonal tree canopy, and that is a much larger arc. **Do not open it.**
 
 ## 7. ⛔ Can the instrument SEE the change?
 ⚠️ **Largely not, and say so rather than faking it** — this is a LOOK, and a check asserting
@@ -107,10 +120,10 @@ eye level has failed. ⭐ **LS's park grass UNCHANGED is the control**: if the l
 extension was not faithful.
 
 ## 8. Write/commit bounds
-**In bounds:** a crop albedo chunk in `grassMaterial.js` · its rows in `cartograph/surfaces.mjs` · the
-new check.
-⛔ **OUT:** the LU vocabulary itself (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`) · water
-(`BRIEF-water-shader.md`) · the arborist's placement (`orchard`, see §6) · plant impostors.
+**In bounds:** `grassMaterial.js` and a crop variant beside it · `BakedGround.jsx`'s face-kind tables
+· the new check.
+⛔ **OUT:** the LU vocabulary itself (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`, and it blocks you) · water
+(`BRIEF-water-shader.md`) · the arborist's placement (`orchard`, see §6) · seasonality.
 ⛔ **LS's grass must come out UNCHANGED.** It is the control and the one surface an operator knows.
 ⛔ **SURFACE SCOPE DRIFT, DO NOT ABSORB IT.**
 
@@ -118,7 +131,7 @@ new check.
 
 ## What "done" looks like
 1. The agricultural audience is **measured by area**, two towns, before anything is built.
-2. A crop surface exists in `surfaces.mjs` + the ground-surface factory, inheriting weather, sun and lamps, with the three seasons.
+2. A crop treatment exists as a **variant of the grass factory**, inheriting weather, sun and lamps.
 3. **Row bearing and frequency are derived per face** — and a check proves it, mutation-tested.
 4. LS's grass is unchanged; Jacob has seen huron's fields **near and far.**
 5. `orchard` is **asked about, not absorbed.**
@@ -142,6 +155,27 @@ new check.
 > is not an aesthetic worry, it is *"the map is lying and nothing says so."* **Protect that. Ignore
 > the rest.**
 >
-> ✅ **THE PARAMETER HOME IS DECIDED (2026-09-24):** `cartograph/surfaces.mjs` — a surface's parameters
-> with unit and source, the operator's layer in `design.json#surfaces` (`BRIEF-surface-lab §4`). This
-> brief names its parameters there.
+> ### ⭐⭐ AND THE QUESTION THAT REPLACES IT — ASK IT EXPLICITLY, IN WRITING
+> *"When I decide that cornfields are a priority, have we paved the way for that or did we screw
+> ourselves? We have color pickers today, but 'color' is hardly what row crops are made of."*
+>
+> **MEASURED 2026-09-20 — what a land-use class can carry TODAY:**
+> ```
+> face group in the slab :  kind · id · color · renderOrder · polygonOffsetUnits
+> authorable per class   :  layerColors · luColors          ← COLOUR, and nothing else
+>                           materialPhysics · materialColors ← present, EMPTY, and PBR-shaped
+> ```
+> ⇒ ✅ **THE RENDER SIDE IS NOT FORECLOSED.** `BakedGround.jsx`'s `GRASS_FACES` selects a whole
+> shader by class id, so attaching a generator to a class is **purely additive.** The road is paved.
+> ⇒ ⛔ **THE AUTHORING SIDE HAS NO SHAPE FOR IT.** There is nowhere to put row bearing, wave
+> direction or stone grading, and `materialPhysics` is the WRONG SHAPE, not merely empty — a material
+> says *how a surface answers light*; a generator says *what structures exist and how they are laid out.*
+>
+> ### ⛔⛔ SO THIS BRIEF OWES ONE THING BEFORE IT BUILDS ANYTHING
+> ▶ **STATE THE PARAMETERS THIS FEATURE NEEDS AUTHORED** — name them, with units — **and say whether
+> today's model can hold them.** ⚠️ **THREE OPEN BRIEFS HIT THIS SAME WALL** (`BRIEF-field-shader`
+> rows/bearing/season · `BRIEF-water-shader` wave scale/turbidity/shoreline band ·
+> `BRIEF-boulder-revetment` stone grading/slope/overlap).
+> ⛔ **DO NOT INVENT A PARAMETER HOME. THREE BRIEFS EACH INVENTING ONE IS THE ACTUAL WAY WE SCREW
+> OURSELVES** — three incompatible authoring models and no panel that can hold them. ▶ **Propose the
+> shape, bring it to Boz, and it gets decided ONCE for all three.**
