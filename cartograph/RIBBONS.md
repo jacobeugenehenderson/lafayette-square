@@ -156,8 +156,8 @@
 > striking a curb on both sides of a 0.6–9 m gap between two ramps collapses it. 48 blocks had their
 > curbs meet — and **47 of the 48 carry NO authoring anywhere**, so Layer 0 q3 was asked first and the
 > answer was no: this is not the operator's widths showing through.
-> ⭐ **The shipped curb path builds NO highway curb at all** (they are flat strokes through their own
-> accumulator), so emitting one invented a curb production never had and then scored it against a
+> ⭐ **The shipped curb path builds NO highway curb at all** (a highway is its own swept object, `H` — its section
+> built from its lanes, `BRIEF-highway-build`), so emitting one invented a curb production never had and then scored it against a
 > baseline that does not exist. `protoCurbGs` already computed the tag and used it only to LABEL the
 > ring; it now excludes it. ⇒ **107 curb rings against 101 tiles**, and "too tight" 90 → 39.
 > ⛔ **STILL OPEN:** 28 holes bounded by ORDINARY streets also have their curbs meet. Unexplained —
@@ -372,8 +372,8 @@
 >   (`if (st.bands)`) and unions them into asphalt / curb / sidewalk / treelawn / LU / block; ③ produces
 >   exactly that tile. ⇒ **`protoProducer` now runs `sectionOpen(protoShapeTiles, …)` and takes every
 >   layer from it** — a change of CONSUMER, not of construction, with no per-layer reimplementation.
->   ⛔ `highway` is deliberately NOT swapped: grade-separated roads are flat strokes through their own
->   accumulator and ② builds no highway curb, so swapping it would invent a production never had.
+>   ⛔ `highway` is deliberately NOT swapped: a grade-separated road is its own swept object (`H`, `BRIEF-highway-build`)
+>   and ② builds no highway curb, so swapping it would invent a production never had.
 >   ▶ `node checks/claims-survey-and-section-agree.mjs` — LS: 118 tiles, all `producer:'proto'`,
 >   all carrying bands; **asphalt, curb, sidewalk and block agree to 0 m²** and the LU class sets are
 >   identical. That gate is the definition of "the same thing".
