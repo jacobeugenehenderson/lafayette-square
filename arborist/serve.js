@@ -1111,10 +1111,11 @@ const server = createServer(async (req, res) => {
     if (req.method === 'POST' && (m = path.match(/^\/coverage\/([^/]+)\/routing$/))) {
       const rosterName = decodeURIComponent(m[1])
       const body = await readBody(req)
-      // Route into the ACTIVE neighbourhood's species-map (?look=), so a
-      // not-available / routing write lands in the right scene, not always LS.
+      // Route into the ACTIVE neighbourhood's species-map (?look=). ⛔ No look is
+      // refused: it used to land in LAFAYETTE SQUARE's map, a write to another town.
       const routeLook = new URL(req.url, 'http://x').searchParams.get('look')
-      const routeScene = routeLook ? (mapForLook(routeLook) || routeLook) : 'lafayette-square'
+      if (!routeLook) return jsonRes(res, 400, { error: 'no ?look= — pick a Look first; a routing write needs to know which town it is for' })
+      const routeScene = mapForLook(routeLook) || routeLook
       const mapPath = parkMapForScene(routeScene)
       const doc = readJsonOrNull(mapPath)
       if (!doc || typeof doc.map !== 'object') {
