@@ -394,7 +394,27 @@ export async function bakeLook(lookId, { force = false, repour = false } = {}) {
     err.code = 'BAKE_IN_PROGRESS'
     throw err
   }
-  if (!res.ok) throw new Error(`bake look failed: ${res.status}`)
+  // ⛔ SAY WHAT FAILED. The server names the step and the reason (serve.js `runStep`); a bare status code told the
+  // operator only "500" (provincetown, 2026-09-24: a 5-minute kill of the ground step read as "bake look failed: 500").
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    const err = new Error(body.error || `bake look failed: ${res.status}`)
+    if (body.cancelled) err.code = 'BAKE_CANCELLED'
+    throw err
+  }
+  return res.json()
+}
+
+// The running bake's steps (serve.js GET /looks/<id>/bake/status) — BakeModal polls it.
+export async function fetchBakeStatus(lookId) {
+  const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake/status`)
+  if (!res.ok) throw new Error(`bake status failed: ${res.status}`)
+  return res.json()
+}
+// Stop the running bake at its current step (the server names the step in the bake's own answer).
+export async function cancelBake(lookId) {
+  const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake/cancel`, { method: 'POST' })
+  if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || `bake cancel failed: ${res.status}`) }
   return res.json()
 }
 

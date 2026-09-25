@@ -27,14 +27,24 @@ import tzLookup from 'tz-lookup'
 // command-string semantics + timeout option, but the event loop keeps
 // serving other requests while the child runs — so `/api/cartograph/*`
 // requests don't pend during a long bake.
+// `opts.onLine(line)` — stream the child's output line by line (it is still echoed to this terminal);
+// `opts.onChild(child)` — hand the child out so an operator's Cancel can stop it.
 function runShell(cmd, opts = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(cmd, {
       shell: true,
-      stdio: 'inherit',
+      stdio: opts.onLine ? ['ignore', 'pipe', 'pipe'] : 'inherit',
       cwd: opts.cwd,
       env: opts.env,
     })
+    opts.onChild?.(child)
+    if (opts.onLine) {
+      for (const [src, sink] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
+        let buf = ''
+        src.on('data', (d) => { sink.write(d); buf += d; const parts = buf.split('\n'); buf = parts.pop(); for (const l of parts) if (l.trim()) opts.onLine(l) })
+        src.on('end', () => { if (buf.trim()) opts.onLine(buf) })
+      }
+    }
     let timer = null
     if (opts.timeout) {
       timer = setTimeout(() => {
@@ -52,6 +62,61 @@ function runShell(cmd, opts = {}) {
       else reject(new Error(`Command failed (code=${code}, signal=${signal}): ${cmd}`))
     })
   })
+}
+
+// ⭐⭐ BAKE PROGRESS — the operator sees the bake, step by step, and can stop it.
+// Jacob, 2026-09-24: "It's just awkward UX to literally grab the package, go into the office and close the door,
+// and leave the customer at the counter wondering what just happened." And the same night a 5-minute wall-clock
+// kill (a constant sized for LS — BRIEF-ls-bleed-excision §1 Class D) SIGKILLed provincetown's ground bake and the
+// operator saw only "500". So:
+//   · NO WALL-CLOCK KILL on a bake step. A no-progress watchdog was considered and rejected: a single Clipper boolean
+//     can legitimately print nothing for minutes, so there is no honest silence span to key on. The operator's
+//     Cancel is the control, and it names the step it stopped.
+//   · every step runs through `runStep` (or is marked by `markStep`), which records state, elapsed time, the last
+//     output line, and a real fraction where the step prints `[progress] <what> <i>/<n>` for its own work count;
+//   · the step LIST is read from this file's own bake route (`bakePlan`), never a hand copy — so a step added to the
+//     route appears in the modal (checks/claims-bake-progress-shows-the-route.mjs);
+//   · an estimate is shown only from THIS town's own previous run of that step (`bake-timings.json` beside its map).
+const _bakeProgress = new Map()          // lookId → { lookId, scene, startedAt, finishedAt, steps, current, cancel, child }
+let _bakePlan = null
+function bakePlan() {
+  if (_bakePlan) return _bakePlan
+  const src = readFileSync(import.meta.filename, 'utf-8')
+  const a = src.indexOf("path.match(/^\\/looks\\/([^/]+)\\/bake$/)"), b = src.indexOf('_bakesInFlight.delete(id)', a)
+  const body = a >= 0 && b > a ? src.slice(a, b) : ''
+  const labels = []
+  for (const m of body.matchAll(/(?:runIfDirty\(|runStep\(P, |markStep\(P, )'([\w-]+)'/g)) if (!labels.includes(m[1])) labels.push(m[1])
+  return (_bakePlan = labels)
+}
+function markStep(P, label, state, extra = {}) {
+  let st = P.steps.find(x => x.label === label)
+  if (!st) { st = { label, state: 'waiting' }; P.steps.push(st) }
+  Object.assign(st, { state }, extra)
+  return st
+}
+async function runStep(P, label, cmd, opts = {}) {
+  if (P.cancel) throw new Error(`cancelled by operator before step "${label}"`)
+  const { timeout, ...rest } = opts        // ⛔ no wall-clock kill on a bake step (see above)
+  const st = markStep(P, label, 'running', { t0: Date.now(), lastLine: null, frac: null, sub: null })
+  P.current = label
+  try {
+    await runShell(cmd, { ...rest, onChild: (c) => { P.child = c }, onLine: (ln) => {
+      st.lastLine = ln.replace(/\x1b\[[0-9;]*m/g, '').slice(0, 240)
+      const m = /\[progress\]\s+(.*?)\s*(\d+)\s*\/\s*(\d+)/.exec(ln)
+      if (m && +m[3] > 0) { st.frac = +m[2] / +m[3]; st.sub = `${m[1]} ${m[2]}/${m[3]}`.trim() }
+    } })
+  } catch (e) {
+    const why = P.cancel ? `cancelled by operator at step "${label}"` : `step "${label}" failed: ${e.message}`
+    markStep(P, label, P.cancel ? 'cancelled' : 'failed', { t1: Date.now(), error: why })
+    throw new Error(why)
+  } finally { P.child = null; P.current = null }
+  markStep(P, label, 'done', { t1: Date.now() })
+}
+function bakeTimingsPath(mapJson) { return join(dirname(mapJson), 'bake-timings.json') }
+function readBakeTimings(mapJson) { try { return JSON.parse(readFileSync(bakeTimingsPath(mapJson), 'utf-8')) } catch { return {} } }
+function saveBakeTiming(mapJson, lookId, label, ms) {
+  try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { ms, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
+  catch (e) { console.warn(`[bake] could not record the ${label} timing: ${e.message}`) }
 }
 
 // Like runShell, but CAPTURES stdout/stderr and RESOLVES with the exit code
@@ -2403,6 +2468,8 @@ createServer(async (req, res) => {
       return
     }
     _bakesInFlight.add(id)
+    const P = { lookId: id, startedAt: Date.now(), finishedAt: null, steps: bakePlan().map(label => ({ label, state: 'waiting' })), current: null, cancel: null, child: null }
+    _bakeProgress.set(id, P)
     try {
       const t0 = Date.now()
       // Full bake chain — every step the operator might forget rolled into
@@ -2474,10 +2541,16 @@ createServer(async (req, res) => {
       const sceneFlag = `--scene=${bakeScene}`
       const ranSteps = []
       const skipped = []
+      // a step skipped as clean (or not applicable) is MARKED — the modal shows it, never leaves it waiting
+      const skip = (text) => { skipped.push(text); for (const l of text.split(/ [(—]/)[0].split(' + ')) markStep(P, l.trim(), 'skipped', { why: text }) }
+      P.scene = bakeScene
+      const timings = readBakeTimings(MAP_JSON)
+      for (const st of P.steps) { const t = timings[`${id}:${st.label}`]; if (t) st.est = t.ms }
+      const ran = (label) => { ranSteps.push(label); const st = P.steps.find(x => x.label === label); if (st?.t0 && st?.t1) saveBakeTiming(MAP_JSON, id, label, st.t1 - st.t0) }
       const runIfDirty = async (label, inputs, outputs, cmd, opts) => {
-        if (!force && !needsRebuild(inputs, outputs)) { skipped.push(label); return }
-        await runShell(cmd, opts)
-        ranSteps.push(label)
+        if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
+        await runStep(P, label, cmd, opts)
+        ran(label)
       }
       // Bake only ACTIVATED content: a hidden layer (layerVis=false) doesn't get
       // its (often heavy) sub-bake run at all — the operator's visibility is a
@@ -2529,7 +2602,7 @@ createServer(async (req, res) => {
           return
         }
         // a changed registry value leaves every mtime alone, so it re-pours explicitly
-        if (regChanged.length) { await runShell(`node pipeline.js ${sceneFlag}${elevFlag}`, { cwd: here, timeout: 600000 }); ranSteps.push('pipeline (registry values this town read changed)') }
+        if (regChanged.length) { await runStep(P, 'pipeline', `node pipeline.js ${sceneFlag}${elevFlag}`, { cwd: here }); ran('pipeline') }
         else await runIfDirty('pipeline',
           [...RAW_PATHS, ...PIPELINE_SRC],
           [MAP_JSON],
@@ -2541,7 +2614,7 @@ createServer(async (req, res) => {
           `node promote-ribbons.js ${sceneFlag}`,
           { cwd: here, timeout: 30000 })
       } else {
-        skipped.push(`pipeline + promote-ribbons (${bakeScene} has no raw/osm.json to derive from)`)
+        skip(`pipeline + promote-ribbons (${bakeScene} has no raw/osm.json to derive from)`)
       }
       // terrain — the installation's own heightfield (clean/terrain.*), lifted
       // at runtime. Bake from the scene's elevation.tif when present + stale, so
@@ -2573,7 +2646,7 @@ createServer(async (req, res) => {
       } else {
         // ⛔ NOT a quiet "flat". The elevation row is ABSENT.REFUSES: a flat dune town is a
         // false map, not a degraded one. Until the pour enforces that, say so loudly here.
-        skipped.push('terrain — NO DEM INPUT (no elevation.tif, no elevation/*.tif, no elevation-sources.txt). This town will render FLAT. ▶ node cartograph/fetch-dem.mjs --scene=' + bakeScene)
+        skip('terrain — NO DEM INPUT (no elevation.tif, no elevation/*.tif, no elevation-sources.txt). This town will render FLAT. ▶ node cartograph/fetch-dem.mjs --scene=' + bakeScene)
       }
       // terrain-slab: publish the scene terrain into this Look's slab (the
       // runtime fetches /baked/<look>/terrain.* by lookId; writeIfChanged keeps
@@ -2584,8 +2657,8 @@ createServer(async (req, res) => {
           mkdirSync(LOOK_DIR, { recursive: true })
           writeIfChanged(tsj, readFileSync(SCENE_TERRAIN_JSON))
           writeIfChanged(tsb, readFileSync(SCENE_TERRAIN_BIN))
-          ranSteps.push('terrain-slab')
-        } else { skipped.push('terrain-slab') }
+          markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab')
+        } else { skip('terrain-slab') }
       }
       // Scene-size-sensitive bake steps get a generous ceiling: a large hood
       // (a wide extent, tens of thousands of footprints) legitimately needs
@@ -2614,7 +2687,7 @@ createServer(async (req, res) => {
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
       } else {
-        skipped.push('buildings (layer hidden)')
+        skip('buildings (layer hidden)')
       }
       // Landscape backdrop — the §10 THIRD hero kind: a brought DEM mesh (the
       // mountain range) baked into the look's slab as a native-PBR GLB + a
@@ -2639,10 +2712,10 @@ createServer(async (req, res) => {
             `node bake-landscape.js --look=${id} --source=${landscapeSource} ${sceneFlag}`,
             { cwd: here, timeout: 180000 })
         } else {
-          skipped.push(`landscape (design.landscape.source missing on disk: ${landscapeSource})`)
+          skip(`landscape (design.landscape.source missing on disk: ${landscapeSource})`)
         }
       } else {
-        skipped.push('landscape (Stage-intake only — never auto-detected from pour data)')
+        skip('landscape (Stage-intake only — never auto-detected from pour data)')
       }
       // content — the content-join (bake-content.js): spatially joins the raw
       // sources (OSM POIs · assessor parcels · NR survey) onto the just-baked
@@ -2664,7 +2737,7 @@ createServer(async (req, res) => {
           `node bake-content.js ${sceneFlag}`,
           { cwd: here, timeout: 180000 })
       } else {
-        skipped.push('content (LS content is hand-curated — not regenerated)')
+        skip('content (LS content is hand-curated — not regenerated)')
       }
       if (layerOn('lamp')) {
         // Scene-keyed lamp source (step C, done 2026-07-09): bake-lamps derives a
@@ -2678,7 +2751,7 @@ createServer(async (req, res) => {
           `node bake-lamps.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 30000 })
       } else {
-        skipped.push('lamps (layer hidden)')
+        skip('lamps (layer hidden)')
       }
       await runIfDirty('scene',
         [DESIGN, join(here, 'bake-scene.js')],
@@ -2695,8 +2768,8 @@ createServer(async (req, res) => {
       // step exactly when an input had just been acquired, and ship the previous
       // town-state's credit. It reads file stats and costs milliseconds — always
       // running it is both cheaper and honest. It prints what is still owed.
-      await runShell(`node bake-sources.js --look=${id} ${sceneFlag}`, { cwd: here, timeout: 30000 })
-      ranSteps.push('sources')
+      await runStep(P, 'sources', `node bake-sources.js --look=${id} ${sceneFlag}`, { cwd: here })
+      ran('sources')
       // Street labels — bake the SCENE's own names (from its ribbons + boundary)
       // into the slab so the player reads baked/<look>/labels.json per-scene,
       // not a static LS ribbons import (src/lib/streetLabels.js reader).
@@ -2715,7 +2788,7 @@ createServer(async (req, res) => {
       if (layerOn('tree')) {
         const treeInputs = treeBakeInputsForMap(bakeScene)
         if (!treeInputs) {
-          skipped.push(`trees (no census on disk for scene '${bakeScene}' — honest zero)`)
+          skip(`trees (no census on disk for scene '${bakeScene}' — honest zero)`)
         } else {
           const flags = [
             // ⛔ `--scene=`, NOT `--scene `. cartograph/scene.js parses the EQUALS form only.
@@ -2744,7 +2817,7 @@ createServer(async (req, res) => {
             { cwd: REPO_ROOT, timeout: 90000 })
         }
       } else {
-        skipped.push('trees (layer hidden)')
+        skip('trees (layer hidden)')
       }
       // ⛔⛔ TREE ANCHORS — AND THE ORDER IS THE WHOLE POINT (wired 2026-08-28; ORDER FIXED 2026-09-08).
       // Anchors are index-parallel to `trees.json`, sampled off `ground.bin`, so this step
@@ -2833,13 +2906,16 @@ createServer(async (req, res) => {
       // (`--env=prod`), because "I poured a slab" and "visitors should see it" are two
       // different decisions and this button only ever meant the first.
       let r2 = null
+      markStep(P, 'upload', 'running', { t0: Date.now() })
       try {
         const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=staging --look=${id}`,
           { cwd: REPO_ROOT, timeout: 900000 })
         if (up.code !== 0) throw new Error(up.stderr || up.stdout || `exit ${up.code}`)
         r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
         console.log(`[bake] R2 ${r2}`)
+        markStep(P, 'upload', 'done', { t1: Date.now() })
       } catch (e) {
+        markStep(P, 'upload', 'failed', { t1: Date.now(), error: e.message })
         // ⛔ Loud, and the request FAILS. A 200 here would tell the operator the pour
         // shipped when it reached nothing.
         console.error(`[bake] ⛔ R2 upload FAILED for "${id}" — the pour is on disk only: ${e.message}`)
@@ -2850,11 +2926,32 @@ createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force, r2 }))
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: err.message }))
+      // ⭐ the failing step NAMES itself (runStep), and an operator's Cancel is its own answer, not a 500
+      res.writeHead(P.cancel ? 499 : 500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: err.message, ...(P.cancel ? { cancelled: true, step: P.cancel.step } : {}) }))
     } finally {
+      P.finishedAt = Date.now()
       _bakesInFlight.delete(id)
     }
+    return
+  }
+
+  // GET /looks/<id>/bake/status — the running bake's steps (BakeModal polls this)
+  if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/bake\/status$/))) {
+    const P = _bakeProgress.get(m[1])
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(P ? { ...P, child: undefined, running: !P.finishedAt, now: Date.now() } : { running: false, steps: [] }))
+    return
+  }
+  // POST /looks/<id>/bake/cancel — stop the running bake at its current step, and say which
+  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/bake\/cancel$/))) {
+    const P = _bakeProgress.get(m[1])
+    if (!P || P.finishedAt) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'no bake is running for this Look' })); return }
+    P.cancel = { at: Date.now(), step: P.current }
+    if (P.child) { try { P.child.kill('SIGTERM') } catch {} }
+    console.log(`[bake] ⛔ cancelled by operator at step "${P.current ?? '(between steps)'}" — ${m[1]}`)
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ ok: true, step: P.current }))
     return
   }
 

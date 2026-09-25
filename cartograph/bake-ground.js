@@ -637,6 +637,8 @@ function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new 
   // is already covered.
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i]
+    // the Bake's progress line (serve.js `runStep` reads `[progress] <what> <i>/<n>`): this step's own work count
+    console.log(`  [progress] flatten ${e.groupKey} ${entries.length - i}/${entries.length}`)
     const keepsSlot = keepOwnSlot.has(e.groupKey)
     const cuts = !doesNotCut.has(e.groupKey)
 

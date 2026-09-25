@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import {
   fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton,
   fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay,
-  fetchLooks, fetchLookDesign, saveLookDesign, bakeLook,
+  fetchLooks, fetchLookDesign, saveLookDesign, bakeLook, fetchBakeStatus,
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
   saveShapeFreeze, fetchRibbons, fetchGeography, fetchBoundary,
 } from '../api.js'
@@ -1962,7 +1962,7 @@ const useCartographStore = create((set, get) => ({
         return
       }
     }
-    set({ bakeRunning: true, bakeError: null })
+    set({ bakeRunning: true, bakeError: null, bakeProgress: null })
     try {
       // (b) SETTLE pending writes before the bake reads disk — WITHOUT bumping
       // input mtimes (that defeats the bake's incremental dirty-skip → an
@@ -1979,7 +1979,11 @@ const useCartographStore = create((set, get) => ({
       // edits before the bake reads it (NOTES.md §"Autosave debounce must flush
       // before /bake", 2026-05-18). No-op when nothing is pending.
       await get()._saveDesignDebounced.flush()
-      const r = await bakeLook(get().activeLookId, { force, repour })
+      // ⭐ the operator watches the bake: poll its steps once a second while it runs (BakeModal renders them)
+      const lookId = get().activeLookId
+      const poll = setInterval(() => { fetchBakeStatus(lookId).then(p => { if (get().bakeRunning) set({ bakeProgress: p }) }).catch(() => {}) }, 1000)
+      let r
+      try { r = await bakeLook(lookId, { force, repour }) } finally { clearInterval(poll) }
       // bakeLastMs is the cache-bust signal for BakedGround / InstancedTrees
       // (`?t=${bakeLastMs}`). Must be unique per bake-completion or the
       // browser will hit cache and show stale geometry. r.ms (duration) is
@@ -2082,6 +2086,8 @@ const useCartographStore = create((set, get) => ({
   sceneRibbons: null,
   // Set when the server's ribbons no longer match the copy this page loaded (BakeModal shows it, with Reload).
   ribbonsStale: null,
+  // the running bake's steps — { steps: [{ label, state, t0, t1, est, lastLine, frac, sub, why, error }], current, now }
+  bakeProgress: null,
   // { scene, files, resume } — a Bake refused because the pour's code changed; BakeModal asks before re-pouring
   repourConfirm: null,
   mapGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)

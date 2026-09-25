@@ -285,7 +285,7 @@
   border: 1px solid var(--carto-border-subtle, rgba(255,255,255,0.12));
   border-radius: 8px;
   padding: 24px 28px;
-  max-width: 420px;
+  max-width: min(560px, 92vw);
   color: var(--carto-text, #f0f0f0);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
@@ -326,6 +326,21 @@
   from { transform: translateX(-100%); }
   to   { transform: translateX(100%); }
 }
+.carto-bake-steps { display: grid; gap: 4px; min-width: min(380px, 80vw); font-size: 12px; }
+.carto-bake-step-row { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: baseline; }
+.carto-bake-step-glyph { text-align: center; color: var(--carto-text-invisible, #999); }
+.carto-bake-step.is-running .carto-bake-step-glyph { color: #2250E8; }
+.carto-bake-step.is-done .carto-bake-step-glyph { color: #3a9d5d; }
+.carto-bake-step.is-failed .carto-bake-step-glyph, .carto-bake-step.is-cancelled .carto-bake-step-glyph { color: #d0473b; }
+.carto-bake-step.is-waiting, .carto-bake-step.is-skipped { color: var(--carto-text-invisible, #999); }
+.carto-bake-step-time { font-variant-numeric: tabular-nums; color: var(--carto-text-invisible, #999); }
+.carto-bake-step-est { opacity: 0.7; }
+.carto-bake-step-live { margin: 2px 0 4px 22px; display: grid; gap: 3px; }
+.carto-bake-step-sub { color: var(--carto-text, #f0f0f0); }
+.carto-bake-step-bar { height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+.carto-bake-step-bar > div { height: 100%; background: #2250E8; }
+.carto-bake-step-line { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 10.5px; color: var(--carto-text-invisible, #999); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70vw; }
+.carto-bake-step-line.is-error { color: #d0473b; white-space: normal; margin-left: 22px; }
 .carto-bake-modal-dismiss {
   margin-top: 12px;
   background: transparent;
