@@ -15,9 +15,11 @@ Cary is one **activity** hung on a neighborhood **Slab** (see the project's Slab
 
 This mirrors the product exactly: **the Slab is industrialized (Cartograph), the harness is hand-fit (per instance)** — and so is the law. `instance.js` is where the *fixed-truth* per-instance config already lives (geography, name, domain, Cary contacts); the rider variables are the legal extension of that same idea.
 
-## SSoT direction (TODO — not built yet)
+## Where the legal text lives
 
-Today the live contract text is the **Missouri document** `src/instances/copy/legal/cary-missouri.jsx` (`COURIER_SECTIONS`, `RESTAURANT_SECTIONS`, the privacy body). An installation runs under it only by declaring `legal.documents: 'cary-missouri'` in its `src/instances/<map>.js` (LS and HPDM do); one that declares nothing renders "not declared", never LS's terms (2026-09-24; ▶ `node checks/claims-installation-legal-is-declared.mjs`). That is still two potential homes for the same fact. **The target state:** the JSX *derives* its sections from a parameterized legal module that reads rider values from `INSTANCE`, exactly as the runtime derives geography from `INSTANCE`. Then there is genuinely one home, and a new neighborhood's contracts regenerate from its rider. Until that refactor lands, this canon is authoritative and the JSX is propagated *from* it by hand — keep them in lockstep.
+- **Canonical home: Operations** (`theward-operations`, "Legal & Compliance" in its README). Every document there is a verbatim record with its provenance and status; all are **Draft** by Jacob's ruling (2026-09-25), and coverage per Ward is computed there. Public Ward pages reading from it is Phase 3 (`docs/briefs/BRIEF-legal-operations.md`), not built.
+- **Live text today:** `src/instances/copy/legal/cary-missouri.jsx`, served only to installations that declare `legal.documents: 'cary-missouri'` (LS, HPDM); others render "not declared" (▶ `node checks/claims-installation-legal-is-declared.mjs`).
+- ⛔ **This folder and the live JSX are DIFFERENT DRAFTS, not copies kept in lockstep** (measured 2026-09-25; ▶ `node scripts/import-legal.mjs` in `theward-operations` prints the lockstep report). Material differences include the courier age gates (live: 16+, no alcohol gate; here: Alcohol 21+) and cancellation (live: penalised; here: free to decline). Which is right is Jacob's and counsel's call; nothing here reconciles them.
 
 ## The documents
 

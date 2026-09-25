@@ -536,6 +536,7 @@ what any visitor sees, and the controls are:
 - **Nothing personal is in it.** The layer carries edited listing fields, closures, and places staff or a Host added to the map (`adds`, whole listings built from Overture and verified research); Guardian
   contacts, outreach notes and research are stored apart and a test searches the published file for them.
 - **Every publish is kept** with who, when and what, and staff can put any earlier one back.
+- **Legal records (2026-09-25) add restricted material** — drafts, executed agreements, counsel notes. A Host sees a document only if it is Host-visible, Current, not Internal and applies to their Ward, **decided in the Worker**, not the page; shareability is a separate field, and only staff can acknowledge the launch gate. `npm test` in that repo asserts it.
 
 ### F-18 · MEDIUM (IP / anti-scraping, not data exposure) · The whole slab of every town is bulk-downloadable by anyone, unauthenticated  *(new, 2026-09-21)*
 - **Measured, from a shell, with no browser and no referrer:**
