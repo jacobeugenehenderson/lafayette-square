@@ -19,6 +19,7 @@ import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
+import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
@@ -1933,10 +1934,7 @@ createServer(async (req, res) => {
         // Snapshot the pre-commit frame so a failure mid-Pour can roll back.
         // Consumed by /rollback-extent when onBuild throws before the bake lands.
         // Stale .prebak from a prior run is cleared first so only one exists.
-        const nPathC = join(mapCleanDir(scene), '..', 'neighborhood.json')
-        for (const src of [geoPath, mapDataPaths(scene).boundary, nPathC]) {
-          try { rmSync(src + '.prebak', { force: true }); if (existsSync(src)) writeFileSync(src + '.prebak', readFileSync(src)) } catch { /* best-effort */ }
-        }
+        snapshotApply(scene, 'prebak')
         const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
         // ⭐ NEVER MOVE THE FRAME ORIGIN (EXTENT-DESIGN §3.3). The origin is the
         // FROZEN fetch center; moving it would run reproject-raw over every raw
@@ -2060,8 +2058,11 @@ createServer(async (req, res) => {
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
         await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
-        await runShell(`node promote-ribbons.js --scene=${scene}`, { cwd: here, env, timeout: 60000 })
-        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true }))
+        // --yes: the Bake that called this IS the operator's decision; the change is RETURNED, not hidden.
+        let promoteDiff = null
+        await runShell(`node promote-ribbons.js --scene=${scene} --yes`, { cwd: here, env, timeout: 60000,
+          onLine: (l) => { if (l.startsWith('PROMOTE-DIFF ')) promoteDiff = JSON.parse(l.slice(13)) } })
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, promoteDiff }))
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
       } finally {
@@ -2083,12 +2084,7 @@ createServer(async (req, res) => {
     _seedsInFlight.add(scene)
     ;(async () => {
       try {
-        const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
-        let restored = false
-        for (const src of [mapDataPaths(scene).geography, mapDataPaths(scene).boundary, nPath]) {
-          const bak = src + '.prebak'
-          if (existsSync(bak)) { writeFileSync(src, readFileSync(bak)); rmSync(bak, { force: true }); restored = true }
-        }
+        const restored = restoreApply(scene, 'prebak')
         if (restored) {
           const here = import.meta.dirname
           const env = { ...process.env, CARTOGRAPH_SCENE: scene }
@@ -2117,6 +2113,7 @@ createServer(async (req, res) => {
     req.on('end', async () => {
       if (_seedsInFlight.has(scene)) { res.writeHead(409, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'busy' })); return }
       _seedsInFlight.add(scene)
+      let rescopeSnapshotted = false
       try {
         const { radius, exclusions, dropPolygon = false, polygon, polygonSource, center } = JSON.parse(body || '{}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
@@ -2220,10 +2217,10 @@ createServer(async (req, res) => {
           disc, membership, exclusions: excl,
           carry: priorRecs.carry, keyOrder: priorRecs.keyOrder,
         })
-        // Snapshot before overwriting. commit-extent has .prebak rollback; this path
-        // — the one that runs on every SUBSEQUENT extent edit — had none, so a bad
-        // rescope was unrecoverable without git.
-        try { writeFileSync(`${bPath}.prebak-rescope`, JSON.stringify(prev, null, 2)) } catch { /* best effort */ }
+        // Snapshot EVERYTHING this apply changes (boundary, draft, and the pour's outputs), and
+        // restore it if the pour fails — one consistent state either way (applySnapshotPaths).
+        snapshotApply(scene, 'prebak-rescope')
+        rescopeSnapshotted = true
         writeFileSync(bPath, JSON.stringify(boundary, null, 2))
         const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
         if (existsSync(nPath)) {
@@ -2232,10 +2229,15 @@ createServer(async (req, res) => {
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
         await runShell('node pipeline.js --skip-elevation', { cwd: here, env, timeout: 600000 })
-        await runShell(`node promote-ribbons.js --scene=${scene}`, { cwd: here, env, timeout: 60000 })
-        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, radius: Math.round(radius) }))
+        let promoteDiff = null
+        await runShell(`node promote-ribbons.js --scene=${scene} --yes`, { cwd: here, env, timeout: 60000,
+          onLine: (l) => { if (l.startsWith('PROMOTE-DIFF ')) promoteDiff = JSON.parse(l.slice(13)) } })
+        clearApplySnapshot(scene, 'prebak-rescope')
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, radius: Math.round(radius), promoteDiff }))
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+        // ⛔ A failed rescope RESTORES — it used to leave the new boundary beside old pour outputs.
+        const restored = rescopeSnapshotted ? restoreApply(scene, 'prebak-rescope') : false
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message, restored }))
       } finally { _seedsInFlight.delete(scene) }
     })
     return
@@ -2599,7 +2601,7 @@ createServer(async (req, res) => {
         await runIfDirty('promote-ribbons',
           [MAP_JSON, ...importClosure([join(here, 'promote-ribbons.js')])],
           [RIBBONS],
-          `node promote-ribbons.js ${sceneFlag}`,
+          `node promote-ribbons.js ${sceneFlag} --yes`,   // the Bake is the decision; the diff streams into this step's output
           { cwd: here, timeout: 30000 })
       } else {
         skip(`pipeline + promote-ribbons (${bakeScene} has no raw/osm.json to derive from)`)

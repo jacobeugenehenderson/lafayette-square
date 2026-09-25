@@ -31,16 +31,13 @@ const skelOverride = arg('skeleton'), ribOverride = arg('ribbons')
 
 const skelSrc = readFileSync(join(ROOT, 'cartograph/skeleton.js'), 'utf8')
 const la = skelSrc.match(/const LIMITED_ACCESS = new Set\(\[([^\]]+)\]\)/)
-const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
-const promoteSrc = readFileSync(join(ROOT, 'cartograph/promote-ribbons.js'), 'utf8')
-if (!la || !DEFAULT_MAP || !/join\(import\.meta\.dirname, '\.\.', 'src', 'data', 'ribbons\.json'\)/.test(promoteSrc)) {
-  console.error('⛔ NOT CHECKED — could not read LIMITED_ACCESS from skeleton.js, or the ribbons path rule from promote-ribbons.js / scene.js')
+// The ribbons path is promote-ribbons.js's rule, which lives in applySnapshot.mjs — CALLED, not re-parsed.
+const { promotedRibbonsPath: ribbonsOf } = await import(join(ROOT, 'cartograph/applySnapshot.mjs'))
+if (!la) {
+  console.error('⛔ NOT CHECKED — could not read LIMITED_ACCESS from skeleton.js')
   process.exit(2)
 }
 const HIGHWAY = new Set([...la[1].matchAll(/'([^']+)'/g)].map(m => m[1]))
-const ribbonsOf = (scene) => scene === DEFAULT_MAP
-  ? join(ROOT, 'src/data/ribbons.json')
-  : join(ROOT, 'cartograph/data', scene, 'clean/ribbons.json')
 
 const xy = (p) => Array.isArray(p) ? p : [p.x, p.z]
 const key = (p) => { const [x, z] = xy(p); return `${x.toFixed(2)},${z.toFixed(2)}` }

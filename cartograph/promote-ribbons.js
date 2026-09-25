@@ -6,8 +6,9 @@
 
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { DEFAULT_MAP, SCENE, mapCleanDir, requireExplicitMap} from './config.js'
+import { SCENE, mapCleanDir, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
+import { promotedRibbonsPath } from './applySnapshot.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('promote-ribbons.js (writes the runtime ribbons bundle)')
@@ -24,9 +25,7 @@ for (const arg of process.argv.slice(2)) {
   if (m) scene = m[1]
 }
 const MAP_PATH = join(mapCleanDir(scene), 'map.json')
-const BUNDLED_PATH = scene === DEFAULT_MAP
-  ? join(import.meta.dirname, '..', 'src', 'data', 'ribbons.json')
-  : join(mapCleanDir(scene), 'ribbons.json')
+const BUNDLED_PATH = promotedRibbonsPath(scene)   // one answer, shared with the apply snapshot
 
 const map = JSON.parse(readFileSync(MAP_PATH, 'utf-8'))
 const ribbons = map.layers?.ribbons
@@ -54,7 +53,14 @@ if (!ribbons) throw new Error('map.json has no layers.ribbons')
 // ⚠️ THE REAL LIMIT OF THIS GUARD IS STILL TRUE AND IS THE ONLY THING TO CARRY FORWARD:
 // it compares COUNTS, so a same-count different-GEOMETRY pour passes silently. That is what
 // the check above exists to catch — diff the layers, never the counts.
-if (existsSync(BUNDLED_PATH) && !process.argv.includes('--yes')) {
+// ⭐ `--yes` IS THE OPERATOR'S GESTURE, AND IT IS NEVER SILENT. The Bake button (Extent and
+// Stage alike) passes it: pressing Bake after changing the extent IS the decision this guard
+// asks for, and until 2026-09-25 the routes did not pass it, so EVERY real radius change was
+// refused, the Extent Bake rolled back, and the operator saw nothing. With --yes the change
+// still prints, human-readable AND as one `PROMOTE-DIFF {json}` line the routes return to the UI.
+// The CLI without --yes keeps the refusal.
+const operatorGesture = process.argv.includes('--yes')
+if (existsSync(BUNDLED_PATH)) {
   try {
     const prev = JSON.parse(readFileSync(BUNDLED_PATH, 'utf-8'))
     const shape = (r) => ({
@@ -65,7 +71,11 @@ if (existsSync(BUNDLED_PATH) && !process.argv.includes('--yes')) {
     })
     const a = shape(prev), b = shape(ribbons)
     const moved = Object.keys(a).filter(k => a[k] !== b[k])
-    if (moved.length) {
+    if (moved.length && operatorGesture) {
+      console.log(`promote changes ${BUNDLED_PATH} (the operator's Bake):`)
+      for (const k of moved) console.log(`     ${k.padEnd(9)} ${a[k]}  →  ${b[k]}`)
+      console.log('PROMOTE-DIFF ' + JSON.stringify(Object.fromEntries(moved.map(k => [k, [a[k], b[k]]]))))
+    } else if (moved.length) {
       console.error(`\n⛔ refusing to promote: this would MATERIALLY CHANGE ${BUNDLED_PATH}\n`)
       for (const k of moved) console.error(`     ${k.padEnd(9)} ${a[k]}  →  ${b[k]}`)
       console.error(`

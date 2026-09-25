@@ -1021,6 +1021,8 @@ export default function ExtentApp() {
   const [query, setQuery] = useState('')
   const [seeding, setSeeding] = useState(false)
   const [seedError, setSeedError] = useState(null)
+  // The last Bake's outcome, shown beside the Bake button: { error:{step,message,rolledBack} } or { promoteDiff }.
+  const [bakeResult, setBakeResult] = useState(null)
   const [fetchSources, setFetchSources] = useState(null)   // per-source ✓/count/error after a Fetch
   // Intake starts BLANK: nothing has been fetched yet, so show no map until the
   // operator Searches (or Fetches). No defaulting to the active scene's map.
@@ -1770,7 +1772,13 @@ export default function ExtentApp() {
   // finalizes the extent, then builds the slab, narrating each phase via buildStage.
   const onBuild = async () => {
     if (!(keptFit.count > 0) || !(radiusM > 0) || building || !geo) return
-    setBuilding(true); setSeedError(null); setBuildStartedAt(Date.now())
+    setBuilding(true); setSeedError(null); setBakeResult(null); setBuildStartedAt(Date.now())
+    // The step in progress, kept LOCALLY (state is async) so a failure can name it.
+    let step = 'starting'
+    const stageTo = (st) => { step = st.label; setBuildStage(st) }
+    // ⭐ The Designer camera BEFORE this Bake touches it, so a rollback can put it back.
+    let priorCam = null
+    try { priorCam = localStorage.getItem('cartograph-camera') } catch { /* ignore */ }
     // §6 atomicity: commit re-centers geography + reprojects raw (destructive). If
     // a later stage throws, roll back to the pre-commit frame so we never strand a
     // re-centered-but-slab-less scene. `committedThisRun` gates the rollback.
@@ -1794,14 +1802,14 @@ export default function ExtentApp() {
       //    Applies edited radius + exclusions and opens the Designer — the single
       //    "apply my changes and show me" action (no separate Re-scope button).
       if (committed) {
-        setBuildStage({ label: 'Re-applying extent', i: 1, n: 2 })
-        await rescopeMap(scene, Math.round(radiusM), exclusionsLL,
+        stageTo({ label: 'Re-applying extent', i: 1, n: 2 })
+        const rs = await rescopeMap(scene, Math.round(radiusM), exclusionsLL,
           Array.isArray(polygonLL) && polygonLL.length >= 3
             ? { polygon: polygonLL, polygonSource: polygonSource || 'authored' }
             : {})
         const b = await fetchBoundary(scene).catch(() => null)
         if (b) useCartographStore.setState({ sceneBoundary: b })
-        setBuildStage({ label: 'Baking slab', i: 2, n: 2 })
+        stageTo({ label: 'Baking slab', i: 2, n: 2 })
         const idx = await fetchLooks().catch(() => null)
         let lookId = idx?.looks?.find(l => l.scene === scene)?.id
         // A committed hood may still have NO Look of its own — poured before Looks
@@ -1819,6 +1827,7 @@ export default function ExtentApp() {
         // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
         const pm = await fetchMap(scene).catch(() => null)
         if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
+        setBakeResult({ promoteDiff: rs?.promoteDiff || null })
         setAppliedRadius(Math.round(radiusM))
         // Committed frame is unchanged (no re-center) → carry the authored view as-is.
         if (authoredCam) { try { localStorage.setItem('cartograph-camera', JSON.stringify(authoredCam)) } catch { /* ignore */ } }
@@ -1829,7 +1838,7 @@ export default function ExtentApp() {
       }
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
-      setBuildStage({ label: 'Committing extent', i: 1, n: 3 })
+      stageTo({ label: 'Committing extent', i: 1, n: 3 })
       // Re-center to the KEPT-buildings centroid so the hood lands at the origin.
       const [lon, lat] = localToWgs84(geo, discCenter.x, discCenter.z)
       // The EXCLUSION loops (frame-independent lon/lat) ride along — the server
@@ -1854,27 +1863,31 @@ export default function ExtentApp() {
       // First pour RE-CENTERS the frame to the disc centre (new origin), so translate
       // the pose by −discCenter; zoom is unchanged. Falls back to a centered fit.
       try {
+        // ⛔ NO −discCenter TRANSLATE. It assumed the first pour RE-CENTERS the frame, which
+        // EXTENT-DESIGN §3.3 retracted (commit never moves the origin), so the Designer opened
+        // offset — the "sliver" (provincetown, 2026-09-25). The authored pose is already right.
         const c = authoredCam
-          ? { x: authoredCam.x - discCenter.x, z: authoredCam.z - discCenter.z, zoom: authoredCam.zoom }
+          ? { x: authoredCam.x, z: authoredCam.z, zoom: authoredCam.zoom }
           : { x: 0, z: 0, zoom: clampZoom((((typeof window !== 'undefined' && window.innerHeight) || 900)) / (2 * Math.round(radiusM) * 1.3)) }
         localStorage.setItem('cartograph-camera', JSON.stringify(c))
       } catch { /* ignore */ }
       // ── Build the slab (was "Pour") — pipeline (clipped to the boundary) →
       //    ribbons → ensure a Look for this scene → bake → open the Designer.
-      setBuildStage({ label: 'Pouring map', i: 2, n: 3 })
-      await pourMap(scene)
+      stageTo({ label: 'Pouring map', i: 2, n: 3 })
+      const pr = await pourMap(scene)
       const idx = await fetchLooks().catch(() => null)
       let lookId = idx?.looks?.find(l => l.scene === scene)?.id
       if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene }); lookId = r.id }
       const store = useCartographStore.getState()
       if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
-      setBuildStage({ label: 'Baking slab', i: 3, n: 3 })
+      stageTo({ label: 'Baking slab', i: 3, n: 3 })
       await bakeLook(lookId, { force: true })
       const rb = await fetchRibbons(scene).catch(() => null)
       if (rb) useCartographStore.setState({ sceneRibbons: rb })
       // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
       const pm = await fetchMap(scene).catch(() => null)
       if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
+      setBakeResult({ promoteDiff: pr?.promoteDiff || null })
       setAppliedRadius(Math.round(radiusM))   // §4: the baked circle, for re-scope detection
       setBakedSig(bakeSignature)
       saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
@@ -1888,10 +1901,13 @@ export default function ExtentApp() {
         const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
         useCartographStore.setState({ mapGeography: g || null, sceneBoundary: b || null })
         setCommitted(false); setSeedToken(t => t + 1)
-        setSeedError(`Pour failed — rolled back to before commit. ${e.message || ''}`.trim())
-      } else {
-        setSeedError(e.message || 'build failed')
       }
+      // ⭐ The camera goes back to where it was before this Bake, whichever branch failed.
+      try { if (priorCam == null) localStorage.removeItem('cartograph-camera'); else localStorage.setItem('cartograph-camera', priorCam) } catch { /* ignore */ }
+      // ⛔ Shown BESIDE THE BAKE BUTTON, naming the step. It used to go to seedError, which
+      // renders only in the Setup section — hidden for every town that has data, so a failed
+      // Bake on an existing town was silent (provincetown, 2026-09-25).
+      setBakeResult({ error: { step, message: e.message || 'failed', rolledBack: committedThisRun } })
     } finally {
       setBuilding(false); setBuildStage(null); setBuildStartedAt(0)
     }
@@ -2434,6 +2450,17 @@ export default function ExtentApp() {
                         : `${buildStage?.label || 'Baking'}…`)
                     : (bakeDirty ? 'Bake' : 'Baked')}
                 </button>
+                {bakeResult?.error && (
+                  <div className="carto-extent-status warn" style={{ flexBasis: '100%', marginTop: 6 }}>
+                    Bake failed at “{bakeResult.error.step}”: {bakeResult.error.message}
+                    {bakeResult.error.rolledBack ? ' — rolled back to how it was before this Bake.' : ''}
+                  </div>
+                )}
+                {bakeResult?.promoteDiff && (
+                  <div className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 6 }}>
+                    This Bake changed the street layout: {Object.entries(bakeResult.promoteDiff).map(([k, [a, b]]) => `${k} ${a}→${b}`).join(' · ')}
+                  </div>
+                )}
               </div>
             )}
           </div>

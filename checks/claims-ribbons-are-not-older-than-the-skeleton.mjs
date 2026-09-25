@@ -21,14 +21,8 @@ import { ROOT, scenes } from './_scenes.mjs'
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
 const skelOverride = process.argv.find(a => a.startsWith('--skeleton='))?.slice('--skeleton='.length)
 
-// promote-ribbons.js's own rule: `scene === DEFAULT_MAP ? <bundle> : <clean>/ribbons.json`.
-const promoteSrc = readFileSync(join(ROOT, 'cartograph/promote-ribbons.js'), 'utf8')
-const bundle = promoteSrc.match(/join\(import\.meta\.dirname, '\.\.', 'src', 'data', 'ribbons\.json'\)/)
-const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
-if (!bundle || !DEFAULT_MAP) { console.error('⛔ NOT CHECKED — could not read the ribbons path rule from promote-ribbons.js / scene.js'); process.exit(2) }
-const ribbonsOf = (scene) => scene === DEFAULT_MAP
-  ? join(ROOT, 'src/data/ribbons.json')
-  : join(ROOT, 'cartograph/data', scene, 'clean/ribbons.json')
+// promote-ribbons.js's own rule, which lives in applySnapshot.mjs — CALLED, not re-parsed.
+const { promotedRibbonsPath: ribbonsOf } = await import(join(ROOT, 'cartograph/applySnapshot.mjs'))
 
 let red = false
 for (const scene of scenes('cartograph/data/<scene>/raw/osm.json')) {
