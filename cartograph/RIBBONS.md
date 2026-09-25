@@ -778,8 +778,11 @@
 > feature goes to **ZERO**: the corner's radius is 0, which is the sharp vertex, the same answer `R=0`
 > already gives. ⛔ Still not the forbidden clamp — nothing is shrunk to a plausible fit.
 > ⚠️ **It goes to zero WHERE it crosses.** A band pinching out mid-block vanishes *there* and continues
-> either side. ⛔ The current implementation is coarser — a self-intersection anywhere on a ring reverts
-> **the whole ring** to sharp, so one bad corner flattens every good corner on a long block. Named, open. **A clamp is a
+> either side. ⛔⛔ **NOT BUILT — this ruling is ASPIRATION, not state** (Plumb, 2026-09-24). The whole-ring
+> revert once cited here (`6d17b6a6`) was excised in `4bc640f0`, and nothing local replaced it: `offsetRingVariable`'s
+> self-union runs at `pftNonZero`, which FILLS a winding −1 lobe, so where a contour narrower than 2·depth crosses
+> itself the backwards lobe **survives** (Huron's US 6 roundabout teardrop and wedges). The same holds for the
+> OFFSET → UNION → EASE claim that *"the union is what performs it"*. ▶ `BRIEF-junction-shape-where-the-offset-crosses`. **A clamp is a
 > cleanup patch living inside the construction** — the miter-limit bevel at §3.3's U-seam is the worked
 > example, and it is *the* artifact there.
 >
