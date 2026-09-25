@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: no
 written: 2026-09-24
-evict-when: each instance below is either fixed at its construction root with a check that goes red on it (mutation-tested), or has a named cause and a ruling; Jacob has eyed Huron's US 6 roundabout and Provincetown's bay
+evict-when: claims-the-ground-covers-every-block is green on huron + LS, and each instance below is either fixed at its construction root with a check that goes red on it (mutation-tested), or has a named cause and a ruling; Jacob has eyed Huron's US 6 roundabout and Provincetown's bay
 -->
 
 **Status:** dispatch-ready. Boz drafted it 2026-09-24, and **Jacob dispatches.**
@@ -39,11 +39,21 @@ evict-when: each instance below is either fixed at its construction root with a 
 
 Gantry's reading (**not measured**) is miter spurs off the breakwater's hairpin dead-end tip, which the fold-spur pass doesn't drop, then bridged to the frame by the self-union.
 
+**Huron, the sky-through holes: the ③ instance.** Gantry measured them in baked `ground.bin`, 2026-09-24. They're pre-existing: identical before H-3 step 3.
+- **The four holes that no partition group covers:**
+  - (−86.4, 27.5) 1.94 m²
+  - (−76.3, 32.3) 1.38 m²
+  - (−75.3, 16.4) 1.13 m²
+  - (−77.2, 15.9) 0.94 m²
+- Each lies **inside its tile's ② curb ring** (tiles 110 and 108). Running the real frozen painter `sectionPassProtoTile` on that tile, the point is in **none** of its outputs (curb, sidewalk, treelawn, LU).
+- ⇒ **The Section painter does not tile its own block** at those corners. The mechanism inside the painter is **not established**.
+- **It is kit-wide.** In both huron and LS, most tiles leave some area painted by nobody. ⛔ **Re-derive it, never quote it:** run Gantry's check `checks/claims-the-ground-covers-every-block.mjs` (being written 2026-09-24).
+  - `claims-t-junctions` reported 0 on this bake because a hole with sound borders on every side has no vertex on a wrong edge. **That check is blind to an absence; this one is the gate.**
+
 ⚠️ The bay is about to become water (Revetment's work), which will delete this face. **That hides the instance; it does not fix the class.** Reproduce it on the current data first, then keep it as a fixture.
 
 ## Not in scope
 
-- **The sky-through holes** in the same screenshot: Gantry has them.
 - **Whether an expressway keeps its curb:** `references/` question `q-atgrade-expressway-edge`, open. (Jacob also flagged *"You can also see: Curb"* on the same screenshot; the curb on US 6 is that question, not yours. If a curb shows on a highway in the H-3 classes, that **is** a defect: tell Boz.)
 - **The owed roundabout brief** (A19: HPDM's unwelded split roundabout pieces).
 
@@ -72,7 +82,7 @@ Gantry's reading (**not measured**) is miter spurs off the breakwater's hairpin 
 
 ## Phase 1 deliverable, in chat to Jacob
 
-For **each** instance (the wedge islands · the teardrop · the SE merge crossing · the corners at the expressway × town-street junction · Provincetown's spurs):
+For **each** instance (the wedge islands · the teardrop · the SE merge crossing · the corners at the expressway × town-street junction · the unpainted holes · Provincetown's spurs):
 
 1. **Where it enters:** ① (mint), ② (offset / union / ease) or ③ (section fill). Locate it by coordinate → the tile whose ring contains it → the arc and its owner. ⛔ Never locate by nearest chain.
 2. **The measured cause**, or *"cause not established."* ⛔ Write only the number, never an explanation you haven't measured.
