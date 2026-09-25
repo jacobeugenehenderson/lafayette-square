@@ -440,10 +440,24 @@ export function bakeRevetment({ scene, look }) {
   const wrote = writeIfChanged(outPath, JSON.stringify(out))
   const kb = (JSON.stringify(out).length / 1024).toFixed(0)
   console.log(`[bake-revetment] scene=${scene} look=${lookId}: ${arcs.length} arc(s) ruled, ${refused.length} refused`)
-  console.log(`  ${(ruledM/1000).toFixed(2)} km ruled · ${(armouredM/1000).toFixed(2)} km armoured (${(100*armouredM/Math.max(1,ruledM)).toFixed(0)}%) · ${(refusedM/1000).toFixed(2)} km refused`)
-  // ⭐ Said on its own line and only when non-zero: merging it with `refused` would report the
-  // edge of our own drawing as a fact about the town's shore.
-  if (outsideM > 0) console.log(`  ⭐ ${(outsideM/1000).toFixed(2)} km of shoreline lies OUTSIDE THE DRAWING (beyond the ${Math.round(discR)} m disc) across ${outside.length} arc(s) — counted, not refused: the circle is stamped last and what it excludes is not in the map.`)
+  // ⭐⭐⭐ ONE LOUD LINE, EVERY BAKE — ruled by Jacob 2026-09-25 ("Lidar", r-coast-trust-the-lidar).
+  // ⛔ THE COVERAGE FIGURE IS A HEADLINE NUMBER AND IT WAS ONLY DISCOVERABLE BY READING A LIST.
+  // Provincetown armours an EIGHTH of its shore, and the reason is not a defect in the kit: the
+  // OSM coastline and the USGS water surface disagree along two thirds of the coast — measured,
+  // 54.3% of segments on the longest run are above zero on BOTH sides within the probe. We TRUST
+  // THE LIDAR (it is what the stone would sit on, and on a sandy spit a shore dry on both sides
+  // is most likely beach that needs no armour), so the decline is CORRECT — which is exactly why
+  // it has to be said out loud rather than left in a `refused` array nobody opens. A town that
+  // armours 12% of its coast and says nothing is the plausible-looking success this kit rates
+  // worst.
+  // ⭐ Three numbers, three different kinds of fact, never merged: what we BUILT, what the
+  // LIDAR declined, and what our own DRAWING excludes.
+  const notWaterM = refused.filter(r => /not at a water edge/i.test(r.why)).reduce((a, r) => a + r.lengthM, 0)
+  const otherM = refusedM - notWaterM
+  console.log(`  ⭐ REVETMENT: covers ${(armouredM/1000).toFixed(2)} km of ${(ruledM/1000).toFixed(2)} km ruled in the drawing (${(100*armouredM/Math.max(1,ruledM)).toFixed(0)}%)` +
+              ` · ${(notWaterM/1000).toFixed(2)} km declined — not at the water per the lidar` +
+              (otherM > 1 ? ` · ${(otherM/1000).toFixed(2)} km refused for other reasons` : '') +
+              (outsideM > 0 ? ` · ${(outsideM/1000).toFixed(2)} km outside the drawing (beyond the ${Math.round(discR)} m disc)` : ''))
   for (const r of refused) console.log(`  ⛔ refused arc #${r.index} (${r.lengthM} m): ${r.why}`)
   const total = Object.values(why).reduce((a, b) => a + b, 0)
   console.log(`  stations: ${Object.entries(why).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `${k} ${v}`).join(' · ')}`)
