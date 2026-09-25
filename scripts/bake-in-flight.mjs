@@ -11,6 +11,9 @@
  *
  *   node scripts/bake-in-flight.mjs [--minutes=5]
  * Exit 0 = quiet · 1 = something is in flight (usable as a guard: `… && edit`).
+ * ⛔ NEVER PIPE IT IN A GUARD: `node scripts/bake-in-flight.mjs | tail -1 && save` gates on
+ *   TAIL's exit code, which is always 0, so the save runs during a bake (it did, 2026-09-25).
+ *   Use `--quiet` (prints only the verdict line) instead of a pipe.
  *   node scripts/bake-in-flight.mjs --self-test
  *
  * ⛔ WRITES ALONE DO NOT PROVE A BAKE. `git worktree add` (or a checkout) stamps many
@@ -22,9 +25,13 @@
 import { readdirSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 const ROOT = join(import.meta.dirname, '..')
 const mins = +(process.argv.find(a => a.startsWith('--minutes='))?.slice(10) || 5)
+const quiet = process.argv.includes('--quiet')
+// Test hook: the self-test runs this script as a CHILD with a simulated state and asserts the EXIT CODE.
+const SIM = process.env.BAKE_IN_FLIGHT_SIMULATE || null   // 'busy' | 'quiet'
 const cutoff = Date.now() - mins * 60_000
 const hhmmss = (t) => new Date(t).toTimeString().slice(0, 8)
 
@@ -80,6 +87,14 @@ if (process.argv.includes('--self-test')) {
     ['only backups, spread over time', [], [[T, 'a/overlay.json.backup-1'], [T + 9_000, 'a/map.json.bak']], false],
   ]
   let bad = 0
+  // ⭐ THE EXIT CODE IS THE CONTRACT A GUARD RELIES ON: run this script as a child and assert it.
+  const { spawnSync } = await import('node:child_process')
+  for (const [state, want] of [['busy', 1], ['quiet', 0]]) {
+    const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--quiet'], { env: { ...process.env, BAKE_IN_FLIGHT_SIMULATE: state } })
+    const ok = r.status === want
+    console.log(`  ${ok ? '✓' : '⛔'} exit code when ${state} → ${r.status} (want ${want})`)
+    if (!ok) bad++
+  }
   for (const [name, p, r, want] of cases) {
     const got = decide(p, r).busy
     console.log(`  ${got === want ? '✓' : '⛔'} ${name} → ${got ? 'IN FLIGHT' : 'quiet'}`)
@@ -88,13 +103,13 @@ if (process.argv.includes('--self-test')) {
   process.exit(bad ? 1 : 0)
 }
 
-const d = decide(procs, recent)
-console.log(`bake-in-flight — now ${hhmmss(Date.now())}, looking back to ${hhmmss(cutoff)} (${mins} min)`)
-console.log(`  processes: ${procs.length ? '' : 'none'}`)
-for (const p of procs) console.log(`    ${p}`)
-console.log(`  writes to public/baked/ or cartograph/data/*/clean/ since ${hhmmss(cutoff)}: ${recent.length || 'none'}` +
+const d = SIM ? { busy: SIM === 'busy', trail: false, artifacts: 0, spanS: 0 } : decide(procs, recent)
+if (!quiet) console.log(`bake-in-flight — now ${hhmmss(Date.now())}, looking back to ${hhmmss(cutoff)} (${mins} min)`)
+if (!quiet) console.log(`  processes: ${procs.length ? '' : 'none'}`)
+if (!quiet) for (const p of procs) console.log(`    ${p}`)
+if (!quiet) console.log(`  writes to public/baked/ or cartograph/data/*/clean/ since ${hhmmss(cutoff)}: ${recent.length || 'none'}` +
   (recent.length ? ` (${d.artifacts} artifact, spanning ${d.spanS.toFixed(1)} s — ${d.trail ? 'a bake-shaped trail' : 'one burst or backups only: a checkout/worktree touch, not a bake'})` : ''))
-for (const [t, p] of recent.slice(0, 12)) console.log(`    ${hhmmss(t)}  ${p}`)
-if (recent.length > 12) console.log(`    … ${recent.length - 12} more`)
+if (!quiet) for (const [t, p] of recent.slice(0, 12)) console.log(`    ${hhmmss(t)}  ${p}`)
+if (!quiet && recent.length > 12) console.log(`    … ${recent.length - 12} more`)
 console.log(d.busy ? '⛔ IN FLIGHT — do not save anything the dev servers import.' : '✅ quiet.')
 process.exit(d.busy ? 1 : 0)
