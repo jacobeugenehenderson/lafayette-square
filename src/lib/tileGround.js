@@ -5004,11 +5004,19 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // is `RIBBONS §1`'s "a seam is UNCONSTRUCTIBLE rather than merely unlikely", now true of the
   // corner as well as the leg. The additive slide that stood here was the last piece that was not
   // an offset of the contour.
+  // ⭐ A PARTITION, NOT AN AREA MASK (Jacob, 2026-09-25: "holes patched"). The lawn and the deep tail were two more
+  // separately-offset bands, and where the walk and the lawn swap order at a corner tangent their boundaries stepped
+  // differently — a triangle painted by NOBODY, the sky showing through. They are ONE material, the block's own colour
+  // (`SECTION` rule 3), so they are painted as "the band the walk is not": the ped envelope (curb-inner → WB) minus the
+  // walk, with the walk clipped to that envelope. curb ∪ walk ∪ lawn ∪ LU = the block by construction; it also ends the
+  // lawn's overlap with the walk. ▶ node checks/claims-the-ground-covers-every-block.mjs
+  const luIn = ins((p) => (i) => (bareAt(p, i) ? 0 : WB))
+  const env = band(pedOuter, luIn)
+  const Wp = env.length && W.length ? intersectRings(W, env) : []
   return {
-    Wacc:   inBlock(W),
-    tlByLu: { [key]: inBlock([...band(insD(p => F.get(p).lawnFromD), insD(p => F.get(p).lawnToD)),
-                              ...band(insD(p => F.get(p).tailFromD), insD(p => F.get(p).tailToD))]) },
-    luByLu: { [key]: inBlock(ins((p) => (i) => (bareAt(p, i) ? 0 : WB))) },
+    Wacc:   inBlock(Wp),
+    tlByLu: { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) },
+    luByLu: { [key]: inBlock(luIn) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
     feArcs, feRepeat,

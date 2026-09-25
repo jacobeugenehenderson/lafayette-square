@@ -295,11 +295,10 @@ pointer that does not resolve reads as evidence already gathered.)*
   ▶ `node checks/claims-the-corner-extent-is-carried.mjs <scene>` — scores the carry against the
   tangent match it replaced, both columns from one run.
   ⛔ Re-run them; never quote a figure from here.
-  ### ⛔ OPEN — THE BANDS ARE AN AREA MASK, NOT A PARTITION. Each band is the difference of two SEPARATE
-  offsets of the curb. Measured on the synthetic eased block (2026-09-25): where walk and lawn swap order at a
-  corner tangent their steps differ and a triangle is painted by NOBODY — the SKY shows. The treelawn∩sidewalk
-  overlap and the divider residual may be the same cause (not measured). ▶ `node checks/claims-the-ground-covers-every-block.mjs
-  [--selftest]` · `claims-proto-fill-is-live.mjs`. ⛔ Striking with ②'s `offsetRingByRects` made it WORSE (reverted). **Awaiting Jacob:** paint as a partition in depth — each curb edge's band sliced by its own depths.
+  ### ✅ THE LAWN IS THE BAND THE WALK IS NOT (built 2026-09-25): ped envelope minus the walk, one material, so no sky hole
+  and no lawn∩walk overlap by construction. ▶ `claims-the-ground-covers-every-block.mjs [--selftest]`. ⛔ OPEN: Huron's island
+  tile 118 hole · the walk's own offsets keep backwards lobes · ⭐ **the first-round paint must ASK what each frontage is**
+  (Jacob) — only the expressway rule and the treelawn glean ask; beaches and islands get walks. ▶ `node scratch/walk-data-coverage.mjs`.
 - **`protoBands` is a second ③** (`blockAt`, frozen ① at scalar widths), drawn nowhere, read by five checks — it disagrees with the drawn ③ wherever a taper exists. OPEN: retire it, or build it from ②'s working copy.
 - **The fe-key partition** — authoring writes `blockCustoms[skelId][side][segOrd]`; ①'s runs carry a
   DIFFERENT segOrd partition, so a majority of LS's authored slots resolve to no run at all. `§7`'s
