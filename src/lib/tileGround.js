@@ -736,7 +736,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
   // own label, labels on Clipper's Z channel, crossings resolved by walking the
   // output ring forward. ⛔ NOT `unionRingLabelled`: that self-unions ONE ring and
   // cannot carry identity across ~200 chain rectangles.
-  const R = booleanLabelled(clipperLib.ClipType.ctUnion, rings, labels, [], null, true)   // ① needs the edge ledger; nothing else does
+  // the containment rule re-owns an edge only ACROSS strokes — two labels are one stroke when they name one chain
+  const sameStroke = (a, b) => owners[a] && owners[b] && owners[a].skelId === owners[b].skelId
+  const R = booleanLabelled(clipperLib.ClipType.ctUnion, rings, labels, [], null, { sameStroke })   // ① needs the edge ledger; nothing else does
+  if (R.containment) console.log(`    [①] containment: ${R.containment.reassigned} surviving vertex/vertices whose edge runs along ANOTHER stroke re-owned by the input edge it lies on${R.containment.unresolved ? ` · ⛔ ${R.containment.unresolved} with no single containing edge — left as they were` : ''}`)
 
   // ⭐⭐⭐ THE CIRCLE IS THE STENCIL, NOT A CHAIN. Home: `RIBBONS §1`, "THE RIM BOUNDS, IT DOES
   // NOT OWN" — ruled 2026-08-12 and re-ruled aloud 2026-09-06: "EITHER we build the entire grid
@@ -884,7 +887,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // is a hole of which. Read as a flat list, `frame − ink` hands back the exterior as the
     // frame ring PLUS one hole per connected ink component, and every one of those holes was
     // being carried out as a block. See `booleanLabelled`'s header for the measurement.
-    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], clipRings, clipLabels, true, true)
+    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], clipRings, clipLabels, { sameStroke }, true)
+    if (D.containment) console.log(`    [①] blocks containment: ${D.containment.reassigned} re-owned${D.containment.unresolved ? ` · ⛔ ${D.containment.unresolved} with no single containing edge — left as they were` : ''}`)
     let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null
     if (!D.refused && D.faces?.length) {
       blocks = []; blockLabels = []; blockHoles = []; blockHoleLabels = []
@@ -1062,6 +1066,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
 // result gains `payloads` (null at a minted crossing). ⛔ Callers that pass nothing take the unchanged
 // path: Z = label + 1 exactly as before, so their output is byte-identical.
 function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null, carryEdges = false, asTree = false, payload = null) {
+  // `carryEdges` may be `{ sameStroke(labA, labB) }` — the caller's own identity test, which the containment rule
+  // needs because labels are opaque here. Any truthy value keeps the ledger on, as before.
+  const sameStroke = typeof carryEdges === 'object' && carryEdges ? carryEdges.sameStroke : null
   const { Clipper, PolyType, PolyFillType } = clipperLib
   const prev = clipperLib.use_xyz
   clipperLib.use_xyz = true
@@ -1088,6 +1095,8 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
   // A post-hoc lookup could not do this (`§A06`: half the carve vertices sit on no input
   // curve), which is exactly why the label has to ride the operation.
   const met = new Map()                 // "X,Y" → Set(label) — the owners that met at a crossing
+  let segs = null, segGrid = null       // the input edges, for the containment rule (filled inside the try, carryEdges only)
+  const SEG_CELL = 50 * SCALE           // their hash cell, in grid units; a lookup scans a 3×3 neighbourhood
   const mkey = (q) => q.X + ',' + q.Y
   try {
     const c = new Clipper()
@@ -1110,16 +1119,29 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
         arr.push({ lab, dx: dx / L, dy: dy / L })
       }
     }
+    // ⭐⭐ THE INPUT SEGMENTS, AS HANDED TO CLIPPER — for the containment rule on the output walk (carryEdges only).
+    // Every input edge with its two endpoints (integer, Z-labelled exactly as encoded), hashed on a grid so an output
+    // edge can ask which input edge it LIES ON. Carried, not recovered: these are the operands of this boolean.
+    // ⛔ OPT-IN, like the ledger's other extensions (`ROADMAP A18`): only a caller that passes `sameStroke` (the ①
+    // mint) gets the containment rule, so ②'s differences and every other caller are byte-identical by construction.
+    segs = sameStroke ? [] : null; segGrid = sameStroke ? new Map() : null
+    const addSegs = (ring, L) => { const e = ring.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L)), n = e.length
+      for (let i = 0; i < n; i++) { const a = e[i], b = e[(i + 1) % n], id = segs.push({ a, b }) - 1
+        const x0 = Math.floor(Math.min(a.X, b.X) / SEG_CELL), x1 = Math.floor(Math.max(a.X, b.X) / SEG_CELL)
+        const y0 = Math.floor(Math.min(a.Y, b.Y) / SEG_CELL), y1 = Math.floor(Math.max(a.Y, b.Y) / SEG_CELL)
+        for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { const k = x + ',' + y; let c = segGrid.get(k); if (!c) segGrid.set(k, c = []); c.push(id) } } }
     let s = 0
     for (let k = 0; k < subjectRings.length; k++) {
       const r = subjectRings[k]; if (!r || r.length < 3) continue
       const L = subjectLabels?.[k], PL = payload?.subject?.[k]
+      if (segs) addSegs(r, L)
       c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L, PL?.[i])), PolyType.ptSubject, true); s++
     }
     if (!s) return { rings: [], labels: [], refused: null }
     for (let k = 0; k < clipRings.length; k++) {
       const r = clipRings[k]; if (!r || r.length < 3) continue
       const L = clipLabels?.[k], PL = payload?.clip?.[k]
+      if (segs) addSegs(r, L)
       c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L, PL?.[i])), PolyType.ptClip, true)
     }
     if (!asTree) c.Execute(clipType, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
@@ -1162,8 +1184,53 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
   // an unchanged object plus one additive key nothing reads. `ROADMAP A18`: anything an experiment
   // needs from shared code is opt-in at the call site.
   const crossings = carryEdges ? out.map(p => p.map(q => (q.Z ? null : (met.get(mkey(q)) || []).map(e => e.lab)))) : null
+  // ⭐⭐⭐ THE CONTAINMENT RULE — a SURVIVING vertex's label names the edge leaving it ONLY IF that edge lies on one of
+  // the vertex's OWN input edges. (Gantry, 2026-09-24; `claims-every-proto-edge-lies-on-its-owner`.) Where chain X ENDS
+  // on Y's stroke at a shallow angle, X's butt-corner vertex lies on Y's ε boundary and survives the union with X's
+  // label — and the output edge leaving it runs along Y (provincetown: 14.49 m of snail-road stamped trunk-link-28;
+  // LS: 322.6 m of truman-parkway-0 stamped secondary-link-45). Such an edge takes the owner of the input edge it
+  // LIES ON — the Z of that input edge's endpoint BEHIND the output edge's start (the end the walk would have entered
+  // it by). No angle and no orientation assumption: `on` is containment on the integer grid (2 units), and "behind"
+  // is the sign of a dot product. ⛔ No such input edge, or two with different owners ⇒ the vertex's
+  // label is LEFT AS IT WAS and COUNTED as `containment.unresolved`, which the mint prints by number — this rule changes
+  // only a label it can name.
+  const onSeg = (q, a, b) => { const dx = b.X - a.X, dy = b.Y - a.Y, L2 = dx * dx + dy * dy; if (!L2) return false
+    const t = (q.X - a.X) * dx + (q.Y - a.Y) * dy; if (t < -2 * Math.sqrt(L2) || t > L2 + 2 * Math.sqrt(L2)) return false
+    return Math.abs((q.X - a.X) * dy - (q.Y - a.Y) * dx) / Math.sqrt(L2) <= 2 }
+  const segsNear = (q) => { const cx = Math.floor(q.X / SEG_CELL), cy = Math.floor(q.Y / SEG_CELL), ids = new Set()
+    for (let x = cx - 1; x <= cx + 1; x++) for (let y = cy - 1; y <= cy + 1; y++) for (const id of segGrid.get(x + ',' + y) || []) ids.add(id)
+    return [...ids].map(id => segs[id]) }
+  // the output edge v→q: does it lie on one of v's OWN input edges (an input edge with v's Z at an end, through v)?
+  const ownEdge = (v, q) => segsNear(v).some(sg => ((sg.a.Z === v.Z && sg.a.X === v.X && sg.a.Y === v.Y) || (sg.b.Z === v.Z && sg.b.X === v.X && sg.b.Y === v.Y))
+    && onSeg(q, sg.a, sg.b) && (() => { const e = (sg.a.X === v.X && sg.a.Y === v.Y) ? sg.b : sg.a; return (q.X - v.X) * (e.X - v.X) + (q.Y - v.Y) * (e.Y - v.Y) > 0 })())
+  // the owner of the input edge the output edge v→q lies on: its endpoint BEHIND v (dot < 0), or at v
+  const containingOwner = (v, q) => { const own = new Set()
+    for (const sg of segsNear(v)) { if (!sg.a.Z || !sg.b.Z) continue; if (!onSeg(v, sg.a, sg.b) || !onSeg(q, sg.a, sg.b)) continue
+      const dq = [q.X - v.X, q.Y - v.Y], back = [sg.a, sg.b].filter(e => (e.X - v.X) * dq[0] + (e.Y - v.Y) * dq[1] <= 0)
+      if (back.length !== 1) continue
+      own.add(labOfZ(back[0].Z)) }
+    return own.size === 1 ? [...own][0] : -1 }
+  let containReassigned = 0, containRefused = 0
   for (const p of out) {
     const raw = p.map(q => (q.Z ? labOfZ(q.Z) : -1))      // -1 = a crossing
+    // ⛔ `raw` itself is NOT rewritten: it is what the vertex CONTRIBUTED, and the crossings before it inherit from
+    // that (the edge a crossing leaves toward X's butt corner does run along X). Only this vertex's own leaving
+    // edge takes the containing owner — measured: rewriting `raw` broke 22 correct LS labels upstream of it.
+    const fix = new Map()                                  // surviving vertex i → the containing owner (−1: none)
+    if (segs) for (let i = 0; i < raw.length; i++) {
+      if (raw[i] < 0) continue
+      const q = p[(i + 1) % raw.length]
+      if (Math.abs(q.X - p[i].X) + Math.abs(q.Y - p[i].Y) <= 2) continue   // a zero-length edge has no direction to own
+      if (ownEdge(p[i], q)) continue
+      const o = containingOwner(p[i], q)
+      // ⛔ ONLY ACROSS STROKES: the defect is an edge running along ANOTHER chain. Where the containing edge is the
+      // vertex's own chain (a tip, a self-overlap), the label is left exactly as it was — this rule does not re-rule it.
+      if (o >= 0 && sameStroke(o, raw[i])) continue
+      // no single containing edge ⇒ the label stays EXACTLY as it was, and is counted — this rule changes only what it
+      // can name; it never hands the vertex to the crossing path (measured: that moved 2 correct labels' srcIdx)
+      if (o < 0) { containRefused++; continue }
+      fix.set(i, o); containReassigned++
+    }
     const n = raw.length
     const res = new Array(n)
     // ⭐⭐⭐ ASK THE CROSSING LEDGER BEFORE THE FORWARD SCAN. The scan below inherits a minted
@@ -1212,7 +1279,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       return best
     }
     for (let i = 0; i < n; i++) {
-      if (raw[i] >= 0) { res[i] = raw[i]; continue }
+      if (raw[i] >= 0) { res[i] = fix.has(i) ? fix.get(i) : raw[i]; continue }
       const led = ownerLeaving(i)
       if (led >= 0) { res[i] = led; continue }
       let v = -1
@@ -1256,7 +1323,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     }
     labs.push(res)
   }
-  return { rings, labels: labs, refused: null, crossings, faces, ...(recs ? { payloads } : {}) }
+  return { rings, labels: labs, refused: null, crossings, faces, ...(segs ? { containment: { reassigned: containReassigned, unresolved: containRefused } } : {}), ...(recs ? { payloads } : {}) }
 }
 // The original single-ring union, preserved EXACTLY as a wrapper — the offset path's
 // byte-identity proof (`a03-curb-identity`) covers it and must keep covering it.
