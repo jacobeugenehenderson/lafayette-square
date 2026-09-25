@@ -38,7 +38,7 @@ evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve 
 5. **The split:** the remaining 90% divides Host / platform. The Host-share slider **defaults to 30%** and ranges to at least 50%. Salary is a knob **defaulting to $0**.
 6. **Interest** is conservative and principal-safe (Jacob: a savings-and-loan account) and never required for the model to work.
 
-**Its real audience (Jacob): "This is a sneak recruiting tool for Hosts."** Build The Ask for a prospective Host modelling **their own** Ward: inputs they can estimate (households, businesses, orders per week), outputs that include the **Host budget**, the money to program their neighbourhood. That stays scenario-framed. ⚠️ Earnings figures shown to prospective recruits are the kind of claim counsel should review before the page goes live.
+**Its real audience (Jacob): "This is a sneak recruiting tool for Hosts."** Build The Ask for a prospective Host modelling **their own** Ward: inputs they can estimate (households, businesses, orders per week), outputs that include the **Host budget**, the money to program their neighbourhood. That stays scenario-framed. Jacob shares it **directly, with people he knows**, not as a public campaign, so it can live at an **unlisted** URL (out of the site's navigation and search) rather than on the front page. ⚠️ Earnings figures shown to prospective recruits are still the kind of claim counsel should review before any wider audience.
 
 **Readouts** (reference §5), per year and per Ward, plus a portfolio view where useful:
 - gross flow;
