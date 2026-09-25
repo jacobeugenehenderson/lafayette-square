@@ -7061,7 +7061,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
   let protoBoundaryRing = null   // ⭐ the circle, carried out so EVERY consumer can stamp with it
-  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoBandsByBlock = null, protoBlockLabelsOut = null, protoStackCollapse = null, protoAuthoring = null
+  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoBandsByBlock = null, protoBlockLabelsOut = null, protoStackCollapse = null, protoAuthoring = null, protoDepthByBlock = null
   // ⭐ ②'s ACHIEVED corner arcs — the handle's ONE truth. Hoisted beside the other proto outputs
   // because the producer swap at the end of the build reads it (`SURVEY §4`: one corner truth).
   const protoCornerSet = []
@@ -7476,6 +7476,12 @@ export function buildTileGround(ribbons, opts = {}) {
       return Math.max(0, baseR) * scale
     }
     const easedByBlock = {}          // BLOCK index → its curb ring(s) + per-vertex ① labels
+    // ⭐ BLOCK index → the depth each ① edge was ACTUALLY offset by (outer + holes), recorded as the
+    // offset asks for it — never recomputed, so a check reads the construction's own number instead of
+    // restating `mkDepth` — plus the block's ② rings. Build RESULT only: nothing here is frozen into a
+    // tile, so every artifact is byte-identical. ▶ node checks/claims-the-curb-never-enters-the-road.mjs
+    const depthByBlock = {}
+    protoDepthByBlock = depthByBlock
     // ⛔⛔ ONE INDEX SPACE FOR EVERY CONSUMER. `easedByBlock` is keyed by position in the block
     // list, so every loop that reads it MUST enumerate the same list. When the curb loop was
     // switched to `blocks` and the two downstream loops were left on `R.rings`, the keys silently
@@ -7552,7 +7558,10 @@ export function buildTileGround(ribbons, opts = {}) {
           if (!(hw > 0)) { noWidth++; return 0 }
           return Math.max(0, hw - PROTO_HW)         // ① already sits ε off the centreline
         }
-        const depthAt = mkDepth(labs)
+        const depthRec = { ring, depth: new Array(ring.length).fill(null), holes: [] }
+        depthByBlock[k] = depthRec
+        const depthOf = mkDepth(labs)
+        const depthAt = (i) => (depthRec.depth[i] = depthOf(i))
         // ⭐⭐ THE COMPOUND FACE — outer + its holes, offset as ONE object.
         const holes = protoBlockHoles?.[k] || [], holeLabs = protoBlockHoleLabels?.[k] || []
         // ⛔ Tag each curb ring by whether a GRADE-SEPARATED chain owns most of it. The
@@ -7669,7 +7678,10 @@ export function buildTileGround(ribbons, opts = {}) {
           const hRings = [], hLabs = []
           for (let hi = 0; hi < holes.length; hi++) {
             const hSt = {}
-            const hOff = offsetRingVariable(holes[hi], mkDepth(holeLabs[hi]), () => true, () => null, false, hSt, true, true)
+            const hRec = { ring: holes[hi], depth: new Array(holes[hi].length).fill(null) }
+            depthRec.holes.push(hRec)
+            const hDepthOf = mkDepth(holeLabs[hi])
+            const hOff = offsetRingVariable(holes[hi], (i) => (hRec.depth[i] = hDepthOf(i)), () => true, () => null, false, hSt, true, true)
             for (let ri = 0; ri < hOff.length; ri++) {
               const src = hSt.labels?.[ri]
               hRings.push(hOff[ri])
@@ -7766,6 +7778,7 @@ export function buildTileGround(ribbons, opts = {}) {
           protoCurb.push(eased.ring); protoCurbGs.push(isGs)
           // ⭐ the curb, with each vertex's ① label — this is what ③ insets FROM
           ;(easedByBlock[k] ||= []).push({ ring: eased.ring, labs: eased.labs || outLabs[ri], arc: outArc[ri] })
+          ;(depthByBlock[k].curb ||= []).push(eased.ring)
         }
       }
       // ⛔ LOUD, not silent: an edge with no resolvable authored width would erode by ZERO and
@@ -8773,7 +8786,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

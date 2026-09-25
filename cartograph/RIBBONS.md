@@ -781,8 +781,9 @@
 > either side. ⛔⛔ **NOT BUILT — this ruling is ASPIRATION, not state** (Plumb, 2026-09-24). The whole-ring
 > revert once cited here (`6d17b6a6`) was excised in `4bc640f0`, and nothing local replaced it: `offsetRingVariable`'s
 > self-union runs at `pftNonZero`, which FILLS a winding −1 lobe, so where a contour narrower than 2·depth crosses
-> itself the backwards lobe **survives** (Huron's US 6 roundabout teardrop and wedges). The same holds for the
-> OFFSET → UNION → EASE claim that *"the union is what performs it"*. ▶ `BRIEF-junction-shape-where-the-offset-crosses`. **A clamp is a
+> itself the backwards lobe **survives**. The same holds for the OFFSET → UNION → EASE claim that *"the union is
+> what performs it"*. ▶ `node checks/claims-the-curb-never-enters-the-road.mjs` (red until built) ·
+> `BRIEF-junction-shape-where-the-offset-crosses`. **A clamp is a
 > cleanup patch living inside the construction** — the miter-limit bevel at §3.3's U-seam is the worked
 > example, and it is *the* artifact there.
 >
