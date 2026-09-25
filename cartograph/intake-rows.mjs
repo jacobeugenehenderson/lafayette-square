@@ -153,17 +153,27 @@ export const ABSENT = {
   /** ⛔ Falls back to LAFAYETTE SQUARE's data, under this town's name. */
   LS_BLEED: 'ls-bleed',
   /**
-   * ⭐⭐ THE POUR STOPS. Added 2026-09-23 by Jacob's ruling on terrain, because the
-   * vocabulary had no way to say "this input is not optional".
+   * ⭐⭐ ABSENCE HERE PRODUCES A FALSE MAP. Added 2026-09-23 by Jacob's ruling on terrain,
+   * because the vocabulary had no way to say "this input is not optional".
    * ⛔ FALLBACK means "a documented, town-NEUTRAL default" — OSM tags, AASHTO widths:
    * things that are defensibly right anywhere. Flat ground is not that. On a dune town
    * it is a WRONG MAP, and it was declared a documented fallback, so a coastal town
    * baked as a plane and the only trace was a line in the Bake's skipped array.
-   * ⇒ Where absence produces a map that LIES, the row says REFUSES and the pour fails.
-   * The operator may still proceed, but only by recording `verifiedAbsent` on the town —
-   * a decision with a date and an author, not a silent default.
+   *
+   * ⛔⛔ IT WAS CALLED `REFUSES: 'refuses-to-pour'` UNTIL 2026-09-25, AND THAT NAME WAS A
+   * CLAIM THE CODE DID NOT HONOUR — TWICE OVER.
+   *   · NOTHING ENFORCED IT. The constant was read by one check (which only asserted the
+   *     ROW declares it) and by a COMMENT in serve.js that then called `skip(...)` — whose
+   *     own text said "Until the pour enforces that, say so loudly here." A doc overstating
+   *     the code, sitting in the open: the table said the pour stops, and it poured.
+   *   · AND IT DOES NOT ALWAYS REFUSE, BY DESIGN. A town with `verifiedAbsent` recorded
+   *     pours flat deliberately — searched, nothing exists, a decision with a date. So
+   *     "refuses-to-pour" was wrong as a name even once enforced.
+   * ⭐ The invariant property is about the MAP, not the reaction: absence here makes the map
+   * LIE. Whether the pour stops follows from that plus what the town has recorded, which is
+   * `pourPolicyFor`'s job and nothing a name should try to carry.
    */
-  REFUSES: 'refuses-to-pour',
+  FALSE_MAP: 'false-map',
 }
 
 /**
@@ -369,7 +379,7 @@ export const INTAKE_ROWS = [
     // a poured town rather than a missing input. Jacob, 2026-09-23: terrain and lidar are
     // acquired by the pour, and no coverage must be loud.
     // ▶ node cartograph/fetch-dem.mjs --scene=<id>   acquires it; refuses loudly if none.
-    absent: { kind: ABSENT.REFUSES, note: 'the pour stops — a flat dune town is a false map, not a degraded one' },
+    absent: { kind: ABSENT.FALSE_MAP, note: 'a flat dune town is a false map, not a degraded one — the pour stops unless the town records verified-absent' },
     // ⛔ WHAT THE READER ACTUALLY ACCEPTS — rewritten 2026-09-21 when the ingest
     // landed. The three limits recorded here on 2026-09-20 are GONE; do not
     // reinstate them from memory:
@@ -394,7 +404,16 @@ export const INTAKE_ROWS = [
     //    water. That is normal there and a red flag anywhere else; the bake prints
     //    the share and says which case it is.
     // ⚠️ The no-data sentinel IS USGS-specific and wants checking per source.
-    acquisition: { kind: ACQUIRE.SOURCE, note: 'USGS 3DEP 1/3 arc-sec (~10 m) for a first pour; USGS 1 m lidar where it exists and the shore matters — several tiles OK, lat/lon or UTM, and URLs are read in place without downloading. Run the bake with no source: it prints the exact curl for this town, both resolutions.' },
+    // ⭐ A BUTTON SINCE `fetch-dem.mjs` LANDED, not a SOURCE. `ACQUIRE.SOURCE` means "here is
+    // where you go and get it"; BUTTON means the kit has a programmatic endpoint. This row
+    // said SOURCE and told the operator to run a curl by hand — which is literally how huron
+    // got its DEM and how Provincetown did not.
+    // ⭐⭐ And the COMMAND lives here, on the row, so a refusal can say what to do without
+    // serve.js hardcoding it in a comment where no other caller can reach it.
+    // `<scene>` is substituted by `pourPolicyFor`.
+    acquisition: { kind: ACQUIRE.BUTTON,
+                   command: 'node cartograph/fetch-dem.mjs --scene=<scene>',
+                   note: 'USGS 3DEP via fetch-dem.mjs — the National Map products API, one survey, never a mosaic of vintages. 1 m lidar where it exists, else the 1/9 and 1/3 arc-sec rungs. ⛔ Nothing is downloaded: it writes the COG URL list that bake-terrain range-reads. No coverage exits 1 and records verified-absent on the town.' },
     doc: 'cartograph/INTAKE.md',
   },
   {
@@ -774,6 +793,76 @@ function readSceneOverlay(scene) {
 export function hasElevationInput(sceneDir) {
   const row = INTAKE_ROWS.find(r => r.id === 'elevation')
   return !!row?.present?.(sceneDir)?.present
+}
+
+/**
+ * ⭐⭐⭐ MAY THIS TOWN POUR WITHOUT THIS ROW? The one place that answers it, for every row.
+ *
+ * Three outcomes, and only one of them is silent:
+ *   · { allow: true }                  — the input is present, or its absence is survivable
+ *                                        (HONEST_ZERO, FALLBACK, LS_BLEED are all "the map
+ *                                        is poorer, not false").
+ *   · { allow: true, onTheRecord }     — absence would make a FALSE map, but the town has
+ *                                        recorded `verifiedAbsent`: someone SEARCHED, found
+ *                                        nothing, and signed for it. It pours, and says so.
+ *   · { allow: false, why, fix }       — ⛔ absence would make a FALSE map and nobody has
+ *                                        looked. The pour STOPS.
+ *
+ * ⛔⛔ WHY THIS FUNCTION HAD TO EXIST. `ABSENT.FALSE_MAP` (then called `REFUSES`) was
+ * DECLARED on the elevation row on 2026-09-23 and enforced by NOTHING. The only readers were
+ * a check asserting the row declares it, and a comment in serve.js whose own text read
+ * "Until the pour enforces that, say so loudly here" — beside a `skip(...)` that let the
+ * bake carry on. Provincetown baked flat with a line in a skipped array, which is the exact
+ * failure the constant was invented to prevent. A policy in a data table that no code
+ * consults is not a policy; it is a note.
+ * ⭐ AND THE ESCAPE IS THE KIT'S OWN THIRD STATE, not a new flag. `--accept-flat` was
+ * proposed once and rejected for this reason: `verifiedAbsent` already means "we looked and
+ * there is none", it carries a date and an author, and the panel already renders it. A
+ * fourth concept would have hidden that decision in a flag only the person who typed it
+ * would ever see.
+ *
+ * @param {string} rowId   an INTAKE_ROWS id, e.g. 'elevation'
+ * @param {string} scene   the scene id
+ */
+export function pourDecision({ kind, present, verifiedAbsent, note, command, scene }) {
+  const none = { allow: true, why: null, fix: null, onTheRecord: null }
+  if (present) return none
+  if (kind !== ABSENT.FALSE_MAP) return none
+  if (verifiedAbsent) {
+    const m = typeof verifiedAbsent === 'string' ? verifiedAbsent : JSON.stringify(verifiedAbsent)
+    return { allow: true, why: null, fix: null,
+             onTheRecord: `VERIFIED-ABSENT — ${m}. This town pours without it, on the record.` }
+  }
+  return {
+    allow: false,
+    why: `absent, and its absence makes a FALSE map, not a poorer one — ${note || 'see INTAKE_ROWS'}`,
+    fix: (command || '').replace('<scene>', scene || '<scene>') || null,
+    onTheRecord: null,
+  }
+}
+
+/**
+ * The same question, answered from DISK for a real scene. ⭐ The decision itself is
+ * `pourDecision` above — pure, so the interesting cases can be tested without staging a town
+ * (and without depending on which towns happen to exist in a worktree, where scene data is
+ * gitignored and every row would read as absent).
+ */
+export function pourPolicyFor(rowId, scene) {
+  const row = INTAKE_ROWS.find(r => r.id === rowId)
+  if (!row) return { allow: true, why: null, fix: null, onTheRecord: null }
+  const dir = mapDir(scene)
+  const p = row.present?.(dir) || {}
+  const own = readSceneOverlay(scene)[rowId] || {}
+  const d = pourDecision({
+    kind: row.absent?.kind,
+    present: !!p.present,
+    verifiedAbsent: own.verifiedAbsent || p.verifiedAbsent || null,
+    note: row.absent?.note,
+    command: row.acquisition?.command,
+    scene,
+  })
+  return { ...d, why: d.why ? `${rowId} is ${d.why}` : null,
+           onTheRecord: d.onTheRecord ? `${rowId}: ${d.onTheRecord}` : null }
 }
 
 export const STATUS = {

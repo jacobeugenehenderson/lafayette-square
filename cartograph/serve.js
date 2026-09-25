@@ -17,7 +17,7 @@ import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
-import { intakeStatusForMap, addAltSource, hasElevationInput } from './intake-rows.mjs'
+import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
@@ -2624,6 +2624,25 @@ createServer(async (req, res) => {
       // explicitly, rather than through a `?? fallback` that reads as a safety net while
       // actually being the only path taken.
       const SCENE_DIR = join(bakePaths.raw, '..')
+      // ⛔⛔ AND NOW THE POUR ACTUALLY ENFORCES IT. The elevation row has declared
+      // `ABSENT.FALSE_MAP` (then called REFUSES) since 2026-09-23, and until this line
+      // NOTHING read it: the comment below used to say "Until the pour enforces that, say so
+      // loudly here" beside a `skip(...)` that let the bake carry on. A policy in a data
+      // table that no code consults is a note, not a policy — and Provincetown baked flat
+      // with one line in a skipped array, which is the exact failure the constant was
+      // invented to prevent.
+      // ⭐ `pourPolicyFor` is the single decider and it honours the kit's OWN third state:
+      // a town that has recorded `verifiedAbsent` pours flat deliberately — searched,
+      // nothing exists, a decision with a date — while a town nobody has looked at STOPS.
+      const elevPolicy = pourPolicyFor('elevation', bakeScene)
+      if (!elevPolicy.allow) {
+        // ⛔ A FAILED STEP, not a skip. The operator sees which step stopped the bake and
+        // exactly what to run; a skipped line is what hid this for two days.
+        const why = `step "terrain" refuses: ${elevPolicy.why}`
+        markStep(P, 'terrain', 'failed', { t1: Date.now(), error: why })
+        throw new Error(`${why}\n   ▶ ${elevPolicy.fix || 'acquire the input for this town'}\n   ⭐ Or, if this town genuinely has no lidar, record it: fetch-dem writes verified-absent when it finds no coverage, and the pour then proceeds on that record.`)
+      }
+      if (elevPolicy.onTheRecord) skip(`terrain — ${elevPolicy.onTheRecord}`)
       if (hasElevationInput(SCENE_DIR)) {
         // ⛔⛔ THE WATER IS AN INPUT TO THE TERRAIN, AND IT USED NOT TO BE — which cost
         // Provincetown its datum. `bake-terrain` does not merely resample a DEM: it DERIVES
@@ -2653,11 +2672,11 @@ createServer(async (req, res) => {
           [SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
           `node bake-terrain.js ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
-      } else {
-        // ⛔ NOT a quiet "flat". The elevation row is ABSENT.REFUSES: a flat dune town is a
-        // false map, not a degraded one. Until the pour enforces that, say so loudly here.
-        skip('terrain — NO DEM INPUT (no elevation.tif, no elevation/*.tif, no elevation-sources.txt). This town will render FLAT. ▶ node cartograph/fetch-dem.mjs --scene=' + bakeScene)
       }
+      // ⭐ No `else` any more: the only way to reach here without an input is
+      // `elevPolicy.onTheRecord`, which was already reported above. An unrecorded absence
+      // threw before the branch.
+
       // terrain-slab: publish the scene terrain into this Look's slab (the
       // runtime fetches /baked/<look>/terrain.* by lookId; writeIfChanged keeps
       // the dirty-graph mtime honest).

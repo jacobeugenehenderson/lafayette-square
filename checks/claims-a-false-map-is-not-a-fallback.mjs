@@ -13,14 +13,14 @@
 // `skipped` array. The operator saw a poured town, not a missing input. That is Layer 0's
 // plausible-looking success, declared as policy in a data table.
 //
-// ⇒ Such a row must say ABSENT.REFUSES: the pour stops, and the operator may proceed only
+// ⇒ Such a row must say ABSENT.FALSE_MAP: the pour stops, and the operator may proceed only
 // by recording `verifiedAbsent` on the town — a decision with a date and an author.
 //
 // ⭐ MUTATION TEST: set the elevation row back to ABSENT.FALLBACK and this must go RED.
 //
 //   node checks/claims-a-false-map-is-not-a-fallback.mjs
 // Read-only. Exits 1 if a listed row declares a false map to be a fallback.
-import { INTAKE_ROWS, ABSENT } from '../cartograph/intake-rows.mjs'
+import { INTAKE_ROWS, ABSENT, pourDecision } from '../cartograph/intake-rows.mjs'
 
 // ⛔ A LIST, AND IT IS NOT A SKIP LIST — it is the opposite. These are rows whose absence
 // has been RULED to produce a false map rather than a poorer one. Adding to it makes the
@@ -38,16 +38,44 @@ for (const want of MUST_REFUSE) {
     failed = true; continue
   }
   const kind = row.absent?.kind
-  const ok = kind === ABSENT.REFUSES
+  const ok = kind === ABSENT.FALSE_MAP
   console.log(`  ${ok ? '✅' : '⛔'} ${row.id.padEnd(12)} absent.kind = ${kind ?? '(unset)'}   [${want.ruledBy}, ${want.ruledOn}]`)
   if (!ok) {
     console.log(`       ${want.why}`)
-    console.log(`       ⛔ "${kind}" lets this town pour anyway and say nothing. Expected "${ABSENT.REFUSES}".`)
+    console.log(`       ⛔ "${kind}" lets this town pour anyway and say nothing. Expected "${ABSENT.FALSE_MAP}".`)
     failed = true
   }
 }
+// ── §2 · AND THE POUR MUST ACT ON IT ──────────────────────────────────────────
+// ⭐ Driven through `pourDecision`, which is pure, so these cases need no staged town — and
+// do not silently pass in a worktree, where scene data is gitignored and every row would
+// read as absent.
+console.log('\nand the decision the pour actually makes:')
+const C = { kind: ABSENT.FALSE_MAP, note: 'a flat dune town is a false map',
+            command: 'node cartograph/fetch-dem.mjs --scene=<scene>', scene: 'ptown' }
+const say = (ok, msg) => { if (!ok) failed = true; console.log(`  ${ok ? '✅' : '⛔'} ${msg}`) }
+{
+  const d = pourDecision({ ...C, present: true })
+  say(d.allow && !d.onTheRecord, `input PRESENT ⇒ pours, silently`)
+}
+{
+  const d = pourDecision({ ...C, present: false })
+  say(!d.allow, `input ABSENT and nobody has looked ⇒ THE POUR STOPS`)
+  say(!!d.fix && d.fix.includes('ptown'), `and it names the command for THIS town — ${d.fix ?? '(none)'}`)
+  say(/FALSE map/i.test(d.why || ''), `and says why the map would lie, not merely that a file is missing`)
+}
+{
+  const d = pourDecision({ ...C, present: false, verifiedAbsent: 'no lidar covers this town, 2026-09-25' })
+  say(d.allow, `input ABSENT but VERIFIED-ABSENT ⇒ pours — searched, nothing exists, signed for`)
+  say(/VERIFIED-ABSENT/.test(d.onTheRecord || ''), `and it is ON THE RECORD, not silent — ${d.onTheRecord ?? '(silent!)'}`)
+}
+{
+  const d = pourDecision({ kind: ABSENT.FALLBACK, present: false, note: 'AASHTO defaults' })
+  say(d.allow && !d.onTheRecord, `a FALLBACK row is untouched by this — it pours as it always did`)
+}
+
 if (failed) {
-  console.log('\n⛔ an input whose absence falsifies the map is declared a fallback — the pour will not say so')
+  console.log('\n⛔ an input whose absence falsifies the map is declared a fallback, or the pour does not act on it')
   process.exit(1)
 }
-console.log('\n✅ every input whose absence would falsify the map refuses to pour instead')
+console.log('\n✅ every input whose absence would falsify the map refuses to pour — and the pour obeys')
