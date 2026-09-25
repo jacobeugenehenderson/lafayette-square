@@ -44,11 +44,13 @@
 import lafayetteSquare from './lafayette-square.js'
 import hipointeDemun from './hipointe-demun.js'
 import huron from './huron.js'
+import provincetown from './provincetown.js'
 
 const INSTANCES = {
   'lafayette-square': lafayetteSquare,
   'hipointe-demun': hipointeDemun,
   huron,
+  'provincetown': provincetown,
 }
 
 /**

@@ -36,10 +36,10 @@ export default {
 
   branding: {
     title: 'Hi-Pointe–DeMun',
-    faviconUrl: null,
-    // ⛔ UNAUTHORED ON PURPOSE — nobody has chosen HiPointe-DeMun's glyph, so it draws its
-    // own INITIAL rather than borrowing another town's mark. Visibly a placeholder, which
-    // is the honest state; ⛔ do not give it LS's arch to make it look finished.
+    // ⭐ AUTHORED: the Gateway Arch, by DECLARATION (Jacob, 2026-09-25: "LS and HPDM can keep
+    // the custom arch"). It is HPDM's own authored choice, not an inheritance from LS.
+    faviconUrl: 'https://lafayette-square.com/favicon.svg',
+    markSvg: 'arch',
     mark: null,
     ogImage: null,
     assetSlug: 'hipointe-demun',
