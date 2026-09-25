@@ -45,6 +45,23 @@ export const DEFAULT_V_EXAG = 1
  *             town's drama. Every consumer (ground per-vertex, buildings rigid, lamps
  *             instanced) multiplies by the same number, so it must be one town's number.
  */
+/**
+ * The identity of a heightfield: FNV-1a over its size, bounds and every sample. A datum
+ * shift rewrites every sample, so it changes the identity. Anchor bakes stamp it; the
+ * runtime refuses anchors stamped with a different one.
+ * ▶ node checks/claims-anchors-know-their-terrain.mjs
+ */
+export function terrainIdentity(t) {
+  if (!t?.data?.length) return 'none'
+  let h = 2166136261 >>> 0
+  const mix = (x) => { h ^= x >>> 0; h = Math.imul(h, 16777619) >>> 0 }
+  mix(t.width | 0); mix(t.height | 0)
+  for (const x of new Uint32Array(new Float64Array([t.bounds.minX, t.bounds.maxX, t.bounds.minZ, t.bounds.maxZ]).buffer)) mix(x)
+  const u = new Uint32Array(t.data.buffer, t.data.byteOffset, t.data.length)
+  for (let i = 0; i < u.length; i++) mix(u[i])
+  return h.toString(16).padStart(8, '0')
+}
+
 export function makeElevationSampler(terrain, exag = DEFAULT_V_EXAG) {
   const { width, height, bounds, data } = terrain
   const spanX = bounds.maxX - bounds.minX

@@ -35,7 +35,7 @@ function readAB(path) {
 function anchorLampsToGround(lamps, outDir, scene) {
   const groundJsonPath = join(outDir, 'ground.json')
   const groundBinPath  = join(outDir, 'ground.bin')
-  if (!existsSync(groundJsonPath) || !existsSync(groundBinPath)) return 0
+  if (!existsSync(groundJsonPath) || !existsSync(groundBinPath)) return null
   const gj = JSON.parse(readFileSync(groundJsonPath, 'utf-8'))
   const gAB = readAB(groundBinPath)
   // Per-scene terrain (cartograph/data/<scene>/clean/terrain.*); flat fallback
@@ -43,7 +43,8 @@ function anchorLampsToGround(lamps, outDir, scene) {
   const terrain = loadSceneTerrain(scene) || { getElevationRaw: () => 0 }
   const sampler = makeGroundSampler(gj, gAB, terrain)
   for (const l of lamps) l.groundRaw = sampler.groundRawAt(l.x, l.z)
-  return lamps.length
+  // The heightfield these anchors were sampled from; the runtime refuses them against any other.
+  return { count: lamps.length, terrain: { key: terrain.identity ?? 'none', baseElev: terrain.baseElev ?? null } }
 }
 
 // Scene-keyed lamp SOURCE (the old TODO step C, resolved 2026-07-09). A scene
@@ -165,11 +166,13 @@ export async function bakeLamps({ look, scene } = {}) {
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   const lamps = loadLampsForMap(scene)
-  const anchored = anchorLampsToGround(lamps, outDir, scene)
+  const anchoring = anchorLampsToGround(lamps, outDir, scene)
+  const anchored = anchoring?.count ?? 0
   const out = {
-    version: 1,
+    version: 2,
     look,
     count: lamps.length,
+    ...(anchoring ? { terrain: anchoring.terrain } : {}),
     lamps,
   }
   const outPath = join(outDir, 'lamps.json')

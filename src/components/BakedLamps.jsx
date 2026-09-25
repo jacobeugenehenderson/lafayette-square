@@ -18,6 +18,7 @@ import StreetLights from './StreetLights'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { currentTerrainIdentity } from '../utils/terrainShader'
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -44,7 +45,23 @@ export default function BakedLamps({ lookId, bakeLastMs, lanternOverride } = {})
     let cancelled = false
     fetch(`${ASSET_BASE}baked/${resolvedLookId}/lamps.json?t=${cacheBust}`)
       .then(r => r.ok ? r.json() : null)
-      .then(j => { if (!cancelled) setData(j) })
+      .then(j => {
+        if (cancelled) return
+        // ⛔ Lamp anchors must have been sampled from THIS heightfield (same guard as the trees).
+        if (j?.lamps?.some(l => typeof l.groundRaw === 'number')) {
+          const live = currentTerrainIdentity()
+          if (!j.terrain) {
+            console.warn(`[BakedLamps] lamps.json for "${resolvedLookId}" carries no terrain identity (baked before the guard) — `
+              + `cannot prove its anchors match this heightfield (${live}). Using them. ▶ re-bake lamps`)
+          } else if (j.terrain.key !== live) {
+            console.error(`[BakedLamps] ⛔ lamps.json for "${resolvedLookId}" was anchored on a DIFFERENT heightfield `
+              + `(terrain ${j.terrain.key}, baseElev ${j.terrain.baseElev}) than this slab's (${live}). `
+              + `Anchors REFUSED — lamps fall back to the smooth terrain field. ▶ re-bake lamps (node cartograph/bake-lamps.js --scene=<scene> --look=${resolvedLookId})`)
+            j = { ...j, lamps: j.lamps.map(({ groundRaw, ...l }) => l) }
+          }
+        }
+        setData(j)
+      })
       .catch(e => console.warn('[BakedLamps] load failed:', e))
     return () => { cancelled = true }
   }, [resolvedLookId, cacheBust])

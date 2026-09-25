@@ -12,7 +12,7 @@
 import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { makeElevationSampler, DEFAULT_V_EXAG } from '../src/lib/terrainCommon.js'
+import { makeElevationSampler, terrainIdentity, DEFAULT_V_EXAG } from '../src/lib/terrainCommon.js'
 
 const CARTOGRAPH_DIR = dirname(fileURLToPath(import.meta.url))
 
@@ -45,5 +45,6 @@ export function loadSceneTerrain(scene) {
   const meta = JSON.parse(readFileSync(json, 'utf-8'))
   const buf = readFileSync(bin)
   const data = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4)
-  return makeElevationSampler({ ...meta, data }, authoredExag(scene))
+  const t = { ...meta, data }
+  return { ...makeElevationSampler(t, authoredExag(scene)), identity: terrainIdentity(t), baseElev: meta.baseElev ?? null }
 }

@@ -34,7 +34,7 @@ import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
-import { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
+import { DEFAULT_V_EXAG, terrainIdentity } from '../lib/terrainCommon.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
 //
@@ -171,6 +171,12 @@ const _reloadCbs = new Set()
 export function onTerrainReload(cb) { _reloadCbs.add(cb); return () => _reloadCbs.delete(cb) }
 /** The current heightfield payload — read fresh after a reload. */
 export function currentTerrain() { return { width, height, bounds, data } }
+let _idFor = null, _id = null
+/** The loaded heightfield's identity (terrainCommon.terrainIdentity), computed once per load. */
+export function currentTerrainIdentity() {
+  if (_idFor !== data) { _idFor = data; _id = data === FLAT_TERRAIN.data ? 'none' : terrainIdentity({ width, height, bounds, data }) }
+  return _id
+}
 
 /**
  * Re-point the terrain singleton at another look's baked heightfield, in place.

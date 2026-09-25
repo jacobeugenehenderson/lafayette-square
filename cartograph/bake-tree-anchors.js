@@ -71,7 +71,9 @@ export async function bakeTreeAnchors({ look, scene } = {}) {
     for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0 }
   }
   const placementKey = h.toString(16).padStart(8, '0')
-  const out = { version: 2, look, count: anchors.length, placementKey, anchors }
+  // The heightfield these anchors were sampled from; the runtime refuses them against any other.
+  const terrainStamp = { key: terrain.identity ?? 'none', baseElev: terrain.baseElev ?? null }
+  const out = { version: 3, look, count: anchors.length, placementKey, terrain: terrainStamp, anchors }
   const outPath = join(outDir, 'tree-anchors.json')
   const wrote = writeIfChanged(outPath, JSON.stringify(out))
   console.log(`[bake-tree-anchors] ${wrote ? 'wrote' : 'unchanged'} ${outPath} (${anchors.length} tree anchors)`)

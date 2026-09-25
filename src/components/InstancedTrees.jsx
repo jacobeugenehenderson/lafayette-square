@@ -35,6 +35,7 @@ import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
 import { getElevationRaw, slabYIsUnstamped } from '../utils/elevation'
+import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
@@ -682,6 +683,20 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         } else if (j?.instances && Array.isArray(anchors)) {
           console.warn('[InstancedTrees] tree-anchors.json has no placementKey (v1, baked before 2026-09-03) — '
             + 'falling back to the length gate, which cannot detect a reordered re-pour. Re-bake to get the key.')
+        }
+        // ⛔ The anchors must have been sampled from THIS heightfield. A terrain re-bake that
+        // moves the datum leaves every anchor bound to its placements and uniformly wrong.
+        if (keyOk && Array.isArray(anchors)) {
+          const live = currentTerrainIdentity()
+          if (!anchorsDoc?.terrain) {
+            console.warn(`[InstancedTrees] tree-anchors.json for "${lookName}" carries no terrain identity (baked before the guard) — `
+              + `cannot prove it matches this heightfield (${live}). Using it. ▶ node cartograph/bake-tree-anchors.js --scene=<scene> --look=${lookName}`)
+          } else if (anchorsDoc.terrain.key !== live) {
+            keyOk = false
+            console.error(`[InstancedTrees] ⛔ tree-anchors.json for "${lookName}" was sampled from a DIFFERENT heightfield `
+              + `(terrain ${anchorsDoc.terrain.key}, baseElev ${anchorsDoc.terrain.baseElev}) than this slab's (${live}). `
+              + `Anchors REFUSED — trees fall back to the smooth terrain field. ▶ re-bake anchors: node cartograph/bake-tree-anchors.js --scene=<scene> --look=${lookName}`)
+          }
         }
         if (j?.instances && Array.isArray(anchors) && keyOk && anchors.length === j.instances.length) {
           for (let i = 0; i < j.instances.length; i++) j.instances[i].groundRaw = anchors[i]
