@@ -1,0 +1,14 @@
+{
+  "_what_this_is": "DERIVED FROM tree-mix.json#commonToLibrary by scripts/15-fia-tree-mix.mjs — do not hand-edit.",
+  "map": {
+    "Oak, White": [
+      "quercus_alba"
+    ],
+    "Red Maple": [
+      "maple_red"
+    ],
+    "blackgum": [
+      "nyssa_sylvatica"
+    ]
+  }
+}

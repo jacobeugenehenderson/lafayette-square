@@ -138,6 +138,7 @@ by the consumer, or you have built the same defect wearing a different hat
 |---|---|---|---|---|
 | **12** | `cartograph/serve.js:1142` | C | `sceneRouteMatch[1] \|\| DEFAULT_MAP` — a scene-less request is served **LS's** artifacts. ⛔ **Deliberately deferred:** `api.js sceneUrl()` emits scene-less URLs for the default scene, so refusing breaks the running app. **Sequence with the client; do not cut it alone.** | MED — blocked |
 | **23** ⭐ | `cartograph/derive.js#_deriveBuildingsOSM` (a town with NO MSBF) | B | **NEW 2026-09-25.** Reads LS's curated `src/data/buildings.json` and RESCALES any OSM building whose centroid lies within 5 m of an LS building's position (LS's frame) to LS's sqft/stories — in every town that takes this path. Reach not measured (it needs a no-MSBF town whose frame puts buildings near LS's coordinates). | MED |
+| **24** | `arborist/roster-coverage.js#computeCoverage(scene = 'lafayette-square')` ← `arborist/serve.js` GET `/coverage` | C | **NEW 2026-09-25.** A coverage request with no `?look=` gets LS's roster board, not a refusal — the Grove's demand order for another town could silently be LS's. | MED |
 
 **Candidate, filed not fixed (2026-09-24):** `cartograph/forbidden-surface.mjs#makeZoneTester` treats `map.json`'s LEGACY `pavement` layer as a tree obstruction. Nothing draws that layer; the drawn surface is the ①/baked ground. So the tree mask can disagree with the ground a visitor sees. Measured on huron: letting parcels shape that layer moved 135 of 18,502 tree verdicts to `pavement`.
 
