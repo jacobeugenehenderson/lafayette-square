@@ -258,6 +258,30 @@ function newestMtime(p) {
 const PLAYER_SRC = ['src', 'index.html', 'vite.config.js', 'package.json']
 const playerSrcPaths = (root) => PLAYER_SRC.map((p) => join(root, p))
 
+// ⭐ THE BAKE'S CODE INPUTS ARE THE IMPORT CLOSURE, NOT A LIST. A hand list (`pipeline.js, derive.js, …`)
+// missed `coastline.mjs` and `src/lib/tileGround.js` — the ① mint itself — so a fix to how ① is built sat
+// unpoured behind a Bake that called the town clean (Gantry, 2026-09-24: the ① containment rule). Walk the
+// static and literal dynamic imports from the entry script, following only relative paths (node: and bare
+// packages are not the pipeline's code). A file that cannot be read is still returned, so it counts as dirty
+// rather than silently dropping out of the closure.
+function importClosure(entries) {
+  const seen = new Set(), stack = [...entries]
+  const rx = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)['"](\.{1,2}\/[^'"]+)['"]/gm
+  while (stack.length) {
+    const f = stack.pop()
+    if (seen.has(f)) continue
+    seen.add(f)
+    let src
+    try { src = readFileSync(f, 'utf-8') } catch { continue }
+    for (const m of src.matchAll(rx)) {
+      let t = join(dirname(f), m[1])
+      if (!existsSync(t) && existsSync(t + '.js')) t += '.js'
+      if (!seen.has(t)) stack.push(t)
+    }
+  }
+  return [...seen]
+}
+
 function needsRebuild(inputs, outputs) {
   const outMtimes = outputs.map(o => existsSync(o) ? statSync(o).mtimeMs : 0)
   if (outMtimes.some(t => t === 0)) return true
@@ -2400,7 +2424,9 @@ createServer(async (req, res) => {
         bakePaths.skeleton,
         join(REPO_ROOT, 'src', 'data', 'buildings.json'),
       ]
-      const PIPELINE_SRC = ['pipeline.js', 'derive.js', 'snap.js', 'classify.js', 'standards.js', 'config.js'].map(f => join(here, f))
+      // every file the pour runs — the ① mint included — plus the DATA it reads as code-like input: the highway
+      // sections are composed from `references/registry.json` at pour (derive.js `hwyStd`), so a changed value re-pours
+      const PIPELINE_SRC = [...importClosure([join(here, 'pipeline.js')]), join(REPO_ROOT, 'references', 'registry.json')]
       const MAP_JSON   = bakePaths.map
       // The scene's OWN ribbons: LS's live in the runtime bundle, every other
       // town's in its clean/ (promote-ribbons.js's rule). ⛔ Comparing a poured
@@ -2450,7 +2476,7 @@ createServer(async (req, res) => {
           `node pipeline.js ${sceneFlag}${elevFlag}`,
           { cwd: here, timeout: 600000 })
         await runIfDirty('promote-ribbons',
-          [MAP_JSON, join(here, 'promote-ribbons.js')],
+          [MAP_JSON, ...importClosure([join(here, 'promote-ribbons.js')])],
           [RIBBONS],
           `node promote-ribbons.js ${sceneFlag}`,
           { cwd: here, timeout: 30000 })
