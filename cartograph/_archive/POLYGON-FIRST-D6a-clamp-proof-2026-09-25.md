@@ -1,0 +1,6 @@
+# POLYGON-FIRST D6a — the dead miter-clamp prescription (retired 2026-09-25)
+
+Diary, retired for CURRENCY, not truth: the banner that stood in `POLYGON-FIRST.md` D6a, replaced there by a one-line pointer. The proof remains true of `offsetRingVariable`'s averaged-normal branch (legacy tile path).
+
+### ⛔⛔ THE PRESCRIPTION THAT STOOD HERE — *"it has **no miter clamp**; the clamp guards only corner vertices"* — IS **EXCISED. IT IS PROVABLY DEAD, AND IT COST A TASK.**
+**The miter clamp measures distance from the apex, and in the averaged-normal branch that distance is BOUNDED BY CONSTRUCTION.** The branch emits at exactly `(A.d + B.d)/2` from `ring[i]`, while `lim = 2.5·max(A.d, B.d, 0.5) + 1`. Since `(A.d+B.d)/2 ≤ max(A.d,B.d) ≤ M < 2.5M + 1` for every `M ≥ 0`, **`dist < lim` ALWAYS — any town, any authored width, forever.** Measured to match: **0 of 27,241 averaged-normal vertices across 7 scenes; max `dist/lim` = 0.389.** ⇒ **it is not a missing call, it is the WRONG QUANTITY.** ⛔ **Adding it would have been dead code that LOOKS like a robustness fix, with `A3` then freezing on top of it — `WALL §1` committed while quoting `WALL §1`.** *(Boz briefed exactly that on 2026-08-09 off this sentence; the agent refused the edit and proved it dead instead. Keep the diagnosis, drop the prescription.)*

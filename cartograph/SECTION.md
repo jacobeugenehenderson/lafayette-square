@@ -295,12 +295,12 @@ pointer that does not resolve reads as evidence already gathered.)*
   ▶ `node checks/claims-the-corner-extent-is-carried.mjs <scene>` — scores the carry against the
   tangent match it replaced, both columns from one run.
   ⛔ Re-run them; never quote a figure from here.
-  ### ⛔ STILL OPEN, MEASURED, CAUSE NOT ESTABLISHED
-  **treelawn∩sidewalk overlap.** The two strips are written as spans that partition the band, so
-  they cannot overlap by construction — and they do, in pieces 1–2 m wide, on both towns and before
-  this work. Removing the additive quad and ramping every leg end made it larger while making the
-  piece COUNT smaller, i.e. the same pieces grew. It is the `~3% divider residual` below, seen from
-  the other end. ▶ `node checks/claims-proto-fill-is-live.mjs`
+  ### ⛔ OPEN — THE BANDS ARE AN AREA MASK, NOT A PARTITION. Each band is the difference of two SEPARATE
+  offsets of the curb. Measured on the synthetic eased block (2026-09-25): where walk and lawn swap order at a
+  corner tangent their steps differ and a triangle is painted by NOBODY — the SKY shows. The treelawn∩sidewalk
+  overlap and the divider residual may be the same cause (not measured). ▶ `node checks/claims-the-ground-covers-every-block.mjs
+  [--selftest]` · `claims-proto-fill-is-live.mjs`. ⛔ Striking with ②'s `offsetRingByRects` made it WORSE (reverted). **Awaiting Jacob:** paint as a partition in depth — each curb edge's band sliced by its own depths.
+- **`protoBands` is a second ③** (`blockAt`, frozen ① at scalar widths), drawn nowhere, read by five checks — it disagrees with the drawn ③ wherever a taper exists. OPEN: retire it, or build it from ②'s working copy.
 - **The fe-key partition** — authoring writes `blockCustoms[skelId][side][segOrd]`; ①'s runs carry a
   DIFFERENT segOrd partition, so a majority of LS's authored slots resolve to no run at all. `§7`'s
   **T3**; its gate `scratch/t4-fe-parity.mjs` is stale and unrun. ⛔ **This is NOT the "swap one, all
@@ -308,7 +308,6 @@ pointer that does not resolve reads as evidence already gathered.)*
   reversed ring, `RIBBONS §1`, 2026-09-07) and it is fixed. Two defects shared one sentence.
   ▶ the slot count is a check, not a number to quote: `node checks/claims-stamp-follows-the-edge.mjs`
   for the carry, `t4-fe-parity.mjs` for the key.
-- **~3% divider residual** vs ③, cause not established.
 - ⚠️ A `shape.json` poured before the flip still carries `bands`; that path draws and **warns**. The
   cure is a re-pour.
 
@@ -647,7 +646,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 - **§3.2 material override** — per-edge LU↔SW swap reads `blockCustoms`, re-strokes the FILL live off the frozen silhouette; byte-identical when un-overridden.
 - **§3.3 per-edge depth + divider** — the mono-width slice (`RIBBONS §1`): the depth override renders, the corner takes `cw + max-adjacent` (`cornerT`).
 - **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). ⛔ **The two painters' corners are NOT the same construction** — `arcSectorPoly` in the walk painter, `§4`'s RAMP (one multiplier on the leg, nothing at the corner) in ③'s.
-- **Dead-end caps built into the curb offset** — the cap (round semicircle / blunt segment) is part of `offsetRingVariable`, so it's tangent to the achieved per-fe width by construction (D6a, `[[project_d6a_curb_offset]]`). NB: the *ped* wrap at the cap is still open (below).
+- **Dead-end caps in the curb offset** — LEGACY path only (`offsetRingVariable`'s `capAt`); under ① a cap is two corner nodes (§6.3).
 - **One depth truth** — handle placement and FILL stroke both read `resolvePedDepths`; the handle rides the achieved curb (`sectionCurbRings`).
 - **Revert UI** — whole-scene + per-edge (§5.1).
 

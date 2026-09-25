@@ -29,3 +29,37 @@ gate **unchanged both sides**. ⛔ Re-run them, don't quote: `claims-marked-corn
 `claims-survey-and-section-agree` · `claims-proto-corner-is-authored-radius`.
 ⚠️ **COST, disclosed: 2 blocks moved into the no-curb class (119 → 117 tiles).** Their curbs meet, so
 the drop is ruled correct — but see the absence disclosure below, which is the bigger half.
+
+
+## Also retired from RIBBONS §1, 2026-09-25 — the per-vertex offset's identity and join machinery
+
+⭐ **The routine already exists and already carries both things the grout needs** —
+`offsetRingVariable(ring, depthAt, cornerAt, capAt, clean, stamp)` (`tileGround.js:435`): `depthAt` is
+per-edge and accepts a `[start,end]` linear ramp, the normal is winding-aware (`:443`), and it takes a
+`stamp`. ⇒ **This is a change of SUBJECT, not a new construction** — today it is called on the tile ring
+(`:288`). **`cornerAt` and `capAt` RETIRE:** they exist to tell the offset where a chain-derived ring has
+a corner or a cap, and a grout contour already *is* its corners and caps.
+  ### ⭐⭐⭐ AND THE THING BEING CARRIED IS AN **EDGE** LABEL ON A **VERTEX** STAMP — 2026-09-07
+  **①'s `labels[q]` owns the edge `q → q+1`. `offsetRingVariable` emits one point per ① VERTEX
+  (`push(p, i)`), so its stamp names a vertex.** Reading `labs[src[j]]` therefore means *"the ①
+  edge LEAVING that vertex"* — which is the ② edge leaving `j` **only while the two rings run the
+  same way.** ⛔ **Clipper's union normalises winding and they mostly do not** —
+  ▶ `node scratch/claims-offset-reversal.mjs` measures the share of ② rings running AGAINST their
+  ① block ring. The result is an off-by-one that displaces every
+  frontage's ownership onto its neighbour's ground, and it is the operator's *"when I swap one
+  treelawn/sidewalk pair, it swaps all 4 sides of the block."*
+  ⛔ **NOT AN ORIENTATION FLAG AND NOT A THRESHOLD** — the adjacency of the two endpoints' source
+  indices *says* which ① edge a ② edge lies along, so there is no case to detect and nothing to
+  tune (`carryEdgeLabels`). Where the union re-resolved a point the provenance is genuinely gone;
+  that is **counted**, never trusted silently.
+  ⭐ **The general form, and it is the one to carry to town #2: a quantity carried through a
+  boolean must be carried as the thing it IS.** Vertex-valued (the ease radius `outR`) survives a
+  reversal untouched; edge-valued does not. This is `§1`'s own *identity carried, never recovered*
+  law with the arity made explicit — and it is the half that was missing.
+  `offsetRingVariable`'s vertex loop carried **FOUR conditionals deciding what a vertex IS**: is it a
+  cap · which kind of cap · is it a real corner or a through-node · **is the miter too long**. Each is
+  a case boundary, and a case boundary is a place a discontinuity can appear. §1 already retires the
+  first three (`cornerAt`/`capAt`), and the proto path neutralises them. **The clamp was the last
+  one, and it is now off for that path** (`noMiterClamp`). A corner is where the two offset lines
+  meet — full stop; where that self-intersects, the boolean cancels it to nothing, which is the
+  operator's own "goes to 0 and disappears" applied by the union rather than by a guard.

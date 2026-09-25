@@ -172,8 +172,7 @@
 > smooth but the corners are rounded by the survey"*). The smooth is already in the chain's points
 > before ① exists; the rounding is Survey's. **① sits between the two stages and does NEITHER** — a
 > STAGE FACT, not a principle about protopolygons.
-> ⚠️ **"AND SHARP THROUGH THE OFFSET" IS STRUCK (2026-09-06).** The ease runs INSIDE
-> `offsetRingVariable`. ⭐ Still ONE rounding, still Survey's; what moved is where in the call it happens.
+> ⭐ The ease runs inside ②'s construction (`offsetRingByRects`), after the bands — still ONE rounding, Survey's.
 > ### ⭐⭐⭐ ② IS ① MINUS ITS DEPTH BANDS, THEN THE EASE — built 2026-09-25 (`offsetRingByRects`)
 > The ease must never see a reversal vertex: `R·tan(θ/2)` diverges as θ→180° — the miter apex's `hw/sin(θ/2)`
 > at a second site. ⭐ **By construction, not by a bound:** ② is the block minus each edge's depth band, so where
@@ -221,12 +220,8 @@
 > ⛔ **`iA = chain ⊕ pavementHW` offsets from the CHAINS, and that is what this replaces.** Offset the
 > grout's contour instead: a **corner** is a join in one contour, a **cap** is where the contour turns
 > around, a **mouth** is two vertices because the object has width. **None of the three is constructed.**
-> ⭐ **The routine already exists and already carries both things the grout needs** —
-> `offsetRingVariable(ring, depthAt, cornerAt, capAt, clean, stamp)` (`tileGround.js:435`): `depthAt` is
-> per-edge and accepts a `[start,end]` linear ramp, the normal is winding-aware (`:443`), and it takes a
-> `stamp`. ⇒ **This is a change of SUBJECT, not a new construction** — today it is called on the tile ring
-> (`:288`). **`cornerAt` and `capAt` RETIRE:** they exist to tell the offset where a chain-derived ring has
-> a corner or a cap, and a grout contour already *is* its corners and caps.
+> ⭐ ② offsets the grout's contour with `offsetRingByRects` (per-edge depth, a `[start,end]` ramp allowed). **`cornerAt`
+> and `capAt` RETIRE on this path:** a grout contour already *is* its corners and caps.
 > ⭐ Winding is free: the contour dilates and every hole erodes from the same call, and the directed
 > side-chains supply the winding by construction.
 > ⭐ **A cap is a COUPLER WITH TANGENT HANDLES, not a shape** (Jacob) — blunt = handles broken to 90°;
@@ -518,23 +513,12 @@
 >   corners onto ②'s contour by the label each vertex already carries (`iaCorner`) — identity carried
 >   through the offset, never recovered from the eased geometry afterward. A corner ARC is **one**
 >   boundary, not twelve.
->   ### ⭐⭐⭐ AND THE THING BEING CARRIED IS AN **EDGE** LABEL ON A **VERTEX** STAMP — 2026-09-07
->   **①'s `labels[q]` owns the edge `q → q+1`. `offsetRingVariable` emits one point per ① VERTEX
->   (`push(p, i)`), so its stamp names a vertex.** Reading `labs[src[j]]` therefore means *"the ①
->   edge LEAVING that vertex"* — which is the ② edge leaving `j` **only while the two rings run the
->   same way.** ⛔ **Clipper's union normalises winding and they mostly do not** —
->   ▶ `node scratch/claims-offset-reversal.mjs` measures the share of ② rings running AGAINST their
->   ① block ring. The result is an off-by-one that displaces every
->   frontage's ownership onto its neighbour's ground, and it is the operator's *"when I swap one
->   treelawn/sidewalk pair, it swaps all 4 sides of the block."*
->   ⛔ **NOT AN ORIENTATION FLAG AND NOT A THRESHOLD** — the adjacency of the two endpoints' source
->   indices *says* which ① edge a ② edge lies along, so there is no case to detect and nothing to
->   tune (`carryEdgeLabels`). Where the union re-resolved a point the provenance is genuinely gone;
->   that is **counted**, never trusted silently.
->   ⭐ **The general form, and it is the one to carry to town #2: a quantity carried through a
->   boolean must be carried as the thing it IS.** Vertex-valued (the ease radius `outR`) survives a
->   reversal untouched; edge-valued does not. This is `§1`'s own *identity carried, never recovered*
->   law with the arity made explicit — and it is the half that was missing.
+>   ### ⭐⭐⭐ A QUANTITY CARRIED THROUGH A BOOLEAN MUST BE CARRIED AS THE THING IT IS — 2026-09-07
+>   An edge label on a vertex stamp flipped every frontage's owner onto its neighbour (the operator's *"swap one
+>   pair, it swaps all 4 sides"*). ⭐ **Today ② carries edges as edges:** each ② edge takes the ① edge it LIES ON,
+>   by containment among its own block's bands, and a vertex is a corner only between two consecutive ① edges
+>   (or at the one owner seam among ① edges its bands swallowed). ▶ `node checks/claims-stamp-follows-the-edge.mjs`.
+>   The vertex-stamp machinery (`carryEdgeLabels`): `_archive/RIBBONS-offset-union-ease-2026-09-25.md`.
 >   ### ⛔⛔ AND IT HAS A SECOND INSTANCE, WHICH COST A WHOLE BLOCK — **AN ARC'S EXTENT IS EDGES, NOT VERTICES** (2026-09-07)
 >   **An arc running from vertex `a` to vertex `b` covers the EDGES between them — `len` of them,
 >   not `len + 1`.** The corner's extent was stamped `k <= len`, so every corner also claimed **the
@@ -645,13 +629,11 @@
 >   > *"I am highly suspicious of 'if' or 'when' statements; there is no 'when the corner' is anywhere
 >   > — the corner is what it is, where it is, there's no conditional."*
 >
->   `offsetRingVariable`'s vertex loop carried **FOUR conditionals deciding what a vertex IS**: is it a
->   cap · which kind of cap · is it a real corner or a through-node · **is the miter too long**. Each is
->   a case boundary, and a case boundary is a place a discontinuity can appear. §1 already retires the
->   first three (`cornerAt`/`capAt`), and the proto path neutralises them. **The clamp was the last
->   one, and it is now off for that path** (`noMiterClamp`). A corner is where the two offset lines
->   meet — full stop; where that self-intersects, the boolean cancels it to nothing, which is the
->   operator's own "goes to 0 and disappears" applied by the union rather than by a guard.
+>   The per-vertex offset carried four conditionals deciding what a vertex IS (cap · cap kind · corner or
+>   through-node · miter too long); ② no longer uses it. ⚠️ **② (`offsetRingByRects`) has ONE, disclosed:** the
+>   miter where the two curb lines meet INSIDE the corner, else the chord between the band ends — lines nearly
+>   parallel meet far away, or never. The two coincide at the boundary, so nothing
+>   jumps; at a highway-owned edge the miter always (H trims it). ⛔ **Not yet put to Jacob against this ruling.**
 >   ⭐ **THE EYE: the shapes came out CLEAN** — sharp miters, no bevels, no stepped notches, blocks
 >   reading as quadrilaterals. ⭐ And a SHAPE gate now exists alongside the distance one:
 >   **median 7 vertices per curb ring** (a quadrilateral block's curb should be 4–8).
@@ -1105,8 +1087,7 @@
 > identity law applied to TOPOLOGY** — carried THROUGH the boolean, never recovered from ring geometry
 > afterward. ⛔ The Z channel survives the PolyTree build, so the labels are unchanged.
 > **② offsets the face as ONE object:** the outer eroded inward, every hole **dilated** into the face
-> (`offsetRingVariable(..., outward)` — the normal is winding-aware and points into the ring's own area
-> whichever way it is traversed, so the direction is **stated**, never inferred), subtracted through
+> (`offsetRingByRects(..., outward)` — the direction is **stated**, never inferred from winding), subtracted through
 > `booleanLabelled` so the ① owner survives. LS **1** compound face, HPDM **6**.
 > ✅ **③ IS COMPOUND-AWARE TOO** — every band boundary goes through one `ins()` that offsets the
 > block's whole curb region (outers eroded, holes dilated, then differenced), so no band is ever
@@ -1614,7 +1595,7 @@ Where a side street **dead-ends/T's into a through street**, `extractFaces` walk
 
 - **tile** — a block face of the centerline graph (`extractFaces`); the unit everything is painted onto.
 - **grout** — the centerlines, which form the tile edges (the tiles are the faces between them).
-- **iA** — the curb edge: the centerline's per-side parallel offset by `pavementHW` (`offsetRingVariable`), rounded once by `filletRing`. The frozen SHAPE.
+- **iA** — the curb edge, the frozen SHAPE: under ① it is ② (`offsetRingByRects`, eased once); on the legacy tile path the per-side offset (`offsetRingVariable`) rounded by `filletRing`.
 - **run / leg** — a maximal span of same-street edges on a tile (`groupRuns`); a run seam (street changes) is a **corner**, same street both sides is a **through-node** (`cornerAt`). ⛔ *"Same street" by WHICH id is the live defect — `§3.3`.*
 - **fe / frontage edge** — a block-edge between two REAL corners; owns `skelId`, `side`, and the `segOrd`s spanning its through-nodes. The authoring unit (`feCustomKey`).
 - **segOrd** — count of IX vertices before a run; the densify-robust run key (vs `intersections.ix`, the fragile index key).
