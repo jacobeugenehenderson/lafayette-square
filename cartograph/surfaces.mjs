@@ -47,8 +47,14 @@ export const SURFACES = {
       },
       beachSlopeDeg: {
         unit: '°', source: 'derived',
-        from: 'p95 slope of the town\'s beach band — sand ground adjacent to the coast (coastline.mjs arcs), at the terrain grid step',
-        needs: ['coast', 'terrain'],
+        from: 'p95 slope of the town\'s beach band (sand ground within beachBandM of the coast), at the terrain grid step',
+        needs: ['coast', 'terrain', 'water datum', 'beachBandM'],
+      },
+      // How far the beach reaches inland from the waterline. Read against the coastDist
+      // context channel (cartograph/bake-coast-distance.js).
+      beachBandM: {
+        unit: 'm', source: 'physics', channel: 'coastDist',
+        question: 'q-beach-band-width', finding: null,        // [U] until answered
       },
       duneBlendDeg: {
         unit: '°', source: 'authored', default: 0,           // neutral: a hard state change

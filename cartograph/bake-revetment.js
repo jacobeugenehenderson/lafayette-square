@@ -43,9 +43,9 @@ import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { shoreArmourFor, wetSideOf, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M } from './shore-armour.mjs'
+import { waterRuns, WATER_EDGE_SKEL } from './shoreRuns.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const WATER_EDGE_SKEL = '__water__'          // tileGround.js's id for the stroked coast
 
 /** Douglas–Peucker. Removes VERTICES; see the resample immediately after it. */
 function simplify(pts, tol) {
@@ -141,14 +141,7 @@ export function bakeRevetment({ scene, look }) {
   const shape = JSON.parse(readFileSync(shapePath, 'utf8'))
   const osm = JSON.parse(readFileSync(osmPath, 'utf8'))
 
-  // ⛔ Each edge appears on the two tiles that share it; dedupe by shape, not by
-  // tile index — the live pass and the frozen artifact number tiles differently.
-  const seen = new Set(); const raw = []
-  for (const t of (shape.tiles || [])) for (const r of (t.runs || [])) {
-    if (r.skelId !== WATER_EDGE_SKEL || !Array.isArray(r.poly) || r.poly.length < 2) continue
-    const k = `${r.poly.length}:${r.poly[0][0].toFixed(2)},${r.poly[0][1].toFixed(2)}`
-    if (!seen.has(k)) { seen.add(k); raw.push(r.poly.map(p => [p[0], p[1]])) }
-  }
+  const raw = waterRuns(shape)   // every distinct __water__ run (shoreRuns.mjs)
 
   // ⭐⭐⭐ THE TWO ARTIFACTS MUST AGREE ABOUT WHETHER THIS TOWN HAS A COAST, AND WHEN THEY
   // DO NOT, THAT IS THE FINDING — NOT AN ANSWER.

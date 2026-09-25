@@ -1082,6 +1082,23 @@
         "f-orc-state-routes-are-through-highways",
         "f-mgl-prima-facie-speeds"
       ]
+    },
+    {
+      "id": "q-beach-band-width",
+      "ask": "How wide the beach / foreshore band is, measured inland from the waterline — the band a sand surface reads as beach before dune",
+      "neededBy": "BRIEF-surface-lab §5 — the sand surface's dune-state lower bound (beachSlopeDeg) and the wet-sand band",
+      "status": "open",
+      "findings": [],
+      "tried": [
+        "No permitted source in the registry covers coastal geomorphology; none read (rule 1)."
+      ],
+      "nextSources": [
+        "a permitted federal source on beach profiles (terms checked first)",
+        "or MEASURED from data we hold: the natural=beach polygons' own width against the coast arcs, or the terrain's slope break along shore-normal transects — needs Provincetown's water datum and readable sand faces first"
+      ],
+      "codeSites": [
+        "cartograph/surfaces.mjs SURFACES.sand.params.beachBandM (finding: null — [U], the parameter is ABSENT)"
+      ]
     }
   ],
   "findings": [
