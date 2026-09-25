@@ -2,7 +2,7 @@
   "committed": true,
   "name": "Lafayette Square",
   "blurb": "St. Louis's oldest neighborhood — a Victorian district of painted-lady townhouses wrapped around 30-acre Lafayette Park, bounded by Chouteau, South Jefferson, Lafayette, and Truman Parkway.",
-  "radius": 892,
+  "draftRadius": 892,
   "timezone": "America/Chicago",
   "sides": [
     "Chouteau Avenue",

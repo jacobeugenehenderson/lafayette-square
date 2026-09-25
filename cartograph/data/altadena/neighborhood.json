@@ -3,7 +3,7 @@
   "blurb": "An unincorporated foothill community at the base of the San Gabriel Mountains in Los Angeles County, California.",
   "sides": [],
   "borderStreets": [],
-  "radius": 4161,
+  "draftRadius": 4161,
   "timezone": "America/Los_Angeles",
   "committed": true,
   "boundaryPath": null,

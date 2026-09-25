@@ -1151,7 +1151,12 @@ export default function ExtentApp() {
   const bakeDirty = !bakedSig || bakedSig !== bakeSignature
   // §4 live re-scope: the radius the committed circle was last baked at. When the
   // operator drags radiusM away from this on a committed scene, offer "Re-scope".
-  const [committedRadius, setCommittedRadius] = useState(0)
+  // ⭐ The radius the map ACTUALLY draws and pours with — the boundary's disc record, its
+  // one home. `radiusM` is the DRAFT (autosaved to neighborhood.json as `draftRadius`).
+  // They differ until Build applies the draft. ⛔ This was hydrated FROM THE DRAFT until
+  // 2026-09-25, so after a reload an unapplied 5,290 m read as applied while every
+  // renderer drew 7,065 m (provincetown).
+  const [appliedRadius, setAppliedRadius] = useState(0)
   const draftHydrated = useRef(false)
   // The name a search suggests, keyed to the draft it made. The [scene] effect
   // resets `name`, so the suggestion is applied there, after hydration, when the
@@ -1420,7 +1425,7 @@ export default function ExtentApp() {
     setSides([]); setStreetCorners(null); setPreviewStreet(null)
     setName(''); setBlurb(''); setRadiusM(0); setRadiusTouched(false)
     setCenterLL(null)
-    setCommittedRadius(0)
+    setAppliedRadius(0)
     setExclusionsLL([]); setPenActive(false); setSelAnchor(null)
     draftHydrated.current = false
     let cancelled = false
@@ -1431,7 +1436,7 @@ export default function ExtentApp() {
         if (Array.isArray(nb.sides) && nb.sides.some(Boolean)) setSides(nb.sides.filter(Boolean))
         if (nb.name) setName(nb.name)
         if (nb.blurb) setBlurb(nb.blurb)
-        if (nb.radius > 0) { setRadiusM(nb.radius); setRadiusTouched(true) }
+        if (nb.draftRadius > 0) { setRadiusM(nb.draftRadius); setRadiusTouched(true) }
         if (nb.center && Number.isFinite(nb.center.lon) && Number.isFinite(nb.center.lat)) setCenterLL(nb.center)
         // Rehydrate the editable pen path (lon/lat) — reopening a hood returns the
         // FULL editable path (not a frozen polygon), the "keep fixing across sessions"
@@ -1453,7 +1458,7 @@ export default function ExtentApp() {
             cls: nb.place.cls || null, kind: nb.place.kind || null, pointish: !!nb.place.pointish,
           })
         }
-        if (nb.committed) { setCommitted(true); setCommittedRadius(Math.round(nb.radius) || 0) }
+        if (nb.committed) setCommitted(true)
       }
       const sug = suggestedNameFor.current
       if (!nb?.name && sug?.scene === scene && sug.name) setName(sug.name)
@@ -1470,6 +1475,8 @@ export default function ExtentApp() {
       const upd = {}
       if (g && !st.mapGeography) upd.mapGeography = g
       if (b) upd.sceneBoundary = b
+      // The APPLIED radius comes from the boundary, never from the draft.
+      setAppliedRadius(b && b.radius > 0 ? Math.round(b.radius) : 0)
       if (Object.keys(upd).length) useCartographStore.setState(upd)
       if (g || st.mapGeography) setLocated(true)
       // NO geocode-for-geometry on open. Search is a data bootstrap only; the
@@ -1491,7 +1498,7 @@ export default function ExtentApp() {
   // draft to its named id (the debounced save may not have run yet).
   const buildDraft = () => {
     const clean = sides.map(s => s.trim()).filter(Boolean)
-    const draft = { sides: clean, radius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim(), exclusions: exclusionsLL || [] }
+    const draft = { sides: clean, draftRadius: Math.round(radiusM) || 0, name: name.trim(), blurb: blurb.trim(), exclusions: exclusionsLL || [] }
     // The authored disc center (lon/lat) is operator-visible → must survive reload.
     if (centerLL) draft.center = centerLL
     // ⭐ The BOUNDARY and the searched place belong in the draft, not just in the
@@ -1647,7 +1654,7 @@ export default function ExtentApp() {
       // committed hood's own extent from disk if this slug already exists.
       setSides([]); setStreetCorners(null); setFetchSources(null)
       setRadiusM(0); setRadiusTouched(false); setName(suggestion); setBlurb('')
-      setCommitted(false); setCommittedRadius(0)
+      setCommitted(false); setAppliedRadius(0)
       setExclusionsLL([]); setPenActive(false); setSelAnchor(null)
       setLocated(true)
     } catch (e) {
@@ -1812,7 +1819,7 @@ export default function ExtentApp() {
         // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
         const pm = await fetchMap(scene).catch(() => null)
         if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
-        setCommittedRadius(Math.round(radiusM))
+        setAppliedRadius(Math.round(radiusM))
         // Committed frame is unchanged (no re-center) → carry the authored view as-is.
         if (authoredCam) { try { localStorage.setItem('cartograph-camera', JSON.stringify(authoredCam)) } catch { /* ignore */ } }
         setBakedSig(bakeSignature)
@@ -1868,7 +1875,7 @@ export default function ExtentApp() {
       // Prefetch map.json so the Designer opens with it in memory (no gray-screen fetch).
       const pm = await fetchMap(scene).catch(() => null)
       if (pm) useCartographStore.setState({ sceneMap: { scene, map: pm } })
-      setCommittedRadius(Math.round(radiusM))   // §4: the baked circle, for re-scope detection
+      setAppliedRadius(Math.round(radiusM))   // §4: the baked circle, for re-scope detection
       setBakedSig(bakeSignature)
       saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
       setShot('designer')
@@ -2340,7 +2347,7 @@ export default function ExtentApp() {
 
               {/* Radius — the slab disc, auto-fit to the kept buildings; pull it out
                   for padding (or in to coarsely trim outer rings). */}
-              {(footprints?.buildings?.length > 0 || (committed && committedRadius > 0)) && (() => {
+              {(footprints?.buildings?.length > 0 || (committed && appliedRadius > 0)) && (() => {
                 // ⛔⛔ THE SLIDER'S RANGE IS BOUNDED BY THE FETCH, NEVER BY THE KEPT SET.
                 // It used to be `base = keptFit.radius` — which `loopExcluded` feeds — so
                 // drawing or dragging an exclusion loop dropped distant buildings, collapsed
@@ -2366,6 +2373,12 @@ export default function ExtentApp() {
                     min={rMin} max={rMax} step={10}
                     value={radiusM}
                     onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
+                  {/* Draft vs applied, said out loud. The map draws the APPLIED disc. */}
+                  {appliedRadius > 0 && Math.round(radiusM) !== appliedRadius && (
+                    <span className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 4 }}>
+                      draft {Math.round(radiusM)} m · applied {appliedRadius} m → Bake to apply it
+                    </span>
+                  )}
                 </div>
                 )
               })()}

@@ -23,10 +23,10 @@
  * Usage:    node fetch.js
  */
 
-import { writeFileSync, mkdirSync, readFileSync, rmSync, statSync } from 'fs'
+import { writeFileSync, mkdirSync, readFileSync, rmSync, statSync, existsSync } from 'fs'
 import { join } from 'path'
 import { execSync } from 'child_process'
-import { BBOX, RAW_DIR, SCENE, mapDir, wgs84ToLocal, overpassBbox } from './config.js'
+import { BBOX, RAW_DIR, SCENE, mapDir, wgs84ToLocal, localToWgs84, overpassBbox } from './config.js'
 import { requireExplicitMap } from './scene.js'
 import { squareAroundDisc, containment, ZONE_PAD } from './discSquare.mjs'
 
@@ -144,12 +144,27 @@ function main() {
   // pass squares around the authored disc instead — see the header.
   let bboxObj = BBOX
   if (pass === 'heavy') {
+    // ⭐ THE APPLIED DISC — `neighborhood_boundary.json`, the radius's one home. The draft
+    // in neighborhood.json (`draftRadius`) is an UNAPPLIED edit and sized this square
+    // until 2026-09-25, while the pour used the applied disc (provincetown: 5,290 vs 7,065).
+    // Before a first commit there is no applied disc; then the draft is the only disc,
+    // and the log says which one was used.
+    const bndPath = join(mapDir(SCENE), 'neighborhood_boundary.json')
     const nbPath = join(mapDir(SCENE), 'neighborhood.json')
     let nb
-    try { nb = JSON.parse(readFileSync(nbPath, 'utf-8')) } catch {
-      console.error(`\n⛔ --pass=heavy needs the authored disc and ${nbPath} is unreadable.\n   The heavy fetch is scoped to the DISC, not the frame; without a radius there is nothing to scope to.\n   Author the extent first, then re-run.\n`)
-      process.exit(2)
+    if (existsSync(bndPath)) {
+      const bnd = JSON.parse(readFileSync(bndPath, 'utf-8'))
+      const [lon, lat] = localToWgs84(bnd.center?.[0] || 0, bnd.center?.[1] || 0)
+      nb = { radius: bnd.radius, center: { lon, lat }, from: 'applied disc (neighborhood_boundary.json)' }
+    } else {
+      let d
+      try { d = JSON.parse(readFileSync(nbPath, 'utf-8')) } catch {
+        console.error(`\n⛔ --pass=heavy needs a disc: ${bndPath} does not exist and ${nbPath} is unreadable.\n   The heavy fetch is scoped to the DISC, not the frame; without a radius there is no disc.\n`)
+        process.exit(2)
+      }
+      nb = { radius: d.draftRadius, center: d.center, from: 'Extent DRAFT (no applied disc yet — this town has not been built)' }
     }
+    console.log(`HEAVY pass disc: r=${nb.radius} m — ${nb.from}`)
     const centre = nb.center && Number.isFinite(nb.center.lon) ? nb.center
       : { lon: BBOX ? (BBOX.minLon + BBOX.maxLon) / 2 : NaN, lat: (BBOX.minLat + BBOX.maxLat) / 2 }
     let sq

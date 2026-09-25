@@ -47,7 +47,7 @@ const towns = readdirSync(DATA, { withFileTypes: true }).filter(d => d.isDirecto
 
 for (const t of towns) {
   const dir = join(DATA, t)
-  const osmP = join(dir, 'raw', 'osm.json'), geoP = join(dir, 'geography.json'), nbP = join(dir, 'neighborhood.json')
+  const osmP = join(dir, 'raw', 'osm.json'), geoP = join(dir, 'geography.json'), nbP = join(dir, 'neighborhood_boundary.json')   // the APPLIED disc — what the pour uses (neighborhood.json holds only the draft)
   if (![osmP, geoP, nbP].every(existsSync)) continue
   const osm = JSON.parse(readFileSync(osmP, 'utf8'))
   const geo = JSON.parse(readFileSync(geoP, 'utf8'))

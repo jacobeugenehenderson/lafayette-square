@@ -1,7 +1,7 @@
 {
   "name": "Huron OH",
   "blurb": "Explore Huron, Ohio, a Lake Erie waterfront community at the mouth of the Huron River. Discover local businesses, historic places, parks, events, neighborhoods and everyday life in Huron.",
-  "radius": 3539,
+  "draftRadius": 3539,
   "timezone": "America/New_York",
   "exclusions": [
     {

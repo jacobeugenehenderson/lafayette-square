@@ -2028,7 +2028,7 @@ createServer(async (req, res) => {
         // Persist the editable exclusion loops AND the inclusion polygon (both lon/lat)
         // so reopening a committed hood returns them fully editable — the "keep fixing
         // across sessions" contract.
-        const nDraft = { name: name || '', blurb: blurb || '', radius: Math.round(radius), timezone: geo.timezone || null, exclusions: exclusions || [], committed: true }
+        const nDraft = { name: name || '', blurb: blurb || '', draftRadius: Math.round(radius), timezone: geo.timezone || null, exclusions: exclusions || [], committed: true }
         if (Array.isArray(polygon) && polygon.length >= 3) { nDraft.polygon = polygon; nDraft.polygonSource = polygonSource || 'authored' }
         else {
           try { const pv = JSON.parse(readFileSync(nPath, 'utf8')); if (Array.isArray(pv.polygon) && pv.polygon.length >= 3) { nDraft.polygon = pv.polygon; if (pv.polygonSource) nDraft.polygonSource = pv.polygonSource } } catch { /* none */ }
@@ -2227,7 +2227,7 @@ createServer(async (req, res) => {
         writeFileSync(bPath, JSON.stringify(boundary, null, 2))
         const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
         if (existsSync(nPath)) {
-          try { const nb = JSON.parse(readFileSync(nPath, 'utf8')); nb.radius = Math.round(radius); if (Array.isArray(exclusions)) nb.exclusions = exclusions; writeFileSync(nPath, JSON.stringify(nb, null, 2)) } catch { /* leave nb */ }
+          try { const nb = JSON.parse(readFileSync(nPath, 'utf8')); nb.draftRadius = Math.round(radius); delete nb.radius; if (Array.isArray(exclusions)) nb.exclusions = exclusions; writeFileSync(nPath, JSON.stringify(nb, null, 2)) } catch { /* leave nb */ }
         }
         const here = import.meta.dirname
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
