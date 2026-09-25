@@ -981,7 +981,7 @@
         "caltrans-hdm Topic 206 → f-caltrans-terminal-widening-taper, f-caltrans-through-lane-addition-length, f-caltrans-lane-reduction-wv; Index 504.3 (ramp widening for trucks — the ramp, not the crossroad)",
         "mutcd-11r1 §3B.12 → f-mutcd-lane-reduction-not-at-junctions (scoped away)"
       ],
-      "notes": "RATE answered for a ramp landing on a narrower street: 10:1 (Caltrans 206.2(3), names ramp terminals); MassDOT states no own-voice rate, so an MA town takes Caltrans's — disclosed. TARGET WIDTH: no source states it — derived from the geometry (the street widens on the overhanging side just enough to receive H's butt). THROUGH-STREET case (trunk-11): 250 ft/lane (206.2(1)) or WV (206.3) — which one is a ruling; WV needs V. Construction proposed to Boz before building."
+      "notes": "RATE: 10:1 for a ramp landing on a narrower street (f-caltrans-terminal-widening-taper). TARGET WIDTH: no source states it — derived: the overhang o = H half-width × cosθ − the street's resolved half-width, per side; the flare is o at the node, tapering over 10·o. THROUGH-STREET case (a highway mainline continuing as a narrower street, provincetown trunk-11): 206.2(3) covers lane-WIDTH increases at curves, ramp terminals and narrow-lane matches — not a mainline lane-COUNT change — so it is [U]: built at 10:1 and disclosed [U] (Boz, 2026-09-24: no 250-ft or W×V, the kit carries no speed). LAYER: ② (the street measure), not ①."
     }
   ],
   "findings": [
@@ -3108,9 +3108,10 @@
       "source": "caltrans-hdm",
       "where": "Index 206.2(3) — Pavement Widenings, Lane Widening",
       "quote": "An increase in lane width can occur at short radius curves which are widened for truck off-tracking, at ramp terminals with large truck turning volumes, or when new construction matches existing roadways with narrow lane widths. Extensive transition lengths are not necessary as the widening does not restrict the driver’s expectations. Transition tapers for these types of situations should be at 10:1 (longitudinal to lateral).",
-      "scope": "CA; a lane WIDENED (not a lane added), named at ramp terminals. States the rate only — not the width widened to.",
+      "scope": "CA; a lane WIDTH increase (not a lane-count change) in three named contexts: short-radius curves widened for truck off-tracking, ramp terminals with large truck turning volumes, and new construction matching existing narrow lanes. States the rate only — not the width widened to. The kit carries no truck volume, so applying it at every ramp terminal reads past the qualifier: disclosed per pour.",
       "foundOn": "2026-09-24",
-      "foundBy": "Gantry"
+      "foundBy": "Gantry",
+      "gist": "Where only ONE permitted manual speaks there is no disagreement, so its value stands for any town, disclosed per pour — r-manuals-disagree-take-smaller governs only disagreement (Boz, 2026-09-24). MassDOT states no own-voice rate, so an MA town takes this."
     },
     {
       "id": "f-caltrans-through-lane-addition-length",
