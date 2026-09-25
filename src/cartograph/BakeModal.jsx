@@ -7,7 +7,25 @@ export default function BakeModal() {
   const bakeRunning = useCartographStore(s => s.bakeRunning)
   const bakeError = useCartographStore(s => s.bakeError)
   const ribbonsStale = useCartographStore(s => s.ribbonsStale)
-  if (!bakeRunning && !bakeError && !ribbonsStale) return null
+  const repourConfirm = useCartographStore(s => s.repourConfirm)
+  if (!bakeRunning && !bakeError && !ribbonsStale && !repourConfirm) return null
+  // ⛔ A CODE change would re-pour the town (the server stopped first and named the files). Say it; run on confirm.
+  if (!bakeRunning && repourConfirm) {
+    const { scene, files = [], resume = {} } = repourConfirm
+    return (
+      <div className="carto-bake-modal">
+        <div className="carto-bake-modal-card">
+          <div className="carto-bake-modal-title">This Bake will re-pour {scene}</div>
+          <div className="carto-bake-modal-msg">
+            The pour code changed since {scene} was last poured, so baking now re-derives its map before baking it:
+            <ul>{files.map(f => <li key={f}><code>{f}</code></li>)}</ul>
+          </div>
+          <button className="carto-bake-modal-dismiss" onClick={() => { useCartographStore.setState({ repourConfirm: null }); useCartographStore.getState().runBake({ ...resume, repour: true }) }}>Re-pour and bake</button>
+          <button className="carto-bake-modal-dismiss" onClick={() => useCartographStore.setState({ repourConfirm: null })}>Cancel</button>
+        </div>
+      </div>
+    )
+  }
   // ⛔ The 2D map is built live from ribbons loaded with the page; after a re-pour it is stale until reload.
   if (!bakeRunning && !bakeError && ribbonsStale) return (
     <div className="carto-bake-modal">

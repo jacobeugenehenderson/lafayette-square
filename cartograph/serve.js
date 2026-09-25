@@ -282,6 +282,13 @@ function importClosure(entries) {
   return [...seen]
 }
 
+// The pour's code files newer than the town's last pour (its map.json) — the Bake asks before re-pouring on these.
+// A town with no map.json yet is a first pour: nothing to ask. Pure, so the check can exercise it on temp files.
+function codeNewerThan(files, mapJson) {
+  const mapM = existsSync(mapJson) ? statSync(mapJson).mtimeMs : 0
+  return mapM ? files.filter(f => existsSync(f) && newestMtime(f) > mapM) : []
+}
+
 function needsRebuild(inputs, outputs) {
   const outMtimes = outputs.map(o => existsSync(o) ? statSync(o).mtimeMs : 0)
   if (outMtimes.some(t => t === 0)) return true
@@ -2391,6 +2398,7 @@ createServer(async (req, res) => {
       // CLI-only QA artifact (human-readable / diffable); the runtime
       // consumes ground.json + ground.bin + ground.lightmap exclusively.
       const force = /[?&]force=1\b/.test(req.url || '')
+      const repourConfirmed = /[?&]repour=1\b/.test(req.url || '')
       const REPO_ROOT = join(import.meta.dirname, '..')
       const here = import.meta.dirname
       // Bake inputs come from the active Look's scene. A Look without an
@@ -2470,6 +2478,19 @@ createServer(async (req, res) => {
       // Whether poured towns should carry pipeline elevation is its own decision.
       const elevFlag = isDefaultMap ? '' : ' --skip-elevation'
       if (hasOsm) {
+        // ⛔⛔ A CODE CHANGE RE-POURS THE TOWN — SAY SO BEFORE DOING IT (Boz's ruling (d), 2026-09-24). The pour's code
+        // inputs are its import closure, so a change to the ① mint, the coastline or the section builder makes every
+        // poured town's next Bake a RE-POUR. That is correct, and it is also how a town gets poured by accident (LS,
+        // whose H-3 pour is held). So a Bake that would re-pour because CODE changed stops and names the files, and
+        // runs only when the request carries `repour=1` (BakeModal's confirm). An authoring edit (overlay, skeleton,
+        // measurements) still re-pours without asking — that is the ordinary edit-bake-see loop. A town with no
+        // map.json yet is a first pour, not a re-pour.
+        const codeNewer = codeNewerThan(PIPELINE_SRC, MAP_JSON)
+        if (codeNewer.length && !repourConfirmed) {
+          res.writeHead(428, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: codeNewer.map(f => f.replace(REPO_ROOT + '/', '')) } }))
+          return
+        }
         await runIfDirty('pipeline',
           [...RAW_PATHS, ...PIPELINE_SRC],
           [MAP_JSON],

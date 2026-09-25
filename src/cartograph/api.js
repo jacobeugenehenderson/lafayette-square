@@ -372,9 +372,19 @@ export async function saveShapeFreeze(artifact, scene) {
 // buildings + lamps + scene) from its design.json. Pass `force: true`
 // to bypass the server's dirty-check and rebuild every step (the
 // cache-bust escape hatch).
-export async function bakeLook(lookId, { force = false } = {}) {
-  const url = `${BASE}/looks/${encodeURIComponent(lookId)}/bake${force ? '?force=1' : ''}`
+export async function bakeLook(lookId, { force = false, repour = false } = {}) {
+  const q = [force && 'force=1', repour && 'repour=1'].filter(Boolean).join('&')
+  const url = `${BASE}/looks/${encodeURIComponent(lookId)}/bake${q ? '?' + q : ''}`
   const res = await fetch(url, { method: 'POST' })
+  // 428 = the pour's CODE changed since this town was last poured, so this Bake would RE-POUR it. Nothing ran;
+  // the server names the files and waits for the operator's confirm (`repour=1`). Tagged so runBake can ask.
+  if (res.status === 428) {
+    const body = await res.json().catch(() => ({}))
+    const err = new Error('The pour code changed — this Bake would re-pour the town.')
+    err.code = 'REPOUR_CONFIRM'
+    err.repour = body.repour || null
+    throw err
+  }
   // 409 = the server's per-look lock: a bake is already running for this Look
   // (a concurrent request, a second tab, a fast re-fire). It is BENIGN — the
   // running bake will finish — so surface a friendly, tagged error instead of

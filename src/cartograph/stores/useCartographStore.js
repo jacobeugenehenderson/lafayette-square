@@ -1941,7 +1941,7 @@ const useCartographStore = create((set, get) => ({
     // Clear only if no newer freeze superseded this one.
     if (get().shapeFreezePending === p) set({ shapeFreezePending: null })
   },
-  runBake: async ({ force = false, navigateTo = null } = {}) => {
+  runBake: async ({ force = false, navigateTo = null, repour = false } = {}) => {
     if (get().bakeRunning) return
     // ── The settle-gate (2026-06-21, HANDOFF-authoring-session-hardening §2) ──
     // (a) REFUSE to bake on an un-hydrated store (real boot before
@@ -1979,7 +1979,7 @@ const useCartographStore = create((set, get) => ({
       // edits before the bake reads it (NOTES.md §"Autosave debounce must flush
       // before /bake", 2026-05-18). No-op when nothing is pending.
       await get()._saveDesignDebounced.flush()
-      const r = await bakeLook(get().activeLookId, { force })
+      const r = await bakeLook(get().activeLookId, { force, repour })
       // bakeLastMs is the cache-bust signal for BakedGround / InstancedTrees
       // (`?t=${bakeLastMs}`). Must be unique per bake-completion or the
       // browser will hit cache and show stale geometry. r.ms (duration) is
@@ -2004,6 +2004,8 @@ const useCartographStore = create((set, get) => ({
       // overhead view immediately after the bake.
       if (navigateTo) get().setShot(navigateTo)
     } catch (err) {
+      // the server stopped before a CODE-driven re-pour: ask, and remember how to resume (BakeModal)
+      if (err.code === 'REPOUR_CONFIRM') { set({ bakeRunning: false, repourConfirm: { ...(err.repour || {}), resume: { force, navigateTo } } }); return }
       set({ bakeRunning: false, bakeError: String(err.message || err) })
     }
   },
@@ -2080,6 +2082,8 @@ const useCartographStore = create((set, get) => ({
   sceneRibbons: null,
   // Set when the server's ribbons no longer match the copy this page loaded (BakeModal shows it, with Reload).
   ribbonsStale: null,
+  // { scene, files, resume } — a Bake refused because the pour's code changed; BakeModal asks before re-pouring
+  repourConfirm: null,
   mapGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)
   sceneBoundary: null,    // fetched neighborhood_boundary.json (raw)
   setScene: (scene) => {
