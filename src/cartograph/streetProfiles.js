@@ -82,17 +82,29 @@ export function townState(osm) {
   return { code, vote: ranked.slice(0, 3).map(([k, n]) => `${k}×${n}`).join(' ') || 'none', tied }
 }
 
-export function highwayStandard(registry, state = { code: null }) {
+// id → entry, over every entry anywhere in the registry (sources, questions, findings)
+function registryIndex(registry) {
   const byId = new Map()
   const walk = (o) => { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') { if (typeof o.id === 'string') byId.set(o.id, o); for (const v of Object.values(o)) if (v && typeof v === 'object') walk(v) } }
   walk(registry)
+  return byId
+}
+
+// ⭐ WHAT THE POUR READ FROM THE REGISTRY — `read` (a Map, optional) records every entry `highwayStandard` asks for:
+// a value it composes → that entry's `value`; an entry it only requires to exist → `true`. The pour stamps the record
+// into map.json (`registryRead`), and the Bake re-pours on a registry edit only when `registryReadChanged` finds a
+// recorded entry that differs now — so a ruling, a question, or a finding no section uses dirties no town.
+export function highwayStandard(registry, state = { code: null }, read = null) {
+  const byId = registryIndex(registry)
   const val = (id, ...path) => {
+    read?.set(id, byId.get(id)?.value ?? null)
     let v = byId.get(id)?.value
     for (const k of path) v = v?.[k]
     if (!Number.isFinite(v)) throw new Error(`⛔ references/registry.json: ${id}.value.${path.join('.')} is missing — the highway section is drawn only from cited values`)
     return v
   }
   for (const id of ['d-left-shoulder-any-lane-count', 'd-interstate-std-on-non-interstate', 'd-motorway-untagged-two-lanes', 'm-osm-line-lane-centre', 'q-ramp-section', 'r-manuals-disagree-take-smaller']) {
+    read?.set(id, byId.has(id))
     if (!byId.has(id)) throw new Error(`⛔ references/registry.json: ${id} is missing — the highway section cites it`)
   }
   const caLane = val('f-caltrans-ramp-lane-width', 'minRampLane_ft') * FT
@@ -123,6 +135,14 @@ export function highwayStandard(registry, state = { code: null }) {
     taperRate: val('d-lane-step-taper-rate', 'taperLengthPerWidthChange'),
     ramp, state,
   }
+}
+
+// The recorded entries (`{ id: value | true }`) that differ in `registry` now → their ids. ⛔ A missing record
+// (a map.json poured before the record existed, or unreadable) is NOT clean: it returns ['(no record)'].
+export function registryReadChanged(record, registry) {
+  if (!record || typeof record !== 'object') return ['(no record of what the last pour read)']
+  const byId = registryIndex(registry)
+  return Object.entries(record).filter(([id, was]) => JSON.stringify(was === true ? byId.has(id) : (byId.get(id)?.value ?? null)) !== JSON.stringify(was)).map(([id]) => id)
 }
 
 // chain: { highway, oneway, lanes?, laneProfile?, length?, ref? } → { left, right, report }

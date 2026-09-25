@@ -9,13 +9,15 @@
 //   · the pipeline's code inputs are the IMPORT CLOSURE of pipeline.js (`importClosure`), not a hand list;
 //   · run on the live tree, that closure contains the file that DEFINES `mintProtopolygon` and the one that defines
 //     `coastRings` (each found by grepping the closure for its export, so a move stays covered);
-//   · the pipeline inputs name `references/registry.json`, which the pour reads to compose highway sections;
+//   · the registry is judged by CONTENT — only the entries the town's last pour READ (`map.json.registryRead`) —
+//     exercised on the real registry: a read value edited ⇒ re-pour; a ruling added or an unread finding edited ⇒
+//     none; no record ⇒ re-pour (never clean by default);
 //   · the Bake STOPS (428) before a code-driven re-pour unless confirmed, and `codeNewerThan` names a newer code file.
 //
 //   node checks/claims-the-bake-watches-its-code.mjs [--serve=path]
 //
 // MUTATIONS (each must go red, via --serve): PIPELINE_SRC set back to the hand list · the 428 stop removed ·
-// codeNewerThan made to return [] always.
+// codeNewerThan made to return [] always · the registry check dropped from the 428 list.
 import { readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { ROOT } from './_scenes.mjs'
@@ -26,7 +28,27 @@ const bad = []
 const line = src.match(/const PIPELINE_SRC = [^\n]+/)?.[0]
 if (!line) { console.log('⛔ NOT CHECKED — no PIPELINE_SRC in serve.js'); process.exit(2) }
 if (!/importClosure\(\[join\(here, 'pipeline\.js'\)\]\)/.test(line)) bad.push(`PIPELINE_SRC is not the import closure of pipeline.js: ${line.trim()}`)
-if (!/references', 'registry\.json'/.test(line)) bad.push('PIPELINE_SRC does not name references/registry.json')
+// ⭐ THE REGISTRY IS JUDGED BY WHAT THE POUR READ, not by its mtime (a ruling or a question dirties no town). The
+// handler must fold `registryReadChanged` into the same 428 list; exercised below on the REAL registry.
+{ const h0 = src.indexOf("await runIfDirty('pipeline'"), g = src.lastIndexOf('registryReadChanged(', h0), q = src.indexOf('res.writeHead(428', g)
+  if (g < 0 || q < 0 || q > h0 || !/regChanged/.test(src.slice(g, q))) bad.push('the Bake does not judge the registry by what the last pour read (registryReadChanged → the 428 list)') }
+{ const { highwayStandard, registryReadChanged } = await import(join(ROOT, 'src/cartograph/streetProfiles.js'))
+  const reg = () => JSON.parse(readFileSync(join(ROOT, 'references/registry.json'), 'utf8'))
+  const idx = (r) => { const m = new Map(); const w = (o) => { if (Array.isArray(o)) o.forEach(w); else if (o && typeof o === 'object') { if (typeof o.id === 'string') m.set(o.id, o); for (const v of Object.values(o)) if (v && typeof v === 'object') w(v) } }; w(r); return m }
+  for (const code of ['MA', 'CA', null]) {
+    const read = new Map(); highwayStandard(reg(), { code }, read); const rec = Object.fromEntries(read)
+    if (!read.size) { bad.push(`state ${code}: highwayStandard recorded no reads`); continue }
+    if (registryReadChanged(rec, reg()).length) bad.push(`state ${code}: an unchanged registry reads as changed`)
+    // a READ value edited ⇒ dirty
+    const valId = Object.keys(rec).find(k => rec[k] !== true), r1 = reg(), e1 = idx(r1).get(valId)
+    e1.value = { ...e1.value, __mutated: 1 }
+    if (!registryReadChanged(rec, r1).includes(valId)) bad.push(`state ${code}: a changed value the pour READ (${valId}) does not re-pour`)
+    // a ruling added, and a finding the pour did NOT read edited ⇒ clean
+    const r2 = reg(); r2.findings.push({ id: 'r-bakewatch-test', kind: 'ruling', quote: 'x' })
+    const unread = r2.findings.find(f => !(f.id in rec) && f.value && typeof f.value === 'object'); if (unread) unread.value = { ...unread.value, __mutated: 1 }
+    if (registryReadChanged(rec, r2).length) bad.push(`state ${code}: a new ruling or an unread finding re-pours every town`)
+  }
+  if (!registryReadChanged(undefined, reg()).length) bad.push('a map.json with NO read record counts as clean — it must be dirty') }
 const a = src.indexOf('function importClosure'), b = src.indexOf('\n}\n', a)
 let closure = []
 if (a < 0 || b < 0) bad.push('importClosure not found in serve.js')

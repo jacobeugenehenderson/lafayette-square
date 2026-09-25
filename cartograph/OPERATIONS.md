@@ -469,7 +469,7 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
 
 - The two-step build: `node skeleton.js` → `node pipeline.js` → `node promote-ribbons.js` → `node bake-ground.js` (the pipeline does **not** re-run the extractor — `[[feedback_skeleton_pipeline_two_step]]`).
 - The bake is incremental (dirty-skipped); `?force=1` on the URL (or ⌥-click a bake button) forces a full rebuild.
-- **A Bake asks before it re-pours because the pour's CODE changed.** The pour's code inputs are its import closure (`pipeline.js` and everything it imports, the ① mint included) plus `references/registry.json`. When any of them is newer than the town's `map.json`, the Bake stops and lists the files ("This Bake will re-pour <town>"), and runs only on **Re-pour and bake**. An authoring edit re-pours without asking, as before. ▶ `node checks/claims-the-bake-watches-its-code.mjs`
+- **A Bake asks before it re-pours because the pour's CODE changed.** The pour's code inputs are its import closure (`pipeline.js` and everything it imports, the ① mint included). The research registry counts only by content: a value that town's last pour actually read (recorded in its `map.json`) has changed. A new ruling or question prompts nobody. When any of these has changed, the Bake stops and lists them ("This Bake will re-pour <town>"), and runs only on **Re-pour and bake**. An authoring edit re-pours without asking, as before. ▶ `node checks/claims-the-bake-watches-its-code.mjs`
 - ### ⛔ **NAME THE TOWN. An unflagged write no longer runs at all.**
   Every script in `cartograph/` that writes an artifact refuses to start until you have named the
   scene. It used to default to `lafayette-square` — so forgetting the flag silently rebuilt LS over

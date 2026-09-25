@@ -13,7 +13,7 @@ import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
-import { deriveLayers, deriveBuildings, _lotPaths } from './derive.js'
+import { deriveLayers, deriveBuildings, _lotPaths, registryReadRecord } from './derive.js'
 import { fetchElevationGrid, interpolateElevation } from './elevation.js'
 import { createMembershipFilter, buildingIdOf } from './membership.mjs'
 
@@ -246,6 +246,9 @@ async function main() {
     } : null,
     layers,
     buildings,
+    // what this pour read from references/registry.json (`{ id: value | true }`) — the Bake compares it with the
+    // registry now, so an edit re-pours a town only when a value this town used has changed. `{}` = read nothing.
+    registryRead: registryReadRecord(),
   }
 
   // Content-aware so a no-op pipeline run doesn't cascade-invalidate

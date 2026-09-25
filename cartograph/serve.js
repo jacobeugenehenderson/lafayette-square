@@ -15,6 +15,7 @@ import { spawn } from 'child_process'
 import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
+import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
 import { intakeStatusForMap, sampleForRow, addAltSource, hasElevationInput } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
@@ -2432,9 +2433,10 @@ createServer(async (req, res) => {
         bakePaths.skeleton,
         join(REPO_ROOT, 'src', 'data', 'buildings.json'),
       ]
-      // every file the pour runs — the ① mint included — plus the DATA it reads as code-like input: the highway
-      // sections are composed from `references/registry.json` at pour (derive.js `hwyStd`), so a changed value re-pours
-      const PIPELINE_SRC = [...importClosure([join(here, 'pipeline.js')]), join(REPO_ROOT, 'references', 'registry.json')]
+      // every file the pour runs — the ① mint included. ⛔ `references/registry.json` is NOT watched by mtime: the
+      // research DB is edited constantly (rulings, questions) and a prompt the operator learns to click through stops
+      // warning. It is judged by CONTENT below — only the entries this town's last pour READ (`registryRead`).
+      const PIPELINE_SRC = importClosure([join(here, 'pipeline.js')])
       const MAP_JSON   = bakePaths.map
       // The scene's OWN ribbons: LS's live in the runtime bundle, every other
       // town's in its clean/ (promote-ribbons.js's rule). ⛔ Comparing a poured
@@ -2485,13 +2487,24 @@ createServer(async (req, res) => {
         // runs only when the request carries `repour=1` (BakeModal's confirm). An authoring edit (overlay, skeleton,
         // measurements) still re-pours without asking — that is the ordinary edit-bake-see loop. A town with no
         // map.json yet is a first pour, not a re-pour.
-        const codeNewer = codeNewerThan(PIPELINE_SRC, MAP_JSON)
+        // the registry, by CONTENT: the entries this town's last pour read (`map.json.registryRead`) that differ now.
+        // ⛔ No record (a map.json poured before it existed, or unreadable) is DIRTY, never clean by default.
+        const regChanged = existsSync(MAP_JSON) ? (() => {
+          let rec, reg
+          try { rec = JSON.parse(readFileSync(MAP_JSON, 'utf-8')).registryRead } catch { rec = undefined }
+          try { reg = JSON.parse(readFileSync(join(REPO_ROOT, 'references', 'registry.json'), 'utf-8')) } catch { return ['(references/registry.json unreadable)'] }
+          return registryReadChanged(rec, reg)
+        })() : []
+        const codeNewer = [...codeNewerThan(PIPELINE_SRC, MAP_JSON).map(f => f.replace(REPO_ROOT + '/', '')),
+                           ...regChanged.map(i => `references/registry.json → ${i}`)]
         if (codeNewer.length && !repourConfirmed) {
           res.writeHead(428, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: codeNewer.map(f => f.replace(REPO_ROOT + '/', '')) } }))
+          res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: codeNewer } }))
           return
         }
-        await runIfDirty('pipeline',
+        // a changed registry value leaves every mtime alone, so it re-pours explicitly
+        if (regChanged.length) { await runShell(`node pipeline.js ${sceneFlag}${elevFlag}`, { cwd: here, timeout: 600000 }); ranSteps.push('pipeline (registry values this town read changed)') }
+        else await runIfDirty('pipeline',
           [...RAW_PATHS, ...PIPELINE_SRC],
           [MAP_JSON],
           `node pipeline.js ${sceneFlag}${elevFlag}`,

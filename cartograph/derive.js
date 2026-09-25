@@ -39,11 +39,14 @@ const SCALE = 100
 // The highway typical section's cited values (H-3) — read from references/, never restated — and
 // the town's state (voted from its own OSM `addr:state`), which picks the ramp manual. Built once.
 let _hwyStd = null
+// ⭐ every registry entry the section composer read this pour — stamped into map.json by pipeline.js (`registryRead`)
+const _registryRead = new Map()
+export const registryReadRecord = () => Object.fromEntries(_registryRead)
 function hwyStd() {
   if (_hwyStd) return _hwyStd
   const state = townState(JSON.parse(readFileSync(join(RAW_DIR, 'osm.json'), 'utf8')))
   console.log(`    Highway section: town state ${state.code ?? '⛔ UNKNOWN'} (addr:state vote: ${state.vote}${state.tied ? ', TIED' : ''})`)
-  return (_hwyStd = highwayStandard(JSON.parse(readFileSync(join(CARTOGRAPH_DIR, '..', 'references', 'registry.json'), 'utf8')), state))
+  return (_hwyStd = highwayStandard(JSON.parse(readFileSync(join(CARTOGRAPH_DIR, '..', 'references', 'registry.json'), 'utf8')), state, _registryRead))
 }
 const ARC_TOL = 0.01 * SCALE  // 1cm — smooth arcs
 
