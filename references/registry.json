@@ -1099,6 +1099,24 @@
       "codeSites": [
         "cartograph/surfaces.mjs SURFACES.sand.params.beachBandM (finding: null — [U], the parameter is ABSENT)"
       ]
+    },
+    {
+      "id": "q-cape-cod-tree-species-mix",
+      "ask": "The tree species composition of Provincetown / outer Cape Cod — which species, in what proportions, by setting (dune backslope, woodland, town) — for the placement mix",
+      "neededBy": "Provincetown's tree roster and placement mix (scripts/15-derive-tree-mix.py has no City census to derive it from; OSM's 48 trees carry no species)",
+      "status": "open",
+      "findings": [],
+      "tried": [
+        "OSM natural=tree: 48 points, 0 with a species tag (raw/osm_trees_raw.json).",
+        "No municipal / MassGIS / Cape Cod Commission tree inventory named in INTAKE-CATALOGUE or TREE-INTAKE."
+      ],
+      "nextSources": [
+        "National Park Service — vegetation mapping of Cape Cod National Seashore (the Province Lands lie inside it). Terms NOT yet checked — do not read until cleared.",
+        "USDA Forest Service — Forest Inventory & Analysis (FIA), Barnstable County. Terms NOT yet checked — do not read until cleared."
+      ],
+      "codeSites": [
+        "scripts/15-derive-tree-mix.py (derives the mix from a City census; none exists for provincetown)"
+      ]
     }
   ],
   "findings": [
