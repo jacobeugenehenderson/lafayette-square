@@ -66,7 +66,7 @@ For **every** row in `intake-rows.mjs`, decide its fate and justify it:
 2. **AUTHORED — the operator's work, not intake** (e.g. survey widths, centerlines, measurements, building-overrides). For a new town, these come from the authoring tools. The pour says "authored: none yet", which is a normal state, not a failure.
 3. **PER-TOWN SEARCH — may or may not exist** (parcels, tree censuses). The pour searches, and records either what it found or `verified-absent` with what it looked at. `intake.json` already has `verified-absent`; use it.
 
-Also flag every row whose **definition** is LS-specific (a path like `raw/stl_parcels.json`, a St. Louis dataset baked into the row). That is Layer 0 Class D in the intake itself.
+Also flag every row whose **definition** is LS-specific (a path like `raw/stl_parcels.json`, a St. Louis dataset baked into the row). That is Layer 0 Class D in the intake itself. **It reaches past the row model into consumers:** `derive.js`'s parcel loader hard-codes `['stl_parcels.json','stlco_parcels.json']`, so huron's declared Ohio well (`sources.json` → `oh_parcels.json`) is never read there (it prints *"St. Louis City/County only"*; Gantry, 2026-09-24). Grep every consumer for a hard-coded well, not just `intake-rows.mjs`.
 
 **Prove the method on real towns, read-only:**
 - **Provincetown** (MA), scene `provincetown` (renamed from `02657` on 2026-09-24);
