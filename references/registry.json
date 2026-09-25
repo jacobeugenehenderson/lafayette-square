@@ -968,10 +968,20 @@
         "checks/claims-ramp-ends-classified.mjs — at-grade butt corners outside the town asphalt"
       ],
       "findings": [
-        "r-ramp-terminal-flares"
+        "r-ramp-terminal-flares",
+        "f-caltrans-terminal-widening-taper",
+        "f-caltrans-through-lane-addition-length",
+        "f-caltrans-lane-reduction-wv",
+        "f-mutcd-lane-reduction-not-at-junctions"
       ],
       "neededBy": "provincetown: trunk-link-9.end / trunk-link-21.start (conwell-street), trunk-link-13.end (snail-road) overhang 0.21–0.45 m; trunk-11.end at province-lands-road-1 overhangs 5.36 m",
-      "status": "open"
+      "status": "open",
+      "tried": [
+        "massdot-design-guide Ch 6 §6.4 Flared Intersections (own voice, no dimensions); Ch 6 Table 6-6 auxiliary-lane tapers (AASHTO-sourced — excluded, already in aashtoPassages); Ch 7 §7.6 lane-drop 70:1/50:1 (freeway lane drops, not terminals)",
+        "caltrans-hdm Topic 206 → f-caltrans-terminal-widening-taper, f-caltrans-through-lane-addition-length, f-caltrans-lane-reduction-wv; Index 504.3 (ramp widening for trucks — the ramp, not the crossroad)",
+        "mutcd-11r1 §3B.12 → f-mutcd-lane-reduction-not-at-junctions (scoped away)"
+      ],
+      "notes": "RATE answered for a ramp landing on a narrower street: 10:1 (Caltrans 206.2(3), names ramp terminals); MassDOT states no own-voice rate, so an MA town takes Caltrans's — disclosed. TARGET WIDTH: no source states it — derived from the geometry (the street widens on the overhanging side just enough to receive H's butt). THROUGH-STREET case (trunk-11): 250 ft/lane (206.2(1)) or WV (206.3) — which one is a ruling; WV needs V. Construction proposed to Boz before building."
     }
   ],
   "findings": [
@@ -3086,6 +3096,70 @@
       "quote": "I think flare because that's real?",
       "gist": "Where a ramp is wider than the town street it lands on, the TOWN STREET flares to receive it (as built) — the ramp is not narrowed to fit. The flare's size comes from a permitted code, not a preference; until answered, check 5 stays red.",
       "canon": "references/README.md (codes first) · docs/briefs/BRIEF-highway-build.md"
+    },
+    {
+      "id": "f-caltrans-terminal-widening-taper",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-ramp-terminal-flare",
+      "kind": "value",
+      "value": {
+        "transitionTaper_longToLat": 10
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 206.2(3) — Pavement Widenings, Lane Widening",
+      "quote": "An increase in lane width can occur at short radius curves which are widened for truck off-tracking, at ramp terminals with large truck turning volumes, or when new construction matches existing roadways with narrow lane widths. Extensive transition lengths are not necessary as the widening does not restrict the driver’s expectations. Transition tapers for these types of situations should be at 10:1 (longitudinal to lateral).",
+      "scope": "CA; a lane WIDENED (not a lane added), named at ramp terminals. States the rate only — not the width widened to.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-caltrans-through-lane-addition-length",
+      "topic": "highway cross-section",
+      "question": "q-ramp-terminal-flare",
+      "kind": "value",
+      "value": {
+        "transitionPerAddedLane_ft": 250,
+        "turnOrRampLaneAddition_ft": 120
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 206.2(1)–(2) — Pavement Widenings",
+      "quote": "Where through lanes, climbing lanes, or passing lanes are added, the minimum recommended distance over which to transition traffic onto the additional width is 250 feet per lane. … Transitions for lane additions, either for left or right turns or to add a lane to a ramp, should typically occur over a length of 120 feet. Lengths shorter than 120 feet are acceptable where design speeds are below 45 miles per hour",
+      "scope": "CA; a LANE ADDED. Candidate for the through-street case (a highway continuing straight on as a narrower street), read from the street side.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-caltrans-lane-reduction-wv",
+      "topic": "highway cross-section",
+      "question": "q-ramp-terminal-flare",
+      "kind": "rule",
+      "value": {
+        "taperLength_ft": "W × V (W = width dropped, ft; V = design speed, mph)"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 206.3(1), 206.3(3) — Pavement Reductions",
+      "quote": "When a lane is to be dropped, it should be done by tapering over a distance equal to WV, where W = Width of lane to be dropped and V = Design Speed. … At any location where lane widths are being reduced, the minimum length over which to accomplish the transition should be equal to WV.",
+      "scope": "CA; a lane DROPPED, read from the highway side. Needs a design speed the kit does not carry per street — [U] unless OSM maxspeed.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-mutcd-lane-reduction-not-at-junctions",
+      "topic": "highway cross-section",
+      "question": "q-ramp-terminal-flare",
+      "kind": "defers",
+      "value": {
+        "excludes": [
+          "interchange",
+          "intersection"
+        ]
+      },
+      "source": "mutcd-11r1",
+      "where": "§3B.12 ¶01 (Support), ¶08 (Guidance)",
+      "quote": "A lane-reduction is where the number of through lanes is reduced at a location that is not at an interchange or intersection because of narrowing of the roadway or because of a section of on-street parking in what would otherwise be a through lane.",
+      "scope": "Negative result: the MUTCD L = WS / WS²/60 lane-reduction taper is scoped AWAY from interchanges and intersections, so it does not size a ramp-terminal flare.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
     }
   ]
 }
