@@ -13,16 +13,17 @@
 // no butt), both corners (the node ± H's half-width at that end, across the highway's own direction) must lie inside the town asphalt: over a segment of a
 // street at that node, within that street's RESOLVED half-width (with the look's authoring) ON THE CORNER'S SIDE.
 // A corner outside it must be received by a FROZEN RAMP-TERMINAL FLARE (`protopolygon.flares`,
-// `r-ramp-terminal-flares`) — and until ② draws the flare, a declared flare is reported "declared, not drawn",
-// RED. The frozen flares must also be what the REAL `rampTerminalFlares` re-derives from the same ribbons.
+// `r-ramp-terminal-flares`) AND by the DRAWN curb: in the baked `shape.json`, just past the butt beside the corner is
+// in no block's `iA` (the region inside the asphalt edge). A flare frozen but not so drawn is "declared, not drawn", RED;
+// no baked shape ⇒ "not judged", RED. The frozen flares must also be what the REAL `rampTerminalFlares` re-derives.
 // ⭐ The geometry is the RIBBONS' points — the tessellated line H is swept on — never the skeleton's anchors, whose
 // chord at a curved end is not the direction H arrives in (provincetown trunk-link-9: a 58 m chord across a curve).
 // The end-contact rule (butt / handoff) is the source's own `highwayEndContact`, imported, never copied.
 //
-//   node checks/claims-ramp-ends-classified.mjs [scene…] [--ribbons=path]
+//   node checks/claims-ramp-ends-classified.mjs [scene…] [--ribbons=path] [--shape=path]
 //
 // MUTATIONS (each must go red): nudge one highway endpoint 1 m in a temp ribbons (--ribbons) · delete one entry
-// of `protopolygon.flares` in a temp ribbons.
+// of `protopolygon.flares` in a temp ribbons · judge a flared ribbons against a shape baked WITHOUT the flare (--shape).
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
@@ -71,10 +72,21 @@ for (const scene of (arg('ribbons') ? named : scenes('cartograph/data/<scene>/ra
       if (Number.isFinite(w) && Math.abs(lat) <= w + TOL) return true
     } return false }
   const frozen = rib.protopolygon?.flares
+  // the DRAWN curb: every block's region inside the asphalt edge (`iA`), from the baked shape
+  const shapeP = arg('shape') || join(ROOT, 'public/baked', scene, 'shape.json')
+  const iA = existsSync(shapeP) ? (readJson(shapeP).tiles || []).filter(t => t.iaStamp).map(t => (t.iA || []).filter(r => r?.length >= 3)) : null
+  const wind = (x, z, r) => { let w = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if (zj <= z) { if (zi > z && (xi - xj) * (z - zj) - (x - xj) * (zi - zj) > 0) w++ } else if (zi <= z && (xi - xj) * (z - zj) - (x - xj) * (zi - zj) < 0) w-- } return w }
+  // ⭐ WHERE THE FLARE SHOWS: the corner itself always sits on H's edge (H is cut out of every block), so it can never
+  // be inside a block. The flare's work is just PAST the butt beside the corner — without it the block's curb wraps
+  // round H's corner there; with it that spot is town asphalt. Probed 2·TOL beyond the butt and 2·TOL in toward H's
+  // centreline (twice the check's on-edge tolerance, so the probe sits on no edge). MEASURED on provincetown: 9 of 9
+  // probes inside a block without flares; drawn flares turn theirs to asphalt.
+  const inBlock = (q) => iA.some(rs => rs.reduce((w, r) => w + wind(q[0], q[1], r), 0) !== 0)
   const flareKey = (f) => `${f.hwy}.${f.end}.${f.corner}`
   const frozenBy = new Map((frozen || []).map(f => [flareKey(f), f]))
   const tally = { 'at-grade': 0, gore: 0, joint: 0, 'off-rim': 0 }, loose = [], outside = [], undrawn = []
-  let handoffs = 0
+  let handoffs = 0, drawn = 0
   for (const s of hw) for (const which of ['start', 'end']) {
     const P = s.points.map(XY), n = P.length
     const node = which === 'start' ? P[0] : P[n - 1]
@@ -105,7 +117,11 @@ for (const scene of (arg('ribbons') ? named : scenes('cartograph/data/<scene>/ra
       if (frozen === undefined) outside.push(`${tag} — outside ${townAt.map(x => x.s.skelId).join('/')}'s asphalt (ribbons poured before flares: re-pour)`)
       else if (!f) outside.push(`${tag} — outside ${townAt.map(x => x.s.skelId).join('/')}'s asphalt, and NO flare is frozen for it`)
       else { const st = all.find(x => x.skelId === f.street), o = f.lateral - hwOf(st, f.side, f.segOrd)
-        undrawn.push(`${tag} — flare DECLARED, NOT DRAWN: ${f.street} ${f.side}/${f.segOrd} widens ${o.toFixed(2)} m over ${(f.rate * o).toFixed(1)} m (${f.sources.filter(x => x.startsWith('[U]')).length ? '[U]' : 'cited'})`) }
+        const what = `${f.street} ${f.side}/${f.segOrd} widens ${o.toFixed(2)} m, tapers over ${(f.rate * o).toFixed(1)} m (${f.sources.filter(x => x.startsWith('[U]')).length ? '[U]' : 'cited'})`
+        if (!iA) undrawn.push(`${tag} — flare declared, NOT JUDGED: no baked shape (${shapeP}) — ${what}`)
+        else if (inBlock([q[0] + 2 * TOL * (b[0] - a[0]) / L + 2 * TOL * (node[0] - q[0]) / Math.hypot(node[0] - q[0], node[1] - q[1]),
+                          q[1] + 2 * TOL * (b[1] - a[1]) / L + 2 * TOL * (node[1] - q[1]) / Math.hypot(node[0] - q[0], node[1] - q[1])])) undrawn.push(`${tag} — flare DECLARED, NOT DRAWN (the block's curb still wraps H's corner): ${what}`)
+        else drawn++ }
     }
   }
   // the frozen flares are what the REAL function re-derives from these ribbons
@@ -118,7 +134,7 @@ for (const scene of (arg('ribbons') ? named : scenes('cartograph/data/<scene>/ra
     drift = [...[...A].filter(x => !B.has(x)).map(x => `frozen but not re-derived: ${x}`), ...[...B].filter(x => !A.has(x)).map(x => `re-derived but not frozen: ${x}`)]
   }
   const bad = loose.length + outside.length + undrawn.length + drift.length
-  console.log(`── ${scene} ── highway ends: ${Object.entries(tally).map(([k, v]) => `${k} ${v}`).join(' · ')} (of the at-grade, ${handoffs} handoff) · loose ${loose.length} · corners outside the town asphalt ${outside.length} · flares declared, not drawn ${undrawn.length}${frozen === undefined ? ' (no flares frozen)' : ` of ${frozen.length} frozen`}${drift.length ? ` · ⛔ frozen flares drift ${drift.length}` : ''} ${bad ? '⛔' : '✅'}`)
+  console.log(`── ${scene} ── highway ends: ${Object.entries(tally).map(([k, v]) => `${k} ${v}`).join(' · ')} (of the at-grade, ${handoffs} handoff) · loose ${loose.length} · corners outside the town asphalt ${outside.length} · flares drawn ${drawn}, declared-not-drawn ${undrawn.length}${frozen === undefined ? ' (no flares frozen)' : ` of ${frozen.length} frozen`}${drift.length ? ` · ⛔ frozen flares drift ${drift.length}` : ''} ${bad ? '⛔' : '✅'}`)
   for (const l of loose) console.log(`   ⛔ loose end ${l}`)
   for (const o of outside) console.log(`   ⛔ ${o}`)
   for (const u of undrawn) console.log(`   ⛔ ${u}`)

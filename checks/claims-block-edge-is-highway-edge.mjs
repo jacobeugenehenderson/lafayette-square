@@ -30,7 +30,11 @@ const TOL = 2 / SCALE
 let red = false
 
 // ── the source: one geometry ──
-const loop = src.slice(src.indexOf('for (const s of gradeSep) {'), src.indexOf('// ── [GROUT]'))
+// ⛔ anchored on the SWEEP's own `handoffOf`: the loop text `for (const s of gradeSep) {` is not unique in the file
+// (`rampTerminalFlares` walks the same chains at the mint), and the first match made this slice span unrelated code
+const at0 = src.indexOf('const handoffOf = (s, which)'), l0 = src.indexOf('for (const s of gradeSep) {', at0), l1 = src.indexOf('// ── [GROUT]', l0)
+if (at0 < 0 || l0 < 0 || l1 < 0) { console.error('⛔ NOT CHECKED — the highway sweep loop was not found in tileGround.js'); process.exit(2) }
+const loop = src.slice(l0, l1)
 const resample = /WIDE_SPACING|smoothChain\(/.test(loop)
 console.log(`source: grade-separated chains ${resample ? '⛔ are RESAMPLED (WIDE_SPACING / smoothChain) — a second geometry' : '✅ are swept on the points ① consumes'}`)
 if (resample) red = true
