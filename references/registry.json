@@ -441,14 +441,15 @@
         "statutory prima facie speed limits (ORC 4511.21)"
       ],
       "terms": {
-        "aiUse": "unchecked",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-24",
         "checkedBy": "Gantry (fetched codes.ohio.gov/about and /legal/disclaimer)",
         "quote": "All users of this service agree to hold the General Assembly of Ohio and its agencies harmless from any and all claims, losses, damages, obligations or liabilities, directly or indirectly relating to this service…",
         "note": "Neither page states any copyright, reuse or automated-access restriction; the disclaimer is liability-only. Statutes are government edicts. Awaiting Jacob's approval.",
-        "source": "https://codes.ohio.gov/legal/disclaimer"
+        "source": "https://codes.ohio.gov/legal/disclaimer",
+        "approvedBy": "Jacob, 2026-09-24 (asked in Gantry's window: approve)"
       },
-      "status": "CANDIDATE — terms checked, awaiting Jacob",
+      "status": "PERMITTED",
       "localCopy": null
     },
     {
@@ -461,14 +462,15 @@
         "statutory speed limits (MGL c.90 §17)"
       ],
       "terms": {
-        "aiUse": "unchecked",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-24",
         "checkedBy": "Gantry (fetched malegislature.gov/StateHouse/TermsAndConditions)",
         "quote": "the General Court forbids any copying or use other than \"fair use\" under the Copyright Act. … \"Fair use\" includes activities such as comment, news reporting, criticism, teaching, research, and other related activities.",
         "note": "The terms do not address the statute text itself (government edicts), nor automated or AI use. A section cite plus a short quote for research is within the fair use it names — but that is a reading for Jacob to approve, not to assume.",
-        "source": "https://malegislature.gov/StateHouse/TermsAndConditions"
+        "source": "https://malegislature.gov/StateHouse/TermsAndConditions",
+        "approvedBy": "Jacob, 2026-09-24 (approved as fair use: section cite + short quote)"
       },
-      "status": "CANDIDATE — terms checked, awaiting Jacob",
+      "status": "PERMITTED — fair use: section cite + short quote only",
       "localCopy": null
     }
   ],
@@ -1003,7 +1005,11 @@
         "f-massdot-sloped-edging-over-45",
         "f-caltrans-freeway-shoulders-by-lanes",
         "f-caltrans-median-width",
-        "f-caltrans-roundabout-defers"
+        "f-caltrans-roundabout-defers",
+        "f-orc-prima-facie-speeds",
+        "f-orc-expressway-legal-definition",
+        "f-orc-state-routes-are-through-highways",
+        "f-mgl-prima-facie-speeds"
       ],
       "neededBy": "huron: US 6 through the centre (primary-90/91/101/102/103, roundabout at (−89,53)) — Jacob's eye 2026-09-24 read its curb and ramp wedges as malfunctions; HPDM Forest Park Parkway at its pour",
       "status": "open",
@@ -1012,7 +1018,7 @@
         "massdot-design-guide Ch 5 (2006) §5.5.3 and §5.6 (median barrier: \"On expressways … the median barrier must terminate at each at-grade intersection\")",
         "the town data: huron raw OSM carries maxspeed on 9 of 48 US 6 ways (55 mph ×7, 35 mph ×2); the pour does not keep it"
       ],
-      "notes": "FINDINGS, NOT YET RULED: both permitted manuals say a high-speed facility takes NO vertical curb — Caltrans avoids curb at posted ≥ 40 mph (expressways: curb only on ramps/C-D roads), MassDOT uses sloped edging above 45 mph design speed — and give an expressway PAVED SHOULDERS (Table 302.1) and an UNSURFACED MEDIAN (305.1–305.2). So the edge is shouldered, not curbed, and the land between carriageways is a median (verge-like: grass, no sidewalk). ⛔ Both rules key on SPEED, which the kit does not carry: OSM maxspeed is present on 9/48 huron US 6 ways and differs along it (55 / 35). Roundabouts: curbs deferred to NCHRP 672 (not for kit use) ⇒ [U]."
+      "notes": "FINDINGS, NOT YET RULED: both permitted manuals say a high-speed facility takes NO vertical curb — Caltrans avoids curb at posted ≥ 40 mph (expressways: curb only on ramps/C-D roads), MassDOT uses sloped edging above 45 mph design speed — and give an expressway PAVED SHOULDERS (Table 302.1) and an UNSURFACED MEDIAN (305.1–305.2). So the edge is shouldered, not curbed, and the land between carriageways is a median (verge-like: grass, no sidewalk). ⛔ Both rules key on SPEED, which the kit does not carry: OSM maxspeed is present on 9/48 huron US 6 ways and differs along it (55 / 35). Roundabouts: curbs deferred to NCHRP 672 (not for kit use) ⇒ [U]. ⇒ UPDATE (statutes read): at huron's roundabout the statutory default is ≤ 35 mph (see q-statutory-speed-default), under the 40 mph line, so the curb Jacob saw there is permitted by the manuals — not by itself a defect."
     },
     {
       "id": "q-ramp-terminal-flare",
@@ -1065,11 +1071,17 @@
         "cartograph/derive.js — the pour drops OSM maxspeed (not carried to the skeleton/ribbons)"
       ],
       "tried": [
-        "ORC 4511.21 and MGL c.90 §17 identified; sources registered as CANDIDATE, NOT READ — terms await Jacob"
+        "ORC 4511.21, 4511.01, 4511.65 (codes.ohio.gov, read 2026-09-24 after Jacob's approval)",
+        "MGL c.90 §17 (malegislature.gov, fair use)"
       ],
-      "notes": "Context predicate, from data held: huron raw OSM carries the admin boundary of the City of Huron (relation 183378, admin_level 8, border_type city); every vertex of primary-90/91/101/102/103 lies inside it. No statutory value is recorded until the source is approved and read.",
-      "status": "blocked",
-      "blockedBy": "ohio-revised-code, mass-general-laws: terms await Jacob"
+      "notes": "HURON US 6 roundabout (primary-101) and primary-90/91/102/103: no OSM maxspeed on any of their ways; every vertex inside the City of Huron (OSM rel 183378). MEASURED (probe, command not yet committed — a derivation, not a finding): the expressway=yes facility (those 5 chains, freeway end (−560,−179) → Cleveland Road West (221,271), wholly in the extent) meets Liberty Drive (the roundabout) and Cleveland Road West at grade; Center Street carries layer −1 but SHARES a vertex (contradictory data); the freeway carriageways/links at its west end are the handoff, not crossroads ⇒ grade-separated crossroads ≤ 1 of 2–3, not an \"excess of fifty per cent\" ⇒ NOT a legal expressway ⇒ (B)(4) 50 mph does not apply. Remaining: (B)(3) 35 mph if US 6 is a state route / through highway (U.S.-route status [U]) and outside a business district ((NN), unmeasured), else (B)(2) 25. ⭐ Every remaining candidate is ≤ 35 mph < Caltrans's 40 (f-caltrans-curb-avoided-40mph) ⇒ curb is PERMITTED at the roundabout whichever applies.",
+      "status": "open",
+      "findings": [
+        "f-orc-prima-facie-speeds",
+        "f-orc-expressway-legal-definition",
+        "f-orc-state-routes-are-through-highways",
+        "f-mgl-prima-facie-speeds"
+      ]
     }
   ],
   "findings": [
@@ -3343,6 +3355,75 @@
       "where": "Ch 5 (2006 EDITION) — §5.5.3 Curbs, Berms and Edging (prose; the height exhibit above it is AASHTO-adapted and excluded)",
       "quote": "Sloped edging is usually granite and should be used for edge delineation and on traffic islands when design speeds are greater than 45 miles per hour since vertical curbs are not suitable for the high speed environment. … Curbs are not commonly used in rural areas unless they are protecting an adjacent sidewalk.",
       "scope": "MA; by DESIGN speed (> 45 mph), where Caltrans uses posted speed (≥ 40 mph). The two agree on the rule and differ on the threshold.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-orc-prima-facie-speeds",
+      "topic": "statutory speed",
+      "question": "q-statutory-speed-default",
+      "kind": "value",
+      "value": {
+        "municipalOther_mph": 25,
+        "stateRouteOrThroughHwyInMunicipalOutsideBusiness_mph": 35,
+        "controlledAccessOrExpresswayInMunicipal_mph": 50,
+        "outsideMunicipal_mph": 55
+      },
+      "source": "ohio-revised-code",
+      "where": "ORC 4511.21(B)(2)–(5) (effective 2025-06-30)",
+      "quote": "(2) Twenty-five miles per hour in all other portions of a municipal corporation, except on state routes outside business districts, through highways outside business districts, and alleys; (3) Thirty-five miles per hour on all state routes or through highways within municipal corporations outside business districts, except as provided in divisions (B)(4) and (6) of this section; (4) Fifty miles per hour on controlled-access highways and expressways within municipal corporations, except as provided in divisions (B)(12), (13), (14), (15), and (16) of this section; (5) Fifty-five miles per hour on highways outside municipal corporations, …",
+      "scope": "OH; prima facie, \"in the absence of a lower limit declared or established\" (B). Applies to a span with NO posted limit (no OSM maxspeed), disclosed as \"statutory default, not posted\".",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-orc-expressway-legal-definition",
+      "topic": "statutory speed",
+      "question": "q-statutory-speed-default",
+      "kind": "rule",
+      "value": {
+        "expressway": "divided arterial, full or partial access control, >50% of all crossroads grade-separated",
+        "freeway": "all crossroads grade-separated, full access control",
+        "businessDistrict": "≥50% of frontage between successive intersections occupied by business buildings (within municipal corporations)",
+        "stateRoute": "designated with an official state route number and so marked"
+      },
+      "source": "ohio-revised-code",
+      "where": "ORC 4511.01(ZZ), (YY), (NN), (JJ)",
+      "quote": "(ZZ) \"Expressway\" means a divided arterial street or highway for through traffic with full or partial control of access with an excess of fifty per cent of all crossroads separated in grade.",
+      "scope": "The LEGAL expressway is a predicate on crossroads, not the OSM expressway=yes tag — so (B)(4)'s 50 mph needs the crossroad count. (YY): \"Freeway\" … \"with all crossroads separated in grade\". (NN) business district and (JJ) state route are quoted in the value.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-orc-state-routes-are-through-highways",
+      "topic": "statutory speed",
+      "question": "q-statutory-speed-default",
+      "kind": "rule",
+      "value": {
+        "stateRoutes": "through highways"
+      },
+      "source": "ohio-revised-code",
+      "where": "ORC 4511.65(A)",
+      "quote": "All state routes are hereby designated as through highways, …",
+      "scope": "Whether a U.S. route (e.g. US 6) is a \"state route\" under 4511.01(JJ) (\"an official state route number\") is not settled by the text read — [U].",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-mgl-prima-facie-speeds",
+      "topic": "statutory speed",
+      "question": "q-statutory-speed-default",
+      "kind": "value",
+      "value": {
+        "dividedHwyOutsideThicklySettled_mph": 50,
+        "otherWayOutsideThicklySettled_mph": 40,
+        "insideThicklySettledOrBusiness_mph": 30,
+        "schoolZone_mph": 20
+      },
+      "source": "mass-general-laws",
+      "where": "MGL c.90 §17",
+      "quote": "(1) if a motor vehicle is operated on a divided highway outside a thickly settled or business district at a rate of speed exceeding fifty miles per hour for a distance of a quarter of a mile, or (2) on any other way outside a thickly settled or business district at a rate of speed exceeding forty miles per hour for a distance of a quarter of a mile, or (3) inside a thickly settled or business district at a rate of speed exceeding thirty miles per hour …",
+      "scope": "MA; prima facie evidence of unreasonable speed \"unless a different speed limit is otherwise posted\". Fair use: cite + short quote.",
       "foundOn": "2026-09-24",
       "foundBy": "Gantry"
     }
