@@ -127,14 +127,6 @@ export async function fetchIntake(scene) {
   return res.json()
 }
 
-// A head of the real artifact — how an operator tells a good file from a bad
-// one. Falls back to Lafayette Square's copy, labelled, when this town has none.
-export async function fetchIntakeSample(scene, row) {
-  const res = await fetch(`${BASE}/${encodeURIComponent(scene)}/intake/sample?row=${encodeURIComponent(row)}`)
-  if (!res.ok) return null
-  return res.json()
-}
-
 // Record a source the operator found. Stored against this scene's JURISDICTION,
 // so the next hood in the same city inherits it rather than rediscovering it.
 export async function saveIntakeSource(scene, row, name) {

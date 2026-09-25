@@ -38,7 +38,7 @@
  * columns are catalogued in `INTAKE-CATALOGUE.md` §1/§2/§3 and drop in here as
  * additional `domain` values without a schema change.
  */
-import { existsSync, statSync, readFileSync, writeFileSync, mkdirSync, openSync, readSync, closeSync, readdirSync } from 'node:fs'
+import { existsSync, statSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mapDir } from './config.js'
@@ -738,65 +738,6 @@ export function addAltSource(scene, rowId, name, url = null) {
   mkdirSync(dirname(SOURCES_STORE), { recursive: true })
   writeFileSync(SOURCES_STORE, JSON.stringify(store, null, 2))
   return list
-}
-
-/**
- * ⭐ A SAMPLE of what a good one looks like.
- *
- * Jacob, 2026-07-20: *"'See a sample json file here' maybe."* This answers
- * `BRIEF §2.2`'s own stated requirement — *"how to tell a good file from a bad
- * one"* — for the DATA rows. An operator told to go acquire
- * `raw/osm_street_lamps.json` has no way to check their work without an example
- * of a correct one, and Lafayette Square is the complete dataset, so every row
- * has a reference copy to point at (`INTAKE-CATALOGUE`: *"LS is the final-Boss
- * version"*).
- *
- * ⚠️ Falls back to LS ONLY as a documentation sample, and says so via `from`.
- * This is the one legitimate reading of another town's file in the whole kit —
- * it is shown to a human as an example, never fed to a bake. Do not let it
- * become an eighth LS-bleed site (`INTAKE-CATALOGUE §0`).
- *
- * ⛔ BOUNDED READ. Centrum's `raw/osm.json` is 121 MB; slurping it to show a
- * head would stall the panel and could exhaust memory. Read a fixed prefix off
- * a file handle and mark the truncation honestly.
- */
-const SAMPLE_BYTES = 2400
-
-export function sampleForRow(scene, rowId) {
-  const row = INTAKE_ROWS.find(r => r.id === rowId)
-  if (!row || !row.path) return null
-
-  let from = scene
-  let file = join(mapDir(scene), row.path)
-  if (!existsSync(file)) {
-    // Not acquired here — show the reference copy instead, clearly labelled.
-    from = 'lafayette-square'
-    file = join(mapDir('lafayette-square'), row.path)
-    if (!existsSync(file)) return null
-  }
-
-  let fd
-  try {
-    const st = statSync(file)
-    const buf = Buffer.alloc(Math.min(SAMPLE_BYTES, st.size))
-    fd = openSync(file, 'r')
-    readSync(fd, buf, 0, buf.length, 0)
-    // Binary artifacts (elevation.tif) have no readable head — say so rather
-    // than spraying control characters at the operator.
-    const isText = row.path.endsWith('.json') || row.path.endsWith('.csv')
-    return {
-      row: rowId,
-      path: row.path,
-      from,
-      bytes: st.size,
-      truncated: st.size > buf.length,
-      sample: isText ? buf.toString('utf8') : `(binary — ${row.path.split('.').pop()}, ${(st.size / 1048576).toFixed(1)} MB)`,
-    }
-  } catch {
-    return null
-  } finally {
-    if (fd !== undefined) { try { closeSync(fd) } catch { /* already gone */ } }
-  }
 }
 
 /**

@@ -17,7 +17,7 @@ import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
-import { intakeStatusForMap, sampleForRow, addAltSource, hasElevationInput } from './intake-rows.mjs'
+import { intakeStatusForMap, addAltSource, hasElevationInput } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
@@ -1401,18 +1401,6 @@ createServer(async (req, res) => {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))
     }
-    return
-  }
-
-  // GET /<scene>/intake/sample?row=<id> — a head of the real artifact, so an
-  // operator can tell a good file from a bad one (`BRIEF §2.2`). Falls back to
-  // Lafayette Square's copy as a labelled EXAMPLE when this town has none.
-  const sampleMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/intake\/sample$/)
-  if (req.method === 'GET' && sampleMatch && !RESERVED_PREFIXES.has(sampleMatch[1])) {
-    const rowId = (req.url.match(/[?&]row=([^&]+)/) || [])[1]
-    const out = rowId ? sampleForRow(sampleMatch[1], decodeURIComponent(rowId)) : null
-    res.writeHead(out ? 200 : 404, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify(out || { error: 'no sample' }))
     return
   }
 
