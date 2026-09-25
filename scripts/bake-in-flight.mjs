@@ -11,6 +11,13 @@
  *
  *   node scripts/bake-in-flight.mjs [--minutes=5]
  * Exit 0 = quiet · 1 = something is in flight (usable as a guard: `… && edit`).
+ *   node scripts/bake-in-flight.mjs --self-test
+ *
+ * ⛔ WRITES ALONE DO NOT PROVE A BAKE. `git worktree add` (or a checkout) stamps many
+ * files at ONE instant, backups included, and the first version called that IN FLIGHT
+ * with no bake process running (Boz, 2026-09-24). IN FLIGHT = a bake/pour process, OR
+ * artifact writes (not backups) spread over more than one second — a bake between steps
+ * has no process for a moment but leaves a trail over time.
  */
 import { readdirSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
@@ -44,12 +51,50 @@ const data = join(ROOT, 'cartograph', 'data')
 if (existsSync(data)) for (const s of readdirSync(data)) walk(join(data, s, 'clean'))
 recent.sort((a, b) => b[0] - a[0])
 
+/** Seconds a write burst must span to read as a bake. A git checkout/worktree touch is one burst. */
+const TRAIL_MIN_SPAN_S = 5
+
+/** The decision, pure so the self-test can drive it. */
+export function decide(procs, recent) {
+  const BACKUP = /\.(backup|bak|prebak|pre-reset|pre)([-.\w]*)?$|\.backup-\d+/
+  const artifacts = recent.filter(([, p]) => !BACKUP.test(p))
+  // A TRAIL, not a timestamp count: a checkout that straddles a second boundary reads as
+  // "two instants", so require the artifact writes to SPAN a few seconds. A bake step's
+  // outputs land seconds to minutes apart; a git touch lands within one burst.
+  const ts = artifacts.map(([t]) => t)
+  const spanS = ts.length ? (Math.max(...ts) - Math.min(...ts)) / 1000 : 0
+  const trail = spanS >= TRAIL_MIN_SPAN_S
+  return { busy: procs.length > 0 || trail, trail, artifacts: artifacts.length, spanS }
+}
+
+if (process.argv.includes('--self-test')) {
+  const T = 1_790_000_000_000
+  const cases = [
+    ['nothing', [], [], false],
+    ['a bake process', ['123 01:00 node cartograph/bake-ground.js'], [], true],
+    ['worktree-add mass touch (one instant, backups included) ⇒ NOT in flight', [],
+      Array.from({ length: 24 }, (_, i) => [T + (i % 3), i % 2 ? `cartograph/data/lafayette-square/clean/overlay.json.backup-17${i}` : `public/baked/x/f${i}.json`]), false],
+    ['mass touch straddling a second boundary ⇒ NOT in flight', [],
+      [[T + 999, 'public/baked/x/a.json'], [T + 1001, 'public/baked/x/b.json'], [T + 1400, 'public/baked/x/c.json']], false],
+    ['a bake between steps: artifacts over time, no process', [], [[T, 'public/baked/x/ground.json'], [T + 40_000, 'public/baked/x/ground.bin']], true],
+    ['only backups, spread over time', [], [[T, 'a/overlay.json.backup-1'], [T + 9_000, 'a/map.json.bak']], false],
+  ]
+  let bad = 0
+  for (const [name, p, r, want] of cases) {
+    const got = decide(p, r).busy
+    console.log(`  ${got === want ? '✓' : '⛔'} ${name} → ${got ? 'IN FLIGHT' : 'quiet'}`)
+    if (got !== want) bad++
+  }
+  process.exit(bad ? 1 : 0)
+}
+
+const d = decide(procs, recent)
 console.log(`bake-in-flight — now ${hhmmss(Date.now())}, looking back to ${hhmmss(cutoff)} (${mins} min)`)
 console.log(`  processes: ${procs.length ? '' : 'none'}`)
 for (const p of procs) console.log(`    ${p}`)
-console.log(`  writes to public/baked/ or cartograph/data/*/clean/ since ${hhmmss(cutoff)}: ${recent.length || 'none'}`)
+console.log(`  writes to public/baked/ or cartograph/data/*/clean/ since ${hhmmss(cutoff)}: ${recent.length || 'none'}` +
+  (recent.length ? ` (${d.artifacts} artifact, spanning ${d.spanS.toFixed(1)} s — ${d.trail ? 'a bake-shaped trail' : 'one burst or backups only: a checkout/worktree touch, not a bake'})` : ''))
 for (const [t, p] of recent.slice(0, 12)) console.log(`    ${hhmmss(t)}  ${p}`)
 if (recent.length > 12) console.log(`    … ${recent.length - 12} more`)
-const busy = procs.length || recent.length
-console.log(busy ? '⛔ IN FLIGHT — do not save anything the dev servers import.' : '✅ quiet.')
-process.exit(busy ? 1 : 0)
+console.log(d.busy ? '⛔ IN FLIGHT — do not save anything the dev servers import.' : '✅ quiet.')
+process.exit(d.busy ? 1 : 0)
