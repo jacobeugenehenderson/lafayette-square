@@ -959,6 +959,19 @@
       "findings": [],
       "neededBy": "huron: US 6 through the centre (primary-90/91/101/102/103, roundabout at (−89,53)) — Jacob's eye 2026-09-24 read its curb and ramp wedges as malfunctions; HPDM Forest Park Parkway at its pour",
       "status": "open"
+    },
+    {
+      "id": "q-ramp-terminal-flare",
+      "ask": "Where a ramp (or a highway end) meets an at-grade town street narrower than the ramp, how is the town street widened at the terminal — flare length, taper rate, and the width it widens to — and does the same apply where the highway runs straight on into a through street?",
+      "codeSites": [
+        "src/lib/tileGround.js — handoffOf (null for a street with a 'mid' vertex at the node ⇒ butt)",
+        "checks/claims-ramp-ends-classified.mjs — at-grade butt corners outside the town asphalt"
+      ],
+      "findings": [
+        "r-ramp-terminal-flares"
+      ],
+      "neededBy": "provincetown: trunk-link-9.end / trunk-link-21.start (conwell-street), trunk-link-13.end (snail-road) overhang 0.21–0.45 m; trunk-11.end at province-lands-road-1 overhangs 5.36 m",
+      "status": "open"
     }
   ],
   "findings": [
@@ -3063,6 +3076,16 @@
       "quote": "-",
       "foundOn": "2026-09-24",
       "foundBy": "Gantry, per Boz (H-3 build)"
+    },
+    {
+      "id": "r-ramp-terminal-flares",
+      "question": "q-ramp-terminal-flare",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-24",
+      "quote": "I think flare because that's real?",
+      "gist": "Where a ramp is wider than the town street it lands on, the TOWN STREET flares to receive it (as built) — the ramp is not narrowed to fit. The flare's size comes from a permitted code, not a preference; until answered, check 5 stays red.",
+      "canon": "references/README.md (codes first) · docs/briefs/BRIEF-highway-build.md"
     }
   ]
 }
