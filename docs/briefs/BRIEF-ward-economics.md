@@ -30,20 +30,23 @@ evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve 
 - *"10% would come out off the top and go into the fund, up to $2500. That's rainy day for the whole company. Everything in the fund after that is for the Host to spend."*
 - *"It is a building amount every year."*
 
-**So the model is:**
-1. **Direct obligations first:** the business's money, tax, courier pay and tips, and processing. These never become proceeds (reference §2).
-2. **The fund skim:** **10%** (knob) of each Ward's distributable local proceeds goes into its fund.
-3. **The reserve:** **each year**, the first **$2,500** (knob) of that year's skim goes to the reserve, the company's rainy-day money, drawn on by claims. It **builds every year**; it isn't a cap on the balance. (Claims are a knob: a per-Ward or portfolio loss rate.)
-4. **The Host budget:** each year, everything the skim adds beyond that year's $2,500 is the **Host's to spend**. This is the Ward Budget of the Host's Agreement §8.
-5. **The split:** the remaining **90%** divides Host / platform. The Host-share slider **defaults to 30%** and ranges to at least 50%. Salary is a knob **defaulting to $0**.
+**So the model is** (Jacob + Boz, 2026-09-25, superseding the reference's ever-growing till):
+1. **Direct obligations first:** business money, tax, courier pay and tips, processing. These never become proceeds (reference §2).
+2. **The skim:** **10%** (knob) of a Ward's distributable local proceeds goes into its **cushion**, at up to **$2,500 a year** (knob).
+3. **The cushion builds to a target** (knob, default **$7,500**; a future option scales it with the Ward's activity). **Once it is at target, the whole skim overflows to the Host's budget** (the Ward Budget of the Host's Agreement §8).
+4. **Claims** are paid from the **company pool** (every Ward's cushion together). A Ward is charged at most its own cushion; anything larger is the pool's, and real insurance sits above both. **After a claim, the cushion refills first** (still at no more than $2,500 a year), so the Host's budget **pauses**; it never resets to year one.
+5. **The split:** the remaining 90% divides Host / platform. The Host-share slider **defaults to 30%** and ranges to at least 50%. Salary is a knob **defaulting to $0**.
+6. **Interest** is conservative and principal-safe (Jacob: a savings-and-loan account) and never required for the model to work.
+
+**Its real audience (Jacob): "This is a sneak recruiting tool for Hosts."** Build The Ask for a prospective Host modelling **their own** Ward: inputs they can estimate (households, businesses, orders per week), outputs that include the **Host budget**, the money to program their neighbourhood. That stays scenario-framed. ⚠️ Earnings figures shown to prospective recruits are the kind of claim counsel should review before the page goes live.
 
 **Readouts** (reference §5), per year and per Ward, plus a portfolio view where useful:
 - gross flow;
 - direct obligations;
 - the skim;
-- reserve added this year, and the reserve balance;
+- cushion added this year, its balance and target;
 - claims;
-- the Host budget added;
+- the Host budget (overflow) added;
 - distributable after the skim;
 - Host earnings;
 - platform earnings.
