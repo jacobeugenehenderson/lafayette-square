@@ -1,13 +1,13 @@
 # BRIEF — Legal & Compliance in Operations, Phase 1: the records and the coverage matrix
 
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
+status: BUILT, awaiting Jacob — the matrix to review; export/legal.sql not yet applied --remote; nothing deployed
+dispatched: 2026-09-25, to Ledger (theward-operations 0498e1e)
 written: 2026-09-25
 evict-when: Operations holds every existing legal document as a managed record and every jurisdiction as a managed object, and computes each Ward's coverage (Covered / Review / Uncovered) from the Ward's own configuration; Jacob has reviewed the matrix. Phases 2–3 get their own go.
 -->
 
-**Status:** dispatch-ready. Boz drafted it 2026-09-25, and **Jacob dispatches.**
+**Status:** built by Ledger 2026-09-25 (`theward-operations` `0498e1e`); awaiting Jacob's review of the matrix (`node scripts/legal-matrix.mjs --remote --seed export/legal.sql` there). Boz drafted it 2026-09-25.
 
 ## Who you are, and the bounds
 
