@@ -964,15 +964,17 @@
       "id": "q-ramp-terminal-flare",
       "ask": "Where a ramp (or a highway end) meets an at-grade town street narrower than the ramp, how is the town street widened at the terminal — flare length, taper rate, and the width it widens to — and does the same apply where the highway runs straight on into a through street?",
       "codeSites": [
-        "src/lib/tileGround.js — handoffOf (null for a street with a 'mid' vertex at the node ⇒ butt)",
-        "checks/claims-ramp-ends-classified.mjs — at-grade butt corners outside the town asphalt"
+        "src/lib/tileGround.js — rampTerminalFlares (the frozen record) · highwayEndContact (butt vs handoff, shared with handoffOf)",
+        "cartograph/derive.js — protopolygon.flares at the mint",
+        "checks/claims-ramp-ends-classified.mjs — reads the frozen flare; red \"declared, not drawn\" until ② draws it"
       ],
       "findings": [
         "r-ramp-terminal-flares",
         "f-caltrans-terminal-widening-taper",
         "f-caltrans-through-lane-addition-length",
         "f-caltrans-lane-reduction-wv",
-        "f-mutcd-lane-reduction-not-at-junctions"
+        "f-mutcd-lane-reduction-not-at-junctions",
+        "d-ramp-terminal-flare-overhang"
       ],
       "neededBy": "provincetown: trunk-link-9.end / trunk-link-21.start (conwell-street), trunk-link-13.end (snail-road) overhang 0.21–0.45 m; trunk-11.end at province-lands-road-1 overhangs 5.36 m",
       "status": "open",
@@ -981,7 +983,8 @@
         "caltrans-hdm Topic 206 → f-caltrans-terminal-widening-taper, f-caltrans-through-lane-addition-length, f-caltrans-lane-reduction-wv; Index 504.3 (ramp widening for trucks — the ramp, not the crossroad)",
         "mutcd-11r1 §3B.12 → f-mutcd-lane-reduction-not-at-junctions (scoped away)"
       ],
-      "notes": "RATE: 10:1 for a ramp landing on a narrower street (f-caltrans-terminal-widening-taper). TARGET WIDTH: no source states it — derived: the overhang o = H half-width × cosθ − the street's resolved half-width, per side; the flare is o at the node, tapering over 10·o. THROUGH-STREET case (a highway mainline continuing as a narrower street, provincetown trunk-11): 206.2(3) covers lane-WIDTH increases at curves, ramp terminals and narrow-lane matches — not a mainline lane-COUNT change — so it is [U]: built at 10:1 and disclosed [U] (Boz, 2026-09-24: no 250-ft or W×V, the kit carries no speed). LAYER: ② (the street measure), not ①."
+      "notes": "RATE: 10:1 for a ramp landing on a narrower street (f-caltrans-terminal-widening-taper). TARGET WIDTH: no source states it — derived: the overhang o = H half-width × cosθ − the street's resolved half-width, per side; the flare is o at the node, tapering over 10·o. THROUGH-STREET case (a highway mainline continuing as a narrower street, provincetown trunk-11): 206.2(3) covers lane-WIDTH increases at curves, ramp terminals and narrow-lane matches — not a mainline lane-COUNT change — so it is [U]: built at 10:1 and disclosed [U] (Boz, 2026-09-24: no 250-ft or W×V, the kit carries no speed). LAYER: ② (the street measure), not ①.",
+      "check": "checks/claims-ramp-ends-classified.mjs"
     }
   ],
   "findings": [
@@ -3161,6 +3164,25 @@
       "scope": "Negative result: the MUTCD L = WS / WS²/60 lane-reduction taper is scoped AWAY from interchanges and intersections, so it does not size a ramp-terminal flare.",
       "foundOn": "2026-09-24",
       "foundBy": "Gantry"
+    },
+    {
+      "id": "d-ramp-terminal-flare-overhang",
+      "topic": "gores, ramp terminals, channelization",
+      "question": "q-ramp-terminal-flare",
+      "kind": "derived",
+      "from": [
+        "r-ramp-terminal-flares",
+        "f-caltrans-terminal-widening-taper",
+        "m-osm-line-lane-centre"
+      ],
+      "value": {
+        "overhang": "o = lateral − w_street (per corner)",
+        "taperLength": "10 × o"
+      },
+      "derivation": "No source states the width a terminal flare widens TO. The flare widens the town street by the LEAST that receives the highway butt: for each butt corner (node ± H half-width at the end, across H's own direction) the lateral distance from the town leg's centreline minus that leg's resolved half-width on the corner's side (with the look's authoring); of the legs the corner projects onto, the smallest. Tapered over 10 × o at f-caltrans-terminal-widening-taper's 10:1. Computed per corner at the mint (tileGround rampTerminalFlares), frozen as protopolygon.flares; the overhang itself is resolved downstream, with authoring.",
+      "quote": "-",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry, per Boz (r-ramp-terminal-flares)"
     }
   ]
 }

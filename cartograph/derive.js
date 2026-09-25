@@ -27,7 +27,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH, isHigh
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
-import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon, classifyHighwayBlocks } from '../src/lib/tileGround.js'
+import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources } from './sources.js'
 import { coastRings } from './coastline.mjs'
@@ -5417,6 +5417,18 @@ export function deriveLayers(highways) {
       }
       if (!skOffGrade) console.warn(`      ⛔ no skeleton grade facts — no overpass span can be recognised`)
     }
+    // ⭐⭐ THE RAMP-TERMINAL FLARE (`r-ramp-terminal-flares`): where a highway end arrives at full width and its butt
+    // corner lies outside the town street, the town street flares to receive it. Frozen per corner here, beside the
+    // region class, because the flare needs the same identity facts (the simplified points, the section at the end,
+    // the mint's segOrd); ② draws it WITH authoring and check 5 reads it. ⛔ An empty list is frozen too — absent
+    // means "poured before flares", never "none".
+    const protoFlares = (() => {
+      const F = rampTerminalFlares(pStreets, pGradeSep, new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link']), boundaryPolyXZ)
+      console.log(`    [H-3 flare] ${F.flares.length} ramp-terminal flare(s) declared (the town street widens to receive a wider highway end, 10:1) · ${F.offRim} highway end(s) beyond the circle, not judged`)
+      for (const f of F.flares) console.log(`      ${f.hwy}.${f.end} ${f.corner} corner → ${f.street} ${f.side}/${f.segOrd}: overhang ${f.baseO.toFixed(2)} m on the base width (${f.baseHW.toFixed(2)}), taper ${(f.rate * f.baseO).toFixed(1)} m · ${f.sources.filter(x => x.startsWith('[U]')).join(' · ')}`)
+      for (const u of F.unreceived) console.warn(`      ⛔ ${u.hwy}.${u.end} ${u.corner} corner at (${u.node.map(v => v.toFixed(0)).join(', ')}): NO town leg can receive it — no flare is possible, check 5 stays red`)
+      return F.flares
+    })()
     protoWaterRings = MP.waterRings || null
     protoWaterMeta = _coast.meta || null
     ribbonsLayer.protopolygon = {
@@ -5445,6 +5457,7 @@ export function deriveLayers(highways) {
         blocks: MP.blocks.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
         blockLabels: MP.blockLabels,
         ...(protoBlockClass ? { blockClass: protoBlockClass } : {}),
+        flares: protoFlares,
         ...(MP.blockHoles ? {
           blockHoles: MP.blockHoles.map(hs => hs.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6]))),
           blockHoleLabels: MP.blockHoleLabels,

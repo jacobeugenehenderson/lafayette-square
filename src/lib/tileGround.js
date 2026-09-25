@@ -415,6 +415,105 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // ⭐ THE OWNER CARRIES IDENTITY ONLY — {skelId, side, segOrd, gradeSeparated}.
 // Authored values resolve downstream off that identity, so ① is look-agnostic:
 // one scene's ① serves every Look.
+// ⭐ H-3 step 5 — HOW A HIGHWAY END MEETS THE TOWN, decided by IDENTITY of the shared vertex and one-way DIRECTION,
+// never by angle, proximity or `ref`. `at` = the town chains with a vertex at the end: [{ st, at: 'start'|'end'|'mid' }].
+//   'none'      no town chain there (a gore, a joint, off the rim);
+//   'butt'      a town chain passes THROUGH the node (a T — a ramp terminal): H arrives at full width;
+//   'handoff'   exactly one town chain CONTINUES it (at a highway END, the one-way street that STARTS there; a two-way
+//               street only as the node's sole town chain): H tapers to that street's width (`sweepHighway`);
+//   'ambiguous' no single continuation: H arrives at full width, and the end is printed by name.
+// ONE rule for the sweep (`handoffOf`) and the mint (`rampTerminalFlares`), so the two cannot disagree on which ends butt.
+export function highwayEndContact(at, which) {
+  if (!at?.length) return { kind: 'none' }
+  if (at.some(x => x.at === 'mid')) return { kind: 'butt' }
+  const want = which === 'end' ? 'start' : 'end'
+  const cand = at.filter(x => x.st.oneway ? x.at === want : at.length === 1)
+  if (cand.length !== 1) return { kind: 'ambiguous' }
+  return { kind: 'handoff', st: cand[0].st, at: cand[0].at, want }
+}
+
+// ⭐⭐ THE RAMP-TERMINAL FLARE (`r-ramp-terminal-flares`, Jacob 2026-09-24: "I think flare because that's real?").
+// Where a highway end arrives at FULL width (a butt, or an ambiguous end) and its butt corner lies outside the town
+// street's asphalt, the TOWN STREET flares to receive it — H is never narrowed to fit. Frozen per corner AT THE MINT
+// (derive.js → `protopolygon.flares`); ② draws it and check 5 reads it.
+//   · received: the corner lies over a town leg at the node (0 < along-leg coordinate ≤ the leg's length) within that
+//     leg's base half-width ON ITS SIDE — then there is no flare. Otherwise the leg: of the legs it projects onto, the
+//     one needing the SMALLEST widening — the least that receives the butt (`d-ramp-terminal-flare-overhang`), no angle cut-off;
+//   · the side + span: the leg's side is measure-right = (−dz, dx) of the CHAIN's point order; `segOrd` is the mint's
+//     own count (`segOrdAt`), so the flare keys to the same authoring slot as the curb it moves;
+//   · `lateral`: the corner's distance from the leg's centreline — geometry, independent of any authoring;
+//   · ⛔ the overhang is NOT frozen as the answer: `o = lateral − the street's RESOLVED half-width`, and the resolution
+//     needs the look's authoring (blockCustoms), which ① never reads. `baseO` (against the base width) is disclosure only;
+//   · the taper: `rate` × o along the leg (`f-caltrans-terminal-widening-taper`, 10:1).
+// ⛔ A corner that no town leg can receive is RETURNED as `unreceived`, never dropped. An end outside `disc` (the
+// stencil ① is clipped to) is counted, not judged.
+export const FLARE_RATE = 10                     // f-caltrans-terminal-widening-taper: 10:1 longitudinal to lateral
+export function rampTerminalFlares(streets, gradeSep, hwyClasses, disc = null) {
+  const XY = (p) => Array.isArray(p) ? p : [p.x, p.z]
+  const hk = (p) => { const q = XY(p); return `${(+q[0]).toFixed(3)},${(+q[1]).toFixed(3)}` }
+  const seg = resolveChainSegmentation(streets)
+  const townAt = new Map()
+  streets.forEach((st, ci) => (st.points || []).forEach((p, i, P) => { const k = hk(p); if (!townAt.has(k)) townAt.set(k, [])
+    townAt.get(k).push({ st, ci, i, at: i === 0 ? 'start' : i === P.length - 1 ? 'end' : 'mid' }) }))
+  const ixOf = (st) => { const n = st.points.length; return [...(seg.get(st) || [])].filter(i => i > 0 && i < n - 1).sort((a, b) => a - b) }
+  const segOrdAt = (st, i) => { let so = 0; for (const k of ixOf(st)) if (k <= i) so++; return so }
+  const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+  const flares = [], unreceived = []
+  let offRim = 0
+  for (const s of gradeSep) {
+    if (!hwyClasses.has(s.highway)) continue
+    const L = s.measure?.left?.section, R = s.measure?.right?.section
+    if (!L?.spans?.length || !R?.spans?.length) continue            // no section: the sweep names it; nothing to receive
+    const P = s.points.map(XY), n = P.length
+    for (const which of ['start', 'end']) {
+      const node = which === 'end' ? P[n - 1] : P[0]
+      if (disc?.length >= 3 && !pip(node[0], node[1], disc)) { offRim++; continue }   // beyond the circle: ① is clipped there
+      const at = townAt.get(hk(node)) || []
+      const contact = highwayEndContact(at, which)
+      if (contact.kind === 'none' || contact.kind === 'handoff') continue
+      const [a, b] = which === 'end' ? [P[n - 2], P[n - 1]] : [P[1], P[0]]
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]); if (!(len > 0)) continue
+      const nx = -(b[1] - a[1]) / len, nz = (b[0] - a[0]) / len
+      const sg = which === 'end' ? 1 : -1                            // right of travel: +n at an END, −n at a START
+      const hwEnd = (sec) => (which === 'end' ? sec.spans[sec.spans.length - 1] : sec.spans[0]).hw
+      const mainline = !/_link$/.test(s.highway)
+      for (const [corner, w, sgn] of [['right', hwEnd(R), 1], ['left', hwEnd(L), -1]]) {
+        const c = [node[0] + sgn * sg * nx * w, node[1] + sgn * sg * nz * w]
+        let best = null, received = false
+        for (const x of at) {
+          const Q = x.st.points.map(XY)
+          for (const k of [x.i - 1, x.i + 1]) {
+            if (k < 0 || k >= Q.length) continue
+            const vx = Q[k][0] - node[0], vz = Q[k][1] - node[1], vl = Math.hypot(vx, vz); if (!(vl > 0)) continue
+            const ux = vx / vl, uz = vz / vl, rx = c[0] - node[0], rz = c[1] - node[1]
+            const along = rx * ux + rz * uz; if (!(along > 0)) continue
+            const lateral = Math.abs(rx * uz - rz * ux)
+            if (along > vl) continue                                   // past this leg's far vertex: not this leg's asphalt
+            // the chain's own direction on this leg, and measure-right of it
+            const fwd = k > x.i, dx = fwd ? ux : -ux, dz = fwd ? uz : -uz
+            const side = (rx * -dz + rz * dx) > 0 ? 'right' : 'left'
+            const baseHW = x.st.measure?.[side]?.pavementHW
+            if (!Number.isFinite(baseHW)) continue
+            const segOrd = segOrdAt(x.st, fwd ? x.i : k)
+            const cand = { street: x.st.skelId ?? x.st.name, side, segOrd, node: [node[0], node[1]], toward: [Q[k][0], Q[k][1]],
+              hwy: s.skelId ?? s.name, end: which, corner, hH: w, lateral, baseHW, baseO: lateral - baseHW, rate: FLARE_RATE,
+              sources: ['f-caltrans-terminal-widening-taper', 'd-ramp-terminal-flare-overhang',
+                mainline ? '[U] q-ramp-terminal-flare (a highway mainline continuing as a narrower street — 206.2(3) covers lane widening, not a lane-count change)'
+                         : '[U] q-ramp-terminal-flare (206.2(3) scopes 10:1 to terminals with large truck turning volumes; the kit carries no truck volume)'] }
+            if (cand.baseO <= 0) received = true                       // already inside this leg's asphalt: no flare
+            if (!best || cand.baseO < best.baseO) best = cand
+          }
+        }
+        if (received) continue
+        if (!best) { unreceived.push({ hwy: s.skelId ?? s.name, end: which, corner, node: [node[0], node[1]] }); continue }
+        flares.push(best)
+      }
+    }
+  }
+  return { flares, unreceived, offRim }
+}
+
 // ⭐⭐ H-3 STEP 4 — THE REGION CLASSIFIER: every ① block is `verge`, `jr` (junction residual) or `block`.
 // Runs AT THE MINT (derive.js), not in ②: it needs the skeleton's grade facts and the RAW building footprints,
 // which no consumer holds, and freezing the class per block makes live and bake identical by construction.
@@ -6849,11 +6948,10 @@ export function buildTileGround(ribbons, opts = {}) {
   const handoffOf = (s, which) => {
     const node = which === 'end' ? s.points[s.points.length - 1] : s.points[0]
     const at = townAt.get(hk(node)) || []
-    if (!at.length || at.some(x => x.at === 'mid')) return null            // no town street, or a T: a butt
-    const want = which === 'end' ? 'start' : 'end'
-    const cand = at.filter(x => x.st.oneway ? x.at === want : at.length === 1)
-    if (cand.length !== 1) { hwyDisclosure.handoffAmbiguous.push(`${s.skelId ?? s.name}.${which} (${at.map(x => x.st.skelId).join(', ')})`); return null }
-    const { st, at: stAt } = cand[0], same = stAt === want
+    const contact = highwayEndContact(at, which)
+    if (contact.kind === 'none' || contact.kind === 'butt') return null   // no town street, or a T: a butt
+    if (contact.kind === 'ambiguous') { hwyDisclosure.handoffAmbiguous.push(`${s.skelId ?? s.name}.${which} (${at.map(x => x.st.skelId).join(', ')})`); return null }
+    const { st, at: stAt, want } = contact, same = stAt === want
     const w = (side) => widthAt(st, same ? side : (side === 'left' ? 'right' : 'left'), stAt)
     const out = { left: w('left'), right: w('right'), street: st.skelId ?? st.name }
     // Any OTHER town chain at the handoff node (huron: the US 6 crossover primary-link-54) is FLAGGED, not ruled.
