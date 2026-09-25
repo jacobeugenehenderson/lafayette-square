@@ -1738,6 +1738,18 @@ createServer(async (req, res) => {
             : { ok: false, count: demTiles, error: lastLine(dR) }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox, sources }))
+        // ⭐ A fetched town gets its OWN instance module, or it boots wearing Lafayette Square
+        // (src/instance.js). Scaffolded AFTER the response on purpose: writing src/instances/*.js
+        // restarts this server (it imports the registry), so doing it mid-request would kill the
+        // fetch. The mark is left for the operator; checks/claims-every-town-has-a-mark.mjs stays
+        // red until one is authored. A scaffold that refuses (e.g. an unnamed town) says why here.
+        if (!existsSync(join(import.meta.dirname, '..', 'src', 'instances', `${scene}.js`))) {
+          setTimeout(() => {
+            runCapture(`node scaffold-instance.mjs --scene=${scene}`, { cwd: here, env, timeout: 30000 })
+              .then(r => console.log(`[fetch-extent] ${scene}: instance module — ${(r.stdout || r.stderr || '').trim().split('\n').pop()}`))
+              .catch(e => console.warn(`[fetch-extent] ${scene}: could not scaffold its instance module — ${e.message}`))
+          }, 250)
+        }
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: err.message }))

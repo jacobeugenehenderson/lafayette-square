@@ -214,5 +214,22 @@ async function alreadyThere(files) {
   await put({ abs: tmp, rel: 'build.json' })
   console.log(`stamp    build.json · srcMtime ${new Date(marker.srcMtimeMs).toISOString()}`)
 
+  // ⭐ THE SHARE CARD, per town, for crawlers that never run JavaScript (SMS/iMessage/social).
+  // The worker serves ONE index.html whose static tags are Lafayette Square's; it rewrites
+  // them per <map> from this file. ⛔ Generated from the instance REGISTRY — never a list
+  // here — so a town with a module gets its own card and a town without one gets neutral
+  // tags from the worker, never LS's.
+  const { registeredMaps, instanceForMap } = await import(join(REPO_ROOT, 'src', 'instances', 'registry.js'))
+  const towns = {}
+  for (const m of registeredMaps()) {
+    const t = instanceForMap(m), b = t.branding || {}
+    towns[m] = { title: b.title || t.name || null, description: t.profile?.tagline || null,
+      ogImage: b.ogImage || null, faviconUrl: b.faviconUrl || null, mark: b.mark || null, markSvg: b.markSvg || null }
+  }
+  const townsTmp = join(REPO_ROOT, 'dist', 'towns.json')
+  writeFileSync(townsTmp, JSON.stringify(towns, null, 2))
+  if (!dryRun) await put({ abs: townsTmp, rel: 'towns.json' })
+  console.log(`towns    towns.json · ${Object.keys(towns).join(', ')}${dryRun ? ' (dry-run, not uploaded)' : ''}`)
+
   console.log(`\n✅ player published — every town at https://staging.theward.online/<map>/`)
 })().catch((e) => { console.error('\n⛔ publish FAILED:', e.message); process.exit(1) })

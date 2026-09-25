@@ -118,8 +118,47 @@ export default {
       return new Response(why + '\n', { status: 404,
         headers: { 'content-type': 'text/plain; charset=utf-8' } })
     }
-    return serve(request, obj)
+    if (wantsTownFile) return serve(request, obj)
+    return shareCard(serve(request, obj), map, url, env)
   },
+}
+
+/**
+ * ⭐ THE SHARE CARD — what an SMS/iMessage/social crawler reads. Crawlers never run JavaScript,
+ * so the player's runtime branding (`src/lib/townMark.js`) never reaches them and every town's
+ * link showed index.html's static Lafayette Square tags. Rewrite them here, per <map>, from
+ * `towns.json` — generated from the instance registry by publish-player-to-staging.mjs, so
+ * this file still holds no list of towns.
+ * ⛔ A map with no entry gets NEUTRAL tags (its id, no image), never Lafayette Square's.
+ */
+let _towns = null, _townsAt = 0
+async function townsIndex(env) {
+  if (_towns && Date.now() - _townsAt < 60_000) return _towns
+  const obj = await env.ASSETS.get(`${env.PLAYER_PREFIX}towns.json`)
+  _towns = obj ? await obj.json() : {}
+  _townsAt = Date.now()
+  return _towns
+}
+function emojiIcon(glyph) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${glyph}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+async function shareCard(response, map, url, env) {
+  const t = (await townsIndex(env))[map] || null
+  const title = t?.title || map
+  const image = t?.ogImage || null
+  const icon = t?.faviconUrl || (t?.mark ? emojiIcon(t.mark) : null)
+  const setOr = (value) => ({ element(el) { value ? el.setAttribute('content', value) : el.remove() } })
+  return new HTMLRewriter()
+    .on('title', { element(el) { el.setInnerContent(title) } })
+    .on('meta[property="og:title"]', setOr(title))
+    .on('meta[name="twitter:title"]', setOr(title))
+    .on('meta[property="og:image"]', setOr(image))
+    .on('meta[name="twitter:image"]', setOr(image))
+    .on('meta[property="og:url"]', setOr(`${url.origin}/${map}/`))
+    .on('link[rel="icon"]', { element(el) { icon ? el.setAttribute('href', icon) : el.remove() } })
+    .on('head', { element(el) { if (t?.description) el.append(`<meta property="og:description" content="${t.description.replace(/"/g, '&quot;')}" />`, { html: true }) } })
+    .transform(await response)
 }
 
 function serve(request, obj) {

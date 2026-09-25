@@ -51,6 +51,8 @@ const INSTANCES = {
   'hipointe-demun': hipointeDemun,
   huron,
   'provincetown': provincetown,
+  // LS's staging copy IS Lafayette Square (Jacob, 2026-09-25): same town, same identity, declared.
+  'lafayette-square-staging': lafayetteSquare,
 }
 
 /**
