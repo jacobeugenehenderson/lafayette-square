@@ -2637,9 +2637,31 @@ createServer(async (req, res) => {
       // actually being the only path taken.
       const SCENE_DIR = join(bakePaths.raw, '..')
       if (hasElevationInput(SCENE_DIR)) {
+        // ⛔⛔ THE WATER IS AN INPUT TO THE TERRAIN, AND IT USED NOT TO BE — which cost
+        // Provincetown its datum. `bake-terrain` does not merely resample a DEM: it DERIVES
+        // THE DATUM, asking `coastRings` where the water is and taking the sea as y = 0 when
+        // there is a coast (`datumKind = wd ? 'water' : 'local minimum'`). So the heightfield
+        // depends on the SHORELINE as much as on the raster.
+        // ⭐ MEASURED 2026-09-24: Provincetown's terrain baked at 17:48, hours before its
+        // coast closed, and fell to `datum: "local minimum"` with baseElev −2.13 — y = 0 the
+        // lowest hole in the envelope rather than the sea. The coast then closed and the
+        // slab gained 122 km of shoreline, but NOTHING in this input list had changed, so
+        // the terrain was clean and never re-baked. Every height-above-water in that town
+        // was measured from the wrong zero, and the only reason anyone noticed is that
+        // bake-revetment now refuses a slab whose terrain disagrees with it.
+        // ⛔ AND THE INPUT IS THE CODE, NOT JUST THE DATA. raw/osm.json did NOT change that
+        // day — `coastline.mjs` did (fb750ec8, the closed-ring arc). A town's shore can move
+        // because the kit learned to read a shape it could not read before, and that is
+        // exactly the case a data-only list misses.
+        // ⭐ So the closure is COMPUTED, never enumerated: `importClosure` walks
+        // bake-terrain.js's imports and picks up coastline.mjs and anything it grows later.
+        // A hand-listed file here would be correct today and silently wrong after the next
+        // refactor — the same staleness this whole fix is about.
         await runIfDirty('terrain',
           [existsSync(ELEVATION_TIF) ? ELEVATION_TIF : ELEVATION_LIST,
-           bakePaths.boundary, bakePaths.geography, join(here, 'bake-terrain.js')],
+           bakePaths.boundary, bakePaths.geography,
+           join(bakePaths.raw, 'osm.json'),
+           ...importClosure([join(here, 'bake-terrain.js')])],
           [SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
           `node bake-terrain.js ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
