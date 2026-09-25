@@ -48,6 +48,12 @@ import { listStages, resolveStage } from './stage.js'
 const params = new URLSearchParams(window.location.search)
 const LOOK = INSTANCE.lookId
 const STAGE = params.get('at') || 'class:park'
+// ⭐ `?as=<surface>` renders the stage's class with that surface, through BakedGround's
+// surfacesOverride — the operator's own remap channel (`scene.surfaces.classes`), so the
+// lab previews exactly what an authored remap would ship. `?as=flat` = null (flat colour).
+const AS = params.get('as')
+const STAGE_CLASS = STAGE.startsWith('class:') ? STAGE.slice(6) : null
+const SURFACES_OVERRIDE = AS && STAGE_CLASS ? { classes: { [STAGE_CLASS]: AS === 'flat' ? null : AS } } : undefined
 
 // ── TIME: solar hour at the TOWN's longitude, not the browser's clock ────────
 // ⭐ The hour on the slider is local SOLAR time where the town is (noon = sun due
@@ -176,7 +182,7 @@ function App() {
         {/* ── the stage: the town's own slab ── */}
         <Suspense fallback={null}>
           {/* ⭐ targetExag 1: life-size ground, the only scale a surface can be judged at. */}
-          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={LOOK} bakeLastMs={bakeLastMs} targetExag={1} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={LOOK} bakeLastMs={bakeLastMs} targetExag={1} surfacesOverride={SURFACES_OVERRIDE} /></R3FErrorBoundary>
           <group visible={layers.revetment}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.lamps}><R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.buildings}><R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={LOOK} interactive={false} /></R3FErrorBoundary></group>
@@ -201,6 +207,10 @@ function App() {
             {stages.map(s => <option key={s.id} value={s.id}>{s.id}{s.tris ? ` · ${s.tris.toLocaleString()} tris` : ''}</option>)}
           </select>
         )}
+        {STAGE_CLASS && <div style={{ display: 'flex', gap: 5, marginBottom: 6, alignItems: 'center' }}>
+          <span style={{ opacity: .7 }}>render as</span>
+          {['kit', 'grass', 'sand', 'flat'].map(a => <Btn key={a} on={(AS || 'kit') === a} tint="#6b3f5a" onClick={() => go({ as: a === 'kit' ? '' : a })}>{a}</Btn>)}
+        </div>}
         <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
           {Object.keys(CAMS).map(c => <Btn key={c} on={cam === c} tint="#4a5a45" onClick={() => setCam(c)}>{c}</Btn>)}
         </div>

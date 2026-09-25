@@ -97,6 +97,11 @@ export async function bakeScene({ look } = {}) {
     // Was a hardcoded 1.5 in src/lib/terrainCommon.js, chosen against LS's 35 m of relief and
     // applied to altadena's 1,480 m (BRIEF-ls-bleed-excision site 15, ruled 2026-09-20).
     terrainExag:     design.terrainExag ?? 1,
+    // ⭐ THE SURFACE OVERRIDES — the operator's sparse layer over the kit's surface table
+    // (`cartograph/surfaces.mjs`): `{ classes: { <lu>: <surface> | null }, params: { <surface>:
+    // { <param>: value } } }`. Carried verbatim; the runtime validates and names bad rows.
+    // Absent ⇒ {} ⇒ the kit table, which is the honest default, not a stand-in.
+    surfaces:        design.surfaces        ?? {},
     lampGlow:        design.lampGlow        || { grass: 0.06, trees: 0.40, pool: 1.0 },
     neon:            design.neon            || { values: { ...NEON_FLAT_DEFAULTS } },
     // SC.1 — sky / lighting / celestial. Sky pivoted (2026-05-20 ADR) to

@@ -21,7 +21,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
-import { makeGrassMaterial } from './grassMaterial'
+import { makeGroundSurfaceMaterial } from './grassMaterial'
+import { surfaceOfGroup, resolveClassTable, SURFACES } from '../../cartograph/surfaces.mjs'
 import { isWaterGroupId } from './waterMaterial'
 import WaterSurface from './WaterSurface.jsx'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
@@ -65,28 +66,24 @@ function treatAlbedo(hex) {
   return _treatC.getHex()
 }
 
-// Material-kind groups that render with the noise-based grass shader
-// (lawn = block interior, treelawn = curb→sidewalk strip, median = between
-// paired carriageways).
-const GRASS_MATERIALS = new Set(['lawn', 'treelawn', 'median'])
+// ⭐ WHICH GENERATOR PAINTS A GROUP is one table, `cartograph/surfaces.mjs` — it
+// replaced GRASS_FACES / GRASS_MATERIALS here (2026-09-24), a three-entry Set holding
+// exactly the three faces Lafayette Square has. The operator's sparse remap rides
+// `scene.surfaces.classes`. ▶ Proven identical to the old grass selection on every
+// group of every baked town before the swap; LS's park grass is the control.
 
-// Face-kind (land-use) groups that render with grass too. Mirrors
-// StreetRibbons.jsx — park and residential face fills both go through
-// makeGrassMaterial in LS, so Stage/Preview must follow.
-const GRASS_FACES = new Set(['park', 'residential', 'recreation'])
-
-// Per-LU treelawn variants ('treelawn:residential', 'treelawn:park', etc.)
-// inherit the parcel's material treatment: grass-LU variants route through
-// GrassMesh (procedural green); other LU variants render flat via
-// FadeMesh in the LU's authored color. Bare 'treelawn' is always grass.
-function isGrassGroup(group) {
-  if (group.kind === 'face') return GRASS_FACES.has(group.id)
-  const colonIdx = group.id.indexOf(':')
-  if (colonIdx < 0) return GRASS_MATERIALS.has(group.id)
-  const bareKind = group.id.slice(0, colonIdx)
-  if (!GRASS_MATERIALS.has(bareKind)) return false
-  const variant = group.id.slice(colonIdx + 1)
-  return GRASS_FACES.has(variant)
+// ⛔ A PARAMETER A SURFACE NEEDS AND DOES NOT HAVE IS SAID, never filled in. Once per
+// look per surface, naming each absent input and what would supply it.
+const _saidAbsent = new Set()
+function reportAbsentParams(look, surface, authored) {
+  const key = look + '|' + surface
+  if (_saidAbsent.has(key)) return
+  _saidAbsent.add(key)
+  const missing = Object.entries(SURFACES[surface]?.params || {})
+    .filter(([name, p]) => authored?.[name] == null && !(p.source === 'authored'))
+    .map(([name, p]) => `${name} (${p.unit}, ${p.source}${p.question ? ' — references ' + p.question + ' is [U]' : ''}${p.needs ? ' — needs ' + p.needs.join(' + ') : ''})`)
+  if (missing.length) console.error(`[BakedGround] ⛔ "${look}": surface "${surface}" is drawn WITHOUT ${missing.join('; ')}. `
+    + `Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs`)
 }
 
 // Ground groups that render with the park gravel (Voronoi pebble) shader.
@@ -149,8 +146,14 @@ function fadeForGroup(group, stencil) {
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
 
-function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
+function GroundMeshes({ manifest, bin, scene: bakedScene, bakeLastMs, surfacesOverride }) {
+  // ⭐ `surfacesOverride` is the live-authoring layer, the same pattern PostProcessing's
+  // *Override props follow: it sits over the baked `scene.surfaces`, never beside it.
+  const scene = useMemo(() => (surfacesOverride
+    ? { ...bakedScene, surfaces: { classes: { ...bakedScene?.surfaces?.classes, ...surfacesOverride.classes }, params: { ...bakedScene?.surfaces?.params, ...surfacesOverride.params } } }
+    : bakedScene), [bakedScene, surfacesOverride])
   const layerVis = scene?.layerVis
+  const surfaceTable = useMemo(() => resolveClassTable(scene?.surfaces?.classes), [scene?.surfaces?.classes])
   const stencil = manifest.stencil || null
   // Publish the disc so size-dependent consumers stop hardcoding one town's
   // radius. The sun's shadow frustum is the one that mattered: it shipped ±900,
@@ -305,8 +308,9 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
             tintHex={scene?.layerColors?.[group.id]}
             roughness={scene?.materialPhysics?.[group.id]?.roughness}
             scale={scene?.materialPhysics?.[group.id]?.scale} />
-        return isGrassGroup(group)
-          ? <GrassMesh key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+        const surface = surfaceOfGroup(group, surfaceTable)
+        return surface
+          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
           : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
       })}
     </group>
@@ -396,11 +400,16 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
   )
 }
 
-function GrassMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
+function SurfaceMesh({ surface, params, look, group, geometry, lightmap, fade, poolmap, poolMeta }) {
+  useEffect(() => { reportAbsentParams(look, surface, params) }, [look, surface, params])
   const { material, shaderRef } = useMemo(
     () => {
-      const built = makeGrassMaterial({
-        color: group.color,
+      const built = makeGroundSurfaceMaterial({
+        surface,
+        // Grass carries its own hue table and ignores this. Every other surface takes
+        // the class colour through the SAME Surface treatment FadeMesh applies, so a
+        // class keeps its value step when it gains a generator.
+        color: surface === 'grass' ? group.color : treatAlbedo(group.color),
         lampLightmap: getLampLightmap(),
         fade,
         poolMap: poolmap || null,
@@ -418,7 +427,7 @@ function GrassMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
       patchTerrain(built.material, { perVertex: true })
       return built
     },
-    [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap]
+    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap]
   )
   useEffect(() => {
     if (lightmap) {
@@ -580,7 +589,7 @@ function resolveLookId(propLookId) {
  */
 // ⛔ Default is the TOWN's authored ceiling, resolved at call time — not a module constant
 // captured at import, which would pin every look to whatever loaded first (site 15).
-export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag() } = {}) {
+export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag(), surfacesOverride } = {}) {
   const [data, setData] = useState(null)
   const resolvedLookId = resolveLookId(lookId)
 
@@ -622,7 +631,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
           manifest (poolmap may flip absent→present across a bake), and a bare
           re-render would change hook order and crash. Remount is fine: the
           geometry already rebuilds on manifest change. */}
-      {data && scene && <GroundMeshes key={cacheBust ?? 'static'} manifest={data.manifest} bin={data.bin} scene={scene} bakeLastMs={cacheBust} />}
+      {data && scene && <GroundMeshes key={cacheBust ?? 'static'} manifest={data.manifest} bin={data.bin} scene={scene} bakeLastMs={cacheBust} surfacesOverride={surfacesOverride} />}
     </>
   )
 }

@@ -217,6 +217,7 @@ Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `
 | `materialColors` | Per-material color overrides outside of layer scope. |
 | `layerColors` | Map of layer name → hex. The bake reads these to color `mat`-kind groups; they ALSO travel in `scene.json` so consumers can re-color outline strokes / wireframes live. |
 | `luColors` | Map of land-use category → hex. |
+| `surfaces` | *(sparse, may be `{}`)* The operator's layer over the kit's surface table (`cartograph/surfaces.mjs`): `classes` remaps a land-use class to a surface generator (`grass` · `sand`) or to `null` (flat colour); `params` sets a surface's authored parameters. Bad rows are named and dropped at runtime, never coerced. A parameter the surface needs and does not have is reported absent, never defaulted. |
 | `layerVis` | Map of layer name → bool. Layers set false do not get baked into `ground.json` groups, so this is redundant on the slab side; it's surfaced for Designer-side inspection and reference. |
 | `lampGlow` | Lamp emission / bloom parameters (color, intensity, attenuation). Consumed by `BakedLamps` and `StreetLights`. |
 | `shotLooks` | *(optional, sparse)* Per-shot LOOK overrides — `{ browse?: {<channel>: <channel-def>}, street?: … }`. Resolved `{...base, ...shotLooks[shot]}` at the `useSceneJson` adapter off the camera shot. Absent = no per-shot looks (byte-identical to a pre-cascade slab). See the paragraph above + `HANDOFF-channel-variant-cascade.md`. |

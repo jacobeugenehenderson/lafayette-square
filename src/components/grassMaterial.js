@@ -18,7 +18,69 @@ import { applyWeatherToShader } from '../lib/weather-uniforms.js'
  *                    big SVG-extent plane does.
  *   - color:         base albedo (defaults to '#2d5a2d').
  */
-export function makeGrassMaterial({
+export function makeGrassMaterial(opts = {}) {
+  return makeGroundSurfaceMaterial({ ...opts, surface: 'grass' })
+}
+
+// ── Per-surface ALBEDO chunks. Each defines `vec3 grass` — the historical name of
+// the shared albedo variable the common tail (sun, pool, contact shadow) works on.
+// ⛔ The GRASS chunk is the CONTROL and must stay byte-identical: LS's park grass is
+// the one surface an operator knows (`BRIEF-surface-lab §2`). It is the exact text
+// that sat inline here before the factory took a `surface`. ──────────────────────
+const GRASS_ALBEDO = `vec2 gp = vGrassPos.xz;
+
+       float gn1 = gFBM(gp * 0.06);
+       float gn2 = gFBM(gp * 0.15 + 42.0);
+       float gn3 = gFBM(gp * 0.8 + 100.0);
+       float gn4 = gFBM(gp * 0.025 + 200.0);
+       // Fine blade detail (~25cm features) — makes grass read as grass
+       // instead of painted green.
+       float gnBlade = gFBM(gp * 4.0 + 17.0);
+       float gnBladeFine = gNoise(gp * 12.0 + 71.0);
+
+       vec3 gBase  = vec3(0.22, 0.40, 0.19);
+       vec3 gLight = vec3(0.30, 0.50, 0.27);
+       vec3 gDark  = vec3(0.15, 0.32, 0.13);
+       vec3 gWarm  = vec3(0.26, 0.44, 0.17);
+       vec3 gCool  = vec3(0.18, 0.38, 0.22);
+
+       vec3 grass = mix(gBase, gLight, smoothstep(0.35, 0.65, gn1));
+       grass = mix(grass, gDark, smoothstep(0.4, 0.7, gn2) * 0.35);
+       grass = mix(grass, gWarm, smoothstep(0.55, 0.8, gn4) * 0.25);
+       grass = mix(grass, gCool, smoothstep(0.2, 0.45, gn4) * 0.2);
+       grass += (gn3 - 0.5) * 0.018;
+       // Fine-scale detail layers so the grass has actual texture, not
+       // smooth gradient. Stronger than the gn3 dust before.
+       grass *= 0.85 + gnBlade * 0.30;
+       grass += (gnBladeFine - 0.5) * 0.06;`
+
+// ⭐ SAND — the class's own colour (the palette's beach/dune swatch, operator-
+// authored) is the base; this adds the mottling of wind-sorted sand. It carries no
+// hue table of its own the way grass does: the colour is the operator's.
+// ⛔ NOT YET HERE, AND NOT FAKED: the dune state (needs the town's beach-band slope
+// and a cited repose angle), wet sand at the water line (needs the coast-distance
+// channel) and wind ripples (needs a cited ripple wavelength). `cartograph/
+// surfaces.mjs` declares each as an ABSENT parameter and BakedGround says so.
+const SAND_ALBEDO = `vec2 gp = vGrassPos.xz;
+       vec3 grass = pow(diffuseColor.rgb, vec3(1.0 / 2.2));   // the class colour, into the space the tail works in
+       float sn1 = gFBM(gp * 0.05);            // broad patches — sorted, damp, trampled
+       float sn2 = gFBM(gp * 0.4 + 31.0);      // footprint-scale unevenness
+       float sn3 = gNoise(gp * 9.0 + 57.0);    // grain speckle
+       grass *= 0.90 + sn1 * 0.16;
+       grass *= 0.96 + sn2 * 0.08;
+       grass += (sn3 - 0.5) * 0.025;`
+
+const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO }
+
+/**
+ * The ground-surface factory. `surface` picks the albedo chunk; every other socket —
+ * weather, sun altitude, the lamp pool, contact shadow, clip, fade — is shared, so a
+ * new surface inherits the whole environment by construction (`BRIEF-field-shader §4`:
+ * extend the factory, never a parallel material). Which group gets which surface is
+ * `cartograph/surfaces.mjs`.
+ */
+export function makeGroundSurfaceMaterial({
+  surface = 'grass',
   lampLightmap = null, clipMask = null, clipMin = null, clipSize = null,
   color = '#2d5a2d',
   // Optional radial alpha fade — soft neighborhood-stencil edge.
@@ -29,6 +91,7 @@ export function makeGrassMaterial({
   // (no night gate — the channel animates it). poolMin/poolSpan map world→UV.
   poolMap = null, poolMin = null, poolSpan = null, poolScale = 1,
 } = {}) {
+  if (!ALBEDO[surface]) throw new Error(`⛔ makeGroundSurfaceMaterial: no albedo for surface "${surface}" (have ${Object.keys(ALBEDO).join(', ')})`)
   const shaderRef = { current: null }
   const material = new THREE.MeshStandardMaterial({ roughness: 0.92, color })
   if (fade) material.transparent = true
@@ -118,32 +181,7 @@ export function makeGrassMaterial({
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <color_fragment>',
       `#include <color_fragment>
-       vec2 gp = vGrassPos.xz;
-
-       float gn1 = gFBM(gp * 0.06);
-       float gn2 = gFBM(gp * 0.15 + 42.0);
-       float gn3 = gFBM(gp * 0.8 + 100.0);
-       float gn4 = gFBM(gp * 0.025 + 200.0);
-       // Fine blade detail (~25cm features) — makes grass read as grass
-       // instead of painted green.
-       float gnBlade = gFBM(gp * 4.0 + 17.0);
-       float gnBladeFine = gNoise(gp * 12.0 + 71.0);
-
-       vec3 gBase  = vec3(0.22, 0.40, 0.19);
-       vec3 gLight = vec3(0.30, 0.50, 0.27);
-       vec3 gDark  = vec3(0.15, 0.32, 0.13);
-       vec3 gWarm  = vec3(0.26, 0.44, 0.17);
-       vec3 gCool  = vec3(0.18, 0.38, 0.22);
-
-       vec3 grass = mix(gBase, gLight, smoothstep(0.35, 0.65, gn1));
-       grass = mix(grass, gDark, smoothstep(0.4, 0.7, gn2) * 0.35);
-       grass = mix(grass, gWarm, smoothstep(0.55, 0.8, gn4) * 0.25);
-       grass = mix(grass, gCool, smoothstep(0.2, 0.45, gn4) * 0.2);
-       grass += (gn3 - 0.5) * 0.018;
-       // Fine-scale detail layers so the grass has actual texture, not
-       // smooth gradient. Stronger than the gn3 dust before.
-       grass *= 0.85 + gnBlade * 0.30;
-       grass += (gnBladeFine - 0.5) * 0.06;
+       ${ALBEDO[surface]}
 
        float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
        float brightness = mix(0.7, 1.0, dayBright);
@@ -190,7 +228,7 @@ export function makeGrassMaterial({
   // grass shader can silently get replaced by an earlier-compiled
   // plain-MeshStandardMaterial program from the same scene).
   material.customProgramCacheKey = () =>
-    `grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${lampLightmap ? 'lamp' : 'nolamp'}-${poolMap ? 'pool' : 'nopool'}-wx1`
+    `${surface === 'grass' ? '' : surface + '-'}grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${lampLightmap ? 'lamp' : 'nolamp'}-${poolMap ? 'pool' : 'nopool'}-wx1`
 
   return { material, shaderRef }
 }

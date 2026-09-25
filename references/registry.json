@@ -985,6 +985,23 @@
       ],
       "notes": "RATE: 10:1 for a ramp landing on a narrower street (f-caltrans-terminal-widening-taper). TARGET WIDTH: no source states it — derived: the overhang o = H half-width × cosθ − the street's resolved half-width, per side; the flare is o at the node, tapering over 10·o. THROUGH-STREET case (a highway mainline continuing as a narrower street, provincetown trunk-11): 206.2(3) covers lane-WIDTH increases at curves, ramp terminals and narrow-lane matches — not a mainline lane-COUNT change — so it is [U]: built at 10:1 and disclosed [U] (Boz, 2026-09-24: no 250-ft or W×V, the kit carries no speed). LAYER: ② (the street measure), not ①.",
       "check": "checks/claims-ramp-ends-classified.mjs"
+    },
+    {
+      "id": "q-dry-sand-repose-angle",
+      "ask": "Angle of repose of dry, wind-blown (aeolian) sand — the steepest a dune slip face stands at",
+      "neededBy": "BRIEF-surface-lab §5 — the sand surface's dune state (upper bound of the slope scale)",
+      "status": "open",
+      "findings": [],
+      "tried": [
+        "No permitted source in the registry covers granular material; none read (rule 1)."
+      ],
+      "nextSources": [
+        "a USGS or other federal geomorphology publication, terms checked first",
+        "or a MEASURED finding off permitted lidar (Provincetown slip faces: p99 slope 31–37° at 1 m, scratch/marram-relief-scale.mjs) once the lidar source is registered"
+      ],
+      "codeSites": [
+        "cartograph/surfaces.mjs SURFACES.sand.params.reposeDeg (finding: null — [U], the parameter is ABSENT)"
+      ]
     }
   ],
   "findings": [
