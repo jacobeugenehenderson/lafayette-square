@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: Act 0 landed 2026-09-20 (Kiln)
 written: 2026-07-20
-evict-when: sites 12 · B2b · 22 all closed (15/16/18-21 done) AND node checks/claims-writers-name-the-scene.mjs is green
+evict-when: site 12 closed (15/16/18-21 done) AND node checks/claims-writers-name-the-scene.mjs is green
   AND CLASS D (§1) HAS A DETECTOR — ⛔ the seven LS-sized constants were all found by accident, by people doing other work;
   a class whose only discovery method is luck is not closed however many instances are ticked. The check is the deliverable, not the count.
 -->
@@ -33,6 +33,7 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 | **15** `terrainExag` sized against LS ⭐ *(instance #2 of CLASS D — §1)* | `9378acfb` — now per-town authored in `design.json`, **kit default 1**; LS authors 1.5 and is byte-identical. ⚠️ **Every other town's terrain got shorter — intended, and it is the eye gate.** ⭐ The brief's stated "hard part" (a scene-blind module singleton in `elevation.js`) was already false: the sampler is rebuilt per look on terrain reload. |
 | **20** `generate-procedural` · **21** `generate-salon` roster write | `58a91317` — `syncLookRoster('lafayette-square', …)` was hardcoded, so publishing a variant edited **LS's `design.json`** whichever Look you were in. Both now require `--look` and exit 2. ⛔ **Ruled by Jacob: "there is no reason for LS to be the fallback here EITHER."** |
 | **6** sky at LS's latitude · **8** LS legal + About prose on every installation · **17** species-routing write → LS · `GET /inventory` · `scripts/config.py`'s LS geography default | **6** `e688555c` (the sky follows its town; §3.1's scoping → `_archive/BRIEF-ls-bleed-excision-site6-2026-09-24.md`) · **8** moved VERBATIM into `src/instances/copy/lafayette-square.jsx`; an undeclared installation renders "not declared" (Wellhead) · **17** `ebb4b927` · `/inventory` deleted `ccbe9d06` · config `1ebdac2d`. ⭐ `scripts/config.py` was not on this list; it was found by sweeping for LS coordinates. |
+| **B2b** no boundary / no scene → LS's map + boundary · **22** LS park point + STL park codes in `derive.js` · the intake panel's `sampleForRow` (LS's file shown as a sample) · `derive.js` reading only St. Louis's parcel files | **B2b** `289c7a3e` (+ the same pattern in `BlockGeometryV2Debug.jsx`) · **22** + parcels `9a2f84c3` (22 matched nothing even on LS) · `sampleForRow` was dead: deleted with its route and client `1e637db6`. (Wellhead) |
 
 ⭐ **The argument for Act 0, kept because it recurs:** those thirteen dead ones were closed by **six different
 agents, none of whom knew this brief existed.** The class is being closed incidentally and nobody was
@@ -136,8 +137,8 @@ by the consumer, or you have built the same defect wearing a different hat
 | # | Site | Class | What bleeds | Sev |
 |---|---|---|---|---|
 | **12** | `cartograph/serve.js:1142` | C | `sceneRouteMatch[1] \|\| DEFAULT_MAP` — a scene-less request is served **LS's** artifacts. ⛔ **Deliberately deferred:** `api.js sceneUrl()` emits scene-less URLs for the default scene, so refusing breaks the running app. **Sequence with the client; do not cut it alone.** | MED — blocked |
-| **B2b** ⭐ | `src/cartograph/MapLayers.jsx:507` | A | **NEW, found in Act 0.** `(isLS \|\| !sceneBoundaryRaw) ? _LS_BUNDLE : makeBoundary(…)` — a non-LS scene with **no boundary** gets **LS's boundary polygon** for clip + fade (`:515`, `:520` branch off it). ⚠️ **Latent today** — all 6 scenes have `neighborhood_boundary.json` — so it fires on a **fresh pour** and in the async fetch window. ⭐ The file's own comment at `:102` says this bundle is *"for scene==='lafayette-square'"*; the `\|\| !sceneBoundaryRaw` clause **exceeds its stated intent.** ⛔ The brief previously listed `MapLayers.jsx` under *"verified NOT bleeding"* — that verification covered `:503` (ribbons) and **not this line.** | MED |
-| **22** ⭐ | `cartograph/derive.js` (the park-parcel exclusion, after `Load parcels`) | B | **NEW 2026-09-24.** `PARK_CENTER = { x: -15, z: -15 }` (LS's frame) + `PARK_LAND_USE_CODES` (St. Louis assessor codes 4800–4900) run on **every** town's parcels. Inert elsewhere today (no parcel lands within 250 m of LS's park point with an STL code), so it is dead weight, not a wrong map. ⭐ Blocked with the rest of `derive.js` behind the pour hold; lands with derive reading each town's declared parcels (Jacob ruled yes 2026-09-24). | LOW |
+
+**Candidate, filed not fixed (2026-09-24):** `cartograph/forbidden-surface.mjs#makeZoneTester` treats `map.json`'s LEGACY `pavement` layer as a tree obstruction. Nothing draws that layer; the drawn surface is the ①/baked ground. So the tree mask can disagree with the ground a visitor sees. Measured on huron: letting parcels shape that layer moved 135 of 18,502 tree verdicts to `pavement`.
 
 **Soft, authoring-only** (fix opportunistically, don't gate on them): `arborist/serve.js:959,1041` (Salon publish +
 variant-rating re-bake LS unconditionally — now **declared LS-only by design** in their own source,
@@ -188,7 +189,6 @@ not prose.
 
 ## 5. Deliver
 
-1. **Site B2b** excised per `§2`.
 4. **Site 12** — ⛔ blocked on the client. Sequence with `api.js sceneUrl()`.
 5. **`§4`'s checks**, failing before and passing after.
 6. A short writeup: what landed, what deferred and why, and whether any *new* bleed surfaced.
