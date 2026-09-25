@@ -37,7 +37,7 @@
  *   node cartograph/bake-revetment.js --scene=<id> [--look=<id>]
  * Writes public/baked/<look>/revetment.json. Read-only apart from that file.
  */
-import { readFileSync, existsSync, mkdirSync } from 'node:fs'
+import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
@@ -88,6 +88,38 @@ function resample(pts, step) {
   return out
 }
 
+/**
+ * ⭐⭐ DO THE SLAB AND THE TERRAIN AGREE ABOUT WHETHER THIS TOWN HAS A COAST?
+ *
+ * Returns which of THREE states this scene is in — never a boolean, because the two
+ * artifacts can disagree and that disagreement is a finding, not an answer:
+ *   · 'build'         — the terrain datum is the water. Whatever the slab says, heights are
+ *                       measured from the sea and the shoreline can be built.
+ *   · 'inland'        — no water datum AND no shoreline in the slab. The two AGREE, nothing
+ *                       is missing, nothing is stale. The only case where silence is right.
+ *   · 'stale-terrain' — ⛔ the slab HAS a shoreline and the terrain does not know about it.
+ *
+ * ⛔ THE THIRD IS WHY THIS EXISTS. `bake-terrain` derives the datum from the scene's water
+ * rings, so a terrain baked before the coast closed falls to `local minimum` and y = 0
+ * becomes the lowest hole in the envelope instead of the sea. The old gate read the datum
+ * ALONE and announced "this town has no coast" — asserting a fact about the town from a fact
+ * about one stale file. On Provincetown that would have denied 122,204 m of Atlantic coast
+ * and exited 0.
+ *
+ * ⭐ Kept as a pure function of the two observations so it can be tested exhaustively
+ * without a baked town — the same shape `revetmentResponseKind` uses for the absent/
+ * unverifiable split, and for the same reason: the interesting case is the one that is hard
+ * to stage.
+ *
+ * @param {string|undefined} datum        `terrain.json`'s `datum` field
+ * @param {number} waterRunCount          deduped `__water__` runs found in `shape.json`
+ * @returns {'build'|'inland'|'stale-terrain'}
+ */
+export function coastAgreement(datum, waterRunCount) {
+  if (datum === 'water') return 'build'
+  return waterRunCount > 0 ? 'stale-terrain' : 'inland'
+}
+
 export function bakeRevetment({ scene, look }) {
   const lookId = look || scene
   const shapePath = join(ROOT, 'public', 'baked', lookId, 'shape.json')
@@ -106,12 +138,65 @@ export function bakeRevetment({ scene, look }) {
   }
 
   const tm = JSON.parse(readFileSync(tMetaPath, 'utf8'))
-  if (tm.datum !== 'water') {
-    console.log(`[bake-revetment] scene=${scene}: terrain datum is "${tm.datum ?? 'unset'}", not water — this town has no coast. Nothing to build.`)
-    return { arcs: [], reason: 'no-water-datum' }
-  }
   const shape = JSON.parse(readFileSync(shapePath, 'utf8'))
   const osm = JSON.parse(readFileSync(osmPath, 'utf8'))
+
+  // ⛔ Each edge appears on the two tiles that share it; dedupe by shape, not by
+  // tile index — the live pass and the frozen artifact number tiles differently.
+  const seen = new Set(); const raw = []
+  for (const t of (shape.tiles || [])) for (const r of (t.runs || [])) {
+    if (r.skelId !== WATER_EDGE_SKEL || !Array.isArray(r.poly) || r.poly.length < 2) continue
+    const k = `${r.poly.length}:${r.poly[0][0].toFixed(2)},${r.poly[0][1].toFixed(2)}`
+    if (!seen.has(k)) { seen.add(k); raw.push(r.poly.map(p => [p[0], p[1]])) }
+  }
+
+  // ⭐⭐⭐ THE TWO ARTIFACTS MUST AGREE ABOUT WHETHER THIS TOWN HAS A COAST, AND WHEN THEY
+  // DO NOT, THAT IS THE FINDING — NOT AN ANSWER.
+  //
+  // ⛔⛔ THIS GATE USED TO SAY SOMETHING IT COULD NOT KNOW. It read the terrain datum alone
+  // and printed "this town has no coast. Nothing to build." But `terrain.json`'s datum is not
+  // water and this town has no coast are DIFFERENT FACTS, and inferring the second from the
+  // first is exactly the substitution Layer 0's second question forbids — in the one place
+  // that decides whether a shoreline gets stone.
+  // ⭐ MEASURED, 2026-09-24, on the town that exposed it: Provincetown's terrain was baked at
+  // 17:48, BEFORE its coast closed, so `bake-terrain` found no water rings and fell to
+  // `datum: "local minimum"` (baseElev −2.13 — y = 0 is the lowest hole in the envelope, not
+  // the sea). Hours later the slab carried 420 `__water__` runs and 122,204 m of shoreline.
+  // The old gate would have read the stale datum, announced that a town with 122 km of
+  // Atlantic coast has none, built nothing, and EXITED 0. The operator sees a bare shore and
+  // no reason — the plausible-looking success this kit rates worst.
+  //
+  // ⭐ So the two artifacts are read TOGETHER and there are three outcomes, not two:
+  const agree = coastAgreement(tm.datum, raw.length)
+  if (agree === 'inland') {
+    // Both agree: no water datum, no shoreline in the slab. A genuinely inland town.
+    // ⭐ Quiet is correct here and ONLY here — nothing is missing and nothing is stale.
+    console.log(`[bake-revetment] scene=${scene}: terrain datum is "${tm.datum ?? 'unset'}" and the slab carries no ${WATER_EDGE_SKEL} runs — the two agree, this town is inland. Nothing to build.`)
+    return { arcs: [], reason: 'no-coast' }
+  }
+  if (agree === 'stale-terrain') {
+    // ⛔⛔ THE CONTRADICTION. The slab has a shoreline; the terrain does not know about it.
+    // This is a STALE TERRAIN, not an absent coast, and it is unfixable from here — the
+    // datum is decided by `bake-terrain`, which derives it from the scene's water rings.
+    // ⛔ Refusing loudly is the whole point: a quiet return here is indistinguishable from
+    // an inland town, and the operator would never learn which they had.
+    const when = (p) => { try { return statSync(p).mtime.toISOString().replace('T', ' ').slice(0, 19) } catch { return '?' } }
+    const shoreM = raw.reduce((a, t) => a + t.reduce((b, p, i) => i ? b + Math.hypot(p[0] - t[i-1][0], p[1] - t[i-1][1]) : 0, 0), 0)
+    throw new Error(
+      `bake-revetment: ${scene} — THE SLAB AND THE TERRAIN DISAGREE ABOUT THIS TOWN'S COAST.\n` +
+      `   the slab HAS a shoreline: ${raw.length} ${WATER_EDGE_SKEL} run(s), ${Math.round(shoreM).toLocaleString()} m\n` +
+      `     ${shapePath}  (written ${when(shapePath)})\n` +
+      `   the terrain does NOT know about it: datum "${tm.datum ?? 'unset'}", baseElev ${tm.baseElev}\n` +
+      `     ${tMetaPath}  (written ${when(tMetaPath)})\n` +
+      `\n` +
+      `   ⛔ This is a STALE TERRAIN, not a town without a coast. The datum is derived by\n` +
+      `      bake-terrain from the scene's water rings; if the terrain was baked before the\n` +
+      `      coast closed, y = 0 is the lowest hole in the envelope rather than the sea, and\n` +
+      `      EVERY height-above-water in this town is measured from the wrong zero.\n` +
+      `   ▶ Re-bake the terrain for this scene, then run this again.\n` +
+      `   ⛔ Refusing rather than building: stone founded on the wrong datum would look\n` +
+      `      plausible and be wrong everywhere, which is worse than no stone at all.`)
+  }
 
   // The heightfield, already normalised so y = 0 IS the water (bake-terrain).
   const tb = readFileSync(tBinPath)
@@ -126,14 +211,8 @@ export function bakeRevetment({ scene, look }) {
     return Number.isFinite(v) ? v : NaN
   }
 
-  // ⛔ Each edge appears on the two tiles that share it; dedupe by shape, not by
-  // tile index — the live pass and the frozen artifact number tiles differently.
-  const seen = new Set(); const raw = []
-  for (const t of (shape.tiles || [])) for (const r of (t.runs || [])) {
-    if (r.skelId !== WATER_EDGE_SKEL || !Array.isArray(r.poly) || r.poly.length < 2) continue
-    const k = `${r.poly.length}:${r.poly[0][0].toFixed(2)},${r.poly[0][1].toFixed(2)}`
-    if (!seen.has(k)) { seen.add(k); raw.push(r.poly.map(p => [p[0], p[1]])) }
-  }
+  // ⭐ Reaching here means the datum IS water. A water-datum town with no shoreline in the
+  // slab is its own case — the terrain found water, the slab froze none.
   if (!raw.length) {
     console.log(`[bake-revetment] scene=${scene}: no ${WATER_EDGE_SKEL} runs in the slab — this town has no shoreline.`)
     return { arcs: [], reason: 'no-shoreline' }
