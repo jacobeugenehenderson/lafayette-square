@@ -261,7 +261,8 @@
 > same-street width change; built with the `[start,end]` `depthAt` ramp in ②'s working copy (Plumb, `BRIEF-junction-shape-where-the-offset-crosses`).
 > **Built** (`taperWorkingCopy`): the WIDER block gives way from the boundary; a leg shorter than its taper takes the
 > whole leg, steeper, named per pour (Jacob: option A). A width step = a width change with no corner (same road, or a
-> turn under `FILLET_TURN_TOL`); ⛔ a dead-end cap (one chain's two sides) is not one.
+> turn under `FILLET_TURN_TOL` even where the street changes — ruled by Jacob 2026-09-25); ⛔ a dead-end cap (one
+> chain's two sides) is not one.
 > ⚠️ **Cause not established for the offset's fold class under the new subject.** `POLYGON-FIRST D6a` marks
 > the offset NOT robust (the averaged-normal branch; `scratch/fold-branch-forensic.mjs`). Dilating a grout
 > fails by a narrow block **vanishing** — loud — rather than by a fold; **hypothesis, unmeasured.**
