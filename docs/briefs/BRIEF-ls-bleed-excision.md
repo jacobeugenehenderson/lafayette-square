@@ -10,7 +10,7 @@ evict-when: site 12 closed (15/16/18-21 done) AND node checks/claims-writers-nam
 -->
 
 **Agent: FRESH.** ⛔ **Route first** (`CLAUDE.md`): `ORIENTATION.md` → `README.md §⭐ START HERE` →
-the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) has the findings.
+the topic canon for the domain you're in. The original findings are in the Diary (`cartograph/_archive/INTAKE-CATALOGUE-s0-bleed-sites-2026-09-25.md`); this brief is the live register.
 
 > ### ✅ ACT 0 COMPLETE — 2026-09-20 (Kiln). Every site re-measured; the dead ones are gone from this file.
 > The pre-clean 409-line version is `cartograph/_archive/BRIEF-ls-bleed-excision-preAct0-2026-09-20.md`.

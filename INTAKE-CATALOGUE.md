@@ -64,44 +64,11 @@
 
 ## 0. ⛔ THE HEADLINE FINDING — the LS-bleed is the kit's systemic defect
 
-Every domain found it independently, without being told the others existed. **Absence does not degrade
-to nothing — it degrades to Lafayette Square.** That is a direct violation of the aspirational model
-("the system just doesn't show them"): a bleed doesn't show a *missing* feature, it shows *someone
-else's*.
-
-**Nine verified sites** — full detail + the excision plan in **`docs/briefs/BRIEF-ls-bleed-excision.md`**.
-
-| # | Site | What bleeds | Severity |
-|---|---|---|---|
-| 1 | `cartograph/bake-lamps.js:99` | LS's 80 lamps into any town with no lamp data | HIGH |
-| 2 | `arborist/bake-trees.js:427` | LS's `park_census.json` — another town bakes LS's trees under its own name | HIGH |
-| 3 | `arborist/bake-trees.js:430` | LS's species map — foreign species routed through a St-Louis collapse table | HIGH |
-| 4 | `arborist/bake-trees.js:69,688` | **module-level, unconditional** — LS's lamp positions stamp `lampGlow` on **every tree of every scene**, evaluated in that scene's own frame. No override flag exists. Same file as #1, entering by a second independent door | MED (night-only, cosmetic) |
-| 5 | `src/instance.js:47` | `INSTANCES[lookId] \|\| INSTANCES[DEFAULT_LOOK]` — an unregistered look silently wears LS's identity, geography, park label and tax rate. ⛔ **Worse than catalogued: it CASCADES INTO SIX RENDER SITES** (2026-07-21) | HIGH |
-
-> ⛔ **Bleed #5 is not only an identity bleed — expanded 2026-07-21.** Six render gates test
-> `INSTANCE.lookId === 'lafayette-square'`, so an unregistered look flips **all six at once**:
-> `Scene.jsx:860` (the Gateway Arch) · `LafayettePark.jsx:848` (park lake, grotto, bridge, fence) ·
-> `LafayettePark.jsx:803` (park title) · `StreetLights.jsx:74` (LS's 80 lamps) · `lampLightmap.js:23`
-> (their baked pools) · `LafayetteScene.jsx:106` (LS's per-building overrides). Jacob previewed Łódź
-> and found **the St. Louis Gateway Arch standing in it, over Lafayette Park's water**. Every gate was
-> correct; the identity beneath them was wrong. Registering an instance file for that scene fixed it
-> (`103d7224`) — which **proved the diagnosis** before the scene was excised and the file went with it
-> (2026-09-19). ⚠️ **`altadena` and `toy` are still unregistered and still carry this** — `ls
-> src/instances/` is the check, and it is the whole remaining population.
-| 6 | `cartograph/pipeline/hydrate-anchor-cards.js:28` | **LS's latitude (38.616°N) → every town's sky.** See §3.0 | HIGH — **live and wrong on Łódź today** |
-| 7 | `cartograph/bake-content.js:118` | *(FIXED `adc03f32`)* MSBF-only join → no OSM pour joined any geometry | — |
-| 8 | `InfoModal.jsx` / `LegalPage.jsx` | LS prose + **State of Missouri governing law** rendered on a Polish deployment | HIGH — legal, not cosmetic |
-| 9 | `bake-content.js#loadParcels` + `#loadLandUseCodes` | *(FIXED 2026-09-20)* **St. Louis FILENAMES in the reader** — `stl_parcels.json` / `stlco_parcels.json` / `county-land-use-codes.csv` — so every other town matched 0 parcels forever. The bleed was in the ACQUISITION path, which is why no render gate could catch it. Towns declare their wells now (`data/<scene>/sources.json`, `§4.2`); huron went **0% → 97%** parcel match with no code change | — |
-
-**Recommended schema consequence** (Cambium): the manifest's absent-state column must be a hard
-three-way — `honest-zero` / `documented-fallback` / **`⛔ LS-BLEED`**.
-
-**The good pattern to copy**, already in-repo: `cartograph/tree-bake-inputs.mjs` returns `null` on a
-missing census — *"an HONEST ZERO, not an error"* — and `bake-trees.js:408` defaults `heroLook` to
-`null → mapName` with the comment *"never a literal 'lafayette-square', which would tier a poured
-scene's trees against LS's camera in LS's coordinate frame (garbage)."* Someone already fixed this
-class here; #4 is the one they missed **in the same file**.
+Every domain found it independently: **absence did not degrade to nothing, it degraded to Lafayette
+Square**, so a town showed *someone else's* feature instead of a missing one. The nine sites this
+catalogue found are all closed; the table and its history are in the Diary
+(`cartograph/_archive/INTAKE-CATALOGUE-s0-bleed-sites-2026-09-25.md`). ▶ **What is still open, and every
+site closed since, lives in `docs/briefs/BRIEF-ls-bleed-excision.md` §0/§3**: one home, not two.
 
 ---
 
@@ -116,7 +83,7 @@ Four wells, unioned by `bake-trees --placements` (`cartograph/tree-bake-inputs.m
 | **Municipal tree inventory** — per-tree species, DBH, condition | `clean/park_trees.json` (layer 1) · `clean/forest_park_trees.json` (layer 4, richer species) | `source:'city-inventory'`; **measured `dbh`** → Designer sizing + size/age benchmark; the empirical mix that becomes the roster | drops out (honest) | **US:** city/county ArcGIS FeatureServers, free, no key (LS/HPDM use St. Louis `FORESTRY_TREES/MapServer/{1,4}`). Equivalents: NYC Street Tree Census, Chicago, SF, Seattle, Portland, LA, Boston, Philadelphia — typically ODC/public-domain, local copy fine. **Non-US:** Berlin *Baumkataster*, Amsterdam/Rotterdam bomen, Melbourne Urban Forest, Vancouver/Toronto, Warsaw `api.um.warszawa.pl` **[unverified]**. ⭐ **`opentrees.org` aggregates several hundred municipal inventories globally into one schema — best single starting point [unverified]**. ⚠️ **Many towns have none** — suburban/county land and most of Europe outside big cities. Then: a **public-records request** to the municipal forestry contractor *is* the procedure (HPDM's = Clayton's unpublished Davey inventory — `[[project_hpdm_tree_census_jurisdiction_gap]]`) |
 | **OSM tree points** | `clean/osm_trees.json` | real positions where no municipal census reaches; species mix-*draped*, not read | drops out | **Overpass API**, global, **ODbL**, permanent copy w/ attribution. Useful tags: `species`, `species:wikidata`, `genus`, `leaf_type`, `leaf_cycle`, `circumference`, `diameter_crown`, `height`, `natural=tree_row`. ⚠️ **Overpass 406s the default python-requests/curl UA — send a real User-Agent** (`TREE-INTAKE.md §2`) |
 | **Canopy raster** | `raw/canopy.tif` → `clean/derived_trees.json` | synthetic fill in parks/yards no point census covers; `source:'derived'`, no dbh | no fill — **a legitimate opt-out, not a defect** (LS ships real-only) | **US: NLCD Tree Canopy Cover (USDA FS / MRLC)**, 30 m, public domain. ⚠️ **WCS GetCoverage 404s for CONUS TCC — use WMS GetMap `format=image/geotiff`, and discover the versioned layer name from GetCapabilities** (handled in `scripts/16`). **Non-US: ESA WorldCover 10 m** (CC BY 4.0, S3 COGs — the intended swap-in per `TREE-INTAKE.md §5`) or **Hansen/UMD Global Forest Change** **[unverified]**; Copernicus HRL Tree Cover Density for Europe **[unverified]** |
-| **Species routing map** | `tree-species-map.json` (+ `tree-mix.json` shares) | every placement resolving to a real library species | ⛔ **LS-BLEED #3** | **DERIVED** from the census histogram by `scripts/15`. ⚠️ But the collapse table inside it is **hand-authored and St-Louis-flavored**; `TREE-INTAKE.md §5.4`: *"If no municipal census, the mix needs a hand-authored seed — audit the table per region."* **Procedure where none exists:** the city's approved street-tree planting list + USDA hardiness zone + a state extension urban-tree guide → hand-write a ~18-species mix with weights |
+| **Species routing map** | `tree-species-map.json` (+ `tree-mix.json` shares) | every placement resolving to a real library species | honest zero: routing is EMPTY, never LS's map (`bake-trees.js`, "Refusing to route through LS's map") | **DERIVED** from the census histogram by `scripts/15`. ⚠️ But the collapse table inside it is **hand-authored and St-Louis-flavored**; `TREE-INTAKE.md §5.4`: *"If no municipal census, the mix needs a hand-authored seed — audit the table per region."* **Procedure where none exists:** the city's approved street-tree planting list + USDA hardiness zone + a state extension urban-tree guide → hand-write a ~18-species mix with weights |
 
 *Also read but **derived**, not acquirable:* `neighborhood_boundary.json`, `public/baked/<scene>/shape.json`, `clean/map.json`. ⚠️ No `shape.json` → the bake falls back to the retired paint mask which *"cannot see the road and will scatter trees into the carriageway"* — loud-on-purpose, not a bleed.
 
@@ -262,7 +229,7 @@ i18n service reads it**) · `profile{}` (population/founded/landmark/tagline/abo
 
 ### 3.2 Layer 1 — roster (JOINED)
 `content/roster.json` — one record per slab building; machine-joined by `bake-content.js`.
-- **Assessor parcels** (`raw/stl_parcels.json`, `stlco_parcels.json`) — ⭐ **the single richest content well**: address (the join spine for NR + the bare-listing gate), zoning (drives **both** neon colour and search category), sqft/units/value/year_built/vacant/historic. **US: reliably exists** — every county has an assessor, most publish ArcGIS FeatureServer or Socrata. ⚠️ **Outside the US this well often does not exist in this shape** — EU **INSPIRE Cadastral Parcels** gives geometry + parcel id but typically **not** valuation/zoning/year-built. **No Polish equivalent verified**; Łódź has 0 parcel matches.
+- **Assessor parcels** (the town's declared wells, `data/<scene>/sources.json` → `raw/<declared file>`) — ⭐ **the single richest content well**: address (the join spine for NR + the bare-listing gate), zoning (drives **both** neon colour and search category), sqft/units/value/year_built/vacant/historic. **US: reliably exists** — every county has an assessor, most publish ArcGIS FeatureServer or Socrata. ⚠️ **Outside the US this well often does not exist in this shape** — EU **INSPIRE Cadastral Parcels** gives geometry + parcel id but typically **not** valuation/zoning/year-built. **No Polish equivalent verified**; Łódź has 0 parcel matches.
   > ⭐ **CORRECTION (2026-07-20, later the same session).** The line above was read as "no assessor ⇒ no addresses," and that is **wrong**. Addresses do not require a parcel authority — outside the US they live in **OSM `addr:*`**. Measured in Łódź's own already-fetched `raw/osm.json`: **3,982 `addr:street`** + 3,973 `addr:housenumber` + 1,905 `addr:postcode` across 10,602 buildings. Address is the join spine for the bare-building atlas and the NR match, so this is load-bearing: **the well exists globally, it is just sourced differently.** What an assessor uniquely provides outside the US is *valuation · zoning · year_built · units* — not address. Split the row accordingly.
 - **Land-use code table** (declared as `landUseCodes` in the town's `sources.json`) — decodes assessor codes. ⛔ **The filename used to be `county-land-use-codes.csv`, hardcoded, so every non-St-Louis town printed "missing" forever**; and the numeric-range heuristic behind it is **St. Louis city/county ranges** applied to whatever digits any town's code contained. ⭐ **That is not a missing feature, it is a confidently wrong one:** Ohio's statewide `500: Res-Vacant Land` strips to `500`, lands in `400 ≤ n < 700 ⇒ commercial, confidence HIGH`, and reports a residential vacant lot as a commercial building. A town now declares `land_use_code_format` — `stl-assessor-numeric` (ranges + the CSV) or `self-describing` (the code carries its meaning, no table to acquire) — and **an undeclared format yields `unknown`, never a guess.**
 - **National Register inventory** (`content/nr-inventory.json`; LS's source is the OCR'd nomination in `inventory/`, 7 files) — style/contributing/architect/period/`nps_ref`. **Tier ③, US-only**: NPS **National Register** nomination PDFs are free at NPGallery, but the per-building "Exhibit 5" table must be **OCR'd and parsed**. State SHPO surveys are the wider net. ⚠️ *"does not exist for a normal town"* (`NEIGHBORHOOD-INPUTS §4.1`). **Non-US analogues differ in kind:** Poland **NID rejestr zabytków**, UK **Historic England Listed Buildings** (open, per-building, well-structured), France **Mérimée** **[unverified]**.
@@ -440,7 +407,7 @@ versioned layer name from GetCapabilities, request WMS GetMap as geotiff"* and *
 | Button | Source | Licence |
 |---|---|---|
 | OSM landmarks / addresses / trees / lamps | Overpass (⚠️ real User-Agent) | ODbL |
-| Building footprints | MSBF (`fetch-msbf.js` already exists) | ODbL |
+| Building footprints | MSBF (`fetch-msbf.js`, in the Extent fetch) | CDLA Permissive 2.0 |
 | Canopy raster | MRLC WMS GetMap · ESA WorldCover | public domain · CC BY |
 | Weather year (offline fixture + cloud regime) | Open-Meteo ERA5 archive | **CC BY 4.0, redistributable** |
 | Climate fingerprint | WorldClim v2.1 | ⚠️ licence unconfirmed |
