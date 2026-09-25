@@ -956,9 +956,23 @@
         "cartograph/derive.js — blockClass at the mint (H-3 classes = motorway/trunk(+_link) only)",
         "Wren 911d4103 — expressway=yes ⇒ pedRealm:false, curb kept"
       ],
-      "findings": [],
+      "findings": [
+        "f-caltrans-expressway-definition",
+        "f-caltrans-curb-avoided-40mph",
+        "f-caltrans-unsurfaced-median",
+        "f-massdot-sloped-edging-over-45",
+        "f-caltrans-freeway-shoulders-by-lanes",
+        "f-caltrans-median-width",
+        "f-caltrans-roundabout-defers"
+      ],
       "neededBy": "huron: US 6 through the centre (primary-90/91/101/102/103, roundabout at (−89,53)) — Jacob's eye 2026-09-24 read its curb and ramp wedges as malfunctions; HPDM Forest Park Parkway at its pour",
-      "status": "open"
+      "status": "open",
+      "tried": [
+        "caltrans-hdm Index 62.3, 302.1/Table 302.1, 303.1/Table 303.1, 305.1–305.2, 405.10",
+        "massdot-design-guide Ch 5 (2006) §5.5.3 and §5.6 (median barrier: \"On expressways … the median barrier must terminate at each at-grade intersection\")",
+        "the town data: huron raw OSM carries maxspeed on 9 of 48 US 6 ways (55 mph ×7, 35 mph ×2); the pour does not keep it"
+      ],
+      "notes": "FINDINGS, NOT YET RULED: both permitted manuals say a high-speed facility takes NO vertical curb — Caltrans avoids curb at posted ≥ 40 mph (expressways: curb only on ramps/C-D roads), MassDOT uses sloped edging above 45 mph design speed — and give an expressway PAVED SHOULDERS (Table 302.1) and an UNSURFACED MEDIAN (305.1–305.2). So the edge is shouldered, not curbed, and the land between carriageways is a median (verge-like: grass, no sidewalk). ⛔ Both rules key on SPEED, which the kit does not carry: OSM maxspeed is present on 9/48 huron US 6 ways and differs along it (55 / 35). Roundabouts: curbs deferred to NCHRP 672 (not for kit use) ⇒ [U]."
     },
     {
       "id": "q-ramp-terminal-flare",
@@ -3210,6 +3224,73 @@
       "quote": "taper",
       "gist": "Where a street's authored width changes at a block boundary, the curb TAPERS between the two widths (not a step, not a miter carried through). Rate reuses f-caltrans-terminal-widening-taper (10:1), [U] for a same-street width change.",
       "canon": "cartograph/RIBBONS.md §1 (the width step) · docs/briefs/BRIEF-junction-shape-where-the-offset-crosses.md"
+    },
+    {
+      "id": "f-caltrans-expressway-definition",
+      "topic": "highway cross-section",
+      "question": "q-atgrade-expressway-edge",
+      "kind": "rule",
+      "value": {
+        "expressway": "arterial, at least partial control of access, may or may not be divided or grade-separated"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 62.3(2)(b) — Highway Types",
+      "quote": "Expressway--An arterial highway with at least partial control of access, which may or may not be divided or have grade separations at intersections.",
+      "scope": "An AT-GRADE expressway is a named type; Caltrans groups it with freeways (\"Freeways and Expressways\") in its curb, shoulder and median standards.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-caltrans-curb-avoided-40mph",
+      "topic": "highway cross-section",
+      "question": "q-atgrade-expressway-edge",
+      "kind": "rule",
+      "value": {
+        "avoidCurbAtPostedSpeed_mph_gte": 40,
+        "freewaysAndExpresswaysCurbOnlyAt": [
+          "collector-distributor roads",
+          "ramps (see 504.3(11))"
+        ]
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 303.1 + Table 303.1 (Selection of Curb Type)",
+      "quote": "The use of curb should be avoided on facilities with posted speeds greater than or equal to 40 miles per hour, except as noted in Table 303.1.",
+      "scope": "Table 303.1 lists, under Freeways and Expressways, only Collector-distributor Roads and Ramps (see Index 504.3(11)); its note (2) defers curbs at roundabouts to NCHRP 672 (not for kit use). Depends on POSTED SPEED, which the kit does not carry per street.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-caltrans-unsurfaced-median",
+      "topic": "highway cross-section",
+      "question": "q-atgrade-expressway-edge",
+      "kind": "rule",
+      "value": {
+        "unsurfacedMedianUpTo_ft": 65,
+        "crossSlopeFlatterThan": "10:1",
+        "preferred": "20:1"
+      },
+      "source": "caltrans-hdm",
+      "where": "Index 305.2 — Median Cross Slopes",
+      "quote": "Unsurfaced medians up to 65 feet wide should be sloped downward from the adjoining shoulders to form a shallow valley in the center. Cross slopes should be 10:1 or flatter; 20:1 being preferred.",
+      "scope": "The land between an expressway's carriageways is a MEDIAN measured between inside edges of traveled way incl. the inside shoulder (305.1): typically unsurfaced, no sidewalk. Widths: f-caltrans-median-width.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
+    },
+    {
+      "id": "f-massdot-sloped-edging-over-45",
+      "topic": "highway cross-section",
+      "question": "q-atgrade-expressway-edge",
+      "kind": "rule",
+      "value": {
+        "verticalCurbNotAboveDesignSpeed_mph": 45,
+        "ruralCurbOnlyToProtectSidewalk": true
+      },
+      "source": "massdot-design-guide",
+      "where": "Ch 5 (2006 EDITION) — §5.5.3 Curbs, Berms and Edging (prose; the height exhibit above it is AASHTO-adapted and excluded)",
+      "quote": "Sloped edging is usually granite and should be used for edge delineation and on traffic islands when design speeds are greater than 45 miles per hour since vertical curbs are not suitable for the high speed environment. … Curbs are not commonly used in rural areas unless they are protecting an adjacent sidewalk.",
+      "scope": "MA; by DESIGN speed (> 45 mph), where Caltrans uses posted speed (≥ 40 mph). The two agree on the rule and differ on the threshold.",
+      "foundOn": "2026-09-24",
+      "foundBy": "Gantry"
     }
   ]
 }
