@@ -1137,6 +1137,19 @@
       ]
     },
     {
+      "id": "q-lu-park-boundary-vs-ground-cover",
+      "ask": "When a park / nature reserve / protected-area boundary and a ground-cover polygon (sand, beach, dune, wood, wetland) both cover the same face, which decides the face's land use?",
+      "neededBy": "Provincetown's dunes: once a face took the class of whatever covered it by area, leisure=nature_reserve (180,227,102 m2 \u2014 the Cape Cod National Seashore) out-voted natural=sand (13,908,598 m2) and the beach face group vanished, rendering 2,697 ha of dune as lawn.",
+      "status": "answered",
+      "findings": [
+        "r-lu-ground-cover-beats-jurisdiction"
+      ],
+      "tried": [
+        "Area share alone: cannot separate the two \u2014 a jurisdiction is usually the larger claim, so it always wins.",
+        "Keying on the LU class rather than the source tag: cannot work, `park` arrives from leisure=park (a lawn) and from a national park boundary spanning dunes and forest alike."
+      ]
+    },
+    {
       "id": "q-cape-cod-tree-species-mix",
       "ask": "The tree species composition of a town's county — ranked by live stems — for its likely-grove mix (every town; first answered for Provincetown / Barnstable County)",
       "neededBy": "Provincetown's tree roster and placement mix (scripts/15-derive-tree-mix.py has no City census to derive it from; OSM's 48 trees carry no species)",
@@ -3495,6 +3508,17 @@
       "scope": "MA; prima facie evidence of unreasonable speed \"unless a different speed limit is otherwise posted\". Fair use: cite + short quote.",
       "foundOn": "2026-09-24",
       "foundBy": "Gantry"
+    },
+    {
+      "id": "r-lu-ground-cover-beats-jurisdiction",
+      "question": "q-lu-park-boundary-vs-ground-cover",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-25",
+      "quote": "yes, ground cover wins",
+      "gist": "Where a MANAGEMENT polygon (park, nature reserve, protected area, national park) and a GROUND-COVER polygon (natural=sand/beach/dune/wood/scrub/wetland/heath/grassland, landuse=forest/meadow) both cover a face, the ground cover takes it; the management class keeps only what no cover claims (lawns, fields, car parks). A park is a jurisdiction, sand is a ground cover, and the surface wants what the ground IS. The kinds are declared per SOURCE TAG in derive.js OSM_LU_KIND, never inferred per town and never from the LU class, because `park` arrives both from leisure=park (a lawn) and from a national park boundary spanning dunes and forest. It is a FILTER, not a weight: 30 m2 of sand beats 180 km2 of reserve, because the question is what kind, not how much. landuse=grass is deliberately NOT a cover: a park's own lawn carries that tag, so treating it as a cover displaces the park while changing no surface at all.",
+      "canon": "docs/briefs/BRIEF-land-use-derivation.md \u00b7 cartograph/derive.js OSM_LU_KIND",
+      "check": "node checks/claims-ground-cover-beats-jurisdiction.mjs"
     },
     {
       "id": "r-coast-trust-the-lidar",

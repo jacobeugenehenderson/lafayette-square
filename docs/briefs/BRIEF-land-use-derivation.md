@@ -40,7 +40,7 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 >
 > **Two more joins behind it, both kit-general, both unfixed:**
 > 1. **`OSM_TO_LU` is a 32-entry allow-list.** HPDM brings **54 subtypes it cannot read, 2,446,607 m²** — `amenity:college` 445k · `amenity:hospital` 112k · `landuse:forest` 48k · `natural:grassland` 58k. Same shape as the `lu-policy` vocabulary gap, one stage upstream at ingest.
-> 2. **The OSM vote asks "is the POLYGON's centroid in the face?"** — structurally favouring small polygons. The seminary votes in **1 of the 7 faces it covers**; mapped parking lots outvote the unmapped lawn in the other six. The **reverse** test is YES for all 7, and is what `luForRing` already uses downstream — **the two stages disagree about which direction containment runs.**
+> 2. ~~**The OSM vote asks "is the POLYGON's centroid in the face?"**~~ ✅ **CLOSED 2026-09-25** — a face now takes the land use that **COVERS** it, by area share of the overlap, and a compound feature votes as **outer MINUS its holes**. ⭐ The scale of what the centroid test was losing: Provincetown's median block face is 6,148 m² against a 4,130,249 m² `natural=sand` — **672×** — and 391 of 1,406 features were larger than the median face. ▶ `node checks/claims-a-face-takes-the-land-use-that-covers-it.mjs`
 >
 > ## ▶ NEXT, in dependency order — they do NOT ship independently
 > Fixing only the first moves the seminary from grey `unknown` to grey `parking`.
@@ -167,6 +167,26 @@ Jacob's idea, and the right answer for the kit: **parcels are a US-municipal lux
 ---
 
 ## 4. What is already done — do NOT redo
+
+### ⭐⭐⭐ GROUND COVER BEATS JURISDICTION — ruled by Jacob, 2026-09-25: *"yes, ground cover wins."*
+**A park is who MANAGES the land. Sand is what you are STANDING ON. The surface wants what the
+ground IS.** Where a management polygon and a ground-cover polygon both cover a face, the cover
+takes it; the management class keeps only what no cover claims — lawns, fields, a car park inside
+a park boundary.
+- ⛔ **THE DEFECT THAT FORCED IT.** The moment a face took the class of whatever covered it,
+  Provincetown's dunes became LAWN: `leisure=nature_reserve` admits **180,227,102 m²** to the vote
+  (the Cape Cod National Seashore) against beach's 13,908,598 m². A jurisdiction is almost always
+  the larger claim, so area share alone hands it every shore it contains.
+- ⛔ **IT IS A FILTER, NOT A WEIGHT.** 30 m² of sand beats 180 km² of reserve. The question is what
+  KIND, not how much; anything that makes it a tie-break reintroduces the bug at another scale.
+- ⛔ **THE KINDS ARE DECLARED PER SOURCE TAG** (`derive.js` `OSM_LU_KIND`), never inferred per town
+  and never from the LU class — `park` arrives from `leisure=park` (a lawn) *and* from a national
+  park boundary spanning dunes and forest alike. A tag in neither list votes exactly as before.
+- ⚠️ **`landuse=grass` is deliberately NOT a cover.** A park's own lawn carries that tag, so
+  treating it as a cover displaces the park — measured, it flipped **all of Lafayette Park** and
+  Forest Park — while changing no surface at all, because `park` already renders as lawn.
+▶ `node checks/claims-ground-cover-beats-jurisdiction.mjs` · ruling `r-lu-ground-cover-beats-jurisdiction`
+
 
 **`cartograph/lu-policy.mjs` landed 2026-07-21.** It is the soft/hard policy layer *downstream* of you: which LU classes are plantable, per-scene overridable, with an unrecognized class defaulting **plantable-and-loud** rather than silently hardscape, plus `checkLuVocabulary()` as the detector. `forbidden-surface.mjs` consumes it; `PLANTABLE_LU` is now a derived view, not the policy.
 
