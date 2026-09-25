@@ -14,7 +14,7 @@
 import { useState, useCallback } from 'react'
 import useCary from '../hooks/useCary'
 import { INSTANCE } from '../instance.js'
-import { COPY, NotDeclared } from '../instances/copy/index.jsx'
+import { LEGAL, NotDeclared } from '../instances/copy/index.jsx'
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
@@ -474,8 +474,8 @@ function VehicleStep({ onNext, vehicleType, preview }) {
 
 // ── Step: Agreement ─────────────────────────────────────────
 
-// ⛔ The agreement text is the installation's (src/instances/copy/), never LS's by default.
-const AGREEMENT_SECTIONS = COPY?.legal?.courierSections ?? null
+// ⛔ The agreement text is the installation's DECLARED legal document, never LS's by default.
+const AGREEMENT_SECTIONS = LEGAL?.courierSections ?? null
 
 function AgreementStep({ onNext, preview }) {
   const { onboardingAction, loading, error } = useCary()
@@ -493,11 +493,11 @@ function AgreementStep({ onNext, preview }) {
     <div className="space-y-4">
       <div>
         <h3 className="text-body font-medium text-on-surface">Courier Independent Contractor Agreement</h3>
-        {COPY?.legal ? <p className="text-body-sm text-on-surface-variant mt-1">{COPY.legal.courierParties}</p> : null}
+        {LEGAL ? <p className="text-body-sm text-on-surface-variant mt-1">{LEGAL.courierParties}</p> : null}
       </div>
 
       {/* Summary */}
-      {COPY?.legal?.CourierSummary ? <COPY.legal.CourierSummary /> : <NotDeclared what="courier agreement" legal />}
+      {LEGAL ? <LEGAL.CourierSummary /> : <NotDeclared what="courier agreement" legal />}
 
       {/* Full agreement toggle */}
       <button

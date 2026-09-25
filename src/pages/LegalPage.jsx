@@ -6,11 +6,11 @@
  */
 
 import { INSTANCE } from '../instance.js'
-import { COPY, NotDeclared } from '../instances/copy/index.jsx'
+import { LEGAL, NotDeclared } from '../instances/copy/index.jsx'
 
-// ⛔ This installation's legal documents, or none. Never another town's: they were
-// hardcoded here until 2026-09-24, so every installation served LS's Missouri terms.
-const LEGAL = COPY?.legal ?? null
+// ⛔ The legal documents THIS installation declares (`legal.documents` in its instance
+// module), or none. They were hardcoded here until 2026-09-24, so every installation
+// served LS's Missouri terms whether it had declared them or not.
 
 
 // ── Shared layout ────────────────────────────────────────────
@@ -33,7 +33,7 @@ function LegalShell({ title, subtitle, children }) {
     <div className="fixed inset-0 bg-[#0a0a0f] text-[#e0ddd8] font-mono overflow-y-auto">
       <div className="max-w-2xl mx-auto px-5 py-10">
         <header className="mb-10">
-          <a href="/" className="text-[13px] text-[#e0ddd8]/40 hover:text-[#e0ddd8]/60 transition-colors">&larr; {LEGAL?.homeLabel ?? INSTANCE.domain ?? 'home'}</a>
+          <a href="/" className="text-[13px] text-[#e0ddd8]/40 hover:text-[#e0ddd8]/60 transition-colors">&larr; {INSTANCE.domain ?? 'home'}</a>
           <h1 className="text-[22px] font-medium text-[#e0ddd8] mt-4">{title}</h1>
           {subtitle && <p className="text-[14px] text-[#e0ddd8]/50 mt-1">{subtitle}</p>}
         </header>

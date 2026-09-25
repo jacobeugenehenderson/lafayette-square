@@ -51,6 +51,9 @@ export default {
     entityName: 'Jacob Henderson LLC',
     dba: null,
     governingState: 'Missouri',
+    // Shares LS's Missouri documents by declaration (Jacob, 2026-09-24:
+    // "HPDM can share the MO docs with LS"). See lafayette-square.js.
+    documents: 'cary-missouri',
   },
   commerce: {
     salesTaxRate: 0.09238,   // placeholder — STL County area; refine when delivery is live

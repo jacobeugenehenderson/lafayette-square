@@ -66,6 +66,9 @@ export default {
     entityName: 'Jacob Henderson LLC',
     dba: 'Lafayette Square Deliveries',
     governingState: 'Missouri',
+    // ⭐ The legal documents this installation runs under — an id in
+    // src/instances/copy/index.jsx#LEGAL_DOCUMENTS. Absent = "not declared", never LS's.
+    documents: 'cary-missouri',
   },
 
   // Commerce constants (installation-specific: local sales-tax jurisdiction).
