@@ -96,6 +96,7 @@ export const DEFAULT_LU_COLORS = {
   forest:             '#3E5E2E',  // deep canopy (matches the natural:wood overlay)
   wetland:            '#6A8A72',  // marsh grey-green
   beach:              '#C8B48A',  // sand
+  dune:               '#B4A884',  // sand under sparse beach grass (pending Jacob's eye)
   bare:               '#9A9086',  // rock / scree
   cemetery:           '#8AA07A',  // mown, pale
   verge:              '#6E8A4E',  // H-3 highway verge — mown grass, the median's tone (pending Jacob's eye)

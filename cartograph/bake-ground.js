@@ -145,7 +145,7 @@ const TREELAWN_LU_VARIANTS = [
   'residential', 'commercial', 'vacant', 'vacant-commercial', 'parking',
   'institutional', 'recreation', 'industrial', 'park', 'island', 'unknown',
   'underived',
-  'brownfield', 'agricultural', 'orchard', 'forest', 'wetland', 'beach',
+  'brownfield', 'agricultural', 'orchard', 'forest', 'wetland', 'beach', 'dune',
   'bare', 'cemetery', 'railway', 'verge',
 ]
 // OSM's `water=*` refinement of `natural=water`. ⭐ A pond is not a lake is not
@@ -185,6 +185,7 @@ const PAINT_ORDER = [
   ['face', 'forest'],
   ['face', 'wetland'],
   ['face', 'beach'],
+  ['face', 'dune'],
   ['face', 'bare'],
   ['face', 'cemetery'],
   ['face', 'railway'],

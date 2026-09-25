@@ -124,6 +124,10 @@ export const LU_POLICY = {
   industrial:          'hard',
   railway:             'hard',
   beach:               'hard',
+  // A dune is hard for the same reason a beach is: no census TREE stands on it. Its
+  // beach grass is the sand surface's to place, by relief and nearness to water —
+  // not a roster tree, so not a `planted` row (BRIEF-surface-lab §5).
+  dune:                'hard',
   bare:                'hard',
   // NOTE: 'unknown' is the kit's OWN "derive.js could not classify this parcel"
   // bucket, ratified hard and eye-gated at LS (4 tiles). It is deliberately NOT

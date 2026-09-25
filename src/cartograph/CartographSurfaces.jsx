@@ -136,6 +136,7 @@ const TABS = [
       { id: 'forest',            label: 'Forest',      kind: 'lu' },
       { id: 'wetland',           label: 'Wetland',     kind: 'lu' },
       { id: 'beach',             label: 'Beach',       kind: 'lu' },
+      { id: 'dune',              label: 'Dune',        kind: 'lu' },
       { id: 'bare',              label: 'Bare Ground', kind: 'lu' },
       { id: 'cemetery',          label: 'Cemetery',    kind: 'lu' },
       { id: 'railway',           label: 'Rail Corridor', kind: 'lu' },

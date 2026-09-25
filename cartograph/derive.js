@@ -3291,6 +3291,15 @@ export function deriveLayers(highways) {
     'landuse:forest': 'forest',   // ⚠️ `natural:wood` deliberately NOT re-pointed here — see above
     'natural:wetland': 'wetland', 'natural:mud': 'wetland',
     'natural:beach': 'beach', 'natural:sand': 'beach',
+    // ⭐ A DUNE IS ITS OWN SURFACE (Jacob, 2026-09-24 — `docs/briefs/BRIEF-surface-lab.md §5`).
+    // ⚠️ The TAG is the smaller half of the answer, MEASURED: on Provincetown `natural:dune`
+    // is 11 polygons / 3.8 ha, while `natural:sand` that MassGIS itself calls "COASTAL
+    // DUNE" is 464.6 ha (▶ node scratch/marram-sand-relief.mjs). ⛔ Do not key on
+    // `massgis:*` — that is a Massachusetts-only instance patch. The dunes this tag misses
+    // are the SAND SURFACE's job: one generator serves `beach` + `dune`, and its dune state
+    // is driven by the relief (Boz ruling, 2026-09-24), so a tag only has to be right
+    // where a mapper was sure.
+    'natural:dune': 'dune',
     'natural:bare_rock': 'bare', 'natural:scree': 'bare',
     'landuse:cemetery': 'cemetery', 'amenity:grave_yard': 'cemetery',
     'landuse:railway': 'railway',
