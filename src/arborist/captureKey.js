@@ -50,10 +50,11 @@
  *                (Grove.jsx) instead of the raw library file for substituted species.
  *                Same tree, different pixels — the fingerprint cannot see it, which is
  *                the exact reason this constant exists. First real use.
+ *   hero     4 — 2026-09-24: the hero frame starts at the ground (heroCardFrame).
  *   hero     3 — same
  *   (2 — 2026-08-28 capture frame, local-vs-world; 1 — the implicit, unversioned era.)
  */
-export const CAPTURE_FORMAT = { overhead: 3, hero: 3 }
+export const CAPTURE_FORMAT = { overhead: 3, hero: 4 }
 
 // FNV-1a over the stable-stringified inputs. Short, dependency-free, and stable
 // across runs/machines (JSON.stringify with sorted keys — plain object key order

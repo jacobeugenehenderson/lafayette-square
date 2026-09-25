@@ -1675,6 +1675,7 @@ const server = createServer(async (req, res) => {
           heightM: body.heightM ?? null,
           canopyRadiusM: body.canopyRadiusM ?? null,
           canopyBaseNorm: body.canopyBaseNorm ?? null,
+          frame: body.frame ?? null,   // the frame the images were shot with (heroCardFrame)
           azimuths: body.azimuths ?? null,
           shells: body.shells ?? null,
           // Fingerprint — see the twin note in the overhead handler. The hero key

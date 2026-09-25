@@ -17,6 +17,7 @@
  * merges heroImpostorBySpecies into the FRESH manifest. Crash-safe: fresh GLB per
  * species, ONE shot (azimuth×layer) per frame.
  */
+import { HERO_FRAME_VERSION } from '../components/impostorGeometry.js'
 import { useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -98,6 +99,7 @@ async function postHeroImpostor(look, species, meta, layers) {
     azimuths: meta.azimuths, shells: meta.shells,
     // Rides along for drain-on-bake — see src/arborist/captureKey.js.
     captureKey: meta.captureKey ?? null,
+    frame: meta.frame,
     layers: layers
       .map((l) => ({
         azIdx: l.azIdx, azimuthDeg: l.azimuthDeg, kind: l.kind, shellIdx: l.shellIdx, cardDepthFrac: l.cardDepthFrac,
@@ -207,6 +209,7 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
               canopyBaseNorm: prep.canopyBaseY / Math.max(1e-3, prep.maxY || prep.heightM),
               azimuths: prep.azimuths, shells: prep.shells,
               albedoSize, aoSize, captureKey: sp.captureKey,
+              frame: { v: HERO_FRAME_VERSION, topM: prep.maxY },
             }
             // RETRY on blank — see the twin note in OverheadBaker. The capture is
             // flaky, so refusing on the first blank turns a transient race into a

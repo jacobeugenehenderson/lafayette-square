@@ -22,6 +22,19 @@
  */
 import * as THREE from 'three'
 
+/** Headroom (m) around a tree in every impostor capture frame; capture and card share it. */
+export const IMPOSTOR_FRAME_PAD_M = 1.5
+
+/** Stamped on a hero record by the capture: the frame its images were shot with. */
+export const HERO_FRAME_VERSION = 'ground-v1'
+
+/** The hero frame — square, bottom edge on the ground (y = 0). Capture and card both call it.
+ *  ▶ node checks/claims-a-tree-card-starts-at-the-ground.mjs */
+export function heroCardFrame({ topM, radiusM, pad = IMPOSTOR_FRAME_PAD_M }) {
+  const half = Math.max(Math.max(0.5, radiusM) + pad, Math.max(0, topM) / 2 + pad)
+  return { half, centerY: half }
+}
+
 // Each canopy slab is a CROSS of two perpendicular quads (a "+" billboard) so
 // the silhouette reads from any azimuth without a true octahedral capture
 // (deferred to Phase 2). The trunk is a single cross too. Cheap: a 4-slab
@@ -145,7 +158,7 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
 
   const H = rec.heightM || 14
   const R = Math.max(0.5, rec.canopyRadiusM || 5)
-  const pad = opts.pad ?? 1.5                     // must match captureTreeOverhead's FRAME_PAD_M
+  const pad = opts.pad ?? IMPOSTOR_FRAME_PAD_M
   const discR = R + pad                           // disc extent = capture frame half-extent
 
   const FOLDS = Math.max(3, Math.round(opts.folds ?? 7))          // rim scallop count
@@ -266,7 +279,7 @@ export function buildOverheadBandDisc(rec, opts = {}) {
 
   const H = rec.heightM || 14
   const R = Math.max(0.5, rec.canopyRadiusM || 5)
-  const pad = opts.pad ?? 1.5                     // must match captureTreeOverheadBands' FRAME_PAD_M
+  const pad = opts.pad ?? IMPOSTOR_FRAME_PAD_M
   const half = R + pad                            // half-side of the SQUARE capture frame
 
   // A tessellated full QUAD over the whole square capture frame — NOT a disc.
@@ -326,9 +339,7 @@ export function buildOverheadBandDisc(rec, opts = {}) {
  * The azimuth is fixed per instance → stable, no per-frame swap. For a DEPTH layer
  * the card sits at a local-Z offset so leaf shells + the rear bark layer read as parallax.
  *
- * Canopy-only: the card spans the SAME square capture frame the side-on ortho used —
- * half = max(canopyRadius+pad, canopyHeight/2+pad), centred on the canopy mid-height
- * — so the baked PNG maps 1:1. Full [0,1] UVs cover the square; alphaTest alone
+ * The card spans the capture's frame (`heroCardFrame`: square, bottom on the ground). Full [0,1] UVs cover the square; alphaTest alone
  * defines the leaf silhouette (a rectangular card, exactly like the overhead disc's
  * full-frame quad — a shape-cut plane clipped the off-centre canopy).
  *
@@ -346,13 +357,18 @@ export function buildHeroImpostorCard(rec, opts = {}) {
 
   const H = rec.heightM || 14
   const R = Math.max(0.5, rec.canopyRadiusM || 5)
-  const pad = opts.pad ?? 1.5                       // must match captureImpostor's FRAME_PAD_M
-  const canopyBaseY = Math.min(H - 0.1, Math.max(0, (rec.canopyBaseNorm ?? 0.35) * H))
   const maxY = H
-  const halfW = R + pad
-  const halfH = Math.max(0.5, (maxY - canopyBaseY) / 2 + pad)
-  const half = Math.max(halfW, halfH)               // square frame (mirrors the capture)
-  const midY = (canopyBaseY + maxY) / 2
+  let half, midY
+  if (rec.frame?.v === HERO_FRAME_VERSION) {
+    ;({ half, centerY: midY } = heroCardFrame({ topM: rec.frame.topM, radiusM: R, pad: opts.pad ?? IMPOSTOR_FRAME_PAD_M }))
+  } else {
+    // Record shot before HERO_FRAME_VERSION: read its image as it was framed (the runtime
+    // names these species until the Grove re-shoots them). Delete once the check finds none.
+    const pad = opts.pad ?? IMPOSTOR_FRAME_PAD_M
+    const canopyBaseY = Math.min(H - 0.1, Math.max(0, (rec.canopyBaseNorm ?? 0.35) * H))
+    half = Math.max(R + pad, Math.max(0.5, (maxY - canopyBaseY) / 2 + pad))
+    midY = (canopyBaseY + maxY) / 2
+  }
 
   // Card depth → local-Z offset. cardDepthFrac 0=front (toward viewer) → 1=back; the
   // canopy depth spans ±R about centre, so z = (1 − 2·d)·R separates the layers. This

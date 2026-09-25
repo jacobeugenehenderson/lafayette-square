@@ -35,6 +35,7 @@ import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { stampTreeVertexAttrs } from './treeAtlasMaterial.js'
+import { heroCardFrame, IMPOSTOR_FRAME_PAD_M } from './impostorGeometry.js'
 
 // One shared loader for all captures. The tree GLBs carry no DRACO/meshopt (only
 // EXT_texture_webp, which we don't read — the material is overridden with the
@@ -61,7 +62,7 @@ const CAPTURE_SIZE = 512
 // elevation — a billboard textured with a perspective render would look wrong
 // at the silhouette edges. The camera distance is irrelevant for ortho; we only
 // need the half-span the frustum spans.
-const FRAME_PAD_M = 1.5   // metres of headroom around the tree's box
+const FRAME_PAD_M = IMPOSTOR_FRAME_PAD_M
 
 export function invalidateImpostorCaptures(lookName) {
   if (!lookName) {
@@ -146,14 +147,11 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     cam.up.set(0, 0, -1)
     cam.lookAt(0, 0, 0)
   } else if (opts.sideOn) {
-    // HERO (low side-on) capture — the CANOPY-ONLY leaf mass seen level from the
-    // side, the skin for the hero canopy-band billboard (HANDOFF-hero-impostor-
+    // HERO (low side-on) capture — the tree seen level from the side, ground up, the skin for the hero canopy-band billboard (HANDOFF-hero-impostor-
     // foundation.md). The 90°-rotated twin of the overhead band cut: overhead looks
     // DOWN and clips HEIGHT bands; hero looks HORIZONTAL and clips DEPTH shells.
     //
-    //  • Canopy-only: the frustom is framed on [canopyBaseY, maxY] (trunk excluded),
-    //    centred on the canopy mid-height, looked at DEAD-HORIZONTAL (Jacob's pitch
-    //    call 2026-07-17 — cleanest side elevation, no foreshortening).
+    //  • Framed by `heroCardFrame` (square, bottom on the ground), looked at dead-horizontal.
     //  • Azimuth: the camera orbits the tree about Y by opts.sideOn.azimuthRad, so N
     //    azimuths capture N sides; the runtime billboard shows the one nearest the
     //    view direction (classic azimuthal impostor).
@@ -163,10 +161,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     //    layers — the exact overhead height-band trick, turned on its side.
     const { azimuthRad = 0, canopyBaseY = 0, maxY = heightM, depthLoFrac = 0, depthHiFrac = 1 } = opts.sideOn
     const R = Math.max(0.5, canopyRadiusM)
-    const halfW = R + FRAME_PAD_M
-    const halfH = Math.max(0.5, (maxY - canopyBaseY) / 2 + FRAME_PAD_M)
-    const half = Math.max(halfW, halfH)                 // square frame + square RT (like overhead)
-    const midY = (canopyBaseY + maxY) / 2
+    const { half, centerY: midY } = heroCardFrame({ topM: maxY, radiusM: R })
     const D = half * 4 + 50                              // orbit radius (arbitrary for ortho)
     // Depth shell → near/far clip along the (horizontal) view axis. The canopy's
     // depth extent about the centre is ±R; fractions [0,1] map front(D−R)→back(D+R).
@@ -561,7 +556,7 @@ export function captureOverheadBand(gl, prep, i) {
 
 // ── HERO canopy impostor (side-on) — the 90°-rotated twin of the overhead bands ──
 // Where overhead slices HEIGHT bands from directly above, the hero slices DEPTH
-// (leaf shells + one rear woody layer) from the side, across N azimuths, canopy-only.
+// (leaf shells + one rear woody layer) from the side, across N azimuths.
 // The N azimuths are NOT a view-dependent swap (wasted bulk, deferred — Jacob
 // 2026-07-17); they are the per-instance VARIETY pool — each of a species' instances
 // is assigned one fixed azimuth so 88 sugar maples aren't 88 identical cards. The
@@ -596,7 +591,7 @@ function isLeafMesh(o) {
  * prepareHeroBands — clone + materialize a tree for the hero side-on capture and
  * lay out the flat shot list (azimuths × depth-shells). Mirrors prepareOverheadBands:
  * the clone SHARES geometry (no 2nd GPU copy) and `alreadyStamped` skips re-stamping
- * the live preview's buffers. Canopy-only: the vertical frame is [canopyBaseY, maxY].
+ * the live preview's buffers. The vertical frame is `heroCardFrame` (ground up).
  *
  * @param {THREE.Object3D} gltfScene    the tree scene (live preview or a fresh load)
  * @param {THREE.Material}  treeMaterial the shared atlas material

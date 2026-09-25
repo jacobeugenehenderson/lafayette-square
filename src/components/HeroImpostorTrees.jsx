@@ -21,7 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { loadImpostorTexture } from './impostorTexture.js'
 import * as THREE from 'three'
-import { buildHeroImpostorCard } from './impostorGeometry.js'
+import { buildHeroImpostorCard, HERO_FRAME_VERSION } from './impostorGeometry.js'
 import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
 import { treeGroundRaw } from '../utils/elevation'
 import { treeDbg } from './OverheadTrees.jsx'
@@ -87,6 +87,7 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
   const assets = useMemo(() => {
     if (!enabled || !heroImpostorBySpecies || !species?.length) return null
     const out = new Map()
+    const stale = []
     for (const sp of species) {
       const rec = heroImpostorBySpecies[sp]
       if (!rec?.layers?.length) continue
@@ -110,11 +111,15 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
         .sort((a, b) => a[0] - b[0])
         .map(([azIdx, layers]) => ({ azIdx, layers }))
       if (!azSets.length) continue
+      if (rec.frame?.v !== HERO_FRAME_VERSION) stale.push(sp)
       out.set(sp, {
         heightM: rec.heightM, canopyRadiusM: rec.canopyRadiusM, canopyBaseNorm: rec.canopyBaseNorm,
+        frame: rec.frame ?? null,
         azimuths: rec.azimuths, shells: rec.shells, azSets,
       })
     }
+    if (stale.length) console.error(`[HeroImpostorTrees] ⛔ ${lookName}: hero cards shot before the ground frame — ${stale.join(', ')}. `
+      + `Their trunks stop above the ground until the Grove re-shoots them (Bake → Slab in the Grove).`)
     return out.size ? out : null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, lookName, heroImpostorBySpecies, species, gl])
@@ -175,6 +180,7 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
     heightM: asset.heightM || 14,
     canopyRadiusM: asset.canopyRadiusM || 5,
     canopyBaseNorm: asset.canopyBaseNorm,
+    frame: asset.frame,
   }), [asset])
 
   // Partition instances by assigned azimuth (the variety pool).
