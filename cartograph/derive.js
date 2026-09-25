@@ -24,6 +24,7 @@ import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
 import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH, isHighwayClass, highwayStandard, highwaySection, townState } from '../src/cartograph/streetProfiles.js'
+import { expresswaySpeeds } from './speedContext.mjs'
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
@@ -5333,6 +5334,22 @@ export function deriveLayers(highways) {
     if (existsSync(skPath)) {
       const sk = JSON.parse(readFileSync(skPath, 'utf-8'))
       skOffGrade = new Set((sk.streets || []).filter(st => st.bridge || st.tunnel || (st.layer | 0) !== 0).map(st => st.id))
+      // ⭐ THE SPEED EACH EXPRESSWAY SPAN IS DRAWN FOR, AND ITS EDGE (`speedContext.mjs`, q-atgrade-expressway-edge):
+      // posted maxspeed on the chain's own ways, else the state's statutory default for its context, else [U] — and
+      // the edge the governing manual gives that speed. Stamped on the ribbons street (`speed`) and printed per span;
+      // ⛔ every basis is disclosed (posted / statutory / [U]), and a [U] edge leaves the construction as it was.
+      {
+        const E = expresswaySpeeds(sk.streets || [], osmData, townState(osmData).code)
+        const byId = new Map(ribbonsLayer.streets.map(r => [r.skelId, r]))
+        for (const row of E.rows) { const r = byId.get(row.id); if (r) r.speed = { candidates: row.candidates, basis: row.basis, cites: row.cites, unknowns: row.unknowns, edge: row.edge, threshold: row.threshold } }
+        if (E.facilities.length) {
+          console.log(`    [expressway speed] ${E.facilities.length} at-grade expressway facility/ies · municipal boundaries: ${E.municipal.join(', ') || 'none in the data'}`)
+          for (const F of E.facilities) { const t = F.test
+            console.log(`      ${F.chains.map(c => c.id).join(' ')} — ORC 4511.01(ZZ) crossroads: ${t.atGrade} at grade · ${t.separated} separated · ${t.contradictory} contradictory ⇒ legal expressway ${t.legalExpressway}`)
+            for (const r of t.rows.filter(r => r.contradictory)) console.log(`        ⛔ CONTRADICTORY DATA: ${r.name} — ${r.why.join('; ')}`) }
+          for (const row of E.rows) console.log(`      ${row.id}: ${row.candidates.length ? row.candidates.join(' or ') + ' mph' : '[U]'} (${row.basis}) ⇒ edge ${row.edge}${row.unknowns.length ? ' · ' + row.unknowns.join(' · ') : ''}`)
+        }
+      }
       // ⭐⭐⭐ TESSELLATE THE CURVE PRIMITIVE. `st.points` is the CONTROL POLYGON — the smoothness
       // lives in `st.segments`, and reading the anchors alone minted every curve into ① as a
       // straight chord (LS: 225 beziers over 9,948 m, sagitta median 1.34 m / max 20.80 m).
