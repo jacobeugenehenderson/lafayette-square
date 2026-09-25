@@ -115,6 +115,60 @@ function resample(pts, step) {
  * @param {number} waterRunCount          deduped `__water__` runs found in `shape.json`
  * @returns {'build'|'inland'|'stale-terrain'}
  */
+/**
+ * ⭐⭐ SPLIT A SHORELINE TRACE AT THE EDGE OF THE DRAWING.
+ *
+ * ⛔ THE DISC IS AUTHORITATIVE FOR ANY CONSUMER OF THE DRAWING — canon, and the reason is that
+ * the circle is stamped LAST: what it excludes is not in the map. Shore beyond it is not
+ * unarmoured, not refused and not a defect; it is OUTSIDE THE DRAWING, and the only honest
+ * thing to do with it is COUNT it and say so.
+ *
+ * ⛔⛔ AND IT MUST NEVER BE PROBED. MEASURED on Provincetown, 2026-09-25: the heightfield spans
+ * ±5,340 m (it follows the applied radius, 5290) while the coast ink still spans the OSM bb at
+ * ±8,831 m, so **8% of shore vertices had no terrain under them at all** — a sample at
+ * (8831, 5639) reads NaN. Those stations were being handed to `wetSideOf`, which cannot find
+ * water in a heightfield that does not reach them, and the arc was then REFUSED as "not at a
+ * water edge". ⭐ That is a false statement about the town: the shore is not dry there, it is
+ * off the map. A refusal that is really an extent mismatch is the plausible-looking failure
+ * this kit rates worst, and it is worse here than silence because it accuses the DATA.
+ *
+ * @returns {{ inside: number[][][], outsideM: number }} the runs within the disc, and the
+ *          metres discarded — never merged into `refused`.
+ */
+export function clipTraceToDisc(trace, center, R) {
+  if (!Array.isArray(trace) || trace.length < 2 || !Array.isArray(center) || !(R > 0)) {
+    return { inside: trace && trace.length >= 2 ? [trace] : [], outsideM: 0 }
+  }
+  const d2 = (p) => (p[0] - center[0]) ** 2 + (p[1] - center[1]) ** 2
+  const R2 = R * R
+  const seg = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1])
+  // the point where segment a→b crosses the circle, by bisection on the chord —
+  // ⭐ good to a millimetre in ~20 steps and free of the quadratic's sign cases
+  const cross = (a, b) => {
+    let lo = 0, hi = 1
+    for (let k = 0; k < 24; k++) {
+      const m = (lo + hi) / 2
+      const q = [a[0] + (b[0] - a[0]) * m, a[1] + (b[1] - a[1]) * m]
+      if ((d2(q) <= R2) === (d2(a) <= R2)) lo = m; else hi = m
+    }
+    const m = (lo + hi) / 2
+    return [a[0] + (b[0] - a[0]) * m, a[1] + (b[1] - a[1]) * m]
+  }
+  const inside = []; let cur = null, outsideM = 0
+  for (let i = 0; i < trace.length; i++) {
+    const p = trace[i], within = d2(p) <= R2
+    if (within) {
+      if (!cur) { cur = []; if (i > 0) { const x = cross(trace[i - 1], p); cur.push(x); outsideM += seg(trace[i - 1], x) } }
+      cur.push(p)
+    } else {
+      if (cur) { const x = cross(trace[i - 1], p); cur.push(x); outsideM += seg(x, p); inside.push(cur); cur = null }
+      else if (i > 0) outsideM += seg(trace[i - 1], p)
+    }
+  }
+  if (cur) inside.push(cur)
+  return { inside: inside.filter(r => r.length >= 2), outsideM }
+}
+
 export function coastAgreement(datum, waterRunCount) {
   if (datum === 'water') return 'build'
   return waterRunCount > 0 ? 'stale-terrain' : 'inland'
@@ -211,12 +265,33 @@ export function bakeRevetment({ scene, look }) {
     return { arcs: [], reason: 'no-shoreline' }
   }
 
+  // ⭐ THE DISC — the edge of the drawing. Read from the town's own boundary, and ⛔ REFUSED
+  // LOUDLY rather than defaulted: a missing radius would silently make the whole bb the
+  // drawing, and shore outside the map would be reported as dry shore inside it.
+  const bndPath = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
+  if (!existsSync(bndPath)) throw new Error(`bake-revetment: ${scene} has no neighborhood_boundary.json — the disc is what says which shore is in the drawing, and without it every arc would be ruled as though the whole fetch were the map.`)
+  const bnd = JSON.parse(readFileSync(bndPath, 'utf8'))
+  const discC = Array.isArray(bnd.center) ? bnd.center : null
+  const discR = Number.isFinite(bnd.radius) ? bnd.radius : NaN
+  if (!discC || !(discR > 0)) throw new Error(`bake-revetment: ${scene}'s neighborhood_boundary.json has no usable center/radius (center=${JSON.stringify(bnd.center)}, radius=${bnd.radius}).`)
+
   const armourAt = shoreArmourFor(osm.ground || {})
   const arcs = [], refused = [], why = {}
-  let ruledM = 0, armouredM = 0, refusedM = 0
+  let ruledM = 0, armouredM = 0, refusedM = 0, outsideM = 0
+  const outside = []
 
+  // ⛔⛔ CLIP TO THE DRAWING BEFORE ANYTHING ELSE. Shore beyond the disc has no terrain under
+  // it, so probing it asks a heightfield a question it cannot answer and then blames the
+  // answer on the coast. It is COUNTED as outside and never ruled. (`clipTraceToDisc`.)
+  const clipped = []
   for (let idx = 0; idx < raw.length; idx++) {
-    const trace = raw[idx]
+    const { inside, outsideM: cut } = clipTraceToDisc(raw[idx], discC, discR)
+    if (cut > 0) { outsideM += cut; outside.push({ index: idx, outsideM: +cut.toFixed(1), keptRuns: inside.length }) }
+    for (const run of inside) clipped.push(run)
+  }
+
+  for (let idx = 0; idx < clipped.length; idx++) {
+    const trace = clipped[idx]
     const len = trace.reduce((a, p, i) => i ? a + Math.hypot(p[0] - trace[i-1][0], p[1] - trace[i-1][1]) : 0, 0)
 
     // ⭐ THE WET SIDE VOTES ON THE UNTOUCHED TRACE. Simplifying first smooths away
@@ -350,7 +425,11 @@ export function bakeRevetment({ scene, look }) {
     // waterline, which is the defect this replaced.
     crestProbeM: +gridM.toFixed(3),
     waterDatum: tm.datum,
-    totals: { ruledM: +ruledM.toFixed(1), armouredM: +armouredM.toFixed(1), refusedM: +refusedM.toFixed(1) },
+    // ⭐ FOUR NUMBERS, NOT THREE. `outsideM` is shore the DRAWING does not contain — it is not
+    // refused, not unarmoured, and not a defect, and folding it into any of those would be a
+    // false statement about the town.
+    totals: { ruledM: +ruledM.toFixed(1), armouredM: +armouredM.toFixed(1), refusedM: +refusedM.toFixed(1), outsideM: +outsideM.toFixed(1) },
+    outside,
     // Why each station was ruled as it was — the census, not the per-station string.
     census: why,
     arcs,
@@ -362,6 +441,9 @@ export function bakeRevetment({ scene, look }) {
   const kb = (JSON.stringify(out).length / 1024).toFixed(0)
   console.log(`[bake-revetment] scene=${scene} look=${lookId}: ${arcs.length} arc(s) ruled, ${refused.length} refused`)
   console.log(`  ${(ruledM/1000).toFixed(2)} km ruled · ${(armouredM/1000).toFixed(2)} km armoured (${(100*armouredM/Math.max(1,ruledM)).toFixed(0)}%) · ${(refusedM/1000).toFixed(2)} km refused`)
+  // ⭐ Said on its own line and only when non-zero: merging it with `refused` would report the
+  // edge of our own drawing as a fact about the town's shore.
+  if (outsideM > 0) console.log(`  ⭐ ${(outsideM/1000).toFixed(2)} km of shoreline lies OUTSIDE THE DRAWING (beyond the ${Math.round(discR)} m disc) across ${outside.length} arc(s) — counted, not refused: the circle is stamped last and what it excludes is not in the map.`)
   for (const r of refused) console.log(`  ⛔ refused arc #${r.index} (${r.lengthM} m): ${r.why}`)
   const total = Object.values(why).reduce((a, b) => a + b, 0)
   console.log(`  stations: ${Object.entries(why).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `${k} ${v}`).join(' · ')}`)
