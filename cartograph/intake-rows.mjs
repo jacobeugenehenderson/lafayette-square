@@ -494,25 +494,31 @@ export const INTAKE_ROWS = [
     doc: 'TREE-INTAKE.md',
   },
 
-  // The four census layers are spatially DISJOINT layers of one census,
-  // unioned — not alternatives (`tree-bake-inputs.mjs:100`). All four absent →
-  // `treeBakeInputsForMap` returns null, no trees, an honest zero.
+  // The census layers are spatially DISJOINT layers of one census, unioned — not
+  // alternatives (`treeBakeInputsForMap`). All absent → it returns null, no trees,
+  // an honest zero.
   {
     id: 'census-city', domain: 'cartograph', tier: 'elective',
-    label: 'City tree census',
+    label: 'Municipal tree inventory',
+    /**
+     * ⭐ ONE ROW, HOWEVER MANY WELLS THE TOWN HAS (Jacob, 2026-09-24). This used to be two
+     * rows, and the second — "Forestry layer 4" — was one St. Louis MapServer layer filed as
+     * a kit input. A town's municipal inventory may live in a city forestry layer, a
+     * regional planimetric set, or several at once; the row asks whether ANY is on disk.
+     * ⚠️ The two filenames are still the ones `treeBakeInputsForMap` reads. Renaming the
+     * producer's files is the tree row's phase-2 work, not this row's.
+     */
+    present: (dir) => {
+      for (const f of ['park_trees.json', 'forest_park_trees.json']) {
+        const p = join(dir, 'clean', f)
+        if (existsSync(p)) { const st = statSync(p); if (st.size > 0) return { present: true, bytes: st.size, mtime: st.mtimeMs } }
+      }
+      return { present: false }
+    },
     path: 'clean/park_trees.json',
     unlocks: 'real tree positions with measured species and DBH',
     absent: { kind: ABSENT.HONEST_ZERO, note: 'this census layer drops out' },
-    acquisition: { kind: ACQUIRE.SOURCE, note: 'municipal forestry inventory — often a records request' },
-    doc: 'TREE-INTAKE.md',
-  },
-  {
-    id: 'census-forest-park', domain: 'cartograph', tier: 'elective',
-    label: 'Forestry layer 4',
-    path: 'clean/forest_park_trees.json',
-    unlocks: 'a richer species prior where the layer reaches',
-    absent: { kind: ABSENT.HONEST_ZERO, note: 'this census layer drops out' },
-    acquisition: { kind: ACQUIRE.SOURCE, note: 'St. Louis FORESTRY_TREES/MapServer/4 — free, STL-shaped' },
+    acquisition: { kind: ACQUIRE.SOURCE, note: 'a city, county or regional forestry inventory — per-town search' },
     doc: 'TREE-INTAKE.md',
   },
   {
