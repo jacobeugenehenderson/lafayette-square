@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CLAIM — A HIGHWAY IS ONE ROAD, NOT A ROW OF FRAGMENTS (H-3 check 1, BRIEF-highway-build).
+// CLAIM — A HIGHWAY IS ONE ROAD, NOT A ROW OF FRAGMENTS (H-3 check 1, cartograph/_archive/BRIEF-highway-build-plan-2026-09-23.md).
 //
 // OSM cuts a freeway into a new way wherever a tag changes, and each unnamed way used to become its
 // own chain — so the highway drew with a visible joint at every cut. `skeleton.js`

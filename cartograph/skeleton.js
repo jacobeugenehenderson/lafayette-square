@@ -1637,7 +1637,7 @@ function buildNodeGraph(streets) {
   return { degree, junctions }
 }
 
-// ⭐ THE HIGHWAY WELD (H-3 ruling f, BRIEF-highway-build step 0.3). OSM cuts a freeway into
+// ⭐ THE HIGHWAY WELD (H-3 ruling f, cartograph/_archive/BRIEF-highway-build-plan-2026-09-23.md step 0.3). OSM cuts a freeway into
 // a way wherever a tag changes (lanes, a bridge, a ref), and each unnamed way became its own
 // chain — so the highway was drawn as fragments with a visible joint at every cut.
 // A joint welds when two chains of the SAME highway class, both grade-separated and the same

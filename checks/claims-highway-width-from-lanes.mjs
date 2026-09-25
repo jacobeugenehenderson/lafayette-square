@@ -2,7 +2,7 @@
 // CLAIM — A HIGHWAY'S WIDTH IS ITS LANES, AND EVERY VALUE SAYS WHERE IT CAME FROM (H-3 check 2).
 //
 // `streetProfiles.js highwaySection` composes each carriageway side from its lanes and the cited
-// values in `references/registry.json` (BRIEF-highway-build step 1):
+// values in `references/registry.json` (cartograph/_archive/BRIEF-highway-build-plan-2026-09-23.md step 1):
 //   one-way   left = n·w/2 + leftShoulder     right = n·w/2 + rightShoulder
 //   two-way   both = n·w/2 + rightShoulder
 // This check re-derives every side, per lane span, FROM THE REGISTRY (never a copy of its numbers)

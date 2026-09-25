@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // CLAIM — EVERY HIGHWAY END IS ACCOUNTED FOR, AND AN AT-GRADE END LIES INSIDE THE TOWN'S ASPHALT (H-3 check 5).
 //
-// A highway chain ends in one of a few ways, and each is drawn deliberately (BRIEF-highway-build step 5):
+// A highway chain ends in one of a few ways, and each is drawn deliberately (cartograph/_archive/BRIEF-highway-build-plan-2026-09-23.md step 5):
 //   AT-GRADE  its end is a vertex of a town street — a ramp terminal (the street passes through: H BUTTS at
 //             the town centreline and the town asphalt draws over it) or an END-TO-END handoff (the street
 //             continues it: H tapers to the street's own width, `tileGround` "END-TO-END");
