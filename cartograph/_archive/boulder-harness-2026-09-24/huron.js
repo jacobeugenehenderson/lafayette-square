@@ -30,7 +30,7 @@
  * with a guess. It is reported, with its reason, and left out.
  */
 
-import { shoreArmourFor, wetSideOf, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../../cartograph/shore-armour.mjs'
+import { shoreArmourFor, wetSideOf, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../shore-armour.mjs'
 
 /** How far landward to sample for the crest. A shoreline arc sits AT the water, so
  *  the terrain on it is ~0 by construction; the wall is what stands behind it. */

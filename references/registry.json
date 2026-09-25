@@ -929,7 +929,7 @@
       "codeSites": [
         "cartograph/bake-revetment.js — the station loop; was heightAt(x, z) ON the arc, now one grid step landward",
         "cartograph/shore-armour.mjs — MIN_ARMOUR_D50_M is the threshold the crest is judged against; wetSideOf's maxProbe = 6 * gridM is the same grid-step currency",
-        "src/harness/boulders/huron.js — CREST_PROBE_M, which had this right before the bake did"
+        "cartograph/_archive/boulder-harness-2026-09-24/huron.js (archived harness) — CREST_PROBE_M, which had this right before the bake did"
       ],
       "findings": [
         "r-revetment-crest-one-grid-step"

@@ -12,7 +12,7 @@
  * ⚠️ NOT WIRED INTO THE MAP, ON PURPOSE. Placement along the shore is
  * `BRIEF-boulder-revetment §8`'s bake-time job and is explicitly out of this
  * probe's bounds. The only consumer today is the harness at
- * `/boulders.html`. Harness first — never eye-gate an unready construction in
+ * `/boulders.html` (now `/lab.html?look=huron&at=revetment`). Harness first — never eye-gate an unready construction in
  * the operator's view.
  *
  * ⭐ PER-INSTANCE COLOUR IS FREE AND IT IS THE CHEAPEST VARIANCE LEVER WE HAVE.

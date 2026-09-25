@@ -12,7 +12,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { loadHuronShore, profileArc, crestFn, bandFolds, arcFaces } from '../src/harness/boulders/huron.js'
+import { loadHuronShore, profileArc, crestFn, bandFolds, arcFaces } from '../cartograph/_archive/boulder-harness-2026-09-24/huron.js'
 import { revetmentDrape } from '../src/lib/revetmentDrape.js'
 import { shoreContext, chunkStones, verifySeams, CHUNK_M } from '../src/lib/shoreChunks.js'
 

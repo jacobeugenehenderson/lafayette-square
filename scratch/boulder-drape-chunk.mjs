@@ -16,7 +16,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { loadHuronShore, profileArc, crestFn, arcFaces } from '../src/harness/boulders/huron.js'
+import { loadHuronShore, profileArc, crestFn, arcFaces } from '../cartograph/_archive/boulder-harness-2026-09-24/huron.js'
 import { revetmentDrape, drapeGlobals } from '../src/lib/revetmentDrape.js'
 
 const ROOT = path.resolve(import.meta.dirname, '..')

@@ -27,7 +27,7 @@ evict-when: the lab runs the real environment on a real baked town; the boulders
 
 ## 1. The template: why the boulder harness worked
 
-`boulders.html` → `src/harness/boulders/` **imports the production pieces rather than copying them**:
+`boulders.html` → `src/harness/boulders/` *(archived 2026-09-24 → `cartograph/_archive/boulder-harness-2026-09-24/`; `boulders.html` now redirects to the lab)* **imports the production pieces rather than copying them**:
 - `components/InstancedBoulders.jsx`
 - `components/revetmentMaterial.js`
 - `lib/boulderGeometry.js`
@@ -139,7 +139,7 @@ What is checkable, and must be (mutation-test each: seen to FAIL):
 - `arborist/ARCHITECTURE.md` (placement of sparse plants, if the beach grass needs it).
 
 **Code:**
-- `src/harness/boulders/*`;
+- `cartograph/_archive/boulder-harness-2026-09-24/*` (the archived boulder harness — the template, now retired into the lab);
 - `src/components/grassMaterial.js`, `BakedGround.jsx`, `groundColorState.js`;
 - `lib/weather-uniforms.js`;
 - `cartograph/bake-ground-ao.js`.

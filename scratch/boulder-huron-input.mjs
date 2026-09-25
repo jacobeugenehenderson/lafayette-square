@@ -19,7 +19,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { loadHuronShore, profileArc, crestFn } from '../src/harness/boulders/huron.js'
+import { loadHuronShore, profileArc, crestFn } from '../cartograph/_archive/boulder-harness-2026-09-24/huron.js'
 import { RIPRAP_REPOSE_DEG, MIN_ARMOUR_D50_M } from '../cartograph/shore-armour.mjs'
 
 const TAN = Math.tan(RIPRAP_REPOSE_DEG * Math.PI / 180)

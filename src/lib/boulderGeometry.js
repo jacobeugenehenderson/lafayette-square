@@ -21,7 +21,7 @@
  * count costs a DRAW CALL each, which is the expensive axis; raising the rotation
  * and scale variance costs nothing at all. Spend there.
  *
- * ▶ See them: http://localhost:5173/boulders.html   (vite is already running; ⛔ do not start another)
+ * ▶ See them: http://localhost:5173/lab.html?look=huron&at=revetment   (vite is already running; ⛔ do not start another)
  */
 
 import * as THREE from 'three'

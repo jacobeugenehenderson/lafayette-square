@@ -19,8 +19,8 @@
  * Jitter, rotation, scale variance and deliberate overlap are the feature.
  */
 
-import { rng, seedAt } from '../../lib/boulderGeometry.js'
-import { MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../../cartograph/shore-armour.mjs'
+import { rng, seedAt } from '../../../src/lib/boulderGeometry.js'
+import { MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../shore-armour.mjs'
 
 const TAN_REPOSE = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
 

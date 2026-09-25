@@ -12,7 +12,7 @@
  *     the trade is visible rather than asserted.
  */
 import { shoreContext, chunkStones, verifySeams, CHUNK_M } from '../src/lib/shoreChunks.js'
-import { demoShoreline, huronLikeCrest } from '../src/harness/boulders/heap.js'
+import { demoShoreline, huronLikeCrest } from '../cartograph/_archive/boulder-harness-2026-09-24/heap.js'
 
 const poly = demoShoreline({ length: 120 })
 const mk = (oversample) => shoreContext({ poly, crestAt: huronLikeCrest, oversample })

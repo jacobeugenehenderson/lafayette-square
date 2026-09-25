@@ -10,7 +10,7 @@
  * Stone costs ZERO slab bytes.
  *
  * ⛔ NOT A SECOND IMPLEMENTATION. Every piece here already existed and was proven
- * in the harness at `/boulders.html` before anything reached the operator's map:
+ * in the harness at `/boulders.html` (now the surface lab, `/lab.html?look=huron&at=revetment`) before anything reached the operator's map:
  *   · `revetmentFromSlab.js` — the artifact → `{poly, crestAt}` adapter, and the
  *     ORIENTATION RULE. Shared with `checks/`, so the check audits what renders.
  *   · `shoreChunks.js`      — candidate stones as a function of position, with

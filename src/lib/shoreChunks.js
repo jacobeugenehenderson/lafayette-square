@@ -1,7 +1,7 @@
 /**
  * shoreChunks.js — THE STONES ARE A FUNCTION OF POSITION, NOT A LIST.
  *
- * ⭐ Promoted out of `src/harness/boulders/` 2026-09-23 when the revetment was
+ * ⭐ Promoted out of `src/harness/boulders/` (archived 2026-09-24 → `cartograph/_archive/boulder-harness-2026-09-24/`) 2026-09-23 when the revetment was
  * installed in the map. ⛔ It was never harness-specific — every input is a
  * parameter — and the alternative was a second copy in the player, which is the
  * one thing this project will not have: one painter, not two that agree today.

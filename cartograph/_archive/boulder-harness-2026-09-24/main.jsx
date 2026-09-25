@@ -1,4 +1,14 @@
 /**
+ * ⛔ ARCHIVED 2026-09-24 (Jacob: "repoint and retire"). Retired for CURRENCY, not truth.
+ * The boulder harness moved into the SURFACE LAB, which draws the revetment with the
+ * map's own `SlabRevetment` under the real sky, sun and water:
+ *   ▶ http://localhost:5173/lab.html?look=huron&at=revetment
+ * It was not copied in: its own hemisphere + directional rig and bank/water materials
+ * are a second pipeline (`node checks/claims-lab-imports-never-reimplements.mjs`
+ * flags this file 4×). `heap.js` / `huron.js` stay importable from here — the
+ * `scratch/boulder-*.mjs` forensics read them. This page no longer runs.
+ */
+/**
  * Boulder harness — TWO WAYS TO MAKE A REVETMENT, SIDE BY SIDE, WITH THE BILL.
  * ▶ http://localhost:5173/boulders.html
  *
