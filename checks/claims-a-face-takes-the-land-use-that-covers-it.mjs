@@ -27,13 +27,20 @@
 // Read-only, hermetic — no town needed, so it cannot pass vacuously in a worktree.
 import { luCoverageForFace } from '../cartograph/derive.js'
 
+// ⭐ `luCoverageForFace` returns { [sourceTag]: { lu, area } } — keyed by TAG, because the
+// precedence rule (`luWinnerFromCoverage`) must know whether a claim is a ground cover or a
+// jurisdiction, and the LU class cannot carry that. These two helpers roll it back up to
+// "which class, and how much", which is what THIS check is about.
+const byLu = (cov) => { const o = {}; for (const v of Object.values(cov)) o[v.lu] = (o[v.lu] || 0) + v.area; return o }
+
 let failed = false
 const say = (ok, msg) => { if (!ok) failed = true; console.log(`  ${ok ? '✅' : '⛔'} ${msg}`) }
 const box = (x0, z0, x1, z1) => [{ x: x0, z: z0 }, { x: x1, z: z0 }, { x: x1, z: z1 }, { x: x0, z: z1 }]
 const bbOf = (r) => { let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity
   for (const p of r) { if (p.x < a) a = p.x; if (p.x > b) b = p.x; if (p.z < c) c = p.z; if (p.z > d) d = p.z }
   return [a, b, c, d] }
-const poly = (lu, ring, holes = []) => ({ lu, ring, holes, bb: bbOf(ring) })
+let _t = 0
+const poly = (lu, ring, holes = []) => ({ lu, tag: `test:${lu}${_t++}`, ring, holes, bb: bbOf(ring) })
 const best = (o) => { let k = null, v = 0; for (const [a, b] of Object.entries(o)) if (b > v) { v = b; k = a } return k }
 
 // ── ① COVERAGE, NOT CENTROID ──────────────────────────────────────────────────
@@ -41,7 +48,7 @@ const best = (o) => { let k = null, v = 0; for (const [a, b] of Object.entries(o
   // a 2 km sand sheet whose centroid is far from this 100 m face
   const sand = poly('beach', box(-1000, -1000, 1000, 1000))
   const face = box(800, 800, 900, 900)          // inside the sheet, nowhere near its centroid
-  const got = luCoverageForFace(face, [sand])
+  const got = byLu(luCoverageForFace(face, [sand]))
   say(best(got) === 'beach', `a face COVERED by a 2 km sheet takes its class though the centroid is 1.1 km away — got ${best(got) ?? 'nothing'}`)
   say(Math.abs((got.beach ?? 0) - 10000) < 50, `and the vote is the OVERLAP area, 10,000 m² — got ${Math.round(got.beach ?? 0).toLocaleString()}`)
 }
@@ -50,7 +57,7 @@ const best = (o) => { let k = null, v = 0; for (const [a, b] of Object.entries(o
   const big  = poly('beach', box(-500, -500, 500, 500))       // covers the face entirely
   const tiny = poly('parking', box(0, 0, 10, 10))             // centroid inside, 100 m²
   const face = box(-50, -50, 50, 50)
-  const got = luCoverageForFace(face, [big, tiny])
+  const got = byLu(luCoverageForFace(face, [big, tiny]))
   say(best(got) === 'beach', `10,000 m² of coverage beats a 100 m² feature whose centroid sits inside — got ${best(got)}`)
 }
 
@@ -59,21 +66,21 @@ const best = (o) => { let k = null, v = 0; for (const [a, b] of Object.entries(o
   // a wood with a pond punched out of it; the face sits INSIDE the pond
   const wood = poly('park', box(-500, -500, 500, 500), [box(-200, -200, 200, 200)])
   const face = box(-50, -50, 50, 50)            // wholly within the pond
-  const got = luCoverageForFace(face, [wood])
+  const got = byLu(luCoverageForFace(face, [wood]))
   say(!best(got), `a face inside the POND takes nothing from the wood around it — got ${best(got) ?? 'nothing'} (⇒ underived downstream)`)
 }
 {
   // the same wood, a face OUTSIDE the pond but inside the wood
   const wood = poly('park', box(-500, -500, 500, 500), [box(-200, -200, 200, 200)])
   const face = box(300, 300, 400, 400)
-  const got = luCoverageForFace(face, [wood])
+  const got = byLu(luCoverageForFace(face, [wood]))
   say(best(got) === 'park', `a face in the wood BESIDE the pond still takes the wood — got ${best(got) ?? 'nothing'}`)
 }
 {
   // ⭐ and the net area is outer MINUS hole, not the outer
   const wood = poly('park', box(-100, -100, 100, 100), [box(-50, -50, 50, 50)])
   const face = box(-100, -100, 100, 100)        // the whole feature
-  const got = luCoverageForFace(face, [wood])
+  const got = byLu(luCoverageForFace(face, [wood]))
   const want = 200 * 200 - 100 * 100            // 40,000 − 10,000
   say(Math.abs((got.park ?? 0) - want) < 50, `the vote is outer MINUS hole = ${want.toLocaleString()} m² — got ${Math.round(got.park ?? 0).toLocaleString()}`)
 }
@@ -82,7 +89,7 @@ const best = (o) => { let k = null, v = 0; for (const [a, b] of Object.entries(o
   const wood  = poly('park',  box(-500, -500, 500, 500), [box(-200, -200, 200, 200)])
   const water = poly('water', box(-200, -200, 200, 200))
   const face  = box(-50, -50, 50, 50)
-  const got = luCoverageForFace(face, [wood, water])
+  const got = byLu(luCoverageForFace(face, [wood, water]))
   say(best(got) === 'water', `the pond's own feature classifies it, the wood does not — got ${best(got) ?? 'nothing'}`)
 }
 

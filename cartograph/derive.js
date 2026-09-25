@@ -182,7 +182,95 @@ function pathFromClipper(p) {
  * hole does not inherit its enclosing class, and if nothing else classifies it, it surfaces
  * as `underived` rather than silently becoming wood.
  * ⛔ `pftNonZero` on the clip side would fill the holes back in, which is the whole defect.
+ *
+ * @returns {{ [tag: string]: { lu: string, area: number } }} keyed by the SOURCE TAG, because
+ *          `luWinnerFromCoverage` needs to know whether a claim is a ground cover or a
+ *          jurisdiction, and the LU class cannot carry that.
  */
+/**
+ * ⭐⭐⭐ A PARK IS A JURISDICTION. SAND IS A GROUND COVER. THE SURFACE WANTS WHAT THE GROUND **IS**.
+ * Ruled by Jacob, 2026-09-25, verbatim: *"yes, ground cover wins."*
+ *
+ * ⛔⛔ THE DEFECT THAT FORCED IT, and it was mine: once a face took the class of whatever
+ * COVERED it (dc0c264f), Provincetown's dunes became LAWN. Measured — `leisure=nature_reserve`
+ * admits **180,227,102 m²** to the vote (the Cape Cod National Seashore) against beach's
+ * 13,908,598 m². The Seashore is a line on a map saying who MANAGES the land; it says nothing
+ * about whether you are standing on sand. Area share alone cannot tell those apart, so it
+ * handed the whole shore to the bigger claim.
+ *
+ * ⭐ So the two kinds are DECLARED here, per TAG, never inferred per town and never guessed
+ * from the LU class (`park` can arrive from `leisure=park`, a lawn, or from a national park
+ * boundary spanning dunes and forest alike — the class cannot carry the distinction, only the
+ * source tag can).
+ * ⛔ A tag in NEITHER list votes as it always did. This table adds precedence; it removes
+ * nothing, and it is not a skip list.
+ * ⚠️ `landuse=forest` and `natural=wood` are COVER — trees on the ground are a surface. A
+ * forestry *boundary* would be management, but OSM does not distinguish them by tag, and we
+ * take the reading that matches what a camera sees.
+ * ▶ `references/` carries the ruling and the OSM wiki citations for each tag.
+ */
+export const OSM_LU_KIND = {
+  // ── MANAGEMENT / JURISDICTION — who looks after it, not what it is made of ──
+  'leisure:nature_reserve': 'management',
+  'leisure:park': 'management',
+  'boundary:protected_area': 'management',
+  'boundary:national_park': 'management',
+  'leisure:garden': 'management',
+  'leisure:recreation_ground': 'management',
+  'landuse:recreation_ground': 'management',
+  'landuse:village_green': 'management',
+  // ── GROUND COVER — what you are standing on ──
+  'natural:sand': 'cover',
+  'natural:beach': 'cover',
+  'natural:dune': 'cover',
+  'natural:wood': 'cover',
+  'natural:scrub': 'cover',
+  'natural:heath': 'cover',
+  'natural:grassland': 'cover',
+  'natural:wetland': 'cover',
+  'natural:mud': 'cover',
+  'natural:shingle': 'cover',
+  'natural:bare_rock': 'cover',
+  'natural:scree': 'cover',
+  'landuse:forest': 'cover',
+  'landuse:meadow': 'cover',
+  // ⛔⛔ `landuse:grass` IS DELIBERATELY NOT A COVER, and the reason is the acceptance itself.
+  // A park's own lawn is tagged `landuse=grass` INSIDE `leisure=park`, so declaring it a cover
+  // displaces the park — measured: Lafayette Park's four faces all flip `park → recreation`,
+  // 51,429 m² of a ~48,000 m² park, i.e. all of it, and HiPointe's Forest Park face flips on
+  // 162 m² of grass against 11,080 m² of park.
+  // ⭐ AND IT BUYS NOTHING: `park` already renders as lawn, so the class changes and the
+  // SURFACE does not. The rule exists to stop a jurisdiction hiding what the ground is made
+  // of; grass under a park is not a contradiction, it is the park.
+  // ⚠️ `natural:grassland` stays a cover — wild grassland is a different surface from a mown
+  // lawn, and it does not arrive inside park boundaries the way `landuse=grass` does.
+}
+
+/**
+ * ⭐ THE PRECEDENCE, applied to one face's coverage tally: if any GROUND COVER covers this
+ * face at all, the winner is chosen among the covers only. A management polygon keeps the
+ * face only where no cover reaches it — a lawn, a field, a car park inside a park boundary.
+ * ⛔ It is a FILTER, not a weight: a 180 km² reserve must not out-vote 30 m² of sand, because
+ * the question is not "how much" but "what kind".
+ */
+export function luWinnerFromCoverage(byTag) {
+  let best = null, bestA = 0, bestKind = null, bestCover = null, bestCoverA = 0
+  for (const [tag, v] of Object.entries(byTag)) {
+    if (v.area > bestA) { bestA = v.area; best = v.lu; bestKind = OSM_LU_KIND[tag] ?? null }
+    if (OSM_LU_KIND[tag] === 'cover' && v.area > bestCoverA) { bestCoverA = v.area; bestCover = v.lu }
+  }
+  // ⛔⛔ THE RULE FIRES ONLY AGAINST A JURISDICTION — not against everything. It displaces a
+  // MANAGEMENT winner in favour of a ground cover, and touches nothing else.
+  // ⚠️ MEASURED BEFORE LANDING, and this is why the disclosure exists: an earlier cut let any
+  // cover displace any winner, and LS moved 43 faces `residential → recreation` and HiPointe
+  // 62 — a scatter of street trees tagged `natural=wood` turning residential blocks into
+  // woodland. Residential is neither a jurisdiction nor a ground cover; it is a built land use
+  // and it is not this rule's business. Jacob's wording is exact: *where a MANAGEMENT polygon
+  // and a GROUND-COVER polygon both cover a face, the ground cover takes it.*
+  if (bestKind === 'management' && bestCover) return bestCover
+  return best
+}
+
 export function luCoverageForFace(faceRing, luPolys) {
   const out = {}
   if (!Array.isArray(faceRing) || faceRing.length < 3) return out
@@ -209,7 +297,7 @@ export function luCoverageForFace(faceRing, luPolys) {
     let a = 0
     for (const path of sol) a += Clipper.Area(path) / (SCALE * SCALE)
     a = Math.abs(a)
-    if (a > 0) out[o.lu] = (out[o.lu] || 0) + a
+    if (a > 0) { const e = out[o.tag] || (out[o.tag] = { lu: o.lu, area: 0 }); e.area += a }
   }
   return out
 }
@@ -3379,6 +3467,8 @@ export function deriveLayers(highways) {
       for (const p of f.coords) { if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x; if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z }
       osmLUPolys.push({
         lu,
+        tag: tagKey,                             // ⭐ the source tag decides cover vs jurisdiction
+
         ring: f.coords,
         holes,                                   // ⭐ even-odd: the hole is NOT this class
         bb: [minX, maxX, minZ, maxZ],            // cheap reject before any boolean op
@@ -3414,10 +3504,8 @@ export function deriveLayers(highways) {
       // ⭐ The overlap is computed with the holes SUBTRACTED, so a pond inside a wood does not
       // vote "wood" for the faces under the pond — that is the even-odd half of the ruling.
       const osmAreas = luCoverageForFace(face.ring, osmLUPolys)
-      let bestLU = null, bestArea = 0
-      for (const [u, a] of Object.entries(osmAreas)) {
-        if (a > bestArea) { bestArea = a; bestLU = u }
-      }
+      // ⭐ GROUND COVER WINS over a jurisdiction that merely contains it — `luWinnerFromCoverage`.
+      const bestLU = luWinnerFromCoverage(osmAreas)
       if (bestLU) { use = bestLU; osmClassified++ }
       else {
         // Fall back to parcel majority vote.
