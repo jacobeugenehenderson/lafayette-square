@@ -1,28 +1,22 @@
 /**
  * LAFAYETTE SQUARE'S OWN ABOUT TEXT — the About, Guidelines and Privacy sections of the
  * info panel, moved here VERBATIM from InfoModal (2026-09-24, `BRIEF-ls-bleed-excision`
- * site 8). ⛔ LS's alone: another installation with no About text shows "not declared",
+ * site 8). The About is Jacob's "About The Ward" (2026-09-25), verbatim; its title is the
+ * panel's "About" heading. ⛔ LS's alone: another installation with no About text shows "not declared",
  * never this. Its LEGAL documents are not here — they are a jurisdiction document,
  * `./legal/cary-missouri.jsx`, which an installation declares in its instance module.
  * Browser-only (JSX): Node-side code imports `../registry.js`, never this.
  */
 export const about = (
               <div className="space-y-3 text-body-sm text-on-surface-variant leading-relaxed">
-  <p>Lafayette-Square.com is an independent project created by a neighbor for neighbors.</p>
-  <p>It is not affiliated with any company, advertiser, or government entity, and it is not funded by grants or sponsorships. The information used to build this project comes from public records, historical materials, and other openly available sources rather than corporate data services. The goal is simple: to celebrate and document one of the most extraordinary neighborhoods in America while building tools that help our community stay connected and resilient.</p>
-  <p>The site includes several systems designed for everyday neighborhood life:</p>
-  <ul className="list-disc list-outside ml-5 space-y-1">
-    <li><strong className="text-on-surface-medium">The Almanac</strong> — live connections to weather and astronomical services, providing daily environmental context for the Square.</li>
-    <li><strong className="text-on-surface-medium">The Community Bulletin Board</strong> — a place to share announcements, ideas, offers, and requests with neighbors.</li>
-    <li><strong className="text-on-surface-medium">The Property Atlas</strong> — listings for all ~1,000 buildings in Lafayette Square, forming the foundation of a shared historical and architectural record.</li>
-  </ul>
-  <p>The map also includes a carefully modeled version of Lafayette Park itself, with trees placed in their real-world locations and tagged with their actual species. One of the major goals of the project is to continue developing the park portion of the map as a living record of the extraordinary volunteer work that maintains it — including the efforts of neighbors and the Lafayette Square Conservancy.</p>
-  <p>As the system grows, park spaces will function just like other places in the neighborhood, allowing community activities and events to be listed directly within the park itself.</p>
-  <p>Over time, the hope is that neighbors will contribute stories, photos, and knowledge so that the site becomes a living digital twin of Lafayette Square — a collective record of the place we share.</p>
-  <p>Eventually, the goal is not just a website but a tool that helps move activity from the internet back into real neighborhood life.</p>
-  <p>Everything here is free to use. Anyone in Lafayette Square — residents, businesses, caretakers, and friends of the neighborhood — is welcome to post announcements, highlight local projects, promote events, or share useful information.</p>
-  <p>With a neighborhood of roughly 2,000 residents, even a simple message can reach the people who matter most: your neighbors.</p>
-  <p className="text-on-surface-subtle italic">Cities are ultimately made of people, memory, and shared space. This project is an attempt to honor all three in Lafayette Square.</p>
+  <p>The Ward is a place for a community to have a presence of its own online.</p>
+  <p>It brings together the places, people, businesses, institutions, events and everyday activity that already make a neighborhood what it is — without trying to turn that community into another social network.</p>
+  <p>The Ward is community first, privacy forward, and people powered.</p>
+  <p>It begins with the place itself. Streets, buildings, landmarks and other familiar parts of the neighborhood give every Ward a foundation from the start. From there, the people who know the place make it richer.</p>
+  <p>Residents, businesses, institutions, artists and organizations can add to the record, take care of places, share what is happening and make themselves useful to the community. There are profiles here, but they are built for utility rather than vanity: a way to say who or what you are, where you belong, and what you can offer or take care of.</p>
+  <p>Every Ward is shaped locally, by the people who actually know the place.</p>
+  <p>The Ward is built to strengthen the network that is already here.</p>
+  <p>A community powers its Ward, and its Ward should give something useful back.</p>
               </div>
 )
 
