@@ -525,7 +525,7 @@ The boundary lives at the **`bake-look.js` + `bake-trees.js` invocation** — ev
 
 **Every stage either RESOLVES or REFUSES. There is exactly one fallback left in the chain and it is named below.**
 
-⭐ **THE LIKELY GROVE (Jacob, 2026-09-25):** *"The point of the Arborist is to create likely groves … list the species in popularity order … if we have pieces to make those trees we should build them."* A town's species come from a census when it has one, and otherwise from the **USDA FIA survey of its county, ranked by live stems** (`scripts/15-fia-tree-mix.mjs` → `tree-mix.json`) — never hand-picked. Species the library cannot build are listed, ranked and red: an honest empty state, never a stand-in.
+⭐ **THE LIKELY GROVE (Jacob, 2026-09-25):** *"The point of the Arborist is to create likely groves … list the species in popularity order … if we have pieces to make those trees we should build them."* A town's species come from a census when it has one, and otherwise from the **USDA FIA survey of its county, ranked by live stems** (`scripts/15-fia-tree-mix.mjs` → `tree-mix.json`) — never hand-picked. Species the library cannot build are listed, ranked and red: an honest empty state, never a stand-in. ⭐ **Build from pieces is the path (Jacob, 2026-09-25: *"yes yes now; but … 'build from pieces' is aspirational … we likely have the pieces but they haven't been categorized yet"*):** inventory and categorize the pieces first, then an auto-compose design goes to Boz before anything is built. ⚠️ Open: FIA by county needs a sample-size rule — Erie County (huron) answers from one plot per species.
 
 | # | Stage | Code | Refuses by |
 |---|---|---|---|
