@@ -156,7 +156,14 @@ export const UNIFORMS = {
   uExag: terrainExag,
   uTexW: { value: width },
   uTexH: { value: height },
+  // ⭐ 1 = the ground is lit by its terrain (the product); 0 = the flat geometry normal.
+  // An EYE-GATE A/B, not a look knob: nothing authors it, and it ships at 1.
+  uTerrainNormals: { value: 1 },
 }
+// window.__terrainNormals — console / lab handle for that A/B (same convention as
+// window.__terrainExag). ⛔ Never a production control: an operator who sees the
+// relief flat is looking at the defect this uniform exists to compare against.
+if (typeof window !== 'undefined') window.__terrainNormals = UNIFORMS.uTerrainNormals
 
 // ── Live re-point (authoring Stage: switch installation without reload) ──
 const _reloadCbs = new Set()
@@ -205,6 +212,7 @@ export const TERRAIN_DECL = `
 uniform sampler2D uTerrainMap;
 uniform float uBMinX, uBMinZ, uSpanX, uSpanZ, uExag;
 uniform float uTexW, uTexH;
+uniform float uTerrainNormals;
 // Reconcile the GPU texture sample with the CPU sampler
 // (terrainCommon.makeElevationSampler) so BOTH return the identical world-Y at
 // the same XZ — one field, no float/sink between a CPU-placed object and the
@@ -276,24 +284,37 @@ const TERRAIN_DISPLACE_RIGID = `
 
 /**
  * Terrain-derived normal — replaces #include <beginnormal_vertex>.
- * Only for ground surfaces (streets, blocks, park).
- * Do NOT use for buildings/trees/lamps — their normals are geometry-based.
+ * For GROUND surfaces only (every BakedGround group but water, the park gravel).
+ * Do NOT use for buildings/trees/lamps/fences — their normals are geometry-based.
+ *
+ * ⭐⭐ WHY IT EXISTS (Jacob, 2026-09-24: "yes everywhere"). The baked ground is FLAT
+ * (Y = 0) and lifted in the vertex shader, so its geometry normals all point UP: every
+ * hill in every town was displaced and then LIT AS IF FLAT. Nothing called this until
+ * then (Boz checked: no caller passed terrainNormals).
+ *
+ * ⛔ THE SAMPLE STEP IS ONE GRID STEP OF THIS TOWN'S HEIGHTFIELD, read from the
+ * terrain's own span and sample count. It used to be `_eps = 5.0` metres — right only
+ * because bake-terrain happens to write a 5 m grid today (Layer 0 Class D: a constant
+ * whose unit is only stable because something ELSE is fixed). A finer lidar grid would
+ * have been smoothed over, a coarser one sampled inside a single cell.
+ * ▶ node checks/claims-ground-normals-come-from-the-terrain.mjs
+ *
+ * ⛔ No terrain ⇒ `fetchTerrain` warns "rendering flat" and hands a flat field, so the
+ * normal is UP because nothing is there — flat by absence, never by a default.
+ * `uExag ≤ 0.01` (the flat Browse map) keeps the geometry normal, which is also up.
  */
 export const TERRAIN_NORMAL = `
 #include <beginnormal_vertex>
 if (uExag > 0.01) {
   vec4 _nw = modelMatrix * vec4(position, 1.0);
-  vec2 _nuv = _terrainUV(vec2(
-    (_nw.x - uBMinX) / uSpanX,
-    (_nw.z - uBMinZ) / uSpanZ
-  ));
-  float _eps = 5.0;
-  float _du = _eps / uSpanX, _dv = _eps / uSpanZ;
-  float _eL = texture2D(uTerrainMap, _nuv + vec2(-_du, 0.0)).r * uExag;
-  float _eR = texture2D(uTerrainMap, _nuv + vec2( _du, 0.0)).r * uExag;
-  float _eD = texture2D(uTerrainMap, _nuv + vec2(0.0, -_dv)).r * uExag;
-  float _eU = texture2D(uTerrainMap, _nuv + vec2(0.0,  _dv)).r * uExag;
-  objectNormal = normalize(vec3(_eL - _eR, 2.0 * _eps, _eD - _eU));
+  float _sx = uSpanX / (uTexW - 1.0);
+  float _sz = uSpanZ / (uTexH - 1.0);
+  float _eL = texture2D(uTerrainMap, _terrainUV(vec2((_nw.x - _sx - uBMinX) / uSpanX, (_nw.z - uBMinZ) / uSpanZ))).r * uExag;
+  float _eR = texture2D(uTerrainMap, _terrainUV(vec2((_nw.x + _sx - uBMinX) / uSpanX, (_nw.z - uBMinZ) / uSpanZ))).r * uExag;
+  float _eD = texture2D(uTerrainMap, _terrainUV(vec2((_nw.x - uBMinX) / uSpanX, (_nw.z - _sz - uBMinZ) / uSpanZ))).r * uExag;
+  float _eU = texture2D(uTerrainMap, _terrainUV(vec2((_nw.x - uBMinX) / uSpanX, (_nw.z + _sz - uBMinZ) / uSpanZ))).r * uExag;
+  vec3 _tn = normalize(vec3((_eL - _eR) / (2.0 * _sx), 1.0, (_eD - _eU) / (2.0 * _sz)));
+  objectNormal = normalize(mix(objectNormal, _tn, uTerrainNormals));
 }`
 
 /**
@@ -444,11 +465,16 @@ export function patchTerrain(mat, { terrainNormals = false, perVertex = false } 
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL)
       .replace('#include <project_vertex>', displaceSnippet)
+    if (prev) prev(shader)
+    // ⛔ AFTER prev, deliberately. `applyWeatherToShader` (called inside prev) appends
+    // its world-normal varying right after `#include <beginnormal_vertex>`; replacing
+    // the include NOW puts the terrain override BETWEEN the include and that varying,
+    // so snow and wet read the SLOPE. Done before prev, the varying captured the flat
+    // geometry normal and the terrain override landed after it.
     if (terrainNormals) {
       shader.vertexShader = shader.vertexShader
         .replace('#include <beginnormal_vertex>', TERRAIN_NORMAL)
     }
-    if (prev) prev(shader)
   }
   const prevKey = mat.customProgramCacheKey?.bind(mat)
   const mode = perVertex ? 'v' : 'r'

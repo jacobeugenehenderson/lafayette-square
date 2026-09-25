@@ -42,8 +42,18 @@ import useTimeOfDay from '../../hooks/useTimeOfDay'
 import useSkyState from '../../hooks/useSkyState'
 import useAtmosphere from '../../hooks/useAtmosphere.js'
 import { getElevationRaw } from '../../utils/elevation'
+import { UNIFORMS as TERRAIN_UNIFORMS } from '../../utils/terrainShader.js'
 import { INSTANCE } from '../../instance.js'
 import { listStages, resolveStage } from './stage.js'
+
+// ⛔ HARNESS ONLY — the boulder harness's measured nuisance, same cure in R3F's own
+// terms: Chrome pauses rAF in a HIDDEN tab, so the canvas holds a stale or black frame
+// while the scene is fine — and R3F's FIRST frame waits on rAF too, so a tab loaded
+// hidden never even creates the renderer. `advance()` runs the REAL frame (every
+// useFrame, the post composer included); a bare gl.render would skip the post chain and
+// show a picture production never draws. Module scope, so it runs from page load.
+clearInterval(window.__labTick)
+window.__labTick = setInterval(() => { if (document.hidden) advance(performance.now()) }, 150)
 
 const params = new URLSearchParams(window.location.search)
 const LOOK = INSTANCE.lookId
@@ -109,12 +119,16 @@ function App() {
   const [stages, setStages] = useState(null)
   const [spot, setSpot] = useState(null)
   const [err, setErr] = useState(null)
-  const [cam, setCam] = useState('eye')
+  // `?cam=eye|mid|overhead` so a view can be handed to someone as a link.
+  const [cam, setCam] = useState(CAMS[params.get('cam')] ? params.get('cam') : 'eye')
   const [month, setMonth] = useState(6)
   const [hour, setHour] = useState(15)
   const [wx, setWx] = useState('clear')
   const [layers, setLayers] = useState({ buildings: true, trees: true, revetment: true, lamps: true, post: true })
   const [probe, setProbe] = useState(null)
+  // The production A/B uniform for terrain-derived ground normals (1 ships).
+  const [tn, setTn] = useState(1)
+  useEffect(() => { TERRAIN_UNIFORMS.uTerrainNormals.value = tn }, [tn])
 
   useEffect(() => {
     listStages(LOOK, bakeLastMs).then(s => setStages(s.stages)).catch(e => setErr(String(e.message || e)))
@@ -157,13 +171,21 @@ function App() {
         onCreated={({ gl, scene: s, camera }) => {
           document.body.dataset.labReady = '1'
           window.__lab = { gl, scene: s, camera }
-          // ⛔ HARNESS ONLY — the boulder harness's measured nuisance, same cure in R3F's
-          // own terms: Chrome pauses rAF in a HIDDEN tab, so the canvas holds a stale or
-          // black frame while the scene is fine. `advance()` runs the REAL frame (every
-          // useFrame, the post composer included) — a bare gl.render would skip the post
-          // chain and show a picture production never draws. Only while hidden.
-          clearInterval(window.__labTick)
-          window.__labTick = setInterval(() => { if (document.hidden) advance(performance.now()) }, 150)
+          // …and Chrome does not COMPOSITE a hidden tab's WebGL canvas, though it paints
+          // the DOM. So while hidden, the frame R3F just drew (preserveDrawingBuffer) is
+          // mirrored into an <img> over the canvas: screenshots and automation see the
+          // real frame. Removed the moment the tab is visible again.
+          clearInterval(window.__labMirror)
+          window.__labMirror = setInterval(() => {
+            let img = document.getElementById('lab-mirror')
+            if (!document.hidden) { if (img) img.remove(); return }
+            if (!img) {
+              img = document.createElement('img'); img.id = 'lab-mirror'
+              Object.assign(img.style, { position: 'fixed', inset: '0', width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 })
+              gl.domElement.parentElement.appendChild(img)
+            }
+            try { img.src = gl.domElement.toDataURL('image/jpeg', 0.85) } catch { /* context gone */ }
+          }, 1000)
         }}
       >
         {/* ── the environment: Preview's own mounts, verbatim components ── */}
@@ -221,6 +243,11 @@ function App() {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
           {Object.keys(layers).map(k => <Btn key={k} on={layers[k]} tint="#3f4f6b" onClick={() => toggle(k)}>{k}</Btn>)}
+        </div>
+        <div style={{ display: 'flex', gap: 5, marginBottom: 6, alignItems: 'center' }}>
+          <span style={{ opacity: .7 }}>ground normals</span>
+          <Btn on={tn === 1} tint="#2f6b4a" onClick={() => setTn(1)}>terrain (ships)</Btn>
+          <Btn on={tn === 0} tint="#6b3f3f" onClick={() => setTn(0)}>flat (before)</Btn>
         </div>
         {probe && <>
           <Head>WHAT THE ENVIRONMENT IS DOING (read back)</Head>

@@ -151,6 +151,6 @@ export function makeGravelPathMaterial({ tintHex = null, roughness = 0.95, scale
   // otherwise three.js's program cache collapses this shader onto another
   // `terrain-vp-std` material and the gravel fragment never compiles.
   mat.customProgramCacheKey = () => 'park-path-gravel-v1'
-  patchTerrain(mat, { perVertex: true })
+  patchTerrain(mat, { perVertex: true, terrainNormals: true })   // lit by its slope, like every ground group
   return { material: mat, shaderRef }
 }

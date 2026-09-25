@@ -380,7 +380,8 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
     // Terrain displacement applied last so its onBeforeCompile wraps any
     // earlier ones (fade, etc.) — patchTerrain runs first, then calls prev.
     // Drives off the shared terrainExag uniform.
-    patchTerrain(mat, { perVertex: true })
+    // ⭐ terrainNormals: the ground is lit by the hill it is draped on (Jacob, 2026-09-24).
+    patchTerrain(mat, { perVertex: true, terrainNormals: true })
     return mat
   }, [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, hasPool, poolmap])
 
@@ -424,7 +425,7 @@ function SurfaceMesh({ surface, params, look, group, geometry, lightmap, fade, p
       // Y stack. (z-fight fix 2026-06-17, ARCHITECTURE §8.)
       // Same parity move as FadeMesh — every BakedGround material rises
       // with the shared terrain displacement.
-      patchTerrain(built.material, { perVertex: true })
+      patchTerrain(built.material, { perVertex: true, terrainNormals: true })
       return built
     },
     [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap]
