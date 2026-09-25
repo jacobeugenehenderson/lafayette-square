@@ -286,6 +286,8 @@ out body;>;out skel qt;`
   // `waysById`: ground and buildings are separate buckets and one way may be in both.
   const dupDropped = new Map()   // target → the dropped repeat elements
   const seenIn = new Map()       // target → Set(way id)
+  const relationIds = new Set()
+  let relDropped = 0
   function ingestElements(elements, target) {
     if (!seenIn.has(target)) seenIn.set(target, new Set())
     const seen = seenIn.get(target)
@@ -303,6 +305,11 @@ out body;>;out skel qt;`
           target.push(el)
         }
       } else if (el.type === 'relation') {
+        // ⭐ ONE relation, however many queries return it — ground AND buildings both
+        // ask for relations, so a building multipolygon (provincetown's Cape Colony Inn)
+        // came back twice and every one of its rings was emitted twice.
+        if (relationIds.has(el.id)) { relDropped++; continue }
+        relationIds.add(el.id)
         relations.push(el)
       }
     }
@@ -399,7 +406,7 @@ out body;>;out skel qt;`
       byCat[cat] = (byCat[cat] || 0) + 1
     }
     const g = Object.entries(byCat).map(([k, n]) => `${k} ${n}`).join(' · ') || 'none'
-    console.log(`  duplicate ways dropped — ground: ${g} · buildings: ${(dupDropped.get(buildingWays) || []).length}`)
+    console.log(`  duplicates dropped — ground ways: ${g} · building ways: ${(dupDropped.get(buildingWays) || []).length} · relations: ${relDropped}`)
   }
 
   // ⭐⭐⭐ MULTIPOLYGON RELATIONS → FEATURES. A relation's members are bare geometry and

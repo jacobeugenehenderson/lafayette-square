@@ -11,7 +11,7 @@
  *   · a WAY id appears once (relations are exempt: one relation legitimately emits
  *     several rings under its id — they are caught by the next test if truly identical);
  *   · no two features share identical tags + geometry;
- * and, reading fetch.js, that ingestElements still dedupes by way id.
+ * and, reading fetch.js, that ingestElements still dedupes ways (per bucket) and relations.
  * ⚠️ A town fetched before the fix stays RED until it is re-fetched. That red is true.
  *
  *     node checks/claims-osm-ground-has-no-duplicates.mjs [--self-test]
@@ -55,12 +55,16 @@ function run(S) {
   }
   assert('fetch/ingest-dedupes-by-way-id', /if \(seen\.has\(el\.id\)\)/.test(S.fetchJs) && /seen\.add\(el\.id\)/.test(S.fetchJs),
     'cartograph/fetch.js#ingestElements no longer dedupes ways by id per target')
+  assert('fetch/ingest-dedupes-relations', /if \(relationIds\.has\(el\.id\)\)/.test(S.fetchJs),
+    'cartograph/fetch.js#ingestElements no longer dedupes relations by id')
   return out
 }
 
 const MUTATIONS = [
   { name: 'fetch/ingest-dedupes-by-way-id',
     apply: (S) => ({ ...S, fetchJs: S.fetchJs.replace('if (seen.has(el.id))', 'if (false)') }) },
+  { name: 'fetch/ingest-dedupes-relations',
+    apply: (S) => ({ ...S, fetchJs: S.fetchJs.replace('if (relationIds.has(el.id))', 'if (false)') }) },
   { name: 'SCENE/way-ids-unique', dup: true },
   { name: 'SCENE/no-identical-features', dup: true },
 ]
