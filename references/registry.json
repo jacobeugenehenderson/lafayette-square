@@ -443,8 +443,9 @@
       ],
       "notes": "Interstate only; non-Interstate freeways use it as a disclosed assumption.",
       "codeSites": [
-        "src/cartograph/streetProfiles.js TYPE_PAVEMENT_HW (motorway = 3·12ft/2 + 10ft — a class constant, not lane-derived)"
-      ]
+        "src/cartograph/streetProfiles.js highwayStandard + highwaySection (lane width read from f-interstate-lane-width at pour time)"
+      ],
+      "check": "checks/claims-highway-width-from-lanes.mjs"
     },
     {
       "id": "q-freeway-shoulders",
@@ -456,8 +457,12 @@
         "f-interstate-left-shoulder"
       ],
       "codeSites": [
-        "src/cartograph/streetProfiles.js TYPE_PAVEMENT_HW",
-        "src/lib/tileGround.js the `for (const s of gradeSep)` stroke — strokeOpen(sm, max(left,right)): symmetric"
+        "src/cartograph/streetProfiles.js highwaySection (asymmetric: right shoulder / left shoulder)",
+        "src/lib/tileGround.js sweepHighway (right = (−dz, dx) of point order)"
+      ],
+      "check": [
+        "checks/claims-highway-width-from-lanes.mjs",
+        "checks/claims-highway-handedness.mjs"
       ]
     },
     {
@@ -478,7 +483,11 @@
         "f-caltrans-freeway-shoulders-by-lanes",
         "f-massdot-freeway-section"
       ],
-      "notes": "Answered by DERIVATION only (no code states a 3+-lane rule): FHWA's 4 ft carries no lane-count condition. A state manual's own lane-count rule would supersede it — Quire's extraction may find one. ⸻ Caltrans (CA only, Quire 2026-09-23): YES by lane count — left shoulder 5 ft at 4 lanes total, 10 ft at 6+ lanes total (Table 302.1, both directions). This answers for CA; for MO/OH/MA the derivation d-left-shoulder-any-lane-count still stands. ⸻ MassDOT (MA only, Quire 2026-09-23): YES — left shoulder 4 ft (8 desirable) on four-lane freeways, 10 ft on six-or-more-lane freeways (2006 Ch 5 §5.3.4.1). MA and CA agree on the 6+ step; the derivation still governs MO/OH."
+      "notes": "Answered by DERIVATION only (no code states a 3+-lane rule): FHWA's 4 ft carries no lane-count condition. A state manual's own lane-count rule would supersede it — Quire's extraction may find one. ⸻ Caltrans (CA only, Quire 2026-09-23): YES by lane count — left shoulder 5 ft at 4 lanes total, 10 ft at 6+ lanes total (Table 302.1, both directions). This answers for CA; for MO/OH/MA the derivation d-left-shoulder-any-lane-count still stands. ⸻ MassDOT (MA only, Quire 2026-09-23): YES — left shoulder 4 ft (8 desirable) on four-lane freeways, 10 ft on six-or-more-lane freeways (2006 Ch 5 §5.3.4.1). MA and CA agree on the 6+ step; the derivation still governs MO/OH.",
+      "codeSites": [
+        "src/cartograph/streetProfiles.js highwaySection (left shoulder = d-left-shoulder-any-lane-count at every lane count)"
+      ],
+      "check": "checks/claims-highway-width-from-lanes.mjs"
     },
     {
       "id": "q-ramp-section",
@@ -704,8 +713,9 @@
         "m-osm-line-lane-centre"
       ],
       "codeSites": [
-        "src/lib/tileGround.js mintProtopolygon (the chain stroked about its points)"
-      ]
+        "src/cartograph/streetProfiles.js highwaySection (travel lanes centred on the line: n·w/2 each side)"
+      ],
+      "check": "checks/claims-highway-width-from-lanes.mjs"
     },
     {
       "id": "q-sidewalk-default",
@@ -780,9 +790,17 @@
         "r-highway-verge"
       ],
       "codeSites": [
-        "src/lib/tileGround.js the gradeSep stroke loop (today: a flat symmetric stroke beside ①)"
+        "src/lib/tileGround.js sweepHighway (H = the alignment swept by its section)",
+        "src/lib/tileGround.js the ② H difference (one edge)",
+        "src/lib/tileGround.js classifyHighwayBlocks (verge / jr / block, at the mint)"
       ],
-      "canon": "ROADMAP H-3"
+      "canon": "ROADMAP H-3",
+      "check": [
+        "checks/claims-highway-no-visible-joint.mjs",
+        "checks/claims-block-edge-is-highway-edge.mjs",
+        "checks/claims-verge-bare.mjs",
+        "checks/claims-junction-residual.mjs"
+      ]
     },
     {
       "id": "q-highway-smoothing",
@@ -790,12 +808,13 @@
       "neededBy": "H-3 (one edge)",
       "status": "answered",
       "codeSites": [
-        "src/lib/tileGround.js WIDE_SPACING = 1.5 + smoothChain on gradeSep — licensed by 'no curb to fold', a licence the one-edge ruling removes"
+        "src/lib/tileGround.js sweepHighway on the points ① consumes (WIDE_SPACING + the gradeSep smoothChain deleted, 4735926e)"
       ],
       "notes": "Answered by the SSoT ruling: no consumer-side smoothing — the highway draws the skeleton's flattened segments, the same geometry ① reads. Combed when the build retires WIDE_SPACING and a check holds it.",
       "findings": [
         "r-ssot-skeleton-geometry"
-      ]
+      ],
+      "check": "checks/claims-block-edge-is-highway-edge.mjs"
     },
     {
       "id": "q-closed-loop-stroke",
@@ -856,8 +875,9 @@
         "d-motorway-untagged-two-lanes"
       ],
       "codeSites": [
-        "cartograph/skeleton.js seedSection (nLanes default = oneway ? 1 : 2)"
-      ]
+        "src/cartograph/streetProfiles.js highwaySection (untagged lanes → the Interstate minimum per direction, stamped ASSUMED; skeleton seedSection no longer sizes a highway)"
+      ],
+      "check": "checks/claims-highway-width-from-lanes.mjs"
     },
     {
       "id": "q-nonInterstate-freeway-section",

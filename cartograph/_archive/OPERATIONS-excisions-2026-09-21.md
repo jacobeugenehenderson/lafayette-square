@@ -66,3 +66,11 @@ the sentence naming it went.
 
 **Superseded by** `9378acfb`: `V_EXAG` no longer exists. The exaggeration is `design.terrainExag`,
 per town, defaulting to the neutral 1.
+
+
+## 2026-09-24 — Hero history, excised from `OPERATIONS.md` Stage ▸ Camera / Shots (Gantry, pruning while adding the H-3 highway section)
+
+*The live rules stay in OPERATIONS; the "it used to" narrative moves here, verbatim.*
+
+  - ⭐ **EVERY TOWN HAS A HERO CAMERA** *(2026-09-21)*. ⛔ It used to be Lafayette Square's alone: one flag, `hasHero`, gated the mount of the thing that **drives the playback** — so on a poured town the Play button toggled a state nothing read, and keyframes recorded perfectly and then did nothing. The flag read as *"does this town have a hero OBJECT"*, and it does not gate an object: a town with no landmark still needs a camera path, and the resolver already answers "no landmark" with the hood centroid. Retired from the registry entirely.
+  - ⭐ **THE FIRST KEYFRAME IS THE ENTRY POSE — on every town, since 2026-09-22.** Landing in Hero puts you at the path start you authored, with its FOV. ⛔ It used to do that only on Lafayette Square: a generic "fit the town's radius" scaffold ran afterwards and overwrote the authored pose on every poured town (huron: 4.2 km out and 1.7 km up, against an authored 457 m — the operator waited out a long load to arrive somewhere they had not chosen). The scaffold now yields to authored keyframes, exactly as Browse's does to an authored frame, and still covers a town with none (the kit stores no camera until you save one).

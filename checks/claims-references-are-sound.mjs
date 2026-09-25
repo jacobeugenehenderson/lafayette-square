@@ -84,7 +84,8 @@ for (const q of questions) {
   for (const fid of fs_) if (!fById.has(fid)) errs.push(`question ${q.id} lists unknown finding "${fid}"`)
   if (q.status === 'answered' && !fs_.length) errs.push(`question ${q.id} is 'answered' with no finding`)
   if (q.status === 'blocked' && !q.blockedBy) errs.push(`question ${q.id} is 'blocked' with no blockedBy`)
-  if (q.check && !fs.existsSync(q.check)) errs.push(`question ${q.id} names check ${q.check}, which does not exist`)
+  // `check` is one path or, for a tooth held by several checks, an array of them — each must exist.
+  for (const c of [].concat(q.check || [])) if (!fs.existsSync(c)) errs.push(`question ${q.id} names check ${c}, which does not exist`)
 }
 for (const s of sources) {
   const lc = typeof s.localCopy === 'string' ? s.localCopy.split(' ')[0] : null

@@ -29,6 +29,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH, isHigh
 // its fallback for pre-D2 artifacts.
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon, classifyHighwayBlocks } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
+import { readSources } from './sources.js'
 import { coastRings } from './coastline.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
@@ -5391,6 +5392,29 @@ export function deriveLayers(highways) {
       if (C.jrRejected.length) console.log(`      ${C.jrRejected.length} ramp-end block(s) kept as BLOCK — they carry buildings: ${C.jrRejected.map(j => `${where(j.k)} ×${j.inside}`).join(', ')}`)
       if (C.jrRefused.length) console.warn(`      ⛔ JR REFUSED for ${C.jrRefused.length} ramp-end block(s): NO building layer (raw/msbf.json) — frontage cannot be tested, so they stay blocks: ${C.jrRefused.map(j => where(j.k)).join(', ')}`)
       if (C.gores.length) console.log(`      gore sliver(s): ${C.gores.length} — ${C.gores.map(g => `${g.chains.join('×')} ${where(g.k)}`).join(' · ')}`)
+      // ⭐ PARCELS — RULED TO MEASURE, NOT BUILT (Jacob, 2026-09-23): the same ramp-end candidates judged by the
+      // PARCEL test ("no parcel → road land": zero parcel centroids inside — the building test's own form, no
+      // constant), printed where it DISAGREES with the building test. Nothing acts on it. The parcel well is the
+      // scene's DECLARED one (sources.json), never a file name typed here.
+      {
+        let wells = null
+        try { const S = readSources(SCENE); wells = S.declared ? (S.parcels || []) : null } catch (e) { console.warn(`      ⛔ parcel test not run — ${e.message.split('\n')[0]}`) }
+        const cands = [...C.jr.map(j => ({ ...j, bJR: true })), ...C.jrRejected.map(j => ({ ...j, bJR: false }))]
+        if (wells == null) console.log(`      parcel-vs-building: not run — ${SCENE} declares no parcel well (no sources.json)`)
+        else if (!wells.length) console.log(`      parcel-vs-building: not run — ${SCENE} declares NONE`)
+        else if (cands.length) {
+          const pc = []
+          for (const w of wells) { try { const d = JSON.parse(readFileSync(join(RAW_DIR, w.file), 'utf-8'))
+            for (const p of Object.values(d.parcels || {})) { const c = p.centroid || (p.rings?.[0] && [p.rings[0].reduce((a, q) => a + q[0], 0) / p.rings[0].length, p.rings[0].reduce((a, q) => a + q[1], 0) / p.rings[0].length]); if (c) pc.push(c) } }
+            catch { console.warn(`      ⛔ declared parcel well ${w.file} could not be read`) } }
+          const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+          const dis = []
+          for (const c of cands) { const outer = MP.blocks[c.k], holes = MP.blockHoles?.[c.k] || []
+            const n = pc.filter(([x, z]) => pip(x, z, outer) && !holes.some(h => pip(x, z, h))).length
+            if ((n === 0) !== c.bJR) dis.push(`${where(c.k)} buildings→${c.bJR ? 'JR' : 'block'}, parcels(${n})→${n === 0 ? 'JR' : 'block'}`) }
+          console.log(`      parcel-vs-building (measured, not acted on): ${cands.length} ramp-end block(s), ${dis.length} disagree${dis.length ? ': ' + dis.join(' · ') : ''}`)
+        }
+      }
       if (!skOffGrade) console.warn(`      ⛔ no skeleton grade facts — no overpass span can be recognised`)
     }
     protoWaterRings = MP.waterRings || null
