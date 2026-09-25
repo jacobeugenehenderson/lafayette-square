@@ -143,6 +143,22 @@ function serveAuthoringAssets() {
 // JSON (listings/menus/roster) is already bundled via loadInstanceData's
 // dynamic import(); this handles the runtime-fetched MEDIA the bundle can't.
 // Scene-generic — globs every data/<look>/content dir, no per-scene fork.
+// ⭐ public/looks/index.json is statically imported by src/instance.js but deliberately NOT watched
+// (every bake stamps it; a watched write would force a full reload mid-Bake). Poll it and, on change,
+// INVALIDATE the cached module only: the next ordinary page load sees the new town, nothing reloads.
+function looksIndexFresh() {
+  return {
+    name: 'looks-index-fresh-on-next-load',
+    apply: 'serve',
+    configureServer(server) {
+      const file = path.resolve('public/looks/index.json')   // cwd-relative, as the other plugins here
+      fs.watchFile(file, { interval: 1000 }, () => {
+        for (const m of server.moduleGraph.getModulesByFile(file) || []) server.moduleGraph.invalidateModule(m)
+      })
+    },
+  }
+}
+
 function mirrorInstallationContent() {
   let outDir = 'dist'
   const copyDir = (src, dest) => {
@@ -172,7 +188,7 @@ function mirrorInstallationContent() {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [serveHelperApps(), serveCodedesk(), serveAuthoringAssets(), serveInstallationContent(), mirrorInstallationContent(), react()],
+  plugins: [serveHelperApps(), serveCodedesk(), serveAuthoringAssets(), serveInstallationContent(), mirrorInstallationContent(), looksIndexFresh(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
     // poly2tri's UMD shim references `global`; polyfill to globalThis so
@@ -201,9 +217,12 @@ export default defineConfig(({ command }) => ({
         // slider move. Authoring a per-ToD look was impossible.
         // ⛔ `public/baked/**` for the same reason at greater scale: one bake writes hundreds
         // of files and would storm reloads through the whole run.
-        // ⭐ Nothing is lost — both are fetched at RUNTIME with a cache-bust
-        // (`?t=${bakeLastMs}` / `scene.bakedAt`), never imported by the bundle, and Preview
-        // already carries a deliberate Reload button for picking a re-bake up.
+        // ⭐ Nothing is lost — design.json and the slab are fetched at RUNTIME with a cache-bust
+        // (`?t=${bakeLastMs}` / `scene.bakedAt`), and Preview has a deliberate Reload button.
+        // ⛔ EXCEPT public/looks/index.json, which src/instance.js IMPORTS statically. Unwatched,
+        // a town poured after Vite started stayed out of the served index and its page booted
+        // wearing Lafayette Square until Vite restarted. `looksIndexFresh()` below invalidates
+        // that one module on change WITHOUT pushing a reload (a reload mid-Bake would kill it).
         '**/public/looks/**',
         '**/public/baked/**',
         '**/botanica/**',
