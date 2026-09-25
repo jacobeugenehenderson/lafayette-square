@@ -17,7 +17,7 @@ evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve 
 - **Where you work:** `~/Desktop/dev.nosync/theward-online`, the marketing site (`js/ask.js`, `js/split.js`, `works/ask/`, `works/split/`). Read its `README.md` first; it owns its rules.
   - ⛔ It is **public**: GitHub Pages deploys `main`. Commit on a branch; **push only on Jacob's word.**
   - Phase 3 is in `theward-operations`, and needs its own go.
-- ⛔ **A scenario, never an offer.** Every number is a knob, the page says plainly that the figures are illustrative and not an offer, and no copy says "our split", "you will earn" or anything like it.
+- ⛔ **No framing copy.** Every number is a knob; add NO disclaimer, explanatory or "illustrative" text about the model (Jacob, 2026-09-25: *"The numbers/knobs are what they are, and it's up to me to present it."*). Labels name what a knob or readout is, nothing more.
 - ⛔ **Never call the fund** an escrow, insurance, deposit, self-insurance, trust or restricted fund; no copy implies a legal or tax treatment. Jacob and counsel settle that (§5 of the reference).
 - ⛔ **Agents write no legal or economic-promise wording** for the Host Agreement or any public covenant.
 
@@ -38,7 +38,7 @@ evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve 
 5. **The split:** the remaining 90% divides Host / platform. The Host-share slider **defaults to 30%** and ranges to at least 50%. Salary is a knob **defaulting to $0**.
 6. **Interest** is conservative and principal-safe (Jacob: a savings-and-loan account) and never required for the model to work.
 
-**Its real audience (Jacob): "This is a sneak recruiting tool for Hosts."** Build The Ask for a prospective Host modelling **their own** Ward: inputs they can estimate (households, businesses, orders per week), outputs that include the **Host budget**, the money to program their neighbourhood. That stays scenario-framed. The pages are **already public and linked**; Jacob shares them **directly with people he knows** and isn't courting strangers for now. So the changes ship to the existing pages (on his word), scenario-framed. ⚠️ Earnings figures shown to prospective recruits are the kind of claim counsel should review before any outreach beyond people he knows.
+**Its real audience (Jacob): "This is a sneak recruiting tool for Hosts."** Build The Ask for a prospective Host modelling **their own** Ward: inputs they can estimate (households, businesses, orders per week), outputs that include the **Host budget**, the money to program their neighbourhood. That stays scenario-framed. The pages are **already public and linked**; Jacob presents them himself. The changes ship to the existing pages, on his word.
 
 **Readouts** (reference §5), per year and per Ward, plus a portfolio view where useful:
 - gross flow;
