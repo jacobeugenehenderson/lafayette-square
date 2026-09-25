@@ -44,6 +44,9 @@ import useAtmosphere from '../../hooks/useAtmosphere.js'
 import { getElevationRaw } from '../../utils/elevation'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../../utils/terrainShader.js'
 import { INSTANCE } from '../../instance.js'
+// Every town the kit knows — the same index the app resolves `?look=` against. A town with
+// no slab fails loudly at its stage, never silently.
+import looksIndex from '../../../public/looks/index.json' with { type: 'json' }
 import { listStages, resolveStage } from './stage.js'
 
 // ⛔ HARNESS ONLY — the boulder harness's measured nuisance, same cure in R3F's own
@@ -222,7 +225,7 @@ function App() {
         <Row k="stage" v={STAGE} />
         {spot && <div style={{ opacity: .6, fontSize: 11, marginBottom: 6 }}>{spot.why}</div>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
-          {['huron', 'lafayette-square'].map(l => <Btn key={l} on={LOOK === l} tint="#3d6b8f" onClick={() => go({ look: l })}>{l}</Btn>)}
+          {(looksIndex.looks || []).map(({ id }) => <Btn key={id} on={LOOK === id} tint="#3d6b8f" onClick={() => go({ look: id })}>{id}</Btn>)}
         </div>
         {stages && (
           <select value={STAGE} onChange={e => go({ at: e.target.value })} style={{ width: '100%', marginBottom: 8, background: '#1a222b', color: '#e8eef5', border: '1px solid #2a3440', font: 'inherit' }}>
