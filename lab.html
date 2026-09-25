@@ -1,0 +1,25 @@
+<!doctype html>
+<!--
+  THE SURFACE LAB — one GL test environment for every procedural surface.
+  ▶ http://localhost:5173/lab.html?look=huron&at=class:agricultural
+  ▶ http://localhost:5173/lab.html?look=lafayette-square&at=class:park   (the control)
+  ▶ http://localhost:5173/lab.html?look=huron&at=revetment               (the boulders, as the map draws them)
+  (vite is already running on 5173; ⛔ do not start another)
+
+  ⛔ DELIBERATELY NOT IN THE OPERATOR'S MAP. Harness first. Brief: docs/briefs/BRIEF-surface-lab.md
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Surface lab</title>
+    <style>
+      html, body, #root { height: 100%; margin: 0; background: #0d1014; }
+      body { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; color: #dfe6ee; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/harness/lab/main.jsx"></script>
+  </body>
+</html>
