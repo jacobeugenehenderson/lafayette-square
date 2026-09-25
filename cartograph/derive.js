@@ -1624,72 +1624,6 @@ export function deriveLayers(highways) {
     }
   }
 
-  // Load manual block patches (drawn in preview GUI)
-  let blockPatches = []
-  try {
-    blockPatches = JSON.parse(readFileSync(join(CLEAN_DIR, 'block_patches.json'), 'utf-8'))
-    if (blockPatches.length > 0) console.log(`    ${blockPatches.length} manual block patches loaded`)
-  } catch {}
-
-  function buildParcelBlock(faceParcels, faceRing) {
-    const pPaths = new Paths()
-    for (const p of faceParcels) {
-      if (!p.rings?.length) continue
-      const r0 = p.rings[0]
-      let rArea = 0
-      for (let ri = 0; ri < r0.length; ri++) {
-        const a = r0[ri], b = r0[(ri + 1) % r0.length]
-        rArea += a[0] * b[1] - b[0] * a[1]
-      }
-      if (Math.abs(rArea / 2) < 20) continue
-      for (const ring of p.rings) {
-        const path = ring.map(pt => toClipper(pt[0], pt[1]))
-        if (path.length >= 3) pPaths.push(path)
-      }
-    }
-    // Add manual patches whose centroid falls in this face
-    if (faceRing) {
-      for (const patch of blockPatches) {
-        if (!patch.ring || patch.ring.length < 3) continue
-        const pcx = patch.ring.reduce((s, p) => s + p.x, 0) / patch.ring.length
-        const pcz = patch.ring.reduce((s, p) => s + p.z, 0) / patch.ring.length
-        if (pointInRing(pcx, pcz, faceRing)) {
-          pPaths.push(patch.ring.map(p => toClipper(p.x, p.z)))
-        }
-      }
-    }
-
-    if (pPaths.length === 0) return new Paths()
-
-    const CLOSE_DIST = 4.0
-    const co1 = new ClipperOffset(); co1.ArcTolerance = ARC_TOL
-    co1.AddPaths(pPaths, JoinType.jtRound, EndType.etClosedPolygon)
-    const exp = new Paths(); co1.Execute(exp, CLOSE_DIST * SCALE)
-    const uc = new Clipper()
-    uc.AddPaths(exp, PolyType.ptSubject, true)
-    const uni = new Paths()
-    uc.Execute(ClipType.ctUnion, uni, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-    const co2 = new ClipperOffset(); co2.ArcTolerance = ARC_TOL
-    co2.AddPaths(uni, JoinType.jtRound, EndType.etClosedPolygon)
-    const closed = new Paths(); co2.Execute(closed, -CLOSE_DIST * SCALE)
-    if (closed.length === 0) return closed
-
-    // Simplify block perimeter to remove footway-scale notches.
-    // Parcels have indentations where footway easements cross them;
-    // these survive morph-close because they're on the exterior edge.
-    // Clipper's SimplifyPolygons removes self-intersections, but we
-    // need to remove small concavities. Use CleanPolygons to merge
-    // vertices closer than ~3m, which smooths out narrow notches.
-    const CLEAN_DIST = 3.0 * SCALE
-    const cleaned = new Paths()
-    for (let i = 0; i < closed.length; i++) {
-      const c = Clipper.CleanPolygon(closed[i], CLEAN_DIST)
-      if (c.length >= 3) cleaned.push(c)
-    }
-
-    return cleaned.length > 0 ? cleaned : closed
-  }
-
   function buildFaceBlock(faceRing) {
     const facePath = faceRing.map(p => toClipper(p.x, p.z))
     if (facePath.length < 3) return new Paths()
@@ -1795,55 +1729,21 @@ export function deriveLayers(highways) {
     console.log(`    ${deadEndPoints.length} dead-end streets: ${[...new Set(deadEndPoints.map(d=>d.name))].join(', ')}`)
   }
 
-  let parcelBlocks = 0, faceBlocks = 0
+  let faceBlocks = 0
 
   for (let fi = 0; fi < blockFaces.length; fi++) {
     const face = blockFaces[fi]
     const faceParcels = faceParcelMap.get(fi) || []
 
-    // Try parcel-union first
-    let closed = buildParcelBlock(faceParcels, face.ring)
-
-    if (faceParcels.length === 0) {
-      closed = buildFaceBlock(face.ring)
-      faceBlocks++
-    } else {
-      parcelBlocks++
-      // For faces bordering the S 18th curve, parcel boundaries don't
-      // extend to the curved face edge. Union parcel block with face
-      // inset so the block follows the arc.
-      // Detect by checking for a long run of consecutive short edges
-      // (densified curve segments) on the face boundary.
-      if (closed.length > 0 && face.ring.length >= 3) {
-        let maxConsecutiveShort = 0, consecutive = 0
-        for (let ri = 0; ri < face.ring.length; ri++) {
-          const rn = (ri + 1) % face.ring.length
-          const segLen = Math.hypot(face.ring[rn].x - face.ring[ri].x, face.ring[rn].z - face.ring[ri].z)
-          if (segLen > 1 && segLen < 5) {
-            consecutive++
-            if (consecutive > maxConsecutiveShort) maxConsecutiveShort = consecutive
-          } else {
-            consecutive = 0
-          }
-        }
-        if (maxConsecutiveShort >= 25 && closed.length === 1) {
-          // Single-polygon parcel block next to a curve: use face inset
-          // so the block edge follows the arc instead of cutting straight.
-          // Use road half-width + sidewalk zone as inset (face ring is at
-          // street centerline, block edge should be at property line).
-          const swZone = STANDARDS.sidewalk.width + STANDARDS.treeLawn.width
-          const curveInset = 6.5 + swZone  // ~6.5m road half-width + ~2.9m sidewalk
-          const facePath = face.ring.map(p => toClipper(p.x, p.z))
-          const fp = new Paths(); fp.push(facePath)
-          const coFace = new ClipperOffset(); coFace.ArcTolerance = ARC_TOL
-          coFace.AddPaths(fp, JoinType.jtRound, EndType.etClosedPolygon)
-          const insetResult = new Paths()
-          coFace.Execute(insetResult, -curveInset * SCALE)
-          if (insetResult.length > 0) closed = insetResult
-        }
-      }
-    }
-
+    // ⭐ PARCELS VOTE THE LAND USE; THEY DO NOT DRAW THE BLOCK (ruling (b), 2026-09-24).
+    // The block is always the street face, inset. It used to be the UNION OF ITS
+    // PARCELS when a face had any, which made the surface layers (block / lot /
+    // sidewalk / pavement, and through `pavement` the tree mask) depend on whether a
+    // town's assessor well happened to be readable. Jacob's ruling was parcels for LAND
+    // USE ("it's a map, it is supposed to reflect reality"), not for surfaces.
+    // The parcel-block builder and its S 18th curve special case went with it.
+    let closed = buildFaceBlock(face.ring)
+    faceBlocks++
 
     // Cut loop streets from blocks (so sidewalk follows the loop curve)
     const loopCutPaths = new Paths()
@@ -2064,7 +1964,8 @@ export function deriveLayers(highways) {
           for (const [use, count] of Object.entries(useCounts)) {
             if (count > maxCount) { maxCount = count; dominant = use }
           }
-          const isMedian = faceParcels.length === 0 && face.absArea < 5000
+          // A median by SHAPE, not by the absence of parcels (which varied with the well).
+          const isMedian = face.absArea < 5000
           blockMeta.push({ clipperPath: rounded[k], dominantUse: dominant, isMedian })
         }
       }
@@ -2096,7 +1997,7 @@ export function deriveLayers(highways) {
   }
 
 
-  console.log(`    ${allBlockPaths.length} blocks (${parcelBlocks} from parcels, ${faceBlocks} from face polygons, medians included)`)
+  console.log(`    ${allBlockPaths.length} blocks (${faceBlocks} from face polygons, medians included; parcels vote land use only)`)
 
   // ── SPIKE: street-offset blocks for comparison ──────────────
   // Build blocks from face − street buffers (pavementHalfWidth only,
