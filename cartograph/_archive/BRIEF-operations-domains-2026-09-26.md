@@ -1,7 +1,7 @@
 # BRIEF — Domains in Operations: Namecheap registers, Cloudflare runs DNS, Operations sees it all
 
 <!-- BRIEF-STATE
-status: OPEN
+status: LANDED 2026-09-26 — live in Operations (deploy c377eea4); home is theward-operations README §Domains
 dispatched: 2026-09-25, to Ledger (session lafayette-square-nosync-95)
 written: 2026-09-25
 evict-when: every domain Jacob owns is a record in Operations, attached to its Ward or marked unassigned, and shows its live state (nameservers, DNS records, whether it answers), read from Cloudflare; Jacob has seen the list.
