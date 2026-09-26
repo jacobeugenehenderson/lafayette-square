@@ -166,6 +166,9 @@ export default function Grove() {
   const groveControlsRef = useRef()
   const [hovered, setHovered] = useState(null)
   const [selected, setSelected] = useState(null)  // {speciesId, variantId} — click-selected tile; drives the fixed editor panel
+  // Bumped when a Grove bake returns. With the atlas manifest's `generatedAt` (which a bake run
+  // ELSEWHERE, e.g. a Cartograph pour, also changes) it versions every tile's GLB load.
+  const [bakeRev, setBakeRev] = useState(0)
   const [toast, setToast] = useState(null)
   // Overhead bake — the Grove Bake→Slab ALSO captures each roster species' 3-slice
   // overhead snapshot (GPU, in this Canvas) and POSTs it into the look's slab. Runs
@@ -189,6 +192,7 @@ export default function Grove() {
   // ⭐ Hoisted above the capture pool (2026-09-03): the pool now asks this manifest which
   // species were rewritten into THIS atlas. Declared after it, the memo hit the TDZ.
   const groveAtlas = useTreeAtlas(activeLookId)
+  const tileRev = `${groveAtlas?.manifest?.generatedAt ?? 0}:${bakeRev}`
   const overheadSpecies = useMemo(() => {
     if (!activeLookId) return []
     const base = import.meta.env.BASE_URL
@@ -386,6 +390,11 @@ export default function Grove() {
     // than the baked slab; the button below still forces. (Jacob, 2026-08-28: "it
     // rebakes every time you enter the grove. It should only bake dirty or new things.")
     await bakeGroveToSlab({ ifDirty })
+    // ⛔ THE TILES MUST SEE THE NEW BYTES. A tile whose GLB 404'd before this bake wrote it
+    // (arrival auto-bakes; a new species has no baked GLB until then) kept useGLTF's cached
+    // failure AND its boundary's `failed` state, so it stayed a red stub on a pink disc until
+    // a hard refresh (Jacob, Provincetown, 2026-09-25). A new revision re-keys both.
+    setBakeRev(r => r + 1)
     // ⛔ RE-READ THE SLAB FIRST. The roster bake just rewrote trees.json, and the capture
     // pool IS that file's species list — capturing off a stale read would shoot the
     // PREVIOUS bake's species.
@@ -872,7 +881,7 @@ export default function Grove() {
             <Suspense fallback={null}>
               {visible.map((v, i) => (
                 <TileBoundary
-                  key={`${v.speciesId}:${v.variantId}`}
+                  key={`${v.speciesId}:${v.variantId}:${tileRev}`}
                   label={`${v.speciesLabel || v.speciesId} (variant ${v.variantId})`}
                   position={positions[i]}
                 >
@@ -884,6 +893,7 @@ export default function Grove() {
                   atlas={groveAtlas}
                   material={speciesMaterials[v.speciesId] || null}
                   lookId={activeLookId}
+                  rev={tileRev}
                   barkUniforms={barkUniformsBySpecies[v.speciesId] || null}
                   hovered={hovered?.speciesId === v.speciesId && Number(hovered?.variantId) === Number(v.variantId)}
                   selected={selected?.speciesId === v.speciesId && Number(selected?.variantId) === Number(v.variantId)}
@@ -1164,10 +1174,12 @@ function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered,
 // the Meteorologist already share. No new implementation — the Grove was simply the one
 // surface nobody connected to it.
 function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect,
-                atlas, material, lookId, barkUniforms }) {
+                atlas, material, lookId, barkUniforms, rev = '' }) {
   const { speciesId, normalizeScale, position: posOv, rotation: rotOv, quality, excluded, speciesLabel, variantId } = variant
   // ⛔ The baked GLB, not the published one — this is what the map loads.
-  const url = bakedGlbUrl(lookId, speciesId, variantId)
+  // `rev` versions the load: drei caches by URL, INCLUDING a failed load, so an unversioned URL
+  // keeps serving the pre-bake 404 after the bake wrote the file.
+  const url = `${bakedGlbUrl(lookId, speciesId, variantId)}?rev=${encodeURIComponent(rev)}`
   const { scene } = useGLTF(url)
   // Clone so each tile has its own scene graph (drei caches by URL).
   const cloned = useMemo(() => scene.clone(true), [scene])
