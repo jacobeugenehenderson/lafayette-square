@@ -22,15 +22,52 @@ import { dirname, join } from 'path'
 const LIB_ROOT = 'public/library'
 const TREE = { chassis: 'chassises', bark: 'barks', leaf: 'leaves', overlay: 'overlays' }
 // the axis whose value names the canonical folder for each part-type
-const PRIMARY_AXIS = { chassis: 'chassis.habit', bark: 'bark.type', leaf: 'leaf.silhouette', overlay: 'overlay.type' }
+// ⛔ These are the LIVE rubric axes. They named the pre-cutover `bark.type` / `leaf.silhouette`
+// (the 19→31 cutover migrated the artifacts, not this producer), so a re-import resolved every
+// bark and leaf to `_unassigned` and reaped the curated placements. ▶ checks/claims-a-reimport-keeps-curation.mjs
+const PRIMARY_AXIS = { chassis: 'chassis.habit', bark: 'bark.texture', leaf: 'leaf.shape', overlay: 'overlay.type' }
 
-const canonicalValue = (part) => {
-  const t = part.tags && part.tags[PRIMARY_AXIS[part.partType]]
-  return (t && t.value) || '_unassigned'
+/** The category a part already holds in the library, if it is ASSIGNED (not `_unassigned`). */
+function assignedPlacement(part, root) {
+  const treeDir = join(root, TREE[part.partType] || part.partType)
+  if (!existsSync(treeDir)) return null
+  for (const value of readdirSync(treeDir)) {
+    if (value === '_unassigned') continue
+    if (safeIsDir(join(treeDir, value, part.partId))) return value
+  }
+  return null
 }
 
-export function canonicalDir(part) {
-  return join(LIB_ROOT, TREE[part.partType] || part.partType, String(canonicalValue(part)), part.partId)
+/** sourcePath → the id the library already gives it. An id is AUTHORED once minted (the
+ *  2026-08-25 form rename: `gray_poplar_a_trunk22.glb` is `columnar_01`, and compositions
+ *  say `columnar_01`), so a re-import keeps it instead of re-minting from the filename. */
+export function assignedIds(root = LIB_ROOT) {
+  const out = new Map()
+  for (const tree of Object.values(TREE)) {
+    const td = join(root, tree)
+    if (!existsSync(td)) continue
+    for (const value of readdirSync(td)) {
+      if (!safeIsDir(join(td, value))) continue
+      for (const id of readdirSync(join(td, value))) {
+        const m = join(td, value, id, 'meta.json')
+        if (!existsSync(m)) continue
+        try { const sp = JSON.parse(readFileSync(m, 'utf8')).sourcePath; if (sp) out.set(sp, id) } catch { /* unreadable meta keys nothing */ }
+      }
+    }
+  }
+  return out
+}
+
+// ⛔ A re-import never downgrades an ASSIGNED category to `_unassigned`: a category is the
+// operator's curation, and a tag the tagger cannot draft today is not evidence against it.
+// An assigned tag still wins (a re-tag moves the part); only "no value" defers to what is there.
+const canonicalValue = (part, root = LIB_ROOT) => {
+  const t = part.tags && part.tags[PRIMARY_AXIS[part.partType]]
+  return (t && t.value) || assignedPlacement(part, root) || '_unassigned'
+}
+
+export function canonicalDir(part, root = LIB_ROOT) {
+  return join(root, TREE[part.partType] || part.partType, String(canonicalValue(part, root)), part.partId)
 }
 
 /**
@@ -39,13 +76,14 @@ export function canonicalDir(part) {
  * the original asset (a GLB / a pack dir / a Bark dir); we point at it.
  */
 export function place(part, opts = {}) {
-  const dir = canonicalDir(part)
+  const root = opts.libRoot || LIB_ROOT
+  const dir = canonicalDir(part, root)
   mkdirSync(dir, { recursive: true })
   const meta = {
     partId: part.partId,
     partType: part.partType,
     source: part.source,
-    canonicalValue: canonicalValue(part),
+    canonicalValue: canonicalValue(part, root),
     sourcePath: part.sourcePath || null,
     tags: part.tags,
     conformReport: part.conformReport || null,
@@ -60,11 +98,11 @@ export function place(part, opts = {}) {
 }
 
 /** Regenerate MANIFEST.json — the back-end "what's where, by rubric value" doc. */
-export function regenerateManifest(parts) {
+export function regenerateManifest(parts, root = LIB_ROOT) {
   const byTree = {}
   for (const p of parts) {
     const t = TREE[p.partType] || p.partType
-    const v = String(canonicalValue(p))
+    const v = String(canonicalValue(p, root))
     byTree[t] = byTree[t] || {}
     byTree[t][v] = byTree[t][v] || []
     byTree[t][v].push({ partId: p.partId, source: p.source, sourcePath: p.sourcePath || null })
@@ -75,8 +113,8 @@ export function regenerateManifest(parts) {
     counts: Object.fromEntries(Object.entries(byTree).map(([t, vs]) => [t, Object.values(vs).reduce((n, a) => n + a.length, 0)])),
     tree: byTree,
   }
-  mkdirSync(LIB_ROOT, { recursive: true })
-  writeIfChanged(join(LIB_ROOT, 'MANIFEST.json'), JSON.stringify(manifest, null, 2) + '\n')
+  mkdirSync(root, { recursive: true })
+  writeIfChanged(join(root, 'MANIFEST.json'), JSON.stringify(manifest, null, 2) + '\n')
   return manifest
 }
 
@@ -88,11 +126,11 @@ export function regenerateManifest(parts) {
  * touches partId-level dirs we own (the canonical leaf of the tree); never the
  * value or tree dirs, never anything outside public/library.
  */
-export function reapOrphans(parts) {
-  const valid = new Set(parts.map(p => canonicalDir(p)))
+export function reapOrphans(parts, root = LIB_ROOT) {
+  const valid = new Set(parts.map(p => canonicalDir(p, root)))
   let reaped = 0
   for (const tree of Object.values(TREE)) {
-    const treeDir = join(LIB_ROOT, tree)
+    const treeDir = join(root, tree)
     if (!existsSync(treeDir)) continue
     for (const value of readdirSync(treeDir)) {
       const valueDir = join(treeDir, value)

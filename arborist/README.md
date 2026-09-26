@@ -79,7 +79,7 @@ Artifacts are **deterministic** + **pristine**: same recipe + same on-disk parts
 | Command | What it does |
 |---|---|
 | `node arborist/serve.js` | Backend (auto-started by `npm run dev`) |
-| `node arborist/ingest.js` | Conform + tag the parts → `part-index.json` + `public/library/` + `INVENTORY.md` |
+| `node arborist/ingest.js` | Conform + tag the parts → `part-index.json` + `public/library/` + `INVENTORY.md`. `--out=<file>` previews: writes that index and nothing else. A re-import keeps every id and category the library already assigned ▶ `node checks/claims-a-reimport-keeps-curation.mjs` |
 | `node arborist/generate-salon.js [--species <id>]` | Headless Salon republish (compositions → GLBs) |
 | `node arborist/build-leaf-atlas.mjs` | Compose varied tile-grid atlases for scanned leaf packs |
 | `node arborist/bake-look.js --look <id>` | Pack the per-Look master atlas (the ship-to-slab bake) |

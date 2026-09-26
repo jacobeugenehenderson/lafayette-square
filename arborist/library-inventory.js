@@ -26,26 +26,26 @@ export function computeInventory() {
     : []
 
   // which rubric value does each dossier WANT, per part-type → for "wanted by" + gaps
-  const wantBy = { 'leaf.silhouette': {}, 'bark.type': {} }
+  const wantBy = { 'leaf.shape': {}, 'bark.texture': {} }
   for (const d of dossiers) for (const axis of Object.keys(wantBy)) {
     const t = d.required && d.required[axis] && d.required[axis].target
     if (t) (wantBy[axis][t] = wantBy[axis][t] || []).push(d.key)
   }
 
-  const leafAxis = rubric.axes.find(a => a.id === 'leaf.silhouette')
-  const barkAxis = rubric.axes.find(a => a.id === 'bark.type')
+  const leafAxis = rubric.axes.find(a => a.id === 'leaf.shape')
+  const barkAxis = rubric.axes.find(a => a.id === 'bark.texture')
 
   const leaves = parts.filter(p => p.partType === 'leaf').map(p => ({
     pack: p.partId,
-    silhouette: p.tags['leaf.silhouette']?.value ?? null,
+    silhouette: p.tags['leaf.shape']?.value ?? null,
     rawMorph: p.packMeta?.morphology,
-    sizeCm: p.tags['leaf.size']?.value ?? p.packMeta?.naturalSize ?? null,
+    sizeCm: p.tags['leaf.length']?.value ?? p.packMeta?.naturalSize ?? null,
     quality: p.packMeta?.quality || 'vendor',
     species: p.packMeta?.recommendedSpecies || [],
   })).sort((a, b) => String(a.silhouette).localeCompare(String(b.silhouette)))
 
   const barks = parts.filter(p => p.partType === 'bark').map(p => ({
-    id: p.partId, type: p.tags['bark.type']?.value ?? null, provenance: p.provenance || 'ambientCG (draft quality)',
+    id: p.partId, type: p.tags['bark.texture']?.value ?? null, provenance: p.provenance || 'ambientCG (draft quality)',
   }))
 
   // GAPS: rubric values with no part covering them
@@ -80,7 +80,7 @@ export function renderInventory(inv) {
   for (const v of inv.leafSilhouettes) {
     const packs = inv.leaves.filter(l => l.silhouette === v)
     if (packs.length === 0) {
-      const want = inv.wantBy['leaf.silhouette'][v] || []
+      const want = inv.wantBy['leaf.shape'][v] || []
       L.push(`| **${v}** | 🔴 GAP | — | — | ${want.join(', ') || '—'} |`)
     } else {
       for (const p of packs) {
@@ -106,7 +106,7 @@ export function renderInventory(inv) {
   L.push('|---|---|---|---|')
   for (const v of inv.barkTypes) {
     const got = inv.barks.filter(b => b.type === v)
-    const want = inv.wantBy['bark.type'][v] || []
+    const want = inv.wantBy['bark.texture'][v] || []
     if (got.length === 0) L.push(`| **${v}** | 🔴 GAP | — | ${want.join(', ') || '—'} |`)
     else for (const b of got) L.push(`| ${v} | ${b.id} | ${b.provenance} | ${want.join(', ') || '—'} |`)
   }

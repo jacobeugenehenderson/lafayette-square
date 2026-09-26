@@ -171,3 +171,44 @@ export function tagBark(rubric, barkId) {
   tags['bark.color'] = tag(null, 'low', 'texture-sample-pending (no decoder this stage)', false)
   return tags
 }
+
+// ── plate labels (the Arborist's plate shelf, BRIEF-arborist-fashion-plates §1) ──
+// A plate names the species or genus it came from, with the evidence, or says why it
+// cannot. Facts only — read off the part's own metadata and the library's own names; the
+// habit is drafted from a DOSSIER when the species has one (dossiers are the kit's
+// sourced traits), never from a hand table of species. Everything here is `ratified:false`.
+const sciOf = (indexSpecies, id) => (indexSpecies.find(s => s.species === id)?.scientific) || null
+const slug = (s) => s.toLowerCase().replace(/[^a-z]+/g, '_').replace(/^_|_$/g, '')
+function speciesLabel(id, indexSpecies, why0) {
+  if (!id) return { species: null, genus: null, scientific: null, why: why0 || 'no species recorded on the part', ratified: false }
+  const scientific = sciOf(indexSpecies, id)
+  if (!scientific) return { species: id, genus: null, scientific: null, why: `library entry "${id}" carries no scientific name (generic or stylised asset)`, ratified: false }
+  const [genus, epithet] = scientific.split(/\s+/)
+  const genusLevel = !epithet || /^(sp|spp)\.?$/i.test(epithet) || /[×x]/.test(epithet)
+  return { species: genusLevel ? null : id, genus, scientific, evidence: genusLevel ? 'genus' : 'species', source: `meta → index.json#species(${id})`, ratified: false }
+}
+
+/** Chassis: species/genus from `meta.source.species`; habit drafted from that species' dossier. */
+export function labelChassis(meta, indexSpecies, dossiers) {
+  const lab = speciesLabel(meta?.source?.species, indexSpecies, 'meta.source.species is empty')
+  const d = lab.scientific && (dossiers[slug(lab.scientific)] || dossiers[meta.source.species])
+  const habit = d?.required?.['chassis.habit']
+  lab.habitFromDossier = habit?.target ?? null
+  if (lab.habitFromDossier) lab.habitSource = `dossier(${d.id || slug(lab.scientific)})`
+  return lab
+}
+
+/** Leaf pack: the species it was made for (pack meta `recommendedSpecies`, binomial slugs). */
+export function labelLeaf(packMeta) {
+  const rec = (packMeta?.recommendedSpecies || []).filter(Boolean)
+  if (!rec.length) return { species: null, genus: null, why: 'pack meta names no species (a shape pack)', ratified: false }
+  const genera = [...new Set(rec.map(r => r.split('_')[0]))]
+  return { species: rec, genus: genera.length === 1 ? genera[0] : null, genera, evidence: 'recommendedSpecies', source: 'pack meta.recommendedSpecies', ratified: false }
+}
+
+/** Bark: the species it was photographed from, when its own meta says so. */
+export function labelBark(barkId, bmeta) {
+  const sp = bmeta?.species || bmeta?.source?.species || null
+  if (sp) return { species: sp, genus: String(sp).split(/[_\s]/)[0], evidence: 'bark meta', source: 'bark meta.species', ratified: false }
+  return { species: null, genus: null, why: /^Bark0\d+$/.test(barkId) ? 'generic photographic bark (ambientCG) — a TRAIT plate, no species' : 'bark meta names no species', ratified: false }
+}
