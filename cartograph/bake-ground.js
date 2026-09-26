@@ -1388,8 +1388,22 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // ⛔ CARRY THE LIGHTMAP REFERENCE FORWARD, don't drop it. Dropping it loses the
   // AO silently; carrying a STALE one is now safe because the key exposes it at
   // load with a message naming the fix. Losing the pointer was the actual defect.
-  let priorLightmap = null
-  try { priorLightmap = JSON.parse(readFileSync(join(outDir, 'ground.json'), 'utf-8')).lightmap || null } catch { priorLightmap = null }
+  let priorLightmap = null, priorMaps = {}
+  try {
+    const prior = JSON.parse(readFileSync(join(outDir, 'ground.json'), 'utf-8'))
+    priorLightmap = prior.lightmap || null
+    // ⭐ bake-ground-ao writes THREE maps in one pass (lightmap, colormap, poolmap) and only the
+    // lightmap records the ground it was made for. The colour and pool maps ride with it: SAME
+    // ground (groundKey unchanged) → carried; changed ground → DROPPED and said by name below.
+    // ⛔ Before 2026-09-26 only the lightmap was carried, so a standalone ground bake silently
+    // unhooked the lamp pools, contact shadows and ground colour (huron, 15:16 — the PNGs were on
+    // disk, referenced by nothing, and the map rendered without them with no error).
+    for (const k of ['colormap', 'poolmap']) if (prior[k]) priorMaps[k] = prior[k]
+  } catch { priorLightmap = null }
+  const sameGround = priorLightmap?.groundKey != null && priorLightmap.groundKey === groundKey
+  const droppedMaps = sameGround ? [] : Object.keys(priorMaps)
+  if (droppedMaps.length) console.warn(`  [bake-ground] ⛔ the ground changed (groundKey ${priorLightmap?.groundKey ?? 'none'} → ${groundKey}): `
+    + `${droppedMaps.join(' + ')} DROPPED — no lamp pools, contact shadows or ground-colour map until ▶ node bake-ground-ao.js --look=${look}`)
 
   const manifest = {
     version: 1,
@@ -1406,6 +1420,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // slivers it came out with — read by the two ground-shape checks.
     ...(groundShape ? { groundShape } : {}),
     ...(priorLightmap ? { lightmap: priorLightmap } : {}),
+    ...(sameGround ? priorMaps : {}),
   }
 
   // Content-aware writes so ground-ao (which depends on ground.json mtime)
