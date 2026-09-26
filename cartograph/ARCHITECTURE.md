@@ -113,10 +113,10 @@ Three layers, in order:
 >   defaults. Writing the defaults into the file would restate the source and go stale on the next move.
 > - ⛔ **THE KIT STORES NO CAMERA.** `heroKeyframes` / `shots` are coordinates in a scene's **local**
 >   frame, so they mean nothing in town #2 — and the store's own former default was *another* LS-tuned
->   pair, i.e. "use the store default" would have laundered LS rather than removed it. Absent a
->   designated hero object the opening view is **derived from the scene's own extent**
->   (`Scene.jsx`'s `derivedHeroPose`). Jacob: *"the camera motion is not something that carries
->   realistically from hood to hood."*
+>   pair, i.e. "use the store default" would have laundered LS rather than removed it. With no
+>   keyframes the opening view is **derived from the scene's own disc**
+>   (`src/lib/cameraRegimes.js#derivedOpeningKeyframe`). Jacob: *"the camera motion is not something
+>   that carries realistically from hood to hood."*
 > - ⭐ **The CAMERA may frame the building mass; the DISC may not be centred on it.** Different objects:
 >   the disc is the ground plane and must not move when membership changes (`6a9b5f85`), while framing
 >   the mass is exactly the camera's job. Do not "tidy" these two into one rule.
@@ -463,8 +463,8 @@ POST /api/cartograph/looks/<id>/bake  (incremental; ?force=1 forces) → public/
 Runtime reads public/baked/<id>/* + the live src/data/* (trees/water/paths/lamps/ribbons).
 ```
 
-### Map state preservation (Designer ↔ Browse)
-Designer and Browse share the overhead view; pan/zoom carries across. Both write `localStorage[cartograph-camera]` every frame (Designer ortho `{x,z,zoom}`; Browse perspective via FOV math) and read the shared key on any shot transition into either. Hero/Street are independent shots, not part of the share. (If a round-trip starts losing state, check the `CameraRig` `useFrame` persist hook fires for both `'designer'` and `'browse'`.)
+### Camera regimes — one definition each, every runtime (2026-09-26)
+A runtime **chooses** a regime (plan · orbit · street · playback, `src/lib/cameraRegimes.js`) and never defines controls; `RegimeControls.jsx` is the one mount. ⛔ **No camera reads a hero subject** (H-7): keyframes carry `{position, target, fov}`; one `heroKeyframeAnim` plays them everywhere. Designer ↔ Browse hand their framing across both ways (inverse FOV/altitude math, `CartographApp.jsx#CameraRig`). ▶ `node checks/claims-the-camera-has-one-definition.mjs`
 
 ### The Extent tool & the Pour — the no-CLI intake→3D arc (2026-07-03; procedure rewritten 2026-07-20; D4 + identity lock + the palimpsest warning added 2026-07-23)
 The whole intake→3D arc (define a new neighborhood → derive → bake → land in Designer) is **one tool, no terminal.**
@@ -580,7 +580,7 @@ Once membership correctly isolates the hood, the kept buildings are an **off-cen
 - **`cartograph/reproject-raw.js` (new)** — recomputes `raw/osm.json` x/z from lon/lat via the *current* `geography.json` (`config.wgs84ToLocal`, `writeIfChanged`): the **re-center-within-bbox** lever, so geography / skeleton / aerial stay aligned after a recenter. Used by `commit-extent`.
 - **`api.js` helpers (new):** `pourMap`, `geocodeZip`, `fetchExtent`, `fetchStreetGeom`, `fetchNeighborhood`/`saveNeighborhood`, `commitExtent`, `fetchStreetNames`, `fetchSkeletonLabels`, `fetchOsmLabels`; `createLook` forwards `scene`; `fetchGeography`/`fetchNeighborhood` are cache-busted (`?t=` + `no-store`).
 - **`skeleton.js` directional-corridor kit fix** — a pass after `nameTransitions` gives opposite-prefix same-base streets meeting head-to-tail with continuous heading (`DIR_PREFIX` / `OPPOSITE`, tangent dot < −0.6) a `corridor` field so N/S halves of one road unify (Big Bend, Skinker). Guarded to exclude perpendicular pairs (South 18th × West 18th); **LS verified byte-identical** (0 corridors).
-- **⚠️ OPEN BUG — 3D Browse framing for poured scenes** (`CartographApp.jsx CameraRig`). A poured-scene override was added in the perspective-shot apply branch (analogous to `TOY_CAM`, for `mapKey` not `lafayette-square`/`toy` with `sceneBoundary?.radius>0`): browse = overhead over origin, altitude fit to R; hero = a static scaled oblique (HeroPreview correctly doesn't run — `genericSceneConfig hasHero:false`); street = ground-level at origin; `sceneBoundary` is in the effect deps so it re-applies when the async boundary lands. **Still broken:** Browse frames "too high and slightly to the left" and the street-clip made "no difference" — the baked ground is a centered disc and the 2D content is symmetric, yet Browse doesn't center. Root cause not found; suspect the camera path / a content-fit overriding the override. **"Don't correct the wrong symptom"** — don't just tweak the altitude factor.
+- **⚠️ OPEN BUG — 3D Browse framing for poured scenes** (`CartographApp.jsx CameraRig`). A poured-scene override was added in the perspective-shot apply branch (analogous to `TOY_CAM`, for `mapKey` not `lafayette-square`/`toy` with `sceneBoundary?.radius>0`): browse = overhead over origin, altitude fit to R; street = ground-level at origin; `sceneBoundary` is in the effect deps so it re-applies when the async boundary lands. **Still broken:** Browse frames "too high and slightly to the left" and the street-clip made "no difference" — the baked ground is a centered disc and the 2D content is symmetric, yet Browse doesn't center. Root cause not found; suspect the camera path / a content-fit overriding the override. **"Don't correct the wrong symptom"** — don't just tweak the altitude factor.
 
 ---
 
