@@ -199,6 +199,16 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
     return mat
   }, [])
 
+  // ⛔ THE SHADOW PASS MUST REPEAT THE LIFT. The posts are lifted in the shader by their baked
+  // ground anchor (patchTerrainInstancedBaked); three's own depth material never runs that, so
+  // the posts cast from the baseline, buried under the terrain. Same class as SlabBuildings.
+  // ▶ checks/claims-displaced-casters-have-a-depth-material.mjs
+  const lampDepthMat = useMemo(() => {
+    const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
+    patchTerrainInstancedBaked(dm)
+    return dm
+  }, [])
+
   // (Both the ground light POOL and the lamp CONTACT SHADOW moved into the
   // baked ground FX map 2026-06-22 — R = additive pool (dark center → bright
   // ring → 0), G = contact shadow (tree + lamp bases), darkening the ground
@@ -409,6 +419,7 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       <instancedMesh
         ref={lampRef}
         args={[lampModel.geometry, lampModel.material, allLamps.length]}
+        customDepthMaterial={lampDepthMat}
         castShadow
         frustumCulled={false}
       />

@@ -128,6 +128,10 @@ for (const f of files) {
     }
     const mat = resolve(src, matExpr, m.index)
     if (!mat.def) {
+      // A material built at runtime (e.g. from a loaded model) cannot be read here — but if the
+      // mesh carries a depth material that resolves and displaces, the shadow pass is covered.
+      const d = attr(tag, 'customDepthMaterial'), dd = d != null && resolve(src, d, m.index)
+      if (dd?.def && DISPLACES.test(dd.def)) { ok.push(`${where} (${mat.expr} runtime → ${dd.expr} displaces)`); continue }
       if (fileDisplaces) unresolved.push(`${where} material={${mat.expr}} — cannot resolve, and this file displaces`)
       else ok.push(`${where} (material ${mat.expr} not defined here; file does not displace)`)
       continue

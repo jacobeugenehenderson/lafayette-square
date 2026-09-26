@@ -601,6 +601,13 @@ function PerimeterFence() {
     patchTerrain(mat)
     return mat
   }, [])
+  // The posts lift in the shader (patchTerrain samples the terrain at each post's origin), so
+  // the shadow pass needs the same lift or they cast from the baseline. Rails do not cast.
+  const postDepthMat = useMemo(() => {
+    const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
+    patchTerrain(dm)
+    return dm
+  }, [])
   const railMat = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.6, metalness: 0.4 })
     patchTerrain(mat)
@@ -610,7 +617,7 @@ function PerimeterFence() {
   return (
     <group>
       {posts.map((pos, i) => (
-        <mesh key={`p${i}`} position={[pos[0], FENCE_HEIGHT / 2, pos[2]]} castShadow material={postMat}>
+        <mesh key={`p${i}`} position={[pos[0], FENCE_HEIGHT / 2, pos[2]]} castShadow material={postMat} customDepthMaterial={postDepthMat}>
           <boxGeometry args={[0.15, FENCE_HEIGHT, 0.15]} />
         </mesh>
       ))}
