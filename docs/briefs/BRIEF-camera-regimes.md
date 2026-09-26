@@ -49,9 +49,6 @@ playback driver. **This brief is that removal.**
 ## Read first (the record — this has been worked on a lot; do not re-derive it)
 
 - `ROADMAP` **H-7**, **A13** (Browse framing), **H-26** (near-level views).
-- `cartograph/BACKLOG.md` — **"SPLIT the animation out of the editing viewport (Stage camera restructure)"**
-  (the viewport is always free; the animation is its own section; *"keep the subject pin during preview
-  playback; with no hero object it is truly free"* — ⚠️ now superseded by H-7: no subject pin at all).
 - `_handoffs/HANDOFF-authoring-session-hardening.md` Ph4 (*"one camera home `useCartographCamera` + de-dup
   CameraRig"*) and `_handoffs/HANDOFF-hero-camera-authoring-mode.md`.
 - The long comment in `CartographApp.jsx#Controls` — the history of gating orbit on PLAYING vs SHOT. Keep that
