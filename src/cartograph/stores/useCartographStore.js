@@ -335,8 +335,9 @@ const BUILDING_PALETTE_DEFAULT = [
   '#d2b48c', '#778899', '#8b4513', '#a52a2a',
   '#f5deb3', '#696969', '#b22222', '#808080',
 ]
-// Period + easing are a CADENCE, not a place — portable between towns.
-const HERO_MOTION_DEFAULT = { period: 720, easing: 'sine' }
+// Length + mode are a CADENCE, not a place — portable between towns. Only read
+// once a Look has 2+ keys; one key is a static shot and needs no motion.
+const HERO_MOTION_DEFAULT = { length: 360, mode: 'bounce' }
 // ⛔⛔ THE KIT STORES NO CAMERA. There is deliberately no default hero path.
 // The pair that stood here — [-540,55,362] / [-260,55,98] — is Lafayette
 // Square's, and it was handed to every Look whose design.json omitted the
@@ -420,11 +421,14 @@ const DESIGN_FIELDS = [
   { key: 'heroSubject',   hydrate: (d) => d.heroSubject || null },
   { key: 'heroKeyframes', hydrate: (d) => Array.isArray(d.heroKeyframes) ? d.heroKeyframes : [...HERO_KEYFRAMES_DEFAULT] },
   { key: 'heroMotion',    hydrate: (d) => {
-    const m = { ...HERO_MOTION_DEFAULT, ...(d.heroMotion || {}) }
-    // 'sawtooth' was a one-way snap masquerading as a loop; retired now the Hero
-    // motion is explicitly a bounce. Migrate legacy Looks to 'sine'.
-    if (m.easing === 'sawtooth') m.easing = 'sine'
-    return m
+    // ⛔ A pre-timeline motion ({ period, easing }) is not merged onto the default:
+    // its keys carry no times either, and Stage refuses them loudly on open.
+    // Migrate with scratch/keyframe-timeline-migrate.mjs (BRIEF-keyframe-timeline).
+    if (d.heroMotion && !('length' in d.heroMotion)) {
+      console.error('[design] heroMotion predates the keyframe timeline — migrate it', d.heroMotion)
+    }
+    return { ...HERO_MOTION_DEFAULT, length: d.heroMotion?.length ?? HERO_MOTION_DEFAULT.length,
+      mode: d.heroMotion?.mode ?? HERO_MOTION_DEFAULT.mode }
   } },
   // SC.5 — shots is nested per-shot; merge shallowly against defaults so a
   // partial author (e.g. only shots.values.hero.fov) inherits the rest.
@@ -1674,7 +1678,14 @@ const useCartographStore = create((set, get) => ({
     set({ heroKeyframes: keyframes })
     get()._saveDesignDebounced()
   },
-  // Patch motion partial — { period?, easing? }. preview/speed are not stored.
+  // Keys + motion in ONE write, for an edit that changes both (the Loop toggle
+  // redistributes the keys' times): the runtime refuses a shot whose last key
+  // disagrees with its mode, so the two must never be seen apart.
+  setHeroShot: (keyframes, patch) => {
+    set(s => ({ heroKeyframes: keyframes, heroMotion: { ...s.heroMotion, ...patch } }))
+    get()._saveDesignDebounced()
+  },
+  // Patch motion partial — { length?, mode? }. preview/speed are not stored.
   setHeroMotion: (patch) => {
     set(s => ({ heroMotion: { ...s.heroMotion, ...patch } }))
     get()._saveDesignDebounced()

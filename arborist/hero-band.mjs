@@ -40,10 +40,11 @@
 import { readFileSync } from 'node:fs'
 
 /** Dense XZ samples along the authored pan polyline (the camera's actual track). */
-export function sampleCameraPath(keyframes, perLeg = 240) {
+export function sampleCameraPath(keyframes, perLeg = 240, loop = false) {
   if (!Array.isArray(keyframes) || keyframes.length === 0) return []
   const pos = keyframes.map(k => (Array.isArray(k) ? k : k.position)).filter(Boolean)
   if (pos.length === 1) return [[pos[0][0], pos[0][2]]]
+  if (loop) pos.push(pos[0])   // a loop closes back on its first key
   const out = []
   for (let s = 0; s < pos.length - 1; s++) {
     const a = pos[s], b = pos[s + 1]
@@ -92,7 +93,7 @@ function minDistToPath(x, z, path) {
  * Assign the hero geometry role by pan-distance, spending a triangle budget.
  *
  * @param {object[]} instances   placements (need x, z, species, variantId)
- * @param {object}   heroPan     { keyframes } from scene.json
+ * @param {object}   heroPan     { keyframes, motion } from scene.json
  * @param {object}   opts
  *   triangleBudget  hard ceiling of vertex-shaded triangles for the shot
  *   trisFor         (inst) => triangle count for THIS placement's mesh, or null
@@ -100,7 +101,7 @@ function minDistToPath(x, z, path) {
  * @returns {{ roles: string[], dists: number[], meta: object } | null}
  */
 export function assignHeroBand(instances, heroPan, opts = {}) {
-  const path = sampleCameraPath(heroPan?.keyframes)
+  const path = sampleCameraPath(heroPan?.keyframes, 240, heroPan?.motion?.mode === 'loop')
   if (!path.length) return null
 
   const { triangleBudget = 15e6, trisFor = () => null, bandMaxM = Infinity } = opts

@@ -610,12 +610,11 @@ function readCamInit() {
 function Controls({ controlsRef, heroPlaying = false }) {
   // ⛔⛔ THE PLAY FLAG IS A PROP, NOT A STORE READ — and the first cut of this fix
   // read the store and was therefore INERT. In the Cartograph `heroMotion.preview`
-  // is NOT persisted state: CartographApp composes it per render at :1134 —
+  // is NOT persisted state: CartographApp composes it per render —
   //     const heroMotion = { ...storeMotion, preview: previewPlaying, speed: … }
-  // — from a LOCAL useState (`previewPlaying`, :1132). The store's heroMotion
-  // carries only { period, easing }, so `st.heroMotion?.preview` is always
-  // undefined and the gate never closed. Caught because huron's design.json shows
-  // heroMotion as {"period":1360,"easing":"sine"} — no `preview` key to read.
+  // — from a LOCAL useState (`previewPlaying`). The store's heroMotion carries
+  // only the authored { length, mode }, so `st.heroMotion?.preview` is always
+  // undefined and the gate never closed.
   const shot = useCartographStore(s => s.shot)
   const tool = useCartographStore(s => s.tool)
   const markerActive = useCartographStore(s => s.markerActive)
@@ -1005,8 +1004,8 @@ export default function CartographApp() {
   const heroMotion = { ...storeMotion, preview: previewPlaying, speed: previewSpeed }
   const setHeroMotion = (next) => {
     const f = typeof next === 'function' ? next(heroMotion) : next
-    if (f.period !== heroMotion.period || f.easing !== heroMotion.easing) {
-      setStoreMotion({ period: f.period, easing: f.easing })
+    if (f.length !== heroMotion.length || f.mode !== heroMotion.mode) {
+      setStoreMotion({ length: f.length, mode: f.mode })
     }
     if (!!f.preview !== previewPlaying) setPreviewPlaying(!!f.preview)
     if ((f.speed || 1) !== previewSpeed) setPreviewSpeed(f.speed || 1)

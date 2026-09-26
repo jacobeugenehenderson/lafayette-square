@@ -45,3 +45,14 @@ removed on 2026-09-21, and the static oblique was removed on 2026-09-26.)*
   - ⚠️ **THE BLEED CAN STILL RETURN THROUGH STAGE — `useCartographStore.js:341`:** `hydrate: (d, get) => d.heroKeyframes || get().heroKeyframes`. A Look whose field is **absent** (i.e. every Look A11-c just stripped) inherits **whatever the previously-opened Look left in the store**, and the next save writes it back to disk. The store's own default (`:715`) is another LS-tuned pair. **Production is safe today** — `bake-scene.js:126` reads `design.json` directly with `|| []` — **but Stage is a live re-bleed path**, and `absence-means-inherit` is a known trap (`feedback_absence_means_inherit_in_authored_blocks`). ⛔ Fix before anyone opens a stripped Look in Stage and saves. **S.**
   - ⚠️ **Parallel copy, unfixed:** `PreviewApp.jsx:157` falls back to its own `SHOTS.hero.position` literal — the same defect A11-c fixed in `Scene.jsx`, in a second file *(agent-reported, not independently verified)*.
 
+
+
+---
+
+## `STAGE.md` hero lines excised 2026-09-26 — the keyframe timeline
+
+Rot by the time `BRIEF-keyframe-timeline` landed: the Hero-Lock-era two-mode UX (retired with the subject), the `hasHero` gate (retired — every town plays its keys), and "runtime motion beyond `period`/`easing`" (the motion is now `{ length, mode }` and the keys carry their times). Live home: `OPERATIONS.md` Camera / Shots.
+
+>   - **Hero authoring/runtime control modes (2026-06-24).** The Hero shot is a deliberate two-mode UX: **runtime** (default) plays the bounce with the orbit controls **locked** (`OrbitControlsShot enabled={false}` in `CartographApp`), exactly as it ships; **clicking a keyframe dot** enters **authoring** — pause, jump to the pose, controls unlocked for free orbit, which pivots on the subject because `HeroPreview` pins `controls.target` to the subject centroid every frame (the **Hero Lock** holds for free). **Save keyframe** captures `{position, fov}` and re-locks, staying paused on the saved frame. The mode is an ephemeral module singleton (`heroAuthoring` / `useHeroAuthoring`, `StageApp.jsx`) on the same R3F⇄DOM rail as `heroScrub` — **not persisted, not baked**; the keyframe **data model is unchanged** (`{position, fov}`, subject-locked), so `bake-scene.js` / `SLAB-CONTRACT §4` are untouched. *(Eye-gate pending; `HANDOFF-hero-camera-authoring-mode.md`.)*
+>     - **Per-scene hero keyframe authoring is still unbuilt** for poured scenes: hero is the static oblique above (genericSceneConfig sets `hasHero: false`, so `HeroPreview` correctly does **not** run for a generic scene — the static pose holds). Authoring real per-scene hero keyframes is future work.
+> - ⬜ **Not yet captured:** SC.4 time defaults (a Look can't yet declare "open at dusk") and the Hero-keyframe *runtime motion* beyond `period`/`easing`. Tracked under "Slab completeness" (§5).

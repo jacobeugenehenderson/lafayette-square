@@ -51,7 +51,7 @@ import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
 import { createCameraTween } from './cameraTween'
 import { transitionMs } from '../camera/transitions.js'
-import { heroKeyframeAnim } from './heroAnim.js'
+import { heroKeyframeAnim, heroCycleSec } from './heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
 import {
@@ -161,9 +161,11 @@ function ShotCamera({ shot, setShot }) {
   const stencil = useSceneStencil()
   const heroFov = scene?.shots?.values?.hero?.fov ?? SHOTS.hero.fov
   const heroKeyframes = useMemo(
-    () => resolveHeroKeyframes(scene?.heroKeyframes, stencil, heroFov, 'preview'),
-    [scene?.heroKeyframes, stencil, heroFov])
-  const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
+    () => resolveHeroKeyframes(scene?.heroKeyframes, scene?.heroMotion, stencil, heroFov, 'preview'),
+    [scene?.heroKeyframes, scene?.heroMotion, stencil, heroFov])
+  // ⛔ No default motion: a static shot needs none; an animated one without its
+  // own is refused above.
+  const heroMotion = scene?.heroMotion ?? null
   const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
 
   // Resolve the pose for a shot transition. Hero uses the keyframe path's
@@ -177,21 +179,21 @@ function ShotCamera({ shot, setShot }) {
   // "when we enter the Preview (autoplay Hero environment) the camera is supposed
   // to pick up at randomized locations on the path so the user sees different
   // things from visit to visit."
-  // ⇒ Offset the clock by a random fraction of ONE FULL PERIOD, chosen once per
+  // ⇒ Offset the clock by a random fraction of ONE FULL CYCLE, chosen once per
   // mount. The motion is periodic, so any offset lands somewhere legitimate on the
   // authored path — no new poses are invented and nothing outside the operator's
   // keyframes can be shown.
-  // ⛔ Seeded at MOUNT, not per frame: re-rolling every frame would scrub the path
-  // at random instead of playing it.
+  // ⛔ Seeded ONCE, when the slab arrives (before it there is no cycle to land in),
+  // not per frame: re-rolling every frame would scrub the path at random.
   const heroPhase = useRef(null)
-  if (heroPhase.current === null) heroPhase.current = Math.random() * (heroMotion?.period || 720)
+  if (heroPhase.current === null && scene) heroPhase.current = Math.random() * heroCycleSec(heroMotion)
 
   function poseFor(shotKey, aspect) {
     if (shotKey === 'hero') {
       // ⛔ SAME PHASE AS THE ANIMATION, or the camera is placed at the path's
       // start and then JUMPS to the random offset on the first frame.
       if (!heroKeyframes) return null
-      const { fov } = heroKeyframeAnim(heroPhase.current, heroKeyframes, heroMotion, _heroPos, _heroTgt)
+      const { fov } = heroKeyframeAnim(heroPhase.current ?? 0, heroKeyframes, heroMotion, _heroPos, _heroTgt)
       return { pos: _heroPos.toArray(), target: _heroTgt.toArray(), fov, up: [0, 1, 0] }
     }
     const pose = resolveShotPose(shotKey, aspect)
@@ -275,7 +277,7 @@ function ShotCamera({ shot, setShot }) {
   useFrame(({ clock }) => {
     if (tween.isActive()) { tween.tick(performance.now()); return }
     if (shot !== 'hero' || !heroKeyframes) return
-    const { fov } = heroKeyframeAnim(clock.elapsedTime + heroPhase.current, heroKeyframes, heroMotion, _heroPos, _heroTgt)
+    const { fov } = heroKeyframeAnim(clock.elapsedTime + (heroPhase.current ?? 0), heroKeyframes, heroMotion, _heroPos, _heroTgt)
     camera.position.copy(_heroPos)
     if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
     const ctl = controlsRef.current

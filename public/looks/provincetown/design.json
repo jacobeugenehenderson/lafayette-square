@@ -189,7 +189,8 @@
         40,
         0
       ],
-      "fov": 22
+      "fov": 22,
+      "t": 0
     },
     {
       "position": [
@@ -202,7 +203,8 @@
         40,
         0
       ],
-      "fov": 22
+      "fov": 22,
+      "t": 0.45998
     },
     {
       "position": [
@@ -215,12 +217,13 @@
         40,
         0
       ],
-      "fov": 22
+      "fov": 22,
+      "t": 1
     }
   ],
   "heroMotion": {
-    "period": 1800,
-    "easing": "sine"
+    "length": 900,
+    "mode": "bounce"
   },
   "shots": {
     "values": {

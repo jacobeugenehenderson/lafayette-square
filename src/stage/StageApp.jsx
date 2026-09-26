@@ -26,7 +26,7 @@ import GatewayArch from '../components/GatewayArch'
 import Terrain from '../components/Terrain'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 
-import { catmullRom, heroKeyframeAnim, heroPoseAt } from '../preview/heroAnim'
+import { heroKeyframeAnim, heroPoseAtTime, heroClockAt } from '../preview/heroAnim'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import {
   cameraState, cameraPush, subscribeCameraState, pushCamera, publishCameraState,
@@ -473,7 +473,7 @@ function ColorRow({ label, value, onChange }) {
 const _heroPos = new THREE.Vector3()
 const _heroTgt = new THREE.Vector3()
 
-const heroScrub = { t: 0 }  // 0–1, written by preview or panel scrub
+const heroScrub = { t: 0 }  // the playhead, as a fraction of the shot length (preview or panel scrub)
 let heroScrubListeners = new Set()
 function subscribeHeroScrub(fn) { heroScrubListeners.add(fn); return () => heroScrubListeners.delete(fn) }
 function notifyHeroScrub() { for (const fn of heroScrubListeners) fn() }
@@ -487,32 +487,40 @@ function useHeroScrub() {
 // ── Keyframe names ──────────────────────────────────────────────────────────
 
 function kfName(i) { return `Key ${i + 1}` }
+const fmtSec = (s) => `${Math.round(s)} s`
 
-// ── The Hero keyframe procedure (Stage only) ────────────────────────────────
-// ONE mode, no separate "edit" state (Jacob, 2026-09-26: "a logical procession
-// that's easy to lay down and remove keyframes … move the playhead"). The camera
-// is the operator's whenever playback is not running (RegimeControls' orbit);
-// the panel only says where you are on the path and what the view can become:
-//   · Hero OPENS PAUSED ON THE FIRST KEYFRAME. ▶ previews the motion (the same
-//     heroKeyframeAnim Preview and production play); ⏸ stops where it is.
-//   · Click a dot, or ‹ ›, to go to a key — position, aim and FOV.
-//   · On a key: Update it from the view · + Add after · Delete (any key).
-//   · Between keys (scrubbed): + Add keyframe here.
-// ⛔ The retired "authoring" state (Save / Cancel / Esc, controls handed over
-// only after clicking a dot) was the Hero-Lock era's: the camera had to be
-// unlocked to move at all. Preview has no authoring controls — this is Stage's.
-const SNAP_TOLERANCE = 0.02
+// ── The Hero keyframe timeline (Stage only) ─────────────────────────────────
+// A timeline, like After Effects (BRIEF-keyframe-timeline, Jacob 2026-09-26).
+// Keys sit at the times the operator puts them; the shot has a fixed length.
+//   · The playhead goes anywhere. The camera is the operator's whenever the shot
+//     is not playing (RegimeControls' orbit).
+//   · KEY HERE sets a key at the playhead from the view: on a key it replaces it,
+//     between keys it adds one. While playing it keys that exact moment and
+//     playback carries on — pause is pause, keying is keying.
+//   · Click a key marker: the playhead goes there and pauses. Drag it: retime it.
+//   · DELETE removes the key under the playhead — any key but the first.
+//   · One key is a static shot. With one key, Key here elsewhere adds the end key.
+//   · BOUNCE: first key at 0, last key at the end; plays there and back.
+//     LOOP: the camera travels on from the last key to the first, which closes
+//     the loop at the end (its marker there is linked, not a key of its own).
+//     Toggling redistributes the keys' times: ×(n−1)/n into a loop, and back
+//     out by whatever puts the last key on the end (the exact inverse).
+// ⛔ No "+ After" and no separate "Update": adding at a key's time IS updating it.
+const SNAP = 0.012   // fraction of the track a click snaps to a key within
+const DRAG_PX = 3
 
 function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
-  const scrubT = useHeroScrub()
+  const f = useHeroScrub()                      // playhead, fraction of the length
   const playing = !!heroMotion.preview
   const n = keyframes.length
-  const fracOf = (i, count = n) => (count <= 1 ? 0 : i / (count - 1))
-  const [selected, setSelected] = useState(null)
+  const L = heroMotion.length
+  const loop = heroMotion.mode === 'loop'
   const trackRef = useRef(null)
   const [scrubDragging, setScrubDragging] = useState(false)
+  const drag = useRef(null)                     // { i, x0, moved }
+  const gap = Math.min(0.01, 0.5 / L)           // keys stay half a second apart
 
-  // Capture delight: a one-shot dot pulse on the key a capture landed on.
+  // Capture delight: a one-shot pulse on the key a capture landed on.
   const [pulse, setPulse] = useState(null)
   const pulseTimer = useRef(null)
   const triggerPulse = (index) => {
@@ -522,19 +530,29 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
   }
   useEffect(() => () => { if (pulseTimer.current) clearTimeout(pulseTimer.current) }, [])
 
-  // Go to key i: select it, park the playhead on its dot, put the camera on it.
-  const goTo = useCallback((i, list = keyframes) => {
-    const kf = list[i]
-    if (!kf) return
-    setSelected(i)
-    heroScrub.t = fracOf(i, list.length)
-    notifyHeroScrub()
-    pushCamera({ position: [...kf.position], target: [...kf.target], fov: kf.fov })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyframes])
+  // The key under a playhead place (a loop's end is its first key, linked).
+  const keyAt = useCallback((x, list = keyframes) => {
+    let hit = null, best = SNAP
+    list.forEach((k, i) => { const d = Math.abs(k.t - x); if (d <= best) { hit = i; best = d } })
+    if (loop && list.length > 1 && 1 - x <= best) hit = 0
+    return hit
+  }, [keyframes, loop])
+  const onKey = playing ? null : keyAt(f)
+  const sel = onKey != null ? keyframes[onKey] : null
 
-  // ⭐ OPEN PAUSED ON THE FIRST KEYFRAME — once per entry into Hero, as soon as
-  // the keyframes are there (they hydrate after a reload).
+  const setPlayhead = (x) => { heroScrub.t = x; notifyHeroScrub() }
+  const showAt = useCallback((x, list = keyframes, motion = heroMotion) => {
+    setPlayhead(x)
+    if (!list.length) return
+    const p = [0, 0, 0], q = [0, 0, 0]
+    const { fov } = heroPoseAtTime(list, motion, x * motion.length, p, q)
+    pushCamera({ position: p.map(Math.round), target: q, fov: Math.round(fov) })
+  }, [keyframes, heroMotion])
+  const pause = () => { if (playing) setHeroMotion({ ...heroMotion, preview: false }) }
+  const goTo = (i) => { pause(); showAt(keyframes[i].t) }
+
+  // ⭐ OPEN PAUSED ON THE FIRST KEY — once per entry into Hero, as soon as the
+  // keys are there (they hydrate after a reload).
   const opened = useRef(false)
   useEffect(() => {
     setHeroMotion(m => ({ ...m, preview: false }))
@@ -543,17 +561,12 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
   useEffect(() => {
     if (opened.current || !n) return
     opened.current = true
-    goTo(0)
-  }, [n, goTo])
-  // Keep the selection valid when keys are removed elsewhere (undo, reload).
-  useEffect(() => { if (selected != null && selected >= n) setSelected(n ? n - 1 : null) }, [n, selected])
+    showAt(0)
+  }, [n, showAt])
 
-  const sel = !playing && selected != null ? keyframes[selected] : null
-
-  // Does the view match the selected key? Position + FOV within the rounding the
-  // capture uses, and the LOOK DIRECTION — not the target point, which the orbit
-  // re-seats on the ground under the screen centre at every press without
-  // turning the camera.
+  // Does the view match the key under the playhead? Position + FOV within the
+  // rounding the capture uses, and the LOOK DIRECTION — not the target point,
+  // which the orbit re-seats on the ground under the screen centre.
   const viewMatches = (() => {
     if (!sel || !cam) return false
     const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
@@ -569,79 +582,119 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     if (!rect) return 0
     return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   }, [])
-
-  // Scrub: the pose AT that path parameter, through the same heroPoseAt the
-  // playback uses. Landing on (near) a dot snaps to it and selects that key.
-  const scrubTo = useCallback((t) => {
-    let snapped = t, hit = null, bestD = Infinity
-    for (let i = 0; i < n; i++) {
-      const dd = Math.abs(fracOf(i) - t)
-      if (dd < SNAP_TOLERANCE && dd < bestD) { snapped = fracOf(i); hit = i; bestD = dd }
-    }
-    setSelected(hit)
-    heroScrub.t = snapped
-    notifyHeroScrub()
-    if (!n) return
-    const { position, target, fov } = heroPoseAt(keyframes, snapped, heroMotion.tension ?? 0.5)
-    pushCamera({ position: position.map(Math.round), target: [...target], fov: Math.round(fov) })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyframes, n, heroMotion.tension])
-
-  const play = () => { setSelected(null); setHeroMotion({ ...heroMotion, preview: true }) }
-  const pause = () => {
-    setHeroMotion({ ...heroMotion, preview: false })
-    // Stops where it is; if that is on a dot, that key is the selection.
-    let hit = null
-    for (let i = 0; i < n; i++) if (Math.abs(fracOf(i) - heroScrub.t) < SNAP_TOLERANCE) hit = i
-    setSelected(hit)
+  // Scrub: the pose at that time; near a key, snap onto it.
+  const scrubTo = (x) => {
+    const hit = keyAt(x)
+    showAt(hit == null ? x : (loop && hit === 0 && x > 0.5 ? 1 : keyframes[hit].t))
   }
-  // ‹ › — the previous / next key from where you are.
+
+  const play = () => setHeroMotion({ ...heroMotion, preview: true })
+  // ‹ › — the previous / next key from the playhead (a loop's linked end counts).
+  const marks = keyframes.map(k => k.t).concat(loop && n > 1 ? [1] : [])
   const step = (dir) => {
     if (!n) return
-    if (playing) setHeroMotion({ ...heroMotion, preview: false })
-    const here = selected != null ? fracOf(selected) : scrubT
-    let i = dir > 0 ? keyframes.findIndex((_, k) => fracOf(k) > here + 1e-6) : -1
-    if (dir < 0) for (let k = n - 1; k >= 0; k--) if (fracOf(k) < here - 1e-6) { i = k; break }
-    if (i >= 0) goTo(i)
+    pause()
+    const x = dir > 0 ? marks.find(t => t > f + 1e-6) : [...marks].reverse().find(t => t < f - 1e-6)
+    if (x != null) showAt(x)
   }
 
-  const viewAsKey = () => {
+  const r6 = (x) => Math.round(x * 1e6) / 1e6
+  const keyHere = () => {
     const snap = captureCameraSnapshot()
-    return snap ? { position: snap.position, target: snap.target, fov: snap.fov } : null
-  }
-  const updateSelected = () => {
-    const kf = viewAsKey()
-    if (!kf || selected == null) return
-    const next = [...keyframes]
-    next[selected] = kf
+    if (!snap) return
+    const view = { position: snap.position, target: snap.target, fov: snap.fov }
+    const here = heroScrub.t
+    const on = keyAt(here)
+    let next, at
+    if (!n) { next = [{ ...view, t: 0 }]; at = 0 }
+    else if (on != null) { next = keyframes.map((k, i) => i === on ? { ...view, t: k.t } : k); at = on }
+    else {
+      // One key: the new one is the end (bounce) or halfway round unless the
+      // playhead says otherwise (loop). More: exactly where the playhead is.
+      let t = here
+      if (n === 1) t = loop ? (here > gap && here < 1 - gap ? here : 0.5) : 1
+      else t = Math.max(gap, Math.min(1 - gap, here))
+      next = [...keyframes, { ...view, t: r6(t) }].sort((a, b) => a.t - b.t)
+      at = next.findIndex(k => k.t === r6(t))
+    }
     setKeyframes(next)
-    triggerPulse(selected)
-  }
-  const addKey = () => {
-    const kf = viewAsKey()
-    if (!kf) return
-    // After the selected key; else at the playhead's place in path order.
-    const at = selected != null ? selected + 1
-      : n === 0 ? 0 : Math.min(n, Math.floor(scrubT * (n - 1)) + 1)
-    const next = [...keyframes.slice(0, at), kf, ...keyframes.slice(at)]
-    setKeyframes(next)
-    setSelected(at)
-    heroScrub.t = fracOf(at, next.length)
-    notifyHeroScrub()
     triggerPulse(at)
+    if (!playing) setPlayhead(next[at].t)
   }
-  const deleteSelected = () => {
-    if (selected == null) return
-    const next = keyframes.filter((_, j) => j !== selected)
+  const deleteHere = () => {
+    if (onKey == null || onKey === 0) return
+    let next = keyframes.filter((_, j) => j !== onKey)
+    // Bounce: the end is always a key — the one before takes its place.
+    if (!loop && onKey === n - 1 && next.length > 1) next = next.map((k, j) => j === next.length - 1 ? { ...k, t: 1 } : k)
     setKeyframes(next)
-    if (!next.length) { setSelected(null); heroScrub.t = 0; notifyHeroScrub(); return }
-    goTo(Math.min(selected, next.length - 1), next)
+    showAt(heroScrub.t, next)
+  }
+  const setMode = (mode) => {
+    if (mode === heroMotion.mode) return
+    // Into a loop: ×(n−1)/n, making room for the way home. Back out: whatever
+    // puts the last key on the end — exactly the inverse unless keys were
+    // dragged in between, and never pushes a key past the end.
+    const k = n > 1 ? (mode === 'loop' ? (n - 1) / n : 1 / keyframes[n - 1].t) : 1
+    const next = keyframes.map((kf, i) => ({ ...kf, t: i === n - 1 && mode === 'bounce' && n > 1 ? 1 : r6(kf.t * k) }))
+    useCartographStore.getState().setHeroShot(next, { mode })
+    showAt(Math.min(1, heroScrub.t * k), next, { ...heroMotion, mode })
+  }
+
+  // Marker drag: a press without movement is a click (go there + pause); any
+  // movement retimes the key. The first key, a bounce's end key and a loop's
+  // linked end are pinned.
+  const draggable = (i) => i > 0 && (loop || i < n - 1)
+  const markerDown = (e, i) => {
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    drag.current = { i, x0: e.clientX, moved: false }
+  }
+  const markerMove = (e) => {
+    const g = drag.current
+    if (!g || !e.currentTarget.hasPointerCapture(e.pointerId)) return
+    if (!g.moved && Math.abs(e.clientX - g.x0) < DRAG_PX) return
+    g.moved = true
+    if (g.i == null || !draggable(g.i)) return
+    const lo = keyframes[g.i - 1].t + gap
+    const hi = (g.i + 1 < n ? keyframes[g.i + 1].t : 1) - gap
+    const t = r6(Math.max(lo, Math.min(hi, fracFromX(e.clientX))))
+    setKeyframes(keyframes.map((k, j) => j === g.i ? { ...k, t } : k))
+    if (!playing) setPlayhead(t)
+  }
+  const markerUp = (e) => {
+    const g = drag.current
+    drag.current = null
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+    if (g && !g.moved) { if (g.i == null) { pause(); showAt(1) } else goTo(g.i) }
   }
 
   const btn = (extra = {}) => ({
     background: 'var(--surface-container-high)', color: 'var(--on-surface)',
     border: '1px solid var(--outline-variant)', ...extra,
   })
+  const marker = (x, i, linked) => {
+    const active = !playing && (linked ? onKey === 0 && f > 0.5 : onKey === i && !(loop && i === 0 && f > 0.5))
+    const pulsing = !linked && pulse === i
+    const title = linked ? `${kfName(0)} again — the loop closes here · ${fmtSec(L)}`
+      : `${kfName(i)} · ${fmtSec(x * L)}${draggable(i) ? ' — drag to retime' : ''}`
+    return (
+      <div key={linked ? 'end' : i}
+        onPointerDown={(e) => markerDown(e, linked ? null : i)}
+        onPointerMove={markerMove} onPointerUp={markerUp} onPointerCancel={markerUp}
+        title={title}
+        className={`absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border touch-none ${!linked && draggable(i) ? 'cursor-ew-resize' : 'cursor-pointer'}${pulsing ? ' hero-dot-pulse' : ''}`}
+        style={{
+          left: `${x * 100}%`,
+          backgroundColor: linked ? 'transparent' : 'var(--vic-gold)',
+          borderColor: linked ? 'var(--vic-gold)' : active || pulsing ? '#fff' : 'rgba(255,255,255,0.5)',
+          borderWidth: active || linked ? 2 : 1,
+          borderStyle: linked ? 'dashed' : 'solid',
+          boxShadow: active ? '0 0 0 2px rgba(255,255,255,0.2)' : 'none',
+          zIndex: pulsing ? 4 : 2,
+        }}
+      />
+    )
+  }
 
   return (
     <div className="space-y-3">
@@ -653,8 +706,8 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
             color: playing ? 'var(--success)' : 'var(--on-surface-variant)',
             border: `1px solid ${playing ? 'var(--success)' : 'var(--outline-variant)'}`,
           }}
-          disabled={!n}
-          title={playing ? 'Pause where it is' : 'Preview the motion'}
+          disabled={n < 2}
+          title={playing ? 'Pause where it is' : n < 2 ? 'One key is a static shot — add a second to animate' : 'Play from the playhead'}
           onClick={playing ? pause : play}
         >{playing ? '⏸' : '▶'}</button>
         {[1, 10, 30].map(s => (
@@ -674,104 +727,79 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
           title="Next key" onClick={() => step(1)}>›</button>
       </div>
 
-      {/* ── Timeline: drag to scrub; click a dot to go to that key ───── */}
-      <div
-        ref={trackRef}
-        className="relative h-6 flex items-center cursor-pointer select-none touch-none"
-        onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId)
-          setScrubDragging(true)
-          if (playing) setHeroMotion({ ...heroMotion, preview: false })
-          scrubTo(fracFromX(e.clientX))
-        }}
-        onPointerMove={(e) => {
-          if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
-          scrubTo(fracFromX(e.clientX))
-        }}
-        onPointerUp={(e) => {
-          if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
-          setScrubDragging(false)
-        }}
-        onPointerCancel={(e) => {
-          if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
-          setScrubDragging(false)
-        }}
-      >
-        <div className="absolute inset-x-0 h-[6px] rounded-full top-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ background: 'var(--surface-container-high)' }} />
-        {keyframes.map((_, i) => {
-          const active = !playing && selected === i
-          const pulsing = pulse === i
-          return (
-            <div key={i}
-              onPointerDown={(e) => {
-                e.stopPropagation()
-                if (playing) setHeroMotion({ ...heroMotion, preview: false })
-                goTo(i)
-              }}
-              title={`Go to ${kfName(i)}`}
-              className={`absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border cursor-pointer${pulsing ? ' hero-dot-pulse' : ''}`}
-              style={{
-                left: `${fracOf(i) * 100}%`,
-                backgroundColor: 'var(--vic-gold)',
-                borderColor: active || pulsing ? '#fff' : 'rgba(255,255,255,0.5)',
-                borderWidth: active ? 2 : 1,
-                boxShadow: active ? '0 0 0 2px rgba(255,255,255,0.2)' : 'none',
-                zIndex: pulsing ? 4 : 2,
-              }}
-            />
-          )
-        })}
+      {/* ── Timeline: drag the playhead; click a key to go there, drag it to retime ── */}
+      <div>
         <div
-          className="absolute w-[14px] h-[14px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none border-2 shadow-sm"
-          style={{
-            left: `${scrubT * 100}%`,
-            backgroundColor: scrubDragging ? '#60a5fa' : playing ? '#4ade80' : 'var(--on-surface-variant)',
-            borderColor: 'rgba(255,255,255,0.6)',
-            zIndex: 3,
+          ref={trackRef}
+          className="relative h-6 flex items-center cursor-pointer select-none touch-none"
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId)
+            setScrubDragging(true)
+            pause()
+            scrubTo(fracFromX(e.clientX))
           }}
-        />
-      </div>
-
-      {/* ── Where you are, and what the view can become ──────────────── */}
-      <div className="text-caption px-1" style={{ color: 'var(--on-surface-variant)' }}>
-        {playing ? 'Playing — ⏸ to stop where it is.'
-          : !n ? 'No keys yet — fly to the first view and add it.'
-          : sel ? <>{kfName(selected)} of {n} · {viewMatches ? <span style={{ color: 'var(--success)' }}>✓ the view is this key</span> : 'the view has moved — Update keeps it'}</>
-          : 'Between keys — add one here, or ‹ › to a key.'}
-      </div>
-
-      {!playing && (sel ? (
-        <div className="space-y-2">
-          <div className="flex gap-1.5">
-            <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
-              style={viewMatches ? btn({ color: 'var(--on-surface-subtle)' }) : btn({ background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)' })}
-              disabled={viewMatches}
-              onClick={updateSelected}
-              title="Replace this key with the current view (position, aim, FOV)"
-            >Update {kfName(selected)}</button>
-            <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all" style={btn()}
-              onClick={addKey} title="Add the current view as a new key after this one"
-            >+ After</button>
-            <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all"
-              style={btn({ background: 'transparent', color: 'var(--error)' })}
-              onClick={deleteSelected} title={`Delete ${kfName(selected)}`}
-            >Delete</button>
-          </div>
-          <SliderRow label="FOV" value={sel.fov} min={5} max={120} suffix="°"
-            onChange={(v) => {
-              const next = [...keyframes]
-              next[selected] = { ...sel, fov: v }
-              setKeyframes(next)
-              pushCamera({ fov: v })
-              triggerPulse(selected)
-            }} />
+          onPointerMove={(e) => {
+            if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+            scrubTo(fracFromX(e.clientX))
+          }}
+          onPointerUp={(e) => {
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+            setScrubDragging(false)
+          }}
+          onPointerCancel={(e) => {
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+            setScrubDragging(false)
+          }}
+        >
+          <div className="absolute inset-x-0 h-[6px] rounded-full top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ background: 'var(--surface-container-high)' }} />
+          {keyframes.map((k, i) => marker(k.t, i, false))}
+          {loop && n > 1 && marker(1, 0, true)}
+          <div
+            className="absolute w-[2px] h-[22px] -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none rounded-full"
+            style={{
+              left: `${f * 100}%`,
+              backgroundColor: scrubDragging ? '#60a5fa' : playing ? '#4ade80' : 'var(--on-surface)',
+              zIndex: 3,
+            }}
+          />
         </div>
-      ) : (
-        <button className="hero-btn w-full py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
-          style={btn()} onClick={addKey}
-        >{n ? '+ Add keyframe here' : '+ Add the first keyframe'}</button>
-      ))}
+        <div className="flex justify-between text-caption font-mono px-0.5" style={{ color: 'var(--on-surface-subtle)' }}>
+          <span>0 s</span><span>{fmtSec(f * L)}</span><span>{fmtSec(L)}</span>
+        </div>
+      </div>
+
+      {/* ── Where you are ────────────────────────────────────────────── */}
+      <div className="text-caption px-1" style={{ color: 'var(--on-surface-variant)' }}>
+        {playing ? 'Playing — Key here keys this moment; ⏸ stops where it is.'
+          : !n ? 'No keys yet — fly to the first view and key it.'
+          : n === 1 && sel ? <>The static shot · {viewMatches ? <span style={{ color: 'var(--success)' }}>✓ the view is this key</span> : 'the view has moved — Key here keeps it'}</>
+          : n === 1 ? 'A static shot — Key here adds a second key and makes it move.'
+          : sel ? <>{kfName(onKey)} of {n} · {viewMatches ? <span style={{ color: 'var(--success)' }}>✓ the view is this key</span> : 'the view has moved — Key here keeps it'}</>
+          : 'Between keys — Key here adds one at the playhead.'}
+      </div>
+
+      <div className="flex gap-1.5">
+        <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
+          style={sel && viewMatches ? btn({ color: 'var(--on-surface-subtle)' }) : btn({ background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)' })}
+          onClick={keyHere}
+          title={playing ? 'Key this moment — playback carries on' : sel ? `Replace ${kfName(onKey)} with the view` : 'Add the view as a key at the playhead'}
+        >{!n ? 'Key the first view' : 'Key here'}</button>
+        <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all"
+          style={btn({ background: 'transparent', color: 'var(--error)' })}
+          disabled={onKey == null || onKey === 0}
+          onClick={deleteHere}
+          title={onKey === 0 ? 'The first key is the shot’s start — it stays' : onKey != null ? `Delete ${kfName(onKey)}` : 'Put the playhead on a key to delete it'}
+        >Delete</button>
+      </div>
+      {sel && (
+        <SliderRow label="FOV" value={sel.fov} min={5} max={120} suffix="°"
+          onChange={(v) => {
+            setKeyframes(keyframes.map((k, i) => i === onKey ? { ...k, fov: v } : k))
+            pushCamera({ fov: v })
+            triggerPulse(onKey)
+          }} />
+      )}
 
       <div className="text-caption px-1" style={{ color: 'var(--on-surface-subtle)' }}>
         Drag orbits · ⌥-drag moves · ⌘/⌃-drag pans · scroll zooms
@@ -779,41 +807,26 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
 
       <div style={{ borderTop: '1px solid var(--outline-variant)' }} />
 
-      {/* ── Motion parameters ───────────────────────────────────── */}
-      <SliderRow label="Period" value={heroMotion.period} min={60} max={1800} step={10} suffix="s"
-        onChange={(v) => setHeroMotion({ ...heroMotion, period: v })} />
-
-      {/* Ease — how the bounce sweeps through its extremes. (No loop mode;
-          the Hero motion is always a bounce. 'sawtooth' was a fake loop and
-          is retired — legacy Looks migrate to 'sine' on load.) */}
-      <div className="space-y-0.5">
-        <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>Ease</span>
-        <div className="flex gap-1">
-          {[
-            { key: 'sine', desc: 'Sine — smooth bounce, slows at the extremes',
-              path: 'M2 12 Q 9 2, 16 12 T 30 12' },
-            { key: 'triangle', desc: 'Triangle — constant-speed bounce, sharp turn at the extremes',
-              path: 'M2 18 L 9 6 L 16 18 L 23 6 L 30 18' },
-          ].map(t => {
-            const active = heroMotion.easing === t.key
-            return (
-              <button key={t.key}
-                onClick={() => setHeroMotion({ ...heroMotion, easing: t.key })}
-                title={t.desc}
-                className="flex-1 py-2 rounded transition-colors cursor-pointer flex items-center justify-center"
-                style={{
-                  background: active ? 'var(--surface-container-highest)' : 'var(--surface-container)',
-                  border: `1px solid ${active ? 'var(--outline)' : 'var(--outline-variant)'}`,
-                }}
-              >
-                <svg width="32" height="20" viewBox="0 0 32 20" fill="none">
-                  <path d={t.path} stroke={active ? 'var(--on-surface)' : 'var(--on-surface-variant)'}
-                    strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            )
-          })}
-        </div>
+      {/* ── The shot: its length and how it repeats ─────────────────── */}
+      <SliderRow label="Length" value={L} min={10} max={1800} step={5} suffix=" s"
+        onChange={(v) => setHeroMotion({ ...heroMotion, length: v })} />
+      <div className="flex gap-1">
+        {[
+          { key: 'bounce', label: 'Bounce', desc: 'Plays to the last key, turns, and plays back' },
+          { key: 'loop', label: 'Loop', desc: 'Travels on from the last key back to the first and carries on — a lighthouse turn' },
+        ].map(o => {
+          const active = heroMotion.mode === o.key
+          return (
+            <button key={o.key} onClick={() => setMode(o.key)} title={o.desc}
+              className="flex-1 py-1.5 rounded text-caption transition-colors cursor-pointer"
+              style={{
+                background: active ? 'var(--surface-container-highest)' : 'var(--surface-container)',
+                color: active ? 'var(--on-surface)' : 'var(--on-surface-variant)',
+                border: `1px solid ${active ? 'var(--outline)' : 'var(--outline-variant)'}`,
+              }}
+            >{o.label}</button>
+          )
+        })}
       </div>
     </div>
   )
@@ -868,16 +881,18 @@ function StreetCamera({ cam }) {
 export function HeroPreview({ keyframes, motion }) {
   const { camera } = useThree()
   const controls = useThree((s) => s.controls)
-  const elapsed = useRef(0)
+  const clock = useRef(0)
+  const wasPlaying = useRef(false)
   const frameCount = useRef(0)
+  // The motion without the preview speed: Stage runs its own clock at that speed.
+  const played = useMemo(() => ({ length: motion.length, mode: motion.mode }), [motion.length, motion.mode])
 
   useFrame((_, delta) => {
-    // 0) Keep liveCamera fresh (Set-from-view reads this synchronously)
+    // 0) Keep liveCamera fresh (Key here reads this synchronously)
     liveCamera.camera = camera
     liveCamera.controls = controls
 
-    // 1) Drain panel pushes (position + target + fov from scrub, keyframe
-    // select, Add/Set Keyframe). The target is the keyframe's own aim.
+    // 1) Drain panel pushes (position + target + fov from the scrub or a key).
     if (cameraPush.pending) {
       const u = cameraPush.pending
       cameraPush.pending = null
@@ -889,22 +904,17 @@ export function HeroPreview({ keyframes, motion }) {
       }
     }
 
-    // 2) Play — the SAME heroKeyframeAnim Preview and production play (arc-length
-    // pacing, keyframe dwell, end trim), so what is previewed here is what ships.
-    // Position, aim and fov are the keyframes' own, interpolated on one parameter.
-    // ⛔⛔ WHEN NOT PLAYING THIS TOUCHES NOTHING. It used to re-aim at the hero
-    // subject every frame it was not authoring — `camera.lookAt(subject)` +
-    // `controls.target.set(subject)` — so every orbit pivoted on the subject
-    // (on huron the hood centroid) and every pan was undone the next frame
-    // (Jacob, 2026-09-26: "trouble getting the camera to an angle to actually
-    // check the stage in Huron"). The camera is the operator's whenever it is
-    // not playing (BRIEF-camera-regimes).
-    if (motion.preview && keyframes.length >= 1) {
-      elapsed.current += delta
-      const { fov, u } = heroKeyframeAnim(elapsed.current, keyframes, motion, _heroPos, _heroTgt)
-      // Publish the PATH parameter, so the panel playhead lives in the same
-      // coordinate system as scrubbing and the dots.
-      heroScrub.t = u
+    // 2) Play — the SAME heroKeyframeAnim Preview and production play, so what
+    // is previewed here is what ships. Playback starts FROM THE PLAYHEAD.
+    // ⛔⛔ WHEN NOT PLAYING THIS TOUCHES NOTHING: the camera is the operator's
+    // whenever it is not playing (BRIEF-camera-regimes).
+    const playing = motion.preview && keyframes.length > 1
+    if (playing && !wasPlaying.current) clock.current = heroClockAt(played, heroScrub.t * played.length)
+    wasPlaying.current = playing
+    if (playing) {
+      clock.current += delta * (motion.speed || 1)
+      const { fov, time } = heroKeyframeAnim(clock.current, keyframes, played, _heroPos, _heroTgt)
+      heroScrub.t = time / played.length
       notifyHeroScrub()
       camera.position.copy(_heroPos)
       if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
@@ -919,29 +929,6 @@ export function HeroPreview({ keyframes, motion }) {
   })
 
   return null
-}
-
-// ── 3D path line (rendered in the scene) ────────────────────────────────────
-
-function PathLine({ keyframes, tension, visible }) {
-  const geo = useMemo(() => {
-    if (!visible || keyframes.length < 2) return null
-    const pts = []
-    const steps = 100
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps
-      const p = catmullRom(keyframes.map(k => k.position), t, tension)
-      pts.push(new THREE.Vector3(...p))
-    }
-    return new THREE.BufferGeometry().setFromPoints(pts)
-  }, [keyframes, tension, visible])
-
-  if (!geo) return null
-  return (
-    <line geometry={geo}>
-      <lineBasicMaterial color="#fbbf24" transparent opacity={0.5} depthTest={false} />
-    </line>
-  )
 }
 
 // ── Hook: subscribe to live camera state from outside R3F ────────────────────

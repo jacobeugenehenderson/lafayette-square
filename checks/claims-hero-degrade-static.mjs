@@ -11,7 +11,7 @@
  *
  *   1. STATIC   — a Look with no authored heroKeyframes plays exactly one
  *                 keyframe, and heroKeyframeAnim returns the SAME pose at every
- *                 phase of the period (no motion, not "slow motion").
+ *                 moment of the clock (no motion, not "slow motion").
  *   2. TRACKS   — the pose is derived from the scene's OWN disc
  *                 (ground.json#stencil): scale the disc, the pose scales; move
  *                 it, the pose moves. A constant that ignores its input is the
@@ -33,7 +33,6 @@ import { derivedOpeningKeyframe, resolveHeroKeyframes } from '../src/lib/cameraR
 import { requireArtifact } from './_scenes.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const HERO_MOTION = { period: 720, easing: 'sine' }   // the runtimes' default when scene.json omits heroMotion
 
 let fails = 0
 const bad = (msg) => { console.log(`  ✗ ${msg}`); fails++ }
@@ -91,7 +90,7 @@ for (const look of looks) {
   const authored = !!scene.heroKeyframes?.length
   const fov = scene.shots?.values?.hero?.fov ?? 22
   let kfs
-  try { kfs = resolveHeroKeyframes(scene.heroKeyframes, stencil, fov, look) }
+  try { kfs = resolveHeroKeyframes(scene.heroKeyframes, scene.heroMotion, stencil, fov, look) }
   catch (e) { bad(`${look}: ${e.message}`); continue }
 
   if (authored) {
@@ -101,12 +100,11 @@ for (const look of looks) {
   }
   if (!kfs) { bad(`${look}: no keyframes and no scene disc — nothing to open on`); continue }
 
-  // 1. STATIC — sample the whole period; every pose identical.
-  const motion = scene.heroMotion || HERO_MOTION
-  const period = motion.period || 720
+  // 1. STATIC — sample an hour of wall clock; every pose identical. ⛔ No motion
+  // is passed: a static shot must not need one.
   const samples = Array.from({ length: 24 }, (_, i) => {
     const p = V(), q = V()
-    const { fov: f } = heroKeyframeAnim((i / 24) * period, kfs, motion, p, q)
+    const { fov: f } = heroKeyframeAnim((i / 24) * 3600, kfs, null, p, q)
     return [p.x, p.y, p.z, q.x, q.y, q.z, f]
   })
   const moved = samples.some(s => s.some((v, j) => Math.abs(v - samples[0][j]) > 1e-9))

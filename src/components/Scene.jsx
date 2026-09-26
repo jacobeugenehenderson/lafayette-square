@@ -287,30 +287,29 @@ function CameraRig() {
   // disc; the hero drive waits for it rather than inventing a pose.
   const stencil = useSceneStencil()
   const heroKeyframes = useMemo(
-    () => resolveHeroKeyframes(scene?.heroKeyframes, stencil, heroFov, 'production'),
-    [scene?.heroKeyframes, stencil, heroFov])
-  const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
+    () => resolveHeroKeyframes(scene?.heroKeyframes, scene?.heroMotion, stencil, heroFov, 'production'),
+    [scene?.heroKeyframes, scene?.heroMotion, stencil, heroFov])
+  // ⛔ No default motion: a static shot needs none, and an animated one without
+  // its own { length, mode } is refused by resolveHeroKeyframes above.
+  const heroMotion = scene?.heroMotion ?? null
   // ⭐ ARRIVAL VARIETY — a different part of the pan on every load (Jacob, 2026-08-28).
   // `randomizeHeroStart` already existed and is called on hero ENTRY (below), but the
   // first load is not an entry: `prevMode` initialises to 'hero', so on arrival
   // `vm !== prevMode.current` is false and the branch never runs — the offset stayed 0
   // and every visitor opened on the identical frame. (Diagnosed and prescribed to the
   // line in `cartograph/BACKLOG.md` before it was applied: a one-shot ref-guarded mount
-  // effect here, dep `[heroMotion.period]`.)
+  // effect here.)
   //
-  // ⛔ GATED ON `scene`, AND THAT IS THE WHOLE CORRECTNESS OF IT. `heroMotion` is the
-  // 720 s DEFAULT until scene.json resolves, so firing on mount randomises against a
-  // period the pan does not use — on LS (authored 1360 s) the offset would only ever
-  // land in the first ~53% of the cycle. Waiting for the slab costs nothing: the pan is
-  // genuinely static until then anyway, because an unresolved scene yields the 1-length
-  // fallback keyframe and `heroKeyframeAnim` returns points[0] verbatim.
+  // ⛔ GATED ON `scene`, AND THAT IS THE WHOLE CORRECTNESS OF IT. Until scene.json
+  // resolves there is no motion, so firing on mount would randomise against no cycle
+  // at all. Waiting for the slab costs nothing: the camera is static until then anyway.
   // ⛔ Still one-shot: re-randomising later would jump the camera mid-pan.
   const didRandomizeArrival = useRef(false)
   useEffect(() => {
     if (didRandomizeArrival.current || !scene) return
     didRandomizeArrival.current = true
-    randomizeHeroStart(heroMotion.period)
-  }, [scene, heroMotion.period])
+    randomizeHeroStart(heroMotion)
+  }, [scene, heroMotion])
 
   // Projection vertical offset (lens shift) for panel-aware reframe
 
@@ -622,7 +621,7 @@ function CameraRig() {
         // to [0,1,0] so Hero un-rolls smoothly out of Browse's overhead.
         // Pick a random point in the pan on each Hero entry → a returning user
         // sees a different part of the arc, not always the same start.
-        randomizeHeroStart(heroMotion.period)
+        randomizeHeroStart(heroMotion)
         transToHero.current = true
         const { fov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos, _heroTgt)
         beginTransition(_heroPos.toArray(), _heroTgt.toArray(), fov, SHOT_TRANSITION_MS.hero, [0, 1, 0])

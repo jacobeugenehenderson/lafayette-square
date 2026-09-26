@@ -1,8 +1,8 @@
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: Cue, 2026-09-26 — built; awaiting the scene re-bake and Jacob's eye
 written: 2026-09-26
-evict-when: a Hero keyframe sits at a time the operator chose on a timeline, Add / Delete / drag act on the playhead, every runtime plays the timing, LS's Arch shots and every town's existing keys play back sample-identical, and Jacob has used it in Stage.
+evict-when: a Hero keyframe sits at a time the operator chose on a timeline, Key here / Delete / drag act on the playhead, every runtime plays the timing, every town's existing keys are reached at the same second as before, and Jacob has used it in Stage.
 -->
 
 # The keyframe timeline: keys sit in time, where the operator puts them
@@ -36,28 +36,30 @@ The rejected option was the quick fix that kept evenly spaced keys. ⛔ Don't fa
   `claims-a-keyframe-carries-its-aim`, `claims-hero-degrade-static`, `claims-the-camera-has-one-definition`.
   Keyframes are authored in `design.json` and shipped in `scene.json#shots` by `cartograph/bake-scene.js`.
 
-## The shape (confirm with Jacob, then build)
+## The shape — RULED by Jacob, 2026-09-26
 
-1. **A key carries its time.** Every key gets a time on the shot's timeline. The panel is a timeline: a playhead
-   you drag, key markers at their times (draggable to retime), **Add key** at the playhead (it replaces the key
-   if the playhead sits on one), **Delete** on the key under the playhead, and ‹ › to jump between keys. ⛔ No
-   "+ After", no "Update" as a separate idea: adding at a key's time IS updating it. The FOV slider stays.
-2. **One interpolation, driven by time.** Playback puts the camera at the playhead's time, in every runtime:
-   Stage, Preview and production. ⛔ No runtime keeps the old index-spaced path.
-3. **Migration, and the acceptance.** Existing keys get the times at which **today's playback** reaches them,
-   i.e. after the arc-length reparam, not the index spacing. That way LS's Arch shots and every town's keys play
-   **sample-identical** before and after. Name how many keys, in how many Looks.
-4. **For Jacob to rule before you build** (don't guess): what the timeline's length is and how the loop behaves.
-   Today it's a ping-pong over `period`, eased by `easing`, with a dwell at each key. Does the timeline show one
-   forward pass that then plays back, does it loop, and does the dwell survive now that the operator places
-   time? Put the options to him in plain words, with a recommendation.
+- **Fixed length, keys as fractions of it.** `heroMotion = { length (s), mode: 'bounce' | 'loop' }`; each key
+  `{ position, target, fov, t }`, `t` ∈ [0,1]. Changing the length stretches every key.
+- **The first key sits at 0 and is never deleted. One key is a static shot.** With one key, a new key goes to
+  the end. **Bounce:** the last key is pinned at the end. **Loop:** the camera travels on from the last key to
+  the first, which closes the loop at the end as a *linked* marker (never stored).
+- **Key here** keys the view at the playhead (on a key it replaces it). **While playing it keys that exact
+  moment and playback carries on** — *"pause is pause, keyframe is keyframe."* **Click a key** → the playhead
+  goes there and pauses; **drag it** → retime it. **Delete** removes the key under the playhead.
+- **Loop ⇄ Bounce redistributes:** ×(n−1)/n into a loop; back out by whatever puts the last key on the end.
+  *(Jacob: the pace change is substantial — a whole return leg is added — "but that doesn't matter.")*
+- **No whole-shot ease** (*"it feels like the camera is stalled … if it's a loop we'd not want any easing"*).
+  Speed follows the operator's spacing and changes smoothly through each key; a bounce turns quickly at its ends.
+- ⛔ **Acceptance changed, and why.** "Sample-identical" and "playback follows the operator's timing" cannot
+  both hold: the retired sine wave is what made them differ. Ruled: **every key reached at the same second as
+  before, and the path's shape unchanged**; between keys the pacing changes (▶ the migration prints it).
+- **Migration:** 11 keys in 4 Looks, `node scratch/keyframe-timeline-migrate.mjs <old heroAnim.js>`.
 
 ## Can the instrument see it?
 
 - Extend `claims-a-keyframe-carries-its-aim` to require a time on every key, strictly increasing. Mutation: drop
   one.
-- A before/after sample check: the camera pose at fixed times, for every Look with keys, is identical across
-  the migration.
+- Every key reached at its time, in both modes, for every Look with keys (in the same check).
 - `claims-the-camera-has-one-definition` stays green.
 - Jacob's eye: lay down, drag and delete keys in Stage on Huron, then the same shot in Preview.
 

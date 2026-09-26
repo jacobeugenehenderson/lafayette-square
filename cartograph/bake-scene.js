@@ -36,6 +36,7 @@ import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { migrateSkyChannel } from '../src/cartograph/skyGrid.js'
+import { assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
 import {
   AMBIENT_FLAT_DEFAULTS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FLAT_DEFAULTS, DIRMOON_FLAT_DEFAULTS,
@@ -55,8 +56,8 @@ import {
 // heroMotion artifact before baking. Production has no use for them.
 function stripTransientHeroMotion(m) {
   if (!m || typeof m !== 'object') return null
-  const { period, easing } = m
-  return { period, easing }
+  const { length, mode } = m
+  return { length, mode }
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -156,16 +157,14 @@ export async function bakeScene({ look } = {}) {
     // default, so an unframed town bakes `null` and each camera derives as before.
     browseFrame:   design.browseFrame || null,
     heroSubject:   design.heroSubject   || null,
-    // ⭐ KEYFRAMES CARRY THEIR OWN AIM as of 2026-09-05 — {position, target,
-    // fov}. The Hero Lock derived the aim from the subject every frame, which
-    // made the camera's pitch an OUTPUT (atan((subjY − camY) / distance)) and
-    // is why the LS pan was level to within two degrees. ⚠️ `target` is
-    // OPTIONAL: a keyframe without one falls back to the resolved subject at
-    // runtime (heroAnim.js), reproducing the old lock exactly for that
-    // keyframe. So every slab baked before today plays identically and
-    // SLAB-CONTRACT §4 extends rather than breaks.
-    heroKeyframes: design.heroKeyframes || [],
-    heroMotion:    stripTransientHeroMotion(design.heroMotion) || { period: 12, easing: 'easeInOut' },
+    // ⭐ THE HERO SHOT — keys `{ position, target, fov, t }` (t = a fraction of
+    // the length; the first at 0) and, for 2+ keys, motion `{ length (s), mode:
+    // 'bounce' | 'loop' }`. Every key carries its own aim and its own time, and
+    // both are refused loudly here if missing (heroAnim.js#assertKeyframesAimed).
+    heroKeyframes: assertKeyframesAimed(design.heroKeyframes || [], `bake-scene ${look}`),
+    // ⛔ No default motion: a static shot (0–1 key) needs none, and an animated
+    // one without its own { length, mode } is refused here, before it ships.
+    heroMotion:    assertHeroMotion(design.heroKeyframes || [], stripTransientHeroMotion(design.heroMotion), `bake-scene ${look}`),
     // SC.7 — arch + horizon authoring. The Gateway Arch landmark's
     // placement / transform / uplights and the ground disc's radius +
     // feathering. Promoted from the module-scope `archState` bridge in

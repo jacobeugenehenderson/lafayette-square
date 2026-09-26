@@ -31,7 +31,7 @@
 import { useSyncExternalStore } from 'react'
 import * as THREE from 'three'
 import { onSceneStencil, getSceneStencil } from '../components/sceneStencilState.js'
-import { assertKeyframesAimed } from '../preview/heroAnim.js'
+import { assertKeyframesAimed, assertHeroMotion } from '../preview/heroAnim.js'
 
 // ── The opening view — a town with no authored keyframes ─────────────────────
 // H-7: "Where a town has no keyframes yet, the default opening view MAY point at
@@ -51,7 +51,7 @@ const OPENING_BEARING        = [-0.80, 0.60]  // unit XZ direction from centre t
 /**
  * @param stencil `{ center:[x,z], radius }` — the scene's disc, or null
  * @param fov     the town's authored hero fov (scene.shots)
- * @returns a single keyframe `{ position, target, fov }`, or null when the
+ * @returns a single keyframe `{ position, target, fov, t: 0 }` (a static shot), or null when the
  *   scene's size is unknown: quietly while the disc has not been published
  *   (null), LOUDLY when it has been and is degenerate. ⛔ No fallback extent: without the disc there is no
  *   scale to stand off by, and inventing one puts a plausible-looking frame on a
@@ -70,6 +70,7 @@ export function derivedOpeningKeyframe(stencil, fov) {
     position: [c[0] + OPENING_BEARING[0] * d, r * OPENING_EYE_RATIO, c[1] + OPENING_BEARING[1] * d],
     target: [c[0], 0, c[1]],
     fov,
+    t: 0,
   }
 }
 
@@ -84,11 +85,15 @@ export function useSceneStencil() {
 
 /**
  * The keyframes a runtime plays: the authored ones, each checked for its own
- * aim; else the derived opening view; else null (size not yet known — the
- * camera stays put until the ground publishes the disc).
+ * aim and time (and an animated shot for its motion); else the derived opening
+ * view; else null (size not yet known — the camera stays put until the ground
+ * publishes the disc).
  */
-export function resolveHeroKeyframes(authored, stencil, fov, where) {
-  if (authored?.length) return assertKeyframesAimed(authored, where)
+export function resolveHeroKeyframes(authored, motion, stencil, fov, where) {
+  if (authored?.length) {
+    assertHeroMotion(authored, motion, where)
+    return assertKeyframesAimed(authored, where)
+  }
   const k = derivedOpeningKeyframe(stencil, fov)
   return k ? [k] : null
 }

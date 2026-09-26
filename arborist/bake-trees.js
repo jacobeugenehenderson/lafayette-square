@@ -52,7 +52,7 @@ import { fileURLToPath } from 'node:url'
 // (src/preview/heroAnim.js: pure, allocation-free, no React/DOM). Importing it
 // (vs reimplementing) keeps the bake-time classifier's camera locus in lock-step
 // with what Scene/Preview/Stage actually render. Node-safe ESM.
-import { heroPoseAt, assertKeyframesAimed } from '../src/preview/heroAnim.js'
+import { heroPathPose, assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
 import { assignHeroBand, glbTriangleCount } from './hero-band.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -431,7 +431,7 @@ const HERO_TIER = {
   CULL_FRUSTUM_GUARD: 1.3,
 }
 // The camera's aim at each sampled pose is the keyframes' OWN target,
-// interpolated on the same parameter as the position (heroPoseAt — the function
+// interpolated on the same parameter as the position (heroPathPose — the path
 // every runtime plays). ⛔ It used to be ONE resolved hero subject for the whole
 // sweep, i.e. the old Hero Lock: on a town whose keyframes aim elsewhere (huron,
 // provincetown) the frustum pointed at the hood centroid, not at what the shot
@@ -495,20 +495,20 @@ function classifyHeroTiers(canopies, heroPan) {
     return { tiers, meta: { skipped: 'no-hero-pan' } }
   }
   assertKeyframesAimed(heroPan.keyframes, 'bake-trees')
+  assertHeroMotion(heroPan.keyframes, heroPan.motion, 'bake-trees')
   const fovDeg = heroPan.keyframes[0].fov
   const vHalf = (fovDeg * Math.PI / 180) / 2
   const hHalf = Math.atan(Math.tan(vHalf) * HERO_TIER.ASPECT)
-  const tension = heroPan.tension ?? 0.5
   const diagHalf = Math.hypot(hHalf, vHalf)
 
-  // Camera poses (position + aim) sampled uniformly along the path parameter
-  // t∈[0,1]. The motion wave only changes dwell/speed, not the set of poses the
-  // camera occupies, so uniform-t covers the whole sweep for max-over-arc.
+  // Camera poses (position + aim) sampled uniformly along the PATH (a loop's
+  // closing segment included). Key times only change when the camera is where,
+  // not the set of poses it occupies, so the path covers the whole sweep.
   const N = HERO_TIER.POSES
   const poses = []
   for (let s = 0; s < N; s++) {
     const t = N === 1 ? 0 : s / (N - 1)
-    const { position: p, target: q } = heroPoseAt(heroPan.keyframes, t, tension)
+    const { position: p, target: q } = heroPathPose(heroPan.keyframes, heroPan.motion, t)
     poses.push({ p: [p[0], p[1], p[2]], q: [q[0], q[1], q[2]] })
   }
 
@@ -934,7 +934,7 @@ export async function bakeTrees({
     const s = JSON.parse(await fs.readFile(
       path.join(REPO_ROOT, 'public', 'baked', effHeroLook, 'scene.json'), 'utf8'))
     if (Array.isArray(s.heroKeyframes) && s.heroKeyframes.length) {
-      heroPan = { keyframes: s.heroKeyframes, tension: s.heroMotion?.tension }
+      heroPan = { keyframes: s.heroKeyframes, motion: s.heroMotion }
     }
   } catch (e) {
     if (verbose) console.log(`[bake-trees] hero pan unavailable for '${effHeroLook}' (${e.code || e.message}) — heroTier skipped`)
