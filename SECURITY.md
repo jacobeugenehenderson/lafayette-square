@@ -537,6 +537,7 @@ what any visitor sees, and the controls are:
   contacts, outreach notes and research are stored apart and a test searches the published file for them.
 - **Every publish is kept** with who, when and what, and staff can put any earlier one back.
 - **Legal records (2026-09-25) add restricted material** — drafts, executed agreements, counsel notes. A Host sees a document only if it is Host-visible, Current, not Internal and applies to their Ward, **decided in the Worker**, not the page; shareability is a separate field, and only staff can acknowledge the launch gate. `npm test` in that repo asserts it.
+- **Domains (2026-09-25) add one secret: `CF_API_TOKEN`, a read-only Cloudflare token (Zone:Read, DNS:Read)** held as a Wrangler secret. The Worker's sync only reads from Cloudflare; with no token it refuses (503) rather than run. Adding zones uses a separate edit token, typed into Jacob's local shell for `scripts/cf-add-zones.mjs` and never stored. A Host sees only their own Ward's domains. `npm test` in that repo checks that the sync never writes, that a Host can't see another Ward's domain, and that no token value appears in any response or log.
 
 ### F-18 · MEDIUM (IP / anti-scraping, not data exposure) · The whole slab of every town is bulk-downloadable by anyone, unauthenticated  *(new, 2026-09-21)*
 - **Measured, from a shell, with no browser and no referrer:**

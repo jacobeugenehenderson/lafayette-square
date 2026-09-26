@@ -2,12 +2,12 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: 2026-09-25, to Ledger (session lafayette-square-nosync-95)
 written: 2026-09-25
 evict-when: every domain Jacob owns is a record in Operations, attached to its Ward or marked unassigned, and shows its live state (nameservers, DNS records, whether it answers), read from Cloudflare; Jacob has seen the list.
 -->
 
-**Status:** dispatch-ready. Boz drafted it 2026-09-25, and **Jacob dispatches.**
+**Status:** dispatched to **Ledger**. The code is built and tested in `theward-operations` (uncommitted). Next it needs Jacob's domain list, the read token, and a deploy.
 
 ## Who you are, and the bounds
 
