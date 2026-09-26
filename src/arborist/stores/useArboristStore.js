@@ -713,6 +713,8 @@ const useArboristStore = create((set, get) => ({
   salonLeafPacks: [],              // [{packId, kind}]
   salonDossier: null,              // §9 — the active species' dossier (reference plates + required) or null
   salonOptions: null,              // §9 — matcher ranked options {chassis,bark,leaf} or null
+  salonRecommend: null,            // { chassis|bark|leaf: { [partId]: { tier, reason, rank } } } — workable marks
+  salonRecommendError: null,
   // Brief 1.5b (Quill): operator-authored chassis curation. Keyed by
   // chassis filename (`<name>.glb`); value is `{displayName, approved, notes}`.
   // `approved` is tri-state: true/false/null (unreviewed). Absent entry is
@@ -758,6 +760,9 @@ const useArboristStore = create((set, get) => ({
         // matcher's ranked options per part-type for this species (null if no dossier).
         salonDossier:        oD.dossier || null,
         salonOptions:        oD.options || null,
+        // recommend-plates' ranking per part-type: { [partId]: { tier, reason, rank } }
+        salonRecommend:      oD.recommend || null,
+        salonRecommendError: oD.recommendError || null,
       })
     } catch (err) {
       set({ salonError: String(err) })

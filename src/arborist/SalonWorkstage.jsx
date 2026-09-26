@@ -86,6 +86,20 @@ const MORPH_TO_TARGET_CATEGORY = {
 // a wiki PAGE serving text/html, so ALL 28 plates failed and vanished, and the pane read
 // as "no references for this species" instead of "these URLs are wrong." The panel whose
 // entire job is ground truth was silently showing nothing. A broken plate is now LOUD.
+// ── Workable marks (Jacob, 2026-09-25): recommend-plates' tier per plate, never a re-sort ──
+const TIER_WORD = { S: 'same species', G: 'same genus', T: 'matches by trait' }
+const TIER_COLOR = { S: ['rgba(80,200,140,0.3)', 'rgba(80,200,140,0.7)', '#9ed8b0'], G: ['rgba(110,150,220,0.28)', 'rgba(110,150,220,0.7)', '#a9c3ee'], T: ['rgba(200,168,58,0.22)', 'rgba(200,168,58,0.6)', '#dcc47a'] }
+function WorkableBadge({ tier }) {
+  const [bg, bd, fg] = TIER_COLOR[tier] || TIER_COLOR.T
+  return <span style={{ position: 'absolute', top: 3, left: 3, zIndex: 1, fontSize: 8, fontWeight: 600, padding: '1px 4px', borderRadius: 3, background: bg, border: `1px solid ${bd}`, color: fg }}>{tier}</span>
+}
+function WorkableLegend({ error }) {
+  if (error) return <div style={{ fontSize: 10, color: '#d98', padding: '0 0 4px' }}>⛔ workable marks unavailable: {error}</div>
+  return <div style={{ fontSize: 9, color: '#8a93a0', padding: '0 0 4px' }}>
+    {Object.keys(TIER_WORD).map(t => <span key={t} style={{ marginRight: 8 }}><b style={{ color: TIER_COLOR[t][2] }}>{t}</b> {TIER_WORD[t]}</span>)}· hover a plate for why
+  </div>
+}
+
 function ReferencePlate({ p }) {
   const [failed, setFailed] = useState(false)
   const label = (
@@ -1019,7 +1033,7 @@ function SlotCard({
 // other shelves collapse below, browsable. Plates render via the shared lazy
 // thumbnailer, so a full shelf costs one WebGL context, not one-per-plate.
 
-function ChassisShelfPicker({ shelves, declaredHabit, selected, chassisCuration, onPick, onApprove, onAdd }) {
+function ChassisShelfPicker({ shelves, declaredHabit, selected, chassisCuration, onPick, onApprove, onAdd, marks }) {
   const hasDeclared = declaredHabit && FORM_IDS.includes(declaredHabit)
   const declaredItems = hasDeclared ? (shelves.get(declaredHabit) || []) : []
   // "Other" = every chassis NOT on the declared shelf, flat (the other 8 habits
@@ -1034,18 +1048,18 @@ function ChassisShelfPicker({ shelves, declaredHabit, selected, chassisCuration,
       {hasDeclared && (
         <ChassisShelf label={FORM_BY_ID[declaredHabit].name} form={declaredHabit} isDeclared
           items={declaredItems} defaultOpen selected={selected} chassisCuration={chassisCuration}
-          onPick={onPick} onApprove={onApprove} />
+          onPick={onPick} onApprove={onApprove} marks={marks} />
       )}
       <ChassisShelf label={hasDeclared ? 'Other' : 'All chassis'} form={null}
         items={otherItems} defaultOpen={!hasDeclared} selected={selected} chassisCuration={chassisCuration}
-        onPick={onPick} onApprove={onApprove} />
+        onPick={onPick} onApprove={onApprove} marks={marks} />
       <button type="button" onClick={onAdd} title="Add a new chassis (procure / author) — behavior TBD"
         style={{ ...btnStyle({ block: true }), width: '100%', marginTop: 2, fontSize: 11, color: '#8a93a0' }}>+ Add chassis</button>
     </div>
   )
 }
 
-function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, chassisCuration, onPick, onApprove }) {
+function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, chassisCuration, onPick, onApprove, marks }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
     <div style={{
@@ -1060,7 +1074,8 @@ function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, c
         <span style={{ fontWeight: isDeclared ? 600 : 500, textTransform: 'capitalize',
           color: isDeclared ? '#bce0a0' : '#cdd6df' }}>{label}</span>
         {isDeclared && <span style={{ fontSize: 8, color: '#8fb87f', textTransform: 'uppercase', letterSpacing: '0.06em' }}>this species</span>}
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: '#778' }}>{items.length}</span>
+        {marks && <span style={{ marginLeft: 'auto', fontSize: 9, color: '#8fb87f' }} title="workable for this species">{items.filter(c => marks[c.name]).length} workable ·</span>}
+        <span style={{ marginLeft: marks ? 0 : 'auto', fontSize: 10, color: '#778' }}>{items.length}</span>
         <span style={{ color: '#667', fontSize: 10 }}>{open ? '▾' : '▸'}</span>
       </button>
       {open && (items.length === 0
@@ -1070,7 +1085,8 @@ function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, c
         : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))', gap: 6, padding: '2px 6px 8px' }}>
             {items.map(c => (
               <SalonShelfPlate key={c.name} chassis={c} cur={chassisCuration[`${c.name}.glb`] || null}
-                selected={c.name === selected} onPick={onPick} onApprove={onApprove} />
+                selected={c.name === selected || marks?.[c.name]?.partId === selected} onPick={onPick} onApprove={onApprove}
+                mark={marks?.[c.name] || null} />
             ))}
           </div>
       )}
@@ -1078,16 +1094,17 @@ function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, c
   )
 }
 
-function SalonShelfPlate({ chassis, cur, selected, onPick, onApprove }) {
+function SalonShelfPlate({ chassis, cur, selected, onPick, onApprove, mark }) {
   const approved = cur?.approved === true
   const label = cur?.displayName || chassis.name
   return (
-    <div onClick={() => onPick(chassis.name)} title={label} style={{
+    <div onClick={() => onPick(chassis.name)} title={mark ? `${label}\n${mark.reason}` : label} style={{
       position: 'relative', borderRadius: 5, padding: 3, cursor: 'pointer',
       background: selected ? 'rgba(120,160,220,0.18)' : 'rgba(255,255,255,0.03)',
       border: '1px solid ' + (selected ? 'rgba(120,160,220,0.75)' : 'rgba(255,255,255,0.08)'),
     }}>
-      <LazyChassisThumb name={chassis.name} overlay={
+      <LazyChassisThumb name={chassis.name} overlay={<>
+        {mark && <WorkableBadge tier={mark.tier} />}
         <button type="button" onClick={(e) => { e.stopPropagation(); onApprove(chassis.name) }}
           title={approved ? 'Approved — ships to the Grove (click to unset)' : 'Approve this chassis'}
           style={{
@@ -1097,7 +1114,7 @@ function SalonShelfPlate({ chassis, cur, selected, onPick, onApprove }) {
             background: approved ? 'rgba(80,200,140,0.28)' : 'rgba(0,0,0,0.45)',
             color: approved ? '#9ed8b0' : '#999',
           }}>{approved ? '★' : '·'}</button>
-      } />
+      </>} />
       <span style={{
         fontSize: 9, color: selected ? '#cdd6df' : '#99a', textAlign: 'center', display: 'block', marginTop: 2,
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -1129,7 +1146,12 @@ function SalonControlsPanel({
   // The species' NATIVE leaf — its declared leaf shape (rubric leaf.silhouette),
   // which doubles as a pack id (palmate/ovate/…). Tagged + first in the leaf
   // picker as the revert anchor. Null when the species has no dossier leaf.
-  const nativePack = dossier?.required?.['leaf.silhouette']?.target || null
+  // ⛔ This read the dead `leaf.silhouette` axis (a shape doubling as a pack id), so the badge
+  // never fired after the cutover. The species' own leaf is its SAME-SPECIES (S) pack.
+  const marks = useArboristStore(s => s.salonRecommend)
+  const marksError = useArboristStore(s => s.salonRecommendError)
+  const nativePack = Object.entries(marks?.leaf || {}).filter(([id, m]) => m.tier === 'S' && id === m.partId)
+    .sort((a, b) => a[1].rank - b[1].rank)[0]?.[0] || null
   // The species' native leaf ARRANGEMENT (rubric leaf.ways) — tagged in the Ways
   // selector like the native pack, so the operator knows which respray pattern is
   // botanically correct (Sugar Maple = opposite). Null when undossiered.
@@ -1172,8 +1194,9 @@ function SalonControlsPanel({
           recommend). You land on this species' declared-habit shelf; the other
           shelves are browsable below. Chassis are tagged in the Shelves gauntlet;
           set-aside ones don't appear here. */}
+      {dossier && <WorkableLegend error={marksError} />}
       <ChassisShelfPicker
-        shelves={shelves} declaredHabit={declaredHabit}
+        shelves={shelves} declaredHabit={declaredHabit} marks={marks?.chassis || null}
         selected={chassis} chassisCuration={chassisCuration}
         onPick={(name) => onParams({ chassis: name })}
         onApprove={(name) => {
@@ -1242,7 +1265,7 @@ function SalonControlsPanel({
       <CollapsibleSection title="Bark" subtitle={bark?.ref} open={barkOpen} onToggle={onBarkOpenChange}>
       <CollapsibleSection title="Bark library" defaultOpen={false} emphasis>
         <PlatePicker
-          items={barkRefs.map(ref => ({ id: ref, label: ref }))}
+          items={barkRefs.map(ref => { const m = marks?.bark?.[ref]; return { id: ref, label: ref, ...(m ? { badge: m.tier, note: `${ref} — ${m.reason}` } : {}) } })}
           current={bark?.ref}
           onPick={(id) => onParams({ bark: { ref: id } })}
           onAdd={() => salonAddStub('bark')}
@@ -1291,8 +1314,9 @@ function SalonControlsPanel({
       <PlatePicker
         items={[
           { id: '__bare__', label: 'Bare', note: 'No leaves (an authored, leafless state)', icon: <span style={{ fontSize: 20, color: '#8a93a0', lineHeight: 1 }}>∅</span> },
-          ...(nativePack && leafPacks.some(p => p.packId === nativePack) ? [{ id: nativePack, label: nativePack, badge: 'native', note: `${nativePack} — this species' own leaf` }] : []),
-          ...leafPacks.filter(p => p.packId !== nativePack).map(p => ({ id: p.packId, label: p.packId, missing: p.kind === 'flat' })),
+          ...(nativePack && leafPacks.some(p => p.packId === nativePack) ? [{ id: nativePack, label: nativePack, badge: 'native', note: `${nativePack} — this species' own leaf: ${marks.leaf[nativePack].reason}` }] : []),
+          ...leafPacks.filter(p => p.packId !== nativePack).map(p => { const m = marks?.leaf?.[p.packId]
+            return { id: p.packId, label: p.packId, missing: p.kind === 'flat', ...(m ? { badge: m.tier, note: `${p.packId} — ${m.reason}` } : {}) } }),
         ]}
         current={leaves?.mode === 'bare' ? '__bare__' : (leaves?.pack || null)}
         onPick={(id) => id === '__bare__'

@@ -13,6 +13,7 @@
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { matcher } from './matcher.js'
+import { recommend } from './recommend-plates.mjs'
 import { slugifyRoster } from './roster-coverage.js'
 
 const RUBRIC = 'arborist/rubric.json'
@@ -72,5 +73,29 @@ export function salonOptionsForSpecies(speciesId) {
       bark: matcher(rubric, dossier, 'bark', parts),
       leaf: matcher(rubric, dossier, 'leaf', parts),
     },
+    // The SAME ranking the system build uses (recommend-plates.mjs): per plate, which parts are
+    // workable for this species — tier S/G/T and the reason in plain words. The Salon marks
+    // plates with it; it never reorders the shelves (Phase 4: categorize, then mark).
+    ...recommendations(dossier, parts, rubric),
+  }
+}
+
+function recommendations(dossier, parts, rubric) {
+  try {
+    const out = {}
+    // Keyed by partId AND by source name: the Salon's chassis catalog still lists source
+    // filenames (`white_oak_a`), not the form ids the part-index and compositions use (`rounded_06`).
+    const src = new Map(parts.map(p => [p.partId, p.sourcePath ? p.sourcePath.split('/').pop().replace(/\.glb$/, '') : null]))
+    for (const t of ['chassis', 'bark', 'leaf']) {
+      out[t] = {}
+      recommend({ scientific: dossier.scientific, partType: t, parts, rubric, dossier }).forEach((r, i) => {
+        const mark = { tier: r.tier, reason: r.reason, rank: i + 1, partId: r.partId }
+        out[t][r.partId] = mark
+        if (src.get(r.partId)) out[t][src.get(r.partId)] = mark
+      })
+    }
+    return { recommend: out }
+  } catch (e) {
+    return { recommend: null, recommendError: e.message }   // ⛔ said, never swallowed (e.g. an unlabelled part-index)
   }
 }
