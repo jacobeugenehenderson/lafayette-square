@@ -46,9 +46,10 @@ bottom is the world datum, y = 0 — not a fixed depth.**
   moves with the lift and the exaggeration. Under the ruling the bottom vertices land at **world y = 0 at every
   exaggeration** — so it must be expressed in the vertex shader (render AND depth material, slab AND Stage),
   not baked as a constant. ⛔ No fallback depth.
-- ⚠️ Check the datum: confirm y = 0 is at or below the lowest ground in every town (coastal towns derive
-  their datum from the water face — `BAKE.md`, "where zero is"). If any town's ground dips below 0, stop and
-  ask Jacob.
+- ✅ **Datum ruled (Jacob, 2026-09-26): "y0" means the TOWN'S LOWEST GROUND** — `min(0, the town's heightfield
+  minimum)`, derived per town from its terrain, never a constant. Plumb measured Provincetown's ground reaching
+  −1.14 m and Huron's −0.11 m (a water datum), with 22 building corners a few mm below 0; LS/HPDM bottom out at 0.
+  Jacob, on ground below the water line: *"IRL that = water"* — ⚠️ recorded as an open data question, not this brief's.
 - **The floor height (the visible pedestal) is NOT ruled.** Jacob: tying it to `year_built` is "stupid", and
   *"it works in LS"*. ⛔ Do not change what Lafayette Square draws above ground; if you touch
   `periodPedestalFor`, bring Jacob the options first.
