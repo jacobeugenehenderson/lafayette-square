@@ -18,6 +18,7 @@ import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import MountainBackdrop from './MountainBackdrop'
 import SetPiece from './SetPiece.jsx'
+import SlabRevetment from './SlabRevetment.jsx'
 import Atmosphere from './Atmosphere'
 import CloudDome from './CloudDome'
 import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
@@ -900,6 +901,8 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
       {/* The town's set-piece, if it declares one — the ONE mount every app uses. */}
       {!IS_GROUND && <R3FErrorBoundary name="SetPiece"><SetPiece /></R3FErrorBoundary>}
+      {/* The shore's stone — the props Stage passes, nothing more (claims-every-app-mounts-the-set-piece). */}
+      {!IS_GROUND && <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={INSTANCE.lookId} bakeLastMs={scene?.bakedAt ?? null} /></R3FErrorBoundary>}
       {/* Landscape backdrop (§10 third hero kind) — a mesh behind everything,
           standing at its true geo spot. Renders NOTHING unless the look ships a
           baked landscape manifest (LS has none), so this is a no-op for LS. */}

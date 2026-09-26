@@ -4,12 +4,15 @@
  *
  * WHY (2026-09-26): the Pilgrim Monument was mounted by hand in Scene and Preview only,
  * and was missing in Stage, where Jacob baked Provincetown. The class: a set-piece added
- * app by app goes missing, silently, in whichever app nobody remembered.
+ * app by app goes missing, silently, in whichever app nobody remembered. The same day the
+ * shore's stone (`<SlabRevetment>`) turned out to be mounted in Stage and the lab only —
+ * its own header claimed Preview mounted it identically — so it is held here too.
  *
  * An APP is found, never listed: a file under src/ that owns an R3F `<Canvas>` AND mounts
  * the town's ground (`<BakedGround` / `<ViewKeyedBakedGround`). A new app that draws a town
  * is covered the day it exists. Fails when:
  *   · an app does not import and render `<SetPiece` (src/components/SetPiece.jsx)
+ *   · an app does not import and render `<SlabRevetment` with `lookId` and `bakeLastMs`
  *   · any file other than SetPiece.jsx imports a set-piece renderer directly (the hand-mount)
  *   · a town declares a `setPiece.kind` that SetPiece.jsx has no renderer for
  *
@@ -51,6 +54,12 @@ export function audit(files, mountSrc, declaredKinds) {
     const imports = /import SetPiece from '[^']*SetPiece(\.jsx)?'/.test(a.src)
     const renders = /<SetPiece\b/.test(a.src)
     if (!imports || !renders) f.push(`${a.path} draws a town but does not ${!imports ? 'import' : 'render'} <SetPiece>`)
+    // ⭐ The shore's stone: every app that draws the ground draws its revetment, with the two
+    // props every caller passes (SlabRevetment.jsx's header: "the look and the bake token").
+    const rImports = /import SlabRevetment from '[^']*SlabRevetment(\.jsx)?'/.test(a.src)
+    const rTag = a.src.match(/<SlabRevetment\b[^>]*\/>/)
+    if (!rImports || !rTag) f.push(`${a.path} draws a town but does not ${!rImports ? 'import' : 'render'} <SlabRevetment> — its shore has no stone`)
+    else if (!/\blookId=/.test(rTag[0]) || !/\bbakeLastMs=/.test(rTag[0])) f.push(`${a.path} mounts <SlabRevetment> without lookId and bakeLastMs: ${rTag[0]}`)
   }
   for (const x of files) {
     if (x.path.endsWith('components/SetPiece.jsx')) continue
@@ -73,6 +82,8 @@ if (process.argv.includes('--self-test')) {
   const app = files.find(x => x.path.endsWith('components/Scene.jsx'))
   const cases = [
     ['an app drops its mount', () => audit(files.map(x => x === app ? { ...x, src: x.src.replace(/<SetPiece\b[^>]*\/>/g, '') } : x), mountSrc, declaredKinds).f.length],
+    ['an app drops the revetment', () => audit(files.map(x => x === app ? { ...x, src: x.src.replace(/<SlabRevetment\b[^>]*\/>/g, '') } : x), mountSrc, declaredKinds).f.length],
+    ['an app mounts the revetment without its bake token', () => audit(files.map(x => x === app ? { ...x, src: x.src.replace(/(<SlabRevetment\b[^>]*?)\s*bakeLastMs=\{[^}]*\}\}?/g, '$1') } : x), mountSrc, declaredKinds).f.length],
     ['an app hand-mounts the renderer', () => audit([...files, { path: 'src/fake/App.jsx', src: "import PilgrimMonument from '../components/PilgrimMonument.jsx'" }], mountSrc, declaredKinds).f.length],
     ['a new app with no mount', () => audit([...files, { path: 'src/fake/NewApp.jsx', src: '<Canvas><BakedGround /></Canvas>' }], mountSrc, declaredKinds).f.length],
     ['a kind with no renderer', () => audit(files, mountSrc, [...declaredKinds, { town: 'town-2', kind: 'lighthouse' }]).f.length],
@@ -86,4 +97,4 @@ const { f, info } = audit(files, mountSrc, declaredKinds)
 console.log(info.join('\n'))
 console.log(`declared set-pieces: ${declaredKinds.map(k => `${k.town}:${k.kind}`).join(', ') || 'none'}`)
 if (f.length) { console.log(`⛔ FAIL\n   ${f.join('\n   ')}`); process.exit(1) }
-console.log('✅ every app that draws a town mounts <SetPiece>; no hand-mounts; every declared kind has a renderer')
+console.log('✅ every app that draws a town mounts <SetPiece> and <SlabRevetment>; no hand-mounts; every declared kind has a renderer')

@@ -25,6 +25,7 @@ import Terrain from '../components/Terrain'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import SetPiece from '../components/SetPiece.jsx'
+import SlabRevetment from '../components/SlabRevetment.jsx'
 import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
@@ -1393,6 +1394,8 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
       <Suspense fallback={null}>
         <group visible={layers.ground}>
           <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bakeLastMs} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : sceneExag()} /></R3FErrorBoundary>
+          {/* The shore's stone — the props Stage passes, nothing more (claims-every-app-mounts-the-set-piece). */}
+          <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         </group>
         {/* Buildings (Phase 2 — collapsed to one toggle). LafayetteScene's
             live Building+Foundations stay unmounted always (`building: true`),
