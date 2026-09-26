@@ -37,6 +37,7 @@ evict-when: huron's fields play the season — dirt → tilled rows → sprouts 
 > - **Reverse at harvest**: the same states played back, not a second sequence.
 > - **Crop type**: one generic crop first. OSM `crop=*` and USDA's Cropland Data Layer (national, per-field,
 >   yearly) are the per-crop sources later — measure what each covers on huron; don't build per-crop yet.
+> ✅ **RULED 2026-09-26 (Jacob): NO PLANTS.** *"I only want the ground with row texture and patterns and colors."* The impostor-plant half below is dropped; the season lives entirely in the ground surface.
 > ▶ **Order for the day:** §5's area measurement (short) → the dirt/tilled/sprout surface cycle in the lab →
 >   the plant impostors → Jacob's eye in the lab at eye/mid/overhead across the months. **Stop and ask** before
 >   anything needs a re-pour or bake.
