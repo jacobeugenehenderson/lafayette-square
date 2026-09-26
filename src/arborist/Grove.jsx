@@ -23,7 +23,8 @@
 import { Component, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { resolveGrove } from '../../arborist/grove-eligibility.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, useGLTF } from '@react-three/drei'
+import { useGLTF } from '@react-three/drei'
+import RegimeControls from '../components/RegimeControls.jsx'
 import * as THREE from 'three'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { OverheadBaker } from './OverheadBaker.jsx'
@@ -893,10 +894,10 @@ export default function Grove() {
 
           <ViewCamera view={view} count={visible.length} radius={ringRadius} transitioning={transitioning} />
           <TransitionDriver tween={tweenRef.current} poseRef={poseRef} controlsRef={groveControlsRef} />
-          <OrbitControls
-            ref={groveControlsRef} makeDefault
+          <RegimeControls
+            regime={view === 'browse' ? 'plan' : 'orbit'}
+            controlsRef={groveControlsRef}
             enabled={!transitioning}
-            enableRotate={view !== 'browse'}
             target={view === 'browse' ? [0, 0, 0] : [0, 4, 0]}
           />
         </Canvas>

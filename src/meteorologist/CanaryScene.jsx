@@ -28,7 +28,8 @@
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, PerspectiveCamera, useGLTF } from '@react-three/drei'
+import { PerspectiveCamera, useGLTF } from '@react-three/drei'
+import RegimeControls from '../components/RegimeControls.jsx'
 import * as THREE from 'three'
 import useMeteorologistStore from './stores/useMeteorologistStore.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -160,27 +161,18 @@ export default function CanaryScene({ slot = 'browse', directive = null, degrees
           Camera traces a horizontal arc around the tree at eye
           height. Pan + zoom disabled. */}
       {cam.orbit && dolly && (
-        <OrbitControls
-          makeDefault
+        <RegimeControls
+          regime="orbit"
           target={cam.target}
-          enableDamping
-          dampingFactor={0.1}
           enablePan={false}
-          enableZoom={false}
-          minDistance={dolly.radius}
-          maxDistance={dolly.radius}
-          minPolarAngle={dolly.polar}
-          maxPolarAngle={dolly.polar}
+          limits={{ minDistance: dolly.radius, maxDistance: dolly.radius, minPolarAngle: dolly.polar, maxPolarAngle: dolly.polar }}
         />
       )}
       {cam.orbit && !dolly && (
-        <OrbitControls
-          makeDefault
+        <RegimeControls
+          regime="orbit"
           target={cam.target}
-          enableDamping
-          dampingFactor={0.1}
-          minDistance={cam.minDistance}
-          maxDistance={cam.maxDistance}
+          limits={{ minDistance: cam.minDistance, maxDistance: cam.maxDistance }}
         />
       )}
     </Canvas>

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { installShadowMaskDebug } from '../utils/shadowMaskDebug.js'
 installShadowMaskDebug()  // ?shadowmask=1 — must run before any material compiles
-import { MapControls, OrbitControls, PerspectiveCamera } from '@react-three/drei'
+import { PerspectiveCamera } from '@react-three/drei'
+import RegimeControls from '../components/RegimeControls.jsx'
 import * as THREE from 'three'
 import { deriveFade } from '../../cartograph/boundaryRecords.mjs'
 
@@ -288,10 +289,10 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   }, [camera, controlsRef])
 
   // Respond to shot changes.
-  // MapControls is keyed on Designer/shot so it rebuilds when the default
+  // The controls are keyed on Designer/shot so they rebuild when the default
   // camera swaps. On rebuild its target defaults to (0,0,0), so we re-assert
   // target (and on Designer, also re-assert the ortho's orientation) here
-  // after a frame delay — giving the new MapControls instance time to mount.
+  // after a frame delay — giving the new controls instance time to mount.
   useEffect(() => {
     const key = `${mapKey}:${shot}:${designHydrated}:${sceneBoundary?.radius || 0}`
     if (appliedShot.current === key) return
@@ -505,7 +506,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
       }
       prevShot.current = shot
     }
-    // MapControls remounts via its key change — wait one tick for the new
+    // The controls remount via their key change — wait one tick for the new
     // instance to be in controlsRef before we push the target.
     const id = requestAnimationFrame(applyTarget)
     useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
@@ -521,7 +522,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
 
   // ── The Stage CAMERA card, live in Cartograph (2026-09-08) ────────────────
   // The panel Cartograph mounts is the Stage's own, and its CAMERA card talks
-  // to the shared bridge (../stage/cameraBridge.js). Only `StageCamera` — the
+  // to the shared bridge (../stage/cameraBridge.js). Only `StageCamera` (excised 2026-09-26) — the
   // standalone /stage page — ever filled that bridge, so in THIS app the card
   // showed the bridge's initial constants (Center 0/0, Altitude 0 m, FOV 22°)
   // while the camera sat wherever it sat, and every number typed into it went
@@ -620,62 +621,31 @@ function Controls({ controlsRef, heroPlaying = false }) {
   const markerActive = useCartographStore(s => s.markerActive)
   const spaceDown = useCartographStore(s => s.spaceDown)
   const hoverTarget = useCartographStore(s => s.hoverTarget)
-  // Hero runtime/authoring. `heroAuthoring` is set by StageApp's keyframe-edit
-  // flow (StageApp.jsx:796/:842, Escape cancels at :870).
-  //
-  // ⛔⛔ IT USED TO BE THE ONLY WAY TO UNLOCK ORBIT IN HERO, AND THAT FORBADE THE
-  // OPERATOR'S ACTUAL WORKFLOW (Jacob, 2026-09-20): *"there's a camera section but
-  // you memorize keyframes arrived at using the controls."* You fly first, THEN
-  // memorize. Gating orbit behind "click a keyframe to author it" hands the camera
-  // over only AFTER you have committed to a frame you could not go and find.
-  //
-  // ⭐ The standalone /stage page never had this problem — `StageCamera` mounts
-  // OrbitControls with no gate at all. Cartograph now hosts the Stage shot
-  // (`1452bdfe`) and mounts its OWN controls here, so the hosted surface silently
-  // lost a capability the standalone one kept. Two surfaces, one name, different
-  // camera rules, and nobody declared the divergence.
-  //
-  // ⇒ Hero orbit is now ALWAYS enabled in this app. ⚠️ It is safe because the hero
-  // flight writes camera position/target DIRECTLY every frame while it plays, so
-  // playback still wins — the lock was belt-and-braces over a camera the flight
-  // already owns. And this is the AUTHORING surface, not the reader's: the shipped
-  // bounce is `Scene.jsx`'s, whose own controls stay correctly disabled while a
-  // framed shot is held.
-  //
-  // ⛔ `useHeroAuthoring()` was read HERE and nowhere else in this app, so the
-  // subscription is gone with the gate rather than left dangling. StageApp still
-  // owns the flag for its own keyframe-edit UI; this app simply no longer asks.
+  // `heroAuthoring` (StageApp's keyframe-edit state) is deliberately NOT read:
+  // it once gated orbit in Hero and forbade the actual workflow — fly first,
+  // THEN memorise (Jacob, 2026-09-20). The only gate is playback, below.
 
   const inDesigner = shot === 'designer'
-  // Designer: no rotate, pan enabled unless hovering an editable target.
-  // Non-Designer shots: BrowseControls / OrbitControlsShot below own the
-  // controls; their basic orbit is all we need for shot viewing.
+  // Designer: pan enabled unless a tool owns the click.
   const panEnabled = !inDesigner || spaceDown
     || (!tool && !markerActive)
     || ((tool === 'surveyor' || tool === 'measure') && !hoverTarget && !markerActive)
 
-  // Designer uses MapControls (plan view, ortho). Shots use OrbitControls so
-  // the operator can freely inspect the 3D scene (full pan + orbit + zoom).
+  // ⭐ ONE CONTROLS DEFINITION PER REGIME (src/lib/cameraRegimes.js), the same
+  // in every app — this app only CHOOSES:
+  //   Designer → plan (ortho)  ·  Browse → plan  ·  Street → street
+  //   Hero → orbit, handed to playback while it plays.
+  // ⛔ Browse has no orbit (2026-09-05): it is the same view of the same ground
+  // the Designer shows, which is why the two hand their framing to each other,
+  // and a tilted Browse camera has no ortho equivalent.
   if (inDesigner) {
     return (
-      <MapControls
-        key="ortho"
-        ref={controlsRef}
-        enableRotate={false}
-        enablePan={panEnabled}
-        enableZoom
-        screenSpacePanning
-        minZoom={0.03}
-        maxZoom={40}
-      />
+      <RegimeControls key="ortho" regime="plan" controlsRef={controlsRef} makeDefault={false}
+        enablePan={panEnabled} limits={{ minZoom: 0.03, maxZoom: 40 }} />
     )
   }
-  // Browse is a plan view — drag pans, wheel zooms, no orbit (BrowseControls).
-  if (shot === 'browse') {
-    return (
-      <BrowseControls controlsRef={controlsRef} />
-    )
-  }
+  if (shot === 'browse') return <RegimeControls key="browse" regime="plan" controlsRef={controlsRef} />
+  if (shot === 'street') return <RegimeControls key="street" regime="street" controlsRef={controlsRef} />
   // ⛔⛔ LOCKED WHILE PLAYBACK IS DRIVING, FREE OTHERWISE — and the gate is
   // PLAYING vs NOT, never SHOT vs SHOT.
   // History, because both halves were got wrong in one day (2026-09-20/21):
@@ -690,196 +660,9 @@ function Controls({ controlsRef, heroPlaying = false }) {
   //   left to move — Jacob: "I programmed new keyframes into the camera but they
   //   don't playback when I push play."
   // ⇒ Both are satisfied by gating on the PLAYBACK flag (`heroMotion.preview`,
-  //   the same one StageApp's driver reads at :1176). Fly freely whenever it is
-  //   not playing; hand the camera over while it is.
-  return (
-    <OrbitControlsShot controlsRef={controlsRef} enabled={!heroPlaying} />
-  )
-}
-
-function BrowseControls({ controlsRef }) {
-  // ⛔⛔ BROWSE IS A PLAN VIEW. PAN AND ZOOM, NOTHING ELSE (2026-09-05).
-  // Jacob: "only hero gets true 3D controls." Browse is the same view of the
-  // same ground the Designer shows — that is the whole reason the two can hand
-  // their framing to each other — and an orbit breaks that the instant it is
-  // used: a tilted Browse camera has no ortho equivalent, so the handoff back
-  // either lies about what you were looking at or has to refuse.
-  // ⛔ WHAT WENT: an ⌥/Alt+LEFT and RIGHT-drag 360° orbit easter egg
-  // (feedback_browse_right_drag_orbit.md), and the two delivery paths it
-  // needed — a declarative `mouseButtons` prop AND an imperative re-assign on
-  // every mouse and key event, because drei rebuilds the underlying
-  // OrbitControls whenever the default camera swaps and the imperative set was
-  // being applied to the dead instance. That machinery existed entirely to
-  // keep a rotation this view should not have.
-  // ⭐ `enableRotate={false}` now does the work one prop used to need forty
-  // lines and a documented failure mode to approximate.
-  // Archived: git show HEAD:src/cartograph/CartographApp.jsx
-  return (
-    <OrbitControls
-      key="browse"
-      makeDefault
-      ref={controlsRef}
-      enablePan
-      enableRotate={false}
-      enableZoom
-      screenSpacePanning
-      minDistance={50}
-      maxDistance={20000}
-      mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
-      touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN }}
-    />
-  )
-}
-
-// Shot-mode controls. Drag orbits; ⌥-drag grabs the ground; ⌃/⌘-drag pans; wheel zooms.
-// `enabled` locks them for the Hero runtime preview (see Controls).
-function OrbitControlsShot({ controlsRef, enabled = true }) {
-  const localRef = useRef(null)
-  const invalidate = useThree(s => s.invalidate)
-  const enabledRef = useRef(enabled)
-  enabledRef.current = enabled
-  // ⛔ RE-AIM ON HANDOVER. While playback drives, these controls are disabled and
-  // their `target` stands still — but the CAMERA has flown somewhere else. Enable
-  // them again and the first drag would orbit around a point from before the take,
-  // and OrbitControls.update() would haul the camera back to satisfy it: a snap,
-  // right after the shot the operator was watching.
-  // ⇒ On every false→true transition, move `target` to the point the camera is
-  // actually looking at, at the distance it was already holding. The controls then
-  // pick up exactly where playback left off.
-  const wasEnabled = useRef(enabled)
-  useEffect(() => {
-    const c = localRef.current
-    if (c && enabled && !wasEnabled.current) {
-      const dist = c.target.distanceTo(c.object.position) || 1
-      const fwd = new THREE.Vector3()
-      c.object.getWorldDirection(fwd)
-      c.target.copy(c.object.position).addScaledVector(fwd, dist)
-      c.update()
-    }
-    wasEnabled.current = enabled
-  }, [enabled])
-  // ⭐ ONE BUTTON AND TWO MODIFIERS, so a pen can do all three moves: drag
-  // orbits · ⌥-drag grabs the ground · ⌃/⌘-drag pans. Middle-drag dollies and
-  // the wheel zooms for a mouse.
-  // ⭐ ⌥ GRABS THE GROUND. Jacob: "I just want to grab the scene and drag it to
-  // the left or to the right." The ground point under the pen at pen-down stays
-  // under the pen: the camera slides across the ground to keep it there, like
-  // dragging a map. Height and look direction are untouched and `target` travels
-  // with the camera, so orbiting afterwards turns about the same relative point.
-  // "Ground" is the horizontal plane through `target` — no scene raycast, so it
-  // costs nothing. ⛔ Not a camera-drive (tried first; the scene went the wrong
-  // way), and not OrbitControls' DOLLY (closes on a fixed target and stalls).
-  // ⚠️ ⌃ STAYS `ROTATE` ON PURPOSE. OrbitControls swaps ROTATE↔PAN itself when
-  // Ctrl/Meta/Shift is down, so a `PAN` mapping would orbit under ⌃. macOS can
-  // also deliver ⌃-click as a RIGHT click, so RIGHT has to be ROTATE under ⌃
-  // too; the same swap turns both into a pan.
-  // ⛔ THE PAN IS THE FRAMING GESTURE. In Hero authoring the camera is free, so
-  // ⌃-dragging moves the subject in the frame — that IS the tilt. The panel's
-  // "From view" then reads where it landed. There is deliberately no keyboard
-  // nudge for it: the framing is what you SEE, not a number you type at.
-  // ⚠️ Both delivery paths, for the reason BrowseControls documented before it
-  // lost its orbit: drei renders OrbitControls as a <primitive> and R3F mutates
-  // `mouseButtons` in place, so a referentially-equal prop will not re-push
-  // after the controls instance is rebuilt on a camera swap.
-  useEffect(() => {
-    const setButtons = (mod) => {
-      const c = localRef.current
-      if (!c) return
-      c.mouseButtons = {
-        LEFT: THREE.MOUSE.ROTATE,
-        MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: mod === 'ctrl' ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
-      }
-    }
-    // ⌥ is tracked from the KEYBOARD as well as read off the press: a tablet
-    // driver can deliver the pen's pointer events without the modifier flags.
-    let altHeld = false
-    const read = (e) => ((e.ctrlKey || e.metaKey) ? 'ctrl' : null)
-    const onKey  = (e) => { altHeld = e.altKey; setButtons(read(e)) }
-    const onBlur = () => { altHeld = false; setButtons(null) }
-    setButtons(null)
-    // The ⌥ grab. ⛔ ⌥ IS A CLAMP: while it is held, the press is swallowed
-    // before OrbitControls sees it, so nothing can orbit, dolly or pan under it
-    // — only the grab moves the camera. (Jacob's stylus "spiralled" the scene
-    // when OrbitControls still got the press: a pen can arrive as a touch,
-    // which OrbitControls tumbles whatever the modifier, and the grab ran on
-    // top of it.) A press above the horizon grabs nothing and moves nothing; a
-    // move whose ray runs off toward the horizon is skipped rather than flung.
-    let grab = null
-    const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
-    const hit = new THREE.Vector3()
-    const groundAt = (c, e) => {
-      const r = c.domElement.getBoundingClientRect()
-      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
-      c.object.updateMatrixWorld()
-      ray.setFromCamera(ndc, c.object)
-      if (!ray.ray.intersectPlane(plane, hit)) return null
-      const reach = 50 * Math.max(Math.abs(c.object.position.y + plane.constant), 1)   // 50× height
-      return hit.distanceTo(c.object.position) > reach ? null : hit
-    }
-    const onDown = (e) => {
-      const alt = e.altKey || altHeld
-      setButtons(read(e))
-      const c = localRef.current
-      if (!c || !enabledRef.current || !alt) return
-      if (!c.domElement.contains(e.target)) return   // R3F's wrapper div, not the <canvas>
-      e.stopPropagation()                            // the clamp: OrbitControls never hears it
-      if (!e.isPrimary) return
-      plane.constant = -c.target.y
-      const g = groundAt(c, e)
-      grab = g ? g.clone() : null
-    }
-    const onMove = (e) => {
-      const c = localRef.current
-      if (!grab || !c || !e.isPrimary) return
-      const h = groundAt(c, e)
-      if (!h) return
-      const step = grab.clone().sub(h).setY(0)   // move so `grab` is back under the pen
-      c.object.position.add(step)
-      c.target.add(step)
-      invalidate()
-    }
-    const onUp = () => { grab = null }
-    window.addEventListener('keydown', onKey)
-    window.addEventListener('keyup', onKey)
-    // ⚠️ Capture phase on window, so the press is judged (and, under ⌥,
-    // swallowed) before it reaches OrbitControls on the canvas's wrapper.
-    window.addEventListener('pointerdown', onDown, true)
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
-    window.addEventListener('blur', onBlur)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      window.removeEventListener('keyup', onKey)
-      window.removeEventListener('pointerdown', onDown, true)
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
-      window.removeEventListener('blur', onBlur)
-    }
-  }, [invalidate])
-  return (
-    <OrbitControls
-      key="persp"
-      makeDefault
-      ref={(r) => { localRef.current = r; if (controlsRef) controlsRef.current = r }}
-      enabled={enabled}
-      enablePan
-      enableRotate
-      enableZoom
-      enableDamping={false}
-      rotateSpeed={0.4}
-      panSpeed={0.6}
-      zoomSpeed={0.6}
-      screenSpacePanning
-      minDistance={0.5}
-      maxDistance={20000}
-      minPolarAngle={0}
-      maxPolarAngle={Math.PI}
-    />
-  )
+  //   the same one StageApp's HeroPreview reads). Fly freely whenever it is not
+  //   playing; hand the camera over while it is.
+  return <RegimeControls key="persp" regime={heroPlaying ? 'playback' : 'orbit'} controlsRef={controlsRef} />
 }
 
 // ── Environment tickers (shot-only) ────────────────────────────────────────

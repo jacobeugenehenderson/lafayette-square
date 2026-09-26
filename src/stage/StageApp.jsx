@@ -14,8 +14,7 @@
  */
 
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
-import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { browseAltitude } from '../lib/browseAltitude.js'
 
@@ -32,7 +31,6 @@ import { browseUpFromHeading } from '../lib/browseHeading.js'
 import {
   cameraState, cameraPush, subscribeCameraState, pushCamera, publishCameraState,
 } from './cameraBridge.js'
-import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
@@ -318,128 +316,6 @@ export function captureCameraSnapshot() {
     fov: Math.round(cam.fov),
     up: [cam.up.x, cam.up.y, cam.up.z],
   }
-}
-
-export function StageCamera({ shot }) {
-  const controlsRef = useRef()
-  const { camera, size } = useThree()
-  const applied = useRef(null)
-  const frameCount = useRef(0)
-
-  useEffect(() => {
-    if (applied.current === shot) return
-    applied.current = shot
-    const s = SHOTS[shot]
-    if (!s) return
-    if (shot === 'browse') {
-      // Overhead, centered on building centroid; altitude fits viewport
-      // aspect so every building stays framed.
-      const aspect = size.width / Math.max(size.height, 1)
-      const y = computeBrowseAltitude(aspect, s.fov)
-      camera.position.set(s.position[0], y, s.position[2])
-      // Heading override: site-wide cosmetic screen-orientation from localStorage.
-      camera.up.set(...browseUpFromHeading(getBrowseHeading()))
-    } else {
-      camera.position.set(...s.position)
-      camera.up.set(...(s.up || [0, 1, 0]))
-    }
-    camera.fov = s.fov
-    camera.lookAt(...s.target)
-    camera.updateProjectionMatrix()
-    if (controlsRef.current) {
-      controlsRef.current.target.set(...s.target)
-      controlsRef.current.update()
-    }
-    // Map 'street' to 'planetarium' for useCamera (controls terrain exag)
-    useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
-  }, [shot, camera, size.width, size.height])
-
-  // Apply pending camera changes from DOM inputs
-  // + broadcast live camera state every 10 frames
-  useFrame(() => {
-    const ctl = controlsRef.current
-
-    // Apply any pending push from the panel (even before controls mount,
-    // we can still write camera + lookAt; controls catch up next frame).
-    if (cameraPush.pending) {
-      const u = cameraPush.pending
-      cameraPush.pending = null
-      if (u.position) camera.position.set(...u.position)
-      if (u.fov != null) { camera.fov = u.fov; camera.updateProjectionMatrix() }
-      if (u.up) camera.up.set(u.up[0], u.up[1], u.up[2])
-      if (u.target) {
-        if (ctl) ctl.target.set(...u.target)
-        camera.lookAt(u.target[0], u.target[1], u.target[2])
-      } else if (u.up) {
-        // up changed without a new target: re-aim at current target so the
-        // camera reflects the new orientation immediately.
-        const t = ctl ? ctl.target : new THREE.Vector3()
-        camera.lookAt(t.x, t.y, t.z)
-      }
-      if (ctl) {
-        const wasDamping = ctl.enableDamping
-        ctl.enableDamping = false
-        ctl.update()
-        ctl.enableDamping = wasDamping
-      }
-    }
-
-    if (++frameCount.current % 10 !== 0) return
-    const p = camera.position
-    // Broadcast: use OrbitControls target if available, else derive from camera direction
-    let tx, ty, tz
-    if (ctl) {
-      tx = ctl.target.x; ty = ctl.target.y; tz = ctl.target.z
-    } else {
-      const dir = new THREE.Vector3(); camera.getWorldDirection(dir)
-      tx = p.x + dir.x * 100; ty = p.y + dir.y * 100; tz = p.z + dir.z * 100
-    }
-    publishCameraState(camera, [tx, ty, tz])
-  })
-
-  // Browse is a planar overhead by default — LEFT-drag pans, wheel zooms.
-  // ⌥/Alt+LEFT-drag (and RIGHT-drag) is a hidden 360° orbit "easter egg"
-  // for the curious / for Mac trackpad users without a real right button.
-  const isBrowse = shot === 'browse'
-  useEffect(() => {
-    if (!isBrowse) return
-    const ctl = controlsRef.current
-    if (!ctl) return
-    const apply = (altDown) => {
-      ctl.mouseButtons = {
-        LEFT: altDown ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
-        MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.ROTATE,
-      }
-    }
-    const onDown = (e) => { if (e.key === 'Alt') apply(true) }
-    const onUp   = (e) => { if (e.key === 'Alt') apply(false) }
-    apply(false)
-    window.addEventListener('keydown', onDown)
-    window.addEventListener('keyup', onUp)
-    return () => {
-      window.removeEventListener('keydown', onDown)
-      window.removeEventListener('keyup', onUp)
-    }
-  }, [isBrowse])
-  return (
-    <OrbitControls
-      key={isBrowse ? 'browse' : 'orbit'}
-      ref={controlsRef}
-      makeDefault
-      enableDamping
-      dampingFactor={0.15}
-      screenSpacePanning={isBrowse}
-      minDistance={isBrowse ? 50 : 1}
-      maxDistance={4000}
-      mouseButtons={isBrowse
-        ? { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }
-        : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
-      touches={isBrowse
-        ? { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }
-        : { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
-    />
-  )
 }
 
 // ── Timeline (dawn-to-dawn with waypoint snaps + slider) ────────────────────

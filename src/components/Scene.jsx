@@ -1,6 +1,5 @@
 import { useRef, useEffect, useMemo, Suspense, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { INSTANCE, moduleOn } from '../instance.js'
 import { IS_MOBILE } from '../lib/isMobile.js'
@@ -40,7 +39,8 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { heroKeyframeAnim, randomizeHeroStart } from '../preview/heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
-import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
+import { resolveHeroKeyframes, useSceneStencil, applyRegime } from '../lib/cameraRegimes.js'
+import RegimeControls from './RegimeControls.jsx'
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -64,57 +64,17 @@ const _heroTgt = new THREE.Vector3()
 // from the camera-SSOT (transitions.js) so Stage/Preview move identically.
 const BROWSE_TRANS_MS = SHOT_TRANSITION_MS.browse
 
-const MODE_CONSTRAINTS = {
-  hero: {
-    enableRotate: false, enablePan: false, enableZoom: false,
-  },
-  browse: {
-    enableRotate: false, enablePan: true, enableZoom: true,
-    panSpeed: 1.5, zoomSpeed: 1.2,
-    minDistance: 50, maxDistance: 4000,
-    // NO polar clamp. OrbitControls measures polar from camera.up, and Browse's
-    // up is browseUpFromHeading ([0,0,-1] at heading 0), so a true overhead sits
-    // at the EQUATOR (polar ≈ 90°), not the pole. Clamping to ~0 (the old
-    // [0,1,0]-frame assumption) yanked the camera to the horizon on handback.
-    // Overhead is held by positioning + enableRotate:false (matches Preview).
-    minPolarAngle: 0, maxPolarAngle: Math.PI,
-    screenSpacePanning: true,
-    mouseButtons: { LEFT: 2, MIDDLE: 2, RIGHT: 2 }, // all pan
-    touches: { ONE: 1, TWO: 2 },  // one-finger pan, pinch zoom
-  },
-  planetarium: {
-    enableRotate: true, enablePan: true, enableZoom: false,
-    rotateSpeed: 0.35, panSpeed: 80,
-    screenSpacePanning: false,          // pan on XZ ground plane
-    minDistance: 0.5, maxDistance: 0.5,  // locked — orbit in place
-    minPolarAngle: Math.PI / 2,         // horizontal (horizon)
-    maxPolarAngle: Math.PI * 0.99,      // nearly straight up (zenith)
-    mouseButtons: { LEFT: 0, MIDDLE: 2, RIGHT: 2 }, // left=orbit, right/ctrl+click=pan
-    touches: { ONE: 0, TWO: 2 },       // one-finger orbit, pinch zoom
-  },
-}
-
-function applyConstraints(ctl, mode) {
-  const c = MODE_CONSTRAINTS[mode]
-  if (!c) return
-  ctl.enableRotate = c.enableRotate
-  ctl.enablePan = c.enablePan
-  ctl.enableZoom = c.enableZoom
-  if (c.panSpeed != null) ctl.panSpeed = c.panSpeed
-  if (c.rotateSpeed != null) ctl.rotateSpeed = c.rotateSpeed
-  if (c.zoomSpeed != null) ctl.zoomSpeed = c.zoomSpeed
-  if (c.minDistance != null) ctl.minDistance = c.minDistance
-  if (c.maxDistance != null) ctl.maxDistance = c.maxDistance
-  if (c.minPolarAngle != null) ctl.minPolarAngle = c.minPolarAngle
-  if (c.maxPolarAngle != null) ctl.maxPolarAngle = c.maxPolarAngle
-  if (c.mouseButtons) {
-    ctl.mouseButtons = c.mouseButtons
-  } else {
-    ctl.mouseButtons = { LEFT: 0, MIDDLE: 1, RIGHT: 2 } // default: left=rotate
-  }
-  if (c.screenSpacePanning != null) ctl.screenSpacePanning = c.screenSpacePanning
-  else ctl.screenSpacePanning = true
-  if (c.touches) ctl.touches = c.touches
+// ⭐ Each camera mode is one of the shared regimes (src/lib/cameraRegimes.js) —
+// the SAME definitions Stage and Preview mount. Production drives one controls
+// instance across modes (its transitions relax and restore it), so it applies
+// them imperatively. Hero is playback: the keyframes own the camera and the
+// controls take no input (a drag or wheel leaves for Browse — see onMove/onWheel).
+const REGIME_OF_MODE = { hero: 'playback', browse: 'plan', planetarium: 'street' }
+function applyMode(ctl, mode) {
+  const regime = REGIME_OF_MODE[mode]
+  if (!regime) throw new Error(`[camera] production mode '${mode}' has no regime`)
+  applyRegime(ctl, regime)
+  ctl.enabled = regime !== 'playback'
 }
 
 function relaxConstraints(ctl) {
@@ -294,10 +254,8 @@ function CameraRig() {
   const controlsRef = useRef()
   const initialized = useRef(false)
 
-  /* Framed, the hero holds the shot it was given — see onMove/onWheel below,
-     and `enabled` on the OrbitControls at the foot of this component. */
-  const viewMode = useCamera((s) => s.viewMode)
-  const heldShot = FRAMED && viewMode === 'hero'
+  /* Framed, the hero holds the shot it was given — see onMove/onWheel below;
+     hero's controls are disabled in every case (applyMode: playback). */
 
   // SC.5 — per-shot framing knobs come from the slab. Production passes
   // no override; the cartograph chunk's Stage live-wires via the store.
@@ -567,7 +525,7 @@ function CameraRig() {
 
     // ── Initialize on first frame ──
     if (!initialized.current) {
-      applyConstraints(ctl, 'hero')
+      applyMode(ctl, 'hero')
       ctl.update()
       initialized.current = true
     }
@@ -748,8 +706,7 @@ function CameraRig() {
           camera.lookAt(ctl.target)
           // Hand control back to OrbitControls now that up is settled and the
           // pose is well-defined (browse overhead is equatorial in the up frame).
-          ctl.enabled = true
-          applyConstraints(ctl, vm)
+          applyMode(ctl, vm)
           ctl.update()
         }
       }
@@ -794,31 +751,14 @@ function CameraRig() {
   })
 
   return (
-    <OrbitControls
-      ref={controlsRef}
-      makeDefault
-      /* ⛔ OFF while a framed shot is held. `update()` is unaffected — the hero
-         keyframe path drives target and position directly above — so this only
-         stops POINTER input reaching a camera that is not the reader's to move. */
-      /* ⛔ OFF while a framed shot is held — this is the half that gives the
-         HOST PAGE ITS GESTURES BACK, and it is why theward.online could delete
-         its "Click to browse" arm gate. `update()` is unaffected: the hero
-         keyframe path drives target and position directly above and calls
-         `update()` itself, so the pan still runs with the controls disabled
-         (drei's own useFrame skips `update()` when `enabled` is false).
-         ⚠ MEASURED, AND IT CORRECTED A PLAUSIBLE-SOUNDING GUESS. The first
-         version of this change also wrote `touch-action: pan-y` onto the canvas,
-         reasoning that OrbitControls sets `touchAction: 'none'` in its
-         constructor — which `three/examples/jsm/controls/OrbitControls` line 36
-         really does. ⛔ THAT IS NOT THE CLASS DREI MOUNTS. It bundles
-         `three-stdlib`'s, which never touches the style, and a walk of the live
-         canvas's ancestor chain in a framed hero found `touch-action` at its
-         initial value on every node. There was nothing to undo, so the write is
-         gone rather than left in as a no-op with a false reason attached. */
-      enabled={!heldShot}
-      enableDamping={true}
-      dampingFactor={0.25}
-    />
+    /* ⛔ HERO IS PLAYBACK — the controls are DISABLED there (applyMode), framed or
+       not. That is the half that gives a HOST PAGE ITS GESTURES BACK, and why
+       theward.online could delete its "Click to browse" arm gate. `update()` is
+       unaffected: the hero keyframe path drives target and position and calls
+       `update()` itself (drei's own useFrame skips it while disabled).
+       ⚠ MEASURED: drei bundles `three-stdlib`'s OrbitControls, which never sets
+       `touch-action` on the canvas, so there is nothing else to undo. */
+    <RegimeControls managed controlsRef={controlsRef} />
   )
 }
 

@@ -18,7 +18,8 @@
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
-import { OrbitControls, useGLTF } from '@react-three/drei'
+import { useGLTF } from '@react-three/drei'
+import RegimeControls from '../components/RegimeControls.jsx'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js'
 import * as THREE from 'three'
 import useArboristStore from './stores/useArboristStore.js'
@@ -995,7 +996,7 @@ export default function LidarWorkstage() {
                   />
                 </Suspense>
               )}
-              <OrbitControls makeDefault target={[0, 5, 0]} maxDistance={80} />
+              <RegimeControls regime="orbit" target={[0, 5, 0]} limits={{ maxDistance: 80 }} />
               <CameraCapture cameraRef={cameraRef} controlsRef={controlsRef} />
             </Canvas>
           )}

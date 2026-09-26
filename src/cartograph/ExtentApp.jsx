@@ -32,7 +32,8 @@ import * as THREE from 'three'
 import { ZONE_PAD, squareAroundDisc, minimumEnclosingCircle } from '../../cartograph/discSquare.mjs'
 import { deriveFade, DEFAULT_FADE_BAND } from '../../cartograph/boundaryRecords.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { MapControls, Text, Line } from '@react-three/drei'
+import { Text, Line } from '@react-three/drei'
+import RegimeControls from '../components/RegimeControls.jsx'
 import useCartographStore from './stores/useCartographStore.js'
 import {
   fetchSkeletonLabels, fetchStreetNames, discardMap, geocodePlace, fetchExtent, fetchGeography,
@@ -2003,16 +2004,9 @@ export default function ExtentApp() {
               centroid={boundaryCentroid} radiusM={radiusM} fadeBand={fadeBandM}
               showVertices={pickingSides && !!streetCorners?.closed} />
           )}
-          <MapControls
-            ref={controlsRef}
-            makeDefault
-            enableRotate={false}
+          <RegimeControls regime="plan" controlsRef={controlsRef}
             enablePan={!markerActive && (!penActive || spacePan)}
-            enableZoom
-            screenSpacePanning
-            minZoom={0.01}
-            maxZoom={40}
-          />
+            limits={{ minZoom: 0.01, maxZoom: 40 }} />
         </Canvas>
 
         {/* Marker tool — same freehand-annotation surface as the Designer,

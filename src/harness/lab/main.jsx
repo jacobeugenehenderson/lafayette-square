@@ -20,7 +20,7 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, useThree, advance } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import RegimeControls from '../../components/RegimeControls.jsx'
 import * as THREE from 'three'
 
 import R3FErrorBoundary from '../../components/R3FErrorBoundary'
@@ -225,7 +225,7 @@ function App() {
         </Suspense>
         {layers.post && <PostProcessing lookId={LOOK} bakeLastMs={bakeLastMs} />}
 
-        <OrbitControls makeDefault maxPolarAngle={Math.PI * 0.499} />
+        <RegimeControls regime="orbit" limits={{ maxPolarAngle: Math.PI * 0.499 }} />
         <CameraDriver spot={spot} cam={cam} />
       </Canvas>
 

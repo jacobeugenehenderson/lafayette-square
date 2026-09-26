@@ -7,7 +7,7 @@
  * notes a Δ-event so spikes are tagged with their cause.
  */
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import RegimeControls from '../components/RegimeControls.jsx'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
@@ -259,7 +259,8 @@ function ShotCamera({ shot, setShot }) {
         }
       },
       onComplete: () => {
-        if (ctl) ctl.enabled = true
+        // Hand back only where the regime has input — Hero is playback.
+        if (ctl) ctl.enabled = shot !== 'hero'
         camera.up.set(...pose.up)        // settle exactly on target up
         phoneBusEndSpan(spanId)
         phoneBusStop()
@@ -289,27 +290,12 @@ function ShotCamera({ shot, setShot }) {
     }
   })
 
-  // Browse: LEFT-drag pans, wheel zooms; RIGHT-drag is the hidden 360° orbit.
-  // Other shots: full orbit defaults.
-  const isBrowse = shot === 'browse'
-  return (
-    <OrbitControls
-      key={isBrowse ? 'browse' : 'orbit'}
-      ref={controlsRef}
-      makeDefault
-      enableDamping
-      dampingFactor={0.15}
-      screenSpacePanning={isBrowse}
-      minDistance={isBrowse ? 50 : 1}
-      maxDistance={4000}
-      mouseButtons={isBrowse
-        ? { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }
-        : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
-      touches={isBrowse
-        ? { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }
-        : { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
-    />
-  )
+  // One controls definition per regime (src/lib/cameraRegimes.js), the same as
+  // production and Stage: Browse → plan (pan + zoom, no rotate — the hidden
+  // right-drag orbit is gone, Jacob 2026-09-26) · Street → street · Hero →
+  // playback (the keyframes own the camera; a drag leaves for Browse, above).
+  const regime = shot === 'browse' ? 'plan' : shot === 'street' ? 'street' : 'playback'
+  return <RegimeControls key={shot} regime={regime} controlsRef={controlsRef} />
 }
 
 const TOOLBAR_SHOTS = SHOTS
