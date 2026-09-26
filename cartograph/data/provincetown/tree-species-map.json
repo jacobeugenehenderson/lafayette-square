@@ -1,11 +1,26 @@
 {
   "_what_this_is": "DERIVED FROM tree-mix.json#commonToLibrary by scripts/15-fia-tree-mix.mjs — do not hand-edit.",
   "map": {
+    "pine_pitch": [
+      "pine_pitch"
+    ],
+    "oak_black": [
+      "oak_black"
+    ],
+    "oak_scarlet": [
+      "oak_scarlet"
+    ],
     "Oak, White": [
       "oak_white"
     ],
     "Red Maple": [
       "maple_red"
+    ],
+    "Pine, White": [
+      "pine_white"
+    ],
+    "locust_black": [
+      "locust_black"
     ],
     "blackgum": [
       "blackgum"

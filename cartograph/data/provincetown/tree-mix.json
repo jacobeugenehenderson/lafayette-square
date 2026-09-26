@@ -7,10 +7,10 @@
     "county": "25001",
     "countyName": "Barnstable County",
     "estimate": 4,
-    "citation": "USDA Forest Service, Forest Inventory and Analysis Program, Sat, 26 Sep 2026 00:01:13 GMT. Forest Inventory FIADB-API web-application Version 2.0 St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/fiadb-api/evalidator]",
+    "citation": "USDA Forest Service, Forest Inventory and Analysis Program, Sat, 26 Sep 2026 00:18:24 GMT. Forest Inventory FIADB-API web-application Version 2.0 St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/fiadb-api/evalidator]",
     "ranked": [
       {
-        "common": "pitch pine",
+        "common": "pine_pitch",
         "fiaCommon": "pitch pine",
         "scientific": "Pinus rigida",
         "spcd": 126,
@@ -18,10 +18,12 @@
         "share": 0.286631322493044,
         "plots": 23,
         "sePct": 32.1,
-        "composed": []
+        "composed": [
+          "pine_pitch"
+        ]
       },
       {
-        "common": "black oak",
+        "common": "oak_black",
         "fiaCommon": "black oak",
         "scientific": "Quercus velutina",
         "spcd": 837,
@@ -29,10 +31,12 @@
         "share": 0.13835396102086597,
         "plots": 15,
         "sePct": 44.1,
-        "composed": []
+        "composed": [
+          "oak_black"
+        ]
       },
       {
-        "common": "scarlet oak",
+        "common": "oak_scarlet",
         "fiaCommon": "scarlet oak",
         "scientific": "Quercus coccinea",
         "spcd": 806,
@@ -40,7 +44,9 @@
         "share": 0.12097377868321667,
         "plots": 12,
         "sePct": 37.6,
-        "composed": []
+        "composed": [
+          "oak_scarlet"
+        ]
       },
       {
         "common": "Oak, White",
@@ -77,7 +83,9 @@
         "share": 0.07445576751578831,
         "plots": 6,
         "sePct": 61.1,
-        "composed": []
+        "composed": [
+          "pine_white"
+        ]
       },
       {
         "common": "gray birch",
@@ -146,7 +154,7 @@
         "composed": []
       },
       {
-        "common": "black locust",
+        "common": "locust_black",
         "fiaCommon": "black locust",
         "scientific": "Robinia pseudoacacia",
         "spcd": 901,
@@ -154,7 +162,9 @@
         "share": 0.005593047938005741,
         "plots": 2,
         "sePct": 83.5,
-        "composed": []
+        "composed": [
+          "locust_black"
+        ]
       },
       {
         "common": "Maple, Norway",
@@ -227,9 +237,9 @@
     ]
   },
   "commonWeights": {
-    "pitch pine": 28.663,
-    "black oak": 13.835,
-    "scarlet oak": 12.097,
+    "pine_pitch": 28.663,
+    "oak_black": 13.835,
+    "oak_scarlet": 12.097,
     "Oak, White": 10.828,
     "Red Maple": 8.535,
     "Pine, White": 7.446,
@@ -239,7 +249,7 @@
     "scrub oak": 2.602,
     "black cherry": 1.775,
     "serviceberry spp.": 1.289,
-    "black locust": 0.559,
+    "locust_black": 0.559,
     "Maple, Norway": 0.31,
     "tamarack": 0.252,
     "white willow": 0.207,
@@ -248,29 +258,54 @@
     "oak, northern red": 0.073
   },
   "shapeByCommon": {
-    "pitch pine": "conifer",
+    "pine_pitch": "conifer",
     "Pine, White": "conifer",
     "eastern redcedar": "conifer",
     "tamarack": "conifer"
   },
   "commonToLibrary": {
+    "pine_pitch": "pine_pitch",
+    "oak_black": "oak_black",
+    "oak_scarlet": "oak_scarlet",
     "Oak, White": "oak_white",
     "Red Maple": "maple_red",
+    "Pine, White": "pine_white",
+    "locust_black": "locust_black",
     "blackgum": "blackgum"
   },
   "_unmapped_is_deliberate": "Only COMPOSED species are routed. Every other species stays in commonWeights and reads red in the Grove, ranked — the work item.",
   "palette": [
     {
+      "libraryId": "pine_pitch",
+      "share": 0.3494
+    },
+    {
+      "libraryId": "oak_black",
+      "share": 0.1686
+    },
+    {
+      "libraryId": "oak_scarlet",
+      "share": 0.1475
+    },
+    {
       "libraryId": "oak_white",
-      "share": 0.5571
+      "share": 0.132
     },
     {
       "libraryId": "maple_red",
-      "share": 0.4391
+      "share": 0.104
+    },
+    {
+      "libraryId": "pine_white",
+      "share": 0.0908
+    },
+    {
+      "libraryId": "locust_black",
+      "share": 0.0068
     },
     {
       "libraryId": "blackgum",
-      "share": 0.0037
+      "share": 0.0009
     }
   ]
 }

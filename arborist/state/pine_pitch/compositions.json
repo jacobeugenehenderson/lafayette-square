@@ -1,0 +1,38 @@
+{
+  "species": "pine_pitch",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1 (auto)",
+      "chassis": "pyramidal_27",
+      "bark": {},
+      "leaves": {
+        "pack": "long_needle"
+      },
+      "deformer": {},
+      "transform": {},
+      "derivedFrom": "tall_pine_b",
+      "auto": {
+        "builtAt": "2026-09-26",
+        "by": "arborist/recommend-plates.mjs",
+        "dossier": null,
+        "chassis": {
+          "pick": "pyramidal_27",
+          "tier": "G",
+          "reason": "same genus · no other species uses it · no dossier — order within this tier is not a judgment"
+        },
+        "bark": {
+          "pick": null,
+          "tier": null,
+          "reason": "no bark plate names this species or genus, and no dossier to match by trait — the default stands"
+        },
+        "leaves": {
+          "pick": "long_needle",
+          "tier": "G",
+          "reason": "same genus · no dossier — not trait-checked"
+        }
+      }
+    }
+  ],
+  "savedAt": 1790381798044
+}

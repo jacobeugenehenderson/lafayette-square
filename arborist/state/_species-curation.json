@@ -324,6 +324,36 @@
     "yellow_autumn_tree": {
       "label": "Yellow Autumn Tree",
       "deciduous": true
+    },
+    "pine_white": {
+      "label": "Pine White",
+      "scientific": "Pinus strobus",
+      "deciduous": false,
+      "promoted": true
+    },
+    "pine_pitch": {
+      "label": "Pine Pitch",
+      "scientific": "Pinus rigida",
+      "deciduous": false,
+      "promoted": true
+    },
+    "oak_black": {
+      "label": "Oak Black",
+      "scientific": "Quercus velutina",
+      "deciduous": true,
+      "promoted": true
+    },
+    "oak_scarlet": {
+      "label": "Oak Scarlet",
+      "scientific": "Quercus coccinea",
+      "deciduous": true,
+      "promoted": true
+    },
+    "locust_black": {
+      "label": "Locust Black",
+      "scientific": "Robinia pseudoacacia",
+      "deciduous": true,
+      "promoted": true
     }
   }
 }

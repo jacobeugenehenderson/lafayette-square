@@ -1,1 +1,32 @@
-{}
+{
+  "trees": [
+    {
+      "species": "locust_black",
+      "variantId": 1
+    },
+    {
+      "species": "pine_white",
+      "variantId": 1
+    },
+    {
+      "species": "pine_pitch",
+      "variantId": 1
+    },
+    {
+      "species": "oak_black",
+      "variantId": 1
+    },
+    {
+      "species": "oak_scarlet",
+      "variantId": 1
+    },
+    {
+      "species": "oak_white",
+      "variantId": 1
+    },
+    {
+      "species": "maple_red",
+      "variantId": 1
+    }
+  ]
+}

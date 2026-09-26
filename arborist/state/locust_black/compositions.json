@@ -1,0 +1,35 @@
+{
+  "species": "locust_black",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1 (auto)",
+      "chassis": "black_locust_a",
+      "bark": {},
+      "leaves": {},
+      "deformer": {},
+      "transform": {},
+      "auto": {
+        "builtAt": "2026-09-26",
+        "by": "arborist/recommend-plates.mjs",
+        "dossier": null,
+        "chassis": {
+          "pick": "black_locust_a",
+          "tier": "S",
+          "reason": "same species · no other species uses it · no dossier — order within this tier is not a judgment"
+        },
+        "bark": {
+          "pick": null,
+          "tier": null,
+          "reason": "no bark plate names this species or genus, and no dossier to match by trait — the default stands"
+        },
+        "leaves": {
+          "pick": null,
+          "tier": null,
+          "reason": "no leaf plate names this species or genus, and no dossier to match by trait — the default stands"
+        }
+      }
+    }
+  ],
+  "savedAt": 1790381763107
+}

@@ -1,0 +1,40 @@
+{
+  "species": "pine_white",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1 (auto)",
+      "chassis": "pyramidal_26",
+      "bark": {
+        "ref": "bark_brown_01"
+      },
+      "leaves": {
+        "pack": "long_needle"
+      },
+      "deformer": {},
+      "transform": {},
+      "derivedFrom": "tall_pine_a",
+      "auto": {
+        "builtAt": "2026-09-26",
+        "by": "arborist/recommend-plates.mjs",
+        "dossier": "pinus_strobus",
+        "chassis": {
+          "pick": "pyramidal_26",
+          "tier": "G",
+          "reason": "same genus · size fits"
+        },
+        "bark": {
+          "pick": "bark_brown_01",
+          "tier": "T",
+          "reason": "matches by trait · furrowed bark"
+        },
+        "leaves": {
+          "pick": "long_needle",
+          "tier": "S",
+          "reason": "same species · needle type"
+        }
+      }
+    }
+  ],
+  "savedAt": 1790381797880
+}

@@ -80,7 +80,8 @@ Artifacts are **deterministic** + **pristine**: same recipe + same on-disk parts
 |---|---|
 | `node arborist/serve.js` | Backend (auto-started by `npm run dev`) |
 | `node arborist/ingest.js` | Conform + tag the parts → `part-index.json` + `public/library/` + `INVENTORY.md`. `--out=<file>` previews: writes that index and nothing else. A re-import keeps every id and category the library already assigned ▶ `node checks/claims-a-reimport-keeps-curation.mjs` |
-| `node arborist/generate-salon.js [--species <id>]` | Headless Salon republish (compositions → GLBs) |
+| `node arborist/recommend-plates.mjs --species <id> --scientific "…" [--label "…" --build]` | Rank each plate S > G > T with reasons; `--build` composes the top picks, marked `auto` |
+| `node arborist/generate-salon.js --look <id> [--species <id>]` | Headless Salon republish (compositions → GLBs), adding them to that Look's roster |
 | `node arborist/build-leaf-atlas.mjs` | Compose varied tile-grid atlases for scanned leaf packs |
 | `node arborist/bake-look.js --look <id>` | Pack the per-Look master atlas (the ship-to-slab bake) |
 | `node arborist/bake-trees.js --scene <name>` | Place the NEIGHBOURHOOD's census onto the roster |

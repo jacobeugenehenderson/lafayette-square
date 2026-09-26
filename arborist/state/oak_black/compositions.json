@@ -1,0 +1,38 @@
+{
+  "species": "oak_black",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1 (auto)",
+      "chassis": "rounded_01",
+      "bark": {},
+      "leaves": {
+        "pack": "eastern_black_oak"
+      },
+      "deformer": {},
+      "transform": {},
+      "derivedFrom": "oak_winter_fall_c",
+      "auto": {
+        "builtAt": "2026-09-26",
+        "by": "arborist/recommend-plates.mjs",
+        "dossier": null,
+        "chassis": {
+          "pick": "rounded_01",
+          "tier": "G",
+          "reason": "same genus · no other species uses it · no dossier — order within this tier is not a judgment"
+        },
+        "bark": {
+          "pick": null,
+          "tier": null,
+          "reason": "no bark plate names this species or genus, and no dossier to match by trait — the default stands"
+        },
+        "leaves": {
+          "pick": "eastern_black_oak",
+          "tier": "S",
+          "reason": "same species · no dossier — not trait-checked"
+        }
+      }
+    }
+  ],
+  "savedAt": 1790381798211
+}
