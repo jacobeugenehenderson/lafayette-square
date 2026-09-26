@@ -315,5 +315,13 @@
       "species": "blackgum",
       "variantId": 1
     }
-  ]
+  ],
+  "surfaces": {
+    "params": {
+      "pilgrim-granite": {
+        "reliefM": 0.08,
+        "toneVar": 0.25
+      }
+    }
+  }
 }
