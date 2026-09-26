@@ -237,6 +237,16 @@ const PAINT_ORDER = [
   ['mat', 'edgeline'],
   ['mat', 'bikelane'],
   ['mat', 'stripe'],
+  // ⭐⭐ THE BED — the ground UNDER every water body (Jacob, 2026-09-26: "there must be no
+  // bare space between the water and the land"). The water is a level sheet and the land is
+  // draped, so where the land's edge stands above the water nothing joined them and the
+  // sky showed through (`docs/briefs/BRIEF-the-shore-is-closed.md`). The bed is draped
+  // over the same terrain and conformed with the land, so the two share every shore vertex
+  // and meet with no step; the visible shore is wherever the terrain crosses the water.
+  // ⛔ BEFORE THE WATER, and that is the one slot it cannot trade: every ground group draws in
+  // renderOrder and the water writes no depth, so a bed drawn after it paints the harbour over
+  // (2026-09-26, seen by Jacob). Only the water slots move for it. FLATTENED AT THE BOTTOM — FLOOR_KEYS.
+  ['mat', 'bed'],
   // ⭐⭐ WATER, APPENDED LAST — and the slot is deliberate on both counts.
   // · APPENDED, never inserted: renderOrder is positional, so slotting water in
   //   at the bottom (where a "floor" belongs) would renumber every group after
@@ -259,14 +269,6 @@ const PAINT_ORDER = [
   // lake 3 · stream 5) plus the OSM values adjacent to them. The unconsumed-key
   // report below is the backstop when OSM produces one nobody listed.
   ...WATER_SUBTYPES.map(w => ['mat', `water:${w}`]),
-  // ⭐⭐ THE BED — the ground UNDER every water body (Jacob, 2026-09-26: "there must be no
-  // bare space between the water and the land"). The water is a level sheet and the land is
-  // draped, so where the land's edge stands above the water nothing joined them and the
-  // sky showed through (`docs/briefs/BRIEF-the-shore-is-closed.md`). The bed is draped
-  // over the same terrain and conformed with the land, so the two share every shore vertex
-  // and meet with no step; the visible shore is wherever the terrain crosses the water.
-  // Appended, never inserted (see water above). FLATTENED AT THE BOTTOM — see FLOOR_KEYS.
-  ['mat', 'bed'],
 ]
 // Layers pressed in BENEATH the whole paint stack, whatever their PAINT_ORDER slot: they fill
 // only what nothing else covers. The bed is one — a shore ribbon or a pier over the water

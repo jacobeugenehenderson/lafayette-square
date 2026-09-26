@@ -18,6 +18,8 @@
  *   · nothing under the water, and the land's edge is at or below the water → the water
  *     covers the meeting; closed, counted as `awash`.
  *   · nothing on the land side → OPEN in plan: the drawing has a hole at the shore.
+ * ⛔ And first: the water must draw after every other ground group, or the ground under it paints
+ * over it — a closed shore with no water visible is the picture this check once passed.
  * Stations on the disc rim are the EDGE OF THE DRAWING (`project_neighborhood_is_a_compound_shape`),
  * not a shore, and are counted as such.
  *
@@ -58,6 +60,18 @@ for (const dir of dirs) {
   const tj = readJSON(join(dir, 'terrain.json'))
   if (!tj || !existsSync(join(dir, 'terrain.bin'))) {
     console.error(`⛔ ${look}: draws ${water.length} water group(s) but has no terrain beside ground.json — cannot say how high the land stands`)
+    fail++
+    continue
+  }
+  // ⛔ THE WATER MUST STILL SHOW. Every ground group is drawn in `renderOrder` (they are all
+  // transparent in BakedGround — the fade), and the water writes no depth, so a group drawn
+  // AFTER the water paints straight over it. 2026-09-26: the first `bed` was appended after
+  // water and hid the whole harbour while the walk below passed.
+  const lastLand = Math.max(...m.groups.filter(g => !water.includes(g)).map(g => g.renderOrder))
+  const over = water.filter(w => w.renderOrder < lastLand)
+  if (over.length) {
+    const painters = m.groups.filter(g => !water.includes(g) && g.renderOrder > Math.min(...over.map(w => w.renderOrder)))
+    console.error(`⛔ ${look}: the water is PAINTED OVER — ${over.map(w => `${w.id} (slot ${w.renderOrder})`).join(', ')} draws before ${painters.map(g => `${g.id} (slot ${g.renderOrder})`).join(', ')}`)
     fail++
     continue
   }
