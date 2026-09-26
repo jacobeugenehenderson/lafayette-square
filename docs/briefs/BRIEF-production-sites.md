@@ -49,6 +49,16 @@ hands anyone a shopping list. Staging links stay unlisted (`BRIEF-a-link-per-tow
 - **Lafayette Square goes last** (`ROADMAP` ordering: "move LS's plumbing last … never the night before a demo"). Build and prove the path on Provincetown or HPDM first.
 - `lafayette-square.com` is live production. ✅ **RULED 2026-09-26 (Jacob): at cutover it REDIRECTS to `lafayettesquare.online`** (a permanent redirect that keeps the path, so old links and QR codes still land). ⛔ The redirect goes live only once `lafayettesquare.online` is serving and Jacob has seen it — never before, and it is part of the Lafayette Square step, which is last.
 
+## ✅ Answered by Jacob, 2026-09-26 (after Tern's and Lintel's read-in)
+
+1. **Operations repo:** `/Users/jacobhenderson/Desktop/dev.nosync/theward-operations` (domain records in `src/domains.js`). Read it; never copy its data here.
+2. **The domain's one home is OPERATIONS.** Promote looks the town's domain up there and refuses if it is not owned and its zone active. `src/instances/<map>.js#domain` stops being a source (Lafayette Square's may stay until its cutover step).
+3. **Copy, not rebuild:** production gets the exact player bytes that were checked on staging — which means the slab base moves from build time to run time (`src/lib/bakedUrl.js`). Each town pins its own copy, so promoting one town changes no other.
+4. **The slab is served through the town's own domain** by the production Worker, from the bucket's prod keys — no per-town CORS edits; this is where H-19's gate will sit.
+5. **`www.<town>.online` binds too and 301s to the apex.**
+6. **Disable the share-card "capture & push" (`smsPush`)** until per-town Promote is proven on Provincetown — today it reaches `main`.
+7. **The Works page is OUT of this brief.** It lives in `dev.nosync/theward-online/works/`; it lists only live towns, so it is a small follow-up once Provincetown is live.
+
 ## The shape to confirm with Jacob before building
 
 A production Worker that mirrors `staging-sites`: each town's `.online` domain bound to it as a custom

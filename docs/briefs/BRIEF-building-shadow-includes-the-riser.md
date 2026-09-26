@@ -2,7 +2,7 @@
 status: OPEN
 dispatched: no
 written: 2026-09-26
-evict-when: no lit strip at the foot of any building in any town (measured, then eye-gated by Jacob with the scene recorded), and the year_built pedestal is retired per Jacob's ruling.
+evict-when: no lit strip at the foot of any building in any town (measured, then eye-gated by Jacob with the scene recorded), and every riser reaches from its floor to world y = 0 (Jacob's ruling).
 -->
 
 # The building's shadow must meet the ground (re-aimed from "include the riser")
@@ -39,17 +39,21 @@ lit strip at its foot — at two sun elevations, two bias values, and before/aft
 jumps with the camera. Report, then stop for Jacob.
 
 ### ✅ Also ruled 2026-09-26 (Jacob) — do this AFTER the shadow, as its own commit
-*"I think the year built heuristic is stupid; the point is we needed a way to guarantee buildings wouldn't
-cantilever off the ground with the terrain."* ⇒ **the riser's job is ground contact, not period styling.**
-- `src/lib/foundationGeometry.js#periodPedestalFor` sizes the ABOVE-grade pedestal from `year_built` (1.2 m
-  pre-1900, 0.8 m pre-1920, else 0), which only Lafayette Square has — so LS draws 757 raised pedestals and
-  every other town none. Retire it; confirm with Jacob what visible pedestal (if any) replaces it before
-  changing LS's look, since this moves LS's buildings.
-- `FOUNDATION_BELOW_GRADE_M = 8` is sized from LS's worst slope (the Class D tell). The depth a riser must
-  reach is a property of the terrain under each footprint — derive it per building (or per town) from the
-  relief, with no fallback.
-- Consumers: `cartograph/bake-buildings.js` (needs a re-bake — Jacob's go) and `LafayetteScene.jsx` (Stage).
-  Both must agree.
+*"The riser reaches from the building's floor down to y0."* ⇒ **the riser's job is ground contact, and its
+bottom is the world datum, y = 0 — not a fixed depth.**
+- Today the riser runs `[-FOUNDATION_BELOW_GRADE_M, foundationY]` (8 m, sized from LS's worst slope — the
+  Class D tell) in the building's local frame, which is then lifted by `aCentroidY × uExag`. ⇒ its bottom
+  moves with the lift and the exaggeration. Under the ruling the bottom vertices land at **world y = 0 at every
+  exaggeration** — so it must be expressed in the vertex shader (render AND depth material, slab AND Stage),
+  not baked as a constant. ⛔ No fallback depth.
+- ⚠️ Check the datum: confirm y = 0 is at or below the lowest ground in every town (coastal towns derive
+  their datum from the water face — `BAKE.md`, "where zero is"). If any town's ground dips below 0, stop and
+  ask Jacob.
+- **The floor height (the visible pedestal) is NOT ruled.** Jacob: tying it to `year_built` is "stupid", and
+  *"it works in LS"*. ⛔ Do not change what Lafayette Square draws above ground; if you touch
+  `periodPedestalFor`, bring Jacob the options first.
+- Consumers: `cartograph/bake-buildings.js`, `SlabBuildings.jsx`, `LafayetteScene.jsx`. A bake-side change
+  needs a re-bake and Jacob's go.
 
 ## Read first (both, before a plan)
 
