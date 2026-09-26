@@ -76,6 +76,16 @@ const ACTIVE_LOOK_KEY = 'cartograph-active-look'
 // ⭐ useArboristStore / useMeteorologistStore have always done it this way;
 // this store was the outlier.
 
+// ⛔ THE LOOK FOR A SCENE. Design autosave writes to the ACTIVE Look, so the active Look must belong to the
+// store's scene — else one town's edits land in another town's design.json (2026-09-25: Extent's openScene
+// switched the scene and left the Look on the previous town). The active Look wins when it already belongs to
+// the scene, else the first Look of that scene. None ⇒ null: nothing saves and the StatusBar says so.
+// ⛔ Never the served default — `kit-default` has no scene; it is not a town.
+function lookForScene(looks, scene, activeLookId) {
+  const own = looks.filter(l => l.scene === scene)
+  return (own.find(l => l.id === activeLookId) || own[0])?.id || null
+}
+
 function readActiveLookFromStorage() {
   // ?look=<id> wins (deep-link any installation's baked Look directly, symmetric
   // with ?scene=) — transient, not persisted; a nav without it reverts to storage.
@@ -1773,7 +1783,6 @@ const useCartographStore = create((set, get) => ({
       // every hard-refresh would surface a stale Stage button and a click
       // would re-bake unnecessarily.
       const activeEntry = looks.find(l => l.id === activeLookId)
-      const wasBaked = !!activeEntry?.bakedAt
       // Align the store's scene with the active Look's scene field. This
       // covers cold boots where localStorage's `cartograph-scene` may
       // disagree with the persisted active Look (e.g. user closed the tab
@@ -1795,7 +1804,17 @@ const useCartographStore = create((set, get) => ({
       if (sceneUpdate.scene) {
         try { localStorage.setItem('cartograph-scene', sceneUpdate.scene) } catch { /* ignore */ }
       }
-      set({ looks, activeLookId, defaultLookId, _looksHydrated: true, bakeStale: !wasBaked, ...sceneUpdate })
+      // Once the scene is known, the Look is the scene's own (see lookForScene) — a persisted Look from another
+      // town, or the town-less default, is not where this scene's design saves.
+      const scene = sceneUpdate.scene || get().scene
+      let lookMissingForScene = null
+      if (isValidMapId(scene)) {
+        activeLookId = lookForScene(looks, scene, activeLookId)
+        if (activeLookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ } }
+        else { lookMissingForScene = scene; console.error(`[looks] no Look belongs to scene "${scene}" — Designer edits will not save`) }
+      }
+      const wasBaked = !!looks.find(l => l.id === activeLookId)?.bakedAt
+      set({ looks, activeLookId, defaultLookId, lookMissingForScene, _looksHydrated: true, bakeStale: !wasBaked, ...sceneUpdate })
     } catch (err) {
       console.warn('[looks] load failed:', err)
       set({ _looksHydrated: true })
@@ -1814,12 +1833,8 @@ const useCartographStore = create((set, get) => ({
     // the design palette. Single-scene switches (e.g. between two LS
     // Looks) keep this path light: design hydrate only, geometry stays.
     if (sceneChanged) {
-      get().setScene(newScene)
-      // _loadCenterlines hydrates geometry AND design for the active Look,
-      // so we don't fall through to the design-only branch below.
-      try { await get()._loadCenterlines() } catch (err) { console.warn('[looks] geometry reload failed:', err) }
-      try { await get()._loadMeasurements() } catch (err) { console.warn('[looks] measurements reload failed:', err) }
-      try { await get()._loadMarkers() } catch (err) { console.warn('[looks] markers reload failed:', err) }
+      // setScene is the one switch path: it drops the old town and reloads geometry AND this Look's design.
+      await get().setScene(newScene)
       return
     }
     // Hydrate the panel from the new Look's design.json. Bake-stale derives
@@ -2092,11 +2107,31 @@ const useCartographStore = create((set, get) => ({
   repourConfirm: null,
   mapGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)
   sceneBoundary: null,    // fetched neighborhood_boundary.json (raw)
-  setScene: (scene) => {
-    if (!isValidMapId(scene)) return
+  // ⛔ THE ONE SCENE SWITCH. It cleared three keys and loaded nothing, so a caller that switched scene without
+  // also switching Look and reloading (Extent's openScene) left the old town's streets on screen AND its Look
+  // active — the next Designer edit autosaved into the other town's design.json (2026-09-25). Now: every key a
+  // scene loader writes goes back to empty, the design is un-hydrated (so neither autosave can fire mid-switch),
+  // the Look becomes the scene's own, and the three loaders run. `checks/claims-a-scene-switch-drops-the-old-town.mjs`
+  // reads the loaders' set() calls and fails if a key they write is not reset here.
+  setScene: async (scene) => {
+    if (!isValidMapId(scene) || scene === get().scene) return
     try { localStorage.setItem('cartograph-scene', scene) } catch { /* ignore */ }
-    set({ scene, sceneRibbons: null, mapGeography: null, sceneBoundary: null })
+    const s = get()
+    const activeLookId = s._looksHydrated ? lookForScene(s.looks, scene, s.activeLookId) : s.activeLookId
+    if (s._looksHydrated && !activeLookId) console.error(`[looks] no Look belongs to scene "${scene}" — Designer edits will not save`)
+    if (activeLookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ } }
+    set({
+      scene, activeLookId, lookMissingForScene: s._looksHydrated && !activeLookId ? scene : null,
+      sceneRibbons: null, mapGeography: null, sceneBoundary: null,
+      centerlineData: { streets: [] }, protopolygon: null, svOriginals: null, corridorByIdx: new Map(),
+      measurements: [], markerStrokes: [],
+      selectedStreet: null, selectedNode: null, selectedMeasurePoint: null, selectedSegmentOrdinal: null, selectedMeasurement: null,
+      ...hydrateDesign({}), _designHydrated: false,
+    })
+    await Promise.all([get()._loadCenterlines(), get()._loadMeasurements(), get()._loadMarkers()])
   },
+  // A scene no Look belongs to (see lookForScene) — the StatusBar alarms while it is set.
+  lookMissingForScene: null,
   markerActive: false,
   setTool: (newTool) => {
     const prev = get().tool
@@ -2209,7 +2244,9 @@ const useCartographStore = create((set, get) => ({
   markerStrokes: [],
   _loadMarkers: async () => {
     try {
-      const data = await fetchMarkers(get().scene)
+      const scene = get().scene
+      const data = await fetchMarkers(scene)
+      if (get().scene !== scene) return   // switched mid-fetch — never land one town's strokes in another
       set({ markerStrokes: Array.isArray(data) ? data : [] })
     } catch { /* ignore */ }
   },
@@ -2512,7 +2549,18 @@ const useCartographStore = create((set, get) => ({
       // Looks index loaded so it can validate the id, so chain through that.
       await get()._loadLooks()
       if (stale()) return
-      const design = await fetchLookDesign(get().activeLookId).catch(() => ({}))
+      // ⛔ No `.catch(() => ({}))`: a failed fetch hydrated the kit defaults and marked the store hydrated, so the
+      // next edit autosaved defaults over the town's Look. A failure now stays un-hydrated, and the banner says so.
+      // No Look for the scene (lookForScene) ⇒ the kit defaults, with nothing to save them to.
+      const lookId = get().activeLookId
+      let design = {}
+      if (lookId) {
+        try { design = await fetchLookDesign(lookId) } catch (err) {
+          console.error(`[looks] design for "${lookId}" failed to load — edits blocked:`, err)
+          if (!stale()) set({ overlaySaveBlocked: true })
+          return
+        }
+      }
       if (stale()) return
       // Re-hydrated from disk → _saveOverlay's guard will pass again; clear
       // the loud save-blocked flag.
@@ -2869,7 +2917,9 @@ const useCartographStore = create((set, get) => ({
 
   _loadMeasurements: async () => {
     try {
-      const data = await fetchMeasurements(get().scene)
+      const scene = get().scene
+      const data = await fetchMeasurements(scene)
+      if (get().scene !== scene) return   // switched mid-fetch — never land one town's measurements in another
       const ms = ((data && data.measurements) || []).map(m => {
         const ts = m.ts || []
         const mats = m.materials && m.materials.length === ts.length + 1

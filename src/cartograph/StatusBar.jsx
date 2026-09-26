@@ -5,6 +5,20 @@ export default function StatusBar() {
   const saveBlocked = useCartographStore(s => s.overlaySaveBlocked)
   const freezeMissing = useCartographStore(s => s.shapeFreezeMissing)
   const census = useCartographStore(s => s.curbProducerCensus)
+  const lookMissing = useCartographStore(s => s.lookMissingForScene)
+
+  // Loud: no Look belongs to this scene, so Designer edits have nowhere to save — before 2026-09-25 they saved
+  // into whichever town's Look was left active.
+  if (lookMissing) {
+    return (
+      <div
+        className="carto-status carto-glass carto-status--alarm"
+        title={`No Look's scene is "${lookMissing}", so Designer (style) edits have nowhere to save. Create a Look for this neighborhood.`}
+      >
+        ⚠ No Look for {lookMissing} — Designer edits are NOT saving
+      </div>
+    )
+  }
 
   // Loud, non-dismissable warning: the Survey store is un-hydrated (usually
   // after a Vite hot-reload), so _saveOverlay is aborting and edits are NOT
