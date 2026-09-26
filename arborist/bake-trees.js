@@ -757,9 +757,12 @@ export async function bakeTrees({
   // Those species were never in the impostor capture pool either, so they rendered as
   // GEOMETRY, which is how the mesh bar came to order 166 and the slab render 1,896.
   // One omission, three symptoms.
-  // ⛔ Fails OPEN and loudly: if the selection cannot be computed we bake with the full
-  // pool exactly as before, rather than silently emptying the map.
-  let variantPool = index.variants
+  // ⛔⛔ NO FULL-POOL FALLBACK (Layer 0 q2; ROADMAP H-20). This used to "fail OPEN": on an
+  // empty selection, an uncomputable one, or one matching no variant it baked from EVERY library
+  // species, so a town could be planted with another town's trees and read as a finished map. A
+  // town's trees come from ITS OWN grove or the bake refuses, naming why.
+  // ▶ checks/claims-a-town-never-bakes-from-the-whole-library.mjs
+  let variantPool = null
   const meshTierSpecies = new Set()
   try {
     const [{ resolveGrove }, { computeCoverage }] = await Promise.all([
@@ -783,7 +786,7 @@ export async function bakeTrees({
       dressableCheck = new Set(Object.keys(imp).filter(k => imp[k]?.leafRect))
     } catch { /* first pour: no atlas yet */ }
     if (!selected.size) {
-      console.warn('[bake-trees] ⚠️ selection is EMPTY — baking with the full pool (bars not applied)')
+      throw new Error(`selection is EMPTY for scene '${scene}' — no composed species is in its grove. Compose and route its likely species (Salon / scripts/15-fia-tree-mix.mjs) before baking trees.`)
     } else {
       // ⛔ The atlas-dressable guard that stood here is RETIRED. It existed only because
       // bake-look built rects from `design.trees` while the pool came from the bars — two
@@ -801,15 +804,16 @@ export async function bakeTrees({
       }
       const filtered = index.variants.filter(v => selected.has(v.species))
       if (!filtered.length) {
-        console.warn(`[bake-trees] ⚠️ selection (${selected.size} species) matched NO published variant — baking with the full pool`)
+        throw new Error(`selection (${selected.size} species: ${[...selected].join(', ')}) matched NO published variant for scene '${scene}' — publish them (generate-salon --look ${scene}) before baking trees.`)
       } else {
         console.log(`[bake-trees] selection: ${selected.size} species → ${filtered.length} of ${index.variants.length} variants`)
         variantPool = filtered
       }
     }
   } catch (err) {
-    console.warn('[bake-trees] ⚠️ could not compute the selection — baking with the full pool:', err.message)
+    throw new Error(`[bake-trees] ⛔ refusing to bake '${scene}': ${err.message}`)
   }
+  if (!variantPool) throw new Error(`[bake-trees] ⛔ no variant pool for '${scene}' — refusing rather than bake from the whole library`)
 
   if (verbose) {
     console.log(`[bake-trees] scene=${mapName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
