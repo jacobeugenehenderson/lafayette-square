@@ -18,6 +18,22 @@ import { applyWeatherToShader } from '../lib/weather-uniforms.js'
  *                    big SVG-extent plane does.
  *   - color:         base albedo (defaults to '#2d5a2d').
  */
+// The value noise + fBm every procedural surface shares (ground and set-piece masonry).
+// ONE copy: the masonry imports it rather than re-typing it.
+export const SURFACE_NOISE_GLSL = `float gHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+       float gNoise(vec2 p) {
+         vec2 i = floor(p), f = fract(p);
+         f = f * f * (3.0 - 2.0 * f);
+         return mix(
+           mix(gHash(i), gHash(i + vec2(1,0)), f.x),
+           mix(gHash(i + vec2(0,1)), gHash(i + vec2(1,1)), f.x), f.y);
+       }
+       float gFBM(vec2 p) {
+         float v = 0.0, a = 0.5;
+         for (int i = 0; i < 5; i++) { v += a * gNoise(p); p *= 2.03; a *= 0.49; }
+         return v;
+       }`
+
 export function makeGrassMaterial(opts = {}) {
   return makeGroundSurfaceMaterial({ ...opts, surface: 'grass' })
 }
@@ -70,7 +86,30 @@ const SAND_ALBEDO = `vec2 gp = vGrassPos.xz;
        grass *= 0.96 + sn2 * 0.08;
        grass += (sn3 - 0.5) * 0.025;`
 
-const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO }
+// ⭐ THE DUNE STATE (BRIEF-surface-lab §5): 0 at or below the town's own beach slope (derived per
+// town, beachSlopeDeg), 1 at dry sand's repose angle (USGS 30–34°, f-usgs-dune-repose), from the
+// terrain slope at the grid step (the world normal after the terrain override). Off unless BOTH
+// inputs are present. ⛔ It changes NO pixel on the map yet: how a dune state should LOOK is an
+// authored choice nobody has made, so it is drawn only in the lab's diagnostic view
+// (SAND_UNIFORMS.uDuneView), for Jacob's first eye — "present and correct, not tuned".
+const SAND_STATE = `
+       float sandSlopeDeg = degrees(acos(clamp(normalize(vWeatherWorldNormal).y, -1.0, 1.0)));
+       float duneState = uDuneOn > 0.5
+         ? clamp((sandSlopeDeg - uBeachSlopeDeg) / max(uReposeMin - uBeachSlopeDeg, 1e-3), 0.0, 1.0) : 0.0;
+       if (uDuneView > 0.5) {
+         vec3 dv = vec3(0.5);                                                   // state absent
+         if (uDuneOn > 0.5) {
+           if (sandSlopeDeg <= uBeachSlopeDeg) dv = vec3(0.20, 0.45, 0.85);     // flat as the town's beach
+           else if (sandSlopeDeg < uReposeMin) dv = mix(vec3(0.95, 0.85, 0.25), vec3(0.95, 0.45, 0.10), duneState);
+           else if (sandSlopeDeg <= uReposeMax) dv = vec3(0.85, 0.10, 0.10);    // at repose: a slip face
+           else dv = vec3(0.85, 0.10, 0.85);                                    // steeper than dry sand stands
+         }
+         grass = dv;
+       }`
+export const SAND_UNIFORMS = { uDuneView: { value: 0 } }
+if (typeof window !== 'undefined') window.__duneView = SAND_UNIFORMS.uDuneView
+
+const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO + SAND_STATE }
 
 /**
  * The ground-surface factory. `surface` picks the albedo chunk; every other socket —
@@ -90,6 +129,8 @@ export function makeGroundSurfaceMaterial({
   // pool is sampled from it at world-XZ and scaled by the live TOD Pool value
   // (no night gate — the channel animates it). poolMin/poolSpan map world→UV.
   poolMap = null, poolMin = null, poolSpan = null, poolScale = 1,
+  // Resolved surface params (cartograph/surfaces.mjs via context.json + the authored layer).
+  surfaceParams = {},
 } = {}) {
   if (!ALBEDO[surface]) throw new Error(`⛔ makeGroundSurfaceMaterial: no albedo for surface "${surface}" (have ${Object.keys(ALBEDO).join(', ')})`)
   const shaderRef = { current: null }
@@ -120,6 +161,16 @@ export function makeGroundSurfaceMaterial({
     shader.uniforms.uPoolScale = { value: poolScale }
     shader.uniforms.uPool      = _lampGlow.poolUniform
     shader.uniforms.uShadowStr = { value: 0.5 }   // contact-shadow (G) strength
+    if (surface === 'sand') {
+      const rep = surfaceParams?.reposeDeg?.reposeDeg ?? surfaceParams?.reposeDeg   // a finding's range
+      const beach = surfaceParams?.beachSlopeDeg
+      const on = Number.isFinite(beach) && Number.isFinite(rep?.min) && Number.isFinite(rep?.max)
+      shader.uniforms.uDuneOn = { value: on ? 1 : 0 }
+      shader.uniforms.uBeachSlopeDeg = { value: on ? beach : 0 }
+      shader.uniforms.uReposeMin = { value: on ? rep.min : 0 }
+      shader.uniforms.uReposeMax = { value: on ? rep.max : 0 }
+      shader.uniforms.uDuneView = SAND_UNIFORMS.uDuneView
+    }
     shader.uniforms.uLampColor = _lampGlow.colorUniform  // pool colour = lamp colour
     shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade?.center?.[0] ?? 0, fade?.center?.[1] ?? 0) }
     shader.uniforms.uFadeInner  = { value: fade?.inner ?? 0 }
@@ -161,21 +212,10 @@ export function makeGroundSurfaceMaterial({
        uniform float uFadeInner;
        uniform float uFadeOuter;
        uniform float uHasFade;
+       ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView;' : ''}
        varying vec3 vGrassPos;
 
-       float gHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-       float gNoise(vec2 p) {
-         vec2 i = floor(p), f = fract(p);
-         f = f * f * (3.0 - 2.0 * f);
-         return mix(
-           mix(gHash(i), gHash(i + vec2(1,0)), f.x),
-           mix(gHash(i + vec2(0,1)), gHash(i + vec2(1,1)), f.x), f.y);
-       }
-       float gFBM(vec2 p) {
-         float v = 0.0, a = 0.5;
-         for (int i = 0; i < 5; i++) { v += a * gNoise(p); p *= 2.03; a *= 0.49; }
-         return v;
-       }`
+       ${SURFACE_NOISE_GLSL}`
     )
 
     shader.fragmentShader = shader.fragmentShader.replace(

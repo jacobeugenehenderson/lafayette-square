@@ -75,13 +75,18 @@ function treatAlbedo(hex) {
 // ⛔ A PARAMETER A SURFACE NEEDS AND DOES NOT HAVE IS SAID, never filled in. Once per
 // look per surface, naming each absent input and what would supply it.
 const _saidAbsent = new Set()
-function reportAbsentParams(look, surface, authored) {
+// `resolved` = context.json `resolved.<surface>` ({ values, absent }); `undefined` = no context.json
+// at all, which is itself named. The bake's own reasons are reported, minus what the operator authored.
+function reportAbsentParams(look, surface, authored, resolved) {
   const key = look + '|' + surface
   if (_saidAbsent.has(key)) return
   _saidAbsent.add(key)
-  const missing = Object.entries(SURFACES[surface]?.params || {})
-    .filter(([name, p]) => authored?.[name] == null && !(p.source === 'authored'))
-    .map(([name, p]) => `${name} (${p.unit}, ${p.source}${p.question ? ' — references ' + p.question + ' is [U]' : ''}${p.needs ? ' — needs ' + p.needs.join(' + ') : ''})`)
+  const declared = Object.entries(SURFACES[surface]?.params || {}).filter(([, p]) => p.source !== 'authored')
+  const why = resolved === undefined ? 'no context.json for this look: bake the context'
+    : resolved === null ? 'the context bake does not resolve this surface' : null
+  const missing = why
+    ? declared.filter(([name]) => authored?.[name] == null).map(([name, p]) => `${name} (${p.unit}, ${p.source} — ${why})`)
+    : (resolved.absent || []).filter(s => authored?.[s.split(' ')[0]] == null)
   if (missing.length) console.error(`[BakedGround] ⛔ "${look}": surface "${surface}" is drawn WITHOUT ${missing.join('; ')}. `
     + `Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs`)
 }
@@ -146,7 +151,7 @@ function fadeForGroup(group, stencil) {
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
 
-function GroundMeshes({ manifest, bin, scene: bakedScene, bakeLastMs, surfacesOverride }) {
+function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, surfacesOverride }) {
   // ⭐ `surfacesOverride` is the live-authoring layer, the same pattern PostProcessing's
   // *Override props follow: it sits over the baked `scene.surfaces`, never beside it.
   const scene = useMemo(() => (surfacesOverride
@@ -310,7 +315,7 @@ function GroundMeshes({ manifest, bin, scene: bakedScene, bakeLastMs, surfacesOv
             scale={scene?.materialPhysics?.[group.id]?.scale} />
         const surface = surfaceOfGroup(group, surfaceTable)
         return surface
-          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
           : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
       })}
     </group>
@@ -401,8 +406,10 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
   )
 }
 
-function SurfaceMesh({ surface, params, look, group, geometry, lightmap, fade, poolmap, poolMeta }) {
-  useEffect(() => { reportAbsentParams(look, surface, params) }, [look, surface, params])
+function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightmap, fade, poolmap, poolMeta }) {
+  useEffect(() => { reportAbsentParams(look, surface, params, resolved) }, [look, surface, params, resolved])
+  // The params the generator draws with: the bake's resolution, the operator's authored layer on top.
+  const surfaceParams = useMemo(() => ({ ...(resolved?.values || {}), ...(params || {}) }), [resolved, params])
   const { material, shaderRef } = useMemo(
     () => {
       const built = makeGroundSurfaceMaterial({
@@ -417,6 +424,7 @@ function SurfaceMesh({ surface, params, look, group, geometry, lightmap, fade, p
         poolMin: poolMeta?.min,
         poolSpan: poolMeta?.span,
         poolScale: poolMeta?.scale ?? 1,
+        surfaceParams,
       })
       // No polygonOffset (inert under log-depth). Grass faces separate from
       // adjacent FadeMesh faces by baked geometric Y (renderOrder × EPS) +
@@ -428,7 +436,7 @@ function SurfaceMesh({ surface, params, look, group, geometry, lightmap, fade, p
       patchTerrain(built.material, { perVertex: true, terrainNormals: true })
       return built
     },
-    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap]
+    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams]
   )
   useEffect(() => {
     if (lightmap) {
@@ -616,7 +624,11 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
         const m = await fetch(manifestUrl).then(r => r.json())
         const bin = await fetch(ASSET_BASE + 'baked/' + m.look + '/' + m.bin + '?t=' + cacheBust)
           .then(r => r.arrayBuffer())
-        if (!cancelled) setData({ manifest: m, bin })
+        // The context bake's RESOLVED surface params (physics + this town's derived values).
+        // Absent file → null, and SurfaceMesh names it; never a default.
+        const context = await fetch(ASSET_BASE + 'baked/' + m.look + '/context.json?t=' + cacheBust)
+          .then(r => (r.ok ? r.json() : null)).catch(() => null)
+        if (!cancelled) setData({ manifest: m, bin, context })
       } catch (e) {
         console.warn('[BakedGround] load failed:', e)
       }
@@ -632,7 +644,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
           manifest (poolmap may flip absent→present across a bake), and a bare
           re-render would change hook order and crash. Remount is fine: the
           geometry already rebuilds on manifest change. */}
-      {data && scene && <GroundMeshes key={cacheBust ?? 'static'} manifest={data.manifest} bin={data.bin} scene={scene} bakeLastMs={cacheBust} surfacesOverride={surfacesOverride} />}
+      {data && scene && <GroundMeshes key={cacheBust ?? 'static'} manifest={data.manifest} bin={data.bin} context={data.context} scene={scene} bakeLastMs={cacheBust} surfacesOverride={surfacesOverride} />}
     </>
   )
 }

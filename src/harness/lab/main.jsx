@@ -29,6 +29,7 @@ import BakedLamps from '../../components/BakedLamps'
 import SlabRevetment from '../../components/SlabRevetment.jsx'
 import SlabBuildings from '../../components/SlabBuildings'
 import InstancedTrees from '../../components/InstancedTrees'
+import PilgrimMonument from '../../components/PilgrimMonument.jsx'
 import CelestialBodies from '../../components/CelestialBodies'
 import CloudDome from '../../components/CloudDome'
 import AtmosphereDirectiveDriver from '../../components/AtmosphereDirectiveDriver'
@@ -43,6 +44,7 @@ import useSkyState from '../../hooks/useSkyState'
 import useAtmosphere from '../../hooks/useAtmosphere.js'
 import { getElevationRaw } from '../../utils/elevation'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../../utils/terrainShader.js'
+import { SAND_UNIFORMS } from '../../components/grassMaterial.js'
 import { INSTANCE } from '../../instance.js'
 // Every town the kit knows — the same index the app resolves `?look=` against. A town with
 // no slab fails loudly at its stage, never silently.
@@ -66,6 +68,10 @@ const STAGE = params.get('at') || 'class:park'
 // lab previews exactly what an authored remap would ship. `?as=flat` = null (flat colour).
 const AS = params.get('as')
 const STAGE_CLASS = STAGE.startsWith('class:') ? STAGE.slice(6) : null
+// ⭐ `?relief=<m>&tone=<×>` previews the granite surface's AUTHORED parameters on the set-piece,
+// the values a town would write in design.json#surfaces.params.granite. Lab-only; never shipped.
+const GRANITE_PREVIEW = (params.has('relief') || params.has('tone'))
+  ? { reliefM: +(params.get('relief') || 0), toneVar: +(params.get('tone') || 0) } : null
 const SURFACES_OVERRIDE = AS && STAGE_CLASS ? { classes: { [STAGE_CLASS]: AS === 'flat' ? null : AS } } : undefined
 
 // ── TIME: solar hour at the TOWN's longitude, not the browser's clock ────────
@@ -132,6 +138,9 @@ function App() {
   // The production A/B uniform for terrain-derived ground normals (1 ships).
   const [tn, setTn] = useState(1)
   useEffect(() => { TERRAIN_UNIFORMS.uTerrainNormals.value = tn }, [tn])
+  // `?dune=1` — the sand surface's DUNE STATE drawn as a diagnostic (the map draws no dune state yet).
+  const [dune, setDune] = useState(params.get('dune') === '1' ? 1 : 0)
+  useEffect(() => { SAND_UNIFORMS.uDuneView.value = dune }, [dune])
 
   useEffect(() => {
     listStages(LOOK, bakeLastMs).then(s => setStages(s.stages)).catch(e => setErr(String(e.message || e)))
@@ -211,6 +220,7 @@ function App() {
           <group visible={layers.revetment}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.lamps}><R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.buildings}><R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={LOOK} interactive={false} /></R3FErrorBoundary></group>
+          <R3FErrorBoundary name="PilgrimMonument"><PilgrimMonument graniteOverride={GRANITE_PREVIEW} /></R3FErrorBoundary>
           <group visible={layers.trees}><R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
         </Suspense>
         {layers.post && <PostProcessing lookId={LOOK} bakeLastMs={bakeLastMs} />}
@@ -252,6 +262,18 @@ function App() {
           <Btn on={tn === 1} tint="#2f6b4a" onClick={() => setTn(1)}>terrain (ships)</Btn>
           <Btn on={tn === 0} tint="#6b3f3f" onClick={() => setTn(0)}>flat (before)</Btn>
         </div>
+        <div style={{ display: 'flex', gap: 5, marginBottom: 4, alignItems: 'center' }}>
+          <span style={{ opacity: .7 }}>sand</span>
+          <Btn on={dune === 0} tint="#6b5a3f" onClick={() => setDune(0)}>as shipped</Btn>
+          <Btn on={dune === 1} tint="#8a3f2f" onClick={() => setDune(1)}>dune state</Btn>
+        </div>
+        {dune === 1 && <div style={{ fontSize: 11, marginBottom: 6, lineHeight: 1.5 }}>
+          <span style={{ color: '#3373d9' }}>■</span> flat as this town's beach ·{' '}
+          <span style={{ color: '#f2d940' }}>■</span>→<span style={{ color: '#f2731a' }}>■</span> rising toward repose ·{' '}
+          <span style={{ color: '#d91a1a' }}>■</span> at repose (30–34°, a slip face) ·{' '}
+          <span style={{ color: '#d91ad9' }}>■</span> steeper than dry sand stands ·{' '}
+          <span style={{ color: '#808080' }}>■</span> state ABSENT (a param missing — see the console)
+        </div>}
         {probe && <>
           <Head>WHAT THE ENVIRONMENT IS DOING (read back)</Head>
           <Row k="sun altitude" v={`${probe.sunAlt.toFixed(1)}°`} />

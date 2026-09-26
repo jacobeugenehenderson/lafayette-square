@@ -46,18 +46,18 @@ surface's parameters with a unit and a source — **physics** (a `references/` f
 ## 5. Dunes — OPEN
 - **Class**: `natural:dune → dune`, beside `beach` (both `hard`). ⚠️ The tag is the smaller half:
   ▶ `node scratch/marram-sand-relief.mjs` (MassGIS-labelled coastal dune sand dwarfs `natural:dune`).
-- **One sand generator** for `beach` + `dune` (Boz ruling): dune state from **slope at the terrain
-  grid step**, between the town's own beach-band slope (derived) and dry sand's repose angle
-  (physics). Built: the sand surface (class colour + mottling). Not built: the dune state, wet sand,
-  ripples — each a named absent parameter.
+- **One sand generator** for `beach` + `dune` (Boz ruling). **Dune state BUILT** (`grassMaterial.js` SAND_STATE):
+  0 at the town's own beach slope, 1 at dry sand's repose angle, read off the terrain normal at the grid step.
+  - `reposeDeg`: physics, USGS 30–34° (`f-usgs-dune-repose`).
+  - `beachBandM` + `beachSlopeDeg`: **DERIVED per town** at the context bake (`deriveSand`; Boz, 2026-09-25: a band
+    is a property of a coast), resolved into `context.json` and ABSENT, named, when a town can't answer.
+    ▶ `node checks/claims-the-beach-band-is-the-towns-own.mjs`
+  - It changes no pixel on the map: how a dune state LOOKS is unauthored, so it shows only in the lab (`?dune=1`).
+  - Not built: wet sand and ripples. No sourced width, wavelength or strength, so both are absent by name.
 - **Scale**: the baked grid is 5 m; the 1–5 m band of the 1 m lidar is surface work.
   ▶ `node scratch/marram-relief-scale.mjs`
-- **Blocked on**:
-  1. `q-dry-sand-repose-angle` and `q-beach-band-width` — [U] (`node checks/claims-references-are-sound.mjs`).
-  2. Sand faces do not reach the land-use vote: compound polygons are refused, and the centroid-in-one-face
-     vote would drop them again (Revetment, probe `0f113398`). Ruling with Boz.
-  3. Provincetown's slab: a Bake that completes past `ground` (terrain datum is now `water`).
-  4. The wet band draws only when `terrain.json.datum === "water"`.
+- **Waiting on**: Provincetown's re-pour. The pour's coast step writes `context.json#resolved`; until then the lab
+  shows the state as ABSENT (grey) and the console names why.
 - ⛔ **Stop point**: Jacob eyes the first dune pass in the lab at eye, mid and overhead — present and
   correct, not tuned.
 

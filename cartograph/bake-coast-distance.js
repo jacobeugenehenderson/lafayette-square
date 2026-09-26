@@ -23,7 +23,7 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { waterRuns } from './shoreRuns.mjs'
-import { SURFACES } from './surfaces.mjs'
+import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -148,7 +148,15 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
   }
   const manifestPath = join(outDir, 'context.json')
   const prev = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : { channels: {} }
-  const out = { version: 1, look: lookId, channels: { ...prev.channels, coastDist: channel }, derived: { ...(prev.derived || {}), sand: derivedSand } }
+  // ⭐ RESOLVED here, where the registry is readable: physics (findings) + this town's derived
+  // values → { values, absent }. The runtime lays the operator's authored layer over it and
+  // never reads references/ itself.
+  const regPath = join(dataRoot, 'references', 'registry.json')
+  const registry = existsSync(regPath) ? JSON.parse(readFileSync(regPath, 'utf8')) : null
+  const resolvedSand = registry ? resolveSurfaceParams('sand', registry, {}, derivedSand)
+    : { values: {}, absent: ['every physics param (no references/registry.json at bake)'] }
+  const out = { version: 1, look: lookId, channels: { ...prev.channels, coastDist: channel },
+    derived: { ...(prev.derived || {}), sand: derivedSand }, resolved: { ...(prev.resolved || {}), sand: resolvedSand } }
   writeFileSync(manifestPath, JSON.stringify(out, null, 1))
   return out
 }
