@@ -51,9 +51,19 @@ widened: 2026-09-26 (Jacob — the always-dirty bake, the 2D refresh, the modal)
 > (`src/tokens/design.css`, the `--carto-*` layer; `ROADMAP C10`) rather than local values. Jacob looks at it for
 > minutes at a time: make it calm and legible. ⛔ No new component library.
 
-> **OPEN (Sluice, 2026-09-26) — cause not established:** a plain huron Designer load ran `sectionOpen` 3× in
-> 51 s (46 s · 10 s · 10 s) with no interaction. Measured from the `[LOAD] sectionOpen` console timers. To test next:
-> is it the graph re-running itself (a dep of that memo changing identity after hydrate)?
+> ### OPEN (2026-09-26) — found by the bake-read audit; owners per Boz's ruling
+> - **Live finding, not only a declaration gap:** `building-overrides.json` is newer than `clean/map.json` in hipointe-demun,
+>   huron and provincetown — authored building edits **not yet poured** (the pour reads it; nothing declared it).
+>   ▶ `stat -f '%m %N' cartograph/data/*/building-overrides.json cartograph/data/*/clean/map.json`
+> - **This brief (Sluice):** `bake-ground-ao.js` rewrites `ground.json` AFTER `lamps` and `tree-anchors` have read it —
+>   declare the true order; readers depend on the FINAL `ground.json`.
+> - **This brief, low:** `bake-terrain.js` range-reads elevation tiles over the network from `elevation-sources.txt` —
+>   declare the list; name the tiles as untracked, loudly.
+> - **`BRIEF-ls-bleed-excision`:** §3 sites 25 (labels fall back to LS's ribbons) and 26 (`buildingOverrides.json` read
+>   in every town); §1 Class D row 10 (bakes read the TOWN's `design.json`, not the Look's).
+> - **Boz:** the Stage Street shot on huron sat below the ground (cause not established).
+> - **Cause not established:** a plain huron Designer load ran `sectionOpen` 3× in 51 s (46 · 10 · 10 s) with no
+>   interaction (the `[LOAD] sectionOpen` timers). Next: is a dep of that memo changing identity after hydrate?
 
 ## 1. You are the dispatched agent. Name yourself — one word, not a name another RUNNING session holds (check `ListAgents`; ask Jacob to `/rename`).
 ## 2. Agent: **FRESH.** ⚠️ `cartograph/serve.js`'s bake chain is the subject; check `git status` first — several sessions have been in that file today.
