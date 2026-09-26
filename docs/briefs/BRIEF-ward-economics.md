@@ -1,8 +1,8 @@
 # BRIEF — Ward economics: the Host split and the Ward fund, in The Ask and The Split (Operations later)
 
 <!-- BRIEF-STATE
-status: PARKED — phase 1's approach rejected by Jacob 2026-09-25 ("I don't like this at all. Too complicated. None of this is useful. Stop work for now."); built work sits unpushed on theward-online branch `ward-economics` (456c2cd, 17dc9e3); main untouched
-dispatched: 2026-09-25, Tally — stopped
+status: OPEN — re-scoped 2026-09-25 to Jacob's ring design (below); phase 1's knob-panel approach rejected and parked on theward-online branch `ward-economics` (456c2cd, 17dc9e3); reuse its model + conservation check, not its page
+dispatched: 2026-09-25, Tally — awaiting Jacob's go on the ring design
 written: 2026-09-25
 evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve and the Host's overflow budget as scenario knobs, and Jacob has approved both; the Operations ledger (phase 3) gets its own go.
 -->
@@ -50,6 +50,18 @@ evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve 
 - distributable after the skim;
 - Host earnings;
 - platform earnings.
+
+## ⭐ THE ASK'S DESIGN (Jacob, 2026-09-25 — supersedes phase 1's knob panel)
+
+**One dominant object that explains the economics: a nested-ring model. The visualization IS the control.**
+- **Outer ring = the Ward economy** (where transaction volume comes from): food/Cary, other local commerce, later other classes. **Centre:** total annual local commerce.
+- **Inner ring = the Ward's proceeds and where they go:** the **Cushion · the Local Host · the Studio.** Local commerce → Ward proceeds → allocation.
+- **The inner ring's boundaries are draggable.** They replace the Host-share / Cushion / Studio sliders. As a boundary moves, each section's size, percentage and dollars change together.
+- **Hover/touch a section:** the centre shows its name, $ and %, with no big permanent legend.
+- **Only a few real controls:** activity/scale · allocation (the ring itself) · time.
+- **Time = small side-by-side SNAPSHOTS** of the same ring (Year 1 — Cushion $2,500 · Year 2 — $5,000 · Year 3 — $7,500 · Steady state — Cushion funded), not four interactive diagrams. They show the Cushion as an accumulating reserve, whose share goes elsewhere once funded.
+- **Everything else is an Assumption** (processing rates, sales tax…): stated in an Assumptions disclosure, not a knob.
+- **Distinct jobs:** The Split = what happens to a TRANSACTION (it keeps the detailed transaction controls); The Ask = what happens when Wards operate AT SCALE (it consumes The Split's economics rather than recreating its controls).
 
 ## The phases (stop after each)
 
