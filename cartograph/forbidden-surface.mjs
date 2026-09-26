@@ -36,12 +36,14 @@
  * the frozen shape — a scene missing it must bake the ground first, not fall through
  * to a wrong mask.
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { sectionOpen } from '../src/lib/tileGround.js'
-import { LU_POLICY, resolveLuPolicy, groundKindOf } from './lu-policy.mjs'
+import { LU_POLICY, WETLAND_SUBTYPE, resolveLuPolicy, groundKindOf } from './lu-policy.mjs'
+import { OSM_TO_LU, OSM_LU_KIND } from './derive.js'
+import { unreadableFace } from './osm-vocabulary.mjs'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -175,7 +177,62 @@ export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allo
   // directory (public/baked/<scene>/shape.json) so existing callers need no change.
   const mapId = scene || path.basename(path.dirname(shapePath || '')) || null
   const classesPresent = Object.keys(pr.luByClass || {})
-  const policy = resolveLuPolicy(mapId, classesPresent)
+
+  // ── ⭐ A GROUND-COVER BLOCK IS ASKED AT THE POINT, NOT AT THE BLOCK (2026-09-26) ──
+  // A tile takes ONE land use, and `luWinnerFromCoverage` (derive.js) lets any ground
+  // cover take a tile from a jurisdiction at ANY share — "a filter, not a weight". Right
+  // for the paint; wrong for a tree. MEASURED on Provincetown: of 20,833 trees refused as
+  // `lu:wetland`, 15,401 stand in NO wetland — in the Seashore's reserve, in mapped woods —
+  // and of 15,829 refused as `lu:beach`, 429 stand on beach or sand. Invisible on
+  // Lafayette Square, whose blocks are small; Provincetown has 159 tiles for the town.
+  // ⇒ For a class that ONLY ground covers produce (every OSM_TO_LU tag emitting it is a
+  // `cover` in OSM_LU_KIND — read from the tables, never listed here), the tree gate
+  // re-runs the vote at the point: the smallest cover containing it, else the smallest
+  // built land use, else the jurisdiction, else nothing — and nothing means the tile's
+  // label was an extrapolation, so the canopy data decides.
+  // ⚠️ The mask therefore follows the SOURCE, not the paint, inside these tiles: a tree can
+  // stand on ground painted wetland. The paint is the Stage's to tune (Jacob: ground colour
+  // is parked until this is nailed down).
+  const coverOnly = new Set(Object.values(OSM_TO_LU).filter(lu =>
+    Object.entries(OSM_TO_LU).every(([tag, l]) => l !== lu || OSM_LU_KIND[tag] === 'cover')))
+  const askedAtPoint = classesPresent.filter(lu => coverOnly.has(lu))
+  const pointFeats = []
+  if (askedAtPoint.length) {
+    const osmPath = path.join(REPO_ROOT, 'cartograph', 'data', mapId, 'raw', 'osm.json')
+    if (!existsSync(osmPath)) throw new Error(`[zone-tester] '${mapId}' has ground-cover tiles (${askedAtPoint.join(', ')}) and no ${osmPath} to ask at the point. Refusing to judge a tree by its block's label.`)
+    const osm = JSON.parse(readFileSync(osmPath, 'utf-8'))
+    // The same features derive.js lets vote: mapped tags, readable rings, holes subtracted.
+    for (const cat of ['landuse', 'leisure', 'natural', 'amenity']) {
+      for (const f of osm.ground?.[cat] || []) {
+        const tag = `${cat}:${f.tags?.[cat]}`
+        const lu = OSM_TO_LU[tag]
+        if (!lu) continue
+        const why = unreadableFace(f)
+        if (why && why !== 'compound') continue
+        const ring = f.coords.map(p => [p.x, p.z])
+        const holes = (f.holes || []).filter(h => h?.length >= 3).map(h => h.map(p => [p.x, p.z]))
+        const poly = polyWithBbox(ring, holes.length ? holes : null)
+        let area = 0
+        for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) area += (ring[j][0] - ring[i][0]) * (ring[j][1] + ring[i][1])
+        pointFeats.push({ ...poly, lu, tag, kind: OSM_LU_KIND[tag] ?? 'use', area: Math.abs(area / 2),
+          subtype: tag === 'natural:wetland' ? (f.tags.wetland ?? '(none)') : null })
+      }
+    }
+    pointFeats.sort((a, b) => a.area - b.area)      // smallest first = most specific
+  }
+  /** The land-use feature that answers for this point, by derive.js's own precedence. */
+  const featureAt = (x, z) => {
+    let use = null, mgmt = null
+    for (const f of pointFeats) {
+      if (x < f.minX || x > f.maxX || z < f.minZ || z > f.maxZ || !pointInPolygon(x, z, f)) continue
+      if (f.kind === 'cover') return f
+      if (f.kind === 'management') mgmt ||= f
+      else use ||= f
+    }
+    return use || mgmt
+  }
+
+  const policy = resolveLuPolicy(mapId, [...new Set([...classesPresent, ...pointFeats.map(f => f.lu)])])
   if (!quiet) console.log(policy.report())
 
   const luAllow = []                 // plantable-type land-use interiors (flattened)
@@ -183,7 +240,14 @@ export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allo
   for (const [lu, rings] of Object.entries(pr.luByClass || {})) {
     const polys = prep(rings)
     if (policy.isPlantable(lu)) luAllow.push(...polys)
-    else luForbid.push({ lu, polys })
+    else luForbid.push({ lu, polys, atPoint: coverOnly.has(lu) })
+  }
+  /** Inside a ground-cover tile: the point's own verdict — a zone name, as zoneOf returns. */
+  const coverVerdict = (x, z) => {
+    const f = featureAt(x, z)
+    if (!f) return 'lu'                                          // nothing here: the canopy decides
+    if (f.lu === 'wetland' && WETLAND_SUBTYPE[f.subtype] === 'wooded') return 'lu'   // a swamp is a forest
+    return policy.isPlantable(f.lu) ? 'lu' : `lu:${f.lu}`
   }
 
   // Real obstructions painted ON TOP of the land use — small literal footprints
@@ -219,7 +283,7 @@ export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allo
     if (insideEO(x, z, curb))     return 'curb'
     if (insideEO(x, z, sidewalk)) return 'sidewalk'
     // 3. a land-use interior of a hardscape TYPE (the lot itself)
-    for (const g of luForbid) if (insideEO(x, z, g.polys)) return `lu:${g.lu}`
+    for (const g of luForbid) if (insideEO(x, z, g.polys)) return g.atPoint ? coverVerdict(x, z) : `lu:${g.lu}`
     // 4. the two plantable surfaces
     if (insideEO(x, z, treelawn)) return 'treelawn'
     if (insideEO(x, z, luAllow))  return 'lu'
@@ -235,6 +299,9 @@ export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allo
     return zone
   }
   classify.zoneOf = zoneOf
+  /** Reporting: the feature that answered for a point inside a ground-cover tile (or null). */
+  classify.featureAt = (x, z) => { const f = featureAt(x, z); return f && { lu: f.lu, tag: f.tag, subtype: f.subtype, kind: f.kind } }
+  classify.askedAtPoint = askedAtPoint
 
   /**
    * Nearest legal ground, spiralling out — for REAL surveyed trees only.

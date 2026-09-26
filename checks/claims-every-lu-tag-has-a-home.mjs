@@ -39,7 +39,7 @@ const read = (rel) => readFileSync(join(ROOT, rel), 'utf8')
 
 /** Parse an object literal's `'key': 'value'` pairs. Throws rather than returning {}. */
 function objectLiteral(src, name, where) {
-  const m = src.match(new RegExp(`(?:const|export const) ${name} = \\{([\\s\\S]*?)\\n  \\}`))
+  const m = src.match(new RegExp(`(?:const|export const) ${name} = \\{([\\s\\S]*?)\\n {0,2}\\}`))
   if (!m) throw new Error(`⛔ could not parse ${name} from ${where} — the guard is blind; fix the parse before trusting a PASS`)
   const out = {}
   for (const kv of m[1].matchAll(/'((?:[^'\\]|\\.)+)'\s*:\s*'((?:[^'\\]|\\.)*)'/g)) out[kv[1]] = kv[2]

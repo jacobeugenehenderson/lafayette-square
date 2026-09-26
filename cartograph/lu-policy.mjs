@@ -147,6 +147,22 @@ export const LU_POLICY = {
   wetland:             { ground: 'planted', with: ['phragmites'],      pattern: 'scatter' },
 }
 
+/**
+ * ⭐ A SWAMP IS A FOREST (Jacob, 2026-09-26 — `docs/briefs/BRIEF-wetland-trees.md`).
+ * `wetland` above is the OPEN wetland: reeds, no census tree. But OSM's `wetland=*`
+ * subtype already says which wetlands are wooded, so the tree gate asks the tag
+ * instead of a town list. OSM wiki definitions: `swamp` = "a wetland with trees",
+ * `mangrove` = a tidal forest; `bog` may carry trees, and the canopy fill only
+ * places trees where canopy was measured, so a bare bog still gets none.
+ * ⛔ A subtype in NEITHER column is not guessed: the tree gate treats it as open
+ * (today's behaviour) and counts it under its own name in the tester's `stats`.
+ */
+export const WETLAND_SUBTYPE = {
+  swamp: 'wooded', mangrove: 'wooded', bog: 'wooded',
+  marsh: 'open', reedbed: 'open', saltmarsh: 'open', tidalflat: 'open',
+  wet_meadow: 'open', fen: 'open', saltern: 'open', string_bog: 'open',
+}
+
 /** What an unrecognized class resolves to. Soft + loud — never silent hardscape. */
 export const UNRECOGNIZED_DEFAULT = 'soft'
 

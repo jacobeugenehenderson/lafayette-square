@@ -246,6 +246,103 @@ export const OSM_LU_KIND = {
   // lawn, and it does not arrive inside park boundaries the way `landuse=grass` does.
 }
 
+// ⭐⭐ WIDENED 2026-09-20 (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`, ruled by Jacob). This was a
+// 32-entry table holding very nearly the vocabulary Lafayette Square happens to
+// contain, and a tag it lacked NEVER BECAME AN LU POLYGON AT ALL — the face fell
+// to the parcel vote, else to the bare `'residential'` default. So huron's corn
+// arrived as somebody's lawn, confidently. Measured across LS · huron ·
+// hipointe-demun · altadena at the widening: 111 distinct tags on disk with no
+// home. ▶ re-derive, never quote: `node checks/claims-every-lu-tag-has-a-home.mjs`.
+//
+// ⛔⛔ EVERY LU-BEARING TAG IS NOW EITHER MAPPED HERE OR DECLARED IN
+// `OSM_LU_DECLARED` BELOW, AND THE CHECK FAILS ON A TAG THAT IS NEITHER. That is
+// the whole deliverable: "we looked and decided no" and "nobody has looked" are
+// the same silence otherwise (`sources.js`'s UNDECLARED / DECLARED-NONE /
+// DECLARED, arriving in a third domain).
+export const OSM_TO_LU = {
+  // — residential / commercial / industrial —
+  'landuse:residential': 'residential',
+  'landuse:retail': 'commercial', 'landuse:commercial': 'commercial',
+  'amenity:fuel': 'commercial', 'amenity:cafe': 'commercial',
+  'amenity:bar': 'commercial', 'amenity:restaurant': 'commercial',
+  'amenity:fast_food': 'commercial', 'amenity:veterinary': 'commercial',
+  'amenity:charging_station': 'commercial', 'amenity:bank': 'commercial',
+  'amenity:car_wash': 'commercial', 'amenity:pub': 'commercial',
+  'amenity:cinema': 'commercial', 'amenity:theatre': 'commercial',
+  'amenity:events_venue': 'commercial', 'amenity:pharmacy': 'commercial',
+  'amenity:dentist': 'commercial', 'amenity:doctors': 'commercial',
+  'leisure:fitness_centre': 'commercial', 'leisure:bowling_alley': 'commercial',
+  'leisure:marina': 'commercial', 'leisure:hackerspace': 'commercial',
+  'amenity:dojo': 'commercial',
+  'landuse:industrial': 'industrial', 'amenity:waste_disposal': 'industrial',
+  'landuse:landfill': 'industrial', 'landuse:quarry': 'industrial',
+  // — institutional: schools, worship, government, care —
+  'landuse:religious': 'institutional', 'landuse:institutional': 'institutional',
+  'landuse:military': 'institutional',
+  'amenity:school': 'institutional', 'amenity:place_of_worship': 'institutional',
+  'amenity:library': 'institutional', 'amenity:university': 'institutional',
+  'amenity:fire_station': 'institutional', 'amenity:crematorium': 'institutional',
+  'amenity:college': 'institutional', 'amenity:hospital': 'institutional',
+  'amenity:clinic': 'institutional', 'amenity:social_facility': 'institutional',
+  'amenity:community_centre': 'institutional', 'amenity:townhall': 'institutional',
+  'amenity:courthouse': 'institutional', 'amenity:police': 'institutional',
+  'amenity:prison': 'institutional', 'amenity:post_office': 'institutional',
+  'amenity:kindergarten': 'institutional', 'amenity:childcare': 'institutional',
+  'amenity:public_building': 'institutional', 'amenity:funeral_hall': 'institutional',
+  'amenity:arts_centre': 'institutional',
+  // — recreation: managed green that is PLAYED on —
+  'landuse:grass': 'recreation', 'landuse:recreation_ground': 'recreation',
+  'landuse:allotments': 'recreation', 'landuse:greenery': 'recreation',
+  'leisure:garden': 'recreation', 'leisure:playground': 'recreation',
+  'leisure:swimming_pool': 'recreation', 'leisure:pitch': 'recreation',
+  'leisure:sports_centre': 'recreation', 'leisure:golf_course': 'recreation',
+  'leisure:track': 'recreation', 'leisure:stadium': 'recreation',
+  'leisure:sports_hall': 'recreation', 'leisure:horse_riding': 'recreation',
+  'leisure:disc_golf_course': 'recreation', 'leisure:schoolyard': 'recreation',
+  // ⚠️ `natural:wood` STAYS `recreation`, and that is a DELIBERATE non-change.
+  // Re-pointing it to `forest` is defensible on the merits — a wood is not a
+  // ballfield — but it is an EXISTING mapping, i.e. somebody's decision, and it
+  // reaches LS (19 features) and hipointe-demun (85), neither of which may be
+  // re-poured without Jacob. A commit that fills holes must not also restyle the
+  // mould town's woods. ▶ Jacob's call, not absorbed here.
+  'natural:wood': 'recreation',
+  'natural:scrub': 'recreation', 'natural:tree_row': 'recreation',
+  'natural:grass': 'recreation', 'natural:grassland': 'recreation',
+  'natural:shrubbery': 'recreation',
+  // — park: public open space, and NOT `recreation` (a different colour, a
+  //   different feel; a park is walked, a pitch is played). ⚠️ The class existed
+  //   in `LU_POLICY`, `PAINT_ORDER`, `TREELAWN_LU_VARIANTS` and the palettes and
+  //   had NO OSM producer at all — its only two sources were the divided-road
+  //   median and LS's authored park override. `leisure:park` is in ALL FOUR towns.
+  'leisure:park': 'park', 'leisure:nature_reserve': 'park', 'leisure:dog_park': 'park',
+  // — the worked and the wild —
+  'landuse:construction': 'vacant',
+  'landuse:brownfield': 'brownfield',     // its own class, ruled by Jacob 2026-09-20
+  'landuse:farmland': 'agricultural', 'landuse:meadow': 'agricultural',
+  'landuse:farmyard': 'agricultural', 'landuse:plant_nursery': 'agricultural',
+  // A greenhouse is a BUILDING, not a field (Jacob, 2026-09-26): under `agricultural` it
+  // took the crop surface, and huron's 47 ha of glasshouse sites would have grown rows.
+  'landuse:greenhouse_horticulture': 'greenhouse',
+  'landuse:orchard': 'orchard',           // trees, in rows, by a farmer
+  'landuse:forest': 'forest',   // ⚠️ `natural:wood` deliberately NOT re-pointed here — see above
+  'natural:wetland': 'wetland', 'natural:mud': 'wetland',
+  'natural:beach': 'beach', 'natural:sand': 'beach',
+  // ⭐ A DUNE IS ITS OWN SURFACE (Jacob, 2026-09-24 — `docs/briefs/BRIEF-surface-lab.md §5`).
+  // ⚠️ The TAG is the smaller half of the answer, MEASURED: on Provincetown `natural:dune`
+  // is 11 polygons / 3.8 ha, while `natural:sand` that MassGIS itself calls "COASTAL
+  // DUNE" is 464.6 ha (▶ node scratch/marram-sand-relief.mjs). ⛔ Do not key on
+  // `massgis:*` — that is a Massachusetts-only instance patch. The dunes this tag misses
+  // are the SAND SURFACE's job: one generator serves `beach` + `dune`, and its dune state
+  // is driven by the relief (Boz ruling, 2026-09-24), so a tag only has to be right
+  // where a mapper was sure.
+  'natural:dune': 'dune',
+  'natural:bare_rock': 'bare', 'natural:scree': 'bare',
+  'landuse:cemetery': 'cemetery', 'amenity:grave_yard': 'cemetery',
+  'landuse:railway': 'railway',
+  // — hardscape lots —
+  'amenity:parking': 'parking', 'amenity:parking_space': 'parking',
+}
+
 /**
  * ⭐ THE PRECEDENCE, applied to one face's coverage tally: if any GROUND COVER covers this
  * face at all, the winner is chosen among the covers only. A management polygon keeps the
@@ -3251,102 +3348,8 @@ export function deriveLayers(highways) {
   //      whichever LU category covers the most area of this face wins.
   //   2. Parcel majority vote (fallback when no OSM polygon hits the face).
   //   3. 'residential' default (when neither is available).
-  // ⭐⭐ WIDENED 2026-09-20 (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`, ruled by Jacob). This was a
-  // 32-entry table holding very nearly the vocabulary Lafayette Square happens to
-  // contain, and a tag it lacked NEVER BECAME AN LU POLYGON AT ALL — the face fell
-  // to the parcel vote, else to the bare `'residential'` default. So huron's corn
-  // arrived as somebody's lawn, confidently. Measured across LS · huron ·
-  // hipointe-demun · altadena at the widening: 111 distinct tags on disk with no
-  // home. ▶ re-derive, never quote: `node checks/claims-every-lu-tag-has-a-home.mjs`.
-  //
-  // ⛔⛔ EVERY LU-BEARING TAG IS NOW EITHER MAPPED HERE OR DECLARED IN
-  // `OSM_LU_DECLARED` BELOW, AND THE CHECK FAILS ON A TAG THAT IS NEITHER. That is
-  // the whole deliverable: "we looked and decided no" and "nobody has looked" are
-  // the same silence otherwise (`sources.js`'s UNDECLARED / DECLARED-NONE /
-  // DECLARED, arriving in a third domain).
-  const OSM_TO_LU = {
-    // — residential / commercial / industrial —
-    'landuse:residential': 'residential',
-    'landuse:retail': 'commercial', 'landuse:commercial': 'commercial',
-    'amenity:fuel': 'commercial', 'amenity:cafe': 'commercial',
-    'amenity:bar': 'commercial', 'amenity:restaurant': 'commercial',
-    'amenity:fast_food': 'commercial', 'amenity:veterinary': 'commercial',
-    'amenity:charging_station': 'commercial', 'amenity:bank': 'commercial',
-    'amenity:car_wash': 'commercial', 'amenity:pub': 'commercial',
-    'amenity:cinema': 'commercial', 'amenity:theatre': 'commercial',
-    'amenity:events_venue': 'commercial', 'amenity:pharmacy': 'commercial',
-    'amenity:dentist': 'commercial', 'amenity:doctors': 'commercial',
-    'leisure:fitness_centre': 'commercial', 'leisure:bowling_alley': 'commercial',
-    'leisure:marina': 'commercial', 'leisure:hackerspace': 'commercial',
-    'amenity:dojo': 'commercial',
-    'landuse:industrial': 'industrial', 'amenity:waste_disposal': 'industrial',
-    'landuse:landfill': 'industrial', 'landuse:quarry': 'industrial',
-    // — institutional: schools, worship, government, care —
-    'landuse:religious': 'institutional', 'landuse:institutional': 'institutional',
-    'landuse:military': 'institutional',
-    'amenity:school': 'institutional', 'amenity:place_of_worship': 'institutional',
-    'amenity:library': 'institutional', 'amenity:university': 'institutional',
-    'amenity:fire_station': 'institutional', 'amenity:crematorium': 'institutional',
-    'amenity:college': 'institutional', 'amenity:hospital': 'institutional',
-    'amenity:clinic': 'institutional', 'amenity:social_facility': 'institutional',
-    'amenity:community_centre': 'institutional', 'amenity:townhall': 'institutional',
-    'amenity:courthouse': 'institutional', 'amenity:police': 'institutional',
-    'amenity:prison': 'institutional', 'amenity:post_office': 'institutional',
-    'amenity:kindergarten': 'institutional', 'amenity:childcare': 'institutional',
-    'amenity:public_building': 'institutional', 'amenity:funeral_hall': 'institutional',
-    'amenity:arts_centre': 'institutional',
-    // — recreation: managed green that is PLAYED on —
-    'landuse:grass': 'recreation', 'landuse:recreation_ground': 'recreation',
-    'landuse:allotments': 'recreation', 'landuse:greenery': 'recreation',
-    'leisure:garden': 'recreation', 'leisure:playground': 'recreation',
-    'leisure:swimming_pool': 'recreation', 'leisure:pitch': 'recreation',
-    'leisure:sports_centre': 'recreation', 'leisure:golf_course': 'recreation',
-    'leisure:track': 'recreation', 'leisure:stadium': 'recreation',
-    'leisure:sports_hall': 'recreation', 'leisure:horse_riding': 'recreation',
-    'leisure:disc_golf_course': 'recreation', 'leisure:schoolyard': 'recreation',
-    // ⚠️ `natural:wood` STAYS `recreation`, and that is a DELIBERATE non-change.
-    // Re-pointing it to `forest` is defensible on the merits — a wood is not a
-    // ballfield — but it is an EXISTING mapping, i.e. somebody's decision, and it
-    // reaches LS (19 features) and hipointe-demun (85), neither of which may be
-    // re-poured without Jacob. A commit that fills holes must not also restyle the
-    // mould town's woods. ▶ Jacob's call, not absorbed here.
-    'natural:wood': 'recreation',
-    'natural:scrub': 'recreation', 'natural:tree_row': 'recreation',
-    'natural:grass': 'recreation', 'natural:grassland': 'recreation',
-    'natural:shrubbery': 'recreation',
-    // — park: public open space, and NOT `recreation` (a different colour, a
-    //   different feel; a park is walked, a pitch is played). ⚠️ The class existed
-    //   in `LU_POLICY`, `PAINT_ORDER`, `TREELAWN_LU_VARIANTS` and the palettes and
-    //   had NO OSM producer at all — its only two sources were the divided-road
-    //   median and LS's authored park override. `leisure:park` is in ALL FOUR towns.
-    'leisure:park': 'park', 'leisure:nature_reserve': 'park', 'leisure:dog_park': 'park',
-    // — the worked and the wild —
-    'landuse:construction': 'vacant',
-    'landuse:brownfield': 'brownfield',     // its own class, ruled by Jacob 2026-09-20
-    'landuse:farmland': 'agricultural', 'landuse:meadow': 'agricultural',
-    'landuse:farmyard': 'agricultural', 'landuse:plant_nursery': 'agricultural',
-    // A greenhouse is a BUILDING, not a field (Jacob, 2026-09-26): under `agricultural` it
-    // took the crop surface, and huron's 47 ha of glasshouse sites would have grown rows.
-    'landuse:greenhouse_horticulture': 'greenhouse',
-    'landuse:orchard': 'orchard',           // trees, in rows, by a farmer
-    'landuse:forest': 'forest',   // ⚠️ `natural:wood` deliberately NOT re-pointed here — see above
-    'natural:wetland': 'wetland', 'natural:mud': 'wetland',
-    'natural:beach': 'beach', 'natural:sand': 'beach',
-    // ⭐ A DUNE IS ITS OWN SURFACE (Jacob, 2026-09-24 — `docs/briefs/BRIEF-surface-lab.md §5`).
-    // ⚠️ The TAG is the smaller half of the answer, MEASURED: on Provincetown `natural:dune`
-    // is 11 polygons / 3.8 ha, while `natural:sand` that MassGIS itself calls "COASTAL
-    // DUNE" is 464.6 ha (▶ node scratch/marram-sand-relief.mjs). ⛔ Do not key on
-    // `massgis:*` — that is a Massachusetts-only instance patch. The dunes this tag misses
-    // are the SAND SURFACE's job: one generator serves `beach` + `dune`, and its dune state
-    // is driven by the relief (Boz ruling, 2026-09-24), so a tag only has to be right
-    // where a mapper was sure.
-    'natural:dune': 'dune',
-    'natural:bare_rock': 'bare', 'natural:scree': 'bare',
-    'landuse:cemetery': 'cemetery', 'amenity:grave_yard': 'cemetery',
-    'landuse:railway': 'railway',
-    // — hardscape lots —
-    'amenity:parking': 'parking', 'amenity:parking_space': 'parking',
-  }
+  // `OSM_TO_LU` — the tag → land-use table — lives at module scope (below `OSM_LU_KIND`),
+  // exported, because the tree gate asks the same question per POINT (`forbidden-surface.mjs`).
 
   /**
    * ⭐⭐ DECLARED-NOT-A-LAND-USE — "we looked and decided no", by name, with the reason.

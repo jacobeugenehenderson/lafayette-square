@@ -138,19 +138,26 @@ The authored well prefers a per-scene `data/<scene>/authored_lamps.json`; LS's s
 
 **Trees** already follow this rule (`[[project_tree_census_wells_must_union_all]]`) — LS unions park / park-census / OSM. What thins trees is a **different**, deliberate gate: see §4.6.
 
-## 4.6 What the tree gates actually exclude (measured 2026-07-23)
+## 4.6 What the tree gates exclude — and a ground-cover block is asked at the point
 
-Harness: **`scratch/tree-lu-exclusion-census.mjs`** (read-only; runs the *same* `makeZoneTester` the bake uses against the *same* frozen shape, so it reports the real gate). LS, census union **6767**:
+The gates, in order: a footprint painted on the ground (building, water, lot, path) → the road, curb and walk →
+a land-use interior whose class is not plantable (`cartograph/lu-policy.mjs`: `hard`, or `planted` with the
+planting specified) → otherwise the treelawn or a plantable interior keeps the tree. Surveyed trees are
+**nudged** onto legal ground; invented ones are dropped.
 
-| gate | trees | share | |
-|---|---|---|---|
-| **hardscape PAINT** — pavement 713 · sidewalk 569 · asphalt 293 · parking_lot 70 · curb 38 · footway 14 · alley 5 · building 5 | **1707** | 25.2% | our strips are *guesses*, so surveyed trees here get **nudged**, not dropped |
-| **LU allow-model** — `lu:parking` 371 · `lu:commercial` 186 · `lu:unknown` 80 | **637** | **9.4%** | the hard-typed land-use interiors |
-| kept (`treelawn` 513 + `lu` 3910) | 4423 | 65.4% | |
+⭐ **A block painted with a GROUND COVER is asked at the tree, not at the block** (Jacob, 2026-09-26,
+`docs/briefs/BRIEF-wetland-trees.md`). A tile takes one land use, and a cover takes a tile from a jurisdiction at
+any share (`derive.js` `luWinnerFromCoverage`), so on Provincetown the Seashore's reserve was painted wetland
+and beach, and every tree in it was refused with it. For a class only ground covers produce (read from
+`OSM_TO_LU` × `OSM_LU_KIND`, never listed), `forbidden-surface.mjs` re-runs the vote at the point: the tree
+stands on the smallest cover containing it, else a built use, else the jurisdiction, else nothing — and nothing
+means the canopy data decides. **A swamp is a forest:** OSM's `wetland=*` subtype says which wetlands are wooded
+(`WETLAND_SUBTYPE` in `lu-policy.mjs`). The paint is unchanged; ground colour is the Stage's to tune.
 
-⭐ **The LU allow-model is the SMALLER gate — 637 trees, 9.4%.** Relaxing it is a modest, bounded win: flip a class to `soft` in **`cartograph/data/<scene>/lu-policy.json`** (`{"commercial":"soft"}`) — a per-scene override, no kit edit. Kit defaults + the reasoning live in `cartograph/lu-policy.mjs` (unrecognized classes already default **soft + loud**, the HPDM bald-blocks fix).
+- ▶ `node checks/claims-every-tree-candidate-is-accounted-for.mjs [scene]` — the funnel: every candidate, every gate, the largest one.
+- ▶ `node checks/claims-a-tree-is-refused-for-what-stands-under-it.mjs [scene]` — every ground-cover refusal, with what stands under the tree; fails on one refused for its block's label.
 
-⚠️ **Read these as "which gate bites," not as a yield.** The zone verdict is not the bake's final answer: `bake-trees.js` then dedups across wells and **nudges** trees from *surveyed* wells onto legal ground rather than dropping them (only *invented* wells are dropped). That is why LS bakes **5001** — more than the 4423 raw-kept.
+*(The LS table this section used to carry: `_archive/BAKE-4.6-tree-gates-LS-2026-07-23.md`.)*
 
 ---
 
