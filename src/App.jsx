@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import SunCalc from 'suncalc'
-import { INSTANCE, moduleOn } from './instance.js'
+import { INSTANCE, moduleOn, TOWN_PATH_PREFIX } from './instance.js'
+import { currentSiteUrl } from './lib/townOrigin.js'
 import Scene from './components/Scene'
 import SceneBoundary from './components/SceneBoundary'
 import Controls from './components/Controls'
@@ -106,8 +107,9 @@ function AccountButton() {
         if (!token) return
         setLinkToken(token)
         setLinkStatus(res.data?.mode === 'push' ? 'push' : 'pending')
-        const base = window.location.origin + (import.meta.env.BASE_URL || '/')
-        const url = base.replace(/\/$/, '') + '/link/' + token
+        // ⭐ The one public URL that is NOT the town's production domain: it hands this person's
+        // session to their own other device, so it stays on the site they are using right now.
+        const url = currentSiteUrl(`/link/${token}`)
         const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2, color: { dark: '#ffffff', light: '#00000000' } })
         if (!cancelled) setLinkQr(dataUrl)
       } catch {}
@@ -916,7 +918,11 @@ function App() {
 function parseRoute() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '')
   const raw = window.location.pathname
-  const path = base && raw.startsWith(base) ? raw.slice(base.length) || '/' : raw
+  // ⛔ Strip the town's own segment too (`/huron/link/<token>` on staging). Stripping only BASE_URL
+  // left every deep route on staging unmatched — link, check-in, claim, place.
+  const unbased = base && raw.startsWith(base) ? raw.slice(base.length) || '/' : raw
+  const path = TOWN_PATH_PREFIX && (unbased === TOWN_PATH_PREFIX || unbased.startsWith(`${TOWN_PATH_PREFIX}/`))
+    ? unbased.slice(TOWN_PATH_PREFIX.length) || '/' : unbased
   const checkinMatch = path.match(/^\/checkin\/([^/]+)$/)
   if (checkinMatch) return { page: 'checkin', locationId: checkinMatch[1] }
   const claimMatch = path.match(/^\/claim\/([^/]+)\/([^/]+)$/)

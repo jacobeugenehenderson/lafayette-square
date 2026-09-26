@@ -16,7 +16,7 @@
  *
  * ▶ node checks/claims-public-urls-come-from-the-town-domain.mjs
  */
-import { INSTANCE } from '../instance.js'
+import { INSTANCE, TOWN_PATH_PREFIX } from '../instance.js'
 
 function readDomain() {
   if (INSTANCE.domain) return String(INSTANCE.domain).replace(/^https?:\/\//, '').replace(/\/+$/, '')
@@ -37,6 +37,18 @@ export function townOrigin() {
       + 'rather than pointing somewhere that is not this town.')
   }
   return d ? `https://${d}` : null
+}
+
+/**
+ * ⭐ THE ONE DELIBERATE EXCEPTION: a URL on the site this person is using RIGHT NOW (Jacob,
+ * 2026-09-26). The device-link QR hands one person's session to their own other device, so it
+ * must land where they are — `staging.theward.online/<map>/link/<token>` on staging,
+ * `<domain>/link/<token>` in production, the plain path in dev. ⛔ Never for anything a visitor
+ * carries away or prints: those are `townOrigin()`. ⛔ Never `BASE_URL`: on a published player that
+ * is `/_player/`, where the Workers serve files, not pages.
+ */
+export function currentSiteUrl(path) {
+  return `${window.location.origin}${TOWN_PATH_PREFIX}${path.startsWith('/') ? path : `/${path}`}`
 }
 
 /** The bare domain, for display (e.g. a back link's label), or null. */

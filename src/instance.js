@@ -87,6 +87,20 @@ function readLookParam() {
 }
 
 /**
+ * The town's own PATH PREFIX on this site — `/huron` on `staging.theward.online/huron/…`, `''` on a
+ * town's own domain and in dev. ⭐ The same rule `readLookParam` uses (a first segment that names a
+ * look), read separately because `?look=` or the host tag can pick the look while the town segment
+ * is still on the path. ⛔ Routes are matched AFTER it (`App.jsx#parseRoute`), which is why
+ * `/huron/link/<token>` is the link page and not an unknown path.
+ */
+export const TOWN_PATH_PREFIX = (() => {
+  try {
+    const seg = window.location.pathname.split('/').filter(Boolean)[0]
+    return seg && (looksIndex.looks || []).some(l => l.id === seg) ? `/${seg}` : ''
+  } catch { return '' }
+})()
+
+/**
  * THE MAP A LOOK IS A LOOK OF — the one client-side home for this rule.
  *
  * The server already has it (`cartograph/tree-bake-inputs.mjs#mapForLook`); the
