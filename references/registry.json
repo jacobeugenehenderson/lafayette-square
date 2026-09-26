@@ -719,12 +719,13 @@
         "lit=yes/no tags on ways"
       ],
       "terms": {
-        "aiUse": "unchecked",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-26",
         "checkedBy": "Wick",
-        "note": "Terms read 2026-09-26 at openstreetmap.org/copyright — ODbL: \"You are free to copy, distribute, transmit and adapt our data, as long as you credit OpenStreetMap and its contributors.\" · \"If you alter or build upon our data, you may distribute the result only under the same license.\" No restriction on automated or AI processing is stated. PROPOSED permitted — awaiting Jacob. Attribution + share-alike apply to anything we distribute that is built on it."
+        "note": "Terms read 2026-09-26 at openstreetmap.org/copyright — ODbL: \"You are free to copy, distribute, transmit and adapt our data, as long as you credit OpenStreetMap and its contributors.\" · \"If you alter or build upon our data, you may distribute the result only under the same license.\" No restriction on automated or AI processing is stated. Attribution + share-alike apply to anything we distribute that is built on it.",
+        "approvedBy": "Jacob, 2026-09-26 (\"OpenStreetMap is a permitted source\")"
       },
-      "status": "UNCHECKED — proposed permitted"
+      "status": "PERMITTED"
     }
   ],
   "questions": [
@@ -1495,30 +1496,21 @@
       "id": "q-street-lamp-spacing",
       "ask": "How far apart do street lamps stand along a street (same side), and does it vary by road class — so a town with no lamp survey can be lit at a real spacing?",
       "neededBy": "ROADMAP H-17 — cartograph/derive-lamps.mjs (every derived lamp)",
-      "status": "open",
+      "status": "answered",
       "tried": [
         "no permitted design manual consulted yet for luminaire spacing (it is a photometric design output, not a fixed standard)"
       ],
       "nextSources": [
         "a permitted state or municipal street-lighting design standard, to set beside the measurement"
       ],
-      "candidateMeasurement": {
-        "verdict": "ordinary streets (residential→primary): median of per-town medians 27 m, range 20.7–43.3 m across 8 towns; trunk 61.1 m (1 town); motorway incl. ramps 70.9 m (2 towns). Downtown main streets measure denser (~20 m).",
-        "by": "Wick, 2026-09-26",
-        "method": "computed",
-        "command": "node cartograph/lamp-spacing.mjs --write-prior",
-        "sites": "every scene on disk + scratch/lamp-sample towns (fetched by scratch/lamp-sample/fetch.mjs): hipointe-demun, lafayette-square-staging (LS counted once), ann-arbor-mi, delft-nl, madison-wi, newport-ri, traverse-city-mi, tubingen-de — a town votes on a group only with ≥10 same-side gaps",
-        "inputs": [
-          "osm"
-        ],
-        "tolerance": "per-town p25–p75 spans ~10–30 m; OSM lamp mapping is partial and downtown-biased; 10 of 11 small Great Lakes / New England towns checked have 0–1 lamps mapped, so towns like Huron and Provincetown are unrepresented",
-        "blockedBy": "source osm is unchecked — becomes a measured finding when Jacob approves it"
-      },
       "codeSites": [
         "cartograph/lamp-spacing.mjs#spacingForScene",
         "cartograph/lamp-spacing-prior.json"
       ],
-      "check": "checks/claims-every-lit-town-has-lamps.mjs"
+      "check": "checks/claims-every-lit-town-has-lamps.mjs",
+      "findings": [
+        "m-street-lamp-spacing"
+      ]
     }
   ],
   "findings": [
@@ -4163,6 +4155,27 @@
       "scope": "ridge-till systems; a MINIMUM, NY edition; most corn is not ridge-tilled",
       "foundOn": "2026-09-26",
       "foundBy": "Furrow"
+    },
+    {
+      "id": "m-street-lamp-spacing",
+      "question": "q-street-lamp-spacing",
+      "kind": "measured",
+      "value": {
+        "ordinary": "27 m (median of per-town medians; range 20.7–43.3 m, 8 towns)",
+        "trunk": "61.1 m (1 town)",
+        "motorway": "70.9 m incl. ramps (2 towns)"
+      },
+      "command": "node cartograph/lamp-spacing.mjs --write-prior",
+      "sites": "every scene on disk + scratch/lamp-sample towns (fetched by scratch/lamp-sample/fetch.mjs): hipointe-demun, lafayette-square-staging (LS counted once), ann-arbor-mi, delft-nl, madison-wi, newport-ri, traverse-city-mi, tubingen-de — a town votes on a group only with ≥10 same-side gaps",
+      "inputs": [
+        "osm"
+      ],
+      "method": "computed",
+      "tolerance": "per-town p25–p75 spans ~10–30 m; OSM lamp mapping is partial and downtown-biased; 10 of 11 small Great Lakes / New England towns checked have 0–1 lamps mapped, so towns like Huron and Provincetown are unrepresented",
+      "quote": "(measured, not quoted — see command)",
+      "foundOn": "2026-09-26",
+      "foundBy": "Wick",
+      "reproducibility": "the sample towns are gitignored OSM pulls: re-fetch with scratch/lamp-sample/fetch.mjs; OSM changes over time, so the prior records each town's timestamp_osm_base"
     }
   ]
 }
