@@ -139,6 +139,7 @@ extension was not faithful.
 **In bounds:** a crop albedo chunk in `grassMaterial.js` · its rows in `cartograph/surfaces.mjs` · the
 new check.
 **In bounds since 2026-09-26:** the crop plant impostors (reusing the Arborist's impostor path) and their instancing.
+**Also in bounds since 2026-09-26 (Jacob, on Furrow's questions):** a per-face id baked into the ground group for per-field row bearing, with a **Huron** re-bake to show it; and ONE vocabulary change — `landuse:greenhouse_horticulture` leaves `agricultural` for its own class (a greenhouse is a building, not a field). Every town's land-use counts before/after in the report.
 ⛔ **OUT:** the LU vocabulary itself (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`) · water
 (`BRIEF-water-shader.md`) · the arborist's placement (`orchard`, see §6) · the containment-direction fix.
 ⛔ **LS's grass must come out UNCHANGED.** It is the control and the one surface an operator knows.
