@@ -96,6 +96,26 @@
   - ⚠️ **It changes what the water-shader work is.** A beautiful lake shader that leaves 40 ponds invisible is **worse** than today, because the lake will look finished. ▶ Establish which water a town actually DRAWS before designing anything on top of it. → `docs/briefs/BRIEF-water-shader.md`, `H-2` ③.
   - ⭐ **The compound-face problem was already solved here by hand** and is the shape the general capability should reach: `park_water.json` carries `lake.outer` + `lake.island` — LS's lake has a HOLE, hand-authored, in a bespoke file, for one pond. ⇒ let that file become **one town's authored override of a general capability**, which is `ORIENTATION`'s *"the override IS the product"* exactly. M · → `H-2`, `EXTENT-DESIGN §2.1`.
 
+- ❤️❤️❤️ **H-36 · THE PILGRIM MONUMENT'S CHRISTMAS LIGHTS — "a TOTAL opportunity to do something beautiful and sweet."** ❤️❤️❤️
+  ```
+       ♥♥♥♥♥       ♥♥♥♥♥
+     ♥♥♥♥♥♥♥♥♥   ♥♥♥♥♥♥♥♥♥
+    ♥♥♥♥♥♥♥♥♥♥♥ ♥♥♥♥♥♥♥♥♥♥♥
+    ♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥
+     ♥♥♥♥♥  THE MONUMENT ♥♥♥
+      ♥♥♥♥   LIGHTS UP   ♥♥
+        ♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥
+          ♥♥♥♥♥♥♥♥♥♥♥♥♥
+            ♥♥♥♥♥♥♥♥♥
+              ♥♥♥♥♥
+                ♥
+  ```
+  *(Jacob, 2026-09-25: "Something the real pilgrim monument does every year is put christmas lights down from the top in a conical shape like a big christmas tree… We could even program a light show with different patterns and animations. We could play it in times when people would have to be watching… we could create must-see internet.")*
+  - **The strands:** lines from the crown to a ground ring, in a cone. They work on the placeholder set-piece today and carry to the artist's model (`src/setpieces/pilgrimMonument.js`).
+  - **The season:** a dated event on the town calendar (`content/events.json`, `H-31`), so the lights come on when the real ones do. The glow reuses the kit's clock-driven light (neon, lamp pools).
+  - ⭐ **"Must-see": every show is a pure function of the CLOCK**, so every viewer sees the same moment with no server. Patterns (chase, twinkle, colour wave, a New Year's countdown) are data. Appointment viewing: "the monument's show at the top of every hour in December."
+  - ▶ After Provincetown is showable. A brief when Jacob says go.
+
 - **H-3 · HIGHWAYS — BUILT on huron (steps 0–6, 2026-09-24); LS and HPDM take it at their own pours.** A highway is a positive object built from code (alignment + typical section, lanes from the data), no authoring, no curb or sidewalk. ▶ `docs/briefs/BRIEF-highway-build.md` (the checks it names) · every value cites `references/registry.json`, and the rulings live there as findings: `r-highway-positive-object` · `r-highway-no-authoring` · `r-highway-verge` (land bounded entirely by highway is verge; partly = a block with a bare edge) · `d-jr-raised` (junction residual by RAW frontage, never the shown set) · `r-manuals-disagree-take-smaller` (per component) · `r-ramp-terminal-flares` (the town street flares to receive a wider ramp, 10:1, `[U]` for truck-volume scope) · `r-width-step-tapers`. At-grade expressways follow speed: posted, else the statutory default, else `[U]` (`node cartograph/speedContext.mjs <scene>`); ≥40 mph = shouldered, no curb, median = verge.
   - 🔧 **OPEN:** the flare's ② draw (Gantry, branch `gantry/flare-on-new-2`, lands after a Provincetown fixture bake) · the ≥40 construction (branch `gantry/expwy-iii`, proven on an HPDM scratch pour — **Jacob's go**) · the physical gore position (`[U]`, check 3 red by ruling) · the ① label residue — `claims-every-proto-edge-lies-on-its-owner`'s not-at-an-end class, cause not established · **divided (A)** — highway chains skip `innerEdgeAssign`, WITH LS's pour · the roundabout brief (OWED). ⛔ The AASHTO Green Book is out (its terms bar AI use); NAIP imagery can't see ramp-end concrete (`c567b771`), so the third surface is derived from geometry.
 
