@@ -4615,8 +4615,14 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⭐ H-3 step 4: a JR's town frontage is concrete on both strips; a verge is bare on every edge.
   const M = (ri, i) => { const m = legArr.get(`${ri}|${i}`) ?? null
     return (m && st.blockClass === 'jr') ? { ...m, matOuter: 'SW', matInner: 'SW' } : m }
+  // ⭐ A SHORE EDGE IS NOT A STREET (`RIBBONS §1`: "no coupler, no baseMeasure, no band … it closes
+  // faces; nothing offsets a curb from it"). It carries no measure, so `resolvePedDepths` handed it the
+  // STANDARD treelawn + sidewalk — a curb, a walk and a lawn traced along 96% of both coasts (Jacob,
+  // 2026-09-26: "no sidewalk on the shore"). Read by IDENTITY, the `__water__` stamp: a real street
+  // along the water is its own chain and keeps its walk.
+  const shoreAt = (p, e) => { const r = (stamps[p.si] || [])[e]; return r != null && runs[r]?.skelId === WATER_EDGE_SKEL }
   const bareAt = (p, e) => { if (st.blockClass === 'verge') return true
-    const r = (stamps[p.si] || [])[e]; return r != null && isHighwayRun(runs[r]) }
+    const r = (stamps[p.si] || [])[e]; return (r != null && isHighwayRun(runs[r])) || shoreAt(p, e) }
 
   // ── THE MONO-WIDTH ENVELOPE — one number for the whole block, over every point it has.
   // `RIBBONS §1` invariant 4, and it is SACROSANCT: the outer depth is uniform per block (that is
@@ -4625,6 +4631,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // `SECTION §7` lists under "preserve, all already working".
   let WBnom = 0
   for (const p of parts) for (let i = 0; i < p.ring.length; i++) {
+    if (shoreAt(p, i)) continue   // the shore's depths are the unmeasured default; never the block's envelope
     const m = M(p.ri, i); if (m) WBnom = Math.max(WBnom, cw + (m.treelawn || 0) + (m.sidewalk || 0))
   }
 
