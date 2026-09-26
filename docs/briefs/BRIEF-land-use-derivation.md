@@ -69,6 +69,18 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 
 ---
 
+## 0. ⭐ NEW EVIDENCE 2026-09-26 — ONE CLASS PER BLOCK OVER-PAINTS, measured by three agents on two towns
+*(Cause not established for any of the three; they are recorded together because they may be one mechanism.)*
+- **Provincetown (Gnomon, wetland brief):** a block takes the largest COVER over a management winner at any
+  share (`derive.js` `luWinnerFromCoverage`), so tile #39 (271 ha, ~23% wetland, ~70% nature reserve with no
+  cover tag) is painted `wetland` whole — and 15,401 tree candidates standing in no wetland at all are refused.
+  The wetland brief is fixing the TREE side by asking the point; **the block's single class is this brief's.**
+- **Huron (Furrow, field brief):** of ~541 ha baked `agricultural`, only ~142 ha is OSM farmland and ~47 ha
+  greenhouse; **~300 ha carries no OSM landuse at all** (plus grass 22 · industrial 14 · water 8).
+- **Huron (Furrow):** the conformed ground mesh draws **7,396 m² of `agricultural` outside the class's own
+  polygons** (filled holes, the largest 6,170 m², and a rim sliver up to 19 m out). The bake now reports it
+  every pour.
+
 ## 1. The finding
 
 Jacob, looking at the HPDM render: *"we have whole areas which have no trees (or grass) because they look to be mismarked or something"* — then, at a large green area rendered as hardscape: **"The verdant greenbelt is *not* 'Vacant'."**

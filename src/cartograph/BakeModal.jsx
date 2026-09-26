@@ -53,9 +53,10 @@ export default function BakeModal() {
   const bakeRunning = useCartographStore(s => s.bakeRunning)
   const bakeError = useCartographStore(s => s.bakeError)
   const ribbonsStale = useCartographStore(s => s.ribbonsStale)
+  const mapRefreshing = useCartographStore(s => s.mapRefreshing)
   const repourConfirm = useCartographStore(s => s.repourConfirm)
   const bakeProgress = useCartographStore(s => s.bakeProgress)
-  if (!bakeRunning && !bakeError && !ribbonsStale && !repourConfirm) return null
+  if (!bakeRunning && !bakeError && !ribbonsStale && !repourConfirm && !mapRefreshing) return null
   // ⛔ A CODE change would re-pour the town (the server stopped first and named the files). Say it; run on confirm.
   if (!bakeRunning && repourConfirm) {
     const { scene, files = [], resume = {} } = repourConfirm
@@ -73,7 +74,17 @@ export default function BakeModal() {
       </div>
     )
   }
-  // ⛔ The 2D map is built live from ribbons loaded with the page; after a re-pour it is stale until reload.
+  // ⭐ After a re-pour the 2D map rebuilds itself (useCartographStore `_refreshPouredMap`). This card appears only
+  // while that runs, and — ⛔ never a silent stale map — when it FAILS, saying why.
+  if (!bakeRunning && !bakeError && mapRefreshing) return (
+    <div className="carto-bake-modal">
+      <div className="carto-bake-modal-card">
+        <div className="carto-bake-modal-title">Redrawing the 2D map…</div>
+        <div className="carto-bake-modal-msg">The bake re-poured this town; the map is being rebuilt from what was poured.</div>
+        <div className="carto-bake-modal-spinner" />
+      </div>
+    </div>
+  )
   if (!bakeRunning && !bakeError && ribbonsStale) return (
     <div className="carto-bake-modal">
       <div className="carto-bake-modal-card">

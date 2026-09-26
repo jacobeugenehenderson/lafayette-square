@@ -4,7 +4,7 @@ import {
   fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay,
   fetchLooks, fetchLookDesign, saveLookDesign, bakeLook, fetchBakeStatus,
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
-  saveShapeFreeze, fetchRibbons, fetchGeography, fetchBoundary,
+  saveShapeFreeze, fetchRibbons, fetchMap, fetchGeography, fetchBoundary,
 } from '../api.js'
 import ribbonsData from '../../data/ribbons.json'
 import { setSceneMeasureSource } from '../measureModel.js'
@@ -1964,6 +1964,25 @@ const useCartographStore = create((set, get) => ({
     // Clear only if no newer freeze superseded this one.
     if (get().shapeFreezePending === p) set({ shapeFreezePending: null })
   },
+  // → re-reads a poured town's ribbons + map.json after a bake and rebuilds the 2D map from them in place.
+  // Bundled scenes (LS, toy) read static imports and are refreshed by the dev server, not here.
+  _refreshPouredMap: async () => {
+    const sc = get().scene, held = get().sceneRibbons
+    if (BUNDLED_MAPS.has(sc) || !held) return
+    let why = null
+    try {
+      const fresh = await fetchRibbons(sc)
+      if (get().scene !== sc || JSON.stringify(fresh) === JSON.stringify(held)) return
+      const map = await fetchMap(sc)
+      if (get().scene !== sc) return
+      const before = get().centerlineData
+      set({ sceneRibbons: fresh, sceneMap: { scene: sc, map }, mapRefreshing: true })
+      try { await get()._loadCenterlines() } finally { set({ mapRefreshing: false }) }
+      // the loader swallows its own errors (it logs them) — so ask whether it actually rebuilt from the fresh copy
+      if (get().scene === sc && (get().centerlineData === before || !get()._designHydrated)) why = 'the scene loader did not rebuild from them (see the console)'
+    } catch (e) { why = e.message || String(e) }
+    if (why) set({ ribbonsStale: `the 2D map could not be refreshed after the bake: ${why}` })
+  },
   runBake: async ({ force = false, navigateTo = null, repour = false } = {}) => {
     if (get().bakeRunning) return
     // ── The settle-gate (2026-06-21, HANDOFF-authoring-session-hardening §2) ──
@@ -2013,19 +2032,13 @@ const useCartographStore = create((set, get) => ({
       // not unique — incremental bakes can return identical small durations.
       // Use Date.now() to guarantee uniqueness.
       set({ bakeRunning: false, bakeStale: false, bakeLastMs: Date.now(), bakeDurationMs: r.ms })
-      // ⛔ THE 2D MAP IS LIVE, BUILT FROM THE RIBBONS THIS PAGE FETCHED AT SCENE LOAD — and a bake can re-pour
-      // them (it re-runs pipeline + promote when they are dirty), as can a CLI pour. The slab refreshes; the
-      // 2D map would keep drawing the OLD ribbons, silently (measured 2026-09-24: huron's verges drawn as
-      // curbed blocks from pre-re-pour ribbons). So after a bake, compare the server's ribbons with ours and
-      // SAY so if they differ — the loader derives several stores from them, so a hot swap is not attempted.
-      {
-        const sc = get().scene, held = get().sceneRibbons
-        if (!BUNDLED_MAPS.has(sc) && held) {
-          const fresh = await fetchRibbons(sc).catch(() => null)
-          if (!fresh) set({ ribbonsStale: 'the ribbons could not be re-read after the bake — the 2D map may be out of date' })
-          else if (JSON.stringify(fresh) !== JSON.stringify(held)) set({ ribbonsStale: 'the map data (ribbons) changed on disk during or before this bake — the 2D map is still drawing the copy loaded with the page' })
-        }
-      }
+      // ⭐ THE 2D MAP REFRESHES ITSELF (Jacob, 2026-09-26: "it should always update"). It is built from the ribbons +
+      // map.json this page fetched at scene load, and a bake can re-pour both (pipeline + promote), as can a CLI
+      // pour — measured 2026-09-24: huron's verges drawn as curbed blocks from pre-re-pour ribbons. So after a bake,
+      // re-read the ribbons; if they differ, take them AND map.json, and re-run the scene loader, which rebuilds
+      // every store derived from them (centerlines, ①, the measure seed, the design hydrate).
+      // ⛔ Never a silent stale map: the modal appears only when that refresh FAILS, and says so.
+      await get()._refreshPouredMap()
       // Optional navigation tied to bake success. Designer's "Stage →"
       // passes navigateTo='browse' so the operator lands at the matching
       // overhead view immediately after the bake.
@@ -2109,6 +2122,7 @@ const useCartographStore = create((set, get) => ({
   sceneRibbons: null,
   // Set when the server's ribbons no longer match the copy this page loaded (BakeModal shows it, with Reload).
   ribbonsStale: null,
+  mapRefreshing: false,   // the 2D map is being rebuilt from a re-poured town's data (_refreshPouredMap)
   // the running bake's steps — { steps: [{ label, state, t0, t1, est, lastLine, frac, sub, why, error }], current, now }
   bakeProgress: null,
   // { scene, files, resume } — a Bake refused because the pour's code changed; BakeModal asks before re-pouring

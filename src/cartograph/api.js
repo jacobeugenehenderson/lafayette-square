@@ -27,6 +27,7 @@ export async function saveMarkers(strokes, scene) {
 // fetches it per-scene from the server instead of bloating the bundle.
 export async function fetchRibbons(scene) {
   const res = await fetch(sceneUrl(scene, 'ribbons'))
+  if (!res.ok) throw new Error(`ribbons for ${scene}: HTTP ${res.status}`)   // an error page is not a ribbons
   return res.json()
 }
 
@@ -35,6 +36,7 @@ export async function fetchRibbons(scene) {
 // the Designer building + land-use overlay.
 export async function fetchMap(scene) {
   const res = await fetch(sceneUrl(scene, 'map'))
+  if (!res.ok) throw new Error(`map for ${scene}: HTTP ${res.status}`)   // an error page is not a map
   return res.json()
 }
 
