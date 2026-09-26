@@ -59,6 +59,9 @@ hands anyone a shopping list. Staging links stay unlisted (`BRIEF-a-link-per-tow
 6. **Disable the share-card "capture & push" (`smsPush`)** until per-town Promote is proven on Provincetown — today it reaches `main`.
 7. **The Works page is OUT of this brief.** It lives in `dev.nosync/theward-online/works/`; it lists only live towns, so it is a small follow-up once Provincetown is live.
 
+8. ✅ **Public URLs the player prints (QRs, share links) use the town's PRODUCTION domain from Operations — on staging too** (Jacob, 2026-09-26, on Lintel's `https://null` finding: PlaceCard's check-in and claim QRs, place share, bulletin share, legal back link). Both Workers look the domain up via the same Operations call Promote uses and write it into the page; the player reads it through one helper. No domain in Operations ⇒ no QR, no share URL, a console.error — never `https://null`, never a staging address on a printed card. Lintel's bounds widened to those components for this.
+9. ✅ **Operations change approved (Jacob):** a read-only "publisher" role for an allowlisted service token (config, not DB) + one endpoint returning a town's domain, ownership and zone status. Deploy, token and Access policy are Jacob's Cloudflare steps.
+
 ## The shape to confirm with Jacob before building
 
 A production Worker that mirrors `staging-sites`: each town's `.online` domain bound to it as a custom
