@@ -159,6 +159,7 @@ export const SURFACE_OF_MATERIAL = {
   lawn:     'grass',
   treelawn: 'grass',
   median:   'grass',
+  bed:      'sand',   // the ground under the water (bake-ground.js PAINT_ORDER 'bed')
 }
 
 /** Validate an operator remap once; bad rows are DROPPED AND NAMED, never coerced. */

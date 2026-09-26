@@ -259,7 +259,19 @@ const PAINT_ORDER = [
   // lake 3 · stream 5) plus the OSM values adjacent to them. The unconsumed-key
   // report below is the backstop when OSM produces one nobody listed.
   ...WATER_SUBTYPES.map(w => ['mat', `water:${w}`]),
+  // ⭐⭐ THE BED — the ground UNDER every water body (Jacob, 2026-09-26: "there must be no
+  // bare space between the water and the land"). The water is a level sheet and the land is
+  // draped, so where the land's edge stands above the water nothing joined them and the
+  // sky showed through (`docs/briefs/BRIEF-the-shore-is-closed.md`). The bed is draped
+  // over the same terrain and conformed with the land, so the two share every shore vertex
+  // and meet with no step; the visible shore is wherever the terrain crosses the water.
+  // Appended, never inserted (see water above). FLATTENED AT THE BOTTOM — see FLOOR_KEYS.
+  ['mat', 'bed'],
 ]
+// Layers pressed in BENEATH the whole paint stack, whatever their PAINT_ORDER slot: they fill
+// only what nothing else covers. The bed is one — a shore ribbon or a pier over the water
+// keeps its shape and the bed loses the overlap.
+const FLOOR_KEYS = new Set(['mat:bed'])
 
 // Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
 // MapLayers.jsx's stripeRibbonGeo widths so the bake matches the live render.
@@ -878,6 +890,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   for (const item of (mapLayers.water || [])) {
     if (!item.ring) continue
     pushMat(item.subtype ? `water:${item.subtype}` : 'water', ringFromOSM(item.ring))
+    pushMat('bed', ringFromOSM(item.ring))   // the ground under it (PAINT_ORDER 'bed')
   }
   // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
   for (const item of (mapLayers.barrier || [])) {
@@ -1018,6 +1031,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     if (kind !== 'face' && key === 'stripe') KEEP_OWN_SLOT.add(groupKey)
     stackEntries.push({ groupKey, kind, key, items: its })
   }
+  // The flatten runs top-down over this list, so a FLOOR layer goes first: last to be cut into.
+  stackEntries.sort((a, b) => FLOOR_KEYS.has(b.groupKey) - FLOOR_KEYS.has(a.groupKey))
   const _t0 = Date.now()
   const flattened = flattenPaintStack(stackEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })
   console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
@@ -1039,7 +1054,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // that is where the budget lives and where coarse triangles are least
     // visible. Landscape overlays keep the legacy fine uniform spacing
     // (crisp-edged, tiny budget). Ribbon bands bypass refinement entirely.
-    const isSoftFill = kind === 'face'
+    // The bed is a fill too: it must follow the terrain under the water, or it chords over it.
+    const isSoftFill = kind === 'face' || key === 'bed'
     const isHardOverlay = LANDSCAPE_OVERLAY_KEYS.has(key)
     const isContourRibbon = CONTOUR_REFINE_KEYS.has(key)   // park_path: rides the park hill
     let refinePolicy = null
@@ -1210,6 +1226,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     let color
     if (kind === 'face') {
       color = designLuColors[key] || DEFAULT_LU_COLORS[key] || LAND_USE_COLORS[key] || LAND_USE_COLORS.unknown
+    } else if (key === 'bed') {
+      // The bed is sand (Jacob, 2026-09-26), so it takes sand's colour.
+      color = designLuColors.beach || DEFAULT_LU_COLORS.beach
     } else if (key.startsWith('treelawn:')) {
       // Per-LU treelawn variants inherit the adjacent parcel's LU color.
       const lu = key.slice('treelawn:'.length)
