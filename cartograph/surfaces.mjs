@@ -77,6 +77,8 @@ export const SURFACES = {
       courseCount:    { unit: 'courses', source: 'physics', finding: 'm-pilgrim-courses-base-to-wash1' },
       // Joints at the documented MAXIMUM, the widest the source allows.
       jointIn:        { unit: 'in', source: 'physics', finding: 'f-pilgrim-joint-width' },
+      // The mortar joint's shade against the stone (I: derived from the documented mix).
+      jointShade:     { unit: '× stone albedo', source: 'physics', finding: 'd-pilgrim-joint-shade' },
       // Split (quarry) faces rather than dressed ashlar.
       face:           { unit: '—',  source: 'physics', finding: 'f-pilgrim-split-faces' },
       // Stone length and joint stagger: running bond, from Baker (1908) §200/§202.

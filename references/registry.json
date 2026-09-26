@@ -1341,6 +1341,21 @@
         "src/setpieces/pilgrimMonument.js courseBeds"
       ],
       "check": "checks/claims-pilgrim-monument-site.mjs"
+    },
+    {
+      "id": "q-pilgrim-joint-shade",
+      "ask": "How the Pilgrim Monument's mortar joints read against the granite face",
+      "neededBy": "the placeholder masonry: joints must draw at every authored value (Jacob saw a plain grey tower)",
+      "status": "answered",
+      "findings": [
+        "d-pilgrim-joint-shade"
+      ],
+      "notes": "Mortar colour is not documented; the mix is. Parametric: replace when a colour source or the artist's model lands.",
+      "codeSites": [
+        "cartograph/surfaces.mjs pilgrim-granite.jointShade",
+        "src/components/graniteMasonryMaterial.js mJoint"
+      ],
+      "check": "checks/claims-pilgrim-monument-site.mjs"
     }
   ],
   "findings": [
@@ -3897,6 +3912,40 @@
       "method": "computed (row-intensity profile of the 400-ppi page)",
       "tolerance": "±0 courses on this segment (bed rows 53–65 px apart, one per course); higher segments are NOT measured (a window opening and halftone noise break the profile)",
       "quote": "(measured, not quoted — see command)",
+      "foundOn": "2026-09-26",
+      "foundBy": "Granite"
+    },
+    {
+      "id": "f-pilgrim-mortar-mix",
+      "kind": "value",
+      "value": {
+        "cement_parts": 1,
+        "sand_parts": 3,
+        "cement": "Portland"
+      },
+      "source": "pilgrim-dossier-v1",
+      "where": "§4 Masonry module and surface, row \"Mortar\" (D, \"material-history note only\")",
+      "quote": "1 Portland cement : 3 sand",
+      "topic": "masonry",
+      "question": null,
+      "scope": "Pilgrim Monument joints",
+      "foundOn": "2026-09-26",
+      "foundBy": "Granite"
+    },
+    {
+      "id": "d-pilgrim-joint-shade",
+      "kind": "derived",
+      "question": "q-pilgrim-joint-shade",
+      "topic": "masonry",
+      "from": [
+        "f-pilgrim-mortar-mix",
+        "f-pilgrim-joint-width"
+      ],
+      "value": {
+        "jointShade_x": 0.72
+      },
+      "derivation": "I (inferred, parametric). A 1:3 Portland-cement mortar is cement-grey, a different material from the split granite face, set in joints up to 1″ wide and recessed below the rough face. Drawn at 0.72 × the stone's albedo so the recessed mortar line reads at every authored value. The mortar's actual colour is NOT documented; this multiple is the stated inference, to be replaced by a colour source or the artist's model.",
+      "quote": "-",
       "foundOn": "2026-09-26",
       "foundBy": "Granite"
     }

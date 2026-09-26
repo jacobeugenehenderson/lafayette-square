@@ -32,7 +32,6 @@ import {
 
 // The monument's own stone, a mid granite grey. Colour is not a dossier value; it is the set-piece's own.
 const GRANITE_HEX = '#8f8b84'
-const PLAIN = new THREE.MeshStandardMaterial({ color: GRANITE_HEX, roughness: 0.92, metalness: 0 })
 
 // ⭐ The masonry's physics values come from `references/` findings, resolved through the one
 // surface settings model (`cartograph/surfaces.mjs`). The registry is a lazy chunk, so only
@@ -62,7 +61,9 @@ function useGraniteMaterial(authored, lookId) {
       const beds = courseBeds({ minIn: ch.min, maxIn: ch.max }, DOSSIER, COURSE_SEED, counted).map(z => z * FT)
       // Vertical joints only where the stone length is sourced; absent ⇒ none drawn.
       const bond = values.stoneLength ? { lengthDepths: values.stoneLength.stoneLength_depths, lapDepths: values.stoneLength.lap_depths } : null
-      const m = makeGraniteMasonryMaterial({ beds, jointM: j * 0.0254, bond, color: GRANITE_HEX })
+      const shade = values.jointShade?.jointShade_x
+      if (!shade) throw new Error(`${SURFACE}: the joint shade is absent — cannot draw the joints`)
+      const m = makeGraniteMasonryMaterial({ beds, jointM: j * 0.0254, jointShade: shade, bond, color: GRANITE_HEX })
       m.userData.setAuthored({ reliefM: values.reliefM, toneVar: values.toneVar })
       setMat(m)
     }).catch(e => { if (!dead) setErr(e) })
@@ -72,14 +73,23 @@ function useGraniteMaterial(authored, lookId) {
   useEffect(() => {
     if (!mat) return
     const d = resolveSurfaceParams(SURFACE, { findings: [] }, authored).values
+    // ⛔ The neutral is SAID, not silent: at relief 0 / tone 0 the joints draw but the split face
+    // and the stone tones do not, and that looks like a skin that never loaded.
+    const neutral = ['reliefM', 'toneVar'].filter(k => authored?.[k] == null)
+    const nkey = lookId + '|neutral|' + neutral.join()
+    if (neutral.length && !_saidAbsent.has(nkey)) {
+      _saidAbsent.add(nkey)
+      console.error(`[PilgrimMonument] ⛔ "${lookId}": ${SURFACE} drawn at its NEUTRAL authored ${neutral.map(k => `${k} ${d[k]}`).join(', ')} — the joints show, the split face and stone tones do not. Author design.json#surfaces.params['${SURFACE}'] (then bake the scene).`)
+    }
     mat.userData.setAuthored({ reliefM: d.reliefM, toneVar: d.toneVar })
-  }, [mat, authored?.reliefM, authored?.toneVar])
+  }, [mat, lookId, authored?.reliefM, authored?.toneVar])
   if (err) throw new Error(`[PilgrimMonument] granite surface failed: ${err?.message || err}`)
   return mat
 }
 
 function Placeholder({ authored, lookId }) {
   const granite = useGraniteMaterial(authored, lookId)
+  // ⛔ No stand-in: until the masonry resolves, nothing draws. A failure throws to the boundary.
   // Geometry in TOWER-LOCAL metres (y = height above Z = 0), so the coursing is one
   // continuous table across every stage.
   const geos = useMemo(() => placeholderStages().map(s => {
@@ -88,11 +98,11 @@ function Placeholder({ authored, lookId }) {
     g.translate(0, s.z0 * FT + h / 2, 0)
     return { name: s.name, g }
   }), [])
+  if (!granite) return null
   return (
     <group>
       {geos.map(({ name, g }) => (
-        // While the registry chunk loads (a moment), the stone draws plain.
-        <mesh key={name} name={name} geometry={g} material={granite || PLAIN} castShadow receiveShadow />
+        <mesh key={name} name={name} geometry={g} material={granite} castShadow receiveShadow />
       ))}
     </group>
   )
@@ -117,7 +127,7 @@ function Model({ path }) {
 export default function PilgrimMonument({ town, graniteOverride } = {}) {
   if (!town) throw new Error('[PilgrimMonument] ⛔ no town — mount <SetPiece>, which passes it')
   const sp = town.setPiece
-  // The operator's layer (`scene.surfaces.params.granite`); the lab may override it for a preview.
+  // The operator's layer (`scene.surfaces.params['pilgrim-granite']`); the lab may override it for a preview.
   const scene = useSceneJson(town.lookId)
   const authored = graniteOverride || scene?.surfaces?.params?.[SURFACE] || null
   const active = sp?.kind === 'pilgrim-monument'

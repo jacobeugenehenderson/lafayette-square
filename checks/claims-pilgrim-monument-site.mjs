@@ -87,10 +87,10 @@ function checkProfile(stages, d) {
 
 // ── F. the coursing ─────────────────────────────────────────────────────────
 const REGISTRY = JSON.parse(readFileSync(join(ROOT, 'references/registry.json'), 'utf8'))
-function checkCoursing(beds, registry = REGISTRY, d = DOSSIER) {
+function checkCoursing(beds, registry = REGISTRY, d = DOSSIER, matSrc = null) {
   const f = []
   const { values, absent } = resolveSurfaceParams('pilgrim-granite', registry)
-  for (const name of ['courseHeightIn', 'courseCount', 'jointIn', 'face', 'stoneLength'])
+  for (const name of ['courseHeightIn', 'courseCount', 'jointIn', 'face', 'stoneLength', 'jointShade'])
     if (values[name] == null) f.push(`pilgrim-granite.${name} does not resolve (${absent.join('; ')})`)
   const ch = values.courseHeightIn?.courseHeight_in, cnt = values.courseCount
   if (!ch) return f
@@ -112,6 +112,13 @@ function checkCoursing(beds, registry = REGISTRY, d = DOSSIER) {
     if (sl.stoneLength_depths > mx.min) f.push(`stone length ${sl.stoneLength_depths}× exceeds Baker §200's hard-stone ${mx.min}×`)
     if (sl.stoneLength_depths < 2 * sl.lap_depths - 1e-9) f.push(`stone length ${sl.stoneLength_depths}× cannot carry a ${sl.lap_depths}× lap on both ends`)
   } else if (sl) f.push('stone length resolves but its Baker findings do not — its ancestry is broken')
+  // ⛔ The joint must not hang on an authored value: read the shader's own source and prove the
+  // joint term is applied to the albedo outside any authored factor.
+  const mat = matSrc ?? readFileSync(join(ROOT, 'src/components/graniteMasonryMaterial.js'), 'utf8')
+  if (!/diffuseColor\.rgb \*= mix\(1\.0, uJointShade, mJoint\(c\)\)/.test(mat)) f.push('the mortar joint is not drawn into the albedo from geometry: at the neutral authored values the joints would vanish')
+  if (/mJoint[^;]*u(ReliefM|ToneVar)|u(ReliefM|ToneVar)[^;]*mJoint\(c\)\)/.test(mat.match(/diffuseColor\.rgb \*= mix\(1\.0, uJointShade[^;]*;/)?.[0] || '')) f.push('the joint albedo term is scaled by an authored value')
+  const js = values.jointShade?.jointShade_x
+  if (!(js > 0 && js < 1)) f.push(`joint shade ${js} is not a darkening multiple in (0, 1)`)
   return f
 }
 
@@ -209,6 +216,8 @@ if (process.argv.includes('--self-test')) {
     ['table off the measured count', () => checkCoursing(courseBeds({ minIn: 18, maxIn: 30 }, DOSSIER, undefined, [{ ...CNT, courses: 9 }])).length],
     ['lap outside Baker', () => checkCoursing(null, { findings: REGISTRY.findings.map(x => x.id === 'd-pilgrim-stone-length' ? { ...x, value: { stoneLength_depths: 2.5, lap_depths: 2 } } : x) }).length],
     ['stone over Baker max', () => checkCoursing(null, { findings: REGISTRY.findings.map(x => x.id === 'd-pilgrim-stone-length' ? { ...x, value: { stoneLength_depths: 6, lap_depths: 1.25 } } : x) }).length],
+    ['joints only in the relief', () => checkCoursing(null, REGISTRY, DOSSIER, readFileSync(join(ROOT, 'src/components/graniteMasonryMaterial.js'), 'utf8').replace(/diffuseColor\.rgb \*= mix\(1\.0, uJointShade, mJoint\(c\)\);/, '')).length],
+    ['joint shade gone', () => checkCoursing(null, { findings: REGISTRY.findings.filter(x => x.id !== 'd-pilgrim-joint-shade') }).length],
     ['finding gone', () => checkCoursing(null, { findings: REGISTRY.findings.filter(x => x.id !== 'f-pilgrim-course-height') }).length],
     ['box in plinth', () => checkSite(inst, { ...ctx, slab: [...ctx.slab, { id: 'mutant-box', ring: [[site.x - 1, site.z - 1], [site.x + 1, site.z - 1], [site.x + 1, site.z + 1], [site.x - 1, site.z + 1]] }] }).f.length],
   ]

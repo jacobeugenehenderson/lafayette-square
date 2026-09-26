@@ -8,6 +8,8 @@
  *   jointM    joint width (finding f-pilgrim-joint-width: "not over 1″", drawn at the maximum)
  *   reliefM   split-face relief depth (authored; 0 = flat)
  *   toneVar   stone-to-stone tone variation (authored; 0 = uniform)
+ *   jointShade the mortar joint's albedo as a multiple of the stone's (d-pilgrim-joint-shade,
+ *             I: derived from the documented 1:3 Portland:sand mix; the colour is not documented)
  *   bond      { lengthDepths, lapDepths }: stone length and joint stagger, in multiples of
  *             the course's own depth (running bond; d-pilgrim-stone-length, from Baker 1908).
  *             null ⇒ no vertical joints: a length nobody sourced is never drawn.
@@ -18,19 +20,21 @@
  * and snow come from `applyWeatherToShader` (the socket SlabBuildings uses), and cascaded
  * shadows compose through `attachCSM`.
  *
- * ⚠️ At the neutral authored values (relief 0, tone 0) the courses do not read. The joint is
- * a recess, and a recess with no depth casts nothing. That is the settings model's neutral,
- * not a bug. The town authors the look in `design.json#surfaces.params.granite`.
+ * ⭐ The joints and seams are drawn from the sourced geometry at EVERY authored value: the
+ * neutral (relief 0, tone 0) hides the look (split-face roughness, stone tones), never the
+ * data. It was the other way round for one day, and Jacob saw a plain grey tower.
+ * The town authors the look in `design.json#surfaces.params['pilgrim-granite']`.
  */
 import * as THREE from 'three'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { attachCSM } from './CascadedShadows.jsx'
 import { SURFACE_NOISE_GLSL } from './grassMaterial.js'
 
-export function makeGraniteMasonryMaterial({ beds, jointM, bond = null, reliefM = 0, toneVar = 0, color }) {
+export function makeGraniteMasonryMaterial({ beds, jointM, jointShade, bond = null, reliefM = 0, toneVar = 0, color }) {
   if (!beds?.length || beds.length < 2) throw new Error('⛔ makeGraniteMasonryMaterial: no course table')
   if (!(jointM > 0)) throw new Error('⛔ makeGraniteMasonryMaterial: no joint width')
   if (!color) throw new Error('⛔ makeGraniteMasonryMaterial: no stone colour')
+  if (!(jointShade > 0)) throw new Error('⛔ makeGraniteMasonryMaterial: no joint shade (d-pilgrim-joint-shade)')
   const bedTex = new THREE.DataTexture(new Float32Array(beds), beds.length, 1, THREE.RedFormat, THREE.FloatType)
   bedTex.minFilter = bedTex.magFilter = THREE.NearestFilter
   bedTex.needsUpdate = true
@@ -42,6 +46,7 @@ export function makeGraniteMasonryMaterial({ beds, jointM, bond = null, reliefM 
     Object.assign(shader.uniforms, {
       uBeds: { value: bedTex }, uBedCount: { value: beds.length },
       uJointM: { value: jointM }, uReliefM: { value: reliefM }, uToneVar: { value: toneVar },
+      uJointShade: { value: jointShade },
       uBondLen: { value: bond?.lengthDepths ?? 0 }, uBondLap: { value: bond?.lapDepths ?? 0 },
     })
     shader.vertexShader = shader.vertexShader
@@ -50,7 +55,7 @@ export function makeGraniteMasonryMaterial({ beds, jointM, bond = null, reliefM 
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
         uniform sampler2D uBeds; uniform float uBedCount;
-        uniform float uJointM, uReliefM, uToneVar, uBondLen, uBondLap;
+        uniform float uJointM, uReliefM, uToneVar, uBondLen, uBondLap, uJointShade;
         varying vec3 vMasonryPos; varying vec3 vMasonryNrm;
         ${SURFACE_NOISE_GLSL}
         float mBed(float i) { return texelFetch(uBeds, ivec2(int(i), 0), 0).r; }
@@ -75,6 +80,16 @@ export function makeGraniteMasonryMaterial({ beds, jointM, bond = null, reliefM 
           float s = u / L;
           return vec2(floor(s), min(fract(s), 1.0 - fract(s)) * L);
         }
+        // 1 on a joint (bed or side), 0 on the stone face. GEOMETRY ONLY: the joint is sourced
+        // (width f-pilgrim-joint-width, beds, bond), so no authored value can switch it off.
+        float mJoint(vec3 c) {
+          float d = min(vMasonryPos.y - c.y, c.z - vMasonryPos.y);
+          float aa = fwidth(vMasonryPos.y);
+          float j = 1.0 - smoothstep(uJointM * 0.5 - aa, uJointM * 0.5 + aa, d);
+          vec2 st = mStone(c);
+          float aau = fwidth(mFace().x);
+          return max(j, 1.0 - smoothstep(uJointM * 0.5 - aau, uJointM * 0.5 + aau, st.y));
+        }
         bool mCoursed() { return abs(vMasonryNrm.y) < 0.5 && vMasonryPos.y >= 0.0 && vMasonryPos.y <= mBed(uBedCount - 1.0); }
         // The split face as a height field (metres), recessed at the joints. Features are
         // sized in COURSE HEIGHTS, so the texture follows the stone it sits on.
@@ -83,12 +98,8 @@ export function makeGraniteMasonryMaterial({ beds, jointM, bond = null, reliefM 
           if (!mCoursed()) return uReliefM * (gFBM(fp * 2.0) - 0.5);
           vec3 c = mCourse(vMasonryPos.y);
           float ch = c.z - c.y;
-          float d = min(vMasonryPos.y - c.y, c.z - vMasonryPos.y);
-          float aa = fwidth(vMasonryPos.y);
-          float joint = 1.0 - smoothstep(uJointM * 0.5 - aa, uJointM * 0.5 + aa, d);
+          float joint = mJoint(c);
           vec2 st = mStone(c);
-          float aau = fwidth(mFace().x);
-          joint = max(joint, 1.0 - smoothstep(uJointM * 0.5 - aau, uJointM * 0.5 + aau, st.y));
           float split = gFBM(fp / ch * 2.0 + c.x * 13.1 + st.x * 7.3) - 0.5;
           return uReliefM * (split - joint);
         }`)
@@ -100,6 +111,8 @@ export function makeGraniteMasonryMaterial({ beds, jointM, bond = null, reliefM 
           float tone = gHash(vec2(c.x, 17.0 + mStone(c).x)) - 0.5;   // one tone per STONE
           float mottle = gFBM(mFace() / (c.z - c.y) * 3.0 + c.x) - 0.5;
           diffuseColor.rgb *= 1.0 + uToneVar * (tone + 0.5 * mottle);
+          // The mortar joint, at every authored value (relief only adds its cast shadow).
+          diffuseColor.rgb *= mix(1.0, uJointShade, mJoint(c));
         }`)
       // Relief: bump the normal from the height field's screen derivatives.
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
