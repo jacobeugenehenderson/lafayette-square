@@ -1,7 +1,7 @@
 # BRIEF — The Pilgrim Monument: rough in the plinth and its site (the tower model comes from an artist)
 
 <!-- BRIEF-STATE
-status: OPEN
+status: LANDED 2026-09-26 — set-piece built, skinned, mounted in every app; Jacob has seen it. Open items live in ROADMAP (status block, H-36)
 dispatched: no
 written: 2026-09-25
 evict-when: Provincetown's monument site is roughed in from the dossier's documented values (plinth, base, grade, a placeholder mass at true height), seated on the lidar, the artist's model has a slot to drop into, and Jacob has seen it at the hero camera.

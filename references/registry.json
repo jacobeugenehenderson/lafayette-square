@@ -526,7 +526,7 @@
         "checkedOn": "2026-09-25",
         "checkedBy": "Granite (agent)",
         "quote": "I also have a build dossier for the PTown monument; I will have to hire an artist to create the actual model but we can get the main plinth and area around it roughed in.",
-        "source": "docs/briefs/BRIEF-pilgrim-monument-site.md (Jacob ask)",
+        "source": "cartograph/_archive/BRIEF-pilgrim-monument-site-2026-09-26.md (Jacob ask)",
         "underlying": "Carpenter 1911, published in the US in 1911: public domain.",
         "approvedBy": "Jacob, 2026-09-26 (via Boz): \"the dossier (Carpenter 1911, converted) is an approved source\""
       },
@@ -1316,7 +1316,7 @@
     {
       "id": "q-pilgrim-stone-length",
       "ask": "Length of a granite stone along a course on the Pilgrim Monument (for the vertical joints), and how joints break course to course",
-      "neededBy": "BRIEF-pilgrim-monument-site: the placeholder masonry (Jacob: \"vertical seams would help a lot\")",
+      "neededBy": "BRIEF-pilgrim-monument-site (archived 2026-09-26): the placeholder masonry (Jacob: \"vertical seams would help a lot\")",
       "status": "answered",
       "findings": [
         "d-pilgrim-stone-length"
@@ -1331,7 +1331,7 @@
     {
       "id": "q-pilgrim-course-count",
       "ask": "How many granite courses between documented datums on the Pilgrim Monument",
-      "neededBy": "BRIEF-pilgrim-monument-site: the placeholder coursing (Jacob: \"count the bands\")",
+      "neededBy": "BRIEF-pilgrim-monument-site (archived 2026-09-26): the placeholder coursing (Jacob: \"count the bands\")",
       "status": "answered",
       "findings": [
         "m-pilgrim-courses-base-to-wash1"

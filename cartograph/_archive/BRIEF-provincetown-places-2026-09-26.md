@@ -1,7 +1,7 @@
 # BRIEF — Provincetown's places: prime the pump from the PBG guide
 
 <!-- BRIEF-STATE
-status: OPEN
+status: LANDED 2026-09-25/26 — 380 listings researched (5429bc8e), wired and live on staging (e936db9d). Owed: the held places (Wellhead; ROADMAP status block)
 dispatched: no
 written: 2026-09-25
 evict-when: Provincetown's listings are matched to the PBG guide, the missing businesses are added, the most prominent places carry hours + a description, the landmarks have full place cards, and Jacob has seen it on staging.
