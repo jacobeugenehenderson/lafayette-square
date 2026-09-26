@@ -5,8 +5,8 @@
   "layer": "Layer 2 — listings (business POIs, building_id → slab id, 0..N per building)",
   "generated": "2026-07-07",
   "generator": "bake-content.js",
-  "count": 380,
-  "enriched": 145,
+  "count": 445,
+  "enriched": 183,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -33,7 +33,7 @@
    "source": "osm",
    "osm_type": "playground",
    "source_key": "osm-29800801",
-   "prominence_rank": 1008
+   "prominence_rank": 1261
   },
   {
    "id": "prov-lst-0104",
@@ -58,7 +58,7 @@
    "source": "osm",
    "osm_type": "pitch",
    "source_key": "osm-29844227",
-   "prominence_rank": 731
+   "prominence_rank": 909
   },
   {
    "id": "prov-lst-0019",
@@ -88,7 +88,7 @@
    "osm_type": "resort",
    "enriched": true,
    "source_key": "osm-170530726",
-   "prominence_rank": 322
+   "prominence_rank": 420
   },
   {
    "id": "prov-lst-0101",
@@ -113,7 +113,7 @@
    "source": "osm",
    "osm_type": "park",
    "source_key": "osm-236160458",
-   "prominence_rank": 553
+   "prominence_rank": 690
   },
   {
    "id": "prov-lst-0108",
@@ -138,7 +138,7 @@
    "source": "osm",
    "osm_type": "park",
    "source_key": "osm-570547729",
-   "prominence_rank": 1237
+   "prominence_rank": 1576
   },
   {
    "id": "prov-lst-0111",
@@ -188,11 +188,11 @@
    "source": "osm",
    "osm_type": "garden",
    "source_key": "osm-591672462",
-   "prominence_rank": 613
+   "prominence_rank": 776
   },
   {
    "id": "prov-lst-0115",
-   "building_id": "msbf-831",
+   "building_id": "osm-170530755",
    "name": "Cannery Wharf Park",
    "category": "parks",
    "subcategory": "parks",
@@ -213,7 +213,7 @@
    "source": "osm",
    "osm_type": "park",
    "source_key": "osm-9635872",
-   "prominence_rank": 55
+   "prominence_rank": 332
   },
   {
    "id": "prov-lst-0012",
@@ -238,11 +238,11 @@
    "source": "osm",
    "osm_type": "pharmacy",
    "source_key": "osm-164025005",
-   "prominence_rank": 74
+   "prominence_rank": 76
   },
   {
    "id": "prov-lst-0089",
-   "building_id": "msbf-27",
+   "building_id": "osm-215752799",
    "name": "Perry's Fine Wine & Liquors",
    "category": "residential",
    "subcategory": "houses",
@@ -269,7 +269,7 @@
    "osm_type": null,
    "enriched": true,
    "source_key": "osm-215752799",
-   "prominence_rank": 155
+   "prominence_rank": 258
   },
   {
    "id": "prov-lst-0102",
@@ -295,7 +295,7 @@
    "osm_type": "place_of_worship",
    "enriched": true,
    "source_key": "osm-2863275",
-   "prominence_rank": 65
+   "prominence_rank": 62
   },
   {
    "id": "prov-lst-0005",
@@ -382,11 +382,11 @@
    "osm_type": "museum",
    "enriched": true,
    "source_key": "osm-164024700",
-   "prominence_rank": 43
+   "prominence_rank": 40
   },
   {
    "id": "prov-lst-0008",
-   "building_id": "msbf-1081",
+   "building_id": "msbf-1994",
    "name": "Gifford House",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
@@ -412,7 +412,39 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-164024920",
-   "prominence_rank": 24
+   "prominence_rank": 115
+  },
+  {
+   "id": "prov-lst-0382",
+   "building_id": "osm-164024928",
+   "name": "Gaslamp Bed & Breakfast",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "97 Bradford Street",
+   "phone": "508-487-6636",
+   "website": "https://thegaslampptown.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "adults only (18+)",
+    "7 rooms",
+    "breakfast included",
+    "hot tub",
+    "clothing-optional deck"
+   ],
+   "tags": [],
+   "description": "A gay-owned, adults-only (18+) bed and breakfast in a renovated late-1800s Victorian, with seven rooms (four with gas fireplaces). Breakfast is included, and there is a year-round hot tub and a clothing-optional deck garden.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "guest_house",
+   "enriched": true,
+   "source_key": "osm-164024928",
+   "prominence_rank": 63
   },
   {
    "id": "prov-lst-0009",
@@ -437,7 +469,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-164024976",
-   "prominence_rank": 1456
+   "prominence_rank": 1894
   },
   {
    "id": "prov-lst-0010",
@@ -462,7 +494,32 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-164025002",
-   "prominence_rank": 122
+   "prominence_rank": 126
+  },
+  {
+   "id": "prov-lst-0383",
+   "building_id": "osm-170403832",
+   "name": "Old Harbor Life Saving Museum",
+   "category": "arts",
+   "subcategory": "museum",
+   "address": "193 Race Point Road",
+   "phone": null,
+   "website": "https://www.nps.gov/caco/learn/historyculture/old-harbor-life-saving-station.htm",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "museum",
+   "source_key": "osm-170403832",
+   "prominence_rank": 2
   },
   {
    "id": "prov-lst-0017",
@@ -487,7 +544,7 @@
    "source": "osm",
    "osm_type": "museum",
    "source_key": "osm-170529473",
-   "prominence_rank": 486
+   "prominence_rank": 620
   },
   {
    "id": "prov-lst-0020",
@@ -517,7 +574,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-170530727",
-   "prominence_rank": 28
+   "prominence_rank": 190
   },
   {
    "id": "prov-lst-0022",
@@ -542,7 +599,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-170530745",
-   "prominence_rank": 54
+   "prominence_rank": 52
   },
   {
    "id": "prov-lst-0023",
@@ -572,7 +629,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-170530751",
-   "prominence_rank": 35
+   "prominence_rank": 34
   },
   {
    "id": "prov-lst-0024",
@@ -597,7 +654,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-170530757",
-   "prominence_rank": 93
+   "prominence_rank": 97
   },
   {
    "id": "prov-lst-0026",
@@ -627,11 +684,11 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-170530775",
-   "prominence_rank": 178
+   "prominence_rank": 214
   },
   {
    "id": "prov-lst-0030",
-   "building_id": "msbf-1949",
+   "building_id": "osm-170530795",
    "name": "Alden Gallery",
    "category": "arts",
    "subcategory": "galleries",
@@ -652,7 +709,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-170530795",
-   "prominence_rank": 41
+   "prominence_rank": 122
   },
   {
    "id": "prov-lst-0032",
@@ -677,7 +734,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-170530804",
-   "prominence_rank": 41
+   "prominence_rank": 129
   },
   {
    "id": "prov-lst-0034",
@@ -707,11 +764,11 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-170629405",
-   "prominence_rank": 123
+   "prominence_rank": 139
   },
   {
    "id": "prov-lst-0035",
-   "building_id": "msbf-1037",
+   "building_id": "osm-1221677734",
    "name": "Harbor Hotel Provincetown",
    "category": "hospitality",
    "subcategory": "hotels",
@@ -738,7 +795,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215750806",
-   "prominence_rank": 317
+   "prominence_rank": 2978
   },
   {
    "id": "prov-lst-0036",
@@ -763,7 +820,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215750978",
-   "prominence_rank": 75
+   "prominence_rank": 78
   },
   {
    "id": "prov-lst-0037",
@@ -794,7 +851,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751052",
-   "prominence_rank": 587
+   "prominence_rank": 731
   },
   {
    "id": "prov-lst-0038",
@@ -825,7 +882,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215751182",
-   "prominence_rank": 158
+   "prominence_rank": 182
   },
   {
    "id": "prov-lst-0041",
@@ -850,7 +907,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751309",
-   "prominence_rank": 60
+   "prominence_rank": 55
   },
   {
    "id": "prov-lst-0043",
@@ -901,11 +958,11 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-215751388",
-   "prominence_rank": 79
+   "prominence_rank": 83
   },
   {
    "id": "prov-lst-0044",
-   "building_id": "msbf-2265",
+   "building_id": "osm-215751408",
    "name": "Inn on Cook Street",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
@@ -926,7 +983,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751408",
-   "prominence_rank": 904
+   "prominence_rank": 193
   },
   {
    "id": "prov-lst-0045",
@@ -951,7 +1008,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751419",
-   "prominence_rank": 154
+   "prominence_rank": 219
   },
   {
    "id": "prov-lst-0046",
@@ -1058,11 +1115,11 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-215751481",
-   "prominence_rank": 68
+   "prominence_rank": 1235
   },
   {
    "id": "prov-lst-0050",
-   "building_id": "msbf-1631",
+   "building_id": "osm-215751535",
    "name": "Aerie House & Beach Club",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
@@ -1083,7 +1140,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751535",
-   "prominence_rank": 1806
+   "prominence_rank": 203
   },
   {
    "id": "prov-lst-0052",
@@ -1117,7 +1174,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751612",
-   "prominence_rank": 66
+   "prominence_rank": 103
   },
   {
    "id": "prov-lst-0053",
@@ -1143,7 +1200,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215751621",
-   "prominence_rank": 98
+   "prominence_rank": 102
   },
   {
    "id": "prov-lst-0054",
@@ -1168,7 +1225,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751673",
-   "prominence_rank": 176
+   "prominence_rank": 209
   },
   {
    "id": "prov-lst-0056",
@@ -1198,7 +1255,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751742",
-   "prominence_rank": 94
+   "prominence_rank": 98
   },
   {
    "id": "prov-lst-0057",
@@ -1227,7 +1284,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751770",
-   "prominence_rank": 1568
+   "prominence_rank": 2100
   },
   {
    "id": "prov-lst-0058",
@@ -1252,7 +1309,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751779",
-   "prominence_rank": 83
+   "prominence_rank": 85
   },
   {
    "id": "prov-lst-0059",
@@ -1277,11 +1334,11 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751788",
-   "prominence_rank": 99
+   "prominence_rank": 105
   },
   {
    "id": "prov-lst-0060",
-   "building_id": "msbf-1026",
+   "building_id": "osm-215751789",
    "name": "Rose Acre",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
@@ -1302,7 +1359,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751789",
-   "prominence_rank": 101
+   "prominence_rank": 117
   },
   {
    "id": "prov-lst-0063",
@@ -1327,7 +1384,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751862",
-   "prominence_rank": 1618
+   "prominence_rank": 2170
   },
   {
    "id": "prov-lst-0064",
@@ -1356,7 +1413,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751865",
-   "prominence_rank": 115
+   "prominence_rank": 128
   },
   {
    "id": "prov-lst-0066",
@@ -1411,7 +1468,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751940",
-   "prominence_rank": 80
+   "prominence_rank": 82
   },
   {
    "id": "prov-lst-0068",
@@ -1436,7 +1493,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751953",
-   "prominence_rank": 92
+   "prominence_rank": 96
   },
   {
    "id": "prov-lst-0072",
@@ -1461,7 +1518,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752273",
-   "prominence_rank": 90
+   "prominence_rank": 91
   },
   {
    "id": "prov-lst-0073",
@@ -1486,7 +1543,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752307",
-   "prominence_rank": 170
+   "prominence_rank": 1764
   },
   {
    "id": "prov-lst-0074",
@@ -1518,11 +1575,11 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215752353",
-   "prominence_rank": 27
+   "prominence_rank": 30
   },
   {
    "id": "prov-lst-0075",
-   "building_id": "msbf-1952",
+   "building_id": "osm-215752385",
    "name": "Brass Key Guesthouse",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
@@ -1551,7 +1608,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215752385",
-   "prominence_rank": 89
+   "prominence_rank": 24
   },
   {
    "id": "prov-lst-0076",
@@ -1576,7 +1633,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752395",
-   "prominence_rank": 106
+   "prominence_rank": 109
   },
   {
    "id": "prov-lst-0078",
@@ -1601,7 +1658,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752438",
-   "prominence_rank": 95
+   "prominence_rank": 99
   },
   {
    "id": "prov-lst-0079",
@@ -1630,7 +1687,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215752448",
-   "prominence_rank": 108
+   "prominence_rank": 112
   },
   {
    "id": "prov-lst-0080",
@@ -1655,7 +1712,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752474",
-   "prominence_rank": 58
+   "prominence_rank": 54
   },
   {
    "id": "prov-lst-0081",
@@ -1685,7 +1742,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215752482",
-   "prominence_rank": 76
+   "prominence_rank": 80
   },
   {
    "id": "prov-lst-0082",
@@ -1710,7 +1767,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752578",
-   "prominence_rank": 87
+   "prominence_rank": 88
   },
   {
    "id": "prov-lst-0085",
@@ -1735,7 +1792,7 @@
    "source": "osm",
    "osm_type": "motel",
    "source_key": "osm-215752685",
-   "prominence_rank": 160
+   "prominence_rank": 184
   },
   {
    "id": "prov-lst-0087",
@@ -1765,7 +1822,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215752727",
-   "prominence_rank": 82
+   "prominence_rank": 84
   },
   {
    "id": "prov-lst-0088",
@@ -1790,7 +1847,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752785",
-   "prominence_rank": 307
+   "prominence_rank": 397
   },
   {
    "id": "prov-lst-0091",
@@ -1815,7 +1872,39 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752908",
-   "prominence_rank": 887
+   "prominence_rank": 1112
+  },
+  {
+   "id": "prov-lst-0388",
+   "building_id": "osm-215753596",
+   "name": "Red Inn",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "15 Commercial Street",
+   "phone": "508-487-7334",
+   "website": "https://theredinn.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "Harbor views",
+    "Raw bar",
+    "Sunday jazz brunch 11–2",
+    "Happy hour Fri–Sun 2–4:30; raw-bar happy hour daily 2–4:30",
+    "Inn rooms"
+   ],
+   "tags": [],
+   "description": "The restaurant of a West End waterfront inn, with views across the harbor to Long Point. Serves dinner nightly, a raw-bar happy hour, and a jazz brunch on Sundays.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "guest_house",
+   "enriched": true,
+   "source_key": "osm-215753596",
+   "prominence_rank": 183
   },
   {
    "id": "prov-lst-0099",
@@ -1845,7 +1934,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215753947",
-   "prominence_rank": 153
+   "prominence_rank": 178
   },
   {
    "id": "prov-lst-0100",
@@ -1870,11 +1959,11 @@
    "source": "osm",
    "osm_type": "motel",
    "source_key": "osm-215754132",
-   "prominence_rank": 164
+   "prominence_rank": 185
   },
   {
    "id": "prov-lst-0107",
-   "building_id": "msbf-1228",
+   "building_id": "osm-509311708",
    "name": "Julie Heller East",
    "category": "arts",
    "subcategory": "galleries",
@@ -1895,7 +1984,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-509311708",
-   "prominence_rank": 53
+   "prominence_rank": 262
   },
   {
    "id": "prov-lst-0114",
@@ -1925,7 +2014,7 @@
    "osm_type": "motel",
    "enriched": true,
    "source_key": "osm-6102879",
-   "prominence_rank": 157
+   "prominence_rank": 181
   },
   {
    "id": "prov-lst-0001",
@@ -1957,7 +2046,7 @@
    "osm_type": "motel",
    "enriched": true,
    "source_key": "osm-16163089",
-   "prominence_rank": 239
+   "prominence_rank": 322
   },
   {
    "id": "prov-lst-0004",
@@ -2027,7 +2116,7 @@
    "osm_type": "townhall",
    "enriched": true,
    "source_key": "osm-164023890",
-   "prominence_rank": 6
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0006",
@@ -2105,7 +2194,7 @@
    "osm_type": "place_of_worship",
    "enriched": true,
    "source_key": "osm-164024901",
-   "prominence_rank": 380
+   "prominence_rank": 488
   },
   {
    "id": "prov-lst-0007",
@@ -2166,7 +2255,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-164024910",
-   "prominence_rank": 205
+   "prominence_rank": 840
   },
   {
    "id": "prov-lst-0013",
@@ -2191,7 +2280,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-164025006",
-   "prominence_rank": 127
+   "prominence_rank": 260
   },
   {
    "id": "prov-lst-0014",
@@ -2234,7 +2323,32 @@
    "osm_type": "place_of_worship",
    "enriched": true,
    "source_key": "osm-170523643",
-   "prominence_rank": 181
+   "prominence_rank": 223
+  },
+  {
+   "id": "prov-lst-0384",
+   "building_id": "osm-170523645",
+   "name": "Shallop Cafe",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": "11:00-16:00",
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "cafe",
+   "source_key": "osm-170523645",
+   "prominence_rank": 213
   },
   {
    "id": "prov-lst-0016",
@@ -2259,11 +2373,11 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-170528584",
-   "prominence_rank": 88
+   "prominence_rank": 81
   },
   {
    "id": "prov-lst-0018",
-   "building_id": "msbf-2006",
+   "building_id": "osm-215752034",
    "name": "Ryder Street Lot",
    "category": "services",
    "subcategory": "parking",
@@ -2284,7 +2398,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-170529575",
-   "prominence_rank": 1834
+   "prominence_rank": 2895
   },
   {
    "id": "prov-lst-0025",
@@ -2309,7 +2423,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-170530770",
-   "prominence_rank": 50
+   "prominence_rank": 45
   },
   {
    "id": "prov-lst-0027",
@@ -2334,7 +2448,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-170530779",
-   "prominence_rank": 593
+   "prominence_rank": 742
   },
   {
    "id": "prov-lst-0028",
@@ -2385,7 +2499,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-170530789",
-   "prominence_rank": 198
+   "prominence_rank": 250
   },
   {
    "id": "prov-lst-0033",
@@ -2410,7 +2524,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-170530823",
-   "prominence_rank": 50
+   "prominence_rank": 45
   },
   {
    "id": "prov-lst-0039",
@@ -2435,7 +2549,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-215751199",
-   "prominence_rank": 472
+   "prominence_rank": 597
   },
   {
    "id": "prov-lst-0040",
@@ -2470,7 +2584,7 @@
    "osm_type": "place_of_worship",
    "enriched": true,
    "source_key": "osm-215751281",
-   "prominence_rank": 147
+   "prominence_rank": 171
   },
   {
    "id": "prov-lst-0051",
@@ -2495,7 +2609,7 @@
    "source": "osm",
    "osm_type": "dentist",
    "source_key": "osm-215751548",
-   "prominence_rank": 196
+   "prominence_rank": 247
   },
   {
    "id": "prov-lst-0055",
@@ -2520,7 +2634,7 @@
    "source": "osm",
    "osm_type": "clinic",
    "source_key": "osm-215751724",
-   "prominence_rank": 100
+   "prominence_rank": 113
   },
   {
    "id": "prov-lst-0061",
@@ -2545,7 +2659,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-215751808",
-   "prominence_rank": 180
+   "prominence_rank": 222
   },
   {
    "id": "prov-lst-0062",
@@ -2633,7 +2747,7 @@
    "osm_type": "arts_centre",
    "enriched": true,
    "source_key": "osm-215751814",
-   "prominence_rank": 9
+   "prominence_rank": 14
   },
   {
    "id": "prov-lst-0065",
@@ -2658,7 +2772,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-215751938",
-   "prominence_rank": 207
+   "prominence_rank": 266
   },
   {
    "id": "prov-lst-0069",
@@ -2709,7 +2823,7 @@
    "osm_type": "bank",
    "enriched": true,
    "source_key": "osm-215751966",
-   "prominence_rank": 125
+   "prominence_rank": 137
   },
   {
    "id": "prov-lst-0084",
@@ -2748,7 +2862,7 @@
    "osm_type": "community_centre",
    "enriched": true,
    "source_key": "osm-215752660",
-   "prominence_rank": 29
+   "prominence_rank": 31
   },
   {
    "id": "prov-lst-0086",
@@ -2773,7 +2887,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-215752700",
-   "prominence_rank": 1065
+   "prominence_rank": 1343
   },
   {
    "id": "prov-lst-0094",
@@ -2834,7 +2948,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-215753603",
-   "prominence_rank": 144
+   "prominence_rank": 169
   },
   {
    "id": "prov-lst-0096",
@@ -2859,7 +2973,7 @@
    "source": "osm",
    "osm_type": "bank",
    "source_key": "osm-215753628",
-   "prominence_rank": 91
+   "prominence_rank": 94
   },
   {
    "id": "prov-lst-0098",
@@ -2884,7 +2998,7 @@
    "source": "osm",
    "osm_type": "fuel",
    "source_key": "osm-215753896",
-   "prominence_rank": 493
+   "prominence_rank": 622
   },
   {
    "id": "prov-lst-0105",
@@ -2909,11 +3023,11 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-416800027",
-   "prominence_rank": 887
+   "prominence_rank": 1112
   },
   {
    "id": "prov-lst-0106",
-   "building_id": "msbf-562",
+   "building_id": "osm-508044028",
    "name": "Gulf",
    "category": "services",
    "subcategory": "automotive",
@@ -2934,7 +3048,7 @@
    "source": "osm",
    "osm_type": "fuel",
    "source_key": "osm-508044028",
-   "prominence_rank": 127
+   "prominence_rank": 268
   },
   {
    "id": "prov-lst-0109",
@@ -2959,11 +3073,11 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-591096585",
-   "prominence_rank": 169
+   "prominence_rank": 186
   },
   {
    "id": "prov-lst-0110",
-   "building_id": "msbf-1711",
+   "building_id": "osm-215753545",
    "name": "Lands End Inn Parking Lot",
    "category": "services",
    "subcategory": "parking",
@@ -2984,7 +3098,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-591244813",
-   "prominence_rank": 634
+   "prominence_rank": 1568
   },
   {
    "id": "prov-lst-0113",
@@ -3009,7 +3123,32 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-595893371",
-   "prominence_rank": 207
+   "prominence_rank": 266
+  },
+  {
+   "id": "prov-lst-0381",
+   "building_id": "osm-1302889864",
+   "name": "Far Land on the Beach",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": null,
+   "phone": null,
+   "website": "https://www.nps.gov/places/herring-cove-snack-bar.htm",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "fast_food",
+   "source_key": "osm-1302889864",
+   "prominence_rank": 200
   },
   {
    "id": "prov-lst-0011",
@@ -3034,7 +3173,7 @@
    "source": "osm",
    "osm_type": "convenience",
    "source_key": "osm-164025003",
-   "prominence_rank": 127
+   "prominence_rank": 260
   },
   {
    "id": "prov-lst-0015",
@@ -3094,7 +3233,7 @@
    "osm_type": "supermarket",
    "enriched": true,
    "source_key": "osm-170523644",
-   "prominence_rank": 11
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0021",
@@ -3125,7 +3264,7 @@
    "osm_type": "books",
    "enriched": true,
    "source_key": "osm-170530729",
-   "prominence_rank": 117
+   "prominence_rank": 121
   },
   {
    "id": "prov-lst-0029",
@@ -3150,7 +3289,7 @@
    "source": "osm",
    "osm_type": "art",
    "source_key": "osm-170530793",
-   "prominence_rank": 78
+   "prominence_rank": 79
   },
   {
    "id": "prov-lst-0031",
@@ -3175,11 +3314,11 @@
    "source": "osm",
    "osm_type": "houseware",
    "source_key": "osm-170530803",
-   "prominence_rank": 149
+   "prominence_rank": 159
   },
   {
    "id": "prov-lst-0048",
-   "building_id": "msbf-1949",
+   "building_id": "osm-215751518",
    "name": "Outermost Home",
    "category": "shopping",
    "subcategory": "retail",
@@ -3200,7 +3339,7 @@
    "source": "osm",
    "osm_type": "interior_decoration",
    "source_key": "osm-215751518",
-   "prominence_rank": 41
+   "prominence_rank": 217
   },
   {
    "id": "prov-lst-0049",
@@ -3225,7 +3364,32 @@
    "source": "osm",
    "osm_type": "funeral_directors",
    "source_key": "osm-215751521",
-   "prominence_rank": 136
+   "prominence_rank": 148
+  },
+  {
+   "id": "prov-lst-0387",
+   "building_id": "osm-215751679",
+   "name": "Hammock Gallery",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "361C Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "hammock",
+   "source_key": "osm-215751679",
+   "prominence_rank": 272
   },
   {
    "id": "prov-lst-0067",
@@ -3250,11 +3414,11 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-215751947",
-   "prominence_rank": 218
+   "prominence_rank": 287
   },
   {
    "id": "prov-lst-0071",
-   "building_id": "msbf-659",
+   "building_id": "osm-215752170",
    "name": "Shor Home",
    "category": "shopping",
    "subcategory": "retail",
@@ -3276,7 +3440,7 @@
    "osm_type": "interior_decoration",
    "enriched": true,
    "source_key": "osm-215752170",
-   "prominence_rank": 32
+   "prominence_rank": 177
   },
   {
    "id": "prov-lst-0083",
@@ -3301,7 +3465,7 @@
    "source": "osm",
    "osm_type": "dry_cleaning",
    "source_key": "osm-215752581",
-   "prominence_rank": 69
+   "prominence_rank": 65
   },
   {
    "id": "prov-lst-0090",
@@ -3356,7 +3520,7 @@
    "osm_type": "bicycle",
    "enriched": true,
    "source_key": "osm-215752813",
-   "prominence_rank": 193
+   "prominence_rank": 243
   },
   {
    "id": "prov-lst-0092",
@@ -3381,7 +3545,7 @@
    "source": "osm",
    "osm_type": "car_repair",
    "source_key": "osm-215753255",
-   "prominence_rank": 183
+   "prominence_rank": 226
   },
   {
    "id": "prov-lst-0093",
@@ -3406,7 +3570,7 @@
    "source": "osm",
    "osm_type": "bicycle",
    "source_key": "osm-215753467",
-   "prominence_rank": 189
+   "prominence_rank": 238
   },
   {
    "id": "prov-lst-0095",
@@ -3431,7 +3595,32 @@
    "source": "osm",
    "osm_type": "storage_rental",
    "source_key": "osm-215753607",
-   "prominence_rank": 188
+   "prominence_rank": 235
+  },
+  {
+   "id": "prov-lst-0389",
+   "building_id": "osm-215753776",
+   "name": "Penny's Wine & Spirits",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "68 Shank Painter Road",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "alcohol",
+   "source_key": "osm-215753776",
+   "prominence_rank": 120
   },
   {
    "id": "prov-lst-0097",
@@ -3456,7 +3645,57 @@
    "source": "osm",
    "osm_type": "convenience",
    "source_key": "osm-215753807",
-   "prominence_rank": 85
+   "prominence_rank": 89
+  },
+  {
+   "id": "prov-lst-0390",
+   "building_id": "osm-288247324",
+   "name": "Whaler's Wharf",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "237 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "mall",
+   "source_key": "osm-288247324",
+   "prominence_rank": 5
+  },
+  {
+   "id": "prov-lst-0391",
+   "building_id": "osm-508069992",
+   "name": "Marine Specialties",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "235 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "yes",
+   "source_key": "osm-508069992",
+   "prominence_rank": 257
   },
   {
    "id": "prov-lst-0156",
@@ -3482,7 +3721,7 @@
    "osm_type": "theatre",
    "enriched": true,
    "source_key": "osm-n367779475",
-   "prominence_rank": 187
+   "prominence_rank": 233
   },
   {
    "id": "prov-lst-0333",
@@ -3508,7 +3747,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n764434433",
-   "prominence_rank": 27
+   "prominence_rank": 30
   },
   {
    "id": "prov-lst-0334",
@@ -3533,7 +3772,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n764434466",
-   "prominence_rank": 44
+   "prominence_rank": 41
   },
   {
    "id": "prov-lst-0335",
@@ -3558,7 +3797,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n764434471",
-   "prominence_rank": 103
+   "prominence_rank": 107
   },
   {
    "id": "prov-lst-0336",
@@ -3583,7 +3822,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n764434476",
-   "prominence_rank": 52
+   "prominence_rank": 69
   },
   {
    "id": "prov-lst-0337",
@@ -3608,11 +3847,11 @@
    "source": "osm",
    "osm_type": "alcohol",
    "source_key": "osm-n764434487",
-   "prominence_rank": 6
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0338",
-   "building_id": "msbf-659",
+   "building_id": "osm-215752170",
    "name": "Wild Hearts",
    "category": "shopping",
    "subcategory": "retail",
@@ -3633,7 +3872,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n764434492",
-   "prominence_rank": 32
+   "prominence_rank": 177
   },
   {
    "id": "prov-lst-0339",
@@ -3658,7 +3897,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n764434495",
-   "prominence_rank": 8
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0340",
@@ -3684,7 +3923,7 @@
    "osm_type": "erotic",
    "enriched": true,
    "source_key": "osm-n764434498",
-   "prominence_rank": 33
+   "prominence_rank": 32
   },
   {
    "id": "prov-lst-0341",
@@ -3739,7 +3978,7 @@
    "osm_type": "greengrocer",
    "enriched": true,
    "source_key": "osm-n850959412",
-   "prominence_rank": 190
+   "prominence_rank": 239
   },
   {
    "id": "prov-lst-0342",
@@ -3765,7 +4004,7 @@
    "osm_type": "doityourself",
    "enriched": true,
    "source_key": "osm-n851633152",
-   "prominence_rank": 17
+   "prominence_rank": 19
   },
   {
    "id": "prov-lst-0343",
@@ -3820,11 +4059,11 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n855546122",
-   "prominence_rank": 143
+   "prominence_rank": 156
   },
   {
    "id": "prov-lst-0344",
-   "building_id": "msbf-1032",
+   "building_id": "osm-215753578",
    "name": "Victor's",
    "category": "dining",
    "subcategory": "restaurants",
@@ -3846,7 +4085,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n855550083",
-   "prominence_rank": 226
+   "prominence_rank": 197
   },
   {
    "id": "prov-lst-0141",
@@ -3871,11 +4110,65 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-n1777319460",
-   "prominence_rank": 67
+   "prominence_rank": 61
+  },
+  {
+   "id": "prov-lst-0397",
+   "building_id": "osm-170602361",
+   "name": "Tin Pan Alley",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "269 Commercial Street",
+   "phone": "508-487-1648",
+   "website": "https://tinpanalleyptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "Live piano bar",
+    "Happy hour 4:45–6 daily ($10 appetizers)"
+   ],
+   "tags": [],
+   "description": "A restaurant and live piano bar serving seasonal New American food with global touches, with breads, sauces and desserts made in-house.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "restaurant",
+   "enriched": true,
+   "source_key": "osm-n1963938662",
+   "prominence_rank": 274
+  },
+  {
+   "id": "prov-lst-0398",
+   "building_id": "osm-288247324",
+   "name": "The Nut House",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "bakery",
+   "source_key": "osm-n1963938699",
+   "prominence_rank": 5
   },
   {
    "id": "prov-lst-0142",
-   "building_id": "msbf-1559",
+   "building_id": "osm-164024930",
    "name": "The Provincetown Bookshop",
    "category": "shopping",
    "subcategory": "retail",
@@ -3931,7 +4224,7 @@
    "osm_type": "books",
    "enriched": true,
    "source_key": "osm-n2940775553",
-   "prominence_rank": 77
+   "prominence_rank": 135
   },
   {
    "id": "prov-lst-0143",
@@ -3956,7 +4249,7 @@
    "source": "osm",
    "osm_type": "food",
    "source_key": "osm-n2940775555",
-   "prominence_rank": 19
+   "prominence_rank": 22
   },
   {
    "id": "prov-lst-0144",
@@ -3982,7 +4275,7 @@
    "osm_type": "pet",
    "enriched": true,
    "source_key": "osm-n2940775556",
-   "prominence_rank": 23
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0145",
@@ -4042,7 +4335,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n2940775557",
-   "prominence_rank": 23
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0146",
@@ -4109,11 +4402,11 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n2940775558",
-   "prominence_rank": 8
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0147",
-   "building_id": "msbf-1080",
+   "building_id": "osm-164023880",
    "name": "Cabot's Candy",
    "category": "dining",
    "subcategory": "desserts",
@@ -4140,7 +4433,7 @@
    "osm_type": "confectionery",
    "enriched": true,
    "source_key": "osm-n2941234384",
-   "prominence_rank": 20
+   "prominence_rank": 176
   },
   {
    "id": "prov-lst-0148",
@@ -4165,11 +4458,11 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n3012615691",
-   "prominence_rank": 123
+   "prominence_rank": 139
   },
   {
    "id": "prov-lst-0149",
-   "building_id": "msbf-658",
+   "building_id": "osm-170602340",
    "name": "Julie Temblay",
    "category": "shopping",
    "subcategory": "retail",
@@ -4190,7 +4483,7 @@
    "source": "osm",
    "osm_type": "art",
    "source_key": "osm-n3019186402",
-   "prominence_rank": 12
+   "prominence_rank": 174
   },
   {
    "id": "prov-lst-0150",
@@ -4215,7 +4508,7 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-n3019186404",
-   "prominence_rank": 12
+   "prominence_rank": 64
   },
   {
    "id": "prov-lst-0151",
@@ -4240,11 +4533,11 @@
    "source": "osm",
    "osm_type": "toys",
    "source_key": "osm-n3019186406",
-   "prominence_rank": 8
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0152",
-   "building_id": "msbf-1080",
+   "building_id": "osm-164023880",
    "name": "The Shell Shop",
    "category": "shopping",
    "subcategory": "retail",
@@ -4265,7 +4558,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n3019198174",
-   "prominence_rank": 20
+   "prominence_rank": 176
   },
   {
    "id": "prov-lst-0153",
@@ -4320,7 +4613,7 @@
    "osm_type": "confectionery",
    "enriched": true,
    "source_key": "osm-n3019268207",
-   "prominence_rank": 12
+   "prominence_rank": 64
   },
   {
    "id": "prov-lst-0154",
@@ -4367,7 +4660,57 @@
    "osm_type": "studio",
    "enriched": true,
    "source_key": "osm-n3430898491",
-   "prominence_rank": 10
+   "prominence_rank": 27
+  },
+  {
+   "id": "prov-lst-0400",
+   "building_id": "osm-170602347",
+   "name": "The Kite Store",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "gift",
+   "source_key": "osm-n3637561051",
+   "prominence_rank": 231
+  },
+  {
+   "id": "prov-lst-0401",
+   "building_id": "osm-170602347",
+   "name": "Cafe Maria",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "restaurant",
+   "source_key": "osm-n3637561054",
+   "prominence_rank": 231
   },
   {
    "id": "prov-lst-0155",
@@ -4392,7 +4735,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n3637561056",
-   "prominence_rank": 12
+   "prominence_rank": 64
   },
   {
    "id": "prov-lst-0157",
@@ -4417,7 +4760,7 @@
    "source": "osm",
    "osm_type": "motel",
    "source_key": "osm-n3959238387",
-   "prominence_rank": 63
+   "prominence_rank": 58
   },
   {
    "id": "prov-lst-0158",
@@ -4443,7 +4786,7 @@
    "osm_type": "convenience",
    "enriched": true,
    "source_key": "osm-n4174474406",
-   "prominence_rank": 161
+   "prominence_rank": 179
   },
   {
    "id": "prov-lst-0159",
@@ -4469,7 +4812,7 @@
    "osm_type": "association",
    "enriched": true,
    "source_key": "osm-n4176404989",
-   "prominence_rank": 124
+   "prominence_rank": 136
   },
   {
    "id": "prov-lst-0160",
@@ -4495,7 +4838,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4192309619",
-   "prominence_rank": 61
+   "prominence_rank": 267
   },
   {
    "id": "prov-lst-0161",
@@ -4520,7 +4863,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4441181663",
-   "prominence_rank": 25
+   "prominence_rank": 28
   },
   {
    "id": "prov-lst-0162",
@@ -4545,7 +4888,7 @@
    "source": "osm",
    "osm_type": "jewelry",
    "source_key": "osm-n4541109127",
-   "prominence_rank": 15
+   "prominence_rank": 72
   },
   {
    "id": "prov-lst-0163",
@@ -4575,7 +4918,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-n4646549478",
-   "prominence_rank": 59
+   "prominence_rank": 48
   },
   {
    "id": "prov-lst-0164",
@@ -4601,7 +4944,7 @@
    "osm_type": "dentist",
    "enriched": true,
    "source_key": "osm-n4902760092",
-   "prominence_rank": 45
+   "prominence_rank": 37
   },
   {
    "id": "prov-lst-0165",
@@ -4626,7 +4969,7 @@
    "source": "osm",
    "osm_type": "pub",
    "source_key": "osm-n4902768500",
-   "prominence_rank": 64
+   "prominence_rank": 60
   },
   {
    "id": "prov-lst-0166",
@@ -4651,11 +4994,11 @@
    "source": "osm",
    "osm_type": "doctors",
    "source_key": "osm-n4902812042",
-   "prominence_rank": 197
+   "prominence_rank": 248
   },
   {
    "id": "prov-lst-0167",
-   "building_id": "msbf-1081",
+   "building_id": "msbf-1994",
    "name": "Gifford House",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
@@ -4676,11 +5019,11 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-n4904027834",
-   "prominence_rank": 24
+   "prominence_rank": 115
   },
   {
    "id": "prov-lst-0168",
-   "building_id": "msbf-1952",
+   "building_id": "osm-215752385",
    "name": "Brass Key",
    "category": "hospitality",
    "subcategory": "bed-and-breakfast",
@@ -4701,11 +5044,11 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-n4904031767",
-   "prominence_rank": 89
+   "prominence_rank": 24
   },
   {
    "id": "prov-lst-0169",
-   "building_id": "msbf-1952",
+   "building_id": "osm-215752385",
    "name": "Shipwreck Lounge at the Brass Key",
    "category": "dining",
    "subcategory": "bars",
@@ -4759,11 +5102,11 @@
    "osm_type": "bar",
    "enriched": true,
    "source_key": "osm-n4904032649",
-   "prominence_rank": 89
+   "prominence_rank": 24
   },
   {
    "id": "prov-lst-0170",
-   "building_id": "msbf-1081",
+   "building_id": "msbf-1994",
    "name": "Porch Bar at Gifford House",
    "category": "dining",
    "subcategory": "bars",
@@ -4790,7 +5133,7 @@
    "osm_type": "bar",
    "enriched": true,
    "source_key": "osm-n4904036631",
-   "prominence_rank": 24
+   "prominence_rank": 115
   },
   {
    "id": "prov-lst-0171",
@@ -4845,7 +5188,7 @@
    "osm_type": "cafe",
    "enriched": true,
    "source_key": "osm-n4904043104",
-   "prominence_rank": 40
+   "prominence_rank": 57
   },
   {
    "id": "prov-lst-0172",
@@ -4870,7 +5213,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904045467",
-   "prominence_rank": 217
+   "prominence_rank": 286
   },
   {
    "id": "prov-lst-0173",
@@ -4896,11 +5239,11 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4904289254",
-   "prominence_rank": 26
+   "prominence_rank": 29
   },
   {
    "id": "prov-lst-0174",
-   "building_id": "msbf-281",
+   "building_id": "osm-215752311",
    "name": "MAP Provincetown",
    "category": "shopping",
    "subcategory": "retail",
@@ -4921,7 +5264,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n4904290480",
-   "prominence_rank": 34
+   "prominence_rank": 282
   },
   {
    "id": "prov-lst-0175",
@@ -4946,7 +5289,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n4904294068",
-   "prominence_rank": 3
+   "prominence_rank": 6
   },
   {
    "id": "prov-lst-0176",
@@ -4971,7 +5314,7 @@
    "source": "osm",
    "osm_type": "interior_decoration",
    "source_key": "osm-n4904297222",
-   "prominence_rank": 46
+   "prominence_rank": 44
   },
   {
    "id": "prov-lst-0177",
@@ -4997,7 +5340,113 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4904300644",
-   "prominence_rank": 77
+   "prominence_rank": 252
+  },
+  {
+   "id": "prov-lst-0402",
+   "building_id": "osm-288247324",
+   "name": "Waters Edge Cinema",
+   "category": "arts",
+   "subcategory": "cinema",
+   "address": "237 Commercial Street",
+   "phone": "508-487-3456",
+   "website": "https://www.provincetownfilm.org/cinema/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A year-round two-screen movie theater on the second floor of Whaler's Wharf, run by the nonprofit Provincetown Film Society (which also stages the Provincetown International Film Festival). Shows new releases, mini-festivals and guest presentations.",
+   "history": [
+    {
+     "year": 2013,
+     "event": "Provincetown Film Society buys and renovates the Whaler's Wharf Cinema, reopening it as Waters Edge Cinema"
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "cinema",
+   "enriched": true,
+   "source_key": "osm-n4904303750",
+   "prominence_rank": 5
+  },
+  {
+   "id": "prov-lst-0403",
+   "building_id": "osm-508069994",
+   "name": "The Vault",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "bar",
+   "source_key": "osm-n4904306563",
+   "prominence_rank": 254
+  },
+  {
+   "id": "prov-lst-0404",
+   "building_id": "osm-170602334",
+   "name": "Wave Bar",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "bar",
+   "source_key": "osm-n4904306587",
+   "prominence_rank": 16
+  },
+  {
+   "id": "prov-lst-0405",
+   "building_id": "osm-170602334",
+   "name": "Central House Restaurant",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": null,
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "restaurant",
+   "source_key": "osm-n4904308521",
+   "prominence_rank": 16
   },
   {
    "id": "prov-lst-0178",
@@ -5052,7 +5501,7 @@
    "osm_type": "convenience",
    "enriched": true,
    "source_key": "osm-n4904310255",
-   "prominence_rank": 38
+   "prominence_rank": 198
   },
   {
    "id": "prov-lst-0179",
@@ -5077,7 +5526,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904314941",
-   "prominence_rank": 6
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0180",
@@ -5102,7 +5551,7 @@
    "source": "osm",
    "osm_type": "ice_cream",
    "source_key": "osm-n4904316975",
-   "prominence_rank": 6
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0181",
@@ -5127,7 +5576,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904317722",
-   "prominence_rank": 44
+   "prominence_rank": 41
   },
   {
    "id": "prov-lst-0182",
@@ -5152,7 +5601,7 @@
    "source": "osm",
    "osm_type": "copyshop",
    "source_key": "osm-n4904319274",
-   "prominence_rank": 16
+   "prominence_rank": 18
   },
   {
    "id": "prov-lst-0183",
@@ -5182,7 +5631,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4904324434",
-   "prominence_rank": 7
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0184",
@@ -5208,7 +5657,7 @@
    "osm_type": "gift",
    "enriched": true,
    "source_key": "osm-n4904330519",
-   "prominence_rank": 140
+   "prominence_rank": 150
   },
   {
    "id": "prov-lst-0185",
@@ -5233,7 +5682,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904343282",
-   "prominence_rank": 5
+   "prominence_rank": 10
   },
   {
    "id": "prov-lst-0186",
@@ -5258,7 +5707,7 @@
    "source": "osm",
    "osm_type": "interior_decoration",
    "source_key": "osm-n4904347324",
-   "prominence_rank": 35
+   "prominence_rank": 34
   },
   {
    "id": "prov-lst-0187",
@@ -5284,7 +5733,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n4904352514",
-   "prominence_rank": 35
+   "prominence_rank": 34
   },
   {
    "id": "prov-lst-0188",
@@ -5309,7 +5758,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n4904358273",
-   "prominence_rank": 18
+   "prominence_rank": 21
   },
   {
    "id": "prov-lst-0189",
@@ -5335,7 +5784,7 @@
    "osm_type": "studio",
    "enriched": true,
    "source_key": "osm-n4904969347",
-   "prominence_rank": 5
+   "prominence_rank": 10
   },
   {
    "id": "prov-lst-0190",
@@ -5360,7 +5809,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904971996",
-   "prominence_rank": 37
+   "prominence_rank": 35
   },
   {
    "id": "prov-lst-0191",
@@ -5385,7 +5834,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904972230",
-   "prominence_rank": 151
+   "prominence_rank": 175
   },
   {
    "id": "prov-lst-0192",
@@ -5410,7 +5859,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904973004",
-   "prominence_rank": 56
+   "prominence_rank": 53
   },
   {
    "id": "prov-lst-0193",
@@ -5435,7 +5884,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904973005",
-   "prominence_rank": 56
+   "prominence_rank": 53
   },
   {
    "id": "prov-lst-0194",
@@ -5461,11 +5910,11 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-n4904973893",
-   "prominence_rank": 84
+   "prominence_rank": 86
   },
   {
    "id": "prov-lst-0195",
-   "building_id": "msbf-2269",
+   "building_id": "osm-215751489",
    "name": "William Scott Gallery",
    "category": "arts",
    "subcategory": "galleries",
@@ -5486,11 +5935,11 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904974485",
-   "prominence_rank": 68
+   "prominence_rank": 59
   },
   {
    "id": "prov-lst-0196",
-   "building_id": "msbf-2269",
+   "building_id": "osm-215751489",
    "name": "Simie Maryles Gallery",
    "category": "arts",
    "subcategory": "galleries",
@@ -5541,7 +5990,7 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-n4904975051",
-   "prominence_rank": 68
+   "prominence_rank": 59
   },
   {
    "id": "prov-lst-0197",
@@ -5566,7 +6015,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904975621",
-   "prominence_rank": 139
+   "prominence_rank": 145
   },
   {
    "id": "prov-lst-0198",
@@ -5591,11 +6040,11 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904978044",
-   "prominence_rank": 54
+   "prominence_rank": 52
   },
   {
    "id": "prov-lst-0199",
-   "building_id": "msbf-1024",
+   "building_id": "osm-170530800",
    "name": "Ptown Scoops",
    "category": "dining",
    "subcategory": "desserts",
@@ -5616,7 +6065,7 @@
    "source": "osm",
    "osm_type": "ice_cream",
    "source_key": "osm-n4904978667",
-   "prominence_rank": 163
+   "prominence_rank": 277
   },
   {
    "id": "prov-lst-0200",
@@ -5641,7 +6090,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904978670",
-   "prominence_rank": 210
+   "prominence_rank": 263
   },
   {
    "id": "prov-lst-0201",
@@ -5666,7 +6115,7 @@
    "source": "osm",
    "osm_type": "interior_decoration",
    "source_key": "osm-n4904979080",
-   "prominence_rank": 212
+   "prominence_rank": 273
   },
   {
    "id": "prov-lst-0202",
@@ -5692,11 +6141,11 @@
    "osm_type": "houseware",
    "enriched": true,
    "source_key": "osm-n4904979453",
-   "prominence_rank": 78
+   "prominence_rank": 79
   },
   {
    "id": "prov-lst-0203",
-   "building_id": "msbf-81",
+   "building_id": "osm-1547244713",
    "name": "Helltown Kitchen",
    "category": "dining",
    "subcategory": "restaurants",
@@ -5717,7 +6166,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904979873",
-   "prominence_rank": 28
+   "prominence_rank": 205
   },
   {
    "id": "prov-lst-0204",
@@ -5742,7 +6191,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n4904979905",
-   "prominence_rank": 141
+   "prominence_rank": 154
   },
   {
    "id": "prov-lst-0205",
@@ -5768,7 +6217,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n4904981741",
-   "prominence_rank": 163
+   "prominence_rank": 246
   },
   {
    "id": "prov-lst-0206",
@@ -5793,7 +6242,7 @@
    "source": "osm",
    "osm_type": "pharmacy",
    "source_key": "osm-n4905038291",
-   "prominence_rank": 100
+   "prominence_rank": 113
   },
   {
    "id": "prov-lst-0207",
@@ -5818,11 +6267,11 @@
    "source": "osm",
    "osm_type": "dentist",
    "source_key": "osm-n4905039065",
-   "prominence_rank": 100
+   "prominence_rank": 113
   },
   {
    "id": "prov-lst-0208",
-   "building_id": "msbf-1072",
+   "building_id": "osm-215752436",
    "name": "Garden Renovations",
    "category": "shopping",
    "subcategory": "retail",
@@ -5843,7 +6292,7 @@
    "source": "osm",
    "osm_type": "garden_centre",
    "source_key": "osm-n4905040844",
-   "prominence_rank": 203
+   "prominence_rank": 309
   },
   {
    "id": "prov-lst-0209",
@@ -5869,7 +6318,7 @@
    "osm_type": "alcohol",
    "enriched": true,
    "source_key": "osm-n4905042093",
-   "prominence_rank": 191
+   "prominence_rank": 240
   },
   {
    "id": "prov-lst-0210",
@@ -5894,7 +6343,7 @@
    "source": "osm",
    "osm_type": "pet",
    "source_key": "osm-n4905045066",
-   "prominence_rank": 214
+   "prominence_rank": 280
   },
   {
    "id": "prov-lst-0211",
@@ -5919,7 +6368,7 @@
    "source": "osm",
    "osm_type": "toys",
    "source_key": "osm-n4905048252",
-   "prominence_rank": 110
+   "prominence_rank": 111
   },
   {
    "id": "prov-lst-0212",
@@ -5945,11 +6394,37 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n4905048367",
-   "prominence_rank": 7
+   "prominence_rank": 12
+  },
+  {
+   "id": "prov-lst-0406",
+   "building_id": "osm-170530818",
+   "name": "Harbor Lounge",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "359 Commercial Street",
+   "phone": "508-413-9527",
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A waterfront cocktail lounge with leather couches and wraparound windows looking over the harbor, beach and pier, serving cocktails, martinis, wine and beer. Veteran- and LGBTQIA+-owned.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "bar",
+   "enriched": true,
+   "source_key": "osm-n4905048996",
+   "prominence_rank": 20
   },
   {
    "id": "prov-lst-0213",
-   "building_id": "msbf-532",
+   "building_id": "osm-215751743",
    "name": "French Patisserie Cafe Provincetown",
    "category": "dining",
    "subcategory": "cafes",
@@ -5970,11 +6445,11 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n4905050161",
-   "prominence_rank": 81
+   "prominence_rank": 133
   },
   {
    "id": "prov-lst-0214",
-   "building_id": "msbf-2581",
+   "building_id": "msbf-532",
    "name": "ScottCakes",
    "category": "shopping",
    "subcategory": "retail",
@@ -5996,7 +6471,7 @@
    "osm_type": "bakery",
    "enriched": true,
    "source_key": "osm-n4905050162",
-   "prominence_rank": 31
+   "prominence_rank": 87
   },
   {
    "id": "prov-lst-0215",
@@ -6051,7 +6526,7 @@
    "osm_type": "interior_decoration",
    "enriched": true,
    "source_key": "osm-n4905050990",
-   "prominence_rank": 150
+   "prominence_rank": 163
   },
   {
    "id": "prov-lst-0216",
@@ -6076,7 +6551,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4905051109",
-   "prominence_rank": 81
+   "prominence_rank": 87
   },
   {
    "id": "prov-lst-0217",
@@ -6132,7 +6607,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4905054766",
-   "prominence_rank": 10
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0219",
@@ -6157,7 +6632,7 @@
    "source": "osm",
    "osm_type": "kindergarten",
    "source_key": "osm-n4905055003",
-   "prominence_rank": 29
+   "prominence_rank": 31
   },
   {
    "id": "prov-lst-0220",
@@ -6182,7 +6657,7 @@
    "source": "osm",
    "osm_type": "pharmacy",
    "source_key": "osm-n4905055605",
-   "prominence_rank": 11
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0221",
@@ -6207,7 +6682,32 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4905056795",
-   "prominence_rank": 148
+   "prominence_rank": 172
+  },
+  {
+   "id": "prov-lst-0407",
+   "building_id": "osm-215753776",
+   "name": "Provincetown Laundromat",
+   "category": "services",
+   "subcategory": "cleaners",
+   "address": "70 Shank Painter Road",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "laundry",
+   "source_key": "osm-n4905057091",
+   "prominence_rank": 120
   },
   {
    "id": "prov-lst-0222",
@@ -6232,11 +6732,11 @@
    "source": "osm",
    "osm_type": "bicycle",
    "source_key": "osm-n4905058172",
-   "prominence_rank": 148
+   "prominence_rank": 172
   },
   {
    "id": "prov-lst-0223",
-   "building_id": "msbf-27",
+   "building_id": "osm-215752799",
    "name": "Perry's",
    "category": "shopping",
    "subcategory": "retail",
@@ -6257,11 +6757,11 @@
    "source": "osm",
    "osm_type": "alcohol",
    "source_key": "osm-n4905060505",
-   "prominence_rank": 155
+   "prominence_rank": 258
   },
   {
    "id": "prov-lst-0224",
-   "building_id": "msbf-2471",
+   "building_id": "osm-170530792",
    "name": "Connie's Bakery",
    "category": "shopping",
    "subcategory": "retail",
@@ -6282,11 +6782,11 @@
    "source": "osm",
    "osm_type": "bakery",
    "source_key": "osm-n4905060638",
-   "prominence_rank": 15
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0225",
-   "building_id": "msbf-383",
+   "building_id": "osm-170530792",
    "name": "Human Rights Campaign Store",
    "category": "shopping",
    "subcategory": "retail",
@@ -6308,7 +6808,66 @@
    "osm_type": "general",
    "enriched": true,
    "source_key": "osm-n4905061999",
-   "prominence_rank": 40
+   "prominence_rank": 26
+  },
+  {
+   "id": "prov-lst-0408",
+   "building_id": "osm-215752232",
+   "name": "Aqua Bar",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "207 Commercial Street",
+   "phone": "774-593-5106",
+   "website": "https://aquabarptown.com",
+   "logo": null,
+   "hours": {
+    "sunday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "monday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "22:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "Harbor deck",
+    "Food-hall vendors",
+    "No reservations"
+   ],
+   "tags": [],
+   "description": "A harborfront bar inside the Aquarium Marketplace, with a harbor-view deck and seven food vendors under the same roof. No reservations; a place to watch the sunset.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "bar",
+   "enriched": true,
+   "source_key": "osm-n4905062000",
+   "prominence_rank": 307
   },
   {
    "id": "prov-lst-0226",
@@ -6339,11 +6898,11 @@
    "osm_type": "association",
    "enriched": true,
    "source_key": "osm-n4905062844",
-   "prominence_rank": 132
+   "prominence_rank": 143
   },
   {
    "id": "prov-lst-0227",
-   "building_id": "msbf-1080",
+   "building_id": "osm-164023889",
    "name": "B.Xclusive",
    "category": "shopping",
    "subcategory": "retail",
@@ -6365,7 +6924,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n4905064862",
-   "prominence_rank": 20
+   "prominence_rank": 142
   },
   {
    "id": "prov-lst-0228",
@@ -6390,7 +6949,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-n4906840129",
-   "prominence_rank": 29
+   "prominence_rank": 31
   },
   {
    "id": "prov-lst-0229",
@@ -6416,11 +6975,11 @@
    "osm_type": "social_facility",
    "enriched": true,
    "source_key": "osm-n4906841829",
-   "prominence_rank": 65
+   "prominence_rank": 62
   },
   {
    "id": "prov-lst-0230",
-   "building_id": "msbf-182",
+   "building_id": "osm-215752229",
    "name": "ASGCC",
    "category": "community",
    "subcategory": "organizations",
@@ -6441,7 +7000,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-n4906842431",
-   "prominence_rank": 222
+   "prominence_rank": 237
   },
   {
    "id": "prov-lst-0231",
@@ -6466,7 +7025,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-n4906843916",
-   "prominence_rank": 2
+   "prominence_rank": 4
   },
   {
    "id": "prov-lst-0232",
@@ -6492,7 +7051,7 @@
    "osm_type": "social_facility",
    "enriched": true,
    "source_key": "osm-n4906846133",
-   "prominence_rank": 166
+   "prominence_rank": 189
   },
   {
    "id": "prov-lst-0233",
@@ -6517,7 +7076,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-n4930668628",
-   "prominence_rank": 57
+   "prominence_rank": 74
   },
   {
    "id": "prov-lst-0234",
@@ -6542,11 +7101,11 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5556931153",
-   "prominence_rank": 62
+   "prominence_rank": 56
   },
   {
    "id": "prov-lst-0235",
-   "building_id": "msbf-2182",
+   "building_id": "osm-595909887",
    "name": "Julie Heller Gallery",
    "category": "arts",
    "subcategory": "galleries",
@@ -6567,7 +7126,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5556931154",
-   "prominence_rank": 13
+   "prominence_rank": 110
   },
   {
    "id": "prov-lst-0236",
@@ -6592,7 +7151,32 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5556931155",
-   "prominence_rank": 204
+   "prominence_rank": 259
+  },
+  {
+   "id": "prov-lst-0409",
+   "building_id": "osm-215752725",
+   "name": "Sal's Place",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "99 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "restaurant",
+   "source_key": "osm-n5617810046",
+   "prominence_rank": 295
   },
   {
    "id": "prov-lst-0237",
@@ -6617,11 +7201,11 @@
    "source": "osm",
    "osm_type": "cannabis",
    "source_key": "osm-n5631043003",
-   "prominence_rank": 46
+   "prominence_rank": 44
   },
   {
    "id": "prov-lst-0238",
-   "building_id": "msbf-544",
+   "building_id": "osm-164024903",
    "name": "Hennep",
    "category": "shopping",
    "subcategory": "retail",
@@ -6675,11 +7259,11 @@
    "osm_type": "cannabis",
    "enriched": true,
    "source_key": "osm-n5631044225",
-   "prominence_rank": 38
+   "prominence_rank": 71
   },
   {
    "id": "prov-lst-0239",
-   "building_id": "msbf-659",
+   "building_id": "osm-1234936263",
    "name": "Provincetown Bookshop",
    "category": "shopping",
    "subcategory": "retail",
@@ -6700,7 +7284,7 @@
    "source": "osm",
    "osm_type": "books",
    "source_key": "osm-n5631044879",
-   "prominence_rank": 32
+   "prominence_rank": 43
   },
   {
    "id": "prov-lst-0240",
@@ -6725,7 +7309,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5642785018",
-   "prominence_rank": 126
+   "prominence_rank": 138
   },
   {
    "id": "prov-lst-0241",
@@ -6750,7 +7334,7 @@
    "source": "osm",
    "osm_type": "bank",
    "source_key": "osm-n5642785019",
-   "prominence_rank": 11
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0242",
@@ -6775,7 +7359,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-n5642792422",
-   "prominence_rank": 65
+   "prominence_rank": 62
   },
   {
    "id": "prov-lst-0243",
@@ -6800,7 +7384,7 @@
    "source": "osm",
    "osm_type": "second_hand",
    "source_key": "osm-n5642792423",
-   "prominence_rank": 65
+   "prominence_rank": 62
   },
   {
    "id": "prov-lst-0244",
@@ -6825,7 +7409,7 @@
    "source": "osm",
    "osm_type": "beauty",
    "source_key": "osm-n5642792424",
-   "prominence_rank": 199
+   "prominence_rank": 253
   },
   {
    "id": "prov-lst-0245",
@@ -6850,11 +7434,11 @@
    "source": "osm",
    "osm_type": "gas",
    "source_key": "osm-n5642792425",
-   "prominence_rank": 152
+   "prominence_rank": 165
   },
   {
    "id": "prov-lst-0246",
-   "building_id": "msbf-833",
+   "building_id": "osm-215752744",
    "name": "Moument Barber Shop",
    "category": "services",
    "subcategory": "beauty",
@@ -6875,7 +7459,32 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-n5642839551",
-   "prominence_rank": 135
+   "prominence_rank": 212
+  },
+  {
+   "id": "prov-lst-0410",
+   "building_id": "osm-215752733",
+   "name": "Relish Bakery & Sandwich Shop",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "93 Commercial Street",
+   "phone": null,
+   "website": "http://www.ptownrelish.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "cafe",
+   "source_key": "osm-n5644778146",
+   "prominence_rank": 196
   },
   {
    "id": "prov-lst-0247",
@@ -6900,7 +7509,7 @@
    "source": "osm",
    "osm_type": "charity",
    "source_key": "osm-n5644778163",
-   "prominence_rank": 73
+   "prominence_rank": 75
   },
   {
    "id": "prov-lst-0248",
@@ -6925,11 +7534,11 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5646355941",
-   "prominence_rank": 102
+   "prominence_rank": 100
   },
   {
    "id": "prov-lst-0249",
-   "building_id": "msbf-2592",
+   "building_id": "osm-215752626",
    "name": "Loveland Bohemian Marine",
    "category": "shopping",
    "subcategory": "retail",
@@ -6950,7 +7559,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5646355942",
-   "prominence_rank": 30
+   "prominence_rank": 199
   },
   {
    "id": "prov-lst-0250",
@@ -6975,11 +7584,11 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5646355943",
-   "prominence_rank": 30
+   "prominence_rank": 90
   },
   {
    "id": "prov-lst-0251",
-   "building_id": "msbf-1910",
+   "building_id": "osm-215752576",
    "name": "Ball Sportswear",
    "category": "shopping",
    "subcategory": "retail",
@@ -7000,11 +7609,11 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5646355944",
-   "prominence_rank": 36
+   "prominence_rank": 291
   },
   {
    "id": "prov-lst-0252",
-   "building_id": "msbf-1910",
+   "building_id": "msbf-1356",
    "name": "Pop + Dutch",
    "category": "dining",
    "subcategory": "cafes",
@@ -7025,11 +7634,11 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n5646355945",
-   "prominence_rank": 36
+   "prominence_rank": 153
   },
   {
    "id": "prov-lst-0253",
-   "building_id": "msbf-1664",
+   "building_id": "osm-215752517",
    "name": "Monkey Bar",
    "category": "dining",
    "subcategory": "bars",
@@ -7050,7 +7659,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n5646355947",
-   "prominence_rank": 221
+   "prominence_rank": 276
   },
   {
    "id": "prov-lst-0254",
@@ -7075,7 +7684,7 @@
    "source": "osm",
    "osm_type": "beauty",
    "source_key": "osm-n5646355949",
-   "prominence_rank": 129
+   "prominence_rank": 191
   },
   {
    "id": "prov-lst-0255",
@@ -7101,7 +7710,7 @@
    "osm_type": "antiques",
    "enriched": true,
    "source_key": "osm-n5646355952",
-   "prominence_rank": 165
+   "prominence_rank": 256
   },
   {
    "id": "prov-lst-0256",
@@ -7126,7 +7735,7 @@
    "source": "osm",
    "osm_type": "beauty",
    "source_key": "osm-n5646355953",
-   "prominence_rank": 133
+   "prominence_rank": 132
   },
   {
    "id": "prov-lst-0257",
@@ -7151,11 +7760,11 @@
    "source": "osm",
    "osm_type": "massage",
    "source_key": "osm-n5646355954",
-   "prominence_rank": 133
+   "prominence_rank": 132
   },
   {
    "id": "prov-lst-0258",
-   "building_id": "msbf-2007",
+   "building_id": "osm-215752317",
    "name": "Bay Cafe",
    "category": "dining",
    "subcategory": "restaurants",
@@ -7206,11 +7815,11 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n5646355956",
-   "prominence_rank": 165
+   "prominence_rank": 251
   },
   {
    "id": "prov-lst-0259",
-   "building_id": "msbf-1532",
+   "building_id": "osm-215752314",
    "name": "Jimmy's Hideaway",
    "category": "dining",
    "subcategory": "restaurants",
@@ -7231,7 +7840,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5646355961",
-   "prominence_rank": 61
+   "prominence_rank": 118
   },
   {
    "id": "prov-lst-0260",
@@ -7284,7 +7893,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n5646355965",
-   "prominence_rank": 137
+   "prominence_rank": 149
   },
   {
    "id": "prov-lst-0261",
@@ -7309,7 +7918,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5646355966",
-   "prominence_rank": 171
+   "prominence_rank": 201
   },
   {
    "id": "prov-lst-0262",
@@ -7334,7 +7943,7 @@
    "source": "osm",
    "osm_type": "wine",
    "source_key": "osm-n5646355968",
-   "prominence_rank": 34
+   "prominence_rank": 187
   },
   {
    "id": "prov-lst-0263",
@@ -7359,7 +7968,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5646355969",
-   "prominence_rank": 162
+   "prominence_rank": 114
   },
   {
    "id": "prov-lst-0264",
@@ -7384,11 +7993,11 @@
    "source": "osm",
    "osm_type": "houseware",
    "source_key": "osm-n5646355970",
-   "prominence_rank": 86
+   "prominence_rank": 147
   },
   {
    "id": "prov-lst-0265",
-   "building_id": "msbf-1269",
+   "building_id": "osm-170530805",
    "name": "The Club (a Lea Delaria Joint)",
    "category": "dining",
    "subcategory": "bars",
@@ -7409,7 +8018,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n5646355972",
-   "prominence_rank": 86
+   "prominence_rank": 242
   },
   {
    "id": "prov-lst-0266",
@@ -7435,7 +8044,7 @@
    "osm_type": "gift",
    "enriched": true,
    "source_key": "osm-n5648405530",
-   "prominence_rank": 112
+   "prominence_rank": 116
   },
   {
    "id": "prov-lst-0267",
@@ -7460,7 +8069,7 @@
    "source": "osm",
    "osm_type": "car_repair",
    "source_key": "osm-n5648421557",
-   "prominence_rank": 219
+   "prominence_rank": 290
   },
   {
    "id": "prov-lst-0268",
@@ -7485,11 +8094,11 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n5649883323",
-   "prominence_rank": 6
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0269",
-   "building_id": "msbf-2471",
+   "building_id": "osm-170530792",
    "name": "Big Daddy's Burritos",
    "category": "dining",
    "subcategory": "restaurants",
@@ -7510,11 +8119,11 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-n5650434269",
-   "prominence_rank": 15
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0270",
-   "building_id": "msbf-2471",
+   "building_id": "osm-170530792",
    "name": "I Dream of Gelato",
    "category": "dining",
    "subcategory": "desserts",
@@ -7535,11 +8144,11 @@
    "source": "osm",
    "osm_type": "ice_cream",
    "source_key": "osm-n5650434270",
-   "prominence_rank": 15
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0271",
-   "building_id": "msbf-2471",
+   "building_id": "osm-170530792",
    "name": "Fortune Cookie",
    "category": "dining",
    "subcategory": "restaurants",
@@ -7560,7 +8169,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-n5650434272",
-   "prominence_rank": 15
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0272",
@@ -7586,7 +8195,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n5650434274",
-   "prominence_rank": 40
+   "prominence_rank": 57
   },
   {
    "id": "prov-lst-0273",
@@ -7611,7 +8220,7 @@
    "source": "osm",
    "osm_type": "biergarten",
    "source_key": "osm-n5650434275",
-   "prominence_rank": 33
+   "prominence_rank": 32
   },
   {
    "id": "prov-lst-0274",
@@ -7636,7 +8245,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5650434276",
-   "prominence_rank": 121
+   "prominence_rank": 124
   },
   {
    "id": "prov-lst-0275",
@@ -7661,7 +8270,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-n5650434277",
-   "prominence_rank": 121
+   "prominence_rank": 124
   },
   {
    "id": "prov-lst-0276",
@@ -7686,7 +8295,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5650434279",
-   "prominence_rank": 33
+   "prominence_rank": 32
   },
   {
    "id": "prov-lst-0277",
@@ -7711,7 +8320,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5650434280",
-   "prominence_rank": 26
+   "prominence_rank": 29
   },
   {
    "id": "prov-lst-0278",
@@ -7736,7 +8345,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5650483060",
-   "prominence_rank": 5
+   "prominence_rank": 10
   },
   {
    "id": "prov-lst-0279",
@@ -7762,11 +8371,11 @@
    "osm_type": "social_facility",
    "enriched": true,
    "source_key": "osm-n5652635470",
-   "prominence_rank": 8
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0280",
-   "building_id": "msbf-2471",
+   "building_id": "osm-164024028",
    "name": "Provincetown Fudge Factory",
    "category": "dining",
    "subcategory": "desserts",
@@ -7793,7 +8402,7 @@
    "osm_type": "confectionery",
    "enriched": true,
    "source_key": "osm-n5652635477",
-   "prominence_rank": 15
+   "prominence_rank": 160
   },
   {
    "id": "prov-lst-0281",
@@ -7819,7 +8428,32 @@
    "osm_type": "massage",
    "enriched": true,
    "source_key": "osm-n5652635478",
-   "prominence_rank": 128
+   "prominence_rank": 140
+  },
+  {
+   "id": "prov-lst-0411",
+   "building_id": "osm-170602334",
+   "name": "Dive Bar",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "247 Commercial Street",
+   "phone": null,
+   "website": "https://onlyatthecrown.com/venue/12",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "bar",
+   "source_key": "osm-n5652635482",
+   "prominence_rank": 16
   },
   {
    "id": "prov-lst-0282",
@@ -7844,11 +8478,11 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5652635483",
-   "prominence_rank": 13
+   "prominence_rank": 180
   },
   {
    "id": "prov-lst-0283",
-   "building_id": "msbf-659",
+   "building_id": "osm-1234936263",
    "name": "Bochick",
    "category": "shopping",
    "subcategory": "retail",
@@ -7869,11 +8503,11 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5652635484",
-   "prominence_rank": 32
+   "prominence_rank": 43
   },
   {
    "id": "prov-lst-0284",
-   "building_id": "msbf-659",
+   "building_id": "osm-1234936263",
    "name": "House of La Rue",
    "category": "shopping",
    "subcategory": "retail",
@@ -7894,7 +8528,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5652635485",
-   "prominence_rank": 32
+   "prominence_rank": 43
   },
   {
    "id": "prov-lst-0285",
@@ -7950,11 +8584,11 @@
    "osm_type": "ticket",
    "enriched": true,
    "source_key": "osm-n5652635486",
-   "prominence_rank": 13
+   "prominence_rank": 180
   },
   {
    "id": "prov-lst-0286",
-   "building_id": "msbf-659",
+   "building_id": "osm-215752228",
    "name": "Tim's Used Books",
    "category": "shopping",
    "subcategory": "retail",
@@ -7975,11 +8609,86 @@
    "source": "osm",
    "osm_type": "books",
    "source_key": "osm-n5652635487",
-   "prominence_rank": 32
+   "prominence_rank": 170
+  },
+  {
+   "id": "prov-lst-0412",
+   "building_id": "osm-170602343",
+   "name": "Hocus Pocus",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "277 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "gift",
+   "source_key": "osm-n5653789972",
+   "prominence_rank": 220
+  },
+  {
+   "id": "prov-lst-0413",
+   "building_id": "osm-170602343",
+   "name": "George's Pizza",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "257 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "restaurant",
+   "source_key": "osm-n5653789973",
+   "prominence_rank": 220
+  },
+  {
+   "id": "prov-lst-0414",
+   "building_id": "osm-170602369",
+   "name": "Board Stiff",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "273 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "sports",
+   "source_key": "osm-n5653789974",
+   "prominence_rank": 245
   },
   {
    "id": "prov-lst-0287",
-   "building_id": "msbf-610",
+   "building_id": "osm-170602341",
    "name": "Waydowntown",
    "category": "dining",
    "subcategory": "restaurants",
@@ -8000,11 +8709,11 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5653789975",
-   "prominence_rank": 48
+   "prominence_rank": 93
   },
   {
    "id": "prov-lst-0288",
-   "building_id": "msbf-610",
+   "building_id": "osm-170602350",
    "name": "Life at the Beach",
    "category": "shopping",
    "subcategory": "retail",
@@ -8025,7 +8734,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5653789976",
-   "prominence_rank": 48
+   "prominence_rank": 275
   },
   {
    "id": "prov-lst-0289",
@@ -8050,7 +8759,7 @@
    "source": "osm",
    "osm_type": "leather",
    "source_key": "osm-n5653789977",
-   "prominence_rank": 48
+   "prominence_rank": 229
   },
   {
    "id": "prov-lst-0290",
@@ -8075,11 +8784,11 @@
    "source": "osm",
    "osm_type": "tattoo",
    "source_key": "osm-n5657197536",
-   "prominence_rank": 179
+   "prominence_rank": 221
   },
   {
    "id": "prov-lst-0291",
-   "building_id": "msbf-1080",
+   "building_id": "msbf-674",
    "name": "Shop Therapy",
    "category": "shopping",
    "subcategory": "retail",
@@ -8100,7 +8809,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5657197537",
-   "prominence_rank": 20
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0292",
@@ -8125,7 +8834,7 @@
    "source": "osm",
    "osm_type": "massage",
    "source_key": "osm-n5657197538",
-   "prominence_rank": 23
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0293",
@@ -8150,7 +8859,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5657197539",
-   "prominence_rank": 8
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0294",
@@ -8175,7 +8884,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5657197541",
-   "prominence_rank": 23
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0295",
@@ -8200,11 +8909,11 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5657197542",
-   "prominence_rank": 8
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0296",
-   "building_id": "msbf-1723",
+   "building_id": "osm-170529479",
    "name": "Kenneth Scott",
    "category": "shopping",
    "subcategory": "retail",
@@ -8225,11 +8934,11 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5676357576",
-   "prominence_rank": 10
+   "prominence_rank": 108
   },
   {
    "id": "prov-lst-0297",
-   "building_id": "msbf-1723",
+   "building_id": "osm-170529479",
    "name": "Rosie's Mexican Cantina",
    "category": "dining",
    "subcategory": "restaurants",
@@ -8250,11 +8959,11 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5676357577",
-   "prominence_rank": 10
+   "prominence_rank": 108
   },
   {
    "id": "prov-lst-0298",
-   "building_id": "msbf-2240",
+   "building_id": "osm-215751907",
    "name": "Bliss",
    "category": "dining",
    "subcategory": "desserts",
@@ -8275,7 +8984,7 @@
    "source": "osm",
    "osm_type": "ice_cream",
    "source_key": "osm-n5676357578",
-   "prominence_rank": 138
+   "prominence_rank": 232
   },
   {
    "id": "prov-lst-0299",
@@ -8300,7 +9009,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5676382381",
-   "prominence_rank": 113
+   "prominence_rank": 119
   },
   {
    "id": "prov-lst-0300",
@@ -8326,7 +9035,7 @@
    "osm_type": "shoes",
    "enriched": true,
    "source_key": "osm-n5676382382",
-   "prominence_rank": 177
+   "prominence_rank": 207
   },
   {
    "id": "prov-lst-0301",
@@ -8351,7 +9060,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5676382383",
-   "prominence_rank": 175
+   "prominence_rank": 204
   },
   {
    "id": "prov-lst-0302",
@@ -8376,7 +9085,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5676382385",
-   "prominence_rank": 202
+   "prominence_rank": 255
   },
   {
    "id": "prov-lst-0303",
@@ -8401,7 +9110,7 @@
    "source": "osm",
    "osm_type": "convenience",
    "source_key": "osm-n5676382386",
-   "prominence_rank": 22
+   "prominence_rank": 23
   },
   {
    "id": "prov-lst-0304",
@@ -8426,7 +9135,7 @@
    "source": "osm",
    "osm_type": "jewelry",
    "source_key": "osm-n5676382387",
-   "prominence_rank": 22
+   "prominence_rank": 23
   },
   {
    "id": "prov-lst-0305",
@@ -8451,7 +9160,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5676382388",
-   "prominence_rank": 96
+   "prominence_rank": 101
   },
   {
    "id": "prov-lst-0306",
@@ -8506,7 +9215,7 @@
    "osm_type": "books",
    "enriched": true,
    "source_key": "osm-n5676382389",
-   "prominence_rank": 55
+   "prominence_rank": 47
   },
   {
    "id": "prov-lst-0307",
@@ -8531,11 +9240,11 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5676382390",
-   "prominence_rank": 16
+   "prominence_rank": 18
   },
   {
    "id": "prov-lst-0308",
-   "building_id": "msbf-1722",
+   "building_id": "osm-170530773",
    "name": "Sarah Jessica Fine Arts",
    "category": "arts",
    "subcategory": "galleries",
@@ -8556,7 +9265,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5676382391",
-   "prominence_rank": 14
+   "prominence_rank": 151
   },
   {
    "id": "prov-lst-0309",
@@ -8581,7 +9290,7 @@
    "source": "osm",
    "osm_type": "art",
    "source_key": "osm-n5676382392",
-   "prominence_rank": 14
+   "prominence_rank": 36
   },
   {
    "id": "prov-lst-0310",
@@ -8606,7 +9315,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5676382393",
-   "prominence_rank": 16
+   "prominence_rank": 18
   },
   {
    "id": "prov-lst-0311",
@@ -8631,7 +9340,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5678229376",
-   "prominence_rank": 6
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0312",
@@ -8656,7 +9365,7 @@
    "source": "osm",
    "osm_type": "association",
    "source_key": "osm-n5691773901",
-   "prominence_rank": 97
+   "prominence_rank": 95
   },
   {
    "id": "prov-lst-0313",
@@ -8681,11 +9390,11 @@
    "source": "osm",
    "osm_type": "beauty",
    "source_key": "osm-n5691773902",
-   "prominence_rank": 97
+   "prominence_rank": 95
   },
   {
    "id": "prov-lst-0314",
-   "building_id": "msbf-1532",
+   "building_id": "osm-215752314",
    "name": "Scott Dinsmore Antiques",
    "category": "shopping",
    "subcategory": "retail",
@@ -8706,7 +9415,7 @@
    "source": "osm",
    "osm_type": "antiques",
    "source_key": "osm-n5702992079",
-   "prominence_rank": 61
+   "prominence_rank": 118
   },
   {
    "id": "prov-lst-0315",
@@ -8731,7 +9440,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326907",
-   "prominence_rank": 53
+   "prominence_rank": 77
   },
   {
    "id": "prov-lst-0316",
@@ -8756,7 +9465,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326908",
-   "prominence_rank": 118
+   "prominence_rank": 123
   },
   {
    "id": "prov-lst-0317",
@@ -8781,7 +9490,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326910",
-   "prominence_rank": 37
+   "prominence_rank": 35
   },
   {
    "id": "prov-lst-0318",
@@ -8806,7 +9515,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326911",
-   "prominence_rank": 37
+   "prominence_rank": 35
   },
   {
    "id": "prov-lst-0319",
@@ -8861,7 +9570,7 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-n5712326913",
-   "prominence_rank": 7
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0320",
@@ -8886,7 +9595,7 @@
    "source": "osm",
    "osm_type": "frame",
    "source_key": "osm-n5712326914",
-   "prominence_rank": 7
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0321",
@@ -8911,11 +9620,11 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326915",
-   "prominence_rank": 47
+   "prominence_rank": 152
   },
   {
    "id": "prov-lst-0322",
-   "building_id": "msbf-2581",
+   "building_id": "msbf-532",
    "name": "Birdie Silkscreen Studio",
    "category": "shopping",
    "subcategory": "retail",
@@ -8936,11 +9645,11 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5712326916",
-   "prominence_rank": 31
+   "prominence_rank": 87
   },
   {
    "id": "prov-lst-0323",
-   "building_id": "msbf-659",
+   "building_id": "osm-1234936263",
    "name": "Mystic Moon Psychic Occult Shop",
    "category": "shopping",
    "subcategory": "retail",
@@ -8961,7 +9670,7 @@
    "source": "osm",
    "osm_type": "occult",
    "source_key": "osm-n5712357628",
-   "prominence_rank": 32
+   "prominence_rank": 43
   },
   {
    "id": "prov-lst-0324",
@@ -8986,7 +9695,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5712359614",
-   "prominence_rank": 33
+   "prominence_rank": 32
   },
   {
    "id": "prov-lst-0325",
@@ -9011,7 +9720,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5718537621",
-   "prominence_rank": 22
+   "prominence_rank": 23
   },
   {
    "id": "prov-lst-0326",
@@ -9036,7 +9745,57 @@
    "source": "osm",
    "osm_type": "houseware",
    "source_key": "osm-n5718537622",
-   "prominence_rank": 224
+   "prominence_rank": 297
+  },
+  {
+   "id": "prov-lst-0415",
+   "building_id": "osm-170530818",
+   "name": "Bakker Gallery",
+   "category": "arts",
+   "subcategory": "galleries",
+   "address": "359 Commercial Street",
+   "phone": null,
+   "website": "https://www.bakkerproject.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "gallery",
+   "source_key": "osm-n5718537624",
+   "prominence_rank": 20
+  },
+  {
+   "id": "prov-lst-0416",
+   "building_id": "osm-170530818",
+   "name": "Bill Evaul Studios & Gallery",
+   "category": "arts",
+   "subcategory": "galleries",
+   "address": "359 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "gallery",
+   "source_key": "osm-n5718537625",
+   "prominence_rank": 20
   },
   {
    "id": "prov-lst-0327",
@@ -9067,7 +9826,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-n6508895790",
-   "prominence_rank": 109
+   "prominence_rank": 125
   },
   {
    "id": "prov-lst-0328",
@@ -9092,7 +9851,7 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-n6508947039",
-   "prominence_rank": 36
+   "prominence_rank": 68
   },
   {
    "id": "prov-lst-0329",
@@ -9117,11 +9876,11 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n6508947040",
-   "prominence_rank": 71
+   "prominence_rank": 236
   },
   {
    "id": "prov-lst-0330",
-   "building_id": "msbf-864",
+   "building_id": "osm-592203452",
    "name": "Respoke Espadrilles",
    "category": "shopping",
    "subcategory": "retail",
@@ -9142,7 +9901,7 @@
    "source": "osm",
    "osm_type": "shoes",
    "source_key": "osm-n6511698246",
-   "prominence_rank": 71
+   "prominence_rank": 188
   },
   {
    "id": "prov-lst-0331",
@@ -9167,7 +9926,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n6680366067",
-   "prominence_rank": 14
+   "prominence_rank": 36
   },
   {
    "id": "prov-lst-0332",
@@ -9192,7 +9951,32 @@
    "source": "osm",
    "osm_type": "cannabis",
    "source_key": "osm-n7179642645",
-   "prominence_rank": 18
+   "prominence_rank": 21
+  },
+  {
+   "id": "prov-lst-0393",
+   "building_id": "osm-215751961",
+   "name": "Provincetown Dental Associates",
+   "category": "services",
+   "subcategory": "health",
+   "address": "86 Harry Kemp Way",
+   "phone": "+1 508-487-9936",
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "dentist",
+   "source_key": "osm-n11057070509",
+   "prominence_rank": 127
   },
   {
    "id": "prov-lst-0116",
@@ -9251,7 +10035,7 @@
    "osm_type": "cannabis",
    "enriched": true,
    "source_key": "osm-n11392407235",
-   "prominence_rank": 19
+   "prominence_rank": 22
   },
   {
    "id": "prov-lst-0117",
@@ -9276,7 +10060,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n11463013048",
-   "prominence_rank": 18
+   "prominence_rank": 21
   },
   {
    "id": "prov-lst-0118",
@@ -9357,7 +10141,32 @@
    "osm_type": "bank",
    "enriched": true,
    "source_key": "osm-n11463013061",
-   "prominence_rank": 182
+   "prominence_rank": 224
+  },
+  {
+   "id": "prov-lst-0394",
+   "building_id": "osm-170602334",
+   "name": "The Crown and Anchor",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "247 Commercial Street",
+   "phone": null,
+   "website": "https://onlyatthecrown.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "guest_house",
+   "source_key": "osm-n11463061383",
+   "prominence_rank": 16
   },
   {
    "id": "prov-lst-0120",
@@ -9396,7 +10205,7 @@
    "osm_type": "bar",
    "enriched": true,
    "source_key": "osm-n11463061405",
-   "prominence_rank": 3
+   "prominence_rank": 6
   },
   {
    "id": "prov-lst-0121",
@@ -9421,7 +10230,7 @@
    "source": "osm",
    "osm_type": "theatre",
    "source_key": "osm-n11463061406",
-   "prominence_rank": 26
+   "prominence_rank": 29
   },
   {
    "id": "prov-lst-0122",
@@ -9468,7 +10277,7 @@
    "osm_type": "bakery",
    "enriched": true,
    "source_key": "osm-n11463061407",
-   "prominence_rank": 8
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0123",
@@ -9493,7 +10302,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11463061414",
-   "prominence_rank": 167
+   "prominence_rank": 264
   },
   {
    "id": "prov-lst-0124",
@@ -9543,7 +10352,7 @@
    "source": "osm",
    "osm_type": "jewelry",
    "source_key": "osm-n11463061419",
-   "prominence_rank": 20
+   "prominence_rank": 210
   },
   {
    "id": "prov-lst-0126",
@@ -9602,7 +10411,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n11463061440",
-   "prominence_rank": 184
+   "prominence_rank": 227
   },
   {
    "id": "prov-lst-0127",
@@ -9627,7 +10436,32 @@
    "source": "osm",
    "osm_type": "bicycle",
    "source_key": "osm-n11463061441",
-   "prominence_rank": 225
+   "prominence_rank": 298
+  },
+  {
+   "id": "prov-lst-0395",
+   "building_id": "osm-164023885",
+   "name": "The Squealing Pig",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "335 Commercial Street",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "pub",
+   "source_key": "osm-n11463061442",
+   "prominence_rank": 168
   },
   {
    "id": "prov-lst-0128",
@@ -9652,7 +10486,7 @@
    "source": "osm",
    "osm_type": "hardware",
    "source_key": "osm-n11463061443",
-   "prominence_rank": 21
+   "prominence_rank": 46
   },
   {
    "id": "prov-lst-0129",
@@ -9678,7 +10512,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n11463061444",
-   "prominence_rank": 228
+   "prominence_rank": 300
   },
   {
    "id": "prov-lst-0130",
@@ -9703,7 +10537,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11463061466",
-   "prominence_rank": 192
+   "prominence_rank": 241
   },
   {
    "id": "prov-lst-0131",
@@ -9728,11 +10562,11 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11463061487",
-   "prominence_rank": 40
+   "prominence_rank": 57
   },
   {
    "id": "prov-lst-0132",
-   "building_id": "msbf-1108",
+   "building_id": "osm-215752487",
    "name": "Saltwater Serpent",
    "category": "shopping",
    "subcategory": "retail",
@@ -9753,7 +10587,7 @@
    "source": "osm",
    "osm_type": "yes",
    "source_key": "osm-n11463234746",
-   "prominence_rank": 129
+   "prominence_rank": 308
   },
   {
    "id": "prov-lst-0133",
@@ -9779,7 +10613,7 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-n11463239491",
-   "prominence_rank": 168
+   "prominence_rank": 195
   },
   {
    "id": "prov-lst-0134",
@@ -9804,7 +10638,32 @@
    "source": "osm",
    "osm_type": "greengrocer",
    "source_key": "osm-n11841251014",
-   "prominence_rank": 116
+   "prominence_rank": 130
+  },
+  {
+   "id": "prov-lst-0396",
+   "building_id": "osm-215753757",
+   "name": "Irie Eats",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "70 Shank Painter Road",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": "restaurant",
+   "source_key": "osm-n11841270959",
+   "prominence_rank": 305
   },
   {
    "id": "prov-lst-0135",
@@ -9829,11 +10688,11 @@
    "source": "osm",
    "osm_type": "seafood",
    "source_key": "osm-n11847282464",
-   "prominence_rank": 130
+   "prominence_rank": 141
   },
   {
    "id": "prov-lst-0136",
-   "building_id": "msbf-1810",
+   "building_id": "msbf-105",
    "name": "Joe & Son Applance",
    "category": "shopping",
    "subcategory": "retail",
@@ -9854,7 +10713,7 @@
    "source": "osm",
    "osm_type": "appliance",
    "source_key": "osm-n11847282465",
-   "prominence_rank": 119
+   "prominence_rank": 164
   },
   {
    "id": "prov-lst-0137",
@@ -9879,7 +10738,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11847282467",
-   "prominence_rank": 44
+   "prominence_rank": 41
   },
   {
    "id": "prov-lst-0138",
@@ -9904,7 +10763,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n11847282468",
-   "prominence_rank": 39
+   "prominence_rank": 33
   },
   {
    "id": "prov-lst-0139",
@@ -9929,11 +10788,11 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-n13374969820",
-   "prominence_rank": 42
+   "prominence_rank": 39
   },
   {
    "id": "prov-lst-0140",
-   "building_id": "msbf-2197",
+   "building_id": "osm-1540050779",
    "name": "Ladyslipper",
    "category": "dining",
    "subcategory": "bars",
@@ -9954,7 +10813,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n14022485317",
-   "prominence_rank": 205
+   "prominence_rank": 299
   },
   {
    "id": "prov-lst-0002",
@@ -9979,7 +10838,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-164023887",
-   "prominence_rank": 233
+   "prominence_rank": 316
   },
   {
    "id": "prov-lst-0003",
@@ -10047,7 +10906,7 @@
    "osm_type": null,
    "enriched": true,
    "source_key": "osm-164023888",
-   "prominence_rank": 4
+   "prominence_rank": 8
   },
   {
    "id": "prov-lst-0042",
@@ -10072,7 +10931,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-215751327",
-   "prominence_rank": 328
+   "prominence_rank": 427
   },
   {
    "id": "prov-lst-0070",
@@ -10127,7 +10986,7 @@
    "osm_type": null,
    "enriched": true,
    "source_key": "osm-215751980",
-   "prominence_rank": 17
+   "prominence_rank": 19
   },
   {
    "id": "prov-lst-0077",
@@ -10152,7 +11011,57 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-215752399",
-   "prominence_rank": 206
+   "prominence_rank": 265
+  },
+  {
+   "id": "prov-lst-0392",
+   "building_id": "osm-562621288",
+   "name": "Province Landing",
+   "category": "residential",
+   "subcategory": "apartments",
+   "address": "90 Shank Painter Road",
+   "phone": null,
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "unverified",
+   "source": "osm",
+   "osm_type": null,
+   "source_key": "osm-562621288",
+   "prominence_rank": 288
+  },
+  {
+   "id": "prov-lst-0417",
+   "building_id": "msbf-2313",
+   "name": "The Black Dog",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "315 Commercial Street",
+   "phone": "508-487-8776",
+   "website": "https://theblackdog.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "The Martha's Vineyard apparel and gear brand, known for its black Lab logo, in its Provincetown shop.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 56
   },
   {
    "id": "prov-lst-0345",
@@ -10177,7 +11086,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 23
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0346",
@@ -10202,7 +11111,32 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 22
+   "prominence_rank": 23
+  },
+  {
+   "id": "prov-lst-0418",
+   "building_id": "osm-1540050778",
+   "name": "Ptown Blooms",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "281 Commercial Street #2",
+   "phone": "508-514-7071",
+   "website": "https://ptownblooms.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A florist arranging seasonal and locally grown flowers, which also does events, weekly subscriptions and floral design classes.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 303
   },
   {
    "id": "prov-lst-0347",
@@ -10227,7 +11161,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 121
+   "prominence_rank": 124
   },
   {
    "id": "prov-lst-0348",
@@ -10252,7 +11186,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 110
+   "prominence_rank": 111
   },
   {
    "id": "prov-lst-0349",
@@ -10277,7 +11211,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 149
+   "prominence_rank": 159
   },
   {
    "id": "prov-lst-0350",
@@ -10302,7 +11236,32 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 14
+   "prominence_rank": 36
+  },
+  {
+   "id": "prov-lst-0419",
+   "building_id": "msbf-1269",
+   "name": "Gallery 193 Artspace",
+   "category": "arts",
+   "subcategory": "galleries",
+   "address": "193 Commercial Street, 2nd Floor",
+   "phone": "508-258-9324",
+   "website": "https://gallery193artspace.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 147
   },
   {
    "id": "prov-lst-0351",
@@ -10327,7 +11286,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 185
+   "prominence_rank": 228
   },
   {
    "id": "prov-lst-0352",
@@ -10352,7 +11311,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 629
+   "prominence_rank": 793
   },
   {
    "id": "prov-lst-0353",
@@ -10377,7 +11336,32 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 117
+   "prominence_rank": 121
+  },
+  {
+   "id": "prov-lst-0376",
+   "building_id": "osm-624547116",
+   "name": "Flyer's Boat Rentals",
+   "category": "parks",
+   "subcategory": "recreation",
+   "address": "131A Commercial Street",
+   "phone": "508-487-0898",
+   "website": "https://flyersboats.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Boat rentals on the harbor in the West End.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 669
   },
   {
    "id": "prov-lst-0354",
@@ -10407,7 +11391,61 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 230
+   "prominence_rank": 312
+  },
+  {
+   "id": "prov-lst-0420",
+   "building_id": "osm-164023883",
+   "name": "Coyote Kayaks",
+   "category": "parks",
+   "subcategory": "recreation",
+   "address": "333R Commercial Street, Unit 1",
+   "phone": "508-413-9563",
+   "website": "https://yogajointptown.com/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "19:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Kayak and paddleboard rentals and tours on the bay, plus SUP yoga and beach chair and tent rentals.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 324
   },
   {
    "id": "prov-lst-0355",
@@ -10432,7 +11470,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 4
+   "prominence_rank": 8
   },
   {
    "id": "prov-lst-0356",
@@ -10482,7 +11520,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 138
+   "prominence_rank": 749
   },
   {
    "id": "prov-lst-0357",
@@ -10507,7 +11545,119 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 22
+   "prominence_rank": 23
+  },
+  {
+   "id": "prov-lst-0421",
+   "building_id": "osm-170530792",
+   "name": "Aqua Bar",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "207 Commercial Street",
+   "phone": "774-593-5106",
+   "website": "https://aquabarptown.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A waterfront cocktail bar reached through the Aquarium Marketplace, with a deck over the harbor.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 26
+  },
+  {
+   "id": "prov-lst-0422",
+   "building_id": "osm-170530761",
+   "name": "Harbor Lounge",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "359 Commercial Street",
+   "phone": "508-413-9527",
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 216
+  },
+  {
+   "id": "prov-lst-0423",
+   "building_id": "osm-170602334",
+   "name": "Crown & Anchor",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "247 Commercial Street",
+   "phone": "508-487-1430",
+   "website": "https://onlyatthecrown.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "The Paramount Club",
+    "The Cabaret",
+    "The Vault",
+    "The Wave Bar",
+    "The Beach Club",
+    "Helltown Fitness",
+    "The Tryst (rooms)"
+   ],
+   "tags": [],
+   "description": "A big entertainment complex in the middle of Commercial Street, with dance floors, a pool deck and a cabaret stage. It calls itself Provincetown's unofficial town square.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 16
   },
   {
    "id": "prov-lst-0358",
@@ -10532,7 +11682,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 6
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0359",
@@ -10586,7 +11736,119 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 185
+   "prominence_rank": 228
+  },
+  {
+   "id": "prov-lst-0424",
+   "building_id": "osm-170530742",
+   "name": "Provincetown Public Library",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "356 Commercial Street",
+   "phone": "508-487-7094",
+   "website": "https://www.provincetownlibrary.org/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "13:00",
+     "close": "17:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [
+    {
+     "url": "photos/provincetown-public-library/01.jpg",
+     "what": "Library in Provincetown, MA",
+     "credit": "BakedintheHole, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:Library_in_Provincetown,_Massachusets.jpg",
+     "license": "CC BY 4.0",
+     "license_url": "https://creativecommons.org/licenses/by/4.0",
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Library_in_Provincetown%2C_Massachusets.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
+   "amenities": [
+    "Half-scale schooner Rose Dorothea"
+   ],
+   "tags": [
+    "landmark",
+    "library",
+    "history"
+   ],
+   "description": "The town library occupies the 1860 Center Methodist Church, with its 162-foot white spire, on Commercial Street. Inside, under the vaulted ceiling, is a half-scale model of the Rose Dorothea, the Provincetown schooner that won the 1907 Lipton Cup. The model dates from the building's years as a heritage museum.",
+   "history": [
+    {
+     "year": 1860,
+     "event": "Built as the Center Methodist Church, seating 900."
+    },
+    {
+     "year": 1958,
+     "event": "Becomes the Chrysler Art Museum."
+    },
+    {
+     "year": 1976,
+     "event": "Becomes the Provincetown Heritage Museum; the half-scale Rose Dorothea is built inside from 1977."
+    },
+    {
+     "year": 2005,
+     "event": "Reopens on April 28 as the Provincetown Public Library."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 9
+  },
+  {
+   "id": "prov-lst-0425",
+   "building_id": "osm-170530792",
+   "name": "A Salted Buttery",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "205 Commercial Street",
+   "phone": "508-487-2167",
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A breakfast-and-sandwich counter operating out of Connie's Cafe, serving breakfast sandwiches, soups and daily specials, with late-night hours for a post-bar snack.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0360",
@@ -10611,7 +11873,63 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 25
+   "prominence_rank": 28
+  },
+  {
+   "id": "prov-lst-0426",
+   "building_id": "osm-215752931",
+   "name": "Liz's Cafe",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "31 Bradford Street",
+   "phone": "508-413-9131",
+   "website": "https://lizscafeptown.com",
+   "logo": null,
+   "hours": {
+    "sunday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "monday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "21:30"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "21:30"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "Dory bar"
+   ],
+   "tags": [],
+   "description": "A comfort-food breakfast and diner spot in the West End, sharing a building with Anybody's Bar. The interior was designed by Ken Fulk.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 283
   },
   {
    "id": "prov-lst-0361",
@@ -10661,7 +11979,224 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 14
+   "prominence_rank": 36
+  },
+  {
+   "id": "prov-lst-0427",
+   "building_id": "osm-164023872",
+   "name": "Freemans",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "333 Commercial Street",
+   "phone": "508-413-9530",
+   "website": "https://freemansptown.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "17:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "17:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "17:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "17:00",
+     "close": "21:30"
+    },
+    "saturday": {
+     "open": "17:00",
+     "close": "21:30"
+    },
+    "sunday": {
+     "open": "17:00",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "An elegant coastal European restaurant in the center of town.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 962
+  },
+  {
+   "id": "prov-lst-0428",
+   "building_id": "osm-170530746",
+   "name": "Mezzeterranean",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "401 ½ Commercial Street",
+   "phone": "508-487-0600",
+   "website": "https://mezzeptown.com",
+   "logo": null,
+   "hours": {
+    "thursday": {
+     "open": "17:30",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "17:30",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "17:30",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Mediterranean small plates for dinner.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 1434
+  },
+  {
+   "id": "prov-lst-0429",
+   "building_id": "osm-170602348",
+   "name": "Tin Pan Alley",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "269 Commercial Street",
+   "phone": "508-487-1648",
+   "website": "https://tinpanalleyptown.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "tuesday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "wednesday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "thursday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "friday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "saturday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "sunday": {
+     "open": "11:30",
+     "close": "23:30"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A piano bar and restaurant with live music every night, seafood and American dishes, and a patio.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 1393
+  },
+  {
+   "id": "prov-lst-0430",
+   "building_id": "osm-170530805",
+   "name": "Ocean 193",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "193A Commercial Street",
+   "phone": "508-487-1527",
+   "website": "https://ocean193.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "16:30",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "16:30",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Seafood with waterfront dining, on the harbor side of Commercial Street.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 242
+  },
+  {
+   "id": "prov-lst-0431",
+   "building_id": "osm-215752626",
+   "name": "Sole Luna Wellness Studio",
+   "category": "services",
+   "subcategory": "health",
+   "address": "140 Commercial Street",
+   "phone": "508-292-5965",
+   "website": "https://Solelunaptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 199
   },
   {
    "id": "prov-lst-0362",
@@ -10686,7 +12221,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 132
+   "prominence_rank": 143
   },
   {
    "id": "prov-lst-0363",
@@ -10740,7 +12275,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 368
+   "prominence_rank": 480
   },
   {
    "id": "prov-lst-0364",
@@ -10794,7 +12329,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 324
+   "prominence_rank": 424
   },
   {
    "id": "prov-lst-0365",
@@ -10819,7 +12354,86 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 5
+   "prominence_rank": 10
+  },
+  {
+   "id": "prov-lst-0432",
+   "building_id": "osm-1234936263",
+   "name": "The Wellness Lab",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "244 Commercial Street",
+   "phone": "508-251-9533",
+   "website": "https://thewellnesslab.co/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "16:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A med spa offering wellness and aesthetic treatments.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 43
+  },
+  {
+   "id": "prov-lst-0433",
+   "building_id": "osm-164023883",
+   "name": "The Yoga Joint",
+   "category": "services",
+   "subcategory": "health",
+   "address": "333R Commercial Street, Unit 1",
+   "phone": "508-413-9563",
+   "website": "https://yogajointptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A bright yoga studio on the bay whose four doors open onto the harbor.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 324
   },
   {
    "id": "prov-lst-0366",
@@ -10844,7 +12458,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1731
+   "prominence_rank": 2418
   },
   {
    "id": "prov-lst-0367",
@@ -10869,7 +12483,82 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 433
+   "prominence_rank": 563
+  },
+  {
+   "id": "prov-lst-0434",
+   "building_id": "msbf-695",
+   "name": "Enzo Guest House",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "186 Commercial Street",
+   "phone": "508-487-7555",
+   "website": "https://www.local186.com/enzo-guest-house",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A guesthouse upstairs from Local 186, run by the same owners.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 149
+  },
+  {
+   "id": "prov-lst-0435",
+   "building_id": "osm-164024904",
+   "name": "The Gaslamp Bed & Breakfast",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "97 Bradford Street",
+   "phone": "508-487-6636",
+   "website": "https://thegaslampptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A boutique bed & breakfast on Bradford Street.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 358
+  },
+  {
+   "id": "prov-lst-0436",
+   "building_id": "osm-164024927",
+   "name": "Guesthouse at 7 Masonic Place",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "7 Masonic Place",
+   "phone": "508-487-0252",
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A small guesthouse in a mid-1800s building just off Commercial Street, with free parking.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 1037
   },
   {
    "id": "prov-lst-0368",
@@ -10911,7 +12600,36 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 344
+   "prominence_rank": 447
+  },
+  {
+   "id": "prov-lst-0437",
+   "building_id": "msbf-1996",
+   "name": "The Masthead Resort & Cottages",
+   "category": "hospitality",
+   "subcategory": "hotels",
+   "address": "31-41 Commercial Street",
+   "phone": "508-487-0523",
+   "website": "https://themasthead.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "private beach",
+    "harbor views",
+    "cottages"
+   ],
+   "tags": [],
+   "description": "Cottages, suites and rooms on the harbor in the West End, with open water views. The same family has run it for more than sixty years.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 854
   },
   {
    "id": "prov-lst-0369",
@@ -10939,7 +12657,89 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 455
+   "prominence_rank": 588
+  },
+  {
+   "id": "prov-lst-0438",
+   "building_id": "osm-215753373",
+   "name": "West End Inn",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "44 Commercial Street",
+   "phone": "508-487-9555",
+   "website": "https://westendinn.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "7 rooms",
+    "breakfast"
+   ],
+   "tags": [],
+   "description": "A seven-bedroom guesthouse in a mid-1800s captain's house in the West End, run by gay men and aimed mostly at men, though all are welcome. Rooms range from a small double to a loft apartment, with a shared breakfast table.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 1039
+  },
+  {
+   "id": "prov-lst-0439",
+   "building_id": "osm-215751416",
+   "name": "Angel Foods",
+   "category": "shopping",
+   "subcategory": "grocery",
+   "address": "467 Commercial Street",
+   "phone": "508-487-6666",
+   "website": "https://angelfoods.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "19:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "19:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "19:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "19:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "sunday": {
+     "open": "08:00",
+     "close": "19:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A full-service East End grocery with a large case of homemade prepared food, specialty aisles (Asian, Thai, Indian, Italian, Spanish) and catering all year.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 42
   },
   {
    "id": "prov-lst-0370",
@@ -11002,7 +12802,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 10
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0371",
@@ -11032,7 +12832,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1110
+   "prominence_rank": 1412
   },
   {
    "id": "prov-lst-0372",
@@ -11057,7 +12857,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 73
+   "prominence_rank": 75
   },
   {
    "id": "prov-lst-0373",
@@ -11082,7 +12882,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 209
+   "prominence_rank": 270
   },
   {
    "id": "prov-lst-0374",
@@ -11138,7 +12938,7 @@
    "name": "Wood End Light",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1876
+   "prominence_rank": 3023
   },
   {
    "id": "prov-lst-0375",
@@ -11185,24 +12985,260 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 220
+   "prominence_rank": 294
   },
   {
-   "id": "prov-lst-0376",
-   "building_id": "msbf-1438",
-   "name": "Flyer's Boat Rentals",
+   "id": "prov-lst-0440",
+   "building_id": "osm-170484430",
+   "name": "Province Lands Visitor Center",
    "category": "parks",
-   "subcategory": "recreation",
-   "address": "131A Commercial Street",
-   "phone": "508-487-0898",
-   "website": "https://www.flyersboats.com/",
+   "subcategory": "parks",
+   "address": "171 Race Point Road",
+   "phone": "508-487-1256",
+   "website": "https://www.nps.gov/caco/planyourvisit/visitorcenters.htm",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "observation decks (open year-round)",
+    "park store",
+    "restrooms (open year-round)",
+    "orientation film"
+   ],
+   "tags": [],
+   "description": "Cape Cod National Seashore's visitor center for the Outer Cape, set among the Province Lands dunes near Race Point. Inside are exhibits on the dunes, shipwrecks and people of the Province Lands, a park store, and the park film 'Standing Bold'; outside, a rooftop observation deck looks over the dunes to the Atlantic, Race Point Beach and the Old Harbor Life-Saving Station. The decks stay open year-round, weather permitting, and the Province Lands bike trail and Beech Forest Trail are close by.",
+   "history": [
+    {
+     "year": 1961,
+     "event": "Cape Cod National Seashore is established, taking in the Province Lands."
+    },
+    {
+     "year": 2018,
+     "event": "New exhibits with tactile and audio-described features open on June 13."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 38
+  },
+  {
+   "id": "prov-lst-0441",
+   "building_id": "osm-170403832",
+   "name": "Old Harbor Life-Saving Station",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": "193 Race Point Road",
+   "phone": "508-255-3421",
+   "website": "https://www.nps.gov/places/old-harbor-life-saving-station.htm",
+   "logo": null,
+   "hours": {
+    "friday": {
+     "open": "14:00",
+     "close": "16:00"
+    },
+    "saturday": {
+     "open": "14:00",
+     "close": "16:00"
+    },
+    "sunday": {
+     "open": "14:00",
+     "close": "16:00"
+    },
+    "monday": {
+     "open": "14:00",
+     "close": "16:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A shingled 1897 life-saving station at Race Point Beach, the last intact survivor of the stations that once lined Cape Cod's outer shore. It was barged here from Chatham in 1977 and is furnished as it would have looked around 1900, with the surfboats and rescue gear the crews used on the Atlantic side. Rangers and volunteers open it on summer afternoons and stage breeches-buoy rescue drills on Thursday evenings in July and August.",
+   "history": [
+    {
+     "year": 1897,
+     "event": "Built in Chatham for the U.S. Life-Saving Service, near Chatham Harbor on Nauset Beach."
+    },
+    {
+     "year": 1944,
+     "event": "Decommissioned by the U.S. Coast Guard in July."
+    },
+    {
+     "year": 1947,
+     "event": "Sold as surplus; used as a private residence for years afterward."
+    },
+    {
+     "year": 1977,
+     "event": "Threatened by erosion, moved by barge in November to Race Point Beach, Provincetown."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 2
+  },
+  {
+   "id": "prov-lst-0442",
+   "building_id": "osm-161377452",
+   "name": "Race Point Light",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": null,
+   "phone": "855-722-3959",
+   "website": "https://www.racepointlighthouse.org/",
+   "logo": null,
+   "hours": {
+    "sunday": {
+     "open": "10:00",
+     "close": "14:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "overnight rentals (2026: July 3 - November 23)",
+    "free tours, donations welcome"
+   ],
+   "tags": [],
+   "description": "A 45-foot cast-iron lighthouse on the far northwest tip of Cape Cod, standing alone in the dunes beyond Race Point Beach. It is reached by a roughly two-mile walk over soft sand from Race Point Beach or the Hatches Harbor lot, or by four-wheel drive with a National Seashore oversand permit. The American Lighthouse Foundation keeps the station, opens the tower for free tours on summer and fall Sundays, and rents the keeper's house and whistle house for overnight stays.",
+   "history": [
+    {
+     "year": 1816,
+     "event": "First lighthouse established at Race Point, the third light on Cape Cod."
+    },
+    {
+     "year": 1858,
+     "event": "Fitted with a fourth-order Fresnel lens."
+    },
+    {
+     "year": 1876,
+     "event": "The present iron-plate tower replaces the deteriorated original."
+    },
+    {
+     "year": 1972,
+     "event": "The light is automated."
+    },
+    {
+     "year": 1995,
+     "event": "Converted to solar power; the American Lighthouse Foundation takes on care of the station."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 3
+  },
+  {
+   "id": "prov-lst-0443",
+   "building_id": "osm-215750957",
+   "name": "Long Point Light",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": null,
+   "phone": null,
+   "website": "https://lighthousefoundation.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": "Family-owned West End boatyard in business since 1944, renting boats and running the Long Point shuttle, seal tours, sunset and day cruises, plus moorings and a boat shop.",
+   "description": "A square, 38-foot brick lighthouse at the very tip of Cape Cod, on the sand hook that encloses Provincetown Harbor. It stands where a fishing village of some 38 families lived until the 1850s, when residents floated many of their houses across the harbor to the West End. The tower is closed to the public; visitors reach it by a long walk over the West End breakwater and beach or by the seasonal water shuttle from town.",
+   "history": [
+    {
+     "year": 1827,
+     "event": "First Long Point light, a lantern on the keeper's house roof, is lit; a fishing settlement grows around it."
+    },
+    {
+     "year": 1863,
+     "event": "Union troops build the Long Point Battery, nicknamed 'Fort Useless' and 'Fort Ridiculous', which never sees action."
+    },
+    {
+     "year": 1875,
+     "event": "The present square brick tower replaces the eroding original."
+    },
+    {
+     "year": 1952,
+     "event": "The light is automated."
+    },
+    {
+     "year": 1982,
+     "event": "Converted to solar power, the second Massachusetts lighthouse to be."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 7
+  },
+  {
+   "id": "prov-lst-0444",
+   "building_id": "osm-1190830835",
+   "name": "Provincetown Police Department",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "2 Jerome Smith Road",
+   "phone": "508-487-1212",
+   "website": "https://www.provincetown-ma.gov/82/Police",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Headquarters of the town police, a two-story, roughly 13,900-square-foot station at the corner of Route 6 and Jerome Smith Road that opened in 2024. It replaced the department's long-time quarters in a former funeral home on Shank Painter Road. For emergencies call 911; the business line handles non-emergency calls.",
+   "history": [
+    {
+     "year": 2019,
+     "event": "Construction bids come in $3.9 million over budget; the extra funding fails at April Town Meeting and at a June 18 ballot."
+    },
+    {
+     "year": 2021,
+     "event": "The building committee resumes work on a revised design in late May."
+    },
+    {
+     "year": 2024,
+     "event": "The new $17 million station is dedicated with a ribbon-cutting on March 20."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 225
+  },
+  {
+   "id": "prov-lst-0445",
+   "building_id": "msbf-1733",
+   "name": "Art's Dune Tours",
+   "category": "parks",
+   "subcategory": "recreation",
+   "address": "4 Standish Street",
+   "phone": "508-487-1950",
+   "website": "https://www.artsdunetours.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Family-run guided 4x4 tours through the Province Lands dunes, including a pass by the historic Peaked Hill dune shacks where writers and artists once lived. Offers hour-long daily tours, two-hour sunset tours with an optional clambake/bonfire, and combined dune-and-water trips.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -11210,7 +13246,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 102
+   "prominence_rank": 221
   },
   {
    "id": "prov-lst-0377",
@@ -11235,7 +13271,57 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 132
+   "prominence_rank": 143
+  },
+  {
+   "id": "prov-lst-0446",
+   "building_id": "osm-288247324",
+   "name": "Cape & Coast Bank",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "237 Commercial Street",
+   "phone": "508-568-3400",
+   "website": "https://www.capeandcoastbank.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Provincetown office of Cape & Coast Bank, the Hyannis-based community bank formerly named The Cooperative Bank of Cape Cod (rooted in 1921).",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 5
+  },
+  {
+   "id": "prov-lst-0447",
+   "building_id": "osm-170602334",
+   "name": "Helltown Fitness",
+   "category": "services",
+   "subcategory": "health",
+   "address": "9 Carver Street",
+   "phone": "774-593-3998",
+   "website": "https://www.helltown.fit/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Small-group strength and conditioning classes built around kettlebells, bands and bodyweight, plus yoga and running sessions, for visitors and locals.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 16
   },
   {
    "id": "prov-lst-0378",
@@ -11260,7 +13346,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 346
+   "prominence_rank": 451
   },
   {
    "id": "prov-lst-0379",
@@ -11285,7 +13371,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 73
+   "prominence_rank": 75
   },
   {
    "id": "prov-lst-0380",
@@ -11310,7 +13396,32 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 70
+   "prominence_rank": 73
+  },
+  {
+   "id": "prov-lst-0448",
+   "building_id": "msbf-843",
+   "name": "P'Town Carts",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "148 Bradford Street",
+   "phone": "508-246-1117",
+   "website": "https://ptowncarts.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Rents street-legal low-speed electric carts with seatbelts, headlights and turn signals; each rental comes with a permit for the town's municipal lots.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 239
   }
  ]
 }
