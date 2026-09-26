@@ -59,7 +59,8 @@
       "name": "Provincetown",
       "scene": "provincetown",
       "createdAt": 1790285800621,
-      "bakedAt": 1790385533339
+      "bakedAt": 1790387427027,
+      "updatedAt": 1790387872706
     }
   ]
 }
