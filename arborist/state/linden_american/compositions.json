@@ -1,0 +1,19 @@
+{
+  "species": "linden_american",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": "oval_24",
+      "bark": {},
+      "leaves": {
+        "scale": 1.8,
+        "occupancy": 0.26
+      },
+      "deformer": {},
+      "transform": {},
+      "derivedFrom": "american_linden_a"
+    }
+  ],
+  "savedAt": 1782356402987
+}

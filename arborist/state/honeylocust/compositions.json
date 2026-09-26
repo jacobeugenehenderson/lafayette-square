@@ -1,0 +1,15 @@
+{
+  "species": "honeylocust",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": null,
+      "bark": {},
+      "leaves": {},
+      "deformer": {},
+      "transform": {}
+    }
+  ],
+  "savedAt": 1782356868495
+}

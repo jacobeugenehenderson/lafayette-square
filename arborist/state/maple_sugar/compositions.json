@@ -1,0 +1,44 @@
+{
+  "species": "maple_sugar",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": "oval_26",
+      "bark": {
+        "uvScale": [
+          6,
+          4
+        ]
+      },
+      "leaves": {
+        "scale": 2.05,
+        "occupancy": 0.51,
+        "show": true,
+        "mode": "authored",
+        "pack": "palmate"
+      },
+      "deformer": {
+        "overhead": {
+          "ruffleDepth": 0.19,
+          "hulaAmount": 0
+        }
+      },
+      "transform": {
+        "posOffset": [
+          0,
+          -0.1,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0.12217304763960307
+        ],
+        "scale": 1
+      },
+      "derivedFrom": "red_maple_a"
+    }
+  ],
+  "savedAt": 1784777075825
+}

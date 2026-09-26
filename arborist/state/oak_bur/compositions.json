@@ -1,0 +1,19 @@
+{
+  "species": "oak_bur",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": "rounded_06",
+      "bark": {},
+      "leaves": {
+        "scale": 2,
+        "occupancy": 0.5
+      },
+      "deformer": {},
+      "transform": {},
+      "derivedFrom": "white_oak_a"
+    }
+  ],
+  "savedAt": 1782356430087
+}

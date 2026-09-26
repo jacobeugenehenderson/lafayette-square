@@ -1,0 +1,15 @@
+{
+  "species": "tuliptree",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": null,
+      "bark": {},
+      "leaves": {},
+      "deformer": {},
+      "transform": {}
+    }
+  ],
+  "savedAt": 1784342875930
+}

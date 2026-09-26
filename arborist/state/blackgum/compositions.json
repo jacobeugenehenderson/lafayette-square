@@ -1,0 +1,20 @@
+{
+  "species": "blackgum",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": "pyramidal_14",
+      "bark": {},
+      "leaves": {
+        "scale": 0.75,
+        "occupancy": 0.75,
+        "show": true
+      },
+      "deformer": {},
+      "transform": {},
+      "derivedFrom": "black_gum_a"
+    }
+  ],
+  "savedAt": 1782356680057
+}

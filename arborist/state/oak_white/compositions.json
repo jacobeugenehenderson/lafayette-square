@@ -1,0 +1,20 @@
+{
+  "species": "oak_white",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": "rounded_06",
+      "bark": {},
+      "leaves": {
+        "pack": "eastern_black_oak",
+        "scale": 2,
+        "occupancy": 0.45
+      },
+      "deformer": {},
+      "transform": {},
+      "derivedFrom": "white_oak_a"
+    }
+  ],
+  "savedAt": 1782356790102
+}

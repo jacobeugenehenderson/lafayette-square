@@ -1,0 +1,18 @@
+{
+  "species": "birch",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": "common_birch_b",
+      "bark": {},
+      "leaves": {
+        "scale": 2,
+        "occupancy": 0.8
+      },
+      "deformer": {},
+      "transform": {}
+    }
+  ],
+  "savedAt": 1782347503002
+}

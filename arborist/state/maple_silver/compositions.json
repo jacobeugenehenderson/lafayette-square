@@ -1,0 +1,30 @@
+{
+  "species": "maple_silver",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": "oval_28",
+      "bark": {},
+      "leaves": {
+        "scale": 1.5
+      },
+      "deformer": {},
+      "transform": {
+        "posOffset": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": 2.5199745255917803
+      },
+      "derivedFrom": "red_maple_c"
+    }
+  ],
+  "savedAt": 1782347427570
+}

@@ -1,0 +1,32 @@
+{
+  "species": "maple_red",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Slot 1",
+      "chassis": "oval_28",
+      "bark": {
+        "ref": "Bark015"
+      },
+      "leaves": {
+        "scale": 1.5
+      },
+      "deformer": {},
+      "transform": {
+        "posOffset": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          -0.75678125,
+          0
+        ],
+        "scale": 1
+      },
+      "derivedFrom": "red_maple_c"
+    }
+  ],
+  "savedAt": 1782356359961
+}

@@ -176,17 +176,15 @@ src/data/ribbons.json.backup-*
 # Source: https://zenodo.org/records/13255198
 botanica/
 
-# Arborist operator state + caches. Curated picks live in arborist/state/;
-# .laz → .ply preview conversion cache lives in arborist/_cache/. Both
-# regenerable; never committed.
-arborist/state/
-# EXCEPT the hand-encoded species priors files — load-bearing artifacts
-# per Project: Li'l Vera Cycle 1 rev. 2 (2026-05-20). Future species
-# onboarding follows the same hand-encode → run → refine cycle.
+# Arborist state: per-species run logs + caches are regenerable, never committed.
+# EXCEPT what is AUTHORED, which cannot be regenerated: the hand-encoded species
+# priors, and the Salon compositions (the operator's picks; auto-builds land here
+# too, so each one is a reviewable diff).
 !arborist/state/
 !arborist/state/*/
 arborist/state/*/*
 !arborist/state/*/botanical-priors.json
+!arborist/state/*/compositions.json
 arborist/_cache/
 arborist/.venv/
 
