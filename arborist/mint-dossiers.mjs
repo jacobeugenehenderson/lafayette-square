@@ -134,6 +134,16 @@ for (const o of obs) {
   if (o.field === '_matched_taxon') { rec.matched.set(o.source, o.value); if (!rec.taxon) rec.taxon = o.value }
   if (o.field === '_taxon_queried' && !rec.queried) rec.queried = o.value
   rec.sources.add(o.source)
+  // AKAs (Jacob, 2026-09-25: "the scientific name WITH AKAs"). Every source's common names,
+  // each with who said it; USDA's first is the ACCEPTED common name, the one the UI leads with.
+  if (o.field === '_common_name') {
+    const n = String(o.value).trim().toLowerCase()
+    if (!rec.names) rec.names = new Map()
+    if (!rec.names.has(n)) rec.names.set(n, new Set())
+    rec.names.get(n).add(o.source)
+    if (o.source === 'usda' && !rec.accepted) rec.accepted = n
+    continue
+  }
 
   let axis = FIELD_MAP[o.field]
   if (!axis || AUTHORED.has(axis)) continue
@@ -307,9 +317,13 @@ for (const [species, rec] of bySpecies) {
     }
   }
 
+  const akas = [...(rec.names || new Map())].map(([name, src]) => ({ name, sources: [...src].sort() }))
+    .sort((a, b) => b.sources.length - a.sources.length || a.name.localeCompare(b.name))
+  const commonName = rec.accepted || akas[0]?.name || null
   const doc = {
-    key: species,
+    key: commonName || species,
     scientific: cleanTaxon(rec.taxon),
+    ...(commonName ? { commonName, akas } : {}),
     canonicalId: id,
     inventoryNames: [species],
     identityConfirmed: false,

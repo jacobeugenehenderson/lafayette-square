@@ -3521,3 +3521,392 @@
 {"species":"juniper, Chinese","source":"selectree","field":"landscape_application","value":"Screen"}
 {"species":"juniper, Chinese","source":"selectree","field":"family","value":"Cupressaceae"}
 {"species":"juniper, Chinese","source":"usda","field":"_taxon_mismatch","value":"Juncus chlorocephalus Engelm.","note":"symbol JUCH resolved to the wrong taxon; no USDA values taken for this species","unverified":"symbol wrong"}
+{"species":"Pinus rigida","source":"harvest","field":"_taxon_queried","value":"Pinus rigida","note":"FIA SPCD 126, Barnstable County"}
+{"species":"Pinus rigida","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 60 ft. 0 in.","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Dimensions","value":"Width: 30 ft. 0 in. - 50 ft. 0 in.","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Needled Evergreen"}
+{"species":"Pinus rigida","source":"ncsu","field":"Habit/Form","value":"Open","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Habit/Form","value":"Pyramidal","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Growth Rate","value":"Medium"}
+{"species":"Pinus rigida","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"Pinus rigida","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"Pinus rigida","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Pinus rigida","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Needled Evergreen"}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Color","value":"Gold/Yellow","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Color","value":"Green","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Type","value":"Needles","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Type","value":"Simple","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Arrangement","value":"Other/more complex"}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Shape","value":"Acicular"}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Margin","value":"Serrate"}
+{"species":"Pinus rigida","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"Pinus rigida","source":"ncsu","field":"Leaf Width","value":"3-6 inches"}
+{"species":"Pinus rigida","source":"ncsu","field":"Bark Color","value":"Light Brown","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Bark Color","value":"Red/Burgundy","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Surface/Attachment","value":"Furrowed","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Surface/Attachment","value":"Ridges","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Surface/Attachment","value":"Shredding","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Bark Plate Shape","value":"Irregular"}
+{"species":"Pinus rigida","source":"ncsu","field":"Stem Color","value":"Brown/Copper"}
+{"species":"Pinus rigida","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Pinus rigida","source":"ncsu","field":"Landscape Location","value":"Slope/Bank","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Landscape Location","value":"Woodland","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Resistance To Challenges","value":"Dry Soil","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Resistance To Challenges","value":"Poor Soil","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Resistance To Challenges","value":"Salt","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 60 ft. 0 in."}
+{"species":"Pinus rigida","source":"ncsu","field":"Dimensions","value":"Width: 30 ft. 0 in. - 50 ft. 0 in."}
+{"species":"Pinus rigida","source":"ncsu","field":"_common_name","value":"Black Pine","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"_common_name","value":"Hard Pine","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"_common_name","value":"Northern Pitch Pine","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"_common_name","value":"Pitch Pine","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"_common_name","value":"Torch Pine","multi":true}
+{"species":"Pinus rigida","source":"ncsu","field":"_common_name","value":"Yellow Pine","multi":true}
+{"species":"Pinus rigida","source":"selectree","field":"_taxon_mismatch","value":"Pinus albicaulis","note":"no species-level record for \"Pinus rigida\"; no SelecTree values taken","unverified":"no record"}
+{"species":"Pinus rigida","source":"usda","field":"_matched_taxon","value":"Pinus rigida Mill.","note":"symbol PIRI, id 15556"}
+{"species":"Pinus rigida","source":"usda","field":"_common_name","value":"pitch pine"}
+{"species":"Pinus rigida","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"Pinus rigida","source":"usda","field":"Fall Conspicuous","value":"No"}
+{"species":"Pinus rigida","source":"usda","field":"Flower Color","value":"Green"}
+{"species":"Pinus rigida","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"Pinus rigida","source":"usda","field":"Foliage Color","value":"Yellow-Green"}
+{"species":"Pinus rigida","source":"usda","field":"Foliage Porosity Summer","value":"Moderate"}
+{"species":"Pinus rigida","source":"usda","field":"Foliage Porosity Winter","value":"Moderate"}
+{"species":"Pinus rigida","source":"usda","field":"Foliage Texture","value":"Medium"}
+{"species":"Pinus rigida","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"Pinus rigida","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"Pinus rigida","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"Pinus rigida","source":"usda","field":"Growth Rate","value":"Rapid"}
+{"species":"Pinus rigida","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"20"}
+{"species":"Pinus rigida","source":"usda","field":"Height, Mature (feet)","value":"80.0"}
+{"species":"Pinus rigida","source":"usda","field":"Leaf Retention","value":"Yes"}
+{"species":"Pinus rigida","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"Pinus rigida","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"Pinus rigida","source":"usda","field":"Shade Tolerance","value":"High"}
+{"species":"Pinus rigida","source":"usda","field":"Bloom Period","value":"Spring"}
+{"species":"Quercus velutina","source":"harvest","field":"_taxon_queried","value":"Quercus velutina","note":"FIA SPCD 837, Barnstable County"}
+{"species":"Quercus velutina","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 100 ft. 0 in.","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Dimensions","value":"Width: 50 ft. 0 in. - 80 ft. 0 in.","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Plant Type","value":"Edible","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Quercus velutina","source":"ncsu","field":"Habit/Form","value":"Broad","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Habit/Form","value":"Erect","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Growth Rate","value":"Slow"}
+{"species":"Quercus velutina","source":"ncsu","field":"Maintenance","value":"Medium"}
+{"species":"Quercus velutina","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"Quercus velutina","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"Quercus velutina","source":"ncsu","field":"Fruit Value To Gardener","value":"Edible"}
+{"species":"Quercus velutina","source":"ncsu","field":"Fruit Type","value":"Nut"}
+{"species":"Quercus velutina","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"Quercus velutina","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"Quercus velutina","source":"ncsu","field":"Flower Inflorescence","value":"Catkin","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Quercus velutina","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Quercus velutina","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"Quercus velutina","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Brown/Copper","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Red/Burgundy","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"Quercus velutina","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"Quercus velutina","source":"ncsu","field":"Leaf Shape","value":"Obovate","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Leaf Shape","value":"Ovate","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Leaf Margin","value":"Lobed"}
+{"species":"Quercus velutina","source":"ncsu","field":"Hairs Present","value":"Yes"}
+{"species":"Quercus velutina","source":"ncsu","field":"Leaf Length","value":"> 6 inches"}
+{"species":"Quercus velutina","source":"ncsu","field":"Leaf Width","value":"3-6 inches"}
+{"species":"Quercus velutina","source":"ncsu","field":"Bark Color","value":"Black","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Surface/Attachment","value":"Furrowed"}
+{"species":"Quercus velutina","source":"ncsu","field":"Bark Plate Shape","value":"Irregular","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Bark Plate Shape","value":"Rectangle","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Stem Color","value":"Gray/Silver","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Quercus velutina","source":"ncsu","field":"Stem Surface","value":"Smooth (glabrous)"}
+{"species":"Quercus velutina","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Landscape Location","value":"Meadow","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Landscape Location","value":"Naturalized Area","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Landscape Location","value":"Slope/Bank","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Resistance To Challenges","value":"Black Walnut","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"Problems","value":"Problem for Horses"}
+{"species":"Quercus velutina","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 100 ft. 0 in."}
+{"species":"Quercus velutina","source":"ncsu","field":"Dimensions","value":"Width: 50 ft. 0 in. - 80 ft. 0 in."}
+{"species":"Quercus velutina","source":"ncsu","field":"_common_name","value":"Black Oak","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"_common_name","value":"Eastern Black Oak","multi":true}
+{"species":"Quercus velutina","source":"ncsu","field":"_common_name","value":"Yellow Oak","multi":true}
+{"species":"Quercus velutina","source":"selectree","field":"_taxon_mismatch","value":"Quercus acuta","note":"no species-level record for \"Quercus velutina\"; no SelecTree values taken","unverified":"no record"}
+{"species":"Quercus velutina","source":"usda","field":"_matched_taxon","value":"Quercus velutina Lam.","note":"symbol QUVE, id 70523"}
+{"species":"Quercus velutina","source":"usda","field":"_common_name","value":"black oak"}
+{"species":"Quercus velutina","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"Quercus velutina","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"Quercus velutina","source":"usda","field":"Flower Color","value":"Yellow"}
+{"species":"Quercus velutina","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"Quercus velutina","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"Quercus velutina","source":"usda","field":"Foliage Porosity Summer","value":"Moderate"}
+{"species":"Quercus velutina","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"Quercus velutina","source":"usda","field":"Foliage Texture","value":"Medium"}
+{"species":"Quercus velutina","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"Quercus velutina","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"Quercus velutina","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"Quercus velutina","source":"usda","field":"Growth Rate","value":"Moderate"}
+{"species":"Quercus velutina","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"25"}
+{"species":"Quercus velutina","source":"usda","field":"Height, Mature (feet)","value":"80.0"}
+{"species":"Quercus velutina","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"Quercus velutina","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"Quercus velutina","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"Quercus velutina","source":"usda","field":"Shade Tolerance","value":"Medium"}
+{"species":"Quercus velutina","source":"usda","field":"Bloom Period","value":"Early Spring"}
+{"species":"Quercus coccinea","source":"harvest","field":"_taxon_queried","value":"Quercus coccinea","note":"FIA SPCD 806, Barnstable County"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 80 ft. 0 in.","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Dimensions","value":"Width: 45 ft. 0 in. - 60 ft. 0 in.","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Plant Type","value":"Poisonous","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Habit/Form","value":"Ascending","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Habit/Form","value":"Open","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Habit/Form","value":"Pyramidal","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Growth Rate","value":"Rapid"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Fruit Type","value":"Nut"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Flower Color","value":"Green"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Flower Inflorescence","value":"Catkin","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Feel","value":"Glossy"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Value To Gardener","value":"Showy"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Red/Burgundy"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Shape","value":"Elliptical","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Shape","value":"Ovate","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Margin","value":"Lobed"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Leaf Width","value":"3-6 inches"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Bark Color","value":"Dark Gray","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Bark Color","value":"Light Brown","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Surface/Attachment","value":"Furrowed","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Surface/Attachment","value":"Ridges","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Stem Color","value":"Red/Burgundy","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Stem Surface","value":"Smooth (glabrous)"}
+{"species":"Quercus coccinea","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Landscape Location","value":"Meadow","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Landscape Location","value":"Naturalized Area","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Resistance To Challenges","value":"Black Walnut","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Resistance To Challenges","value":"Dry Soil","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Resistance To Challenges","value":"Heat","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Problems","value":"Frequent Disease Problems","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Problems","value":"Frequent Insect Problems","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Problems","value":"Poisonous to Humans","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Problems","value":"Problem for Horses","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 80 ft. 0 in."}
+{"species":"Quercus coccinea","source":"ncsu","field":"Dimensions","value":"Width: 45 ft. 0 in. - 60 ft. 0 in."}
+{"species":"Quercus coccinea","source":"ncsu","field":"_common_name","value":"Black oak","multi":true}
+{"species":"Quercus coccinea","source":"ncsu","field":"_common_name","value":"Scarlet oak","multi":true}
+{"species":"Quercus coccinea","source":"selectree","field":"_matched_taxon","value":"Quercus coccinea","note":"queried \"Quercus coccinea\"; tree_id 1233"}
+{"species":"Quercus coccinea","source":"selectree","field":"_common_name","value":"scarlet oak"}
+{"species":"Quercus coccinea","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"Quercus coccinea","source":"selectree","field":"bark_texture","value":"Furrowed","multi":true}
+{"species":"Quercus coccinea","source":"selectree","field":"bark_texture","value":"Scaly","multi":true}
+{"species":"Quercus coccinea","source":"selectree","field":"bark_texture","value":"Smooth","multi":true}
+{"species":"Quercus coccinea","source":"selectree","field":"bark_color","value":"Black or Dark Brown"}
+{"species":"Quercus coccinea","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"Quercus coccinea","source":"selectree","field":"leaflet_shape","value":"Oval"}
+{"species":"Quercus coccinea","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"Quercus coccinea","source":"selectree","field":"foliage_type","value":"Evergreen"}
+{"species":"Quercus coccinea","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"Quercus coccinea","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"Quercus coccinea","source":"selectree","field":"height_high","value":"70"}
+{"species":"Quercus coccinea","source":"selectree","field":"width_high","value":"50"}
+{"species":"Quercus coccinea","source":"selectree","field":"growth_rate_high","value":"36"}
+{"species":"Quercus coccinea","source":"selectree","field":"fruit_type","value":"Acorn"}
+{"species":"Quercus coccinea","source":"selectree","field":"fruit_size","value":"Medium"}
+{"species":"Quercus coccinea","source":"selectree","field":"flower_showiness","value":"Inconspicuous"}
+{"species":"Quercus coccinea","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"Quercus coccinea","source":"selectree","field":"family","value":"Fagaceae"}
+{"species":"Quercus coccinea","source":"usda","field":"_matched_taxon","value":"Quercus coccinea Münchh.","note":"symbol QUCO2, id 70219"}
+{"species":"Quercus coccinea","source":"usda","field":"_common_name","value":"scarlet oak"}
+{"species":"Quercus coccinea","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"Quercus coccinea","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"Quercus coccinea","source":"usda","field":"Flower Color","value":"Yellow"}
+{"species":"Quercus coccinea","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"Quercus coccinea","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"Quercus coccinea","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"Quercus coccinea","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"Quercus coccinea","source":"usda","field":"Foliage Texture","value":"Medium"}
+{"species":"Quercus coccinea","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"Quercus coccinea","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"Quercus coccinea","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"Quercus coccinea","source":"usda","field":"Growth Rate","value":"Rapid"}
+{"species":"Quercus coccinea","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"30"}
+{"species":"Quercus coccinea","source":"usda","field":"Height, Mature (feet)","value":"70.0"}
+{"species":"Quercus coccinea","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"Quercus coccinea","source":"usda","field":"Lifespan","value":"Long"}
+{"species":"Quercus coccinea","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"Quercus coccinea","source":"usda","field":"Shade Tolerance","value":"High"}
+{"species":"Quercus coccinea","source":"usda","field":"Bloom Period","value":"Mid Spring"}
+{"species":"Robinia pseudoacacia","source":"harvest","field":"_taxon_queried","value":"Robinia pseudoacacia","note":"FIA SPCD 901, Barnstable County"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 50 ft. 0 in.","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Dimensions","value":"Width: 20 ft. 0 in. - 35 ft. 0 in.","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Plant Type","value":"Poisonous","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Habit/Form","value":"Erect","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Habit/Form","value":"Oval","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Growth Rate","value":"Rapid"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Maintenance","value":"Medium"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Fruit Color","value":"Brown/Copper","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Fruit Color","value":"Purple/Lavender","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Fruit Type","value":"Legume"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Fruit Length","value":"> 3 inches"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Flower Color","value":"White"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Flower Inflorescence","value":"Raceme"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Flower Value To Gardener","value":"Fragrant","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Flower Value To Gardener","value":"Showy","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Flower Bloom Time","value":"Spring","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Flower Bloom Time","value":"Summer","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Color","value":"Blue","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Color","value":"Brown/Copper","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Color","value":"Green","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Value To Gardener","value":"Showy"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Type","value":"Compound (Pinnately , Bipinnately, Palmately)"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Shape","value":"Ovate"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Margin","value":"Entire"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Length","value":"> 6 inches"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Leaf Width","value":"> 6 inches"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Bark Color","value":"Dark Gray","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Bark Color","value":"Light Brown","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Surface/Attachment","value":"Furrowed","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Surface/Attachment","value":"Ridges","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Surface/Attachment","value":"Scaly","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Stem Cross Section","value":"Round"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Stem Surface","value":"Smooth (glabrous)"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Landscape Location","value":"Naturalized Area","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Design Feature","value":"Flowering Tree"}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Attracts","value":"Bees","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Attracts","value":"Hummingbirds","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Resistance To Challenges","value":"Black Walnut","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Resistance To Challenges","value":"Dry Soil","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Resistance To Challenges","value":"Fire","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Resistance To Challenges","value":"Poor Soil","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Resistance To Challenges","value":"Salt","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Problems","value":"Poisonous to Humans","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Problems","value":"Problem for Cats","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Problems","value":"Problem for Children","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Problems","value":"Problem for Dogs","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Problems","value":"Problem for Horses","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 50 ft. 0 in."}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"Dimensions","value":"Width: 20 ft. 0 in. - 35 ft. 0 in."}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"_common_name","value":"Black Locust","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"_common_name","value":"Common Locust","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"_common_name","value":"False Acacia","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"_common_name","value":"Green Locust","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"_common_name","value":"Pea Flower Locust","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"_common_name","value":"White Locust","multi":true}
+{"species":"Robinia pseudoacacia","source":"ncsu","field":"_common_name","value":"Yellow Locust","multi":true}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"_matched_taxon","value":"Robinia pseudoacacia","note":"queried \"Robinia pseudoacacia\"; tree_id 1290"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"_common_name","value":"black locust"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"bark_texture","value":"Furrowed","multi":true}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"bark_texture","value":"Ridged","multi":true}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"bark_color","value":"Dark Brown or Red Brown"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"leaf_form","value":"Pinnately Compound"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"leaflet_shape","value":"Ovate"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"height_high","value":"70"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"width_high","value":"40"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"growth_rate_high","value":"36"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"fruit_type","value":"Legume"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"fruit_size","value":"Very Large"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"flower_showiness","value":"Showy"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"flower_color","value":"White"}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"litter_type","value":"Dry Fruit","multi":true}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"litter_type","value":"Twigs","multi":true}
+{"species":"Robinia pseudoacacia","source":"selectree","field":"family","value":"Fabaceae"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"_matched_taxon","value":"Robinia pseudoacacia L.","note":"symbol ROPS, id 82163"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"_common_name","value":"black locust"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"_common_name","value":"falsa acacia"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"_common_name","value":"robinia"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Active Growth Period","value":"Spring"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Fall Conspicuous","value":"No"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Flower Color","value":"White"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Flower Conspicuous","value":"Yes"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Foliage Porosity Summer","value":"Moderate"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Foliage Texture","value":"Medium"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Fruit/Seed Color","value":"Black"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Growth Form","value":"Multiple Stem"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Growth Rate","value":"Rapid"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"40"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Height, Mature (feet)","value":"60.0"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Lifespan","value":"Short"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Shade Tolerance","value":"High"}
+{"species":"Robinia pseudoacacia","source":"usda","field":"Bloom Period","value":"Spring"}

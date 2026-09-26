@@ -18,17 +18,13 @@ import { slugifyRoster } from './roster-coverage.js'
 const RUBRIC = 'arborist/rubric.json'
 const DOSSIERS = 'arborist/dossiers'
 const PART_INDEX = 'arborist/state/part-index.json'
+const SPECIES_CURATION = 'arborist/state/_species-curation.json'
 const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'))
 
 /** Find the dossier for a Salon species id (roster slug OR botanical canonicalId). */
 export function dossierForSalonSpecies(speciesId) {
-  if (!speciesId || !existsSync(DOSSIERS)) return null
-  for (const f of readdirSync(DOSSIERS).filter(n => n.endsWith('.json'))) {
-    const d = readJSON(join(DOSSIERS, f))
-    if (d.canonicalId === speciesId) return d
-    for (const inv of (d.inventoryNames || [])) if (slugifyRoster(inv) === speciesId) return d
-  }
-  return null
+  const p = dossierFileForSalonSpecies(speciesId)
+  return p ? readJSON(p) : null
 }
 
 /**
@@ -38,13 +34,21 @@ export function dossierForSalonSpecies(speciesId) {
  */
 export function dossierFileForSalonSpecies(speciesId) {
   if (!speciesId || !existsSync(DOSSIERS)) return null
+  // ⭐ The identity is the SCIENTIFIC name (Jacob, 2026-09-25). A salon id the census never
+  // named (`pine_pitch`) reaches `pinus_rigida.json` through its curated scientific name.
+  const sci = scientificOf(speciesId)
   for (const f of readdirSync(DOSSIERS).filter(n => n.endsWith('.json'))) {
     const p = join(DOSSIERS, f)
     const d = readJSON(p)
     if (d.canonicalId === speciesId) return p
     for (const inv of (d.inventoryNames || [])) if (slugifyRoster(inv) === speciesId) return p
+    if (sci && binomial(d.scientific) === sci) return p
   }
   return null
+}
+const binomial = (x) => String(x || '').toLowerCase().replace(/[×']/g, ' ').split(/\s+/).filter(w => w && w !== 'x').slice(0, 2).join(' ')
+function scientificOf(speciesId) {
+  try { return binomial(readJSON(SPECIES_CURATION).species?.[speciesId]?.scientific) || null } catch { return null }
 }
 
 /** matcher options + the (slim) dossier for one Salon species. */

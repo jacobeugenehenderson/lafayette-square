@@ -97,7 +97,8 @@ const FIELD_MAP = {
   crown_ratio: 'crown.ratio',
 }
 // Harvest bookkeeping — not traits. Ignored silently so the UNMAPPED report stays signal.
-const IGNORE = new Set(['_matched_taxon', '_taxon_queried', 'family'])
+// `_common_name` / `_taxon_mismatch` are identity, not traits: mint carries the AKAs (2026-09-25).
+const IGNORE = new Set(['_matched_taxon', '_taxon_queried', '_taxon_mismatch', '_common_name', 'family'])
 // ⛔ AUTHORED, never hydrated (BRIEF §2). A value found for one of these is a coincidence.
 const AUTHORED = new Set([
   'leaf.growthway', 'leaf.face', 'leaf.occupancy', 'bark.color',

@@ -1,0 +1,256 @@
+{
+  "key": "pitch pine",
+  "scientific": "Pinus rigida",
+  "commonName": "pitch pine",
+  "akas": [
+    {
+      "name": "pitch pine",
+      "sources": [
+        "ncsu",
+        "usda"
+      ]
+    },
+    {
+      "name": "black pine",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "hard pine",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "northern pitch pine",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "torch pine",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "yellow pine",
+      "sources": [
+        "ncsu"
+      ]
+    }
+  ],
+  "canonicalId": "pinus_rigida",
+  "inventoryNames": [
+    "Pinus rigida"
+  ],
+  "identityConfirmed": false,
+  "forces": null,
+  "descriptor": null,
+  "identityNotes": null,
+  "referenceImages": [],
+  "required": {
+    "chassis.density": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "usda: Foliage Porosity Summer"
+      ],
+      "contested": true,
+      "candidates": [
+        {
+          "value": "sparse",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
+          ]
+        },
+        {
+          "value": "medium",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Porosity Summer"
+          ]
+        }
+      ],
+      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
+    },
+    "chassis.habit": {
+      "target": "pyramidal",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form"
+      ],
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Texture",
+        "usda: Foliage Texture"
+      ]
+    },
+    "leaf.shape": {
+      "target": "acicular",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Shape"
+      ],
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.margin": {
+      "target": "serrate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Margin"
+      ]
+    },
+    "bark.texture": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Surface/Attachment",
+        "ncsu: Surface/Attachment",
+        "ncsu: Surface/Attachment"
+      ],
+      "contested": true,
+      "candidates": [
+        {
+          "value": "furrowed",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
+          ]
+        },
+        {
+          "value": "ridged",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
+          ]
+        },
+        {
+          "value": "exfoliating",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
+          ]
+        }
+      ],
+      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
+    },
+    "chassis.trunks": {
+      "target": "single",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "usda: Growth Form"
+      ]
+    },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "usda: Shape and Orientation"
+      ]
+    },
+    "chassis.size": {
+      "target": 18.3,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 12.2,
+        "hi": 18.3
+      },
+      "askedAs": [
+        "ncsu: Dimensions"
+      ]
+    },
+    "chassis.size_20yr": {
+      "target": 6.1,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 6.1,
+        "hi": 6.1
+      },
+      "askedAs": [
+        "usda: Height at 20 Years, Maximum (feet)"
+      ]
+    },
+    "chassis.size_max": {
+      "target": 24.4,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 24.4,
+        "hi": 24.4
+      },
+      "askedAs": [
+        "usda: Height, Mature (feet)"
+      ]
+    }
+  },
+  "recipe": null,
+  "partAvailability": null,
+  "owed": [
+    "⚠️ identityConfirmed:false — the matched taxon is a CLAIM. Confirm it before authoring.",
+    "forces — judgment, not derivable from a database",
+    "descriptor — judgment, not derivable from a database",
+    "identityNotes — judgment, not derivable from a database",
+    "referenceImages — judgment, not derivable from a database",
+    "recipe — judgment, not derivable from a database",
+    "partAvailability — judgment, not derivable from a database",
+    "leaf.face — judgment, not derivable from a database",
+    "⛔ NO TARGET — sources tied on: chassis.density, bark.texture. See .candidates; an author must choose.",
+    "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
+    "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
+  ],
+  "provenance": {
+    "minted": true,
+    "mintedAt": "2026-08-24",
+    "matchedTaxon": "Pinus rigida Mill.",
+    "sources": [
+      "ncsu",
+      "selectree",
+      "usda"
+    ],
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+  }
+}

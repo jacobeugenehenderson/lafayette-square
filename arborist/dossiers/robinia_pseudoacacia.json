@@ -1,0 +1,337 @@
+{
+  "key": "black locust",
+  "scientific": "Robinia pseudoacacia",
+  "commonName": "black locust",
+  "akas": [
+    {
+      "name": "black locust",
+      "sources": [
+        "ncsu",
+        "selectree",
+        "usda"
+      ]
+    },
+    {
+      "name": "common locust",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "falsa acacia",
+      "sources": [
+        "usda"
+      ]
+    },
+    {
+      "name": "false acacia",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "green locust",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "pea flower locust",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "robinia",
+      "sources": [
+        "usda"
+      ]
+    },
+    {
+      "name": "white locust",
+      "sources": [
+        "ncsu"
+      ]
+    },
+    {
+      "name": "yellow locust",
+      "sources": [
+        "ncsu"
+      ]
+    }
+  ],
+  "canonicalId": "robinia_pseudoacacia",
+  "inventoryNames": [
+    "Robinia pseudoacacia"
+  ],
+  "identityConfirmed": false,
+  "forces": null,
+  "descriptor": null,
+  "identityNotes": null,
+  "referenceImages": [],
+  "required": {
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "usda: Shape and Orientation"
+      ]
+    },
+    "chassis.habit": {
+      "target": "rounded",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form",
+        "selectree: tree_shape"
+      ],
+      "contested": true,
+      "candidates": [
+        {
+          "value": "rounded",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form",
+            "selectree: tree_shape"
+          ]
+        },
+        {
+          "value": "oval",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
+          ]
+        }
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another.",
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Texture",
+        "usda: Foliage Texture"
+      ]
+    },
+    "overlay.fruit_type": {
+      "target": "legume",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Fruit Type",
+        "selectree: fruit_type"
+      ]
+    },
+    "leaf.arrangement": {
+      "target": "alternate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Arrangement",
+        "selectree: leaf_arrangement"
+      ]
+    },
+    "leaf.shape": {
+      "target": "ovate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Shape",
+        "selectree: leaflet_shape"
+      ],
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.margin": {
+      "target": "entire",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Margin"
+      ]
+    },
+    "bark.texture": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Surface/Attachment",
+        "ncsu: Surface/Attachment",
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture",
+        "selectree: bark_texture"
+      ],
+      "contested": true,
+      "candidates": [
+        {
+          "value": "furrowed",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment",
+            "selectree: bark_texture"
+          ]
+        },
+        {
+          "value": "ridged",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment",
+            "selectree: bark_texture"
+          ]
+        },
+        {
+          "value": "scaly",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
+          ]
+        }
+      ],
+      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
+    },
+    "leaf.type": {
+      "target": "compound-pinnate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "selectree: leaf_form"
+      ],
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "selectree: foliage_type"
+      ]
+    },
+    "overlay.conspicuous": {
+      "target": "showy",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "selectree: flower_showiness"
+      ]
+    },
+    "chassis.density": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "usda: Foliage Porosity Summer"
+      ]
+    },
+    "chassis.trunks": {
+      "target": "multi",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "usda: Growth Form"
+      ]
+    },
+    "chassis.size": {
+      "target": 21.3,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 15.2,
+        "hi": 21.3
+      },
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ]
+    },
+    "chassis.size_20yr": {
+      "target": 12.2,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 12.2,
+        "hi": 12.2
+      },
+      "askedAs": [
+        "usda: Height at 20 Years, Maximum (feet)"
+      ]
+    },
+    "chassis.size_max": {
+      "target": 18.3,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 18.3,
+        "hi": 18.3
+      },
+      "askedAs": [
+        "usda: Height, Mature (feet)"
+      ]
+    }
+  },
+  "recipe": null,
+  "partAvailability": null,
+  "owed": [
+    "⚠️ identityConfirmed:false — the matched taxon is a CLAIM. Confirm it before authoring.",
+    "forces — judgment, not derivable from a database",
+    "descriptor — judgment, not derivable from a database",
+    "identityNotes — judgment, not derivable from a database",
+    "referenceImages — judgment, not derivable from a database",
+    "recipe — judgment, not derivable from a database",
+    "partAvailability — judgment, not derivable from a database",
+    "leaf.face — judgment, not derivable from a database",
+    "⛔ NO TARGET — sources tied on: bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.habit — see .alternatives",
+    "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
+    "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
+    "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
+  ],
+  "provenance": {
+    "minted": true,
+    "mintedAt": "2026-08-24",
+    "matchedTaxon": "Robinia pseudoacacia",
+    "sources": [
+      "ncsu",
+      "selectree",
+      "usda"
+    ],
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+  }
+}

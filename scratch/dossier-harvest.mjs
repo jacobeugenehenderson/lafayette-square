@@ -99,6 +99,15 @@ const ROWS = [
   // Oak, Pin (459) and others. A species can be a rounding error in the roster and carry
   // a tenth of the map. Harvest demand should follow PLACED assets, not roster counts.
   { rank:35, species:'Oak, White',            taxon:'Quercus alba',           usda:'QUAL',  ncsu:'quercus-alba',           taxonBasis:'unambiguous common name; USDA PLANTS symbol QUAL' },
+  // ── BATCH 3, 2026-09-25 (Marram). Provincetown's FIA list (Barnstable County, 25001), the
+  // species built without a dossier. Keyed by the SCIENTIFIC name: Jacob, 2026-09-25, "each
+  // species has a latin name but nobody would know that so it's good and proper to have the
+  // scientific name WITH AKAs". The AKAs are harvested below as `_common_name`, never borrowed
+  // from LS's census vocabulary. NCSU + SelecTree approved by Jacob the same day.
+  { rank:36, species:'Pinus rigida',          taxon:'Pinus rigida',           usda:'PIRI',  ncsu:'pinus-rigida',           taxonBasis:'FIA SPCD 126, Barnstable County' },
+  { rank:37, species:'Quercus velutina',      taxon:'Quercus velutina',       usda:'QUVE',  ncsu:'quercus-velutina',       taxonBasis:'FIA SPCD 837, Barnstable County' },
+  { rank:38, species:'Quercus coccinea',      taxon:'Quercus coccinea',       usda:'QUCO2', ncsu:'quercus-coccinea',       taxonBasis:'FIA SPCD 806, Barnstable County' },
+  { rank:39, species:'Robinia pseudoacacia',  taxon:'Robinia pseudoacacia',   usda:'ROPS',  ncsu:'robinia-pseudoacacia',   taxonBasis:'FIA SPCD 901, Barnstable County' },
 ]
 
 // ── NC State Plant Toolbox ──────────────────────────────────────────────────
@@ -161,7 +170,17 @@ async function selectree(row) {
   const norm = (x) => String(x || '').replace(/&times;?/g, 'x').replace(/[×']/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase()
   const want = norm(row.taxon)
   const exact = res.find(r => !r.match_taxon?.cultivar && norm(r.accepted_scientific || r.name_concat) === want)
-  const hit = exact || res.find(r => !r.match_taxon?.cultivar) || res[0]
+  // ⛔ The fallback is a CULTIVAR OF THE SAME SPECIES, never another species. It used to be
+  // "any non-cultivar hit, else the first" — so Pinus rigida (not in SelecTree) took Pinus
+  // albicaulis's traits, and Quercus velutina took Quercus acuta's (2026-09-25). Skip instead.
+  const binomial = (x) => norm(x).split(' ').slice(0, 2).join(' ')
+  const hit = exact || res.find(r => binomial(r.accepted_scientific || r.name_concat) === want)
+  if (!hit) {
+    console.error(`  ! selectree has no ${row.taxon} (nearest: ${res[0]?.accepted_scientific || res[0]?.name_concat}) — SKIPPED`)
+    emit({ species: row.species, source: 'selectree', field: '_taxon_mismatch', value: String(res[0]?.accepted_scientific || ''),
+           note: `no species-level record for "${row.taxon}"; no SelecTree values taken`, unverified: 'no record' })
+    return
+  }
   const cultivarFallback = !exact
   const d = await get(`https://selectree.calpoly.edu/api/tree/detail/${hit.tree_id}`, { json: true })
   const rec = Array.isArray(d) ? d[0] : (d?.tree || d)
@@ -171,6 +190,7 @@ async function selectree(row) {
          note: `queried "${row.taxon}"; tree_id ${hit.tree_id}` + (cultivarFallback ? ' — ⚠️ NO species-level record matched; this is a CULTIVAR or near-match, traits may be cultivar-specific' : ''),
          ...(cultivarFallback ? { unverified: 'taxon match is not species-level exact' } : {}) })
   if (cultivarFallback) console.error(`      ! selectree fell back to non-exact taxon: ${matched}`)
+  else if (hit.accepted_common) emit({ species: row.species, source: 'selectree', field: '_common_name', value: String(hit.accepted_common).toLowerCase() })
   for (const f of SEL_WANT) {
     let v = rec[f]
     if (v == null || v === '') continue
@@ -206,6 +226,8 @@ async function usda(row) {
     return
   }
   emit({ species: row.species, source: 'usda', field: '_matched_taxon', value: got, note: `symbol ${row.usda}, id ${p.Id}` })
+  for (const n of [p.CommonName, ...(p.OtherCommonNames || []).map(o => (typeof o === 'string' ? o : o?.CommonName))].filter(Boolean))
+    emit({ species: row.species, source: 'usda', field: '_common_name', value: String(n) })
   const c = await get(`https://plantsservices.sc.egov.usda.gov/api/PlantCharacteristics/${p.Id}`, { json: true })
   if (!Array.isArray(c)) return
   for (const r of c) {
@@ -312,6 +334,10 @@ for (const row of ROWS.filter(r => FROM == null || r.rank >= FROM)) {
     const got = fields.filter(f => NCSU_WANT.has(f.label) || f.label === 'Dimensions')
     for (const f of got) for (const v of f.values)
       emit({ species: row.species, source: 'ncsu', field: f.label, value: v, ...(f.values.length > 1 ? { multi: true } : {}) })
+    // AKAs: <ul id="common_names"><li><a …>Black Pine</a></li>…
+    const ul = html.match(/<ul[^>]*id="common_names"[^>]*>([\s\S]*?)<\/ul>/)
+    for (const m of ul ? ul[1].matchAll(/<a[^>]*>([^<]+)<\/a>/g) : [])
+      emit({ species: row.species, source: 'ncsu', field: '_common_name', value: unent(m[1]), multi: true })
     console.error(`      ncsu ${got.length} fields`)
   } else console.error('      ncsu MISS')
   await selectree(row); await sleep(400)
