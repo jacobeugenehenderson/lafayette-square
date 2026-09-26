@@ -1,6 +1,6 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
+status: LANDED 2026-09-26 — the directive is the weather's single source; rain, sun/dome darkening and a one-stop storm ND on exposure follow the same tweened directive in Scene / Preview / Cartograph and the canary (2ea01564); proven by checks/claims-the-light-follows-the-weather.mjs (mutation-tested); Jacob saw Provincetown in rain: "the sky is very overcast in PTown right now."
+dispatched: Squall, 2026-09-26 — built in 2ea01564
 written: 2026-09-26
 evict-when: when it rains on screen the sky is overcast and the whole scene is darkened, in every app that draws rain, driven by the same weather state; a check proves the light follows the weather; and Jacob has seen Provincetown in rain.
 -->
