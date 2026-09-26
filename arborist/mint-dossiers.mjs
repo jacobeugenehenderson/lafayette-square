@@ -133,7 +133,7 @@ for (const o of obs) {
   // the whole species and threw away 68 good observations to avoid 22 bad ones.
   if (o.field === '_matched_taxon') { rec.matched.set(o.source, o.value); if (!rec.taxon) rec.taxon = o.value }
   if (o.field === '_taxon_queried' && !rec.queried) rec.queried = o.value
-  rec.sources.add(o.source)
+  if (!String(o.field).startsWith('_')) rec.sources.add(o.source)   // a source counts by its TRAITS, not its bookkeeping
   // AKAs (Jacob, 2026-09-25: "the scientific name WITH AKAs"). Every source's common names,
   // each with who said it; USDA's first is the ACCEPTED common name, the one the UI leads with.
   if (o.field === '_common_name') {
@@ -345,7 +345,10 @@ for (const [species, rec] of bySpecies) {
       minted: true,
       mintedAt: rubric._cutover?.at || null,
       matchedTaxon: rec.taxon,
-      sources: [...rec.sources].filter(s => s !== 'harvest'),
+      // ⛔ Only sources that VERIFIED. A rejected source contributes no value, so listing it
+      // claimed provenance the dossier doesn't have (sorbus_americana named selectree, whose
+      // record was Sorbus decora and whose values were all dropped).
+      sources: [...rec.sources].filter(s => s !== 'harvest' && !rejected.has(s)),
       note: 'Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.',
     },
   }
