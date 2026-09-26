@@ -88,9 +88,9 @@ The hardscape silhouette: centerlines, smoothing, caps, anchor, road metadata, c
   - **Color coding:** blue/cyan = default · gold = operator-authored · white = mid-drag. Resolution at render: per-corner → per-IX → data-default, all × the global scale. All three layers persist per-Look to `design.json`; bake reads the same maps. Per-corner identity uses leg-pair keys so authoring survives chain-edit churn.
 
 ### Highways — built from their lanes, never authored *(H-3)*
-A motorway/trunk is swept from its lanes and the values in `references/registry.json`. **No handle moves it**: an override is refused, printed, and kept. The land it bounds is sorted at the pour — **verge** (bare grass, no choice) · **junction residual** (building-less, at a ramp end) · **block** (bare highway edge). Each pour prints, by id:
-- skeleton: *Interstate status unknown*, two-way motorways · derive `Highway section`: sources, `ASSUMED` lanes, `[U]` values · derive `[H-3 ④]`: verge/JR/block, gores, parcel-vs-building · derive `[expressway speed]`: each at-grade expressway span's speed (posted / statutory / [U]) and its edge · `[tileGround][H]`: tapers, handoffs.
-- ⛔ `NO WIDTH` / `poured before H-3` ⇒ **re-pour the town**. H-3 checks read NOT CHECKED until then.
+A motorway/trunk is swept from its lanes and the values in `references/registry.json`. **No handle moves it**: an override is refused, printed, and kept. The land it bounds is sorted at the pour — **verge** (bare grass, no choice) · **junction residual** (building-less, at a ramp end) · **block** (bare highway edge). At a ramp end, a narrower town street's curb **flares** to the ramp's corner, tapering back 10:1. Each pour prints, by id:
+- skeleton: *Interstate status unknown*, two-way motorways · derive `Highway section`: sources, `ASSUMED` lanes, `[U]` values · derive `[H-3 ④]`: verge/JR/block, gores, parcel-vs-building · derive `[expressway speed]`: each at-grade expressway span's speed (posted / statutory / [U]) and its edge · `[tileGround][H]`: tapers, handoffs · `[H-3 flare]`.
+- ⛔ `NO WIDTH` / `poured before H-3` / flare `re-pour` ⇒ **re-pour the town**. H-3 checks read NOT CHECKED until then.
 
 ## Section (was Measure) — the ped-profile tool
 
