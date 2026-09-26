@@ -52,8 +52,7 @@ import { fileURLToPath } from 'node:url'
 // (src/preview/heroAnim.js: pure, allocation-free, no React/DOM). Importing it
 // (vs reimplementing) keeps the bake-time classifier's camera locus in lock-step
 // with what Scene/Preview/Stage actually render. Node-safe ESM.
-import { catmullRom } from '../src/preview/heroAnim.js'
-import { resolveHeroSubject } from '../src/lib/heroSubject.js'
+import { heroPoseAt, assertKeyframesAimed } from '../src/preview/heroAnim.js'
 import { assignHeroBand, glbTriangleCount } from './hero-band.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -431,11 +430,12 @@ const HERO_TIER = {
   // pan is read from the slab, so widening the hero shot re-classifies on rebake.
   CULL_FRUSTUM_GUARD: 1.3,
 }
-// Hero target resolves via the shared resolveHeroSubject (imported above) — the
-// SAME resolver every runtime camera uses. No local fallback literal: the old
-// [400,45,-100] diverged from the runtime's arch default (Vernier's camera fix),
-// so the classifier scored heroTier for a shot ~1200m off the real arch. This
-// was the last unmigrated consumer of project_camera_framing_slab_contract.
+// The camera's aim at each sampled pose is the keyframes' OWN target,
+// interpolated on the same parameter as the position (heroPoseAt — the function
+// every runtime plays). ⛔ It used to be ONE resolved hero subject for the whole
+// sweep, i.e. the old Hero Lock: on a town whose keyframes aim elsewhere (huron,
+// provincetown) the frustum pointed at the hood centroid, not at what the shot
+// shows (BRIEF-camera-regimes). A keyframe with no target throws.
 
 const _clamp1 = (x) => (x < -1 ? -1 : x > 1 ? 1 : x)
 // Fraction of circle i (radius ri) covered by circle j (radius rj), centres d apart.
@@ -494,23 +494,22 @@ function classifyHeroTiers(canopies, heroPan) {
   if (!heroPan?.keyframes?.length || n === 0) {
     return { tiers, meta: { skipped: 'no-hero-pan' } }
   }
-  const positions = heroPan.keyframes.map((k) => k.position)
-  const fovDeg = heroPan.keyframes[0].fov ?? 22
+  assertKeyframesAimed(heroPan.keyframes, 'bake-trees')
+  const fovDeg = heroPan.keyframes[0].fov
   const vHalf = (fovDeg * Math.PI / 180) / 2
   const hHalf = Math.atan(Math.tan(vHalf) * HERO_TIER.ASPECT)
-  const target = resolveHeroSubject(heroPan.subject, { archValues: heroPan.archValues })
   const tension = heroPan.tension ?? 0.5
   const diagHalf = Math.hypot(hHalf, vHalf)
 
-  // Camera positions sampled uniformly along the locus catmullRom(positions, t),
-  // t∈[0,1]. The motion wave only changes dwell/speed, not the set of points the
+  // Camera poses (position + aim) sampled uniformly along the path parameter
+  // t∈[0,1]. The motion wave only changes dwell/speed, not the set of poses the
   // camera occupies, so uniform-t covers the whole sweep for max-over-arc.
   const N = HERO_TIER.POSES
   const poses = []
   for (let s = 0; s < N; s++) {
     const t = N === 1 ? 0 : s / (N - 1)
-    const p = catmullRom(positions, t, tension, [0, 0, 0])
-    poses.push([p[0], p[1], p[2]])
+    const { position: p, target: q } = heroPoseAt(heroPan.keyframes, t, tension)
+    poses.push({ p: [p[0], p[1], p[2]], q: [q[0], q[1], q[2]] })
   }
 
   const maxProm = new Float64Array(n)
@@ -525,7 +524,7 @@ function classifyHeroTiers(canopies, heroPan) {
   const proj = new Array(n)
   for (let i = 0; i < n; i++) proj[i] = { in: false, h: 0, v: 0, r: 0, depth: 0 }
 
-  for (const cam of poses) {
+  for (const { p: cam, q: target } of poses) {
     // Camera basis: forward = unit(target - cam); right = unit(forward × up);
     // up' = right × forward. Sign of `right` is irrelevant (we test |angle|).
     let fx = target[0] - cam[0], fy = target[1] - cam[1], fz = target[2] - cam[2]
@@ -598,7 +597,7 @@ function classifyHeroTiers(canopies, heroPan) {
     meta: {
       poses: N, promThreshold: HERO_TIER.PROM_THRESHOLD, promOpaque: HERO_TIER.PROM_OPAQUE,
       occFrac: HERO_TIER.OCC_FRAC, cullFrustumGuard: HERO_TIER.CULL_FRUSTUM_GUARD,
-      fovDeg, target, mesh: meshN, opaque: opaqueN, impostor: impostorN, cull: cullN, promHistogram: hist,
+      fovDeg, target: poses[0]?.q, mesh: meshN, opaque: opaqueN, impostor: impostorN, cull: cullN, promHistogram: hist,
       thresholdSweep: sweep,
     },
   }
@@ -935,7 +934,7 @@ export async function bakeTrees({
     const s = JSON.parse(await fs.readFile(
       path.join(REPO_ROOT, 'public', 'baked', effHeroLook, 'scene.json'), 'utf8'))
     if (Array.isArray(s.heroKeyframes) && s.heroKeyframes.length) {
-      heroPan = { keyframes: s.heroKeyframes, subject: s.heroSubject, archValues: s.arch?.values, tension: s.heroMotion?.tension }
+      heroPan = { keyframes: s.heroKeyframes, tension: s.heroMotion?.tension }
     }
   } catch (e) {
     if (verbose) console.log(`[bake-trees] hero pan unavailable for '${effHeroLook}' (${e.code || e.message}) — heroTier skipped`)

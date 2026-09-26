@@ -71,25 +71,35 @@ export function lerpFov(keyframes, t) {
   return keyframes[idx].fov + local * (keyframes[idx + 1].fov - keyframes[idx].fov)
 }
 
-// Compute hero pose at normalized time t01 ∈ [0,1] along the keyframe path.
-// `motion` = { tension, easing }. Writes into `outPos` and `outTgt` if provided.
-// Returns { position, target, fov }.
-export function heroAnimPose(t01, keyframes, motion, outPos, outTgt) {
-  const ease = EASINGS[motion.easing] || EASINGS.easeInOut
-  // Triangle wave + ease so the path swings start→end→start smoothly,
-  // matching the legacy `-cos(2π t)` pattern when keyframes are colinear.
-  const tri = t01 < 0.5 ? t01 * 2 : (1 - t01) * 2
-  const eased = ease(tri)
+// ⛔ EVERY KEYFRAME CARRIES ITS OWN AIM (BRIEF-camera-regimes, ROADMAP H-7).
+// Playback interpolates the keyframes' own `position`, `target` and `fov` and
+// nothing else — there is no subject to fall back to. A keyframe without a
+// target is refused LOUDLY here, once, where the keyframes are loaded, rather
+// than aimed somewhere plausible: a slab baked before targets existed must be
+// re-baked (`checks/claims-a-keyframe-carries-its-aim.mjs` guards the authored
+// side). Throws; call it where a render-time error reaches an error boundary.
+const _vec3 = (v) => Array.isArray(v) && v.length === 3 && v.every(Number.isFinite)
+export function assertKeyframesAimed(keyframes, where = 'hero') {
+  keyframes.forEach((k, i) => {
+    if (!_vec3(k?.position) || !_vec3(k?.target) || !Number.isFinite(k?.fov)) {
+      throw new Error(`[${where}] hero keyframe ${i} has no finite position/target/fov — ` +
+        'every keyframe carries its own aim; re-bake a slab that predates keyframe targets')
+    }
+  })
+  return keyframes
+}
 
-  const positions = keyframes.map(k => k.position)
-  const targets = keyframes.map(k => k.target)
-  const tension = motion.tension ?? 0.5
-
-  const position = catmullRom(positions, eased, tension, outPos)
-  const target = catmullRom(targets, eased, tension, outTgt)
-  const fov = lerpFov(keyframes, eased)
-
-  return { position, target, fov }
+// The pose AT path parameter `u` ∈ [0,1] (keyframe i sits at u = i/(n−1)).
+// The one interpolation every consumer uses — playback (below) retimes WHICH u
+// it is at; the Stage scrub asks for a u directly. Position and target ride the
+// same Catmull-Rom parameter, fov is linear. Writes into the caller's arrays.
+const _posScratch = [], _tgtScratch = []
+export function heroPoseAt(keyframes, u, tension = 0.5, outPos = [0, 0, 0], outTgt = [0, 0, 0]) {
+  _posScratch.length = 0; _tgtScratch.length = 0
+  for (const k of keyframes) { _posScratch.push(k.position); _tgtScratch.push(k.target) }
+  catmullRom(_posScratch, u, tension, outPos)
+  catmullRom(_tgtScratch, u, tension, outTgt)
+  return { position: outPos, target: outTgt, fov: lerpFov(keyframes, u) }
 }
 
 // Authored hero animation — the one the operator actually tunes in Stage.
@@ -222,49 +232,41 @@ function _mapKfArc(f) {
 // ⭐ The target rides the SAME `u` as the position, so aim and position cannot
 // desynchronise — including through the arc-length reparam and the per-keyframe
 // dwell below, which retime WHERE along the path the camera sits.
-// ⚠️ `fallbackTarget` is the migration: a keyframe authored before targets
-// existed has none, and using the resolved subject for it reproduces the old
-// lock EXACTLY for that keyframe. A slab baked last week plays identically.
+// ⛔ There is no subject fallback: every keyframe carries its own target
+// (`assertKeyframesAimed` above; the LS/toy migration is 6e8a759d, proven
+// sample-identical). The camera is never aimed by anything but the keyframes.
+//
+// Returns { fov, u } — `u` is the path parameter the camera is at, the same
+// coordinate the Stage timeline's keyframe dots and scrub use.
 const _kfPositions = []
-const _kfTargets = []
-export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos, outTgt, fallbackTarget) {
+const _poseP = [0, 0, 0], _poseT = [0, 0, 0]
+export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos, outTgt) {
   const period = motion.period || 720
   const speed = motion.speed || 1
   const wave = WAVES[motion.easing] || WAVES.sine
   const t = shapePhase((((elapsedSec + _startOffsetSec) * speed) % period) / period, wave)
-
-  if (keyframes.length <= 1) {
-    const p = keyframes[0]?.position || [0, 0, 0]
-    outPos.set(p[0], p[1], p[2])
-    if (outTgt) {
-      const q = keyframes[0]?.target || fallbackTarget || [0, 0, 0]
-      outTgt.set(q[0], q[1], q[2])
-    }
-    return { fov: keyframes[0]?.fov ?? 22 }
-  }
-  _kfPositions.length = 0
-  for (const k of keyframes) _kfPositions.push(k.position)
   const tension = motion.tension ?? 0.5
-  _ensureKfArc(_kfPositions, tension)
-  // Even speed between keyframes (arc-length) kills the long-segment lurch;
-  // a smoothstep dwell per segment keeps each keyframe a felt beat. The path
-  // is unchanged — we only retime WHERE along it the camera sits. Passes
-  // through every keyframe exactly (local 0/1 land on the knots).
-  let u = _mapKfArc(t)
-  const segs = _kfPositions.length - 1
-  const g = u * segs
-  const seg = Math.min(Math.floor(g), segs - 1)
-  const localRaw = g - seg
-  const localEased = localRaw * localRaw * (3 - 2 * localRaw)   // smoothstep
-  const local = localRaw + (localEased - localRaw) * _kfDwell
-  u = (seg + local) / segs
-  const p = catmullRom(_kfPositions, u, tension)
-  outPos.set(p[0], p[1], p[2])
-  if (outTgt) {
-    _kfTargets.length = 0
-    for (const k of keyframes) _kfTargets.push(k.target || fallbackTarget || k.position)
-    const q = catmullRom(_kfTargets, u, tension)
-    outTgt.set(q[0], q[1], q[2])
+
+  let u = 0
+  if (keyframes.length > 1) {
+    _kfPositions.length = 0
+    for (const k of keyframes) _kfPositions.push(k.position)
+    _ensureKfArc(_kfPositions, tension)
+    // Even speed between keyframes (arc-length) kills the long-segment lurch;
+    // a smoothstep dwell per segment keeps each keyframe a felt beat. The path
+    // is unchanged — we only retime WHERE along it the camera sits. Passes
+    // through every keyframe exactly (local 0/1 land on the knots).
+    u = _mapKfArc(t)
+    const segs = _kfPositions.length - 1
+    const g = u * segs
+    const seg = Math.min(Math.floor(g), segs - 1)
+    const localRaw = g - seg
+    const localEased = localRaw * localRaw * (3 - 2 * localRaw)   // smoothstep
+    const local = localRaw + (localEased - localRaw) * _kfDwell
+    u = (seg + local) / segs
   }
-  return { fov: lerpFov(keyframes, u) }
+  const { fov } = heroPoseAt(keyframes, u, tension, _poseP, _poseT)
+  outPos.set(_poseP[0], _poseP[1], _poseP[2])
+  if (outTgt) outTgt.set(_poseT[0], _poseT[1], _poseT[2])
+  return { fov, u }
 }

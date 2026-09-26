@@ -797,13 +797,14 @@ const useCartographStore = create((set, get) => ({
   // CartographApp.StageEnvironment; production omits the override and
   // reads scene.sky frozen-at-bake (SC.1, commit c333e50).
   sky:            { overrides: [] },
-  // The single object the Hero shot frames around. Camera target locks to
-  // its centroid every frame. { kind, id } resolved at runtime to a 3D point.
-  // null = no designation (HeroPreview falls back to legacy arch centroid).
+  // The designated set-piece `{ kind, id }` (ROADMAP H-7). ⛔ NO CAMERA READS IT
+  // (BRIEF-camera-regimes, 2026-09-26) — shots are the keyframes below. Its one
+  // reader today is the Stage "Hero & Horizon" card (landscape vs arch knobs).
   heroSubject: null,
-  // Authored Hero camera path. Each keyframe = { position: [x,y,z], fov }.
-  // Two sensible defaults at the swing extremes; operator captures more via
-  // the timeline. Hydrated from per-Look design.json on switch.
+  // Authored Hero camera path. Each keyframe = { position: [x,y,z],
+  // target: [x,y,z], fov } — its own aim; every runtime refuses one without
+  // (heroAnim.js#assertKeyframesAimed). Empty by default (the kit stores no
+  // camera); hydrated from per-Look design.json on switch.
   // ⛔ Empty, not a pair. See HERO_KEYFRAMES_DEFAULT — the kit stores no camera.
   heroKeyframes: [...HERO_KEYFRAMES_DEFAULT],
   // Authored motion params (preview/speed are transient runtime UI, not here)

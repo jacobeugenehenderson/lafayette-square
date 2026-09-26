@@ -23,10 +23,10 @@ import * as THREE from 'three'
 import { _dofRefs } from './RomanceDoF.jsx'
 import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
 import { DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
-import { resolveHeroSubject } from '../lib/heroSubject.js'
 
 const _camDir  = new THREE.Vector3()  // reused for the browse (look-down) gate
-const _heroVec = new THREE.Vector3()  // reused for the hero-pocket view-Z depth
+const _heroVec = new THREE.Vector3()  // reused for the focus-pocket view-Z depth
+let _warnedNoFocus = false
 
 /**
  * Populate RomanceDoF's `_dofRefs` from the resolved `dof` channel + live
@@ -37,10 +37,12 @@ const _heroVec = new THREE.Vector3()  // reused for the hero-pocket view-Z depth
  * @param dofChannel  the resolved `dof` channel (override ?? scene.dof ?? default)
  * @param minute      current TOD minute-of-day
  * @param slotMins    TOD slot minutes for the resolver
- * @param archValues  the hero/Arch placement values (for the hero subject)
- * @param heroSubject the authored hero subject (scene.heroSubject / override)
+ * @param focusPoint  where the camera is looking — the controls' target, which in
+ *                    playback IS the interpolated keyframe target (Jacob,
+ *                    2026-09-26: DoF focuses on the keyframe's authored target).
+ *                    ⛔ Never a hero subject (BRIEF-camera-regimes).
  */
-export function applyDofFrame({ camera, dofChannel, minute, slotMins, archValues, heroSubject }) {
+export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint }) {
   const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
 
   // Browse (overhead) camera: kill DoF — from above, the scene sits at ~one
@@ -59,12 +61,17 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, archValues
   _dofRefs.sharpWidth.current = 30 - d.softness * 20                 // softer → wider near feather
   _dofRefs.midRange.current   = 100 + d.softness * 350               // softer → gentler ramp
 
-  // Anchor the hero pocket to the AUTHORED hero, measured from the CAMERA each
-  // frame. The shader decodes `dist` as VIEW-Z (depth along the camera's forward
-  // axis), NOT Euclidean — so an off-axis hero (the Arch sits to the side of
-  // where the camera points) must anchor in the same space, or the pocket misses
-  // it. Transform the hero point into view space; -z is that forward depth.
-  const heroPt = resolveHeroSubject(heroSubject, { archValues })
-  _heroVec.set(heroPt[0], heroPt[1], heroPt[2]).applyMatrix4(camera.matrixWorldInverse)
+  // Anchor the sharp pocket to the FOCUS POINT (the camera's target), measured
+  // from the CAMERA each frame. The shader decodes `dist` as VIEW-Z (depth along
+  // the camera's forward axis), NOT Euclidean, so the point is transformed into
+  // view space; -z is that forward depth.
+  // ⛔ No target (a runtime with no controls) ⇒ no pocket, and it says so once —
+  // never a guessed depth.
+  if (!focusPoint) {
+    if (!_warnedNoFocus) { _warnedNoFocus = true; console.error('[dof] no focus point (no controls target) — the hero pocket is off') }
+    _dofRefs.heroBlur.current = 0
+    return
+  }
+  _heroVec.copy(focusPoint).applyMatrix4(camera.matrixWorldInverse)
   _dofRefs.heroDist.current   = -_heroVec.z
 }

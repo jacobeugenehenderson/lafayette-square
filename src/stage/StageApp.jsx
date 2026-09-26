@@ -27,10 +27,7 @@ import GatewayArch from '../components/GatewayArch'
 import Terrain from '../components/Terrain'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 
-import { catmullRom, EASINGS } from '../preview/heroAnim'
-// ⚠️ The `export { resolveHeroSubject } from …` below is a RE-EXPORT and creates
-// no local binding; this file needs its own import to call it.
-import { resolveHeroSubject as _resolveHeroSubject } from '../lib/heroSubject.js'
+import { catmullRom, heroKeyframeAnim, heroPoseAt } from '../preview/heroAnim'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import {
   cameraState, cameraPush, subscribeCameraState, pushCamera, publishCameraState,
@@ -593,36 +590,12 @@ function ColorRow({ label, value, onChange }) {
   )
 }
 
-// ── Default keyframes per shot ──────────────────────────────────────────────
-
-export function defaultKeyframes(shotKey) {
-  const s = SHOTS[shotKey]
-  if (shotKey === 'hero') {
-    // Two keyframes mark the swing extremes; the wave oscillates between them.
-    // ⚠️ NO `target` HERE ON PURPOSE. A keyframe without one falls back to the
-    // resolved subject (heroAnim.js), which is the old dead-centre lock — the
-    // right starting point for a shot nobody has composed yet. The operator
-    // authors the aim by moving the camera and saving.
-    return [
-      { position: [-540, 55, 362], fov: 22 },
-      { position: [-260, 55, 98], fov: 22 },
-    ]
-  }
-  return [{ position: [...s.position], fov: s.fov }]
-}
-
-// Subject centroid resolver lifted to the shared pure module `src/lib/heroSubject.js`
-// (the single resolver Stage / production / Preview all use — no camera resolves
-// differently). Re-exported here so existing `from '../stage/StageApp.jsx'`
-// imports keep resolving. Stage call sites pass the cartograph store's arch
-// values; production/Preview pass `scene.arch.values`.
-export { resolveHeroSubject, FALLBACK_HERO_SUBJECT } from '../lib/heroSubject.js'
-
 // ── Shared hero scrub position (R3F ↔ DOM) ──────────────────────────────────
 
-// Scratch for the interpolated aim — reused every frame so the hero loop stays
+// Scratch for the played pose — reused every frame so the hero loop stays
 // allocation-free, the same reason heroAnim.js writes into caller-owned vectors.
-const _aimScratch = [0, 0, 0]
+const _heroPos = new THREE.Vector3()
+const _heroTgt = new THREE.Vector3()
 
 const heroScrub = { t: 0 }  // 0–1, written by preview or panel scrub
 let heroScrubListeners = new Set()
@@ -635,12 +608,11 @@ function useHeroScrub() {
   return t
 }
 
-// ── Hero authoring mode (free orbit ⇄ locked runtime) ───────────────────────
-// Ephemeral, never persisted/baked — like heroScrub. When ON, the Hero shot's
-// OrbitControls are enabled so the operator can reposition the camera (it still
-// pivots on the subject — HeroPreview pins controls.target every frame, so the
-// Hero Lock holds). When OFF (runtime), controls are locked and the bounce
-// plays as it ships. The out-of-tree controls component reads this via the hook.
+// ── Hero authoring mode (the panel's keyframe-edit state) ───────────────────
+// Ephemeral, never persisted/baked — like heroScrub. ON while a keyframe is
+// being edited (the panel shows Save / Cancel). It does NOT gate the camera: the
+// 3D controls are free whenever playback is not running, and there is no
+// subject to pin to (BRIEF-camera-regimes).
 const heroAuthoring = { on: false }
 let heroAuthoringListeners = new Set()
 function subscribeHeroAuthoring(fn) { heroAuthoringListeners.add(fn); return () => heroAuthoringListeners.delete(fn) }
@@ -669,15 +641,6 @@ function kfName(i, total) {
 function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
   const scrubT = useHeroScrub()
   const authoring = useHeroAuthoring()
-  // The resolved subject — the FALLBACK aim for any keyframe authored before
-  // targets existed, so selecting one lands the camera pointing where the old
-  // lock would have pointed it.
-  const heroSubjectDesignation = useCartographStore(s => s.heroSubject)
-  const archValues = useCartographStore(s => s.arch?.values)
-  const subjectPoint = useMemo(
-    () => _resolveHeroSubject(heroSubjectDesignation, { archValues }),
-    [heroSubjectDesignation, archValues],
-  )
   const trackRef = useRef(null)
   const [scrubDragging, setScrubDragging] = useState(false)
 
@@ -744,8 +707,9 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   }, [])
 
-  // Scrub: move playhead and push interpolated camera (position + fov).
-  // Target is supplied by the runtime (subject centroid), so we don't push it.
+  // Scrub: move playhead and push the pose AT that path parameter — position,
+  // its own interpolated target, and fov — through the same heroPoseAt the
+  // playback uses, so a scrubbed frame and a played frame are the same frame.
   const scrubTo = useCallback((t) => {
     // Snap to nearby keyframe dots so the playhead lands ON them, not next to.
     let snapped = t
@@ -757,22 +721,14 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     heroScrub.t = snapped
     notifyHeroScrub()
     if (keyframes.length < 1) return
-    if (keyframes.length === 1) {
-      pushCamera({ position: keyframes[0].position, fov: keyframes[0].fov })
-      return
-    }
-    const pos = catmullRom(keyframes.map(k => k.position), snapped)
-    const segment = snapped * (keyframes.length - 1)
-    const idx = Math.min(Math.floor(segment), keyframes.length - 2)
-    const local = segment - idx
-    const fov = keyframes[idx].fov + local * (keyframes[idx + 1].fov - keyframes[idx].fov)
-    pushCamera({ position: pos.map(Math.round), fov: Math.round(fov) })
-  }, [keyframes, kfFractions])
+    const { position, target, fov } = heroPoseAt(keyframes, snapped, heroMotion.tension ?? 0.5)
+    pushCamera({ position: position.map(Math.round), target: [...target], fov: Math.round(fov) })
+  }, [keyframes, kfFractions, heroMotion.tension])
 
   const selectKeyframe = useCallback((i) => {
     const kf = keyframes[i]
     if (!kf) return
-    pushCamera({ position: [...kf.position], target: [...(kf.target || subjectPoint)], fov: kf.fov })
+    pushCamera({ position: [...kf.position], target: [...kf.target], fov: kf.fov })
     heroScrub.t = kfFractions[i] ?? 0
     notifyHeroScrub()
   }, [keyframes, kfFractions])
@@ -780,7 +736,9 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
   const addKeyframeFromView = () => {
     const snap = captureCameraSnapshot()
     if (!snap) return
-    const newKf = { position: snap.position, fov: snap.fov }
+    // ⛔ The aim is part of the keyframe — a keyframe without its target is
+    // refused by every runtime (assertKeyframesAimed). This dropped it.
+    const newKf = { position: snap.position, target: snap.target, fov: snap.fov }
     // Insert at the playhead's spot in path order. Post-L1 the playhead IS
     // the true path position, so a gap between dots j and j+1 inserts at j+1
     // (past the last dot → appends). Keyframes then re-space evenly by order.
@@ -831,10 +789,10 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
   }
 
   // ── The authoring loop ──────────────────────────────────────────────────
-  // Click a keyframe → pause, jump the camera there, and unlock free orbit
-  // (the camera still looks at the subject — Hero Lock). Save → capture the
-  // pose, re-lock, and STAY PAUSED on the saved frame. Cancel/Esc → re-lock,
-  // discard the orbit. Default (runtime) plays the bounce with controls locked.
+  // Click a keyframe → pause and jump the camera there (position + its own
+  // aim). Save → capture the live pose into it and STAY PAUSED on the saved
+  // frame. Cancel/Esc → leave without saving. The camera is free throughout —
+  // only playback takes it (BRIEF-camera-regimes).
   const enterAuthoring = useCallback((i) => {
     const kf = keyframes[i]
     if (!kf) return
@@ -845,10 +803,9 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     // ⭐ THE AIM COMES WITH IT. Without the target the camera lands on the
     // keyframe's position pointing wherever it happened to be — half a
     // keyframe, and the operator composes from a pose that is not the one they
-    // clicked. `kf.target` is absent on anything authored before targets
-    // existed; the subject is the fallback, which is what it used to be.
-    pushCamera({ position: [...kf.position], target: [...(kf.target || subjectPoint)], fov: kf.fov })
-  }, [keyframes, kfFractions, heroMotion, setHeroMotion, subjectPoint])
+    // clicked.
+    pushCamera({ position: [...kf.position], target: [...kf.target], fov: kf.fov })
+  }, [keyframes, kfFractions, heroMotion, setHeroMotion])
 
   const saveKeyframe = () => {
     setSelectedFromView()    // capture the live (orbited) pose into the selected kf
@@ -1133,10 +1090,9 @@ function StreetCamera({ cam }) {
 
 // ── Hero preview animation (runs inside R3F) ────────────────────────────────
 
-export function HeroPreview({ keyframes, motion, subject }) {
+export function HeroPreview({ keyframes, motion }) {
   const { camera } = useThree()
   const controls = useThree((s) => s.controls)
-  const authoring = useHeroAuthoring()
   const elapsed = useRef(0)
   const frameCount = useRef(0)
 
@@ -1145,100 +1101,46 @@ export function HeroPreview({ keyframes, motion, subject }) {
     liveCamera.camera = camera
     liveCamera.controls = controls
 
-    // The subject is the FALLBACK aim for any keyframe authored before targets
-    // existed — not the aim itself. See heroAnim.js.
-    const tgt = subject || FALLBACK_HERO_SUBJECT
-    const aim = _aimScratch
-    aim[0] = tgt[0]; aim[1] = tgt[1]; aim[2] = tgt[2]
-
-    // 1) Drain panel pushes (position + target + fov from scrub, keyframe select,
-    // Add/Set Keyframe).
-    // ⛔⛔ THE TARGET USED TO BE DROPPED HERE — "target is owned by the subject;
-    // we ignore u.target if present" — which was true under the Hero Lock and is
-    // a bug without it. Selecting a keyframe or entering authoring jumped the
-    // camera to the saved POSITION and left the aim wherever the last runtime
-    // frame had put it, so the operator started composing from a pose that was
-    // half the keyframe they clicked. Worse with preview paused, where nothing
-    // was updating the aim at all.
+    // 1) Drain panel pushes (position + target + fov from scrub, keyframe
+    // select, Add/Set Keyframe). The target is the keyframe's own aim.
     if (cameraPush.pending) {
       const u = cameraPush.pending
       cameraPush.pending = null
       if (u.position) camera.position.set(u.position[0], u.position[1], u.position[2])
       if (u.fov != null) { camera.fov = u.fov; camera.updateProjectionMatrix() }
       if (u.target) {
-        aim[0] = u.target[0]; aim[1] = u.target[1]; aim[2] = u.target[2]
-        camera.lookAt(aim[0], aim[1], aim[2])
-        if (controls) { controls.target.set(aim[0], aim[1], aim[2]); controls.update() }
+        camera.lookAt(u.target[0], u.target[1], u.target[2])
+        if (controls) { controls.target.set(u.target[0], u.target[1], u.target[2]); controls.update() }
       }
     }
 
-    // 2) Animate when playing — interpolate position + fov; target = subject.
+    // 2) Play — the SAME heroKeyframeAnim Preview and production play (arc-length
+    // pacing, keyframe dwell, end trim), so what is previewed here is what ships.
+    // Position, aim and fov are the keyframes' own, interpolated on one parameter.
+    // ⛔⛔ WHEN NOT PLAYING THIS TOUCHES NOTHING. It used to re-aim at the hero
+    // subject every frame it was not authoring — `camera.lookAt(subject)` +
+    // `controls.target.set(subject)` — so every orbit pivoted on the subject
+    // (on huron the hood centroid) and every pan was undone the next frame
+    // (Jacob, 2026-09-26: "trouble getting the camera to an angle to actually
+    // check the stage in Huron"). The camera is the operator's whenever it is
+    // not playing (BRIEF-camera-regimes).
     if (motion.preview && keyframes.length >= 1) {
-      const speed = motion.speed || 1
-      elapsed.current += delta * speed
-      const wave = EASINGS[motion.easing] || EASINGS.sine
-      const t01 = (elapsed.current % motion.period) / motion.period
-      const t = wave(t01)
-
-      // Publish the PATH position (post-wave), not the period phase, so the
-      // panel playhead lives in the same coordinate system as scrubbing and
-      // the dots — it visibly bounces out-and-back and stays glued to the
-      // camera (which sits at catmullRom(positions, t)).
-      heroScrub.t = t
+      elapsed.current += delta
+      const { fov, u } = heroKeyframeAnim(elapsed.current, keyframes, motion, _heroPos, _heroTgt)
+      // Publish the PATH parameter, so the panel playhead lives in the same
+      // coordinate system as scrubbing and the dots.
+      heroScrub.t = u
       notifyHeroScrub()
-
-      let pos, fov
-      if (keyframes.length === 1) {
-        pos = keyframes[0].position
-        fov = keyframes[0].fov
-      } else {
-        pos = catmullRom(keyframes.map(k => k.position), t)
-        const segment = t * (keyframes.length - 1)
-        const idx = Math.min(Math.floor(segment), keyframes.length - 2)
-        const local = segment - idx
-        fov = keyframes[idx].fov + local * (keyframes[idx + 1].fov - keyframes[idx].fov)
-      }
-
-      camera.position.set(pos[0], pos[1], pos[2])
-      if (Math.abs(camera.fov - fov) > 0.1) {
-        camera.fov = fov
-        camera.updateProjectionMatrix()
-      }
-      // The aim rides the same parameter as the position, so they cannot
-      // desynchronise. A keyframe with no authored target falls back to the
-      // subject — the old lock, for that keyframe only.
-      const tgts = keyframes.map(k => k.target || tgt)
-      const at = keyframes.length === 1 ? tgts[0] : catmullRom(tgts, t)
-      aim[0] = at[0]; aim[1] = at[1]; aim[2] = at[2]
+      camera.position.copy(_heroPos)
+      if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
+      camera.lookAt(_heroTgt)
+      if (controls) controls.target.copy(_heroTgt)
     }
 
-    // 3) Aim — AUTHORED, not derived.
-    //
-    // ⛔⛔ THIS RE-PINNED TO THE SUBJECT EVERY FRAME, animating or not, and that
-    // one line is why the LS pan is level to within two degrees and shows no
-    // rooftops. With a plain lookAt(subject) the pitch is not a choice — it is
-    // atan((subjY − camY) / distance), and the subject is 2km out at camera
-    // height. It also meant every authoring gesture was an orbit around the
-    // subject whether one was wanted or not: pan was undone the instant it
-    // happened, so there was no way to tilt and no way to compose a frame the
-    // subject was not centred in.
-    // ⭐ AUTHORING TOUCHES NOTHING — the camera is free, and what the operator
-    // composes IS the keyframe (Save captures position AND target).
-    // ⭐ OTHERWISE the aim is the interpolated authored target, riding the same
-    // parameter as the position so the two cannot desynchronise.
-    // ⚠️ A keyframe with no authored target falls back to the subject, which
-    // reproduces the old lock exactly for that keyframe — so a slab baked
-    // before today plays identically.
-    if (!authoring) {
-      camera.lookAt(aim[0], aim[1], aim[2])
-      if (controls) controls.target.set(aim[0], aim[1], aim[2])
-    }
-
-    // 4) Broadcast camera state to the panel (every 10 frames)
+    // 3) Broadcast camera state to the panel (every 10 frames)
     if (++frameCount.current % 10 !== 0) return
-    publishCameraState(camera, controls
-      ? [controls.target.x, controls.target.y, controls.target.z]
-      : aim)
+    const t = controls?.target
+    if (t) publishCameraState(camera, [t.x, t.y, t.z])
   })
 
   return null

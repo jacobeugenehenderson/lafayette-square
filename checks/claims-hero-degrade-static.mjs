@@ -1,92 +1,77 @@
 #!/usr/bin/env node
 /**
- * claims-hero-degrade-static.mjs — A11-c gate (agent Vantage, 2026-08-07).
+ * claims-hero-degrade-static.mjs — the opening view of a town with no keyframes.
+ * (A11-c gate, agent Vantage 2026-08-07; re-founded 2026-09-26 on
+ * BRIEF-camera-regimes, when the camera stopped reading a hero subject.)
  *
- * Jacob's ruling: "the camera is a pan pointed at the hero object; with no hero
- * object set up, the pan defaults to OFF." This proves the undesignated hero
- * degrade, for EVERY baked Look, in a town nobody has looked at:
+ * H-7 (Jacob, 2026-09-25): "Where a town has no keyframes yet, the default
+ * opening view MAY point at its set-piece, else the town centre: a starting
+ * suggestion, not a rule." This proves that view, for EVERY baked Look, in a
+ * town nobody has looked at:
  *
- *   1. STATIC   — a Look with no authored heroKeyframes gets exactly one
+ *   1. STATIC   — a Look with no authored heroKeyframes plays exactly one
  *                 keyframe, and heroKeyframeAnim returns the SAME pose at every
  *                 phase of the period (no motion, not "slow motion").
- *   2. NOT LS   — the derived pose is not Lafayette Square's literal, and it
- *                 tracks the scene's own hood extent: change the extent, the
- *                 pose must move. A constant that ignores its input is the
- *                 defect this check exists to catch.
- *   3. LOUD     — with no readable hood extent the deriver returns null and
- *                 shouts, rather than substituting a plausible frame.
+ *   2. TRACKS   — the pose is derived from the scene's OWN disc
+ *                 (ground.json#stencil): scale the disc, the pose scales; move
+ *                 it, the pose moves. A constant that ignores its input is the
+ *                 defect this check exists to catch (the seven-in-a-day class).
+ *   3. LOUD     — a published-but-degenerate disc refuses and shouts, rather
+ *                 than substituting a plausible frame.
  *   4. AUTHORED — a Look WITH heroKeyframes is passed through untouched.
  *
- * ⭐ Reads the constants and the deriver out of src/components/Scene.jsx source
- * rather than restating them, so it cannot go stale when the formula is tuned.
+ * ⭐ Imports the one deriver every runtime uses (src/lib/cameraRegimes.js) and
+ * the one playback (src/preview/heroAnim.js) — nothing restated here.
  * Enumerates public/baked/ * /scene.json — no scene names in this file.
  */
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { heroAnimPose } from '../src/preview/heroAnim.js'
+import * as THREE from 'three'
+import { heroKeyframeAnim } from '../src/preview/heroAnim.js'
+import { derivedOpeningKeyframe, resolveHeroKeyframes } from '../src/lib/cameraRegimes.js'
 import { requireArtifact } from './_scenes.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const SCENE_JSX = join(ROOT, 'src/components/Scene.jsx')
-
-// ── Lift the deriver + its constants out of Scene.jsx (never restate them) ───
-const src = readFileSync(SCENE_JSX, 'utf8')
-function lift(name, re) {
-  const m = src.match(re)
-  if (!m) { console.error(`FAIL — could not lift ${name} from Scene.jsx`); process.exit(1) }
-  return m
-}
-const HERO_CENTER = JSON.parse(lift('HERO_CENTER', /const HERO_CENTER = (\[[^\]]*\])/)[1])
-const fnSrc = lift('derivedHeroPose', /(function derivedHeroPose[\s\S]*?\n})/)[1]
-const constsSrc = [
-  lift('HERO_STANDOFF_RATIO', /const HERO_STANDOFF_RATIO\s*=\s*[-\d.]+/)[0],
-  lift('HERO_EYE_RATIO',      /const HERO_EYE_RATIO\s*=\s*[-\d.]+/)[0],
-  lift('HERO_BEARING',        /const HERO_BEARING\s*=\s*\[[^\]]*\]/)[0],
-].join('\n')
-const derivedHeroPose = new Function(`${constsSrc}\n${fnSrc}\nreturn derivedHeroPose`)()
-
-// Scene.jsx's own default when scene.json omits heroMotion.
-const HERO_MOTION = { period: 720, easing: 'sine' }
-// Scene.jsx's hero-keyframe expression, replayed exactly (see the useMemo).
-function keyframesFor(scene, heroSubject, bounds, fov) {
-  if (scene?.heroKeyframes?.length) return scene.heroKeyframes
-  const pos = derivedHeroPose(heroSubject, bounds)
-  return [{ position: pos || HERO_CENTER, fov }]
-}
+const HERO_MOTION = { period: 720, easing: 'sine' }   // the runtimes' default when scene.json omits heroMotion
 
 let fails = 0
 const bad = (msg) => { console.log(`  ✗ ${msg}`); fails++ }
 const ok  = (msg) => console.log(`  ✓ ${msg}`)
 
-// ── 3. LOUD: no readable extent ⇒ null, not a plausible pose ─────────────────
-console.log('\n[loud] degenerate hood extent must refuse, not substitute')
+// ── 3. LOUD ──────────────────────────────────────────────────────────────────
+console.log('\n[loud] a degenerate disc must refuse, not substitute')
 {
   const quiet = console.error; let shouted = 0
   console.error = () => { shouted++ }
-  const results = [undefined, null, {}, { w: 0, h: 0 }, { w: NaN, h: 100 }, { w: -5, h: 5 }]
-    .map(b => derivedHeroPose([0, 40, 0], b))
+  const degenerate = [{}, { radius: 0, center: [0, 0] }, { radius: NaN, center: [0, 0] },
+    { radius: -5, center: [0, 0] }, { radius: 500 }, { radius: 500, center: [NaN, 0] }]
+  const results = degenerate.map(s => derivedOpeningKeyframe(s, 22))
+  const pending = derivedOpeningKeyframe(null, 22)
   console.error = quiet
-  if (results.every(r => r === null)) ok(`${results.length}/${results.length} degenerate extents refused`)
-  else bad(`a degenerate extent produced a pose: ${JSON.stringify(results.find(r => r !== null))}`)
+  if (results.every(r => r === null)) ok(`${results.length}/${results.length} degenerate discs refused`)
+  else bad(`a degenerate disc produced a pose: ${JSON.stringify(results.find(r => r !== null))}`)
   if (shouted === results.length) ok(`each refusal shouted on console.error (${shouted})`)
   else bad(`silent refusal — ${shouted} of ${results.length} shouted`)
+  if (pending === null) ok('an unpublished disc (still loading) yields no pose')
+  else bad('an unpublished disc produced a pose')
 }
 
-// ── 2b. The pose must TRACK the extent (a constant would pass everything else) ──
-console.log('\n[tracks] pose must follow the scene it is given')
+// ── 2. TRACKS ────────────────────────────────────────────────────────────────
+console.log('\n[tracks] the pose must follow the disc it is given')
 {
-  const small = derivedHeroPose([0, 40, 0], { w: 400, h: 300 })
-  const big   = derivedHeroPose([0, 40, 0], { w: 4000, h: 3000 })
+  const small = derivedOpeningKeyframe({ center: [0, 0], radius: 250 }, 22)
+  const big   = derivedOpeningKeyframe({ center: [0, 0], radius: 2500 }, 22)
   const dist = (p) => Math.hypot(p[0], p[2])
-  if (dist(big) > dist(small) * 9) ok(`10× hood ⇒ ${(dist(big) / dist(small)).toFixed(1)}× standoff`)
-  else bad(`standoff ignores hood size (${dist(small).toFixed(0)} → ${dist(big).toFixed(0)})`)
-  const off = derivedHeroPose([500, 40, -250], { w: 400, h: 300 })
-  if (Math.abs(off[0] - small[0] - 500) < 1e-6 && Math.abs(off[2] - small[2] + 250) < 1e-6)
-    ok('pose is anchored on the resolved hero subject, not on a world literal')
-  else bad('pose does not translate with the hero subject')
-  if (big[1] > small[1] * 9) ok(`10× hood ⇒ ${(big[1] / small[1]).toFixed(1)}× eye height`)
-  else bad('eye height ignores hood size')
+  if (dist(big.position) > dist(small.position) * 9) ok(`10× disc ⇒ ${(dist(big.position) / dist(small.position)).toFixed(1)}× standoff`)
+  else bad(`standoff ignores the disc's size (${dist(small.position).toFixed(0)} → ${dist(big.position).toFixed(0)})`)
+  if (big.position[1] > small.position[1] * 9) ok(`10× disc ⇒ ${(big.position[1] / small.position[1]).toFixed(1)}× eye height`)
+  else bad('eye height ignores the disc\'s size')
+  const off = derivedOpeningKeyframe({ center: [500, -250], radius: 250 }, 22)
+  const moved = Math.abs(off.position[0] - small.position[0] - 500) < 1e-6 && Math.abs(off.position[2] - small.position[2] + 250) < 1e-6
+    && off.target[0] === 500 && off.target[2] === -250
+  if (moved) ok('pose and aim are anchored on the disc centre, not on a world literal')
+  else bad('pose does not translate with the disc centre')
 }
 
 // ── Per-scene sweep ──────────────────────────────────────────────────────────
@@ -96,40 +81,42 @@ const looks = readdirSync(bakedDir, { withFileTypes: true })
   .filter(d => d.isDirectory() && existsSync(join(bakedDir, d.name, 'scene.json')))
   .map(d => d.name)
 
+const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')) } catch { return null } }
+const V = () => new THREE.Vector3()
+
 console.log(`\n[scenes] ${looks.length} baked Looks`)
 for (const look of looks) {
-  const scene = JSON.parse(readFileSync(join(bakedDir, look, 'scene.json'), 'utf8'))
+  const scene = readJson(join(bakedDir, look, 'scene.json'))
+  const stencil = readJson(join(bakedDir, look, 'ground.json'))?.stencil ?? null
   const authored = !!scene.heroKeyframes?.length
   const fov = scene.shots?.values?.hero?.fov ?? 22
-  const bounds = scene.shots?.values?.browse?.bounds
-  // The undesignated look-at for a Look with no arch channel is the hood
-  // centroid = the local frame origin, by construction (src/lib/heroSubject.js).
-  const subject = [0, 40, 0]
-  const kfs = keyframesFor(scene, subject, bounds, fov)
-  const motion = scene.heroMotion || HERO_MOTION
+  let kfs
+  try { kfs = resolveHeroKeyframes(scene.heroKeyframes, stencil, fov, look) }
+  catch (e) { bad(`${look}: ${e.message}`); continue }
 
   if (authored) {
-    console.log(`  · ${look.padEnd(26)} AUTHORED (${kfs.length} kf) — passed through`)
     if (kfs !== scene.heroKeyframes) bad(`${look}: authored path did not pass through by identity`)
+    else console.log(`  · ${look.padEnd(26)} AUTHORED (${kfs.length} kf) — passed through`)
     continue
   }
+  if (!kfs) { bad(`${look}: no keyframes and no scene disc — nothing to open on`); continue }
 
   // 1. STATIC — sample the whole period; every pose identical.
-  const poses = Array.from({ length: 24 }, (_, i) => heroAnimPose(i / 24, kfs, motion).position.slice())
-  const moved = poses.some(p => p.some((v, j) => Math.abs(v - poses[0][j]) > 1e-9))
-  const fovs = Array.from({ length: 24 }, (_, i) => heroAnimPose(i / 24, kfs, motion).fov)
-  const fovMoved = fovs.some(f => Math.abs(f - fovs[0]) > 1e-9)
-
-  // 2. NOT LS — must not be the LS literal.
-  const isLs = poses[0].every((v, j) => Math.abs(v - HERO_CENTER[j]) < 1e-9)
-
-  const p = poses[0].map(v => Math.round(v))
-  const verdict = (!moved && !fovMoved && !isLs && kfs.length === 1)
-  console.log(`  ${verdict ? '✓' : '✗'} ${look.padEnd(26)} DEGRADE 1 kf @ [${p}] fov ${fovs[0]}` +
-    `${moved ? '  ⛔ MOVES' : ''}${fovMoved ? '  ⛔ FOV MOVES' : ''}${isLs ? '  ⛔ IS THE LS LITERAL' : ''}`)
+  const motion = scene.heroMotion || HERO_MOTION
+  const period = motion.period || 720
+  const samples = Array.from({ length: 24 }, (_, i) => {
+    const p = V(), q = V()
+    const { fov: f } = heroKeyframeAnim((i / 24) * period, kfs, motion, p, q)
+    return [p.x, p.y, p.z, q.x, q.y, q.z, f]
+  })
+  const moved = samples.some(s => s.some((v, j) => Math.abs(v - samples[0][j]) > 1e-9))
+  const verdict = !moved && kfs.length === 1
+  const p = samples[0].slice(0, 3).map(v => Math.round(v))
+  console.log(`  ${verdict ? '✓' : '✗'} ${look.padEnd(26)} OPENING VIEW 1 kf @ [${p}] → disc r=${stencil.radius}` +
+    `${moved ? '  ⛔ MOVES' : ''}`)
   if (!verdict) fails++
 }
 
-console.log(fails === 0 ? '\nPASS — hero degrade is static, scene-derived, and loud on refusal'
+console.log(fails === 0 ? '\nPASS — the opening view is static, disc-derived, and loud on refusal'
                         : `\nFAIL — ${fails} problem(s)`)
 process.exit(fails === 0 ? 0 : 1)

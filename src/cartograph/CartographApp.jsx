@@ -49,12 +49,13 @@ import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
 import { sceneExag, reloadTerrain } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject } from '../stage/StageApp.jsx'
+import { SHOTS, computeBrowseAltitude, HeroPreview } from '../stage/StageApp.jsx'
+import { assertKeyframesAimed } from '../preview/heroAnim.js'
+import { derivedOpeningKeyframe } from '../lib/cameraRegimes.js'
 import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
 import { PostProcessing, StageFog, StageShadows } from '../components/PostProcessing.jsx'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { transitionMs } from '../camera/transitions.js'
-import { buildings as _allBuildings } from '../data/buildings'
 
 // Toy scene fixtures (single 4-way corner for shader/shadow R&D)
 import toyRibbons from '../data/toy/toy-ribbons.json'
@@ -71,7 +72,7 @@ import Toolbar from './Toolbar.jsx'
 import ExtentApp from './ExtentApp.jsx'
 import StatusBar from './StatusBar.jsx'
 import Panel from './Panel.jsx'
-import StagePanelReal, { defaultKeyframes } from './StagePanel.jsx'
+import StagePanelReal from './StagePanel.jsx'
 import CartographSkyLight from './CartographSkyLight.jsx'
 import CartographPost from './CartographPost.jsx'
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState.js'
@@ -356,9 +357,6 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         let fov = storeShots?.[shot]?.fov ?? s.fov
         let toPos
         let toTarget = [...s.target]
-        // Set when the Hero pose came from the operator's own keyframes, so the
-        // generic poured-scene reframe below knows to keep its hands off.
-        let heroAuthored = false
         if (shot === 'browse') {
           // ⛔⛔ THE HANDOFF WAS ONE-WAY, AND THAT IS THE BUG (2026-09-05).
           // Browse → Designer has carried the view for a long time (see the
@@ -403,24 +401,25 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             toPos = [s.position[0], y, s.position[2]]
           }
         } else if (shot === 'hero') {
-          // Hero framing is AUTHORED as keyframes + a designated subject, not
-          // the static SHOTS.hero scaffold. Enter at the path start (first
-          // keyframe) looking at the resolved subject, with the keyframe's fov;
-          // HeroPreview then owns subsequent aim/animation. Without this the
-          // camera dropped at the generic SHOTS.hero pose and ignored the
-          // operator's authored keyframes on load (and on every shot switch).
+          // Hero framing is the operator's KEYFRAMES, each with its own aim.
+          // Enter at the path start — the first keyframe's position, target and
+          // fov; HeroPreview plays from there. A town with none gets the opening
+          // view derived from its own disc (cameraRegimes.js), the same one
+          // Preview and production open on.
+          // ⛔ No hero subject and no SHOTS.hero (a Lafayette Square pose): the
+          // camera is never aimed at a designation (BRIEF-camera-regimes, H-7).
           const kfs = useCartographStore.getState().heroKeyframes
-          const subj = resolveHeroSubject(
-            useCartographStore.getState().heroSubject,
-            { buildings: _allBuildings, archValues: useCartographStore.getState().arch?.values },
-          )
-          if (subj) toTarget = [...subj]
-          if (kfs && kfs.length >= 1) {
-            toPos = [...kfs[0].position]
-            if (kfs[0].fov != null) fov = kfs[0].fov
-            heroAuthored = true
+          const open = kfs?.length
+            ? assertKeyframesAimed(kfs, 'stage')[0]
+            : derivedOpeningKeyframe(sceneBoundary, fov)
+          if (open) {
+            toPos = [...open.position]
+            toTarget = [...open.target]
+            fov = open.fov
           } else {
-            toPos = [...s.position]
+            console.error('[stage] hero: no keyframes and no scene disc (neighborhood_boundary.json) — nothing to frame')
+            toPos = [cam.position.x, cam.position.y, cam.position.z]
+            toTarget = ctl ? [ctl.target.x, ctl.target.y, ctl.target.z] : toPos
           }
         } else {
           toPos = [...s.position]
@@ -429,8 +428,9 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         // ABSOLUTE poses — browse sits on LS's building centroid (95,-158) with
         // LS's 1292×1025 bounds; hero is an LS oblique. A fresh hood is centered
         // at origin (0,0) with its OWN radius, so reframe generically: browse =
-        // true overhead over center fit to the circle; hero = scaled oblique;
-        // street = ground-level at center. Until per-scene shot authoring lands.
+        // true overhead over center fit to the circle; street = ground-level at
+        // center. Until per-scene shot authoring lands. (Hero is not here: it is
+        // the keyframes, or the derived opening view, above — in every town.)
         const nb = sceneBoundary
         // ⛔ `browseFrame` short-circuits this for Browse: the generic reframe is
         // the scaffold for a town NOBODY has framed yet ("until per-scene shot
@@ -445,28 +445,6 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             // fit the 2R circle in the binding viewport axis (portrait-safe) + pad
             toPos = [0, (R * 1.12) / (Math.min(1, aspect) * t), 0]
             toTarget = [0, 0, 0]
-          } else if (shot === 'hero') {
-            // ⛔⛔ THE AUTHORED KEYFRAME OUTRANKS THIS, AND IT DID NOT USED TO.
-            // Thirty lines up, Hero already enters at the path start — the
-            // operator's own first keyframe. Then this ran and threw it away on
-            // every town except Lafayette Square, because the guard that
-            // protects Browse's authored frame (`!browseFrame`, above) had no
-            // counterpart here. ⭐ That is the failure shape the Browse comment
-            // already names in so many words: "the feature would work on LS and
-            // be silently overridden in every other town."
-            // ⇒ MEASURED on huron (R ≈ 3353 m): this put the camera at
-            // [-2515, 1677, 2515] — 4.2 km out and 1.7 km up — while the
-            // authored first keyframe is [-456, 91, -17], about NINE TIMES
-            // closer. The operator waited through a long load to arrive at a
-            // distant overview they had not chosen and could not keep.
-            // ⛔ Still the right scaffold for a town nobody has framed yet, which
-            // is exactly when `heroKeyframes` is empty (`HERO_KEYFRAMES_DEFAULT
-            // = []` — the kit stores no camera), so the un-authored path is
-            // unchanged and no town inherits another town's pose.
-            if (!heroAuthored) {
-              toPos = [-R * 0.75, R * 0.5, R * 0.75]
-              toTarget = [0, R * 0.02, 0]
-            }
           } else {
             toPos = [0, 1.73, R * 0.08]
             toTarget = [0, 1.73, R * 0.08 - 0.5]
@@ -1193,7 +1171,6 @@ export default function CartographApp() {
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const activeLookId = useCartographStore(s => s.activeLookId)
   const bakeLastMs = useCartographStore(s => s.bakeLastMs)
-  const heroSubject = useCartographStore(s => s.heroSubject)
   const storeKeyframes = useCartographStore(s => s.heroKeyframes)
   const setStoreKeyframes = useCartographStore(s => s.setHeroKeyframes)
   const storeMotion = useCartographStore(s => s.heroMotion)
@@ -1233,9 +1210,7 @@ export default function CartographApp() {
   const dofOverride      = useCartographStore(s => activeChannel(s, 'dof'))
   const grainOverride    = useCartographStore(s => activeChannel(s, 'grain'))
   const shadowOverride   = useCartographStore(s => activeChannel(s, 'shadow'))
-  // Live arch placement → the DoF hero pocket anchors to the SAME (store) arch
-  // Stage renders, not the stale baked scene.json one (heroSubject already read
-  // above at component scope).
+  // Live arch placement — gates the Designer's arch prop below.
   const archOverride     = useCartographStore(s => s.arch)
 
   // Hero keyframes + authored motion live in the store (persisted to design.json).
@@ -1539,8 +1514,6 @@ export default function CartographApp() {
             grainOverride={grainOverride}
             smaaOverride={smaaOverride}
             dofOverride={dofOverride}
-            archOverride={archOverride}
-            heroSubjectOverride={heroSubject}
           />}
           <group visible={!inDesigner}>
             {/* ⚠️ `?csm=1` — cascaded shadow maps, dark by default. Mounted HERE as well as
@@ -1609,23 +1582,22 @@ export default function CartographApp() {
           <Controls controlsRef={controlsRef} heroPlaying={previewPlaying} />
           {/* ⛔⛔ `sceneCfg.hasHero` GATED THIS AND WAS TRUE FOR LAFAYETTE SQUARE
               ONLY — removed 2026-09-21. HeroPreview is not a decoration, it IS the
-              playback driver: the useFrame at StageApp.jsx:1176 that interpolates
-              the keyframes and writes the camera. Unmounted, the Play button
+              playback driver: the useFrame in StageApp.jsx#HeroPreview that plays
+              the keyframes (heroKeyframeAnim) and writes the camera. Unmounted, the Play button
               toggled a flag nothing read.
               ⇒ Jacob, on huron: "I programmed new keyframes into the camera but
               they don't playback when I push play" … "the LS values are the
               defaults, and they are useless, but they don't drive the camera
               either." Correct on both counts — there was no driver in the scene.
               ⭐ The flag had exactly ONE consumer (this line) and read as "does this
-              town have a hero OBJECT". It does not gate an object; LS's hero is the
-              Arch, and HeroPreview already ships FALLBACK_HERO_SUBJECT for a town
-              that has none. A town with no landmark still needs a camera path —
+              town have a hero OBJECT". It does not gate an object, and since
+              BRIEF-camera-regimes the camera reads no hero object at all — each
+              keyframe carries its own aim. A town with no landmark still needs a camera path —
               Jacob, earlier the same night: "the hero object … that is barely a
               thing". ⛔ Conflating "has a landmark" with "may move its camera" is
               the LS-gated-capability shape, seventh of the night. */}
           {shot === 'hero' && (
-            <HeroPreview keyframes={keyframes} motion={heroMotion}
-              subject={resolveHeroSubject(heroSubject, { buildings: _allBuildings, archValues: useCartographStore.getState().arch?.values })} />
+            <HeroPreview keyframes={keyframes} motion={heroMotion} />
           )}
         </Canvas>
 

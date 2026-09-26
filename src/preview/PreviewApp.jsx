@@ -8,7 +8,7 @@
  */
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
 import InstancedTrees from '../components/InstancedTrees'
@@ -27,8 +27,7 @@ import GatewayArch from '../components/GatewayArch'
 import SetPiece from '../components/SetPiece.jsx'
 import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
-import { resolveHeroSubject } from '../lib/heroSubject.js'
-import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
+import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -153,22 +152,22 @@ function ShotCamera({ shot, setShot }) {
   if (!tweenRef.current) tweenRef.current = createCameraTween()
   const tween = tweenRef.current
 
-  // Authored hero animation from the slab (same data Stage's HeroPreview
-  // plays). Falls back to the static hero pose for an unauthored Look.
+  // Authored hero animation from the slab (same data and function Stage's
+  // HeroPreview plays).
   const scene = useSceneJson(resolvePreviewLookId())
-  const slabIndex = useSlabBuildingIndex((s) => s.index)
-  const heroKeyframes = scene?.heroKeyframes?.length
-    ? scene.heroKeyframes
-    : [{ position: SHOTS.hero.position, fov: SHOTS.hero.fov }]
+  // Each keyframe carries its own aim; no authored path → the opening view
+  // derived from this scene's own disc (src/lib/cameraRegimes.js). ⛔ No hero
+  // subject and no Lafayette Square pose (BRIEF-camera-regimes, H-7).
+  const stencil = useSceneStencil()
+  const heroFov = scene?.shots?.values?.hero?.fov ?? SHOTS.hero.fov
+  const heroKeyframes = useMemo(
+    () => resolveHeroKeyframes(scene?.heroKeyframes, stencil, heroFov, 'preview'),
+    [scene?.heroKeyframes, stencil, heroFov])
   const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
-  // Hero look-at via the SHARED resolver — parity with production CameraRig.
-  // Undesignated → the authored Gateway Arch (scene.arch.values); building/
-  // landmark → the slab index. (project_camera_framing_slab_contract)
-  const heroSubject = resolveHeroSubject(scene?.heroSubject, { slabIndex, archValues: scene?.arch?.values })
   const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
 
   // Resolve the pose for a shot transition. Hero uses the keyframe path's
-  // start (+ subject as target) so the tween lands on the authored path
+  // pose (position + its own target) so the tween lands on the authored path
   // instead of the legacy static center, avoiding a snap when the per-frame
   // animation below takes over. Browse up comes from the authored heading
   // (cosmetic screen orientation) — same scene.browseHeading production reads.
@@ -191,8 +190,9 @@ function ShotCamera({ shot, setShot }) {
     if (shotKey === 'hero') {
       // ⛔ SAME PHASE AS THE ANIMATION, or the camera is placed at the path's
       // start and then JUMPS to the random offset on the first frame.
-      const { fov } = heroKeyframeAnim(heroPhase.current, heroKeyframes, heroMotion, _heroPos)
-      return { pos: [_heroPos.x, _heroPos.y, _heroPos.z], target: heroSubject, fov, up: [0, 1, 0] }
+      if (!heroKeyframes) return null
+      const { fov } = heroKeyframeAnim(heroPhase.current, heroKeyframes, heroMotion, _heroPos, _heroTgt)
+      return { pos: _heroPos.toArray(), target: _heroTgt.toArray(), fov, up: [0, 1, 0] }
     }
     const pose = resolveShotPose(shotKey, aspect)
     if (shotKey === 'browse' && pose) pose.up = browseUpFromHeading(browseHeadingDeg)
@@ -268,13 +268,13 @@ function ShotCamera({ shot, setShot }) {
   }, [shot, camera, size.width, size.height])
 
   // Drive the tween every frame; when idle in Hero, play the AUTHORED
-  // keyframe animation (slab heroKeyframes/heroMotion, look at heroSubject)
+  // keyframe animation (slab heroKeyframes/heroMotion, each with its own aim)
   // so Preview matches Stage and reflects what the operator tuned — not
   // production's legacy lateral pan.
   useFrame(({ clock }) => {
     if (tween.isActive()) { tween.tick(performance.now()); return }
-    if (shot !== 'hero') return
-    const { fov } = heroKeyframeAnim(clock.elapsedTime + heroPhase.current, heroKeyframes, heroMotion, _heroPos, _heroTgt, heroSubject)
+    if (shot !== 'hero' || !heroKeyframes) return
+    const { fov } = heroKeyframeAnim(clock.elapsedTime + heroPhase.current, heroKeyframes, heroMotion, _heroPos, _heroTgt)
     camera.position.copy(_heroPos)
     if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
     const ctl = controlsRef.current

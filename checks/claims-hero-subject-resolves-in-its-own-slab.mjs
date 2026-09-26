@@ -15,6 +15,9 @@
  * resolved to `FALLBACK_HERO_SUBJECT = [400,45,-100]` — LS's hero target — in every
  * town INCLUDING LS. A picker that silently frames the wrong thing is Layer 0 q2:
  * the operator sees a camera move and never learns it aimed at nothing.
+ * (2026-09-26, BRIEF-camera-regimes: the camera no longer reads the designation
+ * at all and `heroSubject.js` is gone; the designation's ids are still slab ids,
+ * so an offered landmark must still exist in the town's own slab.)
  *
  * ⛔ SO THIS ASSERTS THE PROPERTY, NOT THE PATCH: every hero subject a town can
  * OFFER must resolve in THAT TOWN'S OWN slab. That is true for town #5 without
@@ -39,7 +42,6 @@ const ROOT   = new URL('..', import.meta.url).pathname
 const PUBLIC = join(ROOT, 'public')
 const MANIFEST_SRC = readFileSync(join(ROOT, 'src/data/loadInstanceData.js'), 'utf8')
 const PANEL_SRC    = readFileSync(join(ROOT, 'src/cartograph/SurveyorPanel.jsx'), 'utf8')
-const HERO_SRC     = readFileSync(join(ROOT, 'src/lib/heroSubject.js'), 'utf8')
 
 const readJson = (p) => { try { return JSON.parse(readFileSync(p, 'utf8')) } catch { return null } }
 
@@ -93,12 +95,6 @@ check('the hero picker does not statically import a shared src/data/* artifact',
   return m ? `SurveyorPanel.jsx still has \`${m[0]}\` — that file is LS's own data as well as "the default", so every town is offered LS's` : null
 })
 
-check('the resolver still keys landmarks on the SLAB id (if this moves, the rule below moves)', () => (
-  /subject\.kind === 'building' \|\| subject\.kind === 'landmark'/.test(HERO_SRC) && /slabIndex\.byId/.test(HERO_SRC)
-    ? null
-    : 'heroSubject.js no longer resolves landmark/building through slabIndex.byId — re-derive what the offered id must be'
-))
-
 check('every look with landmarks has a manifest entry of its OWN (none inherits another town\'s)', () => {
   const bad = []
   for (const [lookId, p] of paths) {
@@ -127,7 +123,7 @@ check('every landmark a town can OFFER resolves in that town\'s OWN slab', () =>
     measured++
     if (miss.length) {
       bad.push(`${lookId}: ${miss.length}/${offered.length} offered landmark(s) are not in its slab ` +
-               `(e.g. "${miss[0].name}" → ${miss[0].building_id}) — each would frame FALLBACK_HERO_SUBJECT`)
+               `(e.g. "${miss[0].name}" → ${miss[0].building_id}) — each would designate a building the town does not contain`)
     }
   }
   return bad.length ? bad.join('\n           ') : null

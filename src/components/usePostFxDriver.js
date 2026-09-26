@@ -59,14 +59,15 @@ export const _haloColorRef       = { current: new THREE.Color(HALO_FLAT_DEFAULTS
  * @param resolved  the already-resolved channels + drive targets:
  *   { bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
  *     haloChannel, gradeChannel, grainChannel, dofChannel, dofOn, viewMode,
- *     aoRef, bloomRef, archValues, heroSubject }
+ *     aoRef, bloomRef }
  */
 export function usePostFxDriver({
   bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
   haloChannel, gradeChannel, grainChannel, dofChannel, dofOn,
-  viewMode, aoRef, bloomRef, archValues, heroSubject,
+  viewMode, aoRef, bloomRef,
 }) {
   const { gl, camera } = useThree()
+  const controls = useThree((s) => s.controls)
 
   useFrame(() => {
     const tod = useTimeOfDay.getState()
@@ -141,11 +142,11 @@ export function usePostFxDriver({
     // DoF / Focus — the ONE shared per-frame driver (./dofDriver.js). Since all
     // three surfaces drive through this hook, the hero-pocket VIEW-Z anchor + the
     // browse look-down gate cannot drift between production and the publish gate.
-    // Prefer the LIVE (store) arch + hero subject in Stage; fall back to the
-    // baked scene.json in production/Preview (resolved by the caller). Cheap;
+    // Focus = the default controls' target (the keyframe target in playback,
+    // the orbit pivot when flying). Cheap;
     // only meaningful when dofOn (i.e. the DoF pass is mounted).
     if (dofOn) {
-      applyDofFrame({ camera, dofChannel, minute, slotMins, archValues, heroSubject })
+      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target })
     }
   })
 }

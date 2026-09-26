@@ -18,8 +18,9 @@ const TYPES = [
 
 // Hero subject picker — lives in Survey because picking the scene's hero
 // subject is a survey act (you're identifying a real-world building/landmark
-// as the privileged subject). Stage and Browse read heroSubject for camera
-// anchoring; Designer doesn't need to expose it.
+// as the privileged subject). ⛔ No camera reads it any more (BRIEF-camera-
+// regimes, 2026-09-26): shots are the operator's keyframes, each with its own
+// aim. Its one remaining reader is the Stage "Hero & Horizon" card.
 function HeroSubjectPicker() {
   const heroSubject = useCartographStore(s => s.heroSubject)
   const setHeroSubject = useCartographStore(s => s.setHeroSubject)
@@ -62,8 +63,8 @@ function HeroSubjectPicker() {
   }, [activeLookId])
   const options = useMemo(() => {
     // ⛔⛔ THE ID MUST BE THE SLAB'S KEY, NOT THE LISTING'S OWN. `heroSubject`
-    // resolves through `slabIndex.byId` (heroSubject.js), and that Map is built
-    // from `manifest.buildings` — `bldg-NNNN` / `msbf-N` (SlabBuildings.jsx).
+    // resolved through `slabIndex.byId` (the retired heroSubject.js), and that Map
+    // is built from `manifest.buildings` — `bldg-NNNN` / `msbf-N` (SlabBuildings.jsx).
     // It has never contained an `lmk-*`, so emitting `l.id` meant EVERY landmark
     // hero resolved to FALLBACK_HERO_SUBJECT = [400,45,-100] — Lafayette Square's
     // hero target — in every town INCLUDING Lafayette Square. A listing with no

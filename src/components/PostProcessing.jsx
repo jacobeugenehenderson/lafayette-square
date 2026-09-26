@@ -120,7 +120,6 @@ export function PostProcessing({
   lookId, bakeLastMs, viewMode,
   bloomOverride, aoOverride, exposureOverride, warmthOverride,
   fillOverride, haloOverride, gradeOverride, grainOverride, smaaOverride, dofOverride,
-  archOverride, heroSubjectOverride,
   inspect,   // Preview only: { toggles } — per-pass visibility matrix (see RenderPipeline).
 }) {
   const bloomRef = useRef()
@@ -164,8 +163,6 @@ export function PostProcessing({
     bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
     haloChannel, gradeChannel, grainChannel, dofChannel, dofOn: dofMounted,
     viewMode, aoRef, bloomRef,
-    archValues: archOverride?.values ?? scene?.arch?.values,
-    heroSubject: heroSubjectOverride ?? scene?.heroSubject,
   })
 
   // Mount the ONE installer from the manifest. Ordering, per-platform inclusion

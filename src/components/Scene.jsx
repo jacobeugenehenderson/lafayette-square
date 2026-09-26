@@ -40,8 +40,7 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { heroKeyframeAnim, randomizeHeroStart } from '../preview/heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
-import { resolveHeroSubject } from '../lib/heroSubject.js'
-import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
+import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -50,87 +49,15 @@ function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
-// ── Hero framing anchors ─────────────────────────────────────────────────────
-// Fallback hero pose for an unauthored Look + the default camera target
-// (heroSubject). The hero camera ANIMATION plays the authored heroKeyframes
-// via heroKeyframeAnim (src/preview/heroAnim.js) — same data Stage + Preview
-// play, so all three environments share one hero animation.
-const HERO_CENTER = [-400, 55, 230]
-const HERO_TARGET = [400, 45, -100]
+// ── Hero framing ─────────────────────────────────────────────────────────────
+// The hero camera plays the authored heroKeyframes via heroKeyframeAnim
+// (src/preview/heroAnim.js) — the same data and the same function Stage and
+// Preview play. Each keyframe carries its own aim; a town with none gets the
+// opening view derived from its own disc (src/lib/cameraRegimes.js). ⛔ No
+// subject, no Lafayette Square pose: HERO_CENTER / HERO_TARGET and the
+// subject-centred derivedHeroPose are gone (BRIEF-camera-regimes, H-7).
 const _heroPos = new THREE.Vector3()
-// The authored aim, interpolated alongside the position (heroAnim.js).
 const _heroTgt = new THREE.Vector3()
-
-// ── The undesignated hero pose — A11-c, Jacob's ruling 2026-08-07 ────────────
-// "The camera is a pan pointed at the hero object. With no hero object set up,
-// the pan defaults to OFF." So a Look with no authored heroKeyframes gets ONE
-// keyframe — heroKeyframeAnim with n < 2 returns points[0] verbatim and lerpFov
-// returns keyframes[0].fov, so a single keyframe is genuinely static, no motion.
-//
-// ⛔ The pose may not be a literal. `HERO_CENTER` above is Lafayette Square's
-// coordinate; shipping it as every fresh pour's opening shot is the A00 class —
-// "falling back to a generic is fine; falling back to Lafayette Square is what
-// must never happen." So the pose is DERIVED from the scene's own framing:
-//
-//   centre   = the resolved hero subject (heroSubject.js — kit-general already:
-//              the arch when the Look installed one, else the hood centroid,
-//              which IS the local frame's origin by construction).
-//   radius   = half-diagonal of the slab's authored hood extent
-//              (scene.shots.values.browse.bounds — the same w/h Browse frames on).
-//   standoff = a RATIO of that radius, so the shot scales with the town.
-//
-// Both numbers below are dimensionless ratios applied to that radius, never a
-// distance: no scene's metres are hardcoded here. Their values are read off the
-// shape of an authored hero shot (a close oblique inside the hood, not a
-// whole-hood fit — a fit-the-extent standoff lands kilometres out and renders
-// the neighborhood as a speck).
-const HERO_STANDOFF_RATIO = 0.75  // eye distance as a fraction of hood radius
-const HERO_EYE_RATIO      = 0.13  // eye height as a fraction of hood radius
-const HERO_BEARING        = [-0.80, 0, 0.60]  // unit XZ look-in direction; compass-generic
-
-function derivedHeroPose(subject, bounds) {
-  const w = bounds?.w, h = bounds?.h
-  // ⛔ No fallback extent. Without the hood's size there is no scale to stand
-  // off by, and inventing one would put a plausible-looking frame on a scene we
-  // cannot actually measure. Fail loudly and let the authored-literal path be
-  // the visible absence.
-  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
-    console.error('[hero] scene.shots.values.browse.bounds is missing or degenerate —' +
-      ' cannot derive an undesignated hero pose', bounds)
-    return null
-  }
-  const radius   = 0.5 * Math.hypot(w, h)
-  const standoff = radius * HERO_STANDOFF_RATIO
-  return [
-    subject[0] + HERO_BEARING[0] * standoff,
-    radius * HERO_EYE_RATIO,
-    subject[2] + HERO_BEARING[2] * standoff,
-  ]
-}
-
-// ── Camera presets ───────────────────────────────────────────────────────────
-// SC.5 (2026-05-13): FOVs + Street eye height retired from this const —
-// they now flow through scene.shots (SHOTS_FLAT_DEFAULTS for first paint).
-// What remains is the runtime-input shape for hero / browse positions +
-// targets (heroSubject / Browse user-pos centering not yet plumbed
-// through the slab in production — heroSubject channel bakes but
-// production's hero pan still rides on HERO_CENTER; follow-up).
-
-const PRESETS = {
-  hero: {
-    position: HERO_CENTER,
-    target: HERO_TARGET,
-  },
-  browse: {
-    // Centered on the neighborhood centroid [-15,-15] (the boundary SSoT in
-    // neighborhood_boundary.json), not [0,0] — the old target sat off-center.
-    // Altitude pulled 600→420 to crop the default frame to the core (no empty
-    // lots / wasted space); still freely zoomable (min 50 / max 4000).
-    // EYE-GATE: 420 is the framing dial — nudge for desktop crop.
-    position: [-15, 420, -14],    // top-down, centered; Z = target.z+1 avoids gimbal lock
-    target: [-15, 0, -15],
-  },
-}
 
 // Hero→Browse transition duration (ms). 1.5s read as abrupt for the overhead
 // tilt; 2.4s lets it ease into the map as a deliberate "settle" move. Sourced
@@ -375,21 +302,11 @@ function CameraRig() {
   // SC.5 — per-shot framing knobs come from the slab. Production passes
   // no override; the cartograph chunk's Stage live-wires via the store.
   const scene = useSceneJson(INSTANCE.lookId)
-  // Render-scoped buildings index (published by SlabBuildings) — the shared
-  // hero-subject resolver reads building/landmark centroids from it, never
-  // live src/data/buildings (slab owns spatial identity).
-  const slabIndex = useSlabBuildingIndex((s) => s.index)
   const shotsV       = scene?.shots?.values || SHOTS_FLAT_DEFAULTS
   const browseFov    = shotsV.browse?.fov         ?? SHOTS_FLAT_DEFAULTS.browse.fov
   const heroFov      = shotsV.hero?.fov           ?? SHOTS_FLAT_DEFAULTS.hero.fov
   const streetFov    = shotsV.street?.fov         ?? SHOTS_FLAT_DEFAULTS.street.fov
   const streetEye    = shotsV.street?.eyeHeight   ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
-
-  // Hero look-at via the SHARED resolver (one resolver across production /
-  // Preview / Stage). Undesignated → the Gateway Arch (LS hero landmark) from
-  // scene.arch.values; building/landmark → the slab index. No stale literal,
-  // no re-bake (project_camera_framing_slab_contract).
-  const heroSubject = resolveHeroSubject(scene?.heroSubject, { slabIndex, archValues: scene?.arch?.values })
 
   // Cosmetic Browse screen-orientation (authored Heading slider). Applied to
   // the overhead camera's up vector once Browse settles (see the post-
@@ -406,21 +323,14 @@ function CameraRig() {
   const browseCz     = browseBounds?.cz ?? 0
 
   // Authored hero camera animation from the slab — the SAME keyframes Stage +
-  // Preview play. Replaces production's legacy lateral pan so the operator's
-  // tuned hero motion ships.
-  //
-  // ⭐ A11-c: with NO authored path the pan is OFF — one keyframe, statically
-  // framed on this scene's own hood (derivedHeroPose above), never LS's
-  // HERO_CENTER. HERO_CENTER survives only as the last-resort pose for a scene
-  // whose bounds we could not read at all, and that path SHOUTS first.
-  const heroKeyframes = useMemo(() => {
-    if (scene?.heroKeyframes?.length) return scene.heroKeyframes
-    const pos = derivedHeroPose(heroSubject, browseBounds)
-    if (!pos) return [{ position: HERO_CENTER, fov: heroFov }]
-    return [{ position: pos, fov: heroFov }]
-    // heroSubject is a fresh array each render; key on its components.
-  }, [scene?.heroKeyframes, heroSubject[0], heroSubject[1], heroSubject[2],
-      browseBounds?.w, browseBounds?.h, heroFov])
+  // Preview play, each with its own aim. No authored path → ONE keyframe, the
+  // opening view derived from this scene's own disc (static: heroKeyframeAnim
+  // with n = 1 is the keyframe verbatim). Null until the ground publishes the
+  // disc; the hero drive waits for it rather than inventing a pose.
+  const stencil = useSceneStencil()
+  const heroKeyframes = useMemo(
+    () => resolveHeroKeyframes(scene?.heroKeyframes, stencil, heroFov, 'production'),
+    [scene?.heroKeyframes, stencil, heroFov])
   const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
   // ⭐ ARRIVAL VARIETY — a different part of the pan on every load (Jacob, 2026-08-28).
   // `randomizeHeroStart` already existed and is called on hero ENTRY (below), but the
@@ -657,7 +567,6 @@ function CameraRig() {
 
     // ── Initialize on first frame ──
     if (!initialized.current) {
-      ctl.target.set(...PRESETS.hero.target)
       applyConstraints(ctl, 'hero')
       ctl.update()
       initialized.current = true
@@ -749,19 +658,16 @@ function CameraRig() {
         const altitude = browseAltitude(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
         beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, BROWSE_TRANS_MS,
           browseUpFromHeading(browseHeadingDeg))
-      } else if (PRESETS[entering]) {
-        // Transition to mode preset (hero). fov comes from the slab; the
-        // steady-state useFrame plays the authored heroKeyframes (heroKeyframeAnim),
-        // this transition just lerps to the preset entry pose first. Up returns
+      } else if (entering === 'hero' && heroKeyframes) {
+        // Glide onto the authored path: the destination is the keyframe pose
+        // itself, and the chase below keeps it moving with the pan. Up returns
         // to [0,1,0] so Hero un-rolls smoothly out of Browse's overhead.
-        const p = PRESETS[entering]
-        const fov = entering === 'hero' ? heroFov : p.fov
-        const dur = entering === 'hero' ? SHOT_TRANSITION_MS.hero : SHOT_TRANSITION_MS.street
-        transToHero.current = entering === 'hero'
         // Pick a random point in the pan on each Hero entry → a returning user
         // sees a different part of the arc, not always the same start.
-        if (entering === 'hero') randomizeHeroStart(heroMotion.period)
-        beginTransition(p.position, p.target, fov, dur, [0, 1, 0])
+        randomizeHeroStart(heroMotion.period)
+        transToHero.current = true
+        const { fov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos, _heroTgt)
+        beginTransition(_heroPos.toArray(), _heroTgt.toArray(), fov, SHOT_TRANSITION_MS.hero, [0, 1, 0])
       }
     }
 
@@ -794,8 +700,8 @@ function CameraRig() {
 
       // If transitioning into hero, chase the moving keyframe-animated pose
       // so the transition lands on the authored path instead of a stale point.
-      if (transToHero.current) {
-        const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _toPos, _toTarget, heroSubject)
+      if (transToHero.current && heroKeyframes) {
+        const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _toPos, _toTarget)
         toFov.current = kfFov
       }
 
@@ -858,8 +764,8 @@ function CameraRig() {
     }
 
     // ── Hero camera animation — authored keyframe path (slab heroKeyframes) ──
-    if (vm === 'hero') {
-      const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos, _heroTgt, heroSubject)
+    if (vm === 'hero' && heroKeyframes) {
+      const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos, _heroTgt)
       camera.position.copy(_heroPos)
       if (Math.abs(camera.fov - kfFov) > 0.1) {
         camera.fov = kfFov
@@ -948,7 +854,10 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
       style={{ position: 'relative' }}
       frameloop={frameloop}
       camera={{
-        position: PRESETS.hero.position,
+        // A placeholder for the frames before the hero drive has a pose: the
+        // local frame's origin, which is every town's centre by construction.
+        // ⛔ Not a town's hero pose — that comes only from its keyframes.
+        position: [0, 1, 0],
         // Canvas's initial fov fires at mount time, before scene.json
         // resolves. Use the flat default — CameraRig will retarget once
         // the slab loads (~100ms).
