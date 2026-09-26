@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
+import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp } from '../lib/groundLamp.js'
 
 /**
  * Reusable factory for the noise-based park grass material.
@@ -10,8 +10,6 @@ import { applyWeatherToShader } from '../lib/weather-uniforms.js'
  * builds the material and exposes the shader once it compiles.
  *
  * Options:
- *   - lampLightmap:  optional THREE.DataTexture lookup for night lamp glow.
- *                    When omitted, lamp glow is skipped.
  *   - clipMask / clipMin / clipSize: optional SVG-rasterized boundary
  *                    discard. The ribbon park face renders inside its own
  *                    geometry so it doesn't need a clip; LafayettePark's
@@ -311,7 +309,7 @@ const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO + SAND_STATE, crop: CROP
  */
 export function makeGroundSurfaceMaterial({
   surface = 'grass',
-  lampLightmap = null, clipMask = null, clipMin = null, clipSize = null,
+  clipMask = null, clipMin = null, clipSize = null,
   color = '#2d5a2d',
   // Optional radial alpha fade — soft neighborhood-stencil edge.
   // { center: [x,z], inner, outer } ; alpha → 0 at outer.
@@ -342,18 +340,11 @@ export function makeGroundSurfaceMaterial({
     shader.uniforms.uClipMin   = { value: clipMin || new THREE.Vector2(0, 0) }
     shader.uniforms.uClipSize  = { value: clipSize || new THREE.Vector2(1, 1) }
     shader.uniforms.uHasClip   = { value: clipMask ? 1.0 : 0.0 }
-    shader.uniforms.uLampMap   = { value: lampLightmap }
-    shader.uniforms.uHasLamp   = { value: lampLightmap ? 1.0 : 0.0 }
-    shader.uniforms.uLampGlow = _lampGlow.grassUniform
     // Baked lamp light-pool map — warm pool on the ground, sampled at
     // world-XZ, scaled by the live TOD Pool value (uPool = poolUniform).
-    shader.uniforms.uPoolMap   = { value: poolMap }
-    shader.uniforms.uHasPool   = { value: poolMap ? 1.0 : 0.0 }
-    shader.uniforms.uPoolMin   = { value: new THREE.Vector2(poolMin?.[0] ?? 0, poolMin?.[1] ?? 0) }
-    shader.uniforms.uPoolSpan  = { value: new THREE.Vector2(poolSpan?.[0] ?? 1, poolSpan?.[1] ?? 1) }
-    shader.uniforms.uPoolScale = { value: poolScale }
-    shader.uniforms.uPool      = _lampGlow.poolUniform
-    shader.uniforms.uShadowStr = { value: 0.5 }   // contact-shadow (G) strength
+    // The lamp's light on this ground: ONE way for every ground surface (src/lib/groundLamp.js).
+    shader.uniforms.uHasPool = { value: poolMap ? 1.0 : 0.0 }
+    if (poolMap) bindGroundLamp(shader.uniforms, { map: poolMap, min: poolMin, span: poolSpan, scale: poolScale })
     if (surface === 'sand') {
       const rep = surfaceParams?.reposeDeg?.reposeDeg ?? surfaceParams?.reposeDeg   // a finding's range
       const beach = surfaceParams?.beachSlopeDeg
@@ -405,7 +396,6 @@ export function makeGroundSurfaceMaterial({
       shader.uniforms.uDoy = CROP_UNIFORMS.uDoy
       shader.uniforms.uPom = CROP_UNIFORMS.uPom
     }
-    shader.uniforms.uLampColor = _lampGlow.colorUniform  // pool colour = lamp colour
     shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade?.center?.[0] ?? 0, fade?.center?.[1] ?? 0) }
     shader.uniforms.uFadeInner  = { value: fade?.inner ?? 0 }
     shader.uniforms.uFadeOuter  = { value: fade?.outer ?? 0 }
@@ -431,17 +421,7 @@ export function makeGroundSurfaceMaterial({
        uniform vec2 uClipMin;
        uniform vec2 uClipSize;
        uniform float uHasClip;
-       uniform sampler2D uLampMap;
-       uniform float uHasLamp;
-       uniform float uLampGlow;
-       uniform sampler2D uPoolMap;
-       uniform float uHasPool;
-       uniform vec2 uPoolMin;
-       uniform vec2 uPoolSpan;
-       uniform float uPoolScale;
-       uniform float uPool;
-       uniform float uShadowStr;
-       uniform vec3 uLampColor;
+       uniform float uHasPool;${poolMap ? GROUND_LAMP_DECLS : ''}
        uniform vec2 uFadeCenter;
        uniform float uFadeInner;
        uniform float uFadeOuter;
@@ -463,22 +443,6 @@ export function makeGroundSurfaceMaterial({
        vec3 nightTint = vec3(0.6, 0.7, 1.0);
        grass = mix(grass * nightTint, grass, dayBright) * brightness;
 
-       // Lamp light pool — baked ring profile (dark center → bright soft
-       // ring → 0), summed across lamps, sampled at world-XZ and scaled by
-       // the live TOD Pool value. No night gate: the Pool channel is
-       // manually animated, so it owns when the pool shows.
-       if (uHasPool > 0.5) {
-         vec2 poolUV = (vGrassPos.xz - uPoolMin) / uPoolSpan;
-         if (poolUV.x >= 0.0 && poolUV.x <= 1.0 && poolUV.y >= 0.0 && poolUV.y <= 1.0) {
-           vec4 gfx = texture2D(uPoolMap, poolUV);
-           // G — contact shadow (tree + lamp bases): darken the albedo DIRECTLY
-           // so the ring reads in daytime (not just ambient like aoMap).
-           grass *= (1.0 - gfx.g * uShadowStr);
-           // R — lamp light pool in the LAMP'S colour, scaled by the live TOD Pool value.
-           grass += uLampColor * gfx.r * uPoolScale * uPool;
-         }
-       }
-
        diffuseColor.rgb = pow(grass, vec3(2.2));`
     )
 
@@ -496,7 +460,7 @@ export function makeGroundSurfaceMaterial({
        if (uHasFade > 0.5) {
          float dFade = length(vGrassPos.xz - uFadeCenter);
          gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, dFade);
-       }`
+       }${poolMap ? groundLampFragment('vGrassPos.xz') : ''}`
     )
   }
 
@@ -506,7 +470,7 @@ export function makeGroundSurfaceMaterial({
   // grass shader can silently get replaced by an earlier-compiled
   // plain-MeshStandardMaterial program from the same scene).
   material.customProgramCacheKey = () =>
-    `${surface === 'grass' ? '' : surface + '-'}grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${lampLightmap ? 'lamp' : 'nolamp'}-${poolMap ? 'pool' : 'nopool'}-wx1`
+    `${surface === 'grass' ? '' : surface + '-'}grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${poolMap ? 'pool' : 'nopool'}-wx2`
 
   return { material, shaderRef }
 }

@@ -23,16 +23,14 @@ import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGroundSurfaceMaterial, CROP_UNIFORMS } from './grassMaterial'
 import useCalendar from '../hooks/useCalendar'
-import { surfaceOfGroup, resolveClassTable, SURFACES } from '../../cartograph/surfaces.mjs'
-import { isWaterGroupId } from './waterMaterial'
+import { resolveClassTable, SURFACES } from '../../cartograph/surfaces.mjs'
 import WaterSurface from './WaterSurface.jsx'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
-import { getLampLightmap } from './lampLightmap'
+import { groundMaterialFor } from '../lib/groundMaterials.js'
+import { makeFadeGroundMaterial } from './fadeGroundMaterial.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag } from '../utils/terrainShader'
-import { applyWeatherToShader } from '../lib/weather-uniforms.js'
-import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -119,19 +117,8 @@ function reportNoClamp(look) {
     + `fully draped and breaks through the water wherever the terrain stands above it. ▶ re-bake the ground.`)
 }
 
-// Ground groups that render with the park gravel (Voronoi pebble) shader.
-const GRAVEL_MATERIALS = new Set(['park_path'])
-function isGravelGroup(group) {
-  return group.kind !== 'face' && GRAVEL_MATERIALS.has(group.id)
-}
-
-// Water bodies — 'water', or 'water:<subtype>' where OSM refined `natural=water`
-// (lake · pond · basin · reservoir · …). ⛔ The id rule lives in waterMaterial.js
-// so the bake, this runtime and `checks/claims-every-water-body-reaches-the-kit-
-// material.mjs` all ask the SAME function what water is.
-function isWaterGroup(group) {
-  return group.kind !== 'face' && isWaterGroupId(group.id)
-}
+// Which material draws a group (water · gravel · a procedural surface · flat colour) is one rule in
+// src/lib/groundMaterials.js — the lamp check walks the same dispatch.
 
 // Resolve a group's effective layer-visibility from scene.json. Material
 // groups (asphalt, sidewalk, …) map through BAND_TO_LAYER to a layer
@@ -357,23 +344,24 @@ function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, s
       {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry }) => {
         const fade = fadeForGroup(group, stencil)
         const key = group.kind + ':' + group.id
-        if (isWaterGroup(group))
+        const draw = groundMaterialFor(group, surfaceTable, { hasFieldAxis: !!geometry.attributes.aFieldAxis })
+        if (draw.kind === 'water')
           return <WaterSurface key={key} geometry={geometry} renderOrder={group.renderOrder} />
-        if (isGravelGroup(group))
+        if (draw.kind === 'gravel')
           return <GravelMesh key={key} group={group} geometry={geometry} lightmap={lightmap}
             tintHex={scene?.layerColors?.[group.id]}
             roughness={scene?.materialPhysics?.[group.id]?.roughness}
             scale={scene?.materialPhysics?.[group.id]?.scale} />
         if (group.id === 'bed' && !geometry.attributes.aClampY) reportNoClamp(manifest.look)
-        const surface = surfaceOfGroup(group, surfaceTable)
+        const surface = draw.surface
         // ⛔ A per-field surface on a group baked without field ids cannot know which way its rows
         // run: said once, and drawn in the class's flat colour (what a class with no generator gets).
-        if (surface && SURFACES[surface].perField && !geometry.attributes.aFieldAxis) {
+        if (draw.noFields) {
           reportNoFields(manifest.look, group.id, surface)
           return <FadeMesh key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
         }
         if (surface && SURFACES[surface].perField && !geometry.attributes.aFieldEdge) reportNoEdge(manifest.look, group.id)
-        return surface
+        return draw.kind === 'surface'
           ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
           : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
       })}
@@ -384,63 +372,14 @@ function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, s
 function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
   const hasPool = !!poolmap
   const material = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = makeFadeGroundMaterial({
       color: treatAlbedo(group.color),   // desaturate + value-lift (Surface treatment)
-      roughness: 0.95,
-      metalness: 0,
-      // No polygonOffset — it's INERT under the log-depth canvas (the
-      // <logdepthbuf_fragment> writes gl_FragDepth, bypassing GL_POLYGON_OFFSET_FILL).
-      // Coplanar groups now separate by baked geometric Y (renderOrder × EPS,
-      // bake-ground.js) + renderOrder for transparent draw-order. ARCHITECTURE §8.
+      fade,
+      pool: hasPool ? { map: poolmap, min: poolMeta?.min, span: poolMeta?.span, scale: poolMeta?.scale } : null,
     })
-    attachCSM(mat)   // cascades, when `?csm=1` — composes, never replaces onBeforeCompile
-    if (fade) mat.transparent = true
-    mat.onBeforeCompile = (shader) => {
-      applyWeatherToShader(shader)  // Phase 7b/c: wet + snow opt-in
-      // Inject a shared world-XZ varying + the fade discard and/or the lamp
-      // light-pool add (additive warm, baked ring profile × TOD Pool value —
-      // see grassMaterial for the matching grass-side term). Skip entirely
-      // when neither is needed (the cheap plain asphalt path).
-      if (fade || hasPool) {
-        shader.vertexShader = shader.vertexShader.replace(
-          '#include <common>', '#include <common>\nvarying vec3 vGndPos;')
-        shader.vertexShader = shader.vertexShader.replace(
-          '#include <begin_vertex>',
-          '#include <begin_vertex>\n vGndPos = (modelMatrix * vec4(position, 1.0)).xyz;')
-        let decls = 'varying vec3 vGndPos;\n'
-        if (fade)    decls += 'uniform vec2 uFadeCenter; uniform float uFadeInner; uniform float uFadeOuter;\n'
-        if (hasPool) decls += 'uniform sampler2D uPoolMap; uniform vec2 uPoolMin; uniform vec2 uPoolSpan; uniform float uPoolScale; uniform float uPool; uniform float uShadowStr; uniform vec3 uLampColor;\n'
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <common>', '#include <common>\n' + decls)
-        if (fade) {
-          shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade.center[0], fade.center[1]) }
-          shader.uniforms.uFadeInner  = { value: fade.inner }
-          shader.uniforms.uFadeOuter  = { value: fade.outer }
-        }
-        if (hasPool) {
-          shader.uniforms.uPoolMap   = { value: poolmap }
-          shader.uniforms.uPoolMin   = { value: new THREE.Vector2(poolMeta?.min?.[0] ?? 0, poolMeta?.min?.[1] ?? 0) }
-          shader.uniforms.uPoolSpan  = { value: new THREE.Vector2(poolMeta?.span?.[0] ?? 1, poolMeta?.span?.[1] ?? 1) }
-          shader.uniforms.uPoolScale = { value: poolMeta?.scale ?? 1 }
-          shader.uniforms.uPool      = _lampGlow.poolUniform
-          shader.uniforms.uShadowStr = { value: 0.5 }
-          shader.uniforms.uLampColor = _lampGlow.colorUniform
-        }
-        let post = '#include <dithering_fragment>\n'
-        if (hasPool) post +=
-          `{ vec2 puv = (vGndPos.xz - uPoolMin) / uPoolSpan;
-             if (all(greaterThanEqual(puv, vec2(0.0))) && all(lessThanEqual(puv, vec2(1.0)))) {
-               vec4 gfx = texture2D(uPoolMap, puv);
-               gl_FragColor.rgb *= (1.0 - gfx.g * uShadowStr);                  // contact shadow
-               gl_FragColor.rgb += uLampColor * gfx.r * uPoolScale * uPool;     // lamp pool (lamp colour)
-             } }\n`
-        if (fade) post +=
-          `gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, length(vGndPos.xz - uFadeCenter));\n`
-        shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', post)
-      }
-    }
-    mat.customProgramCacheKey = () =>
-      `bg-${fade ? `fade-${fade.inner}-${fade.outer}` : 'plain'}-${hasPool ? 'pool' : 'nopool'}-wx1`
+    // Cascades wrap the material's hook — attached AFTER it exists. (Before 2026-09-26 this ran first
+    // and the hook assigned after it replaced the wrapper, so `?csm=1` never reached flat ground.)
+    attachCSM(mat)
     // Terrain displacement applied last so its onBeforeCompile wraps any
     // earlier ones (fade, etc.) — patchTerrain runs first, then calls prev.
     // Drives off the shared terrainExag uniform.
@@ -483,7 +422,6 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
         // the class colour through the SAME Surface treatment FadeMesh applies, so a
         // class keeps its value step when it gains a generator.
         color: surface === 'grass' ? group.color : treatAlbedo(group.color),
-        lampLightmap: getLampLightmap(),
         fade,
         poolMap: poolmap || null,
         poolMin: poolMeta?.min,

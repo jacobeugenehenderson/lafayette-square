@@ -4,8 +4,9 @@
  *   - the baked `park-path` ground group (BakedGround → GravelMesh)
  *   - the lifted lake-bridge overlay (LafayettePark, until Phase 5)
  *
- * Procedural Voronoi pebbles + FBM grime, TOD day/night tint, and the lamp
- * light-pool (sampled from the shared lamp lightmap). Per-vertex terrain
+ * Procedural Voronoi pebbles + FBM grime, TOD day/night tint, and the lamp's light the one way
+ * every ground surface takes it (src/lib/groundLamp.js — the baked poolmap, after lighting; it
+ * read an LS-only σ12 lightmap before 2026-09-26, so the paths were dark in every other town). Per-vertex terrain
  * displacement via patchTerrain so it rides the ground like every other
  * ground layer.
  *
@@ -16,8 +17,8 @@
  * scene.json-driven Stage material card; the shader body stays here.
  */
 import * as THREE from 'three'
-import { getLampLightmap } from './lampLightmap.js'
-import { patchTerrain } from '../utils/terrainShader'
+import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLampShared } from '../lib/groundLamp.js'
+import { patchTerrain } from '../utils/terrainShader.js'
 
 // The gravel's natural average tone — the tint reference. A park_path swatch
 // equal to this is a NO-OP (tint = 1), so the dialed-in Voronoi palette is the
@@ -53,7 +54,7 @@ export function makeGravelPathMaterial({ tintHex = null, roughness = 0.95, scale
   })
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uSunAltitude = { value: 0.5 }
-    shader.uniforms.uLampMap = { value: getLampLightmap() }
+    bindGroundLampShared(shader.uniforms)
     shader.uniforms.uTint = { value: tintFromHex(tintHex) }
     shader.uniforms.uPathScale = { value: scale > 0 ? scale : 1 }
     shaderRef.current = shader
@@ -73,7 +74,7 @@ export function makeGravelPathMaterial({ tintHex = null, roughness = 0.95, scale
       '#include <common>',
       `#include <common>
        uniform float uSunAltitude;
-       uniform sampler2D uLampMap;
+${GROUND_LAMP_DECLS}
        uniform vec3 uTint;        // look-driven hue shift (1,1,1 = no change)
        uniform float uPathScale;  // look-driven pebble-pattern scale (1 = default)
        varying vec3 vPathPos;
@@ -139,18 +140,16 @@ export function makeGravelPathMaterial({ tintHex = null, roughness = 0.95, scale
        vec3 nightTint = vec3(0.6, 0.7, 1.0);
        gravelCol = mix(gravelCol * nightTint, gravelCol, dayBright) * brightness;
 
-       vec2 pathLampUV = (pp + 200.0) / 400.0;
-       float pathLampI = texture2D(uLampMap, pathLampUV).r;
-       float pathLampOn = clamp((0.15 - uSunAltitude) / 0.45, 0.0, 1.0);
-       gravelCol += vec3(0.50, 0.45, 0.28) * pathLampI * pathLampOn * 0.7;
 
        diffuseColor.rgb = pow(gravelCol, vec3(2.2));`
     )
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <dithering_fragment>', `#include <dithering_fragment>${groundLampFragment('vPathPos.xz')}`)
   }
   // Unique cache key MUST be set before patchTerrain wraps the material —
   // otherwise three.js's program cache collapses this shader onto another
   // `terrain-vp-std` material and the gravel fragment never compiles.
-  mat.customProgramCacheKey = () => 'park-path-gravel-v1'
+  mat.customProgramCacheKey = () => 'park-path-gravel-v2'
   patchTerrain(mat, { perVertex: true, terrainNormals: true })   // lit by its slope, like every ground group
   return { material: mat, shaderRef }
 }
