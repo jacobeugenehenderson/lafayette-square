@@ -52,6 +52,7 @@ import {
 import { CANARY_CAMERAS } from './canaryCamera.js'
 import { useCanaryTree } from '../lib/canaryTree.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { deriveSkyScalars, directiveDarkness } from '../lib/sky-scalars.js'
 
 // Gentle authoring breeze used when the active Condition's directive
 // carries no wind yet (Phase 5 directive→viewport wiring still pending).
@@ -247,31 +248,11 @@ function CloudCoverSeed() {
 
 // ── Condition → environment bridge ────────────────────────────────────
 // The staging-area doctrine in action: a selected Condition drives the
-// canary the same way it drives the LS install, through the SAME shared
-// stores — no canary-only effects. Two stores carry "weather":
-//   • useAtmosphere (the directive) → cloud blend + color, wind, precip,
-//     lightning. Consumed by <Atmosphere>, HeroTree sway, <WeatherEffects>.
-//   • useSkyState (cloudCover/storminess) → the actual scene DARKENING:
-//     CelestialBodies dims the sun by (1 − cloudCover·0.6); GradientSky
-//     desaturates + darkens by storminess. The directive alone does NOT
-//     darken the ground — that's why both stores are driven here.
-const clamp01 = (v) => Math.max(0, Math.min(1, v))
-
-// The almanac authors no cloudCover/storminess; derive them from the
-// directive's own darkness signals so the scene reads as overcast/stormy.
-function deriveSkyScalars(directive) {
-  const precipI = directive?.precip?.intensity ?? 0
-  const sunI = directive?.sun?.intensity ?? 1.2          // ~1.2 = "normal" day
-  const darkness = clamp01((1.2 - sunI) / 1.2)           // dim sun ⇒ dark sky
-  const cloudWeight = (directive?.clouds ?? [])
-    .reduce((s, c) => s + (c.weight ?? 0), 0)            // blend total ≈ coverage
-  return {
-    cloudCover: clamp01(Math.max(cloudWeight, precipI, darkness)),
-    storminess: clamp01(Math.max(precipI * 0.9, darkness)),
-    turbidity:  clamp01(darkness * 0.3),
-  }
-}
-
+// canary the same way it drives every app, through the SAME shared stores
+// and the SAME derivation — no canary-only effects. The directive is the one
+// source; the sky's darkening scalars are projected from it by
+// `lib/sky-scalars.js#deriveSkyScalars`, exactly as AtmosphereDirectiveDriver
+// does in production.
 // The almanac has no `lightning` field (see STATUS.md); synthesize a rate
 // for visibly-stormy conditions so a thunderstorm actually flashes. An
 // authored field (Phase 3b) wins if present.
@@ -279,8 +260,7 @@ function augmentDirective(directive) {
   if (!directive || directive.lightning) return directive
   const precip = directive.precip || {}
   const precipI = precip.intensity ?? 0
-  const sunI = directive.sun?.intensity ?? 1.2
-  const darkness = clamp01((1.2 - sunI) / 1.2)
+  const darkness = directiveDarkness(directive)
   const stormy = precip.kind === 'rain' && precipI >= 0.6 && darkness >= 0.45
   if (!stormy) return directive
   return {
@@ -302,11 +282,7 @@ function ConditionEnvironmentDriver({ directive, degrees = DEFAULT_DEGREES }) {
     return () => {
       useAtmosphere.getState().setRawDirective(null)
       useAtmosphere.getState().setTweenedDirective(null)
-      useSkyState.setState({
-        cloudCover: 0, _targetCloudCover: 0,
-        storminess: 0, _targetStorminess: 0,
-        turbidity: 0,  _targetTurbidity: 0,
-      })
+      useSkyState.getState().setSkyScalars({ cloudCover: 0, storminess: 0, turbidity: 0 })
     }
   }, [setActivePreset])
 
@@ -325,12 +301,7 @@ function ConditionEnvironmentDriver({ directive, degrees = DEFAULT_DEGREES }) {
     const aug = augmentDirective(eff)
     useAtmosphere.getState().setRawDirective(aug)
     useAtmosphere.getState().setTweenedDirective(aug)
-    const { cloudCover, storminess, turbidity } = deriveSkyScalars(eff)
-    useSkyState.setState({
-      cloudCover, _targetCloudCover: cloudCover,
-      storminess, _targetStorminess: storminess,
-      turbidity,  _targetTurbidity: turbidity,
-    })
+    useSkyState.getState().setSkyScalars(deriveSkyScalars(eff))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directive, dp, dw, dc])
 

@@ -35,6 +35,8 @@ import { CSM_ENABLED } from './CascadedShadows.jsx'
 import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import useSkyState from '../hooks/useSkyState'
+import { weatherExposureScale } from '../lib/sky-scalars.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { resolveGroupAtMinute, getTodSlotMinutes, resolveLampGlowAtMinute } from '../cartograph/animatedParam.js'
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState'
@@ -106,6 +108,7 @@ export function ExposureTicker({ lookId, bakeLastMs, exposureOverride }) {
     const tod = useTimeOfDay.getState()
     const slotMins = getTodSlotMinutes(tod.currentTime)
     const v = resolveGroupAtMinute(channel, tod.getMinuteOfDay(), slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
+      * weatherExposureScale(useSkyState.getState().storminess)
     gl.toneMappingExposure = v
     _exposureRef.current = v
   })

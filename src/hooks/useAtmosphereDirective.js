@@ -74,8 +74,8 @@ export function getModulatorsCache() { return _modulatorsCache }
 
 export default function useAtmosphereDirective(lookId) {
   const scene = useSceneJson(lookId)
-  const _targetCloudCover = useSkyState((s) => s._targetCloudCover)
-  const _targetPrecip = useSkyState((s) => s._targetPrecipitation)
+  const _targetCloudCover = useSkyState((s) => s.feedCloudCover)
+  const _targetPrecip = useSkyState((s) => s.feedPrecipitation)
   const _targetWindMs = useSkyState((s) => s.windSpeedMs)
   const _targetWindDir = useSkyState((s) => s.windDirDeg)
   const _humidity = useSkyState((s) => s.humidity)
@@ -102,10 +102,10 @@ export default function useAtmosphereDirective(lookId) {
       const sky = useSkyState.getState()
       const time = useTimeOfDay.getState().currentTime
       const weatherTargets = {
-        cloudCover: sky._targetCloudCover,
-        storminess: sky._targetStorminess,
-        turbidity: sky._targetTurbidity,
-        precipitationIntensity: sky._targetPrecipitation,
+        cloudCover: sky.feedCloudCover,
+        storminess: sky.feedStorminess,
+        turbidity: sky.feedTurbidity,
+        precipitationIntensity: sky.feedPrecipitation,
         windVector: sky._targetWind,
         windSpeedMs: sky.windSpeedMs,
         windDirDeg: sky.windDirDeg,

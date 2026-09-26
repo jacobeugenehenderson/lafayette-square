@@ -20,6 +20,15 @@ import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useAtmosphereDirective from '../hooks/useAtmosphereDirective.js'
+import useSkyState from '../hooks/useSkyState.js'
+import { deriveSkyScalars } from '../lib/sky-scalars.js'
+
+// ⭐ The sky's weather numbers ride the SAME tweened directive the rain reads, so the
+// lights, dome and exposure cannot part ways with the precipitation (`lib/sky-scalars.js`).
+function publishTweened(directive) {
+  useAtmosphere.setState({ tweenedDirective: directive })
+  useSkyState.getState().setSkyScalars(deriveSkyScalars(directive))
+}
 
 const TWEEN_DURATION_MS = 45000  // 45s. Reads as "weather changing", not "scene cut".
 
@@ -149,7 +158,7 @@ export default function AtmosphereDirectiveDriver({ lookId }) {
     const tweened = useAtmosphere.getState().tweenedDirective
     if (!tweened) {
       // Cold start — no prior state to interpolate from. Snap.
-      useAtmosphere.setState({ tweenedDirective: raw })
+      publishTweened(raw)
       lastRawRef.current = raw
       return
     }
@@ -164,7 +173,7 @@ export default function AtmosphereDirectiveDriver({ lookId }) {
       const t = Math.min(1, elapsed / TWEEN_DURATION_MS)
       const eased = easeInOutCubic(t)
       const next = lerpDirective(lerpFromDirective.current, raw, eased)
-      useAtmosphere.setState({ tweenedDirective: next })
+      publishTweened(next)
       if (t >= 1) lerpStartMs.current = null
     }
   })

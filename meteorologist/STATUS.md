@@ -51,7 +51,7 @@ Selecting a Condition now drives the canary the way it drives the LS install, th
 | Link | State | Notes |
 |---|---|---|
 | Active Condition's directive → `useAtmosphere` (clouds/wind/precip) | ✅ | driver pushes the **effective** directive (Condition × Degrees); clears stale active preset so `<Atmosphere>` uses the directive path |
-| Condition → `useSkyState` (`cloudCover`/`storminess`) = scene **darkening** | ✅ | `deriveSkyScalars` from the effective directive; sets current+target (instant, no 90s drag) |
+| Condition → `useSkyState` (`cloudCover`/`storminess`) = scene **darkening** | ✅ | the same `lib/sky-scalars.js#deriveSkyScalars` production uses, from the effective directive |
 | `<WeatherEffects>` mounted in the canary (rain/snow/wetness/lightning) | ✅ | mounted in the Ground (in-situ) slot; lightning synthesized for stormy Conditions (almanac authors none) |
 | Tree wind responds to the active Condition | ✅ | sway reads the now-condition-driven directive; breeze fallback only when no Condition wind |
 | **Degree-driven** continuous response (precip/wind/cloud scrubber) | ✅ | `src/lib/condition-degrees.js#applyDegrees`; Degrees scrubber in the Condition editor previews drizzle→downpour. *v1 = multipliers on the authored full expression.* |
@@ -72,9 +72,8 @@ Selecting a Condition now drives the canary the way it drives the LS install, th
 | Link | State | Notes |
 |---|---|---|
 | **Sky renderer = `skyMode` stopgap** (Howard, 2026-05-27) | ✅ | `Scene.jsx:814` / `CartographApp.jsx:1083` / `PreviewApp.jsx:1124` = `{SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}`. **Default `'cheap'` → ships `<CloudDome />`** (procedural). `<Atmosphere />` (volumetric slab) only under `?sky=volumetric` / `INSTANCE.skyMode==='volumetric'`. The per-genus volumetric track is **TABLED** (`BACKLOG.md`). CanaryScene ignores this — always `<Atmosphere />`. See `ARCHITECTURE.md §4/§8`. |
-| `AtmosphereDirectiveDriver` → `useAtmosphere.tweenedDirective` (45s tween) | ✅ | sourced from live weather via `useAtmosphereDirective`; feeds `<Atmosphere />` when it's the mounted renderer |
+| `AtmosphereDirectiveDriver` → `tweenedDirective` **and** `useSkyState` sky scalars | ✅ | ⭐ **the directive is the weather's single source**: rain, sun/dome darkening and the exposure ND (`weatherExposureScale`) all follow the same tweened directive; the poller only feeds the Almanac (`feed*`). ▶ `node checks/claims-the-light-follows-the-weather.mjs` |
 | `<WeatherEffects>` (rain/snow/lightning/wetness) | ✅ | |
-| `useSkyState` darkening (sun dim + sky desat) | ✅ | from the live weather poller |
 | Trees + Atmosphere consume wind via `wind-field.js` | ✅ | |
 
 ## Artifacts (`public/clouds/`)

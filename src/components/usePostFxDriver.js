@@ -19,6 +19,8 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import useSkyState from '../hooks/useSkyState'
+import { weatherExposureScale } from '../lib/sky-scalars.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
@@ -75,7 +77,10 @@ export function usePostFxDriver({
     const slotMins = getTodSlotMinutes(tod.currentTime)
 
     // Exposure / Warmth / Fill → module refs consumed by FilmGrade.update().
+    // × the weather's neutral density (`lib/sky-scalars.js`): the town's authored exposure,
+    // one stop down at full storm, from the same directive the rain reads.
     _exposureRef.current = resolveGroupAtMinute(exposureChannel, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
+      * weatherExposureScale(useSkyState.getState().storminess)
     _warmthRef.current   = resolveGroupAtMinute(warmthChannel,   minute, slotMins, ['value'], WARMTH_FLAT_DEFAULTS).value
     const fillVal        = resolveGroupAtMinute(fillChannel,     minute, slotMins, ['value'], FILL_FLAT_DEFAULTS).value
     _fillToeRef.current  = fillVal <= 1 ? fillVal * 0.28 : 0.28 + (fillVal - 1) * 0.72

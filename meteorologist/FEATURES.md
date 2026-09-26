@@ -10,6 +10,8 @@ Lafayette Square's sky is not a backdrop. It's the **actual sky over the actual 
 
 **Author once, on the stage that ships.** Rehearsal and performance happen in the same place. The Meteorologist composes the *real* installation elements — the actual sky, sun, clouds, the hero tree, the weather effects — driven by the *real* runtime stores. What you tune in the studio is, to the pixel, what the slab plays; there's no separate "preview look" that can drift from production. (The formal statement is the staging-area doctrine; see `ARCHITECTURE.md §2`.)
 
+**One weather, everywhere it shows.** When it rains, the sky comes with it: the same weather that draws the rain dims the sun, flattens the sky and takes the whole scene down (about a stop in a full storm), so rain never falls in sunshine.
+
 **Continuous, not a slideshow.** Weather isn't a dozen fixed pictures. Every kind of weather — a **Condition** (clear, overcast, rain, thunderstorm…) — is authored as a *continuous look across its **Degrees*** (how much cloud, how hard the rain, how strong the wind, how bright the light). A drizzle and a downpour are the same Condition at different Degrees, and everything between is real and interpolated. The studio is a live scrubber over (Condition × Degrees); the slab is the same function fed by the live feed.
 
 **It moves at the right speed.** The installation tracks the live weather at its true cadence — refreshing as the feed does, tweening smoothly so nothing snaps — while the fast, living detail (the sun climbing, gusts travelling through the canopy, clouds drifting) animates every frame. The result is a neighborhood that feels *weathered*: it dims under a building storm, warms at golden hour, glistens after rain — all on Lafayette Square's own clock.

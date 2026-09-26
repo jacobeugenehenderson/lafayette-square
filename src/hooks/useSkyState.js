@@ -39,11 +39,12 @@ const useSkyState = create((set, get) => ({
     turbidity: 0,
   },
 
-  // ── Weather (smoothly interpolated toward targets) ──
+  // ── Weather the sky DRAWS — a projection of the directive, never the raw feed ──
+  // Written only by `setSkyScalars(deriveSkyScalars(directive))` (`lib/sky-scalars.js`),
+  // so the lights, dome and exposure follow the same state as the rain.
   cloudCover: 0,
   storminess: 0,
   turbidity: 0,
-  precipitationIntensity: 0,
   windVector: new THREE.Vector2(0, 0),
   windSpeedMs: 0,          // raw scalar speed (m/s), surfaced so Almanac evaluator gets windKph without re-deriving from windVector
   windDirDeg: 0,           // meteorological convention — degrees the wind blows FROM
@@ -60,11 +61,11 @@ const useSkyState = create((set, get) => ({
   beautyBias: 0.6,        // 0-1: amplifies sunset glow, cloud highlights
   sunsetPotential: 0,     // derived: how dramatic a sunset could be right now
 
-  // ── Internal interpolation targets ──
-  _targetCloudCover: 0,
-  _targetStorminess: 0,
-  _targetTurbidity: 0,
-  _targetPrecipitation: 0,
+  // ── The live FEED — the Almanac's input (useAtmosphereDirective), never drawn ──
+  feedCloudCover: 0,
+  feedStorminess: 0,
+  feedTurbidity: 0,
+  feedPrecipitation: 0,
   _targetWind: new THREE.Vector2(0, 0),
 
   // ── Background tab state ──
@@ -74,10 +75,10 @@ const useSkyState = create((set, get) => ({
 
   setWeatherTargets: (data) => {
     set({
-      _targetCloudCover: data.cloudCover ?? get()._targetCloudCover,
-      _targetStorminess: data.storminess ?? get()._targetStorminess,
-      _targetTurbidity: data.turbidity ?? get()._targetTurbidity,
-      _targetPrecipitation: data.precipitationIntensity ?? get()._targetPrecipitation,
+      feedCloudCover: data.cloudCover ?? get().feedCloudCover,
+      feedStorminess: data.storminess ?? get().feedStorminess,
+      feedTurbidity: data.turbidity ?? get().feedTurbidity,
+      feedPrecipitation: data.precipitationIntensity ?? get().feedPrecipitation,
       _targetWind: data.windVector ?? get()._targetWind,
       windSpeedMs: data.windSpeedMs !== undefined ? data.windSpeedMs : get().windSpeedMs,
       windDirDeg: data.windDirDeg !== undefined ? data.windDirDeg : get().windDirDeg,
@@ -106,6 +107,10 @@ const useSkyState = create((set, get) => ({
     })
   },
 
+  // The sky's weather, from the directive. Already eased by the directive's own tween,
+  // so it is set, not interpolated again.
+  setSkyScalars: ({ cloudCover, storminess, turbidity }) => set({ cloudCover, storminess, turbidity }),
+
   setHourlyForecast: (f) => set({ hourlyForecast: f }),
 
   setBeautyBias: (v) => set({ beautyBias: Math.max(0, Math.min(1, v)) }),
@@ -117,15 +122,8 @@ const useSkyState = create((set, get) => ({
     const s = get()
     if (s.isBackgroundTab) return
 
-    // ── Smooth interpolation toward weather targets ──
-    // Storm rate is faster (~15s) when storminess is increasing substantially
-    const storming = s._targetStorminess - s.storminess > 0.1
-    const rate = 1 - Math.exp(-dt / (storming ? 15 : 90))
-
-    const cloudCover = s.cloudCover + (s._targetCloudCover - s.cloudCover) * rate
-    const storminess = s.storminess + (s._targetStorminess - s.storminess) * rate
-    const turbidity = s.turbidity + (s._targetTurbidity - s.turbidity) * rate
-    const precipitationIntensity = s.precipitationIntensity + (s._targetPrecipitation - s.precipitationIntensity) * rate
+    const { cloudCover, storminess, turbidity } = s
+    const rate = 1 - Math.exp(-dt / 90)
 
     // Wind interpolation
     const wx = s.windVector.x + (s._targetWind.x - s.windVector.x) * rate
@@ -149,19 +147,11 @@ const useSkyState = create((set, get) => ({
     // Skip set() when all values have converged (avoids per-frame re-render churn)
     const EPS = 5e-4
     if (
-      Math.abs(cloudCover - s.cloudCover) < EPS &&
-      Math.abs(storminess - s.storminess) < EPS &&
-      Math.abs(turbidity - s.turbidity) < EPS &&
-      Math.abs(precipitationIntensity - s.precipitationIntensity) < EPS &&
       Math.abs(astronomyAlpha - s.astronomyAlpha) < EPS &&
       Math.abs(sunsetPotential - s.sunsetPotential) < EPS
     ) return
 
     set({
-      cloudCover,
-      storminess,
-      turbidity,
-      precipitationIntensity,
       astronomyAlpha,
       sunsetPotential,
     })
