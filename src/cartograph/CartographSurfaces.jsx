@@ -132,6 +132,7 @@ const TABS = [
       { id: 'park',              label: 'Park',        kind: 'lu' },
       { id: 'brownfield',        label: 'Brownfield',  kind: 'lu' },
       { id: 'agricultural',      label: 'Farmland',    kind: 'lu' },
+      { id: 'greenhouse',        label: 'Greenhouse',  kind: 'lu' },
       { id: 'orchard',           label: 'Orchard',     kind: 'lu' },
       { id: 'forest',            label: 'Forest',      kind: 'lu' },
       { id: 'wetland',           label: 'Wetland',     kind: 'lu' },

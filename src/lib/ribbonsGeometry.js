@@ -38,6 +38,7 @@ export const LAND_USE_COLORS = {
   // class can be soft and ugly, and `beach`/`bare` are hard and are not grey.
   brownfield:         '#7A7248',  // post-industrial, weedy, patchy
   agricultural:       '#A8A052',  // tilled/cropped ochre-green
+  greenhouse:         '#B8BEB8',  // glasshouse roofs and gravel yard
   orchard:            '#7A9A4A',  // planted rows, greener than a field
   forest:             '#3E5E2E',  // deep canopy (matches the natural:wood overlay)
   wetland:            '#6A8A72',  // marsh grey-green

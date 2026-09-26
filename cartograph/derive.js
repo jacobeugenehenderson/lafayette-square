@@ -3324,8 +3324,10 @@ export function deriveLayers(highways) {
     'landuse:construction': 'vacant',
     'landuse:brownfield': 'brownfield',     // its own class, ruled by Jacob 2026-09-20
     'landuse:farmland': 'agricultural', 'landuse:meadow': 'agricultural',
-    'landuse:farmyard': 'agricultural', 'landuse:greenhouse_horticulture': 'agricultural',
-    'landuse:plant_nursery': 'agricultural',
+    'landuse:farmyard': 'agricultural', 'landuse:plant_nursery': 'agricultural',
+    // A greenhouse is a BUILDING, not a field (Jacob, 2026-09-26): under `agricultural` it
+    // took the crop surface, and huron's 47 ha of glasshouse sites would have grown rows.
+    'landuse:greenhouse_horticulture': 'greenhouse',
     'landuse:orchard': 'orchard',           // trees, in rows, by a farmer
     'landuse:forest': 'forest',   // ⚠️ `natural:wood` deliberately NOT re-pointed here — see above
     'natural:wetland': 'wetland', 'natural:mud': 'wetland',
