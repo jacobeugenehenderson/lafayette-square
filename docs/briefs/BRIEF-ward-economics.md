@@ -51,17 +51,9 @@ evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve 
 - Host earnings;
 - platform earnings.
 
-## ⭐ THE ASK'S DESIGN (Jacob, 2026-09-25 — supersedes phase 1's knob panel)
+## ⭐ THE ASK (Jacob, 2026-09-25 — after a knob panel and a nested ring were both rejected)
 
-**One dominant object that explains the economics: a nested-ring model. The visualization IS the control.**
-- **Outer ring = the Ward economy** (where transaction volume comes from): food/Cary, other local commerce, later other classes. **Centre:** total annual local commerce.
-- **Inner ring = the Ward's proceeds and where they go:** the **Cushion · the Local Host · the Studio.** Local commerce → Ward proceeds → allocation.
-- **The inner ring's boundaries are draggable.** They replace the Host-share / Cushion / Studio sliders. As a boundary moves, each section's size, percentage and dollars change together.
-- **Hover/touch a section:** the centre shows its name, $ and %, with no big permanent legend.
-- **Only a few real controls:** activity/scale · allocation (the ring itself) · time.
-- **Time = small side-by-side SNAPSHOTS** of the same ring (Year 1 — Cushion $2,500 · Year 2 — $5,000 · Year 3 — $7,500 · Steady state — Cushion funded), not four interactive diagrams. They show the Cushion as an accumulating reserve, whose share goes elsewhere once funded.
-- **Everything else is an Assumption** (processing rates, sales tax…): stated in an Assumptions disclosure, not a knob.
-- **Distinct jobs:** The Split = what happens to a TRANSACTION (it keeps the detailed transaction controls); The Ask = what happens when Wards operate AT SCALE (it consumes The Split's economics rather than recreating its controls).
+**The reader is a would-be Host asking "what do I get?"** The answer is **sentences with the numbers in them**, written from the model. There are two controls: food orders a week, and businesses. The sentences cover local commerce a year · what the Local Host earns · the budget to spend on the neighbourhood (first year, and once the cushion is full) · what goes into the cushion until it reaches its target. The skim, Host share and cushion rules sit under Assumptions. Built: theward-online `ward-economics` a7f344e (unpushed). The rejected ring design is in `cartograph/_archive/BRIEF-ward-economics-ring-2026-09-25.md`.
 
 ## The phases (stop after each)
 
