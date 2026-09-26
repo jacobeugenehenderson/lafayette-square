@@ -114,15 +114,18 @@ export function tagChassis(rubric, meta, curationEntry) {
   }
   // habit — displayName (ratified human signal) wins; else species-botany draft.
   const dn = curationEntry && curationEntry.displayName && curationEntry.displayName.trim().toLowerCase()
-  if (dn && DISPLAYNAME_HABIT[dn]) {
-    tags['chassis.habit'] = tag(DISPLAYNAME_HABIT[dn], 'high', `curation.displayName("${curationEntry.displayName}")`, true)
-  } else {
-    const sp = meta.source && meta.source.species
-    const h = sp && SPECIES_HABIT[sp]
-    tags['chassis.habit'] = h
-      ? tag(h, 'low', `source.species-botany(${sp})`, false)
-      : tag(null, 'low', 'undetermined — no aspect at ingest, no species map', false)
+  // ⭐ THE VALUE DECIDES THE AXIS, as for leaves: `multi-stem` left chassis.habit for
+  // chassis.trunks on 2026-08-25, and the cutover migrated the part-index, not this producer —
+  // so the first real re-import wrote the dead value back (claims-axis-keys-resolve went red).
+  const put = (raw, confidence, source, ratified) => {
+    const hit = resolveTagged('chassis.habit', raw)
+    tags[hit ? hit.axis : 'chassis.habit'] = tag(hit ? hit.value : null, confidence,
+      hit ? `${source}${hit.via === 'redirect' ? `(${raw}→${hit.axis})` : ''}` : `${source} — "${raw}" is no live habit`, ratified)
   }
+  const sp = meta.source && meta.source.species
+  if (dn && DISPLAYNAME_HABIT[dn]) put(DISPLAYNAME_HABIT[dn], 'high', `curation.displayName("${curationEntry.displayName}")`, true)
+  else if (sp && SPECIES_HABIT[sp]) put(SPECIES_HABIT[sp], 'low', `source.species-botany(${sp})`, false)
+  else tags['chassis.habit'] = tag(null, 'low', 'undetermined — no aspect at ingest, no species map', false)
   return tags
 }
 

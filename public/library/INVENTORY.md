@@ -58,4 +58,4 @@ _Non-silhouette packs (season/variant, not a single-leaf shape): fine_compound(c
 
 ## Chassis (by habit) — count
 
-(untagged): 74 · oval: 46 · pyramidal: 29 · spreading: 26 · columnar: 25 · weeping: 12 · rounded: 8 · multi-stem: 5
+(untagged): 79 · oval: 46 · pyramidal: 29 · spreading: 26 · columnar: 25 · weeping: 12 · rounded: 8

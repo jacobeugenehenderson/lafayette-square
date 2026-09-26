@@ -11,11 +11,11 @@
       "confidence": "high",
       "source": "tree-bounds(heightRange)"
     },
-    "chassis.habit": {
-      "value": "multi-stem",
+    "chassis.trunks": {
+      "value": "multi",
       "ratified": false,
       "confidence": "low",
-      "source": "source.species-botany(betula_pendula)"
+      "source": "source.species-botany(betula_pendula)(multi-stem→chassis.trunks)"
     }
   },
   "conformReport": {
