@@ -9,7 +9,9 @@
 // (src/lib/groundMaterials.js groundMaterialFor), its REAL material is built with the real factory,
 // its onBeforeCompile is run over three's standard shader, and the compiled fragment must carry the
 // ground-lamp chunk (src/lib/groundLamp.js GROUND_LAMP_MARKER) AFTER lighting — after
-// `#include <dithering_fragment>`. Water is Strand's (lamp reflection) and is listed, not asserted.
+// `#include <dithering_fragment>`. Water is a MIRROR, not a lit surface: it does not take the pool, it
+// reflects the lamp HEADS (waterMaterial.js LAYER 4). Asserted below: the compiled water fragment runs the
+// lamp loop in its emissive, and WaterSurface binds it to the same lampGlow values and lamp list.
 // ⭐ MUTATION-TESTED EVERY RUN: one factory is rebuilt with the chunk stripped and must FAIL here.
 //
 //   node checks/claims-every-ground-surface-takes-the-lamp.mjs [town]
@@ -70,16 +72,31 @@ try {
       if (!seen.get(k)) miss.push(`${g.kind}:${g.id} (${k})`)
     }
     if (miss.length) { bad += miss.length; console.log(`⛔ ${town}: ${miss.length} ground group(s) draw WITHOUT the lamp: ${miss.join(', ')}`) }
-    else console.log(`✅ ${town}: every ground group takes the lamp after lighting${water.length ? ` · water (Strand's): ${water.join(', ')}` : ''}`)
+    else console.log(`✅ ${town}: every ground group takes the lamp after lighting${water.length ? ` · water reflects it (asserted below): ${water.join(', ')}` : ''}`)
   }
   console.log(`   materials compiled: ${[...seen].map(([k, ok]) => `${k}${ok ? '' : ' ⛔'}`).join(' · ')}`)
+
+  // ⭐ WATER — the reflection, asserted, not exempted. The compiled fragment must loop over the lamp heads
+  // after the emissive include, and the one water mesh (WaterSurface) must drive it from lampGlow's pool
+  // strength + colour and the lamp list StreetLights publishes.
+  const { makeWaterMaterial } = await vite.ssrLoadModule('/src/components/waterMaterial.js')
+  const reflects = (frag) => { const e = frag.indexOf('#include <emissivemap_fragment>'), l = frag.indexOf('uLamps[i]'); return e >= 0 && l > e }
+  const wFrag = compile(makeWaterMaterial({ extentDiag: 1000 }).material)
+  const ws = readFileSync(join(ROOT, 'src/components/WaterSurface.jsx'), 'utf8')
+  const binds = ['lampGlow.poolUniform', 'lampGlow.colorUniform', 'lampHeads.xz', 'uLamps', 'uLampN'].filter(k => !ws.includes(k))
+  const waterOk = reflects(wFrag) && !binds.length
+  console.log(waterOk ? '✅ water reflects the lamp heads, driven by the same lampGlow values and lamp list'
+    : `⛔ water: ${reflects(wFrag) ? '' : 'no lamp loop in the compiled fragment · '}${binds.length ? `WaterSurface does not bind ${binds.join(', ')}` : ''}`)
+  if (!waterOk) bad++
+  const wBlind = reflects(wFrag.split('uLamps[i]').join(''))
+  console.log(wBlind ? '⛔ BLIND: a water fragment with its lamp loop stripped still passed' : '   mutation (lamp loop stripped from the water) caught ✓')
 
   // The mutation: a factory whose chunk is stripped must be seen.
   const stripped = build.fade(); const hook = stripped.onBeforeCompile
   stripped.onBeforeCompile = (sh, r) => { hook(sh, r); sh.fragmentShader = sh.fragmentShader.split(GROUND_LAMP_MARKER).join('') }
   const blind = lampAfterLight(compile(stripped))
   console.log(blind ? '⛔ BLIND: a material with the lamp chunk stripped still passed' : '   mutation (lamp chunk stripped from the flat material) caught ✓')
-  exit = bad || blind ? 1 : checked ? 0 : 2
+  exit = bad || blind || wBlind ? 1 : checked ? 0 : 2
   console.log(exit === 0 ? '\n✅ PASS' : exit === 2 ? '\n⚠️ nothing checked' : `\n⛔ FAIL`)
 } catch (e) { console.error('⛔ could not run:', e.message); exit = 2 } finally { await vite.close() }
 process.exit(exit)
