@@ -1,8 +1,8 @@
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: no
-written: 2026-09-20
-evict-when: RULING: Jacob's eye on huron's farmland, near and far, against LS's park grass unchanged.
+written: 2026-09-20 · re-scoped 2026-09-26 (the six-month cycle + plant impostors, Jacob)
+evict-when: huron's fields play the season — dirt → tilled rows → sprouts → plants → harvest → back — and Jacob has eyed it near and far, with LS's park grass unchanged.
 -->
 
 # BRIEF — A FIELD IS NOT A LAWN
@@ -15,9 +15,38 @@ evict-when: RULING: Jacob's eye on huron's farmland, near and far, against LS's 
 > possible."* · *"Without a hero object, we're going to need to get a lot of visible leverage from
 > the landscape itself, and that means beautiful (expensive) water and beautiful fields."*
 
+> ### ⭐⭐ RE-SCOPED 2026-09-26 — A DAY-LEVEL TASK: THE SIX-MONTH FIELD *(Jacob)*
+> *"Huron requires rowcrops, and I want to make a 6-month material/shader that starts out brown (dirt), gets
+> plowed/tilled into raised rows, then the rows sprout. Impostor plants can fill in until harvest when the
+> sequence can play in reverse."*
+> ⇒ **One cycle, driven by the shared calendar** (`src/hooks/useCalendar.js` — `dayOfYear`; the lab's month
+> control), in stages: **bare dirt → tilled raised rows → sprouts → plants (impostors) → harvest → reversed back
+> to dirt.** This supersedes §6's season bullet (winter barren → spring tilled → summer sprouting) by extending
+> it through harvest, and it **brings plant impostors INTO scope** (§8 had them out).
+> - **The stage dates are a property of the town, never a constant** (Layer 0 Class D): planting and harvest
+>   day-of-year, with a unit and a source in `surfaces.mjs` — **authored with a neutral default, or a
+>   `references/registry.json` finding** (e.g. USDA's published usual planting/harvesting dates for the state).
+>   ⛔ Not "April to October" hardcoded; that is Ohio corn, and it is wrong in the next town.
+> - **Raised rows** are relief the eye reads near and mid: row bearing and spacing DERIVED per field (§4①②
+>   unchanged), rows shaded by the sun through the shared sockets. A shader answer first; say plainly if near
+>   views need geometry.
+> - **The plants**: impostor cards along the rows, growing with the stage, instanced — the first consumer of
+>   `lu-policy.mjs#plantingOf` (`agricultural → { with: ['zea_mays'], pattern: 'rows' }`). ⚠️ The impostor
+>   machinery is the Arborist's (`arborist/bake-impostors.js`, `HeroImpostorTrees.jsx`) — reuse its capture and
+>   card path; ⛔ no second impostor system. Count their cost against the phone budget (Column B) and report it.
+> - **Reverse at harvest**: the same states played back, not a second sequence.
+> - **Crop type**: one generic crop first. OSM `crop=*` and USDA's Cropland Data Layer (national, per-field,
+>   yearly) are the per-crop sources later — measure what each covers on huron; don't build per-crop yet.
+> ▶ **Order for the day:** §5's area measurement (short) → the dirt/tilled/sprout surface cycle in the lab →
+>   the plant impostors → Jacob's eye in the lab at eye/mid/overhead across the months. **Stop and ask** before
+>   anything needs a re-pour or bake.
+> ⚠️ **The ceiling from §3 still holds:** huron's largest fields land in NO face (the containment direction),
+>   so the cycle will show on the small fields only until that is fixed. Report the area it reaches vs the
+>   area OSM says is farmland.
+
 ---
 
-## 1. You are the dispatched agent. Name yourself — one word, yours.
+## 1. You are the dispatched agent. Name yourself — one word, not a name another RUNNING session holds (check `ListAgents`; ask Jacob to `/rename`).
 
 ## 2. Agent: **FRESH**
 
@@ -109,8 +138,9 @@ extension was not faithful.
 ## 8. Write/commit bounds
 **In bounds:** a crop albedo chunk in `grassMaterial.js` · its rows in `cartograph/surfaces.mjs` · the
 new check.
+**In bounds since 2026-09-26:** the crop plant impostors (reusing the Arborist's impostor path) and their instancing.
 ⛔ **OUT:** the LU vocabulary itself (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`) · water
-(`BRIEF-water-shader.md`) · the arborist's placement (`orchard`, see §6) · plant impostors.
+(`BRIEF-water-shader.md`) · the arborist's placement (`orchard`, see §6) · the containment-direction fix.
 ⛔ **LS's grass must come out UNCHANGED.** It is the control and the one surface an operator knows.
 ⛔ **SURFACE SCOPE DRIFT, DO NOT ABSORB IT.**
 
