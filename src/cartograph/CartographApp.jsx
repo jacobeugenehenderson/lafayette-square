@@ -49,6 +49,7 @@ import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
 import { sceneExag, reloadTerrain } from '../utils/terrainShader'
+import { getElevationRaw } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview } from '../stage/StageApp.jsx'
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
@@ -80,7 +81,7 @@ import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState.js'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { resolveLampGlowAtMinute, resolveGroupAtMinute, getTodSlotMinutes } from './animatedParam.js'
 import {
-  NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS,
+  NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, SHOTS_FLAT_DEFAULTS,
 } from './skyLightChannels.js'
 import BakeModal from './BakeModal.jsx'
 import CartographSurfaces from './CartographSurfaces.jsx'
@@ -447,8 +448,18 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             toPos = [0, (R * 1.12) / (Math.min(1, aspect) * t), 0]
             toTarget = [0, 0, 0]
           } else {
-            toPos = [0, 1.73, R * 0.08]
-            toTarget = [0, 1.73, R * 0.08 - 0.5]
+            // ⛔ The eye stands ABOVE THE FINISHED GROUND at its point, never at
+            // absolute Y — on raised terrain (huron) an absolute 1.73 m is underground.
+            // Same method as production's Street (Scene.jsx, "Eye height is ABOVE the
+            // ground"): the street view draws the ground at exag 1, so the RAW elevation,
+            // plus the town's authored eye height.
+            const ex = 0, ez = R * 0.08
+            const eye = storeShots?.street?.eyeHeight ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
+            const g = getElevationRaw(ex, ez)
+            if (!Number.isFinite(g)) console.error(`[street] ⛔ no ground under the eye at (${ex}, ${ez}) — standing at 0`)
+            const eyeY = (Number.isFinite(g) ? g : 0) + eye
+            toPos = [ex, eyeY, ez]
+            toTarget = [ex, eyeY, ez - 0.5]
           }
         }
         const toUp = s.up || [0, 1, 0]

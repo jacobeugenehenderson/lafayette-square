@@ -29,6 +29,8 @@ import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import { getElevationRaw } from '../utils/elevation'
+import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -100,15 +102,27 @@ function SkyStateTicker() {
 
 // Resolve a shot's target pose (position/target/fov), accounting for
 // browse's aspect-fit altitude. Pure — no side effects.
-function resolveShotPose(shot, aspect) {
+function resolveShotPose(shot, aspect, streetEye = SHOTS_FLAT_DEFAULTS.street.eyeHeight) {
   const s = SHOTS[shot]
   if (!s) return null
   let pos = s.position
+  let target = s.target
   if (shot === 'browse') {
     const y = computeBrowseAltitude(aspect, s.fov)
     pos = [s.position[0], y, s.position[2]]
   }
-  return { pos, target: s.target, fov: s.fov, up: s.up || [0, 1, 0] }
+  if (shot === 'street') {
+    // ⛔ The eye stands ABOVE THE FINISHED GROUND at its point, never at absolute Y
+    // (on raised terrain an absolute 1.73 m is underground). The street view draws
+    // the ground at exag 1, so the RAW elevation — the same method as production.
+    const [x, , z] = s.position
+    const g = getElevationRaw(x, z)
+    if (!Number.isFinite(g)) console.error(`[street] ⛔ no ground under the eye at (${x}, ${z}) — standing at 0`)
+    const y = (Number.isFinite(g) ? g : 0) + streetEye
+    pos = [x, y, z]
+    target = [s.target[0], y, s.target[2]]
+  }
+  return { pos, target, fov: s.fov, up: s.up || [0, 1, 0] }
 }
 
 // Reused temp for the hero keyframe pose (allocation-free hot path).
@@ -196,7 +210,7 @@ function ShotCamera({ shot, setShot }) {
       const { fov } = heroKeyframeAnim(heroPhase.current ?? 0, heroKeyframes, heroMotion, _heroPos, _heroTgt)
       return { pos: _heroPos.toArray(), target: _heroTgt.toArray(), fov, up: [0, 1, 0] }
     }
-    const pose = resolveShotPose(shotKey, aspect)
+    const pose = resolveShotPose(shotKey, aspect, scene?.shots?.values?.street?.eyeHeight)
     if (shotKey === 'browse' && pose) pose.up = browseUpFromHeading(browseHeadingDeg)
     return pose
   }
