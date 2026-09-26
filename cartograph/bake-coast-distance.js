@@ -110,6 +110,7 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
   const bands = bandsInUse()
   const resolved = bands.filter(b => b.value != null)
   let channel
+  let derivedSand = { beachBandM: { absent: true, why: 'no coastline (coastDist absent)' }, beachSlopeDeg: { absent: true, why: 'no coastline (coastDist absent)' } }
   if (!runs.length) {
     channel = { absent: true, why: all.length ? `all ${all.length} __water__ run(s) refused` : 'no __water__ runs in shape.json — this town has no shoreline', refused }
     console.log(`[bake-coast-distance] ${lookId}: ⛔ coastDist ABSENT — ${channel.why}`)
@@ -132,12 +133,71 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
       farErrorBoundM: +errBoundM.toFixed(2), runs: runs.length, shorelineM: +lenM.toFixed(1), refused,
     }
     console.log(`[bake-coast-distance] ${lookId}: ${runs.length} run(s), ${(lenM / 1000).toFixed(2)} km → ${W}×${H} at ${stepX.toFixed(2)} m (${texelFrom}), max ${maxM.toFixed(0)} m, ${((Date.now() - t0) / 1000).toFixed(1)} s`)
+    // The sand surface's per-town parameters, from THIS town's beach against THIS coast.
+    const mapPath = join(dataRoot, 'cartograph', 'data', scene, 'clean', 'map.json')
+    const tBinPath = join(dataRoot, 'cartograph', 'data', scene, 'clean', 'terrain.bin')
+    const natural = existsSync(mapPath) ? (JSON.parse(readFileSync(mapPath, 'utf8')).layers?.natural || []) : null
+    const hb = existsSync(tBinPath) ? readFileSync(tBinPath) : null
+    const heights = hb && hb.byteLength === W * H * 4 ? new Float32Array(hb.buffer, hb.byteOffset, W * H) : null
+    derivedSand = natural ? deriveSand({ field, W, H, bounds: tm.bounds, heights, natural })
+      : { beachBandM: { absent: true, why: 'no clean/map.json' }, beachSlopeDeg: { absent: true, why: 'no clean/map.json' } }
+    // The band that drives the texel is now DERIVED here; say which, and whether the grid honours it.
+    if (derivedSand.beachBandM.value) channel.texelFrom = `terrain grid (sand.beachBandM derived at ${derivedSand.beachBandM.value} m; the ${stepX.toFixed(2)} m texel ${stepX <= derivedSand.beachBandM.value / 2 ? 'resolves' : '⛔ does NOT resolve'} it)`
+    for (const [k, v] of Object.entries(derivedSand)) console.log(`  sand.${k}: ${v.absent ? '⛔ ABSENT — ' + v.why : v.value + ' ' + v.unit + ' (n=' + v.n + ')'}`)
     for (const r of refused) console.log(`  ⛔ refused run #${r.index}: ${r.why}`)
   }
   const manifestPath = join(outDir, 'context.json')
   const prev = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : { channels: {} }
-  const out = { version: 1, look: lookId, channels: { ...prev.channels, coastDist: channel } }
+  const out = { version: 1, look: lookId, channels: { ...prev.channels, coastDist: channel }, derived: { ...(prev.derived || {}), sand: derivedSand } }
   writeFileSync(manifestPath, JSON.stringify(out, null, 1))
+  return out
+}
+
+/**
+ * The sand surface's DERIVED parameters for one town (surfaces.mjs sand: beachBandM, beachSlopeDeg).
+ * Reads the percentile and the ground each is taken over from the param defs — nothing restated.
+ * `natural` = clean/map.json layers.natural ({ ring, use }); `heights` = the terrain grid (Float32,
+ * same bounds + size as the field). Each result is { value, unit, n, from } or { absent, why }.
+ */
+export function deriveSand({ field, W, H, bounds, heights, natural, defs = SURFACES.sand.params }) {
+  const stepX = (bounds.maxX - bounds.minX) / (W - 1), stepZ = (bounds.maxZ - bounds.minZ) / (H - 1)
+  const inside = (ring, x, z) => { let c = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const A = ring[i], B = ring[j]
+      if ((A.z > z) !== (B.z > z) && x < (B.x - A.x) * (z - A.z) / (B.z - A.z) + A.x) c = !c }
+    return c }
+  const texelsOver = (uses) => {
+    const ks = new Set()
+    for (const f of natural || []) {
+      if (!uses.includes(f.use) || !(f.ring?.length > 2)) continue
+      const xs = f.ring.map(p => p.x), zs = f.ring.map(p => p.z)
+      const i0 = Math.max(1, Math.ceil((Math.min(...xs) - bounds.minX) / stepX)), i1 = Math.min(W - 2, Math.floor((Math.max(...xs) - bounds.minX) / stepX))
+      const j0 = Math.max(1, Math.ceil((Math.min(...zs) - bounds.minZ) / stepZ)), j1 = Math.min(H - 2, Math.floor((Math.max(...zs) - bounds.minZ) / stepZ))
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++)
+        if (inside(f.ring, bounds.minX + i * stepX, bounds.minZ + j * stepZ)) ks.add(j * W + i)
+    }
+    return [...ks]
+  }
+  const pct = (arr, p) => { const a = Float64Array.from(arr).sort(); return a[Math.min(a.length - 1, Math.floor(p * a.length))] }
+  const out = {}
+  const B = defs.beachBandM
+  const band = texelsOver(B.over)
+  out.beachBandM = band.length
+    ? { value: +pct(band.map(k => field[k]), B.percentile).toFixed(1), unit: 'm', n: band.length, from: B.from }
+    : { absent: true, why: `no ${B.over.join('/')}-tagged ground in clean/map.json — this town's coast has no mapped beach` }
+  const S = defs.beachSlopeDeg
+  if (out.beachBandM.absent) out.beachSlopeDeg = { absent: true, why: `needs ${S.within}, which is absent` }
+  else if (!heights) out.beachSlopeDeg = { absent: true, why: 'no terrain grid (clean/terrain.bin)' }
+  else {
+    const lim = out.beachBandM.value
+    const slopes = texelsOver(S.over).filter(k => field[k] <= lim).map(k => {
+      const dx = (heights[k + 1] - heights[k - 1]) / (2 * stepX), dz = (heights[k + W] - heights[k - W]) / (2 * stepZ)
+      return Math.atan(Math.hypot(dx, dz)) * 180 / Math.PI
+    })
+    out.beachSlopeDeg = slopes.length
+      ? { value: +pct(slopes, S.percentile).toFixed(2), unit: '°', n: slopes.length, from: S.from }
+      : { absent: true, why: `no ${S.over.join('/')} ground within ${lim} m of the waterline` }
+  }
   return out
 }
 

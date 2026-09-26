@@ -45,16 +45,20 @@ export const SURFACES = {
         unit: '°', source: 'physics',
         question: 'q-dry-sand-repose-angle', finding: 'f-usgs-dune-repose',   // USGS: 30–34° (a range)
       },
+      // ⭐ DERIVED PER TOWN at bake (cartograph/bake-coast-distance.js deriveSand), written to
+      // context.json `derived.sand`; ABSENT, named, when the town can't answer. The percentile
+      // and the ground are declared HERE and read by the bake — never restated there.
       beachSlopeDeg: {
-        unit: '°', source: 'derived',
-        from: 'p95 slope of the town\'s beach band (sand ground within beachBandM of the coast), at the terrain grid step',
-        needs: ['coast', 'terrain', 'water datum', 'beachBandM'],
+        unit: '°', source: 'derived', percentile: 0.95, over: ['beach', 'sand', 'dune'], within: 'beachBandM',
+        from: 'p95 terrain slope (at the grid step) of the town\'s sand ground within beachBandM of the waterline',
       },
-      // How far the beach reaches inland from the waterline. Read against the coastDist
-      // context channel (cartograph/bake-coast-distance.js).
+      // How far the beach reaches inland from the waterline. A property of a COAST, not of sand:
+      // one number for every town would be a Class D constant (Boz, 2026-09-25).
+      // Receipt, not value: Provincetown measures 98 m (▶ node scratch/marram-beach-band.mjs).
       beachBandM: {
-        unit: 'm', source: 'physics', channel: 'coastDist',
-        question: 'q-beach-band-width', finding: null,        // [U] until answered
+        unit: 'm', source: 'derived', channel: 'coastDist', percentile: 0.95, over: ['beach'],
+        from: 'p95 coastDist over the town\'s beach-tagged ground (OSM natural=beach, clean/map.json)',
+        question: 'q-beach-band-width',
       },
       duneBlendDeg: {
         unit: '°', source: 'authored', default: 0,           // neutral: a hard state change
@@ -134,7 +138,7 @@ export function surfaceOfGroup(group, table = SURFACE_OF_CLASS) {
  * `{ values, absent }`: a physics param with no finding, or a finding missing from the
  * registry, is ABSENT and named, never filled in. Pure: the caller passes the registry.
  */
-export function resolveSurfaceParams(surface, registry, authored = {}) {
+export function resolveSurfaceParams(surface, registry, authored = {}, derived = {}) {
   const def = SURFACES[surface]
   if (!def) throw new Error(`⛔ resolveSurfaceParams: no surface "${surface}"`)
   const byId = new Map((registry?.findings || []).map(f => [f.id, f]))
@@ -143,6 +147,13 @@ export function resolveSurfaceParams(surface, registry, authored = {}) {
     if (authored?.[name] != null) { values[name] = authored[name]; continue }
     if (p.source === 'authored') { values[name] = p.default; continue }
     if (p.source === 'physics' && p.finding && byId.has(p.finding)) { values[name] = byId.get(p.finding).value; continue }
+    // `derived` = the town's context.json `derived.<surface>`: { value } or { absent, why }.
+    if (p.source === 'derived') {
+      const d = derived?.[name]
+      if (d && Number.isFinite(d.value)) { values[name] = d.value; continue }
+      absent.push(`${name} (${p.unit}, derived — ${d?.why || 'not derived: bake the context'})`)
+      continue
+    }
     absent.push(`${name} (${p.unit}, ${p.source}${p.finding ? ' — finding ' + p.finding + ' missing' : ' — no source'})`)
   }
   return { values, absent }

@@ -1208,8 +1208,11 @@
         "or MEASURED from data we hold: the natural=beach polygons' own width against the coast arcs, or the terrain's slope break along shore-normal transects — needs Provincetown's water datum and readable sand faces first"
       ],
       "codeSites": [
-        "cartograph/surfaces.mjs SURFACES.sand.params.beachBandM (finding: null — [U], the parameter is ABSENT)"
-      ]
+        "cartograph/surfaces.mjs SURFACES.sand.params.beachBandM (derived)",
+        "cartograph/bake-coast-distance.js deriveSand"
+      ],
+      "notes": "RULED (Boz, 2026-09-25): DERIVED per town at bake — a beach band is a property of a coast, so one constant would be Class D; a town with no beach-tagged ground gets it ABSENT, named. Held in code by the check below. The Provincetown receipt (p95 98 m, scratch/marram-beach-band.mjs; bake derives 105 m, huron 118 m) waits to be filed as a measured finding until OSM — its input — is a registry source.",
+      "check": "checks/claims-the-beach-band-is-the-towns-own.mjs"
     },
     {
       "id": "q-lu-park-boundary-vs-ground-cover",
