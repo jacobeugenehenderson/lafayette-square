@@ -90,6 +90,19 @@ export const SURFACES = {
       growFrac:  { unit: '× season', source: 'authored', default: 0.5 },
       // The turning strip where rows stop, at each end of the field's long axis. 0 = no headland.
       headlandM: { unit: 'm', source: 'authored', default: 0 },
+      // ⭐ ONE ROUGH GRAYSCALE MAP IS THE COLOUR, THE DEPTH AND THE DISTORTION (Jacob, 2026-09-26).
+      // Colour: two gradient maps read it — the soil runs dark → light, the plants carry their own
+      // green range. Depth: its full range spans the cited ridge height. Distortion: below. Stops are the kit's one
+      // gradient-map format (`arborist/bake-look.js` compileGradientLUT: { t, color }, linear in sRGB),
+      // at most 4 per ramp. These are the LOOK, like grass's hue table — the operator's to replace
+      // per town in design.json#surfaces.params.crop — not a scale constant.
+      // The same map DISTORTS the rows: its mid-scale octave pushes each row sideways by up to this
+      // fraction of a row spacing (scale-free — it rides the cited spacing). 0 = ruler-straight rows.
+      rowDistort: { unit: '× row spacing', source: 'authored', default: 0.35 },
+      soilRamp: { unit: 'gradient stops', source: 'authored', default: [
+        { t: 0.00, color: '#2a1c13' }, { t: 0.35, color: '#4b3423' }, { t: 0.70, color: '#7b5d41' }, { t: 1.00, color: '#a58a6a' } ] },
+      plantRamp: { unit: 'gradient stops', source: 'authored', default: [
+        { t: 0.00, color: '#1c3310' }, { t: 0.40, color: '#2f5719' }, { t: 0.75, color: '#5b8a2b' }, { t: 1.00, color: '#a2b64c' } ] },
     },
   },
   // ⭐ The Pilgrim Monument's coursed granite — a SET-PIECE surface, not a land-use one

@@ -109,21 +109,28 @@ const SAND_STATE = `
 export const SAND_UNIFORMS = { uDuneView: { value: 0 } }
 if (typeof window !== 'undefined') window.__duneView = SAND_UNIFORMS.uDuneView
 
-// ⭐ ROW CROPS — the six-month field (BRIEF-field-shader, 2026-09-26). One scalar, the crop STATE
-// `cropC` ∈ [0, 4]: 0 bare dirt · 1 tilled raised rows · 2 sprouts on the ridges · 4 full plants.
-// It rises from each field's planting day over `uGrowFrac` of its season, holds to harvest, and
-// harvest plays the SAME states back at the same speed — one curve, never a second sequence.
-// Rows run along the field's own long axis (baked per field, `vFieldAxis`), at the cited spacing;
-// the ridges are relief, lit by the sun through the shared normal (CROP_NORMAL below).
-// ⭐ Far away, the row pattern fades to its own mean by screen-space derivative (fwidth), not by
-// a distance constant: the physical 30 in spacing is kept at every scale (§4②).
-// ⛔ No calendar for the town's state → uCropOn 0 → the field holds at bare dirt, and BakedGround
-// names the missing finding. The hues are the look, like grass's; the class colour is not used.
+// ⭐ ROW CROPS — the six-month field (BRIEF-field-shader). One scalar, the crop STATE `cropC` ∈ [0, 4]:
+// 0 bare dirt · 1 tilled raised rows · 2 sprouts · 4 full plants. It rises from each field's planting
+// day over `uGrowFrac` of its season, holds to harvest, and harvest plays the SAME states back.
+// ⭐ ONE ROUGH GRAYSCALE MAP (`cropBW`) is the colour, the depth AND the distortion (Jacob, 2026-09-26):
+//   · distortion — its mid-scale octave pushes the rows sideways (uRowDistort × the row spacing);
+//   · depth      — cropBW × the cited ridge height is a height field, lit by derivative bump (CROP_NORMAL);
+//   · colour     — two gradient maps read it: soil dark → light, plants their own green range.
+// Rows run along the field's own long axis (baked per field) at the cited spacing; every octave finer
+// than a pixel fades to its mean by fwidth, so far fields neither shimmer nor turn to corduroy.
+// ⛔ No calendar for the town's state → uCropOn 0 → bare dirt, and BakedGround names the missing finding.
+const CROP_RAMP_GLSL = `vec3 cropRamp(float t, vec4 T, vec3 c0, vec3 c1, vec3 c2, vec3 c3) {
+         t = clamp(t, 0.0, 1.0);
+         if (t <= T.x) return c0;
+         if (t <= T.y) return mix(c0, c1, (t - T.x) / max(T.y - T.x, 1e-5));
+         if (t <= T.z) return mix(c1, c2, (t - T.y) / max(T.z - T.y, 1e-5));
+         if (t <= T.w) return mix(c2, c3, (t - T.z) / max(T.w - T.z, 1e-5));
+         return c3;
+       }`
 const CROP_ALBEDO = `vec2 gp = vGrassPos.xz;
        vec2 cropD = gp - vFieldAxis.zw;
        float cropU = dot(cropD, vFieldAxis.xy);                           // along the rows (m)
        float cropV = dot(cropD, vec2(-vFieldAxis.y, vFieldAxis.x));        // across the rows (m)
-       // The field's own planting / harvest day, inside the town's most-active window.
        float cropP = mix(uPlantMin, uPlantMax, vFieldExt.z);
        float cropH = mix(uHarvMin, uHarvMax, vFieldExt.w);
        float cropL = mod(cropH - cropP + 365.0, 365.0);
@@ -135,39 +142,64 @@ const CROP_ALBEDO = `vec2 gp = vGrassPos.xz;
        float till   = clamp(cropC, 0.0, 1.0);
        float sprout = clamp(cropC - 1.0, 0.0, 1.0);
        float grow   = clamp((cropC - 2.0) * 0.5, 0.0, 1.0);
-       // Rows: phase across the rows; the pattern fades to its mean where a row is under ~2 px.
-       float rowPh = cropV / uRowSpacingM;
-       float rowAA = 1.0 - smoothstep(0.25, 0.5, fwidth(rowPh));
        float inBody = step(abs(cropU), vFieldExt.x - uHeadlandM);         // 0 on the headland
-       float ridge = 0.5 + 0.5 * cos(6.2831853 * rowPh);                  // 1 on the crest
+
+       // — the ROUGH part of the map: broad patches, clods, grain (fine octaves fade by fwidth) —
+       float gpw = length(fwidth(gp));
+       float rBroad = gFBM(gp * 0.08);
+       float rMid   = gFBM(gp * 0.6 + 19.0);
+       float rClod  = mix(0.5, gFBM(gp * 2.5 + 7.0), 1.0 - smoothstep(0.15, 0.4, gpw * 2.5));
+       float rGrain = mix(0.5, gNoise(gp * 14.0 + 3.0), 1.0 - smoothstep(0.15, 0.4, gpw * 14.0));
+       float rough = 0.40 * rBroad + 0.20 * rMid + 0.28 * rClod + 0.12 * rGrain;
+       // — DISTORTION: the map's mid octave pushes the rows sideways —
+       float rowPh = (cropV + (rMid - 0.5) * 2.0 * uRowDistort * uRowSpacingM) / uRowSpacingM;
+       float rowAA = 1.0 - smoothstep(0.25, 0.5, fwidth(rowPh));
+       float ridge = mix(0.5, 0.5 + 0.5 * cos(6.2831853 * rowPh), rowAA);  // 1 on the crest
        float rowAmt = till * inBody;
-       cropSlope = -3.1415927 * (uRidgeM / uRowSpacingM) * sin(6.2831853 * rowPh) * rowAmt * rowAA;
+       // — THE B&W MAP —
+       float cropBW = mix(rough, 0.6 * ridge + 0.4 * rough, rowAmt);
+       // — DEPTH: the map as height (m), its full range the cited ridge height —
+       float cropHm = cropBW * uRidgeM;
+       cropDH = vec2(dFdx(cropHm), dFdy(cropHm));
 
-       float cn1 = gFBM(gp * 0.05);
-       float cn2 = gNoise(gp * 7.0 + 13.0);
-       vec3 dryDirt  = vec3(0.45, 0.36, 0.27);
-       vec3 tilled   = vec3(0.30, 0.22, 0.15);
-       vec3 leaf     = mix(vec3(0.30, 0.46, 0.16), vec3(0.18, 0.34, 0.11), grow);
-       vec3 grass = mix(dryDirt, tilled, till);
-       grass *= 0.88 + cn1 * 0.24;
-       grass += (cn2 - 0.5) * 0.03;
-       // Furrows sit in shade the sun does not reach; their mean darkening is kept when far.
-       float furrow = mix(0.5, ridge, rowAA);
-       grass *= mix(1.0, 0.78 + 0.22 * furrow, rowAmt);
-       // Green: sprouts speckle the crests, then the leaves close over the rows.
+       // — COLOUR: the soil ramp (untilled crust sits light, fresh-turned soil dark) —
+       vec3 soil = cropRamp(mix(0.30 + 0.70 * cropBW, 0.80 * cropBW, till), uSoilT, uSoilC0, uSoilC1, uSoilC2, uSoilC3);
+       // — the plants' own ramp: young leaves light, mature deep —
+       float leafN = gNoise(vec2(cropU * 6.0, rowPh) + 5.0);
+       vec3 leaf = cropRamp(mix(0.55 + 0.45 * cropBW, 0.10 + 0.60 * cropBW, grow), uPlantT, uPlantC0, uPlantC1, uPlantC2, uPlantC3);
        float crest = mix(smoothstep(0.75, 0.95, ridge), 0.12, 1.0 - rowAA);
-       float speck = step(1.0 - sprout, gNoise(vec2(cropU * 6.0, rowPh * 1.0) + 5.0));
-       float cover = max(crest * speck * sprout,
-                         mix(smoothstep(1.0 - grow, 1.0 - grow + 0.15, mix(ridge, 0.5, 1.0 - rowAA)), grow, 1.0 - rowAA));
+       float speck = step(1.0 - sprout * 0.6, leafN);
+       float cover = max(crest * speck * sprout, smoothstep(1.0 - grow, 1.0 - grow + 0.15, ridge));
        cover = max(cover * inBody, grow * (1.0 - inBody));
-       grass = mix(grass, leaf * (0.9 + cn1 * 0.2), clamp(cover, 0.0, 1.0));`
+       vec3 grass = mix(soil, leaf, clamp(cover, 0.0, 1.0));`
 
-// The ridges as RELIEF: tilt the view-space normal across the rows by the ridge's slope, so the
-// same sun that lights everything else shades the furrows (a heightfield's normal is (−dh/dv)).
+// DEPTH as light: the map's height perturbs the normal by its screen-space derivatives (three's
+// bump-map math, `perturbNormalArb`), so the shared sun shades ridges and clods alike.
 const CROP_NORMAL = `
-       vec3 cropAcross = normalize((viewMatrix * vec4(-vFieldAxis.y, 0.0, vFieldAxis.x, 0.0)).xyz);
-       normal = normalize(normal - cropSlope * cropAcross);`
+       {
+         vec3 cSigX = dFdx(-vViewPosition), cSigY = dFdy(-vViewPosition);
+         vec3 cR1 = cross(cSigY, normal), cR2 = cross(normal, cSigX);
+         float cDet = dot(cSigX, cR1) * faceDirection;
+         vec3 cGrad = sign(cDet) * (cropDH.x * cR1 + cropDH.y * cR2);
+         normal = normalize(abs(cDet) * normal - cGrad);
+       }`
 export const CROP_UNIFORMS = { uDoy: { value: 1 } }
+
+// A gradient map's stops ({ t, color: '#rrggbb' }, the kit's one format — arborist/bake-look.js
+// compileGradientLUT) → 4 stop positions + 4 sRGB colours. Fewer stops pad with the last; ⛔ more than
+// 4, or a bad colour, is refused by name rather than trimmed into a different gradient.
+function rampUniforms(u, name, stops) {
+  const ok = Array.isArray(stops) && stops.length >= 1 && stops.length <= 4
+    && stops.every(s => Number.isFinite(s?.t) && /^#[0-9a-f]{6}$/i.test(s?.color || ''))
+  if (!ok) throw new Error(`⛔ crop ${name.toLowerCase()}Ramp: 1–4 stops of { t, color: '#rrggbb' } required, got ${JSON.stringify(stops)}`)
+  const st = [...stops].sort((a, b) => a.t - b.t)
+  while (st.length < 4) st.push({ t: 1, color: st[st.length - 1].color })
+  u[`u${name}T`] = { value: new THREE.Vector4(...st.map(s => s.t)) }
+  st.forEach((s, i) => {
+    const h = parseInt(s.color.slice(1), 16)
+    u[`u${name}C${i}`] = { value: new THREE.Vector3((h >> 16 & 255) / 255, (h >> 8 & 255) / 255, (h & 255) / 255) }
+  })
+}
 
 const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO + SAND_STATE, crop: CROP_ALBEDO }
 
@@ -249,6 +281,9 @@ export function makeGroundSurfaceMaterial({
       const sp = surfaceParams?.rowSpacingIn?.rowSpacing_in, rh = surfaceParams?.ridgeHeightIn?.ridgeHeightMin_in
       shader.uniforms.uRowSpacingM = { value: Number.isFinite(sp) ? sp * IN : 1e9 }
       shader.uniforms.uRidgeM = { value: Number.isFinite(rh) ? rh * IN : 0 }
+      shader.uniforms.uRowDistort = { value: Number.isFinite(surfaceParams?.rowDistort) ? surfaceParams.rowDistort : 0 }
+      rampUniforms(shader.uniforms, 'Soil', surfaceParams?.soilRamp)
+      rampUniforms(shader.uniforms, 'Plant', surfaceParams?.plantRamp)
       shader.uniforms.uDoy = CROP_UNIFORMS.uDoy
     }
     shader.uniforms.uLampColor = _lampGlow.colorUniform  // pool colour = lamp colour
@@ -293,7 +328,7 @@ export function makeGroundSurfaceMaterial({
        uniform float uFadeOuter;
        uniform float uHasFade;
        ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView;' : ''}
-       ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandM; uniform float uRowSpacingM; uniform float uRidgeM; varying vec4 vFieldAxis; varying vec4 vFieldExt; float cropSlope = 0.0;' : ''}
+       ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandM; uniform float uRowSpacingM; uniform float uRidgeM; uniform float uRowDistort; uniform vec4 uSoilT; uniform vec3 uSoilC0; uniform vec3 uSoilC1; uniform vec3 uSoilC2; uniform vec3 uSoilC3; uniform vec4 uPlantT; uniform vec3 uPlantC0; uniform vec3 uPlantC1; uniform vec3 uPlantC2; uniform vec3 uPlantC3; varying vec4 vFieldAxis; varying vec4 vFieldExt; vec2 cropDH = vec2(0.0);\n       ' + CROP_RAMP_GLSL : ''}
        varying vec3 vGrassPos;
 
        ${SURFACE_NOISE_GLSL}`

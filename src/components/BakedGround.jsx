@@ -441,7 +441,13 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
 function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightmap, fade, poolmap, poolMeta }) {
   useEffect(() => { reportAbsentParams(look, surface, params, resolved) }, [look, surface, params, resolved])
   // The params the generator draws with: the bake's resolution, the operator's authored layer on top.
-  const surfaceParams = useMemo(() => ({ ...(resolved?.values || {}), ...(params || {}) }), [resolved, params])
+  // Authored params' defaults come from the surfaces table itself (pure, already imported), so a
+  // context.json resolved before a param existed cannot strand it; the bake's resolution and the
+  // operator's layer sit on top.
+  const surfaceParams = useMemo(() => ({
+    ...Object.fromEntries(Object.entries(SURFACES[surface]?.params || {}).filter(([, p]) => p.source === 'authored').map(([k, p]) => [k, p.default])),
+    ...(resolved?.values || {}), ...(params || {}),
+  }), [surface, resolved, params])
   const { material, shaderRef } = useMemo(
     () => {
       const built = makeGroundSurfaceMaterial({
