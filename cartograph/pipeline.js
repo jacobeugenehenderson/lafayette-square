@@ -10,7 +10,8 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_MAP, requireExplicitMap} from './config.js'
+import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_MAP, requireExplicitMap, GEOGRAPHY_READ } from './config.js'
+import { pourCodeRecord } from './pour-code.mjs'
 import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
 import { deriveLayers, deriveBuildings, _lotPaths, registryReadRecord } from './derive.js'
@@ -253,6 +254,10 @@ async function main() {
     // what this pour read from references/registry.json (`{ id: value | true }`) — the Bake compares it with the
     // registry now, so an edit re-pours a town only when a value this town used has changed. `{}` = read nothing.
     registryRead: registryReadRecord(),
+    // the code this pour ran ({ path: sha1 }) and the geography it projected with — the Bake compares both by
+    // CONTENT, so a checkout's mtimes or another town's favicon never ask to re-pour this one (pour-code.mjs).
+    codeRead: pourCodeRecord(),
+    geographyRead: GEOGRAPHY_READ,
   }
 
   // Content-aware so a no-op pipeline run doesn't cascade-invalidate

@@ -26,9 +26,7 @@
  * `config.js` keep working; `scene.js`'s header explains why the split is
  * load-bearing and must not be undone.
  */
-import { instanceForMap } from '../src/instances/registry.js'
-import { readFileSync, existsSync } from 'fs'
-import { join } from 'path'
+import { geographyFor } from './geography.mjs'
 import {
   DEFAULT_MAP, SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
   CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR,
@@ -39,43 +37,13 @@ export {
   CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR,
 }
 
-// Geography resolver: a non-default scene's data/<scene>/geography.json wins;
-// otherwise the default map's registry module (LS). Same shape either way.
-function _loadGeography() {
-  if (SCENE !== DEFAULT_MAP) {
-    const p = join(mapDir(SCENE), 'geography.json')
-    if (existsSync(p)) return JSON.parse(readFileSync(p, 'utf8'))
-    // ⛔ Was: warn + fall back to instance.js (Lafayette Square's lat/lon). That
-    // projects another town at St. Louis's coordinates — every metre of its
-    // geometry lands in the wrong place, plausibly, with only a console warning.
-    // An absent geography is not a degraded state, it is an unbuildable one.
-    console.error(`
-⛔ scene '${SCENE}' has no geography.json (looked in ${p}).
-
-   Refusing to fall back to Lafayette Square's coordinates — that would project
-   this town at St. Louis's lat/lon and every derived metre would be wrong.
-
-   Create data/${SCENE}/geography.json (lat/lon/bbox) first.
-`)
-    process.exit(2)
-  }
-  // The DEFAULT scene's geography is the default map's own module — this branch is
-  // only reached when `SCENE === DEFAULT_MAP`, so there is one right answer and no
-  // look involved. ⛔ An unregistered default map is unbuildable, not degraded: say
-  // so and exit, exactly as an absent geography.json does above.
-  const town = instanceForMap(DEFAULT_MAP)
-  if (!town?.geography) {
-    console.error(`
-⛔ the default map '${DEFAULT_MAP}' has no registered instance module (looked in
-   src/instances/registry.js), so there is no geography to project from.
-
-   Register src/instances/${DEFAULT_MAP}.js before building.
-`)
-    process.exit(2)
-  }
-  return town.geography
-}
-const _geo = _loadGeography()
+// Geography resolver — `geography.mjs` is the single answer (a non-default scene's
+// data/<scene>/geography.json, else the default map's registry module), and it is
+// what the pour stamps into map.json as `geographyRead`. Unbuildable → exit loudly.
+let _geo
+try { _geo = geographyFor(SCENE) } catch (e) { console.error(e.message); process.exit(2) }
+// ⭐ the value the pour read — pipeline.js stamps it; the Bake compares it (pour-code.mjs).
+export const GEOGRAPHY_READ = _geo
 
 // Center + extent from the resolved SSOT.
 export const CENTER = { lat: _geo.lat, lon: _geo.lon }

@@ -16,6 +16,7 @@ import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
+import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged } from './pour-code.mjs'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
 import { productionDomainFor } from './operations-domain.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
@@ -343,36 +344,8 @@ function newestMtime(p) {
 const PLAYER_SRC = ['src', 'index.html', 'vite.config.js', 'package.json']
 const playerSrcPaths = (root) => PLAYER_SRC.map((p) => join(root, p))
 
-// ⭐ THE BAKE'S CODE INPUTS ARE THE IMPORT CLOSURE, NOT A LIST. A hand list (`pipeline.js, derive.js, …`)
-// missed `coastline.mjs` and `src/lib/tileGround.js` — the ① mint itself — so a fix to how ① is built sat
-// unpoured behind a Bake that called the town clean (Gantry, 2026-09-24: the ① containment rule). Walk the
-// static and literal dynamic imports from the entry script, following only relative paths (node: and bare
-// packages are not the pipeline's code). A file that cannot be read is still returned, so it counts as dirty
-// rather than silently dropping out of the closure.
-function importClosure(entries) {
-  const seen = new Set(), stack = [...entries]
-  const rx = /(?:\bfrom\s*|\bimport\s*\(\s*|^\s*import\s+)['"](\.{1,2}\/[^'"]+)['"]/gm
-  while (stack.length) {
-    const f = stack.pop()
-    if (seen.has(f)) continue
-    seen.add(f)
-    let src
-    try { src = readFileSync(f, 'utf-8') } catch { continue }
-    for (const m of src.matchAll(rx)) {
-      let t = join(dirname(f), m[1])
-      if (!existsSync(t) && existsSync(t + '.js')) t += '.js'
-      if (!seen.has(t)) stack.push(t)
-    }
-  }
-  return [...seen]
-}
-
-// The pour's code files newer than the town's last pour (its map.json) — the Bake asks before re-pouring on these.
-// A town with no map.json yet is a first pour: nothing to ask. Pure, so the check can exercise it on temp files.
-function codeNewerThan(files, mapJson) {
-  const mapM = existsSync(mapJson) ? statSync(mapJson).mtimeMs : 0
-  return mapM ? files.filter(f => existsSync(f) && newestMtime(f) > mapM) : []
-}
+// ⭐ The pour's code closure, its content record and the geography it read live in `pour-code.mjs` — pipeline.js
+// stamps the record, this file compares it, and one module means the two can never disagree about what counts.
 
 function needsRebuild(inputs, outputs) {
   const outMtimes = outputs.map(o => existsSync(o) ? statSync(o).mtimeMs : 0)
@@ -2554,7 +2527,9 @@ createServer(async (req, res) => {
       // every file the pour runs — the ① mint included. ⛔ `references/registry.json` is NOT watched by mtime: the
       // research DB is edited constantly (rulings, questions) and a prompt the operator learns to click through stops
       // warning. It is judged by CONTENT below — only the entries this town's last pour READ (`registryRead`).
-      const PIPELINE_SRC = importClosure([join(here, 'pipeline.js')])
+      // ⭐ The town modules (src/instances/*) are NOT in it: the pour reads them only as a geography VALUE, recorded
+      // and compared as `geographyRead` (pour-code.mjs) — so a favicon or a domain edit asks no town to re-pour.
+      const PIPELINE_SRC = pourCodeClosure()
       const MAP_JSON   = bakePaths.map
       // The scene's OWN ribbons: LS's live in the runtime bundle, every other
       // town's in its clean/ (promote-ribbons.js's rule). ⛔ Comparing a poured
@@ -2611,25 +2586,32 @@ createServer(async (req, res) => {
         // runs only when the request carries `repour=1` (BakeModal's confirm). An authoring edit (overlay, skeleton,
         // measurements) still re-pours without asking — that is the ordinary edit-bake-see loop. A town with no
         // map.json yet is a first pour, not a re-pour.
-        // the registry, by CONTENT: the entries this town's last pour read (`map.json.registryRead`) that differ now.
+        // ⭐ ALL BY CONTENT, never mtime — the code the last pour ran (`map.json.codeRead`, a hash per file), the
+        // geography it projected with (`geographyRead`) and the registry entries it read (`registryRead`), each
+        // compared with now. A checkout or rebase that rewrites mtimes changes none of them, so it asks nothing.
         // ⛔ No record (a map.json poured before it existed, or unreadable) is DIRTY, never clean by default.
-        const regChanged = existsSync(MAP_JSON) ? (() => {
-          let rec, reg
-          try { rec = JSON.parse(readFileSync(MAP_JSON, 'utf-8')).registryRead } catch { rec = undefined }
+        let lastPour
+        if (existsSync(MAP_JSON)) { try { lastPour = JSON.parse(readFileSync(MAP_JSON, 'utf-8')) } catch { lastPour = {} } }
+        const regChanged = lastPour ? (() => {
+          let reg
           try { reg = JSON.parse(readFileSync(join(REPO_ROOT, 'references', 'registry.json'), 'utf-8')) } catch { return ['(references/registry.json unreadable)'] }
-          return registryReadChanged(rec, reg)
+          return registryReadChanged(lastPour.registryRead, reg)
         })() : []
-        const codeNewer = [...codeNewerThan(PIPELINE_SRC, MAP_JSON).map(f => f.replace(REPO_ROOT + '/', '')),
+        const geoChanged = lastPour ? geographyReadChanged(lastPour.geographyRead, bakeScene) : null
+        const codeChanged = lastPour ? pourCodeChanged(lastPour.codeRead, PIPELINE_SRC) : []
+        const codeNewer = [...codeChanged,
+                           ...(geoChanged ? [`geography → ${geoChanged}`] : []),
                            ...regChanged.map(i => `references/registry.json → ${i}`)]
         if (codeNewer.length && !repourConfirmed) {
           res.writeHead(428, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: codeNewer } }))
           return
         }
-        // a changed registry value leaves every mtime alone, so it re-pours explicitly
-        if (regChanged.length) { await runStep(P, 'pipeline', `node pipeline.js ${sceneFlag}${elevFlag}`, { cwd: here }); ran('pipeline') }
+        // a code, geography or registry change leaves the authoring inputs' mtimes alone, so it re-pours explicitly;
+        // otherwise the pour re-runs only when an AUTHORING input (overlay, skeleton, measurements …) is newer
+        if (codeNewer.length) { await runStep(P, 'pipeline', `node pipeline.js ${sceneFlag}${elevFlag}`, { cwd: here, timeout: 600000 }); ran('pipeline') }
         else await runIfDirty('pipeline',
-          [...RAW_PATHS, ...PIPELINE_SRC],
+          RAW_PATHS,
           [MAP_JSON],
           `node pipeline.js ${sceneFlag}${elevFlag}`,
           { cwd: here, timeout: 600000 })
