@@ -23,6 +23,7 @@ import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { PNG } from 'pngjs'
 import { loadBuildings } from './bake-buildings.js'
 import { requireExplicitMap } from './scene.js'
+import { POOL_RADIUS_M, POOL_MAX, groundPool } from '../src/lib/lampPool.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -167,12 +168,15 @@ function makeRng(seed) {
 // ── Bake ────────────────────────────────────────────────────────────
 
 export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
-                                     rays = RAYS_PER_TEXEL, scene } = {}) {
+                                     rays = RAYS_PER_TEXEL, scene, outDir = null } = {}) {
   assertBakeTarget('bake-ground-ao', look, scene)
   const isDefaultMap = scene === 'lafayette-square'
   const lookDir = join(ROOT, 'public', 'baked', look)
   const manifestPath = join(lookDir, 'ground.json')
   const binPath = join(lookDir, 'ground.bin')
+  // --out-dir: read this look's ground, write the maps + manifest elsewhere (a scratch comparison never touches the live slab).
+  const outBase = outDir || lookDir
+  if (outDir) mkdirSync(outDir, { recursive: true })
   if (!existsSync(manifestPath)) throw new Error('ground.json missing — run bake-ground.js first')
 
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
@@ -259,11 +263,8 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
   //       in daytime — unlike the AO lightmap, which only dims ambient). This
   //       is the "daytime shadow ring." Retires the floating baseMat disc.
   // Own bbox = union(tree extent, lamp extent) + margin → crisp (~0.5 m/texel).
-  const POOL_RADIUS_M    = 16   // outer reach of one light pool (m)
-  const POOL_RING_POS    = 0.32 // normalized radius of the bright ring (0..1)
-  const POOL_RING_SHARP  = 4.5  // ring sharpness; LOWER = blurrier ring
-  const POOL_SHADOW_FRAC = 0.18 // center radius the pole blocks its own light
-  const POOL_MAX         = 3.0  // R encode headroom so overlaps build un-clipped
+  // The pool's reach, profile and headroom live in `src/lib/lampPool.js` — the SAME model the
+  // tree bake lights canopies with, so a tree glows exactly where the ground under it does.
   // ⭐⭐ A TREE GROUNDS ITSELF WITH TWO SHADOWS, NOT ONE (Jacob, 2026-09-04):
   // "a large soft disc for generic depth but contact shadow at transition point."
   // They are different phenomena and neither substitutes for the other:
@@ -380,14 +381,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
         }
       }
       // R — lamp light pools (summed)
-      for (const l of lamps) splat(l.x, l.z, POOL_RADIUS_M, (i, rn) => {
-        const postShadow = Math.min(1, rn / POOL_SHADOW_FRAC)
-        const ringD = (rn - POOL_RING_POS) * POOL_RING_SHARP
-        const ring = Math.exp(-ringD * ringD)
-        const penumbra = Math.exp(-rn * rn * 1.6)
-        const rim = 1 - Math.max(0, Math.min(1, (rn - 0.7) / 0.3))
-        accR[i] += (ring * 0.55 + penumbra * 0.45) * postShadow * rim
-      })
+      for (const l of lamps) splat(l.x, l.z, POOL_RADIUS_M, (i, rn) => { accR[i] += groundPool(rn) })
       // G — contact shadows (trees + lamp bases), summed + clamped at encode.
       // ONLY for trees that actually render — `heroTier:"cull"` placements draw
       // nothing (InstancedTrees drops them), so splatting their shadow leaves an
@@ -443,7 +437,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       }
       const fpng = new PNG({ width: FX_SIZE, height: FX_SIZE })
       fpng.data = Buffer.from(fpx.buffer, fpx.byteOffset, fpx.byteLength)
-      writeIfChanged(join(lookDir, 'ground.poolmap.png'), PNG.sync.write(fpng))
+      writeIfChanged(join(outBase, 'ground.poolmap.png'), PNG.sync.write(fpng))
       manifest.poolmap = { image: 'ground.poolmap.png', size: FX_SIZE, min: [minX, minZ], span: [pW, pH], scale: POOL_MAX }
       console.log(`[bake-ao] ground FX map: ${lamps.length} lamps (pool R) + ${shadowTrees.length}/${trees.length} rendered trees + lamps (shadow G) → ${FX_SIZE}² over ${pW.toFixed(0)}×${pH.toFixed(0)} m`)
     } else {
@@ -497,7 +491,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
     }
     const cpng = new PNG({ width: CMAP, height: CMAP })
     cpng.data = Buffer.from(cpx.buffer, cpx.byteOffset, cpx.byteLength)
-    writeIfChanged(join(lookDir, 'ground.colormap.png'), PNG.sync.write(cpng))
+    writeIfChanged(join(outBase, 'ground.colormap.png'), PNG.sync.write(cpng))
     manifest.colormap = { image: 'ground.colormap.png', size: CMAP, min: [bbox.min[0], bbox.min[2]], span: [W, H] }
     console.log(`[bake-ao] ground-color map: ${manifest.groups.length} groups → ${CMAP}²`)
   } catch (e) {
@@ -522,13 +516,13 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
     // before 2026-09-20; the consumer says so rather than trusting it silently.
     groundKey: manifest.groundKey ?? null,
   }
-  writeIfChanged(manifestPath, JSON.stringify(manifest, null, 2))
+  writeIfChanged(outDir ? join(outDir, 'ground.json') : manifestPath, JSON.stringify(manifest, null, 2))
 
   // Write PNG (content-aware so a deterministic re-bake doesn't bump
   // mtime when bytes match — needsRebuild stays stable).
   const png = new PNG({ width: size, height: size })
   png.data = Buffer.from(pixels.buffer, pixels.byteOffset, pixels.byteLength)
-  const outPath = join(lookDir, 'ground.lightmap.png')
+  const outPath = join(outDir || lookDir, 'ground.lightmap.png')
   writeIfChanged(outPath, PNG.sync.write(png))
 
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1)
@@ -538,14 +532,15 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
 // CLI
 async function main() {
   const scene = requireExplicitMap('bake-ground-ao')   // one resolver: --scene= OR CARTOGRAPH_SCENE
-  let look = null, size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL
+  let look = null, size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL, outDir = null
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/))) look = m[1]
     else if ((m = arg.match(/^--size=(\d+)$/))) size = parseInt(m[1], 10)
     else if ((m = arg.match(/^--rays=(\d+)$/))) rays = parseInt(m[1], 10)
+    else if ((m = arg.match(/^--out-dir=(.+)$/))) outDir = m[1]
   }
-  await bakeGroundAO({ look, size, rays, scene })
+  await bakeGroundAO({ look, size, rays, scene, outDir })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
