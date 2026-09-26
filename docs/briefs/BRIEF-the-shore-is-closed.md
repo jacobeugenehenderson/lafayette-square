@@ -33,15 +33,17 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
   `node checks/claims-every-metre-of-drawn-shore-is-named.mjs --code`. **A bare metre must still be filled
   by something.**
 
-## What is not established (measure it first)
+## What the bare space was, and the state now (Strand, 2026-09-26)
 
-- **What "bare" is on screen.** Is it a **void** (water mesh and ground mesh don't meet, so you see through), an
-  **unfilled strip** (ground drawn but with no land-use surface or material), or the **water sitting away from
-  the lidar's shore** (the OSM coastline and the USGS water surface disagree along about two thirds of
-  Provincetown's coast, per `c9e5dde6`)? It may be all three, in different places. Locate at least one of Jacob's
-  gaps by its coordinates, name its kind, then size each kind along both towns' shores.
-- ⭐ **Find the gaps by asking the polygon, not the street graph.** A coordinate goes to the tile whose ring
-  contains it, then to the arc and who owns it (`CLAUDE.md`, the naming trap).
+- **It was a void standing on its edge.** The water is a level sheet, the land is draped; nothing lay under the
+  water, so wherever the land's edge stood above the sheet the sky showed through (seen on Provincetown's
+  harbour). No plan-view holes, no unfilled strips. Closed by the **bed** (`bake-ground.js` `bed`, FLOOR_KEYS),
+  held under its own water (per-body ceiling, `aClampY`) with a toe ring so the bank is a step at the mapped
+  shore; the shore is bare of curb/sidewalk (`tileGround.js` `shoreAt`). ▶ `node checks/claims-the-shore-is-closed.mjs`
+- **OPEN — Provincetown, land drawn over the drawn water.** Just inside the mapped shore, land-use faces stand
+  above the water along 1.19 km (beach 1.15 · parking_lot 0.03; first at -4543.6, -1292.8, 3.18 m proud).
+  ⛔ Cause not established — the faces and the water disagree about the edge there. The check prints it.
+- **OPEN — the water's depth** is `BRIEF-bathymetry.md`. **Not walked:** Lafayette Square's pond (drawn outside the slab).
 
 ## Read first
 
