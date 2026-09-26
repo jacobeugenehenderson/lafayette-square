@@ -111,7 +111,6 @@ export default function Grove() {
   }, [])
   useEffect(() => { loadSlabSpecies(activeLookId) }, [activeLookId, loadSlabSpecies])
   const warnedNoBoardRef = useRef(false)
-  const [impostorGapDismissed, setImpostorGapDismissed] = useState(false)
   const groveBoard = useMemo(
     () => resolveGrove(rosterSpecies || [], groveThreshold || {}),
     [rosterSpecies, groveThreshold],
@@ -276,24 +275,6 @@ export default function Grove() {
     return out
   }, [activeLookId, activeLookTrees, slabSpecies, eligibleNames, groveBoard, groveAtlas?.manifest])
 
-  // ⛔ THE SKIP MUST BE SEEN. A species the pool refuses (its GLB is not rewritten into
-  // this atlas) would otherwise just be absent — and "silently absent from the capture
-  // pool" is exactly how 2,251 placements once ended up permanently on mesh. Surfaced in
-  // the same "no impostor" banner as a capture FAILURE, because to the operator it is the
-  // same fact: this tree ships as mesh at every distance, and here is its name.
-  const unrewrittenSpecies = useMemo(() => {
-    const bark = groveAtlas?.manifest?.barkBySpecies
-    if (!bark) return []   // atlas unknown — judge nothing (see the pool gate)
-    const source = slabSpecies.length ? slabSpecies : activeLookTrees
-    const seen = new Set(), out = []
-    for (const t of source) {
-      if (seen.has(t.species)) continue
-      seen.add(t.species)
-      if (eligibleNames.size && !eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard, unownedRef)) continue
-      if (!bark[t.species]) out.push(t.species)
-    }
-    return out
-  }, [slabSpecies, activeLookTrees, eligibleNames, groveBoard, groveAtlas?.manifest])
 
   // ⭐ DRAIN-ON-BAKE (Jacob, 2026-07-22). Bake→Slab re-captures only what's DIRTY;
   // a species whose fingerprint still matches its stored capture is skipped. The
@@ -471,7 +452,7 @@ export default function Grove() {
       return
     }
     forceAll.current = true          // repair gesture — ignore the fingerprints
-    setOverheadResult(null); setHeroResult(null); setImpostorGapDismissed(false)
+    setOverheadResult(null); setHeroResult(null)
     setOverheadProg({ done: 0, total: null }); setOverheadTick((t) => t + 1)   // the baker owns the total
   }
 
@@ -520,9 +501,15 @@ export default function Grove() {
   // atlas rect and rendered maroon; platanus_acerifolia sat in design.trees without being
   // green and was captured anyway; and 13 published meshes were invisible in the plenum.
   // ⭐ The Grove now shows THE SELECTION. One set, and the Grove is its view.
-  const inLook = (v) => eligibleNames.size
+  // ⭐ THE GROVE IS ONLY FINISHED TREES (Jacob, 2026-09-25: "The grove is ONLY completed, ready, baked,
+  // ready to place trees. There is no such thing as placeholders."): owned by this town's grove AND
+  // rewritten into THIS Look's atlas (barkBySpecies — bake-look writes it exactly when it baked the GLB).
+  // An atlas that has not answered yet shows nothing, never a stand-in. A species missing here is loud
+  // where it is BUILT — the Salon roster. ▶ checks/claims-the-grove-shows-only-finished-trees.mjs
+  const bakedHere = (sp) => !!groveAtlas?.manifest?.barkBySpecies?.[sp]
+  const inLook = (v) => bakedHere(v.speciesId) && (eligibleNames.size
     ? (eligibleNames.has(v.speciesId) || eligibleByLibId(v.speciesId, groveBoard, unownedRef))
-    : activeLookTrees.some(t => t.species === v.speciesId && Number(t.variantId) === Number(v.variantId))
+    : activeLookTrees.some(t => t.species === v.speciesId && Number(t.variantId) === Number(v.variantId)))
 
   const visible = useMemo(() => {
     let rows = variants
@@ -761,31 +748,8 @@ export default function Grove() {
         )}
       </header>
 
-      {(() => {
-        // ⛔ "3 of 4 species FAILED" printed an INTERNAL BATCH SIZE as if it were the
-        // operator's species count — 4 was however many the drain-on-bake happened to
-        // re-shoot, so the denominator meant nothing to the reader and the ratio changed
-        // every bake while the SAME species kept failing.
-        // ⭐ Name the trees. An operator needs WHICH and WHAT NEXT, never a ratio over a
-        // batch they cannot see. Loud enough not to be silent, but one line, and it
-        // dismisses until the next bake.
-        const names = [...new Set([...(overheadResult?.failedNames || []), ...(heroResult?.failedNames || []), ...unrewrittenSpecies])]
-        if (!names.length || impostorGapDismissed) return null
-        return (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
-            background: 'rgba(200,120,60,0.10)', borderBottom: '1px solid rgba(200,120,60,0.25)',
-            fontSize: 11, color: '#e0b088',
-          }}>
-            <span>
-              no impostor: <b style={{ color: '#f0c8a0' }}>{names.join(', ')}</b>
-              <span style={{ color: '#9a8878' }}> — these render as mesh at every distance. Withhold them, or fix the capture.</span>
-            </span>
-            <button onClick={() => setImpostorGapDismissed(true)} title="Dismiss until the next bake"
-              style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#9a8878', cursor: 'pointer', fontSize: 13, padding: '0 2px' }}>×</button>
-          </div>
-        )
-      })()}
+      {/* The "no impostor" banner left the Grove (Jacob, 2026-09-25: a persistent vexation; the Grove is
+          only finished trees). A capture failure is named in the Salon roster (its yellow dot). */}
 
       <div
         style={{ flex: 1, position: 'relative', minHeight: 0 }}
@@ -1068,20 +1032,10 @@ class TileBoundary extends Component {
       + `it is not in this Look's bake. ${err?.message || err}`)
   }
   render() {
-    if (!this.state.failed) return this.props.children
-    const [x, , z] = this.props.position
-    return (
-      <group position={[x, 0, z]}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 0]}>
-          <circleGeometry args={[TILE_SPACING * 0.42, 48]} />
-          <meshBasicMaterial color="#a33" transparent opacity={0.5} toneMapped={false} />
-        </mesh>
-        <mesh position={[0, 3, 0]}>
-          <boxGeometry args={[0.35, 6, 0.35]} />
-          <meshStandardMaterial color="#a33" roughness={1} />
-        </mesh>
-      </group>
-    )
+    // ⛔ NO PLACEHOLDER (Jacob, 2026-09-25). The red disc + post that stood here drew "a tree that isn't
+    // there". The view only admits baked trees, so this is a last guard: it draws nothing and the
+    // console line above names the tile.
+    return this.state.failed ? null : this.props.children
   }
 }
 
@@ -1099,11 +1053,14 @@ function eligibleByLibId(libId, board, warnRef) {
   const owner = board.find(b => (b.ownsLibIds || []).includes(libId))
     || board.find(b => b.canonicalId === libId)
   if (owner) return owner.tier !== 'out'
+  // ⛔ FAILS CLOSED (Jacob, 2026-09-25: LS species "out of ALL LISTS FOREVER EVERYWHERE"). This used to
+  // return TRUE — "INCLUDED rather than dropped" — so every published LIBRARY species no board row owned
+  // walked into a town's Grove: Provincetown's six red posts were Lafayette Square's trees.
   if (warnRef && !warnRef.current.has(libId)) {
     warnRef.current.add(libId)
-    console.warn(`[grove-bake] "${libId}" has no owning roster row — INCLUDED rather than dropped; the bars are not gating it.`)
+    console.warn(`[grove] "${libId}" is not in this town's grove (no board row owns it) — excluded.`)
   }
-  return true
+  return false
 }
 
 function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {
