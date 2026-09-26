@@ -21,7 +21,7 @@ correct URLs."*
 | town | production domain | status |
 |---|---|---|
 | Lafayette Square | **`lafayettesquare.online`** (moving off `lafayette-square.com`, "to match the convention of everything else"; `.com` redirects to it) | owned |
-| Hi-Pointe–DeMun | `hpdm.online` — ⚠️ confirm the exact spelling against Operations | owned |
+| Hi-Pointe–DeMun | `hipointedemun.online` (Jacob writes it HiPointeDeMun.online; DNS is case-insensitive) | owned |
 | Provincetown | `provincetown.online` | owned |
 | Huron | `huron.online` — **not bought yet**; stays on staging for now | not owned |
 
