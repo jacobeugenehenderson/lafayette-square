@@ -859,14 +859,6 @@
     {
       "species": "oak_bur",
       "variantId": 1
-    },
-    {
-      "species": "oak_white",
-      "variantId": 1
-    },
-    {
-      "species": "birch",
-      "variantId": 1
     }
   ]
 }
