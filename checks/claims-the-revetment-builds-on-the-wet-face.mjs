@@ -1,7 +1,9 @@
 // claims-the-revetment-builds-on-the-wet-face.mjs — DOES THE STONE FACE THE WATER?
 //
 // ⭐⭐ THE INVARIANT: for every armoured station the player will build on, the side
-// the BUILDERS extrude toward is the side the GROUND says is water.
+// the BUILDERS extrude toward is the side the DRAWN WATER is on.
+// ⭐ Ruled 2026-09-26 (Jacob): "The drawn water's edge IS the mapped shoreline, and the
+// revetment sits on it." Until then "wet" here meant "reads lower in the lidar".
 //
 // ⛔⛔ WHY THIS EXISTS AND WHY IT IS NOT THE CHECK NEXT DOOR.
 // `claims-the-shore-knows-which-side-is-wet.mjs` proves `wetSideOf` RESOLVES an
@@ -31,6 +33,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { revetmentFaces, BUILD_SIDE } from '../src/lib/revetmentFromSlab.js'
+import { drawnWaterTest } from '../cartograph/shore-armour.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const only = process.argv[2] || null
@@ -46,32 +49,24 @@ for (const look of looks) {
   const doc = JSON.parse(readFileSync(revPath, 'utf8'))
   if (!doc.arcs?.length) { console.log(`  ${look.padEnd(18)} revetment.json has no arcs — this town has no shoreline`); townsWithout++; continue }
 
-  // The heightfield the bake itself read, so "wet" means here what it meant there.
+  // The drawn water the bake itself read, so "wet" means here what it meant there; the
+  // terrain only for its grid step, which is the probe.
   const scene = doc.scene || look
   const tMeta = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.json')
-  const tBin = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.bin')
-  if (!existsSync(tMeta) || !existsSync(tBin)) {
+  const mPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
+  if (!existsSync(tMeta) || !existsSync(mPath)) {
     // ⛔ Not a pass. The artifact exists and claims faces; we simply cannot audit it.
-    console.log(`  ⚠️ ${look.padEnd(16)} revetment.json present but scene "${scene}" has no clean/terrain — CANNOT VERIFY`)
+    console.log(`  ⚠️ ${look.padEnd(16)} revetment.json present but scene "${scene}" has no clean/terrain.json or clean/map.json — CANNOT VERIFY`)
     failed = true; continue
   }
   const tm = JSON.parse(readFileSync(tMeta, 'utf8'))
-  const tb = readFileSync(tBin)
-  const tf = new Float32Array(tb.buffer, tb.byteOffset, tb.length / 4)
-  const stepX = (tm.bounds.maxX - tm.bounds.minX) / (tm.width - 1)
-  const stepZ = (tm.bounds.maxZ - tm.bounds.minZ) / (tm.height - 1)
-  const probeM = Math.min(stepX, stepZ)
-  const heightAt = (x, z) => {
-    const gx = Math.round((x - tm.bounds.minX) / stepX), gz = Math.round((z - tm.bounds.minZ) / stepZ)
-    if (gx < 0 || gz < 0 || gx >= tm.width || gz >= tm.height) return NaN
-    const v = tf[gz * tm.width + gx]
-    return Number.isFinite(v) ? v : NaN
-  }
+  const probeM = Math.min((tm.bounds.maxX - tm.bounds.minX) / (tm.width - 1), (tm.bounds.maxZ - tm.bounds.minZ) / (tm.height - 1))
+  const inWater = drawnWaterTest((JSON.parse(readFileSync(mPath, 'utf8')).layers?.water || [])
+    .filter(w => w?.ring?.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]])))
 
   townsChecked++
   const faces = revetmentFaces(doc)
   let wet = 0, dry = 0, unreadable = 0
-  const margins = []
   const worst = []
   for (const f of faces) {
     if (!f.anyArmour) continue
@@ -83,36 +78,26 @@ for (const look of looks) {
       // ⭐ The BUILD normal, copied from revetmentDrape.js: n = (uz, −ux). Whatever
       // BUILD_SIDE says, the geometry extrudes this way; that is what we audit.
       const nx = uz / m, nz = -ux / m
-      const hBuild = heightAt(p[i].x + nx * probeM, p[i].z + nz * probeM)
-      const hBack = heightAt(p[i].x - nx * probeM, p[i].z - nz * probeM)
-      if (!Number.isFinite(hBuild) || !Number.isFinite(hBack)) { unreadable++; continue }
-      // ⛔⛔ ORIENTATION IS A RELATIVE QUESTION AND THE FIRST CUT OF THIS CHECK GOT
-      // IT WRONG. It demanded `hBuild <= MIN_ARMOUR_D50_M` as well, and failed
-      // stations reading 0.54 m on the build side against 1.98 m landward — which
-      // is emphatically the waterward side, just past an absolute cutoff. The probe
-      // stands one grid step off the line, where a real bank has already begun to
-      // rise, so an absolute threshold measures the PROBE DISTANCE as much as the
-      // shore. ⭐ Whether the shore is at the water is `wetSideOf`'s question and is
-      // checked next door; the question HERE is only whether we build toward the
-      // lower side. Keep them apart or each one hides the other.
-      if (hBuild < hBack) { wet++; margins.push(hBack - hBuild) }
-      else { dry++; if (worst.length < 3) worst.push(`${f.key} @ ${p[i].x.toFixed(0)},${p[i].z.toFixed(0)}: build side ${hBuild.toFixed(2)} m vs back ${hBack.toFixed(2)} m`) }
+      const wBuild = inWater(p[i].x + nx * probeM, p[i].z + nz * probeM)
+      const wBack = inWater(p[i].x - nx * probeM, p[i].z - nz * probeM)
+      // Water on both faces (a breakwater) or neither (a street end) says nothing about
+      // orientation; only a station with water on exactly one side can be built backwards.
+      if (wBuild === wBack) { unreadable++; continue }
+      if (wBuild) wet++
+      else { dry++; if (worst.length < 3) worst.push(`${f.key} @ ${p[i].x.toFixed(0)},${p[i].z.toFixed(0)}: drawn water is BEHIND the build side`) }
     }
   }
   const total = wet + dry
   const pct = total ? (100 * wet) / total : 0
-  // ⭐ Not 100%: a real shore has river mouths, harbour corners and spits where the
-  // grid genuinely reads both sides near zero. The threshold is what separates
-  // "a coast with awkward corners" from "built inside out", which is a landslide.
+  // ⭐ Not 100%: a harbour corner can put water behind a station for a step or two. The
+  // threshold separates "a coast with awkward corners" from "built inside out", a landslide.
   const ok = total > 0 && pct >= 90
-  margins.sort((a, b) => a - b)
-  const med = margins.length ? margins[margins.length >> 1] : 0
-  console.log(`  ${ok ? '✅' : '⛔'} ${look}/revetment  ${wet}/${total} armoured stations build toward the LOWER side (${pct.toFixed(1)}%) · median drop ${med.toFixed(2)} m · ${unreadable} off-grid · BUILD_SIDE=${BUILD_SIDE}`)
+  console.log(`  ${ok ? '✅' : '⛔'} ${look}/revetment  ${wet}/${total} armoured stations build toward the DRAWN WATER (${pct.toFixed(1)}%) · ${unreadable} with water on both faces or neither · BUILD_SIDE=${BUILD_SIDE}`)
   for (const w of worst) console.log(`       ${w}`)
   if (!ok) failed = true
 }
 
 console.log(`\n  ${townsChecked} revetment(s) audited · ${townsWithout} town(s) without one`)
-console.log(`  probe = the heightfield's own step · "faces the water" = the build side reads LOWER than the landward side`)
+console.log(`  probe = the heightfield's own step · "faces the water" = the build side is inside the drawn water and the back is not`)
 if (failed) { console.log('\n⛔ stone is being built toward the DRY side — the revetment would render inside out'); process.exit(1) }
 console.log('\n✅ every armoured station builds toward its water')

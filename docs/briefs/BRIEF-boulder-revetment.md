@@ -44,15 +44,7 @@ man_made:groyne            1        barrier=wall            10
 ⭐ **That is a serious working waterfront, not a decorative edge** — and it is the one thing huron has
 that no other town in the kit has. **It is also, right now, entirely invisible.**
 
-> ## ⭐⭐ ADDED 2026-09-20 — TWO THINGS THAT CHANGE THIS BRIEF'S PRIORITY AND ITS FIRST STEP
->
-> ### ⚠️ ① THE CODE FIX IS LANDED BUT HURON HAS NOT FELT IT — RE-FETCH FIRST
-> `man_made` is in `tagPriority` now, but **bucketing happens AT FETCH TIME**, in `fetch.js`'s
-> `bucket()` loop, and it writes the buckets into `raw/osm.json`. huron's still carries an empty
-> `man_made` bucket with everything in `other[]`, which has zero consumers.
-> ▶ **Your first step is a re-fetch:** `node cartograph/fetch.js --scene=huron`
-> ✅ Safe — huron has no authored `design.json` and its `raw/osm.json` is git-tracked.
-> ⛔ **Confirm `ground.man_made` is non-empty before going further.**
+> ## ⭐⭐ ADDED 2026-09-20 — WHAT CHANGED THIS BRIEF'S PRIORITY
 >
 > ### ⭐⭐ ② RE-SCOPED 2026-09-21 — THE REVETMENT IS DECORATION AFTER ALL, AND THAT IS GOOD NEWS
 > This brief claimed the shore edge was *"absent from the heightfield"* and that the revetment was
@@ -144,6 +136,14 @@ else is fixed). This one has a unit and its stability is physical.
 > assumed.** Worth testing the same way on `BRIEF-field-shader` (row bearing may be the field
 > polygon's principal axis) and `BRIEF-water-shader` (wave direction already comes from the weather
 > poller) **before anyone builds a parameter home for three briefs that may need none.**
+
+> ### ✅ RULED 2026-09-26 (Jacob) — ③ THE DRAWN WATER IS THE SHORE
+> *"The drawn water's edge IS the mapped shoreline, and the revetment sits on it."* Whether an arc is at the
+> water, and which side is wet, comes from the drawn water (`clean/map.json#layers.water`), not the lidar;
+> the lidar still sets crest and toe. The soft-shore and structure-tag reads below are unchanged, so every
+> bare metre now names its reason. ⛔ This retires `r-coast-trust-the-lidar` (2026-09-25), which declined
+> 42 km of Provincetown's drawn shore as "not at the water" — `cartograph/_archive/revetment-trust-the-lidar-RETIRED-2026-09-26.md`.
+> ▶ `node checks/claims-every-metre-of-drawn-shore-is-named.mjs`
 
 ### Still open, and still his:
 - **Is this 3D, 2D, or both?** The Designer draws barriers as **lines**; a boulder heap is a 3D read.

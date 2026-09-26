@@ -2719,7 +2719,9 @@ createServer(async (req, res) => {
       // A town whose terrain datum is not water exits "nothing to build".
       if (hasOsm) {
         await runIfDirty('revetment',
-          [join(LOOK_DIR, 'shape.json'), join(bakePaths.raw, 'osm.json'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, join(here, 'bake-revetment.js')],
+          // ⭐ MAP_JSON: the drawn water decides where the shore is (2026-09-26).
+          [join(LOOK_DIR, 'shape.json'), join(bakePaths.raw, 'osm.json'), MAP_JSON, bakePaths.boundary, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,
+           join(here, 'bake-revetment.js'), join(here, 'shore-armour.mjs'), join(here, 'shoreRuns.mjs')],
           [join(LOOK_DIR, 'revetment.json')],
           `node bake-revetment.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 120000 })

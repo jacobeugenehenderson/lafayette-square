@@ -34,15 +34,16 @@
  * the map and cannot be re-derived at runtime without shipping both.
  * PLAYER: the mesh, the stones, and everything that varies with the camera.
  *
- *   node cartograph/bake-revetment.js --scene=<id> [--look=<id>]
- * Writes public/baked/<look>/revetment.json. Read-only apart from that file.
+ *   node cartograph/bake-revetment.js --scene=<id> [--look=<id>] [--out=<dir>]
+ * Writes public/baked/<look>/revetment.json — or <dir>/revetment.json with `--out`, which
+ * measures a town without touching its slab. Read-only apart from that file.
  */
 import { readFileSync, existsSync, mkdirSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
-import { shoreArmourFor, wetSideOf, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M } from './shore-armour.mjs'
+import { shoreArmourFor, wetSideOf, drawnWaterTest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL } from './shoreRuns.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -174,17 +175,18 @@ export function coastAgreement(datum, waterRunCount) {
   return waterRunCount > 0 ? 'stale-terrain' : 'inland'
 }
 
-export function bakeRevetment({ scene, look }) {
+export function bakeRevetment({ scene, look, outDir: outDirArg = null, write = true }) {
   const lookId = look || scene
   const shapePath = join(ROOT, 'public', 'baked', lookId, 'shape.json')
   const tMetaPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.json')
   const tBinPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.bin')
   const osmPath = join(ROOT, 'cartograph', 'data', scene, 'raw', 'osm.json')
-  const outDir = join(ROOT, 'public', 'baked', lookId)
+  const mapPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
+  const outDir = outDirArg || join(ROOT, 'public', 'baked', lookId)
   const outPath = join(outDir, 'revetment.json')
 
   for (const [p, what] of [[shapePath, 'shape.json'], [tMetaPath, 'clean/terrain.json'],
-                           [tBinPath, 'clean/terrain.bin'], [osmPath, 'raw/osm.json']]) {
+                           [tBinPath, 'clean/terrain.bin'], [osmPath, 'raw/osm.json'], [mapPath, 'clean/map.json']]) {
     // ⛔ LOUD. A missing input is not "no revetment" — it is a pour that has not
     // happened, and answering it with an empty artifact would look like a town
     // that simply has no shoreline.
@@ -275,9 +277,20 @@ export function bakeRevetment({ scene, look }) {
   const discR = Number.isFinite(bnd.radius) ? bnd.radius : NaN
   if (!discC || !(discR > 0)) throw new Error(`bake-revetment: ${scene}'s neighborhood_boundary.json has no usable center/radius (center=${JSON.stringify(bnd.center)}, radius=${bnd.radius}).`)
 
+  // ⭐⭐ THE DRAWN WATER DECIDES WHERE THE SHORE IS (Jacob, 2026-09-26: "The drawn water's edge
+  // IS the mapped shoreline, and the revetment sits on it"). The same rings `bake-ground` paints
+  // as the water face — `clean/map.json#layers.water`. ⛔ A town with shoreline ink and NO drawn
+  // water is a pour whose ink and drawing disagree; refused loudly, never read as "no shore".
+  const waterRings = (JSON.parse(readFileSync(mapPath, 'utf8')).layers?.water || [])
+    .filter(w => Array.isArray(w?.ring) && w.ring.length >= 3)
+    .map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]]))
+  if (!waterRings.length) throw new Error(`bake-revetment: ${scene} — the slab carries ${raw.length} ${WATER_EDGE_SKEL} run(s) but clean/map.json draws NO water (layers.water is empty). The shoreline ink and the drawing disagree; re-pour the town. (${mapPath})`)
+  const inWater = drawnWaterTest(waterRings)
+
   const armourAt = shoreArmourFor(osm.ground || {})
   const arcs = [], refused = [], why = {}
   let ruledM = 0, armouredM = 0, refusedM = 0, outsideM = 0
+  const bareM = {}
   const outside = []
 
   // ⛔⛔ CLIP TO THE DRAWING BEFORE ANYTHING ELSE. Shore beyond the disc has no terrain under
@@ -294,12 +307,11 @@ export function bakeRevetment({ scene, look }) {
     const trace = clipped[idx]
     const len = trace.reduce((a, p, i) => i ? a + Math.hypot(p[0] - trace[i-1][0], p[1] - trace[i-1][1]) : 0, 0)
 
-    // ⭐ THE WET SIDE VOTES ON THE UNTOUCHED TRACE. Simplifying first smooths away
-    // the very asymmetry it is reading — measured: one jetty reads `both` raw and
-    // `left` once simplified, i.e. its winding was being decided from a line that
-    // had been smoothed. ⇒ Ask the ground before touching the geometry.
-    const wet = wetSideOf(trace, heightAt, gridM)
-    if (!wet.side) { refused.push({ index: idx, lengthM: +len.toFixed(1), why: wet.why }); refusedM += len; continue }
+    // ⭐ THE WET SIDE VOTES ON THE UNTOUCHED TRACE, against the DRAWN water — simplifying
+    // first smooths away the very asymmetry it is reading. ⛔ The lidar no longer votes here
+    // (it did until 2026-09-26, `r-coast-trust-the-lidar`); it still sets the crest below.
+    const wet = wetSideOf(trace, inWater, gridM)
+    if (!wet.side) { refused.push({ index: idx, lengthM: +len.toFixed(1), kind: wet.kind, why: wet.why }); refusedM += len; continue }
 
     // ⭐ Simplify for CURVATURE, then resample for SAMPLING — two different numbers.
     // Douglas–Peucker removes vertices and every reading below is per-vertex, so
@@ -372,10 +384,12 @@ export function bakeRevetment({ scene, look }) {
       // ⛔ `why` is NOT emitted per station. It is a diagnostic string, the player
       // does not read it, and at ~5,000 stations a town it was 60% of the file.
       // The census is summarised below and `checks/` can re-derive any of it.
+      // ⭐ A BARE station names its predicate (soft-shore · below-one-course · no-height), so a
+      // check can prove every unarmoured metre of drawn shore was refused FOR A REASON.
       stations.push({
         x: +x.toFixed(2), z: +z.toFixed(2),
         crest: Number.isFinite(crest) ? +crest.toFixed(3) : null,
-        armour: a.armour, ...(a.dispute ? { dispute: a.dispute } : {}),
+        armour: a.armour, ...(a.armour ? {} : { why: a.why }), ...(a.dispute ? { dispute: a.dispute } : {}),
       })
       why[a.why] = (why[a.why] || 0) + 1
     }
@@ -391,6 +405,14 @@ export function bakeRevetment({ scene, look }) {
       if (!stations[i].armour) continue
       if (i > 0) aM += Math.hypot(stations[i].x - stations[i-1].x, stations[i].z - stations[i-1].z) / 2
       if (i < stations.length - 1) aM += Math.hypot(stations[i+1].x - stations[i].x, stations[i+1].z - stations[i].z) / 2
+    }
+    // …and the bare length by the predicate that bared it, by the same half-attribution.
+    for (let i = 0; i < stations.length; i++) {
+      if (stations[i].armour) continue
+      let m = 0
+      if (i > 0) m += Math.hypot(stations[i].x - stations[i-1].x, stations[i].z - stations[i-1].z) / 2
+      if (i < stations.length - 1) m += Math.hypot(stations[i+1].x - stations[i].x, stations[i+1].z - stations[i].z) / 2
+      bareM[stations[i].why] = (bareM[stations[i].why] || 0) + m
     }
     ruledM += len; armouredM += aM
     arcs.push({
@@ -429,6 +451,11 @@ export function bakeRevetment({ scene, look }) {
     // refused, not unarmoured, and not a defect, and folding it into any of those would be a
     // false statement about the town.
     totals: { ruledM: +ruledM.toFixed(1), armouredM: +armouredM.toFixed(1), refusedM: +refusedM.toFixed(1), outsideM: +outsideM.toFixed(1) },
+    // ⭐ Where the shore is: the drawn water (ruled 2026-09-26). Stamped so a reader knows what
+    // "at the water" meant for this artifact.
+    shoreFrom: 'drawn-water',
+    // Unarmoured-but-ruled metres by the predicate that bared them.
+    bareM: Object.fromEntries(Object.entries(bareM).map(([k, v]) => [k, +v.toFixed(1)])),
     outside,
     // Why each station was ruled as it was — the census, not the per-station string.
     census: why,
@@ -436,28 +463,26 @@ export function bakeRevetment({ scene, look }) {
     refused,
   }
 
-  mkdirSync(outDir, { recursive: true })
-  const wrote = writeIfChanged(outPath, JSON.stringify(out))
+  let wrote = false
+  if (write) { mkdirSync(outDir, { recursive: true }); wrote = writeIfChanged(outPath, JSON.stringify(out)) }
   const kb = (JSON.stringify(out).length / 1024).toFixed(0)
   console.log(`[bake-revetment] scene=${scene} look=${lookId}: ${arcs.length} arc(s) ruled, ${refused.length} refused`)
-  // ⭐⭐⭐ ONE LOUD LINE, EVERY BAKE — ruled by Jacob 2026-09-25 ("Lidar", r-coast-trust-the-lidar).
-  // ⛔ THE COVERAGE FIGURE IS A HEADLINE NUMBER AND IT WAS ONLY DISCOVERABLE BY READING A LIST.
-  // Provincetown armours an EIGHTH of its shore, and the reason is not a defect in the kit: the
-  // OSM coastline and the USGS water surface disagree along two thirds of the coast — measured,
-  // 54.3% of segments on the longest run are above zero on BOTH sides within the probe. We TRUST
-  // THE LIDAR (it is what the stone would sit on, and on a sandy spit a shore dry on both sides
-  // is most likely beach that needs no armour), so the decline is CORRECT — which is exactly why
-  // it has to be said out loud rather than left in a `refused` array nobody opens. A town that
-  // armours 12% of its coast and says nothing is the plausible-looking success this kit rates
-  // worst.
-  // ⭐ Three numbers, three different kinds of fact, never merged: what we BUILT, what the
-  // LIDAR declined, and what our own DRAWING excludes.
-  const notWaterM = refused.filter(r => /not at a water edge/i.test(r.why)).reduce((a, r) => a + r.lengthM, 0)
-  const otherM = refusedM - notWaterM
-  console.log(`  ⭐ REVETMENT: covers ${(armouredM/1000).toFixed(2)} km of ${(ruledM/1000).toFixed(2)} km ruled in the drawing (${(100*armouredM/Math.max(1,ruledM)).toFixed(0)}%)` +
-              ` · ${(notWaterM/1000).toFixed(2)} km declined — not at the water per the lidar` +
-              (otherM > 1 ? ` · ${(otherM/1000).toFixed(2)} km refused for other reasons` : '') +
-              (outsideM > 0 ? ` · ${(outsideM/1000).toFixed(2)} km outside the drawing (beyond the ${Math.round(discR)} m disc)` : ''))
+  // ⭐⭐⭐ ONE LOUD LINE, EVERY BAKE. Every metre of shoreline in the drawing is in exactly one
+  // bucket, and every bucket that is not stone NAMES ITS PREDICATE: bare by a predicate
+  // (soft shore · below one course · no terrain), refused arcs by kind (stub · too few
+  // vertices · ink without water), and shore outside the drawing (our own frame, not a fact
+  // about the town). ⛔ There is no "not at the water" bucket any more: since 2026-09-26 the
+  // drawn water IS the shore (it was "declined per the lidar" under r-coast-trust-the-lidar).
+  const km = (m) => (m / 1000).toFixed(2)
+  const refusedBy = {}
+  for (const r of refused) refusedBy[r.kind] = (refusedBy[r.kind] || 0) + r.lengthM
+  const bareTxt = Object.entries(bareM).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${km(v)} km ${k}`).join(', ')
+  const refTxt = Object.entries(refusedBy).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${km(v)} km ${k}`).join(', ')
+  console.log(`  ⭐ REVETMENT: covers ${km(armouredM)} km of ${km(ruledM + refusedM)} km of drawn shore in the drawing (${(100*armouredM/Math.max(1,ruledM + refusedM)).toFixed(0)}%)` +
+              (bareTxt ? ` · bare by predicate: ${bareTxt}` : '') +
+              (refTxt ? ` · arcs refused: ${refTxt}` : '') +
+              (outsideM > 0 ? ` · ${km(outsideM)} km outside the drawing (beyond the ${Math.round(discR)} m disc)` : ''))
+  if (refusedBy['ink-without-water']) console.warn(`  ⛔ ${km(refusedBy['ink-without-water'])} km of shoreline INK has no drawn water beside it — the pour's ink and its drawing disagree. Re-pour the town.`)
   for (const r of refused) console.log(`  ⛔ refused arc #${r.index} (${r.lengthM} m): ${r.why}`)
   const total = Object.values(why).reduce((a, b) => a + b, 0)
   console.log(`  stations: ${Object.entries(why).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `${k} ${v}`).join(' · ')}`)
@@ -471,18 +496,20 @@ export function bakeRevetment({ scene, look }) {
     console.warn(`  ⚠️ ${why['no-height']} station(s) (${pc}%) have NO TERRAIN beneath them — the arc leaves the baked heightfield.`)
     console.warn(`     They take no stone. That is a gap in coverage, not a ruling that the shore is bare.`)
   }
-  console.log(`  ${wrote ? 'wrote' : 'unchanged'} ${outPath} (${kb} KB — no mesh, no transforms; the player builds both)`)
+  console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : wrote ? 'wrote' : 'unchanged'} ${outPath} (${kb} KB — no mesh, no transforms; the player builds both)`)
   return out
 }
 
 async function main() {
   const scene = requireExplicitMap('bake-revetment')
-  let look = null
+  let look = null, outDir = null
   for (const arg of process.argv.slice(2)) {
     const m = arg.match(/^--look=(.+)$/)
     if (m) look = m[1]
+    const o = arg.match(/^--out=(.+)$/)
+    if (o) outDir = o[1]
   }
-  bakeRevetment({ scene, look })
+  bakeRevetment({ scene, look, outDir })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -27,10 +27,11 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
 ⛔ **What changes:** the revetment is one filler, not the thing that closes the shore.
 - `BRIEF-boulder-revetment.md` §6 asks *"is every shoreline a wall?"*. That stays a real question about which
   **material**, but it no longer decides whether the shore is closed.
-- The revetment bake prints on every run how much shore it **declines**. Provincetown's last print was
-  **24% covered**, with most of the rest declined as *"not at the water per the lidar"* (commit `c9e5dde6`;
-  re-run it, don't quote it). **A declined metre must still be filled by something.** Today, as far as Boz can
-  tell, it is filled by nothing.
+- The revetment bake prints on every run how much drawn shore it leaves **bare, and for which named
+  reason**. Since 2026-09-26 the drawn water's edge IS the shoreline (Jacob), so nothing is declined as
+  "not at the water" any more; on Provincetown most of the shore is now bare as **soft shore**. ▶
+  `node checks/claims-every-metre-of-drawn-shore-is-named.mjs --code`. **A bare metre must still be filled
+  by something.**
 
 ## What is not established (measure it first)
 
@@ -44,8 +45,8 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
 
 ## Read first
 
-- `docs/briefs/BRIEF-boulder-revetment.md` (all of it: the shore's rulings, what was measured false, the
-  lidar ruling `r-coast-trust-the-lidar`).
+- `docs/briefs/BRIEF-boulder-revetment.md` (all of it: the shore's rulings, what was measured false, and
+  §6's 2026-09-26 ruling that the drawn water is the shore, which retired `r-coast-trust-the-lidar`).
 - `docs/briefs/BRIEF-ground-cross-polygon-conformity.md` (the ground must stretch, not break; Huron's shore
   seam) and `BRIEF-water-shader.md` §6e (distance-to-shore; one of Huron's "shores" is the fetch envelope).
 - The coast-distance channel (`cartograph/bake-coast-distance.js`, `context.coastDist.bin`) and the sand surface

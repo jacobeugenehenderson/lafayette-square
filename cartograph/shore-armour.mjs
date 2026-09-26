@@ -57,8 +57,10 @@
  * OPEN ink, not a ring (`coastline.mjs`: we stroke the ARC, never the ring), so it
  * has no orientation to inherit. And a stretch of bank between a river and a lake
  * has water on BOTH sides, where "the wet side" is not defined by winding at all.
- * ⇒ ⛔ Do not look for the rule. **Sample both sides and ask the ground**, which is
- * what `wetSideOf` below does — derived, per arc, no authoring, and it travels.
+ * ⇒ ⛔ Do not look for the rule. **Sample both sides and ask the DRAWN WATER**, which
+ * is what `wetSideOf` below does — derived, per arc, no authoring, and it travels.
+ * ⭐ Ruled 2026-09-26 (Jacob): *"The drawn water's edge IS the mapped shoreline, and the
+ * revetment sits on it."* It used to ask the lidar; see `wetSideOf`.
  *
  * ⚠️ AND MOST OF THESE ARCS ARE STUBS: 5 of huron's 14 are under 10 m long. They
  * cannot carry a revetment and must be REFUSED by name, not quietly skipped.
@@ -202,86 +204,102 @@ export function shoreArmourFor(ground) {
 }
 
 /**
- * Which side of this arc is the water on? ⛔ Derived by sampling the ground, never
+ * ⭐ THE DRAWN WATER, as a point test — the SAME rings the ground bake paints as the water
+ * face (`clean/map.json#layers.water`, which `bake-ground.js` pushes as `water` / `water:*`
+ * and whose complement ① carves as land). Inside ANY ring is water, because that is what the
+ * slab draws: each ring is its own filled face.
+ * @param rings  [[[x,z], …], …]
+ * @returns (x, z) => boolean
+ */
+export function drawnWaterTest(rings) {
+  const R = (rings || []).filter(r => Array.isArray(r) && r.length >= 3).map(r => {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+    for (const p of r) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[1] > z1) z1 = p[1] }
+    return { r, x0, x1, z0, z1 }
+  })
+  return function inWater(x, z) {
+    for (const { r, x0, x1, z0, z1 } of R) {
+      if (x < x0 || x > x1 || z < z0 || z > z1) continue
+      let inside = false
+      for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+        if ((r[i][1] > z) !== (r[j][1] > z) &&
+            x < (r[j][0] - r[i][0]) * (z - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) inside = !inside
+      }
+      if (inside) return true
+    }
+    return false
+  }
+}
+
+/**
+ * Which side of this arc is the water on? ⛔ Derived by sampling the DRAWN WATER, never
  * assumed from winding — see the note above, where the convention was measured false.
  *
- * @param poly      [[x,z], …] one arc, in local metres
- * @param heightAt  (x, z) => metres relative to the water plane (NaN off-grid)
- * @param gridM     the terrain grid's own step, in metres — the finest thing it can say
- * @returns { side: 'left'|'right'|'both'|null, probeM, right, left, samples, why }
- *          ⛔ side === null means REFUSE this arc, loudly. It does not mean "pick one".
- *          ⭐ side === 'both' means water on two faces — a breakwater, a jetty, a bar.
+ * ⭐⭐ RULED 2026-09-26 (Jacob): *"The drawn water's edge IS the mapped shoreline, and the
+ * revetment sits on it."* A `__water__` arc is struck from the same coast ring the ground
+ * paints as water, so the water is beside it BY CONSTRUCTION, and the question "is this at
+ * the water?" is answered by the drawing, not by the lidar.
+ * ⛔ This SUPERSEDES `r-coast-trust-the-lidar` (2026-09-25) for where stone may go. That
+ * version asked the heightfield whether either side reached y <= 0, and declined any arc where
+ * neither did as "not at the water per the lidar" — Provincetown declined 42 km of its drawn
+ * shore that way, and the drawing then showed water meeting land with nothing between them.
+ * The lidar still sets the stone's crest and toe (`bake-revetment.js`); it no longer decides
+ * whether the shore is a shore. Retired text: `cartograph/_archive/revetment-trust-the-lidar-RETIRED-2026-09-26.md`.
+ *
+ * @param poly     [[x,z], …] one arc, in local metres
+ * @param inWater  (x, z) => boolean — `drawnWaterTest(rings)`. ⛔ Must return a BOOLEAN: a
+ *                 caller still passing a heightfield gets a loud throw, not a quiet answer.
+ * @param gridM    the terrain grid's step, metres — the station spacing the stone is placed
+ *                 at, so the finest shore feature the revetment can express. ⛔ Required.
+ * @returns { side: 'left'|'right'|'both'|null, kind, probeM, samples, why }
+ *          ⛔ side === null means REFUSE this arc, loudly, and `kind` NAMES the predicate:
+ *             'too-few-vertices' · 'stub' · 'ink-without-water'. It does not mean "pick one".
+ *          ⭐ side === 'both' means drawn water on two faces — a breakwater, a jetty, a bar.
  *            It is an ANSWER: build on both faces and let `shoreArmourFor` rule on each.
  *
- * ⭐⭐ IT SWEEPS OUTWARD RATHER THAN PROBING AT ONE DISTANCE, and that is not a
- * refinement — a single probe distance is a constant that is correct for one town.
- * Measured on huron: a 539 m arc runs along a spit ~16-20 m wide. At 2-8 m out BOTH
- * sides are still on the spit and read the same; at 12 m the water appears. An 8 m
- * probe refuses it and a 20 m probe would blur an ordinary shore by sampling deep
- * inland. ⇒ Sweep out from the grid's own resolution and take the FIRST distance
- * that answers — the nearest reading wins, which is this kit's rule everywhere else.
- *
- * ⭐ AND THE TEST IS PHYSICAL, NOT A THRESHOLD: the wet side is the side that
- * REACHES THE WATER PLANE. Water is at the plane by definition — that is what the
- * datum means since bake-terrain started deriving it — so "which side is water" is
- * "which side is at y <= 0", not "which side is lower by some margin".
+ * ⭐ IT STILL SWEEPS OUTWARD FROM ONE GRID STEP, for the reason it always did: the arc is ①'s
+ * ε-stroke of the coast, and where a street meets the shore the stroke walks round the street
+ * end, a few metres off the water ring. The nearest distance that answers wins.
+ * ⛔ `ink-without-water` is NOT "not at the water": it says the slab carries shoreline ink with
+ * no drawn water beside it, i.e. the drawing and the ink disagree — a pour defect, named.
  */
-export function wetSideOf(poly, heightAt, gridM = 5) {
+export function wetSideOf(poly, inWater, gridM) {
+  if (typeof inWater !== 'function') throw new Error('wetSideOf: inWater must be (x, z) => boolean — the drawn-water test (drawnWaterTest)')
+  if (!(gridM > 0)) throw new Error(`wetSideOf: gridM is required (got ${gridM}) — it is the terrain grid's own step, never a default`)
   if (!Array.isArray(poly) || poly.length < 3) {
-    return { side: null, samples: 0, why: 'arc has fewer than 3 vertices' }
+    return { side: null, kind: 'too-few-vertices', samples: 0, why: 'arc has fewer than 3 vertices' }
   }
   let len = 0
   for (let i = 1; i < poly.length; i++) len += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1])
 
-  // ⛔ THE BOUND IS DERIVED, AND IT IS NOT A TASTE SETTING. Past a handful of grid
-  // cells you are no longer describing a shore edge, you are describing the
-  // hinterland — and the heightfield cannot resolve a shore feature finer than its
-  // own step anyway. Six cells is the width of the widest spit the grid can still
-  // call a spit; beyond that, refusing is the honest answer.
-  const maxProbe = 6 * gridM
+  // Stone is placed one station per grid step; an arc shorter than two carries none.
   if (len < 2 * gridM) {
-    return { side: null, samples: 0, why: `arc is ${len.toFixed(1)} m — shorter than the terrain can resolve (${(2 * gridM).toFixed(0)} m)` }
+    return { side: null, kind: 'stub', samples: 0, why: `arc is ${len.toFixed(1)} m — shorter than two stone stations (${(2 * gridM).toFixed(0)} m)` }
   }
-
-  let lastRight = NaN, lastLeft = NaN, lastN = 0
-  for (let probeM = gridM; probeM <= maxProbe; probeM += gridM) {
-    let rSum = 0, lSum = 0, n = 0, rWet = 0, lWet = 0
+  // Six cells: past that you are describing the hinterland, not the arc's own edge.
+  const maxProbe = 6 * gridM
+  let most = 0
+  for (let probeM = gridM; probeM <= maxProbe + 1e-9; probeM += gridM) {
+    let n = 0, rWet = 0, lWet = 0
     for (let i = 1; i < poly.length - 1; i++) {
       const tx = poly[i + 1][0] - poly[i - 1][0], tz = poly[i + 1][1] - poly[i - 1][1]
       const m = Math.hypot(tx, tz)
       if (!m) continue
       const nx = -tz / m, nz = tx / m          // right of the walk, +x east / +z south
-      const hr = heightAt(poly[i][0] + nx * probeM, poly[i][1] + nz * probeM)
-      const hl = heightAt(poly[i][0] - nx * probeM, poly[i][1] - nz * probeM)
-      if (!Number.isFinite(hr) || !Number.isFinite(hl)) continue
-      rSum += hr; lSum += hl; n++
-      // AT the water plane, with one armour course of slack for the grid's own noise.
-      if (hr <= MIN_ARMOUR_D50_M) rWet++
-      if (hl <= MIN_ARMOUR_D50_M) lWet++
+      const r = inWater(poly[i][0] + nx * probeM, poly[i][1] + nz * probeM)
+      const l = inWater(poly[i][0] - nx * probeM, poly[i][1] - nz * probeM)
+      if (typeof r !== 'boolean' || typeof l !== 'boolean') {
+        throw new Error(`wetSideOf: inWater returned ${typeof r}/${typeof l}, not a boolean — is a heightfield being passed where the drawn water belongs?`)
+      }
+      n++; if (r) rWet++; if (l) lWet++
     }
     if (!n) continue
-    lastRight = rSum / n; lastLeft = lSum / n; lastN = n
-    // The first distance at which one side is decisively at the water and the other
-    // is not. ⛔ Both-at-water is a bank between two waters — a real case, and one
-    // this function must refuse rather than pick a face for.
+    most = Math.max(most, rWet / n, lWet / n)
     const rAt = rWet / n > 0.6, lAt = lWet / n > 0.6
-    if (rAt !== lAt) {
-      return { side: rAt ? 'right' : 'left', probeM, right: lastRight, left: lastLeft, samples: n, why: `water reached at ${probeM} m` }
-    }
-    if (rAt && lAt) {
-      // ⭐⭐ 'both' IS AN ANSWER, NOT A REFUSAL — ruled 2026-09-21 after measuring what
-      // huron's only such arc actually is. A breakwater or a rubble mound genuinely
-      // has water on two sides and is armoured on both faces; a sand bar has water
-      // on two sides and is armoured on neither. ⛔ THE SIDE-FINDER MUST NOT DECIDE
-      // THAT — it reports both faces and `shoreArmourFor` rules on each one, which
-      // is the predicate that already exists and already knows the difference.
-      // ⚠️ Returning null here made the pipeline STOP on a case it could answer, and
-      // the caller would then have had to invent a rule the kit already has.
-      return { side: 'both', probeM, right: lastRight, left: lastLeft, samples: n,
-               why: `water on BOTH sides at ${probeM} m — two faces; the armour predicate rules on each` }
-    }
+    if (rAt !== lAt) return { side: rAt ? 'right' : 'left', probeM, samples: n, why: `drawn water at ${+probeM.toFixed(2)} m` }
+    // ⭐ 'both' IS AN ANSWER, NOT A REFUSAL (ruled 2026-09-21): two faces, the predicate rules each.
+    if (rAt && lAt) return { side: 'both', probeM, samples: n, why: `drawn water on BOTH sides at ${+probeM.toFixed(2)} m — two faces; the armour predicate rules on each` }
   }
-  if (!lastN) return { side: null, samples: 0, why: 'no terrain under either side of this arc' }
-  return { side: null, probeM: maxProbe, right: lastRight, left: lastLeft, samples: lastN,
-           why: `neither side reaches the water within ${maxProbe} m — this arc is not at a water edge` }
+  return { side: null, kind: 'ink-without-water', probeM: maxProbe, samples: 0,
+           why: `drawn water beside at most ${(100 * most).toFixed(0)}% of this arc on either side within ${+maxProbe.toFixed(1)} m — the slab's shoreline ink and the drawn water DISAGREE here (a pour defect, not a dry shore)` }
 }

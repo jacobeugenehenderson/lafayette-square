@@ -3875,7 +3875,19 @@
       "date": "2026-09-25",
       "quote": "Lidar",
       "gist": "Where the OSM coastline and the lidar water surface disagree, the revetment trusts the dated lidar (the ground the stone would sit on); the pour states loudly how much mapped shore the lidar calls dry. A shoreline storms reshape is better known from the newer measurement.",
-      "canon": "docs/briefs/BRIEF-water-shader.md · ROADMAP status block"
+      "canon": "docs/briefs/BRIEF-water-shader.md · ROADMAP status block",
+      "supersededBy": "r-shore-is-the-drawn-water (2026-09-26) — for where stone may go; retired text in cartograph/_archive/revetment-trust-the-lidar-RETIRED-2026-09-26.md"
+    },
+    {
+      "id": "r-shore-is-the-drawn-water",
+      "question": "q-shore-soft-tag-vs-measured-bank",
+      "kind": "ruling",
+      "by": "Jacob",
+      "date": "2026-09-26",
+      "quote": "The drawn water's edge IS the mapped shoreline, and the revetment sits on it.",
+      "gist": "Whether a shoreline arc is at the water, and which side is wet, is read from the drawn water (clean/map.json layers.water, the rings the ground bake paints), not the lidar. The lidar still sets the stone's crest and toe. The soft-shore and structure-tag predicates are unchanged, so every bare metre of drawn shore names its reason. Supersedes r-coast-trust-the-lidar for where stone may go.",
+      "canon": "docs/briefs/BRIEF-boulder-revetment.md §6 · cartograph/shore-armour.mjs wetSideOf",
+      "check": "node checks/claims-every-metre-of-drawn-shore-is-named.mjs"
     },
     {
       "id": "f-barnstable-fia-species-mix",
