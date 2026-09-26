@@ -7,7 +7,7 @@ evict-when: the two measurements below exist as re-runnable checks, and Jacob ha
 
 # Tree density and tree size — a disciplined measurement
 
-**You are the dispatched agent. Name yourself — one word, yours, and NOT one already used.** Before taking a name, check it is unused in both the commit log and the docs: `n=YourName; git log --all --format=%B | grep -icw "$n"; grep -rliw "$n" --include='*.md' . | grep -v node_modules | head` — both must come back empty. ⛔ A repeated name (two agents called Tern) makes the record ambiguous.
+**You are the dispatched agent. Name yourself — one word, yours, and NOT a name another RUNNING session already holds.** Check with `ListAgents` before taking it (reuse across days is fine; two live sessions with one name is not — Boz addresses you by it). Then `/rename <name>` so the session list shows it.
 **Agent: FRESH** — this is a forensic; it needs a whole context and no prior conclusions.
 
 ## The ask

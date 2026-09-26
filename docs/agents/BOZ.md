@@ -122,7 +122,7 @@ how this line itself was wrong for a few hours on 2026-09-13. **Run it before tr
 
 **Every brief carries — checklist, all eight:**
 
-1. **"You are the dispatched agent. Name yourself — one word, yours, and NOT one already used"** — with the check that proves it (the name absent from `git log --all --format=%B` and from every `*.md`; the briefs carry the one-liner). ⛔ Two agents named Tern happened (2026-09-26); a repeated name makes the trail ambiguous. (⛔ Boz never names itself, `§1`.)
+1. **"You are the dispatched agent. Name yourself — one word, yours, and not one a RUNNING session holds"** (checked with `ListAgents`, then `/rename`). Uniqueness is per live session, not across history — two simultaneous Terns (2026-09-26) meant Boz could not address either. ⭐ Once agents are live, **Boz coordinates them**: `ListAgents` to see who is up, `SendMessage` to ask what each holds and to resolve collisions. (⛔ Boz never names itself, `§1`.)
 2. **`Agent: FRESH` or `WARM → <name>`** — decisive, never "either works," with the one-line why.
 3. **The canon section by number** — *"read `RIBBONS §1`, the four invariants"*. A bare *"consult RIBBONS"*
    is not a pointer.
