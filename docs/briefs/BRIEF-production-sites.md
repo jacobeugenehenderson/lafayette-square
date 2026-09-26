@@ -20,7 +20,7 @@ correct URLs."*
 
 | town | production domain | status |
 |---|---|---|
-| Lafayette Square | **`lafayettesquare.online`** (moving off `lafayette-square.com`, "to match the convention of everything else") | owned |
+| Lafayette Square | **`lafayettesquare.online`** (moving off `lafayette-square.com`, "to match the convention of everything else"; `.com` redirects to it) | owned |
 | Hi-Pointe–DeMun | `hpdm.online` — ⚠️ confirm the exact spelling against Operations | owned |
 | Provincetown | `provincetown.online` | owned |
 | Huron | `huron.online` — **not bought yet**; stays on staging for now | not owned |
@@ -47,7 +47,7 @@ hands anyone a shopping list. Staging links stay unlisted (`BRIEF-a-link-per-tow
 
 - **Promote today pushes this branch to `main`, which is ~646 commits ahead.** Do not press it, and do not run the endpoint, for any town, while building this. A production deploy plan for `main` is owed separately (`ROADMAP` status block).
 - **Lafayette Square goes last** (`ROADMAP` ordering: "move LS's plumbing last … never the night before a demo"). Build and prove the path on Provincetown or HPDM first.
-- `lafayette-square.com` is live production. What happens to it at cutover (redirect to `.online`, or keep serving) is **Jacob's ruling — ask; don't decide.**
+- `lafayette-square.com` is live production. ✅ **RULED 2026-09-26 (Jacob): at cutover it REDIRECTS to `lafayettesquare.online`** (a permanent redirect that keeps the path, so old links and QR codes still land). ⛔ The redirect goes live only once `lafayettesquare.online` is serving and Jacob has seen it — never before, and it is part of the Lafayette Square step, which is last.
 
 ## The shape to confirm with Jacob before building
 
