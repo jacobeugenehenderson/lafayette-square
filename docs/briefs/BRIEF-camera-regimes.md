@@ -72,10 +72,10 @@ playback driver. **This brief is that removal.**
    (H-7). Those keyframes carry targets; a pre-target keyframe that relied on the subject needs its target
    written once, from what it resolves to today, as a migration — name how many.
 
-## ⚠️ One question only Jacob can answer, ask it FIRST
-
-**Which regime is Browse?** It is overhead but *perspective*, and by the 2026-09-05 ruling it pans and zooms
-but does not orbit. Is it the 2D regime (then should it be ortho?), or a constrained 3D view? Don't decide it.
+## ✅ Browse — answered (Jacob, 2026-09-26): *"Browse is already correct, so however it is now is how I want it."*
+Browse stays exactly as it is: overhead, perspective, pan + zoom, no orbit (`BrowseControls`). ⛔ Do not change
+its behaviour; it may move into the shared controls module only if it comes out byte-for-byte the same. The three
+regimes above are Jacob's distinction for the work, not a reclassification of Browse.
 
 ## The chain
 
@@ -95,5 +95,4 @@ and the same drag does the same thing in Preview and production.
   if needed. No bake, no pour. Canon: `ARCHITECTURE` (the regime rule), `OPERATIONS` (the controls, per
   regime), `ROADMAP H-7` closed. Commit messages name the register reached.
 
-**The instruction is confirm-then-build:** read the record and the code, tell Jacob what you found, ask the
-Browse question, and if the code contradicts this brief — stop and flag him.
+**The instruction is confirm-then-build:** read the record and the code, tell Jacob what you found, and if the code contradicts this brief — stop and flag him.
