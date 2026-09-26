@@ -478,20 +478,17 @@ export const CLOUDS_FIELD_KEYS = Object.keys(CLOUDS_FLAT_DEFAULTS)
 // Consumed via the shared lamp-glow uniforms (LampGlowDriver / LampGlowPump)
 // — see src/components/PostProcessing.jsx. Defaults match the legacy
 // lampGlowState so unauthored Looks are unchanged.
-// Consolidated 2026-06-22 to two knobs: one Pool (the warm light pool on ALL
-// ground — grass/asphalt/sidewalk — from the baked pool map) + Canopy (tree
-// under-glow). The old grass-only tint is folded into the pool. `grass` is
-// kept in the defaults for back-compat with older design.json but is no
-// longer a panel field nor consumed by any shader.
-// The ground POOL intensity is no longer a field here — it's driven by the
-// Lantern's output (StreetLights: pool = lantern Brightness × the dusk→night
-// ramp), so the Lantern Brightness slider controls the pool. This channel now
-// carries only the tree CANOPY under-glow. (`grass`/`pool` kept in defaults for
-// back-compat with older design.json; unused as panel fields.)
+// ⭐ BOTH ARE SHARES OF THE LAMP'S OWN OUTPUT (Jacob, 2026-09-26). StreetLights computes that output
+// each frame — Lantern Brightness × the dusk→night ramp, exactly 0 by day — and multiplies it by these:
+//   · trees — how much of it the canopy takes (× the leaf colour, × each tree's baked share, lampPool.js)
+//   · pool  — how strong it lands on every ground surface (groundLamp.js) and on building walls
+// So Brightness moves lamp, halo, pools, trees and walls together, and each slider scales one receiver.
+// (`grass` stays in the defaults for back-compat with older design.json; no panel field, no reader.)
 export const LAMPGLOW_FIELDS = [
-  { key: 'trees', label: 'Tree canopy under-glow', min: 0, max: 0.1, step: 0.005 },
+  { key: 'pool',  label: 'Light pools',          min: 0, max: 4, step: 0.05 },
+  { key: 'trees', label: 'Trees (share of lamp)', min: 0, max: 4, step: 0.05 },
 ]
-export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 0, pool: 1.0 }
+export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 1, pool: 1.0 }
 export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
 
 // Lantern (Lamps card) — the lamp's LIGHT SOURCE itself (the lantern): the

@@ -307,7 +307,7 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
 // LampGlowPump (store-resolved), exactly as NeonPump↔NeonBands does for neon.
 // Without a mount, those uniforms sit at module defaults (grass 0, trees 0,
 // pool 1.0) and authored lamp pools / tree glow never appear off the slab.
-const LAMPGLOW_DEFAULT_CHANNEL = Object.freeze({ values: { grass: 0, trees: 0, pool: 1.0 } })
+const LAMPGLOW_DEFAULT_CHANNEL = Object.freeze({ values: {} })   // resolveLampGlowAtMinute fills LAMPGLOW_FLAT_DEFAULTS
 
 export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
   const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
@@ -318,8 +318,9 @@ export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
     const slotMinutes = channel.animated ? getTodSlotMinutes(tod.currentTime) : null
     const triple = resolveLampGlowAtMinute(channel, minute, slotMinutes)
     _lampGlowUniforms.grassUniform.value = triple.grass
-    _lampGlowUniforms.treesUniform.value = triple.trees
-    // poolUniform is driven by StreetLights (pool follows the lantern's output).
+    // Shares of the lamp's output; StreetLights multiplies them by it (0 by day, follows Brightness).
+    _lampGlowUniforms.share.trees = triple.trees
+    _lampGlowUniforms.share.pool  = triple.pool
   })
   return null
 }

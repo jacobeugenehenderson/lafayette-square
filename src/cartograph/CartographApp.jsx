@@ -170,8 +170,9 @@ function LampGlowPump() {
     const slotMinutes = lampGlow.animated ? getTodSlotMinutes(tod.currentTime) : null
     const triple = resolveLampGlowAtMinute(lampGlow, minute, slotMinutes)
     _lampGlowUniforms.grassUniform.value = triple.grass
-    _lampGlowUniforms.treesUniform.value = triple.trees
-    // poolUniform is driven by StreetLights (pool follows the lantern's output).
+    // Shares of the lamp's output; StreetLights multiplies them by it (0 by day, follows Brightness).
+    _lampGlowUniforms.share.trees = triple.trees
+    _lampGlowUniforms.share.pool  = triple.pool
   })
   return null
 }
@@ -763,6 +764,12 @@ const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
 // `ribbons` is the static post-bake intersections + faces artifact
 // (centerline geometry comes from the live store, scene-aware). Once
 // promote-ribbons is scene-keyed (Phase 0e) this can shrink to a path.
+// The toy rig's lamps, with the live Lantern like every other town's Stage (▶ claims-light-sources-are-live).
+function ToyStageLamps() {
+  const lanternOverride = useCartographStore(s => activeChannel(s, 'lantern'))
+  return <StreetLights lamps={toyLamps.lamps} lantern={lanternOverride} />
+}
+
 const MAP_REGISTRY = {
   'lafayette-square': {
     ribbons: ribbonsRaw,
@@ -825,7 +832,7 @@ const MAP_REGISTRY = {
       <R3FErrorBoundary name="ToyTerrain"><ToyTerrain /></R3FErrorBoundary>
       <R3FErrorBoundary name="ToyBuildings"><ToyBuildings /></R3FErrorBoundary>
       <R3FErrorBoundary name="ToyTrees"><ToyTrees /></R3FErrorBoundary>
-      <R3FErrorBoundary name="ToyStreetLights"><StreetLights lamps={toyLamps.lamps} /></R3FErrorBoundary>
+      <R3FErrorBoundary name="ToyStreetLights"><ToyStageLamps /></R3FErrorBoundary>
     </>,
     // Designer-mode backdrop — a graph-paper grid that sits under the
     // V2 surface so the translucent/opaque story has something to read
@@ -886,6 +893,9 @@ function genericSceneConfig(sceneBoundary) {
       // range instantly as the operator drags the Hero Controls sliders
       // (production reads scene.json frozen-at-bake; same seam as arch/horizon).
       const landscapeOverride = useCartographStore(s => activeChannel(s, 'landscape'))
+      // ⛔ Was absent here: every poured town's Stage read the lantern frozen in scene.json, so
+      // Brightness + Glow did nothing until a re-bake (Jacob, 2026-09-26). ▶ checks/claims-light-sources-are-live.mjs
+      const lanternOverride   = useCartographStore(s => activeChannel(s, 'lantern'))
       return (
       <>
         {!hiddenLayers.building && (
@@ -904,7 +914,7 @@ function genericSceneConfig(sceneBoundary) {
         )}
         {!hiddenLayers.lamp && (
           <R3FErrorBoundary name="BakedLamps">
-            <BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} />
+            <BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} />
           </R3FErrorBoundary>
         )}
         {!hiddenLayers.tree && (

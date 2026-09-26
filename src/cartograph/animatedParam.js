@@ -39,6 +39,7 @@
 // SunCalc each frame so the envelope shifts seasonally with the real sun.
 import SunCalc from 'suncalc'
 import { INSTANCE } from '../instance.js'
+import { LAMPGLOW_FLAT_DEFAULTS } from './skyLightChannels.js'
 
 const LATITUDE = INSTANCE.geography.lat
 const LONGITUDE = INSTANCE.geography.lon
@@ -354,7 +355,6 @@ export function migrateGroupChannel(legacy, fieldKeys, defaults) {
 // Lamp Glow stays as a thin wrapper for back-compat. Same triple shape
 // the existing consumers expect.
 const LAMP_GLOW_KEYS = ['grass', 'trees', 'pool']
-const LAMP_GLOW_DEFAULTS = { grass: 0, trees: 0, pool: 1.0 }
 export function resolveLampGlowAtMinute(lampGlow, minute, slotMinutes) {
-  return resolveGroupAtMinute(lampGlow, minute, slotMinutes, LAMP_GLOW_KEYS, LAMP_GLOW_DEFAULTS)
+  return resolveGroupAtMinute(lampGlow, minute, slotMinutes, LAMP_GLOW_KEYS, LAMPGLOW_FLAT_DEFAULTS)
 }

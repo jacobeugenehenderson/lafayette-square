@@ -404,7 +404,9 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
     // intensity from the lantern's actual output (Brightness × the dusk→night
     // ramp), so the Lantern Brightness slider controls the pool too, and it's
     // off by day. (Consumed by grass + FadeMesh as uPool; colour = uLampColor.)
-    _lampGlow.poolUniform.value = lampLit
+    _lampGlow.poolUniform.value  = lampLit * _lampGlow.share.pool
+    // The trees take their share of the SAME output (× leaf colour × each tree's baked share).
+    _lampGlow.treesUniform.value = lampLit * _lampGlow.share.trees
     // (Lamp pool + contact shadow moved into the baked ground FX map — see
     // BakedGround / bake-ground-ao.js.)
     if (glowRef.current) glowRef.current.visible = isActive

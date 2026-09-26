@@ -38,7 +38,11 @@ const initial = load()
 // Each shader does `shader.uniforms.uMyKnob = lampGlow.grassUniform`.
 export const lampGlow = {
   grassUniform: { value: initial.grass },
-  treesUniform: { value: initial.trees },
+  // Lamp output × the trees share — written by StreetLights each frame; 0 with no lamps.
+  treesUniform: { value: 0 },
+  // The authored shares of the lamp's output (the Lamp Glow card), written by LampGlowPump (Stage,
+  // live) / LampGlowDriver (production, baked); StreetLights multiplies the lamp's output by them.
+  share: { trees: 1, pool: 1 },
   // Init 0, not the legacy default — the pool is driven live by StreetLights
   // (lantern output) from frame 1, so a non-zero init only causes a bright
   // flash before the first drive. (Was `initial.pool` = 1.0 → the flash.)
@@ -56,13 +60,10 @@ function notify() { for (const fn of subs) fn() }
 
 export function setLampGlow(key, value) {
   if (key === 'grass') lampGlow.grassUniform.value = value
-  if (key === 'trees') lampGlow.treesUniform.value = value
-  if (key === 'pool')  lampGlow.poolUniform.value  = value
-  save({
-    grass: lampGlow.grassUniform.value,
-    trees: lampGlow.treesUniform.value,
-    pool:  lampGlow.poolUniform.value,
-  })
+  // trees / pool are SHARES of the lamp's output — StreetLights owns the uniforms (output × share).
+  if (key === 'trees') lampGlow.share.trees = value
+  if (key === 'pool')  lampGlow.share.pool  = value
+  save({ grass: lampGlow.grassUniform.value, trees: lampGlow.share.trees, pool: lampGlow.share.pool })
   notify()
 }
 
