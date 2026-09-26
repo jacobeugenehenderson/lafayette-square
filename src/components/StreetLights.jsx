@@ -16,7 +16,7 @@ import { getElevationRaw } from '../utils/elevation'
 import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
-import { lampGlow as _lampGlow, setLampHeads } from '../preview/lampGlowState'
+import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 
 const LANTERN_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANTERN_FLAT_DEFAULTS } })
 
@@ -80,12 +80,6 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
     () => new Float32Array(allLamps.map(l => (typeof l.groundRaw === 'number' ? l.groundRaw : getElevationRaw(l.x, l.z)))),
     [allLamps],
   )
-
-  // ⭐ The lamp heads this component draws, handed to the water for its reflections (lampGlowState).
-  useEffect(() => {
-    setLampHeads(new Float32Array(allLamps.flatMap(l => [l.x, l.z])), aGroundRaw, GLOW_Y)
-    return () => setLampHeads(null, null, 0)
-  }, [allLamps, aGroundRaw])
 
   // ── Shared geometries ───────────────────────────────────────────────────────
   // Glow + halo are billboards (planes that face the camera in the

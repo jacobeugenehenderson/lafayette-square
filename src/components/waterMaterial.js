@@ -279,14 +279,6 @@ export function waveKForExtent(extentDiag) {
  *   `slopeScaleForWind(useSkyState.windSpeedMs)` and `uWindDir` from
  *   `windDirDeg`, and the lake gets choppy when the town is actually windy.
  */
-/**
- * How many lamps one water pixel tests for a reflection — a GPU budget, not a town scale. The caller
- * hands the shader the lamps whose light reaches the water (`lampPool.js` POOL_RADIUS_M), nearest the
- * camera first; farther ones throw glints too small to read. Huron has 294 lamps within 100 m of its
- * water, Provincetown 266 (Strand, 2026-09-26), so the nearest few dozen carry the picture.
- */
-export const LAMP_REFLECT_MAX = 32
-
 export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, bodyColors = null } = {}) {
   // ⛔ LOUD, NOT SILENT. An absent extent is the one input whose default would
   // be invisible: the surface would render, perfectly plausibly, at a pond's
@@ -333,14 +325,6 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uKeyDir:        { value: new THREE.Vector3(0, 1, 0) },
     uKeyColor:      { value: new THREE.Color('#fffefa') },
     uKeyUp:         { value: 0 },
-    // ⭐ LAMPS ON THE WATER (Jacob, 2026-09-26: "water should reflect lamp light"). Each lamp head is a
-    // point source through the SAME glint lobe as the sun and moon, so its reflection is a column of
-    // glints toward the viewer that lengthens with the wind. `uLampN` 0 = none (a pond with no lamps
-    // attached draws exactly as before). Lit and coloured by the same values that light the ground pools.
-    uLamps:         { value: Array.from({ length: LAMP_REFLECT_MAX }, () => new THREE.Vector3()) },
-    uLampN:         { value: 0 },
-    uLampLit:       { value: 0 },
-    uLampColor:     { value: new THREE.Color(0, 0, 0) },
     // uDisturbAmp 0 removes the term entirely (the multiply below), so one
     // compiled program serves both cases and the cache key stays single.
     uDisturbAmp:    { value: disturbance ? 1 : 0 },
@@ -409,10 +393,6 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform vec3  uKeyDir;
        uniform vec3  uKeyColor;
        uniform float uKeyUp;
-       uniform vec3  uLamps[${LAMP_REFLECT_MAX}];
-       uniform int   uLampN;
-       uniform float uLampLit;
-       uniform vec3  uLampColor;
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
        uniform float uGustDriftMps;
@@ -850,19 +830,6 @@ ${GLITTER_GLSL}
          // than the sun. It is the hue that is dropped, not the brightness.
          float wKeyLum = dot(uKeyColor, vec3(0.2126, 0.7152, 0.0722));
          totalEmissiveRadiance += vec3(wKeyLum) * (wSparkle * GLINT_GAIN * uKeyUp * wF * wGl);
-
-         // ── LAYER 4: THE LAMPS. Each head is a body of its own, through the same half-vector lobe —
-         // a mirror image keeps its source's radiance, so no distance falloff; distance shows as fewer,
-         // smaller glints, which the lobe already does. Off by day through uLampLit.
-         if (uLampLit > 0.0) {
-           float wLampAcc = 0.0;
-           for (int i = 0; i < ${LAMP_REFLECT_MAX}; i++) {
-             if (i >= uLampN) break;
-             vec3 wHl = normalize(normalize(uLamps[i] - vWaterWorld) + wV);
-             wLampAcc += smoothstep(GLINT_COS_WIDE, GLINT_COS_TIGHT, dot(vWaterN, wHl));
-           }
-           totalEmissiveRadiance += uLampColor * (wLampAcc * GLINT_GAIN * uLampLit * wF * wGl);
-         }
        }`
     )
 
@@ -890,7 +857,7 @@ ${GLITTER_GLSL}
   // material's compiled program. ⭐ ONE key for every water body in the kit is
   // correct: the per-feature differences (wave scale, glint, disturbance) are
   // all UNIFORMS, so the code is identical and sharing the program is the point.
-  mat.customProgramCacheKey = () => 'kit-water-v3-lamps'
+  mat.customProgramCacheKey = () => 'kit-water-v2-sky'
 
   return { material: mat, uniforms }
 }
