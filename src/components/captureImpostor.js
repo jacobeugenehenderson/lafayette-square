@@ -64,6 +64,22 @@ const CAPTURE_SIZE = 512
 // need the half-span the frustum spans.
 const FRAME_PAD_M = IMPOSTOR_FRAME_PAD_M
 
+/**
+ * One frame between capture shots. requestAnimationFrame never fires in a hidden tab, so a run whose
+ * tab is hidden MID-RUN froze on its next shot; the shots render through their own gl calls, so a
+ * hidden tab steps on a short timer instead. Shared by both bakers; never a second copy.
+ * ⚠️ OPEN: a Grove opened while HIDDEN still can't START a capture — R3F's renderer never initialises
+ * there (measured 2026-09-26; a lab-style advance() pump did not make it start, cause not established).
+ */
+export function nextCaptureFrame() {
+  return new Promise((r) => (typeof document !== 'undefined' && document.hidden
+    ? setTimeout(r, 16)
+    : requestAnimationFrame(() => r())))
+}
+
+/** Thrown inside a capture run once its React effect was torn down: the run stops, uploads nothing. */
+export const CAPTURE_CANCELLED = Object.freeze(new Error('capture run cancelled — superseded, nothing uploaded'))
+
 export function invalidateImpostorCaptures(lookName) {
   if (!lookName) {
     for (const tex of _captureCache.values()) { try { tex.dispose() } catch {} }

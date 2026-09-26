@@ -19,7 +19,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { useTreeAtlas, applyBarkUniforms, applyDeformerUniforms, applyLeafFaceUniforms } from '../components/treeAtlasMaterial.js'
-import { prepareOverheadBands, captureOverheadBand } from '../components/captureImpostor.js'
+import { prepareOverheadBands, captureOverheadBand, nextCaptureFrame, CAPTURE_CANCELLED } from '../components/captureImpostor.js'
 
 // ⛔ MESHOPT DECODER REQUIRED. This baker reads the BAKED per-look GLBs, which
 // bake-look now writes quantized + meshopt-compressed. drei's useGLTF wires this
@@ -28,7 +28,9 @@ import { prepareOverheadBands, captureOverheadBand } from '../components/capture
 const _loader = new GLTFLoader()
 _loader.setMeshoptDecoder(MeshoptDecoder)
 function loadGltf(url) { return new Promise((res, rej) => _loader.load(url, res, undefined, rej)) }
-function nextFrame() { return new Promise((r) => requestAnimationFrame(r)) }
+// One frame between shots — the SHARED helper (rAF when visible, a timer when hidden: a hidden
+// tab never fires rAF, which stalled every background capture).
+const nextFrame = nextCaptureFrame
 
 // Canopy radius = max XZ extent (from the capture origin) over leaf meshes
 // (fallback: all meshes). ⭐ Measured in WORLD space — each vertex is pushed
@@ -182,6 +184,12 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone, on
     ;(async () => {
       let ok = 0, fail = 0
       const failedNames = []
+      // ⛔ A TORN-DOWN RUN STOPS DEAD. `cancelled` used to be read only at the top of each species,
+      // so a run a re-render aborted kept shooting its in-flight species and POSTed it while the
+      // restarted run began again at index 0 — two loops writing one species at once (Provincetown,
+      // 2026-09-26: maple_red 00:07:13–08:03 overlapping oak_white from 00:07:33, then again).
+      // Checked before every shot and immediately before every POST; never counted as a failure.
+      const alive = () => { if (cancelled) throw CAPTURE_CANCELLED }
       for (let i = 0; i < species.length; i++) {
         if (cancelled) break
         const sp = species[i]
@@ -236,13 +244,16 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone, on
             for (let attempt = 1; attempt <= 3; attempt++) {
               const bands = []
               for (let b = 0; b < prep.cuts.length; b++) {
+                alive()
                 bands.push(captureOverheadBand(gl, prep, b))
                 await nextFrame()               // one band per frame → crash-safe
               }
               try {
+                alive()
                 await postOverhead(lookId, sp.species, prep.heightM, rM, bands, sp.captureKey)
                 lastErr = null
               } catch (e) {
+                if (e === CAPTURE_CANCELLED) throw e
                 lastErr = e
                 if (/blank band/.test(e.message) && attempt < 3) {
                   console.warn(`[overhead-bake] ${sp.species}: ${e.message} — retry ${attempt}/2`)
@@ -258,6 +269,7 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone, on
             ok++
           }
         } catch (e) {
+          if (e === CAPTURE_CANCELLED) break
           console.warn('[overhead-bake] failed', sp.species, e)
           fail++
           failedNames.push(sp.species)
@@ -283,8 +295,13 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone, on
         + `(deps changed: atlas material, look, or batch). Tick released — it will retry `
         + `when they settle. If this repeats forever, something upstream is thrashing.`)
     }
+  // ⛔ `species` is deliberately NOT a dependency. A run shoots the list it STARTED with (read when
+  // its tick is consumed); a new list takes effect at the next tick. With it here, every re-render
+  // that rebuilt the batch (the capture's own onProgress, a board recompute) tore the run down and
+  // restarted it from index 0, so the tail of the list — Provincetown's pines — was never reached.
+  // ▶ checks/claims-a-capture-run-finishes-what-it-started.mjs
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runTick, gl, atlas?.treeMaterial, lookId, species])
+  }, [runTick, gl, atlas?.treeMaterial, lookId])
 
   return null
 }

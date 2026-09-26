@@ -40,6 +40,8 @@ import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
+const EMPTY = Object.freeze([])   // one identity for "nothing loaded yet" — see rosterSpecies
+
 const TILE_SPACING = 8        // meters between tiles, edge-to-edge centers
 const QUALITY_COLOR = {
   2: '#4a6a9a',   // Fill (background only)
@@ -70,7 +72,9 @@ export default function Grove() {
   // rail and the bake cannot disagree about what ships.
   const rosterCoverage = useArboristStore(s => s.rosterCoverage)
   const groveThreshold = useArboristStore(s => s.groveThreshold)
-  const rosterSpecies = rosterCoverage?.species || []
+  // ⛔ A STABLE empty. `|| []` built a new array every render while coverage was unloaded, and that
+  // re-derived the board → eligibility → the capture batch on every render.
+  const rosterSpecies = rosterCoverage?.species || EMPTY
   const unownedRef = useRef(new Set())
 
   // ⭐⭐ THE CAPTURE POOL IS WHAT THE SLAB PLACES — which is what the button has always
@@ -120,7 +124,7 @@ export default function Grove() {
   const bakeGroveToSlab = useArboristStore(s => s.bakeGroveToSlab)
   const groveBaking = useArboristStore(s => s.groveBaking)
   const groveBakeResult = useArboristStore(s => s.groveBakeResult)
-  const activeLookTrees = looksRosters[activeLookId] || []
+  const activeLookTrees = looksRosters[activeLookId] || EMPTY
 
   // The neighbourhoods behind the Looks — the axis the picker above runs on.
   // Deduped by scene, so two Looks over one neighbourhood collapse to one entry
