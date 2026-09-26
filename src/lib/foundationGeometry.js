@@ -7,15 +7,16 @@
 // are the contact joint between an upright rigid building body and a
 // non-flat heightfield ground. The "period pedestal" visible height (fh)
 // sits ON TOP of that contact joint. The contact joint exists for every
-// building, including modern ones (fh = 0). Foundation bottom extends
-// below grade by enough margin that even at the lowest local-ground
-// corner of any footprint, the foundation remains buried in the ground.
+// building, including modern ones (fh = 0).
 //
-// LS diagnostic (2026-05-04): max (centroidEl - minCornerEl) × V_EXAG
-// across all 1056 buildings = 3.984m (worst case bldg-0945). p99 = 1.95m.
-// 8m gives ~2× safety. Future neighborhoods with steeper terrain may need
-// to revisit; if that happens, switch to per-building margin computation
-// or bump this constant globally.
+// ⭐ The riser runs from the building's floor down to THE TOWN'S FLOOR — the
+// lowest ground the town can draw, min(0, heightfield min) × uExag (Jacob,
+// 2026-09-26). That is placed in the vertex shader (`RISER_LIFT_GLSL`,
+// src/utils/terrainShader.js), so no footprint corner can sit below it at any
+// exaggeration. ⛔ FOUNDATION_BELOW_GRADE_M is therefore only a MARKER for the
+// below-grade ring (any y < 0); its value sizes nothing. It was 8 m sized from
+// LS's worst slope — a constant true for town #1 only — and is kept only so the
+// baked ring stays below the y < 0 test.
 
 export const FOUNDATION_BELOW_GRADE_M = 8
 

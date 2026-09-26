@@ -19,7 +19,7 @@ import useCamera from '../hooks/useCamera'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { patchTerrain, patchTerrainAtCentroidRaw } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
-import { terrainExag } from '../utils/terrainShader'
+import { terrainExag, terrainFloorRaw, RISER_LIFT_GLSL } from '../utils/terrainShader'
 import { getElevation, getElevationRaw } from '../utils/elevation'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../lib/foundationGeometry.js'
 import { resolveBuildingPosition } from '../lib/buildingPosition'
@@ -419,10 +419,9 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
       } else {
         groundYRaw = getElevationRaw(building.position[0], building.position[2])
       }
-      // Block goes from (-FOUNDATION_BELOW_GRADE_M) to (+fh) in local Y.
-      // Runtime adds `aCentroidY * uExag` to every vertex so the top sits
-      // at (groundYRaw * uExag + fh) and the bottom at
-      // (groundYRaw * uExag - FOUNDATION_BELOW_GRADE_M).
+      // Block goes from (-FOUNDATION_BELOW_GRADE_M) to (+fh) in local Y. At runtime the
+      // top lifts by `aCentroidY * uExag` to (groundYRaw * uExag + fh); the below-grade
+      // ring is placed on the town floor (RISER_LIFT_GLSL), so its baked depth only marks it.
       const top = fh
       const depth = top + FOUNDATION_BELOW_GRADE_M
 
@@ -494,19 +493,20 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
     // matching the per-vertex ground displacement that runs underneath.
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uExag = terrainExag
+      shader.uniforms.uRiserFloor = terrainFloorRaw
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
         `#include <common>
          attribute float aCentroidY;
-         uniform float uExag;`
+         uniform float uExag;
+         uniform float uRiserFloor;`
       )
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
-        `#include <begin_vertex>
-         transformed.y += aCentroidY * uExag;`
+        `#include <begin_vertex>${RISER_LIFT_GLSL}`
       )
     }
-    mat.customProgramCacheKey = () => 'foundation-terrain-v1'
+    mat.customProgramCacheKey = () => 'foundation-terrain-v2-riser'
     return mat
   }, [])
 
@@ -519,14 +519,15 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
     const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
     dm.onBeforeCompile = (shader) => {
       shader.uniforms.uExag = terrainExag
+      shader.uniforms.uRiserFloor = terrainFloorRaw
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', `#include <common>
          attribute float aCentroidY;
-         uniform float uExag;`)
-        .replace('#include <begin_vertex>', `#include <begin_vertex>
-         transformed.y += aCentroidY * uExag;`)
+         uniform float uExag;
+         uniform float uRiserFloor;`)
+        .replace('#include <begin_vertex>', `#include <begin_vertex>${RISER_LIFT_GLSL}`)
     }
-    dm.customProgramCacheKey = () => 'foundation-terrain-depth-v1'
+    dm.customProgramCacheKey = () => 'foundation-terrain-depth-v2-riser'
     return dm
   }, [])
 

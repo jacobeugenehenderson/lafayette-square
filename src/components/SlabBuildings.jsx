@@ -30,7 +30,7 @@ import { attachCSM } from './CascadedShadows.jsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { terrainExag } from '../utils/terrainShader'
+import { terrainExag, terrainFloorRaw, RISER_LIFT_GLSL } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
@@ -432,6 +432,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       if (!isFoundation) applyWeatherToShader(shader)
 
       shader.uniforms.uExag = terrainExag
+      if (isFoundation) shader.uniforms.uRiserFloor = terrainFloorRaw
       // ⭐⭐ SKY VISIBILITY — the buildings' missing occlusion term.
       // ⛔ The ground multiplies its ambient by a BAKED occlusion map (`aoMap`, hemisphere
       // occlusion out to 80 m, deepest hard against buildings). `SlabBuildings` carried NO
@@ -486,6 +487,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          varying float vCovered;
          ${isWall ? 'attribute vec3 aNightColor;\n varying vec3 vNightCol;' : ''}
          uniform float uExag;
+         ${isFoundation ? 'uniform float uRiserFloor;' : ''}
          varying vec3 vBPos;
          varying vec3 vBNorm;
          varying float vBId;`
@@ -500,7 +502,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          vBId = aBuildingId;
          vCovered = aCovered;
          ${isWall ? 'vNightCol = aNightColor;' : ''}
-         transformed.y += aCentroidY * uExag;`
+         ${isFoundation ? RISER_LIFT_GLSL : 'transformed.y += aCentroidY * uExag;'}`
       )
 
       // ── Fragment: declarations ──
@@ -591,7 +593,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       registerShader(shader)
     }
     attachCSM(mat)   // cascades, when `?csm=1` — composes, never replaces onBeforeCompile
-    mat.customProgramCacheKey = () => `slab-bldg-${group.kind}-${group.id}-${tex ? 'tex' : 'flat'}-skyvis1`
+    mat.customProgramCacheKey = () => `slab-bldg-${group.kind}-${group.id}-${tex ? 'tex' : 'flat'}-skyvis1-riser1`
     return mat
   }, [tex, isRoof, isWall, isFoundation, texStrength, texScale, group.kind, group.id])
 
@@ -621,15 +623,17 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
     const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
     dm.onBeforeCompile = (shader) => {
       shader.uniforms.uExag = terrainExag
+      if (isFoundation) shader.uniforms.uRiserFloor = terrainFloorRaw
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', `#include <common>
          attribute float aCentroidY;
          attribute float aCovered;
          uniform float uExag;
+         ${isFoundation ? 'uniform float uRiserFloor;' : ''}
          varying float vCoveredD;`)
         .replace('#include <begin_vertex>', `#include <begin_vertex>
          vCoveredD = aCovered;
-         transformed.y += aCentroidY * uExag;`)
+         ${isFoundation ? RISER_LIFT_GLSL : 'transformed.y += aCentroidY * uExag;'}`)
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', `#include <common>
          varying float vCoveredD;`)
@@ -637,9 +641,9 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          if (vCoveredD > 0.5) discard;`)
     }
     // Distinct key so this program never collapses onto the plain depth program.
-    dm.customProgramCacheKey = () => 'slab-bldg-depth-centroidlift-v1'
+    dm.customProgramCacheKey = () => `slab-bldg-depth-centroidlift-v2-${isFoundation ? 'riser' : 'rigid'}`
     return dm
-  }, [])
+  }, [isFoundation])
 
   // Resolve a raycast hit to a building id via the aBuildingId attribute.
   // A DISCARDED fragment still raycasts, so an extrusion hidden behind a city

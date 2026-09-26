@@ -498,11 +498,10 @@ function triangulateContour(footprint) {
 // emits its own UVs aligned to the surface so tileable textures (slate
 // courses, brick rows) read correctly.
 //
-// Foundation extends well BELOW Y=0 in the bake frame so the rigid-
-// centroid GPU displacement at runtime can never lift its bottom edge
-// above the local ground at any footprint corner — buildings on
-// hillsides stay grounded instead of floating. See
-// src/lib/foundationGeometry.js for the margin rationale.
+// The foundation's bottom ring is baked BELOW Y=0 only to mark it: at runtime
+// the shader places that ring on the town's floor (RISER_LIFT_GLSL), so no
+// footprint corner can surface it at any exaggeration. See
+// src/lib/foundationGeometry.js.
 function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
   const n = footprint.length
   const wallPositions = []
@@ -753,13 +752,10 @@ export async function bakeBuildings({ look, scene } = {}) {
     if (!fp || fp.length < 3) { unextrudable.push(b.id ?? '<no id>'); continue }
     let wallRange = null, foundRange = null, roofRange = null
     const h = (b.size && b.size[1]) || (b.stories ? b.stories * 3.5 : 8)
-    // Foundation: visible top = period pedestal (fh) above grade; bottom
-    // extends FOUNDATION_BELOW_GRADE_M below grade so no corner of the
-    // displaced footprint can ever surface the bottom edge. Per-vertex
-    // aCentroidY (sampled below) drives rigid-body GPU displacement at
-    // runtime — wall + foundation rise/fall together with the centroid
-    // elevation; the below-grade extension absorbs the local-corner
-    // variance. See src/lib/foundationGeometry.js for sizing.
+    // Foundation: visible top = period pedestal (fh) above grade; the bottom
+    // ring is baked below grade as a marker and seated on the town's floor at
+    // runtime. Per-vertex aCentroidY (sampled below) lifts wall + foundation
+    // top rigidly. See src/lib/foundationGeometry.js.
     const fh = foundationHeightFor(b, overrides)
     const foundationY = fh
     const wallTop = foundationY + h

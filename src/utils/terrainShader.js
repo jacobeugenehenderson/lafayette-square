@@ -142,6 +142,20 @@ export const terrainExag = { value: 0 }
 // pass uses three's own MeshDepthMaterial and carries NONE of these patches.
 if (typeof window !== 'undefined') window.__terrainExag = terrainExag
 
+// ── The town's floor: the lowest ground it can draw, RAW (the shader multiplies by uExag) ──
+// A building's foundation riser runs from its floor down to HERE (Jacob, 2026-09-26), so no
+// footprint corner can ever sit below the riser's foot, at any exaggeration. ⛔ Derived from
+// the loaded heightfield, never a constant: min(0, the lowest sample) — 0 is the datum, and a
+// water-datum town's land can dip below it (provincetown −1.14 m, huron −0.11 m).
+function lowestGround(d) { let m = 0; for (let i = 0; i < d.length; i++) if (d[i] < m) m = d[i]; return m }
+export const terrainFloorRaw = { value: lowestGround(_terrain.data) }
+// ONE rule, four consumers: foundation render + depth materials, slab (SlabBuildings) + Stage
+// (LafayetteScene Foundations). Needs `aCentroidY`, `uExag`, `uRiserFloor` (= terrainFloorRaw).
+// The baked riser's below-grade ring is the only geometry with y < 0; its baked depth is a
+// MARKER, not a size — the ring is placed on the town floor here, and the rest lifts rigidly.
+export const RISER_LIFT_GLSL = `
+         transformed.y = position.y < 0.0 ? uRiserFloor * uExag : transformed.y + aCentroidY * uExag;`
+
 // ── Shared uniform objects ───────────────────────────────────────
 // The wrapper objects here are Object.assign'd into every patched shader by
 // reference (assignTerrainUniforms / patchTerrain*), so mutating a wrapper's
@@ -203,6 +217,7 @@ export async function reloadTerrain(lookId, { force = false } = {}) {
   UNIFORMS.uSpanZ.value = spanZ
   UNIFORMS.uTexW.value = width
   UNIFORMS.uTexH.value = height
+  terrainFloorRaw.value = lowestGround(data)
   for (const cb of _reloadCbs) { try { cb() } catch (e) { console.warn('[terrain] reload cb failed', e) } }
 }
 
