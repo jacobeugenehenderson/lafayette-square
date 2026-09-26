@@ -110,6 +110,11 @@ const MANIFESTS = {
   altadena: {
     landmarks: () => import('../../cartograph/data/altadena/content/listings.json'),
   },
+  // Listings only. ⛔ No `buildings`: the roster has no addresses, so — as with altadena —
+  // every bare building would be dropped. ▶ checks/claims-a-towns-listings-reach-its-surfaces.mjs
+  provincetown: {
+    landmarks: () => import('../../cartograph/data/provincetown/content/listings.json'),
+  },
 }
 
 // ⚠️ MANIFESTS IS A HARDCODED PER-LOOK REGISTRY, so town #5 needs a CODE EDIT
