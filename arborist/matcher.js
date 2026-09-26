@@ -65,7 +65,14 @@ function compareAxis(rubric, axisId, reqSpec, tag) {
   const kind = axisKind(rubric, axisId)
   let distance, withinTol, closeness
 
-  if (actual == null) {
+  if (reqSpec.target == null && kind !== 'band' && kind !== 'dual' && kind !== 'curve') {
+    // ⛔ THE SPECIES HAS NO ANSWER on this axis (sources tied, or none spoke) — nothing can
+    // match it. Before 2026-09-25 this fell through: enumDistance(null) returned null,
+    // `null <= tol` is TRUE in JS, and closeness 1 − null/3 = 1, so an UNANSWERED axis scored
+    // every tagged part a perfect match (74 such axes across the dossiers). Same shape as
+    // untagged: never disqualifies a soft axis, never counts as a match.
+    distance = null; withinTol = false; closeness = 0
+  } else if (actual == null) {
     // untagged / null draft — can't satisfy; never disqualifies a soft axis.
     distance = null; withinTol = false; closeness = 0
   } else if (kind === 'enum') {
