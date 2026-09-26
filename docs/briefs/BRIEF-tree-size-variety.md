@@ -33,13 +33,19 @@ distribution. `REAL_DBH_SOURCES` is city-inventory / forest-park / park. ⇒ **a
 canopy fill has no trunk measurements, so it cannot size, however good its dossiers are** — and the bake says so
 (grep `render at a FLAT 1:1`). Provincetown and Huron are exactly that town.
 
-⛔⛔ **THE CONFLICT TO BRING TO JACOB BEFORE BUILDING:** the code's rule is *"Nothing is invented: a tree is never
-scaled outside what a source actually claimed."* Variety in a town with no measured trunks means sizing invented
-trees from something other than a measurement. `ROADMAP H-17` already ruled the pattern for this: **real where
-real, extrapolated where necessary, provenance stamped per item** (surveyed vs derived). The likely shape is
-"a derived tree takes a size drawn from its species' published band, stamped `derived`" — but that is YOUR
-proposal to put to Jacob with the evidence, not a ruling. ⛔ No per-town constant, no LS-derived distribution
-applied to another town.
+### ✅ RULED 2026-09-26 (Jacob): *"'nothing is invented' is the right spirit but wrong laxity."*
+The rule was being read too strictly. **A size inside the band a source published is SOURCED, not invented** —
+the band is the measurement. What stays forbidden is a size OUTSIDE any published band, a band borrowed from
+another town, or a constant. ⇒ A tree with no measured trunk takes a size **within its species' published band**,
+spread across it (deterministic per tree, e.g. by position seed), and is stamped as such (`H-17`'s provenance
+contract: measured vs derived), so a real inventory still wins wherever one exists.
+⚠️ Still yours to design and show Jacob before building: **how** sizes spread within the band (uniform, weighted
+toward the middle, or shaped like the real DBH distributions we do have — say which and why), and which window
+(street vs forest) the band is for a given town — see the "two size windows" item below. ⛔ No per-town constant,
+no LS distribution applied to another town.
+⛔ **Fix the code's comment in the same commit** — `bake-trees.js` "Nothing is invented: a tree is never scaled
+outside what a source actually claimed" is right as written; the blocking reading was requiring a MEASURED DBH
+too. Say plainly which part is the rule.
 
 ## Read first
 
