@@ -51,6 +51,14 @@ export const lampGlow = {
   colorUniform: { value: new THREE.Color(0.80, 0.62, 0.32) },
 }
 
+// ⭐ WHERE THE LAMP HEADS ARE — published by StreetLights from the lamps it DRAWS (one lamp list), read
+// by the water for its reflections (WaterSurface). `xz` = [x0, z0, x1, z1, …], `groundRaw` = the ground
+// anchor under each (× the terrain exag at use), `headY` = the lantern's height above it. null = no lamps.
+export const lampHeads = { xz: null, groundRaw: null, headY: 0, version: 0 }
+export function setLampHeads(xz, groundRaw, headY) {
+  lampHeads.xz = xz; lampHeads.groundRaw = groundRaw; lampHeads.headY = headY; lampHeads.version++
+}
+
 const subs = new Set()
 function notify() { for (const fn of subs) fn() }
 
