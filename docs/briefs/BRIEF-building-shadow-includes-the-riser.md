@@ -2,10 +2,10 @@
 status: OPEN
 dispatched: no
 written: 2026-09-26
-evict-when: a building's shadow starts at the foot of its riser in every town, measured and eye-gated by Jacob with the scene recorded.
+evict-when: no lit strip at the foot of any building in any town (measured, then eye-gated by Jacob with the scene recorded), and the year_built pedestal is retired per Jacob's ruling.
 -->
 
-# The building's shadow must include the riser
+# The building's shadow must meet the ground (re-aimed from "include the riser")
 
 **You are the dispatched agent. Name yourself — one word, yours, and NOT a name another RUNNING session already holds.** Check with `ListAgents` before taking it (reuse across days is fine; two live sessions with one name is not — Boz addresses you by it). Then ask Jacob to `/rename` the session to it (it is a user command), so the session list shows it.
 **Agent: FRESH** — nothing in the current windows carries this; a clean read of the shadow path is the point.
@@ -18,12 +18,38 @@ the foundation block we still have light looking like the building is hovering o
 Then, on the diagnosis: *"It's in different maps, and I think it has to do with the shadow being from the
 building and not the building + the riser."*
 
-⇒ **The working hypothesis is Jacob's: the shadow is cast by the walls/roof only, not by walls + roof +
-foundation riser.** A shadow that begins at the wall's base, while the visible building begins at the
-riser's foot, reads as a lit strip under the building — hovering. It is seen in more than one town.
+⇒ **RE-AIMED 2026-09-26 — the riser hypothesis is REFUTED, by agent Plumb, verified by Boz.** Every group
+casts, the riser included, on both the slab and Stage paths (`SlabBuildings.jsx` depth material;
+`LafayetteScene.jsx` Foundations). ⭐ Jacob confirmed it from below Provincetown: **every building has its
+riser block, reaching down into the ground** — that block is what guarantees a building never cantilevers
+off contoured terrain, and it is doing its job. **So the defect is: a lit strip at the foot of every
+building, in every town. Cause not established.**
 
-⛔ **This is a claim to confirm, not a fact.** Your first deliverable is a yes/no with the evidence, before
-any fix. If the code says otherwise — stop and tell Jacob what you found.
+**Candidates, neither measured:**
+1. **The fixed shadow depth bias** — `CelestialBodies.jsx`, `light.shadow.bias = -(0.5 / (2 * depth))`, i.e.
+   0.5 m of depth in every town: ground within ~0.5·cos(sun elevation) of a wall's shaded side is left lit.
+   (Plumb's lead. Also a constant sized once — check it against Layer 0's Class D tell.)
+2. **The shadow map read through a matrix it was not drawn with** — the box follows the camera
+   (`CelestialBodies.jsx` fitted-frustum `useFrame`) and `H-16` already recorded this failure once. It predicts
+   every shadow shifted by the same amount in the same direction, changing when the camera moves.
+
+**First deliverable is the measurement, not a fix:** one building on flat ground, in Preview, the width of the
+lit strip at its foot — at two sun elevations, two bias values, and before/after a small camera nudge. Candidate
+1 predicts a strip that follows the bias and cos(elevation) and ignores the camera; candidate 2 predicts one that
+jumps with the camera. Report, then stop for Jacob.
+
+### ✅ Also ruled 2026-09-26 (Jacob) — do this AFTER the shadow, as its own commit
+*"I think the year built heuristic is stupid; the point is we needed a way to guarantee buildings wouldn't
+cantilever off the ground with the terrain."* ⇒ **the riser's job is ground contact, not period styling.**
+- `src/lib/foundationGeometry.js#periodPedestalFor` sizes the ABOVE-grade pedestal from `year_built` (1.2 m
+  pre-1900, 0.8 m pre-1920, else 0), which only Lafayette Square has — so LS draws 757 raised pedestals and
+  every other town none. Retire it; confirm with Jacob what visible pedestal (if any) replaces it before
+  changing LS's look, since this moves LS's buildings.
+- `FOUNDATION_BELOW_GRADE_M = 8` is sized from LS's worst slope (the Class D tell). The depth a riser must
+  reach is a property of the terrain under each footprint — derive it per building (or per town) from the
+  relief, with no fallback.
+- Consumers: `cartograph/bake-buildings.js` (needs a re-bake — Jacob's go) and `LafayetteScene.jsx` (Stage).
+  Both must agree.
 
 ## Read first (both, before a plan)
 
@@ -45,12 +71,8 @@ trusts you: every surface that draws the slab — Stage, Preview, production —
 
 ## Can the instrument see it?
 
-The defect is visual and view-dependent, so **the gate is Jacob's eye, with the town and shot recorded**.
-Before you ask for it, give a measurement that predicts it: for one building on flat ground, the gap
-between the footprint edge and the shadow's near edge, before and after. A riser of height *h* under a
-sun at elevation *e* predicts a gap of about *h / tan(e)*, so it should vary with the riser's height and
-the sun, and go to zero after the fix. Use Preview (production's exact render tree) as the surface; do
-not build a parallel harness.
+The gate is Jacob's eye, town and shot recorded — but only after a measurement that predicts it (above). Use
+Preview (production's exact render tree); do not build a parallel harness.
 
 ## Bounds
 
