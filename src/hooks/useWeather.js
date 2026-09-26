@@ -6,7 +6,7 @@ import { INSTANCE } from '../instance.js'
 // and pressure_msl + past_hours=4 to hourly (so deriveSignals can compute
 // pressure_trend_3hr from the back-fill instead of maintaining an
 // in-memory ring buffer — Approach B from the Phase 6 brief).
-const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${INSTANCE.geography.lat}&longitude=${INSTANCE.geography.lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation&hourly=temperature_2m,weather_code,pressure_msl&past_hours=4&forecast_hours=48&temperature_unit=fahrenheit&timezone=${encodeURIComponent(INSTANCE.geography.timezone)}`
+const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${INSTANCE.geography.lat}&longitude=${INSTANCE.geography.lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation&hourly=temperature_2m,weather_code,pressure_msl&past_hours=4&forecast_hours=48&temperature_unit=fahrenheit&wind_speed_unit=ms&timezone=${encodeURIComponent(INSTANCE.geography.timezone)}`
 
 /**
  * Reconcile Open-Meteo's current `weather_code` against the live Degrees.
