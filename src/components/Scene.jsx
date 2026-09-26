@@ -12,7 +12,7 @@ import SlabBuildings from './SlabBuildings'
 import CityModel from './CityModel'
 import CelestialBodies from './CelestialBodies'
 import BakedGround from './BakedGround.jsx'
-import { getElevationRaw } from '../utils/elevation'
+import { streetEyeY } from '../utils/elevation'
 import LafayettePark from './LafayettePark'
 import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
@@ -591,19 +591,9 @@ function CameraRig() {
         // hardwires-come-out category 3, the click-driven origin is NOT
         // baked — only fov / eyeHeight transit the slab.
         const origin = state.planetariumOrigin || [0, 0]
-        // Eye height is ABOVE the ground at the clicked point, not absolute
-        // Y=eyeHeight — otherwise raised terrain buries the camera underground.
-        // ⛔ The street view draws the ground at exag 1 (ViewKeyedBakedGround:
-        // planetarium → 1), so the eye reads the RAW elevation. The exaggerated
-        // sampler put the eye (exag − 1) × elevation above the drawn ground.
-        // Guarded: a non-finite sample must NEVER reach the camera (a NaN Y
-        // invalidates the view matrix → blank screen). Fall back to flat ground.
-        let groundY = 0
-        try {
-          const g = getElevationRaw(origin[0], origin[1])
-          if (Number.isFinite(g)) groundY = g
-        } catch (e) { console.error('[planetarium] getElevationRaw failed', e) }
-        const eyeY = groundY + streetEye
+        // The eye stands 5′8″ above the drawn ground at the clicked point — the
+        // one method, shared by every app (utils/elevation#streetEyeY). No fallback.
+        const eyeY = streetEyeY(origin[0], origin[1], streetEye)
         beginTransition(
           [origin[0], eyeY, origin[1]],
           [origin[0], eyeY, origin[1] - 0.5],  // look north, orbit takes over

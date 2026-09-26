@@ -261,7 +261,8 @@ export const SHOTS = {
     position: [95, 1300, -158], target: [95, 0, -158], up: [0, 0, -1], fov: 45, label: 'Browse',
     bounds: { cx: 95, cz: -158, w: 1292, h: 1025 }, padding: 1.05,
   },
-  street: { position: [0, 1.73, -50], target: [0, 1.73, -50.5], fov: 75, label: 'Street' },
+  // ⛔ No height: the Street eye's Y is ALWAYS streetEyeY (utils/elevation) at this x/z.
+  street: { position: [0, null, -50], target: [0, null, -50.5], fov: 75, label: 'Street' },
 }
 
 // Fit Browse altitude to viewport aspect so SHOTS.browse.bounds always frames

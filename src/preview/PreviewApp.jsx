@@ -29,7 +29,7 @@ import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { getElevationRaw } from '../utils/elevation'
+import { streetEyeY } from '../utils/elevation'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -112,13 +112,10 @@ function resolveShotPose(shot, aspect, streetEye = SHOTS_FLAT_DEFAULTS.street.ey
     pos = [s.position[0], y, s.position[2]]
   }
   if (shot === 'street') {
-    // ⛔ The eye stands ABOVE THE FINISHED GROUND at its point, never at absolute Y
-    // (on raised terrain an absolute 1.73 m is underground). The street view draws
-    // the ground at exag 1, so the RAW elevation — the same method as production.
+    // The eye stands 5′8″ above the drawn ground at its point — the one method,
+    // shared by every app (utils/elevation#streetEyeY). No fallback.
     const [x, , z] = s.position
-    const g = getElevationRaw(x, z)
-    if (!Number.isFinite(g)) console.error(`[street] ⛔ no ground under the eye at (${x}, ${z}) — standing at 0`)
-    const y = (Number.isFinite(g) ? g : 0) + streetEye
+    const y = streetEyeY(x, z, streetEye)
     pos = [x, y, z]
     target = [s.target[0], y, s.target[2]]
   }

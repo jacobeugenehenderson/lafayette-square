@@ -21,6 +21,21 @@ export const getElevation    = (x, z) => sampler.getElevation(x, z)
 export const getElevationRaw = (x, z) => sampler.getElevationRaw(x, z)
 export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 
+// ── Where the Street eye stands — THE one method, every app ─────────────────
+// Jacob, 2026-09-26: "the street camera is supposed to be about 5' 8" off the
+// finished ground elevation." The street view draws the ground at exag 1
+// (BakedGround's targetExag), so the eye reads the RAW elevation at its own point,
+// plus the town's authored eye height. ⛔ Never an absolute Y (raised terrain buries
+// it), never the exaggerated sampler (it floats), and NO FALLBACK: a missing
+// sample or eye height throws, naming the point.
+// ▶ node checks/claims-the-street-eye-stands-on-the-ground.mjs
+export function streetEyeY(x, z, eyeHeight) {
+  const g = sampler.getElevationRaw(x, z)
+  if (!Number.isFinite(g)) throw new Error(`[street] ⛔ no ground under the eye at (${x}, ${z})`)
+  if (!Number.isFinite(eyeHeight)) throw new Error(`[street] ⛔ no eye height (got ${eyeHeight})`)
+  return g + eyeHeight
+}
+
 // ── Where a tree placement sits on the ground — RAW; the carrier applies uExag ──
 // ⛔⛔ ONE RULE, THREE CONSUMERS. The mesh path (`InstancedTrees`), the hero cards
 // (`HeroImpostorTrees`) and the browse discs (`OverheadTrees`) must seat a placement

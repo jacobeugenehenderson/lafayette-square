@@ -49,7 +49,7 @@ import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
 import { sceneExag, reloadTerrain } from '../utils/terrainShader'
-import { getElevationRaw } from '../utils/elevation'
+import { streetEyeY } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview } from '../stage/StageApp.jsx'
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
@@ -448,19 +448,19 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             toPos = [0, (R * 1.12) / (Math.min(1, aspect) * t), 0]
             toTarget = [0, 0, 0]
           } else {
-            // ⛔ The eye stands ABOVE THE FINISHED GROUND at its point, never at
-            // absolute Y — on raised terrain (huron) an absolute 1.73 m is underground.
-            // Same method as production's Street (Scene.jsx, "Eye height is ABOVE the
-            // ground"): the street view draws the ground at exag 1, so the RAW elevation,
-            // plus the town's authored eye height.
-            const ex = 0, ez = R * 0.08
-            const eye = storeShots?.street?.eyeHeight ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
-            const g = getElevationRaw(ex, ez)
-            if (!Number.isFinite(g)) console.error(`[street] ⛔ no ground under the eye at (${ex}, ${ez}) — standing at 0`)
-            const eyeY = (Number.isFinite(g) ? g : 0) + eye
-            toPos = [ex, eyeY, ez]
-            toTarget = [ex, eyeY, ez - 0.5]
+            // Street: a ground-level stand point near the centre (its height is set below).
+            toPos = [0, 0, R * 0.08]
+            toTarget = [0, 0, R * 0.08 - 0.5]
           }
+        }
+        // ⛔ STREET, EVERY TOWN (LS and toy included): the eye stands 5′8″ above the
+        // drawn ground at its own point — the one method (utils/elevation#streetEyeY).
+        // SHOTS.street carries no height, so nothing else can stand it anywhere.
+        if (shot === 'street') {
+          const eye = storeShots?.street?.eyeHeight ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
+          const y = streetEyeY(toPos[0], toPos[2], eye)
+          toPos = [toPos[0], y, toPos[2]]
+          toTarget = [toTarget[0], y, toTarget[2]]
         }
         const toUp = s.up || [0, 1, 0]
 
