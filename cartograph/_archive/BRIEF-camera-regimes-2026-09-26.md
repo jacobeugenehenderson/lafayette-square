@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: LANDED 2026-09-26 — the camera reads no hero subject, one controls definition per regime (6e8a759d · 4bda693c · f16c42b8), Stage Hero opens paused with the orbit pivoting on the ground under screen centre and wheel zoom by delta (8fb25329); Jacob flew Stage and released Sill. Open: ▶ resumes from the motion clock, not the playhead.
+status: LANDED 2026-09-26 — the camera reads no hero subject, one controls definition per regime (6e8a759d · 4bda693c · f16c42b8), Stage Hero opens paused with the orbit pivoting on the ground under screen centre and wheel zoom by delta (8fb25329); Jacob flew Stage and released Sill. ~~Open: ▶ resumes from the motion clock, not the playhead.~~ Closed by BRIEF-keyframe-timeline (05fbc36b): ▶ plays from the playhead.
 dispatched: Sill, 2026-09-26 — built in 6e8a759d · 4bda693c · f16c42b8 + the docs commit; OPEN on Jacob's eye (fly Stage on Huron)
 written: 2026-09-26
 evict-when: the camera is never aimed by a hero subject; one controls definition per regime is used by every runtime; Jacob can fly Stage on Huron to any angle; checks prove all three.

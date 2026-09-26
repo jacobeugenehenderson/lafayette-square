@@ -1,6 +1,6 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: Cue, 2026-09-26 — built; awaiting the scene re-bake and Jacob's eye
+status: LANDED 2026-09-26 — keys carry their time on a fixed-length timeline, Bounce or Loop, one time-driven playback in Stage / Preview / production (05fbc36b); scene.json re-baked for huron, lafayette-square, toy (provincetown by Jacob's own pour); Jacob used it in Stage: "the system works wonderfully now." Also closes BRIEF-camera-regimes' open item: ▶ now plays from the playhead.
+dispatched: Cue, 2026-09-26 — built in 05fbc36b
 written: 2026-09-26
 evict-when: a Hero keyframe sits at a time the operator chose on a timeline, Key here / Delete / drag act on the playhead, every runtime plays the timing, every town's existing keys are reached at the same second as before, and Jacob has used it in Stage.
 -->
