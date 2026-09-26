@@ -1850,6 +1850,46 @@ async function speciesIsComposed(species) {
   } catch { return false }
 }
 
+/**
+ * The species a Look's town ROUTES TO: every library id in cartograph/data/<scene>/tree-species-map.json
+ * (the town's own grove — FIA- or census-derived). `null` when the Look has no scene or no map.
+ */
+export function routedSpeciesForLook(lookName, root = REPO_ROOT) {
+  let scene = null
+  try {
+    const idx = JSON.parse(fsSync.readFileSync(path.join(root, 'public/looks/index.json'), 'utf8'))
+    scene = (idx.looks || idx).find(l => l.id === lookName)?.scene || null
+  } catch { /* no index → no scene */ }
+  if (!scene) return null
+  try {
+    const m = JSON.parse(fsSync.readFileSync(path.join(root, 'cartograph/data', scene, 'tree-species-map.json'), 'utf8')).map || {}
+    return new Set(Object.values(m).flat())
+  } catch { return null }
+}
+
+/**
+ * ⛔ WHICH SPECIES A ROSTER MAY GAIN (Jacob, 2026-09-25: "The LS species should come out of ALL LISTS
+ * FOREVER EVERYWHERE"). A Grove bake regenerates EVERY composed species (no --species), and this used
+ * to add all of them to the Look — so a town's first Grove bake planted Lafayette Square's trees on its
+ * roster, where its own bake built no GLB for them (Provincetown's six red sticks).
+ *   · full regen   → only species the town ROUTES TO; a town with no routing gains nothing, loudly.
+ *   · `--species X` → the operator's explicit publish: X is added, and a town that doesn't route X says so.
+ * Pure. ▶ checks/claims-a-look-holds-only-its-towns-grove.mjs
+ */
+export function rosterAdditions({ lookName, speciesList, onlySpecies = null, routed = routedSpeciesForLook(lookName) }) {
+  if (onlySpecies) {
+    if (!routed?.has(onlySpecies)) console.warn(`[generate-salon] ⚠️ ${lookName} does not route "${onlySpecies}" (its tree-species-map) — added because you published it by name; it will not be PLACED until the town routes to it.`)
+    return [onlySpecies]
+  }
+  if (!routed) {
+    console.warn(`[generate-salon] ⛔ ${lookName} has no tree routing (no scene or no tree-species-map.json) — adding NOTHING to its roster. Derive its likely grove first (scripts/15-fia-tree-mix.mjs).`)
+    return []
+  }
+  const skipped = speciesList.filter(sp => !routed.has(sp))
+  if (skipped.length) console.log(`[generate-salon] roster: ${skipped.length} composed species NOT added to ${lookName} (its town doesn't route to them): ${skipped.join(' ')}`)
+  return speciesList.filter(sp => routed.has(sp))
+}
+
 async function syncLookRoster(lookName, speciesList) {
   const p = path.join(REPO_ROOT, 'public/looks', lookName, 'design.json')
   let design
@@ -1988,7 +2028,7 @@ async function main() {
   const rosterSpecies = onlySpecies
     ? [onlySpecies]
     : speciesToBuild.map(s => s.speciesId)
-  const added = await syncLookRoster(lookId, rosterSpecies)
+  const added = await syncLookRoster(lookId, rosterAdditions({ lookName: lookId, speciesList: rosterSpecies, onlySpecies }))
   console.log(`[generate-salon] roster: added ${added} variant(s) to ${lookId}/design.json`)
 
   console.log('\n[generate-salon] done. Next:')
