@@ -72,7 +72,15 @@ const STAGE_CLASS = STAGE.startsWith('class:') ? STAGE.slice(6) : null
 // the values a town would write in design.json#surfaces.params['pilgrim-granite']. Lab-only; never shipped.
 const GRANITE_PREVIEW = (params.has('relief') || params.has('tone'))
   ? { reliefM: +(params.get('relief') || 0), toneVar: +(params.get('tone') || 0) } : null
-const SURFACES_OVERRIDE = AS && STAGE_CLASS ? { classes: { [STAGE_CLASS]: AS === 'flat' ? null : AS } } : undefined
+// ⭐ `?wind=<° from north>&ripple=<m>&rippleh=<m>` previews the sand surface's AUTHORED wind and
+// ripples (the values a town would write in design.json#surfaces.params.sand). Lab-only; never shipped.
+const SAND_PREVIEW = (params.has('wind') || params.has('ripple'))
+  ? Object.fromEntries([['windFromDeg', 'wind'], ['rippleSpacingM', 'ripple'], ['rippleHeightM', 'rippleh']]
+      .filter(([, q]) => params.has(q)).map(([k, q]) => [k, +params.get(q)]))
+  : null
+const SURFACES_OVERRIDE = (AS && STAGE_CLASS) || SAND_PREVIEW
+  ? { classes: AS && STAGE_CLASS ? { [STAGE_CLASS]: AS === 'flat' ? null : AS } : {}, params: SAND_PREVIEW ? { sand: SAND_PREVIEW } : {} }
+  : undefined
 
 // ── TIME: solar hour at the TOWN's longitude, not the browser's clock ────────
 // ⭐ The hour on the slider is local SOLAR time where the town is (noon = sun due

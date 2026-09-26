@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: yes — Marram, 2026-09-24
+dispatched: yes — Marram, 2026-09-24; dunes taken over by Furrow 2026-09-26 (Jacob)
 written: 2026-09-24 · state rewritten 2026-09-25 (dispatch text: cartograph/_archive/BRIEF-surface-lab-dispatch-2026-09-24.md)
 evict-when: Provincetown's dunes are a surface Jacob has eyed at eye level, mid and overhead in the lab
 -->
@@ -52,8 +52,12 @@ surface's parameters with a unit and a source — **physics** (a `references/` f
   - `beachBandM` + `beachSlopeDeg`: **DERIVED per town** at the context bake (`deriveSand`; Boz, 2026-09-25: a band
     is a property of a coast), resolved into `context.json` and ABSENT, named, when a town can't answer.
     ▶ `node checks/claims-the-beach-band-is-the-towns-own.mjs`
-  - It changes no pixel on the map: how a dune state LOOKS is unauthored, so it shows only in the lab (`?dune=1`).
-  - Not built: wet sand and ripples. No sourced width, wavelength or strength, so both are absent by name.
+  - ⭐ **It has a LOOK now (Furrow, 2026-09-26 — Jacob: "smoothed and smeared they'll look like dunes")**: one rough
+    B&W sand map (hummocks, the wind's smear, ripples) through the `sandRamp` gradient map + ripple depth; the state
+    makes the dunes paler and drier and a slip face smooth. The lab's `?dune=1` diagnostic still overlays it.
+  - Ripples: crests across the wind, coarse at the crests (USGS). Spacing + height ABSENT (`q-aeolian-ripple-size`;
+    the one number found is © GSA) and a wind (`windFromDeg`) authored per town — until both, none are drawn.
+  - Not built: wet sand (no sourced width).
 - **Scale**: the baked grid is 5 m; the 1–5 m band of the 1 m lidar is surface work.
   ▶ `node scratch/marram-relief-scale.mjs`
 - **Waiting on**: Provincetown's re-pour. The pour's coast step writes `context.json#resolved`; until then the lab

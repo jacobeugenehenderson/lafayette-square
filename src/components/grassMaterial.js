@@ -70,32 +70,50 @@ const GRASS_ALBEDO = `vec2 gp = vGrassPos.xz;
        grass *= 0.85 + gnBlade * 0.30;
        grass += (gnBladeFine - 0.5) * 0.06;`
 
-// ⭐ SAND — the class's own colour (the palette's beach/dune swatch, operator-
-// authored) is the base; this adds the mottling of wind-sorted sand. It carries no
-// hue table of its own the way grass does: the colour is the operator's.
-// ⛔ NOT YET HERE, AND NOT FAKED: the dune state (needs the town's beach-band slope
-// and a cited repose angle), wet sand at the water line (needs the coast-distance
-// channel) and wind ripples (needs a cited ripple wavelength). `cartograph/
-// surfaces.mjs` declares each as an ABSENT parameter and BakedGround says so.
+// ⭐ SAND — one rough B&W map, the field's recipe smoothed and smeared (Jacob, 2026-09-26): broad
+// hummocks, the wind's streaks, and ripples whose crests run across the wind. It is read as COLOUR
+// through the sand gradient map and as DEPTH (the ripples' height, lit by derivative bump).
+// ⭐ THE DUNE STATE chooses its character (BRIEF-surface-lab §5): 0 at or below the town's own beach
+// slope (derived, beachSlopeDeg), 1 at dry sand's repose angle (USGS 30–34°) — up the dunes the sand
+// goes paler and drier; where a slip face stands at repose it is fresh avalanche sand, and no ripple
+// survives on it. Off (state 0) unless both inputs are present.
+// ⛔ ABSENT, not faked: ripples need a cited spacing + height and a wind (windFromDeg, authored); wet
+// sand at the water line needs a cited width. BakedGround names each.
 const SAND_ALBEDO = `vec2 gp = vGrassPos.xz;
-       vec3 grass = pow(diffuseColor.rgb, vec3(1.0 / 2.2));   // the class colour, into the space the tail works in
-       float sn1 = gFBM(gp * 0.05);            // broad patches — sorted, damp, trampled
-       float sn2 = gFBM(gp * 0.4 + 31.0);      // footprint-scale unevenness
-       float sn3 = gNoise(gp * 9.0 + 57.0);    // grain speckle
-       grass *= 0.90 + sn1 * 0.16;
-       grass *= 0.96 + sn2 * 0.08;
-       grass += (sn3 - 0.5) * 0.025;`
-
-// ⭐ THE DUNE STATE (BRIEF-surface-lab §5): 0 at or below the town's own beach slope (derived per
-// town, beachSlopeDeg), 1 at dry sand's repose angle (USGS 30–34°, f-usgs-dune-repose), from the
-// terrain slope at the grid step (the world normal after the terrain override). Off unless BOTH
-// inputs are present. ⛔ It changes NO pixel on the map yet: how a dune state should LOOK is an
-// authored choice nobody has made, so it is drawn only in the lab's diagnostic view
-// (SAND_UNIFORMS.uDuneView), for Jacob's first eye — "present and correct, not tuned".
-const SAND_STATE = `
        float sandSlopeDeg = degrees(acos(clamp(normalize(vWeatherWorldNormal).y, -1.0, 1.0)));
        float duneState = uDuneOn > 0.5
          ? clamp((sandSlopeDeg - uBeachSlopeDeg) / max(uReposeMin - uBeachSlopeDeg, 1e-3), 0.0, 1.0) : 0.0;
+       // Wind-aligned coordinates (along, across); no wind → the map is isotropic.
+       vec2 sq = uWindOn > 0.5 ? vec2(dot(gp, uWindTo), dot(gp, vec2(-uWindTo.y, uWindTo.x))) : gp;
+       float sHum    = gFBM(gp * 0.04);                                              // hummocks
+       float sStreak = uWindOn > 0.5 ? gFBM(vec2(sq.x * 0.06, sq.y * 0.7) + 9.0)   // smeared along the wind
+                                     : gFBM(gp * 0.3 + 9.0);
+       float sGrain  = mix(0.5, gNoise(gp * 9.0 + 57.0), 1.0 - smoothstep(0.1, 0.3, length(fwidth(gp)) * 9.0));
+       // Ripples: crests across the wind, bent by the streaks; a gentle stoss and a steep lee.
+       float rip = 0.5, ripAmt = 0.0;
+       if (uRippleOn > 0.5 && uWindOn > 0.5) {
+         float ph = (sq.x + (sStreak - 0.5) * uRippleM * 1.5) / uRippleM;
+         float f = fract(ph);
+         float aa = 1.0 - smoothstep(0.25, 0.5, fwidth(ph));
+         rip = mix(0.5, f < 0.7 ? f / 0.7 : (1.0 - f) / 0.3, aa);
+         ripAmt = 1.0 - smoothstep(0.75, 1.0, duneState);                          // none on a slip face
+       }
+       sandDH = vec2(dFdx(uRippleHM * (rip - 0.5) * ripAmt), dFdy(uRippleHM * (rip - 0.5) * ripAmt));
+       float sandBW = clamp(0.45 * sHum + 0.35 * sStreak + 0.2 * sGrain + 0.35 * (rip - 0.5) * ripAmt, 0.0, 1.0);
+       // Colour: the map through the sand ramp; drier and paler up the dunes; the crests (coarse) lighter.
+       vec3 grass = surfRamp(0.15 + 0.55 * sandBW + 0.3 * duneState, uSandT, uSandC0, uSandC1, uSandC2, uSandC3);`
+
+// The ripples' height as light — the same derivative bump as the field (three's perturbNormalArb).
+const SAND_NORMAL = `
+       {
+         vec3 cSigX = dFdx(-vViewPosition), cSigY = dFdy(-vViewPosition);
+         vec3 cR1 = cross(cSigY, normal), cR2 = cross(normal, cSigX);
+         float cDet = dot(cSigX, cR1) * faceDirection;
+         normal = normalize(abs(cDet) * normal - sign(cDet) * (sandDH.x * cR1 + sandDH.y * cR2));
+       }`
+
+// The lab's diagnostic view of the dune state (?dune=1) — drawn over the look, unchanged.
+const SAND_STATE = `
        if (uDuneView > 0.5) {
          vec3 dv = vec3(0.5);                                                   // state absent
          if (uDuneOn > 0.5) {
@@ -119,7 +137,7 @@ if (typeof window !== 'undefined') window.__duneView = SAND_UNIFORMS.uDuneView
 // Rows run along the field's own long axis (baked per field) at the cited spacing; every octave finer
 // than a pixel fades to its mean by fwidth, so far fields neither shimmer nor turn to corduroy.
 // ⛔ No calendar for the town's state → uCropOn 0 → bare dirt, and BakedGround names the missing finding.
-const CROP_RAMP_GLSL = `vec3 cropRamp(float t, vec4 T, vec3 c0, vec3 c1, vec3 c2, vec3 c3) {
+const RAMP_GLSL = `vec3 surfRamp(float t, vec4 T, vec3 c0, vec3 c1, vec3 c2, vec3 c3) {
          t = clamp(t, 0.0, 1.0);
          if (t <= T.x) return c0;
          if (t <= T.y) return mix(c0, c1, (t - T.x) / max(T.y - T.x, 1e-5));
@@ -236,10 +254,10 @@ const CROP_ALBEDO = `vec2 gp = vGrassPos.xz;
        float turnT  = 0.85 * cropBW + 0.15 * broad;
        float soilT = mix(crustT, turnT, tilledHere) + patchTone;
        soilT = mix(soilT, 0.12 + 0.2 * clod, ruts);
-       vec3 soil = cropRamp(soilT, uSoilT, uSoilC0, uSoilC1, uSoilC2, uSoilC3);
+       vec3 soil = surfRamp(soilT, uSoilT, uSoilC0, uSoilC1, uSoilC2, uSoilC3);
        // — the plants' own ramp: young light, mature deep; they grow on the bed tops —
        float leafN = gNoise(vec2(uv.x * 6.0, ph) + 5.0);
-       vec3 leaf = cropRamp(mix(0.55 + 0.45 * clod, 0.10 + 0.55 * broad, grow) + patchTone,
+       vec3 leaf = surfRamp(mix(0.55 + 0.45 * clod, 0.10 + 0.55 * broad, grow) + patchTone,
                             uPlantT, uPlantC0, uPlantC1, uPlantC2, uPlantC3);
        // Plants stand in ONE line down the bed's centre; the canopy widens from that line as they grow
        // (xRow: 0 on the centre line, 1 mid-furrow). Far away, the mean cover stands in.
@@ -345,6 +363,17 @@ export function makeGroundSurfaceMaterial({
       shader.uniforms.uReposeMin = { value: on ? rep.min : 0 }
       shader.uniforms.uReposeMax = { value: on ? rep.max : 0 }
       shader.uniforms.uDuneView = SAND_UNIFORMS.uDuneView
+      const wind = surfaceParams?.windFromDeg
+      const windOn = Number.isFinite(wind)
+      // World: +x east, -z north. Blowing FROM bearing B → blowing TO (-sin B, +cos B).
+      shader.uniforms.uWindOn = { value: windOn ? 1 : 0 }
+      shader.uniforms.uWindTo = { value: new THREE.Vector2(windOn ? -Math.sin(wind * Math.PI / 180) : 1, windOn ? Math.cos(wind * Math.PI / 180) : 0) }
+      const rs = surfaceParams?.rippleSpacingM, rh = surfaceParams?.rippleHeightM
+      const ripOn = Number.isFinite(rs) && rs > 0 && Number.isFinite(rh)
+      shader.uniforms.uRippleOn = { value: ripOn ? 1 : 0 }
+      shader.uniforms.uRippleM  = { value: ripOn ? rs : 1 }
+      shader.uniforms.uRippleHM = { value: ripOn ? rh : 0 }
+      rampUniforms(shader.uniforms, 'Sand', surfaceParams?.sandRamp)
     }
     if (surface === 'crop') {
       // Resolved by the context bake (surfaces.mjs SURFACES.crop). Absent calendar → bare dirt.
@@ -417,8 +446,8 @@ export function makeGroundSurfaceMaterial({
        uniform float uFadeInner;
        uniform float uFadeOuter;
        uniform float uHasFade;
-       ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView;' : ''}
-       ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPom; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandRows; uniform float uTrackGaugeRows; uniform float uBedFrac; uniform float uClodSizeM; uniform float uClodHeightM; uniform float uQuiltM; uniform float uHasEdge; uniform float uRowSpacingM; uniform float uRidgeM; uniform float uRowDistort; uniform vec4 uSoilT; uniform vec3 uSoilC0; uniform vec3 uSoilC1; uniform vec3 uSoilC2; uniform vec3 uSoilC3; uniform vec4 uPlantT; uniform vec3 uPlantC0; uniform vec3 uPlantC1; uniform vec3 uPlantC2; uniform vec3 uPlantC3; varying vec4 vFieldAxis; varying vec4 vFieldExt; varying float vFieldEdge; vec2 cropDH = vec2(0.0);\n       ' + CROP_RAMP_GLSL : ''}
+       ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView; uniform float uWindOn; uniform vec2 uWindTo; uniform float uRippleOn; uniform float uRippleM; uniform float uRippleHM; uniform vec4 uSandT; uniform vec3 uSandC0; uniform vec3 uSandC1; uniform vec3 uSandC2; uniform vec3 uSandC3; vec2 sandDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
+       ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPom; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandRows; uniform float uTrackGaugeRows; uniform float uBedFrac; uniform float uClodSizeM; uniform float uClodHeightM; uniform float uQuiltM; uniform float uHasEdge; uniform float uRowSpacingM; uniform float uRidgeM; uniform float uRowDistort; uniform vec4 uSoilT; uniform vec3 uSoilC0; uniform vec3 uSoilC1; uniform vec3 uSoilC2; uniform vec3 uSoilC3; uniform vec4 uPlantT; uniform vec3 uPlantC0; uniform vec3 uPlantC1; uniform vec3 uPlantC2; uniform vec3 uPlantC3; varying vec4 vFieldAxis; varying vec4 vFieldExt; varying float vFieldEdge; vec2 cropDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
        varying vec3 vGrassPos;
 
        ${SURFACE_NOISE_GLSL}${surface === 'crop' ? CROP_FUNCS_GLSL : ''}`
@@ -453,8 +482,8 @@ export function makeGroundSurfaceMaterial({
        diffuseColor.rgb = pow(grass, vec3(2.2));`
     )
 
-    if (surface === 'crop') shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <normal_fragment_maps>', `#include <normal_fragment_maps>${CROP_NORMAL}`)
+    if (surface === 'crop' || surface === 'sand') shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <normal_fragment_maps>', `#include <normal_fragment_maps>${surface === 'crop' ? CROP_NORMAL : SAND_NORMAL}`)
 
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <dithering_fragment>',

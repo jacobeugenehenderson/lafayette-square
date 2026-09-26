@@ -87,7 +87,11 @@ function reportAbsentParams(look, surface, authored, resolved) {
     : resolved === null ? 'the context bake does not resolve this surface' : null
   const missing = why
     ? declared.filter(([name]) => authored?.[name] == null).map(([name, p]) => `${name} (${p.unit}, ${p.source} — ${why})`)
-    : (resolved.absent || []).filter(s => authored?.[s.split(' ')[0]] == null)
+    : [...(resolved.absent || []).filter(s => authored?.[s.split(' ')[0]] == null),
+       // A param declared after this context.json was resolved is in neither list: say so, not nothing.
+       ...declared.filter(([name]) => authored?.[name] == null && !(name in (resolved.values || {}))
+         && !(resolved.absent || []).some(s => s.split(' ')[0] === name))
+         .map(([name, p]) => `${name} (${p.unit}, ${p.source} — not in this context.json: re-bake the context)`)]
   if (missing.length) console.error(`[BakedGround] ⛔ "${look}": surface "${surface}" is drawn WITHOUT ${missing.join('; ')}. `
     + `Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs`)
 }
