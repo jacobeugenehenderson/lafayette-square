@@ -2,7 +2,7 @@
   "committed": true,
   "name": "Hi-Pointe–DeMun",
   "blurb": "A 1920s streetcar-era garden-city district straddling the St. Louis city limit and Clayton at the southwest corner of Forest Park, bounded by Big Bend, Forest Park Parkway, Skinker, and Clayton Road.",
-  "draftRadius": 1260,
+  "draftRadius": 1318,
   "timezone": "America/Chicago",
   "sides": [
     "Big Bend Boulevard",
@@ -11,5 +11,206 @@
     "Clayton Road"
   ],
   "_note": "BACKFILL (not poured): HPDM predates the Extent tool's committed schema but is fully wired/baked at center 38.64231/-90.30968. Marks it committed so Extent shows its real extent with radius/exclusions/name editable. Geography, frame, and bake were NOT re-run — this is metadata only, no re-center. (Mirrors the lafayette-square backfill.)",
-  "exclusions": []
+  "exclusions": [
+    {
+      "closed": true,
+      "anchors": [
+        {
+          "lon": -90.29339589915811,
+          "lat": 38.63989216216216,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30121367530018,
+          "lat": 38.64606270270271,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30070314026774,
+          "lat": 38.649370900900905,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30492830933431,
+          "lat": 38.64979036036036,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30702139945714,
+          "lat": 38.65025666666667,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31195998343837,
+          "lat": 38.6513972972973,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31491473800432,
+          "lat": 38.65160792792793,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31663967704836,
+          "lat": 38.64408693693694,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31694330680406,
+          "lat": 38.641668918918924,
+          "type": "corner"
+        },
+        {
+          "lon": -90.3176472907945,
+          "lat": 38.63936846846847,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31848112251001,
+          "lat": 38.635312432432436,
+          "type": "corner"
+        },
+        {
+          "lon": -90.3224140479367,
+          "lat": 38.63550297297297,
+          "type": "corner"
+        },
+        {
+          "lon": -90.32598652803975,
+          "lat": 38.642605045045045,
+          "type": "corner"
+        },
+        {
+          "lon": -90.32249363573631,
+          "lat": 38.65132477477478,
+          "type": "corner"
+        },
+        {
+          "lon": -90.3098849500851,
+          "lat": 38.65530567567568,
+          "type": "corner"
+        },
+        {
+          "lon": -90.29820636058334,
+          "lat": 38.652769549549554,
+          "type": "corner"
+        },
+        {
+          "lon": -90.2940797561761,
+          "lat": 38.64692018018018,
+          "type": "corner"
+        }
+      ]
+    },
+    {
+      "closed": true,
+      "anchors": [
+        {
+          "lon": -90.32149349772277,
+          "lat": 38.63511414414415,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31853943322446,
+          "lat": 38.63493801801802,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31862500161016,
+          "lat": 38.63338,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31674882274463,
+          "lat": 38.6328790990991,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31445745319041,
+          "lat": 38.632650000000005,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31215400745273,
+          "lat": 38.632423513513515,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31234308598242,
+          "lat": 38.63095837837838,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31004504577449,
+          "lat": 38.630790720720725,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31003469476009,
+          "lat": 38.63144261261262,
+          "type": "corner"
+        },
+        {
+          "lon": -90.3095072530708,
+          "lat": 38.632491891891895,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30918096609467,
+          "lat": 38.63279468468469,
+          "type": "corner"
+        },
+        {
+          "lon": -90.3091175948843,
+          "lat": 38.633182612612615,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30740795233933,
+          "lat": 38.633052252252256,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30428574136265,
+          "lat": 38.63267927927928,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30207717992363,
+          "lat": 38.63217900900901,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30113086718498,
+          "lat": 38.63467945945946,
+          "type": "corner"
+        },
+        {
+          "lon": -90.2976413102084,
+          "lat": 38.63523918918919,
+          "type": "corner"
+        },
+        {
+          "lon": -90.30016592262042,
+          "lat": 38.63019576576577,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31425549339835,
+          "lat": 38.628592702702704,
+          "type": "corner"
+        },
+        {
+          "lon": -90.31880441919309,
+          "lat": 38.63026657657658,
+          "type": "corner"
+        },
+        {
+          "lon": -90.32289468003864,
+          "lat": 38.63281288288289,
+          "type": "corner"
+        }
+      ]
+    }
+  ]
 }
