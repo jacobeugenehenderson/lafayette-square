@@ -948,6 +948,16 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
     return mat
   }, [baseColor, wallTex, roofTex, roofTintColor, hasTextures, foundationY, building, meanCornerRaw])
 
+  // ⛔ THE SHADOW PASS MUST REPEAT THE LIFT. The `position` prop carries only the pedestal
+  // (it rides modelMatrix, which the depth pass honours); the terrain lift is in the SHADER
+  // above, which three's own depth material never runs — so without this, Stage's buildings
+  // sat `meanCornerRaw × uExag` below where they are drawn in the shadow map.
+  const depthMaterial = useMemo(() => {
+    const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
+    patchTerrainAtCentroidRaw(dm, meanCornerRaw)
+    return dm
+  }, [meanCornerRaw])
+
   // Static apply on scene load — materialPhysics comes from scene.json via
   // prop (couplers plan §1). Replaces the prior per-frame cartograph-store
   // read; Stage operator now sees physics updates on re-bake rather than
@@ -1019,6 +1029,7 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
         position={[building.position[0], foundationY, building.position[2]]}
         geometry={geometry}
         material={material}
+        customDepthMaterial={depthMaterial}
         castShadow
         receiveShadow
         frustumCulled={false}

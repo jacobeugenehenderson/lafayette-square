@@ -362,9 +362,10 @@ Five decisions, each of which was a defect first.
    never heard of `aCentroidY` or `uExag`, so a building went into the map **on the baseline**, up
    to 20 m below where it is drawn — worst on the hilliest town. A `position` prop is not an
    offender (it rides `modelMatrix`); only in-shader displacement is. ▶
-   `checks/claims-displaced-casters-have-a-depth-material.mjs` ⚠️ **File-level** — and it bites:
-   Stage's `Building` mesh casts with no depth material and passes, because `Foundations` in the
-   same file has one.
+   `checks/claims-displaced-casters-have-a-depth-material.mjs` — **per mesh** since 2026-09-26 (the
+   file-level version passed Stage's `Building`, which cast with none, because `Foundations` in the
+   same file had one); an unresolvable material fails, never passes. Open: Stage's street lamps and
+   LS's park fence posts.
 2. **The frustum comes from `ground.json#stencil`, never from a constant.** It was `±900` —
    Lafayette Square's 892 m radius plus 8 m — so on a 3,539 m town **~73% of the map could not
    receive a shadow at any quality.** The light itself does not move (`LIGHT_RADIUS` also places
