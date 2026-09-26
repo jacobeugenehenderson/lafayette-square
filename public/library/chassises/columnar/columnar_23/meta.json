@@ -1,5 +1,5 @@
 {
-  "partId": "italian_cypress_m",
+  "partId": "columnar_23",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "columnar",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "italian_cypress_m",
-  "id": "columnar_23"
+  }
 }

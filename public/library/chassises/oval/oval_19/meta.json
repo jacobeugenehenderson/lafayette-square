@@ -1,5 +1,5 @@
 {
-  "partId": "acer_saccharum_q",
+  "partId": "oval_19",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "oval",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "acer_saccharum_q",
-  "id": "oval_19"
+  }
 }

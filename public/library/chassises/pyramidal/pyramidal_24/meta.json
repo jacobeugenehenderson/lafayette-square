@@ -1,5 +1,5 @@
 {
-  "partId": "blue_spruce_winter_g",
+  "partId": "pyramidal_24",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "pyramidal",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "blue_spruce_winter_g",
-  "id": "pyramidal_24"
+  }
 }

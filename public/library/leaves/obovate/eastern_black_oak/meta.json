@@ -1,0 +1,22 @@
+{
+  "partId": "eastern_black_oak",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "obovate",
+  "sourcePath": "public/textures/leaves/shapes/eastern_black_oak",
+  "tags": {
+    "leaf.shape": {
+      "value": "obovate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.length": {
+      "value": 13,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

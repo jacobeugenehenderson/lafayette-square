@@ -5,7 +5,7 @@
   "canonicalValue": "plated",
   "sourcePath": "public/textures/bark/Bark007",
   "tags": {
-    "bark.type": {
+    "bark.texture": {
       "value": "plated",
       "ratified": false,
       "confidence": "low",

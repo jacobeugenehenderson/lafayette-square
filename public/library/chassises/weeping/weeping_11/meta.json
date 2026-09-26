@@ -1,5 +1,5 @@
 {
-  "partId": "weeping_willow_d",
+  "partId": "weeping_11",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "weeping",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "weeping_willow_d",
-  "id": "weeping_11"
+  }
 }

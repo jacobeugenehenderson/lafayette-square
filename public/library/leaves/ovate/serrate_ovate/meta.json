@@ -5,13 +5,13 @@
   "canonicalValue": "ovate",
   "sourcePath": "public/textures/leaves/shapes/serrate_ovate",
   "tags": {
-    "leaf.silhouette": {
+    "leaf.shape": {
       "value": "ovate",
       "ratified": false,
       "confidence": "high",
-      "source": "pack-meta.morphology(serrate_ovate→ovate)"
+      "source": "pack-meta.morphology"
     },
-    "leaf.size": {
+    "leaf.length": {
       "value": 8,
       "ratified": false,
       "confidence": "high",

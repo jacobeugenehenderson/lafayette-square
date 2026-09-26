@@ -1,5 +1,5 @@
 {
-  "partId": "gray_poplar_d_trunk11",
+  "partId": "columnar_10",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "columnar",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "gray_poplar_d_trunk11",
-  "id": "columnar_10"
+  }
 }

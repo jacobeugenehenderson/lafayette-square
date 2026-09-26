@@ -1,5 +1,5 @@
 {
-  "partId": "garden_trees_mix_g",
+  "partId": "oval_25",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "oval",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "garden_trees_mix_g",
-  "id": "oval_25"
+  }
 }

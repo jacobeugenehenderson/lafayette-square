@@ -1,5 +1,5 @@
 {
-  "partId": "alaskan_cedar_i",
+  "partId": "pyramidal_08",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "pyramidal",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "alaskan_cedar_i",
-  "id": "pyramidal_08"
+  }
 }

@@ -1,0 +1,22 @@
+{
+  "partId": "elm_autumn",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "ovate",
+  "sourcePath": "public/textures/leaves/shapes/elm_autumn",
+  "tags": {
+    "leaf.shape": {
+      "value": "ovate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.length": {
+      "value": 8,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

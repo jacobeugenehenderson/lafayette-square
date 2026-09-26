@@ -1,5 +1,5 @@
 {
-  "partId": "london_plane_k",
+  "partId": "spreading_23",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "spreading",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "london_plane_k",
-  "id": "spreading_23"
+  }
 }

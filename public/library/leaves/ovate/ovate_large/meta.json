@@ -5,13 +5,13 @@
   "canonicalValue": "ovate",
   "sourcePath": "public/textures/leaves/shapes/ovate_large",
   "tags": {
-    "leaf.silhouette": {
+    "leaf.shape": {
       "value": "ovate",
       "ratified": false,
       "confidence": "high",
-      "source": "pack-meta.morphology(ovate_large→ovate)"
+      "source": "pack-meta.morphology"
     },
-    "leaf.size": {
+    "leaf.length": {
       "value": 15,
       "ratified": false,
       "confidence": "high",

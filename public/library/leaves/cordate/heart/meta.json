@@ -1,0 +1,22 @@
+{
+  "partId": "heart",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "cordate",
+  "sourcePath": "public/textures/leaves/shapes/heart",
+  "tags": {
+    "leaf.shape": {
+      "value": "cordate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.length": {
+      "value": 10,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

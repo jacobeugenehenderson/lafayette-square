@@ -5,7 +5,7 @@
   "canonicalValue": "exfoliating",
   "sourcePath": "public/textures/bark/chinese_hackberry_bark",
   "tags": {
-    "bark.type": {
+    "bark.texture": {
       "value": "exfoliating",
       "ratified": false,
       "confidence": "low",

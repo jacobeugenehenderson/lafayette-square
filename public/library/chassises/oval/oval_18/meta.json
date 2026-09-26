@@ -1,5 +1,5 @@
 {
-  "partId": "acer_saccharum_procedural_e",
+  "partId": "oval_18",
   "partType": "chassis",
   "source": "procedural",
   "canonicalValue": "oval",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "acer_saccharum_procedural_e",
-  "id": "oval_18"
+  }
 }

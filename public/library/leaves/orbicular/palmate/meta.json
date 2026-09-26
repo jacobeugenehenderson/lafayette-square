@@ -1,0 +1,22 @@
+{
+  "partId": "palmate",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "orbicular",
+  "sourcePath": "public/textures/leaves/shapes/palmate",
+  "tags": {
+    "leaf.shape": {
+      "value": "orbicular",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.length": {
+      "value": 10,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

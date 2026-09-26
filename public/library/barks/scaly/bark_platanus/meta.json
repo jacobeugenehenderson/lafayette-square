@@ -5,7 +5,7 @@
   "canonicalValue": "scaly",
   "sourcePath": "public/textures/bark/bark_platanus",
   "tags": {
-    "bark.type": {
+    "bark.texture": {
       "value": "scaly",
       "ratified": false,
       "confidence": "low",

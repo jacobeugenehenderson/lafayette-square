@@ -5,13 +5,13 @@
   "canonicalValue": "lanceolate",
   "sourcePath": "public/textures/leaves/shapes/lanceolate",
   "tags": {
-    "leaf.silhouette": {
+    "leaf.shape": {
       "value": "lanceolate",
       "ratified": false,
       "confidence": "high",
       "source": "pack-meta.morphology"
     },
-    "leaf.size": {
+    "leaf.length": {
       "value": 8,
       "ratified": false,
       "confidence": "high",

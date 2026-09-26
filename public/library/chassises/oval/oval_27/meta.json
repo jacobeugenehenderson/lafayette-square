@@ -1,5 +1,5 @@
 {
-  "partId": "red_maple_b",
+  "partId": "oval_27",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "oval",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "red_maple_b",
-  "id": "oval_27"
+  }
 }

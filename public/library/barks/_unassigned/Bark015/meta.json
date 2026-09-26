@@ -5,7 +5,7 @@
   "canonicalValue": "_unassigned",
   "sourcePath": "public/textures/bark/Bark015",
   "tags": {
-    "bark.type": {
+    "bark.texture": {
       "value": null,
       "ratified": false,
       "confidence": "low",

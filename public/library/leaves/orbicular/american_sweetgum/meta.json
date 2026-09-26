@@ -1,0 +1,22 @@
+{
+  "partId": "american_sweetgum",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "orbicular",
+  "sourcePath": "public/textures/leaves/shapes/american_sweetgum",
+  "tags": {
+    "leaf.shape": {
+      "value": "orbicular",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.length": {
+      "value": 15,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}

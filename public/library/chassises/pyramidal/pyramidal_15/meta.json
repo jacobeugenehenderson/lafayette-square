@@ -1,5 +1,5 @@
 {
-  "partId": "black_gum_e",
+  "partId": "pyramidal_15",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "pyramidal",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "black_gum_e",
-  "id": "pyramidal_15"
+  }
 }

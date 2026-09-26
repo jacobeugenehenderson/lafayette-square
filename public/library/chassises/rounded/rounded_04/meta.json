@@ -1,5 +1,5 @@
 {
-  "partId": "oak_winter_fall_f",
+  "partId": "rounded_04",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "rounded",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "oak_winter_fall_f",
-  "id": "rounded_04"
+  }
 }

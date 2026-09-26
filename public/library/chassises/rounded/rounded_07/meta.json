@@ -1,5 +1,5 @@
 {
-  "partId": "white_oak_b",
+  "partId": "rounded_07",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "rounded",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "white_oak_b",
-  "id": "rounded_07"
+  }
 }

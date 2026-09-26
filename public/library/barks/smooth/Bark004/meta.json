@@ -5,7 +5,7 @@
   "canonicalValue": "smooth",
   "sourcePath": "public/textures/bark/Bark004",
   "tags": {
-    "bark.type": {
+    "bark.texture": {
       "value": "smooth",
       "ratified": false,
       "confidence": "low",

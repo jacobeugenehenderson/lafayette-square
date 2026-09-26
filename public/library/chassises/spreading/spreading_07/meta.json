@@ -1,5 +1,5 @@
 {
-  "partId": "honey_locust_b_stem1",
+  "partId": "spreading_07",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "spreading",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "honey_locust_b_stem1",
-  "id": "spreading_07"
+  }
 }

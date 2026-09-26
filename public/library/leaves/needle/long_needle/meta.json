@@ -5,13 +5,13 @@
   "canonicalValue": "needle",
   "sourcePath": "public/textures/leaves/shapes/long_needle",
   "tags": {
-    "leaf.silhouette": {
+    "leaf.type": {
       "value": "needle",
       "ratified": false,
       "confidence": "high",
-      "source": "pack-meta.morphology(long_needle→needle)"
+      "source": "pack-meta.morphology(needle→leaf.type)"
     },
-    "leaf.size": {
+    "leaf.length": {
       "value": 15,
       "ratified": false,
       "confidence": "high",

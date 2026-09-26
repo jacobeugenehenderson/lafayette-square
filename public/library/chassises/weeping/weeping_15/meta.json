@@ -1,5 +1,5 @@
 {
-  "partId": "white_willow_c",
+  "partId": "weeping_15",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "weeping",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "white_willow_c",
-  "id": "weeping_15"
+  }
 }

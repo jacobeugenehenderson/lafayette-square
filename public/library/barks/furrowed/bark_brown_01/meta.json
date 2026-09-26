@@ -5,7 +5,7 @@
   "canonicalValue": "furrowed",
   "sourcePath": "public/textures/bark/bark_brown_01",
   "tags": {
-    "bark.type": {
+    "bark.texture": {
       "value": "furrowed",
       "ratified": false,
       "confidence": "low",

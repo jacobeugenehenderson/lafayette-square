@@ -8,43 +8,54 @@
 
 | silhouette | pack | size | quality | recommended species |
 |---|---|---|---|---|
-| palmate | bigleaf_maple | 20cm | 🟢 vendor | acer_macrophyllum |
-| palmate | palmate | 10cm | 🟢 vendor | acer_saccharum, acer_rubrum, platanus_occidentalis |
-| palmate | sycamore | 15cm | 🟢 vendor | platanus_occidentalis |
-| lobed | california_black_oak | 14cm | 🟢 vendor | quercus_kelloggii |
-| lobed | eastern_black_oak | 13cm | 🟢 vendor | quercus_velutina |
-| lobed | lobed | 12cm | 🟢 vendor | quercus_alba, quercus_rubra |
-| heart | heart | 10cm | 🟢 vendor | cercis_canadensis, syringa_vulgaris, tilia_americana |
+| **acicular** | 🔴 GAP | — | — | — |
+| cordate | heart | 10cm | 🟢 vendor | cercis_canadensis, syringa_vulgaris, tilia_americana |
+| **deltoid** | 🔴 GAP | — | — | Red Maple, Sweetgum |
+| **elliptical** | 🔴 GAP | — | — | serviceberry, downy, Pin Oak, oak, northern red |
+| flabellate | ginkgo | 8cm | 🟢 vendor | ginkgo_biloba |
+| lanceolate | lanceolate | 8cm | 🟢 vendor | salix_alba, salix_babylonica |
+| **linear** | 🔴 GAP | — | — | — |
+| **oblanceolate** | 🔴 GAP | — | — | — |
+| **oblong** | 🔴 GAP | — | — | — |
+| obovate | california_black_oak | 14cm | 🟢 vendor | quercus_kelloggii |
+| obovate | eastern_black_oak | 13cm | 🟢 vendor | quercus_velutina |
+| obovate | oak_autumn | 12cm | 🟢 vendor | quercus_alba, quercus_rubra |
+| orbicular | american_sweetgum | 15cm | 🟢 vendor | liquidambar_styraciflua |
+| orbicular | bigleaf_maple | 20cm | 🟢 vendor | acer_macrophyllum |
+| orbicular | palmate | 10cm | 🟢 vendor | acer_saccharum, acer_rubrum, platanus_occidentalis |
+| orbicular | sycamore | 15cm | 🟢 vendor | platanus_occidentalis |
+| ovate | elm_autumn | 8cm | 🟢 vendor | ulmus_americana |
 | ovate | ovate | 8cm | 🟢 vendor | morus_alba, cornus_florida, hydrangea_macrophylla |
 | ovate | ovate_large | 15cm | 🟢 vendor | morus_alba, hydrangea_macrophylla, magnolia_grandiflora |
 | ovate | serrate_ovate | 8cm | 🟢 vendor | ulmus_americana, carpinus_caroliniana |
-| lanceolate | lanceolate | 8cm | 🟢 vendor | salix_alba, salix_babylonica |
-| compound | fine_compound | 25cm | 🟡 placeholder | fraxinus_pennsylvanica |
-| fan | ginkgo | 8cm | 🟢 vendor | ginkgo_biloba |
-| star | american_sweetgum | 15cm | 🟢 vendor | liquidambar_styraciflua |
-| needle | long_needle | 15cm | 🟢 vendor | pinus_strobus, larix_decidua |
-| needle | short_needle | 5cm | 🟡 placeholder | taxodium_distichum |
-| **scale** | 🔴 GAP | — | — | — |
+| **reniform** | 🔴 GAP | — | — | — |
+| **rhomboid** | 🔴 GAP | — | — | — |
+| **spatulate** | 🔴 GAP | — | — | — |
 
-_Non-silhouette packs (season/variant, not a single-leaf shape): elm_autumn(seasonal_elm), oak_autumn(seasonal_oak)_
+_Non-silhouette packs (season/variant, not a single-leaf shape): fine_compound(compound-pinnate), lobed(lobed), long_needle(needle), short_needle(needle)_
 
-**Leaf gaps (no pack): scale.**
+**Leaf gaps (no pack): acicular, deltoid, elliptical, linear, oblanceolate, oblong, reniform, rhomboid, spatulate.**
 
 ## Barks (by type)
 
 | type | asset | provenance | wanted by |
 |---|---|---|---|
-| smooth | Bark004 | ambientCG (draft quality) | Pin Oak |
-| furrowed | bark_brown_01 | Poly Haven CC0 | Sweetgum |
-| plated | Bark007 | ambientCG (draft quality) | Sugar Maple |
-| scaly | bark_platanus | Poly Haven CC0 | Silver Maple, Redbud, Flowering Crabapple |
+| smooth | Bark004 | ambientCG (draft quality) | Pin Oak, Zelkova, Japanese |
+| **fissured** | 🔴 GAP | — | serviceberry, downy |
+| furrowed | bark_brown_01 | Poly Haven CC0 | Sweetgum, blackgum, Pine, White, Oak, Willow, Linden, American |
 | ridged | Bark003 | ambientCG (draft quality) | Red Maple, Green Ash |
-| exfoliating | chinese_hackberry_bark | Poly Haven CC0 | Birch |
-| fibrous | chinese_cedar_bark | Poly Haven CC0 | Bald Cypress |
+| plated | Bark007 | ambientCG (draft quality) | Sugar Maple |
+| scaly | bark_platanus | Poly Haven CC0 | Silver Maple, Redbud, Flowering Crabapple, mountainash, American |
+| **shaggy** | 🔴 GAP | — | — |
+| exfoliating | chinese_hackberry_bark | Poly Haven CC0 | Birch, juniper, Chinese, Oak, White |
+| **papery** | 🔴 GAP | — | — |
+| **lenticellate** | 🔴 GAP | — | — |
 | **mottled** | 🔴 GAP | — | — |
+| fibrous | chinese_cedar_bark | Poly Haven CC0 | Bald Cypress |
+| **warty** | 🔴 GAP | — | — |
 
-**Bark gaps (no asset): mottled.**
+**Bark gaps (no asset): fissured, shaggy, papery, lenticellate, mottled, warty.**
 
 ## Chassis (by habit) — count
 
-(untagged): 80 · oval: 46 · pyramidal: 30 · spreading: 26 · columnar: 25 · weeping: 18 · rounded: 9 · multi-stem: 5
+(untagged): 74 · oval: 46 · pyramidal: 29 · spreading: 26 · columnar: 25 · weeping: 12 · rounded: 8 · multi-stem: 5

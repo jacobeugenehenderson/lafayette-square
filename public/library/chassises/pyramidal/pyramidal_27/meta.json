@@ -1,5 +1,5 @@
 {
-  "partId": "tall_pine_b",
+  "partId": "pyramidal_27",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "pyramidal",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "tall_pine_b",
-  "id": "pyramidal_27"
+  }
 }

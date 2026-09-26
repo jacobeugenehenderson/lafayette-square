@@ -5,7 +5,7 @@
   "canonicalValue": "ridged",
   "sourcePath": "public/textures/bark/Bark003",
   "tags": {
-    "bark.type": {
+    "bark.texture": {
       "value": "ridged",
       "ratified": false,
       "confidence": "low",

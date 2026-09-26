@@ -1,5 +1,5 @@
 {
-  "partId": "sugar_maple_low_poly_forest_j",
+  "partId": "oval_35",
   "partType": "chassis",
   "source": "authored",
   "canonicalValue": "oval",
@@ -23,7 +23,5 @@
     "rescaled": false,
     "forestSplit": false,
     "oriented": false
-  },
-  "derivedFrom": "sugar_maple_low_poly_forest_j",
-  "id": "oval_35"
+  }
 }

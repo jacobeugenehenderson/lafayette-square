@@ -5,13 +5,13 @@
   "canonicalValue": "lobed",
   "sourcePath": "public/textures/leaves/shapes/lobed",
   "tags": {
-    "leaf.silhouette": {
+    "leaf.margin": {
       "value": "lobed",
       "ratified": false,
       "confidence": "high",
-      "source": "pack-meta.morphology"
+      "source": "pack-meta.morphology(lobed→leaf.margin)"
     },
-    "leaf.size": {
+    "leaf.length": {
       "value": 12,
       "ratified": false,
       "confidence": "high",

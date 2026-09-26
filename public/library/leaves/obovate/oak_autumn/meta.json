@@ -1,0 +1,22 @@
+{
+  "partId": "oak_autumn",
+  "partType": "leaf",
+  "source": "authored",
+  "canonicalValue": "obovate",
+  "sourcePath": "public/textures/leaves/shapes/oak_autumn",
+  "tags": {
+    "leaf.shape": {
+      "value": "obovate",
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.morphology"
+    },
+    "leaf.length": {
+      "value": 12,
+      "ratified": false,
+      "confidence": "high",
+      "source": "pack-meta.naturalSize(cm)"
+    }
+  },
+  "conformReport": null
+}
