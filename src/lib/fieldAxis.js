@@ -79,7 +79,8 @@ function distToRing(x, z, ring) {
  * Every triangle goes to the field containing its centroid; one the mesh draws outside every
  * polygon is placed and COUNTED (`outside`), never silently. Vertices are duplicated where two
  * fields meet, so each vertex carries exactly one field.
- * Returns { positions, indices, fieldOfVertex: Float32Array, outside, emptyFields, fields: [{ ...minAreaRect, areaM2 }] }.
+ * Returns { positions, indices, fieldOfVertex, edgeOfVertex (m to the field's own boundary): Float32Array,
+ *           outside, emptyFields, fields: [{ ...minAreaRect, areaM2 }] }.
  */
 export function splitByField(positions, indices, fields) {
   const F = fields.map(f => {
@@ -130,9 +131,29 @@ export function splitByField(positions, indices, fields) {
     if (n === undefined) { n = fov.length; key.set(kk, n); pos.push(positions[v * 3], positions[v * 3 + 1], positions[v * 3 + 2]); fov.push(f) }
     idx[t * 3 + k] = n
   }
+  // Each vertex's distance (m) to ITS field's own boundary, outer ring and holes — the headland reads
+  // it (surfaces.mjs crop `headlandRows`). Exact at the vertex; the GPU interpolates it linearly, which
+  // is exact beside a straight edge and rounds a sharp corner off.
+  const segs = F.map(g => {
+    const out = []
+    for (const r of [g.outer, ...g.holes]) for (let i = 0, j = r.length - 1; i < r.length; j = i++) out.push(r[j][0], r[j][1], r[i][0], r[i][1])
+    return out
+  })
+  const edgeOfVertex = new Float32Array(fov.length)
+  for (let n = 0; n < fov.length; n++) {
+    const x = pos[n * 3], z = pos[n * 3 + 2], S = segs[fov[n]]
+    let d2 = Infinity
+    for (let k = 0; k < S.length; k += 4) {
+      const ax = S[k], az = S[k + 1], dx = S[k + 2] - ax, dz = S[k + 3] - az, L = dx * dx + dz * dz
+      const t = L ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L)) : 0
+      const ex = x - ax - t * dx, ez = z - az - t * dz, e = ex * ex + ez * ez
+      if (e < d2) d2 = e
+    }
+    edgeOfVertex[n] = Math.sqrt(d2)
+  }
   const used = new Set(triField)
   return {
-    positions: new Float32Array(pos), indices: idx, fieldOfVertex: new Float32Array(fov), outside,
+    positions: new Float32Array(pos), indices: idx, fieldOfVertex: new Float32Array(fov), edgeOfVertex, outside,
     emptyFields: F.length - used.size,
     fields: fields.map((f, i) => ({ ...minAreaRect(f.outer), areaM2: Math.round(F[i].areaM2) })),
   }

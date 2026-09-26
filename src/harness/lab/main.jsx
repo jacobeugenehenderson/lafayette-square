@@ -44,7 +44,7 @@ import useSkyState from '../../hooks/useSkyState'
 import useAtmosphere from '../../hooks/useAtmosphere.js'
 import { getElevationRaw } from '../../utils/elevation'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../../utils/terrainShader.js'
-import { SAND_UNIFORMS } from '../../components/grassMaterial.js'
+import { SAND_UNIFORMS, CROP_UNIFORMS } from '../../components/grassMaterial.js'
 import { INSTANCE } from '../../instance.js'
 // Every town the kit knows — the same index the app resolves `?look=` against. A town with
 // no slab fails loudly at its stage, never silently.
@@ -145,6 +145,9 @@ function App() {
   // `?dune=1` — the sand surface's DUNE STATE drawn as a diagnostic (the map draws no dune state yet).
   const [dune, setDune] = useState(params.get('dune') === '1' ? 1 : 0)
   useEffect(() => { SAND_UNIFORMS.uDuneView.value = dune }, [dune])
+  // `?pom=0` — the crop's parallax march off (A/B against the bump alone).
+  const [pom, setPom] = useState(params.get('pom') === '0' ? 0 : 1)
+  useEffect(() => { CROP_UNIFORMS.uPom.value = pom }, [pom])
 
   useEffect(() => {
     listStages(LOOK, bakeLastMs).then(s => setStages(s.stages)).catch(e => setErr(String(e.message || e)))
@@ -265,6 +268,11 @@ function App() {
           <span style={{ opacity: .7 }}>ground normals</span>
           <Btn on={tn === 1} tint="#2f6b4a" onClick={() => setTn(1)}>terrain (ships)</Btn>
           <Btn on={tn === 0} tint="#6b3f3f" onClick={() => setTn(0)}>flat (before)</Btn>
+        </div>
+        <div style={{ display: 'flex', gap: 5, marginBottom: 6, alignItems: 'center' }}>
+          <span style={{ opacity: .7 }}>crop depth</span>
+          <Btn on={pom === 1} tint="#2f6b4a" onClick={() => setPom(1)}>parallax</Btn>
+          <Btn on={pom === 0} tint="#6b3f3f" onClick={() => setPom(0)}>bump only</Btn>
         </div>
         <div style={{ display: 'flex', gap: 5, marginBottom: 4, alignItems: 'center' }}>
           <span style={{ opacity: .7 }}>sand</span>

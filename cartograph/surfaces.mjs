@@ -88,8 +88,20 @@ export const SURFACES = {
       // reach full plants; harvest plays it back at the same speed. Scale-free: a fraction of the
       // town's season, so it moves with the calendar. No source states it.
       growFrac:  { unit: '× season', source: 'authored', default: 0.5 },
-      // The turning strip where rows stop, at each end of the field's long axis. 0 = no headland.
-      headlandM: { unit: 'm', source: 'authored', default: 0 },
+      // ⭐ THE HEADLAND (Jacob, 2026-09-26: "tilling doesn't go right to the edge, and usually has tracks
+      // AROUND the field"): an untilled strip along the field's whole edge — from the baked per-vertex
+      // distance to the field's own boundary — with a pair of wheel ruts running round it. Both in ROWS,
+      // so they ride the cited spacing; ruts are a tractor's wheels, set to straddle rows.
+      headlandRows:   { unit: '× row spacing', source: 'authored', default: 16 },
+      trackGaugeRows: { unit: '× row spacing', source: 'authored', default: 2 },
+      // The bed: its top's share of each row; the rest is shoulder and furrow floor. 0.45 of 30 in ≈ 14 in.
+      bedFrac: { unit: '× row spacing', source: 'authored', default: 0.45 },
+      // Clods: roughness on top of the ridges — their size, and the relief they add.
+      clodSizeM:   { unit: 'm', source: 'authored', default: 0.08 },
+      clodHeightM: { unit: 'm', source: 'authored', default: 0.03 },
+      // ⭐ THE QUILT (Jacob, 2026-09-26, decorative): a field breaks into patches, each with its own row
+      // direction, colour and planting day, parted by tracks. The patch size is a look, not a survey.
+      quiltM: { unit: 'm', source: 'authored', default: 300 },
       // ⭐ ONE ROUGH GRAYSCALE MAP IS THE COLOUR, THE DEPTH AND THE DISTORTION (Jacob, 2026-09-26).
       // Colour: two gradient maps read it — the soil runs dark → light, the plants carry their own
       // green range. Depth: its full range spans the cited ridge height. Distortion: below. Stops are the kit's one

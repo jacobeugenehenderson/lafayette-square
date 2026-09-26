@@ -137,7 +137,7 @@ Each group describes a contiguous slice of `ground.bin`:
 | `polygonOffsetUnits` | Three.js `polygonOffsetUnits`. **Retained for back-compat / the mobile linear-depth path, but INERT under the log-depth canvases** (gl_FragDepth bypasses `GL_POLYGON_OFFSET_FILL`) — the consumer (`BakedGround.jsx`) no longer applies it. The per-group baked Y (see `renderOrder`) is the resolver. |
 | `vertexCount`, `vertexByteOffset` | Position buffer slice |
 | `indexCount`, `indexByteOffset` | Index buffer slice |
-| `fieldByteOffset`, `fields` | **Only on a group whose surface is `perField`** (the crop, `cartograph/surfaces.mjs`): a float32 field index per vertex (third section, §2.3) and one `{ bearing, cx, cz, halfLen, halfWid, areaM2 }` per field — the rows' bearing (rad, world XZ, along the field's long axis) and its minimum-area rectangle. A field is one face interior of that class. ▶ `node checks/claims-crop-rows-derived-per-field.mjs` |
+| `fieldByteOffset`, `fieldEdgeByteOffset`, `fields` | **Only on a group whose surface is `perField`** (the crop, `cartograph/surfaces.mjs`): a float32 field index per vertex (third section, §2.3), a float32 distance (m) from each vertex to its field's own boundary (fourth section — the headland), and one `{ bearing, cx, cz, halfLen, halfWid, areaM2 }` per field — the rows' bearing (rad, world XZ, along the field's long axis) and its minimum-area rectangle. A field is one face interior of that class. ▶ `node checks/claims-crop-rows-derived-per-field.mjs` |
 
 ### 2.3. Binary layout (`ground.bin`)
 
@@ -151,9 +151,10 @@ A single buffer. The manifest's `vertexByteOffset` + `indexByteOffset` per group
 | uint32 indices  for group 1   |
 | … all indices for all groups …
 | float32 field ids for each perField group (fieldByteOffset) |
+| float32 field-edge distances for each perField group (fieldEdgeByteOffset) |
 ```
 
-Vertices are XYZ triples in world-meters. Indices are absolute into the same buffer's position array (not group-relative). All three `*ByteOffset`s are absolute into the file. A perField group's vertices are duplicated where two fields meet, so each vertex belongs to exactly one field.
+Vertices are XYZ triples in world-meters. Indices are absolute into the same buffer's position array (not group-relative). Every `*ByteOffset` is absolute into the file. A perField group's vertices are duplicated where two fields meet, so each vertex belongs to exactly one field.
 
 ### 2.4. Group kinds in production
 

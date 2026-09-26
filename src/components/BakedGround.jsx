@@ -92,6 +92,14 @@ function reportAbsentParams(look, surface, authored, resolved) {
     + `Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs`)
 }
 
+function reportNoEdge(look, id) {
+  const key = look + '|edge|' + id
+  if (_saidAbsent.has(key)) return
+  _saidAbsent.add(key)
+  console.error(`[BakedGround] ⛔ "${look}": face:${id} was baked without field-edge distances — its fields are drawn `
+    + `with NO headland and no tracks round them. ▶ re-bake the ground.`)
+}
+
 function reportNoFields(look, id, surface) {
   const key = look + '|fields|' + id
   if (_saidAbsent.has(key)) return
@@ -321,6 +329,9 @@ function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, s
         }
         geom.setAttribute('aFieldAxis', new THREE.BufferAttribute(axis, 4))
         geom.setAttribute('aFieldExt', new THREE.BufferAttribute(ext, 4))
+        // Metres to the field's own edge (the headland + its tracks). A ground baked before it existed
+        // has none: the crop is then drawn with NO headland, and says so (reportNoEdge).
+        if (g.fieldEdgeByteOffset != null) geom.setAttribute('aFieldEdge', new THREE.BufferAttribute(new Float32Array(bin, g.fieldEdgeByteOffset, g.vertexCount), 1))
       }
       geom.computeVertexNormals()
       return { group: g, geometry: geom }
@@ -346,6 +357,7 @@ function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, s
           reportNoFields(manifest.look, group.id, surface)
           return <FadeMesh key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
         }
+        if (surface && SURFACES[surface].perField && !geometry.attributes.aFieldEdge) reportNoEdge(manifest.look, group.id)
         return surface
           ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
           : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
@@ -463,6 +475,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
         poolSpan: poolMeta?.span,
         poolScale: poolMeta?.scale ?? 1,
         surfaceParams,
+        fieldEdge: !!geometry.attributes.aFieldEdge,
       })
       // No polygonOffset (inert under log-depth). Grass faces separate from
       // adjacent FadeMesh faces by baked geometric Y (renderOrder × EPS) +
@@ -474,7 +487,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
       patchTerrain(built.material, { perVertex: true, terrainNormals: true })
       return built
     },
-    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams]
+    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams, geometry]
   )
   useEffect(() => {
     if (lightmap) {

@@ -944,8 +944,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // ⭐ A `perField` surface (the crop) needs to know which FIELD each vertex is in, and each
   // field's own axis, so its rows run the field's way (surfaces.mjs SURFACES.crop). Written as a
   // third bin section, after the indices; only groups whose surface asks for it carry one.
-  let fieldByteOffset = 0
-  const fieldChunks = []
+  let fieldByteOffset = 0, edgeByteOffset = 0
+  const fieldChunks = [], edgeChunks = []
   const surfaceTable = resolveClassTable(design?.surfaces?.classes)
 
   // Polygon groups (large land-use blocks + leisure/natural overlays) get
@@ -1240,7 +1240,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       indexByteOffset: idxByteOffset,
       // Float32 field index per vertex (third bin section) + each field's axis: bearing (rad,
       // world XZ, along the rows), centre, half-extents along/across the rows (m), area (m²).
-      ...(perField ? { fieldByteOffset, fields: perField.fields.map(f => ({
+      ...(perField ? { fieldByteOffset, fieldEdgeByteOffset: edgeByteOffset, fields: perField.fields.map(f => ({
         bearing: +f.bearing.toFixed(5), cx: +f.cx.toFixed(2), cz: +f.cz.toFixed(2),
         halfLen: +f.halfLen.toFixed(2), halfWid: +f.halfWid.toFixed(2), areaM2: f.areaM2 })) } : {}),
     })
@@ -1249,16 +1249,19 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     indexChunks.push(idxOut)
     posByteOffset += posOut.byteLength
     idxByteOffset += idxOut.byteLength
-    if (perField) { fieldChunks.push(perField.fieldOfVertex); fieldByteOffset += perField.fieldOfVertex.byteLength }
+    if (perField) {
+      fieldChunks.push(perField.fieldOfVertex); fieldByteOffset += perField.fieldOfVertex.byteLength
+      edgeChunks.push(perField.edgeOfVertex); edgeByteOffset += perField.edgeOfVertex.byteLength
+    }
   }
 
   // Concatenate positions (all Float32) and indices (all Uint32) into one
-  // .bin. Layout: [all positions][all indices][field ids of perField groups]. Manifest's *ByteOffset
+  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups]. Manifest's *ByteOffset
   // values are relative to the START of each section (offsets within the
   // positions section, then offsets within the indices section).
   const totalPosBytes = posByteOffset
   const totalIdxBytes = idxByteOffset
-  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset)
+  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -1276,6 +1279,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const fieldSectionStart = totalPosBytes + totalIdxBytes
   for (const g of groups) if (g.fieldByteOffset != null) g.fieldByteOffset += fieldSectionStart
   for (const c of fieldChunks) {
+    buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
+    off += c.byteLength
+  }
+  // Fourth section: each perField vertex's distance (m) to its field's own boundary.
+  const edgeSectionStart = fieldSectionStart + fieldByteOffset
+  for (const g of groups) if (g.fieldEdgeByteOffset != null) g.fieldEdgeByteOffset += edgeSectionStart
+  for (const c of edgeChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }

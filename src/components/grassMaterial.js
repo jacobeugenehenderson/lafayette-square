@@ -127,12 +127,49 @@ const CROP_RAMP_GLSL = `vec3 cropRamp(float t, vec4 T, vec3 c0, vec3 c1, vec3 c2
          if (t <= T.w) return mix(c2, c3, (t - T.z) / max(T.w - T.z, 1e-5));
          return c3;
        }`
+// The field's geometry as functions of world XZ, so the parallax march and the final shade read the
+// SAME map. Row space: field-local (u along the field's axis, v across) → the quilt patch → that
+// patch's row direction → the distortion → the row phase.
+const CROP_FUNCS_GLSL = `
+       vec2 cropLocal(vec2 p) {
+         vec2 d = p - vFieldAxis.zw;
+         return vec2(dot(d, vFieldAxis.xy), dot(d, vec2(-vFieldAxis.y, vFieldAxis.x)));
+       }
+       // (hash A, hash B, metres to the patch border). No quilt → the field is one patch.
+       vec3 cropPatch(vec2 uv) {
+         if (uQuiltM <= 0.0) return vec3(vFieldExt.z, vFieldExt.w, 1e6);
+         // A slight wander so patches are not ruled — enough to read hand-laid, not so much they read as roads.
+         vec2 w = uv + (vec2(gNoise(uv * 0.004 + 3.0), gNoise(uv * 0.004 + 11.0)) - 0.5) * uQuiltM * 0.08;
+         vec2 c = floor(w / uQuiltM), f = fract(w / uQuiltM);
+         float border = min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)) * uQuiltM;
+         return vec3(gHash(c + vFieldExt.zw * 17.0), gHash(c * 1.7 + 5.3 + vFieldExt.zw * 9.0), border);
+       }
+       // Mostly along or across the field; now and then a diagonal patch.
+       float cropAngle(float h) { return h < 0.5 ? 0.0 : (h < 0.85 ? 1.5707963 : (h < 0.93 ? 0.35 : -0.35)); }
+       float cropRowPhase(vec2 p, vec2 uv, float a) {
+         float rv = -sin(a) * uv.x + cos(a) * uv.y;
+         float dist = (gNoise(p * 0.6 + 19.0) + 0.5 * gNoise(p * 1.3 + 7.0)) / 1.5 - 0.5;
+         return (rv + dist * 2.0 * uRowDistort * uRowSpacingM) / uRowSpacingM;
+       }
+       // The bed: a flat-ish top (uBedFrac of the row), shoulders, a flat furrow floor. 1 = bed top.
+       float cropProfile(float ph) {
+         float x = abs(fract(ph + 0.5) - 0.5) * 2.0;          // 0 at the bed's centre, 1 mid-furrow
+         float b = min(uBedFrac, 0.7);
+         return (1.0 - smoothstep(b, max(b + 0.05, 0.8), x)) * (1.0 - 0.12 * (x / max(b, 0.05)) * step(x, b));
+       }
+       float cropClod(vec2 p) { return 0.6 * gNoise(p / uClodSizeM) + 0.4 * gNoise(p / uClodSizeM * 2.3 + 4.0); }
+       // A pair of wheel ruts centred on distance c (m), at the tractor's gauge.
+       float cropRuts(float d, float c) {
+         float g = uTrackGaugeRows * uRowSpacingM * 0.5, w = 0.225 * uRowSpacingM;
+         return max(1.0 - smoothstep(w * 0.6, w, abs(d - c + g)), 1.0 - smoothstep(w * 0.6, w, abs(d - c - g)));
+       }`
+
 const CROP_ALBEDO = `vec2 gp = vGrassPos.xz;
-       vec2 cropD = gp - vFieldAxis.zw;
-       float cropU = dot(cropD, vFieldAxis.xy);                           // along the rows (m)
-       float cropV = dot(cropD, vec2(-vFieldAxis.y, vFieldAxis.x));        // across the rows (m)
-       float cropP = mix(uPlantMin, uPlantMax, vFieldExt.z);
-       float cropH = mix(uHarvMin, uHarvMax, vFieldExt.w);
+       float edgeD = vFieldEdge;
+       // — the STATE, per quilt patch (each patch draws its own day inside the town's window) —
+       vec3 pt0 = cropPatch(cropLocal(gp));
+       float cropP = mix(uPlantMin, uPlantMax, pt0.x);
+       float cropH = mix(uHarvMin, uHarvMax, pt0.y);
        float cropL = mod(cropH - cropP + 365.0, 365.0);
        float cropT = mod(uDoy - cropP + 365.0, 365.0);                    // days since planting
        float cropG = max(uGrowFrac * cropL, 1.0);
@@ -142,39 +179,80 @@ const CROP_ALBEDO = `vec2 gp = vGrassPos.xz;
        float till   = clamp(cropC, 0.0, 1.0);
        float sprout = clamp(cropC - 1.0, 0.0, 1.0);
        float grow   = clamp((cropC - 2.0) * 0.5, 0.0, 1.0);
-       float inBody = step(abs(cropU), vFieldExt.x - uHeadlandM);         // 0 on the headland
+       // Rows under ~2 px fade to their mean; parallax runs only where a row is several px wide.
+       float ph0 = cropRowPhase(gp, cropLocal(gp), cropAngle(pt0.x));
+       float rowAA = 1.0 - smoothstep(0.25, 0.5, fwidth(ph0));
+       float pomAmt = (1.0 - smoothstep(0.08, 0.2, fwidth(ph0))) * till * uPom;
 
-       // — the ROUGH part of the map: broad patches, clods, grain (fine octaves fade by fwidth) —
-       float gpw = length(fwidth(gp));
-       float rBroad = gFBM(gp * 0.08);
-       float rMid   = gFBM(gp * 0.6 + 19.0);
-       float rClod  = mix(0.5, gFBM(gp * 2.5 + 7.0), 1.0 - smoothstep(0.15, 0.4, gpw * 2.5));
-       float rGrain = mix(0.5, gNoise(gp * 14.0 + 3.0), 1.0 - smoothstep(0.15, 0.4, gpw * 14.0));
-       float rough = 0.40 * rBroad + 0.20 * rMid + 0.28 * rClod + 0.12 * rGrain;
-       // — DISTORTION: the map's mid octave pushes the rows sideways —
-       float rowPh = (cropV + (rMid - 0.5) * 2.0 * uRowDistort * uRowSpacingM) / uRowSpacingM;
-       float rowAA = 1.0 - smoothstep(0.25, 0.5, fwidth(rowPh));
-       float ridge = mix(0.5, 0.5 + 0.5 * cos(6.2831853 * rowPh), rowAA);  // 1 on the crest
-       float rowAmt = till * inBody;
-       // — THE B&W MAP —
-       float cropBW = mix(rough, 0.6 * ridge + 0.4 * rough, rowAmt);
-       // — DEPTH: the map as height (m), its full range the cited ridge height —
-       float cropHm = cropBW * uRidgeM;
+       // — PARALLAX: march the view ray down through the height map to where it first hits —
+       // ⚠️ The march is CHEAP by construction: along one pixel's ray only the row phase moves (linearly,
+       // across the rows) and the clods; the patch, the distortion and the headland are held at the
+       // pixel's own values. The full height function per step lost the GPU (2026-09-26, the lab tab).
+       float hTop = uRidgeM + uClodHeightM * 0.5, hBot = -uClodHeightM * 0.5 - 0.5 * uRidgeM;
+       if (pomAmt > 0.01) {
+         float a0 = cropAngle(pt0.x);
+         vec2 across = -sin(a0) * vFieldAxis.xy + cos(a0) * vec2(-vFieldAxis.y, vFieldAxis.x);
+         float headW0 = uHeadlandRows * uRowSpacingM, gauge0 = uTrackGaugeRows * uRowSpacingM;
+         float amp = uRidgeM * till * (uHasEdge > 0.5 ? smoothstep(headW0 - 0.3, headW0 + 0.3, edgeD) : 1.0)
+                   * smoothstep(gauge0, gauge0 + 0.3, pt0.z);
+         vec3 Vw = normalize(transpose(mat3(viewMatrix)) * vViewPosition);
+         vec2 dirXZ = -Vw.xz / max(Vw.y, 0.08) * pomAmt;               // metres of XZ per metre down
+         float span = hTop - hBot, dt = span / 10.0, t = 0.0;
+         for (int i = 0; i < 10; i++) {
+           vec2 p = gp + dirXZ * t;
+           float h = amp * cropProfile(ph0 + dot(p - gp, across) / uRowSpacingM) + uClodHeightM * (gNoise(p / uClodSizeM) - 0.5);
+           if (t >= hTop - h) break;
+           t += dt;
+         }
+         float a = max(t - dt, 0.0), b = t;
+         for (int i = 0; i < 3; i++) {
+           float m = 0.5 * (a + b);
+           vec2 p = gp + dirXZ * m;
+           float h = amp * cropProfile(ph0 + dot(p - gp, across) / uRowSpacingM) + uClodHeightM * (gNoise(p / uClodSizeM) - 0.5);
+           if (m >= hTop - h) b = m; else a = m;
+         }
+         gp = gp + dirXZ * b;
+       }
+
+       // — the B&W MAP at the point the eye actually sees —
+       vec2 uv = cropLocal(gp);
+       vec3 pt = cropPatch(uv);
+       float ph = cropRowPhase(gp, uv, cropAngle(pt.x));
+       float headW = uHeadlandRows * uRowSpacingM, gauge = uTrackGaugeRows * uRowSpacingM;
+       float inBody = uHasEdge > 0.5 ? smoothstep(headW - 0.3, headW + 0.3, edgeD) : 1.0;
+       float inPatch = smoothstep(gauge, gauge + 0.3, pt.z);
+       float tilledHere = till * inBody * inPatch;
+       float prof = mix((min(uBedFrac, 0.7) + 0.8) * 0.5, cropProfile(ph), rowAA);
+       float ruts = max(uHasEdge > 0.5 ? cropRuts(edgeD, headW * 0.5) : 0.0, uQuiltM > 0.0 ? cropRuts(pt.z, 0.0) : 0.0);
+       float clod = mix(0.5, cropClod(gp), 1.0 - smoothstep(0.15, 0.4, length(fwidth(gp)) / uClodSizeM));
+       float cropHm = uRidgeM * prof * tilledHere + uClodHeightM * (clod - 0.5) - 0.5 * uRidgeM * ruts;
+       float cropBW = clamp((cropHm - hBot) / (hTop - hBot), 0.0, 1.0);
        cropDH = vec2(dFdx(cropHm), dFdy(cropHm));
 
-       // — COLOUR: the soil ramp (untilled crust sits light, fresh-turned soil dark) —
-       vec3 soil = cropRamp(mix(0.30 + 0.70 * cropBW, 0.80 * cropBW, till), uSoilT, uSoilC0, uSoilC1, uSoilC2, uSoilC3);
-       // — the plants' own ramp: young leaves light, mature deep —
-       float leafN = gNoise(vec2(cropU * 6.0, rowPh) + 5.0);
-       vec3 leaf = cropRamp(mix(0.55 + 0.45 * cropBW, 0.10 + 0.60 * cropBW, grow), uPlantT, uPlantC0, uPlantC1, uPlantC2, uPlantC3);
-       float crest = mix(smoothstep(0.75, 0.95, ridge), 0.12, 1.0 - rowAA);
+       // — COLOUR: soil ramp (crust light, turned soil dark, ruts packed dark), per-patch shift —
+       float broad = gFBM(gp * 0.08);
+       float patchTone = (pt.y - 0.5) * 0.4 * step(0.0, uQuiltM);
+       float crustT = 0.35 + 0.45 * broad + 0.2 * clod;
+       float turnT  = 0.85 * cropBW + 0.15 * broad;
+       float soilT = mix(crustT, turnT, tilledHere) + patchTone;
+       soilT = mix(soilT, 0.12 + 0.2 * clod, ruts);
+       vec3 soil = cropRamp(soilT, uSoilT, uSoilC0, uSoilC1, uSoilC2, uSoilC3);
+       // — the plants' own ramp: young light, mature deep; they grow on the bed tops —
+       float leafN = gNoise(vec2(uv.x * 6.0, ph) + 5.0);
+       vec3 leaf = cropRamp(mix(0.55 + 0.45 * clod, 0.10 + 0.55 * broad, grow) + patchTone,
+                            uPlantT, uPlantC0, uPlantC1, uPlantC2, uPlantC3);
+       // Plants stand in ONE line down the bed's centre; the canopy widens from that line as they grow
+       // (xRow: 0 on the centre line, 1 mid-furrow). Far away, the mean cover stands in.
+       float xRow = abs(fract(ph + 0.5) - 0.5) * 2.0;
+       float crest = mix(1.0 - smoothstep(0.08, 0.16, xRow), 0.12, 1.0 - rowAA);
        float speck = step(1.0 - sprout * 0.6, leafN);
-       float cover = max(crest * speck * sprout, smoothstep(1.0 - grow, 1.0 - grow + 0.15, ridge));
-       cover = max(cover * inBody, grow * (1.0 - inBody));
+       float canopy = mix(1.0 - smoothstep(grow * 0.95, grow * 0.95 + 0.08, xRow), grow, 1.0 - rowAA);
+       float cover = max(crest * speck * sprout, canopy * step(0.001, grow));
+       cover *= inBody * inPatch * (1.0 - ruts);
        vec3 grass = mix(soil, leaf, clamp(cover, 0.0, 1.0));`
 
 // DEPTH as light: the map's height perturbs the normal by its screen-space derivatives (three's
-// bump-map math, `perturbNormalArb`), so the shared sun shades ridges and clods alike.
+// bump-map math, `perturbNormalArb`), so the shared sun shades beds, furrows, clods and ruts alike.
 const CROP_NORMAL = `
        {
          vec3 cSigX = dFdx(-vViewPosition), cSigY = dFdy(-vViewPosition);
@@ -183,7 +261,10 @@ const CROP_NORMAL = `
          vec3 cGrad = sign(cDet) * (cropDH.x * cR1 + cropDH.y * cR2);
          normal = normalize(abs(cDet) * normal - cGrad);
        }`
-export const CROP_UNIFORMS = { uDoy: { value: 1 } }
+
+// uPom: the parallax march on/off (the lab's A/B; 1 ships).
+export const CROP_UNIFORMS = { uDoy: { value: 1 }, uPom: { value: 1 } }
+if (typeof window !== 'undefined') window.__cropPom = CROP_UNIFORMS.uPom
 
 // A gradient map's stops ({ t, color: '#rrggbb' }, the kit's one format — arborist/bake-look.js
 // compileGradientLUT) → 4 stop positions + 4 sRGB colours. Fewer stops pad with the last; ⛔ more than
@@ -223,6 +304,8 @@ export function makeGroundSurfaceMaterial({
   poolMap = null, poolMin = null, poolSpan = null, poolScale = 1,
   // Resolved surface params (cartograph/surfaces.mjs via context.json + the authored layer).
   surfaceParams = {},
+  // Crop: whether the geometry carries the per-vertex field-edge distance (the headland).
+  fieldEdge = false,
 } = {}) {
   if (!ALBEDO[surface]) throw new Error(`⛔ makeGroundSurfaceMaterial: no albedo for surface "${surface}" (have ${Object.keys(ALBEDO).join(', ')})`)
   const shaderRef = { current: null }
@@ -276,7 +359,13 @@ export function makeGroundSurfaceMaterial({
       // Both are authored with a neutral default, so a resolved surface always carries them; with
       // nothing resolved the calendar is off too and neither is read.
       shader.uniforms.uGrowFrac = { value: Number.isFinite(surfaceParams?.growFrac) ? surfaceParams.growFrac : 0 }
-      shader.uniforms.uHeadlandM = { value: Number.isFinite(surfaceParams?.headlandM) ? surfaceParams.headlandM : 0 }
+      for (const [u, k] of [['uHeadlandRows', 'headlandRows'], ['uTrackGaugeRows', 'trackGaugeRows'], ['uBedFrac', 'bedFrac'],
+        ['uClodSizeM', 'clodSizeM'], ['uClodHeightM', 'clodHeightM'], ['uQuiltM', 'quiltM']]) {
+        // Authored with defaults in surfaces.mjs, which BakedGround always lays under the resolved values.
+        if (!Number.isFinite(surfaceParams?.[k])) throw new Error(`⛔ crop: authored param "${k}" is missing or not a number (${surfaceParams?.[k]})`)
+        shader.uniforms[u] = { value: surfaceParams[k] }
+      }
+      shader.uniforms.uHasEdge = { value: fieldEdge ? 1 : 0 }
       // Absent spacing / ridge → no rows at all (spacing ∞, ridge 0), never a stand-in number.
       const sp = surfaceParams?.rowSpacingIn?.rowSpacing_in, rh = surfaceParams?.ridgeHeightIn?.ridgeHeightMin_in
       shader.uniforms.uRowSpacingM = { value: Number.isFinite(sp) ? sp * IN : 1e9 }
@@ -285,6 +374,7 @@ export function makeGroundSurfaceMaterial({
       rampUniforms(shader.uniforms, 'Soil', surfaceParams?.soilRamp)
       rampUniforms(shader.uniforms, 'Plant', surfaceParams?.plantRamp)
       shader.uniforms.uDoy = CROP_UNIFORMS.uDoy
+      shader.uniforms.uPom = CROP_UNIFORMS.uPom
     }
     shader.uniforms.uLampColor = _lampGlow.colorUniform  // pool colour = lamp colour
     shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade?.center?.[0] ?? 0, fade?.center?.[1] ?? 0) }
@@ -296,12 +386,12 @@ export function makeGroundSurfaceMaterial({
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
       `#include <common>
-       varying vec3 vGrassPos;${surface === 'crop' ? '\n       attribute vec4 aFieldAxis; attribute vec4 aFieldExt; varying vec4 vFieldAxis; varying vec4 vFieldExt;' : ''}`
+       varying vec3 vGrassPos;${surface === 'crop' ? '\n       attribute vec4 aFieldAxis; attribute vec4 aFieldExt; attribute float aFieldEdge; varying vec4 vFieldAxis; varying vec4 vFieldExt; varying float vFieldEdge;' : ''}`
     )
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `#include <begin_vertex>
-       vGrassPos = (modelMatrix * vec4(position, 1.0)).xyz;${surface === 'crop' ? '\n       vFieldAxis = aFieldAxis; vFieldExt = aFieldExt;' : ''}`
+       vGrassPos = (modelMatrix * vec4(position, 1.0)).xyz;${surface === 'crop' ? '\n       vFieldAxis = aFieldAxis; vFieldExt = aFieldExt; vFieldEdge = aFieldEdge;' : ''}`
     )
 
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -328,10 +418,10 @@ export function makeGroundSurfaceMaterial({
        uniform float uFadeOuter;
        uniform float uHasFade;
        ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView;' : ''}
-       ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandM; uniform float uRowSpacingM; uniform float uRidgeM; uniform float uRowDistort; uniform vec4 uSoilT; uniform vec3 uSoilC0; uniform vec3 uSoilC1; uniform vec3 uSoilC2; uniform vec3 uSoilC3; uniform vec4 uPlantT; uniform vec3 uPlantC0; uniform vec3 uPlantC1; uniform vec3 uPlantC2; uniform vec3 uPlantC3; varying vec4 vFieldAxis; varying vec4 vFieldExt; vec2 cropDH = vec2(0.0);\n       ' + CROP_RAMP_GLSL : ''}
+       ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPom; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandRows; uniform float uTrackGaugeRows; uniform float uBedFrac; uniform float uClodSizeM; uniform float uClodHeightM; uniform float uQuiltM; uniform float uHasEdge; uniform float uRowSpacingM; uniform float uRidgeM; uniform float uRowDistort; uniform vec4 uSoilT; uniform vec3 uSoilC0; uniform vec3 uSoilC1; uniform vec3 uSoilC2; uniform vec3 uSoilC3; uniform vec4 uPlantT; uniform vec3 uPlantC0; uniform vec3 uPlantC1; uniform vec3 uPlantC2; uniform vec3 uPlantC3; varying vec4 vFieldAxis; varying vec4 vFieldExt; varying float vFieldEdge; vec2 cropDH = vec2(0.0);\n       ' + CROP_RAMP_GLSL : ''}
        varying vec3 vGrassPos;
 
-       ${SURFACE_NOISE_GLSL}`
+       ${SURFACE_NOISE_GLSL}${surface === 'crop' ? CROP_FUNCS_GLSL : ''}`
     )
 
     shader.fragmentShader = shader.fragmentShader.replace(
