@@ -1663,7 +1663,8 @@
         "evidence": "species",
         "source": "meta → index.json#species(robinia_pseudoacacia)",
         "ratified": false,
-        "habitFromDossier": null
+        "habitFromDossier": "rounded",
+        "habitSource": "dossier(robinia_pseudoacacia)"
       },
       "path": "public/library/chassises/_unassigned/black_locust_a"
     },
@@ -1700,7 +1701,8 @@
         "evidence": "species",
         "source": "meta → index.json#species(robinia_pseudoacacia)",
         "ratified": false,
-        "habitFromDossier": null
+        "habitFromDossier": "rounded",
+        "habitSource": "dossier(robinia_pseudoacacia)"
       },
       "path": "public/library/chassises/_unassigned/black_locust_b"
     },
@@ -1737,7 +1739,8 @@
         "evidence": "species",
         "source": "meta → index.json#species(robinia_pseudoacacia)",
         "ratified": false,
-        "habitFromDossier": null
+        "habitFromDossier": "rounded",
+        "habitSource": "dossier(robinia_pseudoacacia)"
       },
       "path": "public/library/chassises/_unassigned/black_locust_c"
     },
@@ -1774,7 +1777,8 @@
         "evidence": "species",
         "source": "meta → index.json#species(robinia_pseudoacacia)",
         "ratified": false,
-        "habitFromDossier": null
+        "habitFromDossier": "rounded",
+        "habitSource": "dossier(robinia_pseudoacacia)"
       },
       "path": "public/library/chassises/_unassigned/black_locust_d"
     },
@@ -8820,11 +8824,11 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/fine_compound",
       "tags": {
-        "leaf.shape": {
-          "value": null,
+        "leaf.type": {
+          "value": "compound-pinnate",
           "ratified": false,
-          "confidence": "low",
-          "source": "pack-meta.morphology(compound-pinnate) — not a leaf shape (season/variant pack?)"
+          "confidence": "high",
+          "source": "pack-meta.morphology"
         },
         "leaf.length": {
           "value": 25,
@@ -12475,6 +12479,36 @@
       }
     },
     {
+      "id": "oak_black#salon_leaf_eastern_black_oak",
+      "kind": "leaf",
+      "glb": "public/trees/oak_black/skeleton-1-lod0.glb",
+      "image": "salon_leaf_eastern_black_oak",
+      "label": {
+        "species": "oak_black",
+        "genus": "Quercus",
+        "scientific": "Quercus velutina",
+        "evidence": "species",
+        "source": "meta → index.json#species(oak_black)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "oak_black#salon_bark_Bark007_color",
+      "kind": "bark",
+      "glb": "public/trees/oak_black/skeleton-1-lod0.glb",
+      "image": "salon_bark_Bark007_color",
+      "label": {
+        "species": "oak_black",
+        "genus": "Quercus",
+        "scientific": "Quercus velutina",
+        "evidence": "species",
+        "source": "meta → index.json#species(oak_black)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
       "id": "oak_bur#salon_bark_Bark007_color",
       "kind": "bark",
       "glb": "public/trees/oak_bur/skeleton-1-lod0.glb",
@@ -12498,6 +12532,36 @@
         "genus": null,
         "scientific": null,
         "why": "library entry \"oak_bur\" carries no scientific name (generic or stylised asset)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "oak_scarlet#salon_leaf_california_black_oak",
+      "kind": "leaf",
+      "glb": "public/trees/oak_scarlet/skeleton-1-lod0.glb",
+      "image": "salon_leaf_california_black_oak",
+      "label": {
+        "species": "oak_scarlet",
+        "genus": "Quercus",
+        "scientific": "Quercus coccinea",
+        "evidence": "species",
+        "source": "meta → index.json#species(oak_scarlet)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "oak_scarlet#salon_bark_Bark007_color",
+      "kind": "bark",
+      "glb": "public/trees/oak_scarlet/skeleton-1-lod0.glb",
+      "image": "salon_bark_Bark007_color",
+      "label": {
+        "species": "oak_scarlet",
+        "genus": "Quercus",
+        "scientific": "Quercus coccinea",
+        "evidence": "species",
+        "source": "meta → index.json#species(oak_scarlet)",
         "ratified": false,
         "habitFromDossier": null
       }
@@ -12685,6 +12749,66 @@
         "genus": null,
         "scientific": null,
         "why": "library entry \"pine_corona\" carries no scientific name (generic or stylised asset)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "pine_pitch#salon_bark_Bark007_color",
+      "kind": "bark",
+      "glb": "public/trees/pine_pitch/skeleton-1-lod0.glb",
+      "image": "salon_bark_Bark007_color",
+      "label": {
+        "species": "pine_pitch",
+        "genus": "Pinus",
+        "scientific": "Pinus rigida",
+        "evidence": "species",
+        "source": "meta → index.json#species(pine_pitch)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "pine_pitch#salon_leaf_long_needle",
+      "kind": "leaf",
+      "glb": "public/trees/pine_pitch/skeleton-1-lod0.glb",
+      "image": "salon_leaf_long_needle",
+      "label": {
+        "species": "pine_pitch",
+        "genus": "Pinus",
+        "scientific": "Pinus rigida",
+        "evidence": "species",
+        "source": "meta → index.json#species(pine_pitch)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "pine_white#salon_bark_bark_brown_01_color",
+      "kind": "bark",
+      "glb": "public/trees/pine_white/skeleton-1-lod0.glb",
+      "image": "salon_bark_bark_brown_01_color",
+      "label": {
+        "species": "pine_white",
+        "genus": "Pinus",
+        "scientific": "Pinus strobus",
+        "evidence": "species",
+        "source": "meta → index.json#species(pine_white)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "pine_white#salon_leaf_long_needle",
+      "kind": "leaf",
+      "glb": "public/trees/pine_white/skeleton-1-lod0.glb",
+      "image": "salon_leaf_long_needle",
+      "label": {
+        "species": "pine_white",
+        "genus": "Pinus",
+        "scientific": "Pinus strobus",
+        "evidence": "species",
+        "source": "meta → index.json#species(pine_white)",
         "ratified": false,
         "habitFromDossier": null
       }

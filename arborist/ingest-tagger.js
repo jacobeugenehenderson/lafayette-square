@@ -136,13 +136,16 @@ export function tagLeaf(rubric, packMeta) {
   // shape / type / margin, and pack morphology is a single token that may be any of them
   // (`cordate` is a shape, `compound-pinnate` is a type). The old normalizeVocab could
   // not express that and wrote everything back under one dead key.
-  const hit = resolveTagged('leaf.shape', packMeta.morphology)
+  // ⛔ …and the comment above said so while the code only asked leaf.shape (+ its redirects),
+  // so `compound-pinnate` — an exact leaf.type value — tagged nothing, and a black locust
+  // ranked a simple elm leaf over the one compound pack (2026-09-25). Ask each leaf axis.
+  const hit = ['leaf.shape', 'leaf.type', 'leaf.margin'].map(a => resolveTagged(a, packMeta.morphology)).find(Boolean)
   if (hit) {
     tags[hit.axis] = tag(hit.value, 'high',
       `pack-meta.morphology${hit.via === 'redirect' ? `(${packMeta.morphology}→${hit.axis})` : ''}`, false)
   } else {
     tags['leaf.shape'] = tag(null, 'low',
-      `pack-meta.morphology(${packMeta.morphology}) — not a leaf shape (season/variant pack?)`, false)
+      `pack-meta.morphology(${packMeta.morphology}) — no leaf shape, type or margin (season/variant pack?)`, false)
   }
   if (packMeta.naturalSize != null) {
     // `leaf.size` became `leaf.length`, and the rubric declares it cm — which is what

@@ -5,11 +5,11 @@
   "canonicalValue": "compound",
   "sourcePath": "public/textures/leaves/shapes/fine_compound",
   "tags": {
-    "leaf.shape": {
-      "value": null,
+    "leaf.type": {
+      "value": "compound-pinnate",
       "ratified": false,
-      "confidence": "low",
-      "source": "pack-meta.morphology(compound-pinnate) — not a leaf shape (season/variant pack?)"
+      "confidence": "high",
+      "source": "pack-meta.morphology"
     },
     "leaf.length": {
       "value": 25,

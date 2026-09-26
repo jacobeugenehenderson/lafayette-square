@@ -8,10 +8,10 @@
 
 | silhouette | pack | size | quality | recommended species |
 |---|---|---|---|---|
-| **acicular** | 🔴 GAP | — | — | — |
+| **acicular** | 🔴 GAP | — | — | pitch pine |
 | cordate | heart | 10cm | 🟢 vendor | cercis_canadensis, syringa_vulgaris, tilia_americana |
 | **deltoid** | 🔴 GAP | — | — | Red Maple, Sweetgum |
-| **elliptical** | 🔴 GAP | — | — | serviceberry, downy, Pin Oak, oak, northern red |
+| **elliptical** | 🔴 GAP | — | — | serviceberry, downy, scarlet oak, Pin Oak, oak, northern red |
 | flabellate | ginkgo | 8cm | 🟢 vendor | ginkgo_biloba |
 | lanceolate | lanceolate | 8cm | 🟢 vendor | salix_alba, salix_babylonica |
 | **linear** | 🔴 GAP | — | — | — |
@@ -42,7 +42,7 @@ _Non-silhouette packs (season/variant, not a single-leaf shape): fine_compound(c
 |---|---|---|---|
 | smooth | Bark004 | ambientCG (draft quality) | Pin Oak, Zelkova, Japanese |
 | **fissured** | 🔴 GAP | — | serviceberry, downy |
-| furrowed | bark_brown_01 | Poly Haven CC0 | Sweetgum, blackgum, Pine, White, Oak, Willow, Linden, American |
+| furrowed | bark_brown_01 | Poly Haven CC0 | Sweetgum, blackgum, Pine, White, scarlet oak, Oak, Willow, black oak, Linden, American |
 | ridged | Bark003 | ambientCG (draft quality) | Red Maple, Green Ash |
 | plated | Bark007 | ambientCG (draft quality) | Sugar Maple |
 | scaly | bark_platanus | Poly Haven CC0 | Silver Maple, Redbud, Flowering Crabapple, mountainash, American |
