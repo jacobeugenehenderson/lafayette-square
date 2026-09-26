@@ -356,17 +356,15 @@ Every ground-anchored consumer multiplies by the same `uExag` uniform (driven fr
 
 ### Cast shadows — the frustum is the town's, and BOTH its position and its SIZE must be quantised (2026-09-20/21)
 
-Four decisions, each of which was a defect first.
+Five decisions, each of which was a defect first.
 
-1. **A vertex-displaced caster needs a `customDepthMaterial`.** three substitutes its own
-   `MeshDepthMaterial` for the shadow pass, and that material has never heard of `aCentroidY` or
-   `uExag` — so every building went into the shadow map **dropped back onto the baseline**, up to
-   20 m below where it is drawn, and an occluder buried in the terrain shadows nothing. ⛔ **This
-   was never a regression: the shadow pass has never been correct for any in-shader-displaced
-   caster.** It is worst on the hilliest town and mildest on flat LS. ⭐ A `position` prop is
-   **not** an offender — that rides `modelMatrix`, which the depth pass honours; only in-shader
-   displacement is invisible to it. ▶ `checks/claims-displaced-casters-have-a-depth-material.mjs`
-   ⚠️ **File-level**, so a second casting mesh in an already-passing file slips through.
+1. **A vertex-displaced caster needs a `customDepthMaterial`.** three's own depth material has
+   never heard of `aCentroidY` or `uExag`, so a building went into the map **on the baseline**, up
+   to 20 m below where it is drawn — worst on the hilliest town. A `position` prop is not an
+   offender (it rides `modelMatrix`); only in-shader displacement is. ▶
+   `checks/claims-displaced-casters-have-a-depth-material.mjs` ⚠️ **File-level** — and it bites:
+   Stage's `Building` mesh casts with no depth material and passes, because `Foundations` in the
+   same file has one.
 2. **The frustum comes from `ground.json#stencil`, never from a constant.** It was `±900` —
    Lafayette Square's 892 m radius plus 8 m — so on a 3,539 m town **~73% of the map could not
    receive a shadow at any quality.** The light itself does not move (`LIGHT_RADIUS` also places
@@ -387,10 +385,13 @@ Four decisions, each of which was a defect first.
    hysteresis** — grow as soon as the shot needs it, shrink only once the shot is well inside the
    smaller bucket (0.45×) — or a camera parked on a boundary flaps between two sizes every frame and
    the flash comes back worse.
-   ⭐ **What let the flash be told apart from the frame rate:** the parity probe measured the camera
-   as smooth and **monotone** (per-frame step 0.1215/0.1268/0.1547 m, ±5%, ground delta exactly 0)
-   *at 8.5 FPS*. Something was changing between frames that was not the camera.
    ⛔ **The frame rate itself is UNEXPLAINED and is not this** — see `ROADMAP` H-9.
+
+5. **Buildings cast from BOTH faces (`shadowSide: DoubleSide`, slab + Stage).** With three's default
+   (a `FrontSide` mesh casts from its back faces only) a lit strip ran along every building's shaded
+   foot at a low sun — the "hovering" read. Measured 2026-09-26 (huron ×8, LS ×10, 0.125–0.5 m/texel):
+   gone at every size. ⚠️ Cost: grain on sunlit walls (≤ ~11% of pixels >10% darker at 0.5 m/texel);
+   cause not established.
 
 *(The operator-facing half — the Penumbra (m) unit and its migration — is `OPERATIONS.md §Light & Shadow`.)*
 

@@ -418,6 +418,12 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       roughness: isFoundation ? (phys.roughness ?? 0.95) : (phys.roughness ?? 0.9),
       metalness: isFoundation ? (phys.metalness ?? 0) : (phys.metalness ?? 0.05),
       side: isRoof ? THREE.DoubleSide : THREE.FrontSide,
+      // ⛔ BOTH SIDES INTO THE SHADOW MAP. Left null, three casts a FrontSide mesh from its
+      // BACK faces only, and at a low sun a LIT STRIP ran along every building's shaded foot —
+      // the "hovering" read. Measured 2026-09-26, huron + LS: gone with DoubleSide at every box
+      // size tried. Cost: grain on sunlit walls (ARCHITECTURE §8 Cast shadows, decision 5).
+      // Stage's materials match.
+      shadowSide: THREE.DoubleSide,
     })
 
     mat.onBeforeCompile = (shader) => {

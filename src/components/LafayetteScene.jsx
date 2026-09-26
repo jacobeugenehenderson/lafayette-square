@@ -487,7 +487,8 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
   })
 
   const foundationMat = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({ color: '#B8A88A', roughness: 0.95 })
+    // shadowSide: both faces into the shadow map — see SlabBuildings (the lit strip).
+    const mat = new THREE.MeshStandardMaterial({ color: '#B8A88A', roughness: 0.95, shadowSide: THREE.DoubleSide })
     // Per-vertex aCentroidY (raw heightmap, meters above local-min) lifts
     // each building's foundation block rigidly via the shared uExag uniform,
     // matching the per-vertex ground displacement that runs underneath.
@@ -779,6 +780,7 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
       flatShading: true,
       roughness: 0.9,
       metalness: 0.05,
+      shadowSide: THREE.DoubleSide,   // both faces into the shadow map — see SlabBuildings
     })
 
     const wallHeight = building.size[1]

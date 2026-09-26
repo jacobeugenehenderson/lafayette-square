@@ -160,3 +160,10 @@ ASPIRATION not yet established.
 ## Registers (commit gate)
 - `OPERATIONS.md` — the debug seams and what each one answers.
 - `FEATURES.md` — reaches no register until shadows actually ship correct.
+
+---
+
+*Moved here from `ARCHITECTURE §8 Cast shadows` decision 4, 2026-09-26 (Plumb — history, not live doctrine):*
+⭐ **What let the flash be told apart from the frame rate:** the parity probe measured the camera
+as smooth and **monotone** (per-frame step 0.1215/0.1268/0.1547 m, ±5%, ground delta exactly 0)
+*at 8.5 FPS*. Something was changing between frames that was not the camera.
