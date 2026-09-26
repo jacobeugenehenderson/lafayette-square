@@ -168,9 +168,9 @@ export function buildSeasonLayers({ trunkFrac, barkRect, leafRect }) {
  * @param {object}  args
  * @param {string}  args.species
  * @param {number}  args.variantId          representative variant captured
- * @param {number}  args.heightM            real metres (from computeTreeBounds)
+ * @param {number}  args.heightM            standing height, ground → top (lod1 `topM`, bake-look)
  * @param {number}  args.canopyRadiusM      real metres
- * @param {number}  args.trunkFrac          canopy-base ÷ height (measureCanopyBase)
+ * @param {number}  args.trunkFrac          canopy-base ÷ standing height
  * @param {object|null} args.barkRect       {offsetU,offsetV,scaleU,scaleV} | null
  * @param {object|null} args.leafRect       {offsetU,offsetV,scaleU,scaleV} | null
  * @returns {object} impostor record
@@ -226,7 +226,7 @@ export function captureImpostor({ species, variantId, heightM, canopyRadiusM, tr
  * @param {string}  args.species
  * @param {number}  args.heightM            real metres (representative variant)
  * @param {number}  args.canopyRadiusM      real metres
- * @param {number}  args.trunkFrac          canopy-base ÷ height (measureCanopyBase)
+ * @param {number}  args.trunkFrac          canopy-base ÷ standing height
  * @param {object|null} args.leafRect       {offsetU,offsetV,scaleU,scaleV} | null
  * @returns {object} opaque record
  */

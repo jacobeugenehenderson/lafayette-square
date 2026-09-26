@@ -1425,24 +1425,43 @@ export async function bakeLook(lookName, opts = {}) {
     } catch { /* no prior trees dir — nothing to wipe */ }
     for (const v of survey.perVariant) {
       const scale = variantScale.get(`${v.species}|${v.variantId}`) ?? 1
+      // ⭐ The height the tree STANDS at, from lod1 — the tier the hero card and the overhead
+      // snapshot are shot from and the near mesh draws. Read before lod2 (LODS order).
+      let standsAtM = null
       for (const lod of LODS) {
         const src = path.join(TREES_DIR, v.species, `skeleton-${v.variantId}-${lod}.glb`)
         const dst = path.join(outDir, 'trees', v.species, `skeleton-${v.variantId}-${lod}.glb`)
         try {
           const r = await rewriteGLB(src, dst, `${v.species}|${v.variantId}`, lookupIdx, scale)
           rewriteStats.push({ species: v.species, variantId: v.variantId, lod, scale, ...r })
-          // Capture dims from the SHIPPED tier (lod2) — what the runtime renders.
+          // ⛔ 0 is not a height (nyssa_sylvatica's lod1 measures 0 m) — it is "not measured".
+          if (lod === 'lod1') standsAtM = r.bounds?.topM > 0 ? r.bounds.topM : null
+          // Canopy radius from the SHIPPED tier (lod2); height = ground → top.
+          // ⛔⛔ heightM WAS lod2's Y EXTENT (max − min), and lod2 is TRUNK-CUT: its lowest
+          // vertex sits 7.9 m up a pitch pine, 12.1 m up a white pine. So the record read
+          // 10.3 m for an 18.3 m tree, and every consumer that stands a tree on the ground
+          // with it (the legacy ImpostorSpecies card, bake-trees' prominence spheres, the
+          // size check) drew or scored it short — by a different factor per species.
+          // (Measured 2026-09-26, Provincetown: tops agree across lod0/lod1/lod1far/hero/
+          // overhead within 0.6 m; only this record disagreed.)
           if (lod === 'lod2' && r.bounds?.canopyRadiusM != null) {
+            if (standsAtM == null) {
+              console.warn(`[bake-look] ⛔ ${v.species} v${v.variantId}: no lod1 standing height (absent, or 0 m) — `
+                + `canopyByVariant.heightM left EMPTY rather than taken from the trunk-cut lod2.`)
+            }
             ;(canopyByVariant[v.species] ||= {})[v.variantId] = {
-              heightM: r.bounds.heightM,
+              heightM: standsAtM,
               canopyRadiusM: r.bounds.canopyRadiusM,
             }
           }
-          // Impostor (Phase 1): capture the canopy-base fraction from the same
-          // shipped tier. One per species (first variant wins) — the impostor
-          // is a per-species cheap proxy, not per-variant.
-          if (lod === 'lod2' && r.impostor && impostorTrunkFracBySpecies[v.species] == null) {
-            impostorTrunkFracBySpecies[v.species] = r.impostor.trunkFrac
+          // Impostor (Phase 1): the canopy-base fraction, from the same shipped tier, as a
+          // fraction of the STANDING height (the card spans 0 → heightM from the ground).
+          // One per species (first variant wins) — the impostor is a per-species proxy.
+          if (lod === 'lod2' && r.impostor && standsAtM > 0 && impostorTrunkFracBySpecies[v.species] == null) {
+            const cb = r.impostor.canopyBaseY
+            impostorTrunkFracBySpecies[v.species] = Number.isFinite(cb)
+              ? Math.min(0.7, Math.max(0.1, cb / standsAtM))
+              : r.impostor.trunkFrac
           }
         } catch (err) {
           // ⛔ A MISSING TIER IS NOT AN ERROR — an ABSENT one is a different fact from a

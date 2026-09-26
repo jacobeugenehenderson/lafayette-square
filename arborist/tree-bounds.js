@@ -39,6 +39,10 @@ function nodeWorldMatrix(node) {
 // { heightM, canopyRadiusM } in the doc's SOURCE units — both pre-normalizeScale,
 // so a consumer scales them together by normalizeScale to reach real meters.
 //   heightM       — Y extent (drives normalizeScale; existing behavior).
+//   topM          — ground (y=0, the placement origin) to the highest vertex: the height
+//                   the tree STANDS at. ⛔ Not heightM on a trunk-cut LOD — lod2's lowest
+//                   vertex sits metres up the trunk (pitch pine 7.9 m), so its extent is
+//                   the canopy's, not the tree's.
 //   canopyRadiusM — horizontal silhouette radius = mean of the X & Z half-
 //                   extents, i.e. (xExtent + zExtent) / 4. The hero-tier
 //                   prominence pass (bake-trees) reads it as the canopy
@@ -71,10 +75,11 @@ export function computeTreeBounds(doc) {
       }
     }
   }
-  if (!isFinite(minY) || !isFinite(maxY)) return { heightM: null, canopyRadiusM: null }
+  if (!isFinite(minY) || !isFinite(maxY)) return { heightM: null, topM: null, canopyRadiusM: null }
   const heightM = Math.round((maxY - minY) * 10) / 10
+  const topM = Math.round(maxY * 10) / 10
   const canopyRadiusM = isFinite(minX) && isFinite(minZ)
     ? Math.round(((maxX - minX) + (maxZ - minZ)) / 4 * 10) / 10
     : null
-  return { heightM, canopyRadiusM }
+  return { heightM, topM, canopyRadiusM }
 }
