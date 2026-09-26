@@ -1823,8 +1823,15 @@ const useCartographStore = create((set, get) => ({
 
   setActiveLook: async (id) => {
     if (!id || id === get().activeLookId) return
-    try { localStorage.setItem(ACTIVE_LOOK_KEY, id) } catch { /* ignore */ }
     const entry = get().looks.find(l => l.id === id)
+    // ⛔ A Look with no scene (the kit default) is not a town's: with a town open, its design would autosave the
+    // town's state into the kit's 0-state. It is edited with no town open.
+    if (entry && !entry.scene && isValidMapId(get().scene)) {
+      console.error(`[looks] "${id}" has no town; close the town to edit the kit default`)
+      set({ status: `"${entry.name || id}" has no town — close the town to edit the kit default` })
+      return
+    }
+    try { localStorage.setItem(ACTIVE_LOOK_KEY, id) } catch { /* ignore */ }
     const newScene = entry?.scene || get().scene
     const sceneChanged = newScene !== get().scene
     set({ activeLookId: id })

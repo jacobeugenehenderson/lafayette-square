@@ -12,7 +12,9 @@
 //       `lookForScene`, and calls all three loaders;
 //   C · each loader re-reads the scene after its await and bails if it moved (else a slow load lands in the new town);
 //   D · setActiveLook's cross-scene branch goes through setScene;
-//   E · no other set()/setState() in src/ writes `scene` (one switch path) — except _loadLooks' cold-boot fill.
+//   E · no other set()/setState() in src/ writes `scene` (one switch path) — except _loadLooks' cold-boot fill;
+//   F · setActiveLook refuses a Look with no `scene` (the kit default) while a town is open, BEFORE it persists or
+//       activates it — else the town's state autosaves into the kit's 0-state.
 //
 //   node checks/claims-a-scene-switch-drops-the-old-town.mjs [--store=path]
 //
@@ -20,6 +22,7 @@
 //   · delete `measurements: [],` from setScene                              ⇒ A names `measurements`
 //   · change `_designHydrated: false` to `true` in setScene                 ⇒ B
 //   · delete the `if (get().scene !== scene) return` line from _loadMarkers   ⇒ C names _loadMarkers
+//   · delete `!entry.scene && ` from setActiveLook's refusal                  ⇒ F
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -88,6 +91,10 @@ if (!bad.length) {
   for (const n of LOADERS) if (!/get\(\)\.scene !== scene|stale\(\)/.test(bodies[n]) || !/const scene = get\(\)\.scene/.test(bodies[n])) bad.push(`C · ${n} does not re-check the scene after its await — a slow load lands in whichever town is open when it returns`)
   // D
   if (!/setScene\(/.test(bodies.setActiveLook)) bad.push('D · setActiveLook switches scene without going through setScene')
+  // F
+  const A = bodies.setActiveLook, refuse = /if \(entry && !entry\.scene && isValidMapId\(get\(\)\.scene\)\) \{[\s\S]*?\n\s*return\n\s*\}/.exec(A)
+  if (!refuse) bad.push('F · setActiveLook does not refuse a scene-less Look (the kit default) while a town is open')
+  else for (const w of ['localStorage.setItem(ACTIVE_LOOK_KEY', 'set({ activeLookId']) if (A.indexOf(w) >= 0 && A.indexOf(w) < refuse.index) bad.push(`F · setActiveLook runs \`${w}\` before its scene-less refusal — the kit default is persisted or activated anyway`)
   // E
   const files = []
   const walk = (d) => { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else if (/\.(js|jsx)$/.test(f)) files.push(p) } }
