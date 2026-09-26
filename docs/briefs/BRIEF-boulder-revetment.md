@@ -7,6 +7,9 @@ evict-when: RULING: Jacob's eye on huron's lakefront — does the revetment read
 
 # BRIEF — HURON'S LAKEFRONT IS A BOULDER WALL AND WE DRAW NOTHING
 
+> ⭐ **2026-09-26 (Jacob): the shore must never be bare, whatever fills it.** The revetment is one filler, not the thing
+> that closes the shore. ▶ `docs/briefs/BRIEF-the-shore-is-closed.md`.
+
 *Written 2026-09-20 by the coordinator seat.*
 
 > ### ⭐ THE ASK — Jacob, 2026-09-20
