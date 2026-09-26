@@ -687,20 +687,23 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     if (ring.length < 3) continue
     // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon
     // overlaps, so a mixed pile unions into confetti instead of one object.
-    // ⛔⛔ AND THE LABELS REVERSE WITH IT AND ARE **NOT** ROTATED. I rotated them here for an hour
-    // on the reasoning that `labs` is per-EDGE, so a reversal must shift it by one — the same
-    // correction that is right at `carryEdgeLabels`. IT IS WRONG HERE, and bisected: this ring is
-    // [right pass forward, left pass BACKWARD], and each vertex is already paired with the span it
-    // bounds by the `segI` argument above. Rotating on top of that shifts the pairing a second
-    // time — and it does it ACROSS THE SEAM between the two passes, so a `right` label lands on a
-    // `left` vertex and both blocks flanking the street write to one slot.
-    // ▶ measured, ① re-poured both ways, same oracle: runs whose `side` disagrees with their
-    // geometry **47 with the rotation, 2 without**; slots painting in two blocks **54 → 41**; and
-    // the stamp gate did not move either way, so nothing recommended it.
-    // ⭐ THE LESSON, and it is the one to keep: the SAME correction was right three times today and
-    // wrong the fourth. "Per-edge arrays shift on reversal" is a property of a construction, not a
-    // law of the file — check the construction each time.
-    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) { ring.reverse(); labs.reverse() }
+    // ⛔ The earlier ruling here — reverse, do NOT rotate ("47 with the rotation, 2 without") — was measured while
+    // booleanLabelled's forward scan still handed a minted vertex the NEXT record, which partly cancelled the
+    // missing rotation. With the containing edge taken first, rotation is what the geometry oracle agrees with.
+    // Retired text + the measurement: `cartograph/_archive/PROTO-labels-reversed-not-rotated-RETIRED-2026-09-25.md`.
+    const pass = labs.map((_, k) => k < P.length)   // true = the right-hand pass; reversed WITH the ring below
+    const pEnd = labs.map((_, k) => { const i = k < P.length ? k : 2 * P.length - 1 - k; return i === 0 ? 'start' : i === lastI ? 'end' : null })
+    // ⭐ `labs` is PER-EDGE (labs[k] names edge k→k+1: right pass segment i, left pass segment i−1 via `segI`, the two
+    // caps at the seams), so a reversal must also ROTATE it: new edge k is old edge n−2−k. `pass` and `pEnd` are
+    // per-VERTEX and only reverse. ⛔ The not-rotated reversal this replaces put the span of segment i on segment
+    // i−1 wherever i is an IX vertex (▶ `CARTOGRAPH_SCENE=<scene> node scratch/proto-remint.mjs --oracle=<ribbons>`).
+    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) { ring.reverse(); labs.reverse(); labs.push(labs.shift()); pass.reverse(); pEnd.reverse() }
+    // ⭐ THE TWO CAP EDGES ARE MARKED, on the FINAL ring: an edge whose ends lie on opposite passes crosses the
+    // ribbon. ⛔ Marked AFTER the flip, never by position: before it, `P.length-1` and `2·P.length-1` are the cap
+    // vertices; after it, those records label LEGS (▶ `scratch/ink-cap-marks.mjs`). A record is one vertex's
+    // (`stamp` pushes a new one per call), so the mark names that vertex's edge. ⛔ Additive: `skelId`, `srcIdx`, `tipEnd` stay — the tip ease reads them.
+    const capSurvives = (end) => isCoast || (end === 'start' ? dg0 : dg1) === 1
+    for (let k = 0; k < labs.length; k++) if (pass[k] !== pass[(k + 1) % labs.length] && capSurvives(pEnd[k])) owners[labs[k]].cap = true
     rings.push(ring); labels.push(labs)
   }
   // ⭐⭐⭐ THE CORNER NODE, FROZEN — so ② NEVER TOUCHES A CHAIN.
@@ -1210,6 +1213,11 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       if (back.length !== 1) continue
       own.add(labOfZ(back[0].Z)) }
     return own.size === 1 ? [...own][0] : -1 }
+  // the owner of the ONE input edge containing the output edge v→q, read as that edge's own label — its START in input
+  // order (`segs` keeps a→b as handed to Clipper), so the answer does not depend on which way the output walks it
+  const inputEdgeOwner = (v, q) => { const own = new Set()
+    for (const sg of segsNear(v)) { if (!sg.a.Z || !sg.b.Z) continue; if (onSeg(v, sg.a, sg.b) && onSeg(q, sg.a, sg.b)) own.add(labOfZ(sg.a.Z)) }
+    return own.size === 1 ? [...own][0] : -1 }
   let containReassigned = 0, containRefused = 0
   for (const p of out) {
     const raw = p.map(q => (q.Z ? labOfZ(q.Z) : -1))      // -1 = a crossing
@@ -1280,6 +1288,12 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     }
     for (let i = 0; i < n; i++) {
       if (raw[i] >= 0) { res[i] = fix.has(i) ? fix.get(i) : raw[i]; continue }
+      // ⭐ A MINTED VERTEX'S EDGE LIES ON AN INPUT EDGE — take THAT edge's owner record FIRST. Both fallbacks below
+      // name the right street side but an arbitrary VERTEX: the ledger reads the Z Clipper kept for the contributing
+      // edge (either end of it), and the forward scan the NEXT surviving vertex's record (its leaving edge). A record
+      // is one vertex's, so the wrong one carries the wrong `srcIdx` and `cap`. Only where exactly one input edge
+      // contains the output edge (`inputEdgeOwner`); otherwise the ledger, then the scan, as before. ① only (`segs`).
+      if (segs) { const c = inputEdgeOwner(p[i], p[(i + 1) % n]); if (c >= 0) { res[i] = c; continue } }
       const led = ownerLeaving(i)
       if (led >= 0) { res[i] = led; continue }
       let v = -1
@@ -8719,6 +8733,10 @@ export function buildTileGround(ribbons, opts = {}) {
               const o = EC.labs[i] == null ? null : protoOwners[EC.labs[i]]
               const key = o ? `${o.skelId}|${o.side}|${o.segOrd}` : null
               if (!key) { cur = null; continue }
+              // ⛔ A CAP EDGE IS NOT FRONTAGE: it runs ACROSS the ribbon, so as a run it would answer "which side is
+              // the water on" with a segment perpendicular to the shore. It ENDS the run (the leg stops where it
+              // stops in the world). The record keeps its identity for the tip ease; only the RUN declines it.
+              if (o.cap) { cur = null; continue }
               // ⭐ `baseMeasure` — the MEASURED cross-section for this street side. `SECTION §3.1`:
               // treelawn Y/N is "gleaned from data", and `resolvePedDepths(baseMeasure, side, custom)`
               // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by

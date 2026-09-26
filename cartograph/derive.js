@@ -76,7 +76,7 @@ const ARC_TOL = 0.01 * SCALE  // 1cm — smooth arcs
 // ▶ node checks/claims-simplify-preserves-authoring.mjs <scene>
 const CURVE_TOL = 0.10   // m — the sagitta a tessellated chord may miss the true curve by
 
-function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
+export function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
   if (!segments || !segments.length || !(points?.length >= 2)) return points
   const cub = (a, c1, c2, b, t) => {
     const u = 1 - t, A = u*u*u, B = 3*u*u*t, C = 3*u*t*t, D = t*t*t
