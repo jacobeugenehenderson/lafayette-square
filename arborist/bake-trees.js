@@ -54,21 +54,16 @@ import { fileURLToPath } from 'node:url'
 // with what Scene/Preview/Stage actually render. Node-safe ESM.
 import { heroPathPose, assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
 import { assignHeroBand, glbTriangleCount } from './hero-band.mjs'
+import { canopyLightAt } from '../src/lib/lampPool.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
 
-// Per-tree lamp-glow: sample the same gaussian splat the runtime
-// `getLampLightmap()` builds in src/components/lampLightmap.js, but
-// at each tree's world position. Bake-time pre-sample → one float per
-// instance → leaf shader does one cheap multiply at render time, no
-// per-fragment texture lookup. Same SIGMA/EXTENT/CUTOFF as runtime so
-// per-tree intensity matches the grass shader's per-fragment intensity
-// at the same point.
-const LAMP_SIGMA = 12
-const LAMP_SIGMA2 = 2 * LAMP_SIGMA * LAMP_SIGMA
-const LAMP_CUTOFF2 = (4 * LAMP_SIGMA) * (4 * LAMP_SIGMA)
-const LAMP_MAX = 1.5
+// Per-tree lamp-glow: the canopy light from `src/lib/lampPool.js` — the SAME reach and
+// falloff as the ground's pool (bake-ground-ao), minus the ring and pole shadow, which only
+// the ground sees. One float per instance; all three tree paths multiply it by the leaf
+// colour and the lamp colour. (Was a private gaussian σ 12 m cut at 48 m — a tree 30 m out
+// glowed over unlit ground.)
 // ⭐ The lamp set is PER SCENE and loaded at bake time — never module-level.
 //
 // This was `const _lamps = readFileSync('src/data/street_lamps.json')`: LS's own
@@ -102,15 +97,7 @@ function loadLampsForMap(scene) {
   }
 }
 function lampGlowAt(wx, wz) {
-  let acc = 0
-  for (let l = 0; l < _lamps.length; l++) {
-    const dx = wx - _lamps[l].x
-    const dz = wz - _lamps[l].z
-    const d2 = dx * dx + dz * dz
-    if (d2 > LAMP_CUTOFF2) continue
-    acc += Math.exp(-d2 / LAMP_SIGMA2)
-  }
-  return Math.min(acc, LAMP_MAX)
+  return canopyLightAt(_lamps, wx, wz)
 }
 // Forbidden-surface filter (a tree can never stand on hardscape/water/building)
 // lives in cartograph/forbidden-surface.mjs — shared with the canopy-fill

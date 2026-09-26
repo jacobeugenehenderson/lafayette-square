@@ -315,6 +315,10 @@ export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
       const raw = new Float32Array(instances.length)
       for (let i = 0; i < instances.length; i++) raw[i] = treeGroundRaw(instances[i])
       discs[d].geo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(raw, 1))
+      // The per-tree lamp light the bake stamped (`lampGlow`, src/lib/lampPool.js) — the same value the mesh path reads.
+      const glow = new Float32Array(instances.length)
+      for (let i = 0; i < instances.length; i++) glow[i] = Number(instances[i].lampGlow) || 0
+      discs[d].geo.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(glow, 1))
     }
     invalidate()
   }, [matrices, discs, instances, invalidate])

@@ -279,6 +279,10 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       const raw = new Float32Array(d.instances.length)
       for (let i = 0; i < d.instances.length; i++) raw[i] = treeGroundRaw(d.instances[i])
       d.geo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(raw, 1))
+      // The per-tree lamp light the bake stamped (`lampGlow`, src/lib/lampPool.js) — the same value the mesh path reads.
+      const glow = new Float32Array(d.instances.length)
+      for (let i = 0; i < d.instances.length; i++) glow[i] = Number(d.instances[i].lampGlow) || 0
+      d.geo.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(glow, 1))
     }
     invalidate()
   }, [draws, invalidate])

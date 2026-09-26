@@ -190,7 +190,7 @@ All Image channels are TOD. Grouped by intent:
 
 The man-made emitters (TOD):
 - **Lantern** (`lantern` = **Brightness + Glow**) — the lamp's own light source (lantern / glow orb / bulb), TOD-animatable, operator master × the automatic dusk→night turn-on. **Lantern Brightness also drives the ground light POOL** (the pool *is* the lantern's light on the ground — one slider for both; off by day).
-- **Lamp Glow** (`lampGlow` = **Canopy**) — the under-lamp glow on tree foliage.
+- **Lamp Glow** (`lampGlow` = **Canopy**) — how strongly the lamps light the trees' leaves, on a TOD curve. The light is the leaf's own colour × the Lantern colour × each tree's baked share, with the ground pool's reach (`src/lib/lampPool.js`), on every tree path (mesh, hero card, overhead). ⚠️ A tree's share is baked: re-bake trees after lamps.
 - **Arch uplights** (`archLight`) — the Gateway Arch's cross-aimed foot uplights: left/right **intensity · colour · cone° · reach**. Placement is on the non-TOD `arch` channel.
 
 The pool is **baked into the ground** (contour-correct), so its *shape* is a bake-time knob (CLI / bake operations, below). **Lamp colour** is the Surfaces lamp swatch (above) — one source tints the lantern **and** the pool. ⚠️ **Open (Phase B):** the lamp is really **three** things — fixture (lantern + aura/Bloom) · ground pool (should be its own knob, not slaved to Lantern) · canopy — and Bloom + Neon should join this card (`scratch/LOOK-PANEL-TAXONOMY.md`).

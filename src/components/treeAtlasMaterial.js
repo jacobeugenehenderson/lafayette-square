@@ -349,11 +349,11 @@ export function injectFoliageSway(material) {
     // Shared by REFERENCE, so one write drives every mounted tree.
     shader.uniforms.uLeafTransmission          = treeLeafTransmission
     shader.uniforms.uLeafTransmissionSharpness = treeLeafTransmissionSharpness
-    // Per-tree lamp-glow uniform — driven by CartographApp from the
-    // per-Look TOD curve (lampGlow.trees slider). The per-instance
-    // `aLampGlow` attribute (pre-baked at tree position) carries the
-    // gaussian sum over nearby lamps; the uniform scales it.
+    // Per-tree lamp light — the per-Look TOD curve (lampGlow.trees) scales the per-instance
+    // `aLampGlow`, baked from the town's lamps with the ground pool's own reach and falloff
+    // (`src/lib/lampPool.js`). Tinted by the authored lamp colour, the same one the pool uses.
     shader.uniforms.uLampGlow = _lampGlow.treesUniform
+    shader.uniforms.uLampColor = _lampGlow.colorUniform
     // Trunk-base ground blend — the lowest ~uTrunkBlendTop metres of the trunk
     // blend toward the ACTUAL ground colour beneath the tree, sampled from the
     // baked per-Look ground-color map at the tree's world-XZ. Marries the tree
@@ -799,6 +799,7 @@ export function injectFoliageSway(material) {
          uniform float uLeafTransmission;
          uniform float uLeafTransmissionSharpness;
          uniform float uLampGlow;
+         uniform vec3  uLampColor;
          uniform sampler2D uGroundColorMap;
          uniform vec2  uGroundColorMin;
          uniform vec2  uGroundColorSpan;
@@ -1054,13 +1055,13 @@ export function injectFoliageSway(material) {
          }`
       )
       .replace(
-        // Slot the warm contribution into the standard emissive accumulator
-        // so tone-mapping + Bloom see it correctly. Same warm amber tint
-        // grassMaterial uses (vec3(0.55, 0.40, 0.20)) for visual continuity.
-        // vCanopyW gates contribution to upper foliage only.
+        // Lamp light on the leaves: LEAF COLOUR × lamp colour × glow — a light falling on the
+        // albedo, not a flat amber added over it (Jacob, 2026-09-26: "Lamps should affect tree
+        // albedo"). Slotted into the emissive accumulator so tone-mapping + Bloom see it; the
+        // albedo factor is what stops it glowing. vCanopyW gates it to the upper foliage.
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
-         totalEmissiveRadiance += vec3(0.55, 0.40, 0.20) * vLampGlow * uLampGlow * vCanopyW;`
+         totalEmissiveRadiance += diffuseColor.rgb * uLampColor * vLampGlow * uLampGlow * vCanopyW;`
       )
       .replace(
         // Sanitize the final lit color before it becomes gl_FragColor — kills the
@@ -1889,6 +1890,8 @@ export function applyOverheadDeformerUniforms(material, overhead) {
 // Shared overhead-wind vertex GLSL (used by both the procedural relic wiggle and
 // the stamp material). fBm turbulence + hula + flutter; wind-only, no floor.
 const OVERHEAD_WIND_COMMON = `
+         attribute float aLampGlow;   // per-tree lamp light (src/lib/lampPool.js) — absent ⇒ 0
+         varying float vLampGlow;
          uniform float uTime;
          uniform vec3  uWindForce;
          uniform float uWindIntensity;
@@ -1986,7 +1989,8 @@ const OVERHEAD_GROUND_LIFT = `
            float _ovYScale = length(instanceMatrix[1].xyz);
            transformed.y += aGroundRaw * uExag / max(_ovYScale, 0.0001);
          }
-         #endif`
+         #endif
+         vLampGlow = aLampGlow;`
 
 function bindOverheadWindUniforms(shader, floorUniform) {
   // ⛔ Default 1.0 → byte-identical for any caller that does not pass a floor.
@@ -2128,6 +2132,9 @@ if (typeof window !== 'undefined') {
 // were therefore INVISIBLE to the one instrument that exists to catch a non-linking
 // tree shader. An instrument's silence is not evidence of absence.
 const LIT_CARDS_FRAG_COMMON = `
+         varying float vLampGlow;     // lamp light on the card — see bindCardLampUniforms
+         uniform float uLampGlow;
+         uniform vec3  uLampColor;
          uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;
          uniform vec3  uKeyDir;    // world direction TOWARD the scene's key light
          uniform vec3  uKeyColor;
@@ -2184,14 +2191,25 @@ function bindCardLightUniforms(shader) {
   shader.uniforms.uCardBulge = overheadLightUniforms.uCardBulge
 }
 
+// ── LAMP LIGHT ON A CARD — the same per-tree `aLampGlow` the mesh path reads ──────────────
+// ⭐ A SECOND LIGHT ON THE SAME ALBEDO, INSIDE THE RELIGHT: albedo × (relight + lamp). ⛔ Never
+// added after the relight on its own — that is the glow the trunk joint below refuses; a term
+// proportional to the card's own albedo cannot glow brighter than a lit leaf.
+// Declared in OVERHEAD_WIND_COMMON / LIT_CARDS_FRAG_COMMON and written in OVERHEAD_GROUND_LIFT — the
+// blocks every card program already compiles with — so claims-shader-fragments-declare-what-they-use sees them.
+function bindCardLampUniforms(shader) {
+  shader.uniforms.uLampGlow  = _lampGlow.treesUniform
+  shader.uniforms.uLampColor = _lampGlow.colorUniform
+}
+
 const OVERHEAD_STAMP_FRAG = `
          // RELIGHT — see litCardsRelight. Flag off → albedo × (ambient + sun·AO),
-         // byte-identical to what shipped before.
+         // byte-identical to what shipped before. Plus the lamps' light on the same albedo.
          float ovAO = texture2D(uAO, vMapUv).r;
          vec2  ovD  = (vMapUv * 2.0 - 1.0) * uCardBulge;
          float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
          vec3  ovN  = vec3(ovD.x, sqrt(1.0 - ovR2), ovD.y);   // hemispherical crown, world axes
-         diffuseColor.rgb *= litCardsRelight(ovN, ovAO);`
+         diffuseColor.rgb *= litCardsRelight(ovN, ovAO) + uLampColor * vLampGlow * uLampGlow;`
 
 // The HERO card's fragment half. The card is a Y-axis billboard, so its own axes
 // are handed down from the vertex shader as varyings — width along vHeroRight,
@@ -2210,7 +2228,8 @@ const HERO_STAMP_FRAG = `
          vec2  ovD  = (vMapUv * 2.0 - 1.0) * uCardBulge;
          float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
          vec3  ovN  = vHeroRight * ovD.x + vec3(0.0, ovD.y, 0.0) + vHeroFwd * sqrt(1.0 - ovR2);
-         diffuseColor.rgb *= litCardsRelight(ovN, ovAO);
+         // Lamps light the foliage layer only — the mesh path gates the same way (vCanopyW).
+         diffuseColor.rgb *= litCardsRelight(ovN, ovAO) + uLampColor * vLampGlow * uLampGlow * (1.0 - uCardIsBark);
          // ── THE TRUNK/GROUND JOINT ────────────────────────────────────────────
          // The operator's description: "a sample of the shadowed ground multiplied
          // onto the trunk to blend the joint/connection point." It existed on the mesh
@@ -2309,6 +2328,7 @@ export function injectOverheadStamp(material, aoTex) {
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
     bindCardLightUniforms(shader)
+    bindCardLampUniforms(shader)
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
@@ -2389,6 +2409,7 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
     shader.uniforms.uGroundFxMin     = _groundColor.fxMinUniform
     shader.uniforms.uGroundFxSpan    = _groundColor.fxSpanUniform
     shader.uniforms.uTrunkShadowStr  = treeTrunkGround.shadowStrUniform
+    bindCardLampUniforms(shader)
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>' + HERO_VERT_COMMON)
