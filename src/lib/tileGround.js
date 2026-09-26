@@ -441,7 +441,7 @@ export function highwayEndContact(at, which) {
 //     one needing the SMALLEST widening — the least that receives the butt (`d-ramp-terminal-flare-overhang`), no angle cut-off;
 //   · the side + span: the leg's side is measure-right = (−dz, dx) of the CHAIN's point order; `segOrd` is the mint's
 //     own count (`segOrdAt`), so the flare keys to the same authoring slot as the curb it moves;
-//   · `lateral`: the corner's distance from the leg's centreline — geometry, independent of any authoring;
+//   · `lateral` / `along`: the corner's distance from the leg's centreline and its station along the leg from the node — geometry, independent of any authoring (the draw holds full width out to `along`);
 //   · ⛔ the overhang is NOT frozen as the answer: `o = lateral − the street's RESOLVED half-width`, and the resolution
 //     needs the look's authoring (blockCustoms), which ① never reads. `baseO` (against the base width) is disclosure only;
 //   · the taper: `rate` × o along the leg (`f-caltrans-terminal-widening-taper`, 10:1).
@@ -497,7 +497,7 @@ export function rampTerminalFlares(streets, gradeSep, hwyClasses, disc = null) {
             if (!Number.isFinite(baseHW)) continue
             const segOrd = segOrdAt(x.st, fwd ? x.i : k)
             const cand = { street: x.st.skelId ?? x.st.name, side, segOrd, node: [node[0], node[1]], toward: [Q[k][0], Q[k][1]],
-              hwy: s.skelId ?? s.name, end: which, corner, hH: w, lateral, baseHW, baseO: lateral - baseHW, rate: FLARE_RATE,
+              hwy: s.skelId ?? s.name, end: which, corner, hH: w, lateral, along, baseHW, baseO: lateral - baseHW, rate: FLARE_RATE,
               sources: ['f-caltrans-terminal-widening-taper', 'd-ramp-terminal-flare-overhang',
                 mainline ? '[U] q-ramp-terminal-flare (a highway mainline continuing as a narrower street — 206.2(3) covers lane widening, not a lane-count change)'
                          : '[U] q-ramp-terminal-flare (206.2(3) scopes 10:1 to terminals with large truck turning volumes; the kit carries no truck volume)'] }
@@ -1587,7 +1587,9 @@ export function flareWorkingCopy(WC, flares, ownerOfOrig, hwOf, disclosure) {
         const d = Math.hypot(p[0] - f.node[0], p[1] - f.node[1]); if (!best || d < best.d) best = { run, fwd, d } }
     }
     if (!best) { disclosure.noRun.add(name); continue }
-    if (best.d > (f.along ?? 0)) { disclosure.misattributed.add(`${name}: its run starts ${best.d.toFixed(1)} m from the node, past the corner (${(f.along ?? 0).toFixed(1)} m)`); continue }
+    // ⛔ the corner's station is part of the frozen record; a record without it predates the draw — never read as 0
+    if (!Number.isFinite(f.along)) { disclosure.misattributed.add(`${name}: the frozen record carries no \`along\` (poured before the draw) — re-pour`); continue }
+    if (best.d > f.along) { disclosure.misattributed.add(`${name}: its run starts ${best.d.toFixed(1)} m from the node, past the corner (${(f.along ?? 0).toFixed(1)} m)`); continue }
     const o = f.lateral - hwOf(best.run[0], E)
     if (!(o > 0)) { disclosure.received.add(`${name} (the authored width receives it: o = ${o.toFixed(2)} m)`); continue }
     const H0 = (f.along ?? 0) + best.d, T = H0 + f.rate * o, ex = (x) => x <= H0 ? o : x < T ? o * (1 - (x - H0) / (T - H0)) : 0
@@ -8207,9 +8209,14 @@ export function buildTileGround(ribbons, opts = {}) {
         const D = flareDisclosure, notDrawn = [...MP.flares].filter(f => ![...D.drawn].some(x => x.startsWith(`${f.hwy}.${f.end} ${f.corner} `)) && ![...D.received].some(x => x.startsWith(`${f.hwy}.${f.end} ${f.corner} `)))
         console.log(`[tileGround][H-3 flare] ${D.drawn.size} of ${MP.flares.length} frozen flare(s) drawn into the town street (10:1, [U])${D.drawn.size ? ': ' + [...D.drawn].join(' · ') : ''}`)
         if (D.received.size) console.log(`[tileGround][H-3 flare] received by the authored width, not drawn: ${[...D.received].join(' · ')}`)
-        if (D.misattributed.size) console.warn(`[tileGround][H-3 flare] ⛔ NOT DRAWN — ① gives the node's edge along the leg another label: ${[...D.misattributed].join(' · ')}`)
+        // a flare is tried on every ring its street borders: it is DRAWN if any ring drew it; otherwise report only its
+        // closest refusal (the other rings are simply other blocks along the same span)
+        const key = (x) => x.split(':')[0], drawnK = new Set([...D.drawn, ...D.received].map(x => key(x).replace(/ \(the authored.*$/, '')))
+        const refused = new Map(); for (const x of D.misattributed) { const k = key(x); if (drawnK.has(k)) continue
+          const d = +(/starts ([\d.]+) m/.exec(x)?.[1] ?? Infinity); if (!refused.has(k) || d < refused.get(k).d) refused.set(k, { d, x }) }
+        if (refused.size) console.warn(`[tileGround][H-3 flare] ⛔ NOT DRAWN — ① gives the node's edge along the leg another label: ${[...refused.values()].map(r => r.x).join(' · ')}`)
         if (D.truncated.size) console.warn(`[tileGround][H-3 flare] ⛔ TRUNCATED at the span end: ${[...D.truncated].join(' · ')}`)
-        const lost = notDrawn.filter(f => ![...D.misattributed].some(x => x.startsWith(`${f.hwy}.${f.end} ${f.corner} `)))
+        const lost = notDrawn.filter(f => ![...refused.keys()].some(k => k.startsWith(`${f.hwy}.${f.end} ${f.corner} `)))
         if (lost.length) console.warn(`[tileGround][H-3 flare] ⛔ ${lost.length} flare(s) found NO ① run carrying their street: ${lost.map(f => `${f.hwy}.${f.end} → ${f.street} ${f.side}/${f.segOrd}`).join(' · ')}`)
       }
       if (protoTaper.steep.length) console.warn(`[tileGround][PROTO②] ⛔ ${protoTaper.steep.length} width-step taper(s) STEEPER than ${TAPER_RATE}:1 — the wider leg is shorter than the taper, so it takes the whole leg: ` +
