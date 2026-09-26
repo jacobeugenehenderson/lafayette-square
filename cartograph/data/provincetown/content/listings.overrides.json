@@ -13,6 +13,37 @@
  },
  "adds": [
   {
+   "id": "prov-lst-0417",
+   "building_id": "msbf-2313",
+   "name": "The Black Dog",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "315 Commercial Street",
+   "phone": "508-487-8776",
+   "website": "https://theblackdog.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "The Martha's Vineyard apparel and gear brand, known for its black Lab logo, in its Provincetown shop.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "315 Commercial St.",
+    "x": 99.8,
+    "z": -21.3
+   },
+   "_anchor_via": "OSM addr 315 Commercial St. (osm 164023881) → msbf-2313 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.16 (Apparel & Retail)",
+   "_fetched": "2026-09-25",
+   "_source": "https://theblackdog.com/"
+  },
+  {
    "id": "prov-lst-0345",
    "building_id": "msbf-674",
    "name": "Coconuts Sunglasses",
@@ -74,6 +105,37 @@
    "_fetched": "2026-09-25",
    "_source": "https://www.shopdanielhammond.com/ (plushptown.com redirects here)",
    "_season": "The site links \"Provincetown Shop Fall Hours\" but gives no times."
+  },
+  {
+   "id": "prov-lst-0418",
+   "building_id": "osm-1540050778",
+   "name": "Ptown Blooms",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "281 Commercial Street #2",
+   "phone": "508-514-7071",
+   "website": "https://ptownblooms.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A florist arranging seasonal and locally grown flowers, which also does events, weekly subscriptions and floral design classes.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "281 Commercial St. #2",
+    "x": 2.4,
+    "z": 57.7
+   },
+   "_anchor_via": "OSM addr 281 Commercial St.  (osm 164023886) → osm-1540050778 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.16 (Apparel & Retail)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.ptownblooms.com/"
   },
   {
    "id": "prov-lst-0347",
@@ -201,6 +263,37 @@
    "_source": "https://aligraygallery.com/"
   },
   {
+   "id": "prov-lst-0419",
+   "building_id": "msbf-1269",
+   "name": "Gallery 193 Artspace",
+   "category": "arts",
+   "subcategory": "galleries",
+   "address": "193 Commercial Street, 2nd Floor",
+   "phone": "508-258-9324",
+   "website": "https://gallery193artspace.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "193 Commercial St., 2nd Floor",
+    "x": -192.5,
+    "z": 332
+   },
+   "_anchor_via": "OSM addr 193 Commercial St. (osm 170530735) → msbf-1269 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.18 (Art Galleries & Organizations)",
+   "_fetched": "2026-09-25",
+   "_note": "The site did not answer; facts are from the guide only."
+  },
+  {
    "id": "prov-lst-0351",
    "building_id": "msbf-415",
    "name": "Provincetown Art Gallery Association (PAGA)",
@@ -294,6 +387,37 @@
    "_fetched": "2026-09-25"
   },
   {
+   "id": "prov-lst-0376",
+   "building_id": "osm-624547116",
+   "name": "Flyer's Boat Rentals",
+   "category": "parks",
+   "subcategory": "recreation",
+   "address": "131A Commercial Street",
+   "phone": "508-487-0898",
+   "website": "https://flyersboats.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Boat rentals on the harbor in the West End.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "131A Commercial St.",
+    "x": -366.1,
+    "z": 687.4
+   },
+   "_anchor_via": "OSM addr 131A Commercial St. (osm 624547116) → osm-624547116 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.22 (Attractions, Experiences & Tours)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.flyersboats.com/"
+  },
+  {
    "id": "prov-lst-0354",
    "building_id": "msbf-2615",
    "name": "Center For Coastal Studies",
@@ -328,6 +452,75 @@
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.22 (Attractions, Experiences & Tours)",
    "_fetched": "2026-09-25",
    "_source": "https://coastalstudies.org/"
+  },
+  {
+   "id": "prov-lst-0420",
+   "building_id": "osm-164023883",
+   "name": "Coyote Kayaks",
+   "category": "parks",
+   "subcategory": "recreation",
+   "address": "333R Commercial Street, Unit 1",
+   "phone": "508-413-9563",
+   "website": "https://yogajointptown.com/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "19:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Kayak and paddleboard rentals and tours on the bay, plus SUP yoga and beach chair and tent rentals.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "333R Commercial St., Unit 1",
+    "x": 163.5,
+    "z": -53.7
+   },
+   "_anchor_via": "OSM addr 333R Commercial St. (osm 164023883) → osm-164023883 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.22 (Attractions, Experiences & Tours)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.coyotekayaks.com/",
+   "_season": "The site says \"9am-7pm\" next to \"Season Unlimited\". It is a summer business, so these are in-season hours with no end date given.",
+   "_wick_source": "https://yogajointptown.com/",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Own site: address, phone, offerings; no hours shown.",
+   "_wick_fields": [
+    "website"
+   ],
+   "_wick_notes": "Same unit (333R Commercial St Unit 1) and phone as Coyote Kayaks — partner businesses. Class schedule only.",
+   "_was_website": "https://coyotekayaks.com"
   },
   {
    "id": "prov-lst-0355",
@@ -458,6 +651,137 @@
    "_source": "https://www.sailing4allptown.org/"
   },
   {
+   "id": "prov-lst-0421",
+   "building_id": "osm-170530792",
+   "name": "Aqua Bar",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "207 Commercial Street",
+   "phone": "774-593-5106",
+   "website": "https://aquabarptown.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A waterfront cocktail bar reached through the Aquarium Marketplace, with a deck over the harbor.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "207 Commercial St.",
+    "x": -176.4,
+    "z": 300.4
+   },
+   "_anchor_via": "OSM addr 207 Commercial St. (osm 170530792) → osm-170530792 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.28 (Bars, Clubs & Lounges)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.aquabarptown.com/",
+   "_season": "not stated by the source; posted on its site when read 2026-09-25"
+  },
+  {
+   "id": "prov-lst-0422",
+   "building_id": "osm-170530761",
+   "name": "Harbor Lounge",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "359 Commercial Street",
+   "phone": "508-413-9527",
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "359 Commercial St",
+    "x": 237.7,
+    "z": -165
+   },
+   "_anchor_via": "OSM addr 359 Commercial St (osm 170530761) → osm-170530761 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.28 (Bars, Clubs & Lounges)",
+   "_fetched": "2026-09-25"
+  },
+  {
+   "id": "prov-lst-0423",
+   "building_id": "osm-170602334",
+   "name": "Crown & Anchor",
+   "category": "dining",
+   "subcategory": "bars",
+   "address": "247 Commercial Street",
+   "phone": "508-487-1430",
+   "website": "https://onlyatthecrown.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "The Paramount Club",
+    "The Cabaret",
+    "The Vault",
+    "The Wave Bar",
+    "The Beach Club",
+    "Helltown Fitness",
+    "The Tryst (rooms)"
+   ],
+   "tags": [],
+   "description": "A big entertainment complex in the middle of Commercial Street, with dance floors, a pool deck and a cabaret stage. It calls itself Provincetown's unofficial town square.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "247 Commercial St.",
+    "x": -74.7,
+    "z": 158.2
+   },
+   "_anchor_via": "OSM addr 247 Commercial St. (osm 170602334) → osm-170602334 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.28 (Bars, Clubs & Lounges)",
+   "_fetched": "2026-09-25",
+   "_source": "https://onlyatthecrown.com/",
+   "_note": "The guide lists seven Crown & Anchor venues separately; they are recorded as amenities of one card. The OSM \"Crown & Anchor Box Office\" is left as it is."
+  },
+  {
    "id": "prov-lst-0358",
    "building_id": "msbf-474",
    "name": "Red Room",
@@ -566,6 +890,140 @@
    "_wick_notes": "Guide URL commonsptown.org 301-redirects to provincetowncommons.org. Events can be booked outside building hours."
   },
   {
+   "id": "prov-lst-0424",
+   "building_id": "osm-170530742",
+   "name": "Provincetown Public Library",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "356 Commercial Street",
+   "phone": "508-487-7094",
+   "website": "https://www.provincetownlibrary.org/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "13:00",
+     "close": "17:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [
+    {
+     "url": "photos/provincetown-public-library/01.jpg",
+     "what": "Library in Provincetown, MA",
+     "credit": "BakedintheHole, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:Library_in_Provincetown,_Massachusets.jpg",
+     "license": "CC BY 4.0",
+     "license_url": "https://creativecommons.org/licenses/by/4.0",
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Library_in_Provincetown%2C_Massachusets.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
+   "amenities": [
+    "Half-scale schooner Rose Dorothea"
+   ],
+   "tags": [
+    "landmark",
+    "library",
+    "history"
+   ],
+   "description": "The town library occupies the 1860 Center Methodist Church, with its 162-foot white spire, on Commercial Street. Inside, under the vaulted ceiling, is a half-scale model of the Rose Dorothea, the Provincetown schooner that won the 1907 Lipton Cup. The model dates from the building's years as a heritage museum.",
+   "history": [
+    {
+     "year": 1860,
+     "event": "Built as the Center Methodist Church, seating 900."
+    },
+    {
+     "year": 1958,
+     "event": "Becomes the Chrysler Art Museum."
+    },
+    {
+     "year": 1976,
+     "event": "Becomes the Provincetown Heritage Museum; the half-scale Rose Dorothea is built inside from 1977."
+    },
+    {
+     "year": 2005,
+     "event": "Reopens on April 28 as the Provincetown Public Library."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "356 Commercial St.",
+    "x": 184.6,
+    "z": -205.7
+   },
+   "_anchor_via": "OSM addr 356 Commercial St. (osm 170530742) → osm-170530742 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.32 (Community & Support Organizations)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.provincetownlibrary.org/",
+   "_source_history": "https://en.wikipedia.org/wiki/Provincetown_Public_Library",
+   "_hours_conflict": "The page text says Tue–Thu 10–8 and Sat 10–5; the page's JSON-LD says Thu 10–5 and Sat 1–5. The written text is used here.",
+   "_season": "not stated by the source; posted on its site when read 2026-09-25",
+   "_landmark": true
+  },
+  {
+   "id": "prov-lst-0425",
+   "building_id": "osm-170530792",
+   "name": "A Salted Buttery",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "205 Commercial Street",
+   "phone": "508-487-2167",
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A breakfast-and-sandwich counter operating out of Connie's Cafe, serving breakfast sandwiches, soups and daily specials, with late-night hours for a post-bar snack.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "205 Commercial Street",
+    "x": -176.4,
+    "z": 300.4
+   },
+   "_anchor_via": "OSM addr 205 Commercial Street (osm 170530792) → osm-170530792 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.37 (Dining)",
+   "_fetched": "2026-09-25",
+   "_wick_source": "https://www.toasttab.com/local/order/shanes-sweets-llc-connie-s-205-commercial-st",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Online-ordering page and social listing only; no own website. Phone from the PBG guide.",
+   "_wick_fields": [
+    "description"
+   ],
+   "_wick_notes": "Trades as 'Connie's Cafe presents A Salted Buttery'. Same building (Aquarium Marketplace, 205–209) as Aqua Bar. Guide's IG handle @asaltedbuttery vs actual @a_salted_buttery."
+  },
+  {
    "id": "prov-lst-0360",
    "building_id": "msbf-2435",
    "name": "Grand Central",
@@ -596,6 +1054,77 @@
    "_fetched": "2026-09-25",
    "_source": "https://grandcentralptown.com/",
    "_season": "⛔ CLOSED FOR THE SEASON: the site says \"Closed for the season. Re-opens Spring 2027.\" No hours are written, which is correct for today."
+  },
+  {
+   "id": "prov-lst-0426",
+   "building_id": "osm-215752931",
+   "name": "Liz's Cafe",
+   "category": "dining",
+   "subcategory": "cafes",
+   "address": "31 Bradford Street",
+   "phone": "508-413-9131",
+   "website": "https://lizscafeptown.com",
+   "logo": null,
+   "hours": {
+    "sunday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "monday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "21:30"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "21:30"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "Dory bar"
+   ],
+   "tags": [],
+   "description": "A comfort-food breakfast and diner spot in the West End, sharing a building with Anybody's Bar. The interior was designed by Ken Fulk.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "31 Bradford St.",
+    "x": -529.5,
+    "z": 566.2
+   },
+   "_anchor_via": "OSM addr 31 Bradford St. (osm 215752931) → osm-215752931 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.37 (Dining)",
+   "_fetched": "2026-09-25",
+   "_source": "https://lizscafeptown.com/",
+   "_wick_source": "https://lizscafeptown.com/menu/",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Own site: 'Breakfast & Lunch 8 – 2 7 days a week'; 'Dinner Sundays through Thursday 5 – 9:00, Fridays & Saturdays 5 – 9:30'.",
+   "_wick_fields": [
+    "hours",
+    "amenities"
+   ],
+   "_season": "unstated",
+   "_wick_notes": "Outer span recorded; the kitchen closes 14:00–17:00 daily between lunch and dinner (bar status in the gap not stated)."
   },
   {
    "id": "prov-lst-0361",
@@ -662,6 +1191,272 @@
    ],
    "_season": "unstated",
    "_wick_notes": "Guide's domain baedega.com (no www) does not resolve; www.baedega.com works."
+  },
+  {
+   "id": "prov-lst-0427",
+   "building_id": "osm-164023872",
+   "name": "Freemans",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "333 Commercial Street",
+   "phone": "508-413-9530",
+   "website": "https://freemansptown.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "17:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "17:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "17:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "17:00",
+     "close": "21:30"
+    },
+    "saturday": {
+     "open": "17:00",
+     "close": "21:30"
+    },
+    "sunday": {
+     "open": "17:00",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "An elegant coastal European restaurant in the center of town.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "333 Commercial St.",
+    "x": 144.2,
+    "z": -74.8
+   },
+   "_anchor_via": "OSM addr 333 Commercial St. (osm 164023872) → osm-164023872 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.37 (Dining)",
+   "_fetched": "2026-09-25",
+   "_source": "https://freemansptown.com/",
+   "_season": "not stated by the source; posted on its site when read 2026-09-25 (JSON-LD; closed Tuesdays)",
+   "_wick_source": "https://freemansptown.com/contact",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Own site: 21+ policy, max table size 4, Resy only; shows only 'Open today 05:00 pm – 09:30 pm'.",
+   "_wick_fields": [
+    "phone"
+   ],
+   "_wick_notes": "Only today's hours shown on site, so weekly hours left out. Search snippet (source page not identified): Sun–Mon 5–9, Tue closed, Wed–Thu 5–9, Fri–Sat 5–9:30."
+  },
+  {
+   "id": "prov-lst-0428",
+   "building_id": "osm-170530746",
+   "name": "Mezzeterranean",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "401 ½ Commercial Street",
+   "phone": "508-487-0600",
+   "website": "https://mezzeptown.com",
+   "logo": null,
+   "hours": {
+    "thursday": {
+     "open": "17:30",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "17:30",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "17:30",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Mediterranean small plates for dinner.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "401 ½ Commercial St.",
+    "x": 357.8,
+    "z": -298.9
+   },
+   "_anchor_via": "OSM addr 401 Commercial St. (osm 170530746) → osm-170530746 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.38 (Dining)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.mezzeptown.com/",
+   "_season": "⛔ VALID ONLY \"until October 17, 2026\" (quoted from the site). ▶ Re-check after that date: the hours model has no end date, so these hours will stay on the card afterwards."
+  },
+  {
+   "id": "prov-lst-0429",
+   "building_id": "osm-170602348",
+   "name": "Tin Pan Alley",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "269 Commercial Street",
+   "phone": "508-487-1648",
+   "website": "https://tinpanalleyptown.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "tuesday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "wednesday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "thursday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "friday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "saturday": {
+     "open": "11:30",
+     "close": "23:30"
+    },
+    "sunday": {
+     "open": "11:30",
+     "close": "23:30"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A piano bar and restaurant with live music every night, seafood and American dishes, and a patio.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "269 Commercial St.",
+    "x": -28.9,
+    "z": 95.8
+   },
+   "_anchor_via": "OSM addr 269 Commercial St. (osm 170602348) → osm-170602348 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.38 (Dining)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.tinpanalleyptown.com/",
+   "_season": "not stated by the source; posted on its site when read 2026-09-25",
+   "_hours_kind": "The opening hours are the bar's (11:30–11:30). Lunch 11:30–4 and dinner 5–9 are menu windows inside them. They belong in menus.json (PLACE-CARDS §3 menu.schedule), which is not written here."
+  },
+  {
+   "id": "prov-lst-0430",
+   "building_id": "osm-170530805",
+   "name": "Ocean 193",
+   "category": "dining",
+   "subcategory": "restaurants",
+   "address": "193A Commercial Street",
+   "phone": "508-487-1527",
+   "website": "https://ocean193.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "16:30",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "16:30",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "21:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Seafood with waterfront dining, on the harbor side of Commercial Street.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "193A Commercial St.",
+    "x": -168.2,
+    "z": 344.6
+   },
+   "_anchor_via": "OSM addr 193A Commercial St. (osm 170530805) → osm-170530805 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.38 (Dining)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.ocean193.com/",
+   "_hours_absent": "The site posts two windows (12–9 and 4:30–9) and does not say which days each applies to.",
+   "_wick_source": "https://ocean193.com",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Own site: Mon/Fri/Sat/Sun 12–9, Wed/Thu 4:30–9, closed Tuesdays.",
+   "_wick_fields": [
+    "hours"
+   ],
+   "_season": "unstated",
+   "_wick_notes": "Site offers little descriptive content."
+  },
+  {
+   "id": "prov-lst-0431",
+   "building_id": "osm-215752626",
+   "name": "Sole Luna Wellness Studio",
+   "category": "services",
+   "subcategory": "health",
+   "address": "140 Commercial Street",
+   "phone": "508-292-5965",
+   "website": "https://Solelunaptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": null,
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "140 Commercial St.",
+    "x": -416.7,
+    "z": 613.6
+   },
+   "_anchor_via": "OSM addr 140 Commercial St. (osm 215752626) → osm-215752626 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.55 (Health & Beauty)",
+   "_fetched": "2026-09-25"
   },
   {
    "id": "prov-lst-0362",
@@ -855,6 +1650,99 @@
    "_source": "https://www.outermostyoga.com/"
   },
   {
+   "id": "prov-lst-0432",
+   "building_id": "osm-1234936263",
+   "name": "The Wellness Lab",
+   "category": "services",
+   "subcategory": "beauty",
+   "address": "244 Commercial Street",
+   "phone": "508-251-9533",
+   "website": "https://thewellnesslab.co/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "18:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "16:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A med spa offering wellness and aesthetic treatments.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "244 Commercial St.",
+    "x": -108,
+    "z": 129
+   },
+   "_anchor_via": "OSM addr 244 Commercial St. (osm 5652635484) → osm-1234936263 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.55 (Health & Beauty)",
+   "_fetched": "2026-09-25",
+   "_source": "https://thewellnesslab.co/",
+   "_season": "not stated by the source; posted on its site when read 2026-09-25",
+   "_hours_conflict": "The written text gives Mon–Sat 10–6 and Sun 10–4; the JSON-LD gives daily 10–8. The written text is used."
+  },
+  {
+   "id": "prov-lst-0433",
+   "building_id": "osm-164023883",
+   "name": "The Yoga Joint",
+   "category": "services",
+   "subcategory": "health",
+   "address": "333R Commercial Street, Unit 1",
+   "phone": "508-413-9563",
+   "website": "https://yogajointptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A bright yoga studio on the bay whose four doors open onto the harbor.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "333R Commercial St, Unit 1",
+    "x": 163.5,
+    "z": -53.7
+   },
+   "_anchor_via": "OSM addr 333R Commercial St (osm 164023883) → osm-164023883 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.55 (Health & Beauty)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.yogajointptown.com/"
+  },
+  {
    "id": "prov-lst-0366",
    "building_id": "msbf-2379",
    "name": "Provincetown Tennis Club",
@@ -926,6 +1814,105 @@
    "_wick_notes": "WRONG URL: guide prints coastalacres.com, which refuses connections; live site is coastalacresprovincetown.com. Office hours 'Monday through Sunday, 8:00 am - 4:00 pm' appear only in a search summary, not confirmed on the own site — not used. No campground subcategory exists; hotels chosen as closest."
   },
   {
+   "id": "prov-lst-0434",
+   "building_id": "msbf-695",
+   "name": "Enzo Guest House",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "186 Commercial Street",
+   "phone": "508-487-7555",
+   "website": "https://www.local186.com/enzo-guest-house",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A guesthouse upstairs from Local 186, run by the same owners.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "186 Commercial St.",
+    "x": -238.5,
+    "z": 358.4
+   },
+   "_anchor_via": "OSM addr 186 Commercial St. (osm 215752323) → msbf-695 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.62 (Lodging)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.local186.com/enzo-guest-house"
+  },
+  {
+   "id": "prov-lst-0435",
+   "building_id": "osm-164024904",
+   "name": "The Gaslamp Bed & Breakfast",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "97 Bradford Street",
+   "phone": "508-487-6636",
+   "website": "https://thegaslampptown.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A boutique bed & breakfast on Bradford Street.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "97 Bradford St.",
+    "x": -164.2,
+    "z": 109
+   },
+   "_anchor_via": "OSM addr 97 Bradford St. (osm 164024904) → osm-164024904 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.65 (Lodging)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.thegaslampptown.com/"
+  },
+  {
+   "id": "prov-lst-0436",
+   "building_id": "osm-164024927",
+   "name": "Guesthouse at 7 Masonic Place",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "7 Masonic Place",
+   "phone": "508-487-0252",
+   "website": null,
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A small guesthouse in a mid-1800s building just off Commercial Street, with free parking.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "7 Masonic Place",
+    "x": -174.3,
+    "z": 152.7
+   },
+   "_anchor_via": "OSM addr 7 Masonic Place (osm 164024927) → osm-164024927 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.65 (Lodging)",
+   "_fetched": "2026-09-25",
+   "_wick_source": "https://ptownencyclopedia.com/7-masonic-place/",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "No own website; facts from search snippets of the Provincetown Encyclopedia and directory listings — low.",
+   "_wick_fields": [
+    "description"
+   ],
+   "_wick_notes": "No website. Facebook page name is '7 Masonic Place Guest House'."
+  },
+  {
    "id": "prov-lst-0368",
    "building_id": "msbf-1443",
    "name": "Land's End Inn",
@@ -982,6 +1969,49 @@
    "_wick_notes": "Breakfast 8:00–10:30 AM. OSM anchor address is 22A."
   },
   {
+   "id": "prov-lst-0437",
+   "building_id": "msbf-1996",
+   "name": "The Masthead Resort & Cottages",
+   "category": "hospitality",
+   "subcategory": "hotels",
+   "address": "31-41 Commercial Street",
+   "phone": "508-487-0523",
+   "website": "https://themasthead.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "private beach",
+    "harbor views",
+    "cottages"
+   ],
+   "tags": [],
+   "description": "Cottages, suites and rooms on the harbor in the West End, with open water views. The same family has run it for more than sixty years.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "31 Commercial Street",
+    "x": -657.1,
+    "z": 1237.3
+   },
+   "_anchor_via": "OSM addr 31 Commercial Street (osm 215753404) → msbf-1996 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.65 (Lodging)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.themasthead.com/",
+   "_anchor_address": "31 Commercial Street",
+   "_wick_source": "https://www.themasthead.com/",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Resort's own homepage and About page.",
+   "_wick_fields": [
+    "amenities"
+   ],
+   "_wick_notes": "A search summary says 'open year round'; not confirmed on the resort's pages."
+  },
+  {
    "id": "prov-lst-0369",
    "building_id": "msbf-2060",
    "name": "Watership Inn",
@@ -1023,6 +2053,108 @@
     "amenities"
    ],
    "_wick_notes": "Site lists both 800-330-9413 (guide's number) and local 508-487-0094. No season dates published."
+  },
+  {
+   "id": "prov-lst-0438",
+   "building_id": "osm-215753373",
+   "name": "West End Inn",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
+   "address": "44 Commercial Street",
+   "phone": "508-487-9555",
+   "website": "https://westendinn.com",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "7 rooms",
+    "breakfast"
+   ],
+   "tags": [],
+   "description": "A seven-bedroom guesthouse in a mid-1800s captain's house in the West End, run by gay men and aimed mostly at men, though all are welcome. Rooms range from a small double to a loft apartment, with a shared breakfast table.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "44 Commercial St.",
+    "x": -642.1,
+    "z": 1129.1
+   },
+   "_anchor_via": "OSM addr 44 Commercial St. (osm 215753373) → osm-215753373 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.66 (Lodging)",
+   "_fetched": "2026-09-25",
+   "_wick_source": "https://westendinn.com/about",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Inn's own About page.",
+   "_wick_fields": [
+    "description",
+    "amenities"
+   ],
+   "_wick_notes": "No season dates published."
+  },
+  {
+   "id": "prov-lst-0439",
+   "building_id": "osm-215751416",
+   "name": "Angel Foods",
+   "category": "shopping",
+   "subcategory": "grocery",
+   "address": "467 Commercial Street",
+   "phone": "508-487-6666",
+   "website": "https://angelfoods.com",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "19:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "19:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "19:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "19:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "sunday": {
+     "open": "08:00",
+     "close": "19:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A full-service East End grocery with a large case of homemade prepared food, specialty aisles (Asian, Thai, Indian, Italian, Spanish) and catering all year.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "467 Commercial St.",
+    "x": 626.2,
+    "z": -499.7
+   },
+   "_anchor_via": "OSM addr 467 Commercial St. (osm 215751416) → osm-215751416 (its centroid is inside that footprint)",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.67 (Markets, Coffee, Sweets & Spirits)",
+   "_fetched": "2026-09-25",
+   "_source": "https://angelfoods.com/",
+   "_season": "not stated by the source; posted on its site when read 2026-09-25 (\"Hours could change, call ahead to be sure!\")"
   },
   {
    "id": "prov-lst-0370",
@@ -1330,37 +2462,318 @@
    "_wick_notes": "Public pier, open-air, accessible on foot at all hours; no posted opening hours. Harbormaster on VHF Ch. 12; after hours call 508-487-7030 option 2. Owned and managed by the Town (MacMillan Public Pier). The 1970 entry could be dropped as tangential."
   },
   {
-   "id": "prov-lst-0376",
-   "building_id": "msbf-1438",
-   "name": "Flyer's Boat Rentals",
+   "id": "prov-lst-0440",
+   "building_id": "osm-170484430",
+   "name": "Province Lands Visitor Center",
    "category": "parks",
-   "subcategory": "recreation",
-   "address": "131A Commercial Street",
-   "phone": "508-487-0898",
-   "website": "https://www.flyersboats.com/",
+   "subcategory": "parks",
+   "address": "171 Race Point Road",
+   "phone": "508-487-1256",
+   "website": "https://www.nps.gov/caco/planyourvisit/visitorcenters.htm",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "observation decks (open year-round)",
+    "park store",
+    "restrooms (open year-round)",
+    "orientation film"
+   ],
+   "tags": [],
+   "description": "Cape Cod National Seashore's visitor center for the Outer Cape, set among the Province Lands dunes near Race Point. Inside are exhibits on the dunes, shipwrecks and people of the Province Lands, a park store, and the park film 'Standing Bold'; outside, a rooftop observation deck looks over the dunes to the Atlantic, Race Point Beach and the Old Harbor Life-Saving Station. The decks stay open year-round, weather permitting, and the Province Lands bike trail and Beech Forest Trail are close by.",
+   "history": [
+    {
+     "year": 1961,
+     "event": "Cape Cod National Seashore is established, taking in the Province Lands."
+    },
+    {
+     "year": 2018,
+     "event": "New exhibits with tactile and audio-described features open on June 13."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "171 Race Point Road",
+    "x": -1537.8,
+    "z": -2483.6
+   },
+   "_anchor_via": "Wick _anchor → osm-170484430 (point inside footprint)",
+   "_source": "https://www.nps.gov/caco/planyourvisit/visitorcenters.htm",
+   "_fetched": "2026-09-25",
+   "_confidence": "Season and features from the NPS visitor-centers page; phone and 9-5 time from NPS news releases (2014, 2018); 1961 from general NPS record.",
+   "_hours_other_seasons": "Closed November-April (building); decks and restrooms open year-round.",
+   "_season_closes": "end of October ('open from May through October'); recreation.gov says 'mid-May to mid-October'",
+   "_wick_notes": "hours omitted: current NPS page gives only the season. Older NPS releases (2014, 2018) gave '9 AM to 5 PM daily'; recreation.gov says mid-May to mid-October — sources conflict, so no clock times recorded. Park general line 508-255-3421. Exhibits from the 1990s were replaced in 2018."
+  },
+  {
+   "id": "prov-lst-0441",
+   "building_id": "osm-170403832",
+   "name": "Old Harbor Life-Saving Station",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": "193 Race Point Road",
+   "phone": "508-255-3421",
+   "website": "https://www.nps.gov/places/old-harbor-life-saving-station.htm",
+   "logo": null,
+   "hours": {
+    "friday": {
+     "open": "14:00",
+     "close": "16:00"
+    },
+    "saturday": {
+     "open": "14:00",
+     "close": "16:00"
+    },
+    "sunday": {
+     "open": "14:00",
+     "close": "16:00"
+    },
+    "monday": {
+     "open": "14:00",
+     "close": "16:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "A shingled 1897 life-saving station at Race Point Beach, the last intact survivor of the stations that once lined Cape Cod's outer shore. It was barged here from Chatham in 1977 and is furnished as it would have looked around 1900, with the surfboats and rescue gear the crews used on the Atlantic side. Rangers and volunteers open it on summer afternoons and stage breeches-buoy rescue drills on Thursday evenings in July and August.",
+   "history": [
+    {
+     "year": 1897,
+     "event": "Built in Chatham for the U.S. Life-Saving Service, near Chatham Harbor on Nauset Beach."
+    },
+    {
+     "year": 1944,
+     "event": "Decommissioned by the U.S. Coast Guard in July."
+    },
+    {
+     "year": 1947,
+     "event": "Sold as surplus; used as a private residence for years afterward."
+    },
+    {
+     "year": 1977,
+     "event": "Threatened by erosion, moved by barge in November to Race Point Beach, Provincetown."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "193 Race Point Road",
+    "x": -2459.2,
+    "z": -3149.6
+   },
+   "_anchor_via": "Wick _anchor → osm-170403832 (point inside footprint)",
+   "_source": "https://www.nps.gov/places/old-harbor-life-saving-station.htm",
+   "_fetched": "2026-09-25",
+   "_confidence": "Hours and history directly from NPS pages.",
+   "_season": "'open May-September annually, Friday-Monday, 2-4 pm'",
+   "_hours_other_seasons": "Closed October-April (exterior visible from the beach year-round).",
+   "_season_closes": "end of September ('May-September')",
+   "_wick_notes": "Band ends with September, so these hours are in force for only a few more days after 2026-09-25. Beach Apparatus (breeches buoy) drills Thursday evenings in July and August. Phone is the park's general line; no station-specific number published."
+  },
+  {
+   "id": "prov-lst-0442",
+   "building_id": "osm-161377452",
+   "name": "Race Point Light",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": null,
+   "phone": "855-722-3959",
+   "website": "https://www.racepointlighthouse.org/",
+   "logo": null,
+   "hours": {
+    "sunday": {
+     "open": "10:00",
+     "close": "14:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [
+    "overnight rentals (2026: July 3 - November 23)",
+    "free tours, donations welcome"
+   ],
+   "tags": [],
+   "description": "A 45-foot cast-iron lighthouse on the far northwest tip of Cape Cod, standing alone in the dunes beyond Race Point Beach. It is reached by a roughly two-mile walk over soft sand from Race Point Beach or the Hatches Harbor lot, or by four-wheel drive with a National Seashore oversand permit. The American Lighthouse Foundation keeps the station, opens the tower for free tours on summer and fall Sundays, and rents the keeper's house and whistle house for overnight stays.",
+   "history": [
+    {
+     "year": 1816,
+     "event": "First lighthouse established at Race Point, the third light on Cape Cod."
+    },
+    {
+     "year": 1858,
+     "event": "Fitted with a fourth-order Fresnel lens."
+    },
+    {
+     "year": 1876,
+     "event": "The present iron-plate tower replaces the deteriorated original."
+    },
+    {
+     "year": 1972,
+     "event": "The light is automated."
+    },
+    {
+     "year": 1995,
+     "event": "Converted to solar power; the American Lighthouse Foundation takes on care of the station."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": null,
+    "x": -4665,
+    "z": -1182
+   },
+   "_anchor_via": "Wick _anchor → osm-161377452 (point inside footprint)",
+   "_source": "https://www.racepointlighthouse.org/",
+   "_fetched": "2026-09-25",
+   "_confidence": "Tour hours and phone from the ALF Cape Cod Chapter's site; history from Wikipedia (secondary).",
+   "_season": "2026 tours 'every Sunday in July, August, September and October', 10:00am-2:00pm",
+   "_hours_other_seasons": "No tours November-June; exterior accessible year-round on foot.",
+   "_season_closes": "last 2026 tour date October 25",
+   "_wick_notes": "Tours are the only public interior access; the grounds are open to walkers any time. Remaining 2026 tour Sundays: Sept 27; Oct 4, 11, 18, 25. Search snippets citing 'first and third Saturdays' are an older schedule. No street address (in the dunes, Cape Cod National Seashore)."
+  },
+  {
+   "id": "prov-lst-0443",
+   "building_id": "osm-215750957",
+   "name": "Long Point Light",
+   "category": "parks",
+   "subcategory": "parks",
+   "address": null,
+   "phone": null,
+   "website": "https://lighthousefoundation.org/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": "Family-owned West End boatyard in business since 1944, renting boats and running the Long Point shuttle, seal tours, sunset and day cruises, plus moorings and a boat shop.",
+   "description": "A square, 38-foot brick lighthouse at the very tip of Cape Cod, on the sand hook that encloses Provincetown Harbor. It stands where a fishing village of some 38 families lived until the 1850s, when residents floated many of their houses across the harbor to the West End. The tower is closed to the public; visitors reach it by a long walk over the West End breakwater and beach or by the seasonal water shuttle from town.",
+   "history": [
+    {
+     "year": 1827,
+     "event": "First Long Point light, a lantern on the keeper's house roof, is lit; a fishing settlement grows around it."
+    },
+    {
+     "year": 1863,
+     "event": "Union troops build the Long Point Battery, nicknamed 'Fort Useless' and 'Fort Ridiculous', which never sees action."
+    },
+    {
+     "year": 1875,
+     "event": "The present square brick tower replaces the eroding original."
+    },
+    {
+     "year": 1952,
+     "event": "The light is automated."
+    },
+    {
+     "year": 1982,
+     "event": "Converted to solar power, the second Massachusetts lighthouse to be."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": null,
+    "x": 1489.2,
+    "z": 2057.9
+   },
+   "_anchor_via": "Wick _anchor → osm-215750957 (point inside footprint)",
+   "_source": "https://en.wikipedia.org/wiki/Long_Point_Light",
+   "_fetched": "2026-09-25",
+   "_confidence": "History from Wikipedia (secondary); no operator page with visitor hours was found.",
+   "_wick_notes": "Exterior only, not open to the public. Accessible by foot over the West End breakwater and roughly two more miles of beach, or by the seasonal Long Point water shuttle from MacMillan Wharf area (shuttle operator/hours not researched). Leased to the American Lighthouse Foundation by the Coast Guard (per Wikipedia)."
+  },
+  {
+   "id": "prov-lst-0444",
+   "building_id": "osm-1190830835",
+   "name": "Provincetown Police Department",
+   "category": "community",
+   "subcategory": "organizations",
+   "address": "2 Jerome Smith Road",
+   "phone": "508-487-1212",
+   "website": "https://www.provincetown-ma.gov/82/Police",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Headquarters of the town police, a two-story, roughly 13,900-square-foot station at the corner of Route 6 and Jerome Smith Road that opened in 2024. It replaced the department's long-time quarters in a former funeral home on Shank Painter Road. For emergencies call 911; the business line handles non-emergency calls.",
+   "history": [
+    {
+     "year": 2019,
+     "event": "Construction bids come in $3.9 million over budget; the extra funding fails at April Town Meeting and at a June 18 ballot."
+    },
+    {
+     "year": 2021,
+     "event": "The building committee resumes work on a revised design in late May."
+    },
+    {
+     "year": 2024,
+     "event": "The new $17 million station is dedicated with a ribbon-cutting on March 20."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "2 Jerome Smith Road",
+    "x": -723.4,
+    "z": -325.9
+   },
+   "_anchor_via": "Wick _anchor → osm-1190830835 (point inside footprint)",
+   "_source": "https://www.provincetown-ma.gov/82/Police",
+   "_fetched": "2026-09-25",
+   "_confidence": "Address and phones from the Town's Police page; project history from the Town's Police Station project page and 2024 news coverage (CapeCod.com / Provincetown Independent).",
+   "_wick_notes": "24-hour police service; no lobby/records hours published, so hours omitted. Emergency 911; anonymous tips 508-487-2828. Sources disagree on when police moved into the old funeral home (Town page: 1986; 2024 news: 1975).",
+   "_source_pbg": "{\"address\":\"2 Jerome Smith Rd.\",\"web\":null,\"phone\":\"508-487-1212\",\"ig\":null}"
+  },
+  {
+   "id": "prov-lst-0445",
+   "building_id": "msbf-1733",
+   "name": "Art's Dune Tours",
+   "category": "parks",
+   "subcategory": "recreation",
+   "address": "4 Standish Street",
+   "phone": "508-487-1950",
+   "website": "https://www.artsdunetours.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Family-run guided 4x4 tours through the Province Lands dunes, including a pass by the historic Peaked Hill dune shacks where writers and artists once lived. Offers hour-long daily tours, two-hour sunset tours with an optional clambake/bonfire, and combined dune-and-water trips.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "active",
    "source": "research",
    "anchor": {
-    "address": "131A Commercial Street",
-    "x": -420.48,
-    "z": 665.83
+    "address": "4 Standish Street",
+    "x": 74.7,
+    "z": -70.7
    },
-   "_anchor_via": "Wick _anchor → msbf-1438 (point inside footprint)",
-   "_source": "https://www.flyersboats.com/",
+   "_anchor_via": "Wick _latlon → msbf-1733 (point inside footprint)",
+   "_source": "https://www.artsdunetours.com/",
    "_fetched": "2026-09-25",
-   "_confidence": "Own site: addresses, phone, 'family owned & operated in Provincetown since 1944', services; no hours or season dates.",
-   "_wick_notes": "Second location at MacMillan Pier #8W. Season dates not published on the homepage.",
-   "_source_pbg": "{\"name\":\"FLYER’S BOATS & RENTALS\",\"section\":\"Attractions, Experiences & Tours\",\"address\":\"131A Commercial St.\",\"web\":\"flyersboats.com\",\"phone\":\"508-487-0898\",\"ig\":\"@flyersboatrentals\"}"
+   "_confidence": "Own site states address, phone, season, founding (1958, Art Costa) and tour list.",
+   "_season_closes": "Season: April 15 – November 15 (7 days a week)",
+   "_wick_notes": "Trip schedule, not opening hours — book online (closes 24 h before departure) or call for same day. Founded 1958 by Art Costa, now run by his son Robert. _latlon from Nominatim result 1; Nominatim also returned a second '4 Standish Street' point at 42.0530525,-70.1867182 — result 1 (nearer Commercial St) chosen, verify on map.",
+   "_source_pbg": "{\"name\":\"ART’S DUNE TOURS\",\"section\":\"Attractions, Experiences & Tours\",\"address\":\"4 Standish St.\",\"web\":\"artsdunetours.com\",\"phone\":\"508-487-1950\",\"ig\":\"@artsdunetours\"}"
   },
   {
    "id": "prov-lst-0377",
@@ -1394,6 +2807,72 @@
    "_confidence": "PBG's own page describes the center; address/move from Provincetown Magazine (2023) and Chamber listing (115 Bradford, 508-975-6394).",
    "_wick_notes": "PBG OFFICE TODAY = 115 Bradford St. Provincetown Magazine (2023-05-31): the PBG moved over winter 2022–23 from its 'small, dark, and cramped office on Freeman Street' into 115 Bradford. So osm-n5691773901 'Provincetown Business Guild' @ 3 Freeman St is STALE (former office), and osm-n4905062844 'Provicnetown Business Guild' (sic) @ 115 Bradford is the current office — same place as this Pride Center; merge/fix spelling. Only published hours are 2023's (Fri noon–8, Sat 10–6 through mid-Sept) — stale, not used; ptown.org gives none.",
    "_source_pbg": "{\"name\":\"PROVINCETOWN PRIDE CENTER\",\"section\":\"Community & Support Organizations\",\"address\":\"115 Bradford St.\",\"web\":\"ptown.org/pridecenter\",\"phone\":\"508-975-6394\",\"ig\":\"@visitptown\"}"
+  },
+  {
+   "id": "prov-lst-0446",
+   "building_id": "osm-288247324",
+   "name": "Cape & Coast Bank",
+   "category": "services",
+   "subcategory": "financial",
+   "address": "237 Commercial Street",
+   "phone": "508-568-3400",
+   "website": "https://www.capeandcoastbank.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Provincetown office of Cape & Coast Bank, the Hyannis-based community bank formerly named The Cooperative Bank of Cape Cod (rooted in 1921).",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "237 Commercial Street",
+    "x": -88.07,
+    "z": 180.4
+   },
+   "_anchor_via": "Wick _anchor → osm-288247324 (point inside footprint)",
+   "_source": "https://www.capeandcoastbank.com/",
+   "_fetched": "2026-09-25",
+   "_confidence": "LOW on location: the bank's own locations list (10 stores) has no Provincetown entry; address only from the guide.",
+   "_wick_notes": "Bank site's store sitemap lists no Provincetown location. Chamber directory lists it at 307 Commercial St; Yelp calls it a 'Mortgage Office'. Likely a mortgage/lending office, not a full branch. Address 237 Commercial Unit 16 from guide only — verify.",
+   "_source_pbg": "{\"name\":\"CAPE & COAST BANK\",\"section\":\"Financial Services & Insurance\",\"address\":\"237 Commercial St. Unit 16\",\"web\":\"capeandcoastbank.com\",\"phone\":\"508-568-3400\",\"ig\":\"@capeandcoastbank\"}"
+  },
+  {
+   "id": "prov-lst-0447",
+   "building_id": "osm-170602334",
+   "name": "Helltown Fitness",
+   "category": "services",
+   "subcategory": "health",
+   "address": "9 Carver Street",
+   "phone": "774-593-3998",
+   "website": "https://www.helltown.fit/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Small-group strength and conditioning classes built around kettlebells, bands and bodyweight, plus yoga and running sessions, for visitors and locals.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "9 Carver Street",
+    "x": -74.65,
+    "z": 158.17
+   },
+   "_anchor_via": "Wick _anchor → osm-170602334 (point inside footprint)",
+   "_source": "https://www.helltown.fit/find-us",
+   "_fetched": "2026-09-25",
+   "_confidence": "Own 'Find Us' page gives current class location; phone from search summary of its contact page.",
+   "_wick_notes": "MOVED from guide address: classes are now held in the Wilde Room at the Gifford House, 9 Carver Street (easiest entry via the Wilde Room doors at 75 Bradford St). Guide's 247 Commercial St is outdated. Class schedule via goteamup; arrive 10 min early, no late entry.",
+   "_source_pbg": "{\"name\":\"HELLTOWN FITNESS\",\"section\":\"Health & Beauty\",\"address\":\"247 Commercial St.\",\"web\":null,\"phone\":null,\"ig\":\"@helltown.fit\"}"
   },
   {
    "id": "prov-lst-0378",
@@ -1493,6 +2972,40 @@
    "_confidence": "Own site: address (74-2B Shank Painter Rd), phone, services.",
    "_wick_notes": "Unit 2B. Guide lists no phone; site gives 508-789-2438. By appointment.",
    "_source_pbg": "{\"name\":\"PROVINCETOWN RECORDING STUDIO\",\"section\":\"Professional Services\",\"address\":\"74-2B Shank Painter Rd.\",\"web\":\"provincetownrecords.com\",\"phone\":null,\"ig\":\"@ptownrecordingstudio\"}"
+  },
+  {
+   "id": "prov-lst-0448",
+   "building_id": "msbf-843",
+   "name": "P'Town Carts",
+   "category": "shopping",
+   "subcategory": "retail",
+   "address": "148 Bradford Street",
+   "phone": "508-246-1117",
+   "website": "https://ptowncarts.com/",
+   "logo": null,
+   "hours": null,
+   "opening_hours_raw": null,
+   "photos": [],
+   "amenities": [],
+   "tags": [],
+   "description": "Rents street-legal low-speed electric carts with seatbelts, headlights and turn signals; each rental comes with a permit for the town's municipal lots.",
+   "history": null,
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "anchor": {
+    "address": "148 Bradford Street",
+    "x": 151.7,
+    "z": -331.5
+   },
+   "_anchor_via": "Wick _latlon → msbf-843 (point inside footprint)",
+   "_source": "https://ptowncarts.com/",
+   "_fetched": "2026-09-25",
+   "_confidence": "Own site: pick-up address, phone, season.",
+   "_season_closes": "'Carts Available April 11th through November 1st.'",
+   "_wick_notes": "148 Bradford is the pick-up/drop-off; corporate HQ 45A Court Street. No hours published. _latlon from Nominatim.",
+   "_source_pbg": "{\"name\":\"PTOWN CARTS\",\"section\":\"Transportation\",\"address\":\"148 Bradford St.\",\"web\":\"ptowncarts.com\",\"phone\":\"508-246-1117\",\"ig\":null}"
   }
  ],
  "patches": {
@@ -4651,6 +6164,79 @@
    "_was_name": "Provicnetown Business Guild (OSM misspelling)",
    "_note": "⚠️ A second base listing, osm-n5691773901 \"Provincetown Business Guild\" at 3 Freeman St., is probably a stale duplicate. The guide gives 115 Bradford St. It is left in place for the operator to drop."
   },
+  "osm-170530742": {
+   "_match_name": "Provincetown Public Library",
+   "_display_id_at_research": "prov-lst-0385",
+   "address": "356 Commercial Street",
+   "phone": "508-487-7094",
+   "website": "https://provincetownlibrary.org/",
+   "description": "The town library, housed in a steepled 1860 former Methodist church in the center of Commercial Street. Its best-known feature is a half-scale replica of the fishing schooner Rose Dorothea, which fills the upper floor and was built when the building was the town's Heritage Museum. The library is open seven days a week with evening hours midweek.",
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "13:00",
+     "close": "17:00"
+    }
+   },
+   "history": [
+    {
+     "year": 1860,
+     "event": "Built as the Center Methodist Episcopal Church, seating about 900."
+    },
+    {
+     "year": 1958,
+     "event": "Walter P. Chrysler Jr. buys the building and opens the Chrysler Art Museum."
+    },
+    {
+     "year": 1976,
+     "event": "Reopens on July 4 as the town-owned Provincetown Heritage Museum, after National Register listing in 1975."
+    },
+    {
+     "year": 1977,
+     "event": "Work begins on the half-scale replica of the schooner Rose Dorothea inside the building."
+    },
+    {
+     "year": 2005,
+     "event": "The Provincetown Public Library moves in on April 28, keeping the Rose Dorothea as its centerpiece."
+    }
+   ],
+   "_wick_source": "https://provincetownlibrary.org/",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Hours, phone and address from the library's homepage; history from Wikipedia (secondary).",
+   "_wick_fields": [
+    "address",
+    "phone",
+    "website",
+    "description",
+    "hours",
+    "history"
+   ],
+   "_season": "unstated",
+   "_wick_notes": "'Doors are locked 15 minutes before closing.'"
+  },
   "osm-215752660": {
    "_match_name": "Veterans Memorial Community Center",
    "_display_id_at_research": "prov-lst-0084",
@@ -4769,6 +6355,62 @@
    "_season": "unstated",
    "_wick_notes": "Renamed from Bayside Betsy's to Bay Cafe under new ownership; listing name is stale."
   },
+  "osm-n4905062000": {
+   "_match_name": "Aqua Bar",
+   "_display_id_at_research": "prov-lst-0408",
+   "address": "207 Commercial Street",
+   "phone": "774-593-5106",
+   "website": "https://aquabarptown.com",
+   "description": "A harborfront bar inside the Aquarium Marketplace, with a harbor-view deck and seven food vendors under the same roof. No reservations; a place to watch the sunset.",
+   "hours": {
+    "sunday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "monday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "22:00"
+    }
+   },
+   "amenities": [
+    "Harbor deck",
+    "Food-hall vendors",
+    "No reservations"
+   ],
+   "_wick_source": "https://aquabarptown.com",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Own site; weekly hours.",
+   "_wick_fields": [
+    "address",
+    "phone",
+    "website",
+    "description",
+    "hours",
+    "amenities"
+   ],
+   "_season": "unstated",
+   "_wick_notes": "Shares the Aquarium Marketplace building (205–209 Commercial) with A Salted Buttery."
+  },
   "osm-n5652635486": {
    "_match_name": "Crown & Anchor Box Office",
    "_display_id_at_research": "prov-lst-0285",
@@ -4823,6 +6465,96 @@
    ],
    "_wick_notes": "No hours published for any venue. Folds the guide's Beach Club, Paramount Club, Vault, Wave Bar and Cabaret rows. Guide's 'The Beach Club' is branded 'TRYST Beach Club' on the site. Listing is named 'Crown & Anchor Box Office'; renamed to the complex. Tryst acquisition date not stated on the site. 1860s entry given year 1860 as decade marker."
   },
+  "osm-n4905048996": {
+   "_match_name": "Harbor Lounge",
+   "_display_id_at_research": "prov-lst-0406",
+   "address": "359 Commercial Street",
+   "phone": "508-413-9527",
+   "description": "A waterfront cocktail lounge with leather couches and wraparound windows looking over the harbor, beach and pier, serving cocktails, martinis, wine and beer. Veteran- and LGBTQIA+-owned.",
+   "_wick_source": "https://provincetownmagazine.com/2021/08/25/the-harbor-lounge/",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Secondary (Provincetown Magazine 2021, search snippets of FB/listings); the business's own website is gone.",
+   "_wick_fields": [
+    "address",
+    "phone",
+    "description"
+   ],
+   "_wick_notes": "theharborlounge.com now 301-redirects to sleepwalkcollective.com and then peckhamhope.com — unrelated; do not use as website. Aggregators show 'Mon–Fri 12–11pm' (not used). Current operating status in 2026 not independently confirmed beyond the 2026 PBG guide listing."
+  },
+  "osm-215753596": {
+   "_match_name": "Red Inn",
+   "_display_id_at_research": "prov-lst-0388",
+   "address": "15 Commercial Street",
+   "phone": "508-487-7334",
+   "website": "https://theredinn.com",
+   "description": "The restaurant of a West End waterfront inn, with views across the harbor to Long Point. Serves dinner nightly, a raw-bar happy hour, and a jazz brunch on Sundays.",
+   "amenities": [
+    "Harbor views",
+    "Raw bar",
+    "Sunday jazz brunch 11–2",
+    "Happy hour Fri–Sun 2–4:30; raw-bar happy hour daily 2–4:30",
+    "Inn rooms"
+   ],
+   "_wick_source": "https://theredinn.com",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Own site.",
+   "_wick_fields": [
+    "address",
+    "phone",
+    "website",
+    "description",
+    "amenities"
+   ],
+   "_wick_notes": "Dinner 'starts at 5:31 PM nightly' with no stated close, so hours left out. Inn and restaurant are one property; the lodging beat may hold the inn."
+  },
+  "osm-n1963938662": {
+   "_match_name": "Tin Pan Alley",
+   "_display_id_at_research": "prov-lst-0397",
+   "address": "269 Commercial Street",
+   "phone": "508-487-1648",
+   "website": "https://tinpanalleyptown.com",
+   "description": "A restaurant and live piano bar serving seasonal New American food with global touches, with breads, sauces and desserts made in-house.",
+   "amenities": [
+    "Live piano bar",
+    "Happy hour 4:45–6 daily ($10 appetizers)"
+   ],
+   "_wick_source": "https://tinpanalleyptown.com",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Own site: Lunch 11:30–4, Dinner 5–9, Bar 11:30–11:30pm.",
+   "_wick_fields": [
+    "address",
+    "phone",
+    "website",
+    "description",
+    "amenities"
+   ],
+   "_wick_notes": "Hours left out: site gives meal-period times without days of the week (happy hour says 'every day'). If days are daily, the bar span is 11:30–23:30."
+  },
+  "osm-n4904303750": {
+   "_match_name": "Waters Edge Cinema",
+   "_display_id_at_research": "prov-lst-0402",
+   "address": "237 Commercial Street",
+   "phone": "508-487-3456",
+   "website": "https://www.provincetownfilm.org/cinema/",
+   "description": "A year-round two-screen movie theater on the second floor of Whaler's Wharf, run by the nonprofit Provincetown Film Society (which also stages the Provincetown International Film Festival). Shows new releases, mini-festivals and guest presentations.",
+   "history": [
+    {
+     "year": 2013,
+     "event": "Provincetown Film Society buys and renovates the Whaler's Wharf Cinema, reopening it as Waters Edge Cinema"
+    }
+   ],
+   "_wick_source": "https://www.provincetownfilm.org/cinema/",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "Operator's page: description, box office and showtimes lines; address/2013 purchase from secondary listings.",
+   "_wick_fields": [
+    "address",
+    "phone",
+    "website",
+    "description",
+    "history"
+   ],
+   "_wick_notes": "Showtimes line 508-413-9369. Hours not applicable."
+  },
   "osm-n4904289254": {
    "_match_name": "Brewhouse 1620",
    "_display_id_at_research": "prov-lst-0173",
@@ -4842,6 +6574,32 @@
     "description"
    ],
    "_wick_notes": "Own /hours page shows 'Closed' for every day — may mean closed for the season or a template glitch; cause not established. Search shows a different phone (508-413-9687) on listings."
+  },
+  "osm-164024928": {
+   "_match_name": "Gaslamp Bed & Breakfast",
+   "_display_id_at_research": "prov-lst-0382",
+   "address": "97 Bradford Street",
+   "phone": "508-487-6636",
+   "website": "https://thegaslampptown.com/",
+   "description": "A gay-owned, adults-only (18+) bed and breakfast in a renovated late-1800s Victorian, with seven rooms (four with gas fireplaces). Breakfast is included, and there is a year-round hot tub and a clothing-optional deck garden.",
+   "amenities": [
+    "adults only (18+)",
+    "7 rooms",
+    "breakfast included",
+    "hot tub",
+    "clothing-optional deck"
+   ],
+   "_wick_source": "https://thegaslampptown.com/",
+   "_wick_fetched": "2026-09-25",
+   "_wick_confidence": "B&B's own homepage.",
+   "_wick_fields": [
+    "address",
+    "phone",
+    "website",
+    "description",
+    "amenities"
+   ],
+   "_wick_notes": "No season dates published; 'year-round hot tub' hints at year-round operation (not stated)."
   },
   "osm-n11463061407": {
    "_match_name": "Provincetown Portuguese Bakery",
