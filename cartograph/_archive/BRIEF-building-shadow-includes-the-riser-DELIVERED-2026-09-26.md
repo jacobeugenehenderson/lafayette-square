@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: DELIVERED 2026-09-26 (Plumb)
 dispatched: no
 written: 2026-09-26
 evict-when: no lit strip at the foot of any building in any town (measured, then eye-gated by Jacob with the scene recorded), and every riser reaches from its floor to world y = 0 (Jacob's ruling).
@@ -88,3 +88,27 @@ Preview (production's exact render tree); do not build a parallel harness.
 
 **The instruction is confirm-then-build:** read both, tell Jacob what you found, and if the code
 contradicts this brief — stop and flag him.
+
+---
+
+## Delivered 2026-09-26 — Plumb
+
+**Eye verdict (A17, scene recorded):** Jacob, *"Everything looks good"* — **huron, Stage > Hero.**
+⚠️ Not eye-gated: LS (its Stage needs a re-pour, ruled out for now) and a close sunlit-wall shot
+for the grain (Jacob named Hero only).
+
+- `96cec091` buildings cast from both faces — the lit strip (`ARCHITECTURE §8 Cast shadows` decision 5).
+- `e10a2da6` the riser reaches the town's floor, min(0, heightfield min) × exag, in the shader.
+- `49e7f30e` Stage's `Building` casts through its lifted depth material; the check is per mesh.
+- `ecd1f962` lamps + LS park fence posts likewise; the check is green.
+- Tree anchors re-baked (LS, HPDM, toy; Provincetown was already current) and lamp anchors
+  re-stamped (LS, LS-staging) — slab files, gitignored, reach the sites on publish.
+
+**Left open, named:** Altadena's 80 lamps are LS's 80 authored park lamps (the cross-town leak
+`bake-lamps.js` describes) and carry no terrain identity · 27 of HPDM's 112 lamps stand on no drawn
+ground (cause not established) · both anchor bakes fall back to FLAT terrain silently when a scene
+has none (`loadSceneTerrain(scene) || { getElevationRaw: () => 0 }`) · the rails of LS's park fence
+lift rigidly at their midpoint (not measured) · nothing draws fences/walls/hedges in 3D.
+
+*The ROADMAP row this closes, as it stood:*
+- **H-37 · 👁️ AWAITING JACOB'S EYE — the lit strip at every building's foot.** Buildings now cast from both faces (`ARCHITECTURE §8 Cast shadows` decision 5); the strip is measured gone on huron and LS at 0.125–0.5 m/texel. Every riser now reaches the town's floor, min(0, heightfield min) × exag, in the shader (render + depth, slab + Stage) — measured on provincetown: every riser bottoms at −1.14 m. ⚠️ **The trade to judge:** grain on sunlit walls, ≤ ~11% of wall pixels >10% darker at 0.5 m/texel, worst on a low-sun close shot. **The gate:** is every building seated, and is the wall grain acceptable, at Hero and at a close camera? ⚠️ A17 — record the town and shot. ⚠️ **The gate is in STAGE** (Preview has no camera controls). Stage's `Building` now casts through its lifted depth material; on a poured town Stage mounts the same `SlabBuildings` as Preview. ⛔ LS's Stage will not open without a re-pour + bake (the pour changed since the last one) — Jacob's go. S · → `docs/briefs/BRIEF-building-shadow-includes-the-riser.md`.
