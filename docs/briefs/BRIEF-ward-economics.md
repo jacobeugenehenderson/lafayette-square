@@ -53,7 +53,7 @@ evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve 
 
 ## The phases (stop after each)
 
-1. **The Ask:** the model and knobs above, replacing the current salary-and-secondary-share assumptions (reference §4–5). Show a small Ward and a busy Ward side by side, because the flat per-year reserve weighs differently on each.
+1. **The Ask:** the model and knobs above, replacing the current salary-and-secondary-share assumptions (reference §4–5). One Ward is modelled (Jacob, 2026-09-25: "I don't think the small/busy is helpful"); the studio reading is that Ward × the number of Wards.
 2. **The Split:**
    - the Host shown as its own recipient, never folded into "The Ward";
    - **one graphic that follows a dollar all the way through**: obligations → proceeds → the 10% skim → reserve / Host budget → the Host / platform split.
