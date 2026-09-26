@@ -244,10 +244,9 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
       T.makeTranslation(inst.x, inst.y || 0, inst.z)
       R.makeRotationY(inst.rotY)
       // ⭐⭐ PER-TREE SIZE (Jacob, 2026-08-25): "if a tree is placed 300x it should be a
-      // bunch of sizes within that band." The bake writes `scale` from the species' MEASURED
-      // height band (the union of the sources' published ranges) and this tree's OWN census
-      // DBH percentile. Both halves are measured; nothing is invented, and no tree is ever
-      // scaled above the tallest figure a source published for its species.
+      // bunch of sizes within that band." The bake writes `scale` from a point inside the
+      // species' PUBLISHED height band — chosen by the tree's DBH where the town has trunks,
+      // else spread by position (`sizeFrom`) — so no tree is ever drawn outside that band.
       // ⛔ Absent scale → 1:1, exactly the previous behaviour. The old comment here said
       // "Runtime always renders at 1:1" and that was why 728 red maples were identical.
       const sc = Number(inst.scale)

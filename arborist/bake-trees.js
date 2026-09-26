@@ -31,7 +31,7 @@
  *   { generatedAt, scene, lod, activeStyles, count, heroTierMeta, heroBandMeta,
  *     tiles: { cols, rows, minX, minZ, tileW, tileD,
  *              instancesByTile: [{ tileX, tileZ, instances: [...] }, ...] } | null,
- *     instances: [{ x, z, url, scale, rotY, species, variantId, heroTier?,
+ *     instances: [{ x, z, url, scale?, sizeFrom?, rotY, species, variantId, heroTier?,
  *                  heroRole?('mesh'|'impostor'), panDist? }] }
  *
  * `heroTier` ('mesh'|'opaque'|'impostor'|'cull') is a purely DERIVED per-tree visibility class
@@ -702,12 +702,18 @@ export async function bakeTrees({
   // Built from THIS scene's real trees only — the census is per-hood, so HPDM
   // samples HPDM's own trees, never LS's. `source` still marks measured vs
   // estimated, so a size/age BENCHMARK reads only the real ones.
-  // ⭐⭐ PER-TREE SIZE FROM THE SPECIES BAND × THIS TREE'S OWN DBH (Jacob, 2026-08-25):
-  // "if a tree is placed 300x it should be a bunch of sizes within that band."
-  // Both halves are MEASURED: the band is the union of the sources' published height
-  // ranges (NCSU ships `Height: 80 ft - 120 ft` — that IS the band, and taking only its
-  // high threw half the measurement away), and each placement carries its own census DBH.
-  // ⛔ Nothing is invented: a tree is never scaled outside what a source actually claimed.
+  // ⭐⭐ PER-TREE SIZE FROM THE SPECIES BAND (Jacob, 2026-08-25): "if a tree is placed 300x
+  // it should be a bunch of sizes within that band." The band is the union of the sources'
+  // published height ranges (NCSU ships `Height: 80 ft - 120 ft` — that IS the band, and
+  // taking only its high threw half the measurement away).
+  // ⛔ THE RULE: a tree is never sized outside the band a source published for ITS species —
+  // not above it, not below it, not from another town's band, not from a constant.
+  // ⭐ What is NOT the rule (Jacob, 2026-09-26: "the right spirit but wrong laxity"): a
+  // measured trunk. A size inside the published band is SOURCED — the band is the
+  // measurement. A DBH only chooses WHERE in the band a tree stands; with none to read, the
+  // tree takes a position-seeded point spread evenly across the band (`sizeFrom: 'band-spread'`),
+  // which is the population shape the DBH-rank path yields anyway (a rank is uniform). Reading
+  // the DBH as the permission is what left every tree in a census-less town one size.
   const bandBySpecies = new Map()
   let dossierLookup = null
   try { ({ dossierForSalonSpecies: dossierLookup } = await import('./salon-options.js')) }
@@ -1007,7 +1013,7 @@ export async function bakeTrees({
     const measuredDbh = (REAL_DBH_SOURCES.has(tree.__source) && Number.isFinite(tree.dbh)) ? tree.dbh : null
     const dbh = measuredDbh ?? sampleDbh(tree.species, seed)
     // Where this tree sits in its species' DBH spread → where it sits in the size band.
-    let instScale = null
+    let instScale = null, sizeFrom = null
     const band = bandFor(v.species)
     if (band && band.hi > band.lo) {
       // ⚠️ dbhBySpecies is keyed by the CENSUS species (`tree.species`), the variant by the
@@ -1016,10 +1022,19 @@ export async function bakeTrees({
       // library key, then the global distribution; a species substituted onto another
       // still deserves a size drawn from its OWN measured trunks.
       const per = dbhSorted.get(tree.species) || dbhSorted.get(v.species) || dbhGlobalSorted
-      if (per && per.length) {
+      let pct
+      if (dbh != null && per && per.length) {
         let lo = 0, hi = per.length
         while (lo < hi) { const mid = (lo + hi) >> 1; if (per[mid] < dbh) lo = mid + 1; else hi = mid }
-        const pct = per.length > 1 ? lo / (per.length - 1) : 1
+        pct = per.length > 1 ? lo / (per.length - 1) : 1
+        sizeFrom = measuredDbh != null ? 'dbh-measured' : 'dbh-sampled'
+      } else {
+        // No trunk measured anywhere in this town's census (OSM ships a placeholder, canopy
+        // fill has none) — spread across the band by position. Salt 11 is this use's alone.
+        pct = hash01(seed, 11)
+        sizeFrom = 'band-spread'
+      }
+      {
         const h = band.lo + Math.max(0, Math.min(1, pct)) * (band.hi - band.lo)
         // ⛔⛔ DIVIDE BY THE HEIGHT THE GLB ACTUALLY STANDS AT — never by `band.hi`.
         // This was `h / band.hi`, which is only correct if the model is normalised to the
@@ -1041,6 +1056,7 @@ export async function bakeTrees({
         if (standsAtM > 0) {
           instScale = +(h / standsAtM).toFixed(4)
         } else {
+          sizeFrom = null
           // ⛔ LOUD. No fallback to band.hi: that is the bug this replaces, and a silently
           // mis-scaled forest is exactly the plausible-looking success Layer 0 forbids.
           console.warn(`[bake-trees] ⛔ "${v.species}" v${v.variantId} has no usable standing height `
@@ -1081,12 +1097,12 @@ export async function bakeTrees({
       // ⭐ The old-slab case is now a SLAB-LEVEL fact (`meshTierStamped`, below) — the thing
       // it always was. A per-instance absence cannot distinguish "old slab" from "excluded".
       meshTier: meshTierSpecies.has(v.species),
-      // ⭐ PER-INSTANCE SCALE. The GLB is normalised at publish to the band's HIGH — the
-      // mature specimen — so every instance scales DOWN from it by where its own DBH sits
-      // in that species' measured DBH distribution. A tree is therefore never rendered
-      // larger than the tallest figure any source published for its species.
-      // ⛔ Absent band → scale omitted → 1:1, exactly the previous behaviour.
-      ...(instScale != null ? { scale: instScale } : {}),
+      // ⭐ PER-INSTANCE SCALE = a height inside the species' published band ÷ the height the
+      // GLB actually stands at. `sizeFrom` says how the point in the band was chosen:
+      // 'dbh-measured' (this tree's census trunk) · 'dbh-sampled' (a trunk sampled from this
+      // town's own measured pool) · 'band-spread' (no trunk in this town; position-seeded).
+      // ⛔ Absent band → scale and sizeFrom omitted → 1:1, and the flat census below names it.
+      ...(instScale != null ? { scale: instScale, sizeFrom } : {}),
       rotY: +rotY.toFixed(4),
       species: v.species,
       variantId: v.variantId,
@@ -1341,34 +1357,31 @@ export async function bakeTrees({
       if (flat.size) {
         const n = [...flat.values()].reduce((a, b) => a + b, 0)
         const worst = [...flat.entries()].sort((a, b) => b[1] - a[1])
-        // ⭐⭐ TWO CAUSES, AND THEY PRESCRIBE OPPOSITE WORK. `scale` is null when the
-        // species has no BAND *or* when there is no measured DBH to place the tree
-        // within the band it does have (`per` empty at the percentile lookup above).
-        // ⛔ This block used to assert the first and print "author one" for both. On
-        // huron — a town with no municipal census, so ZERO real-DBH sources — that sent
-        // the reader to author eight dossiers that already existed and already carried
-        // bands. A diagnostic that names the wrong cause is worse than silence: it is a
-        // confident wrong answer about our own pipeline, and it costs a day.
-        // ⚠️ REAL_DBH_SOURCES is city-inventory / forest-park / park. OSM ships a
-        // constant placeholder and canopy fill has none, so a town whose census is only
-        // those two has no trunk spread and CANNOT size, however good its dossiers are.
+        // ⭐⭐ TWO CAUSES, AND THEY PRESCRIBE OPPOSITE WORK. `scale` is null when the species
+        // has no BAND, or when its variant has no usable standing height (warned per variant
+        // at the scale above). A missing trunk measurement is NOT a cause any more — such a
+        // tree takes a band-spread size (2026-09-26). ⛔ This block once told huron's reader to
+        // author eight dossiers that already carried bands; name the cause the data shows.
         const noBand = worst.filter(([sp]) => !bandVia.has(sp))
-        const noDbh  = worst.filter(([sp]) => bandVia.has(sp))
+        const noStand = worst.filter(([sp]) => bandVia.has(sp))
         console.log(`[bake-trees] ⛔ ${n} of ${instances.length} placements (${(100 * n / instances.length).toFixed(1)}%) render at a FLAT 1:1.`)
         if (noBand.length) {
           console.log(`[bake-trees]    NO SIZE BAND — ` + noBand.map(([sp, c]) => `${sp}(${c})`).join(' '))
           console.log(`[bake-trees]    A band needs EITHER dossier chassis.size.band (ncsu/selectree) OR the USDA pair ` +
             `chassis.size_20yr + chassis.size_max. A species with neither has no dossier at all — author one.`)
         }
-        if (noDbh.length) {
-          console.log(`[bake-trees]    BAND PRESENT, NO MEASURED DBH — ` + noDbh.map(([sp, c]) => `${sp}(${c})`).join(' '))
-          console.log(`[bake-trees]    ⛔ DO NOT AUTHOR A DOSSIER FOR THESE — they have one, and it carries a band. ` +
-            `This town has no trunk diameters to place a tree WITHIN that band: ${dbhGlobal.length} measured ` +
-            `DBH across the whole census. DBH comes only from a municipal inventory ` +
-            `(city-inventory / forest-park / park); OSM ships a constant placeholder and canopy fill has none. ` +
-            `⭐ For a town with no municipal census this is the HONEST output, not a defect — it is what ` +
-            `"no tree census" looks like on screen. Acquire an inventory, or accept a uniform canopy.`)
+        if (noStand.length) {
+          console.log(`[bake-trees]    BAND PRESENT, NO STANDING HEIGHT ON THE VARIANT — ` + noStand.map(([sp, c]) => `${sp}(${c})`).join(' ') +
+            ` — fix public/trees/index.json (approxHeightM × normalizeScale); do not author a dossier.`)
         }
+      }
+      // ⭐ How every sized tree got its point in the band — so a census-less town reads as
+      // band-spread on the log, never as though it had measured trunks.
+      {
+        const by = new Map()
+        for (const inst of instances) if (inst.sizeFrom) by.set(inst.sizeFrom, (by.get(inst.sizeFrom) || 0) + 1)
+        if (by.size) console.log(`[bake-trees] sized from: ` + [...by].map(([k, v]) => `${k}=${v}`).join(' · ') +
+          ` (${dbhGlobal.length} measured DBH in this census)`)
       }
       const viaCount = new Map()
       for (const [, v] of bandVia) viaCount.set(v, (viaCount.get(v) || 0) + 1)
