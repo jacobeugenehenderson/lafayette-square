@@ -51,6 +51,10 @@ widened: 2026-09-26 (Jacob — the always-dirty bake, the 2D refresh, the modal)
 > (`src/tokens/design.css`, the `--carto-*` layer; `ROADMAP C10`) rather than local values. Jacob looks at it for
 > minutes at a time: make it calm and legible. ⛔ No new component library.
 
+> **OPEN (Sluice, 2026-09-26) — cause not established:** a plain huron Designer load ran `sectionOpen` 3× in
+> 51 s (46 s · 10 s · 10 s) with no interaction. Measured from the `[LOAD] sectionOpen` console timers. To test next:
+> is it the graph re-running itself (a dep of that memo changing identity after hydrate)?
+
 ## 1. You are the dispatched agent. Name yourself — one word, not a name another RUNNING session holds (check `ListAgents`; ask Jacob to `/rename`).
 ## 2. Agent: **FRESH.** ⚠️ `cartograph/serve.js`'s bake chain is the subject; check `git status` first — several sessions have been in that file today.
 
