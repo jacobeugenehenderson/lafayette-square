@@ -508,6 +508,63 @@
         "note": "The Bureau publishes its public data as open data; no restriction stated."
       },
       "status": "PERMITTED"
+    },
+    {
+      "id": "ncsu-plant-toolbox",
+      "title": "North Carolina Extension Gardener Plant Toolbox",
+      "publisher": "NC State Extension",
+      "jurisdiction": "state university extension (US)",
+      "url": "https://plants.ces.ncsu.edu/",
+      "covers": [
+        "per-species traits: habit/form, bark, leaf type/shape/margin/arrangement/size, dimensions",
+        "common names (AKAs)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-25",
+        "checkedBy": "Marram — robots.txt (NCSU: none, 404; SelecTree: allows all), a plant page, the about page, and SelecTree's app bundle, fetched 2026-09-25",
+        "approvedBy": "Jacob, 2026-09-25, relayed by Boz: \"Yes, absolutely, the goal is to create a world-class library of our own.\"",
+        "note": "No terms of use or reuse restriction found on any page checked. We take trait FACTS and common names with attribution, never prose descriptions or images. Harvest: scratch/dossier-harvest.mjs → arborist/mint-dossiers.mjs."
+      },
+      "status": "PERMITTED — facts + names with attribution; no prose, no images"
+    },
+    {
+      "id": "calpoly-selectree",
+      "title": "SelecTree — Urban Forest Ecosystems Institute",
+      "publisher": "Cal Poly San Luis Obispo",
+      "jurisdiction": "state university (California)",
+      "url": "https://selectree.calpoly.edu/",
+      "covers": [
+        "per-species traits: tree shape, bark texture, leaf form/arrangement, size",
+        "accepted common name"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-25",
+        "checkedBy": "Marram — robots.txt (NCSU: none, 404; SelecTree: allows all), a plant page, the about page, and SelecTree's app bundle, fetched 2026-09-25",
+        "approvedBy": "Jacob, 2026-09-25, relayed by Boz: \"Yes, absolutely, the goal is to create a world-class library of our own.\"",
+        "note": "No terms of use or reuse restriction found (the site renders client-side; its bundle carries no copyright or terms text). California-centred: many eastern species have no record, and the harvester SKIPS rather than take a neighbouring species (fixed 2026-09-25; before that Sorbus americana took Sorbus decora's values). Facts + names with attribution; no prose, no images."
+      },
+      "status": "PERMITTED — facts + names with attribution; no prose, no images"
+    },
+    {
+      "id": "usda-plants",
+      "title": "PLANTS Database — Plant Profile + Characteristics services",
+      "publisher": "USDA NRCS",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://plants.usda.gov/",
+      "covers": [
+        "accepted scientific + common names",
+        "growth form, shape and orientation, foliage, height, growth rate"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-25",
+        "checkedBy": "Marram",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)",
+        "note": "Federal work. The harvester verifies each symbol by the returned scientific name and takes nothing on a mismatch (TICO is Tiarella, not Tilia). Its first CommonName is the ACCEPTED common name the dossier leads with."
+      },
+      "status": "PERMITTED"
     }
   ],
   "questions": [
