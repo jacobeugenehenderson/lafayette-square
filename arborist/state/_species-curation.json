@@ -326,31 +326,31 @@
       "deciduous": true
     },
     "pine_white": {
-      "label": "Pine White",
+      "label": "Pine, White",
       "scientific": "Pinus strobus",
       "deciduous": false,
       "promoted": true
     },
     "pine_pitch": {
-      "label": "Pine Pitch",
+      "label": "Pitch Pine",
       "scientific": "Pinus rigida",
       "deciduous": false,
       "promoted": true
     },
     "oak_black": {
-      "label": "Oak Black",
+      "label": "Black Oak",
       "scientific": "Quercus velutina",
       "deciduous": true,
       "promoted": true
     },
     "oak_scarlet": {
-      "label": "Oak Scarlet",
+      "label": "Scarlet Oak",
       "scientific": "Quercus coccinea",
       "deciduous": true,
       "promoted": true
     },
     "locust_black": {
-      "label": "Locust Black",
+      "label": "Black Locust",
       "scientific": "Robinia pseudoacacia",
       "deciduous": true,
       "promoted": true

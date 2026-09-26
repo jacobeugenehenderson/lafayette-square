@@ -463,7 +463,27 @@ function speciesIndex() {
     for (const a of aliases) for (const k of keysFor(a)) byKey.set(k, rep)
   }
 
-  _speciesIndex = { byKey, canonical: merged }
+  // ⭐ AKAs (Jacob, 2026-09-25: "a tree might colloquially have a bunch of different names").
+  // Harvested per dossier as `akas`. ⛔ KEPT OUT OF THE MERGE PASS ON PURPOSE: that pass unions
+  // any two species sharing a key, and sources DO share colloquial names ("black oak" is an AKA
+  // of Quercus coccinea as well as the accepted name of Q. velutina), so an AKA there would
+  // merge two species into one tree. They are a LAST-resort lookup, and a name that more than
+  // one species claims resolves to nothing, loudly (`via: 'ambiguous'`).
+  const byAka = new Map()   // key -> Set(representative)
+  if (existsSync(dossierDir)) {
+    for (const f of readdirSync(dossierDir).filter(x => x.endsWith('.json'))) {
+      const d = readJSON(path.join(dossierDir, f))
+      if (!d?.akas?.length) continue
+      const rep = byKey.get(normalize(d.key || d.canonicalId || f.replace(/\.json$/, '')))
+      if (!rep) continue
+      for (const a of d.akas) for (const k of keysFor(a.name)) {
+        if (!byAka.has(k)) byAka.set(k, new Set())
+        byAka.get(k).add(rep)
+      }
+    }
+  }
+
+  _speciesIndex = { byKey, canonical: merged, byAka }
   return _speciesIndex
 }
 
@@ -475,11 +495,14 @@ export function reloadVocabulary() { _speciesIndex = null }
  * @returns {{value:string, resolved:boolean, via:string}}
  */
 export function resolveSpecies(raw) {
-  const { byKey } = speciesIndex()
+  const { byKey, byAka } = speciesIndex()
   if (raw == null || normalize(raw) === '') return { value: raw, resolved: false, via: 'empty' }
   const n = normalize(raw), t = tokenKey(raw)
   if (byKey.has(n)) return { value: byKey.get(n), resolved: true, via: 'name' }
   if (byKey.has(t)) return { value: byKey.get(t), resolved: true, via: 'word-order' }
+  const aka = byAka.get(n) || byAka.get(t)
+  if (aka?.size === 1) return { value: [...aka][0], resolved: true, via: 'aka' }
+  if (aka?.size > 1) return { value: raw, resolved: false, via: 'ambiguous', candidates: [...aka].sort() }
   return { value: raw, resolved: false, via: 'unresolved' }
 }
 

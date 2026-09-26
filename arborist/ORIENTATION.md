@@ -75,9 +75,9 @@ destroying the "what do I go get" signal. ⛔ **Do not re-land it.**
 
 ### ⭐ The operator is a NON-BOTANIST. That decides the keys.
 *(Jacob, 2026-08-23.)* The operator works in **chassis · bark · leaf (+ season)** and in
-**groupings**, not in Latin. ⇒ **A species' identity, everywhere the operator can see it,
-is its common name** (`Sugar Maple` → `maple_sugar`). Botanical slugs are **supply-side
-metadata** — provenance on a part, never a name on a surface.
+**groupings**, not in Latin. ⇒ **A species LEADS with its common name, Latin beside it; the
+scientific name is its identity, and sourced AKAs route** (Jacob, 2026-09-25 · `vocabulary.mjs`
+▶ `node checks/claims-akas-never-merge-species.mjs`). Botanical *slugs* stay supply-side metadata.
 ⛔ **Today this is broken on both sides of the join:** several species exist twice, once
 botanical and once roster-keyed (`acer_saccharum` *and* `maple_sugar`), and the **dossiers
 are all botanical-named while every shipping tree is roster-named.** So the side that

@@ -232,7 +232,7 @@ function ReferencePanel() {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', cursor: 'pointer', gap: 8 }}
         onClick={() => setOpen(o => !o)}>
-        <span style={{ fontWeight: 600, color: '#e6e9ee' }}>📖 {d.key} <i style={{ color: '#8aa3bb', fontWeight: 400 }}>{d.scientific}</i>{d.required?.['chassis.size']?.target ? <span style={{ color: '#9ab', fontWeight: 400, fontSize: 10 }}> · mature ~{d.required['chassis.size'].target}m</span> : null}</span>
+        <span style={{ fontWeight: 600, color: '#e6e9ee' }}>📖 {d.key} <i style={{ color: '#8aa3bb', fontWeight: 400 }}>{d.scientific}</i>{(d.akas || []).filter(a => a.name !== d.key).length ? <span style={{ color: '#9ab', fontWeight: 400, fontSize: 10 }} title={d.akas.map(a => `${a.name} (${a.sources.join(', ')})`).join('\n')}> · also {d.akas.filter(a => a.name !== d.key).slice(0, 4).map(a => a.name).join(', ')}{d.akas.length > 5 ? '…' : ''}</span> : null}{d.required?.['chassis.size']?.target ? <span style={{ color: '#9ab', fontWeight: 400, fontSize: 10 }}> · mature ~{d.required['chassis.size'].target}m</span> : null}</span>
         <span style={{ color: '#778' }}>{open ? '▾' : '▸'}</span>
       </div>
       {open && (

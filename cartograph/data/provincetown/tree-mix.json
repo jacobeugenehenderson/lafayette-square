@@ -7,10 +7,10 @@
     "county": "25001",
     "countyName": "Barnstable County",
     "estimate": 4,
-    "citation": "USDA Forest Service, Forest Inventory and Analysis Program, Sat, 26 Sep 2026 00:18:24 GMT. Forest Inventory FIADB-API web-application Version 2.0 St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/fiadb-api/evalidator]",
+    "citation": "USDA Forest Service, Forest Inventory and Analysis Program, Sat, 26 Sep 2026 00:32:01 GMT. Forest Inventory FIADB-API web-application Version 2.0 St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/fiadb-api/evalidator]",
     "ranked": [
       {
-        "common": "pine_pitch",
+        "common": "pitch pine",
         "fiaCommon": "pitch pine",
         "scientific": "Pinus rigida",
         "spcd": 126,
@@ -23,7 +23,7 @@
         ]
       },
       {
-        "common": "oak_black",
+        "common": "black oak",
         "fiaCommon": "black oak",
         "scientific": "Quercus velutina",
         "spcd": 837,
@@ -36,7 +36,7 @@
         ]
       },
       {
-        "common": "oak_scarlet",
+        "common": "scarlet oak",
         "fiaCommon": "scarlet oak",
         "scientific": "Quercus coccinea",
         "spcd": 806,
@@ -154,7 +154,7 @@
         "composed": []
       },
       {
-        "common": "locust_black",
+        "common": "black locust",
         "fiaCommon": "black locust",
         "scientific": "Robinia pseudoacacia",
         "spcd": 901,
@@ -237,9 +237,9 @@
     ]
   },
   "commonWeights": {
-    "pine_pitch": 28.663,
-    "oak_black": 13.835,
-    "oak_scarlet": 12.097,
+    "pitch pine": 28.663,
+    "black oak": 13.835,
+    "scarlet oak": 12.097,
     "Oak, White": 10.828,
     "Red Maple": 8.535,
     "Pine, White": 7.446,
@@ -249,7 +249,7 @@
     "scrub oak": 2.602,
     "black cherry": 1.775,
     "serviceberry spp.": 1.289,
-    "locust_black": 0.559,
+    "black locust": 0.559,
     "Maple, Norway": 0.31,
     "tamarack": 0.252,
     "white willow": 0.207,
@@ -258,19 +258,19 @@
     "oak, northern red": 0.073
   },
   "shapeByCommon": {
-    "pine_pitch": "conifer",
+    "pitch pine": "conifer",
     "Pine, White": "conifer",
     "eastern redcedar": "conifer",
     "tamarack": "conifer"
   },
   "commonToLibrary": {
-    "pine_pitch": "pine_pitch",
-    "oak_black": "oak_black",
-    "oak_scarlet": "oak_scarlet",
+    "pitch pine": "pine_pitch",
+    "black oak": "oak_black",
+    "scarlet oak": "oak_scarlet",
     "Oak, White": "oak_white",
     "Red Maple": "maple_red",
     "Pine, White": "pine_white",
-    "locust_black": "locust_black",
+    "black locust": "locust_black",
     "blackgum": "blackgum"
   },
   "_unmapped_is_deliberate": "Only COMPOSED species are routed. Every other species stays in commonWeights and reads red in the Grove, ranked — the work item.",
