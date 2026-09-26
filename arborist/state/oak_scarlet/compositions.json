@@ -4,35 +4,37 @@
     {
       "slot": 1,
       "name": "Slot 1 (auto)",
-      "chassis": "rounded_02",
-      "bark": {},
+      "chassis": "rounded_06",
+      "bark": {
+        "ref": "bark_brown_01"
+      },
       "leaves": {
-        "pack": "california_black_oak"
+        "pack": "lobed"
       },
       "deformer": {},
       "transform": {},
-      "derivedFrom": "oak_winter_fall_d",
+      "derivedFrom": "white_oak_a",
       "auto": {
         "builtAt": "2026-09-26",
         "by": "arborist/recommend-plates.mjs",
-        "dossier": null,
+        "dossier": "quercus_coccinea",
         "chassis": {
-          "pick": "rounded_02",
+          "pick": "rounded_06",
           "tier": "G",
-          "reason": "same genus · no other species uses it · no dossier — order within this tier is not a judgment"
+          "reason": "same genus · rounded habit · size fits"
         },
         "bark": {
-          "pick": null,
-          "tier": null,
-          "reason": "no bark plate names this species or genus, and no dossier to match by trait — the default stands"
+          "pick": "bark_brown_01",
+          "tier": "T",
+          "reason": "matches by trait · furrowed bark"
         },
         "leaves": {
-          "pick": "california_black_oak",
+          "pick": "lobed",
           "tier": "G",
-          "reason": "same genus · no other species uses it · no dossier — order within this tier is not a judgment"
+          "reason": "same genus · lobed margin"
         }
       }
     }
   ],
-  "savedAt": 1790381798388
+  "savedAt": 1790382489503
 }

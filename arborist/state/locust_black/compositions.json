@@ -4,32 +4,34 @@
     {
       "slot": 1,
       "name": "Slot 1 (auto)",
-      "chassis": "black_locust_a",
+      "chassis": "black_locust_d",
       "bark": {},
-      "leaves": {},
+      "leaves": {
+        "pack": "elm_autumn"
+      },
       "deformer": {},
       "transform": {},
       "auto": {
         "builtAt": "2026-09-26",
         "by": "arborist/recommend-plates.mjs",
-        "dossier": null,
+        "dossier": "robinia_pseudoacacia",
         "chassis": {
-          "pick": "black_locust_a",
+          "pick": "black_locust_d",
           "tier": "S",
-          "reason": "same species · no other species uses it · no dossier — order within this tier is not a judgment"
+          "reason": "same species"
         },
         "bark": {
           "pick": null,
           "tier": null,
-          "reason": "no bark plate names this species or genus, and no dossier to match by trait — the default stands"
+          "reason": "no bark plate names this species or genus, and none matches its dossier — the default stands"
         },
         "leaves": {
-          "pick": null,
-          "tier": null,
-          "reason": "no leaf plate names this species or genus, and no dossier to match by trait — the default stands"
+          "pick": "elm_autumn",
+          "tier": "T",
+          "reason": "matches by trait · ovate leaf"
         }
       }
     }
   ],
-  "savedAt": 1790381763107
+  "savedAt": 1790382524238
 }

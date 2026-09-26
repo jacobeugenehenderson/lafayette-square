@@ -18,7 +18,8 @@
  * The build writes `arborist/state/<id>/compositions.json` with the top pick per plate and an
  * `auto` block — `{ <plate>: { pick, tier, reason } }` — so a plate is "auto" exactly while its
  * value still equals `auto.<plate>.pick`; an operator swap retires the claim with no bookkeeping.
- * ⛔ It never overwrites an authored composition (any slot with a chassis) or a curation entry.
+ * ⛔ It never overwrites an authored composition or a curation entry. It may re-rank its OWN
+ * untouched build (every plate still equal to its auto pick) — one operator swap and it refuses.
  *
  *   node arborist/recommend-plates.mjs --species <salonId> --scientific "Genus species"         # print
  *   node arborist/recommend-plates.mjs --species <salonId> --scientific "…" --label "…" --build [--evergreen]
@@ -142,8 +143,15 @@ async function main() {
   const label = arg('label')
   if (!label) { console.error('⛔ --build needs --label (the operator-facing name)'); process.exit(2) }
   const compPath = path.join(ROOT, 'arborist/state', id, 'compositions.json')
-  if (existsSync(compPath) && (readJSON(compPath).compositions || []).some(c => c && c.chassis))
-    throw new Error(`⛔ ${id} already has an authored composition — the build never overwrites one. Swap plates in the Salon.`)
+  // A re-rank may replace the SYSTEM's own picks, and nothing else: every slot must still be
+  // exactly what an auto build wrote (each plate equal to its auto pick). One operator swap
+  // anywhere and the composition is authored — refused.
+  const untouched = (c) => c.auto && c.chassis === c.auto.chassis?.pick
+    && (c.bark?.ref ?? null) === (c.auto.bark?.pick ?? null) && (c.leaves?.pack ?? null) === (c.auto.leaves?.pick ?? null)
+  const prior = existsSync(compPath) ? (readJSON(compPath).compositions || []).filter(c => c && c.chassis) : []
+  if (prior.length && !prior.every(untouched))
+    throw new Error(`⛔ ${id} has an authored composition (an operator chose a plate) — the build never overwrites one. Swap plates in the Salon.`)
+  if (prior.length) console.log(`↻ ${id}: re-ranking an untouched auto build`)
   mkdirSync(path.dirname(compPath), { recursive: true })
   writeFileSync(compPath, JSON.stringify({ species: id, compositions: [composition], savedAt: Date.now() }, null, 2))
   const curPath = path.join(ROOT, 'arborist/state/_species-curation.json')
