@@ -38,7 +38,7 @@ The machinery exists: the Salon composes, the Grove holds a town's roster, dossi
 2. **The likely-grove list per town:** FIA by county, most common first (`scripts/15-fia-tree-mix.mjs`, ruled 2026-09-25). Each species shows **composed / suggested / missing**.
    - ⚠️ A sample-size rule is owed (huron's county has one plot per species): widen county → survey unit → state, loudly; the minimum is Jacob's call.
    - ⚠️ So is his ruling on **street trees vs woods** (FIA samples forest).
-3. **Build, then swap:** for each listed species the kit BUILDS it from the best plates by evidence (S > G > T, trusting filenames), marked `auto` with per-plate provenance. The operator swaps any plate later.
+3. **Build, then swap, from ranked recommendations** (Jacob, 2026-09-25: *"We can also make algorithmic recommendations"*): each plate (skeleton, bark, leaf, crown) of a built tree offers a RANKED list — S > G > T against the species' traits, and against its reference plates (`arborist/references/<species>/`) where they exist — each with its reason in plain words (*"same genus · furrowed bark"*). One click swaps; the build's own pick is the top one, marked `auto` with per-plate provenance. ⛔ Filenames and species-from-filename are internal evidence only (Jacob): the operator sees plates by PART TYPE with anonymised ids, never a source filename.
    - ⚠️ **Owed ruling:** which dossier sources are allowed? (USDA PLANTS + the USFS Urban Tree Database are federal and cleared; NCSU and SelecTree need his OK.)
 4. **Distinct towns:** show two towns' groves side by side, built only from what the library holds, so the claim that every map can look distinct is **seen**, not asserted.
 
