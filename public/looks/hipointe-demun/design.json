@@ -578,24 +578,7 @@
     }
   },
   "heroSubject": null,
-  "heroKeyframes": [
-    {
-      "position": [
-        -540,
-        55,
-        362
-      ],
-      "fov": 22
-    },
-    {
-      "position": [
-        -260,
-        55,
-        98
-      ],
-      "fov": 22
-    }
-  ],
+  "heroKeyframes": [],
   "heroMotion": {
     "period": 1360,
     "easing": "sine"
@@ -624,17 +607,6 @@
   "browseHeading": {
     "values": {
       "value": 0
-    }
-  },
-  "arch": {
-    "values": {
-      "distance": 1690,
-      "bearingX": 0.9487,
-      "bearingZ": -0.3163,
-      "scale": 2.1,
-      "rotation": 1.99,
-      "yOffset": 155,
-      "footFade": 36
     }
   },
   "archLight": {
