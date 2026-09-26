@@ -355,6 +355,25 @@ const TERRAIN_DISPLACE_PERVERTEX = `
 #include <project_vertex>`
 
 /**
+ * The same per-vertex drape, HELD UNDER A CEILING where the vertex asks for one: `aClampY` =
+ * (flag, height). The bed under a water body carries the height of the water drawn over it
+ * (`bake-ground.js`, "THE BED NEVER RISES"), so a flat the lidar reads as dry stays under the
+ * water instead of breaking through it. The ceiling is a world height, not a terrain sample, so
+ * it holds at any `uExag`. ⛔ Opt-in (`clampY`): every other material keeps the snippet above.
+ */
+const TERRAIN_DISPLACE_PERVERTEX_CLAMPED = `
+{
+  vec4 _tw = modelMatrix * vec4(transformed, 1.0);
+  vec2 _tuv = _terrainUV(vec2(
+    (_tw.x - uBMinX) / uSpanX,
+    (_tw.z - uBMinZ) / uSpanZ
+  ));
+  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag;
+  if (aClampY.x > 0.5) transformed.y = min(transformed.y, aClampY.y);
+}
+#include <project_vertex>`
+
+/**
  * Patch a material for GPU terrain displacement.
  * Chains safely with existing onBeforeCompile (buildings, etc.)
  * by injecting displacement at #include <project_vertex> — after
@@ -478,13 +497,14 @@ export function patchTerrainAtCentroidRaw(mat, centroidRaw) {
   mat.customProgramCacheKey = () => `terrain-centroid-${prevKey ? prevKey() : 'std'}`
 }
 
-export function patchTerrain(mat, { terrainNormals = false, perVertex = false } = {}) {
-  const displaceSnippet = perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
+export function patchTerrain(mat, { terrainNormals = false, perVertex = false, clampY = false } = {}) {
+  if (clampY && !perVertex) throw new Error('[terrain] clampY is a per-vertex ceiling — it needs perVertex')
+  const displaceSnippet = clampY ? TERRAIN_DISPLACE_PERVERTEX_CLAMPED : perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
   const prev = mat.onBeforeCompile
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL)
+      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL + (clampY ? 'attribute vec2 aClampY;\n' : ''))
       .replace('#include <project_vertex>', displaceSnippet)
     if (prev) prev(shader)
     // ⛔ AFTER prev, deliberately. `applyWeatherToShader` (called inside prev) appends
@@ -498,7 +518,7 @@ export function patchTerrain(mat, { terrainNormals = false, perVertex = false } 
     }
   }
   const prevKey = mat.customProgramCacheKey?.bind(mat)
-  const mode = perVertex ? 'v' : 'r'
+  const mode = clampY ? 'vc' : perVertex ? 'v' : 'r'
   mat.customProgramCacheKey = () =>
     `terrain-${mode}${terrainNormals ? 'n' : 'p'}-${prevKey ? prevKey() : 'std'}`
 }

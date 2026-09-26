@@ -1276,13 +1276,86 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     }
   }
 
+  // ⭐⭐ THE BED NEVER RISES THROUGH ITS WATER (Jacob, 2026-09-26: the drawn water's edge IS the mapped
+  // shoreline, and the revetment sits on it). Draped freely, the bed broke the surface wherever the lidar
+  // reads the flats as dry — 9.8% of Provincetown's bed, p50 16 m out — and moved the visible shore away
+  // from the coast and the stone. So every INTERIOR bed vertex carries the height of the water drawn over
+  // it, and the runtime drape takes min(terrain, that height). ⛔ PER BODY, read off the water group that
+  // covers the vertex — never the datum: a pond standing above it keeps its bed under its own surface.
+  // The bed's BOUNDARY vertices are shared with the land and stay fully draped, so the mesh stays one piece
+  // and the bank forms at the mapped shore. Section 5 of the bin: (flag, height) per bed vertex.
+  let clampByteOffset = 0
+  const clampChunks = []
+  {
+    const gi = groups.findIndex(g => g.kind === 'mat' && g.id === 'bed')
+    if (gi >= 0) {
+      const BP = positionChunks[gi], BI = indexChunks[gi], n = BP.length / 3
+      const uses = new Map()
+      for (let t = 0; t < BI.length; t += 3) for (let e = 0; e < 3; e++) {
+        const a = BI[t + e], b = BI[t + (e + 1) % 3], k = a < b ? a * n + b : b * n + a
+        uses.set(k, (uses.get(k) || 0) + 1)
+      }
+      const onEdge = new Uint8Array(n)
+      for (const [k, c] of uses) if (c === 1) { onEdge[Math.floor(k / n)] = 1; onEdge[k % n] = 1 }
+      // Every water triangle, gridded, with its group's drawn Y.
+      const CELL = 50, grid = new Map(), wt = []
+      groups.forEach((g, i) => {
+        if (g.kind === 'face' || !(g.id === 'water' || g.id.startsWith('water:'))) return
+        // The body's own LEVEL: its drawn sheet minus the slot lift that separates the sheet from what is
+        // beneath it. Holding the bed AT the sheet would make them coplanar and they would fight.
+        const P = positionChunks[i], I = indexChunks[i], lift = g.renderOrder * GROUND_Y_EPS
+        for (let t = 0; t < I.length; t += 3) {
+          const v = [I[t], I[t + 1], I[t + 2]].map(j => [P[j * 3], P[j * 3 + 2], P[j * 3 + 1] - lift])
+          const k = wt.push(v) - 1
+          const xs = v.map(p => p[0]), zs = v.map(p => p[1])
+          for (let cx = Math.floor(Math.min(...xs) / CELL); cx <= Math.floor(Math.max(...xs) / CELL); cx++)
+            for (let cz = Math.floor(Math.min(...zs) / CELL); cz <= Math.floor(Math.max(...zs) / CELL); cz++) {
+              const key = cx + ',' + cz
+              if (!grid.has(key)) grid.set(key, [])
+              grid.get(key).push(k)
+            }
+        }
+      })
+      const surfaceOver = (x, z) => {
+        let y = null
+        for (const k of grid.get(Math.floor(x / CELL) + ',' + Math.floor(z / CELL)) || []) {
+          const [a, b, c] = wt[k]
+          const d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+          if (!d) continue
+          const w0 = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (z - c[1])) / d
+          const w1 = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (z - c[1])) / d
+          const tol = 1e-6   // on a shared water edge: either triangle answers the same body
+          if (w0 < -tol || w1 < -tol || w0 + w1 > 1 + tol) continue
+          const h = w0 * a[2] + w1 * b[2] + (1 - w0 - w1) * c[2]
+          if (y == null || h > y) y = h                    // under two bodies: the one drawn on top
+        }
+        return y
+      }
+      const clamp = new Float32Array(n * 2)
+      let held = 0, free = 0, orphan = 0, firstOrphan = null
+      for (let i = 0; i < n; i++) {
+        if (onEdge[i]) { free++; continue }
+        const y = surfaceOver(BP[i * 3], BP[i * 3 + 2])
+        if (y == null) { orphan++; firstOrphan ||= [BP[i * 3], BP[i * 3 + 2]]; continue }
+        clamp[i * 2] = 1; clamp[i * 2 + 1] = y; held++
+      }
+      // ⛔ LOUD. A bed vertex under no water is bed outside the water — the bed is built FROM the water rings,
+      // so this cannot happen quietly; if it does, the shape is wrong and must not ship looking right.
+      if (orphan) throw new Error(`[bake-ground] ${orphan} interior bed vertex/vertices lie under NO water body — first at `
+        + `(${firstOrphan[0].toFixed(2)}, ${firstOrphan[1].toFixed(2)}). The bed is built from the water rings; refusing to write a bed outside its water.`)
+      groups[gi].clampByteOffset = clampByteOffset
+      clampChunks.push(clamp); clampByteOffset += clamp.byteLength
+      console.log(`  [bake-ground] bed held under its water: ${held} interior vertices carry the surface over them · ${free} on the shore stay draped`)
+    }
+  }
+
   // Concatenate positions (all Float32) and indices (all Uint32) into one
-  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups]. Manifest's *ByteOffset
+  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups][bed clamp]. Manifest's *ByteOffset
   // values are relative to the START of each section (offsets within the
   // positions section, then offsets within the indices section).
   const totalPosBytes = posByteOffset
   const totalIdxBytes = idxByteOffset
-  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset)
+  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset + clampByteOffset)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -1307,6 +1380,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const edgeSectionStart = fieldSectionStart + fieldByteOffset
   for (const g of groups) if (g.fieldEdgeByteOffset != null) g.fieldEdgeByteOffset += edgeSectionStart
   for (const c of edgeChunks) {
+    buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
+    off += c.byteLength
+  }
+  // Fifth section: the bed's (flag, water height) per vertex — see "THE BED NEVER RISES" above.
+  const clampSectionStart = edgeSectionStart + edgeByteOffset
+  for (const g of groups) if (g.clampByteOffset != null) g.clampByteOffset += clampSectionStart
+  for (const c of clampChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }

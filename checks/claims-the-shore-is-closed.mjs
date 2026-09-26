@@ -18,6 +18,8 @@
  *   · nothing under the water, and the land's edge is at or below the water → the water
  *     covers the meeting; closed, counted as `awash`.
  *   · nothing on the land side → OPEN in plan: the drawing has a hole at the shore.
+ * ⛔ And the bed stays UNDER its water: every bed vertex off the shore carries the height of the water
+ * drawn over it and drapes no higher (bake-ground.js "THE BED NEVER RISES"); a bed with no ceiling fails.
  * ⛔ And first: the water must draw after every other ground group, or the ground under it paints
  * over it — a closed shore with no water visible is the picture this check once passed.
  * Stations on the disc rim are the EDGE OF THE DRAWING (`project_neighborhood_is_a_compound_shape`),
@@ -76,6 +78,7 @@ for (const dir of dirs) {
     continue
   }
   const tb = readFileSync(join(dir, 'terrain.bin'))
+  const bedGroup = m.groups.find(g => g.kind !== 'face' && g.id === 'bed')
   const exag = readJSON(join(dir, 'scene.json'))?.terrainExag ?? DEFAULT_V_EXAG
   const lift = makeElevationSampler({ ...tj, data: new Float32Array(tb.buffer.slice(tb.byteOffset, tb.byteOffset + tb.byteLength)) }, exag).getElevation
   const STEP = Math.min((tj.bounds.maxX - tj.bounds.minX) / (tj.width - 1), (tj.bounds.maxZ - tj.bounds.minZ) / (tj.height - 1))
@@ -90,8 +93,10 @@ for (const dir of dirs) {
   for (const g of m.groups) {
     if (water.includes(g)) continue
     const [P, I] = view(g)
+    const C = g.clampByteOffset != null ? new Float32Array(ab, g.clampByteOffset, g.vertexCount * 2) : null
+    const drape = i => { const y = P[i * 3 + 1] + lift(P[i * 3], P[i * 3 + 2]); return C && C[i * 2] > 0.5 ? Math.min(y, C[i * 2 + 1]) : y }
     for (let t = 0; t < I.length; t += 3) {
-      const v = [I[t], I[t + 1], I[t + 2]].map(i => [P[i * 3], P[i * 3 + 2], P[i * 3 + 1] + lift(P[i * 3], P[i * 3 + 2])])
+      const v = [I[t], I[t + 1], I[t + 2]].map(i => [P[i * 3], P[i * 3 + 2], drape(i)])
       const k = tris.push({ v, id: g.id }) - 1
       const xs = v.map(p => p[0]), zs = v.map(p => p[1])
       for (let cx = Math.floor(Math.min(...xs) / CELL); cx <= Math.floor(Math.max(...xs) / CELL); cx++)
@@ -153,6 +158,29 @@ for (const dir of dirs) {
         opens.push({ x, z, gap, land: land?.id ?? 'nothing', bed: bed?.id ?? 'nothing' })
       }
     }
+  }
+  // ⛔ THE BED STAYS UNDER ITS WATER (Jacob, 2026-09-26: the drawn water's edge IS the mapped shoreline).
+  // Every bed vertex that is not on the shore must carry a ceiling, and drape no higher than the water over it.
+  let risen = 0, worst = null
+  if (bedGroup) {
+    if (bedGroup.clampByteOffset == null) {
+      console.error(`⛔ ${look}: the bed carries NO ceiling (baked before it) — it breaks through the water wherever the terrain stands above it`)
+      fail++
+      continue
+    }
+    const [P] = view(bedGroup), C = new Float32Array(ab, bedGroup.clampByteOffset, bedGroup.vertexCount * 2)
+    const Y = water.map(w => view(w)[0][1])
+    for (let i = 0; i < bedGroup.vertexCount; i++) {
+      if (!(C[i * 2] > 0.5)) continue
+      const y = Math.min(P[i * 3 + 1] + lift(P[i * 3], P[i * 3 + 2]), C[i * 2 + 1])
+      if (!(C[i * 2 + 1] < Math.max(...Y))) { risen++; worst ||= { x: P[i * 3], z: P[i * 3 + 2], why: `ceiling ${C[i * 2 + 1]} is not under any water's drawn surface` }; continue }
+      if (y > C[i * 2 + 1] + 1e-6) { risen++; worst ||= { x: P[i * 3], z: P[i * 3 + 2], why: `${(y - C[i * 2 + 1]).toFixed(2)} m above` } }
+    }
+  }
+  if (risen) {
+    console.error(`⛔ ${look}: ${risen} bed vertex/vertices stand ABOVE the water over them — first at (${worst.x.toFixed(1)}, ${worst.z.toFixed(1)}): ${worst.why}`)
+    fail++
+    continue
   }
   const km = v => (v / 1000).toFixed(2)
   const walked = len.closed + len.awash + len.open
