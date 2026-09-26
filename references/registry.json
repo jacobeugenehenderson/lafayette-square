@@ -1452,6 +1452,25 @@
         "cartograph/surfaces.mjs SURFACES.crop.params.ridgeHeightIn"
       ],
       "notes": "The finding is a MINIMUM (NRCS 346); the surface draws that minimum."
+    },
+    {
+      "id": "q-aeolian-ripple-size",
+      "ask": "Spacing (crest to crest) and height of wind ripples on dry dune sand",
+      "neededBy": "BRIEF-surface-lab §5: the sand surface's ripples",
+      "status": "open",
+      "findings": [],
+      "tried": [
+        "USGS Eolian Processes (pubs.usgs.gov/gip/deserts/eolian/): orientation (crests perpendicular to the wind) and coarse grains at crests, NO number",
+        "USGS 'Sand Dune Ripples' image (public domain): no measurement",
+        "NPS 'Monitoring Aeolian Features and Processes' gives 0.05-0.2 m / 0.005-0.010 m but is (c) 2009 Geological Society of America (Lancaster) - NOT permitted; not used"
+      ],
+      "nextSources": [
+        "a USGS or NPS-authored field measurement (e.g. Great Sand Dunes, Cape Cod National Seashore surveys)",
+        "or a MEASURED finding off permitted lidar at <= 5 cm (the 1 m MassGIS lidar cannot resolve ripples)"
+      ],
+      "codeSites": [
+        "cartograph/surfaces.mjs SURFACES.sand.params.rippleSpacingM / rippleHeightM (ABSENT → no ripples; authorable per town)"
+      ]
     }
   ],
   "findings": [

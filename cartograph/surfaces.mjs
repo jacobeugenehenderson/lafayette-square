@@ -63,6 +63,20 @@ export const SURFACES = {
       duneBlendDeg: {
         unit: '°', source: 'authored', default: 0,           // neutral: a hard state change
       },
+      // ⭐ THE LOOK (Jacob, 2026-09-26: "smoothed and smeared they'll look like dunes"): one rough B&W
+      // sand map — hummocks, the wind's smear, ripples — read as colour through a gradient map and as
+      // depth; the dune state above chooses its character (paler and drier up the dunes, smooth where a
+      // slip face stands at repose).
+      // Wind ripples: crests run ACROSS the wind, coarsest grains at the crests (USGS, Eolian Processes).
+      // ⛔ No permitted source gives their spacing or height (2026-09-26: the only number found is
+      // © GSA). ABSENT → no ripples, named; the operator may author both per town.
+      rippleSpacingM: { unit: 'm', source: 'physics', question: 'q-aeolian-ripple-size' },
+      rippleHeightM:  { unit: 'm', source: 'physics', question: 'q-aeolian-ripple-size' },
+      // The wind the sand is shaped by, as a bearing it blows FROM (° clockwise from north). A property
+      // of the town; neutral default null = no wind: no smear, no ripples.
+      windFromDeg: { unit: '° from north', source: 'authored', default: null },
+      sandRamp: { unit: 'gradient stops', source: 'authored', default: [
+        { t: 0.00, color: '#8a7456' }, { t: 0.40, color: '#b89e78' }, { t: 0.75, color: '#d6c29e' }, { t: 1.00, color: '#ece0c4' } ] },
     },
   },
   // ⭐ ROW CROPS — the six-month field (BRIEF-field-shader, 2026-09-26): bare dirt → tilled raised
