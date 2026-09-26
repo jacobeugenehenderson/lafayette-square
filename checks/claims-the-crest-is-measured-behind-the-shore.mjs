@@ -27,6 +27,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { drawnWaterTest } from '../cartograph/shore-armour.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const only = process.argv[2] || null
@@ -55,6 +56,10 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
     const v = tf[gz * tm.width + gx]
     return Number.isFinite(v) ? v : NaN
   }
+  const mP = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
+  if (!existsSync(mP)) { console.log(`  ⚠️ ${look.padEnd(16)} no clean/map.json — CANNOT VERIFY`); failed = true; continue }
+  const inWater = drawnWaterTest((JSON.parse(readFileSync(mP, 'utf8')).layers?.water || [])
+    .filter(w => w?.ring?.length >= 3).map(w => w.ring.map(p => [p.x ?? p[0], p.z ?? p[1]])))
   towns++
   let matchLand = 0, matchStation = 0, n = 0
   for (const arc of doc.arcs) {
@@ -64,9 +69,12 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
     // ⛔⛔ THE CHECK DOES NOT USE THE WINDING CONVENTION AT ALL, AND THAT IS DELIBERATE.
     // My first cut derived landward from `faces` with the same sign expression the baker
     // used — and I had that sign inverted in BOTH. The check would have agreed with the
-    // bug and called probing INTO the water correct. ⭐ So it asks the ground instead:
-    // landward is, by definition, the HIGHER side. That is independent of any convention,
-    // so a sign error in bake-revetment has nowhere to hide.
+    // bug and called probing INTO the water correct. ⭐ So it asks the DRAWN WATER instead:
+    // landward is the side that is not water. That is independent of any convention, so a
+    // sign error in bake-revetment has nowhere to hide.
+    // ⛔ It used to take "the HIGHER side" by the lidar. Since 2026-09-26 the drawn water IS
+    // the shore (Jacob), and on a sandy coast the drawn land can read lower than the drawn
+    // water, so "higher" was the superseded lidar premise, not a convention-free answer.
     const st = arc.stations
     for (let i = 1; i < st.length - 1; i++) {
       const c = st[i].crest
@@ -78,7 +86,10 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
       const hL = heightAt(st[i].x - rx * gridM, st[i].z - rz * gridM)
       const hAt = heightAt(st[i].x, st[i].z)
       if (!Number.isFinite(hR) || !Number.isFinite(hL) || !Number.isFinite(hAt)) continue
-      const hLand = Math.max(hR, hL)   // the land is the high side; no convention needed
+      const wR = inWater(st[i].x + rx * gridM, st[i].z + rz * gridM)
+      const wL = inWater(st[i].x - rx * gridM, st[i].z - rz * gridM)
+      if (wR === wL) continue          // water on both faces or neither: no landward to read
+      const hLand = wR ? hL : hR       // the land is the side that is not drawn water
       // Only stations where the two readings actually DIFFER can discriminate.
       if (Math.abs(hLand - hAt) < 0.05) continue
       n++

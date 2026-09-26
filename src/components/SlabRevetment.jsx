@@ -143,7 +143,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         const m = f.poly[Math.min(f.poly.length - 1, Math.round(((a + b) / 2 / (G.nAlong - 1)) * (f.poly.length - 1)))]
         return m || f.poly[0]
       })
-      const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, oversample: 10, paletteSize: palette.length, seed: doc.seed })
+      const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, oversample: 10, paletteSize: palette.length, seed: doc.seed })
       return { ...f, G, ranges, at, ctx, cache: new Map() }
     })
   }, [doc, palette])

@@ -40,28 +40,78 @@
 export const BUILD_SIDE = 'left'
 
 /**
- * crestAt(t) over a face's stations, t in 0..1 by arc length.
- * ⛔ Where the predicate says BARE the crest reads ZERO, so the builders emit
- * nothing. A bare stretch is an ABSENCE of stone, not a shorter wall, and it must
- * not be smoothed across — otherwise a beach grows a tapering wall at each end.
+ * crestAt(t) over a face's stations, t in 0..1 by arc length — and WHERE THE ARMOUR ENDS.
+ * ⛔ Where the predicate says BARE there is no wall: a bare stretch is an ABSENCE of stone,
+ * not a shorter wall, and it is not interpolated across.
+ *
+ * ⭐⭐ BUT A HEAP DOES NOT END IN A CUT (Jacob, 2026-09-26: "revetment still just abruptly
+ * stops"). RULED: wherever armour ends the heap ends as a dumped heap does — slumping at
+ * riprap's angle of repose in PLAN as well as in section, a quarter-cone into the sand. The
+ * end's run is that station's own crest / tan(repose), from the material constant the slab
+ * stamps (`material.riprapReposeDeg`) — no length is chosen anywhere.
+ *   · a HARD→SOFT change inside the arc: the heap slumps OUTWARD from the last armoured
+ *     station, over the bare side, to nothing at crest / tan(repose).
+ *   · an ARC TIP that is armoured: the drawn shore stops there, so there is nothing to
+ *     slump onto — the heap's toe is the tip and it rises INWARD at the same angle.
+ * Both builders read this one function (the drape and `shoreChunks.js`), so the taper is
+ * written once. `taperAt(t)` (1 on the wall, falling to 0 at the toe) is what the stone
+ * placer thins and shrinks by. ▶ `node checks/claims-the-revetment-ends-as-a-heap.mjs`
  */
-function crestFnFor(stations, cum, total) {
+export function crestAndEnds(stations, cum, total, tanRepose) {
   const n = stations.length
-  return (t) => {
-    const tt = Math.min(1, Math.max(0, t))
-    let lo = 0, hi = n - 1
-    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (cum[mid] / total <= tt) lo = mid; else hi = mid }
-    const span = (cum[hi] - cum[lo]) / total || 1
-    const f = (tt - cum[lo] / total) / span
-    const cl = stations[lo].armour ? (stations[lo].crest || 0) : 0
-    const ch = stations[hi].armour ? (stations[hi].crest || 0) : 0
-    return Math.max(0, cl * (1 - f) + ch * f)
+  const H = (i) => stations[i].armour ? Math.max(0, stations[i].crest || 0) : 0
+  const on = (i) => stations[i].armour && H(i) > 0
+  // Every place the armour stops, with the direction the heap slumps (+1 = toward larger s).
+  const ends = []
+  for (let i = 0; i < n; i++) {
+    if (!on(i)) continue
+    if (i === 0) ends.push({ s: cum[0], H: H(0), dir: +1, tip: true })          // toe at the tip, rising inward
+    else if (!on(i - 1)) ends.push({ s: cum[i], H: H(i), dir: -1, tip: false })  // slumps back over the bare side
+    if (i === n - 1) ends.push({ s: cum[n - 1], H: H(i), dir: -1, tip: true })
+    else if (!on(i + 1)) ends.push({ s: cum[i], H: H(i), dir: +1, tip: false })
   }
+  for (const e of ends) e.run = e.H / tanRepose
+  const interior = ends.filter(e => !e.tip), tips = ends.filter(e => e.tip)
+  const locate = (s) => {
+    let lo = 0, hi = n - 1
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (cum[mid] <= s) lo = mid; else hi = mid }
+    return lo
+  }
+  // Returns [crest, taper]. taper = 1 on the wall; within an end's run, crest / that end's H.
+  const eval_ = (t) => {
+    const s = Math.min(1, Math.max(0, t)) * total
+    const lo = locate(s), hi = Math.min(n - 1, lo + 1)
+    let c = 0, f = 0
+    if (on(lo) && on(hi)) {
+      const span = cum[hi] - cum[lo] || 1
+      const k = (s - cum[lo]) / span
+      c = H(lo) * (1 - k) + H(hi) * k; f = 1
+    } else {
+      // Off the wall: the tallest slump that reaches here from an interior end.
+      for (const e of interior) {
+        const d = (s - e.s) * e.dir
+        if (d < 0 || d > e.run) continue
+        const h = e.H - d * tanRepose
+        if (h > c) { c = h; f = h / e.H }
+      }
+    }
+    // An armoured tip: the toe is the tip, so the wall is capped by the cone rising inward —
+    // all the way until it meets the wall (where the wall rises inward, the cone runs on at the
+    // same angle; stopping it at the tip station's own run would leave a step).
+    for (const e of tips) {
+      const d = (s - e.s) * e.dir
+      if (d < 0) continue
+      const cap = d * tanRepose
+      if (cap < c) { c = cap; f = Math.min(f, cap / e.H) }
+    }
+    return [Math.max(0, c), Math.max(0, Math.min(1, f))]
+  }
+  return { crestAt: (t) => eval_(t)[0], taperAt: (t) => eval_(t)[1], ends }
 }
 
 /**
  * @param doc the parsed `baked/<look>/revetment.json`
- * @returns [{ key, arcIndex, face, poly:[{x,z}], crestAt, lengthM, armouredM, anyArmour }]
+ * @returns [{ key, arcIndex, face, poly:[{x,z}], crestAt, taperAt, ends, lengthM, armouredM, anyArmour }]
  *          one entry per FACE — a two-faced arc yields two, which is the case a
  *          single-face reader silently half-builds.
  */
@@ -72,6 +122,10 @@ export function revetmentFaces(doc) {
     // as the same class as a fallback.
     throw new Error(`revetmentFromSlab: unsupported revetment.json version ${doc && doc.version}`)
   }
+  // ⭐ The slope is the one the slab was ruled with, stamped in it — never looked up here.
+  const repose = doc.material?.riprapReposeDeg
+  if (!(repose > 0 && repose < 90)) throw new Error(`revetmentFromSlab: revetment.json carries no material.riprapReposeDeg (${repose}) — the heap's ends cannot be shaped`)
+  const tanRepose = Math.tan((repose * Math.PI) / 180)
   const out = []
   for (const arc of doc.arcs || []) {
     for (const face of arc.faces || []) {
@@ -84,13 +138,16 @@ export function revetmentFaces(doc) {
         cum[i] = cum[i - 1] + Math.hypot(st[i].x - st[i - 1].x, st[i].z - st[i - 1].z)
       }
       const total = cum[st.length - 1] || 1
+      const { crestAt, taperAt, ends } = crestAndEnds(st, cum, total, tanRepose)
       out.push({
         key: `${arc.index}:${face}`,
         arcIndex: arc.index,
         face,
         poly: st.map(s => ({ x: s.x, z: s.z })),
         stations: st,
-        crestAt: crestFnFor(st, cum, total),
+        crestAt,
+        taperAt,
+        ends,
         lengthM: total,
         armouredM: arc.armouredM ?? 0,
         anyArmour: st.some(s => s.armour),

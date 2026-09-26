@@ -68,7 +68,10 @@ const randQuat = (r) => {
 }
 
 /** Freeze the shore into something chunk indices can be computed against. */
-export function shoreContext({ poly, crestAt, waterY = 0, packing = 0.62, paletteSize = 12, seed = 4242, oversample = DART_OVERSAMPLE }) {
+export function shoreContext({ poly, crestAt, taperAt, waterY = 0, packing = 0.62, paletteSize = 12, seed = 4242, oversample = DART_OVERSAMPLE }) {
+  // ⛔ Required: where the armour ends the stones must thin and shrink with the heap
+  // (`revetmentFromSlab.js#crestAndEnds`). A caller without it would cut the heap blunt.
+  if (typeof taperAt !== 'function') throw new Error('shoreContext: taperAt is required (revetmentFaces gives it) — without it the heap ends in a cut')
   const segs = []
   let total = 0
   for (let i = 1; i < poly.length; i++) {
@@ -83,7 +86,7 @@ export function shoreContext({ poly, crestAt, waterY = 0, packing = 0.62, palett
     const ux = (sg.b.x - sg.a.x) / sg.L, uz = (sg.b.z - sg.a.z) / sg.L
     return { x: sg.a.x + (sg.b.x - sg.a.x) * f, z: sg.a.z + (sg.b.z - sg.a.z) * f, nx: uz, nz: -ux, t: s / total }
   }
-  return { at, total, crestAt, waterY, packing, paletteSize, seed, nChunks: Math.ceil(total / CHUNK_M), _cand: new Map(), oversample }
+  return { at, total, crestAt, taperAt, waterY, packing, paletteSize, seed, nChunks: Math.ceil(total / CHUNK_M), _cand: new Map(), oversample }
 }
 
 /**
@@ -117,15 +120,21 @@ function candidatesOf(ctx, ci) {
     const s = sA + r() * (sB - sA)
     const st = ctx.at(s)
     const h = ctx.crestAt(st.t)
-    if (h < MIN_ARMOUR_D50_M) continue
+    // ⭐ THE HEAP'S END (Jacob, 2026-09-26): `taper` is 1 on the wall and falls to 0 at the
+    // toe of the end's repose cone. On the wall the floor is one course of armour, as it
+    // always was; down the cone it falls with the heap, so the stones SCATTER out to the
+    // toe — fewer (kept with probability `taper`) and smaller — instead of stopping at a cut.
+    const taper = ctx.taperAt(st.t)
+    if (!(h > 0) || h < MIN_ARMOUR_D50_M * taper) continue
+    if (taper < 1 && r() > taper) continue
     const run = h / TAN_REPOSE
     const len = Math.hypot(run, h) || 1
     const a = r() * len
     const up = 1 - a / len
-    const d = d50For(h) * (1 - 0.45 * up) * (0.82 + r() * 0.36)
+    const d = d50For(h) * (0.5 + 0.5 * taper) * (1 - 0.45 * up) * (0.82 + r() * 0.36)
     const adx = (st.nx * run) / len, ady = -h / len, adz = (st.nz * run) / len
     out.push({
-      id: (ci >>> 0) * 100000 + k,
+      id: (ci >>> 0) * 100000 + k, s,
       prio: hashU32(ci, k, ctx.seed ^ 0x7f4a),
       x: st.x + adx * a, y: ctx.waterY + h + ady * a, z: st.z + adz * a,
       d, up, rad: d * 0.5 * ctx.packing,
@@ -227,6 +236,7 @@ export function resolveWindow(ctx, center, margin = 2) {
     const sv = () => p.d * (0.80 + rr() * 0.40)
     return {
       id: p.id,
+      along: p.s,                 // arc length along the face — lets a check read the heap's end
       p: [p.x, p.ry, p.z],
       q: randQuat(rr),
       s: [sv(), sv() * 0.82, sv()],
