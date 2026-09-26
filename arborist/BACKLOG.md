@@ -92,7 +92,7 @@ Sugar maple makes it plain:
 A street sugar maple is **60 ft**; the same species in a forest reaches **120 ft**. 2×, and neither is wrong.
 
 ⭐ **THE DATA IS ALREADY HARVESTED — ALL 34 SPECIES CARRY BOTH FIGURES.** Nothing needs re-fetching;
-▶ `node -e` over `scratch/dossier-raw-observations.jsonl` + `-batch2.jsonl` (34/34 have an ncsu range
+▶ `node -e` over `scratch/dossier-raw-observations.jsonl` + `scratch/dossier-raw-batch2.jsonl` (+ `scratch/dossier-raw-oak-white.jsonl`) (34/34 have an ncsu range
 AND a selectree landscape height). The split is **derived from provenance** (`askedAs` records which
 database each cell came from), so it satisfies `bake-trees.js:589` — nothing invented.
 
