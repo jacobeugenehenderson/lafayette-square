@@ -2,13 +2,13 @@
   "_what_this_is": "DERIVED FROM tree-mix.json#commonToLibrary by scripts/15-fia-tree-mix.mjs — do not hand-edit.",
   "map": {
     "Oak, White": [
-      "quercus_alba"
+      "oak_white"
     ],
     "Red Maple": [
       "maple_red"
     ],
     "blackgum": [
-      "nyssa_sylvatica"
+      "blackgum"
     ]
   }
 }

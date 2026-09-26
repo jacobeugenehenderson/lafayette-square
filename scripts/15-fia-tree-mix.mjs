@@ -72,8 +72,16 @@ async function main() {
   const total = rows.reduce((s, e) => s + e.ESTIMATE, 0)
 
   // Composed library species, keyed every way the kit names them (id · label · scientific).
+  // ⛔ COMPOSED = a Salon composition with a chassis (arborist/state/<id>/compositions.json)
+  // AND a published variant. A variant alone is not enough: the raw Latin twins
+  // (quercus_alba, nyssa_sylvatica) are published variants with no composition, and cannot
+  // produce an impostor — routing to them is the one-tree-two-ids class.
   const index = JSON.parse(readFileSync(path.join(REPO, 'public', 'trees', 'index.json'), 'utf8'))
-  const composed = new Set(index.variants.map(v => v.species))
+  const published = new Set(index.variants.map(v => v.species))
+  const stateDir = path.join(REPO, 'arborist', 'state')
+  const composed = new Set(readdirSync(stateDir, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name).filter(id => {
+    try { return published.has(id) && JSON.parse(readFileSync(path.join(stateDir, id, 'compositions.json'), 'utf8')).compositions?.some(c => c.chassis) } catch { return false }
+  }))
   const byName = new Map()
   const add = (k, id) => { if (!k) return; const n = String(k).toLowerCase(); byName.set(n, [...new Set([...(byName.get(n) || []), id])]) }
   for (const s of index.species) if (composed.has(s.species)) {
