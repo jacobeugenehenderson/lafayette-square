@@ -1362,16 +1362,20 @@ if (isDirect) {
   const args = parseArgs()
   // ⛔⛔ NAME THE TOWN. `bakeTrees` defaults `scene = DEFAULT_MAP`, and `outPath` defaults to
   // `public/baked/<scene>/trees.json` — so `node arborist/bake-trees.js` with no --scene did not
-  // merely bake the wrong town, it OVERWROTE LAFAYETTE SQUARE'S trees.json. And it overwrote it
-  // with garbage: `resolved` below is `{}` when args.scene is absent, so the bake ran with no
-  // census, no species map, no allow-zone and no boundary, and the empty-census branch WARNS AND
-  // PROCEEDS rather than throwing (BRIEF-ls-bleed-excision site 16, Class C).
+  // merely bake the wrong town, it OVERWROTE LAFAYETTE SQUARE'S trees.json with an input-less bake
+  // (BRIEF-ls-bleed-excision site 16, Class C).
   // ⭐ The guard is here at the CLI and NOT inside `bakeTrees`, because the exported function has
   // legitimate programmatic callers that name the scene themselves (serve.js's Salon publish and
   // variant re-bake both pass it explicitly through `treeBakeInputsForMap`).
   // ⚠️ This is `cartograph/scene.js`'s resolver, reached across the directory line: ONE resolver
   // for the whole repo, reading --scene= and CARTOGRAPH_SCENE both. Do not add a second.
-  requireExplicitMap('bake-trees.js (writes public/baked/<scene>/trees.json)')
+  // ⛔⛔ AND USE WHAT IT RETURNS. This line used to discard it and read `args.scene` from the
+  // local parseArgs, which only knows `--scene X`. So `--scene=provincetown` (the form the
+  // refusal message itself recommends) passed the guard, left `args.scene` undefined, and baked
+  // scene='lafayette-square' with NO inputs into LS's trees.json (2026-09-25; a later zone-shape
+  // guard was all that stopped the write). One resolver: its answer is the scene.
+  // ▶ checks/claims-a-cli-scene-has-one-resolver.mjs
+  const cliScene = requireExplicitMap('bake-trees.js (writes public/baked/<scene>/trees.json)')
   // ⭐ The CLI resolves its scene inputs through the SAME resolver the Cartograph
   // pour and the Grove's Bake→Slab use — census wells, species routing, the
   // forbidden map, the frozen shape (the allow-zone) and the boundary. It used to
@@ -1382,11 +1386,12 @@ if (isDirect) {
   // (`project_the_palimpsest_code_path_multiplicity`). Explicit flags still win,
   // so any single input can be overridden for a one-off.
   const { treeBakeInputsForMap } = await import('../cartograph/tree-bake-inputs.mjs')
-  const resolved = args.scene ? (treeBakeInputsForMap(args.scene) || {}) : {}
+  const resolved = treeBakeInputsForMap(cliScene)
+  if (!resolved) { console.error(`⛔ [bake-trees] no tree-bake inputs resolve for scene '${cliScene}'`); process.exit(2) }
   const { inputs: _dirty, ...sceneInputs } = resolved
   bakeTrees({
     ...sceneInputs,
-    scene: args.scene,
+    scene: cliScene,
     styles: (args.styles || 'realistic').split(',').map(s => s.trim()).filter(Boolean),
     lod: args.lod,
     heroLook: args.heroLook,
