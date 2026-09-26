@@ -88,6 +88,13 @@ const MORPH_TO_TARGET_CATEGORY = {
 // entire job is ground truth was silently showing nothing. A broken plate is now LOUD.
 // ── Workable marks (Jacob, 2026-09-25): recommend-plates' tier per plate, never a re-sort ──
 const TIER_WORD = { S: 'same species', G: 'same genus', T: 'matches by trait' }
+// ⛔ THE ONLY WAY A PLATE REACHES THE SCREEN. A plate's key is internal (a source filename, or a
+// species read off one); the operator sees its anonymised id + trait (Jacob, 2026-09-25).
+// Unknown to the part-index → "unindexed", never the key.  ▶ checks/claims-no-filename-reaches-a-plate-label.mjs
+function plateLabel(labels, key) {
+  if (key == null || key === '') return 'none'
+  return labels?.[key]?.label || 'unindexed'
+}
 const TIER_COLOR = { S: ['rgba(80,200,140,0.3)', 'rgba(80,200,140,0.7)', '#9ed8b0'], G: ['rgba(110,150,220,0.28)', 'rgba(110,150,220,0.7)', '#a9c3ee'], T: ['rgba(200,168,58,0.22)', 'rgba(200,168,58,0.6)', '#dcc47a'] }
 function WorkableBadge({ tier }) {
   const [bg, bd, fg] = TIER_COLOR[tier] || TIER_COLOR.T
@@ -885,7 +892,7 @@ function SlotCard({
   // relative-correct sizes) is the eye-gated follow-up.
   const dossier = useArboristStore(s => s.salonDossier)
   const matureHeightM = dossier?.required?.['chassis.size']?.target
-  const chassisNativeH = chassisCatalog.find(c => c.name === chassis)?.heightRange?.[1]
+  const chassisNativeH = chassisCatalog.find(c => c.id === chassis || c.name === chassis)?.heightRange?.[1]
   const botanicalScale = (matureHeightM && chassisNativeH) ? matureHeightM / chassisNativeH : 1
 
   return (
@@ -1085,7 +1092,7 @@ function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, c
         : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))', gap: 6, padding: '2px 6px 8px' }}>
             {items.map(c => (
               <SalonShelfPlate key={c.name} chassis={c} cur={chassisCuration[`${c.name}.glb`] || null}
-                selected={c.name === selected || marks?.[c.name]?.partId === selected} onPick={onPick} onApprove={onApprove}
+                selected={c.id === selected || c.name === selected} onPick={onPick} onApprove={onApprove}
                 mark={marks?.[c.name] || null} />
             ))}
           </div>
@@ -1096,9 +1103,11 @@ function ChassisShelf({ label, form, items, isDeclared, defaultOpen, selected, c
 
 function SalonShelfPlate({ chassis, cur, selected, onPick, onApprove, mark }) {
   const approved = cur?.approved === true
-  const label = cur?.displayName || chassis.name
+  // The operator's own displayName wins; else the anonymised label. A pick writes the part-index
+  // id (the form id compositions carry), never the source filename.
+  const label = cur?.displayName || chassis.label || 'unindexed'
   return (
-    <div onClick={() => onPick(chassis.name)} title={mark ? `${label}\n${mark.reason}` : label} style={{
+    <div onClick={() => chassis.id && onPick(chassis.id)} title={mark ? `${label}\n${mark.reason}` : label} style={{
       position: 'relative', borderRadius: 5, padding: 3, cursor: 'pointer',
       background: selected ? 'rgba(120,160,220,0.18)' : 'rgba(255,255,255,0.03)',
       border: '1px solid ' + (selected ? 'rgba(120,160,220,0.75)' : 'rgba(255,255,255,0.08)'),
@@ -1149,6 +1158,12 @@ function SalonControlsPanel({
   // ⛔ This read the dead `leaf.silhouette` axis (a shape doubling as a pack id), so the badge
   // never fired after the cutover. The species' own leaf is its SAME-SPECIES (S) pack.
   const marks = useArboristStore(s => s.salonRecommend)
+  const plateLabels = useArboristStore(s => s.salonPlateLabels)
+  const chassisLabels = useMemo(() => {
+    const m = {}
+    for (const c of chassisCatalog || []) if (c.id) { m[c.name] = { id: c.id, label: c.label }; m[c.id] = { id: c.id, label: c.label } }
+    return m
+  }, [chassisCatalog])
   const marksError = useArboristStore(s => s.salonRecommendError)
   const nativePack = Object.entries(marks?.leaf || {}).filter(([id, m]) => m.tier === 'S' && id === m.partId)
     .sort((a, b) => a[1].rank - b[1].rank)[0]?.[0] || null
@@ -1175,7 +1190,7 @@ function SalonControlsPanel({
   // but still selected on the slot — we read from chassisCatalog directly
   // in that case so the curation row keeps working for in-flight slots).
   const pickedChassisInCatalog = chassis
-    ? chassisCatalog.find(c => c.name === chassis)
+    ? chassisCatalog.find(c => c.id === chassis || c.name === chassis)
     : null
   const pickedCurationKey = pickedChassisInCatalog ? curationKey(pickedChassisInCatalog) : null
   const pickedCuration = pickedCurationKey ? (chassisCuration[pickedCurationKey] || null) : null
@@ -1189,7 +1204,7 @@ function SalonControlsPanel({
       display: 'flex', flexDirection: 'column', gap: 8,
       fontSize: 11, color: '#aaa',
     }}>
-      <CollapsibleSection title="Chassis" defaultOpen={false} subtitle={chassis || 'none'}>
+      <CollapsibleSection title="Chassis" defaultOpen={false} subtitle={plateLabel(chassisLabels, chassis)}>
       {/* Phase 4: the chassis picker is the silhouette SHELVES (categorize, don't
           recommend). You land on this species' declared-habit shelf; the other
           shelves are browsable below. Chassis are tagged in the Shelves gauntlet;
@@ -1262,10 +1277,10 @@ function SalonControlsPanel({
       )}
 
       </CollapsibleSection>
-      <CollapsibleSection title="Bark" subtitle={bark?.ref} open={barkOpen} onToggle={onBarkOpenChange}>
+      <CollapsibleSection title="Bark" subtitle={bark?.ref ? plateLabel(plateLabels.bark, bark.ref) : undefined} open={barkOpen} onToggle={onBarkOpenChange}>
       <CollapsibleSection title="Bark library" defaultOpen={false} emphasis>
         <PlatePicker
-          items={barkRefs.map(ref => { const m = marks?.bark?.[ref]; return { id: ref, label: ref, ...(m ? { badge: m.tier, note: `${ref} — ${m.reason}` } : {}) } })}
+          items={barkRefs.map(ref => { const m = marks?.bark?.[ref], label = plateLabel(plateLabels.bark, ref); return { id: ref, label, note: m ? `${label} — ${m.reason}` : label, ...(m ? { badge: m.tier } : {}) } })}
           current={bark?.ref}
           onPick={(id) => onParams({ bark: { ref: id } })}
           onAdd={() => salonAddStub('bark')}
@@ -1304,7 +1319,7 @@ function SalonControlsPanel({
       </Row>
 
       </CollapsibleSection>
-      <CollapsibleSection title="Leaves" defaultOpen={false} subtitle={leaves?.pack || (leaves?.mode === 'bare' ? 'bare' : 'native')}>
+      <CollapsibleSection title="Leaves" defaultOpen={false} subtitle={leaves?.pack ? plateLabel(plateLabels.leaf, leaves.pack) : (leaves?.mode === 'bare' ? 'bare' : 'native')}>
       {/* One picker for the leaf source (2026-07-11): Bare · ✦Native · the packs.
           The 3-way authored/synthesized dropdown is gone — mode is AUTOMATIC:
           picking a leaf keeps the model's own cards when it has them (reskin) and
@@ -1314,9 +1329,9 @@ function SalonControlsPanel({
       <PlatePicker
         items={[
           { id: '__bare__', label: 'Bare', note: 'No leaves (an authored, leafless state)', icon: <span style={{ fontSize: 20, color: '#8a93a0', lineHeight: 1 }}>∅</span> },
-          ...(nativePack && leafPacks.some(p => p.packId === nativePack) ? [{ id: nativePack, label: nativePack, badge: 'native', note: `${nativePack} — this species' own leaf: ${marks.leaf[nativePack].reason}` }] : []),
-          ...leafPacks.filter(p => p.packId !== nativePack).map(p => { const m = marks?.leaf?.[p.packId]
-            return { id: p.packId, label: p.packId, missing: p.kind === 'flat', ...(m ? { badge: m.tier, note: `${p.packId} — ${m.reason}` } : {}) } }),
+          ...(nativePack && leafPacks.some(p => p.packId === nativePack) ? [{ id: nativePack, label: plateLabel(plateLabels.leaf, nativePack), badge: 'native', note: `${plateLabel(plateLabels.leaf, nativePack)} — this species' own leaf: ${marks.leaf[nativePack].reason}` }] : []),
+          ...leafPacks.filter(p => p.packId !== nativePack).map(p => { const m = marks?.leaf?.[p.packId], label = plateLabel(plateLabels.leaf, p.packId)
+            return { id: p.packId, label, note: m ? `${label} — ${m.reason}` : label, missing: p.kind === 'flat', ...(m ? { badge: m.tier } : {}) } }),
         ]}
         current={leaves?.mode === 'bare' ? '__bare__' : (leaves?.pack || null)}
         onPick={(id) => id === '__bare__'

@@ -45,7 +45,7 @@ import {
 import { DEFAULT_SCA_BY_PRESET } from './spaceColonization.js'
 import { buildPreviewAtlas, previewDir } from './salon-preview-atlas.js'
 import { computeCoverage, parkMapForScene } from './roster-coverage.js'
-import { salonOptionsForSpecies } from './salon-options.js'
+import { salonOptionsForSpecies, plateIdentitiesNow } from './salon-options.js'
 
 const __dirname    = dirname(fileURLToPath(import.meta.url))
 const ROOT         = join(__dirname, '..')
@@ -1353,7 +1353,10 @@ const server = createServer(async (req, res) => {
         // usable-only-once-split (Brief 23a). The species DROPDOWN keeps its
         // procedural/LiDAR exclusion (listSalonSpecies) — that's a separate gate.
         const all = url.searchParams.get('all') === '1'
-        let chassis = await listSalonChassis()
+        // ⭐ `name` stays the INTERNAL source key (GLB, thumbnail, curation are keyed by it);
+        // `id` is the part-index identity a composition stores, `label` is all the operator sees.
+        const ident = plateIdentitiesNow().chassis
+        let chassis = (await listSalonChassis()).map(c => ({ ...c, id: ident[c.name]?.id ?? null, label: ident[c.name]?.label ?? null }))
         const forestChassis = await listForestChassis()
         if (all) {
           chassis = chassis.map(c => ({ ...c, isForest: forestChassis.has(c.name) }))
@@ -1386,7 +1389,7 @@ const server = createServer(async (req, res) => {
     // GET /salon/:species/bark — bark refs available under public/textures/bark/
     if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/bark$/))) {
       try {
-        return jsonRes(res, 200, { bark: await listSalonBarkRefs() })
+        return jsonRes(res, 200, { bark: await listSalonBarkRefs(), labels: plateIdentitiesNow().bark })
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
       }
@@ -1395,7 +1398,7 @@ const server = createServer(async (req, res) => {
     // GET /salon/:species/leaves — leaf packs (Phase F target dir + flat PNG fallback)
     if (req.method === 'GET' && (m = path.match(/^\/salon\/([^/]+)\/leaves$/))) {
       try {
-        return jsonRes(res, 200, { leaves: await listSalonLeafPacks() })
+        return jsonRes(res, 200, { leaves: await listSalonLeafPacks(), labels: plateIdentitiesNow().leaf })
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
       }

@@ -715,6 +715,7 @@ const useArboristStore = create((set, get) => ({
   salonOptions: null,              // §9 — matcher ranked options {chassis,bark,leaf} or null
   salonRecommend: null,            // { chassis|bark|leaf: { [partId]: { tier, reason, rank } } } — workable marks
   salonRecommendError: null,
+  salonPlateLabels: { bark: {}, leaf: {} },
   // Brief 1.5b (Quill): operator-authored chassis curation. Keyed by
   // chassis filename (`<name>.glb`); value is `{displayName, approved, notes}`.
   // `approved` is tri-state: true/false/null (unreviewed). Absent entry is
@@ -756,6 +757,9 @@ const useArboristStore = create((set, get) => ({
         salonChassisCatalog: cD.chassis || [],
         salonBarkRefs:       bD.bark || [],
         salonLeafPacks:      lD.leaves || [],
+        // What the operator sees for a bark/leaf plate (anonymised id + trait), keyed by ref/packId.
+        // Chassis carry theirs on the catalog items (`id`, `label`).
+        salonPlateLabels:    { bark: bD.labels || {}, leaf: lD.labels || {} },
         // Forest Builder §9: the dossier (reference plates + required) + the
         // matcher's ranked options per part-type for this species (null if no dossier).
         salonDossier:        oD.dossier || null,

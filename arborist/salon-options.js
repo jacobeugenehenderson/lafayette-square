@@ -14,6 +14,7 @@ import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { matcher } from './matcher.js'
 import { recommend } from './recommend-plates.mjs'
+import { plateIdentities } from './library-builder.js'
 import { slugifyRoster } from './roster-coverage.js'
 
 const RUBRIC = 'arborist/rubric.json'
@@ -98,4 +99,9 @@ function recommendations(dossier, parts, rubric) {
   } catch (e) {
     return { recommend: null, recommendError: e.message }   // ⛔ said, never swallowed (e.g. an unlabelled part-index)
   }
+}
+
+/** { chassis|bark|leaf: { [partId or source key]: { id, label } } } from the live part-index. */
+export function plateIdentitiesNow() {
+  return plateIdentities(existsSync(PART_INDEX) ? (readJSON(PART_INDEX).parts || []) : [])
 }

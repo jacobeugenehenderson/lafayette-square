@@ -152,3 +152,39 @@ function writeIfChanged(path, content) {
   writeFileSync(path, content)
   return true
 }
+
+/**
+ * What the operator SEES for a plate: an anonymised id + its trait, never a source filename
+ * (Jacob, 2026-09-25: "filenames internal … can't get to the user that way").
+ *   `rounded_06` → "rounded 06" (a form id already is anonymised) · a bark in `furrowed/` →
+ *   "furrowed 02" · an unsorted chassis → "unsorted 07".
+ * Keyed by partId AND by the source key the Salon catalogs use (chassis GLB stem, bark/leaf dir),
+ * so either id space finds the same label. Numbers are stable for a given library; they are a
+ * label, never an identity — the partId is.  ▶ checks/claims-no-filename-reaches-a-plate-label.mjs
+ */
+export function plateIdentities(parts) {
+  const out = { chassis: {}, bark: {}, leaf: {} }
+  const groups = new Map()   // `${type}|${category}` -> parts
+  for (const p of parts) {
+    if (!out[p.partType]) continue
+    const seg = String(p.path || '').split('/').filter(Boolean)
+    const cat = seg.length >= 2 ? seg[seg.length - 2] : '_unassigned'
+    const k = `${p.partType}|${cat}`
+    if (!groups.has(k)) groups.set(k, [])
+    groups.get(k).push(p)
+  }
+  for (const [k, ps] of groups) {
+    const [type, cat] = k.split('|')
+    const word = cat === '_unassigned' ? 'unsorted' : cat
+    const own = (p) => { const m = p.partId.match(/^(.+)_(\d+)$/); return m && m[1] === cat ? Number(m[2]) : null }
+    let next = Math.max(0, ...ps.map(own).filter(n => n != null))
+    for (const p of ps.slice().sort((a, b) => a.partId.localeCompare(b.partId))) {
+      const n = own(p) ?? ++next
+      const ident = { id: p.partId, label: `${word} ${String(n).padStart(2, '0')}` }
+      out[type][p.partId] = ident
+      const src = p.sourcePath ? p.sourcePath.split('/').pop().replace(/\.glb$/, '') : null
+      if (src) out[type][src] = ident
+    }
+  }
+  return out
+}
