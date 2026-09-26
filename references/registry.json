@@ -565,6 +565,24 @@
         "note": "Federal work. The harvester verifies each symbol by the returned scientific name and takes nothing on a mismatch (TICO is Tiarella, not Tilia). Its first CommonName is the ACCEPTED common name the dossier leads with."
       },
       "status": "PERMITTED"
+    },
+    {
+      "id": "usgs-web",
+      "title": "USGS website content (e.g. Geology and Ecology of National Parks)",
+      "publisher": "U.S. Geological Survey",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://www.usgs.gov/",
+      "covers": [
+        "geomorphology explainers: dune form, slip faces, angle of repose"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-25",
+        "checkedBy": "Marram (fetched usgs.gov/information-policies-and-instructions/copyrights-and-credits)",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)",
+        "note": "\"USGS-authored or produced data and information are considered to be in the U.S. Public Domain.\" Credit requested (\"Credit: U.S. Geological Survey\"), not required. Skip anything credited to a third party."
+      },
+      "status": "PERMITTED"
     }
   ],
   "questions": [
@@ -1143,8 +1161,8 @@
       "id": "q-dry-sand-repose-angle",
       "ask": "Angle of repose of dry, wind-blown (aeolian) sand — the steepest a dune slip face stands at",
       "neededBy": "BRIEF-surface-lab §5 — the sand surface's dune state (upper bound of the slope scale)",
-      "status": "open",
-      "findings": [],
+      "status": "answered",
+      "findings": ["f-usgs-dune-repose"],
       "tried": [
         "No permitted source in the registry covers granular material; none read (rule 1)."
       ],
@@ -3636,6 +3654,24 @@
       },
       "where": "FIADB-API fullreport, rows = species, columns = county; the full ranked table is written to cartograph/data/<scene>/tree-mix.json#fia by scripts/15-fia-tree-mix.mjs",
       "quote": "USDA Forest Service, Forest Inventory and Analysis Program, Fri, 25 Sep 2026 23:41:32 GMT. Forest Inventory FIADB-API web-application Version 2.0 St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/fiadb-api/ev",
+      "foundOn": "2026-09-25",
+      "foundBy": "Marram"
+    },
+    {
+      "id": "f-usgs-dune-repose",
+      "kind": "range",
+      "value": {
+        "reposeDeg": {
+          "min": 30,
+          "max": 34
+        }
+      },
+      "where": "USGS, Geology of Great Sand Dunes National Park — https://www.usgs.gov/geology-and-ecology-of-national-parks/geology-great-sand-dunes-national-park",
+      "quote": "usually around 30-34°, but depends on factors such as grain size, wind speed, and roundedness",
+      "topic": "aeolian sand",
+      "question": "q-dry-sand-repose-angle",
+      "source": "usgs-web",
+      "scope": "dry wind-blown dune sand; the page's own caveat: varies with grain size, wind speed, roundedness",
       "foundOn": "2026-09-25",
       "foundBy": "Marram"
     }

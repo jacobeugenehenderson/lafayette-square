@@ -43,7 +43,7 @@ export const SURFACES = {
       // out at the angle a dry sand slip face stands at.
       reposeDeg: {
         unit: '°', source: 'physics',
-        question: 'q-dry-sand-repose-angle', finding: null,   // [U] until answered
+        question: 'q-dry-sand-repose-angle', finding: 'f-usgs-dune-repose',   // USGS: 30–34° (a range)
       },
       beachSlopeDeg: {
         unit: '°', source: 'derived',
@@ -59,6 +59,25 @@ export const SURFACES = {
       duneBlendDeg: {
         unit: '°', source: 'authored', default: 0,           // neutral: a hard state change
       },
+    },
+  },
+  // ⭐ Coursed granite — a SET-PIECE surface, not a land-use one (no class maps to it). First
+  // wearer: Provincetown's Pilgrim Monument placeholder (src/components/PilgrimMonument.jsx).
+  // Values come from the reconstruction dossier §4 (source `pilgrim-dossier-v1`).
+  granite: {
+    params: {
+      // Course heights are drawn within this range, continuous from the base to the top.
+      courseHeightIn: { unit: 'in', source: 'physics', finding: 'f-pilgrim-course-height' },
+      // Joints are drawn at the documented MAXIMUM, the widest the source allows.
+      jointIn:        { unit: 'in', source: 'physics', finding: 'f-pilgrim-joint-width' },
+      // Split (quarry) faces rather than dressed ashlar.
+      face:           { unit: '—',  source: 'physics', finding: 'f-pilgrim-split-faces' },
+      // Stone length along a course: the dossier gives none (U). ABSENT ⇒ no vertical joints.
+      blockLengthIn:  { unit: 'in', source: 'physics', question: null, finding: null },
+      // How deep the split face's relief reads, and how much stone-to-stone tone varies.
+      // No source states either: neutral defaults (0 = flat, uniform).
+      reliefM:        { unit: 'm',  source: 'authored', default: 0 },
+      toneVar:        { unit: '×',  source: 'authored', default: 0 },
     },
   },
 }
@@ -107,4 +126,24 @@ export function surfaceOfGroup(group, table = SURFACE_OF_CLASS) {
   const own = SURFACE_OF_MATERIAL[bare]
   if (!own) return null
   return table[variant] === own ? own : null
+}
+
+/**
+ * A surface's parameter VALUES: physics from the registry's findings, authored from the
+ * operator's layer (`scene.surfaces.params.<surface>`) or the neutral default. Returns
+ * `{ values, absent }`: a physics param with no finding, or a finding missing from the
+ * registry, is ABSENT and named, never filled in. Pure: the caller passes the registry.
+ */
+export function resolveSurfaceParams(surface, registry, authored = {}) {
+  const def = SURFACES[surface]
+  if (!def) throw new Error(`⛔ resolveSurfaceParams: no surface "${surface}"`)
+  const byId = new Map((registry?.findings || []).map(f => [f.id, f]))
+  const values = {}, absent = []
+  for (const [name, p] of Object.entries(def.params)) {
+    if (authored?.[name] != null) { values[name] = authored[name]; continue }
+    if (p.source === 'authored') { values[name] = p.default; continue }
+    if (p.source === 'physics' && p.finding && byId.has(p.finding)) { values[name] = byId.get(p.finding).value; continue }
+    absent.push(`${name} (${p.unit}, ${p.source}${p.finding ? ' — finding ' + p.finding + ' missing' : ' — no source'})`)
+  }
+  return { values, absent }
 }
