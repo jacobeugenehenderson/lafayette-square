@@ -1,8 +1,8 @@
 # BRIEF — Ward economics: the Host split and the Ward fund, in The Ask and The Split (Operations later)
 
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
+status: PARKED — phase 1's approach rejected by Jacob 2026-09-25 ("I don't like this at all. Too complicated. None of this is useful. Stop work for now."); built work sits unpushed on theward-online branch `ward-economics` (456c2cd, 17dc9e3); main untouched
+dispatched: 2026-09-25, Tally — stopped
 written: 2026-09-25
 evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve and the Host's overflow budget as scenario knobs, and Jacob has approved both; the Operations ledger (phase 3) gets its own go.
 -->
