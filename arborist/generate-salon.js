@@ -475,6 +475,8 @@ export async function readEffectiveCompositions(species) {
       leaves:  c.leaves  || {},
       deformer: c.deformer || {},
       transform: c.transform || {},
+      ...(c.derivedFrom ? { derivedFrom: c.derivedFrom } : {}),
+      ...(c.auto ? { auto: c.auto } : {}),
       effective: resolveEffective(c, meta, species),
     })
   }
@@ -483,21 +485,34 @@ export async function readEffectiveCompositions(species) {
 
 // POST merges with absent-keys-preserved per
 // `feedback_absence_means_inherit_in_authored_blocks`: if the incoming
-// composition leaves a key off entirely, the prior value is preserved
+// composition leaves a key off entirely, the prior value of that slot is preserved
 // (rather than wiped to `undefined`). This is the behavior the workstage
 // wants — partial patches don't destroy adjacent state.
+// ⛔ That includes keys the workstage never sends: `derivedFrom` (the form rename's
+// provenance) and `auto` (a system build's per-plate picks). Until 2026-09-25 this
+// rebuilt each slot from a fixed field list, so ANY Salon edit erased both.
+// ▶ checks/claims-a-salon-save-keeps-provenance.mjs
+const DERIVED_KEYS = new Set(['effective'])   // computed on read, never persisted
 export async function writeCompositions(species, compositions) {
   const stateDir = path.dirname(compositionsStatePath(species))
   await fs.mkdir(stateDir, { recursive: true })
-  const sanitized = compositions.map(c => ({
-    slot: c.slot,
-    name: c.name || `Slot ${c.slot}`,
-    chassis: c.chassis || null,
-    bark:    c.bark    || {},
-    leaves:  c.leaves  || {},
-    deformer: c.deformer || {},
-    transform: c.transform || {},
-  }))
+  const prior = new Map((await readOverlay(species)).map(c => [c.slot, c]))
+  const sanitized = compositions.map(c => {
+    const p = prior.get(c.slot) || {}
+    const has = (k) => c[k] !== undefined
+    const merged = { ...p }
+    for (const [k, v] of Object.entries(c)) if (v !== undefined && !DERIVED_KEYS.has(k)) merged[k] = v
+    return {
+      ...merged,
+      slot: c.slot,
+      name: (has('name') ? c.name : p.name) || `Slot ${c.slot}`,
+      chassis: (has('chassis') ? c.chassis : p.chassis) || null,
+      bark:    (has('bark') ? c.bark : p.bark) || {},
+      leaves:  (has('leaves') ? c.leaves : p.leaves) || {},
+      deformer: (has('deformer') ? c.deformer : p.deformer) || {},
+      transform: (has('transform') ? c.transform : p.transform) || {},
+    }
+  })
   await fs.writeFile(
     compositionsStatePath(species),
     JSON.stringify({ species, compositions: sanitized, savedAt: Date.now() }, null, 2),
