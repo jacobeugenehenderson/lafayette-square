@@ -484,56 +484,35 @@ function useHeroScrub() {
   return t
 }
 
-// ── Hero authoring mode (the panel's keyframe-edit state) ───────────────────
-// Ephemeral, never persisted/baked — like heroScrub. ON while a keyframe is
-// being edited (the panel shows Save / Cancel). It does NOT gate the camera: the
-// 3D controls are free whenever playback is not running, and there is no
-// subject to pin to (BRIEF-camera-regimes).
-const heroAuthoring = { on: false }
-let heroAuthoringListeners = new Set()
-function subscribeHeroAuthoring(fn) { heroAuthoringListeners.add(fn); return () => heroAuthoringListeners.delete(fn) }
-export function setHeroAuthoring(on) {
-  const v = !!on
-  if (heroAuthoring.on === v) return
-  heroAuthoring.on = v
-  for (const fn of heroAuthoringListeners) fn()
-}
-export function useHeroAuthoring() {
-  const [on, setOn] = useState(heroAuthoring.on)
-  useEffect(() => subscribeHeroAuthoring(() => setOn(heroAuthoring.on)), [])
-  return on
-}
+// ── Keyframe names ──────────────────────────────────────────────────────────
 
-// ── Keyframe name helper ────────────────────────────────────────────────────
+function kfName(i) { return `Key ${i + 1}` }
 
-function kfName(i, total) {
-  if (i === 0) return 'Start'
-  if (i === total - 1) return 'End'
-  return `Mid ${i}`
-}
-
-// ── Shot-specific camera controls ───────────────────────────────────────────
+// ── The Hero keyframe procedure (Stage only) ────────────────────────────────
+// ONE mode, no separate "edit" state (Jacob, 2026-09-26: "a logical procession
+// that's easy to lay down and remove keyframes … move the playhead"). The camera
+// is the operator's whenever playback is not running (RegimeControls' orbit);
+// the panel only says where you are on the path and what the view can become:
+//   · Hero OPENS PAUSED ON THE FIRST KEYFRAME. ▶ previews the motion (the same
+//     heroKeyframeAnim Preview and production play); ⏸ stops where it is.
+//   · Click a dot, or ‹ ›, to go to a key — position, aim and FOV.
+//   · On a key: Update it from the view · + Add after · Delete (any key).
+//   · Between keys (scrubbed): + Add keyframe here.
+// ⛔ The retired "authoring" state (Save / Cancel / Esc, controls handed over
+// only after clicking a dot) was the Hero-Lock era's: the camera had to be
+// unlocked to move at all. Preview has no authoring controls — this is Stage's.
+const SNAP_TOLERANCE = 0.02
 
 function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
   const scrubT = useHeroScrub()
-  const authoring = useHeroAuthoring()
+  const playing = !!heroMotion.preview
+  const n = keyframes.length
+  const fracOf = (i, count = n) => (count <= 1 ? 0 : i / (count - 1))
+  const [selected, setSelected] = useState(null)
   const trackRef = useRef(null)
   const [scrubDragging, setScrubDragging] = useState(false)
 
-  // Hero opens in RUNTIME, PLAYING (the shipped preview); entering/leaving the
-  // shot clears any authoring state. HeroCamera mounts only while the Hero shot
-  // is active (StagePanel renders it conditionally), so this is shot-entry/exit.
-  useEffect(() => {
-    setHeroAuthoring(false)
-    setHeroMotion(m => ({ ...m, preview: true }))
-    return () => setHeroAuthoring(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Capture delight: a one-shot dot pulse on the keyframe a capture landed
-  // on. This is decorative only — the button's truth comes from the live-vs-
-  // stored comparison below, not from a timeout, so confirmation never
-  // "reverts" on its own.
+  // Capture delight: a one-shot dot pulse on the key a capture landed on.
   const [pulse, setPulse] = useState(null)
   const pulseTimer = useRef(null)
   const triggerPulse = (index) => {
@@ -543,39 +522,47 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
   }
   useEffect(() => () => { if (pulseTimer.current) clearTimeout(pulseTimer.current) }, [])
 
-  const kfFractions = keyframes.length <= 1
-    ? keyframes.map(() => 0)
-    : keyframes.map((_, i) => i / (keyframes.length - 1))
+  // Go to key i: select it, park the playhead on its dot, put the camera on it.
+  const goTo = useCallback((i, list = keyframes) => {
+    const kf = list[i]
+    if (!kf) return
+    setSelected(i)
+    heroScrub.t = fracOf(i, list.length)
+    notifyHeroScrub()
+    pushCamera({ position: [...kf.position], target: [...kf.target], fov: kf.fov })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyframes])
 
-  // Selection is derived: if the playhead is on (close to) a keyframe dot,
-  // that's the selected keyframe. Otherwise no selection (button = Add).
-  // Gated on PAUSED — during playback the bouncing playhead sweeps across
-  // dots, which would flicker the Add↔Update control. While previewing,
-  // there's no selection and the button stays stable.
-  const SNAP_TOLERANCE = 0.02
-  const selectedKf = (() => {
-    if (heroMotion.preview) return null
-    let best = -1, bestDist = Infinity
-    kfFractions.forEach((f, i) => {
-      const d = Math.abs(f - scrubT)
-      if (d < SNAP_TOLERANCE && d < bestDist) { best = i; bestDist = d }
-    })
-    return best >= 0 ? best : null
+  // ⭐ OPEN PAUSED ON THE FIRST KEYFRAME — once per entry into Hero, as soon as
+  // the keyframes are there (they hydrate after a reload).
+  const opened = useRef(false)
+  useEffect(() => {
+    setHeroMotion(m => ({ ...m, preview: false }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    if (opened.current || !n) return
+    opened.current = true
+    goTo(0)
+  }, [n, goTo])
+  // Keep the selection valid when keys are removed elsewhere (undo, reload).
+  useEffect(() => { if (selected != null && selected >= n) setSelected(n ? n - 1 : null) }, [n, selected])
+
+  const sel = !playing && selected != null ? keyframes[selected] : null
+
+  // Does the view match the selected key? Position + FOV within the rounding the
+  // capture uses, and the LOOK DIRECTION — not the target point, which the orbit
+  // re-seats on the ground under the screen centre at every press without
+  // turning the camera.
+  const viewMatches = (() => {
+    if (!sel || !cam) return false
+    const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
+    if (d(cam.position, sel.position) > 1 || Math.abs(cam.fov - sel.fov) > 1) return false
+    const u = cam.target.map((v, k) => v - cam.position[k]), w = sel.target.map((v, k) => v - sel.position[k])
+    const lu = Math.hypot(...u), lw = Math.hypot(...w)
+    if (!lu || !lw) return false
+    return (u[0] * w[0] + u[1] * w[1] + u[2] * w[2]) / (lu * lw) > 0.9995
   })()
-  const sel = selectedKf != null ? keyframes[selectedKf] : null
-
-  // Does the LIVE camera currently match the selected keyframe's stored pose?
-  // `cam` is the panel's broadcast of the live camera (~6 Hz), and stored
-  // keyframe positions/fov are rounded ints (captureCameraSnapshot), so an
-  // exact-ish compare is reliable. This is what makes the button truthful:
-  // right after a capture (or after scrubbing onto a dot) the camera matches
-  // → steady "✓ on keyframe"; orbit away → "Update". It only changes when the
-  // camera actually moves, never on a timer.
-  const liveOnKf = sel != null && cam &&
-    Math.abs(cam.position[0] - sel.position[0]) <= 1 &&
-    Math.abs(cam.position[1] - sel.position[1]) <= 1 &&
-    Math.abs(cam.position[2] - sel.position[2]) <= 1 &&
-    Math.abs(cam.fov - sel.fov) <= 1
 
   const fracFromX = useCallback((clientX) => {
     const rect = trackRef.current?.getBoundingClientRect()
@@ -583,300 +570,212 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   }, [])
 
-  // Scrub: move playhead and push the pose AT that path parameter — position,
-  // its own interpolated target, and fov — through the same heroPoseAt the
-  // playback uses, so a scrubbed frame and a played frame are the same frame.
+  // Scrub: the pose AT that path parameter, through the same heroPoseAt the
+  // playback uses. Landing on (near) a dot snaps to it and selects that key.
   const scrubTo = useCallback((t) => {
-    // Snap to nearby keyframe dots so the playhead lands ON them, not next to.
-    let snapped = t
-    let bestD = Infinity
-    kfFractions.forEach(f => {
-      const d = Math.abs(f - t)
-      if (d < SNAP_TOLERANCE && d < bestD) { snapped = f; bestD = d }
-    })
+    let snapped = t, hit = null, bestD = Infinity
+    for (let i = 0; i < n; i++) {
+      const dd = Math.abs(fracOf(i) - t)
+      if (dd < SNAP_TOLERANCE && dd < bestD) { snapped = fracOf(i); hit = i; bestD = dd }
+    }
+    setSelected(hit)
     heroScrub.t = snapped
     notifyHeroScrub()
-    if (keyframes.length < 1) return
+    if (!n) return
     const { position, target, fov } = heroPoseAt(keyframes, snapped, heroMotion.tension ?? 0.5)
     pushCamera({ position: position.map(Math.round), target: [...target], fov: Math.round(fov) })
-  }, [keyframes, kfFractions, heroMotion.tension])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyframes, n, heroMotion.tension])
 
-  const selectKeyframe = useCallback((i) => {
-    const kf = keyframes[i]
-    if (!kf) return
-    pushCamera({ position: [...kf.position], target: [...kf.target], fov: kf.fov })
-    heroScrub.t = kfFractions[i] ?? 0
-    notifyHeroScrub()
-  }, [keyframes, kfFractions])
-
-  const addKeyframeFromView = () => {
-    const snap = captureCameraSnapshot()
-    if (!snap) return
-    // ⛔ The aim is part of the keyframe — a keyframe without its target is
-    // refused by every runtime (assertKeyframesAimed). This dropped it.
-    const newKf = { position: snap.position, target: snap.target, fov: snap.fov }
-    // Insert at the playhead's spot in path order. Post-L1 the playhead IS
-    // the true path position, so a gap between dots j and j+1 inserts at j+1
-    // (past the last dot → appends). Keyframes then re-space evenly by order.
-    const insertAt = keyframes.length === 0
-      ? 0
-      : Math.min(keyframes.length, Math.floor(scrubT * (keyframes.length - 1)) + 1)
-    const next = [...keyframes.slice(0, insertAt), newKf, ...keyframes.slice(insertAt)]
-    setKeyframes(next)
-    // Pause, park the playhead on the new keyframe, and drop straight into
-    // authoring on it — the camera already sits at the captured pose, so the
-    // operator can immediately orbit to refine it, then Save.
-    setHeroMotion(m => ({ ...m, preview: false }))
-    setHeroAuthoring(true)
-    triggerPulse(insertAt)
-    requestAnimationFrame(() => {
-      heroScrub.t = next.length <= 1 ? 0 : insertAt / (next.length - 1)
-      notifyHeroScrub()
-    })
-  }
-  const setSelectedFromView = () => {
-    if (selectedKf == null) return
-    const snap = captureCameraSnapshot()
-    if (!snap) return
-    const next = [...keyframes]
-    // ⭐ THE AIM IS PART OF THE KEYFRAME NOW. It was discarded here — the
-    // snapshot always carried `target` and we threw it away, because the Hero
-    // Lock re-derived the aim from the subject every frame. That is what made
-    // pitch an output instead of a choice.
-    next[selectedKf] = { position: snap.position, target: snap.target, fov: snap.fov }
-    setKeyframes(next)
-    triggerPulse(selectedKf)
-  }
-  // Start (0) and End (last) are the bounce's two extremes — permanent
-  // anchors. Only MID keyframes are deletable, and never below the two anchors.
-  const isMid = selectedKf != null && selectedKf > 0 && selectedKf < keyframes.length - 1
-  const deleteSelected = () => {
-    if (!isMid) return
-    const removed = selectedKf
-    setKeyframes(keyframes.filter((_, j) => j !== removed))
-    setHeroAuthoring(false)
-    // Park the playhead on the now-previous keyframe (a real dot), so you
-    // land cleanly on an anchor/mid rather than in a gap.
-    requestAnimationFrame(() => {
-      const nLeft = keyframes.length - 1
-      heroScrub.t = nLeft <= 1 ? 0 : (removed - 1) / (nLeft - 1)
-      notifyHeroScrub()
-    })
-  }
-
-  // ── The authoring loop ──────────────────────────────────────────────────
-  // Click a keyframe → pause and jump the camera there (position + its own
-  // aim). Save → capture the live pose into it and STAY PAUSED on the saved
-  // frame. Cancel/Esc → leave without saving. The camera is free throughout —
-  // only playback takes it (BRIEF-camera-regimes).
-  const enterAuthoring = useCallback((i) => {
-    const kf = keyframes[i]
-    if (!kf) return
+  const play = () => { setSelected(null); setHeroMotion({ ...heroMotion, preview: true }) }
+  const pause = () => {
     setHeroMotion({ ...heroMotion, preview: false })
-    setHeroAuthoring(true)
-    heroScrub.t = kfFractions[i] ?? 0
-    notifyHeroScrub()
-    // ⭐ THE AIM COMES WITH IT. Without the target the camera lands on the
-    // keyframe's position pointing wherever it happened to be — half a
-    // keyframe, and the operator composes from a pose that is not the one they
-    // clicked.
-    pushCamera({ position: [...kf.position], target: [...kf.target], fov: kf.fov })
-  }, [keyframes, kfFractions, heroMotion, setHeroMotion])
-
-  const saveKeyframe = () => {
-    setSelectedFromView()    // capture the live (orbited) pose into the selected kf
-    setHeroAuthoring(false)  // re-lock; preview stays false → parked on the saved frame
+    // Stops where it is; if that is on a dot, that key is the selection.
+    let hit = null
+    for (let i = 0; i < n; i++) if (Math.abs(fracOf(i) - heroScrub.t) < SNAP_TOLERANCE) hit = i
+    setSelected(hit)
   }
-  const cancelAuthoring = () => setHeroAuthoring(false)
+  // ‹ › — the previous / next key from where you are.
+  const step = (dir) => {
+    if (!n) return
+    if (playing) setHeroMotion({ ...heroMotion, preview: false })
+    const here = selected != null ? fracOf(selected) : scrubT
+    let i = dir > 0 ? keyframes.findIndex((_, k) => fracOf(k) > here + 1e-6) : -1
+    if (dir < 0) for (let k = n - 1; k >= 0; k--) if (fracOf(k) < here - 1e-6) { i = k; break }
+    if (i >= 0) goTo(i)
+  }
 
-  // Esc leaves authoring without saving.
-  // ⛔ NO KEYBOARD NUDGES. An arrow-key handler for the framing mark was built
-  // and cut the same day (Jacob: "hotkeys no: I meant regular 3D controls with
-  // mouse/tablet + option/control keys"). The framing is not a value you type
-  // at — it is what you SEE when you have finished moving the camera. The
-  // gesture is the camera itself; the panel's "From view" reads the result.
-  useEffect(() => {
-    if (!authoring) return
-    const onKey = (e) => {
-      const t = e.target
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
-      if (e.key === 'Escape') setHeroAuthoring(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [authoring])
+  const viewAsKey = () => {
+    const snap = captureCameraSnapshot()
+    return snap ? { position: snap.position, target: snap.target, fov: snap.fov } : null
+  }
+  const updateSelected = () => {
+    const kf = viewAsKey()
+    if (!kf || selected == null) return
+    const next = [...keyframes]
+    next[selected] = kf
+    setKeyframes(next)
+    triggerPulse(selected)
+  }
+  const addKey = () => {
+    const kf = viewAsKey()
+    if (!kf) return
+    // After the selected key; else at the playhead's place in path order.
+    const at = selected != null ? selected + 1
+      : n === 0 ? 0 : Math.min(n, Math.floor(scrubT * (n - 1)) + 1)
+    const next = [...keyframes.slice(0, at), kf, ...keyframes.slice(at)]
+    setKeyframes(next)
+    setSelected(at)
+    heroScrub.t = fracOf(at, next.length)
+    notifyHeroScrub()
+    triggerPulse(at)
+  }
+  const deleteSelected = () => {
+    if (selected == null) return
+    const next = keyframes.filter((_, j) => j !== selected)
+    setKeyframes(next)
+    if (!next.length) { setSelected(null); heroScrub.t = 0; notifyHeroScrub(); return }
+    goTo(Math.min(selected, next.length - 1), next)
+  }
+
+  const btn = (extra = {}) => ({
+    background: 'var(--surface-container-high)', color: 'var(--on-surface)',
+    border: '1px solid var(--outline-variant)', ...extra,
+  })
 
   return (
     <div className="space-y-3">
-      {/* ── Motion timeline ─────────────────────────────────────── */}
-      <div className="space-y-1.5">
-        {/* Controls row: play + speed — hidden while authoring (the bounce
-            is paused; the camera is yours to orbit). */}
-        <div className="flex items-center gap-1.5" style={{ display: authoring ? 'none' : undefined }}>
-          <button className="px-2 py-1 rounded text-caption font-medium cursor-pointer transition-colors"
+      {/* ── Transport: play/pause · speed · previous/next key ─────────── */}
+      <div className="flex items-center gap-1.5">
+        <button className="px-2 py-1 rounded text-caption font-medium cursor-pointer transition-colors"
+          style={{
+            background: playing ? 'var(--success-dim)' : 'var(--surface-container-high)',
+            color: playing ? 'var(--success)' : 'var(--on-surface-variant)',
+            border: `1px solid ${playing ? 'var(--success)' : 'var(--outline-variant)'}`,
+          }}
+          disabled={!n}
+          title={playing ? 'Pause where it is' : 'Preview the motion'}
+          onClick={playing ? pause : play}
+        >{playing ? '⏸' : '▶'}</button>
+        {[1, 10, 30].map(s => (
+          <button key={s}
+            onClick={() => setHeroMotion({ ...heroMotion, speed: s })}
+            className="px-1.5 py-1 rounded text-caption cursor-pointer transition-colors"
             style={{
-              background: heroMotion.preview ? 'var(--success-dim)' : 'var(--surface-container-high)',
-              color: heroMotion.preview ? 'var(--success)' : 'var(--on-surface-variant)',
-              border: `1px solid ${heroMotion.preview ? 'var(--success)' : 'var(--outline-variant)'}`,
+              background: (heroMotion.speed || 1) === s ? 'var(--surface-container-highest)' : 'transparent',
+              color: (heroMotion.speed || 1) === s ? 'var(--on-surface)' : 'var(--on-surface-subtle)',
             }}
-            onClick={() => setHeroMotion({ ...heroMotion, preview: !heroMotion.preview })}
-          >{heroMotion.preview ? '■' : '▶'}</button>
-          {[1, 10, 30].map(s => (
-            <button key={s}
-              onClick={() => setHeroMotion({ ...heroMotion, speed: s })}
-              className="px-1.5 py-1 rounded text-caption cursor-pointer transition-colors"
-              style={{
-                background: (heroMotion.speed || 1) === s ? 'var(--surface-container-highest)' : 'transparent',
-                color: (heroMotion.speed || 1) === s ? 'var(--on-surface)' : 'var(--on-surface-subtle)',
-              }}
-            >{s}x</button>
-          ))}
-        </div>
-
-        {/* Timeline rail — click to scrub + deselect; click a dot to select */}
-        <div
-          ref={trackRef}
-          className="relative h-6 flex items-center cursor-pointer select-none touch-none"
-          onPointerDown={(e) => {
-            // While authoring, the rail is inert — only dot clicks (switch
-            // edit target) and the buttons act, so an stray drag can't
-            // scrub the playhead off the keyframe being edited.
-            if (authoring) return
-            e.currentTarget.setPointerCapture(e.pointerId)
-            setScrubDragging(true)
-            setHeroMotion(m => ({ ...m, preview: false }))
-            scrubTo(fracFromX(e.clientX))
-          }}
-          onPointerMove={(e) => {
-            if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
-            scrubTo(fracFromX(e.clientX))
-          }}
-          onPointerUp={(e) => {
-            if (e.currentTarget.hasPointerCapture(e.pointerId))
-              e.currentTarget.releasePointerCapture(e.pointerId)
-            setScrubDragging(false)
-          }}
-          onPointerCancel={(e) => {
-            if (e.currentTarget.hasPointerCapture(e.pointerId))
-              e.currentTarget.releasePointerCapture(e.pointerId)
-            setScrubDragging(false)
-          }}
-        >
-          {/* Rail */}
-          <div className="absolute inset-x-0 h-[6px] rounded-full top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ background: 'var(--surface-container-high)' }} />
-
-          {/* Keyframe dots — clickable: a dot's own pointerdown enters
-              authoring on it (stopPropagation so it doesn't also start a
-              rail scrub). Drag-to-scrub still crosses dots smoothly: once a
-              drag is captured by the wrapper, moves route there, not here. */}
-          {kfFractions.map((frac, i) => {
-            const active = selectedKf === i
-            const pulsing = pulse === i
-            return (
-              <div key={i}
-                onPointerDown={(e) => { e.stopPropagation(); enterAuthoring(i) }}
-                title={`Edit ${kfName(i, keyframes.length)}`}
-                className={`absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border cursor-pointer${pulsing ? ' hero-dot-pulse' : ''}`}
-                style={{
-                  left: `${frac * 100}%`,
-                  backgroundColor: 'var(--vic-gold)',
-                  borderColor: active || pulsing ? '#fff' : 'rgba(255,255,255,0.5)',
-                  borderWidth: active ? 2 : 1,
-                  boxShadow: active ? '0 0 0 2px rgba(255,255,255,0.2)' : 'none',
-                  zIndex: pulsing ? 4 : 2,
-                }}
-              />
-            )
-          })}
-
-          {/* Playhead */}
-          <div
-            className="absolute w-[14px] h-[14px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none border-2 shadow-sm"
-            style={{
-              left: `${scrubT * 100}%`,
-              backgroundColor: scrubDragging ? '#60a5fa' : heroMotion.preview ? '#4ade80' : 'var(--on-surface-variant)',
-              borderColor: 'rgba(255,255,255,0.6)',
-              zIndex: 3,
-            }}
-          />
-        </div>
+          >{s}x</button>
+        ))}
+        <div className="flex-1" />
+        <button className="px-2 py-1 rounded text-caption cursor-pointer" style={btn()} disabled={!n}
+          title="Previous key" onClick={() => step(-1)}>‹</button>
+        <button className="px-2 py-1 rounded text-caption cursor-pointer" style={btn()} disabled={!n}
+          title="Next key" onClick={() => step(1)}>›</button>
       </div>
 
-      {/* ── Capture zone — two modes ──────────────────────────────────
-          RUNTIME (controls locked): the bounce plays, or scrub to preview;
-          click a keyframe dot (or the Edit button) to author it. AUTHORING
-          (controls free): orbit to reposition — the camera stays on the
-          subject (Hero Lock) — then Save to capture + re-lock (stays paused
-          on the saved frame), or Cancel/Esc to discard. */}
-      {authoring ? (
+      {/* ── Timeline: drag to scrub; click a dot to go to that key ───── */}
+      <div
+        ref={trackRef}
+        className="relative h-6 flex items-center cursor-pointer select-none touch-none"
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId)
+          setScrubDragging(true)
+          if (playing) setHeroMotion({ ...heroMotion, preview: false })
+          scrubTo(fracFromX(e.clientX))
+        }}
+        onPointerMove={(e) => {
+          if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+          scrubTo(fracFromX(e.clientX))
+        }}
+        onPointerUp={(e) => {
+          if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+          setScrubDragging(false)
+        }}
+        onPointerCancel={(e) => {
+          if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+          setScrubDragging(false)
+        }}
+      >
+        <div className="absolute inset-x-0 h-[6px] rounded-full top-1/2 -translate-y-1/2 pointer-events-none"
+          style={{ background: 'var(--surface-container-high)' }} />
+        {keyframes.map((_, i) => {
+          const active = !playing && selected === i
+          const pulsing = pulse === i
+          return (
+            <div key={i}
+              onPointerDown={(e) => {
+                e.stopPropagation()
+                if (playing) setHeroMotion({ ...heroMotion, preview: false })
+                goTo(i)
+              }}
+              title={`Go to ${kfName(i)}`}
+              className={`absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border cursor-pointer${pulsing ? ' hero-dot-pulse' : ''}`}
+              style={{
+                left: `${fracOf(i) * 100}%`,
+                backgroundColor: 'var(--vic-gold)',
+                borderColor: active || pulsing ? '#fff' : 'rgba(255,255,255,0.5)',
+                borderWidth: active ? 2 : 1,
+                boxShadow: active ? '0 0 0 2px rgba(255,255,255,0.2)' : 'none',
+                zIndex: pulsing ? 4 : 2,
+              }}
+            />
+          )
+        })}
+        <div
+          className="absolute w-[14px] h-[14px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none border-2 shadow-sm"
+          style={{
+            left: `${scrubT * 100}%`,
+            backgroundColor: scrubDragging ? '#60a5fa' : playing ? '#4ade80' : 'var(--on-surface-variant)',
+            borderColor: 'rgba(255,255,255,0.6)',
+            zIndex: 3,
+          }}
+        />
+      </div>
+
+      {/* ── Where you are, and what the view can become ──────────────── */}
+      <div className="text-caption px-1" style={{ color: 'var(--on-surface-variant)' }}>
+        {playing ? 'Playing — ⏸ to stop where it is.'
+          : !n ? 'No keys yet — fly to the first view and add it.'
+          : sel ? <>{kfName(selected)} of {n} · {viewMatches ? <span style={{ color: 'var(--success)' }}>✓ the view is this key</span> : 'the view has moved — Update keeps it'}</>
+          : 'Between keys — add one here, or ‹ › to a key.'}
+      </div>
+
+      {!playing && (sel ? (
         <div className="space-y-2">
-          <div className="text-caption px-2 py-1.5 rounded"
-            style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface-variant)' }}>
-            ✎ Editing {selectedKf != null ? kfName(selectedKf, keyframes.length) : 'keyframe'} — the camera is free. <b>Drag</b> orbits, <b>⌥ drag</b> pans, <b>⌃ drag</b> dollies. Compose it, then Save — the aim is part of the keyframe.
-          </div>
           <div className="flex gap-1.5">
             <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
-              style={{ background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)' }}
-              onClick={saveKeyframe}
-              title="Capture this view into the keyframe and return to the runtime preview"
-            >Save keyframe</button>
+              style={viewMatches ? btn({ color: 'var(--on-surface-subtle)' }) : btn({ background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)' })}
+              disabled={viewMatches}
+              onClick={updateSelected}
+              title="Replace this key with the current view (position, aim, FOV)"
+            >Update {kfName(selected)}</button>
+            <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all" style={btn()}
+              onClick={addKey} title="Add the current view as a new key after this one"
+            >+ After</button>
             <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all"
-              style={{ background: 'transparent', color: 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}
-              onClick={cancelAuthoring}
-              title="Discard this orbit (Esc)"
-            >Cancel</button>
-            {isMid && (
-              <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all"
-                style={{ background: 'transparent', color: 'var(--error)', border: '1px solid var(--outline-variant)' }}
-                onClick={deleteSelected}
-                title="Delete this mid keyframe"
-              >×</button>
-            )}
+              style={btn({ background: 'transparent', color: 'var(--error)' })}
+              onClick={deleteSelected} title={`Delete ${kfName(selected)}`}
+            >Delete</button>
           </div>
-          {sel != null && (
-            <SliderRow label="FOV" value={sel.fov} min={5} max={120} suffix="°"
-              onChange={(v) => {
-                const next = [...keyframes]
-                next[selectedKf] = { ...sel, fov: v }
-                setKeyframes(next)
-                pushCamera({ fov: v })
-                triggerPulse(selectedKf)
-              }} />
-          )}
-        </div>
-      ) : heroMotion.preview ? (
-        <div className="text-caption px-1 text-center" style={{ color: 'var(--on-surface-subtle)' }}>
-          ▶ Playing — click a keyframe dot to edit it
-        </div>
-      ) : sel != null ? (
-        <div className="flex gap-1.5">
-          <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all leading-tight"
-            style={{
-              background: liveOnKf ? 'var(--success-dim)' : 'var(--surface-container-highest)',
-              color: liveOnKf ? 'var(--success)' : 'var(--on-surface)',
-              border: `1px solid ${liveOnKf ? 'var(--success)' : 'var(--outline)'}`,
-            }}
-            onClick={() => enterAuthoring(selectedKf)}
-            title="Reposition this keyframe with free orbit"
-          ><span className="flex flex-col items-center">
-            <span>Edit {kfName(selectedKf, keyframes.length)}</span>
-            <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{liveOnKf ? '✓ on keyframe — orbit to reposition' : 'orbit to reposition'}</span>
-          </span></button>
-          {isMid && (
-            <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all"
-              style={{ background: 'transparent', color: 'var(--error)', border: '1px solid var(--outline-variant)' }}
-              onClick={deleteSelected}
-              title="Delete this mid keyframe"
-            >×</button>
-          )}
+          <SliderRow label="FOV" value={sel.fov} min={5} max={120} suffix="°"
+            onChange={(v) => {
+              const next = [...keyframes]
+              next[selected] = { ...sel, fov: v }
+              setKeyframes(next)
+              pushCamera({ fov: v })
+              triggerPulse(selected)
+            }} />
         </div>
       ) : (
         <button className="hero-btn w-full py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
-          style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface)', border: '1px solid var(--outline-variant)' }}
-          onClick={addKeyframeFromView}
-        >+ Add keyframe here</button>
-      )}
+          style={btn()} onClick={addKey}
+        >{n ? '+ Add keyframe here' : '+ Add the first keyframe'}</button>
+      ))}
+
+      <div className="text-caption px-1" style={{ color: 'var(--on-surface-subtle)' }}>
+        Drag orbits · ⌥-drag moves · ⌘/⌃-drag pans · scroll zooms
+      </div>
 
       <div style={{ borderTop: '1px solid var(--outline-variant)' }} />
 

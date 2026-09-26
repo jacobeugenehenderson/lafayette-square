@@ -621,9 +621,9 @@ function Controls({ controlsRef, heroPlaying = false }) {
   const markerActive = useCartographStore(s => s.markerActive)
   const spaceDown = useCartographStore(s => s.spaceDown)
   const hoverTarget = useCartographStore(s => s.hoverTarget)
-  // `heroAuthoring` (StageApp's keyframe-edit state) is deliberately NOT read:
-  // it once gated orbit in Hero and forbade the actual workflow — fly first,
-  // THEN memorise (Jacob, 2026-09-20). The only gate is playback, below.
+  // A keyframe-edit state once gated orbit in Hero and forbade the actual
+  // workflow — fly first, THEN memorise (Jacob, 2026-09-20). It is gone; the
+  // only gate is playback, below.
 
   const inDesigner = shot === 'designer'
   // Designer: pan enabled unless a tool owns the click.

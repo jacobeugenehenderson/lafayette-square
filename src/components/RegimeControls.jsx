@@ -23,6 +23,48 @@ import { useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { REGIMES, REGIME_LIMIT_KEYS } from '../lib/cameraRegimes.js'
+import { getElevation } from '../utils/elevation'
+
+// ── The orbit pivot is the GROUND UNDER THE MIDDLE OF THE SCREEN ─────────────
+// (Jacob, 2026-09-26, BRIEF-camera-regimes: "the orbit target is wherever the
+// operator is looking".) Re-seated on every press and every wheel step, and when
+// the controls take the camera back from playback. Moving `target` along the
+// view ray does not move or turn the camera — only what a drag turns around and
+// what a wheel closes on. ⛔ It used to be a keyframe's stored aim, i.e. the old
+// hero subject baked into the data (huron: the town centre, 460–950 m away), so
+// every drag swung the camera around a point out in the town.
+// Terrain-aware: the ray is re-intersected at the ground height it lands on.
+// Looking above the horizon there is no ground to turn around: returns null and
+// the pivot stays where it is.
+const _ray = new THREE.Raycaster(), _ctr = new THREE.Vector2(0, 0)
+const _gPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), _gHit = new THREE.Vector3()
+function groundUnderCentre(c) {
+  c.object.updateMatrixWorld()
+  _ray.setFromCamera(_ctr, c.object)
+  let h = 0
+  for (let i = 0; i < 3; i++) {
+    _gPlane.constant = -h
+    if (!_ray.ray.intersectPlane(_gPlane, _gHit)) return null
+    const g = getElevation(_gHit.x, _gHit.z)
+    if (!Number.isFinite(g) || Math.abs(g - h) < 0.5) break
+    h = g
+  }
+  const above = Math.max(c.object.position.y - _gHit.y, 1)
+  return _gHit.distanceTo(c.object.position) > 50 * above ? null : _gHit
+}
+function repivot(c) {
+  const g = groundUnderCentre(c)
+  if (!g) return false
+  c.target.copy(g)
+  c.update()
+  return true
+}
+// Wheel: zoom PROPORTIONAL to the scroll delta, so a mouse whose top is a
+// trackpad (many tiny deltas) zooms smoothly. One 100-px wheel notch = the step
+// OrbitControls used to take per event (0.95^zoomSpeed). ⛔ OrbitControls itself
+// takes that full step for EVERY event whatever its size — 30 trackpad ticks of
+// 2 px carried the camera 60% of the way to its pivot.
+const WHEEL_PX = { 0: 1, 1: 16, 2: 800 }   // deltaMode: pixel · line · page
 
 export default function RegimeControls(props) {
   if (props.managed) return <ManagedControls {...props} />
@@ -65,11 +107,13 @@ function DeclaredControls({
   // them again and the first drag would orbit around a point from before, and
   // OrbitControls.update() would haul the camera back to satisfy it: a snap.
   // ⇒ On every false→true transition, move `target` to the point the camera is
-  // actually looking at, at the distance it was already holding.
+  // actually looking at: the ground under screen centre in the orbit regime,
+  // else along the view at the distance it was already holding.
   const wasEnabled = useRef(on)
   useEffect(() => {
     const c = localRef.current
     if (c && on && !wasEnabled.current && regime !== 'street') {
+      if (regime === 'orbit' && repivot(c)) { wasEnabled.current = on; return }
       const dist = c.target.distanceTo(c.object.position) || 1
       const fwd = new THREE.Vector3()
       c.object.getWorldDirection(fwd)
@@ -139,8 +183,10 @@ function DeclaredControls({
       const alt = e.altKey || altHeld
       setButtons(read(e))
       const c = localRef.current
-      if (!c || !enabledRef.current || !panRef.current || !alt) return
+      if (!c || !enabledRef.current) return
       if (!c.domElement.contains(e.target)) return   // R3F's wrapper div, not the <canvas>
+      if (e.isPrimary) repivot(c)                    // turn around / grab where you are looking
+      if (!panRef.current || !alt) return
       e.stopPropagation()                            // the clamp: OrbitControls never hears it
       if (!e.isPrimary) return
       plane.constant = -c.target.y
@@ -158,6 +204,21 @@ function DeclaredControls({
       invalidate()
     }
     const onUp = () => { grab = null }
+    const onWheel = (e) => {
+      const c = localRef.current
+      if (!c || !enabledRef.current || !c.enableZoom) return
+      if (!c.domElement.contains(e.target)) return
+      e.preventDefault()
+      e.stopPropagation()                            // OrbitControls' fixed-step dolly never runs
+      repivot(c)
+      const px = e.deltaY * (WHEEL_PX[e.deltaMode] ?? 1)
+      const k = -Math.log(0.95) * c.zoomSpeed / 100
+      const off = c.object.position.clone().sub(c.target)
+      const d = Math.min(c.maxDistance, Math.max(c.minDistance, off.length() * Math.exp(px * k)))
+      c.object.position.copy(c.target).addScaledVector(off.normalize(), d)
+      c.update()
+      invalidate()
+    }
     window.addEventListener('keydown', onKey)
     window.addEventListener('keyup', onKey)
     // ⚠️ Capture phase on window, so the press is judged (and, under ⌥,
@@ -167,7 +228,10 @@ function DeclaredControls({
     window.addEventListener('pointerup', onUp)
     window.addEventListener('pointercancel', onUp)
     window.addEventListener('blur', onBlur)
+    // Capture phase + non-passive: judged before OrbitControls' own wheel handler.
+    window.addEventListener('wheel', onWheel, { capture: true, passive: false })
     return () => {
+      window.removeEventListener('wheel', onWheel, { capture: true })
       window.removeEventListener('keydown', onKey)
       window.removeEventListener('keyup', onKey)
       window.removeEventListener('pointerdown', onDown, true)
