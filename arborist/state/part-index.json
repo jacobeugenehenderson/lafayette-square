@@ -48,6 +48,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_a",
       "path": "public/library/chassises/oval/oval_01"
     },
     {
@@ -86,6 +87,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_c",
       "path": "public/library/chassises/oval/oval_02"
     },
     {
@@ -124,6 +126,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_d",
       "path": "public/library/chassises/oval/oval_03"
     },
     {
@@ -162,6 +165,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_e",
       "path": "public/library/chassises/oval/oval_04"
     },
     {
@@ -200,6 +204,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_h",
       "path": "public/library/chassises/oval/oval_05"
     },
     {
@@ -238,6 +243,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_i",
       "path": "public/library/chassises/oval/oval_06"
     },
     {
@@ -276,6 +282,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_j",
       "path": "public/library/chassises/oval/oval_07"
     },
     {
@@ -314,6 +321,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_k",
       "path": "public/library/chassises/oval/oval_08"
     },
     {
@@ -352,6 +360,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_l",
       "path": "public/library/chassises/oval/oval_09"
     },
     {
@@ -390,6 +399,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_m",
       "path": "public/library/chassises/oval/oval_10"
     },
     {
@@ -428,6 +438,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_n",
       "path": "public/library/chassises/oval/oval_11"
     },
     {
@@ -466,6 +477,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_o",
       "path": "public/library/chassises/oval/oval_12"
     },
     {
@@ -504,6 +516,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_p",
       "path": "public/library/chassises/oval/oval_13"
     },
     {
@@ -540,6 +553,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "acer_saccharum_procedural_a",
       "path": "public/library/chassises/oval/oval_14"
     },
     {
@@ -576,6 +590,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "acer_saccharum_procedural_b",
       "path": "public/library/chassises/oval/oval_15"
     },
     {
@@ -612,6 +627,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "acer_saccharum_procedural_c",
       "path": "public/library/chassises/oval/oval_16"
     },
     {
@@ -648,6 +664,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "acer_saccharum_procedural_d",
       "path": "public/library/chassises/oval/oval_17"
     },
     {
@@ -684,6 +701,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "acer_saccharum_procedural_e",
       "path": "public/library/chassises/oval/oval_18"
     },
     {
@@ -722,6 +740,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_q",
       "path": "public/library/chassises/oval/oval_19"
     },
     {
@@ -760,6 +779,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_r",
       "path": "public/library/chassises/oval/oval_20"
     },
     {
@@ -798,6 +818,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_s",
       "path": "public/library/chassises/oval/oval_21"
     },
     {
@@ -836,6 +857,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_t",
       "path": "public/library/chassises/oval/oval_22"
     },
     {
@@ -874,6 +896,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_saccharum)"
       },
+      "derivedFrom": "acer_saccharum_u",
       "path": "public/library/chassises/oval/oval_23"
     },
     {
@@ -911,6 +934,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_b",
       "path": "public/library/chassises/pyramidal/pyramidal_01"
     },
     {
@@ -948,6 +972,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_c",
       "path": "public/library/chassises/pyramidal/pyramidal_02"
     },
     {
@@ -985,6 +1010,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_d",
       "path": "public/library/chassises/pyramidal/pyramidal_03"
     },
     {
@@ -1022,6 +1048,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_e",
       "path": "public/library/chassises/pyramidal/pyramidal_04"
     },
     {
@@ -1059,6 +1086,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_f",
       "path": "public/library/chassises/pyramidal/pyramidal_05"
     },
     {
@@ -1096,6 +1124,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_g",
       "path": "public/library/chassises/pyramidal/pyramidal_06"
     },
     {
@@ -1133,6 +1162,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_h",
       "path": "public/library/chassises/pyramidal/pyramidal_07"
     },
     {
@@ -1170,6 +1200,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_i",
       "path": "public/library/chassises/pyramidal/pyramidal_08"
     },
     {
@@ -1207,6 +1238,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_j",
       "path": "public/library/chassises/pyramidal/pyramidal_09"
     },
     {
@@ -1244,6 +1276,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_k",
       "path": "public/library/chassises/pyramidal/pyramidal_10"
     },
     {
@@ -1281,6 +1314,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_l",
       "path": "public/library/chassises/pyramidal/pyramidal_11"
     },
     {
@@ -1318,6 +1352,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_m",
       "path": "public/library/chassises/pyramidal/pyramidal_12"
     },
     {
@@ -1355,6 +1390,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "alaskan_cedar_n",
       "path": "public/library/chassises/pyramidal/pyramidal_13"
     },
     {
@@ -1396,6 +1432,7 @@
         "habitFromDossier": "conical",
         "habitSource": "dossier(tilia_americana)"
       },
+      "derivedFrom": "american_linden_a",
       "path": "public/library/chassises/oval/oval_24"
     },
     {
@@ -1434,6 +1471,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(nyssa_sylvatica)"
       },
+      "derivedFrom": "black_gum_a",
       "path": "public/library/chassises/pyramidal/pyramidal_14"
     },
     {
@@ -1472,6 +1510,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(nyssa_sylvatica)"
       },
+      "derivedFrom": "black_gum_e",
       "path": "public/library/chassises/pyramidal/pyramidal_15"
     },
     {
@@ -1510,6 +1549,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(nyssa_sylvatica)"
       },
+      "derivedFrom": "black_gum_f",
       "path": "public/library/chassises/pyramidal/pyramidal_16"
     },
     {
@@ -1548,6 +1588,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(nyssa_sylvatica)"
       },
+      "derivedFrom": "black_gum_g",
       "path": "public/library/chassises/pyramidal/pyramidal_17"
     },
     {
@@ -1586,6 +1627,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(nyssa_sylvatica)"
       },
+      "derivedFrom": "black_gum_h",
       "path": "public/library/chassises/pyramidal/pyramidal_18"
     },
     {
@@ -1771,6 +1813,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "blue_spruce_winter_c",
       "path": "public/library/chassises/pyramidal/pyramidal_20"
     },
     {
@@ -1808,6 +1851,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "blue_spruce_winter_d",
       "path": "public/library/chassises/pyramidal/pyramidal_21"
     },
     {
@@ -1845,6 +1889,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "blue_spruce_winter_e",
       "path": "public/library/chassises/pyramidal/pyramidal_22"
     },
     {
@@ -1882,6 +1927,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "blue_spruce_winter_f",
       "path": "public/library/chassises/pyramidal/pyramidal_23"
     },
     {
@@ -1919,6 +1965,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "blue_spruce_winter_g",
       "path": "public/library/chassises/pyramidal/pyramidal_24"
     },
     {
@@ -1956,6 +2003,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "blue_spruce_winter_h",
       "path": "public/library/chassises/pyramidal/pyramidal_25"
     },
     {
@@ -3231,6 +3279,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "garden_trees_mix_b",
       "path": "public/library/chassises/weeping/weeping_01"
     },
     {
@@ -3342,6 +3391,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "garden_trees_mix_g",
       "path": "public/library/chassises/oval/oval_25"
     },
     {
@@ -3415,6 +3465,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_a_trunk22",
       "path": "public/library/chassises/columnar/columnar_01"
     },
     {
@@ -3452,6 +3503,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_a_trunk33",
       "path": "public/library/chassises/columnar/columnar_02"
     },
     {
@@ -3489,6 +3541,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_a_trunk44",
       "path": "public/library/chassises/columnar/columnar_03"
     },
     {
@@ -3526,6 +3579,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_b_trunk11",
       "path": "public/library/chassises/columnar/columnar_04"
     },
     {
@@ -3563,6 +3617,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_b_trunk33",
       "path": "public/library/chassises/columnar/columnar_05"
     },
     {
@@ -3600,6 +3655,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_b_trunk44",
       "path": "public/library/chassises/columnar/columnar_06"
     },
     {
@@ -3637,6 +3693,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_c_trunk11",
       "path": "public/library/chassises/columnar/columnar_07"
     },
     {
@@ -3674,6 +3731,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_c_trunk22",
       "path": "public/library/chassises/columnar/columnar_08"
     },
     {
@@ -3711,6 +3769,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_c_trunk44",
       "path": "public/library/chassises/columnar/columnar_09"
     },
     {
@@ -3748,6 +3807,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_d_trunk11",
       "path": "public/library/chassises/columnar/columnar_10"
     },
     {
@@ -3785,6 +3845,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_d_trunk22",
       "path": "public/library/chassises/columnar/columnar_11"
     },
     {
@@ -3822,6 +3883,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "gray_poplar_d_trunk33",
       "path": "public/library/chassises/columnar/columnar_12"
     },
     {
@@ -4024,6 +4086,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_a_bark2",
       "path": "public/library/chassises/spreading/spreading_01"
     },
     {
@@ -4062,6 +4125,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_a_bark3",
       "path": "public/library/chassises/spreading/spreading_02"
     },
     {
@@ -4100,6 +4164,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_a_stem2",
       "path": "public/library/chassises/spreading/spreading_03"
     },
     {
@@ -4138,6 +4203,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_a_stem3",
       "path": "public/library/chassises/spreading/spreading_04"
     },
     {
@@ -4176,6 +4242,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_b_bark1",
       "path": "public/library/chassises/spreading/spreading_05"
     },
     {
@@ -4214,6 +4281,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_b_bark3",
       "path": "public/library/chassises/spreading/spreading_06"
     },
     {
@@ -4252,6 +4320,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_b_stem1",
       "path": "public/library/chassises/spreading/spreading_07"
     },
     {
@@ -4290,6 +4359,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_b_stem3",
       "path": "public/library/chassises/spreading/spreading_08"
     },
     {
@@ -4328,6 +4398,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_c_bark1",
       "path": "public/library/chassises/spreading/spreading_09"
     },
     {
@@ -4366,6 +4437,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_c_bark2",
       "path": "public/library/chassises/spreading/spreading_10"
     },
     {
@@ -4404,6 +4476,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_c_stem1",
       "path": "public/library/chassises/spreading/spreading_11"
     },
     {
@@ -4442,6 +4515,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(gleditsia_triacanthos)"
       },
+      "derivedFrom": "honey_locust_c_stem2",
       "path": "public/library/chassises/spreading/spreading_12"
     },
     {
@@ -4515,6 +4589,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_c",
       "path": "public/library/chassises/columnar/columnar_13"
     },
     {
@@ -4552,6 +4627,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_d",
       "path": "public/library/chassises/columnar/columnar_14"
     },
     {
@@ -4589,6 +4665,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_e",
       "path": "public/library/chassises/columnar/columnar_15"
     },
     {
@@ -4626,6 +4703,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_f",
       "path": "public/library/chassises/columnar/columnar_16"
     },
     {
@@ -4663,6 +4741,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_g",
       "path": "public/library/chassises/columnar/columnar_17"
     },
     {
@@ -4700,6 +4779,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_h",
       "path": "public/library/chassises/columnar/columnar_18"
     },
     {
@@ -4737,6 +4817,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_i",
       "path": "public/library/chassises/columnar/columnar_19"
     },
     {
@@ -4774,6 +4855,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_j",
       "path": "public/library/chassises/columnar/columnar_20"
     },
     {
@@ -4811,6 +4893,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_k",
       "path": "public/library/chassises/columnar/columnar_21"
     },
     {
@@ -4848,6 +4931,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_l",
       "path": "public/library/chassises/columnar/columnar_22"
     },
     {
@@ -4885,6 +4969,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_m",
       "path": "public/library/chassises/columnar/columnar_23"
     },
     {
@@ -4922,6 +5007,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_n",
       "path": "public/library/chassises/columnar/columnar_24"
     },
     {
@@ -4959,6 +5045,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "italian_cypress_o",
       "path": "public/library/chassises/columnar/columnar_25"
     },
     {
@@ -4996,6 +5083,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_a",
       "path": "public/library/chassises/spreading/spreading_13"
     },
     {
@@ -5033,6 +5121,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_b",
       "path": "public/library/chassises/spreading/spreading_14"
     },
     {
@@ -5073,6 +5162,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_c",
       "path": "public/library/chassises/spreading/spreading_15"
     },
     {
@@ -5113,6 +5203,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_d",
       "path": "public/library/chassises/spreading/spreading_16"
     },
     {
@@ -5150,6 +5241,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_e",
       "path": "public/library/chassises/spreading/spreading_17"
     },
     {
@@ -5190,6 +5282,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_f",
       "path": "public/library/chassises/spreading/spreading_18"
     },
     {
@@ -5230,6 +5323,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_g",
       "path": "public/library/chassises/spreading/spreading_19"
     },
     {
@@ -5270,6 +5364,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_h",
       "path": "public/library/chassises/spreading/spreading_20"
     },
     {
@@ -5310,6 +5405,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_i",
       "path": "public/library/chassises/spreading/spreading_21"
     },
     {
@@ -5347,6 +5443,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_j",
       "path": "public/library/chassises/spreading/spreading_22"
     },
     {
@@ -5387,6 +5484,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_k",
       "path": "public/library/chassises/spreading/spreading_23"
     },
     {
@@ -5427,6 +5525,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_l",
       "path": "public/library/chassises/spreading/spreading_24"
     },
     {
@@ -5464,6 +5563,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_m_whitebirchbark_g2",
       "path": "public/library/chassises/spreading/spreading_25"
     },
     {
@@ -5501,6 +5601,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "london_plane_n_whitebirchbark_f2",
       "path": "public/library/chassises/spreading/spreading_26"
     },
     {
@@ -5538,6 +5639,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "oak_winter_fall_c",
       "path": "public/library/chassises/rounded/rounded_01"
     },
     {
@@ -5575,6 +5677,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "oak_winter_fall_d",
       "path": "public/library/chassises/rounded/rounded_02"
     },
     {
@@ -5612,6 +5715,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "oak_winter_fall_e",
       "path": "public/library/chassises/rounded/rounded_03"
     },
     {
@@ -5649,6 +5753,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "oak_winter_fall_f",
       "path": "public/library/chassises/rounded/rounded_04"
     },
     {
@@ -5686,6 +5791,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "oak_winter_fall_g",
       "path": "public/library/chassises/rounded/rounded_05"
     },
     {
@@ -6700,6 +6806,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_rubrum)"
       },
+      "derivedFrom": "red_maple_a",
       "path": "public/library/chassises/oval/oval_26"
     },
     {
@@ -6741,6 +6848,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_rubrum)"
       },
+      "derivedFrom": "red_maple_b",
       "path": "public/library/chassises/oval/oval_27"
     },
     {
@@ -6779,6 +6887,7 @@
         "habitFromDossier": "oval",
         "habitSource": "dossier(acer_rubrum)"
       },
+      "derivedFrom": "red_maple_c",
       "path": "public/library/chassises/oval/oval_28"
     },
     {
@@ -6818,6 +6927,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_a",
       "path": "public/library/chassises/oval/oval_29"
     },
     {
@@ -6854,6 +6964,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_c",
       "path": "public/library/chassises/oval/oval_30"
     },
     {
@@ -6890,6 +7001,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_d",
       "path": "public/library/chassises/oval/oval_31"
     },
     {
@@ -6926,6 +7038,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_e",
       "path": "public/library/chassises/oval/oval_32"
     },
     {
@@ -6962,6 +7075,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_h",
       "path": "public/library/chassises/oval/oval_33"
     },
     {
@@ -6998,6 +7112,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_i",
       "path": "public/library/chassises/oval/oval_34"
     },
     {
@@ -7034,6 +7149,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_j",
       "path": "public/library/chassises/oval/oval_35"
     },
     {
@@ -7070,6 +7186,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_k",
       "path": "public/library/chassises/oval/oval_36"
     },
     {
@@ -7106,6 +7223,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_l",
       "path": "public/library/chassises/oval/oval_37"
     },
     {
@@ -7142,6 +7260,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_m",
       "path": "public/library/chassises/oval/oval_38"
     },
     {
@@ -7178,6 +7297,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_n",
       "path": "public/library/chassises/oval/oval_39"
     },
     {
@@ -7214,6 +7334,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_o",
       "path": "public/library/chassises/oval/oval_40"
     },
     {
@@ -7250,6 +7371,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_p",
       "path": "public/library/chassises/oval/oval_41"
     },
     {
@@ -7286,6 +7408,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_q",
       "path": "public/library/chassises/oval/oval_42"
     },
     {
@@ -7322,6 +7445,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_r",
       "path": "public/library/chassises/oval/oval_43"
     },
     {
@@ -7358,6 +7482,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_s",
       "path": "public/library/chassises/oval/oval_44"
     },
     {
@@ -7394,6 +7519,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_t",
       "path": "public/library/chassises/oval/oval_45"
     },
     {
@@ -7430,6 +7556,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "sugar_maple_low_poly_forest_u",
       "path": "public/library/chassises/oval/oval_46"
     },
     {
@@ -7546,6 +7673,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "tall_pine_a",
       "path": "public/library/chassises/pyramidal/pyramidal_26"
     },
     {
@@ -7583,6 +7711,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "tall_pine_b",
       "path": "public/library/chassises/pyramidal/pyramidal_27"
     },
     {
@@ -7620,6 +7749,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "tall_pine_c",
       "path": "public/library/chassises/pyramidal/pyramidal_28"
     },
     {
@@ -7660,6 +7790,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "tall_pine_d",
       "path": "public/library/chassises/pyramidal/pyramidal_29"
     },
     {
@@ -7697,6 +7828,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "tall_pine_e",
       "path": "public/library/chassises/pyramidal/pyramidal_30"
     },
     {
@@ -7737,6 +7869,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "weeping_willow_a",
       "path": "public/library/chassises/weeping/weeping_08"
     },
     {
@@ -7777,6 +7910,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "weeping_willow_b",
       "path": "public/library/chassises/weeping/weeping_09"
     },
     {
@@ -7817,6 +7951,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "weeping_willow_c",
       "path": "public/library/chassises/weeping/weeping_10"
     },
     {
@@ -7857,6 +7992,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "weeping_willow_d",
       "path": "public/library/chassises/weeping/weeping_11"
     },
     {
@@ -7897,6 +8033,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "weeping_willow_e",
       "path": "public/library/chassises/weeping/weeping_12"
     },
     {
@@ -8052,6 +8189,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(quercus_alba)"
       },
+      "derivedFrom": "white_oak_a",
       "path": "public/library/chassises/rounded/rounded_06"
     },
     {
@@ -8093,6 +8231,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(quercus_alba)"
       },
+      "derivedFrom": "white_oak_b",
       "path": "public/library/chassises/rounded/rounded_07"
     },
     {
@@ -8131,6 +8270,7 @@
         "habitFromDossier": "rounded",
         "habitSource": "dossier(quercus_alba)"
       },
+      "derivedFrom": "white_oak_e",
       "path": "public/library/chassises/rounded/rounded_09"
     },
     {
@@ -8168,6 +8308,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "white_willow_a",
       "path": "public/library/chassises/weeping/weeping_13"
     },
     {
@@ -8205,6 +8346,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "white_willow_b",
       "path": "public/library/chassises/weeping/weeping_14"
     },
     {
@@ -8242,6 +8384,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "white_willow_c",
       "path": "public/library/chassises/weeping/weeping_15"
     },
     {
@@ -8279,6 +8422,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "white_willow_d",
       "path": "public/library/chassises/weeping/weeping_16"
     },
     {
@@ -8316,6 +8460,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "white_willow_e",
       "path": "public/library/chassises/weeping/weeping_17"
     },
     {
@@ -8353,6 +8498,7 @@
         "ratified": false,
         "habitFromDossier": null
       },
+      "derivedFrom": "white_willow_f",
       "path": "public/library/chassises/weeping/weeping_18"
     },
     {
@@ -12075,6 +12221,36 @@
         "genus": null,
         "scientific": null,
         "why": "library entry \"linden_american\" carries no scientific name (generic or stylised asset)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "locust_black#salon_bark_Bark007_color",
+      "kind": "bark",
+      "glb": "public/trees/locust_black/skeleton-1-lod0.glb",
+      "image": "salon_bark_Bark007_color",
+      "label": {
+        "species": "locust_black",
+        "genus": "Robinia",
+        "scientific": "Robinia pseudoacacia",
+        "evidence": "species",
+        "source": "meta → index.json#species(locust_black)",
+        "ratified": false,
+        "habitFromDossier": null
+      }
+    },
+    {
+      "id": "locust_black#salon_leaf_palmate",
+      "kind": "leaf",
+      "glb": "public/trees/locust_black/skeleton-1-lod0.glb",
+      "image": "salon_leaf_palmate",
+      "label": {
+        "species": "locust_black",
+        "genus": "Robinia",
+        "scientific": "Robinia pseudoacacia",
+        "evidence": "species",
+        "source": "meta → index.json#species(locust_black)",
         "ratified": false,
         "habitFromDossier": null
       }

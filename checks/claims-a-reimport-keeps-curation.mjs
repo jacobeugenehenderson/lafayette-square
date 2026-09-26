@@ -7,7 +7,8 @@
 //   ① a preview (`--out`) writes its index and NOTHING under the library;
 //   ② a real re-import never moves a part from an ASSIGNED category to `_unassigned`, and
 //     never drops an id the library already gave it (the 2026-08-25 form rename —
-//     `columnar_01`, not `gray_poplar_a_trunk22` — is what compositions name);
+//     `columnar_01`, not `gray_poplar_a_trunk22` — is what compositions name), and a kept
+//     id still says where it came from (`derivedFrom`), which is how generate-salon finds its GLB;
 //   ③ library-builder's primary axes are live rubric axes.
 //
 // ⛔ It never touches the real library, not even when a mutation breaks the guard: ingest
@@ -20,6 +21,7 @@
 //     · library-builder.js: drop `|| assignedPlacement(part, root)` from canonicalValue            → ② RED
 //     · library-builder.js: PRIMARY_AXIS bark back to 'bark.type'                                  → ③ RED
 //     · ingest.js: `const idFor = (sourcePath, minted) => ids.get(sourcePath) || minted` → `=> minted`  → ② RED
+//     · ingest.js: `parts.push(provenance(part, partId))` → `parts.push(part)`                     → ② RED
 //   Put each back.
 //
 //   node checks/claims-a-reimport-keeps-curation.mjs
@@ -95,6 +97,11 @@ try {
                     : console.log(`   ✅ ${Object.values(beforePlaced).filter(v => v !== '_unassigned').length} assigned placements: none downgraded`)
   lost.length ? bad(`${lost.length} assigned part(s) lost their id, e.g. ${lost.slice(0, 3).map(([k]) => k).join(', ')}`)
               : console.log(`   ✅ every assigned id kept (${gone.length} withdrawn by an operator set-aside)`)
+  const idx = JSON.parse(fs.readFileSync(path.join(tmp, 'arborist/state/part-index.json'), 'utf8'))
+  const orphan = idx.parts.filter(p => p.partType === 'chassis' && p.partId !== path.basename(p.sourcePath, '.glb')
+    && p.derivedFrom !== path.basename(p.sourcePath, '.glb'))
+  orphan.length ? bad(`${orphan.length} renamed chassis carry no derivedFrom — generate-salon cannot find their GLB, e.g. ${orphan.slice(0, 3).map(p => p.partId).join(', ')}`)
+                : console.log(`   ✅ every renamed chassis names its source (${idx.parts.filter(p => p.derivedFrom).length} derivedFrom)`)
 } catch (e) { bad(`re-import run failed: ${String(e.stderr || e.message).slice(0, 300)}`) }
 
 console.log('③ THE BUILDER READS LIVE AXES')

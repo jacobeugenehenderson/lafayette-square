@@ -72,6 +72,9 @@ export function runIngest(opts = {}) {
   // ⛔ A minted id is authored: keep the library's id for a source it already holds.
   const ids = assignedIds(opts.libRoot)
   const idFor = (sourcePath, minted) => ids.get(sourcePath) || minted
+  // …and a kept id that is not the filename says where it came from: generate-salon's
+  // resolveChassisPath reaches `columnar_01`'s GLB only through the part's `derivedFrom`.
+  const provenance = (part, minted) => (part.partId !== minted ? { ...part, derivedFrom: minted } : part)
 
   // ── chassis (241) ──────────────────────────────────────────────────────────
   const chassisMetas = readdirSync(CHASSIS_DIR).filter(f => f.endsWith('.meta.json'))
@@ -95,7 +98,7 @@ export function runIngest(opts = {}) {
       curation: cur ? { approved: cur.approved !== false, displayName: cur.displayName || null } : null,
       label: labelChassis(meta, indexSpecies, dossiers),
     }
-    parts.push(part)
+    parts.push(provenance(part, partId))
   }
 
   // ── leaf packs (10) ─────────────────────────────────────────────────────────
