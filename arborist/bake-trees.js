@@ -143,6 +143,68 @@ const SOURCE_RANK = { 'city-inventory': 3, 'forest-park': 3, 'park': 3, 'osm': 2
 const REAL_DBH_SOURCES = new Set(['city-inventory', 'forest-park', 'park'])
 const DEDUP_M = 3   // same trunk if within this (matches scripts/14's OSM↔city dedup)
 
+/**
+ * The CENSUS: every well unioned, each tree stamped with its well's kind + source,
+ * then deduped across wells. Exported so a check reads the bake's own census step
+ * instead of restating it (`checks/claims-every-tree-candidate-is-accounted-for.mjs`).
+ * @returns {{ trees, perWell: [{ path, source, kind, count }], deduped, dedupedBySource }}
+ */
+export async function readCensus(parkPaths) {
+  const trees = []
+  const perWell = []
+  for (const p of parkPaths) {
+    const layer = JSON.parse(await fs.readFile(p, 'utf8'))
+    // Is this well SURVEYED reality or INVENTED fill? It decides whether a tree
+    // on hardscape gets nudged (reality — our strips are guesses) or dropped
+    // (invention — it has no standing). The well declares itself via meta.kind;
+    // the canopy fill is the only invented layer, so its filename is the
+    // fallback for wells written before `kind` existed.
+    const kind = layer.meta?.kind
+      ?? (path.basename(p) === 'derived_trees.json' ? 'derived' : 'census')
+    // Provenance (Move 4): a finer label than __kind — the ORIGINATING well. The
+    // authored park is addressable on its own ('park' vs the fetched
+    // 'city-inventory'), so richer real species data can later supersede synthetic
+    // in exactly those spots. Declared by the well (meta.well) or read off the
+    // canonical filename; falls back to __kind for an unnamed well.
+    const source = layer.meta?.well ?? (SOURCE_BY_BASENAME[path.basename(p)] || kind)
+    for (const t of (layer.trees || [])) trees.push({ ...t, __kind: kind, __source: source })
+    perWell.push({ path: p, source, kind, count: (layer.trees || []).length })
+  }
+
+  // ── Cross-well proximity dedup ────────────────────────────────────────────
+  // One physical trunk can appear in two wells (OSM's generic point AND Forest
+  // Park's species record; measured HPDM: 594/1319 Forest Park trees within 3m of
+  // an OSM point). Keep the richest record per DEDUP_M cell — greedy in source-
+  // rank order (real species > OSM position > synthetic). Near no-op when wells
+  // are already disjoint (LS: OSM was deduped vs city in scripts/14).
+  let deduped = 0
+  const dedupedBySource = {}
+  if (!trees.length) return { trees, perWell, deduped, dedupedBySource }
+  const ranked = trees
+    .map((t, i) => ({ t, i, r: SOURCE_RANK[t.__source] ?? 2 }))
+    .sort((a, b) => b.r - a.r || a.i - b.i)   // richest first, stable
+  const cell = DEDUP_M, occ = new Map()
+  const gk = (x, z) => `${Math.floor(x / cell)},${Math.floor(z / cell)}`
+  const near = (x, z) => {
+    const gx = Math.floor(x / cell), gz = Math.floor(z / cell)
+    for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++)
+      for (const [ox, oz] of (occ.get(`${gx + dx},${gz + dz}`) || []))
+        if ((ox - x) ** 2 + (oz - z) ** 2 < DEDUP_M * DEDUP_M) return true
+    return false
+  }
+  const kept = []
+  for (const { t } of ranked) {
+    if (near(t.x, t.z)) {
+      deduped++
+      dedupedBySource[t.__source] = (dedupedBySource[t.__source] || 0) + 1
+      continue
+    }
+    const k = gk(t.x, t.z); (occ.get(k) || occ.set(k, []).get(k)).push([t.x, t.z])
+    kept.push(t)
+  }
+  return { trees: kept, perWell, deduped, dedupedBySource }
+}
+
 const SHAPE_TO_CATEGORY = {
   broad: 'broadleaf',
   conifer: 'conifer',
@@ -621,57 +683,15 @@ export async function bakeTrees({
   }
 
   const index = JSON.parse(await fs.readFile(indexPath, 'utf8'))
-  const park = { trees: [] }
-  for (const p of parkPaths) {
-    const layer = JSON.parse(await fs.readFile(p, 'utf8'))
-    // Is this well SURVEYED reality or INVENTED fill? It decides whether a tree
-    // on hardscape gets nudged (reality — our strips are guesses) or dropped
-    // (invention — it has no standing). The well declares itself via meta.kind;
-    // the canopy fill is the only invented layer, so its filename is the
-    // fallback for wells written before `kind` existed.
-    const kind = layer.meta?.kind
-      ?? (path.basename(p) === 'derived_trees.json' ? 'derived' : 'census')
-    // Provenance (Move 4): a finer label than __kind — the ORIGINATING well. The
-    // authored park is addressable on its own ('park' vs the fetched
-    // 'city-inventory'), so richer real species data can later supersede synthetic
-    // in exactly those spots. Declared by the well (meta.well) or read off the
-    // canonical filename; falls back to __kind for an unnamed well.
-    const source = layer.meta?.well ?? (SOURCE_BY_BASENAME[path.basename(p)] || kind)
-    for (const t of (layer.trees || [])) park.trees.push({ ...t, __kind: kind, __source: source })
-  }
+  const census = await readCensus(parkPaths)
+  const park = { trees: census.trees }
   // `mapPath` is null when this scene has no species routing of its own (warned
   // above). An empty map is the honest zero — `pickVariant` reads it through
   // optional chaining, so no routing simply means no preference.
   const speciesMap = mapPath ? JSON.parse(await fs.readFile(mapPath, 'utf8')) : { map: {} }
 
-  // ── Cross-well proximity dedup ────────────────────────────────────────────
-  // One physical trunk can appear in two wells (OSM's generic point AND Forest
-  // Park's species record; measured HPDM: 594/1319 Forest Park trees within 3m of
-  // an OSM point). Keep the richest record per DEDUP_M cell — greedy in source-
-  // rank order (real species > OSM position > synthetic). Near no-op when wells
-  // are already disjoint (LS: OSM was deduped vs city in scripts/14).
-  let deduped = 0
-  if (park.trees.length) {
-    const ranked = park.trees
-      .map((t, i) => ({ t, i, r: SOURCE_RANK[t.__source] ?? 2 }))
-      .sort((a, b) => b.r - a.r || a.i - b.i)   // richest first, stable
-    const cell = DEDUP_M, occ = new Map()
-    const gk = (x, z) => `${Math.floor(x / cell)},${Math.floor(z / cell)}`
-    const near = (x, z) => {
-      const gx = Math.floor(x / cell), gz = Math.floor(z / cell)
-      for (let dx = -1; dx <= 1; dx++) for (let dz = -1; dz <= 1; dz++)
-        for (const [ox, oz] of (occ.get(`${gx + dx},${gz + dz}`) || []))
-          if ((ox - x) ** 2 + (oz - z) ** 2 < DEDUP_M * DEDUP_M) return true
-      return false
-    }
-    const kept = []
-    for (const { t } of ranked) {
-      if (near(t.x, t.z)) { deduped++; continue }
-      const k = gk(t.x, t.z); (occ.get(k) || occ.set(k, []).get(k)).push([t.x, t.z])
-      kept.push(t)
-    }
-    park.trees = kept
-  }
+  // Cross-well dedup ran inside `readCensus` (above) — the census IS the union, deduped.
+  const deduped = census.deduped
 
   // ── Empirical DBH distribution — dress synthetic trees with a believable size ──
   // The same "derive from real, distribute over the rest" move we use for SPECIES
@@ -1357,7 +1377,8 @@ export async function bakeTrees({
     console.log(`[bake-trees] ${variantUseCount.size} unique variants in use`)
     console.log(`[bake-trees] → ${outPath}`)
   }
-  return { count: instances.length, unmatched, forbidden: totalForbidden, forbiddenCounts, nudged: totalNudged, uniqueVariants: variantUseCount.size, outPath }
+  return { count: instances.length, unmatched, forbidden: totalForbidden, forbiddenCounts, nudged: totalNudged, uniqueVariants: variantUseCount.size, outPath,
+    candidates: census.perWell.reduce((n, w) => n + w.count, 0), perWell: census.perWell, deduped, dedupedBySource: census.dedupedBySource, dissolved }
 }
 
 // CLI entry: only run when invoked directly (not when imported).
