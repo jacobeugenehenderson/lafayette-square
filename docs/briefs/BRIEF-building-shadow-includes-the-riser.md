@@ -7,7 +7,7 @@ evict-when: a building's shadow starts at the foot of its riser in every town, m
 
 # The building's shadow must include the riser
 
-**You are the dispatched agent. Name yourself — one word, yours.**
+**You are the dispatched agent. Name yourself — one word, yours, and NOT one already used.** Before taking a name, check it is unused in both the commit log and the docs: `n=YourName; git log --all --format=%B | grep -icw "$n"; grep -rliw "$n" --include='*.md' . | grep -v node_modules | head` — both must come back empty. ⛔ A repeated name (two agents called Tern) makes the record ambiguous.
 **Agent: FRESH** — nothing in the current windows carries this; a clean read of the shadow path is the point.
 
 ## The ask

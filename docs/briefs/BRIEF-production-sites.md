@@ -7,7 +7,7 @@ evict-when: Promote to Production puts a town on its own .online domain without 
 
 # Production sites — each town on its own .online domain
 
-**You are the dispatched agent. Name yourself — one word, yours.**
+**You are the dispatched agent. Name yourself — one word, yours, and NOT one already used.** Before taking a name, check it is unused in both the commit log and the docs: `n=YourName; git log --all --format=%B | grep -icw "$n"; grep -rliw "$n" --include='*.md' . | grep -v node_modules | head` — both must come back empty. ⛔ A repeated name (two agents called Tern) makes the record ambiguous.
 **Agent: FRESH** — the staging half was built by agents whose windows are closed; read what they left, don't recall it.
 
 ## The ask, and the rulings (Jacob, 2026-09-26)
