@@ -43,7 +43,7 @@ import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js
 import { writeIfChanged } from './io.js'
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
-import { conformAndRefine, findTJunctions } from './groundConformity.js'
+import { conformAndRefine, findTJunctions, ON_EDGE_M } from './groundConformity.js'
 import { requireExplicitMap } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
@@ -1040,6 +1040,57 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
     + `(${KEEP_OWN_SLOT.size} keeping their own slot, ${DOES_NOT_CUT.size} not cutting) in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)
 
+  // ⭐⭐ THE TOE — the bank is a STEP AT THE MAPPED SHORE (Jacob, 2026-09-26: the drawn water's edge IS the
+  // shoreline, and the revetment sits on it). The bed's shore vertices are shared with the land and stay at
+  // the land's height; its interior is held at the water's level (section 5, "THE BED NEVER RISES"). Without
+  // a line of held vertices close to the shore, the bank spanned the whole first triangle — measured on huron,
+  // run p50 22 m at 2° — dry sand standing ABOVE the water, and the waterline 22 m out. So each bed polygon is
+  // split into a hairline STRIP along its edge and the CORE inside it: the core's boundary is the toe, held at
+  // the water's level, one TOE_M from the shore. Both stay `bed` and are conformed as one mesh.
+  // TOE_M is a numerical width, not a town scale: the narrowest strip whose two edges the conformity pass
+  // keeps apart (it treats a vertex within ON_EDGE_M of an edge as ON it), with an order of magnitude to spare.
+  const TOE_M = 10 * ON_EDGE_M
+  {
+    const items = flattened.get('mat:bed')
+    if (items?.length) {
+      const { ClipperOffset, JoinType, EndType } = clipperLib
+      const out = []
+      let whole = 0
+      for (const it of items) {
+        const outer = Array.isArray(it) ? it : it?.outer
+        const holes = Array.isArray(it) ? [] : (it?.holes || [])
+        if (!outer || outer.length < 3) continue
+        const mine = new _Paths()
+        mine.push(_ringToPath(outer))
+        for (const h of holes) if (h?.length >= 3) mine.push(_ringToPath(h))
+        _Clipper.CleanPolygons(mine, 1)
+        const co = new ClipperOffset(2.0, 1)
+        co.AddPaths(mine, JoinType.jtMiter, EndType.etClosedPolygon)
+        const core = new _Paths()
+        co.Execute(core, -TOE_M * CLIP_SCALE)
+        const asItems = (tree) => {
+          const r = []
+          const walk = (node) => { for (const ch of node.Childs()) {
+            const ring = _pathToRing(ch.m_polygon)
+            if (ring.length >= 3) r.push({ outer: ring, holes: ch.Childs().map(h => _pathToRing(h.m_polygon)).filter(q => q.length >= 3) })
+            for (const h of ch.Childs()) walk(h) } }
+          walk(tree)
+          return r
+        }
+        if (!core.length) { out.push(it); whole++; continue }   // narrower than two toes: all shore, all draped
+        const cT = new _PolyTree(), sT = new _PolyTree()
+        const c1 = new _Clipper(); c1.AddPaths(core, _PolyType.ptSubject, true)
+        c1.Execute(_ClipType.ctUnion, cT, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)
+        const c2 = new _Clipper(); c2.AddPaths(mine, _PolyType.ptSubject, true); c2.AddPaths(core, _PolyType.ptClip, true)
+        c2.Execute(_ClipType.ctDifference, sT, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)
+        out.push(...asItems(cT), ...asItems(sT))
+      }
+      flattened.set('mat:bed', out)
+      console.log(`  [bake-ground] bed toe: ${items.length} bed polygon(s) → ${out.length} (core + shore strip, ${TOE_M} m)`
+        + (whole ? ` · ${whole} narrower than the strip, kept whole and fully draped` : ''))
+    }
+  }
+
   const planGroup = (kind, key) => {
     if (bakeLayerVis[groupLayerId(kind, key)] === false) return null
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
@@ -1324,8 +1375,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
           if (!d) continue
           const w0 = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (z - c[1])) / d
           const w1 = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (z - c[1])) / d
-          const tol = 1e-6   // on a shared water edge: either triangle answers the same body
-          if (w0 < -tol || w1 < -tol || w0 + w1 > 1 + tol) continue
+          // Inside, or within ON_EDGE_M of the triangle — the conformity pass's own definition of ON an edge
+          // (a toe vertex was measured 2 mm outside the raw water ring along a long straight shore on huron).
+          if (w0 < 0 || w1 < 0 || w0 + w1 > 1) {
+            const segD = (p, q) => { const dx = q[0] - p[0], dz = q[1] - p[1], L2 = dx * dx + dz * dz
+              const t = L2 ? Math.max(0, Math.min(1, ((x - p[0]) * dx + (z - p[1]) * dz) / L2)) : 0
+              return Math.hypot(p[0] + t * dx - x, p[1] + t * dz - z) }
+            if (Math.min(segD(a, b), segD(b, c), segD(c, a)) > ON_EDGE_M) continue
+          }
           const h = w0 * a[2] + w1 * b[2] + (1 - w0 - w1) * c[2]
           if (y == null || h > y) y = h                    // under two bodies: the one drawn on top
         }

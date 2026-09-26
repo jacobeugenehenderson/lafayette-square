@@ -18,6 +18,8 @@
  *   · nothing under the water, and the land's edge is at or below the water → the water
  *     covers the meeting; closed, counted as `awash`.
  *   · nothing on the land side → OPEN in plan: the drawing has a hole at the shore.
+ * ⛔ And the waterline is the mapped shore: just inside the water (the walk's water-side sample), the bed
+ * must be under the sheet — dry sand there moves the visible shore out.
  * ⛔ And the bed stays UNDER its water: every bed vertex off the shore carries the height of the water
  * drawn over it and drapes no higher (bake-ground.js "THE BED NEVER RISES"); a bed with no ceiling fails.
  * ⛔ And first: the water must draw after every other ground group, or the ground under it paints
@@ -124,7 +126,7 @@ for (const dir of dirs) {
   }
 
   const st = m.stencil
-  const len = { rim: 0, closed: 0, awash: 0, open: 0 }, by = {}, opens = []
+  const len = { rim: 0, closed: 0, awash: 0, open: 0 }, by = {}, opens = [], dry = { len: 0, first: null }
   for (const g of water) {
     const [P, I] = view(g)
     const WY = P[1]
@@ -148,6 +150,7 @@ for (const dir of dirs) {
         const bed = groundAt(x - nx * ACROSS, z - nz * ACROSS)
         let gap
         if (!land) gap = Infinity                                  // the drawing ends at the water
+        else if (bed && bed.y > WY + 1e-6) { dry.len += seg; dry.first ||= { x, z, h: bed.y - WY }; gap = 0 }   // closed, but the bed shows through
         else if (bed) gap = 0                                      // one conformed mesh on both sides
         else gap = land.y > WY ? land.y - WY : 0
         if (gap === 0) {
@@ -183,6 +186,14 @@ for (const dir of dirs) {
     continue
   }
   const km = v => (v / 1000).toFixed(2)
+  // ⛔ THE WATERLINE IS THE MAPPED SHORE (Jacob, 2026-09-26). Just inside the water the bed must be UNDER the
+  // sheet; where it stands above it, dry sand shows inside the drawn water and the shore reads as moved out.
+  if (dry.len) {
+    console.error(`⛔ ${look}: the bed stands ABOVE the water just inside the mapped shore along ${km(dry.len)} km — `
+      + `first at (${dry.first.x.toFixed(1)}, ${dry.first.z.toFixed(1)}), ${dry.first.h.toFixed(2)} m proud, ${ACROSS.toFixed(2)} m inside`)
+    fail++
+    continue
+  }
   const walked = len.closed + len.awash + len.open
   const closedBy = Object.entries(by).sort((p, q) => q[1] - p[1]).map(([id, v]) => `${id} ${km(v)}`).join(' · ') || 'none'
   if (!len.open) {
