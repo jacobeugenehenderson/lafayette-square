@@ -190,6 +190,10 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone, on
           gltf = await loadGltf(sp.glbUrl)
           const rM = measureCanopyRadius(gltf.scene)
           const prep = prepareOverheadBands(gltf.scene, atlas.treeMaterial, { canopyRadiusM: rM })
+          // ⛔ A capture that cannot be PREPARED is a FAILURE, not a skip. `if (prep)` alone counted
+          // it as neither ok nor fail, so the species vanished from the result and the Grove's
+          // "no impostor" banner (which lists failedNames) could never name it. (2026-09-25)
+          if (!prep) throw new Error('capture could not be prepared (no scene or no atlas material) — nothing was shot')
           if (prep) {
             // Bind THIS species' atlas config to the shared material for its capture.
             // The mesh path does this per-draw (SubmeshInstances#onBeforeRender →
