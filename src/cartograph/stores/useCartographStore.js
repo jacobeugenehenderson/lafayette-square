@@ -1977,7 +1977,7 @@ const useCartographStore = create((set, get) => ({
       if (get().scene !== sc) return
       const before = get().centerlineData
       set({ sceneRibbons: fresh, sceneMap: { scene: sc, map }, mapRefreshing: true })
-      try { await get()._loadCenterlines() } finally { set({ mapRefreshing: false }) }
+      try { await get()._loadCenterlines({ design: false }) } finally { set({ mapRefreshing: false }) }
       // the loader swallows its own errors (it logs them) — so ask whether it actually rebuilt from the fresh copy
       if (get().scene === sc && (get().centerlineData === before || !get()._designHydrated)) why = 'the scene loader did not rebuild from them (see the console)'
     } catch (e) { why = e.message || String(e) }
@@ -2319,7 +2319,7 @@ const useCartographStore = create((set, get) => ({
   // Altadena load (9.1s + 5.6s). An in-flight promise is the only thing that can
   // dedupe callers that race the await. Sequential calls (a Looks reload, the
   // post-bake settle) still re-run normally — this only collapses OVERLAP.
-  _loadCenterlines: async () => {
+  _loadCenterlines: async (opts) => {
     // ⛔ SCENE-KEYED. _loadCenterlinesImpl captures `get().scene` at its start, so
     // an unkeyed in-flight promise is a SCENE BLEED: switch hoods while a load is
     // still running (Altadena takes 20-70s — near-certain) and the new scene's
@@ -2332,7 +2332,7 @@ const useCartographStore = create((set, get) => ({
     const scene = get().scene
     if (_clInFlight && _clInFlight.scene === scene) return _clInFlight.promise
     const promise = (async () => {
-      try { return await get()._loadCenterlinesImpl() } finally {
+      try { return await get()._loadCenterlinesImpl(opts) } finally {
         // Only clear if we're still the current in-flight — a scene switch may have
         // replaced us, and clearing then would strand the newer load's dedupe.
         if (_clInFlight && _clInFlight.promise === promise) _clInFlight = null
@@ -2341,7 +2341,10 @@ const useCartographStore = create((set, get) => ({
     _clInFlight = { scene, promise }
     return promise
   },
-  _loadCenterlinesImpl: async () => {
+  // opts.design === false: rebuild the map only and keep the in-memory design — the post-bake refresh. The bake read
+  // the design this store flushed, so re-hydrating it only hands blockCustoms a new identity and re-runs sectionOpen
+  // (15–25 s on huron) on top of the run the bake's fresh shape.json already causes.
+  _loadCenterlinesImpl: async (opts) => {
     try {
       const scene = get().scene
       // ⛔ STALE-SCENE GUARD. Every set() below lands AFTER an await. Altadena takes
@@ -2567,6 +2570,7 @@ const useCartographStore = create((set, get) => ({
         svOriginals: originals,
         corridorByIdx,
       })
+      if (opts?.design === false) return
       // Kick off the active Look's design hydrate. setActiveLook needs the
       // Looks index loaded so it can validate the id, so chain through that.
       await get()._loadLooks()
