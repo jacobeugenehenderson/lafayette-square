@@ -63,9 +63,18 @@ const DEFAULT_LOOK = 'lafayette-square'
  * NOT a look — it is a deep link into the SPA (`/legal`, `/preview`) — and treating it as a
  * town would resolve every route to a missing installation and fall back loudly for no
  * reason. ⭐ Validating also means this needs no list of towns and no edit per pour.
+ *
+ * ⭐⭐ A PRODUCTION HOST NAMES ITS TOWN, AND NOTHING ON THE URL MAY OVERRIDE IT (2026-09-26).
+ * `provincetown.online/` has no path segment, so without this it would take the bare-domain
+ * default and draw Lafayette Square. The production Worker resolves the town from the HOST
+ * and writes it into `<meta name="ward-look">`; it wins over `?look=` because a town's own
+ * domain showing another town (`provincetown.online/?look=huron`) is the bleed Layer 0 q2
+ * forbids, reached by a query string.
  */
 function readLookParam() {
   try {
+    const host = document.querySelector('meta[name="ward-look"]')?.getAttribute('content')
+    if (host) return host
     const q = new URLSearchParams(window.location.search).get('look')
     if (q) return q
     const seg = window.location.pathname.split('/').filter(Boolean)[0]

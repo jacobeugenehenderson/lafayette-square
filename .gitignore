@@ -312,6 +312,7 @@ scratch/AB.html
 # Read by the Publish button (`needsRebuild`) to skip a full vite build when the
 # source has not moved since. Per-machine state, never shared.
 .player-published
+.promote-host.json
 
 # ──────────────────────────────────────────────────────────────────────────
 # ⛔⛔ PHOTOGRAPH LIBRARIES ARE NOT SOURCE, AND GIT IS NOT AN ARCHIVE.

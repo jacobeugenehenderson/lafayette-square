@@ -33,7 +33,7 @@ export default {
   },
 
   name: 'Huron',
-  domain: null,   // no deploy target yet
+  domain: null,   // ⛔ NOT A SOURCE (2026-09-26): the production domain lives in Operations (src/lib/townOrigin.js).
 
   contentRoot: 'content/huron/',
 

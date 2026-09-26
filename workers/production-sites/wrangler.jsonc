@@ -1,0 +1,25 @@
+{
+  // ⛔⛔ EVERY TOWN'S OWN PRODUCTION SITE — one Worker, towns resolved from the HOST.
+  //
+  // Sibling of `workers/staging-sites` and the same shape (BRIEF-production-sites): one Worker,
+  // no table of towns, no fallback across towns. The town is read from `hosts/<host>.json`,
+  // which Promote writes, so a new town needs a record and a domain binding — never an edit here.
+  //
+  // ⛔ NO `routes` HERE, ON PURPOSE. A town's `.online` domain (and its `www.`) is bound to this
+  // Worker as a Custom Domain, one operator step per town, approved by Jacob (it is a Cloudflare
+  // change). Listing the domains in this file would put the list of towns back into the one
+  // place the design keeps it out of, and make town #N a deploy. ▶ OPERATIONS.md § Production sites.
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "theward-production-sites",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "observability": { "enabled": true },
+  // ⛔ No second ungated address for the same towns (same reasoning as staging-sites; SECURITY F-18).
+  "workers_dev": false,
+  "preview_urls": false,
+  "r2_buckets": [
+    // The one bucket. Production reads the un-prefixed keys: `baked/<look>/`, `live/<look>/`,
+    // `player/<map>/` (each town's pinned player), `hosts/<host>.json`.
+    { "binding": "ASSETS", "bucket_name": "theward-assets" }
+  ]
+}

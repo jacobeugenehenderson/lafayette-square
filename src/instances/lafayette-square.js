@@ -41,7 +41,10 @@ export default {
   // Display name — the neighborhood name (varies per installation).
   name: 'Lafayette Square',
 
-  // Deploy-side hostname.
+  // ⚠️ LEGACY — the ONLY instance that still declares a domain, and the line is the switch: while it
+  // is here, this town's public URLs and its Promote row read lafayette-square.com (GitHub Pages,
+  // from `main`), and Promote refuses it. Its cutover to lafayettesquare.online (with .com 301ing to
+  // it, ruled 2026-09-26) DELETES this line; from then its domain comes from Operations like every town.
   domain: 'lafayette-square.com',
 
   // Content asset root (§5.1.2), relative to BASE_URL. LS is the legacy install —

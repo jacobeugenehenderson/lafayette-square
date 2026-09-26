@@ -22,6 +22,11 @@
  * the branch push would recreate, so the STAGING half is now the inverse assertion: the
  * publish endpoint must NOT push to a staging branch. The PROD half is unchanged and still
  * derived from the workflow that actually runs.
+ * ⛔⛔ AND NEITHER DOES PRODUCTION (2026-09-26, BRIEF-production-sites). Promote used to push
+ * the branch to `main`, which deployed ONE site for every town. It now pins each town's player
+ * and switches that town's host record in R2. So the PROD half is the same inverse assertion:
+ * no endpoint in `serve.js` runs `git push` at all. The `main` → `deploy.yml` path survives only
+ * for Lafayette Square's legacy site, and nothing in the panel reaches it.
  *
  *   node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs
  */
@@ -32,30 +37,13 @@ const ROOT = path.join(import.meta.dirname, '..')
 const read = (p) => readFileSync(path.join(ROOT, p), 'utf8')
 
 const serve = read('cartograph/serve.js')
-const grab = (name) => {
-  const m = serve.match(new RegExp(`const ${name} = '([^']+)'`))
-  if (!m) { console.error(`⛔ PIN DRIFT — cartograph/serve.js no longer declares ${name}. Update this check.`); process.exit(2) }
-  return m[1]
-}
-const PROD = grab('PROD_BRANCH')
-
-// What each workflow actually deploys from.
-const wfDir = 'github-workflows-placeholder'
-const deploysFrom = {}
-for (const f of readdirSync(path.join(ROOT, '.github/workflows'))) {
-  if (!/\.ya?ml$/.test(f)) continue
-  const y = read(path.join('.github/workflows', f))
-  const name = (y.match(/^name:\s*(.+)$/m) || [, f])[1].trim()
-  const br = y.match(/branches:\s*\[([^\]]+)\]/)
-  if (br) deploysFrom[f] = { name, branches: br[1].split(',').map(s => s.trim().replace(/['"]/g, '')) }
-}
-void wfDir
+// Executable lines only: the endpoints' own comments NAME the retired pushes, on purpose.
+const code = serve.split('\n').filter(l => !/^\s*(\/\/|\*)/.test(l)).join('\n')
 
 let failed = 0
-console.log('The publish gate must push where the deploy listens\n')
-// ── STAGING: the publish endpoint must not push a branch for it any more.
+console.log('The publish gate must not push a branch — both targets upload to R2\n')
 {
-  const pushesStaging = /git push origin \$\{branch\}:\$\{STAGING_BRANCH\}/.test(serve)
+  const pushesStaging = /git push origin \$\{branch\}:\$\{STAGING_BRANCH\}/.test(code)
   if (pushesStaging) {
     failed++
     console.error("  ⛔ staging  cartograph/serve.js still pushes a STAGING BRANCH. Staging is now a direct")
@@ -66,16 +54,15 @@ console.log('The publish gate must push where the deploy listens\n')
     console.log("  ✅ staging  no branch push — publish uploads to R2 directly (staging.theward.online/<map>/)")
   }
 }
-
-for (const [role, branch] of [['prod', PROD]]) {
-  const hit = Object.entries(deploysFrom).find(([, w]) => w.branches.includes(branch))
-  if (hit) {
-    console.log(`  ✅ ${role.padEnd(8)} serve.js pushes to '${branch}' → deployed by ${hit[0]} ("${hit[1].name}")`)
-  } else {
+{
+  const pushes = code.match(/git push[^`'"]*/g) || []
+  if (pushes.length) {
     failed++
-    console.error(`  ⛔ ${role.padEnd(8)} serve.js pushes to '${branch}' — NO workflow deploys that branch.`)
-    console.error(`       A publish will report success and change nothing. Workflows deploy from:`)
-    for (const [f, w] of Object.entries(deploysFrom)) console.error(`         ${f}: ${w.branches.join(', ')}`)
+    console.error(`  ⛔ prod     cartograph/serve.js runs \`${pushes[0]}\`. Production is per-town now`)
+    console.error("             (workers/production-sites, hosts/<domain>.json); a branch push ships ONE site")
+    console.error("             for every town and, on 2026-09-26, 648 commits of unreviewed trunk to main.")
+  } else {
+    console.log("  ✅ prod     no branch push — promote pins the town's player and switches its host record")
   }
 }
 process.exit(failed ? 2 : 0)

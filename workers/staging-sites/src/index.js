@@ -60,6 +60,19 @@ export default {
     const url = new URL(request.url)
     const parts = url.pathname.replace(/^\/+/, '').split('/')
     const map = parts.shift() || ''
+    if (!/\/staging\/$/.test(env.SLAB_BASE || '')) {
+      // ⛔ A preview pointed at the production keys is not a preview (the 2026-09-03 bug); this
+      // is the guard `publish-player-to-staging.mjs` used to hold at build time.
+      return new Response(`SLAB_BASE must end in "/staging/" — got "${env.SLAB_BASE}". Fix wrangler.jsonc.\n`,
+        { status: 500, headers: { 'content-type': 'text/plain; charset=utf-8' } })
+    }
+
+    // ── What this Worker tells a page about its slab. `publish-player-to-staging.mjs` asks
+    // before uploading a runtime player: a Worker that cannot answer (an older deploy) would
+    // serve that player with no tag, and every town's staging site would refuse to load.
+    if (map === '_slab-base') {
+      return new Response(env.SLAB_BASE + '\n', { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } })
+    }
 
     // ── The shared player. One prefix, every town's bytes.
     if (map === PLAYER_SEGMENT) {
@@ -131,6 +144,37 @@ export default {
  * this file still holds no list of towns.
  * ⛔ A map with no entry gets NEUTRAL tags (its id, no image), never Lafayette Square's.
  */
+import { decideProductionDomain } from '../../../src/lib/productionDomain.js'
+
+/**
+ * ⭐⭐ THE TOWN'S PRODUCTION DOMAIN, ON ITS STAGING PAGE (Jacob, 2026-09-26). Every public URL the
+ * player builds — the check-in and claim QR codes, place and bulletin shares — takes the TOWN'S
+ * domain (`src/lib/townOrigin.js`), so a claim card printed while testing on staging carries
+ * `provincetown.online`, never this Worker's address. The domain's one home is Operations; this
+ * asks it with the same read-only service token and the same rule Promote uses.
+ * ⛔ No answer ⇒ no tag, and the player draws no QR and no share URL. Never a guess.
+ */
+const _domains = new Map()
+async function townDomain(env, map) {
+  const hit = _domains.get(map)
+  if (hit && Date.now() - hit.at < 300_000) return hit.d
+  let d
+  if (!env.OPS_ACCESS_CLIENT_ID || !env.OPS_ACCESS_CLIENT_SECRET) {
+    d = { domain: null, why: 'this Worker has no Operations service token (wrangler secret OPS_ACCESS_CLIENT_ID / _SECRET)' }
+  } else {
+    try {
+      const r = await fetch(`${env.OPERATIONS_URL}/api/production-domain/${encodeURIComponent(map)}`, {
+        headers: { 'CF-Access-Client-Id': env.OPS_ACCESS_CLIENT_ID, 'CF-Access-Client-Secret': env.OPS_ACCESS_CLIENT_SECRET } })
+      let body = null
+      try { body = await r.json() } catch { /* Access answers a refused token with HTML */ }
+      d = r.ok || body?.error ? decideProductionDomain(map, body) : { domain: null, why: `Operations answered ${r.status}` }
+    } catch (e) { d = { domain: null, why: `could not reach Operations: ${e.message}` } }
+  }
+  if (!d.domain) console.error(`[staging-sites] no production domain for "${map}": ${d.why}`)
+  _domains.set(map, { d, at: Date.now() })
+  return d
+}
+
 let _towns = null, _townsAt = 0
 async function townsIndex(env) {
   if (_towns && Date.now() - _townsAt < 60_000) return _towns
@@ -145,11 +189,19 @@ function emojiIcon(glyph) {
 }
 async function shareCard(response, map, url, env) {
   const t = (await townsIndex(env))[map] || null
+  const { domain } = await townDomain(env, map)
   const title = t?.title || map
   const image = t?.ogImage || null
   const icon = t?.faviconUrl || (t?.mark ? emojiIcon(t.mark) : null)
   const setOr = (value) => ({ element(el) { value ? el.setAttribute('content', value) : el.remove() } })
   return new HTMLRewriter()
+    // ⭐ WHERE THE SLAB IS — the published player is built with `VITE_ASSET_BASE=runtime` and
+    // reads this (`src/lib/bakedUrl.js`), so the same bytes can be promoted to a town's domain.
+    // ⛔ `SLAB_BASE` is required: without it the player refuses to load rather than guess.
+    .on('head', { element(el) {
+      el.prepend(`<meta name="ward-asset-base" content="${env.SLAB_BASE}" />`
+        + (domain ? `<meta name="ward-domain" content="${domain}" />` : ''), { html: true })
+    } })
     .on('title', { element(el) { el.setInnerContent(title) } })
     .on('meta[property="og:title"]', setOr(title))
     .on('meta[name="twitter:title"]', setOr(title))

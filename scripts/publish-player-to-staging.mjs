@@ -30,7 +30,8 @@
  * under one roof, which is the shape `bakedUrl.js` argues for — "pouring town #2 needs no
  * code change and no entry in any table." ⛔ Neither script may grow a list of towns.
  */
-import { readdirSync, statSync, existsSync, rmSync, writeFileSync } from 'node:fs'
+import { readdirSync, statSync, existsSync, rmSync, writeFileSync, readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { join, relative, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile, execFileSync } from 'node:child_process'
@@ -57,6 +58,7 @@ const MIME = {
   '.wasm': 'application/wasm', '.txt': 'text/plain; charset=utf-8', '.map': 'application/json',
 }
 const mb = (b) => `${(b / 1048576).toFixed(1)} MB`
+const md5Of = (abs) => createHash('md5').update(readFileSync(abs)).digest('hex')
 
 /**
  * The newest mtime anywhere under the player's sources. ⛔ Recursive: a directory's own
@@ -154,18 +156,21 @@ async function alreadyThere(files) {
   console.log(skipBuild ? 'build    SKIPPED (--no-build) — sizing the dist already on disk'
     : `build    npm run build -- --base=${PLAYER_BASE}`)
   if (!skipBuild) {
-    // ⛔⛔ THE SLAB BASE IS NOT OPTIONAL AND HAS NO FALLBACK. Unset, `bakedUrl.js` resolves
-    // ASSET_BASE to BASE_URL — here `/_player/` — and the player would look for every
-    // town's slab inside the player prefix, where it is deliberately not uploaded. That
-    // is `staging.yml`'s own doctrine, which this build replaces and must keep: "an unset
-    // variable must instead break staging's slab visibly, because a broken preview is
-    // recoverable in a minute and a preview that lies about being a preview is not."
-    // ⛔ And it must carry the STAGING prefix: pointing a preview at the production keys
-    // is the 2026-09-03 bug that put a pour on lafayette-square.com with no gate.
-    const assetBase = process.env.VITE_ASSET_BASE_STAGING || 'https://assets.theward.online/staging/'
-    if (!/\/staging\/$/.test(assetBase)) {
-      throw new Error(`VITE_ASSET_BASE_STAGING must end in "/staging/" — got "${assetBase}". `
-        + 'A preview pointed at the production keys is not a preview.')
+    // ⛔⛔ THE SLAB BASE IS DECIDED BY THE SITE, NOT THE BUILD (2026-09-26). The player is built
+    // with `VITE_ASSET_BASE=runtime` and reads its slab address from the page's
+    // `<meta name="ward-asset-base">` — staging's Worker names the staging keys, a town's
+    // production Worker names its own domain. That is what lets Promote ship THESE bytes, the
+    // ones checked on staging, rather than a second build nobody looked at.
+    // ⛔ It keeps `staging.yml`'s doctrine rather than dropping it: a runtime build served with no
+    // tag THROWS (`src/lib/bakedUrl.js#runtimeBase`) — it never guesses an environment.
+    // ⛔ This used to compile `…/staging/` in and refuse anything else; that guard now lives in
+    // the staging Worker's `SLAB_BASE`, which is the only thing that says "staging" to the page.
+    const assetBase = 'runtime'
+    const probe = await fetch('https://staging.theward.online/_slab-base', { cache: 'no-store' }).catch((e) => ({ ok: false, status: e.message }))
+    const said = probe.ok ? (await probe.text()).trim() : null
+    if (!said || !/\/staging\/$/.test(said)) {
+      throw new Error(`the staging Worker does not tell pages where the slab is (/_slab-base → ${said ?? probe.status}). `
+        + 'A runtime player served by it would refuse to load for EVERY town. Deploy workers/staging-sites first.')
     }
     console.log(`slab     ${assetBase}`)
     const { stdout, stderr } = await execFileAsync('npm',
@@ -191,7 +196,7 @@ async function alreadyThere(files) {
   }
   console.log(`upload   ${pending.length} files, ${mb(pending.reduce((s, f) => s + f.bytes, 0))} → ${BUCKET}/${PLAYER_PREFIX}`)
   if (dryRun) { console.log('\n--dry-run: nothing uploaded.'); return }
-  if (!pending.length) { console.log('\n✅ the published player is already current'); return }
+  if (!pending.length) console.log('already current — no player file changed')
 
   let done = 0
   const queue = [...pending]
@@ -201,18 +206,6 @@ async function alreadyThere(files) {
       if (++done % 25 === 0) console.log(`         ${done}/${pending.length}`)
     }
   }))
-  // ⛔⛔ STAMP WHAT WAS BUILT, IN THE BUCKET — the panel cannot otherwise know.
-  // The Publish row answers "is the site showing my work?" by comparing the live slab's
-  // `bakedAt` to the local one. That measures the MAP DATA and says nothing about the
-  // player, so a code-only publish left the button present-tense forever and the operator
-  // with no way to tell whether staging had their fix. This marker is the missing half:
-  // the newest source mtime the published build was made from, written where the site is,
-  // so the answer is read off the artifact rather than remembered by this machine.
-  const marker = { builtAt: new Date().toISOString(), srcMtimeMs: newestSrcMtime(), files: files.length }
-  const tmp = join(REPO_ROOT, 'dist', 'build.json')
-  writeFileSync(tmp, JSON.stringify(marker, null, 2))
-  await put({ abs: tmp, rel: 'build.json' })
-  console.log(`stamp    build.json · srcMtime ${new Date(marker.srcMtimeMs).toISOString()}`)
 
   // ⭐ THE SHARE CARD, per town, for crawlers that never run JavaScript (SMS/iMessage/social).
   // The worker serves ONE index.html whose static tags are Lafayette Square's; it rewrites
@@ -226,10 +219,40 @@ async function alreadyThere(files) {
     towns[m] = { title: b.title || t.name || null, description: t.profile?.tagline || null,
       ogImage: b.ogImage || null, faviconUrl: b.faviconUrl || null, mark: b.mark || null, markSvg: b.markSvg || null }
   }
-  const townsTmp = join(REPO_ROOT, 'dist', 'towns.json')
+  const townsTmp = join(DIST, 'towns.json')
   writeFileSync(townsTmp, JSON.stringify(towns, null, 2))
-  if (!dryRun) await put({ abs: townsTmp, rel: 'towns.json' })
-  console.log(`towns    towns.json · ${Object.keys(towns).join(', ')}${dryRun ? ' (dry-run, not uploaded)' : ''}`)
+  await put({ abs: townsTmp, rel: 'towns.json' })
+  console.log(`towns    towns.json · ${Object.keys(towns).join(', ')}`)
+
+  // ⭐⭐ THE MANIFEST — every byte of THIS build, by name and MD5. Promote copies a town's pinned
+  // production player from exactly this list and checks each object against it
+  // (`scripts/promote-player-to-prod.mjs`), so what reaches a town's domain is what was checked
+  // here — never "whatever staging/player/ holds by then", which a later publish could change.
+  // ⛔ Written AFTER every file it names is up, and before the stamp, so a manifest never names a
+  // file the bucket does not have.
+  const manifest = { builtAt: new Date().toISOString(), assetBase: 'runtime',
+    files: [...files.map((f) => f.abs), townsTmp].map((abs) => ({
+      rel: relative(DIST, abs).split('\\').join('/'), bytes: statSync(abs).size, md5: md5Of(abs) })) }
+  const manTmp = join(DIST, 'manifest.json')
+  writeFileSync(manTmp, JSON.stringify(manifest))
+  await put({ abs: manTmp, rel: 'manifest.json' })
+  console.log(`manifest manifest.json · ${manifest.files.length} files`)
+
+  // ⛔⛔ STAMP WHAT WAS BUILT, IN THE BUCKET — the panel cannot otherwise know. LAST, because it
+  // is what says "this build is complete".
+  // The Publish row answers "is the site showing my work?" by comparing the live slab's
+  // `bakedAt` to the local one. That measures the MAP DATA and says nothing about the
+  // player, so a code-only publish left the button present-tense forever and the operator
+  // with no way to tell whether staging had their fix. This marker is the missing half:
+  // the newest source mtime the published build was made from, written where the site is,
+  // so the answer is read off the artifact rather than remembered by this machine.
+  // ⭐ `builtAt` is shared with the manifest: it is the build's NAME, and Promote carries it.
+  const marker = { builtAt: manifest.builtAt, srcMtimeMs: newestSrcMtime(), files: files.length,
+    assetBase: 'runtime', manifestMd5: md5Of(manTmp) }
+  const tmp = join(DIST, 'build.json')
+  writeFileSync(tmp, JSON.stringify(marker, null, 2))
+  await put({ abs: tmp, rel: 'build.json' })
+  console.log(`stamp    build.json · srcMtime ${new Date(marker.srcMtimeMs).toISOString()}`)
 
   console.log(`\n✅ player published — every town at https://staging.theward.online/<map>/`)
 })().catch((e) => { console.error('\n⛔ publish FAILED:', e.message); process.exit(1) })

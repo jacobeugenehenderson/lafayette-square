@@ -6,6 +6,7 @@ import useLocalStatus from '../hooks/useLocalStatus'
 import useCamera from '../hooks/useCamera'
 import AvatarCircle from './AvatarCircle'
 import { INSTANCE } from '../instance.js'
+import { townOrigin } from '../lib/townOrigin.js'
 
 // Two-level bulletin board: groups → sub-sections
 // Sub-section IDs are stable (existing posts keep their section ID)
@@ -1175,7 +1176,8 @@ export default function BulletinModal() {
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {
-              const shareText = `Check out the Bulletin Board in ${INSTANCE.name}!\nhttps://${INSTANCE.domain}/bulletin`
+              const origin = townOrigin()
+              const shareText = `Check out the Bulletin Board in ${INSTANCE.name}!${origin ? `\n${origin}/bulletin` : ''}`
               if (navigator.share) {
                 navigator.share({ text: shareText }).catch(() => {})
               } else {

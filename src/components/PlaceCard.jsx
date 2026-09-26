@@ -28,6 +28,7 @@ import { useCodeDesk } from './CodeDeskModal'
 import { loadInstanceData } from '../data/loadInstanceData.js'
 import { resolveBuildingPosition } from '../lib/buildingPosition'
 import { assetUrl } from '../lib/assetUrl.js'
+import { townOrigin } from '../lib/townOrigin.js'
 
 // Facade photo lookup: building_id -> { image path, description }
 // facade_mapping loads via the seam; place cards open long after it resolves,
@@ -2324,10 +2325,12 @@ function QrTab({ listingId, buildingId, listingName, isAdmin, isResidential, isH
   }, [])
 
   useEffect(() => {
-    const vanity = `https://${INSTANCE.domain}`
+    const vanity = townOrigin()
     let cancelled = false
 
     async function loadQrs() {
+      // ⛔ No town domain ⇒ no QR. A code printed onto a card cannot be corrected later.
+      if (!vanity) { setLoading(false); return }
       // 1. Generate plain QR instantly (client-side, no network)
       const tUrl = `${vanity}/checkin/${qrId}`
       setTownieUrl(tUrl)
@@ -4445,9 +4448,9 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
         <button
           onClick={() => {
             const typeLabel = hasListingInfo ? 'place' : 'house'
-            const vanity = `https://${INSTANCE.domain}`
-            const placeUrl = listingId ? `${vanity}/place/${listingId}` : vanity
-            const shareText = `Check out this ${typeLabel} in ${INSTANCE.name}!\n${placeUrl}`
+            const vanity = townOrigin()
+            const placeUrl = vanity ? (listingId ? `${vanity}/place/${listingId}` : vanity) : null
+            const shareText = `Check out this ${typeLabel} in ${INSTANCE.name}!${placeUrl ? `\n${placeUrl}` : ''}`
 
             if (navigator.share) {
               navigator.share({ text: shareText }).catch(() => {})

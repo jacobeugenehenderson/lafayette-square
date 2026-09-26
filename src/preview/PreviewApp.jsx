@@ -876,18 +876,20 @@ function PublishPanel({ lookId }) {
   }
 
   async function promoteProd() {
-    if (!window.confirm(`Promote the current staging build to PRODUCTION (${INSTANCE.domain})?`)) return
+    // ⭐ The address is the one the server derived for THIS look, from Operations — never the
+    // page's own INSTANCE, which is whatever town Preview happens to be showing.
+    const to = status.sites?.prod?.url
+    if (!to) { setMsg({ kind: 'err', text: status.sites?.prod?.why || 'no production address' }); return }
+    if (!window.confirm(`Promote this look to PRODUCTION at ${to}?\n\nOnly this town changes. Its player is the build now on staging.`)) return
     setBusy('prod'); setMsg(null)
     try {
       const r = await fetch(`${API}/promote`, { method: 'POST' })
       const data = await r.json()
       if (!r.ok || data.error) throw new Error(data.error || 'promote failed')
-      // ⚠️ Success text is SET but never rendered (the panel shows `kind === 'err'` only, by
-      // the note at the bottom of the panel). Kept accurate rather than "fixed": the slab is
-      // the half that changes what a visitor sees, and a slab-only promotion (0 commits) is a
-      // complete shipment, not a no-op. The drawer is where that detail is actually read.
-      setMsg({ kind: 'ok', text: `Promoted to prod · slab shipped${data.promoted ? ` · ${data.promoted} commit${data.promoted === 1 ? '' : 's'}` : ''}` })
-      setDeploys(prev => ({ ...prev, prod: { status: 'building', bakedAt: data.bakedAt, url: data.prodUrl } }))
+      // ⛔ `ok` is the DOMAIN's answer, not ours: the server asks the town's own address which
+      // town and which pour it serves. Shipped-but-not-serving comes back as an error with the
+      // reason, so a site whose DNS has not settled never reads as promoted.
+      setDeploys(prev => ({ ...prev, prod: { status: 'ready', bakedAt: data.bakedAt, url: data.prodUrl } }))
       await load()
     } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
     setBusy(null)
@@ -926,6 +928,7 @@ function PublishPanel({ lookId }) {
     try {
       const pub = await (await fetch(`${API}/publish`, { method: 'POST' })).json()
       if (pub.error) throw new Error(pub.error)
+      // ⛔ UNREACHABLE WHILE DISABLED (see `sms.push` below). Kept so re-enabling is one line.
       const prom = await (await fetch(`${API}/promote`, { method: 'POST' })).json()
       if (prom.error) throw new Error(prom.error)
       setMsg({ kind: 'ok', text: 'Going live…' })
@@ -937,10 +940,6 @@ function PublishPanel({ lookId }) {
   }
 
   if (!status) return null   // probing or no backend → render nothing
-  // ⛔ GATING ONLY, NEVER DISPLAYED. Promote is disabled when there is nothing to
-  // promote; that is the one thing the git counts are still load-bearing for. The
-  // moment one of these reaches the operator's eye, this panel is leaking git again.
-  const aheadProd = status.vsProd?.ahead || 0
   // ⭐ ONE CONDITION DRIVES BOTH THE TENSE AND THE DISABLE (Jacob, 2026-08-31).
   // They used to be two: `disabled` keyed on `ahead === 0`, the LABEL on the live
   // site having finished building. So the moment after a promote the button was
@@ -975,9 +974,13 @@ function PublishPanel({ lookId }) {
   // STALE — an unstamped player is not a current one.
   const playerCurrent = status.player ? status.player.stale === false : false
   const stagingDone = clean && slabCurrent('staging') && playerCurrent
-  // ⛔ PROD IS UNCHANGED and still branch-based: `git push` to main → deploy.yml. Do not
-  // "harmonise" these two — they ship by different mechanisms on purpose.
-  const prodDone    = clean && aheadProd === 0 && slabCurrent('prod')
+  // ⭐ PROD SHIPS THE SAME TWO THINGS NOW (2026-09-26): the slab, and the player this town has
+  // PINNED — current when it is the build staging serves. No git: Promote no longer pushes a
+  // branch, so a commit count would never return to zero and the button would never rest.
+  // ⛔ A town still on legacy hosting (LS until its cutover) or with no address is not "done" —
+  // the button stays live and Promote refuses with the reason.
+  const prodDone    = clean && slabCurrent('prod') && status.prodPlayer?.current === true
+  const prodBlocked = !status.sites?.prod?.url || status.sites?.prod?.legacy
   const btn = (extra) => ({ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 6, ...extra })
   // ⛔ NO GIT IN THIS PANEL (Jacob, 2026-08-29: "the user shouldn't know about the git").
   // A branch name and a commit count answer a question the operator does not have. The
@@ -1024,7 +1027,10 @@ function PublishPanel({ lookId }) {
   // The SMS-hero multistate button: Capture → Push (straight to prod) → Live.
   const sms = {
     capture: { label: capturing ? 'Capturing…' : '📷 Capture SMS Hero', onClick: smsCapture, bg: 'rgba(168,85,247,0.18)', color: '#e9d5ff' },
-    push:    { label: '🚀 Push SMS Hero', onClick: smsPush, bg: 'rgba(74,222,128,0.20)', color: '#bbf7d0' },
+    // ⛔ OFF (Jacob, 2026-09-26) until per-town Promote is proven on Provincetown: it called
+    // /promote straight to production and polled a Lafayette-Square-only probe (`/og-deployed`).
+    // The capture still works and ships with the next Publish.
+    push:    { label: 'Push SMS Hero — off for now', onClick: null, bg: 'rgba(74,222,128,0.08)', color: '#9ca3af' },
     pushing: { label: 'Pushing…', onClick: null, bg: 'rgba(74,222,128,0.10)', color: '#bbf7d0' },
     live:    { label: '✓ SMS Hero live — recapture', onClick: () => { setSmsStage('capture'); setMsg(null) }, bg: 'rgba(96,165,250,0.16)', color: '#bfdbfe' },
   }[smsStage]
@@ -1045,7 +1051,7 @@ function PublishPanel({ lookId }) {
       </div>
       {status.unbaked && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Unbaked edits — Publish bakes first.</div>}
 
-      <button disabled={!!busy || capturing || smsStage === 'pushing'} onClick={sms.onClick}
+      <button disabled={!!busy || capturing || !sms.onClick} onClick={sms.onClick || undefined}
         style={btn({ background: sms.bg, color: sms.color, opacity: (busy || capturing || smsStage === 'pushing') ? 0.6 : 1 })}
         title="Snapshot the current slab view (center-square, no UI) as the SMS/link-preview image, then ship to prod">
         {sms.label}
@@ -1054,14 +1060,15 @@ function PublishPanel({ lookId }) {
         style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>
         {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : 'Publish to Staging'}
       </button>)}
-      {targetRow('prod', <button disabled={!!busy || prodDone} onClick={promoteProd}
-        style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || prodDone) ? 0.45 : 1, cursor: prodDone ? 'default' : 'pointer' })}>
+      {targetRow('prod', <button disabled={!!busy || prodDone || prodBlocked} onClick={promoteProd}
+        title={prodBlocked ? status.sites?.prod?.why : undefined}
+        style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || prodDone || prodBlocked) ? 0.45 : 1, cursor: (prodDone || prodBlocked) ? 'default' : 'pointer' })}>
         {busy === 'prod' ? 'Promoting…' : prodDone ? 'Promoted to Prod' : 'Promote to Prod'}
       </button>)}
       {/* ⛔ ERRORS ONLY. The success line was a second place the panel said what
           the button already says — and it said it in GIT: "Promoted to prod ·
           1032 commits" put a commit count in front of the operator, which the
-          note on `aheadProd` above forbids in as many words. A thing that
+          panel's no-git rule forbids in as many words. A thing that
           worked needs no receipt; a thing that failed does. */}
       {msg && msg.kind === 'err' && <div style={{ marginTop: 8, color: '#f87171', wordBreak: 'break-word' }}>{msg.text}</div>}
     </div>
@@ -1083,8 +1090,8 @@ function PublishPanel({ lookId }) {
         <Row k="dirty slab files" v={status.dirty?.length || 0} warn={!!status.dirty?.length} />
         {['staging', 'prod'].map((key) => {
           const d = deploys[key]
-          const ahead = (key === 'staging' ? status.vsStaging : status.vsProd)?.ahead || 0
-          const behind = (key === 'staging' ? status.vsStaging : status.vsProd)?.behind || 0
+          const ahead = key === 'staging' ? (status.vsStaging?.ahead || 0) : 0
+          const behind = key === 'staging' ? (status.vsStaging?.behind || 0) : 0
           // ⭐ 'behind' is the one that matters and the one git alone cannot see: the target's
           // live slab is not the slab on this disk. ⚠️ unknown ≠ current — an unreachable
           // site says so rather than borrowing the other row's answer, which is exactly the
@@ -1101,7 +1108,9 @@ function PublishPanel({ lookId }) {
           return (
             <div key={key} style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ color: '#e9e6e2', fontWeight: 700, marginBottom: 3 }}>{key}</div>
-              <Row k="code" v={ahead === 0 ? 'current' : `${ahead} commit${ahead === 1 ? '' : 's'} to ship`} warn={ahead > 0} />
+              {key === 'staging'
+                ? <Row k="code" v={ahead === 0 ? 'current' : `${ahead} commit${ahead === 1 ? '' : 's'} to ship`} warn={ahead > 0} />
+                : <Row k="player" v={status.prodPlayer?.current ? 'current' : (status.prodPlayer?.why || 'unknown')} warn={!status.prodPlayer?.current} />}
               {behind > 0 && <Row k="⚠ behind by" v={`${behind} — not a fast-forward`} warn />}
               <Row k="slab" v={slab} warn={bad} />
               <Row k="live built" v={d?.bakedAt ? new Date(d.bakedAt).toLocaleTimeString() : '—'} />

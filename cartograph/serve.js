@@ -17,6 +17,7 @@ import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
+import { productionDomainFor } from './operations-domain.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
 import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
@@ -157,7 +158,6 @@ function runCapture(cmd, opts = {}) {
 // commit on 2026-08-02 while the workflow had moved to `land-use-derivation`.
 // ▶ node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs
 const STAGING_BRANCH = 'land-use-derivation'
-const PROD_BRANCH = 'main'
 // Where the baked slab is actually served from. Must match the VITE_ASSET_BASE the
 // deployed builds use (.github/workflows/*.yml → repo variable).
 const ASSET_BASE_URL = process.env.ASSET_BASE || 'https://assets.theward.online/'
@@ -177,34 +177,48 @@ const ASSET_ENV_PREFIX = { prod: '', staging: 'staging/' }
 const STAGING_SITE_BASE = 'https://staging.theward.online/'
 // ⛔ LAFAYETTE SQUARE'S OWN DOMAIN, and it is used for ONE thing: the `/og-deployed`
 // probe, which asks whether the link-preview image is live on the production site.
-// ⛔ That probe is LS-shaped and stays boarded (H-18): another town's production site
-// is `instanceForMap(map).domain`, and most towns declare none.
+// ⛔ That probe is LS-shaped and serves only the "Push SMS Hero" button, which is OFF until
+// per-town Promote is proven. Every other town's production address comes from Operations.
 const LS_PROD_SITE_URL = 'https://lafayette-square.com/'
+
+/**
+ * ⭐ THE INSTRUMENT FOR PRODUCTION (BRIEF-production-sites "Can the instrument see it?"): ask the
+ * town's own domain which town it names and which pour it serves. Read off the SERVED page and
+ * slab, never off what Promote believes it wrote.
+ */
+async function proveProduction(domain, look, bakedAt) {
+  try {
+    const page = await fetch(`https://${domain}/?cb=${Date.now()}`, { cache: 'no-store' })
+    const html = await page.text()
+    if (!page.ok) return { ok: false, why: `https://${domain}/ answered ${page.status}: ${html.slice(0, 160).trim()}` }
+    const named = (html.match(/<meta name="ward-look" content="([^"]+)"/) || [])[1] || null
+    if (named !== look) return { ok: false, why: `https://${domain}/ names town "${named}", not "${look}"` }
+    const scene = await fetch(`https://${domain}/baked/${look}/scene.json?cb=${Date.now()}`, { cache: 'no-store' })
+    if (!scene.ok) return { ok: false, why: `its slab answered ${scene.status}` }
+    const served = (await scene.json()).bakedAt ?? null
+    if (bakedAt != null && String(served) !== String(bakedAt)) return { ok: false, why: `it serves the pour of ${served}, not ${bakedAt}` }
+    return { ok: true, look: named, bakedAt: served }
+  } catch (e) {
+    return { ok: false, why: `https://${domain}/ could not be reached: ${e.message}` }
+  }
+}
 
 /**
  * ⛔⛔ THE ADDRESS IS DERIVED FROM THE LOOK — NEVER PRINTED FROM A CONSTANT.
  *
  * `STAGING_SITE_URL` / `PROD_SITE_URL` were module constants, so the Publish panel
- * reported the SAME two addresses whatever town you shipped: press Publish on huron,
- * get told it went to `…/lafayette-square-staging/` and lives at `lafayette-square.com`.
- * Both wrong, and wrong in the worst available way — a truthful "published ✓" handing
- * back an address that belongs to another town (`CLAUDE.md` Layer 0 q2, and H-18 ③).
+ * reported the SAME two addresses whatever town you shipped — a truthful "published ✓"
+ * handing back an address that belongs to another town (`CLAUDE.md` Layer 0 q2, H-18 ③).
  *
- * ⭐ THE PROD ADDRESS IS THE TOWN'S OWN AUTHORED FACT. Every instance module declares
- * `domain` — LS `lafayette-square.com`, hipointe-demun a subpath, **huron `null`, "no
- * deploy target yet"**. So this reads the registry rather than deciding anything:
- * ⛔ a town with no domain has NO production address and this returns `null` with the
- * reason, because printing LS's domain for huron is the same bleed one layer up.
- *
- * ⭐ THE STAGING ADDRESS IS CORRECT TODAY AND ITS NAME IS WRONG, and those are two
- * different problems. Verified in a browser 2026-09-21: `…/?look=huron` renders huron
- * off its own slab. So the honest address is the shared site WITH the look named on it,
- * and `shared: true` discloses that the site's NAME is another town's (H-18 ①) instead
- * of implying this town has one of its own. ⛔ The `?look=` is always written, including
- * for Lafayette Square: the address must name the thing that was shipped, not lean on a
- * site default that H-18 ② is about to change.
+ * ⭐ THE STAGING ADDRESS BELONGS TO THE WARD: `staging.theward.online/<map>/`.
+ * ⭐ THE PRODUCTION ADDRESS BELONGS TO THE TOWN, AND ITS ONE HOME IS OPERATIONS (2026-09-26):
+ * asked, never held here (`cartograph/operations-domain.mjs`). ⛔ Anything short of "owned, and
+ * its zone active" is `{ url: null, why }`, and the panel prints the reason.
+ * ⚠️ ONE LEGACY CASE, READ FROM DATA: a town whose instance module still declares `domain` is on
+ * its OLD production (Lafayette Square: `lafayette-square.com`, GitHub Pages from `main`) until its
+ * own cutover step deletes that line. `legacy: true` says so, and Promote refuses it.
  */
-function siteUrlsForLook(lookId) {
+async function siteUrlsForLook(lookId) {
   const entry = readLooksIndex().looks.find(l => l.id === lookId)
   const mapId = entry?.scene || null
   const town = mapId ? instanceForMap(mapId) : null
@@ -217,14 +231,17 @@ function siteUrlsForLook(lookId) {
     ? { url: `${STAGING_SITE_BASE}${mapId}/${lookId === mapId ? '' : `?look=${encodeURIComponent(lookId)}`}` }
     : { url: null, why: noTown }
 
-  const prod = !mapId ? { url: null, why: noTown }
-    : !town ? { url: null, why: `map '${mapId}' has no instance module, so it declares no domain — `
-        + `register src/instances/${mapId}.js` }
-    : !town.domain ? { url: null, why: `'${mapId}' declares no domain (src/instances/${mapId}.js#domain `
-        + `is null) — it has no production address yet` }
-    : { url: `https://${String(town.domain).replace(/^https?:\/\//, '').replace(/\/?$/, '/')}` }
-
-  return { staging, prod }
+  let prod
+  if (!mapId) prod = { url: null, why: noTown }
+  else if (town?.domain) {
+    prod = { url: `https://${String(town.domain).replace(/^https?:\/\//, '').replace(/\/?$/, '/')}`, legacy: true,
+      why: `'${mapId}' is still on its legacy production (src/instances/${mapId}.js#domain) — its cutover `
+        + 'to its own .online site is a separate step' }
+  } else {
+    const d = await productionDomainFor(mapId)
+    prod = d.domain ? { url: `https://${d.domain}/`, domain: d.domain } : { url: null, why: d.why }
+  }
+  return { staging, prod, mapId }
 }
 // The coherent slab set a publish commits (SLAB-CONTRACT §9): the per-look
 // bundle + its source design + the registry + shared derived geometry/trees.
@@ -3024,7 +3041,6 @@ createServer(async (req, res) => {
       // "<behind>\t<ahead>" — commits in the ref but not HEAD, and vice-versa.
       const parse = (s) => { const [b, a] = s.trim().split(/\s+/).map(Number); return { behind: b || 0, ahead: a || 0 } }
       const vsStaging = parse((await runCapture(`git rev-list --left-right --count origin/${STAGING_BRANCH}...HEAD`, { cwd: REPO_ROOT })).stdout)
-      const vsProd = parse((await runCapture(`git rev-list --left-right --count origin/${PROD_BRANCH}...HEAD`, { cwd: REPO_ROOT })).stdout)
       let unbaked = false
       try {
         const dMs = statSync(join(REPO_ROOT, `public/looks/${id}/design.json`)).mtimeMs
@@ -3062,13 +3078,26 @@ createServer(async (req, res) => {
         }
       } catch { /* unreachable ⇒ leave "not known to be current" */ }
 
+      // ⭐ PRODUCTION'S PLAYER, the same question one step on: is the build this town has PINNED
+      // the one staging now serves? Read off both stamps in the bucket. ⛔ No git here: production
+      // no longer ships through a branch, so a commit count cannot answer for it.
+      const sites = await siteUrlsForLook(id)
+      let prodPlayer = { current: false, why: 'no production player pinned for this town yet' }
+      if (sites.mapId) {
+        try {
+          const [p, st] = await Promise.all([`player/${sites.mapId}/build.json`, 'staging/player/build.json']
+            .map(k => fetch(`${ASSET_BASE_URL}${k}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null)))
+          if (p) prodPlayer = { current: !!st && p.builtAt === st.builtAt, builtAt: p.builtAt,
+            why: st && p.builtAt === st.builtAt ? null : 'production carries an older player than staging' }
+        } catch { /* unreachable ⇒ not known to be current */ }
+      }
+
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({
-        ok: true, branch, unbaked, dirty, vsStaging, vsProd, bakedAt, player,
-        // Per-look, because every town gets its own staging site.
+        ok: true, branch, unbaked, dirty, vsStaging, bakedAt, player, prodPlayer,
         // ⛔ Per-look, derived. Each side is { url, … } or { url: null, why } — the panel
         // shows the reason instead of a link it cannot honestly offer.
-        sites: siteUrlsForLook(id),
+        sites,
       }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
@@ -3213,7 +3242,7 @@ createServer(async (req, res) => {
         if (commit.code !== 0) throw new Error(`git commit failed: ${commit.stderr || commit.stdout}`)
         committed = true
       }
-      const site = siteUrlsForLook(id)
+      const site = await siteUrlsForLook(id)
       if (!site.staging.url) throw new Error(site.staging.why)
 
       // ── 1. The SLAB must actually be in the bucket. ⛔ ASK, never assume: the bake
@@ -3253,62 +3282,55 @@ createServer(async (req, res) => {
     return
   }
 
-  // POST /looks/<id>/promote — fast-forward PROD (main) from the current branch.
-  // The gated final step: only after staging is verified. Guards against a
-  // non-fast-forward (prod carries commits HEAD doesn't) and a no-op.
+  // POST /looks/<id>/promote — put this Look on its TOWN'S OWN production domain.
+  //
+  // ⛔⛔ IT NO LONGER TOUCHES GIT (2026-09-26, BRIEF-production-sites). It used to `git push`
+  // this branch to `main`, which deployed ONE site (lafayette-square.com) for every town and was,
+  // by then, 648 commits of unreviewed trunk. Now it is per-town, like Publish: shipping
+  // Provincetown changes no byte any other town serves.
+  //
+  // THE ORDER IS THE SAFETY — nothing a visitor can reach changes until step 4:
+  //   1. WHERE: the town's domain, asked of Operations (owned, zone active) — or a refusal.
+  //   2. THE SLAB → the prod keys (`baked/<look>/`). ⛔ SLAB BEFORE CODE (`plans/r2-asset-offload.md §5`).
+  //   3. THE PLAYER → `player/<map>/`, the exact build that was checked on staging, byte-verified.
+  //   4. THE SWITCH → `hosts/<domain>.json`, which is what the production Worker reads.
+  //   5. PROOF → the domain itself is asked which town and which pour it serves. ⛔ A promote that
+  //      cannot prove it is reported as NOT live, never as a success.
   if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/promote$/))) {
     const id = m[1]
     const REPO_ROOT = join(import.meta.dirname, '..')
+    const say = (status, body) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(body)) }
     try {
-      await runCapture(`git fetch origin --quiet`, { cwd: REPO_ROOT, timeout: 30000 })
-      const branch = (await runCapture(`git rev-parse --abbrev-ref HEAD`, { cwd: REPO_ROOT })).stdout.trim()
-      const [behind, ahead] = (await runCapture(`git rev-list --left-right --count origin/${PROD_BRANCH}...HEAD`, { cwd: REPO_ROOT }))
-        .stdout.trim().split(/\s+/).map(Number)
-      if (behind > 0) throw new Error(`prod has ${behind} commit(s) not in this branch — not a clean fast-forward; reconcile first`)
-      // ⛔⛔ PROMOTE SHIPS THE SLAB, NOT JUST THE COMMITS (2026-09-04).
-      // This endpoint used to `git push` and nothing else, and the only caller of the
-      // uploader anywhere in this file is the bake — hardcoded `--env=staging`. Nothing
-      // ever ran `--env=prod`. So "Promote to Prod" shipped CODE to main and left the
-      // slab it depends on at whatever pour last reached the production keys: on
-      // 2026-09-04, 830 of 915 objects differed — a complete but OLDER canopy. ⛔ That is
-      // the Layer 0 failure exactly: prod renders a plausible map and nobody is told it is
-      // the wrong one. The staging/prod split (2026-09-03) built the guard — a bake may
-      // only ever write staging — and never wired its second half to a caller.
-      // ⛔ SLAB BEFORE CODE. `plans/r2-asset-offload.md §5`: "if 5 lands before 4, the map
-      // renders and the trees do not." Assets must exist before the code referencing them
-      // deploys, so a failed upload must leave prod untouched rather than half-promoted.
-      let r2 = null
-      try {
-        const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=prod --look=${id}`,
-          { cwd: REPO_ROOT, timeout: 900000 })
-        if (up.code !== 0) throw new Error(up.stderr || up.stdout || `exit ${up.code}`)
-        r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
-        console.log(`[promote] R2 prod ${r2}`)
-      } catch (e) {
-        console.error(`[promote] ⛔ R2 prod upload FAILED for "${id}" — prod NOT pushed: ${e.message}`)
-        throw new Error(`the slab did not reach production — nothing was promoted: ${e.message}`)
-      }
-      // ⭐ The no-op guard moved BELOW the upload and now asks the right question. It used
-      // to read `if (!ahead) throw 'nothing to promote — prod already matches this branch'`,
-      // which is false whenever the code is current and the SLAB is stale — precisely the
-      // state this endpoint's own omission created, and it would have refused the one
-      // gesture that fixes it. Commits and slab are two shipments; only both being current
-      // is a no-op.
-      let pushed = false
-      if (ahead) {
-        const push = await runCapture(`git push origin ${branch}:${PROD_BRANCH}`, { cwd: REPO_ROOT, timeout: 60000 })
-        if (push.code !== 0) throw new Error(`push to prod failed: ${push.stderr}`)
-        pushed = true
-      }
+      const site = await siteUrlsForLook(id)
+      if (site.prod.legacy) throw new Error(site.prod.why)
+      if (!site.prod.url) throw new Error(`no production address: ${site.prod.why}`)
+      const { domain } = site.prod, map = site.mapId
+
+      const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=prod --look=${id}`, { cwd: REPO_ROOT, timeout: 900000 })
+      if (up.code !== 0) throw new Error(`the slab did not reach production — nothing was switched: ${up.stderr || up.stdout || `exit ${up.code}`}`)
+      const r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
+
+      const pin = await runCapture(`node scripts/promote-player-to-prod.mjs --map=${map} --look=${id}`, { cwd: REPO_ROOT, timeout: 1800000 })
+      if (pin.code !== 0) throw new Error(`the player was not pinned — nothing was switched: ${(pin.stderr || pin.stdout).trim().split('\n').pop()}`)
+      const pinned = JSON.parse(pin.stdout.trim().split('\n').pop())
+
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
-      res.writeHead(200, { 'Content-Type': 'application/json' })
-      const site = siteUrlsForLook(id)
-      res.end(JSON.stringify({ ok: true, promoted: ahead, pushed, r2, branch, bakedAt,
-        prodUrl: site.prod.url, prod: site.prod }))
+      const record = { map, look: id, domain, player: pinned.builtAt, bakedAt, promotedAt: new Date().toISOString() }
+      const recPath = join(REPO_ROOT, '.promote-host.json')
+      writeFileSync(recPath, JSON.stringify(record, null, 2))
+      const sw = await runCapture(`npx wrangler r2 object put theward-assets/hosts/${domain}.json --file ${recPath} --remote `
+        + `--content-type 'application/json; charset=utf-8' --cache-control no-store`, { cwd: REPO_ROOT, timeout: 120000 })
+      rmSync(recPath, { force: true })
+      if (sw.code !== 0) throw new Error(`the slab and player are in production but ${domain} was NOT switched to them: ${sw.stderr || sw.stdout}`)
+
+      const proof = await proveProduction(domain, id, bakedAt)
+      const body = { ok: proof.ok, shipped: true, r2, player: pinned.builtAt, copied: pinned.copied, bakedAt,
+        prodUrl: site.prod.url, prod: site.prod, proof }
+      if (!proof.ok) body.error = `shipped, but ${domain} is not serving it yet: ${proof.why}`
+      say(proof.ok ? 200 : 502, body)
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: err.message }))
+      say(500, { error: err.message })
     }
     return
   }

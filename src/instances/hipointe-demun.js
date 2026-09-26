@@ -27,7 +27,7 @@ export default {
   },
 
   name: 'Hi-Pointe–DeMun',
-  domain: 'jacobhenderson.studio/hipointe-demun',   // TBD deploy subpath (§7)
+  domain: null,   // ⛔ NOT A SOURCE (2026-09-26): the production domain lives in Operations (src/lib/townOrigin.js).
 
   // Content asset root (§5.1.2), relative to BASE_URL. HPDM is the clean template:
   // its logos/photos live in its own payload (cartograph/data/hipointe-demun/

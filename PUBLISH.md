@@ -34,51 +34,52 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
 
 | What changed | What to do |
 |---|---|
-| Frontend → **staging** | commit, then push the trunk → `staging.yml` deploys staging. ⛔ **Do not read the branch name off this page** — it has been wrong for four weeks before now: `node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` derives it from the workflow |
-| Promote **staging → prod** | once staging is verified: `git push origin <branch>:main` → `deploy.yml` deploys lafayette-square.com (clean fast-forward; main + trunk stay a few commits apart) |
+| Frontend → **staging** | press **Publish to Staging** in Preview — it uploads the slab check + the shared player to R2; no branch. ▶ `node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` |
+| Promote **staging → prod** | press **Promote to Production** in Preview, per town — slab → `baked/<look>/`, the staged player pinned to `player/<map>/`, then the host record; the town's own domain is then asked what it serves (§0.5). ⛔ No git push. Lafayette Square: legacy, §1 |
 | Apps Script only | `cd apps-script && npx clasp push && npx clasp deploy -i <ID>` |
 | Both | Do both. Order doesn't matter. |
 | Worker only | Update in Cloudflare dashboard |
 | New env var needed in prod | Add to GitHub Secrets + `deploy.yml`, push to trigger rebuild |
 | **Re-poured a town** | nothing to push — the bake uploads the slab to R2 **STAGING** (`staging/baked/…`) and it is live on the staging site immediately. ⛔ **It does NOT reach production.** Verify on staging, then promote: `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` (§6) |
-| **Promote a slab to prod** | `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` — writes the production keys; live on lafayette-square.com immediately, still without a push. ⛔ `--env` is required and has no default. ▶ `node checks/claims-the-slab-envs-do-not-collide.mjs` |
+| **Promote a slab to prod** | part of Promote (above). By hand: `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` — writes the production keys every production site reads. ⛔ `--env` is required and has no default. ▶ `node checks/claims-the-slab-envs-do-not-collide.mjs` |
 | **Slab looks stale / canopy missing** | `node scripts/verify-baked-in-r2.mjs` — reads the bucket, compares to disk, names what is absent |
 | **A Host's or staff listing edits** | published from **operations.theward.online** (a Ward → Listings → Publish): a small layer at `<ASSET_BASE>live/<look>/listings.json` (staging under `staging/`), no push. At boot a town's listings are **file < Apps Script sheet < published layer**, each laid over the last — `src/lib/publishedLayer.js`. The layer also carries places added to the map (`adds`): each joins the town's listings and takes its building from the zoning stand-in there. Hosts publish to staging; staff to production. ▶ `node checks/claims-a-published-edit-reaches-the-map.mjs` |
 
 ---
 
-## 0.5 The multi-neighborhood deploy model — one factory, many destinations
+## 0.5 Where each town is served — staging belongs to The Ward, production to the town
 
-> **The "end process" doctrine** (2026-07-04, prompted by the HiPointe-DeMun URL purchase). The rest of this doc is the LS-specific mechanics; this section is the *frame* those mechanics serve once there is more than one neighborhood. Reference — the developer/operator model for how a poured neighborhood reaches the public.
+*(2026-09-26, `BRIEF-production-sites`. The subpath-first model this replaced is in the Diary:
+`cartograph/_archive/PUBLISH-deploy-model-superseded-2026-09-26.md`.)*
 
-**Two independent axes, never one decision.** They *feel* fused because "move Bake onto the live site" touches both at once — keep them apart and each has a clean answer:
-
-- **Axis A — WHERE it deploys (destination/domain).** `jacobhenderson.studio/<hood>` vs. the neighborhood's own apex (`hipointedemun.com`). **This is a per-instance *variable*, not a fork.**
-- **Axis B — WHO holds the authoring keys (the install *tier*).** *Guided install* (you at the wheel, sharing the rendered result) vs. *full 3rd-party self-serve* (the "front-front-end"). This is about **where the factory lives**, and the higher tier is deferred (`plans/front-front-end-and-productization.md`).
-
-**Axis A — one factory, many destinations.** A neighborhood is a data folder (`cartograph/data/<hood>`) → bakes to a slab (`public/baked/<hood>`) → pointed to by `INSTANCE.lookId` (`src/instance.js`), `?look=`/`?scene=` override. **One build already serves LS + toy + hipointe-demun.** The deploy destination is *not* wired into the artifact — it's a CNAME + the domain field in `instance.js`. The **same built bytes** get re-homed at a different target; this is literally how staging already works today (`staging.yml` builds `dist/` and pushes it to a *separate* repo with its own `--base`). So a per-neighborhood destination is that same move with a different target — **config, not architecture.**
-
-- **The concrete surface for Axis A:** the Publish endpoints in `cartograph/serve.js` (dev-only) hardcode `STAGING_BRANCH` and `PROD_BRANCH = main` and commit a scoped `slabPathspecs` for one look. **Parameterizing those two constants + the pathspecs by scene is the whole job.** Small, well-bounded — not yet built. ⚠️ **Live drift (2026-07-11): `STAGING_BRANCH` still = `cartograph-looks-pass-ab`, the dead pre-2026-07-08 branch that deploys nothing** (`staging.yml` moved to `curb-offset-draw`, `26a62407`). So the Preview's Publish→staging button currently pushes to a branch no workflow watches — fix the constant to `curb-offset-draw` when the parameterization lands (or sooner).
-
-**Axis B — keep the factory local (that's the point of the tiers).** *Guided install* ships **slabs, not tools** — the authoring app (Stage/Bake) never leaves your machine, so you're never anchored to a client's project; the "shared creative" happens through the preview/publish loop (they react to the staging URL, you iterate). "Move Bake onto the live site" is **Tier B, deferred** — the only tier where live-site authoring makes sense, and the tier where the anchoring worry is solved by design (they drive, not you). Don't build it to serve a guided install.
-
-**The one real tradeoff — a neighborhood's *default* home:**
-
-| | Subpath (`studio/<hood>`) | Own apex (`<hood>.com`) |
+| | Staging | Production |
 |---|---|---|
-| Infra now | ~zero (one build, one Pages target) | per-hood Pages target + CNAME + `--base` |
-| Product story | weaker (shares studio identity) | strong ("this is HiPointe's civic thing") |
-| Worth it when | proving the pour · guided installs | a client who's paid for their own home |
+| Address | `staging.theward.online/<map>/` — unlisted, durable | the town's own domain, e.g. `provincetown.online` (`www.` 301s to it) |
+| Served by | `workers/staging-sites` — town from the PATH | `workers/production-sites` — town from the HOST (`hosts/<domain>.json`) |
+| Player | `staging/player/` — ONE build, shared by every town | `player/<map>/` — that same build, **pinned per town** by Promote |
+| Slab | `staging/baked/<look>/`, from `assets.theward.online` | `baked/<look>/`, served **through the town's own domain** (same origin) |
+| Gesture | **Publish to Staging** (one Map) | **Promote to Production** (one Map; no other town changes) |
 
-> **Recommendation (settled):** default to the **subpath now**, make the deploy target a **per-instance variable**, and **promote to an apex only when a client commits** — so promotion is a one-line config change, never a re-architecture. That keeps everything in "one factory, many destinations" and never anchors you.
-
-**On buying the domain:** buy `<hood>.com` for the *name* if you want (cheap option value), but it's **decoupled** from the technical work — the pour ships to the studio subpath regardless, and the domain just becomes a CNAME you flip later. Don't let the purchase gate or reshape the build. *(HiPointe stages first to `jacobhenderson.studio/hipointe-demun`; see `NEIGHBORHOOD-INPUTS.md §7` step 8 for the pour sequence, `cartograph/_archive/HANDOFF-hipointe-pour-step0-LANDED-2026-07-02.md` for step-0 state.)*
-
-> **Interim — the Preview Publish buttons for a non-LS look (decided 2026-07-06, Boz + Jacob).** Because the domain is decoupled (above), the "Push"/Publish button does **not** no-op. **Staging stays live for every look** — one build serves all, so `?look=hipointe-demun` already previews on the staging site. **Prod-promote for a non-LS look is disabled with an honest label** ("ships to its own home once its deploy target's set"), *never* a silent no-op — a button that lies about working is the misleading-UI anti-pattern (`feedback_stale_opaque_overlay_worse_than_hidden`). The real unblock is the per-scene destination (`STAGING_BRANCH`/`PROD_BRANCH`/pathspecs parameterized by scene, above) — small, well-bounded, not yet built. ⏳ **Guard not yet wired in code** — this note records the *decision*; the Preview Publish panel still shows the LS-scoped buttons. Tracked in `HANDOFF-blank-app-instance-decoupling.md`.
+- ⭐ **The domain's one home is Operations.** A Ward there carries `mapId` + `domain`; Promote and both
+  Workers ask `GET /api/production-domain/<mapId>` with a read-only service token, and all three apply one
+  rule (`src/lib/productionDomain.js`): **owned and its zone active, or a refusal with the reason.**
+  `src/instances/<map>.js#domain` is **not** a source — only Lafayette Square still declares one, and its
+  cutover deletes it.
+- ⭐ **The player does not know where its slab is.** It is built with `VITE_ASSET_BASE=runtime` and the
+  serving Worker says so in `<meta name="ward-asset-base">`; the production Worker also writes
+  `ward-look` (the town, which `?look=` cannot override) and `ward-domain` (for every public URL the player
+  builds — QR codes, shares — through `src/lib/townOrigin.js`). ⛔ A runtime player with no tag refuses to load.
+- ⛔ **No fallback across towns, anywhere.** A host with no record, a town with no prod slab, another town's
+  key — each 404s by name. ▶ `node checks/claims-a-production-host-serves-only-its-own-town.mjs`
+- **Lafayette Square is the legacy exception until its cutover:** `lafayette-square.com` (§1, GitHub Pages
+  from `main`) keeps serving; Promote refuses it by name. At cutover `.com` 301s to `lafayettesquare.online`
+  (ruled 2026-09-26), **only after** the new site is serving and Jacob has seen it.
 
 ---
 
-## 1. Frontend (GitHub Pages)
+## 1. Frontend (GitHub Pages) — ⚠️ Lafayette Square's LEGACY production only
+
+> Every other town is served per §0.5. This section describes `lafayette-square.com` until its cutover; nothing in the Publish panel pushes `main` any more.
 
 Deploys automatically on every push to `main`. **Per the working loop (strategy B, 2026-06-26), promote to `main` only after verifying on staging** (the trunk `curb-offset-draw`) — see the Quick reference above + [`cartograph/OPERATIONS.md §Save → ship`](cartograph/OPERATIONS.md). Both branches are slab-era and stay a few commits apart, so prod promotion is a clean fast-forward.
 
@@ -318,6 +319,8 @@ lengthen this TTL until those carry a token** (`plans/r2-asset-offload.md §3.5`
 **Browser Cache TTL** overrides origin headers and must stay on *Respect Existing Headers*.
 
 ### CORS
+
+⭐ **The `.online` production sites need no entry** — their slab is served through their own domain (§0.5), same origin.
 
 Allowed origins are exactly: `lafayette-square.com`, `www.lafayette-square.com`,
 `jacobeugenehenderson.github.io` (staging is a *path* on that origin), and localhost `5173`/`4173`.

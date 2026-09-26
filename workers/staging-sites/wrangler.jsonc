@@ -39,6 +39,13 @@
   "vars": {
     "SITE_PREFIX": "staging/sites/",
     // The ONE player build every town is served from.
-    "PLAYER_PREFIX": "staging/player/"
+    "PLAYER_PREFIX": "staging/player/",
+    // Where the page is told its slab lives (`<meta name="ward-asset-base">`). ⛔ Must end in
+    // `/staging/`; the Worker refuses to serve otherwise.
+    "SLAB_BASE": "https://assets.theward.online/staging/",
+    // Where each town's PRODUCTION domain is asked (written into the page as ward-domain).
+    // ⛔ The service token is a SECRET, never here: `wrangler secret put OPS_ACCESS_CLIENT_ID`
+    // and `OPS_ACCESS_CLIENT_SECRET` (OPERATIONS.md § Production sites).
+    "OPERATIONS_URL": "https://operations.theward.online"
   }
 }

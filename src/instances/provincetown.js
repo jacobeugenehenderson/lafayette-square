@@ -19,7 +19,7 @@ export default {
   },
 
   name: "Provincetown",
-  domain: null,
+  domain: null,   // ⛔ NOT A SOURCE (2026-09-26): the production domain lives in Operations (src/lib/townOrigin.js).
 
   contentRoot: 'content/provincetown/',
 
