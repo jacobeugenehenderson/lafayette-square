@@ -51,9 +51,16 @@ evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve 
 - Host earnings;
 - platform earnings.
 
-## ⭐ THE ASK (Jacob, 2026-09-25 — after a knob panel and a nested ring were both rejected)
+## ⭐ THE MONEY PANEL (Jacob, 2026-09-25 — the current direction; a knob panel, a nested ring and sentences came before it)
 
-**The reader is a would-be Host asking "what do I get?"** The answer is **sentences with the numbers in them**, written from the model. There are two controls: food orders a week, and businesses. The sentences cover local commerce a year · what the Local Host earns · the budget to spend on the neighbourhood (first year, and once the cushion is full) · what goes into the cushion until it reaches its target. The skim, Host share and cushion rules sit under Assumptions. Built: theward-online `ward-economics` a7f344e (unpushed). The rejected ring design is in `cartograph/_archive/BRIEF-ward-economics-ring-2026-09-25.md`.
+> *"the assumptions need to be sliders … this is the 'control panel' for the money in and out … atop both the ask and split docs; they're the same set of info."*
+
+**One panel, at the top of BOTH The Ask and The Split**, driven by one model (theward-online `js/money.js`; the fragment `tools/money-panel.html.txt`, inserted by port-tools). It has three columns:
+1. **Money in:** orders/week, food order, businesses, other sales.
+2. **The order:** tax, service charge, courier share, commission, fee on other sales, processing.
+3. **Where it goes:** a draggable split bar (Ward fund / Local Host / Studio, default 10/30/60) plus the cushion's yearly cap and target.
+
+The Split reads the panel; neither page keeps a private copy of a panel number (`claims-pages-agree`). Built: `ward-economics` 231bf8e (unpushed).
 
 ## The phases (stop after each)
 
