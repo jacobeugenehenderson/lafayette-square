@@ -13,6 +13,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { makeElevationSampler, terrainIdentity, DEFAULT_V_EXAG } from '../src/lib/terrainCommon.js'
+import { pourPolicyFor } from './intake-rows.mjs'
 
 const CARTOGRAPH_DIR = dirname(fileURLToPath(import.meta.url))
 
@@ -47,4 +48,28 @@ export function loadSceneTerrain(scene) {
   const data = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4)
   const t = { ...meta, data }
   return { ...makeElevationSampler(t, authoredExag(scene)), identity: terrainIdentity(t), baseElev: meta.baseElev ?? null }
+}
+
+/**
+ * The terrain an ANCHOR bake must sample, or a loud refusal. ⛔ Not `loadSceneTerrain(scene) || flat`:
+ * that fallback seated every lamp and tree of a hilly town at y = 0, with no warning, whenever its
+ * terrain had not been baked yet (BRIEF-street-lamps-derived, found by Plumb).
+ * Flat is honest in exactly one case — the town has put `verifiedAbsent` on record for its elevation
+ * row (`pourPolicyFor`, the kit's one "we looked and there is none" state). Otherwise: throw, naming the fix.
+ * @param {string} scene
+ * @param {string} who  the calling bake, for the message
+ */
+export function requireSceneTerrain(scene, who) {
+  const t = loadSceneTerrain(scene)
+  if (t) return t
+  const policy = pourPolicyFor('elevation', scene)
+  if (policy.onTheRecord) {
+    console.warn(`[${who}] ${scene}: no terrain baked — anchoring FLAT, on the record: ${policy.onTheRecord}`)
+    return { getElevationRaw: () => 0, identity: 'none', baseElev: null }
+  }
+  throw new Error(`[${who}] ${scene}: no clean/terrain.* to anchor against, and flat is not on the record. ` +
+    (policy.allow
+      ? `The town HAS an elevation input — bake its terrain first (node cartograph/bake-terrain.js --scene=${scene}).`
+      : `${policy.why}${policy.fix ? `\n   ▶ ${policy.fix}` : ''}`) +
+    `\n   Refusing to seat every object at y = 0.`)
 }

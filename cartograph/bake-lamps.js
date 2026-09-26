@@ -1,11 +1,20 @@
 /**
- * bake-lamps.js — passthrough bake of street_lamps.json into the Look's
- * baked folder. Lamp placements aren't authored per-Look today; this
- * step exists so Preview reads only from the bake bundle (matches the
- * pure-Three-bake architecture).
+ * bake-lamps.js — the lamp CENSUS for a Look: every well unioned, each lamp stamped
+ * with where it came from, then seated on the drawn ground.
  *
- * Future: per-Look lamp authoring (different lamp models, per-Look
- * positioning, color overrides) writes here.
+ * ⭐ REAL WHERE REAL, DERIVED WHERE NECESSARY (Jacob, 2026-09-21; ROADMAP H-17) — the
+ * tree pattern (`arborist/bake-trees.js`), copied rather than reinvented:
+ *   · THREE WELLS, provenance per lamp — `SOURCE_BY_WELL`:
+ *       authored  `data/<scene>/authored_lamps.json` (+ LS's legacy path)  the operator's
+ *       osm       `raw/osm.json#pois` + `raw/osm_street_lamps.json`         surveyed reality
+ *       derived   `clean/derived_lamps.json` (cartograph/derive-lamps.mjs)  invented fill
+ *   · CROSS-WELL DEDUP KEEPS THE RICHEST — authored > osm > derived. A derived lamp within
+ *     half its own spacing of a real one is the same light twice and goes.
+ *   · SURVEYED IS NUDGED, INVENTED IS DROPPED — on the frozen shape's painted zones. The
+ *     operator's authored lamps are never moved: the override is the product.
+ *   · THE DISSOLVE — derived lamps thin across the ground's fade band; real ones are only
+ *     bounded by the rim.
+ * ⛔ An absent well is zero lamps from that well, never another scene's.
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
@@ -14,12 +23,25 @@ import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
-import { loadSceneTerrain } from './terrainLoad.js'
+import { requireSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 import { makeMembership } from './neighborhood-membership.mjs'
+import { makeZoneTester } from './forbidden-surface.mjs'
+import { readSurveyedLamps } from './lamp-spacing.mjs'
+import { DERIVED_LEGAL } from './derive-lamps.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
+
+/** Well → the `source` stamped on each lamp, and its rank in the cross-well dedup (higher wins). */
+export const SOURCE_BY_WELL = { authored: 'authored', osm: 'osm', derived: 'derived' }
+const SOURCE_RANK = { authored: 3, osm: 2, derived: 1 }
+/** Surveyed ↔ authored: the same physical lamp digitized twice (stable anywhere in 2–6 m, measured on LS). */
+const DEDUPE_M = 4
+/** Ground a SURVEYED lamp is nudged off. `pavement` is the drawn carriageway (a centreline reads `pavement`), so it is here.
+ *  A derived lamp is judged the other way round — it must stand on `DERIVED_LEGAL` (derive-lamps.mjs), or it goes. */
+const SURVEYED_ILLEGAL = new Set(['asphalt', 'pavement', 'curb', 'building', 'water', 'asphalt-or-unpoured'])
+const isIllegal = (source, zone) => source === 'derived' ? !DERIVED_LEGAL.has(zone) : SURVEYED_ILLEGAL.has(zone)
 
 // Read a .bin as a clean ArrayBuffer (Buffer is a view into a shared pool).
 function readAB(path) {
@@ -38,43 +60,12 @@ function anchorLampsToGround(lamps, outDir, scene) {
   if (!existsSync(groundJsonPath) || !existsSync(groundBinPath)) return null
   const gj = JSON.parse(readFileSync(groundJsonPath, 'utf-8'))
   const gAB = readAB(groundBinPath)
-  // Per-scene terrain (cartograph/data/<scene>/clean/terrain.*); flat fallback
-  // if this installation has none baked yet.
-  const terrain = loadSceneTerrain(scene) || { getElevationRaw: () => 0 }
+  // ⛔ No flat fallback: a hilly town missing its terrain fails here, loudly (flat only on the record).
+  const terrain = requireSceneTerrain(scene, 'bake-lamps')
   const sampler = makeGroundSampler(gj, gAB, terrain)
   for (const l of lamps) l.groundRaw = sampler.groundRawAt(l.x, l.z)
   // The heightfield these anchors were sampled from; the runtime refuses them against any other.
   return { count: lamps.length, terrain: { key: terrain.identity ?? 'none', baseElev: terrain.baseElev ?? null } }
-}
-
-// Scene-keyed lamp SOURCE (the old TODO step C, resolved 2026-07-09). A scene
-// with its own municipal/OSM lamps (`raw/osm_street_lamps.json`) derives real
-// placements PROJECTED THROUGH ITS CURRENT `geography.json` — so lamps share the
-// building frame and re-derive correctly on every re-center (the raw keeps
-// lon/lat, so there's no stale-frame trap like the assessor parcels had; see
-// cartograph/INTAKE.md). LS has no OSM lamp file → falls back to its hand/
-// procedural `src/data/street_lamps.json` (already in the local frame).
-// The OSM lamp fetch is wider than the poured hood, so lamps are bounded by the
-// neighborhood — the SAME membership test buildings and trees use
-// (`neighborhood-membership.mjs`, `NEIGHBORHOOD-INPUTS §5.2`).
-//
-// ⭐ A DISSOLVE, not a cut (Jacob 2026-07-15: literal inside the neighborhood
-// proper; outside, inside the radius, we watch for GPU — and *"I'd rather a
-// dissolve [than an] on/off edge fade dichotomy"*). This used to hard-clip at the
-// polygon, which ended the lamps at a seam the ground doesn't have. Now they thin
-// across the ground's own authored fade band and reach zero at the rim.
-//
-// Was a private copy of the point-in-polygon membership test; folded onto the
-// shared one so the hood's edge means one thing for every object standing in it.
-function clipToBoundary(lamps, scene) {
-  const bp = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
-  if (!existsSync(bp)) return lamps
-  const m = makeMembership(bp)
-  const kept = lamps.filter(l => m.keep(l.x, l.z, 23))
-  const inHood = kept.filter(l => m.isInside(l.x, l.z)).length
-  console.log(`  Lamps: ${inHood} inside the neighborhood proper (literal) / ${kept.length - inHood} dissolving through the greater circle` +
-    (m.hasPolygon ? '' : '  ⚠️ no boundary-street polygon — disc standing in'))
-  return kept
 }
 
 // The AUTHORED lamp well — hand-placed lamps OSM doesn't carry, per scene.
@@ -105,73 +96,121 @@ function loadAuthoredLamps(scene) {
   return []
 }
 
-function loadLampsForMap(scene) {
-  const osmPath = join(ROOT, 'cartograph', 'data', scene, 'raw', 'osm_street_lamps.json')
-  const geoPath = join(ROOT, 'cartograph', 'data', scene, 'geography.json')
-  if (existsSync(osmPath) && existsSync(geoPath)) {
-    const g = JSON.parse(readFileSync(geoPath, 'utf-8'))
-    const toLocal = (lon, lat) => [
-      Math.round((lon - g.lon) * g.lonToMeters * 10) / 10,
-      Math.round((g.lat - lat) * g.latToMeters * 10) / 10,
-    ]
-    const raw = JSON.parse(readFileSync(osmPath, 'utf-8'))
-    const els = raw.elements || raw
-    const lamps = []
-    for (const e of (Array.isArray(els) ? els : [])) {
-      if (e?.tags?.highway !== 'street_lamp') continue
-      if (typeof e.lat !== 'number' || typeof e.lon !== 'number') continue
-      const [x, z] = toLocal(e.lon, e.lat)
-      lamps.push({ x, z, park: false })
-    }
-    // ⭐ UNION THE WELLS, don't let one shadow the other (Jacob, 2026-07-23:
-    // *"I would rather have more lamps and trees, since they're vibes"*). Same
-    // doctrine the tree census already runs on — a census is the UNION of every
-    // well, never whichever well happened to be found first.
-    //
-    // Why this exists: the moment LS gained `raw/osm_street_lamps.json`, this
-    // branch started returning early and the `scene === 'lafayette-square'`
-    // fallback below became unreachable — so LS's 80 hand-placed LAFAYETTE PARK
-    // lamps silently stopped being baked. The park is the centrepiece and it
-    // quietly went from 80 authored lamps to ~35 incidental OSM ones. Nobody
-    // noticed, because the count went UP overall (80 → 536) while the park's
-    // own lamps vanished.
-    //
-    // Dedupe is proximity-based: an OSM lamp within DEDUPE_M of a curated one is
-    // the same physical lamp digitized twice. 33 of the 80 dedupe out; the
-    // threshold is stable anywhere in 2–6 m (measured), so 4 m is a safe middle.
-    const DEDUPE_M = 4
-    const authored = loadAuthoredLamps(scene)
-    let merged = lamps
-    if (authored.length) {
-      const fresh = authored.filter(a => !lamps.some(l => Math.hypot(l.x - a.x, l.z - a.z) <= DEDUPE_M))
-      merged = lamps.concat(fresh)
-      console.log(`[bake-lamps] scene=${scene}: UNION — ${lamps.length} OSM + ${authored.length} authored, ${authored.length - fresh.length} deduped (<${DEDUPE_M}m) → ${merged.length}`)
-    }
-    const clipped = clipToBoundary(merged, scene)
-    console.log(`[bake-lamps] scene=${scene}: derived ${merged.length} street lamps → ${clipped.length} inside the boundary (projected to current frame)`)
-    return clipped
-  }
-  const authoredOnly = loadAuthoredLamps(scene)
-  if (authoredOnly.length) return authoredOnly
-  console.warn(
-    `[bake-lamps] scene=${scene}: no raw/osm_street_lamps.json (or geography.json) — ` +
-    `baking ZERO lamps. This scene has no lamp census; acquire one via the Intake ` +
-    `panel (OSM highway=street_lamp). Refusing to substitute another scene's lamps.`)
-  return []
+/** The derived well, as derive-lamps wrote it. Absent → zero derived lamps, and the bake says so. */
+function loadDerivedLamps(scene, derivedPath) {
+  const p = derivedPath || join(ROOT, 'cartograph', 'data', scene, 'clean', 'derived_lamps.json')
+  if (!existsSync(p)) return { lamps: [], meta: null }
+  const w = JSON.parse(readFileSync(p, 'utf-8'))
+  return { lamps: w.lamps || [], meta: w.meta || null }
 }
 
-export async function bakeLamps({ look, scene } = {}) {
+/**
+ * The census: every well, stamped, deduped richest-first. Exported so a check reads the bake's
+ * own census step instead of restating it.
+ */
+export function readLampCensus(scene, { derivedPath } = {}) {
+  const sceneDir = join(ROOT, 'cartograph', 'data', scene)
+  const hasGeo = existsSync(join(sceneDir, 'geography.json'))
+  const wells = {
+    authored: loadAuthoredLamps(scene).map(l => ({ x: l.x, z: l.z, park: !!l.park, source: SOURCE_BY_WELL.authored })),
+    osm: hasGeo ? readSurveyedLamps(sceneDir).map(l => ({ x: l.x, z: l.z, park: false, source: SOURCE_BY_WELL.osm })) : [],
+  }
+  const derived = loadDerivedLamps(scene, derivedPath)
+  wells.derived = derived.lamps.map(l => ({ x: l.x, z: l.z, park: false, source: SOURCE_BY_WELL.derived, spacing: l.spacing }))
+
+  const kept = [], deduped = {}
+  const near = (l, r) => kept.some(k => SOURCE_RANK[k.source] > SOURCE_RANK[l.source] && Math.hypot(k.x - l.x, k.z - l.z) <= r)
+  for (const src of Object.keys(SOURCE_RANK).sort((a, b) => SOURCE_RANK[b] - SOURCE_RANK[a])) {
+    for (const l of wells[src]) {
+      // A real lamp is the same lamp twice within DEDUPE_M; a derived one is redundant within half its own spacing.
+      const r = src === 'derived' ? l.spacing / 2 : DEDUPE_M
+      if (near(l, r)) { deduped[src] = (deduped[src] || 0) + 1; continue }
+      kept.push(l)
+    }
+  }
+  const perWell = Object.fromEntries(Object.entries(wells).map(([k, v]) => [k, v.length]))
+  return { lamps: kept, perWell, deduped, derivedMeta: derived.meta }
+}
+
+// Nearest ground a lamp may stand on, spiralling out — for SURVEYED lamps only. A recorded lamp a
+// metre into our guessed roadway is our strip widths being soft, not the city planting a pole in
+// the street; reality is moved, never deleted for disagreeing with a guess.
+function nudge(zoneOf, x, z, rings = 6, step = 1) {
+  for (let ring = 1; ring <= rings; ring++) {
+    for (let a = 0; a < 12; a++) {
+      const ang = (a / 12) * Math.PI * 2
+      const nx = +(x + Math.cos(ang) * ring * step).toFixed(1), nz = +(z + Math.sin(ang) * ring * step).toFixed(1)
+      if (!SURVEYED_ILLEGAL.has(zoneOf(nx, nz))) return [nx, nz]
+    }
+  }
+  return null
+}
+
+function loadLampsForMap(scene, look, derivedPath) {
+  const census = readLampCensus(scene, { derivedPath })
+  const { perWell, deduped } = census
+  console.log(`[bake-lamps] scene=${scene}: wells authored=${perWell.authored} osm=${perWell.osm} derived=${perWell.derived}` +
+    (Object.keys(deduped).length ? `; deduped ${JSON.stringify(deduped)} (richest kept: authored > osm > derived)` : ''))
+  if (!perWell.derived) console.warn(`[bake-lamps] scene=${scene}: NO derived well (clean/derived_lamps.json) — only surveyed/authored lamps will stand. ▶ node cartograph/derive-lamps.mjs --scene=${scene}`)
+
+  // ── Legal ground: the frozen shape's painted zones (the tree mask's own surfaces) ──
+  const shapePath = join(ROOT, 'public', 'baked', look, 'shape.json')
+  if (!existsSync(shapePath)) throw new Error(`[bake-lamps] no ${shapePath} — bake the ground first; without it there is no honest answer to "is this lamp in the road?".`)
+  const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
+  const mapPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
+  const zoneOf = makeZoneTester({ shapePath, mapPath: existsSync(mapPath) ? mapPath : undefined,
+    designPath: existsSync(designPath) ? designPath : undefined, scene, quiet: true }).zoneOf
+
+  // ── Bounds: real lamps stop at the rim; invented ones dissolve across the fade band ──
+  const bp = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
+  if (!existsSync(bp)) throw new Error(`[bake-lamps] no ${bp} — a lamp census has no edge without the neighborhood.`)
+  const m = makeMembership(bp)
+
+  const out = [], tally = { nudged: {}, dropped: {}, dissolved: 0, beyondRim: 0 }
+  const bump = (o, k) => { o[k] = (o[k] || 0) + 1 }
+  for (const l of census.lamps) {
+    if (l.source === 'derived') { if (!m.keep(l.x, l.z, 23)) { tally.dissolved++; continue } }
+    else if (m.density(l.x, l.z) <= 0) { tally.beyondRim++; continue }
+    if (l.source !== 'authored') {
+      const zone = zoneOf(l.x, l.z)
+      if (isIllegal(l.source, zone)) {
+        const moved = l.source === 'osm' ? nudge(zoneOf, l.x, l.z) : null
+        if (!moved) { bump(tally.dropped, `${l.source}:${zone}`); continue }
+        l.x = moved[0]; l.z = moved[1]; bump(tally.nudged, zone)
+      }
+    }
+    const { spacing, ...lamp } = l
+    out.push(lamp)
+  }
+  const bySource = {}; for (const l of out) bump(bySource, l.source)
+  const inHood = out.filter(l => m.isInside(l.x, l.z)).length
+  console.log(`[bake-lamps] scene=${scene}: ${out.length} lamps ${JSON.stringify(bySource)} — ${inHood} inside the neighborhood proper, ${out.length - inHood} in the greater circle` +
+    (m.hasPolygon ? '' : '  ⚠️ no boundary-street polygon — disc standing in'))
+  if (Object.keys(tally.nudged).length) console.log(`[bake-lamps]   nudged onto legal ground (surveyed lamps kept): ${JSON.stringify(tally.nudged)}`)
+  if (Object.keys(tally.dropped).length) console.log(`[bake-lamps]   dropped on illegal ground: ${JSON.stringify(tally.dropped)}`)
+  if (tally.dissolved) console.log(`[bake-lamps]   dissolved ${tally.dissolved} derived lamps toward the rim`)
+  if (!out.length) console.warn(`[bake-lamps] scene=${scene}: ZERO lamps. No well produced one — run derive-lamps for this scene. Refusing to substitute another scene's lamps.`)
+  return { lamps: out, bySource, perWell, deduped, tally, spacing: census.derivedMeta?.spacing ?? null }
+}
+
+export async function bakeLamps({ look, scene, outDir: outDirArg, derivedPath } = {}) {
   assertBakeTarget('bake-lamps', look, scene)
-  const outDir  = join(ROOT, 'public', 'baked', look)
+  const outDir  = outDirArg || join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
-  const lamps = loadLampsForMap(scene)
-  const anchoring = anchorLampsToGround(lamps, outDir, scene)
+  const r = loadLampsForMap(scene, look, derivedPath)
+  const lamps = r.lamps
+  // Anchors are sampled from THIS look's ground bake, wherever the output goes.
+  const anchoring = anchorLampsToGround(lamps, join(ROOT, 'public', 'baked', look), scene)
   const anchored = anchoring?.count ?? 0
   const out = {
-    version: 2,
+    version: 3,
     look,
     count: lamps.length,
+    // ⭐ Provenance, per lamp (`source`) and in sum — so the Stage and a check can tell real from invented.
+    bySource: r.bySource,
+    perWell: r.perWell,
+    ...(r.spacing ? { spacing: r.spacing } : {}),
     ...(anchoring ? { terrain: anchoring.terrain } : {}),
     lamps,
   }
@@ -182,12 +221,14 @@ export async function bakeLamps({ look, scene } = {}) {
 
 async function main() {
   const scene = requireExplicitMap('bake-lamps')   // one resolver: --scene= OR CARTOGRAPH_SCENE
-  let look = null
+  let look = null, outDir = null, derivedPath = null
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))      look  = m[1]
+    if ((m = arg.match(/^--out-dir=(.+)$/)))   outDir = m[1]
+    if ((m = arg.match(/^--derived=(.+)$/)))   derivedPath = m[1]   // test a derived well without writing the scene's clean/
   }
-  await bakeLamps({ look, scene })
+  await bakeLamps({ look, scene, outDir, derivedPath })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

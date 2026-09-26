@@ -24,7 +24,7 @@ import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
-import { loadSceneTerrain } from './terrainLoad.js'
+import { requireSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -49,7 +49,7 @@ export async function bakeTreeAnchors({ look, scene } = {}) {
 
   const gj = JSON.parse(readFileSync(groundJsonPath, 'utf-8'))
   const gAB = readAB(groundBinPath)
-  const terrain = loadSceneTerrain(scene) || { getElevationRaw: () => 0 }
+  const terrain = requireSceneTerrain(scene, 'bake-tree-anchors')   // ⛔ no flat fallback: a hilly town missing its terrain fails here
   const sampler = makeGroundSampler(gj, gAB, terrain)
 
   const trees = (JSON.parse(readFileSync(treesPath, 'utf-8')).instances) || []
