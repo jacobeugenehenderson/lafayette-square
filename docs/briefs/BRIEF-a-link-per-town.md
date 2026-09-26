@@ -2,6 +2,7 @@
 status: OPEN
 dispatched: no
 written: 2026-09-21
+production-half: docs/briefs/BRIEF-production-sites.md (2026-09-26 — ④ for prod lives there)
 evict-when: the four named breakages (1 URL name, 2 DEFAULT_LOOK, 3 the printed link, 4 per-town deploy) are each closed or re-boarded. RULED 2026-09-21: one site per Map; the partner link is unlisted but durable. Sec 1's browser gate is PASSED.
 -->
 
