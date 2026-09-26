@@ -7,7 +7,7 @@ evict-when: the two measurements below exist as re-runnable checks, and Jacob ha
 
 # Tree density and tree size — a disciplined measurement
 
-**You are the dispatched agent. Name yourself — one word, yours, and NOT a name another RUNNING session already holds.** Check with `ListAgents` before taking it (reuse across days is fine; two live sessions with one name is not — Boz addresses you by it). Then `/rename <name>` so the session list shows it.
+**You are the dispatched agent. Name yourself — one word, yours, and NOT a name another RUNNING session already holds.** Check with `ListAgents` before taking it (reuse across days is fine; two live sessions with one name is not — Boz addresses you by it). Then ask Jacob to `/rename` the session to it (it is a user command), so the session list shows it.
 **Agent: FRESH** — this is a forensic; it needs a whole context and no prior conclusions.
 
 ## The ask

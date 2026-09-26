@@ -7,7 +7,7 @@ evict-when: Promote to Production puts a town on its own .online domain without 
 
 # Production sites — each town on its own .online domain
 
-**You are the dispatched agent. Name yourself — one word, yours, and NOT a name another RUNNING session already holds.** Check with `ListAgents` before taking it (reuse across days is fine; two live sessions with one name is not — Boz addresses you by it). Then `/rename <name>` so the session list shows it.
+**You are the dispatched agent. Name yourself — one word, yours, and NOT a name another RUNNING session already holds.** Check with `ListAgents` before taking it (reuse across days is fine; two live sessions with one name is not — Boz addresses you by it). Then ask Jacob to `/rename` the session to it (it is a user command), so the session list shows it.
 **Agent: FRESH** — the staging half was built by agents whose windows are closed; read what they left, don't recall it.
 
 ## The ask, and the rulings (Jacob, 2026-09-26)
