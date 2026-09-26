@@ -137,6 +137,7 @@ Each group describes a contiguous slice of `ground.bin`:
 | `polygonOffsetUnits` | Three.js `polygonOffsetUnits`. **Retained for back-compat / the mobile linear-depth path, but INERT under the log-depth canvases** (gl_FragDepth bypasses `GL_POLYGON_OFFSET_FILL`) — the consumer (`BakedGround.jsx`) no longer applies it. The per-group baked Y (see `renderOrder`) is the resolver. |
 | `vertexCount`, `vertexByteOffset` | Position buffer slice |
 | `indexCount`, `indexByteOffset` | Index buffer slice |
+| `fieldByteOffset`, `fields` | **Only on a group whose surface is `perField`** (the crop, `cartograph/surfaces.mjs`): a float32 field index per vertex (third section, §2.3) and one `{ bearing, cx, cz, halfLen, halfWid, areaM2 }` per field — the rows' bearing (rad, world XZ, along the field's long axis) and its minimum-area rectangle. A field is one face interior of that class. ▶ `node checks/claims-crop-rows-derived-per-field.mjs` |
 
 ### 2.3. Binary layout (`ground.bin`)
 
@@ -149,9 +150,10 @@ A single buffer. The manifest's `vertexByteOffset` + `indexByteOffset` per group
 | uint32 indices  for group 0   |
 | uint32 indices  for group 1   |
 | … all indices for all groups …
+| float32 field ids for each perField group (fieldByteOffset) |
 ```
 
-Vertices are XYZ triples in world-meters. Indices are absolute into the same buffer's position array (not group-relative). The first 4 floats of the LS slab as of this writing: `[-273.6, 0, 239.7, -272.5]` — i.e., world XZ with Y=0 on the ground plane.
+Vertices are XYZ triples in world-meters. Indices are absolute into the same buffer's position array (not group-relative). All three `*ByteOffset`s are absolute into the file. A perField group's vertices are duplicated where two fields meet, so each vertex belongs to exactly one field.
 
 ### 2.4. Group kinds in production
 
@@ -189,6 +191,7 @@ Per-texel measures of the scene for surfaces to read (`BRIEF-surface-lab §3`). 
 `{ bin, format: 'uint16', width, height, bounds, mPerUnit, maxM, texelM, texelFrom, farErrorBoundM, … }`, or
 `{ absent: true, why }`. Value in metres = `v × mPerUnit`; the grid is the scene's terrain grid.
 - `coastDist` — unsigned metres to the nearest `__water__` run (`bake-coast-distance.js`; shoreline = `shoreRuns.mjs`).
+- `resolved.<surface>` = `{ values, absent }` — each surface's parameters resolved against `references/registry.json` at bake (the runtime never reads the registry). `crop`'s findings are keyed by the town's state, voted from its own OSM addresses.
 ▶ `node checks/claims-coast-distance-is-the-coast.mjs`
 
 ---

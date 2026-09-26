@@ -25,6 +25,7 @@ import { fileURLToPath } from 'url'
 import { waterRuns } from './shoreRuns.mjs'
 import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
+import { townState } from '../src/cartograph/streetProfiles.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -155,8 +156,15 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
   const registry = existsSync(regPath) ? JSON.parse(readFileSync(regPath, 'utf8')) : null
   const resolvedSand = registry ? resolveSurfaceParams('sand', registry, {}, derivedSand)
     : { values: {}, absent: ['every physics param (no references/registry.json at bake)'] }
+  // ⭐ The crop surface's findings are keyed by the town's STATE, voted from its own OSM addresses.
+  const osmPath = join(dataRoot, 'cartograph', 'data', scene, 'raw', 'osm.json')
+  const state = existsSync(osmPath) ? townState(JSON.parse(readFileSync(osmPath, 'utf8'))) : { code: null, vote: 'no raw/osm.json' }
+  const resolvedCrop = registry ? resolveSurfaceParams('crop', registry, {}, {}, { state: state.code })
+    : { values: {}, absent: ['every physics param (no references/registry.json at bake)'] }
+  console.log(`  crop: state ${state.code ?? '⛔ UNKNOWN'} (${state.vote})${resolvedCrop.absent.length ? ' · ⛔ ABSENT — ' + resolvedCrop.absent.join('; ') : ' · every param resolved'}`)
   const out = { version: 1, look: lookId, channels: { ...prev.channels, coastDist: channel },
-    derived: { ...(prev.derived || {}), sand: derivedSand }, resolved: { ...(prev.resolved || {}), sand: resolvedSand } }
+    derived: { ...(prev.derived || {}), sand: derivedSand },
+    resolved: { ...(prev.resolved || {}), sand: resolvedSand, crop: resolvedCrop } }
   writeFileSync(manifestPath, JSON.stringify(out, null, 1))
   return out
 }

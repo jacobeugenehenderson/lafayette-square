@@ -80,9 +80,13 @@ const SURFACES_OVERRIDE = AS && STAGE_CLASS ? { classes: { [STAGE_CLASS]: AS ===
 // noon wherever the operator's laptop happens to be.
 function solarDate(month, hour) {
   const lon = INSTANCE.geography.lon
-  const utcMs = Date.UTC(new Date().getFullYear(), month - 1, 15) + (hour - lon / 15) * 3600e3
+  // A fractional month steps by quarter-months from the 15th (a crop stage turns in weeks).
+  const m = Math.floor(month)
+  const utcMs = Date.UTC(new Date().getFullYear(), m - 1, 15 + Math.round((month - m) * 30)) + (hour - lon / 15) * 3600e3
   return new Date(utcMs)
 }
+
+const doyOf = (d) => Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 1)) / 86400000) + 1
 
 // ── WEATHER: the lab writes the SAME inputs the live poller writes ───────────
 // ⭐ Through `useSkyState.setWeatherTargets`, so the Almanac picks the directive and
@@ -250,7 +254,7 @@ function App() {
           {Object.keys(CAMS).map(c => <Btn key={c} on={cam === c} tint="#4a5a45" onClick={() => setCam(c)}>{c}</Btn>)}
         </div>
         <Slider label="solar hour" min={0} max={24} step={0.25} v={hour} set={setHour} fmt={h => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`} />
-        <Slider label="season (month)" min={1} max={12} step={1} v={month} set={setMonth} fmt={m => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} />
+        <Slider label="season (month)" min={1} max={12.75} step={0.25} v={month} set={setMonth} fmt={m => `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Math.floor(m) - 1]} ${15 + Math.round((m % 1) * 30)} · day ${doyOf(solarDate(m, hour))}`} />
         <div style={{ display: 'flex', gap: 5, margin: '6px 0 8px' }}>
           {Object.keys(WEATHER).map(w => <Btn key={w} on={wx === w} tint="#6b5a3f" onClick={() => setWx(w)}>{w}</Btn>)}
         </div>

@@ -65,6 +65,33 @@ export const SURFACES = {
       },
     },
   },
+  // ⭐ ROW CROPS — the six-month field (BRIEF-field-shader, 2026-09-26): bare dirt → tilled raised
+  // rows → sprouts → plants → harvest, then the same states played back. Driven by the shared
+  // calendar (useCalendar dayOfYear). Generator: grassMaterial.js CROP_ALBEDO.
+  // ⭐ `perField`: the bake writes a field id per vertex and each field's own axis, so the rows'
+  // bearing is DERIVED per field (its minimum-area rectangle), never a town-wide constant.
+  crop: {
+    perField: true,
+    params: {
+      // WHEN — a property of the town, keyed by its STATE (derived from the town's own OSM,
+      // `townState`), never "April to October". Each field draws its own planting and harvest
+      // day inside the most-active (15–85%) window. No finding for the state → ABSENT, and the
+      // field stays bare dirt, named.
+      calendar: {
+        unit: 'day of year', source: 'physics', finding: 'f-usda-corn-grain-dates-{state}',
+        question: 'q-crop-calendar',
+      },
+      rowSpacingIn:  { unit: 'in', source: 'physics', finding: 'f-ars-corn-row-traditional', question: 'q-crop-row-spacing' },
+      // A MINIMUM (NRCS 346): the ridges are drawn at it.
+      ridgeHeightIn: { unit: 'in', source: 'physics', finding: 'f-nrcs-346-ridge-min-height', question: 'q-crop-ridge-height' },
+      // How much of the field's own season (planting → harvest) the forward sequence takes to
+      // reach full plants; harvest plays it back at the same speed. Scale-free: a fraction of the
+      // town's season, so it moves with the calendar. No source states it.
+      growFrac:  { unit: '× season', source: 'authored', default: 0.5 },
+      // The turning strip where rows stop, at each end of the field's long axis. 0 = no headland.
+      headlandM: { unit: 'm', source: 'authored', default: 0 },
+    },
+  },
   // ⭐ The Pilgrim Monument's coursed granite — a SET-PIECE surface, not a land-use one
   // (no class maps to it). Named for its monument because every value below is THAT
   // structure's: a second town's granite set-piece gets its own entry with its own sources,
@@ -96,6 +123,7 @@ export const SURFACES = {
 export const SURFACE_OF_CLASS = {
   park:        'grass',
   residential: 'grass',
+  agricultural: 'crop',
   recreation:  'grass',
   beach:       'sand',
   dune:        'sand',
@@ -138,12 +166,13 @@ export function surfaceOfGroup(group, table = SURFACE_OF_CLASS) {
 }
 
 /**
- * A surface's parameter VALUES: physics from the registry's findings, authored from the
+ * A surface's parameter VALUES: physics from the registry's findings (an id may carry the town's
+ * `{state}`, passed in `place`), authored from the
  * operator's layer (`scene.surfaces.params.<surface>`) or the neutral default. Returns
  * `{ values, absent }`: a physics param with no finding, or a finding missing from the
  * registry, is ABSENT and named, never filled in. Pure: the caller passes the registry.
  */
-export function resolveSurfaceParams(surface, registry, authored = {}, derived = {}) {
+export function resolveSurfaceParams(surface, registry, authored = {}, derived = {}, place = {}) {
   const def = SURFACES[surface]
   if (!def) throw new Error(`⛔ resolveSurfaceParams: no surface "${surface}"`)
   const byId = new Map((registry?.findings || []).map(f => [f.id, f]))
@@ -151,7 +180,10 @@ export function resolveSurfaceParams(surface, registry, authored = {}, derived =
   for (const [name, p] of Object.entries(def.params)) {
     if (authored?.[name] != null) { values[name] = authored[name]; continue }
     if (p.source === 'authored') { values[name] = p.default; continue }
-    if (p.source === 'physics' && p.finding && byId.has(p.finding)) { values[name] = byId.get(p.finding).value; continue }
+    // A finding id may be keyed by the town's place (`{state}`): no place → no id → ABSENT.
+    const fid = p.finding?.replace(/\{(\w+)\}/g, (_, k) => place?.[k] ?? '\u0000')
+    if (p.source === 'physics' && fid && !fid.includes('\u0000') && byId.has(fid)) { values[name] = byId.get(fid).value; continue }
+    if (fid?.includes('\u0000')) { absent.push(`${name} (${p.unit}, physics — finding ${p.finding}: the town's ${p.finding.match(/\{(\w+)\}/)[1]} is not known)`); continue }
     // `derived` = the town's context.json `derived.<surface>`: { value } or { absent, why }.
     if (p.source === 'derived') {
       const d = derived?.[name]
@@ -159,7 +191,7 @@ export function resolveSurfaceParams(surface, registry, authored = {}, derived =
       absent.push(`${name} (${p.unit}, derived — ${d?.why || 'not derived: bake the context'})`)
       continue
     }
-    absent.push(`${name} (${p.unit}, ${p.source}${p.finding ? ' — finding ' + p.finding + ' missing' : ' — no source'})`)
+    absent.push(`${name} (${p.unit}, ${p.source}${fid ? ' — finding ' + fid + ' missing' : ' — no source'})`)
   }
   return { values, absent }
 }

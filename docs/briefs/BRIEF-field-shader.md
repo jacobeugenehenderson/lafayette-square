@@ -40,9 +40,13 @@ evict-when: huron's fields play the season — dirt → tilled rows → sprouts 
 > ▶ **Order for the day:** §5's area measurement (short) → the dirt/tilled/sprout surface cycle in the lab →
 >   the plant impostors → Jacob's eye in the lab at eye/mid/overhead across the months. **Stop and ask** before
 >   anything needs a re-pour or bake.
-> ⚠️ **The ceiling from §3 still holds:** huron's largest fields land in NO face (the containment direction),
->   so the cycle will show on the small fields only until that is fixed. Report the area it reaches vs the
->   area OSM says is farmland.
+
+> ### ▶ STATE 2026-09-26 (Furrow)
+> ✅ **The surface cycle is built and baked on huron:** `crop` in `surfaces.mjs` (dates `f-usda-corn-grain-dates-{state}`,
+> spacing `f-ars-corn-row-traditional`, ridge `f-nrcs-346-ridge-min-height`; `growFrac`/`headlandM` authored), field ids in
+> the ground bake (`src/lib/fieldAxis.js`), the albedo + relief in `grassMaterial.js`, `greenhouse` its own class.
+> ▶ `node checks/claims-crop-rows-derived-per-field.mjs` (mutation-tested each run). ⚠️ A "field" is a FACE: huron has
+> 9, up to 179 ha — OSM's farmland polygons are the finer unit, not built. **OPEN: the plant impostors** · Jacob's eye.
 
 ---
 
@@ -61,15 +65,13 @@ through Boz if both are running.
 on a re-poured huron: its face classes went **9 → 12**, with **`agricultural` 0 → 8 faces.**
 ▶ Re-derive, never quote: `node checks/claims-every-lu-tag-has-a-home.mjs`.
 
-> ### ⛔⛔ BUT READ THIS BEFORE YOU SIZE §5, BECAUSE IT IS THE CEILING ON YOUR AUDIENCE
-> **The vocabulary is fixed and the SPATIAL JOIN still loses the biggest fields.** The OSM vote asks
-> *"is the POLYGON's centroid inside this FACE?"* (`derive.js`, `pointInRing(o.cx, o.cz, face.ring)`),
-> so a field larger than a block never lands anywhere: **24 of huron's 52 agricultural polygons have
-> their centroid in NO face at all, including the two largest.** ⇒ ⭐ **the 8 faces you can see are
-> the SMALL fields.** Sizing the audience off them will undercount the treatment badly, and it is the
-> difference between §5's "2% — a luxury" and "30% — the town's whole look."
-> ▶ That is `BRIEF-land-use-derivation`'s **open item #2** (the containment direction), not this brief
-> and not the vocabulary one. ⛔ Do not fix it here; measure the polygons, not the faces.
+> ### ✅ MEASURED 2026-09-26 (Furrow) — THE CENTROID CEILING IS GONE; TWO OTHER GAPS ARE NOT
+> The coverage vote (`dc0c264f`) replaced the centroid vote: **142 of the 152 ha of OSM farmland in
+> huron's disc reach baked `agricultural` ground.** But the baked class covers **541 ha**, only 142 of it
+> farmland in OSM (47 greenhouse, ~300 with no OSM land use) — cause not established; that is
+> `BRIEF-land-use-derivation`'s, routed to Boz. And the ground mesh draws **7,396 m²** of the class
+> outside its own polygons (filled holes, a rim sliver), reported by the bake every pour.
+> ▶ Re-derive: the `[bake-ground] face:agricultural` lines every ground bake prints.
 
 ## 4. THE MECHANISM EXISTS — build IN the surface lab
 
@@ -119,8 +121,6 @@ treatment justified by one town is an instance patch.
   should also be a **generator**, and that generator is the unowned piece. ⛔ Still not yours to
   absorb; it is now *named* rather than open. (`lu-policy.mjs`'s `plantingOf()` is the socket.)
 - **`meadow` vs `grassland` vs `grass`** — three tags, and it is not obvious they are three looks.
-- ✅ **Season — RULED (Jacob, 2026-09-24):** winter barren → spring tilled → summer sprouting. The
-  crop state follows the calendar (the lab's month control); plant impostors come later.
 
 ## 7. ⛔ Can the instrument SEE the change?
 ⚠️ **Largely not, and say so rather than faking it** — this is a LOOK, and a check asserting

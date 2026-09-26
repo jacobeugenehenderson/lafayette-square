@@ -2728,7 +2728,9 @@ createServer(async (req, res) => {
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named
       // absence — so it is never dirty forever.
       await runIfDirty('coast-distance',
-        [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, join(here, 'bake-coast-distance.js'), join(here, 'shoreRuns.mjs')],
+        // The registry, the surfaces table and the town's OSM (its state) feed the RESOLVED params.
+        [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, join(here, 'bake-coast-distance.js'), join(here, 'shoreRuns.mjs'),
+          join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json')],
         [join(LOOK_DIR, 'context.json')],
         `node bake-coast-distance.js --look=${id} ${sceneFlag}`,
         { cwd: here })

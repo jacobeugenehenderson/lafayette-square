@@ -100,16 +100,21 @@ export async function resolveStage(lookId, stageId, bust) {
   const bin = await fetch(`${ASSET_BASE}baked/${lookId}/${m.bin}${t}`).then(r => r.arrayBuffer())
   const P = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)
   const I = new Uint32Array(bin, g.indexByteOffset, g.indexCount)
+  // ⭐ Inside the fade's INNER edge, the same rule as `steepest`: huron's largest farmland triangle
+  // sat at r 3449 m in a 3339–3539 m fade, so the surface was judged half-transparent over the sky.
+  const st = m.stencil
+  if (!(st?.fade?.inner > 0)) throw new Error(`⛔ stage "${stageId}" on ${lookId}: ground.json's stencil has no fade band — the opaque disc to search is unknown`)
   let best = -1, bestA = 0
   for (let k = 0; k < I.length; k += 3) {
     const a = I[k] * 3, b = I[k + 1] * 3, c = I[k + 2] * 3
+    if (Math.hypot((P[a] + P[b] + P[c]) / 3 - st.center[0], (P[a + 2] + P[b + 2] + P[c + 2]) / 3 - st.center[1]) > st.fade.inner) continue
     const A = Math.abs((P[b] - P[a]) * (P[c + 2] - P[a + 2]) - (P[c] - P[a]) * (P[b + 2] - P[a + 2])) / 2
     if (A > bestA) { bestA = A; best = k }
   }
-  if (best < 0) throw new Error(`⛔ stage "${stageId}": group has no triangles`)
+  if (best < 0) throw new Error(`⛔ stage "${stageId}": no triangle of "${id}" inside the fade's inner edge (${st.fade.inner} m)`)
   const a = I[best] * 3, b = I[best + 1] * 3, c = I[best + 2] * 3
   return {
     x: (P[a] + P[b] + P[c]) / 3, z: (P[a + 2] + P[b + 2] + P[c + 2]) / 3, normal: [1, 0],
-    why: `centroid of the largest triangle in "${id}" (${bestA.toFixed(0)} m²)`,
+    why: `centroid of the largest triangle in "${id}" inside the fade (${bestA.toFixed(0)} m²)`,
   }
 }

@@ -54,6 +54,8 @@ import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // par
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
+import { SURFACES, resolveClassTable } from './surfaces.mjs'
+import { splitByField } from '../src/lib/fieldAxis.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -939,6 +941,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   let idxByteOffset = 0
   const positionChunks = []
   const indexChunks = []
+  // ⭐ A `perField` surface (the crop) needs to know which FIELD each vertex is in, and each
+  // field's own axis, so its rows run the field's way (surfaces.mjs SURFACES.crop). Written as a
+  // third bin section, after the indices; only groups whose surface asks for it carry one.
+  let fieldByteOffset = 0
+  const fieldChunks = []
+  const surfaceTable = resolveClassTable(design?.surfaces?.classes)
 
   // Polygon groups (large land-use blocks + leisure/natural overlays) get
   // refined to a per-vertex spacing that matches the terrain texture so
@@ -1178,6 +1186,18 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       : conformAndRefine([{ polys: plan.polys, refine: plan.refinePolicy, yLift }])[0]
     if (inPartition && yLift) for (let i = 1; i < positions.length; i += 3) positions[i] = yLift
     if (indices.length === 0) continue
+    let perField = null
+    if (kind === 'face' && SURFACES[surfaceTable[key]]?.perField) {
+      const src = toPolys(byFaceUse.get(key))
+      perField = splitByField(positions, indices, src)
+      console.log(`  [bake-ground] face:${key} → ${surfaceTable[key]}: ${perField.fields.length} field(s), each with its own row axis`
+        + ` (${perField.emptyFields} drew no triangle after the paint stack)`)
+      const o = perField.outside
+      if (o.tris) console.warn(`  [bake-ground] ⛔ face:${key}: the mesh draws ${o.tris} triangle(s), ${Math.round(o.m2)} m², OUTSIDE the class's own polygons `
+        + `(filled holes / rim, up to ${o.maxM.toFixed(1)} m out) — cause not established; placed in the field whose outline holds them, else the nearest`)
+    }
+    const posOut = perField ? perField.positions : positions
+    const idxOut = perField ? perField.indices : indices
 
     // Color resolution: per-Look design.json wins, then the canonical
     // Designer palette (DEFAULT_LAYER_COLORS / DEFAULT_LU_COLORS), then
@@ -1214,25 +1234,31 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       // Which groups the no-T-junction guarantee spans; the check reads this, so it
       // cannot drift from the bake's own definition of the partition.
       partition: inPartition,
-      vertexCount: positions.length / 3,
+      vertexCount: posOut.length / 3,
       vertexByteOffset: posByteOffset,
-      indexCount: indices.length,
+      indexCount: idxOut.length,
       indexByteOffset: idxByteOffset,
+      // Float32 field index per vertex (third bin section) + each field's axis: bearing (rad,
+      // world XZ, along the rows), centre, half-extents along/across the rows (m), area (m²).
+      ...(perField ? { fieldByteOffset, fields: perField.fields.map(f => ({
+        bearing: +f.bearing.toFixed(5), cx: +f.cx.toFixed(2), cz: +f.cz.toFixed(2),
+        halfLen: +f.halfLen.toFixed(2), halfWid: +f.halfWid.toFixed(2), areaM2: f.areaM2 })) } : {}),
     })
 
-    positionChunks.push(positions)
-    indexChunks.push(indices)
-    posByteOffset += positions.byteLength
-    idxByteOffset += indices.byteLength
+    positionChunks.push(posOut)
+    indexChunks.push(idxOut)
+    posByteOffset += posOut.byteLength
+    idxByteOffset += idxOut.byteLength
+    if (perField) { fieldChunks.push(perField.fieldOfVertex); fieldByteOffset += perField.fieldOfVertex.byteLength }
   }
 
   // Concatenate positions (all Float32) and indices (all Uint32) into one
-  // .bin. Layout: [all positions][all indices]. Manifest's *ByteOffset
+  // .bin. Layout: [all positions][all indices][field ids of perField groups]. Manifest's *ByteOffset
   // values are relative to the START of each section (offsets within the
   // positions section, then offsets within the indices section).
   const totalPosBytes = posByteOffset
   const totalIdxBytes = idxByteOffset
-  const buf = new Uint8Array(totalPosBytes + totalIdxBytes)
+  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -1243,6 +1269,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const indexSectionStart = totalPosBytes
   for (const g of groups) g.indexByteOffset += indexSectionStart
   for (const c of indexChunks) {
+    buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
+    off += c.byteLength
+  }
+  // Third section: the per-vertex field index of every `perField` group, absolute like the indices.
+  const fieldSectionStart = totalPosBytes + totalIdxBytes
+  for (const g of groups) if (g.fieldByteOffset != null) g.fieldByteOffset += fieldSectionStart
+  for (const c of fieldChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }

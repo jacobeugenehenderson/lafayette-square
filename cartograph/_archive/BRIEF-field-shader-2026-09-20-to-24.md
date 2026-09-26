@@ -179,3 +179,26 @@ extension was not faithful.
 > ⛔ **DO NOT INVENT A PARAMETER HOME. THREE BRIEFS EACH INVENTING ONE IS THE ACTUAL WAY WE SCREW
 > OURSELVES** — three incompatible authoring models and no panel that can hold them. ▶ **Propose the
 > shape, bring it to Boz, and it gets decided ONCE for all three.**
+
+
+---
+
+## Excised 2026-09-26 (Furrow) — superseded by the measurement and the re-scope
+
+> ### ⛔⛔ BUT READ THIS BEFORE YOU SIZE §5, BECAUSE IT IS THE CEILING ON YOUR AUDIENCE
+> **The vocabulary is fixed and the SPATIAL JOIN still loses the biggest fields.** The OSM vote asks
+> *"is the POLYGON's centroid inside this FACE?"* (`derive.js`, `pointInRing(o.cx, o.cz, face.ring)`),
+> so a field larger than a block never lands anywhere: **24 of huron's 52 agricultural polygons have
+> their centroid in NO face at all, including the two largest.** ⇒ ⭐ **the 8 faces you can see are
+> the SMALL fields.** Sizing the audience off them will undercount the treatment badly, and it is the
+> difference between §5's "2% — a luxury" and "30% — the town's whole look."
+> ▶ That is `BRIEF-land-use-derivation`'s **open item #2** (the containment direction), not this brief
+> and not the vocabulary one. ⛔ Do not fix it here; measure the polygons, not the faces.
+
+
+> ⚠️ **The ceiling from §3 still holds:** huron's largest fields land in NO face (the containment direction),
+>   so the cycle will show on the small fields only until that is fixed. Report the area it reaches vs the
+>   area OSM says is farmland.
+
+- ✅ **Season — RULED (Jacob, 2026-09-24):** winter barren → spring tilled → summer sprouting. The
+  crop state follows the calendar (the lab's month control); plant impostors come later.

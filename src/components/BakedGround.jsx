@@ -21,7 +21,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
-import { makeGroundSurfaceMaterial } from './grassMaterial'
+import { makeGroundSurfaceMaterial, CROP_UNIFORMS } from './grassMaterial'
+import useCalendar from '../hooks/useCalendar'
 import { surfaceOfGroup, resolveClassTable, SURFACES } from '../../cartograph/surfaces.mjs'
 import { isWaterGroupId } from './waterMaterial'
 import WaterSurface from './WaterSurface.jsx'
@@ -89,6 +90,14 @@ function reportAbsentParams(look, surface, authored, resolved) {
     : (resolved.absent || []).filter(s => authored?.[s.split(' ')[0]] == null)
   if (missing.length) console.error(`[BakedGround] ⛔ "${look}": surface "${surface}" is drawn WITHOUT ${missing.join('; ')}. `
     + `Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs`)
+}
+
+function reportNoFields(look, id, surface) {
+  const key = look + '|fields|' + id
+  if (_saidAbsent.has(key)) return
+  _saidAbsent.add(key)
+  console.error(`[BakedGround] ⛔ "${look}": face:${id} renders with "${surface}", which runs its rows per FIELD, `
+    + `but this ground was baked without field ids. Drawn in the class's flat colour — ▶ re-bake the ground.`)
 }
 
 // Ground groups that render with the park gravel (Voronoi pebble) shader.
@@ -296,6 +305,23 @@ function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, s
       geom.setAttribute('uv',  new THREE.BufferAttribute(uv, 2))
       geom.setAttribute('uv2', new THREE.BufferAttribute(uv, 2))  // aoMap slot
       geom.setIndex(new THREE.BufferAttribute(indices, 1))
+      // ⭐ A `perField` group (the crop) carries a field index per vertex (third bin section) and
+      // each field's axis in the manifest: expanded here into the two attributes its shader reads.
+      // `aFieldAxis` = (cos, sin of the row bearing, field centre x, z) · `aFieldExt` = (half-length
+      // along the rows, half-width, and two per-field draws in [0,1) that place its planting and
+      // harvest day inside the town's window — hashed from the field index, so stable per bake).
+      if (g.fieldByteOffset != null) {
+        const fid = new Float32Array(bin, g.fieldByteOffset, g.vertexCount)
+        const draw = (i, k) => { const x = Math.sin((i + 1) * (12.9898 + k * 78.233)) * 43758.5453; return x - Math.floor(x) }
+        const axis = new Float32Array(g.vertexCount * 4), ext = new Float32Array(g.vertexCount * 4)
+        for (let i = 0; i < g.vertexCount; i++) {
+          const f = g.fields[fid[i]]
+          axis.set([Math.cos(f.bearing), Math.sin(f.bearing), f.cx, f.cz], i * 4)
+          ext.set([f.halfLen, f.halfWid, draw(fid[i], 0), draw(fid[i], 1)], i * 4)
+        }
+        geom.setAttribute('aFieldAxis', new THREE.BufferAttribute(axis, 4))
+        geom.setAttribute('aFieldExt', new THREE.BufferAttribute(ext, 4))
+      }
       geom.computeVertexNormals()
       return { group: g, geometry: geom }
     })
@@ -314,6 +340,12 @@ function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, s
             roughness={scene?.materialPhysics?.[group.id]?.roughness}
             scale={scene?.materialPhysics?.[group.id]?.scale} />
         const surface = surfaceOfGroup(group, surfaceTable)
+        // ⛔ A per-field surface on a group baked without field ids cannot know which way its rows
+        // run: said once, and drawn in the class's flat colour (what a class with no generator gets).
+        if (surface && SURFACES[surface].perField && !geometry.attributes.aFieldAxis) {
+          reportNoFields(manifest.look, group.id, surface)
+          return <FadeMesh key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+        }
         return surface
           ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
           : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
@@ -448,6 +480,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
     const s = shaderRef.current
     if (!s) return
     s.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
+    if (surface === 'crop') CROP_UNIFORMS.uDoy.value = useCalendar.getState().dayOfYear()
   })
   return (
     <mesh
