@@ -24,7 +24,7 @@ import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
-import PilgrimMonument from '../components/PilgrimMonument'
+import SetPiece from '../components/SetPiece.jsx'
 import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
 import { resolveHeroSubject } from '../lib/heroSubject.js'
@@ -1424,7 +1424,7 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
         </group>
         <group visible={layers.arch}>
           <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
-          <R3FErrorBoundary name="PilgrimMonument"><PilgrimMonument /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SetPiece"><SetPiece /></R3FErrorBoundary>
         </group>
       </Suspense>
 

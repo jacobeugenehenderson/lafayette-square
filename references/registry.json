@@ -510,6 +510,30 @@
       "status": "PERMITTED"
     },
     {
+      "id": "pilgrim-dossier-v1",
+      "title": "Pilgrim Monument Dimensional Reconstruction Dossier, Version 1",
+      "publisher": "Jacob Henderson (a conversion of Edmund J. Carpenter, The Pilgrims and Their Monument, D. Appleton & Co., 1911)",
+      "jurisdiction": "Provincetown, MA (one structure)",
+      "edition": "v1, 9 pp.",
+      "url": null,
+      "covers": [
+        "Pilgrim Monument dimensions (D/C/I/U coded)",
+        "foundation and site",
+        "masonry module and surface"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-25",
+        "checkedBy": "Granite (agent)",
+        "quote": "I also have a build dossier for the PTown monument; I will have to hire an artist to create the actual model but we can get the main plinth and area around it roughed in.",
+        "source": "docs/briefs/BRIEF-pilgrim-monument-site.md (Jacob ask)",
+        "underlying": "Carpenter 1911, published in the US in 1911: public domain.",
+        "approvedBy": "Jacob, 2026-09-26 (via Boz): \"the dossier (Carpenter 1911, converted) is an approved source\""
+      },
+      "status": "PERMITTED. Build from D and C values only; I is parametric, U is left out.",
+      "localCopy": "/Users/jacobhenderson/Desktop/Pilrgimn Mons/Pilgrim_Monument_Reconstruction_Dossier.pdf (Jacob machine; not committed)"
+    },
+    {
       "id": "ncsu-plant-toolbox",
       "title": "North Carolina Extension Gardener Plant Toolbox",
       "publisher": "NC State Extension",
@@ -583,6 +607,50 @@
         "note": "\"USGS-authored or produced data and information are considered to be in the U.S. Public Domain.\" Credit requested (\"Credit: U.S. Geological Survey\"), not required. Skip anything credited to a third party."
       },
       "status": "PERMITTED"
+    },
+    {
+      "id": "carpenter-1911",
+      "title": "The Pilgrims and Their Monument",
+      "publisher": "Edmund J. Carpenter (D. Appleton & Co., New York, 1911)",
+      "jurisdiction": "Provincetown, MA (one structure)",
+      "edition": "1911; Internet Archive scan pilgrimstheirmon00carp",
+      "url": "https://archive.org/details/pilgrimstheirmon00carp",
+      "covers": [
+        "the monument specification (ch. VI)",
+        "construction plates at 40 ft and 164 ft"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-26",
+        "checkedBy": "Granite (agent)",
+        "quote": "Published in the US in 1911: public domain.",
+        "approvedBy": "Jacob, 2026-09-26 (via Boz), as the source of the approved dossier pilgrim-dossier-v1"
+      },
+      "status": "PERMITTED",
+      "localCopy": "/Users/jacobhenderson/Desktop/Pilrgimn Mons/The_Pilgrims_and_their_monument_(IA_pilgrimstheirmon00carp).pdf (Jacob machine; not committed)"
+    },
+    {
+      "id": "baker-masonry-1908",
+      "title": "A Treatise on Masonry Construction, Ninth Edition",
+      "publisher": "Ira O. Baker (John Wiley & Sons, New York; 1908 printing)",
+      "jurisdiction": "national (US), period practice contemporary with the Pilgrim Monument (1907–10)",
+      "edition": "9th, revised and partially rewritten; 1908 printing",
+      "url": "https://archive.org/details/treatiseonmasonr0000irao",
+      "covers": [
+        "stone masonry",
+        "ashlar",
+        "bond"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-26",
+        "checkedBy": "Granite (agent)",
+        "quote": "US publication of 1908: public domain. The Internet Archive scan (\"Digitized by the Internet Archive in 2022 with funding from Kahle/Austin Foundation\") carries no usage conditions.",
+        "exception": "Google-digitised copies of this title (e.g. atreatiseonmaso02bakegoog) ask for \"personal, non-commercial purposes\": not used; cite this IA scan.",
+        "approvedBy": "Jacob, 2026-09-26 (via Boz): yes to Baker 1909 (the 9th edition, 1908 printing, is the scan without usage conditions)"
+      },
+      "status": "PERMITTED — cite the IA scan only",
+      "localCopy": null
     }
   ],
   "questions": [
@@ -1162,7 +1230,9 @@
       "ask": "Angle of repose of dry, wind-blown (aeolian) sand — the steepest a dune slip face stands at",
       "neededBy": "BRIEF-surface-lab §5 — the sand surface's dune state (upper bound of the slope scale)",
       "status": "answered",
-      "findings": ["f-usgs-dune-repose"],
+      "findings": [
+        "f-usgs-dune-repose"
+      ],
       "tried": [
         "No permitted source in the registry covers granular material; none read (rule 1)."
       ],
@@ -1217,13 +1287,13 @@
     {
       "id": "q-lu-park-boundary-vs-ground-cover",
       "ask": "When a park / nature reserve / protected-area boundary and a ground-cover polygon (sand, beach, dune, wood, wetland) both cover the same face, which decides the face's land use?",
-      "neededBy": "Provincetown's dunes: once a face took the class of whatever covered it by area, leisure=nature_reserve (180,227,102 m2 \u2014 the Cape Cod National Seashore) out-voted natural=sand (13,908,598 m2) and the beach face group vanished, rendering 2,697 ha of dune as lawn.",
+      "neededBy": "Provincetown's dunes: once a face took the class of whatever covered it by area, leisure=nature_reserve (180,227,102 m2 — the Cape Cod National Seashore) out-voted natural=sand (13,908,598 m2) and the beach face group vanished, rendering 2,697 ha of dune as lawn.",
       "status": "answered",
       "findings": [
         "r-lu-ground-cover-beats-jurisdiction"
       ],
       "tried": [
-        "Area share alone: cannot separate the two \u2014 a jurisdiction is usually the larger claim, so it always wins.",
+        "Area share alone: cannot separate the two — a jurisdiction is usually the larger claim, so it always wins.",
         "Keying on the LU class rather than the source tag: cannot work, `park` arrives from leisure=park (a lawn) and from a national park boundary spanning dunes and forest alike."
       ]
     },
@@ -1242,6 +1312,35 @@
       "codeSites": [
         "scripts/15-fia-tree-mix.mjs (town centre → Census county → FIA live stems by species → tree-mix.json)"
       ]
+    },
+    {
+      "id": "q-pilgrim-stone-length",
+      "ask": "Length of a granite stone along a course on the Pilgrim Monument (for the vertical joints), and how joints break course to course",
+      "neededBy": "BRIEF-pilgrim-monument-site: the placeholder masonry (Jacob: \"vertical seams would help a lot\")",
+      "status": "answered",
+      "findings": [
+        "d-pilgrim-stone-length"
+      ],
+      "notes": "Real lengths were set by the US Engineers working drawings (not located). Construction plates at 400 ppi do not resolve vertical joints.",
+      "codeSites": [
+        "cartograph/surfaces.mjs granite.stoneLength",
+        "src/components/graniteMasonryMaterial.js (vertical joints)"
+      ],
+      "check": "checks/claims-pilgrim-monument-site.mjs"
+    },
+    {
+      "id": "q-pilgrim-course-count",
+      "ask": "How many granite courses between documented datums on the Pilgrim Monument",
+      "neededBy": "BRIEF-pilgrim-monument-site: the placeholder coursing (Jacob: \"count the bands\")",
+      "status": "answered",
+      "findings": [
+        "m-pilgrim-courses-base-to-wash1"
+      ],
+      "notes": "Only base → wash 1 is measurable on the plate; higher segments draw within f-pilgrim-course-height.",
+      "codeSites": [
+        "src/setpieces/pilgrimMonument.js courseBeds"
+      ],
+      "check": "checks/claims-pilgrim-monument-site.mjs"
     }
   ],
   "findings": [
@@ -3595,7 +3694,7 @@
       "date": "2026-09-25",
       "quote": "yes, ground cover wins",
       "gist": "Where a MANAGEMENT polygon (park, nature reserve, protected area, national park) and a GROUND-COVER polygon (natural=sand/beach/dune/wood/scrub/wetland/heath/grassland, landuse=forest/meadow) both cover a face, the ground cover takes it; the management class keeps only what no cover claims (lawns, fields, car parks). A park is a jurisdiction, sand is a ground cover, and the surface wants what the ground IS. The kinds are declared per SOURCE TAG in derive.js OSM_LU_KIND, never inferred per town and never from the LU class, because `park` arrives both from leisure=park (a lawn) and from a national park boundary spanning dunes and forest. It is a FILTER, not a weight: 30 m2 of sand beats 180 km2 of reserve, because the question is what kind, not how much. landuse=grass is deliberately NOT a cover: a park's own lawn carries that tag, so treating it as a cover displaces the park while changing no surface at all.",
-      "canon": "docs/briefs/BRIEF-land-use-derivation.md \u00b7 cartograph/derive.js OSM_LU_KIND",
+      "canon": "docs/briefs/BRIEF-land-use-derivation.md · cartograph/derive.js OSM_LU_KIND",
       "check": "node checks/claims-ground-cover-beats-jurisdiction.mjs"
     },
     {
@@ -3661,6 +3760,54 @@
       "foundBy": "Marram"
     },
     {
+      "id": "f-pilgrim-course-height",
+      "kind": "range",
+      "value": {
+        "courseHeight_in": {
+          "min": 18,
+          "max": 30
+        }
+      },
+      "where": "§4 Masonry module and surface, row \"Granite course height\" (D)",
+      "quote": "18\" minimum; 30\" maximum",
+      "topic": "masonry",
+      "question": null,
+      "source": "pilgrim-dossier-v1",
+      "scope": "Pilgrim Monument exterior granite",
+      "foundOn": "2026-09-25",
+      "foundBy": "Granite"
+    },
+    {
+      "id": "f-pilgrim-joint-width",
+      "kind": "rule",
+      "value": {
+        "jointMax_in": 1
+      },
+      "where": "§4 Masonry module and surface, row \"Bed / vertical joints\" (D)",
+      "quote": "not over 1\"",
+      "topic": "masonry",
+      "question": null,
+      "source": "pilgrim-dossier-v1",
+      "scope": "Pilgrim Monument exterior granite",
+      "foundOn": "2026-09-25",
+      "foundBy": "Granite"
+    },
+    {
+      "id": "f-pilgrim-split-faces",
+      "kind": "rule",
+      "value": {
+        "face": "split"
+      },
+      "where": "§4 Masonry module and surface, row \"Exposed faces\" (D)",
+      "quote": "fresh quarry faces",
+      "topic": "masonry",
+      "question": null,
+      "source": "pilgrim-dossier-v1",
+      "scope": "Pilgrim Monument exterior granite",
+      "foundOn": "2026-09-25",
+      "foundBy": "Granite"
+    },
+    {
       "id": "f-usgs-dune-repose",
       "kind": "range",
       "value": {
@@ -3677,6 +3824,81 @@
       "scope": "dry wind-blown dune sand; the page's own caveat: varies with grain size, wind speed, roundedness",
       "foundOn": "2026-09-25",
       "foundBy": "Marram"
+    },
+    {
+      "id": "f-baker-ashlar-max-length",
+      "kind": "range",
+      "value": {
+        "maxLength_depths": {
+          "min": 4,
+          "max": 5
+        }
+      },
+      "where": "Ch. VII §200 Ashlar Masonry",
+      "quote": "in harder materials, the length may be 4 or 5 times the depth",
+      "scope": "ashlar in hard stone (granite)",
+      "source": "baker-masonry-1908",
+      "topic": "masonry",
+      "question": null,
+      "foundOn": "2026-09-26",
+      "foundBy": "Granite"
+    },
+    {
+      "id": "f-baker-bond-lap",
+      "kind": "range",
+      "value": {
+        "lap_depths": {
+          "min": 1,
+          "max": 1.5
+        }
+      },
+      "where": "Ch. VII §202 Bond",
+      "quote": "No side-joint of any course should be directly above a side-joint in the course below ; but the stones should overlap, or break joint, to an extent of from 1 to 1½ times the depth of the course.",
+      "scope": "stone masonry",
+      "source": "baker-masonry-1908",
+      "topic": "masonry",
+      "question": null,
+      "foundOn": "2026-09-26",
+      "foundBy": "Granite"
+    },
+    {
+      "id": "d-pilgrim-stone-length",
+      "kind": "derived",
+      "question": "q-pilgrim-stone-length",
+      "topic": "masonry",
+      "from": [
+        "f-baker-bond-lap",
+        "f-baker-ashlar-max-length"
+      ],
+      "value": {
+        "stoneLength_depths": 2.5,
+        "lap_depths": 1.25
+      },
+      "derivation": "running (half-lap) bond with the lap at the midpoint of Baker §202 (1.25 × course depth), so each stone is twice the lap = 2.5 × its course depth; checked under Baker §200 hard-stone maximum (4–5 ×). The monument drawings that set the real lengths are not available (Carpenter p.155: \"cut to the sizes … shown in the drawings\").",
+      "quote": "-",
+      "foundOn": "2026-09-26",
+      "foundBy": "Granite"
+    },
+    {
+      "id": "m-pilgrim-courses-base-to-wash1",
+      "kind": "measured",
+      "question": "q-pilgrim-course-count",
+      "topic": "masonry",
+      "value": {
+        "courses": 8,
+        "fromZ_ft": 0,
+        "toZ_ft": 16.25
+      },
+      "command": "node scratch/pilgrim-count-courses.mjs \"<carpenter-1911 PDF>\"",
+      "sites": "Carpenter 1911, plate \"40 feet above the base\" (PDF page 207): the sunlit face, left of the door, between the ground line and the first wash",
+      "inputs": [
+        "carpenter-1911"
+      ],
+      "method": "computed (row-intensity profile of the 400-ppi page)",
+      "tolerance": "±0 courses on this segment (bed rows 53–65 px apart, one per course); higher segments are NOT measured (a window opening and halftone noise break the profile)",
+      "quote": "(measured, not quoted — see command)",
+      "foundOn": "2026-09-26",
+      "foundBy": "Granite"
     }
   ]
 }

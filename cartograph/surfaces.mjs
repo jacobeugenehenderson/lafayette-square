@@ -65,21 +65,24 @@ export const SURFACES = {
       },
     },
   },
-  // ⭐ Coursed granite — a SET-PIECE surface, not a land-use one (no class maps to it). First
-  // wearer: Provincetown's Pilgrim Monument placeholder (src/components/PilgrimMonument.jsx).
-  // Values come from the reconstruction dossier §4 (source `pilgrim-dossier-v1`).
-  granite: {
+  // ⭐ The Pilgrim Monument's coursed granite — a SET-PIECE surface, not a land-use one
+  // (no class maps to it). Named for its monument because every value below is THAT
+  // structure's: a second town's granite set-piece gets its own entry with its own sources,
+  // never these. Generator: src/components/graniteMasonryMaterial.js.
+  'pilgrim-granite': {
     params: {
-      // Course heights are drawn within this range, continuous from the base to the top.
+      // Course heights (dossier §4), drawn within this range, continuous base to top.
       courseHeightIn: { unit: 'in', source: 'physics', finding: 'f-pilgrim-course-height' },
-      // Joints are drawn at the documented MAXIMUM, the widest the source allows.
+      // Courses COUNTED on Carpenter's 1908 plate, where the plate resolves them.
+      courseCount:    { unit: 'courses', source: 'physics', finding: 'm-pilgrim-courses-base-to-wash1' },
+      // Joints at the documented MAXIMUM, the widest the source allows.
       jointIn:        { unit: 'in', source: 'physics', finding: 'f-pilgrim-joint-width' },
       // Split (quarry) faces rather than dressed ashlar.
       face:           { unit: '—',  source: 'physics', finding: 'f-pilgrim-split-faces' },
-      // Stone length along a course: the dossier gives none (U). ABSENT ⇒ no vertical joints.
-      blockLengthIn:  { unit: 'in', source: 'physics', question: null, finding: null },
-      // How deep the split face's relief reads, and how much stone-to-stone tone varies.
-      // No source states either: neutral defaults (0 = flat, uniform).
+      // Stone length and joint stagger: running bond, from Baker (1908) §200/§202.
+      stoneLength:    { unit: '× course depth', source: 'physics', finding: 'd-pilgrim-stone-length' },
+      // How deep the split face reads, and how much course-to-course tone varies. No source
+      // states either: authored, neutral defaults (0 = flat, uniform).
       reliefM:        { unit: 'm',  source: 'authored', default: 0 },
       toneVar:        { unit: '×',  source: 'authored', default: 0 },
     },

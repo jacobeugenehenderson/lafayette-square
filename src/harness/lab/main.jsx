@@ -29,7 +29,7 @@ import BakedLamps from '../../components/BakedLamps'
 import SlabRevetment from '../../components/SlabRevetment.jsx'
 import SlabBuildings from '../../components/SlabBuildings'
 import InstancedTrees from '../../components/InstancedTrees'
-import PilgrimMonument from '../../components/PilgrimMonument.jsx'
+import SetPiece from '../../components/SetPiece.jsx'
 import CelestialBodies from '../../components/CelestialBodies'
 import CloudDome from '../../components/CloudDome'
 import AtmosphereDirectiveDriver from '../../components/AtmosphereDirectiveDriver'
@@ -69,7 +69,7 @@ const STAGE = params.get('at') || 'class:park'
 const AS = params.get('as')
 const STAGE_CLASS = STAGE.startsWith('class:') ? STAGE.slice(6) : null
 // ⭐ `?relief=<m>&tone=<×>` previews the granite surface's AUTHORED parameters on the set-piece,
-// the values a town would write in design.json#surfaces.params.granite. Lab-only; never shipped.
+// the values a town would write in design.json#surfaces.params['pilgrim-granite']. Lab-only; never shipped.
 const GRANITE_PREVIEW = (params.has('relief') || params.has('tone'))
   ? { reliefM: +(params.get('relief') || 0), toneVar: +(params.get('tone') || 0) } : null
 const SURFACES_OVERRIDE = AS && STAGE_CLASS ? { classes: { [STAGE_CLASS]: AS === 'flat' ? null : AS } } : undefined
@@ -220,7 +220,7 @@ function App() {
           <group visible={layers.revetment}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.lamps}><R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.buildings}><R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={LOOK} interactive={false} /></R3FErrorBoundary></group>
-          <R3FErrorBoundary name="PilgrimMonument"><PilgrimMonument graniteOverride={GRANITE_PREVIEW} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SetPiece"><SetPiece graniteOverride={GRANITE_PREVIEW} /></R3FErrorBoundary>
           <group visible={layers.trees}><R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
         </Suspense>
         {layers.post && <PostProcessing lookId={LOOK} bakeLastMs={bakeLastMs} />}

@@ -157,3 +157,50 @@ export function southFacingYaw(site) {
 export function lonLatToLocal(geo, lon, lat) {
   return [(lon - geo.lon) * geo.lonToMeters, (geo.lat - lat) * geo.latToMeters]
 }
+
+// ── The masonry coursing (dossier §4: courses 18″–30″, D) ────────────────────────────
+// The bed-joint heights, in FEET above Z = 0, ascending from 0 to the top. One table for the
+// whole tower, so the coursing runs continuously through every wash.
+// ⚠️ I: a bed falls exactly at each wash, because a setback is cut at a bed joint. The dossier
+// gives the wash heights (D) but does not say they are beds, so this is an inference.
+// The draw is seeded, so the tower is the same on every load and the check can re-derive it.
+export const COURSE_SEED = 1910   // the year the monument was completed
+// `counted`: segments whose course COUNT was measured ({ fromZ_ft, toZ_ft, courses }). A
+// counted segment gets exactly that many courses, each still inside the cited range; the
+// rest are drawn. A count that cannot fit the range THROWS.
+export function courseBeds({ minIn, maxIn }, d = DOSSIER, seed = COURSE_SEED, counted = []) {
+  let s = seed >>> 0
+  const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296 }
+  const datums = [0, d.wash1.z, d.wash2.z, d.wash3.z, d.topZ].map(z => z * 12)   // inches
+  const beds = [0]
+  for (let k = 1; k < datums.length; k++) {
+    let z = datums[k - 1]
+    const end = datums[k]
+    const c = counted.find(q => Math.abs(q.fromZ_ft * 12 - z) < 1e-6 && Math.abs(q.toZ_ft * 12 - end) < 1e-6)
+    if (c) {
+      const n = c.courses, h0 = (end - z) / n, room = Math.min(h0 - minIn, maxIn - h0)
+      if (!(room >= 0)) throw new Error(`⛔ courseBeds: ${n} counted courses over ${(end - z).toFixed(1)}″ is ${h0.toFixed(2)}″ each, outside ${minIn}–${maxIn}″`)
+      const w = Array.from({ length: n }, () => rnd() * 2 - 1), mean = w.reduce((a, b) => a + b, 0) / n
+      const dev = w.map(v => v - mean), peak = Math.max(...dev.map(Math.abs)) || 1
+      for (let i = 0; i < n - 1; i++) { z += h0 + dev[i] / peak * room; beds.push(z) }
+      z = end; beds.push(z)
+      continue
+    }
+    for (let guard = 0; end - z > 1e-9; guard++) {
+      if (guard > 10000) throw new Error(`⛔ courseBeds: cannot fill ${datums[k - 1]}″–${end}″ with ${minIn}–${maxIn}″ courses`)
+      const rem = end - z
+      if (rem <= maxIn) {
+        if (rem < minIn - 1e-9) throw new Error(`⛔ courseBeds: a ${rem.toFixed(2)}″ remainder under ${minIn}″ at ${z}″`)
+        z = end
+      } else {
+        // Draw a course, rejecting any that would leave a remainder no course can fill
+        // (between maxIn and 2·minIn).
+        const h = minIn + rnd() * (maxIn - minIn), left = rem - h
+        if (left < minIn || (left > maxIn && left < 2 * minIn)) continue
+        z += h
+      }
+      beds.push(z)
+    }
+  }
+  return beds.map(i => i / 12)
+}

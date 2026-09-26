@@ -1,7 +1,6 @@
 /**
- * PilgrimMonument: Provincetown's set-piece. Self-gates on the town's instance
- * (`INSTANCE.setPiece.kind === 'pilgrim-monument'`), the way GatewayArch self-gates on
- * `scene.arch`, so no mount site names a town.
+ * PilgrimMonument: Provincetown's set-piece renderer. ⛔ Never mounted directly: every app
+ * mounts `SetPiece` (src/components/SetPiece.jsx), which passes the declaring `town` in.
  *
  * Renders the placeholder mass from the dossier's D/C table
  * (`src/setpieces/pilgrimMonument.js`), or the artist's model once `setPiece.model` names
@@ -18,34 +17,83 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { INSTANCE } from '../instance.js'
 import SceneLabel from './SceneLabel.jsx'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { labelFontSize } from '../lib/labelLayout.js'
+import { useSceneJson } from '../lib/useSceneJson.js'
+import { makeGraniteMasonryMaterial } from './graniteMasonryMaterial.js'
+import { resolveSurfaceParams } from '../../cartograph/surfaces.mjs'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { getElevationRaw } from '../utils/elevation.js'
 import { onTerrainReload, terrainExag } from '../utils/terrainShader.js'
 import {
-  DOSSIER, FT, placeholderStages, siteFromFootprint, seatOnTerrain, southFacingYaw, lonLatToLocal,
+  DOSSIER, FT, placeholderStages, courseBeds, COURSE_SEED, siteFromFootprint, seatOnTerrain, southFacingYaw, lonLatToLocal,
 } from '../setpieces/pilgrimMonument.js'
 
-// Rough split granite (dossier §4: "fresh quarry faces … not dressed ashlar"). The
-// monument's own stone, so it is not a Look value.
-const GRANITE = new THREE.MeshStandardMaterial({ color: '#8f8b84', roughness: 0.92, metalness: 0 })
+// The monument's own stone, a mid granite grey. Colour is not a dossier value; it is the set-piece's own.
+const GRANITE_HEX = '#8f8b84'
+const PLAIN = new THREE.MeshStandardMaterial({ color: GRANITE_HEX, roughness: 0.92, metalness: 0 })
 
-function Placeholder() {
-  const stages = useMemo(() => placeholderStages(), [])
+// ⭐ The masonry's physics values come from `references/` findings, resolved through the one
+// surface settings model (`cartograph/surfaces.mjs`). The registry is a lazy chunk, so only
+// a town with a set-piece ever downloads it.
+let _registry = null
+const loadRegistry = () => (_registry ||= import('../../references/registry.json').then(m => m.default))
+const _saidAbsent = new Set()
+
+const SURFACE = 'pilgrim-granite'
+
+function useGraniteMaterial(authored, lookId) {
+  const [mat, setMat] = useState(null)
+  const [err, setErr] = useState(null)
+  useEffect(() => {
+    let dead = false
+    loadRegistry().then(reg => {
+      if (dead) return
+      const { values, absent } = resolveSurfaceParams(SURFACE, reg, authored)
+      const key = lookId + '|' + absent.join()
+      if (absent.length && !_saidAbsent.has(key)) {
+        _saidAbsent.add(key)
+        console.error(`[PilgrimMonument] ⛔ "${lookId}": surface "${SURFACE}" is drawn WITHOUT ${absent.join('; ')}. ABSENT, not defaulted — ▶ cartograph/surfaces.mjs`)
+      }
+      const ch = values.courseHeightIn?.courseHeight_in, j = values.jointIn?.jointMax_in
+      if (!ch || !j) throw new Error(`${SURFACE}: the course range or joint width is absent — cannot course the stone`)
+      const counted = values.courseCount ? [values.courseCount] : []
+      const beds = courseBeds({ minIn: ch.min, maxIn: ch.max }, DOSSIER, COURSE_SEED, counted).map(z => z * FT)
+      // Vertical joints only where the stone length is sourced; absent ⇒ none drawn.
+      const bond = values.stoneLength ? { lengthDepths: values.stoneLength.stoneLength_depths, lapDepths: values.stoneLength.lap_depths } : null
+      const m = makeGraniteMasonryMaterial({ beds, jointM: j * 0.0254, bond, color: GRANITE_HEX })
+      m.userData.setAuthored({ reliefM: values.reliefM, toneVar: values.toneVar })
+      setMat(m)
+    }).catch(e => { if (!dead) setErr(e) })
+    return () => { dead = true }
+  }, [])
+  // Authored values retune live, without rebuilding the course table.
+  useEffect(() => {
+    if (!mat) return
+    const d = resolveSurfaceParams(SURFACE, { findings: [] }, authored).values
+    mat.userData.setAuthored({ reliefM: d.reliefM, toneVar: d.toneVar })
+  }, [mat, authored?.reliefM, authored?.toneVar])
+  if (err) throw new Error(`[PilgrimMonument] granite surface failed: ${err?.message || err}`)
+  return mat
+}
+
+function Placeholder({ authored, lookId }) {
+  const granite = useGraniteMaterial(authored, lookId)
+  // Geometry in TOWER-LOCAL metres (y = height above Z = 0), so the coursing is one
+  // continuous table across every stage.
+  const geos = useMemo(() => placeholderStages().map(s => {
+    const w = s.sq * FT, h = (s.z1 - s.z0) * FT
+    const g = new THREE.BoxGeometry(w, h, w)
+    g.translate(0, s.z0 * FT + h / 2, 0)
+    return { name: s.name, g }
+  }), [])
   return (
     <group>
-      {stages.map(s => {
-        const w = s.sq * FT, h = (s.z1 - s.z0) * FT
-        return (
-          <mesh key={s.name} name={s.name} material={GRANITE} castShadow receiveShadow
-                position={[0, (s.z0 * FT) + h / 2, 0]}>
-            <boxGeometry args={[w, h, w]} />
-          </mesh>
-        )
-      })}
+      {geos.map(({ name, g }) => (
+        // While the registry chunk loads (a moment), the stone draws plain.
+        <mesh key={name} name={name} geometry={g} material={granite || PLAIN} castShadow receiveShadow />
+      ))}
     </group>
   )
 }
@@ -66,12 +114,16 @@ function Model({ path }) {
   return scene ? <primitive object={scene} /> : null
 }
 
-export default function PilgrimMonument() {
-  const sp = INSTANCE.setPiece
+export default function PilgrimMonument({ town, graniteOverride } = {}) {
+  if (!town) throw new Error('[PilgrimMonument] ⛔ no town — mount <SetPiece>, which passes it')
+  const sp = town.setPiece
+  // The operator's layer (`scene.surfaces.params.granite`); the lab may override it for a preview.
+  const scene = useSceneJson(town.lookId)
+  const authored = graniteOverride || scene?.surfaces?.params?.[SURFACE] || null
   const active = sp?.kind === 'pilgrim-monument'
   const site = useMemo(() => {
     if (!active) return null
-    const ring = sp.footprint.map(([lon, lat]) => lonLatToLocal(INSTANCE.geography, lon, lat))
+    const ring = sp.footprint.map(([lon, lat]) => lonLatToLocal(town.geography, lon, lat))
     return siteFromFootprint(ring)
   }, [active, sp])
 
@@ -107,7 +159,7 @@ export default function PilgrimMonument() {
   return (
     <group ref={ref} name="pilgrim-monument" position={[site.x, groundRaw * terrainExag.value, site.z]}
            rotation={[0, southFacingYaw(site), 0]}>
-      {sp.model ? <Model path={sp.model} /> : <Placeholder />}
+      {sp.model ? <Model path={sp.model} /> : <Placeholder authored={authored} lookId={town.lookId} />}
       {label && (
         <group ref={labelRef}>
           <SceneLabel text={sp.name} fontSize={label.fontSize} position={[0, 0, label.dz]} rotation={[-Math.PI / 2, 0, 0]} />

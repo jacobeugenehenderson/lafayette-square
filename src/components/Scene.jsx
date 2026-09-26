@@ -18,7 +18,7 @@ import LafayettePark from './LafayettePark'
 import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import MountainBackdrop from './MountainBackdrop'
-import PilgrimMonument from './PilgrimMonument'
+import SetPiece from './SetPiece.jsx'
 import Atmosphere from './Atmosphere'
 import CloudDome from './CloudDome'
 import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
@@ -1059,8 +1059,8 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
           `scene.arch`); the component self-gates on that data, so no mount site
           names a Look. The condition left here is the mobile budget, not identity. */}
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
-      {/* A town's set-piece (Provincetown's Pilgrim Monument). Self-gates on INSTANCE.setPiece. */}
-      {!IS_GROUND && <R3FErrorBoundary name="PilgrimMonument"><PilgrimMonument /></R3FErrorBoundary>}
+      {/* The town's set-piece, if it declares one — the ONE mount every app uses. */}
+      {!IS_GROUND && <R3FErrorBoundary name="SetPiece"><SetPiece /></R3FErrorBoundary>}
       {/* Landscape backdrop (§10 third hero kind) — a mesh behind everything,
           standing at its true geo spot. Renders NOTHING unless the look ships a
           baked landscape manifest (LS has none), so this is a no-op for LS. */}

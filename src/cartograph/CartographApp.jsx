@@ -24,6 +24,7 @@ import BlockGeometryV2Debug from './BlockGeometryV2Debug.jsx'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import { DesignerArch } from './DesignerArch.jsx'
+import SetPiece from '../components/SetPiece.jsx'
 
 // Shot-only (environment paint-in)
 import LafayetteScene from '../components/LafayetteScene'
@@ -1583,6 +1584,10 @@ export default function CartographApp() {
                 detail, and `visible={false}` doesn't prevent the children's
                 expensive useMemos from running). They mount as soon as a
                 shot is active. */}
+            {/* The town's set-piece — the ONE mount every app uses, in Stage AND Designer
+                (top-down it reads as its plan square). Keyed to the ACTIVE look, since
+                Stage switches towns live. ▶ checks/claims-every-app-mounts-the-set-piece.mjs */}
+            <R3FErrorBoundary name="SetPiece"><SetPiece lookId={activeLookId} /></R3FErrorBoundary>
             {!inDesigner && sceneCfg.StageEnvironment && (
               <sceneCfg.StageEnvironment
                 hiddenLayers={hiddenLayers}

@@ -21,6 +21,12 @@
  *      plain box beside the set-piece, WHICHEVER source brings it (MSBF, OSM, a pour fix),
  *      with no id list. Fix: add the named ids to `building-overrides.json` `hide`.
  *
+ *   F. The masonry (the `pilgrim-granite` surface): its physics params resolve to registry
+ *      findings; every course lies inside the cited range; a bed falls at each wash; the table
+ *      runs from Z = 0 to the top; a MEASURED segment has exactly its counted courses; and the
+ *      running bond sits inside Baker's limits (lap 1–1½ × depth, length ≤ 4–5 × depth).
+ *      Every limit is READ from its finding, never restated.
+ *
  * ⛔ READ-ONLY. Usage: node checks/claims-pilgrim-monument-site.mjs [--self-test]
  *    --self-test mutates the table, the footprint and the slab, and asserts each is caught.
  */
@@ -29,8 +35,9 @@ import { join } from 'path'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
 import {
   DOSSIER, INFERRED, FT, ft, placeholderStages, siteFromFootprint, plinthSamplePoints,
-  seatOnTerrain, lonLatToLocal,
+  seatOnTerrain, lonLatToLocal, courseBeds,
 } from '../src/setpieces/pilgrimMonument.js'
+import { SURFACES, resolveSurfaceParams } from '../cartograph/surfaces.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const eq = (a, b, tol = 1e-9) => Math.abs(a - b) <= tol
@@ -75,6 +82,36 @@ function checkProfile(stages, d) {
     if (!by[n] || !eq(by[n].z0, z)) f.push(`${n} does not start at the table's ${z}′`)
   if (!by.balcony || !eq(by.balcony.z1, d.balcony.z) || !eq(by.balcony.sq, d.balcony.sq)) f.push('balcony deck is not the table\'s 29′6″ at 204′4″')
   if (!by.plinth || !eq(by.plinth.sq, d.foundationTopSq) || !eq(by.plinth.z1, 0)) f.push('plinth is not 28′ square topping out at Z = 0')
+  return f
+}
+
+// ── F. the coursing ─────────────────────────────────────────────────────────
+const REGISTRY = JSON.parse(readFileSync(join(ROOT, 'references/registry.json'), 'utf8'))
+function checkCoursing(beds, registry = REGISTRY, d = DOSSIER) {
+  const f = []
+  const { values, absent } = resolveSurfaceParams('pilgrim-granite', registry)
+  for (const name of ['courseHeightIn', 'courseCount', 'jointIn', 'face', 'stoneLength'])
+    if (values[name] == null) f.push(`pilgrim-granite.${name} does not resolve (${absent.join('; ')})`)
+  const ch = values.courseHeightIn?.courseHeight_in, cnt = values.courseCount
+  if (!ch) return f
+  if (!beds) beds = courseBeds({ minIn: ch.min, maxIn: ch.max }, d, undefined, cnt ? [cnt] : [])
+  const h = beds.slice(1).map((z, i) => (z - beds[i]) * 12)
+  const out = h.filter(x => x < ch.min - 1e-6 || x > ch.max + 1e-6)
+  if (out.length) f.push(`${out.length} course(s) outside the cited ${ch.min}–${ch.max}″: ${out.slice(0, 3).map(x => x.toFixed(2)).join(', ')}″`)
+  if (!eq(beds[0], 0) || !eq(beds.at(-1), d.topZ)) f.push(`course table runs ${beds[0]}′–${beds.at(-1)}′, not 0–${d.topZ}′`)
+  for (const [n, w] of [['wash1', d.wash1.z], ['wash2', d.wash2.z], ['wash3', d.wash3.z]])
+    if (!beds.some(z => eq(z, w, 1e-6))) f.push(`no bed at ${n} (${w}′)`)
+  if (cnt) {
+    const inSeg = beds.filter(z => z > cnt.fromZ_ft + 1e-6 && z <= cnt.toZ_ft + 1e-6).length
+    if (inSeg !== cnt.courses) f.push(`measured ${cnt.courses} courses ${cnt.fromZ_ft}′–${cnt.toZ_ft}′, table has ${inSeg}`)
+  }
+  const sl = values.stoneLength, byId = new Map(registry.findings.map(x => [x.id, x]))
+  const lap = byId.get('f-baker-bond-lap')?.value?.lap_depths, mx = byId.get('f-baker-ashlar-max-length')?.value?.maxLength_depths
+  if (sl && lap && mx) {
+    if (sl.lap_depths < lap.min || sl.lap_depths > lap.max) f.push(`bond lap ${sl.lap_depths}× is outside Baker §202's ${lap.min}–${lap.max}×`)
+    if (sl.stoneLength_depths > mx.min) f.push(`stone length ${sl.stoneLength_depths}× exceeds Baker §200's hard-stone ${mx.min}×`)
+    if (sl.stoneLength_depths < 2 * sl.lap_depths - 1e-9) f.push(`stone length ${sl.stoneLength_depths}× cannot carry a ${sl.lap_depths}× lap on both ends`)
+  } else if (sl) f.push('stone length resolves but its Baker findings do not — its ancestry is broken')
   return f
 }
 
@@ -157,6 +194,8 @@ if (!insts.length) { console.error('⛔ FAIL — no instance declares a pilgrim-
 if (process.argv.includes('--self-test')) {
   const inst = insts[0], ctx = contextFor(inst)
   const site = siteFromFootprint(inst.setPiece.footprint.map(([lon, lat]) => lonLatToLocal(inst.geography, lon, lat)))
+  const CNT = resolveSurfaceParams('pilgrim-granite', REGISTRY).values.courseCount
+  const CB = () => courseBeds({ minIn: 18, maxIn: 30 }, DOSSIER, undefined, [CNT])
   const cases = [
     ['top moved 1″', () => checkTable({ ...DOSSIER, topZ: DOSSIER.topZ + 1 / 12 }).length],
     ['wash 2 moved', () => checkTable({ ...DOSSIER, wash2: { ...DOSSIER.wash2, z: ft(33, 11) } }).length],
@@ -165,6 +204,12 @@ if (process.argv.includes('--self-test')) {
     ['footprint drifted', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, footprint: inst.setPiece.footprint.map(([a, b]) => [a + 1e-6, b]) } }, ctx).f.length],
     ['terrain cliff', () => checkSite(inst, { ...ctx, terrain: { ...ctx.terrain, getElevationRaw: (x) => x > site.x ? 10 : 0 } }).f.length],
     ['label renamed', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, name: 'Pilgrim Tower' } }, ctx).f.length],
+    ['a course over range', () => { const b = CB(); b.splice(12, 1); return checkCoursing(b).length }],
+    ['bed off a wash', () => { const b = CB().map(z => (z > 16 && z < 16.5 ? z + 0.1 : z)); return checkCoursing(b).length }],
+    ['table off the measured count', () => checkCoursing(courseBeds({ minIn: 18, maxIn: 30 }, DOSSIER, undefined, [{ ...CNT, courses: 9 }])).length],
+    ['lap outside Baker', () => checkCoursing(null, { findings: REGISTRY.findings.map(x => x.id === 'd-pilgrim-stone-length' ? { ...x, value: { stoneLength_depths: 2.5, lap_depths: 2 } } : x) }).length],
+    ['stone over Baker max', () => checkCoursing(null, { findings: REGISTRY.findings.map(x => x.id === 'd-pilgrim-stone-length' ? { ...x, value: { stoneLength_depths: 6, lap_depths: 1.25 } } : x) }).length],
+    ['finding gone', () => checkCoursing(null, { findings: REGISTRY.findings.filter(x => x.id !== 'f-pilgrim-course-height') }).length],
     ['box in plinth', () => checkSite(inst, { ...ctx, slab: [...ctx.slab, { id: 'mutant-box', ring: [[site.x - 1, site.z - 1], [site.x + 1, site.z - 1], [site.x + 1, site.z + 1], [site.x - 1, site.z + 1]] }] }).f.length],
   ]
   let bad = 0
@@ -173,8 +218,9 @@ if (process.argv.includes('--self-test')) {
 }
 
 let failed = 0
-const tf = [...checkTable(DOSSIER), ...checkProfile(placeholderStages(), DOSSIER)]
-console.log(tf.length ? `⛔ table/profile:\n   ${tf.join('\n   ')}` : '✅ table: every D/C value matches the dossier; profile reads it, top 252′7.5″')
+const tf = [...checkTable(DOSSIER), ...checkProfile(placeholderStages(), DOSSIER), ...checkCoursing()]
+const nC = (() => { const v = resolveSurfaceParams('pilgrim-granite', REGISTRY).values, ch = v.courseHeightIn?.courseHeight_in; return ch ? courseBeds({ minIn: ch.min, maxIn: ch.max }, DOSSIER, undefined, v.courseCount ? [v.courseCount] : []).length - 1 : 0 })()
+console.log(tf.length ? `⛔ table/profile/coursing:\n   ${tf.join('\n   ')}` : `✅ table: every D/C value matches the dossier; profile reads it, top 252′7.5″; ${nC} courses inside the cited range, a bed at each wash, 8 measured courses base→wash 1, running bond inside Baker`)
 failed += tf.length
 for (const inst of insts) {
   const { f, info } = checkSite(inst, contextFor(inst))

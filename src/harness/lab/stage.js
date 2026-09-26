@@ -13,11 +13,15 @@
  *                 mid-park, never on a curb.
  *   revetment   — the tallest armoured station of the baked revetment: the only
  *                 place the wall is worth judging (the harness's own rule).
+ *   setpiece    — the town's set-piece (INSTANCE.setPiece), from its own mapped footprint,
+ *                 faced from its SOUTH face (the window face), so the eye camera looks at it.
  *   steepest    — the steepest heightfield sample inside the disc's opaque core, read at
  *                 the grid's own step: where relief shading is judged.
  */
 import { ASSET_BASE } from '../../lib/bakedUrl.js'
 import { currentTerrain } from '../../utils/terrainShader.js'
+import { INSTANCE } from '../../instance.js'
+import { siteFromFootprint, southFacingYaw, lonLatToLocal, DOSSIER, FT } from '../../setpieces/pilgrimMonument.js'
 
 async function getJSON(url) {
   const r = await fetch(url)
@@ -31,6 +35,7 @@ export async function listStages(lookId, bust) {
   const m = await getJSON(`${ASSET_BASE}baked/${lookId}/ground.json${t}`)
   const out = m.groups.map(g => ({ id: `class:${g.id}`, kind: g.kind, tris: g.indexCount / 3 }))
   out.unshift({ id: 'steepest', kind: 'terrain' })
+  if (INSTANCE.setPiece) out.unshift({ id: 'setpiece', kind: INSTANCE.setPiece.kind })
   // ⛔ `r.ok` IS NOT PRESENCE IN DEV: vite answers a missing file with its HTML
   // fallback and a 200. Presence is "the body parses as the artifact".
   const rv = await fetch(`${ASSET_BASE}baked/${lookId}/revetment.json${t}`)
@@ -56,6 +61,14 @@ export async function resolveStage(lookId, stageId, bust) {
     const a = bestArc[Math.max(0, bi - 1)], b = bestArc[Math.min(bestArc.length - 1, bi + 1)]
     const L = Math.hypot(b.x - a.x, b.z - a.z) || 1
     return { x: best.x, z: best.z, normal: [(b.z - a.z) / L, -(b.x - a.x) / L], why: `tallest armoured station, crest ${best.crest.toFixed(2)} m` }
+  }
+  if (stageId === 'setpiece') {
+    const sp = INSTANCE.setPiece
+    if (!sp?.footprint) throw new Error(`⛔ stage "setpiece" on ${lookId}: this town declares no set-piece (src/instances/<town>.js setPiece)`)
+    const site = siteFromFootprint(sp.footprint.map(([lon, lat]) => lonLatToLocal(INSTANCE.geography, lon, lat)))
+    const r = southFacingYaw(site), n = [Math.sin(r), Math.cos(r)], h = DOSSIER.foundationTopSq * FT / 2
+    // The spot is the middle of the south face, so the eye camera stands off that face.
+    return { x: site.x + n[0] * h, z: site.z + n[1] * h, normal: n, why: `${sp.kind}: the south face of OSM way ${sp.osmWay}` }
   }
   if (stageId === 'steepest') {
     const m = await getJSON(`${ASSET_BASE}baked/${lookId}/ground.json${t}`)
