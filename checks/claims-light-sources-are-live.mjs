@@ -8,13 +8,15 @@
 //   ② every LANTERN field is read by StreetLights (`lant.<key>`)
 //   ③ every LAMPGLOW field is written as a share by BOTH the Stage pump and the production driver, and
 //      StreetLights turns it into a uniform (`share.<key>` × the lamp's output)
-//   ④ those uniforms have shader readers (pool → groundLamp.js · trees → treeAtlasMaterial.js)
+//   ④ those uniforms have shader readers (pool → groundLamp.js + building walls · trees → treeAtlasMaterial.js)
+//   ⑤ the walls' GLSL falloff equals lampPool.js's JS falloff, evaluated — one model, two languages
 // ⭐ The field lists are READ from skyLightChannels.js, never restated, so a new control is covered the day it lands.
 // ⭐ SELF-MUTATION, every run: ① is re-run on a copy of CartographApp with one live lantern removed, and must go red.
 //
 //   node checks/claims-light-sources-are-live.mjs
 import { readFileSync } from 'node:fs'
 import { LANTERN_FIELD_KEYS, LAMPGLOW_FIELDS } from '../src/cartograph/skyLightChannels.js'
+import { lampFalloff, LAMP_FALLOFF_GLSL } from '../src/lib/lampPool.js'
 
 let red = 0
 const bad = (m) => { red++; console.log(`   ⛔ ${m}`) }
@@ -54,8 +56,18 @@ for (const { key } of LAMPGLOW_FIELDS) {
 }
 
 console.log('④ THE UNIFORMS HAVE SHADER READERS')
-for (const [u, file] of [['poolUniform', 'src/lib/groundLamp.js'], ['treesUniform', 'src/components/treeAtlasMaterial.js']])
+for (const [u, file] of [['poolUniform', 'src/lib/groundLamp.js'], ['poolUniform', 'src/components/SlabBuildings.jsx'], ['treesUniform', 'src/components/treeAtlasMaterial.js']])
   src(file).includes(`_lampGlow.${u}`) ? ok(`${u} → ${file}`) : bad(`${u} has no reader in ${file}`)
+
+console.log('⑤ THE WALLS\' GLSL FALLOFF IS THE JS FALLOFF')
+{
+  // Evaluate the GLSL body as JS: same operators, only the builtins differ.
+  const body = LAMP_FALLOFF_GLSL.replace(/float lampFalloff\(float rn\)/, 'function glsl(rn)').replace(/\bfloat\b/g, 'let')
+  const glsl = new Function('exp', 'clamp', `${body}; return glsl`)(Math.exp, (x, a, b) => Math.min(b, Math.max(a, x)))
+  let worst = 0
+  for (let i = 0; i <= 1000; i++) { const rn = i / 1000; worst = Math.max(worst, Math.abs(glsl(rn) - lampFalloff(rn))) }
+  worst < 1e-12 ? ok(`identical over rn ∈ [0,1] (max |Δ| ${worst.toExponential(1)})`) : bad(`GLSL and JS falloff differ by up to ${worst.toFixed(4)}`)
+}
 
 console.log(red ? `\n⛔ FAIL — ${red}` : '\n✅ all claims hold')
 process.exit(red ? 1 : 0)

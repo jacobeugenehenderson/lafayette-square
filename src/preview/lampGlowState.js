@@ -55,6 +55,17 @@ export const lampGlow = {
   colorUniform: { value: new THREE.Color(0.80, 0.62, 0.32) },
 }
 
+// ⭐ THE LAMPS, FOR BUILDING WALLS — a grid of the lamps StreetLights DRAWS (one lamp list; `buildLampGrid`,
+// src/lib/lampPool.js). Stable uniform objects: SlabBuildings binds them once, StreetLights fills them.
+// dims = (cols, rows, k); k = 0 ⇒ no lamps ⇒ no wall light.
+export const lampGrid = {
+  uLampGrid:     { value: null },
+  uLampGridMin:  { value: new THREE.Vector2() },
+  uLampGridDims: { value: new THREE.Vector3(0, 0, 0) },
+  uLampGridCell: { value: 16 },
+  uLampHeadY:    { value: 0 },
+}
+
 const subs = new Set()
 function notify() { for (const fn of subs) fn() }
 

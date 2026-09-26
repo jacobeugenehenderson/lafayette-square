@@ -41,6 +41,8 @@ import { INSTANCE } from '../instance.js'
 
 import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
+import { LAMP_FALLOFF_GLSL, POOL_RADIUS_M } from '../lib/lampPool.js'
 const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
 
 // ── Camera x-ray — always on (2026-06-28) ─────────────────────────────────
@@ -590,10 +592,59 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          totalEmissiveRadiance += vec3(selT * 0.2 + (1.0 - selT) * hovT * 0.133);`
       )
 
+      // ── Fragment: STREET LAMPS ON THE WALLS (Jacob, 2026-09-26). Every lamp within the pool's
+      //    reach (lampPool.js), measured in 3D from its head, × how squarely the wall faces it,
+      //    × the wall's own colour × the lamp colour × the lamp output (Brightness × dusk ramp ×
+      //    the Light pools share — exactly 0 by day, so the uniform branch skips it all). Walls
+      //    only; the depth material is untouched. Heights are ground-relative on both sides
+      //    (vBPos is un-lifted; the head is uLampHeadY above its ground) — over one reach the
+      //    two grounds are taken as level.
+      if (isWall) {
+        shader.uniforms.uLampOut   = _lampGlow.poolUniform
+        shader.uniforms.uLampColor = _lampGlow.colorUniform
+        Object.assign(shader.uniforms, _lampGrid)
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <common>',
+          `#include <common>
+           uniform float uLampOut;
+           uniform vec3  uLampColor;
+           uniform sampler2D uLampGrid;
+           uniform vec2  uLampGridMin;
+           uniform vec3  uLampGridDims;
+           uniform float uLampGridCell;
+           uniform float uLampHeadY;
+           ${LAMP_FALLOFF_GLSL}
+           float wallLampLight(vec3 p, vec3 n) {
+             int K = int(uLampGridDims.z);
+             if (uLampOut <= 0.0 || K == 0) return 0.0;
+             int cols = int(uLampGridDims.x), rows = int(uLampGridDims.y);
+             ivec2 c = ivec2(floor((p.xz - uLampGridMin) / uLampGridCell));
+             float acc = 0.0;
+             for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) {
+               ivec2 cc = c + ivec2(dx, dz);
+               if (cc.x < 0 || cc.y < 0 || cc.x >= cols || cc.y >= rows) continue;
+               for (int s = 0; s < K; s++) {
+                 vec4 L = texelFetch(uLampGrid, ivec2(cc.x * K + s, cc.y), 0);
+                 if (L.w < 0.5) break;
+                 vec3 d = vec3(L.x, uLampHeadY, L.y) - p;
+                 float dist = length(d);
+                 float rn = dist / ${POOL_RADIUS_M.toFixed(1)};
+                 if (rn >= 1.0 || dist < 1e-3) continue;
+                 acc += lampFalloff(rn) * max(0.0, dot(n, d / dist));
+               }
+             }
+             return acc;
+           }`)
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>
+           totalEmissiveRadiance += diffuseColor.rgb * uLampColor * uLampOut * wallLampLight(vBPos, normalize(vBNorm));`)
+      }
+
       registerShader(shader)
     }
     attachCSM(mat)   // cascades, when `?csm=1` — composes, never replaces onBeforeCompile
-    mat.customProgramCacheKey = () => `slab-bldg-${group.kind}-${group.id}-${tex ? 'tex' : 'flat'}-skyvis1-riser1`
+    mat.customProgramCacheKey = () => `slab-bldg-${group.kind}-${group.id}-${tex ? 'tex' : 'flat'}-skyvis1-riser1-lamps1`
     return mat
   }, [tex, isRoof, isWall, isFoundation, texStrength, texScale, group.kind, group.id])
 

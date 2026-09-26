@@ -16,7 +16,8 @@ import { getElevationRaw } from '../utils/elevation'
 import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
-import { lampGlow as _lampGlow } from '../preview/lampGlowState'
+import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
+import { buildLampGrid } from '../lib/lampPool.js'
 
 const LANTERN_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANTERN_FLAT_DEFAULTS } })
 
@@ -72,6 +73,21 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
   // 'lafayette-square' until instance-boot lands): a non-LS look shows no lamps
   // rather than LS's.
   const allLamps = lampsProp || (INSTANCE.lookId === 'lafayette-square' ? lampData.lamps : [])
+  // The lamps, binned for the building walls (lampPool.js#buildLampGrid) — from the list we DRAW.
+  useEffect(() => {
+    const g = buildLampGrid(allLamps)
+    if (!g) { _lampGrid.uLampGridDims.value.set(0, 0, 0); return }
+    const tex = new THREE.DataTexture(g.data, g.cols * g.k, g.rows, THREE.RGBAFormat, THREE.FloatType)
+    tex.minFilter = tex.magFilter = THREE.NearestFilter
+    tex.needsUpdate = true
+    _lampGrid.uLampGrid.value = tex
+    _lampGrid.uLampGridMin.value.set(g.min[0], g.min[1])
+    _lampGrid.uLampGridDims.value.set(g.cols, g.rows, g.k)
+    _lampGrid.uLampGridCell.value = g.cell
+    _lampGrid.uLampHeadY.value = GLOW_Y          // the lantern's height above its ground
+    return () => { _lampGrid.uLampGridDims.value.set(0, 0, 0); _lampGrid.uLampGrid.value = null; tex.dispose() }
+  }, [allLamps])
+
   // Baked ground anchor per lamp (groundSampler): the raw field where the DRAWN
   // ground sits under each lamp → rigid-lift onto the rendered surface, no float
   // (the buildings/foundations regime for point objects). Falls back to the

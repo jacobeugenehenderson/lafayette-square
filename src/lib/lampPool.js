@@ -54,3 +54,41 @@ export function canopyLightAt(lamps, x, z) {
   }
   return Math.min(acc, POOL_MAX)
 }
+
+// ── Building walls (Jacob, 2026-09-26: "Can buildings get streetlight as well?") ──────────────
+// A wall pixel sums every lamp within reach: the SAME falloff, measured in 3D from the lamp head,
+// × how squarely the wall faces it. There are thousands of lamps, so they are binned into a grid of
+// POOL_RADIUS_M cells — a pixel only ever needs its own cell and the 8 around it.
+
+/** The falloff above, in GLSL — keep the two in step (▶ checks/claims-light-sources-are-live.mjs compares them). */
+export const LAMP_FALLOFF_GLSL = `
+  float lampFalloff(float rn) {
+    float penumbra = exp(-rn * rn * 1.6);
+    float rim = 1.0 - clamp((rn - 0.7) / 0.3, 0.0, 1.0);
+    return penumbra * rim;
+  }`
+
+/**
+ * Bin lamps into POOL_RADIUS_M cells. Each cell holds up to `k` lamps (k = the busiest cell's count,
+ * MEASURED from these lamps — never a cap), as RGBA float texels (x, z, 0, 1); an empty slot is (0,0,0,0).
+ * Texture layout: width = cols × k, height = rows; cell (cx, cz), slot s → texel (cx × k + s, cz).
+ * @returns {{ data: Float32Array, cols: number, rows: number, k: number, min: [number, number], cell: number } | null}
+ */
+export function buildLampGrid(lamps) {
+  if (!lamps?.length) return null
+  const cell = POOL_RADIUS_M
+  let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity
+  for (const l of lamps) { minX = Math.min(minX, l.x); minZ = Math.min(minZ, l.z); maxX = Math.max(maxX, l.x); maxZ = Math.max(maxZ, l.z) }
+  const cols = Math.floor((maxX - minX) / cell) + 1, rows = Math.floor((maxZ - minZ) / cell) + 1
+  const cellOf = (l) => Math.floor((l.z - minZ) / cell) * cols + Math.floor((l.x - minX) / cell)
+  const counts = new Uint16Array(cols * rows)
+  for (const l of lamps) counts[cellOf(l)]++
+  let k = 0; for (const c of counts) k = Math.max(k, c)
+  const data = new Float32Array(cols * k * rows * 4), fill = new Uint16Array(cols * rows)
+  for (const l of lamps) {
+    const c = cellOf(l), cx = c % cols, cz = (c - cx) / cols, s = fill[c]++
+    const t = ((cz * cols * k) + cx * k + s) * 4
+    data[t] = l.x; data[t + 1] = l.z; data[t + 3] = 1
+  }
+  return { data, cols, rows, k, min: [minX, minZ], cell }
+}
