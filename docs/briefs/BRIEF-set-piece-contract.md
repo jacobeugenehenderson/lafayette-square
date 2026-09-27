@@ -30,10 +30,11 @@ asking for is the **contract the slot owes every set-piece**, whichever town dec
 three without anyone remembering to do it. `node checks/claims-every-app-mounts-the-set-piece.mjs` is the
 precedent: the check reads the declaration and fails the set-piece that misses any of the three.
 
-> ⭐ **Item 3 (lighting) is being built by Loupe (2026-09-26)**, as part of the Stage controls audit: the Arch's
-> uplights move out of `GatewayArch` into lights aimed at the town's set-piece (its position and height), hidden
-> where a town declares none (Jacob: *"We need those uplights for the Monument"*). The horizon disc also moves out
-> of `GatewayArch` so every town has it. Items 1 (building id) and 2 (2D) remain for this brief.
+> ✅ **Item 3 (lighting) is DONE — `dfef20a0` (Loupe, 2026-09-26).** The slot mounts `SetPieceUplights.jsx` as the
+> renderer's child, keyframed on the town's `setPieceLight` channel (the Arch's fields, default off); a renderer
+> declares `.extent = { topM, halfWidthM }` and draws `{children}`, and `claims-every-app-mounts-the-set-piece`
+> fails one that doesn't. Stage shows "‹name› uplights" only where a town declares a set-piece. ⚠️ Not yet seen on
+> screen at night. **Items 1 (building id) and 2 (2D) remain OPEN for this brief.**
 
 ## What Boz found (confirm it; don't inherit it)
 
@@ -44,9 +45,6 @@ precedent: the check reads the declaration and fails the set-piece that misses a
   Measure it by footprint geometry, not by name.
 - **2D.** The Arch has a plan silhouette, `src/cartograph/DesignerArch.jsx` (black, catenary from above, Designer
   only). Nothing draws the monument in 2D.
-- **Lighting.** The Arch's uplights and floor wash come from the `archLight` channel
-  (`src/components/GatewayArch.jsx`, `ARCHLIGHT_FLAT_DEFAULTS` in `src/cartograph/skyLightChannels.js`), which
-  is TOD-animatable and authored in Stage. The monument has none.
 - ⚠️ **The Arch is outside the contract today** (`SetPiece.jsx` header: placed by a Look's `arch` channel, with
   its own Stage overrides; folding it in is `ROADMAP H-7`'s set-piece question). Say whether the contract fits
   the Arch as a second instance, but **don't move the Arch** without Jacob's go. LS stays as it is.
