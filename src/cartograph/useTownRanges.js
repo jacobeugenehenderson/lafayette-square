@@ -19,7 +19,6 @@ export default function useTownRanges() {
 
   const compute = () => townRanges({
     boundary,
-    camera: cameraState,
     aspect: typeof window !== 'undefined' ? window.innerWidth / Math.max(1, window.innerHeight) : 1,
     fov: cameraState.fov,
     samples,

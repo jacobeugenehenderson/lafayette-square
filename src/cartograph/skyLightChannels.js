@@ -51,16 +51,15 @@ export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 // ⭐ NO On SWITCH: Blur 0 is off (Jacob, 2026-09-26). The old `enabled` only decided whether the pass was
 // mounted — any key On mounted it, and then EVERY key's Blur applied, Off keys included. migrateDof folds it away.
 // Default Blur 0 so an unauthored Look is unchanged (off).
-// Focus distance reaches the town's far rim from the camera (townRange.js), never a fixed 600 m.
+// ⭐ RELATIVE, never metres (Jacob, 2026-09-27): Focus is × the distance to what the camera looks at (1 = sharp there),
+// and blur grows in front and behind by relative distance — the same numbers frame any town (RomanceDoF.jsx).
 export const DOF_FIELDS = [
-  { key: 'blur',     label: 'Blur',           min: 0, max: 1,   step: 0.02 },
-  // focus = the near sharp distance (sharp from the camera out to here); the
-  // mid/far melts beyond it. Pushing it OUT extends the sharp zone (not backwards).
-  { key: 'focus',    label: 'Focus distance', unit: 'm', min: 5, max: 'town.focusFar', step: 5 },
-  { key: 'heroBlur', label: 'Hero softness',  min: 0, max: 1,   step: 0.02 },
-  { key: 'softness', label: 'Softness',       min: 0, max: 1,   step: 0.02 },
+  { key: 'blur',     label: 'Blur',              min: 0,    max: 1, step: 0.02 },
+  { key: 'focus',    label: 'Focus (× aim)',     min: 0.25, max: 2, step: 0.01 },
+  { key: 'heroBlur', label: 'Softness at focus', min: 0,    max: 1, step: 0.02 },
+  { key: 'softness', label: 'Depth',             min: 0,    max: 1, step: 0.02 },
 ]
-export const DOF_FLAT_DEFAULTS = { blur: 0, focus: 120, softness: 0.5, heroBlur: 0.15 }
+export const DOF_FLAT_DEFAULTS = { blur: 0, focus: 1, softness: 0.5, heroBlur: 0 }
 /**
  * Fold a legacy `enabled` into Blur so every Look renders exactly as it did. What rendered before: the pass
  * mounted iff ANY key (or the flat value) had enabled > 0.5, and then every key's Blur applied regardless of its
@@ -612,11 +611,10 @@ const DAY = {
               vignette: [0.8, 0.8, 0.4, 1.2, 1.1, 1.0, 1.5, 1.3] },
   bloom:    { intensity: [1.2, 0.9, 0.2, 2.2, 1.5, 1.0, 1.1, 0.4], threshold: [0.45, 0.55, 0.8, 0.25, 0.4, 0.4, 0.35, 0.6],
               spread: [0.45, 0.6, 0.15, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
-  // Depth of field is OFF in the kit's day. Its Focus distance is metres from the camera, which only means something
-  // for one town's shot — 0.85 blur around a fixed 120 m smeared Provincetown's whole hero frame (2026-09-27). Blur
-  // is authored per town, against its own camera, until focus is derived from the shot's aim.
-  dof:      { blur: [0, 0, 0, 0, 0, 0, 0, 0], focus: [120, 120, 120, 120, 120, 120, 120, 120],
-              heroBlur: [0, 0, 0, 0, 0, 0, 0, 0], softness: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] },
+  // Depth of field, relative to what the camera looks at: a narrow sharp zone and a strong melt at Noon (the
+  // tilt-shift dollhouse), dreamy at Golden, none at night so the lights and stars stay points.
+  dof:      { blur: [0.2, 0.15, 0.6, 0.35, 0.25, 0.1, 0, 0], focus: [1, 1, 1, 1, 1, 1, 1, 1],
+              heroBlur: [0, 0, 0, 0.1, 0, 0, 0, 0], softness: [0.5, 0.5, 0.2, 0.6, 0.5, 0.5, 0.5, 0.5] },
   grain:    { scale: [0.9, 0.7, 0.4, 0.7, 0.8, 1.0, 1.3, 1.1] },
   // Neon: which buildings light is their HOURS' business; this is how they read. At noon a solid colour band
   // (Emissive 1 is the colour itself, no bleed); at the blue hour it balances the sky; at night it blazes.

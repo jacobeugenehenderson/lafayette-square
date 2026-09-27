@@ -52,26 +52,21 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   camera.getWorldDirection(_camDir)
   const browse = _camDir.y < -0.6
 
-  // CoC paint: window.__dofDebug = 1 (green = sharp, red = full blur) → see
-  // exactly where the hero pocket lands. (Preview sets this from ?dofDebug=1.)
-  _dofRefs.debug.current      = (typeof window !== 'undefined' && window.__dofDebug) ? 1 : 0
-  _dofRefs.nearFocus.current  = d.focus                              // near sharp distance
-  _dofRefs.maxBlur.current    = browse ? 0 : d.blur                  // mid/far melt
-  _dofRefs.heroBlur.current   = browse ? 0 : (d.heroBlur ?? DOF_FLAT_DEFAULTS.heroBlur)
-  _dofRefs.sharpWidth.current = 30 - d.softness * 20                 // softer → wider near feather
-  _dofRefs.midRange.current   = 100 + d.softness * 350               // softer → gentler ramp
-
-  // Anchor the sharp pocket to the FOCUS POINT (the camera's target), measured
-  // from the CAMERA each frame. The shader decodes `dist` as VIEW-Z (depth along
-  // the camera's forward axis), NOT Euclidean, so the point is transformed into
-  // view space; -z is that forward depth.
-  // ⛔ No target (a runtime with no controls) ⇒ no pocket, and it says so once —
-  // never a guessed depth.
+  // CoC paint: window.__dofDebug = 1 (green = sharp, red = full blur). (Preview sets this from ?dofDebug=1.)
+  _dofRefs.debug.current    = (typeof window !== 'undefined' && window.__dofDebug) ? 1 : 0
+  _dofRefs.maxBlur.current  = browse ? 0 : d.blur
+  _dofRefs.heroBlur.current = browse ? 0 : (d.heroBlur ?? DOF_FLAT_DEFAULTS.heroBlur)
+  _dofRefs.zone.current     = 0.03 + d.softness * 0.4                // deeper sharp zone as it softens
+  _dofRefs.ramp.current     = 0.15 + d.softness * 0.8                // and a gentler melt
+  // ⭐ THE FOCAL PLANE IS RELATIVE: `focus` × the view depth of what the camera looks at (the controls' target —
+  // in playback, the interpolated keyframe target). The shader decodes `dist` as VIEW-Z, so the point goes to view
+  // space; −z is its forward depth. ⛔ No target ⇒ no depth of field, said once — never a guessed distance.
   if (!focusPoint) {
-    if (!_warnedNoFocus) { _warnedNoFocus = true; console.error('[dof] no focus point (no controls target) — the hero pocket is off') }
+    if (!_warnedNoFocus) { _warnedNoFocus = true; console.error('[dof] no focus point (no controls target) — depth of field is off') }
+    _dofRefs.maxBlur.current = 0
     _dofRefs.heroBlur.current = 0
     return
   }
   _heroVec.copy(focusPoint).applyMatrix4(camera.matrixWorldInverse)
-  _dofRefs.heroDist.current   = -_heroVec.z
+  _dofRefs.focusDist.current = Math.max(1, -_heroVec.z) * (d.focus ?? DOF_FLAT_DEFAULTS.focus)
 }

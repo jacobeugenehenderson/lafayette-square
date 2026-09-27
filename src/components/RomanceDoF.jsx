@@ -1,30 +1,20 @@
 /**
- * RomanceDoF — single-focal depth-of-field with a gentle HERO pocket.
+ * RomanceDoF — depth of field focused on WHAT THE CAMERA IS LOOKING AT, sized RELATIVE to it.
  *
- * The model (Jacob, 2026-06-26 — supersedes the old two-focal one, which read
- * backwards: pushing Focus out blurred the NEAR field because everything closer
- * than the focal plane was "foreground"):
- *   - SHARP from the camera out to the near focus distance (`focus`).
- *   - Beyond it, blur GROWS with distance up to `blur` (the mid/far melts) —
- *     this is the LoD cover: far leaf detail can taper invisibly in the blur.
- *   - The HERO (the Arch) sits in its own gentle pocket: near the Arch's
- *     distance the blur eases to `heroBlur` (a LITTLE soft, like IRL), so the
- *     hero isn't tack-sharp nor fully melted with the mid-field in front of it.
+ * ⭐ The model (Jacob, 2026-09-27: "get rid of the actual meters and make it relative" · noon's tilt-shift): the
+ * sharp plane sits at `focus` × the distance to the aim point, and blur grows with the RELATIVE distance from it
+ * — IN FRONT AND BEHIND — up to `blur`. So the same numbers frame a 1-km town and a 10-km one alike, and a narrow
+ * sharp zone gives the miniature ("dollhouse") look.
+ * ⛔ Replaces the 2026-06-26 model (sharp from the camera out to a focus in METRES, then a far melt): a constant
+ *   that fitted one town's camera, which smeared Provincetown's whole hero frame (CLAUDE.md Layer 0, Class D).
  *
  * ── Variable RADIUS off the shared ladder ───────────────────────────────────
- * Real DoF's defining property: the blur RADIUS grows with distance from focus.
- * The shared DownsamplePyramid exposes its full LADDER of blur levels (level 0 =
- * tight, level 7 = wide); the blur AMOUNT selects WHICH rung — more blur → wider
- * level. A virtual rung "0" = the sharp input, so at amount 0 it's perfectly
- * sharp and the blur widens smoothly. Two taps/pixel (the straddling rungs).
+ * The blur AMOUNT selects which rung of the shared DownsamplePyramid ladder to read (level 0 tight … 7 wide); a
+ * virtual rung "0" is the sharp input. Two taps/pixel (the straddling rungs).
+ * ⚠️ Must run AFTER the DownsamplePyramid pass in the composer (it samples its ladder via _pyramidRefs.levels).
  *
- * ⚠️ Must run AFTER the DownsamplePyramid pass in the composer (it samples its
- * ladder via _pyramidRefs.levels).
- *
- * Parameterization (the "Focus" channel):
- *   focus (m, near sharp distance) · blur (0..1, mid/far melt) ·
- *   heroBlur (0..1, the Arch's softening) · softness (transition width).
- *   heroDist (the Arch's distance) is set by the driver from the baked arch.
+ * Parameterization (the "Focus" channel): blur (0..1, the most) · focus (× the aim distance) · heroBlur (0..1, the
+ * softness AT the focal plane) · softness (how deep the sharp zone is, and how gently it melts).
  */
 
 import { useMemo, forwardRef } from 'react'
@@ -57,12 +47,11 @@ const fragment = /* glsl */`
     uniform lowp sampler2D uLevel6;
     uniform lowp sampler2D uLevel7;
   #endif
-  uniform float uNearFocus;   // m — near sharp distance (sharp from camera to here)
-  uniform float uMaxBlur;     // 0..1 — how much the mid/far melts
-  uniform float uHeroBlur;    // 0..1 — the Arch's own gentle softening
-  uniform float uHeroDist;    // m — the Arch's distance (centre of the hero pocket)
-  uniform float uSharpWidth;  // m — near-edge feather
-  uniform float uMidRange;    // m — distance over which blur ramps to full
+  uniform float uFocusDist;   // m — the sharp plane (focus × the aim point's view depth), set per frame
+  uniform float uMaxBlur;     // 0..1 — the most blur, far from the plane
+  uniform float uHeroBlur;    // 0..1 — softness AT the plane
+  uniform float uZone;        // the sharp zone's half-depth, as a fraction of the focal distance
+  uniform float uRamp;        // how far past it (same unit) the blur reaches full
   uniform float uLogDepth;    // 1.0 when logarithmicDepthBuffer is active
   uniform float uDebug;       // >0.5 → paint the blur amount instead of the image
 
@@ -92,21 +81,10 @@ const fragment = /* glsl */`
     #endif
   }
 
-  // Single-focal blur amount [0,1] with a gentle hero pocket. Sharp from the
-  // camera out to the near plane; beyond it the blur grows with distance to
-  // uMaxBlur (the mid/far melts). Near the Arch's distance it eases to uHeroBlur
-  // so the hero reads a LITTLE soft, not tack-sharp nor fully melted.
+  // Blur by RELATIVE distance from the focal plane, in front and behind: 0 = on the plane.
   float blurAmount(float dist) {
-    // Single-focal: SHARP from the camera out to the near plane, then blur grows
-    // with distance up to uMaxBlur (the mid/far melts — the LoD cover).
-    float nearEdge = uNearFocus + uSharpWidth;
-    float melt = smoothstep(nearEdge, nearEdge + uMidRange, dist) * uMaxBlur;
-    // HERO pocket: near the hero's distance, ease the blur toward uHeroBlur (a
-    // little soft, like IRL) instead of the full far melt. Now testable — DoF is
-    // confirmed live in the Hero shot (the gate was disabling it before).
-    float band = uMidRange + uSharpWidth;            // hero pocket half-width
-    float prox = 1.0 - smoothstep(0.0, band, abs(dist - uHeroDist));
-    return mix(melt, uHeroBlur, prox);
+    float rel = abs(dist - uFocusDist) / max(uFocusDist, 1.0);
+    return mix(uHeroBlur, uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
   }
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
@@ -141,16 +119,13 @@ const fragment = /* glsl */`
   }
 `
 
-// Module-level refs the consumer's per-frame driver writes (same pattern as the
-// other PostProcessing effects). heroDist is set from the baked arch distance by
-// the driver; maxBlur / heroBlur are the 0..1 blur amounts.
+// Module-level refs the per-frame driver (dofDriver.js) writes — same pattern as the other PostProcessing effects.
 export const _dofRefs = {
-  nearFocus:  { current: 120 },
-  maxBlur:    { current: 0.6 },
-  heroBlur:   { current: 0.15 },
-  heroDist:   { current: 1250 },
-  sharpWidth: { current: 25 },
-  midRange:   { current: 300 },
+  focusDist:  { current: 1000 },
+  maxBlur:    { current: 0 },
+  heroBlur:   { current: 0 },
+  zone:       { current: 0.2 },
+  ramp:       { current: 0.5 },
   debug:      { current: 0 },
 }
 
@@ -169,12 +144,11 @@ class RomanceDoFEffect extends Effect {
         ['uLevel5',     new THREE.Uniform(null)],
         ['uLevel6',     new THREE.Uniform(null)],
         ['uLevel7',     new THREE.Uniform(null)],
-        ['uNearFocus',  new THREE.Uniform(120)],
-        ['uMaxBlur',    new THREE.Uniform(0.6)],
-        ['uHeroBlur',   new THREE.Uniform(0.15)],
-        ['uHeroDist',   new THREE.Uniform(1250)],
-        ['uSharpWidth', new THREE.Uniform(25)],
-        ['uMidRange',   new THREE.Uniform(300)],
+        ['uFocusDist',  new THREE.Uniform(1000)],
+        ['uMaxBlur',    new THREE.Uniform(0)],
+        ['uHeroBlur',   new THREE.Uniform(0)],
+        ['uZone',       new THREE.Uniform(0.2)],
+        ['uRamp',       new THREE.Uniform(0.5)],
         ['uLogDepth',   new THREE.Uniform(0)],
         ['uDebug',      new THREE.Uniform(0)],
       ]),
@@ -189,12 +163,11 @@ class RomanceDoFEffect extends Effect {
     for (let i = 0; i < 8; i++) {
       u.get('uLevel' + i).value = levels[i] ?? levels[levels.length - 1] ?? null
     }
-    u.get('uNearFocus').value  = _dofRefs.nearFocus.current
+    u.get('uFocusDist').value  = _dofRefs.focusDist.current
     u.get('uMaxBlur').value    = _dofRefs.maxBlur.current
     u.get('uHeroBlur').value   = _dofRefs.heroBlur.current
-    u.get('uHeroDist').value   = _dofRefs.heroDist.current
-    u.get('uSharpWidth').value = _dofRefs.sharpWidth.current
-    u.get('uMidRange').value   = _dofRefs.midRange.current
+    u.get('uZone').value       = _dofRefs.zone.current
+    u.get('uRamp').value       = _dofRefs.ramp.current
     u.get('uDebug').value      = _dofRefs.debug.current
     // Decode-mode follows the actual canvas depth regime (LOG on desktop, LINEAR
     // on mobile) — read it live so the effect is correct on whichever host mounts it.
