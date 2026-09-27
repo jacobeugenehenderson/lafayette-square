@@ -174,9 +174,11 @@ check(
   + `announce itself: Stage will author it, persist it and preview it correctly, and the `
   + `SLAB WILL CARRY NOTHING. If it is not baked in, the public never sees it.`,
 )
+// Stage passes its live channel as `canopyOverride` (Furrow, 19f26183); every other app passes
+// none, so the baked scene.canopy is what ships. The claim is that the BAKED value is the default.
 check(
-  /canopyChannel=\{scene\?\.canopy\}/.test(trees),
-  'the runtime reads the BAKED channel off scene, not design.json',
+  /canopyChannel=\{(?:canopyOverride \?\? )?scene\?\.canopy\}/.test(trees),
+  'the runtime reads the BAKED channel off scene, not design.json (Stage may override it live)',
   `${TREES}: the driver is not fed scene?.canopy, so the slab's authored value is ignored.`,
 )
 check(
