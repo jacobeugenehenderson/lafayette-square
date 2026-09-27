@@ -17,6 +17,7 @@ import { useState } from 'react'
 import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import TodChannel from './TodChannel.jsx'
+import { CATEGORY_HEX } from '../tokens/categories'
 import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS, CANOPY_FIELDS, CANOPY_FLAT_DEFAULTS } from './skyLightChannels.js'
 import { StoreChannel } from './CartographSkyLight.jsx'
 
@@ -56,10 +57,9 @@ const DEFAULT_MATERIAL_COLORS = {
   roof_flat: '#2a2a2e', roof_metal: '#555560', roof_slate: '#3a3a42',
   // Building
   foundation: '#B8A88A',
-  // Neon (per-category sign tint)
-  neon_dining: '#C2185B', neon_historic: '#D4A337', neon_arts: '#8E4585',
-  neon_parks: '#3DAF8A', neon_shopping: '#C27F94', neon_services: '#3674A5',
-  neon_community: '#B86B4A', neon_residential: '#7A8B6F',
+  // Neon (per-category sign tint) — the renderer's own table, one source (tokens/categories.js#CATEGORY_HEX)
+  ...Object.fromEntries(['dining', 'historic', 'arts', 'parks', 'shopping', 'services', 'community', 'residential']
+    .map(k => [`neon_${k}`, CATEGORY_HEX[k]])),
   // Park (interior)
   park_path: '#cccccc',
 }

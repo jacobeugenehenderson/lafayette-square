@@ -907,6 +907,7 @@ function genericSceneConfig(sceneBoundary) {
       // Neon controls did nothing (Loupe's audit, 2026-09-26). The same component production mounts.
       const forceNeonOn       = useCartographStore(s => s.neonForceOn)
       const neonDensity       = useCartographStore(s => s.neonDensity)
+      const materialColorsOverride = useCartographStore(s => activeChannel(s, 'materialColors'))
       const materialPhysicsOverrideSlab = useCartographStore(s => activeChannel(s, 'materialPhysics'))
       return (
       <>
@@ -917,7 +918,7 @@ function genericSceneConfig(sceneBoundary) {
         )}
         {!hiddenLayers.building && (
           <R3FErrorBoundary name="SceneNeon">
-            <SceneNeon forceNeonOn={forceNeonOn} density={neonDensity} lookId={lookId} />
+            <SceneNeon forceNeonOn={forceNeonOn} density={neonDensity} materialColors={materialColorsOverride} lookId={lookId} />
           </R3FErrorBoundary>
         )}
         {/* Acquired city LOD2 model — the SAME consumer production mounts

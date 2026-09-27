@@ -146,7 +146,7 @@ function _densityKeeps(id, density) {
   return h / 4294967296 < density
 }
 
-export default function SceneNeon({ forceNeonOn, density, lookId = INSTANCE.lookId }) {
+export default function SceneNeon({ forceNeonOn, density, materialColors, lookId = INSTANCE.lookId }) {
   const neonLookup = useNeonLookup()
 
   // Re-check open/closed every 60s so bands mount/unmount as places open
@@ -251,5 +251,5 @@ export default function SceneNeon({ forceNeonOn, density, lookId = INSTANCE.look
   }, [openPlaces.length])
 
   if (openPlaces.length === 0) return null
-  return <NeonBands places={openPlaces} lookId={lookId} />
+  return <NeonBands places={openPlaces} lookId={lookId} materialColors={materialColors} />
 }

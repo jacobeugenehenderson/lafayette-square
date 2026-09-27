@@ -139,11 +139,22 @@ console.log('⑦ NEON IS MOUNTED IN EVERY STAGE THAT DRAWS BUILDINGS, WITH ITS T
     const neon = b.match(/<SceneNeon\b[^>]*>|<LafayetteScene\b[\s\S]*?\/>/)
     if (!neon) return 'draws buildings and mounts no neon'
     if (!/forceNeonOn=\{forceNeonOn\}/.test(neon[0]) || !/density=\{neonDensity\}|neonDensity=\{neonDensity\}/.test(neon[0])) return 'mounts neon without the Neon on / Density test controls'
+    if (!/materialColors(Override)?=\{materialColorsOverride\}/.test(neon[0])) return 'mounts neon without the live neon colours (Surfaces › Neon)'
     return 'ok'
   }).filter(Boolean)
   for (const r of judge(envs)) { n++; r === 'ok' ? ok(`Stage environment ${n}: neon mounted with its test controls`) : bad(`Stage environment ${n}: ${r}`) }
   if (!n) bad('found no Stage environment that draws buildings — ⑦ cannot see the Stage')
   judge(envs.map(b => b.replace(/<SceneNeon\b[^>]*>/g, ''))).some(r => r !== 'ok') ? ok('mutation (poured-town neon mount removed) is caught') : bad('mutation NOT caught')
+}
+
+console.log('⑧ EVERY NEON SWATCH COLOURS THE NEON (it existed for months and drove nothing)')
+{
+  const surf = src('src/cartograph/CartographSurfaces.jsx'), bands = src('src/components/NeonBands.jsx')
+  const ids = [...surf.matchAll(/id: '(neon_\w+)'/g)].map(m => m[1])
+  const reads = /materialColors\?\.\[`neon_\$\{key\}`\]/.test(bands)
+  if (!ids.length) bad('found no Neon swatches on the Surfaces card')
+  else reads ? ok(`${ids.length} swatches (${ids.join(', ')}) → NeonBands reads materialColors.neon_<category>`) : bad('NeonBands does not read materialColors.neon_<category> — the swatches drive nothing')
+  ;/CATEGORY_HEX\[k\]/.test(surf) ? ok('swatch defaults come from the renderer\'s own CATEGORY_HEX (one table)') : bad('the Surfaces neon defaults are a second copy of CATEGORY_HEX')
 }
 
 console.log(red ? `\n⛔ FAIL — ${red}` : '\n✅ all claims hold')

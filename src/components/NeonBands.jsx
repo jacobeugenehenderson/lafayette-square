@@ -244,9 +244,12 @@ function buildTube(building, tubeRadius) {
 // category the palette did not know, which reads on screen as a deliberate hot-pink
 // accent rather than as an error. `UNKNOWN_HEX` is the one colour that means "we do not
 // know", and an unknown category is exactly that, so it is the honest stand-in for both.
-function categoryColorVec(category) {
+// ⭐ The operator's neon colours are `materialColors.neon_<category>` — the Surfaces card's Neon swatches (live in
+// Stage, baked into scene.json for production). An unset category keeps its CATEGORY_HEX colour. (The swatches
+// existed for months and drove nothing — OPERATIONS promised them; wired 2026-09-26, Jacob: "Neon must be buildable".)
+function categoryColorVec(category, materialColors) {
   const key = (category || '').replace(/^neon_/, '')
-  const c = new THREE.Color(CATEGORY_HEX[key] || UNKNOWN_HEX)
+  const c = new THREE.Color(materialColors?.[`neon_${key}`] || CATEGORY_HEX[key] || UNKNOWN_HEX)
   return [c.r, c.g, c.b]
 }
 
@@ -339,8 +342,12 @@ void main() {
 
 // ── Component ───────────────────────────────────────────────────────
 
-export default function NeonBands({ places, forceOn = true, lookId }) {
+export default function NeonBands({ places, forceOn = true, lookId, materialColors: materialColorsOverride }) {
   const scene = useSceneJson(lookId || '')
+  // Stage's live colours, else the baked ones. Keyed on the neon entries only, so an unrelated material edit
+  // doesn't rebuild the tubes (the colour lives in the geometry).
+  const materialColors = materialColorsOverride ?? scene?.materialColors
+  const neonColorKey = JSON.stringify(Object.entries(materialColors || {}).filter(([k]) => k.startsWith('neon_')).sort())
 
   // Match the renderer's ACTUAL depth encoding. The Canvas this neon mounts in
   // may run linear depth (production Scene.jsx) or logarithmic (Stage / Preview,
@@ -422,7 +429,7 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
 
       const tube = buildTube(p, r)
       if (!tube) continue
-      const rgb = categoryColorVec(p.neon.category)
+      const rgb = categoryColorVec(p.neon.category, materialColors)
       const count = tube.positions.length / 3
       for (let i = 0; i < tube.positions.length;  i++) positions.push(tube.positions[i])
       for (let i = 0; i < tube.normals.length;    i++) normals.push(tube.normals[i])
@@ -445,7 +452,7 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     // close range. `frustumCulled={false}` on the mesh instead — one
     // small draw, trivial cost.
     return g
-  }, [places, r])
+  }, [places, r, neonColorKey])   // materialColors enters through its neon key (the colour lives in the geometry)
 
   const materialRef = useRef(null)
   if (!materialRef.current) {

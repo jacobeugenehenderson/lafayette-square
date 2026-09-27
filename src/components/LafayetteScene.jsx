@@ -1400,7 +1400,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
           with no rebuild — it's one merged mesh, resident as in production
           (Vernier Phase 1b). */}
       <group visible={!hide.neon}>
-        <SceneNeon forceNeonOn={forceNeonOn} density={neonDensity} lookId={INSTANCE.lookId} />
+        <SceneNeon forceNeonOn={forceNeonOn} density={neonDensity} materialColors={materialColorsOverride} lookId={INSTANCE.lookId} />
       </group>
 
       {/* Street labels — the shared StreetLabels group (same component the
