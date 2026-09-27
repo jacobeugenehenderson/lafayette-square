@@ -857,11 +857,15 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
           const d = (tod.currentTime.getTime() - J2000) / 86400000
           const lst = (((280.46061837 + 360.98564736629 * d) % 360 + LONGITUDE) % 360 + 360) % 360 * Math.PI / 180
           const lat = LATITUDE * Math.PI / 180, ra = 192.85948 * Math.PI / 180, dec = 27.12825 * Math.PI / 180
-          const ha = lst - ra
-          const sinAlt = Math.sin(dec) * Math.sin(lat) + Math.cos(dec) * Math.cos(lat) * Math.cos(ha)
-          const cosAlt = Math.sqrt(Math.max(0, 1 - sinAlt * sinAlt))
-          const az = Math.atan2(-Math.sin(ha) * Math.cos(dec) * Math.cos(lat), Math.sin(dec) - sinAlt * Math.sin(lat))
-          u.uGalPole.value.set(cosAlt * Math.sin(az), sinAlt, -cosAlt * Math.cos(az))
+          const toDir = (raR, decR, out) => {
+            const ha = lst - raR
+            const sinAlt = Math.sin(decR) * Math.sin(lat) + Math.cos(decR) * Math.cos(lat) * Math.cos(ha)
+            const cosAlt = Math.sqrt(Math.max(0, 1 - sinAlt * sinAlt))
+            const az = Math.atan2(-Math.sin(ha) * Math.cos(decR) * Math.cos(lat), Math.sin(decR) - sinAlt * Math.sin(lat))
+            out.set(cosAlt * Math.sin(az), sinAlt, -cosAlt * Math.cos(az))
+          }
+          toDir(ra, dec, u.uGalPole.value)
+          toDir(266.40499 * Math.PI / 180, -28.93617 * Math.PI / 180, u.uGalCtr.value)   // the galactic centre, J2000
         }
       } else {
         u.uMilkyWay.value = 0
@@ -893,6 +897,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       // in the money composition. The tilt = a 30° SLOPE (diagonal band, stays
       // lower/tidier, doesn't sweep the zenith). Re-solve if the pan is reauthored.
       uGalPole: { value: new THREE.Vector3(0.275, -0.5, 0.821).normalize() },
+      uGalCtr:  { value: new THREE.Vector3(0, 0, 1) },
       // The bright galactic-core "heart" sits here — aimed behind the arch (the
       // 50%-pan arch azimuth), so the luminous center is the hero.
       uCoreDir: { value: new THREE.Vector3(0.951, 0.018, -0.308).normalize() },
@@ -924,6 +929,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       uniform float uSkyGain;
       uniform float uMilkyWay;   // milkyWay channel on/off (0..1), TOD-lerped
       uniform vec3  uGalPole;    // galactic-pole direction → orients the band
+      uniform vec3  uGalCtr;     // galactic-centre direction (Sagittarius) → the bright, warm core
       varying vec3 vWorldPosition;
 
       // ── Dense fractal noise (procedural Milky Way — no texture) ──
@@ -1067,20 +1073,25 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
           // A smooth GLOWING BAND with very soft feathered sides — not filaments,
           // not stars, not clouds. Just a soft ribbon of light. Lower falloff =
           // softer/wider sides.
-          float band = exp(-gLat * gLat * 30.0);
-          // NEARLY-IMPERCEPTIBLE fractal breakup — subtly varies the glow so it
-          // isn't a dead-flat smear, but stays one cohesive band (low contrast).
+          // ⭐ RICHER, NOT BRIGHTER (Jacob, Deep night pass 2026-09-27: "too bright and not rich enough"): the band swells
+          // and warms toward the galactic CENTRE (Sagittarius — uGalCtr, placed like the pole), cools and thins away
+          // from it, and a dark dust lane splits it along its plane. Structure, not a flat ribbon.
+          float toCentre = dot(dir, normalize(uGalCtr));              // 1 at the core, −1 at the anticentre
+          float core = smoothstep(-0.3, 1.0, toCentre);
+          float band = exp(-gLat * gLat * mix(40.0, 18.0, core));     // wider at the core
           float n = mwFbm(dir * 13.0);
-          float breakup = 0.82 + 0.32 * n;      // ~0.9..1.06 — barely there
-          float milk = band * breakup;
-          // Purple → blue → teal, LOW contrast so it reads as a single glow.
-          vec3 cA = vec3(0.13, 0.11, 0.27);   // deep purple
-          vec3 cB = vec3(0.14, 0.25, 0.45);   // blue
-          vec3 cC = vec3(0.26, 0.50, 0.52);   // teal
-          vec3 milkColor = mix(cA, cB, smoothstep(0.30, 0.60, n));
-          milkColor = mix(milkColor, cC, smoothstep(0.60, 0.88, n));
-          // Master 0.45: at 0.13 the band vanished on a dark sky (Deep night pass, 2026-09-27).
-          finalColor += milkColor * milk * mwGate * 0.45;
+          float clouds = 0.55 + 0.9 * n;                              // star clouds: real lumps, not a smear
+          float lane = mwFbm(dir * 31.0 + 7.0);
+          float dust = 1.0 - 0.75 * smoothstep(0.45, 0.8, lane) * exp(-gLat * gLat * 900.0);   // the Great Rift
+          float milk = band * clouds * dust * mix(0.35, 1.25, core);
+          // SATURATED, the long-exposure look (Jacob: "it should be very saturated; this looks like light pollution"):
+          // a gold-orange core, magenta-violet star clouds, deep blue arms.
+          vec3 arm    = vec3(0.10, 0.22, 0.95);
+          vec3 cloud  = vec3(0.75, 0.18, 0.70);
+          vec3 coreC  = vec3(1.00, 0.55, 0.18);
+          vec3 milkColor = mix(arm, cloud, smoothstep(0.35, 0.75, n));
+          milkColor = mix(milkColor, coreC, core * core);
+          finalColor += milkColor * milk * mwGate * 0.22;
         }
 
         // Opaque sky — no transparent fade, no stencil portal

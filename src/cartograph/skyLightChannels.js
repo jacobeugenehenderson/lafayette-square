@@ -589,7 +589,7 @@ const DAY = {
   dirMoon:  { value: [0.7, 0.3, 0.3, 0.3, 0.3, 0.8, 1.0, 1.3] },
   ambient:  { value: [1.6, 1.5, 1.1, 1.2, 0.85, 0.7, 3.0, 1.6] },
   hemi:     { value: [2.0, 1.8, 1.3, 1.8, 1.4, 1.6, 2.0, 1.4] },
-  skyGain:  { value: [1.0, 1.05, 1.05, 1.15, 1.1, 0.95, 0.65, 0.45] },
+  skyGain:  { value: [1.0, 1.05, 1.05, 1.15, 1.1, 0.95, 0.65, 0.35] },
   stars:    { brightness: [3, 1, 1, 1, 1, 0.6, 1.0, 2.2] },
   constellations: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
   milkyWay: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
@@ -599,13 +599,13 @@ const DAY = {
   fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.35, 0.35] },
   // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
   // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
-  mist:     { amount: [1.25, 0.46, 0.28, 0.35, 0.46, 0.39, 0.28, 0.24],
+  mist:     { amount: [1.25, 0.46, 0.28, 0.35, 0.46, 0.39, 0.28, 0.08],
               color: ['#9a86c0', '#e8b0c8', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#2a3660', '#1c2644'],
               water: [0.5, 0.3, 0.2, 0.35, 0.35, 0.3, 0.25, 0.2] },
   // Halo is a SCREEN BAND, not distance haze (renderPipeline.jsx#AerialPerspectiveEffect): it washes the middle of the
   // frame whatever is there, so a Hero shot looking down on the town hazes near and far alike. Kept faint; Mist is
   // the distance haze (Jacob, Dawn pass 2026-09-27: "it's just very even all the way up to the camera").
-  halo:     { strength: [0.25, 0.08, 0.03, 0.14, 0.1, 0.06, 0.02, 0.01],
+  halo:     { strength: [0.25, 0.08, 0.03, 0.14, 0.1, 0.06, 0.02, 0],
               color: ['#dcbfd0', '#f2b0c6', '#bdd6ec', '#ffc27a', '#ff9868', '#5f6fb4', '#1a2040', '#10152a'] },
   exposure: { value: [1.7, 1.45, 1.18, 1.2, 1.0, 0.95, 1.15, 1.0] },
   warmth:   { value: [0.3, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25],
