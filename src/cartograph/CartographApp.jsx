@@ -957,6 +957,7 @@ export default function CartographApp() {
 
   const shot = useCartographStore(s => s.shot)
   const scene = useCartographStore(s => s.scene)
+  const weatherMode = useCartographStore(s => s.weatherMode)
   const tool = useCartographStore(s => s.tool)
   const markerActive = useCartographStore(s => s.markerActive)
   const markerEraserActive = useCartographStore(s => s.markerEraserActive)
@@ -1344,7 +1345,7 @@ export default function CartographApp() {
             {/* Atmosphere driver chain — production feeds <Atmosphere> via
                 these; without them useAtmosphere.tweenedDirective stays empty
                 and no clouds render. Same fix mirrored into Preview. */}
-            <WeatherPoller />
+            <WeatherPoller mode={weatherMode} />
             <AtmosphereDirectiveDriver lookId={activeLookId} />
             <WeatherEffects />
             {/* Sky renderer stopgap (skyMode): cheap <CloudDome/> ships,

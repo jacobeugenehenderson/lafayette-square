@@ -10,7 +10,7 @@
  * `lib/sky-scalars.js#deriveSkyScalars`, and exposure takes `weatherExposureScale`.
  *
  * 1. End to end in node: a clear feed and a rain feed (the lab's own presets, read from
- *    `harness/lab/main.jsx`) go through the REAL Almanac (`almanac.json`, `modulators.json`,
+ *    `src/lib/weatherPresets.js`, used by the lab and Stage's Weather switch) go through the REAL Almanac (`almanac.json`, `modulators.json`,
  *    `selectDirectiveWithStrengths`) → `deriveSkyScalars` → `weatherExposureScale`. Rain must
  *    read more overcast, stormier and darker than clear.
  * 2. The feed never reaches the drawn sky directly: `setWeatherTargets` leaves the drawn
@@ -38,12 +38,12 @@ const ok = (m) => console.log(`  ✅ ${m}`)
 console.log('\nThe light follows the weather')
 
 // ── 1. feed → Almanac → sky scalars → exposure ─────────────────────────────
-// The lab's presets, parsed out of the lab rather than restated.
-const labSrc = read('src/harness/lab/main.jsx')
+// The weather presets the lab and Stage's Weather switch stand the scene in,
+// imported from their one home rather than restated.
+const { WEATHER_PRESETS } = await import('../src/lib/weatherPresets.js')
 const preset = (name) => {
-  const m = labSrc.match(new RegExp(`^\\s*${name}:\\s*(\\{[^}]*\\})`, 'm'))
-  if (!m) throw new Error(`lab WEATHER.${name} not found in src/harness/lab/main.jsx`)
-  return Function(`return (${m[1]})`)()
+  if (!WEATHER_PRESETS[name]) throw new Error(`WEATHER_PRESETS.${name} not found in src/lib/weatherPresets.js`)
+  return WEATHER_PRESETS[name]
 }
 const almanac = json('public/clouds/almanac.json')
 const presets = json('public/clouds/presets.json')

@@ -795,6 +795,11 @@ const useCartographStore = create((set, get) => ({
   // Stage's StageEnvironment. Doctrine: slab-carries-full-authored-product
   // counter-rule (session UI state ≠ authored product).
   neonForceOn:    false,
+  // Stage-only weather switch: 'live' polls the town's real weather; a
+  // WEATHER_PRESETS key (clear / overcast / rain / snow) stands the scene in it.
+  // Session-only, like neonForceOn: never saved, never baked (Jacob, 2026-09-26:
+  // "it's hard to test looks while it's raining IRL").
+  weatherMode:    'live',
   // Lighting unit — 4 single-value channels, intensity multipliers on
   // the existing scene lights in CelestialBodies. Defaults 1.0 = current
   // behavior. Author 0 at Night to drop world lighting (fixes "bright
@@ -1599,6 +1604,8 @@ const useCartographStore = create((set, get) => ({
   // Stage-only QA toggle. Intentionally does NOT call
   // _saveDesignDebounced — see initial-state comment on neonForceOn.
   setNeonForceOn: (on) => { set({ neonForceOn: !!on }) },
+  // Session-only, no _saveDesignDebounced (see weatherMode).
+  setWeatherMode: (mode) => { set({ weatherMode: mode }) },
   ...createGroupChannelActions({
     name: 'ambient',
     fieldKeys: AMBIENT_FIELD_KEYS,

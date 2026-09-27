@@ -17,6 +17,7 @@
  * ⭐ THE TOWN IS A PAGE LOAD, NOT A TOGGLE: the terrain module and the instance
  * (geography → the sun) resolve `?look=` once at import. Switching town reloads.
  */
+import { WEATHER_PRESETS } from '../../lib/weatherPresets.js'
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, useThree, advance } from '@react-three/fiber'
@@ -100,12 +101,7 @@ const doyOf = (d) => Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDa
 // ⭐ Through `useSkyState.setWeatherTargets`, so the Almanac picks the directive and
 // WeatherEffects drives uWetness / uSnowAccumulation exactly as production does.
 // ⛔ The lab never sets a weather uniform itself. Codes are WMO (open-meteo's).
-const WEATHER = {
-  clear:    { cloudCover: 0.05, precipitationIntensity: 0, currentWeatherCode: 0,  temperatureF: 68 },
-  overcast: { cloudCover: 0.95, precipitationIntensity: 0, currentWeatherCode: 3,  temperatureF: 60 },
-  rain:     { cloudCover: 0.95, precipitationIntensity: 4, currentWeatherCode: 63, temperatureF: 55 },
-  snow:     { cloudCover: 0.95, precipitationIntensity: 2, currentWeatherCode: 73, temperatureF: 25 },
-}
+const WEATHER = WEATHER_PRESETS
 
 // ── CAMERAS ─────────────────────────────────────────────────────────────────
 // ⭐ Judge at the CLOSE camera (`feedback_build_for_close_inspection_not_for_distance`).

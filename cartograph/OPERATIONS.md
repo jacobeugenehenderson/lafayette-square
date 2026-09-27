@@ -148,6 +148,8 @@ Every animatable channel shares one drawer, and **the 7 time-of-day slot chips a
 - **Occlusion** (`ao`) — ambient occlusion (N8AO): contact-darkening in crevices. Fields: radius, intensity, distance-falloff. *(Was "AO.")*
 - **Shadow lift** (`fill`) — lifts shadow floors (distinct-and-deep ↔ soft-and-open). **Owns the FilmGrade `uToe` uniform** — which is why the Grade Toe slider was removed (Fill overrode it, so it did nothing). *(Was "Fill.")*
 
+**Weather (Stage only)** — **Live · Clear · Overcast · Rain · Snow.** *Live* polls the town's real weather; the others stand the scene in that weather so a look can be judged whatever it's doing outside. Session-only: never saved, never baked, and production always runs live. The presets are `src/lib/weatherPresets.js`, shared with the surface lab.
+
 **Sky & Air group**
 - **Sky brightness** (`skyGain`) — *"how dark is the night sky."* Dims (or lifts) **just the sky dome** on a TOD curve — bands, sun/moon glow, horizon scatter together. Exposure scoped to the sky layer: the global **Exposure** knob (Image card) darkens the *whole frame*, whereas this touches only the dome — so deep night goes genuinely dark while street lamps and lit windows stay where authored. Stars are not affected. LS authors ~1.0 by day dipping to ~0.2 at Night; default 1.0 leaves an unauthored Look unchanged. **Reach for Sky brightness when the *sky* is too bright; Exposure when the *whole image* is.** *(Was "Sky Layer Gain." Note 2026-06-07: bloom no longer auto-boosts at night — author it in the Image **Bloom** channel.)*
 - **Mist** — fog density + colour (the FogExp2 the runtime applies). TOD.
