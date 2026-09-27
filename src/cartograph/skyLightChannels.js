@@ -60,9 +60,10 @@ export const DOF_FIELDS = [
   // window is. Softness at focus is an optional extra, never more than Amount.
   { key: 'blur',     label: 'Amount',            min: 0, max: 1, step: 0.02 },
   { key: 'softness', label: 'Clear window',      min: 0, max: 1, step: 0.02 },
+  { key: 'melt',     label: 'Window softness',   min: 0, max: 1, step: 0.02 },   // how gently the blur comes in at its edges
   { key: 'heroBlur', label: 'Softness at focus', min: 0, max: 1, step: 0.02 },
 ]
-export const DOF_FLAT_DEFAULTS = { blur: 0, softness: 0.5, heroBlur: 0 }
+export const DOF_FLAT_DEFAULTS = { blur: 0, softness: 0.5, melt: 0.55, heroBlur: 0 }
 /**
  * Fold a legacy `enabled` into Blur so every Look renders exactly as it did. What rendered before: the pass
  * mounted iff ANY key (or the flat value) had enabled > 0.5, and then every key's Blur applied regardless of its
@@ -617,7 +618,8 @@ const DAY = {
   // Depth of field, relative to what the camera looks at: a narrow sharp zone and a strong melt at Noon (the
   // tilt-shift dollhouse), dreamy at Golden, none at night so the lights and stars stay points.
   dof:      { blur: [0.2, 0.15, 0.1, 0.35, 0.25, 0.1, 0, 0],
-              heroBlur: [0, 0, 0.06, 0.1, 0, 0, 0, 0], softness: [0.5, 0.5, 0.3, 0.6, 0.5, 0.5, 0.5, 0.5] },
+              heroBlur: [0, 0, 0.06, 0.1, 0, 0, 0, 0], softness: [0.5, 0.5, 0.3, 0.6, 0.5, 0.5, 0.5, 0.5],
+              melt: [0.56, 0.56, 0.38, 0.64, 0.56, 0.56, 0.56, 0.56] },
   grain:    { scale: [0.9, 0.7, 0.4, 0.7, 0.8, 1.0, 1.3, 1.1] },
   // Neon: which buildings light is their HOURS' business; this is how they read. At noon a solid colour band
   // (Emissive 1 is the colour itself, no bleed); at the blue hour it balances the sky; at night it blazes.

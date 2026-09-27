@@ -59,8 +59,8 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   _dofRefs.debug.current    = (typeof window !== 'undefined' && window.__dofDebug) ? 1 : 0
   _dofRefs.maxBlur.current  = browse ? 0 : d.blur
   _dofRefs.heroBlur.current = browse ? 0 : (d.heroBlur ?? DOF_FLAT_DEFAULTS.heroBlur)
-  _dofRefs.zone.current     = 0.03 + d.softness * 0.4                // deeper sharp zone as it softens
-  _dofRefs.ramp.current     = 0.15 + d.softness * 0.8                // and a gentler melt
+  _dofRefs.zone.current     = 0.03 + d.softness * 0.4                                  // Clear window: the sharp zone's depth
+  _dofRefs.ramp.current     = 0.05 + (d.melt ?? DOF_FLAT_DEFAULTS.melt) * 0.9           // Window softness: how gently it melts
   // ⭐ THE FOCAL PLANE IS RELATIVE: `focus` × the view depth of what the camera looks at (the controls' target —
   // in playback, the interpolated keyframe target). The shader decodes `dist` as VIEW-Z, so the point goes to view
   // space; −z is its forward depth. ⛔ No target ⇒ no depth of field, said once — never a guessed distance.
