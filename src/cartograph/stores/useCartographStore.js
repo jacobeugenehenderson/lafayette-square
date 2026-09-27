@@ -776,7 +776,9 @@ const useCartographStore = create((set, get) => ({
   // WEATHER_PRESETS key (clear / overcast / rain / snow) stands the scene in it.
   // Session-only, like neonForceOn: never saved, never baked (Jacob, 2026-09-26:
   // "it's hard to test looks while it's raining IRL").
-  weatherMode:    'live',
+  // ⭐ Stage opens in CLEAR, and a reload keeps what the operator chose (Jacob, 2026-09-27: "The system should default
+  // to Clear (not live) and the user must select live"). Live weather is an opt-in, like the live clock.
+  weatherMode:    (() => { try { return sessionStorage.getItem('stage-weather') || 'clear' } catch { return 'clear' } })(),
   // Lighting unit — 4 single-value channels, intensity multipliers on
   // the existing scene lights in CelestialBodies. Defaults 1.0 = current
   // behavior. Author 0 at Night to drop world lighting (fixes "bright
@@ -1577,7 +1579,7 @@ const useCartographStore = create((set, get) => ({
   setNeonForceOn: (on) => { set({ neonForceOn: !!on }) },
   setNeonDensity: (d) => { set({ neonDensity: Math.min(1, Math.max(0, Number(d) || 0)) }) },
   // Session-only, no _saveDesignDebounced (see weatherMode).
-  setWeatherMode: (mode) => { set({ weatherMode: mode }) },
+  setWeatherMode: (mode) => { set({ weatherMode: mode }); try { sessionStorage.setItem('stage-weather', mode) } catch { /* storage blocked */ } },
   ...createGroupChannelActions({
     name: 'ambient',
     fieldKeys: AMBIENT_FIELD_KEYS,
