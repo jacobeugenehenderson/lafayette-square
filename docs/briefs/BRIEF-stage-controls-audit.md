@@ -28,6 +28,7 @@ promised:
 - every **TOD fade** box had never done anything;
 - the Street **Eye Height** slider set an absolute height;
 - the **Weather** switch landed a partial weather.
+- **Force Neon On (test)** (Light & Sky › Neon) doesn't work (Jacob, 2026-09-26; he's not sure what it does today). Start there: trace `neonForceOn` from the store to what it's meant to bypass (the business-hours filter) in every app Stage draws.
 
 The fixes are in `git log` for 2026-09-26. Assume more of the same.
 
