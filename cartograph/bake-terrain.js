@@ -586,9 +586,6 @@ function writeBed(normalized, mask, width, height, bounds, floor = null) {
       if (d < 0) above++
       const w = Math.min(1, wFloor[k] / known.cellM)
       h = w * Math.min(Math.max(d, 0), vis.value) + (1 - w) * hp
-      // ⛔ THE WATERLINE STAYS THE MAPPED SHORE: within a bilinear reach of it (two cells) the bed is never shallower
-      // than the profile, or a flat laid at the level blends with the land beside it and stands proud of the sheet.
-      if (dist[k] <= 2 * Math.max(stepX, stepZ)) h = Math.max(h, hp)
       if (w > 0) { fromFloor[k] = 1; nFloor++ }
     }
     if (h >= vis.value) capped++
