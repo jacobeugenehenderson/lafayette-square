@@ -587,31 +587,31 @@ const LAMP_EDGES = { sunset: { fade: 'up', minutes: 30 }, sunrise: { fade: 'down
 const DAY = {
   dirSun:   { value: [0, 1.5, 1.2, 1.7, 0.9, 0, 0, 0] },
   dirMoon:  { value: [0.7, 0.3, 0.3, 0.3, 0.3, 0.8, 1.0, 1.3] },
-  ambient:  { value: [1.6, 1.5, 1.1, 1.2, 0.85, 0.7, 3.0, 0.5] },
-  hemi:     { value: [2.0, 1.8, 1.3, 1.8, 1.4, 1.6, 2.0, 0.6] },
-  skyGain:  { value: [1.0, 1.05, 1.05, 1.15, 1.1, 0.95, 0.65, 0.3] },
+  ambient:  { value: [1.6, 1.5, 1.1, 1.2, 0.85, 0.7, 3.0, 2.2] },
+  hemi:     { value: [2.0, 1.8, 1.3, 1.8, 1.4, 1.6, 2.0, 1.4] },
+  skyGain:  { value: [1.0, 1.05, 1.05, 1.15, 1.1, 0.95, 0.65, 0.45] },
   stars:    { brightness: [3, 1, 1, 1, 1, 0.6, 1.0, 2.2] },
   constellations: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
   milkyWay: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
   shadow:   { size: [3, 5, 1, 4, 5, 3, 2, 2], samples: [16, 16, 16, 16, 16, 16, 16, 16] },
   ao:       { radius: [15, 15, 15, 15, 15, 15, 15, 15], intensity: [2.0, 2.2, 3.2, 2.0, 2.2, 2.4, 2.8, 2.6],
               distanceFalloff: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3] },
-  fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.35, 0.85] },
+  fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.35, 0.5] },
   // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
   // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
   mist:     { amount: [1.25, 0.46, 0.28, 0.35, 0.46, 0.39, 0.28, 0.24],
-              color: ['#9a86c0', '#e8b0c8', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#2a3660', '#080b16'],
+              color: ['#9a86c0', '#e8b0c8', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#2a3660', '#1c2644'],
               water: [0.5, 0.3, 0.2, 0.35, 0.35, 0.3, 0.25, 0.2] },
   // Halo is a SCREEN BAND, not distance haze (renderPipeline.jsx#AerialPerspectiveEffect): it washes the middle of the
   // frame whatever is there, so a Hero shot looking down on the town hazes near and far alike. Kept faint; Mist is
   // the distance haze (Jacob, Dawn pass 2026-09-27: "it's just very even all the way up to the camera").
   halo:     { strength: [0.25, 0.08, 0.03, 0.14, 0.1, 0.06, 0.02, 0.01],
               color: ['#dcbfd0', '#f2b0c6', '#bdd6ec', '#ffc27a', '#ff9868', '#5f6fb4', '#1a2040', '#10152a'] },
-  exposure: { value: [1.7, 1.45, 1.18, 1.2, 1.0, 0.95, 1.15, 0.8] },
+  exposure: { value: [1.7, 1.45, 1.18, 1.2, 1.0, 0.95, 1.15, 1.0] },
   warmth:   { value: [0.3, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25],
               tint:  [0.5, 0.7, 0.5, 0.55, 0.62, 0.55, 0.5, 0.5] },
-  grade:    { contrast: [0.5, 0.4, 0.5, 0.32, 0.45, 0.5, 0.45, 0.55], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
-              saturation: [1.35, 1.3, 1.35, 1.4, 1.3, 1.1, 1.0, 0.75], brightness: [0, 0, 0, 0, 0, 0, 0, 0],
+  grade:    { contrast: [0.5, 0.4, 0.5, 0.32, 0.45, 0.5, 0.45, 0.5], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
+              saturation: [1.35, 1.3, 1.35, 1.4, 1.3, 1.1, 1.0, 0.9], brightness: [0, 0, 0, 0, 0, 0, 0, 0],
               vignette: [0.8, 0.8, 0.4, 1.2, 1.1, 1.0, 1.5, 1.3] },
   bloom:    { intensity: [1.2, 0.9, 0.5, 2.5, 1.5, 1.0, 1.1, 0.4], threshold: [0.45, 0.55, 0.05, 0.2, 0.4, 0.4, 0.35, 0.6],
               spread: [0.45, 0.6, 0.5, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
@@ -637,13 +637,13 @@ const DAY = {
               bulge: [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9] },
   lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [0.5, 0.5, null, null, 1.25, 1.4, 2.2, 1.1],
               radius: [0.85, 0.75, null, null, 0.75, 1, 1, 1], centre: [1.2, 1.2, null, null, 0.25, 1.2, 1.2, 1.2],
-              trees: [0.3, 0.3, null, null, 0.8, 2, 0.7, 1.6] },
+              trees: [0.3, 0.3, null, null, 0.8, 2, 0.7, 0.5] },
 }
 // The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
 const UPLIGHT = { edges: LAMP_EDGES }
 for (const s of ['L', 'R']) Object.assign(UPLIGHT, {
   // Kept well below a blow-out: 2.8–3.5 at Dusk/Night bloomed into an orange blob at the monument's foot (2026-09-27).
-  [`uplight${s}_intensity`]: [s === 'L' ? 0.05 : 0.2, 0.2, null, null, s === 'L' ? 0.05 : 0.25, 0.05, 0.5, 0.6],
+  [`uplight${s}_intensity`]: [s === 'L' ? 0.05 : 0.2, 0.2, null, null, s === 'L' ? 0.05 : 0.25, 0.05, s === 'L' ? 0.75 : 1, 0.6],
   [`uplight${s}_color`]:     ['#ffe2c0', '#ffd6a8', null, null, '#ffd6a8', '#fbddc7', '#f2ecff', '#e6e4ff'],
   [`uplight${s}_cone`]:      [s === 'L' ? 60 : 35, 35, null, null, 35, 33, 35, 35],
   [`uplight${s}_reach`]:     [s === 'L' ? 150 : 320, 220, null, null, 220, s === 'L' ? 205 : 455, 220, 220],
