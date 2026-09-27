@@ -568,8 +568,19 @@ function floodExtent(normalized, mask, width, height, bounds, water) {
   return { at: water.high, floodedHa: +(flooded * ha).toFixed(1), beyondDrawnHa: +beyondHa.toFixed(1), heldCells: held, polygons: out }
 }
 
-function writeBed(normalized, mask, width, height, bounds, floor = null) {
+function writeBed(normalized, mask, width, height, bounds, floor = null, water = null) {
   const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
+  // The town's HIGH tide above y = 0 at a cell: its datum field (waterLevels), bilinear on the field's own grid.
+  const highAt = (k) => {
+    if (!water) throw new Error('⛔ writeBed: a floor above y = 0 is capped at the town\'s HIGH level, and none was given')
+    const f = water.datums[water.high], g = water.datums.grid
+    if (g.w === 1 && g.h === 1) return f[0]
+    const x = bounds.minX + stepX * (k % width), z = bounds.minZ + stepZ * Math.floor(k / width)
+    const fx = Math.min(g.w - 1, Math.max(0, (x - g.min[0]) / g.step[0])), fz = Math.min(g.h - 1, Math.max(0, (z - g.min[1]) / g.step[1]))
+    const i = Math.min(g.w - 2, Math.floor(fx)), j = Math.min(g.h - 2, Math.floor(fz)), tx = fx - i, tz = fz - j
+    const v = (a, b) => f[b * g.w + a]
+    return (v(i, j) * (1 - tx) + v(i + 1, j) * tx) * (1 - tz) + (v(i, j + 1) * (1 - tx) + v(i + 1, j + 1) * tx) * tz
+  }
   const auth = waterAuthoring()
   const sand = auth.sandD50Mm ?? { value: finding('f-cem-nj-beach-d50').value.d50_mm, from: 'f-cem-nj-beach-d50 (the kit default — no town value authored)' }
   const vis = auth.secchiM ?? (() => { const r = finding('r-bottom-visibility-default').value
@@ -579,8 +590,10 @@ function writeBed(normalized, mask, width, height, bounds, floor = null) {
   const rock = rockCells(normalized, mask, width, height, bounds)
   // ⭐ Where the floor is known it REPLACES the profile, down to the visibility depth (deeper does not show); it is
   // feathered into the profile over one of its own cells where its coverage ends inside the water. A floor that
-  // stands ABOVE the level inside the mapped water is laid at the level (the water is flat, and the map says water
-  // there) and COUNTED, never raised through the sheet.
+  // stands ABOVE y = 0 (the survey's water — the flats) stands where it was MEASURED, capped at the town's HIGH tide
+  // there (`water.high`): the water at high tide covers it, and the dry beach beside it meets it without a cliff.
+  // Cells the floor does not cover keep the profile. (It was once laid at y = 0, when y = 0 was the level: a 1–3 m
+  // cliff at the drawn-water mask's edge once the level became HIGH — Strand, 2026-09-27.)
   const known = floor?.depth ? floor : null
   let wFloor = null
   if (known) {
@@ -589,15 +602,16 @@ function writeBed(normalized, mask, width, height, bounds, floor = null) {
     wFloor = shoreDistance(keep, width, height, stepX, stepZ)             // metres to the nearest wet cell the floor misses
   }
   const fromFloor = new Uint8Array(known ? mask.length : 0)
-  let n = 0, capped = 0, maxD = 0, nFloor = 0, above = 0
+  let n = 0, capped = 0, maxD = 0, nFloor = 0, above = 0, atHigh = 0
   for (let k = 0; k < mask.length; k++) {
     if (!mask[k] || rock.has(k)) continue
     let h = Math.min(A * Math.pow(dist[k], 2 / 3), vis.value)
     if (known && Number.isFinite(known.depth[k])) {
       const d = known.depth[k], hp = h
-      if (d < 0) above++
+      let hf = Math.min(d, vis.value)                                    // depth below y = 0; negative = above it
+      if (d < 0) { above++; const cap = highAt(k); if (-d > cap) { hf = -cap; atHigh++ } }
       const w = Math.min(1, wFloor[k] / known.cellM)
-      h = w * Math.min(Math.max(d, 0), vis.value) + (1 - w) * hp
+      h = w * hf + (1 - w) * hp
       if (w > 0) { fromFloor[k] = 1; nFloor++ }
     }
     if (h >= vis.value) capped++
@@ -626,13 +640,13 @@ function writeBed(normalized, mask, width, height, bounds, floor = null) {
     console.log(`  FLOOR: ${known.tiles} bathymetry tile(s), ${known.datum} (DEM: ${known.demDatumFrom})`)
     console.log(`    draws ${nFloor.toLocaleString()} of ${n.toLocaleString()} bed cells (${(100 * nFloor / Math.max(1, n)).toFixed(1)}%); the rest keep the profile`)
     console.log(`    seam at the shore (floor − DEM on dry ground within 2 cells): median ${known.seam.medianM} m · p90 |Δ| ${known.seam.p90AbsM} m over ${known.seam.samples.toLocaleString()} samples`)
-    if (above) console.warn(`    ⚠️ ${above.toLocaleString()} cell(s) (${(above * cellHa).toFixed(1)} ha) of mapped water have a floor ABOVE the level — laid at the level, not raised through it`)
+    if (above) console.log(`    ${above.toLocaleString()} cell(s) (${(above * cellHa).toFixed(1)} ha) of floor stand above y = 0, as measured; ${atHigh.toLocaleString()} capped at the town's HIGH tide`)
   } else console.log(`  FLOOR: none — ${floor?.none || 'not asked'}. The bed is the profile alone.`)
   return { profile: 'f-cem-equilibrium-profile', A: +A.toFixed(4), sandD50Mm: sand.value, sandFrom: sand.from,
            visibleToM: vis.value, fadeOverM: fade, visibilityFrom: vis.from, cells: n,
            floor: known
              ? { source: 'NOAA OCS BlueTopo (raw/bathymetry-sources.txt)', tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
-                 cellM: known.cellM, cells: nFloor, aboveLevelCells: above, seam: known.seam, runs }
+                 cellM: known.cellM, cells: nFloor, aboveZeroCells: above, cappedAtHighCells: atHigh, seam: known.seam, runs }
              : { none: floor?.none || 'not asked' },
            // ⭐ The kept rock (rockCells): stands above the level by ruling, so the check names it rather than calling it proud.
            rock: { cells: rock.size, from: 'structures.mjs stoneStructures (mapped breakwaters/groynes) × the lidar above the water', runs: rock.size ? rowRuns(k => rock.has(k)) : [] } }
@@ -895,9 +909,9 @@ async function main() {
   const normalized = new Float32Array(total)
   for (let k = 0; k < total; k++) normalized[k] = raw[k] - baseElev
   const floor = wd ? await readFloor({ bounds, width, height, cornersLL: _cornersLL, mask: wd.mask, raw, baseElev, demSources: sources }) : null
-  const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor) : null
-
   const water = wd ? waterLevels(baseElev, waterAuthoring()) : null
+  const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor, water) : null
+
   if (water) water.flood = floodExtent(normalized, wd.mask, width, height, bounds, water)
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
                  datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(water ? { water } : {}) }
