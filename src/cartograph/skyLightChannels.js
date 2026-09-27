@@ -504,7 +504,7 @@ export const CLOUDS_FIELD_KEYS = Object.keys(CLOUDS_FLAT_DEFAULTS)
 export const LAMPGLOW_FIELDS = [
   { key: 'pool',   label: 'Light pools', min: 0, max: 4,  step: 0.05 },
   { key: 'radius', label: 'Pool radius', min: 0, max: 1,  step: 0.01 },
-  { key: 'centre', label: 'Pool centre (m)', min: 0, max: 4, step: 0.05 },   // the dark circle under the lamp; fixed size
+  { key: 'centre', label: 'Pool centre (m)', min: 0, max: 4, step: 0.05, scale: 'fixture' },   // the dark circle under the lamp: lamp-sized, not town-sized
   { key: 'trees',  label: 'Trees',       min: 0, max: 20, step: 0.1 },
 ]
 export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 1, pool: 1.0, radius: 1.0, centre: 1.2 }
