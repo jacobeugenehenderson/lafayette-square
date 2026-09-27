@@ -124,7 +124,7 @@ function Model({ path }) {
   return scene ? <primitive object={scene} /> : null
 }
 
-export default function PilgrimMonument({ town, graniteOverride } = {}) {
+export default function PilgrimMonument({ town, graniteOverride, children } = {}) {
   if (!town) throw new Error('[PilgrimMonument] ⛔ no town — mount <SetPiece>, which passes it')
   const sp = town.setPiece
   // The operator's layer (`scene.surfaces.params['pilgrim-granite']`); the lab may override it for a preview.
@@ -170,6 +170,7 @@ export default function PilgrimMonument({ town, graniteOverride } = {}) {
     <group ref={ref} name="pilgrim-monument" position={[site.x, groundRaw * terrainExag.value, site.z]}
            rotation={[0, southFacingYaw(site), 0]}>
       {sp.model ? <Model path={sp.model} /> : <Placeholder authored={authored} lookId={town.lookId} />}
+      {children /* the slot's lighting, in the tower's base frame (SetPiece.jsx) */}
       {label && (
         <group ref={labelRef}>
           <SceneLabel text={sp.name} fontSize={label.fontSize} position={[0, 0, label.dz]} rotation={[-Math.PI / 2, 0, 0]} />
@@ -178,3 +179,6 @@ export default function PilgrimMonument({ town, graniteOverride } = {}) {
     </group>
   )
 }
+
+// The base extent the slot's lighting aims at (SetPiece.jsx): the documented top and the foundation's half-width.
+PilgrimMonument.extent = { topM: DOSSIER.topZ * FT, halfWidthM: DOSSIER.foundationTopSq * FT / 2 }

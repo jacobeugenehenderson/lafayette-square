@@ -96,8 +96,10 @@ function stageChannels(src) {
   }
   // Store-bound booleans a card sets directly (e.g. Force Neon On).
   for (const m of src.sky.matchAll(/useCartographStore\(s => s\.(\w+)\)/g)) if (!/^set/.test(m[1]) && m[1] !== 'weatherMode') add(m[1], 'Light & Sky')
-  // StageApp's store-bound cards: every `useCartographStore(s => s.X)` whose setter the card calls.
+  // StageApp's store-bound cards: generic <StoreChannel name="X"> (conditional when gated by `&&` / `?`) …
   const stage = src.stage
+  for (const m of stage.matchAll(/<StoreChannel\s+name="(\w+)"/g)) add(m[1], 'Light Sources', /(&&|\?)\s*$/.test(stage.slice(Math.max(0, m.index - 40), m.index)))
+  // … and every `useCartographStore(s => s.X)` whose setter the card calls.
   for (const m of stage.matchAll(/const (\w+)\s*=\s*useCartographStore\(s => (?:activeChannel\(s,\s*')?s?\.?(\w+)'?\)?\)/g)) {
     const [, local, name] = m
     if (/^(set|animate|add|remove|revert)/.test(name)) continue

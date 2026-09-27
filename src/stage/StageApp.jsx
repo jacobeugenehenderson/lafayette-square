@@ -32,6 +32,8 @@ import useSkyState from '../hooks/useSkyState'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import TodChannel from '../cartograph/TodChannel.jsx'
 import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
+import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
+import { setPieceOf } from '../components/SetPiece.jsx'
 import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, resolveHorizon } from '../cartograph/skyLightChannels.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { townRanges } from '../lib/townRange.js'
@@ -112,31 +114,18 @@ function ToggleRow({ label, value, onChange }) {
   )
 }
 
-// Arch Lighting — store-bound TOD channel (the cross-aimed foot uplights).
-// Rides the shared TodChannel UX (Clear + keyframe-on-edit) like every
-// other channel; replaces the old hand-rolled flat L/R uplight sliders so
-// the wash can animate across the day. See skyLightChannels ARCHLIGHT_*.
-function ArchLightChannel() {
-  const channel       = useCartographStore(s => s.archLight)
-  const setValue      = useCartographStore(s => s.setArchLight)
-  const animate       = useCartographStore(s => s.animateArchLight)
-  const addSlot       = useCartographStore(s => s.addArchLightSlot)
-  const removeSlot    = useCartographStore(s => s.removeArchLightSlot)
-  const setTransition = useCartographStore(s => s.setArchLightTransition)
-  const revert        = useCartographStore(s => s.revertArchLight)
-  return (
-    <TodChannel
-      label="Arch uplights"
-      fields={ARCHLIGHT_FIELDS}
-      flatDefaults={ARCHLIGHT_FLAT_DEFAULTS}
-      channel={channel}
-      onSetValue={(key, value, slotId) => setValue(key, value, slotId)}
-      onFillSlot={(slotId, isFirst) => isFirst ? animate(slotId) : addSlot(slotId)}
-      onRemoveSlot={removeSlot}
-      onSetTransition={setTransition}
-      onRevert={revert}
-    />
-  )
+// Uplights — the Arch's where the Look carries an Arch (LS), the set-piece's where the town declares one
+// (SetPieceUplights.jsx), neither elsewhere. Same fields; store-bound through the generic StoreChannel.
+function Uplights() {
+  const hasArch = useCartographStore(s => !!s.arch)
+  const lookId  = useCartographStore(s => s.activeLookId)
+  const sp = setPieceOf(lookId)
+  if (!hasArch && !sp) return null
+  return (<>
+    <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
+    {hasArch && <StoreChannel name="archLight" label="Arch uplights" fields={ARCHLIGHT_FIELDS} flatDefaults={ARCHLIGHT_FLAT_DEFAULTS} />}
+    {sp && <StoreChannel name="setPieceLight" label={`${sp.name || 'Set-piece'} uplights`} fields={ARCHLIGHT_FIELDS} flatDefaults={ARCHLIGHT_FLAT_DEFAULTS} />}
+  </>)
 }
 
 // Lantern — the lamp's own light source (Brightness + Glow), TOD-animatable.
@@ -1034,7 +1023,7 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
       </div>
 
       {/* Light Sources — the man-made emitters: the lantern fixture, its ground
-          pool + tree canopy glow, and the arch foot uplights. Grouped by intent
+          pool + tree canopy glow, and the uplights (the Arch's, or the town's set-piece's). Grouped by intent
           (Phase A taxonomy reorg, 2026-06-30). Bloom (the global aura) + Neon
           join here in Phase B once their cascade-aware mounts are consolidated;
           the lamp fixture/pool/canopy restructure is Phase B too. */}
@@ -1042,8 +1031,7 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         <Collapsible label="Light Sources">
           <LanternChannel />
           <LampGlowEditor />
-          <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
-          <ArchLightChannel />
+          <Uplights />
         </Collapsible>
       </div>
 

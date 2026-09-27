@@ -13,13 +13,20 @@
  * A town with no set-piece renders nothing. A `kind` with no renderer THROWS: it never
  * quietly draws nothing.
  *
+ * ⭐ THE SLOT LIGHTS IT (BRIEF-set-piece-contract item 3). Every set-piece gets <SetPieceUplights>, mounted as the
+ * renderer's CHILD so it sits in the set-piece's base frame, lit by the town's `setPieceLight` channel (Stage's
+ * live override, else scene.json). A renderer declares `Component.extent = { topM, halfWidthM }` and draws its
+ * `children` inside its base group; claims-every-app-mounts-the-set-piece fails one that doesn't.
+ *
  * ⚠️ The Gateway Arch is NOT folded in here. It is placed by a Look's authored `arch`
  * channel, not by the town's instance, and it carries its own Stage overrides. Folding
  * it in is ROADMAP H-7's set-piece question, not a mount change.
  */
 import { INSTANCE, mapForLook } from '../instance.js'
 import { instanceForMap } from '../instances/registry.js'
+import { useSceneJson } from '../lib/useSceneJson.js'
 import PilgrimMonument from './PilgrimMonument.jsx'
+import SetPieceUplights from './SetPieceUplights.jsx'
 
 // kind → renderer. The only place a set-piece component is imported.
 const RENDERERS = {
@@ -33,11 +40,19 @@ function townFor(lookId) {
   return town ? { ...town, lookId, mapId: map } : null
 }
 
-export default function SetPiece({ lookId, ...props }) {
+/** The set-piece a Look's town declares, or null — for panels that show its controls only where it exists. */
+export function setPieceOf(lookId) { return townFor(lookId)?.setPiece ?? null }
+
+export default function SetPiece({ lookId, lightOverride, ...props }) {
   const town = townFor(lookId)
+  const scene = useSceneJson(town?.lookId ?? lookId)
   const sp = town?.setPiece
   if (!sp) return null
   const R = RENDERERS[sp.kind]
   if (!R) throw new Error(`[SetPiece] ⛔ "${town.lookId}" declares a set-piece of kind "${sp.kind}", and no renderer exists for it (have: ${Object.keys(RENDERERS).join(', ')})`)
-  return <R town={town} {...props} />
+  return (
+    <R town={town} {...props}>
+      <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} />
+    </R>
+  )
 }

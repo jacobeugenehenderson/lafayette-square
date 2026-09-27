@@ -66,6 +66,14 @@ export function audit(files, mountSrc, declaredKinds) {
     for (const r of R) if (r.file && new RegExp(`import \\w+ from '[^']*${r.file.split('/').pop()}(\\.jsx)?'`).test(x.src))
       f.push(`${x.path} imports the set-piece renderer ${r.comp} directly — mount <SetPiece> instead`)
   }
+  // ⭐ The slot lights every set-piece (BRIEF-set-piece-contract item 3): a renderer must declare the extent the
+  // uplights aim at and draw the slot's children in its base frame, or its set-piece stands dark.
+  for (const r of R) {
+    const src = r.file && files.find(x => x.path.replace(/\.jsx?$/, '').endsWith(r.file.split('/').pop()))?.src
+    if (!src) continue
+    if (!new RegExp(`${r.comp}\\.extent\\s*=\\s*\\{[^}]*topM[^}]*halfWidthM`).test(src)) f.push(`${r.comp} declares no ${r.comp}.extent = { topM, halfWidthM } — the slot's uplights cannot aim at it`)
+    if (!/\{\s*children\b/.test(src)) f.push(`${r.comp} does not draw {children} — the slot's lighting never reaches its base frame`)
+  }
   for (const k of declaredKinds) if (!R.some(r => r.kind === k.kind)) f.push(`${k.town} declares set-piece kind "${k.kind}"; SetPiece.jsx has no renderer for it`)
   return { f, info }
 }
@@ -87,6 +95,8 @@ if (process.argv.includes('--self-test')) {
     ['an app hand-mounts the renderer', () => audit([...files, { path: 'src/fake/App.jsx', src: "import PilgrimMonument from '../components/PilgrimMonument.jsx'" }], mountSrc, declaredKinds).f.length],
     ['a new app with no mount', () => audit([...files, { path: 'src/fake/NewApp.jsx', src: '<Canvas><BakedGround /></Canvas>' }], mountSrc, declaredKinds).f.length],
     ['a kind with no renderer', () => audit(files, mountSrc, [...declaredKinds, { town: 'town-2', kind: 'lighthouse' }]).f.length],
+    ['a renderer declares no extent', () => audit(files.map(x => /PilgrimMonument\.jsx$/.test(x.path) ? { ...x, src: x.src.replace(/PilgrimMonument\.extent\s*=/, 'PilgrimMonument.nothing =') } : x), mountSrc, declaredKinds).f.length],
+    ['a renderer drops the slot\'s children', () => audit(files.map(x => /PilgrimMonument\.jsx$/.test(x.path) ? { ...x, src: x.src.replace(/\{\s*children\b/g, '{ kids') } : x), mountSrc, declaredKinds).f.length],
   ]
   let bad = 0
   for (const [n, run] of cases) { const c = run() > 0; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }

@@ -124,7 +124,7 @@ export const SHOT_LOOK_CHANNELS = new Set([
   'layerColors', 'luColors', 'lampGlow', 'bloom', 'warmth', 'fill', 'exposure',
   'ao', 'mist', 'halo', 'skyGain', 'grade', 'grain', 'dof', 'shadow',
   'constellations', 'milkyWay', 'neon', 'sky', 'ambient', 'hemi', 'dirSun',
-  'dirMoon', 'archLight', 'lantern', 'clouds', 'canopy',
+  'dirMoon', 'archLight', 'setPieceLight', 'lantern', 'clouds', 'canopy',
 ])
 const FORK_SHOT_KEYS = ['browse', 'street'] // hero + designer → base
 
@@ -486,6 +486,7 @@ const DESIGN_FIELDS = [
     return d.landscape?.source ? { ...grp, source: d.landscape.source } : grp
   } },
   { key: 'archLight', hydrate: (d) => migrateArchLight(d) },
+  _grp('setPieceLight',  ARCHLIGHT_FIELD_KEYS,      ARCHLIGHT_FLAT_DEFAULTS),   // the town's set-piece uplights (same fields)
   _grp('lantern',        LANTERN_FIELD_KEYS,        LANTERN_FLAT_DEFAULTS),
   // Sparse: only authored keys; an unauthored key follows the town's radius (skyLightChannels#resolveHorizon).
   { key: 'horizon', hydrate: (d) => ({ values: Object.fromEntries(HORIZON_FIELD_KEYS
@@ -774,6 +775,7 @@ const useCartographStore = create((set, get) => ({
   arch:    null,
   landscape: { values: { ...LANDSCAPE_FLAT_DEFAULTS } },
   archLight: { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },
+  setPieceLight: { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },
   lantern: { values: { ...LANTERN_FLAT_DEFAULTS } },
   horizon: { values: {} },
   // SC.6 — Meteorologist coupler scaffolding. v1 has no Stage UI; field
@@ -1506,6 +1508,11 @@ const useCartographStore = create((set, get) => ({
   }, set, get),
   ...createGroupChannelActions({
     name: 'archLight',
+    fieldKeys: ARCHLIGHT_FIELD_KEYS,
+    flatDefaults: ARCHLIGHT_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'setPieceLight',
     fieldKeys: ARCHLIGHT_FIELD_KEYS,
     flatDefaults: ARCHLIGHT_FLAT_DEFAULTS,
   }, set, get),
