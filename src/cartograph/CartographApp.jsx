@@ -704,10 +704,17 @@ function Controls({ controlsRef, heroPlaying = false }) {
 }
 
 // ── Environment tickers (shot-only) ────────────────────────────────────────
+// ⭐ A SCRUBBED CLOCK STANDS STILL (Jacob, 2026-09-27: "When we're in a time slot, the time needs to stop. I have
+// been editing against an hour in the future"). The ticker ran on after a chip click or a drag, so the scene drifted
+// away from the key being edited. It advances only in live mode; the ◦ live button resumes it.
 function TimeTicker() {
   const tick = useTimeOfDay(s => s.tick)
   const last = useRef(Date.now())
-  useFrame(() => { const n = Date.now(); tick(n - last.current); last.current = n })
+  useFrame(() => {
+    const n = Date.now(), dt = n - last.current
+    last.current = n
+    if (useTimeOfDay.getState().isLive) tick(dt)
+  })
   return null
 }
 
