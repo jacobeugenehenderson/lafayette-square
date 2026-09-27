@@ -2109,20 +2109,13 @@ const useCartographStore = create((set, get) => ({
       // ⛔ A DIFFERENT SET, deliberately: every VALID destination, not the Stage
       // subset. 'designer' and 'extent' belong here and must never be folded into
       // STAGE_SHOTS — conflating the two is the bug fixed above.
+      // ⭐ STAGE OPENS ON THE OPENING KEYFRAME (Jacob, 2026-09-26: "the camera should
+      // default to the opening keyframe on load, IN STAGE"). A reload in any Stage
+      // shot lands in Hero, whose entry places the camera on the first key, paused.
+      if (isStageShot(saved)) return 'hero'
       if (ALL_SHOTS.includes(saved)) return saved
     } catch { /* ignore */ }
     return 'designer'
-  })(),
-  // Most-recent non-designer shot. Used by the Designer toolbar's
-  // "Stage →" button so the operator returns to whichever Stage shot
-  // they were last working in (preserves "linear-but-concurrent"
-  // tool-switching feel — see FEATURES.md).
-  lastStageShot: (() => {
-    try {
-      const saved = localStorage.getItem('cartograph-last-stage-shot')
-      if (saved && isStageShot(saved)) return saved
-    } catch { /* ignore */ }
-    return 'browse'
   })(),
   // Scene = what geometry we're looking at — the dataset name that data/<scene>/
   // holds. Currently 'lafayette-square' (the real neighborhood) or 'toy' (the
@@ -2248,15 +2241,12 @@ const useCartographStore = create((set, get) => ({
       try { localStorage.setItem('cartograph-tool', 'surveyor') } catch { /* ignore */ }
     }
     try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
-    // Remember the last Stage shot so Designer's "Stage →" returns to it.
-    // Only the 3D Stage shots qualify — 'extent' is a pre-skeleton destination,
-    // not a Stage shot, so it must never become the Stage-return target.
+    // The last Stage shot is still recorded for PREVIEW, which opens on it (its own
+    // ruling, 2026-09-05). Stage itself always opens on the opening keyframe.
     if (isStageShot(shot)) {
       try { localStorage.setItem('cartograph-last-stage-shot', shot) } catch { /* ignore */ }
-      set({ shot, status: '', lastStageShot: shot })
-    } else {
-      set({ shot, status: '' })
     }
+    set({ shot, status: '' })
   },
   toggleMarker: () => {
     const cur = get().markerActive

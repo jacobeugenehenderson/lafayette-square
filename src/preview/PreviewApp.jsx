@@ -1157,8 +1157,8 @@ export default function PreviewApp() {
   // resonant thing to do. It is now just a camera you have to click out of
   // before you can look at what you came to look at.
   // ⭐ It lands on the last Stage shot the operator was actually in —
-  // `cartograph-last-stage-shot`, the same key Cartograph's "Stage →" button
-  // returns to, so Preview and the Designer agree about where you left off.
+  // `cartograph-last-stage-shot`, which Stage records on every shot change.
+  // (Stage itself now always opens on the opening keyframe, 2026-09-26.)
   const [shot, setShot] = useState(() => {
     try {
       const saved = localStorage.getItem('cartograph-last-stage-shot')

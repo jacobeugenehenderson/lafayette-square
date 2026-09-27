@@ -31,7 +31,6 @@ export default function Toolbar() {
   const bakeRunning = useCartographStore(s => s.bakeRunning)
   const bakeStale = useCartographStore(s => s.bakeStale)
   const runBake = useCartographStore(s => s.runBake)
-  const lastStageShot = useCartographStore(s => s.lastStageShot)
   const activeLookId = useCartographStore(s => s.activeLookId)
   const defaultLookId = useCartographStore(s => s.defaultLookId)
   const scene = useCartographStore(s => s.scene)
@@ -126,16 +125,13 @@ export default function Toolbar() {
               // .then closures got stranded across HMR re-renders, which
               // left the operator in Designer after long bakes.
               //
-              // Return to whichever Stage shot the operator was last in
-              // (lastStageShot, persisted in localStorage). Workflow:
-              // jumping back and forth between Designer and Stage to
-              // examine a slab should land on the same shot each time,
-              // not snap to a fixed default.
-              runBake({ force: e.altKey, navigateTo: lastStageShot })
+              // ⭐ Stage opens on the opening keyframe (Jacob, 2026-09-26): Hero,
+              // whose entry places the camera on the first key, paused.
+              runBake({ force: e.altKey, navigateTo: 'hero' })
             }}
             title={bakeRunning
               ? 'Baking…'
-              : `Bake + enter Stage at ${cap(lastStageShot)} (your last Stage shot). ⌥-click forces full rebuild. Use Stage's ↻ to re-bake without navigating.`}>
+              : 'Bake + enter Stage on the opening keyframe. ⌥-click forces full rebuild. Use Stage\'s ↻ to re-bake without navigating.'}>
             {bakeRunning ? 'Baking…' : 'Stage →'}
           </button>
         </div>
