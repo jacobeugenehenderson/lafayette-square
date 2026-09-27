@@ -746,6 +746,24 @@
         "note": "publications.usace.army.mil returns 403 to fetches; read from the pdhonline mirror of the same EM (Part III Ch 1 and Ch 3, dated 30 Apr 02)."
       },
       "status": "PERMITTED"
+    },
+    {
+      "id": "ufc-4-152-07",
+      "title": "UFC 4-152-07 Design: Small Craft Berthing Facilities",
+      "publisher": "U.S. Department of Defense (Unified Facilities Criteria)",
+      "jurisdiction": "federal (US-wide)",
+      "edition": "14 July 2009, change 1",
+      "url": "https://www.wbdg.org/FFC/DOD/UFC/ufc_4_152_07_2009_c1.pdf",
+      "covers": [
+        "walkway, finger and float widths for small craft berthing"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Strand (cover: 'APPROVED FOR PUBLIC RELEASE; DISTRIBUTION UNLIMITED' — a federal work)",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)"
+      },
+      "status": "PERMITTED"
     }
   ],
   "questions": [
@@ -1581,6 +1599,16 @@
         "NOAA GLERL Lake Erie water-quality datasets (federal)",
         "USGS water-quality portal (federal)"
       ]
+    },
+    {
+      "id": "q-pier-walkway-width",
+      "ask": "The width of a pier mapped only as a line, with no width tagged",
+      "neededBy": "BRIEF-the-shore-is-closed — structures over water (Jacob 2026-09-27: OSM width where mapped, else a sourced typical width, with an authored override)",
+      "status": "answered",
+      "findings": [
+        "f-ufc-main-walkway-width"
+      ],
+      "notes": "A pier line is a walkway; fingers are narrower (§5-2.5: preferred minimum 5 ft) but OSM does not say which a line is."
     }
   ],
   "findings": [
@@ -4328,6 +4356,21 @@
         "fadeOverM": 0.6096
       },
       "canon": "BRIEF-the-shore-is-closed; ruled (d) 2026-09-27: a town's own Secchi depth where published, else this, said out loud"
+    },
+    {
+      "id": "f-ufc-main-walkway-width",
+      "question": "q-pier-walkway-width",
+      "kind": "value",
+      "value": {
+        "width_ft": 6,
+        "width_m": 1.8
+      },
+      "source": "ufc-4-152-07",
+      "where": "§5-2.4 Walkways",
+      "quote": "The minimum clear width of main walkways should be 6 ft.",
+      "scope": "small craft berthing; a MINIMUM clear width",
+      "foundOn": "2026-09-27",
+      "foundBy": "Strand"
     }
   ]
 }
