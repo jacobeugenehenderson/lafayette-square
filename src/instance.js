@@ -77,6 +77,18 @@ function readLookParam() {
     if (host) return host
     const q = new URLSearchParams(window.location.search).get('look')
     if (q) return q
+    // ⭐ THE AUTHORING APP STARTS AS THE TOWN YOU LAST HAD OPEN (Jacob, 2026-09-26: "Stage
+    // Must Not Start Up As Lafayette Square"). cartograph.html names the key its store
+    // persists the active Look under. Without this every module that reads INSTANCE at load
+    // (the sun's latitude/longitude, the sky grid, the terrain's exaggeration) took LS's
+    // values in every town's Stage. Only a Look with a map counts.
+    const authoringKey = document.querySelector('meta[name="ward-authoring"]')?.getAttribute('content')
+    if (authoringKey) {
+      const stored = localStorage.getItem(authoringKey)
+      if (stored && (looksIndex.looks || []).some(l => l.id === stored && l.scene)) return stored
+      console.error(`[instance] ⛔ the authoring app has no town open yet (localStorage '${authoringKey}' is ` +
+        `${stored ? `"${stored}", which is not a town` : 'empty'}); starting as "${DEFAULT_LOOK}" until you pick one`)
+    }
     const seg = window.location.pathname.split('/').filter(Boolean)[0]
     if (seg && (looksIndex.looks || []).some(l => l.id === seg)) return seg
     return DEFAULT_LOOK
