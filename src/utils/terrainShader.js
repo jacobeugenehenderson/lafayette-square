@@ -202,6 +202,10 @@ export async function reloadTerrain(lookId, { force = false } = {}) {
   // exag into the closure, so a stale ceiling here would be captured for the whole session.
   _sceneExag = await fetchSceneExag(lookId)
   _lookId = lookId
+  // ⛔ The RECORD too, not just the heights: terrainBed() and terrainWater() read it. It used to stay the page's boot
+  // terrain, so after a Stage re-bake (or a town switch) the water kept the old visibility depth and levels until a
+  // full reload — provincetown's margin read opaque at the old 2.44 m after secchi went to 3.95 (2026-09-27).
+  _terrain = t
   width = t.width; height = t.height; bounds = t.bounds; data = t.data
   spanX = bounds.maxX - bounds.minX
   spanZ = bounds.maxZ - bounds.minZ
