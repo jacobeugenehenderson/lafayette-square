@@ -45,6 +45,7 @@ import { writeIfChanged } from './io.js'
 import { deriveFade } from './boundaryRecords.mjs'
 import { coastRings } from './coastline.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
+import { stoneStructures } from './structures.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -316,6 +317,38 @@ function shoreDistance(mask, width, height, stepX, stepZ) {
   }
   return out
 }
+// ⭐ THE ROCK STAYS. A mapped breakwater or groyne is another surface the level meets (Jacob, 2026-09-26: "the edge
+// of water is always where the flat plane meets any other plane"), and the lidar SEES its rock. So under its
+// footprint — a closed outline's cells, or the cells within half a cell of a mapped line — the bed does not
+// overwrite a cell where the lidar stands above the water. The revetment takes the crest from here; the ground
+// drapes over the rock. Measured before this: the West End Breakwater read −2.44 m (the bed's floor), not its rock.
+function rockCells(normalized, mask, width, height, bounds) {
+  const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
+  const { areas, lines } = stoneStructures(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')).ground)
+  const keep = new Set(), cand = new Set()
+  for (const a of areas) {
+    const zs = a.ring.map(p => p[1])
+    for (let j = Math.max(0, Math.ceil((Math.min(...zs) - bounds.minZ) / stepZ)); j <= Math.min(height - 1, Math.floor((Math.max(...zs) - bounds.minZ) / stepZ)); j++) {
+      const z = bounds.minZ + stepZ * j, xs = []
+      for (let k = 0, n = a.ring.length; k < n; k++) { const p = a.ring[k], q = a.ring[(k + 1) % n]
+        if ((p[1] > z) !== (q[1] > z)) xs.push(p[0] + (z - p[1]) * (q[0] - p[0]) / (q[1] - p[1])) }
+      xs.sort((m, n) => m - n)
+      for (let k = 0; k + 1 < xs.length; k += 2)
+        for (let i = Math.max(0, Math.ceil((xs[k] - bounds.minX) / stepX)); i <= Math.min(width - 1, Math.floor((xs[k + 1] - bounds.minX) / stepX)); i++) cand.add(j * width + i)
+    }
+  }
+  const half = Math.min(stepX, stepZ) / 2
+  for (const l of lines) for (let s = 1; s < l.line.length; s++) {
+    const [ax, az] = l.line[s - 1], [bx, bz] = l.line[s], L = Math.hypot(bx - ax, bz - az)
+    for (let u = 0; u <= L; u += half) { const x = ax + (bx - ax) * u / Math.max(L, 1e-9), z = az + (bz - az) * u / Math.max(L, 1e-9)
+      const i = Math.round((x - bounds.minX) / stepX), j = Math.round((z - bounds.minZ) / stepZ)
+      if (i >= 0 && j >= 0 && i < width && j < height) cand.add(j * width + i) }
+  }
+  // Above the water = above the datum's own 1 cm bucket (waterDatum): a flattened-water sample reads ±0.005 m.
+  for (const k of cand) if (mask[k] && normalized[k] > 0.005) keep.add(k)
+  if (areas.length + lines.length) console.log(`  ROCK: ${areas.length + lines.length} mapped breakwater/groyne(s) — ${keep.size.toLocaleString()} cells under the water keep the lidar's rock (of ${[...cand].filter(k => mask[k]).length.toLocaleString()} in their footprints)`)
+  return keep
+}
 function writeBed(normalized, mask, width, height, bounds) {
   const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
   const auth = waterAuthoring()
@@ -324,9 +357,10 @@ function writeBed(normalized, mask, width, height, bounds) {
     return { value: r.visibleToM, fade: r.fadeOverM, from: 'r-bottom-visibility-default (Jacob\'s 8 ft) — ⚠️ NO measured clarity for this town (q-water-clarity-per-town)' } })()
   const A = deanA(sand.value)
   const dist = shoreDistance(mask, width, height, stepX, stepZ)
+  const rock = rockCells(normalized, mask, width, height, bounds)
   let n = 0, capped = 0, maxD = 0
   for (let k = 0; k < mask.length; k++) {
-    if (!mask[k]) continue
+    if (!mask[k] || rock.has(k)) continue
     const h = Math.min(A * Math.pow(dist[k], 2 / 3), vis.value)
     if (h >= vis.value) capped++
     normalized[k] = -h; n++; if (dist[k] > maxD) maxD = dist[k]
