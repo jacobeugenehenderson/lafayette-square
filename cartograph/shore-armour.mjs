@@ -136,23 +136,18 @@ const containing = (feats, x, z) => {
   return null
 }
 
+// ⛔ EVERY BUCKET, READ BY TAG. The fetch files each feature under ONE bucket (its highest-priority tag), so a
+// structure's tag says nothing about where it sits: measured 2026-09-27, 84 of provincetown's 93 over-water
+// structures are NOT in `man_made` (78 under `highway`, the West End Breakwater under `surface`). Reading only
+// `man_made` and `other` missed that breakwater entirely. A feature is found by what it IS, wherever it was filed.
 const pick = (ground, table, closedOnly = false) => {
-  const out = []
-  for (const [key, values] of Object.entries(table)) {
-    for (const f of (ground[key] || [])) {
-      if (!Array.isArray(f?.coords) || f.coords.length < 2) continue
+  const out = [], seen = new Set()
+  for (const bucket of Object.values(ground || {})) {
+    if (!Array.isArray(bucket)) continue
+    for (const f of bucket) {
+      if (!Array.isArray(f?.coords) || f.coords.length < 2 || seen.has(f)) continue
       if (closedOnly && !f.isClosed) continue
-      if (values.includes(f.tags?.[key])) out.push(f)
-    }
-  }
-  // `man_made` may still be unbucketed on a town fetched before that landed —
-  // look in `other` too rather than silently seeing nothing. ⛔ Absence of a
-  // bucket is not absence of the feature.
-  for (const [key, values] of Object.entries(table)) {
-    for (const f of (ground.other || [])) {
-      if (!Array.isArray(f?.coords) || f.coords.length < 2) continue
-      if (closedOnly && !f.isClosed) continue
-      if (values.includes(f.tags?.[key])) out.push(f)
+      if (Object.entries(table).some(([key, values]) => values.includes(f.tags?.[key]))) { out.push(f); seen.add(f) }
     }
   }
   return out
