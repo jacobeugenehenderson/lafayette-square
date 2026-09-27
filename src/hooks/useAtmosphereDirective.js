@@ -138,9 +138,12 @@ export default function useAtmosphereDirective(lookId) {
       // irrelevant ping. The dedup key now includes modulator strengths
       // (small string) so a strength change retriggers the tween.
       const key = directiveIdentityKey(directive, strengths)
-      if (key === _lastEvalKey.current) return
+      const snap = useAtmosphere.getState().snapPending
+      if (key === _lastEvalKey.current && !snap) return
       _lastEvalKey.current = key
-      useAtmosphere.getState().setRawDirective(directive)
+      // A chosen weather must reach the driver as a new directive even when it resolves to
+      // the same rule (the rule's own object), or the snap would wait for an unrelated change.
+      useAtmosphere.getState().setRawDirective(snap ? { ...directive } : directive)
     })
     return () => { cancelled = true }
   }, [

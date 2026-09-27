@@ -14,8 +14,8 @@
  * widens + recolors particles. Hail also drives the wet integrator (the
  * world becomes wet, accumulation skipped).
  */
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { WEATHER_UNIFORMS } from '../lib/weather-uniforms.js'
 import RainParticles from './weather/RainParticles.jsx'
@@ -37,8 +37,31 @@ function damp(current, target, rate, dt) {
   return current + (target - current) * t
 }
 
-function WetnessDriver({ active, intensity }) {
+// What is falling now, read from the tweened directive. The ground drivers read it per
+// frame rather than through props, which arrive a render late: after a chosen weather's
+// reset, one frame of the PREVIOUS weather's precip would build on the bare ground.
+function precipOf(directive) {
+  const kind = directive?.precip?.kind || 'none'
+  const intensity = directive?.precip?.intensity ?? 0
+  return { kind, intensity, isRain: kind === 'rain' || kind === 'hail' || kind === 'sleet', isSnow: kind === 'snow' }
+}
+const precipNow = () => precipOf(useAtmosphere.getState().tweenedDirective)
+
+// A chosen weather (snapEpoch moved) starts from dry, bare ground and builds toward
+// itself, the same build every time (Jacob, 2026-09-27: "build from bare ground").
+function useSnapReset(uniform) {
+  const seen = useRef(useAtmosphere.getState().snapEpoch)
+  return () => {
+    const epoch = useAtmosphere.getState().snapEpoch
+    if (epoch !== seen.current) { seen.current = epoch; uniform.value = 0 }
+  }
+}
+
+function WetnessDriver() {
+  const resetOnSnap = useSnapReset(WEATHER_UNIFORMS.uWetness)
   useFrame((_, dt) => {
+    resetOnSnap()
+    const { isRain: active, intensity } = precipNow()
     const cur = WEATHER_UNIFORMS.uWetness.value
     const target = active ? intensity : 0
     const rate = active ? WET_RISE_RATE : WET_DECAY_RATE
@@ -47,8 +70,11 @@ function WetnessDriver({ active, intensity }) {
   return null
 }
 
-function SnowAccumulationDriver({ active, intensity }) {
+function SnowAccumulationDriver() {
+  const resetOnSnap = useSnapReset(WEATHER_UNIFORMS.uSnowAccumulation)
   useFrame((_, dt) => {
+    resetOnSnap()
+    const { isSnow: active, intensity } = precipNow()
     const cur = WEATHER_UNIFORMS.uSnowAccumulation.value
     // *1.5 lets light intensity build modestly, full snow saturates.
     const target = active ? Math.min(1, intensity * 1.5) : 0
@@ -60,25 +86,12 @@ function SnowAccumulationDriver({ active, intensity }) {
 
 export default function WeatherEffects() {
   // Subscribe at component scope so React mounts/unmounts particle
-  // systems when kind flips. Useframe-driven uniforms continue to update
-  // even when no kind is active (decay path).
+  // systems when kind flips. The ground drivers read the directive per frame
+  // themselves (precipNow) and keep updating when nothing falls (decay path).
   const directive = useAtmosphere((s) => s.tweenedDirective)
-  if (!directive) {
-    return (
-      <>
-        <WetnessDriver active={false} intensity={0} />
-        <SnowAccumulationDriver active={false} intensity={0} />
-      </>
-    )
-  }
-
-  const kind = directive.precip?.kind || 'none'
-  const intensity = directive.precip?.intensity ?? 0
-  const lightningRate = directive.lightning?.rate ?? 0
-  const lightningKind = directive.lightning?.kind ?? 'intracloud'
-
-  const isRain = kind === 'rain' || kind === 'hail' || kind === 'sleet'
-  const isSnow = kind === 'snow'
+  const { kind, intensity, isRain, isSnow } = precipOf(directive)
+  const lightningRate = directive?.lightning?.rate ?? 0
+  const lightningKind = directive?.lightning?.kind ?? 'intracloud'
 
   return (
     <>
@@ -88,8 +101,8 @@ export default function WeatherEffects() {
       {isSnow && intensity > 0.01 && (
         <SnowParticles intensity={intensity} />
       )}
-      <WetnessDriver active={isRain} intensity={intensity} />
-      <SnowAccumulationDriver active={isSnow} intensity={intensity} />
+      <WetnessDriver />
+      <SnowAccumulationDriver />
       {lightningRate > 0 && (
         <LightningDriver rate={lightningRate} kind={lightningKind} />
       )}

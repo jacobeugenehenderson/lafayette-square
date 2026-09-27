@@ -199,5 +199,42 @@ else ok('only the directive path writes cloudCover/storminess')
   }
 }
 
+// ── 5. a chosen weather is a pure function of the choice ───────────────────
+// ⛔ 2026-09-27 (Jacob, Stage): Snow's cover stayed white through Rain, and Clear came out
+// three ways (after Snow, after Rain, after Live), because four holders integrate weather over
+// time and kept what the last weather left: snow cover, wetness, wind, cloud drift. A chosen
+// weather bumps useAtmosphere.snapEpoch; every holder must reset on it.
+// (a) every src file that integrates weather over time (damp(), exp(-…dt), `+= …wind…dt`)
+//     reads snapEpoch; the files are FOUND by that shape, not listed;
+// (b) in node: the wind takes a chosen weather's target at once, then eases again.
+{
+  const { execSync: sh } = await import('node:child_process')
+  const files = sh('grep -rlE "useSkyState|useAtmosphere|WEATHER_UNIFORMS" src || true', { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean)
+  const integrates = (t) => /\bdamp\(|Math\.exp\(\s*-[^)]*\bdt\b|\+=[^\n]*\b(windVector|intensity|precip)\b[^\n]*\bdt\b/.test(t)
+  const holders = files.filter((f) => integrates(read(f)))
+  const deaf = (srcOf) => holders.filter((f) => !/\bsnapEpoch\b/.test(srcOf(f)))
+  const d = deaf(read)
+  if (holders.length < 3) bad(`found only ${holders.length} weather integrators (${holders.join(', ')}) — the shape test has gone blind`)
+  else if (d.length) d.forEach((f) => bad(`${f} integrates weather over time but never resets on a chosen weather (snapEpoch)`))
+  else ok(`every weather integrator resets on a chosen weather (${holders.map((f) => path.basename(f)).join(', ')})`)
+  const victim = holders.find((f) => f.endsWith('WeatherEffects.jsx'))
+  if (!victim) bad('WeatherEffects.jsx is no longer found as an integrator — re-aim the mutation')
+  else if (deaf((f) => f === victim ? read(f).replaceAll('snapEpoch', 'x') : read(f)).includes(victim)) ok('mutation (WeatherEffects deaf to snapEpoch) is caught')
+  else bad('mutation (WeatherEffects deaf to snapEpoch) is NOT caught')
+
+  const useAtmosphere = (await import(path.join(ROOT, 'src/hooks/useAtmosphere.js'))).default
+  const sky = useSkyState.getState()
+  sky.windVector.set(3, 4)
+  sky.setWeatherTargets({ windVector: { x: 0, y: 0 } })
+  useSkyState.getState().tick(0.1)
+  const eased = useSkyState.getState().windVector.length()
+  useAtmosphere.setState((s) => ({ snapEpoch: s.snapEpoch + 1 }))
+  useSkyState.getState().tick(0.1)
+  const snapped = useSkyState.getState().windVector.length()
+  if (!(eased > 4.9)) bad(`without a snap the wind no longer eases (|wind| ${eased.toFixed(3)} after 0.1 s)`)
+  else if (snapped !== 0) bad(`a chosen weather keeps the last weather's wind (|wind| ${snapped.toFixed(3)})`)
+  else ok('the wind eases for real weather and takes a chosen weather\'s at once')
+}
+
 console.log(failed ? `\n⛔ ${failed} failure(s)\n` : '\n✅ the light follows the weather\n')
 process.exit(failed ? 1 : 0)

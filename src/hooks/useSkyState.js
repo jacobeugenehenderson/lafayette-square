@@ -1,10 +1,13 @@
 import { create } from 'zustand'
 import * as THREE from 'three'
+import useAtmosphere from './useAtmosphere.js'
 
 // Pre-allocated vectors to avoid per-frame GC
 const _sunDir = new THREE.Vector3()
 const _moonDir = new THREE.Vector3()
 const _wind = new THREE.Vector2()
+// The last snapEpoch the wind honoured: a chosen weather's wind lands at once (useAtmosphere).
+let _windSnapEpoch = useAtmosphere.getState().snapEpoch
 
 const useSkyState = create((set, get) => ({
   // ── Celestial (pushed from CelestialBodies each frame) ──
@@ -126,6 +129,10 @@ const useSkyState = create((set, get) => ({
 
     const { cloudCover, storminess, turbidity } = s
     const rate = 1 - Math.exp(-dt / 90)
+
+    // A chosen weather (snapEpoch moved) takes its wind at once; real weather eases in.
+    const epoch = useAtmosphere.getState().snapEpoch
+    if (epoch !== _windSnapEpoch) { _windSnapEpoch = epoch; s.windVector.set(s._targetWind.x, s._targetWind.y) }
 
     // Wind interpolation
     const wx = s.windVector.x + (s._targetWind.x - s.windVector.x) * rate

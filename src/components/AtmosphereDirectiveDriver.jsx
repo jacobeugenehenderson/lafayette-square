@@ -51,16 +51,19 @@ export default function AtmosphereDirectiveDriver({ lookId }) {
     if (!raw) return
     const tweened = useAtmosphere.getState().tweenedDirective
     if (!tweened) {
-      // Cold start — no prior state to interpolate from. Snap.
+      // Cold start — no prior state to interpolate from. Snap (and take a pending one with it).
       publishTweened(raw)
       lastRawRef.current = raw
+      if (useAtmosphere.getState().snapPending) useAtmosphere.setState((s) => ({ snapPending: false, snapEpoch: s.snapEpoch + 1 }))
       return
     }
-    if (raw !== lastRawRef.current && Date.now() < useAtmosphere.getState().snapUntilMs) {
-      // An operator chose this weather (Stage's switch): land on it now, don't ease.
+    if (raw !== lastRawRef.current && useAtmosphere.getState().snapPending) {
+      // An operator chose this weather (Stage's switch): land on it now, don't ease, and
+      // tell every accumulated-weather holder to drop what the last weather left.
       publishTweened(raw)
       lastRawRef.current = raw
       lerpStartMs.current = null
+      useAtmosphere.setState((s) => ({ snapPending: false, snapEpoch: s.snapEpoch + 1 }))
       return
     }
     if (raw !== lastRawRef.current) {

@@ -3,10 +3,13 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCamera from '../hooks/useCamera'
 import useSkyState from '../hooks/useSkyState'
+import useAtmosphere from '../hooks/useAtmosphere.js'
 import { SKY_RADIUS } from './CelestialBodies'
 
-// Wind offset accumulator (persists across frames)
+// Wind offset accumulator (persists across frames). A chosen weather (snapEpoch moved)
+// starts the drift over, so the same weather draws the same clouds (useAtmosphere).
 const _windOffset = new THREE.Vector2(0, 0)
+let _driftSnapEpoch = useAtmosphere.getState().snapEpoch
 
 function CloudDome() {
   const materialRef = useRef()
@@ -182,6 +185,8 @@ function CloudDome() {
     materialRef.current.uniforms.uMoonDir.value.copy(sky.moonDirection)
 
     // Accumulate wind offset
+    const epoch = useAtmosphere.getState().snapEpoch
+    if (epoch !== _driftSnapEpoch) { _driftSnapEpoch = epoch; _windOffset.set(0, 0) }
     if (!sky.isBackgroundTab) {
       _windOffset.x += sky.windVector.x * dt * 0.0003
       _windOffset.y += sky.windVector.y * dt * 0.0003
