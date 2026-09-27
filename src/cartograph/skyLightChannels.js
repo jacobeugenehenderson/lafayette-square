@@ -147,7 +147,7 @@ export const AO_FIELD_KEYS = AO_FIELDS.map(f => f.key)
 // hero shot and the slider ran far past a whiteout — a Class D constant (CLAUDE.md Layer 0), right only for a town
 // of one size. A town whose size is unknown gets NO fog and a console error, never a guessed one.
 export const MIST_FIELDS = [
-  { key: 'amount', label: 'Amount (1 = half the town fogged)', min: 0, max: 2, step: 0.01 },
+  { key: 'amount', label: 'Amount', min: 0, max: 2, step: 0.01 },
   { key: 'color',  label: 'Color', type: 'color' },
   // How much of it lies on the water: 0 = clear water, 1 = the water mists like the land.
   { key: 'water',  label: 'Over water', min: 0, max: 1, step: 0.01 },
