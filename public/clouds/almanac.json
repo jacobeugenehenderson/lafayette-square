@@ -91,36 +91,46 @@
       }
     },
     {
-      "id": "rain_steady",
-      "label": "Steady rain",
+      "id": "blizzard",
+      "label": "Blizzard",
       "when": {
-        "precipMmHr": [
-          0.5,
-          4
+        "tempC": [
+          -30,
+          0
         ],
-        "cloudCover": [
-          0.85,
-          1
+        "precipMmHr": [
+          3,
+          30
+        ],
+        "windKph": [
+          50,
+          200
         ]
       },
       "softness": 0.05,
+      "transitionMs": 30000,
       "directive": {
         "clouds": [
           {
-            "preset": "nimbostratus",
-            "weight": 0.95
+            "preset": "stratus_opacus",
+            "weight": 1
           }
         ],
         "sun": {
-          "intensity": 0.45,
-          "tint": "#a8a39d"
+          "intensity": 0.3,
+          "tint": "#cdd6df"
+        },
+        "lightDome": {
+          "top": "#7c8895",
+          "horizon": "#a8b4c0",
+          "ambientFloor": 0.4
         },
         "wind": {
-          "scale": 1.2
+          "scale": 3
         },
         "precip": {
-          "kind": "rain",
-          "intensity": 0.5
+          "kind": "snow",
+          "intensity": 0.95
         }
       }
     },
@@ -165,46 +175,36 @@
       }
     },
     {
-      "id": "blizzard",
-      "label": "Blizzard",
+      "id": "rain_steady",
+      "label": "Steady rain",
       "when": {
-        "tempC": [
-          -30,
-          0
-        ],
         "precipMmHr": [
-          3,
-          30
+          0.5,
+          4
         ],
-        "windKph": [
-          50,
-          200
+        "cloudCover": [
+          0.85,
+          1
         ]
       },
       "softness": 0.05,
-      "transitionMs": 30000,
       "directive": {
         "clouds": [
           {
-            "preset": "stratus_opacus",
-            "weight": 1
+            "preset": "nimbostratus",
+            "weight": 0.95
           }
         ],
         "sun": {
-          "intensity": 0.3,
-          "tint": "#cdd6df"
-        },
-        "lightDome": {
-          "top": "#7c8895",
-          "horizon": "#a8b4c0",
-          "ambientFloor": 0.4
+          "intensity": 0.45,
+          "tint": "#a8a39d"
         },
         "wind": {
-          "scale": 3
+          "scale": 1.2
         },
         "precip": {
-          "kind": "snow",
-          "intensity": 0.95
+          "kind": "rain",
+          "intensity": 0.5
         }
       }
     },

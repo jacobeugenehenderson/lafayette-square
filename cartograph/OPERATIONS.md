@@ -134,7 +134,7 @@ The full channel inventory + where each persists is `STAGE.md §1`; the cards be
 
 The time readout and **⟲ live**, the **time-of-day chips** (Dawn … Night) above the day slider, the **season chips** above the year slider, and:
 
-**Weather (Stage only)** — the card's last row: **Live · Clear · Overcast · Rain · Snow.** *Live* polls the town's real weather; the others stand the scene in that weather so a look can be judged whatever it's doing outside. A click lands at once, Live included; the live feed's own later readings ease in. Session-only: never saved, never baked, and production always runs live. The presets are `src/lib/weatherPresets.js`, shared with the surface lab. ⚠️ Rain and Snow draw the same sky today (both pick the same cloud).
+**Weather (Stage only)** — the card's last row, a segmented pill (a mode, where the chips above are jumps): **Live · Clear · Overcast · Rain · Snow.** *Live* polls the town's real weather; the others stand the scene in that weather so a look can be judged whatever it's doing outside. A click lands at once, Live included; the live feed's own later readings ease in. Session-only: never saved, never baked, and production always runs live. The presets are `src/lib/weatherPresets.js`, shared with the surface lab. Each draws the sky the Almanac's rule for it picks (`public/clouds/almanac.json`, first match wins, so a narrower rule goes above a broader one) ▶ `node checks/claims-the-light-follows-the-weather.mjs` ④.
 
 ### How to operate any TOD channel (the universal mechanic)
 

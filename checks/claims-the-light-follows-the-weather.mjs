@@ -148,5 +148,56 @@ else ok('only the directive path writes cloudCover/storminess')
   else ok('preset storminess follows the live feed\'s rule (rain is stormier than overcast)')
 }
 
+// ── 4. every falling weather reaches its own rule ──────────────────────────
+// ⛔ 2026-09-27: the Almanac is first-match-wins, and `rain_steady` (no temperature) sat
+// above `snow_active`, so every snow feed, live or Stage's Snow, drew the rain sky; and
+// `snow_active` covered everything `blizzard` does, so no blizzard was ever drawn.
+// (a) each preset that falls resolves to a rule whose precip kind is the feed's own
+//     (`buildWeatherPayload`'s precipKind, from the WMO code, read, not restated);
+// (b) no rule is unreachable: none whose `when` lies wholly inside an earlier rule's.
+// Both are mutation-tested against the order this commit fixed.
+{
+  const ruleFor = (alm, feed) => {
+    const { directive } = selectDirectiveWithStrengths({ weather: buildWeatherPayload(feed, noon), almanac: alm, presets, override: null })
+    return alm.rules.find((r) => r.directive === directive) || null
+  }
+  const wrongKinds = (alm) => Object.entries(WEATHER_PRESETS).flatMap(([name, w]) => {
+    const kind = buildWeatherPayload(w, noon).precipKind
+    if (!kind) return []
+    const r = ruleFor(alm, w)
+    return r?.directive?.precip?.kind === kind ? [] : [`'${name}' (${kind}) draws ${r ? `'${r.id}'` : 'the fallback'} (${r?.directive?.precip?.kind ?? 'no precip'})`]
+  })
+  const inside = (b, a) => Object.entries(a.when || {}).every(([k, av]) => {
+    const bv = b.when?.[k]
+    if (!bv) return false
+    return typeof av[0] === 'number' ? bv[0] >= av[0] && bv[1] <= av[1] : bv.every((x) => av.includes(x))
+  })
+  const shadowed = (alm) => alm.rules.flatMap((b, i) => {
+    const a = alm.rules.slice(0, i).find((r) => inside(b, r))
+    return a ? [`'${b.id}' can never fire: '${a.id}' above it matches everything it does`] : []
+  })
+
+  const falling = Object.keys(WEATHER_PRESETS).filter((n) => buildWeatherPayload(WEATHER_PRESETS[n], noon).precipKind)
+  const wk = wrongKinds(almanac), sh = shadowed(almanac)
+  wk.forEach(bad); sh.forEach(bad)
+  if (!falling.length) bad('no weather preset falls — (a) is testing nothing')
+  else if (!wk.length) ok(`each falling preset draws its own kind of sky (${falling.join(', ')})`)
+  if (!sh.length) ok(`every Almanac rule is reachable (${almanac.rules.length} rules)`)
+
+  const move = (alm, id, beforeId) => {
+    const rules = alm.rules.filter((r) => r.id !== id)
+    rules.splice(rules.findIndex((r) => r.id === beforeId), 0, alm.rules.find((r) => r.id === id))
+    return { ...alm, rules }
+  }
+  const has = (...ids) => ids.every((id) => almanac.rules.some((r) => r.id === id))
+  if (!has('rain_steady', 'snow_active', 'blizzard')) bad('the mutations name rules the Almanac no longer has — re-aim them')
+  else {
+    if (wrongKinds(move(almanac, 'rain_steady', 'blizzard')).length) ok('mutation (rain above snow) is caught')
+    else bad('mutation (rain above snow) is NOT caught — (a) is blind')
+    if (shadowed(move(almanac, 'snow_active', 'blizzard')).length) ok('mutation (snow above blizzard) is caught')
+    else bad('mutation (snow above blizzard) is NOT caught — (b) is blind')
+  }
+}
+
 console.log(failed ? `\n⛔ ${failed} failure(s)\n` : '\n✅ the light follows the weather\n')
 process.exit(failed ? 1 : 0)

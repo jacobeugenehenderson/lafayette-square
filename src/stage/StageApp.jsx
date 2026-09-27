@@ -310,16 +310,16 @@ const Timeline = DawnTimeline
 
 // Stage-only weather switch, the Time of Day card's last row: judge a look in chosen
 // weather instead of the town's live weather. Session-only, like neonForceOn: not
-// saved, not baked. Same chips as the time and season rows (.tod-chip in index.css).
+// saved, not baked. A mode, so a segmented pill (.mode-pill in index.css), set apart
+// from the time and season chips, which are jumps.
 const WEATHER_MODES = ['live', 'clear', 'overcast', 'rain', 'snow']
 function WeatherSwitch() {
   const mode = useCartographStore(s => s.weatherMode)
   const set  = useCartographStore(s => s.setWeatherMode)
   return (
-    <div className="flex justify-between px-1 pt-2">
+    <div className="mode-pill mt-3" role="group" aria-label="Weather">
       {WEATHER_MODES.map(m => (
         <button key={m} type="button" onClick={() => set(m)}
-          className="tod-chip tod-chip--caps"
           aria-pressed={mode === m}
           title={m === 'live' ? "The town's real weather, polled" : `Stand the scene in ${m} weather (Stage only, not saved)`}
         >{m}</button>
