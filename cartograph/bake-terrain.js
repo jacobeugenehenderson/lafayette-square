@@ -469,14 +469,13 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
 // waterline, not at the high level: measured on provincetown, the land just outside it lay BELOW high water along
 // 45 of 51 km, so a sheet ending at the drawing would hang in the air over the beach. The water at HIGH is the drawn
 // water plus the ground below the high level CONNECTED to it — a 4-way flood fill from the water, so a hollow or a diked
-// marsh stays dry — plus one ring of dry cells, so the sheet's own edge lies under the ground and the edge you see is
-// where the level meets it. Returned as rings (local metres) MINUS the drawn water (map.json layers.water), so the two
+// marsh stays dry — its outline TRACED where the level meets the terrain (below). Returned as rings (local metres) MINUS the drawn water (map.json layers.water), so the two
 // sheets meet and never overlap. Lower tides need nothing: the ground hides the sheet wherever it stands above the level.
 function floodExtent(normalized, mask, width, height, bounds, water) {
   const L = levelsOf(water)
   const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1)
   const X = i => bounds.minX + i * sx, Z = j => bounds.minZ + j * sz
-  const state = new Uint8Array(width * height)          // 1 = drawn water, 2 = flooded, 3 = the dry ring, 4 = a held line
+  const state = new Uint8Array(width * height)          // 1 = drawn water, 2 = flooded, 4 = a held line
   // ⛔ A MAPPED DIKE HOLDS THE WATER. The heightfield is 5 m: a dike narrower than ~2 cells reads as a gap and a
   // 4-way fill walks through it into the marsh it keeps dry (Loam, 2026-09-27). Every mapped line that holds water —
   // man_made=dyke, embankment=yes, waterway=dam — is drawn into the grid (half-cell steps: an 8-connected line, which a
@@ -510,35 +509,46 @@ function floodExtent(normalized, mask, width, height, bounds, water) {
       state[n] = 2; flooded++; queue[qt++] = n
     }
   }
-  // The dry ring goes round ALL the water, drawn and flooded: a cell is judged at its centre, so up to a cell beyond the
-  // drawn edge the draped ground can dip below the level while its cell stands above it (measured: 24 km of
-  // provincetown's shore with the ring round the flood alone).
-  let ring = 0
-  for (let k = 0; k < width * height; k++) {
-    if (state[k] !== 1 && state[k] !== 2) continue
-    const i = k % width, j = (k - i) / width
-    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-      const ii = i + di, jj = j + dj
-      if (ii < 0 || jj < 0 || ii >= width || jj >= height) continue
-      const n = jj * width + ii
-      if (!state[n]) { state[n] = 3; ring++ }
-    }
-  }
-  // Each row's runs of drawn + flooded + ring cells as rectangles (a cell spans ±half a step around its sample), unioned, then
-  // the drawn water cut out of them.
+  // ⭐ THE EDGE IS THE WATERLINE, TRACED — not the cells. The first cut drew the flood as 5 m cell squares plus a dry ring,
+  // and along 41% of the Commercial St beach its square edge stood above ground lying below the level (up to 2.5 m):
+  // the stair-stepped shore Jacob saw ("that shoreline is terrible"). Now: marching squares on w = high − ground over the
+  // grid of samples, each square between four samples clipped to w > 0 with the crossing interpolated along its sides,
+  // so the outline is where the level meets the terrain. A sample NOT connected to the water (a hollow, a held dike)
+  // counts as dry, so it stays out; a saddle (wet diagonal, dry diagonal) is split unless the square's centre is wet,
+  // so the flood never leaks across a ridge. The squares are unioned, then the drawn water cut out.
   const S = 100, C = clipperLib, P = (x, z) => ({ X: Math.round(x * S), Y: Math.round(z * S) })
+  const DRY = -1e-3
+  const w = (i, j) => { const k = j * width + i; const v = L.highAt(X(i), Z(j)) - normalized[k]
+    return state[k] === 1 ? Math.max(v, -DRY) : state[k] === 2 ? v : Math.min(v, DRY) }
   const cells = []
-  for (let j = 0; j < height; j++) {
-    let i0 = -1
-    for (let i = 0; i <= width; i++) {
-      const on = i < width && state[j * width + i] >= 1 && state[j * width + i] <= 3
-      if (on && i0 < 0) i0 = i
-      else if (!on && i0 >= 0) {
-        const x0 = X(i0) - sx / 2, x1 = X(i - 1) + sx / 2, z0 = Z(j) - sz / 2, z1 = Z(j) + sz / 2
-        cells.push([P(x0, z0), P(x1, z0), P(x1, z1), P(x0, z1)]); i0 = -1
+  for (let j = 0; j + 1 < height; j++) {
+    let run0 = -1                                                     // runs of wholly wet squares, merged per row
+    const flush = (i1) => { if (run0 >= 0) { cells.push([P(X(run0), Z(j)), P(X(i1), Z(j)), P(X(i1), Z(j + 1)), P(X(run0), Z(j + 1))]); run0 = -1 } }
+    for (let i = 0; i + 1 < width; i++) {
+      const s0 = state[j * width + i], s1 = state[j * width + i + 1], s2 = state[(j + 1) * width + i + 1], s3 = state[(j + 1) * width + i]
+      if (!(s0 === 1 || s0 === 2 || s1 === 1 || s1 === 2 || s2 === 1 || s2 === 2 || s3 === 1 || s3 === 2)) { flush(i); continue }   // no wet corner
+      const c = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]], v = c.map(([a, b]) => w(a, b))
+      const wet = v.map(x => x > 0), n = wet.filter(Boolean).length
+      if (n === 4) { if (run0 < 0) run0 = i; continue }
+      flush(i)
+      if (!n) continue
+      const cross = (p, q) => { const t = v[p] / (v[p] - v[q]); return P(X(c[p][0]) + (X(c[q][0]) - X(c[p][0])) * t, Z(c[p][1]) + (Z(c[q][1]) - Z(c[p][1])) * t) }
+      const clip = (idx) => {                                         // the wet part of a polygon of corner indices
+        const out = []
+        for (let m = 0; m < idx.length; m++) {
+          const p = idx[m], q = idx[(m + 1) % idx.length]
+          if (wet[p]) out.push(P(X(c[p][0]), Z(c[p][1])))
+          if (wet[p] !== wet[q]) out.push(cross(p, q))
+        }
+        return out
       }
+      const saddle = n === 2 && wet[0] === wet[2]
+      if (saddle && (v[0] + v[1] + v[2] + v[3]) / 4 <= 0) { cells.push(clip([0, 1, 3]).length >= 3 ? clip([0, 1, 3]) : []); cells.push(clip([1, 2, 3]).length >= 3 ? clip([1, 2, 3]) : []) }
+      else cells.push(clip([0, 1, 2, 3]))
     }
+    flush(width - 1)
   }
+  for (let k = cells.length - 1; k >= 0; k--) if (cells[k].length < 3) cells.splice(k, 1)
   const mapPath = join(CLEAN_DIR, 'map.json')
   if (!fs.existsSync(mapPath)) throw new Error(`⛔ the high-water flood: ${mapPath} is missing — the drawn water it meets cannot be read. Pour the town first.`)
   const drawn = (JSON.parse(fs.readFileSync(mapPath, 'utf8')).layers?.water || [])
@@ -553,7 +563,9 @@ function floodExtent(normalized, mask, width, height, bounds, water) {
   const walk = (node) => { for (const ch of node.Childs()) { out.push({ outer: xy(ch.Contour()), holes: ch.Childs().map(h => xy(h.Contour())) }); for (const h of ch.Childs()) walk(h) } }
   walk(tree)
   const ha = sx * sz / 1e4
-  return { at: water.high, floodedHa: +(flooded * ha).toFixed(1), ringHa: +(ring * ha).toFixed(1), heldCells: held, polygons: out }
+  const area = r => { let t = 0; for (let m = 0, n = r.length - 1; m < r.length; n = m++) t += (r[n][0] + r[m][0]) * (r[n][1] - r[m][1]); return Math.abs(t / 2) }
+  const beyondHa = out.reduce((t, p) => t + area(p.outer) - p.holes.reduce((u, h) => u + area(h), 0), 0) / 1e4
+  return { at: water.high, floodedHa: +(flooded * ha).toFixed(1), beyondDrawnHa: +beyondHa.toFixed(1), heldCells: held, polygons: out }
 }
 
 function writeBed(normalized, mask, width, height, bounds, floor = null) {
@@ -912,7 +924,7 @@ async function main() {
     console.log(`    ⛔ y = 0 is now the WATER, not the lowest ground: ground below it is NEGATIVE, by design.`)
     const rng = n => { const a = water.datums[n]; return `${Math.min(...a).toFixed(2)}…${Math.max(...a).toFixed(2)}` }
     console.log(`  LEVELS (m above y = 0): ${water.tidal ? 'tidal' : 'lake'} · low ${water.low} ${rng(water.low)} (${water.lowFrom}) · high ${water.high} ${rng(water.high)} (${water.highFrom})`)
-    console.log(`    FLOOD at ${water.flood.at}: ${water.flood.floodedHa} ha of ground below it joins the drawn water (+ a ${water.flood.ringHa} ha dry ring, under the ground) · ${water.flood.polygons.length} polygon(s) beyond the drawing's water · ${water.flood.heldCells} cell(s) held by mapped dikes`)
+    console.log(`    FLOOD at ${water.flood.at}: ${water.flood.floodedHa} ha of ground below it joins the drawn water (traced to the waterline: ${water.flood.beyondDrawnHa} ha of sheet beyond the drawing's water, ${water.flood.polygons.length} polygon(s)) · ${water.flood.heldCells} cell(s) held by mapped dikes`)
     console.log(`    ${water.source}${water.filledFromNeighbour ? ` · ${water.filledFromNeighbour} grid point(s) off the datum model took their nearest neighbour` : ''}`)
   } else {
     console.log(`  DATUM = the local minimum: ${baseElev.toFixed(2)} m (no coast — see waterDatum for why a pond does not qualify)`)

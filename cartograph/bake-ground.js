@@ -51,6 +51,7 @@ import { buildTileGround } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
+import { waterLevels } from './waterLevel.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
@@ -801,6 +802,23 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // a 157 km² land-use face earcut into 12 km slivers, quartered to 10.3M triangles. The AO lightmap is a
   // texture, so nothing else reads ground vertex density. A scene WITH terrain is byte-identical.
   const hasTerrain = !!getTerrainSampler(scene)
+  // ⭐⭐ THE TIDE BAND (Jacob, 2026-09-27, "fix A"): the flat water meets the ground AS DRAWN — the slab's triangles,
+  // lifted only at their vertices — so wherever the waterline can fall at any tide (terrain between the town's LOW and
+  // HIGH level), the drawn ground must BE the terrain. Measured before: across provincetown's Commercial St beach the
+  // drawn ground lay up to 1.66 m below the terrain, so the high-water sheet stood over it in the air. In the band a
+  // soft fill refines to the heightfield's own resolution (edges down to half a terrain step) and to the level's own
+  // uncertainty (±, from the datum record) — no finer than the level is known. Levels are FIELDS, sampled per point.
+  const tideBand = (() => {
+    if (!hasTerrain) return null
+    const t = loadSceneTerrain(scene)
+    if (!t?.water) { console.log(`  [ground] ${look}: the terrain carries no water levels — no tide band`); return null }
+    const L = waterLevels(t.water)
+    const unc = L.uncertaintyM
+    const tol = (unc > 0 ? unc : refineTol) * t.exag
+    if (!(unc > 0)) console.log(`  [ground] ${look}: the levels carry no stated uncertainty — the tide band refines to the ground's own tolerance (${refineTol} m)`)
+    console.log(`  [ground] tide band: ${L.lowName}…${L.highName} (${L.range.low[0].toFixed(2)}…${L.range.high[1].toFixed(2)} m), refined to ±${tol.toFixed(3)} m, edges ≥ ${(t.stepM / 2).toFixed(2)} m`)
+    return { levels: (x, z) => [L.lowAt(x, z) * t.exag, L.highAt(x, z) * t.exag], tol, minEdge: t.stepM / 2 }
+  })()
   if (!hasTerrain) console.log(`  [ground] no terrain for ${look} — refinement off (nothing to drape)`)
   // Bake-target guards — phantom-look + SCENE≠LOOK. Both were written here, inline
   // (2026-06-01 and 2026-07-21), each after a lost session; four other bakers never
@@ -1083,7 +1101,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       // coarse cap it used to emit here bred Provincetown's 10.3M slivers (Altadena, 2026-07-14, was the
       // first no-terrain blow-up — the fine mesh then; the cap now).
       refinePolicy = refineMode === 'adaptive' && refineSampler
-        ? { mode: 'adaptive', sampler: refineSampler, tol: key === 'bed' ? bedTol : refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge }
+        ? { mode: 'adaptive', sampler: refineSampler, tol: key === 'bed' ? bedTol : refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge, band: tideBand }
         : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
     } else if (isContourRibbon) {
       // Dense, EVEN sampling so the path follows the contour. Adaptive's

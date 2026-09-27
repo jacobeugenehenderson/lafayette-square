@@ -50,7 +50,10 @@ export function loadSceneTerrain(scene) {
   const buf = readFileSync(bin)
   const data = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4)
   const t = { ...meta, data }
-  return { ...makeElevationSampler(t, authoredExag(scene)), identity: terrainIdentity(t), baseElev: meta.baseElev ?? null }
+  const exag = authoredExag(scene)
+  const stepM = Math.min((meta.bounds.maxX - meta.bounds.minX) / (meta.width - 1), (meta.bounds.maxZ - meta.bounds.minZ) / (meta.height - 1))
+  // `water`: the town's levels (bake-terrain), for a bake that must know where the tide can reach.
+  return { ...makeElevationSampler(t, exag), identity: terrainIdentity(t), baseElev: meta.baseElev ?? null, water: meta.water ?? null, exag, stepM }
 }
 
 /**

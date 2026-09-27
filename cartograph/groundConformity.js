@@ -124,8 +124,11 @@ function normalizePolicy(refine) {
   if (mode === 'adaptive' && (!sampler || !(tol > 0))) mode = 'uniform'
   const hasCap = maxEdge && maxEdge > 0 && Number.isFinite(maxEdge)
   if (mode === 'uniform' && !hasCap) mode = 'none'
-  return { mode, maxEdgeSq: hasCap ? maxEdge * maxEdge : Infinity, minEdgeSq: minEdge * minEdge, tol, sampler,
-           passes: mode === 'adaptive' ? 10 : mode === 'uniform' ? 8 : 0 }
+  // ⭐ `band`: the TIDE BAND (bake-ground) — where the waterline can fall at any tide, the ground must BE the terrain,
+  // since the flat water meets the ground as drawn: { levels(x, z) → [lo, hi] (lifted like the sampler), tol, minEdge }.
+  const band = refine?.band && sampler ? { ...refine.band, minEdgeSq: refine.band.minEdge * refine.band.minEdge } : null
+  return { mode, maxEdgeSq: hasCap ? maxEdge * maxEdge : Infinity, minEdgeSq: minEdge * minEdge, tol, sampler, band,
+           passes: mode === 'adaptive' ? (band ? 14 : 10) : mode === 'uniform' ? 8 : 0 }
 }
 
 /**
@@ -261,6 +264,15 @@ export function conformAndRefine(groupSpecs, stats = {}) {
     e = Math.abs(s((ax + bx + cx) / 3, (az + bz + cz) / 3) - (ya + yb + yc) / 3); if (e > d) d = e
     return d
   }
+  // Does the terrain under this triangle reach into the band [lo − tol, hi + tol] anywhere it is sampled?
+  function inBand(pol, a, b, c) {
+    const s = pol.sampler, ax = PX[a], az = PZ[a], bx = PX[b], bz = PZ[b], cx = PX[c], cz = PZ[c]
+    const pts = [[ax, az], [bx, bz], [cx, cz], [(ax + bx) / 2, (az + bz) / 2], [(bx + cx) / 2, (bz + cz) / 2], [(cx + ax) / 2, (cz + az) / 2], [(ax + bx + cx) / 3, (az + bz + cz) / 3]]
+    let lo = Infinity, hi = -Infinity
+    for (const [x, z] of pts) { const y = s(x, z); if (y < lo) lo = y; if (y > hi) hi = y }
+    const [bl, bh] = pol.band.levels((ax + bx + cx) / 3, (az + bz + cz) / 3)
+    return lo <= bh + pol.band.tol && hi >= bl - pol.band.tol
+  }
   let closures = 0
   for (let pass = 0; pass < PASSES; pass++) {
     const n = TG.length
@@ -274,6 +286,7 @@ export function conformAndRefine(groupSpecs, stats = {}) {
       const longest = Math.max(e01, e12, e20)
       const split = pol.mode === 'adaptive'
         ? longest > pol.maxEdgeSq || (longest > pol.minEdgeSq && terrainDev(pol.sampler, v0, v1, v2) > pol.tol)
+          || (pol.band && longest > pol.band.minEdgeSq && inBand(pol, v0, v1, v2) && terrainDev(pol.sampler, v0, v1, v2) > pol.band.tol)
         : longest > pol.maxEdgeSq
       if (split) { red[i] = 1; anyRed = true }
     }
