@@ -36,7 +36,7 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
       .then(m => {
         if (cancelled) return
         const s = m?.stencil
-        if (Array.isArray(s?.center) && s.radius > 0) setStencil({ center: s.center, radius: s.radius })
+        if (Array.isArray(s?.center) && s.radius > 0) setStencil({ center: s.center, radius: s.radius, rimR: s.fade?.inner ?? s.radius, colormap: m?.colormap || null })
         else if (!_warned.has(look)) { _warned.add(look); console.error(`[HorizonDisc] ⛔ "${look}" has no baked ground stencil (centre + radius) — no horizon until it is baked`) }
       })
       .catch(() => {})
@@ -44,6 +44,29 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
   }, [look, bakeLastMs])
 
   const h = stencil ? horizonFor(stencil.radius) : null
+
+  // ⭐ THE WORLD CONTINUES (Jacob, 2026-09-27: "What if the horizon extender disc carried the color of the surface out
+  // to the horizon since that's theoretically what the authored disc edge IS"). Each direction takes the ground's
+  // own colour just inside the town's edge (the baked colormap) and carries it to the horizon.
+  // ⛔ Water continuing to the horizon is Strand's (queued): until then a water direction shows the bed's colour.
+  const [colorTex, setColorTex] = useState(null)
+  useEffect(() => {
+    const cm = stencil?.colormap
+    if (!cm?.image) {
+      if (stencil && !_warned.has(look + ':cm')) { _warned.add(look + ':cm'); console.error(`[HorizonDisc] ⛔ "${look}" has no baked ground colormap — the horizon carries the sky's tone only until ground AO is baked`) }
+      setColorTex(null)
+      return
+    }
+    let dead = false
+    new THREE.TextureLoader().load(`${ASSET_BASE}baked/${look}/${cm.image}?t=${bakeLastMs ?? ''}`, (t) => {
+      if (dead) { t.dispose(); return }
+      t.colorSpace = THREE.SRGBColorSpace
+      t.flipY = false
+      t.needsUpdate = true
+      setColorTex(t)
+    })
+    return () => { dead = true }
+  }, [stencil, look, bakeLastMs])
 
   const material = useMemo(() => {
     const m = new THREE.ShaderMaterial({
@@ -53,6 +76,13 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
         uInner: { value: 0 },
         uOuter: { value: 1 },
         uColor: { value: new THREE.Color('#3a4a3a') },
+        uSky: { value: new THREE.Color(1, 1, 1) },
+        uColorMap: { value: null },
+        uHasColor: { value: 0 },
+        uMapMin: { value: new THREE.Vector2() },
+        uMapSpan: { value: new THREE.Vector2(1, 1) },
+        uCenter: { value: new THREE.Vector2() },
+        uRimR: { value: 1 },
       },
       // ⛔ Stage and Preview render with logarithmicDepthBuffer: without the logdepthbuf chunks this disc writes a
       // linear depth the test compares against log depth, and it can vanish (Wick, 36226b74).
@@ -72,6 +102,13 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
         uniform float uInner;
         uniform float uOuter;
         uniform vec3 uColor;
+        uniform vec3 uSky;
+        uniform sampler2D uColorMap;
+        uniform float uHasColor;
+        uniform vec2 uMapMin;
+        uniform vec2 uMapSpan;
+        uniform vec2 uCenter;
+        uniform float uRimR;
         varying vec2 vLocal;
         float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float vnoise(vec2 p) {
@@ -93,7 +130,15 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
           float t = smoothstep(uInner, uOuter, r + wobble);
           float alpha = smoothstep(0.0, 1.0, 1.0 - t);
           if (alpha <= 0.001) discard;
-          gl_FragColor = vec4(uColor, alpha);
+          vec3 col = uColor;
+          if (uHasColor > 0.5) {
+            // The disc lies in its local XY, rotated onto the ground: local (x, y) → world (x, -z).
+            vec2 dir = normalize(vec2(vLocal.x, -vLocal.y) + 1e-6);
+            vec2 rim = uCenter + dir * uRimR * 0.98;          // just inside the town's edge fade
+            vec2 uv = (rim - uMapMin) / uMapSpan;
+            col = texture2D(uColorMap, uv).rgb * uSky;       // the ground's own colour, lit by the sky's horizon
+          }
+          gl_FragColor = vec4(col, alpha);
         }
       `,
     })
@@ -105,7 +150,18 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
   useFrame(() => {
     if (!h) return
     const hc = useSkyState.getState().horizonColor
-    matRef.current.uniforms.uColor.value.set(hc.r * 0.35 + 0.02, hc.g * 0.35 + 0.03, hc.b * 0.30)
+    const u = matRef.current.uniforms
+    u.uColor.value.set(hc.r * 0.35 + 0.02, hc.g * 0.35 + 0.03, hc.b * 0.30)
+    u.uSky.value.set(hc.r, hc.g, hc.b)
+    const cm = stencil.colormap
+    u.uHasColor.value = colorTex && cm ? 1 : 0
+    if (colorTex && cm) {
+      u.uColorMap.value = colorTex
+      u.uMapMin.value.set(cm.min[0], cm.min[1])
+      u.uMapSpan.value.set(cm.span[0], cm.span[1])
+    }
+    u.uCenter.value.set(stencil.center[0], stencil.center[1])
+    u.uRimR.value = stencil.rimR
     // The geometry is a unit circle: express the fade radii in it.
     const r = Math.max(1, h.radius)
     matRef.current.uniforms.uInner.value = h.fadeInner / r
