@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -19,7 +19,6 @@ import { getElevationRaw } from '../utils/elevation'
 import { sceneExag } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
-import { makeGrassMaterial } from './grassMaterial.js'
 import { makeWaterMaterial, ringExtentDiag } from './waterMaterial.js'
 import { terrainExag, patchTerrain } from '../utils/terrainShader'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
@@ -77,129 +76,6 @@ const FENCE_HEIGHT = 1.5
 const FENCE_POST_SPACING = 8
 const TAU = Math.PI * 2
 
-
-// ── SVG clip mask for park boundary ──────────────────────────────────
-const svgUrl = `${import.meta.env.BASE_URL}${INSTANCE.branding.assetSlug}.svg?v=${Date.now()}`
-const SVG_WORLD_X = -843.2
-const SVG_WORLD_Z = -1156.1
-const SVG_VB_W = 2000
-const SVG_VB_H = 2000
-
-// ── Park Ground with procedural grass texture ──────────────────────────
-function ParkGround() {
-  const [clipTexture, setClipTexture] = useState(null)
-  // shaderRef is owned by the grass material factory and populated on compile.
-  const grassMatObj = useMemo(() => makeGrassMaterial({
-    clipMin: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z),
-    clipSize: new THREE.Vector2(SVG_VB_W, SVG_VB_H),
-  }), [])
-  const grassShaderRef = grassMatObj.shaderRef
-
-  // Fetch SVG and rasterize park-boundary to a clip mask texture
-  useEffect(() => {
-    fetch(svgUrl)
-      .then(r => r.text())
-      .then(svgText => {
-        const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
-        // Check for XML parse errors
-        if (doc.querySelector('parsererror')) {
-          console.warn('[ParkGround] SVG parse error:', doc.querySelector('parsererror').textContent)
-          return
-        }
-        // The park boundary can come from two sources:
-        // 1. The clip-path used by the paths group (simple closed polygon — preferred)
-        // 2. The #park-boundary element (may be a sidewalk donut with 2 subpaths)
-        // We prefer the clip-path because it's always a single closed polygon.
-        let dAttrs = []
-
-        // Strategy 1 (preferred): clip-path from the paths group
-        const pathsGroup = doc.querySelector('[id="paths1"]')
-        if (pathsGroup) {
-          const clipped = pathsGroup.querySelector('[clip-path]') || pathsGroup
-          const clipRef = (clipped.getAttribute('clip-path') || '').match(/url\(#(.+?)\)/)
-          if (clipRef) {
-            const clipEl = doc.querySelector(`[id="${clipRef[1]}"]`)
-            if (clipEl) {
-              dAttrs = [...clipEl.querySelectorAll('path')].map(p => p.getAttribute('d')).filter(Boolean)
-            }
-          }
-        }
-
-        // Strategy 2 (fallback): #park-boundary element — split multi-M paths
-        // to fill each subpath separately (avoids winding cancellation)
-        if (!dAttrs.length) {
-          const boundary = doc.querySelector('[id^="park-boundary"]')
-          if (boundary) {
-            const ln = (boundary.tagName || '').toLowerCase()
-            const paths = ln === 'path' ? [boundary] : [...boundary.querySelectorAll('path')]
-            for (const p of paths) {
-              const d = p.getAttribute('d')
-              if (d) {
-                // Split compound paths at M commands — fill each subpath independently
-                // to avoid winding rule cancellation (outer+inner = empty with nonzero rule)
-                for (const sub of d.split(/(?=M)/)) {
-                  if (sub.length > 10) dAttrs.push(sub)
-                }
-              }
-            }
-          }
-        }
-
-        if (!dAttrs.length) { console.warn('[ParkGround] no park boundary found'); return }
-
-        const RES = 4096
-        const canvas = document.createElement('canvas')
-        canvas.width = RES
-        canvas.height = Math.round(RES * (SVG_VB_H / SVG_VB_W))
-        const ctx = canvas.getContext('2d')
-
-        ctx.fillStyle = '#000'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        ctx.fillStyle = '#fff'
-        ctx.scale(canvas.width / SVG_VB_W, canvas.height / SVG_VB_H)
-
-        // Fill park interior in white — grass renders inside this mask
-        for (const d of dAttrs) {
-          ctx.fill(new Path2D(d))
-        }
-
-        const tex = new THREE.CanvasTexture(canvas)
-        tex.flipY = false
-        tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping
-        tex.minFilter = THREE.LinearFilter
-        setClipTexture(tex)
-      })
-      .catch(err => console.warn('[ParkGround] SVG fetch failed:', err))
-  }, [])
-
-  // Update clip uniform when texture loads (shader already compiled)
-  useEffect(() => {
-    if (grassShaderRef.current && clipTexture) {
-      grassShaderRef.current.uniforms.uClipMap.value = clipTexture
-      grassShaderRef.current.uniforms.uHasClip.value = 1.0
-    }
-  }, [clipTexture])
-
-  const grassMat = grassMatObj.material
-
-  useFrame(() => {
-    if (grassShaderRef.current) {
-      const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
-      grassShaderRef.current.uniforms.uSunAltitude.value = sunAltitude
-      // Apply clip mask (also handles HMR where shader recompiles after texture loaded)
-      if (clipTexture) {
-        grassShaderRef.current.uniforms.uClipMap.value = clipTexture
-        grassShaderRef.current.uniforms.uHasClip.value = 1.0
-      }
-    }
-  })
-
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]} receiveShadow material={grassMat} frustumCulled={false}>
-      <planeGeometry args={[500, 500, 1, 1]} />
-    </mesh>
-  )
-}
 
 // ── Park Paths — UNIFIED onto the real path pipeline (2026-06-27) ────
 // Park footpaths are real OSM data that already arrive in the shared prebake
@@ -792,7 +668,6 @@ function LafayettePark({ lookId, bakeLastMs } = {}) {
   if (INSTANCE.lookId !== 'lafayette-square') return null
   return (
     <group>
-      {/* ParkGround retired — StreetRibbons' park face now owns the grass surface (Phase 11.3, 2026-04-17). */}
       <ParkWater lookId={lookId} bakeLastMs={bakeLastMs} />
       <ParkBridge lookId={lookId} bakeLastMs={bakeLastMs} />
       {/* STAIRS PARKED: 3D stairs build + place correctly but render invisible

@@ -74,6 +74,24 @@ try {
   }
   console.log(`   materials compiled: ${[...seen].map(([k, ok]) => `${k}${ok ? '' : ' ⛔'}`).join(' · ')}`)
 
+  // ⭐ EVERY APP, NOT ONLY BakedGround (2026-09-26: a park-grass mesh outside BakedGround was the hole).
+  // A ground surface is built by one of the ground FACTORIES wherever it is mounted; each factory must
+  // carry the lamp even when its caller passes NO poolmap (it then binds the shared one). Compiled here
+  // in exactly that shape, and every call site in src/ is listed so a new one is seen.
+  const bare = { 'makeGroundSurfaceMaterial (no poolmap)': () => makeGroundSurfaceMaterial({ surface: 'grass' }).material,
+                 'makeGravelPathMaterial': () => makeGravelPathMaterial({}).material }
+  for (const [name, mk] of Object.entries(bare)) {
+    const ok = lampAfterLight(compile(mk()))
+    if (!ok) bad++
+    console.log(`${ok ? '✅' : '⛔'} ${name}: ${ok ? 'carries the lamp without a caller-supplied poolmap' : 'draws WITHOUT the lamp when its caller passes no poolmap'}`)
+  }
+  const { readdirSync, statSync } = await import('node:fs')
+  const FACTORIES = /\b(makeGroundSurfaceMaterial|makeGrassMaterial|makeGravelPathMaterial|makeFadeGroundMaterial)\(/g
+  const sites = []
+  const walk = (d) => { for (const f of readdirSync(join(ROOT, d))) { const p = join(d, f); if (statSync(join(ROOT, p)).isDirectory()) walk(p); else if (/\.(js|jsx|mjs)$/.test(f)) { const src = readFileSync(join(ROOT, p), 'utf8'); for (const m of src.matchAll(FACTORIES)) if (!/export function/.test(src.slice(Math.max(0, m.index - 20), m.index))) sites.push(`${p}:${m[1]}`) } } }
+  walk('src')
+  console.log(`   ground-factory call sites in src/ (${sites.length}): ${[...new Set(sites)].join(' · ')}`)
+
   // The mutation: a factory whose chunk is stripped must be seen.
   const stripped = build.fade(); const hook = stripped.onBeforeCompile
   stripped.onBeforeCompile = (sh, r) => { hook(sh, r); sh.fragmentShader = sh.fragmentShader.split(GROUND_LAMP_MARKER).join('') }

@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
-import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp } from '../lib/groundLamp.js'
+import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp, bindGroundLampShared } from '../lib/groundLamp.js'
 import { groundRules, GROUND_RULES_DECLS, groundRulesFragment, bindGroundRules } from '../lib/groundRules.js'
 
 /**
@@ -11,10 +11,6 @@ import { groundRules, GROUND_RULES_DECLS, groundRulesFragment, bindGroundRules }
  * builds the material and exposes the shader once it compiles.
  *
  * Options:
- *   - clipMask / clipMin / clipSize: optional SVG-rasterized boundary
- *                    discard. The ribbon park face renders inside its own
- *                    geometry so it doesn't need a clip; LafayettePark's
- *                    big SVG-extent plane does.
  *   - color:         base albedo (defaults to '#2d5a2d').
  */
 // The value noise + fBm every procedural surface shares (ground and set-piece masonry).
@@ -313,14 +309,13 @@ const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO + SAND_STATE, crop: CROP
 
 /**
  * The ground-surface factory. `surface` picks the albedo chunk; every other socket —
- * weather, sun altitude, the lamp pool, contact shadow, clip, fade — is shared, so a
+ * weather, sun altitude, the lamp pool, contact shadow, fade — is shared, so a
  * new surface inherits the whole environment by construction (`BRIEF-field-shader §4`:
  * extend the factory, never a parallel material). Which group gets which surface is
  * `cartograph/surfaces.mjs`.
  */
 export function makeGroundSurfaceMaterial({
   surface = 'grass',
-  clipMask = null, clipMin = null, clipSize = null,
   color = '#2d5a2d',
   // Optional radial alpha fade — soft neighborhood-stencil edge.
   // { center: [x,z], inner, outer } ; alpha → 0 at outer.
@@ -349,15 +344,13 @@ export function makeGroundSurfaceMaterial({
     // chunk (later replace() calls operate on the modified string).
     applyWeatherToShader(shader)
     shader.uniforms.uSunAltitude = { value: 0.5 }
-    shader.uniforms.uClipMap   = { value: clipMask }
-    shader.uniforms.uClipMin   = { value: clipMin || new THREE.Vector2(0, 0) }
-    shader.uniforms.uClipSize  = { value: clipSize || new THREE.Vector2(1, 1) }
-    shader.uniforms.uHasClip   = { value: clipMask ? 1.0 : 0.0 }
     // Baked lamp light-pool map — warm pool on the ground, sampled at
     // world-XZ, scaled by the live TOD Pool value (uPool = poolUniform).
-    // The lamp's light on this ground: ONE way for every ground surface (src/lib/groundLamp.js).
-    shader.uniforms.uHasPool = { value: poolMap ? 1.0 : 0.0 }
+    // The lamp's light on this ground: ONE way for every ground surface (src/lib/groundLamp.js) — the
+    // caller's poolmap, or else the SHARED one BakedGround publishes, so no caller can build a ground
+    // surface without the lamp (an unbound map samples 0: no pool, never a stand-in).
     if (poolMap) bindGroundLamp(shader.uniforms, { map: poolMap, min: poolMin, span: poolSpan, scale: poolScale })
+    else bindGroundLampShared(shader.uniforms)
     bindGroundRules(shader.uniforms)   // the soft-ground rules (surfaces.mjs GROUND_RULES), after lighting
     if (surface === 'sand') {
       const rep = surfaceParams?.reposeDeg?.reposeDeg ?? surfaceParams?.reposeDeg   // a finding's range
@@ -440,11 +433,7 @@ export function makeGroundSurfaceMaterial({
       '#include <common>',
       `#include <common>
        uniform float uSunAltitude;
-       uniform sampler2D uClipMap;
-       uniform vec2 uClipMin;
-       uniform vec2 uClipSize;
-       uniform float uHasClip;
-       uniform float uHasPool;${poolMap ? GROUND_LAMP_DECLS : ''}${GROUND_RULES_DECLS}
+${GROUND_LAMP_DECLS}${GROUND_RULES_DECLS}
        uniform vec2 uFadeCenter;
        uniform float uFadeInner;
        uniform float uFadeOuter;
@@ -475,15 +464,10 @@ export function makeGroundSurfaceMaterial({
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <dithering_fragment>',
       `#include <dithering_fragment>
-       if (uHasClip > 0.5) {
-         vec2 clipUV = (vGrassPos.xz - uClipMin) / uClipSize;
-         float mask = texture2D(uClipMap, clipUV).r;
-         if (mask < 0.5) discard;
-       }
        if (uHasFade > 0.5) {
          float dFade = length(vGrassPos.xz - uFadeCenter);
          gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, dFade);
-       }${groundRulesFragment('vGrassPos.xz')}${poolMap ? groundLampFragment('vGrassPos.xz') : ''}`
+       }${groundRulesFragment('vGrassPos.xz')}${groundLampFragment('vGrassPos.xz')}`
     )
   }
 
@@ -493,7 +477,7 @@ export function makeGroundSurfaceMaterial({
   // grass shader can silently get replaced by an earlier-compiled
   // plain-MeshStandardMaterial program from the same scene).
   material.customProgramCacheKey = () =>
-    `${surface === 'grass' ? '' : surface + '-'}grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-${clipMask ? 'clip' : 'noclip'}-${poolMap ? 'pool' : 'nopool'}-wx2`
+    `${surface === 'grass' ? '' : surface + '-'}grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-wx4`
 
   return { material, shaderRef }
 }
