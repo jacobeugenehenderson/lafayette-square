@@ -585,7 +585,7 @@ const DAY = {
   ambient:  { value: [1.6, 1.5, 1.1, 1.2, 0.85, 0.7, 0.6, 0.5] },
   hemi:     { value: [2.0, 1.8, 1.3, 1.8, 1.4, 1.6, 0.6, 0.6] },
   skyGain:  { value: [1.0, 1.05, 1.05, 1.15, 1.1, 0.95, 0.35, 0.3] },
-  stars:    { brightness: [0.7, 1, 1, 1, 1, 0.6, 1.0, 2.2] },
+  stars:    { brightness: [3, 1, 1, 1, 1, 0.6, 1.0, 2.2] },
   constellations: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
   milkyWay: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
   shadow:   { size: [3, 5, 1, 4, 5, 3, 2, 2], samples: [16, 16, 16, 16, 16, 16, 16, 16] },
@@ -594,13 +594,13 @@ const DAY = {
   fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.92, 0.85] },
   // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
   // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
-  mist:     { amount: [0.54, 0.46, 0.28, 0.5, 0.46, 0.39, 0.28, 0.24],
+  mist:     { amount: [1.25, 0.46, 0.28, 0.5, 0.46, 0.39, 0.28, 0.24],
               color: ['#9a86c0', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'],
-              water: [0.3, 0.3, 0.2, 0.35, 0.35, 0.3, 0.25, 0.2] },
+              water: [0.5, 0.3, 0.2, 0.35, 0.35, 0.3, 0.25, 0.2] },
   // Halo is a SCREEN BAND, not distance haze (renderPipeline.jsx#AerialPerspectiveEffect): it washes the middle of the
   // frame whatever is there, so a Hero shot looking down on the town hazes near and far alike. Kept faint; Mist is
   // the distance haze (Jacob, Dawn pass 2026-09-27: "it's just very even all the way up to the camera").
-  halo:     { strength: [0.06, 0.08, 0.03, 0.12, 0.1, 0.06, 0.02, 0.01],
+  halo:     { strength: [0.25, 0.08, 0.03, 0.12, 0.1, 0.06, 0.02, 0.01],
               color: ['#dcbfd0', '#f4c29c', '#bdd6ec', '#ffc27a', '#ff9868', '#5f6fb4', '#1a2040', '#10152a'] },
   exposure: { value: [1.7, 1.45, 1.18, 1.2, 1.0, 0.95, 0.85, 0.8] },
   warmth:   { value: [0.3, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25] },
@@ -617,29 +617,29 @@ const DAY = {
   grain:    { scale: [0.9, 0.7, 0.4, 0.7, 0.8, 1.0, 1.3, 1.1] },
   // Neon: which buildings light is their HOURS' business; this is how they read. At noon a solid colour band
   // (Emissive 1 is the colour itself, no bleed); at the blue hour it balances the sky; at night it blazes.
-  neon:     { core: [0.8, 0.6, 0.3, 0.7, 0.9, 1, 1, 1], tube: [0.9, 1, 1, 1, 1, 1, 1, 1],
-              bleed: [0.3, 0.15, 0, 0.35, 0.6, 0.85, 1, 0.8], emissive: [2.0, 1.4, 1.0, 2.5, 3.5, 5.0, 7.5, 5.0],
-              tubeRadius: [1, 1, 1, 1, 1, 1, 1, 1], screenFloor: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
+  neon:     { core: [0.3, 0.6, 0.3, 0.7, 0.9, 1, 1, 1], tube: [0.5, 1, 1, 1, 1, 1, 1, 1],
+              bleed: [0.3, 0.15, 0, 0.35, 0.6, 0.85, 1, 0.8], emissive: [2, 1.4, 1.0, 2.5, 3.5, 5.0, 7.5, 5.0],
+              tubeRadius: [0.5, 1, 1, 1, 1, 1, 1, 1], screenFloor: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
               screenCeil: [0, 0, 0, 0, 0, 0, 0, 0] },
   // Lamps × the daylight ramp: on before it is dark (▲ at Sunset), warm gaslamps at Dusk, cold glitter at Night.
-  lantern:  { edges: LAMP_EDGES, intensity: [5.0, 1.5, null, null, 0.8, 1.6, 2.4, 1.3], glow: [1.6, 1.5, null, null, 0.5, 1.2, 0.9, 0.6],
-              glowSize: [0.45, 1.25, null, null, 0.7, 0.8, 0.45, 0.45],
+  lantern:  { edges: LAMP_EDGES, intensity: [3, 1.5, null, null, 0.8, 1.6, 2.4, 1.3], glow: [2, 1.5, null, null, 0.5, 1.2, 0.9, 0.6],
+              glowSize: [1, 1.25, null, null, 0.7, 0.8, 0.45, 0.45],
               color: ['#ffd9a8', '#fff2e0', null, null, '#ffb877', '#ffa95c', '#e4ecff', '#d6e2ff'] },
   // The tree cards' answer to the key light: flat across the day (0 = the historical dimmer), keyed so a Look can
   // move it by time of day like every other channel.
   canopy:   { directional: [0, 0, 0, 0, 0, 0, 0, 0], gain: [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85],
               bulge: [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9] },
-  lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [1.2, 0.4, null, null, 0.6, 1.4, 2.2, 1.1],
-              radius: [1, 1, null, null, 1, 1, 1, 1], centre: [1.2, 1.2, null, null, 1.2, 1.2, 1.2, 1.2],
-              trees: [1.2, 0.5, null, null, 1.0, 2.5, 3.5, 1.6] },
+  lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [0.5, 0.4, null, null, 0.6, 1.4, 2.2, 1.1],
+              radius: [0.85, 1, null, null, 1, 1, 1, 1], centre: [1.2, 1.2, null, null, 1.2, 1.2, 1.2, 1.2],
+              trees: [0.3, 0.5, null, null, 1.0, 2.5, 3.5, 1.6] },
 }
 // The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
 const UPLIGHT = { edges: LAMP_EDGES }
 for (const s of ['L', 'R']) Object.assign(UPLIGHT, {
-  [`uplight${s}_intensity`]: [0.4, 0.2, null, null, 1.5, 2.8, 3.5, 1.2],
+  [`uplight${s}_intensity`]: [s === 'L' ? 0.05 : 0.2, 0.2, null, null, 1.5, 2.8, 3.5, 1.2],
   [`uplight${s}_color`]:     ['#ffe2c0', '#ffd6a8', null, null, '#ffd6a8', '#ffc98f', '#f2ecff', '#e6e4ff'],
-  [`uplight${s}_cone`]:      [35, 35, null, null, 35, 35, 35, 35],
-  [`uplight${s}_reach`]:     [220, 220, null, null, 220, 220, 220, 220],
+  [`uplight${s}_cone`]:      [s === 'L' ? 60 : 35, 35, null, null, 35, 35, 35, 35],
+  [`uplight${s}_reach`]:     [s === 'L' ? 150 : 320, 220, null, null, 220, 220, 220, 220],
 })
 DAY.setPieceLight = UPLIGHT
 DAY.archLight = UPLIGHT
