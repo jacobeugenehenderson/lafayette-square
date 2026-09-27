@@ -215,7 +215,7 @@ export default function Teacup() {
                               : addParamSlot(preset.id, f.key, slotId)}
                     onRemoveSlot={(slotId) => removeParamSlot(preset.id, f.key, slotId)}
                     onUnanimate={() => unanimateParam(preset.id, f.key)}
-                    onSetTransition={(side, minutes) => setParamTrans(preset.id, f.key, side, minutes)}
+                    onSetTransition={(slotId, fade, minutes) => setParamTrans(preset.id, f.key, slotId, fade, minutes)}
                   />
                 </div>
               )

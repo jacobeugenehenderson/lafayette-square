@@ -31,7 +31,7 @@ const feSegOrds = (fe, k) => {
 import {
   migrateLampGlow, resolveLampGlowAtMinute,
   resolveGroupAtMinute, migrateGroupChannel,
-  NAMED_TOD_SLOTS_BY_ID, getTodSlotMinutes, todSlotAtMinute,
+  NAMED_TOD_SLOTS_BY_ID, getTodSlotMinutes, todSlotAtMinute, todEdgePatch,
 } from '../animatedParam.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
@@ -64,6 +64,7 @@ import {
   HEMI_FIELD_KEYS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FIELD_KEYS, DIRSUN_FLAT_DEFAULTS,
   DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS,
+  LAMPGLOW_FLAT_DEFAULTS,
 } from '../skyLightChannels.js'
 import { migrateSkyChannel, SKY_BANDS, SKY_HOURS } from '../skyGrid.js'
 
@@ -260,13 +261,12 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
       })
       get()._saveDesignDebounced()
     },
-    [`set${cap}Transition`]: (side, minutes) => {
+    // A key's fade at a blank tile — 'up' | 'down' | null (tween) — and its minutes (animatedParam.js#todEdgePatch).
+    [`set${cap}Transition`]: (slotId, fade, minutes) => {
       set(s => {
         const ch = activeChannel(s, name)
         if (!ch?.animated) return s
-        const m = Math.max(0, Number(minutes) || 0)
-        const patch = side === 'in' ? { transitionIn: m } : { transitionOut: m }
-        return channelPatch(s, name, { ...ch, ...patch })
+        return channelPatch(s, name, todEdgePatch(ch, slotId, fade, minutes))
       })
       get()._saveDesignDebounced()
     },
@@ -1400,18 +1400,16 @@ const useCartographStore = create((set, get) => ({
     })
     get()._saveDesignDebounced()
   },
-  setLampGlowTransition: (side, minutes) => {
+  setLampGlowTransition: (slotId, fade, minutes) => {
     set(s => {
       const lg = activeChannel(s, 'lampGlow')
       if (!lg?.animated) return s
-      const m = Math.max(0, Number(minutes) || 0)
-      const patch = side === 'in' ? { transitionIn: m } : { transitionOut: m }
-      return channelPatch(s, 'lampGlow', { ...lg, ...patch })
+      return channelPatch(s, 'lampGlow', todEdgePatch(lg, slotId, fade, minutes))
     })
     get()._saveDesignDebounced()
   },
   revertLampGlow: () => {
-    set(s => channelRevert(s, 'lampGlow', { values: { grass: 0, trees: 0, pool: 1.0 } }))
+    set(s => channelRevert(s, 'lampGlow', { values: { ...LAMPGLOW_FLAT_DEFAULTS } }))
     get()._saveDesignDebounced()
   },
   // ── Group-channel action factory ────────────────────────────

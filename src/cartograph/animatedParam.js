@@ -123,7 +123,65 @@ function wrapTodFraction(minute, firstMin, lastMin) {
   return Math.min(1, Math.max(0, pos / gap))
 }
 
-export function resolveAnimatedAtMinute(channel, minute, todSlots) {
+// ── FADE UP / FADE DOWN AT THE EDGES (Jacob, 2026-09-26) ──────────────────────────────────────────
+// Keys tween to each other — across blank tiles too — exactly as before. The ONLY new thing: a key that
+// borders a blank tile can be marked (`channel.edges[slotId] = { fade: 'up' | 'down', minutes }`):
+//   · 'down' (a blank tile AFTER it): from the key the value fades to OFF over `minutes`, then stays off
+//     until the next key.
+//   · 'up'   (a blank tile BEFORE it): off until the key, then it fades UP over `minutes`, then tweens on.
+//   · A key before a fade-up that is not itself marked switches off AT that key.
+//   · A key marked up whose run has no fade-down holds its value until the next fade-up.
+// Lamps: fade up at Dusk, fade down at Dawn — off through the day, the run spanning midnight. Scalars only:
+// a colour has no "off", so colour fields keep tweening. A mark on a key that no longer borders a blank is
+// ignored (the tile shows no shape there either). One key alone holds, as before.
+// The minutes default to ONE constant, shared with the tile that shows it.
+// ⛔ Replaces the channel-level transitionIn/transitionOut boxes, which were shown for months and read by
+// nothing (both old branches returned the key's own value; 72485eca removed even that).
+export const TOD_FADE_DEFAULT_MIN = 30
+const SLOT_ORDER = NAMED_TOD_SLOTS.map(s => s.id)
+/** The key's fade mark, if it is valid here — 'up' needs a blank tile before it, 'down' a blank tile after. */
+export function todEdge(channel, slotId) {
+  const e = channel?.edges?.[slotId], vals = channel?.values || {}
+  if (!e || !(slotId in vals)) return null
+  const i = SLOT_ORDER.indexOf(slotId); if (i < 0) return null
+  const before = SLOT_ORDER[(i - 1 + SLOT_ORDER.length) % SLOT_ORDER.length]
+  const after = SLOT_ORDER[(i + 1) % SLOT_ORDER.length]
+  if (e.fade === 'up' && !(before in vals)) return e
+  if (e.fade === 'down' && !(after in vals)) return e
+  return null
+}
+/** Set or clear one key's fade mark — the ONE way every store writes it. fade: 'up' | 'down' | null. */
+export function todEdgePatch(ch, slotId, fade, minutes) {
+  const edges = { ...(ch?.edges || {}) }
+  if (!fade) delete edges[slotId]
+  else edges[slotId] = { fade, minutes: Math.max(0, Number(minutes ?? edges[slotId]?.minutes ?? TOD_FADE_DEFAULT_MIN) || 0) }
+  // eslint-disable-next-line no-unused-vars — the dead channel-level boxes go with the first edit
+  const { transitionIn, transitionOut, edges: _old, ...rest } = ch || {}
+  return Object.keys(edges).length ? { ...rest, edges } : rest
+}
+
+/**
+ * How the edge marks shape the value at `minute`, given the channel's keys sorted by minute (≥ 2).
+ * Returns null (no mark in play → plain tween), or { key, scale } (value = key's value × scale),
+ * or { tween: scale } (value = the plain tween × scale).
+ */
+function edgeEnvelope(channel, points, minute) {
+  if (!channel?.edges || points.length < 2) return null
+  const n = points.length
+  let i = n - 1
+  for (let j = 0; j < n; j++) if (points[j].minute <= minute) i = j
+  const K = points[i], N = points[(i + 1) % n]
+  const since = ((minute - K.minute) % TOD_DAY_MIN + TOD_DAY_MIN) % TOD_DAY_MIN
+  const gap = ((N.minute - K.minute) % TOD_DAY_MIN + TOD_DAY_MIN) % TOD_DAY_MIN || TOD_DAY_MIN
+  const eK = todEdge(channel, K.id), eN = todEdge(channel, N.id)
+  const ramp = (e) => { const w = Math.min(gap, Math.max(0, e.minutes ?? TOD_FADE_DEFAULT_MIN)); return w <= 0 ? 1 : Math.min(1, since / w) }
+  if (eK?.fade === 'down') return { key: K, scale: 1 - ramp(eK) }
+  if (eN?.fade === 'up') return eK?.fade === 'up' ? { key: K, scale: ramp(eK) } : { key: K, scale: 0 }
+  if (eK?.fade === 'up') return { tween: ramp(eK) }
+  return null
+}
+
+function tweenAnimatedAtMinute(channel, minute, todSlots) {
   if (!channel) return 0
   if (!channel.animated) return Number(channel.value) || 0
   const slotById = new Map((todSlots || []).map(s => [s.id, s]))
@@ -156,6 +214,19 @@ export function resolveAnimatedAtMinute(channel, minute, todSlots) {
   if (hi.minute === lo.minute) return lo.value
   const t = (minute - lo.minute) / (hi.minute - lo.minute)
   return lo.value + (hi.value - lo.value) * t
+}
+
+/** The plain tween, then the edge fades (edgeEnvelope) where a key is marked up or down. */
+export function resolveAnimatedAtMinute(channel, minute, todSlots) {
+  const base = tweenAnimatedAtMinute(channel, minute, todSlots)
+  if (!channel?.animated || !channel.edges) return base
+  const byId = new Map((todSlots || []).map(sl => [sl.id, sl.minute]))
+  const points = Object.entries(channel.values || {})
+    .filter(([id]) => byId.has(id)).map(([id, v]) => ({ id, minute: byId.get(id), value: Number(v) || 0 }))
+    .sort((a, b) => a.minute - b.minute)
+  const env = edgeEnvelope(channel, points, minute)
+  if (!env) return base
+  return env.key ? env.key.value * env.scale : base * env.tween
 }
 
 // Migrate any prior lampGlow shape to the canonical group shape:
@@ -272,7 +343,7 @@ function lerpField(a, b, t, isColor) {
 // interp on each field between bracketing authored slots — linear for
 // scalars, RGB lerp for colors. Outside the in/out range, hold endpoint
 // values. `defaults` fills in missing fields and routes per-field type.
-export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults = {}) {
+function tweenGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults = {}) {
   const fallback = () => {
     const out = {}
     for (const k of fieldKeys) {
@@ -323,6 +394,25 @@ export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, de
   const t = (minute - lo.minute) / (hi.minute - lo.minute)
   const out = {}
   for (const k of fieldKeys) out[k] = lerpField(lo[k], hi[k], t, isColorVal(defaults[k]))
+  return out
+}
+
+/** The plain tween per field, then the edge fades on SCALAR fields (a colour has no "off"). */
+export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults = {}) {
+  const base = tweenGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults)
+  if (!channel?.animated || !channel.edges) return base
+  const mins = slotMinutes || getTodSlotMinutes(new Date())
+  const points = Object.entries(channel.values || {})
+    .filter(([id]) => mins[id] != null)
+    .map(([id, tuple]) => { const p = { id, minute: mins[id] }; for (const k of fieldKeys) p[k] = readField(tuple, k, defaults); return p })
+    .sort((a, b) => a.minute - b.minute)
+  const env = edgeEnvelope(channel, points, minute)
+  if (!env) return base
+  const out = { ...base }
+  for (const k of fieldKeys) {
+    if (isColorVal(defaults[k])) continue
+    out[k] = env.key ? env.key[k] * env.scale : base[k] * env.tween
+  }
   return out
 }
 

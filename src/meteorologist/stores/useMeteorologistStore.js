@@ -9,7 +9,7 @@ import { create } from 'zustand'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 import {
   NAMED_TOD_SLOTS_BY_ID, getTodSlotMinutes, todSlotAtMinute,
-  resolveGroupAtMinute,
+  resolveGroupAtMinute, todEdgePatch,
 } from '../../cartograph/animatedParam.js'
 
 const ACTIVE_LOOK_KEY = 'meteorologist-active-look'
@@ -339,12 +339,9 @@ const useMeteorologistStore = create((set, get) => ({
     })
   },
 
-  setCloudParamTransition: (presetId, paramKey, side, minutes) => {
-    get()._patchParam(presetId, paramKey, (ch) => {
-      if (!ch?.animated) return undefined
-      const m = Math.max(0, Number(minutes) || 0)
-      return side === 'in' ? { ...ch, transitionIn: m } : { ...ch, transitionOut: m }
-    })
+  // A key's fade at a blank tile (Stage's TodChannel, shared) — animatedParam.js#todEdgePatch.
+  setCloudParamTransition: (presetId, paramKey, slotId, fade, minutes) => {
+    get()._patchParam(presetId, paramKey, (ch) => (ch?.animated ? todEdgePatch(ch, slotId, fade, minutes) : undefined))
   },
 
   // ── Autosave plumbing ────────────────────────────────────────

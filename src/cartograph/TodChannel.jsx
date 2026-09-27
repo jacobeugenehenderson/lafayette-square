@@ -11,7 +11,7 @@
  *   flat:      { values: { <fieldKey>: number, … } }
  *   animated:  { animated: 'tod',
  *                values: { <slotId>: { <fieldKey>: number, … }, … },
- *                transitionIn?: minutes, transitionOut?: minutes }
+ *                edges?: { <slotId>: { fade: 'up'|'down', minutes } } }   (animatedParam.js#edgeEnvelope)
  *
  * Single-channel callers pretend they're single-field groups (e.g. one
  * field with key 'value'). Same code path, no special case.
@@ -55,7 +55,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCartographStore from './stores/useCartographStore.js'
 import {
   NAMED_TOD_SLOTS, getTodSlotLabel, todSlotAtMinute,
-  getTodSlotMinutes, resolveGroupAtMinute,
+  getTodSlotMinutes, resolveGroupAtMinute, todEdge, TOD_FADE_DEFAULT_MIN,
 } from './animatedParam.js'
 
 // Single-letter initials. Collisions (D/S/N) are resolved by chip color
@@ -86,7 +86,13 @@ function hexWithAlpha(color, alpha) {
 
 // ── Slot chip ──────────────────────────────────────────────────────────────
 
-function SlotChip({ slot, attached, parked, onScrub, onFill, onRemove }) {
+// A marked key wears its fade: a pointed roof (fade up) or a pointed bottom (fade down).
+const FADE_CLIP = {
+  up:   'polygon(0 35%, 50% 0, 100% 35%, 100% 100%, 0 100%)',
+  down: 'polygon(0 0, 100% 0, 100% 65%, 50% 100%, 0 65%)',
+}
+
+function SlotChip({ slot, attached, parked, fade, onScrub, onFill, onRemove }) {
   const baseStyle = {
     height: 18,
     padding: '0 4px',
@@ -97,8 +103,9 @@ function SlotChip({ slot, attached, parked, onScrub, onFill, onRemove }) {
     cursor: 'pointer',
     transition: 'background 120ms, opacity 120ms, border-color 120ms',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    flex: '1 1 0',
+    width: '100%',
     minWidth: 0,
+    ...(fade ? { clipPath: FADE_CLIP[fade], height: 22 } : {}),
   }
   const filledStyle = {
     ...baseStyle,
@@ -124,7 +131,7 @@ function SlotChip({ slot, attached, parked, onScrub, onFill, onRemove }) {
     onRemove(slot.id)
   }
   const title = attached
-    ? `${slot.label}${parked ? ' (parked)' : ''} · right-click or ⌘-click to clear this keyframe`
+    ? `${slot.label}${parked ? ' (parked)' : ''}${fade ? ` · fades ${fade}` : ''} · right-click or ⌘-click to clear this keyframe`
     : `Jump to ${slot.label}`
   return (
     <button
@@ -138,72 +145,77 @@ function SlotChip({ slot, attached, parked, onScrub, onFill, onRemove }) {
   )
 }
 
-// ── Ramp input (↑ N before / N ↓ after) ────────────────────────────────────
+// ── Edge toggle — the fade at a blank tile (Jacob, 2026-09-26) ─────────────
+// Only a key that borders a blank tile has one: tween (–) · fade up (▲, blank before it) · fade down (▼,
+// blank after it). Pointed → its minutes show beneath, editable. animatedParam.js#edgeEnvelope is the model.
 
-function RampInput({ side, value, onChange }) {
-  const arrow = side === 'in' ? '↑' : '↓'
-  // Turn-on / turn-off SPEED (Phase A taxonomy reframe, 2026-06-30): the value is
-  // minutes, but the intent is "how sharply this comes on/off around its keyframes"
-  // — small = snaps on (e.g. a lamp tripping ~30 min before dusk), large = eases in
-  // over the long slot tween. Reframed from the old "ramp in/out minutes" jargon.
-  const title = side === 'in'
-    ? 'Turn-on speed (minutes before the first keyframe): small = snaps on, large = eases in slowly'
-    : 'Turn-off speed (minutes after the last keyframe): small = snaps off, large = eases out slowly'
+const FADE_GLYPH = { null: '–', up: '▲', down: '▼' }
+const FADE_TITLE = {
+  null: 'Tweens to its neighbour key, across the blank. Click to fade instead.',
+  up:   'Fades UP from off, starting at this key. Click to change.',
+  down: 'Fades DOWN to off, starting at this key. Click to change.',
+}
+
+function EdgeToggle({ fade, options, minutes, onChange }) {
+  const next = options[(options.indexOf(fade) + 1) % options.length]
+  const small = { fontSize: 'var(--type-caption)', lineHeight: 1, fontFamily: 'inherit', borderRadius: 4, width: '100%' }
   return (
-    <label className="inline-flex items-center" style={{ gap: 2 }} title={title}>
-      {side === 'in' && (
-        <span style={{ color: 'var(--on-surface-subtle)', fontSize: 'var(--type-caption)', lineHeight: 1 }}>{arrow}</span>
+    <>
+      <button
+        onClick={() => onChange(next, minutes)}
+        title={FADE_TITLE[fade]}
+        style={{ ...small, height: 14, padding: 0, cursor: 'pointer', background: 'transparent',
+                 border: '1px solid var(--outline-variant)', color: fade ? 'var(--on-surface)' : 'var(--on-surface-subtle)' }}
+      >{FADE_GLYPH[fade]}</button>
+      {fade && (
+        <input
+          type="number" min={0} max={720} step={1} value={minutes}
+          onChange={(e) => onChange(fade, e.target.value)}
+          title="Fade length, minutes"
+          className="tod-ramp-input"
+          style={{ ...small, padding: '1px 0', textAlign: 'center', background: 'var(--surface-container-highest)',
+                   color: 'var(--on-surface)', border: '1px solid var(--outline-variant)' }}
+        />
       )}
-      <input
-        type="number" min={0} max={720} step={1} value={value}
-        onChange={(e) => onChange(side, e.target.value)}
-        className="tod-ramp-input"
-        style={{
-          width: 32, fontSize: 'var(--type-caption)', padding: '2px 3px',
-          background: 'var(--surface-container-highest)',
-          color: 'var(--on-surface)',
-          border: '1px solid var(--outline-variant)',
-          borderRadius: 4, textAlign: 'center',
-          fontFamily: 'inherit',
-        }}
-      />
-      {side === 'out' && (
-        <span style={{ color: 'var(--on-surface-subtle)', fontSize: 'var(--type-caption)', lineHeight: 1 }}>{arrow}</span>
-      )}
-    </label>
+    </>
   )
 }
 
-// ── Animation row (ramps + 7 chips) ────────────────────────────────────────
+// ── Animation row (7 chips, each with its fade where it borders a blank) ────
 
-function TodAnimationRow({
-  attachedIds, parkedSlotId,
-  onScrub, onFill, onRemove,
-  transitionIn, transitionOut, onTransitionChange,
-}) {
-  // Ramps are only meaningful once at least one slot is attached.
-  const showRamps = attachedIds.size > 0
+function TodAnimationRow({ attachedIds, parkedSlotId, onScrub, onFill, onRemove, channel, onEdge }) {
+  const order = NAMED_TOD_SLOTS.map(s => s.id), n = order.length
   return (
-    <div className="flex items-center pt-1" style={{ gap: 6 }}>
-      {showRamps
-        ? <RampInput side="in" value={transitionIn} onChange={onTransitionChange} />
-        : <span style={{ width: 50 }} />}
-      <div className="flex items-center justify-center" style={{ gap: 3, flex: 1 }}>
-        {NAMED_TOD_SLOTS.map(slot => (
-          <SlotChip
-            key={slot.id}
-            slot={slot}
-            attached={attachedIds.has(slot.id)}
-            parked={slot.id === parkedSlotId}
-            onScrub={onScrub}
-            onFill={onFill}
-            onRemove={onRemove}
-          />
-        ))}
-      </div>
-      {showRamps
-        ? <RampInput side="out" value={transitionOut} onChange={onTransitionChange} />
-        : <span style={{ width: 50 }} />}
+    <div className="flex items-start pt-1" style={{ gap: 3 }}>
+      {NAMED_TOD_SLOTS.map((slot, i) => {
+        const on = attachedIds.has(slot.id)
+        // A single key holds — no edges. Otherwise a key borders a blank when its neighbour tile is empty.
+        const blankBefore = on && attachedIds.size > 1 && !attachedIds.has(order[(i - 1 + n) % n])
+        const blankAfter  = on && attachedIds.size > 1 && !attachedIds.has(order[(i + 1) % n])
+        const edge = on ? todEdge(channel, slot.id) : null
+        const options = [null, ...(blankBefore ? ['up'] : []), ...(blankAfter ? ['down'] : [])]
+        return (
+          <div key={slot.id} style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <SlotChip
+              slot={slot}
+              attached={on}
+              parked={slot.id === parkedSlotId}
+              fade={edge?.fade ?? null}
+              onScrub={onScrub}
+              onFill={onFill}
+              onRemove={onRemove}
+            />
+            {options.length > 1 && (
+              <EdgeToggle
+                fade={edge?.fade ?? null}
+                options={options}
+                minutes={edge?.minutes ?? TOD_FADE_DEFAULT_MIN}
+                onChange={(f, m) => onEdge(slot.id, f, m)}
+              />
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -475,9 +487,8 @@ export default function TodChannel({
             onScrub={onChipClick}
             onFill={onChipClick}
             onRemove={onRemoveSlot}
-            transitionIn={channel?.transitionIn ?? 30}
-            transitionOut={channel?.transitionOut ?? 30}
-            onTransitionChange={onSetTransition}
+            channel={channel}
+            onEdge={onSetTransition}
           />
           {hint && (
             <div className="text-caption" style={{ color: 'var(--on-surface-subtle)', fontSize: 'var(--type-caption)' }}>
