@@ -313,6 +313,7 @@ export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
     _lampGlowUniforms.share.trees = triple.trees
     _lampGlowUniforms.share.pool  = triple.pool
     _lampGlowUniforms.share.radius = triple.radius
+    _lampGlowUniforms.share.centre = triple.centre
   })
   return null
 }

@@ -22,7 +22,7 @@
 //   node checks/claims-light-sources-are-live.mjs
 import { readFileSync } from 'node:fs'
 import { LANTERN_FIELD_KEYS, LAMPGLOW_FIELDS } from '../src/cartograph/skyLightChannels.js'
-import { lampFalloff, LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL, groundPool, poolWipe, canopyWipe } from '../src/lib/lampPool.js'
+import { lampFalloff, LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL, groundPool, canopyWipe, POOL_SHAPE_GLSL, poolDisc, poolCentre } from '../src/lib/lampPool.js'
 
 let red = 0
 const bad = (m) => { red++; console.log(`   ⛔ ${m}`) }
@@ -80,7 +80,7 @@ const writes = (() => {
   // ⭐ AT 0, EVERY LAMP LIGHT IS EXACTLY 0 (Jacob, 2026-09-26: "even turned all the way to 0 … some glows").
   // A light's write must be a pure product of its field (and t, clamps) — an additive term survives 0.
   // Radius (a wipe threshold) and Glow size (a size) are not light, so they are exempt.
-  const NOT_LIGHT = new Set(['lampGlow.radius', 'lantern.glowSize'])
+  const NOT_LIGHT = new Set(['lampGlow.radius', 'lampGlow.centre', 'lantern.glowSize'])
   const frameSrc = lights.slice(lights.indexOf('useFrame('))
   for (const m of frameSrc.matchAll(/([\w.?\[\]]+?\.(?:value|opacity|emissiveIntensity))\s*=\s*([^\n]+)/g)) {
     const f = writes.get(m[1].replace(/\?/g, ''))
@@ -102,7 +102,7 @@ for (const { key } of LAMPGLOW_FIELDS) {
 
 console.log('④ THE UNIFORMS HAVE SHADER READERS')
 for (const [u, file] of [['poolUniform', 'src/lib/groundLamp.js'], ['poolUniform', 'src/components/SlabBuildings.jsx'], ['treesUniform', 'src/components/treeAtlasMaterial.js'],
-                          ['poolWipeUniform', 'src/lib/groundLamp.js'], ['canopyWipeUniform', 'src/components/SlabBuildings.jsx'], ['canopyWipeUniform', 'src/components/treeAtlasMaterial.js']])
+                          ['poolRadiusUniform', 'src/lib/groundLamp.js'], ['poolCentreUniform', 'src/lib/groundLamp.js'], ['canopyWipeUniform', 'src/components/SlabBuildings.jsx'], ['canopyWipeUniform', 'src/components/treeAtlasMaterial.js']])
   src(file).includes(`_lampGlow.${u}`) ? ok(`${u} → ${file}`) : bad(`${u} has no reader in ${file}`)
 
 console.log('⑤ THE WALLS\' GLSL FALLOFF IS THE JS FALLOFF')
@@ -124,10 +124,17 @@ console.log('⑥ POOL RADIUS: MONOTONIC, 0 = OFF, 1 = FULL (through the real GLS
   const sweep = (wipeFn, prof) => Array.from({ length: 41 }, (_, i) => reach(wipeFn(i / 40), prof))
   // Full reach = the last lit sample before the rim, where the profile is exactly 0 (so 0.999, not 1).
   const judge = (xs) => xs[0] === 0 && xs.at(-1) >= 0.99 && xs.every((x, i) => i === 0 || x >= xs[i - 1] - 1e-9)
-  for (const [name, fn, prof] of [['ground', poolWipe, groundPool], ['canopy + walls', canopyWipe, lampFalloff]]) {
-    const xs = sweep(fn, prof)
-    judge(xs) ? ok(`${name}: 0 → ${xs[1].toFixed(2)} … ${xs[20].toFixed(2)} … 1 — never shrinks`) : bad(`${name}: reach across the knob is ${xs.map(x => x.toFixed(2)).join(' ')}`)
-  }
+  // Ground: the circle's reach IS the knob (POOL_SHAPE_GLSL, evaluated as GLSL below) — lit out to k × reach.
+  const disc = new Function('smoothstep', `${POOL_SHAPE_GLSL.replace(/float (poolDisc|poolCentre)\(float d, float (R|c)\)/g, 'function $1(d, $2)')}; return poolDisc`)(smoothstep)
+  const groundXs = Array.from({ length: 41 }, (_, i) => { const k = i / 40; let r = 0; for (let j = 0; j <= 1000; j++) if (disc(j / 1000, k) > 1e-6) r = j / 1000; return r })
+  judge(groundXs) ? ok(`ground: 0 → ${groundXs[1].toFixed(2)} … ${groundXs[20].toFixed(2)} … 1 — never shrinks (the circle is the knob)`) : bad(`ground reach across the knob: ${groundXs.map(x => x.toFixed(2)).join(' ')}`)
+  const cx = sweep(canopyWipe, lampFalloff)
+  judge(cx) ? ok(`canopy + walls: 0 → ${cx[1].toFixed(2)} … ${cx[20].toFixed(2)} … 1 — never shrinks`) : bad(`canopy reach across the knob: ${cx.map(x => x.toFixed(2)).join(' ')}`)
+  // GLSL ↔ JS parity of the pool shape (one model, two languages).
+  const centreG = new Function('smoothstep', 'mix', `${POOL_SHAPE_GLSL.replace(/float (poolDisc|poolCentre)\(float d, float (R|c)\)/g, 'function $1(d, $2)')}; return poolCentre`)(smoothstep, (a, b, t) => a + (b - a) * t)
+  let worst = 0; for (let i = 0; i <= 400; i++) { const d = i / 100; worst = Math.max(worst, Math.abs(disc(d, 3) - poolDisc(d, 3)), Math.abs(centreG(d, 1.2) - poolCentre(d, 1.2))) }
+  worst < 1e-9 ? ok('pool shape GLSL == JS (disc + centre)') : bad(`pool shape GLSL and JS differ by ${worst}`)
+  poolCentre(0, 1.2) < 0.1 && poolCentre(1.5, 1.2) > 0.99 ? ok(`the centre is pronounced: ${poolCentre(0, 1.2).toFixed(2)} of the light inside, full by ${(1.2 * 1.1).toFixed(2)} m`) : bad('the centre is not dark/crisp')
   // Self-mutation: the first, broken threshold (the pool's own profile, dark at its centre).
   judge(sweep(r => (r >= 1 ? 0 : groundPool(Math.max(0, r))), groundPool)) ? bad('mutation NOT caught — ⑥ is blind') : ok('mutation (threshold = the pool profile itself) is caught')
 }
@@ -178,6 +185,18 @@ console.log('⑩ LAMP SHADERS SPEAK LOG DEPTH (Stage/Preview use logarithmicDept
   if (!r.length) bad('found no ShaderMaterial in StreetLights — ⑩ cannot see the lamp shaders')
   else r.every(Boolean) ? ok(`${r.length} depth-tested lamp shaders carry the log-depth chunks`) : bad(`${r.filter(x => !x).length}/${r.length} lamp shaders lack the log-depth chunks — they will be hidden in Stage`)
   judge(lights.replace(/#include <logdepthbuf_vertex>/, '')).every(Boolean) ? bad('mutation NOT caught') : ok('mutation (one logdepthbuf_vertex removed) is caught')
+}
+
+console.log('⑪ EVERY BAKED POOL MAP IS A NEAREST-LAMP DISTANCE MAP (the shape is drawn live from it)')
+{
+  const { readdirSync, existsSync } = await import('node:fs')
+  for (const look of readdirSync('public/baked')) {
+    const g = `public/baked/${look}/ground.json`
+    if (!existsSync(g)) continue
+    const pm = JSON.parse(readFileSync(g, 'utf-8')).poolmap
+    if (!pm) { console.log(`   · ${look}: no poolmap (no lamps and no trees)`); continue }
+    pm.encoding === 'lamp-distance' && pm.scale > 0 ? ok(`${look}: lamp-distance, reach ${pm.scale} m`) : bad(`${look}: poolmap is the old summed map (encoding ${pm.encoding ?? 'none'}) — re-bake its ground AO`)
+  }
 }
 
 console.log(red ? `\n⛔ FAIL — ${red}` : '\n✅ all claims hold')

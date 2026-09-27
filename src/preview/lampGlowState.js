@@ -11,9 +11,11 @@ export const lampGlow = {
   treesUniform: { value: 0 },
   // The authored shares of the lamp's output (the Lamp Glow card), written by LampGlowPump (Stage,
   // live) / LampGlowDriver (production, baked); StreetLights multiplies the lamp's output by them.
-  share: { trees: 1, pool: 1, radius: 1 },
-  // The Pool radius knob as wipe thresholds (lampPool.js#poolWipe / canopyWipe) — 0 = fully open.
-  poolWipeUniform:   { value: 0 },
+  share: { trees: 1, pool: 1, radius: 1, centre: 1.2 },
+  // The pool's SHAPE for the ground (lampPool.js POOL_SHAPE_GLSL): the Radius knob (0..1 of the reach) and the
+  // authored dark centre (metres). Walls + trees still clip by canopyWipe (the knob as a threshold).
+  poolRadiusUniform: { value: 1 },
+  poolCentreUniform: { value: 1.2 },
   canopyWipeUniform: { value: 0 },
   // Init 0, not the legacy default — the pool is driven live by StreetLights
   // (lantern output) from frame 1, so a non-zero init only causes a bright

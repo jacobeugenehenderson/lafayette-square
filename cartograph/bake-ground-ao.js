@@ -24,7 +24,6 @@ import { PNG } from 'pngjs'
 import { loadBuildings } from './bake-buildings.js'
 import { squaredDistance2d } from './distanceField.mjs'
 import { requireExplicitMap } from './scene.js'
-import { POOL_MAX, groundPool } from '../src/lib/lampPool.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -373,7 +372,10 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
         console.warn(`  ⚠️ [bake-ao] FX map CLAMPED at ${FX_SIZE_MAX}² — wanted ${_fxWant}² for `
           + `${FX_TARGET_M_PER_TEXEL} m/texel. Tree shade will be coarser than LS's.`)
       }
-      const accR = new Float32Array(FX_SIZE * FX_SIZE)  // pool light
+      // R = distance to the NEAREST lamp ÷ the reach (1 = none within reach). The pool's SHAPE is drawn live from it
+      // (lampPool.js POOL_SHAPE_GLSL — circle × dark centre), so its radius is a knob, not a re-bake, and overlapping
+      // pools are the union: nearest distance merges them instead of summing to white.
+      const accR = new Float32Array(FX_SIZE * FX_SIZE).fill(1)
       const accG = new Float32Array(FX_SIZE * FX_SIZE)  // contact shadow
       const splat = (cx, cz, reach, fn) => {
         const cu = (cx - minX) / pW * FX_SIZE - 0.5
@@ -391,7 +393,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
         }
       }
       // R — lamp light pools (summed)
-      for (const l of lamps) splat(l.x, l.z, POOL_REACH, (i, rn) => { accR[i] += groundPool(rn) })
+      for (const l of lamps) splat(l.x, l.z, POOL_REACH, (i, rn) => { if (rn < accR[i]) accR[i] = rn })
       // G — contact shadows (trees + lamp bases), summed + clamped at encode.
       // ONLY for trees that actually render — `heroTier:"cull"` placements draw
       // nothing (InstancedTrees drops them), so splatting their shadow leaves an
@@ -481,7 +483,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
 
       const fpx = new Uint8Array(FX_SIZE * FX_SIZE * 4)
       for (let i = 0; i < accR.length; i++) {
-        fpx[i * 4]     = Math.round(Math.max(0, Math.min(1, accR[i] / POOL_MAX)) * 255)  // R pool
+        fpx[i * 4]     = Math.round(Math.max(0, Math.min(1, accR[i])) * 255)  // R nearest-lamp distance / reach
         fpx[i * 4 + 1] = Math.round(Math.max(0, Math.min(1, accG[i])) * 255)             // G shadow
         fpx[i * 4 + 2] = 0
         fpx[i * 4 + 3] = 255
@@ -503,7 +505,8 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       const fpng = new PNG({ width: FX_SIZE, height: FX_SIZE })
       fpng.data = Buffer.from(fpx.buffer, fpx.byteOffset, fpx.byteLength)
       writeIfChanged(join(outBase, 'ground.poolmap.png'), PNG.sync.write(fpng))
-      manifest.poolmap = { image: 'ground.poolmap.png', size: FX_SIZE, min: [minX, minZ], span: [pW, pH], scale: POOL_MAX }
+      // `scale` × R = metres to the nearest lamp. `encoding` names it, so a consumer can refuse an old summed map.
+      manifest.poolmap = { image: 'ground.poolmap.png', size: FX_SIZE, min: [minX, minZ], span: [pW, pH], scale: POOL_REACH, encoding: 'lamp-distance' }
       console.log(`[bake-ao] ground FX map: ${lamps.length} lamps (pool R) + ${shadowTrees.length}/${trees.length} rendered trees + lamps (shadow G) → ${FX_SIZE}² over ${pW.toFixed(0)}×${pH.toFixed(0)} m`)
     } else {
       // The one honest empty: nothing stands on this ground to pool or shadow. Named, not silent.

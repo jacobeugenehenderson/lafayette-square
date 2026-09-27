@@ -54,6 +54,17 @@ const SURFACE_FLOOR = 0.22   // darkest surface lifts to this lightness (off bla
 const SURFACE_CEIL  = 0.72   // brightest surface compresses down to this
 const _treatC = new THREE.Color()
 const _treatHSL = {}
+// ⭐ The pool map's R is the NEAREST-LAMP DISTANCE ÷ reach (encoding 'lamp-distance', bake-ground-ao). A map baked
+// before that holds a summed pool instead, and read as a distance it would light the ground AWAY from every lamp —
+// so it passes scale 0 (no pool) and says so, loud and dark rather than wrong. ▶ claims-light-sources-are-live ⑪
+let _warnedOldPool = false
+function poolScaleOf(meta) {
+  if (!meta) return 0
+  if (meta.encoding === 'lamp-distance' && meta.scale > 0) return meta.scale
+  if (!_warnedOldPool) { _warnedOldPool = true; console.error(`[BakedGround] ⛔ ground.poolmap is an old summed map (encoding ${meta.encoding ?? 'none'}) — no lamp pools until this look's ground AO is re-baked (node cartograph/bake-ground-ao.js).`) }
+  return 0
+}
+
 function treatAlbedo(hex) {
   _treatC.set(hex)
   _treatC.getHSL(_treatHSL, THREE.SRGBColorSpace)
@@ -300,7 +311,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
       poolmap.needsUpdate = true
       // Share the FX map (G shadow / R pool) so the tree trunk blend can take
       // the combined effective ground colour, matching grassMaterial.
-      setGroundFxMap(poolmap, poolMeta?.min, poolMeta?.span, poolMeta?.scale)
+      setGroundFxMap(poolmap, poolMeta?.min, poolMeta?.span, poolScaleOf(poolMeta))
     }
     return () => setGroundFxMap(null)
   }, [poolmap])
@@ -423,7 +434,7 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
     const mat = makeFadeGroundMaterial({
       color: treatAlbedo(group.color),   // desaturate + value-lift (Surface treatment)
       fade,
-      pool: hasPool ? { map: poolmap, min: poolMeta?.min, span: poolMeta?.span, scale: poolMeta?.scale } : null,
+      pool: hasPool ? { map: poolmap, min: poolMeta?.min, span: poolMeta?.span, scale: poolScaleOf(poolMeta) } : null,
     })
     // Cascades wrap the material's hook — attached AFTER it exists. (Before 2026-09-26 this ran first
     // and the hook assigned after it replaced the wrapper, so `?csm=1` never reached flat ground.)

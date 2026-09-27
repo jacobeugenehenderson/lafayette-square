@@ -17,7 +17,7 @@ import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
-import { buildLampGrid, poolWipe, canopyWipe, LAMP_DEFAULT_HEX } from '../lib/lampPool.js'
+import { buildLampGrid, canopyWipe, LAMP_DEFAULT_HEX } from '../lib/lampPool.js'
 
 const LANTERN_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANTERN_FLAT_DEFAULTS } })
 
@@ -57,6 +57,7 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
   // (2026-06-28 — sibling of the InstancedTrees demand-mode fix.)
   const invalidate = useThree(s => s.invalidate)
   const sunAltUniform = useRef({ value: 0.5 })
+  const bulbOnUniform = useRef({ value: 0 })
   const lampMatRef = useRef(null)
   const glowMatRef = useRef(null)
   const getLightingPhase = useTimeOfDay(s => s.getLightingPhase)
@@ -319,6 +320,7 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
 
             mat.onBeforeCompile = (shader) => {
               shader.uniforms.uSunAltitude = sunAltUniform.current
+              shader.uniforms.uBulbOn = bulbOnUniform.current
               if (txMap) {
                 shader.uniforms.uTxMap = { value: txMap }
               }
@@ -327,6 +329,7 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
                 '#include <common>',
                 `#include <common>
                 uniform float uSunAltitude;
+                uniform float uBulbOn;
                 ${txMap ? 'uniform sampler2D uTxMap;' : ''}`
               )
 
@@ -351,7 +354,8 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
                   '#include <dithering_fragment>',
                   `#include <dithering_fragment>
                   float glassMask = texture2D(uTxMap, vMapUv).r;
-                  float glassVisible = 1.0 - smoothstep(-0.05, 0.15, uSunAltitude);
+                  // Lit glass shows whenever the Bulb is on (the operator's keys), clear when it is off — not the sun.
+                  float glassVisible = clamp(uBulbOn, 0.0, 1.0);
                   gl_FragColor.a *= mix(1.0, glassVisible, glassMask);`
                 )
               }
@@ -456,11 +460,10 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
 
     sunAltUniform.current.value = sunAltitude
 
-    // Ramp: 0 at sunAlt≥0.15 (day), 1 at sunAlt≤-0.3 (deep night)
-    const t = Math.min(1, Math.max(0, (0.15 - sunAltitude) / 0.45))
-    const isActive = t > 0.01
-
-    // ⭐ EACH KNOB MOVES ONE THING (Jacob, 2026-09-26), all × the dusk→night turn-on t (0 by day):
+    // ⛔ NO EDITORIAL ON/OFF (Jacob, 2026-09-26: "Please remove the editorial limits on when the lights can come
+    // on … They can stay on all day if I say"). There was a sun-altitude ramp here multiplying every lamp output
+    // to 0 by day; the operator's time-of-day keys (and their fade up / fade down marks) now decide alone.
+    // ⭐ EACH KNOB MOVES ONE THING (Jacob, 2026-09-26):
     //   Lantern › Bulb → glass panes + bulb dot + tiny orb · Lantern › Glow → the soft gradient
     //   Lamp Glow › Light pools → ground + walls · Pool radius → the wipe · Trees → the canopy
     // ▶ checks/claims-light-sources-are-live.mjs pins that no two knobs write the same uniform.
@@ -470,20 +473,23 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
       lanternChannel?.animated ? getTodSlotMinutes(tod.currentTime) : null,
       LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
     )
-    const bulb = t * (lant.intensity ?? 0)
+    const bulb = Math.max(0, lant.intensity ?? 0)
     if (lampMatRef.current) lampMatRef.current.emissiveIntensity = bulb
+    bulbOnUniform.current.value = Math.min(1, bulb)
     if (glowMatRef.current?.uniforms?.uIntensity) glowMatRef.current.uniforms.uIntensity.value = bulb
     bulbMat.opacity = Math.min(1, bulb)
-    haloMat.uniforms.uIntensity.value = t * (lant.glow ?? 0)
+    const glow = Math.max(0, lant.glow ?? 0)
+    haloMat.uniforms.uIntensity.value = glow
     // Clamped to the control's own range — a Look saved when Glow size ran to 10 m reads as the largest glow now.
     haloMat.uniforms.uHaloSize.value = Math.min(GLOW_SIZE_FIELD.max, Math.max(GLOW_SIZE_FIELD.min, lant.glowSize ?? LANTERN_FLAT_DEFAULTS.glowSize))
-    _lampGlow.poolUniform.value  = t * _lampGlow.share.pool
-    _lampGlow.treesUniform.value = t * _lampGlow.share.trees
-    _lampGlow.poolWipeUniform.value   = poolWipe(_lampGlow.share.radius)
+    _lampGlow.poolUniform.value  = Math.max(0, _lampGlow.share.pool)
+    _lampGlow.treesUniform.value = Math.max(0, _lampGlow.share.trees)
+    _lampGlow.poolRadiusUniform.value = Math.min(1, Math.max(0, _lampGlow.share.radius))   // the ground's circle
+    _lampGlow.poolCentreUniform.value = Math.max(0, _lampGlow.share.centre)                 // its dark centre, metres
     _lampGlow.canopyWipeUniform.value = canopyWipe(_lampGlow.share.radius)
-    if (glowRef.current) glowRef.current.visible = isActive
-    if (bulbRef.current) bulbRef.current.visible = isActive
-    if (haloRef.current) haloRef.current.visible = isActive
+    if (glowRef.current) glowRef.current.visible = bulb > 0
+    if (bulbRef.current) bulbRef.current.visible = bulb > 0
+    if (haloRef.current) haloRef.current.visible = glow > 0
   })
 
   if (!lampModel) return null

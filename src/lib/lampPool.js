@@ -10,7 +10,8 @@
  * peak: separate spots. `overlapReach(spacing)` solves for the reach at which the midpoint between two
  * neighbours equals a lone pool's peak — from this file's own profile, so nothing is typed — and
  * bake-lamps stamps it into lamps.json (`reach`), which every consumer reads.
- * ⭐ The PERCEIVED radius is a separate, live control: the pools are baked fully open, and `poolWipe` /
+ * ⭐ The PERCEIVED radius is a separate, live control: the ground draws a circle of that radius (POOL_SHAPE_GLSL) from
+ * a baked nearest-lamp distance map; walls and trees clip by `canopyWipe` /
  * `canopyWipe` turn the Radius knob into a threshold that clips the soft tail at runtime.
  */
 
@@ -67,15 +68,11 @@ export function overlapReach(spacing) {
  * with the knob; the canopy's falloff already only falls. radius ≤ 0 → a threshold nothing reaches → no light.
  */
 const WIPE_OFF = 1e9
-const POOL_ENVELOPE = (() => { const n = 2000, e = new Float64Array(n + 1); let m = 0
-  for (let i = n; i >= 0; i--) { m = Math.max(m, groundPool(i / n)); e[i] = m }; return e })()
-const envelopeAt = (rn) => POOL_ENVELOPE[Math.round(Math.min(1, Math.max(0, rn)) * (POOL_ENVELOPE.length - 1))]
 // The smallest pool is its own bright ring — no threshold can clip inside where the light is brightest. So the
 // knob runs from that ring (just above 0) to the full reach (1), with no dead stretch at the bottom. Read off the
 // profile, not typed: the distance at which the ground pool peaks.
 export const POOL_RING_REACH = (() => { let best = 0, at = 0; for (let i = 0; i <= 2000; i++) { const v = groundPool(i / 2000); if (v > best) { best = v; at = i / 2000 } } return at })()
 const knobToReach = (k) => POOL_RING_REACH + Math.min(1, k) * (1 - POOL_RING_REACH)
-export const poolWipe   = (radius) => (radius >= 1 ? 0 : radius <= 0 ? WIPE_OFF : envelopeAt(knobToReach(radius)))
 export const canopyWipe = (radius) => (radius >= 1 ? 0 : radius <= 0 ? WIPE_OFF : lampFalloff(knobToReach(radius)))
 
 /** Summed canopy light at (x, z) from a town's baked lamps, within `reach`, clamped to the pool's headroom. */
@@ -130,7 +127,7 @@ export function buildLampGrid(lamps, reach) {
   return { data, cols, rows, k, min: [minX, minZ], cell }
 }
 
-/** The Radius wipe, in GLSL — ground, walls and trees all clip with this one function. `th` from poolWipe/canopyWipe.
+/** The Radius wipe, in GLSL — walls and trees clip with it (the ground draws POOL_SHAPE_GLSL). `th` from canopyWipe.
  *  The soft band is the top tenth of the threshold: a wider band (it was half) kept the ring's shoulders and
  *  pinned the pool at ~55% of its reach for the whole bottom third of the knob. */
 export const LAMP_WIPE_GLSL = `
@@ -138,3 +135,24 @@ export const LAMP_WIPE_GLSL = `
 
 /** The lamp's colour when a Look has authored none (layerColors.lamp) — warm incandescent white. One home. */
 export const LAMP_DEFAULT_HEX = '#fff2e0'
+
+// ── THE POOL'S SHAPE (Jacob, 2026-09-26) ─────────────────────────────────────────────────────────
+// "It should be a circle, that can get bigger or smaller … and THEN the soft center is taken out. The center
+// circle doesn't change radius" · "The center circle … should be rather pronounced and contrast."
+//   · the CIRCLE — its radius is the Pool radius knob × the town's reach; a soft outer edge (the outer POOL_SOFT
+//     of the radius). Overlapping pools are the UNION (nearest-lamp distance), so they merge, never double.
+//   · the CENTRE — an authored radius in metres (Lamp Glow › Pool centre), dark (CENTRE_FLOOR of the light left)
+//     with a tight edge (CENTRE_EDGE of its radius). It does not scale with the circle.
+// Unitless shape fractions; the sizes are the knob and the authored centre. JS twins below are for the checks.
+export const POOL_SOFT = 0.4
+export const CENTRE_EDGE = 0.1
+export const CENTRE_FLOOR = 0.05
+const f3 = (v) => v.toFixed(3)
+export const POOL_SHAPE_GLSL = `
+  float poolDisc(float d, float R) { return R <= 0.0 ? 0.0 : 1.0 - smoothstep(${f3(1 - POOL_SOFT)} * R, R, d); }
+  float poolCentre(float d, float c) {
+    return c <= 0.0 ? 1.0 : mix(${f3(CENTRE_FLOOR)}, 1.0, smoothstep(c * ${f3(1 - CENTRE_EDGE)}, c * ${f3(1 + CENTRE_EDGE)}, d));
+  }`
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
+export const poolDisc = (d, R) => (R <= 0 ? 0 : 1 - smooth((1 - POOL_SOFT) * R, R, d))
+export const poolCentre = (d, c) => (c <= 0 ? 1 : CENTRE_FLOOR + (1 - CENTRE_FLOOR) * smooth(c * (1 - CENTRE_EDGE), c * (1 + CENTRE_EDGE), d))
