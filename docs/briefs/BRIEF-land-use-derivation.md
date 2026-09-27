@@ -80,6 +80,11 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 - **Huron (Furrow):** the conformed ground mesh draws **7,396 m² of `agricultural` outside the class's own
   polygons** (filled holes, the largest 6,170 m², and a rim sliver up to 19 m out). The bake now reports it
   every pour.
+- **Provincetown, town-wide (Furrow, 2026-09-26):** of 3,056 building centroids, **1,228 (40%) stand on `beach`**,
+  642 on `wetland`, 281 `park`, 216 underived, and **0 on `residential`**. By area `beach` is about 2,073 ha, roughly
+  71% of the land. On the harbour front, only 1.7% of the beach-painted area lies inside an OSM `natural=beach`
+  (Strand). ⇒ Every ground rule that fades into "the land use" fades into sand or marsh under most of the town:
+  **this blocks the ground-cover work for Provincetown.**
 
 ## 1. The finding
 
