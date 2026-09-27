@@ -637,16 +637,16 @@ const DAY = {
               bulge: [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9] },
   lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [0.5, 0.5, null, null, 1.25, 1.4, 2.2, 1.1],
               radius: [0.85, 0.75, null, null, 0.75, 1, 1, 1], centre: [1.2, 1.2, null, null, 0.25, 1.2, 1.2, 1.2],
-              trees: [0.3, 0.3, null, null, 0.8, 2.5, 3.5, 1.6] },
+              trees: [0.3, 0.3, null, null, 0.8, 2, 3.5, 1.6] },
 }
 // The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
 const UPLIGHT = { edges: LAMP_EDGES }
 for (const s of ['L', 'R']) Object.assign(UPLIGHT, {
   // Kept well below a blow-out: 2.8–3.5 at Dusk/Night bloomed into an orange blob at the monument's foot (2026-09-27).
-  [`uplight${s}_intensity`]: [s === 'L' ? 0.05 : 0.2, 0.2, null, null, s === 'L' ? 0.05 : 0.25, 1.2, 1.5, 0.6],
-  [`uplight${s}_color`]:     ['#ffe2c0', '#ffd6a8', null, null, '#ffd6a8', '#ffc98f', '#f2ecff', '#e6e4ff'],
-  [`uplight${s}_cone`]:      [s === 'L' ? 60 : 35, 35, null, null, 35, 35, 35, 35],
-  [`uplight${s}_reach`]:     [s === 'L' ? 150 : 320, 220, null, null, 220, 220, 220, 220],
+  [`uplight${s}_intensity`]: [s === 'L' ? 0.05 : 0.2, 0.2, null, null, s === 'L' ? 0.05 : 0.25, 0.05, 1.5, 0.6],
+  [`uplight${s}_color`]:     ['#ffe2c0', '#ffd6a8', null, null, '#ffd6a8', '#fbddc7', '#f2ecff', '#e6e4ff'],
+  [`uplight${s}_cone`]:      [s === 'L' ? 60 : 35, 35, null, null, 35, 33, 35, 35],
+  [`uplight${s}_reach`]:     [s === 'L' ? 150 : 320, 220, null, null, 220, s === 'L' ? 205 : 455, 220, 220],
 })
 DAY.setPieceLight = UPLIGHT
 DAY.archLight = UPLIGHT
