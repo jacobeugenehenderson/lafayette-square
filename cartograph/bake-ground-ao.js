@@ -22,6 +22,7 @@ import * as THREE from 'three'
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { PNG } from 'pngjs'
 import { loadBuildings } from './bake-buildings.js'
+import { squaredDistance2d } from './distanceField.mjs'
 import { requireExplicitMap } from './scene.js'
 import { POOL_MAX, groundPool } from '../src/lib/lampPool.js'
 
@@ -437,6 +438,47 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       for (const l of lamps) splat(l.x, l.z, LAMP_SHADOW_RADIUS_M, (i, rn) => {
         accG[i] += (1 - rn) * (1 - rn) * LAMP_SHADOW_STR
       })
+      // ⭐ THE GROUND RULES' DISTANCES (cartograph/surfaces.mjs GROUND_RULES): metres to the nearest
+      // building footprint (buildingFoot) and to the nearest paving (pavedEdge), on the FX map's grid,
+      // encoded over one RANGE stated in texels (so it follows this map's density) and recorded in
+      // manifest.rulemap — the runtime draws those rules only when the rulemap exists, and says so.
+      const FX_RULE_RANGE_TEXELS = 24
+      const ruleRangeM = FX_RULE_RANGE_TEXELS * _fxMpt
+      const toTexel = (x, z) => [(x - minX) / pW * FX_SIZE - 0.5, (z - minZ) / pH * FX_SIZE - 0.5]
+      // Fill a polygon (world XZ ring) into a seed mask, texel centres, even-odd.
+      const fillRing = (mask, ring) => {
+        const pts = ring.map(p => toTexel(Array.isArray(p) ? p[0] : p.x, Array.isArray(p) ? p[1] : p.z))
+        let v0 = Infinity, v1 = -Infinity
+        for (const [, v] of pts) { if (v < v0) v0 = v; if (v > v1) v1 = v }
+        for (let v = Math.max(0, Math.ceil(v0)); v <= Math.min(FX_SIZE - 1, Math.floor(v1)); v++) {
+          const xs = []
+          for (let a = 0, b = pts.length - 1; a < pts.length; b = a++) {
+            const [ua, va] = pts[a], [ub, vb] = pts[b]
+            if ((va > v) !== (vb > v)) xs.push(ua + (v - va) / (vb - va) * (ub - ua))
+          }
+          xs.sort((p, q) => p - q)
+          for (let k = 0; k + 1 < xs.length; k += 2)
+            for (let u = Math.max(0, Math.ceil(xs[k])); u <= Math.min(FX_SIZE - 1, Math.floor(xs[k + 1])); u++) mask[v * FX_SIZE + u] = 1
+        }
+      }
+      const bSeed = new Uint8Array(FX_SIZE * FX_SIZE)
+      let bCount = 0
+      for (const bl of buildingList) { const fp = bl.footprint; if (fp?.length >= 3) { fillRing(bSeed, fp); bCount++ } }
+      // Paving = the ground groups a lawn meets at a hard edge: roadway, lots, walks, paths.
+      const PAVED = new Set(['asphalt', 'highway', 'parking_lot', 'sidewalk', 'footway', 'path', 'park_path', 'cycleway', 'steps', 'alley', 'curb'])
+      const aSeed = new Uint8Array(FX_SIZE * FX_SIZE)
+      let aTris = 0
+      for (const g of manifest.groups) {
+        if (!(g.kind === 'mat' && PAVED.has(g.id)) && !(g.kind === 'face' && g.id === 'parking')) continue
+        const P = new Float32Array(groundBin, g.vertexByteOffset, g.vertexCount * 3)
+        const I = new Uint32Array(groundBin, g.indexByteOffset, g.indexCount)
+        for (let t = 0; t < I.length; t += 3) {
+          fillRing(aSeed, [0, 1, 2].map(k => [P[I[t + k] * 3], P[I[t + k] * 3 + 2]])); aTris++
+        }
+      }
+      const bD2 = squaredDistance2d(bSeed, FX_SIZE, FX_SIZE), aD2 = squaredDistance2d(aSeed, FX_SIZE, FX_SIZE)
+      const enc = (d2) => Math.round(Math.max(0, Math.min(1, Math.sqrt(d2) * _fxMpt / ruleRangeM)) * 255)
+
       const fpx = new Uint8Array(FX_SIZE * FX_SIZE * 4)
       for (let i = 0; i < accR.length; i++) {
         fpx[i * 4]     = Math.round(Math.max(0, Math.min(1, accR[i] / POOL_MAX)) * 255)  // R pool
@@ -444,6 +486,20 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
         fpx[i * 4 + 2] = 0
         fpx[i * 4 + 3] = 255
       }
+      // The rule distances ride in their OWN map, never the poolmap's B/A: a browser may premultiply a
+      // PNG's alpha on decode, and A = 0 on every road would zero the pool and shadow there.
+      const rpx = new Uint8Array(FX_SIZE * FX_SIZE * 4)
+      for (let i = 0; i < accR.length; i++) { rpx[i * 4] = enc(bD2[i]); rpx[i * 4 + 1] = enc(aD2[i]); rpx[i * 4 + 3] = 255 }
+      const rpng = new PNG({ width: FX_SIZE, height: FX_SIZE })
+      rpng.data = Buffer.from(rpx.buffer, rpx.byteOffset, rpx.byteLength)
+      writeIfChanged(join(outBase, 'ground.rulemap.png'), PNG.sync.write(rpng))
+      manifest.rulemap = { image: 'ground.rulemap.png', size: FX_SIZE, min: [minX, minZ], span: [pW, pH],
+        channels: { r: 'building distance', g: 'paving distance' }, rangeM: +ruleRangeM.toFixed(3) }
+      console.log(`[bake-ao] ground-rule distances (ground.rulemap.png): ${bCount} building footprints (R) · ${aTris} paving triangles (G) · range ${ruleRangeM.toFixed(1)} m (${FX_RULE_RANGE_TEXELS} texels)`)
+      // A town WITH buildings none of whose footprints reached the field is a broken input — refused. A town
+      // with no buildings at all is honestly "far from any building" everywhere — said, and baked.
+      if (!bCount && buildingList.length) throw new Error(`[bake-ao] ${scene}/${look}: ${buildingList.length} buildings but no footprint reached the ground-rule field — refusing to bake a building distance of "everywhere far".`)
+      if (!buildingList.length) console.warn(`  [bake-ao] ${scene}/${look}: no buildings — the building distance is "far" everywhere (buildingFoot draws nothing here).`)
       const fpng = new PNG({ width: FX_SIZE, height: FX_SIZE })
       fpng.data = Buffer.from(fpx.buffer, fpx.byteOffset, fpx.byteLength)
       writeIfChanged(join(outBase, 'ground.poolmap.png'), PNG.sync.write(fpng))
@@ -453,6 +509,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       // The one honest empty: nothing stands on this ground to pool or shadow. Named, not silent.
       console.warn(`[bake-ao] ${scene}/${look}: NO ground FX map — this look has no lamps.json lamps and no trees.json trees, so no lamp pools and no contact shadows.`)
       manifest.poolmap = null
+      manifest.rulemap = null
     }
   } catch (e) {
     // ⛔ Was `console.warn('ground FX map skipped')` + carry on: any failure baked a town with no lamp

@@ -186,6 +186,13 @@ A two-channel "ground-contact" map produced by `bake-ground-ao.js`, sampled **on
 
 Per-Look raster of the ground color (each ground group's triangles filled with its color, paint order). Meta in `ground.json#/colormap` `{ image, size, min, span }`. Sampled at world-XZ by the **tree trunk** shader (`treeAtlasMaterial`) so the lowest ~1.5 m of each trunk blends toward the ACTUAL ground beneath it. Published into the runtime via `BakedGround` → `groundColorState`; the Arborist Salon (no `BakedGround`) leaves it unset → trunk blend off.
 
+## 3.2a. `ground.rulemap.png` — the ground rules' distances (2026-09-26)
+
+Written by `bake-ground-ao.js` on the FX map's grid: **R** = metres to the nearest building footprint,
+**G** = metres to the nearest paving, each encoded `min(1, d / rangeM) × 255`; alpha 255 (never data — a
+browser may premultiply it). `ground.json#rulemap` = `{ image, size, min, span, channels, rangeM }`, or
+null. Read by the `buildingFoot` / `pavedEdge` ground rules (`cartograph/surfaces.mjs` GROUND_RULES).
+
 ## 3.3. `context.json` + `context.<channel>.bin` — context channels (2026-09-24)
 
 Per-texel measures of the scene for surfaces to read (`BRIEF-surface-lab §3`). `context.json#channels.<name>` =

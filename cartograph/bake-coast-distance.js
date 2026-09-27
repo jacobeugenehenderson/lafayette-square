@@ -26,6 +26,7 @@ import { waterRuns } from './shoreRuns.mjs'
 import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
 import { townState } from '../src/cartograph/streetProfiles.js'
+import { edt1d } from './distanceField.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -36,18 +37,6 @@ export function bandsInUse(surfaces = SURFACES) {
     for (const [name, p] of Object.entries(def.params || {}))
       if (p.channel === 'coastDist') out.push({ surface, name, value: Number.isFinite(p.value) ? p.value : null, question: p.question ?? null })
   return out
-}
-
-// Felzenszwalb–Huttenlocher 1-D squared distance transform, in place over `f` (length n).
-function edt1d(f, n, d, v, z) {
-  let k = 0; v[0] = 0; z[0] = -Infinity; z[1] = Infinity
-  for (let q = 1; q < n; q++) {
-    let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k])
-    while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]) }
-    k++; v[k] = q; z[k] = s; z[k + 1] = Infinity
-  }
-  k = 0
-  for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]] }
 }
 
 /**

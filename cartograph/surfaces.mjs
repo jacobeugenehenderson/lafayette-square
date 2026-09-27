@@ -167,13 +167,30 @@ export const SURFACES = {
  *                  trees + lamp bases) tints the lit ground toward the litter colour. Every surface.
  *   duneGrass    — sand greens into dune grass inland: from the town's own beach band (sand.beachBandM,
  *                  derived) outward, by the baked distance to the water (context coastDist). Sand only.
- * Not yet built (need B/A distance channels in the poolmap bake): buildingFoot, pathWear, pavedFray.
+ *   buildingFoot — a bare, earthy band at every wall's foot, fading out over widthM.
+ *   pavedEdge    — worn, frayed ground where a lawn or sand meets paving (paths, walks, lots, drives).
  */
 export const GROUND_RULES = {
   canopyLitter: {
     params: {
       strength: { unit: '0–1', source: 'authored', default: 0 },
       color:    { unit: 'hex', source: 'authored', default: '#4b3f2c' },
+    },
+  },
+  // Both below read ground.rulemap.png (bake-ground-ao): metres to the nearest building footprint
+  // and to the nearest paving. Soft surfaces only (grass, sand, fields) — paving would tint itself.
+  buildingFoot: {
+    params: {
+      strength: { unit: '0–1', source: 'authored', default: 0 },
+      widthM:   { unit: 'm', source: 'authored', default: 1.5 },    // the bare band at a wall's foot
+      color:    { unit: 'hex', source: 'authored', default: '#6b5a45' },
+    },
+  },
+  pavedEdge: {
+    params: {
+      strength: { unit: '0–1', source: 'authored', default: 0 },
+      widthM:   { unit: 'm', source: 'authored', default: 1.0 },    // how far the wear reaches off the edge
+      color:    { unit: 'hex', source: 'authored', default: '#a89c7c' },
     },
   },
   duneGrass: {

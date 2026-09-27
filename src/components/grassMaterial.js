@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp } from '../lib/groundLamp.js'
-import { groundRules } from '../lib/groundRules.js'
+import { groundRules, GROUND_RULES_DECLS, groundRulesFragment, bindGroundRules } from '../lib/groundRules.js'
 
 /**
  * Reusable factory for the noise-based park grass material.
@@ -358,6 +358,7 @@ export function makeGroundSurfaceMaterial({
     // The lamp's light on this ground: ONE way for every ground surface (src/lib/groundLamp.js).
     shader.uniforms.uHasPool = { value: poolMap ? 1.0 : 0.0 }
     if (poolMap) bindGroundLamp(shader.uniforms, { map: poolMap, min: poolMin, span: poolSpan, scale: poolScale })
+    bindGroundRules(shader.uniforms)   // the soft-ground rules (surfaces.mjs GROUND_RULES), after lighting
     if (surface === 'sand') {
       const rep = surfaceParams?.reposeDeg?.reposeDeg ?? surfaceParams?.reposeDeg   // a finding's range
       const beach = surfaceParams?.beachSlopeDeg
@@ -443,7 +444,7 @@ export function makeGroundSurfaceMaterial({
        uniform vec2 uClipMin;
        uniform vec2 uClipSize;
        uniform float uHasClip;
-       uniform float uHasPool;${poolMap ? GROUND_LAMP_DECLS : ''}
+       uniform float uHasPool;${poolMap ? GROUND_LAMP_DECLS : ''}${GROUND_RULES_DECLS}
        uniform vec2 uFadeCenter;
        uniform float uFadeInner;
        uniform float uFadeOuter;
@@ -482,7 +483,7 @@ export function makeGroundSurfaceMaterial({
        if (uHasFade > 0.5) {
          float dFade = length(vGrassPos.xz - uFadeCenter);
          gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, dFade);
-       }${poolMap ? groundLampFragment('vGrassPos.xz') : ''}`
+       }${groundRulesFragment('vGrassPos.xz')}${poolMap ? groundLampFragment('vGrassPos.xz') : ''}`
     )
   }
 

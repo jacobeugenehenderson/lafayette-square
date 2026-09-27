@@ -28,7 +28,7 @@ import WaterSurface from './WaterSurface.jsx'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { groundMaterialFor } from '../lib/groundMaterials.js'
 import { makeFadeGroundMaterial } from './fadeGroundMaterial.js'
-import { setGroundRules } from '../lib/groundRules.js'
+import { setGroundRules, setGroundRuleMap } from '../lib/groundRules.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag } from '../utils/terrainShader'
@@ -197,7 +197,13 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
     ? { ...bakedScene, surfaces: { classes: { ...bakedScene?.surfaces?.classes, ...surfacesOverride.classes }, params: { ...bakedScene?.surfaces?.params, ...surfacesOverride.params }, rules: { ...bakedScene?.surfaces?.rules, ...surfacesOverride.rules } } }
     : bakedScene), [bakedScene, surfacesOverride])
   // The ground rules (surfaces.mjs GROUND_RULES) are shared uniforms every ground material binds.
-  useEffect(() => { setGroundRules(scene?.surfaces?.rules) }, [scene?.surfaces?.rules])
+  // ⛔ A distance rule switched ON over a ground baked without ground.rulemap.png draws nothing — SAID,
+  // never a quiet no-op (the rulemap is written by bake-ground-ao).
+  useEffect(() => {
+    const r = setGroundRules(scene?.surfaces?.rules)
+    const on = ['buildingFoot', 'pavedEdge'].filter(k => r[k].strength > 0)
+    if (on.length && !manifest.rulemap) console.error(`[BakedGround] ⛔ "${manifest.look}": ground rule(s) ${on.join(', ')} are ON but this ground has no ground.rulemap.png — they draw NOTHING. ▶ re-run bake-ground-ao for this look.`)
+  }, [scene?.surfaces?.rules, manifest.rulemap, manifest.look])
   const layerVis = scene?.layerVis
   const surfaceTable = useMemo(() => resolveClassTable(scene?.surfaces?.classes), [scene?.surfaces?.classes])
   const stencil = manifest.stencil || null
@@ -298,6 +304,22 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
     }
     return () => setGroundFxMap(null)
   }, [poolmap])
+
+  // The ground rules' baked distances (ground.rulemap.png, bake-ground-ao): R = to a building, G = to paving.
+  const ruleMeta = manifest.rulemap || null
+  const rulemapUrl = ruleMeta ? ASSET_BASE + 'baked/' + manifest.look + '/' + ruleMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '') : null
+  const rulemap = rulemapUrl ? useLoader(THREE.TextureLoader, rulemapUrl) : null
+  useEffect(() => {
+    if (rulemap) {
+      rulemap.colorSpace = THREE.NoColorSpace
+      rulemap.flipY = false
+      rulemap.generateMipmaps = false
+      rulemap.minFilter = rulemap.magFilter = THREE.LinearFilter
+      rulemap.needsUpdate = true
+    }
+    setGroundRuleMap(rulemap, ruleMeta)
+    return () => setGroundRuleMap(null)
+  }, [rulemap])
 
   // Ground-color map — per-Look albedo raster. Published into the shared
   // groundColor uniforms (groundColorState) so the tree trunk shader blends
