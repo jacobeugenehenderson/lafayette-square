@@ -35,5 +35,22 @@ lines, or `node cartograph/fetch-bathymetry.mjs --scene=<id> --dry`.
    into the profile over the source's own cell. `projectorFor` needs EPSG 6339–6348 for the USACE tiles.
 4. The research (sources, URLs, measurements) is in the retired brief (`cartograph/_archive/BRIEF-bathymetry-full-floor-2026-09-26.md`).
 
+## ⭐ The water's LEVEL is a tide, chosen — ruled 2026-09-27 (Jacob)
+**Found:** the level is the lidar's own water surface (Provincetown −0.99 m NAVD88), i.e. **the tide on the day the
+survey flew** — a value no one chose, per town. With a 3.07 m range (NOAA 8446121), Provincetown shows its intertidal
+flats at depth 0: bare sand, and the drop-off is gone (Strand, measured on the West End: 53% of the water at the level).
+**Ruled:** a town's water stands at a **named tide datum**; the kit default is **mean high water** (MHW); a town may
+author another (`design.water`: a datum name, or an explicit height). ⛔ The floor is not touched — only where the
+level sits.
+- **Datum:** VDatum converts the lidar's NAVD88 to the town's tidal datums at its position (step 2 above). A lake has no
+  tide: its datum is the lake's own chart datum or mean level, from its source. ⛔ A coastal town with no conversion
+  fails loudly; it never keeps the flight's level in silence.
+- **Consumers:** the level feeds the waterline where it meets the ground, so the shore, revetment, level-body and
+  every-metre-named checks re-run on it. Loam: the datum. Strand: the level and the shore.
+- ⏭ **NEXT, and not negotiable (Jacob): the tide MOVES with the clock** — NOAA harmonics make it a pure function of
+  time, like the monument's show. The waterline is baked today (the shore rules, the revetment toe, the water body), so
+  a moving level is its own arc. ⛔ **Build the fixed level so the moving one extends it:** a level is a value read at
+  a time, never a constant baked into geometry that cannot move.
+
 ## Bounds
 No bake without Jacob's go, cleared through Boz. Commit only your own paths. Lafayette Square is not re-poured.
