@@ -153,7 +153,7 @@ export function usePostFxDriver({
     // the orbit pivot when flying). Cheap;
     // only meaningful when dofOn (i.e. the DoF pass is mounted).
     if (dofOn) {
-      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, pickedFocus: dofFocus?.point })
+      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, pickedFocus: dofFocus?.point, heroBox: dofFocus?.box })
     }
   })
 }

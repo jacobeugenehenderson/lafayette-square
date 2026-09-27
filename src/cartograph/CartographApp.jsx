@@ -727,6 +727,32 @@ function placeNameAt(x, z) {
   return 'the ground here'
 }
 
+// The hero's world box, for the hero ladder (HeroLadder.jsx): the picked thing's own extent. A merged slab mesh is
+// the whole town, so a slab building takes its footprint; anything else (the set-piece) its own group, the largest
+// ancestor still smaller than a town block.
+const _box = new THREE.Box3(), _sz = new THREE.Vector3()
+function heroBoxOf(hit) {
+  const r = (b) => [b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z].map(v => +v.toFixed(2))
+  if (hit.object.geometry?.attributes?.aBuildingId && hit.face) {
+    const num = hit.object.geometry.attributes.aBuildingId.getX(hit.face.a)
+    const e = useSlabBuildingIndex.getState().index?.byNum?.[num]
+    if (e?.footprint?.length) {
+      _box.makeEmpty()
+      for (const [x, z] of e.footprint) _box.expandByPoint(_sz.set(x, hit.point.y, z))
+      _box.expandByPoint(_sz.set(hit.point.x, (e.centroidY ?? hit.point.y) - 5, hit.point.z))
+      _box.expandByPoint(_sz.set(hit.point.x, Math.max(e.baseY ?? hit.point.y, hit.point.y) + 5, hit.point.z))
+      return r(_box)
+    }
+  }
+  let o = hit.object, best = null
+  while (o && o.parent) {
+    _box.setFromObject(o); _box.getSize(_sz)
+    if (Math.max(_sz.x, _sz.y, _sz.z) > 400) break
+    best = r(_box); o = o.parent
+  }
+  return best
+}
+
 function DofFocusPicker() {
   const picking = useCartographStore(s => s.dofPicking)
   const { gl, camera, scene } = useThree()
@@ -746,6 +772,7 @@ function DofFocusPicker() {
       useCartographStore.getState().setDofFocus({
         point: hit.point.toArray().map(v => +v.toFixed(2)),
         label: placeNameAt(hit.point.x, hit.point.z),
+        box: heroBoxOf(hit),
       })
     }
     el.style.cursor = 'crosshair'

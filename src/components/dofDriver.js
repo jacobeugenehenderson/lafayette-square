@@ -43,7 +43,24 @@ let _warnedNoFocus = false
  *                    ⛔ Never a hero subject (BRIEF-camera-regimes).
  */
 const _picked = new THREE.Vector3()
-export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint, pickedFocus }) {
+const _corner = new THREE.Vector3()
+/** The hero's box on screen, uv (x0, y0, x1, y1), or null when there is no box or it is behind the camera. */
+function heroRectOnScreen(box, camera) {
+  if (!Array.isArray(box) || box.length !== 6) return null
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+  for (let i = 0; i < 8; i++) {
+    _corner.set(box[i & 1 ? 3 : 0], box[i & 2 ? 4 : 1], box[i & 4 ? 5 : 2]).applyMatrix4(camera.matrixWorldInverse)
+    if (_corner.z > -camera.near) return [0, 0, 1, 1]                       // straddles the camera: take the screen
+    _corner.applyMatrix4(camera.projectionMatrix)
+    const u = _corner.x * 0.5 + 0.5, v = _corner.y * 0.5 + 0.5
+    x0 = Math.min(x0, u); y0 = Math.min(y0, v); x1 = Math.max(x1, u); y1 = Math.max(y1, v)
+  }
+  if (x1 < 0 || y1 < 0 || x0 > 1 || y0 > 1) return null                     // off screen
+  return [Math.max(0, x0), Math.max(0, y0), Math.min(1, x1), Math.min(1, y1)]
+}
+export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint, pickedFocus, heroBox }) {
+  _dofRefs.near.current = camera.near; _dofRefs.far.current = camera.far
+  _dofRefs.heroRect.current = heroRectOnScreen(heroBox, camera)
   // A picked focus (the Focus card's Pick) holds through the whole move; else the camera's aim.
   if (pickedFocus) focusPoint = _picked.fromArray(pickedFocus)
   const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)

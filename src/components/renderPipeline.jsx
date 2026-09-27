@@ -29,6 +29,7 @@ import { IS_MOBILE } from '../lib/isMobile.js'
 import { AO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { RomanceDoF } from './RomanceDoF.jsx'
 import { DownsamplePyramid } from './DownsamplePyramid.jsx'
+import { HeroLadder } from './HeroLadder.jsx'
 import { CustomBloom } from './CustomBloom.jsx'
 import {
   _gradeContrastRef, _gradeSatRef, _gradeVignetteRef, _gradeBrightnessRef,
@@ -228,6 +229,9 @@ export const POSTFX_PIPELINE = [
   // flipped it (DoF → bloom, ab3ddb11), and once bloom became a band-pass its fine bands pasted the sharp
   // scene back over the blur (Loupe, 2026-09-26: DoF 0.98 + Bloom = hard-edged plate). Costs one more
   // full-screen pass (bloom no longer merges with grade/grain).
+  // The hero alone, so DoF can take it back out of the shared blur (no halo of the sharp subject). Scissored to the
+  // hero's patch of the screen; after the shared pyramid (it reads its Karis weights), before bloom (same image).
+  { id: 'heroLadder', pass: HeroLadder, order: 21, platform: 'desktop', gate: (ctx) => ctx.dofOn },
   { id: 'bloom', pass: CustomBloom, channel: 'bloom', order: 25, platform: 'desktop', ref: 'bloom' },
   // DoF — single-focal romance DoF, after the pyramid (it samples it) and after bloom (see above).
   // Desktop only; mounts when any key's Blur is above 0.

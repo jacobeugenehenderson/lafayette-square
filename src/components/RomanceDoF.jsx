@@ -27,6 +27,37 @@ import { _pyramidRefs, PYRAMID_LEVELS } from './DownsamplePyramid.jsx'
 // scene's focal planes (park edge ~tens of m, Arch ~1250 m) are a tiny fraction
 // of the near:1/far:60000 frustum, so a normalized [0,1] depth has no precision
 // there. We work in real metres throughout.
+// The depth decode + the blur law, shared by this effect and the hero ladder (HeroLadder.jsx) so both judge focus the
+// same way. Needs uniforms uLogDepth, cameraNear, cameraFar, uFocusDist, uTanHalf, uUpView, uMaxBlur, uHeroBlur, uZone,
+// uRamp in scope.
+export const DOF_BLUR_GLSL = /* glsl */`
+  // Decode the framework 'depth' to a camera-space distance in metres.
+  // Under logarithmicDepthBuffer three.js writes gl_FragDepth = log2(1+w) / log2(far+1),
+  // where w = gl_Position.w ≈ camera distance. Invert it; else use the standard helper.
+  float depthToDistance(float d) {
+    if (uLogDepth > 0.5) {
+      return exp2(d * log2(cameraFar + 1.0)) - 1.0;
+    }
+    #ifdef PERSPECTIVE_CAMERA
+      return -perspectiveDepthToViewZ(d, cameraNear, cameraFar);
+    #else
+      return mix(cameraNear, cameraFar, d);
+    #endif
+  }
+
+  // Blur by RELATIVE distance from the focus, in front and behind, measured ALONG THE GROUND: a tilt-shift's tilted
+  // plane of focus. Height drops out, so a vertical subject (the monument) is one sharpness top to bottom — measured
+  // along the line of sight, a narrow window cut across the shaft in a visible line (Jacob, 2026-09-27).
+  float blurAmount(float dist, vec2 uv) {
+    vec3 p = vec3((uv * 2.0 - 1.0) * uTanHalf * dist, -dist);   // view space; dist is view depth
+    float ground = length(p - dot(p, uUpView) * uUpView);
+    float rel = abs(ground - uFocusDist) / max(uFocusDist, 1.0);
+    // Softness at focus never exceeds Blur: at Blur 0 the effect is OFF, and the plane is never softer than the
+    // field around it (it was — the picked subject blurred while the rest stayed sharp, 2026-09-27).
+    return mix(min(uHeroBlur, uMaxBlur), uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
+  }
+`
+
 const fragment = /* glsl */`
   #ifdef FRAMEBUFFER_PRECISION_HIGH
     uniform mediump sampler2D uLevel0;
@@ -69,31 +100,27 @@ const fragment = /* glsl */`
     return texture2D(uLevel7, uv).rgb;
   }
 
-  // Decode the framework 'depth' to a camera-space distance in metres.
-  // Under logarithmicDepthBuffer three.js writes gl_FragDepth = log2(1+w) / log2(far+1),
-  // where w = gl_Position.w ≈ camera distance. Invert it; else use the standard helper.
-  float depthToDistance(float d) {
-    if (uLogDepth > 0.5) {
-      return exp2(d * log2(cameraFar + 1.0)) - 1.0;
-    }
-    #ifdef PERSPECTIVE_CAMERA
-      return -perspectiveDepthToViewZ(d, cameraNear, cameraFar);
-    #else
-      return mix(cameraNear, cameraFar, d);
-    #endif
+  // The hero ladder's first HERO_LEVELS rungs (HeroLadder.jsx). Four: the day's Amounts reach no deeper, and a shader
+  // reads at most ~16 textures (8 shared rungs + these + the image + depth).
+  uniform sampler2D uHero0; uniform sampler2D uHero1; uniform sampler2D uHero2; uniform sampler2D uHero3;
+  uniform float uHeroOn;       // 1 when the hero ladder was built this frame (HeroLadder.jsx)
+  vec4 heroLevel(int idx, vec2 uv) {
+    if (idx <= 0) return texture2D(uHero0, uv);
+    if (idx == 1) return texture2D(uHero1, uv);
+    if (idx == 2) return texture2D(uHero2, uv);
+    if (idx == 3) return texture2D(uHero3, uv);
+    return vec4(0.0);   // past the hero ladder: the hero's share is spread too thin to see
   }
-
-  // Blur by RELATIVE distance from the focus, in front and behind, measured ALONG THE GROUND: a tilt-shift's tilted
-  // plane of focus. Height drops out, so a vertical subject (the monument) is one sharpness top to bottom — measured
-  // along the line of sight, a narrow window cut across the shaft in a visible line (Jacob, 2026-09-27).
-  float blurAmount(float dist, vec2 uv) {
-    vec3 p = vec3((uv * 2.0 - 1.0) * uTanHalf * dist, -dist);   // view space; dist is view depth
-    float ground = length(p - dot(p, uUpView) * uUpView);
-    float rel = abs(ground - uFocusDist) / max(uFocusDist, 1.0);
-    // Softness at focus never exceeds Blur: at Blur 0 the effect is OFF, and the plane is never softer than the
-    // field around it (it was — the picked subject blurred while the rest stayed sharp, 2026-09-27).
-    return mix(min(uHeroBlur, uMaxBlur), uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
+  // A rung WITHOUT the hero: the shared blur minus the hero's share, over the coverage left — the background alone,
+  // so the sharp hero never smears into the blur beside it.
+  vec3 backgroundLevel(int idx, vec2 uv) {
+    vec3 s = sampleLevel(idx, uv);
+    if (uHeroOn < 0.5) return s;
+    vec4 h = heroLevel(idx, uv);
+    if (h.a < 0.001 || h.a > 0.98) return s;
+    return max((s - h.rgb) / (1.0 - h.a), vec3(0.0));
   }
+  ${DOF_BLUR_GLSL}
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
     float dist = depthToDistance(depth);
@@ -120,14 +147,19 @@ const fragment = /* glsl */`
     float loF = floor(lod);
     int   lo  = int(loF);
     float f   = lod - loF;
-    vec3 a = (lo <= 0) ? inputColor.rgb : sampleLevel(lo - 1, uv);  // nearer rung
-    vec3 b = sampleLevel(lo, uv);                                    // farther rung (level lo)
+    vec3 a = (lo <= 0) ? inputColor.rgb : backgroundLevel(lo - 1, uv);  // nearer rung
+    vec3 b = backgroundLevel(lo, uv);                                    // farther rung (level lo)
     outputColor = vec4(mix(a, b, f), inputColor.a);
   }
 `
 
 // Module-level refs the per-frame driver (dofDriver.js) writes — same pattern as the other PostProcessing effects.
+export const HERO_LEVELS = 4
+export const _heroLadderRefs = { levels: { current: [] }, on: { current: false } }
 export const _dofRefs = {
+  near:       { current: 1 },
+  far:        { current: 60000 },
+  heroRect:   { current: null },   // the hero's box on screen (uv x0,y0,x1,y1), or null
   focusDist:  { current: 1000 },
   tanHalf:    { current: new THREE.Vector2(0.2, 0.2) },
   upView:     { current: new THREE.Vector3(0, 1, 0) },
@@ -162,6 +194,8 @@ class RomanceDoFEffect extends Effect {
         ['uRamp',       new THREE.Uniform(0.5)],
         ['uLogDepth',   new THREE.Uniform(0)],
         ['uDebug',      new THREE.Uniform(0)],
+        ['uHeroOn',     new THREE.Uniform(0)],
+        ...[0, 1, 2, 3].map(i => ['uHero' + i, new THREE.Uniform(null)]),
       ]),
     })
   }
@@ -174,6 +208,10 @@ class RomanceDoFEffect extends Effect {
     for (let i = 0; i < 8; i++) {
       u.get('uLevel' + i).value = levels[i] ?? levels[levels.length - 1] ?? null
     }
+    const hero = _heroLadderRefs.levels.current
+    const heroOn = _heroLadderRefs.on.current && hero.length > 0
+    u.get('uHeroOn').value = heroOn ? 1 : 0
+    for (let i = 0; i < HERO_LEVELS; i++) u.get('uHero' + i).value = (heroOn ? hero[i] : null) ?? levels[i] ?? levels[levels.length - 1] ?? null
     u.get('uFocusDist').value  = _dofRefs.focusDist.current
     u.get('uTanHalf').value.copy(_dofRefs.tanHalf.current)
     u.get('uUpView').value.copy(_dofRefs.upView.current)

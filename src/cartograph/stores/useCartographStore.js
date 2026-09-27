@@ -440,7 +440,9 @@ const DESIGN_FIELDS = [
   // through the whole camera move (Jacob, 2026-09-27: the aim point slides with the move). A PLACE in this town's
   // frame, so serve.js strips it when a Look is seeded for another town. null = focus on what the camera aims at.
   { key: 'dofFocus',      hydrate: (d) => (Array.isArray(d.dofFocus?.point) && d.dofFocus.point.length === 3 && d.dofFocus.point.every(Number.isFinite))
-      ? { point: d.dofFocus.point.slice(), label: String(d.dofFocus.label || 'picked point') } : null },
+      ? { point: d.dofFocus.point.slice(), label: String(d.dofFocus.label || 'picked point'),
+          ...(Array.isArray(d.dofFocus.box) && d.dofFocus.box.length === 6 && d.dofFocus.box.every(Number.isFinite) ? { box: d.dofFocus.box.slice() } : {}) }
+      : null },
   { key: 'heroKeyframes', hydrate: (d) => Array.isArray(d.heroKeyframes) ? d.heroKeyframes : [...HERO_KEYFRAMES_DEFAULT] },
   { key: 'heroMotion',    hydrate: (d) => {
     // ⛔ A pre-timeline motion ({ period, easing }) is not merged onto the default:
