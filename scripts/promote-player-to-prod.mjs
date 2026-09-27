@@ -48,10 +48,26 @@ const typeOf = (rel) => MIME[(rel.split('.').pop() || '').toLowerCase()] || 'app
 const cacheOf = (rel) => /^assets\/[^/]+-[A-Za-z0-9_-]{8,}\./.test(rel) ? 'public, max-age=31536000, immutable'
   : rel.endsWith('.html') ? 'no-cache' : 'public, max-age=3600'
 
+// Connections to the asset host are refused, reset or time out intermittently (measured 2026-09-27, from a plain
+// shell: one in several runs died on its first GET). Those, and only those, are retried. An HTTP status is an answer
+// and is never retried; nor is a byte mismatch (checked by the caller).
+const TRANSIENT = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_SOCKET'])
+const TRIES = 5
+
 async function getBytes(key) {
-  const r = await fetch(PUBLIC_BASE + key, { cache: 'no-store' })
-  if (!r.ok) throw new Error(`${key} → ${r.status}`)
-  return Buffer.from(await r.arrayBuffer())
+  for (let i = 1; ; i++) {
+    let r
+    try {
+      r = await fetch(PUBLIC_BASE + key, { cache: 'no-store' })
+      if (!r.ok) throw new Error(`${key} → HTTP ${r.status}`)
+      return Buffer.from(await r.arrayBuffer())
+    } catch (e) {
+      const code = e.cause?.code
+      if (r?.ok === false || !TRANSIENT.has(code)) throw e
+      if (i === TRIES) throw new Error(`${PUBLIC_BASE + key}: ${code} on all ${TRIES} tries — the asset host would not connect`)
+      await new Promise((ok) => setTimeout(ok, 500 * 2 ** (i - 1)))
+    }
+  }
 }
 
 function putBytes(key, buf, rel) {
@@ -131,4 +147,4 @@ async function put(key, buf, rel) {
   await put(`${dest}build.json`, stampBuf, 'build.json')
   console.log(`\n✅ player ${stamp.builtAt} pinned for ${map}`)
   console.log(JSON.stringify({ ok: true, map, look, builtAt: stamp.builtAt, copied: pending.length }))
-})().catch((e) => { console.error('\n⛔ promote-player FAILED:', e.message); process.exit(1) })
+})().catch((e) => { console.error('\n⛔ promote-player FAILED:', e.message, e.cause?.code ? `(${e.cause.code})` : ''); process.exit(1) })
