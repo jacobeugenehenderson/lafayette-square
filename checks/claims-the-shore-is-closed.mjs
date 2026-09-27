@@ -43,6 +43,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { isWaterGroupId } from '../src/components/waterMaterial.js'
 import { makeElevationSampler, DEFAULT_V_EXAG } from '../src/lib/terrainCommon.js'
+import { waterLevels } from '../cartograph/waterLevel.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const BAKED = join(ROOT, 'public/baked')
@@ -146,6 +147,14 @@ for (const dir of dirs) {
   // water is where the flat plane meets any other plane"), so the waterline rule names it `rock` instead of proud.
   // ⛔ A bed record with no `rock` is a terrain baked before the stamp: its rock (if any) is scored as proud, loudly.
   const onRock = cellsTouch(tj.bed?.rock?.runs)
+  // ⭐ WHERE THE WATER STANDS (cartograph/waterLevel.mjs): the sheet is the baked mesh raised to the town's level there,
+  // at the town's exag (as the shader stands it). Walked at HIGH and at LOW. ⛔ A slab with water and a terrain with no
+  // levels FAILS: its water stands at the survey flight's level, which no one chose.
+  let levels
+  try { levels = waterLevels(tj.water) } catch (e) {
+    console.error(`⛔ ${look}: ${e.message}`); fail++; continue
+  }
+  const TIDES = [['HIGH', 1], ['LOW', 0]]
   const st = m.stencil
   // Every point of the mapped shore (the water groups' boundary, off the disc rim), and the distance to the nearest.
   const shorePts = []
@@ -174,9 +183,18 @@ for (const dir of dirs) {
   let depthLine = ''
   const len = { rim: 0, closed: 0, awash: 0, open: 0 }, by = {}, opens = [], proud = { len: 0, first: null, by: {} }
   let rockM = 0
+  // At HIGH the mapped shore is the waterline, so where the land just across it lies BELOW the sheet by more than the
+  // datum's own uncertainty, the sheet's edge stands in the air over it. Named and counted.
+  const floatTol = (levels.uncertaintyM ?? 0) * exag
+  // …except where the high-water flood (bake-terrain `water.flood`) carries the sheet on up the beach: there it is covered.
+  const floodPolys = (tj.water?.flood?.polygons || []).map(p => ({ p, bb: p.outer.reduce((b, q) => [Math.min(b[0], q[0]), Math.min(b[1], q[1]), Math.max(b[2], q[0]), Math.max(b[3], q[1])], [Infinity, Infinity, -Infinity, -Infinity]) }))
+  const inRing = (r, x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > z) !== (r[j][1] > z) && x < (r[j][0] - r[i][0]) * (z - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c; return c }
+  const inFlood = (x, z) => floodPolys.some(({ p, bb }) => x >= bb[0] && x <= bb[2] && z >= bb[1] && z <= bb[3] && inRing(p.outer, x, z) && !p.holes.some(h => inRing(h, x, z)))
+  const floats = { len: 0, max: 0, first: null }
   for (const g of water) {
     const [P, I] = view(g)
     const WY = P[1]
+    const sheet = (x, z, phase) => WY + levels.levelAt(x, z, phase) * exag
     const edges = new Map()
     for (let t = 0; t < I.length; t += 3) for (let e = 0; e < 3; e++) {
       const a = I[t + e], b = I[t + (e + 1) % 3], key = a < b ? a + '_' + b : b + '_' + a
@@ -201,12 +219,16 @@ for (const dir of dirs) {
         const REACH = Math.SQRT2 * STEP, dx = x - nx * REACH, dz = z - nz * REACH
         const deep = nearest(dx, dz) >= REACH - 1e-6 && inWater(dx, dz) ? groundAt(dx, dz) : null
         // the draped triangle takes its height from its vertices, so it is the rock's if the sample or any vertex is
-        if (deep && deep.y > WY + 1e-6 && (onRock(dx, dz) || deep.v.some(q => onRock(q[0], q[1])))) rockM += seg
-        else if (deep && deep.y > WY + 1e-6) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - WY, id: deep.id } }
+        // The waterline rule is HIGH's: at LOW, flats standing out of the drawn water are the tide, not a defect.
+        const hi = sheet(dx, dz, 1)
+        if (deep && deep.y > hi + 1e-6 && (onRock(dx, dz) || deep.v.some(q => onRock(q[0], q[1])))) rockM += seg
+        else if (deep && deep.y > hi + 1e-6) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - hi, id: deep.id } }
+        if (land && sheet(x, z, 1) - land.y > floatTol && !inFlood(x + nx * ACROSS, z + nz * ACROSS)) { const h = sheet(x, z, 1) - land.y; floats.len += seg; floats.max = Math.max(floats.max, h); floats.first ||= { x, z, h, id: land.id } }
+        // No bare space at EITHER level: with nothing drawn under the water, the land's edge must not stand above it.
         let gap
         if (!land) gap = Infinity                                  // the drawing ends at the water
         else if (bed) gap = 0                                      // one conformed mesh on both sides
-        else gap = land.y > WY ? land.y - WY : 0
+        else gap = Math.max(...TIDES.map(([, ph]) => Math.max(0, land.y - sheet(x, z, ph))))
         if (gap === 0) {
           if (bed) { len.closed += seg; by[bed.id] = (by[bed.id] || 0) + seg } else len.awash += seg
           continue
@@ -262,6 +284,8 @@ for (const dir of dirs) {
   const closedBy = Object.entries(by).sort((p, q) => q[1] - p[1]).map(([id, v]) => `${id} ${km(v)}`).join(' · ') || 'none'
   if (!len.open) {
     console.log(`  ok    ${look}  ${km(walked)} km of shore walked at ${STEP.toFixed(2)} m, none bare — closed by ${closedBy} km · awash ${km(len.awash)} km · rim ${km(len.rim)} km${rockM ? ` · the waterline meets kept rock along ${km(rockM)} km` : ''}${depthLine}`)
+    console.log(`        levels: high ${levels.highName} ${levels.range.high.map(v => v.toFixed(2)).join('…')} m · low ${levels.lowName} ${levels.range.low.map(v => v.toFixed(2)).join('…')} m (above the terrain's zero, ±${levels.uncertaintyM ?? '?'})`
+      + (floats.len ? ` · ⚠️ at HIGH the sheet's edge stands above the land along ${km(floats.len)} km (max ${floats.max.toFixed(2)} m, first at (${floats.first.x.toFixed(0)}, ${floats.first.z.toFixed(0)}) over ${floats.first.id})` : ' · at HIGH the sheet meets the land everywhere'))
     ok++
     continue
   }

@@ -104,6 +104,8 @@ let _sceneExag = await fetchSceneExag(_lookId)
 export function sceneExag() { return _sceneExag }
 /** The ACTIVE look's bed record (terrain.json `bed`: the profile and the visibility depth), or null. Re-points on reload. */
 export function terrainBed() { return _terrain.bed || null }
+/** The ACTIVE look's water levels record (terrain.json `water`: its low and high tide or lake level), or null. Re-points on reload. */
+export function terrainWater() { return _terrain.water || null }
 export let width  = _terrain.width
 export let height = _terrain.height
 export let bounds = _terrain.bounds

@@ -40,9 +40,11 @@ import { revetmentDrape, drapeGlobals } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
 import { revetmentFaces, revetmentResponseKind, toeFor } from '../lib/revetmentFromSlab.js'
 import { getElevationRaw } from '../utils/elevation'
-import { terrainBed } from '../utils/terrainShader'
+import { terrainBed, terrainWater } from '../utils/terrainShader'
+import { waterLevels, tidePhase } from '../../cartograph/waterLevel.mjs'
 
 let _saidNoBerm = false
+let _saidNoLevel = false
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 /** How far from the camera the DETAILED drape and the stones are built, metres.
@@ -126,7 +128,10 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // nothing — with the artifact loaded and every station correct. ⭐ It failed on the
   // CLEANUP path, so the first frame looked fine and the failure only appeared once
   // something remounted: a stone wall that is missing for no visible reason.
-  const { material } = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
+  const { material, uniforms: revU } = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
+  // ⭐ The wetted band stands at the LIVE level where the camera is (cartograph/waterLevel.mjs), so it moves with the tide.
+  const levels = useMemo(() => { try { return waterLevels(terrainWater()) } catch { return null } }, [doc])
+  useFrame(({ camera: cam }) => { if (levels) revU.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, tidePhase(Date.now())) })
   useEffect(() => () => material.dispose?.(), [material])
   useEffect(() => () => { palette?.forEach(g => g.dispose()) }, [palette])
 
@@ -139,9 +144,11 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
     // ⭐ The heap runs on below the water to rest on the bed, down to where the bottom stops showing.
     const floorM = terrainBed()?.visibleToM ?? 0
     return revetmentFaces(doc).filter(f => f.anyArmour).map(f => {
-      const toeAt = toeFor(f, getElevationRaw, floorM)
+      if (f.levelM == null && !_saidNoLevel) { _saidNoLevel = true; console.warn('[SlabRevetment] ⛔ this revetment.json predates the water levels — its heaps stand on the terrain\'s zero, not the town\'s high water. ▶ re-bake the revetment') }
+      const waterY = f.levelM ?? 0
+      const toeAt = toeFor(f, getElevationRaw, floorM, waterY)
       if (!f.toeBerm && !_saidNoBerm) { _saidNoBerm = true; console.warn('[SlabRevetment] ⛔ this revetment.json carries no material.toeBerm — the heaps have no toe berm. ▶ re-bake the revetment') }
-      f = { ...f, toeAt, berm: f.toeBerm, groundAt: getElevationRaw }
+      f = { ...f, toeAt, berm: f.toeBerm, groundAt: getElevationRaw, waterY }
       const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, toeAt, berm: f.berm, octaves: 3 })
       const per = Math.max(4, Math.round(CHUNK_M / G.step))
       const ranges = []
@@ -152,7 +159,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         const m = f.poly[Math.min(f.poly.length - 1, Math.round(((a + b) / 2 / (G.nAlong - 1)) * (f.poly.length - 1)))]
         return m || f.poly[0]
       })
-      const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, oversample: 10, paletteSize: palette.length, seed: doc.seed })
+      const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, oversample: 10, paletteSize: palette.length, seed: doc.seed })
       return { ...f, G, ranges, at, ctx, cache: new Map() }
     })
   }, [doc, palette])
@@ -182,7 +189,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       if (!f) continue
       try {
         const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCTAVES })
-        const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, octaves: FAR_OCTAVES, globals: G })
+        const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: FAR_OCTAVES, globals: G })
         if (d?.stats?.tris) made.push({ key: f.key, geometry: d.geometry })
       } catch (e) {
         // ⛔ Loud. A face that cannot build its far layer is a stretch of shore that
@@ -207,7 +214,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         if (Math.hypot(p.x - c.x, p.z - c.z) > NEAR_RADIUS_M) continue
         if (!f.cache.has(k)) {
           try {
-            f.cache.set(k, revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, octaves: 3, globals: f.G, stations: f.ranges[k] }))
+            f.cache.set(k, revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: 3, globals: f.G, stations: f.ranges[k] }))
           } catch (e) { console.error(`[revetment] drape chunk ${f.key}#${k} failed —`, e); continue }
         }
         const built = f.cache.get(k)

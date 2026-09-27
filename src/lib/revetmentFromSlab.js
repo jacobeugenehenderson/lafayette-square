@@ -152,6 +152,9 @@ export function revetmentFaces(doc) {
         ends,
         tanRepose,
         toeBerm: doc.material?.toeBerm ?? null,
+        // The high water its crests are measured from (bake-revetment `levelM`); null on an artifact from before the
+        // levels, whose crests are above the terrain's zero.
+        levelM: Number.isFinite(arc.levelM) ? arc.levelM : null,
         lengthM: total,
         armouredM: arc.armouredM ?? 0,
         anyArmour: st.some(s => s.armour),

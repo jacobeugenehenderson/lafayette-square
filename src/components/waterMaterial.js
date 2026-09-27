@@ -348,6 +348,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uHorizonOut:    { value: 0 },
     // The drawing's own rim fade (ground.json stencil.fade): past it the bed is past the drawing, so it reads as deep.
     uRimIn:         { value: 0 },
+    // ⭐ The tide's phase (cartograph/waterLevel.mjs tidePhase): 0 = the town's low level, 1 = its high. Each vertex
+    // carries both (aLevelLow / aLevelHigh); the sheet stands between them, and depth is measured from it.
+    uPhase:         { value: 1 },
     uRimOut:        { value: 0 },
     // uDisturbAmp 0 removes the term entirely (the multiply below), so one
     // compiled program serves both cases and the cache key stays single.
@@ -389,12 +392,19 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
       `#include <common>
-       varying vec3 vWaterWorld;`
+       attribute float aLevelLow;
+       attribute float aLevelHigh;
+       uniform float uPhase;
+       varying vec3 vWaterWorld;
+       varying float vLevel;
+       ${terrain ? 'uniform float uExag;' : 'const float uExag = 1.0;'}`
     )
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `#include <begin_vertex>
-       vWaterWorld = (modelMatrix * vec4(position, 1.0)).xyz;`
+       vLevel = mix(aLevelLow, aLevelHigh, uPhase);
+       transformed.y += vLevel * uExag;           // the ground is draped at terrain × exag, so the level is too
+       vWaterWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`
     )
 
     // Fragment: animated ripples + refraction distortion + depth darkening
@@ -424,7 +434,8 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform float uHorizonIn;
        uniform float uHorizonOut;
        uniform float uRimIn;
-       uniform float uRimOut;${terrain ? terrain.decl : ''}
+       uniform float uRimOut;
+       varying float vLevel;${terrain ? terrain.decl : ''}
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
        uniform float uGustDriftMps;
@@ -656,7 +667,8 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // met the grid's east edge the sand stopped on a straight line (Loam, 2026-09-27, provincetown near High Head).
          vec2 wUV = vec2((vWaterWorld.x - uBMinX) / uSpanX, (vWaterWorld.z - uBMinZ) / uSpanZ);
          float wPast = uRimOut > uRimIn ? smoothstep(uRimIn, uRimOut, length(vWaterWorld.xz - uHorizonC)) : 0.0;
-         float wDepth = mix(max(0.0, -texture2D(uTerrainMap, _terrainUV(wUV)).r), uVisibleM, wPast);
+         // Depth is measured from the water's level, not from the terrain's zero (the survey flight's level).
+         float wDepth = mix(max(0.0, vLevel - texture2D(uTerrainMap, _terrainUV(wUV)).r), uVisibleM, wPast);
          float wSeen = 1.0 - smoothstep(uVisibleM - uFadeM, uVisibleM, wDepth);   // 1 = the bottom shows
          diffuseColor.a = mix(1.0, diffuseColor.a * clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
        }

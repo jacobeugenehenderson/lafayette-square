@@ -46,6 +46,8 @@ import { deriveFade } from './boundaryRecords.mjs'
 import { coastRings } from './coastline.mjs'
 import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './terrainReads.mjs'
 import { stoneStructures } from './structures.mjs'
+import { waterLevels as levelsOf } from './waterLevel.mjs'
+import clipperLib from 'clipper-lib'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -463,6 +465,97 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
            seam: { samples: diffs.length, medianM: q(diffs, 0.5), p90AbsM: q(absd, 0.9) } }
 }
 
+// ⭐ THE WATER AT HIGH FLOODS UP THE BEACH (Jacob, 2026-09-27). The drawn water's edge sits near the survey day's
+// waterline, not at the high level: measured on provincetown, the land just outside it lay BELOW high water along
+// 45 of 51 km, so a sheet ending at the drawing would hang in the air over the beach. The water at HIGH is the drawn
+// water plus the ground below the high level CONNECTED to it — a 4-way flood fill from the water, so a hollow or a diked
+// marsh stays dry — plus one ring of dry cells, so the sheet's own edge lies under the ground and the edge you see is
+// where the level meets it. Returned as rings (local metres) MINUS the drawn water (map.json layers.water), so the two
+// sheets meet and never overlap. Lower tides need nothing: the ground hides the sheet wherever it stands above the level.
+function floodExtent(normalized, mask, width, height, bounds, water) {
+  const L = levelsOf(water)
+  const sx = (bounds.maxX - bounds.minX) / (width - 1), sz = (bounds.maxZ - bounds.minZ) / (height - 1)
+  const X = i => bounds.minX + i * sx, Z = j => bounds.minZ + j * sz
+  const state = new Uint8Array(width * height)          // 1 = drawn water, 2 = flooded, 3 = the dry ring, 4 = a held line
+  // ⛔ A MAPPED DIKE HOLDS THE WATER. The heightfield is 5 m: a dike narrower than ~2 cells reads as a gap and a
+  // 4-way fill walks through it into the marsh it keeps dry (Loam, 2026-09-27). Every mapped line that holds water —
+  // man_made=dyke, embankment=yes, waterway=dam — is drawn into the grid (half-cell steps: an 8-connected line, which a
+  // 4-way fill cannot cross) as cells the flood may not enter.
+  let held = 0
+  for (const bucket of Object.values(JSON.parse(fs.readFileSync(OSM_PATH, 'utf8')).ground || {})) {
+    if (!Array.isArray(bucket)) continue
+    for (const f of bucket) {
+      const t = f?.tags || {}
+      if (!(t.man_made === 'dyke' || t.embankment === 'yes' || t.waterway === 'dam')) continue
+      const c = (f.coords || []).filter(q => Number.isFinite(q.x) && Number.isFinite(q.z))
+      for (let n = 1; n < c.length; n++) {
+        const L = Math.hypot(c[n].x - c[n - 1].x, c[n].z - c[n - 1].z), steps = Math.max(1, Math.ceil(L / (Math.min(sx, sz) / 2)))
+        for (let u = 0; u <= steps; u++) {
+          const i = Math.round((c[n - 1].x + (c[n].x - c[n - 1].x) * u / steps - bounds.minX) / sx), j = Math.round((c[n - 1].z + (c[n].z - c[n - 1].z) * u / steps - bounds.minZ) / sz)
+          if (i >= 0 && j >= 0 && i < width && j < height && !mask[j * width + i] && state[j * width + i] !== 4) { state[j * width + i] = 4; held++ }
+        }
+      }
+    }
+  }
+  const queue = new Int32Array(width * height); let qh = 0, qt = 0
+  for (let k = 0; k < width * height; k++) if (mask[k]) { state[k] = 1; queue[qt++] = k }
+  let flooded = 0
+  while (qh < qt) {
+    const k = queue[qh++], i = k % width, j = (k - i) / width
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const ii = i + di, jj = j + dj
+      if (ii < 0 || jj < 0 || ii >= width || jj >= height) continue
+      const n = jj * width + ii
+      if (state[n] || !(normalized[n] < L.highAt(X(ii), Z(jj)))) continue
+      state[n] = 2; flooded++; queue[qt++] = n
+    }
+  }
+  // The dry ring goes round ALL the water, drawn and flooded: a cell is judged at its centre, so up to a cell beyond the
+  // drawn edge the draped ground can dip below the level while its cell stands above it (measured: 24 km of
+  // provincetown's shore with the ring round the flood alone).
+  let ring = 0
+  for (let k = 0; k < width * height; k++) {
+    if (state[k] !== 1 && state[k] !== 2) continue
+    const i = k % width, j = (k - i) / width
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const ii = i + di, jj = j + dj
+      if (ii < 0 || jj < 0 || ii >= width || jj >= height) continue
+      const n = jj * width + ii
+      if (!state[n]) { state[n] = 3; ring++ }
+    }
+  }
+  // Each row's runs of drawn + flooded + ring cells as rectangles (a cell spans ±half a step around its sample), unioned, then
+  // the drawn water cut out of them.
+  const S = 100, C = clipperLib, P = (x, z) => ({ X: Math.round(x * S), Y: Math.round(z * S) })
+  const cells = []
+  for (let j = 0; j < height; j++) {
+    let i0 = -1
+    for (let i = 0; i <= width; i++) {
+      const on = i < width && state[j * width + i] >= 1 && state[j * width + i] <= 3
+      if (on && i0 < 0) i0 = i
+      else if (!on && i0 >= 0) {
+        const x0 = X(i0) - sx / 2, x1 = X(i - 1) + sx / 2, z0 = Z(j) - sz / 2, z1 = Z(j) + sz / 2
+        cells.push([P(x0, z0), P(x1, z0), P(x1, z1), P(x0, z1)]); i0 = -1
+      }
+    }
+  }
+  const mapPath = join(CLEAN_DIR, 'map.json')
+  if (!fs.existsSync(mapPath)) throw new Error(`⛔ the high-water flood: ${mapPath} is missing — the drawn water it meets cannot be read. Pour the town first.`)
+  const drawn = (JSON.parse(fs.readFileSync(mapPath, 'utf8')).layers?.water || [])
+    .filter(w => Array.isArray(w?.ring) && w.ring.length >= 3).map(w => w.ring.map(p => P(p.x ?? p[0], p.z ?? p[1])))
+  const cp = new C.Clipper()
+  cp.AddPaths(cells, C.PolyType.ptSubject, true)
+  const union = new C.Paths(); cp.Execute(C.ClipType.ctUnion, union, C.PolyFillType.pftNonZero, C.PolyFillType.pftNonZero)
+  const cd = new C.Clipper()
+  cd.AddPaths(union, C.PolyType.ptSubject, true); cd.AddPaths(drawn, C.PolyType.ptClip, true)
+  const tree = new C.PolyTree(); cd.Execute(C.ClipType.ctDifference, tree, C.PolyFillType.pftNonZero, C.PolyFillType.pftNonZero)
+  const out = [], xy = path => path.map(p => [+(p.X / S).toFixed(2), +(p.Y / S).toFixed(2)])
+  const walk = (node) => { for (const ch of node.Childs()) { out.push({ outer: xy(ch.Contour()), holes: ch.Childs().map(h => xy(h.Contour())) }); for (const h of ch.Childs()) walk(h) } }
+  walk(tree)
+  const ha = sx * sz / 1e4
+  return { at: water.high, floodedHa: +(flooded * ha).toFixed(1), ringHa: +(ring * ha).toFixed(1), heldCells: held, polygons: out }
+}
+
 function writeBed(normalized, mask, width, height, bounds, floor = null) {
   const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
   const auth = waterAuthoring()
@@ -796,6 +889,7 @@ async function main() {
   const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor) : null
 
   const water = wd ? waterLevels(baseElev, waterAuthoring()) : null
+  if (water) water.flood = floodExtent(normalized, wd.mask, width, height, bounds, water)
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
                  datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(water ? { water } : {}) }
   fs.mkdirSync(_outArg || CLEAN_DIR, { recursive: true })
@@ -821,6 +915,7 @@ async function main() {
     console.log(`    ⛔ y = 0 is now the WATER, not the lowest ground: ground below it is NEGATIVE, by design.`)
     const rng = n => { const a = water.datums[n]; return `${Math.min(...a).toFixed(2)}…${Math.max(...a).toFixed(2)}` }
     console.log(`  LEVELS (m above y = 0): ${water.tidal ? 'tidal' : 'lake'} · low ${water.low} ${rng(water.low)} (${water.lowFrom}) · high ${water.high} ${rng(water.high)} (${water.highFrom})`)
+    console.log(`    FLOOD at ${water.flood.at}: ${water.flood.floodedHa} ha of ground below it joins the drawn water (+ a ${water.flood.ringHa} ha dry ring, under the ground) · ${water.flood.polygons.length} polygon(s) beyond the drawing's water · ${water.flood.heldCells} cell(s) held by mapped dikes`)
     console.log(`    ${water.source}${water.filledFromNeighbour ? ` · ${water.filledFromNeighbour} grid point(s) off the datum model took their nearest neighbour` : ''}`)
   } else {
     console.log(`  DATUM = the local minimum: ${baseElev.toFixed(2)} m (no coast — see waterDatum for why a pond does not qualify)`)

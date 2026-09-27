@@ -33,7 +33,8 @@ import { makeFadeGroundMaterial } from './fadeGroundMaterial.js'
 import { setGroundRules, setGroundRuleMap } from '../lib/groundRules.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
-import { terrainExag, patchTerrain, sceneExag } from '../utils/terrainShader'
+import { terrainExag, patchTerrain, sceneExag, terrainWater } from '../utils/terrainShader'
+import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -375,6 +376,14 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
       geom.setAttribute('uv',  new THREE.BufferAttribute(uv, 2))
       geom.setAttribute('uv2', new THREE.BufferAttribute(uv, 2))  // aoMap slot
       geom.setIndex(new THREE.BufferAttribute(idxUse, 1))
+      // ⭐ WHERE THE WATER STANDS (cartograph/waterLevel.mjs): each vertex carries the town's low and high level there;
+      // the shader stands the sheet between them at the tide's phase. The mesh itself stays where it was baked.
+      if (g.kind !== 'face' && isWaterGroupId(g.id)) {
+        const L = waterLevelsOrSay(), lo = new Float32Array(nV), hi = new Float32Array(nV)
+        if (L) for (let i = 0; i < nV; i++) { lo[i] = L.lowAt(posUse[i * 3], posUse[i * 3 + 2]); hi[i] = L.highAt(posUse[i * 3], posUse[i * 3 + 2]) }
+        geom.setAttribute('aLevelLow', new THREE.BufferAttribute(lo, 1))
+        geom.setAttribute('aLevelHigh', new THREE.BufferAttribute(hi, 1))
+      }
       // ⭐ A `perField` group (the crop) carries a field index per vertex (third bin section) and
       // each field's axis in the manifest: expanded here into the two attributes its shader reads.
       // `aFieldAxis` = (cos, sin of the row bearing, field centre x, z) · `aFieldExt` = (half-length
@@ -400,8 +409,38 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
     })
   }, [manifest, bin])
 
+  // ⭐ THE WATER AT HIGH FLOODS UP THE BEACH (bake-terrain `water.flood`): the ground below the high level connected to
+  // the drawn water, drawn as more of the same sheet beside the body that reaches the rim. Its polygons exclude the drawn
+  // water, so the two never overlap; below HIGH the ground simply hides it.
+  const flood = useMemo(() => {
+    const body = meshes.find(m => m.bodyExtent && isWaterGroupId(m.group.id))
+    const polys = terrainWater()?.flood?.polygons
+    if (!body || !polys?.length) return null
+    const Y = body.geometry.attributes.position.array[1], L = waterLevelsOrSay()
+    const pos = [], idx = []
+    for (const p of polys) {
+      const v0 = pos.length / 3, all = [p.outer, ...p.holes]
+      const tris = THREE.ShapeUtils.triangulateShape(p.outer.map(q => new THREE.Vector2(q[0], q[1])), p.holes.map(h => h.map(q => new THREE.Vector2(q[0], q[1]))))
+      for (const r of all) for (const q of r) pos.push(q[0], Y, q[1])
+      for (const t of tris) idx.push(v0 + t[0], v0 + t[1], v0 + t[2])
+    }
+    const g = new THREE.BufferGeometry(), n = pos.length / 3, lo = new Float32Array(n), hi = new Float32Array(n)
+    if (L) for (let i = 0; i < n; i++) { lo[i] = L.lowAt(pos[i * 3], pos[i * 3 + 2]); hi[i] = L.highAt(pos[i * 3], pos[i * 3 + 2]) }
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3))
+    g.setAttribute('aLevelLow', new THREE.BufferAttribute(lo, 1))
+    g.setAttribute('aLevelHigh', new THREE.BufferAttribute(hi, 1))
+    g.setIndex(idx)
+    g.computeVertexNormals()
+    return { geometry: g, body }
+  }, [meshes])
+  useEffect(() => () => flood?.geometry.dispose(), [flood])
+
   return (
     <group>
+      {flood && isGroupVisible(flood.body.group, layerVis) && (
+        <WaterSurface key="water:flood" geometry={flood.geometry} renderOrder={flood.body.group.renderOrder} extentDiag={flood.body.bodyExtent}
+          horizon={manifest.stencil ? waterHorizon(manifest.stencil) : null} />
+      )}
       {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry, bodyExtent }) => {
         const fade = fadeForGroup(group, stencil)
         const key = group.kind + ':' + group.id
@@ -663,6 +702,16 @@ function TerrainExagDriver({ target }) {
 // The water body's mesh, run on past the town's rim to the horizon's reach wherever the rim is water. 256 directions
 // around the rim: a direction whose rim point lies in the body's own triangles gets a sector from the rim out to the
 // horizon's fade (horizonFor), at the body's own level. Returns null when no direction is water.
+// The active town's water levels. ⛔ A terrain with no `water` record was baked before the levels existed: the water
+// stands at the terrain's zero (the survey flight's level, which no one chose), and that is SAID, once.
+let _saidNoLevels = false
+function waterLevelsOrSay() {
+  try { return waterLevels(terrainWater()) } catch (e) {
+    if (!_saidNoLevels) { _saidNoLevels = true; console.error(`[BakedGround] ⛔ ${e.message} — the water stands at the terrain's zero (the survey flight's level)`) }
+    return null
+  }
+}
+
 // The water past the rim: its haze fade (horizonFor) and the drawing's own rim fade. ⛔ A stencil with no fade band is
 // said once; its rim is then its radius — the drawing's edge, with no band to fade across.
 let _saidNoFade = false
