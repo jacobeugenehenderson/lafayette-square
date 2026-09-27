@@ -39,7 +39,7 @@ import { applyDofFrame } from './dofDriver.js'
 // them from the resolved channels, and the Effect's own update() pass (in
 // PostProcessing.jsx) reads them into uniforms — keeps the per-frame path
 // identical to the SC.1 sky/lighting consumer pattern.
-export const _fillToeRef         = { current: FILL_FLAT_DEFAULTS.value }
+export const _fillToeRef         = { current: 1 - FILL_FLAT_DEFAULTS.crush }
 export const _exposureRef        = { current: EXPOSURE_FLAT_DEFAULTS.value }
 export const _warmthRef          = { current: WARMTH_FLAT_DEFAULTS.value }
 export const _gradeContrastRef   = { current: GRADE_FLAT_DEFAULTS.contrast }
@@ -82,8 +82,7 @@ export function usePostFxDriver({
     _exposureRef.current = resolveGroupAtMinute(exposureChannel, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
       * weatherExposureScale(useSkyState.getState().storminess)
     _warmthRef.current   = resolveGroupAtMinute(warmthChannel,   minute, slotMins, ['value'], WARMTH_FLAT_DEFAULTS).value
-    const fillVal        = resolveGroupAtMinute(fillChannel,     minute, slotMins, ['value'], FILL_FLAT_DEFAULTS).value
-    _fillToeRef.current  = fillVal <= 1 ? fillVal * 0.28 : 0.28 + (fillVal - 1) * 0.72
+    _fillToeRef.current  = 1 - resolveGroupAtMinute(fillChannel, minute, slotMins, ['crush'], FILL_FLAT_DEFAULTS).crush
 
     // Halo strength + color → module refs consumed by AerialPerspective.update().
     const halo = resolveGroupAtMinute(haloChannel, minute, slotMins, HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS)

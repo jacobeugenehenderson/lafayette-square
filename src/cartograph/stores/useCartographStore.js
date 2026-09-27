@@ -54,7 +54,7 @@ import {
   ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS, migrateArchLight,
   LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
-  DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS, migrateDof,
+  DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS, migrateDof, migrateFill, migrateMist,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
@@ -122,7 +122,7 @@ function readActiveLookFromStorage() {
 // failure mode (a missing one just edits base — never an accidental shape fork).
 export const SHOT_LOOK_CHANNELS = new Set([
   'layerColors', 'luColors', 'lampGlow', 'bloom', 'warmth', 'fill', 'exposure',
-  'ao', 'mist', 'halo', 'skyGain', 'grade', 'grain', 'dof', 'shadow',
+  'ao', 'mist', 'halo', 'skyGain', 'stars', 'grade', 'grain', 'dof', 'shadow',
   'constellations', 'milkyWay', 'neon', 'sky', 'ambient', 'hemi', 'dirSun',
   'dirMoon', 'archLight', 'setPieceLight', 'lantern', 'clouds', 'canopy',
 ])
@@ -368,6 +368,9 @@ const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']
 
 const _isObj = (v) => v && typeof v === 'object'
 const _grp = (key, KEYS, DEFAULTS) => ({ key, hydrate: (d) => migrateGroupChannel(d[key], KEYS, DEFAULTS) })
+const SHOT_MIGRATIONS = { fill: migrateFill, mist: migrateMist, dof: migrateDof }
+const migrateShotLooks = (shotLooks) => Object.fromEntries(Object.entries(shotLooks).map(([shot, block]) => [shot,
+  _isObj(block) ? Object.fromEntries(Object.entries(block).map(([ch, v]) => [ch, SHOT_MIGRATIONS[ch] ? SHOT_MIGRATIONS[ch](v) : v])) : block]))
 
 const DESIGN_FIELDS = [
   { key: 'layerVis',     hydrate: (d) => d.layerVis || {} },
@@ -406,10 +409,11 @@ const DESIGN_FIELDS = [
   { key: 'lampGlow',     hydrate: (d) => migrateLampGlow(d.lampGlow) },
   _grp('bloom',          BLOOM_FIELD_KEYS,          BLOOM_FLAT_DEFAULTS),
   _grp('warmth',         WARMTH_FIELD_KEYS,         WARMTH_FLAT_DEFAULTS),
-  _grp('fill',           FILL_FIELD_KEYS,           FILL_FLAT_DEFAULTS),
+  // Shadow lift's 0–2 `value` → Shadow crush's `crush`, Mist's linear `density` → cubed `amount` (skyLightChannels).
+  { key: 'fill', hydrate: (d) => migrateGroupChannel(migrateFill(d.fill), FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS) },
   _grp('exposure',       EXPOSURE_FIELD_KEYS,       EXPOSURE_FLAT_DEFAULTS),
   _grp('ao',             AO_FIELD_KEYS,             AO_FLAT_DEFAULTS),
-  _grp('mist',           MIST_FIELD_KEYS,           MIST_FLAT_DEFAULTS),
+  { key: 'mist', hydrate: (d) => migrateGroupChannel(migrateMist(d.mist), MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS) },
   _grp('halo',           HALO_FIELD_KEYS,           HALO_FLAT_DEFAULTS),
   _grp('skyGain',        SKY_GAIN_FIELD_KEYS,       SKY_GAIN_FLAT_DEFAULTS),
   // stars had channel actions (a Stage control) but no field here, so its edits were never saved.
@@ -495,7 +499,8 @@ const DESIGN_FIELDS = [
   // (browse|street); each value is a full copy of the SHOT_LOOK_CHANNELS the
   // operator forked. Absent shot = follows base (the top-level channels). Sparse
   // → a Look with no forks serializes/bakes byte-identically to before.
-  { key: 'shotLooks', hydrate: (d) => _isObj(d.shotLooks) ? d.shotLooks : {} },
+  // A shot's fork holds whole channels, so a scale migration reaches it too, or the fork keeps the old key.
+  { key: 'shotLooks', hydrate: (d) => _isObj(d.shotLooks) ? migrateShotLooks(d.shotLooks) : {} },
   { key: 'openSections', hydrate: (d) => d.openSections || {} },
 ]
 
@@ -1654,9 +1659,10 @@ const useCartographStore = create((set, get) => ({
     })
     get()._saveDesignDebounced()
   },
-  // Clear every override; sky reverts to pure procedural-canon mosaic.
+  // Clear every override; sky reverts to pure procedural-canon mosaic — in the active shot too. (channelRevert
+  // would drop a Browse/Street fork instead, and the shot would then show Hero's overrides: not what ↺ says.)
   revertSky: () => {
-    set(s => channelRevert(s, 'sky', { overrides: [] }))
+    set(s => channelPatch(s, 'sky', { ...(activeChannel(s, 'sky') || {}), overrides: [] }))
     get()._saveDesignDebounced()
   },
 

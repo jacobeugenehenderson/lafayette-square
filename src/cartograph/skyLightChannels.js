@@ -94,14 +94,31 @@ export const WARMTH_FIELDS = [
 export const WARMTH_FLAT_DEFAULTS = { value: 0.5 }
 export const WARMTH_FIELD_KEYS = ['value']
 
-// Fill: shadow lift via FilmGrade's existing uToe. 0 = distinct (deep
-// shadows), 1 = physics as-is (today's uToe = 0.28), 2 = soft (lifted
-// shadows). Piecewise mapping to uToe inside the FilmGrade update.
+// Shadow crush (`fill` channel): how far FilmGrade's toe pulls the darks toward black. 0 = none (the image as
+// rendered), 1 = full (the darkest tones go to black); FilmGrade's `uToe` = 1 − crush. It only ever darkens, so it
+// was a crush control running backwards under the name "Shadow lift" (0–2, 2 = none). migrateFill converts.
 export const FILL_FIELDS = [
-  { key: 'value', label: 'Fill (distinct ↔ soft)', min: 0, max: 2, step: 0.05 },
+  { key: 'crush', label: 'Crush', min: 0, max: 1, step: 0.01 },
 ]
-export const FILL_FLAT_DEFAULTS = { value: 1.0 }
-export const FILL_FIELD_KEYS = ['value']
+export const FILL_FLAT_DEFAULTS = { crush: 0.72 }
+export const FILL_FIELD_KEYS = ['crush']
+/** A group channel with `fold` applied to every stored value object that `test` accepts (each key, or the flat one). */
+function foldValues(ch, test, fold) {
+  if (!ch || typeof ch !== 'object' || !ch.values || typeof ch.values !== 'object') return ch
+  const animated = ch.animated === 'tod'
+  const keys = animated ? Object.values(ch.values) : [ch.values]
+  if (!keys.some(v => v && typeof v === 'object' && test(v))) return ch
+  const f = (v) => (v && typeof v === 'object' && test(v) ? fold(v) : v)
+  return animated
+    ? { ...ch, values: Object.fromEntries(Object.entries(ch.values).map(([k, v]) => [k, f(v)])) }
+    : { ...ch, values: f(ch.values) }
+}
+/** Legacy Shadow lift `value` (0–2, piecewise onto uToe) → `crush` = 1 − that uToe, so every Look renders as it did. Idempotent. */
+export function migrateFill(ch) {
+  const toe = (v) => (v <= 1 ? v * 0.28 : 0.28 + (v - 1) * 0.72)
+  return foldValues(ch, v => 'value' in v && !('crush' in v),
+    ({ value, ...rest }) => ({ ...rest, crush: +(1 - toe(Number(value))).toFixed(3) }))
+}
 
 // Exposure: drives FilmGrade's existing uExposure uniform directly.
 // Default 0.95 matches the legacy envState.exposure so unauthored Looks
@@ -117,24 +134,30 @@ export const EXPOSURE_FIELD_KEYS = ['value']
 export const AO_FIELDS = [
   { key: 'radius',         label: 'Radius',           min: 1, max: 30, step: 0.5  },
   { key: 'intensity',      label: 'Intensity',        min: 0, max: 5,  step: 0.1  },
-  { key: 'distanceFalloff', label: 'Distance falloff', min: 0, max: 1,  step: 0.05 },
+  // Min 0.05, not 0: N8AO divides by it in the denoiser, and at 0 it also switches AO off (Intensity 0 is the off).
+  { key: 'distanceFalloff', label: 'Distance falloff', min: 0.05, max: 1,  step: 0.05 },
 ]
 export const AO_FLAT_DEFAULTS = { radius: 15, intensity: 2.5, distanceFalloff: 0.3 }
 export const AO_FIELD_KEYS = AO_FIELDS.map(f => f.key)
 
-// Mist (Sky & Light card) — colorable distance fog. Density slider is
-// normalized 0–1 for UX; runtime maps to FogExp2 density via × 0.005.
-// Default density 0.03 → 0.00015 actual, matches the previous hardcoded
-// FogExp2 baseline. Color is a literal hex (no auto/inherit yet);
-// previously fog color tracked horizonColor — small regression for
-// unauthored Looks, will revisit if operators miss it.
+// Mist (Horizon card) — colorable distance fog (FogExp2). Amount 0–1 is CUBED onto the fog density
+// (× MIST_DENSITY_SCALE per metre), so the slider spends its travel where fog is still see-through: linear, the
+// useful zone was the bottom 10–20% and 1 was a whiteout ~98% fog at 400 m (the top is unchanged). The old linear
+// `density` key is converted by migrateMist (amount = ∛density), so every Look renders as it did.
 export const MIST_FIELDS = [
-  { key: 'density', label: 'Density',           min: 0, max: 1, step: 0.01 },
-  { key: 'color',   label: 'Color', type: 'color' },
+  { key: 'amount', label: 'Amount', min: 0, max: 1, step: 0.01 },
+  { key: 'color',  label: 'Color', type: 'color' },
 ]
-export const MIST_FLAT_DEFAULTS = { density: 0.03, color: '#9dc5e0' }
+export const MIST_FLAT_DEFAULTS = { amount: 0.311, color: '#9dc5e0' }
 export const MIST_FIELD_KEYS = MIST_FIELDS.map(f => f.key)
 export const MIST_DENSITY_SCALE = 0.005
+/** FogExp2 density (1/m) for a Mist amount. The one mapping — every fog mount reads it. */
+export const mistFogDensity = (amount) => MIST_DENSITY_SCALE * Math.max(0, Number(amount) || 0) ** 3
+/** Legacy linear `density` → `amount` = ∛density (same fog). Idempotent. */
+export function migrateMist(ch) {
+  return foldValues(ch, v => 'density' in v && !('amount' in v),
+    ({ density, ...rest }) => ({ ...rest, amount: +Math.cbrt(Math.max(0, Number(density) || 0)).toFixed(3) }))
+}
 
 // Halo (Sky & Light card) — colorable horizon-band tint via the existing
 // AerialPerspective post effect. Strength default 0.12 matches the
@@ -176,10 +199,8 @@ export const SKY_GAIN_FIELDS = [
 export const SKY_GAIN_FLAT_DEFAULTS = { value: 1.0 }
 export const SKY_GAIN_FIELD_KEYS = ['value']
 
-// Constellations (Sky & Light, CELESTIAL group) — binary on/off; the
-// resolver lerps between slots so animator-driven fade still works.
-// Runtime also multiplies by nightFactor (no stars in daytime).
-// Mounted in Hero + Street (not Browse). Default off.
+// Constellations (Sky & Light, Night Sky) — on/off per time of day (the lerped value switches at 0.5).
+// Mounts the overlay in Hero + Street, never Browse, at any hour the key is on. Default off.
 export const CONSTELLATIONS_FIELDS = [
   { key: 'value', label: 'Render', type: 'toggle' },
 ]
@@ -380,10 +401,9 @@ export const BROWSE_HEADING_FIELD_KEYS = ['value']
 // (SC.2 follow-up) so the operator's grade authoring rounds-trips
 // through bake → scene.json into production. Defaults match the legacy
 // envState.grade* values verbatim, so unauthored Looks are unchanged.
-// `toe` is the literal FilmGrade uniform; the operator-facing Fill
-// channel (FILL_FIELDS) is a separate piecewise mapping that overrides
-// toe at apply time for the "distinct ↔ soft shadows" axis.
-// NB: `toe` is intentionally NOT a panel field — the Fill (Shadow lift) channel
+// `toe` is the literal FilmGrade uniform; the operator-facing Shadow crush
+// channel (FILL_FIELDS) overrides it at apply time (uToe = 1 − crush).
+// NB: `toe` is intentionally NOT a panel field — the Shadow crush (`fill`) channel
 // owns the FilmGrade `uToe` uniform and overrides it at apply time, so a Grade
 // Toe slider would be DEAD (does nothing). Kept in FLAT_DEFAULTS for data
 // back-compat + as a future explicit-override surface; not shown. (Phase A

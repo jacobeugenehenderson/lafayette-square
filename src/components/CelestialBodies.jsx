@@ -1379,18 +1379,22 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     }
   })
 
-  // Constellations: Hero + Street, never Browse. Gate by the operator's
-  // channel × nightFactor. Default channel value is 0, so unauthored
-  // Looks render no lines until the operator dials them up. Binary mount
-  // for v1; smooth opacity fade is a follow-up that needs propagating the
-  // value into PlanetariumOverlay's sub-materials.
+  // Constellations: the operator's toggle, per time of day, in Hero + Street — never Browse (Jacob, 2026-09-27).
+  // It had been read by nothing: the overlay showed in Street at every hour whatever the toggle said. No
+  // day/night gate of its own (2026-06-17: "all day long"); key it off by day if the Look wants that.
   const viewMode = useCamera((s) => s.viewMode)
-  // Constellations: ONLY in Street view (planetarium), ALL DAY LONG (Jacob
-  // 2026-06-17). Never in Hero or Browse; no day/night gate. Visibility is
-  // purely the camera mode. (The operator `constellations` channel still drives
-  // the overlay's per-TOD styling inside PlanetariumOverlay — it just no longer
-  // gates whether the overlay shows.)
-  const constellationsVisible = viewMode === 'planetarium'
+  const [constellationsOn, setConstellationsOn] = useState(false)
+  const constellationsOnRef = useRef(false)
+  useFrame(() => {
+    const tod = useTimeOfDay.getState()
+    const on = (resolveGroupAtMinute(
+      constellationsChannel, tod.getMinuteOfDay(),
+      constellationsChannel?.animated ? getTodSlotMinutes(tod.currentTime) : null,
+      CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
+    ).value ?? 0) > 0.5
+    if (on !== constellationsOnRef.current) { constellationsOnRef.current = on; setConstellationsOn(on) }
+  })
+  const constellationsVisible = constellationsOn && (viewMode === 'planetarium' || viewMode === 'hero')
 
   return (
     <>
@@ -1401,9 +1405,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       <points ref={starRef} geometry={starGeo} material={starMat} frustumCulled={false} />
       <points ref={noiseRef} geometry={noiseGeo} material={noiseMat} frustumCulled={false} />
       {constellationsVisible && (
-        // Isolated: PlanetariumOverlay was effectively never mounted in
-        // production (the `constellations` channel defaulted to 0), so an
-        // always-on mount in Street view must not be able to blank the whole
+        // Isolated: an overlay mount must not be able to blank the whole
         // sky/scene if it throws. The boundary logs `[R3F] PlanetariumOverlay
         // crashed <error>` to the console; Suspense covers any async label load.
         <R3FErrorBoundary name="PlanetariumOverlay">
@@ -1638,9 +1640,11 @@ function CelestialBodies({
   // PrimaryOrb / SecondaryOrb handle their own multipliers internally.
   const ambientRef = useRef()
   const hemiRef = useRef()
-  // Refs for the 3 night-fill floors (white · warm · hemisphere) so the
-  // operator's Ambient knob (ambientMulRef) reaches them too — they used to be
-  // hardcoded floors that ignored every knob (Jacob 2026-06-27, the un-zeroable night).
+  // Refs for the 3 night-fill floors (white · warm · hemisphere) so the operator's knobs reach them — they
+  // used to be hardcoded floors that ignored every knob (Jacob 2026-06-27, the un-zeroable night).
+  // ⭐ ONE KNOB PER LIGHT TYPE (2026-09-27): Fill light (ambientMulRef) scales the ambient lights, Sky fill
+  // (hemiMulRef) every hemisphere light. Fill light had also reached two of the three hemispheres, so the
+  // two knobs overlapped and neither did what its name said.
   const floorWhiteRef = useRef()
   const floorWarmRef  = useRef()
   const floorFillRef   = useRef()
@@ -1653,13 +1657,11 @@ function CelestialBodies({
   useFrame(() => {
     if (ambientRef.current) ambientRef.current.intensity = ambientBase * ambientMulRef.current
     if (hemiRef.current)    hemiRef.current.intensity    = hemiBase    * hemiMulRef.current
-    // Night-fill floors now ride the Ambient knob (× ambientMulRef): default (×1)
-    // = today's look; Ambient → 0 darkens night fully (stars / mood). Folds the
-    // old hardcoded floors into the operator's control — knob, not hardwire.
+    // Night-fill floors ride their type's knob: default (×1) = today's look; both → 0 darkens night fully.
     const aMul = ambientMulRef.current
     if (floorWhiteRef.current) floorWhiteRef.current.intensity = 0.45 * aMul
     if (floorWarmRef.current)  floorWarmRef.current.intensity  = 0.15 * lighting.nightFactor * aMul
-    if (floorFillRef.current)   floorFillRef.current.intensity   = (0.12 - lighting.nightFactor * 0.06) * HEMI_FOR_DIRECTIONAL * aMul
+    if (floorFillRef.current)   floorFillRef.current.intensity   = (0.12 - lighting.nightFactor * 0.06) * HEMI_FOR_DIRECTIONAL * hemiMulRef.current
   })
 
   if (debugLevel >= 3) return null
@@ -1722,7 +1724,7 @@ function CelestialBodies({
       {/* The stylistic fill rides AMBIENT with the other irradiance-only floors —
           it stopped being a body-shaped light when it became a hemisphere, and
           `dirMoon` now belongs to the actual moon. */}
-      {debugLevel < 1 && <SecondaryOrb {...lighting.secondary} intensityMulRef={ambientMulRef} />}
+      {debugLevel < 1 && <SecondaryOrb {...lighting.secondary} intensityMulRef={hemiMulRef} />}
       {/* ⭐⭐ THE NIGHT-FILL FLOOR — A HEMISPHERE, NOT A DIRECTIONAL, AND THE KIND
           OF LIGHT IS THE WHOLE POINT. This shipped as
           `<directionalLight position={[0, 100, -400]}>`: a fill light nailed due

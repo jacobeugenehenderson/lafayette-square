@@ -50,6 +50,7 @@ import {
   treeSwayUniforms,
 } from '../components/treeAtlasMaterial.js'
 import { CANARY_CAMERAS } from './canaryCamera.js'
+import { StageFog } from '../components/PostProcessing.jsx'
 import { useCanaryTree } from '../lib/canaryTree.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { deriveSkyScalars, directiveDarkness } from '../lib/sky-scalars.js'
@@ -467,16 +468,9 @@ function HeroTree({ lookId }) {
 }
 
 // ── Fog ───────────────────────────────────────────────────────────────
-// Reads the active Look's `mist` channel from scene.json and mounts
-// three.js exponential fog. Mist density=0 → no fog (today's default);
-// authored values surface in the canary the way they would in production.
+// The Look's `mist`, through production's own fog mount. This used to be a second copy with its own
+// mapping (× 0.001, a fifth of production's) that read the channel flat, so the first time-of-day
+// key made it undefined: the canary showed a different fog, then none.
 function CanaryFog({ lookId }) {
-  const scene = useSceneJson(lookId)
-  const mist  = scene?.mist?.values
-  if (!mist || !mist.density || mist.density <= 0) return null
-  // Mist density is authored 0-2 in the Conditions schema; map to an
-  // exponential fog density value with a gentle scale factor. 1.0 →
-  // visibility falls to ~50% at ~700m; 2.0 → ~350m. Tuned by eye.
-  const fogDensity = mist.density * 0.001
-  return <fogExp2 attach="fog" args={[mist.color || '#9dc5e0', fogDensity]} />
+  return <StageFog lookId={lookId} />
 }

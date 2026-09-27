@@ -12,13 +12,18 @@
 //      only when its own channel exists (`{archChannel ? …}`) is exempt: it is hidden where it can't draw.
 //   ② NO FLAT GATE ON A KEYFRAMED CHANNEL. The first edit in TodChannel turns a channel into keys, so a render
 //      file that reads `…?.values?.<field>` without branching on `animated` reads undefined after that edit.
-//   ③ NO TOGGLE FIELD IN A KEYFRAMED CHANNEL that the per-minute resolvers never read.
+//   ③ NO TOGGLE FIELD IN A KEYFRAMED CHANNEL that the per-minute resolvers never read — the resolver must be
+//      handed THAT channel (`resolveGroupAtMinute(<ch>Channel, …)`), not merely sit in a file that names it.
+//      (Constellations passed the looser form for months while nothing read it.)
 //   ④ A METRE SLIDER'S RANGE COMES FROM THE TOWN (Class D). A field or SliderRow in metres (`unit: 'm'`, a `m`
 //      suffix, or "(m)" in its label) may not have a numeric-literal max, unless it declares a scale no town
 //      changes (`scale: 'body'` an eye height, `scale: 'fixture'` a lamp's pool); `scale: 'town'` must derive
 //      (a human-sized quantity — an eye height — which no town changes).
+//   ⑤ EVERY LOOK CHANNEL ON A CARD FORKS PER SHOT. A card channel missing from the store's SHOT_LOOK_CHANNELS
+//      writes the base Look when edited in Browse or Street — the shot the operator is looking at doesn't change,
+//      Hero does (Stars, until 2026-09-27).
 // ⚠️ KNOWN BLIND SPOT in ①: a channel handed as a prop to a drawn component counts as live even if that component
-//    never reads it (Constellations reaches CelestialBodies and stops there). ① proves the route, not the read.
+//    never reads it. ① proves the route, not the read; ③ proves the read for a toggle.
 // ⭐ Everything is READ from source, never restated, so a new card, channel or mount is covered the day it lands.
 // ⭐ SELF-MUTATION, every run: each section is re-run on a mutated copy and must go red.
 //
@@ -230,7 +235,8 @@ function todToggles(fieldsText, panelTexts, renderTexts) {
     const ch = channelOf.get(exp); if (!ch) continue
     for (const it of items) {
       if (it.type !== 'toggle') continue
-      const readers = renderTexts.filter(([, t]) => /resolve(Group|Animated)AtMinute/.test(t) && new RegExp(`\\b${ch}\\b`).test(t) && new RegExp(`\\.${it.key}\\b`).test(t))
+      const handed = new RegExp(`resolve(Group|Animated)AtMinute\\(\\s*[\\w.?]*\\b${ch}(Channel|Override)?\\b`)
+      const readers = renderTexts.filter(([, t]) => handed.test(t) && new RegExp(`\\.${it.key}\\b`).test(t))
       if (!readers.length) failures.push(`${ch}.${it.key} is a keyframed toggle no per-minute resolver reads — it can't switch with the time of day`)
     }
   }
@@ -254,6 +260,16 @@ function metreRanges(fieldsText, stageText) {
     if (metres && (!scale || scale === 'town') && isLiteral(max)) failures.push(`SliderRow "${label}" is in metres with a fixed max ${max}`)
   }
   return failures
+}
+
+// ══ ⑤ ═══════════════════════════════════════════════════════════════════════
+const STORE = 'src/cartograph/stores/useCartographStore.js'
+function unforked(storeText, cardTexts) {
+  const set = storeText.match(/export const SHOT_LOOK_CHANNELS = new Set\(\[([\s\S]*?)\]\)/)
+  if (!set) return ['SHOT_LOOK_CHANNELS not found in the store — ⑤ cannot read it']
+  const forks = new Set([...set[1].matchAll(/'(\w+)'/g)].map(m => m[1]))
+  const cards = new Set(cardTexts.flatMap(t => [...t.matchAll(/<StoreChannel\s+name="(\w+)"/g)].map(m => m[1])))
+  return [...cards].filter(c => !forks.has(c)).map(c => `${c} is on a Stage card but not in SHOT_LOOK_CHANNELS — editing it in Browse or Street writes the base Look`)
 }
 
 // ── run ─────────────────────────────────────────────────────────────────────
@@ -295,6 +311,9 @@ console.log('③ NO KEYFRAMED TOGGLE THE RESOLVERS NEVER READ')
   f.length ? f.forEach(bad) : ok('every keyframed toggle is read per minute')
   const mut = todToggles(texts.fields.replace(/export const BLOOM_FIELDS = \[/, "export const BLOOM_FIELDS = [\n  { key: 'zzzOff', label: 'x', type: 'toggle' },"), [texts.sky, texts.post, texts.surfaces], renders)
   mut.some(x => /zzzOff/.test(x)) ? ok('mutation (an unread bloom toggle) is caught') : bad('mutation NOT caught — ③ is blind')
+  const unread = todToggles(texts.fields, [texts.sky, texts.post, texts.surfaces],
+    renders.map(([p, t]) => [p, t.replace(/resolveGroupAtMinute\(\s*constellationsChannel/g, 'resolveGroupAtMinute(zzz')]))
+  unread.some(x => /^constellations\./.test(x)) ? ok('mutation (the Constellations read removed) is caught') : bad('mutation NOT caught — ③ passes a toggle nobody reads')
 }
 
 console.log('④ A METRE SLIDER\'S RANGE COMES FROM THE TOWN')
@@ -303,6 +322,16 @@ console.log('④ A METRE SLIDER\'S RANGE COMES FROM THE TOWN')
   f.length ? f.forEach(bad) : ok('no metre slider has a fixed max')
   const mut = metreRanges(texts.fields, texts.stage + '\n<SliderRow label="Zzz" value={1} min={0} max={900} suffix="m" />')
   mut.some(x => /Zzz/.test(x)) ? ok('mutation (a fixed-max metre slider) is caught') : bad('mutation NOT caught — ④ is blind')
+}
+
+console.log('⑤ EVERY LOOK CHANNEL ON A CARD FORKS PER SHOT')
+{
+  const store = strip(read(STORE))
+  const cards = [texts.sky, texts.post, texts.surfaces, texts.stage]
+  const f = unforked(store, cards)
+  f.length ? f.forEach(bad) : ok('every card channel is in SHOT_LOOK_CHANNELS')
+  const mut = unforked(store.replace(/'bloom',\s*/, ''), cards)
+  mut.some(x => /^bloom /.test(x)) ? ok('mutation (bloom dropped from the fork set) is caught') : bad('mutation NOT caught — ⑤ is blind')
 }
 
 console.log(red ? `\n⛔ ${red} claim(s) fail` : '\n✅ all claims hold')

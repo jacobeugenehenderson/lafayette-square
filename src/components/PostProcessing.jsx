@@ -46,8 +46,8 @@ import {
   AO_FLAT_DEFAULTS,
   EXPOSURE_FLAT_DEFAULTS,
   WARMTH_FLAT_DEFAULTS,
-  FILL_FLAT_DEFAULTS,
-  MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, MIST_DENSITY_SCALE,
+  FILL_FLAT_DEFAULTS, migrateFill,
+  MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, mistFogDensity, migrateMist,
   HALO_FLAT_DEFAULTS,
   GRADE_FLAT_DEFAULTS,
   GRAIN_FLAT_DEFAULTS,
@@ -126,7 +126,8 @@ export function PostProcessing({
   const aoChannel       = aoOverride       ?? scene?.ao       ?? AO_DEFAULT_CHANNEL
   const exposureChannel = exposureOverride ?? scene?.exposure ?? EXPOSURE_DEFAULT_CHANNEL
   const warmthChannel   = warmthOverride   ?? scene?.warmth   ?? WARMTH_DEFAULT_CHANNEL
-  const fillChannel     = fillOverride     ?? scene?.fill     ?? FILL_DEFAULT_CHANNEL
+  // migrateFill: an older scene.json carries Shadow lift's `value`, not `crush`.
+  const fillChannel     = useMemo(() => migrateFill(fillOverride ?? scene?.fill ?? FILL_DEFAULT_CHANNEL), [fillOverride, scene?.fill])
   const haloChannel     = haloOverride     ?? scene?.halo     ?? HALO_DEFAULT_CHANNEL
   const gradeChannel    = gradeOverride    ?? scene?.grade    ?? GRADE_DEFAULT_CHANNEL
   const grainChannel    = grainOverride    ?? scene?.grain    ?? GRAIN_DEFAULT_CHANNEL
@@ -236,19 +237,23 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   // ⭐ Cap the radius at what the sample budget can actually carry. The
   // authored metres govern whenever they are achievable; this only bites when
   // they are not, and it says so rather than quietly rendering mush.
+  // ⛔ drei writes BOTH into GLSL #defines and recompiles every material when either changes. Tweened between
+  // keys, Samples went fractional (`i < 12.5` doesn't compile) and both changed every frame of a transition.
+  // Whole samples, and the radius on a half-texel grid, so a tween recompiles in steps, not per frame.
+  const samples = Math.round(resolved.samples)
   const wanted = resolved.size / mPerTexel
-  const budget = penumbraBudgetTexels(resolved.samples)   // the Penumbra slider's max reads the same budget
-  const sizeTexels = Math.max(0.5, Math.min(wanted, budget))
+  const budget = penumbraBudgetTexels(samples)   // the Penumbra slider's max reads the same budget
+  const sizeTexels = Math.max(0.5, Math.round(Math.min(wanted, budget) * 2) / 2)
   if (wanted > budget * 1.05 && !_penumbraWarned) {
     _penumbraWarned = true
     console.warn(`[StageShadows] penumbra ${resolved.size} m = ${wanted.toFixed(0)} texels at ` +
-      `${mPerTexel.toFixed(3)} m/texel, but ${resolved.samples} samples only carry ~${budget.toFixed(0)}. ` +
+      `${mPerTexel.toFixed(3)} m/texel, but ${samples} samples only carry ~${budget.toFixed(0)}. ` +
       `Clamped. Lower the Penumbra (m) knob or raise Samples. ` +
       `⭐ The sun's real penumbra is ~0.0093 × blocker distance — a 10 m wall throws ~0.09 m, ` +
       `so a large value here is compensating for a coarse map that no longer exists.`)
   }
 
-  return <SoftShadows size={sizeTexels} samples={resolved.samples} focus={0.35} />
+  return <SoftShadows size={sizeTexels} samples={samples} focus={0.35} />
 }
 
 // ── Atmospheric fog (blends ground into sky at horizon) ─────────────────────
@@ -262,11 +267,11 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
   const { scene: threeScene } = useThree()
   const fogRef = useRef()
   const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
-  const mistChannel = mistOverride ?? sceneJson?.mist ?? MIST_DEFAULT_CHANNEL
+  const mistChannel = useMemo(() => migrateMist(mistOverride ?? sceneJson?.mist ?? MIST_DEFAULT_CHANNEL), [mistOverride, sceneJson?.mist])
 
   useEffect(() => {
     if (!enabled) { threeScene.fog = null; fogRef.current = null; return }
-    threeScene.fog = new THREE.FogExp2(MIST_FLAT_DEFAULTS.color, MIST_FLAT_DEFAULTS.density * MIST_DENSITY_SCALE)
+    threeScene.fog = new THREE.FogExp2(MIST_FLAT_DEFAULTS.color, mistFogDensity(MIST_FLAT_DEFAULTS.amount))
     fogRef.current = threeScene.fog
     return () => { threeScene.fog = null; fogRef.current = null }
   }, [threeScene, enabled])
@@ -276,7 +281,7 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
     const tod = useTimeOfDay.getState()
     const slotMins = getTodSlotMinutes(tod.currentTime)
     const m = resolveGroupAtMinute(mistChannel, tod.getMinuteOfDay(), slotMins, MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS)
-    fogRef.current.density = m.density * MIST_DENSITY_SCALE
+    fogRef.current.density = mistFogDensity(m.amount)
     _tmpColor.set(m.color)
     fogRef.current.color.copy(_tmpColor)
   })

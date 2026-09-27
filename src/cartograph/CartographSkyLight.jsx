@@ -3,7 +3,7 @@
  * by OPERATOR INTENT (Phase A taxonomy reorg, 2026-06-30 — see
  * scratch/LOOK-PANEL-TAXONOMY.md). Sections:
  *   LIGHT & SHADOW — Sun · Moon · Fill light (ambient) · Sky fill (hemi) ·
- *                    Cast shadows · Occlusion (AO) · Shadow lift (fill).
+ *                    Cast shadows · Occlusion (AO) · Shadow crush (fill).
  *                    AO/Fill/Shadow moved here from the Post card by intent.
  *   SKY            — sky gradient · sky brightness   (Mist + Halo live in the Horizon card)
  *   NIGHT SKY      — constellations · stars
@@ -151,7 +151,7 @@ export default function CartographSkyLight() {
         fields={withRanges(SHADOW_FIELDS, ranges)} flatDefaults={SHADOW_FLAT_DEFAULTS} />
       <StoreChannel name="ao" label="Occlusion (AO)"
         fields={AO_FIELDS} flatDefaults={AO_FLAT_DEFAULTS} />
-      <StoreChannel name="fill" label="Shadow lift"
+      <StoreChannel name="fill" label="Shadow crush"
         fields={FILL_FIELDS} flatDefaults={FILL_FLAT_DEFAULTS} />
 
       <SectionLabel label="Weather (Stage only)" />
