@@ -54,7 +54,7 @@ import {
   ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS, migrateArchLight,
   LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
-  DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS, migrateDof, migrateFill, migrateMist,
+  DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS, migrateDof, migrateFill,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
@@ -371,7 +371,7 @@ const _isObj = (v) => v && typeof v === 'object'
 // flat defaults — so a town inherits the kit's day on every channel it has not authored.
 const _kit = (key, d, migrate) => (d[key] == null && kitDayChannel(key)) || migrate(d[key])
 const _grp = (key, KEYS, DEFAULTS) => ({ key, hydrate: (d) => _kit(key, d, (v) => migrateGroupChannel(v, KEYS, DEFAULTS)) })
-const SHOT_MIGRATIONS = { fill: migrateFill, mist: migrateMist, dof: migrateDof }
+const SHOT_MIGRATIONS = { fill: migrateFill, dof: migrateDof }
 const migrateShotLooks = (shotLooks) => Object.fromEntries(Object.entries(shotLooks).map(([shot, block]) => [shot,
   _isObj(block) ? Object.fromEntries(Object.entries(block).map(([ch, v]) => [ch, SHOT_MIGRATIONS[ch] ? SHOT_MIGRATIONS[ch](v) : v])) : block]))
 
@@ -412,11 +412,11 @@ const DESIGN_FIELDS = [
   { key: 'lampGlow',     hydrate: (d) => _kit('lampGlow', d, migrateLampGlow) },
   _grp('bloom',          BLOOM_FIELD_KEYS,          BLOOM_FLAT_DEFAULTS),
   _grp('warmth',         WARMTH_FIELD_KEYS,         WARMTH_FLAT_DEFAULTS),
-  // Shadow lift's 0–2 `value` → Shadow crush's `crush`, Mist's linear `density` → cubed `amount` (skyLightChannels).
+  // Shadow lift's 0–2 `value` → Shadow crush's `crush` (skyLightChannels).
   { key: 'fill', hydrate: (d) => _kit('fill', d, (v) => migrateGroupChannel(migrateFill(v), FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS)) },
   _grp('exposure',       EXPOSURE_FIELD_KEYS,       EXPOSURE_FLAT_DEFAULTS),
   _grp('ao',             AO_FIELD_KEYS,             AO_FLAT_DEFAULTS),
-  { key: 'mist', hydrate: (d) => _kit('mist', d, (v) => migrateGroupChannel(migrateMist(v), MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS)) },
+  _grp('mist',           MIST_FIELD_KEYS,           MIST_FLAT_DEFAULTS),
   _grp('halo',           HALO_FIELD_KEYS,           HALO_FLAT_DEFAULTS),
   _grp('skyGain',        SKY_GAIN_FIELD_KEYS,       SKY_GAIN_FLAT_DEFAULTS),
   // stars had channel actions (a Stage control) but no field here, so its edits were never saved.

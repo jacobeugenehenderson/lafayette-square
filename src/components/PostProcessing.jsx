@@ -30,7 +30,7 @@
 import { useRef, useEffect, useState, useMemo } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { SoftShadows } from '@react-three/drei'
-import { onSceneStencil } from './sceneStencilState'
+import { onSceneStencil, getSceneStencil } from './sceneStencilState'
 import { penumbraBudgetTexels, penumbraMetresPerTexel } from '../lib/townRange.js'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
 import * as THREE from 'three'
@@ -43,7 +43,7 @@ import { resolveGroupAtMinute, getTodSlotMinutes, resolveLampGlowAtMinute } from
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState'
 import {
   EXPOSURE_FLAT_DEFAULTS, migrateFill,
-  MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, mistFogDensity, migrateMist,
+  MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, mistFogDensity,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
   DOF_FLAT_DEFAULTS, migrateDof, kitDayChannel } from '../cartograph/skyLightChannels.js'
 
@@ -254,15 +254,16 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
 // without unmounting — fog is a scene property, not a drawn layer, so the
 // Preview "Atmospheric Fog" toggle nulls scene.fog rather than churning the
 // mount. Production + Stage pass no `enabled` → unchanged.
+let _mistWarned = false
 export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
   const { scene: threeScene } = useThree()
   const fogRef = useRef()
   const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
-  const mistChannel = useMemo(() => migrateMist(mistOverride ?? sceneJson?.mist ?? MIST_DEFAULT_CHANNEL), [mistOverride, sceneJson?.mist])
+  const mistChannel = mistOverride ?? sceneJson?.mist ?? MIST_DEFAULT_CHANNEL
 
   useEffect(() => {
     if (!enabled) { threeScene.fog = null; fogRef.current = null; return }
-    threeScene.fog = new THREE.FogExp2(MIST_FLAT_DEFAULTS.color, mistFogDensity(MIST_FLAT_DEFAULTS.amount))
+    threeScene.fog = new THREE.FogExp2(MIST_FLAT_DEFAULTS.color, 0)
     fogRef.current = threeScene.fog
     return () => { threeScene.fog = null; fogRef.current = null }
   }, [threeScene, enabled])
@@ -272,7 +273,11 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
     const tod = useTimeOfDay.getState()
     const slotMins = getTodSlotMinutes(tod.currentTime)
     const m = resolveGroupAtMinute(mistChannel, tod.getMinuteOfDay(), slotMins, MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS)
-    fogRef.current.density = mistFogDensity(m.amount)
+    const density = mistFogDensity(m.amount, getSceneStencil()?.radius)
+    if (density == null) {   // ⛔ no town size ⇒ no fog, loudly — never a density guessed for some other town
+      if (!_mistWarned) { _mistWarned = true; console.error('[StageFog] the scene disc has no radius — Mist cannot be sized to the town, so fog is OFF') }
+      fogRef.current.density = 0
+    } else fogRef.current.density = density
     _tmpColor.set(m.color)
     fogRef.current.color.copy(_tmpColor)
   })

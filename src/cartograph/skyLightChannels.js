@@ -140,23 +140,25 @@ export const AO_FIELDS = [
 export const AO_FLAT_DEFAULTS = { radius: 15, intensity: 2.5, distanceFalloff: 0.3 }
 export const AO_FIELD_KEYS = AO_FIELDS.map(f => f.key)
 
-// Mist (Horizon card) — colorable distance fog (FogExp2). Amount 0–1 is CUBED onto the fog density
-// (× MIST_DENSITY_SCALE per metre), so the slider spends its travel where fog is still see-through: linear, the
-// useful zone was the bottom 10–20% and 1 was a whiteout ~98% fog at 400 m (the top is unchanged). The old linear
-// `density` key is converted by migrateMist (amount = ∛density), so every Look renders as it did.
+// Mist (Horizon card) — colorable distance fog (FogExp2).
+// ⭐ AMOUNT IS HOW MUCH OF THE TOWN THE FOG HIDES: the share of light lost across the town's width (2 × its disc
+// radius), so 0.3 means the far side is 30% fogged from the near side, in EVERY town (Jacob, 2026-09-27).
+// ⛔ It was a fixed density per metre (0.005 × amount³): the whole useful range sat below ~0.05 on Provincetown's
+// hero shot and the slider ran far past a whiteout — a Class D constant (CLAUDE.md Layer 0), right only for a town
+// of one size. A town whose size is unknown gets NO fog and a console error, never a guessed one.
 export const MIST_FIELDS = [
-  { key: 'amount', label: 'Amount', min: 0, max: 1, step: 0.01 },
+  { key: 'amount', label: 'Amount (share of the town hidden)', min: 0, max: 0.95, step: 0.01 },
   { key: 'color',  label: 'Color', type: 'color' },
 ]
-export const MIST_FLAT_DEFAULTS = { amount: 0.311, color: '#9dc5e0' }
+export const MIST_FLAT_DEFAULTS = { amount: 0.2, color: '#9dc5e0' }
 export const MIST_FIELD_KEYS = MIST_FIELDS.map(f => f.key)
-export const MIST_DENSITY_SCALE = 0.005
-/** FogExp2 density (1/m) for a Mist amount. The one mapping — every fog mount reads it. */
-export const mistFogDensity = (amount) => MIST_DENSITY_SCALE * Math.max(0, Number(amount) || 0) ** 3
-/** Legacy linear `density` → `amount` = ∛density (same fog). Idempotent. */
-export function migrateMist(ch) {
-  return foldValues(ch, v => 'density' in v && !('amount' in v),
-    ({ density, ...rest }) => ({ ...rest, amount: +Math.cbrt(Math.max(0, Number(density) || 0)).toFixed(3) }))
+/** FogExp2 density (1/m) for a Mist amount in a town of `radius` metres. The one mapping — every fog mount reads it.
+ *  FogExp2 keeps exp(−(ρd)²) of the light at distance d; solve for ρ so that 1 − amount survives d = 2 × radius. */
+export function mistFogDensity(amount, radius) {
+  const a = Math.min(0.95, Math.max(0, Number(amount) || 0))
+  if (a === 0) return 0
+  if (!(radius > 0)) return null
+  return Math.sqrt(-Math.log(1 - a)) / (2 * radius)
 }
 
 // Halo (Sky & Light card) — colorable horizon-band tint via the existing
@@ -578,8 +580,8 @@ const LAMP_EDGES = { sunset: { fade: 'up', minutes: 30 }, sunrise: { fade: 'down
 const DAY = {
   dirSun:   { value: [0, 0.8, 1.2, 1.3, 0.9, 0, 0, 0] },
   dirMoon:  { value: [0.7, 0.3, 0.3, 0.3, 0.3, 0.8, 1.0, 1.3] },
-  ambient:  { value: [0.9, 0.85, 1.1, 1.0, 0.85, 0.7, 0.6, 0.5] },
-  hemi:     { value: [1.5, 1.2, 0.9, 1.5, 1.4, 1.6, 0.6, 0.6] },
+  ambient:  { value: [1.6, 0.85, 1.1, 1.0, 0.85, 0.7, 0.6, 0.5] },
+  hemi:     { value: [2.0, 1.2, 0.9, 1.5, 1.4, 1.6, 0.6, 0.6] },
   skyGain:  { value: [1.0, 1.05, 1.25, 1.15, 1.1, 0.95, 0.35, 0.3] },
   stars:    { brightness: [0.7, 1, 1, 1, 1, 0.6, 1.0, 2.2] },
   constellations: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
@@ -587,15 +589,17 @@ const DAY = {
   shadow:   { size: [3, 5, 1, 4, 5, 3, 2, 2], samples: [16, 16, 16, 16, 16, 16, 16, 16] },
   ao:       { radius: [15, 15, 15, 15, 15, 15, 15, 15], intensity: [2.0, 2.2, 3.2, 2.0, 2.2, 2.4, 2.8, 2.6],
               distanceFalloff: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3] },
-  fill:     { crush: [0.45, 0.6, 0.75, 0.4, 0.55, 0.7, 0.92, 0.85] },
-  mist:     { amount: [0.44, 0.36, 0.16, 0.34, 0.32, 0.28, 0.18, 0.14],
-              color: ['#cdb9cf', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'] },
-  halo:     { strength: [0.4, 0.42, 0.12, 0.65, 0.55, 0.32, 0.04, 0.02],
+  fill:     { crush: [0.35, 0.6, 0.75, 0.4, 0.55, 0.7, 0.92, 0.85] },
+  // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
+  // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
+  mist:     { amount: [0.22, 0.25, 0.08, 0.28, 0.25, 0.2, 0.12, 0.08],
+              color: ['#9a86c0', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'] },
+  halo:     { strength: [0.22, 0.42, 0.12, 0.65, 0.55, 0.32, 0.04, 0.02],
               color: ['#dcbfd0', '#f4c29c', '#bdd6ec', '#ffc27a', '#ff9868', '#5f6fb4', '#1a2040', '#10152a'] },
-  exposure: { value: [1.0, 1.0, 1.18, 1.06, 1.0, 0.95, 0.85, 0.8] },
-  warmth:   { value: [0.38, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25] },
-  grade:    { contrast: [0.3, 0.4, 0.62, 0.32, 0.45, 0.5, 0.72, 0.55], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
-              saturation: [1.0, 1.15, 1.35, 1.4, 1.3, 1.1, 0.85, 0.75], brightness: [0.04, 0.01, 0, 0.03, 0.01, 0, 0, 0],
+  exposure: { value: [1.5, 1.0, 1.18, 1.06, 1.0, 0.95, 0.85, 0.8] },
+  warmth:   { value: [0.3, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25] },
+  grade:    { contrast: [0.4, 0.4, 0.62, 0.32, 0.45, 0.5, 0.72, 0.55], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
+              saturation: [1.35, 1.15, 1.35, 1.4, 1.3, 1.1, 0.85, 0.75], brightness: [0.03, 0.01, 0, 0.03, 0.01, 0, 0, 0],
               vignette: [0.8, 0.8, 0.4, 1.2, 1.1, 1.0, 1.5, 1.3] },
   bloom:    { intensity: [1.2, 0.9, 0.2, 2.2, 1.5, 1.0, 1.1, 0.4], threshold: [0.45, 0.55, 0.8, 0.25, 0.4, 0.4, 0.35, 0.6],
               spread: [0.85, 0.6, 0.15, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
@@ -626,7 +630,7 @@ const DAY = {
 // The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
 const UPLIGHT = { edges: LAMP_EDGES }
 for (const s of ['L', 'R']) Object.assign(UPLIGHT, {
-  [`uplight${s}_intensity`]: [1.0, 0.4, null, null, 1.5, 2.8, 3.5, 1.2],
+  [`uplight${s}_intensity`]: [0.4, 0.2, null, null, 1.5, 2.8, 3.5, 1.2],
   [`uplight${s}_color`]:     ['#ffe2c0', '#ffd6a8', null, null, '#ffd6a8', '#ffc98f', '#f2ecff', '#e6e4ff'],
   [`uplight${s}_cone`]:      [35, 35, null, null, 35, 35, 35, 35],
   [`uplight${s}_reach`]:     [220, 220, null, null, 220, 220, 220, 220],
