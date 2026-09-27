@@ -41,7 +41,6 @@ import { weatherExposureScale } from '../lib/sky-scalars.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { resolveGroupAtMinute, getTodSlotMinutes, resolveLampGlowAtMinute } from '../cartograph/animatedParam.js'
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState'
-import { INSTANCE } from '../instance.js'
 import {
   BLOOM_FLAT_DEFAULTS,
   AO_FLAT_DEFAULTS,
@@ -65,14 +64,9 @@ import {
 // 2026-06-30). ExposureTicker still writes _exposureRef.
 import { usePostFxDriver, _exposureRef } from './usePostFxDriver.js'
 import { RenderPipeline } from './renderPipeline.jsx'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 // Inline flat-default envelopes for first-paint (~100ms before scene.json
 // resolves). Mirrors bake-scene.js's emit so unauthored Looks read

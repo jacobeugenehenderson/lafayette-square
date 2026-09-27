@@ -46,15 +46,10 @@ import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights
 import { SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
 // Production passes no `lookId`; Stage threads the operator's active Look.
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 const LATITUDE = INSTANCE.geography.lat
 const LONGITUDE = INSTANCE.geography.lon

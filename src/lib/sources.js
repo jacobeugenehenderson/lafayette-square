@@ -25,13 +25,8 @@
 import { useState, useEffect } from 'react'
 import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from './bakedUrl.js'
+import { resolveLookId } from './resolveLookId.js'
 
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/[?&]look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 /**
  * @param {string} [lookId] — explicit Look id; falls back to `?look=`, then INSTANCE.

@@ -83,6 +83,18 @@ for (const f of files) {
   }
 }
 
+// ⭐ AND A LOOK IS RESOLVED ONE WAY. `resolveLookId` (prop → ?look= → boot town) had ELEVEN private copies in src/,
+// two with a different URL match (2026-09-27, folded into src/lib/resolveLookId.js). A second definition is a copy
+// that will drift. Self-mutated: a fake second definition must be caught.
+const ONE_HOME = path.join('src', 'lib', 'resolveLookId.js')
+const defsIn = (fileList, read) => fileList.filter((f) => f.includes(`${path.sep}src${path.sep}`) && !f.endsWith(ONE_HOME) &&
+  /(?:^|\n)\s*(?:export\s+)?(?:function\s+resolveLookId\s*\(|(?:const|let)\s+resolveLookId\s*=)/.test(read(f)))
+for (const f of defsIn(files, (x) => fs.readFileSync(x, 'utf8'))) hits.push(`${path.relative(ROOT, f)}  defines its own resolveLookId — import it from ${ONE_HOME}`)
+{
+  const fake = path.join(ROOT, 'src', 'fake', 'X.jsx')
+  if (defsIn([fake], () => 'function resolveLookId(p) { return p }').length !== 1) hits.push('the one-copy rule is blind (mutation not caught)')
+}
+
 if (hits.length) {
   console.error(`FAIL claims-a-look-keyed-tool-is-called-with-its-look (${files.length} files, ${strict.size} Look-strict tool(s): ${[...strict].join(', ')})`)
   console.error('  ⛔ these spawn a tool that REFUSES without an explicit Look, and pass none — so the')

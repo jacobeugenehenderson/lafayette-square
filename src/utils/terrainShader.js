@@ -30,11 +30,11 @@
  */
 
 import * as THREE from 'three'
-import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
 import { DEFAULT_V_EXAG, terrainIdentity } from '../lib/terrainCommon.js'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
 //
@@ -54,13 +54,6 @@ const FLAT_TERRAIN = { width: 2, height: 2, bounds: { minX: -1, maxX: 1, minZ: -
 // The active look at module load: ?look= override (Preview / any deep-link),
 // else the deployment's default installation. The authoring app drives live
 // changes through reloadTerrain(), so it doesn't need cartograph internals here.
-function resolveLookId() {
-  try {
-    const m = (typeof window !== 'undefined' ? window.location.search : '').match(/[?&]look=([^&]+)/)
-    if (m) return decodeURIComponent(m[1])
-  } catch { /* no window */ }
-  return INSTANCE.lookId
-}
 
 // ── THE TOWN'S AUTHORED VERTICAL EXAGGERATION — the CEILING the hero shot lerps toward.
 //

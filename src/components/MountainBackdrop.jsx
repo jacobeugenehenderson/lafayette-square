@@ -36,20 +36,14 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import useSkyState from '../hooks/useSkyState'
-import { INSTANCE } from '../instance.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { LANDSCAPE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 const LANDSCAPE_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANDSCAPE_FLAT_DEFAULTS } })
 const PLACEMENT_KEYS = ['bearingX', 'bearingZ', 'distance', 'scale', 'rotation', 'yOffset']
 
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 // Dev busts the browser HTTP cache so a re-bake shows immediately (same footgun
 // useSceneJson guards); prod caches normally and busts on bakeLastMs.

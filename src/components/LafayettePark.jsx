@@ -27,6 +27,7 @@ import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
 import { buildStairGeometry } from '../lib/buildStairGeometry.js'
 import featureElev from '../data/park-feature-elev.json'
 import { makeGravelPathMaterial } from './gravelPathMaterial.js'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin.
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
@@ -207,12 +208,6 @@ function ParkStairs({ lookId, bakeLastMs }) {
   )
 }
 
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 // ── Park Water Features (Lake + Grotto Pond) ─────────────────────────
 function ParkWater({ lookId, bakeLastMs }) {

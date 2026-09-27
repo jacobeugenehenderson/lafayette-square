@@ -16,16 +16,10 @@
 import { useEffect, useState } from 'react'
 import StreetLights from './StreetLights'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { currentTerrainIdentity } from '../utils/terrainShader'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 /**
  * @param {object} props

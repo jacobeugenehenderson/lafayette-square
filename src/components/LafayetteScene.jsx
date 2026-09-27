@@ -97,6 +97,7 @@ function isDrag(e) {
 // restructuring that arc is positioned to do and e2e against the bake.
 // Owner: roster/render producer-emit arc. See the HANDOFF producer-emit list.
 import buildingOverridesData from '../data/buildingOverrides.json'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 // ============ PER-BUILDING OVERRIDES ============
 // Override lookup: individual buildings can have custom roof_shape, foundation_height, etc.
@@ -1285,12 +1286,6 @@ function LandmarkMarkers() {
 }
 
 // ============ MAIN ============
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn, neonDensity, hiddenLayers, labelViewMode, forceContentReady } = {}) {
   // Panel layer toggles: { building, labels, ... } → boolean. Empty object in

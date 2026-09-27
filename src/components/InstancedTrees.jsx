@@ -37,17 +37,11 @@ import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.
 import { getElevationRaw, slabYIsUnstamped } from '../utils/elevation'
 import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { defaultWindState, resolveWindState } from '../lib/wind-field.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 // URL → species. The rewritten GLB path is
 // `<base>/baked/<look>/trees/<species>/skeleton-<variantId>-<lod>.glb`

@@ -35,8 +35,8 @@ import { terrainExag, patchTerrain, sceneExag } from '../utils/terrainShader'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 // ── Surface treatment: albedo desaturation + value-range lift ────────────────
 // Jacob 2026-06-30 (Option A): surfaces should be DESATURATED and lit by
@@ -641,12 +641,6 @@ function TerrainExagDriver({ target }) {
 // Look id resolution. Caller may pass `lookId` directly (Stage uses the
 // active Look from its store); fallback is the URL `?look=` param so
 // Preview's standalone behavior is preserved when no prop is given.
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 /**
  * @param {object} props
