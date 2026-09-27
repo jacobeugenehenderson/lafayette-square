@@ -308,6 +308,26 @@ export function captureCameraSnapshot() {
 // Shared with Preview; see src/components/DawnTimeline.jsx.
 const Timeline = DawnTimeline
 
+// Stage-only weather switch, the Time of Day card's last row: judge a look in chosen
+// weather instead of the town's live weather. Session-only, like neonForceOn: not
+// saved, not baked. Same chips as the time and season rows (.tod-chip in index.css).
+const WEATHER_MODES = ['live', 'clear', 'overcast', 'rain', 'snow']
+function WeatherSwitch() {
+  const mode = useCartographStore(s => s.weatherMode)
+  const set  = useCartographStore(s => s.setWeatherMode)
+  return (
+    <div className="flex justify-between px-1 pt-2">
+      {WEATHER_MODES.map(m => (
+        <button key={m} type="button" onClick={() => set(m)}
+          className="tod-chip tod-chip--caps"
+          aria-pressed={mode === m}
+          title={m === 'live' ? "The town's real weather, polled" : `Stand the scene in ${m} weather (Stage only, not saved)`}
+        >{m}</button>
+      ))}
+    </div>
+  )
+}
+
 // ── Reusable input components ────────────────────────────────────────────────
 
 const inputStyle = {
@@ -979,10 +999,11 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           the cartograph chunk (store-bound); standalone /stage passes none. */}
       {lookForkSlot}
 
-      {/* Time of Day — top slot for Preview parity */}
+      {/* Time of Day — top slot for Preview parity. The weather row is Stage's own. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
         <div className="section-heading mb-2">Time of Day</div>
         <Timeline />
+        <WeatherSwitch />
       </div>
 
       {/* Sky & Light — TOD-animatable atmospheric + lighting channels.

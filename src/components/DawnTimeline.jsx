@@ -165,8 +165,8 @@ export function TodStrip({ showHiLo = false, useCelsius = false }) {
           <button
             key={wp.label}
             onClick={() => setTime(wp.time)}
-            className="text-caption leading-none transition-opacity hover:opacity-100 cursor-pointer"
-            style={{ color: wp.color, opacity: 0.75 }}
+            className="tod-chip"
+            style={{ color: wp.color }}
           >
             {wp.label}
           </button>
@@ -325,13 +325,7 @@ function YearStrip() {
             key={a.name}
             onClick={() => jumpToAnchor(a)}
             title={`Jump to ${a.name} anchor`}
-            className="text-caption leading-none transition-opacity hover:opacity-100 cursor-pointer"
-            style={{
-              opacity: 0.85,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              fontSize: 9,
-            }}
+            className="tod-chip tod-chip--caps"
           >
             {a.name}
           </button>

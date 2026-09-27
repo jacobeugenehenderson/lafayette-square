@@ -1,4 +1,5 @@
 import useSkyState from './useSkyState'
+import useAtmosphere from './useAtmosphere.js'
 import { deriveStorminess } from '../lib/weatherPresets.js'
 import { INSTANCE } from '../instance.js'
 
@@ -45,9 +46,12 @@ function deriveTurbidity(visibility) {
 }
 
 /**
- * Fetch current weather from Open-Meteo and push targets to useSkyState
+ * Fetch current weather from Open-Meteo and push targets to useSkyState.
+ * `snap`: the operator chose Live on Stage's Weather switch, so this reading lands
+ * at once instead of easing in over the directive tween. The snap is requested when
+ * the reading arrives, not when it was asked for, so a slow fetch still lands at once.
  */
-export async function fetchWeather() {
+export async function fetchWeather({ snap = false } = {}) {
   try {
     const res = await fetch(API_URL)
     if (!res.ok) return
@@ -71,6 +75,7 @@ export async function fetchWeather() {
       y: Math.cos(dirRad) * speed,
     }
 
+    if (snap) useAtmosphere.getState().requestSnap()
     useSkyState.getState().setWeatherTargets({
       cloudCover,
       storminess,

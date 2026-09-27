@@ -24,11 +24,12 @@ function WeatherPoller({ mode = 'live' }) {
       return
     }
     useSkyState.getState().setFeedPaused(false)
-    // Initial fetch
-    fetchWeather()
+    // Initial fetch. It snaps, so choosing Live on the switch lands at once like a preset
+    // does; the polls and the tab-return fetch below keep easing, as real weather should.
+    fetchWeather({ snap: true })
 
     // Start polling
-    intervalRef.current = setInterval(fetchWeather, POLL_INTERVAL)
+    intervalRef.current = setInterval(() => fetchWeather(), POLL_INTERVAL)
 
     // Background tab detection
     const handleVisibility = () => {

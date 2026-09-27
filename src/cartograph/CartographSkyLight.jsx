@@ -85,30 +85,6 @@ function NeonForceOnToggle() {
   )
 }
 
-// Stage-only weather switch — judge a look in chosen weather instead of the
-// town's live weather. Session-only, like NeonForceOnToggle: not saved, not baked.
-const WEATHER_MODES = ['live', 'clear', 'overcast', 'rain', 'snow']
-function WeatherSwitch() {
-  const mode = useCartographStore(s => s.weatherMode)
-  const set  = useCartographStore(s => s.setWeatherMode)
-  return (
-    <div className="flex items-center gap-1 py-1 pl-2 flex-wrap" style={{ fontSize: 12, color: 'var(--on-surface)' }}>
-      {WEATHER_MODES.map(m => (
-        <button key={m} type="button" onClick={() => set(m)}
-          className="px-2 py-0.5 rounded cursor-pointer"
-          style={{
-            background: mode === m ? 'var(--surface-container-highest)' : 'transparent',
-            color: mode === m ? 'var(--on-surface)' : 'var(--on-surface-subtle)',
-            border: '1px solid var(--outline-variant)',
-            textTransform: 'capitalize',
-          }}
-          title={m === 'live' ? "The town's real weather, polled" : `Stand the scene in ${m} weather (Stage only, not saved)`}
-        >{m}</button>
-      ))}
-    </div>
-  )
-}
-
 // Typographic sub-section label — same shape as CartographPost's.
 // NOT a folder: no expand/collapse state, no children grouping in DOM.
 function SectionLabel({ label }) {
@@ -153,9 +129,6 @@ export default function CartographSkyLight() {
         fields={AO_FIELDS} flatDefaults={AO_FLAT_DEFAULTS} />
       <StoreChannel name="fill" label="Shadow crush"
         fields={FILL_FIELDS} flatDefaults={FILL_FLAT_DEFAULTS} />
-
-      <SectionLabel label="Weather (Stage only)" />
-      <WeatherSwitch />
 
       <SectionLabel label="Sky" />
       <SkyGradientGrid />

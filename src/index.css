@@ -254,6 +254,25 @@ input, textarea, select {
     letter-spacing: 0.05em;
   }
 
+  /* Time-of-Day card chips — the time-of-day, season and weather rows: text, no box.
+     A time chip keeps its slot's colour inline (it is data); .tod-chip--caps is the
+     season/weather label. aria-pressed marks the chosen weather. */
+  .tod-chip {
+    font-size: var(--type-caption);
+    line-height: 1;
+    opacity: 0.8;
+    cursor: pointer;
+    transition: opacity 150ms;
+  }
+  .tod-chip:hover { opacity: 1; }
+  .tod-chip--caps {
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .tod-chip[aria-pressed="false"] { color: var(--on-surface-subtle); }
+  .tod-chip[aria-pressed="true"]  { color: var(--on-surface); opacity: 1; }
+
   /* History collapse trigger */
   .history-toggle {
     cursor: pointer;

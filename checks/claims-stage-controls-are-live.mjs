@@ -101,7 +101,7 @@ function stageChannels(src) {
     for (const m of src[file].matchAll(/activeChannel\(s,\s*'(\w+)'\)/g)) add(m[1], card)
   }
   // Store-bound booleans a card sets directly (e.g. Force Neon On).
-  for (const m of src.sky.matchAll(/useCartographStore\(s => s\.(\w+)\)/g)) if (!/^set/.test(m[1]) && m[1] !== 'weatherMode') add(m[1], 'Light & Sky')
+  for (const m of src.sky.matchAll(/useCartographStore\(s => s\.(\w+)\)/g)) if (!/^set/.test(m[1])) add(m[1], 'Light & Sky')
   // StageApp's store-bound cards: generic <StoreChannel name="X"> (conditional when gated by `&&` / `?`) …
   const stage = src.stage
   for (const m of stage.matchAll(/<StoreChannel\s+name="(\w+)"/g)) add(m[1], 'Light Sources', /(&&|\?)\s*$/.test(stage.slice(Math.max(0, m.index - 40), m.index)))
@@ -111,7 +111,7 @@ function stageChannels(src) {
     if (/^(set|animate|add|remove|revert)/.test(name)) continue
     const cap = name[0].toUpperCase() + name.slice(1)
     if (!new RegExp(`s => s\\.set${cap}\\b`).test(stage)) continue   // read to pick knobs, never edited
-    const card = /archLight|lantern|lampGlow/.test(name) ? 'Light Sources' : 'Hero & Horizon'
+    const card = /archLight|lantern|lampGlow/.test(name) ? 'Light Sources' : name === 'weatherMode' ? 'Time of Day' : 'Hero & Horizon'
     // Conditional: the card renders this channel's knobs only when the channel exists.
     const conditional = new RegExp(`\\b${local}\\s*\\?\\s*\\(|\\b${local}\\s*&&|if\\s*\\(!\\s*${local}\\)\\s*return`).test(stage)
     add(name, card, conditional)

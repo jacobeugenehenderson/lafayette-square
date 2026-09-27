@@ -130,6 +130,12 @@ Materials, color, visibility, shaders, sky, post-FX, neon, camera — the per-Lo
 
 The full channel inventory + where each persists is `STAGE.md §1`; the cards below are the operator's-eye view — *which knob is on which card, and how to drive it.*
 
+### Time of Day card
+
+The time readout and **⟲ live**, the **time-of-day chips** (Dawn … Night) above the day slider, the **season chips** above the year slider, and:
+
+**Weather (Stage only)** — the card's last row: **Live · Clear · Overcast · Rain · Snow.** *Live* polls the town's real weather; the others stand the scene in that weather so a look can be judged whatever it's doing outside. A click lands at once, Live included; the live feed's own later readings ease in. Session-only: never saved, never baked, and production always runs live. The presets are `src/lib/weatherPresets.js`, shared with the surface lab. ⚠️ Rain and Snow draw the same sky today (both pick the same cloud).
+
 ### How to operate any TOD channel (the universal mechanic)
 
 **Stage keeps your place across a reload** — the time, date and season (so the key you're parked on) come back
@@ -152,8 +158,6 @@ Every animatable channel shares one drawer, and **the 7 time-of-day slot chips a
   - ▶ Debug seams, house `window.__` convention: `?shadowmask=1` · `window.__r3f` · `window.__terrainExag`. ⚠️ `?shadowmask=1` carries a warning earned the hard way — its first cut called `getShadowMask()`, which three defines for Lambert/Phong and **not** `MeshStandardMaterial`, so every ground shader died `VALIDATE_STATUS false` and rendered **uniform white**, which is indistinguishable from a legitimate "everything is lit" reading.
 - **Occlusion** (`ao`) — ambient occlusion (N8AO): contact-darkening in crevices. Fields: radius, intensity (0 = off), distance-falloff `0.05–1`. *(Was "AO.")*
 - **Shadow crush** (`fill`) — **Crush** `0–1`: how far the darkest tones are pulled toward black. 0 = none (the image as rendered), 1 = full; default 0.72. **Owns the FilmGrade `uToe` uniform** (= 1 − crush) — which is why the Grade Toe slider was removed. For the opposite, lifting the blacks, use Image › Grade › **Brightness**. *(Was "Shadow lift" `0–2`, which ran backwards; stored values convert on load, same look.)*
-
-**Weather (Stage only)** — **Live · Clear · Overcast · Rain · Snow.** *Live* polls the town's real weather; the others stand the scene in that weather so a look can be judged whatever it's doing outside. Session-only: never saved, never baked, and production always runs live. The presets are `src/lib/weatherPresets.js`, shared with the surface lab.
 
 **Sky group**
 - **Sky brightness** (`skyGain`) — *"how dark is the night sky."* Dims (or lifts) **just the sky dome** on a TOD curve — bands, sun/moon glow, horizon scatter together. Exposure scoped to the sky layer: the global **Exposure** knob (Image card) darkens the *whole frame*, whereas this touches only the dome — so deep night goes genuinely dark while street lamps and lit windows stay where authored. Stars are not affected. LS authors ~1.0 by day dipping to ~0.2 at Night; default 1.0 leaves an unauthored Look unchanged. **Reach for Sky brightness when the *sky* is too bright; Exposure when the *whole image* is.** *(Was "Sky Layer Gain." Note 2026-06-07: bloom no longer auto-boosts at night — author it in the Image **Bloom** channel.)*
