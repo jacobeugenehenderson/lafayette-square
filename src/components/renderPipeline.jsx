@@ -209,16 +209,21 @@ export const POSTFX_PIPELINE = [
     }),
   },
   // Shared full-scene blur pyramid — built after N8AO (post-AO scene). A PURE
-  // RESOURCE both DoF and bloom SAMPLE (never each other's result). `dependsOn`
+  // RESOURCE bloom and DoF both SAMPLE (never each other's result). `dependsOn`
   // is honored only while inspecting (Preview): the pyramid is pointless when no
   // consumer is mounted, so a toggle-off of both DoF and bloom drops it too.
   // Production/Stage mount it unconditionally (bloom always ships).
   { id: 'pyramid', pass: DownsamplePyramid, order: 20, platform: 'desktop', dependsOn: ['dof', 'bloom'] },
-  // DoF — two-focal romance DoF, AFTER the pyramid so it samples it (CoC-weighted
-  // lerp toward the shared blur), BEFORE bloom so the glow lands on the defocused
-  // scene. Desktop only. Mounts only when the `dof` channel enables it.
+  // ⭐ BLOOM BEFORE DoF — the order HANDOFF-real-dof Phase 1 specified (scene → N8AO → pyramid → Bloom → DoF).
+  // Bloom glows the sharp scene; DoF then lerps each pixel toward the pyramid (built BEFORE bloom) by its own
+  // focus, so a defocused region shows the blurred scene and an in-focus one keeps its glow. The build had
+  // flipped it (DoF → bloom, ab3ddb11), and once bloom became a band-pass its fine bands pasted the sharp
+  // scene back over the blur (Loupe, 2026-09-26: DoF 0.98 + Bloom = hard-edged plate). Costs one more
+  // full-screen pass (bloom no longer merges with grade/grain).
+  { id: 'bloom', pass: CustomBloom, channel: 'bloom', order: 25, platform: 'desktop', ref: 'bloom' },
+  // DoF — single-focal romance DoF, after the pyramid (it samples it) and after bloom (see above).
+  // Desktop only; mounts when any key's Blur is above 0.
   { id: 'dof', pass: RomanceDoF, channel: 'dof', order: 30, platform: 'desktop', gate: (ctx) => ctx.dofOn },
-  { id: 'bloom', pass: CustomBloom, channel: 'bloom', order: 40, platform: 'desktop', ref: 'bloom' },
   { id: 'aerial', pass: AerialPerspective, channel: 'halo', order: 50, platform: 'desktop' },
   { id: 'grade', pass: FilmGrade, channel: 'grade', order: 60 },
   // SMAA — cleans shader-contrast edges MSAA can't (curb lines, slab seams, thin
