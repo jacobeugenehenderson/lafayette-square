@@ -106,18 +106,10 @@ A walk-around is **street view that translates**: same 1.73 m eye, same look-aro
 - **A noise/filler star field** rotated as a rigid group for sky fill.
 - **The sky dome** — a 4-band operator-authored gradient (`GradientSky`), weather-modified (cloud cover, turbidity, sunset potential), with `skyGain` darkening the *dome only* at night (lamps + lit windows hold their authored strength).
 
-### 3.2 The drawn constellation figures — always-on, gold lines, spectral nodes ✅ LANDED
-> ⚠️ **Corrects a stale claim.** `ls/reference/RUNTIME-DELTA.md` (K.3 / RD.3) once called `PlanetariumOverlay` "unmounted dead code." **It is not** — the mount is **one level down, inside `CelestialBodies`** (`Scene.jsx:759` mounts that). RD.3 is corrected/closed.
+### 3.2 The drawn constellation figures — gold lines, spectral nodes ✅ LANDED
+The overlay (`PlanetariumOverlay.jsx`) draws, for the 88 IAU constellations in `src/data/planetarium/constellations.json`: **graphic lines** + **vertex nodes** + **name labels**, plus named-star + planet labels. It is mounted inside `CelestialBodies`.
 
-The overlay (`PlanetariumOverlay.jsx`) draws, for the 88 IAU constellations in `src/data/planetarium/constellations.json`: **graphic lines** + **vertex nodes** + **name labels**, plus named-star + planet labels. Mounted by `CelestialBodies.jsx:962` behind `constellationsVisible`.
-
-**Visibility — Street view ONLY, all day long** (LANDED 2026-06-17). The original channel×night gate (channel default 0 → never showed) is gone entirely:
-
-```js
-const constellationsVisible = viewMode === 'planetarium'
-```
-
-So the figures show **only in street view (planetarium), all day** — never in Hero or Browse, and with no day/night fade (Jacob 2026-06-17). Visibility is purely the camera mode. *(The operator `constellations` channel still drives the overlay's per-TOD styling inside `PlanetariumOverlay`; it no longer gates whether the overlay appears.)*
+**Visibility — the `constellations` channel, per time of day, in Hero and Street (never Browse).** The toggle is read every frame and switches at 0.5 between keys (`CelestialBodies.jsx#constellationsVisible`). Default off; a Look keys the hours it wants. ▶ `node checks/claims-stage-controls-are-live.mjs` ③.
 
 **The look — gold figures, real-temperature joints** (LANDED 2026-06-17, spectral-node pass):
 - **Lines + name labels stay GOLD** (`#c4a265`) — deliberately, the **Grand Central Terminal ceiling** aesthetic (Jacob).
@@ -125,7 +117,7 @@ So the figures show **only in street view (planetarium), all day** — never in 
 - **Shared SSoT:** the `ci → RGB` ladder lives once in **`src/lib/starColor.js`** (`bvToRGB`), used by both the main catalog field (`CelestialBodies`) and the overlay nodes — no forked copy, so every star recolors together if the ladder ever changes.
 
 **Open follow-ups (not blocking):**
-- **Smooth opacity fade** vs. today's **binary mount** — moot now that street view is always-on; revisit only if the gate is re-parameterized.
+- **Smooth opacity fade** vs. today's **binary mount** (the toggle switches at 0.5 between keys).
 - **Milky Way** authored-but-disabled — the seam into the larger planetarium build-out (§3.4).
 
 ### 3.3 Where the sky is authored
@@ -183,11 +175,11 @@ State, not doctrine — these belong in `ls/BACKLOG.md` once we decide to act. O
 | Thread | Layer | Status / decision |
 |---|---|---|
 | **Desktop double-click → drop to street** | camera | ✅ **LANDED** `779aded` — 450 ms detection window; animates down via CameraRig |
-| **Constellations always-on + spectral nodes + gold lines** | sky | ✅ **LANDED** 2026-06-17 — always-on in street view; gold Grand-Central figures; nodes colored by real B–V spectral color (§3.2) |
+| **Constellations + spectral nodes + gold lines** | sky | ✅ **LANDED** — keyed by time of day, Hero + Street; gold Grand-Central figures; nodes colored by real B–V spectral color (§3.2) |
 | **Walk-around mode** (§2.5) | camera | the planned evolution of street view — **sequenced *after* everything else**; designed-not-built. Real work = mobile input + collision |
 | **Planetarium build-out** (§3.4): Milky Way anim → planets → meteors → aurora | sky | the vision for the look-up half; **not yet scheduled**, dependency-ordered. Milky Way is the entry move |
 | **Tier-2 street bark (Brief 10C) + LOD dispatch** | trees | **accepted as-is for now**; promotes to required when walk-around lands |
-| **Smooth constellation opacity fade** | sky | follow-up; moot now street view is always-on; revisit only if re-parameterized |
+| **Smooth constellation opacity fade** | sky | follow-up: the toggle is binary today |
 | **Street-view entry discoverability** | camera | open design question; merges with walk-around entry |
 
 ---
@@ -200,7 +192,7 @@ State, not doctrine — these belong in `ls/BACKLOG.md` once we decide to act. O
 - `src/preview/cameraTween.js` — the shared transition state machine + `easeInOutCubic`.
 
 **Sky / constellations**
-- `src/components/CelestialBodies.jsx` — sky dome, sun, moon, stars; mounts `PlanetariumOverlay`; the `constellationsVisible` always-on gate.
+- `src/components/CelestialBodies.jsx` — sky dome, sun, moon, stars; mounts `PlanetariumOverlay`; the `constellationsVisible` gate (channel × Hero/Street).
 - `src/components/PlanetariumOverlay.jsx` — constellation gold lines / spectral nodes (`vertexStarColor`) / gold labels + named stars (+ planet markers).
 - `src/lib/starColor.js` — `bvToRGB`, the shared B–V→RGB spectral-color SSoT (main field + overlay nodes).
 - `src/data/bright_stars.json` (ra/dec/mag/**ci**), `src/data/planetarium/{constellations,named_stars,planets}.json` — the catalogs.
@@ -220,4 +212,4 @@ State, not doctrine — these belong in `ls/BACKLOG.md` once we decide to act. O
 
 ---
 
-> **Maintenance note:** this doc is reachable from `README.md` (Documentation map + cross-cutting feature index) and gets a plain-language line in `ORIENTATION.md`. When the camera/sky/tree code changes, update the *fact* here; route operator knobs to `cartograph/OPERATIONS.md`, the pitch to `ls/FEATURES.md`, and narrative to NOTES. The §3.2 correction means `RUNTIME-DELTA.md` K.3 needs repointing — accord sweep.
+> **Maintenance note:** this doc is reachable from `README.md` (Documentation map + cross-cutting feature index) and gets a plain-language line in `ORIENTATION.md`. When the camera/sky/tree code changes, update the *fact* here; route operator knobs to `cartograph/OPERATIONS.md`, the pitch to `ls/FEATURES.md`, and narrative to NOTES.

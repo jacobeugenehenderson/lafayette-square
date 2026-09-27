@@ -27,10 +27,8 @@
  *      want a real fade in).
  *   5. Mirror logic past out.minute with transitionOut.
  *
- * Day wraps at 1440. We resolve in linear-minute space without wrapping —
- * Lafayette Looks are authored in a single 24h cycle and the operator can
- * model overnight by adding a "midnight" slot. Wrapping logic adds
- * complexity without earning it yet; revisit when needed.
+ * Day wraps at 1440: outside [first key, last key] the value tweens from
+ * the last key across midnight to the first (wrapTodFraction).
  */
 
 // Canonical TOD slot vocabulary — mirrors the 7 SunCalc waypoints in

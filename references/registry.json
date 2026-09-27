@@ -799,6 +799,222 @@
         "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)"
       },
       "status": "PERMITTED"
+    },
+    {
+      "id": "usno-aa-twilight",
+      "title": "Rise, Set, and Twilight Definitions",
+      "publisher": "US Naval Observatory, Astronomical Applications Dept.",
+      "jurisdiction": "n/a (science)",
+      "url": "https://aa.usno.navy.mil/faq/RST_defs",
+      "covers": [
+        "civil/nautical/astronomical twilight definitions",
+        "sun/moon altitude-azimuth tables (AltAz service)",
+        "moon phase / fraction illuminated"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched aa.usno.navy.mil/about/PrivacyNotice (the /about/disclaimer URL returned 500)",
+        "quote": "All information on this site is considered public information and may be distributed or copied unless otherwise specified. Use of appropriate byline/photo/image credits is requested.",
+        "source": "https://aa.usno.navy.mil/about/PrivacyNotice",
+        "exception": "'unless otherwise specified'. No USNO illuminance-vs-altitude table found; its data services cover rise/set, alt/az and phase only.",
+        "proposedAiUse": "permitted",
+        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+    },
+    {
+      "id": "noaa-gml-solar-calc",
+      "title": "NOAA Solar Calculator / Solar Position",
+      "publisher": "NOAA Global Monitoring Laboratory",
+      "jurisdiction": "n/a (science)",
+      "url": "https://gml.noaa.gov/grad/solcalc/",
+      "covers": [
+        "solar position (altitude/azimuth) algorithm",
+        "sunrise/sunset/solar noon"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched",
+        "quote": "The information on government servers are in the public domain, unless specifically annotated otherwise, and may be used freely by the public",
+        "source": "https://gml.noaa.gov/about/disclaimer.html",
+        "exception": "Attribution requested ('Data/Image provided by NOAA Global Monitoring Laboratory, Boulder, Colorado, USA'). Must not imply NOAA endorsement or present modified content as official.",
+        "proposedAiUse": "permitted",
+        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+    },
+    {
+      "id": "doe-ssl-street-lighting",
+      "title": "DOE Solid-State Lighting: LED street lighting, CCT and blue light",
+      "publisher": "US Department of Energy, Office of Energy Efficiency & Renewable Energy",
+      "jurisdiction": "n/a (science)",
+      "url": "https://www.energy.gov/eere/ssl/solid-state-lighting",
+      "covers": [
+        "LED vs HPS street lighting CCT",
+        "blue light / spectral content of outdoor lighting",
+        "photocontrol switching"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched energy.gov/web-policies",
+        "quote": "Government information at DOE websites is in the public domain. Public domain information may be freely distributed and copied, but it is requested that in any subsequent use the Department of Energy be given appropriate acknowledgement.",
+        "source": "https://www.energy.gov/web-policies",
+        "exception": "Copyrighted third-party items need the owner's written permission beyond fair use. Many SSL reports are written by PNNL or contractors: check each report's own notice.",
+        "proposedAiUse": "permitted",
+        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+    },
+    {
+      "id": "nps-night-skies",
+      "title": "NPS Night Skies program",
+      "publisher": "US National Park Service",
+      "jurisdiction": "n/a (science)",
+      "url": "https://www.nps.gov/subjects/nightskies/index.htm",
+      "covers": [
+        "night sky brightness",
+        "Bortle / Milky Way visibility",
+        "natural light levels at night"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched",
+        "quote": "Copyright law does not protect 'any work of the U.S. Government' where 'a work prepared by an officer or employee of the U.S. Government as part of that person's official duties.'",
+        "source": "https://www.nps.gov/aboutus/disclaimer.htm",
+        "exception": "'not all materials appearing on this website ... are in the public domain'. Third-party items: 'It is your responsibility to determine what permission(s) you need'. Commercial use should credit the government source.",
+        "proposedAiUse": "permitted",
+        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+    },
+    {
+      "id": "nasa-science",
+      "title": "NASA Science (Moon, sky)",
+      "publisher": "NASA",
+      "jurisdiction": "n/a (science)",
+      "url": "https://science.nasa.gov/moon/",
+      "covers": [
+        "moonlight / lunar phase and albedo",
+        "sky colour / Rayleigh scattering explainers"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched (AI section pulled verbatim via curl)",
+        "quote": "While a wealth of public information is available for use in artificial intelligence (AI) applications, it's important to understand the following when using our data for AI development: Attribution: NASA cannot verify the accuracy of information once it's incorporated into a large language model. Therefore, attribution of the information directly to NASA is not permitted. ... References like \"according to NASA\" or similar are prohibited in AI products.",
+        "source": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+        "exception": "CONFLICT WITH README rule 2 (cite the source used): NASA forbids attributing AI-derived information to NASA. Jacob to rule whether a finding may carry this source id.",
+        "proposedAiUse": "permitted",
+        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob's approval (attribution conflict)"
+    },
+    {
+      "id": "wikipedia",
+      "title": "Wikipedia: Purkinje effect, Blue hour, Golden hour, Twilight, Lux, Color temperature, Neon lighting",
+      "publisher": "Wikimedia Foundation / Wikipedia contributors",
+      "jurisdiction": "n/a (science)",
+      "url": "https://en.wikipedia.org/wiki/Purkinje_effect",
+      "covers": [
+        "Purkinje / mesopic shift",
+        "blue hour / golden hour",
+        "twilight",
+        "lux ranges",
+        "colour temperature",
+        "neon lighting spectra/colours"
+      ],
+      "terms": {
+        "aiUse": "unchecked",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched",
+        "quote": "When you submit text to which you hold the copyright, you agree to license it under: Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0), and GNU Free Documentation License (GFDL)",
+        "source": "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use",
+        "exception": "No AI clause; attribution + share-alike apply to text; a tertiary source — prefer the permitted primary it cites.",
+        "proposedAiUse": "permitted",
+        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+      },
+      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+    },
+    {
+      "id": "nist-asd",
+      "title": "NIST Atomic Spectra Database (SRD 78): neon lines",
+      "publisher": "NIST (US Dept. of Commerce)",
+      "jurisdiction": "n/a (science)",
+      "url": "https://physics.nist.gov/PhysRefData/ASD/lines_form.html",
+      "covers": [
+        "Ne I emission lines (neon sign colour)",
+        "Na (sodium lamp) lines"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched",
+        "quote": "Standard Reference Data (SRD) are copyrighted by the U.S. Secretary of Commerce on behalf of the United States of America. All rights reserved. ... None of our SRD may be reproduced, stored in a retrieval system or transmitted, in any form or by by means, electronic, mechanical, photocopying, recording or otherwise, without prior permission.",
+        "source": "https://www.nist.gov/srd/public-law",
+        "exception": "15 USC 290e. CONFLICT: data.gov metadata for SRD 78 lists the NIST open licence. Ask data@nist.gov before use."
+      },
+      "status": "NOT PERMITTED — ask NIST"
+    },
+    {
+      "id": "cie-191-mesopic",
+      "title": "CIE 191:2010 Recommended System for Mesopic Photometry Based on Visual Performance",
+      "publisher": "CIE (International Commission on Illumination), Vienna",
+      "jurisdiction": "n/a (science)",
+      "url": "https://cie.co.at/publications/recommended-system-mesopic-photometry-based-visual-performance",
+      "covers": [
+        "mesopic photometry / Purkinje shift quantified"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched cie.co.at imprint (/terms-and-conditions 404); publication notice via search",
+        "quote": "The reproduction, processing, distribution, and any kind of exploitation outside the limits of copyright law require the written consent of the respective author or creator. ... Downloads and copies of this site are only permitted for private, non-commercial use.",
+        "source": "https://cie.co.at/cie.co.at/imprint"
+      },
+      "status": "NOT PERMITTED — written consent needed"
+    },
+    {
+      "id": "ies",
+      "title": "IES (Illuminating Engineering Society) standards and handbook (e.g. RP-8 roadway lighting)",
+      "publisher": "Illuminating Engineering Society",
+      "jurisdiction": "n/a (science)",
+      "url": "https://www.ies.org/standards/",
+      "covers": [
+        "roadway lighting practice",
+        "lighting terminology / CCT guidance"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: via search, fetch blocked (ies.org 403)",
+        "quote": "The reproduction, duplication, distribution (including by way of email, facsimile, or other electronic means), publication, modification, copying, or transmission of material from this Website is STRICTLY PROHIBITED unless You have obtained the prior written consent of the IES or unless it is expressly permitted by this Website.",
+        "source": "https://ies.org/terms-of-use/",
+        "exception": "Quote via search rendering — confirm in a browser."
+      },
+      "status": "NOT PERMITTED"
+    },
+    {
+      "id": "ama-csaph-2-a-16",
+      "title": "AMA CSAPH Report 2-A-16: Human and Environmental Effects of LED Community Lighting (2016)",
+      "publisher": "American Medical Association",
+      "jurisdiction": "n/a (science)",
+      "url": "https://policysearch.ama-assn.org/councilreports/downloadreport?uri=%2Fcouncilreports%2Fa16_csaph2.pdf",
+      "covers": [
+        "LED street lighting CCT / blue light health guidance"
+      ],
+      "terms": {
+        "aiUse": "not-permitted-without-permission",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched ama-assn.org/terms-use",
+        "quote": "The reproduction, transmission, distribution, sale, publication, broadcast, circulation or dissemination of any AMA Content by you...is prohibited unless express written consent is separately obtained.",
+        "source": "https://www.ama-assn.org/terms-use",
+        "exception": "A search snippet surfaced one line of the report's CCT recommendation during the terms check (an accidental rule-1 breach). It is NOT recorded and must not be used."
+      },
+      "status": "NOT PERMITTED"
     }
   ],
   "questions": [
@@ -1665,6 +1881,100 @@
         "f-usfs-timber-deck-min"
       ],
       "notes": "Minimums of the deck itself under highway loading; a structure's visible fascia (stringers, pile caps) is deeper."
+    },
+    {
+      "id": "q-twilight-definitions",
+      "ask": "Sun altitude that defines civil / nautical / astronomical twilight, and what each lets the eye see (horizon, brightest stars, full star field)",
+      "neededBy": "docs/briefs/BRIEF-tod-kit-default.md (the kit's designed day)",
+      "status": "open",
+      "tried": [
+        "terms checked 2026-09-27; no content read — every candidate awaits Jacob approval"
+      ],
+      "nextSources": [
+        "usno-aa-twilight (once Jacob approves its terms)"
+      ],
+      "codeSites": [
+        "src/cartograph/animatedParam.js getTodSlotMinutes (SunCalc dawn/dusk −6°, night −18°)",
+        "src/hooks/useSkyState.js astronomyAlpha sunFade (full at −8°, not −18°)",
+        "src/components/CelestialBodies.jsx mwNight (full at −8.6°)",
+        "cartograph/proceduralSky.js proceduralSkyAt (night colours below −6.9°)"
+      ]
+    },
+    {
+      "id": "q-daylight-cct-by-altitude",
+      "ask": "Colour temperature of direct sun and of skylight at each slot altitude (horizon sun ~2000 K … noon sun ~5500 K; blue sky 10,000 K+)",
+      "neededBy": "docs/briefs/BRIEF-tod-kit-default.md (the kit's designed day)",
+      "status": "open",
+      "tried": [
+        "terms checked 2026-09-27; no content read — every candidate awaits Jacob approval"
+      ],
+      "nextSources": [
+        "wikipedia (once Jacob approves its terms)"
+      ],
+      "codeSites": [
+        "src/components/celestialLights.js sunColor",
+        "src/components/CelestialBodies.jsx ambient/hemi colours"
+      ]
+    },
+    {
+      "id": "q-night-sky-milky-way-visibility",
+      "ask": "Sky brightness at which the Milky Way and the full star field are visible (Bortle class), and what a town sky shows",
+      "neededBy": "docs/briefs/BRIEF-tod-kit-default.md (the kit's designed day)",
+      "status": "open",
+      "tried": [
+        "terms checked 2026-09-27; no content read — every candidate awaits Jacob approval"
+      ],
+      "nextSources": [
+        "nps-night-skies (once Jacob approves its terms)"
+      ],
+      "codeSites": [
+        "src/components/CelestialBodies.jsx GradientSky uMilkyWay band + stars uOpacity"
+      ]
+    },
+    {
+      "id": "q-mesopic-purkinje",
+      "ask": "Luminance ranges of photopic / mesopic / scotopic vision and the Purkinje shift (reds darken, blues brighten, colour fades) — the basis for a desaturated, cool night that keeps its lamps and neon saturated",
+      "neededBy": "docs/briefs/BRIEF-tod-kit-default.md (the kit's designed day)",
+      "status": "open",
+      "tried": [
+        "terms checked 2026-09-27; no content read — every candidate awaits Jacob approval"
+      ],
+      "nextSources": [
+        "wikipedia (once Jacob approves its terms)"
+      ],
+      "codeSites": [
+        "grade.saturation + warmth night keys (proposed)"
+      ]
+    },
+    {
+      "id": "q-streetlight-cct",
+      "ask": "Colour temperature of high-pressure sodium vs LED street lighting as installed in US towns today",
+      "neededBy": "docs/briefs/BRIEF-tod-kit-default.md (the kit's designed day)",
+      "status": "open",
+      "tried": [
+        "terms checked 2026-09-27; no content read — every candidate awaits Jacob approval"
+      ],
+      "nextSources": [
+        "doe-ssl-street-lighting (once Jacob approves its terms)"
+      ],
+      "codeSites": [
+        "src/cartograph/m3Colors.js lamp #F2D67A (the kit lamp colour, not keyed)"
+      ]
+    },
+    {
+      "id": "q-photocell-switching-level",
+      "ask": "Illuminance at which a street-light photocontrol turns on and off, i.e. the sun altitude where lamps light",
+      "neededBy": "docs/briefs/BRIEF-tod-kit-default.md (the kit's designed day)",
+      "status": "open",
+      "tried": [
+        "terms checked 2026-09-27; no content read — every candidate awaits Jacob approval"
+      ],
+      "nextSources": [
+        "doe-ssl-street-lighting (once Jacob approves its terms)"
+      ],
+      "codeSites": [
+        "src/components/StreetLights.jsx daylight ramp t (0 at +8.6°, 1 at −17.2°)"
+      ]
     }
   ],
   "findings": [

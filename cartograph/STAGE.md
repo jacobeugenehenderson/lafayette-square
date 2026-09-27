@@ -14,7 +14,7 @@ Two load-bearing facts:
 
 1. **The Stage is wall #2 — the store dies into `scene.json`.** Survey freezes chains→polygons (wall #1); the Stage freezes the live **look store** into a flat snapshot the runtime trusts (wall #2). Past the bake, no store exists — the runtime reads `scene.json` cold (`BAKE.md §0`, `[[project_two_bakes_two_walls]]`).
 
-2. **Every look channel is a *time-of-day curve*, not a scalar.** The Stage's vocabulary is the **TodChannel**: a value authored across the day (dawn / day / dusk / night anchors), so a single Look renders golden-hour, noon, and deep-night faithfully. Sky pivoted (2026-05-20 ADR) to kit-canonical 4-anchor cards + per-Look *sparse overrides*; the rest follow `{ values: {…} }`. The operator drags a slider at the current scrubbed time; the channel records the curve. *(`skyLightChannels.js` defaults · `skyGrid.js` migration.)*
+2. **Every look channel is a *time-of-day curve*, not a scalar.** The Stage's vocabulary is the **TodChannel**: a value keyed at the day's seven named sun moments (dawn · sunrise · noon · golden · sunset · dusk · night, `animatedParam.js#NAMED_TOD_SLOTS`), each slot's minute computed from SunCalc at the town's own latitude and date, so a single Look renders golden-hour, noon, and deep-night faithfully. Sky pivoted (2026-05-20 ADR) to kit-canonical 4-anchor cards + per-Look *sparse overrides*; the rest follow `{ values: {…} }`. The operator drags a slider at the current scrubbed time; the channel records the curve. *(`skyLightChannels.js` defaults · `skyGrid.js` migration.)*
 
 ---
 
