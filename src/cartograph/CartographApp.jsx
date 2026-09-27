@@ -48,7 +48,7 @@ import WeatherPoller from '../components/WeatherPoller'
 import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
-import { sceneExag, reloadTerrain } from '../utils/terrainShader'
+import { sceneExag, reloadTerrain, onTerrainReload } from '../utils/terrainShader'
 import { streetEyeY } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview } from '../stage/StageApp.jsx'
@@ -1063,6 +1063,13 @@ export default function CartographApp() {
   // switch to another installation must swap the heightfield the same way
   // BakedGround swaps ground.bin. Force on a re-bake (bakeLastMs) so a Look's
   // FIRST bake — which fills in previously-404 (flat) terrain — takes effect.
+  // ⛔ sceneExag() is read during render, and reloadTerrain re-points it ASYNC with no
+  // re-render. So after a reload Stage kept the BOOT town's exaggeration (Lafayette
+  // Square's 1.5, the page's default town) until some unrelated re-render (Stage's
+  // Weather switch) dropped it to the active town's own value (Jacob, 2026-09-26:
+  // "when I click clear the elevation goes down almost flat"). Re-render on reload.
+  const [, setTerrainGen] = useState(0)
+  useEffect(() => onTerrainReload(() => setTerrainGen(g => g + 1)), [])
   const _prevBakeMs = useRef(bakeLastMs)
   useEffect(() => {
     if (!activeLookId) return
