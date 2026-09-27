@@ -619,8 +619,8 @@ const DAY = {
               tubeRadius: [1, 1, 1, 1, 1, 1, 1, 1], screenFloor: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
               screenCeil: [0, 0, 0, 0, 0, 0, 0, 0] },
   // Lamps × the daylight ramp: on before it is dark (▲ at Sunset), warm gaslamps at Dusk, cold glitter at Night.
-  lantern:  { edges: LAMP_EDGES, intensity: [5.0, 0.5, null, null, 0.8, 1.6, 2.4, 1.3], glow: [1.6, 0.3, null, null, 0.5, 1.2, 0.9, 0.6],
-              glowSize: [0.45, 0.5, null, null, 0.7, 0.8, 0.45, 0.45],
+  lantern:  { edges: LAMP_EDGES, intensity: [5.0, 1.5, null, null, 0.8, 1.6, 2.4, 1.3], glow: [1.6, 1.5, null, null, 0.5, 1.2, 0.9, 0.6],
+              glowSize: [0.45, 1.25, null, null, 0.7, 0.8, 0.45, 0.45],
               color: ['#ffd9a8', '#fff2e0', null, null, '#ffb877', '#ffa95c', '#e4ecff', '#d6e2ff'] },
   // The tree cards' answer to the key light: flat across the day (0 = the historical dimmer), keyed so a Look can
   // move it by time of day like every other channel.
