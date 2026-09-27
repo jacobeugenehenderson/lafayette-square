@@ -20,8 +20,11 @@
  *   · nothing on the land side → OPEN in plan: the drawing has a hole at the shore.
  * ⛔ And the waterline is where the level meets the ground (Jacob, 2026-09-26): √2 terrain cells from every part
  * of the mapped shore (a bilinear cell's reach), whatever ground is drawn — the bed, or a land face over the water — must be under the sheet.
- * ⛔ And the bed deepens going out: under a terrain that carries the bed (bake-terrain `bed`), the median
- * depth at each distance from the nearest mapped shore never shrinks, out to the visibility depth.
+ * ⛔ And the PROFILE deepens going out: under a terrain that carries the bed (bake-terrain `bed`), the median
+ * depth at each distance from the nearest mapped shore never shrinks, out to the visibility depth — over the cells
+ * the profile drew. ⭐ Where a real floor was laid (`bed.floor.runs`), bars, flats and channels rise again going
+ * out and that is the point (Jacob, 2026-09-27), so those cells are left out of the rule; a slab whose bed claims
+ * a floor must carry its cells and a named source.
  * ⛔ And first: the water must draw after every other ground group, or the ground under it paints
  * over it — a closed shore with no water visible is the picture this check once passed.
  * Stations on the disc rim are the EDGE OF THE DRAWING (`project_neighborhood_is_a_compound_shape`),
@@ -205,12 +208,32 @@ for (const dir of dirs) {
   // visibility depth. By distance to the NEAREST shore, not along a normal: across a channel the depth rises
   // again past the middle, and that is correct.
   if (tj.bed) {
+    // The cells the real floor drew (bake-terrain writeBed: row runs [row, firstCol, lastCol, …]) are not the profile.
+    const fl = tj.bed.floor
+    if (fl && !fl.none && !(Array.isArray(fl.runs) && fl.runs.length && fl.source && fl.cells > 0)) {
+      console.error(`⛔ ${look}: terrain.json's bed claims a real floor but carries no cells or no source — the profile's rule cannot be scoped`)
+      fail++
+      continue
+    }
+    const floorCell = new Uint8Array(fl?.runs ? tj.width * tj.height : 0)
+    if (fl?.runs) for (let r = 0; r < fl.runs.length; r += 3) floorCell.fill(1, fl.runs[r] * tj.width + fl.runs[r + 1], fl.runs[r] * tj.width + fl.runs[r + 2] + 1)
+    const sx = (tj.bounds.maxX - tj.bounds.minX) / (tj.width - 1), sz = (tj.bounds.maxZ - tj.bounds.minZ) / (tj.height - 1)
+    // A sample reads its four bilinear neighbours, so it is the floor's if ANY of them is.
+    const onFloor = (x, z) => {
+      if (!floorCell.length) return false
+      const i = Math.floor((x - tj.bounds.minX) / sx), j = Math.floor((z - tj.bounds.minZ) / sz)
+      for (const [di, dj] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        const ii = Math.min(tj.width - 1, Math.max(0, i + di)), jj = Math.min(tj.height - 1, Math.max(0, j + dj))
+        if (floorCell[jj * tj.width + ii]) return true
+      }
+      return false
+    }
     const reach = Math.pow(tj.bed.visibleToM / tj.bed.A, 1.5), bins = []
     for (const g of water) { const [P, I] = view(g)
       for (let t = 0; t < I.length && bins.flat().length < 60000; t += 3) { const V = [0, 1, 2].map(e => [P[I[t + e] * 3], P[I[t + e] * 3 + 2]])
         for (let q = 0; q < 6; q++) { let a2 = ((q + 1) * 0.7548776662) % 1, b2 = ((q + 1) * 0.5698402909) % 1; if (a2 + b2 > 1) { a2 = 1 - a2; b2 = 1 - b2 }
           const x = V[0][0] + a2 * (V[1][0] - V[0][0]) + b2 * (V[2][0] - V[0][0]), z = V[0][1] + a2 * (V[1][1] - V[0][1]) + b2 * (V[2][1] - V[0][1])
-          const d = nearest(x, z); if (!(d < reach)) continue
+          const d = nearest(x, z); if (!(d < reach) || onFloor(x, z)) continue
           const bi = Math.floor(d / STEP); (bins[bi] ||= []).push(-lift(x, z) / exag) } } }
     const med = bins.map(b2 => b2 && b2.length >= 20 ? b2.sort((p2, q2) => p2 - q2)[Math.floor(b2.length / 2)] : null)
     let prev = -Infinity, bad = null
@@ -220,7 +243,9 @@ for (const dir of dirs) {
       fail++
       continue
     }
-    depthLine = ` · bed deepens to ${tj.bed.visibleToM.toFixed(2)} m over ${reach.toFixed(0)} m (medians ${med.filter(v => v != null).slice(0, 4).map(v => v.toFixed(2)).join(' → ')} …)`
+    const shown = med.filter(v => v != null)
+    depthLine = (fl && !fl.none ? ` · real floor ${fl.source.split(' (')[0]}: ${fl.cells.toLocaleString()} cells (shore seam median ${fl.seam?.medianM} m, p90 |Δ| ${fl.seam?.p90AbsM} m)` : ' · no real floor')
+      + (shown.length ? ` · profile deepens to ${tj.bed.visibleToM.toFixed(2)} m over ${reach.toFixed(0)} m (medians ${shown.slice(0, 4).map(v => v.toFixed(2)).join(' → ')} …)` : ' · no profile cells left to test')
   }
   const walked = len.closed + len.awash + len.open
   const closedBy = Object.entries(by).sort((p, q) => q[1] - p[1]).map(([id, v]) => `${id} ${km(v)}`).join(' · ') || 'none'

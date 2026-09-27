@@ -349,7 +349,69 @@ function rockCells(normalized, mask, width, height, bounds) {
   if (areas.length + lines.length) console.log(`  ROCK: ${areas.length + lines.length} mapped breakwater/groyne(s) — ${keep.size.toLocaleString()} cells under the water keep the lidar's rock (of ${[...cand].filter(k => mask[k]).length.toLocaleString()} in their footprints)`)
   return keep
 }
-function writeBed(normalized, mask, width, height, bounds) {
+// ⭐⭐ THE REAL FLOOR (BRIEF-bathymetry; Jacob, 2026-09-26/27: "where there is depth data, we only use it out to
+// stair's edge. Where we don't have it, we gently slope it"). `fetch-bathymetry.mjs` lists the town's bathymetry
+// tiles (raw/bathymetry-sources.txt); they are range-read here through the same reader as the DEM, finest first,
+// and sampled under the mapped water. Depth = the water's level (the datum, derived from the flattened DEM FIRST —
+// replacing those samples before the datum would break it) minus the floor's elevation, in the DEM's vertical datum.
+// ⛔ Two vertical datums are never subtracted: the floor's is read off its tile, the DEM's off its tile or its
+// product's specification, and a pair this file cannot reconcile is REFUSED (no conversion is built yet).
+const BATHY_LIST = join(MAP_DIR, 'raw', 'bathymetry-sources.txt')
+const NAVD88 = 5103   // EPSG vertical datum code
+// The DEM's vertical datum. USGS 3DEP 1 m tiles carry no vertical GeoKey; the 3DEP product is NAVD88 over the
+// conterminous US (USGS Lidar Base Specification), so that is taken for a 3DEP tile inside CONUS and SAID.
+function demVerticalDatum(sources, cornersLL) {
+  if (sources.every(S => S.geoKeys?.VerticalDatumGeoKey === NAVD88)) return { datum: 'NAVD88', from: 'the DEM tiles\' own VerticalDatumGeoKey' }
+  const conus = cornersLL.every(([lon, lat]) => lon > -125 && lon < -66 && lat > 24 && lat < 50)
+  if (conus && sources.every(S => /\/StagedProducts\/Elevation\//.test(S.ref)))
+    return { datum: 'NAVD88', from: 'USGS 3DEP product specification (CONUS elevations are NAVD88) — the tiles carry no vertical key' }
+  return null
+}
+async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev, demSources }) {
+  if (!fs.existsSync(BATHY_LIST)) return { none: `no raw/bathymetry-sources.txt — ▶ node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` }
+  const urls = fs.readFileSync(BATHY_LIST, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
+  if (!urls.length) return { none: 'fetch-bathymetry found no tiles on its built rungs (raw/bathymetry-sources.txt says which rungs ran) — NOT verified-absent' }
+  const src = await openSources(urls.map(ref => ({ kind: 'url', ref })), { bounds, width, height, cornersLL, elevationBandOnly: true })
+  if (!src.length) throw new Error(`⛔ the floor: none of the ${urls.length} tile(s) in ${BATHY_LIST} overlap scene '${SCENE}' — the list is for another place`)
+  src.sort((a, b) => Math.abs(a.rx) - Math.abs(b.rx))                      // finest first
+  const bad = src.filter(S => S.geoKeys?.VerticalDatumGeoKey !== NAVD88 && !/navd\s*88/i.test(S.geoKeys?.VerticalCitationGeoKey || ''))
+  if (bad.length) throw new Error(`⛔ the floor: ${bad.map(S => S.label).join(', ')} name no NAVD88 vertical datum — refusing to subtract it from the DEM's`)
+  const dem = demVerticalDatum(demSources, cornersLL)
+  if (dem?.datum !== 'NAVD88') throw new Error(`⛔ the floor is NAVD88 and the DEM's vertical datum cannot be established — refusing to mix them (no datum conversion is built: BRIEF-bathymetry step 2)`)
+  const total = width * height, stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
+  const at = (i, j) => localToWgs84(bounds.minX + stepX * i, bounds.minZ + stepZ * j)
+  const depth = new Float32Array(total).fill(NaN)
+  let n = 0
+  for (let j = 0; j < height; j++) for (let i = 0; i < width; i++) {
+    const k = j * width + i
+    if (!mask[k]) continue
+    const v = sampleSources(src, ...at(i, j), { nanIsNodata: true })
+    if (Number.isFinite(v)) { depth[k] = baseElev - v; n++ }
+  }
+  // The SEAM: on dry ground within two cells of the water, where both rasters stand, how far the floor's
+  // elevation sits from the DEM's. A step there is a new bare gap at the shore (BRIEF-bathymetry step 2).
+  const diffs = []
+  for (let j = 0; j < height; j++) for (let i = 0; i < width; i++) {
+    const k = j * width + i
+    if (mask[k] || !Number.isFinite(raw[k])) continue
+    let near = false
+    for (let dj = -2; dj <= 2 && !near; dj++) for (let di = -2; di <= 2; di++) {
+      const ii = i + di, jj = j + dj
+      if (ii >= 0 && jj >= 0 && ii < width && jj < height && mask[jj * width + ii]) { near = true; break }
+    }
+    if (!near) continue
+    const v = sampleSources(src, ...at(i, j), { nanIsNodata: true })
+    if (Number.isFinite(v)) diffs.push(v - raw[k])
+  }
+  diffs.sort((a, b) => a - b)
+  const absd = diffs.map(Math.abs).sort((a, b) => a - b)
+  const q = (arr, p) => arr.length ? +arr[Math.min(arr.length - 1, Math.floor(p * arr.length))].toFixed(3) : null
+  const cellM = Math.max(...src.map(S => Math.abs(S.rx)))
+  return { depth, cells: n, cellM, tiles: src.length, datum: 'NAVD88', demDatumFrom: dem.from,
+           seam: { samples: diffs.length, medianM: q(diffs, 0.5), p90AbsM: q(absd, 0.9) } }
+}
+
+function writeBed(normalized, mask, width, height, bounds, floor = null) {
   const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
   const auth = waterAuthoring()
   const sand = auth.sandD50Mm ?? { value: finding('f-cem-nj-beach-d50').value.d50_mm, from: 'f-cem-nj-beach-d50 (the kit default — no town value authored)' }
@@ -358,19 +420,62 @@ function writeBed(normalized, mask, width, height, bounds) {
   const A = deanA(sand.value)
   const dist = shoreDistance(mask, width, height, stepX, stepZ)
   const rock = rockCells(normalized, mask, width, height, bounds)
-  let n = 0, capped = 0, maxD = 0
+  // ⭐ Where the floor is known it REPLACES the profile, down to the visibility depth (deeper does not show); it is
+  // feathered into the profile over one of its own cells where its coverage ends inside the water. A floor that
+  // stands ABOVE the level inside the mapped water is laid at the level (the water is flat, and the map says water
+  // there) and COUNTED, never raised through the sheet.
+  const known = floor?.depth ? floor : null
+  let wFloor = null
+  if (known) {
+    const keep = new Uint8Array(mask.length)
+    for (let k = 0; k < mask.length; k++) keep[k] = (mask[k] && !Number.isFinite(known.depth[k])) ? 0 : 1
+    wFloor = shoreDistance(keep, width, height, stepX, stepZ)             // metres to the nearest wet cell the floor misses
+  }
+  const fromFloor = new Uint8Array(known ? mask.length : 0)
+  let n = 0, capped = 0, maxD = 0, nFloor = 0, above = 0
   for (let k = 0; k < mask.length; k++) {
     if (!mask[k] || rock.has(k)) continue
-    const h = Math.min(A * Math.pow(dist[k], 2 / 3), vis.value)
+    let h = Math.min(A * Math.pow(dist[k], 2 / 3), vis.value)
+    if (known && Number.isFinite(known.depth[k])) {
+      const d = known.depth[k], hp = h
+      if (d < 0) above++
+      const w = Math.min(1, wFloor[k] / known.cellM)
+      h = w * Math.min(Math.max(d, 0), vis.value) + (1 - w) * hp
+      // ⛔ THE WATERLINE STAYS THE MAPPED SHORE: within a bilinear reach of it (two cells) the bed is never shallower
+      // than the profile, or a flat laid at the level blends with the land beside it and stands proud of the sheet.
+      if (dist[k] <= 2 * Math.max(stepX, stepZ)) h = Math.max(h, hp)
+      if (w > 0) { fromFloor[k] = 1; nFloor++ }
+    }
     if (h >= vis.value) capped++
     normalized[k] = -h; n++; if (dist[k] > maxD) maxD = dist[k]
+  }
+  // Which cells the floor drew, as row runs [row, firstCol, lastCol, …] — the check scopes the profile's rule by it.
+  const runs = []
+  if (known) for (let j = 0; j < height; j++) {
+    let i0 = -1
+    for (let i = 0; i <= width; i++) {
+      const on = i < width && fromFloor[j * width + i]
+      if (on && i0 < 0) i0 = i
+      else if (!on && i0 >= 0) { runs.push(j, i0, i - 1); i0 = -1 }
+    }
   }
   const fade = vis.fade ?? finding('r-bottom-visibility-default').value.fadeOverM
   console.log(`  BED: ${n.toLocaleString()} cells under the water · h = ${A.toFixed(3)}·y^(2/3) (sand ${sand.value} mm — ${sand.from})`)
   console.log(`    visible to ${vis.value.toFixed(2)} m, fading over the last ${fade.toFixed(2)} m — ${vis.from}`)
-  console.log(`    reaches that depth ${(Math.pow(vis.value / A, 1.5)).toFixed(0)} m from the shore · ${(100 * capped / Math.max(1, n)).toFixed(1)}% of the water is past it`)
+  console.log(`    the profile reaches that depth ${(Math.pow(vis.value / A, 1.5)).toFixed(0)} m from the shore · ${(100 * capped / Math.max(1, n)).toFixed(1)}% of the water is past it`)
+  const cellHa = stepX * stepZ / 1e4
+  if (known) {
+    console.log(`  FLOOR: ${known.tiles} bathymetry tile(s), ${known.datum} (DEM: ${known.demDatumFrom})`)
+    console.log(`    draws ${nFloor.toLocaleString()} of ${n.toLocaleString()} bed cells (${(100 * nFloor / Math.max(1, n)).toFixed(1)}%); the rest keep the profile`)
+    console.log(`    seam at the shore (floor − DEM on dry ground within 2 cells): median ${known.seam.medianM} m · p90 |Δ| ${known.seam.p90AbsM} m over ${known.seam.samples.toLocaleString()} samples`)
+    if (above) console.warn(`    ⚠️ ${above.toLocaleString()} cell(s) (${(above * cellHa).toFixed(1)} ha) of mapped water have a floor ABOVE the level — laid at the level, not raised through it`)
+  } else console.log(`  FLOOR: none — ${floor?.none || 'not asked'}. The bed is the profile alone.`)
   return { profile: 'f-cem-equilibrium-profile', A: +A.toFixed(4), sandD50Mm: sand.value, sandFrom: sand.from,
-           visibleToM: vis.value, fadeOverM: fade, visibilityFrom: vis.from, cells: n }
+           visibleToM: vis.value, fadeOverM: fade, visibilityFrom: vis.from, cells: n,
+           floor: known
+             ? { source: 'NOAA OCS BlueTopo (raw/bathymetry-sources.txt)', tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
+                 cellM: known.cellM, cells: nFloor, aboveLevelCells: above, seam: known.seam, runs }
+             : { none: floor?.none || 'not asked' } }
 }
 
 // ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx
@@ -396,6 +501,103 @@ function deriveStencilBbox(boundary) {
     minX: Math.floor(mnx), maxX: Math.ceil(mxx),
     minZ: Math.floor(mnz), maxZ: Math.ceil(mxz),
   }
+}
+
+// ⭐ One reader for every raster the terrain reads — the DEM tiles and the bathymetry tiles — so both are placed
+// by the same projector, the same overview choice and the same window. Returns the windows that overlap the scene.
+// `elevationBandOnly`: read band 1 alone (a BlueTopo tile carries elevation, uncertainty and contributor).
+async function openSources(specs, { bounds, width, height, cornersLL: _cornersLL, elevationBandOnly = false }) {
+  const PAD = 2
+  const sources = []
+for (const spec of specs) {
+  const label = spec.ref.split('/').pop()
+  const tiff = spec.kind === 'url' ? await fromUrl(spec.ref) : await fromFile(spec.ref)
+  const base = await tiff.getImage(0)
+  const [bx0, by0] = base.getOrigin()
+  const [brx, bry] = base.getResolution()
+  const proj = projectorFor(base, label)
+
+  // ⭐⭐ READ THE OVERVIEW THAT MATCHES THE OUTPUT GRID, NOT THE FINEST ONE.
+  // A COG carries a pyramid, and USGS 1 m tiles carry six levels. Sampling a
+  // 1 m level onto a 5 m grid transfers and decodes 25× the bytes to throw 96%
+  // of them away — and over a 7 km town that is the difference between a second
+  // and a minute. ⛔ Never COARSER than the output step: that would smear the
+  // very edge we went to 1 m for. ⇒ the finest level whose pixel is still at
+  // least as fine as the grid, which for a 5 m grid off a 1 m tile is the 4 m
+  // level. ⚠️ Only level 0 carries a geotransform, so a level's scale is its
+  // size ratio to level 0 — geotiff throws on getResolution() for the rest.
+  // ⛔ THE GRID STEP IS IN METRES AND A PIXEL MAY BE IN DEGREES. The first cut of
+  // this compared the two directly and silently chose the coarsest overview for
+  // every geographic tile — LS lost 2.9 m of relief and nothing errored. That is
+  // CLAUDE.md's Class D tell exactly: a comparison whose unit is only stable
+  // because something else happens to be fixed. ⇒ Measure the grid step IN THE
+  // SOURCE'S OWN UNITS by projecting two points one step apart.
+  const stepM = Math.min(Math.abs((bounds.maxX - bounds.minX) / (width - 1)),
+                         Math.abs((bounds.maxZ - bounds.minZ) / (height - 1)))
+  const _a = proj.to(...localToWgs84(bounds.minX, bounds.minZ))
+  const _b = proj.to(...localToWgs84(bounds.minX + stepM, bounds.minZ))
+  const want = Math.hypot(_b[0] - _a[0], _b[1] - _a[1])
+  const levels = await tiff.getImageCount()
+  let pick = 0, image = base, w = base.getWidth(), h = base.getHeight(), rx = brx, ry = bry
+  for (let L = 1; L < levels; L++) {
+    const im = await tiff.getImage(L)
+    const scale = base.getWidth() / im.getWidth()
+    if (Math.abs(brx) * scale > want) break          // this level is coarser than the grid
+    pick = L; image = im; w = im.getWidth(); h = im.getHeight()
+    rx = brx * scale; ry = bry * scale
+  }
+  const ox = bx0, oy = by0
+  if (pick) console.log(`  ${label}: grid step is ${stepM.toFixed(2)} m = ${want.toExponential(3)} ${proj.unit} — reading overview level ${pick}/${levels - 1} (${Math.abs(rx).toExponential(3)} ${proj.unit}/px) instead of level 0`)
+
+  // The scene's own corners, in THIS tile's coordinates. ⛔ All four, not a
+  // bbox of lon/lat: a projected frame is not axis-aligned to a geographic one.
+  let sx0 = Infinity, sx1 = -Infinity, sy0 = Infinity, sy1 = -Infinity
+  for (const [lon, lat] of _cornersLL) {
+    const [px, py] = proj.to(lon, lat)
+    if (px < sx0) sx0 = px; if (px > sx1) sx1 = px
+    if (py < sy0) sy0 = py; if (py > sy1) sy1 = py
+  }
+  const tx0 = ox, tx1 = ox + w * rx
+  const ty1 = oy, ty0 = oy + h * ry          // ry < 0 for a north-up image
+  const overlaps = sx1 > Math.min(tx0, tx1) && sx0 < Math.max(tx0, tx1)
+                && sy1 > Math.min(ty0, ty1) && sy0 < Math.max(ty0, ty1)
+  console.log(`  source ${label}  ${w}×${h}  ${proj.kind} (EPSG:${proj.epsg})  res=(${rx}, ${ry}) ${proj.unit}/px  ${overlaps ? 'overlaps' : '⚠️ NO OVERLAP — skipped'}`)
+  if (!overlaps) continue
+
+  const px0 = Math.max(0, Math.floor((sx0 - ox) / rx) - PAD)
+  const px1 = Math.min(w, Math.ceil((sx1 - ox) / rx) + PAD)
+  const py0 = Math.max(0, Math.floor((sy1 - oy) / ry) - PAD)
+  const py1 = Math.min(h, Math.ceil((sy0 - oy) / ry) + PAD)
+  if (px1 <= px0 || py1 <= py0) { console.log(`    (empty window — skipped)`); continue }
+  const winW = px1 - px0, winH = py1 - py0
+  const rasters = await image.readRasters(elevationBandOnly ? { window: [px0, py0, px1, py1], samples: [0] } : { window: [px0, py0, px1, py1] })
+  const band = Array.isArray(rasters) ? rasters[0] : rasters
+  if (band.length !== winW * winH) throw new Error(`${label}: window read ${band.length}, expected ${winW * winH}`)
+  console.log(`    window px=[${px0},${px1}) py=[${py0},${py1}) = ${winW}×${winH}`)
+  sources.push({ label, band, winW, winH, rx, ry, proj, geoKeys: base.getGeoKeys?.() || {}, ref: spec.ref,
+                 x0: ox + (px0 + 0.5) * rx, y0: oy + (py0 + 0.5) * ry })
+}
+  return sources
+}
+
+/** Bilinear sample of the first source that holds all four neighbours of (lon, lat); NaN if none does. */
+function sampleSources(sources, lon, lat, { nanIsNodata = false } = {}) {
+  for (const S of sources) {
+    const [px, py] = S.proj.to(lon, lat)
+    const fx = (px - S.x0) / S.rx, fy = (py - S.y0) / S.ry
+    const ix = Math.floor(fx), iy = Math.floor(fy)
+    if (ix < 0 || iy < 0 || ix + 1 >= S.winW || iy + 1 >= S.winH) continue
+    const tx = fx - ix, ty = fy - iy
+    const v00 = S.band[iy * S.winW + ix],         v10 = S.band[iy * S.winW + ix + 1]
+    const v01 = S.band[(iy + 1) * S.winW + ix],   v11 = S.band[(iy + 1) * S.winW + ix + 1]
+    if (v00 < NODATA_THRESHOLD || v10 < NODATA_THRESHOLD ||
+        v01 < NODATA_THRESHOLD || v11 < NODATA_THRESHOLD) continue
+    // BlueTopo marks no-data as NaN, which no threshold catches: the next (coarser) source is asked instead.
+    if (nanIsNodata && !(Number.isFinite(v00) && Number.isFinite(v10) && Number.isFinite(v01) && Number.isFinite(v11))) continue
+    return v00 * (1 - tx) * (1 - ty) + v10 * tx * (1 - ty)
+         + v01 * (1 - tx) * ty       + v11 * tx * ty
+  }
+  return NaN
 }
 
 async function main() {
@@ -472,76 +674,7 @@ async function main() {
   }
 
   const t0 = Date.now()
-  const PAD = 2
-  const sources = []
-  for (const spec of specs) {
-    const label = spec.ref.split('/').pop()
-    const tiff = spec.kind === 'url' ? await fromUrl(spec.ref) : await fromFile(spec.ref)
-    const base = await tiff.getImage(0)
-    const [bx0, by0] = base.getOrigin()
-    const [brx, bry] = base.getResolution()
-    const proj = projectorFor(base, label)
-
-    // ⭐⭐ READ THE OVERVIEW THAT MATCHES THE OUTPUT GRID, NOT THE FINEST ONE.
-    // A COG carries a pyramid, and USGS 1 m tiles carry six levels. Sampling a
-    // 1 m level onto a 5 m grid transfers and decodes 25× the bytes to throw 96%
-    // of them away — and over a 7 km town that is the difference between a second
-    // and a minute. ⛔ Never COARSER than the output step: that would smear the
-    // very edge we went to 1 m for. ⇒ the finest level whose pixel is still at
-    // least as fine as the grid, which for a 5 m grid off a 1 m tile is the 4 m
-    // level. ⚠️ Only level 0 carries a geotransform, so a level's scale is its
-    // size ratio to level 0 — geotiff throws on getResolution() for the rest.
-    // ⛔ THE GRID STEP IS IN METRES AND A PIXEL MAY BE IN DEGREES. The first cut of
-    // this compared the two directly and silently chose the coarsest overview for
-    // every geographic tile — LS lost 2.9 m of relief and nothing errored. That is
-    // CLAUDE.md's Class D tell exactly: a comparison whose unit is only stable
-    // because something else happens to be fixed. ⇒ Measure the grid step IN THE
-    // SOURCE'S OWN UNITS by projecting two points one step apart.
-    const stepM = Math.min(Math.abs((bounds.maxX - bounds.minX) / (width - 1)),
-                           Math.abs((bounds.maxZ - bounds.minZ) / (height - 1)))
-    const _a = proj.to(...localToWgs84(bounds.minX, bounds.minZ))
-    const _b = proj.to(...localToWgs84(bounds.minX + stepM, bounds.minZ))
-    const want = Math.hypot(_b[0] - _a[0], _b[1] - _a[1])
-    const levels = await tiff.getImageCount()
-    let pick = 0, image = base, w = base.getWidth(), h = base.getHeight(), rx = brx, ry = bry
-    for (let L = 1; L < levels; L++) {
-      const im = await tiff.getImage(L)
-      const scale = base.getWidth() / im.getWidth()
-      if (Math.abs(brx) * scale > want) break          // this level is coarser than the grid
-      pick = L; image = im; w = im.getWidth(); h = im.getHeight()
-      rx = brx * scale; ry = bry * scale
-    }
-    const ox = bx0, oy = by0
-    if (pick) console.log(`  ${label}: grid step is ${stepM.toFixed(2)} m = ${want.toExponential(3)} ${proj.unit} — reading overview level ${pick}/${levels - 1} (${Math.abs(rx).toExponential(3)} ${proj.unit}/px) instead of level 0`)
-
-    // The scene's own corners, in THIS tile's coordinates. ⛔ All four, not a
-    // bbox of lon/lat: a projected frame is not axis-aligned to a geographic one.
-    let sx0 = Infinity, sx1 = -Infinity, sy0 = Infinity, sy1 = -Infinity
-    for (const [lon, lat] of _cornersLL) {
-      const [px, py] = proj.to(lon, lat)
-      if (px < sx0) sx0 = px; if (px > sx1) sx1 = px
-      if (py < sy0) sy0 = py; if (py > sy1) sy1 = py
-    }
-    const tx0 = ox, tx1 = ox + w * rx
-    const ty1 = oy, ty0 = oy + h * ry          // ry < 0 for a north-up image
-    const overlaps = sx1 > Math.min(tx0, tx1) && sx0 < Math.max(tx0, tx1)
-                  && sy1 > Math.min(ty0, ty1) && sy0 < Math.max(ty0, ty1)
-    console.log(`  source ${label}  ${w}×${h}  ${proj.kind} (EPSG:${proj.epsg})  res=(${rx}, ${ry}) ${proj.unit}/px  ${overlaps ? 'overlaps' : '⚠️ NO OVERLAP — skipped'}`)
-    if (!overlaps) continue
-
-    const px0 = Math.max(0, Math.floor((sx0 - ox) / rx) - PAD)
-    const px1 = Math.min(w, Math.ceil((sx1 - ox) / rx) + PAD)
-    const py0 = Math.max(0, Math.floor((sy1 - oy) / ry) - PAD)
-    const py1 = Math.min(h, Math.ceil((sy0 - oy) / ry) + PAD)
-    if (px1 <= px0 || py1 <= py0) { console.log(`    (empty window — skipped)`); continue }
-    const winW = px1 - px0, winH = py1 - py0
-    const rasters = await image.readRasters({ window: [px0, py0, px1, py1] })
-    const band = Array.isArray(rasters) ? rasters[0] : rasters
-    if (band.length !== winW * winH) throw new Error(`${label}: window read ${band.length}, expected ${winW * winH}`)
-    console.log(`    window px=[${px0},${px1}) py=[${py0},${py1}) = ${winW}×${winH}`)
-    sources.push({ label, band, winW, winH, rx, ry, proj,
-                   x0: ox + (px0 + 0.5) * rx, y0: oy + (py0 + 0.5) * ry })
-  }
+  const sources = await openSources(specs, { bounds, width, height, cornersLL: _cornersLL })
 
   // ⛔⛔ DOES THE UNION ACTUALLY COVER THE SCENE? REFUSE IF NOT.
   // The window clamps are Math.max(0,…)/Math.min(w,…), so a tile from the wrong
@@ -553,22 +686,7 @@ async function main() {
     process.exit(1)
   }
 
-  function sample(lon, lat) {
-    for (const S of sources) {
-      const [px, py] = S.proj.to(lon, lat)
-      const fx = (px - S.x0) / S.rx, fy = (py - S.y0) / S.ry
-      const ix = Math.floor(fx), iy = Math.floor(fy)
-      if (ix < 0 || iy < 0 || ix + 1 >= S.winW || iy + 1 >= S.winH) continue
-      const tx = fx - ix, ty = fy - iy
-      const v00 = S.band[iy * S.winW + ix],         v10 = S.band[iy * S.winW + ix + 1]
-      const v01 = S.band[(iy + 1) * S.winW + ix],   v11 = S.band[(iy + 1) * S.winW + ix + 1]
-      if (v00 < NODATA_THRESHOLD || v10 < NODATA_THRESHOLD ||
-          v01 < NODATA_THRESHOLD || v11 < NODATA_THRESHOLD) continue
-      return v00 * (1 - tx) * (1 - ty) + v10 * tx * (1 - ty)
-           + v01 * (1 - tx) * ty       + v11 * tx * ty
-    }
-    return NaN
-  }
+  const sample = (lon, lat) => sampleSources(sources, lon, lat)
 
   const raw = new Float32Array(total)
   let misses = 0
@@ -616,7 +734,8 @@ async function main() {
 
   const normalized = new Float32Array(total)
   for (let k = 0; k < total; k++) normalized[k] = raw[k] - baseElev
-  const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds) : null
+  const floor = wd ? await readFloor({ bounds, width, height, cornersLL: _cornersLL, mask: wd.mask, raw, baseElev, demSources: sources }) : null
+  const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor) : null
 
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
                  datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}) }

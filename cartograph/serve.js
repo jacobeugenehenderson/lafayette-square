@@ -1738,6 +1738,17 @@ createServer(async (req, res) => {
             ? { ok: true, count: 0, verifiedAbsent: true,
                 note: 'no lidar DEM covers this town — searched the whole ladder and recorded it. ⛔ This town bakes FLAT; that is now a decision on the record, not a default.' }
             : { ok: false, count: demTiles, error: lastLine(dR) }
+        // ── Bathymetry — the floor under the town's water (BRIEF-bathymetry; fetch-bathymetry.mjs). Nothing
+        //    downloaded: the tile list bake-terrain range-reads. 0 = found · 1 = none on the BUILT rungs, which is
+        //    NOT verified-absent (the file names the rungs never asked); the bed then stays the profile, said.
+        const bathR = await runCapture('node fetch-bathymetry.mjs --scene=' + scene, { cwd: here, env, timeout: 300000 })
+        const bathyList = join(raw, 'bathymetry-sources.txt')
+        const bathyTiles = existsSync(bathyList)
+          ? readFileSync(bathyList, 'utf8').split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).length
+          : 0
+        sources.bathymetry = bathR.code === 0 ? { ok: true, count: bathyTiles }
+          : bathR.code === 1 ? { ok: true, count: 0, note: 'no bathymetry on the built rungs — the bed under the water is the profile; see raw/bathymetry-sources.txt' }
+          : { ok: false, count: bathyTiles, error: lastLine(bathR) }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox, sources }))
         // ⭐ A fetched town gets its OWN instance module, or it boots wearing Lafayette Square
@@ -2748,6 +2759,7 @@ createServer(async (req, res) => {
         // (coastline.mjs included, and anything it grows later) — never a hand list.
         await runIfDirty('terrain',
           [ELEVATION_TIF, ELEVATION_LIST, join(bakePaths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
+           join(bakePaths.raw, 'bathymetry-sources.txt'),   // the real floor under the water (fetch-bathymetry.mjs); same caveat
            bakePaths.boundary, bakePaths.geography,
            join(bakePaths.raw, 'osm.json'),
            // the coast bed reads design.water from every Look of this town and three registry findings — declared as
