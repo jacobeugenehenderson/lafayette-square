@@ -18,13 +18,16 @@
 import * as THREE from 'three'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState.js'
 import { groundColor } from '../components/groundColorState.js'
+import { LAMP_WIPE_GLSL } from './lampPool.js'
 
 /** Marks the chunk in a compiled shader, so the check can find it. */
 export const GROUND_LAMP_MARKER = '/* ground-lamp: poolmap, after lighting */'
 
 export const GROUND_LAMP_DECLS = `
        uniform sampler2D uPoolMap; uniform vec2 uPoolMin; uniform vec2 uPoolSpan;
-       uniform float uPoolScale; uniform float uPool; uniform float uShadowStr; uniform vec3 uLampColor;`
+       uniform float uPoolScale; uniform float uPool; uniform float uShadowStr; uniform vec3 uLampColor;
+       uniform float uPoolWipe;   // the Pool radius knob (lampPool.js#poolWipe) — 0 = fully open
+       ${LAMP_WIPE_GLSL}`
 
 /** The fragment code, to follow `#include <dithering_fragment>`. `xz` = the fragment's world XZ. */
 export const groundLampFragment = (xz) => `
@@ -33,7 +36,7 @@ export const groundLampFragment = (xz) => `
          if (all(greaterThanEqual(puv, vec2(0.0))) && all(lessThanEqual(puv, vec2(1.0)))) {
            vec4 gfx = texture2D(uPoolMap, puv);
            gl_FragColor.rgb *= (1.0 - gfx.g * uShadowStr);                  // contact shadow
-           gl_FragColor.rgb += uLampColor * gfx.r * uPoolScale * uPool;     // the lamp's pool, in its colour
+           gl_FragColor.rgb += uLampColor * lampWipe(gfx.r * uPoolScale, uPoolWipe) * uPool;   // the lamp's pool, in its colour, clipped to the Radius
          } }`
 
 /** Bind the pool uniforms. `pool` = { map, min, span, scale } from ground.json#poolmap (+ its texture). */
@@ -45,6 +48,7 @@ export function bindGroundLamp(uniforms, pool) {
   uniforms.uPool      = _lampGlow.poolUniform
   uniforms.uShadowStr = { value: 0.5 }
   uniforms.uLampColor = _lampGlow.colorUniform
+  uniforms.uPoolWipe  = _lampGlow.poolWipeUniform
 }
 
 /**
@@ -60,4 +64,5 @@ export function bindGroundLampShared(uniforms) {
   uniforms.uPool      = _lampGlow.poolUniform
   uniforms.uShadowStr = { value: 0.5 }
   uniforms.uLampColor = _lampGlow.colorUniform
+  uniforms.uPoolWipe  = _lampGlow.poolWipeUniform
 }

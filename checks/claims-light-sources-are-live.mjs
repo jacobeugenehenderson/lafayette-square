@@ -5,9 +5,9 @@
 // store in LAFAYETTE SQUARE's Stage only; every poured town mounted the lamps without it and read the value frozen
 // in scene.json — so Brightness and Glow moved a slider and nothing else. Layer 0's LS-shaped hole, in the UI.
 //   ① every Stage mount of the lamps (<BakedLamps>, <StreetLights>) in CartographApp passes the live lantern
-//   ② every LANTERN field is read by StreetLights (`lant.<key>`)
-//   ③ every LAMPGLOW field is written as a share by BOTH the Stage pump and the production driver, and
-//      StreetLights turns it into a uniform (`share.<key>` × the lamp's output)
+//   ② each control moves its own thing: every Lantern/Lamp Glow field drives ≥1 target in StreetLights,
+//      and no target is driven by two fields (self-mutated: a master multiplier on the pools must go red)
+//   ③ every LAMPGLOW field is written as a share by BOTH the Stage pump and the production driver
 //   ④ those uniforms have shader readers (pool → groundLamp.js + building walls · trees → treeAtlasMaterial.js)
 //   ⑤ the walls' GLSL falloff equals lampPool.js's JS falloff, evaluated — one model, two languages
 // ⭐ The field lists are READ from skyLightChannels.js, never restated, so a new control is covered the day it lands.
@@ -43,20 +43,49 @@ console.log('① EVERY STAGE MOUNT OF THE LAMPS PASSES THE LIVE LANTERN')
   deadMounts(mutated).dead.length ? ok('mutation (one live lantern removed) is caught') : bad('mutation NOT caught — ① is blind')
 }
 
-console.log('② EVERY LANTERN FIELD IS READ BY THE LAMPS')
-for (const k of LANTERN_FIELD_KEYS) new RegExp(`lant\\.${k}\\b`).test(lights) ? ok(`lantern.${k}`) : bad(`lantern.${k} — no \`lant.${k}\` in StreetLights`)
+console.log('② EACH CONTROL MOVES ITS OWN THING — every field drives ≥1 target, no target is driven by two fields')
+// Jacob, 2026-09-26: "They're redundant, but also don't refer to the correct things" — a master Brightness
+// multiplied the pools, so two knobs moved one thing. Parse StreetLights' per-frame writes (following local
+// consts such as `bulb`) and map field → targets.
+const writes = (() => {
+  const frame = lights.slice(lights.indexOf('useFrame('))
+  const fieldsIn = (expr, vars) => {
+    const f = new Set()
+    for (const m of expr.matchAll(/lant\.(\w+)|share\.(\w+)/g)) f.add(m[1] ? `lantern.${m[1]}` : `lampGlow.${m[2]}`)
+    for (const [v, vf] of vars) if (new RegExp(`\\b${v}\\b`).test(expr)) vf.forEach(x => f.add(x))
+    return f
+  }
+  const vars = new Map()
+  for (const m of frame.matchAll(/const (\w+) = ([^\n]+)/g)) { const f = fieldsIn(m[2], vars); if (f.size) vars.set(m[1], f) }
+  const out = new Map()   // target → Set(fields)
+  for (const m of frame.matchAll(/([\w.?\[\]]+?\.(?:value|opacity))\s*=\s*([^\n]+)/g)) {
+    const f = fieldsIn(m[2], vars)
+    if (f.size) out.set(m[1].replace(/\?/g, ''), f)
+  }
+  return out
+})()
+{
+  const all = [...LANTERN_FIELD_KEYS.map(k => `lantern.${k}`), ...LAMPGLOW_FIELDS.map(f => `lampGlow.${f.key}`)]
+  for (const field of all) {
+    const targets = [...writes].filter(([, f]) => f.has(field)).map(([t]) => t)
+    targets.length ? ok(`${field} → ${targets.join(', ')}`) : bad(`${field} drives nothing in StreetLights`)
+  }
+  for (const [t, f] of writes) if (f.size > 1) bad(`${t} is driven by ${[...f].join(' AND ')} — two controls, one thing`)
+  // Self-mutation: a master multiplier on the pools must be caught.
+  const m = new Map(writes); m.set('_lampGlow.poolUniform.value', new Set(['lampGlow.pool', 'lantern.intensity']))
+  ;[...m].some(([, f]) => f.size > 1) ? ok('mutation (Bulb also scaling the pools) is caught') : bad('mutation NOT caught')
+}
 
-console.log('③ EVERY LAMP GLOW FIELD IS WRITTEN IN STAGE + PRODUCTION AND BECOMES A UNIFORM')
+console.log('③ EVERY LAMP GLOW FIELD IS WRITTEN IN STAGE + PRODUCTION')
 for (const { key } of LAMPGLOW_FIELDS) {
   const w = new RegExp(`share\\.${key}\\s*=\\s*triple\\.${key}\\b`)
   w.test(app) ? ok(`${key}: Stage pump writes it`) : bad(`${key}: the Stage pump (CartographApp LampGlowPump) never writes share.${key}`)
   w.test(driver) ? ok(`${key}: production driver writes it`) : bad(`${key}: the production driver (LampGlowDriver) never writes share.${key}`)
-  new RegExp(`Uniform\\.value\\s*=\\s*lampLit\\s*\\*\\s*_lampGlow\\.share\\.${key}\\b`).test(lights)
-    ? ok(`${key}: StreetLights applies it to the lamp's output`) : bad(`${key}: StreetLights never multiplies the lamp output by share.${key}`)
 }
 
 console.log('④ THE UNIFORMS HAVE SHADER READERS')
-for (const [u, file] of [['poolUniform', 'src/lib/groundLamp.js'], ['poolUniform', 'src/components/SlabBuildings.jsx'], ['treesUniform', 'src/components/treeAtlasMaterial.js']])
+for (const [u, file] of [['poolUniform', 'src/lib/groundLamp.js'], ['poolUniform', 'src/components/SlabBuildings.jsx'], ['treesUniform', 'src/components/treeAtlasMaterial.js'],
+                          ['poolWipeUniform', 'src/lib/groundLamp.js'], ['canopyWipeUniform', 'src/components/SlabBuildings.jsx'], ['canopyWipeUniform', 'src/components/treeAtlasMaterial.js']])
   src(file).includes(`_lampGlow.${u}`) ? ok(`${u} → ${file}`) : bad(`${u} has no reader in ${file}`)
 
 console.log('⑤ THE WALLS\' GLSL FALLOFF IS THE JS FALLOFF')

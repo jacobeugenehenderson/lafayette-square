@@ -189,8 +189,11 @@ All Image channels are TOD. Grouped by intent:
 ### Light Sources card *(was "Lamps")*
 
 The man-made emitters (TOD):
-- **Lantern** (`lantern` = **Brightness + Glow**) — the lamp's own light (lantern, halo, bulb), TOD-animatable, × the automatic dusk→night turn-on. **Its output is the one lamp light everything else takes a share of**: it is exactly 0 by day, so everything below is too.
-- **Lamp Glow** (`lampGlow`) — **shares of the Lantern's output**, TOD-animatable. **Light pools** = how strongly it lands on every ground surface (and building walls). **Trees** = the canopy's share (× the leaf's own colour × each tree's baked share, with the pool's reach — `src/lib/lampPool.js`; re-bake trees after lamps). Both default to 1. Reach is baked (16 m), not a slider. ▶ `node checks/claims-light-sources-are-live.mjs` — every field reaches a live uniform in every town's Stage and in production.
+- **Lamps — five knobs, each moving ONE thing** *(Jacob, 2026-09-26)*, all × the automatic dusk→night turn-on (so all 0 by day); no master over the others.
+  - **Lantern › Bulb** — the light source: the glass panes shift toward the lamp colour (a colour, not an emission), plus the bulb dot and tiny orb. **Lantern › Glow** — the soft gradient around the lantern; what stands in front hides it.
+  - **Lamp Glow › Light pools** — strength on the ground and on building walls. **Pool radius** — a live gradient wipe that clips how far a pool reads; 1 = fully open. **Trees** — the canopy (× the leaf's own colour, so it runs high).
+  - ⭐ **The pool's REACH is not a knob — it is derived** from the town's lamp spacing so neighbouring pools overlap (`src/lib/lampPool.js#overlapReach`, ≈ 0.91 × spacing), stamped into `lamps.json#reach` by bake-lamps and baked into the pool map + tree glow. Re-bake lamps → ground AO → trees after a spacing change.
+  - ▶ `node checks/claims-light-sources-are-live.mjs` — every knob reaches the screen in every town's Stage and in production, and no two knobs move the same thing.
 - **Arch uplights** (`archLight`) — the Gateway Arch's cross-aimed foot uplights: left/right **intensity · colour · cone° · reach**. Placement is on the non-TOD `arch` channel.
 
 The pool is **baked into the ground** (contour-correct), so its *shape* is a bake-time knob (CLI / bake operations, below). **Lamp colour** is the Surfaces lamp swatch (above) — one source tints the lantern **and** the pool. ⚠️ **Open (Phase B):** the lamp is really **three** things — fixture (lantern + aura/Bloom) · ground pool (should be its own knob, not slaved to Lantern) · canopy — and Bloom + Neon should join this card (`scratch/LOOK-PANEL-TAXONOMY.md`).

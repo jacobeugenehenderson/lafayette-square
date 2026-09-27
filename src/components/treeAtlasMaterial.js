@@ -15,6 +15,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
+import { LAMP_WIPE_GLSL } from '../lib/lampPool.js'
 import { groundColor as _groundColor } from './groundColorState'
 import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
@@ -354,6 +355,7 @@ export function injectFoliageSway(material) {
     // (`src/lib/lampPool.js`). Tinted by the authored lamp colour, the same one the pool uses.
     shader.uniforms.uLampGlow = _lampGlow.treesUniform
     shader.uniforms.uLampColor = _lampGlow.colorUniform
+    shader.uniforms.uCanopyWipe = _lampGlow.canopyWipeUniform
     // Trunk-base ground blend — the lowest ~uTrunkBlendTop metres of the trunk
     // blend toward the ACTUAL ground colour beneath the tree, sampled from the
     // baked per-Look ground-color map at the tree's world-XZ. Marries the tree
@@ -800,6 +802,8 @@ export function injectFoliageSway(material) {
          uniform float uLeafTransmissionSharpness;
          uniform float uLampGlow;
          uniform vec3  uLampColor;
+         uniform float uCanopyWipe;
+         ${LAMP_WIPE_GLSL}
          uniform sampler2D uGroundColorMap;
          uniform vec2  uGroundColorMin;
          uniform vec2  uGroundColorSpan;
@@ -1061,7 +1065,7 @@ export function injectFoliageSway(material) {
         // albedo factor is what stops it glowing. vCanopyW gates it to the upper foliage.
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
-         totalEmissiveRadiance += diffuseColor.rgb * uLampColor * vLampGlow * uLampGlow * vCanopyW;`
+         totalEmissiveRadiance += diffuseColor.rgb * uLampColor * lampWipe(vLampGlow, uCanopyWipe) * uLampGlow * vCanopyW;`
       )
       .replace(
         // Sanitize the final lit color before it becomes gl_FragColor — kills the
@@ -2135,6 +2139,8 @@ const LIT_CARDS_FRAG_COMMON = `
          varying float vLampGlow;     // lamp light on the card — see bindCardLampUniforms
          uniform float uLampGlow;
          uniform vec3  uLampColor;
+         uniform float uCanopyWipe;
+         ${LAMP_WIPE_GLSL}
          uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;
          uniform vec3  uKeyDir;    // world direction TOWARD the scene's key light
          uniform vec3  uKeyColor;
@@ -2200,6 +2206,7 @@ function bindCardLightUniforms(shader) {
 function bindCardLampUniforms(shader) {
   shader.uniforms.uLampGlow  = _lampGlow.treesUniform
   shader.uniforms.uLampColor = _lampGlow.colorUniform
+  shader.uniforms.uCanopyWipe = _lampGlow.canopyWipeUniform
 }
 
 const OVERHEAD_STAMP_FRAG = `
@@ -2209,7 +2216,7 @@ const OVERHEAD_STAMP_FRAG = `
          vec2  ovD  = (vMapUv * 2.0 - 1.0) * uCardBulge;
          float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
          vec3  ovN  = vec3(ovD.x, sqrt(1.0 - ovR2), ovD.y);   // hemispherical crown, world axes
-         diffuseColor.rgb *= litCardsRelight(ovN, ovAO) + uLampColor * vLampGlow * uLampGlow;`
+         diffuseColor.rgb *= litCardsRelight(ovN, ovAO) + uLampColor * lampWipe(vLampGlow, uCanopyWipe) * uLampGlow;`
 
 // The HERO card's fragment half. The card is a Y-axis billboard, so its own axes
 // are handed down from the vertex shader as varyings — width along vHeroRight,
@@ -2229,7 +2236,7 @@ const HERO_STAMP_FRAG = `
          float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
          vec3  ovN  = vHeroRight * ovD.x + vec3(0.0, ovD.y, 0.0) + vHeroFwd * sqrt(1.0 - ovR2);
          // Lamps light the foliage layer only — the mesh path gates the same way (vCanopyW).
-         diffuseColor.rgb *= litCardsRelight(ovN, ovAO) + uLampColor * vLampGlow * uLampGlow * (1.0 - uCardIsBark);
+         diffuseColor.rgb *= litCardsRelight(ovN, ovAO) + uLampColor * lampWipe(vLampGlow, uCanopyWipe) * uLampGlow * (1.0 - uCardIsBark);
          // ── THE TRUNK/GROUND JOINT ────────────────────────────────────────────
          // The operator's description: "a sample of the shadowed ground multiplied
          // onto the trunk to blend the joint/connection point." It existed on the mesh

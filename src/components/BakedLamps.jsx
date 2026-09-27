@@ -70,5 +70,5 @@ export default function BakedLamps({ lookId, bakeLastMs, lanternOverride } = {})
   if (scene?.layerVis?.lamp === false) return null
   // Lantern channel: Stage live override > baked scene > flat default.
   const lantern = lanternOverride ?? scene?.lantern ?? null
-  return <StreetLights lamps={data.lamps} lookId={resolvedLookId} bakeLastMs={bakeLastMs} lantern={lantern} />
+  return <StreetLights lamps={data.lamps} reach={data.reach} lookId={resolvedLookId} bakeLastMs={bakeLastMs} lantern={lantern} />
 }

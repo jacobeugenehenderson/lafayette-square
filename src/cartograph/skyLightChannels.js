@@ -485,10 +485,11 @@ export const CLOUDS_FIELD_KEYS = Object.keys(CLOUDS_FLAT_DEFAULTS)
 // So Brightness moves lamp, halo, pools, trees and walls together, and each slider scales one receiver.
 // (`grass` stays in the defaults for back-compat with older design.json; no panel field, no reader.)
 export const LAMPGLOW_FIELDS = [
-  { key: 'pool',  label: 'Light pools',          min: 0, max: 4, step: 0.05 },
-  { key: 'trees', label: 'Trees (share of lamp)', min: 0, max: 4, step: 0.05 },
+  { key: 'pool',   label: 'Light pools', min: 0, max: 4,  step: 0.05 },
+  { key: 'radius', label: 'Pool radius', min: 0, max: 1,  step: 0.01 },
+  { key: 'trees',  label: 'Trees',       min: 0, max: 20, step: 0.1 },
 ]
-export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 1, pool: 1.0 }
+export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 1, pool: 1.0, radius: 1.0 }
 export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
 
 // Lantern (Lamps card) — the lamp's LIGHT SOURCE itself (the lantern): the
@@ -504,11 +505,16 @@ export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
 // (`layerColors.lamp`, the Surfaces lamp swatch), which also drives the ground
 // pool's colour (the pool IS the lantern's light on the ground). Defaults
 // reproduce today's hardwired output.
+// ⭐ Jacob, 2026-09-26 — each knob moves ONE thing, and none is a master over the others:
+//   Bulb (`intensity`, key kept so authored Looks still load) — the light source: the glass panes
+//   whiten toward the lamp colour (a colour, not an emission), plus the bulb dot and tiny orb inside.
+//   Glow — the soft gradient around the lantern, depth-tested so what stands in front hides it.
+// The pools, trees and walls are the Lamp Glow card's. All of it × the automatic dusk→night turn-on.
 export const LANTERN_FIELDS = [
-  { key: 'intensity', label: 'Brightness',  min: 0, max: 2, step: 0.02 },
-  { key: 'glow',      label: 'Glow (halo)', min: 0, max: 2, step: 0.02 },
+  { key: 'intensity', label: 'Bulb', min: 0, max: 1, step: 0.01 },
+  { key: 'glow',      label: 'Glow', min: 0, max: 2, step: 0.02 },
 ]
-export const LANTERN_FLAT_DEFAULTS = { intensity: 1.0, glow: 1.0 }
+export const LANTERN_FLAT_DEFAULTS = { intensity: 0.5, glow: 1.0 }
 export const LANTERN_FIELD_KEYS = LANTERN_FIELDS.map(f => f.key)
 
 // Milky Way (Sky & Light, CELESTIAL group) — binary on/off. Cross-slot

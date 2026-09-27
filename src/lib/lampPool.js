@@ -1,22 +1,25 @@
 /**
- * lampPool.js — ONE model of how far a street lamp's light reaches and how it falls off.
+ * lampPool.js — ONE model of how a street lamp's light falls on the world: ground, trees, walls.
  *
  * Read by the ground's pool bake (`cartograph/bake-ground-ao.js`, the R channel of
- * `ground.poolmap.png`) AND by the per-tree glow bake (`arborist/bake-trees.js`), so a
- * tree is lit exactly where the ground under it is — never a second copy of the numbers.
- * (It was: the trees ran a gaussian σ 12 m cut at 48 m, the pool reached 16 m, so a tree
- * 30 m out glowed over unlit ground. Jacob, 2026-09-26: *"Lamps should affect tree albedo."*)
+ * `ground.poolmap.png`), the per-tree glow bake (`arborist/bake-trees.js`) and the building walls
+ * (`SlabBuildings.jsx`, via the grid below), so a tree or a wall is lit exactly where the ground is.
  *
- * The constants are the LAMP's, not a town's: one light fixture, the same everywhere.
+ * ⭐ THE REACH IS THE TOWN'S, DERIVED — NOT A CONSTANT (Jacob, 2026-09-26: "The ground pools should
+ * overlap"). A 16 m reach at 27 m spacing left the midpoint between neighbours at 16% of a pool's
+ * peak: separate spots. `overlapReach(spacing)` solves for the reach at which the midpoint between two
+ * neighbours equals a lone pool's peak — from this file's own profile, so nothing is typed — and
+ * bake-lamps stamps it into lamps.json (`reach`), which every consumer reads.
+ * ⭐ The PERCEIVED radius is a separate, live control: the pools are baked fully open, and `poolWipe` /
+ * `canopyWipe` turn the Radius knob into a threshold that clips the soft tail at runtime.
  */
 
-export const POOL_RADIUS_M    = 16   // outer reach of one lamp's light (m)
 export const POOL_RING_POS    = 0.32 // normalized radius of the bright ring on the ground (0..1)
 export const POOL_RING_SHARP  = 4.5  // ring sharpness; LOWER = blurrier ring
 export const POOL_SHADOW_FRAC = 0.18 // centre radius the pole blocks its own light, on the ground
 export const POOL_MAX         = 3.0  // headroom: overlapping lamps sum up to this before clipping
 
-/** The distance falloff every surface shares — full at the lamp, zero at POOL_RADIUS_M. `rn` = d / POOL_RADIUS_M. */
+/** The distance falloff every surface shares — full at the lamp, zero at the reach. `rn` = d / reach. */
 export function lampFalloff(rn) {
   const penumbra = Math.exp(-rn * rn * 1.6)
   const rim = 1 - Math.max(0, Math.min(1, (rn - 0.7) / 0.3))
@@ -39,18 +42,39 @@ export function groundPool(rn) {
 /**
  * Light on a CANOPY: the same reach and falloff, WITHOUT the ring and the pole shadow — a
  * crown up by the lamp head is neither on the pavement nor behind the pole (Jacob, 2026-09-26).
- * ⭐ Flip this one line to `groundPool(rn)` if the trees should carry the ground's shape too.
  */
 export const canopyLight = (rn) => lampFalloff(rn)
 
-/** Summed canopy light at (x, z) from a town's baked lamps, clamped to the same headroom as the pool. */
-export function canopyLightAt(lamps, x, z) {
+const POOL_PEAK = (() => { let p = 0; for (let i = 0; i <= 2000; i++) p = Math.max(p, groundPool(i / 2000)); return p })()
+
+/**
+ * The reach at which two lamps `spacing` apart light the ground midway between them as brightly as
+ * one pool's peak. Solved by bisection on this file's own profile — change the profile, the reach follows.
+ */
+export function overlapReach(spacing) {
+  if (!(spacing > 0)) throw new Error(`[lampPool] overlapReach needs a positive spacing, got ${spacing}`)
+  const mid = (R) => { const rn = (spacing / 2) / R; return rn < 1 ? 2 * groundPool(rn) : 0 }
+  let lo = spacing / 2, hi = spacing * 4           // at lo the midpoint sits on the rim (0); at hi it is well past the peak
+  for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (mid(m) < POOL_PEAK) lo = m; else hi = m }
+  return +((lo + hi) / 2).toFixed(2)
+}
+
+/**
+ * The Radius knob → a threshold on the summed light, so the soft tail is clipped where a LONE pool
+ * would have reached `radius` of its full reach. radius 1 → 0 (no clip). One knob, two profiles.
+ */
+export const poolWipe   = (radius) => (radius >= 1 ? 0 : groundPool(Math.max(0, radius)))
+export const canopyWipe = (radius) => (radius >= 1 ? 0 : lampFalloff(Math.max(0, radius)))
+
+/** Summed canopy light at (x, z) from a town's baked lamps, within `reach`, clamped to the pool's headroom. */
+export function canopyLightAt(lamps, x, z, reach) {
+  if (!(reach > 0)) throw new Error(`[lampPool] canopyLightAt needs the town's reach (lamps.json#reach), got ${reach}`)
   let acc = 0
-  const R2 = POOL_RADIUS_M * POOL_RADIUS_M
+  const R2 = reach * reach
   for (const l of lamps) {
     const dx = x - l.x, dz = z - l.z, d2 = dx * dx + dz * dz
     if (d2 >= R2) continue
-    acc += canopyLight(Math.sqrt(d2) / POOL_RADIUS_M)
+    acc += canopyLight(Math.sqrt(d2) / reach)
   }
   return Math.min(acc, POOL_MAX)
 }
@@ -58,7 +82,7 @@ export function canopyLightAt(lamps, x, z) {
 // ── Building walls (Jacob, 2026-09-26: "Can buildings get streetlight as well?") ──────────────
 // A wall pixel sums every lamp within reach: the SAME falloff, measured in 3D from the lamp head,
 // × how squarely the wall faces it. There are thousands of lamps, so they are binned into a grid of
-// POOL_RADIUS_M cells — a pixel only ever needs its own cell and the 8 around it.
+// reach-sized cells — a pixel only ever needs its own cell and the 8 around it.
 
 /** The falloff above, in GLSL — keep the two in step (▶ checks/claims-light-sources-are-live.mjs compares them). */
 export const LAMP_FALLOFF_GLSL = `
@@ -69,14 +93,15 @@ export const LAMP_FALLOFF_GLSL = `
   }`
 
 /**
- * Bin lamps into POOL_RADIUS_M cells. Each cell holds up to `k` lamps (k = the busiest cell's count,
+ * Bin lamps into `reach`-sized cells. Each cell holds up to `k` lamps (k = the busiest cell's count,
  * MEASURED from these lamps — never a cap), as RGBA float texels (x, z, 0, 1); an empty slot is (0,0,0,0).
  * Texture layout: width = cols × k, height = rows; cell (cx, cz), slot s → texel (cx × k + s, cz).
  * @returns {{ data: Float32Array, cols: number, rows: number, k: number, min: [number, number], cell: number } | null}
  */
-export function buildLampGrid(lamps) {
+export function buildLampGrid(lamps, reach) {
   if (!lamps?.length) return null
-  const cell = POOL_RADIUS_M
+  if (!(reach > 0)) throw new Error(`[lampPool] buildLampGrid needs the town's reach (lamps.json#reach), got ${reach}`)
+  const cell = reach
   let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity
   for (const l of lamps) { minX = Math.min(minX, l.x); minZ = Math.min(minZ, l.z); maxX = Math.max(maxX, l.x); maxZ = Math.max(maxZ, l.z) }
   const cols = Math.floor((maxX - minX) / cell) + 1, rows = Math.floor((maxZ - minZ) / cell) + 1
@@ -92,3 +117,7 @@ export function buildLampGrid(lamps) {
   }
   return { data, cols, rows, k, min: [minX, minZ], cell }
 }
+
+/** The Radius wipe, in GLSL — ground, walls and trees all clip with this one function. `th` from poolWipe/canopyWipe. */
+export const LAMP_WIPE_GLSL = `
+  float lampWipe(float v, float th) { return th > 0.0 ? v * smoothstep(0.5 * th, th, v) : v; }`

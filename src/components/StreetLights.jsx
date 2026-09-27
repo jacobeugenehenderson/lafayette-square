@@ -17,7 +17,7 @@ import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
-import { buildLampGrid } from '../lib/lampPool.js'
+import { buildLampGrid, poolWipe, canopyWipe } from '../lib/lampPool.js'
 
 const LANTERN_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANTERN_FLAT_DEFAULTS } })
 
@@ -44,10 +44,13 @@ const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern cente
 // ground FX map — see BakedGround / grassMaterial / bake-ground-ao.js.
 // POOL_RADIUS/POOL_Y/poolMat + SHADOW_RADIUS/baseMat all retired.)
 
-function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternChannel } = {}) {
+function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: lanternChannel } = {}) {
   const lampRef = useRef()
   const glowRef = useRef()
   const bulbRef = useRef()
+  const haloRef = useRef()
+  // Bulb: how far the glass panes shift toward the lamp colour (0..1) — a colour, not an emission.
+  const bulbPaneUniform = useRef({ value: 0 })
   // Production Canvas runs frameloop="demand"; the imperative instance-matrix
   // fills below (lamp/glow/bulb) don't trigger R3F's auto-invalidate, and the
   // lamp model loads async — so lamps would stay unpainted until a camera nudge.
@@ -75,7 +78,12 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
   const allLamps = lampsProp || (INSTANCE.lookId === 'lafayette-square' ? lampData.lamps : [])
   // The lamps, binned for the building walls (lampPool.js#buildLampGrid) — from the list we DRAW.
   useEffect(() => {
-    const g = buildLampGrid(allLamps)
+    if (allLamps.length && !(reach > 0)) {
+      // ⛔ No fallback reach: a lamps.json baked before the derived reach lights no walls, and says so.
+      console.warn(`[StreetLights] ${allLamps.length} lamps and no reach (lamps.json predates the derived pool reach) — building walls take NO lamp light. ▶ re-bake lamps.`)
+      _lampGrid.uLampGridDims.value.set(0, 0, 0); return
+    }
+    const g = buildLampGrid(allLamps, reach)
     if (!g) { _lampGrid.uLampGridDims.value.set(0, 0, 0); return }
     const tex = new THREE.DataTexture(g.data, g.cols * g.k, g.rows, THREE.RGBAFormat, THREE.FloatType)
     tex.minFilter = tex.magFilter = THREE.NearestFilter
@@ -85,8 +93,9 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
     _lampGrid.uLampGridDims.value.set(g.cols, g.rows, g.k)
     _lampGrid.uLampGridCell.value = g.cell
     _lampGrid.uLampHeadY.value = GLOW_Y          // the lantern's height above its ground
+    _lampGrid.uLampReach.value = reach
     return () => { _lampGrid.uLampGridDims.value.set(0, 0, 0); _lampGrid.uLampGrid.value = null; tex.dispose() }
-  }, [allLamps])
+  }, [allLamps, reach])
 
   // Baked ground anchor per lamp (groundSampler): the raw field where the DRAWN
   // ground sits under each lamp → rigid-lift onto the rendered surface, no float
@@ -242,11 +251,12 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
   useEffect(() => {
     const lampCol = panelLampColor || '#fff2e0'  // layerColors.lamp, else the warm default
     if (glowMatRef.current?.uniforms?.uColor) glowMatRef.current.uniforms.uColor.value.set(lampCol)
+    haloMat.uniforms.uColor.value.set(lampCol)   // the soft glow is the same light
     if (lampMatRef.current?.emissive) lampMatRef.current.emissive.set(lampCol)
     // The ground light pool IS the lantern's light on the ground — give it the
     // same colour (consumed by the grass + FadeMesh pool term via uLampColor).
     _lampGlow.colorUniform.value.set(lampCol)
-  }, [panelLampColor, lampModel])
+  }, [panelLampColor, lampModel, haloMat])
 
   useEffect(() => {
     const loader = new GLTFLoader()
@@ -270,8 +280,8 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
 
             // Glass glow: transmissionTexture becomes emissiveMap
             // Glass areas glow warm amber at night, iron stays dark
-            mat.emissive = LAMP_COLOR_ON.clone()
-            mat.emissiveMap = txMap
+            // ⭐ The panes are NOT emissive (Jacob, 2026-09-26: "just being slightly more white, not even
+            // literally emissive") — they shift toward the lamp colour by the Bulb knob, after lighting.
             mat.emissiveIntensity = 0
 
             // Enable transparency so glass panels can fade to clear during day
@@ -279,6 +289,8 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
 
             mat.onBeforeCompile = (shader) => {
               shader.uniforms.uSunAltitude = sunAltUniform.current
+              shader.uniforms.uBulbPane = bulbPaneUniform.current
+              shader.uniforms.uBulbColor = _lampGlow.colorUniform
               if (txMap) {
                 shader.uniforms.uTxMap = { value: txMap }
               }
@@ -287,6 +299,8 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
                 '#include <common>',
                 `#include <common>
                 uniform float uSunAltitude;
+                uniform float uBulbPane;
+                uniform vec3  uBulbColor;
                 ${txMap ? 'uniform sampler2D uTxMap;' : ''}`
               )
 
@@ -312,7 +326,9 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
                   `#include <dithering_fragment>
                   float glassMask = texture2D(uTxMap, vMapUv).r;
                   float glassVisible = 1.0 - smoothstep(-0.05, 0.15, uSunAltitude);
-                  gl_FragColor.a *= mix(1.0, glassVisible, glassMask);`
+                  gl_FragColor.a *= mix(1.0, glassVisible, glassMask);
+                  // Bulb: the lit glass reads toward the lamp colour.
+                  gl_FragColor.rgb = mix(gl_FragColor.rgb, uBulbColor, glassMask * uBulbPane);`
                 )
               }
             }
@@ -385,6 +401,23 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
     invalidate()
   }, [allLamps, lampModel, aGroundRaw, bulbGeo, invalidate])
 
+  // ── Instance transforms — the soft GLOW around each lantern (restored 2026-09-26: haloMat was
+  //    defined and never mounted). Depth-TESTED (three's default), so what stands in front hides it.
+  useEffect(() => {
+    if (!haloRef.current) return
+    const d = new THREE.Object3D()
+    allLamps.forEach((lamp, i) => {
+      d.position.set(lamp.x, GLOW_Y, lamp.z)
+      d.rotation.set(0, 0, 0)
+      d.scale.setScalar(HALO_RADIUS)
+      d.updateMatrix()
+      haloRef.current.setMatrixAt(i, d.matrix)
+    })
+    haloRef.current.instanceMatrix.needsUpdate = true
+    haloGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
+    invalidate()
+  }, [allLamps, lampModel, aGroundRaw, haloGeo, invalidate])
+
   // (Lamp base-ring instance transforms removed — the contact shadow is baked
   // into the ground FX map now, not a per-lamp disc.)
 
@@ -399,34 +432,28 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
     const t = Math.min(1, Math.max(0, (0.15 - sunAltitude) / 0.45))
     const isActive = t > 0.01
 
-    // Lantern channel (operator master Brightness + Glow, TOD-animatable) ×
-    // the automatic dusk→night turn-on (t). Resolved per-frame; defaults
-    // reproduce the old hardwired 0.8 / 1.0 multipliers.
+    // ⭐ EACH KNOB MOVES ONE THING (Jacob, 2026-09-26), all × the dusk→night turn-on t (0 by day):
+    //   Lantern › Bulb → glass panes + bulb dot + tiny orb · Lantern › Glow → the soft gradient
+    //   Lamp Glow › Light pools → ground + walls · Pool radius → the wipe · Trees → the canopy
+    // ▶ checks/claims-light-sources-are-live.mjs pins that no two knobs write the same uniform.
     const tod = useTimeOfDay.getState()
     const lant = resolveGroupAtMinute(
       lanternChannel || LANTERN_DEFAULT_CHANNEL, tod.getMinuteOfDay(),
       lanternChannel?.animated ? getTodSlotMinutes(tod.currentTime) : null,
       LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
     )
-    const lampLit = t * (lant.intensity ?? 1)
-
-    // Glass panels — warm white when lit, no procedural glow
-    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = lampLit * 0.8
-    // Tight glass halo — visible but not blowout (× the Glow knob)
-    if (glowMatRef.current?.uniforms?.uIntensity) glowMatRef.current.uniforms.uIntensity.value = lampLit * (lant.glow ?? 1)
-    // Sharp bulb dot — bright pinprick at lantern center
-    bulbMat.opacity = lampLit
-    // The ground light pool IS the lantern's light on the ground — drive its
-    // intensity from the lantern's actual output (Brightness × the dusk→night
-    // ramp), so the Lantern Brightness slider controls the pool too, and it's
-    // off by day. (Consumed by grass + FadeMesh as uPool; colour = uLampColor.)
-    _lampGlow.poolUniform.value  = lampLit * _lampGlow.share.pool
-    // The trees take their share of the SAME output (× leaf colour × each tree's baked share).
-    _lampGlow.treesUniform.value = lampLit * _lampGlow.share.trees
-    // (Lamp pool + contact shadow moved into the baked ground FX map — see
-    // BakedGround / bake-ground-ao.js.)
+    const bulb = t * Math.min(1, lant.intensity ?? 0)
+    bulbPaneUniform.current.value = bulb
+    if (glowMatRef.current?.uniforms?.uIntensity) glowMatRef.current.uniforms.uIntensity.value = bulb
+    bulbMat.opacity = bulb
+    if (haloMat.uniforms?.uIntensity) haloMat.uniforms.uIntensity.value = t * (lant.glow ?? 0)
+    _lampGlow.poolUniform.value  = t * _lampGlow.share.pool
+    _lampGlow.treesUniform.value = t * _lampGlow.share.trees
+    _lampGlow.poolWipeUniform.value   = poolWipe(_lampGlow.share.radius)
+    _lampGlow.canopyWipeUniform.value = canopyWipe(_lampGlow.share.radius)
     if (glowRef.current) glowRef.current.visible = isActive
     if (bulbRef.current) bulbRef.current.visible = isActive
+    if (haloRef.current) haloRef.current.visible = isActive
   })
 
   if (!lampModel) return null
@@ -452,6 +479,13 @@ function StreetLights({ lamps: lampsProp, lookId, bakeLastMs, lantern: lanternCh
       <instancedMesh
         ref={glowRef}
         args={[glowGeo, glowMat, allLamps.length]}
+        frustumCulled={false}
+      />
+
+      {/* Soft glow around the lantern — Lantern › Glow */}
+      <instancedMesh
+        ref={haloRef}
+        args={[haloGeo, haloMat, allLamps.length]}
         frustumCulled={false}
       />
 

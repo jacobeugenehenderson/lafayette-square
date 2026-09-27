@@ -23,7 +23,7 @@ import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { PNG } from 'pngjs'
 import { loadBuildings } from './bake-buildings.js'
 import { requireExplicitMap } from './scene.js'
-import { POOL_RADIUS_M, POOL_MAX, groundPool } from '../src/lib/lampPool.js'
+import { POOL_MAX, groundPool } from '../src/lib/lampPool.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -304,6 +304,15 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
   // HEMI_FOR_DIRECTIONAL blackout the same evening.
   const FX_TARGET_M_PER_TEXEL = 1.6   // LS's proven density; 4.5 m radius ≈ 2.8 texels
   const FX_SIZE_MAX = 4096            // 4096² × 2 Float32 accumulators ≈ 134 MB
+  // ⭐ THE POOL'S REACH IS THE TOWN'S — derived from its lamp spacing so neighbouring pools overlap, and
+  // stamped into lamps.json by bake-lamps (`reach`). Read HERE, outside the try below, because that try
+  // swallows every error as "FX map skipped": a missing reach must stop the bake, not bake no pools.
+  const lampsDocPath = join(lookDir, 'lamps.json')
+  const lampsDoc = existsSync(lampsDocPath) ? JSON.parse(readFileSync(lampsDocPath, 'utf-8')) : null
+  if (lampsDoc?.lamps?.length && !(lampsDoc.reach > 0))
+    throw new Error(`[bake-ao] ${lampsDocPath} has ${lampsDoc.lamps.length} lamps and no \`reach\` — it predates the derived pool reach. ` +
+      `Re-bake lamps first (node cartograph/bake-lamps.js --scene=${scene} --look=${look}). Refusing to guess a reach.`)
+  const POOL_REACH = lampsDoc?.reach ?? 0
   try {
     // Contact-shadow sources are per-installation. The Look's own lamps.json /
     // the scene's own tree placements — NEVER LS's when this is a poured
@@ -347,7 +356,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
         if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x
         if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z
       }
-      const margin = Math.max(POOL_RADIUS_M, TREE_SHADOW_RADIUS_M)
+      const margin = Math.max(POOL_REACH, TREE_SHADOW_RADIUS_M)
       minX -= margin; maxX += margin; minZ -= margin; maxZ += margin
       const pW = maxX - minX, pH = maxZ - minZ
       // Size the FX map to hold FX_TARGET_M_PER_TEXEL across THIS town's span.
@@ -381,7 +390,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
         }
       }
       // R — lamp light pools (summed)
-      for (const l of lamps) splat(l.x, l.z, POOL_RADIUS_M, (i, rn) => { accR[i] += groundPool(rn) })
+      for (const l of lamps) splat(l.x, l.z, POOL_REACH, (i, rn) => { accR[i] += groundPool(rn) })
       // G — contact shadows (trees + lamp bases), summed + clamped at encode.
       // ONLY for trees that actually render — `heroTier:"cull"` placements draw
       // nothing (InstancedTrees drops them), so splatting their shadow leaves an

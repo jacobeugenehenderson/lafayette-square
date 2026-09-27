@@ -321,6 +321,7 @@ export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
     // Shares of the lamp's output; StreetLights multiplies them by it (0 by day, follows Brightness).
     _lampGlowUniforms.share.trees = triple.trees
     _lampGlowUniforms.share.pool  = triple.pool
+    _lampGlowUniforms.share.radius = triple.radius
   })
   return null
 }

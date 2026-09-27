@@ -354,7 +354,7 @@ export function migrateGroupChannel(legacy, fieldKeys, defaults) {
 
 // Lamp Glow stays as a thin wrapper for back-compat. Same triple shape
 // the existing consumers expect.
-const LAMP_GLOW_KEYS = ['grass', 'trees', 'pool']
+const LAMP_GLOW_KEYS = ['grass', 'trees', 'pool', 'radius']
 export function resolveLampGlowAtMinute(lampGlow, minute, slotMinutes) {
   return resolveGroupAtMinute(lampGlow, minute, slotMinutes, LAMP_GLOW_KEYS, LAMPGLOW_FLAT_DEFAULTS)
 }

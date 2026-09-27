@@ -42,7 +42,7 @@ import { INSTANCE } from '../instance.js'
 import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
-import { LAMP_FALLOFF_GLSL, POOL_RADIUS_M } from '../lib/lampPool.js'
+import { LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL } from '../lib/lampPool.js'
 const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
 
 // ── Camera x-ray — always on (2026-06-28) ─────────────────────────────────
@@ -602,6 +602,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       if (isWall) {
         shader.uniforms.uLampOut   = _lampGlow.poolUniform
         shader.uniforms.uLampColor = _lampGlow.colorUniform
+        shader.uniforms.uCanopyWipe = _lampGlow.canopyWipeUniform
         Object.assign(shader.uniforms, _lampGrid)
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <common>',
@@ -613,10 +614,13 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
            uniform vec3  uLampGridDims;
            uniform float uLampGridCell;
            uniform float uLampHeadY;
+           uniform float uLampReach;
+           uniform float uCanopyWipe;
            ${LAMP_FALLOFF_GLSL}
+           ${LAMP_WIPE_GLSL}
            float wallLampLight(vec3 p, vec3 n) {
              int K = int(uLampGridDims.z);
-             if (uLampOut <= 0.0 || K == 0) return 0.0;
+             if (uLampOut <= 0.0 || K == 0 || uLampReach <= 0.0) return 0.0;
              int cols = int(uLampGridDims.x), rows = int(uLampGridDims.y);
              ivec2 c = ivec2(floor((p.xz - uLampGridMin) / uLampGridCell));
              float acc = 0.0;
@@ -628,7 +632,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
                  if (L.w < 0.5) break;
                  vec3 d = vec3(L.x, uLampHeadY, L.y) - p;
                  float dist = length(d);
-                 float rn = dist / ${POOL_RADIUS_M.toFixed(1)};
+                 float rn = dist / uLampReach;
                  if (rn >= 1.0 || dist < 1e-3) continue;
                  acc += lampFalloff(rn) * max(0.0, dot(n, d / dist));
                }
@@ -638,7 +642,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <emissivemap_fragment>',
           `#include <emissivemap_fragment>
-           totalEmissiveRadiance += diffuseColor.rgb * uLampColor * uLampOut * wallLampLight(vBPos, normalize(vBNorm));`)
+           totalEmissiveRadiance += diffuseColor.rgb * uLampColor * uLampOut * lampWipe(wallLampLight(vBPos, normalize(vBNorm)), uCanopyWipe);`)
       }
 
       registerShader(shader)

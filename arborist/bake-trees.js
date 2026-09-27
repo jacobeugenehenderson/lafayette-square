@@ -80,6 +80,7 @@ const REPO_ROOT = path.resolve(__dirname, '..')
 // glow to land. Absent is honest (zero), not an error — same contract as the
 // frozen-shape mask above.
 let _lamps = []
+let _lampReach = 0   // lamps.json#reach — the town's derived pool reach (src/lib/lampPool.js#overlapReach)
 function loadLampsForMap(scene) {
   const p = path.join(REPO_ROOT, 'public', 'baked', scene, 'lamps.json')
   if (!existsSync(p)) {
@@ -87,17 +88,21 @@ function loadLampsForMap(scene) {
       `(Run bake-lamps first if this scene has a lamp census.)`)
     return []
   }
-  try {
-    const j = JSON.parse(readFileSync(p, 'utf-8'))
-    const lamps = j.lamps || j
-    return Array.isArray(lamps) ? lamps : []
-  } catch (e) {
+  let j
+  try { j = JSON.parse(readFileSync(p, 'utf-8')) }
+  catch (e) {
     console.warn(`[bake-trees] scene=${scene}: lamps.json unreadable (${e.message}) — lampGlow ZERO.`)
     return []
   }
+  const lamps = Array.isArray(j.lamps || j) ? (j.lamps || j) : []
+  // Outside the try: a lamps.json with lamps and no reach must STOP the bake, not read as "no glow".
+  if (lamps.length && !(j.reach > 0))
+    throw new Error(`[bake-trees] scene=${scene}: lamps.json has ${lamps.length} lamps and no \`reach\` — re-bake lamps first (node cartograph/bake-lamps.js --scene=${scene} --look=${scene}). Refusing to guess a reach.`)
+  _lampReach = j.reach ?? 0
+  return lamps
 }
 function lampGlowAt(wx, wz) {
-  return canopyLightAt(_lamps, wx, wz)
+  return _lamps.length ? canopyLightAt(_lamps, wx, wz, _lampReach) : 0
 }
 // Forbidden-surface filter (a tree can never stand on hardscape/water/building)
 // lives in cartograph/forbidden-surface.mjs — shared with the canopy-fill

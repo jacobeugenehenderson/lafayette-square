@@ -42,7 +42,10 @@ export const lampGlow = {
   treesUniform: { value: 0 },
   // The authored shares of the lamp's output (the Lamp Glow card), written by LampGlowPump (Stage,
   // live) / LampGlowDriver (production, baked); StreetLights multiplies the lamp's output by them.
-  share: { trees: 1, pool: 1 },
+  share: { trees: 1, pool: 1, radius: 1 },
+  // The Pool radius knob as wipe thresholds (lampPool.js#poolWipe / canopyWipe) — 0 = fully open.
+  poolWipeUniform:   { value: 0 },
+  canopyWipeUniform: { value: 0 },
   // Init 0, not the legacy default — the pool is driven live by StreetLights
   // (lantern output) from frame 1, so a non-zero init only causes a bright
   // flash before the first drive. (Was `initial.pool` = 1.0 → the flash.)
@@ -64,6 +67,7 @@ export const lampGrid = {
   uLampGridDims: { value: new THREE.Vector3(0, 0, 0) },
   uLampGridCell: { value: 16 },
   uLampHeadY:    { value: 0 },
+  uLampReach:    { value: 0 },   // lamps.json#reach — the town's derived pool reach
 }
 
 const subs = new Set()

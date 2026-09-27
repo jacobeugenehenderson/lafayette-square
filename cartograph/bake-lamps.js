@@ -27,7 +27,8 @@ import { requireSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 import { makeMembership } from './neighborhood-membership.mjs'
 import { makeZoneTester } from './forbidden-surface.mjs'
-import { readSurveyedLamps } from './lamp-spacing.mjs'
+import { readSurveyedLamps, spacingForScene } from './lamp-spacing.mjs'
+import { overlapReach } from '../src/lib/lampPool.js'
 import { DERIVED_LEGAL } from './derive-lamps.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -203,10 +204,18 @@ export async function bakeLamps({ look, scene, outDir: outDirArg, derivedPath } 
   // Anchors are sampled from THIS look's ground bake, wherever the output goes.
   const anchoring = anchorLampsToGround(lamps, join(ROOT, 'public', 'baked', look), scene)
   const anchored = anchoring?.count ?? 0
+  // ⭐ The pool REACH, derived from the town's own street spacing so neighbouring pools overlap
+  // (Jacob, 2026-09-26: "The ground pools should overlap"). Every consumer — the ground's pool map,
+  // the trees' glow, the walls — reads it from here. ▶ src/lib/lampPool.js#overlapReach
+  const streetSpacing = spacingForScene(join(ROOT, 'cartograph', 'data', scene)).ordinary
+  const reach = overlapReach(streetSpacing.spacing)
+  console.log(`[bake-lamps] pool reach ${reach} m — overlap at the town's ${streetSpacing.spacing} m spacing (${streetSpacing.from})`)
   const out = {
     version: 3,
     look,
     count: lamps.length,
+    reach,
+    reachFrom: { spacing: streetSpacing.spacing, from: streetSpacing.from },
     // ⭐ Provenance, per lamp (`source`) and in sum — so the Stage and a check can tell real from invented.
     bySource: r.bySource,
     perWell: r.perWell,
