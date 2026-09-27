@@ -866,5 +866,9 @@
       "#b99b72",
       "#a8875f"
     ]
+  },
+  "water": {
+    "lakeLevel": "mean",
+    "lakeLevelSource": "Jacob, 2026-09-27: the lake mean — NOAA CO-OPS 9063079 Marblehead, mean of 240 monthly means 2006–2025 = 174.354 m IGLD85 (raw/water-datums.json, fetch-water-datums.mjs)"
   }
 }
