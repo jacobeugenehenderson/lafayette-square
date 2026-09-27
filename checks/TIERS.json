@@ -1,12 +1,21 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 199,
+  "total": 297,
   "counts": {
-    "safe": 157,
+    "safe": 159,
     "local-effect": 6,
-    "live": 36
+    "live": 132
   },
   "checks": [
+    {
+      "file": "checks/claims-a-bake-step-declares-what-it-reads.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/pour-code.mjs, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
     {
       "file": "checks/claims-a-brief-declares-how-it-dies.mjs",
       "tier": "safe",
@@ -15,7 +24,77 @@
       ]
     },
     {
+      "file": "checks/claims-a-capture-run-finishes-what-it-started.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-cli-scene-has-one-resolver.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-closed-shore-still-yields-ink.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-closed-stripe-keeps-its-hole.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-corner-is-where-one-turns.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-curb-arc-belongs-to-one-tile.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-face-takes-the-land-use-that-covers-it.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-failed-apply-leaves-one-state.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-false-map-is-not-a-fallback.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-flat-town-is-not-refined.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -23,6 +102,21 @@
     },
     {
       "file": "checks/claims-a-frontage-can-ask-for-no-ped-band.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-highway-block-keeps-its-corners.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-keyframe-carries-its-aim.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -30,9 +124,10 @@
     },
     {
       "file": "checks/claims-a-kink-recovers-but-a-corner-does-not.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -43,7 +138,36 @@
       ]
     },
     {
+      "file": "checks/claims-a-listing-keeps-its-id.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of cartograph/listing-identity.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-look-holds-only-its-towns-grove.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
       "file": "checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-menu-price-is-in-cents.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -57,10 +181,83 @@
       ]
     },
     {
-      "file": "checks/claims-a-swap-never-happens-mid-street.mjs",
+      "file": "checks/claims-a-pour-keeps-building-ids.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync"
+      ]
+    },
+    {
+      "file": "checks/claims-a-production-host-serves-only-its-own-town.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-published-edit-reaches-the-map.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/lib/publishedLayerApply.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-reimport-keeps-curation.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "deletes files",
+        "copies/renames files",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-salon-save-keeps-provenance.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+      ]
+    },
+    {
+      "file": "checks/claims-a-scene-is-named-not-numbered.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/lib/sceneSlug.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-scene-switch-drops-the-old-town.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-shore-is-not-traced-twice.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-swap-never-happens-mid-street.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -71,6 +268,44 @@
       ]
     },
     {
+      "file": "checks/claims-a-town-event-is-not-clock-dependent.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/hooks/useEvents.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-never-bakes-from-the-whole-library.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-towns-listings-reach-its-surfaces.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import of src/tokens/categories.js — read, safe",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-tree-card-starts-at-the-ground.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-tree-is-refused-for-what-stands-under-it.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-a16-materials-write.mjs",
       "tier": "safe",
       "why": [
@@ -78,10 +313,18 @@
       ]
     },
     {
-      "file": "checks/claims-alley-stub-pairs.mjs",
+      "file": "checks/claims-akas-never-merge-species.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-alley-stub-pairs.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -96,7 +339,21 @@
       ]
     },
     {
+      "file": "checks/claims-an-unanswered-axis-matches-nothing.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-anchors-follow-the-placements.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-anchors-know-their-terrain.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -110,10 +367,33 @@
       ]
     },
     {
+      "file": "checks/claims-authored-skelids-keep-their-ways.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "deletes files",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-autosave-keeps-what-bakes-read.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-axis-keys-resolve.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-bake-progress-shows-the-route.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of a data: module — hermetic"
       ]
     },
     {
@@ -126,13 +406,23 @@
     },
     {
       "file": "checks/claims-band-is-one-ring.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
       "file": "checks/claims-band-vs-partition-state.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-block-edge-is-highway-edge.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -160,6 +450,15 @@
       ]
     },
     {
+      "file": "checks/claims-buildings-are-the-union.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import of cartograph/building-union.mjs — read, safe",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-cap-vs-skeleton.mjs",
       "tier": "safe",
       "why": [
@@ -178,6 +477,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-coast-distance-is-the-coast.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "imports cartograph/bake-coast-distance.js, which can: writeFileSync, mkdirSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -210,20 +520,29 @@
     },
     {
       "file": "checks/claims-corner-decline-vs-partition.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "computed import of src/lib/tileGround.js — read, safe"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-corner-takeover.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "computed import of src/lib/tileGround.js — read, safe"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-coupler-totality.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-crop-rows-derived-per-field.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -273,9 +592,10 @@
     },
     {
       "file": "checks/claims-deadend-set-decomposition.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/coupler-fold-legs.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -307,6 +627,15 @@
       ]
     },
     {
+      "file": "checks/claims-every-app-mounts-the-set-piece.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
       "file": "checks/claims-every-baked-species-has-an-impostor.mjs",
       "tier": "safe",
       "why": [
@@ -322,16 +651,33 @@
     },
     {
       "file": "checks/claims-every-corner-is-configured.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-every-corner-is-one-of-three.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-every-ground-surface-takes-the-lamp.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "imports package(s) vite — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-every-lit-town-has-lamps.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/bake-lamps.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/lamp-spacing.mjs, which can: writeFileSync, imports cartograph/derive-lamps.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -349,6 +695,22 @@
       ]
     },
     {
+      "file": "checks/claims-every-metre-of-drawn-shore-is-named.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-every-proto-edge-lies-on-its-owner.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-every-shadowed-placement-renders.mjs",
       "tier": "safe",
       "why": [
@@ -356,10 +718,27 @@
       ]
     },
     {
-      "file": "checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs",
+      "file": "checks/claims-every-town-has-a-mark.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "computed import of src/instances/registry.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-every-tree-candidate-is-accounted-for.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "deletes files",
+        "imports arborist/bake-trees.js, which can: writeFile, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -370,10 +749,28 @@
       ]
     },
     {
-      "file": "checks/claims-faces-on-the-ssot.mjs",
-      "tier": "safe",
+      "file": "checks/claims-expressway-edge-follows-speed.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read",
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-extent-lands-in-survey.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-faces-on-the-ssot.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -408,9 +805,10 @@
     },
     {
       "file": "checks/claims-frontage-covers-the-block.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -421,24 +819,48 @@
       ]
     },
     {
-      "file": "checks/claims-grout-is-a-valid-polygon.mjs",
+      "file": "checks/claims-ground-cover-beats-jurisdiction.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-ground-normals-come-from-the-terrain.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
       ]
     },
     {
-      "file": "checks/claims-handle-rides-its-arc.mjs",
+      "file": "checks/claims-ground-refinement-does-not-breed-slivers.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/lib/tileGround.js — read, safe"
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-grout-is-a-valid-polygon.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-handle-rides-its-arc.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-hero-degrade-static.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "imports package(s) three — not read from source"
       ]
     },
     {
@@ -447,6 +869,35 @@
       "reasonClass": "unreadable",
       "why": [
         "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-highway-handedness.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of a data: module — hermetic"
+      ]
+    },
+    {
+      "file": "checks/claims-highway-no-visible-joint.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-highway-sweep-is-finite.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of a data: module — hermetic"
+      ]
+    },
+    {
+      "file": "checks/claims-highway-width-from-lanes.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
@@ -471,6 +922,15 @@
       ]
     },
     {
+      "file": "checks/claims-installation-legal-is-declared.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import of src/instances/registry.js — read, safe",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-intake-absence-is-loud.mjs",
       "tier": "safe",
       "why": [
@@ -486,6 +946,22 @@
     },
     {
       "file": "checks/claims-intersections-are-over-described.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-junction-residual.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-lab-imports-never-reimplements.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -496,6 +972,13 @@
       "tier": "safe",
       "why": [
         "imports package(s) sharp — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-light-sources-are-live.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
@@ -514,9 +997,10 @@
     },
     {
       "file": "checks/claims-marked-corners.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -555,7 +1039,45 @@
       ]
     },
     {
+      "file": "checks/claims-no-dossier-rests-on-a-wrong-species.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-filename-reaches-a-plate-label.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read",
+        "imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+      ]
+    },
+    {
       "file": "checks/claims-no-hairline-ring-reaches-the-operator.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-no-label-is-a-made-up-name.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-listing-links-to-a-hijacked-domain.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-photo-loads-from-someone-elses-server.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -605,16 +1127,25 @@
     },
     {
       "file": "checks/claims-one-face-one-arrangement.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-one-frontage-one-arc.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-open-now-has-one-home-and-handles-midnight.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "computed import of src/lib/openNow.js — read, safe"
       ]
     },
     {
@@ -626,6 +1157,13 @@
     },
     {
       "file": "checks/claims-orphaned-customs.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-osm-ground-has-no-duplicates.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -649,16 +1187,27 @@
     },
     {
       "file": "checks/claims-ped-does-not-follow-the-rim.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-physical-side-reconcile.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "computed import of src/lib/tileGround.js — read, safe"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-pilgrim-monument-site.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -677,9 +1226,10 @@
     },
     {
       "file": "checks/claims-producer-does-not-decide-partition.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -692,135 +1242,154 @@
     },
     {
       "file": "checks/claims-proto-band-flood-mechanism.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-blocks-are-faces.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-corner-is-authored-radius.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-curb-is-block-sized.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-curb-is-parallel.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-curb.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-fill-is-live.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-frozen-matches-live.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-identity.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-leg-tail-is-corner-reach.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-legmiss-by-producer.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-median-is-a-hole.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-paints-into-medians.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-stack-disjoint.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-stack-reads-authoring.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-thin-curb-runs.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-tip-has-two-apexes.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-unrounded-corners.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-proto-vertex-provenance.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -828,6 +1397,28 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-public-urls-come-from-the-town-domain.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-radius-has-one-home.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-ramp-ends-classified.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -845,6 +1436,13 @@
       ]
     },
     {
+      "file": "checks/claims-references-are-sound.mjs",
+      "tier": "safe",
+      "why": [
+        "runs `git ls-files --error-unmatch $` — local, read-only"
+      ]
+    },
+    {
       "file": "checks/claims-repour-changes-nothing.mjs",
       "tier": "safe",
       "why": [
@@ -852,10 +1450,25 @@
       ]
     },
     {
+      "file": "checks/claims-research-is-keyed-to-the-place-it-describes.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-revert-field-coverage.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-ribbons-are-not-older-than-the-skeleton.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -894,6 +1507,14 @@
       ]
     },
     {
+      "file": "checks/claims-shore-outside-the-drawing-is-not-refused.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-side-baseline-audit.mjs",
       "tier": "safe",
       "why": [
@@ -909,9 +1530,10 @@
     },
     {
       "file": "checks/claims-sidewalk-is-one-band.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -946,6 +1568,13 @@
       ]
     },
     {
+      "file": "checks/claims-stage-controls-are-live.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-stage-preview-parity.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
@@ -957,9 +1586,10 @@
     },
     {
       "file": "checks/claims-stamp-follows-the-edge.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -971,16 +1601,18 @@
     },
     {
       "file": "checks/claims-survey-and-section-agree.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-swap-reaches-the-paint.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -991,7 +1623,43 @@
       ]
     },
     {
+      "file": "checks/claims-the-armoured-shore-is-never-empty.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-bake-watches-its-code.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "computed import of cartograph/geography.mjs — read, safe",
+        "computed import of src/cartograph/streetProfiles.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-the-beach-band-is-the-towns-own.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
       "file": "checks/claims-the-block-underlay-never-shows.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-camera-has-one-definition.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1006,16 +1674,34 @@
     },
     {
       "file": "checks/claims-the-corner-extent-is-carried.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-corner-record-reports-the-achieved-radius.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-crest-is-measured-behind-the-shore.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
       ]
     },
     {
-      "file": "checks/claims-the-corner-record-reports-the-achieved-radius.mjs",
-      "tier": "safe",
+      "file": "checks/claims-the-curb-never-enters-the-road.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -1026,14 +1712,55 @@
       ]
     },
     {
+      "file": "checks/claims-the-device-link-page-is-served-on-both-sites.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "imports workers/staging-sites/src/index.js, which can: calls fetch()",
+        "imports workers/production-sites/src/index.js, which can: calls fetch()"
+      ]
+    },
+    {
+      "file": "checks/claims-the-directory-has-exactly-one-order.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/lib/listingOrder.js — read, safe"
+      ]
+    },
+    {
       "file": "checks/claims-the-ease-is-the-corner.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-fade-tracks-the-active-disc.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
       ]
     },
     {
-      "file": "checks/claims-the-fade-tracks-the-active-disc.mjs",
+      "file": "checks/claims-the-ground-covers-every-block.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-grove-shows-only-finished-trees.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1047,10 +1774,23 @@
       ]
     },
     {
-      "file": "checks/claims-the-pad-is-the-size-of-the-corner.mjs",
+      "file": "checks/claims-the-light-follows-the-weather.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "computed import of src/lib/almanac-eval.js — read, safe",
+        "computed import of src/lib/weather-payload.js — read, safe",
+        "computed import of src/lib/weather-signals.js — read, safe",
+        "computed import of src/lib/sky-scalars.js — read, safe",
+        "computed import of src/hooks/useSkyState.js — read, safe",
+        "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-pad-is-the-size-of-the-corner.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1058,6 +1798,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-publish-can-stage-what-it-promises.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "runs `git` — not a known-local command"
       ]
     },
     {
@@ -1076,6 +1824,28 @@
     },
     {
       "file": "checks/claims-the-ramp-has-room.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-revetment-builds-on-the-wet-face.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-revetment-ends-as-a-heap.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-search-outlives-an-empty-ticker.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1083,6 +1853,13 @@
     },
     {
       "file": "checks/claims-the-shadow-box-has-no-cliff.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-shore-is-closed.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1118,13 +1895,30 @@
     },
     {
       "file": "checks/claims-the-slope-is-on-the-leg.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-street-eye-stands-on-the-ground.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-the-survey-reaches-the-measure.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -1135,6 +1929,23 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-tod-fades-at-the-edges.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-tree-drawn-height-by-window.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read",
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command",
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source"
       ]
     },
     {
@@ -1156,6 +1967,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-verge-bare.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1192,7 +2011,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
@@ -1200,7 +2019,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+        "imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1273,9 +2092,11 @@
     },
     {
       "file": "scratch/claims-deadend-look.mjs",
-      "tier": "local-effect",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
         "writeFileSync",
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
         "imports package(s) sharp — not read from source"
       ]
     },
@@ -1331,7 +2152,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/salon-options.js, which can: imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
       ]
     },
     {
@@ -1391,7 +2212,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
@@ -1454,7 +2275,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/salon-options.js, which can: imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
       ]
     },
     {
@@ -1462,7 +2283,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
