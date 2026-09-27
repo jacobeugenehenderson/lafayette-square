@@ -44,6 +44,7 @@ import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { deriveFade } from './boundaryRecords.mjs'
 import { coastRings } from './coastline.mjs'
+import { terrainValueReads } from './terrainReads.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -259,23 +260,15 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
 // is the town's authored `water.secchiM` (its own published clarity), else r-bottom-visibility-default, SAID.
 // Everything else drapes over the terrain as before, so the waterline is where the level meets the ground,
 // by construction. ⛔ Runs only when waterDatum found a coast: every other town comes out byte-identical.
-const REGISTRY_PATH = join(CARTOGRAPH_DIR, '..', 'references', 'registry.json')
-function finding(id) {
-  const f = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8')).findings.find(x => x.id === id)
-  if (!f) throw new Error(`⛔ the bed needs finding ${id} and references/registry.json has none`)
-  return f
-}
-// The town's authored water values, from the design of every look on this scene. ⛔ Two looks disagreeing is refused.
+// The values read — sand size and clarity per look, the three findings — come from terrainReads.mjs, the same call
+// serve.js declares as this step's value input.
+const READS = terrainValueReads(SCENE)
+const finding = (id) => READS.findings[id]
+// The town's authored water values. ⛔ Two looks on one scene disagreeing is refused — the terrain is one per scene.
 function waterAuthoring() {
-  const idx = JSON.parse(fs.readFileSync(join(CARTOGRAPH_DIR, '..', 'public', 'looks', 'index.json'), 'utf8'))
-  const vals = []
-  for (const l of (idx.looks || []).filter(l => l.scene === SCENE)) {
-    const p = join(CARTOGRAPH_DIR, '..', 'public', 'looks', l.id, 'design.json')
-    if (fs.existsSync(p)) vals.push([l.id, JSON.parse(fs.readFileSync(p, 'utf8')).water || {}])
-  }
   const out = {}
   for (const key of ['sandD50Mm', 'secchiM']) {
-    const set = vals.filter(([, w]) => w[key] != null)
+    const set = READS.water.filter(([, w]) => w[key] != null)
     if (new Set(set.map(([, w]) => w[key])).size > 1)
       throw new Error(`⛔ looks on scene '${SCENE}' author different water.${key}: ${set.map(([id, w]) => `${id}=${w[key]}`).join(', ')} — the terrain is one per scene`)
     if (set.length) out[key] = { value: +set[0][1][key], from: `authored (design.json water.${key}, ${set.map(([id]) => id).join(', ')})` }
