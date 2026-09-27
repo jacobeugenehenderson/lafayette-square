@@ -140,6 +140,12 @@ else ok('only the directive path writes cloudCover/storminess')
     if (missing.length) { partial++; bad(`weather preset '${name}' leaves ${missing.join(', ')} to the previous (live) weather`) }
   }
   if (!partial) ok(`every weather preset sets all ${inputs.length} inputs of setWeatherTargets`)
+  // Storminess comes from the live feed's own rule, so precipitation makes a preset stormier.
+  const { deriveStorminess } = await import('../src/lib/weatherPresets.js')
+  const off = Object.entries(WEATHER_PRESETS).filter(([, w]) => w.storminess !== deriveStorminess(w.currentWeatherCode, w.precipitationIntensity))
+  if (off.length) bad(`preset storminess is not the live feed's rule: ${off.map(([n, w]) => `${n}=${w.storminess}`).join(', ')}`)
+  else if (!(WEATHER_PRESETS.rain.storminess > WEATHER_PRESETS.overcast.storminess)) bad('the rain preset is no stormier than overcast')
+  else ok('preset storminess follows the live feed\'s rule (rain is stormier than overcast)')
 }
 
 console.log(failed ? `\n⛔ ${failed} failure(s)\n` : '\n✅ the light follows the weather\n')

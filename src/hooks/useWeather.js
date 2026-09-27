@@ -1,4 +1,5 @@
 import useSkyState from './useSkyState'
+import { deriveStorminess } from '../lib/weatherPresets.js'
 import { INSTANCE } from '../instance.js'
 
 // Halo 2026-05-20 Phase 6: added direct_radiation + diffuse_radiation to
@@ -31,23 +32,6 @@ function reconcileWeatherCode(code, precipMm, cloudCoverPct) {
     return 3                // overcast
   }
   return code
-}
-
-/**
- * Derive storminess (0-1) from WMO weather code + precipitation amount
- */
-function deriveStorminess(weatherCode, precipitation) {
-  let base = 0
-  if (weatherCode >= 95) base = 0.8          // thunderstorm
-  else if (weatherCode >= 80) base = 0.4     // showers
-  else if (weatherCode >= 61) base = 0.2     // rain
-  else if (weatherCode >= 51) base = 0.1     // drizzle
-  else if (weatherCode >= 71) base = 0.15    // snow
-  else if (weatherCode >= 45) base = 0.05    // fog
-
-  // Boost from precipitation intensity (mm/h)
-  const precipBoost = Math.min(0.2, precipitation * 0.02)
-  return Math.min(1, base + precipBoost)
 }
 
 /**
