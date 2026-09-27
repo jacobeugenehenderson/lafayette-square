@@ -34,7 +34,7 @@
  * the map and cannot be re-derived at runtime without shipping both.
  * PLAYER: the mesh, the stones, and everything that varies with the camera.
  *
- *   node cartograph/bake-revetment.js --scene=<id> [--look=<id>] [--out=<dir>]
+ *   node cartograph/bake-revetment.js --scene=<id> [--look=<id>] [--out=<dir>] [--terrain-dir=<dir>]
  * Writes public/baked/<look>/revetment.json — or <dir>/revetment.json with `--out`, which
  * measures a town without touching its slab. Read-only apart from that file.
  */
@@ -45,6 +45,7 @@ import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { shoreArmourFor, wetSideOf, drawnWaterTest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL } from './shoreRuns.mjs'
+import { stoneStructures } from './structures.mjs'
 // The toe berm's size in stones, read from references/registry.json (f-cem-toe-berm-size): the low end of each range.
 function toeBerm() {
   const reg = JSON.parse(readFileSync(new URL('../references/registry.json', import.meta.url), 'utf8'))
@@ -183,11 +184,13 @@ export function coastAgreement(datum, waterRunCount) {
   return waterRunCount > 0 ? 'stale-terrain' : 'inland'
 }
 
-export function bakeRevetment({ scene, look, outDir: outDirArg = null, write = true }) {
+export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDir = null, write = true }) {
   const lookId = look || scene
   const shapePath = join(ROOT, 'public', 'baked', lookId, 'shape.json')
-  const tMetaPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.json')
-  const tBinPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.bin')
+  // `terrainDir`: read the heightfield from a scratch bake (bake-terrain --out-dir) instead of the scene's clean/ — an A/B.
+  const tDir = terrainDir || join(ROOT, 'cartograph', 'data', scene, 'clean')
+  const tMetaPath = join(tDir, 'terrain.json')
+  const tBinPath = join(tDir, 'terrain.bin')
   const osmPath = join(ROOT, 'cartograph', 'data', scene, 'raw', 'osm.json')
   const mapPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   const outDir = outDirArg || join(ROOT, 'public', 'baked', lookId)
@@ -436,6 +439,85 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, write = t
     })
   }
 
+  // ⭐⭐ EVERY MAPPED BREAKWATER AND GROYNE IS STONE (Jacob, 2026-09-27), WHETHER OR NOT THE DRAWING CUT IT OUT OF THE
+  // WATER. The walk above follows the drawn shore, so it meets a structure only where the drawing carved it as land;
+  // one the drawing left inside the water (measured: two of provincetown's three, incl. the West End Breakwater) had no
+  // shore to walk and took no stone. So each is walked on its own outline: an AREA on its ring with the water face
+  // outward and the crest read one grid step INSIDE (the rock bake-terrain keeps there); a LINE on both faces, crest on
+  // the line. ⛔ Where the shore walk already passes within TAG_REACH_M, it is that walk's (the tag armours it there), so
+  // the stone is never laid twice. Its metres are counted apart from the shore's: a structure is not drawn shore.
+  const shoreSt = arcs.flatMap(a => a.stations)
+  const cell = TAG_REACH_M, grid = new Map()
+  for (const s of shoreSt) { const k = `${Math.floor(s.x / cell)},${Math.floor(s.z / cell)}`; (grid.get(k) || grid.set(k, []).get(k)).push(s) }
+  const shoreNear = (x, z) => {
+    const gx = Math.floor(x / cell), gz = Math.floor(z / cell)
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const s of grid.get(`${gx + i},${gz + j}`) || []) if (Math.hypot(s.x - x, s.z - z) <= TAG_REACH_M) return true
+    return false
+  }
+  const ringHas = (ring, x, z) => {
+    let inside = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      if ((ring[i][1] > z) !== (ring[j][1] > z) && x < (ring[j][0] - ring[i][0]) * (z - ring[i][1]) / (ring[j][1] - ring[i][1]) + ring[i][0]) inside = !inside
+    }
+    return inside
+  }
+  const { areas: stoneAreas, lines: stoneLines } = stoneStructures(osm.ground)
+  const structures = []
+  let structureM = 0
+  for (const s of [...stoneAreas.map(a => ({ ...a, trace: [...a.ring, a.ring[0]] })), ...stoneLines.map(l => ({ ...l, trace: l.line }))]) {
+    const rec = { id: s.id, kind: s.kind, name: s.name, form: s.ring ? 'area' : 'line', lengthM: 0, shoreM: 0, ownM: 0, outsideM: 0, noRockM: 0 }
+    const { inside, outsideM: cut } = clipTraceToDisc(s.trace, discC, discR)
+    rec.outsideM = cut
+    for (const run of inside) {
+      const path = resample(simplify(run, gridM / 2), gridM)
+      // Each station owns half of each neighbouring segment, as on the shore.
+      const own = path.map((p, i) => ((i ? Math.hypot(p[0] - path[i - 1][0], p[1] - path[i - 1][1]) : 0) + (i < path.length - 1 ? Math.hypot(path[i + 1][0] - p[0], path[i + 1][1] - p[1]) : 0)) / 2)
+      let cur = []
+      const flush = () => {
+        if (cur.length >= 2) {
+          // An area's water face is outward: whichever side of the walk leaves the ring.
+          let face = 'both'
+          if (s.ring) {
+            const [a, b] = [cur[0], cur[1]], m = Math.hypot(b.x - a.x, b.z - a.z) || 1
+            face = ringHas(s.ring, (a.x + b.x) / 2 + (-(b.z - a.z) / m) * 0.01, (a.z + b.z) / 2 + ((b.x - a.x) / m) * 0.01) ? 'left' : 'right'
+          }
+          let aM = 0
+          for (let i = 0; i < cur.length; i++) if (cur[i].armour) aM += cur[i]._own
+          arcs.push({ index: clipped.length + arcs.length, lengthM: +cur.reduce((t, q) => t + q._own, 0).toFixed(1), armouredM: +aM.toFixed(1),
+            faces: face === 'both' ? ['left', 'right'] : [face], probeM: null, structure: { id: s.id, kind: s.kind },
+            stations: cur.map(({ _own, ...q }) => q) })
+        } else for (const q of cur) rec.ownM -= q._own   // a lone station carries no heap
+        cur = []
+      }
+      for (let i = 0; i < path.length; i++) {
+        const [x, z] = path[i]
+        rec.lengthM += own[i]
+        if (shoreNear(x, z)) { rec.shoreM += own[i]; flush(); continue }
+        let crest = heightAt(x, z)
+        if (s.ring) {
+          const a0 = path[Math.max(0, i - 1)], b0 = path[Math.min(path.length - 1, i + 1)], m = Math.hypot(b0[0] - a0[0], b0[1] - a0[1])
+          if (m) for (const sg of [1, -1]) {
+            const px = x + (-(b0[1] - a0[1]) / m) * gridM * sg, pz = z + ((b0[0] - a0[0]) / m) * gridM * sg
+            if (ringHas(s.ring, px, pz)) { const h = heightAt(px, pz); if (Number.isFinite(h)) crest = Math.max(crest, h); break }
+          }
+        }
+        // ⛔ No heap stands below one course of armour: where the terrain shows no rock above the water the station is
+        // bare for that NAMED reason and counted (noRockM), never armoured with nothing to build.
+        const rock = crest >= MIN_ARMOUR_D50_M
+        const a = rock ? armourAt(x, z, crest) : { armour: false, why: 'below-one-course' }
+        if (!rock) rec.noRockM += own[i]
+        rec.ownM += own[i]
+        cur.push({ x: +x.toFixed(2), z: +z.toFixed(2), crest: Number.isFinite(crest) ? +crest.toFixed(3) : null,
+          armour: a.armour, ...(a.armour ? {} : { why: a.why }), _own: own[i] })
+        why[a.why] = (why[a.why] || 0) + 1
+      }
+      flush()
+    }
+    for (const k of ['lengthM', 'shoreM', 'ownM', 'outsideM', 'noRockM']) rec[k] = +rec[k].toFixed(1)
+    structureM += rec.ownM
+    structures.push(rec)
+  }
+
   const out = {
     version: 1,
     look: lookId,
@@ -460,7 +542,10 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, write = t
     // ⭐ FOUR NUMBERS, NOT THREE. `outsideM` is shore the DRAWING does not contain — it is not
     // refused, not unarmoured, and not a defect, and folding it into any of those would be a
     // false statement about the town.
-    totals: { ruledM: +ruledM.toFixed(1), armouredM: +armouredM.toFixed(1), refusedM: +refusedM.toFixed(1), outsideM: +outsideM.toFixed(1) },
+    totals: { ruledM: +ruledM.toFixed(1), armouredM: +armouredM.toFixed(1), refusedM: +refusedM.toFixed(1), outsideM: +outsideM.toFixed(1), structureM: +structureM.toFixed(1) },
+    // ⭐ Every mapped breakwater/groyne and where its outline's metres went: the shore walk's, its own walk's, or outside
+    // the drawing. `noRockM` = own metres where the terrain shows no rock one course above the water (no heap stands there).
+    structures,
     // ⭐ Where the shore is: the drawn water (ruled 2026-09-26). Stamped so a reader knows what
     // "at the water" meant for this artifact.
     shoreFrom: 'drawn-water',
@@ -494,6 +579,11 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, write = t
               (outsideM > 0 ? ` · ${km(outsideM)} km outside the drawing (beyond the ${Math.round(discR)} m disc)` : ''))
   if (refusedBy['ink-without-water']) console.warn(`  ⛔ ${km(refusedBy['ink-without-water'])} km of shoreline INK has no drawn water beside it — the pour's ink and its drawing disagree. Re-pour the town.`)
   for (const r of refused) console.log(`  ⛔ refused arc #${r.index} (${r.lengthM} m): ${r.why}`)
+  if (structures.length) {
+    const sum = (k) => structures.reduce((t, r) => t + r[k], 0)
+    console.log(`  ⭐ STRUCTURES: ${structures.length} mapped breakwater/groyne(s) · ${km(sum('lengthM'))} km of outline in the drawing: ${km(sum('shoreM'))} km on the shore walk, ${km(sum('ownM'))} km walked on their own` +
+                (sum('noRockM') > 0 ? ` (${km(sum('noRockM'))} km with no rock above the water in the terrain)` : '') + (sum('outsideM') > 0 ? ` · ${km(sum('outsideM'))} km outside the drawing` : ''))
+  }
   const total = Object.values(why).reduce((a, b) => a + b, 0)
   console.log(`  stations: ${Object.entries(why).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `${k} ${v}`).join(' · ')}`)
   // ⛔ SAY IT RATHER THAN LET IT READ AS "bare". A station with no terrain beneath
@@ -512,14 +602,16 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, write = t
 
 async function main() {
   const scene = requireExplicitMap('bake-revetment')
-  let look = null, outDir = null
+  let look = null, outDir = null, terrainDir = null
   for (const arg of process.argv.slice(2)) {
     const m = arg.match(/^--look=(.+)$/)
     if (m) look = m[1]
     const o = arg.match(/^--out=(.+)$/)
     if (o) outDir = o[1]
+    const t = arg.match(/^--terrain-dir=(.+)$/)
+    if (t) terrainDir = t[1]
   }
-  bakeRevetment({ scene, look, outDir })
+  bakeRevetment({ scene, look, outDir, terrainDir })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

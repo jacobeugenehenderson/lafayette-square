@@ -48,9 +48,11 @@ if (!NAMED.has(FAILING_KIND) || !NAMED.has('soft-shore')) {
 export function audit(doc, drawnShoreM) {
   const f = []
   if (doc.shoreFrom !== 'drawn-water') f.push(`ruled against ${doc.shoreFrom ? `"${doc.shoreFrom}"` : 'the lidar (no shoreFrom stamp)'} — not the drawn water. Re-bake: node cartograph/bake-revetment.js --scene=${doc.scene}`)
-  const accounted = (doc.arcs || []).reduce((a, x) => a + x.lengthM, 0) + (doc.refused || []).reduce((a, x) => a + x.lengthM, 0)
+  // A breakwater's own walk (`structure`) is not drawn shore: it is audited by claims-every-mapped-stone-structure-is-stone.
+  const shoreArcs = (doc.arcs || []).filter(a => !a.structure)
+  const accounted = shoreArcs.reduce((a, x) => a + x.lengthM, 0) + (doc.refused || []).reduce((a, x) => a + x.lengthM, 0)
   // Each length is stamped to 0.1 m, so the sum may differ by 0.05 m per entry and no more.
-  const tol = 0.05 * ((doc.arcs || []).length + (doc.refused || []).length + 1)
+  const tol = 0.05 * (shoreArcs.length + (doc.refused || []).length + 1)
   if (Math.abs(accounted - drawnShoreM) > tol) {
     f.push(`${(drawnShoreM - accounted).toFixed(1)} m of shoreline in the drawing is in NO bucket (arcs + refused = ${accounted.toFixed(1)} m of ${drawnShoreM.toFixed(1)} m)`)
   }

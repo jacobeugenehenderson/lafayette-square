@@ -66,6 +66,8 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
     // ⛔ A two-faced arc has no landward at all; the station IS its crest there, by
     // ruling. Excluded rather than counted as evidence either way.
     if ((arc.faces || []).length !== 1) continue
+    // A breakwater's own walk reads its crest INSIDE its ring (bake-revetment), not behind a shore: not this rule's.
+    if (arc.structure) continue
     // ⛔⛔ THE CHECK DOES NOT USE THE WINDING CONVENTION AT ALL, AND THAT IS DELIBERATE.
     // My first cut derived landward from `faces` with the same sign expression the baker
     // used — and I had that sign inverted in BOTH. The check would have agreed with the

@@ -46,10 +46,14 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
   so beautiful and real!"* Still owed: the revetment's heap ends, and both towns at the water's edge near and far.
 - **STRUCTURES OVER WATER — ruled 2026-09-27, partly built.** Landed: `structures.mjs` (every OSM bucket, by tag),
   the rock kept under breakwaters/groynes (`cde379d0`), shore-armour reading every bucket (`e521e577`). A groyne also
-  tagged `barrier=wall` is TWO structures (Jacob: "perhaps it's 2"). ⛔ **Two rulings owed before the decks are built:**
-  (1) **floating docks** — UFC 4-152-07 §6-3.3.1 puts a floating deck 16–24 in above the WATER, not at the land's
-  height as ruled for decks (94 floating piers across both towns); (2) **fixed deck thickness** — no permitted source
-  found (UFC 4-152-01 and CEM Part VI state none): an OSM tag, an authored per-town value, or more research.
+  tagged `barrier=wall` is TWO structures (Jacob: "perhaps it's 2"). **Stone on every mapped breakwater/groyne**, the
+  ones the drawing left inside the water included: `bake-revetment` walks each outline (▶
+  `node checks/claims-every-mapped-stone-structure-is-stone.mjs`, red on the live artifacts until the re-bake below).
+  Deck thickness is sourced (`f-fhwa-concrete-deck-min` 7 in, `f-usfs-timber-deck-min` 5½ in). ⛔ **Rulings owed before
+  the decks are built:** (1) **floating docks** at land height, or 16–24 in above the WATER (UFC 4-152-07 §6-3.3.1);
+  (2) **untagged pier material** (most piers in both towns): timber, concrete, or refuse; (3) **metal decks**: as
+  concrete, or refuse. (4) **Huron's awash breakwaters**: where the lidar shows no rock above the water, the outline is
+  bare (`noRockM` in the artifact's `structures`); cause not established.
 - **OPEN:** · each town's own water
   clarity (`references/` q-water-clarity-per-town) · real depth inside the visible band (`BRIEF-bathymetry.md`).
   **Not walked:** Lafayette Square's pond (drawn outside the slab).
@@ -95,10 +99,9 @@ cd cartograph && node bake-terrain.js --scene=T && cp data/T/clean/terrain.json 
   && node bake-ground.js --look=T --scene=T && node bake-ground-ao.js --look=T --scene=T && node bake-lamps.js --look=T --scene=T
 ```
 then the trees with the flags from `tree-bake-inputs.mjs#treeBakeInputsForMap(T)` (as serve.js builds them), then
-`node bake-tree-anchors.js --look=T --scene=T`, then `node bake-revetment.js --scene=T` (which also picks up e521e577: every OSM bucket).
-Checks: `claims-the-shore-is-closed`, `claims-the-ground-has-no-cross-polygon-t-junctions`, `claims-a-level-body-has-one-surface`,
-`claims-every-metre-of-drawn-shore-is-named`. LS: prove terrain.bin byte-identical (no coast, so the step never runs).
-**Owed rulings before decks:** (1) floating docks ride 16–24 in above the WATER (UFC 4-152-07 §6-3.3.1; 94 floating piers), not at land
-height; (2) fixed deck thickness has no permitted source (UFC 4-152-01, CEM Part VI): an OSM tag, an authored per-town value, or more research?
-**Next:** breakwater/groyne stone (the design is ready), then solid decks, lifting what stands on them. **His eye:** the revetment's heap ends,
+`node bake-tree-anchors.js --look=T --scene=T`, then `node bake-revetment.js --scene=T` (every OSM bucket, the toe berm, and the
+breakwater/groyne walks). Checks: `claims-the-shore-is-closed`, `claims-the-ground-has-no-cross-polygon-t-junctions`,
+`claims-a-level-body-has-one-surface`, `claims-every-metre-of-drawn-shore-is-named`, `claims-every-mapped-stone-structure-is-stone`,
+`claims-the-armoured-shore-is-never-empty`. LS: prove terrain.bin byte-identical (no coast, so the step never runs).
+**Next:** solid decks after the rulings above, lifting what stands on them. **His eye:** the breakwaters, the revetment's heap ends,
 and both towns at the water's edge near and far.
