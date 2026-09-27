@@ -55,7 +55,7 @@ export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 // and blur grows in front and behind by relative distance — the same numbers frame any town (RomanceDoF.jsx).
 export const DOF_FIELDS = [
   { key: 'blur',     label: 'Blur',              min: 0,    max: 1, step: 0.02 },
-  { key: 'focus',    label: 'Focus (× aim)',     min: 0.25, max: 2, step: 0.01 },
+  { key: 'focus',    label: 'Focus (× distance to the focus point)', min: 0.25, max: 2, step: 0.01 },
   { key: 'heroBlur', label: 'Softness at focus', min: 0,    max: 1, step: 0.02 },
   { key: 'softness', label: 'Depth',             min: 0,    max: 1, step: 0.02 },
 ]
@@ -613,7 +613,7 @@ const DAY = {
               spread: [0.45, 0.6, 0.28, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
   // Depth of field, relative to what the camera looks at: a narrow sharp zone and a strong melt at Noon (the
   // tilt-shift dollhouse), dreamy at Golden, none at night so the lights and stars stay points.
-  dof:      { blur: [0.2, 0.15, 0.1, 0.35, 0.25, 0.1, 0, 0], focus: [1, 1, 1.25, 1, 1, 1, 1, 1],
+  dof:      { blur: [0.2, 0.15, 0.1, 0.35, 0.25, 0.1, 0, 0], focus: [1, 1, 1, 1, 1, 1, 1, 1],
               heroBlur: [0, 0, 0.06, 0.1, 0, 0, 0, 0], softness: [0.5, 0.5, 0.3, 0.6, 0.5, 0.5, 0.5, 0.5] },
   grain:    { scale: [0.9, 0.7, 0.4, 0.7, 0.8, 1.0, 1.3, 1.1] },
   // Neon: which buildings light is their HOURS' business; this is how they read. At noon a solid colour band
