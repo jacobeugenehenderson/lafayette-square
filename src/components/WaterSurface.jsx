@@ -86,6 +86,9 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
     uniforms.uBandHigh.value.copy(b.high)
     uniforms.uSkyGlow.value.copy(b.glow)
     uniforms.uTurbidity.value = b.turbidity
+    uniforms.uGalPole.value.copy(b.galPole)       // the Milky Way reflects: the same band the dome draws
+    uniforms.uGalCtr.value.copy(b.galCtr)
+    uniforms.uMwGate.value = b.mwGate
     uniforms.uSunDir.value.copy(sky.sunDirection)
     // The BRIGHTER BODY, for the analytic glitter. keyDirection is published by
     // CelestialBodies for exactly this: a consumer that needs the VECTOR rather

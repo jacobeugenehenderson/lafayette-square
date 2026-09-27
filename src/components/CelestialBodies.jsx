@@ -42,7 +42,7 @@ import R3FErrorBoundary from './R3FErrorBoundary'
 import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
 import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights.js'
-import { SKY_GRADIENT_GLSL } from './skyGradient.js'
+import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
 import { resolveLookId } from '../lib/resolveLookId.js'
@@ -867,8 +867,13 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
           toDir(ra, dec, u.uGalPole.value)
           toDir(266.40499 * Math.PI / 180, -28.93617 * Math.PI / 180, u.uGalCtr.value)   // the galactic centre, J2000
         }
+        // Published for the water, which reflects the same band (skyGradient.js#MILKY_WAY_GLSL).
+        sky.skyBands.galPole.copy(u.uGalPole.value)
+        sky.skyBands.galCtr.copy(u.uGalCtr.value)
+        sky.skyBands.mwGate = u.uMilkyWay.value * Math.min(1, Math.max(0, (-0.209 - sunAltitude) / 0.105))
       } else {
         u.uMilkyWay.value = 0
+        useSkyState.getState().skyBands.mwGate = 0
       }
     }
   })
@@ -932,28 +937,9 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
       uniform vec3  uGalCtr;     // galactic-centre direction (Sagittarius) → the bright, warm core
       varying vec3 vWorldPosition;
 
-      // ── Dense fractal noise (procedural Milky Way — no texture) ──
-      float mwHash(vec3 p){
-        p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
-        p *= 17.0;
-        return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
-      }
-      float mwNoise(vec3 x){
-        vec3 i = floor(x);
-        vec3 f = fract(x);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(mix(mix(mwHash(i+vec3(0,0,0)), mwHash(i+vec3(1,0,0)), f.x),
-                       mix(mwHash(i+vec3(0,1,0)), mwHash(i+vec3(1,1,0)), f.x), f.y),
-                   mix(mix(mwHash(i+vec3(0,0,1)), mwHash(i+vec3(1,0,1)), f.x),
-                       mix(mwHash(i+vec3(0,1,1)), mwHash(i+vec3(1,1,1)), f.x), f.y), f.z);
-      }
       ${SKY_GRADIENT_GLSL}
 
-      float mwFbm(vec3 p){
-        float a = 0.5, s = 0.0;
-        for(int i = 0; i < 4; i++){ s += a * mwNoise(p); p *= 2.02; a *= 0.5; }
-        return s;
-      }
+      ${MILKY_WAY_GLSL}
 
       void main() {
         vec3 dir = normalize(vWorldPosition);
@@ -1069,29 +1055,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         float mwNight = clamp((-0.209 - sunAlt) / 0.105, 0.0, 1.0);
         float mwGate = uMilkyWay * mwNight;
         if (mwGate > 0.001) {
-          float gLat = asin(clamp(dot(dir, normalize(uGalPole)), -1.0, 1.0));
-          // A smooth GLOWING BAND with very soft feathered sides — not filaments,
-          // not stars, not clouds. Just a soft ribbon of light. Lower falloff =
-          // softer/wider sides.
-          // ⭐ RICHER, NOT BRIGHTER (Jacob, Deep night pass 2026-09-27: "too bright and not rich enough"): the band swells
-          // and warms toward the galactic CENTRE (Sagittarius — uGalCtr, placed like the pole), cools and thins away
-          // from it, and a dark dust lane splits it along its plane. Structure, not a flat ribbon.
-          float toCentre = dot(dir, normalize(uGalCtr));              // 1 at the core, −1 at the anticentre
-          float core = smoothstep(-0.3, 1.0, toCentre);
-          float band = exp(-gLat * gLat * mix(40.0, 18.0, core));     // wider at the core
-          float n = mwFbm(dir * 13.0);
-          float clouds = 0.55 + 0.9 * n;                              // star clouds: real lumps, not a smear
-          float lane = mwFbm(dir * 31.0 + 7.0);
-          float dust = 1.0 - 0.75 * smoothstep(0.45, 0.8, lane) * exp(-gLat * gLat * 900.0);   // the Great Rift
-          float milk = band * clouds * dust * mix(0.35, 1.25, core);
-          // SATURATED, the long-exposure look (Jacob: "it should be very saturated; this looks like light pollution"):
-          // a gold-orange core, magenta-violet star clouds, deep blue arms.
-          vec3 arm    = vec3(0.10, 0.22, 0.95);
-          vec3 cloud  = vec3(0.75, 0.18, 0.70);
-          vec3 coreC  = vec3(1.00, 0.55, 0.18);
-          vec3 milkColor = mix(arm, cloud, smoothstep(0.35, 0.75, n));
-          milkColor = mix(milkColor, coreC, core * core);
-          finalColor += milkColor * milk * mwGate * 0.22;
+          finalColor += milkyWayColor(dir, uGalPole, uGalCtr, mwGate);
         }
 
         // Opaque sky — no transparent fade, no stencil portal

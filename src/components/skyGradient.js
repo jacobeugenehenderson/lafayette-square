@@ -110,3 +110,45 @@ float waterFresnel(vec3 N, vec3 V) {
   return 0.02 + 0.98 * (c2 * c2 * c);
 }
 `
+
+// ⭐ THE MILKY WAY — one function for the dome AND the water that reflects it (Jacob, 2026-09-27: "the milky way needs
+// to reflect on the water too"). dir: normalized world direction; galPole / galCtr: the galactic north pole and centre
+// as world directions for this town and moment (CelestialBodies, per frame, published on useSkyState.skyBands);
+// gate: the milkyWay channel × how dark the sky is. Returns the colour to ADD.
+// Rich, not bright: it swells and warms toward the galactic centre, breaks into star clouds, and a dark lane (the
+// Great Rift) splits its plane; saturated, the long-exposure look — gold-orange core, magenta-violet clouds, deep blue arms.
+export const MILKY_WAY_GLSL = /* glsl */`
+float mwHash(vec3 p){
+  p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float mwNoise(vec3 x){
+  vec3 i = floor(x);
+  vec3 f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(mwHash(i+vec3(0,0,0)), mwHash(i+vec3(1,0,0)), f.x),
+                 mix(mwHash(i+vec3(0,1,0)), mwHash(i+vec3(1,1,0)), f.x), f.y),
+             mix(mix(mwHash(i+vec3(0,0,1)), mwHash(i+vec3(1,0,1)), f.x),
+                 mix(mwHash(i+vec3(0,1,1)), mwHash(i+vec3(1,1,1)), f.x), f.y), f.z);
+}
+float mwFbm(vec3 p){
+  float a = 0.5, s = 0.0;
+  for(int i = 0; i < 4; i++){ s += a * mwNoise(p); p *= 2.02; a *= 0.5; }
+  return s;
+}
+vec3 milkyWayColor(vec3 dir, vec3 galPole, vec3 galCtr, float gate) {
+  if (gate <= 0.001) return vec3(0.0);
+  float gLat = asin(clamp(dot(dir, normalize(galPole)), -1.0, 1.0));
+  float core = smoothstep(-0.3, 1.0, dot(dir, normalize(galCtr)));
+  float band = exp(-gLat * gLat * mix(40.0, 18.0, core));
+  float n = mwFbm(dir * 13.0);
+  float clouds = 0.55 + 0.9 * n;
+  float lane = mwFbm(dir * 31.0 + 7.0);
+  float dust = 1.0 - 0.75 * smoothstep(0.45, 0.8, lane) * exp(-gLat * gLat * 900.0);
+  float milk = band * clouds * dust * mix(0.35, 1.25, core);
+  vec3 c = mix(vec3(0.10, 0.22, 0.95), vec3(0.75, 0.18, 0.70), smoothstep(0.35, 0.75, n));
+  c = mix(c, vec3(1.00, 0.55, 0.18), core * core);
+  return c * milk * gate * 0.22;
+}
+`

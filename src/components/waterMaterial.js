@@ -67,7 +67,7 @@
  *   flat normal the material had before. That is how LS's pond stays the control.
  */
 import * as THREE from 'three'
-import { SKY_GRADIENT_GLSL, FRESNEL_GLSL } from './skyGradient.js'
+import { SKY_GRADIENT_GLSL, FRESNEL_GLSL, MILKY_WAY_GLSL } from './skyGradient.js'
 
 // ⭐ THE CALIBRATION ANCHOR, AND IT IS THE ONLY MEASURED POINT ON THE CURVE.
 // The lifted frequency constants (`wp*0.12`, `*0.3`, `*1.2`, refraction `*0.25`
@@ -331,6 +331,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uBandHigh:      { value: new THREE.Color('#3a5580') },
     uSkyGlow:       { value: new THREE.Color('#ffd9a0') },
     uTurbidity:     { value: 0 },
+    uGalPole:       { value: new THREE.Vector3(0, 1, 0) },   // the Milky Way the dome draws (WaterSurface copies it)
+    uGalCtr:        { value: new THREE.Vector3(0, 0, 1) },
+    uMwGate:        { value: 0 },
     uSunDir:        { value: new THREE.Vector3(0, 1, 0) },
     // The BRIGHTER BODY's direction and colour — sun by day, moon by night.
     uKeyDir:        { value: new THREE.Vector3(0, 1, 0) },
@@ -440,6 +443,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform vec3  uBandHigh;
        uniform vec3  uSkyGlow;
        uniform float uTurbidity;
+       uniform vec3  uGalPole;
+       uniform vec3  uGalCtr;
+       uniform float uMwGate;
        uniform vec3  uSunDir;
        uniform vec3  uKeyDir;
        uniform vec3  uKeyColor;
@@ -490,6 +496,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        const float SPEC_AA_K   = ${SPEC_AA_K.toFixed(4)};
 
 ${SKY_GRADIENT_GLSL}
+${MILKY_WAY_GLSL}
 ${FRESNEL_GLSL}
 
        // Hash + noise for water
@@ -824,7 +831,8 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // has nothing below h = 0 to give back.
          wR.y = abs(wR.y);
          vec3 wSky = skyDomeColor(wR, uBandHorizon, uBandLow, uBandMid, uBandHigh,
-                                  uTurbidity, uSunDir, uSunAltitude, uSkyGlow);
+                                  uTurbidity, uSunDir, uSunAltitude, uSkyGlow)
+                   + milkyWayColor(wR, uGalPole, uGalCtr, uMwGate);   // the band reflects too
          // ⚠️ The bands arrive as the operator authored them — hex/255, i.e. sRGB
          // DISPLAY values (skyGrid.js), and the dome writes them straight to
          // gl_FragColor with no encode. This material is lit in linear and IS
@@ -862,7 +870,8 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          vec3 wRfacet = reflect(-wV, vWaterN);
          wRfacet.y = abs(wRfacet.y);
          vec3 wSkyF = skyDomeColor(wRfacet, uBandHorizon, uBandLow, uBandMid, uBandHigh,
-                                   uTurbidity, uSunDir, uSunAltitude, uSkyGlow);
+                                   uTurbidity, uSunDir, uSunAltitude, uSkyGlow)
+                    + milkyWayColor(wRfacet, uGalPole, uGalCtr, uMwGate);
          // ⛔ THE CLIP IS ON THE WAVE FIELD, NOT ON A SKY COMPARISON — and that
          // correction is why the lake went FLAT AND DEAD. The first version
          // clipped on "does this facet see brighter sky than the mean", which has

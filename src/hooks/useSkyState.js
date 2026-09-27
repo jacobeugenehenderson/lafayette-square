@@ -40,6 +40,10 @@ const useSkyState = create((set, get) => ({
     high:    new THREE.Color('#3a5580'),
     glow:    new THREE.Color('#ffd9a0'),
     turbidity: 0,
+    // The Milky Way as the dome draws it this frame: the galactic pole and centre as world directions, and the gate.
+    galPole: new THREE.Vector3(0, 1, 0),
+    galCtr:  new THREE.Vector3(0, 0, 1),
+    mwGate:  0,
   },
 
   // ── Weather the sky DRAWS — a projection of the directive, never the raw feed ──
