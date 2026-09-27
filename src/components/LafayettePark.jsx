@@ -21,7 +21,6 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { makeWaterMaterial, ringExtentDiag } from './waterMaterial.js'
-import { getLampLightmap } from './lampLightmap.js'
 import { terrainExag, patchTerrain } from '../utils/terrainShader'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import { ringsToFlatGeo } from '../lib/ringsToFlatGeo.js'
@@ -78,7 +77,6 @@ const FENCE_HEIGHT = 1.5
 const FENCE_POST_SPACING = 8
 const TAU = Math.PI * 2
 
-// Lamp lightmap moved to ./lampLightmap.js for sharing with StreetRibbons.
 
 // ── SVG clip mask for park boundary ──────────────────────────────────
 const svgUrl = `${import.meta.env.BASE_URL}${INSTANCE.branding.assetSlug}.svg?v=${Date.now()}`
@@ -92,7 +90,6 @@ function ParkGround() {
   const [clipTexture, setClipTexture] = useState(null)
   // shaderRef is owned by the grass material factory and populated on compile.
   const grassMatObj = useMemo(() => makeGrassMaterial({
-    lampLightmap: getLampLightmap(),
     clipMin: new THREE.Vector2(SVG_WORLD_X, SVG_WORLD_Z),
     clipSize: new THREE.Vector2(SVG_VB_W, SVG_VB_H),
   }), [])

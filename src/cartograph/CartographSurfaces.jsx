@@ -206,13 +206,6 @@ const TABS = [
     ],
   },
   {
-    key: 'lighting',
-    label: 'Lighting',
-    items: [
-      { id: 'lamp_glow', label: 'Lamp Glow', kind: 'lamp_glow' },
-    ],
-  },
-  {
     key: 'building',
     label: 'Building',
     items: [
@@ -457,9 +450,6 @@ export default function CartographSurfaces() {
           setEntry={setBuildingPaletteEntry}
           reset={resetBuildingPalette}
         />
-      )}
-      {selectedItem && selectedItem.kind === 'lamp_glow' && (
-        <LampGlowEditor />
       )}
       {selectedItem && selectedItem.kind === 'canopy_light' && (
         <CanopyLightEditor />

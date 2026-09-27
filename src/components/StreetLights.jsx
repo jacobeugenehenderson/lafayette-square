@@ -5,8 +5,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 // ⚠️ DEFERRED-TO-PRODUCER (Universal Reader Phase 2). street_lamps is render
-// geometry shared with the bake pipeline + the lamp-lightmap subsystem
-// (lampLightmap.js → BakedGround/gravelPathMaterial, outside the reader scope).
+// geometry shared with the bake pipeline (bake-lamps → lamps.json; the ground takes lamp light
+// from the baked pool map via src/lib/groundLamp.js).
 // Kept static + LS-guarded so a non-LS look shows no lamps; its by-lookId load
 // belongs to the roster/render-emit arc alongside the lightmap. Owner: that arc.
 import lampData from '../data/street_lamps.json'

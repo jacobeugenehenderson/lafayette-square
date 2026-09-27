@@ -169,7 +169,6 @@ function LampGlowPump() {
     const minute = tod.getMinuteOfDay()
     const slotMinutes = lampGlow.animated ? getTodSlotMinutes(tod.currentTime) : null
     const triple = resolveLampGlowAtMinute(lampGlow, minute, slotMinutes)
-    _lampGlowUniforms.grassUniform.value = triple.grass
     // Shares of the lamp's output; StreetLights multiplies them by it (0 by day, follows Brightness).
     _lampGlowUniforms.share.trees = triple.trees
     _lampGlowUniforms.share.pool  = triple.pool
