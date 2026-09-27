@@ -303,7 +303,7 @@ GPU profiler · device frame · layer-toggle matrix · TOD scrub. Walks the *shi
 
 **One-time setup (Jacob — each is a Cloudflare change):**
 1. An Access **service token** for Promote; its client id goes in theward-operations `PUBLISHER_CLIENT_IDS`, and the Operations Access application gets a **Service Auth** policy for it.
-2. The dev server's environment: `OPS_ACCESS_CLIENT_ID`, `OPS_ACCESS_CLIENT_SECRET` (and `OPERATIONS_URL` if not `https://operations.theward.online`). Without them the Promote row reads *"no address"* with the reason.
+2. The dev server's environment: `OPS_ACCESS_CLIENT_ID`, `OPS_ACCESS_CLIENT_SECRET` (and `OPERATIONS_URL` if not `https://operations.theward.online`). ⛔ `cartograph/serve.js` does **not** read `.env` — export them in the shell that runs `npm run dev` (e.g. `~/.zshrc`), then restart it. Without them the Promote row reads *"no address"* with the reason.
 3. The same two as **Worker secrets** on `theward-staging-sites` (`npx wrangler secret put OPS_ACCESS_CLIENT_ID`, `…_SECRET`), so staging pages carry the town's domain for QR codes.
 4. Deploy `workers/staging-sites` **before** the next player publish, then `workers/production-sites`.
 
