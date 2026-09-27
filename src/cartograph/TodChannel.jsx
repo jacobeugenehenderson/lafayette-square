@@ -346,7 +346,12 @@ export default function TodChannel({
   //     else the resolved tween / flat baseline at its minute); live.
   //   - in a gap → show the resolved value at the live minute; read-only.
   const tMin = editTarget ? (slotMinutes[editTarget] ?? minute) : minute
-  const displayValues = resolveGroupAtMinute(channel, tMin, slotMinutes, fieldKeys, flatDefaults)
+  // ⭐ ON A KEYED TILE THE SLIDERS SHOW THE KEY ITSELF — never the value after a fade (Jacob, 2026-09-27: a fade-up's
+  // key read 0.00 on every slider, Glow size included, whose floor is 0.2, while the key held Bulb 1.92).
+  const key = editTarget && channel?.animated ? channel.values?.[editTarget] : null
+  const displayValues = key
+    ? Object.fromEntries(fieldKeys.map(k => [k, key[k] ?? flatDefaults[k]]))
+    : resolveGroupAtMinute(channel, tMin, slotMinutes, fieldKeys, flatDefaults)
   const editable = !!editTarget
 
   // Chip click: scrub the playhead onto that slot (which makes it the edit
