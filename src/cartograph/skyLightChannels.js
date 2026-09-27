@@ -599,8 +599,11 @@ const DAY = {
               vignette: [0.8, 0.8, 0.4, 1.2, 1.1, 1.0, 1.5, 1.3] },
   bloom:    { intensity: [1.2, 0.9, 0.2, 2.2, 1.5, 1.0, 1.1, 0.4], threshold: [0.45, 0.55, 0.8, 0.25, 0.4, 0.4, 0.35, 0.6],
               spread: [0.85, 0.6, 0.15, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
-  dof:      { blur: [0.4, 0.3, 0.85, 0.6, 0.45, 0.25, 0.12, 0], focus: [120, 120, 120, 120, 120, 120, 120, 120],
-              heroBlur: [0.25, 0.15, 0, 0.3, 0.2, 0.1, 0, 0], softness: [0.8, 0.6, 0.3, 0.9, 0.7, 0.5, 0.3, 0.5] },
+  // Depth of field is OFF in the kit's day. Its Focus distance is metres from the camera, which only means something
+  // for one town's shot — 0.85 blur around a fixed 120 m smeared Provincetown's whole hero frame (2026-09-27). Blur
+  // is authored per town, against its own camera, until focus is derived from the shot's aim.
+  dof:      { blur: [0, 0, 0, 0, 0, 0, 0, 0], focus: [120, 120, 120, 120, 120, 120, 120, 120],
+              heroBlur: [0, 0, 0, 0, 0, 0, 0, 0], softness: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] },
   grain:    { scale: [0.9, 0.7, 0.4, 0.7, 0.8, 1.0, 1.3, 1.1] },
   // Neon: which buildings light is their HOURS' business; this is how they read. At noon a solid colour band
   // (Emissive 1 is the colour itself, no bleed); at the blue hour it balances the sky; at night it blazes.
