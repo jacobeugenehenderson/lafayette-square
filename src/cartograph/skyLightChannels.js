@@ -544,7 +544,7 @@ export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
 export const LANTERN_FIELDS = [
   { key: 'intensity', label: 'Bulb',      min: 0,   max: 4,  step: 0.02 },
   { key: 'glow',      label: 'Glow',      min: 0,   max: 3,  step: 0.02 },
-  { key: 'glowSize',  label: 'Glow size', min: 0.2, max: 1.5, step: 0.05 },  // metres, radius — small by design; the wide halo is Bloom's
+  { key: 'glowSize',  label: 'Glow size', min: 0, max: 1.5, step: 0.05 },  // metres, radius — 0 is no glow; small by design, the wide halo is Bloom's
   // The lamp's colour, keyed like everything else (Jacob, 2026-09-27: "at dusk they would be lovely little gaslamps …
   // the night lamps glittery and cold"). One colour for every lamp light: bulb, glow, pools, trees, walls.
   // ⛔ Replaces the flat `layerColors.lamp` swatch.
