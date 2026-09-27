@@ -62,7 +62,6 @@
     "park": "#5E8A3A",
     "water": "#4A6A8E",
     "tree": "#4E7A3E",
-    "lamp": "#F2D67A",
     "fence": "#8A7E6E",
     "wall": "#9A8E7E",
     "retaining_wall": "#7A6E5E",
@@ -124,124 +123,8 @@
     "#b22222",
     "#808080"
   ],
-  "lampGlow": {
-    "animated": "tod",
-    "transitionIn": 30,
-    "transitionOut": 30,
-    "values": {
-      "sunset": {
-        "grass": 0.5,
-        "trees": 0.005,
-        "pool": 0.1
-      },
-      "night": {
-        "grass": 0.5,
-        "trees": 0.06,
-        "pool": 0.25
-      }
-    }
-  },
-  "bloom": {
-    "values": {
-      "intensity": 0.5,
-      "threshold": 0.85,
-      "smoothing": 0.4
-    }
-  },
-  "warmth": {
-    "values": {
-      "value": 0
-    }
-  },
-  "fill": {
-    "values": {
-      "value": 0.65
-    }
-  },
-  "exposure": {
-    "values": {
-      "value": 0.95
-    }
-  },
-  "ao": {
-    "values": {
-      "radius": 15,
-      "intensity": 2.5,
-      "distanceFalloff": 0.3
-    }
-  },
-  "mist": {
-    "values": {
-      "density": 0,
-      "color": "#9dc5e0"
-    }
-  },
-  "halo": {
-    "values": {
-      "strength": 0,
-      "color": "#b8c8d8"
-    }
-  },
-  "grade": {
-    "values": {
-      "contrast": 0.42,
-      "toe": 0.28,
-      "saturation": 1.1,
-      "vignette": 1
-    }
-  },
-  "grain": {
-    "values": {
-      "scale": 1
-    }
-  },
-  "shadow": {
-    "values": {
-      "size": 22.85,
-      "samples": 16
-    }
-  },
-  "constellations": {
-    "values": {
-      "value": 0
-    }
-  },
-  "milkyWay": {
-    "values": {
-      "value": 1
-    }
-  },
-  "neon": {
-    "values": {
-      "core": 1,
-      "tube": 1,
-      "bleed": 1,
-      "emissive": 4,
-      "tubeRadius": 1
-    }
-  },
   "sky": {
     "overrides": []
-  },
-  "ambient": {
-    "values": {
-      "value": 1.58
-    }
-  },
-  "hemi": {
-    "values": {
-      "value": 1
-    }
-  },
-  "dirSun": {
-    "values": {
-      "value": 1
-    }
-  },
-  "dirMoon": {
-    "values": {
-      "value": 1
-    }
   },
   "heroSubject": null,
   "heroKeyframes": [
