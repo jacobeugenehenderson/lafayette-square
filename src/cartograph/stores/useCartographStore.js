@@ -398,7 +398,7 @@ const DESIGN_FIELDS = [
   // ⭐ Keys Stage has no controls for yet but a bake reads: carried through untouched, because the
   // autosave REPLACES design.json with this store's fields — a key missing here is wiped on the next
   // save (2026-09-26: `surfaces`, the operator layer of cartograph/surfaces.mjs, was). ▶ checks/
-  // claims-revert-field-coverage.mjs fails on a design.json key a bake reads that is not listed here.
+  // claims-autosave-keeps-what-bakes-read.mjs fails on a design.json key a bake reads that is not listed here.
   { key: 'surfaces',     hydrate: (d) => _isObj(d.surfaces) ? d.surfaces : null },
   { key: 'wallMix',      hydrate: (d) => _isObj(d.wallMix) ? d.wallMix : null },       // bake-buildings: undescribed walls
   { key: 'wallPalettes', hydrate: (d) => _isObj(d.wallPalettes) ? d.wallPalettes : null },
