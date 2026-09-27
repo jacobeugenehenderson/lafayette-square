@@ -82,7 +82,7 @@ import CartographPost from './CartographPost.jsx'
 import { browseFitAltitude } from '../lib/townRange.js'
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState.js'
 import { neon as _neonUniforms } from '../preview/neonState.js'
-import { resolveLampGlowAtMinute, resolveGroupAtMinute, getTodSlotMinutes, setTodStillMinute } from './animatedParam.js'
+import { resolveLampGlowAtMinute, resolveGroupAtMinute, getTodSlotMinutes, setTodStill, todSlotAtMinute } from './animatedParam.js'
 import {
   NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, SHOTS_FLAT_DEFAULTS,
 } from './skyLightChannels.js'
@@ -125,7 +125,12 @@ const TOD_PLACE_KEY = 'stage-tod-place'
   tod.setHour(12)
 })()
 // A stopped clock is a still moment: channels keyed on the tile it stands on show their key, fades aside.
-const _syncStill = () => { const s = useTimeOfDay.getState(); setTodStillMinute(s.isLive ? null : s.getMinuteOfDay()) }
+const _syncStill = () => {
+  const s = useTimeOfDay.getState()
+  if (s.isLive) return setTodStill(null)
+  const m = s.getMinuteOfDay()
+  setTodStill(m, todSlotAtMinute(m, s.currentTime))   // the tile the editor targets at this stopped minute
+}
 _syncStill()
 useTimeOfDay.subscribe(_syncStill)
 let _todPlaceTimer = null

@@ -219,23 +219,21 @@ function tweenAnimatedAtMinute(channel, minute, todSlots) {
   return lo.value + (hi.value - lo.value) * t
 }
 
-// ⭐ IN EDITING, A TILE IS A STILL MOMENT (Jacob, 2026-09-27: "There are no timers in editing, when I click on a ToD,
-// it's a static moment at that 'time'"). Stage sets the minute its stopped clock stands on; at exactly that minute a
-// channel keyed there shows its key's own values — no fade-up/down envelope. Playback (the live clock, production)
-// never sets it, so the fades play as authored.
-let _stillMinute = null
-export function setTodStillMinute(minute) { _stillMinute = Number.isFinite(minute) ? minute : null }
-const atStill = (minute) => _stillMinute != null && Math.abs(minute - _stillMinute) < 1e-3
+// ⭐ IN EDITING, THE TILE YOU ARE ON IS WHAT YOU SEE — AT 100% OF ITS SETTING (Jacob, 2026-09-27: "There are no timers
+// in editing … it's a static moment" · "THEY ARE SUPPOSED TO BE AT 100% OF THE SETTING: WHICH IS ZERO!"). With Stage's
+// clock stopped, the tile the editor targets (todSlotAtMinute — within its tolerance) is the moment: a channel keyed
+// on that tile shows its key's own values, with no fade and no drift toward the next key. It used to show the clock's
+// own minute — 9 minutes past Sunset tweened toward Dusk while the editor said "Sunset".
+// Playback (the live clock, production) never sets it, so fades and tweens play as authored.
+let _still = null   // { minute, slot } — the stopped clock's minute and the tile the editor targets there
+export function setTodStill(minute, slot) { _still = Number.isFinite(minute) && slot ? { minute, slot } : null }
+const stillSlot = (minute) => (_still && Math.abs(minute - _still.minute) < 1e-3 ? _still.slot : null)
 
 /** The plain tween, then the edge fades (edgeEnvelope) where a key is marked up or down. */
 export function resolveAnimatedAtMinute(channel, minute, todSlots) {
+  if (channel?.animated) { const id = stillSlot(minute); if (id && id in (channel.values || {})) return Number(channel.values[id]) || 0 }
   const base = tweenAnimatedAtMinute(channel, minute, todSlots)
   if (!channel?.animated || !channel.edges) return base
-  if (atStill(minute)) {
-    // The clock resolves whole minutes; a tile's moment carries seconds — so "on the tile" is within the minute.
-    const sl = (todSlots || []).find(x => x.id in (channel.values || {}) && Math.abs(x.minute - minute) < 1)
-    if (sl) return Number(channel.values[sl.id]) || 0
-  }
   const byId = new Map((todSlots || []).map(sl => [sl.id, sl.minute]))
   const points = Object.entries(channel.values || {})
     .filter(([id]) => byId.has(id)).map(([id, v]) => ({ id, minute: byId.get(id), value: Number(v) || 0 }))
@@ -434,13 +432,11 @@ function tweenGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults = 
 
 /** The plain tween per field, then the edge fades on SCALAR fields (a colour has no "off"). */
 export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults = {}) {
+  if (channel?.animated) { const id = stillSlot(minute)
+    if (id && id in (channel.values || {})) { const out = {}; for (const k of fieldKeys) out[k] = readField(channel.values[id], k, defaults); return out } }
   const base = tweenGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults)
   if (!channel?.animated || !channel.edges) return base
   const mins = slotMinutes || getTodSlotMinutes(new Date())
-  if (atStill(minute)) {
-    const id = Object.keys(channel.values || {}).find(k => mins[k] != null && Math.abs(mins[k] - minute) < 1)
-    if (id) { const out = {}; for (const k of fieldKeys) out[k] = readField(channel.values[id], k, defaults); return out }
-  }
   const points = Object.entries(channel.values || {})
     .filter(([id]) => mins[id] != null)
     .map(([id, tuple]) => { const p = { id, minute: mins[id] }; for (const k of fieldKeys) p[k] = readField(tuple, k, defaults); return p })
