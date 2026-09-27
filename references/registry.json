@@ -812,16 +812,15 @@
         "moon phase / fraction illuminated"
       ],
       "terms": {
-        "aiUse": "unchecked",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-27",
         "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched aa.usno.navy.mil/about/PrivacyNotice (the /about/disclaimer URL returned 500)",
         "quote": "All information on this site is considered public information and may be distributed or copied unless otherwise specified. Use of appropriate byline/photo/image credits is requested.",
         "source": "https://aa.usno.navy.mil/about/PrivacyNotice",
         "exception": "'unless otherwise specified'. No USNO illuminance-vs-altitude table found; its data services cover rise/set, alt/az and phase only.",
-        "proposedAiUse": "permitted",
-        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+        "approvedBy": "Jacob, 2026-09-27 (\"Approve the sources\")"
       },
-      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+      "status": "PERMITTED — skip anything credited to a third party"
     },
     {
       "id": "noaa-gml-solar-calc",
@@ -834,16 +833,15 @@
         "sunrise/sunset/solar noon"
       ],
       "terms": {
-        "aiUse": "unchecked",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-27",
         "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched",
         "quote": "The information on government servers are in the public domain, unless specifically annotated otherwise, and may be used freely by the public",
         "source": "https://gml.noaa.gov/about/disclaimer.html",
         "exception": "Attribution requested ('Data/Image provided by NOAA Global Monitoring Laboratory, Boulder, Colorado, USA'). Must not imply NOAA endorsement or present modified content as official.",
-        "proposedAiUse": "permitted",
-        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+        "approvedBy": "Jacob, 2026-09-27 (\"Approve the sources\")"
       },
-      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+      "status": "PERMITTED — skip anything credited to a third party"
     },
     {
       "id": "doe-ssl-street-lighting",
@@ -857,16 +855,15 @@
         "photocontrol switching"
       ],
       "terms": {
-        "aiUse": "unchecked",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-27",
         "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched energy.gov/web-policies",
         "quote": "Government information at DOE websites is in the public domain. Public domain information may be freely distributed and copied, but it is requested that in any subsequent use the Department of Energy be given appropriate acknowledgement.",
         "source": "https://www.energy.gov/web-policies",
         "exception": "Copyrighted third-party items need the owner's written permission beyond fair use. Many SSL reports are written by PNNL or contractors: check each report's own notice.",
-        "proposedAiUse": "permitted",
-        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+        "approvedBy": "Jacob, 2026-09-27 (\"Approve the sources\")"
       },
-      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+      "status": "PERMITTED — skip anything credited to a third party"
     },
     {
       "id": "nps-night-skies",
@@ -880,16 +877,15 @@
         "natural light levels at night"
       ],
       "terms": {
-        "aiUse": "unchecked",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-27",
         "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched",
         "quote": "Copyright law does not protect 'any work of the U.S. Government' where 'a work prepared by an officer or employee of the U.S. Government as part of that person's official duties.'",
         "source": "https://www.nps.gov/aboutus/disclaimer.htm",
         "exception": "'not all materials appearing on this website ... are in the public domain'. Third-party items: 'It is your responsibility to determine what permission(s) you need'. Commercial use should credit the government source.",
-        "proposedAiUse": "permitted",
-        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+        "approvedBy": "Jacob, 2026-09-27 (\"Approve the sources\")"
       },
-      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+      "status": "PERMITTED — skip anything credited to a third party"
     },
     {
       "id": "nasa-science",
@@ -928,16 +924,15 @@
         "neon lighting spectra/colours"
       ],
       "terms": {
-        "aiUse": "unchecked",
+        "aiUse": "permitted",
         "checkedOn": "2026-09-27",
         "checkedBy": "Gloaming's terms agent, 2026-09-27: fetched",
         "quote": "When you submit text to which you hold the copyright, you agree to license it under: Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0), and GNU Free Documentation License (GFDL)",
         "source": "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use",
         "exception": "No AI clause; attribution + share-alike apply to text; a tertiary source — prefer the permitted primary it cites.",
-        "proposedAiUse": "permitted",
-        "note": "Terms read as permitting reuse; left unchecked (do not read) until Jacob approves — README rule 1."
+        "approvedBy": "Jacob, 2026-09-27 (\"Approve the sources\")"
       },
-      "status": "CANDIDATE — terms checked, awaiting Jacob's approval"
+      "status": "PERMITTED — skip anything credited to a third party"
     },
     {
       "id": "nist-asd",
