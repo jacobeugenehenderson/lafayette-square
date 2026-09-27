@@ -135,3 +135,6 @@ export function buildLampGrid(lamps, reach) {
  *  pinned the pool at ~55% of its reach for the whole bottom third of the knob. */
 export const LAMP_WIPE_GLSL = `
   float lampWipe(float v, float th) { return th > 0.0 ? v * smoothstep(0.9 * th, th, v) : v; }`
+
+/** The lamp's colour when a Look has authored none (layerColors.lamp) — warm incandescent white. One home. */
+export const LAMP_DEFAULT_HEX = '#fff2e0'

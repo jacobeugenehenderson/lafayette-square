@@ -17,7 +17,7 @@ import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
-import { buildLampGrid, poolWipe, canopyWipe } from '../lib/lampPool.js'
+import { buildLampGrid, poolWipe, canopyWipe, LAMP_DEFAULT_HEX } from '../lib/lampPool.js'
 
 const LANTERN_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANTERN_FLAT_DEFAULTS } })
 
@@ -35,7 +35,7 @@ const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
 const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
 
 import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
-const LAMP_COLOR_ON = new THREE.Color('#fff2e0')  // warm incandescent white
+const LAMP_COLOR_ON = new THREE.Color(LAMP_DEFAULT_HEX)  // warm incandescent white
 const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.18 // tight glass halo
 const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern center
@@ -43,7 +43,7 @@ const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern cente
 // ground FX map — see BakedGround / grassMaterial / bake-ground-ao.js.
 // POOL_RADIUS/POOL_Y/poolMat + SHADOW_RADIUS/baseMat all retired.)
 
-function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: lanternChannel } = {}) {
+function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: lanternChannel, lampColor } = {}) {
   const lampRef = useRef()
   const glowRef = useRef()
   const bulbRef = useRef()
@@ -64,7 +64,8 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
   // (not useFrame) — per-frame overwrite of the instanced material's
   // emissive caused lamps to vanish at daytime.
   const scene = useSceneJson(_resolveLookId(lookId), bakeLastMs)
-  const panelLampColor = scene?.layerColors?.lamp
+  // Stage passes the live colour (Light Sources › Lamp colour); production reads it baked.
+  const panelLampColor = lampColor ?? scene?.layerColors?.lamp
 
   // Effect that re-applies tint lives below the lampModel useState so the
   // dep array can include it (re-runs when the GLB finishes loading).
@@ -254,7 +255,7 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
   // GLB finishes loading. Avoids the per-frame mutation that previously
   // caused the iron material to vanish at daytime.
   useEffect(() => {
-    const lampCol = panelLampColor || '#fff2e0'  // layerColors.lamp, else the warm default
+    const lampCol = panelLampColor || LAMP_DEFAULT_HEX  // layerColors.lamp, else the warm default
     if (glowMatRef.current?.uniforms?.uColor) glowMatRef.current.uniforms.uColor.value.set(lampCol)
     haloMat.uniforms.uColor.value.set(lampCol)   // the soft glow is the same light
     if (lampMatRef.current?.emissive) lampMatRef.current.emissive.set(lampCol)

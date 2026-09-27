@@ -29,9 +29,10 @@ import {
 import { streetEyeY } from '../utils/elevation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import useCartographStore, { activeChannel } from '../cartograph/stores/useCartographStore.js'
 import TodChannel from '../cartograph/TodChannel.jsx'
 import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
+import { LAMP_DEFAULT_HEX } from '../lib/lampPool.js'
 import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf } from '../components/SetPiece.jsx'
 import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, resolveHorizon } from '../cartograph/skyLightChannels.js'
@@ -128,10 +129,29 @@ function Uplights() {
   </>)
 }
 
-// Lantern — the lamp's own light source (Brightness + Glow), TOD-animatable.
-// Sits in the Lamps card beside Lamp Glow (the ground pool + canopy). Same
-// store-bound TodChannel pattern. (Lamp colour stays the Surfaces lamp swatch
-// and also drives the pool colour — see StreetLights.)
+// The lamp's COLOUR and whether lamps show at all — on the Light Sources card, beside the knobs they tint
+// (Jacob, 2026-09-26: "I don't like the lamp color being in furniture"). One colour for every lamp light: bulb,
+// glow, pools, trees, walls. Same fields as ever (layerColors.lamp, layerVis.lamp — the latter also gates the lamp
+// bake); live in Stage, baked for production.
+function LampSourceControls() {
+  const color   = useCartographStore(s => activeChannel(s, 'layerColors')?.lamp) || LAMP_DEFAULT_HEX
+  const visible = useCartographStore(s => s.layerVis?.lamp !== false)
+  const setColor = useCartographStore(s => s.setLayerColor)
+  const setVis   = useCartographStore(s => s.setLayerVis)
+  return (
+    <div className="flex items-center gap-2 py-1 pl-2" style={{ fontSize: 12, color: 'var(--on-surface)' }}>
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={visible} onChange={e => setVis('lamp', e.target.checked)} />
+        <span>Show lamps</span>
+      </label>
+      <span style={{ color: 'var(--on-surface-subtle)', marginLeft: 'auto' }}>Lamp colour</span>
+      <input type="color" value={color} onChange={e => setColor('lamp', e.target.value)}
+        style={{ width: 28, height: 20, padding: 0, border: '1px solid var(--outline-variant)', background: 'transparent' }} />
+    </div>
+  )
+}
+
+// Lantern — the lamp's own light source (Bulb · Glow · Glow size), TOD-animatable. Same store-bound TodChannel pattern.
 function LanternChannel() {
   const channel       = useCartographStore(s => s.lantern)
   const setValue      = useCartographStore(s => s.setLantern)
@@ -1029,6 +1049,7 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           the lamp fixture/pool/canopy restructure is Phase B too. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
         <Collapsible label="Light Sources">
+          <LampSourceControls />
           <LanternChannel />
           <LampGlowEditor />
           <Uplights />

@@ -172,7 +172,6 @@ const TABS = [
     label: 'Furniture',
     items: [
       { id: 'tree',           label: 'Trees',           kind: 'layer' },
-      { id: 'lamp',           label: 'Lamps',           kind: 'layer' },
       { id: 'fence',          label: 'Fences',          kind: 'layer' },
       { id: 'wall',           label: 'Walls',           kind: 'layer' },
       { id: 'retaining_wall', label: 'Retaining Walls', kind: 'layer' },
