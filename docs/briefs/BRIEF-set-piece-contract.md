@@ -30,6 +30,11 @@ asking for is the **contract the slot owes every set-piece**, whichever town dec
 three without anyone remembering to do it. `node checks/claims-every-app-mounts-the-set-piece.mjs` is the
 precedent: the check reads the declaration and fails the set-piece that misses any of the three.
 
+> ⭐ **Item 3 (lighting) is being built by Loupe (2026-09-26)**, as part of the Stage controls audit: the Arch's
+> uplights move out of `GatewayArch` into lights aimed at the town's set-piece (its position and height), hidden
+> where a town declares none (Jacob: *"We need those uplights for the Monument"*). The horizon disc also moves out
+> of `GatewayArch` so every town has it. Items 1 (building id) and 2 (2D) remain for this brief.
+
 ## What Boz found (confirm it; don't inherit it)
 
 - **Building id.** Provincetown's `setPiece` declares `osmWay: 164024699` and a footprint, and no building id.
