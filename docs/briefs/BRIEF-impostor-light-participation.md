@@ -66,9 +66,10 @@ recognisably the same trees, differing only in how the light falls on them.
 - The card relight is bound in exactly **two** places, `injectOverheadStamp` and
   `injectHeroImpostorStamp`, and both read the same `overheadLightUniforms {uAmbient, uSun}`
   (`treeAtlasMaterial.js:2016`). That object is where a direction and a feature flag belong.
-- `OverheadTrees.jsx:60-68` drives those scalars per frame off
-  `useAtmosphere.getState().tweenedDirective.lightDome.ambientFloor`. Weather already
-  reaches the cards; only DIRECTION is missing.
+- `OverheadLightDriver` (`OverheadTrees.jsx`) drives those scalars per frame off the weather's
+  `lightDome.ambientFloor` — CONTRAST only; they sum to 1. ✅ **BRIGHTNESS landed 2026-09-27:** the same
+  driver sums the live rig's light on an up-facing surface (`uSceneLight`) and the relight multiplies by
+  it, so cards darken with the scene (measured 7 pm: cards were 0.34–1.0 against the ground's 0.047).
 - **A card is a Y-axis billboard**, so it always faces camera: in VIEW space its facing is
   +Z. A synthetic normal from the card UV (a hemisphere bulge) plus the sun direction taken
   into view space is a real directional term needing NO new pages — worth measuring as a

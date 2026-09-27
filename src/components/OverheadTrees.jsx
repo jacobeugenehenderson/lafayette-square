@@ -56,6 +56,7 @@ const BAND_DEBUG_COLOR = [[1, 0.15, 0.15], [0.15, 1, 0.15], [0.3, 0.5, 1]]  // b
 // lets top-down clicks pass THROUGH to whatever they're a stand-in for (in the
 // Grove, the ground selection plate; in the slab, the ground/buildings).
 const NO_RAYCAST = () => null
+const _lp = new THREE.Vector3(), _tp = new THREE.Vector3()
 
 // ── Weather relight driver ───────────────────────────────────────────────────
 // Feeds the shared overheadLightUniforms from the atmosphere directive so the
@@ -64,7 +65,7 @@ const NO_RAYCAST = () => null
 // directive the sky (Atmosphere.jsx) + the wind (SwayDriver) read — one weather
 // system. No directive (e.g. the Salon, which has no weather) → leaves the shared
 // uniforms alone so the Salon's Light slider / the default still governs.
-// uAmbient + uSun ≈ 1 keeps brightness; the ratio is the CONTRAST. Curve tunable.
+// uAmbient + uSun sum to 1: the ratio is the CONTRAST. The BRIGHTNESS is the scene's own lights (below).
 export function OverheadLightDriver({ enabled = true, canopyChannel }) {
   // The AUTHORED canopy response, resolved per frame against the live TOD minute —
   // the same `resolveGroupAtMinute` every other look channel uses (dirSun, ambient,
@@ -72,9 +73,34 @@ export function OverheadLightDriver({ enabled = true, canopyChannel }) {
   // is only an override on top, so a look that authors `directional: 0.8` renders
   // that way for every viewer, with nothing to remember to append.
   const resolved = canopyChannel ?? CANOPY_DEFAULT_CHANNEL
+  const scene = useThree((st) => st.scene)
+  const lights = useRef({ list: [], age: Infinity })
 
   useFrame(() => {
     if (!enabled) return
+
+    // ── BRIGHTNESS — what the scene's own lights deliver ──────────────────────
+    // The cards are MeshBasic, so no light reaches them; this hands them the diffuse an up-facing
+    // MeshStandard surface gets from the live rig — ambient + hemisphere sky + each directional
+    // light × its elevation, ÷ π — so a card is as lit as the ground under it (see uSceneLight).
+    // Lights mount and unmount rarely; the scene is re-walked for them twice a second, not per frame.
+    const lr = lights.current
+    if (++lr.age > 30) {
+      lr.list = []
+      scene.traverse((o) => { if (o.isAmbientLight || o.isHemisphereLight || o.isDirectionalLight) lr.list.push(o) })
+      lr.age = 0
+    }
+    const out = overheadLightUniforms.uSceneLight.value.setRGB(0, 0, 0)
+    for (const l of lr.list) {
+      if (!l.visible || !(l.intensity > 0)) continue
+      let k = l.intensity
+      if (l.isDirectionalLight) {
+        l.getWorldPosition(_lp); l.target.getWorldPosition(_tp)
+        k *= Math.max(0, _lp.sub(_tp).normalize().y)
+      }
+      out.r += l.color.r * k; out.g += l.color.g * k; out.b += l.color.b * k
+    }
+    out.multiplyScalar(1 / Math.PI)
 
     // ── The authored channel → the shared card uniforms ───────────────────────
     // ⛔ A live override (?litCards / __setLitCards) WINS, and is deliberately

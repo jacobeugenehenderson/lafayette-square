@@ -1114,123 +1114,6 @@ export function injectFoliageSway(material) {
   }
 }
 
-// ── Captured-impostor billboard material (Arc 2, Phase 1) ──────────────────
-//
-// The X cross-billboard (impostorGeometry.js#buildXImpostorGeometry) is textured
-// with a render-to-texture CAPTURE of the real tree (captureImpostor.js), NOT
-// the shared atlas — so it can't ride injectFoliageSway's bark-retint/atlas
-// path. It gets its OWN slim MeshStandardMaterial with a captured texture as
-// `map`, plus the SAME base-anchored sway (off the shared treeSwayUniforms — the
-// whole forest moves as one weather system) and the SAME lamp-glow emissive as
-// the mesh trees, so it rides full optical parity (tone-mapped + fogged → DoF /
-// fog / bloom all apply). Flat-lit billboard: no per-leaf-tier damping, just a
-// single horizontal sway growing with aTreeHeightNorm (base planted, canopy
-// flutters), reusing the sway/lamp shader slices of injectFoliageSway.
-export function injectImpostorBillboard(material) {
-  material.onBeforeCompile = (shader) => {
-    // Reuse the SHARED sway uniforms (same object the mesh trees mutate per
-    // frame in SwayDriver) so impostor + mesh move as one weather system.
-    shader.uniforms.uTime              = treeSwayUniforms.uTime
-    shader.uniforms.uWindForce         = treeSwayUniforms.uWindForce
-    shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
-    shader.uniforms.uGustFrontVelocity = treeSwayUniforms.uGustFrontVelocity
-    shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
-    shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
-    // Per-instance lamp glow (same per-Look TOD uniform + per-tree baked attr).
-    shader.uniforms.uLampGlow          = _lampGlow.treesUniform
-    // ⚠️ This is `injectImpostorBillboard` — the KILLED octahedral impostor, which has
-    // ZERO instances on every slab. This comment claimed ?heroTierQC=1 thereby covered
-    // "the captured-impostor billboards"; it never did, and that false claim is what made
-    // the eye-gate read as authoritative. The LIVE impostor tier is the hero foundation,
-    // and its tint now lives in `injectHeroImpostorStamp`, where it belongs.
-    shader.uniforms.uHeroTierQC        = treeHeroTierQC
-    material.userData.shader = shader
-
-    shader.vertexShader = shader.vertexShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-         uniform float uTime;
-         uniform vec3  uWindForce;
-         uniform float uWindIntensity;
-         uniform vec3  uGustFrontVelocity;
-         uniform float uGustsScale;
-         uniform float uGustEnvelope;
-         attribute float aLampGlow;
-         attribute float aTreeHeightNorm;
-         varying float vLampGlow;`
-      )
-      .replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-         vLampGlow = aLampGlow;
-         {
-           // Per-instance phase + advection from the instance translation column
-           // (same seam injectFoliageSway uses). Base-anchored horizontal sway
-           // ∝ aTreeHeightNorm: trunk base planted, canopy top fluttering.
-           #ifdef USE_INSTANCING
-             vec3 instWorld = vec3(instanceMatrix[3].x, 0.0, instanceMatrix[3].z);
-           #else
-             vec3 instWorld = vec3(modelMatrix[3].x, 0.0, modelMatrix[3].z);
-           #endif
-           float phase = instWorld.x * 0.05 + instWorld.z * 0.07;
-           float frontLenSq = dot(uGustFrontVelocity.xz, uGustFrontVelocity.xz);
-           float phaseOffset = (frontLenSq > 1e-4)
-             ? dot(instWorld.xz, uGustFrontVelocity.xz) / frontLenSq
-             : 0.0;
-           vec2 windDirXZ;
-           if (uWindIntensity > 1e-3)      windDirXZ = uWindForce.xz / uWindIntensity;
-           else if (frontLenSq > 1e-4)     windDirXZ = uGustFrontVelocity.xz / sqrt(frontLenSq);
-           else                            windDirXZ = vec2(0.0);
-           float wtGust  = uTime - phaseOffset;
-           float spikePhase = wtGust * 1.5 + instWorld.x * 0.01 + instWorld.z * 0.007;
-           float spikeRaw   = sin(spikePhase) * 0.6
-                            + sin(spikePhase * 1.7 + 1.3) * 0.3
-                            + sin(spikePhase * 0.31 + 0.7) * 0.1;
-           float spikeShape = max(spikeRaw - 0.35, 0.0) * 2.2;
-           float gustAmp    = uGustsScale * uGustEnvelope * spikeShape;
-           float driftOsc   = sin(uTime * 1.6 + phase);
-           float gustOsc    = sin(wtGust * 1.9 + phase * 1.7);
-           float swayMps    = uWindIntensity * driftOsc + gustAmp * gustOsc;
-           // The whole canopy is one billboard, so sway it as a unit (no per-
-           // tier damping); aTreeHeightNorm keeps the base planted. 0.05 m / (m/s)
-           // / m of height ≈ the mesh canopy's flutter at the leaf tier.
-           float swayM = swayMps * 0.05 * aTreeHeightNorm;
-           transformed.xz += windDirXZ * swayM;
-           // Static lean toward the wind, also base-anchored.
-           transformed.xz += windDirXZ * (uWindIntensity * 0.05 * aTreeHeightNorm * 0.3);
-         }`
-      )
-
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-         uniform float uLampGlow;
-         uniform float uHeroTierQC;
-         varying float vLampGlow;`
-      )
-      .replace(
-        '#include <map_fragment>',
-        `#include <map_fragment>
-         // Hero-tier QC overlay — impostors are tier 1 (magenta). Gated → no-op
-         // when off (bit-identical capture render). Matches the mesh material's
-         // QC tint so the operator's eye-gate reads the whole forest uniformly.
-         if (uHeroTierQC > 0.5) {
-           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.20, 0.85), 0.65);
-         }`
-      )
-      .replace(
-        '#include <emissivemap_fragment>',
-        `#include <emissivemap_fragment>
-         // Lamp glow — same warm amber the mesh canopy emits (no vCanopyW gate:
-         // the whole billboard IS canopy), so impostor trees under a lamp warm
-         // up consistently with their mesh neighbours.
-         totalEmissiveRadiance += vec3(0.55, 0.40, 0.20) * vLampGlow * uLampGlow;`
-      )
-  }
-}
-
 // ── Coverage-preserving mipmaps (Castano/NVIDIA alpha-to-coverage) ──────────
 // The leaf atlas is alpha-tested at a FIXED cutoff (0.5). GPU auto-mipmaps
 // box-average the alpha channel, so as the camera backs away each leaf card's
@@ -2017,13 +1900,19 @@ export function injectOverheadWiggle(material) {
   }
 }
 
-// Runtime atmosphere for the overhead stamp — ONE shared light state (like
-// treeSwayUniforms is one shared wind). The Salon preview drives it via a Light
-// control; in LS it's fed from the TOD/meteorologist so the plan-view trees track
-// the weather. uAmbient + uSun ≈ 1 keeps brightness; the ratio sets CONTRAST.
+// Runtime atmosphere for the card stamps — ONE shared light state (like
+// treeSwayUniforms is one shared wind), fed by OverheadLightDriver.
+// uAmbient + uSun sum to 1: the weather's CONTRAST (the ratio), never the brightness.
+// ⭐ THE BRIGHTNESS IS uSceneLight (Jacob, 2026-09-27: "I have the light on the trees turned to 0 and they
+// are still pretty bright in an otherwise very dark scene"). A card is MeshBasic — no scene light reaches it —
+// so it drew at its noon level all night: measured at 7 pm, cards 0.34–1.0 against the ground's 0.047.
+// uSceneLight is what the scene's own lights deliver to an up-facing surface (irradiance / π, the diffuse
+// MeshStandard gives the ground), read off the live rig every frame, so a card is lit exactly as the ground
+// under it is — ≈1 at noon (today's look), dark and moon-tinted at night. ⛔ Never a constant.
 export const overheadLightUniforms = {
   uAmbient: { value: 0.5 },
   uSun:     { value: 0.5 },
+  uSceneLight: { value: new THREE.Color(1, 1, 1) },
   // ── DIRECTION (2026-09-03) — the cards' half of "participate in the lighting" ──
   // Until now the pair above was the WHOLE light model for an impostor: two scalars,
   // no direction. A card was DIMMED by the weather; it was never LIT by anything. The
@@ -2104,6 +1993,7 @@ function readCardLight() {
     keyColor: '#' + u.uKeyColor.value.getHexString(),
     ambient: +u.uAmbient.value.toFixed(3),
     sun: +u.uSun.value.toFixed(3),
+    sceneLight: '#' + u.uSceneLight.value.getHexString(),
     directional: +u.uLitCards.value.toFixed(3),
     gain: +u.uKeyGain.value.toFixed(3),
     bulge: +u.uCardBulge.value.toFixed(3),
@@ -2142,6 +2032,7 @@ const LIT_CARDS_FRAG_COMMON = `
          uniform float uCanopyWipe;
          ${LAMP_WIPE_GLSL}
          uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;
+         uniform vec3  uSceneLight;  // the rig's light on an up-facing surface — see overheadLightUniforms
          uniform vec3  uKeyDir;    // world direction TOWARD the scene's key light
          uniform vec3  uKeyColor;
          uniform float uLitCards;  // 0 = today's flat dimmer, 1 = directional
@@ -2151,7 +2042,10 @@ const LIT_CARDS_FRAG_COMMON = `
          // The card's light response. N is a WORLD-space normal; ao is the baked
          // occlusion page (light-independent, geometry).
          vec3 litCardsRelight(vec3 N, float ao) {
-           vec3 flatC = vec3(uAmbient + uSun * ao);   // TODAY, unchanged
+           // The rig's light carries the key's colour already; the directional path adds uKeyColor itself, so
+           // it takes the rig's brightness only (its luminance) — the moon's tint is applied once, not twice.
+           vec3 rig = mix(uSceneLight, vec3(dot(uSceneLight, vec3(0.2126, 0.7152, 0.0722))), step(0.0001, uLitCards));
+           vec3 flatC = vec3(uAmbient + uSun * ao) * rig;
            // ⛔ UNIFORM BRANCH, and it is deliberate. uLitCards is a uniform, so this
            // is fully coherent across every fragment of every draw — there is no
            // divergence to pay for. It buys two things a branchless mix() cannot:
@@ -2177,7 +2071,7 @@ const LIT_CARDS_FRAG_COMMON = `
            // "fold AO into a directional term rather than replacing it"). Occlusion is
            // geometry — a leaf deep in the crown stays dark wherever the sun is — so it
            // scales what the key delivers. Ambient stays un-occluded, exactly as today.
-           vec3 lit = vec3(uAmbient) + uKeyColor * (uSun * ao * dir);
+           vec3 lit = (vec3(uAmbient) + uKeyColor * (uSun * ao * dir)) * rig;
            return mix(flatC, lit, uLitCards);
          }`
 
@@ -2195,6 +2089,7 @@ function bindCardLightUniforms(shader) {
   shader.uniforms.uLitCards  = overheadLightUniforms.uLitCards
   shader.uniforms.uKeyGain   = overheadLightUniforms.uKeyGain
   shader.uniforms.uCardBulge = overheadLightUniforms.uCardBulge
+  shader.uniforms.uSceneLight = overheadLightUniforms.uSceneLight
 }
 
 // ── LAMP LIGHT ON A CARD — the same per-tree `aLampGlow` the mesh path reads ──────────────
@@ -2394,7 +2289,7 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
     shader.uniforms.uSun     = overheadLightUniforms.uSun
     // ⛔⛔ THE EYE-GATE WAS BLIND TO THE ONLY TIER IT EXISTS TO CHECK (2026-08-27).
     // `?heroTierQC=1` is the operator's mesh-vs-impostor eye-gate, and its magenta was
-    // wired ONLY into `injectImpostorBillboard` — the KILLED octahedral impostor
+    // wired ONLY into `injectImpostorBillboard` (deleted 2026-09-27) — the KILLED octahedral impostor
     // (`ARCHITECTURE.md`: "killed, not parked"), which has ZERO instances on every slab.
     // So the QC view painted nothing for the impostors, and the operator read the absence
     // of magenta as the absence of IMPOSTORS. That is the worst shape an instrument can
