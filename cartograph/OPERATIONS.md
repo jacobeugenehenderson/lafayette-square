@@ -151,10 +151,8 @@ Every animatable channel shares one drawer, and **the 7 time-of-day slot chips a
 
 **Weather (Stage only)** — **Live · Clear · Overcast · Rain · Snow.** *Live* polls the town's real weather; the others stand the scene in that weather so a look can be judged whatever it's doing outside. Session-only: never saved, never baked, and production always runs live. The presets are `src/lib/weatherPresets.js`, shared with the surface lab.
 
-**Sky & Air group**
+**Sky group**
 - **Sky brightness** (`skyGain`) — *"how dark is the night sky."* Dims (or lifts) **just the sky dome** on a TOD curve — bands, sun/moon glow, horizon scatter together. Exposure scoped to the sky layer: the global **Exposure** knob (Image card) darkens the *whole frame*, whereas this touches only the dome — so deep night goes genuinely dark while street lamps and lit windows stay where authored. Stars are not affected. LS authors ~1.0 by day dipping to ~0.2 at Night; default 1.0 leaves an unauthored Look unchanged. **Reach for Sky brightness when the *sky* is too bright; Exposure when the *whole image* is.** *(Was "Sky Layer Gain." Note 2026-06-07: bloom no longer auto-boosts at night — author it in the Image **Bloom** channel.)*
-- **Mist** — fog density + colour (the FogExp2 the runtime applies). TOD.
-- **Halo** — the aerial-perspective glow strength + colour (sky-light bleeding into distance). TOD.
 
 **Night Sky group**
 - **Constellations** — toggle the spectral-node constellation overlay (TOD; defaults off, lifts at night).
@@ -201,12 +199,16 @@ The man-made emitters (TOD):
 
 The pool is **baked into the ground** (contour-correct), so its *shape* is a bake-time knob (CLI / bake operations, below). **Lamp colour** sits at the top of the **Light Sources** card (`layerColors.lamp`) — one colour tints bulb, glow, pools, trees and walls, live in Stage. **Lamps on/off** is the Designer's **Furniture › Lamps** toggle (`layerVis.lamp`): off hides the 2D lamp dots, the 3D lamps in Stage, and — through the bake — production. ⚠️ **Open (Phase B):** Bloom + Neon should join this card (`scratch/LOOK-PANEL-TAXONOMY.md`); the lamp's three parts — fixture, pool, canopy — are separate knobs now ("Lamps", below).
 
-### Hero & Horizon card
+### Horizon card
+
+The distance: the Arch or the backdrop where the town has one, and the air between. *(Was "Hero & Horizon"; the
+horizon ground disc is gone — the town's edge is the neighborhood fade, set in Extent: **Fade band** + **Ruffle**.)*
+- **Mist** — fog density + colour (the FogExp2 the runtime applies). TOD.
+- **Halo** — the aerial-perspective glow strength + colour (sky-light bleeding into distance). TOD.
 
 - **Arch placement** (non-TOD) — the Gateway Arch's **Distance**, **Scale**, **Rotation**, **Y-offset**, and **Foot-fade** (where the legs dissolve into the ground).
 - **A town's set-piece** (not a Look knob) — a modelled landmark the town owns: Provincetown's **Pilgrim Monument**. Declared in `src/instances/<town>.js` as `setPiece` (the mapped footprint sets where it stands and which way it faces), seated on the town's terrain. Until the artist's model lands it renders as a **placeholder from the reconstruction dossier's documented dimensions**, at true height (252′7.5″). **To drop in the model:** the `.glb` goes at `public/setpieces/<town>/pilgrim-monument.glb` and is named in `setPiece.model`. The contract (metres, Y-up, origin at the base centre on finished grade, window face to +Z) is in `src/setpieces/pilgrimMonument.js`. A named model that fails to load shows **no monument and a console error**, never the placeholder. ▶ `node checks/claims-pilgrim-monument-site.mjs`
-- **Horizon** (non-TOD) — the ground from the town's rim out to the horizon, fading on a scalloped edge (`HorizonDisc.jsx`, **every town**): **Radius**, **Fade-inner**, **Fade-outer**, in metres. A key you haven't set follows the town's radius (2.8 R · 1.05 R → 3.53 R, `skyLightChannels#horizonDefaults`); the sliders reach eight radii. ▶ `node checks/claims-stage-controls-are-live.mjs` ①.
-- ⭐ **The Hero subject picker offers THIS town's own landmarks** *(2026-09-19)*. Survey ▸ Hero lists: the **Neighborhood Centroid**, the **Gateway Arch** only if this Look installed an `arch` channel, a **backdrop** only if this Look has a baked landscape, and **this installation's own listings** — never another town's (`node checks/claims-hero-subject-resolves-in-its-own-slab.mjs`). ⚠️ **The camera does not read this designation** (2026-09-26 — shots are your keyframes, below); today it only chooses which knobs the Stage **Hero & Horizon** card shows (the backdrop's, else the Arch's).
+- ⭐ **The Hero subject picker offers THIS town's own landmarks** *(2026-09-19)*. Survey ▸ Hero lists: the **Neighborhood Centroid**, the **Gateway Arch** only if this Look installed an `arch` channel, a **backdrop** only if this Look has a baked landscape, and **this installation's own listings** — never another town's (`node checks/claims-hero-subject-resolves-in-its-own-slab.mjs`). ⚠️ **The camera does not read this designation** (2026-09-26 — shots are your keyframes, below); today it only chooses which knobs the Stage **Horizon** card shows (the backdrop's, else the Arch's).
 
 ### Camera / Shots
 

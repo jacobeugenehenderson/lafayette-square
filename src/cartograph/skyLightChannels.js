@@ -347,20 +347,6 @@ export function migrateArchLight(design) {
   return { values: { ...ARCHLIGHT_FLAT_DEFAULTS } }
 }
 
-// Horizon (Hero & Horizon card) — the ground disc that runs from the town's rim to the horizon, with a scalloped
-// fade (HorizonDisc.jsx). Every town has it.
-// ⛔ Class D: the defaults were 3750 / 900 / 3750 m — a fade starting at LS's own radius (892 m), so on a larger
-// town the whole disc sat under the town and never showed. The defaults are now MULTIPLES OF THE TOWN'S RADIUS,
-// taken from LS's authored horizon (2500 / 940 / 3150 at R 892), so LS renders exactly as before. An authored key
-// overrides its default; an unauthored key follows the town.
-export const HORIZON_FIELD_KEYS = ['radius', 'fadeInner', 'fadeOuter']
-export const horizonDefaults = (R) => ({ radius: 2.8 * R, fadeInner: 1.054 * R, fadeOuter: 3.53 * R })
-/** Authored keys over the town-derived defaults. `R` is the town's radius (ground.json stencil). */
-export function resolveHorizon(channel, R) {
-  const out = horizonDefaults(R)
-  for (const k of HORIZON_FIELD_KEYS) { const v = channel?.values?.[k]; if (Number.isFinite(v)) out[k] = v }
-  return out
-}
 
 // Shots (Hero & Horizon — SC.5) — per-shot framing knobs that bake into
 // the slab. Authored-only knobs: FOVs, Browse bounds + padding, Street

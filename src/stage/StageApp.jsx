@@ -35,7 +35,7 @@ import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
 import { LAMP_DEFAULT_HEX } from '../lib/lampPool.js'
 import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf } from '../components/SetPiece.jsx'
-import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, resolveHorizon } from '../cartograph/skyLightChannels.js'
+import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, MIST_FIELDS, MIST_FLAT_DEFAULTS, HALO_FIELDS, HALO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { townRanges } from '../lib/townRange.js'
 import SliderRow from '../cartograph/SliderRow.jsx'
@@ -68,11 +68,8 @@ function FrameLimiter() {
 // archState / setArch / useArchState / subscribeArch / ARCH_DEFAULTS all
 // retired 2026-05-13 (SC.7). The Gateway Arch landmark's placement +
 // transform + uplights ride the cartograph store as the `arch` channel
-// (GatewayArch.jsx); the horizon disc's radius + feathering are the `horizon`
-// channel (HorizonDisc.jsx, every town; unset keys follow the town's radius).
-//
-// ArchHorizonControls below reads the store directly via setArch /
-// setHorizon actions; module-scope state is gone per doctrine
+// (GatewayArch.jsx). HorizonControls below reads the store directly via setArch /
+// setLandscape; module-scope state is gone per doctrine
 // project_authoring_is_live_production_is_static.
 
 // ── Scene diagnostic (temporary) ────────────────────────────────────────────
@@ -96,7 +93,7 @@ function SceneDiag() {
 // SC.2 follow-up 2026-05-13). EnvironmentControls's grade/grain/shadow
 // sliders are now standard TodChannels mounted by CartographPost; the
 // arch + horizon authoring surface promoted to its own top-level
-// "Hero & Horizon" card (no Environment wrapper). Kit-generic phrasing —
+// "Horizon" card (no Environment wrapper). Kit-generic phrasing —
 // "Hero" is the shot subject role; "Arch" is reserved for SC.7's
 // LS-specific consolidation inside this card.
 
@@ -169,30 +166,24 @@ function LanternChannel() {
   )
 }
 
-function ArchHorizonControls() {
+function HorizonControls() {
   // Live store reads — drag a slider, retint instantly in Stage; values
   // persist to design.json via the debounced save path; reload Stage and
   // the values are still there. (SC.7 fix: previously archState was
   // module-scope and reload lost everything.)
   const archChannel      = useCartographStore(s => s.arch)
-  const horizonChannel   = useCartographStore(s => s.horizon)
   const landscapeChannel = useCartographStore(s => s.landscape)
   const heroSubject      = useCartographStore(s => s.heroSubject)
   const setArch       = useCartographStore(s => s.setArch)
-  const setHorizon    = useCartographStore(s => s.setHorizon)
   const setLandscape  = useCartographStore(s => s.setLandscape)
   const a = archChannel?.values || {}
-  // What the disc draws: authored keys over defaults that follow the town's radius (HorizonDisc.jsx).
-  const boundary = useCartographStore(s => s.sceneBoundary)
-  const hr = townRanges({ boundary })
-  const h = hr ? resolveHorizon(horizonChannel, boundary.radius) : null
   const ls = landscapeChannel?.values || {}
   // The Hero Controls render the active subject KIND's per-type knobs: the
   // landscape backdrop's placement/snowline/atmosphere when the hero is the
   // landscape, else the Arch's prop sliders. (§10 third subject kind.)
   const isLandscape = heroSubject?.kind === 'landscape'
   return (
-    <Collapsible label="Hero & Horizon">
+    <Collapsible label="Horizon">
       <div className="space-y-1">
         {isLandscape ? (<>
           {/* Landscape backdrop — placement (geo-anchor seeded) + snowline + atmosphere */}
@@ -232,20 +223,11 @@ function ArchHorizonControls() {
           <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
             onChange={(v) => setArch('footFade', v)} />
         </>) : null}
-        {/* No knobs for a hood that frames on its own centroid — the subject is
-            the neighborhood, and it has no placement to author. Horizon (below)
-            is a hood property, so it stays for every subject kind. */}
-        {/* Arch uplights moved to the "Light Sources" card (Phase A) — they're a
-            light source, not framing. Placement (above) stays here. */}
-        <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
-        {h ? (<>
-          <SliderRow label="Horizon Radius" value={Math.round(h.radius)} min={hr['town.radius']} max={hr['town.horizon']} step={10} suffix="m"
-            onChange={(v) => setHorizon('radius', v)} />
-          <SliderRow label="Fade Inner" value={Math.round(h.fadeInner)} min={0} max={hr['town.horizon']} step={10} suffix="m"
-            onChange={(v) => setHorizon('fadeInner', v)} />
-          <SliderRow label="Fade Outer" value={Math.round(h.fadeOuter)} min={0} max={hr['town.horizon']} step={10} suffix="m"
-            onChange={(v) => setHorizon('fadeOuter', v)} />
-        </>) : <span className="text-caption" style={{ color: 'var(--error)' }}>Horizon: town size unknown</span>}
+        {/* The distance: the Arch or the backdrop above (only where the town has one), then the air between. The
+            town's own edge is the neighborhood fade (Extent › Fade band + Ruffle), not a control here. */}
+        {(isLandscape || archChannel) && <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />}
+        <StoreChannel name="mist" label="Mist" fields={MIST_FIELDS} flatDefaults={MIST_FLAT_DEFAULTS} />
+        <StoreChannel name="halo" label="Halo" fields={HALO_FIELDS} flatDefaults={HALO_FLAT_DEFAULTS} />
       </div>
     </Collapsible>
   )
@@ -1014,10 +996,9 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         </Collapsible>
       </div>
 
-      {/* Hero & Horizon — Hero subject placement + sky horizon. SC.7
-          will fold arch-specific consolidation in as LS's Hero subject. */}
+      {/* Horizon — the distance: the Arch or backdrop where the town has one, and the air (Mist, Halo). */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <ArchHorizonControls />
+        <HorizonControls />
       </div>
 
       {/* Light Sources — the man-made emitters: the lantern fixture, its ground

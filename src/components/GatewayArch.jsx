@@ -1,6 +1,6 @@
 /**
- * GatewayArch — shared consumer for the Gateway Arch landmark. (The horizon ground disc it used to draw is
- * HorizonDisc.jsx now, mounted for every town; drawn here, only a Look with an Arch had a horizon.)
+ * GatewayArch — shared consumer for the Gateway Arch landmark. (The horizon ground disc it used to draw is gone:
+ * the town's edge is the neighborhood fade, one radius — BRIEF-fade-ssot; Jacob 2026-09-27.)
  *
  * Doctrine: ONE consumer. Production (Scene.jsx), Stage (CartographApp.jsx),
  * and Preview (PreviewApp.jsx) all mount this file. Per-channel

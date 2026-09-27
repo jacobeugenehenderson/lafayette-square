@@ -5,7 +5,7 @@
  *   LIGHT & SHADOW — Sun · Moon · Fill light (ambient) · Sky fill (hemi) ·
  *                    Cast shadows · Occlusion (AO) · Shadow lift (fill).
  *                    AO/Fill/Shadow moved here from the Post card by intent.
- *   SKY & AIR      — sky gradient · sky brightness · mist · halo
+ *   SKY            — sky gradient · sky brightness   (Mist + Halo live in the Horizon card)
  *   NIGHT SKY      — constellations · stars
  *   NEON           — neon (+ force-on QA toggle)
  * The camera/image-grade channels (exposure/warmth/grade/bloom/dof/grain)
@@ -15,8 +15,6 @@ import TodChannel from './TodChannel.jsx'
 import SkyGradientGrid from './SkyGradientGrid.jsx'
 import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import {
-  MIST_FIELDS, MIST_FLAT_DEFAULTS,
-  HALO_FIELDS, HALO_FLAT_DEFAULTS,
   SKY_GAIN_FIELDS, SKY_GAIN_FLAT_DEFAULTS,
   CONSTELLATIONS_FIELDS, CONSTELLATIONS_FLAT_DEFAULTS,
   STARS_FIELDS, STARS_FLAT_DEFAULTS,
@@ -159,14 +157,10 @@ export default function CartographSkyLight() {
       <SectionLabel label="Weather (Stage only)" />
       <WeatherSwitch />
 
-      <SectionLabel label="Sky & Air" />
+      <SectionLabel label="Sky" />
       <SkyGradientGrid />
       <StoreChannel name="skyGain" label="Sky brightness"
         fields={SKY_GAIN_FIELDS} flatDefaults={SKY_GAIN_FLAT_DEFAULTS} />
-      <StoreChannel name="mist" label="Mist"
-        fields={MIST_FIELDS} flatDefaults={MIST_FLAT_DEFAULTS} />
-      <StoreChannel name="halo" label="Halo"
-        fields={HALO_FIELDS} flatDefaults={HALO_FLAT_DEFAULTS} />
 
       <SectionLabel label="Night Sky" />
       <StoreChannel name="constellations" label="Constellations"

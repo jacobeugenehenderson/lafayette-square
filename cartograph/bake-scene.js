@@ -190,7 +190,6 @@ export async function bakeScene({ look } = {}) {
     archLight: migrateArchLight(design),
     setPieceLight: design.setPieceLight || { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },   // the set-piece's uplights
     lantern:   design.lantern   || { values: { ...LANTERN_FLAT_DEFAULTS } },
-    horizon:   design.horizon   || { values: {} },   // unset keys follow the town's radius at render
     // SC.6 — Meteorologist coupler scaffolding. Forward-compat field for
     // the future <Atmosphere /> raymarched runtime. v1's CloudDome
     // ignores `clouds`; the field round-trips through bake so Atmosphere

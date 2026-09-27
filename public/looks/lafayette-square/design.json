@@ -1290,13 +1290,6 @@
       }
     }
   },
-  "horizon": {
-    "values": {
-      "radius": 2500,
-      "fadeInner": 940,
-      "fadeOuter": 3150
-    }
-  },
   "clouds": {
     "values": {
       "preset": "auto",

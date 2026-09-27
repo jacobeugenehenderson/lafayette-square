@@ -25,7 +25,6 @@ import Terrain from '../components/Terrain'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import SetPiece from '../components/SetPiece.jsx'
-import HorizonDisc from '../components/HorizonDisc.jsx'
 import SlabRevetment from '../components/SlabRevetment.jsx'
 import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
@@ -1397,7 +1396,6 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
           <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
           <R3FErrorBoundary name="SetPiece"><SetPiece /></R3FErrorBoundary>
         </group>
-        <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
       </Suspense>
 
       <ShotCamera shot={shot} setShot={setShot} />
