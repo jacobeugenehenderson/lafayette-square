@@ -99,11 +99,10 @@ const fragment = /* glsl */`
     float dist = depthToDistance(depth);
     float amt  = clamp(blurAmount(dist, uv), 0.0, 1.0);
 
-    // Sky + stars sit at the far plane (they render depthWrite OFF, so their
-    // pixels keep the cleared depth = 1.0). Hold them at INFINITY FOCUS — sharp,
-    // not the far melt — so the bright sky reads as a crisp backdrop and stars
-    // stay as points. Real geometry writes depth < 1.0 and still melts normally.
-    if (depth >= 0.9999) amt = 0.0;
+    // ⛔ The sky is NOT held sharp. Held at infinity focus while the far ground below it melted, it drew a hard
+    // straight line across the frame at the horizon, through anything standing against it (Jacob, 2026-09-27:
+    // "still blurry, straight line across"). It takes the far field's blur like any distant surface; the night keys
+    // have no blur, so stars stay points.
 
     if (uDebug > 0.5) {
       // Verification paint: green = sharp (0), red = full blur. Near field green,
