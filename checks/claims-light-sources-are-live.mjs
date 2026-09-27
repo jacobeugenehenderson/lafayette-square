@@ -10,13 +10,15 @@
 //   ③ every LAMPGLOW field is written as a share by BOTH the Stage pump and the production driver
 //   ④ those uniforms have shader readers (pool → groundLamp.js + building walls · trees → treeAtlasMaterial.js)
 //   ⑤ the walls' GLSL falloff equals lampPool.js's JS falloff, evaluated — one model, two languages
+//   ⑥ Pool radius is MONOTONIC and 0 = OFF: through the real GLSL wipe, a lone pool's lit reach (ground and
+//      canopy) starts at 0, never shrinks as the knob rises, and is the full reach at 1 (self-mutated)
 // ⭐ The field lists are READ from skyLightChannels.js, never restated, so a new control is covered the day it lands.
 // ⭐ SELF-MUTATION, every run: ① is re-run on a copy of CartographApp with one live lantern removed, and must go red.
 //
 //   node checks/claims-light-sources-are-live.mjs
 import { readFileSync } from 'node:fs'
 import { LANTERN_FIELD_KEYS, LAMPGLOW_FIELDS } from '../src/cartograph/skyLightChannels.js'
-import { lampFalloff, LAMP_FALLOFF_GLSL } from '../src/lib/lampPool.js'
+import { lampFalloff, LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL, groundPool, poolWipe, canopyWipe } from '../src/lib/lampPool.js'
 
 let red = 0
 const bad = (m) => { red++; console.log(`   ⛔ ${m}`) }
@@ -107,6 +109,23 @@ console.log('⑤ THE WALLS\' GLSL FALLOFF IS THE JS FALLOFF')
   let worst = 0
   for (let i = 0; i <= 1000; i++) { const rn = i / 1000; worst = Math.max(worst, Math.abs(glsl(rn) - lampFalloff(rn))) }
   worst < 1e-12 ? ok(`identical over rn ∈ [0,1] (max |Δ| ${worst.toExponential(1)})`) : bad(`GLSL and JS falloff differ by up to ${worst.toFixed(4)}`)
+}
+
+console.log('⑥ POOL RADIUS: MONOTONIC, 0 = OFF, 1 = FULL (through the real GLSL wipe)')
+{
+  const smoothstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
+  const body = LAMP_WIPE_GLSL.replace(/float lampWipe\(float v, float th\)/, 'function lampWipe(v, th)')
+  const lampWipe = new Function('smoothstep', `${body}; return lampWipe`)(smoothstep)
+  const reach = (th, prof) => { let r = 0; for (let i = 0; i <= 1000; i++) if (lampWipe(prof(i / 1000), th) > 1e-6) r = i / 1000; return r }
+  const sweep = (wipeFn, prof) => Array.from({ length: 41 }, (_, i) => reach(wipeFn(i / 40), prof))
+  // Full reach = the last lit sample before the rim, where the profile is exactly 0 (so 0.999, not 1).
+  const judge = (xs) => xs[0] === 0 && xs.at(-1) >= 0.99 && xs.every((x, i) => i === 0 || x >= xs[i - 1] - 1e-9)
+  for (const [name, fn, prof] of [['ground', poolWipe, groundPool], ['canopy + walls', canopyWipe, lampFalloff]]) {
+    const xs = sweep(fn, prof)
+    judge(xs) ? ok(`${name}: 0 → ${xs[1].toFixed(2)} … ${xs[20].toFixed(2)} … 1 — never shrinks`) : bad(`${name}: reach across the knob is ${xs.map(x => x.toFixed(2)).join(' ')}`)
+  }
+  // Self-mutation: the first, broken threshold (the pool's own profile, dark at its centre).
+  judge(sweep(r => (r >= 1 ? 0 : groundPool(Math.max(0, r))), groundPool)) ? bad('mutation NOT caught — ⑥ is blind') : ok('mutation (threshold = the pool profile itself) is caught')
 }
 
 console.log(red ? `\n⛔ FAIL — ${red}` : '\n✅ all claims hold')

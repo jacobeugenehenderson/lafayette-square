@@ -60,11 +60,23 @@ export function overlapReach(spacing) {
 }
 
 /**
- * The Radius knob → a threshold on the summed light, so the soft tail is clipped where a LONE pool
- * would have reached `radius` of its full reach. radius 1 → 0 (no clip). One knob, two profiles.
+ * The Radius knob → a threshold on the summed light, so a LONE pool reads out to `radius` of its full reach.
+ * ⭐ MONOTONIC, 0 = OFF (Loupe's audit, 2026-09-26: the first version followed groundPool itself, whose centre is
+ * dark — the pole's shadow — so radius 0 clipped NOTHING and the pool was smallest near 0.2). The ground uses the
+ * pool's OUTER ENVELOPE — the brightest it gets at or beyond a distance, which only falls — so the pool only grows
+ * with the knob; the canopy's falloff already only falls. radius ≤ 0 → a threshold nothing reaches → no light.
  */
-export const poolWipe   = (radius) => (radius >= 1 ? 0 : groundPool(Math.max(0, radius)))
-export const canopyWipe = (radius) => (radius >= 1 ? 0 : lampFalloff(Math.max(0, radius)))
+const WIPE_OFF = 1e9
+const POOL_ENVELOPE = (() => { const n = 2000, e = new Float64Array(n + 1); let m = 0
+  for (let i = n; i >= 0; i--) { m = Math.max(m, groundPool(i / n)); e[i] = m }; return e })()
+const envelopeAt = (rn) => POOL_ENVELOPE[Math.round(Math.min(1, Math.max(0, rn)) * (POOL_ENVELOPE.length - 1))]
+// The smallest pool is its own bright ring — no threshold can clip inside where the light is brightest. So the
+// knob runs from that ring (just above 0) to the full reach (1), with no dead stretch at the bottom. Read off the
+// profile, not typed: the distance at which the ground pool peaks.
+export const POOL_RING_REACH = (() => { let best = 0, at = 0; for (let i = 0; i <= 2000; i++) { const v = groundPool(i / 2000); if (v > best) { best = v; at = i / 2000 } } return at })()
+const knobToReach = (k) => POOL_RING_REACH + Math.min(1, k) * (1 - POOL_RING_REACH)
+export const poolWipe   = (radius) => (radius >= 1 ? 0 : radius <= 0 ? WIPE_OFF : envelopeAt(knobToReach(radius)))
+export const canopyWipe = (radius) => (radius >= 1 ? 0 : radius <= 0 ? WIPE_OFF : lampFalloff(knobToReach(radius)))
 
 /** Summed canopy light at (x, z) from a town's baked lamps, within `reach`, clamped to the pool's headroom. */
 export function canopyLightAt(lamps, x, z, reach) {
@@ -118,6 +130,8 @@ export function buildLampGrid(lamps, reach) {
   return { data, cols, rows, k, min: [minX, minZ], cell }
 }
 
-/** The Radius wipe, in GLSL — ground, walls and trees all clip with this one function. `th` from poolWipe/canopyWipe. */
+/** The Radius wipe, in GLSL — ground, walls and trees all clip with this one function. `th` from poolWipe/canopyWipe.
+ *  The soft band is the top tenth of the threshold: a wider band (it was half) kept the ring's shoulders and
+ *  pinned the pool at ~55% of its reach for the whole bottom third of the knob. */
 export const LAMP_WIPE_GLSL = `
-  float lampWipe(float v, float th) { return th > 0.0 ? v * smoothstep(0.5 * th, th, v) : v; }`
+  float lampWipe(float v, float th) { return th > 0.0 ? v * smoothstep(0.9 * th, th, v) : v; }`
