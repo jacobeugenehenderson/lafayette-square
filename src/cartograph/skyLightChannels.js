@@ -642,7 +642,8 @@ const DAY = {
 // The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
 const UPLIGHT = { edges: LAMP_EDGES }
 for (const s of ['L', 'R']) Object.assign(UPLIGHT, {
-  [`uplight${s}_intensity`]: [s === 'L' ? 0.05 : 0.2, 0.2, null, null, 1.5, 2.8, 3.5, 1.2],
+  // Kept well below a blow-out: 2.8–3.5 at Dusk/Night bloomed into an orange blob at the monument's foot (2026-09-27).
+  [`uplight${s}_intensity`]: [s === 'L' ? 0.05 : 0.2, 0.2, null, null, 0.8, 1.2, 1.5, 0.6],
   [`uplight${s}_color`]:     ['#ffe2c0', '#ffd6a8', null, null, '#ffd6a8', '#ffc98f', '#f2ecff', '#e6e4ff'],
   [`uplight${s}_cone`]:      [s === 'L' ? 60 : 35, 35, null, null, 35, 35, 35, 35],
   [`uplight${s}_reach`]:     [s === 'L' ? 150 : 320, 220, null, null, 220, 220, 220, 220],

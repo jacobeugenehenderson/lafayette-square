@@ -219,10 +219,23 @@ function tweenAnimatedAtMinute(channel, minute, todSlots) {
   return lo.value + (hi.value - lo.value) * t
 }
 
+// ⭐ IN EDITING, A TILE IS A STILL MOMENT (Jacob, 2026-09-27: "There are no timers in editing, when I click on a ToD,
+// it's a static moment at that 'time'"). Stage sets the minute its stopped clock stands on; at exactly that minute a
+// channel keyed there shows its key's own values — no fade-up/down envelope. Playback (the live clock, production)
+// never sets it, so the fades play as authored.
+let _stillMinute = null
+export function setTodStillMinute(minute) { _stillMinute = Number.isFinite(minute) ? minute : null }
+const atStill = (minute) => _stillMinute != null && Math.abs(minute - _stillMinute) < 1e-3
+
 /** The plain tween, then the edge fades (edgeEnvelope) where a key is marked up or down. */
 export function resolveAnimatedAtMinute(channel, minute, todSlots) {
   const base = tweenAnimatedAtMinute(channel, minute, todSlots)
   if (!channel?.animated || !channel.edges) return base
+  if (atStill(minute)) {
+    // The clock resolves whole minutes; a tile's moment carries seconds — so "on the tile" is within the minute.
+    const sl = (todSlots || []).find(x => x.id in (channel.values || {}) && Math.abs(x.minute - minute) < 1)
+    if (sl) return Number(channel.values[sl.id]) || 0
+  }
   const byId = new Map((todSlots || []).map(sl => [sl.id, sl.minute]))
   const points = Object.entries(channel.values || {})
     .filter(([id]) => byId.has(id)).map(([id, v]) => ({ id, minute: byId.get(id), value: Number(v) || 0 }))
@@ -424,6 +437,10 @@ export function resolveGroupAtMinute(channel, minute, slotMinutes, fieldKeys, de
   const base = tweenGroupAtMinute(channel, minute, slotMinutes, fieldKeys, defaults)
   if (!channel?.animated || !channel.edges) return base
   const mins = slotMinutes || getTodSlotMinutes(new Date())
+  if (atStill(minute)) {
+    const id = Object.keys(channel.values || {}).find(k => mins[k] != null && Math.abs(mins[k] - minute) < 1)
+    if (id) { const out = {}; for (const k of fieldKeys) out[k] = readField(channel.values[id], k, defaults); return out }
+  }
   const points = Object.entries(channel.values || {})
     .filter(([id]) => mins[id] != null)
     .map(([id, tuple]) => { const p = { id, minute: mins[id] }; for (const k of fieldKeys) p[k] = readField(tuple, k, defaults); return p })
