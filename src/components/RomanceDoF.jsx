@@ -2,7 +2,7 @@
  * RomanceDoF — depth of field focused on WHAT THE CAMERA IS LOOKING AT, sized RELATIVE to it.
  *
  * ⭐ The model (Jacob, 2026-09-27: "get rid of the actual meters and make it relative" · noon's tilt-shift): the
- * sharp plane sits at `focus` × the distance to the aim point, and blur grows with the RELATIVE distance from it
+ * sharp plane sits at the focus point (picked, or the camera's aim), and blur grows with the RELATIVE distance from it
  * — IN FRONT AND BEHIND — up to `blur`. So the same numbers frame a 1-km town and a 10-km one alike, and a narrow
  * sharp zone gives the miniature ("dollhouse") look.
  * ⛔ Replaces the 2026-06-26 model (sharp from the camera out to a focus in METRES, then a far melt): a constant
@@ -13,7 +13,7 @@
  * virtual rung "0" is the sharp input. Two taps/pixel (the straddling rungs).
  * ⚠️ Must run AFTER the DownsamplePyramid pass in the composer (it samples its ladder via _pyramidRefs.levels).
  *
- * Parameterization (the "Focus" channel): blur (0..1, the most) · focus (× the aim distance) · heroBlur (0..1, the
+ * Parameterization (the "Focus" channel): blur (0..1, the most) · heroBlur (0..1, the
  * softness AT the focal plane) · softness (how deep the sharp zone is, and how gently it melts).
  */
 

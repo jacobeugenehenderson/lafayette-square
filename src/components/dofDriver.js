@@ -71,5 +71,5 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
     return
   }
   _heroVec.copy(focusPoint).applyMatrix4(camera.matrixWorldInverse)
-  _dofRefs.focusDist.current = Math.max(1, -_heroVec.z) * (d.focus ?? DOF_FLAT_DEFAULTS.focus)
+  _dofRefs.focusDist.current = Math.max(1, -_heroVec.z)
 }
