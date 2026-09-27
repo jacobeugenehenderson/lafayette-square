@@ -26,6 +26,7 @@ import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import { DesignerArch } from './DesignerArch.jsx'
 import SetPiece from '../components/SetPiece.jsx'
+import HorizonDisc from '../components/HorizonDisc.jsx'
 
 // Shot-only (environment paint-in)
 import LafayetteScene from '../components/LafayetteScene'
@@ -1414,6 +1415,8 @@ export default function CartographApp() {
                 (top-down it reads as its plan square). Keyed to the ACTIVE look, since
                 Stage switches towns live. ▶ checks/claims-every-app-mounts-the-set-piece.mjs */}
             <R3FErrorBoundary name="SetPiece"><SetPiece lookId={activeLookId} lightOverride={setPieceLightOverride} /></R3FErrorBoundary>
+            {/* The ground from the town's rim to the horizon — every town, the same component production mounts. */}
+            <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={activeLookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
             {!inDesigner && sceneCfg.StageEnvironment && (
               <sceneCfg.StageEnvironment
                 hiddenLayers={hiddenLayers}
