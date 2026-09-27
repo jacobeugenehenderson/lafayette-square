@@ -44,7 +44,13 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
   over the water (the flatten is strictly simple, `52cba914`). ▶ `node checks/claims-the-shore-is-closed.mjs`
 - ✅ **EYE GATE — the water over the bed** (Jacob, 2026-09-27, Provincetown, relayed by Boz): *"OH MY GOD it looks
   so beautiful and real!"* Still owed: the revetment's heap ends, and both towns at the water's edge near and far.
-- **OPEN:** structures over water (piers, wharves, breakwaters — ruled, not built) · each town's own water
+- **STRUCTURES OVER WATER — ruled 2026-09-27, partly built.** Landed: `structures.mjs` (every OSM bucket, by tag),
+  the rock kept under breakwaters/groynes (`cde379d0`), shore-armour reading every bucket (`e521e577`). A groyne also
+  tagged `barrier=wall` is TWO structures (Jacob: "perhaps it's 2"). ⛔ **Two rulings owed before the decks are built:**
+  (1) **floating docks** — UFC 4-152-07 §6-3.3.1 puts a floating deck 16–24 in above the WATER, not at the land's
+  height as ruled for decks (94 floating piers across both towns); (2) **fixed deck thickness** — no permitted source
+  found (UFC 4-152-01 and CEM Part VI state none): an OSM tag, an authored per-town value, or more research.
+- **OPEN:** · each town's own water
   clarity (`references/` q-water-clarity-per-town) · real depth inside the visible band (`BRIEF-bathymetry.md`).
   **Not walked:** Lafayette Square's pond (drawn outside the slab).
 
