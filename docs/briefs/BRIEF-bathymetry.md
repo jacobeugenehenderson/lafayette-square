@@ -5,44 +5,27 @@ written: 2026-09-26
 evict-when: every town with water bakes its bed from a real floor (a named bathymetry source, or verified-absent on the record); `node checks/claims-the-shore-is-closed.mjs` asserts depth gets deeper, never shallower, going out from the shore; Jacob has seen Huron and Provincetown shaded by real depth.
 -->
 
-# Bathymetry: the bed is the real floor
+# Bathymetry: real depth, only where it shows
 
-## The ask (Jacob, 2026-09-26)
-Water shaded by its real depth: pale where shallow, dark where deep. Chose real depth over a
-distance-from-shore stand-in: *"it's a whole other thing, BUT it's CORRECT and we'll get a better result."*
+## The ask (Jacob, 2026-09-26/27)
+*"Where there is depth data, we only use it out to stair's edge. Where we don't have it, we gently slope it."* Past
+the depth at which the bottom stops showing, depth does not matter.
 
-## What is measured
-- Under the drawn water the terrain carries **no depth**. Depth (water surface − terrain) is 0.09 m at
-  p5–p95 in both towns — the water sheet's own slot lift — max 0.09 m on Huron, 1.23 m on Provincetown.
-  ▶ re-derive: the water group's baked Y minus `public/baked/<town>/terrain.bin` under the drawn water ring.
-- Why: the USGS DEM hydro-flattens water bodies, and `bake-terrain.js` DERIVES the datum as the mode of
-  the samples under the water (`BAKE.md §2`, "the heightfield derives where zero is"). The flattening
-  IS the datum's signal. ⛔ **A merge that replaces those samples first breaks the datum for every
-  coastal town.** Order: derive the datum from the flattened surface, THEN lay the floor under it.
-- `BRIEF-water-shader.md` §6d/§6e (and the retired 2026-09-20 measurements in `cartograph/_archive/BRIEF-water-shader-6e-level-set-RETIRED-2026-09-26.md`) record "no bathymetry in the source" and that any depth ramp
-  built without one is fabricated. This brief is the source it lacked.
+## What is built — the consumer (`7c33bfbe`)
+`bake-terrain` writes the bed under the mapped water: the USACE equilibrium profile h = A·y^⅔ down to the town's
+visibility depth (`BAKE.md` "the bed"; `references/` f-cem-dean-a-table, r-bottom-visibility-default). The water
+thins over it. ⭐ Real depth REPLACES the profile inside that band, and nothing downstream changes.
+▶ `node checks/claims-the-shore-is-closed.mjs` (the median depth never shrinks going out).
 
-## What is already built (Strand, 2026-09-26) — your consumer
-- The **bed**: the ground under every water body, draped over the terrain, conformed with the land
-  (`bake-ground.js` PAINT_ORDER `bed`, FLOOR_KEYS). Each interior bed vertex carries the level of the water over it
-  and drapes no higher (`aClampY`, section 5 of `ground.bin`). With a real floor, the drape simply goes
-  below the level, and nothing downstream changes.
-- The check: `checks/claims-the-shore-is-closed.mjs`.
-
-## The job
-1. **Source, per town, by coordinates — never by town name.** Candidates: NOAA NCEI Great Lakes
-   bathymetry (Lake Erie), NOAA CUDEM / Coastal Relief Model (US coasts). Record vertical datum and
-   resolution. Kit-wide ladder like `fetch-dem.mjs`'s: a town with none on record is verified-absent,
-   and says so (`claims-a-false-map-is-not-a-fallback.mjs` is the pattern). ⛔ No invented floor.
-2. **Vertical datum**: bathymetry and lidar use different datums (e.g. IGLD85 / NAVD88 / MLLW). Convert,
-   cite the conversion, and measure the seam where they meet at the shore. ⛔ A step there is a new bare gap.
-3. **Merge** under the water only, after the datum is derived. Plan it and report before editing
-   `bake-terrain.js` or `fetch-dem.mjs` — both reach every town.
-4. **Depth shading** in `waterMaterial.js` (depth = water surface − bed under the fragment; shallow colour
-   from the bed's sand colour). Respect the shader's idempotence rule (`332a06cf`, `b87e42f7`).
-5. **Check**: depth gets deeper, never shallower, going out from the shore along sampled lines, in
-   `claims-the-shore-is-closed.mjs`. Mutation-test it.
+## The job — the nearshore band only
+1. **Source by coordinates**, finest first: NOAA BlueTopo (Provincetown: 4 m, NAVD88, covers its water) · USACE
+   NCMP topobathy (Huron: 1 m, IGLD85) · NCEI CUDEM · the Great Lakes 3″ grid is too coarse at the shore (its cells
+   straddle it: seam −5.16 m) — not usable here. A town with none is verified-absent and keeps the profile, said.
+2. **Vertical datum** to NAVD88 via NOAA VDatum, per town and level (IGLD85 → NAVD88 = +0.067 m at Huron; VDatum
+   returns −999999 outside coverage — refuse it). Measure the seam at the shore (USACE −0.06 m median after conversion).
+3. **Merge** in `bake-terrain` after the datum, only where the source is shallower than the visibility depth; feather
+   into the profile over the source's own cell. `projectorFor` needs EPSG 6339–6348 for the USACE tiles.
+4. The research (sources, URLs, measurements) is in the retired brief (`cartograph/_archive/BRIEF-bathymetry-full-floor-2026-09-26.md`).
 
 ## Bounds
-No bake or pour without Jacob's go, cleared through Boz. Commit only your own paths. Lafayette
-Square is not re-poured. Report the plan (source, datum, merge site) before building.
+No bake without Jacob's go, cleared through Boz. Commit only your own paths. Lafayette Square is not re-poured.

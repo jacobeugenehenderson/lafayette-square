@@ -33,17 +33,18 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
   `node checks/claims-every-metre-of-drawn-shore-is-named.mjs --code`. **A bare metre must still be filled
   by something.**
 
-## What the bare space was, and the state now (Strand, 2026-09-26)
+## What the bare space was, and the state now (Strand, 2026-09-27)
 
 - **It was a void standing on its edge.** The water is a level sheet, the land is draped; nothing lay under the
-  water, so wherever the land's edge stood above the sheet the sky showed through (seen on Provincetown's
-  harbour). No plan-view holes, no unfilled strips. Closed by the **bed** (`bake-ground.js` `bed`, FLOOR_KEYS),
-  held under its own water (per-body ceiling, `aClampY`) with a toe ring so the bank is a step at the mapped
-  shore; the shore is bare of curb/sidewalk (`tileGround.js` `shoreAt`). ▶ `node checks/claims-the-shore-is-closed.mjs`
-- **OPEN — Provincetown, land drawn over the drawn water.** Just inside the mapped shore, land-use faces stand
-  above the water along 1.19 km (beach 1.15 · parking_lot 0.03; first at -4543.6, -1292.8, 3.18 m proud).
-  ⛔ Cause not established — the faces and the water disagree about the edge there. The check prints it.
-- **OPEN — the water's depth** is `BRIEF-bathymetry.md`. **Not walked:** Lafayette Square's pond (drawn outside the slab).
+  water, so wherever the land's edge stood above the sheet the sky showed through (seen on Provincetown's harbour).
+- **Closed by the bed, and the bed is in the terrain.** Jacob, 2026-09-26: *"water is always flat, and the edge of
+  water is always where the flat plane meets any other plane."* `bake-terrain` writes the USACE beach profile under
+  the mapped water down to the visibility depth (`BAKE.md`); the `bed` ground group drapes over it, and the water
+  thins over the shallows. The shore is bare of curb/sidewalk (`tileGround.js` `shoreAt`); land no longer paints
+  over the water (the flatten is strictly simple, `52cba914`). ▶ `node checks/claims-the-shore-is-closed.mjs`
+- **OPEN:** structures over water (piers, wharves, breakwaters — ruled, not built) · each town's own water
+  clarity (`references/` q-water-clarity-per-town) · real depth inside the visible band (`BRIEF-bathymetry.md`).
+  **Not walked:** Lafayette Square's pond (drawn outside the slab).
 
 ## Read first
 

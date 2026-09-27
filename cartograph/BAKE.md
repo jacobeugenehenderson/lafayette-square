@@ -73,6 +73,10 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 > SHORELINE as much as on the raster**, and that is not an implementation detail — every
 > height-above-water in the town is measured from it. ▶ the datum a town actually got:
 > `cat cartograph/data/<scene>/clean/terrain.json`
+> - ⭐ **THEN IT WRITES THE BED UNDER THE WATER.** Every cell under the mapped water takes the USACE equilibrium
+>   beach profile (h = A·y^⅔, A read from `references/` at the town's sand size) down to the depth the bottom stops
+>   showing (the town's `design.json#water`, else the kit's recorded defaults — and it says which). The waterline is
+>   then where the level meets the ground, by construction. A town with no coast comes out byte-identical.
 > - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** ⛔ The dirty set is a **computed import closure**
 >   of `bake-terrain.js` — which reaches `coastline.mjs` — plus the town's `raw/osm.json`, never a
 >   hand-listed file: a town's shore can move because the kit learned to read a shape it could not
