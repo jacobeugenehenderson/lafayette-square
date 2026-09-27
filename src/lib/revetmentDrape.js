@@ -86,10 +86,28 @@ const VERTS_PER_WAVELENGTH = 3
  *  being judged at half the gain it was built for. */
 export const DRAPE_DEFAULT_GATHER = 0.6
 /** How far past the nominal crest/toe the sheet is BUILT, in band fractions. The
- *  mesh is wider than the band so the band's edge can be cut out of it. */
-const U_LO = -0.35, U_HI = 1.35
+ *  mesh is wider than the band so the band's edge can be cut out of it — and, behind the crest, wide enough for the
+ *  crest's wander plus its burial. */
+const U_LO = -1.4, U_HI = 1.35
 /** How far the band's own half-width wanders, in band fractions — the long field. */
 const EDGE_WANDER = 0.22
+/** ⭐ …and how far the CREST'S edge wanders up the bank (Jacob, 2026-09-27: the top was "too straight and regular").
+ *  At 0.22 the top line stayed parallel to the shore; stone thrown up a bank reaches it unevenly. Exported so the
+ *  loose stones on the bank (shoreChunks) spill over the same reach. */
+export const CREST_WANDER = 0.7
+/** The wander's own amplitude swings along the shore, over a long wavelength: stretches where the stone runs well up
+ *  the bank, and stretches where it stops close. The furthest the crest's edge can reach, in band fractions. */
+const CREST_SWING = [0.4, 1.6]
+export const CREST_REACH = CREST_WANDER * CREST_SWING[1]
+/** The edge noise (`sn`, value noise −0.5…0.5) is not uniform: MEASURED over 20,000 samples its p10…p90 is ±0.17, so
+ *  `0.5 + wob` sat in 0.33…0.67 and the crest used a third of its range (2.0 m of an intended 5.4 m, synthetic shore).
+ *  `spread` maps p10…p90 onto 0…1. */
+const SN_P90 = 0.17
+const spread = w => Math.min(1, Math.max(0, 0.5 + w / (2 * SN_P90)))
+/** ⭐ With the ground known, the sheet is not CUT at its edge but BURIED past it, over this many band fractions: the
+ *  ground's own surface then draws the edge where it meets the rough stone — irregular at block scale, where the
+ *  whole-quad trim drew a staircase (Jacob, 2026-09-27: the bottom "cuts off abruptly and in a jagged way"). */
+const BURY_U = 0.15
 /** …and the stone-scale raggedness of the boundary itself. */
 const EDGE_RAGGED = 0.14
 /** …and its wavelength, in BLOCKS. ⛔ Must stay well above the mesh step or the trim
@@ -367,10 +385,15 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
       // an edge over 0.56 m). Above the crest the stone lies FLAT on the bank, which
       // is what the measured ground does — nearly level, then a drop at the line.
       const uu = Math.max(0, u)                    // the slope face only
-      const over = Math.max(0, -u) * run           // …and a flat apron behind the crest
+      const over = Math.max(0, -u) * run           // …and an apron behind the crest
       let x = st.x + st.nx * (uu * run - over)
       let y = waterY + h * (1 - uu)
       let z = st.z + st.nz * (uu * run - over)
+      // ⭐ Behind the crest the apron LIES ON THE BANK, not level at the crest's height (a shelf that floated over a
+      // falling bank and sank into a rising one: the regular top line). It eases from the crest onto the ground.
+      // ⛔ ON it, a course thick: eased to the bare ground, the rock's own roughness put half of it under the bank and
+      // the stone showed only 0.6-1.7 m behind the crest whatever the wander (measured, provincetown's longest face).
+      if (groundAt && u < 0) { const w = smooth(Math.min(1, -u / CREST_REACH)); y = y + (groundAt(x, z) + blk * 0.5 - y) * w }
       // ── past the toe, the berm lies ON the ground, from its heel height down to nothing at its outer edge — and never
       // above the water: on a shallow bed it is an apron just under the surface
       if (hasBerm && uu > toe) y = Math.min(waterY, groundAt(x, z) + bermH * Math.max(0, 1 - (uu - toe) / bermU))
@@ -405,7 +428,6 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
       }
       x += vnx * d + gx; y += vny * d + gy; z += vnz * d + gz
       const o = (i * nAcross + j) * 3
-      pos[o] = x; pos[o + 1] = y; pos[o + 2] = z
       // ⭐ THE EDGE, AS A CONTOUR OF TWO FIELDS. A long one makes the band's own
       // half-width WANDER (the toe and the crest are not parallel to the arc); a
       // short one makes the boundary RAGGED at stone scale, so it ends the way a
@@ -421,9 +443,17 @@ export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groun
       // gather was innocent, and sweeping it 0.6→0.15 barely moved the picture,
       // which is the tell that the suspect was wrong. The boundary field must be
       // several blocks long so the trim can resolve it.
-      const crestEdge = 0.0 - EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
+      const crestEdge = groundAt
+        ? 0.0 - CREST_WANDER * (CREST_SWING[0] + (CREST_SWING[1] - CREST_SWING[0]) * spread(wob(1 / (lam0 * 9), 75))) * spread(wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
+        : 0.0 - EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
       const toeEdge = toe + bermU + EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.2), 73)) + EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS * 0.85), 74)
-      keep[i * nAcross + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
+      if (groundAt) {
+        // ⭐ BURIED, NOT CUT: past either edge the rough sheet sinks a block below the ground, and the ground draws the edge.
+        const past = Math.max(crestEdge - u, u - toeEdge)
+        if (past > 0) { const w = smooth(Math.min(1, past / BURY_U)); y = y + (groundAt(x, z) - blk - y) * w }
+        keep[i * nAcross + j] = (!bare && u >= crestEdge - BURY_U && u <= toeEdge + BURY_U) ? 1 : 0
+      } else keep[i * nAcross + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
+      pos[o] = x; pos[o + 1] = y; pos[o + 2] = z
       if (i > bld0 && j) {
         const a = (i - 1) * nAcross + (j - 1), b = (i - 1) * nAcross + j, c = i * nAcross + (j - 1), e = i * nAcross + j
         // ⛔ A quad survives only if ALL FOUR corners are inside the contour, so the

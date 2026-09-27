@@ -36,6 +36,7 @@
 
 import { rng, seedAt } from './boulderGeometry.js'
 import { MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../cartograph/shore-armour.mjs'
+import { CREST_REACH } from './revetmentDrape.js'
 
 const TAN_REPOSE = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
 export const d50For = h => Math.max(MIN_ARMOUR_D50_M, Math.min(1.5, h * 0.45))
@@ -160,6 +161,26 @@ function candidatesOf(ctx, ci) {
       // resting on the bottom, stacked toward the heel — and never riding above the water (a submerged toe)
       const g = ctx.groundAt(x, z), y = Math.max(g + d * 0.45, Math.min(ctx.waterY - d * 0.2, g + d * 0.45 + r() * Math.max(0, Hb * f - d)))
       out.push({ id: (ci >>> 0) * 100000 + 50000 + k, s, prio: hashU32(ci, k + 50000, ctx.seed ^ 0x7f4a), x, y, z, d, up: 0, rad: d * 0.5 * ctx.packing })
+    }
+  }
+  // ⭐ THE SPILL ONTO THE BANK (Jacob, 2026-09-27: the top was "too straight and regular"): loose stones behind the
+  // crest, over the furthest reach of the drape's crest edge (CREST_REACH of the band), thinning to none at its far side
+  // and smaller than the armour — so the heap's top ends in scattered stone, not on a line. Resting on the ground.
+  if (ctx.groundAt) {
+    let sArea = 0
+    for (let k = 0; k < N; k++) { const st = ctx.at(sA + ((sB - sA) * (k + 0.5)) / N), h = ctx.crestAt(st.t)
+      if (h >= MIN_ARMOUR_D50_M) sArea += 0.5 * CREST_REACH * (h / TAN_REPOSE) * ((sB - sA) / N) }
+    const sDarts = Math.ceil((sArea / (Math.PI * Math.pow(dMid * 0.5, 2))) * (ctx.oversample ?? DART_OVERSAMPLE))
+    for (let k = 0; k < sDarts; k++) {
+      const s = sA + r() * (sB - sA), st = ctx.at(s), h = ctx.crestAt(st.t), taper = ctx.taperAt(st.t)
+      if (!(h >= MIN_ARMOUR_D50_M * Math.max(taper, 1e-6)) || h < MIN_ARMOUR_D50_M) continue
+      const f = r()                                  // 0 at the crest … 1 at the spill's far side
+      if (r() > (1 - f) * taper) continue            // thinning inland, and with the heap's end
+      const back = f * CREST_REACH * (h / TAN_REPOSE)
+      const x = st.x - st.nx * back, z = st.z - st.nz * back
+      const d = d50For(h) * (0.45 + 0.35 * (1 - f)) * (0.82 + r() * 0.36)
+      out.push({ id: (ci >>> 0) * 100000 + 75000 + k, s, prio: hashU32(ci, k + 75000, ctx.seed ^ 0x7f4a),
+        x, y: ctx.groundAt(x, z) + d * 0.35, z, d, up: 1, rad: d * 0.5 * ctx.packing })
     }
   }
   ctx._cand.set(ci, out)
