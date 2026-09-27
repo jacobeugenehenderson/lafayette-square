@@ -232,7 +232,7 @@ export const STARS_FIELD_KEYS = ['brightness']
 // Defaults = 1.0 (no modulation; current behavior preserved). Operator
 // authors 0 at Night to drop world lighting; existing color physics
 // (sun/moon temperature, hemi gradient) stay untouched.
-export const AMBIENT_FIELDS  = [{ key: 'value', label: 'Ambient',     min: 0, max: 2, step: 0.02 }]
+export const AMBIENT_FIELDS  = [{ key: 'value', label: 'Ambient',     min: 0, max: 4, step: 0.02 }]
 export const AMBIENT_FLAT_DEFAULTS  = { value: 1.0 }
 export const AMBIENT_FIELD_KEYS  = ['value']
 export const HEMI_FIELDS     = [{ key: 'value', label: 'Hemisphere',  min: 0, max: 2, step: 0.02 }]

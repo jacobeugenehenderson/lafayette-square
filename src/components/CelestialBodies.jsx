@@ -1537,12 +1537,13 @@ function CelestialBodies({
         color: lerpColor('#8877aa', '#4466aa', nightBlend),
         intensity: (twiSecIntensity + (0.15 - twiSecIntensity) * nightBlend) * Math.max(0.1, moonAltFade),
       }
-      // ⭐ NIGHT'S LIGHT IS THE MOON'S (Jacob, 2026-09-27; was ROADMAP H-34, cartograph/_archive/ROADMAP-H34-night-darkness-2026-09-27.md). The flat fill DESCENDS into the night to a
-      // starlight floor; it used to CLIMB to 1.0, the brightest ambient of the whole day. The ground at night is lit
-      // by the moon (phase- and altitude-aware, celestialLights.js#moonIntensity) and the lamps.
+      // ⭐ NIGHT'S LIGHT: the moon (phase- and altitude-aware, celestialLights.js#moonIntensity), the lamps, and a flat
+      // fill the operator sets (was ROADMAP H-34, cartograph/_archive/ROADMAP-H34-night-darkness-2026-09-27.md).
+      // It holds the twilight level into the night (it used to CLIMB to 1.0, the day's brightest); how bright the
+      // night reads is Fill light's to set — "needs much more ambient light" (Jacob, Night pass 2026-09-27).
       ambient = {
         color: lerpColor('#443355', '#3a4a70', nightBlend),
-        intensity: 0.35 - nightBlend * 0.25,
+        intensity: 0.35,
       }
     } else if (isTwilight) {
       const t = (sunAlt + 0.12) / 0.17
