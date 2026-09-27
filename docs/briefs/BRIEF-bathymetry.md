@@ -35,6 +35,14 @@ lines, or `node cartograph/fetch-bathymetry.mjs --scene=<id> --dry`.
    into the profile over the source's own cell. `projectorFor` needs EPSG 6339–6348 for the USACE tiles.
 4. The research (sources, URLs, measurements) is in the retired brief (`cartograph/_archive/BRIEF-bathymetry-full-floor-2026-09-26.md`).
 
+## The datums — LANDED (Loam, 2026-09-27)
+`fetch-water-datums.mjs` → `raw/water-datums.json` → `bake-terrain` `waterLevels` → `terrain.json#water` = { tidal,
+navd88OfZero, datums: { grid: { min, step, w, h }, <DATUM>: m above y = 0 (row-major z then x, north first), uncertaintyM },
+low, lowFrom, high, highFrom, station, source }. ▶ a town's levels: the `LEVELS` line of its terrain bake.
+**Open:** Huron's lake level is Jacob's to rule (`water.lakeLevel`: `LWD` or `mean`; its terrain refuses until then) ·
+an explicit authored height · VDatum's NAVD88→IGLD85 at Huron reads −0.004 m where the research above says +0.067 m
+(cause not established).
+
 ## ⭐ The water's LEVEL is a tide, chosen — ruled 2026-09-27 (Jacob)
 **Found:** the level is the lidar's own water surface (Provincetown −0.99 m NAVD88), i.e. **the tide on the day the
 survey flew** — a value no one chose, per town. With a 3.07 m range (NOAA 8446121), Provincetown shows its intertidal

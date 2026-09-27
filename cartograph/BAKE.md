@@ -85,6 +85,13 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 >   waterline stays where the level meets the ground. Which cells the floor drew is recorded in `terrain.json#bed.floor`
 >   with its seam against the DEM. A town with no coast comes out byte-identical.
 >   ▶ `node cartograph/fetch-bathymetry.mjs --scene=<id>` · `node checks/claims-the-shore-is-closed.mjs`
+> - ⭐ **AND IT NAMES WHERE THE WATER STANDS** (`terrain.json#water`). y = 0 stays the lidar's water — the tide the survey
+>   flew at, which no one chose — and the town's named levels are heights above it: a **low** and a **high** tide (MLLW
+>   and MHW unless the town's `design.json#water.low/high` names others it has), as a coarse grid because the datums
+>   vary across a town; a lake has one level, which the town must rule (`water.lakeLevel`: its chart datum or its
+>   gauge's mean). From `raw/water-datums.json` (`fetch-water-datums.mjs`: NOAA VDatum, cross-checked against the
+>   CO-OPS station; for a lake, its Great Lakes gauge) — the bake calls no service. ⛔ A coast with no datums, or a lake
+>   with no ruled level, REFUSES. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id>`
 > - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** ⛔ The dirty set is a **computed import closure**
 >   of `bake-terrain.js` — which reaches `coastline.mjs` — plus the town's `raw/osm.json`, never a
 >   hand-listed file: a town's shore can move because the kit learned to read a shape it could not

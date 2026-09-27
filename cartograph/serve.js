@@ -1749,6 +1749,12 @@ createServer(async (req, res) => {
         sources.bathymetry = bathR.code === 0 ? { ok: true, count: bathyTiles }
           : bathR.code === 1 ? { ok: true, count: 0, note: 'no bathymetry on the built rungs — the bed under the water is the profile; see raw/bathymetry-sources.txt' }
           : { ok: false, count: bathyTiles, error: lastLine(bathR) }
+        // ── Water datums — where the water stands (BRIEF-bathymetry: a low and a high tide, or a lake's level).
+        //    0 = written · 1 = no datum for this town (said; a coastal town's terrain then refuses) · other = error.
+        const wdR = await runCapture('node fetch-water-datums.mjs --scene=' + scene, { cwd: here, env, timeout: 900000 })
+        sources.waterDatums = wdR.code === 0 ? { ok: true, count: 1 }
+          : wdR.code === 1 ? { ok: true, count: 0, note: 'no tide datum or lake gauge for this town — a coastal town\'s terrain refuses until one is named' }
+          : { ok: false, count: 0, error: lastLine(wdR) }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox, sources }))
         // ⭐ A fetched town gets its OWN instance module, or it boots wearing Lafayette Square
@@ -2760,6 +2766,7 @@ createServer(async (req, res) => {
         await runIfDirty('terrain',
           [ELEVATION_TIF, ELEVATION_LIST, join(bakePaths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
            join(bakePaths.raw, 'bathymetry-sources.txt'),   // the real floor under the water (fetch-bathymetry.mjs); same caveat
+           join(bakePaths.raw, 'water-datums.json'),        // where the water stands: tide datums or the lake's levels (fetch-water-datums.mjs)
            bakePaths.boundary, bakePaths.geography,
            join(bakePaths.raw, 'osm.json'),
            // the coast bed reads design.water from every Look of this town and three registry findings — declared as

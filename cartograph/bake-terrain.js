@@ -44,7 +44,7 @@ import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { deriveFade } from './boundaryRecords.mjs'
 import { coastRings } from './coastline.mjs'
-import { terrainValueReads } from './terrainReads.mjs'
+import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './terrainReads.mjs'
 import { stoneStructures } from './structures.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
@@ -268,11 +268,12 @@ const finding = (id) => READS.findings[id]
 // The town's authored water values. ⛔ Two looks on one scene disagreeing is refused — the terrain is one per scene.
 function waterAuthoring() {
   const out = {}
-  for (const key of ['sandD50Mm', 'secchiM']) {
+  for (const key of TERRAIN_WATER_KEYS) {
     const set = READS.water.filter(([, w]) => w[key] != null)
     if (new Set(set.map(([, w]) => w[key])).size > 1)
       throw new Error(`⛔ looks on scene '${SCENE}' author different water.${key}: ${set.map(([id, w]) => `${id}=${w[key]}`).join(', ')} — the terrain is one per scene`)
-    if (set.length) out[key] = { value: +set[0][1][key], from: `authored (design.json water.${key}, ${set.map(([id]) => id).join(', ')})` }
+    if (set.length) out[key] = { value: TERRAIN_WATER_NAMES.includes(key) ? String(set[0][1][key]) : +set[0][1][key],
+                                 from: `authored (design.json water.${key}, ${set.map(([id]) => id).join(', ')})` }
   }
   return out
 }
@@ -349,6 +350,57 @@ function rockCells(normalized, mask, width, height, bounds) {
   if (areas.length + lines.length) console.log(`  ROCK: ${areas.length + lines.length} mapped breakwater/groyne(s) — ${keep.size.toLocaleString()} cells under the water keep the lidar's rock (of ${[...cand].filter(k => mask[k]).length.toLocaleString()} in their footprints)`)
   return keep
 }
+// ⭐⭐ WHERE THE WATER STANDS (BRIEF-bathymetry, "The water's LEVEL is a tide"; Jacob, 2026-09-27). y = 0 stays the
+// lidar's water — the tide on the day the survey flew, which no one chose — and the floor stays as baked. What this
+// adds is the town's NAMED levels, as heights above y = 0: a LOW and a HIGH tide (MLLW and MHW by default, a town may
+// name others it has), or a lake's one level. They come from raw/water-datums.json (fetch-water-datums.mjs; the bake
+// calls no service). A tidal town's datums vary across it, so they are a GRID, row-major by z then x, rows north →
+// south; a point the datum service does not cover (land) takes its nearest covered neighbour, COUNTED.
+// ⭐ A level is a value read at a place and a time (the runtime's levelAt): the clock that moves between low and high
+// is next, and this record is what it reads. ⛔ A coastal town with no datums, or a lake with no ruled level, REFUSES.
+const DATUMS_PATH = join(MAP_DIR, 'raw', 'water-datums.json')
+function waterLevels(baseElev, auth) {
+  if (!fs.existsSync(DATUMS_PATH))
+    throw new Error(`⛔ the water level: '${SCENE}' has a coast and no raw/water-datums.json — its water would stand at the tide the lidar flew at, which no one chose. ▶ node cartograph/fetch-water-datums.mjs --scene=${SCENE}`)
+  const D = JSON.parse(fs.readFileSync(DATUMS_PATH, 'utf8'))
+  const up = navd => +(navd - baseElev).toFixed(3)         // NAVD88 → metres above y = 0 (baseElev is the lidar's NAVD88 water)
+  if (D.kind === 'tidal') {
+    const { lons, lats } = D.grid, w = lons.length, h = lats.length
+    const [x0, z0] = wgs84ToLocal(lons[0], lats[0]), [x1, z1] = wgs84ToLocal(lons[w - 1], lats[h - 1])
+    const have = { [D.high.datum]: D.high.navd88M, [D.low.datum]: D.low.navd88M }
+    let filled = 0
+    const field = arr => arr.map((v, k) => {
+      if (v != null) return up(v)
+      let best = null, bd = Infinity                          // nearest covered sample on the grid
+      arr.forEach((u, q) => { if (u == null) return; const d = Math.hypot((q % w) - (k % w), Math.floor(q / w) - Math.floor(k / w)); if (d < bd) { bd = d; best = u } })
+      filled++
+      return up(best)
+    })
+    const datums = { grid: { min: [+x0.toFixed(2), +z0.toFixed(2)], step: [+((x1 - x0) / (w - 1)).toFixed(3), +((z1 - z0) / (h - 1)).toFixed(3)], w, h },
+                     uncertaintyM: D.uncertaintyM }
+    for (const [name, arr] of Object.entries(have)) datums[name] = field(arr)
+    const pick = (key, dflt) => {
+      const name = auth[key]?.value ?? dflt
+      if (!datums[name]) throw new Error(`⛔ the water level: design.json water.${key} = '${name}', and '${SCENE}' has only ${Object.keys(have).join(', ')} (raw/water-datums.json) — fetch it, or name one of those`)
+      return { name, from: auth[key] ? auth[key].from : 'kit default' }
+    }
+    const high = pick('high', 'MHW'), low = pick('low', 'MLLW')
+    return { tidal: true, navd88OfZero: baseElev, datums, low: low.name, lowFrom: low.from, high: high.name, highFrom: high.from,
+             station: D.station, source: `${D.source}, fetched ${D.fetchedOn}`, filledFromNeighbour: filled / Object.keys(have).length }
+  }
+  if (D.kind === 'lake') {
+    const name = auth.lakeLevel?.value
+    const opts = Object.entries(D.levels).map(([k, v]) => `${k} = ${v.igld85M} m IGLD85 (${v.what})`).join(' · ')
+    if (!name) throw new Error(`⛔ the water level: '${SCENE}' is a lake (${D.station.name}, ${D.station.id}) and no level is ruled. Author design.json water.lakeLevel as one of: ${opts}. The lidar flew at ${baseElev} m NAVD88.`)
+    const L = D.levels[name]
+    if (!L || !Number.isFinite(L.igld85M)) throw new Error(`⛔ the water level: water.lakeLevel = '${name}' — '${SCENE}' has ${opts}`)
+    const v = up(L.igld85M + D.igld85InNavd88M)
+    return { tidal: false, navd88OfZero: baseElev, datums: { grid: { min: [0, 0], step: [0, 0], w: 1, h: 1 }, [name]: [v], uncertaintyM: null },
+             low: name, lowFrom: auth.lakeLevel.from, high: name, highFrom: auth.lakeLevel.from, station: D.station, source: `${D.source}, fetched ${D.fetchedOn}` }
+  }
+  throw new Error(`⛔ the water level: raw/water-datums.json for '${SCENE}' names no datum (${D.why || D.kind}) — its water level cannot be named`)
+}
+
 // ⭐⭐ THE REAL FLOOR (BRIEF-bathymetry; Jacob, 2026-09-26/27: "where there is depth data, we only use it out to
 // stair's edge. Where we don't have it, we gently slope it"). `fetch-bathymetry.mjs` lists the town's bathymetry
 // tiles (raw/bathymetry-sources.txt); they are range-read here through the same reader as the DEM, finest first,
@@ -743,8 +795,9 @@ async function main() {
   const floor = wd ? await readFloor({ bounds, width, height, cornersLL: _cornersLL, mask: wd.mask, raw, baseElev, demSources: sources }) : null
   const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds, floor) : null
 
+  const water = wd ? waterLevels(baseElev, waterAuthoring()) : null
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
-                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}) }
+                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}), ...(water ? { water } : {}) }
   fs.mkdirSync(_outArg || CLEAN_DIR, { recursive: true })
   writeIfChanged(OUT_JSON, JSON.stringify(meta))
   writeIfChanged(OUT_BIN, Buffer.from(normalized.buffer))
@@ -766,6 +819,9 @@ async function main() {
       console.warn(`       dominant patch and stand off the others. ▶ node checks/claims-a-level-body-has-one-surface.mjs`)
     }
     console.log(`    ⛔ y = 0 is now the WATER, not the lowest ground: ground below it is NEGATIVE, by design.`)
+    const rng = n => { const a = water.datums[n]; return `${Math.min(...a).toFixed(2)}…${Math.max(...a).toFixed(2)}` }
+    console.log(`  LEVELS (m above y = 0): ${water.tidal ? 'tidal' : 'lake'} · low ${water.low} ${rng(water.low)} (${water.lowFrom}) · high ${water.high} ${rng(water.high)} (${water.highFrom})`)
+    console.log(`    ${water.source}${water.filledFromNeighbour ? ` · ${water.filledFromNeighbour} grid point(s) off the datum model took their nearest neighbour` : ''}`)
   } else {
     console.log(`  DATUM = the local minimum: ${baseElev.toFixed(2)} m (no coast — see waterDatum for why a pond does not qualify)`)
   }

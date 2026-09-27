@@ -3,7 +3,8 @@
  *
  * bake-terrain writes the bed under the water (BAKE.md "the bed"): its profile scale comes from the references
  * registry and the town may author its sand size and water clarity in its looks' design.json `water`. ⭐ The bake
- * reads them HERE, and serve.js declares the same call as the terrain step's value input (hashed like a file), so
+ * reads them HERE (and the town's water level: which tide datum is high and low, or which lake level — BRIEF-bathymetry),
+ * and serve.js declares the same call as the terrain step's value input (hashed like a file), so
  * the bake and the dirty-check cannot disagree about what was read — and a Stage slider elsewhere in design.json
  * does not re-bake the terrain. The list is fixed: every key below may be read on any run.
  */
@@ -14,7 +15,9 @@ import { CARTOGRAPH_DIR } from './config.js'
 /** Registry findings the bed reads. */
 export const TERRAIN_FINDINGS = ['f-cem-dean-a-table', 'f-cem-nj-beach-d50', 'r-bottom-visibility-default']
 /** design.json `water` keys the bed reads. */
-export const TERRAIN_WATER_KEYS = ['sandD50Mm', 'secchiM']
+export const TERRAIN_WATER_KEYS = ['sandD50Mm', 'secchiM', 'high', 'low', 'lakeLevel']
+/** Of those, the ones that are NAMES, not numbers: a tide datum (`high`/`low`), a lake level (`lakeLevel`). */
+export const TERRAIN_WATER_NAMES = ['high', 'low', 'lakeLevel']
 
 const ROOT = join(CARTOGRAPH_DIR, '..')
 
