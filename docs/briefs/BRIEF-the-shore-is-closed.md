@@ -42,6 +42,8 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
   the mapped water down to the visibility depth (`BAKE.md`); the `bed` ground group drapes over it, and the water
   thins over the shallows. The shore is bare of curb/sidewalk (`tileGround.js` `shoreAt`); land no longer paints
   over the water (the flatten is strictly simple, `52cba914`). ▶ `node checks/claims-the-shore-is-closed.mjs`
+- ✅ **EYE GATE — the water over the bed** (Jacob, 2026-09-27, Provincetown, relayed by Boz): *"OH MY GOD it looks
+  so beautiful and real!"* Still owed: the revetment's heap ends, and both towns at the water's edge near and far.
 - **OPEN:** structures over water (piers, wharves, breakwaters — ruled, not built) · each town's own water
   clarity (`references/` q-water-clarity-per-town) · real depth inside the visible band (`BRIEF-bathymetry.md`).
   **Not walked:** Lafayette Square's pond (drawn outside the slab).
