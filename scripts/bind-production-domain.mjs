@@ -38,13 +38,23 @@ const DOMAIN = /^(?=.{4,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,6
 const SERVICE = (readFileSync(join(REPO_ROOT, 'workers/production-sites/wrangler.jsonc'), 'utf8')
   .match(/^\s*"name"\s*:\s*"([^"]+)"/m) || [])[1]
 
+// ⛔ `node --watch` (the dev server) hands its child these two, and a node grandchild that inherits them reports its
+// modules to a watch channel that isn't its own and dies with EBADF — which read as "not signed in" (2026-09-27).
+const WATCH_ONLY = ['WATCH_REPORT_DEPENDENCIES', 'NODE_CHANNEL_FD']
+
 function token() {
+  const env = { ...process.env }
+  for (const k of WATCH_ONLY) delete env[k]
+  let t = ''
   try {
-    const t = execFileSync('npx', ['wrangler', 'auth', 'token'], { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    t = execFileSync('npx', ['wrangler', 'auth', 'token'], { cwd: REPO_ROOT, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
       .trim().split('\n').pop().trim()
-    if (t) return t
-  } catch { /* below */ }
-  throw new Error('Wrangler is not signed in to Cloudflare on this machine — run `npx wrangler login`, then promote again.')
+  } catch (e) {
+    const said = String(e.stderr || e.message).trim().split('\n').slice(-3).join(' · ')
+    throw new Error(`\`npx wrangler auth token\` failed (exit ${e.status ?? '?'}): ${said} — if it says you are not logged in, run \`npx wrangler login\`, then promote again.`)
+  }
+  if (!t) throw new Error('`npx wrangler auth token` printed no token — run `npx wrangler login`, then promote again.')
+  return t
 }
 
 /** A / AAAA / CNAME for `host`, asked of the given nameservers directly. ⛔ No nameserver → refuse. */
