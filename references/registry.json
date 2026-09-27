@@ -1031,6 +1031,25 @@
         "note": "publications.usace.army.mil returns 403 to fetches; read from the City of Del Mar's copy of the same EM (30 Jun 95), text extracted with pdftotext."
       },
       "status": "PERMITTED"
+    },
+    {
+      "id": "epa-coastal-wq-data",
+      "title": "EPA coastal water-quality survey data (EMAP Coastal 2004–2006; National Coastal Condition Assessment 2010, 2015) via the Water Quality Portal",
+      "publisher": "U.S. Environmental Protection Agency (NARS / EMAP), served by the Water Quality Portal (USGS · EPA · NWQMC)",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://www.waterqualitydata.us/",
+      "covers": [
+        "Secchi disk depth at coastal and estuarine sampling stations"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Loam (fetched epa.gov/web-policies-and-procedures/epa-disclaimers)",
+        "quote": "Unless otherwise specified, geospatial data produced by the EPA is by default in the public domain and is not subject to domestic copyright protection under 17 U.S.C. § 105.",
+        "exception": "The same page says some EPA DOCUMENTS may be protected for commercial use; these are measured values, not documents. Only EPA-collected results are used (organizations EMAP_CS_WQX, NARS_WQX); other providers on the portal (state, NALMS, non-profits) are third parties and are NOT read.",
+        "approvedBy": "PENDING — applied under Jacob's standing acceptance of federal works (2026-09-23, see usgs-web); confirm"
+      },
+      "status": "PERMITTED (pending Jacob's confirmation) — EPA-collected results only; skip anything credited to a third party"
     }
   ],
   "questions": [
@@ -1856,10 +1875,14 @@
       "ask": "A town's own measured water clarity (Secchi depth) for the water beside it",
       "neededBy": "q-bottom-visibility-depth (d)",
       "status": "open",
-      "findings": [],
+      "findings": [
+        "f-epa-cape-cod-bay-secchi",
+        "d-provincetown-secchi"
+      ],
       "tried": [
         "huron (Lake Erie central basin): NOAA GLERL / NCEI searched 2026-09-27 — central-basin Secchi figures not found in a permitted source",
-        "provincetown (Cape Cod Bay): Center for Coastal Studies monitors Secchi since 2002; Luis et al. 2019 (Landsat 8) validates it — neither is a registered permitted source"
+        "provincetown (Cape Cod Bay): Center for Coastal Studies monitors Secchi since 2002; Luis et al. 2019 (Landsat 8) validates it — neither is a registered permitted source",
+        "provincetown: EPA EMAP Coastal + NCCA Secchi via the Water Quality Portal (EPA-collected only) - 20 Cape Cod Bay results, 2 inside the disc (2026-09-27, Loam). Huron: still open."
       ],
       "nextSources": [
         "US EPA National Coastal Condition Assessment site data (federal)",
@@ -4831,6 +4854,138 @@
       "scope": "coastal revetments, seawalls and bulkheads. ⚠️ The kit applies it without a wave model: the crest is built to at least the town's HIGH level plus one course of its stone (no runup computed — that 'one course' is the kit's judgement, not the manual's), and the toe runs at least one course below the LOW level. Placement (whether a shore is armoured) is NOT from this finding: it is the bank's height (bake-revetment).",
       "foundOn": "2026-09-27",
       "foundBy": "Strand"
+    },
+    {
+      "id": "f-epa-cape-cod-bay-secchi",
+      "question": "q-water-clarity-per-town",
+      "kind": "value",
+      "value": {
+        "unit": "m",
+        "stations": [
+          {
+            "id": "EMAP_CS_WQX-MA05-0002-A",
+            "date": "2005-08-23",
+            "secchiM": 4
+          },
+          {
+            "id": "EMAP_CS_WQX-MA04-0137-A",
+            "date": "2004-07-07",
+            "secchiM": 3.9
+          },
+          {
+            "id": "EMAP_CS_WQX-MA06-0032-A",
+            "date": "2006-07-31",
+            "secchiM": 9
+          },
+          {
+            "id": "EMAP_CS_WQX-MA06-0044-A",
+            "date": "2006-07-31",
+            "secchiM": 7
+          },
+          {
+            "id": "EMAP_CS_WQX-MA04-0134-B",
+            "date": "2004-07-07",
+            "secchiM": 5.2
+          },
+          {
+            "id": "EMAP_CS_WQX-MA04-0028-A",
+            "date": "2004-07-07",
+            "secchiM": 6.5
+          },
+          {
+            "id": "EMAP_CS_WQX-MA06-0038-A",
+            "date": "2006-07-31",
+            "secchiM": 8
+          },
+          {
+            "id": "NARS_WQX-NCCA10-1034",
+            "date": "2010-08-19",
+            "secchiM": 5.17
+          },
+          {
+            "id": "NARS_WQX-NCA_MA-10170",
+            "date": "2015-09-16",
+            "secchiM": 8.43
+          },
+          {
+            "id": "NARS_WQX-NCA_MA-10163",
+            "date": "2015-09-16",
+            "secchiM": 7.88
+          },
+          {
+            "id": "NARS_WQX-NCCA10-1027",
+            "date": "2010-08-19",
+            "secchiM": 7.12
+          },
+          {
+            "id": "NARS_WQX-NCA_MA-10203",
+            "date": "2015-09-16",
+            "secchiM": 8.65
+          },
+          {
+            "id": "EMAP_CS_WQX-MA05-0011-A",
+            "date": "2005-08-23",
+            "secchiM": 3
+          },
+          {
+            "id": "EMAP_CS_WQX-MA06-0040-A",
+            "date": "2006-07-31",
+            "secchiM": 6.5
+          },
+          {
+            "id": "EMAP_CS_WQX-MA05-0003-A",
+            "date": "2005-08-23",
+            "secchiM": 5
+          },
+          {
+            "id": "EMAP_CS_WQX-MA04-0128-A",
+            "date": "2004-07-07",
+            "secchiM": 8.5
+          },
+          {
+            "id": "EMAP_CS_WQX-MA05-0023-A",
+            "date": "2005-08-23",
+            "secchiM": 4
+          },
+          {
+            "id": "EMAP_CS_WQX-MA06-0043-A",
+            "date": "2006-07-31",
+            "secchiM": 7.5
+          },
+          {
+            "id": "EMAP_CS_WQX-MA04-0021-A",
+            "date": "2004-07-07",
+            "secchiM": 8.5
+          },
+          {
+            "id": "EMAP_CS_WQX-MA06-0031-A",
+            "date": "2006-07-31",
+            "secchiM": 8
+          }
+        ]
+      },
+      "source": "epa-coastal-wq-data",
+      "where": "Water Quality Portal Result search: bBox -70.40,41.85,-70.00,42.15 · characteristicName 'Depth, Secchi disk depth' · organization EMAP_CS_WQX, NARS_WQX (20 results; station coordinates from the Station search)",
+      "quote": "ResultMeasureValue per station, unit m (e.g. EMAP_CS_WQX-MA05-0002-A, 2005-08-23: 4 m)",
+      "scope": "Cape Cod Bay, single summer visits 2004–2015 (July–September); open-bay and near-harbour stations, none inside Provincetown Harbor itself",
+      "foundOn": "2026-09-27",
+      "foundBy": "Loam"
+    },
+    {
+      "id": "d-provincetown-secchi",
+      "question": "q-water-clarity-per-town",
+      "kind": "derived",
+      "from": [
+        "f-epa-cape-cod-bay-secchi"
+      ],
+      "derivation": "median of the stations inside Provincetown's drawn disc (ground.json stencil radius 5290 m from its centre): MA05-0002-A 4.0 m (3.1 km) and MA04-0137-A 3.9 m (4.2 km) -> 3.95 m. For contrast, all 20 Cape Cod Bay results: median 7.0 m, range 3.0-9.0 m. Thin sample (n = 2, summer only).",
+      "value": {
+        "secchiM": 3.95,
+        "bayMedianM": 7
+      },
+      "quote": "-",
+      "foundOn": "2026-09-27",
+      "foundBy": "Loam"
     }
   ]
 }
