@@ -27,17 +27,20 @@ let _saidNoBed = false
  * and that is exactly the half that diverged.
  * ⚠️ General form: `docs/agents/AGENT-VALIDATION-SURFACES.md`.
  */
-function WaterSurface({ geometry, renderOrder = 0 }) {
+// `extentDiag` — the body's own extent when the geometry carries more than the body (the horizon sectors BakedGround
+// appends), so the waves keep the town's scale. `horizon` — { center, inner, outer }: the haze fade past the rim.
+function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = null, horizon = null }) {
   const { material, uniforms } = useMemo(() => {
     geometry.computeBoundingBox()
     const bb = geometry.boundingBox
-    const extentDiag = Math.hypot(bb.max.x - bb.min.x, bb.max.z - bb.min.z)
+    const extentDiag = extentOverride ?? Math.hypot(bb.max.x - bb.min.x, bb.max.z - bb.min.z)
     // ⛔ No `disturbance`: the point ripple models something dropped in a pond.
     // On a body kilometres across it is one sine wave crossing the map.
     return makeWaterMaterial({ extentDiag, terrain: { decl: TERRAIN_DECL, assign: assignTerrainUniforms } })
-  }, [geometry])
+  }, [geometry, extentOverride])
   useFrame((_, delta) => {
     uniforms.uTime.value += delta
+    if (horizon) { uniforms.uHorizonC.value.set(horizon.center[0], horizon.center[1]); uniforms.uHorizonIn.value = horizon.inner; uniforms.uHorizonOut.value = horizon.outer }
     // ⭐ The town's visibility depth, read off its terrain's bed record (bake-terrain). ⛔ A town whose terrain has
     // no bed draws the water flat-shaded and SAYS so — it was baked before the bed existed.
     const bed = terrainBed()

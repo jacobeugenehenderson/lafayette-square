@@ -34,6 +34,7 @@
  * (`shore-armour.mjs`: *"the walk direction IS the wet side"*, dead within hours).
  */
 import { d50For } from './shoreChunks.js'
+import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 
 /** The side of the walk the builders extrude toward. ⛔ Not a preference — read off
  *  `revetmentDrape.js`'s station normal. If that changes, this must change with it
@@ -219,10 +220,12 @@ export function toeFor(face, groundAt, floorM, waterY = 0) {
   const toe = new Float64Array(n).fill(1)
   for (let i = 0; i < n; i++) {
     const h = face.crestAt(cum[i] / total)
-    if (!(h > 0)) continue
+    if (!(h >= MIN_ARMOUR_D50_M)) continue           // no stone below one course of armour, so no toe to find
     const a = st[Math.max(0, i - 1)], b = st[Math.min(n - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1
     const nx = (b.z - a.z) / L, nz = -(b.x - a.x) / L          // the face's waterward normal, as the drape builds it
-    const run = h / tan, uMax = 1 + floorM / h, du = Math.min(0.05, 0.5 / run)
+    // ⛔ BOUNDED: at most 200 steps down the face. A near-zero crest (a heap's end) made uMax enormous and the walk
+    // hung the page before the ground loaded (Jacob, 2026-09-27: "everything flooded with flat blue").
+    const run = h / tan, uMax = 1 + floorM / h, du = Math.max((uMax - 1) / 200, Math.min(0.05, 0.5 / run))
     let u = 1
     while (u < uMax) {
       const un = u + du, x = st[i].x + nx * un * run, z = st[i].z + nz * un * run, y = waterY + h * (1 - un)

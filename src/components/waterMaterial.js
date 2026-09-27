@@ -340,6 +340,12 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     // (y = 0 is this water's level), in metres, so the exaggeration does not stretch it. 0 = not shading by depth.
     uVisibleM:      { value: 0 },
     uFadeM:         { value: 0 },
+    // ⭐ THE WATER GOES TO THE HORIZON (Jacob, 2026-09-27: "water is supposed to go to the horizon"). Where the town's
+    // edge is water the sheet runs on past the rim (BakedGround) and thins into the haze over the horizon's own reach
+    // (HorizonDisc horizonFor). uHorizonOut 0 = no fade.
+    uHorizonC:      { value: new THREE.Vector2() },
+    uHorizonIn:     { value: 0 },
+    uHorizonOut:    { value: 0 },
     // uDisturbAmp 0 removes the term entirely (the multiply below), so one
     // compiled program serves both cases and the cache key stays single.
     uDisturbAmp:    { value: disturbance ? 1 : 0 },
@@ -410,7 +416,10 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform vec3  uKeyColor;
        uniform float uKeyUp;
        uniform float uVisibleM;
-       uniform float uFadeM;${terrain ? terrain.decl : ''}
+       uniform float uFadeM;
+       uniform vec2  uHorizonC;
+       uniform float uHorizonIn;
+       uniform float uHorizonOut;${terrain ? terrain.decl : ''}
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
        uniform float uGustDriftMps;
@@ -633,6 +642,7 @@ ${GLITTER_GLSL}
 
        // Vary alpha slightly with ripple (thinner at highlights)
        diffuseColor.a = mix(0.72, 0.88, smoothstep(0.3, 0.6, ripple));
+       if (uHorizonOut > 0.0) diffuseColor.a *= 1.0 - smoothstep(uHorizonIn, uHorizonOut, length(vWaterWorld.xz - uHorizonC));
 ${terrain ? `       if (uVisibleM > 0.0) {
          float wDepth = max(0.0, -texture2D(uTerrainMap, _terrainUV(vec2((vWaterWorld.x - uBMinX) / uSpanX, (vWaterWorld.z - uBMinZ) / uSpanZ))).r);
          float wSeen = 1.0 - smoothstep(uVisibleM - uFadeM, uVisibleM, wDepth);   // 1 = the bottom shows

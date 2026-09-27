@@ -25,6 +25,8 @@ import { makeGroundSurfaceMaterial, CROP_UNIFORMS } from './grassMaterial'
 import useCalendar from '../hooks/useCalendar'
 import { resolveClassTable, SURFACES } from '../../cartograph/surfaces.mjs'
 import WaterSurface from './WaterSurface.jsx'
+import { horizonFor } from './HorizonDisc.jsx'
+import { isWaterGroupId } from './waterMaterial.js'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { groundMaterialFor } from '../lib/groundMaterials.js'
 import { makeFadeGroundMaterial } from './fadeGroundMaterial.js'
@@ -352,16 +354,27 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
       const indices   = new Uint32Array(bin,  g.indexByteOffset,  g.indexCount)
       // Planar UV (and identical UV2): u = (x - minX)/W, v = (z - minZ)/H.
       // Matches the AO baker's texel→world mapping exactly.
-      const uv = new Float32Array(g.vertexCount * 2)
-      for (let i = 0; i < g.vertexCount; i++) {
-        uv[i * 2]     = (positions[i * 3]     - bbox.min[0]) / W
-        uv[i * 2 + 1] = (positions[i * 3 + 2] - bbox.min[2]) / H
+
+      // ⭐ THE WATER GOES TO THE HORIZON (Jacob, 2026-09-27). Where the town's rim is water, the water body's own mesh
+      // runs on out past it to the horizon's reach (HorizonDisc horizonFor), so the same surface — glitter, sky, depth —
+      // carries on and thins into the haze, with no line where the drawn water stops. The body's extent is kept for its
+      // wave scale. Directions whose rim is land are left to the horizon disc.
+      let posUse = positions, idxUse = indices, bodyExtent = null
+      if (g.kind !== 'face' && isWaterGroupId(g.id) && manifest.stencil?.radius > 0) {
+        const ext = extendWaterToHorizon(positions, indices, manifest.stencil)
+        if (ext) { posUse = ext.positions; idxUse = ext.indices; bodyExtent = ext.bodyExtent }
       }
       const geom = new THREE.BufferGeometry()
-      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      geom.setAttribute('position', new THREE.BufferAttribute(posUse, 3))
+      // Planar UV (and identical UV2): u = (x - minX)/W, v = (z - minZ)/H. Matches the AO baker's texel→world mapping exactly.
+      const nV = posUse.length / 3, uv = new Float32Array(nV * 2)
+      for (let i = 0; i < nV; i++) {
+        uv[i * 2]     = (posUse[i * 3]     - bbox.min[0]) / W
+        uv[i * 2 + 1] = (posUse[i * 3 + 2] - bbox.min[2]) / H
+      }
       geom.setAttribute('uv',  new THREE.BufferAttribute(uv, 2))
       geom.setAttribute('uv2', new THREE.BufferAttribute(uv, 2))  // aoMap slot
-      geom.setIndex(new THREE.BufferAttribute(indices, 1))
+      geom.setIndex(new THREE.BufferAttribute(idxUse, 1))
       // ⭐ A `perField` group (the crop) carries a field index per vertex (third bin section) and
       // each field's axis in the manifest: expanded here into the two attributes its shader reads.
       // `aFieldAxis` = (cos, sin of the row bearing, field centre x, z) · `aFieldExt` = (half-length
@@ -383,18 +396,19 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
         if (g.fieldEdgeByteOffset != null) geom.setAttribute('aFieldEdge', new THREE.BufferAttribute(new Float32Array(bin, g.fieldEdgeByteOffset, g.vertexCount), 1))
       }
       geom.computeVertexNormals()
-      return { group: g, geometry: geom }
+      return { group: g, geometry: geom, bodyExtent }
     })
   }, [manifest, bin])
 
   return (
     <group>
-      {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry }) => {
+      {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry, bodyExtent }) => {
         const fade = fadeForGroup(group, stencil)
         const key = group.kind + ':' + group.id
         const draw = groundMaterialFor(group, surfaceTable, { hasFieldAxis: !!geometry.attributes.aFieldAxis })
         if (draw.kind === 'water')
-          return <WaterSurface key={key} geometry={geometry} renderOrder={group.renderOrder} />
+          return <WaterSurface key={key} geometry={geometry} renderOrder={group.renderOrder} extentDiag={bodyExtent}
+            horizon={bodyExtent && manifest.stencil ? { center: manifest.stencil.center, inner: horizonFor(manifest.stencil.radius).fadeInner, outer: horizonFor(manifest.stencil.radius).fadeOuter } : null} />
         if (draw.kind === 'gravel')
           return <GravelMesh key={key} group={group} geometry={geometry} lightmap={lightmap}
             tintHex={scene?.layerColors?.[group.id]}
@@ -645,6 +659,41 @@ function TerrainExagDriver({ target }) {
  */
 // ⛔ Default is the TOWN's authored ceiling, resolved at call time — not a module constant
 // captured at import, which would pin every look to whatever loaded first (site 15).
+
+// The water body's mesh, run on past the town's rim to the horizon's reach wherever the rim is water. 256 directions
+// around the rim: a direction whose rim point lies in the body's own triangles gets a sector from the rim out to the
+// horizon's fade (horizonFor), at the body's own level. Returns null when no direction is water.
+const HORIZON_SECTORS = 256
+function extendWaterToHorizon(positions, indices, stencil) {
+  const [cx, cz] = stencil.center, R = stencil.radius, Y = positions[1]
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+  for (let i = 0; i < positions.length; i += 3) { const x = positions[i], z = positions[i + 2]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z }
+  const bodyExtent = Math.hypot(x1 - x0, z1 - z0)
+  const inBody = (x, z) => {
+    for (let t = 0; t < indices.length; t += 3) {
+      const a = indices[t] * 3, b = indices[t + 1] * 3, c = indices[t + 2] * 3
+      const d = (positions[b + 2] - positions[c + 2]) * (positions[a] - positions[c]) + (positions[c] - positions[b]) * (positions[a + 2] - positions[c + 2])
+      if (!d) continue
+      const w0 = ((positions[b + 2] - positions[c + 2]) * (x - positions[c]) + (positions[c] - positions[b]) * (z - positions[c + 2])) / d
+      const w1 = ((positions[c + 2] - positions[a + 2]) * (x - positions[c]) + (positions[a] - positions[c]) * (z - positions[c + 2])) / d
+      if (w0 >= 0 && w1 >= 0 && w0 + w1 <= 1) return true
+    }
+    return false
+  }
+  const outer = horizonFor(R).fadeOuter
+  const wet = []
+  for (let k = 0; k < HORIZON_SECTORS; k++) { const a = ((k + 0.5) / HORIZON_SECTORS) * Math.PI * 2; wet.push(inBody(cx + Math.cos(a) * R * 0.995, cz + Math.sin(a) * R * 0.995)) }
+  if (!wet.some(Boolean)) return null
+  const P = Array.from(positions), I = Array.from(indices)
+  for (let k = 0; k < HORIZON_SECTORS; k++) {
+    if (!wet[k]) continue
+    const a0 = (k / HORIZON_SECTORS) * Math.PI * 2, a1 = ((k + 1) / HORIZON_SECTORS) * Math.PI * 2, v = P.length / 3
+    for (const [a, r] of [[a0, R], [a1, R], [a1, outer], [a0, outer]]) P.push(cx + Math.cos(a) * r, Y, cz + Math.sin(a) * r)
+    I.push(v, v + 2, v + 1, v, v + 3, v + 2)
+  }
+  return { positions: new Float32Array(P), indices: new Uint32Array(I), bodyExtent }
+}
+
 export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag(), surfacesOverride } = {}) {
   const [data, setData] = useState(null)
   const resolvedLookId = resolveLookId(lookId)

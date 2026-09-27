@@ -4,8 +4,9 @@
  * ⭐ RESTORED 2026-09-27 (Jacob: "restore it that way"). Removed the night before with its controls
  * (fe2215b2); without it nothing is drawn past the town's edge fade, and the page's background showed as a dark
  * band under the sky that no control could reach. It comes back with NO controls: its size is the town's own
- * (multiples of the baked stencil radius; Class D: never a fixed metre), its colour follows the sky's horizon
- * band, so the sky controls light it. The scalloped far edge is the look Jacob kept.
+ * (multiples of the baked stencil radius; Class D: never a fixed metre), its colour is the ground's own at the
+ * rim, lit by the scene's lights like the ground. The scalloped far edge is the look Jacob kept. Where the rim is
+ * WATER, the water body itself runs on past the rim to the horizon (BakedGround `extendWaterToHorizon`).
  * Centre and radius are the baked ground's stencil. ⛔ No stencil ⇒ no disc, said once — never an invented size.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -20,7 +21,7 @@ const _warned = new Set()
 // The horizon's reach, in multiples of the town's own radius (what 65b273dd derived from LS's authored horizon over
 // its radius, so LS renders as it did): the disc out to 2.8 R, fading from 1.05 R to 3.53 R.
 const DISC_R = 2.8, FADE_IN_R = 1.05, FADE_OUT_R = 3.53
-const horizonFor = (townRadius) => ({ radius: DISC_R * townRadius, fadeInner: FADE_IN_R * townRadius, fadeOuter: FADE_OUT_R * townRadius })
+export const horizonFor = (townRadius) => ({ radius: DISC_R * townRadius, fadeInner: FADE_IN_R * townRadius, fadeOuter: FADE_OUT_R * townRadius })
 
 export default function HorizonDisc({ lookId, bakeLastMs }) {
   const look = resolveLookId(lookId)
@@ -48,7 +49,7 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
   // ⭐ THE WORLD CONTINUES (Jacob, 2026-09-27: "What if the horizon extender disc carried the color of the surface out
   // to the horizon since that's theoretically what the authored disc edge IS"). Each direction takes the ground's
   // own colour just inside the town's edge (the baked colormap) and carries it to the horizon.
-  // ⛔ Water continuing to the horizon is Strand's (queued): until then a water direction shows the bed's colour.
+  // Where the rim is water, the water surface runs on over this (BakedGround); beneath it the disc carries the bed.
   const [colorTex, setColorTex] = useState(null)
   useEffect(() => {
     const cm = stencil?.colormap
@@ -68,80 +69,50 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
     return () => { dead = true }
   }, [stencil, look, bakeLastMs])
 
+  // ⭐ LIT LIKE THE GROUND (Jacob, 2026-09-27: the land past the rim was "too dark" — it took only the sky's horizon
+  // colour). A standard material, so the same sun, ambient and hemisphere that light the town light the disc; its
+  // colour is the ground's own just inside the rim, carried outward direction by direction, and it fades on the
+  // scalloped edge. The fade and the colour lookup are the only things patched in.
   const material = useMemo(() => {
-    const m = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      uniforms: {
-        uInner: { value: 0 },
-        uOuter: { value: 1 },
-        uColor: { value: new THREE.Color('#3a4a3a') },
-        uSky: { value: new THREE.Color(1, 1, 1) },
-        uColorMap: { value: null },
-        uHasColor: { value: 0 },
-        uMapMin: { value: new THREE.Vector2() },
-        uMapSpan: { value: new THREE.Vector2(1, 1) },
-        uCenter: { value: new THREE.Vector2() },
-        uRimR: { value: 1 },
-      },
-      // ⛔ Stage and Preview render with logarithmicDepthBuffer: without the logdepthbuf chunks this disc writes a
-      // linear depth the test compares against log depth, and it can vanish (Wick, 36226b74).
-      vertexShader: `
-        #include <common>
-        #include <logdepthbuf_pars_vertex>
-        varying vec2 vLocal;
-        void main() {
-          vLocal = position.xy;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          #include <logdepthbuf_vertex>
-        }
-      `,
-      fragmentShader: `
-        #include <common>
-        #include <logdepthbuf_pars_fragment>
-        uniform float uInner;
-        uniform float uOuter;
-        uniform vec3 uColor;
-        uniform vec3 uSky;
-        uniform sampler2D uColorMap;
-        uniform float uHasColor;
-        uniform vec2 uMapMin;
-        uniform vec2 uMapSpan;
-        uniform vec2 uCenter;
-        uniform float uRimR;
-        varying vec2 vLocal;
-        float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-        float vnoise(vec2 p) {
-          vec2 i = floor(p);
-          vec2 f = fract(p);
-          float a = hash(i);
-          float b = hash(i + vec2(1.0, 0.0));
-          float c = hash(i + vec2(0.0, 1.0));
-          float d = hash(i + vec2(1.0, 1.0));
-          vec2 u = f * f * (3.0 - 2.0 * f);
-          return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-        }
-        void main() {
-          #include <logdepthbuf_fragment>
-          float r = length(vLocal);
-          float band = max(1.0, uOuter - uInner);
-          // The scalloped edge: noise pushes the fade in and out along the rim.
-          float wobble = (vnoise(vLocal * 9.0) - 0.5) * band * 0.35;
-          float t = smoothstep(uInner, uOuter, r + wobble);
-          float alpha = smoothstep(0.0, 1.0, 1.0 - t);
-          if (alpha <= 0.001) discard;
-          vec3 col = uColor;
+    const u = {
+      uInner: { value: 0 }, uOuter: { value: 1 },
+      uColor: { value: new THREE.Color('#3a4a3a') },
+      uColorMap: { value: null }, uHasColor: { value: 0 },
+      uMapMin: { value: new THREE.Vector2() }, uMapSpan: { value: new THREE.Vector2(1, 1) },
+      uCenter: { value: new THREE.Vector2() }, uRimR: { value: 1 },
+    }
+    const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, metalness: 0, transparent: true, depthWrite: false })
+    m.onBeforeCompile = (sh) => {
+      if (sh.fragmentShader.includes('hdVnoise')) return      // idempotent: three may call this twice
+      Object.assign(sh.uniforms, u)
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vLocal;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLocal = position.xy;')
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', `#include <common>
+          uniform float uInner; uniform float uOuter; uniform vec3 uColor; uniform sampler2D uColorMap; uniform float uHasColor;
+          uniform vec2 uMapMin; uniform vec2 uMapSpan; uniform vec2 uCenter; uniform float uRimR; varying vec2 vLocal;
+          float hdHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float hdVnoise(vec2 p) { vec2 i = floor(p), f = fract(p); vec2 w = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hdHash(i), hdHash(i + vec2(1.0, 0.0)), w.x), mix(hdHash(i + vec2(0.0, 1.0)), hdHash(i + vec2(1.0, 1.0)), w.x), w.y); }`)
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          vec3 hdCol = uColor;
           if (uHasColor > 0.5) {
             // The disc lies in its local XY, rotated onto the ground: local (x, y) → world (x, -z).
             vec2 dir = normalize(vec2(vLocal.x, -vLocal.y) + 1e-6);
-            vec2 rim = uCenter + dir * uRimR * 0.98;          // just inside the town's edge fade
-            vec2 uv = (rim - uMapMin) / uMapSpan;
-            col = texture2D(uColorMap, uv).rgb * uSky;       // the ground's own colour, lit by the sky's horizon
+            vec2 uv = (uCenter + dir * uRimR * 0.98 - uMapMin) / uMapSpan;   // just inside the town's edge fade
+            hdCol = texture2D(uColorMap, uv).rgb;
           }
-          gl_FragColor = vec4(col, alpha);
-        }
-      `,
-    })
+          diffuseColor.rgb = hdCol;`)
+        .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+          { float r = length(vLocal), band = max(1.0, uOuter - uInner);
+            float wobble = (hdVnoise(vLocal * 9.0) - 0.5) * band * 0.35;     // the scalloped edge
+            float a = smoothstep(0.0, 1.0, 1.0 - smoothstep(uInner, uOuter, r + wobble));
+            if (a <= 0.001) discard;
+            gl_FragColor.a *= a; }`)
+    }
+    m.customProgramCacheKey = () => 'horizon-disc-lit'
+    m.userData.u = u
     matRef.current = m
     return m
   }, [])
@@ -150,9 +121,8 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
   useFrame(() => {
     if (!h) return
     const hc = useSkyState.getState().horizonColor
-    const u = matRef.current.uniforms
-    u.uColor.value.set(hc.r * 0.35 + 0.02, hc.g * 0.35 + 0.03, hc.b * 0.30)
-    u.uSky.value.set(hc.r, hc.g, hc.b)
+    const u = matRef.current.userData.u
+    u.uColor.value.set(hc.r * 0.35 + 0.02, hc.g * 0.35 + 0.03, hc.b * 0.30)   // only until the colormap loads
     const cm = stencil.colormap
     u.uHasColor.value = colorTex && cm ? 1 : 0
     if (colorTex && cm) {
@@ -164,8 +134,8 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
     u.uRimR.value = stencil.rimR
     // The geometry is a unit circle: express the fade radii in it.
     const r = Math.max(1, h.radius)
-    matRef.current.uniforms.uInner.value = h.fadeInner / r
-    matRef.current.uniforms.uOuter.value = h.fadeOuter / r
+    u.uInner.value = h.fadeInner / r
+    u.uOuter.value = h.fadeOuter / r
     if (meshRef.current) {
       meshRef.current.position.set(stencil.center[0], -0.05, stencil.center[1])
       meshRef.current.scale.set(r, r, 1)
