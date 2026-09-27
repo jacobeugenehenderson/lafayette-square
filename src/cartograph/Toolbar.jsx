@@ -33,7 +33,6 @@ export default function Toolbar() {
   const bakeStale = useCartographStore(s => s.bakeStale)
   const runBake = useCartographStore(s => s.runBake)
   const activeLookId = useCartographStore(s => s.activeLookId)
-  const defaultLookId = useCartographStore(s => s.defaultLookId)
   const scene = useCartographStore(s => s.scene)
   // "What goes into a town" — the outward face of the intake catalogue.
   // Lives in Stage beside Preview: both answer "what does this install
@@ -186,6 +185,10 @@ function LooksMenu() {
   const looks = useCartographStore(s => s.looks)
   const scene = useCartographStore(s => s.scene)
   const activeLookId = useCartographStore(s => s.activeLookId)
+  // Read here, not only in Toolbar: the delete row below uses it, and without this line
+  // opening the menu threw "defaultLookId is not defined" and took the app down (since
+  // 5bc74866; found by Loupe, 2026-09-26).
+  const defaultLookId = useCartographStore(s => s.defaultLookId)
   const setActiveLook = useCartographStore(s => s.setActiveLook)
   const createLook = useCartographStore(s => s.createLook)
   const deleteActiveLook = useCartographStore(s => s.deleteActiveLook)
