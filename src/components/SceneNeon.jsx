@@ -175,6 +175,8 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, lookId
 
     if (slabIndex) {
       for (const e of slabIndex.byNum) {
+        // A record the slab built no walls for (a set-piece's building, SetPiece.jsx) has no eave to trace.
+        if (!e.ranges?.wall) continue
         const listingInfo = neonLookup[e.id]
         const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
         const hours = listingInfo ? listingInfo.hours : null

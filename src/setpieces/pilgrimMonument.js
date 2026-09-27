@@ -85,8 +85,8 @@ export function placeholderStages(d = DOSSIER, inf = INFERRED) {
 }
 
 /**
- * The site from the mapped footprint: centre, rotation and side length. `ring` is
- * `[[x, z], …]` in local metres (closed or open). The rotation is recovered modulo 90°,
+ * The site from the set-piece's building footprint (the slab record <SetPiece> passes): centre,
+ * rotation and side length. `ring` is `[[x, z], …]` in local metres (closed or open). The rotation is recovered modulo 90°,
  * averaging every edge on the 4θ circle, so midpoints and uneven vertex spacing don't bias it.
  */
 export function siteFromFootprint(ring) {
@@ -151,11 +151,6 @@ export function southFacingYaw(site) {
     if (dot > bestDot) { bestDot = dot; best = r }
   }
   return best
-}
-
-/** lon/lat → the runtime's local frame (the same formula as `AerialTiles.wgs84ToLocal`). */
-export function lonLatToLocal(geo, lon, lat) {
-  return [(lon - geo.lon) * geo.lonToMeters, (geo.lat - lat) * geo.latToMeters]
 }
 
 // ── The masonry coursing (dossier §4: courses 18″–30″, D) ────────────────────────────

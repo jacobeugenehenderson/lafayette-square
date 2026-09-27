@@ -13,7 +13,7 @@
  *                 mid-park, never on a curb.
  *   revetment   — the tallest armoured station of the baked revetment: the only
  *                 place the wall is worth judging (the harness's own rule).
- *   setpiece    — the town's set-piece (INSTANCE.setPiece), from its own mapped footprint,
+ *   setpiece    — the town's set-piece (INSTANCE.setPiece), from its building's slab footprint,
  *                 faced from its SOUTH face (the window face), so the eye camera looks at it.
  *   steepest    — the steepest heightfield sample inside the disc's opaque core, read at
  *                 the grid's own step: where relief shading is judged.
@@ -21,7 +21,7 @@
 import { ASSET_BASE } from '../../lib/bakedUrl.js'
 import { currentTerrain } from '../../utils/terrainShader.js'
 import { INSTANCE } from '../../instance.js'
-import { siteFromFootprint, southFacingYaw, lonLatToLocal, DOSSIER, FT } from '../../setpieces/pilgrimMonument.js'
+import { siteFromFootprint, southFacingYaw, DOSSIER, FT } from '../../setpieces/pilgrimMonument.js'
 
 async function getJSON(url) {
   const r = await fetch(url)
@@ -64,11 +64,18 @@ export async function resolveStage(lookId, stageId, bust) {
   }
   if (stageId === 'setpiece') {
     const sp = INSTANCE.setPiece
-    if (!sp?.footprint) throw new Error(`⛔ stage "setpiece" on ${lookId}: this town declares no set-piece (src/instances/<town>.js setPiece)`)
-    const site = siteFromFootprint(sp.footprint.map(([lon, lat]) => lonLatToLocal(INSTANCE.geography, lon, lat)))
+    if (!sp?.buildingId) throw new Error(`⛔ stage "setpiece" on ${lookId}: this town declares no set-piece (src/instances/<town>.js setPiece)`)
+    // The footprint is the set-piece's building record in the slab, as <SetPiece> reads it.
+    const m = await getJSON(`${ASSET_BASE}baked/${lookId}/buildings.json${t}`)
+    const b = m.buildings.find(x => x.id === sp.buildingId)
+    if (!b) throw new Error(`⛔ stage "setpiece" on ${lookId}: the slab has no building ${sp.buildingId}`)
+    const bin = await fetch(`${ASSET_BASE}baked/${lookId}/${m.bin}${t}`).then(r => r.arrayBuffer())
+    const [start, count] = b.footprintRange
+    const fp = new Float32Array(bin, m.footprintByteOffset + start * 8, count * 2)
+    const site = siteFromFootprint(Array.from({ length: count }, (_, i) => [fp[i * 2], fp[i * 2 + 1]]))
     const r = southFacingYaw(site), n = [Math.sin(r), Math.cos(r)], h = DOSSIER.foundationTopSq * FT / 2
     // The spot is the middle of the south face, so the eye camera stands off that face.
-    return { x: site.x + n[0] * h, z: site.z + n[1] * h, normal: n, why: `${sp.kind}: the south face of OSM way ${sp.osmWay}` }
+    return { x: site.x + n[0] * h, z: site.z + n[1] * h, normal: n, why: `${sp.kind}: the south face of building ${sp.buildingId}` }
   }
   if (stageId === 'steepest') {
     const m = await getJSON(`${ASSET_BASE}baked/${lookId}/ground.json${t}`)

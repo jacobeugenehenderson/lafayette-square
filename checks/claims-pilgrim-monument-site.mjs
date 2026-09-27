@@ -10,16 +10,18 @@
  *      per wash, the −5′ datum shift, the 3′3″ balcony projection, the 1′ shoulder).
  *   B. The placeholder profile reads that table: contiguous from the original ground to
  *      Z = 0 and up, the washes at the table's Z, and the top at 252′7.5″.
- *   C. The site is the mapped footprint: the instance ring equals raw/osm.json's way, and
- *      the mapped square agrees with the dossier's 28′ plinth to within its 6″ shoulder
- *      per face (1′ overall). A bigger miss means OSM mapped something else.
+ *   C. The site is the set-piece's building (`setPiece.buildingId`), its footprint read from the
+ *      slab record as <SetPiece> reads it, and that square agrees with the dossier's 28′ plinth
+ *      to within its 6″ shoulder per face (1′ overall). A bigger miss means the id names
+ *      something other than the tower.
  *   D. The seat sits on the lidar: Z = 0 is the lowest terrain under the plinth, and the
  *      terrain's spread there fits the plinth's documented 5′ depth. ⛔ Fails loudly if it
  *      doesn't: the site would need grading the kit cannot fake.
- *   (C also checks the printed label: `setPiece.name` must be the way's OSM `name`.)
- *   E. No slab building stands inside the plinth. That catches the tower extruding as a
- *      plain box beside the set-piece, WHICHEVER source brings it (MSBF, OSM, a pour fix),
- *      with no id list. Fix: add the named ids to `building-overrides.json` `hide`.
+ *   (C also checks the printed label: `setPiece.name` must be the building's mapped `name`, read
+ *      from its clean/map.json record.)
+ *   E. No slab building is BUILT inside the plinth: only records with geometry (wall / roof /
+ *      foundation ranges) count, so the set-piece's own building (a record, no geometry) never
+ *      trips it, and a box extruded there by ANY source does, with no id list.
  *
  *   F. The masonry (the `pilgrim-granite` surface): its physics params resolve to registry
  *      findings; every course lies inside the cited range; a bed falls at each wash; the table
@@ -28,15 +30,16 @@
  *      Every limit is READ from its finding, never restated.
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-pilgrim-monument-site.mjs [--self-test]
- *    --self-test mutates the table, the footprint and the slab, and asserts each is caught.
+ *    --self-test mutates the table, the building and the slab, and asserts each is caught.
  */
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { loadSceneTerrain } from '../cartograph/terrainLoad.js'
 import {
   DOSSIER, INFERRED, FT, ft, placeholderStages, siteFromFootprint, plinthSamplePoints,
-  seatOnTerrain, lonLatToLocal, courseBeds,
+  seatOnTerrain, courseBeds,
 } from '../src/setpieces/pilgrimMonument.js'
+import { buildingIdOf } from '../cartograph/membership.mjs'
 import { SURFACES, resolveSurfaceParams } from '../cartograph/surfaces.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
@@ -133,27 +136,26 @@ function slabFootprints(look) {
     // [ptStart, ptCount] (bake-buildings.js), not [start, end]: read as an end, every ring came back empty.
     const [s, n] = b.footprintRange, ring = []
     for (let i = s; i < s + n; i++) ring.push([all[2 * i], all[2 * i + 1]])
-    return { id: b.id, ring }
+    return { id: b.id, ring, built: ['wall', 'roof', 'foundation'].some(k => b.ranges?.[k]) }
   })
 }
 const inPoly = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, zi] = p[i], [xj, zj] = p[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
 
-function checkSite(inst, { osmRing, way, terrain, slab }) {
+function checkSite(inst, { mapped, terrain, slab }) {
   const f = [], info = []
   const sp = inst.setPiece
-  // C. the ring is OSM's
-  if (!osmRing) f.push(`raw/osm.json has no building way ${sp.osmWay}`)
-  else if (osmRing.length !== sp.footprint.length || osmRing.some((p, i) => p[0] !== sp.footprint[i][0] || p[1] !== sp.footprint[i][1]))
-    f.push(`instance footprint differs from OSM way ${sp.osmWay} — re-copy it from raw/osm.json`)
-  if (!way) f.push(`raw/osm.json has no way ${sp.osmWay}`)
-  else if (sp.name !== way.tags?.name) f.push(`setPiece.name "${sp.name}" ≠ OSM way ${sp.osmWay}'s name "${way.tags?.name}"`)
-  const site = siteFromFootprint(sp.footprint.map(([lon, lat]) => lonLatToLocal(inst.geography, lon, lat)))
+  // C. the site is the set-piece's building, as the slab carries it
+  const rec = slab?.find(b => b.id === sp.buildingId)
+  if (!rec) { f.push(`the slab has no building ${sp.buildingId} (setPiece.buildingId) — nothing to seat on`); return { f, info } }
+  if (!mapped) f.push(`clean/map.json has no building ${sp.buildingId}`)
+  else if (sp.name !== mapped.tags?.name) f.push(`setPiece.name "${sp.name}" ≠ building ${sp.buildingId}'s mapped name "${mapped.tags?.name}"`)
+  const site = siteFromFootprint(rec.ring)
   const plinthM = DOSSIER.foundationTopSq * FT
   const [shortM, longM] = site.sidesM
   info.push(`site (${site.x.toFixed(2)}, ${site.z.toFixed(2)}) · yaw ${(site.yaw * 180 / Math.PI).toFixed(1)}° · mapped ${shortM.toFixed(2)} × ${longM.toFixed(2)} m vs plinth ${plinthM.toFixed(2)} m square`)
   // The SHORT side is tested: the mapped ring runs long on one axis (cause not established),
   // and the dossier, not the map, sets the size. The map is trusted for position + rotation.
-  if (Math.abs(shortM - plinthM) > 1 * FT) f.push(`mapped footprint's short side ${shortM.toFixed(2)} m is more than the 1′ shoulder off the dossier's 28′ (${plinthM.toFixed(2)} m): is way ${sp.osmWay} the tower?`)
+  if (Math.abs(shortM - plinthM) > 1 * FT) f.push(`mapped footprint's short side ${shortM.toFixed(2)} m is more than the 1′ shoulder off the dossier's 28′ (${plinthM.toFixed(2)} m): is ${sp.buildingId} the tower?`)
   // D. the seat
   if (!terrain) f.push(`${inst.lookId} has no terrain — cannot seat the set-piece`)
   else {
@@ -165,13 +167,12 @@ function checkSite(inst, { osmRing, way, terrain, slab }) {
     const top = seat.groundRaw + (Math.max(...placeholderStages().map(s => s.z1)) * FT)
     info.push(`top at ${top.toFixed(2)} m raw = ${((top - seat.groundRaw) / FT).toFixed(3)}′ above the base (252.625′ wanted)`)
   }
-  // E. nothing else stands in the plinth
-  if (!slab) f.push(`no baked slab buildings for ${inst.lookId}`)
-  else {
+  // E. nothing is built in the plinth
+  {
     const sq = plinthSamplePoints(site).slice(1)
-    const hits = slab.filter(b => b.ring.some(([x, z]) => inPoly(x, z, sq)) || inPoly(site.x, site.z, b.ring))
-    info.push(`slab buildings inside the plinth: ${hits.length}`)
-    if (hits.length) f.push(`slab buildings extrude inside the set-piece's plinth: ${hits.map(h => h.id).join(', ')} — add them to building-overrides.json "hide"`)
+    const hits = slab.filter(b => b.built && (b.ring.some(([x, z]) => inPoly(x, z, sq)) || inPoly(site.x, site.z, b.ring)))
+    info.push(`slab buildings built inside the plinth: ${hits.length}`)
+    if (hits.length) f.push(`slab buildings are built inside the set-piece's plinth: ${hits.map(h => h.id).join(', ')}${hits.some(h => h.id === sp.buildingId) ? ' — the set-piece\'s own building was extruded; re-bake the buildings' : ''}`)
   }
   return { f, info }
 }
@@ -187,13 +188,12 @@ async function loadInstances() {
   return out
 }
 function contextFor(inst) {
-  const osm = JSON.parse(readFileSync(join(ROOT, 'cartograph/data', inst.lookId, 'raw/osm.json'), 'utf8'))
-  const way = osm.buildings.find(b => b.osmId === inst.setPiece.osmWay)
-  const osmRing = way ? way.coords.slice(0, -1).map(c => [c.lon, c.lat]) : null
+  const map = JSON.parse(readFileSync(join(ROOT, 'cartograph/data', inst.lookId, 'clean/map.json'), 'utf8'))
+  const mapped = map.buildings.find(b => buildingIdOf(b) === inst.setPiece.buildingId) ?? null
   const t = loadSceneTerrain(inst.lookId)
   const meta = JSON.parse(readFileSync(join(ROOT, 'cartograph/data', inst.lookId, 'clean/terrain.json'), 'utf8'))
   const terrain = t && { getElevationRaw: t.getElevationRaw, stepM: (meta.bounds.maxX - meta.bounds.minX) / (meta.width - 1) }
-  return { osmRing, way, terrain, slab: slabFootprints(inst.lookId) }
+  return { mapped, terrain, slab: slabFootprints(inst.lookId) }
 }
 
 const insts = await loadInstances()
@@ -201,7 +201,7 @@ if (!insts.length) { console.error('⛔ FAIL — no instance declares a pilgrim-
 
 if (process.argv.includes('--self-test')) {
   const inst = insts[0], ctx = contextFor(inst)
-  const site = siteFromFootprint(inst.setPiece.footprint.map(([lon, lat]) => lonLatToLocal(inst.geography, lon, lat)))
+  const site = siteFromFootprint(ctx.slab.find(b => b.id === inst.setPiece.buildingId).ring)
   const CNT = resolveSurfaceParams('pilgrim-granite', REGISTRY).values.courseCount
   const CB = () => courseBeds({ minIn: 18, maxIn: 30 }, DOSSIER, undefined, [CNT])
   const cases = [
@@ -209,7 +209,9 @@ if (process.argv.includes('--self-test')) {
     ['wash 2 moved', () => checkTable({ ...DOSSIER, wash2: { ...DOSSIER.wash2, z: ft(33, 11) } }).length],
     ['profile top short', () => checkProfile(placeholderStages(DOSSIER, INFERRED).slice(0, -1), DOSSIER).length],
     ['profile ignores table', () => checkProfile(placeholderStages({ ...DOSSIER, wash1: { z: 17, sq: DOSSIER.wash1.sq } }), DOSSIER).length],
-    ['footprint drifted', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, footprint: inst.setPiece.footprint.map(([a, b]) => [a + 1e-6, b]) } }, ctx).f.length],
+    ['the id names another building', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, buildingId: ctx.slab.find(b => b.built).id } }, ctx).f.length],
+    ['the id names no building', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, buildingId: 'osm-0' } }, ctx).f.length],
+    ['the set-piece\'s building extruded', () => checkSite(inst, { ...ctx, slab: ctx.slab.map(b => b.id === inst.setPiece.buildingId ? { ...b, built: true } : b) }).f.length],
     ['terrain cliff', () => checkSite(inst, { ...ctx, terrain: { ...ctx.terrain, getElevationRaw: (x) => x > site.x ? 10 : 0 } }).f.length],
     ['label renamed', () => checkSite({ ...inst, setPiece: { ...inst.setPiece, name: 'Pilgrim Tower' } }, ctx).f.length],
     ['a course over range', () => { const b = CB(); b.splice(12, 1); return checkCoursing(b).length }],
@@ -220,7 +222,7 @@ if (process.argv.includes('--self-test')) {
     ['joints only in the relief', () => checkCoursing(null, REGISTRY, DOSSIER, readFileSync(join(ROOT, 'src/components/graniteMasonryMaterial.js'), 'utf8').replace(/diffuseColor\.rgb \*= mix\(1\.0, uJointShade, mJoint\(c\)\);/, '')).length],
     ['joint shade gone', () => checkCoursing(null, { findings: REGISTRY.findings.filter(x => x.id !== 'd-pilgrim-joint-shade') }).length],
     ['finding gone', () => checkCoursing(null, { findings: REGISTRY.findings.filter(x => x.id !== 'f-pilgrim-course-height') }).length],
-    ['box in plinth', () => checkSite(inst, { ...ctx, slab: [...ctx.slab, { id: 'mutant-box', ring: [[site.x - 1, site.z - 1], [site.x + 1, site.z - 1], [site.x + 1, site.z + 1], [site.x - 1, site.z + 1]] }] }).f.length],
+    ['box in plinth', () => checkSite(inst, { ...ctx, slab: [...ctx.slab, { id: 'mutant-box', built: true, ring: [[site.x - 1, site.z - 1], [site.x + 1, site.z - 1], [site.x + 1, site.z + 1], [site.x - 1, site.z + 1]] }] }).f.length],
   ]
   let bad = 0
   for (const [n, run] of cases) { const caught = run() > 0; if (!caught) bad++; console.log(`${caught ? '✅ caught' : '⛔ MISSED'} — ${n}`) }

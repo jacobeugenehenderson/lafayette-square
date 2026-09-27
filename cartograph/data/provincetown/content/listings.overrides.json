@@ -3006,6 +3006,94 @@
    "_season_closes": "'Carts Available April 11th through November 1st.'",
    "_wick_notes": "148 Bradford is the pick-up/drop-off; corporate HQ 45A Court Street. No hours published. _latlon from Nominatim.",
    "_source_pbg": "{\"name\":\"PTOWN CARTS\",\"section\":\"Transportation\",\"address\":\"148 Bradford St.\",\"web\":\"ptowncarts.com\",\"phone\":\"508-246-1117\",\"ig\":null}"
+  },
+  {
+   "id": "prov-lst-0449",
+   "building_id": "osm-164024699",
+   "name": "Pilgrim Monument",
+   "category": "arts",
+   "subcategory": "landmark",
+   "address": "1 High Pole Hill Road",
+   "phone": "508-487-1310",
+   "website": "https://www.pilgrim-monument.org/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "16:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [
+    {
+     "url": "photos/pilgrim-monument/01.jpg",
+     "what": "Pilgrim Monument and Bas Relief as viewed from Bradford St.",
+     "credit": "Peter Whitlock, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:PilgrimMonumentbasrelief.jpg",
+     "license": "CC BY-SA 3.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/ac/PilgrimMonumentbasrelief.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
+   "amenities": [
+    "Climb to the top (116 steps and 60 ramps)",
+    "Last ticket 3 p.m.; last climb 3:15 p.m."
+   ],
+   "tags": [
+    "landmark",
+    "history",
+    "views"
+   ],
+   "description": "The granite tower on High Pole Hill that you can see from almost anywhere on the Outer Cape. At 252 feet it is the tallest all-granite structure in the United States, modelled on the Torre del Mangia in Siena, and it marks the Pilgrims' first landfall in 1620 and the signing of the Mayflower Compact in Provincetown Harbor. Visitors climb 116 steps and 60 ramps to the top.",
+   "history": [
+    {
+     "year": 1620,
+     "event": "The Mayflower anchors in Provincetown Harbor; the Mayflower Compact is signed aboard."
+    },
+    {
+     "year": 1907,
+     "event": "President Theodore Roosevelt lays the cornerstone on August 20."
+    },
+    {
+     "year": 1910,
+     "event": "President William H. Taft dedicates the finished monument on August 5."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.22 (Attractions, Experiences & Tours)",
+   "_fetched": "2026-09-25",
+   "_source": "https://www.pilgrim-monument.org/visit/",
+   "_source_history": "https://en.wikipedia.org/wiki/Pilgrim_Monument",
+   "_season": "The site gives 10 a.m.–4 p.m., seven days, with dated exceptions around it (\"Closed on September 26th. Early closure at 3 PM on October 2nd.\"), so these are the autumn 2026 hours. The site names no end date for them, so treat them as seasonal.",
+   "_landmark": true,
+   "_anchor_note": "The tower itself: OSM way 164024699, the building Provincetown's setPiece claims (src/instances/provincetown.js). Split from prov-lst-0005 on 2026-09-27 (Jacob): the museum keeps msbf-427."
   }
  ],
  "patches": {
@@ -3810,11 +3898,11 @@
    "_display_id_at_research": "prov-lst-0005",
    "phone": "508-487-1310",
    "address": "1 High Pole Hill Road",
-   "name": "Pilgrim Monument & Provincetown Museum",
+   "name": "Provincetown Museum",
    "category": "arts",
    "subcategory": "museum",
    "website": "https://www.pilgrim-monument.org/",
-   "description": "The granite tower on High Pole Hill that you can see from almost anywhere on the Outer Cape. At 252 feet it is the tallest all-granite structure in the United States, modelled on the Torre del Mangia in Siena, and it marks the Pilgrims' first landfall in 1620 and the signing of the Mayflower Compact in Provincetown Harbor. Visitors climb 116 steps and 60 ramps to the top; the Provincetown Museum at its base tells the town's maritime story.",
+   "description": "The museum at the base of the Pilgrim Monument, telling the town's maritime story. One ticket covers the museum and the climb up the tower.",
    "hours": {
     "monday": {
      "open": "10:00",
@@ -3845,30 +3933,13 @@
      "close": "16:00"
     }
    },
-   "history": [
-    {
-     "year": 1620,
-     "event": "The Mayflower anchors in Provincetown Harbor; the Mayflower Compact is signed aboard."
-    },
-    {
-     "year": 1907,
-     "event": "President Theodore Roosevelt lays the cornerstone on August 20."
-    },
-    {
-     "year": 1910,
-     "event": "President William H. Taft dedicates the finished monument on August 5."
-    }
-   ],
    "amenities": [
-    "Climb to the top (116 steps and 60 ramps)",
-    "Provincetown Museum at the base",
-    "Last ticket 3 p.m.; last climb 3:15 p.m."
+    "Pilgrim Monument climb on the same ticket",
+    "Last ticket 3 p.m."
    ],
    "tags": [
-    "landmark",
     "museum",
-    "history",
-    "views"
+    "history"
    ],
    "photos": [
     {
@@ -3884,10 +3955,9 @@
    "_source_pbg": "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf p.22 (Attractions, Experiences & Tours)",
    "_fetched": "2026-09-25",
    "_source": "https://www.pilgrim-monument.org/visit/",
-   "_source_history": "https://en.wikipedia.org/wiki/Pilgrim_Monument",
    "_season": "The site gives 10 a.m.–4 p.m., seven days, with dated exceptions around it (\"Closed on September 26th. Early closure at 3 PM on October 2nd.\"), so these are the autumn 2026 hours. The site names no end date for them, so treat them as seasonal.",
    "_landmark": true,
-   "_anchor_note": "Patched onto the Provincetown Museum building (msbf-427), the entrance to both. ⛔ The Monument tower has no building in clean/map.json at all, so it cannot carry a card of its own."
+   "_anchor_note": "The Provincetown Museum building (msbf-427, OSM way 164024700). The tower is its own listing, prov-lst-0449 on osm-164024699, split 2026-09-27 (Jacob)."
   },
   "osm-n11392407235": {
    "_match_name": "Haven Center",

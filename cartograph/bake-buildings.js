@@ -29,6 +29,7 @@ import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { createMembershipFilter } from './membership.mjs'
+import { instanceForMap } from '../src/instances/registry.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -679,6 +680,15 @@ export async function bakeBuildings({ look, scene } = {}) {
 
   }
 
+  // ⭐ THE SET-PIECE'S BUILDING (BRIEF-set-piece-contract item 1). A town's set-piece stands on one of
+  // its own buildings (`setPiece.buildingId`, src/instances/<town>.js). That building keeps its RECORD
+  // here (id, footprint), because the slab is the id set everything downstream joins to (bake-content's
+  // listings and roster, picking, the card). It gets NO geometry: the set-piece renderer is its 3D.
+  // ⛔ A claim on a building the town doesn't have THROWS. It never bakes on without its set-piece.
+  const setPieceId = instanceForMap(scene)?.setPiece?.buildingId ?? null
+  if (setPieceId && !buildings.some(b => b.id === setPieceId))
+    throw new Error(`[bake-buildings] ⛔ "${scene}" puts its set-piece on building ${setPieceId}, which is not in the town's building list (hidden in building-overrides.json, or outside the neighborhood?)`)
+
   // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;
   // SlabBuildings multiplies by `uExag` (the ground-displacement uniform) so
   // buildings rise/fall in lockstep with the ground. Uses getElevationRaw (NOT
@@ -814,8 +824,11 @@ export async function bakeBuildings({ look, scene } = {}) {
     for (let i = 0; i < fp.length; i++) centroidY += getElevationRaw(fp[i][0], fp[i][1])
     centroidY /= fp.length
 
+    // The set-piece's building: its record, no geometry (see setPieceId above).
+    const built = b.id !== setPieceId
+
     // Append walls
-    {
+    if (built) {
       const bucket = ensure(walls, wallMat)
       const base = bucket.vCount
       const vAdded = wallPositions.length / 3
@@ -827,7 +840,7 @@ export async function bakeBuildings({ look, scene } = {}) {
       wallRange = [base, vAdded]
       bucket.vCount += vAdded
     }
-    if (foundPositions.length) {
+    if (built && foundPositions.length) {
       const bucket = ensure(founds, 'foundation')
       const base = bucket.vCount
       const vAdded = foundPositions.length / 3
@@ -839,7 +852,7 @@ export async function bakeBuildings({ look, scene } = {}) {
       foundRange = [base, vAdded]
       bucket.vCount += vAdded
     }
-    {
+    if (built) {
       const bucket = ensure(roofs, roofMat)
       const base = bucket.vCount
       const vAdded = roofPositions.length / 3
@@ -871,7 +884,9 @@ export async function bakeBuildings({ look, scene } = {}) {
     // (2026-06-27). `h` === b.size[1] for all real buildings.
     const baseY = fh + h + 0.3
 
-    const ranges = { wall: wallRange, roof: roofRange }
+    const ranges = {}
+    if (wallRange) ranges.wall = wallRange
+    if (roofRange) ranges.roof = roofRange
     if (foundRange) ranges.foundation = foundRange
     buildingIndex.push({
       id: b.id,

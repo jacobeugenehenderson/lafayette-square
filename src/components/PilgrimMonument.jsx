@@ -1,6 +1,7 @@
 /**
  * PilgrimMonument: Provincetown's set-piece renderer. ⛔ Never mounted directly: every app
- * mounts `SetPiece` (src/components/SetPiece.jsx), which passes the declaring `town` in.
+ * mounts `SetPiece` (src/components/SetPiece.jsx), which passes the declaring `town` in, and
+ * the footprint of the building the set-piece stands on (local [x, z], read from the slab).
  *
  * Renders the placeholder mass from the dossier's D/C table
  * (`src/setpieces/pilgrimMonument.js`), or the artist's model once `setPiece.model` names
@@ -27,7 +28,7 @@ import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { getElevationRaw } from '../utils/elevation.js'
 import { onTerrainReload, terrainExag } from '../utils/terrainShader.js'
 import {
-  DOSSIER, FT, placeholderStages, courseBeds, COURSE_SEED, siteFromFootprint, seatOnTerrain, southFacingYaw, lonLatToLocal,
+  DOSSIER, FT, placeholderStages, courseBeds, COURSE_SEED, siteFromFootprint, seatOnTerrain, southFacingYaw,
 } from '../setpieces/pilgrimMonument.js'
 
 // The monument's own stone, a mid granite grey. Colour is not a dossier value; it is the set-piece's own.
@@ -124,8 +125,8 @@ function Model({ path }) {
   return scene ? <primitive object={scene} /> : null
 }
 
-export default function PilgrimMonument({ town, graniteOverride, children } = {}) {
-  if (!town) throw new Error('[PilgrimMonument] ⛔ no town — mount <SetPiece>, which passes it')
+export default function PilgrimMonument({ town, footprint, graniteOverride, children } = {}) {
+  if (!town || !footprint) throw new Error('[PilgrimMonument] ⛔ no town or footprint — mount <SetPiece>, which passes both')
   const sp = town.setPiece
   // The operator's layer (`scene.surfaces.params['pilgrim-granite']`); the lab may override it for a preview.
   const scene = useSceneJson(town.lookId)
@@ -133,9 +134,8 @@ export default function PilgrimMonument({ town, graniteOverride, children } = {}
   const active = sp?.kind === 'pilgrim-monument'
   const site = useMemo(() => {
     if (!active) return null
-    const ring = sp.footprint.map(([lon, lat]) => lonLatToLocal(town.geography, lon, lat))
-    return siteFromFootprint(ring)
-  }, [active, sp])
+    return siteFromFootprint(footprint)
+  }, [active, footprint])
 
   // Terrain re-points on a look switch; re-seat when it does.
   const [terrainGen, setTerrainGen] = useState(0)
@@ -182,3 +182,6 @@ export default function PilgrimMonument({ town, graniteOverride, children } = {}
 
 // The base extent the slot's lighting aims at (SetPiece.jsx): the documented top and the foundation's half-width.
 PilgrimMonument.extent = { topM: DOSSIER.topZ * FT, halfWidthM: DOSSIER.foundationTopSq * FT / 2 }
+// The set-piece's own plan outline for the 2D views, in its base frame. null: it has none of its own (no deck yet), so
+// the 2D outline is its building's footprint, drawn with every other building (OPERATIONS, "A town's set-piece").
+PilgrimMonument.plan = null

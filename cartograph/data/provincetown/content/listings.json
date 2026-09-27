@@ -5,8 +5,8 @@
   "layer": "Layer 2 — listings (business POIs, building_id → slab id, 0..N per building)",
   "generated": "2026-07-07",
   "generator": "bake-content.js",
-  "count": 445,
-  "enriched": 183,
+  "count": 446,
+  "enriched": 184,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -33,7 +33,7 @@
    "source": "osm",
    "osm_type": "playground",
    "source_key": "osm-29800801",
-   "prominence_rank": 1261
+   "prominence_rank": 1262
   },
   {
    "id": "prov-lst-0104",
@@ -58,7 +58,7 @@
    "source": "osm",
    "osm_type": "pitch",
    "source_key": "osm-29844227",
-   "prominence_rank": 909
+   "prominence_rank": 910
   },
   {
    "id": "prov-lst-0019",
@@ -88,7 +88,7 @@
    "osm_type": "resort",
    "enriched": true,
    "source_key": "osm-170530726",
-   "prominence_rank": 420
+   "prominence_rank": 421
   },
   {
    "id": "prov-lst-0101",
@@ -113,7 +113,7 @@
    "source": "osm",
    "osm_type": "park",
    "source_key": "osm-236160458",
-   "prominence_rank": 690
+   "prominence_rank": 691
   },
   {
    "id": "prov-lst-0108",
@@ -138,7 +138,7 @@
    "source": "osm",
    "osm_type": "park",
    "source_key": "osm-570547729",
-   "prominence_rank": 1576
+   "prominence_rank": 1577
   },
   {
    "id": "prov-lst-0111",
@@ -188,7 +188,7 @@
    "source": "osm",
    "osm_type": "garden",
    "source_key": "osm-591672462",
-   "prominence_rank": 776
+   "prominence_rank": 777
   },
   {
    "id": "prov-lst-0115",
@@ -213,7 +213,7 @@
    "source": "osm",
    "osm_type": "park",
    "source_key": "osm-9635872",
-   "prominence_rank": 332
+   "prominence_rank": 333
   },
   {
    "id": "prov-lst-0012",
@@ -238,7 +238,7 @@
    "source": "osm",
    "osm_type": "pharmacy",
    "source_key": "osm-164025005",
-   "prominence_rank": 76
+   "prominence_rank": 77
   },
   {
    "id": "prov-lst-0089",
@@ -269,7 +269,7 @@
    "osm_type": null,
    "enriched": true,
    "source_key": "osm-215752799",
-   "prominence_rank": 258
+   "prominence_rank": 259
   },
   {
    "id": "prov-lst-0102",
@@ -295,12 +295,12 @@
    "osm_type": "place_of_worship",
    "enriched": true,
    "source_key": "osm-2863275",
-   "prominence_rank": 62
+   "prominence_rank": 63
   },
   {
    "id": "prov-lst-0005",
    "building_id": "msbf-427",
-   "name": "Pilgrim Monument & Provincetown Museum",
+   "name": "Provincetown Museum",
    "category": "arts",
    "subcategory": "museum",
    "address": "1 High Pole Hill Road",
@@ -350,31 +350,15 @@
     }
    ],
    "amenities": [
-    "Climb to the top (116 steps and 60 ramps)",
-    "Provincetown Museum at the base",
-    "Last ticket 3 p.m.; last climb 3:15 p.m."
+    "Pilgrim Monument climb on the same ticket",
+    "Last ticket 3 p.m."
    ],
    "tags": [
-    "landmark",
     "museum",
-    "history",
-    "views"
+    "history"
    ],
-   "description": "The granite tower on High Pole Hill that you can see from almost anywhere on the Outer Cape. At 252 feet it is the tallest all-granite structure in the United States, modelled on the Torre del Mangia in Siena, and it marks the Pilgrims' first landfall in 1620 and the signing of the Mayflower Compact in Provincetown Harbor. Visitors climb 116 steps and 60 ramps to the top; the Provincetown Museum at its base tells the town's maritime story.",
-   "history": [
-    {
-     "year": 1620,
-     "event": "The Mayflower anchors in Provincetown Harbor; the Mayflower Compact is signed aboard."
-    },
-    {
-     "year": 1907,
-     "event": "President Theodore Roosevelt lays the cornerstone on August 20."
-    },
-    {
-     "year": 1910,
-     "event": "President William H. Taft dedicates the finished monument on August 5."
-    }
-   ],
+   "description": "The museum at the base of the Pilgrim Monument, telling the town's maritime story. One ticket covers the museum and the climb up the tower.",
+   "history": null,
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
@@ -382,7 +366,7 @@
    "osm_type": "museum",
    "enriched": true,
    "source_key": "osm-164024700",
-   "prominence_rank": 40
+   "prominence_rank": 41
   },
   {
    "id": "prov-lst-0008",
@@ -412,7 +396,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-164024920",
-   "prominence_rank": 115
+   "prominence_rank": 116
   },
   {
    "id": "prov-lst-0382",
@@ -444,7 +428,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-164024928",
-   "prominence_rank": 63
+   "prominence_rank": 64
   },
   {
    "id": "prov-lst-0009",
@@ -469,7 +453,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-164024976",
-   "prominence_rank": 1894
+   "prominence_rank": 1896
   },
   {
    "id": "prov-lst-0010",
@@ -494,7 +478,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-164025002",
-   "prominence_rank": 126
+   "prominence_rank": 127
   },
   {
    "id": "prov-lst-0383",
@@ -544,7 +528,7 @@
    "source": "osm",
    "osm_type": "museum",
    "source_key": "osm-170529473",
-   "prominence_rank": 620
+   "prominence_rank": 621
   },
   {
    "id": "prov-lst-0020",
@@ -574,7 +558,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-170530727",
-   "prominence_rank": 190
+   "prominence_rank": 191
   },
   {
    "id": "prov-lst-0022",
@@ -599,7 +583,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-170530745",
-   "prominence_rank": 52
+   "prominence_rank": 53
   },
   {
    "id": "prov-lst-0023",
@@ -629,7 +613,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-170530751",
-   "prominence_rank": 34
+   "prominence_rank": 35
   },
   {
    "id": "prov-lst-0024",
@@ -654,7 +638,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-170530757",
-   "prominence_rank": 97
+   "prominence_rank": 98
   },
   {
    "id": "prov-lst-0026",
@@ -684,7 +668,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-170530775",
-   "prominence_rank": 214
+   "prominence_rank": 215
   },
   {
    "id": "prov-lst-0030",
@@ -709,7 +693,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-170530795",
-   "prominence_rank": 122
+   "prominence_rank": 123
   },
   {
    "id": "prov-lst-0032",
@@ -734,7 +718,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-170530804",
-   "prominence_rank": 129
+   "prominence_rank": 130
   },
   {
    "id": "prov-lst-0034",
@@ -764,7 +748,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-170629405",
-   "prominence_rank": 139
+   "prominence_rank": 140
   },
   {
    "id": "prov-lst-0035",
@@ -795,7 +779,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215750806",
-   "prominence_rank": 2978
+   "prominence_rank": 2979
   },
   {
    "id": "prov-lst-0036",
@@ -820,7 +804,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215750978",
-   "prominence_rank": 78
+   "prominence_rank": 79
   },
   {
    "id": "prov-lst-0037",
@@ -851,7 +835,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751052",
-   "prominence_rank": 731
+   "prominence_rank": 733
   },
   {
    "id": "prov-lst-0038",
@@ -882,7 +866,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215751182",
-   "prominence_rank": 182
+   "prominence_rank": 183
   },
   {
    "id": "prov-lst-0041",
@@ -907,7 +891,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751309",
-   "prominence_rank": 55
+   "prominence_rank": 56
   },
   {
    "id": "prov-lst-0043",
@@ -958,7 +942,7 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-215751388",
-   "prominence_rank": 83
+   "prominence_rank": 84
   },
   {
    "id": "prov-lst-0044",
@@ -983,7 +967,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751408",
-   "prominence_rank": 193
+   "prominence_rank": 194
   },
   {
    "id": "prov-lst-0045",
@@ -1008,7 +992,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751419",
-   "prominence_rank": 219
+   "prominence_rank": 220
   },
   {
    "id": "prov-lst-0046",
@@ -1115,7 +1099,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-215751481",
-   "prominence_rank": 1235
+   "prominence_rank": 1236
   },
   {
    "id": "prov-lst-0050",
@@ -1140,7 +1124,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751535",
-   "prominence_rank": 203
+   "prominence_rank": 204
   },
   {
    "id": "prov-lst-0052",
@@ -1174,7 +1158,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751612",
-   "prominence_rank": 103
+   "prominence_rank": 104
   },
   {
    "id": "prov-lst-0053",
@@ -1200,7 +1184,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215751621",
-   "prominence_rank": 102
+   "prominence_rank": 103
   },
   {
    "id": "prov-lst-0054",
@@ -1225,7 +1209,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751673",
-   "prominence_rank": 209
+   "prominence_rank": 210
   },
   {
    "id": "prov-lst-0056",
@@ -1255,7 +1239,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751742",
-   "prominence_rank": 98
+   "prominence_rank": 99
   },
   {
    "id": "prov-lst-0057",
@@ -1284,7 +1268,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751770",
-   "prominence_rank": 2100
+   "prominence_rank": 2101
   },
   {
    "id": "prov-lst-0058",
@@ -1309,7 +1293,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751779",
-   "prominence_rank": 85
+   "prominence_rank": 86
   },
   {
    "id": "prov-lst-0059",
@@ -1334,7 +1318,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751788",
-   "prominence_rank": 105
+   "prominence_rank": 106
   },
   {
    "id": "prov-lst-0060",
@@ -1359,7 +1343,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751789",
-   "prominence_rank": 117
+   "prominence_rank": 118
   },
   {
    "id": "prov-lst-0063",
@@ -1384,7 +1368,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751862",
-   "prominence_rank": 2170
+   "prominence_rank": 2171
   },
   {
    "id": "prov-lst-0064",
@@ -1413,7 +1397,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751865",
-   "prominence_rank": 128
+   "prominence_rank": 129
   },
   {
    "id": "prov-lst-0066",
@@ -1468,7 +1452,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215751940",
-   "prominence_rank": 82
+   "prominence_rank": 83
   },
   {
    "id": "prov-lst-0068",
@@ -1493,7 +1477,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215751953",
-   "prominence_rank": 96
+   "prominence_rank": 97
   },
   {
    "id": "prov-lst-0072",
@@ -1518,7 +1502,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752273",
-   "prominence_rank": 91
+   "prominence_rank": 92
   },
   {
    "id": "prov-lst-0073",
@@ -1543,7 +1527,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752307",
-   "prominence_rank": 1764
+   "prominence_rank": 1765
   },
   {
    "id": "prov-lst-0074",
@@ -1575,7 +1559,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-215752353",
-   "prominence_rank": 30
+   "prominence_rank": 31
   },
   {
    "id": "prov-lst-0075",
@@ -1608,7 +1592,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215752385",
-   "prominence_rank": 24
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0076",
@@ -1633,7 +1617,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752395",
-   "prominence_rank": 109
+   "prominence_rank": 110
   },
   {
    "id": "prov-lst-0078",
@@ -1658,7 +1642,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752438",
-   "prominence_rank": 99
+   "prominence_rank": 100
   },
   {
    "id": "prov-lst-0079",
@@ -1687,7 +1671,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215752448",
-   "prominence_rank": 112
+   "prominence_rank": 113
   },
   {
    "id": "prov-lst-0080",
@@ -1712,7 +1696,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752474",
-   "prominence_rank": 54
+   "prominence_rank": 55
   },
   {
    "id": "prov-lst-0081",
@@ -1742,7 +1726,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215752482",
-   "prominence_rank": 80
+   "prominence_rank": 81
   },
   {
    "id": "prov-lst-0082",
@@ -1767,7 +1751,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752578",
-   "prominence_rank": 88
+   "prominence_rank": 89
   },
   {
    "id": "prov-lst-0085",
@@ -1792,7 +1776,7 @@
    "source": "osm",
    "osm_type": "motel",
    "source_key": "osm-215752685",
-   "prominence_rank": 184
+   "prominence_rank": 185
   },
   {
    "id": "prov-lst-0087",
@@ -1822,7 +1806,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215752727",
-   "prominence_rank": 84
+   "prominence_rank": 85
   },
   {
    "id": "prov-lst-0088",
@@ -1847,7 +1831,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752785",
-   "prominence_rank": 397
+   "prominence_rank": 398
   },
   {
    "id": "prov-lst-0091",
@@ -1872,7 +1856,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-215752908",
-   "prominence_rank": 1112
+   "prominence_rank": 1114
   },
   {
    "id": "prov-lst-0388",
@@ -1904,7 +1888,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215753596",
-   "prominence_rank": 183
+   "prominence_rank": 184
   },
   {
    "id": "prov-lst-0099",
@@ -1934,7 +1918,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-215753947",
-   "prominence_rank": 178
+   "prominence_rank": 179
   },
   {
    "id": "prov-lst-0100",
@@ -1959,7 +1943,7 @@
    "source": "osm",
    "osm_type": "motel",
    "source_key": "osm-215754132",
-   "prominence_rank": 185
+   "prominence_rank": 186
   },
   {
    "id": "prov-lst-0107",
@@ -1984,7 +1968,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-509311708",
-   "prominence_rank": 262
+   "prominence_rank": 263
   },
   {
    "id": "prov-lst-0114",
@@ -2014,7 +1998,7 @@
    "osm_type": "motel",
    "enriched": true,
    "source_key": "osm-6102879",
-   "prominence_rank": 181
+   "prominence_rank": 182
   },
   {
    "id": "prov-lst-0001",
@@ -2046,7 +2030,7 @@
    "osm_type": "motel",
    "enriched": true,
    "source_key": "osm-16163089",
-   "prominence_rank": 322
+   "prominence_rank": 323
   },
   {
    "id": "prov-lst-0004",
@@ -2116,7 +2100,7 @@
    "osm_type": "townhall",
    "enriched": true,
    "source_key": "osm-164023890",
-   "prominence_rank": 11
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0006",
@@ -2194,7 +2178,7 @@
    "osm_type": "place_of_worship",
    "enriched": true,
    "source_key": "osm-164024901",
-   "prominence_rank": 488
+   "prominence_rank": 489
   },
   {
    "id": "prov-lst-0007",
@@ -2255,7 +2239,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-164024910",
-   "prominence_rank": 840
+   "prominence_rank": 841
   },
   {
    "id": "prov-lst-0013",
@@ -2280,7 +2264,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-164025006",
-   "prominence_rank": 260
+   "prominence_rank": 261
   },
   {
    "id": "prov-lst-0014",
@@ -2323,7 +2307,7 @@
    "osm_type": "place_of_worship",
    "enriched": true,
    "source_key": "osm-170523643",
-   "prominence_rank": 223
+   "prominence_rank": 224
   },
   {
    "id": "prov-lst-0384",
@@ -2348,7 +2332,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-170523645",
-   "prominence_rank": 213
+   "prominence_rank": 214
   },
   {
    "id": "prov-lst-0016",
@@ -2373,7 +2357,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-170528584",
-   "prominence_rank": 81
+   "prominence_rank": 82
   },
   {
    "id": "prov-lst-0018",
@@ -2398,7 +2382,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-170529575",
-   "prominence_rank": 2895
+   "prominence_rank": 2896
   },
   {
    "id": "prov-lst-0025",
@@ -2423,7 +2407,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-170530770",
-   "prominence_rank": 45
+   "prominence_rank": 46
   },
   {
    "id": "prov-lst-0027",
@@ -2448,7 +2432,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-170530779",
-   "prominence_rank": 742
+   "prominence_rank": 744
   },
   {
    "id": "prov-lst-0028",
@@ -2499,7 +2483,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-170530789",
-   "prominence_rank": 250
+   "prominence_rank": 252
   },
   {
    "id": "prov-lst-0033",
@@ -2524,7 +2508,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-170530823",
-   "prominence_rank": 45
+   "prominence_rank": 46
   },
   {
    "id": "prov-lst-0039",
@@ -2549,7 +2533,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-215751199",
-   "prominence_rank": 597
+   "prominence_rank": 598
   },
   {
    "id": "prov-lst-0040",
@@ -2584,7 +2568,7 @@
    "osm_type": "place_of_worship",
    "enriched": true,
    "source_key": "osm-215751281",
-   "prominence_rank": 171
+   "prominence_rank": 172
   },
   {
    "id": "prov-lst-0051",
@@ -2609,7 +2593,7 @@
    "source": "osm",
    "osm_type": "dentist",
    "source_key": "osm-215751548",
-   "prominence_rank": 247
+   "prominence_rank": 248
   },
   {
    "id": "prov-lst-0055",
@@ -2634,7 +2618,7 @@
    "source": "osm",
    "osm_type": "clinic",
    "source_key": "osm-215751724",
-   "prominence_rank": 113
+   "prominence_rank": 114
   },
   {
    "id": "prov-lst-0061",
@@ -2659,7 +2643,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-215751808",
-   "prominence_rank": 222
+   "prominence_rank": 223
   },
   {
    "id": "prov-lst-0062",
@@ -2747,7 +2731,7 @@
    "osm_type": "arts_centre",
    "enriched": true,
    "source_key": "osm-215751814",
-   "prominence_rank": 14
+   "prominence_rank": 15
   },
   {
    "id": "prov-lst-0065",
@@ -2772,7 +2756,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-215751938",
-   "prominence_rank": 266
+   "prominence_rank": 267
   },
   {
    "id": "prov-lst-0069",
@@ -2823,7 +2807,7 @@
    "osm_type": "bank",
    "enriched": true,
    "source_key": "osm-215751966",
-   "prominence_rank": 137
+   "prominence_rank": 138
   },
   {
    "id": "prov-lst-0084",
@@ -2862,7 +2846,7 @@
    "osm_type": "community_centre",
    "enriched": true,
    "source_key": "osm-215752660",
-   "prominence_rank": 31
+   "prominence_rank": 32
   },
   {
    "id": "prov-lst-0086",
@@ -2887,7 +2871,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-215752700",
-   "prominence_rank": 1343
+   "prominence_rank": 1344
   },
   {
    "id": "prov-lst-0094",
@@ -2948,7 +2932,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-215753603",
-   "prominence_rank": 169
+   "prominence_rank": 170
   },
   {
    "id": "prov-lst-0096",
@@ -2973,7 +2957,7 @@
    "source": "osm",
    "osm_type": "bank",
    "source_key": "osm-215753628",
-   "prominence_rank": 94
+   "prominence_rank": 95
   },
   {
    "id": "prov-lst-0098",
@@ -2998,7 +2982,7 @@
    "source": "osm",
    "osm_type": "fuel",
    "source_key": "osm-215753896",
-   "prominence_rank": 622
+   "prominence_rank": 623
   },
   {
    "id": "prov-lst-0105",
@@ -3023,7 +3007,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-416800027",
-   "prominence_rank": 1112
+   "prominence_rank": 1114
   },
   {
    "id": "prov-lst-0106",
@@ -3048,7 +3032,7 @@
    "source": "osm",
    "osm_type": "fuel",
    "source_key": "osm-508044028",
-   "prominence_rank": 268
+   "prominence_rank": 269
   },
   {
    "id": "prov-lst-0109",
@@ -3073,7 +3057,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-591096585",
-   "prominence_rank": 186
+   "prominence_rank": 187
   },
   {
    "id": "prov-lst-0110",
@@ -3098,7 +3082,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-591244813",
-   "prominence_rank": 1568
+   "prominence_rank": 1569
   },
   {
    "id": "prov-lst-0113",
@@ -3123,7 +3107,7 @@
    "source": "osm",
    "osm_type": "parking",
    "source_key": "osm-595893371",
-   "prominence_rank": 266
+   "prominence_rank": 267
   },
   {
    "id": "prov-lst-0381",
@@ -3148,7 +3132,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-1302889864",
-   "prominence_rank": 200
+   "prominence_rank": 201
   },
   {
    "id": "prov-lst-0011",
@@ -3173,7 +3157,7 @@
    "source": "osm",
    "osm_type": "convenience",
    "source_key": "osm-164025003",
-   "prominence_rank": 260
+   "prominence_rank": 261
   },
   {
    "id": "prov-lst-0015",
@@ -3233,7 +3217,7 @@
    "osm_type": "supermarket",
    "enriched": true,
    "source_key": "osm-170523644",
-   "prominence_rank": 17
+   "prominence_rank": 18
   },
   {
    "id": "prov-lst-0021",
@@ -3264,7 +3248,7 @@
    "osm_type": "books",
    "enriched": true,
    "source_key": "osm-170530729",
-   "prominence_rank": 121
+   "prominence_rank": 122
   },
   {
    "id": "prov-lst-0029",
@@ -3289,7 +3273,7 @@
    "source": "osm",
    "osm_type": "art",
    "source_key": "osm-170530793",
-   "prominence_rank": 79
+   "prominence_rank": 80
   },
   {
    "id": "prov-lst-0031",
@@ -3314,7 +3298,7 @@
    "source": "osm",
    "osm_type": "houseware",
    "source_key": "osm-170530803",
-   "prominence_rank": 159
+   "prominence_rank": 160
   },
   {
    "id": "prov-lst-0048",
@@ -3339,7 +3323,7 @@
    "source": "osm",
    "osm_type": "interior_decoration",
    "source_key": "osm-215751518",
-   "prominence_rank": 217
+   "prominence_rank": 218
   },
   {
    "id": "prov-lst-0049",
@@ -3364,7 +3348,7 @@
    "source": "osm",
    "osm_type": "funeral_directors",
    "source_key": "osm-215751521",
-   "prominence_rank": 148
+   "prominence_rank": 149
   },
   {
    "id": "prov-lst-0387",
@@ -3389,7 +3373,7 @@
    "source": "osm",
    "osm_type": "hammock",
    "source_key": "osm-215751679",
-   "prominence_rank": 272
+   "prominence_rank": 273
   },
   {
    "id": "prov-lst-0067",
@@ -3414,7 +3398,7 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-215751947",
-   "prominence_rank": 287
+   "prominence_rank": 288
   },
   {
    "id": "prov-lst-0071",
@@ -3440,7 +3424,7 @@
    "osm_type": "interior_decoration",
    "enriched": true,
    "source_key": "osm-215752170",
-   "prominence_rank": 177
+   "prominence_rank": 178
   },
   {
    "id": "prov-lst-0083",
@@ -3465,7 +3449,7 @@
    "source": "osm",
    "osm_type": "dry_cleaning",
    "source_key": "osm-215752581",
-   "prominence_rank": 65
+   "prominence_rank": 66
   },
   {
    "id": "prov-lst-0090",
@@ -3520,7 +3504,7 @@
    "osm_type": "bicycle",
    "enriched": true,
    "source_key": "osm-215752813",
-   "prominence_rank": 243
+   "prominence_rank": 244
   },
   {
    "id": "prov-lst-0092",
@@ -3545,7 +3529,7 @@
    "source": "osm",
    "osm_type": "car_repair",
    "source_key": "osm-215753255",
-   "prominence_rank": 226
+   "prominence_rank": 227
   },
   {
    "id": "prov-lst-0093",
@@ -3570,7 +3554,7 @@
    "source": "osm",
    "osm_type": "bicycle",
    "source_key": "osm-215753467",
-   "prominence_rank": 238
+   "prominence_rank": 239
   },
   {
    "id": "prov-lst-0095",
@@ -3595,7 +3579,7 @@
    "source": "osm",
    "osm_type": "storage_rental",
    "source_key": "osm-215753607",
-   "prominence_rank": 235
+   "prominence_rank": 236
   },
   {
    "id": "prov-lst-0389",
@@ -3620,7 +3604,7 @@
    "source": "osm",
    "osm_type": "alcohol",
    "source_key": "osm-215753776",
-   "prominence_rank": 120
+   "prominence_rank": 121
   },
   {
    "id": "prov-lst-0097",
@@ -3645,7 +3629,7 @@
    "source": "osm",
    "osm_type": "convenience",
    "source_key": "osm-215753807",
-   "prominence_rank": 89
+   "prominence_rank": 90
   },
   {
    "id": "prov-lst-0390",
@@ -3670,7 +3654,7 @@
    "source": "osm",
    "osm_type": "mall",
    "source_key": "osm-288247324",
-   "prominence_rank": 5
+   "prominence_rank": 6
   },
   {
    "id": "prov-lst-0391",
@@ -3695,7 +3679,7 @@
    "source": "osm",
    "osm_type": "yes",
    "source_key": "osm-508069992",
-   "prominence_rank": 257
+   "prominence_rank": 258
   },
   {
    "id": "prov-lst-0156",
@@ -3721,7 +3705,7 @@
    "osm_type": "theatre",
    "enriched": true,
    "source_key": "osm-n367779475",
-   "prominence_rank": 233
+   "prominence_rank": 234
   },
   {
    "id": "prov-lst-0333",
@@ -3747,7 +3731,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n764434433",
-   "prominence_rank": 30
+   "prominence_rank": 31
   },
   {
    "id": "prov-lst-0334",
@@ -3772,7 +3756,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n764434466",
-   "prominence_rank": 41
+   "prominence_rank": 42
   },
   {
    "id": "prov-lst-0335",
@@ -3797,7 +3781,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n764434471",
-   "prominence_rank": 107
+   "prominence_rank": 108
   },
   {
    "id": "prov-lst-0336",
@@ -3822,7 +3806,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n764434476",
-   "prominence_rank": 69
+   "prominence_rank": 70
   },
   {
    "id": "prov-lst-0337",
@@ -3847,7 +3831,7 @@
    "source": "osm",
    "osm_type": "alcohol",
    "source_key": "osm-n764434487",
-   "prominence_rank": 11
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0338",
@@ -3872,7 +3856,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n764434492",
-   "prominence_rank": 177
+   "prominence_rank": 178
   },
   {
    "id": "prov-lst-0339",
@@ -3897,7 +3881,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n764434495",
-   "prominence_rank": 13
+   "prominence_rank": 14
   },
   {
    "id": "prov-lst-0340",
@@ -3923,7 +3907,7 @@
    "osm_type": "erotic",
    "enriched": true,
    "source_key": "osm-n764434498",
-   "prominence_rank": 32
+   "prominence_rank": 33
   },
   {
    "id": "prov-lst-0341",
@@ -3978,7 +3962,7 @@
    "osm_type": "greengrocer",
    "enriched": true,
    "source_key": "osm-n850959412",
-   "prominence_rank": 239
+   "prominence_rank": 240
   },
   {
    "id": "prov-lst-0342",
@@ -4004,7 +3988,7 @@
    "osm_type": "doityourself",
    "enriched": true,
    "source_key": "osm-n851633152",
-   "prominence_rank": 19
+   "prominence_rank": 20
   },
   {
    "id": "prov-lst-0343",
@@ -4059,7 +4043,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n855546122",
-   "prominence_rank": 156
+   "prominence_rank": 157
   },
   {
    "id": "prov-lst-0344",
@@ -4085,7 +4069,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n855550083",
-   "prominence_rank": 197
+   "prominence_rank": 198
   },
   {
    "id": "prov-lst-0141",
@@ -4110,7 +4094,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-n1777319460",
-   "prominence_rank": 61
+   "prominence_rank": 62
   },
   {
    "id": "prov-lst-0397",
@@ -4139,7 +4123,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n1963938662",
-   "prominence_rank": 274
+   "prominence_rank": 275
   },
   {
    "id": "prov-lst-0398",
@@ -4164,7 +4148,7 @@
    "source": "osm",
    "osm_type": "bakery",
    "source_key": "osm-n1963938699",
-   "prominence_rank": 5
+   "prominence_rank": 6
   },
   {
    "id": "prov-lst-0142",
@@ -4224,7 +4208,7 @@
    "osm_type": "books",
    "enriched": true,
    "source_key": "osm-n2940775553",
-   "prominence_rank": 135
+   "prominence_rank": 136
   },
   {
    "id": "prov-lst-0143",
@@ -4249,7 +4233,7 @@
    "source": "osm",
    "osm_type": "food",
    "source_key": "osm-n2940775555",
-   "prominence_rank": 22
+   "prominence_rank": 23
   },
   {
    "id": "prov-lst-0144",
@@ -4275,7 +4259,7 @@
    "osm_type": "pet",
    "enriched": true,
    "source_key": "osm-n2940775556",
-   "prominence_rank": 25
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0145",
@@ -4335,7 +4319,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n2940775557",
-   "prominence_rank": 25
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0146",
@@ -4402,7 +4386,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n2940775558",
-   "prominence_rank": 13
+   "prominence_rank": 14
   },
   {
    "id": "prov-lst-0147",
@@ -4433,7 +4417,7 @@
    "osm_type": "confectionery",
    "enriched": true,
    "source_key": "osm-n2941234384",
-   "prominence_rank": 176
+   "prominence_rank": 177
   },
   {
    "id": "prov-lst-0148",
@@ -4458,7 +4442,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n3012615691",
-   "prominence_rank": 139
+   "prominence_rank": 140
   },
   {
    "id": "prov-lst-0149",
@@ -4483,7 +4467,7 @@
    "source": "osm",
    "osm_type": "art",
    "source_key": "osm-n3019186402",
-   "prominence_rank": 174
+   "prominence_rank": 175
   },
   {
    "id": "prov-lst-0150",
@@ -4508,7 +4492,7 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-n3019186404",
-   "prominence_rank": 64
+   "prominence_rank": 65
   },
   {
    "id": "prov-lst-0151",
@@ -4533,7 +4517,7 @@
    "source": "osm",
    "osm_type": "toys",
    "source_key": "osm-n3019186406",
-   "prominence_rank": 13
+   "prominence_rank": 14
   },
   {
    "id": "prov-lst-0152",
@@ -4558,7 +4542,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n3019198174",
-   "prominence_rank": 176
+   "prominence_rank": 177
   },
   {
    "id": "prov-lst-0153",
@@ -4613,7 +4597,7 @@
    "osm_type": "confectionery",
    "enriched": true,
    "source_key": "osm-n3019268207",
-   "prominence_rank": 64
+   "prominence_rank": 65
   },
   {
    "id": "prov-lst-0154",
@@ -4660,7 +4644,7 @@
    "osm_type": "studio",
    "enriched": true,
    "source_key": "osm-n3430898491",
-   "prominence_rank": 27
+   "prominence_rank": 28
   },
   {
    "id": "prov-lst-0400",
@@ -4735,7 +4719,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n3637561056",
-   "prominence_rank": 64
+   "prominence_rank": 65
   },
   {
    "id": "prov-lst-0157",
@@ -4760,7 +4744,7 @@
    "source": "osm",
    "osm_type": "motel",
    "source_key": "osm-n3959238387",
-   "prominence_rank": 58
+   "prominence_rank": 59
   },
   {
    "id": "prov-lst-0158",
@@ -4786,7 +4770,7 @@
    "osm_type": "convenience",
    "enriched": true,
    "source_key": "osm-n4174474406",
-   "prominence_rank": 179
+   "prominence_rank": 180
   },
   {
    "id": "prov-lst-0159",
@@ -4812,7 +4796,7 @@
    "osm_type": "association",
    "enriched": true,
    "source_key": "osm-n4176404989",
-   "prominence_rank": 136
+   "prominence_rank": 137
   },
   {
    "id": "prov-lst-0160",
@@ -4838,7 +4822,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4192309619",
-   "prominence_rank": 267
+   "prominence_rank": 268
   },
   {
    "id": "prov-lst-0161",
@@ -4863,7 +4847,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4441181663",
-   "prominence_rank": 28
+   "prominence_rank": 29
   },
   {
    "id": "prov-lst-0162",
@@ -4888,7 +4872,7 @@
    "source": "osm",
    "osm_type": "jewelry",
    "source_key": "osm-n4541109127",
-   "prominence_rank": 72
+   "prominence_rank": 73
   },
   {
    "id": "prov-lst-0163",
@@ -4918,7 +4902,7 @@
    "osm_type": "hotel",
    "enriched": true,
    "source_key": "osm-n4646549478",
-   "prominence_rank": 48
+   "prominence_rank": 49
   },
   {
    "id": "prov-lst-0164",
@@ -4944,7 +4928,7 @@
    "osm_type": "dentist",
    "enriched": true,
    "source_key": "osm-n4902760092",
-   "prominence_rank": 37
+   "prominence_rank": 38
   },
   {
    "id": "prov-lst-0165",
@@ -4969,7 +4953,7 @@
    "source": "osm",
    "osm_type": "pub",
    "source_key": "osm-n4902768500",
-   "prominence_rank": 60
+   "prominence_rank": 61
   },
   {
    "id": "prov-lst-0166",
@@ -4994,7 +4978,7 @@
    "source": "osm",
    "osm_type": "doctors",
    "source_key": "osm-n4902812042",
-   "prominence_rank": 248
+   "prominence_rank": 249
   },
   {
    "id": "prov-lst-0167",
@@ -5019,7 +5003,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-n4904027834",
-   "prominence_rank": 115
+   "prominence_rank": 116
   },
   {
    "id": "prov-lst-0168",
@@ -5044,7 +5028,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-n4904031767",
-   "prominence_rank": 24
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0169",
@@ -5102,7 +5086,7 @@
    "osm_type": "bar",
    "enriched": true,
    "source_key": "osm-n4904032649",
-   "prominence_rank": 24
+   "prominence_rank": 25
   },
   {
    "id": "prov-lst-0170",
@@ -5133,7 +5117,7 @@
    "osm_type": "bar",
    "enriched": true,
    "source_key": "osm-n4904036631",
-   "prominence_rank": 115
+   "prominence_rank": 116
   },
   {
    "id": "prov-lst-0171",
@@ -5188,7 +5172,7 @@
    "osm_type": "cafe",
    "enriched": true,
    "source_key": "osm-n4904043104",
-   "prominence_rank": 57
+   "prominence_rank": 58
   },
   {
    "id": "prov-lst-0172",
@@ -5213,7 +5197,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904045467",
-   "prominence_rank": 286
+   "prominence_rank": 287
   },
   {
    "id": "prov-lst-0173",
@@ -5239,7 +5223,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4904289254",
-   "prominence_rank": 29
+   "prominence_rank": 30
   },
   {
    "id": "prov-lst-0174",
@@ -5264,7 +5248,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n4904290480",
-   "prominence_rank": 282
+   "prominence_rank": 283
   },
   {
    "id": "prov-lst-0175",
@@ -5289,7 +5273,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n4904294068",
-   "prominence_rank": 6
+   "prominence_rank": 7
   },
   {
    "id": "prov-lst-0176",
@@ -5314,7 +5298,7 @@
    "source": "osm",
    "osm_type": "interior_decoration",
    "source_key": "osm-n4904297222",
-   "prominence_rank": 44
+   "prominence_rank": 45
   },
   {
    "id": "prov-lst-0177",
@@ -5340,7 +5324,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4904300644",
-   "prominence_rank": 252
+   "prominence_rank": 253
   },
   {
    "id": "prov-lst-0402",
@@ -5371,7 +5355,7 @@
    "osm_type": "cinema",
    "enriched": true,
    "source_key": "osm-n4904303750",
-   "prominence_rank": 5
+   "prominence_rank": 6
   },
   {
    "id": "prov-lst-0403",
@@ -5396,7 +5380,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n4904306563",
-   "prominence_rank": 254
+   "prominence_rank": 255
   },
   {
    "id": "prov-lst-0404",
@@ -5421,7 +5405,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n4904306587",
-   "prominence_rank": 16
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0405",
@@ -5446,7 +5430,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904308521",
-   "prominence_rank": 16
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0178",
@@ -5501,7 +5485,7 @@
    "osm_type": "convenience",
    "enriched": true,
    "source_key": "osm-n4904310255",
-   "prominence_rank": 198
+   "prominence_rank": 199
   },
   {
    "id": "prov-lst-0179",
@@ -5526,7 +5510,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904314941",
-   "prominence_rank": 11
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0180",
@@ -5551,7 +5535,7 @@
    "source": "osm",
    "osm_type": "ice_cream",
    "source_key": "osm-n4904316975",
-   "prominence_rank": 11
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0181",
@@ -5576,7 +5560,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904317722",
-   "prominence_rank": 41
+   "prominence_rank": 42
   },
   {
    "id": "prov-lst-0182",
@@ -5601,7 +5585,7 @@
    "source": "osm",
    "osm_type": "copyshop",
    "source_key": "osm-n4904319274",
-   "prominence_rank": 18
+   "prominence_rank": 19
   },
   {
    "id": "prov-lst-0183",
@@ -5631,7 +5615,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4904324434",
-   "prominence_rank": 12
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0184",
@@ -5657,7 +5641,7 @@
    "osm_type": "gift",
    "enriched": true,
    "source_key": "osm-n4904330519",
-   "prominence_rank": 150
+   "prominence_rank": 151
   },
   {
    "id": "prov-lst-0185",
@@ -5682,7 +5666,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904343282",
-   "prominence_rank": 10
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0186",
@@ -5707,7 +5691,7 @@
    "source": "osm",
    "osm_type": "interior_decoration",
    "source_key": "osm-n4904347324",
-   "prominence_rank": 34
+   "prominence_rank": 35
   },
   {
    "id": "prov-lst-0187",
@@ -5733,7 +5717,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n4904352514",
-   "prominence_rank": 34
+   "prominence_rank": 35
   },
   {
    "id": "prov-lst-0188",
@@ -5758,7 +5742,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n4904358273",
-   "prominence_rank": 21
+   "prominence_rank": 22
   },
   {
    "id": "prov-lst-0189",
@@ -5784,7 +5768,7 @@
    "osm_type": "studio",
    "enriched": true,
    "source_key": "osm-n4904969347",
-   "prominence_rank": 10
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0190",
@@ -5809,7 +5793,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904971996",
-   "prominence_rank": 35
+   "prominence_rank": 36
   },
   {
    "id": "prov-lst-0191",
@@ -5834,7 +5818,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904972230",
-   "prominence_rank": 175
+   "prominence_rank": 176
   },
   {
    "id": "prov-lst-0192",
@@ -5859,7 +5843,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904973004",
-   "prominence_rank": 53
+   "prominence_rank": 54
   },
   {
    "id": "prov-lst-0193",
@@ -5884,7 +5868,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904973005",
-   "prominence_rank": 53
+   "prominence_rank": 54
   },
   {
    "id": "prov-lst-0194",
@@ -5910,7 +5894,7 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-n4904973893",
-   "prominence_rank": 86
+   "prominence_rank": 87
   },
   {
    "id": "prov-lst-0195",
@@ -5935,7 +5919,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904974485",
-   "prominence_rank": 59
+   "prominence_rank": 60
   },
   {
    "id": "prov-lst-0196",
@@ -5990,7 +5974,7 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-n4904975051",
-   "prominence_rank": 59
+   "prominence_rank": 60
   },
   {
    "id": "prov-lst-0197",
@@ -6015,7 +5999,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904975621",
-   "prominence_rank": 145
+   "prominence_rank": 146
   },
   {
    "id": "prov-lst-0198",
@@ -6040,7 +6024,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904978044",
-   "prominence_rank": 52
+   "prominence_rank": 53
   },
   {
    "id": "prov-lst-0199",
@@ -6065,7 +6049,7 @@
    "source": "osm",
    "osm_type": "ice_cream",
    "source_key": "osm-n4904978667",
-   "prominence_rank": 277
+   "prominence_rank": 278
   },
   {
    "id": "prov-lst-0200",
@@ -6090,7 +6074,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n4904978670",
-   "prominence_rank": 263
+   "prominence_rank": 264
   },
   {
    "id": "prov-lst-0201",
@@ -6115,7 +6099,7 @@
    "source": "osm",
    "osm_type": "interior_decoration",
    "source_key": "osm-n4904979080",
-   "prominence_rank": 273
+   "prominence_rank": 274
   },
   {
    "id": "prov-lst-0202",
@@ -6141,7 +6125,7 @@
    "osm_type": "houseware",
    "enriched": true,
    "source_key": "osm-n4904979453",
-   "prominence_rank": 79
+   "prominence_rank": 80
   },
   {
    "id": "prov-lst-0203",
@@ -6166,7 +6150,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4904979873",
-   "prominence_rank": 205
+   "prominence_rank": 206
   },
   {
    "id": "prov-lst-0204",
@@ -6191,7 +6175,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n4904979905",
-   "prominence_rank": 154
+   "prominence_rank": 155
   },
   {
    "id": "prov-lst-0205",
@@ -6217,7 +6201,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n4904981741",
-   "prominence_rank": 246
+   "prominence_rank": 247
   },
   {
    "id": "prov-lst-0206",
@@ -6242,7 +6226,7 @@
    "source": "osm",
    "osm_type": "pharmacy",
    "source_key": "osm-n4905038291",
-   "prominence_rank": 113
+   "prominence_rank": 114
   },
   {
    "id": "prov-lst-0207",
@@ -6267,7 +6251,7 @@
    "source": "osm",
    "osm_type": "dentist",
    "source_key": "osm-n4905039065",
-   "prominence_rank": 113
+   "prominence_rank": 114
   },
   {
    "id": "prov-lst-0208",
@@ -6292,7 +6276,7 @@
    "source": "osm",
    "osm_type": "garden_centre",
    "source_key": "osm-n4905040844",
-   "prominence_rank": 309
+   "prominence_rank": 310
   },
   {
    "id": "prov-lst-0209",
@@ -6318,7 +6302,7 @@
    "osm_type": "alcohol",
    "enriched": true,
    "source_key": "osm-n4905042093",
-   "prominence_rank": 240
+   "prominence_rank": 241
   },
   {
    "id": "prov-lst-0210",
@@ -6343,7 +6327,7 @@
    "source": "osm",
    "osm_type": "pet",
    "source_key": "osm-n4905045066",
-   "prominence_rank": 280
+   "prominence_rank": 281
   },
   {
    "id": "prov-lst-0211",
@@ -6368,7 +6352,7 @@
    "source": "osm",
    "osm_type": "toys",
    "source_key": "osm-n4905048252",
-   "prominence_rank": 111
+   "prominence_rank": 112
   },
   {
    "id": "prov-lst-0212",
@@ -6394,7 +6378,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n4905048367",
-   "prominence_rank": 12
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0406",
@@ -6420,7 +6404,7 @@
    "osm_type": "bar",
    "enriched": true,
    "source_key": "osm-n4905048996",
-   "prominence_rank": 20
+   "prominence_rank": 21
   },
   {
    "id": "prov-lst-0213",
@@ -6445,7 +6429,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n4905050161",
-   "prominence_rank": 133
+   "prominence_rank": 134
   },
   {
    "id": "prov-lst-0214",
@@ -6471,7 +6455,7 @@
    "osm_type": "bakery",
    "enriched": true,
    "source_key": "osm-n4905050162",
-   "prominence_rank": 87
+   "prominence_rank": 88
   },
   {
    "id": "prov-lst-0215",
@@ -6526,7 +6510,7 @@
    "osm_type": "interior_decoration",
    "enriched": true,
    "source_key": "osm-n4905050990",
-   "prominence_rank": 163
+   "prominence_rank": 164
   },
   {
    "id": "prov-lst-0216",
@@ -6551,7 +6535,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4905051109",
-   "prominence_rank": 87
+   "prominence_rank": 88
   },
   {
    "id": "prov-lst-0217",
@@ -6576,7 +6560,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n4905052451",
-   "prominence_rank": 104
+   "prominence_rank": 105
   },
   {
    "id": "prov-lst-0218",
@@ -6607,7 +6591,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n4905054766",
-   "prominence_rank": 27
+   "prominence_rank": 28
   },
   {
    "id": "prov-lst-0219",
@@ -6632,7 +6616,7 @@
    "source": "osm",
    "osm_type": "kindergarten",
    "source_key": "osm-n4905055003",
-   "prominence_rank": 31
+   "prominence_rank": 32
   },
   {
    "id": "prov-lst-0220",
@@ -6657,7 +6641,7 @@
    "source": "osm",
    "osm_type": "pharmacy",
    "source_key": "osm-n4905055605",
-   "prominence_rank": 17
+   "prominence_rank": 18
   },
   {
    "id": "prov-lst-0221",
@@ -6682,7 +6666,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n4905056795",
-   "prominence_rank": 172
+   "prominence_rank": 173
   },
   {
    "id": "prov-lst-0407",
@@ -6707,7 +6691,7 @@
    "source": "osm",
    "osm_type": "laundry",
    "source_key": "osm-n4905057091",
-   "prominence_rank": 120
+   "prominence_rank": 121
   },
   {
    "id": "prov-lst-0222",
@@ -6732,7 +6716,7 @@
    "source": "osm",
    "osm_type": "bicycle",
    "source_key": "osm-n4905058172",
-   "prominence_rank": 172
+   "prominence_rank": 173
   },
   {
    "id": "prov-lst-0223",
@@ -6757,7 +6741,7 @@
    "source": "osm",
    "osm_type": "alcohol",
    "source_key": "osm-n4905060505",
-   "prominence_rank": 258
+   "prominence_rank": 259
   },
   {
    "id": "prov-lst-0224",
@@ -6782,7 +6766,7 @@
    "source": "osm",
    "osm_type": "bakery",
    "source_key": "osm-n4905060638",
-   "prominence_rank": 26
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0225",
@@ -6808,7 +6792,7 @@
    "osm_type": "general",
    "enriched": true,
    "source_key": "osm-n4905061999",
-   "prominence_rank": 26
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0408",
@@ -6867,7 +6851,7 @@
    "osm_type": "bar",
    "enriched": true,
    "source_key": "osm-n4905062000",
-   "prominence_rank": 307
+   "prominence_rank": 308
   },
   {
    "id": "prov-lst-0226",
@@ -6898,7 +6882,7 @@
    "osm_type": "association",
    "enriched": true,
    "source_key": "osm-n4905062844",
-   "prominence_rank": 143
+   "prominence_rank": 144
   },
   {
    "id": "prov-lst-0227",
@@ -6924,7 +6908,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n4905064862",
-   "prominence_rank": 142
+   "prominence_rank": 143
   },
   {
    "id": "prov-lst-0228",
@@ -6949,7 +6933,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-n4906840129",
-   "prominence_rank": 31
+   "prominence_rank": 32
   },
   {
    "id": "prov-lst-0229",
@@ -6975,7 +6959,7 @@
    "osm_type": "social_facility",
    "enriched": true,
    "source_key": "osm-n4906841829",
-   "prominence_rank": 62
+   "prominence_rank": 63
   },
   {
    "id": "prov-lst-0230",
@@ -7000,7 +6984,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-n4906842431",
-   "prominence_rank": 237
+   "prominence_rank": 238
   },
   {
    "id": "prov-lst-0231",
@@ -7025,7 +7009,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-n4906843916",
-   "prominence_rank": 4
+   "prominence_rank": 5
   },
   {
    "id": "prov-lst-0232",
@@ -7051,7 +7035,7 @@
    "osm_type": "social_facility",
    "enriched": true,
    "source_key": "osm-n4906846133",
-   "prominence_rank": 189
+   "prominence_rank": 190
   },
   {
    "id": "prov-lst-0233",
@@ -7076,7 +7060,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-n4930668628",
-   "prominence_rank": 74
+   "prominence_rank": 75
   },
   {
    "id": "prov-lst-0234",
@@ -7101,7 +7085,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5556931153",
-   "prominence_rank": 56
+   "prominence_rank": 57
   },
   {
    "id": "prov-lst-0235",
@@ -7126,7 +7110,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5556931154",
-   "prominence_rank": 110
+   "prominence_rank": 111
   },
   {
    "id": "prov-lst-0236",
@@ -7151,7 +7135,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5556931155",
-   "prominence_rank": 259
+   "prominence_rank": 260
   },
   {
    "id": "prov-lst-0409",
@@ -7176,7 +7160,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5617810046",
-   "prominence_rank": 295
+   "prominence_rank": 296
   },
   {
    "id": "prov-lst-0237",
@@ -7201,7 +7185,7 @@
    "source": "osm",
    "osm_type": "cannabis",
    "source_key": "osm-n5631043003",
-   "prominence_rank": 44
+   "prominence_rank": 45
   },
   {
    "id": "prov-lst-0238",
@@ -7259,7 +7243,7 @@
    "osm_type": "cannabis",
    "enriched": true,
    "source_key": "osm-n5631044225",
-   "prominence_rank": 71
+   "prominence_rank": 72
   },
   {
    "id": "prov-lst-0239",
@@ -7284,7 +7268,7 @@
    "source": "osm",
    "osm_type": "books",
    "source_key": "osm-n5631044879",
-   "prominence_rank": 43
+   "prominence_rank": 44
   },
   {
    "id": "prov-lst-0240",
@@ -7309,7 +7293,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5642785018",
-   "prominence_rank": 138
+   "prominence_rank": 139
   },
   {
    "id": "prov-lst-0241",
@@ -7334,7 +7318,7 @@
    "source": "osm",
    "osm_type": "bank",
    "source_key": "osm-n5642785019",
-   "prominence_rank": 17
+   "prominence_rank": 18
   },
   {
    "id": "prov-lst-0242",
@@ -7359,7 +7343,7 @@
    "source": "osm",
    "osm_type": "social_facility",
    "source_key": "osm-n5642792422",
-   "prominence_rank": 62
+   "prominence_rank": 63
   },
   {
    "id": "prov-lst-0243",
@@ -7384,7 +7368,7 @@
    "source": "osm",
    "osm_type": "second_hand",
    "source_key": "osm-n5642792423",
-   "prominence_rank": 62
+   "prominence_rank": 63
   },
   {
    "id": "prov-lst-0244",
@@ -7409,7 +7393,7 @@
    "source": "osm",
    "osm_type": "beauty",
    "source_key": "osm-n5642792424",
-   "prominence_rank": 253
+   "prominence_rank": 254
   },
   {
    "id": "prov-lst-0245",
@@ -7434,7 +7418,7 @@
    "source": "osm",
    "osm_type": "gas",
    "source_key": "osm-n5642792425",
-   "prominence_rank": 165
+   "prominence_rank": 166
   },
   {
    "id": "prov-lst-0246",
@@ -7459,7 +7443,7 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-n5642839551",
-   "prominence_rank": 212
+   "prominence_rank": 213
   },
   {
    "id": "prov-lst-0410",
@@ -7484,7 +7468,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n5644778146",
-   "prominence_rank": 196
+   "prominence_rank": 197
   },
   {
    "id": "prov-lst-0247",
@@ -7509,7 +7493,7 @@
    "source": "osm",
    "osm_type": "charity",
    "source_key": "osm-n5644778163",
-   "prominence_rank": 75
+   "prominence_rank": 76
   },
   {
    "id": "prov-lst-0248",
@@ -7534,7 +7518,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5646355941",
-   "prominence_rank": 100
+   "prominence_rank": 101
   },
   {
    "id": "prov-lst-0249",
@@ -7559,7 +7543,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5646355942",
-   "prominence_rank": 199
+   "prominence_rank": 200
   },
   {
    "id": "prov-lst-0250",
@@ -7584,7 +7568,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5646355943",
-   "prominence_rank": 90
+   "prominence_rank": 91
   },
   {
    "id": "prov-lst-0251",
@@ -7609,7 +7593,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5646355944",
-   "prominence_rank": 291
+   "prominence_rank": 292
   },
   {
    "id": "prov-lst-0252",
@@ -7634,7 +7618,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n5646355945",
-   "prominence_rank": 153
+   "prominence_rank": 154
   },
   {
    "id": "prov-lst-0253",
@@ -7659,7 +7643,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n5646355947",
-   "prominence_rank": 276
+   "prominence_rank": 277
   },
   {
    "id": "prov-lst-0254",
@@ -7684,7 +7668,7 @@
    "source": "osm",
    "osm_type": "beauty",
    "source_key": "osm-n5646355949",
-   "prominence_rank": 191
+   "prominence_rank": 192
   },
   {
    "id": "prov-lst-0255",
@@ -7710,7 +7694,7 @@
    "osm_type": "antiques",
    "enriched": true,
    "source_key": "osm-n5646355952",
-   "prominence_rank": 256
+   "prominence_rank": 257
   },
   {
    "id": "prov-lst-0256",
@@ -7735,7 +7719,7 @@
    "source": "osm",
    "osm_type": "beauty",
    "source_key": "osm-n5646355953",
-   "prominence_rank": 132
+   "prominence_rank": 133
   },
   {
    "id": "prov-lst-0257",
@@ -7760,7 +7744,7 @@
    "source": "osm",
    "osm_type": "massage",
    "source_key": "osm-n5646355954",
-   "prominence_rank": 132
+   "prominence_rank": 133
   },
   {
    "id": "prov-lst-0258",
@@ -7840,7 +7824,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5646355961",
-   "prominence_rank": 118
+   "prominence_rank": 119
   },
   {
    "id": "prov-lst-0260",
@@ -7893,7 +7877,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n5646355965",
-   "prominence_rank": 149
+   "prominence_rank": 150
   },
   {
    "id": "prov-lst-0261",
@@ -7918,7 +7902,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5646355966",
-   "prominence_rank": 201
+   "prominence_rank": 202
   },
   {
    "id": "prov-lst-0262",
@@ -7943,7 +7927,7 @@
    "source": "osm",
    "osm_type": "wine",
    "source_key": "osm-n5646355968",
-   "prominence_rank": 187
+   "prominence_rank": 188
   },
   {
    "id": "prov-lst-0263",
@@ -7968,7 +7952,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5646355969",
-   "prominence_rank": 114
+   "prominence_rank": 115
   },
   {
    "id": "prov-lst-0264",
@@ -7993,7 +7977,7 @@
    "source": "osm",
    "osm_type": "houseware",
    "source_key": "osm-n5646355970",
-   "prominence_rank": 147
+   "prominence_rank": 148
   },
   {
    "id": "prov-lst-0265",
@@ -8018,7 +8002,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n5646355972",
-   "prominence_rank": 242
+   "prominence_rank": 243
   },
   {
    "id": "prov-lst-0266",
@@ -8044,7 +8028,7 @@
    "osm_type": "gift",
    "enriched": true,
    "source_key": "osm-n5648405530",
-   "prominence_rank": 116
+   "prominence_rank": 117
   },
   {
    "id": "prov-lst-0267",
@@ -8069,7 +8053,7 @@
    "source": "osm",
    "osm_type": "car_repair",
    "source_key": "osm-n5648421557",
-   "prominence_rank": 290
+   "prominence_rank": 291
   },
   {
    "id": "prov-lst-0268",
@@ -8094,7 +8078,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n5649883323",
-   "prominence_rank": 11
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0269",
@@ -8119,7 +8103,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-n5650434269",
-   "prominence_rank": 26
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0270",
@@ -8144,7 +8128,7 @@
    "source": "osm",
    "osm_type": "ice_cream",
    "source_key": "osm-n5650434270",
-   "prominence_rank": 26
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0271",
@@ -8169,7 +8153,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-n5650434272",
-   "prominence_rank": 26
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0272",
@@ -8195,7 +8179,7 @@
    "osm_type": "clothes",
    "enriched": true,
    "source_key": "osm-n5650434274",
-   "prominence_rank": 57
+   "prominence_rank": 58
   },
   {
    "id": "prov-lst-0273",
@@ -8220,7 +8204,7 @@
    "source": "osm",
    "osm_type": "biergarten",
    "source_key": "osm-n5650434275",
-   "prominence_rank": 32
+   "prominence_rank": 33
   },
   {
    "id": "prov-lst-0274",
@@ -8245,7 +8229,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5650434276",
-   "prominence_rank": 124
+   "prominence_rank": 125
   },
   {
    "id": "prov-lst-0275",
@@ -8270,7 +8254,7 @@
    "source": "osm",
    "osm_type": "fast_food",
    "source_key": "osm-n5650434277",
-   "prominence_rank": 124
+   "prominence_rank": 125
   },
   {
    "id": "prov-lst-0276",
@@ -8295,7 +8279,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5650434279",
-   "prominence_rank": 32
+   "prominence_rank": 33
   },
   {
    "id": "prov-lst-0277",
@@ -8320,7 +8304,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5650434280",
-   "prominence_rank": 29
+   "prominence_rank": 30
   },
   {
    "id": "prov-lst-0278",
@@ -8345,7 +8329,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5650483060",
-   "prominence_rank": 10
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0279",
@@ -8371,7 +8355,7 @@
    "osm_type": "social_facility",
    "enriched": true,
    "source_key": "osm-n5652635470",
-   "prominence_rank": 13
+   "prominence_rank": 14
   },
   {
    "id": "prov-lst-0280",
@@ -8402,7 +8386,7 @@
    "osm_type": "confectionery",
    "enriched": true,
    "source_key": "osm-n5652635477",
-   "prominence_rank": 160
+   "prominence_rank": 161
   },
   {
    "id": "prov-lst-0281",
@@ -8428,7 +8412,7 @@
    "osm_type": "massage",
    "enriched": true,
    "source_key": "osm-n5652635478",
-   "prominence_rank": 140
+   "prominence_rank": 141
   },
   {
    "id": "prov-lst-0411",
@@ -8453,7 +8437,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n5652635482",
-   "prominence_rank": 16
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0282",
@@ -8478,7 +8462,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5652635483",
-   "prominence_rank": 180
+   "prominence_rank": 181
   },
   {
    "id": "prov-lst-0283",
@@ -8503,7 +8487,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5652635484",
-   "prominence_rank": 43
+   "prominence_rank": 44
   },
   {
    "id": "prov-lst-0284",
@@ -8528,7 +8512,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5652635485",
-   "prominence_rank": 43
+   "prominence_rank": 44
   },
   {
    "id": "prov-lst-0285",
@@ -8584,7 +8568,7 @@
    "osm_type": "ticket",
    "enriched": true,
    "source_key": "osm-n5652635486",
-   "prominence_rank": 180
+   "prominence_rank": 181
   },
   {
    "id": "prov-lst-0286",
@@ -8609,7 +8593,7 @@
    "source": "osm",
    "osm_type": "books",
    "source_key": "osm-n5652635487",
-   "prominence_rank": 170
+   "prominence_rank": 171
   },
   {
    "id": "prov-lst-0412",
@@ -8634,7 +8618,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5653789972",
-   "prominence_rank": 220
+   "prominence_rank": 221
   },
   {
    "id": "prov-lst-0413",
@@ -8659,7 +8643,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5653789973",
-   "prominence_rank": 220
+   "prominence_rank": 221
   },
   {
    "id": "prov-lst-0414",
@@ -8684,7 +8668,7 @@
    "source": "osm",
    "osm_type": "sports",
    "source_key": "osm-n5653789974",
-   "prominence_rank": 245
+   "prominence_rank": 246
   },
   {
    "id": "prov-lst-0287",
@@ -8709,7 +8693,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5653789975",
-   "prominence_rank": 93
+   "prominence_rank": 94
   },
   {
    "id": "prov-lst-0288",
@@ -8734,7 +8718,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5653789976",
-   "prominence_rank": 275
+   "prominence_rank": 276
   },
   {
    "id": "prov-lst-0289",
@@ -8759,7 +8743,7 @@
    "source": "osm",
    "osm_type": "leather",
    "source_key": "osm-n5653789977",
-   "prominence_rank": 229
+   "prominence_rank": 230
   },
   {
    "id": "prov-lst-0290",
@@ -8784,7 +8768,7 @@
    "source": "osm",
    "osm_type": "tattoo",
    "source_key": "osm-n5657197536",
-   "prominence_rank": 221
+   "prominence_rank": 222
   },
   {
    "id": "prov-lst-0291",
@@ -8809,7 +8793,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5657197537",
-   "prominence_rank": 25
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0292",
@@ -8834,7 +8818,7 @@
    "source": "osm",
    "osm_type": "massage",
    "source_key": "osm-n5657197538",
-   "prominence_rank": 25
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0293",
@@ -8859,7 +8843,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5657197539",
-   "prominence_rank": 13
+   "prominence_rank": 14
   },
   {
    "id": "prov-lst-0294",
@@ -8884,7 +8868,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5657197541",
-   "prominence_rank": 25
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0295",
@@ -8909,7 +8893,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5657197542",
-   "prominence_rank": 13
+   "prominence_rank": 14
   },
   {
    "id": "prov-lst-0296",
@@ -8934,7 +8918,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5676357576",
-   "prominence_rank": 108
+   "prominence_rank": 109
   },
   {
    "id": "prov-lst-0297",
@@ -8959,7 +8943,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5676357577",
-   "prominence_rank": 108
+   "prominence_rank": 109
   },
   {
    "id": "prov-lst-0298",
@@ -8984,7 +8968,7 @@
    "source": "osm",
    "osm_type": "ice_cream",
    "source_key": "osm-n5676357578",
-   "prominence_rank": 232
+   "prominence_rank": 233
   },
   {
    "id": "prov-lst-0299",
@@ -9009,7 +8993,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5676382381",
-   "prominence_rank": 119
+   "prominence_rank": 120
   },
   {
    "id": "prov-lst-0300",
@@ -9035,7 +9019,7 @@
    "osm_type": "shoes",
    "enriched": true,
    "source_key": "osm-n5676382382",
-   "prominence_rank": 207
+   "prominence_rank": 208
   },
   {
    "id": "prov-lst-0301",
@@ -9060,7 +9044,7 @@
    "source": "osm",
    "osm_type": "gift",
    "source_key": "osm-n5676382383",
-   "prominence_rank": 204
+   "prominence_rank": 205
   },
   {
    "id": "prov-lst-0302",
@@ -9085,7 +9069,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5676382385",
-   "prominence_rank": 255
+   "prominence_rank": 256
   },
   {
    "id": "prov-lst-0303",
@@ -9110,7 +9094,7 @@
    "source": "osm",
    "osm_type": "convenience",
    "source_key": "osm-n5676382386",
-   "prominence_rank": 23
+   "prominence_rank": 24
   },
   {
    "id": "prov-lst-0304",
@@ -9135,7 +9119,7 @@
    "source": "osm",
    "osm_type": "jewelry",
    "source_key": "osm-n5676382387",
-   "prominence_rank": 23
+   "prominence_rank": 24
   },
   {
    "id": "prov-lst-0305",
@@ -9160,7 +9144,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5676382388",
-   "prominence_rank": 101
+   "prominence_rank": 102
   },
   {
    "id": "prov-lst-0306",
@@ -9215,7 +9199,7 @@
    "osm_type": "books",
    "enriched": true,
    "source_key": "osm-n5676382389",
-   "prominence_rank": 47
+   "prominence_rank": 48
   },
   {
    "id": "prov-lst-0307",
@@ -9240,7 +9224,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5676382390",
-   "prominence_rank": 18
+   "prominence_rank": 19
   },
   {
    "id": "prov-lst-0308",
@@ -9265,7 +9249,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5676382391",
-   "prominence_rank": 151
+   "prominence_rank": 152
   },
   {
    "id": "prov-lst-0309",
@@ -9290,7 +9274,7 @@
    "source": "osm",
    "osm_type": "art",
    "source_key": "osm-n5676382392",
-   "prominence_rank": 36
+   "prominence_rank": 37
   },
   {
    "id": "prov-lst-0310",
@@ -9315,7 +9299,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5676382393",
-   "prominence_rank": 18
+   "prominence_rank": 19
   },
   {
    "id": "prov-lst-0311",
@@ -9340,7 +9324,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n5678229376",
-   "prominence_rank": 11
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0312",
@@ -9365,7 +9349,7 @@
    "source": "osm",
    "osm_type": "association",
    "source_key": "osm-n5691773901",
-   "prominence_rank": 95
+   "prominence_rank": 96
   },
   {
    "id": "prov-lst-0313",
@@ -9390,7 +9374,7 @@
    "source": "osm",
    "osm_type": "beauty",
    "source_key": "osm-n5691773902",
-   "prominence_rank": 95
+   "prominence_rank": 96
   },
   {
    "id": "prov-lst-0314",
@@ -9415,7 +9399,7 @@
    "source": "osm",
    "osm_type": "antiques",
    "source_key": "osm-n5702992079",
-   "prominence_rank": 118
+   "prominence_rank": 119
   },
   {
    "id": "prov-lst-0315",
@@ -9440,7 +9424,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326907",
-   "prominence_rank": 77
+   "prominence_rank": 78
   },
   {
    "id": "prov-lst-0316",
@@ -9465,7 +9449,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326908",
-   "prominence_rank": 123
+   "prominence_rank": 124
   },
   {
    "id": "prov-lst-0317",
@@ -9490,7 +9474,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326910",
-   "prominence_rank": 35
+   "prominence_rank": 36
   },
   {
    "id": "prov-lst-0318",
@@ -9515,7 +9499,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326911",
-   "prominence_rank": 35
+   "prominence_rank": 36
   },
   {
    "id": "prov-lst-0319",
@@ -9570,7 +9554,7 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-n5712326913",
-   "prominence_rank": 12
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0320",
@@ -9595,7 +9579,7 @@
    "source": "osm",
    "osm_type": "frame",
    "source_key": "osm-n5712326914",
-   "prominence_rank": 12
+   "prominence_rank": 13
   },
   {
    "id": "prov-lst-0321",
@@ -9620,7 +9604,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5712326915",
-   "prominence_rank": 152
+   "prominence_rank": 153
   },
   {
    "id": "prov-lst-0322",
@@ -9645,7 +9629,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5712326916",
-   "prominence_rank": 87
+   "prominence_rank": 88
   },
   {
    "id": "prov-lst-0323",
@@ -9670,7 +9654,7 @@
    "source": "osm",
    "osm_type": "occult",
    "source_key": "osm-n5712357628",
-   "prominence_rank": 43
+   "prominence_rank": 44
   },
   {
    "id": "prov-lst-0324",
@@ -9695,7 +9679,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n5712359614",
-   "prominence_rank": 32
+   "prominence_rank": 33
   },
   {
    "id": "prov-lst-0325",
@@ -9720,7 +9704,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5718537621",
-   "prominence_rank": 23
+   "prominence_rank": 24
   },
   {
    "id": "prov-lst-0326",
@@ -9745,7 +9729,7 @@
    "source": "osm",
    "osm_type": "houseware",
    "source_key": "osm-n5718537622",
-   "prominence_rank": 297
+   "prominence_rank": 298
   },
   {
    "id": "prov-lst-0415",
@@ -9770,7 +9754,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5718537624",
-   "prominence_rank": 20
+   "prominence_rank": 21
   },
   {
    "id": "prov-lst-0416",
@@ -9795,7 +9779,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n5718537625",
-   "prominence_rank": 20
+   "prominence_rank": 21
   },
   {
    "id": "prov-lst-0327",
@@ -9826,7 +9810,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-n6508895790",
-   "prominence_rank": 125
+   "prominence_rank": 126
   },
   {
    "id": "prov-lst-0328",
@@ -9851,7 +9835,7 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-n6508947039",
-   "prominence_rank": 68
+   "prominence_rank": 69
   },
   {
    "id": "prov-lst-0329",
@@ -9876,7 +9860,7 @@
    "source": "osm",
    "osm_type": "clothes",
    "source_key": "osm-n6508947040",
-   "prominence_rank": 236
+   "prominence_rank": 237
   },
   {
    "id": "prov-lst-0330",
@@ -9901,7 +9885,7 @@
    "source": "osm",
    "osm_type": "shoes",
    "source_key": "osm-n6511698246",
-   "prominence_rank": 188
+   "prominence_rank": 189
   },
   {
    "id": "prov-lst-0331",
@@ -9926,7 +9910,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n6680366067",
-   "prominence_rank": 36
+   "prominence_rank": 37
   },
   {
    "id": "prov-lst-0332",
@@ -9951,7 +9935,7 @@
    "source": "osm",
    "osm_type": "cannabis",
    "source_key": "osm-n7179642645",
-   "prominence_rank": 21
+   "prominence_rank": 22
   },
   {
    "id": "prov-lst-0393",
@@ -9976,7 +9960,7 @@
    "source": "osm",
    "osm_type": "dentist",
    "source_key": "osm-n11057070509",
-   "prominence_rank": 127
+   "prominence_rank": 128
   },
   {
    "id": "prov-lst-0116",
@@ -10035,7 +10019,7 @@
    "osm_type": "cannabis",
    "enriched": true,
    "source_key": "osm-n11392407235",
-   "prominence_rank": 22
+   "prominence_rank": 23
   },
   {
    "id": "prov-lst-0117",
@@ -10060,7 +10044,7 @@
    "source": "osm",
    "osm_type": "cafe",
    "source_key": "osm-n11463013048",
-   "prominence_rank": 21
+   "prominence_rank": 22
   },
   {
    "id": "prov-lst-0118",
@@ -10090,7 +10074,7 @@
    "osm_type": "guest_house",
    "enriched": true,
    "source_key": "osm-n11463013057",
-   "prominence_rank": 49
+   "prominence_rank": 50
   },
   {
    "id": "prov-lst-0119",
@@ -10141,7 +10125,7 @@
    "osm_type": "bank",
    "enriched": true,
    "source_key": "osm-n11463013061",
-   "prominence_rank": 224
+   "prominence_rank": 225
   },
   {
    "id": "prov-lst-0394",
@@ -10166,7 +10150,7 @@
    "source": "osm",
    "osm_type": "guest_house",
    "source_key": "osm-n11463061383",
-   "prominence_rank": 16
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0120",
@@ -10205,7 +10189,7 @@
    "osm_type": "bar",
    "enriched": true,
    "source_key": "osm-n11463061405",
-   "prominence_rank": 6
+   "prominence_rank": 7
   },
   {
    "id": "prov-lst-0121",
@@ -10230,7 +10214,7 @@
    "source": "osm",
    "osm_type": "theatre",
    "source_key": "osm-n11463061406",
-   "prominence_rank": 29
+   "prominence_rank": 30
   },
   {
    "id": "prov-lst-0122",
@@ -10277,7 +10261,7 @@
    "osm_type": "bakery",
    "enriched": true,
    "source_key": "osm-n11463061407",
-   "prominence_rank": 13
+   "prominence_rank": 14
   },
   {
    "id": "prov-lst-0123",
@@ -10302,7 +10286,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11463061414",
-   "prominence_rank": 264
+   "prominence_rank": 265
   },
   {
    "id": "prov-lst-0124",
@@ -10327,7 +10311,7 @@
    "source": "osm",
    "osm_type": "tattoo",
    "source_key": "osm-n11463061418",
-   "prominence_rank": 131
+   "prominence_rank": 132
   },
   {
    "id": "prov-lst-0125",
@@ -10352,7 +10336,7 @@
    "source": "osm",
    "osm_type": "jewelry",
    "source_key": "osm-n11463061419",
-   "prominence_rank": 210
+   "prominence_rank": 211
   },
   {
    "id": "prov-lst-0126",
@@ -10411,7 +10395,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n11463061440",
-   "prominence_rank": 227
+   "prominence_rank": 228
   },
   {
    "id": "prov-lst-0127",
@@ -10436,7 +10420,7 @@
    "source": "osm",
    "osm_type": "bicycle",
    "source_key": "osm-n11463061441",
-   "prominence_rank": 298
+   "prominence_rank": 299
   },
   {
    "id": "prov-lst-0395",
@@ -10461,7 +10445,7 @@
    "source": "osm",
    "osm_type": "pub",
    "source_key": "osm-n11463061442",
-   "prominence_rank": 168
+   "prominence_rank": 169
   },
   {
    "id": "prov-lst-0128",
@@ -10486,7 +10470,7 @@
    "source": "osm",
    "osm_type": "hardware",
    "source_key": "osm-n11463061443",
-   "prominence_rank": 46
+   "prominence_rank": 47
   },
   {
    "id": "prov-lst-0129",
@@ -10512,7 +10496,7 @@
    "osm_type": "restaurant",
    "enriched": true,
    "source_key": "osm-n11463061444",
-   "prominence_rank": 300
+   "prominence_rank": 301
   },
   {
    "id": "prov-lst-0130",
@@ -10537,7 +10521,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11463061466",
-   "prominence_rank": 241
+   "prominence_rank": 242
   },
   {
    "id": "prov-lst-0131",
@@ -10562,7 +10546,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11463061487",
-   "prominence_rank": 57
+   "prominence_rank": 58
   },
   {
    "id": "prov-lst-0132",
@@ -10587,7 +10571,7 @@
    "source": "osm",
    "osm_type": "yes",
    "source_key": "osm-n11463234746",
-   "prominence_rank": 308
+   "prominence_rank": 309
   },
   {
    "id": "prov-lst-0133",
@@ -10613,7 +10597,7 @@
    "osm_type": "gallery",
    "enriched": true,
    "source_key": "osm-n11463239491",
-   "prominence_rank": 195
+   "prominence_rank": 196
   },
   {
    "id": "prov-lst-0134",
@@ -10638,7 +10622,7 @@
    "source": "osm",
    "osm_type": "greengrocer",
    "source_key": "osm-n11841251014",
-   "prominence_rank": 130
+   "prominence_rank": 131
   },
   {
    "id": "prov-lst-0396",
@@ -10663,7 +10647,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11841270959",
-   "prominence_rank": 305
+   "prominence_rank": 306
   },
   {
    "id": "prov-lst-0135",
@@ -10688,7 +10672,7 @@
    "source": "osm",
    "osm_type": "seafood",
    "source_key": "osm-n11847282464",
-   "prominence_rank": 141
+   "prominence_rank": 142
   },
   {
    "id": "prov-lst-0136",
@@ -10713,7 +10697,7 @@
    "source": "osm",
    "osm_type": "appliance",
    "source_key": "osm-n11847282465",
-   "prominence_rank": 164
+   "prominence_rank": 165
   },
   {
    "id": "prov-lst-0137",
@@ -10738,7 +10722,7 @@
    "source": "osm",
    "osm_type": "restaurant",
    "source_key": "osm-n11847282467",
-   "prominence_rank": 41
+   "prominence_rank": 42
   },
   {
    "id": "prov-lst-0138",
@@ -10763,7 +10747,7 @@
    "source": "osm",
    "osm_type": "gallery",
    "source_key": "osm-n11847282468",
-   "prominence_rank": 33
+   "prominence_rank": 34
   },
   {
    "id": "prov-lst-0139",
@@ -10788,7 +10772,7 @@
    "source": "osm",
    "osm_type": "hairdresser",
    "source_key": "osm-n13374969820",
-   "prominence_rank": 39
+   "prominence_rank": 40
   },
   {
    "id": "prov-lst-0140",
@@ -10813,7 +10797,7 @@
    "source": "osm",
    "osm_type": "bar",
    "source_key": "osm-n14022485317",
-   "prominence_rank": 299
+   "prominence_rank": 300
   },
   {
    "id": "prov-lst-0002",
@@ -10838,7 +10822,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-164023887",
-   "prominence_rank": 316
+   "prominence_rank": 317
   },
   {
    "id": "prov-lst-0003",
@@ -10906,7 +10890,7 @@
    "osm_type": null,
    "enriched": true,
    "source_key": "osm-164023888",
-   "prominence_rank": 8
+   "prominence_rank": 9
   },
   {
    "id": "prov-lst-0042",
@@ -10931,7 +10915,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-215751327",
-   "prominence_rank": 427
+   "prominence_rank": 428
   },
   {
    "id": "prov-lst-0070",
@@ -10986,7 +10970,7 @@
    "osm_type": null,
    "enriched": true,
    "source_key": "osm-215751980",
-   "prominence_rank": 19
+   "prominence_rank": 20
   },
   {
    "id": "prov-lst-0077",
@@ -11011,7 +10995,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-215752399",
-   "prominence_rank": 265
+   "prominence_rank": 266
   },
   {
    "id": "prov-lst-0392",
@@ -11036,7 +11020,7 @@
    "source": "osm",
    "osm_type": null,
    "source_key": "osm-562621288",
-   "prominence_rank": 288
+   "prominence_rank": 289
   },
   {
    "id": "prov-lst-0417",
@@ -11061,7 +11045,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 56
+   "prominence_rank": 57
   },
   {
    "id": "prov-lst-0345",
@@ -11086,7 +11070,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 25
+   "prominence_rank": 26
   },
   {
    "id": "prov-lst-0346",
@@ -11111,7 +11095,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 23
+   "prominence_rank": 24
   },
   {
    "id": "prov-lst-0418",
@@ -11136,7 +11120,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 303
+   "prominence_rank": 304
   },
   {
    "id": "prov-lst-0347",
@@ -11161,7 +11145,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 124
+   "prominence_rank": 125
   },
   {
    "id": "prov-lst-0348",
@@ -11186,7 +11170,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 111
+   "prominence_rank": 112
   },
   {
    "id": "prov-lst-0349",
@@ -11211,7 +11195,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 159
+   "prominence_rank": 160
   },
   {
    "id": "prov-lst-0350",
@@ -11236,7 +11220,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 36
+   "prominence_rank": 37
   },
   {
    "id": "prov-lst-0419",
@@ -11261,7 +11245,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 147
+   "prominence_rank": 148
   },
   {
    "id": "prov-lst-0351",
@@ -11286,7 +11270,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 228
+   "prominence_rank": 229
   },
   {
    "id": "prov-lst-0352",
@@ -11311,7 +11295,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 793
+   "prominence_rank": 795
   },
   {
    "id": "prov-lst-0353",
@@ -11336,7 +11320,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 121
+   "prominence_rank": 122
   },
   {
    "id": "prov-lst-0376",
@@ -11361,7 +11345,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 669
+   "prominence_rank": 670
   },
   {
    "id": "prov-lst-0354",
@@ -11391,7 +11375,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 312
+   "prominence_rank": 313
   },
   {
    "id": "prov-lst-0420",
@@ -11445,7 +11429,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 324
+   "prominence_rank": 325
   },
   {
    "id": "prov-lst-0355",
@@ -11470,7 +11454,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 8
+   "prominence_rank": 9
   },
   {
    "id": "prov-lst-0356",
@@ -11520,7 +11504,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 749
+   "prominence_rank": 750
   },
   {
    "id": "prov-lst-0357",
@@ -11545,7 +11529,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 23
+   "prominence_rank": 24
   },
   {
    "id": "prov-lst-0421",
@@ -11599,7 +11583,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 26
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0422",
@@ -11624,7 +11608,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 216
+   "prominence_rank": 217
   },
   {
    "id": "prov-lst-0423",
@@ -11657,7 +11641,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 16
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0358",
@@ -11682,7 +11666,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 11
+   "prominence_rank": 12
   },
   {
    "id": "prov-lst-0359",
@@ -11736,7 +11720,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 228
+   "prominence_rank": 229
   },
   {
    "id": "prov-lst-0424",
@@ -11823,7 +11807,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 9
+   "prominence_rank": 10
   },
   {
    "id": "prov-lst-0425",
@@ -11848,7 +11832,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 26
+   "prominence_rank": 27
   },
   {
    "id": "prov-lst-0360",
@@ -11873,7 +11857,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 28
+   "prominence_rank": 29
   },
   {
    "id": "prov-lst-0426",
@@ -11929,7 +11913,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 283
+   "prominence_rank": 284
   },
   {
    "id": "prov-lst-0361",
@@ -11979,7 +11963,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 36
+   "prominence_rank": 37
   },
   {
    "id": "prov-lst-0427",
@@ -12029,7 +12013,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 962
+   "prominence_rank": 964
   },
   {
    "id": "prov-lst-0428",
@@ -12067,7 +12051,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1434
+   "prominence_rank": 1436
   },
   {
    "id": "prov-lst-0429",
@@ -12121,7 +12105,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1393
+   "prominence_rank": 1395
   },
   {
    "id": "prov-lst-0430",
@@ -12171,7 +12155,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 242
+   "prominence_rank": 243
   },
   {
    "id": "prov-lst-0431",
@@ -12196,7 +12180,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 199
+   "prominence_rank": 200
   },
   {
    "id": "prov-lst-0362",
@@ -12221,7 +12205,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 143
+   "prominence_rank": 144
   },
   {
    "id": "prov-lst-0363",
@@ -12275,7 +12259,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 480
+   "prominence_rank": 481
   },
   {
    "id": "prov-lst-0364",
@@ -12329,7 +12313,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 424
+   "prominence_rank": 425
   },
   {
    "id": "prov-lst-0365",
@@ -12354,7 +12338,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 10
+   "prominence_rank": 11
   },
   {
    "id": "prov-lst-0432",
@@ -12408,7 +12392,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 43
+   "prominence_rank": 44
   },
   {
    "id": "prov-lst-0433",
@@ -12433,7 +12417,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 324
+   "prominence_rank": 325
   },
   {
    "id": "prov-lst-0366",
@@ -12458,7 +12442,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 2418
+   "prominence_rank": 2419
   },
   {
    "id": "prov-lst-0367",
@@ -12483,7 +12467,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 563
+   "prominence_rank": 564
   },
   {
    "id": "prov-lst-0434",
@@ -12508,7 +12492,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 149
+   "prominence_rank": 150
   },
   {
    "id": "prov-lst-0435",
@@ -12533,7 +12517,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 358
+   "prominence_rank": 359
   },
   {
    "id": "prov-lst-0436",
@@ -12558,7 +12542,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1037
+   "prominence_rank": 1038
   },
   {
    "id": "prov-lst-0368",
@@ -12600,7 +12584,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 447
+   "prominence_rank": 448
   },
   {
    "id": "prov-lst-0437",
@@ -12629,7 +12613,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 854
+   "prominence_rank": 855
   },
   {
    "id": "prov-lst-0369",
@@ -12657,7 +12641,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 588
+   "prominence_rank": 589
   },
   {
    "id": "prov-lst-0438",
@@ -12685,7 +12669,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1039
+   "prominence_rank": 1040
   },
   {
    "id": "prov-lst-0439",
@@ -12739,7 +12723,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 42
+   "prominence_rank": 43
   },
   {
    "id": "prov-lst-0370",
@@ -12802,7 +12786,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 27
+   "prominence_rank": 28
   },
   {
    "id": "prov-lst-0371",
@@ -12832,7 +12816,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 1412
+   "prominence_rank": 1413
   },
   {
    "id": "prov-lst-0372",
@@ -12857,7 +12841,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 75
+   "prominence_rank": 76
   },
   {
    "id": "prov-lst-0373",
@@ -12882,7 +12866,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 270
+   "prominence_rank": 271
   },
   {
    "id": "prov-lst-0374",
@@ -12938,7 +12922,7 @@
    "name": "Wood End Light",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 3023
+   "prominence_rank": 3024
   },
   {
    "id": "prov-lst-0375",
@@ -12985,7 +12969,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 294
+   "prominence_rank": 295
   },
   {
    "id": "prov-lst-0440",
@@ -13024,7 +13008,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 38
+   "prominence_rank": 39
   },
   {
    "id": "prov-lst-0441",
@@ -13183,7 +13167,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 7
+   "prominence_rank": 8
   },
   {
    "id": "prov-lst-0444",
@@ -13221,7 +13205,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 225
+   "prominence_rank": 226
   },
   {
    "id": "prov-lst-0445",
@@ -13246,7 +13230,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 221
+   "prominence_rank": 222
   },
   {
    "id": "prov-lst-0377",
@@ -13271,7 +13255,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 143
+   "prominence_rank": 144
   },
   {
    "id": "prov-lst-0446",
@@ -13296,7 +13280,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 5
+   "prominence_rank": 6
   },
   {
    "id": "prov-lst-0447",
@@ -13321,7 +13305,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 16
+   "prominence_rank": 17
   },
   {
    "id": "prov-lst-0378",
@@ -13346,7 +13330,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 451
+   "prominence_rank": 452
   },
   {
    "id": "prov-lst-0379",
@@ -13371,7 +13355,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 75
+   "prominence_rank": 76
   },
   {
    "id": "prov-lst-0380",
@@ -13396,7 +13380,7 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 73
+   "prominence_rank": 74
   },
   {
    "id": "prov-lst-0448",
@@ -13421,7 +13405,91 @@
    "source": "research",
    "enriched": true,
    "source_key": null,
-   "prominence_rank": 239
+   "prominence_rank": 240
+  },
+  {
+   "id": "prov-lst-0449",
+   "building_id": "osm-164024699",
+   "name": "Pilgrim Monument",
+   "category": "arts",
+   "subcategory": "landmark",
+   "address": "1 High Pole Hill Road",
+   "phone": "508-487-1310",
+   "website": "https://www.pilgrim-monument.org/",
+   "logo": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "16:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "16:00"
+    }
+   },
+   "opening_hours_raw": null,
+   "photos": [
+    {
+     "url": "photos/pilgrim-monument/01.jpg",
+     "what": "Pilgrim Monument and Bas Relief as viewed from Bradford St.",
+     "credit": "Peter Whitlock, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:PilgrimMonumentbasrelief.jpg",
+     "license": "CC BY-SA 3.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+     "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/ac/PilgrimMonumentbasrelief.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+    }
+   ],
+   "amenities": [
+    "Climb to the top (116 steps and 60 ramps)",
+    "Last ticket 3 p.m.; last climb 3:15 p.m."
+   ],
+   "tags": [
+    "landmark",
+    "history",
+    "views"
+   ],
+   "description": "The granite tower on High Pole Hill that you can see from almost anywhere on the Outer Cape. At 252 feet it is the tallest all-granite structure in the United States, modelled on the Torre del Mangia in Siena, and it marks the Pilgrims' first landfall in 1620 and the signing of the Mayflower Compact in Provincetown Harbor. Visitors climb 116 steps and 60 ramps to the top.",
+   "history": [
+    {
+     "year": 1620,
+     "event": "The Mayflower anchors in Provincetown Harbor; the Mayflower Compact is signed aboard."
+    },
+    {
+     "year": 1907,
+     "event": "President Theodore Roosevelt lays the cornerstone on August 20."
+    },
+    {
+     "year": 1910,
+     "event": "President William H. Taft dedicates the finished monument on August 5."
+    }
+   ],
+   "menu_url": null,
+   "reservation_url": null,
+   "status": "active",
+   "source": "research",
+   "enriched": true,
+   "source_key": null,
+   "prominence_rank": 4
   }
  ]
 }
