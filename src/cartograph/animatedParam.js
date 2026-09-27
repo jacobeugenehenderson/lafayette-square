@@ -131,7 +131,7 @@ function wrapTodFraction(minute, firstMin, lastMin) {
 // borders a blank tile can be marked (`channel.edges[slotId] = { fade: 'up' | 'down', minutes }`):
 //   · 'down' (a blank tile AFTER it): from the key the value fades to OFF over `minutes`, then stays off
 //     until the next key.
-//   · 'up'   (a blank tile BEFORE it): off until the key, then it fades UP over `minutes`, then tweens on.
+//   · 'up'   (a blank tile BEFORE it): off, then it fades UP over the `minutes` before the key — full AT the key — then tweens on.
 //   · A key before a fade-up that is not itself marked switches off AT that key.
 //   · A key marked up whose run has no fade-down holds its value until the next fade-up.
 // Lamps: fade up at Dusk, fade down at Dawn — off through the day, the run spanning midnight. Scalars only:
@@ -177,10 +177,21 @@ function edgeEnvelope(channel, points, minute) {
   const since = ((minute - K.minute) % TOD_DAY_MIN + TOD_DAY_MIN) % TOD_DAY_MIN
   const gap = ((N.minute - K.minute) % TOD_DAY_MIN + TOD_DAY_MIN) % TOD_DAY_MIN || TOD_DAY_MIN
   const eK = todEdge(channel, K.id), eN = todEdge(channel, N.id)
-  const ramp = (e) => { const w = Math.min(gap, Math.max(0, e.minutes ?? TOD_FADE_DEFAULT_MIN)); return w <= 0 ? 1 : Math.min(1, since / w) }
-  if (eK?.fade === 'down') return { key: K, scale: 1 - ramp(eK) }
-  if (eN?.fade === 'up') return eK?.fade === 'up' ? { key: K, scale: ramp(eK) } : { key: K, scale: 0 }
-  if (eK?.fade === 'up') return { tween: ramp(eK) }
+  const width = (e) => Math.min(gap, Math.max(0, e.minutes ?? TOD_FADE_DEFAULT_MIN))
+  // ⭐ A FADE-UP FINISHES AT ITS KEY (Jacob, 2026-09-27: "when I click the tile, even if it has a :30 fade up or down,
+  // we need to see the full effect"). It ramps over the minutes BEFORE the key, so the key's own moment shows the
+  // value set on it. It used to start from 0 at the key, so parked on it the lights were off. A fade-down already
+  // starts full at its key. Across one blank stretch both can run: the one further along wins.
+  const down = eK?.fade === 'down' ? (() => { const w = width(eK); return { key: K, scale: w <= 0 ? 0 : 1 - Math.min(1, since / w) } })() : null
+  const up = eN?.fade === 'up' ? (() => {
+    const w = width(eN), until = gap - since
+    if (w > 0 && until <= w) return { key: N, scale: 1 - until / w }
+    return eK?.fade === 'up' ? { key: K, scale: 1 } : null
+  })() : null
+  if (down && up) return down.scale >= up.scale ? down : up
+  if (down) return down
+  if (up) return up
+  if (eN?.fade === 'up') return { key: K, scale: 0 }
   return null
 }
 

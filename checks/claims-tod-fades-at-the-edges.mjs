@@ -52,10 +52,12 @@ const pool = (c, m) => resolveGroupAtMinute(c, m, MIN, KEYS, DEF).pool
 const run = (resolve, label) => {
   const r = []
   const tweenAt = (m) => pool(ch, m)
-  r.push(['② up: off before dusk (noon)', near(resolve(marked, 780), 0)])
-  r.push(['② up: 0 at the dusk key', near(resolve(marked, MIN.dusk), 0)])
-  r.push(['② up: half-way at dusk + 15', near(resolve(marked, MIN.dusk + 15), tweenAt(MIN.dusk + 15) * 0.5)])
-  r.push(['② up: the plain tween from dusk + 30', near(resolve(marked, MIN.dusk + 30), tweenAt(MIN.dusk + 30))])
+  // ⭐ A fade-up FINISHES at its key: the key's own moment shows the value set on it (Jacob, 2026-09-27).
+  r.push(['② up: off before the fade (noon)', near(resolve(marked, 780), 0)])
+  r.push(['② up: off until dusk − 30', near(resolve(marked, MIN.dusk - 31), 0)])
+  r.push(['② up: half-way at dusk − 15', near(resolve(marked, MIN.dusk - 15), 1.0 * 0.5)])
+  r.push(['② up: the full key value AT the dusk key', near(resolve(marked, MIN.dusk), 1.0)])
+  r.push(['② up: the plain tween after the key', near(resolve(marked, MIN.dusk + 15), tweenAt(MIN.dusk + 15))])
   r.push(['② run tweens across midnight (00:30)', near(resolve(marked, 30), tweenAt(30))])
   r.push(['③ down: dawn\'s value at the dawn key', near(resolve(marked, MIN.dawn), 1.5)])
   r.push(['③ down: half at dawn + 15', near(resolve(marked, MIN.dawn + 15), 0.75)])
