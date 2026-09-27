@@ -17,6 +17,8 @@
  *    `cloudCover`/`storminess` untouched.
  * 3. Every app that draws rain mounts the driver and the light rig, the driver publishes
  *    through `deriveSkyScalars`, and both exposure writers apply the weather's scale.
+ * 4. Each falling weather reaches an Almanac rule of its own kind, and every rule is reachable.
+ * 5. A chosen weather is the same every time: every weather integrator resets on `snapEpoch`.
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
