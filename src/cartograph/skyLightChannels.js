@@ -589,20 +589,23 @@ const DAY = {
   shadow:   { size: [3, 5, 1, 4, 5, 3, 2, 2], samples: [16, 16, 16, 16, 16, 16, 16, 16] },
   ao:       { radius: [15, 15, 15, 15, 15, 15, 15, 15], intensity: [2.0, 2.2, 3.2, 2.0, 2.2, 2.4, 2.8, 2.6],
               distanceFalloff: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3] },
-  fill:     { crush: [0.35, 0.4, 0.55, 0.3, 0.55, 0.7, 0.92, 0.85] },
+  fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.92, 0.85] },
   // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
   // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
-  mist:     { amount: [0.22, 0.25, 0.08, 0.28, 0.25, 0.2, 0.12, 0.08],
+  mist:     { amount: [0.18, 0.25, 0.08, 0.28, 0.25, 0.2, 0.12, 0.08],
               color: ['#9a86c0', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'] },
-  halo:     { strength: [0.22, 0.42, 0.12, 0.65, 0.55, 0.32, 0.04, 0.02],
+  // Halo is a SCREEN BAND, not distance haze (renderPipeline.jsx#AerialPerspectiveEffect): it washes the middle of the
+  // frame whatever is there, so a Hero shot looking down on the town hazes near and far alike. Kept faint; Mist is
+  // the distance haze (Jacob, Dawn pass 2026-09-27: "it's just very even all the way up to the camera").
+  halo:     { strength: [0.06, 0.08, 0.03, 0.12, 0.1, 0.06, 0.02, 0.01],
               color: ['#dcbfd0', '#f4c29c', '#bdd6ec', '#ffc27a', '#ff9868', '#5f6fb4', '#1a2040', '#10152a'] },
-  exposure: { value: [1.5, 1.45, 1.18, 1.2, 1.0, 0.95, 0.85, 0.8] },
+  exposure: { value: [1.7, 1.45, 1.18, 1.2, 1.0, 0.95, 0.85, 0.8] },
   warmth:   { value: [0.3, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25] },
-  grade:    { contrast: [0.4, 0.4, 0.5, 0.32, 0.45, 0.5, 0.72, 0.55], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
-              saturation: [1.35, 1.3, 1.35, 1.4, 1.3, 1.1, 0.85, 0.75], brightness: [0.03, 0.03, 0, 0.03, 0.01, 0, 0, 0],
+  grade:    { contrast: [0.5, 0.4, 0.5, 0.32, 0.45, 0.5, 0.72, 0.55], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
+              saturation: [1.35, 1.3, 1.35, 1.4, 1.3, 1.1, 0.85, 0.75], brightness: [0, 0, 0, 0, 0, 0, 0, 0],
               vignette: [0.8, 0.8, 0.4, 1.2, 1.1, 1.0, 1.5, 1.3] },
   bloom:    { intensity: [1.2, 0.9, 0.2, 2.2, 1.5, 1.0, 1.1, 0.4], threshold: [0.45, 0.55, 0.8, 0.25, 0.4, 0.4, 0.35, 0.6],
-              spread: [0.85, 0.6, 0.15, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
+              spread: [0.45, 0.6, 0.15, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
   // Depth of field is OFF in the kit's day. Its Focus distance is metres from the camera, which only means something
   // for one town's shot — 0.85 blur around a fixed 120 m smeared Provincetown's whole hero frame (2026-09-27). Blur
   // is authored per town, against its own camera, until focus is derived from the shot's aim.
@@ -616,16 +619,16 @@ const DAY = {
               tubeRadius: [1, 1, 1, 1, 1, 1, 1, 1], screenFloor: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
               screenCeil: [0, 0, 0, 0, 0, 0, 0, 0] },
   // Lamps × the daylight ramp: on before it is dark (▲ at Sunset), warm gaslamps at Dusk, cold glitter at Night.
-  lantern:  { edges: LAMP_EDGES, intensity: [3.0, 0.5, null, null, 0.8, 1.6, 2.4, 1.3], glow: [1.6, 0.3, null, null, 0.5, 1.2, 0.9, 0.6],
-              glowSize: [0.8, 0.5, null, null, 0.7, 0.8, 0.45, 0.45],
+  lantern:  { edges: LAMP_EDGES, intensity: [5.0, 0.5, null, null, 0.8, 1.6, 2.4, 1.3], glow: [1.6, 0.3, null, null, 0.5, 1.2, 0.9, 0.6],
+              glowSize: [0.45, 0.5, null, null, 0.7, 0.8, 0.45, 0.45],
               color: ['#ffd9a8', '#fff2e0', null, null, '#ffb877', '#ffa95c', '#e4ecff', '#d6e2ff'] },
   // The tree cards' answer to the key light: flat across the day (0 = the historical dimmer), keyed so a Look can
   // move it by time of day like every other channel.
   canopy:   { directional: [0, 0, 0, 0, 0, 0, 0, 0], gain: [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85],
               bulge: [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9] },
-  lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [2.5, 0.4, null, null, 0.6, 1.4, 2.2, 1.1],
+  lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [1.2, 0.4, null, null, 0.6, 1.4, 2.2, 1.1],
               radius: [1, 1, null, null, 1, 1, 1, 1], centre: [1.2, 1.2, null, null, 1.2, 1.2, 1.2, 1.2],
-              trees: [2, 0.5, null, null, 1.0, 2.5, 3.5, 1.6] },
+              trees: [1.2, 0.5, null, null, 1.0, 2.5, 3.5, 1.6] },
 }
 // The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
 const UPLIGHT = { edges: LAMP_EDGES }

@@ -1486,7 +1486,6 @@ function CelestialBodies({
 
     let primary = {}
     let secondary = {}
-    let sky = {}
     let ambient = {}
 
     // Sun direction in world space (normalized) — used by Moon shader for
@@ -1538,10 +1537,6 @@ function CelestialBodies({
         color: lerpColor('#8877aa', '#4466aa', nightBlend),
         intensity: (twiSecIntensity + (0.15 - twiSecIntensity) * nightBlend) * Math.max(0.1, moonAltFade),
       }
-      sky = {
-        top: lerpColor('#1a1535', '#0a1020', nightBlend),
-        bottom: lerpColor('#553333', '#1a2545', nightBlend),
-      }
       // ⭐ NIGHT'S LIGHT IS THE MOON'S (Jacob, 2026-09-27; was ROADMAP H-34, cartograph/_archive/ROADMAP-H34-night-darkness-2026-09-27.md). The flat fill DESCENDS into the night to a
       // starlight floor; it used to CLIMB to 1.0, the brightest ambient of the whole day. The ground at night is lit
       // by the moon (phase- and altitude-aware, celestialLights.js#moonIntensity) and the lamps.
@@ -1556,10 +1551,6 @@ function CelestialBodies({
         color: '#8877aa',
         intensity: 0.2 + t * 0.1,
       }
-      sky = {
-        top: lerpColor('#1a1535', '#3a4570', t),
-        bottom: lerpColor('#553333', '#885544', t),
-      }
       ambient = { color: lerpColor('#443355', '#887766', t), intensity: 0.35 + t * 0.1 }
     } else if (isGoldenHour) {
       const t = (sunAlt - 0.05) / 0.25
@@ -1568,10 +1559,6 @@ function CelestialBodies({
         color: '#aabbdd',
         intensity: 0.3 - t * 0.05,
       }
-      sky = {
-        top: lerpColor('#4a6090', '#5080c0', t),
-        bottom: lerpColor('#aa7755', '#88aacc', t),
-      }
       ambient = { color: lerpColor('#998877', '#ccddee', t), intensity: 0.45 - t * 0.1 }
     } else {
       secondary = {
@@ -1579,7 +1566,6 @@ function CelestialBodies({
         color: '#aaccff',
         intensity: 0.25,
       }
-      sky = { top: '#5090dd', bottom: '#99ccee' }
       ambient = { color: '#eef4ff', intensity: 0.55 }
     }
 
@@ -1611,7 +1597,7 @@ function CelestialBodies({
     // like the water material, should take the light itself and not this.)
     _keyD.copy(primary.lightPosition).normalize()
 
-    return { primary, counter, secondary, sky, ambient, isNight, nightFactor, moon, sunAlt, sunDir: _sunD, moonGlow,
+    return { primary, counter, secondary, ambient, isNight, nightFactor, moon, sunAlt, sunDir: _sunD, moonGlow,
       _celestial: { sunDirection: _sunD.clone(), sunElevation: sunAlt, moonDirection: _moonD.clone(),
         moonPhase: moonIllum.phase, moonIllumination: moonIllum.fraction, moonAltitude: moonAlt,
         keyDirection: _keyD.clone(), keyColor: primary.color, nightFactor } }
@@ -1661,7 +1647,12 @@ function CelestialBodies({
   const hemiBase = (0.55 - lighting.nightFactor * 0.2) * (1 + cc * 0.5)
   useFrame(() => {
     if (ambientRef.current) ambientRef.current.intensity = ambientBase * ambientMulRef.current
-    if (hemiRef.current)    hemiRef.current.intensity    = hemiBase    * hemiMulRef.current
+    if (hemiRef.current) {
+      hemiRef.current.intensity = hemiBase * hemiMulRef.current
+      const bands = useSkyState.getState().skyBands   // the dome as GradientSky resolved it this frame
+      hemiRef.current.color.copy(bands.mid)
+      hemiRef.current.groundColor.copy(bands.horizon)
+    }
     // Night-fill floors ride their type's knob: default (×1) = today's look; both → 0 darkens night fully.
     const aMul = ambientMulRef.current
     if (floorWhiteRef.current) floorWhiteRef.current.intensity = 0.45 * (1 - lighting.nightFactor) * aMul
@@ -1684,17 +1675,11 @@ function CelestialBodies({
         color={lighting.ambient?.color || '#ffffff'}
         intensity={ambientBase}
       />}
-      {/* Hemisphere fill now driven by the live SKY GRADIENT — the up-sky color
-          washes surfaces from above, the warm horizon color is the ground bounce.
-          This is what makes surfaces "glow with the sky's color" (Jacob's vision)
-          instead of the old muddy #ffeedd→#556688 over dark brown. Saturation
-          degree will become a knob; raw sky colors are the honest baseline. */}
-      {debugLevel < 2 && <hemisphereLight
-        ref={hemiRef}
-        color={lighting.sky?.top || '#88aacc'}
-        groundColor={lighting.sky?.bottom || '#665544'}
-        intensity={hemiBase}
-      />}
+      {/* Sky fill takes THE DOME'S OWN COLOURS, every frame: the upper sky washes surfaces from above, the horizon
+          band is the ground bounce — so the town glows with the sky it sits under (Jacob's vision), lavender at dawn.
+          ⛔ It said so for months while reading a fixed four-branch palette (dark navy at dawn), so no setting could
+          put the sky's colour on the town (Dawn pass, 2026-09-27). Colours set in the frame loop above. */}
+      {debugLevel < 2 && <hemisphereLight ref={hemiRef} intensity={hemiBase} />}
       {/* ⭐⭐ THE CHANNEL FOLLOWS THE BODY, NOT THE SLOT (Jacob, 2026-09-20: "I
           don't think we should have lights that don't have operator facing
           knobs"). `dirSun` scales the SUN wherever it is in the rig and `dirMoon`
