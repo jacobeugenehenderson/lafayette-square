@@ -18,7 +18,10 @@ import { pourPolicyFor } from './intake-rows.mjs'
 const CARTOGRAPH_DIR = dirname(fileURLToPath(import.meta.url))
 
 export function mapTerrainPaths(scene) {
-  const dir = join(CARTOGRAPH_DIR, 'data', scene, 'clean')
+  // CARTOGRAPH_TERRAIN_DIR: read a scratch heightfield (bake-terrain --out-dir) for an A/B bake — said out loud.
+  const alt = process.env.CARTOGRAPH_TERRAIN_DIR
+  if (alt) console.warn(`  ⚠️ [terrain] reading ${scene}'s heightfield from ${alt} (CARTOGRAPH_TERRAIN_DIR), NOT the scene's own clean/`)
+  const dir = alt || join(CARTOGRAPH_DIR, 'data', scene, 'clean')
   return { json: join(dir, 'terrain.json'), bin: join(dir, 'terrain.bin') }
 }
 

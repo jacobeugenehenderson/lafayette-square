@@ -254,10 +254,17 @@ const GLITTER_GLSL = GLITTER_OCTAVES.map((o, i) => {
   const invL = (1 / o.lambdaM).toFixed(6)                           // cycles per metre
   return `         {  // octave ${i}: ${o.lambdaM} m wave, ${c.toFixed(2)} m/s, period ${(o.lambdaM / c).toFixed(2)} s, ${o.spreadDeg}° off the wind
            vec2 d = vec2(uWindDir.x * ${ca} - uWindDir.y * ${sa}, uWindDir.x * ${sa} + uWindDir.y * ${ca});
-           vec2 q = (pw - d * ${c.toFixed(5)} * uTime) * ${invL};
+           // ⛔ THE LATTICE TURNS WITH THE TRAIN (Jacob, 2026-09-27: "there are times when it looks like a straight
+           // grid"; traced by Furrow). Value noise shows its cell borders in its slope, and the glitter fires on the
+           // slope's tail — so all three octaves sampling one world-aligned lattice lined the glints up along x and z.
+           // Each octave now samples in its own frame (along d, across dp) and turns its slope back into the world.
+           // A rotation keeps the slope variance, so the Cox–Munk calibration stands.
+           vec2 dp = vec2(-d.y, d.x);
+           vec2 p0 = pw - d * ${c.toFixed(5)} * uTime;
+           vec2 q = vec2(dot(p0, d), dot(p0, dp)) * ${invL};
            float hx = wNoise(q + vec2(0.5, 0.0)) - wNoise(q - vec2(0.5, 0.0));
            float hz = wNoise(q + vec2(0.0, 0.5)) - wNoise(q - vec2(0.0, 0.5));
-           s += vec2(hx, hz) * ${o.steep.toFixed(4)};
+           s += (d * hx + dp * hz) * ${o.steep.toFixed(4)};
          }`
 }).join('\n')
 
@@ -279,7 +286,9 @@ export function waveKForExtent(extentDiag) {
  *   `slopeScaleForWind(useSkyState.windSpeedMs)` and `uWindDir` from
  *   `windDirDeg`, and the lake gets choppy when the town is actually windy.
  */
-export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, bodyColors = null } = {}) {
+// `terrain` — { decl, assign } from terrainShader (TERRAIN_DECL, assignTerrainUniforms), handed in by the caller so
+// this module stays importable where the terrain is not loaded (the checks). Absent, the water does not shade by depth.
+export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, bodyColors = null, terrain = null } = {}) {
   // ⛔ LOUD, NOT SILENT. An absent extent is the one input whose default would
   // be invisible: the surface would render, perfectly plausibly, at a pond's
   // frequencies on whatever body it was given. A plausible-looking success is
@@ -325,6 +334,12 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uKeyDir:        { value: new THREE.Vector3(0, 1, 0) },
     uKeyColor:      { value: new THREE.Color('#fffefa') },
     uKeyUp:         { value: 0 },
+    // ⭐ THE BOTTOM SHOWS THROUGH THE SHALLOWS (Jacob, 2026-09-26: "it takes 8' of water to make the bottom invisible;
+    // the last 2' is faded away"). The bed is drawn under this sheet (bake-terrain `bed`), so the sheet thins with the
+    // depth it covers: clear at the waterline, full past the visibility depth. Depth = −terrain under the fragment
+    // (y = 0 is this water's level), in metres, so the exaggeration does not stretch it. 0 = not shading by depth.
+    uVisibleM:      { value: 0 },
+    uFadeM:         { value: 0 },
     // uDisturbAmp 0 removes the term entirely (the multiply below), so one
     // compiled program serves both cases and the cache key stays single.
     uDisturbAmp:    { value: disturbance ? 1 : 0 },
@@ -359,6 +374,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     // marker is a function only this file emits.
     if (shader.fragmentShader.includes('wGlitterSlope')) return
     Object.assign(shader.uniforms, uniforms)
+    if (terrain) terrain.assign(shader)
 
     // Vertex: pass world position to fragment
     shader.vertexShader = shader.vertexShader.replace(
@@ -393,6 +409,8 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform vec3  uKeyDir;
        uniform vec3  uKeyColor;
        uniform float uKeyUp;
+       uniform float uVisibleM;
+       uniform float uFadeM;${terrain ? terrain.decl : ''}
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
        uniform float uGustDriftMps;
@@ -615,7 +633,12 @@ ${GLITTER_GLSL}
 
        // Vary alpha slightly with ripple (thinner at highlights)
        diffuseColor.a = mix(0.72, 0.88, smoothstep(0.3, 0.6, ripple));
-
+${terrain ? `       if (uVisibleM > 0.0) {
+         float wDepth = max(0.0, -texture2D(uTerrainMap, _terrainUV(vec2((vWaterWorld.x - uBMinX) / uSpanX, (vWaterWorld.z - uBMinZ) / uSpanZ))).r);
+         float wSeen = 1.0 - smoothstep(uVisibleM - uFadeM, uVisibleM, wDepth);   // 1 = the bottom shows
+         diffuseColor.a *= mix(1.0, clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
+       }
+` : ''}
        // ⭐⭐ THE WAVE NORMAL — THE SUN AND MOON PATH LIVES HERE, and it is the
        // only thing that turns "a lit plane" into water. Two contributions:
        //   · the GLITTER stack, world-constant metres, which supplies the fine
@@ -857,7 +880,7 @@ ${GLITTER_GLSL}
   // material's compiled program. ⭐ ONE key for every water body in the kit is
   // correct: the per-feature differences (wave scale, glint, disturbance) are
   // all UNIFORMS, so the code is identical and sharing the program is the point.
-  mat.customProgramCacheKey = () => 'kit-water-v2-sky'
+  mat.customProgramCacheKey = () => `kit-water-v2-sky${terrain ? '-depth' : ''}`
 
   return { material: mat, uniforms }
 }

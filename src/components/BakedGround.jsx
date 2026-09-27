@@ -144,14 +144,6 @@ function reportNoFields(look, id, surface) {
   console.error(`[BakedGround] ⛔ "${look}": face:${id} renders with "${surface}", which runs its rows per FIELD, `
     + `but this ground was baked without field ids. Drawn in the class's flat colour — ▶ re-bake the ground.`)
 }
-function reportNoClamp(look) {
-  const key = look + '|clamp'
-  if (_saidAbsent.has(key)) return
-  _saidAbsent.add(key)
-  console.error(`[BakedGround] ⛔ "${look}": the bed under the water was baked without its ceiling, so it is drawn `
-    + `fully draped and breaks through the water wherever the terrain stands above it. ▶ re-bake the ground.`)
-}
-
 // Which material draws a group (water · gravel · a procedural surface · flat colour) is one rule in
 // src/lib/groundMaterials.js — the lamp check walks the same dispatch.
 
@@ -390,9 +382,6 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
         // has none: the crop is then drawn with NO headland, and says so (reportNoEdge).
         if (g.fieldEdgeByteOffset != null) geom.setAttribute('aFieldEdge', new THREE.BufferAttribute(new Float32Array(bin, g.fieldEdgeByteOffset, g.vertexCount), 1))
       }
-      // ⭐ The bed's ceiling: (flag, height of the water drawn over it) per vertex — bake-ground.js
-      // "THE BED NEVER RISES". A bed baked before it has none and is drawn draped, and says so (reportNoClamp).
-      if (g.clampByteOffset != null) geom.setAttribute('aClampY', new THREE.BufferAttribute(new Float32Array(bin, g.clampByteOffset, g.vertexCount * 2), 2))
       geom.computeVertexNormals()
       return { group: g, geometry: geom }
     })
@@ -411,7 +400,6 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
             tintHex={scene?.layerColors?.[group.id]}
             roughness={scene?.materialPhysics?.[group.id]?.roughness}
             scale={scene?.materialPhysics?.[group.id]?.scale} />
-        if (group.id === 'bed' && !geometry.attributes.aClampY) reportNoClamp(manifest.look)
         const surface = draw.surface
         // ⛔ A per-field surface on a group baked without field ids cannot know which way its rows
         // run: said once, and drawn in the class's flat colour (what a class with no generator gets).
@@ -443,7 +431,7 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
     // earlier ones (fade, etc.) — patchTerrain runs first, then calls prev.
     // Drives off the shared terrainExag uniform.
     // ⭐ terrainNormals: the ground is lit by the hill it is draped on (Jacob, 2026-09-24).
-    patchTerrain(mat, { perVertex: true, terrainNormals: true, clampY: !!geometry.attributes.aClampY })
+    patchTerrain(mat, { perVertex: true, terrainNormals: true })
     return mat
   }, [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, hasPool, poolmap, geometry])
 
@@ -502,7 +490,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
       // Y stack. (z-fight fix 2026-06-17, ARCHITECTURE §8.)
       // Same parity move as FadeMesh — every BakedGround material rises
       // with the shared terrain displacement.
-      patchTerrain(built.material, { perVertex: true, terrainNormals: true, clampY: !!geometry.attributes.aClampY })
+      patchTerrain(built.material, { perVertex: true, terrainNormals: true })
       return built
     },
     [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams, geometry, coast]

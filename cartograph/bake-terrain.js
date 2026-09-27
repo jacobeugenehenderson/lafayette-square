@@ -60,8 +60,10 @@ const BOUNDARY_PATH = join(MAP_DIR, 'neighborhood_boundary.json')
 const TIF_PATH      = join(MAP_DIR, 'raw', 'elevation.tif')
 const OSM_PATH      = join(MAP_DIR, 'raw', 'osm.json')
 const CLEAN_DIR     = join(MAP_DIR, 'clean')
-const OUT_JSON      = join(CLEAN_DIR, 'terrain.json')
-const OUT_BIN       = join(CLEAN_DIR, 'terrain.bin')
+// --out-dir=<dir>: write the heightfield there instead of the scene's clean/ (a scratch A/B, not the live terrain).
+const _outArg = process.argv.slice(2).map(a => a.match(/^--out-dir=(.+)$/)).find(Boolean)?.[1]
+const OUT_JSON      = join(_outArg || CLEAN_DIR, 'terrain.json')
+const OUT_BIN       = join(_outArg || CLEAN_DIR, 'terrain.bin')
 
 // Per-scene projection. bake-terrain maps its local-meter grid back to lon/lat
 // to sample the GeoTIFF, so it needs THIS installation's geography — not
@@ -205,6 +207,7 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
   const stepX = (bounds.maxX - bounds.minX) / (width - 1)
   const stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
   const hist = new Map()
+  const mask = new Uint8Array(width * height)   // the cells under the mapped water — the bed is written into these
   let wet = 0
   for (let j = 0; j < height; j++) {
     const z = bounds.minZ + stepZ * j
@@ -223,6 +226,7 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
       const i1 = Math.min(width - 1, Math.floor((xs[k + 1] - bounds.minX) / stepX))
       for (let i = i0; i <= i1; i++) {
         const v = raw[j * width + i]
+        mask[j * width + i] = 1
         if (!Number.isFinite(v)) continue
         wet++
         const key = Math.round(v * 100)          // 1 cm buckets
@@ -242,7 +246,104 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
   for (const [k, c] of hist) if (c > best) { best = c; mode = k }
   const elev = mode / 100
   const share = best / wet
-  return { elev, share, wet, rings: rings.length }
+  return { elev, share, wet, rings: rings.length, mask }
+}
+
+// ⭐⭐ THE BED — the ground under the water, written INTO the heightfield (Jacob, 2026-09-26/27: "water is
+// always flat, and the edge of water is always where the flat plane meets any other plane" · "where we don't
+// have [depth data], we gently slope it" · "it takes 8' of water to make the bottom invisible").
+// Every cell under the mapped water takes the equilibrium beach profile h = A·y^(2/3) (references
+// f-cem-equilibrium-profile) at its distance y from the nearest dry cell, stopping at the depth the bottom
+// stops being visible — past that, depth does not show. A is READ from Table III-3-3 at the town's sand size
+// (f-cem-dean-a-table); the size is the town's authored `water.sandD50Mm`, else f-cem-nj-beach-d50. Visibility
+// is the town's authored `water.secchiM` (its own published clarity), else r-bottom-visibility-default, SAID.
+// Everything else drapes over the terrain as before, so the waterline is where the level meets the ground,
+// by construction. ⛔ Runs only when waterDatum found a coast: every other town comes out byte-identical.
+const REGISTRY_PATH = join(CARTOGRAPH_DIR, '..', 'references', 'registry.json')
+function finding(id) {
+  const f = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8')).findings.find(x => x.id === id)
+  if (!f) throw new Error(`⛔ the bed needs finding ${id} and references/registry.json has none`)
+  return f
+}
+// The town's authored water values, from the design of every look on this scene. ⛔ Two looks disagreeing is refused.
+function waterAuthoring() {
+  const idx = JSON.parse(fs.readFileSync(join(CARTOGRAPH_DIR, '..', 'public', 'looks', 'index.json'), 'utf8'))
+  const vals = []
+  for (const l of (idx.looks || []).filter(l => l.scene === SCENE)) {
+    const p = join(CARTOGRAPH_DIR, '..', 'public', 'looks', l.id, 'design.json')
+    if (fs.existsSync(p)) vals.push([l.id, JSON.parse(fs.readFileSync(p, 'utf8')).water || {}])
+  }
+  const out = {}
+  for (const key of ['sandD50Mm', 'secchiM']) {
+    const set = vals.filter(([, w]) => w[key] != null)
+    if (new Set(set.map(([, w]) => w[key])).size > 1)
+      throw new Error(`⛔ looks on scene '${SCENE}' author different water.${key}: ${set.map(([id, w]) => `${id}=${w[key]}`).join(', ')} — the terrain is one per scene`)
+    if (set.length) out[key] = { value: +set[0][1][key], from: `authored (design.json water.${key}, ${set.map(([id]) => id).join(', ')})` }
+  }
+  return out
+}
+function deanA(d50) {
+  const table = finding('f-cem-dean-a-table').value.A_m13_by_D_mm
+  const pts = Object.entries(table).map(([d, a]) => [+d, a]).sort((p, q) => p[0] - q[0])
+  if (d50 < pts[0][0] || d50 > pts[pts.length - 1][0])
+    throw new Error(`⛔ sand size ${d50} mm is outside Table III-3-3 as recorded (${pts[0][0]}–${pts[pts.length - 1][0]} mm)`)
+  for (let i = 1; i < pts.length; i++) if (d50 <= pts[i][0]) {
+    const [d0, a0] = pts[i - 1], [d1, a1] = pts[i]
+    return a0 + (a1 - a0) * (d50 - d0) / (d1 - d0)
+  }
+}
+// Exact squared Euclidean distance transform (Felzenszwalb & Huttenlocher), 1-D pass.
+function edt1d(f, n) {
+  const d = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1)
+  let k = 0; v[0] = 0; z[0] = -Infinity; z[1] = Infinity
+  for (let q = 1; q < n; q++) {
+    let s
+    while ((s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k])) <= z[k]) k--
+    k++; v[k] = q; z[k] = s; z[k + 1] = Infinity
+  }
+  k = 0
+  for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) ** 2 + f[v[k]] }
+  return d
+}
+// Metres from every wet cell to the shore — half a cell short of the nearest dry cell's centre.
+function shoreDistance(mask, width, height, stepX, stepZ) {
+  const INF = 1e20, g = new Float64Array(width * height)
+  for (let j = 0; j < height; j++) {
+    const f = new Float64Array(width)
+    for (let i = 0; i < width; i++) f[i] = mask[j * width + i] ? INF : 0
+    const d = edt1d(f, width)
+    for (let i = 0; i < width; i++) g[j * width + i] = d[i] * stepX * stepX
+  }
+  const out = new Float32Array(width * height)
+  for (let i = 0; i < width; i++) {
+    const f = new Float64Array(height)
+    for (let j = 0; j < height; j++) f[j] = g[j * width + i] / (stepZ * stepZ)
+    const d = edt1d(f, height)
+    for (let j = 0; j < height; j++) out[j * width + i] = Math.max(0, Math.sqrt(d[j] * stepZ * stepZ) - Math.min(stepX, stepZ) / 2)
+  }
+  return out
+}
+function writeBed(normalized, mask, width, height, bounds) {
+  const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
+  const auth = waterAuthoring()
+  const sand = auth.sandD50Mm ?? { value: finding('f-cem-nj-beach-d50').value.d50_mm, from: 'f-cem-nj-beach-d50 (the kit default — no town value authored)' }
+  const vis = auth.secchiM ?? (() => { const r = finding('r-bottom-visibility-default').value
+    return { value: r.visibleToM, fade: r.fadeOverM, from: 'r-bottom-visibility-default (Jacob\'s 8 ft) — ⚠️ NO measured clarity for this town (q-water-clarity-per-town)' } })()
+  const A = deanA(sand.value)
+  const dist = shoreDistance(mask, width, height, stepX, stepZ)
+  let n = 0, capped = 0, maxD = 0
+  for (let k = 0; k < mask.length; k++) {
+    if (!mask[k]) continue
+    const h = Math.min(A * Math.pow(dist[k], 2 / 3), vis.value)
+    if (h >= vis.value) capped++
+    normalized[k] = -h; n++; if (dist[k] > maxD) maxD = dist[k]
+  }
+  const fade = vis.fade ?? finding('r-bottom-visibility-default').value.fadeOverM
+  console.log(`  BED: ${n.toLocaleString()} cells under the water · h = ${A.toFixed(3)}·y^(2/3) (sand ${sand.value} mm — ${sand.from})`)
+  console.log(`    visible to ${vis.value.toFixed(2)} m, fading over the last ${fade.toFixed(2)} m — ${vis.from}`)
+  console.log(`    reaches that depth ${(Math.pow(vis.value / A, 1.5)).toFixed(0)} m from the shore · ${(100 * capped / Math.max(1, n)).toFixed(1)}% of the water is past it`)
+  return { profile: 'f-cem-equilibrium-profile', A: +A.toFixed(4), sandD50Mm: sand.value, sandFrom: sand.from,
+           visibleToM: vis.value, fadeOverM: fade, visibilityFrom: vis.from, cells: n }
 }
 
 // ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx
@@ -488,10 +589,11 @@ async function main() {
 
   const normalized = new Float32Array(total)
   for (let k = 0; k < total; k++) normalized[k] = raw[k] - baseElev
+  const bed = wd ? writeBed(normalized, wd.mask, width, height, bounds) : null
 
   const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
-                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null }
-  fs.mkdirSync(CLEAN_DIR, { recursive: true })
+                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null, ...(bed ? { bed } : {}) }
+  fs.mkdirSync(_outArg || CLEAN_DIR, { recursive: true })
   writeIfChanged(OUT_JSON, JSON.stringify(meta))
   writeIfChanged(OUT_BIN, Buffer.from(normalized.buffer))
 

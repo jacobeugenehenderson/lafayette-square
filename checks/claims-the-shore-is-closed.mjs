@@ -18,11 +18,10 @@
  *   · nothing under the water, and the land's edge is at or below the water → the water
  *     covers the meeting; closed, counted as `awash`.
  *   · nothing on the land side → OPEN in plan: the drawing has a hole at the shore.
- * ⛔ And the waterline is the mapped shore: just inside the water (the walk's water-side sample), whatever
- * ground is drawn there — the bed, or a land face overlapping the water — must be under the sheet; ground
- * standing proud there moves the visible shore out.
- * ⛔ And the bed stays UNDER its water: every bed vertex off the shore carries the height of the water
- * drawn over it and drapes no higher (bake-ground.js "THE BED NEVER RISES"); a bed with no ceiling fails.
+ * ⛔ And the waterline is where the level meets the ground (Jacob, 2026-09-26): √2 terrain cells from every part
+ * of the mapped shore (a bilinear cell's reach), whatever ground is drawn — the bed, or a land face over the water — must be under the sheet.
+ * ⛔ And the bed deepens going out: under a terrain that carries the bed (bake-terrain `bed`), the median
+ * depth at each distance from the nearest mapped shore never shrinks, out to the visibility depth.
  * ⛔ And first: the water must draw after every other ground group, or the ground under it paints
  * over it — a closed shore with no water visible is the picture this check once passed.
  * Stations on the disc rim are the EDGE OF THE DRAWING (`project_neighborhood_is_a_compound_shape`),
@@ -81,7 +80,6 @@ for (const dir of dirs) {
     continue
   }
   const tb = readFileSync(join(dir, 'terrain.bin'))
-  const bedGroup = m.groups.find(g => g.kind !== 'face' && g.id === 'bed')
   const exag = readJSON(join(dir, 'scene.json'))?.terrainExag ?? DEFAULT_V_EXAG
   const lift = makeElevationSampler({ ...tj, data: new Float32Array(tb.buffer.slice(tb.byteOffset, tb.byteOffset + tb.byteLength)) }, exag).getElevation
   const STEP = Math.min((tj.bounds.maxX - tj.bounds.minX) / (tj.width - 1), (tj.bounds.maxZ - tj.bounds.minZ) / (tj.height - 1))
@@ -96,8 +94,7 @@ for (const dir of dirs) {
   for (const g of m.groups) {
     if (water.includes(g)) continue
     const [P, I] = view(g)
-    const C = g.clampByteOffset != null ? new Float32Array(ab, g.clampByteOffset, g.vertexCount * 2) : null
-    const drape = i => { const y = P[i * 3 + 1] + lift(P[i * 3], P[i * 3 + 2]); return C && C[i * 2] > 0.5 ? Math.min(y, C[i * 2 + 1]) : y }
+    const drape = i => P[i * 3 + 1] + lift(P[i * 3], P[i * 3 + 2])
     for (let t = 0; t < I.length; t += 3) {
       const v = [I[t], I[t + 1], I[t + 2]].map(i => [P[i * 3], P[i * 3 + 2], drape(i)])
       const k = tris.push({ v, id: g.id }) - 1
@@ -127,6 +124,31 @@ for (const dir of dirs) {
   }
 
   const st = m.stencil
+  // Every point of the mapped shore (the water groups' boundary, off the disc rim), and the distance to the nearest.
+  const shorePts = []
+  for (const g of water) { const [P, I] = view(g); const cnt = new Map()
+    for (let t = 0; t < I.length; t += 3) for (let e = 0; e < 3; e++) { const a2 = I[t + e], b2 = I[t + (e + 1) % 3], kk = a2 < b2 ? a2 + '_' + b2 : b2 + '_' + a2; cnt.set(kk, (cnt.get(kk) || 0) + 1) }
+    for (const [kk, c] of cnt) { if (c !== 1) continue; const [a2, b2] = kk.split('_').map(Number); const L2 = Math.hypot(P[b2 * 3] - P[a2 * 3], P[b2 * 3 + 2] - P[a2 * 3 + 2])
+      for (let u = 0; u <= L2; u += STEP / 2) { const px = P[a2 * 3] + (P[b2 * 3] - P[a2 * 3]) * u / L2, pz = P[a2 * 3 + 2] + (P[b2 * 3 + 2] - P[a2 * 3 + 2]) * u / L2
+        if (!st || Math.hypot(px - st.center[0], pz - st.center[1]) <= st.radius - STEP) shorePts.push([px, pz]) } } }
+  const SC = STEP * 8, sg = new Map()
+  for (const q of shorePts) { const kk = Math.floor(q[0] / SC) + ',' + Math.floor(q[1] / SC); if (!sg.has(kk)) sg.set(kk, []); sg.get(kk).push(q) }
+  const nearest = (x, z) => { let best = Infinity; const cx = Math.floor(x / SC), cz = Math.floor(z / SC)
+    // ring r's cells are at least (r − 1)·SC away, so stop only once the best found is nearer than that
+    for (let r = 0; r < 4 && best > (r - 1) * SC; r++) for (let di = -r; di <= r; di++) for (let dj = -r; dj <= r; dj++) { if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue
+      for (const q of sg.get((cx + di) + ',' + (cz + dj)) || []) best = Math.min(best, Math.hypot(q[0] - x, q[1] - z)) } return best }
+  // Is (x, z) under the drawn water? (a normal stepped in from a corner can land back on the land)
+  const wgrid = new Map(), wtris = []
+  for (const g of water) { const [P, I] = view(g)
+    for (let t = 0; t < I.length; t += 3) { const v = [0, 1, 2].map(e => [P[I[t + e] * 3], P[I[t + e] * 3 + 2]]); const k = wtris.push(v) - 1
+      const xs = v.map(q => q[0]), zs = v.map(q => q[1])
+      for (let cx = Math.floor(Math.min(...xs) / CELL); cx <= Math.floor(Math.max(...xs) / CELL); cx++) for (let cz = Math.floor(Math.min(...zs) / CELL); cz <= Math.floor(Math.max(...zs) / CELL); cz++) {
+        const kk = cx + ',' + cz; if (!wgrid.has(kk)) wgrid.set(kk, []); wgrid.get(kk).push(k) } } }
+  const inWater = (x, z) => (wgrid.get(Math.floor(x / CELL) + ',' + Math.floor(z / CELL)) || []).some(k => { const [a2, b2, c2] = wtris[k]
+    const d = (b2[1] - c2[1]) * (a2[0] - c2[0]) + (c2[0] - b2[0]) * (a2[1] - c2[1]); if (!d) return false
+    const w0 = ((b2[1] - c2[1]) * (x - c2[0]) + (c2[0] - b2[0]) * (z - c2[1])) / d, w1 = ((c2[1] - a2[1]) * (x - c2[0]) + (a2[0] - c2[0]) * (z - c2[1])) / d
+    return w0 >= 0 && w1 >= 0 && w0 + w1 <= 1 })
+  let depthLine = ''
   const len = { rim: 0, closed: 0, awash: 0, open: 0 }, by = {}, opens = [], proud = { len: 0, first: null, by: {} }
   for (const g of water) {
     const [P, I] = view(g)
@@ -149,9 +171,14 @@ for (const dir of dirs) {
         if (st && Math.hypot(x - st.center[0], z - st.center[1]) > st.radius - STEP) { len.rim += seg; continue }
         const land = groundAt(x + nx * ACROSS, z + nz * ACROSS)
         const bed = groundAt(x - nx * ACROSS, z - nz * ACROSS)
+        // The bank is the terrain's own step from the land to the bed. A bilinear terrain lets a land cell reach a point
+        // up to √2 cells away, so the water is tested only where EVERY part of the mapped shore is at least that far —
+        // at an inlet, a point one cell in from this edge can be one cell from the opposite one, correctly.
+        const REACH = Math.SQRT2 * STEP, dx = x - nx * REACH, dz = z - nz * REACH
+        const deep = nearest(dx, dz) >= REACH - 1e-6 && inWater(dx, dz) ? groundAt(dx, dz) : null
+        if (deep && deep.y > WY + 1e-6) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - WY, id: deep.id } }
         let gap
         if (!land) gap = Infinity                                  // the drawing ends at the water
-        else if (bed && bed.y > WY + 1e-6) { proud.len += seg; proud.by[bed.id] = (proud.by[bed.id] || 0) + seg; proud.first ||= { x, z, h: bed.y - WY, id: bed.id }; gap = 0 }   // closed, but ground shows through the water
         else if (bed) gap = 0                                      // one conformed mesh on both sides
         else gap = land.y > WY ? land.y - WY : 0
         if (gap === 0) {
@@ -163,43 +190,42 @@ for (const dir of dirs) {
       }
     }
   }
-  // ⛔ THE BED STAYS UNDER ITS WATER (Jacob, 2026-09-26: the drawn water's edge IS the mapped shoreline).
-  // Every bed vertex that is not on the shore must carry a ceiling, and drape no higher than the water over it.
-  let risen = 0, worst = null
-  if (bedGroup) {
-    if (bedGroup.clampByteOffset == null) {
-      console.error(`⛔ ${look}: the bed carries NO ceiling (baked before it) — it breaks through the water wherever the terrain stands above it`)
-      fail++
-      continue
-    }
-    const [P] = view(bedGroup), C = new Float32Array(ab, bedGroup.clampByteOffset, bedGroup.vertexCount * 2)
-    const Y = water.map(w => view(w)[0][1])
-    for (let i = 0; i < bedGroup.vertexCount; i++) {
-      if (!(C[i * 2] > 0.5)) continue
-      const y = Math.min(P[i * 3 + 1] + lift(P[i * 3], P[i * 3 + 2]), C[i * 2 + 1])
-      if (!(C[i * 2 + 1] < Math.max(...Y))) { risen++; worst ||= { x: P[i * 3], z: P[i * 3 + 2], why: `ceiling ${C[i * 2 + 1]} is not under any water's drawn surface` }; continue }
-      if (y > C[i * 2 + 1] + 1e-6) { risen++; worst ||= { x: P[i * 3], z: P[i * 3 + 2], why: `${(y - C[i * 2 + 1]).toFixed(2)} m above` } }
-    }
-  }
-  if (risen) {
-    console.error(`⛔ ${look}: ${risen} bed vertex/vertices stand ABOVE the water over them — first at (${worst.x.toFixed(1)}, ${worst.z.toFixed(1)}): ${worst.why}`)
-    fail++
-    continue
-  }
   const km = v => (v / 1000).toFixed(2)
   // ⛔ THE WATERLINE IS THE MAPPED SHORE (Jacob, 2026-09-26). Just inside the water the bed must be UNDER the
   // sheet; where it stands above it, dry sand shows inside the drawn water and the shore reads as moved out.
   if (proud.len) {
     console.error(`⛔ ${look}: ground stands ABOVE the water just inside the mapped shore along ${km(proud.len)} km `
       + `(${Object.entries(proud.by).sort((p, q) => q[1] - p[1]).map(([id, v]) => `${id} ${km(v)}`).join(' · ')}) — `
-      + `first at (${proud.first.x.toFixed(1)}, ${proud.first.z.toFixed(1)}), ${proud.first.id} ${proud.first.h.toFixed(2)} m proud, ${ACROSS.toFixed(2)} m inside`)
+      + `first at (${proud.first.x.toFixed(1)}, ${proud.first.z.toFixed(1)}), ${proud.first.id} ${proud.first.h.toFixed(2)} m proud, ${(Math.SQRT2 * STEP).toFixed(2)} m (√2 terrain cells) from every part of the shore`)
     fail++
     continue
+  }
+  // ⭐ THE BED DEEPENS GOING OUT (bake-terrain `bed`): sample the water, bin by distance to the nearest mapped
+  // shore at the terrain step, and the median depth must not fall bin to bin out to where the bed reaches the
+  // visibility depth. By distance to the NEAREST shore, not along a normal: across a channel the depth rises
+  // again past the middle, and that is correct.
+  if (tj.bed) {
+    const reach = Math.pow(tj.bed.visibleToM / tj.bed.A, 1.5), bins = []
+    for (const g of water) { const [P, I] = view(g)
+      for (let t = 0; t < I.length && bins.flat().length < 60000; t += 3) { const V = [0, 1, 2].map(e => [P[I[t + e] * 3], P[I[t + e] * 3 + 2]])
+        for (let q = 0; q < 6; q++) { let a2 = ((q + 1) * 0.7548776662) % 1, b2 = ((q + 1) * 0.5698402909) % 1; if (a2 + b2 > 1) { a2 = 1 - a2; b2 = 1 - b2 }
+          const x = V[0][0] + a2 * (V[1][0] - V[0][0]) + b2 * (V[2][0] - V[0][0]), z = V[0][1] + a2 * (V[1][1] - V[0][1]) + b2 * (V[2][1] - V[0][1])
+          const d = nearest(x, z); if (!(d < reach)) continue
+          const bi = Math.floor(d / STEP); (bins[bi] ||= []).push(-lift(x, z) / exag) } } }
+    const med = bins.map(b2 => b2 && b2.length >= 20 ? b2.sort((p2, q2) => p2 - q2)[Math.floor(b2.length / 2)] : null)
+    let prev = -Infinity, bad = null
+    med.forEach((m2, bi) => { if (m2 == null) return; if (m2 < prev - 0.01 && !bad) bad = { bi, m2, prev }; prev = Math.max(prev, m2) })
+    if (bad) {
+      console.error(`⛔ ${look}: the bed gets SHALLOWER going out — median depth ${bad.m2.toFixed(2)} m at ${(bad.bi * STEP).toFixed(0)} m from the shore, after ${bad.prev.toFixed(2)} m nearer in`)
+      fail++
+      continue
+    }
+    depthLine = ` · bed deepens to ${tj.bed.visibleToM.toFixed(2)} m over ${reach.toFixed(0)} m (medians ${med.filter(v => v != null).slice(0, 4).map(v => v.toFixed(2)).join(' → ')} …)`
   }
   const walked = len.closed + len.awash + len.open
   const closedBy = Object.entries(by).sort((p, q) => q[1] - p[1]).map(([id, v]) => `${id} ${km(v)}`).join(' · ') || 'none'
   if (!len.open) {
-    console.log(`  ok    ${look}  ${km(walked)} km of shore walked at ${STEP.toFixed(2)} m, none bare — closed by ${closedBy} km · awash ${km(len.awash)} km · rim ${km(len.rim)} km`)
+    console.log(`  ok    ${look}  ${km(walked)} km of shore walked at ${STEP.toFixed(2)} m, none bare — closed by ${closedBy} km · awash ${km(len.awash)} km · rim ${km(len.rim)} km${depthLine}`)
     ok++
     continue
   }

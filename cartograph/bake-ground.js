@@ -43,7 +43,7 @@ import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js
 import { writeIfChanged } from './io.js'
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
-import { conformAndRefine, findTJunctions, ON_EDGE_M } from './groundConformity.js'
+import { conformAndRefine, findTJunctions } from './groundConformity.js'
 import { requireExplicitMap } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
@@ -242,7 +242,8 @@ const PAINT_ORDER = [
   // draped, so where the land's edge stands above the water nothing joined them and the
   // sky showed through (`docs/briefs/BRIEF-the-shore-is-closed.md`). The bed is draped
   // over the same terrain and conformed with the land, so the two share every shore vertex
-  // and meet with no step; the visible shore is wherever the terrain crosses the water.
+  // and meet with no step. Its SHAPE is in the terrain: bake-terrain writes the bed under the water
+  // (THE BED), so the visible shore is wherever the level meets the ground.
   // ⛔ BEFORE THE WATER, and that is the one slot it cannot trade: every ground group draws in
   // renderOrder and the water writes no depth, so a bed drawn after it paints the harbour over
   // (2026-09-26, seen by Jacob). Only the water slots move for it. FLATTENED AT THE BOTTOM — FLOOR_KEYS.
@@ -1046,57 +1047,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
     + `(${KEEP_OWN_SLOT.size} keeping their own slot, ${DOES_NOT_CUT.size} not cutting) in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)
 
-  // ⭐⭐ THE TOE — the bank is a STEP AT THE MAPPED SHORE (Jacob, 2026-09-26: the drawn water's edge IS the
-  // shoreline, and the revetment sits on it). The bed's shore vertices are shared with the land and stay at
-  // the land's height; its interior is held at the water's level (section 5, "THE BED NEVER RISES"). Without
-  // a line of held vertices close to the shore, the bank spanned the whole first triangle — measured on huron,
-  // run p50 22 m at 2° — dry sand standing ABOVE the water, and the waterline 22 m out. So each bed polygon is
-  // split into a hairline STRIP along its edge and the CORE inside it: the core's boundary is the toe, held at
-  // the water's level, one TOE_M from the shore. Both stay `bed` and are conformed as one mesh.
-  // TOE_M is a numerical width, not a town scale: the narrowest strip whose two edges the conformity pass
-  // keeps apart (it treats a vertex within ON_EDGE_M of an edge as ON it), with an order of magnitude to spare.
-  const TOE_M = 10 * ON_EDGE_M
-  {
-    const items = flattened.get('mat:bed')
-    if (items?.length) {
-      const { ClipperOffset, JoinType, EndType } = clipperLib
-      const out = []
-      let whole = 0
-      for (const it of items) {
-        const outer = Array.isArray(it) ? it : it?.outer
-        const holes = Array.isArray(it) ? [] : (it?.holes || [])
-        if (!outer || outer.length < 3) continue
-        const mine = new _Paths()
-        mine.push(_ringToPath(outer))
-        for (const h of holes) if (h?.length >= 3) mine.push(_ringToPath(h))
-        _Clipper.CleanPolygons(mine, 1)
-        const co = new ClipperOffset(2.0, 1)
-        co.AddPaths(mine, JoinType.jtMiter, EndType.etClosedPolygon)
-        const core = new _Paths()
-        co.Execute(core, -TOE_M * CLIP_SCALE)
-        const asItems = (tree) => {
-          const r = []
-          const walk = (node) => { for (const ch of node.Childs()) {
-            const ring = _pathToRing(ch.m_polygon)
-            if (ring.length >= 3) r.push({ outer: ring, holes: ch.Childs().map(h => _pathToRing(h.m_polygon)).filter(q => q.length >= 3) })
-            for (const h of ch.Childs()) walk(h) } }
-          walk(tree)
-          return r
-        }
-        if (!core.length) { out.push(it); whole++; continue }   // narrower than two toes: all shore, all draped
-        const cT = new _PolyTree(), sT = new _PolyTree()
-        const c1 = new _Clipper(); c1.AddPaths(core, _PolyType.ptSubject, true)
-        c1.Execute(_ClipType.ctUnion, cT, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)
-        const c2 = new _Clipper(); c2.AddPaths(mine, _PolyType.ptSubject, true); c2.AddPaths(core, _PolyType.ptClip, true)
-        c2.Execute(_ClipType.ctDifference, sT, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)
-        out.push(...asItems(cT), ...asItems(sT))
-      }
-      flattened.set('mat:bed', out)
-      console.log(`  [bake-ground] bed toe: ${items.length} bed polygon(s) → ${out.length} (core + shore strip, ${TOE_M} m)`
-        + (whole ? ` · ${whole} narrower than the strip, kept whole and fully draped` : ''))
-    }
-  }
 
+  // ⭐ THE BED'S TOLERANCE IS THE WATER SHEET'S LIFT. The sheet sits its slot above the level (renderOrder ×
+  // GROUND_Y_EPS); a bed triangle that misses the terrain by less than that can never lift through the sheet where
+  // the terrain is under the water. At the generic 0.5 m a 50 m bed triangle chorded 0.6 m over the bank and stood
+  // proud (huron, 2026-09-27). Only the curving bank splits — the bed past the visibility depth is flat.
+  // The slot counts the groups painted before the water — a lower bound on its renderOrder, so the bound holds.
+  const bedTol = GROUND_Y_EPS * PAINT_ORDER.slice(0, PAINT_ORDER.findIndex(([k, key]) => k === 'mat' && key === 'water'))
+    .filter(([k, key]) => bakeLayerVis[groupLayerId(k, key)] !== false && (k === 'face' ? byFaceUse.get(key) : byMaterial.get(key))?.length).length
   const planGroup = (kind, key) => {
     if (bakeLayerVis[groupLayerId(kind, key)] === false) return null
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
@@ -1125,7 +1083,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       // coarse cap it used to emit here bred Provincetown's 10.3M slivers (Altadena, 2026-07-14, was the
       // first no-terrain blow-up — the fine mesh then; the cap now).
       refinePolicy = refineMode === 'adaptive' && refineSampler
-        ? { mode: 'adaptive', sampler: refineSampler, tol: refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge }
+        ? { mode: 'adaptive', sampler: refineSampler, tol: key === 'bed' ? bedTol : refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge }
         : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
     } else if (isContourRibbon) {
       // Dense, EVEN sampling so the path follows the contour. Adaptive's
@@ -1333,92 +1291,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     }
   }
 
-  // ⭐⭐ THE BED NEVER RISES THROUGH ITS WATER (Jacob, 2026-09-26: the drawn water's edge IS the mapped
-  // shoreline, and the revetment sits on it). Draped freely, the bed broke the surface wherever the lidar
-  // reads the flats as dry — 9.8% of Provincetown's bed, p50 16 m out — and moved the visible shore away
-  // from the coast and the stone. So every INTERIOR bed vertex carries the height of the water drawn over
-  // it, and the runtime drape takes min(terrain, that height). ⛔ PER BODY, read off the water group that
-  // covers the vertex — never the datum: a pond standing above it keeps its bed under its own surface.
-  // The bed's BOUNDARY vertices are shared with the land and stay fully draped, so the mesh stays one piece
-  // and the bank forms at the mapped shore. Section 5 of the bin: (flag, height) per bed vertex.
-  let clampByteOffset = 0
-  const clampChunks = []
-  {
-    const gi = groups.findIndex(g => g.kind === 'mat' && g.id === 'bed')
-    if (gi >= 0) {
-      const BP = positionChunks[gi], BI = indexChunks[gi], n = BP.length / 3
-      const uses = new Map()
-      for (let t = 0; t < BI.length; t += 3) for (let e = 0; e < 3; e++) {
-        const a = BI[t + e], b = BI[t + (e + 1) % 3], k = a < b ? a * n + b : b * n + a
-        uses.set(k, (uses.get(k) || 0) + 1)
-      }
-      const onEdge = new Uint8Array(n)
-      for (const [k, c] of uses) if (c === 1) { onEdge[Math.floor(k / n)] = 1; onEdge[k % n] = 1 }
-      // Every water triangle, gridded, with its group's drawn Y.
-      const CELL = 50, grid = new Map(), wt = []
-      groups.forEach((g, i) => {
-        if (g.kind === 'face' || !(g.id === 'water' || g.id.startsWith('water:'))) return
-        // The body's own LEVEL: its drawn sheet minus the slot lift that separates the sheet from what is
-        // beneath it. Holding the bed AT the sheet would make them coplanar and they would fight.
-        const P = positionChunks[i], I = indexChunks[i], lift = g.renderOrder * GROUND_Y_EPS
-        for (let t = 0; t < I.length; t += 3) {
-          const v = [I[t], I[t + 1], I[t + 2]].map(j => [P[j * 3], P[j * 3 + 2], P[j * 3 + 1] - lift])
-          const k = wt.push(v) - 1
-          const xs = v.map(p => p[0]), zs = v.map(p => p[1])
-          for (let cx = Math.floor(Math.min(...xs) / CELL); cx <= Math.floor(Math.max(...xs) / CELL); cx++)
-            for (let cz = Math.floor(Math.min(...zs) / CELL); cz <= Math.floor(Math.max(...zs) / CELL); cz++) {
-              const key = cx + ',' + cz
-              if (!grid.has(key)) grid.set(key, [])
-              grid.get(key).push(k)
-            }
-        }
-      })
-      const surfaceOver = (x, z) => {
-        let y = null
-        for (const k of grid.get(Math.floor(x / CELL) + ',' + Math.floor(z / CELL)) || []) {
-          const [a, b, c] = wt[k]
-          const d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
-          if (!d) continue
-          const w0 = ((b[1] - c[1]) * (x - c[0]) + (c[0] - b[0]) * (z - c[1])) / d
-          const w1 = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (z - c[1])) / d
-          // Inside, or within ON_EDGE_M of the triangle — the conformity pass's own definition of ON an edge
-          // (a toe vertex was measured 2 mm outside the raw water ring along a long straight shore on huron).
-          if (w0 < 0 || w1 < 0 || w0 + w1 > 1) {
-            const segD = (p, q) => { const dx = q[0] - p[0], dz = q[1] - p[1], L2 = dx * dx + dz * dz
-              const t = L2 ? Math.max(0, Math.min(1, ((x - p[0]) * dx + (z - p[1]) * dz) / L2)) : 0
-              return Math.hypot(p[0] + t * dx - x, p[1] + t * dz - z) }
-            if (Math.min(segD(a, b), segD(b, c), segD(c, a)) > ON_EDGE_M) continue
-          }
-          const h = w0 * a[2] + w1 * b[2] + (1 - w0 - w1) * c[2]
-          if (y == null || h > y) y = h                    // under two bodies: the one drawn on top
-        }
-        return y
-      }
-      const clamp = new Float32Array(n * 2)
-      let held = 0, free = 0, orphan = 0, firstOrphan = null
-      for (let i = 0; i < n; i++) {
-        if (onEdge[i]) { free++; continue }
-        const y = surfaceOver(BP[i * 3], BP[i * 3 + 2])
-        if (y == null) { orphan++; firstOrphan ||= [BP[i * 3], BP[i * 3 + 2]]; continue }
-        clamp[i * 2] = 1; clamp[i * 2 + 1] = y; held++
-      }
-      // ⛔ LOUD. A bed vertex under no water is bed outside the water — the bed is built FROM the water rings,
-      // so this cannot happen quietly; if it does, the shape is wrong and must not ship looking right.
-      if (orphan) throw new Error(`[bake-ground] ${orphan} interior bed vertex/vertices lie under NO water body — first at `
-        + `(${firstOrphan[0].toFixed(2)}, ${firstOrphan[1].toFixed(2)}). The bed is built from the water rings; refusing to write a bed outside its water.`)
-      groups[gi].clampByteOffset = clampByteOffset
-      clampChunks.push(clamp); clampByteOffset += clamp.byteLength
-      console.log(`  [bake-ground] bed held under its water: ${held} interior vertices carry the surface over them · ${free} on the shore stay draped`)
-    }
-  }
-
   // Concatenate positions (all Float32) and indices (all Uint32) into one
-  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups][bed clamp]. Manifest's *ByteOffset
+  // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups]. Manifest's *ByteOffset
   // values are relative to the START of each section (offsets within the
   // positions section, then offsets within the indices section).
   const totalPosBytes = posByteOffset
   const totalIdxBytes = idxByteOffset
-  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset + clampByteOffset)
+  const buf = new Uint8Array(totalPosBytes + totalIdxBytes + fieldByteOffset + edgeByteOffset)
   let off = 0
   for (const c of positionChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
@@ -1443,13 +1322,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const edgeSectionStart = fieldSectionStart + fieldByteOffset
   for (const g of groups) if (g.fieldEdgeByteOffset != null) g.fieldEdgeByteOffset += edgeSectionStart
   for (const c of edgeChunks) {
-    buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
-    off += c.byteLength
-  }
-  // Fifth section: the bed's (flag, water height) per vertex — see "THE BED NEVER RISES" above.
-  const clampSectionStart = edgeSectionStart + edgeByteOffset
-  for (const g of groups) if (g.clampByteOffset != null) g.clampByteOffset += clampSectionStart
-  for (const c of clampChunks) {
     buf.set(new Uint8Array(c.buffer, c.byteOffset, c.byteLength), off)
     off += c.byteLength
   }

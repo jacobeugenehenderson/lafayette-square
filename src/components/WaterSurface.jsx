@@ -4,6 +4,9 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { makeWaterMaterial, slopeScaleForWind, maxRoughnessForWind,
          coxMunkSlopeVariance, WIND_FLOOR_MPS } from './waterMaterial'
+import { TERRAIN_DECL, assignTerrainUniforms, terrainBed } from '../utils/terrainShader'
+
+let _saidNoBed = false
 
 /**
  * WaterSurface — THE ONE WATER MESH, MOUNTED TWICE.
@@ -31,10 +34,16 @@ function WaterSurface({ geometry, renderOrder = 0 }) {
     const extentDiag = Math.hypot(bb.max.x - bb.min.x, bb.max.z - bb.min.z)
     // ⛔ No `disturbance`: the point ripple models something dropped in a pond.
     // On a body kilometres across it is one sine wave crossing the map.
-    return makeWaterMaterial({ extentDiag })
+    return makeWaterMaterial({ extentDiag, terrain: { decl: TERRAIN_DECL, assign: assignTerrainUniforms } })
   }, [geometry])
   useFrame((_, delta) => {
     uniforms.uTime.value += delta
+    // ⭐ The town's visibility depth, read off its terrain's bed record (bake-terrain). ⛔ A town whose terrain has
+    // no bed draws the water flat-shaded and SAYS so — it was baked before the bed existed.
+    const bed = terrainBed()
+    uniforms.uVisibleM.value = bed ? bed.visibleToM : 0
+    uniforms.uFadeM.value = bed ? bed.fadeOverM : 0
+    if (!bed && !_saidNoBed) { _saidNoBed = true; console.error('[WaterSurface] ⛔ this terrain carries no bed (terrain.json `bed`) — the water is not shaded by depth. ▶ re-bake the terrain') }
     uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     // ⭐⭐ THE LAKE READS THE TOWN'S REAL WEATHER. `windSpeedMs` / `windDirDeg`
     // are polled from open-meteo for this town's own coordinates

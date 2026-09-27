@@ -22,6 +22,7 @@
 // global minimum lands on the wrong one and the whole body is drawn low. Nothing
 // downstream can tell.
 //
+// ⭐ Once the bed is IN the terrain (bake-terrain `bed`), the evidence moves to terrain.json — see the loop.
 // ⭐ THE TOLERANCE IS DERIVED, NOT PICKED. Ground groups are separated in Y by
 // `renderOrder × GROUND_Y_EPS` (`bake-ground.js`), so the entire coplanar stack is
 // worth (group count × EPS) metres. Anything inside that is the resolver; anything
@@ -119,6 +120,25 @@ for (const scene of list) {
   if (!water.length) { console.log(`  ${scene.padEnd(18)} no water body in the slab — nothing to level`); dry++; continue }
   const sample = terrainOf(scene)
   if (!sample) { console.log(`  ${scene.padEnd(18)} ⚠️  water body but NO terrain artifact — not checked`); continue }
+  // ⭐ A TERRAIN THAT CARRIES THE BED (bake-terrain `bed`, Jacob 2026-09-26: the bed slopes down from the shore)
+  // no longer holds the flattened surface under the water — so the "one surface" evidence is what bake-terrain
+  // recorded BEFORE writing the bed: the datum is the water, and its 1 cm bucket holds most of the body's samples
+  // (the same "under half" bar bake-terrain prints). Seated = the sheet, less its own slot lift, is at y = 0.
+  const tmeta = JSON.parse(read(`cartograph/data/${scene}/clean/terrain.json`))
+  if (tmeta.bed) {
+    const STACKb = gj.groups.length * EPS, binb = readFileSync(join(ROOT, `public/baked/${scene}/ground.bin`))
+    for (const wg of water) {
+      bodies++
+      const meshY = new Float32Array(binb.buffer, binb.byteOffset + wg.vertexByteOffset, 3)[1]
+      const LIFT = (wg.renderOrder || 0) * EPS
+      const flat = tmeta.datum === 'water' && tmeta.datumShare > 0.5
+      const seated = Math.abs(meshY - LIFT) <= STACKb
+      console.log(`  ${flat && seated ? '✅' : '⛔'} ${scene}/${wg.id}  datum ${tmeta.datum} · ${(100 * (tmeta.datumShare ?? 0)).toFixed(1)}% of the flattened source in one 1 cm bucket · mesh Y ${meshY.toFixed(3)} m less its lift ${LIFT.toFixed(3)} · stack ${STACKb.toFixed(3)} m · bed written (${tmeta.bed.cells.toLocaleString()} cells)`)
+      if (!flat) fail.push(`   ${scene}/${wg.id}: the flattened source was not ONE surface (datum ${tmeta.datum}, share ${tmeta.datumShare}) — the level the bed hangs from is arbitrary.`)
+      if (!seated) fail.push(`   ${scene}/${wg.id}: the water sheet is ${(meshY - LIFT).toFixed(3)} m off the datum it should sit on.`)
+    }
+    continue
+  }
 
   // The whole coplanar stack is worth this much Y. Inside it, a difference is the
   // resolver doing its job; outside it, the two surfaces genuinely disagree.
