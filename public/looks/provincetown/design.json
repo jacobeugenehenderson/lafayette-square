@@ -25,24 +25,56 @@
   "materialColors": {},
   "materialPhysics": {},
   "buildingPalette": [
-    "#dcdcdc",
-    "#a0522d",
-    "#cd853f",
-    "#8b2500",
-    "#d2b48c",
-    "#778899",
-    "#8b4513",
-    "#a52a2a",
-    "#f5deb3",
-    "#696969",
-    "#b22222",
-    "#808080"
+    "#9c7a56",
+    "#8f7c66",
+    "#8b867c",
+    "#9d9a93",
+    "#9d9a93",
+    "#b2afa8",
+    "#b2afa8",
+    "#7f7c76",
+    "#f1efe8",
+    "#f1efe8",
+    "#e8e4da",
+    "#8e3a30",
+    "#3f5874"
   ],
+  "surfaces": {
+    "params": {
+      "pilgrim-granite": {
+        "reliefM": 0.08,
+        "toneVar": 0.25
+      }
+    }
+  },
+  "wallMix": {
+    "wood_siding": 0.9,
+    "brick_red": 0.1
+  },
+  "wallPalettes": {
+    "brick_red": [
+      "#8a4636",
+      "#7a3f31",
+      "#94543f"
+    ]
+  },
+  "terrainExag": null,
   "lampGlow": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "grass": 0,
-      "trees": 0,
-      "pool": 1
+      "dusk": {
+        "grass": 0,
+        "trees": 0.6,
+        "pool": 0.4,
+        "radius": 0.65
+      },
+      "night": {
+        "grass": 0,
+        "trees": 4,
+        "pool": 2.65
+      }
     }
   },
   "bloom": {
@@ -90,6 +122,11 @@
   "skyGain": {
     "values": {
       "value": 1
+    }
+  },
+  "stars": {
+    "values": {
+      "brightness": 1
     }
   },
   "grade": {
@@ -194,17 +231,31 @@
     },
     {
       "position": [
-        1175,
-        23,
-        1243
+        -256,
+        69,
+        861
       ],
       "target": [
-        0,
-        40,
-        0
+        -77,
+        3,
+        13
       ],
       "fov": 22,
-      "t": 0.45998
+      "t": 0.459979
+    },
+    {
+      "position": [
+        499,
+        136,
+        -152
+      ],
+      "target": [
+        -1256,
+        -52,
+        -106
+      ],
+      "fov": 22,
+      "t": 0.692494
     },
     {
       "position": [
@@ -222,7 +273,7 @@
     }
   ],
   "heroMotion": {
-    "length": 900,
+    "length": 785,
     "mode": "bounce"
   },
   "shots": {
@@ -265,9 +316,18 @@
     }
   },
   "lantern": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "intensity": 1,
-      "glow": 1
+      "dusk": {
+        "intensity": 0.67,
+        "glow": 0.3
+      },
+      "night": {
+        "intensity": 0.18,
+        "glow": 1.62
+      }
     }
   },
   "horizon": {
@@ -318,13 +378,5 @@
       "species": "blackgum",
       "variantId": 1
     }
-  ],
-  "surfaces": {
-    "params": {
-      "pilgrim-granite": {
-        "reliefM": 0.08,
-        "toneVar": 0.25
-      }
-    }
-  }
+  ]
 }

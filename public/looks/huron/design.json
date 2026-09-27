@@ -121,18 +121,15 @@
   "materialColors": {},
   "materialPhysics": {},
   "buildingPalette": [
-    "#dcdcdc",
-    "#a0522d",
-    "#cd853f",
-    "#8b2500",
-    "#d2b48c",
-    "#778899",
-    "#8b4513",
-    "#a52a2a",
-    "#f5deb3",
-    "#696969",
-    "#b22222",
-    "#808080"
+    "#f1efe8",
+    "#f1efe8",
+    "#ebe6d8",
+    "#e6dcb4",
+    "#cfcec8",
+    "#b9c5cc",
+    "#aab49b",
+    "#efe3c6",
+    "#d9d4c6"
   ],
   "lampGlow": {
     "animated": "tod",
@@ -863,5 +860,18 @@
       "species": "oak_bur",
       "variantId": 1
     }
-  ]
+  ],
+  "wallMix": {
+    "wood_siding": 0.75,
+    "brick_red": 0.25
+  },
+  "wallPalettes": {
+    "brick_red": [
+      "#8a4636",
+      "#7c3b2d",
+      "#9a5442",
+      "#b99b72",
+      "#a8875f"
+    ]
+  }
 }
