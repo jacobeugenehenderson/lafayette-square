@@ -68,6 +68,8 @@ export async function fetchWeather() {
     const res = await fetch(API_URL)
     if (!res.ok) return
     const data = await res.json()
+    // Stage's Weather switch is standing a preset: the live feed writes nothing.
+    if (useSkyState.getState().feedPaused) return
     const c = data.current
 
     // Trust the Degrees over a possibly-stale weather_code (see reconcile above).

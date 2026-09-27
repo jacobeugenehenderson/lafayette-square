@@ -55,6 +55,7 @@ const useSkyState = create((set, get) => ({
   directRadiation:  null,    // open-meteo direct_radiation (W/m²)
   diffuseRadiation: null,    // open-meteo diffuse_radiation (W/m²)
   hourlyForecast: [],  // Array<{ time: Date, temperatureF: number, weatherCode: number, pressureMb: number|null }>
+  feedPaused: false,   // true while Stage's Weather switch stands a preset: the live fetch writes nothing
 
   // ── Creative / derived ──
   astronomyAlpha: 1,      // star visibility factor (sun + clouds)
@@ -112,6 +113,7 @@ const useSkyState = create((set, get) => ({
   setSkyScalars: ({ cloudCover, storminess, turbidity }) => set({ cloudCover, storminess, turbidity }),
 
   setHourlyForecast: (f) => set({ hourlyForecast: f }),
+  setFeedPaused: (on) => set({ feedPaused: !!on }),
 
   setBeautyBias: (v) => set({ beautyBias: Math.max(0, Math.min(1, v)) }),
   setLiveMode: () => set({ beautyBias: 0.6 }),

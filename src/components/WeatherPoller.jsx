@@ -15,9 +15,13 @@ function WeatherPoller({ mode = 'live' }) {
     if (mode !== 'live') {
       const preset = WEATHER_PRESETS[mode]
       if (!preset) throw new Error(`[weather] ⛔ unknown weather mode '${mode}' (have: live, ${Object.keys(WEATHER_PRESETS).join(', ')})`)
-      useSkyState.getState().setWeatherTargets(preset)
+      const sky = useSkyState.getState()
+      sky.setFeedPaused(true)             // a live fetch already in flight must not land over it
+      sky.setHourlyForecast([])           // the live forecast is a directive input too
+      sky.setWeatherTargets(preset)
       return
     }
+    useSkyState.getState().setFeedPaused(false)
     // Initial fetch
     fetchWeather()
 

@@ -109,5 +109,22 @@ const hits = execSync(`grep -rlE "setState\\(\\{[^}]*\\b(cloudCover|storminess)\
 if (hits.length) bad(`something besides the directive writes the drawn sky: ${hits.join(', ')}`)
 else ok('only the directive path writes cloudCover/storminess')
 
+// A weather preset is a COMPLETE weather. setWeatherTargets keeps the previous value of
+// any input it isn't given, so a partial preset over a live rainy feed kept the storm
+// ("Clear" stayed gloomy at noon, 2026-09-26). Every input setWeatherTargets reads must be
+// set by every preset. The list is read from setWeatherTargets, not restated.
+{
+  const sky = read('src/hooks/useSkyState.js')
+  const body = (sky.match(/setWeatherTargets:\s*\(data\)\s*=>\s*\{[\s\S]*?\n  \},/) || [''])[0]
+  const inputs = [...new Set([...body.matchAll(/data\.(\w+)/g)].map((m) => m[1]))]
+  if (!inputs.length) bad('could not read the inputs of useSkyState.setWeatherTargets')
+  let partial = 0
+  for (const [name, w] of Object.entries(WEATHER_PRESETS)) {
+    const missing = inputs.filter((k) => !(k in w))
+    if (missing.length) { partial++; bad(`weather preset '${name}' leaves ${missing.join(', ')} to the previous (live) weather`) }
+  }
+  if (!partial) ok(`every weather preset sets all ${inputs.length} inputs of setWeatherTargets`)
+}
+
 console.log(failed ? `\n⛔ ${failed} failure(s)\n` : '\n✅ the light follows the weather\n')
 process.exit(failed ? 1 : 0)
