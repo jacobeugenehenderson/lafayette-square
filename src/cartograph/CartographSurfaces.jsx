@@ -172,6 +172,9 @@ const TABS = [
     label: 'Furniture',
     items: [
       { id: 'tree',           label: 'Trees',           kind: 'layer' },
+      // Lamps: ON/OFF only (layerVis.lamp — the same switch production honours, and it gates the lamp bake);
+      // the 2D dots are DesignerLamps. The lamp's COLOUR lives on Stage's Light Sources card, not here.
+      { id: 'lamp',           label: 'Lamps',           kind: 'layer', noColor: true },
       { id: 'fence',          label: 'Fences',          kind: 'layer' },
       { id: 'wall',           label: 'Walls',           kind: 'layer' },
       { id: 'retaining_wall', label: 'Retaining Walls', kind: 'layer' },
@@ -428,7 +431,7 @@ export default function CartographSurfaces() {
               ...((materialPhysics || {})[selectedItem.id] || {}) }
           : null
         const hasTexture = phys && phys.texture && phys.texture !== 'none'
-        const showColorPicker = !hasTexture
+        const showColorPicker = !hasTexture && !selectedItem.noColor
         return (
         <div className="space-y-2 pt-1" style={{ borderTop: '1px solid var(--outline-variant)' }}>
           <div className="flex items-center gap-2">

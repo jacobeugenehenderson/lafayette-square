@@ -129,22 +129,15 @@ function Uplights() {
   </>)
 }
 
-// The lamp's COLOUR and whether lamps show at all — on the Light Sources card, beside the knobs they tint
-// (Jacob, 2026-09-26: "I don't like the lamp color being in furniture"). One colour for every lamp light: bulb,
-// glow, pools, trees, walls. Same fields as ever (layerColors.lamp, layerVis.lamp — the latter also gates the lamp
-// bake); live in Stage, baked for production.
+// The lamp's COLOUR — on the Light Sources card, beside the knobs it tints (Jacob, 2026-09-26: "I don't like the
+// lamp color being in furniture"). One colour for every lamp light: bulb, glow, pools, trees, walls
+// (layerColors.lamp; live in Stage, baked for production). Lamps ON/OFF stays in the Designer (Furniture › Lamps).
 function LampSourceControls() {
   const color   = useCartographStore(s => activeChannel(s, 'layerColors')?.lamp) || LAMP_DEFAULT_HEX
-  const visible = useCartographStore(s => s.layerVis?.lamp !== false)
   const setColor = useCartographStore(s => s.setLayerColor)
-  const setVis   = useCartographStore(s => s.setLayerVis)
   return (
     <div className="flex items-center gap-2 py-1 pl-2" style={{ fontSize: 12, color: 'var(--on-surface)' }}>
-      <label className="flex items-center gap-2">
-        <input type="checkbox" checked={visible} onChange={e => setVis('lamp', e.target.checked)} />
-        <span>Show lamps</span>
-      </label>
-      <span style={{ color: 'var(--on-surface-subtle)', marginLeft: 'auto' }}>Lamp colour</span>
+      <span style={{ color: 'var(--on-surface-subtle)' }}>Lamp colour</span>
       <input type="color" value={color} onChange={e => setColor('lamp', e.target.value)}
         style={{ width: 28, height: 20, padding: 0, border: '1px solid var(--outline-variant)', background: 'transparent' }} />
     </div>

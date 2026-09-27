@@ -163,7 +163,7 @@ console.log('⑨ THE LAMP COLOUR LIVES ON THE LIGHT SOURCES CARD AND IS LIVE IN 
 {
   const stage = src('src/stage/StageApp.jsx'), surf = src('src/cartograph/CartographSurfaces.jsx')
   ;/setColor\('lamp'/.test(stage) && /<LampSourceControls \/>/.test(stage) ? ok('Light Sources › Lamp colour writes layerColors.lamp') : bad('no Lamp colour control on the Light Sources card')
-  ;/id: 'lamp'/.test(surf) ? bad('a second lamp colour swatch is back on the Surfaces card') : ok('no duplicate lamp swatch on Surfaces')
+  ;/id: 'lamp',[^\n]*noColor: true/.test(surf) ? ok('Designer › Furniture › Lamps is On/Off only (no second colour picker)') : bad('the Designer Lamps item is missing, or carries a colour picker again')
   const mounts = [...app.matchAll(/<(BakedLamps|StreetLights)\b[^>]*>/g)].map(m => m[0])
   const dead = mounts.filter(t => !/lampColor(Override)?=\{lampColorOverride\}/.test(t))
   dead.length ? dead.forEach(t => bad(`lamp colour is baked-only here: ${t}`)) : ok(`${mounts.length} Stage lamp mounts take the live colour`)
