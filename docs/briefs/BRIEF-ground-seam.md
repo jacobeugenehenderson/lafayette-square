@@ -9,6 +9,17 @@ evict-when: git grep -q 'mix(diffuseColor.rgb, gcol' -- src || echo LANDED
 
 **One job: an upright object should meet the ground correctly.** Trunks and lamp posts both.
 
+## ⭐ RE-OPENED 2026-09-26 (Jacob): *"We also need to reexamine the 'point of contact' on the tree trunks: it needs to be a better blend of the ground color and the trunk."*
+The 08-24 spec below still holds: the seam never **lightens** the trunk. Jacob now also wants the ground's
+**colour** in the blend. The reading to confirm with him first: the trunk base takes the ground's **hue**
+(soil, grass, sand, pavement), while its **value** stays at or below the trunk's, i.e. blend the chroma and clamp
+the luminance. Show him that before building.
+- The trees are now placed and seated (tree anchors re-baked 2026-09-26), so the "do this after the trees are
+  placed" gate below has passed.
+- Every tree path must agree: mesh trunks, hero cards and overhead discs.
+- ⚠️ Wick added lamp light to `treeAtlasMaterial.js` today (834b39d8, ae8a2d90). Coordinate through Boz before
+  editing it.
+
 ⛔ **DO THIS AFTER THE TREES ARE PLACED CORRECTLY** (`_archive/BRIEF-arborist-join-and-budget-SUPERSEDED-2026-09-13.md` §0a).
 A seam tuned against impostors is wrong for mesh trees — an impostor's bark is a single rear
 card with no trunk at the base.
