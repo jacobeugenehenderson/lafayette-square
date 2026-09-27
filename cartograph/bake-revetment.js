@@ -371,7 +371,7 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
     // wetSideOf names RIGHT of the walk as (-tz, tx). So water on the RIGHT means
     // landward is the LEFT, and vice versa: the sign is the OPPOSITE of the side name.
     const landSign = wet.side === 'right' ? -1 : wet.side === 'left' ? 1 : 0
-    const stations = []
+    const stations = [], verdict = []
     for (let i = 0; i < path.length; i++) {
       const [x, z] = path[i]
       let crest
@@ -403,6 +403,28 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
         armour: a.armour, ...(a.armour ? {} : { why: a.why }), ...(a.dispute ? { dispute: a.dispute } : {}),
       })
       why[a.why] = (why[a.why] || 0) + 1
+      verdict.push(a.why)
+    }
+    // ⛔ ARMOUR AT AN ARC'S TIP SHORTER THAN ITS OWN TIP CONE CARRIES NO WALL. The player caps an armoured tip with the
+    // cone rising inward from it at the angle of repose (revetmentFromSlab crestAndEnds), so a stretch shorter than
+    // crest / tan(repose) never reaches its crest: one station builds nothing, two build a stub cone whose peak lies
+    // past the armour (measured: provincetown arcs 6 and 1, after e521e577 let a mapped wall armour their tips). Such a
+    // stretch is bare as a `stub`, the same currency as an arc too short to carry two stations.
+    const tanR = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
+    for (const dir of [1, -1]) {
+      const k0 = dir === 1 ? 0 : stations.length - 1
+      let k = k0, len = 0, hMax = 0
+      while (k >= 0 && k < stations.length && stations[k].armour) {
+        hMax = Math.max(hMax, stations[k].crest || 0)
+        if (k !== k0) len += Math.hypot(stations[k].x - stations[k - dir].x, stations[k].z - stations[k - dir].z)
+        k += dir
+      }
+      if (k === k0 || (k >= 0 && k < stations.length) === false) continue   // no armour at this tip, or the whole arc is armour
+      if (len >= hMax / tanR) continue
+      for (let q = k0; q !== k; q += dir) {
+        why[verdict[q]]--; why.stub = (why.stub || 0) + 1
+        stations[q] = { ...stations[q], armour: false, why: 'stub' }; delete stations[q].dispute
+      }
     }
     // ⭐ ARMOURED LENGTH BY HALF-ATTRIBUTION: each station owns half the segment on
     // either side of it. ⛔ Not "both endpoints armoured" (which undercounts every
@@ -470,6 +492,12 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
     rec.outsideM = cut
     for (const run of inside) {
       const path = resample(simplify(run, gridM / 2), gridM)
+      // ⭐ A WHOLE RING IS ONE WALK WITH NO END. Its closing point repeats its first (and read a crest of 0 there,
+      // a false "end" at the seam), so it is dropped; if the ring is walked unbroken, the walk runs on past its start
+      // by twice the heap's end run, so the cone rising from one tip and the cone falling to the other overlap at full
+      // height — the seam has no dip (crestAndEnds shapes an armoured tip at the angle of repose).
+      const closed = !!s.ring && inside.length === 1 && path.length > 3 && Math.hypot(path[0][0] - path[path.length - 1][0], path[0][1] - path[path.length - 1][1]) < gridM / 2
+      if (closed) path.pop()
       // Each station owns half of each neighbouring segment, as on the shore.
       const own = path.map((p, i) => ((i ? Math.hypot(p[0] - path[i - 1][0], p[1] - path[i - 1][1]) : 0) + (i < path.length - 1 ? Math.hypot(path[i + 1][0] - p[0], path[i + 1][1] - p[1]) : 0)) / 2)
       let cur = []
@@ -510,6 +538,14 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
         cur.push({ x: +x.toFixed(2), z: +z.toFixed(2), crest: Number.isFinite(crest) ? +crest.toFixed(3) : null,
           armour: a.armour, ...(a.armour ? {} : { why: a.why }), _own: own[i] })
         why[a.why] = (why[a.why] || 0) + 1
+      }
+      if (closed && cur.length === path.length) {
+        const tan = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180), need = 2 * Math.max(...cur.map(q => (q.crest || 0) / tan))
+        for (let k = 0, n0 = cur.length, acc = 0; k < n0 && acc < need; k++) {
+          const q = cur[k], prev = cur[cur.length - 1]
+          acc += Math.hypot(q.x - prev.x, q.z - prev.z)
+          cur.push({ ...q, _own: 0 })   // overlap only: its metres are already counted
+        }
       }
       flush()
     }
