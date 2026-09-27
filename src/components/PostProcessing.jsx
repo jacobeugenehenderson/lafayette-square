@@ -37,6 +37,7 @@ import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
+import { WATER_MIST } from './waterMaterial.js'
 import { weatherExposureScale } from '../lib/sky-scalars.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { resolveGroupAtMinute, getTodSlotMinutes, resolveLampGlowAtMinute } from '../cartograph/animatedParam.js'
@@ -287,6 +288,7 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
     _tmpHorizon.setRGB(h.r, h.g, h.b, THREE.SRGBColorSpace)
     _tmpColor.set(m.color).lerp(_tmpHorizon, 0.75)
     fogRef.current.color.copy(_tmpColor)
+    WATER_MIST.value = Math.min(1, Math.max(0, m.water ?? MIST_FLAT_DEFAULTS.water))
   })
 
   return null

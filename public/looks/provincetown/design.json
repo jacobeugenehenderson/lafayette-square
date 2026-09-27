@@ -71,6 +71,81 @@
   },
   "lamps": null,
   "terrainExag": null,
+  "mist": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "amount": 1.58,
+        "color": "#9a86c0",
+        "water": 0
+      },
+      "sunrise": {
+        "amount": 0.32,
+        "color": "#efc7a6"
+      },
+      "noon": {
+        "amount": 0.17,
+        "color": "#cfe2f0"
+      },
+      "golden": {
+        "amount": 0.34,
+        "color": "#f6cb8e"
+      },
+      "sunset": {
+        "amount": 0.32,
+        "color": "#e89c7c"
+      },
+      "dusk": {
+        "amount": 0.28,
+        "color": "#3e4f86"
+      },
+      "night": {
+        "amount": 0.21,
+        "color": "#0b0f1c"
+      },
+      "deep": {
+        "amount": 0.17,
+        "color": "#080b16"
+      }
+    }
+  },
+  "halo": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "strength": 0.48,
+        "color": "#dcbfd0"
+      },
+      "sunrise": {
+        "strength": 0.08,
+        "color": "#f4c29c"
+      },
+      "noon": {
+        "strength": 0.03,
+        "color": "#bdd6ec"
+      },
+      "golden": {
+        "strength": 0.12,
+        "color": "#ffc27a"
+      },
+      "sunset": {
+        "strength": 0.1,
+        "color": "#ff9868"
+      },
+      "dusk": {
+        "strength": 0.06,
+        "color": "#5f6fb4"
+      },
+      "night": {
+        "strength": 0.02,
+        "color": "#1a2040"
+      },
+      "deep": {
+        "strength": 0.01,
+        "color": "#10152a"
+      }
+    }
+  },
   "sky": {
     "overrides": []
   },
@@ -176,6 +251,7 @@
       "overrides": null
     }
   },
+  "shotLooks": {},
   "openSections": {},
   "trees": [
     {

@@ -141,24 +141,26 @@ export const AO_FLAT_DEFAULTS = { radius: 15, intensity: 2.5, distanceFalloff: 0
 export const AO_FIELD_KEYS = AO_FIELDS.map(f => f.key)
 
 // Mist (Horizon card) — colorable distance fog (FogExp2).
-// ⭐ AMOUNT IS HOW MUCH OF THE TOWN THE FOG HIDES: the share of light lost across the town's width (2 × its disc
-// radius), so 0.3 means the far side is 30% fogged from the near side, in EVERY town (Jacob, 2026-09-27).
+// ⭐ AMOUNT IS SIZED TO THE TOWN: 1 = half the light lost over the town's disc radius, 2 = twice that density (the
+// town all but gone), 0 = none — the same number reads the same in every town (Jacob, 2026-09-27: "this should go to 2").
 // ⛔ It was a fixed density per metre (0.005 × amount³): the whole useful range sat below ~0.05 on Provincetown's
 // hero shot and the slider ran far past a whiteout — a Class D constant (CLAUDE.md Layer 0), right only for a town
 // of one size. A town whose size is unknown gets NO fog and a console error, never a guessed one.
 export const MIST_FIELDS = [
-  { key: 'amount', label: 'Amount (share of the town hidden)', min: 0, max: 0.95, step: 0.01 },
+  { key: 'amount', label: 'Amount (1 = half the town fogged)', min: 0, max: 2, step: 0.01 },
   { key: 'color',  label: 'Color', type: 'color' },
+  // How much of it lies on the water: 0 = clear water, 1 = the water mists like the land.
+  { key: 'water',  label: 'Over water', min: 0, max: 1, step: 0.01 },
 ]
-export const MIST_FLAT_DEFAULTS = { amount: 0.2, color: '#9dc5e0' }
+export const MIST_FLAT_DEFAULTS = { amount: 0.2, color: '#9dc5e0', water: 0.3 }
 export const MIST_FIELD_KEYS = MIST_FIELDS.map(f => f.key)
 /** FogExp2 density (1/m) for a Mist amount in a town of `radius` metres. The one mapping — every fog mount reads it.
- *  FogExp2 keeps exp(−(ρd)²) of the light at distance d; solve for ρ so that 1 − amount survives d = 2 × radius. */
+ *  FogExp2 keeps exp(−(ρd)²) of the light at distance d; amount 1 is the ρ that keeps half at d = radius. */
 export function mistFogDensity(amount, radius) {
-  const a = Math.min(0.95, Math.max(0, Number(amount) || 0))
+  const a = Math.max(0, Number(amount) || 0)
   if (a === 0) return 0
   if (!(radius > 0)) return null
-  return Math.sqrt(-Math.log(1 - a)) / (2 * radius)
+  return a * Math.sqrt(Math.LN2) / radius
 }
 
 // Halo (Sky & Light card) — colorable horizon-band tint via the existing
@@ -592,8 +594,9 @@ const DAY = {
   fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.92, 0.85] },
   // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
   // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
-  mist:     { amount: [0.55, 0.45, 0.2, 0.5, 0.45, 0.35, 0.2, 0.15],
-              color: ['#9a86c0', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'] },
+  mist:     { amount: [0.54, 0.46, 0.28, 0.5, 0.46, 0.39, 0.28, 0.24],
+              color: ['#9a86c0', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'],
+              water: [0.3, 0.3, 0.2, 0.35, 0.35, 0.3, 0.25, 0.2] },
   // Halo is a SCREEN BAND, not distance haze (renderPipeline.jsx#AerialPerspectiveEffect): it washes the middle of the
   // frame whatever is there, so a Hero shot looking down on the town hazes near and far alike. Kept faint; Mist is
   // the distance haze (Jacob, Dawn pass 2026-09-27: "it's just very even all the way up to the camera").

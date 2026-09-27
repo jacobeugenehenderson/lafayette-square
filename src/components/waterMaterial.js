@@ -288,6 +288,8 @@ export function waveKForExtent(extentDiag) {
  */
 // `terrain` — { decl, assign } from terrainShader (TERRAIN_DECL, assignTerrainUniforms), handed in by the caller so
 // this module stays importable where the terrain is not loaded (the checks). Absent, the water does not shade by depth.
+/** Mist › Over water — the share of the town's fog the water takes. One uniform, written by StageFog each frame. */
+export const WATER_MIST = { value: 0.3 }
 export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, bodyColors = null, terrain = null } = {}) {
   // ⛔ LOUD, NOT SILENT. An absent extent is the one input whose default would
   // be invisible: the surface would render, perfectly plausibly, at a pond's
@@ -386,7 +388,21 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     // marker is a function only this file emits.
     if (shader.fragmentShader.includes('wGlitterSlope')) return
     Object.assign(shader.uniforms, uniforms)
+    shader.uniforms.uWaterMist = WATER_MIST
     if (terrain) terrain.assign(shader)
+    // The town's Mist lies on the water only by Mist › Over water (0 clear … 1 as on land). Fully fogged, the far sea
+    // became a flat, electric slab (Jacob, 2026-09-27: "the town to get misty without the electric mist over the
+    // ocean … meet in the middle or add a knob").
+    shader.fragmentShader = shader.fragmentShader
+      .replace('void main() {', 'uniform float uWaterMist;\nvoid main() {')
+      .replace('#include <fog_fragment>', `#ifdef USE_FOG
+         #ifdef FOG_EXP2
+           float wFog = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );
+         #else
+           float wFog = smoothstep( fogNear, fogFar, vFogDepth );
+         #endif
+         gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, wFog * uWaterMist );
+       #endif`)
 
     // Vertex: pass world position to fragment
     shader.vertexShader = shader.vertexShader.replace(
