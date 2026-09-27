@@ -133,6 +133,10 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
     gl_Position = projectionMatrix * _bbView;
   `
 
+  // ⛔ LOG DEPTH: Stage/Preview render with logarithmicDepthBuffer:true, and a ShaderMaterial without the
+  // logdepthbuf chunks writes a linear depth the depth test compares against log depth — the soft Glow was
+  // hidden by everything and the knob "did nothing" (measured 2026-09-26: visible with depthTest off). The
+  // chunks are no-ops on production's linear depth. ▶ claims-light-sources-are-live ⑩.
   // ── Glow orb (tight glass halo) — billboard with soft falloff ────────────
   // Tight, intense, warm — reads as the bulb's immediate halo through
   // the lantern glass. PlaneGeometry billboarded in vertex; fragment
@@ -145,18 +149,24 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
         ...TERRAIN_UNIFORMS,
       },
       vertexShader: /*glsl*/`
+        #include <common>
+        #include <logdepthbuf_pars_vertex>
         ${TERRAIN_DECL}
         attribute float aGroundRaw;
         varying vec2 vUv;
         void main() {
           vUv = uv;
           ${BILLBOARD_VS_INC}
+          #include <logdepthbuf_vertex>
         }`,
       fragmentShader: /*glsl*/`
+        #include <common>
+        #include <logdepthbuf_pars_fragment>
         uniform vec3 uColor;
         uniform float uIntensity;
         varying vec2 vUv;
         void main() {
+          #include <logdepthbuf_fragment>
           float r = length(vUv - 0.5) * 2.0;          // 0 at center, 1 at edge
           if (r >= 1.0) discard;
           float core = exp(-r * r * 8.0);
@@ -184,6 +194,8 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
         ...TERRAIN_UNIFORMS,
       },
       vertexShader: /*glsl*/`
+        #include <common>
+        #include <logdepthbuf_pars_vertex>
         ${TERRAIN_DECL}
         attribute float aGroundRaw;
         uniform float uHaloSize;
@@ -196,12 +208,16 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
             // lantern's half-width, so the lantern's own cage and glass never hide its glow.
             .replace('vec4 _bbView = _bbCenterView + vec4(position.xy * _bbScale, 0.0, 0.0);',
                      'vec4 _bbView = _bbCenterView + vec4(normalize(-_bbCenterView.xyz) * uPush, 0.0) + vec4(position.xy * 2.0 * uHaloSize, 0.0, 0.0);')}
+          #include <logdepthbuf_vertex>
         }`,
       fragmentShader: /*glsl*/`
+        #include <common>
+        #include <logdepthbuf_pars_fragment>
         uniform vec3 uColor;
         uniform float uIntensity;
         varying vec2 vUv;
         void main() {
+          #include <logdepthbuf_fragment>
           float r = length(vUv - 0.5) * 2.0;
           if (r >= 1.0) discard;
           // Wide soft glow with a guaranteed-zero edge.

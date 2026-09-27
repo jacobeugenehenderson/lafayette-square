@@ -12,6 +12,8 @@
 //   ⑤ the walls' GLSL falloff equals lampPool.js's JS falloff, evaluated — one model, two languages
 //   ⑦ NEON: every Stage environment that draws buildings also mounts neon (SceneNeon, directly or via
 //      LafayetteScene) and passes it the Neon on + Density test controls (Loupe's audit: poured towns had none)
+//   ⑩ every depth-tested custom lamp shader (StreetLights ShaderMaterials) carries the logdepthbuf chunks —
+//      Stage renders log depth, and without them the Glow was hidden by everything (self-mutated)
 //   ⑥ Pool radius is MONOTONIC and 0 = OFF: through the real GLSL wipe, a lone pool's lit reach (ground and
 //      canopy) starts at 0, never shrinks as the knob rises, and is the full reach at 1 (self-mutated)
 // ⭐ The field lists are READ from skyLightChannels.js, never restated, so a new control is covered the day it lands.
@@ -165,6 +167,17 @@ console.log('⑨ THE LAMP COLOUR LIVES ON THE LIGHT SOURCES CARD AND IS LIVE IN 
   const mounts = [...app.matchAll(/<(BakedLamps|StreetLights)\b[^>]*>/g)].map(m => m[0])
   const dead = mounts.filter(t => !/lampColor(Override)?=\{lampColorOverride\}/.test(t))
   dead.length ? dead.forEach(t => bad(`lamp colour is baked-only here: ${t}`)) : ok(`${mounts.length} Stage lamp mounts take the live colour`)
+}
+
+console.log('⑩ LAMP SHADERS SPEAK LOG DEPTH (Stage/Preview use logarithmicDepthBuffer)')
+{
+  const judge = (text) => [...text.matchAll(/new THREE\.ShaderMaterial\(\{([\s\S]*?)\n\s{4}\}\)/g)].map(m => m[1])
+    .filter(b => !/depthTest:\s*false/.test(b))
+    .map(b => /logdepthbuf_pars_vertex/.test(b) && /logdepthbuf_vertex>/.test(b) && /logdepthbuf_pars_fragment/.test(b) && /logdepthbuf_fragment>/.test(b))
+  const r = judge(lights)
+  if (!r.length) bad('found no ShaderMaterial in StreetLights — ⑩ cannot see the lamp shaders')
+  else r.every(Boolean) ? ok(`${r.length} depth-tested lamp shaders carry the log-depth chunks`) : bad(`${r.filter(x => !x).length}/${r.length} lamp shaders lack the log-depth chunks — they will be hidden in Stage`)
+  judge(lights.replace(/#include <logdepthbuf_vertex>/, '')).every(Boolean) ? bad('mutation NOT caught') : ok('mutation (one logdepthbuf_vertex removed) is caught')
 }
 
 console.log(red ? `\n⛔ FAIL — ${red}` : '\n✅ all claims hold')
