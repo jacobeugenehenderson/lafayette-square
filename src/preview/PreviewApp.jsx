@@ -644,6 +644,8 @@ function FxCaveats() {
 // env toggle swaps which env's degree these sliders bind to. Levels/radius/
 // resolution update the live pyramid without a composer rebuild.
 function PyramidTuner({ envId, degree, onChange }) {
+  // Twirl-collapsible, collapsed by default, like the roster cards below (Jacob, 2026-09-27).
+  const [expanded, setExpanded] = useState(false)
   if (!degree) return null
   const row = (key, label, min, max, step, digits) => (
     <div className="space-y-0.5" key={key}>
@@ -661,14 +663,23 @@ function PyramidTuner({ envId, degree, onChange }) {
   )
   return (
     <div className="glass-panel rounded-xl p-3 space-y-2">
-      <div className="section-heading">Pyramid · {envId}</div>
-      {row('levels', 'Levels', 1, 8, 1, 0)}
-      {row('resolutionScale', 'Resolution', 0.1, 1, 0.05, 2)}
-      {row('radius', 'Radius', 0, 1, 0.05, 2)}
-      <div className="glass-text-dim" style={{ fontSize: 9, lineHeight: 1.4 }}>
-        The blur bracket for this environment — fewer levels / lower resolution =
-        cheaper, tighter bloom + DoF. Switch the env toggle to bracket another tier.
-      </div>
+      <button onClick={() => setExpanded(e => !e)} className="w-full flex items-center"
+        style={{ gap: 6, padding: 0, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+        <span style={{ display: 'inline-block', width: 10, color: 'var(--on-surface-subtle)',
+          transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 120ms' }}>▸</span>
+        <span className="section-heading" style={{ marginBottom: 0 }}>Pyramid · {envId}</span>
+      </button>
+      {expanded && (
+        <>
+          {row('levels', 'Levels', 1, 8, 1, 0)}
+          {row('resolutionScale', 'Resolution', 0.1, 1, 0.05, 2)}
+          {row('radius', 'Radius', 0, 1, 0.05, 2)}
+          <div className="glass-text-dim" style={{ fontSize: 9, lineHeight: 1.4 }}>
+            The blur bracket for this environment — fewer levels / lower resolution =
+            cheaper, tighter bloom + DoF. Switch the env toggle to bracket another tier.
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -682,8 +693,8 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
         <TimeControl />
       </div>
 
-      {/* Pyramid tuner leads the tools — the active tool; stays open. The roster
-          cards below twirl-collapse (default closed) to cut the clutter. */}
+      {/* Pyramid tuner leads the tools; it and the roster cards below
+          twirl-collapse (default closed) to cut the clutter. */}
       <PyramidTuner envId={envId} degree={degree} onChange={onTuneDegree} />
 
       <LayerSection title="Scene" layerList={SCENE_LAYERS} layers={layers}
