@@ -157,6 +157,42 @@ export const SURFACES = {
   },
 }
 
+/**
+ * ⭐ GROUND RULES (Jacob, 2026-09-26: "are there any easy 'logic' rules we could apply that would sell
+ * the ground?"). Each reads a RELATIONSHIP the bake already knows — never a painted mask, never a width
+ * or colour that exists because it looked right on one town — and each is OFF at its neutral default
+ * (strength 0), so Jacob judges them one at a time. The operator's layer is
+ * `design.json#surfaces.rules.<rule>`; the lab previews with `&rules=<rule>:<strength>,…`.
+ *   canopyLitter — damp, leaf-littered ground under trees: the baked contact-shadow channel (poolmap G,
+ *                  trees + lamp bases) tints the lit ground toward the litter colour. Every surface.
+ *   duneGrass    — sand greens into dune grass inland: from the town's own beach band (sand.beachBandM,
+ *                  derived) outward, by the baked distance to the water (context coastDist). Sand only.
+ * Not yet built (need B/A distance channels in the poolmap bake): buildingFoot, pathWear, pavedFray.
+ */
+export const GROUND_RULES = {
+  canopyLitter: {
+    params: {
+      strength: { unit: '0–1', source: 'authored', default: 0 },
+      color:    { unit: 'hex', source: 'authored', default: '#4b3f2c' },
+    },
+  },
+  duneGrass: {
+    params: {
+      strength: { unit: '0–1', source: 'authored', default: 0 },
+      // How far past the beach band the grass takes over, as a fraction of the band (scale-free).
+      fadeBands: { unit: '× beachBandM', source: 'authored', default: 1 },
+      color:    { unit: 'hex', source: 'authored', default: '#7d8452' },
+    },
+  },
+}
+
+/** A rule's values: the operator's layer over the neutral defaults. Unknown rules are refused by name. */
+export function resolveGroundRules(authored = {}, report = console.error) {
+  for (const k of Object.keys(authored || {})) if (!GROUND_RULES[k]) report(`[surfaces] ⛔ ground rule "${k}" does not exist (have ${Object.keys(GROUND_RULES).join(', ')}). Ignored.`)
+  return Object.fromEntries(Object.entries(GROUND_RULES).map(([k, r]) => [k,
+    Object.fromEntries(Object.entries(r.params).map(([p, d]) => [p, authored?.[k]?.[p] ?? d.default]))]))
+}
+
 /** LU class → surface. ⛔ Absent means "the class's flat colour" (FadeMesh), which is
  *  the kit's honest default for a class nobody has built a generator for. */
 export const SURFACE_OF_CLASS = {

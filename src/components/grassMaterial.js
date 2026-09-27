@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp } from '../lib/groundLamp.js'
+import { groundRules } from '../lib/groundRules.js'
 
 /**
  * Reusable factory for the noise-based park grass material.
@@ -99,7 +100,17 @@ const SAND_ALBEDO = `vec2 gp = vGrassPos.xz;
        sandDH = vec2(dFdx(uRippleHM * (rip - 0.5) * ripAmt), dFdy(uRippleHM * (rip - 0.5) * ripAmt));
        float sandBW = clamp(0.45 * sHum + 0.35 * sStreak + 0.2 * sGrain + 0.35 * (rip - 0.5) * ripAmt, 0.0, 1.0);
        // Colour: the map through the sand ramp; drier and paler up the dunes; the crests (coarse) lighter.
-       vec3 grass = surfRamp(0.15 + 0.55 * sandBW + 0.3 * duneState, uSandT, uSandC0, uSandC1, uSandC2, uSandC3);`
+       vec3 grass = surfRamp(0.15 + 0.55 * sandBW + 0.3 * duneState, uSandT, uSandC0, uSandC1, uSandC2, uSandC3);
+       // Ground rule duneGrass (surfaces.mjs GROUND_RULES): past the town's own beach band (derived),
+       // by the baked distance to the water, the sand greens into tussocks of dune grass — never on a
+       // slip face at repose. Off at strength 0; ABSENT (named by BakedGround) without the coast channel.
+       if (uHasCoast > 0.5 && uDuneGrass > 0.0 && uBeachBandM > 0.0) {
+         float dM = texture2D(uCoastMap, (gp - uCoastMin) / uCoastSpan).r * uCoastRangeM;
+         float inland = smoothstep(uBeachBandM, uBeachBandM * (1.0 + uDuneGrassFade), dM);
+         float tuft = smoothstep(0.35, 0.65, gFBM(gp * 0.35 + 71.0));
+         float cov = clamp(inland * mix(0.35, 1.0, tuft) * (1.0 - smoothstep(0.75, 1.0, duneState)) * uDuneGrass, 0.0, 1.0);
+         grass = mix(grass, uDuneGrassColor * (0.85 + 0.3 * sGrain), cov);
+       }`
 
 // The ripples' height as light — the same derivative bump as the field (three's perturbNormalArb).
 const SAND_NORMAL = `
@@ -322,6 +333,8 @@ export function makeGroundSurfaceMaterial({
   surfaceParams = {},
   // Crop: whether the geometry carries the per-vertex field-edge distance (the headland).
   fieldEdge = false,
+  // Sand: the baked distance to the water (context coastDist) as { map, min, span, rangeM }, or null.
+  coast = null,
 } = {}) {
   if (!ALBEDO[surface]) throw new Error(`⛔ makeGroundSurfaceMaterial: no albedo for surface "${surface}" (have ${Object.keys(ALBEDO).join(', ')})`)
   const shaderRef = { current: null }
@@ -365,6 +378,15 @@ export function makeGroundSurfaceMaterial({
       shader.uniforms.uRippleM  = { value: ripOn ? rs : 1 }
       shader.uniforms.uRippleHM = { value: ripOn ? rh : 0 }
       rampUniforms(shader.uniforms, 'Sand', surfaceParams?.sandRamp)
+      shader.uniforms.uHasCoast    = { value: coast?.map ? 1 : 0 }
+      shader.uniforms.uCoastMap    = { value: coast?.map ?? null }
+      shader.uniforms.uCoastMin    = { value: new THREE.Vector2(coast?.min?.[0] ?? 0, coast?.min?.[1] ?? 0) }
+      shader.uniforms.uCoastSpan   = { value: new THREE.Vector2(coast?.span?.[0] ?? 1, coast?.span?.[1] ?? 1) }
+      shader.uniforms.uCoastRangeM = { value: coast?.rangeM ?? 0 }
+      shader.uniforms.uBeachBandM  = { value: Number.isFinite(surfaceParams?.beachBandM) ? surfaceParams.beachBandM : 0 }
+      shader.uniforms.uDuneGrass      = groundRules.duneGrass
+      shader.uniforms.uDuneGrassFade  = groundRules.duneGrassFade
+      shader.uniforms.uDuneGrassColor = groundRules.duneGrassColor
     }
     if (surface === 'crop') {
       // Resolved by the context bake (surfaces.mjs SURFACES.crop). Absent calendar → bare dirt.
@@ -426,7 +448,7 @@ export function makeGroundSurfaceMaterial({
        uniform float uFadeInner;
        uniform float uFadeOuter;
        uniform float uHasFade;
-       ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView; uniform float uWindOn; uniform vec2 uWindTo; uniform float uRippleOn; uniform float uRippleM; uniform float uRippleHM; uniform vec4 uSandT; uniform vec3 uSandC0; uniform vec3 uSandC1; uniform vec3 uSandC2; uniform vec3 uSandC3; vec2 sandDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
+       ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView; uniform float uWindOn; uniform vec2 uWindTo; uniform float uRippleOn; uniform float uRippleM; uniform float uRippleHM; uniform vec4 uSandT; uniform vec3 uSandC0; uniform vec3 uSandC1; uniform vec3 uSandC2; uniform vec3 uSandC3; uniform float uHasCoast; uniform sampler2D uCoastMap; uniform vec2 uCoastMin; uniform vec2 uCoastSpan; uniform float uCoastRangeM; uniform float uBeachBandM; uniform float uDuneGrass; uniform float uDuneGrassFade; uniform vec3 uDuneGrassColor; vec2 sandDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
        ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPom; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandRows; uniform float uTrackGaugeRows; uniform float uBedFrac; uniform float uClodSizeM; uniform float uClodHeightM; uniform float uQuiltM; uniform float uHasEdge; uniform float uRowSpacingM; uniform float uRidgeM; uniform float uRowDistort; uniform vec4 uSoilT; uniform vec3 uSoilC0; uniform vec3 uSoilC1; uniform vec3 uSoilC2; uniform vec3 uSoilC3; uniform vec4 uPlantT; uniform vec3 uPlantC0; uniform vec3 uPlantC1; uniform vec3 uPlantC2; uniform vec3 uPlantC3; varying vec4 vFieldAxis; varying vec4 vFieldExt; varying float vFieldEdge; vec2 cropDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
        varying vec3 vGrassPos;
 

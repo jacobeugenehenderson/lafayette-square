@@ -79,8 +79,13 @@ const SAND_PREVIEW = (params.has('wind') || params.has('ripple'))
   ? Object.fromEntries([['windFromDeg', 'wind'], ['rippleSpacingM', 'ripple'], ['rippleHeightM', 'rippleh']]
       .filter(([, q]) => params.has(q)).map(([k, q]) => [k, +params.get(q)]))
   : null
-const SURFACES_OVERRIDE = (AS && STAGE_CLASS) || SAND_PREVIEW
-  ? { classes: AS && STAGE_CLASS ? { [STAGE_CLASS]: AS === 'flat' ? null : AS } : {}, params: SAND_PREVIEW ? { sand: SAND_PREVIEW } : {} }
+// ⭐ `?rules=canopyLitter:0.6,duneGrass:1` previews the GROUND RULES (surfaces.mjs GROUND_RULES) at a
+// strength, one at a time — what a town would write in design.json#surfaces.rules. Lab-only.
+const RULES_PREVIEW = params.has('rules')
+  ? Object.fromEntries(params.get('rules').split(',').map(r => r.split(':')).filter(([k]) => k).map(([k, v]) => [k, { strength: +(v ?? 1) }]))
+  : null
+const SURFACES_OVERRIDE = (AS && STAGE_CLASS) || SAND_PREVIEW || RULES_PREVIEW
+  ? { classes: AS && STAGE_CLASS ? { [STAGE_CLASS]: AS === 'flat' ? null : AS } : {}, params: SAND_PREVIEW ? { sand: SAND_PREVIEW } : {}, rules: RULES_PREVIEW || {} }
   : undefined
 
 // ── TIME: solar hour at the TOWN's longitude, not the browser's clock ────────

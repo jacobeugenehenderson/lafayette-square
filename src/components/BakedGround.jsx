@@ -28,6 +28,7 @@ import WaterSurface from './WaterSurface.jsx'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { groundMaterialFor } from '../lib/groundMaterials.js'
 import { makeFadeGroundMaterial } from './fadeGroundMaterial.js'
+import { setGroundRules } from '../lib/groundRules.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag } from '../utils/terrainShader'
@@ -92,6 +93,29 @@ function reportAbsentParams(look, surface, authored, resolved) {
          .map(([name, p]) => `${name} (${p.unit}, ${p.source} — not in this context.json: re-bake the context)`)]
   if (missing.length) console.error(`[BakedGround] ⛔ "${look}": surface "${surface}" is drawn WITHOUT ${missing.join('; ')}. `
     + `Those features are ABSENT, not defaulted — ▶ cartograph/surfaces.mjs`)
+}
+
+// ⭐ The baked distance to the water (context.json#channels.coastDist, SLAB-CONTRACT §3.3) as a texture
+// the sand's duneGrass rule reads. Quantised to 8 bits over a range the rule can use (6 × the town's
+// own beach band, capped at the channel's max). ⛔ No channel, or no derived band → null, SAID once.
+async function loadCoastDist(look, context, cacheBust) {
+  const ch = context?.channels?.coastDist
+  const band = context?.derived?.sand?.beachBandM?.value
+  if (!ch?.bin || !Number.isFinite(band)) {
+    // Said by the sand surface that needs it (SurfaceMesh), not here — a town with no sand is not missing it.
+    return { absent: !context ? 'no context.json' : !ch?.bin ? (ch?.why || 'no coastDist channel') : 'no derived sand.beachBandM' }
+  }
+  const buf = await fetch(ASSET_BASE + 'baked/' + look + '/' + ch.bin + '?t=' + cacheBust).then(r => r.arrayBuffer())
+  const u16 = new Uint16Array(buf)
+  if (u16.length !== ch.width * ch.height) { console.error(`[BakedGround] ⛔ "${look}": coastDist is ${u16.length} values, the manifest says ${ch.width}×${ch.height} — not used.`); return null }
+  const rangeM = Math.min(ch.maxM, band * 6)
+  const u8 = new Uint8Array(u16.length)
+  for (let k = 0; k < u16.length; k++) u8[k] = Math.min(255, Math.round((u16[k] * ch.mPerUnit) / rangeM * 255))
+  const map = new THREE.DataTexture(u8, ch.width, ch.height, THREE.RedFormat, THREE.UnsignedByteType)
+  map.minFilter = map.magFilter = THREE.LinearFilter
+  map.needsUpdate = true
+  const b = ch.bounds
+  return { map, min: [b.minX, b.minZ], span: [b.maxX - b.minX, b.maxZ - b.minZ], rangeM }
 }
 
 function reportNoEdge(look, id) {
@@ -166,12 +190,14 @@ function fadeForGroup(group, stencil) {
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
 
-function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, surfacesOverride }) {
+function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLastMs, surfacesOverride }) {
   // ⭐ `surfacesOverride` is the live-authoring layer, the same pattern PostProcessing's
   // *Override props follow: it sits over the baked `scene.surfaces`, never beside it.
   const scene = useMemo(() => (surfacesOverride
-    ? { ...bakedScene, surfaces: { classes: { ...bakedScene?.surfaces?.classes, ...surfacesOverride.classes }, params: { ...bakedScene?.surfaces?.params, ...surfacesOverride.params } } }
+    ? { ...bakedScene, surfaces: { classes: { ...bakedScene?.surfaces?.classes, ...surfacesOverride.classes }, params: { ...bakedScene?.surfaces?.params, ...surfacesOverride.params }, rules: { ...bakedScene?.surfaces?.rules, ...surfacesOverride.rules } } }
     : bakedScene), [bakedScene, surfacesOverride])
+  // The ground rules (surfaces.mjs GROUND_RULES) are shared uniforms every ground material binds.
+  useEffect(() => { setGroundRules(scene?.surfaces?.rules) }, [scene?.surfaces?.rules])
   const layerVis = scene?.layerVis
   const surfaceTable = useMemo(() => resolveClassTable(scene?.surfaces?.classes), [scene?.surfaces?.classes])
   const stencil = manifest.stencil || null
@@ -362,7 +388,7 @@ function GroundMeshes({ manifest, bin, context, scene: bakedScene, bakeLastMs, s
         }
         if (surface && SURFACES[surface].perField && !geometry.attributes.aFieldEdge) reportNoEdge(manifest.look, group.id)
         return draw.kind === 'surface'
-          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} coast={surface === 'sand' ? coast : null} />
           : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
       })}
     </group>
@@ -404,8 +430,13 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
   )
 }
 
-function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightmap, fade, poolmap, poolMeta }) {
+function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightmap, fade, poolmap, poolMeta, coast }) {
   useEffect(() => { reportAbsentParams(look, surface, params, resolved) }, [look, surface, params, resolved])
+  useEffect(() => {
+    if (surface !== 'sand' || !coast?.absent || _saidAbsent.has(look + '|coast')) return
+    _saidAbsent.add(look + '|coast')
+    console.error(`[BakedGround] ⛔ "${look}": ground rule duneGrass has no distance to the water (${coast.absent}) — it draws nothing on this town's sand.`)
+  }, [surface, coast, look])
   // The params the generator draws with: the bake's resolution, the operator's authored layer on top.
   // Authored params' defaults come from the surfaces table itself (pure, already imported), so a
   // context.json resolved before a param existed cannot strand it; the bake's resolution and the
@@ -429,6 +460,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
         poolScale: poolMeta?.scale ?? 1,
         surfaceParams,
         fieldEdge: !!geometry.attributes.aFieldEdge,
+        coast,
       })
       // No polygonOffset (inert under log-depth). Grass faces separate from
       // adjacent FadeMesh faces by baked geometric Y (renderOrder × EPS) +
@@ -440,7 +472,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
       patchTerrain(built.material, { perVertex: true, terrainNormals: true, clampY: !!geometry.attributes.aClampY })
       return built
     },
-    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams, geometry]
+    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams, geometry, coast]
   )
   useEffect(() => {
     if (lightmap) {
@@ -633,7 +665,8 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
         // Absent file → null, and SurfaceMesh names it; never a default.
         const context = await fetch(ASSET_BASE + 'baked/' + m.look + '/context.json?t=' + cacheBust)
           .then(r => (r.ok ? r.json() : null)).catch(() => null)
-        if (!cancelled) setData({ manifest: m, bin, context })
+        const coast = await loadCoastDist(m.look, context, cacheBust)
+        if (!cancelled) setData({ manifest: m, bin, context, coast })
       } catch (e) {
         console.warn('[BakedGround] load failed:', e)
       }
@@ -649,7 +682,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
           manifest (poolmap may flip absent→present across a bake), and a bare
           re-render would change hook order and crash. Remount is fine: the
           geometry already rebuilds on manifest change. */}
-      {data && scene && <GroundMeshes key={cacheBust ?? 'static'} manifest={data.manifest} bin={data.bin} context={data.context} scene={scene} bakeLastMs={cacheBust} surfacesOverride={surfacesOverride} />}
+      {data && scene && <GroundMeshes key={cacheBust ?? 'static'} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} scene={scene} bakeLastMs={cacheBust} surfacesOverride={surfacesOverride} />}
     </>
   )
 }
