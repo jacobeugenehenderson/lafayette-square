@@ -71,59 +71,6 @@
   },
   "lamps": null,
   "terrainExag": null,
-  "bloom": {
-    "animated": "tod",
-    "values": {
-      "dawn": {
-        "intensity": 1.2,
-        "threshold": 0.45,
-        "spread": 0.45,
-        "warmCool": 0.35
-      },
-      "sunrise": {
-        "intensity": 0.9,
-        "threshold": 0.55,
-        "spread": 0.6,
-        "warmCool": 0.65
-      },
-      "noon": {
-        "intensity": 0,
-        "threshold": 0,
-        "spread": 0,
-        "warmCool": 0.5
-      },
-      "golden": {
-        "intensity": 2.2,
-        "threshold": 0.25,
-        "spread": 0.95,
-        "warmCool": 0.85
-      },
-      "sunset": {
-        "intensity": 1.5,
-        "threshold": 0.4,
-        "spread": 0.8,
-        "warmCool": 0.8
-      },
-      "dusk": {
-        "intensity": 1,
-        "threshold": 0.4,
-        "spread": 0.5,
-        "warmCool": 0.45
-      },
-      "night": {
-        "intensity": 1.1,
-        "threshold": 0.35,
-        "spread": 0.2,
-        "warmCool": 0.5
-      },
-      "deep": {
-        "intensity": 0.4,
-        "threshold": 0.6,
-        "spread": 0.3,
-        "warmCool": 0.3
-      }
-    }
-  },
   "sky": {
     "overrides": []
   },
@@ -229,7 +176,6 @@
       "overrides": null
     }
   },
-  "shotLooks": {},
   "openSections": {},
   "trees": [
     {
