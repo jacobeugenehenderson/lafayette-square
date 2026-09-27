@@ -449,16 +449,20 @@ function writeBed(normalized, mask, width, height, bounds, floor = null) {
     if (h >= vis.value) capped++
     normalized[k] = -h; n++; if (dist[k] > maxD) maxD = dist[k]
   }
-  // Which cells the floor drew, as row runs [row, firstCol, lastCol, …] — the check scopes the profile's rule by it.
-  const runs = []
-  if (known) for (let j = 0; j < height; j++) {
-    let i0 = -1
-    for (let i = 0; i <= width; i++) {
-      const on = i < width && fromFloor[j * width + i]
-      if (on && i0 < 0) i0 = i
-      else if (!on && i0 >= 0) { runs.push(j, i0, i - 1); i0 = -1 }
+  // Cells as row runs [row, firstCol, lastCol, …] — the check scopes its rules by them.
+  const rowRuns = (on) => {
+    const out = []
+    for (let j = 0; j < height; j++) {
+      let i0 = -1
+      for (let i = 0; i <= width; i++) {
+        const v = i < width && on(j * width + i)
+        if (v && i0 < 0) i0 = i
+        else if (!v && i0 >= 0) { out.push(j, i0, i - 1); i0 = -1 }
+      }
     }
+    return out
   }
+  const runs = known ? rowRuns(k => fromFloor[k]) : []   // which cells the floor drew
   const fade = vis.fade ?? finding('r-bottom-visibility-default').value.fadeOverM
   console.log(`  BED: ${n.toLocaleString()} cells under the water · h = ${A.toFixed(3)}·y^(2/3) (sand ${sand.value} mm — ${sand.from})`)
   console.log(`    visible to ${vis.value.toFixed(2)} m, fading over the last ${fade.toFixed(2)} m — ${vis.from}`)
@@ -475,7 +479,9 @@ function writeBed(normalized, mask, width, height, bounds, floor = null) {
            floor: known
              ? { source: 'NOAA OCS BlueTopo (raw/bathymetry-sources.txt)', tiles: known.tiles, datum: known.datum, demDatumFrom: known.demDatumFrom,
                  cellM: known.cellM, cells: nFloor, aboveLevelCells: above, seam: known.seam, runs }
-             : { none: floor?.none || 'not asked' } }
+             : { none: floor?.none || 'not asked' },
+           // ⭐ The kept rock (rockCells): stands above the level by ruling, so the check names it rather than calling it proud.
+           rock: { cells: rock.size, from: 'structures.mjs stoneStructures (mapped breakwaters/groynes) × the lidar above the water', runs: rock.size ? rowRuns(k => rock.has(k)) : [] } }
 }
 
 // ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx

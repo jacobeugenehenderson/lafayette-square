@@ -121,11 +121,31 @@ for (const dir of dirs) {
       const w1 = ((c[1] - a[1]) * (x - c[0]) + (a[0] - c[0]) * (z - c[1])) / d
       if (w0 < 0 || w1 < 0 || w0 + w1 > 1) continue
       const y = w0 * a[2] + w1 * b[2] + (1 - w0 - w1) * c[2]
-      if (!best || y > best.y) best = { y, id: tris[k].id }
+      if (!best || y > best.y) best = { y, id: tris[k].id, v: tris[k].v }
     }
     return best
   }
 
+  // Cells the terrain names (bake-terrain writeBed: row runs [row, firstCol, lastCol, …]), as a point test: a sample
+  // reads its four bilinear neighbours, so it is theirs if ANY of them is named.
+  const tsx = (tj.bounds.maxX - tj.bounds.minX) / (tj.width - 1), tsz = (tj.bounds.maxZ - tj.bounds.minZ) / (tj.height - 1)
+  const cellsTouch = (runs) => {
+    if (!Array.isArray(runs) || !runs.length) return () => false
+    const on = new Uint8Array(tj.width * tj.height)
+    for (let r = 0; r < runs.length; r += 3) on.fill(1, runs[r] * tj.width + runs[r + 1], runs[r] * tj.width + runs[r + 2] + 1)
+    return (x, z) => {
+      const i = Math.floor((x - tj.bounds.minX) / tsx), j = Math.floor((z - tj.bounds.minZ) / tsz)
+      for (const [di, dj] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        const ii = Math.min(tj.width - 1, Math.max(0, i + di)), jj = Math.min(tj.height - 1, Math.max(0, j + dj))
+        if (on[jj * tj.width + ii]) return true
+      }
+      return false
+    }
+  }
+  // ⭐ THE KEPT ROCK (bake-terrain rockCells): a mapped breakwater's lidar stands above the level by ruling ("the edge of
+  // water is where the flat plane meets any other plane"), so the waterline rule names it `rock` instead of proud.
+  // ⛔ A bed record with no `rock` is a terrain baked before the stamp: its rock (if any) is scored as proud, loudly.
+  const onRock = cellsTouch(tj.bed?.rock?.runs)
   const st = m.stencil
   // Every point of the mapped shore (the water groups' boundary, off the disc rim), and the distance to the nearest.
   const shorePts = []
@@ -153,6 +173,7 @@ for (const dir of dirs) {
     return w0 >= 0 && w1 >= 0 && w0 + w1 <= 1 })
   let depthLine = ''
   const len = { rim: 0, closed: 0, awash: 0, open: 0 }, by = {}, opens = [], proud = { len: 0, first: null, by: {} }
+  let rockM = 0
   for (const g of water) {
     const [P, I] = view(g)
     const WY = P[1]
@@ -179,7 +200,9 @@ for (const dir of dirs) {
         // at an inlet, a point one cell in from this edge can be one cell from the opposite one, correctly.
         const REACH = Math.SQRT2 * STEP, dx = x - nx * REACH, dz = z - nz * REACH
         const deep = nearest(dx, dz) >= REACH - 1e-6 && inWater(dx, dz) ? groundAt(dx, dz) : null
-        if (deep && deep.y > WY + 1e-6) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - WY, id: deep.id } }
+        // the draped triangle takes its height from its vertices, so it is the rock's if the sample or any vertex is
+        if (deep && deep.y > WY + 1e-6 && (onRock(dx, dz) || deep.v.some(q => onRock(q[0], q[1])))) rockM += seg
+        else if (deep && deep.y > WY + 1e-6) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - WY, id: deep.id } }
         let gap
         if (!land) gap = Infinity                                  // the drawing ends at the water
         else if (bed) gap = 0                                      // one conformed mesh on both sides
@@ -215,19 +238,7 @@ for (const dir of dirs) {
       fail++
       continue
     }
-    const floorCell = new Uint8Array(fl?.runs ? tj.width * tj.height : 0)
-    if (fl?.runs) for (let r = 0; r < fl.runs.length; r += 3) floorCell.fill(1, fl.runs[r] * tj.width + fl.runs[r + 1], fl.runs[r] * tj.width + fl.runs[r + 2] + 1)
-    const sx = (tj.bounds.maxX - tj.bounds.minX) / (tj.width - 1), sz = (tj.bounds.maxZ - tj.bounds.minZ) / (tj.height - 1)
-    // A sample reads its four bilinear neighbours, so it is the floor's if ANY of them is.
-    const onFloor = (x, z) => {
-      if (!floorCell.length) return false
-      const i = Math.floor((x - tj.bounds.minX) / sx), j = Math.floor((z - tj.bounds.minZ) / sz)
-      for (const [di, dj] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
-        const ii = Math.min(tj.width - 1, Math.max(0, i + di)), jj = Math.min(tj.height - 1, Math.max(0, j + dj))
-        if (floorCell[jj * tj.width + ii]) return true
-      }
-      return false
-    }
+    const onFloor = cellsTouch(fl?.runs)
     const reach = Math.pow(tj.bed.visibleToM / tj.bed.A, 1.5), bins = []
     for (const g of water) { const [P, I] = view(g)
       for (let t = 0; t < I.length && bins.flat().length < 60000; t += 3) { const V = [0, 1, 2].map(e => [P[I[t + e] * 3], P[I[t + e] * 3 + 2]])
@@ -250,7 +261,7 @@ for (const dir of dirs) {
   const walked = len.closed + len.awash + len.open
   const closedBy = Object.entries(by).sort((p, q) => q[1] - p[1]).map(([id, v]) => `${id} ${km(v)}`).join(' · ') || 'none'
   if (!len.open) {
-    console.log(`  ok    ${look}  ${km(walked)} km of shore walked at ${STEP.toFixed(2)} m, none bare — closed by ${closedBy} km · awash ${km(len.awash)} km · rim ${km(len.rim)} km${depthLine}`)
+    console.log(`  ok    ${look}  ${km(walked)} km of shore walked at ${STEP.toFixed(2)} m, none bare — closed by ${closedBy} km · awash ${km(len.awash)} km · rim ${km(len.rim)} km${rockM ? ` · the waterline meets kept rock along ${km(rockM)} km` : ''}${depthLine}`)
     ok++
     continue
   }
