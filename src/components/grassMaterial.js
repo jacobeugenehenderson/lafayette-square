@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade, neighborhoodFadeKey } from '../lib/neighborhoodFade.js'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp, bindGroundLampShared } from '../lib/groundLamp.js'
 import { groundRules, GROUND_RULES_DECLS, groundRulesFragment, bindGroundRules } from '../lib/groundRules.js'
@@ -412,9 +413,7 @@ export function makeGroundSurfaceMaterial({
       shader.uniforms.uDoy = CROP_UNIFORMS.uDoy
       shader.uniforms.uPom = CROP_UNIFORMS.uPom
     }
-    shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade?.center?.[0] ?? 0, fade?.center?.[1] ?? 0) }
-    shader.uniforms.uFadeInner  = { value: fade?.inner ?? 0 }
-    shader.uniforms.uFadeOuter  = { value: fade?.outer ?? 0 }
+    bindNeighborhoodFade(shader.uniforms, fade ?? { center: [0, 0], inner: 0, outer: 0 })   // uHasFade gates it
     shader.uniforms.uHasFade    = { value: fade ? 1.0 : 0.0 }
     shaderRef.current = shader
 
@@ -434,9 +433,7 @@ export function makeGroundSurfaceMaterial({
       `#include <common>
        uniform float uSunAltitude;
 ${GROUND_LAMP_DECLS}${GROUND_RULES_DECLS}
-       uniform vec2 uFadeCenter;
-       uniform float uFadeInner;
-       uniform float uFadeOuter;
+       ${NEIGHBORHOOD_FADE_GLSL}
        uniform float uHasFade;
        ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView; uniform float uWindOn; uniform vec2 uWindTo; uniform float uRippleOn; uniform float uRippleM; uniform float uRippleHM; uniform vec4 uSandT; uniform vec3 uSandC0; uniform vec3 uSandC1; uniform vec3 uSandC2; uniform vec3 uSandC3; uniform float uHasCoast; uniform sampler2D uCoastMap; uniform vec2 uCoastMin; uniform vec2 uCoastSpan; uniform float uCoastRangeM; uniform float uBeachBandM; uniform float uDuneGrass; uniform float uDuneGrassFade; uniform vec3 uDuneGrassColor; vec2 sandDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
        ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPom; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandRows; uniform float uTrackGaugeRows; uniform float uBedFrac; uniform float uClodSizeM; uniform float uClodHeightM; uniform float uQuiltM; uniform float uHasEdge; uniform float uRowSpacingM; uniform float uRidgeM; uniform float uRowDistort; uniform vec4 uSoilT; uniform vec3 uSoilC0; uniform vec3 uSoilC1; uniform vec3 uSoilC2; uniform vec3 uSoilC3; uniform vec4 uPlantT; uniform vec3 uPlantC0; uniform vec3 uPlantC1; uniform vec3 uPlantC2; uniform vec3 uPlantC3; varying vec4 vFieldAxis; varying vec4 vFieldExt; varying float vFieldEdge; vec2 cropDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
@@ -464,10 +461,7 @@ ${GROUND_LAMP_DECLS}${GROUND_RULES_DECLS}
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <dithering_fragment>',
       `#include <dithering_fragment>
-       if (uHasFade > 0.5) {
-         float dFade = length(vGrassPos.xz - uFadeCenter);
-         gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, dFade);
-       }${groundRulesFragment('vGrassPos.xz')}${groundLampFragment('vGrassPos.xz')}`
+       if (uHasFade > 0.5) gl_FragColor.a *= neighborhoodFade(vGrassPos.xz);${groundRulesFragment('vGrassPos.xz')}${groundLampFragment('vGrassPos.xz')}`
     )
   }
 
@@ -477,7 +471,7 @@ ${GROUND_LAMP_DECLS}${GROUND_RULES_DECLS}
   // grass shader can silently get replaced by an earlier-compiled
   // plain-MeshStandardMaterial program from the same scene).
   material.customProgramCacheKey = () =>
-    `${surface === 'grass' ? '' : surface + '-'}grass-${fade ? `f${fade.inner}-${fade.outer}` : 'nf'}-wx4`
+    `${surface === 'grass' ? '' : surface + '-'}grass-${fade ? neighborhoodFadeKey(fade) : 'nf'}-wx4`
 
   return { material, shaderRef }
 }

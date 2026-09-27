@@ -2113,6 +2113,34 @@ createServer(async (req, res) => {
     return
   }
 
+  // POST /<scene>/edge-fade — the town's EDGE: the fade band's width (m) and its ruffle (0 straight … 1). Writes only
+  // those two facts into neighborhood_boundary.json through the three records (fadeBand = the disc's fade set,
+  // fadeRuffle = carried). No pipeline: neither moves the clip (it follows the radius); the ground shows them at its
+  // next bake (ground's inputs include the boundary file). Body { fadeBand, fadeRuffle }. (Loupe, Jacob 2026-09-27)
+  const edgeMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/edge-fade$/)
+  if (req.method === 'POST' && edgeMatch && !RESERVED_PREFIXES.has(edgeMatch[1])) {
+    const scene = edgeMatch[1]
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const { fadeBand, fadeRuffle } = JSON.parse(body || '{}')
+        if (!Number.isFinite(fadeBand) || fadeBand < 0) throw new Error('fadeBand must be a width in metres, ≥ 0')
+        if (!Number.isFinite(fadeRuffle) || fadeRuffle < 0 || fadeRuffle > 1) throw new Error('fadeRuffle must be 0 … 1')
+        const bPath = mapDataPaths(scene).boundary
+        if (!existsSync(bPath)) throw new Error('no committed boundary — Pour first')
+        const recs = splitBoundary(JSON.parse(readFileSync(bPath, 'utf8')), `${scene}/neighborhood_boundary.json`)
+        recs.disc.fade = { fadeBand }
+        recs.carry.fadeRuffle = fadeRuffle
+        writeFileSync(bPath, JSON.stringify(composeBoundary(recs), null, 2))
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, fadeBand, fadeRuffle }))
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
   // POST /<scene>/rescope — live radius re-scope (§4, the §11 living boundary):
   // rewrite neighborhood_boundary.json with a new radius circle — PRESERVING the
   // membership polygon (streets/official boundary unchanged) — then re-clip

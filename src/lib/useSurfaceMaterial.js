@@ -10,6 +10,7 @@
  *   - fade:  optional { center: {x,z}, inner, outer } radial-fade descriptor
  *   - opts:  { measureActive, surveyActive, selectedCorridor }
  */
+import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade, neighborhoodFadeKey } from './neighborhoodFade.js'
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import {
@@ -81,21 +82,16 @@ export default function useSurfaceMaterial(flat) {
             .replace('#include <lights_fragment_maps>', fragShader)
         }
         if (fade) {
-          shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade.center.x, fade.center.z) }
-          shader.uniforms.uFadeInner  = { value: fade.inner }
-          shader.uniforms.uFadeOuter  = { value: fade.outer }
+          bindNeighborhoodFade(shader.uniforms, { ...fade, center: [fade.center.x, fade.center.z] })
           shader.vertexShader = shader.vertexShader
             .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;')
             .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvFadeWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
           shader.fragmentShader = shader.fragmentShader
-            .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;\nuniform vec2 uFadeCenter;\nuniform float uFadeInner;\nuniform float uFadeOuter;')
-            .replace('#include <opaque_fragment>',
-              '#include <opaque_fragment>\n' +
-              'float _fadeR = distance(vFadeWorldPos.xz, uFadeCenter);\n' +
-              'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _fadeR);')
+            .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;\n' + NEIGHBORHOOD_FADE_GLSL)
+            .replace('#include <opaque_fragment>', '#include <opaque_fragment>\ngl_FragColor.a *= neighborhoodFade(vFadeWorldPos.xz);')
         }
       }
-      const fadeKey = fade ? `-f${fade.inner}-${fade.outer}` : ''
+      const fadeKey = fade ? `-${neighborhoodFadeKey(fade)}` : ''
       mat.customProgramCacheKey = () => (flat ? 'sr-flat' : 'sr-pbr-v3') + fadeKey
       return mat
     }

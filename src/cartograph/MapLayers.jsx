@@ -86,7 +86,8 @@ const PRI = {
 
 // ── Radial edge fade ──
 // Imported from boundary.js so circle moves are a one-file edit.
-import { BOUNDARY_CENTER_XZ as _BC, FADE_INNER as _FI, FADE_OUTER as _FO } from './boundary.js'
+import { BOUNDARY_CENTER_XZ as _BC, FADE_INNER as _FI, FADE_OUTER as _FO, FADE_RUFFLE } from './boundary.js'
+import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
 const FADE_CENTER = { x: _BC[0], z: _BC[1] }
 const FADE_INNER = _FI
 const FADE_OUTER = _FO
@@ -139,13 +140,12 @@ function injectRadialFade(mat, { rigidCentroid = false, fade } = {}) {
   const fOuter = fade?.outer ?? FADE_OUTER
   const fCx = fade?.center ? fade.center[0] : FADE_CENTER.x
   const fCz = fade?.center ? fade.center[1] : FADE_CENTER.z
+  const fRuffle = fade?.ruffle ?? FADE_RUFFLE
   if (faded) mat.transparent = true
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
     if (faded) {
-      shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fCx, fCz) }
-      shader.uniforms.uFadeInner = { value: fInner }
-      shader.uniforms.uFadeOuter = { value: fOuter }
+      bindNeighborhoodFade(shader.uniforms, { center: [fCx, fCz], inner: fInner, outer: fOuter, ruffle: fRuffle })
     }
     const displaceSnippet = rigidCentroid ? TERRAIN_DISPLACE_CENTROID : TERRAIN_DISPLACE
     const commonDecl = '#include <common>\n' + TERRAIN_DECL +
@@ -160,17 +160,14 @@ function injectRadialFade(mat, { rigidCentroid = false, fade } = {}) {
         : '#include <worldpos_vertex>')
     if (faded) {
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;\nuniform vec2 uFadeCenter;\nuniform float uFadeInner;\nuniform float uFadeOuter;')
-        .replace('#include <opaque_fragment>',
-          '#include <opaque_fragment>\n' +
-          'float _fadeR = distance(vFadeWorldPos.xz, uFadeCenter);\n' +
-          'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _fadeR);')
+        .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;\n' + NEIGHBORHOOD_FADE_GLSL)
+        .replace('#include <opaque_fragment>', '#include <opaque_fragment>\ngl_FragColor.a *= neighborhoodFade(vFadeWorldPos.xz);')
     }
   }
   // ⛔ The cache key must carry the no-fade case, or a faded material and an opted-out
   // one with the same geometry flags share a compiled program.
   mat.customProgramCacheKey = () => faded
-    ? `ml-terrain-fade-${rigidCentroid ? 'c' : 'v'}-${fInner}-${fOuter}`
+    ? `ml-terrain-fade-${rigidCentroid ? 'c' : 'v'}-${fInner}-${fOuter}-r${fRuffle}`
     : `ml-terrain-nofade-${rigidCentroid ? 'c' : 'v'}`
   return mat
 }

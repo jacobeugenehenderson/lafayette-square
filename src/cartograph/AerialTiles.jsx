@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { deriveFade } from '../../cartograph/boundaryRecords.mjs'
+import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
 import useCartographStore from './stores/useCartographStore.js'
 
 // ── Active-installation geography + silhouette ──────────────────────────────
@@ -15,7 +16,7 @@ function makeGeo(g, nb) {
   if (!g || !nb) return null
   // ⛔ Derived, never read off the artifact — a FOURTH copy of the fade formula
   // lived here, with its own `?? 134` that matched neither of the other two.
-  const { inner: fadeInner, outer: fadeOuter } = deriveFade(nb.radius || 0, nb.fadeBand)
+  const { inner: fadeInner, outer: fadeOuter, ruffle: fadeRuffle } = deriveFade(nb.radius || 0, nb.fadeBand, nb.fadeRuffle)
   const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
   return {
     center: { lat: g.lat, lon: g.lon },
@@ -26,6 +27,7 @@ function makeGeo(g, nb) {
     fadeCenterXZ: [cx, cz],
     fadeInner,
     fadeOuter,
+    fadeRuffle,
     cosLat: Math.cos((g.lat * Math.PI) / 180),
   }
 }
@@ -38,21 +40,18 @@ function useSceneGeo() {
 function injectCircleCrop(mat, geo) {
   mat.transparent = true
   mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uFadeCenter = { value: geo.fadeCenter }
-    shader.uniforms.uFadeInner = { value: geo.fadeInner }
-    shader.uniforms.uFadeOuter = { value: geo.fadeOuter }
+    bindNeighborhoodFade(shader.uniforms, { center: geo.fadeCenterXZ, inner: geo.fadeInner, outer: geo.fadeOuter, ruffle: geo.fadeRuffle })
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vAerialWorldPos;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvAerialWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vAerialWorldPos;\nuniform vec2 uFadeCenter;\nuniform float uFadeInner;\nuniform float uFadeOuter;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vAerialWorldPos;\n' + NEIGHBORHOOD_FADE_GLSL)
       .replace('#include <opaque_fragment>',
         '#include <opaque_fragment>\n' +
-        'float _r = distance(vAerialWorldPos.xz, uFadeCenter);\n' +
-        'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _r);\n' +
+        'gl_FragColor.a *= neighborhoodFade(vAerialWorldPos.xz);\n' +
         'if (gl_FragColor.a < 0.01) discard;')
   }
-  mat.customProgramCacheKey = () => `aerial-crop-${geo.fadeInner.toFixed(0)}-${geo.fadeOuter.toFixed(0)}`
+  mat.customProgramCacheKey = () => `aerial-crop-${geo.fadeInner.toFixed(0)}-${geo.fadeOuter.toFixed(0)}-r${geo.fadeRuffle}`
   return mat
 }
 

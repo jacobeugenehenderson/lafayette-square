@@ -9,6 +9,14 @@ evict-when: node checks/claims-fade-derives-from-radius.mjs && node checks/claim
 
 *Written 2026-09-20 by the coordinator seat. Ruling by Jacob, same day.*
 
+> ✅ **LANDED 2026-09-27 (Loupe) — the shader side is one function, and the edge has a RUFFLE.** The fade was
+> computed FIVE times (fadeGroundMaterial, grassMaterial, useSurfaceMaterial, MapLayers, AerialTiles); all five now
+> call `src/lib/neighborhoodFade.js#neighborhoodFade`. `deriveFade` carries `ruffle` (the optional `fadeRuffle` on
+> the boundary; absent ⇒ 0, the straight edge every town had). Extent gains the ONE fade knob this brief ruled
+> (**Fade band**) beside **Ruffle**, saved by `POST /<scene>/edge-fade` (no pipeline). Shows at each town's next
+> ground bake. The horizon disc that carried the ruffle before is gone (fe2215b2). This brief's evict-when checks
+> are green.
+
 > ### ⭐ THE RULING, IN JACOB'S WORDS
 > *"The street fade should be SSoT, 0 reason to add more and more layers where we have a hard and
 > fast rule. If we want the streets to fade over a different schedule that's fine but the OG radius

@@ -40,7 +40,7 @@ import {
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourMap, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeMap, rollbackExtent,
-  fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton, renameDraftScene,
+  fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton, renameDraftScene, saveEdgeFade,
 } from './api.js'
 import { sceneIdForName, suggestedName, slugifyName } from '../lib/sceneSlug.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
@@ -260,6 +260,38 @@ function circlePts(cx, cz, r, n = 96) {
 // moment it is turned, which is most of why it drifted into four stored copies.
 // ⛔ The radius is also where the geometry is CUT — content past it is not drawn at
 // all. An operator who wants more at the edge pulls this circle out.
+// The town's edge: Fade band + Ruffle. Local draft while dragging; saved 400 ms after the last change, and pushed
+// into the store's sceneBoundary so the 2D map (MapLayers, AerialTiles) follows at once.
+function EdgeFadeRows({ scene, nb }) {
+  const [band, setBand] = useState(Number.isFinite(nb.fadeBand) ? nb.fadeBand : DEFAULT_FADE_BAND)
+  const [ruffle, setRuffle] = useState(Number.isFinite(nb.fadeRuffle) ? nb.fadeRuffle : 0)
+  const [status, setStatus] = useState('')
+  const timer = useRef(null)
+  const save = (b, r) => {
+    setBand(b); setRuffle(r)
+    useCartographStore.setState(s => ({ sceneBoundary: s.sceneBoundary ? { ...s.sceneBoundary, fadeBand: b, fadeRuffle: r } : s.sceneBoundary }))
+    clearTimeout(timer.current)
+    timer.current = setTimeout(async () => {
+      try { await saveEdgeFade(scene, { fadeBand: b, fadeRuffle: r }); setStatus('saved · shows in Stage at the next Bake') }
+      catch (e) { setStatus(`⛔ not saved: ${e.message}`) }
+    }, 400)
+  }
+  const bandMax = Math.max(50, Math.round(nb.radius / 2 / 10) * 10)
+  return (
+    <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
+      <span className="carto-label" style={{ cursor: 'default' }}>Fade band</span>
+      <span className="carto-meta--value">{band} m</span>
+      <input className="carto-range" type="range" style={{ flexBasis: '100%' }} min={0} max={Math.max(bandMax, band)} step={10}
+        value={band} onChange={e => save(+e.target.value, ruffle)} />
+      <span className="carto-label" style={{ cursor: 'default', marginTop: 6 }}>Ruffle</span>
+      <span className="carto-meta--value">{ruffle.toFixed(2)}</span>
+      <input className="carto-range" type="range" style={{ flexBasis: '100%' }} min={0} max={1} step={0.02}
+        value={ruffle} onChange={e => save(band, +e.target.value)} />
+      {status && <span className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 4 }}>{status}</span>}
+    </div>
+  )
+}
+
 function ExtentBoundary({ corners, centroid, radiusM, fadeBand = DEFAULT_FADE_BAND, showVertices = true }) {
   const hasPoly = corners?.length >= 2
   // Draw when there's a polygon OR just a circle (a reopened committed hood has
@@ -2392,6 +2424,11 @@ export default function ExtentApp() {
                 </div>
                 )
               })()}
+
+              {/* The town's EDGE — the fade band (the one fade knob, BRIEF-fade-ssot) and its RUFFLE (Jacob,
+                  2026-09-27: the scalloped edge he liked on the old horizon disc). Saved as you drag (no pipeline:
+                  neither moves the clip); Stage and production show them at the ground's next bake. */}
+              {committed && sceneBoundary?.radius > 0 && <EdgeFadeRows scene={scene} nb={sceneBoundary} />}
 
               {/* The containment breach, in the operator's terms. Not a blocker —
                   a wide disc over thin data is sometimes deliberate — but it must

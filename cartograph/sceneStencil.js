@@ -47,7 +47,7 @@ export function loadSceneStencil(root, scene) {
   const center = s.center || [0, 0]
   const radius = s.radius || 1
   // ⛔ DERIVED, not read. `s.fade` is no longer stored and is ignored if present.
-  const faceFade = Number.isFinite(s.fadeBand) ? deriveFade(radius, s.fadeBand) : null
+  const faceFade = Number.isFinite(s.fadeBand) ? deriveFade(radius, s.fadeBand, s.fadeRuffle) : null
   let clipPolygon = null
   if (s.boundary?.length) {
     const targetR = faceFade ? faceFade.outer + 50 : radius

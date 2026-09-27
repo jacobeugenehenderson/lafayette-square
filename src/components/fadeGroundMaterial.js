@@ -8,6 +8,7 @@
  *
  * `pool` = { map, min, span, scale } (ground.json#poolmap + its texture) or null.
  */
+import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade, neighborhoodFadeKey } from '../lib/neighborhoodFade.js'
 import * as THREE from 'three'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp } from '../lib/groundLamp.js'
@@ -34,24 +35,22 @@ export function makeFadeGroundMaterial({ color, fade = null, pool = null }) {
         '#include <begin_vertex>',
         '#include <begin_vertex>\n vGndPos = (modelMatrix * vec4(position, 1.0)).xyz;')
       let decls = 'varying vec3 vGndPos;\n'
-      if (fade)    decls += 'uniform vec2 uFadeCenter; uniform float uFadeInner; uniform float uFadeOuter;\n'
+      if (fade)    decls += NEIGHBORHOOD_FADE_GLSL + '\n'
       if (hasPool) decls += GROUND_LAMP_DECLS + '\n'
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <common>', '#include <common>\n' + decls)
       if (fade) {
-        shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fade.center[0], fade.center[1]) }
-        shader.uniforms.uFadeInner  = { value: fade.inner }
-        shader.uniforms.uFadeOuter  = { value: fade.outer }
+        bindNeighborhoodFade(shader.uniforms, fade)
       }
       if (hasPool) bindGroundLamp(shader.uniforms, pool)
       let post = '#include <dithering_fragment>\n'
       if (hasPool) post += groundLampFragment('vGndPos.xz') + '\n'
       if (fade) post +=
-        `gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, length(vGndPos.xz - uFadeCenter));\n`
+        `gl_FragColor.a *= neighborhoodFade(vGndPos.xz);\n`
       shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', post)
     }
   }
   mat.customProgramCacheKey = () =>
-    `bg-${fade ? `fade-${fade.inner}-${fade.outer}` : 'plain'}-${hasPool ? 'pool' : 'nopool'}-wx2`
+    `bg-${fade ? neighborhoodFadeKey(fade) : 'plain'}-${hasPool ? 'pool' : 'nopool'}-wx2`
   return mat
 }

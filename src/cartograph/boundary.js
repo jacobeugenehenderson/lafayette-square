@@ -92,7 +92,7 @@ export function makeBoundary(nb) {
   // field was `??`), so moving the radius left five numbers pointing at the old
   // circle. The only stored fade fact is the band WIDTH.
   const fadeBand = Number.isFinite(nb?.fadeBand) ? nb.fadeBand : DEFAULT_FADE_BAND
-  const { inner: fadeInner, outer: fadeOuter } = deriveFade(radius, fadeBand)
+  const { inner: fadeInner, outer: fadeOuter, ruffle: fadeRuffle } = deriveFade(radius, fadeBand, nb?.fadeRuffle)
 
   function pointInBoundary(x, z) {
     if (!boundary.length) return true // no boundary = show everything
@@ -211,7 +211,7 @@ export function makeBoundary(nb) {
   return {
     boundary,
     center, radius,
-    fadeInner, fadeOuter, fadeBand,
+    fadeInner, fadeOuter, fadeBand, fadeRuffle,
     boundaryPolygon: boundary,
     pointInBoundary, streetInBoundary, faceInBoundary,
     clipPolylineToBoundary,
@@ -229,6 +229,7 @@ export const BOUNDARY_RADIUS = _ls.radius
 export const FADE_INNER = _ls.fadeInner
 export const FADE_OUTER = _ls.fadeOuter
 export const FADE_BAND = _ls.fadeBand
+export const FADE_RUFFLE = _ls.fadeRuffle
 export const boundaryPolygon = _ls.boundaryPolygon
 export const pointInBoundary = _ls.pointInBoundary
 export const streetInBoundary = _ls.streetInBoundary

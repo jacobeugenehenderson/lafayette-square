@@ -192,6 +192,17 @@ export async function saveNeighborhood(scene, data) {
   })
 }
 
+// Extent editor: the town's edge — the fade band's width (m) and its ruffle (0 straight … 1). Writes only those two
+// facts into neighborhood_boundary.json (no pipeline: neither moves the clip); the ground shows them at its next bake.
+export async function saveEdgeFade(scene, { fadeBand, fadeRuffle }) {
+  const res = await fetch(sceneUrl(scene, 'edge-fade'), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fadeBand, fadeRuffle }),
+  })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(j.error || `edge-fade ${res.status}`)
+  return j
+}
+
 // Extent editor: the one-click pour — pipeline (clipped to the boundary) →
 // promote-ribbons → the map the Designer renders. Long-running.
 export async function pourMap(scene) {

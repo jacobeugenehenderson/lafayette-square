@@ -70,9 +70,12 @@ export const DEFAULT_FADE_BAND = 200
  * 360 bearings, so it rendered at full alpha against a ragged straight-sided edge.
  * ▶ node checks/claims-fade-has-something-to-dissolve.mjs
  */
-export function deriveFade(radius, fadeBand = DEFAULT_FADE_BAND) {
+export function deriveFade(radius, fadeBand = DEFAULT_FADE_BAND, fadeRuffle) {
   const band = Number.isFinite(fadeBand) ? fadeBand : DEFAULT_FADE_BAND
-  return { inner: Math.max(0, radius - band), outer: radius }
+  // RUFFLE (Jacob, 2026-09-27): how far the edge scallops, 0 (a straight edge — every town before it existed,
+  // and the meaning of an absent `fadeRuffle`) … 1. Drawn by src/lib/neighborhoodFade.js.
+  const ruffle = Number.isFinite(fadeRuffle) ? Math.min(1, Math.max(0, fadeRuffle)) : 0
+  return { inner: Math.max(0, radius - band), outer: radius, ruffle }
 }
 
 /** The 256-gon render ring. Always derived from radius + center — never authored. */
