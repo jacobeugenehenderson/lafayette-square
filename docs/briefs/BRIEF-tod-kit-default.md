@@ -76,12 +76,14 @@ it uses the dramatic tools. **That page is the design discussion.** Nothing is a
   is `{}` **on purpose**. Every absent channel resolves from the code defaults above, and `serve.js` says why:
   *"Writing the defaults into the file would restate the source and go stale."* ⇒ the default day is written into
   **the code defaults** (as time-of-day channels where they are keyed), not into a file.
-- ⛔⛔ **CHANGING A CODE DEFAULT REACHES EVERY EXISTING TOWN THAT HAS NOT AUTHORED THAT CHANNEL.** An absent channel
-  resolves from the default at load, so Provincetown, Huron, HPDM and LS would all move on every channel they left
-  unkeyed (Provincetown keys `skyGain` only at dawn and night, for example). **Before changing anything, measure it
-  per town:** which channels each `design.json` authors and which it inherits. Put that table in front of Jacob.
-  **Which towns adopt the new day is his ruling.** A town that should keep its current look must have it written
-  into its own `design.json` first.
+- ⛔⛔ **A CODE DEFAULT REACHES ONLY NEW POURS, PLUS THE CHANNELS A TOWN HAS NEVER SAVED.** *(Corrected
+  2026-09-27 by Gloaming; Boz's first version of this line said it reached every existing town, which was inferred
+  and wrong.)* Stage's autosave (`serializeDesign`) writes **every** `DESIGN_FIELD` into the town's `design.json`,
+  so any town ever saved in Stage carries a frozen copy of the defaults as they were then. ⇒ **Existing towns will
+  not pick up the designed day by themselves.** Adoption is an explicit per-town step, and **which towns adopt it is
+  Jacob's ruling.** ⚠️ That autosave restating the defaults is itself the "restate the source" behaviour `serve.js`
+  forbids for `kit-default`: a town cannot tell a value it chose from a default it merely saved. Name it in your
+  report; it is not yours to fix here.
 - The check (the deliverable): every time-of-day channel in the kit defaults is keyed at all seven slots; every
   value names its source or its design reason; and no default carries a town's name or a value copied from one
   town's Look. ▶ extend `checks/claims-look-default-has-no-town.mjs`, whose "assert a property of the default,
