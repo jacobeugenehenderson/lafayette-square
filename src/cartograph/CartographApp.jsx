@@ -94,6 +94,8 @@ import useCartographStore, { activeChannel } from './stores/useCartographStore.j
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import useCamera from '../hooks/useCamera'
+import useListings from '../hooks/useListings'
+import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 
 const CAM_KEY = 'cartograph-camera'
 
@@ -706,6 +708,25 @@ function Controls({ controlsRef, heroPlaying = false }) {
 // ── Focus › Pick — the next click in the view sets where depth of field focuses ──────────────────────────
 // (Jacob, 2026-09-27: "it's the monument. The buildings are clickable … put a picker/selector in the blur panel").
 // The hit POINT is stored (store#dofFocus); the camera-move no longer drags the focus with it.
+// The focus point's name, as the town knows the place: the building whose footprint holds it (the set-piece is a
+// slab building too), named by its listing — never the mesh part the ray happened to hit ("shaft").
+function placeNameAt(x, z) {
+  const inside = (fp) => {
+    let c = false
+    for (let i = 0, j = fp.length - 1; i < fp.length; j = i++) {
+      const [xi, zi] = fp[i], [xj, zj] = fp[j]
+      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c
+    }
+    return c
+  }
+  for (const [id, e] of useSlabBuildingIndex.getState().index?.byId ?? []) {
+    if (!e?.footprint || e.footprint.length < 3 || !inside(e.footprint)) continue
+    const l = useListings.getState().listings.find(l => l.building_id === id || l.id === id)
+    return l?.name || 'a building'
+  }
+  return 'the ground here'
+}
+
 function DofFocusPicker() {
   const picking = useCartographStore(s => s.dofPicking)
   const { gl, camera, scene } = useThree()
@@ -724,7 +745,7 @@ function DofFocusPicker() {
       if (!hit) { console.error('[Focus] nothing under the click to focus on — pick a building or the ground'); return }
       useCartographStore.getState().setDofFocus({
         point: hit.point.toArray().map(v => +v.toFixed(2)),
-        label: hit.object.name || hit.object.parent?.name || 'picked point',
+        label: placeNameAt(hit.point.x, hit.point.z),
       })
     }
     el.style.cursor = 'crosshair'
