@@ -79,7 +79,7 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
       uColor: { value: new THREE.Color('#3a4a3a') },
       uColorMap: { value: null }, uHasColor: { value: 0 },
       uMapMin: { value: new THREE.Vector2() }, uMapSpan: { value: new THREE.Vector2(1, 1) },
-      uCenter: { value: new THREE.Vector2() }, uRimR: { value: 1 },
+      uCenter: { value: new THREE.Vector2() }, uRimR: { value: 1 }, uRimLocal: { value: 0 },
     }
     const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, metalness: 0, transparent: true, depthWrite: false })
     m.onBeforeCompile = (sh) => {
@@ -91,7 +91,7 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
       sh.fragmentShader = sh.fragmentShader
         .replace('#include <common>', `#include <common>
           uniform float uInner; uniform float uOuter; uniform vec3 uColor; uniform sampler2D uColorMap; uniform float uHasColor;
-          uniform vec2 uMapMin; uniform vec2 uMapSpan; uniform vec2 uCenter; uniform float uRimR; varying vec2 vLocal;
+          uniform vec2 uMapMin; uniform vec2 uMapSpan; uniform vec2 uCenter; uniform float uRimR; uniform float uRimLocal; varying vec2 vLocal;
           float hdHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
           float hdVnoise(vec2 p) { vec2 i = floor(p), f = fract(p); vec2 w = f * f * (3.0 - 2.0 * f);
             return mix(mix(hdHash(i), hdHash(i + vec2(1.0, 0.0)), w.x), mix(hdHash(i + vec2(0.0, 1.0)), hdHash(i + vec2(1.0, 1.0)), w.x), w.y); }`)
@@ -105,6 +105,10 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
           }
           diffuseColor.rgb = hdCol;`)
         .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+          // ⛔ Nothing inside the town's rim fade: the disc lies at y = -0.05 and draws after the opaque world, so under the
+          // town it painted over anything below that plane — the revetment's toe under the water showed the disc's blue
+          // through the shallows (Jacob, 2026-09-27: "shows the horizon and ground discs thru the seams").
+          if (length(vLocal) < uRimLocal) discard;
           { float r = length(vLocal), band = max(1.0, uOuter - uInner);
             float wobble = (hdVnoise(vLocal * 9.0) - 0.5) * band * 0.35;     // the scalloped edge
             float a = smoothstep(0.0, 1.0, 1.0 - smoothstep(uInner, uOuter, r + wobble));
@@ -135,6 +139,7 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
     // The geometry is a unit circle: express the fade radii in it.
     const r = Math.max(1, h.radius)
     u.uInner.value = h.fadeInner / r
+    u.uRimLocal.value = stencil.rimR / r
     u.uOuter.value = h.fadeOuter / r
     if (meshRef.current) {
       meshRef.current.position.set(stencil.center[0], -0.05, stencil.center[1])
