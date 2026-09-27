@@ -109,14 +109,14 @@ function loadDerivedLamps(scene, derivedPath) {
  * The census: every well, stamped, deduped richest-first. Exported so a check reads the bake's
  * own census step instead of restating it.
  */
-export function readLampCensus(scene, { derivedPath } = {}) {
+export function readLampCensus(scene, { derivedPath, derive = true } = {}) {
   const sceneDir = join(ROOT, 'cartograph', 'data', scene)
   const hasGeo = existsSync(join(sceneDir, 'geography.json'))
   const wells = {
     authored: loadAuthoredLamps(scene).map(l => ({ x: l.x, z: l.z, park: !!l.park, source: SOURCE_BY_WELL.authored })),
     osm: hasGeo ? readSurveyedLamps(sceneDir).map(l => ({ x: l.x, z: l.z, park: false, source: SOURCE_BY_WELL.osm })) : [],
   }
-  const derived = loadDerivedLamps(scene, derivedPath)
+  const derived = derive ? loadDerivedLamps(scene, derivedPath) : { lamps: [], meta: null }
   wells.derived = derived.lamps.map(l => ({ x: l.x, z: l.z, park: false, source: SOURCE_BY_WELL.derived, spacing: l.spacing }))
 
   const kept = [], deduped = {}
@@ -147,12 +147,21 @@ function nudge(zoneOf, x, z, rings = 6, step = 1) {
   return null
 }
 
+/** The Look's authored lamp settings. `derive: false` = real lamps only (surveyed + authored); neutral default derives. */
+export function lampSettings(look) {
+  const p = join(ROOT, 'public', 'looks', look, 'design.json')
+  const l = existsSync(p) ? JSON.parse(readFileSync(p, 'utf-8')).lamps : null
+  return { derive: l?.derive !== false }
+}
+
 function loadLampsForMap(scene, look, derivedPath) {
-  const census = readLampCensus(scene, { derivedPath })
+  const { derive } = lampSettings(look)
+  if (!derive) console.warn(`[bake-lamps] ${look}: design.json#lamps.derive = false — REAL lamps only (surveyed + authored); the derived fill is off by authoring.`)
+  const census = readLampCensus(scene, { derivedPath, derive })
   const { perWell, deduped } = census
   console.log(`[bake-lamps] scene=${scene}: wells authored=${perWell.authored} osm=${perWell.osm} derived=${perWell.derived}` +
     (Object.keys(deduped).length ? `; deduped ${JSON.stringify(deduped)} (richest kept: authored > osm > derived)` : ''))
-  if (!perWell.derived) console.warn(`[bake-lamps] scene=${scene}: NO derived well (clean/derived_lamps.json) — only surveyed/authored lamps will stand. ▶ node cartograph/derive-lamps.mjs --scene=${scene}`)
+  if (derive && !perWell.derived) console.warn(`[bake-lamps] scene=${scene}: NO derived well (clean/derived_lamps.json) — only surveyed/authored lamps will stand. ▶ node cartograph/derive-lamps.mjs --scene=${scene}`)
 
   // ── Legal ground: the frozen shape's painted zones (the tree mask's own surfaces) ──
   const shapePath = join(ROOT, 'public', 'baked', look, 'shape.json')

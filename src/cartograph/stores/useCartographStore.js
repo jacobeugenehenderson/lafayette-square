@@ -402,6 +402,7 @@ const DESIGN_FIELDS = [
   { key: 'surfaces',     hydrate: (d) => _isObj(d.surfaces) ? d.surfaces : null },
   { key: 'wallMix',      hydrate: (d) => _isObj(d.wallMix) ? d.wallMix : null },       // bake-buildings: undescribed walls
   { key: 'wallPalettes', hydrate: (d) => _isObj(d.wallPalettes) ? d.wallPalettes : null },
+  { key: 'lamps',        hydrate: (d) => _isObj(d.lamps) ? d.lamps : null },             // bake-lamps: { derive: false } = surveyed + authored only
   { key: 'terrainExag',  hydrate: (d) => Number.isFinite(d.terrainExag) ? d.terrainExag : null }, // bake-scene: the town's authored exaggeration
   { key: 'lampGlow',     hydrate: (d) => migrateLampGlow(d.lampGlow) },
   _grp('bloom',          BLOOM_FIELD_KEYS,          BLOOM_FLAT_DEFAULTS),

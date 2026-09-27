@@ -1562,5 +1562,8 @@
       "species": "platanus_acerifolia",
       "variantId": 4
     }
-  ]
+  ],
+  "lamps": {
+    "derive": false
+  }
 }

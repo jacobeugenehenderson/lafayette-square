@@ -23,7 +23,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { scenes } from './_scenes.mjs'
-import { SOURCE_BY_WELL, readLampCensus } from '../cartograph/bake-lamps.js'
+import { SOURCE_BY_WELL, readLampCensus, lampSettings } from '../cartograph/bake-lamps.js'
 import { groupOf } from '../cartograph/lamp-spacing.mjs'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 import { DERIVED_LEGAL } from '../cartograph/derive-lamps.mjs'
@@ -45,8 +45,14 @@ for (const scene of scenes('public/baked/<scene>/shape.json')) {
   const eligible = read(skel).streets.filter(s => groupOf(s.highway)).length
   const derivedPath = join('cartograph/data', scene, 'clean/derived_lamps.json')
 
-  // ② The mutation, in-process: without the derived well, does a town with no survey go dark?
-  if (existsSync(derivedPath)) {
+  // The operator may switch the fill off (design.json#lamps.derive = false — "real lamps only"). Then no
+  // derived lamp may ship, and the town must still have its real ones.
+  const { derive } = lampSettings(scene)
+  if (!derive) {
+    const lp0 = join(bakedArg || 'public/baked', scene, 'lamps.json')
+    const d0 = existsSync(lp0) ? (read(lp0).lamps || []).filter(l => l.source === 'derived').length : 0
+    d0 ? bad(`② derived fill is OFF by authoring, yet ${d0} derived lamps shipped — re-bake lamps`) : ok('② derived fill OFF by authoring (real lamps only) — none shipped')
+  } else if (existsSync(derivedPath)) {
     const withIt = readLampCensus(scene).perWell, without = readLampCensus(scene, { derivedPath: '/nonexistent/derived_lamps.json' }).perWell
     without.derived === 0 && withIt.derived > 0 ? ok(`② dropping the derived well removes ${withIt.derived} lamps (census can fail)`) : bad(`② removing the derived well changed nothing (${withIt.derived} → ${without.derived})`)
   } else if (eligible) bad(`② no ${derivedPath} — ${eligible} streets are eligible and nothing derived them. ▶ node cartograph/derive-lamps.mjs --scene=${scene}`)
