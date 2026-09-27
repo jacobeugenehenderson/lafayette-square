@@ -613,8 +613,8 @@ const DAY = {
               spread: [0.45, 0.6, 0.15, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
   // Depth of field, relative to what the camera looks at: a narrow sharp zone and a strong melt at Noon (the
   // tilt-shift dollhouse), dreamy at Golden, none at night so the lights and stars stay points.
-  dof:      { blur: [0.2, 0.15, 0.6, 0.35, 0.25, 0.1, 0, 0], focus: [1, 1, 1, 1, 1, 1, 1, 1],
-              heroBlur: [0, 0, 0, 0.1, 0, 0, 0, 0], softness: [0.5, 0.5, 0.2, 0.6, 0.5, 0.5, 0.5, 0.5] },
+  dof:      { blur: [0.2, 0.15, 0.8, 0.35, 0.25, 0.1, 0, 0], focus: [1, 1, 1, 1, 1, 1, 1, 1],
+              heroBlur: [0, 0, 0, 0.1, 0, 0, 0, 0], softness: [0.5, 0.5, 0.15, 0.6, 0.5, 0.5, 0.5, 0.5] },
   grain:    { scale: [0.9, 0.7, 0.4, 0.7, 0.8, 1.0, 1.3, 1.1] },
   // Neon: which buildings light is their HOURS' business; this is how they read. At noon a solid colour band
   // (Emissive 1 is the colour itself, no bleed); at the blue hour it balances the sky; at night it blazes.
