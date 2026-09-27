@@ -1047,9 +1047,9 @@
         "checkedBy": "Loam (fetched epa.gov/web-policies-and-procedures/epa-disclaimers)",
         "quote": "Unless otherwise specified, geospatial data produced by the EPA is by default in the public domain and is not subject to domestic copyright protection under 17 U.S.C. § 105.",
         "exception": "The same page says some EPA DOCUMENTS may be protected for commercial use; these are measured values, not documents. Only EPA-collected results are used (organizations EMAP_CS_WQX, NARS_WQX); other providers on the portal (state, NALMS, non-profits) are third parties and are NOT read.",
-        "approvedBy": "PENDING — applied under Jacob's standing acceptance of federal works (2026-09-23, see usgs-web); confirm"
+        "approvedBy": "Jacob, 2026-09-27"
       },
-      "status": "PERMITTED (pending Jacob's confirmation) — EPA-collected results only; skip anything credited to a third party"
+      "status": "PERMITTED — EPA-collected results only; skip anything credited to a third party"
     }
   ],
   "questions": [

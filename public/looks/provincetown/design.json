@@ -210,5 +210,9 @@
       "species": "blackgum",
       "variantId": 1
     }
-  ]
+  ],
+  "water": {
+    "secchiM": 3.95,
+    "secchiSource": "Jacob, 2026-09-27: the water beside the town — references d-provincetown-secchi (EPA EMAP Coastal, 2 Cape Cod Bay stations inside the disc: 4.0 m, 3.9 m; median 3.95 m)"
+  }
 }
