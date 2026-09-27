@@ -221,8 +221,10 @@ for (const dir of dirs) {
         // the draped triangle takes its height from its vertices, so it is the rock's if the sample or any vertex is
         // The waterline rule is HIGH's: at LOW, flats standing out of the drawn water are the tide, not a defect.
         const hi = sheet(dx, dz, 1)
-        if (deep && deep.y > hi + 1e-6 && (onRock(dx, dz) || deep.v.some(q => onRock(q[0], q[1])))) rockM += seg
-        else if (deep && deep.y > hi + 1e-6) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - hi, id: deep.id } }
+        // Proud beyond the level's own uncertainty (the datum's ±): a floor capped AT the high level (bake-terrain) is
+        // the level meeting the ground, and its sub-centimetre interpolation is no defect.
+        if (deep && deep.y > hi + floatTol && (onRock(dx, dz) || deep.v.some(q => onRock(q[0], q[1])))) rockM += seg
+        else if (deep && deep.y > hi + floatTol) { proud.len += seg; proud.by[deep.id] = (proud.by[deep.id] || 0) + seg; proud.first ||= { x: dx, z: dz, h: deep.y - hi, id: deep.id } }
         if (land && sheet(x, z, 1) - land.y > floatTol && !inFlood(x + nx * ACROSS, z + nz * ACROSS)) { const h = sheet(x, z, 1) - land.y; floats.len += seg; floats.max = Math.max(floats.max, h); floats.first ||= { x, z, h, id: land.id } }
         // No bare space at EITHER level: with nothing drawn under the water, the land's edge must not stand above it.
         let gap
