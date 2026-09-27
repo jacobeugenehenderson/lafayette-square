@@ -15,7 +15,7 @@ import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL 
 import { getElevationRaw } from '../utils/elevation'
 import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
+import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { buildLampGrid, poolWipe, canopyWipe, LAMP_DEFAULT_HEX } from '../lib/lampPool.js'
 
@@ -42,6 +42,8 @@ const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern cente
 // (The ground light pool AND the lamp contact shadow moved into the baked
 // ground FX map — see BakedGround / grassMaterial / bake-ground-ao.js.
 // POOL_RADIUS/POOL_Y/poolMat + SHADOW_RADIUS/baseMat all retired.)
+
+const GLOW_SIZE_FIELD = LANTERN_FIELDS.find(f => f.key === 'glowSize')
 
 function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: lanternChannel, lampColor } = {}) {
   const lampRef = useRef()
@@ -204,8 +206,10 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
         void main() {
           vUv = uv;
           ${BILLBOARD_VS_INC
-            // Sized by the Glow size knob, not the instance scale; and pushed toward the camera by the
-            // lantern's half-width, so the lantern's own cage and glass never hide its glow.
+            // Sized by the Glow size knob, not the instance scale; pushed toward the camera by the lantern's own
+            // half-width so the cage and glass never hide it. ⭐ The glow is SMALL by design (Glow size 0.2–1.5 m): a
+            // flat card cannot make a wide halo — pushed forward by its radius it washed the post and everything near
+            // it white (tried 2026-09-26, Jacob: "looks terrible"). The wide halo is Bloom's (Image › Bloom).
             .replace('vec4 _bbView = _bbCenterView + vec4(position.xy * _bbScale, 0.0, 0.0);',
                      'vec4 _bbView = _bbCenterView + vec4(normalize(-_bbCenterView.xyz) * uPush, 0.0) + vec4(position.xy * 2.0 * uHaloSize, 0.0, 0.0);')}
           #include <logdepthbuf_vertex>
@@ -220,8 +224,9 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
           #include <logdepthbuf_fragment>
           float r = length(vUv - 0.5) * 2.0;
           if (r >= 1.0) discard;
-          // Wide soft glow with a guaranteed-zero edge.
-          float a = exp(-r * r * 2.0) * uIntensity * 0.45;
+          // Light gathered at the lantern, falling away fast — a glow, not a haze disc (Jacob: the gradual
+          // exp(-2r²) read as grey fog filling the whole circle). Zero at the edge.
+          float a = exp(-r * r * 6.0) * uIntensity * 0.45;
           a *= 1.0 - smoothstep(0.6, 1.0, r);
           gl_FragColor = vec4(uColor, a);
         }`,
@@ -470,7 +475,8 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
     if (glowMatRef.current?.uniforms?.uIntensity) glowMatRef.current.uniforms.uIntensity.value = bulb
     bulbMat.opacity = Math.min(1, bulb)
     haloMat.uniforms.uIntensity.value = t * (lant.glow ?? 0)
-    haloMat.uniforms.uHaloSize.value = lant.glowSize ?? LANTERN_FLAT_DEFAULTS.glowSize
+    // Clamped to the control's own range — a Look saved when Glow size ran to 10 m reads as the largest glow now.
+    haloMat.uniforms.uHaloSize.value = Math.min(GLOW_SIZE_FIELD.max, Math.max(GLOW_SIZE_FIELD.min, lant.glowSize ?? LANTERN_FLAT_DEFAULTS.glowSize))
     _lampGlow.poolUniform.value  = t * _lampGlow.share.pool
     _lampGlow.treesUniform.value = t * _lampGlow.share.trees
     _lampGlow.poolWipeUniform.value   = poolWipe(_lampGlow.share.radius)

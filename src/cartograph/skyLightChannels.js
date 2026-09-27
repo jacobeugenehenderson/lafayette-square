@@ -525,15 +525,16 @@ export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
 // ⭐ Jacob, 2026-09-26 — each knob moves ONE thing, and none is a master over the others:
 //   Bulb (`intensity`, key kept so authored Looks still load) — the light source: the glass panes EMIT in the
 //   lamp colour (so bloom takes them), plus the bulb dot and tiny orb inside. Uncapped.
-//   Glow + Glow size — the soft gradient around the lantern, drawn just in front of it (by the lantern's own
-//   measured half-width) so the lantern never hides it, while anything standing in front of it still does.
+//   Glow + Glow size — a SMALL soft light hugging the lantern head (0.2–1.5 m), drawn just in front of it by the
+//   lantern's own half-width. The wide halo is Bloom's (Image › Bloom): a flat card can't make one without washing
+//   out everything near the lamp.
 // The pools, trees and walls are the Lamp Glow card's. All of it × the automatic dusk→night turn-on.
 export const LANTERN_FIELDS = [
   { key: 'intensity', label: 'Bulb',      min: 0,   max: 4,  step: 0.02 },
   { key: 'glow',      label: 'Glow',      min: 0,   max: 3,  step: 0.02 },
-  { key: 'glowSize',  label: 'Glow size', min: 0.5, max: 10, step: 0.1 },   // metres, radius
+  { key: 'glowSize',  label: 'Glow size', min: 0.2, max: 1.5, step: 0.05 },  // metres, radius — small by design; the wide halo is Bloom's
 ]
-export const LANTERN_FLAT_DEFAULTS = { intensity: 1.0, glow: 1.0, glowSize: 3.0 }
+export const LANTERN_FLAT_DEFAULTS = { intensity: 1.0, glow: 1.0, glowSize: 0.6 }
 export const LANTERN_FIELD_KEYS = LANTERN_FIELDS.map(f => f.key)
 
 // Milky Way (Sky & Light, CELESTIAL group) — binary on/off. Cross-slot
