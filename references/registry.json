@@ -764,6 +764,41 @@
         "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)"
       },
       "status": "PERMITTED"
+    },
+    {
+      "id": "fhwa-lrfd-steel-example",
+      "title": "LRFD Steel Girder SuperStructure Design Example",
+      "publisher": "U.S. Federal Highway Administration",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://www.fhwa.dot.gov/bridge/lrfd/us_ds2.cfm",
+      "covers": [
+        "concrete bridge deck minimum depth (S9.7.1.1)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Strand (an FHWA web publication — a federal work)",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)",
+        "note": "It restates the AASHTO LRFD minimum; AASHTO itself is aiUse prohibited (aashto-gdhs-7), so the FHWA page is what is cited."
+      },
+      "status": "PERMITTED"
+    },
+    {
+      "id": "usfs-timber-bridges",
+      "title": "Timber Bridges: Design, Construction, Inspection, and Maintenance (Ritter 1990, EM 7700-8), Chapter 8",
+      "publisher": "USDA Forest Service",
+      "jurisdiction": "federal (US-wide)",
+      "url": "https://www.dot.state.mn.us/bridge/pdf/insp/USFS-TimberBridgeManual/em7700_8_chapter08.pdf",
+      "covers": [
+        "timber deck thicknesses (longitudinal decks, glulam, nail-laminated)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Strand (a USDA Forest Service engineering manual — a federal work; read from the MnDOT mirror)",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)"
+      },
+      "status": "PERMITTED"
     }
   ],
   "questions": [
@@ -1619,6 +1654,17 @@
         "f-cem-toe-berm-size"
       ],
       "notes": "Stone-relative, so it scales with each heap's own stone and travels to any town. The kit uses the smallest standard toe (3 wide, 2 high)."
+    },
+    {
+      "id": "q-deck-min-thickness",
+      "ask": "The minimum thickness of a deck that carries people and vehicles, by material",
+      "neededBy": "BRIEF-the-shore-is-closed — structures over water (Jacob 2026-09-27: 'a dock or a wharf or pier can't be a 2D plane' · 'engineering weight requirements … would tell us minimum thicknesses')",
+      "status": "answered",
+      "findings": [
+        "f-fhwa-concrete-deck-min",
+        "f-usfs-timber-deck-min"
+      ],
+      "notes": "Minimums of the deck itself under highway loading; a structure's visible fascia (stringers, pile caps) is deeper."
     }
   ],
   "findings": [
@@ -4400,6 +4446,38 @@
       "where": "Part VI-5, toe stability (armor toe berm), EM 1110-2-1100",
       "quote": "For a standard toe size of about 3-5 stones wide and 2-3 stones high",
       "scope": "rubble-mound toe berms; widths in units of the toe stone size",
+      "foundOn": "2026-09-27",
+      "foundBy": "Strand"
+    },
+    {
+      "id": "f-fhwa-concrete-deck-min",
+      "question": "q-deck-min-thickness",
+      "kind": "value",
+      "value": {
+        "thickness_in": 7,
+        "thickness_m": 0.1778,
+        "material": "concrete"
+      },
+      "source": "fhwa-lrfd-steel-example",
+      "where": "Design Step 2 (S9.7.1.1)",
+      "quote": "The concrete deck depth cannot be less than 7.0 inches, excluding any provision for grinding, grooving, and sacrificial surface.",
+      "scope": "concrete bridge decks under highway loading",
+      "foundOn": "2026-09-27",
+      "foundBy": "Strand"
+    },
+    {
+      "id": "f-usfs-timber-deck-min",
+      "question": "q-deck-min-thickness",
+      "kind": "value",
+      "value": {
+        "thickness_in": 5.5,
+        "thickness_m": 0.1397,
+        "material": "wood"
+      },
+      "source": "usfs-timber-bridges",
+      "where": "Chapter 8, example (p 8-63)",
+      "quote": "the minimum deck thickness of 5-1/2 inches (6 inches nominal) is selected",
+      "scope": "longitudinal timber decks under highway loading",
       "foundOn": "2026-09-27",
       "foundBy": "Strand"
     }
