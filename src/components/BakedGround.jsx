@@ -408,7 +408,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
         const draw = groundMaterialFor(group, surfaceTable, { hasFieldAxis: !!geometry.attributes.aFieldAxis })
         if (draw.kind === 'water')
           return <WaterSurface key={key} geometry={geometry} renderOrder={group.renderOrder} extentDiag={bodyExtent}
-            horizon={bodyExtent && manifest.stencil ? { center: manifest.stencil.center, inner: horizonFor(manifest.stencil.radius).fadeInner, outer: horizonFor(manifest.stencil.radius).fadeOuter } : null} />
+            horizon={bodyExtent && manifest.stencil ? { center: manifest.stencil.center, inner: horizonFor(manifest.stencil.radius).radius, outer: horizonFor(manifest.stencil.radius).fadeOuter } : null} />
         if (draw.kind === 'gravel')
           return <GravelMesh key={key} group={group} geometry={geometry} lightmap={lightmap}
             tintHex={scene?.layerColors?.[group.id]}

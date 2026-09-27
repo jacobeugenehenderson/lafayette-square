@@ -341,8 +341,8 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uVisibleM:      { value: 0 },
     uFadeM:         { value: 0 },
     // ⭐ THE WATER GOES TO THE HORIZON (Jacob, 2026-09-27: "water is supposed to go to the horizon"). Where the town's
-    // edge is water the sheet runs on past the rim (BakedGround) and thins into the haze over the horizon's own reach
-    // (HorizonDisc horizonFor). uHorizonOut 0 = no fade.
+    // edge is water the sheet runs on past the rim (BakedGround) and thins into the haze from the disc's edge to the
+    // horizon's reach (HorizonDisc horizonFor: radius → fadeOuter), where nothing lies beneath it. uHorizonOut 0 = no fade.
     uHorizonC:      { value: new THREE.Vector2() },
     uHorizonIn:     { value: 0 },
     uHorizonOut:    { value: 0 },
@@ -642,13 +642,18 @@ ${GLITTER_GLSL}
 
        // Vary alpha slightly with ripple (thinner at highlights)
        diffuseColor.a = mix(0.72, 0.88, smoothstep(0.3, 0.6, ripple));
-       if (uHorizonOut > 0.0) diffuseColor.a *= 1.0 - smoothstep(uHorizonIn, uHorizonOut, length(vWaterWorld.xz - uHorizonC));
 ${terrain ? `       if (uVisibleM > 0.0) {
-         float wDepth = max(0.0, -texture2D(uTerrainMap, _terrainUV(vec2((vWaterWorld.x - uBMinX) / uSpanX, (vWaterWorld.z - uBMinZ) / uSpanZ))).r);
+         // ⭐ The bottom is seen only to the visibility depth (bake-terrain \`bed\`): deeper, the water is OPAQUE. It
+         // used to stay 12-28% clear at any depth, so the sand bed tinted deep water, and past the rim (no bed) the
+         // disc beneath showed through instead: a seam and a second, darker sea at the rim (Jacob, 2026-09-27).
+         // Past the terrain's edge is past the bed: deep.
+         vec2 wUV = vec2((vWaterWorld.x - uBMinX) / uSpanX, (vWaterWorld.z - uBMinZ) / uSpanZ);
+         bool wOff = any(lessThan(wUV, vec2(0.0))) || any(greaterThan(wUV, vec2(1.0)));
+         float wDepth = wOff ? uVisibleM : max(0.0, -texture2D(uTerrainMap, _terrainUV(wUV)).r);
          float wSeen = 1.0 - smoothstep(uVisibleM - uFadeM, uVisibleM, wDepth);   // 1 = the bottom shows
-         diffuseColor.a *= mix(1.0, clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
+         diffuseColor.a = mix(1.0, diffuseColor.a * clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
        }
-` : ''}
+` : ''}       if (uHorizonOut > 0.0) diffuseColor.a *= 1.0 - smoothstep(uHorizonIn, uHorizonOut, length(vWaterWorld.xz - uHorizonC));
        // ⭐⭐ THE WAVE NORMAL — THE SUN AND MOON PATH LIVES HERE, and it is the
        // only thing that turns "a lit plane" into water. Two contributions:
        //   · the GLITTER stack, world-constant metres, which supplies the fine
