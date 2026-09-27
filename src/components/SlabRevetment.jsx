@@ -42,6 +42,7 @@ import { revetmentFaces, revetmentResponseKind, toeFor } from '../lib/revetmentF
 import { getElevationRaw } from '../utils/elevation'
 import { terrainBed, terrainWater } from '../utils/terrainShader'
 import { waterLevels, tidePhase } from '../../cartograph/waterLevel.mjs'
+import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 
 let _saidNoBerm = false
 let _saidNoLevel = false
@@ -146,7 +147,10 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
     return revetmentFaces(doc).filter(f => f.anyArmour).map(f => {
       if (f.levelM == null && !_saidNoLevel) { _saidNoLevel = true; console.warn('[SlabRevetment] ⛔ this revetment.json predates the water levels — its heaps stand on the terrain\'s zero, not the town\'s high water. ▶ re-bake the revetment') }
       const waterY = f.levelM ?? 0
-      const toeAt = toeFor(f, getElevationRaw, floorM, waterY)
+      // The toe runs down to the bed, at least one course below the LOW level (so it stays under water at low tide),
+      // and no shallower than the depth the bottom can be seen to.
+      const toeFloor = Math.max(floorM, f.lowM != null ? waterY - f.lowM + MIN_ARMOUR_D50_M : 0)
+      const toeAt = toeFor(f, getElevationRaw, toeFloor, waterY)
       if (!f.toeBerm && !_saidNoBerm) { _saidNoBerm = true; console.warn('[SlabRevetment] ⛔ this revetment.json carries no material.toeBerm — the heaps have no toe berm. ▶ re-bake the revetment') }
       f = { ...f, toeAt, berm: f.toeBerm, groundAt: getElevationRaw, waterY }
       const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, toeAt, berm: f.berm, octaves: 3 })

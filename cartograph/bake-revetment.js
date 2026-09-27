@@ -43,7 +43,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
-import { shoreArmourFor, wetSideOf, drawnWaterTest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M } from './shore-armour.mjs'
+import { shoreArmourFor, wetSideOf, drawnWaterTest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M, d50For } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL } from './shoreRuns.mjs'
 import { stoneStructures } from './structures.mjs'
 import { waterLevels } from './waterLevel.mjs'
@@ -265,21 +265,26 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
   const stepX = (tm.bounds.maxX - tm.bounds.minX) / (tm.width - 1)
   const stepZ = (tm.bounds.maxZ - tm.bounds.minZ) / (tm.height - 1)
   const gridM = Math.min(stepX, stepZ)
-  // ⭐⭐ HEIGHTS ARE ABOVE THE TOWN'S HIGH WATER, not the terrain's zero (the survey flight's level, which no one chose).
-  // Ruled 2026-09-27 (Jacob, BRIEF-bathymetry): the water stands at a chosen tide; the stone is ruled against the HIGH
-  // level, the design water a real revetment is sized to, and its face runs down past the low. ⛔ A terrain with no
-  // `water` record throws here (waterLevels) — it is never read as zero.
+  // ⭐⭐ PLACEMENT IS THE BANK'S; THE CREST IS THE TIDE'S (Jacob, 2026-09-27, "fix the revetment").
+  // `heightAt` is the BANK: the terrain above the drawn shore's own water (y = 0), as before the tide — whether a shore
+  // is armoured is a fact about its bank ("a wall shorter than one course of armour is a kerb"). ⛔ It was briefly
+  // measured above MHW on an unsourced claim that a revetment is "ruled against design water"; that halved
+  // provincetown's shore stone (2.11 → 1.06 km) and there is no such finding. What the design water sets is the CREST:
+  // an armoured shore is built UP to at least the HIGH level plus one course of its stone (`builtCrest`), whatever the
+  // bank, and its face runs down past the LOW. ⛔ A terrain with no `water` record throws here — never read as zero.
   const levels = waterLevels(tm.water)
   const heightAt = (x, z) => {
     const gx = Math.round((x - tm.bounds.minX) / stepX), gz = Math.round((z - tm.bounds.minZ) / stepZ)
     if (gx < 0 || gz < 0 || gx >= tm.width || gz >= tm.height) return NaN
     const v = tf[gz * tm.width + gx]
-    return Number.isFinite(v) ? v - levels.highAt(x, z) : NaN
+    return Number.isFinite(v) ? v : NaN
   }
+  // The crest a shore's stone is built to, above HIGH (the level its walk stands on): the bank where it clears the
+  // high water by a course, else high water plus one course of the stone that bank calls for.
+  const builtCrest = (bank, x, z) => Math.max(bank - levels.highAt(x, z), d50For(bank))
   // ⭐ A MAPPED BREAKWATER IS A STRUCTURE, NOT A SHORE (Jacob, 2026-09-27, option b): its stone stands wherever the rock
-  // is, sized against the LOW level, so its crest is the rock's top and the tide covers it as it rises. The shore stays
-  // ruled against HIGH (the design water a revetment is sized to).
-  const aboveLow = (x, z) => { const h = heightAt(x, z); return Number.isFinite(h) ? h + levels.highAt(x, z) - levels.lowAt(x, z) : NaN }
+  // is, sized against the LOW level, so its crest is the rock's top and the tide covers it as it rises.
+  const aboveLow = (x, z) => { const h = heightAt(x, z); return Number.isFinite(h) ? h - levels.lowAt(x, z) : NaN }
 
   // ⭐ Reaching here means the datum IS water. A water-datum town with no shoreline in the
   // slab is its own case — the terrain found water, the slab froze none.
@@ -433,6 +438,7 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
         }
       }
       const a = armourAt(x, z, crest)
+      if (a.armour && Number.isFinite(crest)) crest = builtCrest(crest, x, z)   // placed by the bank, built to the tide
       // ⛔ `why` is NOT emitted per station. It is a diagnostic string, the player
       // does not read it, and at ~5,000 stations a town it was 60% of the file.
       // The census is summarised below and `checks/` can re-derive any of it.
@@ -579,7 +585,11 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
   // Each walk's high water (metres above the terrain's zero), where its crests are measured from: the player stands
   // the heap on it. The field varies by centimetres along one walk, under VDatum's own uncertainty.
   // A shore walk's crests are above HIGH; a structure walk's above LOW — each walk carries the level it was measured from.
-  for (const a of arcs) { const at = a.structure ? levels.lowAt : levels.highAt; a.levelM = +(a.stations.reduce((t, q) => t + at(q.x, q.z), 0) / Math.max(1, a.stations.length)).toFixed(3); a.levelFrom = a.structure ? levels.lowName : levels.highName }
+  const meanAt = (a, at) => +(a.stations.reduce((t, q) => t + at(q.x, q.z), 0) / Math.max(1, a.stations.length)).toFixed(3)
+  for (const a of arcs) {
+    a.levelM = meanAt(a, a.structure ? levels.lowAt : levels.highAt); a.levelFrom = a.structure ? levels.lowName : levels.highName
+    a.lowM = meanAt(a, levels.lowAt)   // the toe runs down past it
+  }
 
   const out = {
     version: 1,

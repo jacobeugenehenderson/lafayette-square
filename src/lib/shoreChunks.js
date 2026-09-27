@@ -35,11 +35,11 @@
  */
 
 import { rng, seedAt } from './boulderGeometry.js'
-import { MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../cartograph/shore-armour.mjs'
+import { MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, d50For } from '../../cartograph/shore-armour.mjs'
 import { CREST_REACH } from './revetmentDrape.js'
 
 const TAN_REPOSE = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
-export const d50For = h => Math.max(MIN_ARMOUR_D50_M, Math.min(1.5, h * 0.45))
+export { d50For }   // one copy, in cartograph/shore-armour.mjs
 
 /** Chunk length along the shore, metres. ⛔ A budget, not a look: it sets how much
  *  work one camera step can trigger and how many chunks a view spans. */

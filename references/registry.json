@@ -1010,6 +1010,27 @@
         "exception": "A search snippet surfaced one line of the report's CCT recommendation during the terms check (an accidental rule-1 breach). It is NOT recorded and must not be used."
       },
       "status": "NOT PERMITTED"
+    },
+    {
+      "id": "usace-em-1110-2-1614",
+      "title": "Design of Coastal Revetments, Seawalls, and Bulkheads (EM 1110-2-1614)",
+      "publisher": "U.S. Army Corps of Engineers",
+      "jurisdiction": "federal (US-wide)",
+      "edition": "30 Jun 1995",
+      "url": "https://www.delmar.ca.us/DocumentCenter/View/1899/Design-of-Coastal-Revetments-Seawalls-and-Bulkheads_Army-Corps-of-Engineers-1995",
+      "covers": [
+        "design water levels for revetments (2-5)",
+        "armor layer thickness (2-17)",
+        "toe protection (2-19)"
+      ],
+      "terms": {
+        "aiUse": "permitted",
+        "checkedOn": "2026-09-27",
+        "checkedBy": "Strand (a U.S. Army Corps of Engineers engineer manual — a federal work)",
+        "approvedBy": "Jacob, 2026-09-23 (standing acceptance of federal works as public domain)",
+        "note": "publications.usace.army.mil returns 403 to fetches; read from the City of Del Mar's copy of the same EM (30 Jun 95), text extracted with pdftotext."
+      },
+      "status": "PERMITTED"
     }
   ],
   "questions": [
@@ -1970,6 +1991,16 @@
       "codeSites": [
         "src/components/StreetLights.jsx daylight ramp t (0 at +8.6°, 1 at −17.2°)"
       ]
+    },
+    {
+      "id": "q-revetment-crest-and-toe-levels",
+      "ask": "Which water levels set a revetment's crest and how deep its armour runs",
+      "neededBy": "BRIEF-the-shore-is-closed — Jacob 2026-09-27: 'fix the revetment' (placement by the bank, the crest built to the tide, the toe below LOW)",
+      "status": "answered",
+      "findings": [
+        "f-em1614-design-water-levels"
+      ],
+      "notes": "Placement is the bank's, not this finding's. The kit has no wave model, so the crest floor is HIGH + one course (its judgement), not HIGH + runup."
     }
   ],
   "findings": [
@@ -4783,6 +4814,21 @@
       "where": "Chapter 8, example (p 8-63)",
       "quote": "the minimum deck thickness of 5-1/2 inches (6 inches nominal) is selected",
       "scope": "longitudinal timber decks under highway loading",
+      "foundOn": "2026-09-27",
+      "foundBy": "Strand"
+    },
+    {
+      "id": "f-em1614-design-water-levels",
+      "question": "q-revetment-crest-and-toe-levels",
+      "kind": "rule",
+      "value": {
+        "crestFrom": "maximum water level (+ runup)",
+        "armourDepthFrom": "minimum expected water level"
+      },
+      "source": "usace-em-1110-2-1614",
+      "where": "2-5 Design Water Levels, EM 1110-2-1614",
+      "quote": "The maximum water level is needed to estimate the maximum breaking wave height at the structure, the amount of runup to be expected, and the required crest elevation of the structure. Minimum expected water levels play an important role in anticipating the amount of toe scour that may occur and the depth to which the armor layer should extend.",
+      "scope": "coastal revetments, seawalls and bulkheads. ⚠️ The kit applies it without a wave model: the crest is built to at least the town's HIGH level plus one course of its stone (no runup computed — that 'one course' is the kit's judgement, not the manual's), and the toe runs at least one course below the LOW level. Placement (whether a shore is armoured) is NOT from this finding: it is the bank's height (bake-revetment).",
       "foundOn": "2026-09-27",
       "foundBy": "Strand"
     }

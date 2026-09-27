@@ -27,7 +27,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { drawnWaterTest } from '../cartograph/shore-armour.mjs'
+import { drawnWaterTest, d50For } from '../cartograph/shore-armour.mjs'
 import { waterLevels } from '../cartograph/waterLevel.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -51,8 +51,9 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
   const stepX = (tm.bounds.maxX - tm.bounds.minX) / (tm.width - 1)
   const stepZ = (tm.bounds.maxZ - tm.bounds.minZ) / (tm.height - 1)
   const gridM = Math.min(stepX, stepZ)
-  // An artifact ruled against the town's levels (bake-revetment `levels`) measures a shore crest above HIGH, so the check
-  // does too — from the same terrain record. ⛔ An artifact that claims levels on a terrain without them cannot be audited.
+  // An artifact ruled against the town's levels (bake-revetment `levels`) PLACES by the bank but BUILDS an armoured
+  // station's crest up to HIGH + one course (`builtCrest`), so the check expects that — from the same terrain record.
+  // ⛔ An artifact that claims levels on a terrain without them cannot be audited.
   let high = () => 0
   if (doc.levels) {
     try { high = waterLevels(tm.water).highAt } catch (e) { console.log(`  ⚠️ ${look.padEnd(16)} revetment.json was ruled against levels but ${e.message} — CANNOT VERIFY`); failed = true; continue }
@@ -61,8 +62,9 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
     const gx = Math.round((x - tm.bounds.minX) / stepX), gz = Math.round((z - tm.bounds.minZ) / stepZ)
     if (gx < 0 || gz < 0 || gx >= tm.width || gz >= tm.height) return NaN
     const v = tf[gz * tm.width + gx]
-    return Number.isFinite(v) ? v - high(x, z) : NaN
+    return Number.isFinite(v) ? v : NaN
   }
+  const expect = (bank, armour, x, z) => (doc.levels && armour ? Math.max(bank - high(x, z), d50For(bank)) : bank)
   const mP = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   if (!existsSync(mP)) { console.log(`  ⚠️ ${look.padEnd(16)} no clean/map.json — CANNOT VERIFY`); failed = true; continue }
   const inWater = drawnWaterTest((JSON.parse(readFileSync(mP, 'utf8')).layers?.water || [])
@@ -102,8 +104,8 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
       // Only stations where the two readings actually DIFFER can discriminate.
       if (Math.abs(hLand - hAt) < 0.05) continue
       n++
-      if (Math.abs(c - Math.max(0, hLand)) < 0.02) matchLand++
-      else if (Math.abs(c - hAt) < 0.02) matchStation++
+      if (Math.abs(c - expect(Math.max(0, hLand), st[i].armour, st[i].x, st[i].z)) < 0.02) matchLand++
+      else if (Math.abs(c - expect(hAt, st[i].armour, st[i].x, st[i].z)) < 0.02) matchStation++
     }
   }
   const pct = n ? (100 * matchLand) / n : 0

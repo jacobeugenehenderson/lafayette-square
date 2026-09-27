@@ -67,7 +67,7 @@
  */
 
 import * as THREE from 'three'
-import { RIPRAP_REPOSE_DEG, MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
+import { RIPRAP_REPOSE_DEG, MIN_ARMOUR_D50_M, d50For } from '../../cartograph/shore-armour.mjs'
 
 const TAN_REPOSE = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
 
@@ -113,7 +113,6 @@ const EDGE_RAGGED = 0.14
 /** …and its wavelength, in BLOCKS. ⛔ Must stay well above the mesh step or the trim
  *  cannot resolve it — see the comb-teeth receipt at the contour. */
 const EDGE_RAGGED_BLOCKS = 4.5
-const d50For = h => Math.max(MIN_ARMOUR_D50_M, Math.min(1.5, h * 0.45))
 
 const hash3 = (i, j, k, s = 0) => {
   let n = Math.imul(i | 0, 0x27d4eb2d) ^ Math.imul(j | 0, 0x165667b1) ^ Math.imul(k | 0, 0x9e3779b9) ^ Math.imul(s, 0x85ebca6b)

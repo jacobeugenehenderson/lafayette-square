@@ -69,6 +69,9 @@
 /** Minimum armour stone, metres. Quarried armour below this washes out, so a
  *  "wall" shorter than one course of it is a kerb, not a revetment. */
 export const MIN_ARMOUR_D50_M = 0.5
+/** The armour stone for a bank of height h, metres: 0.45 of the height, between one course and 1.5 m. ⭐ ONE copy — the
+ *  bake (the crest it builds to) and the player (the heap's stones and its sheet) read this. */
+export const d50For = h => Math.max(MIN_ARMOUR_D50_M, Math.min(1.5, h * 0.45))
 
 /** ⭐ RULED 2026-09-21 (Jacob): a tall face is STILL RIPRAP. huron's arc #3 is a
  *  genuine ~9.2 m step down to the water with a flat terrace behind it — 2.5× the
