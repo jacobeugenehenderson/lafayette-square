@@ -56,9 +56,11 @@ export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 // (RomanceDoF.jsx). ⛔ The Focus multiplier is gone: it fought the pick ("the selector and focus distance sliders are
 // incompatible"); a stored `focus` is ignored.
 export const DOF_FIELDS = [
-  { key: 'blur',     label: 'Blur',              min: 0,    max: 1, step: 0.02 },
-  { key: 'heroBlur', label: 'Softness at focus', min: 0,    max: 1, step: 0.02 },
-  { key: 'softness', label: 'Depth',             min: 0,    max: 1, step: 0.02 },
+  // The logic, in order (Jacob, 2026-09-27): pick the thing (Focus on, above) · how much to blur · how wide the clear
+  // window is. Softness at focus is an optional extra, never more than Amount.
+  { key: 'blur',     label: 'Amount',            min: 0, max: 1, step: 0.02 },
+  { key: 'softness', label: 'Clear window',      min: 0, max: 1, step: 0.02 },
+  { key: 'heroBlur', label: 'Softness at focus', min: 0, max: 1, step: 0.02 },
 ]
 export const DOF_FLAT_DEFAULTS = { blur: 0, softness: 0.5, heroBlur: 0 }
 /**
