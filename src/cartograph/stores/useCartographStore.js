@@ -395,6 +395,14 @@ const DESIGN_FIELDS = [
   { key: 'materialColors',  hydrate: (d) => d.materialColors || {} },
   { key: 'materialPhysics', hydrate: (d) => d.materialPhysics || {} },
   { key: 'buildingPalette', hydrate: (d) => d.buildingPalette || [...BUILDING_PALETTE_DEFAULT] },
+  // ⭐ Keys Stage has no controls for yet but a bake reads: carried through untouched, because the
+  // autosave REPLACES design.json with this store's fields — a key missing here is wiped on the next
+  // save (2026-09-26: `surfaces`, the operator layer of cartograph/surfaces.mjs, was). ▶ checks/
+  // claims-revert-field-coverage.mjs fails on a design.json key a bake reads that is not listed here.
+  { key: 'surfaces',     hydrate: (d) => _isObj(d.surfaces) ? d.surfaces : null },
+  { key: 'wallMix',      hydrate: (d) => _isObj(d.wallMix) ? d.wallMix : null },       // bake-buildings: undescribed walls
+  { key: 'wallPalettes', hydrate: (d) => _isObj(d.wallPalettes) ? d.wallPalettes : null },
+  { key: 'terrainExag',  hydrate: (d) => Number.isFinite(d.terrainExag) ? d.terrainExag : null }, // bake-scene: the town's authored exaggeration
   { key: 'lampGlow',     hydrate: (d) => migrateLampGlow(d.lampGlow) },
   _grp('bloom',          BLOOM_FIELD_KEYS,          BLOOM_FLAT_DEFAULTS),
   _grp('warmth',         WARMTH_FIELD_KEYS,         WARMTH_FLAT_DEFAULTS),
@@ -404,6 +412,8 @@ const DESIGN_FIELDS = [
   _grp('mist',           MIST_FIELD_KEYS,           MIST_FLAT_DEFAULTS),
   _grp('halo',           HALO_FIELD_KEYS,           HALO_FLAT_DEFAULTS),
   _grp('skyGain',        SKY_GAIN_FIELD_KEYS,       SKY_GAIN_FLAT_DEFAULTS),
+  // stars had channel actions (a Stage control) but no field here, so its edits were never saved.
+  _grp('stars',          STARS_FIELD_KEYS,          STARS_FLAT_DEFAULTS),
   _grp('grade',          GRADE_FIELD_KEYS,          GRADE_FLAT_DEFAULTS),
   _grp('grain',          GRAIN_FIELD_KEYS,          GRAIN_FLAT_DEFAULTS),
   _grp('smaa',           SMAA_FIELD_KEYS,           SMAA_FLAT_DEFAULTS),
@@ -741,6 +751,7 @@ const useCartographStore = create((set, get) => ({
   mist:     { values: { ...MIST_FLAT_DEFAULTS } },
   halo:     { values: { ...HALO_FLAT_DEFAULTS } },
   skyGain:  { values: { ...SKY_GAIN_FLAT_DEFAULTS } },
+  stars:    { values: { ...STARS_FLAT_DEFAULTS } },
   grade:    { values: { ...GRADE_FLAT_DEFAULTS } },
   grain:    { values: { ...GRAIN_FLAT_DEFAULTS } },
   shadow:   { values: { ...SHADOW_FLAT_DEFAULTS } },

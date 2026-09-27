@@ -2302,9 +2302,11 @@ createServer(async (req, res) => {
         // ⛔ Throws rather than merging into `{}` — an unreadable file here would
         // silently drop Arborist's `trees` and then persist the loss.
         const existing = readLookDesign(id)
-        // Preserve Arborist-owned keys if the incoming payload omits them.
+        // Preserve keys another endpoint owns (read-merge-write behind Stage's back) if the incoming
+        // payload omits them: the Arborist's `trees`, the Grove's `groveThreshold`.
+        // ▶ checks/claims-autosave-keeps-what-bakes-read.mjs
         const merged = { ...parsed }
-        for (const k of ['trees']) {
+        for (const k of ['trees', 'groveThreshold']) {
           if (!(k in parsed) && k in existing) merged[k] = existing[k]
         }
         mkdirSync(lookDir(id), { recursive: true })

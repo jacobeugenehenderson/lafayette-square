@@ -700,6 +700,26 @@ export async function bakeBuildings({ look, scene } = {}) {
   }
   const palette = design.buildingPalette || DEFAULT_PALETTE
   const physics = design.materialPhysics || {}
+  // ⭐ A TOWN'S OWN WALLS (Jacob, 2026-09-26 — "a cosmetic, decorative presumption"; authoring, not
+  // survey). `wallMix` {material: weight}: what a building OSM says nothing about is built of, drawn per
+  // building by id — the default was LS's red brick everywhere. `wallPalettes` {material: [hex…]}: a
+  // wall material's own swatches, so a brick building is dealt brick colours, not a clapboard white.
+  // Both absent → exactly the behaviour before (brick_red, one palette). A material the baker does not
+  // carry is REFUSED by name, never coerced.
+  const wallMix = design.wallMix || null
+  const wallPalettes = design.wallPalettes || {}
+  for (const k of [...Object.keys(wallMix || {}), ...Object.keys(wallPalettes)])
+    if (!WALL_MATERIALS[k]) throw new Error(`[bake-buildings] ⛔ design.json names wall material "${k}"; the baker carries ${Object.keys(WALL_MATERIALS).join(', ')}`)
+  const mixTotal = wallMix ? Object.values(wallMix).reduce((a, w) => a + (w > 0 ? w : 0), 0) : 0
+  if (wallMix && !(mixTotal > 0)) throw new Error(`[bake-buildings] ⛔ design.json wallMix has no positive weight: ${JSON.stringify(wallMix)}`)
+  const defaultWallFor = (id) => {
+    if (!wallMix) return 'brick_red'
+    let r = (hashStr(id + ':wall') % 10000) / 10000 * mixTotal
+    for (const [k, w] of Object.entries(wallMix)) { if (w > 0 && (r -= w) < 0) return k }
+    return Object.keys(wallMix).find(k => wallMix[k] > 0)
+  }
+  if (wallMix) console.log(`[bake-buildings] wall mix for undescribed buildings: ${Object.entries(wallMix).map(([k, w]) => `${k} ${w}`).join(' · ')}`
+    + `${Object.keys(wallPalettes).length ? ` · own palettes: ${Object.keys(wallPalettes).join(', ')}` : ''}`)
   console.log(`[bake-buildings] using palette[${palette.length}] + ${Object.keys(physics).length} material physics overrides`)
 
   // Bucket per-material. Walls bucket by wall_material; roofs by
@@ -759,7 +779,7 @@ export async function bakeBuildings({ look, scene } = {}) {
     const fh = foundationHeightFor(b, overrides)
     const foundationY = fh
     const wallTop = foundationY + h
-    const wallMat = b.wall_material || 'brick_red'
+    const wallMat = b.wall_material || defaultWallFor(b.id)
     const roofMat = b.roof_material || 'flat'
     const roofShape = classifyRoofFor(b, overrides)
     const stories = b.stories || 1
@@ -775,7 +795,8 @@ export async function bakeBuildings({ look, scene } = {}) {
     // Per-building override (buildingOverrides.color) wins if set; else
     // palette; else legacy building.color.
     const ovColor = overrides[b.id]?.color
-    const tintHex = ovColor || palette[hashStr(b.id) % palette.length] || b.color
+    const pal = wallPalettes[wallMat]?.length ? wallPalettes[wallMat] : palette
+    const tintHex = ovColor || pal[hashStr(b.id) % pal.length] || b.color
     const wallRgb  = parseHex(tintHex)
     const foundRgb = parseHex(FOUNDATION_MATERIAL.color)     // uniform tan
     // Roof color rule mirrors LafayetteScene exactly:
