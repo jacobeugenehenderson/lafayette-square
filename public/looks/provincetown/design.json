@@ -75,6 +75,14 @@
     "overrides": []
   },
   "heroSubject": null,
+  "dofFocus": {
+    "point": [
+      -164.98,
+      73.36,
+      -56.41
+    ],
+    "label": "Pilgrim Monument"
+  },
   "heroKeyframes": [
     {
       "position": [
@@ -102,21 +110,7 @@
         13
       ],
       "fov": 22,
-      "t": 0.459979
-    },
-    {
-      "position": [
-        499,
-        136,
-        -152
-      ],
-      "target": [
-        -1256,
-        -52,
-        -106
-      ],
-      "fov": 22,
-      "t": 0.692494
+      "t": 0.427807
     },
     {
       "position": [
