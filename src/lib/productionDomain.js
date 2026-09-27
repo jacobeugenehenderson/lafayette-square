@@ -7,7 +7,7 @@
  * Pure — no fetch, no env — so a check can drive it.
  *
  * `answer` is Operations' `GET /api/production-domain/<mapId>`:
- *   { domain, owned, zoneStatus, syncedAt }  or  { error }
+ *   { domain, owned, zoneStatus, zoneCheckedAt }  or  { error }  — zoneStatus asked of Cloudflare live
  * ⛔ Anything but "owned, and its zone active" is a refusal with its reason — never a guess.
  */
 export function decideProductionDomain(mapId, answer) {
@@ -16,8 +16,8 @@ export function decideProductionDomain(mapId, answer) {
   if (!answer.domain) return { domain: null, why: `no Ward in Operations names "${mapId}" with a domain` }
   if (!answer.owned) return { domain: null, why: `${answer.domain} is not on the registrar list in Operations, so it is not ours` }
   if (answer.zoneStatus !== 'active') {
-    return { domain: null, why: `${answer.domain}'s Cloudflare zone is "${answer.zoneStatus ?? 'absent'}" at the last `
-      + `Operations sync (${answer.syncedAt ?? 'never'}) — it must be active before a site can be bound to it` }
+    return { domain: null, why: `${answer.domain}'s Cloudflare zone is "${answer.zoneStatus ?? 'absent'}" (checked `
+      + `${answer.zoneCheckedAt ?? 'at an unknown time'}) — it must be active before a site can be bound to it` }
   }
   return { domain: String(answer.domain).toLowerCase() }
 }

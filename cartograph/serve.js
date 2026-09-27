@@ -3349,12 +3349,15 @@ createServer(async (req, res) => {
   // by then, 648 commits of unreviewed trunk. Now it is per-town, like Publish: shipping
   // Provincetown changes no byte any other town serves.
   //
-  // THE ORDER IS THE SAFETY — nothing a visitor can reach changes until step 4:
-  //   1. WHERE: the town's domain, asked of Operations (owned, zone active) — or a refusal.
+  // THE ORDER IS THE SAFETY — nothing a visitor can reach changes until step 5:
+  //   1. WHERE: the town's domain, asked of Operations (owned, zone active LIVE) — or a refusal.
   //   2. THE SLAB → the prod keys (`baked/<look>/`). ⛔ SLAB BEFORE CODE (`plans/r2-asset-offload.md §5`).
   //   3. THE PLAYER → `player/<map>/`, the exact build that was checked on staging, byte-verified.
-  //   4. THE SWITCH → `hosts/<domain>.json`, which is what the production Worker reads.
-  //   5. PROOF → the domain itself is asked which town and which pour it serves. ⛔ A promote that
+  //   4. THE ADDRESS → `<domain>` and `www.<domain>` bound to the production Worker
+  //      (`scripts/bind-production-domain.mjs`): the first promote of a town binds them, every later
+  //      one finds them bound. Until step 5 the domain answers "no town promoted", never another town.
+  //   5. THE SWITCH → `hosts/<domain>.json`, which is what the production Worker reads.
+  //   6. PROOF → the domain itself is asked which town and which pour it serves. ⛔ A promote that
   //      cannot prove it is reported as NOT live, never as a success.
   if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/promote$/))) {
     const id = m[1]
@@ -3373,6 +3376,9 @@ createServer(async (req, res) => {
       const pin = await runCapture(`node scripts/promote-player-to-prod.mjs --map=${map} --look=${id}`, { cwd: REPO_ROOT, timeout: 1800000 })
       if (pin.code !== 0) throw new Error(`the player was not pinned — nothing was switched: ${(pin.stderr || pin.stdout).trim().split('\n').pop()}`)
       const pinned = JSON.parse(pin.stdout.trim().split('\n').pop())
+
+      const bind = await runCapture(`node scripts/bind-production-domain.mjs --domain=${domain}`, { cwd: REPO_ROOT, timeout: 180000 })
+      if (bind.code !== 0) throw new Error(`the slab and player are in production, but ${domain} could not be put on the production site — nothing was switched: ${(bind.stderr || bind.stdout).trim().split('\n').pop()}`)
 
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
