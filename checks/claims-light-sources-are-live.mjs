@@ -58,7 +58,7 @@ const writes = (() => {
   const vars = new Map()
   for (const m of frame.matchAll(/const (\w+) = ([^\n]+)/g)) { const f = fieldsIn(m[2], vars); if (f.size) vars.set(m[1], f) }
   const out = new Map()   // target → Set(fields)
-  for (const m of frame.matchAll(/([\w.?\[\]]+?\.(?:value|opacity))\s*=\s*([^\n]+)/g)) {
+  for (const m of frame.matchAll(/([\w.?\[\]]+?\.(?:value|opacity|emissiveIntensity))\s*=\s*([^\n]+)/g)) {
     const f = fieldsIn(m[2], vars)
     if (f.size) out.set(m[1].replace(/\?/g, ''), f)
   }
@@ -71,6 +71,17 @@ const writes = (() => {
     targets.length ? ok(`${field} → ${targets.join(', ')}`) : bad(`${field} drives nothing in StreetLights`)
   }
   for (const [t, f] of writes) if (f.size > 1) bad(`${t} is driven by ${[...f].join(' AND ')} — two controls, one thing`)
+  // ⭐ AT 0, EVERY LAMP LIGHT IS EXACTLY 0 (Jacob, 2026-09-26: "even turned all the way to 0 … some glows").
+  // A light's write must be a pure product of its field (and t, clamps) — an additive term survives 0.
+  // Radius (a wipe threshold) and Glow size (a size) are not light, so they are exempt.
+  const NOT_LIGHT = new Set(['lampGlow.radius', 'lantern.glowSize'])
+  const frameSrc = lights.slice(lights.indexOf('useFrame('))
+  for (const m of frameSrc.matchAll(/([\w.?\[\]]+?\.(?:value|opacity|emissiveIntensity))\s*=\s*([^\n]+)/g)) {
+    const f = writes.get(m[1].replace(/\?/g, ''))
+    if (!f || [...f].every(x => NOT_LIGHT.has(x))) continue
+    ;/[^e]\+|^\s*\+/.test(m[2].replace(/\/\/.*$/, '')) ? bad(`${m[1]} = ${m[2].trim()} — an additive term survives its slider at 0`) : null
+  }
+  ok('every lamp light is a pure product of its slider (0 ⇒ exactly 0)')
   // Self-mutation: a master multiplier on the pools must be caught.
   const m = new Map(writes); m.set('_lampGlow.poolUniform.value', new Set(['lampGlow.pool', 'lantern.intensity']))
   ;[...m].some(([, f]) => f.size > 1) ? ok('mutation (Bulb also scaling the pools) is caught') : bad('mutation NOT caught')

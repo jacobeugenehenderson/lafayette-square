@@ -38,7 +38,6 @@ import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
 const LAMP_COLOR_ON = new THREE.Color('#fff2e0')  // warm incandescent white
 const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.18 // tight glass halo
-const HALO_RADIUS = _IS_MOBILE ? 0.6 : 1.0   // soft wide glow (bloom substitute)
 const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern center
 // (The ground light pool AND the lamp contact shadow moved into the baked
 // ground FX map — see BakedGround / grassMaterial / bake-ground-ao.js.
@@ -49,8 +48,6 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
   const glowRef = useRef()
   const bulbRef = useRef()
   const haloRef = useRef()
-  // Bulb: how far the glass panes shift toward the lamp colour (0..1) — a colour, not an emission.
-  const bulbPaneUniform = useRef({ value: 0 })
   // Production Canvas runs frameloop="demand"; the imperative instance-matrix
   // fills below (lamp/glow/bulb) don't trigger R3F's auto-invalidate, and the
   // lamp model loads async — so lamps would stay unpainted until a camera nudge.
@@ -181,15 +178,23 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
       uniforms: {
         uColor: { value: LAMP_COLOR_ON.clone() },
         uIntensity: { value: 0 },
+        uHaloSize: { value: 3 },   // Lantern › Glow size (m, radius)
+        uPush: { value: 0 },       // the lantern's own half-width — measured from the model, set on load
         ...TERRAIN_UNIFORMS,
       },
       vertexShader: /*glsl*/`
         ${TERRAIN_DECL}
         attribute float aGroundRaw;
+        uniform float uHaloSize;
+        uniform float uPush;
         varying vec2 vUv;
         void main() {
           vUv = uv;
-          ${BILLBOARD_VS_INC}
+          ${BILLBOARD_VS_INC
+            // Sized by the Glow size knob, not the instance scale; and pushed toward the camera by the
+            // lantern's half-width, so the lantern's own cage and glass never hide its glow.
+            .replace('vec4 _bbView = _bbCenterView + vec4(position.xy * _bbScale, 0.0, 0.0);',
+                     'vec4 _bbView = _bbCenterView + vec4(normalize(-_bbCenterView.xyz) * uPush, 0.0) + vec4(position.xy * 2.0 * uHaloSize, 0.0, 0.0);')}
         }`,
       fragmentShader: /*glsl*/`
         uniform vec3 uColor;
@@ -280,8 +285,11 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
 
             // Glass glow: transmissionTexture becomes emissiveMap
             // Glass areas glow warm amber at night, iron stays dark
-            // ⭐ The panes are NOT emissive (Jacob, 2026-09-26: "just being slightly more white, not even
-            // literally emissive") — they shift toward the lamp colour by the Bulb knob, after lighting.
+            // Glass glow: the transmission texture is the glass mask → emissiveMap. The Bulb knob drives
+            // emissiveIntensity — real HDR light, so bloom takes it. (A post-tonemap colour shift was tried
+            // 2026-09-26 and read ~1% as strong: it can never exceed display white, so nothing blooms.)
+            mat.emissive = LAMP_COLOR_ON.clone()
+            mat.emissiveMap = txMap
             mat.emissiveIntensity = 0
 
             // Enable transparency so glass panels can fade to clear during day
@@ -289,8 +297,6 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
 
             mat.onBeforeCompile = (shader) => {
               shader.uniforms.uSunAltitude = sunAltUniform.current
-              shader.uniforms.uBulbPane = bulbPaneUniform.current
-              shader.uniforms.uBulbColor = _lampGlow.colorUniform
               if (txMap) {
                 shader.uniforms.uTxMap = { value: txMap }
               }
@@ -299,8 +305,6 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
                 '#include <common>',
                 `#include <common>
                 uniform float uSunAltitude;
-                uniform float uBulbPane;
-                uniform vec3  uBulbColor;
                 ${txMap ? 'uniform sampler2D uTxMap;' : ''}`
               )
 
@@ -326,9 +330,7 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
                   `#include <dithering_fragment>
                   float glassMask = texture2D(uTxMap, vMapUv).r;
                   float glassVisible = 1.0 - smoothstep(-0.05, 0.15, uSunAltitude);
-                  gl_FragColor.a *= mix(1.0, glassVisible, glassMask);
-                  // Bulb: the lit glass reads toward the lamp colour.
-                  gl_FragColor.rgb = mix(gl_FragColor.rgb, uBulbColor, glassMask * uBulbPane);`
+                  gl_FragColor.a *= mix(1.0, glassVisible, glassMask);`
                 )
               }
             }
@@ -336,6 +338,10 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
             // Chain terrain displacement for instanced mesh lift.
             patchTerrainInstancedBaked(mat)
             lampMatRef.current = mat
+            // The lantern's horizontal half-diagonal, in world metres — how far the glow sits in front of it.
+            child.geometry.computeBoundingBox()
+            const bb = child.geometry.boundingBox, sz = new THREE.Vector3(); bb.getSize(sz)
+            haloMat.uniforms.uPush.value = 0.5 * Math.hypot(sz.x, sz.z) * child.matrixWorld.getMaxScaleOnAxis() * LAMP_SCALE
 
             setLampModel({
               geometry: child.geometry,
@@ -409,7 +415,7 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
     allLamps.forEach((lamp, i) => {
       d.position.set(lamp.x, GLOW_Y, lamp.z)
       d.rotation.set(0, 0, 0)
-      d.scale.setScalar(HALO_RADIUS)
+      d.scale.setScalar(1)   // size is the Glow size knob (uHaloSize), not the instance
       d.updateMatrix()
       haloRef.current.setMatrixAt(i, d.matrix)
     })
@@ -442,11 +448,12 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
       lanternChannel?.animated ? getTodSlotMinutes(tod.currentTime) : null,
       LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
     )
-    const bulb = t * Math.min(1, lant.intensity ?? 0)
-    bulbPaneUniform.current.value = bulb
+    const bulb = t * (lant.intensity ?? 0)
+    if (lampMatRef.current) lampMatRef.current.emissiveIntensity = bulb
     if (glowMatRef.current?.uniforms?.uIntensity) glowMatRef.current.uniforms.uIntensity.value = bulb
-    bulbMat.opacity = bulb
-    if (haloMat.uniforms?.uIntensity) haloMat.uniforms.uIntensity.value = t * (lant.glow ?? 0)
+    bulbMat.opacity = Math.min(1, bulb)
+    haloMat.uniforms.uIntensity.value = t * (lant.glow ?? 0)
+    haloMat.uniforms.uHaloSize.value = lant.glowSize ?? LANTERN_FLAT_DEFAULTS.glowSize
     _lampGlow.poolUniform.value  = t * _lampGlow.share.pool
     _lampGlow.treesUniform.value = t * _lampGlow.share.trees
     _lampGlow.poolWipeUniform.value   = poolWipe(_lampGlow.share.radius)

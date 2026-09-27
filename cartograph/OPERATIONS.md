@@ -192,8 +192,8 @@ All Image channels are TOD. Grouped by intent:
 ### Light Sources card *(was "Lamps")*
 
 The man-made emitters (TOD):
-- **Lamps — five knobs, each moving ONE thing** *(Jacob, 2026-09-26)*, all × the automatic dusk→night turn-on (so all 0 by day); no master over the others.
-  - **Lantern › Bulb** — the light source: the glass panes shift toward the lamp colour (a colour, not an emission), plus the bulb dot and tiny orb. **Lantern › Glow** — the soft gradient around the lantern; what stands in front hides it.
+- **Lamps — six knobs, each moving ONE thing** *(Jacob, 2026-09-26)*, all × the automatic dusk→night turn-on (so all 0 by day); no master over the others.
+  - **Lantern › Bulb** — the light source: the glass panes glow in the lamp colour (real light, so bloom takes it; uncapped), plus the bulb dot and tiny orb. **Lantern › Glow** + **Glow size** (metres) — the soft gradient around the lantern, drawn just in front of it so the lantern never hides it; what stands in front of it does.
   - **Lamp Glow › Light pools** — strength on the ground and on building walls. **Pool radius** — a live gradient wipe that clips how far a pool reads; 1 = fully open. **Trees** — the canopy (× the leaf's own colour, so it runs high).
   - ⭐ **The pool's REACH is not a knob — it is derived** from the town's lamp spacing so neighbouring pools overlap (`src/lib/lampPool.js#overlapReach`, ≈ 0.91 × spacing), stamped into `lamps.json#reach` by bake-lamps and baked into the pool map + tree glow. Re-bake lamps → ground AO → trees after a spacing change.
   - ▶ `node checks/claims-light-sources-are-live.mjs` — every knob reaches the screen in every town's Stage and in production, and no two knobs move the same thing.
