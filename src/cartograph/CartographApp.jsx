@@ -732,7 +732,8 @@ function placeNameAt(x, z) {
 // ancestor still smaller than a town block.
 const _box = new THREE.Box3(), _sz = new THREE.Vector3()
 function heroBoxOf(hit) {
-  const r = (b) => [b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z].map(v => +v.toFixed(2))
+  // Padded a little all round (and 5% of its height on top) so the hero's crown is never clipped off its own box.
+  const r = (b) => { b.getSize(_sz); const p = 1 + 0.05 * Math.max(_sz.x, _sz.y, _sz.z); return [b.min.x - p, b.min.y - p, b.min.z - p, b.max.x + p, b.max.y + p, b.max.z + p].map(v => +v.toFixed(2)) }
   if (hit.object.geometry?.attributes?.aBuildingId && hit.face) {
     const num = hit.object.geometry.attributes.aBuildingId.getX(hit.face.a)
     const e = useSlabBuildingIndex.getState().index?.byNum?.[num]

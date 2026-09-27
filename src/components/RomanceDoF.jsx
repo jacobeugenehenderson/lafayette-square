@@ -113,12 +113,24 @@ const fragment = /* glsl */`
   }
   // A rung WITHOUT the hero: the shared blur minus the hero's share, over the coverage left — the background alone,
   // so the sharp hero never smears into the blur beside it.
-  vec3 backgroundLevel(int idx, vec2 uv) {
+  // ⭐ Only where the background's share is big enough to trust: dividing by a sliver amplified tiny mismatches into
+  // odd-coloured pixels on the hero's edge (Jacob, 2026-09-27: "red pixels mixed in"). Where the hero covers most of
+  // a rung's texel, the background comes from the next coarser rung, where it covers less.
+  vec3 bgAt(int idx, vec2 uv, out float keep) {
     vec3 s = sampleLevel(idx, uv);
-    if (uHeroOn < 0.5) return s;
     vec4 h = heroLevel(idx, uv);
-    if (h.a < 0.001 || h.a > 0.98) return s;
-    return max((s - h.rgb) / (1.0 - h.a), vec3(0.0));
+    keep = 1.0 - h.a;
+    return h.a < 0.001 ? s : max((s - h.rgb) / max(keep, 1e-3), vec3(0.0));
+  }
+  vec3 backgroundLevel(int idx, vec2 uv) {
+    if (uHeroOn < 0.5) return sampleLevel(idx, uv);
+    float k0, k1, k2;
+    vec3 b0 = bgAt(idx, uv, k0);
+    if (k0 >= 0.5) return b0;
+    vec3 b1 = bgAt(idx + 1, uv, k1);
+    if (k1 >= 0.5) return mix(b1, b0, smoothstep(0.2, 0.5, k0));
+    vec3 b2 = bgAt(idx + 2, uv, k2);
+    return k2 >= 0.5 ? mix(b2, b1, smoothstep(0.2, 0.5, k1)) : sampleLevel(idx + 2, uv);
   }
   ${DOF_BLUR_GLSL}
 
