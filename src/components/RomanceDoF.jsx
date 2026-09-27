@@ -84,7 +84,9 @@ const fragment = /* glsl */`
   // Blur by RELATIVE distance from the focal plane, in front and behind: 0 = on the plane.
   float blurAmount(float dist) {
     float rel = abs(dist - uFocusDist) / max(uFocusDist, 1.0);
-    return mix(uHeroBlur, uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
+    // Softness at focus never exceeds Blur: at Blur 0 the effect is OFF, and the plane is never softer than the
+    // field around it (it was — the picked subject blurred while the rest stayed sharp, 2026-09-27).
+    return mix(min(uHeroBlur, uMaxBlur), uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
   }
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
