@@ -26,7 +26,7 @@ import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
   AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
   EXPOSURE_FLAT_DEFAULTS,
-  WARMTH_FLAT_DEFAULTS,
+  WARMTH_FLAT_DEFAULTS, WARMTH_FIELD_KEYS,
   FILL_FLAT_DEFAULTS,
   HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
   GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS,
@@ -42,6 +42,7 @@ import { applyDofFrame } from './dofDriver.js'
 export const _fillToeRef         = { current: 1 - FILL_FLAT_DEFAULTS.crush }
 export const _exposureRef        = { current: EXPOSURE_FLAT_DEFAULTS.value }
 export const _warmthRef          = { current: WARMTH_FLAT_DEFAULTS.value }
+export const _tintRef            = { current: WARMTH_FLAT_DEFAULTS.tint }
 export const _gradeContrastRef   = { current: GRADE_FLAT_DEFAULTS.contrast }
 export const _gradeSatRef        = { current: GRADE_FLAT_DEFAULTS.saturation }
 export const _gradeVignetteRef   = { current: GRADE_FLAT_DEFAULTS.vignette }
@@ -81,7 +82,9 @@ export function usePostFxDriver({
     // one stop down at full storm, from the same directive the rain reads.
     _exposureRef.current = resolveGroupAtMinute(exposureChannel, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
       * weatherExposureScale(useSkyState.getState().storminess)
-    _warmthRef.current   = resolveGroupAtMinute(warmthChannel,   minute, slotMins, ['value'], WARMTH_FLAT_DEFAULTS).value
+    const wb = resolveGroupAtMinute(warmthChannel, minute, slotMins, WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS)
+    _warmthRef.current   = wb.value
+    _tintRef.current     = wb.tint
     _fillToeRef.current  = 1 - resolveGroupAtMinute(fillChannel, minute, slotMins, ['crush'], FILL_FLAT_DEFAULTS).crush
 
     // Halo strength + color → module refs consumed by AerialPerspective.update().

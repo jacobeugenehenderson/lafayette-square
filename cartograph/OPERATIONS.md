@@ -177,7 +177,7 @@ All Image channels are TOD. Grouped by intent:
 
 **Tone & Color group**
 - **Exposure** — global brightness of the whole frame, a **multiplicative gain** (the master image knob; contrast with Sky brightness, which is sky-only). ⚠️ Because it multiplies, it **can't lift crushed blacks** (near-0 × anything ≈ 0) — for that, reach for **Grade › Brightness** (the additive lift).
-- **Warmth** — cool↔warm colour-temperature tint across the image.
+- **Warmth** — the white balance: **Warmth** (cool↔warm) and **Tint** (green↔pink), both luminance-preserving. ⚠️ Two sun-keyed tints still sit in FilmGrade with no control (a golden wash near sunset, a blue one at night).
 - **Grade** — the film grade: **Brightness** · **Saturation** · **Contrast** · **Vignette**. **Brightness** (new 2026-06-30) is the **B of HSB** (Saturation = the "S") — an *additive LIFT* (`c + B·(1−c)`) that raises the black floor while leaving the white point put, so crushed dark surfaces read; it's the lever Exposure structurally can't be. *(The dead **Toe** field was removed — the Shadow lift channel, Light & Sky, owns the FilmGrade `uToe`.)*
 
 **Glow group**

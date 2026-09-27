@@ -32,7 +32,7 @@ import { DownsamplePyramid } from './DownsamplePyramid.jsx'
 import { CustomBloom } from './CustomBloom.jsx'
 import {
   _gradeContrastRef, _gradeSatRef, _gradeVignetteRef, _gradeBrightnessRef,
-  _exposureRef, _warmthRef, _fillToeRef, _grainScaleRef,
+  _exposureRef, _warmthRef, _tintRef, _fillToeRef, _grainScaleRef,
   _haloStrengthRef, _haloColorRef,
 } from './usePostFxDriver.js'
 
@@ -51,6 +51,7 @@ class FilmGradeEffect extends Effect {
       uniform float uVignette;
       uniform float uExposure;
       uniform float uWarmth;
+      uniform float uTint;
       uniform float uBrightness;
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec3 c = inputColor.rgb * uExposure;
@@ -81,6 +82,11 @@ class FilmGradeEffect extends Effect {
         float lumIn  = dot(c,      vec3(0.2126, 0.7152, 0.0722));
         float lumOut = dot(tinted, vec3(0.2126, 0.7152, 0.0722));
         c = tinted * (lumIn / max(lumOut, 1e-4));
+        // Tint — the white balance's green ↔ pink axis, luminance-preserving like Warmth.
+        float tintBias = (uTint - 0.5) * 2.0;
+        vec3 tintTone = tintBias >= 0.0 ? vec3(1.06, 0.88, 1.04) : vec3(0.94, 1.08, 0.94);
+        vec3 tinted2 = c * mix(vec3(1.0), tintTone, abs(tintBias) * 0.6);
+        c = tinted2 * (dot(c, vec3(0.2126, 0.7152, 0.0722)) / max(dot(tinted2, vec3(0.2126, 0.7152, 0.0722)), 1e-4));
         gray = vec3(dot(c, vec3(0.2126, 0.7152, 0.0722)));
         c = mix(gray, c, uSat);
         c = mix(c, inputColor.rgb, smoothstep(0.7, 1.0, lum));
@@ -102,6 +108,7 @@ class FilmGradeEffect extends Effect {
         ['uVignette', new THREE.Uniform(1.0)],
         ['uExposure', new THREE.Uniform(0.95)],
         ['uWarmth',   new THREE.Uniform(0.5)],
+        ['uTint',     new THREE.Uniform(0.5)],
         ['uBrightness', new THREE.Uniform(0)],
       ])
     })
@@ -116,6 +123,7 @@ class FilmGradeEffect extends Effect {
     this.uniforms.get('uVignette').value = _gradeVignetteRef.current
     this.uniforms.get('uExposure').value = _exposureRef.current
     this.uniforms.get('uWarmth').value   = _warmthRef.current
+    this.uniforms.get('uTint').value     = _tintRef.current
     this.uniforms.get('uToe').value      = _fillToeRef.current
     this.uniforms.get('uBrightness').value = _gradeBrightnessRef.current
   }

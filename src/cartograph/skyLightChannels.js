@@ -90,9 +90,11 @@ export const DOF_FIELD_KEYS = DOF_FIELDS.map(f => f.key)
 // most of the color. Max bias depth is bounded inside CelestialBodies.
 export const WARMTH_FIELDS = [
   { key: 'value', label: 'Warmth (cool ↔ warm)', min: 0, max: 1, step: 0.02 },
+  // The white balance's second axis (Jacob, 2026-09-27: sunrise "similar but pinker" than dawn). 0.5 neutral.
+  { key: 'tint',  label: 'Tint (green ↔ pink)',  min: 0, max: 1, step: 0.02 },
 ]
-export const WARMTH_FLAT_DEFAULTS = { value: 0.5 }
-export const WARMTH_FIELD_KEYS = ['value']
+export const WARMTH_FLAT_DEFAULTS = { value: 0.5, tint: 0.5 }
+export const WARMTH_FIELD_KEYS = WARMTH_FIELDS.map(f => f.key)
 
 // Shadow crush (`fill` channel): how far FilmGrade's toe pulls the darks toward black. 0 = none (the image as
 // rendered), 1 = full (the darkest tones go to black); FilmGrade's `uToe` = 1 − crush. It only ever darkens, so it
@@ -595,15 +597,16 @@ const DAY = {
   // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
   // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
   mist:     { amount: [1.25, 0.46, 0.28, 0.5, 0.46, 0.39, 0.28, 0.24],
-              color: ['#9a86c0', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'],
+              color: ['#9a86c0', '#e8b0c8', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'],
               water: [0.5, 0.3, 0.2, 0.35, 0.35, 0.3, 0.25, 0.2] },
   // Halo is a SCREEN BAND, not distance haze (renderPipeline.jsx#AerialPerspectiveEffect): it washes the middle of the
   // frame whatever is there, so a Hero shot looking down on the town hazes near and far alike. Kept faint; Mist is
   // the distance haze (Jacob, Dawn pass 2026-09-27: "it's just very even all the way up to the camera").
   halo:     { strength: [0.25, 0.08, 0.03, 0.12, 0.1, 0.06, 0.02, 0.01],
-              color: ['#dcbfd0', '#f4c29c', '#bdd6ec', '#ffc27a', '#ff9868', '#5f6fb4', '#1a2040', '#10152a'] },
+              color: ['#dcbfd0', '#f2b0c6', '#bdd6ec', '#ffc27a', '#ff9868', '#5f6fb4', '#1a2040', '#10152a'] },
   exposure: { value: [1.7, 1.45, 1.18, 1.2, 1.0, 0.95, 0.85, 0.8] },
-  warmth:   { value: [0.3, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25] },
+  warmth:   { value: [0.3, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25],
+              tint:  [0.5, 0.7, 0.5, 0.55, 0.62, 0.55, 0.5, 0.5] },
   grade:    { contrast: [0.5, 0.4, 0.5, 0.32, 0.45, 0.5, 0.72, 0.55], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
               saturation: [1.35, 1.3, 1.35, 1.4, 1.3, 1.1, 0.85, 0.75], brightness: [0, 0, 0, 0, 0, 0, 0, 0],
               vignette: [0.8, 0.8, 0.4, 1.2, 1.1, 1.0, 1.5, 1.3] },
