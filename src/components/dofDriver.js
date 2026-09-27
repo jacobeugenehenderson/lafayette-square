@@ -70,6 +70,11 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
     _dofRefs.heroBlur.current = 0
     return
   }
+  // The tilted plane: distances along the ground (the shader measures every pixel the same way).
+  const tanY = Math.tan(THREE.MathUtils.degToRad(camera.fov ?? 45) / 2)
+  _dofRefs.tanHalf.current.set(tanY * (camera.aspect ?? 1), tanY)
+  _dofRefs.upView.current.set(0, 1, 0).transformDirection(camera.matrixWorldInverse)
   _heroVec.copy(focusPoint).applyMatrix4(camera.matrixWorldInverse)
-  _dofRefs.focusDist.current = Math.max(1, -_heroVec.z)
+  const up = _dofRefs.upView.current
+  _dofRefs.focusDist.current = Math.max(1, _heroVec.clone().addScaledVector(up, -_heroVec.dot(up)).length())
 }

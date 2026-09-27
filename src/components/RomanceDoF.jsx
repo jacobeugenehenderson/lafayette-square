@@ -47,7 +47,9 @@ const fragment = /* glsl */`
     uniform lowp sampler2D uLevel6;
     uniform lowp sampler2D uLevel7;
   #endif
-  uniform float uFocusDist;   // m — the sharp plane (focus × the aim point's view depth), set per frame
+  uniform float uFocusDist;   // m — the focus point's distance from the camera ALONG THE GROUND, set per frame
+  uniform vec2  uTanHalf;     // tan(half fov) in x and y — rebuilds a pixel's view-space position from its depth
+  uniform vec3  uUpView;      // world up, in view space
   uniform float uMaxBlur;     // 0..1 — the most blur, far from the plane
   uniform float uHeroBlur;    // 0..1 — softness AT the plane
   uniform float uZone;        // the sharp zone's half-depth, as a fraction of the focal distance
@@ -81,9 +83,13 @@ const fragment = /* glsl */`
     #endif
   }
 
-  // Blur by RELATIVE distance from the focal plane, in front and behind: 0 = on the plane.
-  float blurAmount(float dist) {
-    float rel = abs(dist - uFocusDist) / max(uFocusDist, 1.0);
+  // Blur by RELATIVE distance from the focus, in front and behind, measured ALONG THE GROUND: a tilt-shift's tilted
+  // plane of focus. Height drops out, so a vertical subject (the monument) is one sharpness top to bottom — measured
+  // along the line of sight, a narrow window cut across the shaft in a visible line (Jacob, 2026-09-27).
+  float blurAmount(float dist, vec2 uv) {
+    vec3 p = vec3((uv * 2.0 - 1.0) * uTanHalf * dist, -dist);   // view space; dist is view depth
+    float ground = length(p - dot(p, uUpView) * uUpView);
+    float rel = abs(ground - uFocusDist) / max(uFocusDist, 1.0);
     // Softness at focus never exceeds Blur: at Blur 0 the effect is OFF, and the plane is never softer than the
     // field around it (it was — the picked subject blurred while the rest stayed sharp, 2026-09-27).
     return mix(min(uHeroBlur, uMaxBlur), uMaxBlur, smoothstep(uZone, uZone + uRamp, rel));
@@ -91,7 +97,7 @@ const fragment = /* glsl */`
 
   void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth, out vec4 outputColor) {
     float dist = depthToDistance(depth);
-    float amt  = clamp(blurAmount(dist), 0.0, 1.0);
+    float amt  = clamp(blurAmount(dist, uv), 0.0, 1.0);
 
     // Sky + stars sit at the far plane (they render depthWrite OFF, so their
     // pixels keep the cleared depth = 1.0). Hold them at INFINITY FOCUS — sharp,
@@ -124,6 +130,8 @@ const fragment = /* glsl */`
 // Module-level refs the per-frame driver (dofDriver.js) writes — same pattern as the other PostProcessing effects.
 export const _dofRefs = {
   focusDist:  { current: 1000 },
+  tanHalf:    { current: new THREE.Vector2(0.2, 0.2) },
+  upView:     { current: new THREE.Vector3(0, 1, 0) },
   maxBlur:    { current: 0 },
   heroBlur:   { current: 0 },
   zone:       { current: 0.2 },
@@ -147,6 +155,8 @@ class RomanceDoFEffect extends Effect {
         ['uLevel6',     new THREE.Uniform(null)],
         ['uLevel7',     new THREE.Uniform(null)],
         ['uFocusDist',  new THREE.Uniform(1000)],
+        ['uTanHalf',    new THREE.Uniform(new THREE.Vector2(0.2, 0.2))],
+        ['uUpView',     new THREE.Uniform(new THREE.Vector3(0, 1, 0))],
         ['uMaxBlur',    new THREE.Uniform(0)],
         ['uHeroBlur',   new THREE.Uniform(0)],
         ['uZone',       new THREE.Uniform(0.2)],
@@ -166,6 +176,8 @@ class RomanceDoFEffect extends Effect {
       u.get('uLevel' + i).value = levels[i] ?? levels[levels.length - 1] ?? null
     }
     u.get('uFocusDist').value  = _dofRefs.focusDist.current
+    u.get('uTanHalf').value.copy(_dofRefs.tanHalf.current)
+    u.get('uUpView').value.copy(_dofRefs.upView.current)
     u.get('uMaxBlur').value    = _dofRefs.maxBlur.current
     u.get('uHeroBlur').value   = _dofRefs.heroBlur.current
     u.get('uZone').value       = _dofRefs.zone.current
