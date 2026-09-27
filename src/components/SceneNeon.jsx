@@ -136,7 +136,17 @@ export function useNeonLookup() {
  * SceneNeon — computes openPlaces and renders the one merged <NeonBands>
  * mesh. Self-gates: returns null when no place is currently lit.
  */
-export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
+// Stage's neon DENSITY: a stable per-building draw, so raising the knob only ADDS buildings (never reshuffles).
+function _densityKeeps(id, density) {
+  if (density == null || density >= 1) return true
+  if (density <= 0) return false
+  let h = 2166136261 >>> 0
+  const s = String(id)
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0 }
+  return h / 4294967296 < density
+}
+
+export default function SceneNeon({ forceNeonOn, density, lookId = INSTANCE.lookId }) {
   const neonLookup = useNeonLookup()
 
   // Re-check open/closed every 60s so bands mount/unmount as places open
@@ -169,7 +179,7 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
         const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
         const hours = listingInfo ? listingInfo.hours : null
         const on = _neonOn({ forceNeonOn, hours, now })
-        if (!on) continue
+        if (!on || !_densityKeeps(e.id, density)) continue
         // baseY + groundYRaw (== centroidY) are baked into the index by the
         // SAME anchor math the live path uses below, so tubes lift in lockstep
         // with their building on sloped terrain. NeonBands.buildTube traces
@@ -195,7 +205,7 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
         category: defaultNeonCategoryForBuilding(b),
       }
       const on = _neonOn({ forceNeonOn, hours: info.hours, now })
-      if (!on) continue
+      if (!on || !_densityKeeps(b.id, density)) continue
       // baseY = world Y of the building TOP (the wall/roof joint, the eave) —
       // dropped the roof-peak lift so neon HUGS the building instead of hovering
       // at the peak (Jacob 2026-06-27). Foundation pedestal lift shifts the
@@ -221,7 +231,7 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
       places.push({ ...b, baseY, groundYRaw, roofOutline: roofTopRingFor(b), neon: { category: info.category } })
     }
     return places
-  }, [neonLookup, neonTick, forceNeonOn, slabIndex])
+  }, [neonLookup, neonTick, forceNeonOn, density, slabIndex])
 
   // Cold-load reconcile flush — the same frameloop="demand" issue that hid the
   // trees (see InstancedTrees ParkPopulation). On a cold load the neon mesh and

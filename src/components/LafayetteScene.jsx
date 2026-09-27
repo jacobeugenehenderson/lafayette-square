@@ -1292,7 +1292,7 @@ function resolveLookId(propLookId) {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn, hiddenLayers, labelViewMode, forceContentReady } = {}) {
+function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn, neonDensity, hiddenLayers, labelViewMode, forceContentReady } = {}) {
   // Panel layer toggles: { building, labels, ... } → boolean. Empty object in
   // production (no overrides). Stage passes the live store map; baked Stage
   // reads scene.json.layerVis. Foundations are tied to Building visibility.
@@ -1400,7 +1400,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
           with no rebuild — it's one merged mesh, resident as in production
           (Vernier Phase 1b). */}
       <group visible={!hide.neon}>
-        <SceneNeon forceNeonOn={forceNeonOn} lookId={INSTANCE.lookId} />
+        <SceneNeon forceNeonOn={forceNeonOn} density={neonDensity} lookId={INSTANCE.lookId} />
       </group>
 
       {/* Street labels — the shared StreetLabels group (same component the

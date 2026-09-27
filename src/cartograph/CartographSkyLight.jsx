@@ -66,20 +66,24 @@ export function StoreChannel({ name, label, fields, flatDefaults }) {
   )
 }
 
-// Stage-only QA toggle — bypasses LafayetteScene's openPlaces
-// business-hours filter so the operator can preview neon visibility
-// at any TOD without scrubbing to night. Session-only state, NOT
-// serialized to design.json, NOT in scene.json. Doctrine:
-// slab-carries-full-authored-product counter-rule.
+// Stage-only neon test (Jacob, 2026-09-26: "Neon is On or Off … It's meant to test the Neon, not the
+// schedules"). On = every neon building lit, Off = none; Density = the share shown (a stable draw, so raising
+// it only adds buildings). Session-only: not saved, not baked — production runs on each place's own hours.
 function NeonForceOnToggle() {
   const on  = useCartographStore(s => s.neonForceOn)
   const set = useCartographStore(s => s.setNeonForceOn)
+  const density    = useCartographStore(s => s.neonDensity)
+  const setDensity = useCartographStore(s => s.setNeonDensity)
   return (
-    <label className="flex items-center gap-2 py-1 pl-2"
-      style={{ fontSize: 12, color: 'var(--on-surface)' }}>
-      <input type="checkbox" checked={!!on} onChange={e => set(e.target.checked)} />
-      <span>Force Neon On (test)</span>
-    </label>
+    <div className="flex items-center gap-2 py-1 pl-2" style={{ fontSize: 12, color: 'var(--on-surface)' }}>
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={!!on} onChange={e => set(e.target.checked)} />
+        <span>Neon on (test)</span>
+      </label>
+      <span style={{ color: 'var(--on-surface-subtle)' }}>Density</span>
+      <input type="range" min={0} max={1} step={0.01} value={density} onChange={e => setDensity(e.target.value)} style={{ flex: 1 }} />
+      <span style={{ width: 32, textAlign: 'right' }}>{Math.round(density * 100)}%</span>
+    </div>
   )
 }
 

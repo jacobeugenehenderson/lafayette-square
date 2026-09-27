@@ -160,7 +160,7 @@ Every animatable channel shares one drawer, and **the 7 time-of-day slot chips a
 - **Constellations** — toggle the spectral-node constellation overlay (TOD; defaults off, lifts at night).
 - **Stars** — brightness multiplier on star visibility (on top of the physical night-fade).
 
-**Neon** — the neon look as one grouped TOD channel: **core / tube / bleed / emissive** intensities, plus the **tube-radius** field. Tube radius (per-Look `tubeRadius`, ~0.1–3.0 m, default 1.0) is the odd one out — unlike the intensity fields it **drives geometry**, so it rebuilds the merged neon mesh on change (step-quantized so a drag doesn't churn). Neon *colour* is set on the Surfaces card's **Neon** tab. *(Phase B will move Neon into the Light Sources card with Bloom + Lamps.)*
+**Neon** — the neon look as one grouped TOD channel: **core / tube / bleed / emissive** intensities, plus the **tube-radius** field. Tube radius (per-Look `tubeRadius`, ~0.1–3.0 m, default 1.0) is the odd one out — unlike the intensity fields it **drives geometry**, so it rebuilds the merged neon mesh on change (step-quantized so a drag doesn't churn). Neon *colour* is set on the Surfaces card's **Neon** tab. **Testing (Stage only, session-only):** **Neon on** lights every neon building, off shows none, and **Density** thins them to a share (a stable draw, so raising it only adds buildings) — it tests the neon, not the schedules; production runs each place on its own hours. Mounted in every town's Stage. *(Phase B will move Neon into the Light Sources card with Bloom + Lamps.)*
 
 ### Image card — post-processing *(was "Post")*
 
@@ -184,7 +184,7 @@ All Image channels are TOD. Grouped by intent:
 
 ### Surfaces / Materials card
 
-- **Per-layer / per-LU swatch** — pick any map layer or land-use class from the tabbed list (Streets, Blocks, Land Use, Paths, Land Cover, Furniture, Labels, Roofs, Lighting, Building, Neon, Trees, Park, Infra) and set its **Color** (hex swatch) and **Visible** (checkbox). Visibility here is also a bake lever (`BAKE.md §2`). *(Not TOD — a flat per-Look property.)*
+- **Per-layer / per-LU swatch** — pick any map layer or land-use class from the tabbed list (Streets, Blocks, Land Use, Paths, Land Cover, Furniture, Labels, Roofs, Building, Neon, Trees, Park, Infra) and set its **Color** (hex swatch) and **Visible** (checkbox). Visibility here is also a bake lever (`BAKE.md §2`). *(Not TOD — a flat per-Look property.)*
 - **3D material editor** (for the selected PBR material) — **Roughness**, **Metalness**, a **Texture** dropdown (none / brick variants / stone / stucco / wood / slate / metal) with **Texture Scale** + **Texture Strength** when a texture is chosen, and **Emissive** (colour swatch + intensity).
 - **Building palette** — a 16-swatch colour grid that drives the per-building tint mix.
 - **Lamp colour** — the **lamp swatch** here (`layerColors.lamp`) is the single source that tints both the lamp lantern and its ground light-pool (see Light Sources card).
@@ -199,7 +199,7 @@ The man-made emitters (TOD):
   - ▶ `node checks/claims-light-sources-are-live.mjs` — every knob reaches the screen in every town's Stage and in production, and no two knobs move the same thing.
 - **Arch uplights** (`archLight`) — the Gateway Arch's cross-aimed foot uplights: left/right **intensity · colour · cone° · reach**. Placement is on the non-TOD `arch` channel.
 
-The pool is **baked into the ground** (contour-correct), so its *shape* is a bake-time knob (CLI / bake operations, below). **Lamp colour** is the Surfaces lamp swatch (above) — one source tints the lantern **and** the pool. ⚠️ **Open (Phase B):** the lamp is really **three** things — fixture (lantern + aura/Bloom) · ground pool (should be its own knob, not slaved to Lantern) · canopy — and Bloom + Neon should join this card (`scratch/LOOK-PANEL-TAXONOMY.md`).
+The pool is **baked into the ground** (contour-correct), so its *shape* is a bake-time knob (CLI / bake operations, below). **Lamp colour** is the Surfaces lamp swatch (above) — one source tints the lantern **and** the pool. ⚠️ **Open (Phase B):** Bloom + Neon should join this card (`scratch/LOOK-PANEL-TAXONOMY.md`); the lamp's three parts — fixture, pool, canopy — are separate knobs now ("Lamps", below).
 
 ### Hero & Horizon card
 

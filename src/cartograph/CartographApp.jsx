@@ -31,6 +31,7 @@ import SetPiece from '../components/SetPiece.jsx'
 import LafayetteScene from '../components/LafayetteScene'
 import LafayettePark from '../components/LafayettePark'
 import InstancedTrees from '../components/InstancedTrees'
+import SceneNeon from '../components/SceneNeon.jsx'
 import StreetLights from '../components/StreetLights'
 import BakedLamps from '../components/BakedLamps'
 import CityModel from '../components/CityModel'
@@ -796,6 +797,7 @@ const MAP_REGISTRY = {
       const lanternOverride         = useCartographStore(s => activeChannel(s, 'lantern'))
       const horizonOverride         = useCartographStore(s => activeChannel(s, 'horizon'))
       const forceNeonOn             = useCartographStore(s => s.neonForceOn)
+      const neonDensity             = useCartographStore(s => s.neonDensity)
       return <>
         {!hiddenLayers.park && (
           <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
@@ -810,6 +812,7 @@ const MAP_REGISTRY = {
           materialPhysicsOverride={materialPhysicsOverride}
           materialColorsOverride={materialColorsOverride}
           forceNeonOn={forceNeonOn}
+          neonDensity={neonDensity}
           hiddenLayers={hiddenLayers}
           forceContentReady
         /></R3FErrorBoundary>
@@ -899,11 +902,20 @@ function genericSceneConfig(sceneBoundary) {
       // ⛔ Was absent here: every poured town's Stage read the lantern frozen in scene.json, so
       // Brightness + Glow did nothing until a re-bake (Jacob, 2026-09-26). ▶ checks/claims-light-sources-are-live.mjs
       const lanternOverride   = useCartographStore(s => activeChannel(s, 'lantern'))
+      // ⛔ Neon was mounted only through LS's LafayetteScene, so every poured town's Stage drew none and all its
+      // Neon controls did nothing (Loupe's audit, 2026-09-26). The same component production mounts.
+      const forceNeonOn       = useCartographStore(s => s.neonForceOn)
+      const neonDensity       = useCartographStore(s => s.neonDensity)
       return (
       <>
         {!hiddenLayers.building && (
           <R3FErrorBoundary name="SlabBuildings">
             <SlabBuildings key={`slab-${bakeLastMs || 0}`} lookId={lookId} />
+          </R3FErrorBoundary>
+        )}
+        {!hiddenLayers.building && (
+          <R3FErrorBoundary name="SceneNeon">
+            <SceneNeon forceNeonOn={forceNeonOn} density={neonDensity} lookId={lookId} />
           </R3FErrorBoundary>
         )}
         {/* Acquired city LOD2 model — the SAME consumer production mounts

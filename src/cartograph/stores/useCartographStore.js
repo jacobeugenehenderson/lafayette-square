@@ -794,6 +794,9 @@ const useCartographStore = create((set, get) => ({
   // Stage's StageEnvironment. Doctrine: slab-carries-full-authored-product
   // counter-rule (session UI state ≠ authored product).
   neonForceOn:    false,
+  // Stage-only neon DENSITY (0..1): the share of neon buildings shown while testing — Jacob, 2026-09-26: "It's
+  // meant to test the Neon, not the schedules." Session-only like neonForceOn; production shows every building.
+  neonDensity:    1,
   // Stage-only weather switch: 'live' polls the town's real weather; a
   // WEATHER_PRESETS key (clear / overcast / rain / snow) stands the scene in it.
   // Session-only, like neonForceOn: never saved, never baked (Jacob, 2026-09-26:
@@ -1596,6 +1599,7 @@ const useCartographStore = create((set, get) => ({
   // Stage-only QA toggle. Intentionally does NOT call
   // _saveDesignDebounced — see initial-state comment on neonForceOn.
   setNeonForceOn: (on) => { set({ neonForceOn: !!on }) },
+  setNeonDensity: (d) => { set({ neonDensity: Math.min(1, Math.max(0, Number(d) || 0)) }) },
   // Session-only, no _saveDesignDebounced (see weatherMode).
   setWeatherMode: (mode) => { set({ weatherMode: mode }) },
   ...createGroupChannelActions({

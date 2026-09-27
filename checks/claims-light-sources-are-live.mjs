@@ -10,6 +10,8 @@
 //   ③ every LAMPGLOW field is written as a share by BOTH the Stage pump and the production driver
 //   ④ those uniforms have shader readers (pool → groundLamp.js + building walls · trees → treeAtlasMaterial.js)
 //   ⑤ the walls' GLSL falloff equals lampPool.js's JS falloff, evaluated — one model, two languages
+//   ⑦ NEON: every Stage environment that draws buildings also mounts neon (SceneNeon, directly or via
+//      LafayetteScene) and passes it the Neon on + Density test controls (Loupe's audit: poured towns had none)
 //   ⑥ Pool radius is MONOTONIC and 0 = OFF: through the real GLSL wipe, a lone pool's lit reach (ground and
 //      canopy) starts at 0, never shrinks as the knob rises, and is the full reach at 1 (self-mutated)
 // ⭐ The field lists are READ from skyLightChannels.js, never restated, so a new control is covered the day it lands.
@@ -126,6 +128,22 @@ console.log('⑥ POOL RADIUS: MONOTONIC, 0 = OFF, 1 = FULL (through the real GLS
   }
   // Self-mutation: the first, broken threshold (the pool's own profile, dark at its centre).
   judge(sweep(r => (r >= 1 ? 0 : groundPool(Math.max(0, r))), groundPool)) ? bad('mutation NOT caught — ⑥ is blind') : ok('mutation (threshold = the pool profile itself) is caught')
+}
+
+console.log('⑦ NEON IS MOUNTED IN EVERY STAGE THAT DRAWS BUILDINGS, WITH ITS TEST CONTROLS')
+{
+  const envs = app.split(/StageEnvironment:/).slice(1)
+  let n = 0
+  const judge = (blocks) => blocks.map(b => {
+    if (!/<SlabBuildings|<LafayetteScene/.test(b)) return null
+    const neon = b.match(/<SceneNeon\b[^>]*>|<LafayetteScene\b[\s\S]*?\/>/)
+    if (!neon) return 'draws buildings and mounts no neon'
+    if (!/forceNeonOn=\{forceNeonOn\}/.test(neon[0]) || !/density=\{neonDensity\}|neonDensity=\{neonDensity\}/.test(neon[0])) return 'mounts neon without the Neon on / Density test controls'
+    return 'ok'
+  }).filter(Boolean)
+  for (const r of judge(envs)) { n++; r === 'ok' ? ok(`Stage environment ${n}: neon mounted with its test controls`) : bad(`Stage environment ${n}: ${r}`) }
+  if (!n) bad('found no Stage environment that draws buildings — ⑦ cannot see the Stage')
+  judge(envs.map(b => b.replace(/<SceneNeon\b[^>]*>/g, ''))).some(r => r !== 'ok') ? ok('mutation (poured-town neon mount removed) is caught') : bad('mutation NOT caught')
 }
 
 console.log(red ? `\n⛔ FAIL — ${red}` : '\n✅ all claims hold')
