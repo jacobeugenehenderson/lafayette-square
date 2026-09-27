@@ -243,19 +243,38 @@ export function resolveAnimatedAtMinute(channel, minute, todSlots) {
 // (3) folds into the group shape: take the union of all per-channel
 // authored slot ids; at each slot id, each channel contributes its
 // authored value (or its flat value if the channel wasn't animated).
-export function migrateLampGlow(legacy) {
-  const FLAT_DEFAULT = { values: { grass: 0, trees: 0, pool: 1.0 } }
+// ⭐ POOL RADIUS CHANGED MEANING 2026-09-26 (0c221c63): it used to run 0 = FULL pool … 1 = full; it now runs
+// 0 = OFF … 1 = full. A channel saved before carries radius 0 meaning FULL, so an UNSTAMPED channel reads its 0s
+// as 1 and is stamped `radiusV: 2`; from then on 0 means off. Values between 0 and 1 read about the same on both
+// scales and are left alone. Applied where a channel is LOADED (Stage hydrate, the value setter) and where it is
+// RESOLVED (production's baked scene.json), so an old Look reads right everywhere without a re-save.
+export const LAMPGLOW_RADIUS_V = 2
+const _radiusStamped = new WeakMap()
+export function stampLampGlowRadius(ch) {
+  if (!ch || typeof ch !== 'object' || ch.radiusV === LAMPGLOW_RADIUS_V) return ch
+  if (_radiusStamped.has(ch)) return _radiusStamped.get(ch)
+  const fix = (t) => (t && typeof t === 'object' && t.radius === 0 ? { ...t, radius: 1 } : t)
+  const values = ch.animated
+    ? Object.fromEntries(Object.entries(ch.values || {}).map(([k, t]) => [k, fix(t)]))
+    : fix(ch.values || {})
+  const out = { ...ch, values, radiusV: LAMPGLOW_RADIUS_V }
+  _radiusStamped.set(ch, out)
+  return out
+}
+
+export function migrateLampGlow(legacy) { return stampLampGlowRadius(_migrateLampGlowShape(legacy)) }
+function _migrateLampGlowShape(legacy) {
+  const FLAT_DEFAULT = { values: { ...LAMPGLOW_FLAT_DEFAULTS }, radiusV: LAMPGLOW_RADIUS_V }
   if (!legacy || typeof legacy !== 'object') return FLAT_DEFAULT
 
   // Already group shape?
   if (legacy.values && typeof legacy.values === 'object') {
     if (legacy.animated) return legacy
     if ('grass' in legacy.values || 'trees' in legacy.values || 'pool' in legacy.values) {
-      return { values: {
-        grass: Number(legacy.values.grass) || 0,
-        trees: Number(legacy.values.trees) || 0,
-        pool:  legacy.values.pool == null ? 1.0 : Number(legacy.values.pool),
-      } }
+      // Every field the card has (it used to keep only grass/trees/pool and dropped `radius` on every load).
+      const v = { ...LAMPGLOW_FLAT_DEFAULTS }
+      for (const k of Object.keys(LAMPGLOW_FLAT_DEFAULTS)) if (legacy.values[k] != null) v[k] = Number(legacy.values[k])
+      return { ...(legacy.radiusV ? { radiusV: legacy.radiusV } : {}), values: v }
     }
   }
 
@@ -446,5 +465,5 @@ export function migrateGroupChannel(legacy, fieldKeys, defaults) {
 // the existing consumers expect.
 const LAMP_GLOW_KEYS = ['grass', 'trees', 'pool', 'radius']
 export function resolveLampGlowAtMinute(lampGlow, minute, slotMinutes) {
-  return resolveGroupAtMinute(lampGlow, minute, slotMinutes, LAMP_GLOW_KEYS, LAMPGLOW_FLAT_DEFAULTS)
+  return resolveGroupAtMinute(stampLampGlowRadius(lampGlow), minute, slotMinutes, LAMP_GLOW_KEYS, LAMPGLOW_FLAT_DEFAULTS)
 }

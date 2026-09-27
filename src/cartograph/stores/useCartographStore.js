@@ -32,6 +32,7 @@ import {
   migrateLampGlow, resolveLampGlowAtMinute,
   resolveGroupAtMinute, migrateGroupChannel,
   NAMED_TOD_SLOTS_BY_ID, getTodSlotMinutes, todSlotAtMinute, todEdgePatch,
+  stampLampGlowRadius, LAMPGLOW_RADIUS_V,
 } from '../animatedParam.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
@@ -1321,7 +1322,8 @@ const useCartographStore = create((set, get) => ({
   //     slot — UI also gates this.
   setLampGlow: (channel, value) => {
     set(s => {
-      const lg = activeChannel(s, 'lampGlow') || { values: {} }
+      // Stamped before the edit, so a radius written now (0 = off) is never read under the old scale.
+      const lg = stampLampGlowRadius(activeChannel(s, 'lampGlow') || { values: {} })
       if (!lg.animated) {
         return channelPatch(s, 'lampGlow', { ...lg, values: { ...(lg.values || {}), [channel]: value } })
       }
@@ -1415,7 +1417,7 @@ const useCartographStore = create((set, get) => ({
     get()._saveDesignDebounced()
   },
   revertLampGlow: () => {
-    set(s => channelRevert(s, 'lampGlow', { values: { ...LAMPGLOW_FLAT_DEFAULTS } }))
+    set(s => channelRevert(s, 'lampGlow', { values: { ...LAMPGLOW_FLAT_DEFAULTS }, radiusV: LAMPGLOW_RADIUS_V }))
     get()._saveDesignDebounced()
   },
   // ── Group-channel action factory ────────────────────────────
