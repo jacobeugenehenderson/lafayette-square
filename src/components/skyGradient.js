@@ -141,14 +141,15 @@ vec3 milkyWayColor(vec3 dir, vec3 galPole, vec3 galCtr, float gate) {
   if (gate <= 0.001) return vec3(0.0);
   float gLat = asin(clamp(dot(dir, normalize(galPole)), -1.0, 1.0));
   float core = smoothstep(-0.3, 1.0, dot(dir, normalize(galCtr)));
-  float band = exp(-gLat * gLat * mix(40.0, 18.0, core));
+  // A narrow, directional band (≈ ±6° at the core, thinner in the arms) — not a diffuse glow (Jacob, 2026-09-27).
+  float band = exp(-gLat * gLat * mix(160.0, 70.0, core));
   float n = mwFbm(dir * 13.0);
   float clouds = 0.55 + 0.9 * n;
   float lane = mwFbm(dir * 31.0 + 7.0);
   float dust = 1.0 - 0.75 * smoothstep(0.45, 0.8, lane) * exp(-gLat * gLat * 900.0);
-  float milk = band * clouds * dust * mix(0.35, 1.25, core);
+  float milk = band * clouds * dust * mix(0.12, 1.4, core * core);   // concentrated toward the core
   vec3 c = mix(vec3(0.10, 0.22, 0.95), vec3(0.75, 0.18, 0.70), smoothstep(0.35, 0.75, n));
   c = mix(c, vec3(1.00, 0.55, 0.18), core * core);
-  return c * milk * gate * 0.22;
+  return c * milk * gate * 0.12;
 }
 `

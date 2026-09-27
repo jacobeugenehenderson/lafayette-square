@@ -591,7 +591,7 @@ const DAY = {
   hemi:     { value: [2.0, 1.8, 1.3, 1.8, 1.4, 1.6, 2.0, 1.4] },
   skyGain:  { value: [1.0, 1.05, 1.05, 1.15, 1.1, 0.95, 0.65, 0.35] },
   stars:    { brightness: [3, 1, 1, 1, 1, 0.6, 1.0, 2.2] },
-  constellations: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
+  constellations: { value: [0, 0, 0, 0, 0, 0, 0, 0] },   // off: the figures and names don't suit this view (Jacob, 2026-09-27)
   milkyWay: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
   shadow:   { size: [3, 5, 1, 4, 5, 3, 2, 2], samples: [16, 16, 16, 16, 16, 16, 16, 16] },
   ao:       { radius: [15, 15, 15, 15, 15, 15, 15, 15], intensity: [2.0, 2.2, 3.2, 2.0, 2.2, 2.4, 2.8, 2.6],
