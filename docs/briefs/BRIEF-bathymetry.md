@@ -14,12 +14,12 @@ distance-from-shore stand-in: *"it's a whole other thing, BUT it's CORRECT and w
 ## What is measured
 - Under the drawn water the terrain carries **no depth**. Depth (water surface − terrain) is 0.09 m at
   p5–p95 in both towns — the water sheet's own slot lift — max 0.09 m on Huron, 1.23 m on Provincetown.
-  ▶ `scratch` probe in Strand's session; re-derive from `public/baked/<town>/terrain.bin` and the water group.
+  ▶ re-derive: the water group's baked Y minus `public/baked/<town>/terrain.bin` under the drawn water ring.
 - Why: the USGS DEM hydro-flattens water bodies, and `bake-terrain.js` DERIVES the datum as the mode of
   the samples under the water (`BAKE.md §2`, "the heightfield derives where zero is"). The flattening
   IS the datum's signal. ⛔ **A merge that replaces those samples first breaks the datum for every
   coastal town.** Order: derive the datum from the flattened surface, THEN lay the floor under it.
-- `BRIEF-water-shader.md` §6d/§6e already records "no bathymetry in the source" and that any depth ramp
+- `BRIEF-water-shader.md` §6d/§6e (and the retired 2026-09-20 measurements in `cartograph/_archive/BRIEF-water-shader-6e-level-set-RETIRED-2026-09-26.md`) record "no bathymetry in the source" and that any depth ramp
   built without one is fabricated. This brief is the source it lacked.
 
 ## What is already built (Strand, 2026-09-26) — your consumer

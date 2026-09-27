@@ -50,7 +50,7 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
 - `docs/briefs/BRIEF-boulder-revetment.md` (all of it: the shore's rulings, what was measured false, and
   §6's 2026-09-26 ruling that the drawn water is the shore, which retired `r-coast-trust-the-lidar`).
 - `docs/briefs/BRIEF-ground-cross-polygon-conformity.md` (the ground must stretch, not break; Huron's shore
-  seam) and `BRIEF-water-shader.md` §6e (distance-to-shore; one of Huron's "shores" is the fetch envelope).
+  seam) and `BRIEF-bathymetry.md` (the depth under the water; the old distance-to-shore path is in the Diary).
 - The coast-distance channel (`cartograph/bake-coast-distance.js`, `context.coastDist.bin`) and the sand surface
   (`cartograph/surfaces.mjs#sand`: `beachBandM` is derived per town from the waterline).
 - The tools already written: `scratch/huron-shore-transect/` (`negatives.mjs`, `predicate.mjs`, `profiles.mjs`).

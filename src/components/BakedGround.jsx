@@ -577,14 +577,9 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 // that later compares water against the terrain's zero crossing must use the
 // group's own baked Y, not the number in the sentence.
 //
-// ⛔ AND THE SHORELINE IS **NOT** FREE — the brief said it was and the DEM says
-// otherwise. Measured on huron, 2,064,969 samples split by the water ring:
-// under the water the DEM reads 0.00–3.31 m (median 0.55); on land it never
-// drops below 1.14 m. The two populations OVERLAP and the land never reaches
-// zero, so the y=0 level set is a patch somewhere inside the lake, not the
-// shore. ▶ The real signal is `coastline.mjs`'s ARCS (the true shoreline,
-// separate from the bb closure), which needs a per-vertex attribute and so a
-// slab schema bump — unruled, not built.
+// ⛔ THE DEM CARRIES NO DEPTH under the water (it hydro-flattens it), so nothing here
+// shades by depth. The waterline is the mapped shore and the `bed` sits under it
+// (BRIEF-the-shore-is-closed); real depth is BRIEF-bathymetry.
 //
 // ⭐ The wave frequencies come from THIS BODY'S OWN EXTENT, read off the baked
 // geometry's bounding box. Not a constant, not a scene lookup — the surface's

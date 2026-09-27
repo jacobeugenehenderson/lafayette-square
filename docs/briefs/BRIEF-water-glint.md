@@ -69,10 +69,10 @@ thing that consumes them.** Fathom's octave table carries a **`steepness`** per 
 Wave height is a function of wind speed **and fetch** — the distance of open water the wind has
 crossed. A sheltered lee shore stays glassy in the same wind that raises chop a kilometre out,
 and that contrast is most of what makes real water read as real.
-⭐ **The signal for it is the same one the shoreline needs:** `coastline.mjs` `arcs` (§6e) — fetch
+⭐ **The signal for it is the same one the shoreline needs:** `coastline.mjs` `arcs` (retired §6e: `cartograph/_archive/BRIEF-water-shader-6e-level-set-RETIRED-2026-09-26.md`) — fetch
 is the distance from a point to the upwind shore along `windDirDeg`. ⇒ **the arcs work is now
 load-bearing for two features, not one**, which strengthens the case for the slab schema bump
-that §6e costed and left for Jacob.
+that the retired §6e costed; Jacob has since ruled for real depth (`BRIEF-bathymetry.md`).
 
 ### Why this is the right place for weather to show
 Trees move in wind; that is legible but local. Water integrates wind over an entire surface, so a
