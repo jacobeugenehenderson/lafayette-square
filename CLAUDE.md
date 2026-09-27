@@ -125,7 +125,10 @@ troubleshoot** — all of it inside the **causal chains**, which is why routing 
 courtesy. ⛔ A proposal that reopens design is out of scope; say so and move.
 
 ### ⭐⭐ EVERY FIX IS A FIX IN THREE PARTS — it is not done until all three.
-1. **The code works.**
+1. **The code works, and the code it replaces is GONE.** *(Jacob, 2026-09-26: "this is a final pass, so if we see
+   defunct wiring or duplicative efforts, we should take this chance to clean out and not just layering on.")* The
+   old path, the dead uniform, the unread control, the commented-out mount, the shim: delete it in the same commit,
+   and say in the message what was removed. ⛔ A fix that leaves its predecessor wired alongside is a layer, not a fix.
 2. **What a marketer or a developer needs to know is written down**, in the register that reaches them
    (`FEATURES` = the capability in their words · `OPERATIONS` = the knobs). ⛔ **COMMIT GATE: the commit
    message names the register it reached, or says "reaches no register" outright.** Silence is not an
