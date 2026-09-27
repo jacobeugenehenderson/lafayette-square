@@ -3,6 +3,7 @@ import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade, neighborhoodFadeKey } fro
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp, bindGroundLampShared } from '../lib/groundLamp.js'
 import { groundRules, GROUND_RULES_DECLS, groundRulesFragment, bindGroundRules } from '../lib/groundRules.js'
+import { SURFACES } from '../../cartograph/surfaces.mjs'
 
 /**
  * Reusable factory for the noise-based park grass material.
@@ -296,7 +297,7 @@ if (typeof window !== 'undefined') window.__cropPom = CROP_UNIFORMS.uPom
 function rampUniforms(u, name, stops) {
   const ok = Array.isArray(stops) && stops.length >= 1 && stops.length <= 4
     && stops.every(s => Number.isFinite(s?.t) && /^#[0-9a-f]{6}$/i.test(s?.color || ''))
-  if (!ok) throw new Error(`⛔ crop ${name.toLowerCase()}Ramp: 1–4 stops of { t, color: '#rrggbb' } required, got ${JSON.stringify(stops)}`)
+  if (!ok) throw new Error(`⛔ ${name.toLowerCase()} ramp: 1–4 stops of { t, color: '#rrggbb' } required, got ${JSON.stringify(stops)}`)
   const st = [...stops].sort((a, b) => a.t - b.t)
   while (st.length < 4) st.push({ t: 1, color: st[st.length - 1].color })
   u[`u${name}T`] = { value: new THREE.Vector4(...st.map(s => s.t)) }
@@ -306,7 +307,34 @@ function rampUniforms(u, name, stops) {
   })
 }
 
-const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO + SAND_STATE, crop: CROP_ALBEDO }
+// ⭐ GROUND COVER — marsh · earth · litter (surfaces.mjs, generator 'cover'). Vegetation in patches over
+// bare soil. One domain-warped patch map, each octave rotated so no lattice lines up, decides where the
+// cover stands (uCoverFrac of the ground, patches ~uPatchM across); a broad octave drifts the tone of
+// both layers, and a fine grain (faded to its mean by fwidth, so the far ground doesn't shimmer) gives
+// blades on the cover and crumb on the soil. Each layer reads the map through its own gradient map.
+const COVER_ALBEDO = `vec2 gp = vGrassPos.xz;
+       float cS = 1.0 / max(uPatchM, 0.1);
+       vec2 cw = gp + uPatchM * 0.6 * vec2(gNoise(gp * cS * 0.35 + 3.0), gNoise(gp * cS * 0.35 + 11.0));
+       float cBroad = gFBM(mat2(0.80, -0.60, 0.60, 0.80) * cw * cS * 0.12 + 5.0);
+       float cPatch = gFBM(mat2(0.28, 0.96, -0.96, 0.28) * cw * cS + 23.0);
+       float cPx = length(fwidth(gp));
+       // Two rotated octaves averaged at each scale, so the value-noise lattice never shows as squares.
+       float cMid  = mix(0.5, 0.5 * (gNoise(mat2(-0.49, 0.87, -0.87, -0.49) * gp * 1.3 + 29.0) + gNoise(mat2(0.60, 0.80, -0.80, 0.60) * gp * 2.1 + 61.0)),
+                         1.0 - smoothstep(0.15, 0.4, cPx * 2.1));
+       float cFine = mix(0.5, 0.5 * (gNoise(mat2(0.93, 0.37, -0.37, 0.93) * gp * 7.0 + 17.0) + gNoise(mat2(-0.21, 0.98, -0.98, -0.21) * gp * 11.0 + 43.0)),
+                         1.0 - smoothstep(0.15, 0.4, cPx * 11.0));
+       float cV = 0.75 * cPatch + 0.25 * cBroad + 0.12 * (cMid - 0.5);
+       float cThr = mix(0.68, 0.30, uCoverFrac);
+       float cover = uCoverFrac <= 0.0 ? 0.0 : uCoverFrac >= 1.0 ? 1.0 : smoothstep(cThr - 0.035, cThr + 0.035, cV);
+       vec3 cSoil = surfRamp(0.2 + 0.7 * cBroad + 0.35 * (cMid - 0.5) + 0.25 * (cFine - 0.5), uEarthT, uEarthC0, uEarthC1, uEarthC2, uEarthC3);
+       vec3 cVeg  = surfRamp(0.1 + 0.8 * cBroad + 0.4 * (cPatch - 0.5) + 0.3 * (cMid - 0.5), uCoverT, uCoverC0, uCoverC1, uCoverC2, uCoverC3);
+       cVeg *= 0.8 + 0.4 * cFine;
+       // The cover thins at its edge: a darker fringe of soil showing through.
+       float cEdge = cover * (1.0 - cover) * 4.0;
+       vec3 grass = mix(cSoil, cVeg, cover) * (1.0 - 0.12 * cEdge);`
+
+// Keyed by GENERATOR: a surface names its generator in surfaces.mjs, or is its own.
+const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO + SAND_STATE, crop: CROP_ALBEDO, cover: COVER_ALBEDO }
 
 /**
  * The ground-surface factory. `surface` picks the albedo chunk; every other socket —
@@ -332,7 +360,8 @@ export function makeGroundSurfaceMaterial({
   // Sand: the baked distance to the water (context coastDist) as { map, min, span, rangeM }, or null.
   coast = null,
 } = {}) {
-  if (!ALBEDO[surface]) throw new Error(`⛔ makeGroundSurfaceMaterial: no albedo for surface "${surface}" (have ${Object.keys(ALBEDO).join(', ')})`)
+  const gen = SURFACES[surface]?.generator || surface
+  if (!ALBEDO[gen]) throw new Error(`⛔ makeGroundSurfaceMaterial: no albedo for surface "${surface}" (generator "${gen}"; have ${Object.keys(ALBEDO).join(', ')})`)
   const shaderRef = { current: null }
   const material = new THREE.MeshStandardMaterial({ roughness: 0.92, color })
   if (fade) material.transparent = true
@@ -382,6 +411,15 @@ export function makeGroundSurfaceMaterial({
       shader.uniforms.uDuneGrass      = groundRules.duneGrass
       shader.uniforms.uDuneGrassFade  = groundRules.duneGrassFade
       shader.uniforms.uDuneGrassColor = groundRules.duneGrassColor
+    }
+    if (gen === 'cover') {
+      // All four are authored with defaults in surfaces.mjs, which BakedGround lays under the resolved values.
+      for (const k of ['coverFrac', 'patchM'])
+        if (!Number.isFinite(surfaceParams?.[k])) throw new Error(`⛔ ${surface}: authored param "${k}" is missing or not a number (${surfaceParams?.[k]})`)
+      shader.uniforms.uCoverFrac = { value: surfaceParams.coverFrac }
+      shader.uniforms.uPatchM = { value: surfaceParams.patchM }
+      rampUniforms(shader.uniforms, 'Earth', surfaceParams?.soilRamp)
+      rampUniforms(shader.uniforms, 'Cover', surfaceParams?.coverRamp)
     }
     if (surface === 'crop') {
       // Resolved by the context bake (surfaces.mjs SURFACES.crop). Absent calendar → bare dirt.
@@ -436,6 +474,7 @@ ${GROUND_LAMP_DECLS}${GROUND_RULES_DECLS}
        ${NEIGHBORHOOD_FADE_GLSL}
        uniform float uHasFade;
        ${surface === 'sand' ? 'uniform float uDuneOn; uniform float uBeachSlopeDeg; uniform float uReposeMin; uniform float uReposeMax; uniform float uDuneView; uniform float uWindOn; uniform vec2 uWindTo; uniform float uRippleOn; uniform float uRippleM; uniform float uRippleHM; uniform vec4 uSandT; uniform vec3 uSandC0; uniform vec3 uSandC1; uniform vec3 uSandC2; uniform vec3 uSandC3; uniform float uHasCoast; uniform sampler2D uCoastMap; uniform vec2 uCoastMin; uniform vec2 uCoastSpan; uniform float uCoastRangeM; uniform float uBeachBandM; uniform float uDuneGrass; uniform float uDuneGrassFade; uniform vec3 uDuneGrassColor; vec2 sandDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
+       ${gen === 'cover' ? 'uniform float uCoverFrac; uniform float uPatchM; uniform vec4 uEarthT; uniform vec3 uEarthC0; uniform vec3 uEarthC1; uniform vec3 uEarthC2; uniform vec3 uEarthC3; uniform vec4 uCoverT; uniform vec3 uCoverC0; uniform vec3 uCoverC1; uniform vec3 uCoverC2; uniform vec3 uCoverC3;\n       ' + RAMP_GLSL : ''}
        ${surface === 'crop' ? 'uniform float uCropOn; uniform float uDoy; uniform float uPom; uniform float uPlantMin; uniform float uPlantMax; uniform float uHarvMin; uniform float uHarvMax; uniform float uGrowFrac; uniform float uHeadlandRows; uniform float uTrackGaugeRows; uniform float uBedFrac; uniform float uClodSizeM; uniform float uClodHeightM; uniform float uQuiltM; uniform float uHasEdge; uniform float uRowSpacingM; uniform float uRidgeM; uniform float uRowDistort; uniform vec4 uSoilT; uniform vec3 uSoilC0; uniform vec3 uSoilC1; uniform vec3 uSoilC2; uniform vec3 uSoilC3; uniform vec4 uPlantT; uniform vec3 uPlantC0; uniform vec3 uPlantC1; uniform vec3 uPlantC2; uniform vec3 uPlantC3; varying vec4 vFieldAxis; varying vec4 vFieldExt; varying float vFieldEdge; vec2 cropDH = vec2(0.0);\n       ' + RAMP_GLSL : ''}
        varying vec3 vGrassPos;
 
@@ -445,7 +484,7 @@ ${GROUND_LAMP_DECLS}${GROUND_RULES_DECLS}
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <color_fragment>',
       `#include <color_fragment>
-       ${ALBEDO[surface]}
+       ${ALBEDO[gen]}
 
        float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
        float brightness = mix(0.7, 1.0, dayBright);

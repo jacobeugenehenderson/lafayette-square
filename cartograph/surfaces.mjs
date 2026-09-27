@@ -131,6 +131,39 @@ export const SURFACES = {
         { t: 0.00, color: '#1c3310' }, { t: 0.40, color: '#2f5719' }, { t: 0.75, color: '#5b8a2b' }, { t: 1.00, color: '#a2b64c' } ] },
     },
   },
+  // ⭐ GROUND COVER (Jacob, 2026-09-27: "we just need to make the colors more 'ground' colored") —
+  // ONE generator (grassMaterial.js COVER_ALBEDO), three looks. Vegetation in patches over bare soil:
+  // a warped patch map decides where the cover stands, `coverFrac` of the ground; each layer reads
+  // the same rough map through its own gradient map, so both vary in tone as well as place.
+  // Every value is the LOOK — the operator's to replace per town in design.json#surfaces.params.<surface>.
+  //   marsh  — marsh grasses, olive to tawny, over dark wet peat.
+  //   earth  — mostly bare soil, sparse growth: bare ground, brownfield.
+  marsh: { generator: 'cover', params: {
+    coverFrac: { unit: '0–1 of the ground', source: 'authored', default: 0.85 },
+    patchM:    { unit: 'm', source: 'authored', default: 10 },
+    soilRamp:  { unit: 'gradient stops', source: 'authored', default: [
+      { t: 0.00, color: '#2a2620' }, { t: 0.35, color: '#3f3a2e' }, { t: 0.70, color: '#5a5341' }, { t: 1.00, color: '#76705a' } ] },
+    coverRamp: { unit: 'gradient stops', source: 'authored', default: [
+      { t: 0.00, color: '#4b5a2c' }, { t: 0.40, color: '#6d7436' }, { t: 0.75, color: '#958c4c' }, { t: 1.00, color: '#b7a66c' } ] },
+  } },
+  earth: { generator: 'cover', params: {
+    coverFrac: { unit: '0–1 of the ground', source: 'authored', default: 0.3 },
+    patchM:    { unit: 'm', source: 'authored', default: 4 },
+    soilRamp:  { unit: 'gradient stops', source: 'authored', default: [
+      { t: 0.00, color: '#4a3a28' }, { t: 0.35, color: '#6b5439' }, { t: 0.70, color: '#8a7050' }, { t: 1.00, color: '#a88e6c' } ] },
+    coverRamp: { unit: 'gradient stops', source: 'authored', default: [
+      { t: 0.00, color: '#3e4a26' }, { t: 0.40, color: '#58602f' }, { t: 0.75, color: '#767a42' }, { t: 1.00, color: '#948f5a' } ] },
+  } },
+  // The woodland floor (Jacob, 2026-09-27: "a loam of pine needles … a darker brown"): duff — needles and
+  // leaf litter over dark humus, rust-brown where the needles are fresh — with the odd patch of moss.
+  litter: { generator: 'cover', params: {
+    coverFrac: { unit: '0–1 of the ground', source: 'authored', default: 0.08 },
+    patchM:    { unit: 'm', source: 'authored', default: 3 },
+    soilRamp:  { unit: 'gradient stops', source: 'authored', default: [
+      { t: 0.00, color: '#16100a' }, { t: 0.35, color: '#271c12' }, { t: 0.70, color: '#3a2a1b' }, { t: 1.00, color: '#524029' } ] },
+    coverRamp: { unit: 'gradient stops', source: 'authored', default: [
+      { t: 0.00, color: '#222a17' }, { t: 0.50, color: '#2f381c' }, { t: 1.00, color: '#3e4624' } ] },
+  } },
   // ⭐ The Pilgrim Monument's coursed granite — a SET-PIECE surface, not a land-use one
   // (no class maps to it). Named for its monument because every value below is THAT
   // structure's: a second town's granite set-piece gets its own entry with its own sources,
@@ -229,6 +262,18 @@ export const SURFACE_OF_CLASS = {
   recreation:  'grass',
   beach:       'sand',
   dune:        'sand',
+  // ⭐ Every soft class is drawn as ground (Jacob, 2026-09-27: "the ground should look like it's on Earth").
+  // Grounds, cemeteries, verges, lots gone to grass, orchards — and land whose use is not derived — are grass.
+  cemetery:    'grass',
+  institutional: 'grass',
+  verge:       'grass',
+  vacant:      'grass',
+  orchard:     'grass',
+  underived:   'grass',
+  wetland:     'marsh',
+  bare:        'earth',
+  brownfield:  'earth',
+  forest:      'litter',
 }
 
 /** Material kinds (ribbon bands) with a surface of their own, whatever block they are on. */
@@ -237,6 +282,13 @@ export const SURFACE_OF_MATERIAL = {
   treelawn: 'grass',
   median:   'grass',
   bed:      'sand',   // the ground under the water (bake-ground.js PAINT_ORDER 'bed')
+  // OSM ground overlays (`leisure=garden|pitch`, `natural=wood|scrub`) painted over the blocks: they are
+  // ground too, and a flat fill over a textured block reads as a sticker (Jacob, 2026-09-27: "3 greens,
+  // only one is grass?").
+  garden:   'grass',
+  pitch:    'grass',
+  scrub:    'grass',
+  wood:     'litter',
 }
 
 /** Validate an operator remap once; bad rows are DROPPED AND NAMED, never coerced. */
@@ -254,18 +306,20 @@ export function resolveClassTable(override, report = console.error) {
  * The surface a baked ground group renders with, or null for flat colour.
  *   face 'park'                → table['park']
  *   mat  'treelawn'            → SURFACE_OF_MATERIAL['treelawn']
- *   mat  'treelawn:residential'→ grass only if the BLOCK's class is grass — a
- *                                curbside strip on a parking lot stays the lot's colour.
- * ⚠️ That last rule is the pre-table behaviour, carried verbatim so LS is unchanged.
+ *   mat  'treelawn:residential'→ the BLOCK's surface: the strip is drawn as the ground it
+ *                                belongs to (grass, sand, marsh …), and a strip on a block with no
+ *                                surface — a parking lot — stays the lot's colour.
  */
 export function surfaceOfGroup(group, table = SURFACE_OF_CLASS) {
   if (group.kind === 'face') return table[group.id] ?? null
   const c = group.id.indexOf(':')
   if (c < 0) return SURFACE_OF_MATERIAL[group.id] ?? null
   const bare = group.id.slice(0, c), variant = group.id.slice(c + 1)
-  const own = SURFACE_OF_MATERIAL[bare]
-  if (!own) return null
-  return table[variant] === own ? own : null
+  if (!SURFACE_OF_MATERIAL[bare]) return null
+  const s = table[variant] ?? null
+  // A per-field surface (the crop) needs the bake's field ids, which only the class's own face carries:
+  // a curbside strip on a farm block is drawn as the strip's own surface instead.
+  return s && SURFACES[s].perField ? SURFACE_OF_MATERIAL[bare] : s
 }
 
 /**
