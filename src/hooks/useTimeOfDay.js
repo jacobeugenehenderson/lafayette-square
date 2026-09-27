@@ -50,8 +50,10 @@ const useTimeOfDay = create((set, get) => ({
   // the main picker, which happens to call `setTime`.
   // ⛔ They also skipped the `useCalendar` write `setTime` does, so the two parallel Date
   // views drifted apart on every chip click — the exact lockstep the comment promises.
+  // ⭐ Both keep the CURRENT DATE and change only the time (2026-09-27): they rebuilt from `new Date()`, so a
+  // time-chip click snapped the date and season back to today.
   setHour: (hour) => {
-    const now = new Date()
+    const now = new Date(get().currentTime)
     const wholeHour = Math.floor(hour)
     const minutes = Math.round((hour - wholeHour) * 60)
     now.setHours(wholeHour, minutes, 0, 0)
@@ -60,7 +62,7 @@ const useTimeOfDay = create((set, get) => ({
   },
 
   setMinuteOfDay: (minutes) => {
-    const now = new Date()
+    const now = new Date(get().currentTime)
     const hours = Math.floor(minutes / 60)
     const mins = Math.round(minutes % 60)
     now.setHours(hours, mins, 0, 0)
