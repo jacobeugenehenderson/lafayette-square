@@ -309,7 +309,9 @@ GPU profiler · device frame · layer-toggle matrix · TOD scrub. Walks the *shi
 3. The same two as **Worker secrets** on `theward-staging-sites` (`npx wrangler secret put OPS_ACCESS_CLIENT_ID`, `…_SECRET`), so staging pages carry the town's domain for QR codes.
 4. Deploy `workers/staging-sites` **before** the next player publish, then `workers/production-sites`.
 
-**Per town (once):** bind `<town>.online` **and** `www.<town>.online` to `theward-production-sites` as Custom Domains (dashboard → the Worker → Domains & Routes; the zone must be **active**). ⛔ Not in `wrangler.jsonc` — that would put the list of towns back into the Worker. Then press Promote.
+**Per town (once):** bind `<town>.online` **and** `www.<town>.online` to `theward-production-sites` as Custom Domains; the zone must be **active**. The apex binds in the dashboard (the Worker → Domains & Routes → Add → Custom domain). ⚠️ The dashboard offers to *purchase* a `www.` name instead of binding it (2026-09-27), so bind `www.` through the API, which adds that one hostname and touches no other:
+`T=$(npx wrangler auth token 2>/dev/null | tail -1); curl -s -X PUT -H "Authorization: Bearer $T" -H "Content-Type: application/json" https://api.cloudflare.com/client/v4/accounts/<account id>/workers/domains -d '{"hostname":"www.<town>.online","service":"theward-production-sites","zone_id":"<zone id>","environment":"production"}'`
+(account id: `npx wrangler whoami`; zone id: the same endpoint with `GET …/workers/domains?service=theward-production-sites` lists the apex's.) ⛔ Not in `wrangler.jsonc`, and not `wrangler deploy --domain` — the first puts the list of towns back into the Worker, and whether the second replaces other towns' bindings is unverified. Then press Promote.
 
 **Reading it:** the Promote row is current when this town's pinned player is the build staging serves **and** its prod slab is your pour. `curl -s https://<domain>/ | grep ward-look` names the town the site thinks it is.
 
