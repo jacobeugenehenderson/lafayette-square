@@ -26,6 +26,7 @@ import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import { DesignerArch } from './DesignerArch.jsx'
 import SetPiece from '../components/SetPiece.jsx'
+import HorizonDisc from '../components/HorizonDisc.jsx'
 
 // Shot-only (environment paint-in)
 import LafayetteScene from '../components/LafayetteScene'
@@ -795,7 +796,6 @@ const MAP_REGISTRY = {
       const archOverride            = useCartographStore(s => activeChannel(s, 'arch'))
       const archLightOverride       = useCartographStore(s => activeChannel(s, 'archLight'))
       const lanternOverride         = useCartographStore(s => activeChannel(s, 'lantern'))
-      const horizonOverride         = useCartographStore(s => activeChannel(s, 'horizon'))
       const forceNeonOn             = useCartographStore(s => s.neonForceOn)
       const neonDensity             = useCartographStore(s => s.neonDensity)
       return <>
@@ -824,7 +824,6 @@ const MAP_REGISTRY = {
           bakeLastMs={bakeLastMs}
           archOverride={archOverride}
           archLightOverride={archLightOverride}
-          horizonOverride={horizonOverride}
         /></R3FErrorBoundary>
       </>
     },
@@ -1028,6 +1027,7 @@ export default function CartographApp() {
   const dofOverride      = useCartographStore(s => activeChannel(s, 'dof'))
   const grainOverride    = useCartographStore(s => activeChannel(s, 'grain'))
   const shadowOverride   = useCartographStore(s => activeChannel(s, 'shadow'))
+  const horizonOverride  = useCartographStore(s => activeChannel(s, 'horizon'))
   // Live arch placement — gates the Designer's arch prop below.
   const archOverride     = useCartographStore(s => s.arch)
 
@@ -1385,6 +1385,8 @@ export default function CartographApp() {
                 (top-down it reads as its plan square). Keyed to the ACTIVE look, since
                 Stage switches towns live. ▶ checks/claims-every-app-mounts-the-set-piece.mjs */}
             <R3FErrorBoundary name="SetPiece"><SetPiece lookId={activeLookId} /></R3FErrorBoundary>
+            {/* The ground from the town's rim to the horizon — every town, the same component production mounts. */}
+            <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={activeLookId} bakeLastMs={bakeLastMs} horizonOverride={horizonOverride} /></R3FErrorBoundary>
             {!inDesigner && sceneCfg.StageEnvironment && (
               <sceneCfg.StageEnvironment
                 hiddenLayers={hiddenLayers}

@@ -52,7 +52,7 @@ import {
   LANDSCAPE_FIELD_KEYS, LANDSCAPE_FLAT_DEFAULTS,
   ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS, migrateArchLight,
   LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
-  HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS,
+  HORIZON_FIELD_KEYS,
   CLOUDS_FLAT_DEFAULTS,
   DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS, migrateDof,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
@@ -487,7 +487,9 @@ const DESIGN_FIELDS = [
   } },
   { key: 'archLight', hydrate: (d) => migrateArchLight(d) },
   _grp('lantern',        LANTERN_FIELD_KEYS,        LANTERN_FLAT_DEFAULTS),
-  _grp('horizon',        HORIZON_FIELD_KEYS,        HORIZON_FLAT_DEFAULTS),
+  // Sparse: only authored keys; an unauthored key follows the town's radius (skyLightChannels#resolveHorizon).
+  { key: 'horizon', hydrate: (d) => ({ values: Object.fromEntries(HORIZON_FIELD_KEYS
+    .filter(k => Number.isFinite(d.horizon?.values?.[k])).map(k => [k, d.horizon.values[k]])) }) },
   { key: 'clouds', hydrate: (d) => d.clouds?.values
     ? { values: { ...CLOUDS_FLAT_DEFAULTS, ...d.clouds.values } }
     : { values: { ...CLOUDS_FLAT_DEFAULTS } } },
@@ -773,7 +775,7 @@ const useCartographStore = create((set, get) => ({
   landscape: { values: { ...LANDSCAPE_FLAT_DEFAULTS } },
   archLight: { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },
   lantern: { values: { ...LANTERN_FLAT_DEFAULTS } },
-  horizon: { values: { ...HORIZON_FLAT_DEFAULTS } },
+  horizon: { values: {} },
   // SC.6 — Meteorologist coupler scaffolding. v1 has no Stage UI; field
   // round-trips through design.json → bake → scene.json so Atmosphere
   // v3 has it ready. preset='auto' = consult the Almanac at runtime.
@@ -1515,7 +1517,7 @@ const useCartographStore = create((set, get) => ({
   ...createGroupChannelActions({
     name: 'horizon',
     fieldKeys: HORIZON_FIELD_KEYS,
-    flatDefaults: HORIZON_FLAT_DEFAULTS,
+    flatDefaults: {},   // never keyframed; an unset key follows the town
   }, set, get),
 
   // SC.6 — clouds hand-rolled actions. Values aren't flat scalars

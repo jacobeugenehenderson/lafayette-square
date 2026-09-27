@@ -130,7 +130,7 @@ function routesOf(name, R, appImports) {
   for (const m of t.matchAll(/function (\w+Pump)\s*\(\)\s*\{([\s\S]*?)\n\}/g)) {
     if (!new RegExp(`activeChannel\\(.*?'${name}'\\)`).test(m[2])) continue
     const mounted = t.match(new RegExp(`<${m[1]}\\b`))
-    const writes = new Set([...m[2].matchAll(/(_\w+)\.\w+\.value\s*=/g)].map(x => appImports.get(x[1])).filter(Boolean))
+    const writes = new Set([...m[2].matchAll(/(_\w+)\.[\w.]+\s*=(?!=)/g)].map(x => appImports.get(x[1])).filter(Boolean))
     routes.push({ via: 'pump', target: m[1], region: mounted ? regionOf(mounted.index) : 'unmounted', modules: [...writes] })
   }
   return routes

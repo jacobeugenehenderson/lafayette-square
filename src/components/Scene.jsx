@@ -18,6 +18,7 @@ import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import MountainBackdrop from './MountainBackdrop'
 import SetPiece from './SetPiece.jsx'
+import HorizonDisc from './HorizonDisc.jsx'
 import SlabRevetment from './SlabRevetment.jsx'
 import Atmosphere from './Atmosphere'
 import CloudDome from './CloudDome'
@@ -899,6 +900,8 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
           `scene.arch`); the component self-gates on that data, so no mount site
           names a Look. The condition left here is the mobile budget, not identity. */}
       {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
+      {/* The ground from the town's rim to the horizon — every town (it used to live inside the Arch). */}
+      {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc bakeLastMs={scene?.bakedAt ?? null} /></R3FErrorBoundary>}
       {/* The town's set-piece, if it declares one — the ONE mount every app uses. */}
       {!IS_GROUND && <R3FErrorBoundary name="SetPiece"><SetPiece /></R3FErrorBoundary>}
       {/* The shore's stone — the props Stage passes, nothing more (claims-every-app-mounts-the-set-piece). */}

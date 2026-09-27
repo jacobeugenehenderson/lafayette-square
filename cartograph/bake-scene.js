@@ -47,7 +47,7 @@ import {
   SKY_GAIN_FLAT_DEFAULTS,
   GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS, CANOPY_FLAT_DEFAULTS, DOF_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
-  ARCH_FLAT_DEFAULTS, migrateArchLight, LANTERN_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
+  ARCH_FLAT_DEFAULTS, migrateArchLight, LANTERN_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
   NEON_FLAT_DEFAULTS,
 } from '../src/cartograph/skyLightChannels.js'
@@ -189,7 +189,7 @@ export async function bakeScene({ look } = {}) {
     ...(design.landscape?.source ? { landscape: design.landscape } : {}),
     archLight: migrateArchLight(design),
     lantern:   design.lantern   || { values: { ...LANTERN_FLAT_DEFAULTS } },
-    horizon:   design.horizon   || { values: { ...HORIZON_FLAT_DEFAULTS } },
+    horizon:   design.horizon   || { values: {} },   // unset keys follow the town's radius at render
     // SC.6 — Meteorologist coupler scaffolding. Forward-compat field for
     // the future <Atmosphere /> raymarched runtime. v1's CloudDome
     // ignores `clouds`; the field round-trips through bake so Atmosphere

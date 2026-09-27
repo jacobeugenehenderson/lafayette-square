@@ -37,7 +37,7 @@ import useSkyState from '../hooks/useSkyState'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
 import TodChannel from '../cartograph/TodChannel.jsx'
 import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
-import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, resolveHorizon } from '../cartograph/skyLightChannels.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { townRanges } from '../lib/townRange.js'
 
@@ -68,11 +68,9 @@ function FrameLimiter() {
 // ── Arch & Horizon authoring state retired ─────────────────────────────────
 // archState / setArch / useArchState / subscribeArch / ARCH_DEFAULTS all
 // retired 2026-05-13 (SC.7). The Gateway Arch landmark's placement +
-// transform + uplights and the ground disc's radius + feathering now ride
-// the cartograph store as the `arch` + `horizon` channels (see
-// skyLightChannels.js ARCH_FLAT_DEFAULTS / HORIZON_FLAT_DEFAULTS), bake
-// into scene.json, and consume via the shared
-// src/components/GatewayArch.jsx consumer.
+// transform + uplights ride the cartograph store as the `arch` channel
+// (GatewayArch.jsx); the horizon disc's radius + feathering are the `horizon`
+// channel (HorizonDisc.jsx, every town; unset keys follow the town's radius).
 //
 // ArchHorizonControls below reads the store directly via setArch /
 // setHorizon actions; module-scope state is gone per doctrine
@@ -186,7 +184,10 @@ function ArchHorizonControls() {
   const setHorizon    = useCartographStore(s => s.setHorizon)
   const setLandscape  = useCartographStore(s => s.setLandscape)
   const a = archChannel?.values || {}
-  const h = horizonChannel?.values || {}
+  // What the disc draws: authored keys over defaults that follow the town's radius (HorizonDisc.jsx).
+  const boundary = useCartographStore(s => s.sceneBoundary)
+  const hr = townRanges({ boundary })
+  const h = hr ? resolveHorizon(horizonChannel, boundary.radius) : null
   const ls = landscapeChannel?.values || {}
   // The Hero Controls render the active subject KIND's per-type knobs: the
   // landscape backdrop's placement/snowline/atmosphere when the hero is the
@@ -239,12 +240,14 @@ function ArchHorizonControls() {
         {/* Arch uplights moved to the "Light Sources" card (Phase A) — they're a
             light source, not framing. Placement (above) stays here. */}
         <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
-        <SliderRow label="Horizon Radius" value={h.radius} min={400} max={8000} step={10}
-          onChange={(v) => setHorizon('radius', v)} />
-        <SliderRow label="Fade Inner" value={h.fadeInner} min={100} max={8000} step={10}
-          onChange={(v) => setHorizon('fadeInner', v)} />
-        <SliderRow label="Fade Outer" value={h.fadeOuter} min={100} max={8000} step={10}
-          onChange={(v) => setHorizon('fadeOuter', v)} />
+        {h ? (<>
+          <SliderRow label="Horizon Radius" value={Math.round(h.radius)} min={hr['town.radius']} max={hr['town.horizon']} step={10} suffix="m"
+            onChange={(v) => setHorizon('radius', v)} />
+          <SliderRow label="Fade Inner" value={Math.round(h.fadeInner)} min={0} max={hr['town.horizon']} step={10} suffix="m"
+            onChange={(v) => setHorizon('fadeInner', v)} />
+          <SliderRow label="Fade Outer" value={Math.round(h.fadeOuter)} min={0} max={hr['town.horizon']} step={10} suffix="m"
+            onChange={(v) => setHorizon('fadeOuter', v)} />
+        </>) : <span className="text-caption" style={{ color: 'var(--error)' }}>Horizon: town size unknown</span>}
       </div>
     </Collapsible>
   )

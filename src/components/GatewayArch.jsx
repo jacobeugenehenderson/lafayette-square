@@ -1,10 +1,10 @@
 /**
- * GatewayArch — shared consumer for the Gateway Arch landmark + horizon
- * ground disc.
+ * GatewayArch — shared consumer for the Gateway Arch landmark. (The horizon ground disc it used to draw is
+ * HorizonDisc.jsx now, mounted for every town; drawn here, only a Look with an Arch had a horizon.)
  *
  * Doctrine: ONE consumer. Production (Scene.jsx), Stage (CartographApp.jsx),
  * and Preview (PreviewApp.jsx) all mount this file. Per-channel
- * `archOverride` / `horizonOverride` props let Stage retint instantly off
+ * `archOverride` / `archLightOverride` props let Stage retint instantly off
  * the live cartograph store; when absent, the consumer falls back to the
  * channels baked into scene.json (frozen-at-bake), and finally to the
  * inline flat-default envelopes for first-paint. The store reach is
@@ -25,7 +25,7 @@
  * mode) lives at src/cartograph/DesignerArch.jsx — it stays in the
  * cartograph chunk where store reach is acceptable.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -38,10 +38,9 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import {
   ARCH_FLAT_DEFAULTS,
   ARCHLIGHT_FLAT_DEFAULTS, ARCHLIGHT_FIELD_KEYS,
-  HORIZON_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 // NPS catenary equation converted to meters:
 const A = 211.5
@@ -54,13 +53,6 @@ const HALF_SPAN = Math.acosh(A / B) / C
 // Scratch vectors for per-frame uplight world-space transforms (avoid GC).
 const _upPos = new THREE.Vector3()
 const _upTarget = new THREE.Vector3()
-
-// Computed each frame by GatewayArch and read by GroundDisc — both feet's
-// live world positions, used for the floor wash light pools on the disc.
-const archFootWorld = {
-  L: new THREE.Vector3(),
-  R: new THREE.Vector3(),
-}
 
 const BASE_RADIUS = 10.0   // thickened for heavier silhouette
 const TOP_RADIUS = 4.0
@@ -130,17 +122,9 @@ export function createArchGeometry(curveSegs = 120) {
 
 const ARCH_DEFAULT_CHANNEL      = Object.freeze({ values: { ...ARCH_FLAT_DEFAULTS } })
 const ARCHLIGHT_DEFAULT_CHANNEL = Object.freeze({ values: { ...ARCHLIGHT_FLAT_DEFAULTS } })
-const HORIZON_DEFAULT_CHANNEL   = Object.freeze({ values: { ...HORIZON_FLAT_DEFAULTS } })
-
-function resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 export default function GatewayArch({
-  lookId, bakeLastMs, archOverride, horizonOverride, archLightOverride,
+  lookId, bakeLastMs, archOverride, archLightOverride,
 }) {
   const geometry = useMemo(() => createArchGeometry(), [])
   const meshRef = useRef()
@@ -148,7 +132,6 @@ export default function GatewayArch({
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
   const archChannel = archOverride ?? scene?.arch ?? null
   const arch    = (archChannel ?? ARCH_DEFAULT_CHANNEL).values
-  const horizon = (horizonOverride ?? scene?.horizon ?? HORIZON_DEFAULT_CHANNEL).values
   // Arch Lighting is a TOD-animatable channel — keep the whole channel
   // object and resolve it per-frame (below) so the uplight wash can ride a
   // day→night curve. Override (Stage live) > baked scene > flat defaults.
@@ -373,7 +356,6 @@ export default function GatewayArch({
 
       _upPos.set(-HALF_SPAN, 0, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpL_pos.value.copy(_upPos)
-      archFootWorld.L.copy(_upPos)
       _upTarget.set(HALF_SPAN * 0.5, PEAK_HEIGHT * 0.6, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpL_dir.value.copy(_upTarget).sub(_upPos).normalize()
       shaderRef.current.uniforms.uUpL_color.value.set(al.uplightL_color)
@@ -384,7 +366,6 @@ export default function GatewayArch({
 
       _upPos.set(HALF_SPAN, 0, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpR_pos.value.copy(_upPos)
-      archFootWorld.R.copy(_upPos)
       _upTarget.set(-HALF_SPAN * 0.5, PEAK_HEIGHT * 0.6, 0).applyMatrix4(mw)
       shaderRef.current.uniforms.uUpR_dir.value.copy(_upTarget).sub(_upPos).normalize()
       shaderRef.current.uniforms.uUpR_color.value.set(al.uplightR_color)
@@ -451,119 +432,11 @@ export default function GatewayArch({
   if (!archChannel) return null
 
   return (
-    <>
-      <GroundDisc horizon={horizon} lookId={lookId} bakeLastMs={bakeLastMs} />
-      <mesh
-        ref={meshRef}
-        geometry={geometry}
-        material={material}
-        frustumCulled={false}
-      />
-    </>
-  )
-}
-
-// The base-color disc shares its center with BakedGround by reading the
-// same ground.json manifest — `stencil.center` is the canonical map
-// centerpoint.
-function GroundDisc({ horizon, lookId, bakeLastMs }) {
-  const matRef = useRef(null)
-  const meshRef = useRef(null)
-  const resolvedLookId = resolveLookId(lookId)
-  const [center, setCenter] = useState([0, 0])
-
-  useEffect(() => {
-    let cancelled = false
-    const t = bakeLastMs ?? Date.now()
-    fetch(`${ASSET_BASE}baked/${resolvedLookId}/ground.json?t=${t}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(m => {
-        if (!cancelled && m?.stencil?.center) {
-          setCenter([m.stencil.center[0], m.stencil.center[1]])
-        }
-      })
-      .catch(() => { /* keep origin fallback */ })
-    return () => { cancelled = true }
-  }, [resolvedLookId, bakeLastMs])
-
-  const material = useMemo(() => {
-    const m = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      uniforms: {
-        uInner: { value: horizon.fadeInner },
-        uOuter: { value: horizon.fadeOuter },
-        uColor: { value: new THREE.Color('#3a4a3a') },
-      },
-      vertexShader: `
-        varying vec2 vLocal;
-        void main() {
-          vLocal = position.xy;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform float uInner;
-        uniform float uOuter;
-        uniform vec3 uColor;
-        varying vec2 vLocal;
-        float hash(vec2 p) {
-          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-        }
-        float vnoise(vec2 p) {
-          vec2 i = floor(p);
-          vec2 f = fract(p);
-          float a = hash(i);
-          float b = hash(i + vec2(1.0, 0.0));
-          float c = hash(i + vec2(0.0, 1.0));
-          float d = hash(i + vec2(1.0, 1.0));
-          vec2 u = f * f * (3.0 - 2.0 * f);
-          return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-        }
-        void main() {
-          float r = length(vLocal);
-          float band = max(1.0, uOuter - uInner);
-          float wobble = (vnoise(vLocal * 9.0) - 0.5) * band * 0.35;
-          float t = smoothstep(uInner, uOuter, r + wobble);
-          float alpha = smoothstep(0.0, 1.0, 1.0 - t);
-          if (alpha <= 0.001) discard;
-          gl_FragColor = vec4(uColor, alpha);
-        }
-      `,
-    })
-    matRef.current = m
-    return m
-  }, [])
-
-  useFrame(() => {
-    if (matRef.current) {
-      const hc = useSkyState.getState().horizonColor
-      matRef.current.uniforms.uColor.value.set(
-        hc.r * 0.35 + 0.02,
-        hc.g * 0.35 + 0.03,
-        hc.b * 0.30,
-      )
-      // Geometry is a unit circle; convert authored world-unit fade radii
-      // to that space using horizon.radius.
-      const r = Math.max(1, horizon.radius)
-      matRef.current.uniforms.uInner.value = horizon.fadeInner / r
-      matRef.current.uniforms.uOuter.value = horizon.fadeOuter / r
-    }
-    if (meshRef.current) {
-      meshRef.current.position.set(center[0], -0.05, center[1])
-      const r = horizon.radius
-      meshRef.current.scale.set(r, r, 1)
-    }
-  })
-
-  return (
     <mesh
       ref={meshRef}
-      rotation={[-Math.PI / 2, 0, 0]}
+      geometry={geometry}
       material={material}
-      renderOrder={-100}
-    >
-      <circleGeometry args={[1, 128]} />
-    </mesh>
+      frustumCulled={false}
+    />
   )
 }

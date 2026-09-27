@@ -45,6 +45,9 @@ export function townRanges({ boundary, camera, aspect = 1, fov = 45, samples = 1
   return {
     // Twice the fit, so the operator can pull back past the framed town.
     'town.browseAltitude': ceilTo(2 * browseFitAltitude(R, aspect, fov), 100),
+    // The horizon disc: from the town's rim (smaller is hidden under the town) out to eight radii.
+    'town.radius': Math.round(R),
+    'town.horizon': ceilTo(8 * R, 100),
     // From the camera to the town's far rim.
     'town.focusFar': ceilTo(Math.hypot(px - cx, pz - cz) + R, 50),
     // The widest penumbra the current sample budget renders; above it StageShadows clamps.
