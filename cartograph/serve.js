@@ -18,6 +18,7 @@ import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
+import { terrainValueReads } from './terrainReads.mjs'
 import { productionDomainFor } from './operations-domain.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
@@ -2598,7 +2599,8 @@ createServer(async (req, res) => {
           await runStep(P, label, cmd, opts); ran(label); return
         }
         const isCode = (f) => /\.m?js$/.test(f)
-        const code = importClosure(inputs.filter(isCode)), data = inputs.filter(f => !isCode(f))
+        const code = importClosure(inputs.filter(f => typeof f === 'string' && isCode(f)))
+        const data = inputs.filter(f => typeof f !== 'string' || !isCode(f))   // files by content, and { value, read } inputs
         const was = bakeReads[`${id}:${label}`], who = `step "${label}"`
         const why = was ? [...contentChanged(was.code, code, who), ...contentChanged(was.data, data, who)] : contentChanged(undefined, [], who)
         const missing = outputs.filter(o => !existsSync(o))
@@ -2748,6 +2750,9 @@ createServer(async (req, res) => {
           [ELEVATION_TIF, ELEVATION_LIST, join(bakePaths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
            bakePaths.boundary, bakePaths.geography,
            join(bakePaths.raw, 'osm.json'),
+           // the coast bed reads design.water from every Look of this town and three registry findings — declared as
+           // the VALUES read, so a slider or a research edit elsewhere in those files re-bakes nothing (Strand, 3ab2b794)
+           { value: 'terrainValueReads', read: () => terrainValueReads(bakeScene) },
            join(here, 'bake-terrain.js')],
           [SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
           `node bake-terrain.js ${sceneFlag}`,
@@ -3112,8 +3117,10 @@ createServer(async (req, res) => {
       await runCapture(`git fetch origin --quiet`, { cwd: REPO_ROOT, timeout: 30000 })
       const branch = (await runCapture(`git rev-parse --abbrev-ref HEAD`, { cwd: REPO_ROOT })).stdout.trim()
       const specs = slabPathspecs(id).join(' ')
+      // ⛔ never trim the whole output: porcelain lines START with a status column (" M path"), and a leading trim
+      // shifted the first line so slice(3) ate its path's first character — "ublic/looks/index.json" (Lintel)
       const dirty = (await runCapture(`git status --porcelain -- ${specs}`, { cwd: REPO_ROOT })).stdout
-        .trim().split('\n').map(l => l.slice(3)).filter(Boolean)
+        .split('\n').filter(Boolean).map(l => l.slice(3))
       // "<behind>\t<ahead>" — commits in the ref but not HEAD, and vice-versa.
       const parse = (s) => { const [b, a] = s.trim().split(/\s+/).map(Number); return { behind: b || 0, ahead: a || 0 } }
       const vsStaging = parse((await runCapture(`git rev-list --left-right --count origin/${STAGING_BRANCH}...HEAD`, { cwd: REPO_ROOT })).stdout)
@@ -3288,7 +3295,7 @@ createServer(async (req, res) => {
       const specs = slabPathspecs(id).filter(p => existsSync(join(REPO_ROOT, p)))
       if (!specs.length) throw new Error('no slab files found to publish')
       const changed = (await runCapture(`git status --porcelain -- ${specs.join(' ')}`, { cwd: REPO_ROOT })).stdout
-        .trim().split('\n').map(l => l.slice(3)).filter(Boolean)
+        .split('\n').filter(Boolean).map(l => l.slice(3))   // no whole-output trim: see /publish/status above
       let committed = false
       if (changed.length) {
         // Stage first: `git commit -- <paths>` only knows TRACKED files, so a

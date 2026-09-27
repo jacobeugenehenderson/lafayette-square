@@ -66,8 +66,13 @@ function contentHash(f) {
 // → { path: sha1 | null } for a set of files as they stand now — CODE (the pour's `codeRead`, a step's closure) or
 // DATA (a step's declared inputs). Every bake step keeps one in clean/bake-reads.json (serve.js `runIfDirty`), so it
 // re-runs on a CONTENT change and never on an mtime — a checkout, or writeIfChanged's touch, changes nothing.
+// ⭐ An input may also be a VALUE — `{ value: name, read: () => … }` — when a step reads a few keys out of a file that
+// changes for other reasons (a Look's design.json on every slider, the registry on every research edit). Its record is
+// the hash of what `read()` returns, keyed `value:<name>`, so only a change to what the step READ re-runs it.
 export function contentRecord(files) {
-  return Object.fromEntries(files.map(f => [relative(REPO_ROOT, f), contentHash(f)]).sort(([a], [b]) => a < b ? -1 : 1))
+  return Object.fromEntries(files.map(f => typeof f === 'string'
+    ? [relative(REPO_ROOT, f), contentHash(f)]
+    : [`value:${f.value}`, createHash('sha1').update(JSON.stringify(f.read())).digest('hex')]).sort(([a], [b]) => a < b ? -1 : 1))
 }
 
 // The files whose content differs from `record` → their paths. ⛔ No record ⇒ dirty, named.

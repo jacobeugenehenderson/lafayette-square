@@ -74,15 +74,19 @@ const mdp = (() => { const a = src.indexOf('function mapDataPaths'), b = src.ind
 const mdpKey = (k) => { const m = mdp.match(new RegExp(`\\b${k}\\s*:\\s*([^\\n]+)`)); return m ? m[1].replace(/,\s*(\/\/.*)?$/, '').trim() : null }
 // the towns on disk, and every function serve.js imports from its own modules and calls as `fn(bakeScene)`
 const TOWNS = readdirSync(join(CARTO, 'data'), { withFileTypes: true }).filter(d => d.isDirectory() && existsSync(join(CARTO, 'data', d.name, 'clean'))).map(d => d.name)
-const CALLABLE = new Map()
+const CALLABLE = new Map(), CALLABLE_FROM = new Map()   // name → fn, name → the module that exports it
 for (const m of src.matchAll(/^import\s*\{([^}]+)\}\s*from\s*'(\.[^']+)'/gm)) {
   const names = m[1].split(',').map(s => s.trim().split(/\s+as\s+/).pop()).filter(n => new RegExp(`\\b${n}\\(\\s*(bakeScene)?\\s*\\)`).test(src))
   if (!names.length) continue
   const mod = await import(pathToFileURL(join(CARTO, m[2])).href)
-  for (const n of names) if (typeof mod[n] === 'function') CALLABLE.set(n, mod[n])
+  for (const n of names) if (typeof mod[n] === 'function') { CALLABLE.set(n, mod[n]); CALLABLE_FROM.set(n, join(CARTO, m[2])) }
 }
 function resolve(expr, acc, depth = 0) {
   expr = expr.trim()
+  // ⭐ a VALUE input — `{ value: 'name', read: () => fn(bakeScene) }`: the step's reads through `fn`'s module are recorded as
+  // that value (pour-code.mjs contentRecord), so that module is a boundary for the name scan, like the town registry
+  const val = expr.match(/^\{\s*value:\s*'([^']+)'\s*,\s*read:\s*\(\)\s*=>\s*(\w+)\(\s*bakeScene\s*\)\s*\}$/)
+  if (val) { if (CALLABLE_FROM.has(val[2])) acc.valueModules.add(CALLABLE_FROM.get(val[2])); else acc.unknown.push(expr); return }
   if (depth > 8) { acc.unknown.push(expr); return }
   if (expr.startsWith('...importClosure(') || expr.startsWith('importClosure(')) {
     const lits = [...expr.matchAll(/join\(\s*(here|REPO_ROOT)\s*,\s*((?:'[^']*'\s*,?\s*)+)\)/g)]
@@ -147,9 +151,9 @@ for (const m of src.matchAll(/runIfDirty\(\s*'([^']+)'\s*,/g)) {
   const [, inputs, outputs, cmd] = args
   if (!inputs?.startsWith('[') && !/^\w+$/.test(inputs || '')) continue   // the definition `runIfDirty = async (label, inputs…`
   const arr = (a) => a.startsWith('[') ? splitTop(a.slice(1, -1)) : [a]
-  const decl = { names: new Set(), code: new Set(), unknown: [] }
+  const decl = { names: new Set(), code: new Set(), unknown: [], valueModules: new Set() }
   for (const e of arr(inputs)) resolve(e, decl)
-  const outs = { names: new Set(), code: new Set(), unknown: [] }
+  const outs = { names: new Set(), code: new Set(), unknown: [], valueModules: new Set() }
   for (const e of arr(outputs)) resolve(e, outs)
   const sm = cmd?.match(/node\s+((?:arborist\/)?[\w.-]+\.m?js)/)
   const script = sm ? join(sm[1].startsWith('arborist/') ? ROOT : CARTO, sm[1]) : null
@@ -174,7 +178,7 @@ for (const st of steps) {
   if (!st.script || !existsSync(st.script)) { row.unknown.push(`script not found (${st.script ?? 'no node command'})`); rows.push(row); unknowns++; continue }
   const closure = importClosure([st.script])
   // the data scan stops at the town registry: its modules reach a step only as geography.mjs's VALUE (geography.json)
-  const scanned = importClosure([st.script], { stopAt: [pc.TOWN_REGISTRY] })
+  const scanned = importClosure([st.script], { stopAt: [pc.TOWN_REGISTRY, ...st.decl.valueModules] })
   // ⭐ The POUR is judged by content, not by this list: map.json records the code it ran (`codeRead`, over
   // `pourCodeClosure()`), the geography (`geographyRead`) and the registry entries (`registryRead`), and serve.js
   // compares all three before the pipeline step (pour-code.mjs). Credited only when serve.js actually calls them.
