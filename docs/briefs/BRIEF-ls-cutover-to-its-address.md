@@ -31,9 +31,10 @@ A default that merely changes spelling is the same bleed with a new name.
 
 ## The cutover, in order
 
-1. **Rename** (as HPDM): data, look, instance module, registry, R2 slab (staging), Operations Ward, the
-   staging redirect `lafayette-square` → `lafayettesquare`. Listing ids unchanged.
-2. **Operations**: the Ward's domain `lafayette-square.com` → `lafayettesquare.online`.
+1. **Rename** (as HPDM): data, look, instance module, registry, R2 slab (staging), the staging redirect
+   `lafayette-square` → `lafayettesquare`. Listing ids unchanged.
+2. **Operations**: the Ward's Domain `lafayette-square.com` → `lafayettesquare.online`, one edited value.
+   That is also what renames the town in Operations (its name is read from the Domain).
 3. **The switch in code**: delete `src/instances/lafayette-square.js#domain`. It is the one legacy line
    that makes Promote refuse Lafayette Square and makes its QR codes read `.com`
    (`src/lib/townOrigin.js`, `cartograph/serve.js#siteUrlsForLook`). ⚠️ From that commit, new QR codes

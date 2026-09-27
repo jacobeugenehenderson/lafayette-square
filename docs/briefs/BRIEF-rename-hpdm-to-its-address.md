@@ -12,12 +12,11 @@ evict-when: the map, its Ward, its slab, its look and its instance module are al
 ## The ruling (Jacob, 2026-09-27)
 
 *"I'd rather the map be called what its actual URL is for clarity sake."* ⇒ **A town's name is its address.**
-The Ward's id, the map's id and the name before the dot of its domain are one name
-(`provincetown.online` → `provincetown`). Operations already works this way (theward-operations
-`76865b7`: the Ward id *is* the map id; there is no Map id field). HPDM is one of the two towns that
-predate the rule: its map is `hipointe-demun`, its address `hipointedemun.online`. ⛔ Promote refuses it
-until this lands. It looks the Ward up by the map's name, and the Ward is named `hipointe-demun` today,
-so it would find the Ward and ship to the right domain, but under the wrong name forever.
+The map's name is the name before the dot of its Ward's Domain in Operations (`provincetown.online` →
+`provincetown`). Operations reads it that way (theward-operations `100f2b8`; there is no Map id field).
+HPDM is one of the two towns that predate the rule: its map is `hipointe-demun`, its address
+`hipointedemun.online`. ⛔ Until this lands, Promote finds no Ward for the map `hipointe-demun`, and its
+staging page carries no production domain, so QR codes and share links are withheld.
 
 ## What moves (▶ re-derive; never quote a count)
 
@@ -27,9 +26,8 @@ so it would find the Ward and ship to the right domain, but under the wrong name
   `cartograph/_archive/` and `docs/briefs/` are history. ⛔ Don't rewrite history; repoint only live references.
 - **The slab in R2**: `staging/baked/hipointe-demun/` → `staging/baked/hipointedemun/` (re-bake and upload
   under the new name, then verify with `scripts/verify-baked-in-r2.mjs`). There's no production copy yet.
-- **Operations**: the Ward `hipointe-demun` → `hipointedemun`. A Ward's id can't be edited, so this is a
-  new record with the old one's data, plus its listings' `ward` field (`hpdm-lst-*` records name their
-  Ward). It's an Operations write, so Jacob approves it.
+- **Operations: nothing.** The Ward's Domain already reads `hipointedemun.online`, so the name is already
+  right there. (The Ward's record id `hipointe-demun` is only a key; its listings keep pointing at it.)
 
 ## ⛔ What must NOT move: the listing ids
 
