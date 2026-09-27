@@ -320,6 +320,7 @@ function ChannelColor({ field, value, editable, onChange }) {
 export default function TodChannel({
   label, fields, channel, flatDefaults,
   onSetValue, onFillSlot, onRemoveSlot, onSetTransition, onRevert,
+  children,   // a control that belongs to this channel alone (e.g. Focus › Focus on), shown at the top when open
 }) {
   const scrubToTodSlot = useCartographStore(s => s.scrubToTodSlot)
   const currentTime    = useTimeOfDay(s => s.currentTime)
@@ -454,6 +455,7 @@ export default function TodChannel({
             )
           })()}
 
+          {children}
           {fields.map(field => {
             const Comp = field.type === 'color' ? ChannelColor
               : field.type === 'toggle' ? ChannelToggle

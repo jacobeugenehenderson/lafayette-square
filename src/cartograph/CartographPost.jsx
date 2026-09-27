@@ -33,7 +33,7 @@ function DofFocusRow() {
   const setFocus = useCartographStore(s => s.setDofFocus)
   const btn = { fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1px solid var(--outline-variant)', background: picking ? 'var(--primary)' : 'transparent', color: picking ? 'var(--on-primary)' : 'var(--on-surface)', cursor: 'pointer' }
   return (
-    <div className="flex items-center gap-2 py-1 pl-2" style={{ fontSize: 12, color: 'var(--on-surface)' }}>
+    <div className="flex items-center gap-2" style={{ fontSize: 12, color: 'var(--on-surface)' }}>
       <span style={{ color: 'var(--on-surface-subtle)' }}>Focus on</span>
       <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {picking ? 'click the view…' : focus ? focus.label : 'what the camera aims at'}
@@ -44,7 +44,7 @@ function DofFocusRow() {
   )
 }
 
-function StoreChannel({ name, label, fields, flatDefaults }) {
+function StoreChannel({ name, label, fields, flatDefaults, children }) {
   const cap = name[0].toUpperCase() + name.slice(1)
   // Resolve the active shot's channel (channel-variant cascade): a forked shot
   // edits its own block, hero/unforked edits base — same panel, the binding
@@ -67,7 +67,7 @@ function StoreChannel({ name, label, fields, flatDefaults }) {
       onRemoveSlot={removeSlot}
       onSetTransition={setTransition}
       onRevert={revert}
-    />
+    >{children}</TodChannel>
   )
 }
 
@@ -109,8 +109,9 @@ export default function CartographPost() {
 
       <SectionLabel label="Lens & Film" />
       <StoreChannel name="dof" label="Focus (DoF)"
-        fields={withRanges(DOF_FIELDS, ranges)} flatDefaults={DOF_FLAT_DEFAULTS} />
-      <DofFocusRow />
+        fields={withRanges(DOF_FIELDS, ranges)} flatDefaults={DOF_FLAT_DEFAULTS}>
+        <DofFocusRow />
+      </StoreChannel>
       <StoreChannel name="grain" label="Grain"
         fields={GRAIN_FIELDS} flatDefaults={GRAIN_FLAT_DEFAULTS} />
     </div>
