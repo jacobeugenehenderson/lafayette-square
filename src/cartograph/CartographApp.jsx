@@ -796,6 +796,7 @@ const MAP_REGISTRY = {
       const archOverride            = useCartographStore(s => activeChannel(s, 'arch'))
       const archLightOverride       = useCartographStore(s => activeChannel(s, 'archLight'))
       const lanternOverride         = useCartographStore(s => activeChannel(s, 'lantern'))
+      const canopyOverride          = useCartographStore(s => activeChannel(s, 'canopy'))
       const forceNeonOn             = useCartographStore(s => s.neonForceOn)
       const neonDensity             = useCartographStore(s => s.neonDensity)
       return <>
@@ -803,7 +804,7 @@ const MAP_REGISTRY = {
           <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         )}
         {!hiddenLayers.tree && (
-          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bakeLastMs} canopyOverride={canopyOverride} /></R3FErrorBoundary>
         )}
         <R3FErrorBoundary name="LafayetteScene"><LafayetteScene
           lookId={lookId}
@@ -898,6 +899,7 @@ function genericSceneConfig(sceneBoundary) {
       // range instantly as the operator drags the Hero Controls sliders
       // (production reads scene.json frozen-at-bake; same seam as arch/horizon).
       const landscapeOverride = useCartographStore(s => activeChannel(s, 'landscape'))
+      const canopyOverride    = useCartographStore(s => activeChannel(s, 'canopy'))
       // ⛔ Was absent here: every poured town's Stage read the lantern frozen in scene.json, so
       // Brightness + Glow did nothing until a re-bake (Jacob, 2026-09-26). ▶ checks/claims-light-sources-are-live.mjs
       const lanternOverride   = useCartographStore(s => activeChannel(s, 'lantern'))
@@ -905,11 +907,12 @@ function genericSceneConfig(sceneBoundary) {
       // Neon controls did nothing (Loupe's audit, 2026-09-26). The same component production mounts.
       const forceNeonOn       = useCartographStore(s => s.neonForceOn)
       const neonDensity       = useCartographStore(s => s.neonDensity)
+      const materialPhysicsOverrideSlab = useCartographStore(s => activeChannel(s, 'materialPhysics'))
       return (
       <>
         {!hiddenLayers.building && (
           <R3FErrorBoundary name="SlabBuildings">
-            <SlabBuildings key={`slab-${bakeLastMs || 0}`} lookId={lookId} />
+            <SlabBuildings key={`slab-${bakeLastMs || 0}`} lookId={lookId} materialPhysicsOverride={materialPhysicsOverrideSlab} />
           </R3FErrorBoundary>
         )}
         {!hiddenLayers.building && (
@@ -937,6 +940,7 @@ function genericSceneConfig(sceneBoundary) {
               lookId={lookId}
               bakeLastMs={bakeLastMs}
               bakeUrl={`${ASSET_BASE}baked/${lookId}/trees.json`}
+              canopyOverride={canopyOverride}
             />
           </R3FErrorBoundary>
         )}

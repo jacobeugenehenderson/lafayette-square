@@ -81,7 +81,7 @@ How it persists + resolves (the store is the convergence point — `useCartograp
 
 ## 3. The authoring model — author live, freeze on bake
 
-The Stage is **WYSIWYG**: a color change in Surfaces, a bloom tweak in Post, an arch nudge — all show on screen *immediately* (the runtime re-renders live edits during authoring; `ARCHITECTURE.md §5`). The bake then captures that exact state for handoff. The operator never "saves the bake" — that language is misleading (`ARCHITECTURE.md §3`). The deliberate save action is **forking a new named Look** ("＋ Save as new Look…"); every panel tweak before that just hits the active Look's autosave.
+The Stage is **WYSIWYG**: a color change in Surfaces, a bloom tweak in Post, an arch nudge — all show on screen *immediately* (the runtime re-renders live edits during authoring; `ARCHITECTURE.md §5`). ⚠️ **One exception, said on its card:** the building **Palette** is baked into each building's vertices, so on a poured town it lands on the next buildings bake, not live. ▶ `node checks/claims-stage-controls-are-live.mjs` The bake then captures that exact state for handoff. The operator never "saves the bake" — that language is misleading (`ARCHITECTURE.md §3`). The deliberate save action is **forking a new named Look** ("＋ Save as new Look…"); every panel tweak before that just hits the active Look's autosave.
 
 **Looks are material-keyed, never feature-keyed** (`ARCHITECTURE.md §3`): `design.json` says *"asphalt is pink,"* not *"chain-43A12's asphalt is pink."* So adding geometry in Survey/Section never invalidates a Look — new streets inherit the active Look's rules; the re-bake just enlarges the slab with consistent styling. **Survey/Section → Stage is purely additive.**
 

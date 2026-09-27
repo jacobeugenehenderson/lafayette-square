@@ -26,18 +26,17 @@ import { StoreChannel } from './CartographSkyLight.jsx'
 // the cartograph store as `materialPhysics[id]`.
 export const DEFAULT_MATERIAL_PHYSICS = {
   // Walls
-  brick_red:       { roughness: 0.90, metalness: 0,    texture: 'brick_red',       textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
-  brick_weathered: { roughness: 0.95, metalness: 0,    texture: 'brick_weathered', textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
-  stone:           { roughness: 0.85, metalness: 0,    texture: 'stone',           textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
-  stucco:          { roughness: 0.95, metalness: 0,    texture: 'stucco',          textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
-  wood_siding:     { roughness: 0.85, metalness: 0,    texture: 'wood_siding',     textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  brick_red:       { roughness: 0.90, metalness: 0,    texture: 'brick_red',       textureScale: 1, textureStrength: 0.4 },
+  brick_weathered: { roughness: 0.95, metalness: 0,    texture: 'brick_weathered', textureScale: 1, textureStrength: 0.4 },
+  stone:           { roughness: 0.85, metalness: 0,    texture: 'stone',           textureScale: 1, textureStrength: 0.4 },
+  stucco:          { roughness: 0.95, metalness: 0,    texture: 'stucco',          textureScale: 1, textureStrength: 0.4 },
+  wood_siding:     { roughness: 0.85, metalness: 0,    texture: 'wood_siding',     textureScale: 1, textureStrength: 0.4 },
   // Roofs
-  roof_flat:       { roughness: 0.90, metalness: 0,    texture: 'none',            textureScale: 1, textureStrength: 0.0, emissive: '#000000', emissiveIntensity: 0 },
-  roof_metal:      { roughness: 0.50, metalness: 0.40, texture: 'metal',           textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
-  roof_slate:      { roughness: 0.70, metalness: 0,    texture: 'slate',           textureScale: 1, textureStrength: 0.4, emissive: '#000000', emissiveIntensity: 0 },
+  roof_flat:       { roughness: 0.90, metalness: 0,    texture: 'none',            textureScale: 1, textureStrength: 0.0 },
+  roof_metal:      { roughness: 0.50, metalness: 0.40, texture: 'metal',           textureScale: 1, textureStrength: 0.4 },
+  roof_slate:      { roughness: 0.70, metalness: 0,    texture: 'slate',           textureScale: 1, textureStrength: 0.4 },
   // Building (other)
   foundation:      { roughness: 0.95, metalness: 0,    texture: 'none',            textureScale: 1, textureStrength: 0.0, emissive: '#000000', emissiveIntensity: 0 },
-  night_behavior:  { roughness: 0.80, metalness: 0,    texture: 'none',            textureScale: 1, textureStrength: 0.0, emissive: '#000000', emissiveIntensity: 0 },
 }
 
 export const TEXTURE_OPTIONS = [
@@ -56,21 +55,13 @@ const DEFAULT_MATERIAL_COLORS = {
   // Roofs
   roof_flat: '#2a2a2e', roof_metal: '#555560', roof_slate: '#3a3a42',
   // Building
-  foundation: '#B8A88A', night_behavior: '#3d3530',
+  foundation: '#B8A88A',
   // Neon (per-category sign tint)
   neon_dining: '#C2185B', neon_historic: '#D4A337', neon_arts: '#8E4585',
   neon_parks: '#3DAF8A', neon_shopping: '#C27F94', neon_services: '#3674A5',
   neon_community: '#B86B4A', neon_residential: '#7A8B6F',
-  // Trees (leaf morphology tint)
-  leaf_palmate: '#2d6828', leaf_lobed: '#2a5a22', leaf_compound: '#2e5e28',
-  leaf_ovate_lg: '#2a5828', leaf_ovate_sm: '#3a7035', leaf_heart: '#358030',
-  leaf_tulip: '#2e6028', leaf_fan: '#4a8a30', leaf_palm_cmpd: '#2a5825',
-  leaf_long_ndl: '#1e4420', leaf_short_ndl: '#1a3e22', leaf_scale: '#2a5a32',
-  leaf_narrow: '#3a7a30', leaf_fine_cmpd: '#3a7a2a',
   // Park (interior)
-  park_grass: '#2d5a2d', park_path: '#cccccc',
-  // Infra (atmosphere props)
-  streetlamp: '#fff2e0', arch: '#c8c8d0', terrain: '#2a2a26',
+  park_path: '#cccccc',
 }
 
 // Tab catalog — keys match bake material/layer ids so the row binding is
@@ -221,10 +212,10 @@ const TABS = [
       { id: 'wood_siding',     label: 'Wood Siding',     kind: 'material' },
       // Foundation + night behavior — building-scoped, not wall-specific.
       { id: 'foundation',      label: 'Foundation',      kind: 'material' },
-      { id: 'night_behavior',  label: 'Night Shift',     kind: 'material' },
       // Palette last — operator usually dials walls/roofs first, then
       // tunes the per-building tint mix.
-      { id: 'palette',         label: 'Palette',         kind: 'palette' },
+      // Baked into each building's vertices, so on a poured town it lands on the next buildings bake.
+      { id: 'palette',         label: 'Palette (on bake)', kind: 'palette' },
     ],
   },
   {
@@ -245,45 +236,19 @@ const TABS = [
     key: 'trees',
     label: 'Trees',
     items: [
-      // ⭐ FIRST, above the leaf tints, because it is the only control here that
-      // changes how a tree READS rather than what colour it is. The leaf swatches
-      // tint morphology classes; this decides whether the canopy answers to the
-      // scene's light at all.
+      // Whether the canopy answers to the scene's light. (The 14 leaf-morphology swatches that sat
+      // below it were removed 2026-09-26: nothing read them — materialColors keys trees by species.)
       { id: 'canopy_light',    label: 'Canopy Light', kind: 'canopy_light' },
-      { id: 'leaf_palmate',    label: 'Palmate',     kind: 'material' },
-      { id: 'leaf_lobed',      label: 'Lobed',       kind: 'material' },
-      { id: 'leaf_compound',   label: 'Compound',    kind: 'material' },
-      { id: 'leaf_ovate_lg',   label: 'Ovate Lg',    kind: 'material' },
-      { id: 'leaf_ovate_sm',   label: 'Ovate Sm',    kind: 'material' },
-      { id: 'leaf_heart',      label: 'Heart',       kind: 'material' },
-      { id: 'leaf_tulip',      label: 'Tulip',       kind: 'material' },
-      { id: 'leaf_fan',        label: 'Fan',         kind: 'material' },
-      { id: 'leaf_palm_cmpd',  label: 'Palm Cmpd',   kind: 'material' },
-      { id: 'leaf_long_ndl',   label: 'Long Needle', kind: 'material' },
-      { id: 'leaf_short_ndl',  label: 'Short Needle', kind: 'material' },
-      { id: 'leaf_scale',      label: 'Scale',       kind: 'material' },
-      { id: 'leaf_narrow',     label: 'Narrow',      kind: 'material' },
-      { id: 'leaf_fine_cmpd',  label: 'Fine Cmpd',   kind: 'material' },
     ],
   },
   {
     key: 'park',
     label: 'Park',
     items: [
-      { id: 'park_grass', label: 'Grass', kind: 'material' },
       // park_path is a real ground layer (baked `park_path` group + 2D Designer
       // + bridge overlay all gate off layerVis['park_path']) — 'layer' kind so
       // it gets the on/off eye + colour, not the inert material-only swatch.
       { id: 'park_path',  label: 'Paths', kind: 'layer' },
-    ],
-  },
-  {
-    key: 'infra',
-    label: 'Infra',
-    items: [
-      { id: 'streetlamp', label: 'Lamps', kind: 'material' },
-      { id: 'arch',       label: 'Arch',  kind: 'material' },
-      { id: 'terrain',    label: 'Ground', kind: 'material' },
     ],
   },
 ]
@@ -376,7 +341,7 @@ export default function CartographSurfaces() {
   const physicsFor = (item) => {
     const def = DEFAULT_MATERIAL_PHYSICS[item.id] || {
       roughness: 0.85, metalness: 0, texture: 'none', textureScale: 1,
-      textureStrength: 0, emissive: '#000000', emissiveIntensity: 0,
+      textureStrength: 0,
     }
     const ov = materialPhysics[item.id] || {}
     return { ...def, ...ov }
@@ -669,15 +634,19 @@ function ShaderControls({ item, phys, set, reset }) {
         </>
       )}
 
-      <div className="flex items-center gap-2">
-        <span style={{ ...lblStyle, width: 70 }}>Emissive</span>
-        <input type="color" value={phys.emissive}
-          onChange={(e) => set({ emissive: e.target.value })}
-          style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }} />
-        <span style={valStyle}>{phys.emissive}</span>
-      </div>
-      <Slider label="Emissive ×" value={phys.emissiveIntensity} min={0} max={5} step={0.1}
-        onChange={(v) => set({ emissiveIntensity: v })} />
+      {/* Emissive only where something reads it — the foundation (LafayetteScene#Foundations). Walls
+          and roofs never read it; the rows that sat under every material were removed 2026-09-26. */}
+      {'emissive' in phys && <>
+        <div className="flex items-center gap-2">
+          <span style={{ ...lblStyle, width: 70 }}>Emissive</span>
+          <input type="color" value={phys.emissive}
+            onChange={(e) => set({ emissive: e.target.value })}
+            style={{ width: 28, height: 20, border: 'none', borderRadius: 4, cursor: 'pointer' }} />
+          <span style={valStyle}>{phys.emissive}</span>
+        </div>
+        <Slider label="Emissive ×" value={phys.emissiveIntensity} min={0} max={5} step={0.1}
+          onChange={(v) => set({ emissiveIntensity: v })} />
+      </>}
     </div>
   )
 }

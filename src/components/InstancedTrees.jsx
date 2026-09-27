@@ -618,7 +618,7 @@ export function SwayDriver() {
   return null
 }
 
-function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }) {
+function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl, canopyOverride }) {
   // Active Look: explicit prop wins; otherwise URL `?look=` fallback; final
   // default 'lafayette-square'. Cartograph passes the active Look explicitly
   // via the StageEnvironment thread; Preview reads ?look= from the URL.
@@ -1258,7 +1258,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     <>
       <SwayDriver />
       <TierDriver />
-      <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} canopyChannel={scene?.canopy} />
+      <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} canopyChannel={canopyOverride ?? scene?.canopy} />
       {/* All-mesh (+ hero impostor) render. ⛔ THIS GROUP NO LONGER HIDES AS A BLOCK.
           It used to be `visible={!overheadMode}`, which made the comment on the overhead
           group below ("a species with no baked asset simply stays on mesh — never blank")
@@ -1357,8 +1357,10 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   )
 }
 
-export default function InstancedTrees({ maxVariants, lookId, bakeLastMs, bakeUrl } = {}) {
+// `canopyOverride`: Stage's live Canopy Light channel, laid over the baked scene.canopy so an edit shows
+// before a bake (Loupe's audit, 2026-09-26: it reached nothing on a poured town until bake-scene ran).
+export default function InstancedTrees({ maxVariants, lookId, bakeLastMs, bakeUrl, canopyOverride } = {}) {
   // No default maxVariants — atlas collapses materials to 2 shared instances,
   // so unbounded variant count is now safe.
-  return <ParkPopulation maxVariants={maxVariants} lookId={lookId} bakeLastMs={bakeLastMs} bakeUrl={bakeUrl} />
+  return <ParkPopulation maxVariants={maxVariants} lookId={lookId} bakeLastMs={bakeLastMs} bakeUrl={bakeUrl} canopyOverride={canopyOverride} />
 }

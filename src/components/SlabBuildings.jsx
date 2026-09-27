@@ -131,10 +131,15 @@ function getLookId(propLook) {
  * can know whether an arbitrary lookId ships a city model.
  * `renderGeometry: false` additionally forces index-only for callers that want it.
  */
-export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true } = {}) {
+// `materialPhysicsOverride`: Stage's live wall/roof physics, laid over the baked scene.materialPhysics so an
+// edit shows before a bake (Loupe's audit, 2026-09-26). The building PALETTE cannot: each building's colour
+// is baked into its vertices — Stage says so on the card.
+export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride } = {}) {
   const LOOK_ID = useMemo(() => getLookId(lookId), [lookId])
   const [data, setData] = useState(null)   // { manifest, bin }
-  const [scene, setScene] = useState(null)
+  const [bakedScene, setScene] = useState(null)
+  const scene = useMemo(() => (materialPhysicsOverride && bakedScene
+    ? { ...bakedScene, materialPhysics: materialPhysicsOverride } : bakedScene), [bakedScene, materialPhysicsOverride])
   // The city model covers only the buildings OSM also mapped, so we keep DRAWING
   // and keep the geometry mounted — suppression is PER BUILDING (aCovered below),
   // not wholesale. Hiding everything left ~46% of Łódź as bare ground.
