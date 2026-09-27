@@ -107,8 +107,29 @@ function StageCascades() {
   return <CascadedShadows lightDirection={keyDirection} keyIntensity={key.intensity} keyColor={keyColor} />
 }
 
-// Pre-set time to noon so sky starts with daylight
-useTimeOfDay.getState().setHour(12)
+// ⭐ STAGE KEEPS THE OPERATOR'S PLACE ACROSS A RELOAD (Jacob, 2026-09-27: editing a Night key, a code change
+// reloaded Stage, it came back at Noon, and the place was lost). The moment — date and time, so the season and
+// the keyframe the playhead is parked on come back too — and whether time is live or paused ride sessionStorage:
+// per tab, survives a reload, not a new tab. Session-only: never saved into a Look, never baked.
+// A first open in a tab starts at noon, so the sky starts with daylight.
+const TOD_PLACE_KEY = 'stage-tod-place'
+;(() => {
+  let saved = null
+  try { saved = JSON.parse(sessionStorage.getItem(TOD_PLACE_KEY) || 'null') } catch { /* storage blocked */ }
+  const tod = useTimeOfDay.getState()
+  if (saved?.live) return                                    // it was following the clock: stay live
+  if (Number.isFinite(saved?.t)) { tod.setTime(new Date(saved.t)); tod.setPaused(!!saved.paused); return }
+  tod.setHour(12)
+})()
+let _todPlaceTimer = null
+useTimeOfDay.subscribe(() => {
+  if (_todPlaceTimer) return                                 // at most twice a second, so playback is saved too
+  _todPlaceTimer = setTimeout(() => {
+    _todPlaceTimer = null
+    const s = useTimeOfDay.getState()
+    try { sessionStorage.setItem(TOD_PLACE_KEY, JSON.stringify({ t: s.currentTime.getTime(), live: s.isLive, paused: s.isPaused })) } catch { /* storage blocked */ }
+  }, 500)
+})
 
 // ── LampGlow pump ──────────────────────────────────────────────────────────
 // Reads the active Look's lampGlow envelope + todSlots from the store and
