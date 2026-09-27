@@ -28,6 +28,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { drawnWaterTest } from '../cartograph/shore-armour.mjs'
+import { waterLevels } from '../cartograph/waterLevel.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const only = process.argv[2] || null
@@ -50,11 +51,17 @@ for (const look of readdirSync(join(ROOT, 'public', 'baked'), { withFileTypes: t
   const stepX = (tm.bounds.maxX - tm.bounds.minX) / (tm.width - 1)
   const stepZ = (tm.bounds.maxZ - tm.bounds.minZ) / (tm.height - 1)
   const gridM = Math.min(stepX, stepZ)
+  // An artifact ruled against the town's levels (bake-revetment `levels`) measures a shore crest above HIGH, so the check
+  // does too — from the same terrain record. ⛔ An artifact that claims levels on a terrain without them cannot be audited.
+  let high = () => 0
+  if (doc.levels) {
+    try { high = waterLevels(tm.water).highAt } catch (e) { console.log(`  ⚠️ ${look.padEnd(16)} revetment.json was ruled against levels but ${e.message} — CANNOT VERIFY`); failed = true; continue }
+  }
   const heightAt = (x, z) => {
     const gx = Math.round((x - tm.bounds.minX) / stepX), gz = Math.round((z - tm.bounds.minZ) / stepZ)
     if (gx < 0 || gz < 0 || gx >= tm.width || gz >= tm.height) return NaN
     const v = tf[gz * tm.width + gx]
-    return Number.isFinite(v) ? v : NaN
+    return Number.isFinite(v) ? v - high(x, z) : NaN
   }
   const mP = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   if (!existsSync(mP)) { console.log(`  ⚠️ ${look.padEnd(16)} no clean/map.json — CANNOT VERIFY`); failed = true; continue }

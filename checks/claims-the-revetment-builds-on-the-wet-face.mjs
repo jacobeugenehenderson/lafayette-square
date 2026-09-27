@@ -68,8 +68,11 @@ for (const look of looks) {
   const faces = revetmentFaces(doc)
   let wet = 0, dry = 0, unreadable = 0
   const worst = []
+  // A breakwater's own walk (bake-revetment `structure`) builds on its outline's OUTWARD side by construction — both of a
+  // breakwater's flanks carry stone, whatever the drawing puts beside them — so the water's side is not its rule.
+  const structural = new Set((doc.arcs || []).filter(a => a.structure).map(a => a.index))
   for (const f of faces) {
-    if (!f.anyArmour) continue
+    if (!f.anyArmour || structural.has(f.arcIndex)) continue
     const p = f.poly
     for (let i = 1; i < p.length - 1; i++) {
       if (!f.stations[i].armour) continue

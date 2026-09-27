@@ -308,28 +308,34 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
   if (!waterRings.length) throw new Error(`bake-revetment: ${scene} — the slab carries ${raw.length} ${WATER_EDGE_SKEL} run(s) but clean/map.json draws NO water (layers.water is empty). The shoreline ink and the drawing disagree; re-pour the town. (${mapPath})`)
   const inWater = drawnWaterTest(waterRings)
 
-  // ⛔ ARMOUR AT A WALK'S TIP SHORTER THAN ITS OWN TIP CONE CARRIES NO WALL. The player caps an armoured tip with the
-  // cone rising inward from it at the angle of repose (revetmentFromSlab crestAndEnds), so a stretch shorter than
-  // crest / tan(repose) never reaches its crest: one station builds nothing, two build a stub cone whose peak lies
-  // past the armour (measured: provincetown shore arcs 6 and 1 after e521e577 let a mapped wall armour their tips;
-  // huron breakwater walks 21 and 42, whose walk stops where the shore walk takes over). Such a stretch is bare as a
-  // `stub`, the same currency as an arc too short to carry two stations. Shore walks and structure walks alike.
+  // ⛔ A HEAP NEEDS TWO STATIONS AT FULL HEIGHT. The player shapes every armour end as a cone at the angle of repose
+  // (revetmentFromSlab crestAndEnds) and caps an armoured TIP with the cone rising inward from it, so a station within
+  // crest / tan(repose) of a tip never stands at its crest; and a station armoured by its tag but under one course of
+  // armour above the water (provincetown arc 5 against MHW: a mapped wall at crest 0) stands none at all. A run with fewer than two stations that do is a lone cone,
+  // not a wall — it builds nothing the far layer can hold. Measured: provincetown shore arcs 6 and 1 (a mapped wall
+  // armouring their tips, after e521e577); huron breakwater walks 21 and 42 (a lone station where the shore walk takes
+  // over); provincetown arc 0 against MHW (lone stations barely one course above the high water). Such a run is bare
+  // as a `stub`, the same currency as an arc too short to carry two stations. Shore walks and structure walks alike.
   const tanR = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
-  const bareShortTips = (stations, verdict) => {
-    for (const dir of [1, -1]) {
-      const k0 = dir === 1 ? 0 : stations.length - 1
-      let k = k0, len = 0, hMax = 0
-      while (k >= 0 && k < stations.length && stations[k].armour) {
-        hMax = Math.max(hMax, stations[k].crest || 0)
-        if (k !== k0) len += Math.hypot(stations[k].x - stations[k - dir].x, stations[k].z - stations[k - dir].z)
-        k += dir
+  const bareShortRuns = (stations, verdict) => {
+    const n = stations.length, cum = new Float64Array(n)
+    for (let k = 1; k < n; k++) cum[k] = cum[k - 1] + Math.hypot(stations[k].x - stations[k - 1].x, stations[k].z - stations[k - 1].z)
+    for (let a = 0; a < n; ) {
+      if (!stations[a].armour) { a++; continue }
+      let b = a
+      while (b + 1 < n && stations[b + 1].armour) b++
+      if (a === 0 && b === n - 1) break                       // the whole walk is armour
+      let full = 0
+      for (let k = a; k <= b; k++) {
+        const H = stations[k].crest || 0
+        const fromTip = Math.min(a === 0 ? cum[k] : Infinity, b === n - 1 ? cum[n - 1] - cum[k] : Infinity)
+        if (H >= MIN_ARMOUR_D50_M && fromTip >= H / tanR) full++   // a station below one course stands no heap at all
       }
-      if (k === k0 || !(k >= 0 && k < stations.length)) continue   // no armour at this tip, or the whole walk is armour
-      if (len >= hMax / tanR) continue
-      for (let q = k0; q !== k; q += dir) {
-        why[verdict[q]]--; why.stub = (why.stub || 0) + 1
-        stations[q] = { ...stations[q], armour: false, why: 'stub' }; delete stations[q].dispute
+      if (full < 2) for (let k = a; k <= b; k++) {
+        why[verdict[k]]--; why.stub = (why.stub || 0) + 1
+        stations[k] = { ...stations[k], armour: false, why: 'stub' }; delete stations[k].dispute
       }
+      a = b + 1
     }
   }
 
@@ -440,7 +446,7 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
       why[a.why] = (why[a.why] || 0) + 1
       verdict.push(a.why)
     }
-    bareShortTips(stations, verdict)
+    bareShortRuns(stations, verdict)
     // ⭐ ARMOURED LENGTH BY HALF-ATTRIBUTION: each station owns half the segment on
     // either side of it. ⛔ Not "both endpoints armoured" (which undercounts every
     // transition — 7.03 km against 7.96 on huron) and not "either endpoint" (which
@@ -524,7 +530,7 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
             const [a, b] = [cur[0], cur[1]], m = Math.hypot(b.x - a.x, b.z - a.z) || 1
             face = ringHas(s.ring, (a.x + b.x) / 2 + (-(b.z - a.z) / m) * 0.01, (a.z + b.z) / 2 + ((b.x - a.x) / m) * 0.01) ? 'left' : 'right'
           }
-          bareShortTips(cur, cur.map(q => q._why))
+          bareShortRuns(cur, cur.map(q => q._why))
           let aM = 0
           for (let i = 0; i < cur.length; i++) if (cur[i].armour) aM += cur[i]._own
           arcs.push({ index: clipped.length + arcs.length, lengthM: +cur.reduce((t, q) => t + q._own, 0).toFixed(1), armouredM: +aM.toFixed(1),
