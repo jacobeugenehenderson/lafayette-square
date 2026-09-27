@@ -62,8 +62,12 @@ widened: 2026-09-26 (Jacob — the always-dirty bake, the 2D refresh, the modal)
 > - **`BRIEF-ls-bleed-excision`:** §3 sites 25 (labels fall back to LS's ribbons) and 26 (`buildingOverrides.json` read
 >   in every town); §1 Class D row 10 (bakes read the TOWN's `design.json`, not the Look's).
 > - **Boz:** the Stage Street shot on huron sat below the ground (cause not established).
-> - **Cause not established:** a plain huron Designer load ran `sectionOpen` 3× in 51 s (46 · 10 · 10 s) with no
->   interaction (the `[LOAD] sectionOpen` timers). Next: is a dep of that memo changing identity after hydrate?
+> - **The Designer's sidewalk build (`sectionOpen`) runs FOUR times per huron load, before ONE React commit** (measured
+>   2026-09-27, quiet server): 14.8 s `FIRST RUN`, then 6.3 · 6.3 · 6.6 s each logging `trigger: (no dep changed?!)`, each
+>   followed by compose (~5 s) — then a single `compose → React commit`; zero store writes in the window. So the RENDER is
+>   repeated before it commits, not re-triggered by data. **Cause not established** between an interrupted-and-restarted
+>   render and `React.StrictMode`'s dev double-invoke (`src/cartograph/main.jsx`, React 18.3.1). Also: the main thread is
+>   blocked ~90 s before the first `[LOAD]` line. (The HMR storm seen earlier was a stale 17:55 Vite; gone after restart.)
 
 ## 1. You are the dispatched agent. Name yourself — one word, not a name another RUNNING session holds (check `ListAgents`; ask Jacob to `/rename`).
 ## 2. Agent: **FRESH.** ⚠️ `cartograph/serve.js`'s bake chain is the subject; check `git status` first — several sessions have been in that file today.
