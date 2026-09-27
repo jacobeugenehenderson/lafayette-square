@@ -31,6 +31,7 @@ import { browseUpFromHeading } from '../lib/browseHeading.js'
 import {
   cameraState, cameraPush, subscribeCameraState, pushCamera, publishCameraState,
 } from './cameraBridge.js'
+import { streetEyeY } from '../utils/elevation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
@@ -552,18 +553,13 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
   const pause = () => { if (playing) setHeroMotion({ ...heroMotion, preview: false }) }
   const goTo = (i) => { pause(); showAt(keyframes[i].t) }
 
-  // ⭐ OPEN PAUSED ON THE FIRST KEY — once per entry into Hero, as soon as the
-  // keys are there (they hydrate after a reload).
-  const opened = useRef(false)
+  // Opening on the first key is the Hero driver's job (HeroPreview), which is
+  // mounted whether or not this card is open. Here: opening the card never
+  // starts playback.
   useEffect(() => {
     setHeroMotion(m => ({ ...m, preview: false }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  useEffect(() => {
-    if (opened.current || !n) return
-    opened.current = true
-    showAt(0)
-  }, [n, showAt])
 
   // Does the view match the key under the playhead? Position + FOV within the
   // rounding the capture uses, and the LOOK DIRECTION — not the target point,
@@ -867,10 +863,14 @@ function BrowseCamera({ cam }) {
 }
 
 function StreetCamera({ cam }) {
+  // Eye height is ABOVE THE DRAWN GROUND at the eye's point (streetEyeY), never an
+  // absolute Y: an absolute 1–5 m stood the eye underground on raised terrain.
+  const [x, , z] = cam.position
+  const ground = streetEyeY(x, z, 0)
   return (
     <div className="space-y-2">
-      <SliderRow label="Eye Height" value={cam.position[1]} min={1} max={5} step={0.1} suffix="m"
-        onChange={(v) => pushCamera({ position: [cam.position[0], v, cam.position[2]] })} />
+      <SliderRow label="Eye Height" value={Math.round((cam.position[1] - ground) * 10) / 10} min={1} max={5} step={0.1} suffix="m"
+        onChange={(v) => pushCamera({ position: [x, streetEyeY(x, z, v), z] })} />
       <SliderRow label="FOV" value={cam.fov} min={30} max={120} suffix="°"
         onChange={(v) => pushCamera({ fov: v })} />
     </div>
@@ -887,6 +887,23 @@ export function HeroPreview({ keyframes, motion }) {
   const frameCount = useRef(0)
   // The motion without the preview speed: Stage runs its own clock at that speed.
   const played = useMemo(() => ({ length: motion.length, mode: motion.mode }), [motion.length, motion.mode])
+
+  // ⭐ OPEN ON THE FIRST KEY — once per entry into Hero, as soon as the keys are
+  // there (they hydrate after a reload). It lives HERE, in the driver that is always
+  // mounted in Hero, and not in the Camera card: the card's panel only mounts when
+  // the card is open, so on a reload with it collapsed the first key was never shown
+  // (Jacob, 2026-09-26: "clicking the word 'camera' fixes it").
+  const opened = useRef(false)
+  const n = keyframes.length
+  useEffect(() => {
+    if (opened.current || !n || !(motion.length > 0)) return
+    opened.current = true
+    heroScrub.t = 0
+    notifyHeroScrub()
+    const p = [0, 0, 0], q = [0, 0, 0]
+    const { fov } = heroPoseAtTime(keyframes, played, 0, p, q)
+    pushCamera({ position: p, target: q, fov })
+  }, [n, motion.length, keyframes, played])
 
   useFrame((_, delta) => {
     // 0) Keep liveCamera fresh (Key here reads this synchronously)

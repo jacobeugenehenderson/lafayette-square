@@ -51,7 +51,9 @@ if (guards.length < 2 || guards.some(l => !/\bthrow\b/.test(l))) fails.push('(a)
 
 // (b) every placer uses it
 const NOT_PLACEMENTS = new Set(['src/cartograph/skyLightChannels.js', 'src/components/InstancedTrees.jsx'])
-const placers = files.filter(f => !NOT_PLACEMENTS.has(f) && /street\??\.eyeHeight/.test(read(f)))
+// A placer reads the authored eye height OR offers an Eye Height control (Stage's
+// Street camera card set an absolute 1–5 m Y and this check did not see it).
+const placers = files.filter(f => !NOT_PLACEMENTS.has(f) && /street\??\.eyeHeight|Eye Height/.test(read(f)))
 if (!placers.length) fails.push('(b) no source places a Street eye — the claim reads nothing')
 for (const f of placers) {
   const src = read(f)
