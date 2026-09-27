@@ -672,6 +672,12 @@ function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new 
     let visible = e.items
     if (acc.length && !keepsSlot) {
       const c = new _Clipper()
+      // ⛔ STRICTLY SIMPLE, because earcut is downstream. Clipper's default output may carry holes that TOUCH
+      // their outer and rings that pinch at a repeated vertex — legal to Clipper, but the triangulator bridges
+      // across them and fills ground where the polygon has none. Measured on provincetown 2026-09-26: the
+      // 18.76 km² beach face came out with 2 holes poking past its outer ring and 19 pinches, and earcut laid
+      // beach over 2.72 ha of the drawn water, outside every block (34 of 138 beach polygons invalid).
+      c.StrictlySimple = true
       c.AddPaths(mine, _PolyType.ptSubject, true)
       c.AddPaths(acc, _PolyType.ptClip, true)
       const tree = new _PolyTree()
