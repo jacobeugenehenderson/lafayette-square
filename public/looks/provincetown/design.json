@@ -159,11 +159,11 @@
     "values": {
       "night": {
         "color": "#ace1fb",
-        "amount": 0.215
+        "amount": 0.1
       },
       "dawn": {
         "color": "#ace1fb",
-        "amount": 0
+        "amount": 0.15
       }
     }
   },
@@ -196,6 +196,9 @@
       },
       "night": {
         "value": 0
+      },
+      "noon": {
+        "value": 1
       }
     }
   },
@@ -415,10 +418,10 @@
   },
   "browseFrame": {
     "center": [
-      0,
-      0
+      499,
+      -470
     ],
-    "altitude": 16383
+    "altitude": 3015
   },
   "browseHeading": {
     "values": {
