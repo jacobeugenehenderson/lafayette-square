@@ -56,14 +56,21 @@ export default function HorizonDisc({ lookId, bakeLastMs, horizonOverride }) {
         uOuter: { value: 1 },
         uColor: { value: new THREE.Color('#3a4a3a') },
       },
+      // ⛔ Stage and Preview render with logarithmicDepthBuffer: without the logdepthbuf chunks this disc writes a
+      // linear depth the test compares against log depth, and it can vanish (Wick, 36226b74).
       vertexShader: `
+        #include <common>
+        #include <logdepthbuf_pars_vertex>
         varying vec2 vLocal;
         void main() {
           vLocal = position.xy;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          #include <logdepthbuf_vertex>
         }
       `,
       fragmentShader: `
+        #include <common>
+        #include <logdepthbuf_pars_fragment>
         uniform float uInner;
         uniform float uOuter;
         uniform vec3 uColor;
@@ -80,6 +87,7 @@ export default function HorizonDisc({ lookId, bakeLastMs, horizonOverride }) {
           return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
         }
         void main() {
+          #include <logdepthbuf_fragment>
           float r = length(vLocal);
           float band = max(1.0, uOuter - uInner);
           // The scalloped edge: noise pushes the fade in and out along the rim.
