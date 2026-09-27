@@ -18,7 +18,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v))
 // The sun intensity a directive means by "an ordinary day". A directive that authors no
 // `sun` leaves the sun as it is, so it contributes no darkness — absence is meaningful
 // here (most clear-weather rules author no sun), not a missing value.
-const NORMAL_SUN_INTENSITY = 1.2
+export const NORMAL_SUN_INTENSITY = 1.2
 
 /** How far the directive's sun sits below an ordinary day, 0..1. */
 export function directiveDarkness(directive) {
@@ -26,15 +26,30 @@ export function directiveDarkness(directive) {
   return sunI == null ? 0 : clamp01((NORMAL_SUN_INTENSITY - sunI) / NORMAL_SUN_INTENSITY)
 }
 
+/** A cloud preset's own coverage (params.coverage), from the preset library. */
+export function presetCoverage(presets, id) {
+  const list = Array.isArray(presets) ? presets : presets?.presets
+  if (!list) throw new Error(`[sky-scalars] ⛔ no cloud preset library to read '${id}' coverage from`)
+  const p = list.find((x) => x.id === id)
+  if (!p) throw new Error(`[sky-scalars] ⛔ cloud preset '${id}' is not in the library`)
+  const v = p.params?.coverage?.values?.value
+  if (!Number.isFinite(v)) throw new Error(`[sky-scalars] ⛔ cloud preset '${id}' has no coverage`)
+  return v
+}
+
 /**
  * @param {object|null} directive the effective (tweened) directive
+ * @param {object|Array} presets the cloud preset library (public/clouds/presets.json)
  * @returns {{cloudCover:number, storminess:number, turbidity:number}}
  */
-export function deriveSkyScalars(directive) {
+export function deriveSkyScalars(directive, presets) {
   const precipI = directive?.precip?.intensity ?? 0
   const darkness = directiveDarkness(directive)
+  // Coverage = each blend weight × THAT preset's own authored coverage. ⛔ Not the raw
+  // weight sum: "clear_sky" (coverage 0) at weight 0.97 read as 97% cloud, so a clear
+  // noon drew as overcast (Jacob, 2026-09-26). No presets, or a preset not in them, throws.
   const cloudWeight = (directive?.clouds ?? [])
-    .reduce((s, c) => s + (c.weight ?? 0), 0)            // blend total ≈ coverage
+    .reduce((s, c) => s + (c.weight ?? 0) * presetCoverage(presets, c.preset), 0)
   return {
     cloudCover: clamp01(Math.max(cloudWeight, precipI, darkness)),
     storminess: clamp01(Math.max(precipI * 0.9, darkness)),

@@ -301,7 +301,7 @@ function ConditionEnvironmentDriver({ directive, degrees = DEFAULT_DEGREES }) {
     const aug = augmentDirective(eff)
     useAtmosphere.getState().setRawDirective(aug)
     useAtmosphere.getState().setTweenedDirective(aug)
-    useSkyState.getState().setSkyScalars(deriveSkyScalars(eff))
+    useSkyState.getState().setSkyScalars(deriveSkyScalars(eff, useMeteorologistStore.getState().presets))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [directive, dp, dw, dc])
 

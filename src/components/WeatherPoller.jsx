@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { fetchWeather } from '../hooks/useWeather'
 import useSkyState from '../hooks/useSkyState'
 import { WEATHER_PRESETS } from '../lib/weatherPresets.js'
+import useAtmosphere from '../hooks/useAtmosphere.js'
 
 const POLL_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
@@ -16,6 +17,7 @@ function WeatherPoller({ mode = 'live' }) {
       const preset = WEATHER_PRESETS[mode]
       if (!preset) throw new Error(`[weather] ⛔ unknown weather mode '${mode}' (have: live, ${Object.keys(WEATHER_PRESETS).join(', ')})`)
       const sky = useSkyState.getState()
+      useAtmosphere.getState().requestSnap()   // a chosen weather lands at once
       sky.setFeedPaused(true)             // a live fetch already in flight must not land over it
       sky.setHourlyForecast([])           // the live forecast is a directive input too
       sky.setWeatherTargets(preset)

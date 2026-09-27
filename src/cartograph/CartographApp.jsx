@@ -449,8 +449,11 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             // fit the 2R circle in the binding viewport axis (portrait-safe) + pad
             toPos = [0, (R * 1.12) / (Math.min(1, aspect) * t), 0]
             toTarget = [0, 0, 0]
-          } else {
+          } else if (shot === 'street') {
             // Street: a ground-level stand point near the centre (its height is set below).
+            // ⛔ `else if`, never a bare `else`: a bare else also caught HERO and stood the
+            // camera on the street point, overwriting the first keyframe on every reload
+            // ("scene STILL opens underwater", Jacob 2026-09-26). Hero is the keyframes.
             toPos = [0, 0, R * 0.08]
             toTarget = [0, 0, R * 0.08 - 0.5]
           }

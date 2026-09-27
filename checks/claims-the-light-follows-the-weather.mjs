@@ -54,7 +54,7 @@ function lightFor(feed) {
   const weather = buildWeatherPayload(feed, noon)
   const signals = deriveSignals(weather, noon, { currentWeatherCode: feed.currentWeatherCode })
   const { directive } = selectDirectiveWithStrengths({ weather, almanac, presets, override: null, modulators, signals })
-  const s = deriveSkyScalars(directive)
+  const s = deriveSkyScalars(directive, presets)
   return { ...s, exposure: weatherExposureScale(s.storminess), precip: directive?.precip }
 }
 const clear = lightFor(preset('clear'))
@@ -108,6 +108,22 @@ const hits = execSync(`grep -rlE "setState\\(\\{[^}]*\\b(cloudCover|storminess)\
   .split('\n').filter(Boolean).filter((f) => !writers.includes(f))
 if (hits.length) bad(`something besides the directive writes the drawn sky: ${hits.join(', ')}`)
 else ok('only the directive path writes cloudCover/storminess')
+
+// Two ways noon stayed dark in Stage under "Clear" (2026-09-26), both proven here:
+// (a) the blend KEPT a previous directive's sun when the next authored none, so a stale
+//     sun of 0 held darkness 1 forever; a directive with no sun must end with no sun.
+// (b) coverage summed raw blend weights, so "clear_sky" (coverage 0) read as overcast.
+{
+  const { lerpDirective } = await import('../src/lib/directive-blend.js')
+  const dark = { clouds: [{ preset: 'stratocumulus_perlucidus', weight: 1 }], sun: { intensity: 0, tint: '#ff9a3a' } }
+  const clearD = { clouds: [{ preset: 'clear_sky', weight: 1 }] }
+  const end = lerpDirective(dark, clearD, 1)
+  if (end.sun) bad(`the blend keeps a sun the new directive does not author (intensity ${end.sun.intensity})`)
+  else ok('a directive that authors no sun ends with no sun (no stale darkness)')
+  const cs = deriveSkyScalars(clearD, presets)
+  if (cs.cloudCover !== 0 || cs.storminess !== 0) bad(`a clear_sky directive draws cloud ${cs.cloudCover}, storm ${cs.storminess}`)
+  else ok('a clear_sky directive draws no cloud and no storm')
+}
 
 // A weather preset is a COMPLETE weather. setWeatherTargets keeps the previous value of
 // any input it isn't given, so a partial preset over a live rainy feed kept the storm
