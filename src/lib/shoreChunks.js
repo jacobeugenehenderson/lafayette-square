@@ -38,7 +38,7 @@ import { rng, seedAt } from './boulderGeometry.js'
 import { MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from '../../cartograph/shore-armour.mjs'
 
 const TAN_REPOSE = Math.tan((RIPRAP_REPOSE_DEG * Math.PI) / 180)
-const d50For = h => Math.max(MIN_ARMOUR_D50_M, Math.min(1.5, h * 0.45))
+export const d50For = h => Math.max(MIN_ARMOUR_D50_M, Math.min(1.5, h * 0.45))
 
 /** Chunk length along the shore, metres. ⛔ A budget, not a look: it sets how much
  *  work one camera step can trigger and how many chunks a view spans. */
@@ -68,7 +68,7 @@ const randQuat = (r) => {
 }
 
 /** Freeze the shore into something chunk indices can be computed against. */
-export function shoreContext({ poly, crestAt, taperAt, waterY = 0, packing = 0.62, paletteSize = 12, seed = 4242, oversample = DART_OVERSAMPLE }) {
+export function shoreContext({ poly, crestAt, taperAt, toeAt = null, berm = null, groundAt = null, waterY = 0, packing = 0.62, paletteSize = 12, seed = 4242, oversample = DART_OVERSAMPLE }) {
   // ⛔ Required: where the armour ends the stones must thin and shrink with the heap
   // (`revetmentFromSlab.js#crestAndEnds`). A caller without it would cut the heap blunt.
   if (typeof taperAt !== 'function') throw new Error('shoreContext: taperAt is required (revetmentFaces gives it) — without it the heap ends in a cut')
@@ -86,7 +86,7 @@ export function shoreContext({ poly, crestAt, taperAt, waterY = 0, packing = 0.6
     const ux = (sg.b.x - sg.a.x) / sg.L, uz = (sg.b.z - sg.a.z) / sg.L
     return { x: sg.a.x + (sg.b.x - sg.a.x) * f, z: sg.a.z + (sg.b.z - sg.a.z) * f, nx: uz, nz: -ux, t: s / total }
   }
-  return { at, total, crestAt, taperAt, waterY, packing, paletteSize, seed, nChunks: Math.ceil(total / CHUNK_M), _cand: new Map(), oversample }
+  return { at, total, crestAt, taperAt, toeAt, berm, groundAt, waterY, packing, paletteSize, seed, nChunks: Math.ceil(total / CHUNK_M), _cand: new Map(), oversample }
 }
 
 /**
@@ -112,7 +112,7 @@ function candidatesOf(ctx, ci) {
   for (let k = 0; k < N; k++) {
     const st = ctx.at(sA + ((sB - sA) * (k + 0.5)) / N)
     const h = ctx.crestAt(st.t)
-    area += Math.hypot(h / TAN_REPOSE, h) * ((sB - sA) / N)
+    area += Math.hypot(h / TAN_REPOSE, h) * (ctx.toeAt ? ctx.toeAt(st.t) : 1) * ((sB - sA) / N)
   }
   const dMid = d50For(ctx.crestAt(ctx.at((sA + sB) / 2).t))
   const darts = Math.ceil((area / (Math.PI * Math.pow(dMid * 0.5, 2))) * (ctx.oversample ?? DART_OVERSAMPLE))
@@ -129,8 +129,9 @@ function candidatesOf(ctx, ci) {
     if (taper < 1 && r() > taper) continue
     const run = h / TAN_REPOSE
     const len = Math.hypot(run, h) || 1
-    const a = r() * len
-    const up = 1 - a / len
+    // ⭐ The face runs on below the water to the bed (`toeAt`, revetmentFromSlab toeFor): stones down to the toe.
+    const a = r() * len * (ctx.toeAt ? ctx.toeAt(st.t) : 1)
+    const up = Math.max(0, 1 - a / len)
     const d = d50For(h) * (0.5 + 0.5 * taper) * (1 - 0.45 * up) * (0.82 + r() * 0.36)
     const adx = (st.nx * run) / len, ady = -h / len, adz = (st.nz * run) / len
     out.push({
@@ -139,6 +140,27 @@ function candidatesOf(ctx, ci) {
       x: st.x + adx * a, y: ctx.waterY + h + ady * a, z: st.z + adz * a,
       d, up, rad: d * 0.5 * ctx.packing,
     })
+  }
+  // ⭐ THE TOE BERM (references f-cem-toe-berm-size): stone laid on the bottom beyond the foot of the slope, `stonesWide`
+  // of the heap's own stones out and `stonesHigh` of them at the heel, tapering to nothing at its outer edge. Its darts
+  // come after the face's, from the same generator, so a chunk's stones are the same whoever computes them.
+  if (ctx.berm && ctx.groundAt && ctx.toeAt) {
+    let bArea = 0
+    for (let k = 0; k < N; k++) { const st = ctx.at(sA + ((sB - sA) * (k + 0.5)) / N), h = ctx.crestAt(st.t)
+      if (h >= MIN_ARMOUR_D50_M) bArea += ctx.berm.stonesWide * d50For(h) * ((sB - sA) / N) }
+    const bDarts = Math.ceil((bArea / (Math.PI * Math.pow(dMid * 0.5, 2))) * (ctx.oversample ?? DART_OVERSAMPLE))
+    for (let k = 0; k < bDarts; k++) {
+      const s = sA + r() * (sB - sA), st = ctx.at(s), h = ctx.crestAt(st.t), taper = ctx.taperAt(st.t)
+      if (!(h > 0) || h < MIN_ARMOUR_D50_M * taper) continue
+      if (taper < 1 && r() > taper) continue
+      const dN = d50For(h), W = ctx.berm.stonesWide * dN, Hb = ctx.berm.stonesHigh * dN
+      const w = r() * W, heel = (h / TAN_REPOSE) * ctx.toeAt(st.t), f = 1 - w / W
+      const x = st.x + st.nx * (heel + w), z = st.z + st.nz * (heel + w)
+      const d = dN * (0.5 + 0.5 * taper) * (0.82 + r() * 0.36)
+      // resting on the bottom, stacked toward the heel — and never riding above the water (a submerged toe)
+      const g = ctx.groundAt(x, z), y = Math.max(g + d * 0.45, Math.min(ctx.waterY - d * 0.2, g + d * 0.45 + r() * Math.max(0, Hb * f - d)))
+      out.push({ id: (ci >>> 0) * 100000 + 50000 + k, s, prio: hashU32(ci, k + 50000, ctx.seed ^ 0x7f4a), x, y, z, d, up: 0, rad: d * 0.5 * ctx.packing })
+    }
   }
   ctx._cand.set(ci, out)
   return out

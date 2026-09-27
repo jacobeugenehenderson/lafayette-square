@@ -1609,6 +1609,16 @@
         "f-ufc-main-walkway-width"
       ],
       "notes": "A pier line is a walkway; fingers are narrower (§5-2.5: preferred minimum 5 ft) but OSM does not say which a line is."
+    },
+    {
+      "id": "q-revetment-toe-berm",
+      "ask": "How far a revetment's toe runs out onto the bottom beyond the foot of its slope",
+      "neededBy": "BRIEF-the-shore-is-closed — Jacob 2026-09-27: 'the rocks need to extend further into the water … the harsh cutoff on the bottom'",
+      "status": "answered",
+      "findings": [
+        "f-cem-toe-berm-size"
+      ],
+      "notes": "Stone-relative, so it scales with each heap's own stone and travels to any town. The kit uses the smallest standard toe (3 wide, 2 high)."
     }
   ],
   "findings": [
@@ -4369,6 +4379,27 @@
       "where": "§5-2.4 Walkways",
       "quote": "The minimum clear width of main walkways should be 6 ft.",
       "scope": "small craft berthing; a MINIMUM clear width",
+      "foundOn": "2026-09-27",
+      "foundBy": "Strand"
+    },
+    {
+      "id": "f-cem-toe-berm-size",
+      "question": "q-revetment-toe-berm",
+      "kind": "range",
+      "value": {
+        "stonesWide": [
+          3,
+          5
+        ],
+        "stonesHigh": [
+          2,
+          3
+        ]
+      },
+      "source": "usace-cem",
+      "where": "Part VI-5, toe stability (armor toe berm), EM 1110-2-1100",
+      "quote": "For a standard toe size of about 3-5 stones wide and 2-3 stones high",
+      "scope": "rubble-mound toe berms; widths in units of the toe stone size",
       "foundOn": "2026-09-27",
       "foundBy": "Strand"
     }

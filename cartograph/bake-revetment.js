@@ -45,6 +45,14 @@ import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { shoreArmourFor, wetSideOf, drawnWaterTest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M } from './shore-armour.mjs'
 import { waterRuns, WATER_EDGE_SKEL } from './shoreRuns.mjs'
+// The toe berm's size in stones, read from references/registry.json (f-cem-toe-berm-size): the low end of each range.
+function toeBerm() {
+  const reg = JSON.parse(readFileSync(new URL('../references/registry.json', import.meta.url), 'utf8'))
+  const f = reg.findings.find(x => x.id === 'f-cem-toe-berm-size')
+  if (!f) throw new Error('⛔ bake-revetment: references has no f-cem-toe-berm-size — the heap\'s toe berm has no size')
+  return { stonesWide: f.value.stonesWide[0], stonesHigh: f.value.stonesHigh[0], from: 'f-cem-toe-berm-size' }
+}
+
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -438,7 +446,9 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, write = t
     // The constants are STAMPED, not looked up at runtime: a slab must render the
     // same a year from now even if these move, and a reader should not have to
     // find the module to know what geometry was ruled.
-    material: { minArmourD50M: MIN_ARMOUR_D50_M, riprapReposeDeg: RIPRAP_REPOSE_DEG, tagReachM: TAG_REACH_M },
+    // ⭐ The toe berm (references f-cem-toe-berm-size: "3-5 stones wide and 2-3 stones high") — the smallest standard toe,
+    // stamped here because the runtime cannot read the registry. It is in units of the heap's own stone.
+    material: { minArmourD50M: MIN_ARMOUR_D50_M, riprapReposeDeg: RIPRAP_REPOSE_DEG, tagReachM: TAG_REACH_M, toeBerm: toeBerm() },
     gridM: +gridM.toFixed(3),
     // ⭐ How far LANDWARD the crest was sampled, stamped so a reader — and a check —
     // can tell what this artifact's heights actually mean. One grid step by ruling

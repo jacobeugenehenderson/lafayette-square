@@ -264,7 +264,9 @@ function fieldAt(x, y, z, { lam0, amp0, octaves, seed, uniform, cellAt = 1 }) {
  * chunk build the same lattice by construction, which is why the seam is exact
  * rather than approximately exact.
  */
-export function drapeGlobals({ poly, crestAt, octaves = 3, tRange = [0, 1] } = {}) {
+// `toeAt(t)` (revetmentFromSlab `toeFor`): the face parameter of the toe, ≥ 1 — the heap runs on below the water to
+// rest on the bed. Absent = 1, the toe at the waterline (the pre-2026-09-27 heap).
+export function drapeGlobals({ poly, crestAt, toeAt = null, berm = null, octaves = 3, tRange = [0, 1] } = {}) {
   const segs = []
   let total = 0
   for (let i = 1; i < poly.length; i++) {
@@ -273,17 +275,18 @@ export function drapeGlobals({ poly, crestAt, octaves = 3, tRange = [0, 1] } = {
     if (L < 1e-9) continue
     segs.push({ a, b, L, s0: total }); total += L
   }
-  let hMax = 0
+  let hMax = 0, toeMax = 1
   for (let k = 0; k <= 200; k++) {
     const t = tRange[0] + (tRange[1] - tRange[0]) * (k / 200)
     hMax = Math.max(hMax, crestAt(t))
+    if (toeAt) { const h = crestAt(t); toeMax = Math.max(toeMax, toeAt(t) + (berm && h > 0 ? berm.stonesWide * d50For(h) * TAN_REPOSE / h : 0)) }
   }
   const blk = d50For(hMax)
   const lam0 = blk * MACRO_WAVELENGTHS_PER_BLOCK
   const amp0 = blk * MACRO_AMPLITUDE_PER_BLOCK
   const lamMin = lam0 / Math.pow(2, Math.max(0, octaves - 1))
   const step = lamMin / VERTS_PER_WAVELENGTH
-  const span = U_HI - U_LO
+  const span = (U_HI - 1) + toeMax - U_LO      // the across range reaches the deepest toe, past it by the same margin
   const s0 = tRange[0] * total, s1 = tRange[1] * total
   const nAlong = Math.max(2, Math.round((s1 - s0) / step) + 1)
   const nAcross = Math.max(3, Math.round(Math.hypot(hMax / TAN_REPOSE, hMax) * span / step) + 1)
@@ -300,9 +303,9 @@ export function drapeGlobals({ poly, crestAt, octaves = 3, tRange = [0, 1] } = {
  *                 positions still match exactly but the NORMALS do not, and a normal
  *                 seam is a thin dark line at a grazing angle and invisible from above.
  */
-export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', octaves = 3, gather = DRAPE_DEFAULT_GATHER, uniform = false, faceted = false, tRange = [0, 1], seed = 99, globals = null, stations = null, normalMargin = 1 } = {}) {
+export function revetmentDrape({ poly, crestAt, toeAt = null, berm = null, groundAt = null, waterY = 0, noise = 'cellular', octaves = 3, gather = DRAPE_DEFAULT_GATHER, uniform = false, faceted = false, tRange = [0, 1], seed = 99, globals = null, stations = null, normalMargin = 1 } = {}) {
   // ── the spine and the lattice: arc-global, and shared by every chunk ─────────
-  const G = globals || drapeGlobals({ poly, crestAt, octaves, tRange })
+  const G = globals || drapeGlobals({ poly, crestAt, toeAt, berm, octaves, tRange })
   const { segs, total, hMax, blk, lam0, amp0, lamMin, step, span, s0, s1, nAlong, nAcross } = G
 
   const at = (s) => {
@@ -341,6 +344,11 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
     // NOTHING. (`heap.js` already refused it; the drape did not.)
     const bare = h < MIN_ARMOUR_D50_M
     const run = h / TAN_REPOSE
+    const toe = toeAt ? toeAt(st.t) : 1                  // ≥ 1: the face runs on below the water to the bed
+    // The toe berm beyond it (references f-cem-toe-berm-size), in the face's u-units: its width and heel height.
+    const hasBerm = !!(berm && groundAt && h > 0)
+    const bermU = hasBerm ? berm.stonesWide * d50For(h) / run : 0, bermH = hasBerm ? berm.stonesHigh * d50For(h) : 0
+    const spanHere = (U_HI - 1) + toe + bermU - U_LO
     // The face's own length and its down-slope unit vector — the sheet's second
     // axis. ⛔ Using the PLAN run here instead would squash the cells wherever the
     // wall is tall, i.e. exactly where the stone is most visible.
@@ -348,7 +356,7 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
     const ux = -st.nz, uz = st.nx                  // along-shore unit (n is the right-hand normal)
     const adx = (st.nx * run) / faceLen, ady = -h / faceLen, adz = (st.nz * run) / faceLen
     for (let j = 0; j < nAcross; j++) {
-      const u = U_LO + span * (j / (nAcross - 1))       // 0 crest … 1 toe, and past both
+      const u = U_LO + spanHere * (j / (nAcross - 1))   // 0 crest … 1 waterline … `toe` on the bed, and past both
       // ── the smooth shell: a ruled surface from crest to toe at the angle of repose
       // ⛔⛔ AND IT MUST NOT KEEP CLIMBING PAST THE CREST. The domain runs past u=0 so
       // the edge can be trimmed out of it — but extending the SLOPE backwards puts
@@ -363,6 +371,9 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
       let x = st.x + st.nx * (uu * run - over)
       let y = waterY + h * (1 - uu)
       let z = st.z + st.nz * (uu * run - over)
+      // ── past the toe, the berm lies ON the ground, from its heel height down to nothing at its outer edge — and never
+      // above the water: on a shallow bed it is an apron just under the surface
+      if (hasBerm && uu > toe) y = Math.min(waterY, groundAt(x, z) + bermH * Math.max(0, 1 - (uu - toe) / bermU))
       // ── the shell's own normal, analytically: the slope face leans waterward
       const cosR = Math.cos(Math.atan(1 / TAN_REPOSE))
       const ny = Math.cos(Math.atan(TAN_REPOSE))         // ≈ 0.82 at 35°
@@ -411,7 +422,7 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
       // which is the tell that the suspect was wrong. The boundary field must be
       // several blocks long so the trim can resolve it.
       const crestEdge = 0.0 - EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
-      const toeEdge = 1.0 + EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.2), 73)) + EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS * 0.85), 74)
+      const toeEdge = toe + bermU + EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.2), 73)) + EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS * 0.85), 74)
       keep[i * nAcross + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
       if (i > bld0 && j) {
         const a = (i - 1) * nAcross + (j - 1), b = (i - 1) * nAcross + j, c = i * nAcross + (j - 1), e = i * nAcross + j

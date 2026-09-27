@@ -33,6 +33,7 @@
  * asserting a winding has already been measured false here once
  * (`shore-armour.mjs`: *"the walk direction IS the wet side"*, dead within hours).
  */
+import { d50For } from './shoreChunks.js'
 
 /** The side of the walk the builders extrude toward. ⛔ Not a preference — read off
  *  `revetmentDrape.js`'s station normal. If that changes, this must change with it
@@ -148,6 +149,8 @@ export function revetmentFaces(doc) {
         crestAt,
         taperAt,
         ends,
+        tanRepose,
+        toeBerm: doc.material?.toeBerm ?? null,
         lengthM: total,
         armouredM: arc.armouredM ?? 0,
         anyArmour: st.some(s => s.armour),
@@ -193,4 +196,45 @@ export function revetmentResponseKind(status, contentType) {
   // file; in production it is a misconfigured server. ⛔ Either way it is NOT the
   // artifact, and either way absence is a GUESS here — so it is not claimed.
   return 'unverifiable'
+}
+
+/**
+ * ⭐ THE TOE RESTS ON THE BED (Jacob, 2026-09-27, looking at the clear shallows: "the rocks need to extend further
+ * into the water … the harsh cutoff on the bottom"). The heap was built to a toe AT the water surface, when the water
+ * was an opaque sheet over a flat bottom; now the shallows are clear and the bottom is a sloping bed, so the stone
+ * visibly stopped at the waterline. A dumped heap runs on down at its angle of repose until it lands on the bottom.
+ * Per station: walk the face on below the water (u > 1, the same slope) until it meets the ground under it, or until
+ * it is deeper than the bottom can be seen (`floorM`, the town's visibility depth) — past that nothing shows.
+ * Returns toeAt(t) ≥ 1, the face parameter of the toe (1 = the waterline), interpolated along the face like its crest.
+ */
+export function toeFor(face, groundAt, floorM, waterY = 0) {
+  // With a toe berm the slope comes down onto the berm's TOP (the bed plus `stonesHigh` of its stones, but never above
+  // the water — a toe berm is submerged), so the heap and its berm are one continuous shape; without one, onto the bed.
+  const bermH = (h) => (face.toeBerm ? face.toeBerm.stonesHigh * d50For(h) : 0)
+  const st = face.stations, n = st.length
+  if (!(floorM > 0) || typeof groundAt !== 'function' || n < 2) return () => 1
+  const cum = new Float64Array(n)
+  for (let i = 1; i < n; i++) cum[i] = cum[i - 1] + Math.hypot(st[i].x - st[i - 1].x, st[i].z - st[i - 1].z)
+  const total = cum[n - 1] || 1, tan = face.tanRepose
+  const toe = new Float64Array(n).fill(1)
+  for (let i = 0; i < n; i++) {
+    const h = face.crestAt(cum[i] / total)
+    if (!(h > 0)) continue
+    const a = st[Math.max(0, i - 1)], b = st[Math.min(n - 1, i + 1)], L = Math.hypot(b.x - a.x, b.z - a.z) || 1
+    const nx = (b.z - a.z) / L, nz = -(b.x - a.x) / L          // the face's waterward normal, as the drape builds it
+    const run = h / tan, uMax = 1 + floorM / h, du = Math.min(0.05, 0.5 / run)
+    let u = 1
+    while (u < uMax) {
+      const un = u + du, x = st[i].x + nx * un * run, z = st[i].z + nz * un * run, y = waterY + h * (1 - un)
+      if (y <= (face.toeBerm ? Math.min(waterY, groundAt(x, z) + bermH(h)) : groundAt(x, z))) break
+      u = un
+    }
+    toe[i] = u
+  }
+  return (t) => {
+    const s = Math.max(0, Math.min(1, t)) * total
+    let i = 1; while (i < n - 1 && cum[i] < s) i++
+    const f = (s - cum[i - 1]) / Math.max(1e-9, cum[i] - cum[i - 1])
+    return toe[i - 1] + (toe[i] - toe[i - 1]) * Math.max(0, Math.min(1, f))
+  }
 }

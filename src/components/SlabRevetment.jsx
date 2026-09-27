@@ -38,7 +38,11 @@ import { makeRevetmentMaterial } from './revetmentMaterial.js'
 import { boulderPalette } from '../lib/boulderGeometry.js'
 import { revetmentDrape, drapeGlobals } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
-import { revetmentFaces, revetmentResponseKind } from '../lib/revetmentFromSlab.js'
+import { revetmentFaces, revetmentResponseKind, toeFor } from '../lib/revetmentFromSlab.js'
+import { getElevationRaw } from '../utils/elevation'
+import { terrainBed } from '../utils/terrainShader'
+
+let _saidNoBerm = false
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 /** How far from the camera the DETAILED drape and the stones are built, metres.
@@ -132,8 +136,13 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // seam exact rather than approximately exact.
   const faces = useMemo(() => {
     if (!doc) return []
+    // ⭐ The heap runs on below the water to rest on the bed, down to where the bottom stops showing.
+    const floorM = terrainBed()?.visibleToM ?? 0
     return revetmentFaces(doc).filter(f => f.anyArmour).map(f => {
-      const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: 3 })
+      const toeAt = toeFor(f, getElevationRaw, floorM)
+      if (!f.toeBerm && !_saidNoBerm) { _saidNoBerm = true; console.warn('[SlabRevetment] ⛔ this revetment.json carries no material.toeBerm — the heaps have no toe berm. ▶ re-bake the revetment') }
+      f = { ...f, toeAt, berm: f.toeBerm, groundAt: getElevationRaw }
+      const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, toeAt, berm: f.berm, octaves: 3 })
       const per = Math.max(4, Math.round(CHUNK_M / G.step))
       const ranges = []
       for (let i = 0; i < G.nAlong - 1; i += per) ranges.push([i, Math.min(G.nAlong - 1, i + per)])
@@ -143,7 +152,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         const m = f.poly[Math.min(f.poly.length - 1, Math.round(((a + b) / 2 / (G.nAlong - 1)) * (f.poly.length - 1)))]
         return m || f.poly[0]
       })
-      const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, oversample: 10, paletteSize: palette.length, seed: doc.seed })
+      const ctx = shoreContext({ poly: f.poly, crestAt: f.crestAt, taperAt: f.taperAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, oversample: 10, paletteSize: palette.length, seed: doc.seed })
       return { ...f, G, ranges, at, ctx, cache: new Map() }
     })
   }, [doc, palette])
@@ -173,7 +182,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       if (!f) continue
       try {
         const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCTAVES })
-        const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCTAVES, globals: G })
+        const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, octaves: FAR_OCTAVES, globals: G })
         if (d?.stats?.tris) made.push({ key: f.key, geometry: d.geometry })
       } catch (e) {
         // ⛔ Loud. A face that cannot build its far layer is a stretch of shore that
@@ -198,7 +207,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         if (Math.hypot(p.x - c.x, p.z - c.z) > NEAR_RADIUS_M) continue
         if (!f.cache.has(k)) {
           try {
-            f.cache.set(k, revetmentDrape({ poly: f.poly, crestAt: f.crestAt, octaves: 3, globals: f.G, stations: f.ranges[k] }))
+            f.cache.set(k, revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, octaves: 3, globals: f.G, stations: f.ranges[k] }))
           } catch (e) { console.error(`[revetment] drape chunk ${f.key}#${k} failed —`, e); continue }
         }
         const built = f.cache.get(k)
