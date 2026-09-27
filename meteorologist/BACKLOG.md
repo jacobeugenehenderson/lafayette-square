@@ -8,6 +8,9 @@ Punchlist for the cloud + weather authoring track. Items are independently shipp
 
 ## In flight — phase queue (next up first)
 
+### ⭐ DIRECTION (Jacob, 2026-09-26): *"eventually we'll want **all** the weather to be controlled by the meteorologist."*
+Stage's **Weather switch** (Light & Sky › Weather: Live · Clear · Overcast · Rain · Snow, `bc920102`) is a stopgap for judging a look in chosen weather. Its four presets are a hand table (`src/lib/weatherPresets.js`) fed through the same `setWeatherTargets` input as the live feed, so the Almanac still picks the directive. **Owed:** the switch's choices become the Meteorologist's own **Conditions** (with their Degrees), authored here, so Stage, the lab and the Canary stand the scene in the same named weathers and the hand table retires.
+
 ### 🔭 2026-06-08 — make Conditions *feel* like the LS install (the staging-area pass)
 
 Framing locked this session: **the Meteorologist is the staging area for the slab** — same stage/elements as LS, different audiences ([[project_meteorologist_is_slab_staging_area]], `ARCHITECTURE.md §2`). Conditions must *be* the slab, not a stand-in.
