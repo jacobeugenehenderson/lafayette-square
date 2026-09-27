@@ -70,6 +70,10 @@ recognisably the same trees, differing only in how the light falls on them.
   `lightDome.ambientFloor` — CONTRAST only; they sum to 1. ✅ **BRIGHTNESS landed 2026-09-27:** the same
   driver sums the live rig's light on an up-facing surface (`uSceneLight`) and the relight multiplies by
   it, so cards darken with the scene (measured 7 pm: cards were 0.34–1.0 against the ground's 0.047).
+  ⚠️ **What still reads as "dark trees too dark, light too bright" is the SPECIES, not the light:** front-shell
+  leaf luminance spans ×13–17 across species (oak_black / oak_white near-black), shaded→lit inside a crown
+  only ~2–2.5×. Known to Jacob; the answer is elaborating the Arborist, not a Stage knob (2026-09-27, not
+  started). ▶ `node scratch/card-tone.mjs <scene>`
 - **A card is a Y-axis billboard**, so it always faces camera: in VIEW space its facing is
   +Z. A synthetic normal from the card UV (a hemisphere bulge) plus the sun direction taken
   into view space is a real directional term needing NO new pages — worth measuring as a
