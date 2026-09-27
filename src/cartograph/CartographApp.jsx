@@ -818,6 +818,7 @@ const MAP_REGISTRY = {
       const archOverride            = useCartographStore(s => activeChannel(s, 'arch'))
       const archLightOverride       = useCartographStore(s => activeChannel(s, 'archLight'))
       const lanternOverride         = useCartographStore(s => activeChannel(s, 'lantern'))
+      const lampsOn                 = useCartographStore(s => s.layerVis?.lamp !== false)
       const canopyOverride          = useCartographStore(s => activeChannel(s, 'canopy'))
       const forceNeonOn             = useCartographStore(s => s.neonForceOn)
       const neonDensity             = useCartographStore(s => s.neonDensity)
@@ -840,7 +841,7 @@ const MAP_REGISTRY = {
           forceContentReady
         /></R3FErrorBoundary>
         {!hiddenLayers.lamp && (
-          <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} lampsOnOverride={lampsOn} /></R3FErrorBoundary>
         )}
         <R3FErrorBoundary name="GatewayArch"><GatewayArch
           lookId={lookId}
@@ -925,6 +926,7 @@ function genericSceneConfig(sceneBoundary) {
       // ⛔ Was absent here: every poured town's Stage read the lantern frozen in scene.json, so
       // Brightness + Glow did nothing until a re-bake (Jacob, 2026-09-26). ▶ checks/claims-light-sources-are-live.mjs
       const lanternOverride   = useCartographStore(s => activeChannel(s, 'lantern'))
+      const lampsOn           = useCartographStore(s => s.layerVis?.lamp !== false)
       // ⛔ Neon was mounted only through LS's LafayetteScene, so every poured town's Stage drew none and all its
       // Neon controls did nothing (Loupe's audit, 2026-09-26). The same component production mounts.
       const forceNeonOn       = useCartographStore(s => s.neonForceOn)
@@ -954,7 +956,7 @@ function genericSceneConfig(sceneBoundary) {
         )}
         {!hiddenLayers.lamp && (
           <R3FErrorBoundary name="BakedLamps">
-            <BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} />
+            <BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} lampsOnOverride={lampsOn} />
           </R3FErrorBoundary>
         )}
         {!hiddenLayers.tree && (
@@ -1115,7 +1117,10 @@ export default function CartographApp() {
     reloadTerrain(activeLookId, { force: bakeChanged })
   }, [activeLookId, bakeLastMs])
 
-  const effectiveLayerVis = inDesigner ? layerVis : (bakedLayerVis || {})
+  // Stage shots read visibility from the BAKE (a hidden layer is not poured). ⭐ Except the lamps: they draw from the
+  // lamp file already baked, so their switch (Furniture › Lamps) is live in Stage as OPERATIONS says — it read the
+  // baked value, so turning lamps on did nothing until a bake (Jacob's Dawn pass, 2026-09-27).
+  const effectiveLayerVis = inDesigner ? layerVis : { ...(bakedLayerVis || {}), lamp: layerVis?.lamp }
   const hiddenLayers = {}
   for (const k in effectiveLayerVis) {
     if (effectiveLayerVis[k] === false) hiddenLayers[k] = true

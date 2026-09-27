@@ -183,6 +183,14 @@ console.log('⑨ THE LAMP COLOUR IS A KEYED FIELD OF THE LANTERN, AND LIVE IN EV
   ;/id: 'lamp',[^\n]*noColor: true/.test(surf) ? ok('Designer › Furniture › Lamps is On/Off only (no second colour picker)') : bad('the Designer Lamps item is missing, or carries a colour picker again')
 }
 
+console.log('⑨b THE LAMPS SWITCH (Furniture › Lamps) IS LIVE IN STAGE — never read from the last bake')
+{
+  const live = /const effectiveLayerVis = inDesigner \? layerVis : \{ \.\.\.\(bakedLayerVis \|\| \{\}\), lamp: layerVis\?\.lamp \}/.test(app)
+  const baked = src('src/components/BakedLamps.jsx')
+  live ? ok('Stage shots take lamp visibility from the live store') : bad('Stage shots read lamp visibility from the bake — turning lamps on does nothing until a bake')
+  ;/lampsOnOverride \?\? scene\?\.layerVis\?\.lamp/.test(baked) ? ok('BakedLamps takes the live switch when Stage passes it') : bad('BakedLamps gates on the baked layerVis only')
+}
+
 console.log('⑩ LAMP SHADERS SPEAK LOG DEPTH (Stage/Preview use logarithmicDepthBuffer)')
 {
   const judge = (text) => [...text.matchAll(/new THREE\.ShaderMaterial\(\{([\s\S]*?)\n\s{4}\}\)/g)].map(m => m[1])
