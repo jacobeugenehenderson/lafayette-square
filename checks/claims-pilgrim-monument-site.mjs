@@ -130,8 +130,9 @@ function slabFootprints(look) {
   const buf = readFileSync(join(ROOT, 'public/baked', look, j.bin))
   const all = new Float32Array(buf.buffer, buf.byteOffset + j.footprintByteOffset, j.footprintPointCount * 2)
   return j.buildings.map(b => {
-    const [s, e] = b.footprintRange, ring = []
-    for (let i = s; i < e; i++) ring.push([all[2 * i], all[2 * i + 1]])
+    // [ptStart, ptCount] (bake-buildings.js), not [start, end]: read as an end, every ring came back empty.
+    const [s, n] = b.footprintRange, ring = []
+    for (let i = s; i < s + n; i++) ring.push([all[2 * i], all[2 * i + 1]])
     return { id: b.id, ring }
   })
 }
