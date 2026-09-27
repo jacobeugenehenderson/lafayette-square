@@ -140,8 +140,9 @@ const useSkyState = create((set, get) => ({
     s.windVector.set(wx, wy)
 
     // ── Derived: astronomyAlpha ──
-    // sunFade: 0 when sun is up (alt>0.12), 1 when sun is well below horizon (alt<-0.02)
-    const sunFade = Math.max(0, Math.min(1, (-s.sunElevation - 0.02) / 0.12))
+    // sunFade: 0 while the sun is up (alt > −1.1°), 1 at astronomical darkness (−18°, −0.314 rad): the brightest
+    // stars by civil dusk (~0.3), the full field only in real night (USNO twilight definitions; Jacob 2026-09-27).
+    const sunFade = Math.max(0, Math.min(1, (-s.sunElevation - 0.02) / 0.294))
     const astronomyAlpha = sunFade * (1 - cloudCover * 0.7)
 
     // ── Derived: sunsetPotential ──

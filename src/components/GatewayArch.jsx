@@ -37,8 +37,7 @@ const LONGITUDE = INSTANCE.geography.lon
 import { useSceneJson } from '../lib/useSceneJson.js'
 import {
   ARCH_FLAT_DEFAULTS,
-  ARCHLIGHT_FLAT_DEFAULTS, ARCHLIGHT_FIELD_KEYS,
-} from '../cartograph/skyLightChannels.js'
+  ARCHLIGHT_FLAT_DEFAULTS, ARCHLIGHT_FIELD_KEYS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { resolveLookId } from '../lib/resolveLookId.js'
 
@@ -121,7 +120,7 @@ export function createArchGeometry(curveSegs = 120) {
 }
 
 const ARCH_DEFAULT_CHANNEL      = Object.freeze({ values: { ...ARCH_FLAT_DEFAULTS } })
-const ARCHLIGHT_DEFAULT_CHANNEL = Object.freeze({ values: { ...ARCHLIGHT_FLAT_DEFAULTS } })
+const ARCHLIGHT_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('archLight'))
 
 export default function GatewayArch({
   lookId, bakeLastMs, archOverride, archLightOverride,

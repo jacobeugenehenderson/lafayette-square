@@ -68,6 +68,11 @@ const writes = (() => {
     const f = fieldsIn(m[2], vars)
     if (f.size) out.set(m[1].replace(/\?/g, ''), f)
   }
+  // Colours are written with .set(…) (a THREE.Color), not assigned.
+  for (const m of frame.matchAll(/([\w.?\[\]]+?\.(?:value|emissive))\.set\(([^\n]+)\)/g)) {
+    const f = fieldsIn(m[2], vars)
+    if (f.size) out.set(m[1].replace(/\?/g, ''), f)
+  }
   return out
 })()
 {
@@ -166,14 +171,16 @@ console.log('⑧ EVERY NEON SWATCH COLOURS THE NEON (it existed for months and d
   ;/CATEGORY_HEX\[k\]/.test(surf) ? ok('swatch defaults come from the renderer\'s own CATEGORY_HEX (one table)') : bad('the Surfaces neon defaults are a second copy of CATEGORY_HEX')
 }
 
-console.log('⑨ THE LAMP COLOUR LIVES ON THE LIGHT SOURCES CARD AND IS LIVE IN EVERY STAGE')
+console.log('⑨ THE LAMP COLOUR IS A KEYED FIELD OF THE LANTERN, AND LIVE IN EVERY STAGE')
 {
-  const stage = src('src/stage/StageApp.jsx'), surf = src('src/cartograph/CartographSurfaces.jsx')
-  ;/setColor\('lamp'/.test(stage) && /<LampSourceControls \/>/.test(stage) ? ok('Light Sources › Lamp colour writes layerColors.lamp') : bad('no Lamp colour control on the Light Sources card')
+  const chans = src('src/cartograph/skyLightChannels.js'), lights = src('src/components/StreetLights.jsx'), surf = src('src/cartograph/CartographSurfaces.jsx')
+  ;/LANTERN_FIELDS = \[[\s\S]*?key: 'color'[\s\S]*?\]/.test(chans) ? ok('Light Sources › Lantern › Colour is a keyed field') : bad('the lantern channel has no Colour field')
+  ;/lant\.color/.test(lights) ? ok('StreetLights colours every lamp light from the resolved lantern colour') : bad('StreetLights does not read the lantern colour')
+  // ⛔ The retired flat swatch must not come back beside it: two colours for one light, one of them dead.
+  const stale = ['src/stage/StageApp.jsx', 'src/components/StreetLights.jsx', 'src/components/BakedLamps.jsx', 'src/cartograph/CartographApp.jsx']
+    .filter(f => /layerColors\??\.lamp|lampColorOverride/.test(src(f)))
+  stale.length ? bad(`the retired layerColors.lamp swatch is still read in ${stale.join(', ')}`) : ok('no second lamp colour (layerColors.lamp) is read anywhere')
   ;/id: 'lamp',[^\n]*noColor: true/.test(surf) ? ok('Designer › Furniture › Lamps is On/Off only (no second colour picker)') : bad('the Designer Lamps item is missing, or carries a colour picker again')
-  const mounts = [...app.matchAll(/<(BakedLamps|StreetLights)\b[^>]*>/g)].map(m => m[0])
-  const dead = mounts.filter(t => !/lampColor(Override)?=\{lampColorOverride\}/.test(t))
-  dead.length ? dead.forEach(t => bad(`lamp colour is baked-only here: ${t}`)) : ok(`${mounts.length} Stage lamp mounts take the live colour`)
 }
 
 console.log('⑩ LAMP SHADERS SPEAK LOG DEPTH (Stage/Preview use logarithmicDepthBuffer)')

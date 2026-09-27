@@ -794,8 +794,7 @@ const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
 // The toy rig's lamps, with the live Lantern like every other town's Stage (▶ claims-light-sources-are-live).
 function ToyStageLamps() {
   const lanternOverride = useCartographStore(s => activeChannel(s, 'lantern'))
-  const lampColorOverride = useCartographStore(s => activeChannel(s, 'layerColors')?.lamp)
-  return <StreetLights lamps={toyLamps.lamps} lantern={lanternOverride} lampColor={lampColorOverride} />
+  return <StreetLights lamps={toyLamps.lamps} lantern={lanternOverride} />
 }
 
 const MAP_REGISTRY = {
@@ -819,7 +818,6 @@ const MAP_REGISTRY = {
       const archOverride            = useCartographStore(s => activeChannel(s, 'arch'))
       const archLightOverride       = useCartographStore(s => activeChannel(s, 'archLight'))
       const lanternOverride         = useCartographStore(s => activeChannel(s, 'lantern'))
-      const lampColorOverride       = useCartographStore(s => activeChannel(s, 'layerColors')?.lamp)
       const canopyOverride          = useCartographStore(s => activeChannel(s, 'canopy'))
       const forceNeonOn             = useCartographStore(s => s.neonForceOn)
       const neonDensity             = useCartographStore(s => s.neonDensity)
@@ -842,7 +840,7 @@ const MAP_REGISTRY = {
           forceContentReady
         /></R3FErrorBoundary>
         {!hiddenLayers.lamp && (
-          <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} lampColorOverride={lampColorOverride} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} /></R3FErrorBoundary>
         )}
         <R3FErrorBoundary name="GatewayArch"><GatewayArch
           lookId={lookId}
@@ -927,7 +925,6 @@ function genericSceneConfig(sceneBoundary) {
       // ⛔ Was absent here: every poured town's Stage read the lantern frozen in scene.json, so
       // Brightness + Glow did nothing until a re-bake (Jacob, 2026-09-26). ▶ checks/claims-light-sources-are-live.mjs
       const lanternOverride   = useCartographStore(s => activeChannel(s, 'lantern'))
-      const lampColorOverride = useCartographStore(s => activeChannel(s, 'layerColors')?.lamp)
       // ⛔ Neon was mounted only through LS's LafayetteScene, so every poured town's Stage drew none and all its
       // Neon controls did nothing (Loupe's audit, 2026-09-26). The same component production mounts.
       const forceNeonOn       = useCartographStore(s => s.neonForceOn)
@@ -957,7 +954,7 @@ function genericSceneConfig(sceneBoundary) {
         )}
         {!hiddenLayers.lamp && (
           <R3FErrorBoundary name="BakedLamps">
-            <BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} lampColorOverride={lampColorOverride} />
+            <BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} />
           </R3FErrorBoundary>
         )}
         {!hiddenLayers.tree && (

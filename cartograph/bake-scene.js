@@ -38,18 +38,7 @@ import { assertBakeTarget } from './bake-target.js'
 import { migrateSkyChannel } from '../src/cartograph/skyGrid.js'
 import { assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
 import {
-  AMBIENT_FLAT_DEFAULTS, HEMI_FLAT_DEFAULTS,
-  DIRSUN_FLAT_DEFAULTS, DIRMOON_FLAT_DEFAULTS,
-  CONSTELLATIONS_FLAT_DEFAULTS, MILKYWAY_FLAT_DEFAULTS, STARS_FLAT_DEFAULTS,
-  BLOOM_FLAT_DEFAULTS, AO_FLAT_DEFAULTS, EXPOSURE_FLAT_DEFAULTS,
-  WARMTH_FLAT_DEFAULTS, FILL_FLAT_DEFAULTS,
-  MIST_FLAT_DEFAULTS, HALO_FLAT_DEFAULTS,
-  SKY_GAIN_FLAT_DEFAULTS,
-  GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS, CANOPY_FLAT_DEFAULTS, DOF_FLAT_DEFAULTS,
-  SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
-  ARCH_FLAT_DEFAULTS, migrateArchLight, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FLAT_DEFAULTS,
-  CLOUDS_FLAT_DEFAULTS,
-  NEON_FLAT_DEFAULTS,
+  SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS, migrateArchLight, CLOUDS_FLAT_DEFAULTS, kitDayChannel,
 } from '../src/cartograph/skyLightChannels.js'
 
 // SC.5 — strip transient runtime-UI fields (preview, speed) off the
@@ -103,38 +92,35 @@ export async function bakeScene({ look } = {}) {
     // { <param>: value } } }`. Carried verbatim; the runtime validates and names bad rows.
     // Absent ⇒ {} ⇒ the kit table, which is the honest default, not a stand-in.
     surfaces:        design.surfaces        ?? {},
-    lampGlow:        design.lampGlow        || { grass: 0.06, trees: 0.40, pool: 1.0 },
-    neon:            design.neon            || { values: { ...NEON_FLAT_DEFAULTS } },
+    lampGlow:        design.lampGlow        || kitDayChannel('lampGlow'),
+    neon:            design.neon            || kitDayChannel('neon'),
     // SC.1 — sky / lighting / celestial. Sky pivoted (2026-05-20 ADR) to
     // kit-canonical 4 anchor cards in skyGrid.js + per-Look sparse
     // overrides in scene.json. migrateSkyChannel normalizes any legacy
     // shape (1-layer, 4-anchor bff87b5, or new) to { overrides: [...] }.
     sky:            migrateSkyChannel(design.sky),
-    ambient:        design.ambient        || { values: { ...AMBIENT_FLAT_DEFAULTS } },
-    hemi:           design.hemi           || { values: { ...HEMI_FLAT_DEFAULTS } },
-    dirSun:         design.dirSun         || { values: { ...DIRSUN_FLAT_DEFAULTS } },
-    dirMoon:        design.dirMoon        || { values: { ...DIRMOON_FLAT_DEFAULTS } },
-    constellations: design.constellations || { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
-    stars:          design.stars          || { values: { ...STARS_FLAT_DEFAULTS } },
-    milkyWay:       design.milkyWay       || { values: { ...MILKYWAY_FLAT_DEFAULTS } },
-    // SC.2 + SC.3 — post-FX channels (Post card + Sky & Light). Operator
-    // authors via cartograph sliders; defaults seeded from
-    // skyLightChannels.js so an unauthored Look renders identically to
-    // today's hardcoded post-FX literals.
-    bloom:    design.bloom    || { values: { ...BLOOM_FLAT_DEFAULTS } },
-    ao:       design.ao       || { values: { ...AO_FLAT_DEFAULTS } },
-    exposure: design.exposure || { values: { ...EXPOSURE_FLAT_DEFAULTS } },
-    warmth:   design.warmth   || { values: { ...WARMTH_FLAT_DEFAULTS } },
-    fill:     design.fill     || { values: { ...FILL_FLAT_DEFAULTS } },
-    mist:     design.mist     || { values: { ...MIST_FLAT_DEFAULTS } },
-    halo:     design.halo     || { values: { ...HALO_FLAT_DEFAULTS } },
-    // Sky Layer Gain — exposure scoped to the sky dome (owns "how dark is
-    // night"). Unauthored Looks emit 1.0 (no-op); LS authors a TOD curve.
-    skyGain:  design.skyGain  || { values: { ...SKY_GAIN_FLAT_DEFAULTS } },
-    grade:    design.grade    || { values: { ...GRADE_FLAT_DEFAULTS } },
-    grain:    design.grain    || { values: { ...GRAIN_FLAT_DEFAULTS } },
-    dof:      design.dof      || { values: { ...DOF_FLAT_DEFAULTS } },
-    shadow:   design.shadow   || { values: { ...SHADOW_FLAT_DEFAULTS } },
+    ambient:        design.ambient        || kitDayChannel('ambient'),
+    hemi:           design.hemi           || kitDayChannel('hemi'),
+    dirSun:         design.dirSun         || kitDayChannel('dirSun'),
+    dirMoon:        design.dirMoon        || kitDayChannel('dirMoon'),
+    constellations: design.constellations || kitDayChannel('constellations'),
+    stars:          design.stars          || kitDayChannel('stars'),
+    milkyWay:       design.milkyWay       || kitDayChannel('milkyWay'),
+    // SC.2 + SC.3 — post-FX channels (Post card + Sky & Light). An unauthored channel bakes THE KIT'S DAY
+    // (skyLightChannels.js#kitDayChannel) — the same channel Stage hydrates and production first-paints.
+    bloom:    design.bloom    || kitDayChannel('bloom'),
+    ao:       design.ao       || kitDayChannel('ao'),
+    exposure: design.exposure || kitDayChannel('exposure'),
+    warmth:   design.warmth   || kitDayChannel('warmth'),
+    fill:     design.fill     || kitDayChannel('fill'),
+    mist:     design.mist     || kitDayChannel('mist'),
+    halo:     design.halo     || kitDayChannel('halo'),
+    // Sky Layer Gain — exposure scoped to the sky dome.
+    skyGain:  design.skyGain  || kitDayChannel('skyGain'),
+    grade:    design.grade    || kitDayChannel('grade'),
+    grain:    design.grain    || kitDayChannel('grain'),
+    dof:      design.dof      || kitDayChannel('dof'),
+    shadow:   design.shadow   || kitDayChannel('shadow'),
     // Canopy Light (Surfaces → Trees) — how the tree impostor CARDS answer to the
     // scene's key light. Every town carries it, and an unauthored one carries
     // `directional: 0` = the historical flat dimmer, so emitting it unconditionally
@@ -144,7 +130,7 @@ export async function bakeScene({ look } = {}) {
     // it appears on this line. That is the design.json-is-not-scene.json trap, and
     // it fails in the worst direction — the operator authors, sees it work, and
     // the slab quietly carries nothing.
-    canopy:   design.canopy   || { values: { ...CANOPY_FLAT_DEFAULTS } },
+    canopy:   design.canopy   || kitDayChannel('canopy'),
     // SC.5 — per-shot camera + Hero authoring + Browse heading. Runtime
     // inputs (Browse altitude, Hero target, Street position/target)
     // explicitly NOT baked: they come from computeBrowseAltitude(aspect),
@@ -188,8 +174,8 @@ export async function bakeScene({ look } = {}) {
     // is what LS's scene.json already carries today.
     ...(design.landscape?.source ? { landscape: design.landscape } : {}),
     archLight: migrateArchLight(design),
-    setPieceLight: design.setPieceLight || { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },   // the set-piece's uplights
-    lantern:   design.lantern   || { values: { ...LANTERN_FLAT_DEFAULTS } },
+    setPieceLight: design.setPieceLight || kitDayChannel('setPieceLight'),   // the set-piece's uplights
+    lantern:   design.lantern   || kitDayChannel('lantern'),
     // SC.6 — Meteorologist coupler scaffolding. Forward-compat field for
     // the future <Atmosphere /> raymarched runtime. v1's CloudDome
     // ignores `clouds`; the field round-trips through bake so Atmosphere

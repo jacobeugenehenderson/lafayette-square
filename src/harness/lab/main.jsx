@@ -36,6 +36,7 @@ import CloudDome from '../../components/CloudDome'
 import AtmosphereDirectiveDriver from '../../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../../components/WeatherEffects'
 import { PostProcessing, ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../../components/PostProcessing.jsx'
+import { NeonDriver } from '../../components/NeonBands.jsx'
 import { TimeTicker, SkyStateTicker } from '../../components/Scene.jsx'
 import { ShaderLinkGuard } from '../../lib/shaderLinkGuard.jsx'
 import { useSceneJson } from '../../lib/useSceneJson.js'
@@ -228,6 +229,7 @@ function App() {
         <StageShadows lookId={LOOK} bakeLastMs={bakeLastMs} />
         <StageFog lookId={LOOK} bakeLastMs={bakeLastMs} />
         <LampGlowDriver lookId={LOOK} bakeLastMs={bakeLastMs} />
+        <NeonDriver lookId={LOOK} bakeLastMs={bakeLastMs} />
         <ShaderLinkGuard />
         <R3FErrorBoundary name="CelestialBodies"><CelestialBodies lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>

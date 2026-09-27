@@ -10,23 +10,16 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 // Kept static + LS-guarded so a non-LS look shows no lamps; its by-lookId load
 // belongs to the roster/render-emit arc alongside the lightmap. Owner: that arc.
 import lampData from '../data/street_lamps.json'
-import { useSceneJson } from '../lib/useSceneJson.js'
 import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { getElevationRaw } from '../utils/elevation'
 import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS } from '../cartograph/skyLightChannels.js'
+import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
-import { buildLampGrid, canopyWipe, LAMP_DEFAULT_HEX } from '../lib/lampPool.js'
+import { buildLampGrid, canopyWipe } from '../lib/lampPool.js'
 
-const LANTERN_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANTERN_FLAT_DEFAULTS } })
+const LANTERN_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('lantern'))
 
-function _resolveLookId(propLookId) {
-  if (propLookId) return propLookId
-  if (typeof window === 'undefined') return INSTANCE.lookId
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
-}
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const LAMP_URL = `${import.meta.env.BASE_URL}models/lamp-posts/victorian-lamp.glb`
@@ -35,7 +28,7 @@ const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
 const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
 
 import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
-const LAMP_COLOR_ON = new THREE.Color(LAMP_DEFAULT_HEX)  // warm incandescent white
+const LAMP_COLOR_ON = new THREE.Color(LANTERN_FLAT_DEFAULTS.color)  // until the first frame applies the keyed colour
 const GLOW_Y = 3.3       // world Y of lantern center
 const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.18 // tight glass halo
 const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern center
@@ -45,7 +38,7 @@ const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern cente
 
 const GLOW_SIZE_FIELD = LANTERN_FIELDS.find(f => f.key === 'glowSize')
 
-function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: lanternChannel, lampColor } = {}) {
+function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {}) {
   const lampRef = useRef()
   const glowRef = useRef()
   const bulbRef = useRef()
@@ -61,14 +54,9 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
   const lampMatRef = useRef(null)
   const glowMatRef = useRef(null)
   const getLightingPhase = useTimeOfDay(s => s.getLightingPhase)
-  // Panel-driven lamp tint, sourced from scene.json (frozen-at-bake) per
-  // couplers plan §1. Stage panel writes layerColors.lamp into design.json
-  // → bake → scene.json.layerColors.lamp; runtime applies via useEffect
-  // (not useFrame) — per-frame overwrite of the instanced material's
-  // emissive caused lamps to vanish at daytime.
-  const scene = useSceneJson(_resolveLookId(lookId), bakeLastMs)
-  // Stage passes the live colour (Light Sources › Lamp colour); production reads it baked.
-  const panelLampColor = lampColor ?? scene?.layerColors?.lamp
+  // The lamp's colour is the Lantern channel's `color`, keyed like its brightness (warm gaslamps at Dusk, cold
+  // glitter at Night). Applied in the frame loop ONLY when the resolved hex changes — never a per-frame overwrite.
+  const appliedColor = useRef(null)
 
   // Effect that re-applies tint lives below the lampModel useState so the
   // dep array can include it (re-runs when the GLB finishes loading).
@@ -273,18 +261,8 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
   // Glass panels are cut out via alphaTest so glow orbs show through the cage.
   const [lampModel, setLampModel] = useState(null)
 
-  // Apply panel lamp tint once on mount + whenever the picker changes or the
-  // GLB finishes loading. Avoids the per-frame mutation that previously
-  // caused the iron material to vanish at daytime.
-  useEffect(() => {
-    const lampCol = panelLampColor || LAMP_DEFAULT_HEX  // layerColors.lamp, else the warm default
-    if (glowMatRef.current?.uniforms?.uColor) glowMatRef.current.uniforms.uColor.value.set(lampCol)
-    haloMat.uniforms.uColor.value.set(lampCol)   // the soft glow is the same light
-    if (lampMatRef.current?.emissive) lampMatRef.current.emissive.set(lampCol)
-    // The ground light pool IS the lantern's light on the ground — give it the
-    // same colour (consumed by the grass + FadeMesh pool term via uLampColor).
-    _lampGlow.colorUniform.value.set(lampCol)
-  }, [panelLampColor, lampModel, haloMat])
+  // A freshly loaded lamp model (or glow material) has not had the colour yet — re-apply on the next frame.
+  useEffect(() => { appliedColor.current = null }, [lampModel, haloMat])
 
   useEffect(() => {
     const loader = new GLTFLoader()
@@ -474,6 +452,14 @@ function StreetLights({ lamps: lampsProp, reach, lookId, bakeLastMs, lantern: la
       lanternChannel?.animated ? getTodSlotMinutes(tod.currentTime) : null,
       LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
     )
+    const lampCol = lant.color || LANTERN_FLAT_DEFAULTS.color
+    if (lampCol !== appliedColor.current) {
+      appliedColor.current = lampCol
+      if (glowMatRef.current?.uniforms?.uColor) glowMatRef.current.uniforms.uColor.value.set(lampCol)
+      haloMat.uniforms.uColor.value.set(lampCol)   // the soft glow is the same light
+      if (lampMatRef.current?.emissive) lampMatRef.current.emissive.set(lampCol)
+      _lampGlow.colorUniform.value.set(lampCol)    // the pools, trees and walls: the lantern's light, same colour
+    }
     const bulb = t * Math.max(0, lant.intensity ?? 0)
     if (lampMatRef.current) lampMatRef.current.emissiveIntensity = bulb
     bulbOnUniform.current.value = Math.min(1, bulb)

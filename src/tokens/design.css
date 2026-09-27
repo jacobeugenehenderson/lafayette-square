@@ -89,6 +89,7 @@
   --tod-sunset:   rgb(196, 100, 80);   /* burnt orange-red, fading warm */
   --tod-dusk:     rgb(140, 110, 175);  /* deeper violet, twilight purple */
   --tod-night:    rgb(95, 115, 175);   /* deep blue, full dark */
+  --tod-deep:     rgb(48, 56, 112);    /* navy, the sky's darkest hour */
 
   /* Fonts */
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;

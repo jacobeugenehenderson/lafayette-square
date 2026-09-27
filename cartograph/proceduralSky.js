@@ -28,6 +28,13 @@ export const KEYFRAMES = {
   night:           { horizon: '#1a1525', low: '#0f0f18', mid: '#080810', high: '#050508' },
   day:             { horizon: '#9dc5e0', low: '#80b5e0', mid: '#5a9ce0', high: '#4a90e0' },
 
+  // ⭐ THE BLUE HOUR (Jacob, 2026-09-27: Dusk "should really lean in to the nature of the hour"). Sun −8°: the
+  // sky's deep saturated blue between the afterglow and the night. The ladder used to reach night at −6.9°, so the
+  // dome had no blue hour at all; it now holds blue through nautical twilight and reaches night at −18°
+  // (astronomical), where the sky is really dark (USNO twilight definitions, registry q-twilight-definitions).
+  dawnBlue:        { horizon: '#4a4478', low: '#2c2c66', mid: '#1a2256', high: '#0e153c' },
+  duskBlue:        { horizon: '#3b3f78', low: '#26306a', mid: '#18245a', high: '#0e1740' },
+
   // Dawn ladder (cooler / rose / steel / lavender)
   dawnDeep:        { horizon: '#3a2838', low: '#30254a', mid: '#151838', high: '#0a0c1a' },
   dawnPeak:        { horizon: '#c07050', low: '#885578', mid: '#4a3878', high: '#141838' },
@@ -184,8 +191,9 @@ function lerpBands(a, b, t) {
 // Returns { horizon, low, mid, high, sunGlow } as hex strings.
 //
 // Altitude breakpoints (radians, mirror the historical shader):
-//   alt < -0.12          → night
-//   alt < -0.02          → night → deep   (twilight begin)
+//   alt < -0.314         → night          (astronomical, −18°)
+//   alt < -0.14          → night → blue   (the blue hour holds through nautical twilight)
+//   alt < -0.02          → blue → deep    (twilight begin)
 //   alt <  0.03          → deep → peak    (electric twilight moment)
 //   alt <  0.08          → peak → earlyGolden
 //   alt <  0.22          → earlyGolden → golden
@@ -196,16 +204,19 @@ export function proceduralSkyAt(altitude, isDawn, seasonTransform = SEASON_TRANS
   const alt = altitude
   const tk = transformKeyframes(KEYFRAMES, seasonTransform)
 
+  const blue        = isDawn ? tk.dawnBlue        : tk.duskBlue
   const deep        = isDawn ? tk.dawnDeep        : tk.duskDeep
   const peak        = isDawn ? tk.dawnPeak        : tk.duskPeak
   const earlyGolden = isDawn ? tk.dawnEarlyGolden : tk.duskEarlyGolden
   const golden      = isDawn ? tk.dawnGolden     : tk.duskGolden
 
   let bands
-  if (alt < -0.12) {
+  if (alt < -0.314) {
     bands = { ...tk.night }
+  } else if (alt < -0.14) {
+    bands = lerpBands(tk.night, blue, (alt + 0.314) / 0.174)
   } else if (alt < -0.02) {
-    bands = lerpBands(tk.night, deep, (alt + 0.12) / 0.10)
+    bands = lerpBands(blue, deep, (alt + 0.14) / 0.12)
   } else if (alt < 0.03) {
     bands = lerpBands(deep, peak, (alt + 0.02) / 0.05)
   } else if (alt < 0.08) {

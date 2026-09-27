@@ -42,18 +42,10 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { resolveGroupAtMinute, getTodSlotMinutes, resolveLampGlowAtMinute } from '../cartograph/animatedParam.js'
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState'
 import {
-  BLOOM_FLAT_DEFAULTS,
-  AO_FLAT_DEFAULTS,
-  EXPOSURE_FLAT_DEFAULTS,
-  WARMTH_FLAT_DEFAULTS,
-  FILL_FLAT_DEFAULTS, migrateFill,
+  EXPOSURE_FLAT_DEFAULTS, migrateFill,
   MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, mistFogDensity, migrateMist,
-  HALO_FLAT_DEFAULTS,
-  GRADE_FLAT_DEFAULTS,
-  GRAIN_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
-  DOF_FLAT_DEFAULTS, migrateDof,
-} from '../cartograph/skyLightChannels.js'
+  DOF_FLAT_DEFAULTS, migrateDof, kitDayChannel } from '../cartograph/skyLightChannels.js'
 
 // The pipeline is DECLARED once (POSTFX_PIPELINE) and installed by RenderPipeline
 // (renderPipeline.jsx). PostProcessing is now just the mode wrapper: it resolves
@@ -68,20 +60,19 @@ import { resolveLookId } from '../lib/resolveLookId.js'
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
 
-// Inline flat-default envelopes for first-paint (~100ms before scene.json
-// resolves). Mirrors bake-scene.js's emit so unauthored Looks read
-// identically.
-const BLOOM_DEFAULT_CHANNEL    = Object.freeze({ values: { ...BLOOM_FLAT_DEFAULTS } })
-const AO_DEFAULT_CHANNEL       = Object.freeze({ values: { ...AO_FLAT_DEFAULTS } })
-const EXPOSURE_DEFAULT_CHANNEL = Object.freeze({ values: { ...EXPOSURE_FLAT_DEFAULTS } })
-const WARMTH_DEFAULT_CHANNEL   = Object.freeze({ values: { ...WARMTH_FLAT_DEFAULTS } })
-const FILL_DEFAULT_CHANNEL     = Object.freeze({ values: { ...FILL_FLAT_DEFAULTS } })
-const MIST_DEFAULT_CHANNEL     = Object.freeze({ values: { ...MIST_FLAT_DEFAULTS } })
-const HALO_DEFAULT_CHANNEL     = Object.freeze({ values: { ...HALO_FLAT_DEFAULTS } })
-const GRADE_DEFAULT_CHANNEL    = Object.freeze({ values: { ...GRADE_FLAT_DEFAULTS } })
-const GRAIN_DEFAULT_CHANNEL    = Object.freeze({ values: { ...GRAIN_FLAT_DEFAULTS } })
-const SHADOW_DEFAULT_CHANNEL   = Object.freeze({ values: { ...SHADOW_FLAT_DEFAULTS } })
-const DOF_DEFAULT_CHANNEL      = Object.freeze({ values: { ...DOF_FLAT_DEFAULTS } })
+// The kit's day for first paint (~100ms before scene.json resolves) — the same channels bake-scene.js seeds for
+// an unauthored Look, so the two read identically.
+const BLOOM_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('bloom'))
+const AO_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('ao'))
+const EXPOSURE_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('exposure'))
+const WARMTH_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('warmth'))
+const FILL_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('fill'))
+const MIST_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('mist'))
+const HALO_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('halo'))
+const GRADE_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('grade'))
+const GRAIN_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('grain'))
+const SHADOW_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('shadow'))
+const DOF_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('dof'))
 
 // The FilmGrade / FilmGrain / AerialPerspective passes live in renderPipeline.jsx
 // (the manifest references them); they read the driving refs owned by
@@ -298,7 +289,7 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
 // LampGlowPump (store-resolved), exactly as NeonPump↔NeonBands does for neon.
 // Without a mount, those uniforms sit at module defaults (grass 0, trees 0,
 // pool 1.0) and authored lamp pools / tree glow never appear off the slab.
-const LAMPGLOW_DEFAULT_CHANNEL = Object.freeze({ values: {} })   // resolveLampGlowAtMinute fills LAMPGLOW_FLAT_DEFAULTS
+const LAMPGLOW_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('lampGlow'))
 
 export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
   const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)

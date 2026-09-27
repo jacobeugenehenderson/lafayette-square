@@ -37,6 +37,7 @@ import R3FErrorBoundary from './R3FErrorBoundary'
 import Terrain from './Terrain'
 import InstancedTrees from './InstancedTrees'
 import { PostProcessing, StageShadows, StageFog, LampGlowDriver } from './PostProcessing.jsx'
+import { NeonDriver } from './NeonBands.jsx'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { heroKeyframeAnim, randomizeHeroStart } from '../preview/heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
@@ -912,6 +913,7 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
       {!IS_GROUND && <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop /></R3FErrorBoundary>}
       <CameraRig />
       {!IS_GROUND && <LampGlowDriver />}
+      {!IS_GROUND && <NeonDriver />}
       {!IS_GROUND && <PostProcessing viewMode={viewMode} />}
     </Canvas>
     </div>

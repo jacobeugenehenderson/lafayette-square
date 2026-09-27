@@ -16,7 +16,7 @@ const LONGITUDE = INSTANCE.geography.lon
 // SunCalc value, so it gets its own special-case below.
 const SUNCALC_KEY = {
   sunrise: 'sunrise', noon: 'solarNoon', golden: 'goldenHour',
-  sunset: 'sunset', dusk: 'dusk', night: 'night',
+  sunset: 'sunset', dusk: 'dusk', night: 'night', deep: 'nadir',
 }
 
 // Four cardinal year-anchors at solstices + equinoxes. Northern-hemisphere
@@ -52,8 +52,8 @@ function daysInYear(year) {
   return ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365
 }
 
-// Build the ordered tick-time list for a dawn-to-dawn window: the 7 named
-// TOD keyframes (dawn, sunrise, noon, golden, sunset, dusk, night) plus
+// Build the ordered tick-time list for a dawn-to-dawn window: the 8 named
+// TOD keyframes (dawn … night, deep night) plus
 // the next day's dawn as the wrap endpoint. Used for cross-day TOD
 // semantic preservation under year scrub — the thumb stays in the same
 // inter-tick neighborhood (e.g. "halfway between noon and golden") even
@@ -70,6 +70,7 @@ function buildTickTimes(window) {
     t.sunset,
     t.dusk,
     t.night,
+    SunCalc.getTimes(window.end, LATITUDE, LONGITUDE).nadir,  // deep night: the nadir before the next dawn
     window.end,      // next-day dawn
   ].filter(d => d && !isNaN(d.getTime()))
   ticks.sort((a, b) => a.getTime() - b.getTime())
@@ -132,7 +133,11 @@ export function TodStrip({ showHiLo = false, useCelsius = false }) {
     return NAMED_TOD_SLOTS
       .map(slot => ({
         ...slot,
-        time: slot.id === 'dawn' ? dawnWindow.start : times[SUNCALC_KEY[slot.id]],
+        // Deep night is the nadir BEFORE the window's closing dawn: `times` is the window's middle day, whose own
+        // nadir fell before the window opened.
+        time: slot.id === 'dawn' ? dawnWindow.start
+          : slot.id === 'deep' ? SunCalc.getTimes(dawnWindow.end, LATITUDE, LONGITUDE).nadir
+          : times[SUNCALC_KEY[slot.id]],
       }))
       .filter(w => w.time && w.time >= dawnWindow.start && w.time <= dawnWindow.end)
       .map(w => ({ ...w, fraction: dateToFraction(w.time, dawnWindow) }))

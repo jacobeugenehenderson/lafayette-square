@@ -14,7 +14,7 @@ Two load-bearing facts:
 
 1. **The Stage is wall #2 — the store dies into `scene.json`.** Survey freezes chains→polygons (wall #1); the Stage freezes the live **look store** into a flat snapshot the runtime trusts (wall #2). Past the bake, no store exists — the runtime reads `scene.json` cold (`BAKE.md §0`, `[[project_two_bakes_two_walls]]`).
 
-2. **Every look channel is a *time-of-day curve*, not a scalar.** The Stage's vocabulary is the **TodChannel**: a value keyed at the day's seven named sun moments (dawn · sunrise · noon · golden · sunset · dusk · night, `animatedParam.js#NAMED_TOD_SLOTS`), each slot's minute computed from SunCalc at the town's own latitude and date, so a single Look renders golden-hour, noon, and deep-night faithfully. Sky pivoted (2026-05-20 ADR) to kit-canonical 4-anchor cards + per-Look *sparse overrides*; the rest follow `{ values: {…} }`. The operator drags a slider at the current scrubbed time; the channel records the curve. *(`skyLightChannels.js` defaults · `skyGrid.js` migration.)*
+2. **Every look channel is a *time-of-day curve*, not a scalar.** The Stage's vocabulary is the **TodChannel**: a value keyed at the day's eight named sun moments (dawn · sunrise · noon · golden · sunset · dusk · night · deep night = the sun's nadir, `animatedParam.js#NAMED_TOD_SLOTS`), each slot's minute computed from SunCalc at the town's own latitude and date, so a single Look renders golden-hour, noon, and deep-night faithfully. Sky pivoted (2026-05-20 ADR) to kit-canonical 4-anchor cards + per-Look *sparse overrides*; the rest follow `{ values: {…} }`. The operator drags a slider at the current scrubbed time; the channel records the curve. *(`skyLightChannels.js` defaults · `skyGrid.js` migration.)*
 
 ---
 
@@ -42,13 +42,13 @@ Two load-bearing facts:
 > **Arch Lighting (`archLight`, 2026-06-22; moved to Light Sources 2026-06-30).** The cross-aimed foot uplights split off the `arch` *placement* channel into their **own TOD-animatable** group channel (`ARCHLIGHT_*` in `skyLightChannels.js`) so the *wash* rides a day→night curve while placement stays put. Now mounted as a `<TodChannel>` ("Arch uplights") in the **Light Sources** card; `GatewayArch` resolves it per-frame. Legacy Looks migrate via `migrateArchLight` (uplights carried off `arch`; cone radians→degrees).
 >
 > **Light Sources card (was "Lamps"; 2026-06-22, expanded 2026-06-30)** — the man-made emitters:
-> - **`lantern`** — the lamp's own light: **Bulb · Glow · Glow size**, TOD-animatable, × the automatic dusk→night turn-on; the lamp *colour* (`layerColors.lamp`) colours every lamp light. It no longer drives the pools — each knob moves one thing (`OPERATIONS` "Lamps").
+> - **`lantern`** — the lamp's own light: **Bulb · Glow · Glow size · Colour**, TOD-animatable, × the automatic dusk→night turn-on; its Colour colours every lamp light (warm gaslamps at Dusk, cold glitter at Night in the kit's day). It no longer drives the pools — each knob moves one thing (`OPERATIONS` "Lamps").
 > - **`lantern`** = `{ intensity: Bulb, glow: Glow }` and **`lampGlow`** = `{ pool, radius, trees }` (2026-09-26) — five knobs, each moving one thing (`OPERATIONS` "Lamps"); the pool reach is derived, not a knob. The pool renders **baked into the ground** (the contour-correct ring map's R channel; G = contact shadow), not a floating disc — see `BAKE.md` / `SLAB-CONTRACT.md §3.1`.
 > - **`archLight`** ("Arch uplights") — the Gateway Arch's foot uplights; moved here from Hero & Horizon 2026-06-30 (a light source, not framing).
 >
 > ⚠️ **Open (Phase B):** the lamp is conceptually **three** things the panel still conflates as two — the **fixture** (lantern + its aura, which is really Bloom), the **ground pool**, and the **canopy emitter**; and the pool should be its own knob, not slaved to Lantern Brightness (`scratch/LOOK-PANEL-TAXONOMY.md`).
 
-`skyGain` (panel label **"Sky brightness"**) is worth a sentence: it is **exposure scoped to the sky dome only** — it owns "how dark is night" without dimming lamps or lit windows (the single-owner cure for the night-brightness floor sprawl, `ARCHITECTURE.md §7`, 2026-06-07).
+`skyGain` (panel label **"Sky brightness"**) is worth a sentence: it is **exposure scoped to the sky dome only** — it owns how dark the night SKY is without dimming lamps or lit windows (`ARCHITECTURE.md §7`, 2026-06-07). ⭐ The night GROUND's light is the moon's (Jacob, 2026-09-27; was `ROADMAP H-34`, now in `_archive/ROADMAP-H34-night-darkness-2026-09-27.md`): the flat fill descends into the night and the white floor fades with the dark, so moon phase and the lamps decide how bright the ground is.
 
 ---
 
@@ -75,7 +75,7 @@ How it persists + resolves (the store is the convergence point — `useCartograp
 | **Format SSOT** | `SLAB-CONTRACT.md §4` |
 | **Who consumes it** | the runtime's look consumers — `CelestialBodies` (sky/light), `PostProcessing` (post-FX), `GatewayArch` (arch), `NeonBands` (neon), `BakedLamps` (lampGlow), material binders — all via `useSceneJson`, cache-busted by `scene.json.bakedAt` |
 
-**`design.json` is the live truth; `scene.json` is the frozen copy.** `bake-scene.js` reads `design.json` and, for any unauthored channel, seeds the kit default (`*_FLAT_DEFAULTS` from `skyLightChannels.js`) — so an unauthored Look bakes byte-for-byte to today's hardcoded look. Authoring overrides the default; the bake never invents values.
+**`design.json` is the live truth; `scene.json` is the frozen copy.** `bake-scene.js` reads `design.json` and, for any unauthored channel, seeds **the kit's day** (`skyLightChannels.js#kitDayChannel` — the same channel Stage hydrates and production first-paints), so an unauthored channel follows the kit. ⭐ Stage never writes an unchanged day channel back into `design.json`, so a change to the kit's day reaches every town that has not authored that channel. ▶ `node checks/claims-look-default-has-no-town.mjs` Authoring overrides the default; the bake never invents values.
 
 ---
 
@@ -225,10 +225,10 @@ every seeded Look. Same class as the one the strip list exists to stop.
 ## 6. The doctrine, in one place
 
 - **Looks vary styling, never geometry.** The Stage cannot move a curb; that's Survey. This is what makes Look-swap free.
-- **Every channel is a TodChannel.** Author a curve across the day, not a scalar. Kit defaults are seeded for unauthored channels so an empty Look = today's look.
+- **Every channel is a TodChannel.** Author a curve across the day, not a scalar. An unauthored channel is the kit's day, designed on the sun's own moments so it serves every town (`BRIEF-tod-kit-default`).
 - **`design.json` lives; `scene.json` freezes.** Author live (WYSIWYG); the bake snapshots. "Saving the bake" is not a thing — forking a named Look is the deliberate save.
 - **Material-keyed, additive.** New geometry inherits the active Look's rules; Survey/Section → Stage never invalidates a Look.
-- **Single-owner channels.** Each look fact has exactly one owner (`skyGain` owns night darkness; bloom owns bloom) — no emergent sums of hidden floors (`ARCHITECTURE.md §7`).
+- **Single-owner channels.** Each look fact has exactly one owner (`skyGain` owns the night sky's darkness, the moon the night ground's; bloom owns bloom) — no emergent sums of hidden floors (`ARCHITECTURE.md §7`).
 - **A shot overrides the base sparsely.** Editing in a `browse`/`street` shot records that channel as the shot's override; untouched channels inherit Hero (the base). One merge (`{...base, ...shotLooks[shot]}`), resolved at one point per surface (§1.5).
 - **Runtime-derived inputs stay live.** Per-device camera math (Browse altitude, Hero target) is computed at runtime, not baked — baking it would be a bug.
 - **Format lives in the contract.** `SLAB-CONTRACT.md §4` is the SSOT for `scene.json`'s bytes; this doc owns *what the operator authors and how it persists*.

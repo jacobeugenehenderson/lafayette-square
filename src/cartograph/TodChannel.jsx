@@ -17,7 +17,7 @@
  * field with key 'value'). Same code path, no special case.
  *
  * The mechanic (unified 2026-06-27 — no "animate" toggle):
- *   - The 7 NAMED_TOD_SLOTS chips ALWAYS render. The edit target is simply
+ *   - The 8 NAMED_TOD_SLOTS chips ALWAYS render. The edit target is simply
  *     the slot the PLAYHEAD is parked on (todSlotAtMinute) — the active
  *     chip IS that slot. There is no arm step and no sticky selection.
  *   - Playhead ON a slot → sliders LIVE. Editing writes that slot's
@@ -182,7 +182,7 @@ function EdgeToggle({ fade, options, minutes, onChange }) {
   )
 }
 
-// ── Animation row (7 chips, each with its fade where it borders a blank) ────
+// ── Animation row (8 chips, each with its fade where it borders a blank) ────
 
 function TodAnimationRow({ attachedIds, parkedSlotId, onScrub, onFill, onRemove, channel, onEdge }) {
   const order = NAMED_TOD_SLOTS.map(s => s.id), n = order.length

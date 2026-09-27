@@ -3,7 +3,7 @@
  * parameters attached to a keyframe track (TOD slots or, later, camera
  * keyframes).
  *
- * TOD slots are a fixed vocabulary of seven named moments. The operator
+ * TOD slots are a fixed vocabulary of eight named sun moments. The operator
  * picks names from this list — no free-form slot authoring. Each slot has
  * a canonical minute-of-day; channels keyed by slot id automatically
  * resolve to those minutes via NAMED_TOD_SLOTS_BY_ID.
@@ -31,13 +31,16 @@
  * the last key across midnight to the first (wrapTodFraction).
  */
 
-// Canonical TOD slot vocabulary — mirrors the 7 SunCalc waypoints in
-// DawnTimeline.jsx (Dawn, Sunrise, Noon, Golden, Sunset, Dusk, Night).
+// Canonical TOD slot vocabulary — eight SunCalc moments (DawnTimeline.jsx draws the same list).
+// ⭐ DEEP NIGHT is the sun's NADIR (solar midnight), the slot between Night and Dawn (Jacob, 2026-09-27).
+// Night is astronomical DUSK (−18°, evening); without a key after it the resolver tweened straight up to
+// Dawn, so the night was darkest at 20:00 and half-way back to Dawn by midnight. Nadir exists at every
+// latitude and date (Night does not, above ~48.6°N near the June solstice) and needs no timezone.
 // Per-Look serialization stores slot ids; minutes are computed live from
 // SunCalc each frame so the envelope shifts seasonally with the real sun.
 import SunCalc from 'suncalc'
 import { INSTANCE } from '../instance.js'
-import { LAMPGLOW_FLAT_DEFAULTS } from './skyLightChannels.js'
+import { LAMPGLOW_FLAT_DEFAULTS, LAMPGLOW_RADIUS_V } from './skyLightChannels.js'
 
 const LATITUDE = INSTANCE.geography.lat
 const LONGITUDE = INSTANCE.geography.lon
@@ -54,6 +57,7 @@ export const NAMED_TOD_SLOTS = [
   { id: 'sunset',  label: 'Sunset',  color: 'var(--tod-sunset)'  },
   { id: 'dusk',    label: 'Dusk',    color: 'var(--tod-dusk)'    },
   { id: 'night',   label: 'Night',   color: 'var(--tod-night)'   },
+  { id: 'deep',    label: 'Deep night', color: 'var(--tod-deep)'  },
 ]
 export const NAMED_TOD_SLOTS_BY_ID = Object.fromEntries(
   NAMED_TOD_SLOTS.map(s => [s.id, s])
@@ -63,7 +67,7 @@ export function getTodSlotColor(id) { return NAMED_TOD_SLOTS_BY_ID[id]?.color }
 
 // Compute each named slot's minute-of-day for the given Date. SunCalc
 // `times` keys: dawn / sunrise / solarNoon / goldenHour / sunset / dusk /
-// night. We convert each to minute-of-day in the local frame the rest of
+// night / nadir. A moment the sun does not reach that day (high latitude) is null and its keys drop out. We convert each to minute-of-day in the local frame the rest of
 // useTimeOfDay uses.
 export function getTodSlotMinutes(date) {
   const times = SunCalc.getTimes(date || new Date(), LATITUDE, LONGITUDE)
@@ -79,6 +83,7 @@ export function getTodSlotMinutes(date) {
     sunset:  toMin(times.sunset),
     dusk:    toMin(times.dusk),
     night:   toMin(times.night),
+    deep:    toMin(times.nadir),
   }
 }
 
@@ -98,7 +103,7 @@ export function todSlotAtMinute(minute, date) {
   for (const slot of NAMED_TOD_SLOTS) {
     const m = mins[slot.id]
     if (m == null) continue
-    const gap = Math.abs(m - minute)
+    const d = Math.abs(m - minute), gap = Math.min(d, 1440 - d)
     if (gap <= TOD_SLOT_TOLERANCE_MIN && gap < bestGap) {
       best = slot.id
       bestGap = gap
@@ -246,7 +251,7 @@ export function resolveAnimatedAtMinute(channel, minute, todSlots) {
 // as 1 and is stamped `radiusV: 2`; from then on 0 means off. Values between 0 and 1 read about the same on both
 // scales and are left alone. Applied where a channel is LOADED (Stage hydrate, the value setter) and where it is
 // RESOLVED (production's baked scene.json), so an old Look reads right everywhere without a re-save.
-export const LAMPGLOW_RADIUS_V = 2
+export { LAMPGLOW_RADIUS_V }
 const _radiusStamped = new WeakMap()
 export function stampLampGlowRadius(ch) {
   if (!ch || typeof ch !== 'object' || ch.radiusV === LAMPGLOW_RADIUS_V) return ch

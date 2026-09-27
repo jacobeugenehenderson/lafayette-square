@@ -31,12 +31,12 @@ import useAtmosphere from '../hooks/useAtmosphere.js'
 import useSkyState from '../hooks/useSkyState.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 
 // Boot-time envelope for a look whose slab predates the channel — identical to what
 // bake-scene emits for an unauthored town, so first paint matches the bake rather
 // than flashing a different canopy for a frame.
-const CANOPY_DEFAULT_CHANNEL = { values: { ...CANOPY_FLAT_DEFAULTS } }
+const CANOPY_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('canopy'))
 import useCamera from '../hooks/useCamera'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 

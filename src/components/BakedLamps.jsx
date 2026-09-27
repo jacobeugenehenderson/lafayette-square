@@ -27,7 +27,7 @@ import { resolveLookId } from '../lib/resolveLookId.js'
  * @param {number} [props.bakeLastMs] — Stage-authoring cache-bust override;
  *                                      production omits and uses scene.bakedAt.
  */
-export default function BakedLamps({ lookId, bakeLastMs, lanternOverride, lampColorOverride } = {}) {
+export default function BakedLamps({ lookId, bakeLastMs, lanternOverride } = {}) {
   const resolvedLookId = resolveLookId(lookId)
   const scene = useSceneJson(resolvedLookId, bakeLastMs)
   const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
@@ -62,7 +62,7 @@ export default function BakedLamps({ lookId, bakeLastMs, lanternOverride, lampCo
 
   if (!data?.lamps?.length) return null
   if (scene?.layerVis?.lamp === false) return null
-  // Lantern channel: Stage live override > baked scene > flat default.
+  // Lantern channel (brightness, glow, colour): Stage live override > baked scene > the kit's day.
   const lantern = lanternOverride ?? scene?.lantern ?? null
-  return <StreetLights lamps={data.lamps} reach={data.reach} lookId={resolvedLookId} bakeLastMs={bakeLastMs} lantern={lantern} lampColor={lampColorOverride} />
+  return <StreetLights lamps={data.lamps} reach={data.reach} lantern={lantern} />
 }

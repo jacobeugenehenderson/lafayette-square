@@ -17,10 +17,10 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 
 const DEG = Math.PI / 180
-const DEFAULT_CHANNEL = Object.freeze({ values: { ...ARCHLIGHT_FLAT_DEFAULTS } })
+const DEFAULT_CHANNEL = Object.freeze(kitDayChannel('setPieceLight'))   // the kit's day: blank by day, up from Sunset
 
 /**
  * @param channel     the `setPieceLight` channel (Stage override ?? scene.json ?? default)

@@ -32,7 +32,7 @@ import {
   migrateLampGlow, resolveLampGlowAtMinute,
   resolveGroupAtMinute, migrateGroupChannel,
   NAMED_TOD_SLOTS_BY_ID, getTodSlotMinutes, todSlotAtMinute, todEdgePatch,
-  stampLampGlowRadius, LAMPGLOW_RADIUS_V,
+  stampLampGlowRadius,
 } from '../animatedParam.js'
 import {
   BLOOM_FIELD_KEYS, BLOOM_FLAT_DEFAULTS,
@@ -63,7 +63,7 @@ import {
   HEMI_FIELD_KEYS, HEMI_FLAT_DEFAULTS,
   DIRSUN_FIELD_KEYS, DIRSUN_FLAT_DEFAULTS,
   DIRMOON_FIELD_KEYS, DIRMOON_FLAT_DEFAULTS,
-  LAMPGLOW_FLAT_DEFAULTS,
+  kitDayChannel, KIT_DAY_CHANNELS,
 } from '../skyLightChannels.js'
 import { migrateSkyChannel, SKY_BANDS, SKY_HOURS } from '../skyGrid.js'
 
@@ -273,7 +273,7 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
     // Single button at the channel header (feedback_per_item_revert) —
     // never a card-level "reset everything," never a per-slider revert.
     [`revert${cap}`]: () => {
-      set(s => channelRevert(s, name, { values: { ...flatDefaults } }))
+      set(s => channelRevert(s, name, kitDayChannel(name) || { values: { ...flatDefaults } }))
       get()._saveDesignDebounced()
     },
   }
@@ -367,7 +367,10 @@ const isStageShot = (shot) => STAGE_SHOTS.includes(shot)
 const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']
 
 const _isObj = (v) => v && typeof v === 'object'
-const _grp = (key, KEYS, DEFAULTS) => ({ key, hydrate: (d) => migrateGroupChannel(d[key], KEYS, DEFAULTS) })
+// An absent channel hydrates to THE KIT'S DAY where the day keys it (skyLightChannels.js#kitDayChannel), else to the
+// flat defaults — so a town inherits the kit's day on every channel it has not authored.
+const _kit = (key, d, migrate) => (d[key] == null && kitDayChannel(key)) || migrate(d[key])
+const _grp = (key, KEYS, DEFAULTS) => ({ key, hydrate: (d) => _kit(key, d, (v) => migrateGroupChannel(v, KEYS, DEFAULTS)) })
 const SHOT_MIGRATIONS = { fill: migrateFill, mist: migrateMist, dof: migrateDof }
 const migrateShotLooks = (shotLooks) => Object.fromEntries(Object.entries(shotLooks).map(([shot, block]) => [shot,
   _isObj(block) ? Object.fromEntries(Object.entries(block).map(([ch, v]) => [ch, SHOT_MIGRATIONS[ch] ? SHOT_MIGRATIONS[ch](v) : v])) : block]))
@@ -406,14 +409,14 @@ const DESIGN_FIELDS = [
   { key: 'wallPalettes', hydrate: (d) => _isObj(d.wallPalettes) ? d.wallPalettes : null },
   { key: 'lamps',        hydrate: (d) => _isObj(d.lamps) ? d.lamps : null },             // bake-lamps: { derive: false } = surveyed + authored only
   { key: 'terrainExag',  hydrate: (d) => Number.isFinite(d.terrainExag) ? d.terrainExag : null }, // bake-scene: the town's authored exaggeration
-  { key: 'lampGlow',     hydrate: (d) => migrateLampGlow(d.lampGlow) },
+  { key: 'lampGlow',     hydrate: (d) => _kit('lampGlow', d, migrateLampGlow) },
   _grp('bloom',          BLOOM_FIELD_KEYS,          BLOOM_FLAT_DEFAULTS),
   _grp('warmth',         WARMTH_FIELD_KEYS,         WARMTH_FLAT_DEFAULTS),
   // Shadow lift's 0–2 `value` → Shadow crush's `crush`, Mist's linear `density` → cubed `amount` (skyLightChannels).
-  { key: 'fill', hydrate: (d) => migrateGroupChannel(migrateFill(d.fill), FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS) },
+  { key: 'fill', hydrate: (d) => _kit('fill', d, (v) => migrateGroupChannel(migrateFill(v), FILL_FIELD_KEYS, FILL_FLAT_DEFAULTS)) },
   _grp('exposure',       EXPOSURE_FIELD_KEYS,       EXPOSURE_FLAT_DEFAULTS),
   _grp('ao',             AO_FIELD_KEYS,             AO_FLAT_DEFAULTS),
-  { key: 'mist', hydrate: (d) => migrateGroupChannel(migrateMist(d.mist), MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS) },
+  { key: 'mist', hydrate: (d) => _kit('mist', d, (v) => migrateGroupChannel(migrateMist(v), MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS)) },
   _grp('halo',           HALO_FIELD_KEYS,           HALO_FLAT_DEFAULTS),
   _grp('skyGain',        SKY_GAIN_FIELD_KEYS,       SKY_GAIN_FLAT_DEFAULTS),
   // stars had channel actions (a Stage control) but no field here, so its edits were never saved.
@@ -421,7 +424,7 @@ const DESIGN_FIELDS = [
   _grp('grade',          GRADE_FIELD_KEYS,          GRADE_FLAT_DEFAULTS),
   _grp('grain',          GRAIN_FIELD_KEYS,          GRAIN_FLAT_DEFAULTS),
   // Focus has no On switch: a legacy `enabled` folds into Blur so the slider is live (skyLightChannels#migrateDof).
-  { key: 'dof', hydrate: (d) => migrateGroupChannel(migrateDof(d.dof), DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS) },
+  { key: 'dof', hydrate: (d) => _kit('dof', d, (v) => migrateGroupChannel(migrateDof(v), DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)) },
   _grp('shadow',         SHADOW_FIELD_KEYS,         SHADOW_FLAT_DEFAULTS),
   _grp('canopy',         CANOPY_FIELD_KEYS,         CANOPY_FLAT_DEFAULTS),
   _grp('constellations', CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
@@ -535,6 +538,10 @@ function serializeDesign(s) {
   // Same rule for the arch set-piece (see the `arch` hydrate above): a Look that
   // doesn't carry the block must not acquire one on its next autosave.
   if (!out.arch) delete out.arch
+  // ⭐ A channel still equal to THE KIT'S DAY is not written (Jacob, 2026-09-27: "Code default … should [reach
+  // existing towns], now"). Writing it would freeze today's default into the town, and the next change to the
+  // kit's day would never reach it. Only what the operator actually authored is the town's.
+  for (const k of KIT_DAY_CHANNELS) if (k in out && JSON.stringify(out[k]) === JSON.stringify(kitDayChannel(k))) delete out[k]
   return out
 }
 
@@ -732,35 +739,9 @@ const useCartographStore = create((set, get) => ({
   // separate "parked" state — the playhead position IS the parked state.
   // (project_stage_keyframe_authoring_rule)
 
-  // Lamp glow strengths per receiving surface — ONE animatable group with
-  // three channels (grass / trees / pool). Group shape:
-  //   flat:     { values: { grass, trees, pool } }
-  //   animated: { animated: 'tod', transitionIn, transitionOut,
-  //               values: { <slotId>: { grass, trees, pool }, … } }
-  // The three channels share one timeline: at each slot the operator
-  // authors a triple of values. Runtime envelope resolver lerps each
-  // channel independently between bracketing authored slots.
-  lampGlow: { values: { grass: 0, trees: 0, pool: 1.0 } },
-  // Bloom — first channel of the Sky & Light card. Group of 3
-  // (intensity / threshold / smoothing) sharing one TOD timeline.
-  // Flat defaults match the previous envState bloom* values so behavior
-  // is unchanged on Looks that haven't authored bloom yet.
-  bloom: { values: { ...BLOOM_FLAT_DEFAULTS } },
-  // Lighting floor — two mood axes, see skyLightChannels.js. Sun/moon
-  // stay physics-driven; these only bias the atmospheric soup between
-  // bodies (operator-tunable ambient + hemi).
-  warmth:   { values: { ...WARMTH_FLAT_DEFAULTS } },
-  fill:     { values: { ...FILL_FLAT_DEFAULTS } },
-  exposure: { values: { ...EXPOSURE_FLAT_DEFAULTS } },
-  ao:       { values: { ...AO_FLAT_DEFAULTS } },
-  mist:     { values: { ...MIST_FLAT_DEFAULTS } },
-  halo:     { values: { ...HALO_FLAT_DEFAULTS } },
-  skyGain:  { values: { ...SKY_GAIN_FLAT_DEFAULTS } },
-  stars:    { values: { ...STARS_FLAT_DEFAULTS } },
-  grade:    { values: { ...GRADE_FLAT_DEFAULTS } },
-  grain:    { values: { ...GRAIN_FLAT_DEFAULTS } },
-  shadow:   { values: { ...SHADOW_FLAT_DEFAULTS } },
-  canopy:   { values: { ...CANOPY_FLAT_DEFAULTS } },
+  // THE KIT'S DAY — every channel the day keys starts at it (skyLightChannels.js#kitDayChannel); a Look's
+  // hydrate replaces what it authored.
+  ...Object.fromEntries(KIT_DAY_CHANNELS.map(k => [k, kitDayChannel(k)])),
   // SC.5 — per-shot framing knobs (FOVs, Browse bounds/padding, Street
   // eye height). Single flat-value channel; hand-rolled setShots because
   // values are nested per-shot objects (not the factory's flat scalar
@@ -776,21 +757,10 @@ const useCartographStore = create((set, get) => ({
   // stand an arch over any Look whose design.json failed to load.
   arch:    null,
   landscape: { values: { ...LANDSCAPE_FLAT_DEFAULTS } },
-  archLight: { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },
-  setPieceLight: { values: { ...ARCHLIGHT_FLAT_DEFAULTS } },
-  lantern: { values: { ...LANTERN_FLAT_DEFAULTS } },
   // SC.6 — Meteorologist coupler scaffolding. v1 has no Stage UI; field
   // round-trips through design.json → bake → scene.json so Atmosphere
   // v3 has it ready. preset='auto' = consult the Almanac at runtime.
   clouds:  { values: { ...CLOUDS_FLAT_DEFAULTS } },
-  dof:            { values: { ...DOF_FLAT_DEFAULTS } },
-  constellations: { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
-  milkyWay:       { values: { ...MILKYWAY_FLAT_DEFAULTS } },
-  // Neon — group of 3 (core / tube / bleed) sharing one TOD timeline.
-  // Drives the runtime NeonBands shader uniforms via NeonPump. Per-place
-  // hue comes from the category palette; the Stage operator authors only
-  // the physics. See HANDOFF-neon.md.
-  neon:           { values: { ...NEON_FLAT_DEFAULTS } },
   // Stage-only QA toggle. Bypasses LafayetteScene's openPlaces
   // business-hours filter so the operator can preview neon visibility
   // at any TOD without scrubbing to night / waiting for open hours.
@@ -1417,7 +1387,7 @@ const useCartographStore = create((set, get) => ({
     get()._saveDesignDebounced()
   },
   revertLampGlow: () => {
-    set(s => channelRevert(s, 'lampGlow', { values: { ...LAMPGLOW_FLAT_DEFAULTS }, radiusV: LAMPGLOW_RADIUS_V }))
+    set(s => channelRevert(s, 'lampGlow', kitDayChannel('lampGlow')))
     get()._saveDesignDebounced()
   },
   // ── Group-channel action factory ────────────────────────────

@@ -32,7 +32,6 @@ import useSkyState from '../hooks/useSkyState'
 import useCartographStore, { activeChannel } from '../cartograph/stores/useCartographStore.js'
 import TodChannel from '../cartograph/TodChannel.jsx'
 import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
-import { LAMP_DEFAULT_HEX } from '../lib/lampPool.js'
 import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf } from '../components/SetPiece.jsx'
 import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, MIST_FIELDS, MIST_FLAT_DEFAULTS, HALO_FIELDS, HALO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
@@ -127,22 +126,7 @@ function Uplights() {
   </>)
 }
 
-// The lamp's COLOUR — on the Light Sources card, beside the knobs it tints (Jacob, 2026-09-26: "I don't like the
-// lamp color being in furniture"). One colour for every lamp light: bulb, glow, pools, trees, walls
-// (layerColors.lamp; live in Stage, baked for production). Lamps ON/OFF stays in the Designer (Furniture › Lamps).
-function LampSourceControls() {
-  const color   = useCartographStore(s => activeChannel(s, 'layerColors')?.lamp) || LAMP_DEFAULT_HEX
-  const setColor = useCartographStore(s => s.setLayerColor)
-  return (
-    <div className="flex items-center gap-2 py-1 pl-2" style={{ fontSize: 12, color: 'var(--on-surface)' }}>
-      <span style={{ color: 'var(--on-surface-subtle)' }}>Lamp colour</span>
-      <input type="color" value={color} onChange={e => setColor('lamp', e.target.value)}
-        style={{ width: 28, height: 20, padding: 0, border: '1px solid var(--outline-variant)', background: 'transparent' }} />
-    </div>
-  )
-}
-
-// Lantern — the lamp's own light source (Bulb · Glow · Glow size), TOD-animatable. Same store-bound TodChannel pattern.
+// Lantern — the lamp's own light source (Bulb · Glow · Glow size · Colour), TOD-animatable. Same store-bound TodChannel pattern.
 function LanternChannel() {
   const channel       = useCartographStore(s => s.lantern)
   const setValue      = useCartographStore(s => s.setLantern)
@@ -1029,7 +1013,6 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
           the lamp fixture/pool/canopy restructure is Phase B too. */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
         <Collapsible label="Light Sources">
-          <LampSourceControls />
           <LanternChannel />
           <LampGlowEditor />
           <Uplights />

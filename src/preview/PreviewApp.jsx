@@ -50,6 +50,7 @@ import { setActiveProfileId } from './deviceProfiles'
 // Preview mounts the SHARED PostProcessing consumer with `inspect` (the per-pass
 // toggle matrix) — the retired PreviewPostFx forked its own composer + driver.
 import { PostProcessing, ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
+import { NeonDriver } from '../components/NeonBands.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
@@ -1325,6 +1326,7 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
           scene.lampGlow — the same driver production now mounts. Without it
           the uniforms stay at dead defaults and lamp pools never appear. */}
       <LampGlowDriver lookId={lookId} bakeLastMs={bakeLastMs} />
+      <NeonDriver lookId={lookId} bakeLastMs={bakeLastMs} />
 
       {/* Celestial + clouds visibility-gated, both always mounted. When
           celestial is off, the always-mounted BasicLights takes over via its

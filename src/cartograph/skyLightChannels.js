@@ -365,7 +365,7 @@ export function migrateArchLight(design) {
     if (a.uplightR_cone != null) carried.uplightR_cone = Number(a.uplightR_cone) * RAD2DEG
     return { values: fill(carried) }
   }
-  return { values: { ...ARCHLIGHT_FLAT_DEFAULTS } }
+  return kitDayChannel('archLight')
 }
 
 
@@ -514,6 +514,8 @@ export const LAMPGLOW_FIELDS = [
   { key: 'trees',  label: 'Trees',       min: 0, max: 20, step: 0.1 },
 ]
 export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 1, pool: 1.0, radius: 1.0, centre: 1.2 }
+// Pool radius's scale version (animatedParam.js#stampLampGlowRadius): 2 = 0 means off.
+export const LAMPGLOW_RADIUS_V = 2
 export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
 
 // Lantern (Lamps card) — the lamp's LIGHT SOURCE itself (the lantern): the
@@ -521,14 +523,8 @@ export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
 // group channel so the lantern's brightness/colour can ride the day. The
 // automatic dusk→night turn-on (the sunAlt ramp in StreetLights) STAYS as the
 // base on/off; this channel is the operator's master Brightness × that ramp,
-// the Glow (wide halo strength), and the Colour. Defaults reproduce today's
-// hardwired look (brightness 1, glow 1, #fff2e0) so an unauthored Look is
-// unchanged. Distinct from `lampGlow` (the GROUND pool + tree canopy) — this is
-// the lantern's own emission. (hardwires-come-out; sibling of `archLight`.)
-// Brightness + Glow only — the lamp's *colour* stays a single source
-// (`layerColors.lamp`, the Surfaces lamp swatch), which also drives the ground
-// pool's colour (the pool IS the lantern's light on the ground). Defaults
-// reproduce today's hardwired output.
+// the Glow (wide halo strength), and the Colour — which also colours the ground pools, trees and walls (the pool
+// IS the lantern's light on the ground). Distinct from `lampGlow` (how strong that light lands on each receiver).
 // ⭐ Jacob, 2026-09-26 — each knob moves ONE thing, and none is a master over the others:
 //   Bulb (`intensity`, key kept so authored Looks still load) — the light source: the glass panes EMIT in the
 //   lamp colour (so bloom takes them), plus the bulb dot and tiny orb inside. Uncapped.
@@ -540,8 +536,12 @@ export const LANTERN_FIELDS = [
   { key: 'intensity', label: 'Bulb',      min: 0,   max: 4,  step: 0.02 },
   { key: 'glow',      label: 'Glow',      min: 0,   max: 3,  step: 0.02 },
   { key: 'glowSize',  label: 'Glow size', min: 0.2, max: 1.5, step: 0.05 },  // metres, radius — small by design; the wide halo is Bloom's
+  // The lamp's colour, keyed like everything else (Jacob, 2026-09-27: "at dusk they would be lovely little gaslamps …
+  // the night lamps glittery and cold"). One colour for every lamp light: bulb, glow, pools, trees, walls.
+  // ⛔ Replaces the flat `layerColors.lamp` swatch.
+  { key: 'color',     label: 'Colour', type: 'color' },
 ]
-export const LANTERN_FLAT_DEFAULTS = { intensity: 1.0, glow: 1.0, glowSize: 0.6 }
+export const LANTERN_FLAT_DEFAULTS = { intensity: 1.0, glow: 1.0, glowSize: 0.6, color: '#fff2e0' }
 export const LANTERN_FIELD_KEYS = LANTERN_FIELDS.map(f => f.key)
 
 // Milky Way (Sky & Light, CELESTIAL group) — binary on/off. Cross-slot
@@ -553,3 +553,103 @@ export const MILKYWAY_FIELDS = [
 ]
 export const MILKYWAY_FLAT_DEFAULTS = { value: 0 }
 export const MILKYWAY_FIELD_KEYS = ['value']
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+// THE KIT'S DAY — the default every town starts from, keyed at all eight sun moments (Jacob, 2026-09-27;
+// docs/briefs/BRIEF-tod-kit-default.md, the design page https://claude.ai/artifact/L4biBpFrgW1h3og4SK66XJ).
+//
+// ⭐ The keys are STYLE on top of physics. Sun and moon intensity and colour, the sky's colour, the stars'
+// fade and the lamps' daylight ramp all run on the real sun and moon at the town's own latitude and date
+// (celestialLights.js, proceduralSky.js, StreetLights), so a winter noon at 55°N is still a low weak sun.
+// The keys only say how each moment is PICTURED — which is why one day serves every town.
+// ⭐ Hyperreal: each moment is its own character. Dawn "lavender hush" · Sunrise first light · Noon the
+// dollhouse (very bright, razor-sharp, almost no bloom) · Golden dazzle (drenched bloom, amber haze) ·
+// Sunset embers · Dusk the blue hour (gaslamps and neon arrive against a blue sky) · Night stylish (deep
+// blacks, cold glittering lamps, neon blazing) · Deep night the planetarium (the town subdued, the sky acts).
+// ⭐ Man-made light is complete by Dusk; Night and Deep night deepen only the natural channels — so a town
+// whose sun never reaches −18° (a white night) keeps its lamps and simply never gets astronomically dark.
+// Values are design choices argued on the page above; none is copied from a town's Look.
+// ▶ node checks/claims-look-default-has-no-town.mjs — every day channel keyed at every slot, no town values.
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+export const KIT_DAY_SLOTS = ['dawn', 'sunrise', 'noon', 'golden', 'sunset', 'dusk', 'night', 'deep']
+// Per channel: field → eight values in KIT_DAY_SLOTS order; `null` = a blank tile (the light is off there).
+// `edges` = the ▲ fade-up / ▼ fade-down marks (animatedParam.js#todEdge).
+const LAMP_EDGES = { sunset: { fade: 'up', minutes: 30 }, sunrise: { fade: 'down', minutes: 30 } }
+const DAY = {
+  dirSun:   { value: [0, 0.8, 1.2, 1.3, 0.9, 0, 0, 0] },
+  dirMoon:  { value: [0.7, 0.3, 0.3, 0.3, 0.3, 0.8, 1.0, 1.3] },
+  ambient:  { value: [0.9, 0.85, 1.1, 1.0, 0.85, 0.7, 0.6, 0.5] },
+  hemi:     { value: [1.5, 1.2, 0.9, 1.5, 1.4, 1.6, 0.6, 0.6] },
+  skyGain:  { value: [1.0, 1.05, 1.25, 1.15, 1.1, 0.95, 0.35, 0.3] },
+  stars:    { brightness: [0.7, 1, 1, 1, 1, 0.6, 1.0, 2.2] },
+  constellations: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
+  milkyWay: { value: [0, 0, 0, 0, 0, 0, 0, 1] },
+  shadow:   { size: [3, 5, 1, 4, 5, 3, 2, 2], samples: [16, 16, 16, 16, 16, 16, 16, 16] },
+  ao:       { radius: [15, 15, 15, 15, 15, 15, 15, 15], intensity: [2.0, 2.2, 3.2, 2.0, 2.2, 2.4, 2.8, 2.6],
+              distanceFalloff: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3] },
+  fill:     { crush: [0.45, 0.6, 0.75, 0.4, 0.55, 0.7, 0.92, 0.85] },
+  mist:     { amount: [0.44, 0.36, 0.16, 0.34, 0.32, 0.28, 0.18, 0.14],
+              color: ['#cdb9cf', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'] },
+  halo:     { strength: [0.4, 0.42, 0.12, 0.65, 0.55, 0.32, 0.04, 0.02],
+              color: ['#dcbfd0', '#f4c29c', '#bdd6ec', '#ffc27a', '#ff9868', '#5f6fb4', '#1a2040', '#10152a'] },
+  exposure: { value: [1.0, 1.0, 1.18, 1.06, 1.0, 0.95, 0.85, 0.8] },
+  warmth:   { value: [0.38, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25] },
+  grade:    { contrast: [0.3, 0.4, 0.62, 0.32, 0.45, 0.5, 0.72, 0.55], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
+              saturation: [1.0, 1.15, 1.35, 1.4, 1.3, 1.1, 0.85, 0.75], brightness: [0.04, 0.01, 0, 0.03, 0.01, 0, 0, 0],
+              vignette: [0.8, 0.8, 0.4, 1.2, 1.1, 1.0, 1.5, 1.3] },
+  bloom:    { intensity: [1.2, 0.9, 0.2, 2.2, 1.5, 1.0, 1.1, 0.4], threshold: [0.45, 0.55, 0.8, 0.25, 0.4, 0.4, 0.35, 0.6],
+              spread: [0.85, 0.6, 0.15, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
+  dof:      { blur: [0.4, 0.3, 0.85, 0.6, 0.45, 0.25, 0.12, 0], focus: [120, 120, 120, 120, 120, 120, 120, 120],
+              heroBlur: [0.25, 0.15, 0, 0.3, 0.2, 0.1, 0, 0], softness: [0.8, 0.6, 0.3, 0.9, 0.7, 0.5, 0.3, 0.5] },
+  grain:    { scale: [0.9, 0.7, 0.4, 0.7, 0.8, 1.0, 1.3, 1.1] },
+  // Neon: which buildings light is their HOURS' business; this is how they read. At noon a solid colour band
+  // (Emissive 1 is the colour itself, no bleed); at the blue hour it balances the sky; at night it blazes.
+  neon:     { core: [0.8, 0.6, 0.3, 0.7, 0.9, 1, 1, 1], tube: [0.9, 1, 1, 1, 1, 1, 1, 1],
+              bleed: [0.3, 0.15, 0, 0.35, 0.6, 0.85, 1, 0.8], emissive: [2.0, 1.4, 1.0, 2.5, 3.5, 5.0, 7.5, 5.0],
+              tubeRadius: [1, 1, 1, 1, 1, 1, 1, 1], screenFloor: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
+              screenCeil: [0, 0, 0, 0, 0, 0, 0, 0] },
+  // Lamps × the daylight ramp: on before it is dark (▲ at Sunset), warm gaslamps at Dusk, cold glitter at Night.
+  lantern:  { edges: LAMP_EDGES, intensity: [1.1, 0.5, null, null, 0.8, 1.6, 2.4, 1.3], glow: [0.6, 0.3, null, null, 0.5, 1.2, 0.9, 0.6],
+              glowSize: [0.5, 0.5, null, null, 0.7, 0.8, 0.45, 0.45],
+              color: ['#dfe6ff', '#fff2e0', null, null, '#ffb877', '#ffa95c', '#e4ecff', '#d6e2ff'] },
+  // The tree cards' answer to the key light: flat across the day (0 = the historical dimmer), keyed so a Look can
+  // move it by time of day like every other channel.
+  canopy:   { directional: [0, 0, 0, 0, 0, 0, 0, 0], gain: [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85],
+              bulge: [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9] },
+  lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [1.0, 0.4, null, null, 0.6, 1.4, 2.2, 1.1],
+              radius: [1, 1, null, null, 1, 1, 1, 1], centre: [1.2, 1.2, null, null, 1.2, 1.2, 1.2, 1.2],
+              trees: [1.5, 0.5, null, null, 1.0, 2.5, 3.5, 1.6] },
+}
+// The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
+const UPLIGHT = { edges: LAMP_EDGES }
+for (const s of ['L', 'R']) Object.assign(UPLIGHT, {
+  [`uplight${s}_intensity`]: [1.0, 0.4, null, null, 1.5, 2.8, 3.5, 1.2],
+  [`uplight${s}_color`]:     ['#ffe2c0', '#ffd6a8', null, null, '#ffd6a8', '#ffc98f', '#f2ecff', '#e6e4ff'],
+  [`uplight${s}_cone`]:      [35, 35, null, null, 35, 35, 35, 35],
+  [`uplight${s}_reach`]:     [220, 220, null, null, 220, 220, 220, 220],
+})
+DAY.setPieceLight = UPLIGHT
+DAY.archLight = UPLIGHT
+
+function buildDayChannel(spec) {
+  const { edges, ...fields } = spec
+  const values = {}
+  KIT_DAY_SLOTS.forEach((slot, i) => {
+    const tuple = {}
+    for (const [k, arr] of Object.entries(fields)) if (arr[i] != null) tuple[k] = arr[i]
+    if (Object.keys(tuple).length) values[slot] = tuple
+  })
+  return { animated: 'tod', values, ...(edges ? { edges } : {}) }
+}
+const KIT_DAY = Object.fromEntries(Object.entries(DAY).map(([k, spec]) => [k, buildDayChannel(spec)]))
+KIT_DAY.lampGlow.radiusV = LAMPGLOW_RADIUS_V
+/** The channels the kit's day owns — the set a town's reset returns to the kit (cartograph/reset-town-day.mjs). */
+export const KIT_DAY_CHANNELS = Object.keys(KIT_DAY)
+/**
+ * The kit's channel for `key`: the designed day where the day keys it, else null (the caller's flat defaults).
+ * A fresh deep copy every call — the store mutates what it hydrates.
+ */
+export function kitDayChannel(key) {
+  const ch = KIT_DAY[key]
+  return ch ? JSON.parse(JSON.stringify(ch)) : null
+}

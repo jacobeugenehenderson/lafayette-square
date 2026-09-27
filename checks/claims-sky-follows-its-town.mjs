@@ -13,7 +13,7 @@
 // ⛔ THE REGRESSION THIS EXISTS TO CATCH is not "somebody deleted the feature" — it is
 // somebody reintroducing a constant. Three ways that happens, and all three fail here:
 //   ① the derivation stops depending on latitude at all (towns collapse to one table)
-//   ② the derivation drifts so LS's own sky changes (the retired constant is the oracle)
+//   ② the derivation drifts so LS's own sky changes above the horizon (the retired constant is the oracle)
 //   ③ a hemisphere is handled by a northern assumption
 //
 //   node checks/claims-sky-follows-its-town.mjs
@@ -46,14 +46,32 @@ if (!existsSync(join(ROOT, 'cartograph/_archive/skyGrid-anchor-cards-LS-static-2
   throw new Error('⛔ the archived anchor-card oracle is missing — LS cannot be proven unmoved. NOT CHECKED.')
 const { ANCHOR_CARDS_PROCEDURAL: ORACLE } = await import(ORACLE_PATH)
 const lsCards = buildAnchorCards(SunCalc, LS.lat, LS.lon, LS.tzOffset)
-const drift = diff(lsCards, ORACLE)
-if (drift) {
-  fail(`LS's sky MOVED: ${drift}/480 cells differ from the constant that shipped for 16 months.`)
-  for (const s of SKY_SEASONS) for (let h = 0; h < 24; h++) for (const b of BANDS)
-    if (lsCards[s][h][b] !== ORACLE[s][h][b] && failed < 6)
-      console.log(`       ${s} ${String(h).padStart(2, '0')}:00 ${b}: ${ORACLE[s][h][b]} → ${lsCards[s][h][b]}`)
-} else {
-  console.log('✅ LS reproduces the retired constant on ALL 480 cells — replacing it moved nothing.')
+// ⭐ The oracle holds wherever the sun is above −1.1° (−0.02 rad). Below it the ladder was DELIBERATELY re-cut on
+// 2026-09-27 — the blue hour holds through nautical twilight and night is reached at −18°, not −6.9° (Jacob's ruling,
+// BRIEF-tod-kit-default) — so those cells are checked for that property instead of against the retired constant.
+const REF = { winter: [2026, 11, 21], spring: [2026, 2, 20], summer: [2026, 5, 21], autumn: [2026, 8, 22] }
+const altAt = (season, h) => { const [y, m, d] = REF[season]
+  return SunCalc.getPosition(new Date(Date.UTC(y, m, d, h - LS.tzOffset)), LS.lat, LS.lon).altitude }
+let drift = 0, reCut = 0
+for (const s of SKY_SEASONS) for (let h = 0; h < 24; h++) {
+  const alt = altAt(s, h)
+  for (const b of BANDS) {
+    if (lsCards[s][h][b] === ORACLE[s][h][b]) continue
+    if (alt < -0.02 && b !== 'sunGlow') { reCut++; continue }
+    drift++
+    if (drift < 6) console.log(`       ${s} ${String(h).padStart(2, '0')}:00 ${b} (sun ${(alt * 180 / Math.PI).toFixed(1)}°): ${ORACLE[s][h][b]} → ${lsCards[s][h][b]}`)
+  }
+}
+if (drift) fail(`LS's sky MOVED above −1.1°: ${drift} cells differ from the constant that shipped for 16 months.`)
+else console.log(`✅ LS reproduces the retired constant on every cell with the sun above −1.1° (${reCut} twilight cells re-cut by the 2026-09-27 blue-hour ladder).`)
+// The re-cut's own property: a cell below −18° is night; a cell in nautical twilight (−12°…−6°) is NOT night yet.
+{
+  const night = lsCards.summer.find((_, h) => altAt('summer', h) < -0.35)
+  const naut = SKY_SEASONS.flatMap(s => lsCards[s].filter((_, h) => { const a = altAt(s, h); return a < -0.105 && a > -0.209 }))
+  if (!night) fail('no LS summer hour below −18° to test the night end of the ladder')
+  if (!naut.length) console.log('   (no LS hour lands in nautical twilight on the four reference days — blue-hour cell not sampled)')
+  else if (naut.every(c => c.high === night.high)) fail('nautical-twilight cells are already night — the blue hour is gone')
+  else console.log(`✅ the blue hour holds in nautical twilight (${naut.length} cell(s) not yet night)`)
 }
 
 // ── ② EVERY POURED TOWN GETS ITS OWN SKY. Derived from what is on disk, never a list.
@@ -96,5 +114,5 @@ for (const [tz, want] of [['America/Chicago', -6], ['Asia/Kolkata', 5.5], ['Aust
   if (got !== want) fail(`standardUtcOffsetHours('${tz}') = ${got}, want ${want}`)
 }
 
-console.log(failed ? `\n⛔ FAIL — ${failed} problem(s).` : '\n✅ PASS — every town\'s sky is sampled at its own lat/lon; LS is unmoved.')
+console.log(failed ? `\n⛔ FAIL — ${failed} problem(s).` : '\n✅ PASS — every town\'s sky is sampled at its own lat/lon; LS is unmoved above the horizon.')
 process.exit(failed ? 1 : 0)

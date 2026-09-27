@@ -7,7 +7,8 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
+import { resolveLookId } from '../lib/resolveLookId.js'
 
 /**
  * NeonBands — wall-mounted glass-tube signage along the rooftop perimeter
@@ -18,9 +19,8 @@ import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS } from '../cartograph/skyLightChann
  *
  * Design rules followed:
  *   - One merged mesh per scene (per HANDOFF-neon Path B + FEATURES §Neon)
- *   - Slab-completeness: intensity from scene.json.neon.values, by
- *     reference (NeonPump writes the shared uniform refs in Stage;
- *     production reads scene.json once via useSceneJson)
+ *   - Slab-completeness: intensity from the neon channel, by reference to shared uniforms written EVERY FRAME —
+ *     by NeonPump from the live store in Stage, by NeonDriver (below) from scene.json in production and Preview
  *   - Per-vertex terrain lift via the shared `aCentroidY` attribute
  *     (mean of footprint-corner raw elevations, threaded through
  *     openPlaces as `place.groundYRaw`) — matches the canonical
@@ -363,35 +363,10 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   const logDepth = useThree((s) => s.gl.capabilities.logarithmicDepthBuffer)
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
-  useEffect(() => {
-    if (!lookId || !scene?.neon?.values) return
-    // Resolve the (TOD-animated) neon channel at the current minute — same as
-    // Stage's NeonPump. The OLD code flat-read `scene.neon.values.core`, which
-    // is `undefined` once neon is `animated:"tod"` (values is slot-keyed, e.g.
-    // {golden:{…}}) → core/tube = 0 → tubes built but rendered at ZERO intensity
-    // → INVISIBLE in production. Force-on "worked" only in Stage, where NeonPump
-    // resolves the slot. (2026-06-29 regression fix.) In Stage, NeonPump's
-    // per-frame write still wins; this mount-time resolve is the production /
-    // Preview baseline (single-slot today → constant; promote to a gated
-    // per-frame pump if a multi-slot neon TOD curve is ever authored).
-    const tod = useTimeOfDay.getState()
-    const slotMinutes = scene.neon.animated ? getTodSlotMinutes(tod.currentTime) : null
-    const v = resolveGroupAtMinute(scene.neon, tod.getMinuteOfDay(), slotMinutes, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS)
-    _neonUniforms.coreUniform.value       = v.core       ?? 0
-    _neonUniforms.tubeUniform.value       = v.tube       ?? 0
-    _neonUniforms.bleedUniform.value      = v.bleed      ?? 0
-    _neonUniforms.emissiveUniform.value   = v.emissive   ?? 4
-    _neonUniforms.tubeRadiusUniform.value = v.tubeRadius ?? DEFAULT_TUBE_RADIUS
-    _neonUniforms.screenFloorUniform.value = v.screenFloor ?? MIN_SCREEN_PX
-    _neonUniforms.screenCeilUniform.value  = v.screenCeil  ?? 0
-    // Production runs frameloop="demand". These are imperative writes to shared
-    // uniform objects (not React props), so they don't trigger R3F's auto-
-    // invalidate — and the uniforms init to 0 (alpha<0.01 → discard → invisible).
-    // Without this, neon mounts dark, the values land here, and no frame is ever
-    // requested → neon stays off until a camera nudge. (2026-06-28 — the "neon
-    // not showing at all" bug; sibling of the InstancedTrees demand-mode fix.)
-    invalidate()
-  }, [lookId, scene, invalidate])
+  // Production runs frameloop="demand": the uniforms are imperative writes (NeonDriver in production, NeonPump in
+  // Stage) that trigger no render, so request one when the neon mounts or its Look lands — else it stays dark
+  // until a camera nudge (2026-06-28, the "neon not showing at all" bug).
+  useEffect(() => { invalidate() }, [lookId, scene, invalidate])
 
   // Tube radius — animated like the other four fields, but the value
   // drives vertex positions (not a shader uniform), so a change must
@@ -519,4 +494,27 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   // see the logDepth gating on the material). This ordering is about
   // transparent compositing + depthWrite:false, independent of log vs linear.
   return <mesh geometry={geometry} material={materialRef.current} renderOrder={100} frustumCulled={false} />
+}
+
+// ── NeonDriver — the neon channel, resolved EVERY FRAME, in production and Preview ────────────────────────────
+// Neon rides the day like every other channel (Jacob, 2026-09-27: "it needs to be animatable like everything
+// else"). ⛔ Replaces NeonBands' mount-time resolve, which froze a keyed neon at whatever minute the page loaded.
+// Sibling of PostProcessing.jsx#LampGlowDriver; Stage mounts NeonPump (the live store) instead, never both.
+const NEON_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('neon'))
+export function NeonDriver({ lookId, bakeLastMs } = {}) {
+  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const channel = scene?.neon ?? NEON_DEFAULT_CHANNEL
+  useFrame(() => {
+    const tod = useTimeOfDay.getState()
+    const v = resolveGroupAtMinute(channel, tod.getMinuteOfDay(),
+      channel.animated ? getTodSlotMinutes(tod.currentTime) : null, NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS)
+    _neonUniforms.coreUniform.value        = v.core
+    _neonUniforms.tubeUniform.value        = v.tube
+    _neonUniforms.bleedUniform.value       = v.bleed
+    _neonUniforms.emissiveUniform.value    = v.emissive
+    _neonUniforms.tubeRadiusUniform.value  = v.tubeRadius
+    _neonUniforms.screenFloorUniform.value = v.screenFloor
+    _neonUniforms.screenCeilUniform.value  = v.screenCeil
+  })
+  return null
 }

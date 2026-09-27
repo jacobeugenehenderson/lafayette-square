@@ -17,8 +17,7 @@ import {
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
-  SKY_GAIN_FIELD_KEYS, SKY_GAIN_FLAT_DEFAULTS,
-} from '../cartograph/skyLightChannels.js'
+  SKY_GAIN_FIELD_KEYS, SKY_GAIN_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 
 // Inline-default channel envelopes used for the ~100ms first-paint window
 // before scene.json resolves at mount. Same shape + values bake-scene.js
@@ -28,14 +27,14 @@ import {
 // Sky channel now stores per-Look overrides on top of kit-canonical anchor
 // cards (see skyGrid.js). Empty list = pure procedural-canon mosaic.
 const SKY_DEFAULT_CHANNEL            = { overrides: [] }
-const AMBIENT_DEFAULT_CHANNEL        = { values: AMBIENT_FLAT_DEFAULTS }
-const HEMI_DEFAULT_CHANNEL           = { values: HEMI_FLAT_DEFAULTS }
-const DIRSUN_DEFAULT_CHANNEL         = { values: DIRSUN_FLAT_DEFAULTS }
-const DIRMOON_DEFAULT_CHANNEL        = { values: DIRMOON_FLAT_DEFAULTS }
-const CONSTELLATIONS_DEFAULT_CHANNEL = { values: CONSTELLATIONS_FLAT_DEFAULTS }
-const STARS_DEFAULT_CHANNEL          = { values: STARS_FLAT_DEFAULTS }
-const MILKYWAY_DEFAULT_CHANNEL       = { values: MILKYWAY_FLAT_DEFAULTS }
-const SKY_GAIN_DEFAULT_CHANNEL       = { values: SKY_GAIN_FLAT_DEFAULTS }
+const AMBIENT_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('ambient'))
+const HEMI_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('hemi'))
+const DIRSUN_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('dirSun'))
+const DIRMOON_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('dirMoon'))
+const CONSTELLATIONS_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('constellations'))
+const STARS_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('stars'))
+const MILKYWAY_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('milkyWay'))
+const SKY_GAIN_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('skyGain'))
 import brightStars from '../data/bright_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
@@ -1044,8 +1043,9 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
 
         // ── Milky Way band — dense fractal noise, composited AFTER skyGain so
         // the night-dimmed dome lets it rise (like the separate star layer).
-        // Aimed to dive behind the arch. Gated by milkyWay channel × nightFactor.
-        float mwNight = clamp((0.05 - sunAlt) / 0.20, 0.0, 1.0);
+        // Aimed to dive behind the arch. Gated by the milkyWay channel × the sky's darkness (mwNight).
+        // The band shows only in a really dark sky: from nautical (−12°) to full at astronomical (−18°).
+        float mwNight = clamp((-0.209 - sunAlt) / 0.105, 0.0, 1.0);
         float mwGate = uMilkyWay * mwNight;
         if (mwGate > 0.001) {
           float gLat = asin(clamp(dot(dir, normalize(uGalPole)), -1.0, 1.0));
@@ -1542,9 +1542,12 @@ function CelestialBodies({
         top: lerpColor('#1a1535', '#0a1020', nightBlend),
         bottom: lerpColor('#553333', '#1a2545', nightBlend),
       }
+      // ⭐ NIGHT'S LIGHT IS THE MOON'S (Jacob, 2026-09-27; was ROADMAP H-34, cartograph/_archive/ROADMAP-H34-night-darkness-2026-09-27.md). The flat fill DESCENDS into the night to a
+      // starlight floor; it used to CLIMB to 1.0, the brightest ambient of the whole day. The ground at night is lit
+      // by the moon (phase- and altitude-aware, celestialLights.js#moonIntensity) and the lamps.
       ambient = {
         color: lerpColor('#443355', '#3a4a70', nightBlend),
-        intensity: 0.35 + nightBlend * 0.65,
+        intensity: 0.35 - nightBlend * 0.25,
       }
     } else if (isTwilight) {
       const t = (sunAlt + 0.12) / 0.17
@@ -1640,13 +1643,15 @@ function CelestialBodies({
   // PrimaryOrb / SecondaryOrb handle their own multipliers internally.
   const ambientRef = useRef()
   const hemiRef = useRef()
-  // Refs for the 3 night-fill floors (white · warm · hemisphere) so the operator's knobs reach them — they
-  // used to be hardcoded floors that ignored every knob (Jacob 2026-06-27, the un-zeroable night).
+  // Refs for the 2 fill floors (white · hemisphere) so the operator's knobs reach them — they used to be hardcoded
+  // floors that ignored every knob (Jacob 2026-06-27, the un-zeroable night).
+  // ⭐ Both FADE WITH THE DARK (was H-34, 2026-09-27): the white floor had no time-of-day term at all — the same pure
+  // white at noon and at 2am, the largest ambient term at night. The warm night floor (#8a7060 × nightFactor), which
+  // ROSE into the night, is gone: night's light is the moon's.
   // ⭐ ONE KNOB PER LIGHT TYPE (2026-09-27): Fill light (ambientMulRef) scales the ambient lights, Sky fill
   // (hemiMulRef) every hemisphere light. Fill light had also reached two of the three hemispheres, so the
   // two knobs overlapped and neither did what its name said.
   const floorWhiteRef = useRef()
-  const floorWarmRef  = useRef()
   const floorFillRef   = useRef()
   const ambientBase = (lighting.ambient?.intensity || 0.5) * (1 + cc * 0.4)
   // Hemi is the SKY-COLOR fill lever (Jacob 2026-06-29: "desaturated surfaces
@@ -1659,8 +1664,7 @@ function CelestialBodies({
     if (hemiRef.current)    hemiRef.current.intensity    = hemiBase    * hemiMulRef.current
     // Night-fill floors ride their type's knob: default (×1) = today's look; both → 0 darkens night fully.
     const aMul = ambientMulRef.current
-    if (floorWhiteRef.current) floorWhiteRef.current.intensity = 0.45 * aMul
-    if (floorWarmRef.current)  floorWarmRef.current.intensity  = 0.15 * lighting.nightFactor * aMul
+    if (floorWhiteRef.current) floorWhiteRef.current.intensity = 0.45 * (1 - lighting.nightFactor) * aMul
     if (floorFillRef.current)   floorFillRef.current.intensity   = (0.12 - lighting.nightFactor * 0.06) * HEMI_FOR_DIRECTIONAL * hemiMulRef.current
   })
 
@@ -1674,13 +1678,12 @@ function CelestialBodies({
           CartographSkyLight.jsx. MilkyWaySphere component preserved; takes
           a milkyWayChannel prop for the eventual re-mount path. */}
       {/* {debugLevel < 1 && <MilkyWaySphere nightFactor={lighting.nightFactor} milkyWayChannel={milkyWayChannel} />} */}
-      <ambientLight ref={floorWhiteRef} color="#ffffff" intensity={0.45} />
+      <ambientLight ref={floorWhiteRef} color="#ffffff" intensity={0.45 * (1 - lighting.nightFactor)} />
       {debugLevel < 99 && <ambientLight
         ref={ambientRef}
         color={lighting.ambient?.color || '#ffffff'}
         intensity={ambientBase}
       />}
-      <ambientLight ref={floorWarmRef} color="#8a7060" intensity={0.15 * lighting.nightFactor} />
       {/* Hemisphere fill now driven by the live SKY GRADIENT — the up-sky color
           washes surfaces from above, the warm horizon color is the ground bounce.
           This is what makes surfaces "glow with the sky's color" (Jacob's vision)

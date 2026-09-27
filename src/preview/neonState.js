@@ -1,8 +1,8 @@
 /**
  * neonState — module-scoped uniforms for the runtime neon overlay
  * (Path B). The NeonBands shader holds stable references to these
- * objects; CartographApp's NeonPump writes their `.value` each frame
- * from the per-Look TOD-resolved triple. Mirrors `lampGlowState.js`.
+ * objects; they are written each frame from the TOD-resolved neon channel — by CartographApp's NeonPump in
+ * Stage, by NeonBands.jsx#NeonDriver in production and Preview. Mirrors `lampGlowState.js`.
  */
 
 export const neon = {
@@ -15,14 +15,13 @@ export const neon = {
   // changes trigger a BufferGeometry rebuild rather than a uniform
   // write. NeonBands' useFrame reads this each frame, quantizes to the
   // slider step (0.05 m), and rebuilds only when the quantized value
-  // changes. Mutated by NeonPump in Stage (live store resolution) and
-  // by NeonBands' useEffect in production (scene.json baseline).
+  // changes. Written by NeonPump (Stage) and NeonDriver (production).
   tubeRadiusUniform: { value: 1.0 },
   // Screen-relative size band (radius, device px). Real shader uniforms — the
   // NeonBands vertex shader clamps each tube's on-screen radius to
   // [screenFloor, screenCeil] so it never goes sub-pixel far away nor reads as a
   // fat pipe up close. screenCeil = 0 → no ceiling. Written by NeonPump (Stage)
-  // and NeonBands' production useEffect, same as the four intensity uniforms.
+  // and NeonDriver (production), same as the four intensity uniforms.
   screenFloorUniform: { value: 2.5 },
   screenCeilUniform:  { value: 0 },
 }

@@ -30,10 +30,19 @@
  *   node checks/claims-look-default-has-no-town.mjs   # ⇒ must FAIL
  *   git checkout public/looks/index.json
  *
+ * THE KIT'S DAY (2026-09-27, BRIEF-tod-kit-default). The default's time-of-day channels are a designed day in the
+ * CODE (skyLightChannels.js#kitDayChannel), not in the empty 0-state file. The same rule — a property of the default,
+ * never a comparison that passes for a town nobody looked at — applies: every day channel is keyed at every sun
+ * moment (a blank tile only where a light is marked ▲/▼ off), no day channel is any town's Look copied in, and an
+ * unauthored channel reaches the day on all three paths (Stage hydrate, the bake, production first paint).
+ * MUTATION: ▶ node checks/claims-look-default-has-no-town.mjs --mutate  (each must FAIL; the run reports it)
+ *
  * Usage: node checks/claims-look-default-has-no-town.mjs
  */
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
+import { KIT_DAY_CHANNELS, kitDayChannel } from '../src/cartograph/skyLightChannels.js'
+import { NAMED_TOD_SLOTS, todEdge } from '../src/cartograph/animatedParam.js'
 
 const ROOT       = new URL('..', import.meta.url).pathname
 const PUBLIC_DIR = join(ROOT, 'public')
@@ -212,6 +221,71 @@ check('the store declares no Lafayette Square hero path as the kit default', () 
     ? `HERO_KEYFRAMES_DEFAULT holds ${v.length} keyframe(s) — a hero path is a coordinate in ONE town's frame`
     : null
 })
+
+// ── THE KIT'S DAY ─────────────────────────────────────────────────────────────────────────────────────────────
+const SLOTS = NAMED_TOD_SLOTS.map(s => s.id)
+function dayGaps(ch) {
+  if (ch?.animated !== 'tod') return 'not keyed by time of day'
+  const missing = SLOTS.filter(id => !(id in (ch.values || {})))
+  if (!missing.length) return null
+  // A blank tile is legitimate only as a light's OFF stretch: some key fades up into the keys after it and some key
+  // fades down out of the keys before it (animatedParam.js#todEdge validates each mark against its neighbours).
+  const up = SLOTS.some(id => todEdge(ch, id)?.fade === 'up'), down = SLOTS.some(id => todEdge(ch, id)?.fade === 'down')
+  return up && down ? null : `blank at ${missing.join(', ')} with no ▲/▼ marks — a hole, not an off stretch`
+}
+const dayProblems = (get) => KIT_DAY_CHANNELS.flatMap(k => { const g = dayGaps(get(k)); return g ? [`${k}: ${g}`] : [] })
+check(`the kit's day keys every channel at every sun moment (${SLOTS.length} slots: ${SLOTS.join(' · ')})`, () => {
+  const bad = dayProblems(kitDayChannel)
+  return bad.length ? bad.join(' · ') : null
+})
+
+const townLooks = (idx.looks || []).filter(l => l.scene).map(l => l.id)
+const towns = Object.fromEntries(townLooks.map(id => [id, readJsonOrNull(join(PUBLIC_DIR, 'looks', id, 'design.json'))]).filter(([, d]) => d))
+const copiedFrom = (get) => KIT_DAY_CHANNELS.flatMap(k => Object.entries(towns)
+  .filter(([, d]) => d[k] && JSON.stringify(d[k]) === JSON.stringify(get(k))).map(([id]) => `${k} = ${id}'s`))
+check("no channel of the kit's day is a town's Look copied in", () => {
+  if (!Object.keys(towns).length) return 'NOT MEASURED — no town-bound Look is readable'
+  const c = copiedFrom(kitDayChannel)
+  return c.length ? `${c.join(' · ')} — the default day must be designed, not one town's authoring` : null
+})
+
+// Every path an unauthored channel travels must land on the day: a path that seeds its own flat default hands that
+// town a different day in Stage, in the slab and on first paint.
+const BAKE = readFileSync(join(ROOT, 'cartograph/bake-scene.js'), 'utf8')
+const PROD = ['components', 'cartograph'].flatMap(dir => readdirSync(join(ROOT, 'src', dir)).filter(f => /\.jsx?$/.test(f))
+  .map(f => readFileSync(join(ROOT, 'src', dir, f), 'utf8'))).join('\n')
+const unreached = (bake, prod) => KIT_DAY_CHANNELS.flatMap(k => {
+  const out = []
+  const inBake = new RegExp(`\\b${k}:\\s*design\\.${k}\\s*\\|\\|\\s*kitDayChannel\\('${k}'\\)`).test(bake) || (k === 'archLight' && /migrateArchLight\(design\)/.test(bake))
+  if (!inBake) out.push(`${k}: bake-scene does not seed the day`)
+  if (!new RegExp(`kitDayChannel\\('${k}'\\)`).test(prod)) out.push(`${k}: no production consumer first-paints the day`)
+  return out
+})
+check('an unauthored channel reaches the day in the bake and in production', () => {
+  const u = unreached(BAKE, PROD)
+  return u.length ? u.join(' · ') : null
+})
+check('Stage hydrates an absent day channel to the day, and never writes the unchanged day back', () => {
+  if (!/const _kit = \(key, d, migrate\) => \(d\[key\] == null && kitDayChannel\(key\)\)/.test(STORE)) return 'the store has no _kit hydrator — an absent channel hydrates to flat defaults'
+  if (!/for \(const k of KIT_DAY_CHANNELS\) if \(k in out && JSON\.stringify\(out\[k\]\) === JSON\.stringify\(kitDayChannel\(k\)\)\) delete out\[k\]/.test(STORE))
+    return 'serializeDesign writes an unchanged day channel into the town — the next change to the kit day would never reach it'
+  return null
+})
+
+// ── mutation tests: each property must be SEEN to fail ────────────────────────────────────────────────────────
+if (process.argv.includes('--mutate')) {
+  console.log('\nMUTATIONS (each must be caught):')
+  const holed = (k) => { const c = kitDayChannel(k); if (k === 'bloom') delete c.values.deep; return c }
+  const m1 = dayProblems(holed).length > 0
+  const firstTown = Object.keys(towns).find(id => KIT_DAY_CHANNELS.some(k => towns[id][k]))
+  const firstKey = firstTown && KIT_DAY_CHANNELS.find(k => towns[firstTown][k])
+  const m2 = firstTown ? copiedFrom(k => k === firstKey ? towns[firstTown][k] : kitDayChannel(k)).length > 0 : null
+  const m3 = unreached(BAKE.replace("kitDayChannel('mist')", "{ values: { ...MIST_FLAT_DEFAULTS } }"), PROD).length > 0
+  for (const [label, caught] of [['bloom loses its Deep night key', m1], [`the kit copies ${firstTown}'s ${firstKey}`, m2], ['the bake seeds mist flat', m3]]) {
+    if (caught === null) { console.log(`  ⚠️  NOT MEASURED  ${label} (no town carries a day channel to copy)`); continue }
+    console.log(`  ${caught ? '✅ caught' : '⛔ MISSED'}  ${label}`); caught ? pass++ : fail++
+  }
+}
 
 console.log(`\n${fail ? '⛔' : '✅'} ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

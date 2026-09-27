@@ -74,8 +74,8 @@ console.log('④ DEFAULTS AND VALIDITY')
   const noMin = { ...ch, edges: { dawn: { fade: 'down' } } }
   near(pool(noMin, MIN.dawn + TOD_FADE_DEFAULT_MIN), 0) && pool(noMin, MIN.dawn + TOD_FADE_DEFAULT_MIN - 1) > 0
     ? ok(`absent minutes = TOD_FADE_DEFAULT_MIN (${TOD_FADE_DEFAULT_MIN})`) : bad('absent minutes do not use TOD_FADE_DEFAULT_MIN')
-  const notEdge = { ...ch, edges: { night: { fade: 'down', minutes: 30 } } }   // night's next tile (dawn, across midnight) is keyed
-  near(pool(notEdge, MIN.night + 60), pool(ch, MIN.night + 60)) ? ok('a mark on a key with no blank beside it is ignored') : bad('a mark with no blank beside it changed the value')
+  const notEdge = { ...ch, edges: { dusk: { fade: 'down', minutes: 30 } } }   // dusk's next tile (night) is keyed
+  near(pool(notEdge, MIN.dusk + 20), pool(ch, MIN.dusk + 20)) ? ok('a mark on a key with no blank beside it is ignored') : bad('a mark with no blank beside it changed the value')
   const edited = todEdgePatch({ ...ch, transitionIn: 30, transitionOut: 30 }, 'dusk', 'up', 20)
   edited.edges?.dusk?.minutes === 20 && !('transitionIn' in edited) ? ok('todEdgePatch writes the mark and drops the dead channel-level boxes') : bad('todEdgePatch did not write the mark')
   !('edges' in todEdgePatch(edited, 'dusk', null)) ? ok('clearing the last mark removes `edges`') : bad('clearing left an empty edges')
