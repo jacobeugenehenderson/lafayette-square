@@ -53,6 +53,7 @@
 import { useState } from 'react'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCartographStore from './stores/useCartographStore.js'
+import SliderRow from './SliderRow.jsx'
 import {
   NAMED_TOD_SLOTS, getTodSlotLabel, todSlotAtMinute,
   getTodSlotMinutes, resolveGroupAtMinute, todEdge, TOD_FADE_DEFAULT_MIN,
@@ -223,23 +224,10 @@ function TodAnimationRow({ attachedIds, parkedSlotId, onScrub, onFill, onRemove,
 // ── Slider ─────────────────────────────────────────────────────────────────
 
 function ChannelSlider({ field, value, editable, onChange }) {
-  const min = field.min ?? 0
   return (
-    <div className="space-y-0.5">
-      <div className="flex items-baseline justify-between">
-        <span className="text-caption" style={{ color: 'var(--on-surface-variant)', fontSize: 'var(--type-caption)' }}>{field.label}</span>
-        <span className="font-mono" style={{ color: 'var(--on-surface-medium)', fontSize: 'var(--type-caption)' }}>
-          {Number(value || 0).toFixed(2)}
-        </span>
-      </div>
-      <input type="range" min={min} max={field.max} step={field.step}
-        value={Number(value) || 0}
-        disabled={!editable}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full"
-        style={{ accentColor: 'var(--vic-gold)', opacity: editable ? 1 : 0.4 }}
-        title={editable ? '' : 'Park on a slot to edit'} />
-    </div>
+    <SliderRow label={field.label} value={value} min={field.min ?? 0} max={field.max} step={field.step}
+      suffix={field.unit ?? ''} disabled={!editable} title={editable ? '' : 'Park on a slot to edit'}
+      onChange={onChange} />
   )
 }
 

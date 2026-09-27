@@ -38,6 +38,7 @@ import { setPieceOf } from '../components/SetPiece.jsx'
 import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, resolveHorizon } from '../cartograph/skyLightChannels.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { townRanges } from '../lib/townRange.js'
+import SliderRow from '../cartograph/SliderRow.jsx'
 
 
 // ── Tickers ─────────────────────────────────────────────────────────────────
@@ -442,22 +443,6 @@ function Vec3Input({ label, value, onChange }) {
   )
 }
 
-function SliderRow({ label, value, onChange, min, max, step = 1, suffix = '' }) {
-  return (
-    <div className="space-y-0.5">
-      <div className="flex items-center justify-between">
-        <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>{label}</span>
-        <span className="text-caption font-mono" style={{ color: 'var(--on-surface-medium)' }}>
-          {value}{suffix}
-        </span>
-      </div>
-      <input type="range" min={min} max={max} step={step} value={value}
-        className="w-full" style={{ accentColor: 'var(--vic-gold)' }}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-      />
-    </div>
-  )
-}
 
 function ColorRow({ label, value, onChange }) {
   return (
