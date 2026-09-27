@@ -66,7 +66,7 @@ export const _haloColorRef       = { current: new THREE.Color(HALO_FLAT_DEFAULTS
  */
 export function usePostFxDriver({
   bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
-  haloChannel, gradeChannel, grainChannel, dofChannel, dofOn,
+  haloChannel, gradeChannel, grainChannel, dofChannel, dofOn, dofFocus,
   viewMode, aoRef, bloomRef,
 }) {
   const { gl, camera } = useThree()
@@ -153,7 +153,7 @@ export function usePostFxDriver({
     // the orbit pivot when flying). Cheap;
     // only meaningful when dofOn (i.e. the DoF pass is mounted).
     if (dofOn) {
-      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target })
+      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, pickedFocus: dofFocus?.point })
     }
   })
 }

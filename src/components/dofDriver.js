@@ -42,7 +42,10 @@ let _warnedNoFocus = false
  *                    2026-09-26: DoF focuses on the keyframe's authored target).
  *                    ⛔ Never a hero subject (BRIEF-camera-regimes).
  */
-export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint }) {
+const _picked = new THREE.Vector3()
+export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint, pickedFocus }) {
+  // A picked focus (the Focus card's Pick) holds through the whole move; else the camera's aim.
+  if (pickedFocus) focusPoint = _picked.fromArray(pickedFocus)
   const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
 
   // Browse (overhead) camera: kill DoF — from above, the scene sits at ~one

@@ -703,6 +703,37 @@ function Controls({ controlsRef, heroPlaying = false }) {
   return <RegimeControls key="persp" regime={heroPlaying ? 'playback' : 'orbit'} controlsRef={controlsRef} />
 }
 
+// ── Focus › Pick — the next click in the view sets where depth of field focuses ──────────────────────────
+// (Jacob, 2026-09-27: "it's the monument. The buildings are clickable … put a picker/selector in the blur panel").
+// The hit POINT is stored (store#dofFocus); the camera-move no longer drags the focus with it.
+function DofFocusPicker() {
+  const picking = useCartographStore(s => s.dofPicking)
+  const { gl, camera, scene } = useThree()
+  useEffect(() => {
+    if (!picking) return
+    const el = gl.domElement
+    const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
+    const onDown = (e) => {
+      e.preventDefault(); e.stopPropagation()
+      const r = el.getBoundingClientRect()
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
+      ray.setFromCamera(ndc, camera)
+      // The first real surface: skip the sky dome and star field (far, depth-write off, points).
+      const hit = ray.intersectObjects(scene.children, true).find(h =>
+        h.object.visible && !h.object.isPoints && h.object.material?.depthWrite !== false && h.distance < 20000)
+      if (!hit) { console.error('[Focus] nothing under the click to focus on — pick a building or the ground'); return }
+      useCartographStore.getState().setDofFocus({
+        point: hit.point.toArray().map(v => +v.toFixed(2)),
+        label: hit.object.name || hit.object.parent?.name || 'picked point',
+      })
+    }
+    el.style.cursor = 'crosshair'
+    el.addEventListener('pointerdown', onDown, true)
+    return () => { el.removeEventListener('pointerdown', onDown, true); el.style.cursor = '' }
+  }, [picking, gl, camera, scene])
+  return null
+}
+
 // ── Environment tickers (shot-only) ────────────────────────────────────────
 // ⭐ A SCRUBBED CLOCK STANDS STILL (Jacob, 2026-09-27: "When we're in a time slot, the time needs to stop. I have
 // been editing against an hour in the future"). The ticker ran on after a chip click or a drag, so the scene drifted
@@ -1061,6 +1092,7 @@ export default function CartographApp() {
   const haloOverride     = useCartographStore(s => activeChannel(s, 'halo'))
   const gradeOverride    = useCartographStore(s => activeChannel(s, 'grade'))
   const dofOverride      = useCartographStore(s => activeChannel(s, 'dof'))
+  const dofFocusOverride = useCartographStore(s => s.dofFocus)
   const grainOverride    = useCartographStore(s => activeChannel(s, 'grain'))
   const shadowOverride   = useCartographStore(s => activeChannel(s, 'shadow'))
   const setPieceLightOverride = useCartographStore(s => activeChannel(s, 'setPieceLight'))
@@ -1377,7 +1409,9 @@ export default function CartographApp() {
             gradeOverride={gradeOverride}
             grainOverride={grainOverride}
             dofOverride={dofOverride}
+            dofFocusOverride={dofFocusOverride}
           />}
+          {!inDesigner && <DofFocusPicker />}
           <group visible={!inDesigner}>
             {/* ⚠️ `?csm=1` — cascaded shadow maps, dark by default. Mounted HERE as well as
                 Preview because Stage is where the operator has camera control and the

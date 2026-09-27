@@ -74,7 +74,7 @@ if (!SCENE_KEYED) {
 // SCENE_KEYED (which is about keys); these are about values in a local frame.
 // Jacob, 2026-09-19: "the camera motion is not something that carries
 // realistically from hood to hood" ⇒ the kit stores no camera.
-const CAMERA_AND_PLACE = ['heroKeyframes', 'shots', 'browseFrame', 'heroSubject', 'parkTitlePos']
+const CAMERA_AND_PLACE = ['heroKeyframes', 'shots', 'browseFrame', 'heroSubject', 'parkTitlePos', 'dofFocus']
 
 const idx = readJsonOrNull(join(PUBLIC_DIR, 'looks/index.json'))
 if (!idx) { console.error('⛔ FAIL — public/looks/index.json unreadable.'); process.exit(2) }

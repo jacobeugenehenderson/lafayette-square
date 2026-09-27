@@ -436,6 +436,11 @@ const DESIGN_FIELDS = [
   _grp('dirSun',         DIRSUN_FIELD_KEYS,         DIRSUN_FLAT_DEFAULTS),
   _grp('dirMoon',        DIRMOON_FIELD_KEYS,        DIRMOON_FLAT_DEFAULTS),
   { key: 'heroSubject',   hydrate: (d) => d.heroSubject || null },
+  // ⭐ WHERE DEPTH OF FIELD FOCUSES — a point the operator PICKED in the view (the monument, a building), held
+  // through the whole camera move (Jacob, 2026-09-27: the aim point slides with the move). A PLACE in this town's
+  // frame, so serve.js strips it when a Look is seeded for another town. null = focus on what the camera aims at.
+  { key: 'dofFocus',      hydrate: (d) => (Array.isArray(d.dofFocus?.point) && d.dofFocus.point.length === 3 && d.dofFocus.point.every(Number.isFinite))
+      ? { point: d.dofFocus.point.slice(), label: String(d.dofFocus.label || 'picked point') } : null },
   { key: 'heroKeyframes', hydrate: (d) => Array.isArray(d.heroKeyframes) ? d.heroKeyframes : [...HERO_KEYFRAMES_DEFAULT] },
   { key: 'heroMotion',    hydrate: (d) => {
     // ⛔ A pre-timeline motion ({ period, easing }) is not merged onto the default:
@@ -800,6 +805,8 @@ const useCartographStore = create((set, get) => ({
   // (BRIEF-camera-regimes, 2026-09-26) — shots are the keyframes below. Its one
   // reader today is the Stage "Hero & Horizon" card (landscape vs arch knobs).
   heroSubject: null,
+  dofFocus: null,
+  dofPicking: false,   // session: the next click in the Stage view sets the focus point
   // Authored Hero camera path. Each keyframe = { position: [x,y,z],
   // target: [x,y,z], fov } — its own aim; every runtime refuses one without
   // (heroAnim.js#assertKeyframesAimed). Empty by default (the kit stores no
@@ -1667,6 +1674,11 @@ const useCartographStore = create((set, get) => ({
     set({ heroSubject: subject || null })
     get()._saveDesignDebounced()
   },
+  setDofFocus: (focus) => {
+    set({ dofFocus: focus || null, dofPicking: false })
+    get()._saveDesignDebounced()
+  },
+  setDofPicking: (on) => set({ dofPicking: !!on }),
   setHeroKeyframes: (keyframes) => {
     set({ heroKeyframes: keyframes })
     get()._saveDesignDebounced()

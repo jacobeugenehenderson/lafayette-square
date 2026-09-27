@@ -108,7 +108,7 @@ const _tmpHorizon = new THREE.Color()
 export function PostProcessing({
   lookId, bakeLastMs, viewMode,
   bloomOverride, aoOverride, exposureOverride, warmthOverride,
-  fillOverride, haloOverride, gradeOverride, grainOverride, dofOverride,
+  fillOverride, haloOverride, gradeOverride, grainOverride, dofOverride, dofFocusOverride,
   inspect,   // Preview only: { toggles } — per-pass visibility matrix (see RenderPipeline).
 }) {
   const bloomRef = useRef()
@@ -147,6 +147,7 @@ export function PostProcessing({
   usePostFxDriver({
     bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
     haloChannel, gradeChannel, grainChannel, dofChannel, dofOn: dofMounted,
+    dofFocus: dofFocusOverride !== undefined ? dofFocusOverride : (scene?.dofFocus ?? null),
     viewMode, aoRef, bloomRef,
   })
 
