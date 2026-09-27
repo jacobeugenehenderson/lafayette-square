@@ -87,3 +87,18 @@ near and far.
 
 **The instruction is confirm-then-build:** measure, tell Jacob what the bare space is and your proposal, then
 build. If the code contradicts this brief, stop and flag him.
+
+## ▶ READY TO RUN on Jacob's go (Strand's handoff, 2026-09-27 night; not run, since a peer can't give the go)
+The terrain changed (the rock stays under breakwaters and groynes, cde379d0), so each town, **provincetown first, then huron**:
+```
+cd cartograph && node bake-terrain.js --scene=T && cp data/T/clean/terrain.json ../public/baked/T/ && cp data/T/clean/terrain.bin ../public/baked/T/ \
+  && node bake-ground.js --look=T --scene=T && node bake-ground-ao.js --look=T --scene=T && node bake-lamps.js --look=T --scene=T
+```
+then the trees with the flags from `tree-bake-inputs.mjs#treeBakeInputsForMap(T)` (as serve.js builds them), then
+`node bake-tree-anchors.js --look=T --scene=T`, then `node bake-revetment.js --scene=T` (which also picks up e521e577: every OSM bucket).
+Checks: `claims-the-shore-is-closed`, `claims-the-ground-has-no-cross-polygon-t-junctions`, `claims-a-level-body-has-one-surface`,
+`claims-every-metre-of-drawn-shore-is-named`. LS: prove terrain.bin byte-identical (no coast, so the step never runs).
+**Owed rulings before decks:** (1) floating docks ride 16–24 in above the WATER (UFC 4-152-07 §6-3.3.1; 94 floating piers), not at land
+height; (2) fixed deck thickness has no permitted source (UFC 4-152-01, CEM Part VI): an OSM tag, an authored per-town value, or more research?
+**Next:** breakwater/groyne stone (the design is ready), then solid decks, lifting what stands on them. **His eye:** the revetment's heap ends,
+and both towns at the water's edge near and far.
