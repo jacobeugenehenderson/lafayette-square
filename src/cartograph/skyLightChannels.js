@@ -592,7 +592,7 @@ const DAY = {
   fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.92, 0.85] },
   // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
   // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
-  mist:     { amount: [0.18, 0.25, 0.08, 0.28, 0.25, 0.2, 0.12, 0.08],
+  mist:     { amount: [0.55, 0.45, 0.2, 0.5, 0.45, 0.35, 0.2, 0.15],
               color: ['#9a86c0', '#efc7a6', '#cfe2f0', '#f6cb8e', '#e89c7c', '#3e4f86', '#0b0f1c', '#080b16'] },
   // Halo is a SCREEN BAND, not distance haze (renderPipeline.jsx#AerialPerspectiveEffect): it washes the middle of the
   // frame whatever is there, so a Hero shot looking down on the town hazes near and far alike. Kept faint; Mist is

@@ -211,7 +211,7 @@ The pool is **baked into the ground** (contour-correct), so its *shape* is a bak
 
 The distance: the Arch or the backdrop where the town has one, and the air between. *(Was "Hero & Horizon"; the
 horizon ground disc is gone — the town's edge is the neighborhood fade, set in Extent: **Fade band** + **Ruffle**.)*
-- **Mist** — **Amount** + colour: distance fog. Amount is **how much of the town the fog hides** — the share of light lost across the town's width (its disc diameter), so the same number reads the same in a small town and a big one. `0.1` is a clear day's haze, `0.3` a misty morning, `0.95` the top. A town with no known size gets no fog, and says so in the console. TOD.
+- **Mist** — **Amount** + colour: distance fog. Amount is **how much of the town the fog hides** — the share of light lost across the town's width (its disc diameter), so the same number reads the same in a small town and a big one. `0.1` is a clear day's haze, `0.3` a misty morning, `0.95` the top. **Its colour meets the sky:** distant fog takes the sky's live horizon colour, and the Mist colour tints it (a quarter). A town with no known size gets no fog, and says so in the console. TOD.
 - **Halo** — the aerial-perspective glow strength + colour (sky-light bleeding into distance). TOD.
 
 - **Arch placement** (non-TOD) — the Gateway Arch's **Distance**, **Scale**, **Rotation**, **Y-offset**, and **Foot-fade** (where the legs dissolve into the ground).

@@ -102,6 +102,7 @@ export function ExposureTicker({ lookId, bakeLastMs, exposureOverride }) {
 // ── Shared PostProcessing consumer ──────────────────────────────────────────
 
 const _tmpColor = new THREE.Color()
+const _tmpHorizon = new THREE.Color()
 
 export function PostProcessing({
   lookId, bakeLastMs, viewMode,
@@ -278,7 +279,13 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
       if (!_mistWarned) { _mistWarned = true; console.error('[StageFog] the scene disc has no radius — Mist cannot be sized to the town, so fog is OFF') }
       fogRef.current.density = 0
     } else fogRef.current.density = density
-    _tmpColor.set(m.color)
+    // ⭐ THE HAZE MEETS THE SKY: far fog takes the dome's live horizon colour, and the authored Mist colour TINTS it
+    // (a quarter). A fixed colour per slot met the sky only where the two happened to agree — a flat slab with a
+    // hard line where it met the dome (Jacob's Dawn pass, 2026-09-27). The bands are sRGB display values
+    // (skyGrid.js), so they are decoded on the way in.
+    const h = useSkyState.getState().skyBands.horizon
+    _tmpHorizon.setRGB(h.r, h.g, h.b, THREE.SRGBColorSpace)
+    _tmpColor.set(m.color).lerp(_tmpHorizon, 0.75)
     fogRef.current.color.copy(_tmpColor)
   })
 
