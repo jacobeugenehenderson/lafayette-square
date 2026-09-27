@@ -798,7 +798,6 @@ function PublishPanel({ lookId }) {
   // is. The drawer is a second audience behind a closed door, not a change to the first.
   // ⛔ DEFAULT CLOSED, and in-memory by design — a refresh returns to the operator's face.
   const [drawer, setDrawer] = useState(false)
-  const [smsStage, setSmsStage] = useState('capture') // capture → push → pushing → live (in-memory; a refresh just resets to capture, by design)
   const API = `/api/cartograph/looks/${encodeURIComponent(lookId)}`
 
   async function load() {
@@ -896,7 +895,8 @@ function PublishPanel({ lookId }) {
     setBusy(null)
   }
 
-  // Stage 1: snapshot the current slab frame → center-square JPEG → save it.
+  // Snapshot the current slab frame → center-square JPEG → public/photos/og-preview.jpg.
+  // It is committed with the next Publish (it is in the slab pathspecs); nothing ships it on its own.
   async function smsCapture() {
     setCapturing(true); setMsg(null)
     try {
@@ -904,40 +904,9 @@ function PublishPanel({ lookId }) {
       const r = await fetch('/api/cartograph/og-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl }) })
       const data = await r.json()
       if (!r.ok || data.error) throw new Error(data.error || 'save failed')
-      setSmsStage('push')
       setMsg({ kind: 'ok', text: `Captured · ${Math.round(data.bytes / 1024)} KB` })
     } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
     setCapturing(false)
-  }
-
-  // Poll prod (server-side) until the live OG image == the captured one.
-  function pollOgLive() {
-    return new Promise(resolve => {
-      let n = 0
-      const iv = setInterval(async () => {
-        n += 1
-        try { const j = await (await fetch('/api/cartograph/og-deployed')).json(); if (j.live) { clearInterval(iv); resolve(true); return } } catch { /* keep polling */ }
-        if (n >= 40) { clearInterval(iv); resolve(false) }   // ~10 min cap @ 15s
-      }, 15000)
-    })
-  }
-
-  // Stage 2: commit the captured image (+ any slab changes) and ship straight to
-  // PROD. Staging adds nothing for a slab-data publish — Preview is the gate.
-  async function smsPush() {
-    setSmsStage('pushing'); setMsg(null)
-    try {
-      const pub = await (await fetch(`${API}/publish`, { method: 'POST' })).json()
-      if (pub.error) throw new Error(pub.error)
-      // ⛔ UNREACHABLE WHILE DISABLED (see `sms.push` below). Kept so re-enabling is one line.
-      const prom = await (await fetch(`${API}/promote`, { method: 'POST' })).json()
-      if (prom.error) throw new Error(prom.error)
-      setMsg({ kind: 'ok', text: 'Going live…' })
-      const live = await pollOgLive()
-      setSmsStage('live')
-      setMsg({ kind: 'ok', text: live ? 'Live ✓' : 'Still deploying…' })
-      await load()
-    } catch (e) { setSmsStage('push'); setMsg({ kind: 'err', text: String(e.message || e) }) }
   }
 
   if (!status) return null   // probing or no backend → render nothing
@@ -1025,16 +994,6 @@ function PublishPanel({ lookId }) {
   // was inert AND present-tense, which reads as a failure. `stagingDone`/`prodDone`
   // above answer the question the operator actually has — is there anything of mine
   // still unsent — and that is true the instant the push lands.
-  // The SMS-hero multistate button: Capture → Push (straight to prod) → Live.
-  const sms = {
-    capture: { label: capturing ? 'Capturing…' : '📷 Capture SMS Hero', onClick: smsCapture, bg: 'rgba(168,85,247,0.18)', color: '#e9d5ff' },
-    // ⛔ OFF (Jacob, 2026-09-26) until per-town Promote is proven on Provincetown: it called
-    // /promote straight to production and polled a Lafayette-Square-only probe (`/og-deployed`).
-    // The capture still works and ships with the next Publish.
-    push:    { label: 'Push SMS Hero — off for now', onClick: null, bg: 'rgba(74,222,128,0.08)', color: '#9ca3af' },
-    pushing: { label: 'Pushing…', onClick: null, bg: 'rgba(74,222,128,0.10)', color: '#bbf7d0' },
-    live:    { label: '✓ SMS Hero live — recapture', onClick: () => { setSmsStage('capture'); setMsg(null) }, bg: 'rgba(96,165,250,0.16)', color: '#bfdbfe' },
-  }[smsStage]
 
   return (
     <div style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 50, display: 'flex', alignItems: 'flex-end', gap: 8 }}>
@@ -1052,10 +1011,10 @@ function PublishPanel({ lookId }) {
       </div>
       {status.unbaked && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Unbaked edits — Publish bakes first.</div>}
 
-      <button disabled={!!busy || capturing || !sms.onClick} onClick={sms.onClick || undefined}
-        style={btn({ background: sms.bg, color: sms.color, opacity: (busy || capturing || smsStage === 'pushing') ? 0.6 : 1 })}
-        title="Snapshot the current slab view (center-square, no UI) as the SMS/link-preview image, then ship to prod">
-        {sms.label}
+      <button disabled={!!busy || capturing} onClick={smsCapture}
+        style={btn({ background: 'rgba(168,85,247,0.18)', color: '#e9d5ff', opacity: (busy || capturing) ? 0.6 : 1 })}
+        title="Snapshot the current slab view (center-square, no UI) as the SMS/link-preview image. It is committed with the next Publish.">
+        {capturing ? 'Capturing…' : '📷 Capture SMS Hero'}
       </button>
       {targetRow('staging', <button disabled={!!busy || stagingDone} onClick={publishStaging}
         style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>

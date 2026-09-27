@@ -176,11 +176,6 @@ const ASSET_ENV_PREFIX = { prod: '', staging: 'staging/' }
 // kit-level term; Lafayette Square is installation #1.
 // ▶ served by `workers/staging-sites`, one Worker for every town.
 const STAGING_SITE_BASE = 'https://staging.theward.online/'
-// ⛔ LAFAYETTE SQUARE'S OWN DOMAIN, and it is used for ONE thing: the `/og-deployed`
-// probe, which asks whether the link-preview image is live on the production site.
-// ⛔ That probe is LS-shaped and serves only the "Push SMS Hero" button, which is OFF until
-// per-town Promote is proven. Every other town's production address comes from Operations.
-const LS_PROD_SITE_URL = 'https://lafayette-square.com/'
 
 /**
  * ⭐ THE INSTRUMENT FOR PRODUCTION (BRIEF-production-sites "Can the instrument see it?"): ask the
@@ -3120,22 +3115,6 @@ createServer(async (req, res) => {
     return
   }
 
-  // GET /og-deployed — is the captured OG image live on prod yet? Compares the
-  // live prod image's byte size to the local committed one (server-side → no
-  // browser CORS). The "Push SMS Hero" button polls this for its ✓ Live state.
-  if (req.method === 'GET' && path === '/og-deployed') {
-    let localBytes = null
-    try { localBytes = statSync(join(import.meta.dirname, '..', 'public', 'photos', 'og-preview.jpg')).size } catch { /* none */ }
-    let prodStatus = null, prodBytes = null
-    try {
-      const r = await fetch(`${LS_PROD_SITE_URL}photos/og-preview.jpg?cb=${Date.now()}`, { cache: 'no-store' })
-      prodStatus = r.status
-      if (r.ok) prodBytes = (await r.arrayBuffer()).byteLength
-    } catch { /* offline */ }
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(JSON.stringify({ ok: true, live: localBytes != null && prodBytes === localBytes, prodStatus, localBytes, prodBytes }))
-    return
-  }
 
   // GET /looks/<id>/deployed?target=staging|prod — server-side read of the LIVE
   // slab's bakedAt (node fetch → no browser CORS). The Publish panel polls this to

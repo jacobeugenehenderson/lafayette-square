@@ -22,8 +22,9 @@
  * like a SITE (not an asset host, not a CDN) sitting in the publish server is checked for
  * whether a per-look deriver exists to explain it. One exemption, named in the code and
  * re-stated here because an unexplained exemption is how the constant comes back:
- * `LS_PROD_SITE_URL` is Lafayette Square's own domain, used only by `/og-deployed`, which
- * is boarded as LS-shaped under H-18.
+ * `STAGING_SITE_BASE` is The Ward's staging HOST, never an answer on its own — the per-look
+ * address is always derived from it. (`LS_PROD_SITE_URL` was the other, for the `/og-deployed`
+ * probe; both were deleted 2026-09-26 with the share-card push.)
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -57,7 +58,7 @@ if (!/function\s+siteUrlsForLook\s*\(/.test(src)) {
 
 // ── 2. No site literal is emitted by a publish path.
 //    A SITE literal is an http(s) string that is not an asset/CDN host.
-const EXEMPT = new Set(['LS_PROD_SITE_URL', 'STAGING_SITE_BASE'])
+const EXEMPT = new Set(['STAGING_SITE_BASE'])
 const ASSETY = /assets\.|\.r2\.|cdn|overpass|api\./i
 const lines = src.split('\n')
 const literals = []
