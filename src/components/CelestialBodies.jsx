@@ -848,6 +848,21 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
           MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
         ).value
         u.uMilkyWay.value = (mw == null ? 0 : mw)
+        // ⭐ THE BAND STANDS WHERE THE GALAXY IS: the galactic north pole (J2000 RA 192.859°, Dec +27.128°) through the
+        // same equatorial → horizontal transform the stars use, for this town and this moment. It was a fixed
+        // direction "aimed to dive behind the arch" — Lafayette Square's composition in every town (Jacob, Deep night
+        // pass 2026-09-27: "Where is the Milky Way?").
+        if (u.uMilkyWay.value > 0.001) {
+          const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0)
+          const d = (tod.currentTime.getTime() - J2000) / 86400000
+          const lst = (((280.46061837 + 360.98564736629 * d) % 360 + LONGITUDE) % 360 + 360) % 360 * Math.PI / 180
+          const lat = LATITUDE * Math.PI / 180, ra = 192.85948 * Math.PI / 180, dec = 27.12825 * Math.PI / 180
+          const ha = lst - ra
+          const sinAlt = Math.sin(dec) * Math.sin(lat) + Math.cos(dec) * Math.cos(lat) * Math.cos(ha)
+          const cosAlt = Math.sqrt(Math.max(0, 1 - sinAlt * sinAlt))
+          const az = Math.atan2(-Math.sin(ha) * Math.cos(dec) * Math.cos(lat), Math.sin(dec) - sinAlt * Math.sin(lat))
+          u.uGalPole.value.set(cosAlt * Math.sin(az), sinAlt, -cosAlt * Math.cos(az))
+        }
       } else {
         u.uMilkyWay.value = 0
       }
@@ -1043,7 +1058,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
 
         // ── Milky Way band — dense fractal noise, composited AFTER skyGain so
         // the night-dimmed dome lets it rise (like the separate star layer).
-        // Aimed to dive behind the arch. Gated by the milkyWay channel × the sky's darkness (mwNight).
+        // Placed where the galaxy really is (uGalPole, per frame). Gated by the milkyWay channel × the sky's darkness.
         // The band shows only in a really dark sky: from nautical (−12°) to full at astronomical (−18°).
         float mwNight = clamp((-0.209 - sunAlt) / 0.105, 0.0, 1.0);
         float mwGate = uMilkyWay * mwNight;
@@ -1064,9 +1079,8 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
           vec3 cC = vec3(0.26, 0.50, 0.52);   // teal
           vec3 milkColor = mix(cA, cB, smoothstep(0.30, 0.60, n));
           milkColor = mix(milkColor, cC, smoothstep(0.60, 0.88, n));
-          // Low master (~13%) — a subtle glow over the dark dome. Default for the
-          // future Brightness knob.
-          finalColor += milkColor * milk * mwGate * 0.13;
+          // Master 0.45: at 0.13 the band vanished on a dark sky (Deep night pass, 2026-09-27).
+          finalColor += milkColor * milk * mwGate * 0.45;
         }
 
         // Opaque sky — no transparent fade, no stencil portal

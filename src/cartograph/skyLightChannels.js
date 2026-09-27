@@ -587,7 +587,7 @@ const LAMP_EDGES = { sunset: { fade: 'up', minutes: 30 }, sunrise: { fade: 'down
 const DAY = {
   dirSun:   { value: [0, 1.5, 1.2, 1.7, 0.9, 0, 0, 0] },
   dirMoon:  { value: [0.7, 0.3, 0.3, 0.3, 0.3, 0.8, 1.0, 1.3] },
-  ambient:  { value: [1.6, 1.5, 1.1, 1.2, 0.85, 0.7, 3.0, 2.2] },
+  ambient:  { value: [1.6, 1.5, 1.1, 1.2, 0.85, 0.7, 3.0, 1.6] },
   hemi:     { value: [2.0, 1.8, 1.3, 1.8, 1.4, 1.6, 2.0, 1.4] },
   skyGain:  { value: [1.0, 1.05, 1.05, 1.15, 1.1, 0.95, 0.65, 0.45] },
   stars:    { brightness: [3, 1, 1, 1, 1, 0.6, 1.0, 2.2] },
@@ -596,7 +596,7 @@ const DAY = {
   shadow:   { size: [3, 5, 1, 4, 5, 3, 2, 2], samples: [16, 16, 16, 16, 16, 16, 16, 16] },
   ao:       { radius: [15, 15, 15, 15, 15, 15, 15, 15], intensity: [2.0, 2.2, 3.2, 2.0, 2.2, 2.4, 2.8, 2.6],
               distanceFalloff: [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3] },
-  fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.35, 0.5] },
+  fill:     { crush: [0.45, 0.4, 0.55, 0.3, 0.55, 0.7, 0.35, 0.35] },
   // Mist = the share of the town the fog hides across its width. Its colour sits near the sky's horizon at that hour,
   // or the fog paints a pale band against a darker sky (Dawn, first eye pass 2026-09-27).
   mist:     { amount: [1.25, 0.46, 0.28, 0.35, 0.46, 0.39, 0.28, 0.24],
@@ -610,11 +610,11 @@ const DAY = {
   exposure: { value: [1.7, 1.45, 1.18, 1.2, 1.0, 0.95, 1.15, 1.0] },
   warmth:   { value: [0.3, 0.62, 0.5, 0.88, 0.82, 0.3, 0.32, 0.25],
               tint:  [0.5, 0.7, 0.5, 0.55, 0.62, 0.55, 0.5, 0.5] },
-  grade:    { contrast: [0.5, 0.4, 0.5, 0.32, 0.45, 0.5, 0.45, 0.5], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
+  grade:    { contrast: [0.5, 0.4, 0.5, 0.32, 0.45, 0.5, 0.45, 0.35], toe: [0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28, 0.28],
               saturation: [1.35, 1.3, 1.35, 1.4, 1.3, 1.1, 1.0, 0.9], brightness: [0, 0, 0, 0, 0, 0, 0, 0],
               vignette: [0.8, 0.8, 0.4, 1.2, 1.1, 1.0, 1.5, 1.3] },
-  bloom:    { intensity: [1.2, 0.9, 0.5, 2.5, 1.5, 1.0, 1.1, 0.4], threshold: [0.45, 0.55, 0.05, 0.2, 0.4, 0.4, 0.35, 0.6],
-              spread: [0.45, 0.6, 0.5, 0.95, 0.8, 0.5, 0.2, 0.3], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
+  bloom:    { intensity: [1.2, 0.9, 0.5, 2.5, 1.5, 1.0, 1.1, 0.5], threshold: [0.45, 0.55, 0.05, 0.2, 0.4, 0.4, 0.35, 0.5],
+              spread: [0.45, 0.6, 0.5, 0.95, 0.8, 0.5, 0.2, 0.1], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
   // Depth of field, relative to the focus point (Focus › Focus on): none at Noon (Jacob's call, a crisp dollhouse),
   // a narrow window at Golden, none at night so the lights and stars stay points.
   dof:      { blur: [0.2, 0.15, 0, 0.2, 0.08, 0.1, 0, 0],
@@ -628,16 +628,16 @@ const DAY = {
               tubeRadius: [0.5, 1, 1, 1, 1, 1, 1, 1], screenFloor: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
               screenCeil: [0, 0, 0, 0, 0, 0, 0, 0] },
   // Lamps × the daylight ramp: on before it is dark (▲ at Sunset), warm gaslamps at Dusk, cold glitter at Night.
-  lantern:  { edges: LAMP_EDGES, intensity: [3, 1, null, null, 3, 1.6, 2.4, 1.3], glow: [2, 1, null, null, 2.5, 1.2, 0.9, 0.6],
-              glowSize: [1, 1, null, null, 1.25, 0.8, 0.45, 0.45],
+  lantern:  { edges: LAMP_EDGES, intensity: [3, 1, null, null, 3, 1.6, 2.4, 2.5], glow: [2, 1, null, null, 2.5, 1.2, 0.9, 0.2],
+              glowSize: [1, 1, null, null, 1.25, 0.8, 0.45, 0.2],
               color: ['#ffd9a8', '#fff2e0', null, null, '#ffb877', '#ffa95c', '#e4ecff', '#d6e2ff'] },
   // The tree cards' answer to the key light: flat across the day (0 = the historical dimmer), keyed so a Look can
   // move it by time of day like every other channel.
   canopy:   { directional: [0, 0, 0, 0, 0, 0, 0, 0], gain: [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85],
               bulge: [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9] },
-  lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [0.5, 0.5, null, null, 1.25, 1.4, 2.2, 1.1],
+  lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [0.5, 0.5, null, null, 1.25, 1.4, 2.2, 0.25],
               radius: [0.85, 0.75, null, null, 0.75, 1, 1, 1], centre: [1.2, 1.2, null, null, 0.25, 1.2, 1.2, 1.2],
-              trees: [0.3, 0.3, null, null, 0.8, 2, 0.7, 0.5] },
+              trees: [0.3, 0.3, null, null, 0.8, 2, 0.7, 0.3] },
 }
 // The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
 const UPLIGHT = { edges: LAMP_EDGES }
