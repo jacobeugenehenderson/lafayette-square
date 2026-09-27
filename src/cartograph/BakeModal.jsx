@@ -83,8 +83,8 @@ export default function BakeModal() {
         <button className="carto-bake-modal-dismiss is-primary" onClick={() => { useCartographStore.setState({ repourConfirm: null }); useCartographStore.getState().runBake({ ...resume, repour: true }) }}>Re-pour and bake</button>
       </>}>
         <div className="carto-bake-modal-msg">
-          What {scene}'s last pour read has changed — its code, its geography or a registry value — so baking now
-          re-derives its map before baking it:
+          What {scene}'s last pour read has changed — its code, a data file it reads, its geography or a registry
+          value — or baking would rewrite a file the town is holding. Baking now re-derives it first:
           <ul>{files.map(f => <li key={f}><code>{f}</code></li>)}</ul>
         </div>
       </Card>

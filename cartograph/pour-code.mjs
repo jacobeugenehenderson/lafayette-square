@@ -10,11 +10,13 @@
 //     registry: those modules are read by the pour only as this value.
 // ⛔ A map.json with no record is DIRTY, named — never clean by default (the `registryRead` rule).
 //   ▶ node checks/claims-the-bake-watches-its-code.mjs
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, statSync, readdirSync } from 'fs'
 import { join, dirname, relative } from 'path'
 import { createHash } from 'crypto'
 import { fileURLToPath } from 'url'
 import { geographyFor } from './geography.mjs'
+import { mapDir, DEFAULT_MAP } from './scene.js'
+import { declaredParcelPaths, sourcesPath } from './sources.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = join(HERE, '..')
@@ -48,20 +50,54 @@ export function importClosure(entries, { stopAt = [] } = {}) {
 
 export const pourCodeClosure = () => importClosure([POUR_ENTRY], { stopAt: [TOWN_REGISTRY] })
 
-const sha1 = (f) => { try { return createHash('sha1').update(readFileSync(f)).digest('hex') } catch { return null } }
-
-// → { path: sha1 } for the pour's code as it stands now (pipeline.js stamps this into map.json as `codeRead`).
-export function pourCodeRecord(files = pourCodeClosure()) {
-  return Object.fromEntries(files.map(f => [relative(REPO_ROOT, f), sha1(f)]).sort(([a], [b]) => a < b ? -1 : 1))
+// ⭐ A FILE'S CONTENT, hashed once per (path, mtime, size) — a bake hashes map.json for several steps and pays once.
+// A missing file hashes to null (so its APPEARING later is a change); a directory to the hash of its sorted listing.
+const _hashCache = new Map()
+function contentHash(f) {
+  let st; try { st = statSync(f) } catch { return null }
+  const key = `${f}|${st.mtimeMs}|${st.size}|${st.isDirectory()}`
+  if (_hashCache.has(key)) return _hashCache.get(key)
+  const h = createHash('sha1')
+  if (st.isDirectory()) for (const e of readdirSync(f).sort()) h.update(`${e}:${contentHash(join(f, e))}\n`)
+  else h.update(readFileSync(f))
+  const out = h.digest('hex'); _hashCache.set(key, out); return out
 }
 
-// The files whose content differs from what the last pour ran → their paths. ⛔ No record ⇒ dirty.
-export function pourCodeChanged(record, files = pourCodeClosure()) {
-  if (!record || typeof record !== 'object') return ['(no record of the code the last pour ran)']
-  const now = pourCodeRecord(files), out = []
-  for (const [p, h] of Object.entries(now)) if (record[p] !== h) out.push(p in record ? p : `${p} (new to the pour)`)
-  for (const p of Object.keys(record)) if (!(p in now)) out.push(`${p} (no longer in the pour)`)
+// → { path: sha1 | null } for a set of files as they stand now — CODE (the pour's `codeRead`, a step's closure) or
+// DATA (a step's declared inputs). Every bake step keeps one in clean/bake-reads.json (serve.js `runIfDirty`), so it
+// re-runs on a CONTENT change and never on an mtime — a checkout, or writeIfChanged's touch, changes nothing.
+export function contentRecord(files) {
+  return Object.fromEntries(files.map(f => [relative(REPO_ROOT, f), contentHash(f)]).sort(([a], [b]) => a < b ? -1 : 1))
+}
+
+// The files whose content differs from `record` → their paths. ⛔ No record ⇒ dirty, named.
+export function contentChanged(record, files, who = 'this step') {
+  if (!record || typeof record !== 'object') return [`(no record of what ${who} last read)`]
+  const now = contentRecord(files), out = []
+  for (const [p, h] of Object.entries(now)) if (record[p] !== h) out.push(p in record ? p : `${p} (new to ${who})`)
+  for (const p of Object.keys(record)) if (!(p in now)) out.push(`${p} (no longer read by ${who})`)
   return out
+}
+
+export const pourCodeRecord = (files = pourCodeClosure()) => contentRecord(files)
+export const pourCodeChanged = (record, files = pourCodeClosure()) => contentChanged(record, files, 'the pour')
+
+// ⭐ THE POUR'S OTHER DATA READS — files pipeline.js/derive.js open that were never declared (the bake-read audit,
+// 2026-09-26). The pour stamps their content as `map.json.dataRead`; a change to one re-pours only after the SAME
+// question as a code change (Boz's ruling: the operator was never told these drive the pour). The authoring inputs
+// (overlay, skeleton, measurements…) are NOT here — they re-pour without asking. ▶ the site of each read is named.
+export function pourDataReads(scene) {
+  const raw = join(mapDir(scene), 'raw'), clean = join(mapDir(scene), 'clean')
+  return [
+    join(raw, 'msbf.json'),                                   // pipeline.js main — the footprint well
+    join(mapDir(scene), 'neighborhood_boundary.json'),        // pipeline.js — membership
+    join(mapDir(scene), 'building-overrides.json'),           // pipeline.js — authored building edits
+    join(raw, 'survey.json'),                                 // derive.js — surveyed widths
+    join(clean, 'park-polygon.json'),                         // derive.js — the authored park
+    scene === DEFAULT_MAP ? join(REPO_ROOT, 'scripts', 'raw', 'osm_street_lamps.json') : join(raw, 'osm_street_lamps.json'),  // derive.js
+    join(mapDir(scene), 'content', 'county-land-use-codes.csv'),  // derive.js → parcel-landuse#loadCountyCodeTable
+    sourcesPath(scene), ...declaredParcelPaths(scene),        // derive.js → sources.js#readSources, and its parcel wells
+  ]
 }
 
 // The geography the last pour projected with vs `scene`'s now → a one-line reason, or null. ⛔ No record ⇒ dirty.

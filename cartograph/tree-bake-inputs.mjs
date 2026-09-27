@@ -21,13 +21,31 @@
  * error: the caller skips the placement step rather than baking someone else's
  * trees under this scene's name.
  */
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mapCleanDir } from './config.js'
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const LOOKS_INDEX = join(REPO_ROOT, 'public', 'looks', 'index.json')
+
+// ⭐ THE TREE LIBRARY, AS ONE INPUT (Boz's ruling, 2026-09-26) — every library file bake-trees OPENS (traced
+// 2026-09-26): the index, each species' manifest, the chassis metadata, the dossiers, the compositions, the
+// curation, the part index, the rubric and the name canon. ⛔ NOT the GLB/texture payload: bake-trees carries those
+// as URLs and never opens them. The Bake hashes this set by content, so a library edit re-bakes every town's trees.
+export function treeLibraryFiles() {
+  const ls = (d, keep) => { try { return readdirSync(d, { withFileTypes: true }).filter(keep).map(e => join(d, e.name)).sort() } catch { return [] } }
+  const trees = join(REPO_ROOT, 'public', 'trees'), arb = join(REPO_ROOT, 'arborist'), state = join(arb, 'state')
+  return [
+    join(trees, 'index.json'),
+    ...ls(trees, e => e.isDirectory() && !e.name.startsWith('_')).map(d => join(d, 'manifest.json')),
+    ...ls(join(trees, '_chassis'), e => e.name.endsWith('.meta.json')),
+    ...ls(join(arb, 'dossiers'), e => e.name.endsWith('.json')),
+    ...ls(state, e => e.isDirectory() && !e.name.startsWith('_')).map(d => join(d, 'compositions.json')),
+    join(state, '_species-curation.json'), join(state, 'part-index.json'), join(state, 'part-index.fixture.json'),
+    join(arb, 'rubric.json'), join(arb, 'roster-name-canon.json'),
+  ]
+}
 
 /**
  * The NEIGHBOURHOOD a Look is a Look OF. This is the axis split, in one function.

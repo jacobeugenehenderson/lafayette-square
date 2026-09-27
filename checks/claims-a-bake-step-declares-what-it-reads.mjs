@@ -21,7 +21,7 @@
 //   node checks/claims-a-bake-step-declares-what-it-reads.mjs [--serve=path] [--step=label] [-v]
 //
 // MUTATION (must go red, naming `ground`): remove SCENE_TERRAIN_JSON from ground's input list, via --serve.
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { join, basename, relative } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { ROOT } from './_scenes.mjs'
@@ -72,6 +72,15 @@ const constDef = (id) => {
 }
 const mdp = (() => { const a = src.indexOf('function mapDataPaths'), b = src.indexOf('return {', a), e = balanced(src, src.indexOf('{', b)); return src.slice(src.indexOf('{', b) + 1, e - 1) })()
 const mdpKey = (k) => { const m = mdp.match(new RegExp(`\\b${k}\\s*:\\s*([^\\n]+)`)); return m ? m[1].replace(/,\s*(\/\/.*)?$/, '').trim() : null }
+// the towns on disk, and every function serve.js imports from its own modules and calls as `fn(bakeScene)`
+const TOWNS = readdirSync(join(CARTO, 'data'), { withFileTypes: true }).filter(d => d.isDirectory() && existsSync(join(CARTO, 'data', d.name, 'clean'))).map(d => d.name)
+const CALLABLE = new Map()
+for (const m of src.matchAll(/^import\s*\{([^}]+)\}\s*from\s*'(\.[^']+)'/gm)) {
+  const names = m[1].split(',').map(s => s.trim().split(/\s+as\s+/).pop()).filter(n => new RegExp(`\\b${n}\\(\\s*(bakeScene)?\\s*\\)`).test(src))
+  if (!names.length) continue
+  const mod = await import(pathToFileURL(join(CARTO, m[2])).href)
+  for (const n of names) if (typeof mod[n] === 'function') CALLABLE.set(n, mod[n])
+}
 function resolve(expr, acc, depth = 0) {
   expr = expr.trim()
   if (depth > 8) { acc.unknown.push(expr); return }
@@ -84,9 +93,27 @@ function resolve(expr, acc, depth = 0) {
   }
   const spc = expr.match(/^\.\.\.(\w+)$/)
   if (spc && constDef(spc[1])?.startsWith('[')) { resolve(constDef(spc[1]), acc, depth + 1); return }
+  // ⭐ A step's inputs EXPORTED AS A FUNCTION (Boz's ruling 3): `fn(bakeScene)`, `...fn(bakeScene)` or
+  // `...X.prop` with `const X = fn(bakeScene)` — called here for every town on disk, never guessed.
+  const call = expr.match(/^(?:\.\.\.)?(\w+)\(\s*(?:bakeScene)?\s*\)$/)
+  const prop = expr.match(/^\.\.\.(\w+)\.(\w+)$/), viaConst = prop && constDef(prop[1])?.match(/^(\w+)\(\s*bakeScene\s*\)$/)
+  if ((call && CALLABLE.has(call[1])) || (viaConst && CALLABLE.has(viaConst[1]))) {
+    const fn = CALLABLE.get(call ? call[1] : viaConst[1])
+    for (const town of TOWNS) {
+      let v
+      try { v = fn(town) } catch (e) { acc.unknown.push(`${expr} threw for ${town}: ${e.message.split('\n')[0]}`); continue }
+      if (!call) v = v?.[prop[2]]
+      for (const p of v == null ? [] : Array.isArray(v) ? v : [v]) {
+        if (typeof p !== 'string') { acc.unknown.push(`${expr} returned a non-path for ${town}`); continue }
+        if (/\.m?js$/.test(p)) acc.code.add(p.startsWith('/') ? p : join(ROOT, p)); else acc.names.add(basename(p))
+      }
+    }
+    return
+  }
   if (expr.startsWith('...')) { acc.unknown.push(expr); return }
-  const tern = expr.match(/^existsSync\((\w+)\)\s*\?\s*(\w+)\s*:\s*(\w+)$/)
-  if (tern) { resolve(tern[2], acc, depth + 1); resolve(tern[3], acc, depth + 1); return }
+  // a ternary declares BOTH branches (`isDefaultMap ? LS's bundle : the town's clean/`)
+  const tern = expr.match(/^[^?]+\?\s*(.+?)\s*:\s*([^:]+)$/)
+  if (tern && !expr.startsWith('join(') && !expr.startsWith('[')) { resolve(tern[1], acc, depth + 1); resolve(tern[2], acc, depth + 1); return }
   if (expr.startsWith('[')) { for (const e of splitTop(expr.slice(1, -1))) resolve(e, acc, depth + 1); return }
   const j = expr.match(/^join\(([\s\S]*)\)$/)
   if (j) {
@@ -106,6 +133,12 @@ function resolve(expr, acc, depth = 0) {
   acc.unknown.push(expr)
 }
 
+const RUN_IF_DIRTY_EXPANDS_CODE = (() => {
+  const a = src.indexOf('const runIfDirty = async'); if (a < 0) return false
+  const body = src.slice(a, balanced(src, src.indexOf('{', src.indexOf('=>', a))))
+  return /importClosure\(\s*inputs\.filter\(/.test(body) && /contentChanged\(/.test(body) && /saveBakeRead\(/.test(body)
+})()
+
 // ── the steps ──
 const steps = []
 for (const m of src.matchAll(/runIfDirty\(\s*'([^']+)'\s*,/g)) {
@@ -120,7 +153,14 @@ for (const m of src.matchAll(/runIfDirty\(\s*'([^']+)'\s*,/g)) {
   for (const e of arr(outputs)) resolve(e, outs)
   const sm = cmd?.match(/node\s+((?:arborist\/)?[\w.-]+\.m?js)/)
   const script = sm ? join(sm[1].startsWith('arborist/') ? ROOT : CARTO, sm[1]) : null
-  steps.push({ label: m[1], decl, outs, script, line: src.slice(0, m.index).split('\n').length })
+  // `// not-inputs: name (why) · name (why)` in the comment block directly above the call: a name the step's code
+  // mentions but that is deliberately NOT an input (a guard that only passes or throws, a literal never opened on
+  // this path). The reason sits next to the code it excuses; a NEW name the code gains still goes red.
+  const above = src.slice(0, m.index).split('\n').slice(0, -1).reverse()
+  const block = []; for (const l of above) { if (/^\s*\/\//.test(l)) block.push(l); else break }
+  const notInputs = new Map()
+  for (const l of block) { const n = l.match(/not-inputs:\s*(.*)$/); if (n) for (const part of n[1].split(' · ')) { const k = part.match(/^\s*([^\s(]+)\s*\((.*)\)\s*$/); if (k) notInputs.set(k[1], k[2]) } }
+  steps.push({ label: m[1], decl, outs, script, notInputs, line: src.slice(0, m.index).split('\n').length })
 }
 if (!steps.length) { console.log('⛔ NOT CHECKED — no runIfDirty steps parsed out of serve.js'); process.exit(2) }
 
@@ -133,23 +173,31 @@ for (const st of steps) {
   const row = { label: st.label, line: st.line, code: [], data: [], unknown: [...st.decl.unknown] }
   if (!st.script || !existsSync(st.script)) { row.unknown.push(`script not found (${st.script ?? 'no node command'})`); rows.push(row); unknowns++; continue }
   const closure = importClosure([st.script])
+  // the data scan stops at the town registry: its modules reach a step only as geography.mjs's VALUE (geography.json)
+  const scanned = importClosure([st.script], { stopAt: [pc.TOWN_REGISTRY] })
   // ⭐ The POUR is judged by content, not by this list: map.json records the code it ran (`codeRead`, over
   // `pourCodeClosure()`), the geography (`geographyRead`) and the registry entries (`registryRead`), and serve.js
   // compares all three before the pipeline step (pour-code.mjs). Credited only when serve.js actually calls them.
   if (st.script === pc.POUR_ENTRY && /pourCodeChanged\(/.test(src) && /geographyReadChanged\(/.test(src) && /registryReadChanged\(/.test(src)) {
     for (const f of importClosure([pc.POUR_ENTRY])) st.decl.code.add(f)       // town modules: read only as geographyRead
     st.decl.names.add('geography.json'); st.decl.names.add('registry.json')
+    // and its other data reads, stamped as `dataRead` and asked about — credited only when the pour stamps them
+    if (/pourDataReads\(\s*bakeScene\s*\)/.test(src) && /dataRead:\s*contentRecord\(pourDataReads\(SCENE\)\)/.test(readFileSync(pc.POUR_ENTRY, 'utf8')))
+      for (const t of TOWNS) { try { for (const f of pc.pourDataReads(t)) st.decl.names.add(basename(f)) } catch (e) { row.unknown.push(`pourDataReads(${t}) threw: ${e.message.split('\n')[0]}`) } }
   }
+  // ⭐ A step's CODE is covered when runIfDirty itself expands every declared script to its import closure and
+  // compares it by content (`codeChanged`) — read off runIfDirty's own definition, not assumed.
+  if (RUN_IF_DIRTY_EXPANDS_CODE) for (const f of importClosure([...st.decl.code])) st.decl.code.add(f)
   row.code = closure.filter(f => !st.decl.code.has(f)).map(f => relative(ROOT, f))
   const declNames = new Set([...st.decl.names, ...[...st.decl.code].map(f => basename(f))])
   const outNames = st.outs.names
   const seen = new Map()                   // basename → first file that names it
   const rx = new RegExp(`['"\`]([^'"\`\\n]*?\\.(?:${DATA_EXT}))['"\`]`, 'g')
-  for (const f of closure) {
+  for (const f of scanned) {
     let s; try { s = stripComments(readFileSync(f, 'utf8')) } catch { continue }
     for (const mm of s.matchAll(rx)) {
       const name = basename(mm[1].replace(/\$\{[^}]*\}/g, '*'))
-      if (!name || name.includes('*') || declNames.has(name) || outNames.has(name) || seen.has(name)) continue
+      if (!name || name.includes("*") || declNames.has(name) || outNames.has(name) || st.notInputs.has(name) || seen.has(name)) continue
       seen.set(name, relative(ROOT, f))
     }
   }

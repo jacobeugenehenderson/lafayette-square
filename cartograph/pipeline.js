@@ -11,7 +11,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_MAP, requireExplicitMap, GEOGRAPHY_READ } from './config.js'
-import { pourCodeRecord } from './pour-code.mjs'
+import { pourCodeRecord, contentRecord, pourDataReads } from './pour-code.mjs'
 import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
 import { deriveLayers, deriveBuildings, _lotPaths, registryReadRecord } from './derive.js'
@@ -257,6 +257,8 @@ async function main() {
     // the code this pour ran ({ path: sha1 }) and the geography it projected with — the Bake compares both by
     // CONTENT, so a checkout's mtimes or another town's favicon never ask to re-pour this one (pour-code.mjs).
     codeRead: pourCodeRecord(),
+    // the pour's other data reads ({ path: sha1 | null }) — a change to one re-pours only after the question
+    dataRead: contentRecord(pourDataReads(SCENE)),
     geographyRead: GEOGRAPHY_READ,
   }
 

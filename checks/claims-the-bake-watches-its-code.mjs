@@ -101,6 +101,19 @@ if (!/geographyRead:\s*GEOGRAPHY_READ/.test(pipe)) bad.push('pipeline.js does no
   if (h0 < 0 || g < 0 || q < 0 || q > h0 || !/repourConfirmed/.test(src.slice(q - 200, h0))) bad.push('the Bake does not stop (428, unless repour=1) on changed pour code before running the pipeline')
   else if (!/codeChanged/.test(between) || !/geoChanged/.test(between)) bad.push('the 428 list does not carry both the code and the geography changes') }
 
+// ── every OTHER step is judged by content too (Boz's rulings 2026-09-26): runIfDirty hashes each step's code closure
+// AND its declared data against clean/bake-reads.json; only the pour's authoring inputs keep the mtime rule ──
+{ const a = src.indexOf('const runIfDirty = async'), body = a < 0 ? '' : src.slice(a, src.indexOf('\n      }\n', a))
+  if (!/importClosure\(\s*inputs\.filter\(/.test(body) || (body.match(/contentChanged\(/g) || []).length < 2 || !/saveBakeRead\(/.test(body))
+    bad.push('runIfDirty does not judge a step\'s code AND data by content against bake-reads.json')
+  const pl = src.slice(src.indexOf("await runIfDirty('pipeline'"), src.indexOf("await runIfDirty('promote-ribbons'"))
+  if (!/judge:\s*'mtime'/.test(pl)) bad.push('the pour\'s authoring inputs are not on the explicit mtime rule (judge: \'mtime\')')
+  const g = src.lastIndexOf('pourDataReads(bakeScene)', src.indexOf("await runIfDirty('pipeline'")), q = src.indexOf('res.writeHead(428', g)
+  if (g < 0 || q < 0 || !/dataChanged/.test(src.slice(g, q + 300))) bad.push('a change to the pour\'s other data reads (pourDataReads) does not ask (428)')
+  if (!/lsAsks/.test(src.slice(g, q + 300))) bad.push('LS (held): a first promote-ribbons with no record does not ask before rewriting src/data/ribbons.json')
+  const pipe = readFileSync(join(ROOT, 'cartograph/pipeline.js'), 'utf8')
+  if (!/dataRead:\s*contentRecord\(pourDataReads\(SCENE\)\)/.test(pipe)) bad.push('pipeline.js does not stamp dataRead: contentRecord(pourDataReads(SCENE))') }
+
 console.log(`── bake inputs ── pour code: ${closure.length} file(s), no town module ${bad.length ? '⛔' : '✅'}`)
 for (const x of bad) console.log(`   ⛔ ${x}`)
 console.log(bad.length ? '\n⛔ The Bake can call a town clean while the pour\'s own code has changed — or ask when nothing it reads has.' : '\n✅ The Bake watches every file the pour runs, by content, and nothing it does not read.')

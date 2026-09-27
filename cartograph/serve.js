@@ -16,8 +16,8 @@ import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
-import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged } from './pour-code.mjs'
-import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
+import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads } from './pour-code.mjs'
+import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { productionDomainFor } from './operations-domain.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
@@ -121,6 +121,16 @@ function readBakeTimings(mapJson) { try { return JSON.parse(readFileSync(bakeTim
 function saveBakeTiming(mapJson, lookId, label, ms) {
   try { const t = readBakeTimings(mapJson); t[`${lookId}:${label}`] = { ms, at: new Date().toISOString() }; writeFileSync(bakeTimingsPath(mapJson), JSON.stringify(t, null, 1)) }
   catch (e) { console.warn(`[bake] could not record the ${label} timing: ${e.message}`) }
+}
+// ⭐ WHAT EACH STEP READ WHEN IT LAST RAN — `${lookId}:${label}` → { code, data }, each { path: sha1 }, beside the timings.
+// runIfDirty re-runs a step when its code (its scripts' import closure) or a declared data input differs by CONTENT
+// (pour-code.mjs `contentChanged`), or an output is missing — never on an mtime, so a checkout or writeIfChanged's
+// touch re-runs nothing. ⛔ An unreadable or absent record file is NO record: every step is dirty, never clean by default.
+function bakeReadsPath(mapJson) { return join(dirname(mapJson), 'bake-reads.json') }
+function readBakeReads(mapJson) { try { return JSON.parse(readFileSync(bakeReadsPath(mapJson), 'utf-8')) } catch { return {} } }
+function saveBakeRead(mapJson, lookId, label, rec) {
+  try { const r = readBakeReads(mapJson); r[`${lookId}:${label}`] = { ...rec, at: new Date().toISOString() }; writeFileSync(bakeReadsPath(mapJson), JSON.stringify(r, null, 1)) }
+  catch (e) { console.warn(`[bake] could not record what ${label} read: ${e.message}`) }   // next bake re-runs it: the safe direction
 }
 
 // Like runShell, but CAPTURES stdout/stderr and RESOLVES with the exit code
@@ -2534,6 +2544,10 @@ createServer(async (req, res) => {
       const RIBBONS    = isDefaultMap ? join(REPO_ROOT, 'src', 'data', 'ribbons.json') : bakePaths.ribbons
       const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')
       const DESIGN    = join(REPO_ROOT, 'public', 'looks', id, 'design.json')
+      // ⚠️ terrainLoad.js reads `terrainExag` from the TOWN's design (public/looks/<scene>/design.json), and bake-trees
+      // reads its grove/roster from it too — not this Look's. The same file only while look id = scene id. Declared
+      // because it is READ; the keying is a finding (BRIEF-dirty-graph), not changed here.
+      const SCENE_DESIGN = join(REPO_ROOT, 'public', 'looks', bakeScene, 'design.json')
       const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
       const sceneFlag = `--scene=${bakeScene}`
       const ranSteps = []
@@ -2544,9 +2558,27 @@ createServer(async (req, res) => {
       const timings = readBakeTimings(MAP_JSON)
       for (const st of P.steps) { const t = timings[`${id}:${st.label}`]; if (t) st.est = t.ms }
       const ran = (label) => { ranSteps.push(label); const st = P.steps.find(x => x.label === label); if (st?.t0 && st?.t1) saveBakeTiming(MAP_JSON, id, label, st.t1 - st.t0) }
-      const runIfDirty = async (label, inputs, outputs, cmd, opts) => {
-        if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
+      // ⭐ BY CONTENT (Boz's rulings, 2026-09-26; BRIEF-dirty-graph §5). A step's CODE is its declared scripts' whole
+      // import closure; its DATA is every other declared input. Both are compared with what it read when it last ran
+      // (`bake-reads.json`), so a change to a helper it imports re-runs it, and a date that moved alone does not.
+      // ⛔ `judge: 'mtime'` is the POUR only: its code, geography, registry and other data reads are judged by content
+      // above (map.json's records, behind the question); its authoring inputs re-pour on a newer mtime, unasked.
+      const bakeReads = readBakeReads(MAP_JSON)
+      const runIfDirty = async (label, inputs, outputs, cmd, { judge, ...opts } = {}) => {
+        if (judge === 'mtime') {
+          if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
+          await runStep(P, label, cmd, opts); ran(label); return
+        }
+        const isCode = (f) => /\.m?js$/.test(f)
+        const code = importClosure(inputs.filter(isCode)), data = inputs.filter(f => !isCode(f))
+        const was = bakeReads[`${id}:${label}`], who = `step "${label}"`
+        const why = was ? [...contentChanged(was.code, code, who), ...contentChanged(was.data, data, who)] : contentChanged(undefined, [], who)
+        const missing = outputs.filter(o => !existsSync(o))
+        if (!force && !why.length && !missing.length) { skip(label); return }
+        console.log(`[bake] ${label}: ${[...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)].slice(0, 5).join(', ')}`)
         await runStep(P, label, cmd, opts)
+        // recorded AFTER the run: an input that is also an output (ground-ao's ground.json) is recorded as it left it
+        saveBakeRead(MAP_JSON, id, label, { code: contentRecord(code), data: contentRecord(data) })
         ran(label)
       }
       // Bake only ACTIVATED content: a hidden layer (layerVis=false) doesn't get
@@ -2596,12 +2628,20 @@ createServer(async (req, res) => {
         })() : []
         const geoChanged = lastPour ? geographyReadChanged(lastPour.geographyRead, bakeScene) : null
         const codeChanged = lastPour ? pourCodeChanged(lastPour.codeRead, PIPELINE_SRC) : []
+        // ⭐ the pour's other DATA reads (`pourDataReads`, stamped as map.json.dataRead) — the operator was never told
+        // these drive the pour, so a re-pour they cause asks first, naming them (Boz's ruling Q1, 2026-09-26)
+        const dataChanged = lastPour ? contentChanged(lastPour.dataRead, pourDataReads(bakeScene), 'the pour') : []
         const codeNewer = [...codeChanged,
+                           ...dataChanged.map(p => `${p} — the pour reads it`),
                            ...(geoChanged ? [`geography → ${geoChanged}`] : []),
                            ...regChanged.map(i => `references/registry.json → ${i}`)]
-        if (codeNewer.length && !repourConfirmed) {
+        // ⛔ LS is HELD (no LS re-pour, and nothing rewrites its committed runtime files unasked — Boz's ruling Q3).
+        // promote-ribbons writes LS's src/data/ribbons.json; with no record of what it last read it would run, so ask.
+        const lsAsks = isDefaultMap && !bakeReads[`${id}:promote-ribbons`]
+          ? ['src/data/ribbons.json → promote-ribbons has no record yet, so this Bake would re-promote LS\'s committed ribbons'] : []
+        if ((codeNewer.length || lsAsks.length) && !repourConfirmed) {
           res.writeHead(428, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: codeNewer } }))
+          res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: [...codeNewer, ...lsAsks] } }))
           return
         }
         // a code, geography or registry change leaves the authoring inputs' mtimes alone, so it re-pours explicitly;
@@ -2611,9 +2651,9 @@ createServer(async (req, res) => {
           RAW_PATHS,
           [MAP_JSON],
           `node pipeline.js ${sceneFlag}${elevFlag}`,
-          { cwd: here, timeout: 600000 })
+          { cwd: here, timeout: 600000, judge: 'mtime' })
         await runIfDirty('promote-ribbons',
-          [MAP_JSON, ...importClosure([join(here, 'promote-ribbons.js')])],
+          [MAP_JSON, bakePaths.geography, join(here, 'promote-ribbons.js')],
           [RIBBONS],
           `node promote-ribbons.js ${sceneFlag} --yes`,   // the Bake is the decision; the diff streams into this step's output
           { cwd: here, timeout: 30000 })
@@ -2633,8 +2673,6 @@ createServer(async (req, res) => {
       // and what bake-terrain range-reads) was skipped as flat — while the intake panel showed
       // the very same row FILLED. Three readers, two answers, and the operator saw a poured
       // town rather than a missing input. `hasElevationInput` is now the single answer.
-      // ⚠️ The dirty-graph input stays the .tif path: a list-fed town re-bakes on the list's
-      // own mtime instead, which `runIfDirty` sees through SCENE_TERRAIN_*.
       const ELEVATION_LIST = join(bakePaths.raw, 'elevation-sources.txt')
       // ⛔ `mapDataPaths` exposes raw/ and clean/, not the scene dir — so derive it once,
       // explicitly, rather than through a `?? fallback` that reads as a safety net while
@@ -2676,15 +2714,13 @@ createServer(async (req, res) => {
         // day — `coastline.mjs` did (fb750ec8, the closed-ring arc). A town's shore can move
         // because the kit learned to read a shape it could not read before, and that is
         // exactly the case a data-only list misses.
-        // ⭐ So the closure is COMPUTED, never enumerated: `importClosure` walks
-        // bake-terrain.js's imports and picks up coastline.mjs and anything it grows later.
-        // A hand-listed file here would be correct today and silently wrong after the next
-        // refactor — the same staleness this whole fix is about.
+        // ⭐ So the step declares its SCRIPT and runIfDirty hashes that script's whole import closure
+        // (coastline.mjs included, and anything it grows later) — never a hand list.
         await runIfDirty('terrain',
-          [existsSync(ELEVATION_TIF) ? ELEVATION_TIF : ELEVATION_LIST,
+          [ELEVATION_TIF, ELEVATION_LIST, join(bakePaths.raw, 'elevation'),   // ⚠️ a URL list's TILES are read over the network: not tracked
            bakePaths.boundary, bakePaths.geography,
            join(bakePaths.raw, 'osm.json'),
-           ...importClosure([join(here, 'bake-terrain.js')])],
+           join(here, 'bake-terrain.js')],
           [SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
           `node bake-terrain.js ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
@@ -2693,20 +2729,19 @@ createServer(async (req, res) => {
       // `elevPolicy.onTheRecord`, which was already reported above. An unrecorded absence
       // threw before the branch.
 
-      // terrain-slab: publish the scene terrain into this Look's slab (the
-      // runtime fetches /baked/<look>/terrain.* by lookId; writeIfChanged keeps
-      // the dirty-graph mtime honest).
+      // terrain-slab: publish the scene terrain into this Look's slab (the runtime fetches /baked/<look>/terrain.* by
+      // lookId). A BYTE compare, not a date: writeIfChanged writes only what differs, and says whether it did.
       if (existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
-        const tsj = join(LOOK_DIR, 'terrain.json'), tsb = join(LOOK_DIR, 'terrain.bin')
-        if (force || needsRebuild([SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN], [tsj, tsb])) {
-          mkdirSync(LOOK_DIR, { recursive: true })
-          writeIfChanged(tsj, readFileSync(SCENE_TERRAIN_JSON))
-          writeIfChanged(tsb, readFileSync(SCENE_TERRAIN_BIN))
-          markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab')
-        } else { skip('terrain-slab') }
+        mkdirSync(LOOK_DIR, { recursive: true })
+        const a = writeIfChanged(join(LOOK_DIR, 'terrain.json'), readFileSync(SCENE_TERRAIN_JSON), { touch: false })
+        const b = writeIfChanged(join(LOOK_DIR, 'terrain.bin'), readFileSync(SCENE_TERRAIN_BIN), { touch: false })
+        if (a || b) { markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab') } else skip('terrain-slab')
       }
+      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · shape.json (its own output, written beside ground.json)
       await runIfDirty('ground',
-        [MAP_JSON, DESIGN, join(here, 'bake-ground.js'), join(REPO_ROOT, 'src', 'lib', 'ribbonsGeometry.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
+        [MAP_JSON, DESIGN, SCENE_DESIGN, RIBBONS, bakePaths.boundary, join(bakePaths.raw, 'survey.json'),
+         join(bakePaths.clean, 'park-polygon.json'), join(REPO_ROOT, 'src', 'data', bakeScene, 'park_water.json'),
+         join(here, 'bake-ground.js'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN],
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
@@ -2718,7 +2753,7 @@ createServer(async (req, res) => {
         await runIfDirty('revetment',
           // ⭐ MAP_JSON: the drawn water decides where the shore is (2026-09-26).
           [join(LOOK_DIR, 'shape.json'), join(bakePaths.raw, 'osm.json'), MAP_JSON, bakePaths.boundary, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,
-           join(here, 'bake-revetment.js'), join(here, 'shore-armour.mjs'), join(here, 'shoreRuns.mjs')],
+           join(here, 'bake-revetment.js')],
           [join(LOOK_DIR, 'revetment.json')],
           `node bake-revetment.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 120000 })
@@ -2726,16 +2761,21 @@ createServer(async (req, res) => {
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named
       // absence — so it is never dirty forever.
+      // not-inputs: context.coastDist.bin (its own output, written only)
       await runIfDirty('coast-distance',
         // The registry, the surfaces table and the town's OSM (its state) feed the RESOLVED params.
-        [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, join(here, 'bake-coast-distance.js'), join(here, 'shoreRuns.mjs'),
+        [join(LOOK_DIR, 'shape.json'), SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, MAP_JSON, join(here, 'bake-coast-distance.js'),
           join(here, 'surfaces.mjs'), join(here, '..', 'references', 'registry.json'), join(bakePaths.raw, 'osm.json')],
         [join(LOOK_DIR, 'context.json')],
         `node bake-coast-distance.js --look=${id} ${sceneFlag}`,
         { cwd: here })
       if (layerOn('building')) {
+        // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output)
         await runIfDirty('buildings',
-          [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
+          [MAP_JSON, DESIGN, SCENE_DESIGN, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,   // ⭐ the terrain: Huron's buildings at y=0
+           join(SCENE_DIR, 'buildings.json'), bakePaths.boundary, join(SCENE_DIR, 'building-overrides.json'),
+           join(REPO_ROOT, 'src', 'data', 'buildingOverrides.json'),   // ⚠️ one file for EVERY town — a finding, not changed here
+           join(here, 'bake-buildings.js')],
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 300000 })
@@ -2759,8 +2799,10 @@ createServer(async (req, res) => {
       if (landscapeSource) {
         const LANDSCAPE_OBJ = join(REPO_ROOT, landscapeSource)
         if (existsSync(LANDSCAPE_OBJ)) {
+          // not-inputs: sangabriel.obj (the script's default name; the Bake always passes --source) · index.json (guard: assertBakeTarget passes or throws; shapes no output)
           await runIfDirty('landscape',
-            [LANDSCAPE_OBJ, bakePaths.geography, join(here, 'bake-landscape.js')],
+            [LANDSCAPE_OBJ, join(dirname(LANDSCAPE_OBJ), 'meta.json'), join(dirname(LANDSCAPE_OBJ), 'heights.f32'),
+             bakePaths.geography, join(here, 'bake-landscape.js')],
             [join(LOOK_DIR, 'landscape', 'landscape.json'), join(LOOK_DIR, 'landscape', 'sangabriel.glb')],
             `node bake-landscape.js --look=${id} --source=${landscapeSource} ${sceneFlag}`,
             { cwd: here, timeout: 180000 })
@@ -2780,11 +2822,13 @@ createServer(async (req, res) => {
       if (!isDefaultMap) {
         const SCENE_BAKED_BUILDINGS = join(REPO_ROOT, 'public', 'baked', bakeScene, 'buildings.json')
         const CONTENT_DIR = join(bakePaths.raw, '..', 'content')
+        // not-inputs: listing-identity.json (its own output: the id registry it maintains)
         await runIfDirty('content',
           [SCENE_BAKED_BUILDINGS, MAP_JSON,
            join(bakePaths.raw, 'osm.json'), ...declaredParcelPaths(bakeScene), sourcesPath(bakeScene),
            join(CONTENT_DIR, 'nr-inventory.json'), join(CONTENT_DIR, 'county-land-use-codes.csv'),
            join(CONTENT_DIR, 'listings.overrides.json'), join(CONTENT_DIR, 'roster.overrides.json'),
+           join(CONTENT_DIR, 'events.json'), join(bakePaths.raw, 'overture-places.json'), bakePaths.geography,
            join(here, 'bake-content.js')],
           [join(CONTENT_DIR, 'roster.json'), join(CONTENT_DIR, 'listings.json')],
           `node bake-content.js ${sceneFlag}`,
@@ -2793,13 +2837,26 @@ createServer(async (req, res) => {
         skip('content (LS content is hand-curated — not regenerated)')
       }
       if (layerOn('lamp')) {
-        // Scene-keyed lamp source (step C, done 2026-07-09): bake-lamps derives a
-        // poured scene's lamps from its OWN raw/osm_street_lamps.json (projected
-        // through geography.json + boundary-clipped), or falls back to LS's
-        // src/data/street_lamps.json for the default scene. Every installation
-        // gets real lamps — no longer gated to LS.
+        // lamps = surveyed (raw/osm.json pois + osm_street_lamps.json) ∪ derived (clean/derived_lamps.json) ∪ authored;
+        // each stamped osm|derived|authored — ROADMAP H-17. The derived set is its own step, after the ground (it reads
+        // shape.json) and the pour (skeleton.json); it THROWS when a town has lamp-eligible streets and none gets one.
+        await runIfDirty('derived-lamps',
+          [join(REPO_ROOT, 'public', 'baked', bakeScene, 'shape.json'), bakePaths.skeleton, MAP_JSON, SCENE_DESIGN,
+           join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'osm_street_lamps.json'), join(here, 'lamp-spacing-prior.json'),
+           bakePaths.geography, join(SCENE_DIR, 'lu-policy.json'),   // traced 2026-09-27
+           join(here, 'derive-lamps.mjs')],
+          [join(bakePaths.clean, 'derived_lamps.json')],
+          `node derive-lamps.mjs ${sceneFlag}`,
+          { cwd: here })
+        // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output)
         await runIfDirty('lamps',
-          [STREET_LAMPS, DESIGN, join(here, 'bake-lamps.js')],
+          // traced today (2026-09-26) ∪ Wick's H-17 list (surveyed POIs, derived lamps, the zone tester) — declared ahead
+          // of Wick's bake-lamps change so the step already re-runs when those land
+          [STREET_LAMPS, join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'osm_street_lamps.json'), join(bakePaths.clean, 'derived_lamps.json'),
+           join(SCENE_DIR, 'authored_lamps.json'), bakePaths.geography, bakePaths.boundary,
+           join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'shape.json'), MAP_JSON, DESIGN,
+           SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, SCENE_DESIGN, join(SCENE_DIR, 'lu-policy.json'), join(here, 'lamp-spacing-prior.json'),
+           join(here, 'bake-lamps.js')],
           [join(LOOK_DIR, 'lamps.json')],
           `node bake-lamps.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 30000 })
@@ -2827,7 +2884,7 @@ createServer(async (req, res) => {
       // into the slab so the player reads baked/<look>/labels.json per-scene,
       // not a static LS ribbons import (src/lib/streetLabels.js reader).
       await runIfDirty('labels',
-        [bakePaths.ribbons, bakePaths.boundary, join(here, 'bake-labels.js')],
+        [RIBBONS, bakePaths.boundary, DESIGN, join(here, 'bake-labels.js')],
         [join(LOOK_DIR, 'labels.json')],
         `node bake-labels.js ${sceneFlag} --look=${id}`,
         { cwd: here, timeout: 30000 })
@@ -2864,7 +2921,12 @@ createServer(async (req, res) => {
             `--output ${treeInputs.output}`,
           ].filter(Boolean).join(' ')
           await runIfDirty('trees',
-            [...treeInputs.inputs, join(REPO_ROOT, 'arborist', 'bake-trees.js')],
+            // the traced reads (2026-09-26): the census inputs, the tree LIBRARY as one set, and the town's baked
+            // lamps / atlas / scene (hero keyframes) — keyed by SCENE, as bake-trees opens them (Class D row 10)
+            [...treeInputs.inputs, ...treeLibraryFiles(), SCENE_DESIGN, bakePaths.geography,
+             join(REPO_ROOT, 'public', 'baked', bakeScene, 'lamps.json'), join(REPO_ROOT, 'public', 'baked', bakeScene, 'trees-atlas.json'),
+             join(REPO_ROOT, 'public', 'baked', bakeScene, 'scene.json'), join(SCENE_DIR, 'lu-policy.json'), join(bakePaths.raw, 'osm.json'),
+             join(REPO_ROOT, 'arborist', 'bake-trees.js')],
             [join(REPO_ROOT, treeInputs.output)],
             `node arborist/bake-trees.js ${flags}`,
             { cwd: REPO_ROOT, timeout: 90000 })
@@ -2890,9 +2952,11 @@ createServer(async (req, res) => {
       // ⛔ Both flags are passed explicitly: bake-tree-anchors defaults BOTH look and
       // scene to 'lafayette-square', so an omitted flag writes LS's trunk heights into
       // another town's slab (the A00 class — that exact bug was fixed 2026-07-15).
+      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output)
       await runIfDirty('tree-anchors',
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'trees.json'),
-         join(here, 'bake-tree-anchors.js'), join(here, 'groundSampler.js'), join(here, 'terrainLoad.js')],
+         SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, SCENE_DESIGN, bakePaths.geography,
+         join(here, 'bake-tree-anchors.js')],
         [join(LOOK_DIR, 'tree-anchors.json')],
         `node bake-tree-anchors.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
@@ -2905,9 +2969,10 @@ createServer(async (req, res) => {
       // for the previous set — new lamps standing in the dark with no pool, and
       // pools glowing where a lamp no longer is. Caught 2026-07-23 re-baking LS
       // after the lamp-well union added 47 park lamps.
+      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · ground.poolmap.png (its own output) · ground.colormap.png (its own output)
       await runIfDirty('ground-ao',
-        [MAP_JSON, DESIGN, join(LOOK_DIR, 'ground.json'),
-         join(LOOK_DIR, 'lamps.json'), join(LOOK_DIR, 'trees.json'),
+        [MAP_JSON, join(SCENE_DIR, 'buildings.json'), join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),
+         join(LOOK_DIR, 'lamps.json'), STREET_LAMPS, join(LOOK_DIR, 'trees.json'), join(LOOK_DIR, 'trees-atlas.json'),
          join(here, 'bake-ground-ao.js')],
         [join(LOOK_DIR, 'ground.lightmap.png')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
