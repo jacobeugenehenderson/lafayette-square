@@ -14,7 +14,8 @@
 //      file that reads `…?.values?.<field>` without branching on `animated` reads undefined after that edit.
 //   ③ NO TOGGLE FIELD IN A KEYFRAMED CHANNEL that the per-minute resolvers never read.
 //   ④ A METRE SLIDER'S RANGE COMES FROM THE TOWN (Class D). A field or SliderRow in metres (`unit: 'm'`, a `m`
-//      suffix, or "(m)" in its label) may not have a numeric-literal max, unless it declares `scale: 'body'`
+//      suffix, or "(m)" in its label) may not have a numeric-literal max, unless it declares a scale no town
+//      changes (`scale: 'body'` an eye height, `scale: 'fixture'` a lamp's pool); `scale: 'town'` must derive
 //      (a human-sized quantity — an eye height — which no town changes).
 // ⚠️ KNOWN BLIND SPOT in ①: a channel handed as a prop to a drawn component counts as live even if that component
 //    never reads it (Constellations reaches CelestialBodies and stops there). ① proves the route, not the read.
@@ -242,14 +243,15 @@ function metreRanges(fieldsText, stageText) {
   const failures = []
   for (const [exp, items] of fieldExports(fieldsText)) for (const it of items) {
     const metres = it.unit === 'm' || /\(m\)/.test(it.label)
-    if (metres && it.scale !== 'body' && isLiteral(it.max)) failures.push(`${exp} ${it.key} ("${it.label}") is in metres with a fixed max ${it.max}`)
+    if (metres && (!it.scale || it.scale === 'town') && isLiteral(it.max)) failures.push(`${exp} ${it.key} ("${it.label}") is in metres with a fixed max ${it.max} — derive it from the town, or declare the quantity's scale (e.g. scale: 'fixture')`)
   }
   for (const m of strip(stageText).matchAll(/<SliderRow\b([\s\S]*?)\/>/g)) {
     const a = m[1]
     const label = a.match(/label="([^"]*)"/)?.[1] ?? '?'
     const metres = /suffix="m"/.test(a) || /\(m\)/.test(label) || /unit="m"/.test(a)
     const max = a.match(/max=\{([^}]*)\}/)?.[1]
-    if (metres && !/scale="body"/.test(a) && isLiteral(max)) failures.push(`SliderRow "${label}" is in metres with a fixed max ${max}`)
+    const scale = a.match(/scale="(\w+)"/)?.[1]
+    if (metres && (!scale || scale === 'town') && isLiteral(max)) failures.push(`SliderRow "${label}" is in metres with a fixed max ${max}`)
   }
   return failures
 }
