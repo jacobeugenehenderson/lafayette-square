@@ -346,6 +346,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uHorizonC:      { value: new THREE.Vector2() },
     uHorizonIn:     { value: 0 },
     uHorizonOut:    { value: 0 },
+    // The drawing's own rim fade (ground.json stencil.fade): past it the bed is past the drawing, so it reads as deep.
+    uRimIn:         { value: 0 },
+    uRimOut:        { value: 0 },
     // uDisturbAmp 0 removes the term entirely (the multiply below), so one
     // compiled program serves both cases and the cache key stays single.
     uDisturbAmp:    { value: disturbance ? 1 : 0 },
@@ -419,7 +422,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform float uFadeM;
        uniform vec2  uHorizonC;
        uniform float uHorizonIn;
-       uniform float uHorizonOut;${terrain ? terrain.decl : ''}
+       uniform float uHorizonOut;
+       uniform float uRimIn;
+       uniform float uRimOut;${terrain ? terrain.decl : ''}
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
        uniform float uGustDriftMps;
@@ -646,10 +651,12 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // ⭐ The bottom is seen only to the visibility depth (bake-terrain \`bed\`): deeper, the water is OPAQUE. It
          // used to stay 12-28% clear at any depth, so the sand bed tinted deep water, and past the rim (no bed) the
          // disc beneath showed through instead: a seam and a second, darker sea at the rim (Jacob, 2026-09-27).
-         // Past the terrain's edge is past the bed: deep.
+         // Past the drawing's rim the bed is past the drawing: it turns deep across the rim's own fade — a CIRCLE, the
+         // edge the ground fades on. ⛔ It used to be "past the terrain grid's edge", a SQUARE: where real shallow floor
+         // met the grid's east edge the sand stopped on a straight line (Loam, 2026-09-27, provincetown near High Head).
          vec2 wUV = vec2((vWaterWorld.x - uBMinX) / uSpanX, (vWaterWorld.z - uBMinZ) / uSpanZ);
-         bool wOff = any(lessThan(wUV, vec2(0.0))) || any(greaterThan(wUV, vec2(1.0)));
-         float wDepth = wOff ? uVisibleM : max(0.0, -texture2D(uTerrainMap, _terrainUV(wUV)).r);
+         float wPast = uRimOut > uRimIn ? smoothstep(uRimIn, uRimOut, length(vWaterWorld.xz - uHorizonC)) : 0.0;
+         float wDepth = mix(max(0.0, -texture2D(uTerrainMap, _terrainUV(wUV)).r), uVisibleM, wPast);
          float wSeen = 1.0 - smoothstep(uVisibleM - uFadeM, uVisibleM, wDepth);   // 1 = the bottom shows
          diffuseColor.a = mix(1.0, diffuseColor.a * clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
        }

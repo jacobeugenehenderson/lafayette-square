@@ -28,7 +28,8 @@ let _saidNoBed = false
  * ⚠️ General form: `docs/agents/AGENT-VALIDATION-SURFACES.md`.
  */
 // `extentDiag` — the body's own extent when the geometry carries more than the body (the horizon sectors BakedGround
-// appends), so the waves keep the town's scale. `horizon` — { center, inner, outer }: the haze fade past the rim.
+// appends), so the waves keep the town's scale. `horizon` — { center, inner, outer, rimIn, rimOut }: the haze fade past
+// the rim, and the rim's own fade (past it the bed reads as deep).
 function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = null, horizon = null }) {
   const { material, uniforms } = useMemo(() => {
     geometry.computeBoundingBox()
@@ -40,7 +41,8 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
   }, [geometry, extentOverride])
   useFrame((_, delta) => {
     uniforms.uTime.value += delta
-    if (horizon) { uniforms.uHorizonC.value.set(horizon.center[0], horizon.center[1]); uniforms.uHorizonIn.value = horizon.inner; uniforms.uHorizonOut.value = horizon.outer }
+    if (horizon) { uniforms.uHorizonC.value.set(horizon.center[0], horizon.center[1]); uniforms.uHorizonIn.value = horizon.inner; uniforms.uHorizonOut.value = horizon.outer
+      uniforms.uRimIn.value = horizon.rimIn; uniforms.uRimOut.value = horizon.rimOut }
     // ⭐ The town's visibility depth, read off its terrain's bed record (bake-terrain). ⛔ A town whose terrain has
     // no bed draws the water flat-shaded and SAYS so — it was baked before the bed existed.
     const bed = terrainBed()

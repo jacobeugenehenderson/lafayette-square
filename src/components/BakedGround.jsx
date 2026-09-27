@@ -408,7 +408,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
         const draw = groundMaterialFor(group, surfaceTable, { hasFieldAxis: !!geometry.attributes.aFieldAxis })
         if (draw.kind === 'water')
           return <WaterSurface key={key} geometry={geometry} renderOrder={group.renderOrder} extentDiag={bodyExtent}
-            horizon={bodyExtent && manifest.stencil ? { center: manifest.stencil.center, inner: horizonFor(manifest.stencil.radius).radius, outer: horizonFor(manifest.stencil.radius).fadeOuter } : null} />
+            horizon={bodyExtent && manifest.stencil ? waterHorizon(manifest.stencil) : null} />
         if (draw.kind === 'gravel')
           return <GravelMesh key={key} group={group} geometry={geometry} lightmap={lightmap}
             tintHex={scene?.layerColors?.[group.id]}
@@ -663,6 +663,15 @@ function TerrainExagDriver({ target }) {
 // The water body's mesh, run on past the town's rim to the horizon's reach wherever the rim is water. 256 directions
 // around the rim: a direction whose rim point lies in the body's own triangles gets a sector from the rim out to the
 // horizon's fade (horizonFor), at the body's own level. Returns null when no direction is water.
+// The water past the rim: its haze fade (horizonFor) and the drawing's own rim fade. ⛔ A stencil with no fade band is
+// said once; its rim is then its radius — the drawing's edge, with no band to fade across.
+let _saidNoFade = false
+function waterHorizon(stencil) {
+  const h = horizonFor(stencil.radius), f = stencil.fade
+  if (!(f?.outer > 0) && !_saidNoFade) { _saidNoFade = true; console.error('[BakedGround] ⛔ ground.json stencil carries no fade band — the water turns deep AT the rim, with no fade. ▶ re-bake the ground') }
+  return { center: stencil.center, inner: h.radius, outer: h.fadeOuter, rimIn: f?.inner ?? stencil.radius, rimOut: f?.outer ?? stencil.radius }
+}
+
 const HORIZON_SECTORS = 256
 function extendWaterToHorizon(positions, indices, stencil) {
   const [cx, cz] = stencil.center, R = stencil.radius, Y = positions[1]
