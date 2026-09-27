@@ -450,11 +450,14 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       manifest.poolmap = { image: 'ground.poolmap.png', size: FX_SIZE, min: [minX, minZ], span: [pW, pH], scale: POOL_MAX }
       console.log(`[bake-ao] ground FX map: ${lamps.length} lamps (pool R) + ${shadowTrees.length}/${trees.length} rendered trees + lamps (shadow G) → ${FX_SIZE}² over ${pW.toFixed(0)}×${pH.toFixed(0)} m`)
     } else {
+      // The one honest empty: nothing stands on this ground to pool or shadow. Named, not silent.
+      console.warn(`[bake-ao] ${scene}/${look}: NO ground FX map — this look has no lamps.json lamps and no trees.json trees, so no lamp pools and no contact shadows.`)
       manifest.poolmap = null
     }
   } catch (e) {
-    console.warn('[bake-ao] ground FX map skipped:', e.message)
-    manifest.poolmap = null
+    // ⛔ Was `console.warn('ground FX map skipped')` + carry on: any failure baked a town with no lamp
+    // pools and no contact shadows, and the pour read as a success (Layer 0 q2). Now it stops, named.
+    throw new Error(`[bake-ao] ${scene}/${look}: the ground FX map (lamp pools + contact shadows) FAILED — ${e.message}`, { cause: e })
   }
 
   // ── Ground-color map — per-Look raster of the ground albedo ──────────
