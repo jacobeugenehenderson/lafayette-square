@@ -45,6 +45,12 @@
         "reliefM": 0.08,
         "toneVar": 0.25
       }
+    },
+    "rules": {
+      "buildingGreen": {
+        "strength": 1,
+        "widthM": 40
+      }
     }
   },
   "wallMix": {
