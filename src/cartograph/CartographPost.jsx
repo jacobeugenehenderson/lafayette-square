@@ -4,7 +4,7 @@
  * scratch/LOOK-PANEL-TAXONOMY.md). Sections:
  *   TONE & COLOR — Exposure · Warmth · Grade (contrast/saturation/brightness/vignette)
  *   GLOW         — Bloom
- *   LENS & FILM  — Focus (DoF) · Grain · Antialiasing (SMAA)
+ *   LENS & FILM  — Focus (DoF) · Grain   (antialiasing always runs: no switch)
  * The world's light + shadow + sky channels (incl. AO/Fill/Cast-shadows, moved
  * out by intent) live in CartographSkyLight.
  */
@@ -16,9 +16,10 @@ import {
   EXPOSURE_FIELDS, EXPOSURE_FLAT_DEFAULTS,
   GRADE_FIELDS, GRADE_FLAT_DEFAULTS,
   GRAIN_FIELDS, GRAIN_FLAT_DEFAULTS,
-  SMAA_FIELDS, SMAA_FLAT_DEFAULTS,
   DOF_FIELDS, DOF_FLAT_DEFAULTS,
 } from './skyLightChannels.js'
+import { withRanges } from '../lib/townRange.js'
+import useTownRanges from './useTownRanges.js'
 
 // Generic store-bound TodChannel mount. Reads channel + 6 actions by
 // name. Same shape as the one in CartographSkyLight; lifted here too
@@ -71,6 +72,7 @@ function SectionLabel({ label }) {
 }
 
 export default function CartographPost() {
+  const ranges = useTownRanges()
   return (
     <div className="space-y-1">
       <SectionLabel label="Tone & Color" />
@@ -87,11 +89,9 @@ export default function CartographPost() {
 
       <SectionLabel label="Lens & Film" />
       <StoreChannel name="dof" label="Focus (DoF)"
-        fields={DOF_FIELDS} flatDefaults={DOF_FLAT_DEFAULTS} />
+        fields={withRanges(DOF_FIELDS, ranges)} flatDefaults={DOF_FLAT_DEFAULTS} />
       <StoreChannel name="grain" label="Grain"
         fields={GRAIN_FIELDS} flatDefaults={GRAIN_FLAT_DEFAULTS} />
-      <StoreChannel name="smaa" label="Antialiasing (SMAA)"
-        fields={SMAA_FIELDS} flatDefaults={SMAA_FLAT_DEFAULTS} />
     </div>
   )
 }

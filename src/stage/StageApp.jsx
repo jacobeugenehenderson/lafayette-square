@@ -39,6 +39,7 @@ import TodChannel from '../cartograph/TodChannel.jsx'
 import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
 import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import DawnTimeline from '../components/DawnTimeline'
+import { townRanges } from '../lib/townRange.js'
 
 
 // ── Tickers ─────────────────────────────────────────────────────────────────
@@ -837,8 +838,13 @@ function BrowseCamera({ cam }) {
     if (Math.hypot(ux, uz) < 1e-3) return getBrowseHeading()
     return Math.atan2(ux, -uz) * 180 / Math.PI
   })()
+  // The slider reaches twice the town's own overhead fit (townRange.js), never LS's 2000 m.
+  // ⛔ Unknown town size → the slider collapses and says so; never a guessed range.
+  const boundary = useCartographStore(s => s.sceneBoundary)
+  const altitudeMax = townRanges({ boundary, aspect: window.innerWidth / Math.max(1, window.innerHeight), fov: cam.fov })?.['town.browseAltitude']
   return (
     <div className="space-y-2">
+      {!altitudeMax && <span className="text-caption" style={{ color: 'var(--error)' }}>Altitude: town size unknown</span>}
       <div className="flex gap-2">
         <div className="flex-1">
           <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>Center X</span>
@@ -851,7 +857,7 @@ function BrowseCamera({ cam }) {
             pushCamera({ target: [cam.target[0], cam.target[1], v], position: [cam.target[0], cam.position[1], v + 1] })} />
         </div>
       </div>
-      <SliderRow label="Altitude" value={cam.position[1]} min={50} max={2000} suffix="m"
+      <SliderRow label="Altitude" value={cam.position[1]} min={50} max={altitudeMax || 50} suffix="m"
         onChange={(v) => pushCamera({ position: [cam.position[0], v, cam.position[2]] })} />
       <SliderRow label="FOV" value={cam.fov} min={10} max={90} suffix="°"
         onChange={(v) => pushCamera({ fov: v })} />
@@ -869,7 +875,7 @@ function StreetCamera({ cam }) {
   const ground = streetEyeY(x, z, 0)
   return (
     <div className="space-y-2">
-      <SliderRow label="Eye Height" value={Math.round((cam.position[1] - ground) * 10) / 10} min={1} max={5} step={0.1} suffix="m"
+      <SliderRow label="Eye Height" value={Math.round((cam.position[1] - ground) * 10) / 10} min={1} max={5} step={0.1} suffix="m" scale="body"
         onChange={(v) => pushCamera({ position: [x, streetEyeY(x, z, v), z] })} />
       <SliderRow label="FOV" value={cam.fov} min={30} max={120} suffix="°"
         onChange={(v) => pushCamera({ fov: v })} />

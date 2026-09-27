@@ -45,21 +45,39 @@ export const BLOOM_FIELD_KEYS = BLOOM_FIELDS.map(f => f.key)
 // DoF / Focus (Post card) — single-focal romance depth-of-field (RomanceDoF.jsx,
 // HANDOFF-real-dof). Operator-facing INTUITIVE knobs: `focus` = how far the SHARP
 // near zone extends from the camera (sharp out to here); `blur` = how much the
-// mid/far field melts beyond it (the LoD cover); `heroBlur` = the Arch's own
-// gentle softening (a little, like IRL — independent of the melt); `softness`
-// folds the near feather + ramp into one gentleness dial. The hero's DISTANCE is
-// not a knob — the consumer anchors the pocket to the baked Arch distance.
-// `enabled` default 0 (off) so unauthored Looks are unchanged.
+// mid/far field melts beyond it (the LoD cover); `heroBlur` = softening at the
+// point the camera aims at (dofDriver: the controls' target, in Hero and Street);
+// `softness` folds the near feather + ramp into one gentleness dial.
+// ⭐ NO On SWITCH: Blur 0 is off (Jacob, 2026-09-26). The old `enabled` only decided whether the pass was
+// mounted — any key On mounted it, and then EVERY key's Blur applied, Off keys included. migrateDof folds it away.
+// Default Blur 0 so an unauthored Look is unchanged (off).
+// Focus distance reaches the town's far rim from the camera (townRange.js), never a fixed 600 m.
 export const DOF_FIELDS = [
-  { key: 'enabled',  label: 'On',             type: 'toggle' },
   { key: 'blur',     label: 'Blur',           min: 0, max: 1,   step: 0.02 },
   // focus = the near sharp distance (sharp from the camera out to here); the
   // mid/far melts beyond it. Pushing it OUT extends the sharp zone (not backwards).
-  { key: 'focus',    label: 'Focus distance', min: 5, max: 600, step: 5    },
+  { key: 'focus',    label: 'Focus distance', unit: 'm', min: 5, max: 'town.focusFar', step: 5 },
   { key: 'heroBlur', label: 'Hero softness',  min: 0, max: 1,   step: 0.02 },
   { key: 'softness', label: 'Softness',       min: 0, max: 1,   step: 0.02 },
 ]
-export const DOF_FLAT_DEFAULTS = { enabled: 0, blur: 0.6, focus: 120, softness: 0.5, heroBlur: 0.15 }
+export const DOF_FLAT_DEFAULTS = { blur: 0, focus: 120, softness: 0.5, heroBlur: 0.15 }
+/**
+ * Fold a legacy `enabled` into Blur so every Look renders exactly as it did. What rendered before: the pass
+ * mounted iff ANY key (or the flat value) had enabled > 0.5, and then every key's Blur applied regardless of its
+ * own `enabled`. So: some key on → drop `enabled`, keep every Blur; none on → Blur 0 everywhere (it never showed).
+ * Idempotent; a channel with no `enabled` anywhere is returned as is.
+ */
+export function migrateDof(ch) {
+  if (!ch || typeof ch !== 'object' || !ch.values || typeof ch.values !== 'object') return ch
+  const animated = ch.animated === 'tod'
+  const keys = animated ? Object.values(ch.values) : [ch.values]
+  if (!keys.some(v => v && 'enabled' in v)) return ch
+  const anyOn = keys.some(v => (v?.enabled ?? 0) > 0.5)
+  const fold = (v) => { const { enabled, ...rest } = v || {}; return anyOn ? rest : { ...rest, blur: 0 } }
+  return animated
+    ? { ...ch, values: Object.fromEntries(Object.entries(ch.values).map(([k, v]) => [k, fold(v)])) }
+    : { ...ch, values: fold(ch.values) }
+}
 export const DOF_FIELD_KEYS = DOF_FIELDS.map(f => f.key)
 
 // Lighting floor — operator-facing mood axes, not mechanical knobs.
@@ -400,14 +418,6 @@ export const GRAIN_FIELDS = [
 export const GRAIN_FLAT_DEFAULTS = { scale: 1.0 }
 export const GRAIN_FIELD_KEYS = ['scale']
 
-// SMAA antialiasing (Post card) — binary on/off. Mounts the SMAA post pass on
-// both render tiers (it is mobile's ONLY AA — Canvas MSAA is off there). A
-// static per-Look toggle; `value > 0.5` = on. Default ON.
-export const SMAA_FIELDS = [
-  { key: 'value', label: 'On', type: 'toggle' },
-]
-export const SMAA_FLAT_DEFAULTS = { value: 1 }
-export const SMAA_FIELD_KEYS = ['value']
 
 // Shadow (Post card) — SoftShadows parameters.
 // ⭐⭐ `size` IS PENUMBRA IN METRES — a real-world width, not a kernel radius.
@@ -421,7 +431,9 @@ export const SMAA_FIELD_KEYS = ['value']
 // whose buildings are 20 m wide, which reads as "no edges at all".
 // Stored values were migrated ×(1800/4096) so every town kept its authored look.
 export const SHADOW_FIELDS = [
-  { key: 'size',    label: 'Penumbra (m)', min: 1, max: 60, step: 0.5 },
+  // Max = the widest penumbra the current Samples can render (townRange.js#penumbraBudgetTexels); above it
+  // StageShadows clamps, so a fixed 60 m left most of the travel dead.
+  { key: 'size',    label: 'Penumbra', unit: 'm', min: 1, max: 'render.penumbra', step: 0.5 },
   { key: 'samples', label: 'Samples',      min: 4, max: 32, step: 1 },
 ]
 export const SHADOW_FLAT_DEFAULTS = { size: 22.85, samples: 16 }

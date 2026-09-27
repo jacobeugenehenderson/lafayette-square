@@ -8,7 +8,7 @@
  *   SKY & AIR      — sky gradient · sky brightness · mist · halo
  *   NIGHT SKY      — constellations · stars
  *   NEON           — neon (+ force-on QA toggle)
- * The camera/image-grade channels (exposure/warmth/grade/bloom/dof/grain/smaa)
+ * The camera/image-grade channels (exposure/warmth/grade/bloom/dof/grain)
  * live in CartographPost.
  */
 import TodChannel from './TodChannel.jsx'
@@ -33,6 +33,8 @@ import {
   FILL_FIELDS, FILL_FLAT_DEFAULTS,
   SHADOW_FIELDS, SHADOW_FLAT_DEFAULTS,
 } from './skyLightChannels.js'
+import { withRanges } from '../lib/townRange.js'
+import useTownRanges from './useTownRanges.js'
 
 // Generic store-bound TodChannel mount — same shape as the one in
 // CartographPost. Reads channel + 6 actions by name.
@@ -126,6 +128,7 @@ function SectionLabel({ label }) {
 }
 
 export default function CartographSkyLight() {
+  const ranges = useTownRanges()
   return (
     <div className="space-y-1">
       {/* LIGHT & SHADOW — by intent: the directional lights, the soft fill, and
@@ -143,7 +146,7 @@ export default function CartographSkyLight() {
       <StoreChannel name="hemi" label="Sky fill (hemisphere)"
         fields={HEMI_FIELDS} flatDefaults={HEMI_FLAT_DEFAULTS} />
       <StoreChannel name="shadow" label="Cast shadows"
-        fields={SHADOW_FIELDS} flatDefaults={SHADOW_FLAT_DEFAULTS} />
+        fields={withRanges(SHADOW_FIELDS, ranges)} flatDefaults={SHADOW_FLAT_DEFAULTS} />
       <StoreChannel name="ao" label="Occlusion (AO)"
         fields={AO_FIELDS} flatDefaults={AO_FLAT_DEFAULTS} />
       <StoreChannel name="fill" label="Shadow lift"

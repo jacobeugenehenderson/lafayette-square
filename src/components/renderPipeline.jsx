@@ -223,8 +223,8 @@ export const POSTFX_PIPELINE = [
   { id: 'grade', pass: FilmGrade, channel: 'grade', order: 60 },
   // SMAA — cleans shader-contrast edges MSAA can't (curb lines, slab seams, thin
   // poles); on mobile it is the ONLY antialiasing. After grade, before grain.
-  // ULTRA preset = most aggressive edge detection. Operator on/off → scene.json.
-  { id: 'smaa', pass: SMAA, channel: 'smaa', order: 70, gate: (ctx) => ctx.smaaOn, props: () => ({ preset: SMAAPreset.ULTRA }) },
+  // ULTRA preset = most aggressive edge detection. Always on: no operator switch (Jacob, 2026-09-26).
+  { id: 'smaa', pass: SMAA, order: 70, props: () => ({ preset: SMAAPreset.ULTRA }) },
   { id: 'grain', pass: FilmGrain, channel: 'grain', order: 80 },
 ]
 
@@ -234,7 +234,6 @@ export const POSTFX_PIPELINE = [
  *
  * @param refs      { ao, bloom } — refs the driver reaches the live passes through.
  * @param viewMode  production's view mode (undefined in Stage → full-res AO).
- * @param smaaOn    resolved SMAA on/off (drives the SMAA gate + remount key).
  * @param dofOn     resolved DoF on/off (drives the DoF gate + remount key).
  * @param inspect   Preview only: { toggles:{id:bool} } — the per-pass visibility
  *                  matrix (Preview's sanctioned divergence: an FX toggle
@@ -247,8 +246,8 @@ export const POSTFX_PIPELINE = [
  *                  externally off renderer.info via GpuMonitor's measureToggle;
  *                  no in-installer probe needed.)
  */
-export function RenderPipeline({ refs, viewMode, smaaOn, dofOn, inspect }) {
-  const ctx = { refs, viewMode, smaaOn, dofOn }
+export function RenderPipeline({ refs, viewMode, dofOn, inspect }) {
+  const ctx = { refs, viewMode, dofOn }
   const platform = IS_MOBILE ? 'mobile' : 'desktop'
   // Inspecting (Preview) offers the whole desktop-shaped pipeline and lets the
   // toggle matrix decide what mounts — the operator inspects every pass
@@ -258,7 +257,7 @@ export function RenderPipeline({ refs, viewMode, smaaOn, dofOn, inspect }) {
   // (mobile drops ao/pyramid/dof/bloom/aerial).
   const included = inspect ? POSTFX_PIPELINE : POSTFX_PIPELINE.filter((e) => !e.platform || e.platform === platform)
 
-  // Mount decision. Production/Stage: the channel gate (dofOn/smaaOn) decides.
+  // Mount decision. Production/Stage: the channel gate (dofOn) decides.
   // Preview: the inspect TOGGLE decides; a shared-resource pass (`dependsOn`, the
   // pyramid) mounts only while a consumer it feeds is toggled on.
   const mountOn = (e) => {
@@ -272,7 +271,7 @@ export function RenderPipeline({ refs, viewMode, smaaOn, dofOn, inspect }) {
   // EffectComposer can only add/remove passes on REMOUNT, so its key must change
   // whenever the mounted set changes. Key only on entries whose mount can vary
   // (gated passes; every pass while inspecting) so production/Stage keep today's
-  // exact remount cadence — flips only with smaaOn / dofOn.
+  // exact remount cadence — flips only with dofOn.
   const varying = inspect ? included : included.filter((e) => e.gate)
   const key = 'fx-' + varying.map((e) => `${e.id}:${mountOn(e) ? 1 : 0}`).join('-')
   const mounted = included.filter(mountOn)

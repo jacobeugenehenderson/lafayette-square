@@ -77,6 +77,7 @@ import Panel from './Panel.jsx'
 import StagePanelReal from './StagePanel.jsx'
 import CartographSkyLight from './CartographSkyLight.jsx'
 import CartographPost from './CartographPost.jsx'
+import { browseFitAltitude } from '../lib/townRange.js'
 import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState.js'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { resolveLampGlowAtMinute, resolveGroupAtMinute, getTodSlotMinutes } from './animatedParam.js'
@@ -443,10 +444,9 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         if (mapKey !== 'lafayette-square' && mapKey !== 'toy' && nb?.radius > 0 && !browseFrame) {
           const R = nb.radius
           if (shot === 'browse') {
-            const aspect = size.width / Math.max(size.height, 1)
-            const t = Math.tan((fov * Math.PI / 180) / 2)
-            // fit the 2R circle in the binding viewport axis (portrait-safe) + pad
-            toPos = [0, (R * 1.12) / (Math.min(1, aspect) * t), 0]
+            // fit the 2R circle in the binding viewport axis (portrait-safe) + pad — the same fit the
+            // Altitude slider's range is twice of (townRange.js)
+            toPos = [0, browseFitAltitude(R, size.width / Math.max(size.height, 1), fov), 0]
             toTarget = [0, 0, 0]
           } else if (shot === 'street') {
             // Street: a ground-level stand point near the centre (its height is set below).
@@ -1013,7 +1013,6 @@ export default function CartographApp() {
   const mistOverride     = useCartographStore(s => activeChannel(s, 'mist'))
   const haloOverride     = useCartographStore(s => activeChannel(s, 'halo'))
   const gradeOverride    = useCartographStore(s => activeChannel(s, 'grade'))
-  const smaaOverride     = useCartographStore(s => activeChannel(s, 'smaa'))
   const dofOverride      = useCartographStore(s => activeChannel(s, 'dof'))
   const grainOverride    = useCartographStore(s => activeChannel(s, 'grain'))
   const shadowOverride   = useCartographStore(s => activeChannel(s, 'shadow'))
@@ -1326,7 +1325,6 @@ export default function CartographApp() {
             haloOverride={haloOverride}
             gradeOverride={gradeOverride}
             grainOverride={grainOverride}
-            smaaOverride={smaaOverride}
             dofOverride={dofOverride}
           />}
           <group visible={!inDesigner}>

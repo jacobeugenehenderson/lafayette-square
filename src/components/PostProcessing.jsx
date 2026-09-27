@@ -27,10 +27,11 @@
  * `resolveGroupAtMinute` resolver.
  */
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { SoftShadows } from '@react-three/drei'
-import { onSceneStencil, shadowMetresPerTexel, shadowMaxMetresPerTexel } from './sceneStencilState'
+import { onSceneStencil } from './sceneStencilState'
+import { penumbraBudgetTexels, penumbraMetresPerTexel } from '../lib/townRange.js'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
 import * as THREE from 'three'
 
@@ -51,9 +52,8 @@ import {
   HALO_FLAT_DEFAULTS,
   GRADE_FLAT_DEFAULTS,
   GRAIN_FLAT_DEFAULTS,
-  SMAA_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
-  DOF_FLAT_DEFAULTS,
+  DOF_FLAT_DEFAULTS, migrateDof,
 } from '../cartograph/skyLightChannels.js'
 
 // The pipeline is DECLARED once (POSTFX_PIPELINE) and installed by RenderPipeline
@@ -78,7 +78,6 @@ function resolveLookId(propLookId) {
 // resolves). Mirrors bake-scene.js's emit so unauthored Looks read
 // identically.
 const BLOOM_DEFAULT_CHANNEL    = Object.freeze({ values: { ...BLOOM_FLAT_DEFAULTS } })
-const SMAA_DEFAULT_CHANNEL     = Object.freeze({ values: { ...SMAA_FLAT_DEFAULTS } })
 const AO_DEFAULT_CHANNEL       = Object.freeze({ values: { ...AO_FLAT_DEFAULTS } })
 const EXPOSURE_DEFAULT_CHANNEL = Object.freeze({ values: { ...EXPOSURE_FLAT_DEFAULTS } })
 const WARMTH_DEFAULT_CHANNEL   = Object.freeze({ values: { ...WARMTH_FLAT_DEFAULTS } })
@@ -122,7 +121,7 @@ const _tmpColor = new THREE.Color()
 export function PostProcessing({
   lookId, bakeLastMs, viewMode,
   bloomOverride, aoOverride, exposureOverride, warmthOverride,
-  fillOverride, haloOverride, gradeOverride, grainOverride, smaaOverride, dofOverride,
+  fillOverride, haloOverride, gradeOverride, grainOverride, dofOverride,
   inspect,   // Preview only: { toggles } — per-pass visibility matrix (see RenderPipeline).
 }) {
   const bloomRef = useRef()
@@ -137,19 +136,14 @@ export function PostProcessing({
   const haloChannel     = haloOverride     ?? scene?.halo     ?? HALO_DEFAULT_CHANNEL
   const gradeChannel    = gradeOverride    ?? scene?.grade    ?? GRADE_DEFAULT_CHANNEL
   const grainChannel    = grainOverride    ?? scene?.grain    ?? GRAIN_DEFAULT_CHANNEL
-  // SMAA on/off — a static per-Look toggle (not TOD-animated): read the flat
-  // value at render and mount the pass when on. Default on. Override (Stage) >
-  // scene.json (baked) > default.
-  const smaaChannel     = smaaOverride     ?? scene?.smaa     ?? SMAA_DEFAULT_CHANNEL
-  const smaaOn = (smaaChannel?.values?.value ?? SMAA_FLAT_DEFAULTS.value) > 0.5
-  // DoF / Focus — desktop-only convolution pass. Mount when enabled. A
-  // TOD-animated dof has its `enabled` nested per slot, so mount if ANY slot
-  // enables it (the per-frame dofDriver resolves blur per-minute — sharp slots
-  // run a near-noop passthrough). Flat dof keeps the original single-toggle read.
-  const dofChannel = dofOverride ?? scene?.dof ?? DOF_DEFAULT_CHANNEL
+  // SMAA has no switch: antialiasing always runs (Jacob, 2026-09-26). The mobile tier decides per device
+  // what else runs; on mobile SMAA is the ONLY AA (Canvas MSAA is off there).
+  // DoF / Focus — desktop-only convolution pass. Blur 0 is off, so the pass mounts when any key's (or the flat)
+  // Blur is above 0. migrateDof folds a legacy `enabled` (older design.json / scene.json) the way it rendered.
+  const dofChannel = useMemo(() => migrateDof(dofOverride ?? scene?.dof ?? DOF_DEFAULT_CHANNEL), [dofOverride, scene?.dof])
   const dofOn = dofChannel?.animated === 'tod'
-    ? Object.values(dofChannel.values || {}).some(s => (s?.enabled ?? 0) > 0.5)
-    : (dofChannel?.values?.enabled ?? DOF_FLAT_DEFAULTS.enabled) > 0.5
+    ? Object.values(dofChannel.values || {}).some(s => (s?.blur ?? 0) > 0)
+    : (dofChannel?.values?.blur ?? DOF_FLAT_DEFAULTS.blur) > 0
 
   // DoF drives (applyDofFrame) exactly when the DoF pass is MOUNTED: in
   // production/Stage that's the channel gate (dofOn); in Preview it's the
@@ -169,7 +163,7 @@ export function PostProcessing({
   })
 
   // Mount the ONE installer from the manifest. Ordering, per-platform inclusion
-  // (mobile drops AO/pyramid/DoF/bloom/aerial), the DoF/SMAA mount gates, the
+  // (mobile drops AO/pyramid/DoF/bloom/aerial), the DoF mount gate, the
   // composer remount key, and Preview's per-pass toggle matrix (`inspect`) all
   // live in renderPipeline.jsx — production and Stage install with no `inspect`,
   // byte-identical to the old hand-wired chain.
@@ -178,7 +172,6 @@ export function PostProcessing({
       inspect={inspect}
       refs={{ ao: aoRef, bloom: bloomRef }}
       viewMode={viewMode}
-      smaaOn={smaaOn}
       dofOn={dofOn}
     />
   )
@@ -237,8 +230,7 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   // ⚠️ OWED: cascades currently give up contact-hardening. Restoring it means a PCSS
   // sampler written INTO the cascade path, not two libraries fighting over one chunk.
   if (CSM_ENABLED) return null
-  const capped = shadowMaxMetresPerTexel()
-  const mPerTexel = (capped > 0 && Number.isFinite(capped)) ? capped : shadowMetresPerTexel(stencil)
+  const mPerTexel = penumbraMetresPerTexel(stencil)
   if (mPerTexel == null) return null
 
   // ⛔⛔ THE FILTER RADIUS AND THE SAMPLE COUNT ARE ONE DECISION, NOT TWO.
@@ -251,7 +243,7 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   // authored metres govern whenever they are achievable; this only bites when
   // they are not, and it says so rather than quietly rendering mush.
   const wanted = resolved.size / mPerTexel
-  const budget = Math.max(8, resolved.samples * 1.5)
+  const budget = penumbraBudgetTexels(resolved.samples)   // the Penumbra slider's max reads the same budget
   const sizeTexels = Math.max(0.5, Math.min(wanted, budget))
   if (wanted > budget * 1.05 && !_penumbraWarned) {
     _penumbraWarned = true

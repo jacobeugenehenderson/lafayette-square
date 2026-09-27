@@ -222,7 +222,7 @@ function todToggles(fieldsText, panelTexts, renderTexts) {
   const failures = []
   const fx = fieldExports(fieldsText)
   const channelOf = new Map()
-  for (const t of panelTexts) for (const m of t.matchAll(/<StoreChannel\s+name="(\w+)"[\s\S]*?fields=\{(\w+_FIELDS)\}/g)) channelOf.set(m[2], m[1])
+  for (const t of panelTexts) for (const m of t.matchAll(/<StoreChannel\s+name="(\w+)"[\s\S]*?fields=\{(?:withRanges\()?(\w+_FIELDS)/g)) channelOf.set(m[2], m[1])
   for (const [exp, items] of fx) {
     const ch = channelOf.get(exp); if (!ch) continue
     for (const it of items) {

@@ -54,8 +54,7 @@ import {
   LANTERN_FIELD_KEYS, LANTERN_FLAT_DEFAULTS,
   HORIZON_FIELD_KEYS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
-  SMAA_FIELD_KEYS, SMAA_FLAT_DEFAULTS,
-  DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS,
+  DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS, migrateDof,
   CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS,
   STARS_FIELD_KEYS, STARS_FLAT_DEFAULTS,
   MILKYWAY_FIELD_KEYS, MILKYWAY_FLAT_DEFAULTS,
@@ -123,7 +122,7 @@ function readActiveLookFromStorage() {
 // failure mode (a missing one just edits base — never an accidental shape fork).
 export const SHOT_LOOK_CHANNELS = new Set([
   'layerColors', 'luColors', 'lampGlow', 'bloom', 'warmth', 'fill', 'exposure',
-  'ao', 'mist', 'halo', 'skyGain', 'grade', 'grain', 'smaa', 'dof', 'shadow',
+  'ao', 'mist', 'halo', 'skyGain', 'grade', 'grain', 'dof', 'shadow',
   'constellations', 'milkyWay', 'neon', 'sky', 'ambient', 'hemi', 'dirSun',
   'dirMoon', 'archLight', 'lantern', 'clouds', 'canopy',
 ])
@@ -417,8 +416,8 @@ const DESIGN_FIELDS = [
   _grp('stars',          STARS_FIELD_KEYS,          STARS_FLAT_DEFAULTS),
   _grp('grade',          GRADE_FIELD_KEYS,          GRADE_FLAT_DEFAULTS),
   _grp('grain',          GRAIN_FIELD_KEYS,          GRAIN_FLAT_DEFAULTS),
-  _grp('smaa',           SMAA_FIELD_KEYS,           SMAA_FLAT_DEFAULTS),
-  _grp('dof',            DOF_FIELD_KEYS,            DOF_FLAT_DEFAULTS),
+  // Focus has no On switch: a legacy `enabled` folds into Blur so the slider is live (skyLightChannels#migrateDof).
+  { key: 'dof', hydrate: (d) => migrateGroupChannel(migrateDof(d.dof), DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS) },
   _grp('shadow',         SHADOW_FIELD_KEYS,         SHADOW_FLAT_DEFAULTS),
   _grp('canopy',         CANOPY_FIELD_KEYS,         CANOPY_FLAT_DEFAULTS),
   _grp('constellations', CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
@@ -779,7 +778,6 @@ const useCartographStore = create((set, get) => ({
   // round-trips through design.json → bake → scene.json so Atmosphere
   // v3 has it ready. preset='auto' = consult the Almanac at runtime.
   clouds:  { values: { ...CLOUDS_FLAT_DEFAULTS } },
-  smaa:           { values: { ...SMAA_FLAT_DEFAULTS } },
   dof:            { values: { ...DOF_FLAT_DEFAULTS } },
   constellations: { values: { ...CONSTELLATIONS_FLAT_DEFAULTS } },
   milkyWay:       { values: { ...MILKYWAY_FLAT_DEFAULTS } },
@@ -1575,11 +1573,6 @@ const useCartographStore = create((set, get) => ({
     set({ browseFrame: null })
     get()._saveDesignDebounced()
   },
-  ...createGroupChannelActions({
-    name: 'smaa',
-    fieldKeys: SMAA_FIELD_KEYS,
-    flatDefaults: SMAA_FLAT_DEFAULTS,
-  }, set, get),
   ...createGroupChannelActions({
     name: 'dof',
     fieldKeys: DOF_FIELD_KEYS,
