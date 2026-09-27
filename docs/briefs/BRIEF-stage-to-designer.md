@@ -16,6 +16,10 @@ evict-when: going Designer → Stage → Designer leaves the Designer exactly as
 enfleshed. We do not have a dependable* deflator *to go back into the 2D view. I can hard refresh but it would
 be better if we just fixed this."*
 
+**And the acceptance, sharpened (Jacob, 2026-09-27):** *"when I click the 'designer' button in STAGE the scene
+MUST flatten and return to Browse camera."* ⇒ two requirements, both at the click with no refresh: **flat** (a
+fresh Designer's 2D scene) and **the Browse camera** (the town's own Browse framing, not wherever Stage left it).
+
 ## ⭐ The frame: not a deflator
 
 A deflator is an undo. It has to know everything Stage changed, and it breaks the next time Stage learns to
