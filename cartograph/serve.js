@@ -2354,10 +2354,11 @@ createServer(async (req, res) => {
         // silently drop Arborist's `trees` and then persist the loss.
         const existing = readLookDesign(id)
         // Preserve keys another endpoint owns (read-merge-write behind Stage's back) if the incoming
-        // payload omits them: the Arborist's `trees`, the Grove's `groveThreshold`.
+        // payload omits them: the Arborist's `trees`, the Grove's `groveThreshold`, and `water` — the town's
+        // water level and bed values, authored in the file (no Stage control), read by the terrain bake.
         // ▶ checks/claims-autosave-keeps-what-bakes-read.mjs
         const merged = { ...parsed }
-        for (const k of ['trees', 'groveThreshold']) {
+        for (const k of ['trees', 'groveThreshold', 'water']) {
           if (!(k in parsed) && k in existing) merged[k] = existing[k]
         }
         mkdirSync(lookDir(id), { recursive: true })

@@ -27,7 +27,10 @@ export function terrainValueReads(scene) {
   const water = []
   for (const l of (idx.looks || []).filter(l => l.scene === scene)) {
     const p = join(ROOT, 'public', 'looks', l.id, 'design.json')
-    const w = fs.existsSync(p) ? (JSON.parse(fs.readFileSync(p, 'utf8')).water || {}) : {}
+    // Read as `design.water` so claims-autosave-keeps-what-bakes-read sees the key: it is authored outside Stage, and
+    // the autosave must preserve it (serve.js) or the next save wipes the town's water level.
+    const design = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {}
+    const w = design.water || {}
     water.push([l.id, Object.fromEntries(TERRAIN_WATER_KEYS.filter(k => w[k] != null).map(k => [k, w[k]]))])
   }
   const reg = JSON.parse(fs.readFileSync(join(ROOT, 'references', 'registry.json'), 'utf8'))
