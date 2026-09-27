@@ -168,6 +168,7 @@ export const SURFACES = {
  *   duneGrass    — sand greens into dune grass inland: from the town's own beach band (sand.beachBandM,
  *                  derived) outward, by the baked distance to the water (context coastDist). Sand only.
  *   buildingFoot — a bare, earthy band at every wall's foot, fading out over widthM.
+ *   buildingGreen — yards: dull grass solid at the wall, breaking into clumps over darker dirt, out to widthM.
  *   pavedEdge    — worn, frayed ground where a lawn or sand meets paving (paths, walks, lots, drives).
  */
 export const GROUND_RULES = {
@@ -184,6 +185,15 @@ export const GROUND_RULES = {
       strength: { unit: '0–1', source: 'authored', default: 0 },
       widthM:   { unit: 'm', source: 'authored', default: 1.5 },    // the bare band at a wall's foot
       color:    { unit: 'hex', source: 'authored', default: '#6b5a45' },
+    },
+  },
+  // Houses give off green (Jacob, 2026-09-27: "the houses emitted 'green' around them and there was
+  // sandy splotches throughout"). Reads the rulemap's building distance, like buildingFoot.
+  buildingGreen: {
+    params: {
+      strength: { unit: '0–1', source: 'authored', default: 0 },
+      widthM:   { unit: 'm', source: 'authored', default: 12 },
+      color:    { unit: 'hex', source: 'authored', default: '#6b7043' },   // dull olive, not lawn-bright
     },
   },
   pavedEdge: {

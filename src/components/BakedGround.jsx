@@ -204,7 +204,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
   // never a quiet no-op (the rulemap is written by bake-ground-ao).
   useEffect(() => {
     const r = setGroundRules(scene?.surfaces?.rules)
-    const on = ['buildingFoot', 'pavedEdge'].filter(k => r[k].strength > 0)
+    const on = ['buildingFoot', 'buildingGreen', 'pavedEdge'].filter(k => r[k].strength > 0)
     if (on.length && !manifest.rulemap) console.error(`[BakedGround] ⛔ "${manifest.look}": ground rule(s) ${on.join(', ')} are ON but this ground has no ground.rulemap.png — they draw NOTHING. ▶ re-run bake-ground-ao for this look.`)
   }, [scene?.surfaces?.rules, manifest.rulemap, manifest.look])
   const layerVis = scene?.layerVis
