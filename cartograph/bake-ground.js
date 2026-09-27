@@ -1537,13 +1537,13 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   try {
     const prior = JSON.parse(readFileSync(join(outDir, 'ground.json'), 'utf-8'))
     priorLightmap = prior.lightmap || null
-    // ⭐ bake-ground-ao writes THREE maps in one pass (lightmap, colormap, poolmap) and only the
-    // lightmap records the ground it was made for. The colour and pool maps ride with it: SAME
+    // ⭐ bake-ground-ao writes FOUR maps in one pass (lightmap, colormap, poolmap, rulemap) and only the
+    // lightmap records the ground it was made for. The colour, pool and rule maps ride with it: SAME
     // ground (groundKey unchanged) → carried; changed ground → DROPPED and said by name below.
     // ⛔ Before 2026-09-26 only the lightmap was carried, so a standalone ground bake silently
     // unhooked the lamp pools, contact shadows and ground colour (huron, 15:16 — the PNGs were on
     // disk, referenced by nothing, and the map rendered without them with no error).
-    for (const k of ['colormap', 'poolmap']) if (prior[k]) priorMaps[k] = prior[k]
+    for (const k of ['colormap', 'poolmap', 'rulemap']) if (prior[k]) priorMaps[k] = prior[k]
   } catch { priorLightmap = null }
   const sameGround = priorLightmap?.groundKey != null && priorLightmap.groundKey === groundKey
   const droppedMaps = sameGround ? [] : Object.keys(priorMaps)
