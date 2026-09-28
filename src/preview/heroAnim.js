@@ -252,26 +252,17 @@ export function heroClockAt(motion, sec) {
   return p + w / 2
 }
 
-// Per-entry random phase so each visit to the Hero view picks up at a DIFFERENT
-// point in the shot. Set on hero entry by the consumer (production CameraRig).
-// Module-scoped → per app instance, so it never randomizes Stage/Preview
-// authoring unless they opt in (default 0 = no shift).
-let _startOffsetSec = 0
-export function randomizeHeroStart(motion) { _startOffsetSec = Math.random() * heroCycleSec(motion) }
-
-// The authored hero animation — the one the operator tunes in Stage, shared by
-// Stage (HeroPreview), Preview (ShotCamera) and production (Scene.jsx CameraRig):
-// one hero animation across all three environments.
+// The authored hero animation — played by ONE driver, src/camera/MovieCamera.jsx, in every app (production,
+// Preview, Stage); the driver owns the clock, the start phase and the speed (BRIEF-one-movie-driver).
 //
-// `elapsedSec` — wall seconds; `motion` = { length, mode, speed? }. Writes the
-// camera position/aim into `outPos`/`outTgt` (THREE.Vector3). Returns
-// { fov, time } — `time` is the playhead's second on the timeline, the same
-// coordinate the Stage timeline's key markers and scrub use.
+// `clockSec` — the driver's clock, already scaled by speed; `motion` = { length, mode }. Writes the camera
+// position/aim into `outPos`/`outTgt` (THREE.Vector3). Returns { fov, time } — `time` is the playhead's second on
+// the timeline, the same coordinate the Stage timeline's key markers and scrub use.
 // ⛔ The camera is aimed by nothing but the keyframes (no subject fallback).
 const _poseP = [0, 0, 0], _poseT = [0, 0, 0]
-export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos, outTgt) {
+export function heroKeyframeAnim(clockSec, keyframes, motion, outPos, outTgt) {
   let time = 0
-  if (keyframes.length > 1) time = _playhead((elapsedSec + _startOffsetSec) * (motion.speed || 1), motion)
+  if (keyframes.length > 1) time = _playhead(clockSec, motion)
   const { fov } = heroPoseAtTime(keyframes, motion, time, _poseP, _poseT)
   outPos.set(_poseP[0], _poseP[1], _poseP[2])
   if (outTgt) outTgt.set(_poseT[0], _poseT[1], _poseT[2])

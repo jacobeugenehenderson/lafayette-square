@@ -32,7 +32,7 @@ import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
 import { createCameraTween } from './cameraTween'
 import { transitionMs } from '../camera/transitions.js'
-import { heroKeyframeAnim, heroCycleSec } from './heroAnim.js'
+import MovieCamera from '../camera/MovieCamera.jsx'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
 import {
@@ -152,27 +152,17 @@ function ShotCamera({ shot, setShot }) {
   // instead of the legacy static center, avoiding a snap when the per-frame
   // animation below takes over. Browse up comes from the authored heading
   // (cosmetic screen orientation) — same scene.browseHeading production reads.
-  // ⭐⭐ RANDOMISED ENTRY POINT ON THE PATH. `clock.elapsedTime` starts at 0 on
-  // every load, so every visitor entered the autoplay Hero at the SAME frame of
-  // the SAME path and saw the same opening shot forever. Jacob, 2026-09-21:
-  // "when we enter the Preview (autoplay Hero environment) the camera is supposed
-  // to pick up at randomized locations on the path so the user sees different
-  // things from visit to visit."
-  // ⇒ Offset the clock by a random fraction of ONE FULL CYCLE, chosen once per
-  // mount. The motion is periodic, so any offset lands somewhere legitimate on the
-  // authored path — no new poses are invented and nothing outside the operator's
-  // keyframes can be shown.
-  // ⛔ Seeded ONCE, when the slab arrives (before it there is no cycle to land in),
-  // not per frame: re-rolling every frame would scrub the path at random.
-  const heroPhase = useRef(null)
-  if (heroPhase.current === null && scene) heroPhase.current = Math.random() * heroCycleSec(heroMotion)
+  // The movie is played by MovieCamera (mounted below), which also picks a random point on the path on each entry
+  // ("the camera is supposed to pick up at randomized locations on the path", Jacob, 2026-09-21). The tween into
+  // Hero samples the path through its handle, on the driver's own clock, so it lands where the driver plays.
+  const movie = useRef(null)
 
   function poseFor(shotKey, aspect) {
     if (shotKey === 'hero') {
-      // ⛔ SAME PHASE AS THE ANIMATION, or the camera is placed at the path's
-      // start and then JUMPS to the random offset on the first frame.
-      if (!heroKeyframes) return null
-      const { fov } = heroKeyframeAnim(heroPhase.current ?? 0, heroKeyframes, heroMotion, _heroPos, _heroTgt)
+      // ⛔ THE DRIVER'S CLOCK, or the tween lands on one pose and the driver plays from another.
+      const r = heroKeyframes && movie.current?.pose(_heroPos, _heroTgt)
+      if (!r) return null
+      const { fov } = r
       return { pos: _heroPos.toArray(), target: _heroTgt.toArray(), fov, up: [0, 1, 0] }
     }
     const pose = resolveShotPose(shotKey, aspect, scene?.shots?.values?.street?.eyeHeight)
@@ -249,34 +239,21 @@ function ShotCamera({ shot, setShot }) {
     })
   }, [shot, camera, size.width, size.height])
 
-  // Drive the tween every frame; when idle in Hero, play the AUTHORED
-  // keyframe animation (slab heroKeyframes/heroMotion, each with its own aim)
-  // so Preview matches Stage and reflects what the operator tuned — not
-  // production's legacy lateral pan.
-  useFrame(({ clock }) => {
-    if (tween.isActive()) { tween.tick(performance.now()); return }
-    if (shot !== 'hero' || !heroKeyframes) return
-    const { fov } = heroKeyframeAnim(clock.elapsedTime + (heroPhase.current ?? 0), heroKeyframes, heroMotion, _heroPos, _heroTgt)
-    camera.position.copy(_heroPos)
-    if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
-    const ctl = controlsRef.current
-    if (ctl) {
-      ctl.target.copy(_heroTgt)
-      // Direct position control — bypass damping so it doesn't fight the anim.
-      ctl.enableDamping = false
-      ctl.update()
-      ctl.enableDamping = true
-    } else {
-      camera.lookAt(_heroTgt.x, _heroTgt.y, _heroTgt.z)
-    }
-  })
+  // Drive the tween every frame. In Hero, MovieCamera plays the authored path and holds while the tween runs.
+  useFrame(() => { if (tween.isActive()) tween.tick(performance.now()) })
 
   // One controls definition per regime (src/lib/cameraRegimes.js), the same as
   // production and Stage: Browse → plan (pan + zoom, no rotate — the hidden
   // right-drag orbit is gone, Jacob 2026-09-26) · Street → street · Hero →
   // playback (the keyframes own the camera; a drag leaves for Browse, above).
   const regime = shot === 'browse' ? 'plan' : shot === 'street' ? 'street' : 'playback'
-  return <RegimeControls key={shot} regime={regime} controlsRef={controlsRef} />
+  return (
+    <>
+      <RegimeControls key={shot} regime={regime} controlsRef={controlsRef} />
+      <MovieCamera keyframes={heroKeyframes} motion={heroMotion} quality={QUALITY} active={shot === 'hero'}
+        controlsRef={controlsRef} handle={movie} hold={() => tween.isActive()} />
+    </>
+  )
 }
 
 const TOOLBAR_SHOTS = SHOTS

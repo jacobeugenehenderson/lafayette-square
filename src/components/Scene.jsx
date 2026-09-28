@@ -19,7 +19,7 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useListings from '../hooks/useListings'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { heroKeyframeAnim, randomizeHeroStart } from '../preview/heroAnim.js'
+import MovieCamera from '../camera/MovieCamera.jsx'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { resolveHeroKeyframes, useSceneStencil, applyRegime } from '../lib/cameraRegimes.js'
@@ -33,10 +33,9 @@ function easeInOutCubic(t) {
 }
 
 // ── Hero framing ─────────────────────────────────────────────────────────────
-// The hero camera plays the authored heroKeyframes via heroKeyframeAnim
-// (src/preview/heroAnim.js) — the same data and the same function Stage and
-// Preview play. Each keyframe carries its own aim; a town with none gets the
-// opening view derived from its own disc (src/lib/cameraRegimes.js). ⛔ No
+// The hero camera plays the authored heroKeyframes through MovieCamera
+// (src/camera/MovieCamera.jsx) — the one driver Stage and Preview mount too.
+// Each keyframe carries its own aim; a town with none gets the opening view derived from its own disc (src/lib/cameraRegimes.js). ⛔ No
 // subject, no Lafayette Square pose: HERO_CENTER / HERO_TARGET and the
 // subject-centred derivedHeroPose are gone (BRIEF-camera-regimes, H-7).
 const _heroPos = new THREE.Vector3()
@@ -209,24 +208,9 @@ function CameraRig() {
   // ⛔ No default motion: a static shot needs none, and an animated one without
   // its own { length, mode } is refused by resolveHeroKeyframes above.
   const heroMotion = scene?.heroMotion ?? null
-  // ⭐ ARRIVAL VARIETY — a different part of the pan on every load (Jacob, 2026-08-28).
-  // `randomizeHeroStart` already existed and is called on hero ENTRY (below), but the
-  // first load is not an entry: `prevMode` initialises to 'hero', so on arrival
-  // `vm !== prevMode.current` is false and the branch never runs — the offset stayed 0
-  // and every visitor opened on the identical frame. (Diagnosed and prescribed to the
-  // line in `cartograph/BACKLOG.md` before it was applied: a one-shot ref-guarded mount
-  // effect here.)
-  //
-  // ⛔ GATED ON `scene`, AND THAT IS THE WHOLE CORRECTNESS OF IT. Until scene.json
-  // resolves there is no motion, so firing on mount would randomise against no cycle
-  // at all. Waiting for the slab costs nothing: the camera is static until then anyway.
-  // ⛔ Still one-shot: re-randomising later would jump the camera mid-pan.
-  const didRandomizeArrival = useRef(false)
-  useEffect(() => {
-    if (didRandomizeArrival.current || !scene) return
-    didRandomizeArrival.current = true
-    randomizeHeroStart(heroMotion)
-  }, [scene, heroMotion])
+  // The movie is played by MovieCamera (mounted below); entering it samples the path through its handle, on
+  // its clock — the random start on each entry (and on arrival) is the driver's (BRIEF-one-movie-driver).
+  const movie = useRef(null)
 
   // Projection vertical offset (lens shift) for panel-aware reframe
 
@@ -435,7 +419,7 @@ function CameraRig() {
     }
   }, [gl, camera])
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     const ctl = controlsRef.current
     if (!ctl) return
 
@@ -527,11 +511,10 @@ function CameraRig() {
         // Glide onto the authored path: the destination is the keyframe pose
         // itself, and the chase below keeps it moving with the pan. Up returns
         // to [0,1,0] so Hero un-rolls smoothly out of Browse's overhead.
-        // Pick a random point in the pan on each Hero entry → a returning user
+        // MovieCamera picks a random point in the pan on each entry → a returning user
         // sees a different part of the arc, not always the same start.
-        randomizeHeroStart(heroMotion)
         transToHero.current = true
-        const { fov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos, _heroTgt)
+        const { fov } = movie.current.pose(_heroPos, _heroTgt)
         beginTransition(_heroPos.toArray(), _heroTgt.toArray(), fov, SHOT_TRANSITION_MS.hero, [0, 1, 0])
       }
     }
@@ -566,7 +549,7 @@ function CameraRig() {
       // If transitioning into hero, chase the moving keyframe-animated pose
       // so the transition lands on the authored path instead of a stale point.
       if (transToHero.current && heroKeyframes) {
-        const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _toPos, _toTarget)
+        const { fov: kfFov } = movie.current.pose(_toPos, _toTarget)
         toFov.current = kfFov
       }
 
@@ -620,30 +603,6 @@ function CameraRig() {
       return
     }
 
-    // ── Adjust near plane for depth precision ──
-    const wantNear = vm === 'hero' ? 10 : 1
-    if (Math.abs(camera.near - wantNear) > 0.1) {
-      camera.near = wantNear
-      camera.updateProjectionMatrix()
-    }
-
-    // ── Hero camera animation — authored keyframe path (slab heroKeyframes) ──
-    if (vm === 'hero' && heroKeyframes) {
-      const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos, _heroTgt)
-      camera.position.copy(_heroPos)
-      if (Math.abs(camera.fov - kfFov) > 0.1) {
-        camera.fov = kfFov
-        camera.updateProjectionMatrix()
-      }
-      // ⭐ THE AIM IS AUTHORED. This used to re-pin to the subject every frame,
-      // which made pitch an output rather than a choice — see heroAnim.js.
-      ctl.target.copy(_heroTgt)
-      // Bypass damping — direct position control, no interpolation fighting
-      ctl.enableDamping = false
-      ctl.update()
-      ctl.enableDamping = true
-    }
-
     // ── Idle → hero ──
     const idleLimit = vm === 'planetarium' ? IDLE_TIMEOUT_PLANET : IDLE_TIMEOUT
     const modeAge = Date.now() - modeChangedAt.current
@@ -665,7 +624,11 @@ function CameraRig() {
        `update()` itself (drei's own useFrame skips it while disabled).
        ⚠ MEASURED: drei bundles `three-stdlib`'s OrbitControls, which never sets
        `touch-action` on the canvas, so there is nothing else to undo. */
-    <RegimeControls managed controlsRef={controlsRef} />
+    <>
+      <RegimeControls managed controlsRef={controlsRef} />
+      <MovieCamera keyframes={heroKeyframes} motion={heroMotion} quality={QUALITY} controlsRef={controlsRef} handle={movie}
+        active={() => useCamera.getState().viewMode === 'hero'} hold={() => transitioning.current} />
+    </>
   )
 }
 
@@ -693,7 +656,7 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
 
   // The movie shot needs CONTINUOUS rendering where the profile asks for it: under
   // frameloop="demand" the R3F clock advances in coarse steps, so the authored pan
-  // (driven by clock.elapsedTime) reads ~2 fps even though <Town> pumps invalidate
+  // (MovieCamera's clock steps by the frame delta) reads ~2 fps even though <Town> pumps invalidate
   // every frame. Every other shot stays "demand" (<Town> paces it). Confirmed by the
   // window.__frameloop A/B test, 2026-06-29 (H1).
   const frameloop = (QUALITY.movieEveryFrame && shot === 'movie') ? 'always' : 'demand'

@@ -21,7 +21,8 @@ import { browseAltitude } from '../lib/browseAltitude.js'
 import StreetLights from '../components/StreetLights'
 import GatewayArch from '../components/GatewayArch'
 
-import { heroKeyframeAnim, heroPoseAtTime, heroClockAt } from '../preview/heroAnim'
+import { heroPoseAtTime } from '../preview/heroAnim'
+import MovieCamera from '../camera/MovieCamera.jsx'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import {
   cameraState, cameraPush, subscribeCameraState, pushCamera, publishCameraState,
@@ -442,10 +443,6 @@ function ColorRow({ label, value, onChange }) {
 
 // ── Shared hero scrub position (R3F ↔ DOM) ──────────────────────────────────
 
-// Scratch for the played pose — reused every frame so the hero loop stays
-// allocation-free, the same reason heroAnim.js writes into caller-owned vectors.
-const _heroPos = new THREE.Vector3()
-const _heroTgt = new THREE.Vector3()
 
 const heroScrub = { t: 0 }  // the playhead, as a fraction of the shot length (preview or panel scrub)
 let heroScrubListeners = new Set()
@@ -856,13 +853,11 @@ function StreetCamera({ cam }) {
 
 // ── Hero preview animation (runs inside R3F) ────────────────────────────────
 
-export function HeroPreview({ keyframes, motion }) {
+export function HeroPreview({ keyframes, motion, quality }) {
   const { camera } = useThree()
   const controls = useThree((s) => s.controls)
-  const clock = useRef(0)
-  const wasPlaying = useRef(false)
   const frameCount = useRef(0)
-  // The motion without the preview speed: Stage runs its own clock at that speed.
+  // The path's { length, mode } — the first key's pose is read from it.
   const played = useMemo(() => ({ length: motion.length, mode: motion.mode }), [motion.length, motion.mode])
 
   // ⭐ OPEN ON THE FIRST KEY — once per entry into Hero, as soon as the keys are
@@ -882,7 +877,7 @@ export function HeroPreview({ keyframes, motion }) {
     pushCamera({ position: p, target: q, fov })
   }, [n, motion.length, keyframes, played])
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     // 0) Keep liveCamera fresh (Key here reads this synchronously)
     liveCamera.camera = camera
     liveCamera.controls = controls
@@ -899,31 +894,20 @@ export function HeroPreview({ keyframes, motion }) {
       }
     }
 
-    // 2) Play — the SAME heroKeyframeAnim Preview and production play, so what
-    // is previewed here is what ships. Playback starts FROM THE PLAYHEAD.
-    // ⛔⛔ WHEN NOT PLAYING THIS TOUCHES NOTHING: the camera is the operator's
-    // whenever it is not playing (BRIEF-camera-regimes).
-    const playing = motion.preview && keyframes.length > 1
-    if (playing && !wasPlaying.current) clock.current = heroClockAt(played, heroScrub.t * played.length)
-    wasPlaying.current = playing
-    if (playing) {
-      clock.current += delta * (motion.speed || 1)
-      const { fov, time } = heroKeyframeAnim(clock.current, keyframes, played, _heroPos, _heroTgt)
-      heroScrub.t = time / played.length
-      notifyHeroScrub()
-      camera.position.copy(_heroPos)
-      if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
-      camera.lookAt(_heroTgt)
-      if (controls) controls.target.copy(_heroTgt)
-    }
-
     // 3) Broadcast camera state to the panel (every 10 frames)
     if (++frameCount.current % 10 !== 0) return
     const t = controls?.target
     if (t) publishCameraState(camera, [t.x, t.y, t.z])
   })
 
-  return null
+  // Play — MovieCamera, the one driver production and Preview mount too, so what is previewed here is what ships.
+  // Playback starts FROM THE PLAYHEAD and writes it back. ⛔ When not playing it touches nothing: the camera is the
+  // operator's whenever it is not playing (BRIEF-camera-regimes).
+  return (
+    <MovieCamera keyframes={keyframes} motion={motion} quality={quality} active={!!motion.preview && keyframes.length > 1}
+      start={() => heroScrub.t * motion.length}
+      onTime={(time) => { heroScrub.t = time / motion.length; notifyHeroScrub() }} />
+  )
 }
 
 // ── Hook: subscribe to live camera state from outside R3F ────────────────────

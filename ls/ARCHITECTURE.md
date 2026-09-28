@@ -19,10 +19,12 @@ Last verified: 2026-06-02 (forensic inventory pass §§1–6 — `scratch/ls-for
 What varies by app arrives as a prop; what varies by town arrives from the slab and the town's identity, passed IN
 (`town`, a town manifest's `identity` — the kit's apps pass their instance module — beside `lookId`). Nothing Town
 reaches resolves a town from the kit.
-The camera is the app's, mounted beside `<Town>`. ▶ `node checks/claims-every-app-mounts-the-town.mjs` ·
-`node checks/claims-the-town-reads-no-player-store.mjs`. ⏳ Stage on Lafayette Square still draws through its old
-`MAP_REGISTRY` assembly until live building-palette retint lands (`docs/briefs/BRIEF-live-building-palette.md`); the
-first check reports it, red, until then. The prop list is Town.jsx's header.
+The camera is the app's, mounted beside `<Town>` — except the movie itself: **`<MovieCamera>`**
+(`src/camera/MovieCamera.jsx`) is the one player of the town's authored path in every app. It owns the clock, the
+random start on each entry (Stage: the playhead), the pose and the movie's near plane (the quality profile's
+`movieNear`); the app owns entering and leaving (its tween samples the path through the driver's handle).
+▶ `node checks/claims-every-app-mounts-the-town.mjs` · `node checks/claims-the-town-reads-no-player-store.mjs` ·
+`node checks/claims-one-movie-driver.mjs`. The prop list is Town.jsx's header.
 
 ```
 index.html → main.jsx → App.jsx              ← URL route switch, top-level modals, identity
@@ -47,6 +49,7 @@ index.html → main.jsx → App.jsx              ← URL route switch, top-level
     │       │   └── {children}                the app's overlays — here UserDot, CourierDots,
     │       │                                 LandmarkMarkers (pins, click-to-deselect, Escape)
     │       └── CameraRig                     the player's camera: modes, transitions, idle → hero
+    │           └── MovieCamera               plays the movie (src/camera/MovieCamera.jsx)
     ├── Controls / CompassRose / BrowseHeader / SidePanel / EventTicker
     ├── Modals: PlaceCard / BulletinModal / ContactModal / CodeDeskModal / SmsInbox / ChatModal / …
     └── URL-routed pages: CheckinPage / ClaimPage / LinkPage / PrivacyPage / … / PlaceOpener

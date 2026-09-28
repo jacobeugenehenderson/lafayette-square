@@ -1,6 +1,6 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
+status: BUILT — open until the parity census is re-taken and the operator's eye has seen the movie, after merge
+dispatched: yes (Mortise)
 written: 2026-09-28
 evict-when: node checks/claims-one-movie-driver.mjs
 -->
@@ -52,13 +52,14 @@ path and nothing else:
    heroAnim.js itself). Every app that mounts `<Town>` mounts `<MovieCamera>`. Read from the sources, never listed.
 2. **Parity:** `claims-stage-preview-parity` shows the same `camera.near` / `far` / `fov` in the movie shot in all three.
 
-## 5. Rulings needed (Jacob, through Warden)
+## 5. Rulings (Warden, 2026-09-28)
 
-- **The movie shot's near plane: 10 or 1?** Production chose 10 "for depth precision"; Preview and Stage render
-  at 1 under log depth, which is what the operator judges. A phone profile renders linear depth
-  (`qualityProfile.js`), and that is where 10 may be needed. It could be a quality-profile field, not a
-  constant.
-- **Random start in Stage?** Stage plays from the playhead today; keeping that is my default.
+- **The near plane is a quality-profile field**, `movieNear` (desktop 1 under log depth, phone 10 under linear
+  depth); MovieCamera sets it on entering the movie and restores it on leaving. No sniffing.
+- **Stage keeps its playhead**: it plays from the scrub and writes it back; `<MovieCamera start>` takes it.
+- **The entry tween samples the path through the driver** (`handle.current.pose()`), so production's chase and
+  Preview's tween read the driver's clock — which closed Preview's land-then-jump (its tween sampled one phase,
+  its frames played another).
 
 ## 6. Out of scope
 

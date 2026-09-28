@@ -1139,8 +1139,8 @@ export default function CartographApp() {
           <Controls controlsRef={controlsRef} heroPlaying={previewPlaying} />
           {/* ⛔⛔ `sceneCfg.hasHero` GATED THIS AND WAS TRUE FOR LAFAYETTE SQUARE
               ONLY — removed 2026-09-21. HeroPreview is not a decoration, it IS the
-              playback driver: the useFrame in StageApp.jsx#HeroPreview that plays
-              the keyframes (heroKeyframeAnim) and writes the camera. Unmounted, the Play button
+              playback driver: StageApp.jsx#HeroPreview mounts MovieCamera, which plays
+              the keyframes and writes the camera. Unmounted, the Play button
               toggled a flag nothing read.
               ⇒ Jacob, on huron: "I programmed new keyframes into the camera but
               they don't playback when I push play" … "the LS values are the
@@ -1154,7 +1154,7 @@ export default function CartographApp() {
               thing". ⛔ Conflating "has a landmark" with "may move its camera" is
               the LS-gated-capability shape, seventh of the night. */}
           {shot === 'hero' && (
-            <HeroPreview keyframes={keyframes} motion={heroMotion} />
+            <HeroPreview keyframes={keyframes} motion={heroMotion} quality={QUALITY} />
           )}
         </Canvas>
 

@@ -463,7 +463,7 @@ Runtime reads public/baked/<id>/* + the live src/data/* (trees/water/paths/lamps
 ```
 
 ### Camera regimes — one definition each, every runtime (2026-09-26)
-A runtime **chooses** a regime (plan · orbit · street · playback, `src/lib/cameraRegimes.js`) and never defines controls; `RegimeControls.jsx` is the one mount. ⛔ **No camera reads a hero subject** (H-7): keyframes carry `{position, target, fov}`; one `heroKeyframeAnim` plays them everywhere. Designer ↔ Browse hand their framing across both ways (inverse FOV/altitude math, `CartographApp.jsx#CameraRig`). ▶ `node checks/claims-the-camera-has-one-definition.mjs`
+A runtime **chooses** a regime (plan · orbit · street · playback, `src/lib/cameraRegimes.js`) and never defines controls; `RegimeControls.jsx` is the one mount. ⛔ **No camera reads a hero subject** (H-7): keyframes carry `{position, target, fov}`; one driver, `src/camera/MovieCamera.jsx`, plays them in every app (▶ `node checks/claims-one-movie-driver.mjs`). Designer ↔ Browse hand their framing across both ways (inverse FOV/altitude math, `CartographApp.jsx#CameraRig`). ▶ `node checks/claims-the-camera-has-one-definition.mjs`
 
 ### The Extent tool & the Pour — the no-CLI intake→3D arc (2026-07-03; procedure rewritten 2026-07-20; D4 + identity lock + the palimpsest warning added 2026-07-23)
 The whole intake→3D arc (define a new neighborhood → derive → bake → land in Designer) is **one tool, no terminal.**

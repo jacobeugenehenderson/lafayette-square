@@ -23,6 +23,8 @@ export const QUALITY = {
     id: 'desktop',
     antialias: true,
     logDepth: true,
+    // The movie shot's near plane (MovieCamera): log depth keeps precision at near 1 to the horizon.
+    movieNear: 1,
     dpr: [1, 1.5],
     shadows: 'soft',
     // The movie shot renders every frame (under a demand loop its clock steps coarsely).
@@ -40,6 +42,8 @@ export const QUALITY = {
     // Linear depth: log depth writes gl_FragDepth on mobile WebGL2, kills early-Z and taxes the
     // canopy's fill budget. Which depth phones should run is a later phone measurement.
     logDepth: false,
+    // Linear depth spends its precision near the camera, so the movie shot pushes the near plane out.
+    movieNear: 10,
     dpr: 1,
     shadows: false,
     movieEveryFrame: false,
