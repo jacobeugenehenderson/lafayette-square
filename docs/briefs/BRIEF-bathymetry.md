@@ -60,10 +60,9 @@ level sits.
   **new graphic in the Almanac** tells the user where the tide is (Meteorologist's surface; its own brief).
 - ⏭ **NEXT, and not negotiable (Jacob): the tide MOVES with the clock** — NOAA harmonics make it a pure function of
   time, like the monument's show. The level already is a value read at a time (`waterLevel.mjs`); the clock replaces
-  only `tidePhase(t)`. Seam (agreed 2026-09-28): Loam ships `tideHarmonics.mjs` `tideHeightAt(tide, t)` + its check
-  against NOAA's predictions; Strand maps it to a phase at the station (unclamped — springs run past MHW/MLLW) and
-  moves the flood to HAT and the tide band to LAT…HAT once `water.datums` carries them. Kept out of any real bake until
-  Provincetown has promoted (Boz, 2026-09-28).
+  only `tidePhase(t)`. The clock is built: `cartograph/tide.mjs` `tidePhaseClock` (95a7ca58), clamped to [0, 1] between
+  the town's MHW and MLLW by ruling — so the flood at MHW is the full extent. ▶ `docs/briefs/BRIEF-tide.md`. Wiring
+  `tidePhase` to it waits for Jacob's eye gate, after Provincetown has promoted (Boz, 2026-09-28).
 
 ## Bounds
 No bake without Jacob's go, cleared through Boz. Commit only your own paths. Lafayette Square is not re-poured.

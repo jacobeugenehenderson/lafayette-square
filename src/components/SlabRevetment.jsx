@@ -46,6 +46,7 @@ import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 
 let _saidNoBerm = false
 let _saidNoLevel = false
+let _saidNoLevels = false
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 /** How far from the camera the DETAILED drape and the stones are built, metres.
@@ -131,7 +132,11 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // something remounted: a stone wall that is missing for no visible reason.
   const { material, uniforms: revU } = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
   // ⭐ The wetted band stands at the LIVE level where the camera is (cartograph/waterLevel.mjs), so it moves with the tide.
-  const levels = useMemo(() => { try { return waterLevels(terrainWater()) } catch { return null } }, [doc])
+  // ⛔ Not swallowed (BRIEF-tide finding): a town whose water record cannot be read SAYS so, once, and its wetted band
+  // stays unlit — never a quiet dry band.
+  const levels = useMemo(() => { try { return waterLevels(terrainWater()) } catch (e) {
+    if (!_saidNoLevels) { _saidNoLevels = true; console.error(`[SlabRevetment] ⛔ ${e.message} — the stone's wetted band has no level to stand at`) }
+    return null } }, [doc])
   useFrame(({ camera: cam }) => { if (levels) revU.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, tidePhase(Date.now())) })
   useEffect(() => () => material.dispose?.(), [material])
   useEffect(() => () => { palette?.forEach(g => g.dispose()) }, [palette])

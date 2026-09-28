@@ -95,7 +95,8 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 >   A tidal town also acquires its **tide clock** (NOAA's constituents, which time the tide; the levels stay the town's)
 >   into `raw/tide.json` — ⛔ never a terrain input — and `bake-manifest` publishes it. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id> --tide-only`
 > - ⭐ **EVERY CONSUMER READS THE LEVEL, ONE WAY** — `cartograph/waterLevel.mjs`: `levelAt(x, z, phase)` = low + (high − low)·phase
->   over those fields, and `tidePhase(t)` (HIGH until the clock; the clock replaces only it). ⛔ **Never measure water
+>   over those fields, and `tidePhase(t)` (HIGH until it is wired to the clock, `cartograph/tide.mjs` `tidePhaseClock` —
+  phase in [0, 1] by ruling, so HIGH is the most the water ever stands). ⛔ **Never measure water
 >   depth or a waterline from y = 0** — that is the flight's tide. Built on it: the **flood** (`water.flood`: the ground
 >   below HIGH connected to the drawn water, TRACED where the level meets the terrain, minus the drawn water — the sheet
 >   runs up the beach); the **tide band** (`bake-ground`: a soft fill refines to half a terrain step and ±the datum's
