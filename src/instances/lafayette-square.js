@@ -42,7 +42,7 @@ export default {
   name: 'Lafayette Square',
   // The town's locale — authored, never the viewer's browser and never another town's (Jacob, 2026-09-28:
   // "localize the almanac"). Every date, time, temperature and price the Ward shows is formatted from this.
-  locale: { language: 'en-US', temperature: 'fahrenheit', currency: 'USD' },
+  locale: { language: 'en-US', temperature: 'fahrenheit', currency: 'USD', length: 'feet' },
 
   // ⚠️ LEGACY — the ONLY instance that still declares a domain, and the line is the switch: while it
   // is here, this town's public URLs and its Promote row read lafayette-square.com (GitHub Pages,

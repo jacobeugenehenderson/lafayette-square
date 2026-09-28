@@ -29,7 +29,7 @@ export default {
   name: 'Hi-Pointe–DeMun',
   // The town's locale — authored, never the viewer's browser and never another town's (Jacob, 2026-09-28:
   // "localize the almanac"). Every date, time, temperature and price the Ward shows is formatted from this.
-  locale: { language: 'en-US', temperature: 'fahrenheit', currency: 'USD' },
+  locale: { language: 'en-US', temperature: 'fahrenheit', currency: 'USD', length: 'feet' },
   domain: null,   // ⛔ NOT A SOURCE (2026-09-26): the production domain lives in Operations (src/lib/townOrigin.js).
 
   // Content asset root (§5.1.2), relative to BASE_URL. HPDM is the clean template:
