@@ -499,6 +499,13 @@ parameter, so it lands in every server, proxy and browser log that records URLs.
 **Fix:** send it in a POST body (or a header) and never in a URL; the Apps Script reads it from there. The Ward's
 admin surface (step 5) must not reproduce the pattern. The CodeDesk copy dies with the kit's `public/codedesk/`.
 
+### F-21 · MEDIUM (integrity) · A Guardian can set their own place's rating  *(new, 2026-09-28)*
+`apps-script/Code.js` `postUpdateListing`'s `EDITABLE` includes `rating` and `review_count`, so a full Guardian can
+write their own listing's rating through `update-listing`. No client sends them, but the endpoint accepts them. A
+place's rating is the town's own (the Ward's rating marks), never the owner's. Found by Quire (menu editor).
+**Fix:** drop both from `EDITABLE`; the rating's writer is the operator's path only. ⏳ A `clasp` deploy: Jacob's go.
+Open for Jacob: whether `category`/`subcategory` stay Guardian-editable (they drive the map's lit set and tint).
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
