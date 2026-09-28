@@ -26,7 +26,7 @@ portal."* And: the CSS must be generic.
 
 ## The work
 - ⚠️ **FALSE PREMISE, corrected 2026-09-28: the channel ALREADY EXISTED** — the Look's `materialColors.neon_<category>`
-  (Stage › Surfaces › Neon, baked into `scene.json`, read by NeonBands). No town had authored it. It IS the palette; no
+  (authored then in Stage › Surfaces › Neon — now the Identity panel — baked into `scene.json`, read by NeonBands). No town had authored it. It IS the palette; no
   second channel was added. **Built:** `src/lib/categoryColor.js` decides a category's colour (the Look's, else the
   kit's neutral default) for the neon, Stage's swatches and the manifest (`19c10388`, and the bake side). LS's current
   look was written into its Look as its own (`072990bb`). ▶ `node checks/claims-a-towns-colours-are-its-own.mjs`

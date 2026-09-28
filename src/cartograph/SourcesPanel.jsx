@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { fetchIntake, saveIntakeSource } from './api.js'
 import useCartographStore from './stores/useCartographStore'
 import { IDENTITY_CHANNELS } from '../lib/townIdentity.js'
+import CATEGORIES from '../tokens/categories.js'
 
 /**
  * SOURCES — every input that goes into pouring a town, and WHAT TO DO about it.
@@ -222,11 +223,11 @@ const GROUPS = [
       // ⭐ The row stays DOC rather than FETCH deliberately — the BASE is a
       // button, but hours and descriptions are hand-work and always were, and
       // calling the whole row a button would promise the part that is not.
-      // How the town looks — its mark, accent, rating mark, lit tint. Nothing to fetch: the town chooses, and the
+      // How the town looks — its mark, accent, rating mark, lit tint, category colours. Nothing to fetch: the town chooses, and the
       // choosing is done in the Identity panel (IdentityPanel.jsx). A to-do until every channel is chosen.
       { name: 'Identity', act: CHOOSE, where: 'Identity',
         sources: [{ name: 'the town', note: 'its own choice — never another town\'s' }],
-        steps: ['Ask the town: the emoji it goes by, the one it rates with, its accent colour, and the tint for lit roofs.',
+        steps: ['Ask the town: the emoji it goes by, the one it rates with, its accent colour, the tint for lit roofs, and a colour for each category of place.',
                 'Choose each in the Identity panel. Until then the kit\'s neutral value shows, and says so.'] },
       { name: 'Businesses & hours', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md',
         sources: [
@@ -255,7 +256,9 @@ const GROUPS = [
 ]
 
 export default function SourcesPanel({ scene, onClose, onOpenIdentity }) {
-  const unchosen = useCartographStore((s) => IDENTITY_CHANNELS.filter((k) => s.identity?.[k] == null).length)
+  // The Identity row's to-do: every identity channel and every category colour the town has not chosen.
+  const unchosen = useCartographStore((s) => IDENTITY_CHANNELS.filter((k) => s.identity?.[k] == null).length
+    + Object.keys(CATEGORIES).filter((k) => !s.materialColors?.[`neon_${k}`]).length)
   const [openRow, setOpenRow] = useState(null)
   const [extra, setExtra] = useState({})   // per-row operator-added sources
   const [copied, setCopied] = useState(null)

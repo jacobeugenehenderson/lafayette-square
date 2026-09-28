@@ -8,7 +8,7 @@
  * Neon. src/lib/categoryColor.js now decides a category's colour: the Look's, else the kit's NEUTRAL default.
  *
  * Asserts, reading the sources and the baked artifacts:
- *   · no neon consumer (NeonBands, SceneNeon, Stage's swatches) nor the manifest bake reads CATEGORY_HEX — the colour
+ *   · no neon consumer (NeonBands, SceneNeon, the Identity panel's swatches) nor the manifest bake reads CATEGORY_HEX — the colour
  *     comes from categoryColor.js;
  *   · ONE source per category, TWO derived forms (Jacob, 2026-09-28): `neon` (the map's tubes) and `detail` (the pastel
  *     for chips, dots, accents). The neutral hues cover EVERY category of the taxonomy (read from tokens/categories.js)
@@ -28,7 +28,7 @@ import { categoryNeon, categoryDetail, detailOf, isAuthoredCategory, NEUTRAL_CAT
 
 const ROOT = new URL('..', import.meta.url).pathname
 const BAKED = join(ROOT, 'public/baked')
-const CONSUMERS = ['src/components/NeonBands.jsx', 'src/components/SceneNeon.jsx', 'src/cartograph/CartographSurfaces.jsx', 'cartograph/bake-manifest.mjs']
+const CONSUMERS = ['src/components/NeonBands.jsx', 'src/components/SceneNeon.jsx', 'src/cartograph/IdentityPanel.jsx', 'cartograph/bake-manifest.mjs']
 const code = (s) => s.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
 
 export function audit({ sources, towns, hues = NEUTRAL_CATEGORY_HUE, neonOf = categoryNeon }) {

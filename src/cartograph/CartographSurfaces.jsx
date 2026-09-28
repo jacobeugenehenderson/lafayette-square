@@ -17,7 +17,6 @@ import { useState } from 'react'
 import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import TodChannel from './TodChannel.jsx'
-import { NEUTRAL_CATEGORY_NEON } from '../lib/categoryColor.js'
 import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS, CANOPY_FIELDS, CANOPY_FLAT_DEFAULTS } from './skyLightChannels.js'
 import { StoreChannel } from './CartographSkyLight.jsx'
 import { WATER_LOOK_DEFAULTS } from '../components/waterMaterial.js'
@@ -47,7 +46,8 @@ export const TEXTURE_OPTIONS = [
   'slate', 'metal',
 ]
 
-// Defaults for non-bake material kinds (walls/roofs/neon/trees/park/infra).
+// Defaults for non-bake material kinds (walls/roofs/trees/park/infra). A category's neon colour is chosen in the
+// Identity panel (IdentityPanel.jsx), not here.
 // Mirrored from the standalone /stage SURFACE_CATALOG so identity matches
 // between the two apps; cartograph adds per-Look overrides on top.
 const DEFAULT_MATERIAL_COLORS = {
@@ -58,9 +58,6 @@ const DEFAULT_MATERIAL_COLORS = {
   roof_flat: '#2a2a2e', roof_metal: '#555560', roof_slate: '#3a3a42',
   // Building
   foundation: '#B8A88A',
-  // Neon (per-category sign tint): an unauthored category shows what it draws — the kit's NEUTRAL default
-  // (src/lib/categoryColor.js, one source). The town's own colours are what the operator sets here.
-  ...Object.fromEntries(Object.entries(NEUTRAL_CATEGORY_NEON).map(([k, hex]) => [`neon_${k}`, hex])),
   // Park (interior)
   park_path: '#cccccc',
 }
@@ -219,23 +216,6 @@ const TABS = [
       // tunes the per-building tint mix.
       // Baked into each building's vertices, so on a poured town it lands on the next buildings bake.
       { id: 'palette',         label: 'Palette (on bake)', kind: 'palette' },
-    ],
-  },
-  {
-    key: 'neon',
-    label: 'Neon',
-    items: [
-      { id: 'neon_dining',      label: 'Dining',      kind: 'material' },
-      { id: 'neon_historic',    label: 'Historic',    kind: 'material' },
-      { id: 'neon_arts',        label: 'Arts',        kind: 'material' },
-      { id: 'neon_parks',       label: 'Parks',       kind: 'material' },
-      { id: 'neon_shopping',    label: 'Shopping',    kind: 'material' },
-      { id: 'neon_services',    label: 'Services',    kind: 'material' },
-      { id: 'neon_community',   label: 'Community',   kind: 'material' },
-      { id: 'neon_residential', label: 'Residential', kind: 'material' },
-      { id: 'neon_hospitality', label: 'Hospitality', kind: 'material' },
-      { id: 'neon_commercial',  label: 'Commercial',  kind: 'material' },
-      { id: 'neon_industrial',  label: 'Industrial',  kind: 'material' },
     ],
   },
   {

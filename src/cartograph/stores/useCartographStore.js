@@ -1199,6 +1199,18 @@ const useCartographStore = create((set, get) => ({
     })
     get()._saveDesignDebounced()
   },
+  // A category's colour — its neon and its Ward chips (src/lib/categoryColor.js), chosen in the Identity panel. Stored
+  // where it always was, materialColors.neon_<category>; `null` un-chooses it (the kit's neutral hue shows).
+  setCategoryNeon: (category, hex) => {
+    if (hex != null && !/^#[0-9a-f]{6}$/i.test(hex)) throw new Error(`neon_${category} = ${JSON.stringify(hex)} — must be '#rrggbb'`)
+    set(s => {
+      const next = { ...s.materialColors }
+      if (hex == null) delete next[`neon_${category}`]
+      else next[`neon_${category}`] = hex
+      return { materialColors: next }
+    })
+    get()._saveDesignDebounced()
+  },
   setMaterialColor: (id, color) => {
     set(s => ({ materialColors: { ...s.materialColors, [id]: color } }))
     get()._saveDesignDebounced()

@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import useCartographStore from './stores/useCartographStore'
 import { IDENTITY_NEUTRAL } from '../lib/townIdentity.js'
+import { neutralNeon } from '../lib/categoryColor.js'
+import CATEGORIES from '../tokens/categories.js'
 
 /**
  * IDENTITY — how the town looks, chosen in one place (Warden's ruling, 2026-09-28): its mark, its accent, the mark it
- * rates with, and the tint a lit set of roofs takes. Saved in the Look's design.json `identity` block (the store's
+ * rates with, the tint a lit set of roofs takes, and its category colours (Neon — its signs and its Ward chips, stored
+ * as materialColors.neon_<category>, decided by src/lib/categoryColor.js; moved here from Stage › Surfaces). Saved in the Look's design.json `identity` block (the store's
  * autosave), baked into scene.json, published in the manifest's `look` (src/lib/townIdentity.js).
  * Reached from the Stage toolbar beside Sources, and from Sources' "Identity" row.
  *
@@ -31,6 +34,8 @@ const neutralText = (id) => {
 export default function IdentityPanel({ onClose }) {
   const identity = useCartographStore((s) => s.identity) || {}
   const setChannel = useCartographStore((s) => s.setIdentityChannel)
+  const materialColors = useCartographStore((s) => s.materialColors) || {}
+  const setCategoryNeon = useCartographStore((s) => s.setCategoryNeon)
   const activeLookId = useCartographStore((s) => s.activeLookId)
   const [errors, setErrors] = useState({})
   const [drafts, setDrafts] = useState({})        // what was typed but refused — kept on screen beside its error
@@ -46,6 +51,8 @@ export default function IdentityPanel({ onClose }) {
     catch (err) { setErrors((e) => ({ ...e, [id]: err.message.replace(/^Identity: /, '') })); setDrafts((d) => ({ ...d, [id]: value })) }
   }
   const unchosen = ROWS.filter((r) => identity[r.id] == null)
+  const categories = Object.entries(CATEGORIES).map(([id, c]) => ({ id, label: c.label, hex: materialColors[`neon_${id}`] }))
+  const neonUnchosen = categories.filter((c) => !c.hex).length
 
   // ⛔ PORTAL — the toolbar's backdrop-filter would otherwise contain the fixed scrim (see SourcesPanel).
   return createPortal(
@@ -55,7 +62,7 @@ export default function IdentityPanel({ onClose }) {
           <div>
             <div className="carto-sources-title">Identity</div>
             <div className="carto-sources-sub">
-              {activeLookId || 'no town open'} · {unchosen.length ? `${unchosen.length} of ${ROWS.length} not chosen` : 'all chosen'}
+              {activeLookId || 'no town open'} · {unchosen.length + neonUnchosen ? `${unchosen.length + neonUnchosen} of ${ROWS.length + categories.length} not chosen` : 'all chosen'}
             </div>
           </div>
           <button className="carto-btn-sm" onClick={onClose} title="Close (Esc)">✕</button>
@@ -98,6 +105,20 @@ export default function IdentityPanel({ onClose }) {
               </div>
             )
           })}
+          <div className="carto-sources-tabrow"><div className="carto-sources-tab">Neon — category colours</div></div>
+          <p className="carto-identity-foot">Each category's signs on the map, and its chips in the Ward (a pastel of the same hue).</p>
+          {categories.map((c) => (
+            <div key={c.id} className="carto-identity-row">
+              <span className="carto-sources-name">{c.label}</span>
+              <div className="carto-identity-control">
+                <input type="color" value={c.hex ?? neutralNeon(c.id)} aria-label={`${c.label} colour`}
+                  className={c.hex ? '' : 'carto-identity-unset'} onChange={(e) => setCategoryNeon(c.id, e.target.value)} />
+                {c.hex
+                  ? <button className="carto-btn-sm" onClick={() => setCategoryNeon(c.id, null)} title="Un-choose — the kit's neutral hue shows">clear</button>
+                  : <span className="carto-identity-todo">not chosen · shows {neutralNeon(c.id)}</span>}
+              </div>
+            </div>
+          ))}
           <p className="carto-identity-foot">Saved to this town's Look. The published town shows a change after the next bake.</p>
         </div>
       </div>
