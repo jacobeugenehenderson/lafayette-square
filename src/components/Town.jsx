@@ -91,6 +91,8 @@ import MountainBackdrop from './MountainBackdrop'
 
 // The props contract comes through the one entry: an app asks this for its quality profile.
 export { deviceQuality } from '../lib/qualityProfile.js'
+// …and places its town at boot (before any screen mounts), for readers that run without a <Town> (TownPlace.jsx).
+export { placeTown } from './TownPlace.jsx'
 
 const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'compass', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt
