@@ -24,7 +24,10 @@ The camera is the app's, mounted beside `<Town>` — except the movie itself: **
 random start on each entry (Stage: the playhead), the pose and the movie's near plane (the quality profile's
 `movieNear`); the app owns entering and leaving (its tween samples the path through the driver's handle).
 ▶ `node checks/claims-every-app-mounts-the-town.mjs` · `node checks/claims-the-town-reads-no-player-store.mjs` ·
-`node checks/claims-one-movie-driver.mjs`. The prop list is Town.jsx's header.
+`node checks/claims-one-movie-driver.mjs`. The plan map opens on its places: `frameDensest(places, ids, stencil)`
+(exported from Town) frames the densest cluster (k = ⌈√n⌉ nearest neighbours) of the lit category or every listed
+place, inside the Extent, and returns every id it could not place. ▶ `node checks/claims-the-plan-opens-on-its-places.mjs`.
+The prop list is Town.jsx's header.
 
 ```
 index.html → main.jsx → App.jsx              ← URL route switch, top-level modals, identity

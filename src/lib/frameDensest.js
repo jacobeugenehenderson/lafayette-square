@@ -6,9 +6,8 @@
  *
  * ⭐ Computed from the places alone — no per-town constant, no metre value. The cluster's size comes from the data:
  * k = ⌈√n⌉ nearest neighbours (the standard k-NN density rule; unitless). The densest point is the one whose k-th
- * neighbour is nearest. `mode`:
- *   'sqrt'      the frame holds that point and its k neighbours;
- *   'halfPeak'  the neighbourhood grows while its density (count ÷ area) stays at or above half the peak.
+ * neighbour is nearest, and the frame holds that point and its k neighbours (Jacob picked this over growing the
+ * neighbourhood to half the peak density, 2026-09-28).
  * The frame is bounded by the Extent (the slab's stencil disc): it is moved and shrunk to lie inside it, never beyond.
  *
  * ⛔ NOTHING VANISHES. A requested id with no place (a listing with no building, a building the slab does not have)
@@ -19,8 +18,7 @@
  * ids (null/undefined allowed and disclosed), stencil = { center: [x, z], radius }. Returns
  * { x, z, radius, count, placed, of, outside: [ids], unplaced: [ids] }, or null when no id has a place in the disc.
  */
-export function frameDensest(places, ids, stencil, { mode } = {}) {
-  if (mode !== 'sqrt' && mode !== 'halfPeak') throw new Error(`[frameDensest] ⛔ mode is 'sqrt' or 'halfPeak' (Jacob picks from the frames); got ${mode}`)
+export function frameDensest(places, ids, stencil) {
   if (!(stencil?.radius > 0) || !Array.isArray(stencil.center)) throw new Error('[frameDensest] ⛔ needs the Extent — the slab\'s stencil { center, radius }')
   const [cx, cz] = stencil.center, R = stencil.radius
   const all = [...ids]
@@ -42,14 +40,7 @@ export function frameDensest(places, ids, stencil, { mode } = {}) {
     const dists = pts.map((p) => pts.map((q) => Math.hypot(p.x - q.x, p.z - q.z)).sort((a, b) => a - b))
     let best = 0
     for (let i = 1; i < n; i++) if (dists[i][k] < dists[best][k]) best = i
-    let m = k
-    if (mode === 'halfPeak') {
-      // Density of the neighbourhood of m neighbours: (m + 1) points over the disc reaching the m-th.
-      const density = (j) => (j + 1) / (Math.PI * Math.max(dists[best][j], Number.MIN_VALUE) ** 2)
-      const peak = density(k)
-      while (m + 1 < n && density(m + 1) >= peak / 2) m++
-    }
-    const reach = dists[best][m]
+    const reach = dists[best][k]
     const o = pts[best]
     chosen = pts.filter((q) => Math.hypot(q.x - o.x, q.z - o.z) <= reach)
   }
