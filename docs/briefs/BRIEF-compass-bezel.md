@@ -10,7 +10,7 @@ evict-when: RULING: Jacob's eye gate on two towns — north-up and facing, stree
 **Jacob, 2026-09-28:** *"We use the round neighborhood shape as the horizon… make the circle a compass face,
 and literally tie it to the device's compass so it's helpful in an orienteering way, and it totally ties in the
 municipal element too."* · *"I kind of think this should be totally runtime."* · *"maybe it's not a ring but a
-series of tics?"* · street names at the rim: *"unknown"* · heading: *"whatever's helpful"* · *"not in movie."* · *"the map can be North up unless they are in the
+series of tics?"* · street names at the rim: *"unknown"*, then *"drop the street names at the rim"* · heading: *"whatever's helpful"* · *"not in movie."* · *"the map can be North up unless they are in the
 hood"* (with the live user dot).
 
 ## 1. What it is
@@ -50,8 +50,9 @@ Everything it needs is already published:
   enables it.
 - **In Street,** the bezel shows which way the camera faces, and replaces the old `CompassRose.jsx` (delete it;
   one compass, not two).
-- **Street names at the rim — undecided ("unknown").** Build it as a Town layer, switchable, and show Jacob a
-  frame of each town with and without it. He chooses the default.
+- **No street names at the rim** (Jacob, 2026-09-28: *"drop the street names at the rim"*). Ticks and
+  N · E · S · W only. The exit analysis (labels stop at the boundary polygon, not the Extent circle) stays on
+  record in this brief's history; no exit layer is built.
 - **Reduced motion:** stays north-up; heading changes are smoothed, never jittery. Screen readers hear
   "facing north-east" on change, rate-limited.
 
