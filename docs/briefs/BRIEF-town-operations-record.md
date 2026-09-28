@@ -31,7 +31,7 @@ the LS-named default inbox goes ("Agreed about the emails and LS email address, 
    town with none configured is refused loudly. No default address, and no town's address used for another.
    Its allowed origins cover every Ward origin (the town domains, staging, local dev) from one list.
 4. **Every operator power moves to Operations** (Jacob, 2026-09-28: "That is what we should do"): listing
-   setup and claim codes, resident verification, photo folders, the Manage tab, and delivery testing (an
+   setup and claim codes, the operator's own resident verification (admin-verify; whether NEIGHBOURS verify is unruled), photo folders, the Manage tab, and delivery testing (an
    "open this town as a tester" link that turns delivery on for that device only). The Ward has no admin mode, so
    SECURITY F-20's passphrase-in-a-URL goes away instead of being fixed. ⏳ The texting parts are zero priority for now.
    **The operator's message inbox moves to Operations** (Jacob, 2026-09-28: "we should move it into operations").
