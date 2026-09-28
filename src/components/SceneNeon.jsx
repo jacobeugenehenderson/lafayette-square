@@ -16,22 +16,15 @@
  *   - `forceNeonOn` undefined (production / Preview): `_isWithinHours` is the
  *     sole gate — tubes auto-glow when a listing's authored hours intersect
  *     the current TOD. Buildings without authored hours stay dark.
- *
- * Height helpers (getFoundationHeight / getRoofPeakHeight) are imported from
- * LafayetteScene — both are hoisted `function` declarations, so the
- * LafayetteScene⟷SceneNeon circular import resolves safely at runtime.
  */
 import { useMemo, useState, useEffect, useReducer } from 'react'
 import { isOpenAt } from '../lib/openNow.js'
-import { buildings as _allBuildings } from '../data/buildings'
 import { useTownContext } from './townContext.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { getElevationRaw } from '../utils/elevation'
 import { CATEGORY_HEX, UNKNOWN_HEX } from '../tokens/categories'
 import { lookOf } from '../lib/lookOf.js'
 import NeonBands from './NeonBands.jsx'
-import { getFoundationHeight, roofTopRingFor } from './LafayetteScene.jsx'
 
 // ── Open-by-hours filter ────────────────────────────────────────────
 // Glows when the place is currently open. ⛔ THERE IS NO DARKNESS TERM — this
@@ -97,19 +90,9 @@ const _NEON_ZONING_CATEGORY = {
 function defaultNeonCategoryForZoning(zoning) {
   return _NEON_ZONING_CATEGORY[zoning] || null
 }
-function defaultNeonCategoryForBuilding(building) {
-  // A town whose assessor does not speak the St. Louis alphabet has no readable letter
-  // here at all, and must not be read as though it did.
-  if (building.zoning_code_format && building.zoning_code_format !== 'stl-letter') return null
-  return defaultNeonCategoryForZoning(building.zoning)
-}
-function defaultNeonHexForBuilding(building) {
-  const cat = defaultNeonCategoryForBuilding(building)
-  return cat ? CATEGORY_HEX[cat] : UNKNOWN_HEX
-}
 
 // ── neonLookup — buildingId → { hex, hours, category } for listings ──
-// Shared by LafayetteScene's per-id <Building> mounts AND openPlaces.
+// Read by openPlaces.
 // Every REAL listing (a business/POI) is included, whether or not it has
 // authored `hours`; the openPlaces gate below decides on/off. A present but
 // null `hours` marks a POI that glows on the default window (dusk→late) so a
@@ -161,13 +144,9 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, litIds
     return () => clearInterval(id)
   }, [])
 
-  // Slab path: when SlabBuildings has published the render-scoped index,
-  // source neon geometry/anchors from it (production after cutover, and
-  // Preview with the slab A/B on). Until then — Stage, and Preview with the
-  // slab A/B off — fall back to live _allBuildings so nothing breaks
-  // pre-cutover. Either way, listing hours/category still come from
-  // useListings (content, not slab); the index only replaces the building
-  // geometry/anchor/zoning side of openPlaces.
+  // The tubes trace the slab's buildings (SlabBuildings publishes the index; no neon until it has). The live
+  // per-building fallback went with the live-building path (BRIEF-live-building-palette): every app draws the slab.
+  // Each place's hours and category come from <Town listings>.
   const slabIndex = useSlabBuildingIndex((s) => s.index)
   // The town's clock by the minute: a scrubbed (or app-given) time re-decides which places are open, rather than
   // waiting for the 60 s re-check below.
@@ -180,64 +159,19 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, litIds
     const places = []
     const now = useTimeOfDay.getState().currentTime
 
-    if (slabIndex) {
-      for (const e of slabIndex.byNum) {
-        // A record the slab built no walls for (a set-piece's building, SetPiece.jsx) has no eave to trace.
-        if (!e.ranges?.wall) continue
-        const listingInfo = neonLookup[e.id]
-        const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
-        const hours = listingInfo ? listingInfo.hours : null
-        const on = _neonOn({ forceNeonOn, hours, now })
-        if (!on || !_densityKeeps(e.id, density) || (litIds && !litIds.has(e.id))) continue
-        // baseY + groundYRaw (== centroidY) are baked into the index by the
-        // SAME anchor math the live path uses below, so tubes lift in lockstep
-        // with their building on sloped terrain. NeonBands.buildTube traces
-        // roofOutline (true roof edge, Alidade's baked field) and falls back to
-        // footprint where it's absent/degenerate; baseY / groundYRaw / category
-        // are unchanged.
-        places.push({ footprint: e.footprint, roofOutline: e.roofOutline, baseY: e.baseY, groundYRaw: e.centroidY, neon: { category } })
-      }
-      return places
-    }
-
-    for (const b of _allBuildings) {
-      // The live path builds tube geometry from INLINE building geometry (size +
-      // footprint). Roster-only installs (e.g. HPDM's content roster) carry no
-      // inline geometry — their tubes come from the slab path above. Skip such
-      // buildings here so a null-slabIndex cold-load moment can't crash on
-      // `b.size[1]` and take down the scene. (HPDM SceneNeon crash, 2026-07-16.)
-      if (!Array.isArray(b.size) || !b.footprint || b.footprint.length < 3) continue
-      const listingInfo = neonLookup[b.id]
-      const info = listingInfo || {
-        hex: defaultNeonHexForBuilding(b),
-        hours: null,
-        category: defaultNeonCategoryForBuilding(b),
-      }
-      const on = _neonOn({ forceNeonOn, hours: info.hours, now })
-      if (!on || !_densityKeeps(b.id, density) || (litIds && !litIds.has(b.id))) continue
-      // baseY = world Y of the building TOP (the wall/roof joint, the eave) —
-      // dropped the roof-peak lift so neon HUGS the building instead of hovering
-      // at the peak (Jacob 2026-06-27). Foundation pedestal lift shifts the
-      // mounted position; the tube sits at the eave. buildTube traces the
-      // footprint, so the ring matches the building's size on every roof type.
-      const baseY = getFoundationHeight(b) + b.size[1] + 0.3
-      // Mean-corner raw elevation — canonical anchor matching Foundations
-      // and Building walls, so the neon mesh lifts in lockstep with its
-      // building on sloped terrain.
-      let groundYRaw
-      const fp = b.footprint
-      if (fp && fp.length >= 3) {
-        let sum = 0
-        for (let i = 0; i < fp.length; i++) sum += getElevationRaw(fp[i][0], fp[i][1])
-        groundYRaw = sum / fp.length
-      } else {
-        groundYRaw = getElevationRaw(b.position[0], b.position[2])
-      }
-      // roofTopRingFor derives the SAME rooftop ring bake-buildings bakes into
-      // roofOutline (inset cap for mansard, footprint for flat/hip), so Stage's
-      // live-path neon traces the roof edge identically to the slab path — the
-      // Preview slab A/B toggle shows no pop (project_stage_consumer_parity).
-      places.push({ ...b, baseY, groundYRaw, roofOutline: roofTopRingFor(b), neon: { category: info.category } })
+    if (!slabIndex) return places
+    for (const e of slabIndex.byNum) {
+      // A record the slab built no walls for (a set-piece's building, SetPiece.jsx) has no eave to trace.
+      if (!e.ranges?.wall) continue
+      const listingInfo = neonLookup[e.id]
+      const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
+      const hours = listingInfo ? listingInfo.hours : null
+      const on = _neonOn({ forceNeonOn, hours, now })
+      if (!on || !_densityKeeps(e.id, density) || (litIds && !litIds.has(e.id))) continue
+      // baseY + groundYRaw (== centroidY) are baked into the index, so tubes lift in lockstep with their building
+      // on sloped terrain. NeonBands.buildTube traces roofOutline (the true roof edge) and falls back to the
+      // footprint where it's absent/degenerate.
+      places.push({ footprint: e.footprint, roofOutline: e.roofOutline, baseY: e.baseY, groundYRaw: e.centroidY, neon: { category } })
     }
     return places
   }, [neonLookup, neonTick, forceNeonOn, density, slabIndex, litIds, clockMinute])

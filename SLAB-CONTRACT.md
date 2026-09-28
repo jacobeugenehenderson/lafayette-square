@@ -21,7 +21,7 @@ Cross-refs: [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) (producer
 
 ## 0. Scope and version
 
-**Slab version:** every manifest carries a `"version"`. Most are `1`; **`buildings.json` is `2`** (the render-scoped per-building index + footprints/roofOutlines `.bin` sections, added 2026-05-26 — see §6). A consumer MUST refuse to render manifests with a version it doesn't recognize. A producer that changes the binary layout, group semantics, or coordinate frame MUST bump this number. (Forward-compatible *additive* fields — like `roofOutlines` within v2 — do not require a bump; see §10 rule 5.)
+**Slab version:** every manifest carries a `"version"`. Most are `1`; **`buildings.json` is `3`** (v2's render-scoped per-building index + footprints/roofOutlines `.bin` sections, plus each building's `tint` source, 2026-09-28 — see §6; the consumer still draws v2 and refuses to recolour it live). A consumer MUST refuse to render manifests with a version it doesn't recognize. A producer that changes the binary layout, group semantics, or coordinate frame MUST bump this number. (Forward-compatible *additive* fields — like `roofOutlines` within v2 — do not require a bump; see §10 rule 5.)
 
 **Coordinate frame:** all slab geometry is in **compass-frame world meters**, origin at the neighborhood center, equirectangular GPS→meters projection. No rotation applied. Y is up; XZ is the ground plane. See [`cartograph/ARCHITECTURE.md` §7 "Coordinate systems"](cartograph/ARCHITECTURE.md) for the canonical statement (the compass-only rule + the 9.2° firebreak) and the historical reasons.
 
@@ -234,6 +234,7 @@ Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `
 | Field | Meaning |
 |---|---|
 | `palette` | Building-palette colors (foundation + walls + roofs). |
+| `wallPalettes` | *(v3 bakes)* `{ wallMaterial: [hex…] }` — a material's own swatches, as baked. With `palette`, the input a live recolour starts from. |
 | `materialPhysics` | Per-material PBR overrides (roughness, metalness, emissive intensity). Today: usually empty; cartograph plumbs through but rarely authors. |
 | `materialColors` | Per-material color overrides outside of layer scope. |
 | `layerColors` | Map of layer name → hex. The bake reads these to color `mat`-kind groups; they ALSO travel in `scene.json` so consumers can re-color outline strokes / wireframes live. |
@@ -266,11 +267,11 @@ Consumer: `src/components/BakedLamps.jsx` → `StreetLights`.
 
 ## 6. `buildings.json` — building geometry manifest
 
-The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex color + UV + centroid-Y attributes for shading, **plus a render-scoped per-building index** (`buildings`) and **footprints / roofOutlines `.bin` sections** so the runtime resolves per-building identity (click / hover / neon / selection) against the slab instead of `src/data/buildings`. **This manifest is `version: 2`.**
+The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex color + UV + centroid-Y attributes for shading, **plus a render-scoped per-building index** (`buildings`) and **footprints / roofOutlines `.bin` sections** so the runtime resolves per-building identity (click / hover / neon / selection) against the slab instead of `src/data/buildings`. **This manifest is `version: 3`** — v2 plus each building's `tint` (§6.3), so the player can recolour live with the bake's own rules (`src/lib/buildingTint.js`, shared by both).
 
 ```jsonc
 {
-  "version": 2,
+  "version": 3,
   "look": "lafayette-square",
   "bbox": { … },
   "bin": "buildings.bin",
@@ -296,7 +297,7 @@ The merged-mesh buildings slab. Same shape as `ground.json` but with per-vertex 
 }
 ```
 
-The consumer is `src/components/SlabBuildings.jsx` — Preview *and* production (L1.3 cutover, 2026-05-26). It draws the ~9 group meshes and publishes the parsed index to `useSlabBuildingIndex`, which `SceneNeon` + selection read. It **refuses any version ≠ 2**.
+The consumer is `src/components/SlabBuildings.jsx` — Preview *and* production (L1.3 cutover, 2026-05-26). It draws the ~9 group meshes and publishes the parsed index to `useSlabBuildingIndex`, which `SceneNeon` + selection read. It draws **v2 and v3** and refuses any other version. It recolours **v3** live when a palette override differs from the baked one; a v2 slab draws its baked colours, and a live palette change reaching it is a loud console error. ▶ `node checks/claims-live-palette-equals-the-bake.mjs` — the module reproduces every baked colour, and lists the towns still on v2 (the v2 path is deleted when that list is empty).
 
 ### 6.1. Group entry
 
@@ -350,6 +351,7 @@ The render-scoped per-building index. One entry per *rendered* building (skips `
   "wallMaterial": "brick_red",
   "roofMaterial": "flat",
   "zoning": "F",                             // drives neon's default category for non-listing buildings
+  "tint": { "palette": "brick_red" },         // v3: where the wall tint comes from — { fixed: '#hex' } (an override; never moves) or { palette: 'base' | <wallMaterial> }; the slot is hashStr(id) % length
   "ranges": {                                // GROUP-LOCAL [startVert, count] into the building's group
     "wall":       [v0, n],
     "roof":       [v0, n],

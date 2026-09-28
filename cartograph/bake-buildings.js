@@ -30,6 +30,9 @@ import { SCENE, requireExplicitMap } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { createMembershipFilter } from './membership.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
+// ⭐ THE TINT RULES ARE ONE MODULE, shared with the player (SlabBuildings' live palette): a drag equals a re-bake.
+// ▶ node checks/claims-live-palette-equals-the-bake.mjs
+import { DEFAULT_PALETTE, hashStr, parseHex, roofTintFor, FLAT_ROOF_RGB, tintSourceFor, wallTintHex } from '../src/lib/buildingTint.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -169,63 +172,6 @@ const ROOF_MATERIALS = {
 }
 // Mirrors the runtime foundation material in LafayetteScene.jsx.
 const FOUNDATION_MATERIAL = { color: '#B8A88A', roughness: 0.95, metalness: 0 }
-
-// Parse `#rrggbb` → [r,g,b] in 0..1
-function parseHex(hex) {
-  const h = (hex || '#888888').replace('#', '')
-  return [
-    parseInt(h.substring(0, 2), 16) / 255,
-    parseInt(h.substring(2, 4), 16) / 255,
-    parseInt(h.substring(4, 6), 16) / 255,
-  ]
-}
-
-// Convert RGB → HSL (each in 0..1)
-function rgbToHsl(r, g, b) {
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
-  let h = 0, s = 0, l = (max + min) / 2
-  if (max !== min) {
-    const d = max - min
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break
-      case g: h = (b - r) / d + 2; break
-      case b: h = (r - g) / d + 4; break
-    }
-    h /= 6
-  }
-  return [h, s, l]
-}
-function hslToRgb(h, s, l) {
-  let r, g, b
-  if (s === 0) { r = g = b = l }
-  else {
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1; if (t > 1) t -= 1
-      if (t < 1/6) return p + (q - p) * 6 * t
-      if (t < 1/2) return q
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6
-      return p
-    }
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s
-    const p = 2 * l - q
-    r = hue2rgb(p, q, h + 1/3)
-    g = hue2rgb(p, q, h)
-    b = hue2rgb(p, q, h - 1/3)
-  }
-  return [r, g, b]
-}
-
-// Roof tint: same recipe as LafayetteScene.jsx — desaturate building
-// color + darken per material so each roof keeps a hint of the building's
-// hue without overpowering.
-function roofTintFor(buildingColorHex, roofMat) {
-  const [r, g, b] = parseHex(buildingColorHex)
-  const [h, s] = rgbToHsl(r, g, b)
-  const lum = roofMat === 'slate' ? 0.15 : roofMat === 'metal' ? 0.28 : 0.20
-  const sat = s * 0.3
-  return hslToRgb(h, sat, lum)
-}
 
 // foundationHeightFor: thin alias preserving the call sites below; canonical
 // definition lives in src/lib/foundationGeometry.js (shared with LafayetteScene).
@@ -627,23 +573,6 @@ function buildingGeometry(footprint, foundationY, wallTop, roofShape, stories) {
   }
 }
 
-// Deterministic string hash — match the runtime hash in LafayetteScene
-// so palette assignment is identical between Stage live-render and the
-// Preview bake.
-function hashStr(s) {
-  let h = 0
-  for (let i = 0; i < s.length; i++) {
-    h = ((h << 5) - h + s.charCodeAt(i)) | 0
-  }
-  return Math.abs(h)
-}
-
-const DEFAULT_PALETTE = [
-  '#dcdcdc', '#a0522d', '#cd853f', '#8b2500',
-  '#d2b48c', '#778899', '#8b4513', '#a52a2a',
-  '#f5deb3', '#696969', '#b22222', '#808080',
-]
-
 export async function bakeBuildings({ look, scene } = {}) {
   assertBakeTarget('bake-buildings', look, scene)
   const outDir   = join(ROOT, 'public', 'baked', look)
@@ -695,10 +624,11 @@ export async function bakeBuildings({ look, scene } = {}) {
   // getElevation) — the scene's own terrain; flat if it has none.
   const terrain = loadSceneTerrain(scene) || { getElevationRaw: () => 0 }
   const getElevationRaw = (x, z) => terrain.getElevationRaw(x, z)
-  const overridesPath = join(ROOT, 'src', 'data', 'buildingOverrides.json')
-  const overrides = existsSync(overridesPath)
-    ? (JSON.parse(readFileSync(overridesPath, 'utf-8')).overrides || {})
-    : {}
+  // Per-building overrides (roof shape, foundation height, colour) are the TOWN's own: the `overrides` map in
+  // cartograph/data/<town>/building-overrides.json. ⛔ They used to be read from src/data/buildingOverrides.json — one
+  // legacy file (Lafayette Square's) for every town (BRIEF-live-building-palette; empty when retired, 2026-09-28).
+  const townOvP = join(ROOT, 'cartograph', 'data', scene, 'building-overrides.json')
+  const overrides = existsSync(townOvP) ? (JSON.parse(readFileSync(townOvP, 'utf-8')).overrides || {}) : {}
 
   // Read the Look's design.json for palette + materialPhysics. Without
   // it, fall back to defaults (matches the runtime fallback chain).
@@ -800,22 +730,18 @@ export async function bakeBuildings({ look, scene } = {}) {
       roofTopRing,
     } = buildingGeometry(fp, foundationY, wallTop, roofShape, stories)
 
-    // Per-building color packing — pick from the Look's palette via
-    // deterministic id hash (matches LafayetteScene's effectiveBuildingColor).
-    // Per-building override (buildingOverrides.color) wins if set; else
-    // palette; else legacy building.color.
-    const ovColor = overrides[b.id]?.color
-    const pal = wallPalettes[wallMat]?.length ? wallPalettes[wallMat] : palette
-    const tintHex = ovColor || pal[hashStr(b.id) % pal.length] || b.color
+    // Per-building colour — the shared tint module (src/lib/buildingTint.js): an override colour is FIXED; else
+    // the wall material's own palette, else the base palette, by the id's hash. The SOURCE is stamped in the
+    // index (`tint`) so the player can recolour live without knowing which buildings were overridden.
+    const tint = tintSourceFor({ fixedColor: overrides[b.id]?.color ?? null, wallMaterial: wallMat }, { wallPalettes })
+    const tintHex = wallTintHex(b.id, tint, { palette, wallPalettes })
     const wallRgb  = parseHex(tintHex)
     const foundRgb = parseHex(FOUNDATION_MATERIAL.color)     // uniform tan
     // Roof color rule mirrors LafayetteScene exactly:
     //  - flat: uniform near-black, NO building tint, NO texture
     //  - slate/metal: HSL-transform of building tint (hue kept, sat×0.3,
     //    lum=0.15 slate / 0.28 metal), overlay-blended with texture in shader
-    const roofRgb = roofMat === 'flat'
-      ? [0.04, 0.04, 0.045]
-      : roofTintFor(tintHex, roofMat)
+    const roofRgb = roofMat === 'flat' ? FLAT_ROOF_RGB : roofTintFor(tintHex, roofMat)
 
     // Per-building centroid elevation (raw, no exag). Each vertex of this
     // building carries the same centroidY so the runtime can lift the
@@ -896,6 +822,8 @@ export async function bakeBuildings({ look, scene } = {}) {
       baseY,
       wallMaterial: wallMat,
       roofMaterial: roofMat,
+      // v3: where the wall tint came from — { fixed: '#hex' } or { palette: 'base' | <wallMaterial> } (buildingTint.js).
+      tint,
       // ⭐ The storey count the geometry was ACTUALLY built from. The roster
       // used to back-solve this from `(centroidY − baseY)/3.5`, which is not a
       // height at all — centroidY is mean terrain under the footprint and baseY
@@ -1099,7 +1027,7 @@ export async function bakeBuildings({ look, scene } = {}) {
     // + a footprints section in the .bin. Consumers MUST refuse unknown
     // versions (SLAB-CONTRACT §0). NOTE: the tree path is deliberately
     // version-agnostic and is NOT affected by this bump.
-    version: 2,
+    version: 3,
     look,
     bbox: { min: [bx0, by0, bz0], max: [bx1, by1, bz1] },
     bin: 'buildings.bin',

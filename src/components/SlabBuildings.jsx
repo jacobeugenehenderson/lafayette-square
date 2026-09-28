@@ -40,6 +40,7 @@ import useCityModelActive from '../hooks/useCityModelActive'
 import { lookOf } from '../lib/lookOf.js'
 
 import { useQuality } from '../lib/qualityProfile.js'
+import { buildingColors } from '../lib/buildingTint.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL } from '../lib/lampPool.js'
@@ -149,30 +150,55 @@ const _NIGHT_FOUND = new THREE.Color('#3d3530') // foundation night target (line
  * `renderGeometry: false` additionally forces index-only for callers that want it.
  */
 // `materialPhysicsOverride`: Stage's live wall/roof physics, laid over the baked scene.materialPhysics so an
-// edit shows before a bake (Loupe's audit, 2026-09-26). The building PALETTE cannot: each building's colour
-// is baked into its vertices — Stage says so on the card.
-// `paletteOverride` — Stage's live building palette (<Town overrides.buildingPalette>). ⛔ NOT DRAWN YET: each
-// building's colour is baked into its vertices, so a palette drag shows only after a re-bake. Live retint for
-// every town is docs/briefs/BRIEF-live-building-palette.md (Jacob ruled 2026-09-27); it lands HERE. Until then a
-// palette that differs from the baked one says so, once, rather than a slider doing nothing in silence.
-let _paletteWarned = false
-function useLivePaletteNotice(paletteOverride, bakedScene) {
-  useEffect(() => {
-    if (!paletteOverride || !bakedScene || _paletteWarned) return
-    if (JSON.stringify(paletteOverride) === JSON.stringify(bakedScene.palette ?? null)) return
-    _paletteWarned = true
-    console.warn('[SlabBuildings] the building palette differs from the bake — it is drawn from the vertices, so re-bake to see it (BRIEF-live-building-palette)')
-  }, [paletteOverride, bakedScene])
+// edit shows before a bake (Loupe's audit, 2026-09-26). The building PALETTE is live too, on a v3 slab (below).
+// ── THE LIVE PALETTE (BRIEF-live-building-palette; Jacob 2026-09-27: "live retint for every town") ──────────────
+// The slab stores each vertex's sRGB colour; the player converts it to linear (and derives the walls' night colour)
+// in ONE function, used when the slab loads AND when the palette changes. A v3 slab records each building's tint
+// SOURCE (`tint`), so a palette drag recomputes every building through the SAME module the bake uses
+// (src/lib/buildingTint.js) and rewrites its vertex range — a live drag equals a re-bake
+// (▶ checks/claims-live-palette-equals-the-bake.mjs). A FIXED tint (an operator's override colour) never moves.
+// ⛔ A v2 slab does not say which buildings were overridden, so it DRAWS as baked and REFUSES a live palette, loudly
+// (Warden's ruling 2026-09-28) — the town gets live retint at its next bake. The v2 path goes when no town is v2.
+const _c = new THREE.Color(), _hsl = {}
+function writeLinear(r, g, b, isFlatRoof, isWall, colors, nightColors, i) {
+  // Albedo: sRGB→linear to match `new THREE.Color(hex)`. The flat-roof constant is a raw value → kept raw.
+  if (isFlatRoof) { colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b; return }
+  _c.setRGB(r, g, b, THREE.SRGBColorSpace)
+  colors[i * 3] = _c.r; colors[i * 3 + 1] = _c.g; colors[i * 3 + 2] = _c.b
+  if (isWall) {
+    // The night colour: keep the hue, cool and darken (the building's own colour at night).
+    _c.getHSL(_hsl)
+    _c.setHSL(_hsl.h + 0.03, _hsl.s * 0.55, _hsl.l * 0.32)
+    nightColors[i * 3] = _c.r; nightColors[i * 3 + 1] = _c.g; nightColors[i * 3 + 2] = _c.b
+  }
+}
+let _v2Warned = new Set()
+function recolour(meshes, manifest, palettes) {
+  const byKey = new Map(meshes.map(m => [`${m.group.kind}:${m.group.id}`, m]))
+  for (const e of manifest.buildings) {
+    const cols = buildingColors(e.id, e.tint, e.roofMaterial, palettes)
+    for (const [kind, id, rgb] of [['wall', e.wallMaterial, cols.wall], ['roof', e.roofMaterial, cols.roof]]) {
+      const r = e.ranges?.[kind]; const m = r && byKey.get(`${kind}:${id}`); if (!m) continue
+      const colors = m.geometry.attributes.color.array
+      const night = m.geometry.attributes.aNightColor?.array ?? null
+      const flat = kind === 'roof' && id === 'flat', wall = kind === 'wall'
+      for (let v = r[0]; v < r[0] + r[1]; v++) writeLinear(rgb[0], rgb[1], rgb[2], flat, wall, colors, night, v)
+    }
+  }
+  for (const m of meshes) {
+    m.geometry.attributes.color.needsUpdate = true
+    if (m.geometry.attributes.aNightColor) m.geometry.attributes.aNightColor.needsUpdate = true
+  }
 }
 
 // `litIds` (Set of building ids, <Town litIds>) tints those roofs; `litTintOverride` is Stage's live channel.
-export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride, paletteOverride, litIds, litTintOverride } = {}) {
+// `paletteOverride` / `wallPalettesOverride`: Stage's live palettes (<Town overrides.buildingPalette / .wallPalettes>).
+export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride, paletteOverride, wallPalettesOverride, litIds, litTintOverride } = {}) {
   const LOOK_ID = lookOf(lookId, 'SlabBuildings')
   const [data, setData] = useState(null)   // { manifest, bin }
   const [bakedScene, setScene] = useState(null)
   const scene = useMemo(() => (materialPhysicsOverride && bakedScene
     ? { ...bakedScene, materialPhysics: materialPhysicsOverride } : bakedScene), [bakedScene, materialPhysicsOverride])
-  useLivePaletteNotice(paletteOverride, bakedScene)
   // The lit set → the shared roof uniforms. Absent litIds: off (the selection tint still reads uSelectedId).
   const litIndex = useSlabBuildingIndex((s) => s.index)
   useEffect(() => {
@@ -212,8 +238,10 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
         const m = await fetch(`${base}baked/${LOOK_ID}/buildings.json?t=${t}`).then(r => r.json())
         // Refuse unknown versions (SLAB-CONTRACT §0 / §10.3). v2 added the
         // render-scoped index + footprints section this consumer requires.
-        if (m.version !== 2) {
-          console.error(`[SlabBuildings] refusing buildings.json version ${m.version} (expected 2)`)
+        // Refuse unknown versions (SLAB-CONTRACT §0 / §10.3). v3 adds each building's tint source (the live
+        // palette); v2 still draws, and refuses only the live palette (see recolour above).
+        if (m.version !== 2 && m.version !== 3) {
+          console.error(`[SlabBuildings] refusing buildings.json version ${m.version} (expected 2 or 3)`)
           return
         }
         const bin = await fetch(`${base}baked/${m.look}/${m.bin}?t=${t}`).then(r => r.arrayBuffer())
@@ -280,22 +308,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       // flat-roof constant is a raw linear value in the live shader → keep raw.
       const colors = new Float32Array(g.vertexCount * 3)
       const nightColors = isWall ? new Float32Array(g.vertexCount * 3) : null
-      const c = new THREE.Color()
-      const hsl = {}
-      for (let i = 0; i < g.vertexCount; i++) {
-        const r = srcColors[i * 3], gg = srcColors[i * 3 + 1], b = srcColors[i * 3 + 2]
-        if (isFlatRoof) { colors[i * 3] = r; colors[i * 3 + 1] = gg; colors[i * 3 + 2] = b }
-        else {
-          c.setRGB(r, gg, b, THREE.SRGBColorSpace)
-          colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b
-          if (isWall) {
-            // Exact replica of LafayetteScene Building.nightColor.
-            c.getHSL(hsl)
-            c.setHSL(hsl.h + 0.03, hsl.s * 0.55, hsl.l * 0.32)
-            nightColors[i * 3] = c.r; nightColors[i * 3 + 1] = c.g; nightColors[i * 3 + 2] = c.b
-          }
-        }
-      }
+      for (let i = 0; i < g.vertexCount; i++) writeLinear(srcColors[i * 3], srcColors[i * 3 + 1], srcColors[i * 3 + 2], isFlatRoof, isWall, colors, nightColors, i)
       return { group: g, positions, colors, nightColors, uvs, centroidYs, indices,
                aBuildingId: new Float32Array(g.vertexCount).fill(-1),
                aCovered: new Float32Array(g.vertexCount) }
@@ -333,6 +346,30 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       return { group: d.group, geometry: geom, texId: textureIdFor(d.group, scene) }
     })
   }, [data, scene, cityCoveredIds])
+
+  // ── The live palette: recolour when the effective palettes differ from what is drawn ──
+  const effective = useMemo(() => bakedScene && ({
+    palette: paletteOverride ?? bakedScene.palette,
+    wallPalettes: wallPalettesOverride ?? bakedScene.wallPalettes ?? {},
+  }), [paletteOverride, wallPalettesOverride, bakedScene])
+  // What these meshes currently show: a freshly built geometry shows the slab's own (baked) colours.
+  const drawn = useRef({ meshes: null, key: null })
+  useEffect(() => {
+    if (!meshes || !effective || !data) return
+    const key = JSON.stringify(effective)
+    const baked = JSON.stringify({ palette: bakedScene.palette, wallPalettes: bakedScene.wallPalettes ?? {} })
+    const shown = drawn.current.meshes === meshes ? drawn.current.key : baked
+    if (key === shown) return
+    if (data.manifest.version < 3) {
+      // A v2 index cannot recolour, and its scene.json never recorded the wall palettes it was baked with — so the
+      // first palettes it is drawn under ARE what it shows. Loud only when a live palette CHANGE reaches it.
+      if (drawn.current.meshes !== meshes) { drawn.current = { meshes, key }; return }
+      if (!_v2Warned.has(LOOK_ID)) { _v2Warned.add(LOOK_ID); console.error(`[SlabBuildings] ⛔ "${LOOK_ID}" is baked as buildings.json v2, which does not record which buildings are overridden — the palette shows only after a re-bake. Re-bake this town's buildings for a live palette.`) }
+      return
+    }
+    recolour(meshes, data.manifest, effective)
+    drawn.current = { meshes, key }
+  }, [meshes, effective, data, bakedScene, LOOK_ID])
 
   // ── Selection / night uniform plumbing across all group shaders ────
   // Collected ONCE per material at compile (onBeforeCompile fires once, not

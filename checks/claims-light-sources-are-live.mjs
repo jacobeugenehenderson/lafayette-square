@@ -4,7 +4,7 @@
 // Jacob, 2026-09-26, on Provincetown: "none of these controls do anything." The Lantern was wired to the live
 // store in LAFAYETTE SQUARE's Stage only; every poured town mounted the lamps without it and read the value frozen
 // in scene.json — so Brightness and Glow moved a slider and nothing else. Layer 0's LS-shaped hole, in the UI.
-//   ① every Stage mount of the lamps (<BakedLamps>, <StreetLights>) in CartographApp passes the live lantern
+//   ① Stage draws the lamps through <Town>, which passes the live lantern; any lamp CartographApp mounts itself must too
 //   ② each control moves its own thing: every Lantern/Lamp Glow field drives ≥1 target in StreetLights,
 //      and no target is driven by two fields (self-mutated: a master multiplier on the pools must go red)
 //   ③ every LAMPGLOW field is written as a share by BOTH the Stage pump and the production driver
@@ -17,7 +17,7 @@
 //   ⑥ Pool radius is MONOTONIC and 0 = OFF: through the real GLSL wipe, a lone pool's lit reach (ground and
 //      canopy) starts at 0, never shrinks as the knob rises, and is the full reach at 1 (self-mutated)
 // ⭐ The field lists are READ from skyLightChannels.js, never restated, so a new control is covered the day it lands.
-// ⭐ SELF-MUTATION, every run: ① is re-run on a copy of CartographApp with one live lantern removed, and must go red.
+// ⭐ SELF-MUTATION, every run: ① is re-run on a copy of CartographApp with a lamp mount lacking the live lantern, and must go red.
 //
 //   node checks/claims-light-sources-are-live.mjs
 import { readFileSync } from 'node:fs'
@@ -31,7 +31,7 @@ const src = (p) => readFileSync(p, 'utf-8').replace(/\/\/.*$/gm, '')
 const app = src('src/cartograph/CartographApp.jsx')
 const lights = src('src/components/StreetLights.jsx')
 const driver = src('src/components/PostProcessing.jsx')
-// ⭐ Every town but Lafayette Square draws in Stage through <Town> (src/components/Town.jsx), which takes
+// ⭐ Every town draws in Stage through <Town> (src/components/Town.jsx), which takes
 // Stage's live channels as ONE object: `overrides`, built by CartographApp's useStageOverrides. A Town prop
 // `x={o.key}` is live in Stage exactly when that hook supplies `key` — read from its source, never listed.
 const town = src('src/components/Town.jsx')
@@ -51,12 +51,11 @@ function deadMounts(text) {
 console.log('① EVERY STAGE MOUNT OF THE LAMPS PASSES THE LIVE LANTERN')
 {
   const { tags, dead } = deadMounts(app)
-  if (!tags.length) bad('found no lamp mounts in CartographApp — the check cannot see the Stage')
+  if (!tags.length) stageMountsTown ? ok('Stage mounts no lamps of its own — every town\'s lamps come through <Town>') : bad('Stage mounts neither <Town> nor lamps — the check cannot see the Stage')
   else if (dead.length) for (const t of dead) bad(`reads the BAKED lantern in Stage: ${t}`)
-  else ok(`${tags.length} mounts, all live`)
-  // Self-mutation: drop one live lantern → ① must go red.
-  const mutated = app.replace(/ lanternOverride=\{lanternOverride\}/, '')
-  deadMounts(mutated).dead.length ? ok('mutation (one live lantern removed) is caught') : bad('mutation NOT caught — ① is blind')
+  else ok(`${tags.length} mounts of its own, all live`)
+  // Self-mutation: a lamp mounted in Stage without the live lantern → ① must go red.
+  deadMounts(app + '\n<StreetLights lookId={activeLookId} />').dead.length ? ok('mutation (a lamp mount without the live lantern) is caught') : bad('mutation NOT caught — ① is blind')
   // <Town>, as Stage mounts it: its lamps take the live lantern from `overrides`, and Stage supplies it.
   const townLive = (t) => stageMountsTown && stageKeys.has('lantern') && /<BakedLamps\b[^>]*lanternOverride=\{o\.lantern\}/.test(t)
   townLive(town) ? ok('Stage via <Town>: the lamps take the live lantern') : bad('Stage via <Town>: the lamps read the BAKED lantern')
@@ -114,7 +113,7 @@ const writes = (() => {
 
 console.log('③ EVERY LAMP GLOW FIELD IS WRITTEN IN STAGE + PRODUCTION')
 // ONE driver writes the shares (LampGlowDriver); Stage reaches it with its live channel on both of its
-// routes — <Town lampGlowOverride={o.lampGlow}>, and the hand-assembly Lafayette Square keeps for now.
+// route — <Town>, whose LampGlowDriver takes lampGlowOverride={o.lampGlow}.
 for (const { key } of LAMPGLOW_FIELDS) {
   const w = new RegExp(`share\\.${key}\\s*=\\s*triple\\.${key}\\b`)
   w.test(driver) ? ok(`${key}: the one driver (LampGlowDriver) writes it`) : bad(`${key}: the driver (LampGlowDriver) never writes share.${key}`)
@@ -122,8 +121,7 @@ for (const { key } of LAMPGLOW_FIELDS) {
 }
 ;(/<LampGlowDriver\b[^>]*lampGlowOverride=\{o\.lampGlow\}/.test(town) && stageKeys.has('lampGlow') && stageMountsTown)
   ? ok('Stage (every town on <Town>) drives it with the live Lamp Glow') : bad('Stage\'s <Town> route does not carry the live Lamp Glow to LampGlowDriver')
-;/<LampGlowDriver\b[^>]*lampGlowOverride=\{/.test(app) || !/MAP_REGISTRY/.test(app)
-  ? ok('Stage\'s remaining hand-assembly drives it with the live Lamp Glow') : bad('Stage\'s hand-assembly mounts no live LampGlowDriver')
+;/<LampGlowDriver\b/.test(app) ? bad('Stage mounts a LampGlowDriver of its own beside <Town>\'s — a second driver') : ok('Stage mounts no second LampGlowDriver')
 
 console.log('④ THE UNIFORMS HAVE SHADER READERS')
 for (const [u, file] of [['poolUniform', 'src/lib/groundLamp.js'], ['poolUniform', 'src/components/SlabBuildings.jsx'], ['treesUniform', 'src/components/treeAtlasMaterial.js'],

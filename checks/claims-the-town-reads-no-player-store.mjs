@@ -95,6 +95,7 @@ export function audit(files) {
   const renderer = closureOf(files, TOWN).filter(x => !isStoreModule(x.path))
   info.push(`renderer: ${renderer.length} files in the import closure of ${TOWN}`)
   if (!renderer.some(x => x.path === PLACER)) f.push(`${TOWN} does not reach ${PLACER} — nothing places its town`)
+  if (!/<TownPlace\b/.test(code(files.find(x => x.path === TOWN)?.src || ''))) f.push(`${TOWN} does not render <TownPlace> — nothing places the town it is given`)
   const census = []
   for (const x of renderer) {
     const stores = PLAYER_STORES.filter(s => importsStore(x, s))
@@ -141,7 +142,7 @@ if (process.argv.includes('--self-test')) {
     ['an app that mounts Town sniffs the device', () => audit(swap('src/components/Scene.jsx', s => `import { IS_MOBILE } from '../lib/isMobile.js'\n` + s)).f.length],
     ['an app moves the town\'s place', () => audit(swap('src/cartograph/CartographApp.jsx', s => s + `\nsetTownPlace(geo, look)`)).f.length],
     ['a leaf imports the kit\'s instance', () => audit(swap(leaf, s => `import { INSTANCE } from '../instance.js'\n` + s)).f.length],
-    ['nothing places the town', () => audit(swap(TOWN, s => s.replace(/^import .*TownPlace.*$/m, ''))).f.length],
+    ['nothing places the town', () => audit(swap(TOWN, s => s.replace(/<TownPlace\b[^>]*\/>/g, ''))).f.length],
   ]
   // Caught means MORE failures than the tree has now — the known-open loaders keep the baseline red.
   const base = audit(files).f.length

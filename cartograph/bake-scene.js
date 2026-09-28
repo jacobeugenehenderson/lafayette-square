@@ -49,14 +49,11 @@ function stripTransientHeroMotion(m) {
   return { length, mode }
 }
 
+import { DEFAULT_PALETTE } from '../src/lib/buildingTint.js'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 
-const DEFAULT_PALETTE = [
-  '#dcdcdc', '#a0522d', '#cd853f', '#8b2500',
-  '#d2b48c', '#778899', '#8b4513', '#a52a2a',
-  '#f5deb3', '#696969', '#b22222', '#808080',
-]
 
 export async function bakeScene({ look } = {}) {
   assertBakeTarget('bake-scene', look)
@@ -76,6 +73,8 @@ export async function bakeScene({ look } = {}) {
     look,
     bakedAt:         Date.now(),
     palette:         design.buildingPalette || DEFAULT_PALETTE,
+    // The wall materials' own swatches — the player's live recolour needs them beside the base palette (v3).
+    wallPalettes:    design.wallPalettes || {},
     materialPhysics: design.materialPhysics || {},
     materialColors:  design.materialColors  || {},
     layerColors:     design.layerColors     || {},

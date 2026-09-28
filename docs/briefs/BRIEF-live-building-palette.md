@@ -29,8 +29,8 @@ One assembly means one building path, and Jacob chose live retint for all.
 
 ## 3. The work
 - **The bake records each building's tint SOURCE** in the index — `{ fixed: <hex> }` or
-  `{ palette: 'base' | <wallMat>, slot }`. That is a **slab-contract change: `buildings.json` v2 → v3**,
-  and the consumer refuses v2 (`SLAB-CONTRACT.md` §0, §10.3). Rewrite §6 for v3 — don't amend.
+  `{ palette: 'base' | <wallMat> }` (the slot is `hashStr(id) % length`, recomputed). That is a **slab-contract
+  change: `buildings.json` v2 → v3** (`SLAB-CONTRACT.md` §0, §6).
 - **The tint rules move into ONE shared module** — `hashStr`, the palette pick, `roofTintFor`, the night
   shift — imported by both the bake and `SlabBuildings`, so the two can never drift.
 - **On a live palette change** (`Town`'s `overrides.buildingPalette`, and wall palettes), `SlabBuildings`
@@ -40,9 +40,10 @@ One assembly means one building path, and Jacob chose live retint for all.
   live-building path (`LafayetteScene`'s `Building`/`Foundations`/`loadBuildingTextures`) is **deleted**.
 
 ## 4. Deploy sequencing — the part that is not code
-A v3 consumer refuses v2 slabs, so **every live town must be re-baked and republished to v3 before the
-consumer ships** — Lafayette Square, Provincetown (mid-launch), and the rest. Write the order down and
-check it; never ship a consumer that blanks a town's buildings.
+**Ruled 2026-09-28 (Warden, with Jacob): no special re-bake.** The consumer draws v2 exactly as before and
+v3 with a live palette; a live palette change reaching a v2 town is a loud console error. Each town becomes v3
+at its next ordinary bake. `claims-live-palette-equals-the-bake` lists the towns still on v2 — **delete the v2
+path when that list is empty.**
 
 ## 5. Checks — each seen to fail first
 - **Live recolour equals a re-bake**, byte for byte on the colour attributes, on two towns.

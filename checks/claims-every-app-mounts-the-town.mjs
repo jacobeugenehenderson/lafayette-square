@@ -31,9 +31,7 @@ const ROOT = new URL('..', import.meta.url).pathname
 const SRC = join(ROOT, 'src')
 const TOWN = 'src/components/Town.jsx'
 // Rendered by Town but not a drawing: an app may use it for its own children.
-const OPEN = {
-  'src/cartograph/CartographApp.jsx': 'Stage on Lafayette Square keeps its MAP_REGISTRY assembly until SlabBuildings retints the palette live for every town (Jacob ruled 2026-09-27; its own brief). Then it moves onto <Town> and LafayetteScene\'s live Building path is deleted.',
-}
+const OPEN = {}
 const WRAPPERS = { R3FErrorBoundary: 'an error boundary; it draws nothing' }
 
 function walk(dir, out = []) {
@@ -76,7 +74,9 @@ export function audit(files) {
   info.push(`renderer pieces (read from ${TOWN}): ${pieces.join(', ')}`)
   const drawn = drawnPiecesOf(town.src)
   if (!drawn.includes('BakedGround')) return { f: [`${TOWN}'s <Suspense> block does not draw <BakedGround> — the definition broke`], info }
-  const apps = files.filter(x => x.path !== TOWN && /<Canvas\b/.test(code(x.src)) && (renders(x.src, 'Town') || drawn.some(p => renders(x.src, p))))
+  // An app: owns a <Canvas> and draws a town — renders <Town> or a piece, or PLACES a town (placeTown / TownPlace), so
+  // an app that places its town and then drops <Town> is still seen.
+  const apps = files.filter(x => x.path !== TOWN && /<Canvas\b/.test(code(x.src)) && (renders(x.src, 'Town') || drawn.some(p => renders(x.src, p)) || /\b(placeTown|TownPlace)\b/.test(code(x.src))))
   if (!apps.length) f.push('no app found (no file owns a <Canvas> and renders <Town> or a piece) — the definition broke')
   for (const a of apps) {
     const exempt = harnessReason(a)
