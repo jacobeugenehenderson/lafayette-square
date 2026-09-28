@@ -208,6 +208,10 @@ export function useBuildingPlaces() {
   }, [index])
 }
 
+// The plan map's opening frame: the DENSEST CLUSTER of a set of places (the lit category, or every listed place),
+// bounded by the Extent, with every unplaced or outside id disclosed. Pure; ▶ checks/claims-the-plan-opens-on-its-places.mjs
+export { frameDensest } from '../lib/frameDensest.js'
+
 /** The circle that holds a set of buildings: { x, z, radius }, or null when none of `ids` has a place. */
 export function frameBuildings(places, ids) {
   const ps = [...ids].map((id) => places?.get(id)).filter(Boolean)
