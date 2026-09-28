@@ -168,6 +168,9 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, litIds
   // useListings (content, not slab); the index only replaces the building
   // geometry/anchor/zoning side of openPlaces.
   const slabIndex = useSlabBuildingIndex((s) => s.index)
+  // The town's clock by the minute: a scrubbed (or app-given) time re-decides which places are open, rather than
+  // waiting for the 60 s re-check below.
+  const clockMinute = useTimeOfDay((s) => Math.floor(s.currentTime.getTime() / 60000))
 
   // openPlaces — buildings eligible for tube geometry. Every building is a
   // candidate; listings-authored ones carry their authored category via
@@ -236,7 +239,7 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, litIds
       places.push({ ...b, baseY, groundYRaw, roofOutline: roofTopRingFor(b), neon: { category: info.category } })
     }
     return places
-  }, [neonLookup, neonTick, forceNeonOn, density, slabIndex, litIds])
+  }, [neonLookup, neonTick, forceNeonOn, density, slabIndex, litIds, clockMinute])
 
   // Cold-load reconcile flush — the same frameloop="demand" issue that hid the
   // trees (see InstancedTrees ParkPopulation). On a cold load the neon mesh and

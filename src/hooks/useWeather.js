@@ -93,6 +93,7 @@ export async function fetchWeather({ snap = false } = {}) {
       humidity: c.relative_humidity_2m != null ? c.relative_humidity_2m / 100 : null,
       temperatureF: c.temperature_2m ?? null,
       currentWeatherCode: saneCode,
+      weatherAt: Date.now(),
       directRadiation:  c.direct_radiation  ?? null,
       diffuseRadiation: c.diffuse_radiation ?? null,
     })
@@ -105,7 +106,11 @@ export async function fetchWeather({ snap = false } = {}) {
       const press = data.hourly.pressure_msl || []
       // Open-Meteo returns times in the requested timezone without offset suffix.
       // Use utc_offset_seconds from response to build proper Date objects.
-      const utcOffset = data.utc_offset_seconds ?? -21600 // CST = -6h
+      // ⛔ The offset is the TOWN's, as the provider answered for its timezone. It used to fall back to -21600
+      // (CST: Lafayette Square's) — every other town's forecast would have been shifted silently. Absent, the
+      // forecast is not parsed, and that is said.
+      const utcOffset = data.utc_offset_seconds
+      if (!Number.isFinite(utcOffset)) { console.error('[weather] ⛔ the forecast carries no utc_offset_seconds — its hours cannot be placed; hourly forecast not read'); return }
       const offsetMs = utcOffset * 1000
       const hourly = times.map((t, i) => {
         // t is like "2026-02-19T14:00" — parse as local by appending offset

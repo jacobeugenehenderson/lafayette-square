@@ -37,6 +37,10 @@
  *                    without a bake
  *   weatherMode      'live' (default) or Stage's forced weather
  *   holdScrubbedTime a scrubbed clock stays where the operator put it (Stage)
+ *   time             the town's clock, when the APP owns it (The Ward's scrubbed time): a Date draws the town at
+ *                    that instant (sky, sun, light, neon's opening hours) and nothing ticks it; null is live (the
+ *                    renderer's own clock). Absent (undefined), the app drives the clock store itself (the kit's
+ *                    apps). ⛔ Never with holdScrubbedTime: one writer of the town's clock.
  *   children         the app's overlays, drawn in the town's frame (see <TownPoint>)
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
@@ -53,6 +57,7 @@ import { sceneExag } from '../utils/terrainShader'
 import { terrainExag } from '../utils/terrainShader'
 import { getElevationRaw } from '../utils/elevation'
 import useSkyState from '../hooks/useSkyState'
+import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { PostProcessing, StageFog, StageShadows, LampGlowDriver } from './PostProcessing.jsx'
 import { NeonDriver } from './NeonBands.jsx'
@@ -124,6 +129,29 @@ export function Cascades() {
 }
 
 /**
+ * The town's weather as the renderer reads it — ONE reading, the live feed WeatherPoller fetches for the placed
+ * town (hooks/useWeather.js), READ-ONLY, or null before the first reading:
+ *   { now: { tempC, code, isDay, at }, hourly: [{ at, tempC, code }], fetchedAt }
+ * An app shows it rather than fetching its own: two calls to one provider read different numbers at different
+ * times. `code` is WMO (current reconciled against precipitation and cloud); `isDay` is the sun above the town's
+ * horizon at the town's clock; `at` / `fetchedAt` are ms epochs; hourly spans the provider's past 4 h and next 48 h,
+ * its hours placed with the town's own UTC offset. °C out. Mount-context: inside <Town>.
+ */
+const fToC = (f) => (f == null ? null : Math.round(((f - 32) * 5 / 9) * 10) / 10)
+export function useTownWeather() {
+  const tempF = useSkyState((s) => s.temperatureF)
+  const code = useSkyState((s) => s.currentWeatherCode)
+  const at = useSkyState((s) => s.weatherAt)
+  const forecast = useSkyState((s) => s.hourlyForecast)
+  const isDay = useTimeOfDay((s) => s.getLightingPhase().sunAltitude > 0)
+  return useMemo(() => (at == null || tempF == null ? null : {
+    now: { tempC: fToC(tempF), code, isDay, at },
+    hourly: (forecast || []).map((h) => ({ at: h.time.getTime(), tempC: fToC(h.temperatureF), code: h.weatherCode })),
+    fetchedAt: at,
+  }), [tempF, code, isDay, at, forecast])
+}
+
+/**
  * Where each of the town's buildings stands, READ-ONLY, for an app's overlays and camera moves (The Ward's
  * Society frames the lit buildings with it): Map(id → { x, z, radius }) in the town's local metres — the
  * footprint's centroid and the farthest corner from it. The ids are the slab's, the same ids
@@ -177,8 +205,10 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId, onSelectBuilding, litIds, liveIds,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, heading = null, compassDial, children,
+  holdScrubbedTime = false, heading = null, compassDial, time, children,
 }) {
+  if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
+  if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
   if (!lookId) throw new Error('[Town] ⛔ needs lookId — the Look to draw')
   if (!quality?.id) throw new Error('[Town] ⛔ needs quality — a profile from src/lib/qualityProfile.js')
   if (!SHOT_KEY[shot]) throw new Error(`[Town] ⛔ shot "${shot}" is not one of ${Object.keys(SHOT_KEY).join(' · ')}`)
@@ -193,16 +223,16 @@ export default function Town({
   const key = SHOT_KEY[shot]
   // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
   const loaded = useTownLoaded(lookId)
-  if (!loaded) return <TownBridge town={town} lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} />
+  if (!loaded) return <TownBridge town={town} lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} time={time} />
   const targetExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // The phone profile mounts the arch and the horizon in the movie shot only (its budget).
   const heavy = !quality.heroOnlyPieces || shot === 'movie'
 
   return (
     <QualityProvider quality={quality}>
-      <TownBridge town={town} lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} />
+      <TownBridge town={town} lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} time={time} />
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} />
-      <TimeTicker holdScrubbedTime={holdScrubbedTime} />
+      {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} />}
       <SkyStateTicker />
       {/* Names the material when a program fails to link — the failure that draws nothing and says nothing. */}
       <ShaderLinkGuard />

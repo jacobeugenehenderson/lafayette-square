@@ -17,6 +17,7 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import useCamera from '../hooks/useCamera'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
+import useTimeOfDay from '../hooks/useTimeOfDay'
 import { setTownPlace, placedLook, onPlaceMoved } from '../lib/townPlace.js'
 import { reloadTerrain, terrainLook, onTerrainReload } from '../utils/terrainShader'
 
@@ -53,8 +54,17 @@ export function useTownLoaded(lookId) {
   return useSyncExternalStore(subscribeReady, () => placedLook() === lookId && terrainLook() === lookId)
 }
 
-export default function TownBridge({ town, lookId, shot, selectedId, onSelectBuilding }) {
+export default function TownBridge({ town, lookId, shot, selectedId, onSelectBuilding, time }) {
   requireTown(town, lookId)
+  // The town's clock, when the app owns it (<Town time>): a Date is written as the town's instant (setTime keeps the
+  // calendar in step); null returns the clock to live once. Undefined leaves the clock to the app (the kit's apps).
+  const instant = time instanceof Date ? time.getTime() : time
+  useLayoutEffect(() => {
+    if (instant === undefined) return
+    const tod = useTimeOfDay.getState()
+    if (instant === null) { if (!tod.isLive) tod.returnToLive() }
+    else tod.setTime(new Date(instant))
+  }, [instant])
   const key = SHOT_KEY[shot]
   if (!key) throw new Error(`[Town] ⛔ shot "${shot}" is not one of ${Object.keys(SHOT_KEY).join(' · ')}`)
   useLayoutEffect(() => { useCamera.setState({ townShot: key }) }, [key])

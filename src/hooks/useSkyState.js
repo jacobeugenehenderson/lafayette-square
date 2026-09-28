@@ -59,6 +59,7 @@ const useSkyState = create((set, get) => ({
   humidity: null,          // open-meteo relative_humidity_2m, normalized to 0..1
   temperatureF: null,  // real temp from Open-Meteo (°F), null until first fetch
   currentWeatherCode: null,  // WMO code from current conditions
+  weatherAt: null,  // ms epoch of the last live reading, null until the first fetch
   directRadiation:  null,    // open-meteo direct_radiation (W/m²)
   diffuseRadiation: null,    // open-meteo diffuse_radiation (W/m²)
   hourlyForecast: [],  // Array<{ time: Date, temperatureF: number, weatherCode: number, pressureMb: number|null }>
@@ -94,6 +95,7 @@ const useSkyState = create((set, get) => ({
       humidity: data.humidity !== undefined ? data.humidity : get().humidity,
       temperatureF: data.temperatureF !== undefined ? data.temperatureF : get().temperatureF,
       currentWeatherCode: data.currentWeatherCode !== undefined ? data.currentWeatherCode : get().currentWeatherCode,
+      weatherAt: data.weatherAt !== undefined ? data.weatherAt : get().weatherAt,
       directRadiation:  data.directRadiation  !== undefined ? data.directRadiation  : get().directRadiation,
       diffuseRadiation: data.diffuseRadiation !== undefined ? data.diffuseRadiation : get().diffuseRadiation,
     })
