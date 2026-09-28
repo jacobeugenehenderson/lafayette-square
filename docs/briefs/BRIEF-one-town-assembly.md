@@ -100,6 +100,15 @@ shows only after a bake. Jacob: **live retint for every town.** So `SlabBuilding
 the legacy live-building path is **deleted**. Until then Stage-on-LS is the one remaining hand-assembly,
 reported red by name — migrated last, never given a second path inside `Town`.
 
+### Found while landing it (Mortise, 2026-09-28) — pre-existing, OPEN
+- **Tone mapping flips with re-renders, in every app.** R3F re-applies the Canvas `gl` prop
+  (`toneMapping: ACES`) on each re-render of the app component, overwriting EffectComposer's
+  `NoToneMapping`; the renderer reads 4 or 0 depending on timing. Stage re-renders on any store change.
+  Cause measured; visual effect not established.
+- **The movie near-plane differs** (production 10 vs 1) — owned by the one-movie-driver brief.
+- **Stage never drew hour-based neon** on any town (it passed Force Neon On's `false`, which SceneNeon
+  reads as an answer). Fixed in the landing; now visible in Stage.
+
 ## 6. Checks — the deliverable
 
 Write each check first, **see it fail**, then make it pass. A check that has never been seen to
