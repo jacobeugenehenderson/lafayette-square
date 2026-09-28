@@ -63,6 +63,10 @@ Bundled into the app by static import, so every town downloads it:
 - Building identity from two sources (the bundled roster and the baked `buildings.json`); listings
   in three layers (bundled, Apps Script `init`, `live/<town>/listings.json`).
 - `sources.json` once per component that asks.
+- **The Apps Script `init` layer returns listings the published base doesn't have** — 11 rows for one
+  town, 3 of them nameless (`status: "pending"`, every field null). The old player merged them in as
+  listings; the Ward leaves nameless rows out and names their ids (Quire, 2026-09-27). Who creates a
+  pending, nameless listing, and should `init` return it at all, is not established.
 
 ### ⑥ The player reads an authoring file
 `treeAtlasMaterial.js` fetches `looks/<town>/design.json` — the authoring document — at runtime.
