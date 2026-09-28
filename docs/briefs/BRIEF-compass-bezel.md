@@ -26,7 +26,10 @@ Everything it needs is already published:
 - **North-up unless you are in the neighbourhood** (Jacob, 2026-09-28). The map already carries a live user
   dot — the person's position, placed with `TownPoint`. Outside the town's disc, or with no position, the
   map is north-up. **Inside the disc, the map turns with the person by default**, the bezel's N pointing at
-  true north, and the dot shows which way they face. It moves because the *person* moved — "the scene never
+  true north, and the dot shows which way they face. ⭐ **It rotates about the TOWN's centre, like a compass
+  card — never about the dot, and it never follows or recentres on the person** (Jacob, 2026-09-28: "it
+  should center in its center. it just rotates like a compass"). The dot moves across the town; the town
+  only turns. It moves because the *person* moved — "the scene never
   takes you anywhere" holds.
 - **A control, always:** "North up" / "Face my direction" is a named switch whenever it applies, so a
   person inside can hold the map still. iOS asks permission for the heading on a tap; until granted, the
