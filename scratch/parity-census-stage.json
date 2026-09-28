@@ -1,14 +1,12 @@
 {
  "view": "stage",
- "href": "/cartograph?scene=lafayette-square",
- "scene": "lafayette-square",
- "bakedScenesTouched": [
-  "lafayette-square"
- ],
- "takenAt": "2026-09-21T05:26:29.686Z",
+ "href": "/cartograph.html?scene=provincetown",
+ "scene": "provincetown",
+ "bakedScenesTouched": [],
+ "takenAt": "2026-09-28T05:11:23.273Z",
  "live": {
-  "f0": 4620,
-  "f1": 4880,
+  "f0": 2310,
+  "f1": 2541,
   "advancing": true,
   "visibility": "visible"
  },
@@ -23,316 +21,207 @@
   "dpr": 1.5,
   "shadows": true,
   "shadowType": 2,
-  "toneMapping": 0,
-  "exposure": 0.873,
+  "toneMapping": 4,
+  "exposure": 1.227,
   "colorSpace": "srgb",
   "logDepth": true
  },
- "fog": "FogExp2@0.00025",
- "sunIntensity": 0.224,
+ "fog": "FogExp2@0.000049039161320273847",
+ "sunIntensity": 2.425,
  "lights": [
   {
-   "owner": "CelestialBodies",
+   "owner": "Town>CelestialBodies",
    "type": "AmbientLight",
-   "intensity": 0.764,
+   "intensity": 0.527,
    "visible": true,
-   "castShadow": false,
-   "shadow": null
+   "castShadow": false
   },
   {
-   "owner": "CelestialBodies",
+   "owner": "Town>CelestialBodies",
    "type": "AmbientLight",
-   "intensity": 2.072,
+   "intensity": 0.695,
    "visible": true,
-   "castShadow": false,
-   "shadow": null
+   "castShadow": false
   },
   {
-   "owner": "CelestialBodies",
-   "type": "AmbientLight",
-   "intensity": 0.255,
-   "visible": true,
-   "castShadow": false,
-   "shadow": null
-  },
-  {
-   "owner": "CelestialBodies",
+   "owner": "Town>CelestialBodies",
    "type": "HemisphereLight",
-   "intensity": 0.822,
+   "intensity": 0.84,
    "visible": true,
-   "castShadow": false,
-   "shadow": null
+   "castShadow": false
   },
   {
-   "owner": "CelestialBodies>PrimaryOrb",
+   "owner": "Town>CelestialBodies>PrimaryOrb",
    "type": "DirectionalLight",
-   "intensity": 0.224,
+   "intensity": 2.425,
    "visible": true,
    "castShadow": true,
    "shadow": {
     "map": 4096,
-    "near": -2613.21,
-    "far": 2613.21,
-    "halfExtent": 1013.21
+    "near": -6990.35,
+    "far": 6990.35,
+    "halfExtent": 256
    }
   },
   {
-   "owner": "CelestialBodies>CounterBodyLight",
+   "owner": "Town>CelestialBodies>CounterBodyLight",
    "type": "DirectionalLight",
    "intensity": 0,
    "visible": true,
-   "castShadow": false,
-   "shadow": null
+   "castShadow": false
   },
   {
-   "owner": "CelestialBodies>SecondaryOrb",
+   "owner": "Town>CelestialBodies>SecondaryOrb",
    "type": "HemisphereLight",
-   "intensity": 0.044,
+   "intensity": 0.087,
    "visible": true,
-   "castShadow": false,
-   "shadow": null
+   "castShadow": false
   },
   {
-   "owner": "CelestialBodies",
+   "owner": "Town>CelestialBodies",
    "type": "HemisphereLight",
-   "intensity": 0.025,
+   "intensity": 0.042,
    "visible": true,
-   "castShadow": false,
-   "shadow": null
+   "castShadow": false
+  },
+  {
+   "owner": "Town>SetPiece>PilgrimMonument>SetPieceUplights",
+   "type": "SpotLight",
+   "intensity": 0,
+   "visible": true,
+   "castShadow": false
+  },
+  {
+   "owner": "Town>SetPiece>PilgrimMonument>SetPieceUplights",
+   "type": "SpotLight",
+   "intensity": 0,
+   "visible": true,
+   "castShadow": false
   }
  ],
  "populations": {
   "(unowned)": {
-   "objs": 1,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 0
+   "objs": 1
   },
   "": {
+   "objs": 2
+  },
+  "Town": {
+   "objs": 8
+  },
+  "Town>CelestialBodies>GradientSky": {
+   "objs": 3,
+   "meshes": 1,
+   "tris": 10238
+  },
+  "Town>CelestialBodies": {
    "objs": 4,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 0
+   "lights": 4
   },
-  "BakedGround>GroundMeshes": {
+  "Town>CelestialBodies>PrimaryOrb": {
+   "objs": 2,
+   "lights": 1
+  },
+  "Town>CelestialBodies>CounterBodyLight": {
    "objs": 1,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 0
+   "lights": 1
   },
-  "BakedGround>GroundMeshes>GrassMesh": {
-   "objs": 6,
-   "meshes": 6,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 91380,
-   "lights": 0
+  "Town>CelestialBodies>SecondaryOrb": {
+   "objs": 1,
+   "lights": 1
   },
-  "BakedGround>GroundMeshes>FadeMesh": {
-   "objs": 29,
-   "meshes": 29,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 163983,
-   "lights": 0
+  "Town>CloudDome": {
+   "objs": 1,
+   "meshes": 1,
+   "tris": 3968
+  },
+  "Town>BakedGround>GroundMeshes": {
+   "objs": 1
+  },
+  "Town>BakedGround>GroundMeshes>WaterSurface": {
+   "objs": 2,
+   "meshes": 2,
+   "tris": 17629
+  },
+  "Town>BakedGround>GroundMeshes>FadeMesh": {
+   "objs": 23,
+   "meshes": 23,
+   "tris": 336424
+  },
+  "Town>BakedGround>GroundMeshes>SurfaceMesh": {
+   "objs": 21,
+   "meshes": 21,
+   "tris": 2173174
+  },
+  "Town>SlabRevetment": {
+   "objs": 18,
+   "meshes": 17,
+   "tris": 56984
+  },
+  "Town>LafayetteScene": {
+   "objs": 2
+  },
+  "Town>LafayetteScene>SceneNeon>NeonBands": {
+   "objs": 1,
+   "meshes": 1,
+   "tris": 2800
+  },
+  "Town>SlabBuildings": {
+   "objs": 1
+  },
+  "Town>SlabBuildings>GroupMesh": {
+   "objs": 4,
+   "meshes": 4,
+   "tris": 71653
+  },
+  "Town>InstancedTrees>ParkPopulation": {
+   "objs": 1
+  },
+  "Town>InstancedTrees>ParkPopulation>HeroImpostorSpecies": {
+   "objs": 144,
+   "instanced": 144,
+   "instances": 111129,
+   "tris": 5334192
+  },
+  "Town>BakedLamps>StreetLights": {
+   "objs": 2,
+   "instanced": 1,
+   "instances": 1766,
+   "tris": 7600864
+  },
+  "Town>SetPiece": {
+   "objs": 1
+  },
+  "Town>SetPiece>PilgrimMonument": {
+   "objs": 2
+  },
+  "Town>SetPiece>PilgrimMonument>Placeholder": {
+   "objs": 8,
+   "meshes": 7,
+   "tris": 84
+  },
+  "Town>SetPiece>PilgrimMonument>SetPieceUplights": {
+   "objs": 7,
+   "lights": 2
+  },
+  "Town>SetPiece>PilgrimMonument>SceneLabel": {
+   "objs": 1,
+   "meshes": 1,
+   "tris": 2
+  },
+  "Town>HorizonDisc": {
+   "objs": 1,
+   "meshes": 1,
+   "tris": 128
+  },
+  "Town>PostProcessing>RenderPipeline": {
+   "objs": 1
   },
   "MapLayers": {
-   "objs": 11,
-   "meshes": 10,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 9548,
-   "lights": 0
-  },
-  "PostProcessing>RenderPipeline": {
-   "objs": 1,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 0
-  },
-  "CelestialBodies>GradientSky": {
-   "objs": 3,
-   "meshes": 1,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 10238,
-   "lights": 0
-  },
-  "CelestialBodies>Moon": {
-   "objs": 3,
-   "meshes": 2,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 4,
-   "lights": 0
-  },
-  "CelestialBodies": {
-   "objs": 5,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 5
-  },
-  "CelestialBodies>PrimaryOrb": {
-   "objs": 2,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 1
-  },
-  "CelestialBodies>CounterBodyLight": {
-   "objs": 1,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 1
-  },
-  "CelestialBodies>SecondaryOrb": {
-   "objs": 1,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 1
-  },
-  "CloudDome": {
-   "objs": 1,
-   "meshes": 1,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 3968,
-   "lights": 0
-  },
-  "Terrain": {
-   "objs": 1,
-   "meshes": 1,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 284258,
-   "lights": 0
-  },
-  "LafayettePark": {
-   "objs": 1,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 0
-  },
-  "LafayettePark>ParkWater": {
-   "objs": 1,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 0
-  },
-  "LafayettePark>ParkWater>PondGroup": {
-   "objs": 7,
-   "meshes": 5,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 262,
-   "lights": 0
-  },
-  "LafayettePark>PerimeterFence": {
-   "objs": 189,
-   "meshes": 184,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 2208,
-   "lights": 0
-  },
-  "InstancedTrees>ParkPopulation": {
-   "objs": 2,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 0
-  },
-  "InstancedTrees>ParkPopulation>HeroImpostorSpecies": {
-   "objs": 162,
-   "meshes": 0,
-   "instanced": 162,
-   "instances": 15327,
-   "tris": 12261600,
-   "lights": 0
-  },
-  "InstancedTrees>ParkPopulation>OverheadSpecies": {
-   "objs": 27,
-   "meshes": 0,
-   "instanced": 27,
-   "instances": 15327,
-   "tris": 24032736,
-   "lights": 0
-  },
-  "LafayetteScene": {
-   "objs": 2,
-   "meshes": 0,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 0,
-   "lights": 0
-  },
-  "LafayetteScene>ClickCatcher": {
-   "objs": 1,
-   "meshes": 1,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 2,
-   "lights": 0
-  },
-  "LafayetteScene>Foundations": {
-   "objs": 1,
-   "meshes": 1,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 22240,
-   "lights": 0
-  },
-  "LafayetteScene>Building": {
-   "objs": 2164,
-   "meshes": 1082,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 25629,
-   "lights": 0
-  },
-  "BakedLamps>StreetLights": {
-   "objs": 4,
-   "meshes": 0,
-   "instanced": 3,
-   "instances": 1749,
-   "tris": 2557038,
-   "lights": 0
-  },
-  "GatewayArch>GroundDisc": {
-   "objs": 1,
-   "meshes": 1,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 128,
-   "lights": 0
-  },
-  "GatewayArch": {
-   "objs": 1,
-   "meshes": 1,
-   "instanced": 0,
-   "instances": 0,
-   "tris": 720,
-   "lights": 0
+   "objs": 39,
+   "meshes": 20,
+   "tris": 83548
   }
- }
+ },
+ "fetched": []
 }

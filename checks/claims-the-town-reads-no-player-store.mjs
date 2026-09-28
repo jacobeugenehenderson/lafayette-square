@@ -19,11 +19,13 @@
  *   · a renderer file reads `data-scene-pause` or imports `FRAMED` (pausing arrives as a prop)
  *   · a renderer file, or an app that mounts <Town>, imports the device sniff (lib/isMobile) —
  *     the device question is answered in ONE module, src/lib/qualityProfile.js
- *   · any file but the bridge writes the camera store's `shotOverride` (the shot is a prop)
+ *   · any file but the bridge writes the camera store's `townShot` (the shot is a prop), or a
+ *     renderer file reads the old player's `viewMode` (the camera state machine) instead of it
  *   · a renderer file reads the BOOT town's place on the globe (INSTANCE.geography's lat / lon /
  *     metre scales / timezone, or the whole object) — the town it draws is the one it is given, and
  *     a live town switch must not keep the boot town's sun. A place NAME (cityState, stateCode) is
- *     a label, not a position, and is not this class.
+ *     a label, not a position, and is not this class. ONE module owns the boot town's place,
+ *     src/lib/townPlace.js; the renderer asks it, and only the bridge moves it (setTownPlace).
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-the-town-reads-no-player-store.mjs [--self-test]
  */
@@ -35,6 +37,7 @@ const SRC = join(ROOT, 'src')
 const TOWN = 'src/components/Town.jsx'
 const BRIDGE = 'src/components/TownBridge.jsx'
 const PROFILE = 'src/lib/qualityProfile.js'
+const PLACE = 'src/lib/townPlace.js'
 const PLAYER_STORES = ['useCamera', 'useSelectedBuilding', 'useLandmarkFilter', 'useListings', 'useUserLocation']
 const OVERLAY_STORES = ['useUserLocation', 'useLandmarkFilter']
 const GLOBE_RE = /INSTANCE\.geography(?!\.(cityState|stateCode)\b)/
@@ -69,11 +72,12 @@ export function closureOf(files, entry) {
   return [...seen].map(p => byPath.get(p)).filter(Boolean)
 }
 const importsStore = (x, store) => specsOf(x.src).some(s => new RegExp(`/${store}(\\.jsx?)?$`).test(s))
+const code = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
 const importsSniff = (x) => specsOf(x.src).some(s => /\/isMobile(\.js)?$/.test(s))
 
 export function audit(files) {
   const f = [], info = []
-  for (const p of [TOWN, BRIDGE, PROFILE]) if (!files.some(x => x.path === p)) f.push(`${p} does not exist`)
+  for (const p of [TOWN, BRIDGE, PROFILE, PLACE]) if (!files.some(x => x.path === p)) f.push(`${p} does not exist`)
   if (f.length) return { f, info }
   const renderer = closureOf(files, TOWN).filter(x => !isStoreModule(x.path))
   info.push(`renderer: ${renderer.length} files in the import closure of ${TOWN}`)
@@ -84,13 +88,16 @@ export function audit(files) {
     for (const s of OVERLAY_STORES) if (importsStore(x, s)) f.push(`${x.path} (renderer) imports ${s} — the player's overlay, not the town`)
     if (/data-scene-pause/.test(x.src.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ''))) f.push(`${x.path} (renderer) reads data-scene-pause — pausing is <Town paused>`)
     if (/import\s*\{[^}]*\bFRAMED\b[^}]*\}/.test(x.src)) f.push(`${x.path} (renderer) imports FRAMED — the embed's state is the app's`)
+    if (/useCamera\.getState\(\)\.viewMode|useCamera\(\s*\(?\w+\)?\s*=>\s*\w+\.viewMode/.test(code(x.src))) f.push(`${x.path} (renderer) reads the old player's viewMode — read townShot (<Town shot>)`)
     if (x.path !== PROFILE && importsSniff(x)) f.push(`${x.path} (renderer) imports the device sniff — read the quality profile (${PROFILE})`)
-    if (GLOBE_RE.test(x.src.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ''))) f.push(`${x.path} (renderer) reads the boot town's place on the globe (INSTANCE.geography) — not the town it is drawing`)
+    if (x.path !== PLACE && GLOBE_RE.test(x.src.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ''))) f.push(`${x.path} (renderer) reads the boot town's place on the globe (INSTANCE.geography) — not the town it is drawing`)
   }
   for (const x of files) {
     if (x.path === BRIDGE) continue
-    if (/<Town\b/.test(x.src) && importsSniff(x)) f.push(`${x.path} mounts <Town> and imports the device sniff — the device question is ${PROFILE}'s`)
-    if (/shotOverride\s*:/.test(x.src)) f.push(`${x.path} writes the camera store's shotOverride — only ${BRIDGE} does (the shot is <Town shot>)`)
+    if (/^import\s+Town\b[^;\n]*from\s+'[^']*\/Town(\.jsx)?'/m.test(x.src) && importsSniff(x)) f.push(`${x.path} mounts <Town> and imports the device sniff — the device question is ${PROFILE}'s`)
+    if (x.path !== PLACE && /\bsetTownPlace\s*\(/.test(x.src)) f.push(`${x.path} moves the town's place — only ${BRIDGE} does (the place is <Town lookId>'s)`)
+    if (!x.path.endsWith('hooks/useCamera.js') && /townShot\s*:/.test(x.src)) f.push(`${x.path} writes the camera store's townShot — only ${BRIDGE} does (the shot is <Town shot>)`)
+    if (/shotOverride/.test(x.src)) f.push(`${x.path} still names shotOverride — the shot is townShot, written by ${BRIDGE}`)
   }
   // The census the follow-up brief starts from: leaves that still read a player store.
   const leaves = renderer.filter(x => x.path !== BRIDGE && PLAYER_STORES.some(s => importsStore(x, s)))
@@ -101,7 +108,7 @@ export function audit(files) {
 const files = walk(SRC).map(p => ({ path: relative(ROOT, p), src: readFileSync(p, 'utf8') }))
 
 if (process.argv.includes('--self-test')) {
-  if (![TOWN, BRIDGE, PROFILE].every(p => existsSync(join(ROOT, p)))) { console.log('⛔ cannot self-test: the assembly does not exist yet'); process.exit(1) }
+  if (![TOWN, BRIDGE, PROFILE, PLACE].every(p => existsSync(join(ROOT, p)))) { console.log('⛔ cannot self-test: the assembly does not exist yet'); process.exit(1) }
   const swap = (path, fn) => files.map(x => x.path === path ? { ...x, src: fn(x.src) } : x)
   const leaf = closureOf(files, TOWN).filter(x => !isStoreModule(x.path)).find(x => x.path.endsWith('SlabBuildings.jsx')).path
   const cases = [
@@ -110,8 +117,10 @@ if (process.argv.includes('--self-test')) {
     ['a leaf reads data-scene-pause', () => audit(swap(leaf, s => s + `\nconst p = document.querySelector('[data-scene-pause]')`)).f.length],
     ['a leaf imports the user location', () => audit(swap(leaf, s => `import useUserLocation from '../hooks/useUserLocation'\n` + s)).f.length],
     ['a leaf reads the boot town\'s geography', () => audit(swap(leaf, s => s + `\nconst LAT = INSTANCE.geography.lat`)).f.length],
-    ['an app writes shotOverride', () => audit(swap('src/preview/PreviewApp.jsx', s => s + `\nuseCamera.setState({ shotOverride: 'hero' })`)).f.length],
+    ['an app writes the town\'s shot', () => audit(swap('src/preview/PreviewApp.jsx', s => s + `\nuseCamera.setState({ townShot: 'hero' })`)).f.length],
+    ['a leaf reads the player\'s viewMode', () => audit(swap(leaf, s => s + `\nconst v = useCamera.getState().viewMode`)).f.length],
     ['an app that mounts Town sniffs the device', () => audit(swap('src/components/Scene.jsx', s => `import { IS_MOBILE } from '../lib/isMobile.js'\n` + s)).f.length],
+    ['an app moves the town\'s place', () => audit(swap('src/cartograph/CartographApp.jsx', s => s + `\nsetTownPlace(geo, look)`)).f.length],
     ['the bridge is unreachable', () => audit(swap(TOWN, s => s.replace(/^import .*TownBridge.*$/m, ''))).f.length],
   ]
   let bad = 0

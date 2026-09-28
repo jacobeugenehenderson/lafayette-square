@@ -29,8 +29,7 @@
  * channel, not by the town's instance, and it carries its own Stage overrides. Folding
  * it in is ROADMAP H-7's set-piece question, not a mount change.
  */
-import { INSTANCE, mapForLook } from '../instance.js'
-import { instanceForMap } from '../instances/registry.js'
+import { townForLook as townFor } from '../instance.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import PilgrimMonument from './PilgrimMonument.jsx'
 import SetPieceUplights from './SetPieceUplights.jsx'
@@ -40,13 +39,6 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 // kind → renderer. The only place a set-piece component is imported.
 const RENDERERS = {
   'pilgrim-monument': PilgrimMonument,
-}
-
-function townFor(lookId) {
-  if (!lookId || lookId === INSTANCE.lookId) return INSTANCE
-  const map = mapForLook(lookId)
-  const town = map && instanceForMap(map)
-  return town ? { ...town, lookId, mapId: map } : null
 }
 
 /** The set-piece a Look's town declares, or null — for panels that show its controls only where it exists. */

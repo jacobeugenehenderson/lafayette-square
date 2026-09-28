@@ -146,7 +146,9 @@ function _densityKeeps(id, density) {
   return h / 4294967296 < density
 }
 
-export default function SceneNeon({ forceNeonOn, density, materialColors, lookId = INSTANCE.lookId }) {
+// `litIds` (a Set of building ids, from <Town litIds>): only those places carry neon — how an app shows a chosen
+// category or a search. Absent: every open place is lit, as before.
+export default function SceneNeon({ forceNeonOn, density, materialColors, litIds, lookId = INSTANCE.lookId }) {
   const neonLookup = useNeonLookup()
 
   // Re-check open/closed every 60s so bands mount/unmount as places open
@@ -181,7 +183,7 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, lookId
         const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
         const hours = listingInfo ? listingInfo.hours : null
         const on = _neonOn({ forceNeonOn, hours, now })
-        if (!on || !_densityKeeps(e.id, density)) continue
+        if (!on || !_densityKeeps(e.id, density) || (litIds && !litIds.has(e.id))) continue
         // baseY + groundYRaw (== centroidY) are baked into the index by the
         // SAME anchor math the live path uses below, so tubes lift in lockstep
         // with their building on sloped terrain. NeonBands.buildTube traces
@@ -207,7 +209,7 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, lookId
         category: defaultNeonCategoryForBuilding(b),
       }
       const on = _neonOn({ forceNeonOn, hours: info.hours, now })
-      if (!on || !_densityKeeps(b.id, density)) continue
+      if (!on || !_densityKeeps(b.id, density) || (litIds && !litIds.has(b.id))) continue
       // baseY = world Y of the building TOP (the wall/roof joint, the eave) —
       // dropped the roof-peak lift so neon HUGS the building instead of hovering
       // at the peak (Jacob 2026-06-27). Foundation pedestal lift shifts the
@@ -233,7 +235,7 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, lookId
       places.push({ ...b, baseY, groundYRaw, roofOutline: roofTopRingFor(b), neon: { category: info.category } })
     }
     return places
-  }, [neonLookup, neonTick, forceNeonOn, density, slabIndex])
+  }, [neonLookup, neonTick, forceNeonOn, density, slabIndex, litIds])
 
   // Cold-load reconcile flush — the same frameloop="demand" issue that hid the
   // trees (see InstancedTrees ParkPopulation). On a cold load the neon mesh and

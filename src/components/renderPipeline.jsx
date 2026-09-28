@@ -25,7 +25,7 @@ import { Effect, SMAAPreset } from 'postprocessing'
 import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { IS_MOBILE } from '../lib/isMobile.js'
+import { useQuality } from '../lib/qualityProfile.js'
 import { AO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { RomanceDoF } from './RomanceDoF.jsx'
 import { DownsamplePyramid } from './DownsamplePyramid.jsx'
@@ -265,7 +265,8 @@ export const POSTFX_PIPELINE = [
  */
 export function RenderPipeline({ refs, viewMode, dofOn, inspect }) {
   const ctx = { refs, viewMode, dofOn }
-  const platform = IS_MOBILE ? 'mobile' : 'desktop'
+  // Which passes run is the quality profile's (qualityProfile.js), never a device sniff here.
+  const platform = useQuality().postFx
   // Inspecting (Preview) offers the whole desktop-shaped pipeline and lets the
   // toggle matrix decide what mounts — the operator inspects every pass
   // regardless of the running device (the tier emulator varies the pyramid

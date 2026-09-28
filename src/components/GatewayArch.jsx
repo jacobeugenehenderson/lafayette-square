@@ -31,9 +31,7 @@ import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import SunCalc from 'suncalc'
-import { INSTANCE } from '../instance.js'
-const LATITUDE = INSTANCE.geography.lat
-const LONGITUDE = INSTANCE.geography.lon
+import { townPlace } from '../lib/townPlace.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import {
   ARCH_FLAT_DEFAULTS,
@@ -373,8 +371,9 @@ export default function GatewayArch({
       shaderRef.current.uniforms.uUpR_cosCenter.value = Math.cos(al.uplightR_cone * 0.3 * DEG)
       shaderRef.current.uniforms.uUpR_reach.value = al.uplightR_reach
 
-      const sunPos = SunCalc.getPosition(currentTime, LATITUDE, LONGITUDE)
-      const moonPos = SunCalc.getMoonPosition(currentTime, LATITUDE, LONGITUDE)
+      const { lat, lon } = townPlace()
+      const sunPos = SunCalc.getPosition(currentTime, lat, lon)
+      const moonPos = SunCalc.getMoonPosition(currentTime, lat, lon)
       const sunAz = sunPos.azimuth + Math.PI
       const sunAlt = sunPos.altitude
       const moonAz = moonPos.azimuth + Math.PI

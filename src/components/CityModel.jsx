@@ -59,7 +59,7 @@ import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
-import { IS_MOBILE } from '../lib/isMobile.js'
+import { useQuality } from '../lib/qualityProfile.js'
 import { INSTANCE } from '../instance.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
@@ -106,8 +106,8 @@ vec3 cmOverlay(vec3 base, vec3 tex) {
 }`
 
 const _texCache = new Map()
-function loadTexture(id) {
-  if (!id || id === 'none' || IS_MOBILE) return null   // mobile stays untextured, like the slab
+function loadTexture(id, textured) {
+  if (!id || id === 'none' || !textured) return null   // the phone profile stays untextured, like the slab
   if (_texCache.has(id)) return _texCache.get(id)
   const t = new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}textures/buildings/${id}.jpg`)
   t.wrapS = t.wrapT = THREE.RepeatWrapping
@@ -169,6 +169,7 @@ function flattenTile(gltfScene, idFor) {
 
 export default function CityModel({ lookId: propLookId, interactive = true } = {}) {
   const lookId = propLookId || INSTANCE.lookId
+  const textured = useQuality().buildingTextures
   const [manifest, setManifest] = useState(null)
   const [tiles, setTiles] = useState([])
   const shadersRef = useRef([])
@@ -247,8 +248,8 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
   }, [manifest, lookId, slabWins, idToNum, setCoveredIds])
 
   const material = useMemo(() => {
-    const wallTex = loadTexture(WALL_TEX_ID)
-    const roofTex = loadTexture(ROOF_TEX_ID)
+    const wallTex = loadTexture(WALL_TEX_ID, textured)
+    const roofTex = loadTexture(ROOF_TEX_ID, textured)
     // flatShading — the slab buildings are faceted, and smooth-shaded LOD2 next
     // to faceted extrusions reads as a different material entirely (this is what
     // "not connected to the lighting the same way" looked like).
@@ -373,7 +374,7 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
     }
     m.customProgramCacheKey = () => `citymodel-lod2-${wallTex ? 'w' : ''}${roofTex ? 'r' : ''}`
     return m
-  }, [])
+  }, [textured])
 
   // Drive the per-frame uniforms. This MUST be useFrame, not useEffect: shaders
   // register at COMPILE time, which happens after the first render, so an effect

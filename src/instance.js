@@ -174,6 +174,18 @@ function resolveInstance() {
 export const INSTANCE = resolveInstance()
 
 /**
+ * The town a Look belongs to — its instance module, carrying that Look's id and map. Stage switches
+ * towns live, so a renderer drawing a town it was GIVEN asks this rather than reading INSTANCE (the
+ * page's boot town). null for a Look we cannot place.
+ */
+export function townForLook(lookId) {
+  if (!lookId || lookId === INSTANCE.lookId) return INSTANCE
+  const map = mapForLook(lookId)
+  const town = map && instanceForMap(map)
+  return town ? { ...town, lookId, mapId: map } : null
+}
+
+/**
  * ⭐ THE PUBLIC-FACING CONTACT FIELDS, CHECKED OUT LOUD.
  *
  * These reach `LegalPage.jsx` — the canonical public statement, and the only

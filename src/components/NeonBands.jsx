@@ -501,9 +501,10 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
 // else"). ⛔ Replaces NeonBands' mount-time resolve, which froze a keyed neon at whatever minute the page loaded.
 // Sibling of PostProcessing.jsx#LampGlowDriver; Stage mounts NeonPump (the live store) instead, never both.
 const NEON_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('neon'))
-export function NeonDriver({ lookId, bakeLastMs } = {}) {
+// `neonOverride`: Stage's live channel (an operator drag shows without a bake); absent, the slab's.
+export function NeonDriver({ lookId, bakeLastMs, neonOverride } = {}) {
   const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
-  const channel = scene?.neon ?? NEON_DEFAULT_CHANNEL
+  const channel = neonOverride ?? scene?.neon ?? NEON_DEFAULT_CHANNEL
   useFrame(() => {
     const tod = useTimeOfDay.getState()
     const v = resolveGroupAtMinute(channel, tod.getMinuteOfDay(),

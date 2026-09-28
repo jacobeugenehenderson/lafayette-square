@@ -4,7 +4,7 @@
  *
  * useWeather.js fetches open-meteo and writes targets into useSkyState.
  * This module reads the latest weather targets + the current scrub time
- * + INSTANCE geography, derives the schema-aligned payload (sun
+ * + the town's place (townPlace), derives the schema-aligned payload (sun
  * position, tod, season, precip kind), and returns it for
  * selectDirective() to consume.
  *
@@ -13,7 +13,7 @@
  * first-class fields so the Almanac can rule on them.
  */
 import SunCalc from 'suncalc'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from './townPlace.js'
 
 // WMO weather codes → precip kind enum from weather-payload.schema.json
 // (rain | snow | sleet | hail | null). Codes the schema doesn't accept
@@ -75,8 +75,7 @@ function deriveSeason(date, lat) {
  * @returns {object} payload — passable to selectDirective({weather: ...}).
  */
 export function buildWeatherPayload(weatherTargets, currentTime) {
-  const lat = INSTANCE.geography.lat
-  const lon = INSTANCE.geography.lon
+  const { lat, lon } = townPlace()
   const sun = SunCalc.getPosition(currentTime, lat, lon)
 
   const tempF = weatherTargets?.temperatureF

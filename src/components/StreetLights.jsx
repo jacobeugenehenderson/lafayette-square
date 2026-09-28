@@ -20,10 +20,9 @@ const LAMP_MODEL_HEIGHT = 2.65
 const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
 const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
 
-import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
+import { useQuality } from '../lib/qualityProfile.js'
 const LAMP_COLOR_ON = new THREE.Color(LANTERN_FLAT_DEFAULTS.color)  // until the first frame applies the keyed colour
 const GLOW_Y = 3.3       // world Y of lantern center
-const GLOW_RADIUS = _IS_MOBILE ? 0.25 : 0.18 // tight glass halo
 const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern center
 // (The ground light pool AND the lamp contact shadow moved into the baked
 // ground FX map — see BakedGround / grassMaterial / bake-ground-ao.js.
@@ -32,6 +31,7 @@ const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern cente
 const GLOW_SIZE_FIELD = LANTERN_FIELDS.find(f => f.key === 'glowSize')
 
 function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {}) {
+  const glowRadius = useQuality().lampHaloRadius
   const lampRef = useRef()
   const glowRef = useRef()
   const bulbRef = useRef()
@@ -380,14 +380,14 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
     allLamps.forEach((lamp, i) => {
       d.position.set(lamp.x, GLOW_Y, lamp.z)
       d.rotation.set(0, 0, 0)
-      d.scale.setScalar(GLOW_RADIUS)
+      d.scale.setScalar(glowRadius)   // the tight glass halo, sized by the quality profile
       d.updateMatrix()
       glowRef.current.setMatrixAt(i, d.matrix)
     })
     glowRef.current.instanceMatrix.needsUpdate = true
     glowGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
     invalidate()
-  }, [allLamps, lampModel, aGroundRaw, glowGeo, invalidate])
+  }, [allLamps, lampModel, aGroundRaw, glowGeo, invalidate, glowRadius])
 
   // ── Instance transforms — sharp bulb dot ───────────────────────────────────
   useEffect(() => {

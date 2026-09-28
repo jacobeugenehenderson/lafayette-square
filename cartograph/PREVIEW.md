@@ -104,17 +104,12 @@ full re-pour from the Datawall. Ground/buildings/trees off in `preview.layers.v3
 to a broken slab**, with nothing on screen saying so — the operator reasonably concludes the pipeline
 broke. ⭐ **Preview should surface "N layers hidden" without expanding SCENE.** Not built.
 
-## 2b. ⛔ PARITY BREAK: the shot picker publishes `shotOverride`, and consumers must READ it
+## 2b. The shot is `<Town shot>` — the same store field in every app
 
-Preview owns its own camera and **deliberately does not drive `useCamera.viewMode`** — it publishes
-`shotOverride`, scoped so it "can't perturb terrain-exag / clouds / frameloop" (`PreviewApp.jsx:932`).
-That scoping is right, but **every legitimate shot consumer must be added to it**, and one never was:
-`useOverheadMode` read `viewMode`, so in Preview it was pinned to `'hero'` forever ⇒ **Browse never
-swapped: the hero cards and mesh trees never hid and the overhead discs NEVER RENDERED AT ALL.**
-Fixed with the idiom `useSceneJson.js:87` already used — `s.shotOverride ?? s.viewMode` (production
-sets no override, so it falls through byte-identically).
-⛔ **Adding a shot consumer? Read `shotOverride ?? viewMode`, or Preview stops being a mirror** — and
-parity is this stage's entire job.
+Preview draws through `<Town>` (`src/components/Town.jsx`), like production and Stage. The shot reaches the renderer
+as ONE field, `useCamera.townShot`, written only by `TownBridge.jsx`; a shot consumer reads that, never the old
+player's `viewMode` (reading `viewMode` is what kept Preview's Browse on the hero cards, 2026-08-28).
+▶ `node checks/claims-the-town-reads-no-player-store.mjs` fails a renderer file that reads `viewMode`.
 
 ## 3. The toggle convention — why "all on" must equal production
 

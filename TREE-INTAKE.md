@@ -106,7 +106,7 @@ When the scene's `neighborhood_boundary.json` is passed, invented (**derived**) 
 
 ## 4. Render (3D slab + the 2D Designer layer)
 
-- `InstancedTrees.jsx` (mounted in `CartographApp.jsx#genericSceneConfig` with `bakeUrl=/baked/<look>/trees.json`) fetches the placement file.
+- `InstancedTrees.jsx` (mounted by `<Town>`, `src/components/Town.jsx`, in every app) fetches `/baked/<look>/trees.json`.
 - `treeAtlasMaterial.js` loads `/baked/<look>/trees-atlas.json` (**hard-requires it** — a missing atlas throws and renders nothing; always `bake-look` before expecting trees).
 - **Runtime substitution** (`InstancedTrees.jsx:639`): any placement whose `species:variantId` isn't in the atlas roster is deterministically remapped to a **same-category roster member** — so partial rosters still render every placement. (This is why a scene renders even before the mix work; it just wears the wrong palette.)
 

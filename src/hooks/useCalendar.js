@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 import useTimeOfDay from './useTimeOfDay.js'
 
 // Kit-level calendar anchor — date / day-of-year / season. Parallel to
@@ -12,7 +12,6 @@ import useTimeOfDay from './useTimeOfDay.js'
 //   - `setDateFromLive` is the pump's wall-time tick — it advances
 //     `currentDate` WITHOUT flipping `isLive`. Only operators leave live.
 
-const LATITUDE = INSTANCE.geography.lat
 
 // Northern-hemisphere day-of-year → season. If a future INSTANCE sits at
 // `lat < 0`, the southern-hemisphere mapping inverts (swap winter↔summer
@@ -99,7 +98,7 @@ const useCalendar = create((set, get) => ({
 
   setSeason: (s) => {
     let target = s
-    if (LATITUDE < 0) {
+    if (townPlace().lat < 0) {
       if (s === 'winter') target = 'summer'
       else if (s === 'summer') target = 'winter'
       else if (s === 'spring') target = 'autumn'
@@ -112,7 +111,7 @@ const useCalendar = create((set, get) => ({
 
   // Derived getters — computed on read, not stored.
   dayOfYear: () => dayOfYearFromDate(get().currentDate),
-  season: () => seasonFromDoy(dayOfYearFromDate(get().currentDate), LATITUDE),
+  season: () => seasonFromDoy(dayOfYearFromDate(get().currentDate), townPlace().lat),
   isLeapYear: () => isLeapYearFromDate(get().currentDate),
 }))
 

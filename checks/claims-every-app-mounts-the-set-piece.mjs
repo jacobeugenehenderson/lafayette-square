@@ -9,8 +9,9 @@
  * its own header claimed Preview mounted it identically — so it is held here too.
  *
  * An APP is found, never listed: a file under src/ that owns an R3F `<Canvas>` AND mounts
- * the town's ground (`<BakedGround` / `<ViewKeyedBakedGround`). A new app that draws a town
- * is covered the day it exists. Fails when:
+ * the town's ground (`<BakedGround`) or the one assembly (`<Town`, src/components/Town.jsx).
+ * An app that mounts <Town> is held through Town.jsx, which must mount both itself
+ * (claims-every-app-mounts-the-town holds every app to <Town>). Fails when:
  *   · an app does not import and render `<SetPiece` (src/components/SetPiece.jsx)
  *   · an app does not import and render `<SlabRevetment` with `lookId` and `bakeLastMs`
  *   · any file other than SetPiece.jsx imports a set-piece renderer directly (the hand-mount)
@@ -47,7 +48,11 @@ export function audit(files, mountSrc, declaredKinds) {
   const f = [], info = []
   const R = renderersOf(mountSrc)
   if (!R) return { f: ['SetPiece.jsx has no RENDERERS table — cannot verify'], info }
-  const apps = files.filter(x => /<Canvas\b/.test(x.src) && /<(ViewKeyed)?BakedGround\b/.test(x.src))
+  const code = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+  const town = files.find(x => x.path.endsWith('components/Town.jsx'))
+  const apps = files.filter(x => /<Canvas\b/.test(code(x.src)) && /<(BakedGround|Town)\b/.test(code(x.src)))
+    // An app that draws through <Town> mounts what Town.jsx mounts.
+    .map(x => /<Town\b/.test(code(x.src)) && !/<BakedGround\b/.test(code(x.src)) && town ? { path: `${x.path} (through ${town.path})`, src: town.src } : x)
   info.push(`apps found: ${apps.map(a => a.path).join(', ')}`)
   if (!apps.length) f.push('no app found (no file owns a <Canvas> and mounts the ground) — the definition broke')
   for (const a of apps) {
@@ -87,7 +92,8 @@ for (const n of readdirSync(join(SRC, 'instances')).filter(n => n.endsWith('.js'
 }
 
 if (process.argv.includes('--self-test')) {
-  const app = files.find(x => x.path.endsWith('components/Scene.jsx'))
+  // The mounts every app shares live in the one assembly, so that is where they are cut.
+  const app = files.find(x => x.path.endsWith('components/Town.jsx'))
   const cases = [
     ['an app drops its mount', () => audit(files.map(x => x === app ? { ...x, src: x.src.replace(/<SetPiece\b[^>]*\/>/g, '') } : x), mountSrc, declaredKinds).f.length],
     ['an app drops the revetment', () => audit(files.map(x => x === app ? { ...x, src: x.src.replace(/<SlabRevetment\b[^>]*\/>/g, '') } : x), mountSrc, declaredKinds).f.length],

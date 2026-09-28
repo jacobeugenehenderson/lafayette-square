@@ -21,12 +21,14 @@ const PARK_TOWN = 'lafayette-square'
 const Body = lazy(() => import('./LafayetteParkBody.jsx'))
 const Title = lazy(() => import('./LafayetteParkBody.jsx').then(m => ({ default: m.ParkTitle })))
 
-export default function LafayettePark(props) {
-  if (INSTANCE.lookId !== PARK_TOWN) return null
-  return <Suspense fallback={null}><Body {...props} /></Suspense>
+// Guarded on the town being DRAWN (`lookId`, which <Town> passes), not the page's boot town: Stage
+// switches towns live, and a park guarded on the boot town followed Lafayette Square into the next one.
+export default function LafayettePark({ lookId = INSTANCE.lookId, ...props }) {
+  if (lookId !== PARK_TOWN) return null
+  return <Suspense fallback={null}><Body lookId={lookId} {...props} /></Suspense>
 }
 
-export function ParkTitle(props) {
-  if (INSTANCE.lookId !== PARK_TOWN) return null
-  return <Suspense fallback={null}><Title {...props} /></Suspense>
+export function ParkTitle({ lookId = INSTANCE.lookId, ...props }) {
+  if (lookId !== PARK_TOWN) return null
+  return <Suspense fallback={null}><Title lookId={lookId} {...props} /></Suspense>
 }

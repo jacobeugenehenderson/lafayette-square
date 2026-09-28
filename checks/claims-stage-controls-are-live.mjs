@@ -141,6 +141,19 @@ function routesOf(name, R, appImports) {
     const writes = new Set([...m[2].matchAll(/(_\w+)\.[\w.]+\s*=(?!=)/g)].map(x => appImports.get(x[1])).filter(Boolean))
     routes.push({ via: 'pump', target: m[1], region: mounted ? regionOf(mounted.index) : 'unmounted', modules: [...writes] })
   }
+  // Via <Town overrides>: CartographApp's useStageOverrides resolves the channel into one object (by name in
+  // STAGE_CHANNELS, or as a store field it returns), Stage mounts <Town overrides={townOverrides}> in the Canvas,
+  // and Town.jsx hands `o.<key>` to a drawn tag. All three are read, never assumed.
+  const list = t.match(/const STAGE_CHANNELS = \[([\s\S]*?)\]/)
+  const extra = t.match(/return useMemo\(\(\) => \(\{ \.\.\.channels, ([^}]*)\}\)/)
+  const keys = new Set(list ? [...list[1].matchAll(/'(\w+)'/g)].map(m => m[1]) : [])
+  const extraKeys = extra ? extra[1].split(',').map(x => x.split(':')[0].trim()).filter(Boolean) : []
+  const key = keys.has(name) ? name : extraKeys.find(k => vars.has(k))
+  const mountsTown = /<Town\b[^>]*overrides=\{townOverrides\}/.test(R.canvas)
+  if (key && mountsTown) {
+    const town = strip(read('src/components/Town.jsx'))
+    for (const m of town.matchAll(new RegExp(`<([A-Z]\\w*)\\b[^>]*?=\\{o\\.${key}\\}`, 'g'))) routes.push({ via: 'town', target: m[1], region: 'canvas' })
+  }
   return routes
 }
 
@@ -185,6 +198,7 @@ function parity(appText, srcTexts, log = true) {
     const live = routes.some(r =>
       r.direct ||
       (r.via === 'prop' && (r.region === 'canvas' || r.region === 'generic')) ||
+      r.via === 'town' ||
       (r.via === 'pump' && (r.region === 'canvas') && r.modules.some(m => importersOf(m).some(f => f !== SRC.app))))
     const where = routes.map(r => `${r.target}@${r.region}`).join(', ') || 'no route'
     if (live) { if (log) ok(`${card} › ${name} → ${where}`) }
@@ -289,10 +303,11 @@ console.log('① EVERY STAGE CHANNEL REACHES SOMETHING DRAWN ON A POURED TOWN')
   const { failures, channels } = parity(appRaw, texts)
   if (!channels.size) bad('found no Stage channels — the check cannot see the cards')
   failures.forEach(bad)
-  // Self-mutation: drop the generic lamp mount's live lantern → Light Sources › lantern must go red.
-  const mut = appRaw.replace(/(function genericSceneConfig[\s\S]*?)<BakedLamps\b[^>]*\/>/, '$1')
+  // Self-mutation: poured towns stop receiving the live lantern (Stage no longer hands it to <Town>) →
+  // Light Sources › lantern must go red.
+  const mut = appRaw.replace(/(const STAGE_CHANNELS = \[[\s\S]*?)'lantern',\s*/, '$1')
   const m = parity(mut, texts, false).failures.some(f => /› lantern /.test(f))
-  m ? ok('mutation (poured towns lose the lamp mount) is caught') : bad('mutation NOT caught — ① is blind')
+  m ? ok('mutation (poured towns lose the live lantern) is caught') : bad('mutation NOT caught — ① is blind')
 }
 
 console.log('② NO FLAT GATE ON A KEYFRAMED CHANNEL')

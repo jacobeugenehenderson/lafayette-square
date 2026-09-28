@@ -7,7 +7,7 @@ import CloudDome from './CloudDome'
 import WeatherEffects from './WeatherEffects'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
-import { TimeTicker, SkyStateTicker } from './Scene'
+import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
 
 /**
  * SKY EMBED — the neighbourhood's actual sky, and nothing else.

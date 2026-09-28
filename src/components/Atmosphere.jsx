@@ -39,6 +39,7 @@ import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedP
 import { resolveSkyAtMinute } from '../cartograph/skyGrid.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { getPresetsCache } from '../hooks/useAtmosphereDirective.js'
 import { defaultWindState, resolveWindState, windAt } from '../lib/wind-field.js'
@@ -57,8 +58,6 @@ const _windSample = { force: new THREE.Vector3(), intensity: 0 }
 // here so cloud advection rate in calm weather is byte-identical pre/post 9b.
 const WIND_MPS_PER_SCALE = 3.0
 
-const LATITUDE = INSTANCE.geography.lat
-const LONGITUDE = INSTANCE.geography.lon
 
 // Same first-paint fallback shape CelestialBodies' SKY_DEFAULT_CHANNEL uses
 // post-sky-pivot — empty overrides → pure procedural mosaic. Avoids a flash
@@ -243,7 +242,8 @@ export default function Atmosphere({ lookId, displayBaseAlt } = {}) {
     // Real sun direction — same projection CelestialBodies uses
     // (celestialToPosition: x = cos(alt)·sin(az), y = sin(alt),
     //  z = -cos(alt)·cos(az)). Stable for months; treat as the authority.
-    const sunPos = SunCalc.getPosition(currentTime, LATITUDE, LONGITUDE)
+    const { lat, lon } = townPlace()
+    const sunPos = SunCalc.getPosition(currentTime, lat, lon)
     material.uniforms.uSunDir.value.set(
       Math.cos(sunPos.altitude) * Math.sin(sunPos.azimuth),
       Math.sin(sunPos.altitude),

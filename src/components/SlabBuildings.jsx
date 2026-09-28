@@ -36,10 +36,9 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useCityModelActive from '../hooks/useCityModelActive'
-import useCamera from '../hooks/useCamera'
 import { INSTANCE } from '../instance.js'
 
-import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
+import { useQuality } from '../lib/qualityProfile.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL } from '../lib/lampPool.js'
@@ -76,8 +75,8 @@ if (typeof window !== 'undefined') {
 
 // Shared texture cache (heavy, shared across material groups + remounts).
 const _texCache = new Map()
-function loadTexture(id) {
-  if (id === 'none' || !id || _IS_MOBILE) return null
+function loadTexture(id, textured) {
+  if (id === 'none' || !id || !textured) return null
   if (_texCache.has(id)) return _texCache.get(id)
   const tex = new THREE.TextureLoader().load(`${TEXTURE_BASE}${id}.jpg`)
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping
@@ -134,12 +133,27 @@ function getLookId(propLook) {
 // `materialPhysicsOverride`: Stage's live wall/roof physics, laid over the baked scene.materialPhysics so an
 // edit shows before a bake (Loupe's audit, 2026-09-26). The building PALETTE cannot: each building's colour
 // is baked into its vertices — Stage says so on the card.
-export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride } = {}) {
+// `paletteOverride` — Stage's live building palette (<Town overrides.buildingPalette>). ⛔ NOT DRAWN YET: each
+// building's colour is baked into its vertices, so a palette drag shows only after a re-bake. Live retint for
+// every town is docs/briefs/BRIEF-live-building-palette.md (Jacob ruled 2026-09-27); it lands HERE. Until then a
+// palette that differs from the baked one says so, once, rather than a slider doing nothing in silence.
+let _paletteWarned = false
+function useLivePaletteNotice(paletteOverride, bakedScene) {
+  useEffect(() => {
+    if (!paletteOverride || !bakedScene || _paletteWarned) return
+    if (JSON.stringify(paletteOverride) === JSON.stringify(bakedScene.palette ?? null)) return
+    _paletteWarned = true
+    console.warn('[SlabBuildings] the building palette differs from the bake — it is drawn from the vertices, so re-bake to see it (BRIEF-live-building-palette)')
+  }, [paletteOverride, bakedScene])
+}
+
+export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride, paletteOverride } = {}) {
   const LOOK_ID = useMemo(() => getLookId(lookId), [lookId])
   const [data, setData] = useState(null)   // { manifest, bin }
   const [bakedScene, setScene] = useState(null)
   const scene = useMemo(() => (materialPhysicsOverride && bakedScene
     ? { ...bakedScene, materialPhysics: materialPhysicsOverride } : bakedScene), [bakedScene, materialPhysicsOverride])
+  useLivePaletteNotice(paletteOverride, bakedScene)
   // The city model covers only the buildings OSM also mapped, so we keep DRAWING
   // and keep the geometry mounted — suppression is PER BUILDING (aCovered below),
   // not wholesale. Hiding everything left ~46% of Łódź as bare ground.
@@ -404,7 +418,8 @@ vec3 slabOverlay(vec3 base, vec3 tex) {
 }`
 
 function GroupMesh({ group, geometry, texId, scene, registerShader, interactive = true }) {
-  const tex = useMemo(() => loadTexture(texId), [texId])
+  const textured = useQuality().buildingTextures
+  const tex = useMemo(() => loadTexture(texId, textured), [texId, textured])
   const isRoof = group.kind === 'roof'
   const isWall = group.kind === 'wall'
   const isFoundation = group.kind === 'foundation'

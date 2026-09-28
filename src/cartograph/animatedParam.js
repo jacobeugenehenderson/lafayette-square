@@ -39,11 +39,9 @@
 // Per-Look serialization stores slot ids; minutes are computed live from
 // SunCalc each frame so the envelope shifts seasonally with the real sun.
 import SunCalc from 'suncalc'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 import { LAMPGLOW_FLAT_DEFAULTS, LAMPGLOW_RADIUS_V } from './skyLightChannels.js'
 
-const LATITUDE = INSTANCE.geography.lat
-const LONGITUDE = INSTANCE.geography.lon
 
 // Order matches the day's progression so filtering by attachment
 // preserves chronological order in the strip. Colors come from --tod-*
@@ -70,7 +68,8 @@ export function getTodSlotColor(id) { return NAMED_TOD_SLOTS_BY_ID[id]?.color }
 // night / nadir. A moment the sun does not reach that day (high latitude) is null and its keys drop out. We convert each to minute-of-day in the local frame the rest of
 // useTimeOfDay uses.
 export function getTodSlotMinutes(date) {
-  const times = SunCalc.getTimes(date || new Date(), LATITUDE, LONGITUDE)
+  const { lat, lon } = townPlace()
+  const times = SunCalc.getTimes(date || new Date(), lat, lon)
   const toMin = (d) => {
     if (!d || isNaN(d.getTime?.())) return null
     return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60

@@ -8,16 +8,19 @@ import constellationsData from '../data/planetarium/constellations.json'
 import planetsData from '../data/planetarium/planets.json'
 import brightStars from '../data/planetarium/bright_stars.json'
 import { bvToRGB } from '../lib/starColor'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 
 const DEG = Math.PI / 180
-const LATITUDE = INSTANCE.geography.lat
-const LONGITUDE = INSTANCE.geography.lon
 const SKY_RADIUS = 55000
 const R = SKY_RADIUS * 0.88
 
-const sinLat = Math.sin(LATITUDE * DEG)
-const cosLat = Math.cos(LATITUDE * DEG)
+// The pole's tilt, for the town being drawn — recomputed only when <Town> moves the place.
+let _trig = null, _trigFor = null
+function latTrig() {
+  const p = townPlace()
+  if (_trigFor !== p) { _trig = { sinLat: Math.sin(p.lat * DEG), cosLat: Math.cos(p.lat * DEG) }; _trigFor = p }
+  return _trig
+}
 
 // A constellation vertex IS a real star — match it to the catalog and color the
 // node by that star's B–V spectral color (hot-blue → cool-red), so the figure is
@@ -51,7 +54,7 @@ function getLST() {
   const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0)
   const daysSinceJ2000 = (currentTime.getTime() - J2000) / 86400000
   const GMST = (280.46061837 + 360.98564736629 * daysSinceJ2000) % 360
-  const LST = ((GMST + LONGITUDE) % 360 + 360) % 360
+  const LST = ((GMST + townPlace().lon) % 360 + 360) % 360
   return { lstRad: LST * DEG, daysSinceJ2000 }
 }
 
@@ -66,6 +69,7 @@ function raDecToXYZ(raDeg, decDeg, lstRad, out) {
   const cosDec = Math.cos(decRad)
   const cosHA = Math.cos(ha)
   const sinHA = Math.sin(ha)
+  const { sinLat, cosLat } = latTrig()
 
   const sinAlt = sinDec * sinLat + cosDec * cosLat * cosHA
   const alt = Math.asin(sinAlt)

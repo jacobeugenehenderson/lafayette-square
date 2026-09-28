@@ -141,7 +141,7 @@ export function OverheadLightDriver({ enabled = true, canopyChannel }) {
 }
 
 // ── Selection = the CAMERA VIEW, not a height heuristic ───────────────────────
-// The swap keys off the app's own view-context signal: useCamera().viewMode. In
+// The swap keys off the shot the town is drawn in: useCamera().townShot. In
 // the 'browse' view we show the overhead snapshot imposters; in 'hero'/street we
 // render the authored mesh trees (close enough to draw them easily). Browse is
 // straight-down by construction (the camera SSOT holds it there), so there's no
@@ -149,22 +149,11 @@ export function OverheadLightDriver({ enabled = true, canopyChannel }) {
 // carries (the LsoD's Street/Hero/Browse contexts; do NOT invent a parallel one).
 // If the user hot-key-overrides Browse into a tilt, billboarding the discs to face
 // the camera is a later refinement — for now the view context is the whole gate.
-// ⛔⛔ AND IT MUST HONOUR `shotOverride` OR PREVIEW NEVER SWAPS (Jacob, 2026-08-28:
-// "the radially arranged impostors from the hero shot are showing [in Browse]... I
-// believe I am seeing mesh trees in Browse *in preview*"). Preview owns its own camera
-// and DELIBERATELY does not drive `viewMode` — it publishes `shotOverride` instead
-// (`PreviewApp.jsx:932`), scoped so it "can't perturb terrain-exag / clouds / frameloop".
-// That scoping was right, but this consumer was never added to it: `viewMode` is pinned
-// to 'hero' in Preview forever, so `overheadMode` was ALWAYS false — the hero cards and
-// mesh trees never hid, and the overhead discs NEVER RENDERED AT ALL. Browse in Preview
-// has never shown the browse trees.
-// ⭐ It stayed invisible because the hero cards were themselves buried under the terrain
-// until `4486d0dc`/`2aaca5ca`; un-burying them is what exposed this, not what caused it.
-// ⛔ This is a PARITY break, and parity is Preview's entire job (`PREVIEW.md`: "renders
-// production's exact tree"). Same one-line idiom `useSceneJson.js:87` already uses —
-// production sets no `shotOverride`, so it falls through and is byte-identical there.
+// ⛔ IT READS `townShot` — the shot <Town> is drawn in, the same in every app — never the old
+// player's `viewMode`. Reading viewMode is what kept Preview's Browse on the hero cards and
+// never drew the overhead discs (Jacob, 2026-08-28), because only production drives it.
 export function useOverheadMode(enabled) {
-  const viewMode = useCamera(s => s.shotOverride ?? s.viewMode)
+  const viewMode = useCamera(s => s.townShot)
   return enabled && viewMode === 'browse'
 }
 

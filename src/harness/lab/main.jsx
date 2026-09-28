@@ -25,6 +25,7 @@ import RegimeControls from '../../components/RegimeControls.jsx'
 import * as THREE from 'three'
 
 import R3FErrorBoundary from '../../components/R3FErrorBoundary'
+import { QualityProvider, deviceQuality } from '../../lib/qualityProfile.js'
 import BakedGround from '../../components/BakedGround.jsx'
 import BakedLamps from '../../components/BakedLamps'
 import SlabRevetment from '../../components/SlabRevetment.jsx'
@@ -37,7 +38,7 @@ import AtmosphereDirectiveDriver from '../../components/AtmosphereDirectiveDrive
 import WeatherEffects from '../../components/WeatherEffects'
 import { PostProcessing, ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../../components/PostProcessing.jsx'
 import { NeonDriver } from '../../components/NeonBands.jsx'
-import { TimeTicker, SkyStateTicker } from '../../components/Scene.jsx'
+import { TimeTicker, SkyStateTicker } from '../../components/SkyTickers.jsx'
 import { ShaderLinkGuard } from '../../lib/shaderLinkGuard.jsx'
 import { useSceneJson } from '../../lib/useSceneJson.js'
 import { WEATHER_UNIFORMS } from '../../lib/weather-uniforms.js'
@@ -220,6 +221,7 @@ function App() {
           }, 1000)
         }}
       >
+        <QualityProvider quality={deviceQuality()}>
         {/* ── the environment: Preview's own mounts, verbatim components ── */}
         <TimeTicker />
         <SkyStateTicker />
@@ -248,6 +250,7 @@ function App() {
 
         <RegimeControls regime="orbit" limits={{ maxPolarAngle: Math.PI * 0.499 }} />
         <CameraDriver spot={spot} cam={cam} />
+        </QualityProvider>
       </Canvas>
 
       <div style={{ position: 'fixed', top: 12, left: 12, background: 'rgba(8,11,14,.88)', border: '1px solid #2a3440', borderRadius: 8, padding: '10px 12px', width: 380 }}>

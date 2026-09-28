@@ -125,15 +125,19 @@ const PROBE = String.raw`
     }
   })(root.fiber.current || root.fiber, [])
 
-  const SKIP = /^(Provider|FiberProvider|ErrorBoundary|R3FErrorBoundary|CanvasContents|Suspense|StrictMode)$/
+  const SKIP = /^(Provider|FiberProvider|ErrorBoundary|R3FErrorBoundary|CanvasContents|Suspense|StrictMode|QualityProvider)$/
   const own = (o) => {
     let q = o, h = 0
     while (q && h++ < 100) { if (chain.has(q)) return chain.get(q).filter(s => !SKIP.test(s)).join('>'); q = q.parent }
     return '(unowned)'
   }
 
+  // ⭐ A hidden ancestor draws nothing: an object under a group with visible=false (a Preview layer
+  // toggle, Stage's Designer group) is not a population of the frame, and neither are its lights.
+  const drawn = (o) => { for (let q = o; q; q = q.parent) if (!q.visible) return false; return true }
   const pops = {}
   st.scene.traverse((o) => {
+    if (!drawn(o)) return
     const c = own(o)
     const a = pops[c] || (pops[c] = { objs: 0, meshes: 0, instanced: 0, instances: 0, tris: 0, lights: 0 })
     a.objs++
@@ -145,7 +149,7 @@ const PROBE = String.raw`
 
   const lights = []
   st.scene.traverse((o) => {
-    if (!o.isLight) return
+    if (!o.isLight || !drawn(o)) return
     lights.push({
       owner: own(o), type: o.type, intensity: +(o.intensity || 0).toFixed(3), visible: !!o.visible,
       castShadow: !!o.castShadow,

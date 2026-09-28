@@ -3,7 +3,7 @@
  *
  * 24 clock-hour columns × 5 vertical bands. Each cell renders the resolved
  * sky color at that (hour, band), composed from:
- *   - the procedural-canon anchor cards (ANCHOR_CARDS in skyGrid.js)
+ *   - the procedural-canon anchor cards (anchorCards() in skyGrid.js)
  *   - lerped between flanking seasonal anchors by useCalendar.dayOfYear()
  *   - with per-Look overrides applied via Chebyshev d≤1 spatial × 15-min
  *     temporal envelope (handled by skyGrid.buildMosaicForDate / resolver)

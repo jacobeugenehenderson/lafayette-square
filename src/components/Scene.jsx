@@ -1,43 +1,21 @@
-import { useRef, useEffect, useMemo, Suspense, useState } from 'react'
+import { useRef, useEffect, useMemo, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { INSTANCE, moduleOn } from '../instance.js'
-import { IS_MOBILE } from '../lib/isMobile.js'
+import { deviceQuality } from '../lib/qualityProfile.js'
 import { framedPresence } from '../lib/framedPresence.js'
 import { FRAMED } from '../hooks/useCamera'
 import { browseAltitude } from '../lib/browseAltitude.js'
 import { SHOT_TRANSITION_MS } from '../camera/transitions.js'
-import LafayetteScene from './LafayetteScene'
-import SlabBuildings from './SlabBuildings'
-import CityModel from './CityModel'
-import CelestialBodies from './CelestialBodies'
-import BakedGround from './BakedGround.jsx'
+import Town from './Town.jsx'
+import { SHOT_KEY } from './TownBridge.jsx'
+import LandmarkMarkers from './LandmarkMarkers.jsx'
 import { streetEyeY } from '../utils/elevation'
-import LafayettePark from './LafayettePark'
-import BakedLamps from './BakedLamps'
-import GatewayArch from './GatewayArch'
-import MountainBackdrop from './MountainBackdrop'
-import SetPiece from './SetPiece.jsx'
-import HorizonDisc from './HorizonDisc.jsx'
-import SlabRevetment from './SlabRevetment.jsx'
-import Atmosphere from './Atmosphere'
-import CloudDome from './CloudDome'
-import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
-import WeatherPoller from './WeatherPoller'
-import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
-import WeatherEffects from './WeatherEffects'
 import UserDot from './UserDot'
 import CourierDots from './CourierDots'
 import useCamera from '../hooks/useCamera'
-import { sceneExag } from '../utils/terrainShader'
 import useUserLocation from '../hooks/useUserLocation'
-import useTimeOfDay from '../hooks/useTimeOfDay'
-import useSkyState from '../hooks/useSkyState'
 import R3FErrorBoundary from './R3FErrorBoundary'
-import Terrain from './Terrain'
-import InstancedTrees from './InstancedTrees'
-import { PostProcessing, StageShadows, StageFog, LampGlowDriver } from './PostProcessing.jsx'
-import { NeonDriver } from './NeonBands.jsx'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { heroKeyframeAnim, randomizeHeroStart } from '../preview/heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
@@ -145,64 +123,24 @@ function SheetGround({ active, ground }) {
   return null
 }
 
-// ── Frame limiter ────────────────────────────────────────────────────────────
-// Canvas uses frameloop="demand" so no frames render unless invalidated.
-// Hero mode runs at 60fps for smooth pan; other modes skip every other frame (30fps).
-
-function FrameLimiter() {
-  const invalidate = useThree((s) => s.invalidate)
+// ── Pacing ───────────────────────────────────────────────────────────────────
+// <Town paused idle>: the player's two reasons to draw less. A full-screen overlay marks itself
+// `data-scene-pause` (free the GPU); an embedding page that has scrolled us mostly out of view says
+// so (`ward-perf`) and we draw a third of the frames. Polled per frame, re-rendering only on change.
+function usePlayerPacing() {
+  const [pace, setPace] = useState({ paused: false, idle: false })
   useEffect(() => {
-    let n = 0
-    let id
+    let id, last = pace
     const loop = () => {
-      // Pause rendering when full-screen overlays are open — free the GPU
-      const paused = document.querySelector('[data-scene-pause]')
-      if (!paused) {
-        const isHero = !IS_MOBILE && useCamera.getState().viewMode === 'hero'
-        // ⭐ Three rates, not two. An embedding page that has scrolled us
-        // mostly out of view says so (`ward-perf`), and we drop to a third —
-        // enough that the sky still moves and nothing looks frozen, cheap
-        // enough that the page scrolls smoothly beside us.
-        // ⛔ NOT paused: going idle is what makes Chrome drop the WebGL
-        // surface, and coming back costs seconds. Render less, never none.
-        const idle = FRAMED && framedPresence() === 'idle'
-        const every = idle ? 3 : (isHero ? 1 : 2)
-        if (n % every === 0) invalidate()
-      }
-      n++
+      const next = { paused: !!document.querySelector('[data-scene-pause]'), idle: FRAMED && framedPresence() === 'idle' }
+      if (next.paused !== last.paused || next.idle !== last.idle) { last = next; setPace(next) }
       id = requestAnimationFrame(loop)
     }
     id = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(id)
-  }, [invalidate])
-  return null
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  return pace
 }
-
-// ── Time ticker ──────────────────────────────────────────────────────────────
-
-// Exported so a sky-only embed can run the same clock and the same weather
-// interpolation the scene does, rather than reimplementing either.
-export function TimeTicker() {
-  const tick = useTimeOfDay((state) => state.tick)
-  const lastTime = useRef(Date.now())
-
-  useFrame(() => {
-    const now = Date.now()
-    const delta = now - lastTime.current
-    lastTime.current = now
-    tick(delta)
-  })
-
-  return null
-}
-
-// ── Sky state ticker (smooth weather interpolation) ─────────────────────────
-
-export function SkyStateTicker() {
-  useFrame((_, delta) => useSkyState.getState().tick(Math.min(delta, 0.1)))
-  return null
-}
-
 
 // ── Camera rig ───────────────────────────────────────────────────────────────
 
@@ -225,32 +163,6 @@ const _lerpTarget = new THREE.Vector3()
 const _fromUp = new THREE.Vector3()
 const _toUp = new THREE.Vector3()
 const _lerpUp = new THREE.Vector3()
-
-// Terrain exaggeration is per-VIEW, not constant: Browse (top-down) flattens to
-// 0 so the overhead map reads clean, Hero gets the town's full authored drama, and
-// planetarium sits at 1. Production previously mounted BakedGround with no
-// targetExag → it defaulted to the ceiling and was never keyed to the view, so once
-// the Hero pan eased terrainExag up to it, returning to Browse left the
-// terrain exaggerated → the top-down Y-fighting. Subscribe to viewMode here so
-// only BakedGround re-renders on a mode switch (its data effect + GroundMeshes
-// key off lookId/cacheBust, not targetExag → no refetch/remount). Mirrors the
-// shot-keyed targetExag Preview + Cartograph already pass.
-// (2026-06-28 — Browse terrain Y-fight on return.)
-function ViewKeyedBakedGround({ lookId }) {
-  const viewMode = useCamera(s => s.viewMode)
-  // ⛔ The hero ceiling is the TOWN's authored value, not a constant (site 15).
-  const targetExag = viewMode === 'browse' ? 0 : viewMode === 'planetarium' ? 1 : sceneExag()
-  // ⛔ CACHE-BUST — production shipped WITHOUT one. BakedGround gates its `?t=` on
-  // this prop, so an absent token leaves ground.json / ground.bin on an unchanging
-  // URL and a visitor's browser serves the PREVIOUS bake after a deploy. Silent:
-  // the page renders, nothing errors, the map is simply old. `useSceneJson`'s own
-  // header says production relies on "the bakedAt cacheBust busting the URL on each
-  // bake" — this is the caller that never passed it. Found 2026-09-20 by
-  // checks/claims-baked-consumers-get-a-cache-bust.mjs, written after the same gap
-  // in Preview made an operator eye-gate report the opposite of the truth.
-  const scene = useSceneJson(lookId)
-  return <BakedGround lookId={lookId} bakeLastMs={scene?.bakedAt ?? null} targetExag={targetExag} />
-}
 
 function CameraRig() {
   const { camera, gl, size } = useThree()
@@ -757,27 +669,26 @@ function CameraRig() {
 
 // ── Scene ────────────────────────────────────────────────────────────────────
 
+// `?ground` strips the town to bare ground (App.jsx's chrome gate reads the same flag).
 const IS_GROUND = window.location.search.includes('ground')
-
-
-
-
+const GROUND_ONLY = { buildings: false, trees: false, lamps: false, setPieces: false, neon: false, labels: false, fog: false, shadows: false, post: false }
+// The old player's camera modes → the shot <Town> draws.
+const SHOT_OF_MODE = { hero: 'movie', browse: 'plan', planetarium: 'street' }
+// The device this page runs on decides the quality — in lib/qualityProfile.js, not here.
+const QUALITY = deviceQuality()
 
 function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const viewMode = useCamera((s) => s.viewMode)
-  // Baked layer visibility — the park title honors scene.json.layerVis like
-  // every other layer (authored in the panel → baked → all consumers gate on
-  // it). No consumer toggle; the slab carries the authored on/off.
-  const scene = useSceneJson(INSTANCE.lookId)
+  const shot = SHOT_OF_MODE[viewMode]
+  if (!shot) throw new Error(`[Scene] ⛔ camera mode '${viewMode}' draws no shot`)
+  const { paused, idle } = usePlayerPacing()
 
-  // Hero needs CONTINUOUS rendering. Under frameloop="demand" the R3F clock
-  // advances in coarse steps, so the authored pan (driven by clock.elapsedTime)
-  // reads ~2 fps even though FrameLimiter pumps invalidate every frame — the
-  // demand loop redraws the same pose between coarse clock ticks. Desktop hero
-  // runs "always" (smooth); every other mode stays "demand" (FrameLimiter pumps
-  // those at 30 fps). Mobile stays "demand" everywhere for battery — FrameLimiter
-  // caps it. Confirmed by the window.__frameloop A/B test, 2026-06-29 (H1).
-  const frameloop = (!IS_MOBILE && viewMode === 'hero') ? 'always' : 'demand'
+  // The movie shot needs CONTINUOUS rendering where the profile asks for it: under
+  // frameloop="demand" the R3F clock advances in coarse steps, so the authored pan
+  // (driven by clock.elapsedTime) reads ~2 fps even though <Town> pumps invalidate
+  // every frame. Every other shot stays "demand" (<Town> paces it). Confirmed by the
+  // window.__frameloop A/B test, 2026-06-29 (H1).
+  const frameloop = (QUALITY.movieEveryFrame && shot === 'movie') ? 'always' : 'demand'
 
   return (
     <div role="img" aria-label={`3D visualization of ${INSTANCE.name} neighborhood`} style={{
@@ -800,26 +711,16 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
       }}
       gl={{
         alpha: false,
-        antialias: !IS_MOBILE,
-        // Desktop renders under LOG depth — the validated authoring regime
-        // (Stage/Preview run logarithmicDepthBuffer:true), closing §6-E's
-        // desktop side: far-field precision at near:1/far:60000 + NeonBands
-        // auto-re-enables its LOG path (gl.capabilities gate, Ballast Option B)
-        // → resolves desktop neon-over-trees at the root. `!IS_MOBILE` is
-        // LOAD-BEARING: mobile stays LINEAR — a global flip writes gl_FragDepth
-        // on mobile WebGL2, kills early-Z, and taxes the canopy fill budget.
-        // The mobile depth decision is a later phone-measurement (conformance
-        // Phase 4/5), not this change.
-        logarithmicDepthBuffer: !IS_MOBILE,
+        antialias: QUALITY.antialias,
+        // Log depth where the profile asks for it — the validated authoring regime
+        // (Stage/Preview run it): far-field precision at near:1/far:60000, and NeonBands
+        // auto-enables its LOG path. The phone profile stays linear (see qualityProfile.js).
+        logarithmicDepthBuffer: QUALITY.logDepth,
         stencil: true,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
-        // toneMappingExposure now derives from scene.exposure (SC.3,
-        // 2026-05-13). PostProcessing's useFrame writes gl.toneMappingExposure
-        // each tick from the authored channel; EffectComposer's FilmGrade
-        // pass also applies uExposure. The previous hardcoded 0.95 was the
-        // hardwired counterpart of the exposure channel — installed, so
-        // out per doctrine `hardwires-come-out-when-channels-install`.
+        // toneMappingExposure derives from scene.exposure: the post pipeline
+        // writes gl.toneMappingExposure each tick from the authored channel.
       }}
       onCreated={({ gl }) => {
         gl.setClearColor(0x1a1a18, 1)
@@ -832,89 +733,18 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
           console.info('[WebGL] Context restored')
         })
       }}
-      dpr={IS_MOBILE ? 1 : [1, 1.5]}
-      shadows={IS_GROUND || IS_MOBILE ? false : 'soft'}
+      dpr={QUALITY.dpr}
+      shadows={IS_GROUND ? false : QUALITY.shadows}
     >
       <SheetGround active={sheeted} ground={ground} />
-      {!IS_GROUND && !IS_MOBILE && <StageShadows />}
-      {/* Atmospheric fog (FogExp2 from scene.mist). Completes the authored
-          `mist` channel in production — no-op at density 0. */}
-      {!IS_GROUND && <StageFog />}
-      <FrameLimiter />
-      <TimeTicker />
-      <SkyStateTicker />
-      <WeatherPoller />
-      <AtmosphereDirectiveDriver lookId={INSTANCE.lookId} />
-      <WeatherEffects />
-      <CelestialBodies />
-      {/* Sky renderer stopgap (skyMode): cheap <CloudDome/> ships, the
-          <Atmosphere/> slab mounts under ?sky=volumetric. */}
-      {SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}
-      {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
-          visible ground (Cartograph convention). Terrain still mounts
-          so its `terrainExag` shader uniform stays live (drives Y
-          displacement on ribbons + buildings). Mesh itself is dark
-          #2a2a26 and centered on the elevation-data bounds — a different
-          region than the LS centroid, so it would render as a large
-          offset square if visible. */}
-      <group visible={false}>
-        <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
-      </group>
-      <R3FErrorBoundary name="BakedGround"><ViewKeyedBakedGround lookId={INSTANCE.lookId} /></R3FErrorBoundary>
-      <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
-      {/* Trees — 9-species roster shipped into the slab this session; the
-          lightweight tier + LoD + deformer perf groundwork is in place, so
-          production mounts the same InstancedTrees Stage/Preview do. */}
-      {!IS_GROUND && <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
-      {!IS_GROUND && <UserDot />}
-      {!IS_GROUND && moduleOn('delivery') && <CourierDots />}
-      {/* Buildings: production renders the merged-mesh slab (L1.3 cutover).
-          LafayetteScene stays mounted for neon / street labels / landmark
-          markers / click-catcher, with its live Building+Foundations hidden;
-          SlabBuildings draws the buildings off the slab and publishes the
-          per-building index that SceneNeon + selection now resolve against.
-          Stage (CartographApp) keeps the live mount (no SlabBuildings there →
-          the index store stays null → SceneNeon falls back to live source, so
-          authoring retint still works). */}
-      {!IS_GROUND && <R3FErrorBoundary name="LafayetteScene"><LafayetteScene hiddenLayers={{ building: true, parkTitle: scene?.layerVis?.parkTitle === false }} /></R3FErrorBoundary>}
-      {/* SlabBuildings ALWAYS mounts — it is the single hydration path for building
-          identity (it publishes the index SceneNeon + selection resolve against).
-          It self-gates to index-only when a city LOD2 model is drawing (see
-          useCityModelActive), rather than unmounting and taking identity down. */}
-      {!IS_GROUND && <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
-      {/* City LOD2 model (real roofs) where an installation could acquire one —
-          Łódź publishes a municipal makieta covering Księży Młyn. Renders NOTHING
-          without a citymodel manifest, so LS is untouched. While it renders it
-          REPLACES the extruded slab buildings rather than z-fighting them; `?slab=1`
-          swaps back for an A/B. ⚠️ Geometry only so far — the vendor meshes carry the
-          city's own ids, not osm-<id>, so identity (click / neon / place cards) still
-          needs the centroid-in-footprint join. See CityModel.jsx. */}
-      {!IS_GROUND && <R3FErrorBoundary name="CityModel"><CityModel lookId={INSTANCE.lookId} /></R3FErrorBoundary>}
-      {/* Lamps mount unconditionally (no device fork). The old IS_MOBILE branch
-          deferred the mobile mount 4s ("let hero settle") — a hardwire that both
-          violated the manifest-authored-bracket doctrine AND silently dropped the
-          lamps on a demand frameloop (the deferred mount never got a render frame).
-          If mobile ever needs a different lamp treatment, author it via the
-          platform channel, don't hardwire a device fork here. (Boz + Jacob 2026-07-16.) */}
-      {!IS_GROUND && <R3FErrorBoundary name="BakedLamps"><BakedLamps /></R3FErrorBoundary>}
-      {/* The Gateway Arch is a set-piece a Look INSTALLS (a `design.arch` block →
-          `scene.arch`); the component self-gates on that data, so no mount site
-          names a Look. The condition left here is the mobile budget, not identity. */}
-      {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>}
-      {/* The town's set-piece, if it declares one — the ONE mount every app uses. */}
-      {!IS_GROUND && <R3FErrorBoundary name="SetPiece"><SetPiece /></R3FErrorBoundary>}
-      {/* The ground from the town's rim to the horizon — every town. */}
-      {!IS_GROUND && (!IS_MOBILE || viewMode === 'hero') && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc bakeLastMs={scene?.bakedAt ?? null} /></R3FErrorBoundary>}
-      {/* The shore's stone — the props Stage passes, nothing more (claims-every-app-mounts-the-set-piece). */}
-      {!IS_GROUND && <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={INSTANCE.lookId} bakeLastMs={scene?.bakedAt ?? null} /></R3FErrorBoundary>}
-      {/* Landscape backdrop (§10 third hero kind) — a mesh behind everything,
-          standing at its true geo spot. Renders NOTHING unless the look ships a
-          baked landscape manifest (LS has none), so this is a no-op for LS. */}
-      {!IS_GROUND && <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop /></R3FErrorBoundary>}
+      <Town lookId={INSTANCE.lookId} quality={QUALITY} shot={shot} paused={paused} idle={idle}
+        layers={IS_GROUND ? GROUND_ONLY : undefined}>
+        {/* The old player's overlays: the user's dot, the couriers, the map pins. */}
+        {!IS_GROUND && <UserDot />}
+        {!IS_GROUND && moduleOn('delivery') && <CourierDots />}
+        {!IS_GROUND && <R3FErrorBoundary name="LandmarkMarkers"><LandmarkMarkers shot={SHOT_KEY[shot]} /></R3FErrorBoundary>}
+      </Town>
       <CameraRig />
-      {!IS_GROUND && <LampGlowDriver />}
-      {!IS_GROUND && <NeonDriver />}
-      {!IS_GROUND && <PostProcessing viewMode={viewMode} />}
     </Canvas>
     </div>
   )

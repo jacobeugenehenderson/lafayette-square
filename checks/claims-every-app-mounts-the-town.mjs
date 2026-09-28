@@ -11,12 +11,14 @@
  * THE RENDERER PIECES are READ from Town.jsx — every component it renders that it imports from a
  * local file — never listed here. A piece added to Town is covered the day it is added.
  * AN APP is found, never listed: a file under src/ that owns an R3F `<Canvas>` and renders `<Town>`
- * or the town's ground (`<BakedGround>`) — the ground is what makes a canvas a town, the same
- * definition claims-every-app-mounts-the-set-piece used. A canvas that draws only a sky (SkyEmbed,
- * TreeDiorama, the weather canary) mounts sky pieces and is not an app. Fails when:
+ * or any piece of the DRAWN town — what Town.jsx mounts inside its <Suspense> block (ground,
+ * buildings, trees, lamps, set-pieces, horizon), read from its source. A canvas that draws only a
+ * sky (SkyEmbed, TreeDiorama, the weather canary) mounts sky pieces and is not an app. Fails when:
  *   · src/components/Town.jsx does not exist, or renders no piece
  *   · an app does not render `<Town`
  *   · an app renders a renderer piece itself (the hand-assembly)
+ * ⏳ KNOWN OPEN, still RED: an app named in OPEN keeps failing, and the failure carries why it is open
+ * and what closes it. It is not an exemption; it is a time-box made visible.
  * A file under src/harness/ whose header says `⛔ HARNESS ONLY` is declared exempt, with that line
  * as the reason: a harness mounts a partial scene on purpose. The marker exempts nothing elsewhere.
  *
@@ -29,6 +31,9 @@ const ROOT = new URL('..', import.meta.url).pathname
 const SRC = join(ROOT, 'src')
 const TOWN = 'src/components/Town.jsx'
 // Rendered by Town but not a drawing: an app may use it for its own children.
+const OPEN = {
+  'src/cartograph/CartographApp.jsx': 'Stage on Lafayette Square keeps its MAP_REGISTRY assembly until SlabBuildings retints the palette live for every town (Jacob ruled 2026-09-27; its own brief). Then it moves onto <Town> and LafayetteScene\'s live Building path is deleted.',
+}
 const WRAPPERS = { R3FErrorBoundary: 'an error boundary; it draws nothing' }
 
 function walk(dir, out = []) {
@@ -52,7 +57,14 @@ export function piecesOf(townSrc) {
   return [...imported].filter(n => rendered.has(n) && !WRAPPERS[n]).sort()
 }
 
-const renders = (src, name) => new RegExp(`<${name}\\b`).test(src)
+// Code only: a comment that names a piece mounts nothing.
+const code = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
+// The drawn town: the pieces Town renders between <Suspense> and </Suspense>.
+function drawnPiecesOf(townSrc) {
+  const m = code(townSrc).match(/<Suspense\b[\s\S]*<\/Suspense>/)
+  return m ? [...new Set([...m[0].matchAll(/<([A-Z]\w*)\b/g)].map(x => x[1]))].filter(n => n !== 'Suspense' && !WRAPPERS[n]) : []
+}
+const renders = (src, name) => new RegExp(`<${name}\\b`).test(code(src))
 const harnessReason = (x) => x.path.startsWith('src/harness/') && (x.src.slice(0, 1500).match(/^.*⛔ HARNESS ONLY.*$/m) || [])[0]
 
 export function audit(files) {
@@ -60,17 +72,18 @@ export function audit(files) {
   const town = files.find(x => x.path === TOWN)
   if (!town) return { f: [`${TOWN} does not exist — there is no one assembly for an app to mount`], info }
   const pieces = piecesOf(town.src)
-  if (!pieces.includes('BakedGround')) return { f: [`${TOWN} does not render <BakedGround> — an assembly without the town's ground is not the town`], info }
   if (!pieces.length) return { f: [`${TOWN} renders no renderer piece — the definition broke`], info }
   info.push(`renderer pieces (read from ${TOWN}): ${pieces.join(', ')}`)
-  const apps = files.filter(x => x.path !== TOWN && /<Canvas\b/.test(x.src) && (renders(x.src, 'Town') || renders(x.src, 'BakedGround')))
+  const drawn = drawnPiecesOf(town.src)
+  if (!drawn.includes('BakedGround')) return { f: [`${TOWN}'s <Suspense> block does not draw <BakedGround> — the definition broke`], info }
+  const apps = files.filter(x => x.path !== TOWN && /<Canvas\b/.test(code(x.src)) && (renders(x.src, 'Town') || drawn.some(p => renders(x.src, p))))
   if (!apps.length) f.push('no app found (no file owns a <Canvas> and renders <Town> or a piece) — the definition broke')
   for (const a of apps) {
     const exempt = harnessReason(a)
     if (exempt) { info.push(`exempt: ${a.path} — ${exempt.replace(/^\s*\*?\s*/, '')}`); continue }
     const hand = pieces.filter(p => renders(a.src, p))
     if (!renders(a.src, 'Town')) f.push(`${a.path} draws a town but does not render <Town>`)
-    if (hand.length) f.push(`${a.path} renders renderer pieces itself — mount them through <Town>: ${hand.join(', ')}`)
+    if (hand.length) f.push(`${a.path} renders renderer pieces itself — mount them through <Town>: ${hand.join(', ')}${OPEN[a.path] ? `\n      ⏳ OPEN: ${OPEN[a.path]}` : ''}`)
     if (!hand.length && renders(a.src, 'Town')) info.push(`app: ${a.path} mounts <Town>`)
   }
   return { f, info }
@@ -85,14 +98,16 @@ if (process.argv.includes('--self-test')) {
   const swap = (path, fn) => files.map(x => x.path === path ? { ...x, src: fn(x.src) } : x)
   const cases = [
     ['production hand-mounts a piece', () => audit(swap('src/components/Scene.jsx', s => s + `\n<${piece} />`)).f.length],
-    ['Preview drops <Town>', () => audit(swap('src/preview/PreviewApp.jsx', s => s.replace(/<Town\b/g, `<${piece}`))).f.length],
-    ['Stage drops <Town>', () => audit(swap('src/cartograph/CartographApp.jsx', s => s.replace(/<Town\b/g, `<${piece}`))).f.length],
+    ['Preview drops <Town> for a drawn piece', () => audit(swap('src/preview/PreviewApp.jsx', s => s.replace(/<Town\b/g, '<SlabBuildings'))).f.length],
+    ['Stage drops <Town>', () => audit(swap('src/cartograph/CartographApp.jsx', s => s.replace(/<Town\b/g, `<Nothing`))).f.length],
     ['a new app hand-assembles', () => audit([...files, { path: 'src/fake/NewApp.jsx', src: `<Canvas><BakedGround /><${piece} /></Canvas>` }]).f.length],
     ['the harness marker outside src/harness/', () => audit([...files, { path: 'src/fake/NewApp.jsx', src: `/* ⛔ HARNESS ONLY */ <Canvas><BakedGround /></Canvas>` }]).f.length],
-    ['Town is deleted', () => audit(files.filter(x => x.path !== TOWN)).f.length],
+    ['Town is deleted', () => audit(files.filter(x => x.path !== TOWN)).f.some(x => /does not exist/.test(x)) ? Infinity : 0],
   ]
+  // Caught means MORE failures than the tree has now — the known-open Stage row keeps the baseline red.
+  const base = audit(files).f.length
   let bad = 0
-  for (const [n, run] of cases) { const c = run() > 0; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
+  for (const [n, run] of cases) { const c = run() > base; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
   process.exit(bad ? 1 : 0)
 }
 

@@ -76,16 +76,11 @@ export function useSceneJson(lookId, cacheBust) {
     return () => { cancelled = true }
   }, [lookId, bust])
   // Channel-variant cascade (HANDOFF-channel-variant-cascade.md): resolve the
-  // per-shot whole-look fork ONCE, here, off the live camera viewMode — so every
-  // consumer reading through this adapter gets the active shot's look with no
-  // consumer change. resolveShotScene returns the SAME object identity when the
-  // shot has no fork, so an unforked Look (no scene.shotLooks) is byte-identical
-  // to before and doesn't add render churn.
-  // Production drives `viewMode`; Preview owns its own camera and instead sets a
-  // dedicated `shotOverride` (PreviewApp) so per-shot look forks resolve there too
-  // WITHOUT touching the `viewMode` other consumers branch on. Production never
-  // sets shotOverride → falls through to viewMode → byte-identical.
-  const viewMode = useCamera(s => s.shotOverride ?? s.viewMode)
+  // per-shot whole-look fork ONCE, here, off the shot the town is drawn in (`townShot`,
+  // written by <Town shot> through TownBridge.jsx — the same in every app). resolveShotScene
+  // returns the SAME object identity when the shot has no fork, so an unforked Look (no
+  // scene.shotLooks) adds no render churn.
+  const viewMode = useCamera(s => s.townShot)
   return useMemo(
     () => resolveShotScene(scene, shotKeyForViewMode(viewMode)),
     [scene, viewMode]

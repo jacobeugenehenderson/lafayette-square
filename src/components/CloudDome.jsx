@@ -13,7 +13,7 @@ let _driftSnapEpoch = useAtmosphere.getState().snapEpoch
 
 function CloudDome() {
   const materialRef = useRef()
-  const viewMode = useCamera((s) => s.viewMode)
+  const shot = useCamera((s) => s.townShot)
 
   const cloudMaterial = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
@@ -199,7 +199,7 @@ function CloudDome() {
   })
 
   // Only render in hero mode
-  if (viewMode !== 'hero') return null
+  if (shot !== 'hero') return null
 
   return (
     <mesh>

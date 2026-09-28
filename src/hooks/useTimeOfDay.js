@@ -1,10 +1,7 @@
 import { create } from 'zustand'
 import SunCalc from 'suncalc'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 import useCalendar from './useCalendar.js'
-
-const LATITUDE = INSTANCE.geography.lat
-const LONGITUDE = INSTANCE.geography.lon
 
 const useTimeOfDay = create((set, get) => ({
   currentTime: new Date(),
@@ -84,7 +81,8 @@ const useTimeOfDay = create((set, get) => ({
 
   getLightingPhase: () => {
     const { currentTime } = get()
-    const sunPos = SunCalc.getPosition(currentTime, LATITUDE, LONGITUDE)
+    const { lat, lon } = townPlace()
+    const sunPos = SunCalc.getPosition(currentTime, lat, lon)
     const sunAlt = sunPos.altitude
     return {
       isNight: sunAlt < -0.12,

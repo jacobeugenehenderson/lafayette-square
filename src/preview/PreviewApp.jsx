@@ -8,49 +8,24 @@
  */
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import RegimeControls from '../components/RegimeControls.jsx'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import Town from '../components/Town.jsx'
+import { deviceQuality } from '../lib/qualityProfile.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
-import InstancedTrees from '../components/InstancedTrees'
 import { invalidateTreeAtlas } from '../components/treeAtlasMaterial'
-import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import CelestialBodies from '../components/CelestialBodies'
-import Atmosphere from '../components/Atmosphere'
-import CloudDome from '../components/CloudDome'
-import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
-import WeatherPoller from '../components/WeatherPoller'
-import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
-import WeatherEffects from '../components/WeatherEffects'
-import Terrain from '../components/Terrain'
-import BakedLamps from '../components/BakedLamps'
-import GatewayArch from '../components/GatewayArch'
-import SetPiece from '../components/SetPiece.jsx'
-import HorizonDisc from '../components/HorizonDisc.jsx'
-import SlabRevetment from '../components/SlabRevetment.jsx'
-import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { streetEyeY } from '../utils/elevation'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
-import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import useSkyState from '../hooks/useSkyState'
-import BakedGround from '../components/BakedGround.jsx'
-import CascadedShadows, { CSM_ENABLED } from '../components/CascadedShadows.jsx'
-import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import { INSTANCE } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
-import { sceneExag } from '../utils/terrainShader'
-import LafayetteScene from '../components/LafayetteScene'
-import CityModel from '../components/CityModel'
-import SlabBuildings from '../components/SlabBuildings'
 import { RENDER_TIERS } from '../lib/renderTiers.js'
 import { setActiveProfileId } from './deviceProfiles'
 // Preview mounts the SHARED PostProcessing consumer with `inspect` (the per-pass
 // toggle matrix) — the retired PreviewPostFx forked its own composer + driver.
-import { PostProcessing, ExposureTicker, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
-import { NeonDriver } from '../components/NeonBands.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
@@ -89,19 +64,8 @@ function ForceDaytimeOnMount() {
   }, [setTime])
   return null
 }
-function TimeTicker() {
-  const tick = useTimeOfDay((s) => s.tick)
-  const last = useRef(Date.now())
-  useFrame(() => { const n = Date.now(); tick(n - last.current); last.current = n })
-  return null
-}
-function SkyStateTicker() {
-  useFrame((_, d) => useSkyState.getState().tick(Math.min(d, 0.1)))
-  return null
-}
-// Preview targets a continuously-rendering runtime (mobile/desktop app).
+// Preview targets a continuously-rendering runtime (mobile/desktop app):
 // frameloop="always" is more honest about cost than demand+invalidate.
-// FrameLimiter no longer needed — Canvas drives the loop.
 
 // Resolve a shot's target pose (position/target/fov), accounting for
 // browse's aspect-fit altitude. Pure — no side effects.
@@ -1113,16 +1077,6 @@ function Row({ k, v, warn }) {
 }
 
 // Feeds CascadedShadows the SAME key vector CelestialBodies publishes — never re-derived.
-function CascadedShadowsDriver() {
-  const keyDirection = useSkyState(st => st.keyDirection)
-  const keyColor = useSkyState(st => st.keyColor)
-  // Intensity comes from the light CelestialBodies zeroed, so the rig is the same
-  // key at the same strength — never a second derivation of the sun.
-  const [key, setKey] = useState({ intensity: 1 })
-  useFrame(() => { const k = window.__csmKey; if (k && k.intensity !== key.intensity) setKey({ intensity: k.intensity }) })
-  return <CascadedShadows lightDirection={keyDirection} keyIntensity={key.intensity} keyColor={keyColor} />
-}
-
 export default function PreviewApp() {
   // ⛔ NOT ALWAYS HERO (2026-09-05). Preview opened on the Hero shot every
   // time, which dates from when arriving on the hero was the emotionally
@@ -1138,17 +1092,6 @@ export default function PreviewApp() {
     } catch { /* ignore */ }
     return 'browse'
   })
-  // Per-shot look resolve (channel-variant cascade): Preview drives a LOCAL
-  // `shot`, but `useSceneJson` resolves shotLooks off the camera store. Production
-  // drives `useCamera.viewMode`; Preview deliberately does NOT (it owns its own
-  // camera), so without this the browse/street fork never applied in Preview —
-  // every shot showed the base/Hero look. Publish a dedicated `shotOverride`
-  // field that ONLY useSceneJson reads (no other viewMode consumer touches it),
-  // so this can't perturb terrain-exag / clouds / frameloop. Cleared on unmount.
-  useEffect(() => {
-    useCamera.setState({ shotOverride: shot })
-    return () => useCamera.setState({ shotOverride: null })
-  }, [shot])
   const lookId = resolvePreviewLookId()
   const [mode, setModeRaw] = useState(loadMode)
   const setMode = (m) => { setModeRaw(m); saveMode(m) }
@@ -1227,7 +1170,7 @@ export default function PreviewApp() {
       shadows="soft"
       onCreated={({ camera, gl }) => { camera.lookAt(...SHOTS.hero.target); _ogCaptureGL = gl }}
     >
-      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} tier={mode} pyramidDegree={activeDegree} />
+      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} />
     </Canvas>
   )
 
@@ -1276,153 +1219,37 @@ function resolvePreviewLookId() {
   return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
 }
 
-function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
+// Preview's shots → the shot <Town> draws; its layer toggles → <Town layers>.
+const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
+const QUALITY = deviceQuality()
+
+function CanvasContents({ layers, shot, setShot }) {
   const lookId = resolvePreviewLookId()
-  // Baked layer visibility — the park title honors scene.json.layerVis, same as
-  // every other layer (re-bake propagates the panel toggle to the slab).
-  const scene = useSceneJson(lookId)
-  // ⛔⛔ CACHE-BUST TOKEN — WITHOUT THIS PREVIEW SHOWS A STALE BAKE, SILENTLY.
-  // Every baked consumer builds its URL as `…/<file>` + (bakeLastMs ? '?t=…' : ''),
-  // so an ABSENT token means an unchanging URL and the browser's HTTP cache serves
-  // the PREVIOUS bake for ground.json / ground.bin / trees / lamps. Preview passed
-  // none — Stage did — which is why the two disagreed and why an operator eye-gate
-  // taken in Preview could be judging geometry several bakes old. Measured
-  // 2026-09-20: a 10× ground re-bake was invisible in Preview and visible in Stage.
-  // ⭐ `scene.bakedAt` is the right token and it is already in hand: useSceneJson
-  // fetches with `cache: 'no-store'` in dev, so it is never itself stale, and it
-  // changes exactly when a bake happens — no more, no less.
-  // ⛔ NO FALLBACK to Date.now(): that would re-fetch every mount and defeat the
-  // cache entirely. An absent bakedAt means an unbaked look, and the un-busted URL
-  // is then correct — there is nothing newer to miss.
-  const bakeLastMs = scene?.bakedAt ?? null
   // ?dofDebug=1 paints the DoF CoC zones (green = sharp, red = full blur) — the
-  // shared dofDriver reads window.__dofDebug. (Formerly set by PreviewPostFx's
-  // DofDriver; that fork is retired, so Preview sets it here.)
+  // shared dofDriver reads window.__dofDebug.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('dofDebug') === '1') window.__dofDebug = 1
   }, [])
+  // ⭐ Preview draws the town through <Town>, the assembly production and Stage mount — so the
+  // surface an operator confirms on cannot drift from what ships. What is Preview's own: the
+  // per-layer and per-pass toggles (measurement), a noon clock on load, the GPU monitor, and
+  // BasicLights — an inspection fallback lit only while the sky layer is off.
   return (
     <>
-      <TimeTicker />
-      <SkyStateTicker />
-      <ForceDaytimeOnMount />
-      <GpuMonitorTicker />
-      <ExposureTicker lookId={lookId} bakeLastMs={bakeLastMs} />
-
-      {/* Atmosphere driver chain — same as production. Without these,
-          useAtmosphere.tweenedDirective is never populated and <Atmosphere>
-          renders no clouds. WeatherPoller fetches live conditions,
-          AtmosphereDirectiveDriver blends the per-Look cloud directive,
-          WeatherEffects renders precipitation. */}
-      <WeatherPoller />
-      <AtmosphereDirectiveDriver lookId={lookId} />
-      <WeatherEffects />
-
-      {/* Hidden Terrain — keeps the shared terrainExag uniform live (drives
-          ribbon/building Y displacement). Mesh itself stays invisible, as in
-          production. */}
-      <group visible={false}>
-        <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
-      </group>
-
-      {/* Channel-driven soft shadows (size/samples from scene.shadow) —
-          matches Stage + production. Canvas already runs shadows="soft". */}
-      <StageShadows lookId={lookId} bakeLastMs={bakeLastMs} />
-      {/* Atmospheric fog (FogExp2 from scene.mist) — Stage mounts this; it
-          was previously absent from Preview entirely. Always mounted now;
-          the toggle nulls scene.fog via `enabled` (fog is a scene property,
-          not a drawn layer) so there's no mount churn (Vernier Phase 1b). */}
-      <StageFog lookId={lookId} bakeLastMs={bakeLastMs} enabled={layers.fog} />
-      {/* Lamp-glow uniforms (grass pools / tree emissive / pool radial) from
-          scene.lampGlow — the same driver production now mounts. Without it
-          the uniforms stay at dead defaults and lamp pools never appear. */}
-      <LampGlowDriver lookId={lookId} bakeLastMs={bakeLastMs} />
-      <NeonDriver lookId={lookId} bakeLastMs={bakeLastMs} />
-
-      {/* Celestial + clouds visibility-gated, both always mounted. When
-          celestial is off, the always-mounted BasicLights takes over via its
-          own visibility — no mount swap. group.visible=false skips the
-          subtree's draws AND lights, so "all on" == production (CelestialBodies
-          visible, BasicLights dark = zero contribution) (Vernier Phase 1b).
-          BasicLights is a Preview-only inspection fallback (no production
-          analog) — held resident-but-hidden, never drawn in the all-on path. */}
-      {/* ⚠️ `?csm=1` — cascaded shadow maps, dark by default. Replaces the single
-          fitted map with N across the view range. See CascadedShadows.jsx. */}
-      {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><CascadedShadowsDriver /></R3FErrorBoundary>}
-      {/* ⛔ UNGATED. Names the material when a program fails to link — the failure
-          that draws NOTHING and says nothing. See lib/shaderLinkGuard.jsx. */}
-      <ShaderLinkGuard />
-      <group visible={layers.celestial}>
-        <R3FErrorBoundary name="CelestialBodies"><CelestialBodies lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
-      </group>
-      <group visible={!layers.celestial}>
-        <BasicLights />
-      </group>
-      <group visible={layers.clouds}>
-        {/* Sky renderer stopgap (skyMode): cheap <CloudDome/> ships,
-            <Atmosphere/> slab mounts under ?sky=volumetric. */}
-        <R3FErrorBoundary name="Atmosphere">{SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}</R3FErrorBoundary>
-      </group>
-
-      <Suspense fallback={null}>
-        <group visible={layers.ground}>
-          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bakeLastMs} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : sceneExag()} /></R3FErrorBoundary>
-          {/* The shore's stone — the props Stage passes, nothing more (claims-every-app-mounts-the-set-piece). */}
-          <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
+      <Town lookId={lookId} quality={QUALITY} shot={TOWN_SHOT[shot]} interactive={false}
+        layers={{
+          ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
+          lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,
+          clouds: layers.clouds, fog: layers.fog,
+        }}
+        postFx={{ toggles: layers }}>
+        <ForceDaytimeOnMount />
+        <GpuMonitorTicker />
+        <group visible={!layers.celestial}>
+          <BasicLights />
         </group>
-        {/* Buildings (Phase 2 — collapsed to one toggle). LafayetteScene's
-            live Building+Foundations stay unmounted always (`building: true`),
-            exactly like production where the slab replaces them — it's kept
-            mounted only for <SceneNeon> + street labels + landmark markers +
-            click-catcher. The single "Buildings" toggle gates the rendered
-            SlabBuildings' .visible below. `neon` gates .visible inside
-            LafayetteScene (the toggle, not a mount). */}
-        <R3FErrorBoundary name="LafayetteScene">
-          <LafayetteScene
-            lookId={lookId}
-            hiddenLayers={{ building: true, neon: !layers.neon, parkTitle: scene?.layerVis?.parkTitle === false }}
-            forceNeonOn={layers.neon || undefined}
-            labelViewMode={shot}
-          />
-        </R3FErrorBoundary>
-        {/* Slab buildings (L1.3) — the rendered buildings path, as in
-            production. Always mounted, .visible-gated by the single Buildings
-            toggle: a clean per-frame draws/tris on-off (Vernier Phase 2). */}
-        <group visible={layers.buildings}>
-          <R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={lookId} interactive={false} /></R3FErrorBoundary>
-          {/* Same consumer as Stage + production — Preview is the publish-confidence
-              gate, so it must render production's exact tree. */}
-          <R3FErrorBoundary name="CityModel"><CityModel lookId={lookId} interactive={false} /></R3FErrorBoundary>
-        </group>
-        {/* Trees / Park / Streetlamps / Arch — visibility-gated (always
-            mounted, baked assets resident). Each toggle is a clean per-frame
-            draws/tris on-off with no dispose/re-upload (Vernier Phase 1b). */}
-        <group visible={layers.trees}>
-          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
-        </group>
-        <group visible={layers.park}>
-          <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
-        </group>
-        <group visible={layers.lights}>
-          <R3FErrorBoundary name="StreetLights"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
-        </group>
-        <group visible={layers.arch}>
-          <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
-          <R3FErrorBoundary name="SetPiece"><SetPiece /></R3FErrorBoundary>
-        </group>
-        <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
-      </Suspense>
-
+      </Town>
       <ShotCamera shot={shot} setShot={setShot} />
-
-      {/* The SHARED post-FX consumer (no overrides → resolves the baked
-          scene.json channels, exactly like production). `inspect.toggles` is the
-          per-pass visibility matrix — Preview's sanctioned divergence: an FX
-          toggle mounts/unmounts its pass to measure it. tier/pyramidDegree are
-          vestigial for post-FX (DownsamplePyramid renders a fixed ladder,
-          ignoring degree) — kept until the v0.2 measurement regime re-homes the
-          per-platform inclusion here. */}
-      <PostProcessing lookId={lookId} bakeLastMs={bakeLastMs} inspect={{ toggles: layers }} />
     </>
   )
 }

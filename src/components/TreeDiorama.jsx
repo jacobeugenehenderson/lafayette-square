@@ -10,7 +10,8 @@ import WeatherEffects from './WeatherEffects'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
-import { TimeTicker, SkyStateTicker } from './Scene'
+import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
+import { QualityProvider, deviceQuality } from '../lib/qualityProfile.js'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { treeSwayUniforms } from './treeAtlasMaterial'
 import {
@@ -803,6 +804,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
       dpr={IS_MOBILE ? 1 : [1, 2]}
       shadows
     >
+      <QualityProvider quality={deviceQuality()}>
       {/* The clock, and the weather it drives — the same seam every other embed
           uses, so an embedding page's slider moves this sky, this light and
           this wind together. */}
@@ -854,6 +856,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
       {!alpha && <StageShadows lookId={look} />}
       {!alpha && <ShadowFocus height={measured?.height} spread={measured?.spread} />}
       <DioramaCamera height={measured?.height} spread={measured?.spread} baseY={measured?.baseY} topY={measured?.topY} />
+      </QualityProvider>
       {atlas.status === 'ready' && <BarkSlots atlas={atlas} species={sp} variantId={vr} />}
       {atlas.status === 'ready' && (
         <Suspense fallback={null}>

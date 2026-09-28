@@ -31,6 +31,16 @@ const src = (p) => readFileSync(p, 'utf-8').replace(/\/\/.*$/gm, '')
 const app = src('src/cartograph/CartographApp.jsx')
 const lights = src('src/components/StreetLights.jsx')
 const driver = src('src/components/PostProcessing.jsx')
+// ⭐ Every town but Lafayette Square draws in Stage through <Town> (src/components/Town.jsx), which takes
+// Stage's live channels as ONE object: `overrides`, built by CartographApp's useStageOverrides. A Town prop
+// `x={o.key}` is live in Stage exactly when that hook supplies `key` — read from its source, never listed.
+const town = src('src/components/Town.jsx')
+const stageKeys = (() => {
+  const list = app.match(/const STAGE_CHANNELS = \[([\s\S]*?)\]/)
+  const extra = app.match(/return useMemo\(\(\) => \(\{ \.\.\.channels, ([^}]*)\}\)/)
+  return new Set([...(list ? [...list[1].matchAll(/'(\w+)'/g)].map(m => m[1]) : []), ...(extra ? extra[1].split(',').map(x => x.split(':')[0].trim()).filter(Boolean) : [])])
+})()
+const stageMountsTown = /<Town\b[^>]*overrides=\{townOverrides\}/.test(app) && /const townOverrides = useStageOverrides\(\)/.test(app)
 
 /** Stage mounts of the lamps that do NOT pass the live lantern. */
 function deadMounts(text) {
@@ -47,6 +57,10 @@ console.log('① EVERY STAGE MOUNT OF THE LAMPS PASSES THE LIVE LANTERN')
   // Self-mutation: drop one live lantern → ① must go red.
   const mutated = app.replace(/ lanternOverride=\{lanternOverride\}/, '')
   deadMounts(mutated).dead.length ? ok('mutation (one live lantern removed) is caught') : bad('mutation NOT caught — ① is blind')
+  // <Town>, as Stage mounts it: its lamps take the live lantern from `overrides`, and Stage supplies it.
+  const townLive = (t) => stageMountsTown && stageKeys.has('lantern') && /<BakedLamps\b[^>]*lanternOverride=\{o\.lantern\}/.test(t)
+  townLive(town) ? ok('Stage via <Town>: the lamps take the live lantern') : bad('Stage via <Town>: the lamps read the BAKED lantern')
+  !townLive(town.replace(/lanternOverride=\{o\.lantern\}/, '')) ? ok('mutation (Town\'s live lantern removed) is caught') : bad('mutation NOT caught — ① is blind to <Town>')
 }
 
 console.log('② EACH CONTROL MOVES ITS OWN THING — every field drives ≥1 target, no target is driven by two fields')
@@ -99,11 +113,17 @@ const writes = (() => {
 }
 
 console.log('③ EVERY LAMP GLOW FIELD IS WRITTEN IN STAGE + PRODUCTION')
+// ONE driver writes the shares (LampGlowDriver); Stage reaches it with its live channel on both of its
+// routes — <Town lampGlowOverride={o.lampGlow}>, and the hand-assembly Lafayette Square keeps for now.
 for (const { key } of LAMPGLOW_FIELDS) {
   const w = new RegExp(`share\\.${key}\\s*=\\s*triple\\.${key}\\b`)
-  w.test(app) ? ok(`${key}: Stage pump writes it`) : bad(`${key}: the Stage pump (CartographApp LampGlowPump) never writes share.${key}`)
-  w.test(driver) ? ok(`${key}: production driver writes it`) : bad(`${key}: the production driver (LampGlowDriver) never writes share.${key}`)
+  w.test(driver) ? ok(`${key}: the one driver (LampGlowDriver) writes it`) : bad(`${key}: the driver (LampGlowDriver) never writes share.${key}`)
+  w.test(app) ? bad(`${key}: CartographApp writes share.${key} itself — a second copy of the driver`) : null
 }
+;(/<LampGlowDriver\b[^>]*lampGlowOverride=\{o\.lampGlow\}/.test(town) && stageKeys.has('lampGlow') && stageMountsTown)
+  ? ok('Stage (every town on <Town>) drives it with the live Lamp Glow') : bad('Stage\'s <Town> route does not carry the live Lamp Glow to LampGlowDriver')
+;/<LampGlowDriver\b[^>]*lampGlowOverride=\{/.test(app) || !/MAP_REGISTRY/.test(app)
+  ? ok('Stage\'s remaining hand-assembly drives it with the live Lamp Glow') : bad('Stage\'s hand-assembly mounts no live LampGlowDriver')
 
 console.log('④ THE UNIFORMS HAVE SHADER READERS')
 for (const [u, file] of [['poolUniform', 'src/lib/groundLamp.js'], ['poolUniform', 'src/components/SlabBuildings.jsx'], ['treesUniform', 'src/components/treeAtlasMaterial.js'],
@@ -157,8 +177,19 @@ console.log('⑦ NEON IS MOUNTED IN EVERY STAGE THAT DRAWS BUILDINGS, WITH ITS T
     return 'ok'
   }).filter(Boolean)
   for (const r of judge(envs)) { n++; r === 'ok' ? ok(`Stage environment ${n}: neon mounted with its test controls`) : bad(`Stage environment ${n}: ${r}`) }
-  if (!n) bad('found no Stage environment that draws buildings — ⑦ cannot see the Stage')
-  judge(envs.map(b => b.replace(/<SceneNeon\b[^>]*>/g, ''))).some(r => r !== 'ok') ? ok('mutation (poured-town neon mount removed) is caught') : bad('mutation NOT caught')
+  // <Town>, as Stage mounts it: its neon must take the three test controls from `overrides`, and Stage must supply them.
+  const judgeTown = (t) => {
+    if (!stageMountsTown) return 'Stage mounts no <Town> with its live overrides'
+    const neon = t.match(/<LafayetteScene\b[\s\S]*?\/>/)
+    if (!neon) return 'draws buildings and mounts no neon'
+    const need = [['forceNeonOn', 'neonForceOn'], ['neonDensity', 'neonDensity'], ['materialColorsOverride', 'materialColors']]
+    const miss = need.filter(([prop, key]) => !new RegExp(`${prop}=\\{o\\.${key}\\}`).test(neon[0]) || !stageKeys.has(key))
+    return miss.length ? `mounts neon without ${miss.map(m => m[1]).join(', ')} from Stage` : 'ok'
+  }
+  n++
+  const t = judgeTown(town)
+  t === 'ok' ? ok(`Stage via <Town> (every town on it): neon mounted with its test controls`) : bad(`Stage via <Town>: ${t}`)
+  judgeTown(town.replace(/<LafayetteScene\b[\s\S]*?\/>/, '')) !== 'ok' ? ok('mutation (Town\'s neon mount removed) is caught') : bad('mutation NOT caught')
 }
 
 console.log('⑧ EVERY NEON SWATCH COLOURS THE NEON (it existed for months and drove nothing)')

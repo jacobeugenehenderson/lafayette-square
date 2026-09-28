@@ -7,7 +7,7 @@
  *   cartograph/proceduralSky.js           ← keyframes + math (kit canon)
  *   cartograph/pipeline/hydrate-anchor-cards.js  ← one-shot generator
  *   ────────────────────────────────────────────────────────────────
- *   ANCHOR_CARDS  (this file, static data)       ← procedural-hydrated +
+ *   anchorCards() (this file, per place)           ← procedural-hydrated +
  *                                                  Wren's artistic
  *                                                  deviation (Phase B)
  *   ────────────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@
  */
 import SunCalc from 'suncalc'
 import useCalendar from '../hooks/useCalendar.js'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 import { buildAnchorCards, standardUtcOffsetHours } from '../../cartograph/proceduralSky.js'
 
 export const SKY_BANDS = ['horizon', 'low', 'mid', 'high', 'sunGlow']
@@ -44,7 +44,7 @@ export const SKY_ANCHOR_DOY = {
 const DAYS_IN_YEAR = 365  // ignore leap-day in anchor math; ±1d is invisible
 
 // ─────────────────────────────────────────────────────────────────────
-// ANCHOR_CARDS — the 4 × 24 × 5 colour table, SAMPLED AT THIS TOWN'S LAT/LON.
+// anchorCards() — the 4 × 24 × 5 colour table, SAMPLED AT THIS TOWN'S LAT/LON.
 //
 // ⛔⛔ THIS WAS 118 LINES OF CHECKED-IN HEX, GENERATED ONCE AT LAFAYETTE SQUARE'S
 // COORDINATES AND SHIPPED TO EVERY TOWN. Jacob, 2026-09-20: "the sky should be set to
@@ -62,11 +62,17 @@ const DAYS_IN_YEAR = 365  // ignore leap-day in anchor math; ±1d is invisible
 // cells of the retired constant exactly — ▶ node checks/claims-sky-follows-its-town.mjs.
 // The other towns move, which is the point: HPDM 73 cells, altadena 97, huron 120.
 //
-// ⚠️ Derived once at module load (~96 SunCalc calls), not per frame.
-const _geo = INSTANCE.geography
-export const ANCHOR_CARDS = buildAnchorCards(
-  SunCalc, _geo.lat, _geo.lon, standardUtcOffsetHours(_geo.timezone),
-)
+// ⚠️ Derived once PER PLACE (~96 SunCalc calls), not per frame — and re-derived when <Town> moves
+// the place (a live town switch in Stage), so the sky is never painted on the previous town's schedule.
+let _cards = null, _cardsFor = null
+export function anchorCards() {
+  const p = townPlace()
+  if (_cardsFor !== p) {
+    _cards = buildAnchorCards(SunCalc, p.lat, p.lon, standardUtcOffsetHours(p.timezone))
+    _cardsFor = p
+  }
+  return _cards
+}
 
 // ─── Hex / RGB helpers (CPU-side; shader does its own) ────────────────
 function hexToRGB(hex) {
@@ -182,8 +188,9 @@ function temporalWeight(minuteWithinDay, overrideHour) {
 function buildBaseMosaic(date) {
   const doy = dayOfYearFromDate(date)
   const [anchorA, anchorB, t] = flankingAnchors(doy)
-  const cardA = ANCHOR_CARDS[anchorA]
-  const cardB = ANCHOR_CARDS[anchorB]
+  const cards = anchorCards()
+  const cardA = cards[anchorA]
+  const cardB = cards[anchorB]
   const mosaic = new Array(SKY_HOURS)
   for (let h = 0; h < SKY_HOURS; h++) {
     const a = cardA[h]

@@ -59,6 +59,11 @@ function initialViewMode() {
 
 const useCamera = create((set, get) => ({
   viewMode: initialViewMode(),   // 'hero' | 'browse' | 'planetarium'
+  // ⭐ THE SHOT THE TOWN IS DRAWN IN — 'hero' | 'browse' | 'street'. Written ONLY by
+  // src/components/TownBridge.jsx from <Town shot>; renderer pieces read this, never viewMode (the old
+  // player's camera state machine). A canvas with no <Town> (a sky embed) draws the movie shot.
+  // ▶ node checks/claims-the-town-reads-no-player-store.mjs
+  townShot: 'hero',
   // Seeded to match, so the first setMode() out of an embed's shot does not
   // record a transition from a mode the app was never in.
   previousMode: initialViewMode(),

@@ -14,107 +14,50 @@ Last verified: 2026-06-02 (forensic inventory pass §§1–6 — `scratch/ls-for
 
 ## 1. Runtime composition
 
-Mount tree as actually rendered today. Read top-down.
+⭐ **One assembly draws the town, in every app.** `src/components/Town.jsx` mounts the whole renderer; production
+(`Scene.jsx`), Preview and Stage each mount `<Town>` inside their own `<Canvas>`, and The Ward imports the same file.
+What varies by app arrives as a prop; what varies by town arrives from the slab and the town's instance (`lookId`).
+The camera is the app's, mounted beside `<Town>`. ▶ `node checks/claims-every-app-mounts-the-town.mjs` ·
+`node checks/claims-the-town-reads-no-player-store.mjs`. ⏳ Stage on Lafayette Square still draws through its old
+`MAP_REGISTRY` assembly until live building-palette retint lands (`docs/briefs/BRIEF-live-building-palette.md`); the
+first check reports it, red, until then. The prop list is Town.jsx's header.
 
 ```
-index.html
-└── main.jsx
-    └── App.jsx                            ← URL route switch, top-level modals, identity
-        │
-        ├── Splash                          (boot screen)
-        ├── SceneBoundary
-        │   └── Scene.jsx                   (R3F Canvas, post-FX, camera rig, time/sky tickers)
-        │       ├── FrameLimiter
-        │       ├── TimeTicker              (drives useTimeOfDay)
-        │       ├── SkyStateTicker          (drives useSkyState)
-        │       ├── WeatherPoller           → fetches open-meteo.com every N min
-        │       ├── CelestialBodies         (sun/moon/stars; live, no data fetch beyond bright_stars.json + planetarium/*)
-        │       ├── CloudDome               (cheap procedural sky-cloud system; the
-        │       │                             DEFAULT production cloud render; does NOT
-        │       │                             itself read meteorologist artifacts)
-        │       ├── Atmosphere              (volumetric raymarched clouds; consumer IS
-        │       │                             wired — reads /clouds/{almanac,presets,
-        │       │                             modulators}.json + scene.json.sky via
-        │       │                             useAtmosphereDirective + atmosphere-materials.
-        │       │                             ⚠️ GATED OFF BY DEFAULT (skyMode stopgap):
-        │       │                             prod ships CloudDome; Atmosphere only mounts
-        │       │                             under ?sky=volumetric. "Wired, not the
-        │       │                             default" — not "the live production clouds.")
-        │       ├── AtmosphereDirectiveDriver (per-frame: lerps useAtmosphere.rawDirective →
-        │       │                             tweenedDirective over 45s; the meteorologist
-        │       │                             store→scene-uniform bridge)
-        │       ├── Terrain                 ← src/data/terrain.{json,bin} (kit-baked
-        │       │                             pair via cartograph/bake-terrain.js;
-        │       │                             metadata static-imported, .bin fetched
-        │       │                             via Vite `?url` import + top-level
-        │       │                             await). Mesh `visible={false}` in
-        │       │                             both Cartograph and production —
-        │       │                             mount stays alive only so the
-        │       │                             `terrainExag` shader uniform keeps
-        │       │                             driving Y-displacement on ribbons +
-        │       │                             buildings + lamps.
-        │       ├── BakedGround lookId={INSTANCE.lookId}
-        │       │       ↑ fetches /baked/<lookId>/{ground.json,ground.bin,scene.json,ground.lightmap.png}
-        │       ├── LafayettePark
-        │       │       ↑ park_water.json + park_paths.json (live imports)
-        │       │       ↑ fetches /baked/<look>/scene.json (for bake-aware lift/offsets)
-        │       ├── UserDot                 (geolocation)
-        │       ├── CourierDots             ← supabase realtime
-        │       ├── LafayetteScene          (the building scene + neon + place state)
-        │       │   ├── ClickCatcher
-        │       │   ├── Foundations         ← buildings (lazy import of buildings.json)
-        │       │   ├── Building × N
-        │       │   │   ├── NeonBand        (per-building, gated by listing hours)
-        │       │   │   └── SelectionRing
-        │       │   ├── SceneLabel × N      ← src/lib/streetLabels.js (shared with Cartograph; reads ribbons.json)
-        │       │   ├── MapPin × N          (mobile-deferred)
-        │       │   └── LandmarkMarkers
-        │       ├── BakedLamps              ← /baked/<look>/lamps.json + scene.json
-        │       │                             lampGlow (production lamp consumer since
-        │       │                             L1.1, 2026-05-12; desktop direct, mobile
-        │       │                             via DeferredStreetLights → <BakedLamps/>).
-        │       │                             Shader glow DataTexture still reads live
-        │       │                             street_lamps.json (lampLightmap.js).
-        │       │                             [CORRECTED — was "StreetLights (live)";
-        │       │                             StreetLights.jsx no longer mounted by Scene.]
-        │       ├── GatewayArch             (procedural catenary; placement +
-        │       │                             transform + uplights + horizon disc
-        │       │                             authored, baked into scene.arch +
-        │       │                             scene.horizon. Shared consumer at
-        │       │                             src/components/GatewayArch.jsx —
-        │       │                             cartograph Stage + production +
-        │       │                             Preview all mount this same file
-        │       │                             (SC.7 consolidation, 2026-05-13).
-        │       │                             DesignerArch plan-view silhouette
-        │       │                             lives in src/cartograph/.)
-        │       ├── CameraRig
-        │       ├── PostProcessing          (shared consumer at src/components/
-        │       │                             PostProcessing.jsx. Operator-authored
-        │       │                             channels: bloom, ao, exposure, warmth,
-        │       │                             fill, mist, halo, grade, grain,
-        │       │                             shadow — all baked into scene.json.
-        │       │                             EffectComposer: N8AO + Bloom +
-        │       │                             AerialPerspective + FilmGrade +
-        │       │                             FilmGrain. Cartograph Stage + Preview
-        │       │                             mount the same file with override
-        │       │                             props.)
-        │       └── DeferredStreetLights    (mobile fallback)
-        │
-        ├── Controls / CompassRose / BrowseHeader / SidePanel / EventTicker
-        ├── Modals: PlaceCard / BulletinModal / ContactModal / CodeDeskModal
-        │           SmsInbox / ChatModal / InfoModal / AdminPrompt
-        ├── CourierDashboard / CourierOnboarding (Cary surface)
-        ├── AvatarEditor
-        └── URL-routed pages: CheckinPage / ClaimPage / LinkPage / PrivacyPage
-                              / CourierTermsPage / RestaurantTermsPage / CaryStandalone
-                              / PlaceOpener / BulletinOpener
+index.html → main.jsx → App.jsx              ← URL route switch, top-level modals, identity
+    ├── SceneBoundary
+    │   └── Scene.jsx                         the old player: <Canvas> sized by the quality profile
+    │       ├── SheetGround                   (embed sheet: the scene paints only the sheet's colour)
+    │       ├── Town lookId quality shot paused idle      ← src/components/Town.jsx
+    │       │   ├── TownBridge                the ONE writer of the renderer's internal state: the shot
+    │       │   │                             (useCamera.townShot), selection in/out, the town's place
+    │       │   │                             on the globe (lib/townPlace.js — sun, moon, season, sky)
+    │       │   ├── FrameLimiter · TimeTicker · SkyStateTicker · ShaderLinkGuard · Cascades (?csm=1)
+    │       │   ├── StageShadows · StageFog · LampGlowDriver · NeonDriver
+    │       │   ├── WeatherPoller · AtmosphereDirectiveDriver · WeatherEffects
+    │       │   ├── CelestialBodies · CloudDome (Atmosphere under ?sky=volumetric) · Terrain (hidden)
+    │       │   ├── ⟨drawn town⟩ BakedGround · SlabRevetment · LafayetteScene (neon, street labels,
+    │       │   │     park title) · SlabBuildings · CityModel · InstancedTrees · LafayettePark (its own
+    │       │   │     town only) · BakedLamps · GatewayArch · SetPiece · HorizonDisc · MountainBackdrop
+    │       │   ├── PostProcessing            (per-device passes from the quality profile)
+    │       │   └── {children}                the app's overlays — here UserDot, CourierDots,
+    │       │                                 LandmarkMarkers (pins, click-to-deselect, Escape)
+    │       └── CameraRig                     the player's camera: modes, transitions, idle → hero
+    ├── Controls / CompassRose / BrowseHeader / SidePanel / EventTicker
+    ├── Modals: PlaceCard / BulletinModal / ContactModal / CodeDeskModal / SmsInbox / ChatModal / …
+    └── URL-routed pages: CheckinPage / ClaimPage / LinkPage / PrivacyPage / … / PlaceOpener
 ```
 
-**Mobile staging** (`LafayetteScene` line ~1275): on `navigator.userAgent` match, mounts of SDF labels and map pins are staggered across 2-3.5s after `viewMode !== 'hero'`. Desktop mounts everything immediately.
+**The modules that own what used to be hard-wired in the apps.** `lib/qualityProfile.js` — the ONE place the device
+is asked about (antialiasing, log depth, pixel ratio, shadows, which pieces mount in which shot, building textures,
+lamp halo, post passes, label staggering); an app passes `deviceQuality()` or any profile. `lib/townPlace.js` — the
+town's place, moved by `<Town lookId>`. `components/SkyTickers.jsx` — the clock and weather tickers (sky-only
+canvases import them too). `components/LandmarkMarkers.jsx` — the old player's pins, an overlay, not the town.
+
+**Preview** mounts `<Town>` with its layer toggles as `layers`, its per-pass matrix as `postFx`, and its own
+overlays (a noon clock, the GPU monitor, BasicLights). **Stage** mounts `<Town>` with every live Look-panel channel
+in one `overrides` object (`useStageOverrides` in CartographApp.jsx) and mounts none in Designer.
 
 **Boundary-crossing imports** (LS runtime → cartograph store): `BakedGround`, `BakedLamps`, `InstancedTrees`, `LafayetteScene`, `LafayettePark`, `StreetLights` all import `useCartographStore` from `src/cartograph/stores/`. This is the seam where cartograph code reaches into production — visible as the 4.5MB `cartograph` chunk in the build output. Tree-shaking limits the cost but doesn't eliminate it; the store + its transitive deps survive.
-
-**Production does NOT mount** *(corrected 2026-06-30 — several prior entries were stale):* `StreetLights.jsx` (no longer imported by `Scene.jsx`; production lamps render via `BakedLamps`), `BakedBuildings` (deleted — production renders buildings via `SlabBuildings`), `StreetRibbons` (file no longer exists), `MapLayers` (cartograph-internal). *Note: `BakedLamps` **is** production (corrected from "Stage/Preview only"); `PlanetariumOverlay` **is** mounted in production — one level down via `CelestialBodies.jsx:962`, operator-gated + default-off (corrected from "not mounted / may be dead" — see RUNTIME-DELTA RD.3, `STREET-VIEW.md §3.2`).*
 
 ---
 

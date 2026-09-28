@@ -40,7 +40,7 @@ import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { bvToRGB } from '../lib/starColor'
-import { INSTANCE } from '../instance.js'
+import { townPlace, useTownPlace } from '../lib/townPlace.js'
 import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights.js'
 import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
@@ -50,8 +50,6 @@ import { resolveLookId } from '../lib/resolveLookId.js'
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
 // Production passes no `lookId`; Stage threads the operator's active Look.
 
-const LATITUDE = INSTANCE.geography.lat
-const LONGITUDE = INSTANCE.geography.lon
 
 // ⭐ LIGHT_RADIUS + celestialToPosition now live in `celestialLights.js` — the
 // pure module the sky rig and `checks/claims-the-key-light-is-a-real-body.mjs`
@@ -742,7 +740,7 @@ function MilkyWaySphere({ nightFactor, milkyWayChannel }) {
     const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0)
     const daysSinceJ2000 = (currentTime.getTime() - J2000) / 86400000
     const GMST = (280.46061837 + 360.98564736629 * daysSinceJ2000) % 360
-    const LST = ((GMST + LONGITUDE) % 360 + 360) % 360
+    const LST = ((GMST + townPlace().lon) % 360 + 360) % 360
     const lstRad = LST * (Math.PI / 180)
     if (groupRef.current) groupRef.current.children[0].rotation.y = -lstRad
 
@@ -756,7 +754,7 @@ function MilkyWaySphere({ nightFactor, milkyWayChannel }) {
 
   // Outer group tilts the celestial pole to its actual altitude (latitude
   // above the northern horizon). Inner group spins around the pole.
-  const latRad = LATITUDE * (Math.PI / 180)
+  const latRad = useTownPlace().lat * (Math.PI / 180)
   return (
     <group ref={groupRef} rotation-x={latRad - Math.PI / 2}>
       <group>
@@ -782,7 +780,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   useFrame(() => {
     if (materialRef.current) {
       const u = materialRef.current.uniforms
-      const planetariumActive = useCamera.getState().viewMode === 'planetarium'
+      const planetariumActive = useCamera.getState().townShot === 'street'
       const dimFactor = planetariumActive ? 0.4 : 1.0
       // 4-band colors — resolve the operator's authored sky-grid
       // envelope at the current TOD minute and write the band tuple.
@@ -855,8 +853,8 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         if (u.uMilkyWay.value > 0.001) {
           const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0)
           const d = (tod.currentTime.getTime() - J2000) / 86400000
-          const lst = (((280.46061837 + 360.98564736629 * d) % 360 + LONGITUDE) % 360 + 360) % 360 * Math.PI / 180
-          const lat = LATITUDE * Math.PI / 180, ra = 192.85948 * Math.PI / 180, dec = 27.12825 * Math.PI / 180
+          const lst = (((280.46061837 + 360.98564736629 * d) % 360 + townPlace().lon) % 360 + 360) % 360 * Math.PI / 180
+          const lat = townPlace().lat * Math.PI / 180, ra = 192.85948 * Math.PI / 180, dec = 27.12825 * Math.PI / 180
           const toDir = (raR, decR, out) => {
             const ha = lst - raR
             const sinAlt = Math.sin(decR) * Math.sin(lat) + Math.cos(decR) * Math.cos(lat) * Math.cos(ha)
@@ -1275,7 +1273,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   // and fade opacity with sun altitude
   useFrame((state) => {
     if (!starRef.current || !starMat) return
-    const planetariumActive = useCamera.getState().viewMode === 'planetarium'
+    const planetariumActive = useCamera.getState().townShot === 'street'
     const { astronomyAlpha } = useSkyState.getState()
     // Operator star-brightness knob (the `stars` channel, threaded into GradientSky
     // like constellations/skyGain) multiplies the physical astronomyAlpha. Authored,
@@ -1313,9 +1311,10 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     const J2000 = Date.UTC(2000, 0, 1, 12, 0, 0)
     const daysSinceJ2000 = (currentTime.getTime() - J2000) / 86400000
     const GMST = (280.46061837 + 360.98564736629 * daysSinceJ2000) % 360
-    const LST = ((GMST + LONGITUDE) % 360 + 360) % 360 // degrees
+    const place = townPlace()
+    const LST = ((GMST + place.lon) % 360 + 360) % 360 // degrees
     const lstRad = LST * (Math.PI / 180)
-    const latRad = LATITUDE * (Math.PI / 180)
+    const latRad = place.lat * (Math.PI / 180)
     const sinLat = Math.sin(latRad)
     const cosLat = Math.cos(latRad)
 
@@ -1371,7 +1370,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   // Constellations: the operator's toggle, per time of day, in Hero + Street — never Browse (Jacob, 2026-09-27).
   // It had been read by nothing: the overlay showed in Street at every hour whatever the toggle said. No
   // day/night gate of its own (2026-06-17: "all day long"); key it off by day if the Look wants that.
-  const viewMode = useCamera((s) => s.viewMode)
+  const shot = useCamera((s) => s.townShot)
   const [constellationsOn, setConstellationsOn] = useState(false)
   const constellationsOnRef = useRef(false)
   useFrame(() => {
@@ -1383,7 +1382,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
     ).value ?? 0) > 0.5
     if (on !== constellationsOnRef.current) { constellationsOnRef.current = on; setConstellationsOn(on) }
   })
-  const constellationsVisible = constellationsOn && (viewMode === 'planetarium' || viewMode === 'hero')
+  const constellationsVisible = constellationsOn && (shot === 'street' || shot === 'hero')
 
   return (
     <>
@@ -1457,9 +1456,11 @@ function CelestialBodies({
     hemiMulRef.current    = resolveGroupAtMinute(hemiChannel,    minute, hemiChannel.animated    ? slotMinutes : null, HEMI_FIELD_KEYS,    HEMI_FLAT_DEFAULTS).value    ?? 1
   })
 
+  // The town being drawn: a live switch moves the sun and the moon on the same render.
+  const place = useTownPlace()
   const lighting = useMemo(() => {
-    const sunPos = SunCalc.getPosition(currentTime, LATITUDE, LONGITUDE)
-    const moonPos = SunCalc.getMoonPosition(currentTime, LATITUDE, LONGITUDE)
+    const sunPos = SunCalc.getPosition(currentTime, place.lat, place.lon)
+    const moonPos = SunCalc.getMoonPosition(currentTime, place.lat, place.lon)
     const moonIllum = SunCalc.getMoonIllumination(currentTime)
 
     const sunAlt = sunPos.altitude
@@ -1591,7 +1592,7 @@ function CelestialBodies({
       _celestial: { sunDirection: _sunD.clone(), sunElevation: sunAlt, moonDirection: _moonD.clone(),
         moonPhase: moonIllum.phase, moonIllumination: moonIllum.fraction, moonAltitude: moonAlt,
         keyDirection: _keyD.clone(), keyColor: primary.color, nightFactor } }
-  }, [currentTime])
+  }, [currentTime, place])
 
   // Push celestial data to sky state store (after render, not during)
   useEffect(() => {
