@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 320,
+  "total": 321,
   "counts": {
     "safe": 175,
     "local-effect": 6,
-    "live": 139
+    "live": 140
   },
   "checks": [
     {
@@ -106,6 +106,19 @@
       "reasonClass": "unreadable",
       "why": [
         "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-hashed-town-loads-end-to-end.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "writeFileSync",
+        "deletes files",
+        "runs `npx` \u2014 reaches out",
+        "runs `/Applications/Google Chrome.app/Contents` \u2014 not a known-local command"
       ]
     },
     {
