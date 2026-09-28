@@ -1047,7 +1047,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           ⭐ `isLS` three hundred lines up is the same question asked of the STORE,
           which is the thing that actually changes. One file had two answers to
           "am I Lafayette Square" and the label picked the frozen one. */}
-      {!hide.parkTitle && isLS && <ParkTitleMesh town={townForLook(activeLookId)} y={2.6} />}
+      {!hide.parkTitle && isLS && <ParkTitleMesh town={townForLook(activeLookId, 'MapLayers')} y={2.6} />}
     </group>
   )
 }

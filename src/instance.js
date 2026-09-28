@@ -181,8 +181,10 @@ export const INSTANCE = resolveInstance()
 /** The set-piece a Look's town declares, or null — for panels that show its controls only where it exists. */
 export function setPieceOf(lookId) { return townForLook(lookId)?.setPiece ?? null }
 
-export function townForLook(lookId) {
-  if (!lookId || lookId === INSTANCE.lookId) return INSTANCE
+export function townForLook(lookId, where = 'a caller') {
+  // ⛔ No Look ⇒ no town. This used to answer the BOOT town for a null Look (Stage drew it under no Look).
+  if (!lookId) throw new Error(`[instance] ⛔ townForLook(${lookId}) from ${where} — no Look, no town; pass the Look being drawn`)
+  if (lookId === INSTANCE.lookId) return INSTANCE
   const map = mapForLook(lookId)
   const town = map && instanceForMap(map)
   return town ? { ...town, lookId, mapId: map } : null

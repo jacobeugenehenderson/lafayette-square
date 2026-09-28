@@ -193,7 +193,9 @@ function LooksMenu() {
   // (its seasonal/sponsor presets — "Spring", "Prom", "Schnuck's Sponsorship");
   // NEIGHBORHOOD switching lives in the Extent tool. So filter to the active
   // scene's looks — never list another neighborhood's looks here.
-  const sceneLooks = (looks || []).filter(l => l.scene === scene)
+  // ⭐ With NO town open (a cold Stage: no link, nothing stored), this menu is where a town is chosen: it lists every
+  // town's Look (and the kit default, which is edited with no town open) and opens itself. Never a default town.
+  const sceneLooks = scene ? (looks || []).filter(l => l.scene === scene) : [...(looks || []).filter(l => l.scene), ...(looks || []).filter(l => !l.scene)]
 
   // Custom dropdown — a <button> + absolute-positioned popup, NOT a native
   // <select>. The native control's macOS UA stylesheet renders taller than
@@ -225,7 +227,10 @@ function LooksMenu() {
   // Prefer the active Look when it IS this scene's; else this scene's own. Before
   // `looks` loads, fall back to the persisted id / scene — never another hood's name.
   const ownEntry = (activeEntry && activeEntry.scene === scene) ? activeEntry : sceneLooks[0]
-  const label = ownEntry?.name || (activeIsForeign ? scene : activeLookId) || '…'
+  const label = !scene && !activeLookId ? 'Choose a town' : ownEntry?.name || (activeIsForeign ? scene : activeLookId) || '…'
+  // No town open and the list loaded ⇒ the menu opens itself: choosing a town is the only thing to do.
+  const noTown = !scene && !activeLookId && (looks || []).length > 0
+  useEffect(() => { if (noTown) setOpen(true) }, [noTown])
 
   // Close on outside click + Escape.
   useEffect(() => {

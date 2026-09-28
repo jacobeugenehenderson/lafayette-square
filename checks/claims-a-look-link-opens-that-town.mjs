@@ -10,6 +10,8 @@
  * (nothing is saved). For every Look in the served index that has a scene: ?look=<id> settles on activeLookId <id>
  * and that Look's scene. And the two refusals: a ?look= naming no Look, and a ?look= whose scene disagrees with
  * ?scene=, each resolve NO town and log an error naming what was asked — never the default town.
+ * And a COLD Stage (no link, nothing stored) opens NO town: no Look, no scene, no town's data fetched, and the Look
+ * picker shows every town to choose from (Jacob's standing order: LS is never the fallback).
  *
  * Usage: node checks/claims-a-look-link-opens-that-town.mjs
  */
@@ -30,18 +32,22 @@ process.on('exit', cleanup)
 let port; for (let i = 0; i < 100 && !port; i++) { const f = join(profile, 'DevToolsActivePort'); if (existsSync(f)) port = readFileSync(f, 'utf8').split('\n')[0]; else await sleep(100) }
 const ws = new WebSocket((await (await fetch(`http://127.0.0.1:${port}/json/version`)).json()).webSocketDebuggerUrl)
 await new Promise((r, j) => { ws.onopen = r; ws.onerror = j })
-let seq = 0; const pending = new Map(); const errs = new Map()
+let seq = 0; const pending = new Map(); const errs = new Map(); const townFetches = new Map(); const thrown = new Map()
 const cdp = (method, params = {}, sid) => new Promise((res, rej) => { const id = ++seq; pending.set(id, m => m.error ? rej(new Error(m.error.message)) : res(m.result)); ws.send(JSON.stringify({ id, method, params, ...(sid ? { sessionId: sid } : {}) })) })
 ws.onmessage = (e) => { const m = JSON.parse(e.data)
   if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); return }
-  if (m.method === 'Fetch.requestPaused') { const r = m.params.request; cdp(r.method === 'GET' ? 'Fetch.continueRequest' : 'Fetch.failRequest', r.method === 'GET' ? { requestId: m.params.requestId } : { requestId: m.params.requestId, errorReason: 'BlockedByClient' }, m.sessionId).catch(() => {}) }
-  if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errs.get(m.sessionId)?.push(m.params.args.map(a => a.value ?? a.description ?? '').join(' ')) }
+  if (m.method === 'Fetch.requestPaused') { const r = m.params.request
+    const t = r.url.match(/\/api\/cartograph\/([a-z0-9-]+)\/(skeleton|centerlines|overlay|markers|measurements|ribbons|geography|boundary)\b/)
+    if (t) townFetches.get(m.sessionId)?.push(t[1])
+    cdp(r.method === 'GET' ? 'Fetch.continueRequest' : 'Fetch.failRequest', r.method === 'GET' ? { requestId: m.params.requestId } : { requestId: m.params.requestId, errorReason: 'BlockedByClient' }, m.sessionId).catch(() => {}) }
+  if (m.method === 'Runtime.consoleAPICalled' && m.params.type === 'error') errs.get(m.sessionId)?.push(m.params.args.map(a => a.value ?? a.description ?? '').join(' '))
+  if (m.method === 'Runtime.exceptionThrown') thrown.get(m.sessionId)?.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text) }
 
 // Open a URL in a fresh tab (fresh storage: a throwaway profile, each tab's storage cleared first) and read the store.
-async function open(query) {
+async function open(query, pick = null) {
   const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' })
   const { sessionId: S } = await cdp('Target.attachToTarget', { targetId, flatten: true })
-  errs.set(S, [])
+  errs.set(S, []); townFetches.set(S, []); thrown.set(S, [])
   await cdp('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] }, S)
   await cdp('Runtime.enable', {}, S); await cdp('Page.enable', {}, S)
   await cdp('Storage.clearDataForOrigin', { origin: BASE, storageTypes: 'all' }, S)
@@ -53,9 +59,18 @@ async function open(query) {
     st = r?.result?.value
     if (st?.looks) { await sleep(3000); st = (await cdp('Runtime.evaluate', { awaitPromise: true, returnByValue: true, expression: `(async () => { const u = performance.getEntriesByType('resource').map(e => e.name).filter(n => n.includes('/stores/useCartographStore.js')).pop(); const s = (await import(u)).default.getState(); return { activeLookId: s.activeLookId, scene: s.scene, looks: s._looksHydrated } })()` }, S)).result.value; break }
   }
-  const e = errs.get(S)
+  // Optionally choose a town from the picker, then read the store again.
+  let picked = null
+  if (pick) {
+    await cdp('Runtime.evaluate', { expression: `[...document.querySelectorAll('.carto-looks-option')].find(b => b.textContent.includes(${JSON.stringify(pick)}))?.click()` }, S)
+    await sleep(12000)
+    picked = (await cdp('Runtime.evaluate', { awaitPromise: true, returnByValue: true, expression: `(async () => { const u = performance.getEntriesByType('resource').map(e => e.name).filter(n => n.includes('/stores/useCartographStore.js')).pop(); const s = (await import(u)).default.getState(); return { activeLookId: s.activeLookId, scene: s.scene } })()` }, S)).result.value
+  }
+  const exceptions = thrown.get(S)
+  const e = errs.get(S), fetched = [...new Set(townFetches.get(S))]
+  const picker = await cdp('Runtime.evaluate', { returnByValue: true, expression: `[...document.querySelectorAll('.carto-looks-option')].map(b => b.textContent.trim())` }, S).then(r => r.result.value).catch(() => null)
   await cdp('Target.closeTarget', { targetId })
-  return { st, errors: e }
+  return { st, errors: e, fetched, picker, picked, exceptions }
 }
 
 const fails = []
@@ -75,6 +90,25 @@ for (const [q, names] of refusals) {
   const ok = st?.activeLookId == null && loud
   if (!ok) fails.push(`?${q} settled on look "${st?.activeLookId}" scene "${st?.scene}"${loud ? '' : ' with no error naming ' + names.join(' + ')} — it must resolve no town and say why`)
   console.log(`${ok ? '✅' : '⛔'} ?${q} → look ${st?.activeLookId} · ${loud ? 'refused loudly' : 'NO error naming it'}`)
+}
+// The cold boot: no link, nothing stored.
+{
+  const { st, fetched, picker } = await open('')
+  const names = towns.map(t => t.name || t.id)
+  const shown = (picker || []).filter(p => names.some(n => p.includes(n)))
+  const ok = st?.activeLookId == null && st?.scene == null && !fetched.length && shown.length === towns.length
+  if (!ok) fails.push(`a cold Stage (no link, nothing stored) opened look "${st?.activeLookId}" scene "${st?.scene}", fetched ${fetched.length ? fetched.join(', ') + "'s data" : 'no town'}, picker shows ${shown.length} of ${towns.length} towns — it must open none and offer them all`)
+  console.log(`${ok ? '✅' : '⛔'} cold Stage → look ${st?.activeLookId} · scene ${st?.scene} · fetched [${fetched.join(', ')}] · picker ${shown.length}/${towns.length}`)
+  // ...and choosing a town from that picker opens it.
+  const t = towns.find(x => x.scene !== 'lafayette-square') || towns[0]
+  const { picked, errors, exceptions } = await open('', t.name || t.id)
+  const ok2 = picked?.activeLookId === t.id && picked?.scene === t.scene
+  if (!ok2) fails.push(`choosing "${t.name || t.id}" from the cold picker opened look "${picked?.activeLookId}" scene "${picked?.scene}"`)
+  // A THROWN exception is a crash (the blank page this check found twice). Console errors are the app speaking —
+  // listed, not failed: a town's own data warnings are not this check's subject.
+  if (exceptions.length) fails.push(`the cold Stage threw ${exceptions.length} exception(s): ${exceptions.slice(0, 2).map(x => x.slice(0, 140)).join(' | ')}`)
+  console.log(`${ok2 && !exceptions.length ? '✅' : '⛔'} cold Stage, choose ${t.id} → look ${picked?.activeLookId} · scene ${picked?.scene} · ${exceptions.length} exception(s)`)
+  for (const x of errors) console.log(`   ⓘ console error: ${x.slice(0, 160)}`)
 }
 ws.close(); cleanup()
 if (fails.length) { console.log(`\n⛔ FAIL — ${fails.length}\n   ${fails.join('\n   ')}`); process.exit(1) }

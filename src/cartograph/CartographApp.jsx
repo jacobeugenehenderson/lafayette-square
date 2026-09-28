@@ -911,9 +911,8 @@ export default function CartographApp() {
   // declutters via per-layer visibility toggles in the Designer Panel.
   const sceneCfg = useMemo(() => sceneConfig(scene, sceneBoundary), [scene, sceneBoundary])
   // The active Look's installation — <Town town>, never the page's boot one.
-  // ⛔ No Look yet ⇒ no town. townForLook(null) answers the BOOT town, and Stage drew that town under a null Look
-  // (a blank page on a fresh profile: placeTown / <Town> refuse a null lookId).
-  const activeTown = useMemo(() => (activeLookId ? townForLook(activeLookId) : null), [activeLookId])
+  // ⛔ No Look yet ⇒ no town (townForLook refuses a null Look).
+  const activeTown = useMemo(() => (activeLookId ? townForLook(activeLookId, 'Stage') : null), [activeLookId])
   // Stage places the town it is on, like every app's entry: in Designer no <Town> is mounted, and the sun, the
   // moon, the season and Stage's own panels still follow the active town. (Terrain is reloaded above.)
   useLayoutEffect(() => { if (activeTown) placeTown(activeTown, activeLookId) }, [activeTown, activeLookId])

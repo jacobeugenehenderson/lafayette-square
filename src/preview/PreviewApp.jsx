@@ -1203,7 +1203,7 @@ const QUALITY = deviceQuality()
 
 function CanvasContents({ layers, shot, setShot }) {
   const lookId = resolvePreviewLookId()
-  const town = useMemo(() => townForLook(lookId), [lookId])
+  const town = useMemo(() => townForLook(lookId, 'Preview'), [lookId])
   // Preview takes no clicks (interactive={false}); it draws the listings the page loaded, as production does.
   const listings = useListings((s) => s.listings)
   // ?dofDebug=1 paints the DoF CoC zones (green = sharp, red = full blur) — the

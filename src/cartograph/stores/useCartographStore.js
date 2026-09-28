@@ -556,8 +556,9 @@ function serializeDesign(s) {
 // installation ('lafayette-square'). A new installation (hipointe-demun,
 // provincetown, …) is never added here; it fetches. Nothing enumerates the set
 // of installations in code.
-const DEFAULT_INSTALLATION = 'lafayette-square'
-const BUNDLED_MAPS = new Set([DEFAULT_INSTALLATION])
+// The one town whose ribbons ship as a static import (src/data/ribbons.json) — named, not a default: Stage opens no
+// town until one is chosen (Jacob's standing order, 2026-09-28: Lafayette Square is never the fallback).
+const BUNDLED_MAPS = new Set(['lafayette-square'])
 // A scene id is any lowercase slug; existence is validated by the server (a
 // missing installation just serves empty). No hardcoded installation list.
 const isValidMapId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
@@ -1734,16 +1735,12 @@ const useCartographStore = create((set, get) => ({
       const looks = Array.isArray(idx.looks) ? idx.looks : []
       const defaultLookId = idx.default || null
       let activeLookId = get().activeLookId
-      if (!looks.some(l => l.id === activeLookId)) {
-        // ⛔ Was `idx.default || DEFAULT_LOOK_ID` — the served index failing to
-        // name a default resolved to Lafayette Square. If the index cannot say
-        // what the 0-state is, that is a broken install; say so and leave the
-        // Look unresolved rather than opening someone else's town.
-        if (!defaultLookId) console.error('[looks] index.json names no `default` — no 0-state Look to fall back to')
-        activeLookId = defaultLookId
-        if (activeLookId) {
-          try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ }
-        }
+      if (activeLookId && !looks.some(l => l.id === activeLookId)) {
+        // ⛔ A stored Look the index no longer has resolves NOTHING — it used to fall to the index default, and with
+        // the scene booted to the default installation that opened Lafayette Square. The picker offers the towns.
+        console.error(`[looks] the stored Look "${activeLookId}" is not in the index — no town is opened`)
+        activeLookId = null
+        try { localStorage.removeItem(ACTIVE_LOOK_KEY) } catch { /* ignore */ }
       }
       // The store inits with bakeStale=true (no prior session knowledge).
       // If the looks index reports a non-null bakedAt for the active Look,
@@ -2089,17 +2086,17 @@ const useCartographStore = create((set, get) => ({
   // to 'lafayette-square' on read for backward compat.
   scene: (() => {
     // ?scene=<id> wins (open any installation directly), then the persisted
-    // choice, else the default installation.
+    // choice, else NO town — the Look picker offers them all (never a default town).
     try {
       const urlScene = new URLSearchParams(window.location.search).get('scene')
       if (isValidMapId(urlScene)) return urlScene
     } catch { /* ignore */ }
     try {
       const saved = localStorage.getItem('cartograph-scene')
-      if (saved === 'neighborhood') return DEFAULT_INSTALLATION
+      if (saved === 'neighborhood') return 'lafayette-square'   // the legacy stored name of that one town
       if (isValidMapId(saved)) return saved
     } catch { /* ignore */ }
-    return DEFAULT_INSTALLATION
+    return null
   })(),
   // Active installation's data, loaded BY ID (null until fetched). The bundled
   // fast-path scene (the default) leaves sceneRibbons null and reads its
@@ -2249,6 +2246,7 @@ const useCartographStore = create((set, get) => ({
   _loadMarkers: async () => {
     try {
       const scene = get().scene
+      if (!isValidMapId(scene)) return   // no town open
       const data = await fetchMarkers(scene)
       if (get().scene !== scene) return   // switched mid-fetch — never land one town's strokes in another
       set({ markerStrokes: Array.isArray(data) ? data : [] })
@@ -2312,6 +2310,8 @@ const useCartographStore = create((set, get) => ({
     // hood's authoring lands on another's slab. Dedupe only ever collapses callers
     // that want the SAME scene.
     const scene = get().scene
+    // No town open: load the Looks index (the picker's list) and nothing else — no town's data is fetched.
+    if (!isValidMapId(scene)) { await get()._loadLooks(); return }
     if (_clInFlight && _clInFlight.scene === scene) return _clInFlight.promise
     const promise = (async () => {
       try { return await get()._loadCenterlinesImpl(opts) } finally {
@@ -2929,6 +2929,7 @@ const useCartographStore = create((set, get) => ({
   _loadMeasurements: async () => {
     try {
       const scene = get().scene
+      if (!isValidMapId(scene)) return   // no town open
       const data = await fetchMeasurements(scene)
       if (get().scene !== scene) return   // switched mid-fetch — never land one town's measurements in another
       const ms = ((data && data.measurements) || []).map(m => {
