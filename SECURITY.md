@@ -498,6 +498,9 @@ copy (`public/codedesk/qr_sync_pipeline.js`, `&admin=…`) send the operator's a
 parameter, so it lands in every server, proxy and browser log that records URLs. Found by Tamp (CodeDesk brief).
 **Fix:** send it in a POST body (or a header) and never in a URL; the Apps Script reads it from there. The Ward's
 admin surface (step 5) must not reproduce the pattern. The CodeDesk copy dies with the kit's `public/codedesk/`.
+**Worse, same class (Quire, 2026-09-28):** `admin-auth` is GET-only and takes the operator's PASSPHRASE as `?p=`;
+`doPost` has no `admin-auth`. The fix adds a POST `admin-auth` and reads `admin_token` from POST bodies everywhere.
+Until it deploys, the Ward has no operator sign-in.
 
 ### F-21 · MEDIUM (integrity) · A Guardian can set their own place's rating  *(new, 2026-09-28)*
 `apps-script/Code.js` `postUpdateListing`'s `EDITABLE` includes `rating` and `review_count`, so a full Guardian can
