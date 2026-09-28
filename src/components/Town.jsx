@@ -23,7 +23,8 @@
  *   idle             the embedding page has scrolled us mostly out of view: draw a third of the frames
  *   selectedId       the selected building, when the app owns selection (else the leaves' clicks do)
  *   onSelectBuilding (id | null) => void — a click on a building
- *   litIds           Set of building ids: only these carry neon (a chosen category, a search)
+ *   litIds           Set of building ids — a chosen category, a search: their ROOFS take the town's lit
+ *                    tint day and night (SlabBuildings), and only they carry neon
  *   interactive      buildings take the pointer (default true)
  *   bakeLastMs       cache-bust token (default: the slab's bakedAt)
  *   layers           visibility, default all on: ground buildings trees park lamps setPieces neon
@@ -83,7 +84,7 @@ export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
   'lantern', 'lampsOn', 'canopy', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
-  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus',
+  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint',
 ]
 // PostProcessing's view vocabulary (half-res AO off the movie shot, the street-level bloom bump).
 const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
@@ -239,7 +240,8 @@ export default function Town({
         </R3FErrorBoundary>
         <group visible={on('buildings')}>
           <R3FErrorBoundary name="SlabBuildings"><SlabBuildings key={`slab-${bake || 0}`} lookId={lookId} interactive={interactive}
-            materialPhysicsOverride={o.materialPhysics} paletteOverride={o.buildingPalette} /></R3FErrorBoundary>
+            materialPhysicsOverride={o.materialPhysics} paletteOverride={o.buildingPalette}
+            litIds={litIds} litTintOverride={o.litTint} /></R3FErrorBoundary>
           <R3FErrorBoundary name="CityModel"><CityModel key={`city-${bake || 0}`} lookId={lookId} interactive={interactive} /></R3FErrorBoundary>
         </group>
         <group visible={on('trees')}>

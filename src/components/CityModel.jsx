@@ -63,6 +63,7 @@ import { useQuality } from '../lib/qualityProfile.js'
 import { lookOf } from '../lib/lookOf.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
+import { litUniforms } from './SlabBuildings'
 import useCityModelActive from '../hooks/useCityModelActive'
 
 const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
@@ -276,6 +277,7 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
       shader.uniforms.uWallNight = { value: wallNight }
       shader.uniforms.uRoofColor = { value: roof }
       shader.uniforms.uDarkFactor = { value: 0 }
+      Object.assign(shader.uniforms, litUniforms)
       shader.uniforms.uSelectedId = { value: -1 }
       shader.uniforms.uHoveredId = { value: -1 }
       shader.uniforms.uCamPos = { value: new THREE.Vector3() }
@@ -318,6 +320,11 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
            uniform float uDarkFactor;
            uniform float uSelectedId;
            uniform float uHoveredId;
+           uniform sampler2D uLitTex;
+           uniform vec2 uLitTexSize;
+           uniform float uLitOn;
+           uniform vec3 uLitColor;
+           uniform float uLitStrength;
            uniform vec3 uCamPos;
            uniform float uDissolveDist;
            uniform float uDissolveBand;
@@ -360,7 +367,16 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
            vec2 ruv = vBPos.xz * 0.2 / uTexScale;
            vec3 rts = texture2D(uRoofTex, ruv).rgb;
            cmRoof = mix(cmRoof, cmOverlay(cmRoof, rts), uTexStrength);` : ''}
-           diffuseColor.rgb *= mix(cmWall, cmRoof, step(0.5, vRoof));`)
+           diffuseColor.rgb *= mix(cmWall, cmRoof, step(0.5, vRoof));
+           // The lit set and the selection on the ROOF — the same shared uniforms and mix as SlabBuildings
+           // (litUniforms), keyed by the same building numbers, so a tinted roof reads the same on either geometry.
+           float litT = 0.0;
+           if (uLitOn > 0.5) {
+             vec2 luv = vec2((mod(vBId, uLitTexSize.x) + 0.5) / uLitTexSize.x, (floor(vBId / uLitTexSize.x) + 0.5) / uLitTexSize.y);
+             litT = texture2D(uLitTex, luv).r;
+           }
+           float selRoof = step(abs(vBId - uSelectedId), 0.5);
+           diffuseColor.rgb = mix(diffuseColor.rgb, uLitColor, step(0.5, vRoof) * clamp(max(litT * uLitStrength, selRoof * min(1.0, uLitStrength * 1.8)), 0.0, 1.0));`)
         // Selection / hover in-shader — one shared material can't set per-building
         // emissive. Same strengths as SlabBuildings, so a selected building reads
         // identically whichever geometry is drawing it.

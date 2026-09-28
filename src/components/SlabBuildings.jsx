@@ -73,6 +73,31 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// ── THE LIT SET, ON THE ROOFS (Warden → Jacob, 2026-09-28). An app shows a chosen category or a search by
+// passing <Town litIds>; neon alone could not show it, because neon draws only for places OPEN now — at 10 a.m.
+// or after hours a chosen category was invisible. So a lit building's ROOF mixes toward the town's lit tint,
+// day and night, and the selected building gets the same mix, stronger. Neon still adds on top when open.
+// ⭐ The tint is a Look channel (`scene.litTint` = { color, strength }), authored per town; absent, the kit's
+// neutral default below, which is no town's. One set of uniforms shared by every roof material, so a change
+// of lit set or tint re-uploads a small texture and never recompiles a shader.
+export const LIT_TINT_DEFAULT = { color: '#f2c14e', strength: 0.45 }
+export const litUniforms = {
+  uLitTex: { value: null },
+  uLitTexSize: { value: new THREE.Vector2(1, 1) },
+  uLitOn: { value: 0 },
+  uLitColor: { value: new THREE.Color(LIT_TINT_DEFAULT.color) },
+  uLitStrength: { value: LIT_TINT_DEFAULT.strength },
+}
+function litTexture(byNum, litIds) {
+  const n = Math.max(1, byNum.length)
+  const w = Math.min(n, 2048), h = Math.ceil(n / w)
+  const data = new Uint8Array(w * h)
+  if (litIds) for (let i = 0; i < byNum.length; i++) if (litIds.has(byNum[i].id)) data[i] = 255
+  const t = new THREE.DataTexture(data, w, h, THREE.RedFormat, THREE.UnsignedByteType)
+  t.needsUpdate = true
+  return t
+}
+
 // Shared texture cache (heavy, shared across material groups + remounts).
 const _texCache = new Map()
 function loadTexture(id, textured) {
@@ -139,13 +164,30 @@ function useLivePaletteNotice(paletteOverride, bakedScene) {
   }, [paletteOverride, bakedScene])
 }
 
-export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride, paletteOverride } = {}) {
+// `litIds` (Set of building ids, <Town litIds>) tints those roofs; `litTintOverride` is Stage's live channel.
+export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride, paletteOverride, litIds, litTintOverride } = {}) {
   const LOOK_ID = lookOf(lookId, 'SlabBuildings')
   const [data, setData] = useState(null)   // { manifest, bin }
   const [bakedScene, setScene] = useState(null)
   const scene = useMemo(() => (materialPhysicsOverride && bakedScene
     ? { ...bakedScene, materialPhysics: materialPhysicsOverride } : bakedScene), [bakedScene, materialPhysicsOverride])
   useLivePaletteNotice(paletteOverride, bakedScene)
+  // The lit set → the shared roof uniforms. Absent litIds: off (the selection tint still reads uSelectedId).
+  const litIndex = useSlabBuildingIndex((s) => s.index)
+  useEffect(() => {
+    if (!litIndex || litIndex.look !== LOOK_ID) return
+    const prev = litUniforms.uLitTex.value
+    const t = litTexture(litIndex.byNum, litIds)
+    litUniforms.uLitTex.value = t
+    litUniforms.uLitTexSize.value.set(t.image.width, t.image.height)
+    litUniforms.uLitOn.value = litIds ? 1 : 0
+    if (prev) prev.dispose()
+  }, [litIndex, litIds, LOOK_ID])
+  const tint = litTintOverride ?? bakedScene?.litTint ?? LIT_TINT_DEFAULT
+  useEffect(() => {
+    litUniforms.uLitColor.value.set(tint.color ?? LIT_TINT_DEFAULT.color)
+    litUniforms.uLitStrength.value = Number.isFinite(tint.strength) ? tint.strength : LIT_TINT_DEFAULT.strength
+  }, [tint.color, tint.strength])
   // The city model covers only the buildings OSM also mapped, so we keep DRAWING
   // and keep the geometry mounted — suppression is PER BUILDING (aCovered below),
   // not wholesale. Hiding everything left ~46% of Łódź as bare ground.
@@ -479,6 +521,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
                + '  reflectedLight.indirectDiffuse *= occ;\n'
                + '  reflectedLight.indirectSpecular *= occ; }')
       shader.uniforms.uDarkFactor = { value: 0 }
+      if (isRoof) Object.assign(shader.uniforms, litUniforms)
       shader.uniforms.uSelectedId = { value: -1 }
       shader.uniforms.uHoveredId = { value: -1 }
       shader.uniforms.uCamPos = { value: new THREE.Vector3() }
@@ -524,6 +567,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
         '#include <common>',
         `#include <common>
          uniform float uDarkFactor;
+         ${isRoof ? 'uniform sampler2D uLitTex;\n uniform vec2 uLitTexSize;\n uniform float uLitOn;\n uniform vec3 uLitColor;\n uniform float uLitStrength;' : ''}
          uniform float uSelectedId;
          uniform float uHoveredId;
          varying float vCovered;
@@ -587,7 +631,15 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
              diffuseColor.rgb = mix(${tint}, ov, uTexStrength) * bRoofNight;`
           : `diffuseColor.rgb = ${tint} * bRoofNight;`
         body = `float bRoofNight = 1.0 - uDarkFactor * 0.75;
-                ${sample}`
+                ${sample}
+                // The lit set and the selection, on the roof (see litUniforms): a mix toward the tint.
+                float litT = 0.0;
+                if (uLitOn > 0.5) {
+                  vec2 luv = vec2((mod(vBId, uLitTexSize.x) + 0.5) / uLitTexSize.x, (floor(vBId / uLitTexSize.x) + 0.5) / uLitTexSize.y);
+                  litT = texture2D(uLitTex, luv).r;
+                }
+                float selRoof = step(abs(vBId - uSelectedId), 0.5);
+                diffuseColor.rgb = mix(diffuseColor.rgb, uLitColor, clamp(max(litT * uLitStrength, selRoof * min(1.0, uLitStrength * 1.8)), 0.0, 1.0));`
       }
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <color_fragment>',
