@@ -29,6 +29,7 @@
 import SunCalc from 'suncalc'
 import { inflateSync } from 'node:zlib'
 import { launch, sleep } from './headless.mjs'
+import { luminance, contrastOfLuminances } from '../../src/lib/colourMath.js'
 
 const IDLE_MS = 500
 const SETTLE_TIMEOUT_MS = 60000
@@ -154,9 +155,8 @@ function readTargets(targets) {
 }
 
 // ── contrast off the screenshot ─────────────────────────────────────────────────────────────────────────────
-const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }
-const lum = (d, i) => 0.2126 * lin(d[i]) + 0.7152 * lin(d[i + 1]) + 0.0722 * lin(d[i + 2])
-const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+const lum = (d, i) => luminance([d[i], d[i + 1], d[i + 2]])
+const ratio = contrastOfLuminances
 const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1] }
 const r3 = (x) => Math.round(x * 1000) / 1000
 

@@ -115,6 +115,12 @@ export { deviceQuality } from '../lib/qualityProfile.js'
 export { placeTown } from './TownPlace.jsx'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
 export { townCanvasProps } from '../lib/qualityProfile.js'
+// An emoji as this device draws it, and its inked pixels — one home for the method (src/lib/glyphInk.js); the Ward's
+// vignette measurement and glyph fitting read it here.
+export { glyphInk, EMOJI_FONT, COLOUR_ALPHA } from '../lib/glyphInk.js'
+// The player's chrome: its grounds, the colours that carry meaning, the contrast floors (src/tokens/playerChrome.js).
+// The Ward's tokens.css must equal these; its check reads them here.
+export { GROUNDS, MEANING, CONTRAST } from '../tokens/playerChrome.js'
 
 const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt
