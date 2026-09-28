@@ -1,7 +1,13 @@
 {
   "layerVis": {
     "lu-greenhouse": true,
-    "lamp": true
+    "lamp": true,
+    "stripe": false,
+    "edgeline": false,
+    "bikelane": false,
+    "oneway": false,
+    "parking_lot": false,
+    "garden": true
   },
   "layerColors": {},
   "layerStrokes": {},
@@ -86,63 +92,49 @@
   "heroKeyframes": [
     {
       "position": [
-        -1157,
-        175,
-        1914
+        -540,
+        65,
+        1452
       ],
       "target": [
-        0,
-        40,
-        0
+        -206,
+        15,
+        503
       ],
       "fov": 22,
       "t": 0
     },
     {
       "position": [
-        -256,
-        69,
-        861
+        385,
+        65,
+        541
       ],
       "target": [
-        -77,
-        3,
-        13
+        -6,
+        4,
+        117
       ],
       "fov": 22,
-      "t": 0.459979
+      "t": 0.498256
     },
     {
       "position": [
-        499,
-        136,
-        -152
+        1658,
+        181,
+        -1054
       ],
       "target": [
-        -1256,
-        -52,
-        -106
-      ],
-      "fov": 22,
-      "t": 0.692494
-    },
-    {
-      "position": [
-        1351,
-        330,
-        -1764
-      ],
-      "target": [
-        0,
-        40,
-        0
+        283,
+        11,
+        -259
       ],
       "fov": 22,
       "t": 1
     }
   ],
   "heroMotion": {
-    "length": 785,
+    "length": 600,
     "mode": "bounce"
   },
   "shots": {
@@ -184,7 +176,13 @@
       "overrides": null
     }
   },
-  "openSections": {},
+  "shotLooks": {},
+  "openSections": {
+    "Streets": false,
+    "Blocks": false,
+    "Paths": false,
+    "Land Cover": false
+  },
   "trees": [
     {
       "species": "locust_black",
