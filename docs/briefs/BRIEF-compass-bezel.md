@@ -29,7 +29,8 @@ Everything it needs is already published:
   true north, and the dot shows which way they face. ⭐ **It rotates about the TOWN's centre, like a compass
   card — never about the dot, and it never follows or recentres on the person** (Jacob, 2026-09-28: "it
   should center in its center. it just rotates like a compass"). The dot moves across the town; the town
-  only turns. It moves because the *person* moved — "the scene never
+  only turns. **Pan and zoom stay the person's, in every mode** (Jacob: "the user can still drag the map
+  horizontally and zoom") — the heading drives ROTATION only, never position or scale. It moves because the *person* moved — "the scene never
   takes you anywhere" holds.
 - **A control, always:** "North up" / "Face my direction" is a named switch whenever it applies, so a
   person inside can hold the map still. iOS asks permission for the heading on a tap; until granted, the
