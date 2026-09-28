@@ -51,6 +51,19 @@ Confirm each claim above against the code and say what you found. Then:
    contract exists, the Studio offers "design this card" by handing CodeDesk one of `PRINTABLE`'s
    addresses — the Ward stays the only authority on what may be printed.
 
+## 2b. Rulings and state (2026-09-28)
+- **Contract and release: built** in `dev.nosync/codedesk` (`863022e`) — `codedesk-host.js`, README § "Hosts" and
+  § "Releasing", `checks/host-contract.mjs`, `publish.sh`. ⏳ **Not run:** publishing to the asset host and pinning the
+  portfolio are Jacob's go.
+- **Storage: stateless (v1).** The host gets the PNG and the design JSON back and keeps them if it wants. CodeDesk
+  stores nothing; the kit copy's LSQ Apps Script (`saveDesign`/`getDesign`) leaves CodeDesk's path.
+- **The kit copy retires at cutover** with the frozen old player that mounts it (`CodeDeskModal.jsx`) — not before.
+  ▶ `node checks/claims-no-host-carries-a-codedesk-copy.mjs` is red until then, saying so.
+- **Findings.** The kit copy's `claim-secret` call puts an admin token in a URL query string (SECURITY F-20). The
+  standalone's URL `buildText()` falls back to `https://jacobhenderson.studio` when the field is empty — a card
+  encoding an address nobody gave it; host mode never reaches it (the host's address is returned first), but the
+  standalone's own use still can.
+
 ## 3. Checks
 - No host contains a CodeDesk copy (the kit's `public/codedesk/` gone; the Ward imports none).
 - CodeDesk never reads `location.origin` to build a card address (grep the source).
