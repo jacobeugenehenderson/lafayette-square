@@ -28,7 +28,9 @@
  *   interactive      buildings take the pointer (default true)
  *   bakeLastMs       cache-bust token (default: the slab's bakedAt)
  *   layers           visibility, default all on: ground buildings trees park lamps setPieces neon
- *                    labels sky clouds fog shadows post
+ *                    labels compass sky clouds fog shadows post
+ *   heading          degrees TRUE the Street camera faces, or null — turns the compass dial (no heading, no dial)
+ *   compassDial      where Street's compass dial sits — the app's layout: { corner, px, inset } (CompassBezel)
  *   postFx           Preview's per-pass inspection matrix ({ toggles })
  *   overrides        Stage's live authoring channels (see OVERRIDE_KEYS) — an operator drag shows
  *                    without a bake
@@ -72,12 +74,13 @@ import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import SetPiece from './SetPiece.jsx'
 import HorizonDisc from './HorizonDisc.jsx'
+import CompassBezel from './CompassBezel.jsx'
 import MountainBackdrop from './MountainBackdrop'
 
 // The props contract comes through the one entry: an app asks this for its quality profile.
 export { deviceQuality } from '../lib/qualityProfile.js'
 
-const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post']
+const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'compass', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt
 // override would otherwise do nothing, silently, while the operator drags a slider.
 export const OVERRIDE_KEYS = [
@@ -173,7 +176,7 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId, onSelectBuilding, litIds, liveIds,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, children,
+  holdScrubbedTime = false, heading = null, compassDial, children,
 }) {
   if (!lookId) throw new Error('[Town] ⛔ needs lookId — the Look to draw')
   if (!quality?.id) throw new Error('[Town] ⛔ needs quality — a profile from src/lib/qualityProfile.js')
@@ -258,6 +261,8 @@ export default function Town({
           <R3FErrorBoundary name="SetPiece"><SetPiece town={town} lookId={lookId} lightOverride={o.setPieceLight} /></R3FErrorBoundary>
         </group>
         {heavy && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
+        {/* The town's edge as a compass: ticks at the rim in plan, a dial in Street, nothing in the movie. */}
+        {on('compass') && <R3FErrorBoundary name="CompassBezel"><CompassBezel lookId={lookId} bakeLastMs={bake} shot={shot} heading={heading} dial={compassDial} /></R3FErrorBoundary>}
         {/* A mesh behind everything, at its true geo spot; nothing unless the Look ships a landscape. */}
         <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop lookId={lookId} bakeLastMs={bake} landscapeOverride={o.landscape} /></R3FErrorBoundary>
       </Suspense>
