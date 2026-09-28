@@ -103,9 +103,10 @@ export default {
 
     // ⛔ A TOWN IS ONLY REAL IF ITS SLAB IS PUBLISHED. The player would happily render its
     // loud "look is not in the index" fallback for a town nobody has poured — a page that
-    // looks like a site and is not one. Ask the artifact instead: the slab's `scene.json`
-    // is what a pour writes, so its absence is the honest 404.
-    const slab = `staging/baked/${map}/scene.json`
+    // looks like a site and is not one. Ask the artifact instead: the slab's `manifest.json`
+    // is the one file published at a fixed name (every other is served under its content —
+    // src/lib/slabNames.js), so its absence is the honest 404.
+    const slab = `staging/baked/${map}/manifest.json`
     if (!(await env.ASSETS.head(slab))) {
       return new Response(
         `"${map}" has no staging slab yet — nothing has been published to ${slab}. `

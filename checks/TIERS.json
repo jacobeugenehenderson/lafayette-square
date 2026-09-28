@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 319,
+  "total": 320,
   "counts": {
-    "safe": 174,
+    "safe": 175,
     "local-effect": 6,
     "live": 139
   },
@@ -312,6 +312,13 @@
       "tier": "safe",
       "why": [
         "computed import of src/hooks/useEvents.js \u2014 read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-is-live-by-its-manifest.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

@@ -80,8 +80,9 @@ export default {
     }
 
     // ── A document. ⛔ A town is only live if its production slab is there: a player with no
-    // slab renders a page that looks like a site and is not one.
-    const slab = `baked/${rec.look}/scene.json`
+    // slab renders a page that looks like a site and is not one. Asked of `manifest.json`, the one
+    // slab file whose name never changes (every other is served under its content — slabNames.js).
+    const slab = `baked/${rec.look}/manifest.json`
     if (!(await env.ASSETS.head(slab))) {
       return text(`"${rec.look}" has no production slab — nothing at ${slab}.`, 404)
     }

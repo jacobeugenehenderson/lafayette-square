@@ -35,13 +35,13 @@ const expect = async (what, res, wantIndex) => {
 console.log('The device-link page is served on both sites\n')
 
 const stgEnv = { SLAB_BASE: 'https://assets.theward.online/staging/', PLAYER_PREFIX: 'staging/player/', SITE_PREFIX: 'staging/sites/',
-  ASSETS: bucket({ 'staging/player/index.html': 'STAGING-INDEX', 'staging/baked/huron/scene.json': '{}' }) }
+  ASSETS: bucket({ 'staging/player/index.html': 'STAGING-INDEX', 'staging/baked/huron/manifest.json': '{}' }) }
 await expect('staging  /huron/link/AbC123 → the player page',
   await staging.fetch(new Request('https://staging.theward.online/huron/link/AbC123'), stgEnv), 'STAGING-INDEX')
 
 const prodEnv = { ASSETS: bucket({
   'hosts/provincetown.online.json': JSON.stringify({ map: 'provincetown', look: 'provincetown', domain: 'provincetown.online' }),
-  'player/provincetown/index.html': 'PROD-INDEX', 'baked/provincetown/scene.json': '{}' }) }
+  'player/provincetown/index.html': 'PROD-INDEX', 'baked/provincetown/manifest.json': '{}' }) }
 await expect('prod     provincetown.online/link/AbC123 → the player page',
   await production.fetch(new Request('https://provincetown.online/link/AbC123'), prodEnv), 'PROD-INDEX')
 
