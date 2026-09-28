@@ -8,7 +8,10 @@
  * are re-baked; then that becomes a loud failure.
  *
  * Asserts, reading the sources and the baked artifacts:
- *   · every baked labels.json at v4 carries the town's authored label block exactly (design.json `labels`, migrated);
+ *   · every baked labels.json at v4 carries the town's COMPLETE label style exactly (the kit default under design.json
+ *     `labels`, migrated) — and no field a reader does not use (Warden, 2026-09-28: the unread fields are ROT);
+ *   · LABEL_STYLE_FIELDS is exactly the set the readers read — derived from their SOURCES (SceneLabel, the park title,
+ *     the layout), never restated;
  *   · the kit's label default exists ONCE (src/lib/labelStyle.js) — no reader keeps its own fallback values;
  *   · and LISTS the towns still on v3 (draw with the kit default for the unbaked fields) — the re-bake list.
  *
@@ -16,7 +19,7 @@
  */
 import { readFileSync, readdirSync, existsSync, statSync } from 'fs'
 import { join, relative } from 'path'
-import { LABEL_STYLE_DEFAULT, migrateLabels, LABELS_FULL_STYLE_VERSION } from '../src/lib/labelStyle.js'
+import { LABEL_STYLE_DEFAULT, LABEL_STYLE_FIELDS, authoredLabelStyle, LABELS_FULL_STYLE_VERSION } from '../src/lib/labelStyle.js'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const BAKED = join(ROOT, 'public/baked')
@@ -27,10 +30,23 @@ export function auditTowns(towns) {
   for (const t of towns) {
     if (!t.artifact) continue
     if ((t.artifact.version ?? 0) < LABELS_FULL_STYLE_VERSION) { v3.push(t.id); continue }
-    const want = migrateLabels(t.design?.labels || {})
+    const extra = Object.keys(t.artifact.style || {}).filter(k => !LABEL_STYLE_FIELDS.includes(k))
+    if (extra.length) f.push(`${t.id}: labels.json v${t.artifact.version} style carries field(s) no reader uses: ${extra.join(', ')}`)
+    const want = authoredLabelStyle(t.design?.labels)
     if (JSON.stringify(t.artifact.style) !== JSON.stringify(want)) f.push(`${t.id}: labels.json v${t.artifact.version} style ${JSON.stringify(t.artifact.style)} ≠ the town's authored labels ${JSON.stringify(want)} — re-bake its labels`)
   }
   return { f, v3 }
+}
+// The fields the readers actually read, from their sources: `style.X` / `style?.X` and `{ a, b } = style`.
+const READERS = ['src/components/SceneLabel.jsx', 'src/components/LafayetteParkBody.jsx', 'src/lib/labelLayout.js', 'src/lib/useLabelPlacements.js']
+export function readSet(files) {
+  const out = new Set()
+  for (const x of files.filter(f => READERS.includes(f.path))) {
+    const c = code(x.src)
+    for (const m of c.matchAll(/\bstyle\??\.(\w+)/g)) out.add(m[1])
+    for (const m of c.matchAll(/\{([^{}]*)\}\s*=\s*style\b/g)) for (const k of m[1].split(',')) { const n = k.trim().split(/\s*:\s*/)[0]; if (n) out.add(n) }
+  }
+  return out
 }
 // A second copy of the default: the default's own distinctive values hard-coded outside the module.
 export function copies(files) {
@@ -53,6 +69,8 @@ if (process.argv.includes('--self-test')) {
     ['a v4 artifact with a stale value', () => auditTowns([{ id: 'x', artifact: { version: 4, style: { case: 'mixed' } }, design: { labels: { case: 'upper' } } }]).f.length > 0],
     ['a v3 town is listed', () => auditTowns([{ id: 'x', artifact: { version: 3, style: { sizeK: 1 } }, design: {} }]).v3.includes('x')],
     ['a reader keeps its own default', () => copies([{ path: 'src/components/X.jsx', src: `const c = style.fill ?? '#e8e8f0'` }]).length > 0],
+    ['a v4 artifact carries a rot field', () => auditTowns([{ id: 'x', artifact: { version: 4, style: { ...authoredLabelStyle({}), tierScale: {} } }, design: {} }]).f.some(m => /no reader uses/.test(m))],
+    ['a reader reads a field the list does not keep', () => readSet([{ path: 'src/components/SceneLabel.jsx', src: 'x = style.plate' }]).has('plate')],
   ]
   let bad = 0
   for (const [n, run] of cases) { const c = run(); if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
@@ -60,6 +78,10 @@ if (process.argv.includes('--self-test')) {
 }
 
 const { f, v3 } = auditTowns(towns)
+const read = readSet(files)
+const unread = LABEL_STYLE_FIELDS.filter(k => !read.has(k)), unlisted = [...read].filter(k => !LABEL_STYLE_FIELDS.includes(k))
+if (unread.length) f.push(`LABEL_STYLE_FIELDS lists field(s) no reader reads: ${unread.join(', ')} — drop them (src/lib/labelStyle.js)`)
+if (unlisted.length) f.push(`a reader reads label field(s) LABEL_STYLE_FIELDS does not keep: ${unlisted.join(', ')} — they would never be stored or baked`)
 const dup = copies(files)
 if (dup.length) f.push(`the label default is copied outside src/lib/labelStyle.js: ${dup.join(', ')} — take the resolved style (labelStyleOf)`)
 const v4 = towns.filter(t => (t.artifact.version ?? 0) >= LABELS_FULL_STYLE_VERSION).map(t => t.id)

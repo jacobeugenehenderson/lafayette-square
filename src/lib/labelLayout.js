@@ -20,6 +20,7 @@
 //
 // PURE (no React) so it's node-testable (scratch/plot-label-placements.mjs); the
 // React hook that wires it to the panel style lives in useLabelPlacements.js.
+import { LABEL_STYLE_DEFAULT } from './labelStyle.js'
 import { abbreviateName, MAX_ABBREV_LEVEL } from './streetAbbrev.js'
 
 // ── Tunable constants ──────────────────────────────────────────────────────
@@ -123,7 +124,7 @@ export function labelFontSize(widthM, style = {}) {
 }
 
 export function layoutStreetLabels(polylines, style = {}) {
-  const tracking = style.letterSpacing ?? 0.05
+  const tracking = style.letterSpacing ?? LABEL_STYLE_DEFAULT.letterSpacing
   const out = []
   for (const pl of polylines || []) {
     if (!pl?.points || pl.points.length < 2) continue

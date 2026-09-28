@@ -1,4 +1,4 @@
-import { LABEL_STYLE_DEFAULT, migrateLabels } from '../../lib/labelStyle.js'
+import { LABEL_STYLE_DEFAULT, authoredLabelStyle } from '../../lib/labelStyle.js'
 import { create } from 'zustand'
 import {
   fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton,
@@ -371,7 +371,8 @@ const DESIGN_FIELDS = [
   // move survives and ships.
   { key: 'parkTitlePos', hydrate: (d) => Array.isArray(d.parkTitlePos) && d.parkTitlePos.length === 2 ? d.parkTitlePos : null },
   { key: 'alleyCap',     hydrate: (d) => ['square', 'rounded', 'round'].includes(d.alleyCap) ? d.alleyCap : 'square' },
-  { key: 'labels',       hydrate: (d) => migrateLabels({ ...LABEL_STYLE_DEFAULT, ...(_isObj(d.labels) ? d.labels : {}) }) },
+  // Only the fields a reader uses: the rot a Look still carries (bg, tierScale, …) falls away at its next save.
+  { key: 'labels',       hydrate: (d) => authoredLabelStyle(_isObj(d.labels) ? d.labels : {}) },
   { key: 'blockCustoms', hydrate: (d) => _isObj(d.blockCustoms) ? d.blockCustoms : {} },
   // The blessed Survey "Default" (Set Default snapshots the curated state here;
   // Revert to Default restores it). null until the operator blesses one.

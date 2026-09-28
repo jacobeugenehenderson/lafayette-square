@@ -21,6 +21,26 @@ export const LABEL_STYLE_DEFAULT = {
   fontFamily:    '',           // fontsource id (e.g. 'inter'); empty = Troika default (Roboto)
 }
 
+/**
+ * The fields a label reader actually reads — and so the only ones stored, baked or resolved. `sizeK` is optional
+ * (absent = Auto). Anything else a Look's design.json still carries (bg, bgAlpha, tierScale, targetPx, minPx, maxPx,
+ * size — the screen-space label system that 154501c8 replaced, 2026-05-14) is ROT, dropped here (Warden, 2026-09-28).
+ * ▶ node checks/claims-the-labels-carry-their-style.mjs derives the read set from the readers and holds this list to it.
+ */
+export const LABEL_STYLE_FIELDS = ['weight', 'fill', 'halo', 'haloWidth', 'letterSpacing', 'opacity', 'case', 'fontFamily', 'sizeK']
+
+/** Only the fields a reader uses. */
+export function pickLabelStyle(labels) {
+  const out = {}
+  for (const k of LABEL_STYLE_FIELDS) if (labels?.[k] !== undefined) out[k] = labels[k]
+  return out
+}
+
+/** The complete style a Look's authored block means: the kit default under it, only the fields a reader uses. */
+export function authoredLabelStyle(labels) {
+  return pickLabelStyle(migrateLabels({ ...LABEL_STYLE_DEFAULT, ...(labels || {}) }))
+}
+
 /** An old halo width (pre-fraction units) reads as the neutral one. */
 export function migrateLabels(labels) {
   if (!labels) return labels
@@ -41,5 +61,5 @@ export const LABELS_FULL_STYLE_VERSION = 4
 export function labelStyleOf(artifact, override = null) {
   const baked = artifact?.style || {}
   const full = (artifact?.version ?? 0) >= LABELS_FULL_STYLE_VERSION
-  return { ...(full ? {} : LABEL_STYLE_DEFAULT), ...migrateLabels(baked), ...(override ? migrateLabels(override) : {}) }
+  return pickLabelStyle({ ...(full ? {} : LABEL_STYLE_DEFAULT), ...migrateLabels(baked), ...(override ? migrateLabels(override) : {}) })
 }

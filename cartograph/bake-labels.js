@@ -29,7 +29,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeMembership } from './neighborhood-membership.mjs'
 import { requireExplicitMap } from './scene.js'
-import { migrateLabels, LABELS_FULL_STYLE_VERSION } from '../src/lib/labelStyle.js'
+import { authoredLabelStyle, LABELS_FULL_STYLE_VERSION } from '../src/lib/labelStyle.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -174,17 +174,18 @@ function main() {
     const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
     if (existsSync(designPath)) {
       const d = JSON.parse(readFileSync(designPath, 'utf-8'))
-      style = migrateLabels(d.labels || {})
+      style = authoredLabelStyle(d.labels)   // complete (the default under the authored block), read fields only
       if (Array.isArray(d.parkTitlePos) && d.parkTitlePos.length === 2) setPieceTitles['lafayette-park'] = d.parkTitlePos
     }
-  } catch (e) { console.warn('[bake-labels] design.json unreadable, baking the kit label style:', e.message) }
+  } catch (e) { console.warn('[bake-labels] design.json unreadable, baking the kit label style:', e.message); style = authoredLabelStyle(null) }
+  if (!Object.keys(style).length) style = authoredLabelStyle(null)   // no design.json: the kit style, whole
 
   const outDir = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
   const outPath = join(outDir, 'labels.json')
   writeFileSync(outPath, JSON.stringify({ version: LABELS_FULL_STYLE_VERSION, scene, look, count: labels.length, style, setPieceTitles, labels }))
   console.log(`[bake-labels] scene=${scene} look=${look}: ${labels.length} street labels → ${outPath}`)
-  console.log(`  label style: ${Object.keys(style).length ? JSON.stringify(style) : '(none authored — the kit style)'}${Object.keys(setPieceTitles).length ? ` · set-piece titles ${JSON.stringify(setPieceTitles)}` : ''}`)
+  console.log(`  label style: ${JSON.stringify(style)}${Object.keys(setPieceTitles).length ? ` · set-piece titles ${JSON.stringify(setPieceTitles)}` : ''}`)
   if (labels.length) console.log('  e.g. ' + labels.slice(0, 8).map(l => l.name).join(' · '))
 }
 main()

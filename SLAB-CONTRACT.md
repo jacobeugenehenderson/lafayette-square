@@ -277,7 +277,7 @@ the park title). Stage's live edits arrive as `<Town overrides.labels>` on top.
 {
   "version": 4, "scene": "<scene>", "look": "<look>", "count": <n>,
   "style": { "weight": 500, "fill": "#ffffff", "halo": "#000000", "haloWidth": 0.07, "letterSpacing": 0.04,
-             "opacity": 0.9, "case": "upper", "fontFamily": "", "sizeK": 0.7, "bg": "#3a3a38", "bgAlpha": 1, … },
+             "opacity": 0.9, "case": "upper", "fontFamily": "", "sizeK": 0.7 },
   "setPieceTitles": { "lafayette-park": [-22.48, -97.31] },   // a set-piece's own title position; read only by it
   "labels": [ { "name": "Park Avenue", "widthM": 12.4, "points": [[x, z], …] }, … ]
 }
@@ -285,7 +285,7 @@ the park title). Stage's live edits arrive as `<Town overrides.labels>` on top.
 
 | Field | Meaning |
 |---|---|
-| `style` | The Look's authored `labels` block, whole (`design.json#labels`, halo width migrated). An unauthored Look bakes `{}`, which draws the kit's neutral style (`src/lib/labelStyle.js#LABEL_STYLE_DEFAULT` — the one default). |
+| `style` | The town's COMPLETE label style: the kit default (`src/lib/labelStyle.js#LABEL_STYLE_DEFAULT`, the one default) under the Look's authored `labels` block, halo width migrated — and only the fields a reader uses (`LABEL_STYLE_FIELDS`; `sizeK` absent = Auto). A Look's leftover fields from the replaced screen-space label system (bg, bgAlpha, tierScale, targetPx, minPx, maxPx, size) are not baked. |
 | `setPieceTitles` | A set-piece's own title placement, keyed by set-piece (`lafayette-park` ← `design.json#parkTitlePos`). Only that set-piece reads its entry; a town without it never does. |
 | `labels` | The street-name polylines. Placement is computed at runtime (`labelLayout.js`) from them and `style.sizeK` / `style.letterSpacing`. |
 
