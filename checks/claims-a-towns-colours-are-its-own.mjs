@@ -59,7 +59,12 @@ export function audit({ sources, towns, hues = NEUTRAL_CATEGORY_HUE, neonOf = ca
 }
 
 const sources = Object.fromEntries(CONSUMERS.filter(p => existsSync(join(ROOT, p))).map(p => [p, readFileSync(join(ROOT, p), 'utf8')]))
-const towns = readdirSync(BAKED).filter(t => existsSync(join(BAKED, t, 'scene.json'))).map(id => ({
+// A retired scene declares it in its own directory (cartograph/data/<scene>/RETIRED.md — the kit's convention): it is
+// not a town, and it is listed, never judged.
+const isRetired = (scene) => existsSync(join(ROOT, 'cartograph/data', scene, 'RETIRED.md'))
+const retiredScenes = readdirSync(BAKED).filter(isRetired)
+if (retiredScenes.length) console.log(`   retired, not a town: ${retiredScenes.join(', ')}`)
+const towns = readdirSync(BAKED).filter(t => !isRetired(t) && existsSync(join(BAKED, t, 'scene.json'))).map(id => ({
   id,
   scene: JSON.parse(readFileSync(join(BAKED, id, 'scene.json'), 'utf8')),
   manifest: existsSync(join(BAKED, id, 'manifest.json')) ? JSON.parse(readFileSync(join(BAKED, id, 'manifest.json'), 'utf8')) : null,

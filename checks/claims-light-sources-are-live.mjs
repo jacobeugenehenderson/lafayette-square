@@ -190,16 +190,17 @@ console.log('⑦ NEON IS MOUNTED IN EVERY STAGE THAT DRAWS BUILDINGS, WITH ITS T
   judgeTown(town.replace(/<LafayetteScene\b[\s\S]*?\/>/, '')) !== 'ok' ? ok('mutation (Town\'s neon mount removed) is caught') : bad('mutation NOT caught')
 }
 
-console.log('⑧ EVERY NEON SWATCH COLOURS THE NEON (it existed for months and drove nothing)')
+console.log('⑧ EVERY NEON SWATCH COLOURS THE NEON (it existed for months and drove nothing) — Stage › Identity')
 {
-  const surf = src('src/cartograph/CartographSurfaces.jsx'), bands = src('src/components/NeonBands.jsx')
-  const ids = [...surf.matchAll(/id: '(neon_\w+)'/g)].map(m => m[1])
+  // The swatches live in Stage › Identity since c9c7a911 (Tamp): one per category of the taxonomy, not a hand list.
+  const panel = src('src/cartograph/IdentityPanel.jsx'), bands = src('src/components/NeonBands.jsx')
+  const perCategory = /Object\.(entries|keys)\(CATEGORIES\)/.test(panel) && /neon_\$\{\w+\}/.test(panel)
   // NeonBands colours each tube by categoryNeon (src/lib/categoryColor.js), which reads the Look's materialColors.neon_<category>.
   const palette = src('src/lib/categoryColor.js')
   const reads = /\bcategoryNeon\(/.test(bands) && /materialColors\?\.\[`neon_\$\{key\}`\]/.test(palette)
-  if (!ids.length) bad('found no Neon swatches on the Surfaces card')
-  else reads ? ok(`${ids.length} swatches (${ids.join(', ')}) → NeonBands colours by categoryNeon, which reads materialColors.neon_<category>`) : bad('NeonBands does not read materialColors.neon_<category> — the swatches drive nothing')
-  ;/NEUTRAL_CATEGORY_NEON/.test(surf) ? ok('swatch defaults come from the one neutral table (src/lib/categoryColor.js)') : bad('the Surfaces neon defaults are a second copy of the category colours')
+  if (!perCategory) bad('the Identity panel does not offer a Neon swatch per category (materialColors.neon_<category>)')
+  else reads ? ok('Identity offers one swatch per category → NeonBands colours by categoryNeon, which reads materialColors.neon_<category>') : bad('NeonBands does not read materialColors.neon_<category> — the swatches drive nothing')
+  ;/\bneutralNeon\b[^\n]*from '\.\.\/lib\/categoryColor\.js'/.test(panel) ? ok('an unchosen swatch shows the one neutral (src/lib/categoryColor.js#neutralNeon)') : bad('the Identity neon defaults are a second copy of the category colours')
 }
 
 console.log('⑨ THE LAMP COLOUR IS A KEYED FIELD OF THE LANTERN, AND LIVE IN EVERY STAGE')
@@ -237,6 +238,8 @@ console.log('⑪ EVERY BAKED POOL MAP IS A NEAREST-LAMP DISTANCE MAP (the shape 
 {
   const { readdirSync, existsSync } = await import('node:fs')
   for (const look of readdirSync('public/baked')) {
+    // A retired scene declares it in its own directory (cartograph/data/<scene>/RETIRED.md): listed, never judged.
+    if (existsSync(`cartograph/data/${look}/RETIRED.md`)) { console.log(`   · ${look}: retired, not a town`); continue }
     const g = `public/baked/${look}/ground.json`
     if (!existsSync(g)) continue
     const pm = JSON.parse(readFileSync(g, 'utf-8')).poolmap

@@ -55,7 +55,12 @@ export function copies(files) {
     .map(x => x.path)
 }
 
-const towns = readdirSync(BAKED).filter(t => existsSync(join(BAKED, t, 'labels.json'))).map(id => ({
+// A retired scene declares it in its own directory (cartograph/data/<scene>/RETIRED.md — the kit's convention): it is
+// not a town, and it is listed, never judged.
+const isRetired = (scene) => existsSync(join(ROOT, 'cartograph/data', scene, 'RETIRED.md'))
+const retiredScenes = readdirSync(BAKED).filter(isRetired)
+if (retiredScenes.length) console.log(`   retired, not a town: ${retiredScenes.join(', ')}`)
+const towns = readdirSync(BAKED).filter(t => !isRetired(t) && existsSync(join(BAKED, t, 'labels.json'))).map(id => ({
   id,
   artifact: JSON.parse(readFileSync(join(BAKED, id, 'labels.json'), 'utf8')),
   design: existsSync(join(ROOT, 'public/looks', id, 'design.json')) ? JSON.parse(readFileSync(join(ROOT, 'public/looks', id, 'design.json'), 'utf8')) : null,
