@@ -35,7 +35,8 @@ Everything it needs is already published:
   momentary: on release the map settles back to the correct bearing** (Jacob: "the map settles in the correct
   direction") — true north outside the neighbourhood, the person's heading inside it — with the same eased
   "give" as the end of a drag. The map is never left pointing the wrong way, so there is no "rotated by hand"
-  mode to escape from. Reduced motion: it returns without the ease.
+  mode to escape from. **Only the rotation settles: pan and zoom stay exactly where the person left them**
+  (Jacob: "the scale and pan remain, though"). Reduced motion: it returns without the ease.
   ⚠️ The old player's plan camera disables rotation (`cameraRegimes.js` plan regime) — the Ward's plan camera
   enables it.
 - **In Street,** the bezel shows which way the camera faces, and replaces the old `CompassRose.jsx` (delete it;
