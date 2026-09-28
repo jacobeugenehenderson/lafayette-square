@@ -29,7 +29,7 @@
  *   photos    — every photo a published listing names, copied beside the content, indexed by the
  *               listing's own url (null when the file is missing). Credit/licence ride on the listing.
  *   tide      — tidal towns only (terrain.json `water.tidal`): the station's harmonic constituents, MSL above MLLW and
- *               its datums, from raw/water-datums.json `tide` (fetch-water-datums --tide-only). The player times
+ *               its datums, from raw/tide.json (fetch-water-datums --tide-only). The player times
  *               the tide from them (cartograph/tide.mjs); the levels stay the town's own. Kept whole, unrounded
  *               (Jacob: "keep the data"). A tidal town without them exits 2; a non-tidal town has no key at all.
  *   files     — every file of the slab with its size and sha256. ⚠️ v0 LISTS the existing names; it
@@ -163,8 +163,8 @@ let tide = null
 const terrainP = resolve(slabDir, 'terrain.json')
 const water = existsSync(terrainP) ? JSON.parse(readFileSync(terrainP, 'utf8')).water ?? null : null
 if (water?.tidal === true) {
-  const rawP = resolve(ROOT, 'cartograph/data', town, 'raw/water-datums.json')
-  const t = existsSync(rawP) ? JSON.parse(readFileSync(rawP, 'utf8')).tide : null
+  const rawP = resolve(ROOT, 'cartograph/data', town, 'raw/tide.json')
+  const t = existsSync(rawP) ? JSON.parse(readFileSync(rawP, 'utf8')) : null
   if (!t?.constituents?.length || !Number.isFinite(t.mslAboveDatumM)) {
     console.error(`⛔ "${town}" is tidal but has no tide clock in ${relative(ROOT, rawP)} — ▶ node cartograph/fetch-water-datums.mjs --scene=${town} --tide-only`)
     process.exit(2)

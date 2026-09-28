@@ -17,8 +17,16 @@
  *     gauge: that gauge's chart datum (GL_LWD, IGLD85) and its monthly-mean level over the last 20 whole years, plus
  *     VDatum's NAVD88 → IGLD85 offset at the town. ⛔ Which of the two is the town's level is NOT decided here.
  *
+ *   · TIDE CLOCK (tidal towns, BRIEF-tide) — the station's harmonic constituents (CO-OPS `harcon`), its MSL above
+ *     MLLW and datums, and ONE WEEK of NOAA's own high/low predictions as the fixture `claims-tide-matches-noaa`
+ *     holds cartograph/tide.mjs to. The constituents time the tide; the town's own MLLW/MHW stay its levels.
+ *     ⛔ Written to its OWN file, raw/tide.json: water-datums.json is a terrain input (serve.js runIfDirty), and a
+ *     timing record must never make a town's terrain dirty.
+ *
  *   node cartograph/fetch-water-datums.mjs --scene=<id> [--dry]
- * Writes cartograph/data/<scene>/raw/water-datums.json. Exit 0 = written · 1 = no datum found (said) · other = error.
+ *   node cartograph/fetch-water-datums.mjs --scene=<id> --tide-only   # the tide clock alone, for a town already acquired
+ * Writes cartograph/data/<scene>/raw/water-datums.json (+ raw/tide.json when tidal). Exit 0 = written · 1 = no datum
+ * found (said) · other = error.
  */
 import { readFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -77,6 +85,34 @@ async function stationsNear(bbox, type) {
     .sort((a, b) => a.km - b.km)
 }
 
+/** The tide clock for a CO-OPS station: constituents, MSL above MLLW, and a week of NOAA's highs/lows. ⛔ Throws on any gap. */
+export async function tideClock(stationId, now = new Date()) {
+  const hc = await json(`${COOPS_MD}/stations/${stationId}/harcon.json?units=metric`)
+  // ⭐ KEPT WHOLE (Jacob: "keep the data in case we ever sophisticate into using it"): every constituent, zero ones included,
+  // with NOAA's local phase, number and description — nothing rounded or dropped for today's timing-only use.
+  const constituents = (hc.HarmonicConstituents || []).map(c => ({ number: c.number, name: c.name, description: c.description,
+    amplitudeM: +c.amplitude, phaseGMT: +c.phase_GMT, phaseLocal: +c.phase_local, speed: +c.speed }))
+  if (hc.units !== 'meters' || !constituents.length) throw new Error(`⛔ CO-OPS ${stationId}: no harmonic constituents in metres (units ${hc.units}, ${constituents.length} rows) — this station cannot time a tide`)
+  const d = await json(`${COOPS_MD}/stations/${stationId}/datums.json?units=metric`)
+  const g = n => d.datums?.find(x => x.name === n)?.value
+  if (g('MSL') == null || g('MLLW') == null) throw new Error(`⛔ CO-OPS ${stationId}: no MSL/MLLW datums`)
+  const ymd = t => t.toISOString().slice(0, 10).replace(/-/g, '')
+  const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const to = new Date(from.getTime() + 7 * 86400000)
+  const pu = `${COOPS_DATA}?product=predictions&interval=hilo&datum=MLLW&units=metric&time_zone=gmt&format=json&application=cartograph-kit`
+    + `&station=${stationId}&begin_date=${ymd(from)}&end_date=${ymd(to)}`
+  const pj = await json(pu)
+  const hilo = (pj.predictions || []).map(p => ({ at: p.t.replace(' ', 'T') + ':00Z', heightM: +p.v, kind: p.type === 'H' ? 'high' : 'low' }))
+  if (hilo.length < 20) throw new Error(`⛔ CO-OPS ${stationId}: ${hilo.length} predicted highs/lows in a week — too few to hold the tide to`)
+  return {
+    source: `NOAA CO-OPS ${stationId} (harmonic constituents + datums; public domain)`, station: stationId, fetched: now.toISOString().slice(0, 10),
+    datum: 'MLLW', mslAboveDatumM: g('MSL') - g('MLLW'), datumEpoch: d.epoch ?? null,
+    stationDatums: Object.fromEntries((d.datums || []).map(x => [x.name, x.value])),   // on the station datum (STND), metres
+    harconUrl: `${COOPS_MD}/stations/${stationId}/harcon.json?units=metric`, constituents,
+    noaaHilo: { url: pu, window: [from.toISOString(), to.toISOString()], extrema: hilo },
+  }
+}
+
 async function tidal(bbox) {
   const lons = [], lats = []
   for (let i = 0; i < GRID_N; i++) {
@@ -103,7 +139,22 @@ async function main() {
   if (!bbox) { console.error(`fetch-water-datums: ${scene}'s raw/osm.json has no bbox`); process.exit(2) }
   console.log(`[fetch-water-datums] ${scene}  bbox ${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
 
-  let out
+  if (arg('tide-only')) {
+    const p = join(rawDir, 'water-datums.json')
+    if (!existsSync(p)) { console.error(`fetch-water-datums: ${scene} has no raw/water-datums.json — run the full acquisition first`); process.exit(2) }
+    const cur = JSON.parse(readFileSync(p, 'utf8'))
+    if (cur.kind !== 'tidal') { console.error(`fetch-water-datums: ${scene} is not tidal (${cur.kind}) — it has no tide clock`); process.exit(1) }
+    if (!cur.station?.id) { console.error(`⛔ ${scene}: tidal, but no CO-OPS station is named — no tide source for this town (outside the US? name one in INTAKE-CATALOGUE)`); process.exit(1) }
+    const tide = await tideClock(cur.station.id)
+    console.log(`  TIDE: ${tide.constituents.length} constituents · MSL ${tide.mslAboveDatumM} m above MLLW · ${tide.noaaHilo.extrema.length} NOAA highs/lows`)
+    if (arg('dry')) { console.log(JSON.stringify({ ...tide, constituents: tide.constituents.length }, null, 1)); return }
+    const tp = join(rawDir, 'tide.json')
+    writeIfChanged(tp, JSON.stringify(tide, null, 2) + '\n')
+    console.log(`✅ → ${tp}`)
+    return
+  }
+
+  let out, tideOut = null
   console.log(`  VDatum NAVD88 → MHW / MLLW on a ${GRID_N}×${GRID_N} grid (▪ covered · · not):`)
   const t = await tidal(bbox)
   const covered = t.high.filter(v => v != null).length
@@ -125,6 +176,8 @@ async function main() {
       fetchedOn: new Date().toISOString().slice(0, 10), grid: { lons: t.lons, lats: t.lats, rowsFrom: 'north' },
       high: { datum: 'MHW', navd88M: t.high }, low: { datum: 'MLLW', navd88M: t.low }, uncertaintyM: t.uncertaintyM,
       covered, of: GRID_N * GRID_N, station }
+    if (station) tideOut = await tideClock(station.id)
+    else throw new Error(`⛔ ${scene}: tidal, but no CO-OPS station in the bbox — no tide source for this town (outside the US? name one in INTAKE-CATALOGUE)`)
     console.log(`  TIDAL: ${covered}/${GRID_N * GRID_N} points covered · MHW ${Math.min(...hs).toFixed(3)}…${Math.max(...hs).toFixed(3)} m NAVD88 · MLLW ${Math.min(...ls).toFixed(3)}…${Math.max(...ls).toFixed(3)} m · ±${t.uncertaintyM} m`)
   } else {
     const gl = (await stationsNear(bbox, 'historicwl'))                                // the Great Lakes gauges are here, not under `datums`
@@ -164,6 +217,7 @@ async function main() {
   const p = join(rawDir, 'water-datums.json')
   writeIfChanged(p, JSON.stringify(out, null, 2) + '\n')
   console.log(`✅ → ${p}`)
+  if (tideOut) { const tp = join(rawDir, 'tide.json'); writeIfChanged(tp, JSON.stringify(tideOut, null, 2) + '\n'); console.log(`✅ → ${tp}`) }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main().catch(e => { console.error(e); process.exit(3) })

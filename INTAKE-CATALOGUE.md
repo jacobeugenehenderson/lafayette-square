@@ -479,6 +479,15 @@ from bare building to landmark, and in what order.** Do not introduce "importanc
 > predicates trap operating at the scale of whole towns. ⭐ **Don't carry that fact in prose — the bake
 > prints it, per town, beside the number it qualifies** (`bake-content.js`, the prominence census).
 > ⛔ How much a re-fetch would recover is **not established**; nobody has re-fetched and re-scored.
+## 4b. WATER — the tide's clock (tidal towns only)
+| Input | Path | Source |
+|---|---|---|
+| **Harmonic constituents + station datums** (amplitude, Greenwich phase, speed; MSL/MLLW) | `raw/tide.json` → the manifest's `tide` | **NOAA CO-OPS** (`api.tidesandcurrents.noaa.gov` mdapi `harcon` + `datums`) — US-gov public domain, **US stations only** |
+| **NOAA's own predicted highs/lows**, one week | `raw/tide.json#noaaHilo` | CO-OPS `datagetter` `predictions&interval=hilo` — the fixture `claims-tide-matches-noaa` holds `cartograph/tide.mjs` to |
+
+⛔ **A non-US tidal town has no source yet.** The acquisition refuses ("no tide source for this region"); name the regional
+authority here when one arrives. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id> --tide-only`
+
 ## 5. ⭐ BUILDING FABRIC — the best source is REGIONAL, and we discard real data
 
 *(Jacob, 2026-07-20 late: "the Księży Młyn neighborhood has more fulsome building scans." Verified —

@@ -92,6 +92,8 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 >   gauge's mean). From `raw/water-datums.json` (`fetch-water-datums.mjs`: NOAA VDatum, cross-checked against the
 >   CO-OPS station; for a lake, its Great Lakes gauge) — the bake calls no service. ⛔ A coast with no datums, or a lake
 >   with no ruled level, REFUSES. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id>`
+>   A tidal town also acquires its **tide clock** (NOAA's constituents, which time the tide; the levels stay the town's)
+>   into `raw/tide.json` — ⛔ never a terrain input — and `bake-manifest` publishes it. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id> --tide-only`
 > - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** ⛔ The dirty set is a **computed import closure**
 >   of `bake-terrain.js` — which reaches `coastline.mjs` — plus the town's `raw/osm.json`, never a
 >   hand-listed file: a town's shore can move because the kit learned to read a shape it could not
