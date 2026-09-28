@@ -1,0 +1,48 @@
+/* CompassBezel.css — the compass dial (the phone's ring round the map, and Street's badge): a shaded face, a light
+   rim, a soft shadow (Jacob, 2026-09-28).
+   The rim line and the shadow make it read as an object; the face's gradient stays subtle, and at night the face is
+   already dark, so the rim light carries it. The ticks, the north mark and the letters draw ON the face.
+
+   ⛔ THE FACE'S COLOURS ARE THE HOST'S. This sheet consumes them and supplies none — a component that carried its
+   host's colours would draw a plausible dial where the host forgot to set them, instead of a visible gap. A host
+   (the Ward) sets, from its own tokens:
+     --compass-face-centre   the face at its centre (darker)
+     --compass-face-rim      the face at its rim (lighter)
+     --compass-rim-line      the thin light rim line
+     --compass-shadow        the drop shadow
+   CompassBezel.jsx says so, once and loudly, when a mounted dial finds them unset.
+   Set BY THE COMPONENT (the model's values, the same as the rim's): --compass-night (0–1), --compass-glow (the marks'
+   colour at this hour), --compass-keyline (the Look's keyline colour). */
+
+.compass-dial {
+  display: block;
+  overflow: visible;
+  filter:
+    drop-shadow(0 1px 3px var(--compass-shadow))
+    drop-shadow(0 0 calc(1px + 3px * var(--compass-night)) var(--compass-glow));
+}
+
+.compass-dial__face-centre { stop-color: var(--compass-face-centre); }
+.compass-dial__face-rim { stop-color: var(--compass-face-rim); }
+
+.compass-dial__rim {
+  fill: none;
+  stroke: var(--compass-rim-line);
+  stroke-width: 0.8;
+}
+
+/* Every mark's keyline: a light line drawn under it (ticks), round it (letters), or as a dilated silhouette (🔺). */
+.compass-dial__keyline {
+  stroke: var(--compass-keyline);
+  stroke-linecap: butt;
+}
+.compass-dial__letter {
+  stroke: var(--compass-keyline);
+  paint-order: stroke;
+  font-family: system-ui, sans-serif;
+  font-weight: 600;
+}
+.compass-dial__keyline-flood { flood-color: var(--compass-keyline); }
+
+/* The dial's box, placed by the component (inscribed in the map's viewport, or the badge's corner). */
+.compass-dial__box { position: absolute; }

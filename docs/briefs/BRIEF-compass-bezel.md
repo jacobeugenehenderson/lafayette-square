@@ -1,73 +1,79 @@
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: Tamp
+dispatched: Tamp (kit) · Quire (the Ward)
 written: 2026-09-28
-evict-when: RULING: Jacob's eye gate on two towns — north-up and facing
+evict-when: RULING: Jacob's eye on the phone ring (north-up and turned, noon and night) and the computer rose
 -->
-# BRIEF — The town's edge as a compass bezel
+# BRIEF — The compass
 
-**For:** a fresh agent, kit and Ward. **Written:** 2026-09-28 (Warden). **Report to:** Warden.
-**Jacob, 2026-09-28:** *"We use the round neighborhood shape as the horizon… make the circle a compass face,
-and literally tie it to the device's compass so it's helpful in an orienteering way, and it totally ties in the
-municipal element too."* · *"I kind of think this should be totally runtime."* · *"maybe it's not a ring but a
-series of tics?"* · street names at the rim: *"unknown"*, then *"drop the street names at the rim"* · heading: *"whatever's helpful"* · *"not in movie."* · *"the map can be North up unless they are in the
-hood"* (with the live user dot).
+**For:** the kit (Tamp) and the Ward (Quire). **Rewritten:** 2026-09-28 (the rim design it replaces is in the Diary:
+`cartograph/_archive/BRIEF-compass-bezel-rim-SUPERSEDED-2026-09-28.md`). **Report to:** Warden.
+**Jacob, 2026-09-28:** *"a maxi compass around the part of the map we're looking at, which is either N for people
+outside the hood or rotates dynamically for people in the hood."* · *"computer gets no ring"* — only the little rose.
 
 ## 1. What it is
-The neighbourhood is one closed shape, and its rim is an edge of the drawing (the kit's own doctrine). This
-gives that edge a job: **a bezel of ticks around the town's edge** — no drawn ring; the ticks imply the circle,
-as on a watch bezel. The four cardinal ticks are heavier, with small N · E · S · W.
+- **Narrow screen:** the map is seen **through** the ring, so the ring is **as large as the map's space allows** — Jacob:
+  *"if we're looking at the map thru the ring it needs to be maximum size in the space; on a phone that would be a
+  square at the top of the screen."* The app makes its map area that square and asks for `<Town compassDial={{ at:
+  'fill' }}>`: the dial inscribed in the map's viewport. (Where it sits is the app's layout; `top-center` and the edges
+  remain for a smaller badge.) In **Street**, the same dial as a small badge.
+- **Wide screen:** **no ring, and no compass in Street.** It keeps the little compass rose it already has — the old
+  player's `src/components/CompassRose.jsx` (`CompassRoseSVG`), shown when not at ground level (`App.jsx`). The Ward
+  ports it **faithfully**: the same drawing, the same size. Not redesigned.
+- **Not in the movie** (the hero shot draws no compass).
 
-## 2. Totally runtime — nothing new in the slab, nothing new in the bake
-Everything it needs is already published:
-- **The circle:** `ground.json`'s `stencil` — `center` and `radius` per town.
-- **True north from the phone's heading:** the World Magnetic Model, computed in the player from the town's
-  latitude/longitude and **today's date** — more correct than a baked number, because declination drifts.
-- **The heading:** the device orientation API. iOS needs a user tap to grant it, so it starts from a control.
+**Narrow versus wide is the APP'S LAYOUT, not the device** (Jacob, 2026-09-28: the ring is *"narrow-screen detail, so I
+can see it on my desktop"*). The app passes `<Town compassWhen>` — the media query for its own narrow layout (the
+Ward: its stacked Society, i.e. `not all and (min-width: 60rem) and (orientation: landscape)`, its own breakpoint). The
+kit carries no breakpoint, so it can never drift from the app's layout; narrow a desktop window and the ring appears.
+Only the ring's TURN needs a real heading (§2). Never a user-agent. A compass layer with no `compassWhen` refuses.
 
-## 3. Behaviour — the helpful defaults (Jacob: "whatever's helpful")
-- **Where:** Society's map (plan view) and Street. **Not in the movie.**
-- **North-up unless you are in the neighbourhood** (Jacob, 2026-09-28). The map already carries a live user
-  dot — the person's position, placed with `TownPoint`. Outside the town's disc, or with no position, the
-  map is north-up. **Inside the disc, the map turns with the person by default**, the bezel's N pointing at
-  true north, and the dot shows which way they face. ⭐ **It rotates about the TOWN's centre, like a compass
-  card — never about the dot, and it never follows or recentres on the person** (Jacob, 2026-09-28: "it
-  should center in its center. it just rotates like a compass"). The dot moves across the town; the town
-  only turns. **Pan and zoom stay the person's, in every mode** (Jacob: "the user can still drag the map
-  horizontally and zoom") — the heading drives ROTATION only, never position or scale.
-- **Pinch zooms and twist rotates, in every mode** (Jacob: "pinch scale and rotate, too"). ⭐ **A twist is
-  momentary: on release the map settles back to the correct bearing** (Jacob: "the map settles in the correct
-  direction") — true north outside the neighbourhood, the person's heading inside it — with the same eased
-  "give" as the end of a drag. The map is never left pointing the wrong way, so there is no "rotated by hand"
-  mode to escape from. **Only the rotation settles: pan and zoom stay exactly where the person left them**
-  (Jacob: "the scale and pan remain, though"). Reduced motion: it returns without the ease.
-  ⚠️ The old player's plan camera disables rotation (`cameraRegimes.js` plan regime) — the Ward's plan camera
-  enables it.
-- **In Street,** the bezel shows which way the camera faces, and replaces the old `CompassRose.jsx` (delete it;
-  one compass, not two).
-- **No street names at the rim** (Jacob, 2026-09-28: *"drop the street names at the rim"*). Ticks and
-  N · E · S · W only. No exit layer is built.
-- **Reduced motion:** stays north-up; heading changes are smoothed, never jittery. Screen readers hear
-  "facing north-east" on change, rate-limited.
+## 2. Which way it turns — the map's camera decides, and the dial follows it
+The dial reads which way the view faces **from the camera**, every frame, so it can never disagree with the map:
+- **North-up** — a visitor outside the town, or no heading (no sensor, permission refused): the map is north-up, so
+  the ring is.
+- **Heading-up** — inside the town with a heading: the map turns with the person (the Ward's plan camera, the device
+  compass), and the ring turns with it. **A twist is momentary**: on release the map settles back to the correct
+  bearing, with the same eased give as a drag's end; **only the rotation settles — pan and zoom stay** where the
+  person left them. Reduced motion: it returns without the ease, and stays north-up.
+- The **heading** is true, not magnetic: the device's compass + the World Magnetic Model's declination for the town's
+  place and today (the Ward's `src/compass/heading.js` + `declination.js`). No heading → north-up, never a guessed north.
+- **Screen readers** hear "facing north-east" on change, rate-limited (`compassWord` in the model).
 
-## 4. No fallbacks
-- A town with no disc (`stencil: null`) has no bezel, and says so once.
-- No heading from the device → no "face my direction" control; never a guessed north.
-- Declination that cannot be computed → the control is withheld with its reason; never magnetic passed off as
-  true.
+## 3. The look — one model, the Look authors it
+`src/lib/compassBezel.js` is the one model; every size is a fraction of the dial's own radius and every spacing an
+angle, so it reads the same at any size and holds no town's data. A Look authors any of it under `compass` in its
+design; the defaults:
+- **Ticks:** minor every 2°, intermediate every 10°, major every 30°, cardinal every 90°; the finer tiers recede
+  (less opacity), the cardinals lead.
+- **The north mark:** 🔺, one definition (a swap is one line), in place of N's tick; a small N under it.
+- **Colour:** Cary's verdigris (the Ward's `--cary-rule`: day `#2F7D63` / night `#56B892`) — lent to the compass by
+  Jacob; the note sits on the token.
+- **Keyline:** a thin light line round every mark (the Ward's `--ground`), so each carries its own contrast over any map.
+- **Glow in the dark:** after sunset (the town's clock, so a scrub moves it) the colour eases to its night value and
+  lifts; the 🔺, which cannot be tinted, gets a red halo (⏳ proposed, awaiting Jacob's eye).
+- **The face** — a ring, darker inward, lighter at the rim, a thin light rim line and a soft shadow — is drawn in
+  **the host's colours**: `CompassBezel.css` consumes `--compass-face-centre · --compass-face-rim · --compass-rim-line ·
+  --compass-shadow` and supplies none. A host that sets none gets a loud console error, never a borrowed palette.
 
-## 5. Where the pieces live
-- **The kit** (`Town` layer `compass`): one model (`compassBezel.js` — ticks and cardinals from the stencil), two renderings: on the ground at the rim in plan, and a screen-space bezel in
-  Street driven by a `heading` prop (degrees true, or null).
-- **The Ward:** the "face my direction" control, the device-orientation permission, the declination, the
-  map's rotation, and the spoken readout.
+## 4. Where the pieces live
+- **The kit:** `src/lib/compassBezel.js` (the model), `src/components/CompassBezel.jsx` + `.css` (the dial: the ring
+  in plan on a handheld, and the same dial as Street's badge where an app places one). A `<Town>` layer, **opt-in**
+  (`layers.compass: true`) — an app that never asks draws exactly what it drew before.
+- **The Ward (Quire):** the rotation (heading-up inside the town, settle-back, pan/zoom kept), the heading and
+  declination modules (built), the permission tap, the spoken readout, the face tokens, and the **computer rose port**.
+- **The map's framing** (it is now free to frame the lit places rather than the whole disc) is the Ward's camera plus
+  a kit helper — not this brief.
 
-## 6. Checks — each seen to fail first
-- The declination for a known town and date matches NOAA's published value within its stated tolerance.
-- The bezel meets the map legibility floor (`BRIEF-map-legibility-floor`) at noon, dusk and midnight — this
-  check waits on that brief's harness and Jacob-calibrated threshold. Until then the bezel's colours are
-  authored values with a neutral default, never a town's constant.
-- No constant in the bezel is a town's: radius, centre and tick count come from the town's own disc.
+## 5. No fallbacks
+- No heading → north-up; never a guessed north, never magnetic passed off as true.
+- Declination outside the model's window (WMM2025: 2025.0–2030.0) → the heading is withheld with its reason.
+- A host that sets no face colours → the dial says so, once.
+
+## 6. Checks
+▶ `node checks/claims-the-compass-is-one-dial.mjs` — one dial (plan and Street draw the same `BezelDial`); nothing on
+the ground; no town data in the model; the computer gets no ring (the input rule, no user-agent); the model's rules.
+▶ The Ward: `npm run check` — `declination-matches-noaa`, `heading-is-true-or-nothing`.
 
 ## 7. Eye gate
-Jacob, on two towns, north-up and facing: the ticks and the cardinals.
+Jacob, on a phone: the ring north-up and turned, at noon and at night; and the computer's rose.

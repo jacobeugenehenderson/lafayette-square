@@ -25,6 +25,7 @@ const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/M
 const BASE = process.env.DEV_URL || 'http://localhost:5173'
 const arg = (k) => process.argv.find((a) => a.startsWith(`--${k}=`))?.split('=')[1]
 const HOURS = (arg('at') || 'noon,dusk,midnight').split(',')
+const FRAMES = (arg('frame') || 'lit,disc').split(',')   // lit = Society's own framing (calibrate on this); disc = the whole town
 const CASE_TIMEOUT_MS = 6 * 60000
 
 // Towns: every Look whose slab has a disc. A town with no disc is REPORTED, not skipped.
@@ -70,15 +71,15 @@ const day = new Date().toISOString().slice(0, 10)
 const OUT = join(ROOT, 'scratch/legibility-runs', day)
 mkdirSync(OUT, { recursive: true })
 const cases = []
-for (const town of towns) for (const at of HOURS) {
+for (const town of towns) for (const at of HOURS) for (const frame of FRAMES) {
   const t0 = Date.now()
-  process.stdout.write(`  ${town.padEnd(26)} ${at.padEnd(9)} `)
+  process.stdout.write(`  ${town.padEnd(26)} ${at.padEnd(9)} ${frame.padEnd(5)} `)
   const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' })
   const { sessionId } = await cdp('Target.attachToTarget', { targetId, flatten: true })
   let result = null
   try {
     await cdp('Page.enable', {}, sessionId)
-    await cdp('Page.navigate', { url: `${BASE}/legibility.html?look=${encodeURIComponent(town)}&at=${at}` }, sessionId)
+    await cdp('Page.navigate', { url: `${BASE}/legibility.html?look=${encodeURIComponent(town)}&at=${at}&frame=${frame}` }, sessionId)
     while (Date.now() - t0 < CASE_TIMEOUT_MS) {
       await sleep(1500)
       const r = await cdp('Runtime.evaluate', { expression: 'window.__legibility ? JSON.stringify(window.__legibility) : null', returnByValue: true }, sessionId)
@@ -89,12 +90,12 @@ for (const town of towns) for (const at of HOURS) {
   if (!result) result = { error: `no result in ${CASE_TIMEOUT_MS / 60000} min` }
   const frames = {}
   for (const [k, url] of Object.entries(result.frames || {})) {
-    const f = `${town}-${at}-${k}.png`
+    const f = `${town}-${at}-${frame}-${k}.png`
     writeFileSync(join(OUT, f), Buffer.from(url.split(',')[1], 'base64'))
     frames[k] = f
   }
   const { frames: _drop, ...rest } = result
-  cases.push({ town, at, ...rest, frames, seconds: Math.round((Date.now() - t0) / 1000) })
+  cases.push({ town, at, framing: frame, ...rest, frames, seconds: Math.round((Date.now() - t0) / 1000) })
   console.log(result.error ? `⛔ ${result.error}` : `${Math.round((Date.now() - t0) / 1000)} s`)
 }
 ws.close(); cleanup()
@@ -107,13 +108,17 @@ const report = {
   note: 'No threshold: Jacob calibrates the floor by eye from index.html. Numbers are WCAG contrast ratios of on-screen relative luminance.',
   camera: 'the harness\'s own (straight down, fitted to the disc, north up) — the product\'s Society framing is the Ward\'s, so the two can differ',
   weather: 'clear (rain is a later pass)', renderers, softwareWebGL: software,
+  openQuestions: [
+    'Roof coverage: the rendered roof mask can read far below the footprint area computed from buildings.bin ' +
+    '(huron 2026-09-28: 0.23% rendered vs 1.25% computed, lit framing). Cause not established.',
+  ],
   notMeasured: noDisc, cases,
 }
 writeFileSync(join(OUT, 'report.json'), JSON.stringify(report, null, 2) + '\n')
 
 const fmt = (s) => (s ? `${s.median} <span class=q>(p10 ${s.p10} · p90 ${s.p90})</span>` : '—')
 const row = (c) => c.error ? `<tr><td>${c.town}</td><td>${c.at}</td><td colspan=4 class=err>⛔ ${c.error}</td></tr>` : `
-<tr><td>${c.town}</td><td>${c.at}<div class=q>${c.time}</div></td>
+<tr><td>${c.town}</td><td>${c.at} · ${c.framing}<div class=q>${c.time}</div></td>
 <td>${['full', 'noBuildings', 'noLabels', 'lit'].map((k) => c.frames[k] ? `<figure><img src="${c.frames[k]}"><figcaption>${k}</figcaption></figure>` : '').join('')}</td>
 <td>roof vs ground ${fmt(c.metrics.roofVsGround.contrast)}<div class=q>roofs ${c.metrics.roofVsGround.coveragePct}% of frame</div></td>
 <td>lit vs unlit ${c.metrics.litVsUnlit.contrastOfMedians ?? '—'}<div class=q>${c.lit ? `lit: ${c.lit.category} (${c.lit.buildings})` : 'no lit set'}</div></td>

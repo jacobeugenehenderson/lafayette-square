@@ -1,59 +1,64 @@
-// The town's edge as a compass bezel — THE ONE MODEL (BRIEF-compass-bezel).
+// THE COMPASS — one model, one look (BRIEF-compass-bezel).
 //
-// The neighbourhood's disc is an edge of the drawing; this gives that edge a job: ticks round the
-// rim, as on a watch bezel (no drawn ring — the ticks imply the circle), heavier at the four
-// cardinals with N · E · S · W. Pure: the plan layer (on the ground at the rim) and Street's
-// screen-space bezel both draw from THIS, so there is one definition of a tick, not two.
+// Jacob, 2026-09-28: "a maxi compass around the part of the map we're looking at." A SCREEN-SPACE dial: in plan it is
+// a big ring round the map's viewport; in Street the same dial is a small badge. Ticks (four tiers), the 🔺 north mark,
+// E · S · W, each with its own light keyline, glowing after dark. Pure: CompassBezel.jsx draws both sizes from THIS.
 //
-// ⛔ NOTHING HERE IS A TOWN'S. The centre and radius are the town's own disc (`ground.json`'s
-// `stencil`); every radial size is a FRACTION of that radius; the spacing is an ANGLE, so a town
-// of any size reads the same when its disc is fitted to a screen. The divisions are the Look's
-// authored `compass` block, with a neutral default. ▶ node checks/claims-the-bezel-carries-no-towns-constant.mjs
+// ⛔ NOTHING HERE IS A TOWN'S, AND NOTHING HERE IS A PIXEL. Every radial size is a FRACTION of the dial's radius (the
+// rim = 1); the spacing is an ANGLE; the divisions and colours are the Look's authored `compass` block over a neutral
+// default. The dial reads no town data at all — the town's rim no longer drives the compass.
+// ▶ node checks/claims-the-compass-is-one-dial.mjs
 //
-// Bearings are degrees TRUE, clockwise from north. The town frame is x east, z SOUTH (TownPoint
-// projects `z = (lat0 − lat) · k`), so north is −z.
+// Bearings are degrees TRUE, clockwise from north. On the dial, north is up when the view is north-up.
 
 /** The neutral default. A Look overrides any of it under `compass`; nothing here is tuned to a town. */
 export const BEZEL_DEFAULTS = Object.freeze({
-  tickDegrees: 5,        // minor tick spacing, degrees — must divide 90 so the cardinals land on ticks
-  majorEvery: 6,         // every Nth tick is a major (5° × 6 = every 30°)
-  minorLength: 0.018,    // tick lengths, as fractions of the radius, drawn inward from the rim
-  majorLength: 0.032,
-  cardinalLength: 0.05,
-  tickWidth: 0.0022,     // tick width, fraction of the radius
-  cardinalWidth: 0.0045,
-  letterSize: 0.045,     // N · E · S · W cap height, fraction of the radius
-  letterInset: 0.085,    // letter centre, inward from the rim, fraction of the radius
-  color: '#e8e8f0',
-  opacity: 0.85,
-  halo: '#14141c',
+  // The divisions — ANGLES, so any town reads the same fitted to a screen. Four tiers, finest first:
+  // minor every tickDegrees · intermediate every intermediateEvery minors · major every majorEvery
+  // minors · cardinal every 90°. tickDegrees must divide 90 so the cardinals land on ticks.
+  tickDegrees: 2,
+  intermediateEvery: 5,  // 2° × 5 = every 10°
+  majorEvery: 15,        // 2° × 15 = every 30°
+  // Lengths and widths, as FRACTIONS of the radius, drawn inward from the rim.
+  minorLength: 0.012, intermediateLength: 0.022, majorLength: 0.034, cardinalLength: 0.05,
+  minorWidth: 0.0016, intermediateWidth: 0.0022, majorWidth: 0.003, cardinalWidth: 0.0045,
+  // THE NORTH MARK — only N gets it, in place of its tick. ⭐ ONE DEFINITION: swap the glyph here and it changes
+  // everywhere (the rim's texture, Street's dial). Jacob, 2026-09-28: the red triangle emoji, pointing outward.
+  northMark: '🔺',
+  northSize: 0.12,       // the mark's height, fraction of the dial's radius; its apex on the rim
+  northLetter: true,     // a small N under the mark (provisional: frames show it both ways)
+  letterSize: 0.045,     // E · S · W (and N's) cap height, fraction of the radius
+  letterInset: 0.1,      // letter centre, inward from the rim, fraction of the radius
+  // COLOURS — day and night, and the night value IS the glow. The defaults are the Ward's own tokens, never
+  // invented: Cary's verdigris (theward-online css/tokens.css --cary-rule: #2F7D63 day / #56B892 night), lent to the
+  // compass cardinals by Jacob, 2026-09-28. A Look may author its own — a single colour or a { day, night } pair.
+  color: { day: '#2F7D63', night: '#56B892' },
+  // The finer ticks recede behind the cardinals: the same hue, less of it.
+  opacity: 0.95, majorOpacity: 0.8, intermediateOpacity: 0.6, minorOpacity: 0.4,
+  // The halo behind 🔺 at night (an emoji cannot be tinted, so its glow is a halo, not a tint). ⏳ PROPOSED red,
+  // not a token yet — Jacob approves it by eye; not amber, which is the Ward's `--live`.
+  northHalo: '#E5484D',
+  // THE KEYLINE — a thin light line round every mark (ticks, letters, the north mark), so each carries its own
+  // contrast over any map beneath it (Warden's ruling, 2026-09-28). Width: a fraction of the dial's radius. Colour: the Ward's own light, theward-online css/tokens.css --ground (#EFE8D8).
+  keyline: '#EFE8D8', keylineWidth: 0.0009, keylineOpacity: 0.85,
+  // GLOW IN THE DARK — every colourway. After sunset the colour eases day → night over civil twilight, lifted by
+  // this gain (past 1 it blooms where the pipeline runs bloom). 1 = the night colour alone.
+  nightGlow: 1.3,
 })
 
 const CARDINALS = [['N', 0], ['E', 90], ['S', 180], ['W', 270]]
 const norm = (d) => ((d % 360) + 360) % 360
 
-/** A point at `bearing` degrees true and `r` metres from `center`, in the town frame. */
-export function atBearing([cx, cz], bearing, r) {
-  const b = bearing * Math.PI / 180
-  return [cx + r * Math.sin(b), cz - r * Math.cos(b)]
-}
-
 /**
- * The bezel for one town.
- * @param stencil  `ground.json`'s stencil ({ center:[x,z], radius }) — or null
+ * The dial, in units of its own radius (rim = 1).
  * @param authored the Look's `compass` block (scene.json), or undefined
- * @returns {{ ok: false, reason } | { ok: true, center, radius, style, ticks, cardinals }}
- *   ticks:     [{ bearing, kind: 'minor'|'major'|'cardinal', inner, outer, width }]   (metres from centre)
+ * @returns {{ style, ticks, north, cardinals, face }}
+ *   ticks:     [{ bearing, kind: 'minor'|'intermediate'|'major'|'cardinal', inner, outer, width }]
+ *   north:     { bearing: 0, glyph, size, r } — the north mark (one glyph), in place of N's tick
  *   cardinals: [{ letter, bearing, r, size }]
+ *   face:      { inner, outer } — the ring the marks sit on (the dial's face is a ring: the map shows through its middle)
  */
-export function bezelModel(stencil, authored) {
-  if (!stencil) return { ok: false, reason: 'this town has no disc (ground.json stencil is null) — no bezel' }
-  const { center, radius } = stencil
-  if (!Array.isArray(center) || center.length !== 2 || !center.every(Number.isFinite)) {
-    return { ok: false, reason: `the stencil's centre is not a point (${JSON.stringify(center)})` }
-  }
-  if (!(radius > 0)) return { ok: false, reason: `the stencil's radius is not a length (${radius})` }
-
+export function bezelModel(authored) {
   for (const k of Object.keys(authored || {})) {
     if (!(k in BEZEL_DEFAULTS)) throw new Error(`[compassBezel] ⛔ unknown compass field "${k}" (have: ${Object.keys(BEZEL_DEFAULTS).join(' ')})`)
   }
@@ -62,18 +67,36 @@ export function bezelModel(stencil, authored) {
   if (!Number.isInteger(n) || !Number.isInteger(90 / s.tickDegrees)) {
     throw new Error(`[compassBezel] ⛔ tickDegrees ${s.tickDegrees} must divide 90 — the cardinals must land on ticks`)
   }
-  if (!Number.isInteger(s.majorEvery) || s.majorEvery < 1) throw new Error(`[compassBezel] ⛔ majorEvery ${s.majorEvery} must be a whole number ≥ 1`)
+  for (const k of ['intermediateEvery', 'majorEvery']) {
+    if (!Number.isInteger(s[k]) || s[k] < 1) throw new Error(`[compassBezel] ⛔ ${k} ${s[k]} must be a whole number ≥ 1`)
+  }
+  colorPair(s.color)
+  if (!(s.nightGlow >= 1)) throw new Error(`[compassBezel] ⛔ nightGlow ${s.nightGlow} must be ≥ 1 — night never dims the compass`)
 
-  const R = radius
+  const R = 1
+  const TIER = {
+    minor: [s.minorLength, s.minorWidth], intermediate: [s.intermediateLength, s.intermediateWidth],
+    major: [s.majorLength, s.majorWidth], cardinal: [s.cardinalLength, s.cardinalWidth],
+  }
   const ticks = []
   for (let i = 0; i < n; i++) {
     const bearing = i * s.tickDegrees
-    const kind = bearing % 90 === 0 ? 'cardinal' : i % s.majorEvery === 0 ? 'major' : 'minor'
-    const len = kind === 'cardinal' ? s.cardinalLength : kind === 'major' ? s.majorLength : s.minorLength
-    ticks.push({ bearing, kind, inner: R * (1 - len), outer: R, width: R * (kind === 'cardinal' ? s.cardinalWidth : s.tickWidth) })
+    if (bearing === 0) continue                 // north carries the mark instead
+    const kind = bearing % 90 === 0 ? 'cardinal' : i % s.majorEvery === 0 ? 'major' : i % s.intermediateEvery === 0 ? 'intermediate' : 'minor'
+    const [len, w] = TIER[kind]
+    ticks.push({ bearing, kind, inner: R * (1 - len), outer: R, width: R * w })
   }
-  const cardinals = CARDINALS.map(([letter, bearing]) => ({ letter, bearing, r: R * (1 - s.letterInset), size: R * s.letterSize }))
-  return { ok: true, center: [center[0], center[1]], radius: R, style: s, ticks, cardinals }
+  // The north mark: a square of side R·northSize at bearing 0, apex on the rim (the glyph is drawn upright = outward).
+  const markSize = R * s.northSize
+  const north = { bearing: 0, glyph: s.northMark, size: markSize, r: R - markSize / 2 }
+  const cardinals = CARDINALS.filter(([letter]) => letter !== 'N' || s.northLetter).map(([letter, bearing]) => ({
+    letter, bearing, size: R * s.letterSize,
+    // N sits under its mark; E · S · W at the common inset.
+    r: letter === 'N' ? R - markSize - R * s.letterSize * 0.9 : R * (1 - s.letterInset),
+  }))
+  // The face: from inside the innermost letter to the rim, so every mark sits on it and the map shows through the middle.
+  const face = { inner: Math.min(...cardinals.map((c) => c.r - c.size), north.r - north.size / 2) - s.keylineWidth * 4, outer: R }
+  return { style: s, ticks, north, cardinals, face }
 }
 
 /** "facing north-east" words for a heading — the 8-point name, for a spoken readout. null in, null out. */
@@ -81,3 +104,24 @@ export function compassWord(heading) {
   if (!Number.isFinite(heading)) return null
   return ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][Math.round(norm(heading) / 45) % 8]
 }
+
+/** The night lift for a sun altitude (radians): 1 by day, `gain` after civil twilight. Pure. */
+export function nightGlowAt(sunAltitudeRad, gain) {
+  return 1 + (gain - 1) * nightness(sunAltitudeRad)
+}
+
+/** The colour pair a style resolves to: an authored single colour is its own night colour. */
+export function colorPair(c) {
+  if (typeof c === 'string') return { day: c, night: c }
+  if (c && typeof c.day === 'string' && typeof c.night === 'string') return c
+  throw new Error(`[compassBezel] ⛔ colour ${JSON.stringify(c)} — a colour string or a { day, night } pair`)
+}
+
+/** How far into the night a sun altitude (radians) is: 0 by day, 1 after civil twilight (sun 0° → −6°). Pure. */
+export function nightness(sunAltitudeRad) {
+  if (!Number.isFinite(sunAltitudeRad)) return 0
+  return Math.min(1, Math.max(0, -sunAltitudeRad / (6 * Math.PI / 180)))
+}
+
+/** Each tick tier's opacity, from the style. */
+export const tierOpacity = (s, kind) => ({ cardinal: s.opacity, major: s.majorOpacity, intermediate: s.intermediateOpacity, minor: s.minorOpacity })[kind]

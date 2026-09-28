@@ -32,8 +32,9 @@
  *   layers           visibility, default all on: ground buildings trees park lamps setPieces neon
  *                    labels sky clouds fog shadows post — and `compass`, default OFF: an app opts in
  *                    (`compass: true`), so an app that never asks draws exactly what it drew before
- *   heading          degrees TRUE the Street camera faces, or null — turns the compass dial (no heading, no dial)
- *   compassDial      where Street's compass dial sits — the app's layout: { corner, px, inset } (CompassBezel)
+ *   compassDial      with `compass`: where the compass dial sits and how big — the app's layout, per shot:
+ *                    { at: 'top-center'|'top-left'|'top-right'|'bottom-left'|'bottom-right', px, inset } (CompassBezel)
+ *   compassWhen      with `compass`: the app's media query for its narrow layout — the compass shows only there
  *   postFx           Preview's per-pass inspection matrix ({ toggles })
  *   overrides        Stage's live authoring channels (see OVERRIDE_KEYS) — an operator drag shows
  *                    without a bake
@@ -241,7 +242,7 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, heading = null, compassDial, time, children,
+  holdScrubbedTime = false, compassDial, compassWhen, time, children,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
@@ -334,8 +335,8 @@ export default function Town({
         {/* The ground past the rim, out to the horizon — the movie and the street only. In PLAN the town is one closed
             circle ending at its soft rim (Jacob, 2026-09-28; ▶ claims-the-plan-shot-ends-at-the-rim). */}
         {heavy && shot !== 'plan' && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
-        {/* The town's edge as a compass: ticks at the rim in plan, a dial in Street, nothing in the movie. */}
-        {layers?.compass === true && <R3FErrorBoundary name="CompassBezel"><CompassBezel lookId={lookId} bakeLastMs={bake} shot={shot} heading={heading} dial={compassDial} /></R3FErrorBoundary>}
+        {/* The compass: one screen-space dial, on the app's narrow layout, turned by the camera; none in the movie. */}
+        {layers?.compass === true && <R3FErrorBoundary name="CompassBezel"><CompassBezel lookId={lookId} shot={shot} dial={compassDial} when={compassWhen} /></R3FErrorBoundary>}
         {/* A mesh behind everything, at its true geo spot; nothing unless the Look ships a landscape. */}
         <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop lookId={lookId} bakeLastMs={bake} landscapeOverride={o.landscape} /></R3FErrorBoundary>
       </Suspense>
