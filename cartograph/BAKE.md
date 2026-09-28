@@ -94,6 +94,16 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 >   with no ruled level, REFUSES. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id>`
 >   A tidal town also acquires its **tide clock** (NOAA's constituents, which time the tide; the levels stay the town's)
 >   into `raw/tide.json` — ⛔ never a terrain input — and `bake-manifest` publishes it. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id> --tide-only`
+> - ⭐ **EVERY CONSUMER READS THE LEVEL, ONE WAY** — `cartograph/waterLevel.mjs`: `levelAt(x, z, phase)` = low + (high − low)·phase
+>   over those fields, and `tidePhase(t)` (HIGH until the clock; the clock replaces only it). ⛔ **Never measure water
+>   depth or a waterline from y = 0** — that is the flight's tide. Built on it: the **flood** (`water.flood`: the ground
+>   below HIGH connected to the drawn water, TRACED where the level meets the terrain, minus the drawn water — the sheet
+>   runs up the beach); the **tide band** (`bake-ground`: a soft fill refines to half a terrain step and ±the datum's
+>   uncertainty wherever its terrain reaches LOW…HIGH, so the drawn beach IS the terrain the tide meets); the player
+>   (water vertices carry `aLevelLow/High`, the sheet stands at the phase × exag, depth from it); the **revetment**
+>   (placed by the bank above y = 0, crest built to ≥ HIGH + a course, toe below LOW; breakwaters sized against LOW —
+>   `levelM/levelFrom/lowM` per walk). ▶ `node checks/claims-the-shore-is-closed.mjs` (walks HIGH and LOW) ·
+  `node checks/claims-water-depth-reads-the-level.mjs`
 > - ⚠️ **A COAST THAT MOVES RE-BAKES THE TERRAIN.** ⛔ The dirty set is a **computed import closure**
 >   of `bake-terrain.js` — which reaches `coastline.mjs` — plus the town's `raw/osm.json`, never a
 >   hand-listed file: a town's shore can move because the kit learned to read a shape it could not

@@ -20,6 +20,7 @@ import TodChannel from './TodChannel.jsx'
 import { CATEGORY_HEX } from '../tokens/categories'
 import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS, CANOPY_FIELDS, CANOPY_FLAT_DEFAULTS } from './skyLightChannels.js'
 import { StoreChannel } from './CartographSkyLight.jsx'
+import { WATER_LOOK_DEFAULTS } from '../components/waterMaterial.js'
 
 // Default shader physics for the 3D-scene materials. roughness/metalness
 // reflect what LafayetteScene's hardcoded materials use today; textures
@@ -488,6 +489,8 @@ export default function CartographSurfaces() {
               </div>
             )}
 
+            {selectedItem.id === 'water' && <WaterLookControls />}
+
             {/* Shader physics — only meaningful for 3D-scene materials.
                 Layer/lu kinds (flat ground bake) ignore these knobs at
                 render time; we still expose them for forward-compat with
@@ -649,6 +652,31 @@ function ShaderControls({ item, phys, set, reset }) {
         <Slider label="Emissive ×" value={phys.emissiveIntensity} min={0} max={5} step={0.1}
           onChange={(v) => set({ emissiveIntensity: v })} />
       </>}
+    </div>
+  )
+}
+
+// Surfaces › Water — the town's authored look of its water (design.json#surfaces.params.water), live in Stage and
+// baked into scene.json. ⭐ Clarity is a share of the town's OWN measured visibility (its Secchi): 1 is the measure, lower
+// shows the bottom less far; it cannot go past it (a clearer town is water.secchiM + a terrain re-bake). Deep see-through
+// is how much of the bed shows faintly through water deeper than that: 0 opaque (the kit's neutral), 1 the ripple's alpha.
+function WaterLookControls() {
+  const look = useCartographStore(s => s.surfaces?.params?.water) || {}
+  const setSurfaceParam = useCartographStore(s => s.setSurfaceParam)
+  const row = (key, label) => (
+    <div className="flex items-end gap-2">
+      <div className="flex-1">
+        <Slider label={label} value={look[key] ?? WATER_LOOK_DEFAULTS[key]} min={0} max={1} step={0.01}
+          onChange={(v) => setSurfaceParam('water', key, v)} />
+      </div>
+      <button onClick={() => setSurfaceParam('water', key, null)} title="Back to the kit's neutral default"
+        className="text-caption px-1.5 py-0.5 rounded cursor-pointer" style={{ background: 'transparent', color: 'var(--on-surface-subtle)' }}>↺</button>
+    </div>
+  )
+  return (
+    <div className="space-y-1 pt-1">
+      {row('clarity', 'Clarity (share of the town\'s measured visibility)')}
+      {row('deepSeeThrough', 'Deep see-through')}
     </div>
   )
 }

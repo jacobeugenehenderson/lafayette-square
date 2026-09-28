@@ -439,7 +439,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
     <group>
       {flood && isGroupVisible(flood.body.group, layerVis) && (
         <WaterSurface key="water:flood" geometry={flood.geometry} renderOrder={flood.body.group.renderOrder} extentDiag={flood.body.bodyExtent}
-          horizon={manifest.stencil ? waterHorizon(manifest.stencil) : null} />
+          horizon={manifest.stencil ? waterHorizon(manifest.stencil) : null} look={scene?.surfaces?.params?.water} />
       )}
       {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry, bodyExtent }) => {
         const fade = fadeForGroup(group, stencil)
@@ -447,7 +447,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
         const draw = groundMaterialFor(group, surfaceTable, { hasFieldAxis: !!geometry.attributes.aFieldAxis })
         if (draw.kind === 'water')
           return <WaterSurface key={key} geometry={geometry} renderOrder={group.renderOrder} extentDiag={bodyExtent}
-            horizon={bodyExtent && manifest.stencil ? waterHorizon(manifest.stencil) : null} />
+            horizon={bodyExtent && manifest.stencil ? waterHorizon(manifest.stencil) : null} look={scene?.surfaces?.params?.water} />
         if (draw.kind === 'gravel')
           return <GravelMesh key={key} group={group} geometry={geometry} lightmap={lightmap}
             tintHex={scene?.layerColors?.[group.id]}

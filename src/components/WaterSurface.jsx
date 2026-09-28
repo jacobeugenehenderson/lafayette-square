@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
-import { makeWaterMaterial, slopeScaleForWind, maxRoughnessForWind,
+import { makeWaterMaterial, WATER_LOOK_DEFAULTS, slopeScaleForWind, maxRoughnessForWind,
          coxMunkSlopeVariance, WIND_FLOOR_MPS } from './waterMaterial'
 import { TERRAIN_DECL, assignTerrainUniforms, terrainBed } from '../utils/terrainShader'
 import { tidePhase } from '../../cartograph/waterLevel.mjs'
@@ -31,7 +31,7 @@ let _saidNoBed = false
 // `extentDiag` — the body's own extent when the geometry carries more than the body (the horizon sectors BakedGround
 // appends), so the waves keep the town's scale. `horizon` — { center, inner, outer, rimIn, rimOut }: the haze fade past
 // the rim, and the rim's own fade (past it the bed reads as deep).
-function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = null, horizon = null }) {
+function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = null, horizon = null, look = null }) {
   const { material, uniforms } = useMemo(() => {
     geometry.computeBoundingBox()
     const bb = geometry.boundingBox
@@ -48,8 +48,11 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
     // ⭐ The town's visibility depth, read off its terrain's bed record (bake-terrain). ⛔ A town whose terrain has
     // no bed draws the water flat-shaded and SAYS so — it was baked before the bed existed.
     const bed = terrainBed()
-    uniforms.uVisibleM.value = bed ? bed.visibleToM : 0
-    uniforms.uFadeM.value = bed ? bed.fadeOverM : 0
+    // Surfaces › Water › Clarity scales the town's visibility depth (never past it — see WATER_LOOK_DEFAULTS).
+    const clarity = Math.min(1, Math.max(0, look?.clarity ?? WATER_LOOK_DEFAULTS.clarity))
+    uniforms.uVisibleM.value = bed ? bed.visibleToM * clarity : 0
+    uniforms.uFadeM.value = bed ? bed.fadeOverM * clarity : 0
+    uniforms.uDeepSee.value = Math.min(1, Math.max(0, look?.deepSeeThrough ?? WATER_LOOK_DEFAULTS.deepSeeThrough))
     if (!bed && !_saidNoBed) { _saidNoBed = true; console.error('[WaterSurface] ⛔ this terrain carries no bed (terrain.json `bed`) — the water is not shaded by depth. ▶ re-bake the terrain') }
     uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     // ⭐⭐ THE LAKE READS THE TOWN'S REAL WEATHER. `windSpeedMs` / `windDirDeg`

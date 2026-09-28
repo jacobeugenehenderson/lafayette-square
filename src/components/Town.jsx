@@ -101,7 +101,7 @@ export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
   'lantern', 'lampsOn', 'canopy', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
-  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint',
+  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint', 'wallPalettes', 'surfaces',
 ]
 // PostProcessing's view vocabulary (half-res AO off the movie shot, the street-level bloom bump).
 const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
@@ -298,7 +298,7 @@ export default function Town({
 
       <Suspense fallback={null}>
         <group visible={on('ground')}>
-          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
           <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
         </group>
         {/* Neon, street labels and the park title. Its live buildings stay hidden: the slab draws them. */}
@@ -310,7 +310,7 @@ export default function Town({
         </R3FErrorBoundary>
         <group visible={on('buildings')}>
           <R3FErrorBoundary name="SlabBuildings"><SlabBuildings key={`slab-${bake || 0}`} lookId={lookId} interactive={interactive}
-            materialPhysicsOverride={o.materialPhysics} paletteOverride={o.buildingPalette}
+            materialPhysicsOverride={o.materialPhysics} paletteOverride={o.buildingPalette} wallPalettesOverride={o.wallPalettes}
             litIds={litIds} litTintOverride={o.litTint} /></R3FErrorBoundary>
           <R3FErrorBoundary name="CityModel"><CityModel key={`city-${bake || 0}`} lookId={lookId} interactive={interactive} /></R3FErrorBoundary>
         </group>

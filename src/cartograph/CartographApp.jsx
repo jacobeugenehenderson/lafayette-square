@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { installShadowMaskDebug } from '../utils/shadowMaskDebug.js'
 installShadowMaskDebug()  // ?shadowmask=1 — must run before any material compiles
@@ -12,7 +12,6 @@ import MapLayers from './MapLayers.jsx'
 import DesignerTrees from './DesignerTrees.jsx'
 import DesignerLamps from './DesignerLamps.jsx'
 import OneWayArrows from './OneWayArrows.jsx'
-import BakedGround from '../components/BakedGround.jsx'
 
 // Designer-only (aerial + authoring overlays)
 import AerialBase, { AerialFocus } from './AerialTiles.jsx'
@@ -25,41 +24,19 @@ import BlockGeometryV2Debug from './BlockGeometryV2Debug.jsx'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import { DesignerArch } from './DesignerArch.jsx'
-import SetPiece from '../components/SetPiece.jsx'
-import Town, { Cascades } from '../components/Town.jsx'
-import SlabRevetment from '../components/SlabRevetment.jsx'
-import { TownPlace, useTownLoaded } from '../components/TownPlace.jsx'
-import { TownScope, SHOT_KEY } from '../components/townContext.js'
-import { TimeTicker, SkyStateTicker } from '../components/SkyTickers.jsx'
-import { QualityProvider, deviceQuality } from '../lib/qualityProfile.js'
+import Town from '../components/Town.jsx'
+import { placeTown } from '../components/Town.jsx'
+import { deviceQuality } from '../lib/qualityProfile.js'
 import { shallow } from 'zustand/shallow'
-import HorizonDisc from '../components/HorizonDisc.jsx'
 
 // Shot-only (environment paint-in)
-import LafayetteScene from '../components/LafayetteScene'
-import LafayettePark from '../components/LafayettePark'
-import InstancedTrees from '../components/InstancedTrees'
-import BakedLamps from '../components/BakedLamps'
-import GatewayArch from '../components/GatewayArch'
-import CelestialBodies from '../components/CelestialBodies'
-import CascadedShadows, { CSM_ENABLED } from '../components/CascadedShadows.jsx'
-import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
-import Atmosphere from '../components/Atmosphere'
-import CloudDome from '../components/CloudDome'
-import { skyModeOf } from '../lib/skyMode'
-import WeatherPoller from '../components/WeatherPoller'
-import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
-import WeatherEffects from '../components/WeatherEffects'
-import Terrain from '../components/Terrain'
-import { sceneExag, reloadTerrain, onTerrainReload } from '../utils/terrainShader'
+import { reloadTerrain, onTerrainReload } from '../utils/terrainShader'
 import { streetEyeY } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview } from '../stage/StageApp.jsx'
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
 import { derivedOpeningKeyframe } from '../lib/cameraRegimes.js'
 import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
-import { PostProcessing, StageFog, StageShadows, LampGlowDriver } from '../components/PostProcessing.jsx'
-import { NeonDriver } from '../components/NeonBands.jsx'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { transitionMs } from '../camera/transitions.js'
 
@@ -782,59 +759,10 @@ const MAP_REGISTRY = {
     ribbons: ribbonsRaw,
     stencil: LS_STENCIL,
     hasAerial: true,
-    StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => {
-      // Stage live-wire for every authored channel — drag a slider, see it
-      // retint instantly. Production omits these overrides and reads
-      // scene.json frozen-at-bake. Contained here in the cartograph chunk
-      // so LafayetteScene itself never imports useCartographStore.
-      // Doctrine: project_authoring_is_live_production_is_static.
-      // activeChannel resolves the active shot's fork (channel-variant cascade)
-      // so the Stage live-renders per-shot looks; non-forkable channels (palette/
-      // material/arch/horizon) resolve to base unchanged.
-      const paletteOverride         = useCartographStore(s => activeChannel(s, 'buildingPalette'))
-      const materialPhysicsOverride = useCartographStore(s => activeChannel(s, 'materialPhysics'))
-      const materialColorsOverride  = useCartographStore(s => activeChannel(s, 'materialColors'))
-      const archOverride            = useCartographStore(s => activeChannel(s, 'arch'))
-      const archLightOverride       = useCartographStore(s => activeChannel(s, 'archLight'))
-      const lanternOverride         = useCartographStore(s => activeChannel(s, 'lantern'))
-      const lampsOn                 = useCartographStore(s => s.layerVis?.lamp !== false)
-      const canopyOverride          = useCartographStore(s => activeChannel(s, 'canopy'))
-      const forceNeonOn             = useCartographStore(s => s.neonForceOn)
-      const neonDensity             = useCartographStore(s => s.neonDensity)
-      return <>
-        {!hiddenLayers.park && (
-          <R3FErrorBoundary name="LafayettePark"><LafayettePark town={townForLook(lookId)} lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
-        )}
-        {!hiddenLayers.tree && (
-          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bakeLastMs} canopyOverride={canopyOverride} /></R3FErrorBoundary>
-        )}
-        <R3FErrorBoundary name="LafayetteScene"><LafayetteScene
-          town={townForLook(lookId)}
-          lookId={lookId}
-          bakeLastMs={bakeLastMs}
-          paletteOverride={paletteOverride}
-          materialPhysicsOverride={materialPhysicsOverride}
-          materialColorsOverride={materialColorsOverride}
-          forceNeonOn={forceNeonOn}
-          neonDensity={neonDensity}
-          hiddenLayers={hiddenLayers}
-          forceContentReady
-        /></R3FErrorBoundary>
-        {!hiddenLayers.lamp && (
-          <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} lanternOverride={lanternOverride} lampsOnOverride={lampsOn} /></R3FErrorBoundary>
-        )}
-        <R3FErrorBoundary name="GatewayArch"><GatewayArch
-          lookId={lookId}
-          bakeLastMs={bakeLastMs}
-          archOverride={archOverride}
-          archLightOverride={archLightOverride}
-        /></R3FErrorBoundary>
-      </>
-    },
   },
 }
 // MAP_REGISTRY holds only the DEFAULT installation ('lafayette-square', with
-// its bundled ribbons + StageEnvironment). Any
+// its bundled ribbons — Designer's). Its 3D is <Town>, like every town's. Any
 // OTHER installation is a generic "poured neighborhood": its config is built
 // from data loaded BY ID (ribbons + boundary from the store), so no specific
 // neighborhood is named here. `sceneBoundary` is the active installation's
@@ -856,10 +784,10 @@ function sceneConfig(scene, sceneBoundary) {
 // (Town.jsx OVERRIDE_KEYS) is wired here once, not per piece. activeChannel resolves the active
 // shot's fork (the channel-variant cascade). Doctrine: project_authoring_is_live_production_is_static.
 const STAGE_CHANNELS = [
-  'buildingPalette', 'materialPhysics', 'materialColors', 'neon', 'lampGlow', 'lantern', 'canopy', 'arch',
+  'buildingPalette', 'wallPalettes', 'materialPhysics', 'materialColors', 'neon', 'lampGlow', 'lantern', 'canopy', 'arch',
   'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon',
   'constellations', 'milkyWay', 'skyGain', 'stars', 'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo',
-  'grade', 'grain', 'dof',
+  'grade', 'grain', 'dof', 'surfaces',
 ]
 function useStageOverrides() {
   const channels = useCartographStore(s => Object.fromEntries(STAGE_CHANNELS.map(k => [k, activeChannel(s, k)])), shallow)
@@ -908,41 +836,6 @@ export default function CartographApp() {
   const storeMotion = useCartographStore(s => s.heroMotion)
   const setStoreMotion = useCartographStore(s => s.setHeroMotion)
 
-  // Stage live-wire for sky / lighting / celestial — threaded into the
-  // single shared CelestialBodies consumer via `<channel>Override` props.
-  // Drag a slider in Sky & Light → Stage retints instantly. Production
-  // mounts the same consumer without these props and reads scene.json
-  // frozen-at-bake. Store reach is contained here in the cartograph chunk;
-  // CelestialBodies itself never imports useCartographStore.
-  // Doctrine: project_stage_consumer_parity, project_authoring_is_live_production_is_static.
-  // activeChannel resolves the active shot's fork (channel-variant cascade) so
-  // the Stage live-renders per-shot looks; unforked shots resolve to base.
-  const skyOverride            = useCartographStore(s => activeChannel(s, 'sky'))
-  const ambientOverride        = useCartographStore(s => activeChannel(s, 'ambient'))
-  const hemiOverride           = useCartographStore(s => activeChannel(s, 'hemi'))
-  const dirSunOverride         = useCartographStore(s => activeChannel(s, 'dirSun'))
-  const dirMoonOverride        = useCartographStore(s => activeChannel(s, 'dirMoon'))
-  const constellationsOverride = useCartographStore(s => activeChannel(s, 'constellations'))
-  const milkyWayOverride       = useCartographStore(s => activeChannel(s, 'milkyWay'))
-  const skyGainOverride        = useCartographStore(s => activeChannel(s, 'skyGain'))
-  const starsOverride          = useCartographStore(s => activeChannel(s, 'stars'))
-
-  // SC.2 + SC.3 — post-FX channels threaded as overrides into the shared
-  // PostProcessing + StageFog consumers. Production passes no overrides
-  // and reads scene.json frozen-at-bake.
-  const bloomOverride    = useCartographStore(s => activeChannel(s, 'bloom'))
-  const aoOverride       = useCartographStore(s => activeChannel(s, 'ao'))
-  const exposureOverride = useCartographStore(s => activeChannel(s, 'exposure'))
-  const warmthOverride   = useCartographStore(s => activeChannel(s, 'warmth'))
-  const fillOverride     = useCartographStore(s => activeChannel(s, 'fill'))
-  const mistOverride     = useCartographStore(s => activeChannel(s, 'mist'))
-  const haloOverride     = useCartographStore(s => activeChannel(s, 'halo'))
-  const gradeOverride    = useCartographStore(s => activeChannel(s, 'grade'))
-  const dofOverride      = useCartographStore(s => activeChannel(s, 'dof'))
-  const dofFocusOverride = useCartographStore(s => s.dofFocus)
-  const grainOverride    = useCartographStore(s => activeChannel(s, 'grain'))
-  const shadowOverride   = useCartographStore(s => activeChannel(s, 'shadow'))
-  const setPieceLightOverride = useCartographStore(s => activeChannel(s, 'setPieceLight'))
   // Live arch placement — gates the Designer's arch prop below.
   const archOverride     = useCartographStore(s => s.arch)
 
@@ -1017,21 +910,17 @@ export default function CartographApp() {
   // tool affordances stay over the aerial as reference, and the user
   // declutters via per-layer visibility toggles in the Designer Panel.
   const sceneCfg = useMemo(() => sceneConfig(scene, sceneBoundary), [scene, sceneBoundary])
-  // ⏳ The town still on Stage's hand-assembly: the registered one (Lafayette Square).
-  const legacy = !!MAP_REGISTRY[scene]
-  // The active Look's installation — <Town town> and every legacy mount that needs the town, never the page's boot one.
+  // The active Look's installation — <Town town>, never the page's boot one.
   const activeTown = useMemo(() => townForLook(activeLookId), [activeLookId])
-  // The hand-assembly draws once the active town's place and terrain are in, as <Town> does.
-  const townIn = useTownLoaded(activeLookId)
-  // Stage's selection and listings, handed to <Town> — and, through the same scope, to its hand-assembly for
-  // Lafayette Square (⏳ until BRIEF-live-building-palette moves it onto <Town>).
+  // Stage places the town it is on, like every app's entry: in Designer no <Town> is mounted, and the sun, the
+  // moon, the season and Stage's own panels still follow the active town. (Terrain is reloaded above.)
+  useLayoutEffect(() => { if (activeTown) placeTown(activeTown, activeLookId) }, [activeTown, activeLookId])
+  // Stage's selection and listings, handed to <Town>.
   const selectedId = useSelectedBuilding((s) => s.selectedId)
   const selectStore = useSelectedBuilding((s) => s.select)
   const deselectStore = useSelectedBuilding((s) => s.deselect)
   const onSelectBuilding = useCallback((id) => (id ? selectStore(id) : deselectStore()), [selectStore, deselectStore])
   const listings = useListings((s) => s.listings)
-  const stageScope = useMemo(() => ({ shotKey: SHOT_KEY[TOWN_SHOT[shot]] ?? 'hero', selectedId, select: onSelectBuilding, listings }),
-    [shot, selectedId, onSelectBuilding, listings])
   const townOverrides = useStageOverrides()
   const designAerialOnly = inDesigner && !tool && aerialVisible
   // When a tool is active, hide the giant off-map ground plane so the
@@ -1103,8 +992,6 @@ export default function CartographApp() {
           shadows="soft"
           style={{ position: 'absolute', inset: 0 }}
         >
-          <QualityProvider quality={QUALITY}>
-          <TownScope value={stageScope}>
           <PerspectiveCamera
             ref={perspRef}
             makeDefault={!inDesigner}
@@ -1114,8 +1001,6 @@ export default function CartographApp() {
             far={60000}
           />
           <CameraRig orthoRef={orthoRef} perspRef={perspRef} controlsRef={controlsRef} />
-          {legacy && !inDesigner && townIn && <TimeTicker holdScrubbedTime />}
-          {legacy && !inDesigner && townIn && <SkyStateTicker />}
 
 
           {/* ── Ground:
@@ -1168,11 +1053,10 @@ export default function CartographApp() {
               Same component Preview mounts; cache-busts on bakeLastMs so
               ↻ / Stage→ refresh the artifact in place. The slab is the
               single rendered ground in shot mode (no V2 overlay). ── */}
-          {/* ⭐ Every town but Lafayette Square draws through <Town> — the assembly production and Preview
-              mount. ⏳ Lafayette Square keeps the hand-assembly below until SlabBuildings
-              retints the palette live for every town (BRIEF-live-building-palette; Jacob ruled 2026-09-27).
-              ▶ node checks/claims-every-app-mounts-the-town.mjs reports it, red, until then. */}
-          {!legacy && !inDesigner && townIn && (
+          {/* ⭐ Every town draws through <Town> — the assembly production and Preview mount, Lafayette Square
+              included since SlabBuildings recolours the palette live (BRIEF-live-building-palette).
+              ▶ node checks/claims-every-app-mounts-the-town.mjs */}
+          {!inDesigner && (
             <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs}
               selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
@@ -1181,21 +1065,6 @@ export default function CartographApp() {
                 lamps: !hiddenLayers.lamp, park: !hiddenLayers.park, labels: !hiddenLayers.labels,
               }} />
           )}
-          {/* The sun, the moon and the season follow the active town in every mode, Designer included. */}
-          {(legacy || inDesigner) && activeTown && <TownPlace town={activeTown} lookId={activeLookId} />}
-          {legacy && !inDesigner && townIn && (
-            <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={activeLookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
-          )}
-          {legacy && !inDesigner && townIn && (
-            <R3FErrorBoundary name="BakedGround">
-              <BakedGround
-                lookId={activeLookId}
-                bakeLastMs={bakeLastMs}
-                targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : sceneExag()}
-              />
-            </R3FErrorBoundary>
-          )}
-
           {/* ── Map layers (flat ground geometry — neighborhood only).
               In shots, layers with 3D equivalents (park, buildings, trees,
               lamps, water) are suppressed so the 3D components own them.
@@ -1258,88 +1127,7 @@ export default function CartographApp() {
           </>}
 
           {/* ── Shot-only (environment paint — must exactly mirror runtime) ── */}
-          {legacy && !inDesigner && townIn && <StageShadows
-            lookId={activeLookId}
-            bakeLastMs={bakeLastMs}
-            shadowOverride={shadowOverride}
-          />}
-          {legacy && !inDesigner && townIn && <StageFog
-            lookId={activeLookId}
-            bakeLastMs={bakeLastMs}
-            mistOverride={mistOverride}
-          />}
-          {legacy && !inDesigner && townIn && <PostProcessing
-            lookId={activeLookId}
-            bakeLastMs={bakeLastMs}
-            bloomOverride={bloomOverride}
-            aoOverride={aoOverride}
-            exposureOverride={exposureOverride}
-            warmthOverride={warmthOverride}
-            fillOverride={fillOverride}
-            haloOverride={haloOverride}
-            gradeOverride={gradeOverride}
-            grainOverride={grainOverride}
-            dofOverride={dofOverride}
-            dofFocusOverride={dofFocusOverride}
-          />}
           {!inDesigner && <DofFocusPicker />}
-          {legacy && townIn && <group visible={!inDesigner}>
-            {/* ⚠️ `?csm=1` — cascaded shadow maps, dark by default. Mounted HERE as well as
-                Preview because Stage is where the operator has camera control and the
-                Look panel; a render change that cannot be driven cannot be judged. */}
-            {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><Cascades /></R3FErrorBoundary>}
-            {/* ⛔ UNGATED. Names the material when a program fails to link — the failure
-                that draws NOTHING and says nothing. See lib/shaderLinkGuard.jsx. */}
-            <ShaderLinkGuard />
-            <R3FErrorBoundary name="CelestialBodies"><CelestialBodies
-              debugLevel={0}
-              lookId={activeLookId}
-              bakeLastMs={bakeLastMs}
-              skyOverride={skyOverride}
-              ambientOverride={ambientOverride}
-              hemiOverride={hemiOverride}
-              dirSunOverride={dirSunOverride}
-              dirMoonOverride={dirMoonOverride}
-              constellationsOverride={constellationsOverride}
-              milkyWayOverride={milkyWayOverride}
-              skyGainOverride={skyGainOverride}
-              starsOverride={starsOverride}
-            /></R3FErrorBoundary>
-            {/* Atmosphere driver chain — production feeds <Atmosphere> via
-                these; without them useAtmosphere.tweenedDirective stays empty
-                and no clouds render. Same fix mirrored into Preview. */}
-            <WeatherPoller mode={weatherMode} />
-            <AtmosphereDirectiveDriver lookId={activeLookId} />
-            <WeatherEffects />
-            {/* Sky renderer stopgap (skyMode): cheap <CloudDome/> ships,
-                <Atmosphere/> slab mounts under ?sky=volumetric. */}
-            <R3FErrorBoundary name="Atmosphere">{skyModeOf(activeTown) === 'volumetric' ? <Atmosphere lookId={activeLookId} /> : <CloudDome />}</R3FErrorBoundary>
-            {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
-                visible ground. Terrain still mounts so its shader uniforms
-                drive displacement for ribbons/buildings. */}
-            <group visible={false}>
-              <R3FErrorBoundary name="Terrain"><Terrain /></R3FErrorBoundary>
-            </group>
-            {/* Heavy 3D-only props — skip mounting entirely in Designer
-                (flat top-down view doesn't render trees/arch/lamps/scene
-                detail, and `visible={false}` doesn't prevent the children's
-                expensive useMemos from running). They mount as soon as a
-                shot is active. */}
-            {/* The town's set-piece — the ONE mount every app uses, in Stage AND Designer
-                (top-down it reads as its plan square). Keyed to the ACTIVE look, since
-                Stage switches towns live. ▶ checks/claims-every-app-mounts-the-set-piece.mjs */}
-            <R3FErrorBoundary name="SetPiece"><SetPiece town={activeTown} lookId={activeLookId} lightOverride={setPieceLightOverride} /></R3FErrorBoundary>
-            {/* The ground from the town's rim to the horizon — every town, the same component production mounts. */}
-            {/* Not in the plan (browse) shot: there the town ends at its soft rim (Jacob, 2026-09-28). */}
-            {shot !== 'browse' && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={activeLookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>}
-            {!inDesigner && sceneCfg.StageEnvironment && (
-              <sceneCfg.StageEnvironment
-                hiddenLayers={hiddenLayers}
-                lookId={activeLookId}
-                bakeLastMs={bakeLastMs}
-              />
-            )}
-          </group>}
           {/* SC.2 (2026-05-13): the duplicate `<PreviewPostFx>` mount that
               used to live here was a workaround for the StageApp-vs-Scene
               PostProcessing fork — Stage doubled up the chain so its
@@ -1348,8 +1136,6 @@ export default function CartographApp() {
               gets live retint via the single mount and the doubled
               EffectComposer is gone. */}
 
-          {legacy && !inDesigner && townIn && <LampGlowDriver lookId={activeLookId} bakeLastMs={bakeLastMs} lampGlowOverride={townOverrides.lampGlow} />}
-          {legacy && !inDesigner && townIn && <NeonDriver lookId={activeLookId} bakeLastMs={bakeLastMs} neonOverride={townOverrides.neon} />}
           <Controls controlsRef={controlsRef} heroPlaying={previewPlaying} />
           {/* ⛔⛔ `sceneCfg.hasHero` GATED THIS AND WAS TRUE FOR LAFAYETTE SQUARE
               ONLY — removed 2026-09-21. HeroPreview is not a decoration, it IS the
@@ -1370,8 +1156,6 @@ export default function CartographApp() {
           {shot === 'hero' && (
             <HeroPreview keyframes={keyframes} motion={heroMotion} />
           )}
-          </TownScope>
-          </QualityProvider>
         </Canvas>
 
         {inDesigner && <MarkerOverlay cameraRef={orthoRef} />}

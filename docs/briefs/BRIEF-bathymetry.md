@@ -53,15 +53,17 @@ level sits.
 - **Datum:** VDatum converts the lidar's NAVD88 to the town's tidal datums at its position (step 2 above). A lake has no
   tide: its datum is the lake's own chart datum or mean level, from its source. ⛔ A coastal town with no conversion
   fails loudly; it never keeps the flight's level in silence.
-- **Consumers:** the level feeds the waterline where it meets the ground, so the shore, revetment, level-body and
-  every-metre-named checks re-run on it. Loam: the datum. Strand: the level and the shore.
+- **Consumers — BUILT** (0962f27b … f52ad01f; the contract is `cartograph/BAKE.md` "every consumer reads the level"):
+  the level, the traced high-water flood, the tide-band ground, the revetment. Loam: the datum. Strand: the level and the shore.
 - ⭐ **The shape, ruled 2026-09-27 (Jacob): a LOW-tide level and a HIGH-tide level per town, and a clock between them.**
   Build the two levels now (the default shown = high; low = MLLW from the same VDatum call); the clock is next. And a
   **new graphic in the Almanac** tells the user where the tide is (Meteorologist's surface; its own brief).
 - ⏭ **NEXT, and not negotiable (Jacob): the tide MOVES with the clock** — NOAA harmonics make it a pure function of
-  time, like the monument's show. The waterline is baked today (the shore rules, the revetment toe, the water body), so
-  a moving level is its own arc. ⛔ **Build the fixed level so the moving one extends it:** a level is a value read at
-  a time, never a constant baked into geometry that cannot move.
+  time, like the monument's show. The level already is a value read at a time (`waterLevel.mjs`); the clock replaces
+  only `tidePhase(t)`. Seam (agreed 2026-09-28): Loam ships `tideHarmonics.mjs` `tideHeightAt(tide, t)` + its check
+  against NOAA's predictions; Strand maps it to a phase at the station (unclamped — springs run past MHW/MLLW) and
+  moves the flood to HAT and the tide band to LAT…HAT once `water.datums` carries them. Kept out of any real bake until
+  Provincetown has promoted (Boz, 2026-09-28).
 
 ## Bounds
 No bake without Jacob's go, cleared through Boz. Commit only your own paths. Lafayette Square is not re-poured.

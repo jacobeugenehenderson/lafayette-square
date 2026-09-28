@@ -290,6 +290,16 @@ export function waveKForExtent(extentDiag) {
 // this module stays importable where the terrain is not loaded (the checks). Absent, the water does not shade by depth.
 /** Mist › Over water — the share of the town's fog the water takes. One uniform, written by StageFog each frame. */
 export const WATER_MIST = { value: 0.3 }
+/**
+ * Surfaces › Water — the town's authored look of its water (design.json#surfaces.params.water; Jacob, 2026-09-28).
+ * ⭐ NEUTRAL kit defaults: `clarity` 1 = the town's own measured visibility depth (bake-terrain `bed.visibleToM`, from
+ * its Secchi); lower shows the bottom less far. ⛔ Never above 1: the bed is baked down to that depth, and seeing past
+ * it would show where the baked bed stops — a clearer town is design.json water.secchiM + a terrain re-bake.
+ * `deepSeeThrough` 0 = past the visibility depth the water is opaque (the physical answer); 1 = the sheet's own ripple
+ * alpha there. A town authors its own by eye.
+ */
+export const WATER_LOOK_DEFAULTS = { clarity: 1, deepSeeThrough: 0 }
+
 export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, bodyColors = null, terrain = null } = {}) {
   // ⛔ LOUD, NOT SILENT. An absent extent is the one input whose default would
   // be invisible: the surface would render, perfectly plausibly, at a pond's
@@ -353,6 +363,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uHorizonOut:    { value: 0 },
     // The drawing's own rim fade (ground.json stencil.fade): past it the bed is past the drawing, so it reads as deep.
     uRimIn:         { value: 0 },
+    // Surfaces › Water › Deep see-through (WaterSurface writes it): 0 = opaque past the visibility depth, 1 = the sheet's
+    // own ripple alpha there, the bed faintly through it.
+    uDeepSee:       { value: WATER_LOOK_DEFAULTS.deepSeeThrough },
     // ⭐ The tide's phase (cartograph/waterLevel.mjs tidePhase): 0 = the town's low level, 1 = its high. Each vertex
     // carries both (aLevelLow / aLevelHigh); the sheet stands between them, and depth is measured from it.
     uPhase:         { value: 1 },
@@ -457,6 +470,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform float uHorizonOut;
        uniform float uRimIn;
        uniform float uRimOut;
+       uniform float uDeepSee;
        varying float vLevel;${terrain ? terrain.decl : ''}
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
@@ -697,7 +711,7 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // Jacob loved had it (2026-09-27: "yes faint see thru"; 4ab1dae3 had made it opaque, and with the tide at HIGH
          // the town's water measured mean alpha 0.93 against that look's 0.71). ⛔ Past the drawing's rim there is no
          // bed, only the horizon disc beneath: there it stays opaque, or the disc shows as a second, darker sea.
-         float wDeepA = mix(diffuseColor.a, 1.0, wPast);
+         float wDeepA = mix(mix(1.0, diffuseColor.a, clamp(uDeepSee, 0.0, 1.0)), 1.0, wPast);
          diffuseColor.a = mix(wDeepA, diffuseColor.a * clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
        }
 ` : ''}       if (uHorizonOut > 0.0) diffuseColor.a *= 1.0 - smoothstep(uHorizonIn, uHorizonOut, length(vWaterWorld.xz - uHorizonC));

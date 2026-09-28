@@ -822,6 +822,18 @@ const useCartographStore = create((set, get) => ({
   // ── Style setters (used by StyleEditor and any other styling UI) ──
   // Each writes the new value into the store, triggers a debounced save
   // to /looks/<activeLookId>/design, and stales the bake.
+  // design.json#surfaces.params.<surface>.<key> — a surface's authored look (Surfaces › Water: clarity, deep
+  // see-through). `value` null removes the key, so the kit's neutral default applies again.
+  setSurfaceParam: (surface, key, value) => {
+    set(s => {
+      const params = { ...(s.surfaces?.params || {}) }
+      const one = { ...(params[surface] || {}) }
+      if (value == null) delete one[key]; else one[key] = value
+      if (Object.keys(one).length) params[surface] = one; else delete params[surface]
+      return { surfaces: { ...(s.surfaces || {}), params } }
+    })
+    get()._saveDesignDebounced()
+  },
   setLayerColor: (id, color) => {
     set(s => ({ layerColors: { ...s.layerColors, [id]: color } }))
     get()._saveDesignDebounced()
