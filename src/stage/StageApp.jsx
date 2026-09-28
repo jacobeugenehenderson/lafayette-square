@@ -606,11 +606,13 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     showAt(Math.min(1, heroScrub.t * k), next, { ...heroMotion, mode })
   }
 
-  // Marker drag: a press without movement is a click (go there + pause); any
-  // movement retimes the key. The first key, a bounce's end key and a loop's
-  // linked end are pinned.
+  // ⭐ SCRUBBING NEVER WRITES THE KEYS (Jacob, 2026-09-28: "I was trying to edit the time slider and the keyframe
+  // moved"). A plain press on a dot is the track's — it scrubs (and snaps onto the key, so a click goes there). Only
+  // ⌥-drag (Alt) RETIMES a key; ⌥ without movement is a click. The first key, a bounce's end key and a loop's linked
+  // end are pinned. ▶ node checks/claims-a-scrub-never-writes-the-keys.mjs
   const draggable = (i) => i > 0 && (loop || i < n - 1)
   const markerDown = (e, i) => {
+    if (!e.altKey) return                       // the track scrubs
     e.stopPropagation()
     e.currentTarget.setPointerCapture(e.pointerId)
     drag.current = { i, x0: e.clientX, moved: false }
@@ -642,13 +644,13 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     const active = !playing && (linked ? onKey === 0 && f > 0.5 : onKey === i && !(loop && i === 0 && f > 0.5))
     const pulsing = !linked && pulse === i
     const title = linked ? `${kfName(0)} again — the loop closes here · ${fmtSec(L)}`
-      : `${kfName(i)} · ${fmtSec(x * L)}${draggable(i) ? ' — drag to retime' : ''}`
+      : `${kfName(i)} · ${fmtSec(x * L)}${draggable(i) ? ' — ⌥-drag to retime' : ''}`
     return (
       <div key={linked ? 'end' : i}
         onPointerDown={(e) => markerDown(e, linked ? null : i)}
         onPointerMove={markerMove} onPointerUp={markerUp} onPointerCancel={markerUp}
         title={title}
-        className={`absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border touch-none ${!linked && draggable(i) ? 'cursor-ew-resize' : 'cursor-pointer'}${pulsing ? ' hero-dot-pulse' : ''}`}
+        className={`absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 border touch-none cursor-pointer${pulsing ? ' hero-dot-pulse' : ''}`}
         style={{
           left: `${x * 100}%`,
           backgroundColor: linked ? 'transparent' : 'var(--vic-gold)',
@@ -693,7 +695,7 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
           title="Next key" onClick={() => step(1)}>›</button>
       </div>
 
-      {/* ── Timeline: drag the playhead; click a key to go there, drag it to retime ── */}
+      {/* ── Timeline: drag anywhere to scrub (a key's dot too); click a key to go there; ⌥-drag a key to retime ── */}
       <div>
         <div
           ref={trackRef}
@@ -732,6 +734,9 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
         </div>
         <div className="flex justify-between text-caption font-mono px-0.5" style={{ color: 'var(--on-surface-subtle)' }}>
           <span>0 s</span><span>{fmtSec(f * L)}</span><span>{fmtSec(L)}</span>
+        </div>
+        <div className="text-caption px-0.5" style={{ color: 'var(--on-surface-subtle)' }}>
+          Drag to scrub · click a key to go there · ⌥-drag a key to retime it
         </div>
       </div>
 
