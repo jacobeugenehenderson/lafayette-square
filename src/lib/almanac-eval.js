@@ -16,7 +16,10 @@
  *
  * Composition rules (commutative-by-design where the math allows):
  *   - Scalar `{scale:[a,b]}` deltas multiply on the same field across
- *     modulators (commutes naturally).
+ *     modulators (commutes naturally). ⛔ A field the directive doesn't author
+ *     is scaled from what its absence MEANS (ABSENT_MEANS: sun.intensity =
+ *     NORMAL_SUN_INTENSITY), and left absent where no meaning is named; a
+ *     tint-toward on an unauthored colour writes nothing. Absence is not zero.
  *   - `{tintToward, amount:[a,b]}` deltas sum-and-clamp on `amount`
  *     before being applied as a single lerp toward `tintToward` (the
  *     summed amount is the lerp factor; multiple modulators tinting
@@ -29,6 +32,8 @@
  *     modulators don't fire at once).
  *   - Direct scalar `[lo,hi]` deltas sum-and-clamp per field.
  */
+
+import { NORMAL_SUN_INTENSITY } from './sky-scalars.js'
 
 const NUMERIC_RANGE_KEYS = [
   'tempC', 'cloudCover', 'pressureMb', 'humidity',
@@ -161,14 +166,19 @@ function applyModulators(baseDirective, modulators, signals) {
     // anyway).
     if (a.colorOverride != null) {
       next = a.colorOverride
-    } else if (a.tintAmount > 0 && a.tintColor) {
-      const baseColor = typeof cur === 'string' && cur[0] === '#' ? cur : '#888888'
-      next = lerpHex(baseColor, a.tintColor, Math.min(1, a.tintAmount))
+    } else if (a.tintAmount > 0 && a.tintColor && typeof cur === 'string' && cur[0] === '#') {
+      // ⛔ A tint on a colour the directive doesn't author writes nothing (it used to tint from a made-up #888888).
+      next = lerpHex(cur, a.tintColor, Math.min(1, a.tintAmount))
     }
 
     if (typeof cur === 'number' || typeof next === 'number' || a.directCount > 0 || a.scaleProduct !== 1) {
-      let n = typeof cur === 'number' ? cur : 0
+      // ⛔ ABSENCE IS NOT ZERO. A scale on a field the directive doesn't author scales what absence MEANS, and where
+      // the kit names no meaning it writes nothing. It used to scale 0: clear_sky authors no sun, so any sun-scaling
+      // modulator wrote sun.intensity 0, which sky-scalars reads as full darkness — cloud cover 1 and storm on a
+      // cloudless day (Lafayette Square, 2026-09-28).
+      let n = typeof cur === 'number' ? cur : ABSENT_MEANS[path]
       if (a.directCount > 0) n = a.directSum / a.directCount  // average direct ranges that landed
+      if (n === undefined) continue
       n = n * a.scaleProduct
       // Clamp to the directive schema's bounds where known (best-effort
       // — full schema-aware clamping lives in the validator).
@@ -259,6 +269,9 @@ function setPath(obj, path, value) {
   }
   cur[last] = value
 }
+
+// What an absent field means to its consumer, for a modulator's scale to act on (see applyModulators).
+const ABSENT_MEANS = { 'sun.intensity': NORMAL_SUN_INTENSITY }
 
 // Best-effort clamping against directive.schema.json's known bounds.
 const NUMERIC_BOUNDS = {

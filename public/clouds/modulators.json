@@ -9,7 +9,7 @@
       "label": "Cold front passage",
       "description": "A falling barometer over 3 hours warms the sun cast, cools the sky low-band, and lifts wind scale — the visible texture of frontal passage. Canonical ADR example.",
       "enabled": true,
-      "driver": { "signal": "pressure_trend_3hr", "range": [-6, 0], "curve": "smoothstep" },
+      "driver": { "signal": "pressure_trend_3hr", "range": [0, -6], "curve": "smoothstep" },
       "deltas": {
         "sun.tint":             { "from": "#ffe6c8", "to": "#fff0aa" },
         "sun.intensity":        { "scale": [1.0, 0.7] },
@@ -77,7 +77,7 @@
       "enabled": true,
       "driver": {
         "all": [
-          { "signal": "pressure_trend_3hr", "range": [-3, 0],     "curve": "smoothstep" },
+          { "signal": "pressure_trend_3hr", "range": [0, -3],     "curve": "smoothstep" },
           { "signal": "humidity",           "range": [0.75, 0.95], "curve": "smoothstep" },
           { "signal": "cloudCover",         "min": 0.6 }
         ]

@@ -22,6 +22,7 @@
  */
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const read = (p) => readFileSync(path.join(ROOT, p), 'utf8')
@@ -241,6 +242,54 @@ else ok('only the directive path writes cloudCover/storminess')
   if (!(eased > 4.9)) bad(`without a snap the wind no longer eases (|wind| ${eased.toFixed(3)} after 0.1 s)`)
   else if (snapped !== 0) bad(`a chosen weather keeps the last weather's wind (|wind| ${snapped.toFixed(3)})`)
   else ok('the wind eases for real weather and takes a chosen weather\'s at once')
+}
+
+// ── 6. a modulator shades the weather it lands on; it never makes a clear day a storm ──
+// ⛔ THE DEFECT (Lafayette Square, 2026-09-28): clear_sky authors no sun, and a sun-scaling modulator scaled the
+// absent value as 0, writing sun.intensity 0: full darkness, so cover 1 and storm under a cloudless feed. Section 1
+// never saw it, because its feed carries no hourly pressure and no modulator fired. Here each modulator is forced
+// to full strength, alone, on the clear directive; and a pressure-driven one must rise as the barometer FALLS.
+{
+  const { evaluateDriver } = await import(path.join(ROOT, 'src/lib/almanac-eval.js'))
+  const clearWeather = buildWeatherPayload(preset('clear'), noon)
+  const forced = (m) => ({ ...m, enabled: true, driver: { signal: '__forced', min: 0 } })
+  const worstOn = (select, mods) => {
+    let worst = null
+    for (const m of mods) {
+      const { directive } = select({ weather: clearWeather, almanac, presets, override: null, modulators: [forced(m)], signals: { __forced: 1 } })
+      const s = deriveSkyScalars(directive, presets)
+      if (!worst || s.cloudCover > worst.cover) worst = { id: m.id, cover: s.cloudCover, sun: directive?.sun?.intensity }
+    }
+    return worst
+  }
+  // The darkest any single modulator may make clear: its own strongest sun scale (severe storm filter, ×0.35).
+  const limit = (mods) => 1 - Math.min(1, ...mods.flatMap((m) => Object.entries(m.deltas || {}).filter(([p, d]) => p === 'sun.intensity' && d.scale).map(([, d]) => Math.min(...d.scale))))
+  const lim = limit(modulators) + 1e-6
+  const w = worstOn(selectDirectiveWithStrengths, modulators)
+  console.log(`    darkest modulator on clear: ${w.id} → cover ${w.cover.toFixed(2)}, sun ${w.sun} (limit ${lim.toFixed(2)})`)
+  if (w.cover > lim) bad(`${w.id} at full strength turns a clear day to cover ${w.cover.toFixed(2)} (sun ${w.sun}) — past its own sun scale`)
+  else ok('no modulator darkens a clear day past its own sun scale (absence is not zero)')
+  // Mutation: the old composer, which scaled an absent field from 0.
+  const src = read('src/lib/almanac-eval.js')
+  const mutSrc = src.replace('ABSENT_MEANS[path]', '0').replace("from './sky-scalars.js'", `from '${pathToFileURL(path.join(ROOT, 'src/lib/sky-scalars.js')).href}'`)
+  if (mutSrc === src) bad('the absence-is-zero mutation no longer applies — re-aim it')
+  else {
+    const mut = await import('data:text/javascript,' + encodeURIComponent(mutSrc))
+    const mw = worstOn(mut.selectDirectiveWithStrengths, modulators)
+    if (mw.cover > lim) ok(`mutation (absent field scaled from 0) is caught: ${mw.id} → cover ${mw.cover.toFixed(2)}`)
+    else bad('mutation (absent field scaled from 0) is NOT caught')
+  }
+
+  // A pressure-driven modulator fires as the barometer falls: stronger at −6 mb/3 h than at 0.
+  const pressureDrivers = (d) => d?.all ? d.all.flatMap(pressureDrivers) : d?.signal === 'pressure_trend_3hr' ? [d] : []
+  const backwards = (mods) => mods.flatMap((m) => pressureDrivers(m.driver).filter((d) => !(evaluateDriver(d, { pressure_trend_3hr: -6 }) > evaluateDriver(d, { pressure_trend_3hr: 0 }))).map(() => m.id))
+  const pd = modulators.filter((m) => pressureDrivers(m.driver).length)
+  if (!pd.length) bad('no modulator is driven by pressure_trend_3hr — re-aim this test')
+  else if (backwards(modulators).length) bad(`driven by a RISING barometer: ${backwards(modulators).join(', ')}`)
+  else ok(`${pd.map((m) => m.id).join(', ')} rise as the barometer falls`)
+  const flipped = modulators.map((m) => JSON.parse(JSON.stringify(m).replace(/("pressure_trend_3hr","range":\[)(-?[\d.]+),(-?[\d.]+)\]/g, '$1$3,$2]')))
+  if (backwards(flipped).length) ok('mutation (pressure ranges flipped back) is caught')
+  else bad('mutation (pressure ranges flipped back) is NOT caught')
 }
 
 console.log(failed ? `\n⛔ ${failed} failure(s)\n` : '\n✅ the light follows the weather\n')
