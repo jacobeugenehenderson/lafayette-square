@@ -28,7 +28,8 @@
  *   interactive      buildings take the pointer (default true)
  *   bakeLastMs       cache-bust token (default: the slab's bakedAt)
  *   layers           visibility, default all on: ground buildings trees park lamps setPieces neon
- *                    labels compass sky clouds fog shadows post
+ *                    labels sky clouds fog shadows post — and `compass`, default OFF: an app opts in
+ *                    (`compass: true`), so an app that never asks draws exactly what it drew before
  *   heading          degrees TRUE the Street camera faces, or null — turns the compass dial (no heading, no dial)
  *   compassDial      where Street's compass dial sits — the app's layout: { corner, px, inset } (CompassBezel)
  *   postFx           Preview's per-pass inspection matrix ({ toggles })
@@ -262,7 +263,7 @@ export default function Town({
         </group>
         {heavy && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
         {/* The town's edge as a compass: ticks at the rim in plan, a dial in Street, nothing in the movie. */}
-        {on('compass') && <R3FErrorBoundary name="CompassBezel"><CompassBezel lookId={lookId} bakeLastMs={bake} shot={shot} heading={heading} dial={compassDial} /></R3FErrorBoundary>}
+        {layers?.compass === true && <R3FErrorBoundary name="CompassBezel"><CompassBezel lookId={lookId} bakeLastMs={bake} shot={shot} heading={heading} dial={compassDial} /></R3FErrorBoundary>}
         {/* A mesh behind everything, at its true geo spot; nothing unless the Look ships a landscape. */}
         <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop lookId={lookId} bakeLastMs={bake} landscapeOverride={o.landscape} /></R3FErrorBoundary>
       </Suspense>
