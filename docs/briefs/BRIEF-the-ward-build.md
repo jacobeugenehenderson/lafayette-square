@@ -156,6 +156,8 @@ registers rewritten for what shipped (README §10), and a commit that says what 
   time fields were dropped silently. The Ward asks only for what is kept.
 - **A town has no currency.** The manifest's `identity.commerce` carries only `salesTaxRate`; the old player
   hard-coded USD. Currency belongs in the town's authored identity. The Ward shows plain numbers until then.
+- **A town has no locale or units.** The old Almanac hard-codes `'en-US'` formatting and °F; the manifest's
+  identity carries neither. Locale, temperature units and currency belong in the town's authored identity.
 - **The review endpoint keeps less than the old form offered:** it `parseInt`s the rating (half ratings
   lost) and drops photo, avatar and vignette. The Ward asks only for what the server keeps.
 
