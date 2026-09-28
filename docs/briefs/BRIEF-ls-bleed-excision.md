@@ -42,8 +42,8 @@ keeping score. ▶ That is what `§4`'s check is for.
 ### ⭐⭐ AND TWO OF THE BRIEF'S OWN PREMISES WERE FALSE. Both would have caused damage.
 
 - ⛔ **B6 said *"`StreetLights.jsx` is no longer mounted — confirm it is unmounted, then DELETE the
-  file."*** **It is mounted, in three surfaces** — `BakedLamps.jsx:56` (Preview's lamp render),
-  `CartographApp.jsx:875` (toy lamps), `StageApp.jsx:25`. **Following the brief would have broken the
+  file."*** **It is mounted** — by `BakedLamps.jsx` (the lamp render) and
+  `StageApp.jsx`. **Following the brief would have broken the
   lamp render.** The `ls/ARCHITECTURE.md §1` line it rested on (*"no longer mounted by Scene"*) is
   true and narrow — `Scene.jsx` is one of four callers. ⭐ **A doc sentence scoped to one caller,
   quoted as a statement about the file.**

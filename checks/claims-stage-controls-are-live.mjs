@@ -81,14 +81,14 @@ function renderClosure(roots, srcOf = (f) => read(f)) {
 // ── CartographApp regions ───────────────────────────────────────────────────
 function regionsOf(appText) {
   const t = strip(appText)
-  const ls0 = t.indexOf("'lafayette-square': {"), toy0 = t.indexOf("'toy': {", ls0)
-  const reg1 = t.indexOf('\n}\n', toy0)
+  const ls0 = t.indexOf("'lafayette-square': {")
+  const reg1 = t.indexOf('\n}\n', ls0)
   const gen0 = t.indexOf('function genericSceneConfig'), gen1 = t.indexOf('\n}\n', gen0)
   const c0 = t.indexOf('<Canvas'), c1 = t.indexOf('</Canvas>', c0)
-  if ([ls0, toy0, reg1, gen0, gen1, c0, c1].some(i => i < 0)) throw new Error('CartographApp regions not found — the check cannot see the Stage mounts')
+  if ([ls0, reg1, gen0, gen1, c0, c1].some(i => i < 0)) throw new Error('CartographApp regions not found — the check cannot see the Stage mounts')
   return {
     text: t,
-    ls: t.slice(ls0, toy0), toy: t.slice(toy0, reg1), generic: t.slice(gen0, gen1), canvas: t.slice(c0, c1),
+    ls: t.slice(ls0, reg1), generic: t.slice(gen0, gen1), canvas: t.slice(c0, c1),
   }
 }
 
@@ -125,7 +125,7 @@ function routesOf(name, R, appImports) {
   const vars = new Set()
   for (const m of t.matchAll(new RegExp(`const (\\w+)\\s*=\\s*useCartographStore\\(s => (?:activeChannel\\(s,\\s*'${name}'\\)|s\\.${name})\\)`, 'g'))) vars.add(m[1])
   const regionOf = (idx) => {
-    for (const k of ['ls', 'toy', 'generic']) { const i = t.indexOf(R[k]); if (idx >= i && idx < i + R[k].length) return k }
+    for (const k of ['ls', 'generic']) { const i = t.indexOf(R[k]); if (idx >= i && idx < i + R[k].length) return k }
     const ci = t.indexOf(R.canvas); if (idx >= ci && idx < ci + R.canvas.length) return 'canvas'
     return 'outside'
   }

@@ -168,7 +168,6 @@ hard.** Two different renderers — `MapLayers` fades, the tile render does not.
 | branch | `useBoundary` | `stencil` |
 |---|---|---|
 | lafayette-square (~`:807`) | **true** | `LS_STENCIL` |
-| toy (~`:860`) | false | `TOY_STENCIL` |
 | **generic poured scene (~`:904`)** | **false** | `stencilFromBoundary(sceneBoundary)` |
 
 ⇒ `BlockGeometryV2Debug` (~`:254`) sets `faceFade = useBoundary ? FACE_FADE : null` and the same for

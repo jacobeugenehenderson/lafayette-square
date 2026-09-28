@@ -152,7 +152,7 @@ how this line itself was wrong for a few hours on 2026-09-13. **Run it before tr
    controlled surface?** (the Designer, the Salon, the Stage). If yes, the brief routes validation *through that
    fixture via the production path* — ⛔ never parallel spike/SVG/scratch tooling that bypasses it. Jacob
    built those surfaces deliberately; designing validation from scratch spends the agent's session and
-   erodes the kit. [[feedback_toy_is_the_construction_spike_surface]] · [[feedback_no_parallel_pipeline_for_scenes]]
+   erodes the kit. [[feedback_no_parallel_pipeline_for_scenes]]
 
 **The instruction is confirm-then-build:** *"read both, tell me what you found, and if the code contradicts
 this brief — stop and flag me."* ⭐ **The stop is the deliverable, not a failure of the brief.**

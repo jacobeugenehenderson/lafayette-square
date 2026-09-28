@@ -245,7 +245,7 @@ Wind belongs to Meteorologist; consumers subscribe but don't author.
 - **Schemas are versioned by `$id` filename.** `preset.schema.json` is registered both by `$id` and by filename so `$ref`s resolve regardless of authoring style.
 - **The validator is strict.** `Ajv({ strict: true })` — unknown keywords throw. Schema authors must extend deliberately, not accidentally.
 - **Cross-schema checks live in `validateLibrary()`.** Preset-id uniqueness, almanac→preset reference integrity (including disabled presets), cloud-blend weight ≤1.0. Run via `npm run validate -- ../public/clouds/presets.json ../public/clouds/almanac.json`.
-- **The canary is `CanaryScene.jsx`.** A purpose-built sky-dominant scene (flat ground + one hero tree + imported Look sky) mounted inside the standalone Meteorologist shell. "Works in canary" advances to LS at Browse/Hero/Street for the visibility-at-scale check (memory `feedback_toy_not_proving_ground_for_ls_visibility`). The legacy 4-way-corner toy in `src/toy/` remains as the developer's shader-R&D entrance, separate door.
+- **The canary is `CanaryScene.jsx`.** A purpose-built sky-dominant scene (flat ground + one hero tree + imported Look sky) mounted inside the standalone Meteorologist shell. "Works in canary" advances to LS at Browse/Hero/Street for the visibility-at-scale check (memory `feedback_no_parallel_pipeline_for_scenes`).
 - **No draft/published split.** Saves write directly through validation. The decision is captured in `NOTES.md`.
 
 ---

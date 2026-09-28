@@ -38,7 +38,6 @@ import HorizonDisc from '../components/HorizonDisc.jsx'
 import LafayetteScene from '../components/LafayetteScene'
 import LafayettePark from '../components/LafayettePark'
 import InstancedTrees from '../components/InstancedTrees'
-import StreetLights from '../components/StreetLights'
 import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import CelestialBodies from '../components/CelestialBodies'
@@ -63,15 +62,10 @@ import { NeonDriver } from '../components/NeonBands.jsx'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { transitionMs } from '../camera/transitions.js'
 
-// Toy scene fixtures (single 4-way corner for shader/shadow R&D)
-import toyRibbons from '../data/toy/toy-ribbons.json'
 import ribbonsRaw from '../data/ribbons.json'
 import lsNeighborhoodBoundary from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
-import toyLamps from '../data/toy/toy-lamps.json'
-import ToyBuildings from '../toy/ToyBuildings.jsx'
-import ToyTrees from '../toy/ToyTrees.jsx'
-import ToyTerrain from '../toy/ToyTerrain.jsx'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { townForLook } from '../instance.js'
 
 // UI
 import Toolbar from './Toolbar.jsx'
@@ -201,10 +195,6 @@ function ShotLookFork({ shot }) {
 // Canvas creates the default ortho camera (Designer). <PerspectiveCamera
 // makeDefault /> takes over for shots; flipping makeDefault back to false
 // returns control to the Canvas's ortho camera.
-// Toy is a small fixture (~36 wide × 68 deep, centered on origin); the SHOTS
-// camera positions are authored for the full neighborhood, so on toy we
-// override with a fixed oblique framing that puts the cluster mid-screen.
-const TOY_CAM = { position: [38, 32, 58], target: [0, 4, 0], fov: 35 }
 
 // ── The authored Browse frame (SC.5) ────────────────────────────────────────
 // Browse is a PLAN VIEW — pan and zoom, nothing else (2026-09-05) — so its
@@ -286,36 +276,6 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     appliedShot.current = key
     const applyTarget = () => {
       const ctl = controlsRef.current
-      // Toy scene runs on its own fixed oblique framing in any non-Designer
-      // shot; the SHOTS table is authored for the full neighborhood and
-      // would put the toy fixture hundreds of units off-camera.
-      if (mapKey === 'toy' && shot !== 'designer') {
-        const cam = perspRef.current
-        if (!cam) return
-        cam.position.set(...TOY_CAM.position)
-        cam.up.set(0, 1, 0)
-        cam.fov = TOY_CAM.fov
-        cam.lookAt(...TOY_CAM.target)
-        cam.updateProjectionMatrix()
-        if (ctl) { ctl.target.set(...TOY_CAM.target); ctl.update() }
-        prevShot.current = shot
-        return
-      }
-      // Toy + Designer: reset ortho camera to origin so the toy fixture is
-      // visible (otherwise localStorage-persisted LS-centered position
-      // leaves toy hundreds of meters off-screen → user sees gray canvas).
-      if (mapKey === 'toy' && shot === 'designer') {
-        const cam = orthoRef.current
-        if (!cam) return
-        cam.position.set(0, 500, 0)
-        cam.zoom = Math.max(2, size.height / 200)  // fit ~200m vertical
-        cam.up.set(0, 0, -1)
-        cam.lookAt(0, 0, 0)
-        cam.updateProjectionMatrix()
-        if (ctl) { ctl.target.set(0, 0, 0); ctl.update() }
-        prevShot.current = shot
-        return
-      }
       if (shot === 'designer') {
         const cam = orthoRef.current
         if (!cam) return
@@ -412,7 +372,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         } else {
           toPos = [...s.position]
         }
-        // Poured scene (not LS, not toy): the SHOTS above are LS-authored
+        // Poured scene (not LS): the SHOTS above are LS-authored
         // ABSOLUTE poses — browse sits on LS's building centroid (95,-158) with
         // LS's 1292×1025 bounds; hero is an LS oblique. A fresh hood is centered
         // at origin (0,0) with its OWN radius, so reframe generically: browse =
@@ -425,7 +385,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         // authoring lands"), and an authored frame IS that authoring. Without
         // this guard the feature would work on LS and be silently overridden in
         // every other town — the kit's signature failure shape.
-        if (mapKey !== 'lafayette-square' && mapKey !== 'toy' && nb?.radius > 0 && !browseFrame) {
+        if (mapKey !== 'lafayette-square' && nb?.radius > 0 && !browseFrame) {
           const R = nb.radius
           if (shot === 'browse') {
             // fit the 2R circle in the binding viewport axis (portrait-safe) + pad — the same fit the
@@ -441,7 +401,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             toTarget = [0, 0, R * 0.08 - 0.5]
           }
         }
-        // ⛔ STREET, EVERY TOWN (LS and toy included): the eye stands 5′8″ above the
+        // ⛔ STREET, EVERY TOWN (LS included): the eye stands 5′8″ above the
         // drawn ground at its own point — the one method (utils/elevation#streetEyeY).
         // SHOTS.street carries no height, so nothing else can stand it anywhere.
         if (shot === 'street') {
@@ -779,11 +739,6 @@ function useLoadData() {
   }, [])
 }
 
-// Toy bounding rectangle — defines the residential substrate that V2's
-// rounded asphalt is carved out of. Toy-only stencil; non-toy scenes
-// don't pass one (V2 emits asphalt + bands without block-fill).
-const TOY_STENCIL = [[-180, -180], [180, -180], [180, 180], [-180, 180]]
-
 // LS stencil = the neighborhood boundary polygon, scaled outward to the
 // fade.outer + buffer band. Mirrors the bake-side derivation in sceneStencil.js
 // so V2's blockRounded comes out the same shape Designer-side as bake-side.
@@ -798,7 +753,7 @@ const TOY_STENCIL = [[-180, -180], [180, -180], [180, 180], [-180, 180]]
 // a town with no authored fade a 50 m scale-out protecting a feather that does not
 // exist — and disagreed with the bake side's `: radius` by exactly that 50 m.
 // ⚠️ Reachable ONLY at the poured-scene call site below: a town between its pour and
-// its fade. NOT a toy branch — toy is handed a literal box and never arrives here.
+// its fade.
 function stencilFromBoundary(nb) {
   const poly = nb?.boundary
   const center = nb?.center
@@ -820,17 +775,10 @@ const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
 // `ribbons` is the static post-bake intersections + faces artifact
 // (centerline geometry comes from the live store, scene-aware). Once
 // promote-ribbons is scene-keyed (Phase 0e) this can shrink to a path.
-// The toy rig's lamps, with the live Lantern like every other town's Stage (▶ claims-light-sources-are-live).
-function ToyStageLamps() {
-  const lanternOverride = useCartographStore(s => activeChannel(s, 'lantern'))
-  return <StreetLights lamps={toyLamps.lamps} lantern={lanternOverride} />
-}
-
 const MAP_REGISTRY = {
   'lafayette-square': {
     ribbons: ribbonsRaw,
     stencil: LS_STENCIL,
-    useBoundary: true,
     hasAerial: true,
     StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => {
       // Stage live-wire for every authored channel — drag a slider, see it
@@ -881,44 +829,9 @@ const MAP_REGISTRY = {
       </>
     },
   },
-  'toy': {
-    ribbons: toyRibbons,
-    stencil: TOY_STENCIL,
-    useBoundary: false,
-    hasAerial: false,
-    StageEnvironment: () => <>
-      <R3FErrorBoundary name="ToyTerrain"><ToyTerrain /></R3FErrorBoundary>
-      <R3FErrorBoundary name="ToyBuildings"><ToyBuildings /></R3FErrorBoundary>
-      <R3FErrorBoundary name="ToyTrees"><ToyTrees /></R3FErrorBoundary>
-      <R3FErrorBoundary name="ToyStreetLights"><ToyStageLamps /></R3FErrorBoundary>
-    </>,
-    // Designer-mode backdrop — a graph-paper grid that sits under the
-    // V2 surface so the translucent/opaque story has something to read
-    // against. LS uses real aerial tiles for this; toy is purely
-    // diagnostic so a procedural grid signals "design mode" instead.
-    // Backdrop color reads from `layerColors.ground` (Surfaces > Streets
-    // > Ground); visibility from `layerVis.ground`. Defaults to a cool
-    // navy if the operator hasn't customized.
-    DesignerBackdrop: () => {
-      const layerColors = useCartographStore(s => activeChannel(s, 'layerColors'))
-      const layerVis    = useCartographStore(s => s.layerVis)
-      if (layerVis?.ground === false) return null
-      const groundCol = layerColors?.ground || '#1f2530'
-      return (
-        <group>
-          <mesh position={[0, -0.06, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={-1}>
-            <planeGeometry args={[400, 400]} />
-            <meshBasicMaterial color={groundCol} transparent opacity={1.0} depthWrite={false} />
-          </mesh>
-          <gridHelper args={[400, 80, '#3a4658', '#2a3340']} position={[0, -0.05, 0]} />
-          <gridHelper args={[400, 8,  '#56708a', '#56708a']} position={[0, -0.04, 0]} />
-        </group>
-      )
-    },
-  },
 }
 // MAP_REGISTRY holds only the DEFAULT installation ('lafayette-square', with
-// its bundled ribbons + StageEnvironment) and the diagnostic 'toy' fixture. Any
+// its bundled ribbons + StageEnvironment). Any
 // OTHER installation is a generic "poured neighborhood": its config is built
 // from data loaded BY ID (ribbons + boundary from the store), so no specific
 // neighborhood is named here. `sceneBoundary` is the active installation's
@@ -927,15 +840,6 @@ function genericSceneConfig(sceneBoundary) {
   return {
     ribbons: null,                                  // → store.sceneRibbons at render
     stencil: sceneBoundary ? stencilFromBoundary(sceneBoundary) : null,
-    // ⭐ EVERY POURED INSTALLATION DRAWS THE SOFT CIRCLE. This was false while
-    // boundary.js was LS-module-hardcoded (64cb6387, 2026-07-02: "the soft-circle
-    // fade … remain LS-only; a bake + boundary.js scene-param are the next
-    // pieces"). That next piece landed the same day — 47e2ca81's makeBoundary(nb)
-    // kit factory — and this consumer was never rewired, so a poured town got the
-    // stencil's CUT and never the FADE. ⛔ This is ONE kit default for towns
-    // #2…#100, not a per-town flag; BlockGeometryV2Debug resolves the bands from
-    // the active installation's own boundary.
-    useBoundary: true,
     hasAerial: true,                                // AerialTiles reads the active installation's geography
     // Its 3D is <Town> (src/components/Town.jsx) — the assembly production and Preview mount.
   }
@@ -1110,7 +1014,7 @@ export default function CartographApp() {
   // tool affordances stay over the aerial as reference, and the user
   // declutters via per-layer visibility toggles in the Designer Panel.
   const sceneCfg = useMemo(() => sceneConfig(scene, sceneBoundary), [scene, sceneBoundary])
-  // ⏳ The towns still on Stage's hand-assembly: the registered ones (Lafayette Square, the toy fixture).
+  // ⏳ The town still on Stage's hand-assembly: the registered one (Lafayette Square).
   const legacy = !!MAP_REGISTRY[scene]
   const townOverrides = useStageOverrides()
   const designAerialOnly = inDesigner && !tool && aerialVisible
@@ -1208,15 +1112,6 @@ export default function CartographApp() {
           <SceneHandle />
           {inDesigner && <ambientLight intensity={1} />}
 
-          {/* Designer-mode backdrop. LS uses aerial tiles (gated lower);
-              toy registers a procedural grid so the V2 translucent layers
-              have something to read against in Designer. */}
-          {inDesigner && sceneCfg.DesignerBackdrop && (
-            <R3FErrorBoundary name="DesignerBackdrop">
-              <sceneCfg.DesignerBackdrop />
-            </R3FErrorBoundary>
-          )}
-
 
           {/* ── Rounded-block-clip V2 ground render — Designer only.
               Live render driven by the store (centerlines, blockCustoms,
@@ -1234,7 +1129,6 @@ export default function CartographApp() {
                 stencil={sceneCfg.stencil}
                 flat={inDesigner}
                 scene={scene}
-                useBoundary={sceneCfg.useBoundary}
                 useRingBandEmitter={true /* C5: LS cutover — keeper for all scenes (legacy else-branch dead, removed in C5 commit 3) */}
                 measureActive={tool === 'measure' && inDesigner}
                 surveyActive={tool === 'surveyor' && inDesigner}
@@ -1258,11 +1152,11 @@ export default function CartographApp() {
               ↻ / Stage→ refresh the artifact in place. The slab is the
               single rendered ground in shot mode (no V2 overlay). ── */}
           {/* ⭐ Every town but Lafayette Square draws through <Town> — the assembly production and Preview
-              mount. ⏳ Lafayette Square (and the toy fixture) keep the hand-assembly below until SlabBuildings
+              mount. ⏳ Lafayette Square keeps the hand-assembly below until SlabBuildings
               retints the palette live for every town (BRIEF-live-building-palette; Jacob ruled 2026-09-27).
               ▶ node checks/claims-every-app-mounts-the-town.mjs reports it, red, until then. */}
           {!legacy && !inDesigner && (
-            <Town lookId={activeLookId} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs}
+            <Town lookId={activeLookId} town={townForLook(activeLookId)} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
               layers={{
                 buildings: !hiddenLayers.building, neon: !hiddenLayers.building, trees: !hiddenLayers.tree,
@@ -1270,7 +1164,7 @@ export default function CartographApp() {
               }} />
           )}
           {/* The sun, the moon and the season follow the active town in every mode, Designer included. */}
-          {scene !== 'toy' && (legacy || inDesigner) && <TownPlace lookId={activeLookId} />}
+          {(legacy || inDesigner) && <TownPlace lookId={activeLookId} />}
           {legacy && !inDesigner && (
             <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={activeLookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
           )}
@@ -1295,9 +1189,8 @@ export default function CartographApp() {
               boundary per-scene; the old `scene === 'lafayette-square'` gate +
               the thin SceneMapLayers substitute (buildings+LU only) are retired,
               so a poured scene gets the full Designer view — road paint, alleys,
-              barriers, parking, labels — not just footprints. Toy has no
-              map.json, so it stays out. */}
-          {scene !== 'toy' && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
+              barriers, parking, labels — not just footprints. */}
+          {(!toolAerialFocus || surveyMode) && !designAerialOnly && (
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner}
               measureActive={tool === 'measure' && inDesigner} />
@@ -1306,7 +1199,7 @@ export default function CartographApp() {
               sized by DBH, tinted by source. One shared path (LS + non-LS),
               replacing MapLayers' old LS-only park-census discs. Designer-only;
               Stage's 3D InstancedTrees owns the trees in shots. */}
-          {scene !== 'toy' && inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
+          {inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
             <DesignerTrees scene={scene} hiddenLayers={decorationsHidden} bakeLastMs={bakeLastMs} />
           )}
 
@@ -1315,14 +1208,13 @@ export default function CartographApp() {
               old hardwired src/data/street_lamps.json (prod LS only). The lamp
               twin of DesignerTrees. Designer-only; Stage's 3D BakedLamps owns
               the real lamp props in shots. */}
-          {scene !== 'toy' && inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
+          {inDesigner && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
             <DesignerLamps scene={scene} hiddenLayers={decorationsHidden} bakeLastMs={bakeLastMs} />
           )}
 
           {/* ── Designer-only UI overlays. Survey + Measure overlays mount
-              in every scene that supports authoring (toy and LS both).
-              AerialTiles is gated by scene capabilities so toy doesn't try
-              to load the 64 aerial tiles; DesignerArch follows the Look's
+              in every scene. AerialTiles is gated by scene capabilities;
+              DesignerArch follows the Look's
               set-piece opt-in (below). Mounting
               only in Designer keeps these out of Stage shots. */}
           {inDesigner && <>

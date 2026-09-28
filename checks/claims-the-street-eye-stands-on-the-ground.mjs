@@ -17,7 +17,7 @@
 //  (c) NO HEIGHT TO COPY. SHOTS.street's position and target carry no Y (null), so no
 //      code path can stand the eye at an authored absolute height.
 //  (d) EVERY TOWN, NOT ONE BRANCH. Stage applies streetEyeY OUTSIDE its poured-town
-//      reframe, so LS and toy take it too (the branch the first version missed).
+//      reframe, so LS takes it too (the branch the first version missed).
 //  (e) IT RUNS. For every town with terrain, the method at its stand point gives a
 //      finite eye 1.73 m above the ground the street view draws.
 //
@@ -69,9 +69,9 @@ if (!/position:\s*\[[^,\]]+,\s*null\s*,/.test(street) || !/target:\s*\[[^,\]]+,\
 }
 
 // (d) Stage applies it for every town: the streetEyeY call must lie OUTSIDE the
-// poured-town reframe block (brace-matched), or LS/toy never get it.
+// poured-town reframe block (brace-matched), or LS never gets it.
 const app = read('src/cartograph/CartographApp.jsx')
-const reframeAt = app.indexOf("if (mapKey !== 'lafayette-square' && mapKey !== 'toy'")
+const reframeAt = app.indexOf("if (mapKey !== 'lafayette-square' && nb?.radius > 0")
 const callAt = app.indexOf('streetEyeY(')
 if (reframeAt < 0 || callAt < 0) fails.push('(d) could not find the Stage reframe block or the streetEyeY call')
 else {
@@ -80,7 +80,7 @@ else {
     if (app[i] === '{') depth++
     else if (app[i] === '}' && --depth === 0) { end = i; break }
   }
-  if (callAt > reframeAt && callAt < end) fails.push('(d) Stage applies streetEyeY only inside the poured-town reframe — LS and toy stand at an absolute height')
+  if (callAt > reframeAt && callAt < end) fails.push('(d) Stage applies streetEyeY only inside the poured-town reframe — LS stands at an absolute height')
 }
 
 // (e) it runs, on every town's own terrain (raw = exag 1, what the street view draws)

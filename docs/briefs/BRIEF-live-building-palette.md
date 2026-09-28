@@ -32,7 +32,6 @@ One assembly means one building path, and Jacob chose live retint for all.
   **Fixed (override) colours never move.**
 - **Then Stage-on-Lafayette-Square migrates onto `Town`**, and in the same commit the legacy
   live-building path (`LafayetteScene`'s `Building`/`Foundations`/`loadBuildingTextures`) is **deleted**.
-  ⚠️ `src/toy/ToyBuildings.jsx` imports those too — sequence with the Toy removal, or remove Toy's use.
 
 ## 4. Deploy sequencing — the part that is not code
 A v3 consumer refuses v2 slabs, so **every live town must be re-baked and republished to v3 before the

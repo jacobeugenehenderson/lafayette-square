@@ -45,25 +45,16 @@ let failures = 0
 const fail = (msg) => { failures++; console.log(`  ✗ ${msg}`) }
 const pass = (msg) => console.log(`  ✓ ${msg}`)
 
-// ── 1. The gate: does a poured installation draw the soft circle at all? ──────
-console.log(`\ngeneric (poured) scene config, parsed from ${APP}:`)
+// ── 1. The gate: is there ANY switch that can turn the soft circle off? ───────
+// Failure mode (a) was a per-scene `useBoundary` flag, false for every poured town.
+// It is deleted (2026-09-28): every installation draws the circle. A gate coming
+// back — in the scene config or in the consumer — is the regression.
+console.log(`\nsoft-circle gate, parsed from ${APP} and ${V2}:`)
 const app = read(APP)
-const generic = app.match(/function genericSceneConfig\s*\([^)]*\)\s*\{([\s\S]*?)\n\}/)
-if (!generic) throw new Error(`⛔ could not parse genericSceneConfig from ${APP} — the guard is blind; fix the parse before trusting a PASS`)
-const gate = generic[1].match(/^\s*useBoundary:\s*(\w+)\s*,/m)
-if (!gate) throw new Error(`⛔ could not find useBoundary in genericSceneConfig — the guard is blind; fix the parse before trusting a PASS`)
-if (gate[1] === 'true') pass(`useBoundary: true — a poured installation draws the soft circle`)
-else fail(`useBoundary: ${gate[1]} — a poured installation gets the stencil's CUT and never the FADE (failure mode a)`)
-
-// ⭐ The other half of the acceptance: THE DEFAULT INSTALLATION RENDERS UNCHANGED.
-// Fixing the poured path by turning the default's fade off would satisfy every
-// assertion below while regressing the one town that already worked.
-const defBranch = app.match(new RegExp(`['"]?${DEFAULT_INSTALLATION}['"]?\\s*:\\s*\\{([\\s\\S]*?)\\n  \\}`))
-if (!defBranch) throw new Error(`⛔ could not parse the ${DEFAULT_INSTALLATION} branch from ${APP} — the guard is blind; fix the parse before trusting a PASS`)
-const defGate = defBranch[1].match(/^\s*useBoundary:\s*(\w+)\s*,/m)
-if (!defGate) throw new Error(`⛔ could not find useBoundary in the ${DEFAULT_INSTALLATION} branch — the guard is blind; fix the parse before trusting a PASS`)
-if (defGate[1] === 'true') pass(`${DEFAULT_INSTALLATION} still draws its soft circle — unchanged`)
-else fail(`${DEFAULT_INSTALLATION} useBoundary: ${defGate[1]} — the default installation REGRESSED; it is the one town that already worked`)
+for (const [file, src] of [[APP, app], [V2, read(V2)]]) {
+  if (/\buseBoundary\b/.test(src)) fail(`${file} carries a useBoundary gate — a scene can get the stencil's CUT and never the FADE (failure mode a)`)
+  else pass(`${file}: no useBoundary gate — every installation draws the soft circle`)
+}
 
 // ── 2. The resolution: whose disc do the bands come from? ────────────────────
 console.log(`\nfade-band resolution, parsed from ${V2}:`)

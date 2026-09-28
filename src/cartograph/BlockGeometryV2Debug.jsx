@@ -243,7 +243,6 @@ const SURVEY_BLUE = { block: '#3b7dd8', curbFill: '#27579e', curb: '#1f6fe0', ix
 export default function BlockGeometryV2Debug({
   ribbons, stencil = null, flat = true, showCornerDots = false, residentialColor,
   measureActive = false, surveyActive = false, hideLandUse = false,
-  useBoundary = false,
   scene = null,
   useRingBandEmitter = true,  // C5: keeper for all scenes (LS cutover); legacy else-branch removed in commit 3
 }) {
@@ -257,15 +256,13 @@ export default function BlockGeometryV2Debug({
   // neighborhood_boundary.json, BY ID out of the store, via the kit factory
   // `makeBoundary(nb)`. ⛔ Never a static per-installation map: 47e2ca81 removed
   // one precisely to kill cross-installation refs.
-  // `useBoundary` stays the switch for WHETHER this installation draws a soft
-  // circle at all — toy is the deliberate false (its stencil is a 360×360 box, so
-  // it stays rectangular). Every real poured town gets true from the generic
-  // branch: one kit default, not a per-town flag.
+  // Every installation draws the soft circle — there is no per-scene switch. (A
+  // per-scene gate once held it false for every poured town, so they got the
+  // stencil's CUT and never the FADE.)
   // ▶ node checks/claims-the-fade-tracks-the-active-disc.mjs
   const sceneBoundaryRaw = useCartographStore(s => s.sceneBoundary)
   const isLS = scene === 'lafayette-square'
   const { faceFade, bandFade } = useMemo(() => {
-    if (!useBoundary) return { faceFade: null, bandFade: null }
     // LS keeps the module constants verbatim — byte-identical to before.
     if (isLS) return { faceFade: FACE_FADE, bandFade: FACE_FADE }
     // ⛔ No boundary → no fade. It used to take LS's constants (the B2b pattern).
@@ -275,7 +272,7 @@ export default function BlockGeometryV2Debug({
     // ⭐ One band, handed to both slots. See the BAND_FADE note above.
     const one = { center, inner: B.fadeInner, outer: B.fadeOuter }
     return { faceFade: one, bandFade: one }
-  }, [useBoundary, isLS, sceneBoundaryRaw])
+  }, [isLS, sceneBoundaryRaw])
   const makeMaterial = useSurfaceMaterial(flat)
   // Read corner-authoring + palette state directly from the store. Keeps
   // the V2 mount simple (just `ribbons` + `stencil` as props) and lets the
