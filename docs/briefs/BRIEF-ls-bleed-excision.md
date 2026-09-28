@@ -194,6 +194,15 @@ not prose.
    (`project_the_check_is_the_deliverable_mutation_test_it`). **Pin the runtime rule it models** and
    refuse to report green if that rule has moved.
 
+### 4a. Paths exercised by no scene after Toy's removal (Tamp, 2026-09-28) — behaviour unchanged, OPEN
+Each existed for Toy or a pre-D2 artifact; with Toy gone no town reaches it. Several are fallbacks, which
+is this brief's class. Decide per item: delete (and fail loudly) or name the town that needs it.
+- `cartograph/boundaryRecords.mjs#classifyFade` 'absent' + `cartograph/sceneStencil.js#loadSceneStencil` → `stencil: null` (and bake-ground's null-stencil emit)
+- `src/lib/tileGround.js`: the live `extractFaces` fallback when an artifact has no tiles, and `tilesFromFrozen`'s null return
+- `src/utils/terrainShader.js`: the flat-terrain fallback
+- `cartograph/serve.js` bake handler's `hasOsm` skip (every town has `raw/osm.json`)
+- `cartograph/config.js#_loadGeography`'s exit when there is no `geography.json` (every town has one)
+
 ## 5. Deliver
 
 4. **Site 12** — ⛔ blocked on the client. Sequence with `api.js sceneUrl()`.
