@@ -515,6 +515,16 @@ Found by Quire (◉, device link).
 **Fix:** `check-link-token` returns status only; push payloads stop carrying `device_hash`; pull mode is removed. The
 Ward links push-only and never reads `device_hash` from it. ⏳ A `clasp` deploy: Jacob's go.
 
+### F-23 · HIGH · Any device can make itself a verified resident of any building  *(new, 2026-09-28)*
+`apps-script/Code.js` `postClaimResidence` trusts `auto_verify` from the request body. POST `claim-residence`
+`{ building_id, auto_verify: true }` makes the caller a VERIFIED resident, moves it out of its old residence, and
+backfills Townie. `/home/<id>` carries no secret, and any id can be typed, so "verified residents only" rests on
+the client's word. Related: `verify-resident` takes another device's `target_hash`, so a neighbour's verification
+needs a device key handed over. Found by Quire (arrival pages).
+**Fix:** the server verifies on a per-building secret (`/home/<id>/<secret>`, like `/claim`'s), never on a client
+flag, and neighbour verification stops taking a device key. The address change is Jacob's (Ward README §2).
+Until then the Ward claims without `auto_verify` (pending only). ⏳ A `clasp` deploy: Jacob's go.
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
