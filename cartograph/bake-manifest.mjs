@@ -20,12 +20,18 @@
  *               roster (one record per baked building — bare-building cards read it) and listings
  *               (bake-content.js), and the hand-authored profile, menus and events. Each is named
  *               with its size and sha256, or `null` when the town has none — absent is said, never
- *               guessed. The source stays cartograph/data/<town>/content/; this is its publication,
+ *               guessed. `mark.svg` is the town's drawn mark when it authors one (branding.markSvg names it;
+ *               the player draws it as a mask, so the file's own colours never matter). The source stays
+ *               cartograph/data/<town>/content/; this is its publication,
  *               like the slab's. The override sidecars are inputs to bake-content, not payload.
  *   board     — the town's bulletin groups and sections. None authored yet: the kit's list, `authored:
  *               false`, generic labels, ids kept stable; Cary's group only where delivery is on.
  *   photos    — every photo a published listing names, copied beside the content, indexed by the
  *               listing's own url (null when the file is missing). Credit/licence ride on the listing.
+ *   tide      — tidal towns only (terrain.json `water.tidal`): the station's harmonic constituents, MSL above MLLW and
+ *               its datums, from raw/water-datums.json `tide` (fetch-water-datums --tide-only). The player times
+ *               the tide from them (cartograph/tide.mjs); the levels stay the town's own. Kept whole, unrounded
+ *               (Jacob: "keep the data"). A tidal town without them exits 2; a non-tidal town has no key at all.
  *   files     — every file of the slab with its size and sha256. ⚠️ v0 LISTS the existing names; it
  *               does not yet rename files by content. That, and the Worker and R2 side of it, is
  *               BRIEF-slab-loading §3 step 3.
@@ -67,7 +73,7 @@ const categories = Object.entries(CATEGORIES).map(([id, c]) => ({
 
 // ── content: publish the payload the player reads ─────────────────────────────
 // The player's content payload, by name. Declared once, here: these are what a player reads.
-const CONTENT_PAYLOAD = ['roster.json', 'listings.json', 'profile.json', 'menus.json', 'events.json']
+const CONTENT_PAYLOAD = ['roster.json', 'listings.json', 'profile.json', 'menus.json', 'events.json', 'mark.svg']
 const contentSrc = resolve(ROOT, 'cartograph/data', town, 'content')
 const contentOut = resolve(slabDir, 'content')
 const content = {}
@@ -75,7 +81,8 @@ for (const name of CONTENT_PAYLOAD) {
   const src = resolve(contentSrc, name)
   if (!existsSync(src)) { content[name] = null; continue }
   const buf = readFileSync(src)
-  try { JSON.parse(buf.toString('utf8')) } catch (e) { console.error(`⛔ ${relative(ROOT, src)} is not valid JSON: ${e.message}`); process.exit(2) }
+  if (name.endsWith('.json')) { try { JSON.parse(buf.toString('utf8')) } catch (e) { console.error(`⛔ ${relative(ROOT, src)} is not valid JSON: ${e.message}`); process.exit(2) } }
+  else if (name.endsWith('.svg') && !/<svg[\s>]/.test(buf.toString('utf8'))) { console.error(`⛔ ${relative(ROOT, src)} is not an SVG`); process.exit(2) }
   mkdirSync(contentOut, { recursive: true })
   writeFileSync(resolve(contentOut, name), buf)
   content[name] = { bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
@@ -150,6 +157,26 @@ for (const p of walk(slabDir)) {
   files[rel] = { bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
 }
 
+// ── tide: the station's clock, for a tidal town only ─────────────────────────
+// Whether the town is tidal is the SLAB's answer (terrain.json `water.tidal`), never re-decided here.
+let tide = null
+const terrainP = resolve(slabDir, 'terrain.json')
+const water = existsSync(terrainP) ? JSON.parse(readFileSync(terrainP, 'utf8')).water ?? null : null
+if (water?.tidal === true) {
+  const rawP = resolve(ROOT, 'cartograph/data', town, 'raw/water-datums.json')
+  const t = existsSync(rawP) ? JSON.parse(readFileSync(rawP, 'utf8')).tide : null
+  if (!t?.constituents?.length || !Number.isFinite(t.mslAboveDatumM)) {
+    console.error(`⛔ "${town}" is tidal but has no tide clock in ${relative(ROOT, rawP)} — ▶ node cartograph/fetch-water-datums.mjs --scene=${town} --tide-only`)
+    process.exit(2)
+  }
+  if (t.station !== water.station?.id) {
+    console.error(`⛔ "${town}": the tide clock is station ${t.station} but the slab's water names ${water.station?.id} — re-acquire`)
+    process.exit(2)
+  }
+  const { noaaHilo, ...clock } = t          // NOAA's own predictions are the check's fixture, not the player's
+  tide = clock
+}
+
 const manifest = {
   version: 0,
   town,
@@ -159,6 +186,7 @@ const manifest = {
   board: { authored: false, groups: boardGroups },
   content,
   photos,
+  ...(tide ? { tide } : {}),
   files,
 }
 writeFileSync(resolve(slabDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
@@ -166,4 +194,4 @@ const total = Object.values(files).reduce((s, f) => s + f.bytes, 0)
 const missingPhotos = Object.entries(photos).filter(([, v]) => !v).map(([k]) => k)
 if (missingPhotos.length) console.error(`⚠️ ${missingPhotos.length} photo(s) named by listings are missing on disk: ${missingPhotos.slice(0, 5).join(', ')}${missingPhotos.length > 5 ? ' …' : ''}`)
 const have = Object.entries(content).filter(([, v]) => v).map(([k]) => k.replace('.json', ''))
-console.log(`✅ ${relative(ROOT, resolve(slabDir, 'manifest.json'))} — ${Object.keys(files).length} slab files, ${(total / 1e6).toFixed(1)} MB · content: ${have.join(', ') || 'none'} · photos ${Object.values(photos).filter(Boolean).length}/${Object.keys(photos).length}${photosOutsideTown ? ` (${photosOutsideTown} from the app's public/photos/)` : ''} · ${categories.length} categories (unauthored)`)
+console.log(`✅ ${relative(ROOT, resolve(slabDir, 'manifest.json'))} — ${Object.keys(files).length} slab files, ${(total / 1e6).toFixed(1)} MB · content: ${have.join(', ') || 'none'} · photos ${Object.values(photos).filter(Boolean).length}/${Object.keys(photos).length}${photosOutsideTown ? ` (${photosOutsideTown} from the app's public/photos/)` : ''} · ${categories.length} categories (unauthored)${tide ? ` · tide: ${tide.constituents.length} constituents, station ${tide.station}` : ''}`)
