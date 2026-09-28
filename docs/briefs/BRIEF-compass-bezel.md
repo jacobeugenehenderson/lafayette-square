@@ -4,7 +4,8 @@
 **Jacob, 2026-09-28:** *"We use the round neighborhood shape as the horizon… make the circle a compass face,
 and literally tie it to the device's compass so it's helpful in an orienteering way, and it totally ties in the
 municipal element too."* · *"I kind of think this should be totally runtime."* · *"maybe it's not a ring but a
-series of tics?"* · street names at the rim: *"unknown"* · heading: *"whatever's helpful"* · *"not in movie."*
+series of tics?"* · street names at the rim: *"unknown"* · heading: *"whatever's helpful"* · *"not in movie."* · *"the map can be North up unless they are in the
+hood"* (with the live user dot).
 
 ## 1. What it is
 The neighbourhood is one closed shape, and its rim is an edge of the drawing (the kit's own doctrine). This
@@ -22,10 +23,14 @@ Everything it needs is already published:
 
 ## 3. Behaviour — the helpful defaults (Jacob: "whatever's helpful")
 - **Where:** Society's map (plan view) and Street. **Not in the movie.**
-- **North-up by default.** A map is read north-up.
-- **"Face my direction"** is a named control, shown **only when the device reports a heading AND the person
-  is inside the town's disc.** On, the map turns so the bezel's N points at true north as the person turns —
-  the map moves because the *person* moved, which keeps "the scene never takes you anywhere". Off, north-up.
+- **North-up unless you are in the neighbourhood** (Jacob, 2026-09-28). The map already carries a live user
+  dot — the person's position, placed with `TownPoint`. Outside the town's disc, or with no position, the
+  map is north-up. **Inside the disc, the map turns with the person by default**, the bezel's N pointing at
+  true north, and the dot shows which way they face. It moves because the *person* moved — "the scene never
+  takes you anywhere" holds.
+- **A control, always:** "North up" / "Face my direction" is a named switch whenever it applies, so a
+  person inside can hold the map still. iOS asks permission for the heading on a tap; until granted, the
+  map stays north-up and the switch asks.
 - **In Street,** the bezel shows which way the camera faces, and replaces the old `CompassRose.jsx` (delete it;
   one compass, not two).
 - **Street names at the rim — undecided ("unknown").** Build it as a Town layer, switchable, and show Jacob a
