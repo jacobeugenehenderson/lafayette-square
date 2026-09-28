@@ -74,3 +74,17 @@ gestures.
 - One driver. The three hero branches are **deleted**; the commit names what was removed.
 - Both checks in §4 pass, and each was seen to fail.
 - `ls/ARCHITECTURE.md §1` names `MovieCamera` beside `<Town>`, and the commit names that register.
+
+## 8. Parity — where it stands, and what is parked (2026-09-28)
+- **The driver's own divergence is closed:** `camera.near` is 1 in Stage, Preview and production (it was 10 vs 1).
+- **`claims-stage-preview-parity` compares only what is comparable** (Warden's ruling, no product hook): each census
+  records its view's clock (the time-of-day store's minute) and whether the camera moved; clock-shaped fields (fog,
+  the lit rig and casters, Moon/Sun/Stars/CounterBody, neon) are compared only on the same minute, `fov` only on a
+  still camera or an equal path phase. Otherwise the field is printed **NOT COMPARABLE** and the check cannot be
+  green. ▶ `node checks/claims-stage-preview-parity.mjs [--self-test]`
+- **Measured on huron** (harness-pinned start `Math.random = 0`, the store set to noon): 0 comparable divergences;
+  **11 fields NOT COMPARABLE** — the clocks differ (each app drives its own: Stage's scrub, Preview's `<Town time>`,
+  production live) and the movie camera's phase has no readout.
+- ⛔ **PARKED — not solved:** a same-clock, same-phase census needs a way for the probe to set Preview's clock and a
+  read of MovieCamera's phase. Production's player dies at cutover, so no door into it (Warden). Until then those
+  fields are unproven, not passed.
