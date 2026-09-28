@@ -9,11 +9,13 @@
  *    settle carries `{ error }` — and still its screenshot, when one could be taken.
  *
  *   const r = await readPage({
- *     url: 'http://localhost:5180/society',
+ *     url: 'http://localhost:5180/lafayette-square/society',
  *     viewport: { width: 390, height: 844, deviceScaleFactor: 3, mobile: true },
  *     place: { lat, lon },                         // the town's manifest identity.geography — the caller reads it
  *     at: ['noon', 'dusk', 'midnight'],            // solar noon · civil dusk · solar midnight (nadir), today, at place
- *     clock: (iso) => `import('/src/almanac/almanacClock.js').then(m => m.scrubTo(new Date('${iso}')))`,
+ *     clock: (iso, modules) => `…`,                // a page script. modules = every module URL the page has parsed, so
+ *                                                  // it can import the exact copy the app runs: on a dev server a
+ *                                                  // ?t= HMR stamp makes a bare import a SECOND copy, silently
  *     targets: [{ name: 'place name', selector: '.place h1', kind: 'text' }],   // kind: 'text' | 'boundary'
  *     axeSource,                                   // the text of axe.min.js — the caller's dependency, not the kit's
  *   })
@@ -50,6 +52,9 @@ export async function readPage({ url, viewport, place, at, clock, targets, axeSo
     page.on('Network.requestWillBeSent', net((p) => { if (/^https?:/.test(p.request.url)) inflight.add(p.requestId) }))
     page.on('Network.loadingFinished', net((p) => inflight.delete(p.requestId)))
     page.on('Network.loadingFailed', net((p) => inflight.delete(p.requestId)))
+    const modules = []                 // every http(s) script the page has parsed, in order, once each
+    page.on('Debugger.scriptParsed', (p) => { if (/^https?:/.test(p.url) && !modules.includes(p.url)) modules.push(p.url) })
+    await page.send('Debugger.enable')
     await page.send('Network.enable')
     await page.send('Page.enable')
     await page.send('Emulation.setDeviceMetricsOverride', viewport)
@@ -86,7 +91,7 @@ export async function readPage({ url, viewport, place, at, clock, targets, axeSo
       try {
         if (unloaded) throw new Error(unloaded)
         if (!c.time) throw new Error(`no ${h} at ${place.lat}, ${place.lon} today (polar day or night)`)
-        await evaluate(clock(c.time))
+        await evaluate(clock(c.time, [...modules]))
         await settle()
       } catch (e) { c.error = e.message }
       let png = null
@@ -110,7 +115,7 @@ export async function readPage({ url, viewport, place, at, clock, targets, axeSo
       cases.push(c)
     }
     await page.close()
-    return { url, viewport, renderer, cases }
+    return { url, viewport, renderer, modules, cases }
   } finally {
     await chrome.close()
   }
