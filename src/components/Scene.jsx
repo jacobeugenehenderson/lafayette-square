@@ -661,8 +661,7 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
         // resolves. Use the flat default — CameraRig will retarget once
         // the slab loads (~100ms).
         fov: SHOTS_FLAT_DEFAULTS.hero.fov,
-        near: 1,
-        far: 60000,
+        near: 1,   // the far plane is <Town>'s (it reaches its own sky)
       }}
       gl={{
         alpha: false,

@@ -1109,7 +1109,7 @@ export default function PreviewApp() {
   const canvas = (
     <Canvas
       frameloop="always"
-      camera={{ position: SHOTS.hero.position, fov: SHOTS.hero.fov, near: 1, far: 60000 }}
+      camera={{ position: SHOTS.hero.position, fov: SHOTS.hero.fov, near: 1 }}   // far: <Town>'s (it reaches its own sky)
       gl={{
         alpha: false, antialias: true, stencil: true,
         // Lets "Capture hero → preview" read the current slab frame off the

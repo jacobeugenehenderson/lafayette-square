@@ -1005,7 +1005,6 @@ export default function CartographApp() {
             position={SHOTS.browse.position}
             fov={SHOTS.browse.fov}
             near={1}
-            far={60000}
           />
           <CameraRig orthoRef={orthoRef} perspRef={perspRef} controlsRef={controlsRef} />
 

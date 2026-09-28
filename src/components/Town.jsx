@@ -47,7 +47,7 @@
  *                    passes none: shot='movie' plays the town's own baked path.
  *   children         the app's overlays, drawn in the town's frame (see <TownPoint>)
  */
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { TownPlace, useTownLoaded } from './TownPlace.jsx'
@@ -78,7 +78,7 @@ import CascadedShadows, { CSM_ENABLED } from './CascadedShadows.jsx'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import WeatherEffects from './WeatherEffects'
-import CelestialBodies from './CelestialBodies'
+import CelestialBodies, { SKY_RADIUS } from './CelestialBodies'
 import Atmosphere from './Atmosphere'
 import CloudDome from './CloudDome'
 import Terrain from './Terrain'
@@ -244,6 +244,29 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
   return <group ref={ref} position={[px, y(), pz]} {...props}>{children}</group>
 }
 
+/**
+ * ⭐ THE TOWN REACHES ITS OWN SKY (2026-09-28). The farthest thing <Town> draws is the sky dome (SKY_RADIUS); the camera
+ * it is drawn through must reach past it, or the dome is clipped and the sky reads BLACK in daylight — measured in the
+ * Ward, whose Canvas kept R3F's default far = 1000. The kit's apps had hidden it by each pinning `far: 60000`. Town owns
+ * the far plane now. Two things a component cannot change once the Canvas exists — the depth buffer (log or linear) and
+ * whether it has a shadow map — are the app's Canvas props; when they disagree with the quality profile, Town says so.
+ * ▶ node checks/claims-the-town-sees-its-sky.mjs
+ */
+function TownOptics({ quality }) {
+  const camera = useThree((s) => s.camera)
+  const gl = useThree((s) => s.gl)
+  useLayoutEffect(() => {
+    const far = SKY_RADIUS * 1.1   // past the dome (and the orbs inside it), with room for the camera's own lift
+    if (camera.far !== far) { camera.far = far; camera.updateProjectionMatrix() }
+  }, [camera])
+  useEffect(() => {
+    const logDepth = !!gl.capabilities.logarithmicDepthBuffer
+    if (!!quality.logDepth !== logDepth) console.error(`[Town] ⛔ the Canvas was created with ${logDepth ? 'logarithmic' : 'linear'} depth, but the quality profile "${quality.id}" asks for ${quality.logDepth ? 'logarithmic' : 'linear'} — create the Canvas with gl={{ logarithmicDepthBuffer: quality.logDepth }}`)
+    if (!!quality.shadows !== !!gl.shadowMap.enabled) console.error(`[Town] ⛔ the Canvas ${gl.shadowMap.enabled ? 'has' : 'has no'} shadow map, but the quality profile "${quality.id}" asks for ${quality.shadows ? `shadows (${quality.shadows})` : 'none'} — create the Canvas with shadows={quality.shadows}`)
+  }, [gl, quality])
+  return null
+}
+
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
@@ -281,7 +304,7 @@ export default function Town({
     [o.heroKeyframes, scene, stencil, heroFov])
   // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
   const loaded = useTownLoaded(lookId)
-  if (!loaded) return <TownPlace town={town} lookId={lookId} time={time} />
+  if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} /></>
   const targetExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // The phone profile mounts the arch and the horizon in the movie shot only (its budget).
   const heavy = !quality.heroOnlyPieces || shot === 'movie'
@@ -289,6 +312,7 @@ export default function Town({
   return (
     <QualityProvider quality={quality}>
     <TownScope value={scope}>
+      <TownOptics quality={quality} />
       <TownPlace town={town} lookId={lookId} time={time} />
       {/* ⭐ THE MOVIE IS TOWN'S (Warden, 2026-09-28): the ONE mount of the driver, playing this town's own baked path
           (Stage's live keys arrive as overrides). Mounted in every shot so an app's tween can sample the path before
