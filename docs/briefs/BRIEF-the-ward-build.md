@@ -153,6 +153,12 @@ registers rewritten for what shipped (README §10), and a commit that says what 
 - **The review endpoint keeps less than the old form offered:** it `parseInt`s the rating (half ratings
   lost) and drops photo, avatar and vignette. The Ward asks only for what the server keeps.
 
+### Ruled 2026-09-28 (Jacob): couriers are per map
+The census's courier count was Cary's global count (`courier_profiles` has no town column). **Ruling: per
+map.** `courier_profiles` gains the map a courier works in; onboarding writes it; the census counts that
+map's active couriers. A Supabase migration is a live-database change — it rides Jacob's go in the session
+that runs it. Until it lands the Ward says "couriers: not yet counted by town".
+
 ## 6. Out of this brief
 
 - **Street and walking tours** — later, after steps 1–6 (README §2a). Nothing adequate is built.

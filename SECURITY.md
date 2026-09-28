@@ -472,13 +472,20 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   (Authentication → Users). `auth.users` is not readable with the anon key, so this was NOT verified here.
 
 
-### F-18 · HIGH · Starting a thread on an ANONYMOUS bulletin post reveals its author  *(new, 2026-09-28)*
+### F-18 · HIGH · Starting a thread on an ANONYMOUS bulletin post reveals its author  — ⚙️ FIXED + DEPLOYED 2026-09-28 (`27dc1f2f`, Apps Script @68) · not yet observed live
 `apps-script/Code.js#postStartThread` does not refuse a thread on an anonymous post: it stores the poster's
 real handle as `a_handle`, and `getThreads` returns it to the thread's starter as `other_handle`. So anyone
 who calls `start-thread` directly on a Missed Connections or Emergency post learns who wrote it. Only the old
 client hid the "Message" button; the gate must be the server's. Found by Quire (The Ward build).
 **Fix:** refuse `start-thread` on an anonymous post, or never return the anonymous party's handle.
-Rides the same Apps Script deploy as `my-role` (pull + diff the live script first).
+**Fixed:** `start-thread` refuses an anonymous post (`forbidden`); `getThreads` never returns the poster's
+handle for a thread on an anonymous or deleted post, which also covers threads already open; `isAnonymousFlag()`
+is the one reading of the flag. Deployed with `my-role` as @68 (`clasp deploy -i`, same id;
+`claims-deployment-id-single-source` PASS). ⚠️ **Not yet observed live** — a stranger device stops at the Townie
+gate first; a real test needs a townie device and a test post. ⚠️ The deploy also shipped two earlier undeployed
+commits: `cd0446a4` (townie standing counts linked devices) and `ee3a33b9` (`guardian-check`, which answers
+**no to everyone until `COMMERCE_SHARED_SECRET` is set** — so the `commerce-write` path refuses every guardian
+until then).
 
 ### F-19 · LOW · Bulletin server gaps  *(new, 2026-09-28)*
 Found by Quire: deleting a post leaves its threads open · `postComment` does not check the post exists ·
