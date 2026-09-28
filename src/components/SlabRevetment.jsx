@@ -41,7 +41,8 @@ import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
 import { revetmentFaces, revetmentResponseKind, toeFor } from '../lib/revetmentFromSlab.js'
 import { getElevationRaw } from '../utils/elevation'
 import { terrainBed, terrainWater } from '../utils/terrainShader'
-import { waterLevels, tidePhase } from '../../cartograph/waterLevel.mjs'
+import { waterLevels } from '../../cartograph/waterLevel.mjs'
+import { phaseNow } from './WaterSurface.jsx'
 import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 
 let _saidNoBerm = false
@@ -137,7 +138,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   const levels = useMemo(() => { try { return waterLevels(terrainWater()) } catch (e) {
     if (!_saidNoLevels) { _saidNoLevels = true; console.error(`[SlabRevetment] ⛔ ${e.message} — the stone's wetted band has no level to stand at`) }
     return null } }, [doc])
-  useFrame(({ camera: cam }) => { if (levels) revU.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, tidePhase(Date.now())) })
+  useFrame(({ camera: cam }) => { if (levels) revU.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, phaseNow()) })
   useEffect(() => () => material.dispose?.(), [material])
   useEffect(() => () => { palette?.forEach(g => g.dispose()) }, [palette])
 

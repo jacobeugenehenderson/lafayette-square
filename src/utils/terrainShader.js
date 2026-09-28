@@ -85,7 +85,11 @@ async function fetchTerrain(lookId) {
   try {
     const meta = await fetch(`${base}baked/${lookId}/terrain.json`).then(r => { if (!r.ok) throw new Error(`terrain.json ${r.status}`); return r.json() })
     const buf  = await fetch(`${base}baked/${lookId}/terrain.bin`).then(r => { if (!r.ok) throw new Error(`terrain.bin ${r.status}`); return r.arrayBuffer() })
-    return { ...meta, data: new Float32Array(buf) }
+    // The town's tide clock rides its manifest (bake-manifest `tide`, tidal towns only) — absent, never zero.
+    const tide = meta.water?.tidal
+      ? await fetch(`${base}baked/${lookId}/manifest.json`).then(r => (r.ok ? r.json() : null)).then(m => m?.tide ?? null).catch(() => null)
+      : null
+    return { ...meta, data: new Float32Array(buf), tide }
   } catch (e) {
     console.warn(`[terrain] no baked terrain for look "${lookId}" — rendering flat`, e?.message || e)
     return FLAT_TERRAIN
@@ -111,6 +115,8 @@ export function terrainLook() { return _lookId }
 export function terrainBed() { return _terrain.bed || null }
 /** The ACTIVE look's water levels record (terrain.json `water`: its low and high tide or lake level), or null. Re-points on reload. */
 export function terrainWater() { return _terrain.water || null }
+/** The ACTIVE look's tide clock (its manifest's `tide`: NOAA's constituents), or null for a town with none. Re-points on reload. */
+export function terrainTide() { return _terrain.tide || null }
 export let width  = _terrain.width
 export let height = _terrain.height
 export let bounds = _terrain.bounds

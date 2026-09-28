@@ -4,10 +4,19 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { makeWaterMaterial, WATER_LOOK_DEFAULTS, slopeScaleForWind, maxRoughnessForWind,
          coxMunkSlopeVariance, WIND_FLOOR_MPS } from './waterMaterial'
-import { TERRAIN_DECL, assignTerrainUniforms, terrainBed } from '../utils/terrainShader'
+import { TERRAIN_DECL, assignTerrainUniforms, terrainBed, terrainWater, terrainTide } from '../utils/terrainShader'
 import { tidePhase } from '../../cartograph/waterLevel.mjs'
 
 let _saidNoBed = false
+let _saidNoTide = false
+/** The tide's phase at the SCENE's time (Stage's scrubbed clock or the live one). A tidal town with no clock says so
+ *  once and stands at HIGH. Shared with the stone's wetted band (SlabRevetment). */
+export function phaseNow() {
+  try { return tidePhase(useTimeOfDay.getState().currentTime, terrainWater(), terrainTide()) } catch (e) {
+    if (!_saidNoTide) { _saidNoTide = true; console.error(`[WaterSurface] ⛔ ${e.message} — the water stands at HIGH`) }
+    return 1
+  }
+}
 
 /**
  * WaterSurface — THE ONE WATER MESH, MOUNTED TWICE.
@@ -42,7 +51,7 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
   }, [geometry, extentOverride])
   useFrame((_, delta) => {
     uniforms.uTime.value += delta
-    uniforms.uPhase.value = tidePhase(Date.now())
+    uniforms.uPhase.value = phaseNow()
     if (horizon) { uniforms.uHorizonC.value.set(horizon.center[0], horizon.center[1]); uniforms.uHorizonIn.value = horizon.inner; uniforms.uHorizonOut.value = horizon.outer
       uniforms.uRimIn.value = horizon.rimIn; uniforms.uRimOut.value = horizon.rimOut }
     // ⭐ The town's visibility depth, read off its terrain's bed record (bake-terrain). ⛔ A town whose terrain has

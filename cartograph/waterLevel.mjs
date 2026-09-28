@@ -2,16 +2,34 @@
  * waterLevel.mjs — WHERE THE WATER STANDS, as a value read at a time and a place.
  *
  * Ruled 2026-09-27 (Jacob, BRIEF-bathymetry): a town's water stands at a chosen tide, not at the survey flight's —
- * a LOW and a HIGH level per town, and a clock between them. Shown at HIGH until the clock is built. ⛔ "Build the fixed
+ * a LOW and a HIGH level per town, and a clock between them. ⛔ "Build the fixed
  * level so the moving one extends it: a level is a value read at a time, never a constant baked into geometry."
  *
  * The levels are terrain.json `water` (bake-terrain, from NOAA VDatum): fields over a coarse grid, in metres above the
- * terrain's zero. `levelAt(x, z, phase)` = low + (high − low) · phase. `tidePhase(t)` is the clock; today it answers
- * HIGH, and it is the only thing the moving tide replaces. One module for the bake, the checks and the player.
+ * terrain's zero. `levelAt(x, z, phase)` = low + (high − low) · phase; `tidePhase(date, water, tide)` is the phase on
+ * NOAA's clock (below). One module for the bake, the checks and the player.
  */
 
-/** The tide's phase at a time: 0 = the low level, 1 = the high. ⛔ Fixed at HIGH until the clock (NOAA harmonics). */
-export function tidePhase(/* t */) { return 1 }
+import { tidePhaseClock } from './tide.mjs'
+
+const _clocks = new WeakMap()
+/**
+ * The tide's phase at a time: 0 = the town's low level, 1 = its high. ⭐ On NOAA's clock (Jacob, 2026-09-28, BRIEF-tide:
+ * "We decide the 'high' and 'low' tides, and clamp them to the times"): 1 at each predicted high, 0 at each low, a
+ * half-cosine between — `cartograph/tide.mjs` tidePhaseClock, over the town manifest's `tide` record.
+ * A lake (water.tidal false) has one level, so its phase is moot: 1.
+ * ⛔ A TIDAL town with no tide record THROWS — never a silent high tide. The caller says so and draws HIGH.
+ * @param date   the SCENE's time (Stage's scrubbed clock / the player's live one), not the wall clock
+ * @param water  terrain.json `water`
+ * @param tide   the town manifest's `tide`
+ */
+export function tidePhase(date, water, tide) {
+  if (!water?.tidal) return 1
+  if (!tide) throw new Error('tidePhase: this town is tidal but its manifest carries no `tide` clock — ▶ node cartograph/bake-manifest.mjs')
+  let clock = _clocks.get(tide)
+  if (!clock) { clock = tidePhaseClock(tide); _clocks.set(tide, clock) }
+  return clock(date instanceof Date ? date : new Date(date))
+}
 
 /**
  * @param water terrain.json `water`
