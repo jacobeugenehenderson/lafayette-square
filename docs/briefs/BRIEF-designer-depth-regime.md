@@ -8,7 +8,7 @@ evict-when: the Designer's coplanar layers sort by a mechanism that is not inert
 # BRIEF — the Designer's rim regime: TWO defects
 
 **A — the flicker.** A 2D map is depth-sorting and its sorter is inert.
-**B — the hard rim.** The radial fade never reaches the tile layers on any scene but Lafayette Square.
+**B — the hard rim.** The radial fade now reaches the tile layers on every town's own disc (§3b).
 
 ⛔ **TWO DEFECTS, TWO ACCEPTANCES, TWO COMMITS.** They share a file surface — which is the only
 reason they share a brief, and why one agent holds both rather than two colliding on
@@ -154,69 +154,23 @@ consulted. Jacob's constraint, and it is the design call, not a preference.
 
 ---
 
-## 3b. ⛔ DEFECT B — the rim is CUT but never FADED, on every scene but LS
+## 3b. DEFECT B — the rim: the fade now reaches the tile layers on every town's own disc
 
-**Jacob's eye, `huron`, second pass:** *"the hard edge tells me this is stamped after the gradient
-edge and not before."* ⭐ **He is right in effect, and the mechanism is two sites that must move
-together.**
+**Jacob's eye, `huron`:** *"the hard edge tells me this is stamped after the gradient edge and not
+before."* The block/tile layers were CUT at the stencil but never FADED on any town but LS.
 
-The tell is in one frame: a **woods overlay fades correctly** while the **block fill beside it cuts
-hard.** Two different renderers — `MapLayers` fades, the tile render does not.
+**As the code stands:** there is no per-scene switch. `BlockGeometryV2Debug`'s `faceFade`/`bandFade`
+resolve from the ACTIVE installation's own `neighborhood_boundary.json`, by id out of the store,
+through the kit factory `makeBoundary(nb)` — the same route `MapLayers`' `injectRadialFade` takes. LS
+keeps its module constants, which are its own band. ▶ `node checks/claims-the-fade-tracks-the-active-disc.mjs`
+fails if a scene switch reappears, if the bands stop resolving through `makeBoundary`, or if a poured
+town would feather on another town's disc (it prints what fraction of each disc would go to alpha 0).
 
-**① The fade is gated off for every scene but LS.** `CartographApp.jsx` `sceneConfig`, three branches:
+⛔ **The constraint that stays:** resolve BY ID AT RUNTIME. `47e2ca81` removed a static per-scene
+boundary registry to kill cross-installation imports — do not re-add one.
 
-| branch | `useBoundary` | `stencil` |
-|---|---|---|
-| lafayette-square (~`:807`) | **true** | `LS_STENCIL` |
-| **generic poured scene (~`:904`)** | **false** | `stencilFromBoundary(sceneBoundary)` |
-
-⇒ `BlockGeometryV2Debug` (~`:254`) sets `faceFade = useBoundary ? FACE_FADE : null` and the same for
-`bandFade`. On a poured town both are **null**. ⭐⭐ **And the generic branch still computes a
-stencil — so a poured town gets the CUT and not the FADE.** The gate's own comment says it:
-*"LS turns on the soft-circle."*
-
-**② ⛔ FLIPPING THE FLAG ALONE DOES NOT FIX IT — and this is the half that will waste a session.**
-`boundary.js` (~`:218-224`) derives `BOUNDARY_CENTER_XZ` · `FADE_INNER/OUTER` · `STREET_FADE_*` from a
-**static import of `lafayette-square/neighborhood_boundary.json`** (~`:17`), and
-`BlockGeometryV2Debug` builds `FACE_FADE`/`BAND_FADE` from those module constants. Turn `useBoundary`
-on for huron and it fades at **LS's 892 m radius on a 3539 m disc** — the falloff lands deep inside
-the town and the rim still cuts. **Both halves, or neither.**
-
-⭐ **The cure exists and this consumer does not use it.** `boundary.js`'s own header: *"`makeBoundary(nb)`
-is the KIT factory: hand it ANY installation's `neighborhood_boundary.json` — loaded by id, never
-imported here."* And `MapLayers`' `injectRadialFade` **already takes a per-scene `fade`**, with a comment
-naming this exact hazard: *"the feather must track the ACTIVE scene's disc, or a poured scene's edge
-content fades at LS's radius."* ⇒ **One file learned it; the other did not.** Follow `MapLayers`.
-
-⛔ **THIRD INSTANCE OF ONE CLASS IN ONE DAY** — `MapLayers`' `natural=water` skip (`ROADMAP H-8`), the
-`leisure=park` class skip (`ea13e35e`), and this. Perfect on the mould, broken on every town that is
-not it. **The kit-shaped fix is per-scene resolution, never a second `useBoundary: true`.**
-
-**Acceptance for B — separate from A's:** on a poured town (`huron`), the block/tile layers fade over
-**that town's own** band, and LS renders **unchanged**. ⛔ An LS-only check proves nothing here by
-construction — it is the one scene that already worked.
-
-### ✅ THE OPEN PREMISE IS ANSWERED FROM THE COMMIT RECORD — `useBoundary: false` GUARDS NOTHING
-
-*(Answered 2026-09-20 by the dispatched agent. It was never defensive, so there is nothing to route
-around and no stop owed on this count.)* `64cb6387` set it false as an **explicit placeholder** and
-says so in its own message — *"the soft-circle fade (boundary.js is still LS-module-hardcoded) remain
-LS-only; a bake + boundary.js scene-param are the next pieces."* **The next piece landed the same
-day** (`47e2ca81`, the `makeBoundary(nb)` factory) and this consumer was never rewired onto it.
-⇒ **ASPIRATION filed as done**, per `CLAUDE.md`'s three causes.
-
-⛔⛔ **AND A CONSTRAINT ON THE CURE THAT THE COMMIT RECORD CARRIES:** `47e2ca81` **removed** a static
-per-scene registry that literally held `'hipointe-demun': makeBoundary(hpBoundaryData)` — to kill
-cross-installation imports. **So the cure must resolve BY ID AT RUNTIME. ⛔ Do not re-add a static
-map.** ⭐ `MapLayers` already does exactly that (`store.sceneBoundary` → `makeBoundary(...)` → `fade`),
-and `genericSceneConfig(sceneBoundary)` already receives the boundary it needs. **The rails are laid.**
-
-### ⛔⛔ AND THE CONSEQUENCE IS WORSE THAN "FADES AT THE WRONG RADIUS"
-
-Measured radii: LS **892 m** · huron **3539 m** · altadena **4161 m** · HPDM **1251 m**, against LS's
-band of inner 758 / outer 892. ⇒ Flipping the flag alone on huron does not misplace the falloff —
-**every tile beyond 892 m goes to ALPHA 0. Roughly 90% of the town disappears.** State it that way;
-"the wrong radius" undersells it into something someone might ship.
+**Acceptance for B:** on a poured town (`huron`) the block/tile layers fade over that town's own band,
+and LS renders unchanged. ⛔ An LS-only check proves nothing here — LS's band is the module constant.
 
 ---
 
