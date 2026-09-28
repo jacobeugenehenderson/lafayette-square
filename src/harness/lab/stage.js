@@ -18,27 +18,26 @@
  *   steepest    — the steepest heightfield sample inside the disc's opaque core, read at
  *                 the grid's own step: where relief shading is judged.
  */
-import { ASSET_BASE } from '../../lib/bakedUrl.js'
+import { slabFetch } from '../../lib/slabUrl.js'
 import { currentTerrain } from '../../utils/terrainShader.js'
 import { INSTANCE } from '../../instance.js'
 import { siteFromFootprint, southFacingYaw, DOSSIER, FT } from '../../setpieces/pilgrimMonument.js'
 
-async function getJSON(url) {
-  const r = await fetch(url)
-  if (!r.ok) throw new Error(`${url} → HTTP ${r.status}`)
+async function getJSON(lookId, rel, bust) {
+  const r = await slabFetch(lookId, rel, undefined, bust || null)
+  if (!r.ok) throw new Error(`${r.url} → HTTP ${r.status}`)
   return r.json()
 }
 
 /** Every stage this town can offer, from its ground manifest + revetment. */
 export async function listStages(lookId, bust) {
-  const t = bust ? `?t=${bust}` : ''
-  const m = await getJSON(`${ASSET_BASE}baked/${lookId}/ground.json${t}`)
+  const m = await getJSON(lookId, 'ground.json', bust)
   const out = m.groups.map(g => ({ id: `class:${g.id}`, kind: g.kind, tris: g.indexCount / 3 }))
   out.unshift({ id: 'steepest', kind: 'terrain' })
   if (INSTANCE.setPiece) out.unshift({ id: 'setpiece', kind: INSTANCE.setPiece.kind })
   // ⛔ `r.ok` IS NOT PRESENCE IN DEV: vite answers a missing file with its HTML
   // fallback and a 200. Presence is "the body parses as the artifact".
-  const rv = await fetch(`${ASSET_BASE}baked/${lookId}/revetment.json${t}`)
+  const rv = await slabFetch(lookId, 'revetment.json', undefined, bust || null)
   const doc = rv.ok ? await rv.json().catch(() => null) : null
   if (doc?.arcs) out.unshift({ id: 'revetment', kind: 'revetment' })
   return { stages: out, manifest: m }
@@ -46,9 +45,8 @@ export async function listStages(lookId, bust) {
 
 /** Resolve a stage name to a world XZ point (and a facing, for the eye camera). */
 export async function resolveStage(lookId, stageId, bust) {
-  const t = bust ? `?t=${bust}` : ''
   if (stageId === 'revetment') {
-    const doc = await getJSON(`${ASSET_BASE}baked/${lookId}/revetment.json${t}`)
+    const doc = await getJSON(lookId, 'revetment.json', bust)
     let best = null, bestArc = null, bi = -1
     for (const arc of doc.arcs || []) {
       const st = arc.stations || []
@@ -66,10 +64,10 @@ export async function resolveStage(lookId, stageId, bust) {
     const sp = INSTANCE.setPiece
     if (!sp?.buildingId) throw new Error(`⛔ stage "setpiece" on ${lookId}: this town declares no set-piece (src/instances/<town>.js setPiece)`)
     // The footprint is the set-piece's building record in the slab, as <SetPiece> reads it.
-    const m = await getJSON(`${ASSET_BASE}baked/${lookId}/buildings.json${t}`)
+    const m = await getJSON(lookId, 'buildings.json', bust)
     const b = m.buildings.find(x => x.id === sp.buildingId)
     if (!b) throw new Error(`⛔ stage "setpiece" on ${lookId}: the slab has no building ${sp.buildingId}`)
-    const bin = await fetch(`${ASSET_BASE}baked/${lookId}/${m.bin}${t}`).then(r => r.arrayBuffer())
+    const bin = await slabFetch(lookId, m.bin, undefined, bust || null).then(r => r.arrayBuffer())
     const [start, count] = b.footprintRange
     const fp = new Float32Array(bin, m.footprintByteOffset + start * 8, count * 2)
     const site = siteFromFootprint(Array.from({ length: count }, (_, i) => [fp[i * 2], fp[i * 2 + 1]]))
@@ -78,7 +76,7 @@ export async function resolveStage(lookId, stageId, bust) {
     return { x: site.x + n[0] * h, z: site.z + n[1] * h, normal: n, why: `${sp.kind}: the south face of building ${sp.buildingId}` }
   }
   if (stageId === 'steepest') {
-    const m = await getJSON(`${ASSET_BASE}baked/${lookId}/ground.json${t}`)
+    const m = await getJSON(lookId, 'ground.json', bust)
     const st = m.stencil
     // ⭐ Inside the fade's INNER edge: past it the ground dissolves, and a slope judged
     // through a half-transparent rim is not a slope judged. ⛔ No fade band ⇒ refuse.
@@ -101,10 +99,10 @@ export async function resolveStage(lookId, stageId, bust) {
   }
   if (!stageId.startsWith('class:')) throw new Error(`⛔ unknown stage "${stageId}" — expected class:<id> or revetment`)
   const id = stageId.slice(6)
-  const m = await getJSON(`${ASSET_BASE}baked/${lookId}/ground.json${t}`)
+  const m = await getJSON(lookId, 'ground.json', bust)
   const g = m.groups.find(q => q.id === id)
   if (!g) throw new Error(`⛔ stage "${stageId}": ${lookId}'s ground has no group "${id}" (has: ${m.groups.map(q => q.id).join(', ')})`)
-  const bin = await fetch(`${ASSET_BASE}baked/${lookId}/${m.bin}${t}`).then(r => r.arrayBuffer())
+  const bin = await slabFetch(lookId, m.bin, undefined, bust || null).then(r => r.arrayBuffer())
   const P = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)
   const I = new Uint32Array(bin, g.indexByteOffset, g.indexCount)
   // ⭐ Inside the fade's INNER edge, the same rule as `steepest`: huron's largest farmland triangle

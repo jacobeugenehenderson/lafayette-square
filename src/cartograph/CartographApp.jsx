@@ -43,7 +43,7 @@ import { transitionMs } from '../camera/transitions.js'
 
 import ribbonsRaw from '../data/ribbons.json'
 import lsNeighborhoodBoundary from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch } from '../lib/slabUrl.js'
 import { townForLook, INSTANCE, mapForLook } from '../instance.js'
 
 // UI
@@ -876,7 +876,7 @@ export default function CartographApp() {
   useEffect(() => {
     if (!activeLookId) return
     let cancelled = false
-    fetch(`${ASSET_BASE}baked/${activeLookId}/scene.json?t=${Date.now()}`)
+    slabFetch(activeLookId, 'scene.json', { cache: 'no-cache' })
       .then(r => r.ok ? r.json() : null)
       .then(j => { if (!cancelled) setBakedLayerVis(j?.layerVis || {}) })
       .catch(() => { if (!cancelled) setBakedLayerVis({}) })

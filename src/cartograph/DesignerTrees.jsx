@@ -16,7 +16,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch } from '../lib/slabUrl.js'
 
 // Source → interface-color TOKEN. The color VALUES live in the master CSS
 // (src/cartograph/cartograph.css `--carto-tree-*`) — one place to re-theme
@@ -75,8 +75,7 @@ export default function DesignerTrees({ scene, hiddenLayers, bakeLastMs }) {
   useEffect(() => {
     if (hidden || !scene) { setInstances(null); return }
     let cancelled = false
-    const bust = bakeLastMs ? `?t=${bakeLastMs}` : ''
-    fetch(`${ASSET_BASE}baked/${scene}/trees.json${bust}`)
+    slabFetch(scene, 'trees.json', undefined, bakeLastMs || null)
       .then(r => (r.ok ? r.json() : null))
       .then(j => { if (!cancelled) setInstances(Array.isArray(j?.instances) ? j.instances : null) })
       .catch(() => { if (!cancelled) setInstances(null) })

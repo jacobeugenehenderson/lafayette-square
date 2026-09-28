@@ -48,7 +48,7 @@ import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
 let _saidNoBerm = false
 let _saidNoLevel = false
 let _saidNoLevels = false
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch } from '../lib/slabUrl.js'
 
 /** How far from the camera the DETAILED drape and the stones are built, metres.
  *  ⛔ A BUDGET, not a look: it sets how much work one camera move can trigger.
@@ -89,11 +89,11 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   useEffect(() => {
     if (!lookId) return
     let dead = false
-    // ⛔ CACHE-BUST OR THE OPERATOR EYE-GATES THE PREVIOUS BAKE. Preview mounted its
+    // ⛔ RE-READ OR THE OPERATOR EYE-GATES THE PREVIOUS BAKE. Preview mounted its
     // baked consumers at unchanging URLs until 2026-09-20 and the browser served the
     // stale slab; a re-bake read as "unchanged" and the A/B was recorded backwards.
-    const t = bakeLastMs ? `?t=${bakeLastMs}` : ''
-    fetch(`${ASSET_BASE}baked/${lookId}/revetment.json${t}`)
+    // bakeLastMs is the re-read key; the resolver carries it on disk.
+    slabFetch(lookId, 'revetment.json', undefined, bakeLastMs || null)
       .then(r => {
         // ⭐ 404 is NORMAL and is not a failure: `bake-revetment` writes nothing for a
         // town with no shoreline, or whose terrain datum is not the water. Most towns

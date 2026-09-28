@@ -14,14 +14,14 @@
 // four hardcoded LS corridors. Doctrine [[project_labels_encourage_walking]],
 // [[project_preview_equals_ls_literally]], slab-is-the-contract.
 import { useState, useEffect } from 'react'
-import { ASSET_BASE } from './bakedUrl.js'
+import { slabFetch } from './slabUrl.js'
 import { lookOf } from './lookOf.js'
 
 
 /**
  * @param {string} [lookId]     — explicit Look id (cartograph passes activeLookId);
  *                                required: the Look being drawn (never a guessed one).
- * @param {number} [cacheBust]  — bump to re-fetch after a Stage/Designer re-bake.
+ * @param {number} [reread]     — bump to re-fetch after a Stage/Designer re-bake.
  * @returns {{labels, style, version, setPieceTitles}} — the labels.json artifact: `labels` is [] until loaded / if the
  *   scene has none; `style` is the town's label style baked beside them (the whole authored block from v4; v3 carried
  *   only { sizeK, letterSpacing }) — resolve it with labelStyleOf (src/lib/labelStyle.js); `setPieceTitles` places a
@@ -35,18 +35,17 @@ import { lookOf } from './lookOf.js'
  * lafayette-square: sizeK 0.7 vs 1, letterSpacing 0.04 vs 0.05. See
  * useLabelPlacements.js, which asserted they could not drift.
  */
-export function useStreetLabels(lookId, cacheBust) {
+export function useStreetLabels(lookId, reread) {
   const resolved = lookOf(lookId, 'streetLabels')
   const [data, setData] = useState(EMPTY)
   useEffect(() => {
     let cancelled = false
-    const bust = cacheBust != null ? `?t=${cacheBust}` : ''
-    fetch(`${ASSET_BASE}baked/${resolved}/labels.json${bust}`)
+    slabFetch(resolved, 'labels.json')
       .then(r => (r.ok ? r.json() : null))
       .then(j => { if (!cancelled) setData(j?.labels ? { labels: j.labels, style: j.style || {}, version: j.version ?? 0, setPieceTitles: j.setPieceTitles || {} } : EMPTY) })
       .catch(e => { console.warn('[streetLabels] load failed:', e); if (!cancelled) setData(EMPTY) })
     return () => { cancelled = true }
-  }, [resolved, cacheBust])
+  }, [resolved, reread])
   return data
 }
 

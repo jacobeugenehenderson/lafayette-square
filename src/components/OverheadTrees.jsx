@@ -38,7 +38,7 @@ import { CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS, kitDayChannel } from '../carto
 // than flashing a different canopy for a frame.
 const CANOPY_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('canopy'))
 import { useTownShot } from './townContext.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl } from '../lib/slabUrl.js'
 
 // ── Debug instrument (dev-only; ?treeDebug=flag,flag — NEVER affects prod) ────
 // Names the "chips": ?treeDebug=bandTint tints the 3 overhead bands branch=red /
@@ -201,7 +201,6 @@ export function useOverheadWarm(enabled) {
  */
 export function useOverheadAssets({ enabled, lookName, overheadBySpecies, species }) {
   const [ready, setReady] = useState(0)
-  const base = ASSET_BASE
   // KTX2 needs the renderer to know the device's block formats before it can load.
   const gl = useThree((st) => st.gl)
 
@@ -212,7 +211,7 @@ export function useOverheadAssets({ enabled, lookName, overheadBySpecies, specie
       const rec = overheadBySpecies[sp]
       if (!rec?.bands?.length) continue
       const bands = rec.bands.map((b) => {
-        const url = (p) => (p.startsWith('/trees/') ? `${base}baked/${lookName}${p}` : p)
+        const url = (p) => (p && p.startsWith('/trees/') ? slabUrl(lookName, p) : p)
         return {
           key: b.key,
           yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,

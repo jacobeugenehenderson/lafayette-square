@@ -38,7 +38,7 @@ import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
 
 // ── Surface treatment: albedo desaturation + value-range lift ────────────────
@@ -112,14 +112,14 @@ function reportAbsentParams(look, surface, authored, resolved) {
 // ⭐ The baked distance to the water (context.json#channels.coastDist, SLAB-CONTRACT §3.3) as a texture
 // the sand's duneGrass rule reads. Quantised to 8 bits over a range the rule can use (6 × the town's
 // own beach band, capped at the channel's max). ⛔ No channel, or no derived band → null, SAID once.
-async function loadCoastDist(look, context, cacheBust) {
+async function loadCoastDist(look, context, bake) {
   const ch = context?.channels?.coastDist
   const band = context?.derived?.sand?.beachBandM?.value
   if (!ch?.bin || !Number.isFinite(band)) {
     // Said by the sand surface that needs it (SurfaceMesh), not here — a town with no sand is not missing it.
     return { absent: !context ? 'no context.json' : !ch?.bin ? (ch?.why || 'no coastDist channel') : 'no derived sand.beachBandM' }
   }
-  const buf = await fetch(ASSET_BASE + 'baked/' + look + '/' + ch.bin + '?t=' + cacheBust).then(r => r.arrayBuffer())
+  const buf = await slabFetch(look, ch.bin, undefined, bake).then(r => r.arrayBuffer())
   const u16 = new Uint16Array(buf)
   if (u16.length !== ch.width * ch.height) { console.error(`[BakedGround] ⛔ "${look}": coastDist is ${u16.length} values, the manifest says ${ch.width}×${ch.height} — not used.`); return null }
   const rangeM = Math.min(ch.maxM, band * 6)
@@ -267,7 +267,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
   }, [lmOk, lmKey, manifest.groundKey, manifest.look, manifest.lightmap])
 
   const lightmapUrl = (manifest.lightmap && lmOk)
-    ? ASSET_BASE + 'baked/' + manifest.look + '/' + manifest.lightmap.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    ? slabUrl(manifest.look, manifest.lightmap.image, bakeLastMs || null)
     : null
   const lightmap = lightmapUrl ? useLoader(THREE.TextureLoader, lightmapUrl) : null
 
@@ -283,7 +283,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
   // ground shaders (grass + FadeMesh) at world-XZ × the TOD Pool value.
   const poolMeta = manifest.poolmap || null
   const poolmapUrl = poolMeta
-    ? ASSET_BASE + 'baked/' + manifest.look + '/' + poolMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    ? slabUrl(manifest.look, poolMeta.image, bakeLastMs || null)
     : null
   const poolmap = poolmapUrl ? useLoader(THREE.TextureLoader, poolmapUrl) : null
   useEffect(() => {
@@ -313,7 +313,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
 
   // The ground rules' baked distances (ground.rulemap.png, bake-ground-ao): R = to a building, G = to paving.
   const ruleMeta = manifest.rulemap || null
-  const rulemapUrl = ruleMeta ? ASSET_BASE + 'baked/' + manifest.look + '/' + ruleMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '') : null
+  const rulemapUrl = ruleMeta ? slabUrl(manifest.look, ruleMeta.image, bakeLastMs || null) : null
   const rulemap = rulemapUrl ? useLoader(THREE.TextureLoader, rulemapUrl) : null
   useEffect(() => {
     if (rulemap) {
@@ -333,7 +333,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
   // sample decodes to linear and mixes correctly with the (linear) trunk diffuse.
   const colorMeta = manifest.colormap || null
   const colormapUrl = colorMeta
-    ? ASSET_BASE + 'baked/' + manifest.look + '/' + colorMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    ? slabUrl(manifest.look, colorMeta.image, bakeLastMs || null)
     : null
   const colormap = colormapUrl ? useLoader(THREE.TextureLoader, colormapUrl) : null
   useEffect(() => {
@@ -757,49 +757,47 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
   const resolvedLookId = lookOf(lookId, 'BakedGround')
 
   // Scene.json comes through the slab data adapter (couplers plan §1).
-  // Passing bakeLastMs as cacheBust makes Stage authoring reactive to ↻
+  // Passing bakeLastMs as the re-read key makes Stage authoring reactive to ↻
   // rebakes; production passes undefined, so the hook uses its MODE-keyed
   // default and the module-scope memo keeps the fetch warm within a session.
   const scene = useSceneJson(resolvedLookId, bakeLastMs)
 
-  // Effective cache-bust for the heavy artifacts (manifest, bin, lightmap):
-  // Stage's explicit bakeLastMs wins; production falls back to scene.bakedAt
-  // (the bake's completion epoch, baked into scene.json per CC.7). This
-  // replaces the previous Date.now() fallback that defeated browser caching
-  // on every page load.
-  const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
+  // The re-read key for the heavy artifacts (ground.json, bin, maps): Stage's explicit
+  // bakeLastMs wins, else scene.bakedAt. It re-reads after a re-bake and keys the remount
+  // below; the URL itself is the resolver's (on disk it carries the key, so useLoader's
+  // in-memory cache sees a new URL — src/lib/slabNames.js#slabPath).
+  const bake = bakeLastMs ?? scene?.bakedAt ?? null
 
   useEffect(() => {
-    if (cacheBust == null) return
+    if (bake == null) return
     let cancelled = false
     ;(async () => {
       try {
-        const manifestUrl = `${ASSET_BASE}baked/${resolvedLookId}/ground.json?t=${cacheBust}`
-        const m = await fetch(manifestUrl).then(r => r.json())
-        const bin = await fetch(ASSET_BASE + 'baked/' + m.look + '/' + m.bin + '?t=' + cacheBust)
+        const m = await slabFetch(resolvedLookId, 'ground.json', undefined, bake).then(r => r.json())
+        const bin = await slabFetch(m.look, m.bin, undefined, bake)
           .then(r => r.arrayBuffer())
         // The context bake's RESOLVED surface params (physics + this town's derived values).
         // Absent file → null, and SurfaceMesh names it; never a default.
-        const context = await fetch(ASSET_BASE + 'baked/' + m.look + '/context.json?t=' + cacheBust)
+        const context = await slabFetch(m.look, 'context.json', undefined, bake)
           .then(r => (r.ok ? r.json() : null)).catch(() => null)
-        const coast = await loadCoastDist(m.look, context, cacheBust)
+        const coast = await loadCoastDist(m.look, context, bake)
         if (!cancelled) setData({ manifest: m, bin, context, coast })
       } catch (e) {
         console.warn('[BakedGround] load failed:', e)
       }
     })()
     return () => { cancelled = true }
-  }, [resolvedLookId, cacheBust])
+  }, [resolvedLookId, bake])
 
   return (
     <>
       <TerrainExagDriver target={targetExag} />
-      {/* Keyed by cacheBust so a re-bake REMOUNTS GroundMeshes with a fresh
+      {/* Keyed by the bake so a re-bake REMOUNTS GroundMeshes with a fresh
           hook order — the lightmap/poolmap useLoaders are conditional on the
           manifest (poolmap may flip absent→present across a bake), and a bare
           re-render would change hook order and crash. Remount is fine: the
           geometry already rebuilds on manifest change. */}
-      {data && scene && <GroundMeshes key={cacheBust ?? 'static'} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} scene={scene} bakeLastMs={cacheBust} surfacesOverride={surfacesOverride} />}
+      {data && scene && <GroundMeshes key={bake ?? 'static'} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} scene={scene} bakeLastMs={bake} surfacesOverride={surfacesOverride} />}
     </>
   )
 }

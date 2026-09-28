@@ -41,7 +41,7 @@ import { lookOf } from '../lib/lookOf.js'
 
 import { useQuality } from '../lib/qualityProfile.js'
 import { buildingColors } from '../lib/buildingTint.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch } from '../lib/slabUrl.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL } from '../lib/lampPool.js'
 const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
@@ -233,9 +233,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     let cancelled = false
     ;(async () => {
       try {
-        const base = ASSET_BASE
-        const t = Date.now()
-        const m = await fetch(`${base}baked/${LOOK_ID}/buildings.json?t=${t}`).then(r => r.json())
+        const m = await slabFetch(LOOK_ID, 'buildings.json').then(r => r.json())
         // Refuse unknown versions (SLAB-CONTRACT §0 / §10.3). v2 added the
         // render-scoped index + footprints section this consumer requires.
         // Refuse unknown versions (SLAB-CONTRACT §0 / §10.3). v3 adds each building's tint source (the live
@@ -244,8 +242,8 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
           console.error(`[SlabBuildings] refusing buildings.json version ${m.version} (expected 2 or 3)`)
           return
         }
-        const bin = await fetch(`${base}baked/${m.look}/${m.bin}?t=${t}`).then(r => r.arrayBuffer())
-        const sc = await fetch(`${base}baked/${m.look}/scene.json?t=${t}`)
+        const bin = await slabFetch(m.look, m.bin).then(r => r.arrayBuffer())
+        const sc = await slabFetch(m.look, 'scene.json')
           .then(r => r.ok ? r.json() : null).catch(() => null)
         if (!cancelled) { setData({ manifest: m, bin }); setScene(sc) }
       } catch (e) {

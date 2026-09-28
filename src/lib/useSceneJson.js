@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTownShot } from '../components/townContext.js'
 import { shotKeyForViewMode, resolveShotScene } from './shotScene.js'
-import { ASSET_BASE } from './bakedUrl.js'
+import { slabFetch } from './slabUrl.js'
 
 /**
  * useSceneJson — the production-side slab data adapter.
@@ -14,35 +14,23 @@ import { ASSET_BASE } from './bakedUrl.js'
  * store to ~1300 lines. Keeping it distinct from the cartograph store
  * is what makes the seam load-bearing in the right direction.
  *
- * Fetches once per (lookId, cacheBust) pair via module-scope memo;
- * subsequent calls with the same key return the cached promise. The
- * default cacheBust is the build's `import.meta.env.MODE` so dev
- * always refreshes, prod caches normally; pass a different value to
- * force-refresh (e.g., from `scene.bakedAt` once the first read
- * completes — see neon-uniforms pump for the pattern).
- *
- * Path routed through `import.meta.env.BASE_URL` per SLAB-CONTRACT
- * §10.6 + memory `project_kit_deploy_path_agnostic` — same call site
- * works on apex (lafayette-square.com, BASE_URL=`/`) and subpath
- * (jacobeugenehenderson.github.io/lafayette-square-staging/,
- * BASE_URL=`/lafayette-square-staging/`).
+ * Fetches once per (lookId, reread) pair via module-scope memo; a new
+ * `reread` value (Stage passes its last bake time) reads the file again.
+ * The URL is the resolver's (`src/lib/slabUrl.js`) — no version token.
  */
 
-const _cache = new Map() // `${lookId}@${cacheBust}` → Promise<scene>
+const _cache = new Map() // `${lookId}@${reread}` → Promise<scene>
 
-// In dev the cacheBust seed is constant (`development`), so the browser's HTTP
-// memory-cache can serve a stale scene.json for the unchanging URL even after a
-// re-bake — the recurring "edited the slab but the app shows the old look" dev
-// footgun (same reason the Section shape.json fetch uses no-store). Force a
-// fresh read in dev; production keeps normal caching (the bakedAt cacheBust
-// busts the URL on each bake, so the slab still caches correctly).
+// In dev a re-bake rewrites scene.json under the same URL; the browser's memory
+// cache could serve the old one ("edited the slab but the app shows the old
+// look"). Force a fresh read in dev; a published town's scene.json is named by
+// its content, so production caches it forever and correctly.
 const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
 
-function fetchSceneOnce(lookId, cacheBust) {
-  const key = `${lookId}@${cacheBust}`
+function fetchSceneOnce(lookId, reread) {
+  const key = `${lookId}@${reread}`
   if (_cache.has(key)) return _cache.get(key)
-  const url = `${ASSET_BASE}baked/${lookId}/scene.json?t=${cacheBust}`
-  const p = fetch(url, _fetchOpts)
+  const p = slabFetch(lookId, 'scene.json', _fetchOpts)
     .then(r => (r.ok ? r.json() : null))
     .catch(e => {
       console.warn(`[useSceneJson] load failed for ${lookId}:`, e)
@@ -57,16 +45,13 @@ function fetchSceneOnce(lookId, cacheBust) {
  *   literal `'lafayette-square'` from production call sites pending the
  *   INSTANCE coupler (couplers plan §6). When INSTANCE lands, call
  *   sites flip to `INSTANCE.lookId`.
- * @param {string|number} [cacheBust] — optional cache-bust seed. If
- *   omitted, derives from `import.meta.env.MODE`. After the first read
- *   resolves, callers may re-invoke with the returned `scene.bakedAt`
- *   to ensure the browser HTTP cache is honored correctly per slab
- *   contract §1.
+ * @param {string|number} [reread] — change it to read the file again
+ *   (Stage passes its last bake time).
  * @returns {object|null} the parsed scene.json, or null until the
  *   first fetch resolves (and on fetch failure).
  */
-export function useSceneJson(lookId, cacheBust) {
-  const bust = cacheBust ?? (import.meta.env.MODE || 'prod')
+export function useSceneJson(lookId, reread) {
+  const bust = reread ?? 0
   const [scene, setScene] = useState(null)
   useEffect(() => {
     let cancelled = false

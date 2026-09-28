@@ -39,7 +39,7 @@ import {
 import { writeCanaryTree, useCanaryTree } from '../lib/canaryTree.js'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl, slabFetch, suspendSlabUrl } from '../lib/slabUrl.js'
 
 const EMPTY = Object.freeze([])   // one identity for "nothing loaded yet" — see rosterSpecies
 
@@ -88,7 +88,7 @@ export default function Grove() {
   const loadSlabSpecies = useMemo(() => async (lookId) => {
     if (!lookId) { setSlabSpecies([]); return }
     try {
-      const r = await fetch(`${ASSET_BASE}baked/${lookId}/trees.json?t=${Date.now()}`)
+      const r = await slabFetch(lookId, 'trees.json')
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const j = await r.json()
       const seen = new Set(), out = []
@@ -269,7 +269,7 @@ export default function Grove() {
           + `is not rewritten to it, so any capture would sample the wrong atlas regions. SKIPPED, loudly.`)
         continue
       }
-      const glbUrl = bakedGlbUrl(activeLookId, t.species, t.variantId, 'lod1')
+      const glbUrl = slabUrl(activeLookId, bakedGlbRel(t.species, t.variantId, 'lod1'))
       if (!glbUrl) { console.warn(`[grove-bake] "${t.species}" has no GLB url in the slab — cannot capture.`); continue }
       out.push({ species: t.species, glbUrl })
     }
@@ -1046,8 +1046,8 @@ class TileBoundary extends Component {
 // ⛔ DEFAULT lod1, NOT lod0. lod0 is not published (.gitignore), so a caller that
 // omits the argument used to build a URL that 404s on every deployed build — the
 // same defect that blanked theward.online's diorama on 2026-08-28.
-function bakedGlbUrl(lookId, species, variantId, lod = 'lod1') {
-  return `${ASSET_BASE}baked/${lookId}/trees/${species}/skeleton-${variantId}-${lod}.glb`
+function bakedGlbRel(species, variantId, lod = 'lod1') {
+  return `trees/${species}/skeleton-${variantId}-${lod}.glb`
 }
 
 function eligibleByLibId(libId, board, warnRef) {
@@ -1141,7 +1141,7 @@ function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHov
   // ⛔ The baked GLB, not the published one — this is what the map loads.
   // `rev` versions the load: drei caches by URL, INCLUDING a failed load, so an unversioned URL
   // keeps serving the pre-bake 404 after the bake wrote the file.
-  const url = `${bakedGlbUrl(lookId, speciesId, variantId)}?rev=${encodeURIComponent(rev)}`
+  const url = suspendSlabUrl(lookId, bakedGlbRel(speciesId, variantId), rev || null)
   const { scene } = useGLTF(url)
   // Clone so each tile has its own scene graph (drei caches by URL).
   const cloned = useMemo(() => scene.clone(true), [scene])

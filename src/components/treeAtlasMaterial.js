@@ -18,7 +18,7 @@ import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { LAMP_WIPE_GLSL } from '../lib/lampPool.js'
 import { groundColor as _groundColor } from './groundColorState'
 import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 
 // Module-level cache: one material set per look. Sharing materials across
 // component remounts keeps program count at 2 even if the tree component
@@ -1285,13 +1285,12 @@ function loadNormalTexture(url) {
 }
 
 async function buildMaterials(lookName) {
-  const manifestUrl = `${ASSET_BASE}baked/${lookName}/trees-atlas.json?t=${Date.now()}`
   const designUrl = `${import.meta.env.BASE_URL}looks/${lookName}/design.json?t=${Date.now()}`
   const [manifestRes, designRes] = await Promise.all([
-    fetch(manifestUrl),
+    slabFetch(lookName, 'trees-atlas.json'),
     fetch(designUrl),
   ])
-  if (!manifestRes.ok) throw new Error(`atlas manifest ${manifestUrl} → ${manifestRes.status}`)
+  if (!manifestRes.ok) throw new Error(`atlas manifest ${manifestRes.url} → ${manifestRes.status}`)
   if (!designRes.ok) throw new Error(`design ${designUrl} → ${designRes.status}`)
   const manifest = await manifestRes.json()
   const design = await designRes.json()
@@ -1305,17 +1304,12 @@ async function buildMaterials(lookName) {
   const roughness = materialDefaults?.roughness ?? 0.85
   const metalness = materialDefaults?.metalness ?? 0
 
-  // The manifest stores absolute `/baked/...` paths (the bake is base-unaware).
-  // Route them through Vite's BASE_URL so the PNGs resolve under a deploy
-  // subpath (e.g. staging's /lafayette-square-staging/) — otherwise they 404,
-  // the atlas load rejects, and InstancedTrees gates ALL trees off. Mirrors the
-  // base-join pattern used for every other baked asset. (treeAtlasMaterial bug
-  // 2026-06-17: the lone runtime fetch that bypassed BASE_URL.)
-  const base = ASSET_BASE
-  const withBase = (p) => `${base}${String(p).replace(/^\//, '')}`
+  // The manifest names its pages as absolute `/baked/<look>/…` cross-references (the bake is
+  // base-unaware); the resolver turns them into this town's served names. A 404 here rejects the
+  // atlas and InstancedTrees gates ALL trees off.
   const [color, normal] = await Promise.all([
-    loadTexture(withBase(atlas.colorPath), { coveragePreserving: true, alphaTest: atlas.alphaTest ?? 0.5 }),
-    loadNormalTexture(withBase(atlas.normalPath)),
+    loadTexture(slabUrl(lookName, atlas.colorPath), { coveragePreserving: true, alphaTest: atlas.alphaTest ?? 0.5 }),
+    loadNormalTexture(slabUrl(lookName, atlas.normalPath)),
   ])
 
   // Single shared material for every tree primitive — bark and leaf tiles

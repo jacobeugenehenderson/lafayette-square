@@ -16,7 +16,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch } from '../lib/slabUrl.js'
 
 const FALLBACK_HEX = '#F2D67A'   // only if the CSS token can't be read
 // Resolve the lamp dot colour from the master CSS token (--carto-lamp), the same
@@ -44,8 +44,7 @@ export default function DesignerLamps({ scene, hiddenLayers, bakeLastMs }) {
   useEffect(() => {
     if (hidden || !scene) { setLamps(null); return }
     let cancelled = false
-    const bust = bakeLastMs ? `?t=${bakeLastMs}` : ''
-    fetch(`${ASSET_BASE}baked/${scene}/lamps.json${bust}`)
+    slabFetch(scene, 'lamps.json', undefined, bakeLastMs || null)
       .then(r => (r.ok ? r.json() : null))
       .then(j => { if (!cancelled) setLamps(Array.isArray(j?.lamps) ? j.lamps : null) })
       .catch(() => { if (!cancelled) setLamps(null) })

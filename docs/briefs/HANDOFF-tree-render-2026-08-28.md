@@ -101,7 +101,6 @@ tint/counter/guard bind to the live path, or to a retired sibling? A dead-code t
 ```
 node checks/claims-every-shadowed-placement-renders.mjs      # rings without trees, per look
 node scratch/claims-the-roster-light-tells-the-truth.mjs      # green-but-unexported / placed-but-unexported
-node checks/claims-the-slab-freshness-key-is-not-stale.mjs   # bakedAt vs artifact mtimes
 node scratch/claims-every-placed-asset-has-a-size-band.mjs    # flat 1:1 scale, ranked by PLACED demand
 node checks/claims-the-capture-frame-is-the-clip-frame.mjs   # band cuts outside the tree; pre-fix card heights
 node scratch/claims-every-declared-page-ships.mjs             # declared pages + GLBs that never reach the deploy

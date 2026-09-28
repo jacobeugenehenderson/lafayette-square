@@ -14,7 +14,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useSkyState from '../hooks/useSkyState'
 import { lookOf } from '../lib/lookOf.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 
 const _warned = new Set()
 
@@ -32,7 +32,7 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
   useEffect(() => {
     let cancelled = false
     setStencil(null)
-    fetch(`${ASSET_BASE}baked/${look}/ground.json?t=${bakeLastMs ?? Date.now()}`)
+    slabFetch(look, 'ground.json', undefined, bakeLastMs ?? null)
       .then(r => r.ok ? r.json() : null)
       .then(m => {
         if (cancelled) return
@@ -59,7 +59,7 @@ export default function HorizonDisc({ lookId, bakeLastMs }) {
       return
     }
     let dead = false
-    new THREE.TextureLoader().load(`${ASSET_BASE}baked/${look}/${cm.image}?t=${bakeLastMs ?? ''}`, (t) => {
+    new THREE.TextureLoader().load(slabUrl(look, cm.image, bakeLastMs ?? null), (t) => {
       if (dead) { t.dispose(); return }
       t.colorSpace = THREE.SRGBColorSpace
       t.flipY = false

@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 132. Never in a default run.
+## ⛔ live — 139. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -35,11 +35,15 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-frontage-can-ask-for-no-ped-band.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-a-kink-recovers-but-a-corner-does-not.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-a-look-holds-only-its-towns-grove.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-a-look-link-opens-that-town.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-reimport-keeps-curation.mjs` | unreadable | deletes files · copies/renames files · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-salon-save-keeps-provenance.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | unreadable | child_process with a non-literal command — cannot be read |
+| `checks/claims-a-scrub-never-writes-the-keys.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
+| `checks/claims-a-slab-name-is-its-content.mjs` | outbound | writeFileSync · mkdirSync · deletes files · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync · imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs` | unreadable | imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-a-swap-never-happens-mid-street.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
+| `checks/claims-a-town-page-fetches-no-authoring.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-towns-listings-reach-its-surfaces.mjs` | unreadable | computed import of src/tokens/categories.js — read, safe · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-tree-is-refused-for-what-stands-under-it.mjs` | unreadable | imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-alley-stub-pairs.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
@@ -57,6 +61,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-every-corner-is-configured.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-corner-is-one-of-three.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-lit-town-has-lamps.mjs` | unreadable | imports cartograph/bake-lamps.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/lamp-spacing.mjs, which can: writeFileSync, imports cartograph/derive-lamps.mjs, which can: writeFileSync, mkdirSync |
+| `checks/claims-every-mapped-stone-structure-is-stone.mjs` | unreadable | imports cartograph/structures.mjs, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-metre-of-drawn-shore-is-named.mjs` | unreadable | imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-proto-edge-lies-on-its-owner.mjs` | unreadable | imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-tree-candidate-is-accounted-for.mjs` | unreadable | deletes files · imports arborist/bake-trees.js, which can: writeFile, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
@@ -76,6 +81,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-marked-corners.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-no-filename-reaches-a-plate-label.mjs` | unreadable | child_process with a non-literal command — cannot be read · imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `checks/claims-no-hairline-ring-reaches-the-operator.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
+| `checks/claims-no-town-rides-in-the-bundle.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-one-face-one-arrangement.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-one-frontage-one-arc.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-overture-licence-table-is-current.mjs` | outbound | calls fetch() · child_process with a non-literal command — cannot be read |
@@ -108,7 +114,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-shore-outside-the-drawing-is-not-refused.mjs` | unreadable | imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-sidewalk-is-one-band.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-sky-follows-its-town.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · imports cartograph/proceduralSky.js, which can: child_process with a non-literal command — cannot be read · imports package(s) suncalc — not read from source |
-| `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-stage-preview-parity.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `checks/claims-stamp-follows-the-edge.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-survey-and-section-agree.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-swap-reaches-the-paint.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
@@ -122,6 +128,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-the-ease-is-the-corner.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-the-ground-covers-every-block.mjs` | unreadable | imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read · imports package(s) clipper-lib — not read from source |
 | `checks/claims-the-pad-is-the-size-of-the-corner.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
+| `checks/claims-the-plan-shot-ends-at-the-rim.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `checks/claims-the-publish-can-stage-what-it-promises.mjs` | unreadable | runs `git` — not a known-local command |
 | `checks/claims-the-ramp-has-room.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-the-slope-is-on-the-leg.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
@@ -173,7 +180,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 159. This is `npm test`.
+## safe — 175. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -199,6 +206,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-tile-is-one-tree.mjs` | A TILE IS ONE TREE. |
 | `checks/claims-a-town-event-is-not-clock-dependent.mjs` | a dated event with no times runs all day, |
 | `checks/claims-a-town-never-bakes-from-the-whole-library.mjs` | library.mjs — CAN A TREE BAKE PLANT A SPECIES FROM OUTSIDE THE TOWN'S GROVE? |
+| `checks/claims-a-towns-colours-are-its-own.mjs` | "ARE A TOWN'S CATEGORY COLOURS — ITS NEON, ITS CHIPS — ITS OWN?" |
 | `checks/claims-a-tree-card-starts-at-the-ground.mjs` | ground.mjs — DOES EVERY HERO TREE CARD START AT THE GROUND? |
 | `checks/claims-a16-materials-write.mjs` | A16 GATE — "does a materials flip invent authoring, and did the resolver fix |
 | `checks/claims-akas-never-merge-species.mjs` | species.mjs — DO COLLOQUIAL NAMES ROUTE WITHOUT MERGING TWO SPECIES INTO ONE? |
@@ -232,12 +240,14 @@ Writes into the repo or a scratch dir.
 | `checks/claims-displaced-casters-have-a-depth-material.mjs` | PER MESH. |
 | `checks/claims-divided-seam-step.mjs` | DOES THE DIVIDED↔UNDIVIDED SEAM STEP SURVIVE INTO THE FROZEN ARTIFACT? |
 | `checks/claims-docs-carry-their-commands.mjs` | ⭐⭐⭐ THE DOC WRAP, AS A GATE INSTEAD OF A PROMISE. (Jacob, 2026-09-07: "The docs must be fixed |
+| `checks/claims-every-app-mounts-the-town.mjs` | "DOES EVERY APP THAT DRAWS A TOWN DRAW IT THROUGH THE ONE ASSEMBLY?" |
 | `checks/claims-every-baked-species-has-an-impostor.mjs` | every species in a baked census is in that slab’s atlas. |
 | `checks/claims-every-category-has-a-full-treatment.mjs` | every category resolves to a COMPLETE class set. |
 | `checks/claims-every-ground-surface-takes-the-lamp.mjs` | lamp.mjs — DOES A LAMP LIGHT WHATEVER GROUND IT STANDS OVER? |
 | `checks/claims-every-lu-tag-has-a-home.mjs` | home.mjs — CAN A TOWN BRING A WORD WE DO NOT KNOW? |
 | `checks/claims-every-measurable-town-is-declared.mjs` | A TOWN THE KIT CAN MEASURE IS A TOWN THE KIT DECLARES. |
 | `checks/claims-every-shadowed-placement-renders.mjs` | EVERY PLACEMENT THE GROUND SHADOWS MUST RENDER A TREE. |
+| `checks/claims-every-slab-url-is-resolved.mjs` | "DOES EVERY SLAB URL IN THE PLAYER COME FROM THE ONE RESOLVER?" |
 | `checks/claims-every-town-has-a-mark.mjs` | mark.mjs |
 | `checks/claims-every-water-body-reaches-the-kit-material.mjs` | material.mjs — DOES THE WATER ARRIVE? |
 | `checks/claims-fade-has-something-to-dissolve.mjs` | REPORT: does each town's block fill actually reach the fade band? |
@@ -258,6 +268,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-lab-imports-never-reimplements.mjs` | reimplements.mjs — IS THE SURFACE LAB STILL THE MAP'S ENVIRONMENT? |
 | `checks/claims-leaf-pack-cells-agree.mjs` | A leaf pack's CELLS MUST BE INTERCHANGEABLE — the system assumes it and nothing checked. |
 | `checks/claims-light-sources-are-live.mjs` | CLAIM — EVERY CONTROL ON STAGE'S LIGHT SOURCES CARD REACHES A LIVE UNIFORM, IN EVERY TOWN'S STAGE AND IN PRODUCTION. |
+| `checks/claims-live-palette-equals-the-bake.mjs` | "DOES A LIVE PALETTE DRAG DRAW EXACTLY WHAT A RE-BAKE WOULD?" |
 | `checks/claims-look-default-has-no-town.mjs` | "IS THE KIT'S 0-STATE A KIT, OR IS IT A TOWN?" — A11 / A00, the root gate. |
 | `checks/claims-look-seed-scene-clean.mjs` | "DOES A NEW LOOK START CLEAN?" — A11 / D-C, the recurrence gate. |
 | `checks/claims-matched-axes-have-matrices.mjs` | Without one, enumDistance returns farDistance (9) for ANY non-identical pair |
@@ -266,6 +277,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-named-way-becomes-street.mjs` | ⭐⭐ DOES A NON-VEHICULAR WAY BOUND A CITY BLOCK? — the check behind `ROADMAP A19`. |
 | `checks/claims-no-coarse-value-decides.mjs` | The defect this exists for, measured 2026-08-26: SelecTree's `leaf_form` has three |
 | `checks/claims-no-dossier-rests-on-a-wrong-species.mjs` | species.mjs — DOES ANY DOSSIER CITE A SOURCE THAT ANSWERED FOR ANOTHER SPECIES? |
+| `checks/claims-no-host-carries-a-codedesk-copy.mjs` | copy.mjs — CodeDesk has one source, and hosts pin its releases (BRIEF-codedesk). |
 | `checks/claims-no-label-is-a-made-up-name.mjs` | ⭐ IS ANY BAKED STREET LABEL A NAME THE SKELETON MADE UP? — `ROADMAP A19`. |
 | `checks/claims-no-listing-links-to-a-hijacked-domain.mjs` | a URL a researcher condemned may not ship. |
 | `checks/claims-no-photo-loads-from-someone-elses-server.mjs` | every listing photograph is ours, and |
@@ -275,6 +287,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-tree-stands-on-drawn-hardscape.mjs` | NO TREE MAY STAND ON A SURFACE THE MAP DRAWS AS HARDSCAPE. |
 | `checks/claims-node-pair-key-parity.mjs` | SLICE 1 of "fix the key". PROVE, DON'T SWITCH. |
 | `checks/claims-objects-dissolve-with-the-ground.mjs` | CLAIM: trees, lamps and labels thin out over the SAME band the ground fades on — |
+| `checks/claims-one-movie-driver.mjs` | "IS THE TOWN'S MOVIE PLAYED BY ONE COMPONENT?" |
 | `checks/claims-open-now-has-one-home-and-handles-midnight.mjs` | one predicate, and it survives a |
 | `checks/claims-opting-out-of-the-fade-is-explicit.mjs` | CLAIM: a population that does not fade says so EXPLICITLY, and buildings are one. |
 | `checks/claims-orphaned-customs.mjs` | It reported "27 of 76 authored leg slots are never read" (commit c430f4e9). |
@@ -295,6 +308,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-ring-partition.mjs` | "DOES THE FROZEN RING ALREADY CARRY A PARTITION WITH AN OWNER ON EVERY ARC?" |
 | `checks/claims-scene-at-default.mjs` | "IS THIS SCENE AT THE STUDS?" — enumerate every surviving authoring gesture, |
 | `checks/claims-scene-flag-is-the-equals-form.mjs` | form |
+| `checks/claims-set-piece-contract.mjs` | "DOES EVERY DECLARED SET-PIECE MEET THE SLOT'S CONTRACT?" (BRIEF-set-piece-contract) |
 | `checks/claims-shader-fragments-declare-what-they-use.mjs` | EVERY IDENTIFIER A GLSL FRAGMENT USES |
 | `checks/claims-side-baseline-audit.mjs` | VERIFY THE BASELINE BEFORE COMPARING TO IT. |
 | `checks/claims-side-chain-falsifiers.mjs` | READ-ONLY. THE TWO FALSIFIABLE PREDICTIONS of the directed-side-chain / grout model, |
@@ -306,6 +320,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ao-belongs-to-its-ground.mjs` | ground |
 | `checks/claims-the-armoured-shore-is-never-empty.mjs` | empty.mjs — IS THERE A WALL AT EVERY DISTANCE? |
 | `checks/claims-the-camera-has-one-definition.mjs` | definition.mjs — DOES EVERY APP DRIVE THE CAMERA THE SAME WAY? |
+| `checks/claims-the-canvas-is-the-towns.mjs` | "DOES EVERY APP DRAW ITS TOWN THROUGH THE CANVAS THE TOWN'S QUALITY PROFILE ASKS FOR?" |
 | `checks/claims-the-capture-frame-is-the-clip-frame.mjs` | THE FRAME A BAND IS CUT IN MUST BE THE FRAME THE CAMERA CLIPS IN. |
 | `checks/claims-the-crest-is-measured-behind-the-shore.mjs` | shore.mjs — WHERE WAS THE WALL'S HEIGHT READ? |
 | `checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs` | no dev server imports a file it WRITES. |
@@ -314,7 +329,9 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs` | junctions |
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | trees.mjs — CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |
 | `checks/claims-the-key-light-is-a-real-body.mjs` | body.mjs — IS ANYTHING ACTUALLY THERE? |
+| `checks/claims-the-labels-carry-their-style.mjs` | "DOES EVERY TOWN'S labels.json CARRY ITS WHOLE LABEL STYLE — AND IS THERE ONE DEFAULT?" |
 | `checks/claims-the-light-follows-the-weather.mjs` | one weather state drives the rain AND the light. |
+| `checks/claims-the-plan-opens-on-its-places.mjs` | "DOES THE PLAN MAP OPEN ON THE TOWN'S PLACES — THEIR DENSEST CLUSTER, INSIDE THE EXTENT, WITH NOTHING HIDDEN?" |
 | `checks/claims-the-publish-button-can-say-it-is-done.mjs` | its condition measures what it ships. |
 | `checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` | THE PUBLISH GATE MUST PUSH WHERE THE DEPLOY ACTUALLY LISTENS. |
 | `checks/claims-the-publish-panel-reports-the-address-it-shipped.mjs` | no site URL is a module constant. |
@@ -326,13 +343,18 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-shore-knows-which-side-is-wet.mjs` | wet.mjs — WHICH FACE DOES THE STONE GO ON? |
 | `checks/claims-the-shore-says-what-it-is-made-of.mjs` | of.mjs — CAN THE KIT TELL STONE FROM SAND? |
 | `checks/claims-the-slab-envs-do-not-collide.mjs` | STAGING AND PRODUCTION MUST NOT SERVE THE SAME SLAB. |
-| `checks/claims-the-slab-freshness-key-is-not-stale.mjs` | NO SLAB ARTIFACT MAY BE NEWER THAN THE KEY THAT BUSTS IT. |
+| `checks/claims-the-tide-phase-stays-in-bounds.mjs` | bounds.mjs — the water never leaves the town's own low and high (BRIEF-tide). |
+| `checks/claims-the-town-reads-no-player-store.mjs` | "CAN AN APP DRAW THE TOWN WITHOUT BEING THE OLD PLAYER?" |
+| `checks/claims-the-town-sees-its-sky.mjs` | "DOES <Town> DRAW ITS SKY IN ANY APP'S CANVAS — OR ONLY IN ONE WHOSE CAMERA HAPPENS TO REACH IT?" |
 | `checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs` | the Open-Meteo request names the |
 | `checks/claims-through-node-width-step.mjs` | THE CHECK: at a THROUGH-NODE — a ring vertex where two consecutive runs carry |
+| `checks/claims-tide-is-present-exactly-where-tidal.mjs` | tidal.mjs — a tide where the water is tidal, and nowhere else (BRIEF-tide). |
+| `checks/claims-tide-matches-noaa.mjs` | noaa.mjs — the tide's CLOCK is NOAA's, not ours (BRIEF-tide). |
 | `checks/claims-tod-fades-at-the-edges.mjs` | CLAIM — TIME-OF-DAY KEYS TWEEN; A KEY BORDERING A BLANK TILE CAN FADE UP OR DOWN, AND THE FADE DOES WHAT IT SAYS. |
 | `checks/claims-twilio-webhook-guard.mjs` | does sms-webhook actually reject a forged POST? |
 | `checks/claims-two-listings-are-not-one-place.mjs` | no two listings share an address AND a phone. |
 | `checks/claims-uturn-outer-edge-walk.mjs` | THE CHECK: walk the OUTER EDGE (the asphalt polygon `iA`) of every tile that |
 | `checks/claims-verify-taxon.mjs` | taxon.mjs — asserts vocabulary.mjs `verifyTaxon`. |
+| `checks/claims-water-depth-reads-the-level.mjs` | level.mjs — IS WATER DEPTH MEASURED FROM THE TOWN'S LEVEL, NEVER FROM y = 0? |
 | `checks/claims-water-scales-with-its-body.mjs` | body.mjs — DOES THE WATER KNOW HOW BIG IT IS? |
 | `checks/claims-zero-separation-offset.mjs` | READ-ONLY. Three questions, none of which has been measured: |

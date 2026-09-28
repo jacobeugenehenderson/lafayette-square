@@ -25,7 +25,7 @@ import { buildHeroImpostorCard, HERO_FRAME_VERSION } from './impostorGeometry.js
 import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
 import { treeGroundRaw } from '../utils/elevation'
 import { treeDbg } from './OverheadTrees.jsx'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl } from '../lib/slabUrl.js'
 
 // ⭐ THE CARD STACK — canopy <> trunk/branches <> canopy.
 // Jacob's intended design is a SANDWICH: the trunk sits BETWEEN two canopy
@@ -80,7 +80,6 @@ const _IDENTITY_QUAT = new THREE.Quaternion()
  */
 export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies, species }) {
   const [ready, setReady] = useState(0)
-  const base = ASSET_BASE
   // KTX2 needs the renderer to know the device's block formats before it can load.
   const gl = useThree((st) => st.gl)
 
@@ -91,7 +90,7 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
     for (const sp of species) {
       const rec = heroImpostorBySpecies[sp]
       if (!rec?.layers?.length) continue
-      const url = (p) => (p && p.startsWith('/trees/') ? `${base}baked/${lookName}${p}` : p)
+      const url = (p) => (p && p.startsWith('/trees/') ? slabUrl(lookName, p) : p)
       // Group the flat layer list by azimuth so the runtime picks one azSet per instance.
       const byAz = new Map()
       for (const l of rec.layers) {

@@ -6,6 +6,18 @@
  *   node scripts/upload-baked-to-r2.mjs --env=staging --look=altadena
  *   node scripts/upload-baked-to-r2.mjs --env=prod                # promote, all looks
  *   node scripts/upload-baked-to-r2.mjs --env=staging --force     # re-put everything
+ *   node scripts/upload-baked-to-r2.mjs --env=staging --look=huron --names=sha256-16 --dry-run
+ *
+ * ⭐ `--names=sha256-16` — PUBLISH UNDER CONTENT NAMES (BRIEF-slab-loading §3 step 3). Each file
+ * is written TWICE: at its plain key (300 s, for players pinned before the resolver) and at
+ * `<name>.<sha16>.<ext>` (immutable, `src/lib/slabNames.js`). Then a versioned copy of the
+ * manifest (`manifests/<sha16>.json`), then `manifests/index.json` (what the retirement sweep
+ * reads), then `manifest.json` LAST, stamped `names: "sha256-16"`, no-cache — the switch: a
+ * visitor holding the previous manifest keeps resolving the files it named, which are never
+ * overwritten. ⛔ It REFUSES a town whose manifest.json disagrees with the files on disk — the
+ * manifest is the name table, and a stale one names bytes that are not being uploaded.
+ * ▶ node cartograph/bake-manifest.mjs --town=<town>, then upload.
+ * Without the flag the upload is exactly the plain one below.
  *
  * ⭐ INCREMENTAL BY DEFAULT. It HEADs each key first and puts only what is missing or
  * whose bytes differ (`probe`); `--force` puts everything. Every uncertain answer
@@ -46,12 +58,14 @@
  * uploaded slab that reports success is the worst outcome available here: the map
  * renders and the canopy does not, and nobody is told (`CLAUDE.md` Layer 0, q2).
  */
-import { readdirSync, statSync, createReadStream } from 'node:fs'
+import { readdirSync, statSync, createReadStream, readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs'
 import { join, relative, extname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { tmpdir } from 'node:os'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { createHash } from 'node:crypto'
+import { HASHED, CACHE, contentName, shaOf } from '../src/lib/slabNames.js'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -117,27 +131,30 @@ const MIME = {
 }
 
 /**
- * ⚠️ Cache-Control is deliberately SHORT, and must stay short until every baked URL
- * carries a version token. 38.3 MB of the LS slab carries none in a production build
- * — both atlas PNGs, all 360 KTX2 impostor pages, terrain/ground maps — because
- * `bakeLastMs` is an authoring prop, undefined in prod. `immutable` on those pins a
- * stale canopy at a URL nothing can change. R2 serves ETags, so this costs
- * revalidations, not re-downloads. See plans/r2-asset-offload.md §3.5.
+ * Cache-Control, from `src/lib/slabNames.js#CACHE`: a PLAIN key stays short (300 s, revalidated
+ * by ETag) because its URL does not change when its bytes do; a CONTENT name is immutable because
+ * it cannot; the manifest and its index are no-cache — they are the switch.
  */
-const CACHE_CONTROL = 'public, max-age=300, must-revalidate'
 
 const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
   const p = join(dir, e.name)
   return e.isDirectory() ? walk(p) : e.isFile() ? [p] : []
 })
 
-function plan({ look, prefix }) {
+const sha256 = (abs) => createHash('sha256').update(readFileSync(abs)).digest('hex')
+
+/**
+ * What to put, in ORDER. `root` is the directory holding `<look>/…` (public/baked by default).
+ * `names`: undefined → the plain upload; HASHED → the content-named, dual-write upload (header).
+ */
+export function plan({ look, prefix, root = BAKED_ROOT, names } = {}) {
+  if (names != null && names !== HASHED) throw new Error(`unknown --names="${names}" — the one scheme is "${HASHED}"`)
   let looks
   try {
-    looks = readdirSync(BAKED_ROOT, { withFileTypes: true })
+    looks = readdirSync(root, { withFileTypes: true })
       .filter((e) => e.isDirectory()).map((e) => e.name)
   } catch {
-    throw new Error(`no baked tree at ${BAKED_ROOT} — nothing to upload`)
+    throw new Error(`no baked tree at ${root} — nothing to upload`)
   }
   if (look) {
     if (!looks.includes(look)) throw new Error(`no such look "${look}" — have: ${looks.join(', ')}`)
@@ -147,15 +164,73 @@ function plan({ look, prefix }) {
 
   const files = [], skipped = []
   for (const l of looks) {
-    for (const abs of walk(join(BAKED_ROOT, l))) {
-      const rel = relative(REPO_ROOT, abs).split('\\').join('/')   // public/baked/<look>/…
-      const key = prefix + rel.replace(/^public\//, '')            // <prefix>baked/<look>/…
+    const town = join(root, l)
+    const base = `${prefix}baked/${l}/`
+    const own = []
+    for (const abs of walk(town)) {
+      const rel = relative(town, abs).split('\\').join('/')      // <rel> under baked/<look>/
+      const key = base + rel
       const ex = EXCLUDE.find((e) => e.test('/' + key))
       if (ex) { skipped.push({ key, bytes: statSync(abs).size, why: ex.why }); continue }
-      files.push({ abs, key, bytes: statSync(abs).size })
+      own.push({ abs, rel, key, bytes: statSync(abs).size, cache: CACHE.plain })
     }
+    if (!names) { files.push(...own); continue }
+
+    // ── content names ────────────────────────────────────────────────────────────
+    const mPath = join(town, 'manifest.json')
+    if (!existsSync(mPath)) {
+      throw new Error(`"${l}" has no manifest.json — a content-named upload needs the name table. `
+        + `▶ node cartograph/bake-manifest.mjs --town=${l}`)
+    }
+    const manifest = JSON.parse(readFileSync(mPath, 'utf8'))
+    const payload = own.filter((f) => f.rel !== 'manifest.json')
+    const stale = []
+    const hashed = payload.map((f) => {
+      let want
+      try { want = shaOf(manifest, f.rel) } catch { stale.push(`${f.rel} (not in the manifest)`); return null }
+      const got = sha256(f.abs)
+      if (got !== want) { stale.push(`${f.rel} (manifest ${want.slice(0, 16)}, disk ${got.slice(0, 16)})`); return null }
+      return { ...f, key: base + contentName(f.rel, got), cache: CACHE.hashed }
+    })
+    if (stale.length) {
+      throw new Error(`"${l}"'s manifest.json disagrees with ${stale.length} file(s) on disk — it would publish `
+        + `names for bytes that are not being uploaded:\n     ${stale.slice(0, 12).join('\n     ')}`
+        + `${stale.length > 12 ? `\n     …and ${stale.length - 12} more` : ''}\n   ▶ node cartograph/bake-manifest.mjs --town=${l}`)
+    }
+    const stamped = JSON.stringify({ ...manifest, names: HASHED }, null, 2) + '\n'
+    const stampedSha = createHash('sha256').update(stamped).digest('hex')
+    const tmp = mkdtempSync(join(tmpdir(), `slab-manifest-${l}-`))
+    const stampedAbs = join(tmp, 'manifest.json')
+    writeFileSync(stampedAbs, stamped)
+    const copyKey = `${base}manifests/${stampedSha.slice(0, 16)}.json`
+    // The index is completed at upload time (it appends to what is published); the plan names it.
+    const indexAbs = join(tmp, 'index.json')
+    files.push(
+      ...hashed,                                                   // 1. every content name — nothing points at them yet
+      ...payload,                                                  // 2. the plain keys, for pinned pre-resolver players
+      { abs: stampedAbs, rel: `manifests/${stampedSha.slice(0, 16)}.json`, key: copyKey, bytes: Buffer.byteLength(stamped), cache: CACHE.hashed },
+      { abs: indexAbs, rel: 'manifests/index.json', key: `${base}manifests/index.json`, bytes: 0, cache: CACHE.manifest,
+        index: { town: l, copyKey, writtenAt: manifest.writtenAt ?? null } },
+      { abs: stampedAbs, rel: 'manifest.json', key: `${base}manifest.json`, bytes: Buffer.byteLength(stamped), cache: CACHE.manifest },
+    )
   }
   return { looks, files, skipped }
+}
+
+/**
+ * manifests/index.json — the published history the retirement sweep reads (newest last). Read
+ * back from the bucket and appended to; ⛔ an unreadable index (not a 404) stops the upload,
+ * because rewriting it from nothing would forget manifests a visitor may still hold.
+ */
+async function writeIndex(f) {
+  const r = await fetch(PUBLIC_BASE + f.key, { cache: 'no-store' })
+  let prior = { town: f.index.town, manifests: [] }
+  if (r.ok) prior = await r.json()
+  else if (r.status !== 404) throw new Error(`cannot read ${f.key} (${r.status}) — refusing to rewrite the manifest history blind`)
+  const manifests = prior.manifests.filter((m) => m.key !== f.index.copyKey)
+  manifests.push({ key: f.index.copyKey, writtenAt: f.index.writtenAt, uploadedAt: new Date().toISOString() })
+  writeFileSync(f.abs, JSON.stringify({ town: f.index.town, manifests }, null, 2) + '\n')
+  f.bytes = statSync(f.abs).size
 }
 
 const mb = (b) => (b / 1048576).toFixed(1) + ' MB'
@@ -186,11 +261,11 @@ async function withRetry(label, fn) {
   throw lastErr
 }
 
-async function put({ abs, key }) {
+async function put({ abs, key, cache }) {
   const args = ['wrangler', 'r2', 'object', 'put', `${BUCKET}/${key}`,
     '--file', abs, '--remote',
     '--content-type', MIME[extname(key).toLowerCase()] || 'application/octet-stream',
-    '--cache-control', CACHE_CONTROL]
+    '--cache-control', cache]
   await withRetry(key, () => execFileAsync('npx', args, { cwd: REPO_ROOT, maxBuffer: 1 << 24 }))
 }
 
@@ -243,10 +318,11 @@ async function main() {
   const force = argv.includes('--force')
   const look = argv.find((a) => a.startsWith('--look='))?.split('=')[1]
   const conc = Number(argv.find((a) => a.startsWith('--concurrency='))?.split('=')[1] || 8)
+  const names = argv.find((a) => a.startsWith('--names='))?.split('=')[1]
   const env = resolveEnv(argv)
   const prefix = ENV_PREFIX[env]
 
-  const { looks, files, skipped } = plan({ look, prefix })
+  const { looks, files, skipped } = plan({ look, prefix, names })
   const total = files.reduce((s, f) => s + f.bytes, 0)
   const skipBytes = skipped.reduce((s, f) => s + f.bytes, 0)
 
@@ -264,7 +340,15 @@ async function main() {
     const n = skipped.filter((s) => s.why === e.why)
     if (n.length) console.log(`           ${n.length} × ${e.why} — ${mb(n.reduce((s, f) => s + f.bytes, 0))}`)
   }
-  console.log(`cache    ${CACHE_CONTROL}`)
+  if (names) {
+    const h = files.filter((f) => f.cache === CACHE.hashed)
+    console.log(`names    ${names} — ${h.length} content-named keys (immutable) + ${files.length - h.length} plain/switch keys, manifest.json LAST`)
+    for (const f of h.slice(0, 5)) console.log(`           ${f.key}`)
+    if (h.length > 5) console.log(`           …and ${h.length - 5} more`)
+    console.log(`cache    content ${CACHE.hashed} · plain ${CACHE.plain} · manifest ${CACHE.manifest}`)
+  } else {
+    console.log(`names    plain (no --names) · cache ${CACHE.plain}`)
+  }
 
   // ⭐ Only put what is not already there, byte-for-byte. A pour whose dirty-gate skipped
   // every bake step used to re-put all 915 objects anyway — ~915 `npx wrangler` spawns
@@ -283,17 +367,28 @@ async function main() {
   if (dryRun) { console.log('\n--dry-run: nothing uploaded.'); return }
   if (!pending.length) { console.log(`\n✅ ${files.length} objects, ${mb(total)} → ${BUCKET} (all already current)`); return }
 
+  // ⭐ In a content-named upload the ORDER is the safety: every content name, then the plain keys,
+  // and only then the manifest copy, the index and manifest.json — each stage finishing before the
+  // next starts, and a failure stopping before anything points at a missing file.
+  const stages = names
+    ? [pending.filter((f) => f.cache === CACHE.hashed && !/\/manifests\//.test(f.key)),
+       pending.filter((f) => f.cache === CACHE.plain),
+       ...pending.filter((f) => /\/manifests\/|\/manifest\.json$/.test(f.key) && f.cache !== CACHE.plain).map((f) => [f])]
+    : [pending]
   let done = 0
   const failures = []
-  const queue = [...pending]
-  await Promise.all(Array.from({ length: Math.max(1, conc) }, async () => {
-    for (let f = queue.pop(); f; f = queue.pop()) {
-      try { await put(f) } catch (err) { failures.push({ key: f.key, err: err.stderr || err.message }) }
-      if (++done % 50 === 0 || done === pending.length) {
-        process.stdout.write(`\r  ${done}/${pending.length}`)
+  for (const stage of stages) {
+    if (failures.length) break
+    const queue = [...stage]
+    await Promise.all(Array.from({ length: Math.max(1, conc) }, async () => {
+      for (let f = queue.shift(); f; f = queue.shift()) {
+        try { if (f.index) await writeIndex(f); await put(f) } catch (err) { failures.push({ key: f.key, err: err.stderr || err.message }) }
+        if (++done % 50 === 0 || done === pending.length) {
+          process.stdout.write(`\r  ${done}/${pending.length}`)
+        }
       }
-    }
-  }))
+    }))
+  }
   process.stdout.write('\n')
 
   // ⛔ Loud. A partial slab must never exit 0.
@@ -306,4 +401,6 @@ async function main() {
   console.log(`\n✅ ${files.length} objects, ${mb(total)} → ${BUCKET} (${pending.length} uploaded, ${files.length - pending.length} already current)`)
 }
 
-main().catch((err) => { console.error(`⛔ ${err.message}`); process.exit(1) })
+if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
+  main().catch((err) => { console.error(`⛔ ${err.message}`); process.exit(1) })
+}

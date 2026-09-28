@@ -40,7 +40,7 @@ import {
   FADE_INNER, FADE_OUTER,
   makeBoundary,
 } from './boundary.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch } from '../lib/slabUrl.js'
 
 // Single source of truth for the soft-circle silhouette in Designer's V2 live
 // render. Mirrors BakedGround.fadeForGroup — which is now ONE band for every kind.
@@ -606,7 +606,7 @@ export default function BlockGeometryV2Debug({
     // [LOAD-FORENSIC 2026-07-14] shape.json is ~8 MB for a CDP-sized hood — this
     // fetch+parse is a prime suspect for the 60s of gray before anything draws.
     console.time(`[LOAD] shape.json fetch+parse (${scene})`)
-    fetch(`${ASSET_BASE}baked/${scene}/shape.json${freezeTag ? `?t=${freezeTag}` : ''}`)
+    slabFetch(scene, 'shape.json', undefined, freezeTag || null)
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         console.timeEnd(`[LOAD] shape.json fetch+parse (${scene})`)

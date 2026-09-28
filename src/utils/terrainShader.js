@@ -30,7 +30,7 @@
  */
 
 import * as THREE from 'three'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch, slabManifest } from '../lib/slabUrl.js'
 
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
 import { DEFAULT_V_EXAG, terrainIdentity } from '../lib/terrainCommon.js'
@@ -68,7 +68,7 @@ const FLAT_TERRAIN = { width: 2, height: 2, bounds: { minX: -1, maxX: 1, minZ: -
 // height the ground actually is. ⛔ Absent must never mean "inherit the first town's drama".
 async function fetchSceneExag(lookId) {
   try {
-    const r = await fetch(`${ASSET_BASE}baked/${lookId}/scene.json`)
+    const r = await slabFetch(lookId, 'scene.json')
     if (!r.ok) throw new Error(`scene.json ${r.status}`)
     const v = (await r.json())?.terrainExag
     // ⛔ A SENTINEL IS NOT A VALUE: `?? `, never `||`. An authored 0 means FLAT and is a real
@@ -81,13 +81,12 @@ async function fetchSceneExag(lookId) {
 }
 
 async function fetchTerrain(lookId) {
-  const base = ASSET_BASE
   try {
-    const meta = await fetch(`${base}baked/${lookId}/terrain.json`).then(r => { if (!r.ok) throw new Error(`terrain.json ${r.status}`); return r.json() })
-    const buf  = await fetch(`${base}baked/${lookId}/terrain.bin`).then(r => { if (!r.ok) throw new Error(`terrain.bin ${r.status}`); return r.arrayBuffer() })
+    const meta = await slabFetch(lookId, 'terrain.json').then(r => { if (!r.ok) throw new Error(`terrain.json ${r.status}`); return r.json() })
+    const buf  = await slabFetch(lookId, 'terrain.bin').then(r => { if (!r.ok) throw new Error(`terrain.bin ${r.status}`); return r.arrayBuffer() })
     // The town's tide clock rides its manifest (bake-manifest `tide`, tidal towns only) — absent, never zero.
     const tide = meta.water?.tidal
-      ? await fetch(`${base}baked/${lookId}/manifest.json`).then(r => (r.ok ? r.json() : null)).then(m => m?.tide ?? null).catch(() => null)
+      ? await slabManifest(lookId).then(m => m?.tide ?? null).catch(() => null)
       : null
     return { ...meta, data: new Float32Array(buf), tide }
   } catch (e) {

@@ -16,7 +16,7 @@
 import { useEffect, useState } from 'react'
 import StreetLights from './StreetLights'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch } from '../lib/slabUrl.js'
 import { currentTerrainIdentity } from '../utils/terrainShader'
 import { lookOf } from '../lib/lookOf.js'
 
@@ -30,14 +30,14 @@ import { lookOf } from '../lib/lookOf.js'
 export default function BakedLamps({ lookId, bakeLastMs, lanternOverride, lampsOnOverride } = {}) {
   const resolvedLookId = lookOf(lookId, 'BakedLamps')
   const scene = useSceneJson(resolvedLookId, bakeLastMs)
-  const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
+  const reread = bakeLastMs ?? scene?.bakedAt ?? null
 
   const [data, setData] = useState(null)
 
   useEffect(() => {
-    if (cacheBust == null) return
+    if (reread == null) return
     let cancelled = false
-    fetch(`${ASSET_BASE}baked/${resolvedLookId}/lamps.json?t=${cacheBust}`)
+    slabFetch(resolvedLookId, 'lamps.json', undefined, reread)
       .then(r => r.ok ? r.json() : null)
       .then(j => {
         if (cancelled) return
@@ -58,7 +58,7 @@ export default function BakedLamps({ lookId, bakeLastMs, lanternOverride, lampsO
       })
       .catch(e => console.warn('[BakedLamps] load failed:', e))
     return () => { cancelled = true }
-  }, [resolvedLookId, cacheBust])
+  }, [resolvedLookId, reread])
 
   if (!data?.lamps?.length) return null
   // Lamps on/off (Designer › Furniture › Lamps): Stage passes the LIVE switch; production reads it baked.

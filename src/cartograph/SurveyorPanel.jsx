@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import { loadInstanceData } from '../data/loadInstanceData.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabFetch } from '../lib/slabUrl.js'
 
 // Roadway classes only. The dropdown writes st.type on a STREET
 // (ribbons.streets); paths/alleys render from ribbons.paths/ribbons.alleys keyed
@@ -55,7 +55,7 @@ function HeroSubjectPicker() {
     let ok = true
     setLandscape(null)
     if (!activeLookId) return
-    fetch(`${ASSET_BASE}baked/${activeLookId}/landscape/landscape.json?t=${Date.now()}`, { cache: 'no-store' })
+    slabFetch(activeLookId, 'landscape/landscape.json', { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(m => { if (ok && m) setLandscape({ label: m.label || 'Mountain Backdrop' }) })
       .catch(() => {})

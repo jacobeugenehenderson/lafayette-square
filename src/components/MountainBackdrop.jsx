@@ -38,19 +38,16 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import useSkyState from '../hooks/useSkyState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { LANDSCAPE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
 
 const LANDSCAPE_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANDSCAPE_FLAT_DEFAULTS } })
 const PLACEMENT_KEYS = ['bearingX', 'bearingZ', 'distance', 'scale', 'rotation', 'yOffset']
 
 
-// Dev busts the browser HTTP cache so a re-bake shows immediately (same footgun
-// useSceneJson guards); prod caches normally and busts on bakeLastMs.
+// Dev reads fresh so a re-bake shows immediately (same footgun useSceneJson guards);
+// bakeLastMs is the re-read key, which the resolver carries on disk only.
 const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
-function cacheBust(bakeLastMs) {
-  return bakeLastMs ?? (import.meta.env.MODE || 'prod')
-}
 
 export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride }) {
   const resolvedLookId = lookOf(lookId, 'MountainBackdrop')
@@ -67,8 +64,7 @@ export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride
   const [manifest, setManifest] = useState(null)
   useEffect(() => {
     let cancelled = false
-    const t = cacheBust(bakeLastMs)
-    fetch(`${ASSET_BASE}baked/${resolvedLookId}/landscape/landscape.json?t=${t}`, _fetchOpts)
+    slabFetch(resolvedLookId, 'landscape/landscape.json', _fetchOpts, bakeLastMs ?? null)
       .then(r => (r.ok ? r.json() : null))
       .then(m => { if (!cancelled) setManifest(m) })
       .catch(() => { if (!cancelled) setManifest(null) })
@@ -170,8 +166,7 @@ export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride
   useEffect(() => {
     if (!manifest?.asset) return
     let cancelled = false
-    const t = cacheBust(bakeLastMs)
-    const url = `${ASSET_BASE}baked/${resolvedLookId}/landscape/${manifest.asset}?t=${t}`
+    const url = slabUrl(resolvedLookId, 'landscape/' + manifest.asset, bakeLastMs ?? null)
     new GLTFLoader().load(
       url,
       (gltf) => {

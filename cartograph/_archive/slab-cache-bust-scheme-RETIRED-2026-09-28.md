@@ -1,3 +1,25 @@
+# The `?t=` cache-bust scheme — RETIRED 2026-09-28
+
+**Replaced by** content-named slab files (BRIEF-slab-loading §3 step 3): every slab URL comes from
+`src/lib/slabUrl.js`; a published file is served at `<name>.<sha16>.<ext>`, immutable, and the town's
+`manifest.json` (no-cache) is the switch. On disk (Stage, dev) the resolver carries the caller's re-read
+key as `?bake=` only because r3f's useLoader / drei's useGLTF cache in memory by URL.
+▶ `node checks/claims-every-slab-url-is-resolved.mjs` · `node checks/claims-a-slab-name-is-its-content.mjs`.
+The stale-key class this scheme had (an artifact newer than `scene.json#bakedAt`) cannot occur under
+content names; its successor gate is the uploader REFUSING a manifest that disagrees with the files on
+disk (`scripts/upload-baked-to-r2.mjs --names=sha256-16`).
+
+## Evicted from arborist/BACKLOG.md
+- [ ] **⛔ Two looks publish behind a stale cache-bust key** — `default` and `lafayette-square-staging` (LS was among them until 2026-08-29 and is now clean). Cold consumers serve the PREVIOUS slab from cache **and no reload dislodges it**, which is exactly how a fixed bug keeps reading as broken. The pour stamps `scene.json#bakedAt` unconditionally now, so the cure is one re-pour per look. ▶ `node checks/claims-the-slab-freshness-key-is-not-stale.mjs`
+
+## Evicted from cartograph/PREVIEW.md (Inputs row, the cache-bust clauses)
+| **Inputs** | the slab — `public/baked/<look>/{ground.json,ground.bin,ground.lightmap.png,buildings.json,buildings.bin,lamps.json,scene.json,trees.json}` — all cache-busted by `scene.json#bakedAt`. ⛔ **ROT EVICTED 2026-08-28:** this row named `public/baked/<look>.json` as the tree input. Nothing has read it since the slab moved into the look folder (`InstancedTrees.jsx:626` — `bakeUrl || baked/<look>/trees.json`, and Preview passes no `bakeUrl`); the file was a 745-tree corpse from 2026-06-26 sitting beside a 5,127-tree live one, and it cost a diagnosis a detour. ⭐ **AND THE KEY IS LOAD-BEARING:** every cold consumer fetches `?t=<bakedAt>`, so if it does not advance, browsers serve the PREVIOUS slab forever and no reload dislodges it. Stage passes its own `bakeLastMs` and is immune — which is why a stale key shows up **only at the publish gate.** The pour now stamps it unconditionally (`serve.js`, beside the looks-index stamp). ▶ `node checks/claims-the-slab-freshness-key-is-not-stale.mjs` |
+
+## Evicted from docs/briefs/HANDOFF-tree-render-2026-08-28.md
+node checks/claims-the-slab-freshness-key-is-not-stale.mjs   # bakedAt vs artifact mtimes
+
+## The retired check, verbatim: checks/claims-the-slab-freshness-key-is-not-stale.mjs
+```js
 /**
  * NO SLAB ARTIFACT MAY BE NEWER THAN THE KEY THAT BUSTS IT.
  *
@@ -99,3 +121,4 @@ for (const look of looks) {
 console.log()
 if (failed) { console.error(`⛔ ${failed} look(s) publish behind a stale cache-bust key.`); process.exit(1) }
 console.log(`✅ every look's freshness key is ahead of its artifacts.`)
+```

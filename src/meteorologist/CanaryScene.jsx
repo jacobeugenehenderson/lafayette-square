@@ -52,7 +52,7 @@ import {
 import { CANARY_CAMERAS } from './canaryCamera.js'
 import { StageFog } from '../components/PostProcessing.jsx'
 import { useCanaryTree } from '../lib/canaryTree.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { suspendSlabUrl } from '../lib/slabUrl.js'
 import { deriveSkyScalars, directiveDarkness } from '../lib/sky-scalars.js'
 
 // Gentle authoring breeze used when the active Condition's directive
@@ -351,7 +351,7 @@ function HeroTree({ lookId }) {
   const variantId = pref?.variantId ?? 1
   const variant   = pref?.variantId != null ? `skeleton-${pref.variantId}-lod1.glb` : HERO_TREE_SKELETON
   const treeLook  = pref?.lookId ?? lookId
-  const url = `${ASSET_BASE}baked/${treeLook}/trees/${species}/${variant}`
+  const url = suspendSlabUrl(treeLook, `trees/${species}/${variant}`)
   const { scene } = useGLTF(url)
   const groupRef = useRef()
 

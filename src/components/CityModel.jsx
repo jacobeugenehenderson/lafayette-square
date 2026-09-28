@@ -58,7 +58,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { useQuality } from '../lib/qualityProfile.js'
 import { lookOf } from '../lib/lookOf.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
@@ -73,7 +73,6 @@ const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
 // generous enough for shallow pitches, steep enough to exclude walls.
 const ROOF_NORMAL_Y = 0.5
 
-const baseUrl = (lookId) => `${ASSET_BASE}baked/${lookId}/citymodel/`
 
 // Placeholder albedo until the city model gets its own Look channel — the vendor
 // ships no materials, so these two values ARE the palette right now. Brick wall /
@@ -195,7 +194,7 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
   useEffect(() => {
     let dead = false
     setManifest(null); setTiles([])
-    fetch(`${baseUrl(lookId)}citymodel.json`, _fetchOpts)
+    slabFetch(lookId, 'citymodel/citymodel.json', _fetchOpts)
       .then((r) => (r.ok ? r.json() : null))
       .then((m) => {
         if (dead) return
@@ -214,7 +213,6 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
     if (!manifest?.tiles?.length || slabWins || !idToNum) return
     let dead = false
     const loader = new GLTFLoader()
-    const base = baseUrl(lookId)
     const out = []
     const coveredAcc = new Set()
     let pending = manifest.tiles.length
@@ -222,7 +220,7 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
 
     for (const t of manifest.tiles) {
       // Ids sidecar is optional: without it the tile still renders, just inert.
-      fetch(`${base}${t.id}_buildings.ids.json`, _fetchOpts)
+      slabFetch(lookId, `citymodel/${t.id}_buildings.ids.json`, _fetchOpts)
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)
         .then((sidecar) => {
@@ -238,7 +236,7 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
             return num == null ? -1 : num
           }
           loader.load(
-            `${base}${t.asset}`,
+            slabUrl(lookId, `citymodel/${t.asset}`),
             (gltf) => {
               if (dead) return
               const geom = flattenTile(gltf.scene, idFor)

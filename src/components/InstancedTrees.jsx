@@ -39,7 +39,7 @@ import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { defaultWindState, resolveWindState } from '../lib/wind-field.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
 
 
@@ -612,41 +612,36 @@ export function SwayDriver() {
   return null
 }
 
-function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl, canopyOverride }) {
+function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOverride }) {
   // Active Look: explicit prop wins; otherwise URL `?look=` fallback; final
   // default 'lafayette-square'. Cartograph passes the active Look explicitly
   // via the StageEnvironment thread; Preview reads ?look= from the URL.
   const lookName = lookOf(propLookId, 'InstancedTrees')
   const scene = useSceneJson(lookName, bakeLastMs)
-  const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
+  // The re-read key: Stage's bakeLastMs, else scene.bakedAt (and the fetch waits for it).
+  const reread = bakeLastMs ?? scene?.bakedAt ?? null
 
-  // Placement source: an explicit bakeUrl prop (Preview/Stage, where the
-  // scene and the Look differ) wins as-is; otherwise it is the Look's own
-  // placements. Every neighbourhood ships baked/<scene>/trees.json — LS
-  // included, since 2026-07-15. There is no global fallback any more: the old
-  // baked/default.json was LS's census under a fossil name, and a "fallback"
-  // that silently hands LS's 745 trees to a neighbourhood whose bake is missing
-  // is a bug that hides a bug.
-  const placementsUrl = bakeUrl || `${ASSET_BASE}baked/${lookName}/trees.json`
-
+  // Placements are the Look's own trees.json. Every neighbourhood ships one — LS included,
+  // since 2026-07-15. There is no global fallback: the old baked/default.json was LS's census
+  // under a fossil name, and a "fallback" that silently hands LS's 745 trees to a
+  // neighbourhood whose bake is missing is a bug that hides a bug.
   const [rawBake, setBake] = useState(null)
   useEffect(() => {
-    if (cacheBust == null) return
+    if (reread == null) return
     let cancelled = false
     // The ground anchor that seats each trunk on the DRAWN ground is PER-LOOK
     // (tree-anchors.json, groundSampler bake). Fetch placements + anchors and
     // inject groundRaw into each instance; if anchors are absent/stale, the
     // per-instance memos fall back to the smooth field.
-    const anchorsUrl = `${ASSET_BASE}baked/${lookName}/tree-anchors.json`
     // A missing placements file may 404 OR (on SPA-fallback hosts) return a 200
     // HTML page, so `instances` is validated rather than trusted. Absent → no
     // trees, which is the honest answer for a neighbourhood that has no census
     // yet (the Arborist ships it a blank grove).
-    const tryJson = (url) => fetch(url + '?t=' + cacheBust).then(r => r.ok ? r.json().catch(() => null) : null)
-    const fetchPlacements = tryJson(placementsUrl).then(j => (j && j.instances) ? j : null)
+    const fetchPlacements = slabFetch(lookName, 'trees.json', undefined, reread)
+      .then(r => r.ok ? r.json().catch(() => null) : null).then(j => (j && j.instances) ? j : null)
     Promise.all([
       fetchPlacements,
-      fetch(anchorsUrl + '?t=' + cacheBust).then(r => r.ok ? r.json() : null).catch(() => null),
+      slabFetch(lookName, 'tree-anchors.json', undefined, reread).then(r => r.ok ? r.json() : null).catch(() => null),
     ])
       .then(([j, anchorsDoc]) => {
         if (cancelled) return
@@ -723,7 +718,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl, 
       })
       .catch(e => console.warn('[InstancedTrees] bake fetch failed:', e))
     return () => { cancelled = true }
-  }, [placementsUrl, cacheBust, lookName, bakeUrl])
+  }, [reread, lookName])
 
   const atlas = useTreeAtlas(lookName)
 
@@ -829,8 +824,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl, 
   const groups = useMemo(() => {
     if (!bake?.instances || !atlas?.roster || atlas.status !== 'ready') return null
 
-    const generatedAt = atlas.manifest?.generatedAt
-    const atlasVersion = generatedAt ? `?v=${encodeURIComponent(generatedAt)}` : ''
+    const generatedAt = atlas.manifest?.generatedAt ?? null
 
     // Build category → list-of-roster-keys index by sweeping the bake.
     // Every roster entry that has at least one matching placement gets
@@ -1054,12 +1048,9 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl, 
       // off; the legacy cull/impostor role handled above). Impostor with no baked record
       // also falls through here → real geometry, never blank.
       const url = inRoster ? lodUrlOf(inst, inst) : lodUrlOf(sub, inst)
-      // Cache-bust GLB URLs against the atlas manifest's generatedAt so an
-      // open Preview/Stage tab picks up rewritten UVs after a rebake instead
-      // of holding drei's useGLTF cache for the same path indefinitely.
-      const lookUrl = url.startsWith('/trees/')
-        ? `${ASSET_BASE}baked/${lookName}${url}${atlasVersion}`
-        : url
+      // The atlas manifest's generatedAt is the GLBs' re-read key: an open Stage tab picks up
+      // rewritten UVs after a rebake instead of holding drei's useGLTF cache for the same path.
+      const lookUrl = url.startsWith('/trees/') ? slabUrl(lookName, url, generatedAt) : url
       let byTile = m.get(lookUrl)
       if (!byTile) {
         if (maxVariants && m.size >= maxVariants) {
@@ -1353,8 +1344,8 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl, 
 
 // `canopyOverride`: Stage's live Canopy Light channel, laid over the baked scene.canopy so an edit shows
 // before a bake (Loupe's audit, 2026-09-26: it reached nothing on a poured town until bake-scene ran).
-export default function InstancedTrees({ maxVariants, lookId, bakeLastMs, bakeUrl, canopyOverride } = {}) {
+export default function InstancedTrees({ maxVariants, lookId, bakeLastMs, canopyOverride } = {}) {
   // No default maxVariants — atlas collapses materials to 2 shared instances,
   // so unbounded variant count is now safe.
-  return <ParkPopulation maxVariants={maxVariants} lookId={lookId} bakeLastMs={bakeLastMs} bakeUrl={bakeUrl} canopyOverride={canopyOverride} />
+  return <ParkPopulation maxVariants={maxVariants} lookId={lookId} bakeLastMs={bakeLastMs} canopyOverride={canopyOverride} />
 }

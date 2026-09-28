@@ -51,7 +51,7 @@ const DIRS = ['checks', 'scratch']
  * Strip comments, keep string literals.
  * The string bodies must SURVIVE — `execSync('git ls-files')` is classified by reading its
  * argument — while comment bodies must NOT, because a doc-comment showing `fetch(url)` is prose
- * (`claims-the-slab-freshness-key-is-not-stale.mjs:8` is exactly that, and grep calls it live).
+ * (grep would call it live).
  */
 export function stripComments(src, shell = false) {
   if (shell) return src.replace(/^\s*#.*$/gm, '')

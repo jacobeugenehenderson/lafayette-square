@@ -37,7 +37,7 @@ import Town, { useBuildingPlaces, frameBuildings } from '../../components/Town.j
 import { QUALITY } from '../../lib/qualityProfile.js'
 import { SCREEN_W, SCREEN_H } from '../../preview/PhoneFrame.jsx'
 import { browseFitAltitude } from '../../lib/townRange.js'
-import { ASSET_BASE } from '../../lib/bakedUrl.js'
+import { slabFetch } from '../../lib/slabUrl.js'
 import { INSTANCE, townForLook } from '../../instance.js'
 import { reloadTerrain } from '../../utils/terrainShader.js'
 
@@ -196,11 +196,11 @@ function App() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    fetch(`${ASSET_BASE}baked/${LOOK}/ground.json`).then((r) => r.json()).then((g) => {
+    slabFetch(LOOK, 'ground.json').then((r) => r.json()).then((g) => {
       if (!g.stencil) throw new Error(`${LOOK} has no disc (stencil null) — nothing to fit`)
       setStencil(g.stencil)
     }).catch((e) => setErr(String(e.message || e)))
-    fetch(`${ASSET_BASE}baked/${LOOK}/content/listings.json`).then((r) => (r.ok ? r.json() : null)).then((j) => {
+    slabFetch(LOOK, 'content/listings.json').then((r) => (r.ok ? r.json() : null)).then((j) => {
       const rows = Array.isArray(j) ? j : (j?.listings || [])
       const by = new Map()
       for (const r of rows) if (r.category && r.building_id) (by.get(r.category) || by.set(r.category, new Set()).get(r.category)).add(r.building_id)

@@ -24,7 +24,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { CANARY_GROUND_CAMERA } from './canaryCamera.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { ASSET_BASE } from '../lib/bakedUrl.js'
+import { suspendSlabUrl } from '../lib/slabUrl.js'
 
 /**
  * TREE DIORAMA — one specimen, fully dressed, under the neighbourhood's real
@@ -773,7 +773,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
   useDioramaTrunkGround()
   useDioramaWindTiering()
   const nightChannels = useDioramaNightChannels(look)
-  const url = `${ASSET_BASE}baked/${look}/trees/${sp}/skeleton-${vr}-lod${ld}.glb`
+  const url = suspendSlabUrl(look, `trees/${sp}/skeleton-${vr}-lod${ld}.glb`)
 
   // ⛔ NO FALLBACK. If the atlas fails to build there is no second dressing to
   // fall back to — an undressed specimen paints its leaves with bark and looks
