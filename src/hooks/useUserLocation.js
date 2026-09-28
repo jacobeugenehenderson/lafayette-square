@@ -1,11 +1,13 @@
 import { create } from 'zustand'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
+import { getSceneStencil } from '../components/sceneStencilState'
 
-const CENTER_LAT = INSTANCE.geography.lat
-const CENTER_LON = INSTANCE.geography.lon
-const LON_TO_METERS = 86774
-const LAT_TO_METERS = 111000
-const BOUNDS_RADIUS = 800 // meters from center — covers Truman/Chouteau/Jefferson/44 box
+// ⛔ Both numbers here used to be Lafayette Square's: LON_TO_METERS = 86774 (metres per degree of longitude
+// at 38.6°N) and an 800 m "in bounds" radius (its streets, by name). In any other town the dot sat east or
+// west of where the visitor stood — 5% off at Provincetown — and "in the neighbourhood" meant LS's size.
+// The projection is now the TOWN's own (lib/townPlace.js, the one the sun uses), and "in bounds" is the
+// town's own disc (ground.json#stencil, published by BakedGround). An unknown disc is said, never guessed.
+let _warnedNoDisc = false
 
 const useUserLocation = create((set, get) => ({
   x: null,
@@ -25,16 +27,20 @@ const useUserLocation = create((set, get) => ({
 
     const id = navigator.geolocation.watchPosition(
       (pos) => {
-        const lon = pos.coords.longitude
-        const lat = pos.coords.latitude
-        const x = (lon - CENTER_LON) * LON_TO_METERS
-        const z = (CENTER_LAT - lat) * LAT_TO_METERS
-        const dist = Math.sqrt(x * x + z * z)
+        const place = townPlace()
+        const x = (pos.coords.longitude - place.lon) * place.lonToMeters
+        const z = (place.lat - pos.coords.latitude) * place.latToMeters
+        const disc = getSceneStencil()
+        if (!disc && !_warnedNoDisc) {
+          _warnedNoDisc = true
+          console.error(`[userLocation] "${place.lookId}" has published no scene disc yet — the visitor is treated as outside the town until it has`)
+        }
+        const [cx, cz] = disc?.center ?? [0, 0]
         set({
           x,
           z,
           accuracy: pos.coords.accuracy,
-          inBounds: dist <= BOUNDS_RADIUS,
+          inBounds: !!disc && Math.hypot(x - cx, z - cz) <= disc.radius,
           active: true,
           error: null,
         })
