@@ -1,0 +1,15 @@
+{
+  "country": "US",
+  "subdivision": "MA",
+  "name": "Massachusetts, United States",
+  "source": {
+    "service": "OpenStreetMap Nominatim reverse (zoom 5)",
+    "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+    "osm": "relation/61315",
+    "at": [
+      42.05167,
+      -70.18666
+    ]
+  },
+  "at": "2026-09-28T20:27:14.754Z"
+}

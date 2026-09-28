@@ -131,6 +131,10 @@ Materials, color, visibility, shaders, sky, post-FX, neon, camera — the per-Lo
 
 The full channel inventory + where each persists is `STAGE.md §1`; the cards below are the operator's-eye view — *which knob is on which card, and how to drive it.*
 
+### Sources *(toolbar)*
+
+Every input a town is poured from, what to do about it, and where it can come from — **for this town's country**: a row names the source that covers it (from `cartograph/data/<town>/jurisdiction.json`), then global ones; another country's sources are listed after it, tagged **"<country> only"**. A row nothing covers reads **none known for <country>** (⚠); a town whose country was never fetched reads **country unknown** — fetch it: `node cartograph/fetch-jurisdiction.mjs --town=<id>`. The hand-off and agent-assist text use the same order and tags. ▶ `node checks/claims-a-towns-sources-are-its-own.mjs`
+
 ### Identity *(toolbar, beside Sources)*
 
 How the town looks, chosen in one place: its **Mark** (one emoji — avatar, load screen, tab), **Accent** (the Ward's chrome colour), **Rating mark** (one emoji, what a place is rated in) and **Lit tint** (colour + strength of the roofs of a chosen category or search, and of the selected building — previewed live). Saved in the Look's `design.json` `identity`, baked into `scene.json`, published as the manifest's `look` (each channel with `…Authored`). A channel not chosen says so and names the kit's neutral value it shows; **clear** un-chooses one. A malformed value is refused with the reason, and nothing is saved. Sources lists **Identity** with **choose it here** and a to-do count until every channel is chosen. Not here: the town's name and locale (Operations), its label style (Designer). ▶ `node checks/claims-a-towns-identity-is-its-own.mjs`

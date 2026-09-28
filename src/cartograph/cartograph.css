@@ -1471,6 +1471,7 @@ input[type="range"]:active { cursor: grabbing; }
 .carto-sources-action--none  { color: var(--on-surface-disabled); border-color: var(--outline-variant); }
 .carto-sources-action--choose { color: var(--info); border-color: var(--info-dim); background: var(--info-dim); }
 .carto-sources-choose { all: unset; cursor: pointer; }
+.carto-sources-unknown { color: var(--warning); }
 
 /* Identity (IdentityPanel.jsx) — how the town looks, in the Sources dialog's shell. */
 .carto-identity { max-width: 560px; }

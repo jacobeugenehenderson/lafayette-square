@@ -488,6 +488,15 @@ from bare building to landmark, and in what order.** Do not introduce "importanc
 ⛔ **A non-US tidal town has no source yet.** The acquisition refuses ("no tide source for this region"); name the regional
 authority here when one arrives. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id> --tide-only`
 
+## 4c. JURISDICTION — which country a town is in (decides which sources are its own)
+| Input | Path | Source |
+|---|---|---|
+| **Country + first-level subdivision** (ISO 3166-1 / 3166-2, e.g. `US` / `MO`) | `data/<town>/jurisdiction.json` — ⛔ not `geography.json`, a bake input | **OSM Nominatim reverse** of the town centre, one request, ODbL (recorded in `source`) — `node cartograph/fetch-jurisdiction.mjs --town=<id>` |
+
+Every Sources row names the source that covers **this** country (each source declares `covers`, `src/cartograph/sourcesCatalogue.js`),
+then the global ones; another country's is listed after, marked as theirs. No country on disk → the row says **country unknown**, never
+a guess. ▶ `node checks/claims-a-towns-sources-are-its-own.mjs`
+
 ## 5. ⭐ BUILDING FABRIC — the best source is REGIONAL, and we discard real data
 
 *(Jacob, 2026-07-20 late: "the Księży Młyn neighborhood has more fulsome building scans." Verified —

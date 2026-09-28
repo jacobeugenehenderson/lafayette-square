@@ -1,0 +1,15 @@
+{
+  "country": "US",
+  "subdivision": "MO",
+  "name": "Missouri, United States",
+  "source": {
+    "service": "OpenStreetMap Nominatim reverse (zoom 5)",
+    "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+    "osm": "relation/161638",
+    "at": [
+      38.616,
+      -90.2161
+    ]
+  },
+  "at": "2026-09-28T20:27:10.774Z"
+}

@@ -29,19 +29,6 @@ import tzLookup from 'tz-lookup'
 import { mapDir } from './config.js'
 
 /**
- * Coarse regional bucket. This is what decides which source is a scene's
- * NATIVE BEST — `INTAKE-CATALOGUE §5.1`: Microsoft's ML footprints are correct
- * in St. Louis and actively worse in Łódź, where hand-mapped OSM carries ~2×
- * the vertex detail. Region is the axis that ordering reads.
- */
-export function regionForTz(tz) {
-  if (!tz) return 'global'
-  if (tz.startsWith('America/')) return 'us'
-  if (tz.startsWith('Europe/')) return 'eu'
-  return 'global'
-}
-
-/**
  * The sharing key. Timezone zone-name doubles as a serviceable jurisdiction
  * proxy — `Europe/Warsaw` is Poland, `America/Chicago` is the central US — and
  * it needs no network, which matters for a kit whose whole doctrine is that a
@@ -51,8 +38,8 @@ export function regionForTz(tz) {
  * St. Louis, so a source shared under it may not apply to every hood beneath
  * it. That is the right failure direction — an operator shown one extra
  * candidate loses a moment; an operator shown none rediscovers it from scratch.
- * A true city/country key wants the geocoder's own administrative fields
- * recorded at Extent-commit time; that is the upgrade, not this.
+ * The country is not guessed from it: that is the town's own jurisdiction.json
+ * (cartograph/fetch-jurisdiction.mjs), carried alongside the key.
  */
 export function jurisdictionForMap(scene) {
   const p = join(mapDir(scene), 'geography.json')
@@ -61,7 +48,12 @@ export function jurisdictionForMap(scene) {
     const g = JSON.parse(readFileSync(p, 'utf8'))
     if (typeof g.lat !== 'number' || typeof g.lon !== 'number') return null
     const tz = tzLookup(g.lat, g.lon)
-    return { key: tz, region: regionForTz(tz), lat: g.lat, lon: g.lon }
+    // The town's country + first-level subdivision — its own intake fact (cartograph/fetch-jurisdiction.mjs), which
+    // decides which sources are ITS sources (src/cartograph/sourcesCatalogue.js resolveRow). null when not yet
+    // fetched: the panel then says the country is unknown, never guesses it from the timezone.
+    const jp = join(mapDir(scene), 'jurisdiction.json')
+    const own = existsSync(jp) ? JSON.parse(readFileSync(jp, 'utf8')) : null
+    return { key: tz, country: own?.country ?? null, subdivision: own?.subdivision ?? null, lat: g.lat, lon: g.lon }
   } catch {
     return null
   }

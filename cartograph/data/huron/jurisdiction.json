@@ -1,0 +1,15 @@
+{
+  "country": "US",
+  "subdivision": "OH",
+  "name": "Ohio, United States",
+  "source": {
+    "service": "OpenStreetMap Nominatim reverse (zoom 5)",
+    "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+    "osm": "relation/162061",
+    "at": [
+      41.39497,
+      -82.56244
+    ]
+  },
+  "at": "2026-09-28T20:27:13.402Z"
+}
