@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { fetchIntake, saveIntakeSource } from './api.js'
+import useCartographStore from './stores/useCartographStore'
+import { IDENTITY_CHANNELS } from '../lib/townIdentity.js'
 
 /**
  * SOURCES — every input that goes into pouring a town, and WHAT TO DO about it.
@@ -39,6 +41,7 @@ const FETCH = 'fetch'   // an endpoint exists — one button (BRIEF §2.2b)
 const DOC   = 'doc'     // a written procedure; go read/update it
 const OWED  = 'owed'    // ⚠ the procedure exists only in someone's head
 const NONE  = 'none'    // nothing to acquire, ever
+const CHOOSE = 'choose' // the town decides, in a panel here — "choose it here" opens it
 
 // ⛔ NAME THE SOURCE. Jacob, 2026-07-20: *"'Building footprints' should say
 // 'microsoft' or whatever — I hate all this dumb treacle."* The proper noun IS
@@ -219,6 +222,12 @@ const GROUPS = [
       // ⭐ The row stays DOC rather than FETCH deliberately — the BASE is a
       // button, but hours and descriptions are hand-work and always were, and
       // calling the whole row a button would promise the part that is not.
+      // How the town looks — its mark, accent, rating mark, lit tint. Nothing to fetch: the town chooses, and the
+      // choosing is done in the Identity panel (IdentityPanel.jsx). A to-do until every channel is chosen.
+      { name: 'Identity', act: CHOOSE, where: 'Identity',
+        sources: [{ name: 'the town', note: 'its own choice — never another town\'s' }],
+        steps: ['Ask the town: the emoji it goes by, the one it rates with, its accent colour, and the tint for lit roofs.',
+                'Choose each in the Identity panel. Until then the kit\'s neutral value shows, and says so.'] },
       { name: 'Businesses & hours', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md',
         sources: [
           { name: 'Overture Places', note: 'free · one command, any town · ⛔ licence is per record' },
@@ -245,7 +254,8 @@ const GROUPS = [
   },
 ]
 
-export default function SourcesPanel({ scene, onClose }) {
+export default function SourcesPanel({ scene, onClose, onOpenIdentity }) {
+  const unchosen = useCartographStore((s) => IDENTITY_CHANNELS.filter((k) => s.identity?.[k] == null).length)
   const [openRow, setOpenRow] = useState(null)
   const [extra, setExtra] = useState({})   // per-row operator-added sources
   const [copied, setCopied] = useState(null)
@@ -428,11 +438,13 @@ export default function SourcesPanel({ scene, onClose }) {
                         {row.sources[0].name}
                         {alts > 0 && <span className="carto-sources-more"> +{alts}</span>}
                       </button>
-                      <span className={`carto-sources-action carto-sources-action--${locked ? 'locked' : row.act}`}>
+                      <span className={`carto-sources-action carto-sources-action--${locked ? 'locked' : row.act === CHOOSE && unchosen ? 'owed' : row.act}`}>
                         {locked ? 'included'
                           : row.act === FETCH ? <><b>Fetch</b> · {row.where}</>
                           : row.act === DOC ? <><b>→</b> {row.where}</>
                           : row.act === OWED ? <><b>⚠</b> {row.where} — unwritten</>
+                          : row.act === CHOOSE ? <button className="carto-sources-choose" onClick={onOpenIdentity}>
+                              <b>choose it here</b>{unchosen ? ` · ${unchosen} to do` : ' · done'}</button>
                           : row.where}
                       </span>
                     </div>

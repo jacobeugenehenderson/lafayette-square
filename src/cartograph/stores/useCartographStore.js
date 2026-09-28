@@ -65,6 +65,7 @@ import {
   kitDayChannel, KIT_DAY_CHANNELS,
 } from '../skyLightChannels.js'
 import { migrateSkyChannel, SKY_BANDS, SKY_HOURS } from '../skyGrid.js'
+import { validateIdentity } from '../../lib/townIdentity.js'
 
 const ACTIVE_LOOK_KEY = 'cartograph-active-look'
 // ⛔⛔ There is deliberately NO `DEFAULT_LOOK_ID = 'lafayette-square'` here any
@@ -839,6 +840,15 @@ const useCartographStore = create((set, get) => ({
     get()._saveDesignDebounced()
   },
   // Move the park title. pos = [x,z] world, or null to reset to the default.
+  // The Identity panel: choose one channel (src/lib/townIdentity.js), or `null` to un-choose it (the kit's neutral
+  // value shows). A malformed value THROWS — the panel shows the message; nothing is saved.
+  setIdentityChannel: (channel, value) => {
+    const next = { ...get().identity }
+    if (value == null) delete next[channel]
+    else next[channel] = value
+    set({ identity: validateIdentity(next, 'Identity'), bakeStale: true })
+    get()._saveDesignDebounced()
+  },
   setParkTitlePos: (pos) => {
     set({ parkTitlePos: Array.isArray(pos) ? [Math.round(pos[0] * 100) / 100, Math.round(pos[1] * 100) / 100] : null, bakeStale: true })
     get()._saveDesignDebounced()

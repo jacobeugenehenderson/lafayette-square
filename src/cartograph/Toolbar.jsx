@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import SourcesPanel from './SourcesPanel.jsx'
+import IdentityPanel from './IdentityPanel.jsx'
 
 const SHOTS = ['browse', 'hero', 'street']
 
@@ -37,6 +38,8 @@ export default function Toolbar() {
   // Lives in Stage beside Preview: both answer "what does this install
   // actually consist of", one for the render and one for the inputs.
   const [sourcesOpen, setSourcesOpen] = useState(false)
+  // How the town looks (mark, accent, rating mark, lit tint) — its own panel beside Sources (IdentityPanel.jsx).
+  const [identityOpen, setIdentityOpen] = useState(false)
 
   const inDesigner = shot === 'designer'
 
@@ -101,6 +104,11 @@ export default function Toolbar() {
               onClick={() => setSourcesOpen(true)}
               title="What goes into a town — every input, where it comes from, and what to do about it.">
               Sources
+            </button>
+            <button
+              onClick={() => setIdentityOpen(true)}
+              title="How the town looks — its mark, accent, rating mark and lit tint.">
+              Identity
             </button>
           </div>
         </>
@@ -167,7 +175,9 @@ export default function Toolbar() {
         </>
       )}
 
-      {sourcesOpen && <SourcesPanel scene={scene} onClose={() => setSourcesOpen(false)} />}
+      {sourcesOpen && <SourcesPanel scene={scene} onClose={() => setSourcesOpen(false)}
+        onOpenIdentity={() => { setSourcesOpen(false); setIdentityOpen(true) }} />}
+      {identityOpen && <IdentityPanel onClose={() => setIdentityOpen(false)} />}
     </div>
   )
 }

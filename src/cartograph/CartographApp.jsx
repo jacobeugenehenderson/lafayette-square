@@ -798,13 +798,15 @@ function useStageOverrides(heroKeyframes, heroMotion) {
   const neonDensity = useCartographStore(s => s.neonDensity)
   const lampsOn = useCartographStore(s => s.layerVis?.lamp !== false)
   const dofFocus = useCartographStore(s => s.dofFocus)
+  // The Identity panel's lit tint, live (the Look's identity.litTint; unchosen → the renderer's neutral).
+  const litTint = useCartographStore(s => s.identity?.litTint)
   // Force Neon On OFF means "not forced" — neon follows each place's hours, as it ships. A literal `false`
   // told SceneNeon to switch every tube off, so Stage never showed the neon production draws.
   // The park title's live position (Designer's drag handle) — that set-piece's own entry, as labels.json bakes it.
   const parkTitlePos = useCartographStore(s => s.parkTitlePos)
   const setPieceTitles = useMemo(() => (parkTitlePos ? { 'lafayette-park': parkTitlePos } : undefined), [parkTitlePos])
-  return useMemo(() => ({ ...channels, neonForceOn: neonForceOn || undefined, neonDensity, lampsOn, dofFocus, setPieceTitles, heroKeyframes, heroMotion }),
-    [channels, neonForceOn, neonDensity, lampsOn, dofFocus, setPieceTitles, heroKeyframes, heroMotion])
+  return useMemo(() => ({ ...channels, neonForceOn: neonForceOn || undefined, neonDensity, lampsOn, dofFocus, setPieceTitles, heroKeyframes, heroMotion, litTint }),
+    [channels, neonForceOn, neonDensity, lampsOn, dofFocus, setPieceTitles, heroKeyframes, heroMotion, litTint])
 }
 // Stage's shots → the shot <Town> draws (Designer draws no <Town>).
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }

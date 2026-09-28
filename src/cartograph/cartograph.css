@@ -1469,6 +1469,22 @@ input[type="range"]:active { cursor: grabbing; }
 .carto-sources-action--doc   { color: var(--info);    border-color: var(--info-dim);    background: var(--info-dim); }
 .carto-sources-action--owed  { color: var(--warning); border-color: var(--warning-dim); background: var(--warning-dim); }
 .carto-sources-action--none  { color: var(--on-surface-disabled); border-color: var(--outline-variant); }
+.carto-sources-action--choose { color: var(--info); border-color: var(--info-dim); background: var(--info-dim); }
+.carto-sources-choose { all: unset; cursor: pointer; }
+
+/* Identity (IdentityPanel.jsx) — how the town looks, in the Sources dialog's shell. */
+.carto-identity { max-width: 560px; }
+.carto-identity-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--outline-variant);
+}
+.carto-identity-label { display: flex; flex-direction: column; gap: 2px; }
+.carto-identity-hint, .carto-identity-foot { font-size: var(--type-caption); color: var(--on-surface-subtle); }
+.carto-identity-control { display: flex; align-items: center; gap: 8px; justify-self: end; }
+.carto-identity-emoji { flex: none; width: 3.2em; font-size: 20px; text-align: center; }
+.carto-identity-unset { opacity: 0.35; }
+.carto-identity-todo { font-size: var(--type-label-sm); color: var(--warning); }
+.carto-identity-error { grid-column: 1 / -1; font-size: var(--type-caption); color: var(--error); }
 
 /* Expanded alternatives — the accumulating directory of public wells. */
 .carto-sources-alts {
