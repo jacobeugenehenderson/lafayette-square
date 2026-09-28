@@ -146,6 +146,10 @@ registers rewritten for what shipped (README §10), and a commit that says what 
   right design and needs a deploy.
 - **CodeDesk builds card URLs from `location.origin`** (`public/codedesk/`), so a card printed on staging
   carries the staging address. It should use the town's domain (Operations), and refuse without one.
+- **`postEvent` keeps only type, title, description, start and end dates.** The old form's recurrence and
+  time fields were dropped silently. The Ward asks only for what is kept.
+- **A town has no currency.** The manifest's `identity.commerce` carries only `salesTaxRate`; the old player
+  hard-coded USD. Currency belongs in the town's authored identity. The Ward shows plain numbers until then.
 - **The review endpoint keeps less than the old form offered:** it `parseInt`s the rating (half ratings
   lost) and drops photo, avatar and vignette. The Ward asks only for what the server keeps.
 
