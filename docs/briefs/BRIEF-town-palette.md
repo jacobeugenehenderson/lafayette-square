@@ -63,6 +63,12 @@ taxonomy, or the bake fails naming them.
   on the device (never derived from the emoji's colours), and half-cut (full colour | desaturated) for halves.
   That half is the Ward's (Quire); this brief carries only the channel.
 
+### And the town's lit tint (Warden → Jacob, 2026-09-28) — the RENDERER half is built, the channel is not
+- A **Look channel** `litTint` = `{ color, strength }`: the roof tint a lit set (<Town litIds>, a chosen category or
+  a search) and the selected building take, day and night (`SlabBuildings.jsx` litUniforms, 92a68e41). Read from
+  `scene.litTint`; absent, the kit's neutral `LIT_TINT_DEFAULT` (#f2c14e at 0.45 — no town's). ⛔ Not yet authored
+  in Stage nor carried through the bake: same path as the palette and the rating mark. Jacob's eye picks the default.
+
 ## Checks
 - No colour literal in `categories.js` or any neon consumer; every category colour is read from
   the look.
