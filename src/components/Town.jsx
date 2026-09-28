@@ -27,6 +27,20 @@
  *   flightRef        a ref Town fills: { from, to, t, eased, duration, at, landed, interrupted } — at t = 0 before the first
  *                    painted frame of a flight, then every frame; `eased` is the camera's own curve (drive a panel by it)
  *   onFlightEnd      (f) => void, once per shot change: landed, or interrupted by a pointerdown / wheel
+ *   frameKey         the plan's ONE move: the plan frames its places on entering the shot and again only when this
+ *                    changes (a Return, a category chosen). litIds alone only light — typing never moves the camera.
+ *                    The in-plan move runs transitions.js' `frame` (1200 ms, easeInOutCubic).
+ *   onFramed         ({ x, z, radius, placed, of, outside, unplaced }) => void, each time the plan frames — frameDensest's
+ *                    disclosure of the places it could not put down (litIds may carry nulls; they come back unplaced)
+ *   planHeading      'town' (default: the town's authored browseHeading) | 'north' | { follow: headingRef } — the
+ *                    reader's TRUE heading (degrees, the direction they face; the app's compass, already smoothed),
+ *                    or null (no sensor / no permission → north up). Following turns screen-up to it EVERY frame, no
+ *                    flight; switching between the forms turns the map on the `frame` curve, keeping what the reader
+ *                    looks at.
+ *   bearingRef       a ref Town fills EVERY frame with the compass bearing of screen-up (degrees; 0 = north up) — a rose
+ *   controls         true: Town mounts the kit's controls, one regime per shot (RegimeControls: movie playback · plan
+ *                    · street) — an app that imports only <Town> takes them this way. Default false (the app mounts its own).
+ *                    ⭐ Under prefers-reduced-motion every flight is a cut and the controls do not coast (kit-wide).
  *   movers           live dots the APP positions: [{ id, kind: 'you' | 'courier', lat, lon, active (couriers) }] — the
  *                    town projects them through its own place, seats them on its ground, draws each kind's look
  *                    (src/components/Movers.jsx); none in the movie or outside the disc. Unknown fields throw.
@@ -73,6 +87,7 @@ import { labelStyleOf } from '../lib/labelStyle.js'
 import MovieCamera from '../camera/MovieCamera.jsx'
 import ShotFlight from '../camera/ShotFlight.jsx'
 import Movers from './Movers.jsx'
+import RegimeControls from './RegimeControls.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { skyModeOf } from '../lib/skyMode'
@@ -305,7 +320,8 @@ function TownOptics({ quality }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movers, onMovers, children,
+  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, onFramed, planHeading = 'town', bearingRef,
+  controls = false, movers, onMovers, children,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
@@ -339,7 +355,8 @@ export default function Town({
     [o.heroKeyframes, scene, stencil, heroFov])
   // The flight between shots (src/camera/ShotFlight.jsx): the plan opens on the lit places, else every listed one.
   const places = useBuildingPlaces()
-  const placeIds = useMemo(() => (litIds?.size ? [...litIds] : listings.map((l) => l.building_id).filter(Boolean)), [litIds, listings])
+  // Listings with no building are kept (as null): the plan's disclosure names them unplaced, never drops them.
+  const placeIds = useMemo(() => (litIds?.size ? [...litIds] : listings.map((l) => l.building_id ?? null)), [litIds, listings])
   const ownHandle = useRef(null)
   const flightHold = useRef(() => false)
   const movieHandle = movie?.handle ?? ownHandle
@@ -365,10 +382,12 @@ export default function Town({
       {/* ⭐ A SHOT CHANGE FLIES (BRIEF-town-shot-flight): the town knows where each shot puts the camera and flies
           there with the one tween, holding the movie while it does. ▶ node checks/claims-one-shot-flight.mjs */}
       <ShotFlight shot={shot} flight={flight} streetAt={streetAt} viewInset={viewInset} flightRef={flightRef}
-        onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} />
+        onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds}
+        frameKey={frameKey} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} />
+      {controls && <RegimeControls regime={shot === 'plan' ? 'plan' : shot === 'street' ? 'street' : 'playback'} />}
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} flying={flightHold} />
-      {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} />}
-      <SkyStateTicker />
+      {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} paused={paused} />}
+      <SkyStateTicker paused={paused} />
       {/* Names the material when a program fails to link — the failure that draws nothing and says nothing. */}
       <ShaderLinkGuard />
       {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><Cascades /></R3FErrorBoundary>}

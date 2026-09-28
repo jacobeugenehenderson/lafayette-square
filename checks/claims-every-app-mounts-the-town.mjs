@@ -32,7 +32,13 @@ const SRC = join(ROOT, 'src')
 const TOWN = 'src/components/Town.jsx'
 // Rendered by Town but not a drawing: an app may use it for its own children.
 const OPEN = {}
-const WRAPPERS = { R3FErrorBoundary: 'an error boundary; it draws nothing' }
+const WRAPPERS = {
+  R3FErrorBoundary: 'an error boundary; it draws nothing',
+  // Town mounts the controls only under <Town controls> (an app that imports only Town); an app that places its own
+  // camera (Stage, the old player — flight={false}) mounts its own. They draw nothing, and the regimes are defined
+  // once (claims-the-camera-has-one-definition).
+  RegimeControls: 'the camera controls; Town mounts them only when an app asks (<Town controls>)',
+}
 
 function walk(dir, out = []) {
   for (const n of readdirSync(dir)) {

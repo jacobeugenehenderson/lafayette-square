@@ -34,10 +34,11 @@ import * as THREE from 'three'
 import { createCameraTween } from './cameraTween.js'
 import { transitionMs } from './transitions.js'
 import { frameDensest } from '../lib/frameDensest.js'
-import { browseUpFromHeading } from '../lib/browseHeading.js'
+import { browseUpFromHeading, bearingOf } from '../lib/browseHeading.js'
 import { getSceneStencil } from '../components/sceneStencilState.js'
 import { streetEyeY } from '../utils/elevation'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { prefersReducedMotion } from '../lib/reducedMotion.js'
 
 // transitions.js is keyed by the production vocabulary (the shot ENTERED).
 const ENTRY = { movie: 'hero', plan: 'browse', street: 'street' }
@@ -48,8 +49,15 @@ const insetKey = (i) => (i ? `${i.top | 0},${i.right | 0},${i.bottom | 0},${i.le
 const _p = new THREE.Vector3(), _t = new THREE.Vector3(), _fwd = new THREE.Vector3()
 const _warned = new Set()
 
-export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds }) {
+export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds,
+  frameKey, onFramed, planHeading = 'town', bearingRef }) {
   if (flight !== true && flight !== false && flight !== 'cut') throw new Error(`[Town] ⛔ flight must be true, 'cut' or false (got ${flight})`)
+  const following = planHeading && typeof planHeading === 'object'
+  if (following ? !(planHeading.follow && 'current' in planHeading.follow) : planHeading !== 'town' && planHeading !== 'north') {
+    throw new Error(`[Town] ⛔ planHeading must be 'town', 'north' or { follow: headingRef } (got ${JSON.stringify(planHeading)})`)
+  }
+  // The heading mode, as a value: a new { follow } object each render is the same mode while it names the same ref.
+  const headingMode = following ? planHeading.follow : planHeading
   if (shot === 'street' && flight !== false && !(Array.isArray(streetAt) && streetAt.length === 2 && streetAt.every(Number.isFinite))) {
     throw new Error('[Town] ⛔ shot="street" needs streetAt={[x, z]} — the eye stands at a point the app chooses (a tap, a place)')
   }
@@ -58,7 +66,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const tween = useRef(null)
   if (!tween.current) tween.current = createCameraTween()
   const live = useRef({})
-  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, size }
+  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, size, onFramed, planHeading }
   const prev = useRef(null)            // the last shot this component saw
   const pending = useRef(null)         // { shot, landed }: a cut whose destination is not known yet — landed when placed
   const flying = useRef(null)          // { from, to, toUp, fromOff, toOff }
@@ -83,6 +91,17 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   }
 
   // Where shot `s` puts the camera: { pos, target, fov, up, chase?, overhead? } — or null when it cannot be known yet.
+  // The plan's up vector: the town's authored browseHeading · north · or, FOLLOWING, the reader's true heading (the
+  // direction they face, from the app's compass; null — no sensor, no permission — holds north up).
+  const followHeading = () => {
+    const h = live.current.planHeading?.follow?.current
+    return Number.isFinite(h) ? h : 0
+  }
+  const planUp = () => {
+    const ph = live.current.planHeading
+    if (ph && typeof ph === 'object') return browseUpFromHeading(followHeading())
+    return ph === 'north' ? browseUpFromHeading(0) : browseUpFromHeading(live.current.scene?.browseHeading?.values?.value ?? 0)
+  }
   const destination = (s) => {
     const { scene: sc, size: { width: W, height: H } } = live.current
     const v = sc?.shots?.values || {}
@@ -104,12 +123,15 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
       if (!frame) {
         const why = `${stencil.center}:${ids.length}`
         if (!_warned.has(why)) { _warned.add(why); console.warn(`[Town] plan: no listed place has a building in this town (${ids.length} ids) — the plan frames the whole Extent`) }
-        frame = { x: stencil.center[0], z: stencil.center[1], radius: stencil.radius }
+        // The disclosure still names every id: none has a place inside the disc (frameDensest's own partition).
+        const at = (id) => (id == null ? null : live.current.places?.get(id))
+        const outside = ids.filter((id) => at(id) && Math.hypot(at(id).x - stencil.center[0], at(id).z - stencil.center[1]) > stencil.radius)
+        frame = { x: stencil.center[0], z: stencil.center[1], radius: stencil.radius, placed: 0, of: ids.length,
+          outside, unplaced: ids.filter((id) => !at(id)).map((id) => id ?? null) }
       }
       const tanH = Math.tan((fov * Math.PI) / 360)
       const alt = (frame.radius * pad) / (tanH * Math.min(fh, (W / H) * fw))
-      return { pos: [frame.x, alt, frame.z + 1], target: [frame.x, 0, frame.z], fov,
-        up: browseUpFromHeading(sc?.browseHeading?.values?.value ?? 0), overhead: true }
+      return { pos: [frame.x, alt, frame.z + 1], target: [frame.x, 0, frame.z], fov, up: planUp(), overhead: true, frame }
     }
     const [x, z] = live.current.streetAt
     const y = streetEyeY(x, z, v.street?.eyeHeight ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight)
@@ -142,8 +164,55 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     pending.current = null
     if (s !== PLAYBACK) { camera.position.set(...d.pos); land(s, d) }   // the movie places itself (MovieCamera)
     applyOffset(offsetFor(s))
+    framed(d)
     if (landed) end(landed)
     return true
+  }
+  // The plan says what it framed, and what it could not put down (frameDensest's disclosure).
+  const framed = (d) => {
+    const f = d?.frame
+    if (!f) return
+    live.current.onFramed?.({ x: f.x, z: f.z, radius: f.radius, placed: f.placed, of: f.of, outside: f.outside, unplaced: f.unplaced })
+  }
+
+  // ONE flight, whatever asked for it: a shot change, a re-frame (frameKey), a turn (planHeading). Under "reduce
+  // motion" it is a cut. `d` is the destination; `duration` comes from transitions.js.
+  const fly = (from, to, d, duration) => {
+    const landed = { from, to, t: 1, eased: 1, duration: 0, landed: true, interrupted: false }
+    if (prefersReducedMotion()) {
+      if (to !== PLAYBACK) { camera.position.set(...d.pos); land(to, d) }
+      applyOffset(offsetFor(to)); framed(d); end(landed)
+      return
+    }
+    const ctl = controls()
+    const fromTarget = ctl ? ctl.target.toArray()
+      : camera.getWorldDirection(_fwd).multiplyScalar(100).add(camera.position).toArray()
+    const fromOff = { ...off.current }, toOff = offsetFor(to)
+    flying.current = { from, to, d, fromOff, toOff }
+    framed(d)
+    report({ from, to, t: 0, eased: 0, duration, landed: false, interrupted: false })
+    tween.current.start({
+      from: { pos: camera.position.toArray(), target: fromTarget, fov: camera.fov, up: camera.up.toArray() },
+      to: { pos: d.pos, target: d.target, fov: d.fov, up: d.up },
+      duration, ease: 'easeInOutCubic', label: `→${to}`, chase: d.chase,
+      onUpdate: (p, t, fov, e, up) => {
+        camera.position.copy(p)
+        if (up.lengthSq() > 1e-6) camera.up.copy(up)
+        camera.lookAt(t)
+        if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix() }
+        const c = controls()
+        if (c) c.target.copy(t)
+        const fl = flying.current
+        applyOffset({ x: fromOff.x + ((fl?.toOff ?? toOff).x - fromOff.x) * e, y: fromOff.y + ((fl?.toOff ?? toOff).y - fromOff.y) * e })
+      },
+      onComplete: () => {
+        const fl = flying.current
+        flying.current = null
+        land(to, fl.d.chase ? { ...fl.d, target: controls()?.target.toArray() ?? fl.d.target } : fl.d)
+        applyOffset(fl.toOff)
+        end({ ...landed, duration })
+      },
+    })
   }
 
   // ── a shot change: fly, cut, or keep hands off ────────────────────────────────────
@@ -161,35 +230,32 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
 
     const d = destination(shot)
     if (!d) { cut(shot, landed); return }
-    const ctl = controls()
-    const fromTarget = ctl ? ctl.target.toArray()
-      : camera.getWorldDirection(_fwd).multiplyScalar(100).add(camera.position).toArray()
-    const duration = transitionMs(ENTRY[shot])
-    const fromOff = { ...off.current }, toOff = offsetFor(shot)
-    flying.current = { from, to: shot, d, fromOff, toOff }
-    report({ from, to: shot, t: 0, eased: 0, duration, landed: false, interrupted: false })
-    tween.current.start({
-      from: { pos: camera.position.toArray(), target: fromTarget, fov: camera.fov, up: camera.up.toArray() },
-      to: { pos: d.pos, target: d.target, fov: d.fov, up: d.up },
-      duration, ease: 'easeInOutCubic', label: `→${shot}`, chase: d.chase,
-      onUpdate: (p, t, fov, e, up) => {
-        camera.position.copy(p)
-        if (up.lengthSq() > 1e-6) camera.up.copy(up)
-        camera.lookAt(t)
-        if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix() }
-        const c = controls()
-        if (c) c.target.copy(t)
-        applyOffset({ x: fromOff.x + (toOff.x - fromOff.x) * e, y: fromOff.y + (toOff.y - fromOff.y) * e })
-      },
-      onComplete: () => {
-        const fl = flying.current
-        flying.current = null
-        land(shot, fl.d.chase ? { ...fl.d, target: controls()?.target.toArray() ?? fl.d.target } : fl.d)
-        applyOffset(toOff)
-        end({ from, to: shot, t: 1, eased: 1, duration, landed: true, interrupted: false })
-      },
-    })
+    fly(from, shot, d, transitionMs(ENTRY[shot]))
   }, [shot])
+
+  // ── the plan's ONE move: re-frame on a frameKey change (never on litIds alone — typing never moves the camera) ──
+  const lastKey = useRef(frameKey)
+  useLayoutEffect(() => {
+    if (Object.is(lastKey.current, frameKey)) return
+    lastKey.current = frameKey
+    if (shot !== 'plan' || live.current.flight === false) return
+    const d = destination('plan')
+    if (!d) return
+    if (tween.current.isActive()) tween.current.cancel()
+    flying.current = null
+    fly('plan', 'plan', d, transitionMs('frame'))
+  }, [frameKey])
+
+  // ── the rose: turn the plan to the town's heading or to north, keeping what the reader is looking at ──
+  const lastHeading = useRef(headingMode)
+  useLayoutEffect(() => {
+    if (lastHeading.current === headingMode) return
+    lastHeading.current = headingMode
+    if (shot !== 'plan' || live.current.flight === false || flying.current) return
+    const ctl = controls()
+    const target = ctl ? ctl.target.toArray() : [camera.position.x, 0, camera.position.z]
+    fly('plan', 'plan', { pos: camera.position.toArray(), target, fov: camera.fov, up: planUp(), overhead: true }, transitionMs('frame'))
+  }, [headingMode])
 
   // ── an inset change with no shot change re-fits at once ──────────────────────────
   useEffect(() => {
@@ -227,14 +293,28 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
 
   useFrame(() => {
     if (pending.current && !flying.current) cut(pending.current.shot, pending.current.landed)
-    if (!flying.current) return
-    const ctl = controls()
-    if (ctl) ctl.enabled = false                       // held off every frame, as production does
-    tween.current.tick(performance.now())
-    if (flying.current) {
-      const { t, eased, duration, at } = tween.current.progress()
-      report({ from: flying.current.from, to: flying.current.to, t, eased, duration, at, landed: false, interrupted: false })
+    // FOLLOWING: screen-up is the reader's heading every frame — no flight (the app's heading is already smoothed; a
+    // live follow must not ease). Entering and leaving follow are flights (the planHeading effect).
+    if (following && shot === 'plan' && !flying.current && live.current.flight !== false) {
+      const [ux, uy, uz] = browseUpFromHeading(followHeading())
+      if (Math.abs(camera.up.x - ux) > 1e-6 || Math.abs(camera.up.z - uz) > 1e-6) {
+        const ctl = controls()
+        camera.up.set(ux, uy, uz)
+        camera.lookAt(ctl ? ctl.target : _t.set(camera.position.x, 0, camera.position.z))
+        if (ctl?.enabled) ctl.update()
+      }
     }
+    if (flying.current) {
+      const ctl = controls()
+      if (ctl) ctl.enabled = false                       // held off every frame, as production does
+      tween.current.tick(performance.now())
+      if (flying.current) {
+        const { t, eased, duration, at } = tween.current.progress()
+        report({ from: flying.current.from, to: flying.current.to, t, eased, duration, at, landed: false, interrupted: false })
+      }
+    }
+    // LAST, so it is what this frame draws: the compass bearing of screen-up (0 = north up, 90 = east up) — the rose.
+    if (bearingRef) bearingRef.current = bearingOf(camera.getWorldDirection(_fwd), camera.up)
   })
   return null
 }

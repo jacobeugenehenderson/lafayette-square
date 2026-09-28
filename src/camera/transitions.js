@@ -20,6 +20,10 @@ export const SHOT_TRANSITION_MS = {
   hero:   2500,  // Browse → Hero
   browse: 2400,  // Hero → Browse (the deliberate slow — the romance beat)
   street: 1500,  // Browse → Street
+  // An in-plan move — the plan re-framing its places (<Town frameKey>) or turning to a new heading (<Town
+  // planHeading>). 1200 ms: the old player's flyTo, its only in-plan move (Scene.jsx). Not a shot: named here so no
+  // app or component carries the number.
+  frame:  1200,
 }
 
 // Duration for a transition INTO `enteringShot`. Default matches the legacy

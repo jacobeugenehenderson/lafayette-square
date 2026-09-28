@@ -7,7 +7,6 @@
  * notes a Δ-event so spikes are tagged with their cause.
  */
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import RegimeControls from '../components/RegimeControls.jsx'
 import Town from '../components/Town.jsx'
 import { QUALITY as QUALITY_PROFILES, townCanvasProps } from '../lib/qualityProfile.js'
 import useListings from '../hooks/useListings'
@@ -91,17 +90,15 @@ function ShotCamera({ shot, setShot }) {
     }
   }, [shot, gl, setShot])
 
-  // One controls definition per regime (src/lib/cameraRegimes.js), the same as
-  // production and Stage: Browse → plan (pan + zoom, no rotate — the hidden
-  // right-drag orbit is gone, Jacob 2026-09-26) · Street → street · Hero →
-  // playback (the keyframes own the camera; a drag leaves for Browse, above).
-  const regime = shot === 'browse' ? 'plan' : shot === 'street' ? 'street' : 'playback'
-  return <RegimeControls regime={regime} />
+  // The controls are <Town controls>'s: one regime per shot (src/lib/cameraRegimes.js).
+  return null
 }
 
 const TOOLBAR_SHOTS = SHOTS
 // Preview's Street button stands the eye where it always has (SHOTS.street's point); production stands it at a tap.
 const PREVIEW_STREET_AT = [SHOTS.street.position[0], SHOTS.street.position[2]]
+// ?frameloop=demand — inspect <Town paused> as the Ward runs it (Preview draws "always" by default).
+const PREVIEW_FRAMELOOP = new URLSearchParams(window.location.search).get('frameloop') === 'demand' ? 'demand' : 'always'
 // ?inset=top,right,bottom,left (CSS px) — inspect <Town viewInset>: the plan frames into what an app's UI leaves free.
 const PREVIEW_INSET = (() => {
   const q = new URLSearchParams(window.location.search).get('inset')
@@ -1022,7 +1019,7 @@ function PreviewTown() {
       // Depth, antialias and the shadow map are fixed when the Canvas is created: a tier switch re-creates it.
       key={quality.id}
       {...townCanvas}
-      frameloop="always"
+      frameloop={PREVIEW_FRAMELOOP}
       camera={{ ...townCanvas.camera, position: SHOTS.hero.position, fov: SHOTS.hero.fov }}
       // The Canvas is the quality profile's (townCanvasProps — the same profile <Town> is given); Preview adds only
       // preserveDrawingBuffer, so "Capture hero → preview" can read the slab frame off the canvas between renders.
@@ -1090,7 +1087,23 @@ const TIER_QUALITY = { desktop: QUALITY_PROFILES.desktop, 'phone-hi': QUALITY_PR
 function CanvasContents({ layers, shot, setShot, quality }) {
   // The town's flight between shots reports here; exposed for claims-a-shot-change-flies (an inspection surface).
   const flightRef = useRef(null)
-  useEffect(() => { window.__flight = flightRef; return () => { if (window.__flight === flightRef) delete window.__flight } }, [])
+  const bearingRef = useRef(null)
+  // An inspection surface for claims-a-shot-change-flies: drive the plan's one move, the rose, the lit set.
+  const [frameKey, setFrameKey] = useState(0)
+  const [planHeading, setPlanHeadingRaw] = useState('town')
+  const followRef = useRef(null)
+  const setPlanHeading = (h) => setPlanHeadingRaw(h === 'follow' ? { follow: followRef } : h)
+  const [litIds, setLitIds] = useState(null)
+  const [probePaused, setProbePaused] = useState(false)
+  const framedLog = useRef([])
+  const listingsRef = useRef([])
+  useEffect(() => {
+    window.__flight = flightRef
+    window.__townProbe = { bearingRef, followRef, framed: framedLog.current, setFrameKey, setPlanHeading, setPaused: setProbePaused,
+      setLitIds: (ids) => setLitIds(ids ? new Set(ids) : null),
+      get listingIds() { return listingsRef.current.map((l) => l.building_id).filter(Boolean) } }
+    return () => { if (window.__flight === flightRef) { delete window.__flight; delete window.__townProbe } }
+  }, [])
   // The phone bus's camera span: one per flight, closed when the town says it landed.
   const span = useRef(null)
   useEffect(() => { span.current = `camera:${shot}:${performance.now()}`; phoneBusStartSpan(span.current, 'camera', `→${shot}`, '#7dd3fc') }, [shot])
@@ -1099,6 +1112,7 @@ function CanvasContents({ layers, shot, setShot, quality }) {
   const town = useMemo(() => townForLook(lookId, 'Preview'), [lookId])
   // Preview takes no clicks (interactive={false}); it draws the listings the page loaded, as production does.
   const listings = useListings((s) => s.listings)
+  listingsRef.current = listings
   // ?dofDebug=1 paints the DoF CoC zones (green = sharp, red = full blur) — the
   // shared dofDriver reads window.__dofDebug.
   useEffect(() => {
@@ -1111,7 +1125,9 @@ function CanvasContents({ layers, shot, setShot, quality }) {
   return (
     <>
       <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
-        flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={PREVIEW_STREET_AT} viewInset={PREVIEW_INSET}
+        flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={PREVIEW_STREET_AT} viewInset={PREVIEW_INSET} controls
+        frameKey={frameKey} planHeading={planHeading} bearingRef={bearingRef} litIds={litIds ?? undefined} paused={probePaused}
+        onFramed={(f) => { framedLog.current.push(f); if (framedLog.current.length > 20) framedLog.current.shift() }}
         movers={PREVIEW_MOVERS} onMovers={PREVIEW_MOVERS ? (m) => { window.__movers = m } : undefined}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,

@@ -21,6 +21,12 @@
  *   3. a wheel mid-flight ends it where it is: the ref reports interrupted with t < 1.
  *   4. viewInset (Preview's ?inset=): the movie is full frame (no view offset); the plan lands with its target at the
  *      centre of the FREE region (± 3 px); mid-flight the offset has moved by the flight's own eased fraction.
+ *   5. the plan's one move and the rose (Preview's window.__townProbe): lighting places (litIds, as typing does) does
+ *      NOT move the camera; a frameKey change flies plan → plan on transitions.js' `frame` (1200 ms ± 1%) and onFramed
+ *      discloses { placed, of }; planHeading 'north' turns the map to bearing 0 and 'town' back to the town's
+ *      browseHeading (± 1°), read through bearingRef; { follow: headingRef } turns screen-up to the reader's true
+ *      heading and follows a change within 2 frames (no flight), holding north up while the heading is null; under prefers-reduced-motion a shot change is a cut (no frame
+ *      with 0 < t < 1). (Pausing is its own check: claims-a-paused-town-draws-nothing.)
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-a-shot-change-flies.mjs [--town=huron] [--base=http://localhost:5173]
  */
@@ -146,15 +152,17 @@ if (r2.error) { fails.push(r2.error) } else {
   const iL = s.findIndex((x) => x.landed && x.to === 'movie')
   if (iL < 0) fails.push('plan → movie: the flight never landed (to=movie)')
   else {
-    // The movie's own pace just after landing, against the steps at the landing itself.
-    const step = (k) => dist(s[k].p, s[k - 1].p)
-    const pace = s.slice(iL + 1, iL + 11).map((_, j) => step(iL + 1 + j)).filter(Number.isFinite).sort((a, b) => a - b)
+    // SPEED (m per ms), not per frame: a long frame at the landing (the movie's own pieces mount there) advances the
+    // movie's clock by that frame's time, a stutter, not a missed chase. The movie's own speed just after landing,
+    // against the speed at the landing itself.
+    const speed = (k) => dist(s[k].p, s[k - 1].p) / Math.max(1, s[k].ms - s[k - 1].ms)
+    const pace = s.slice(iL + 1, iL + 11).map((_, j) => speed(iL + 1 + j)).filter(Number.isFinite).sort((a, b) => a - b)
     const med = pace[pace.length >> 1]
-    const jump = Math.max(step(iL - 1), step(iL), step(iL + 1))
+    const jump = Math.max(speed(iL - 1), speed(iL), speed(iL + 1))
     const after = dist(s[s.length - 1].p, s[iL].p)
     if (after < 1e-3) fails.push('plan → movie: the camera stopped after landing — it landed on a still pose, not the moving path')
-    if (med > 0 && jump > 4 * med) fails.push(`plan → movie: a ${jump.toFixed(2)} m jump at the landing (median step ${med.toFixed(2)} m) — the flight did not chase the moving pose`)
-    console.log(`  plan → movie: landed at ${s[iL].ms.toFixed(0)} ms · largest step at landing ${jump.toFixed(2)} m (the movie's pace ${med.toFixed(2)} m/frame)`)
+    if (med > 0 && jump > 4 * med) fails.push(`plan → movie: the camera moves ${(jump * 1000).toFixed(1)} m/s at the landing, the movie ${(med * 1000).toFixed(1)} m/s — the flight did not chase the moving pose`)
+    console.log(`  plan → movie: landed at ${s[iL].ms.toFixed(0)} ms · ${(jump * 1000).toFixed(1)} m/s at the landing (the movie's own ${(med * 1000).toFixed(1)} m/s)`)
   }
 }
 
@@ -194,6 +202,74 @@ else {
   if (!mid.length) fails.push('the inset plan flight was not observed mid-flight')
   else if (offErr > 1) fails.push(`mid-flight the view offset is off the flight's eased fraction by ${offErr.toFixed(1)} px`)
   else console.log(`  inset top ${TOP}: plan target at y ${at.y.toFixed(0)} px (free centre ${want.toFixed(0)}) · offset rides the eased curve (≤ ${offErr.toFixed(2)} px)`)
+}
+
+// ── 5. the plan's one move, the rose, reduced motion ──────────────────────────────────
+await cdp('Page.navigate', { url: `${BASE}/preview.html?look=${TOWN}` }, S)
+let ready5 = false
+for (let i = 0; i < 90 && !ready5; i++) { await sleep(1000); ready5 = await js('!!(window.__townProbe && window.__flight?.current?.landed && window.__townProbe.listingIds.length)') }
+if (!ready5) fails.push('the Preview never offered window.__townProbe with its listings')
+else {
+  if ((await js('window.__flight.current.to')) !== 'plan') { await record('Browse', PLAN_MS + 800) }
+  await sleep(1500)
+  const pos = () => js('JSON.stringify(window.__camera.position.toArray())').then(JSON.parse)
+  // a. lighting places — what typing does — never moves the camera
+  const ids = await js('JSON.stringify(window.__townProbe.listingIds.slice(-6))').then(JSON.parse)
+  const p0 = await pos()
+  await js(`window.__townProbe.setLitIds(${JSON.stringify(ids)})`)
+  await sleep(1500)
+  const p1 = await pos()
+  if (dist(p0, p1) > 0.01) fails.push(`lighting ${ids.length} places moved the camera ${dist(p0, p1).toFixed(2)} m — typing must never move it`)
+  // b. frameKey: the one move, on transitions.js' `frame`, and the disclosure
+  const nFramed = await js('window.__townProbe.framed.length')
+  const fk = await js(`new Promise((resolve) => { const out = []; const t0 = performance.now()
+    window.__townProbe.setFrameKey((k) => k + 1)
+    const tick = () => { const f = window.__flight.current || {}; out.push({ t: f.t, at: f.at, to: f.to, from: f.from, landed: f.landed })
+      if (performance.now() - t0 < ${SHOT_TRANSITION_MS.frame} + 900) requestAnimationFrame(tick); else resolve(out) }
+    requestAnimationFrame(tick) })`)
+  const mv = fk.filter((x, k, a) => x.from === 'plan' && x.to === 'plan' && x.t > 0 && x.t < 1 && x.at != null && (!k || x.t !== a[k - 1].t))
+  if (mv.length < 4) fails.push(`a frameKey change did not fly plan → plan (${mv.length} flight frames seen)`)
+  else {
+    const n = mv.length, mx = mv.reduce((a, x) => a + x.at, 0) / n, mt = mv.reduce((a, x) => a + x.t, 0) / n
+    const ms = 1 / (mv.reduce((a, x) => a + (x.at - mx) * (x.t - mt), 0) / mv.reduce((a, x) => a + (x.at - mx) ** 2, 0))
+    if (!(Math.abs(ms - SHOT_TRANSITION_MS.frame) <= 0.01 * SHOT_TRANSITION_MS.frame)) fails.push(`the frameKey move runs ${ms.toFixed(0)} ms — transitions.js' frame says ${SHOT_TRANSITION_MS.frame}`)
+    const f = await js('JSON.stringify(window.__townProbe.framed[window.__townProbe.framed.length - 1])').then(JSON.parse)
+    if ((await js('window.__townProbe.framed.length')) <= nFramed || f?.of !== ids.length) fails.push(`onFramed did not disclose the frame of the ${ids.length} lit places (got ${JSON.stringify(f)})`)
+    else console.log(`  frameKey: plan → plan in ${ms.toFixed(0)} ms (frame ${SHOT_TRANSITION_MS.frame}) · onFramed placed ${f.placed}/${f.of}, outside ${f.outside.length}, unplaced ${f.unplaced.length}`)
+  }
+  // c. the rose
+  const heading = await js(`fetch('/baked/${TOWN}/scene.json').then(r => r.json()).then(s => s.browseHeading?.values?.value ?? 0)`)
+  const off = (a, b) => Math.abs(((a - b) % 360 + 540) % 360 - 180)
+  await js("window.__townProbe.setPlanHeading('north')"); await sleep(SHOT_TRANSITION_MS.frame + 800)
+  const bN = await js('window.__townProbe.bearingRef.current')
+  await js("window.__townProbe.setPlanHeading('town')"); await sleep(SHOT_TRANSITION_MS.frame + 800)
+  const bT = await js('window.__townProbe.bearingRef.current')
+  if (!(off(bN, 0) <= 1)) fails.push(`planHeading 'north' left the bearing at ${bN?.toFixed?.(1)}° — north up is 0`)
+  if (!(off(bT, heading) <= 1)) fails.push(`planHeading 'town' left the bearing at ${bT?.toFixed?.(1)}° — the town's browseHeading is ${heading}°`)
+  // c'. follow: the map turns with the reader's true heading every frame — no flight once following; null holds north
+  await js("window.__townProbe.followRef.current = 90; window.__townProbe.setPlanHeading('follow')"); await sleep(SHOT_TRANSITION_MS.frame + 800)
+  const bF1 = await js('window.__townProbe.bearingRef.current')
+  const followed = await js(`new Promise((resolve) => { const p = window.__townProbe; const f0 = p.bearingRef.current
+    p.followRef.current = 180; let n = 0
+    const tick = () => { if (++n < 3) requestAnimationFrame(tick); else resolve({ b: p.bearingRef.current, t: window.__flight.current.t }) }
+    requestAnimationFrame(tick) })`)
+  const bF0 = await js(`new Promise((resolve) => { const p = window.__townProbe; p.followRef.current = null; let n = 0
+    const tick = () => { if (++n < 3) requestAnimationFrame(tick); else resolve(p.bearingRef.current) }
+    requestAnimationFrame(tick) })`)
+  if (!(off(bF1, 90) <= 1)) fails.push(`following heading 90°, the bearing is ${bF1?.toFixed?.(1)}°`)
+  if (!(off(followed.b, 180) <= 1)) fails.push(`the heading moved to 180° and 2 frames later the bearing is ${followed.b?.toFixed?.(1)}° — a follow turns every frame, it does not fly`)
+  if (!(off(bF0, 0) <= 1)) fails.push(`a null heading while following left the bearing at ${bF0?.toFixed?.(1)}° 2 frames later — it holds north up`)
+  await js("window.__townProbe.setPlanHeading('town')"); await sleep(SHOT_TRANSITION_MS.frame + 800)
+  if (off(bF1, 90) <= 1 && off(followed.b, 180) <= 1 && off(bF0, 0) <= 1) console.log(`  follow: 90° → ${bF1.toFixed(1)}° · then 180° within 2 frames → ${followed.b.toFixed(1)}° · null → ${bF0.toFixed(1)}° (north)`)
+  if (off(bN, 0) <= 1 && off(bT, heading) <= 1) console.log(`  rose: north → ${bN.toFixed(1)}° · town → ${bT.toFixed(1)}° (browseHeading ${heading}°${heading === 0 ? ' — the same bearing: a turn is proven by claims-one-shot-flight\'s arithmetic, not here' : ''})`)
+  // d. reduced motion: a shot change is a cut
+  await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] }, S)
+  const rm = await record('Hero', 1200)
+  await cdp('Emulation.setEmulatedMedia', { features: [] }, S)
+  const mid = (rm.out || []).filter((x) => x.to === 'movie' && x.t > 0 && x.t < 1)
+  if (!(rm.out || []).some((x) => x.to === 'movie' && x.landed)) fails.push('under reduced motion the shot change never landed')
+  else if (mid.length) fails.push(`under prefers-reduced-motion the shot change flew (${mid.length} frames with 0 < t < 1) — it must cut`)
+  else console.log('  reduced motion: the shot change is a cut')
 }
 
 if (arg('dump')) (await import('node:fs')).writeFileSync(arg('dump'), JSON.stringify({ r1, r2, r3 }))

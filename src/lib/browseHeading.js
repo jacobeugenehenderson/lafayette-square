@@ -16,3 +16,13 @@ export function browseUpFromHeading(deg) {
   const r = deg * Math.PI / 180
   return [Math.sin(r), 0, -Math.cos(r)]
 }
+
+/**
+ * The compass bearing of screen-up on the ground, in degrees (0 = north up, 90 = east up) — the inverse of
+ * browseUpFromHeading for an overhead camera (its up vector), the view direction otherwise. What a rose shows.
+ * forward, up: {x, y, z} (the camera's world direction and up). Pure.
+ */
+export function bearingOf(forward, up) {
+  const v = Math.abs(forward.y) > 0.99 ? up : forward
+  return ((Math.atan2(v.x, -v.z) * 180) / Math.PI + 360) % 360
+}

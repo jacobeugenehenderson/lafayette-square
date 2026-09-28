@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 328,
+  "total": 329,
   "counts": {
     "safe": 179,
     "local-effect": 6,
-    "live": 143
+    "live": 144
   },
   "checks": [
     {
@@ -207,6 +207,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-paused-town-draws-nothing.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
     {

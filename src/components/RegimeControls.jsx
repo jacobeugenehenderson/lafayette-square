@@ -24,6 +24,7 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { REGIMES, REGIME_LIMIT_KEYS } from '../lib/cameraRegimes.js'
 import { getElevation } from '../utils/elevation'
+import { prefersReducedMotion } from '../lib/reducedMotion.js'
 
 // ── The orbit pivot is the GROUND UNDER THE MIDDLE OF THE SCREEN ─────────────
 // (Jacob, 2026-09-26, BRIEF-camera-regimes: "the orbit target is wherever the
@@ -242,7 +243,9 @@ function DeclaredControls({
     }
   }, [regime, r, invalidate])
 
-  const { mouseButtons, touches, enablePan: regimePan, ...params } = r
+  const { mouseButtons, touches, enablePan: regimePan, ...regimeParams } = r
+  // ⛔ Under "reduce motion" the camera does not coast after a gesture (kit-wide, Warden 2026-09-28).
+  const params = prefersReducedMotion() ? { ...regimeParams, enableDamping: false } : regimeParams
   // Stable, so a re-render does not detach/re-attach the instance (and clobber
   // a held modifier's button map).
   const attach = useCallback((c) => {
