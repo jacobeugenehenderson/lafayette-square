@@ -376,7 +376,8 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
              litT = texture2D(uLitTex, luv).r;
            }
            float selRoof = step(abs(vBId - uSelectedId), 0.5);
-           diffuseColor.rgb = mix(diffuseColor.rgb, uLitColor, step(0.5, vRoof) * clamp(max(litT * uLitStrength, selRoof * min(1.0, uLitStrength * 1.8)), 0.0, 1.0));`)
+           float litMix = step(0.5, vRoof) * clamp(max(litT * uLitStrength, selRoof * min(1.0, uLitStrength * 1.8)), 0.0, 1.0);
+           diffuseColor.rgb = mix(diffuseColor.rgb, uLitColor, litMix);`)
         // Selection / hover in-shader — one shared material can't set per-building
         // emissive. Same strengths as SlabBuildings, so a selected building reads
         // identically whichever geometry is drawing it.
@@ -384,7 +385,9 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
           `#include <emissivemap_fragment>
            float selT = step(abs(vBId - uSelectedId), 0.5);
            float hovT = step(abs(vBId - uHoveredId), 0.5);
-           totalEmissiveRadiance += vec3(selT * 0.2 + (1.0 - selT) * hovT * 0.133);`)
+           totalEmissiveRadiance += vec3(selT * 0.2 + (1.0 - selT) * hovT * 0.133);
+           // At night the lit roof glows by the same mix, as SlabBuildings' does.
+           totalEmissiveRadiance += uLitColor * litMix * uDarkFactor * 0.6;`)
 
       shadersRef.current.push(shader)
     }

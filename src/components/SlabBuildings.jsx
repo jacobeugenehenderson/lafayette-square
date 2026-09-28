@@ -639,7 +639,8 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
                   litT = texture2D(uLitTex, luv).r;
                 }
                 float selRoof = step(abs(vBId - uSelectedId), 0.5);
-                diffuseColor.rgb = mix(diffuseColor.rgb, uLitColor, clamp(max(litT * uLitStrength, selRoof * min(1.0, uLitStrength * 1.8)), 0.0, 1.0));`
+                float litMix = clamp(max(litT * uLitStrength, selRoof * min(1.0, uLitStrength * 1.8)), 0.0, 1.0);
+                diffuseColor.rgb = mix(diffuseColor.rgb, uLitColor, litMix);`
       }
       shader.fragmentShader = shader.fragmentShader.replace(
         '#include <color_fragment>',
@@ -653,7 +654,9 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
         `#include <emissivemap_fragment>
          float selT = step(abs(vBId - uSelectedId), 0.5);
          float hovT = step(abs(vBId - uHoveredId), 0.5);
-         totalEmissiveRadiance += vec3(selT * 0.2 + (1.0 - selT) * hovT * 0.133);`
+         totalEmissiveRadiance += vec3(selT * 0.2 + (1.0 - selT) * hovT * 0.133);
+         ${isRoof ? `// At night an albedo tint has no light to show it: the lit roof glows by the same mix, as the dark comes.
+         totalEmissiveRadiance += uLitColor * litMix * uDarkFactor * 0.6;` : ''}`
       )
 
       // ── Fragment: STREET LAMPS ON THE WALLS (Jacob, 2026-09-26). Every lamp within the pool's
