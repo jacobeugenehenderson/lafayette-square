@@ -506,6 +506,15 @@ place's rating is the town's own (the Ward's rating marks), never the owner's. F
 **Fix:** drop both from `EDITABLE`; the rating's writer is the operator's path only. ⏳ A `clasp` deploy: Jacob's go.
 Open for Jacob: whether `category`/`subcategory` stay Guardian-editable (they drive the map's lit set and tint).
 
+### F-22 · HIGH · A 6-character link code hands over another device's credential  *(new, 2026-09-28)*
+`apps-script/Code.js` GET `check-link-token` returns the SOURCE device's `device_hash` to anyone holding the code
+(6 hex chars from a UUID, 5-minute cache, unauthenticated), for pull and push tokens alike. The old player's pull
+mode then writes it into the new device as its own key (`adoptIdentity`), so linking copies the credential, Guardian
+and Keyholder roles included. Linking needs no credential: `getLinkedHashes` already links devices by shared handle.
+Found by Quire (◉, device link).
+**Fix:** `check-link-token` returns status only; push payloads stop carrying `device_hash`; pull mode is removed. The
+Ward links push-only and never reads `device_hash` from it. ⏳ A `clasp` deploy: Jacob's go.
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
