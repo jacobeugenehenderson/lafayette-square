@@ -1,3 +1,8 @@
+// ⛔ SUPERSEDED 2026-09-28 (Strand; flagged by Revetment, its author). This probe models the toe as a fixed fraction of
+// the crest (U_TOE_MAX from U_HI / EDGE_WANDER / EDGE_RAGGED) — the drape before the tide. The toe now has its own term
+// (revetmentDrape spanHere: toe + berm) and a floor from the town's LOW level (bake-revetment `lowM`, SlabRevetment
+// toeFloor): it runs down to the bed, at least one course below LOW. Its source guard read symbols that still exist
+// with a changed meaning, so it kept printing plausible numbers. ⛔ Do not run it; kept for its reasoning.
 // Revetment, 2026-09-24 — WHAT IS THE REVETMENT'S TOE FOUNDED ON?
 //
 // Marram saw jagged dark-blue lobes along huron's waterline. They are not a water artifact:
