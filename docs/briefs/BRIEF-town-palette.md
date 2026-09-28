@@ -47,6 +47,16 @@ under a plain "Not in a category" heading and reports the unknown ids — it nev
 **Check to add:** every category and type id in a town's published content exists in that town's manifest
 taxonomy, or the bake fails naming them.
 
+### And the town's rating mark (Jacob, 2026-09-28) — part of the Look, not yet planned in
+*"The town picks whatever they want and we put it in a vignette"* · *"the town can choose and change any time"* ·
+*"the emoji is another part of the town's Look."* Lafayette Square's is ⚜️; the kit's neutral default is ⭐.
+- A **Look channel** (`ratingMark`, one emoji), authored in Stage beside the palette, saved in the Look's
+  `design.json`, baked into `scene.json`, and surfaced in the town's manifest so the player reads it without
+  the authoring file. Changing it is re-authoring the Look.
+- The PLAYER draws it: a round vignette whose field is chosen at runtime by measuring the glyph's legible ink
+  on the device (never derived from the emoji's colours), and half-cut (full colour | desaturated) for halves.
+  That half is the Ward's (Quire); this brief carries only the channel.
+
 ## Checks
 - No colour literal in `categories.js` or any neon consumer; every category colour is read from
   the look.
