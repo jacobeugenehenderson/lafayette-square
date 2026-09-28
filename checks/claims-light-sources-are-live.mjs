@@ -194,10 +194,12 @@ console.log('⑧ EVERY NEON SWATCH COLOURS THE NEON (it existed for months and d
 {
   const surf = src('src/cartograph/CartographSurfaces.jsx'), bands = src('src/components/NeonBands.jsx')
   const ids = [...surf.matchAll(/id: '(neon_\w+)'/g)].map(m => m[1])
-  const reads = /materialColors\?\.\[`neon_\$\{key\}`\]/.test(bands)
+  // NeonBands colours each tube by categoryHex (src/lib/categoryColor.js), which reads the Look's materialColors.neon_<category>.
+  const palette = src('src/lib/categoryColor.js')
+  const reads = /\bcategoryHex\(/.test(bands) && /materialColors\?\.\[`neon_\$\{key\}`\]/.test(palette)
   if (!ids.length) bad('found no Neon swatches on the Surfaces card')
-  else reads ? ok(`${ids.length} swatches (${ids.join(', ')}) → NeonBands reads materialColors.neon_<category>`) : bad('NeonBands does not read materialColors.neon_<category> — the swatches drive nothing')
-  ;/CATEGORY_HEX\[k\]/.test(surf) ? ok('swatch defaults come from the renderer\'s own CATEGORY_HEX (one table)') : bad('the Surfaces neon defaults are a second copy of CATEGORY_HEX')
+  else reads ? ok(`${ids.length} swatches (${ids.join(', ')}) → NeonBands colours by categoryHex, which reads materialColors.neon_<category>`) : bad('NeonBands does not read materialColors.neon_<category> — the swatches drive nothing')
+  ;/NEUTRAL_CATEGORY_HEX/.test(surf) ? ok('swatch defaults come from the one neutral table (src/lib/categoryColor.js)') : bad('the Surfaces neon defaults are a second copy of the category colours')
 }
 
 console.log('⑨ THE LAMP COLOUR IS A KEYED FIELD OF THE LANTERN, AND LIVE IN EVERY STAGE')

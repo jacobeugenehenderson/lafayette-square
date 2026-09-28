@@ -9,7 +9,7 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import RegimeControls from '../components/RegimeControls.jsx'
 import Town from '../components/Town.jsx'
-import { deviceQuality, townCanvasProps } from '../lib/qualityProfile.js'
+import { QUALITY as QUALITY_PROFILES, townCanvasProps } from '../lib/qualityProfile.js'
 import useListings from '../hooks/useListings'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -1086,6 +1086,9 @@ export default function PreviewApp() {
   }
 
   const isPhone = mode !== 'desktop'
+  // The tier's profile — the one <Town> and the Canvas are both given.
+  const quality = TIER_QUALITY[mode]
+  const townCanvas = useMemo(() => townCanvasProps(quality), [quality])
   const phoneScale = usePhoneScale(isPhone)
 
   // Stage spans from below the app bar to the bottom of the window, leaving
@@ -1108,6 +1111,8 @@ export default function PreviewApp() {
 
   const canvas = (
     <Canvas
+      // Depth, antialias and the shadow map are fixed when the Canvas is created: a tier switch re-creates it.
+      key={quality.id}
       {...townCanvas}
       frameloop="always"
       camera={{ ...townCanvas.camera, position: SHOTS.hero.position, fov: SHOTS.hero.fov }}
@@ -1116,7 +1121,7 @@ export default function PreviewApp() {
       gl={{ ...townCanvas.gl, preserveDrawingBuffer: true }}
       onCreated={({ camera, gl }) => { camera.lookAt(...SHOTS.hero.target); _ogCaptureGL = gl }}
     >
-      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} />
+      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} quality={quality} />
     </Canvas>
   )
 
@@ -1167,11 +1172,14 @@ function resolvePreviewLookId() {
 
 // Preview's shots → the shot <Town> draws; its layer toggles → <Town layers>.
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
-const QUALITY = deviceQuality()
-// The Canvas this town is drawn through, from the same profile <Town> is given.
-const townCanvas = townCanvasProps(QUALITY)
+// ⭐ EACH TIER DRAWS WITH ITS OWN PROFILE (Jacob: "The entire Preview authoring space is designed to test these things
+// for use in a mobile space"). Phone hi / Phone lo pass the PHONE profile to <Town> AND to the Canvas (linear depth, no
+// shadow map, the hero-only pieces, the phone post-FX) — they differ in the pyramid degree. Before 2026-09-28 every
+// tier drew the device's own profile, so "phone" measured the phone's frame through a desktop renderer.
+// ▶ node checks/claims-the-canvas-is-the-towns.mjs
+const TIER_QUALITY = { desktop: QUALITY_PROFILES.desktop, 'phone-hi': QUALITY_PROFILES.phone, 'phone-lo': QUALITY_PROFILES.phone }
 
-function CanvasContents({ layers, shot, setShot }) {
+function CanvasContents({ layers, shot, setShot, quality }) {
   // The link between ShotCamera's tween and <Town>'s movie driver: Town fills the handle, the tween answers hold.
   const movieLink = useMemo(() => ({ handle: { current: null }, hold: () => false }), [])
   const movieHooks = useMemo(() => ({ handle: movieLink.handle, hold: () => movieLink.hold() }), [movieLink])
@@ -1190,7 +1198,7 @@ function CanvasContents({ layers, shot, setShot }) {
   // BasicLights — an inspection fallback lit only while the sky layer is off.
   return (
     <>
-      <Town town={town} lookId={lookId} quality={QUALITY} listings={listings} shot={TOWN_SHOT[shot]} interactive={false} movie={movieHooks}
+      <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false} movie={movieHooks}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,

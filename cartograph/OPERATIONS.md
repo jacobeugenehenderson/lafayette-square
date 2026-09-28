@@ -326,6 +326,7 @@ Unlike Stage, **Preview authors almost nothing** — its knobs set up an *inspec
 ### Device / environment selector — Desktop · Phone-hi · Phone-lo
 
 The top-bar device picker switches the render environment *and* the budget the gauges read against — the cost is benchmarked to **two real reference phones**, not the operator's desktop. Exclusive toggle; persists to `localStorage` (`preview.mode.v1`). Phone modes also draw the canvas inside the phone bezel (below).
+- ⭐ **Each tier draws with its own quality profile** — the phone tiers with the **phone** profile, in both `<Town>` and the Canvas (linear depth, no shadow map, the hero-only pieces, no building textures, the phone post-FX); Desktop with the desktop profile. The Canvas is re-created on a tier switch (depth can't change live). Until 2026-09-28 every tier drew the device's own profile, so "phone" measured the phone's frame through a desktop renderer. ▶ `node checks/claims-the-canvas-is-the-towns.mjs`
 - **`phone-hi` = iPhone 16 Pro Max** — Apple A18 Pro (6-core GPU), 8 GB RAM, 6.9″ 2868×1320 (~460 ppi). The best-case ceiling (and the device the PhoneFrame bezel is modeled on).
 - **`phone-lo` = Samsung Galaxy A54/A55** — the floor we *guarantee*. Anchored to the weaker A54 (Exynos 1380, Mali-G68 MP5, 8 GB, 6.4″ 2340×1080); the A55 (Exynos 1480, RDNA-based Xclipse 530) is the stronger sibling, so an A54-clean slab covers it.
 - **`desktop`** — a 60fps target with a generous-but-present draw/tri ceiling (trips only on a pathological scene / weak laptop GPU).
