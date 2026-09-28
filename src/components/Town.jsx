@@ -272,10 +272,22 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 function TownOptics({ quality }) {
   const camera = useThree((s) => s.camera)
   const gl = useThree((s) => s.gl)
-  useLayoutEffect(() => {
-    const far = SKY_RADIUS * 1.1   // past the dome (and the orbs inside it), with room for the camera's own lift
-    if (camera.far !== far) { camera.far = far; camera.updateProjectionMatrix() }
-  }, [camera])
+  // ⭐ HELD EVERY FRAME, on whatever camera is default. An app may make its own camera default at any time (the Ward's
+  // plan camera, a drei <PerspectiveCamera makeDefault>); set once per camera identity, such a camera drew ONLY SKY at
+  // R3F's far (Quire, measured 2026-09-28). A camera someone else gave a different far is corrected and SAID, once.
+  const FAR = SKY_RADIUS * 1.1     // past the dome (and the orbs inside it), with room for the camera's own lift
+  const told = useRef(new WeakSet())
+  const hold = (cam) => {
+    if (!cam || cam.far === FAR) return
+    if (!told.current.has(cam) && cam.far !== 1000 && cam.far !== 2000) {
+      told.current.add(cam)
+      console.warn(`[Town] the default camera's far plane was ${cam.far} — Town owns it (${FAR}, past the sky dome); set nothing on the app's camera`)
+    }
+    cam.far = FAR
+    cam.updateProjectionMatrix()
+  }
+  useLayoutEffect(() => { hold(camera) }, [camera])
+  useFrame((st) => hold(st.camera))
   useEffect(() => {
     const logDepth = !!gl.capabilities.logarithmicDepthBuffer
     if (!!quality.logDepth !== logDepth) console.error(`[Town] ⛔ the Canvas was created with ${logDepth ? 'logarithmic' : 'linear'} depth, but the quality profile "${quality.id}" asks for ${quality.logDepth ? 'logarithmic' : 'linear'} — create the Canvas with gl={{ logarithmicDepthBuffer: quality.logDepth }}`)

@@ -31,8 +31,10 @@ export function audit(files) {
   if (!town) return { f: [`${TOWN} does not exist`] }
   const t = code(town.src)
   // camera.far = <expr with SKY_RADIUS>, or = a const declared from SKY_RADIUS.
-  const viaConst = [...t.matchAll(/const\s+(\w+)\s*=\s*[^;\n]*SKY_RADIUS/g)].some(m => new RegExp(`camera\\.far\\s*=\\s*${m[1]}\\b`).test(t))
-  if (!/camera\.far\s*=\s*[^;\n]*SKY_RADIUS/.test(t) && !viaConst) f.push(`${TOWN} does not set the camera's far plane from SKY_RADIUS — the sky dome is clipped in any Canvas whose camera does not happen to reach it`)
+  const viaConst = [...t.matchAll(/const\s+(\w+)\s*=\s*[^;\n]*SKY_RADIUS/g)].some(m => new RegExp(`\\b\\w+\\.far\\s*=\\s*${m[1]}\\b`).test(t))
+  if (!/\b\w+\.far\s*=\s*[^;\n]*SKY_RADIUS/.test(t) && !viaConst) f.push(`${TOWN} does not set the camera's far plane from SKY_RADIUS — the sky dome is clipped in any Canvas whose camera does not happen to reach it`)
+  // Held EVERY FRAME on the default camera: an app may make its own camera default at any time (Quire, 2026-09-28).
+  if (!/useFrame\(\s*\(?\s*\w+\s*\)?\s*=>\s*\w+\(\s*\w+\.camera\s*\)\s*\)/.test(t)) f.push(`${TOWN} does not hold the far plane every frame on the default camera — an app's own default camera draws only sky`)
   if (!/logarithmicDepthBuffer/.test(t) || !/shadowMap/.test(t)) f.push(`${TOWN} does not report a Canvas whose depth buffer / shadow map disagrees with the quality profile`)
   for (const x of files) {
     const c = code(x.src)
