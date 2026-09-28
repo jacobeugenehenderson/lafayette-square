@@ -13,6 +13,10 @@
  * everything else truthy, is FALSE. The plan value is the guard's own vocabulary: 'browse' when it names the apps' shot,
  * else 'plan' (<Town shot>). An unguarded mount fails. ▶ the dissolve at the same edge: claims-objects-dissolve-with-the-ground.
  *
+ * ⭐ AND ITS MIRROR (Jacob, 2026-09-28: "it needs to NOT be cut out when it's in Hero; it's what fills in the
+ * horizon"): every guard, evaluated at the MOVIE shot ('movie' / 'hero') and at STREET, is TRUE — the horizon
+ * disc is there. Only plan ends at the rim.
+ *
  * ⛔ READ-ONLY. Usage: node checks/claims-the-plan-shot-ends-at-the-rim.mjs [--self-test]
  */
 import { readFileSync, readdirSync, statSync } from 'fs'
@@ -57,6 +61,12 @@ export function audit(files) {
       try { v = evalGuard(g, plan) } catch (e) { f.push(`${x.path}: cannot evaluate the HorizonDisc guard \`${g}\` (${e.message})`); continue }
       if (v) f.push(`${x.path}: <HorizonDisc> draws under the plan shot (shot='${plan}') — guard \`${g}\``)
       else info.push(`${x.path}: guard \`${g}\` is false at shot='${plan}'`)
+      // The mirror: the movie and the street shots DO draw the horizon.
+      const others = plan === 'browse' ? ['hero', 'street'] : ['movie', 'street']
+      for (const o of others) {
+        let w; try { w = evalGuard(g, o) } catch (e) { continue }
+        if (!w) f.push(`${x.path}: <HorizonDisc> does NOT draw in the ${o} shot — the horizon is cut out there — guard \`${g}\``)
+      }
     }
   }
   if (!total) f.push('no <HorizonDisc> mount found — the check cannot see the horizon')
@@ -71,6 +81,7 @@ if (process.argv.includes('--self-test')) {
   const cases = [
     ['Town drops the plan term', () => audit(swap(s => s.replace(/shot !== 'plan' && /g, ''))).f.length],
     ['a new unguarded mount', () => audit([...files, { path: 'src/fake/App.jsx', src: `<HorizonDisc lookId={l} />` }]).f.length],
+    ['the movie loses the horizon', () => audit(swap(s => s.replace(/shot !== 'plan' && /g, "shot === 'plan' && "))).f.length],
     ['a guard that ignores the shot', () => audit([...files, { path: 'src/fake/App.jsx', src: `{heavy && <HorizonDisc lookId={l} />}` }]).f.length],
   ]
   let bad = 0
