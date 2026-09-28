@@ -21,26 +21,36 @@ slab).
 3. `waterLevels()` in the same file already refuses a record it cannot read (*"a missing level is
    never read as 0"*). Keep that standard.
 
-## The approach to evaluate first — it fits the lighter-slab rule
-A tide is a sum of known harmonic constituents. NOAA publishes each station's constituents. So:
-**bake the station's constituents** (a few dozen numbers) **and compute the tide in the player**,
-for any date, forever, with no live API call and no table of predictions in the slab.
-- ⚠️ **To verify before building:** that CO-OPS serves harmonic constituents for the station the
-  bake names, their units and datum, and that the computed curve matches NOAA's published
-  predictions for that station over a test window. That comparison **is** the check.
-- A town that is not tidal has no tide face and no tide data: absent, never zero.
-- A tidal town whose constituents cannot be fetched fails the bake loudly.
-- Outside the US there is no CO-OPS. The source is per region; name it in the intake catalogue
-  when a non-US tidal town arrives, and fail loudly until then.
+## The ruling (Jacob, 2026-09-28): the LEVELS are ours, the TIMING is NOAA's
+*"We decide the 'high' and 'low' tides, and clamp them to the times."*
+- **The levels are the town's:** its authored low and high (terrain.json `water`: MLLW and MHW, and the flood
+  extents baked at them). NOAA's predicted HEIGHTS are never drawn.
+- **The timing is NOAA's:** the station's predicted highs and lows. At each predicted high the water stands exactly
+  at our high (phase 1), at each low exactly at our low (phase 0), and between two adjacent extrema it eases by a
+  half-cosine — so the phase never leaves [0, 1] by construction, with no plateaus.
+- **One timing source:** the Almanac's high/low times and the water's phase come from the same `tideExtrema`.
+- **How:** the station's harmonic constituents (CO-OPS `harcon`, a few dozen numbers) and MSL above MLLW reach the
+  player through the town manifest (`bake-manifest.mjs` → `tide`); `cartograph/tide.mjs` computes the extrema for
+  any date. No live API call, no prediction table in the slab, no terrain re-bake.
+- A town that is not tidal has no `tide` in its manifest: absent, never zero. A tidal town whose constituents
+  cannot be fetched fails the acquisition loudly. Outside the US there is no CO-OPS: name the regional source in the
+  intake catalogue when a non-US tidal town arrives, and fail loudly until then.
+
+## Findings
+- ⛔ `src/components/SlabRevetment.jsx`, the `levels` memo: `try { return waterLevels(terrainWater()) } catch { return
+  null }` swallows the refusal `waterLevels` exists to make, so a town with an unreadable water record draws a dry
+  wetted band and says nothing. Filed for the shore's owner; not fixed here.
 
 ## Consumers
-- The Almanac's back face in The Ward: the tide now, the next high and low.
-- `tidePhase()` in the water shader: the water level moves with the real tide.
+- The Almanac's back face in The Ward: the next high and low times.
+- `tidePhase()` (the water surface and the shore's wetted band): between the town's own low and high, on NOAA's
+  clock. ⚠️ This changes what a tidal town's water looks like — Jacob's eye gate, sequenced with the shore's work.
 
 ## Checks
-- Computed vs NOAA's published predictions for the named station, over a week, within a stated
-  tolerance.
-- Every town with `water.tidal === true` has constituents in its slab; every other town has none.
+- The computed extrema against NOAA's own published predictions for the named station, over a week, within a
+  stated tolerance (times and heights of the turning points).
+- Every town with `water.tidal === true` has `tide` in its manifest; every other town has none.
+- The water's phase stays in [0, 1] over a year of predicted times.
 
 ## Docs
 Rewrite `cartograph/FEATURES.md` (the water section) for the capability, and the intake catalogue
