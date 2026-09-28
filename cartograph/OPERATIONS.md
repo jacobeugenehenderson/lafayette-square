@@ -301,6 +301,8 @@ horizon ground disc is gone — the town's edge is the neighborhood fade, set in
 
 ## Preview — the publish-confidence gate
 
+**Which town:** `?look=<id>`, else the town Stage last had open, else **none** — Preview offers the towns to choose from; it never falls back to Lafayette Square. ▶ `node checks/claims-a-look-link-opens-that-town.mjs`
+
 GPU profiler · device frame · layer-toggle matrix · TOD scrub. Walks the *shipping* render with a profiler strapped on. **The layer-toggle matrix is *ephemeral inspection* ("what am I measuring") — never persisted as policy; "all-on" equals production.** Separately, the operator authors **deployment policy** here: the per-platform channel-listing (desktop vs. mobile inclusion), the one thing Preview writes. Keystone Reference: **`PREVIEW.md`** (the model — what it inspects + how to read the numbers). *(In flight — the virtual-device emulator + device-budget gauges + thermal/memory/transition readouts: `HANDOFF-preview-measurement.md`.)*
 
 ### Publish — where the buttons actually push

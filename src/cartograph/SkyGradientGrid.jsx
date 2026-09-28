@@ -23,11 +23,10 @@ import {
   SKY_BANDS, SKY_HOURS,
   resolveSkyAtMinute, buildMosaicForDate,
 } from './skyGrid.js'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 
 const BAND_ORDER = ['high', 'mid', 'low', 'horizon', 'sunGlow']  // top-to-bottom
-const LAT = INSTANCE.geography.lat
-const LON = INSTANCE.geography.lon
+// The town being drawn — the PLACED one (lib/townPlace.js), read at use; never the boot town's geography at load.
 const PREVIEW_SAMPLES = 96  // ~15 min per sample for the 24h strip
 
 function rgbCss(rgb) {
@@ -69,7 +68,7 @@ function EditorGrid({ sky, currentDate, tick }) {
 
   // Solar-noon hour for the active date (for the sun-overhead marker).
   const solarNoonHour = useMemo(() => {
-    const t = SunCalc.getTimes(currentDate, LAT, LON)
+    const t = SunCalc.getTimes(currentDate, townPlace().lat, townPlace().lon)
     return t.solarNoon.getHours() + t.solarNoon.getMinutes() / 60
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate])
@@ -202,8 +201,8 @@ function NowPreview({ sky, tick }) {
     const tod = useTimeOfDay.getState()
     const minute = tod.getMinuteOfDay()
     const r = resolveSkyAtMinute(sky, minute, null)
-    const sunPos = SunCalc.getPosition(tod.currentTime, LAT, LON)
-    const moonPos = SunCalc.getMoonPosition(tod.currentTime, LAT, LON)
+    const sunPos = SunCalc.getPosition(tod.currentTime, townPlace().lat, townPlace().lon)
+    const moonPos = SunCalc.getMoonPosition(tod.currentTime, townPlace().lat, townPlace().lon)
     const moonIllum = SunCalc.getMoonIllumination(tod.currentTime).fraction
     return {
       resolved: r,

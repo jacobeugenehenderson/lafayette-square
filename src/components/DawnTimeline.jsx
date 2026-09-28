@@ -7,10 +7,9 @@ import {
   getDawnWindow, dateToFraction, fractionToDate, getHiLo,
 } from '../lib/dawnTimeline'
 import { NAMED_TOD_SLOTS } from '../cartograph/animatedParam'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 
-const LATITUDE = INSTANCE.geography.lat
-const LONGITUDE = INSTANCE.geography.lon
+// The town being drawn — the PLACED one (lib/townPlace.js), read at use; never the boot town's geography at load.
 
 // Map slot ids → SunCalc time keys. Dawn is the window's left edge, not a
 // SunCalc value, so it gets its own special-case below.
@@ -61,7 +60,7 @@ function daysInYear(year) {
 // SunCalc table.
 function buildTickTimes(window) {
   const mid = new Date((window.start.getTime() + window.end.getTime()) / 2)
-  const t = SunCalc.getTimes(mid, LATITUDE, LONGITUDE)
+  const t = SunCalc.getTimes(mid, townPlace().lat, townPlace().lon)
   const ticks = [
     window.start,    // dawn
     t.sunrise,
@@ -70,7 +69,7 @@ function buildTickTimes(window) {
     t.sunset,
     t.dusk,
     t.night,
-    SunCalc.getTimes(window.end, LATITUDE, LONGITUDE).nadir,  // deep night: the nadir before the next dawn
+    SunCalc.getTimes(window.end, townPlace().lat, townPlace().lon).nadir,  // deep night: the nadir before the next dawn
     window.end,      // next-day dawn
   ].filter(d => d && !isNaN(d.getTime()))
   ticks.sort((a, b) => a.getTime() - b.getTime())
@@ -129,14 +128,14 @@ export function TodStrip({ showHiLo = false, useCelsius = false }) {
 
   const waypoints = useMemo(() => {
     const mid = new Date((dawnWindow.start.getTime() + dawnWindow.end.getTime()) / 2)
-    const times = SunCalc.getTimes(mid, LATITUDE, LONGITUDE)
+    const times = SunCalc.getTimes(mid, townPlace().lat, townPlace().lon)
     return NAMED_TOD_SLOTS
       .map(slot => ({
         ...slot,
         // Deep night is the nadir BEFORE the window's closing dawn: `times` is the window's middle day, whose own
         // nadir fell before the window opened.
         time: slot.id === 'dawn' ? dawnWindow.start
-          : slot.id === 'deep' ? SunCalc.getTimes(dawnWindow.end, LATITUDE, LONGITUDE).nadir
+          : slot.id === 'deep' ? SunCalc.getTimes(dawnWindow.end, townPlace().lat, townPlace().lon).nadir
           : times[SUNCALC_KEY[slot.id]],
       }))
       .filter(w => w.time && w.time >= dawnWindow.start && w.time <= dawnWindow.end)

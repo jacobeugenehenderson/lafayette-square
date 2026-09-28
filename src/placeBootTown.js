@@ -10,4 +10,5 @@
 import { INSTANCE } from './instance.js'
 import { placeTown } from './components/TownPlace.jsx'
 
-placeTown(INSTANCE, INSTANCE.lookId)
+// An authoring page with no town open places none: nothing is drawn until a town is chosen.
+if (INSTANCE) placeTown(INSTANCE, INSTANCE.lookId)

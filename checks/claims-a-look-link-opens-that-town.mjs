@@ -12,6 +12,10 @@
  * ?scene=, each resolve NO town and log an error naming what was asked — never the default town.
  * And a COLD Stage (no link, nothing stored) opens NO town: no Look, no scene, no town's data fetched, and the Look
  * picker shows every town to choose from (Jacob's standing order: LS is never the fallback).
+ * ⭐ AND THE PAGE'S INSTANCE IS THAT TOWN (BRIEF-no-default-town, 2026-09-28): ?scene=huron opened huron in the store
+ * while src/instance.js's INSTANCE stayed Lafayette Square — so Stage handed <Town> LS's listings and every neon on huron
+ * drew UNKNOWN slate. Asserted: under ?scene=<town>, INSTANCE is that town's Look and the listings' buildings exist in
+ * that town's slab; a cold Stage has INSTANCE null.
  *
  * Usage: node checks/claims-a-look-link-opens-that-town.mjs
  */
@@ -44,14 +48,14 @@ ws.onmessage = (e) => { const m = JSON.parse(e.data)
   if (m.method === 'Runtime.exceptionThrown') thrown.get(m.sessionId)?.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text) }
 
 // Open a URL in a fresh tab (fresh storage: a throwaway profile, each tab's storage cleared first) and read the store.
-async function open(query, pick = null) {
+async function open(query, pick = null, page = 'cartograph.html') {
   const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' })
   const { sessionId: S } = await cdp('Target.attachToTarget', { targetId, flatten: true })
   errs.set(S, []); townFetches.set(S, []); thrown.set(S, [])
   await cdp('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] }, S)
   await cdp('Runtime.enable', {}, S); await cdp('Page.enable', {}, S)
   await cdp('Storage.clearDataForOrigin', { origin: BASE, storageTypes: 'all' }, S)
-  await cdp('Page.navigate', { url: `${BASE}/cartograph.html?${query}` }, S)
+  await cdp('Page.navigate', { url: `${BASE}/${page}?${query}` }, S)
   let st = null
   for (let i = 0; i < 40; i++) {
     await sleep(1000)
@@ -66,11 +70,19 @@ async function open(query, pick = null) {
     await sleep(12000)
     picked = (await cdp('Runtime.evaluate', { awaitPromise: true, returnByValue: true, expression: `(async () => { const u = performance.getEntriesByType('resource').map(e => e.name).filter(n => n.includes('/stores/useCartographStore.js')).pop(); const s = (await import(u)).default.getState(); return { activeLookId: s.activeLookId, scene: s.scene } })()` }, S)).result.value
   }
+  // The page's INSTANCE and the listings Stage hands <Town>.
+  const inst = (await cdp('Runtime.evaluate', { awaitPromise: true, returnByValue: true, expression: `(async () => {
+    const n = performance.getEntriesByType('resource').map(e => e.name)
+    const im = n.filter(u => /\\/src\\/instance\\.js/.test(u)).pop(), lm = n.filter(u => /\\/hooks\\/useListings\\.js/.test(u)).pop()
+    const out = {}
+    try { out.instance = im ? ((await import(im)).INSTANCE?.lookId ?? null) : 'not loaded' } catch (e) { out.instance = 'ERR ' + e.message }
+    try { out.buildingIds = lm ? (await import(lm)).default.getState().listings.filter(l => !l._bare).map(l => l.building_id).filter(Boolean) : [] } catch (e) { out.buildingIds = [] }
+    return out })()` }, S).catch(() => null))?.result?.value ?? {}
   const exceptions = thrown.get(S)
   const e = errs.get(S), fetched = [...new Set(townFetches.get(S))]
   const picker = await cdp('Runtime.evaluate', { returnByValue: true, expression: `[...document.querySelectorAll('.carto-looks-option')].map(b => b.textContent.trim())` }, S).then(r => r.result.value).catch(() => null)
   await cdp('Target.closeTarget', { targetId })
-  return { st, errors: e, fetched, picker, picked, exceptions }
+  return { st, errors: e, fetched, picker, picked, exceptions, instance: inst.instance, buildingIds: inst.buildingIds || [] }
 }
 
 const fails = []
@@ -91,14 +103,24 @@ for (const [q, names] of refusals) {
   if (!ok) fails.push(`?${q} settled on look "${st?.activeLookId}" scene "${st?.scene}"${loud ? '' : ' with no error naming ' + names.join(' + ')} — it must resolve no town and say why`)
   console.log(`${ok ? '✅' : '⛔'} ?${q} → look ${st?.activeLookId} · ${loud ? 'refused loudly' : 'NO error naming it'}`)
 }
+// ⭐ ?scene=<town>: the page's INSTANCE is that town, and so are the listings Stage draws with.
+{
+  const t = towns.find(x => x.id === 'huron') || towns.find(x => x.scene !== 'lafayette-square')
+  const { st, instance, buildingIds } = await open(`scene=${t.scene}`)
+  const slab = new Set(JSON.parse(await (await fetch(`${BASE}/baked/${t.id}/buildings.json`)).text()).buildings.map(b => b.id))
+  const inSlab = buildingIds.filter(id => slab.has(id)).length
+  const ok = st?.activeLookId === t.id && instance === t.id && buildingIds.length > 0 && inSlab === buildingIds.length
+  if (!ok) fails.push(`?scene=${t.scene} opened look "${st?.activeLookId}" with INSTANCE "${instance}" — ${inSlab} of ${buildingIds.length} listing building(s) exist in ${t.id}'s slab: Stage draws one town with another's content`)
+  console.log(`${ok ? '✅' : '⛔'} ?scene=${t.scene} → look ${st?.activeLookId} · INSTANCE ${instance} · listings in its slab ${inSlab}/${buildingIds.length}`)
+}
 // The cold boot: no link, nothing stored.
 {
-  const { st, fetched, picker } = await open('')
+  const { st, fetched, picker, instance } = await open('')
   const names = towns.map(t => t.name || t.id)
   const shown = (picker || []).filter(p => names.some(n => p.includes(n)))
-  const ok = st?.activeLookId == null && st?.scene == null && !fetched.length && shown.length === towns.length
-  if (!ok) fails.push(`a cold Stage (no link, nothing stored) opened look "${st?.activeLookId}" scene "${st?.scene}", fetched ${fetched.length ? fetched.join(', ') + "'s data" : 'no town'}, picker shows ${shown.length} of ${towns.length} towns — it must open none and offer them all`)
-  console.log(`${ok ? '✅' : '⛔'} cold Stage → look ${st?.activeLookId} · scene ${st?.scene} · fetched [${fetched.join(', ')}] · picker ${shown.length}/${towns.length}`)
+  const ok = st?.activeLookId == null && st?.scene == null && !fetched.length && shown.length === towns.length && instance == null
+  if (!ok) fails.push(`a cold Stage (no link, nothing stored) opened look "${st?.activeLookId}" scene "${st?.scene}" with INSTANCE "${instance}", fetched ${fetched.length ? fetched.join(', ') + "'s data" : 'no town'}, picker shows ${shown.length} of ${towns.length} towns — it must open none and offer them all`)
+  console.log(`${ok ? '✅' : '⛔'} cold Stage → look ${st?.activeLookId} · scene ${st?.scene} · INSTANCE ${instance} · fetched [${fetched.join(', ')}] · picker ${shown.length}/${towns.length}`)
   // ...and choosing a town from that picker opens it.
   const t = towns.find(x => x.scene !== 'lafayette-square') || towns[0]
   const { picked, errors, exceptions } = await open('', t.name || t.id)
@@ -109,6 +131,15 @@ for (const [q, names] of refusals) {
   if (exceptions.length) fails.push(`the cold Stage threw ${exceptions.length} exception(s): ${exceptions.slice(0, 2).map(x => x.slice(0, 140)).join(' | ')}`)
   console.log(`${ok2 && !exceptions.length ? '✅' : '⛔'} cold Stage, choose ${t.id} → look ${picked?.activeLookId} · scene ${picked?.scene} · ${exceptions.length} exception(s)`)
   for (const x of errors) console.log(`   ⓘ console error: ${x.slice(0, 160)}`)
+}
+// A cold Preview (no ?look=, nothing stored): no town drawn — the chooser offers them all.
+{
+  const { instance, picker, exceptions } = await open('', null, 'preview')
+  const names = towns.map(t => t.name || t.id)
+  const shown = (picker || []).filter(p => names.some(n => p.includes(n)))
+  const ok = instance == null && shown.length === towns.length && !exceptions.length
+  if (!ok) fails.push(`a cold Preview drew INSTANCE "${instance}" and offered ${shown.length} of ${towns.length} towns${exceptions.length ? ` (${exceptions.length} exception(s))` : ''} — it must draw none and offer them all`)
+  console.log(`${ok ? '✅' : '⛔'} cold Preview → INSTANCE ${instance} · chooser ${shown.length}/${towns.length} · ${exceptions.length} exception(s)`)
 }
 ws.close(); cleanup()
 if (fails.length) { console.log(`\n⛔ FAIL — ${fails.length}\n   ${fails.join('\n   ')}`); process.exit(1) }

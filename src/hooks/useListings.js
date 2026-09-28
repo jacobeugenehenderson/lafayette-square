@@ -107,7 +107,7 @@ function _buildBareBuildingListings(buildings) {
           stories ? `${stories}-story` : null,
           style ? `${style} style.` : null,
           zoningLabel ? `Zoned ${zoningLabel}.` : null,
-          historicStatus === 'contributing' ? `Contributing structure in the ${INSTANCE.profile.historicDistrictName}.` : null,
+          historicStatus === 'contributing' ? `Contributing structure in the ${INSTANCE?.profile?.historicDistrictName}.` : null,
           sqft ? `${sqft.toLocaleString()} sq ft.` : null,
         ].filter(Boolean).join(' '),
         _bare: true,
@@ -116,10 +116,11 @@ function _buildBareBuildingListings(buildings) {
 }
 
 // landmarks + menus resolved → fill the derived lookups and seed the store.
-export const _landmarksReady = Promise.all([
+// No town open (an authoring page's INSTANCE is null): no town's content is loaded.
+export const _landmarksReady = Promise.all(INSTANCE ? [
   loadInstanceData(INSTANCE.lookId, 'landmarks').ready,
   loadInstanceData(INSTANCE.lookId, 'menus').ready,
-]).then(([staticData, menuData]) => {
+] : [null, null]).then(([staticData, menuData]) => {
   const menus = menuData || {}
   landmarksWithMenus = (staticData?.landmarks || []).map(lm =>
     menus[lm.id] ? normalizeListingMenu({ ...lm, menu: menus[lm.id] }) : lm

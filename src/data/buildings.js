@@ -27,7 +27,8 @@ export let buildings = []
 export let buildingMap = {}
 export let buildingCount = 0
 
-export const ready = loadInstanceData(INSTANCE.lookId, 'buildings').ready.then(data => {
+// No town open (an authoring page's INSTANCE is null): no town's buildings are loaded.
+export const ready = (INSTANCE ? loadInstanceData(INSTANCE.lookId, 'buildings').ready : Promise.resolve(null)).then(data => {
   buildings = (data && data.buildings) || []
   buildingCount = buildings.length
   const map = {}

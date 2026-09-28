@@ -84,10 +84,23 @@ function readLookParam() {
     // values in every town's Stage. Only a Look with a map counts.
     const authoringKey = document.querySelector('meta[name="ward-authoring"]')?.getAttribute('content')
     if (authoringKey) {
+      // ⭐ AN AUTHORING PAGE'S INSTANCE IS THE TOWN IT OPENS, OR NONE (BRIEF-no-default-town, 2026-09-28). ?scene= names
+      // the town the store opens, so it names INSTANCE too — Stage opened by ?scene=huron kept Lafayette Square's
+      // INSTANCE and drew huron with LS's listings. Nothing named, nothing stored: NO town (the Look picker offers them);
+      // it used to start as Lafayette Square.
+      const towns = (looksIndex.looks || []).filter(l => l.scene)
       const stored = localStorage.getItem(authoringKey)
-      if (stored && (looksIndex.looks || []).some(l => l.id === stored && l.scene)) return stored
-      console.error(`[instance] ⛔ the authoring app has no town open yet (localStorage '${authoringKey}' is ` +
-        `${stored ? `"${stored}", which is not a town` : 'empty'}); starting as "${DEFAULT_LOOK}" until you pick one`)
+      const scene = new URLSearchParams(window.location.search).get('scene')
+      if (scene) {
+        const own = towns.filter(l => l.scene === scene)
+        const pick = own.find(l => l.id === stored) || own[0]
+        if (pick) return pick.id
+        console.error(`[instance] ⛔ ?scene=${scene} names no town's Look — no town is opened`)
+        return null
+      }
+      if (stored && towns.some(l => l.id === stored)) return stored
+      console.warn(`[instance] the authoring app has no town open (localStorage '${authoringKey}' is ${stored ? `"${stored}", not a town` : 'empty'}) — choose one`)
+      return null
     }
     const seg = window.location.pathname.split('/').filter(Boolean)[0]
     if (seg && (looksIndex.looks || []).some(l => l.id === seg)) return seg
@@ -149,6 +162,7 @@ export function mapForLook(lookId) {
 // different questions and this used to answer both with "lafayette-square".
 function resolveInstance() {
   const lookId = readLookParam()
+  if (lookId === null) return null   // an authoring page with no town open — no identity is guessed
   const mapId = mapForLook(lookId)
   if (!mapId) {
     console.error(
@@ -184,7 +198,7 @@ export function setPieceOf(lookId) { return townForLook(lookId)?.setPiece ?? nul
 export function townForLook(lookId, where = 'a caller') {
   // ⛔ No Look ⇒ no town. This used to answer the BOOT town for a null Look (Stage drew it under no Look).
   if (!lookId) throw new Error(`[instance] ⛔ townForLook(${lookId}) from ${where} — no Look, no town; pass the Look being drawn`)
-  if (lookId === INSTANCE.lookId) return INSTANCE
+  if (INSTANCE && lookId === INSTANCE.lookId) return INSTANCE
   const map = mapForLook(lookId)
   const town = map && instanceForMap(map)
   return town ? { ...town, lookId, mapId: map } : null
@@ -213,7 +227,7 @@ const PUBLIC_CONTACT_FIELDS = [
   ['cary.email',      (i) => i?.cary?.email],
   ['cary.smsNumber',  (i) => i?.cary?.smsNumber],
 ]
-{
+if (INSTANCE) {
   const missing = PUBLIC_CONTACT_FIELDS.filter(([, read]) => !read(INSTANCE)).map(([k]) => k)
   if (missing.length) {
     console.error(

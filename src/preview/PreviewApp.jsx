@@ -280,7 +280,7 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
         style={{ fontSize: 13, textDecoration: 'none' }}>← Stage</a>
       {divider('d1')}
       <span className="rounded-lg px-3 py-1 glass-text-dim"
-        style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>{INSTANCE.name} ▼</span>
+        style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>{INSTANCE?.name ?? 'Choose a town'} ▼</span>
       <div style={{ flex: 1 }} />
       {btn('desktop',  'Desktop',  mode === 'desktop',  () => { setMode('desktop');  noteEvent('mode→desktop') })}
       {btn('phone-hi', 'Phone hi', mode === 'phone-hi', () => { setMode('phone-hi'); noteEvent('mode→phone-hi') })}
@@ -1034,7 +1034,31 @@ function Row({ k, v, warn }) {
 }
 
 // Feeds CascadedShadows the SAME key vector CelestialBodies publishes — never re-derived.
+// ⭐ NO TOWN, NO DRAWING (BRIEF-no-default-town, 2026-09-28). Preview with no ?look= and no town open drew Lafayette
+// Square; it now offers the towns. ▶ node checks/claims-a-look-link-opens-that-town.mjs
+function TownChooser() {
+  const [towns, setTowns] = useState(null)
+  useEffect(() => {
+    fetch('/looks/index.json').then(r => r.json()).then(j => setTowns((j.looks || []).filter(l => l.scene))).catch(() => setTowns([]))
+  }, [])
+  return (
+    <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#141416', color: '#ddd' }}>
+      <div className="town-chooser" style={{ minWidth: 320 }}>
+        <div style={{ fontSize: 13, opacity: 0.7, marginBottom: 12 }}>Preview · Choose a town</div>
+        {(towns || []).map(t => (
+          <a key={t.id} className="carto-looks-option" href={`?look=${encodeURIComponent(t.id)}`}
+            style={{ display: 'block', padding: '8px 12px', color: '#eee', textDecoration: 'none' }}>{t.name || t.id}</a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function PreviewApp() {
+  return resolvePreviewLookId() ? <PreviewTown /> : <TownChooser />
+}
+
+function PreviewTown() {
   // ⛔ NOT ALWAYS HERO (2026-09-05). Preview opened on the Hero shot every
   // time, which dates from when arriving on the hero was the emotionally
   // resonant thing to do. It is now just a camera you have to click out of
@@ -1165,9 +1189,9 @@ export default function PreviewApp() {
 }
 
 function resolvePreviewLookId() {
-  if (typeof window === 'undefined') return INSTANCE.lookId
+  if (typeof window === 'undefined') return INSTANCE?.lookId ?? null
   const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : INSTANCE.lookId
+  return m ? decodeURIComponent(m[1]) : (INSTANCE?.lookId ?? null)
 }
 
 // Preview's shots → the shot <Town> draws; its layer toggles → <Town layers>.

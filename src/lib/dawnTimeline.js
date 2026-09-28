@@ -1,12 +1,11 @@
 import SunCalc from 'suncalc'
 import { NAMED_TOD_SLOTS_BY_ID } from '../cartograph/animatedParam'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from './townPlace.js'
 
-const LATITUDE = INSTANCE.geography.lat
-const LONGITUDE = INSTANCE.geography.lon
+// The town being drawn — the PLACED one (lib/townPlace.js), read at use; never the boot town's geography at load.
 
 function getDawn(date) {
-  return SunCalc.getTimes(date, LATITUDE, LONGITUDE).dawn
+  return SunCalc.getTimes(date, townPlace().lat, townPlace().lon).dawn
 }
 
 /**
@@ -52,7 +51,7 @@ export function fractionToDate(fraction, window) {
 export function getWaypoints(window) {
   // Use the middle of the window to compute sun times for the relevant day
   const mid = new Date((window.start.getTime() + window.end.getTime()) / 2)
-  const times = SunCalc.getTimes(mid, LATITUDE, LONGITUDE)
+  const times = SunCalc.getTimes(mid, townPlace().lat, townPlace().lon)
 
   // Pulls colors from the canonical NAMED_TOD_SLOTS_BY_ID so this older
   // narrower-window helper stays in sync with the chip strip + DawnTimeline.

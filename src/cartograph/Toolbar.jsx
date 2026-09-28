@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import SourcesPanel from './SourcesPanel.jsx'
-import { INSTANCE, mapForLook } from '../instance.js'
 
 const SHOTS = ['browse', 'hero', 'street']
 
@@ -247,15 +246,11 @@ function LooksMenu() {
     }
   }, [open])
 
-  // ⭐ A different TOWN reloads the page, so every module that reads the town at load
-  // (INSTANCE: the sun's latitude/longitude, the sky grid, the terrain) re-reads it.
-  // The page starts as the stored town (src/instance.js), which setActiveLook persists.
+  // A pick that changes TOWN is followed by the page (CartographApp's one INSTANCE rule reloads onto it).
   const pick = async (id) => {
     setOpen(false)
     if (id === activeLookId) return
     await setActiveLook(id)
-    const map = mapForLook(id)
-    if (map && map !== INSTANCE.mapId) window.location.reload()
   }
   const onNew = () => {
     setOpen(false)

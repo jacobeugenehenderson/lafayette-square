@@ -1,6 +1,6 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
+status: BUILT 2026-09-28 (authoring scope) — DEFAULT_LOOK remains only for non-authoring pages (the old player), which go at cutover
+dispatched: yes (Mortise)
 written: 2026-09-28
 evict-when: node checks/claims-a-look-link-opens-that-town.mjs (extended by §4) is green with DEFAULT_LOOK gone from src/instance.js
 -->
@@ -50,3 +50,18 @@ CartographApp.jsx, PreviewApp.jsx, main.jsx closures ∩ files reading `INSTANCE
 
 ## 5. Out of scope
 The old player (§3). The production Worker's host→town resolution. Any Look authoring change.
+
+## 6. Built (2026-09-28)
+- **The harm, measured red first:** `cartograph.html?scene=huron` opened huron in the store with `INSTANCE` still
+  lafayette-square — 0 of 83 listing buildings existed in huron's slab, so every neon drew UNKNOWN slate.
+- `src/instance.js`: an authoring page (`<meta name="ward-authoring">` — Stage AND Preview now) resolves `?look=` →
+  `?scene=` (that scene's Look) → the stored Look → **none** (INSTANCE = null). Non-authoring pages keep DEFAULT_LOOK
+  until cutover.
+- Content and place take the town or nothing: useListings, data/buildings.js load nothing for no town; placeBootTown
+  places none; DawnTimeline, dawnTimeline.js, SkyGradientGrid read the placed town at use; Stage's still-minute sync
+  waits for a placed town.
+- ONE rule replaces the Toolbar's pick-only reload: when the store's town is not INSTANCE's (a pick, ?scene=, the Looks
+  alignment) Stage reloads onto it — never over an unsaved edit (blocked loudly), once per town.
+- Preview with no town offers a chooser.
+- ▶ `node checks/claims-a-look-link-opens-that-town.mjs` — ?scene=huron: INSTANCE huron, listings 288/288 in its slab;
+  cold Stage: INSTANCE null, picker 6/6; cold Preview: no town, chooser 6/6.

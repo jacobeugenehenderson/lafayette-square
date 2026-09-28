@@ -1,3 +1,4 @@
+import { placedLook, onPlaceMoved } from '../lib/townPlace.js'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { installShadowMaskDebug } from '../utils/shadowMaskDebug.js'
@@ -43,7 +44,7 @@ import { transitionMs } from '../camera/transitions.js'
 import ribbonsRaw from '../data/ribbons.json'
 import lsNeighborhoodBoundary from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
-import { townForLook } from '../instance.js'
+import { townForLook, INSTANCE, mapForLook } from '../instance.js'
 
 // UI
 import Toolbar from './Toolbar.jsx'
@@ -85,14 +86,16 @@ const TOD_PLACE_KEY = 'stage-tod-place'
   tod.setHour(12)
 })()
 // A stopped clock is a still moment: channels keyed on the tile it stands on show their key, fades aside.
+// No town placed yet (a cold Stage, the picker open): the tile depends on the town's sun, so there is none until one is.
 const _syncStill = () => {
   const s = useTimeOfDay.getState()
-  if (s.isLive) return setTodStill(null)
+  if (s.isLive || !placedLook()) return setTodStill(null)
   const m = s.getMinuteOfDay()
   setTodStill(m, todSlotAtMinute(m, s.currentTime))   // the tile the editor targets at this stopped minute
 }
 _syncStill()
 useTimeOfDay.subscribe(_syncStill)
+onPlaceMoved(_syncStill)
 let _todPlaceTimer = null
 useTimeOfDay.subscribe(() => {
   if (_todPlaceTimer) return                                 // at most twice a second, so playback is saved too
@@ -918,6 +921,27 @@ export default function CartographApp() {
   // The active Look's installation — <Town town>, never the page's boot one.
   // ⛔ No Look yet ⇒ no town (townForLook refuses a null Look).
   const activeTown = useMemo(() => (activeLookId ? townForLook(activeLookId, 'Stage') : null), [activeLookId])
+  // ⭐ THE PAGE FOLLOWS ITS TOWN (BRIEF-no-default-town, 2026-09-28). Modules that read the town at load (INSTANCE —
+  // the listings, the buildings, the page's content) are the page's; when the store's town is not INSTANCE's — by a pick,
+  // a ?scene= link or the Looks alignment — the page reloads onto it (the store has persisted it; the URL is set to it).
+  // It used to reload only on a pick, so ?scene=huron drew huron with Lafayette Square's listings. ⛔ Never over unsaved
+  // edits: that blocks the switch, loudly. ⛔ Once per town: a reload that still disagrees says so and stops.
+  useEffect(() => {
+    if (!activeLookId) return
+    const map = mapForLook(activeLookId)
+    if (!map || map === INSTANCE?.mapId) { try { sessionStorage.removeItem('stage-follow-town') } catch { /* ignore */ } ; return }
+    const st = useCartographStore.getState()
+    if (st._saveDesignDebounced.pending?.()) {
+      console.error(`[stage] ⛔ "${activeLookId}" is open in the store but the page is still "${INSTANCE?.lookId ?? 'no town'}" — an edit is unsaved, so the page is NOT reloaded onto it. Save (or wait for the autosave), then reload.`)
+      useCartographStore.setState({ status: `Switching to ${activeLookId} waits for an unsaved edit — reload once it has saved` })
+      return
+    }
+    let tried = null; try { tried = sessionStorage.getItem('stage-follow-town') } catch { /* ignore */ }
+    if (tried === activeLookId) { console.error(`[stage] ⛔ reloaded onto "${activeLookId}" but the page is still "${INSTANCE?.lookId ?? 'no town'}" — not reloading again`); return }
+    try { sessionStorage.setItem('stage-follow-town', activeLookId) } catch { /* ignore */ }
+    const url = new URL(window.location.href); url.searchParams.delete('look'); url.searchParams.set('scene', map)
+    window.location.replace(url.toString())
+  }, [activeLookId])
   // Stage places the town it is on, like every app's entry: in Designer no <Town> is mounted, and the sun, the
   // moon, the season and Stage's own panels still follow the active town. (Terrain is reloaded above.)
   useLayoutEffect(() => { if (activeTown) placeTown(activeTown, activeLookId) }, [activeTown, activeLookId])

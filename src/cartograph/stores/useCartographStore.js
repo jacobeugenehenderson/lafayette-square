@@ -2675,6 +2675,8 @@ const useCartographStore = create((set, get) => ({
       if (t) clearTimeout(t)
       t = setTimeout(runSave, 300)
     }
+    // An edit whose save has not gone out yet — a page switch now would drop it.
+    fn.pending = () => t !== null
     fn.flush = () => {
       if (t === null) return Promise.resolve()
       clearTimeout(t)
