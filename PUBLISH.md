@@ -69,6 +69,9 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
   serving Worker says so in `<meta name="ward-asset-base">`; the production Worker also writes
   `ward-look` (the town, which `?look=` cannot override) and `ward-domain` (for every public URL the player
   builds — QR codes, shares — through `src/lib/townOrigin.js`). ⭐ The one exception is the device-link QR, which hands a session to the same person's other device and so stays on the site they are using (`currentSiteUrl`). ⛔ A runtime player with no tag refuses to load.
+- ⛔ **Deploy order for a Worker: (a) publish every town it serves WITH its `manifest.json`, THEN (b) deploy.**
+  Both Workers decide a town is live by its manifest, so the reverse order darkens the town. Each
+  `wrangler deploy` runs the check first and refuses. ▶ `node checks/claims-a-worker-deploy-darkens-no-town.mjs`
 - ⛔ **No fallback across towns, anywhere.** A host with no record, a town with no prod slab, another town's
   key — each 404s by name. ▶ `node checks/claims-a-production-host-serves-only-its-own-town.mjs`
 - **Lafayette Square is the legacy exception until its cutover:** `lafayette-square.com` (§1, GitHub Pages

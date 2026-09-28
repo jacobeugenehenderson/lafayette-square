@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 321,
+  "total": 323,
   "counts": {
-    "safe": 175,
+    "safe": 176,
     "local-effect": 6,
-    "live": 140
+    "live": 141
   },
   "checks": [
     {
@@ -12,8 +12,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/pour-code.mjs, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "imports cartograph/pour-code.mjs, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -56,7 +56,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -71,7 +71,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command \u2014 cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -81,8 +81,8 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "computed import() with no readable target — runs arbitrary modules",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -90,7 +90,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -105,7 +105,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -117,8 +117,8 @@
         "opens a WebSocket",
         "writeFileSync",
         "deletes files",
-        "runs `npx` \u2014 reaches out",
-        "runs `/Applications/Google Chrome.app/Contents` \u2014 not a known-local command"
+        "runs `npx` — reaches out",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
     {
@@ -140,7 +140,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -154,7 +154,7 @@
       "file": "checks/claims-a-listing-keeps-its-id.mjs",
       "tier": "safe",
       "why": [
-        "computed import of cartograph/listing-identity.js \u2014 read, safe"
+        "computed import of cartograph/listing-identity.js — read, safe"
       ]
     },
     {
@@ -162,7 +162,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -180,12 +180,12 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "runs `/Applications/Google Chrome.app/Contents` \u2014 not a known-local command"
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
     {
@@ -206,7 +206,7 @@
       "file": "checks/claims-a-pour-adds-no-gitignore-lines.mjs",
       "tier": "safe",
       "why": [
-        "runs `git ls-files -z -- cartograph/` \u2014 local, read-only"
+        "runs `git ls-files -z -- cartograph/` — local, read-only"
       ]
     },
     {
@@ -227,7 +227,7 @@
       "file": "checks/claims-a-published-edit-reaches-the-map.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/lib/publishedLayerApply.js \u2014 read, safe"
+        "computed import of src/lib/publishedLayerApply.js — read, safe"
       ]
     },
     {
@@ -237,7 +237,7 @@
       "why": [
         "deletes files",
         "copies/renames files",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -248,14 +248,14 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "imports arborist/generate-salon.js, which can: writeFile, runs `node` \u2014 not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
       "file": "checks/claims-a-scene-is-named-not-numbered.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/lib/sceneSlug.js \u2014 read, safe"
+        "computed import of src/lib/sceneSlug.js — read, safe"
       ]
     },
     {
@@ -263,7 +263,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -274,8 +274,8 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "runs `/Applications/Google Chrome.app/Contents` \u2014 not a known-local command"
+        "computed import() with no readable target — runs arbitrary modules",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
     {
@@ -302,7 +302,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -310,21 +310,21 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-a-tile-is-one-tree.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) @gltf-transform/core, @gltf-transform/extensions \u2014 not read from source"
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
       ]
     },
     {
       "file": "checks/claims-a-town-event-is-not-clock-dependent.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/hooks/useEvents.js \u2014 read, safe"
+        "computed import of src/hooks/useEvents.js — read, safe"
       ]
     },
     {
@@ -349,14 +349,14 @@
         "calls fetch()",
         "opens a WebSocket",
         "deletes files",
-        "runs `/Applications/Google Chrome.app/Contents` \u2014 not a known-local command"
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
       ]
     },
     {
       "file": "checks/claims-a-towns-colours-are-its-own.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) x \u2014 not read from source"
+        "imports package(s) x — not read from source"
       ]
     },
     {
@@ -364,8 +364,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import of src/tokens/categories.js \u2014 read, safe",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "computed import of src/tokens/categories.js — read, safe",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -380,7 +380,15 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-worker-deploy-darkens-no-town.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()"
       ]
     },
     {
@@ -402,7 +410,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -413,7 +421,7 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "runs `node` \u2014 not a known-local command"
+        "runs `node` — not a known-local command"
       ]
     },
     {
@@ -441,7 +449,7 @@
       "file": "checks/claims-atlas-uv-rect-survives-the-bake.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) @gltf-transform/core, @gltf-transform/extensions \u2014 not read from source"
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
       ]
     },
     {
@@ -450,7 +458,7 @@
       "reasonClass": "unreadable",
       "why": [
         "deletes files",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -471,7 +479,7 @@
       "file": "checks/claims-bake-progress-shows-the-route.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module \u2014 hermetic"
+        "computed import of a data: module — hermetic"
       ]
     },
     {
@@ -479,7 +487,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -487,8 +495,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read",
-        "imports package(s) clipper-lib \u2014 not read from source"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -496,7 +504,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -532,8 +540,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import of cartograph/building-union.mjs \u2014 read, safe",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "computed import of cartograph/building-union.mjs — read, safe",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -565,7 +573,7 @@
         "writeFileSync",
         "mkdirSync",
         "deletes files",
-        "imports cartograph/bake-coast-distance.js, which can: writeFileSync, mkdirSync, imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/bake-coast-distance.js, which can: writeFileSync, mkdirSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -579,7 +587,7 @@
       "file": "checks/claims-contact-sms-rate-limit.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module \u2014 hermetic"
+        "computed import of a data: module — hermetic"
       ]
     },
     {
@@ -601,7 +609,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -609,7 +617,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -673,7 +681,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/coupler-fold-legs.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/coupler-fold-legs.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -709,8 +717,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -731,7 +739,7 @@
       "file": "checks/claims-every-category-has-a-full-treatment.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/tokens/categories.js \u2014 read, safe"
+        "computed import of src/tokens/categories.js — read, safe"
       ]
     },
     {
@@ -739,7 +747,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -747,14 +755,14 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-every-ground-surface-takes-the-lamp.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) vite \u2014 not read from source"
+        "imports package(s) vite — not read from source"
       ]
     },
     {
@@ -762,7 +770,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-lamps.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/lamp-spacing.mjs, which can: writeFileSync, imports cartograph/derive-lamps.mjs, which can: writeFileSync, mkdirSync"
+        "imports cartograph/bake-lamps.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/lamp-spacing.mjs, which can: writeFileSync, imports cartograph/derive-lamps.mjs, which can: writeFileSync, mkdirSync"
       ]
     },
     {
@@ -777,7 +785,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/structures.mjs, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/structures.mjs, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -792,7 +800,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -800,7 +808,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command \u2014 cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -821,7 +829,7 @@
       "file": "checks/claims-every-town-has-a-mark.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/instances/registry.js \u2014 read, safe"
+        "computed import of src/instances/registry.js — read, safe"
       ]
     },
     {
@@ -830,7 +838,7 @@
       "reasonClass": "unreadable",
       "why": [
         "deletes files",
-        "imports arborist/bake-trees.js, which can: writeFile, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command \u2014 cannot be read, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` \u2014 not a known-local command"
+        "imports arborist/bake-trees.js, which can: writeFile, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
       ]
     },
     {
@@ -838,7 +846,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -853,8 +861,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/speedContext.mjs, which can: child_process with a non-literal command \u2014 cannot be read",
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read",
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -862,7 +870,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -870,7 +878,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -908,7 +916,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -923,7 +931,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command \u2014 cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -945,7 +953,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -953,14 +961,14 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-hero-degrade-static.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) three \u2014 not read from source"
+        "imports package(s) three — not read from source"
       ]
     },
     {
@@ -968,14 +976,14 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-highway-handedness.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module \u2014 hermetic"
+        "computed import of a data: module — hermetic"
       ]
     },
     {
@@ -983,14 +991,14 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-highway-sweep-is-finite.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module \u2014 hermetic"
+        "computed import of a data: module — hermetic"
       ]
     },
     {
@@ -1026,8 +1034,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import of src/instances/registry.js \u2014 read, safe",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "computed import of src/instances/registry.js — read, safe",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1049,7 +1057,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1057,7 +1065,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1071,7 +1079,7 @@
       "file": "checks/claims-leaf-pack-cells-agree.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) sharp \u2014 not read from source"
+        "imports package(s) sharp — not read from source"
       ]
     },
     {
@@ -1107,7 +1115,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1121,7 +1129,7 @@
       "file": "checks/claims-memory-index-health.mjs",
       "tier": "safe",
       "why": [
-        "runs `git ls-files -z` \u2014 local, read-only"
+        "runs `git ls-files -z` — local, read-only"
       ]
     },
     {
@@ -1157,7 +1165,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read",
+        "child_process with a non-literal command — cannot be read",
         "imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
@@ -1166,7 +1174,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1216,8 +1224,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -1253,7 +1261,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1261,7 +1269,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1275,7 +1283,7 @@
       "file": "checks/claims-open-now-has-one-home-and-handles-midnight.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/lib/openNow.js \u2014 read, safe"
+        "computed import of src/lib/openNow.js — read, safe"
       ]
     },
     {
@@ -1312,7 +1320,7 @@
       "reasonClass": "outbound",
       "why": [
         "calls fetch()",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1320,7 +1328,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1328,7 +1336,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1336,8 +1344,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1359,7 +1367,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1367,7 +1375,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-content.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/bake-content.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1375,7 +1383,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1383,7 +1391,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1391,7 +1399,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1399,7 +1407,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1407,7 +1415,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1415,7 +1423,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1423,7 +1431,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1431,7 +1439,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1439,7 +1447,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1447,7 +1455,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1455,7 +1463,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1463,7 +1471,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1471,7 +1479,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1479,7 +1487,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1487,7 +1495,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1495,7 +1503,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1503,7 +1511,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1511,7 +1519,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1519,7 +1527,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1548,7 +1556,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1569,14 +1577,14 @@
       "file": "checks/claims-references-are-sound.mjs",
       "tier": "safe",
       "why": [
-        "runs `git ls-files --error-unmatch $` \u2014 local, read-only"
+        "runs `git ls-files --error-unmatch $` — local, read-only"
       ]
     },
     {
       "file": "checks/claims-repour-changes-nothing.mjs",
       "tier": "safe",
       "why": [
-        "runs `git show HEAD:${P}` \u2014 local, read-only"
+        "runs `git show HEAD:${P}` — local, read-only"
       ]
     },
     {
@@ -1598,7 +1606,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/applySnapshot.mjs, which can: writeFileSync, deletes files, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1648,7 +1656,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1670,7 +1678,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1685,9 +1693,9 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "imports cartograph/proceduralSky.js, which can: child_process with a non-literal command \u2014 cannot be read",
-        "imports package(s) suncalc \u2014 not read from source"
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/proceduralSky.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) suncalc — not read from source"
       ]
     },
     {
@@ -1718,8 +1726,8 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -1727,7 +1735,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1742,7 +1750,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1750,7 +1758,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1774,10 +1782,10 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read",
-        "computed import of cartograph/geography.mjs \u2014 read, safe",
-        "computed import of src/cartograph/streetProfiles.js \u2014 read, safe"
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read",
+        "computed import of cartograph/geography.mjs — read, safe",
+        "computed import of src/cartograph/streetProfiles.js — read, safe"
       ]
     },
     {
@@ -1785,7 +1793,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -1793,7 +1801,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1814,7 +1822,7 @@
       "file": "checks/claims-the-capture-frame-is-the-clip-frame.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer \u2014 not read from source"
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source"
       ]
     },
     {
@@ -1822,7 +1830,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1830,7 +1838,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1845,8 +1853,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read",
-        "imports package(s) clipper-lib \u2014 not read from source"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -1870,7 +1878,7 @@
       "file": "checks/claims-the-directory-has-exactly-one-order.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/lib/listingOrder.js \u2014 read, safe"
+        "computed import of src/lib/listingOrder.js — read, safe"
       ]
     },
     {
@@ -1878,7 +1886,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1893,8 +1901,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read",
-        "imports package(s) clipper-lib \u2014 not read from source"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -1912,10 +1920,17 @@
       ]
     },
     {
+      "file": "checks/claims-the-horizon-takes-the-towns-cover.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-key-light-is-a-real-body.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) suncalc, three \u2014 not read from source"
+        "imports package(s) suncalc, three — not read from source"
       ]
     },
     {
@@ -1929,15 +1944,15 @@
       "file": "checks/claims-the-light-follows-the-weather.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/lib/almanac-eval.js \u2014 read, safe",
-        "computed import of src/lib/weather-payload.js \u2014 read, safe",
-        "computed import of src/lib/townPlace.js \u2014 read, safe",
-        "computed import of src/instances/registry.js \u2014 read, safe",
-        "computed import of src/lib/weather-signals.js \u2014 read, safe",
-        "computed import of src/lib/sky-scalars.js \u2014 read, safe",
-        "computed import of src/hooks/useSkyState.js \u2014 read, safe",
-        "computed import of src/hooks/useAtmosphere.js \u2014 read, safe",
-        "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` \u2014 local, read-only"
+        "computed import of src/lib/almanac-eval.js — read, safe",
+        "computed import of src/lib/weather-payload.js — read, safe",
+        "computed import of src/lib/townPlace.js — read, safe",
+        "computed import of src/instances/registry.js — read, safe",
+        "computed import of src/lib/weather-signals.js — read, safe",
+        "computed import of src/lib/sky-scalars.js — read, safe",
+        "computed import of src/hooks/useSkyState.js — read, safe",
+        "computed import of src/hooks/useAtmosphere.js — read, safe",
+        "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
       ]
     },
     {
@@ -1945,14 +1960,14 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
       "file": "checks/claims-the-plan-opens-on-its-places.mjs",
       "tier": "safe",
       "why": [
-        "computed import of src/lib/frameDensest.js \u2014 read, safe"
+        "computed import of src/lib/frameDensest.js — read, safe"
       ]
     },
     {
@@ -1960,7 +1975,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -1975,7 +1990,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "runs `git` \u2014 not a known-local command"
+        "runs `git` — not a known-local command"
       ]
     },
     {
@@ -1997,7 +2012,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2061,7 +2076,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2069,7 +2084,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2077,7 +2092,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2141,16 +2156,16 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read",
-        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` \u2014 not a known-local command",
-        "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer \u2014 not read from source"
+        "child_process with a non-literal command — cannot be read",
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command",
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source"
       ]
     },
     {
       "file": "checks/claims-twilio-webhook-guard.mjs",
       "tier": "safe",
       "why": [
-        "computed import of a data: module \u2014 hermetic"
+        "computed import of a data: module — hermetic"
       ]
     },
     {
@@ -2172,7 +2187,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2201,14 +2216,14 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "runs `git` \u2014 not a known-local command"
+        "runs `git` — not a known-local command"
       ]
     },
     {
       "file": "checks/claims-zero-separation-offset.mjs",
       "tier": "safe",
       "why": [
-        "imports package(s) clipper-lib \u2014 not read from source"
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -2216,7 +2231,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/generate-salon.js, which can: writeFile, runs `node` \u2014 not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
@@ -2224,7 +2239,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command \u2014 cannot be read"
+        "imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2234,8 +2249,8 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2252,7 +2267,7 @@
       "reasonClass": "outbound",
       "why": [
         "calls fetch()",
-        "child_process with a non-literal command \u2014 cannot be read",
+        "child_process with a non-literal command — cannot be read",
         "references a hosted-service credential"
       ]
     },
@@ -2261,7 +2276,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2271,8 +2286,8 @@
       "why": [
         "writeFileSync",
         "deletes files",
-        "child_process with a non-literal command \u2014 cannot be read",
-        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target \u2014 runs arbitrary modules, computed import() with no readable target \u2014 runs arbitrary modules"
+        "child_process with a non-literal command — cannot be read",
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2282,7 +2297,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2292,7 +2307,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2301,8 +2316,8 @@
       "reasonClass": "unreadable",
       "why": [
         "writeFileSync",
-        "imports src/lib/tileGround.js, which can: child_process with a non-literal command \u2014 cannot be read",
-        "imports package(s) sharp \u2014 not read from source"
+        "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) sharp — not read from source"
       ]
     },
     {
@@ -2312,8 +2327,8 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2321,8 +2336,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "runs `git ls-files` \u2014 local, read-only",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "runs `git ls-files` — local, read-only",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2330,8 +2345,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target \u2014 runs arbitrary modules",
-        "runs `git ls-files \"*.md\"` \u2014 local, read-only"
+        "computed import() with no readable target — runs arbitrary modules",
+        "runs `git ls-files \"*.md\"` — local, read-only"
       ]
     },
     {
@@ -2341,7 +2356,7 @@
       "why": [
         "deletes files",
         "copies/renames files",
-        "runs `node` \u2014 not a known-local command"
+        "runs `node` — not a known-local command"
       ]
     },
     {
@@ -2349,7 +2364,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "runs `git` \u2014 not a known-local command"
+        "runs `git` — not a known-local command"
       ]
     },
     {
@@ -2357,7 +2372,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` \u2014 not a known-local command"
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
       ]
     },
     {
@@ -2365,7 +2380,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2374,7 +2389,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import of scratch/.stamp-probe/tileGround.stamp.mjs \u2014 read, safe"
+        "computed import of scratch/.stamp-probe/tileGround.stamp.mjs — read, safe"
       ]
     },
     {
@@ -2382,8 +2397,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "runs `grep -rl junctionMap src carto` \u2014 local, read-only",
-        "child_process with a non-literal command \u2014 cannot be read"
+        "runs `grep -rl junctionMap src carto` — local, read-only",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2391,7 +2406,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target \u2014 runs arbitrary modules, computed import() with no readable target \u2014 runs arbitrary modules"
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2399,7 +2414,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target \u2014 runs arbitrary modules, computed import() with no readable target \u2014 runs arbitrary modules"
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2409,7 +2424,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2417,7 +2432,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` \u2014 not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
@@ -2427,7 +2442,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2437,7 +2452,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2456,7 +2471,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2464,7 +2479,7 @@
       "tier": "local-effect",
       "why": [
         "writeFileSync",
-        "imports package(s) clipper-lib \u2014 not read from source"
+        "imports package(s) clipper-lib — not read from source"
       ]
     },
     {
@@ -2472,7 +2487,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "child_process with a non-literal command \u2014 cannot be read"
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -2480,7 +2495,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` \u2014 not a known-local command"
+        "imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files, imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
       ]
     },
     {
@@ -2488,7 +2503,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` \u2014 not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
+        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files"
       ]
     },
     {
@@ -2498,7 +2513,7 @@
       "why": [
         "writeFileSync",
         "mkdirSync",
-        "computed import() with no readable target \u2014 runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -2506,8 +2521,8 @@
       "tier": "local-effect",
       "why": [
         "deletes files",
-        "runs `git show ${BASE}:src/component` \u2014 local, read-only",
-        "imports package(s) three, esbuild \u2014 not read from source"
+        "runs `git show ${BASE}:src/component` — local, read-only",
+        "imports package(s) three, esbuild — not read from source"
       ]
     }
   ]

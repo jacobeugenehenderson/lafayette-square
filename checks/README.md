@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 140. Never in a default run.
+## ⛔ live — 141. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -47,6 +47,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-town-page-fetches-no-authoring.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-towns-listings-reach-its-surfaces.mjs` | unreadable | computed import of src/tokens/categories.js — read, safe · child_process with a non-literal command — cannot be read |
 | `checks/claims-a-tree-is-refused-for-what-stands-under-it.mjs` | unreadable | imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read |
+| `checks/claims-a-worker-deploy-darkens-no-town.mjs` | outbound | calls fetch() |
 | `checks/claims-alley-stub-pairs.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-an-external-base-survives-a-bake.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · runs `node` — not a known-local command |
 | `checks/claims-authored-skelids-keep-their-ways.mjs` | unreadable | deletes files · child_process with a non-literal command — cannot be read |
@@ -330,6 +331,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-fade-tracks-the-active-disc.mjs` | disc.mjs — WHOSE CIRCLE IS THE MAP FADING OVER? |
 | `checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs` | junctions |
 | `checks/claims-the-grove-shows-only-finished-trees.mjs` | trees.mjs — CAN THE GROVE SHOW A TREE THAT ISN'T THIS TOWN'S, OR ISN'T BAKED? |
+| `checks/claims-the-horizon-takes-the-towns-cover.mjs` | cover.mjs — DOES THE HORIZON CARRY THE TOWN'S COVER, NEVER A ROAD? |
 | `checks/claims-the-key-light-is-a-real-body.mjs` | body.mjs — IS ANYTHING ACTUALLY THERE? |
 | `checks/claims-the-labels-carry-their-style.mjs` | "DOES EVERY TOWN'S labels.json CARRY ITS WHOLE LABEL STYLE — AND IS THERE ONE DEFAULT?" |
 | `checks/claims-the-light-follows-the-weather.mjs` | one weather state drives the rain AND the light. |

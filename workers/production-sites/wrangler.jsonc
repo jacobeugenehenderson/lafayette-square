@@ -12,6 +12,10 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "theward-production-sites",
   "main": "src/index.js",
+  // ⛔ THE DEPLOY REFUSES WHILE IT WOULD DARKEN A TOWN. wrangler runs build.command before every deploy;
+  // this one fails if any town this Worker serves has no manifest.json in R2 (the live probe asks for it).
+  // Order: publish every town with its manifest (PUBLISH.md §0.5), then deploy.
+  "build": { "command": "node ../../checks/claims-a-worker-deploy-darkens-no-town.mjs --env=prod" },
   "compatibility_date": "2026-09-01",
   "observability": { "enabled": true },
   // ⛔ No second ungated address for the same towns (same reasoning as staging-sites; SECURITY F-18).

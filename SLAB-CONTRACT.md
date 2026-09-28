@@ -62,7 +62,7 @@ public/baked/
 │                                       never shared, never inherited — see §8)
 ```
 
-**Cache-busting:** consumers MUST request manifests with `?t=<bakeLastMs>` where `bakeLastMs` is a unique-per-bake timestamp from the consumer's store. `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial`, `LafayettePark`, `StageArch`, `SlabBuildings` all follow this pattern today. Reusing a stale `bakeLastMs` causes browser HTTP cache to serve last-bake artifacts. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) for the cache-bust rule + the historical bug.
+⚠️ **`?t=` IS RETIRED (2026-09-28) — see `src/lib/slabUrl.js`; this paragraph is stale until the rewrite.** **Cache-busting:** consumers MUST request manifests with `?t=<bakeLastMs>` where `bakeLastMs` is a unique-per-bake timestamp from the consumer's store. `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial`, `LafayettePark`, `StageArch`, `SlabBuildings` all follow this pattern today. Reusing a stale `bakeLastMs` causes browser HTTP cache to serve last-bake artifacts. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) for the cache-bust rule + the historical bug.
 
 ---
 
@@ -489,7 +489,7 @@ Consumers: `src/components/InstancedTrees.jsx` (production + Stage + Preview, sa
 ## 10. Consumer contract (what LS MUST guarantee)
 
 1. **Treat the slab as immutable.** The runtime never writes under `public/baked/`. If you find yourself wanting to, the bug is upstream.
-2. **Cache-bust with `?t=<bakeLastMs>`.** Use a unique-per-bake timestamp from your store, not the bake's *duration*. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) (cache-bust rule + historical bug).
+2. ⚠️ **`?t=` IS RETIRED (2026-09-28) — every slab URL comes from `src/lib/slabUrl.js`; the rest of this item and §1's "Cache-busting" paragraph are stale until the rewrite.** **Cache-bust with `?t=<bakeLastMs>`.** Use a unique-per-bake timestamp from your store, not the bake's *duration*. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) (cache-bust rule + historical bug).
 3. **Refuse unknown versions.** A `version` you don't recognize is a failed fetch, not a best-effort render.
 4. **Branch on `stencil: null`.** Skip the radial-fade shader cleanly; don't synthesize a fake stencil.
 5. **Don't infer schema beyond this doc.** If a field appears in a manifest that isn't listed here, ignore it. The producer is allowed to add forward-compatible fields without bumping `version`; the consumer must tolerate them.
