@@ -37,7 +37,7 @@ import { CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS, kitDayChannel } from '../carto
 // bake-scene emits for an unauthored town, so first paint matches the bake rather
 // than flashing a different canopy for a frame.
 const CANOPY_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('canopy'))
-import useCamera from '../hooks/useCamera'
+import { useTownShot } from './townContext.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // ── Debug instrument (dev-only; ?treeDebug=flag,flag — NEVER affects prod) ────
@@ -141,7 +141,7 @@ export function OverheadLightDriver({ enabled = true, canopyChannel }) {
 }
 
 // ── Selection = the CAMERA VIEW, not a height heuristic ───────────────────────
-// The swap keys off the shot the town is drawn in: useCamera().townShot. In
+// The swap keys off the shot the town is drawn in (<Town>'s context, townContext.js). In
 // the 'browse' view we show the overhead snapshot imposters; in 'hero'/street we
 // render the authored mesh trees (close enough to draw them easily). Browse is
 // straight-down by construction (the camera SSOT holds it there), so there's no
@@ -149,11 +149,11 @@ export function OverheadLightDriver({ enabled = true, canopyChannel }) {
 // carries (the LsoD's Street/Hero/Browse contexts; do NOT invent a parallel one).
 // If the user hot-key-overrides Browse into a tilt, billboarding the discs to face
 // the camera is a later refinement — for now the view context is the whole gate.
-// ⛔ IT READS `townShot` — the shot <Town> is drawn in, the same in every app — never the old
+// ⛔ IT READS the shot <Town> is drawn in (its context), the same in every app — never the old
 // player's `viewMode`. Reading viewMode is what kept Preview's Browse on the hero cards and
 // never drew the overhead discs (Jacob, 2026-08-28), because only production drives it.
 export function useOverheadMode(enabled) {
-  const viewMode = useCamera(s => s.townShot)
+  const viewMode = useTownShot()
   return enabled && viewMode === 'browse'
 }
 

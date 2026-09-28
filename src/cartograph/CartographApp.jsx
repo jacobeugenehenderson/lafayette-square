@@ -28,7 +28,8 @@ import { DesignerArch } from './DesignerArch.jsx'
 import SetPiece from '../components/SetPiece.jsx'
 import Town, { Cascades } from '../components/Town.jsx'
 import SlabRevetment from '../components/SlabRevetment.jsx'
-import { TownPlace, useTownLoaded } from '../components/TownBridge.jsx'
+import { TownPlace, useTownLoaded } from '../components/TownPlace.jsx'
+import { TownScope, SHOT_KEY } from '../components/townContext.js'
 import { TimeTicker, SkyStateTicker } from '../components/SkyTickers.jsx'
 import { QualityProvider, deviceQuality } from '../lib/qualityProfile.js'
 import { shallow } from 'zustand/shallow'
@@ -86,6 +87,7 @@ import useCartographStore, { activeChannel } from './stores/useCartographStore.j
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
+import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 
 const CAM_KEY = 'cartograph-camera'
@@ -1021,6 +1023,15 @@ export default function CartographApp() {
   const activeTown = useMemo(() => townForLook(activeLookId), [activeLookId])
   // The hand-assembly draws once the active town's place and terrain are in, as <Town> does.
   const townIn = useTownLoaded(activeLookId)
+  // Stage's selection and listings, handed to <Town> — and, through the same scope, to its hand-assembly for
+  // Lafayette Square (⏳ until BRIEF-live-building-palette moves it onto <Town>).
+  const selectedId = useSelectedBuilding((s) => s.selectedId)
+  const selectStore = useSelectedBuilding((s) => s.select)
+  const deselectStore = useSelectedBuilding((s) => s.deselect)
+  const onSelectBuilding = useCallback((id) => (id ? selectStore(id) : deselectStore()), [selectStore, deselectStore])
+  const listings = useListings((s) => s.listings)
+  const stageScope = useMemo(() => ({ shotKey: SHOT_KEY[TOWN_SHOT[shot]] ?? 'hero', selectedId, select: onSelectBuilding, listings }),
+    [shot, selectedId, onSelectBuilding, listings])
   const townOverrides = useStageOverrides()
   const designAerialOnly = inDesigner && !tool && aerialVisible
   // When a tool is active, hide the giant off-map ground plane so the
@@ -1093,6 +1104,7 @@ export default function CartographApp() {
           style={{ position: 'absolute', inset: 0 }}
         >
           <QualityProvider quality={QUALITY}>
+          <TownScope value={stageScope}>
           <PerspectiveCamera
             ref={perspRef}
             makeDefault={!inDesigner}
@@ -1162,6 +1174,7 @@ export default function CartographApp() {
               ▶ node checks/claims-every-app-mounts-the-town.mjs reports it, red, until then. */}
           {!legacy && !inDesigner && townIn && (
             <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs}
+              selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
               layers={{
                 buildings: !hiddenLayers.building, neon: !hiddenLayers.building, trees: !hiddenLayers.tree,
@@ -1317,7 +1330,8 @@ export default function CartographApp() {
                 Stage switches towns live. ▶ checks/claims-every-app-mounts-the-set-piece.mjs */}
             <R3FErrorBoundary name="SetPiece"><SetPiece town={activeTown} lookId={activeLookId} lightOverride={setPieceLightOverride} /></R3FErrorBoundary>
             {/* The ground from the town's rim to the horizon — every town, the same component production mounts. */}
-            <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={activeLookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
+            {/* Not in the plan (browse) shot: there the town ends at its soft rim (Jacob, 2026-09-28). */}
+            {shot !== 'browse' && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={activeLookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>}
             {!inDesigner && sceneCfg.StageEnvironment && (
               <sceneCfg.StageEnvironment
                 hiddenLayers={hiddenLayers}
@@ -1356,6 +1370,7 @@ export default function CartographApp() {
           {shot === 'hero' && (
             <HeroPreview keyframes={keyframes} motion={heroMotion} />
           )}
+          </TownScope>
           </QualityProvider>
         </Canvas>
 

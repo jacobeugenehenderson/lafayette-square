@@ -24,7 +24,7 @@
 import { useMemo, useState, useEffect, useReducer } from 'react'
 import { isOpenAt } from '../lib/openNow.js'
 import { buildings as _allBuildings } from '../data/buildings'
-import useListings from '../hooks/useListings'
+import { useTownContext } from './townContext.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { getElevationRaw } from '../utils/elevation'
@@ -116,8 +116,9 @@ function defaultNeonHexForBuilding(building) {
 // fresh install looks alive out of the box — an authored `hours` still wins.
 // Synthetic zoning-default listings (`_bare`) are EXCLUDED: a residential house
 // with no real POI stays dark, rather than the whole hood lighting up at night.
+// The listings are <Town listings> (townContext.js) — the app's, never the old player's store.
 export function useNeonLookup() {
-  const listings = useListings((s) => s.listings)
+  const { listings } = useTownContext()
   return useMemo(() => {
     const map = {}
     listings.forEach(l => {

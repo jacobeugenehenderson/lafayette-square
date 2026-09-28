@@ -21,8 +21,10 @@
  *   shot             'movie' | 'plan' | 'street'
  *   paused           draw no frames (a full-screen overlay is up) — under a demand frameloop
  *   idle             the embedding page has scrolled us mostly out of view: draw a third of the frames
- *   selectedId       the selected building, when the app owns selection (else the leaves' clicks do)
- *   onSelectBuilding (id | null) => void — a click on a building
+ *   selectedId       the selected building's id, or null — the app owns the selection
+ *   onSelectBuilding (id) => void — a click on a building (absent: clicks select nothing)
+ *   listings         REQUIRED — the town's content listings (the listings.json shape a town manifest carries):
+ *                    neon reads each place's category and opening hours from them
  *   litIds           Set of building ids — a chosen category, a search: their ROOFS take the town's lit
  *                    tint day and night (SlabBuildings), and only they carry neon
  *   interactive      buildings take the pointer (default true)
@@ -46,7 +48,8 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import R3FErrorBoundary from './R3FErrorBoundary'
-import TownBridge, { SHOT_KEY, useTownLoaded } from './TownBridge.jsx'
+import { TownPlace, useTownLoaded } from './TownPlace.jsx'
+import { TownScope, SHOT_KEY } from './townContext.js'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
 import { QualityProvider } from '../lib/qualityProfile.js'
 import { useTownPlace } from '../lib/townPlace.js'
@@ -57,6 +60,9 @@ import { sceneExag } from '../utils/terrainShader'
 import { terrainExag } from '../utils/terrainShader'
 import { getElevationRaw } from '../utils/elevation'
 import useSkyState from '../hooks/useSkyState'
+import { acquireWeatherPoll } from '../hooks/useWeather'
+import { resolveSkyAtMinute } from '../cartograph/skyGrid.js'
+import { lookOf } from '../lib/lookOf.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { PostProcessing, StageFog, StageShadows, LampGlowDriver } from './PostProcessing.jsx'
@@ -135,10 +141,14 @@ export function Cascades() {
  * An app shows it rather than fetching its own: two calls to one provider read different numbers at different
  * times. `code` is WMO (current reconciled against precipitation and cloud); `isDay` is the sun above the town's
  * horizon at the town's clock; `at` / `fetchedAt` are ms epochs; hourly spans the provider's past 4 h and next 48 h,
- * its hours placed with the town's own UTC offset. °C out. Mount-context: inside <Town>.
+ * its hours placed with the town's own UTC offset. °C out.
+ * ⭐ It needs NO <Town>: it joins the page's ONE weather poll (acquireWeatherPoll, hooks/useWeather.js), which
+ * <Town>'s WeatherPoller shares — The Ward's Almanac runs on screens with no <Town> mounted, and still one fetch.
+ * The page must have placed its town (placeTown) — the forecast is for the placed place.
  */
 const fToC = (f) => (f == null ? null : Math.round(((f - 32) * 5 / 9) * 10) / 10)
 export function useTownWeather() {
+  useEffect(() => acquireWeatherPoll(), [])
   const tempF = useSkyState((s) => s.temperatureF)
   const code = useSkyState((s) => s.currentWeatherCode)
   const at = useSkyState((s) => s.weatherAt)
@@ -150,6 +160,26 @@ export function useTownWeather() {
     fetchedAt: at,
   }), [tempF, code, isDay, at, forecast])
 }
+
+/**
+ * The town's sky, from its AUTHORED sky channel (`baked/<look>/scene.json` → `sky`) through the Sky Builder's own
+ * resolver (skyGrid.js#resolveSkyAtMinute — what SkyGradientGrid's DayStrip samples and the shader consumes):
+ *   useTownSky(lookId) → skyAt(minute, dayOfYear) → { high, mid, low, horizon, sunGlow }, each [r, g, b] in 0..1
+ * null until the channel has loaded. It needs NO <Town>: one shared read of the Look's scene.json (useSceneJson's
+ * cache). ⛔ `dayOfYear` is REQUIRED — the resolver would otherwise fall back to the authoring calendar store.
+ */
+export function useTownSky(lookId) {
+  const scene = useSceneJson(lookOf(lookId, 'useTownSky'))
+  const sky = scene?.sky ?? null
+  return useMemo(() => (!scene ? null : (minute, dayOfYear) => {
+    if (!Number.isFinite(minute)) throw new Error(`[useTownSky] ⛔ skyAt needs a minute of the day; got ${minute}`)
+    if (!Number.isFinite(dayOfYear)) throw new Error(`[useTownSky] ⛔ skyAt needs dayOfYear — never the authoring calendar's; got ${dayOfYear}`)
+    return resolveSkyAtMinute(sky, minute, null, dayOfYear)
+  }), [scene, sky])
+}
+
+// The tide, for an Almanac: pure functions over the town's tide constituents (cartograph/tide.mjs), no renderer state.
+export { tideExtrema, tideAt } from '../../cartograph/tide.mjs'
 
 /**
  * Where each of the town's buildings stands, READ-ONLY, for an app's overlays and camera moves (The Ward's
@@ -203,7 +233,7 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 }
 
 export default function Town({
-  town, lookId, quality, shot, paused = false, idle = false, selectedId, onSelectBuilding, litIds, liveIds,
+  town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
   holdScrubbedTime = false, heading = null, compassDial, time, children,
 }) {
@@ -221,16 +251,20 @@ export default function Town({
   const scene = useSceneJson(lookId)
   const bake = bakeLastMs ?? scene?.bakedAt ?? null
   const key = SHOT_KEY[shot]
+  if (!Array.isArray(listings)) throw new Error('[Town] ⛔ needs the `listings` prop — the town\'s content listings (an array; [] for a town with none)')
+  // What the leaves read (townContext.js) — the shot, the selection, the listings. No player store.
+  const scope = useMemo(() => ({ shotKey: key, selectedId, select: onSelectBuilding ?? null, listings }), [key, selectedId, onSelectBuilding, listings])
   // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
   const loaded = useTownLoaded(lookId)
-  if (!loaded) return <TownBridge town={town} lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} time={time} />
+  if (!loaded) return <TownPlace town={town} lookId={lookId} time={time} />
   const targetExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // The phone profile mounts the arch and the horizon in the movie shot only (its budget).
   const heavy = !quality.heroOnlyPieces || shot === 'movie'
 
   return (
     <QualityProvider quality={quality}>
-      <TownBridge town={town} lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} time={time} />
+    <TownScope value={scope}>
+      <TownPlace town={town} lookId={lookId} time={time} />
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} />
       {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} />}
       <SkyStateTicker />
@@ -291,7 +325,9 @@ export default function Town({
           {heavy && <R3FErrorBoundary name="GatewayArch"><GatewayArch lookId={lookId} bakeLastMs={bake} archOverride={o.arch} archLightOverride={o.archLight} /></R3FErrorBoundary>}
           <R3FErrorBoundary name="SetPiece"><SetPiece town={town} lookId={lookId} lightOverride={o.setPieceLight} /></R3FErrorBoundary>
         </group>
-        {heavy && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
+        {/* The ground past the rim, out to the horizon — the movie and the street only. In PLAN the town is one closed
+            circle ending at its soft rim (Jacob, 2026-09-28; ▶ claims-the-plan-shot-ends-at-the-rim). */}
+        {heavy && shot !== 'plan' && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
         {/* The town's edge as a compass: ticks at the rim in plan, a dial in Street, nothing in the movie. */}
         {layers?.compass === true && <R3FErrorBoundary name="CompassBezel"><CompassBezel lookId={lookId} bakeLastMs={bake} shot={shot} heading={heading} dial={compassDial} /></R3FErrorBoundary>}
         {/* A mesh behind everything, at its true geo spot; nothing unless the Look ships a landscape. */}
@@ -303,6 +339,7 @@ export default function Town({
         fillOverride={o.fill} haloOverride={o.halo} gradeOverride={o.grade} grainOverride={o.grain}
         dofOverride={o.dof} dofFocusOverride={o.dofFocus} />}
       {children}
+    </TownScope>
     </QualityProvider>
   )
 }

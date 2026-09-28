@@ -62,7 +62,8 @@ import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { useQuality } from '../lib/qualityProfile.js'
 import { lookOf } from '../lib/lookOf.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
-import useSelectedBuilding from '../hooks/useSelectedBuilding'
+import { useTownContext } from './townContext.js'
+import useTownHover from './townHover.js'
 import { litUniforms } from './SlabBuildings'
 import useCityModelActive from '../hooks/useCityModelActive'
 
@@ -176,9 +177,13 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
   const shadersRef = useRef([])
 
   const idToNum = useSlabBuildingIndex((s) => s.index?.idToNum)
-  const select = useSelectedBuilding((s) => s.select)
-  const setHovered = useSelectedBuilding((s) => s.setHovered)
-  const clearHovered = useSelectedBuilding((s) => s.clearHovered)
+  // A click reports to the app (<Town onSelectBuilding>); hover is the renderer's own; the selection is <Town>'s.
+  const town = useTownContext()
+  const select = (id) => town.select?.(id)
+  const setHovered = useTownHover((s) => s.setHovered)
+  const clearHovered = useTownHover((s) => s.clearHovered)
+  const townSel = useRef(town.selectedId)
+  townSel.current = town.selectedId
   const getLightingPhase = useTimeOfDay((s) => s.getLightingPhase)
   const setCityActive = useCityModelActive((s) => s.setActive)
   const setCoveredIds = useCityModelActive((s) => s.setCoveredIds)
@@ -404,7 +409,8 @@ export default function CityModel({ lookId: propLookId, interactive = true } = {
     if (!shaders.length) return
     const { sunAltitude } = getLightingPhase()
     const darkFactor = Math.min(1, Math.max(0, (0.2 - sunAltitude) / 0.35))
-    const { selectedId: sel, hoveredId: hov } = useSelectedBuilding.getState()
+    const sel = townSel.current
+    const hov = useTownHover.getState().hoveredId
     const selNum = (idToNum && sel != null) ? (idToNum.get(sel) ?? -1) : -1
     const hovNum = (idToNum && hov != null) ? (idToNum.get(hov) ?? -1) : -1
     const cam = state.camera.position

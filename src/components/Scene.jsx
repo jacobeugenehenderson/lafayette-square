@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, useState } from 'react'
+import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { INSTANCE, moduleOn } from '../instance.js'
@@ -8,13 +8,15 @@ import { FRAMED } from '../hooks/useCamera'
 import { browseAltitude } from '../lib/browseAltitude.js'
 import { SHOT_TRANSITION_MS } from '../camera/transitions.js'
 import Town from './Town.jsx'
-import { SHOT_KEY } from './TownBridge.jsx'
+import { SHOT_KEY } from './townContext.js'
 import LandmarkMarkers from './LandmarkMarkers.jsx'
 import { streetEyeY } from '../utils/elevation'
 import UserDot from './UserDot'
 import CourierDots from './CourierDots'
 import useCamera from '../hooks/useCamera'
 import useUserLocation from '../hooks/useUserLocation'
+import useSelectedBuilding from '../hooks/useSelectedBuilding'
+import useListings from '../hooks/useListings'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { heroKeyframeAnim, randomizeHeroStart } from '../preview/heroAnim.js'
@@ -682,6 +684,12 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const shot = SHOT_OF_MODE[viewMode]
   if (!shot) throw new Error(`[Scene] ⛔ camera mode '${viewMode}' draws no shot`)
   const { paused, idle } = usePlayerPacing()
+  // The player owns its selection and its listings; <Town> is handed them (a click opens the place card, as before).
+  const selectedId = useSelectedBuilding((s) => s.selectedId)
+  const select = useSelectedBuilding((s) => s.select)
+  const deselect = useSelectedBuilding((s) => s.deselect)
+  const onSelectBuilding = useCallback((id) => (id ? select(id) : deselect()), [select, deselect])
+  const listings = useListings((s) => s.listings)
 
   // The movie shot needs CONTINUOUS rendering where the profile asks for it: under
   // frameloop="demand" the R3F clock advances in coarse steps, so the authored pan
@@ -738,6 +746,7 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
     >
       <SheetGround active={sheeted} ground={ground} />
       <Town town={INSTANCE} lookId={INSTANCE.lookId} quality={QUALITY} shot={shot} paused={paused} idle={idle}
+        selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
         layers={IS_GROUND ? GROUND_ONLY : undefined}>
         {/* The old player's overlays: the user's dot, the couriers, the map pins. */}
         {!IS_GROUND && <UserDot />}

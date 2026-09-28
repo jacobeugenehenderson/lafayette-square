@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import useCamera from '../hooks/useCamera'
+import { useTownShot } from '../components/townContext.js'
 import { shotKeyForViewMode, resolveShotScene } from './shotScene.js'
 import { ASSET_BASE } from './bakedUrl.js'
 
@@ -76,11 +76,11 @@ export function useSceneJson(lookId, cacheBust) {
     return () => { cancelled = true }
   }, [lookId, bust])
   // Channel-variant cascade (HANDOFF-channel-variant-cascade.md): resolve the
-  // per-shot whole-look fork ONCE, here, off the shot the town is drawn in (`townShot`,
-  // written by <Town shot> through TownBridge.jsx — the same in every app). resolveShotScene
+  // per-shot whole-look fork ONCE, here, off the shot the town is drawn in (<Town shot>, from Town's
+  // context — the same in every app; outside a <Town>, the base look). resolveShotScene
   // returns the SAME object identity when the shot has no fork, so an unforked Look (no
   // scene.shotLooks) adds no render churn.
-  const viewMode = useCamera(s => s.townShot)
+  const viewMode = useTownShot()
   return useMemo(
     () => resolveShotScene(scene, shotKeyForViewMode(viewMode)),
     [scene, viewMode]

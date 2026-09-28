@@ -33,7 +33,8 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import PilgrimMonument from './PilgrimMonument.jsx'
 import SetPieceUplights from './SetPieceUplights.jsx'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
-import useSelectedBuilding from '../hooks/useSelectedBuilding'
+import { useTownContext } from './townContext.js'
+import useTownHover from './townHover.js'
 
 // kind → renderer. The only place a set-piece component is imported.
 const RENDERERS = {
@@ -45,9 +46,11 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
   if (!lookId) throw new Error('[SetPiece] ⛔ needs `lookId` — the Look being drawn')
   const scene = useSceneJson(lookId)
   const index = useSlabBuildingIndex(s => s.index)
-  const select = useSelectedBuilding(s => s.select)
-  const setHovered = useSelectedBuilding(s => s.setHovered)
-  const clearHovered = useSelectedBuilding(s => s.clearHovered)
+  // A click reports to the app (<Town onSelectBuilding>), as a click on any building does; hover is the renderer's.
+  const townSelect = useTownContext().select
+  const select = (id) => townSelect?.(id)
+  const setHovered = useTownHover(s => s.setHovered)
+  const clearHovered = useTownHover(s => s.clearHovered)
   const sp = town?.setPiece
   if (!sp) return null
   const R = RENDERERS[sp.kind]

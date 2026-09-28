@@ -29,19 +29,20 @@ index.html → main.jsx → App.jsx              ← URL route switch, top-level
     ├── SceneBoundary
     │   └── Scene.jsx                         the old player: <Canvas> sized by the quality profile
     │       ├── SheetGround                   (embed sheet: the scene paints only the sheet's colour)
-    │       ├── Town town lookId quality shot paused idle      ← src/components/Town.jsx
-    │       │   ├── TownBridge                the ONE writer of the renderer's internal state: the shot
-    │       │   │                             (useCamera.townShot), selection in/out, the town's place
-    │       │   │                             on the globe (lib/townPlace.js — sun, moon, season, sky)
-    │       │   │                             and its terrain (reloadTerrain). Town draws nothing until
-    │       │   │                             both are this town's.
+    │       ├── Town town lookId quality shot listings selectedId onSelectBuilding …  ← src/components/Town.jsx
+    │       │   ├── TownScope                 what the leaves read (townContext.js): the shot, the selection
+    │       │   │                             (selectedId + onSelectBuilding), the listings — no player store
+    │       │   ├── TownPlace                 the ONE writer of the town's place (lib/townPlace.js — sun, moon,
+    │       │   │                             season, sky), its terrain and, when given, its clock (<Town time>).
+    │       │   │                             Town draws nothing until the place and terrain are this town's.
     │       │   ├── FrameLimiter · TimeTicker · SkyStateTicker · ShaderLinkGuard · Cascades (?csm=1)
     │       │   ├── StageShadows · StageFog · LampGlowDriver · NeonDriver
     │       │   ├── WeatherPoller · AtmosphereDirectiveDriver · WeatherEffects
     │       │   ├── CelestialBodies · CloudDome (Atmosphere under ?sky=volumetric) · Terrain (hidden)
     │       │   ├── ⟨drawn town⟩ BakedGround · SlabRevetment · LafayetteScene (neon, street labels,
     │       │   │     park title) · SlabBuildings · CityModel · InstancedTrees · LafayettePark (its own
-    │       │   │     town only) · BakedLamps · GatewayArch · SetPiece · HorizonDisc · MountainBackdrop
+    │       │   │     town only) · BakedLamps · GatewayArch · SetPiece · MountainBackdrop · HorizonDisc
+    │       │   │     (movie and street only: in PLAN the town ends at its soft rim)
     │       │   ├── PostProcessing            (per-device passes from the quality profile)
     │       │   └── {children}                the app's overlays — here UserDot, CourierDots,
     │       │                                 LandmarkMarkers (pins, click-to-deselect, Escape)

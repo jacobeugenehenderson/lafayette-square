@@ -5,7 +5,7 @@
  * ⭐ WHY (BRIEF-one-town-assembly, Warden's rulings, 2026-09-27/28). Ten renderer files read
  * `INSTANCE.geography` at module load: the boot town's latitude, frozen, resolved by the kit's own
  * instance.js — which falls back to town #1 for a town it cannot place. The place is now MOVED here by
- * whoever knows the town: <Town town> (TownBridge.jsx), or an app's entry for its own boot town
+ * whoever knows the town: <Town town> (TownPlace.jsx), or an app's entry for its own boot town
  * (placeTown). Every reader resolves it AT USE, so the sun, the moon and the calendar change together.
  * ▶ node checks/claims-the-town-reads-no-player-store.mjs
  *
@@ -30,7 +30,7 @@ export function townPlace() {
   return _place
 }
 
-/** Move the place to a town's geography. Called by TownBridge.jsx only. */
+/** Move the place to a town's geography. Called by TownPlace.jsx only. */
 export function setTownPlace(geography, lookId) {
   if (_place && _place.lookId === lookId && _place.lat === geography?.lat && _place.lon === geography?.lon) return
   _place = placeOf(geography, lookId)

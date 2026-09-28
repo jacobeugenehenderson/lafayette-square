@@ -4,7 +4,7 @@ import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import useCamera from '../hooks/useCamera'
+import { useTownShot } from './townContext.js'
 import useSkyState from '../hooks/useSkyState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { resolveSkyAtMinute } from '../cartograph/skyGrid.js'
@@ -769,6 +769,10 @@ function MilkyWaySphere({ nightFactor, milkyWayChannel }) {
 
 function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constellationsChannel, skyGainChannel, starsChannel, milkyWayChannel }) {
   const materialRef = useRef()
+  // The shot the town is drawn in (<Town>'s context); a ref for the per-frame readers below.
+  const shot = useTownShot()
+  const shotRef = useRef(shot)
+  shotRef.current = shot
   // 4-band sky color authoring lives in `skyChannel` (operator's grid).
   // The legacy procedural keyframe ladder + JS-side weather color
   // modifiers that used to derive `colors.bands` here were dead post-
@@ -780,7 +784,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   useFrame(() => {
     if (materialRef.current) {
       const u = materialRef.current.uniforms
-      const planetariumActive = useCamera.getState().townShot === 'street'
+      const planetariumActive = shotRef.current === 'street'
       const dimFactor = planetariumActive ? 0.4 : 1.0
       // 4-band colors — resolve the operator's authored sky-grid
       // envelope at the current TOD minute and write the band tuple.
@@ -1273,7 +1277,7 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   // and fade opacity with sun altitude
   useFrame((state) => {
     if (!starRef.current || !starMat) return
-    const planetariumActive = useCamera.getState().townShot === 'street'
+    const planetariumActive = shotRef.current === 'street'
     const { astronomyAlpha } = useSkyState.getState()
     // Operator star-brightness knob (the `stars` channel, threaded into GradientSky
     // like constellations/skyGain) multiplies the physical astronomyAlpha. Authored,
@@ -1370,7 +1374,6 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
   // Constellations: the operator's toggle, per time of day, in Hero + Street — never Browse (Jacob, 2026-09-27).
   // It had been read by nothing: the overlay showed in Street at every hour whatever the toggle said. No
   // day/night gate of its own (2026-06-17: "all day long"); key it off by day if the Look wants that.
-  const shot = useCamera((s) => s.townShot)
   const [constellationsOn, setConstellationsOn] = useState(false)
   const constellationsOnRef = useRef(false)
   useFrame(() => {

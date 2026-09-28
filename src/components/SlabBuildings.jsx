@@ -33,7 +33,8 @@ import * as THREE from 'three'
 import { terrainExag, terrainFloorRaw, RISER_LIFT_GLSL } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import useSelectedBuilding from '../hooks/useSelectedBuilding'
+import { useTownContext } from './townContext.js'
+import useTownHover from './townHover.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useCityModelActive from '../hooks/useCityModelActive'
 import { lookOf } from '../lib/lookOf.js'
@@ -339,12 +340,17 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
   const shadersRef = useRef([])
   const getLightingPhase = useTimeOfDay((s) => s.getLightingPhase)
   const idToNum = useSlabBuildingIndex((s) => s.index?.idToNum)
+  // The selection is <Town>'s (townContext.js); a ref for the per-frame uniform write.
+  const givenSel = useTownContext().selectedId
+  const townSel = useRef(givenSel)
+  townSel.current = givenSel
 
   useFrame((state) => {
     if (shadersRef.current.length === 0) return
     const { sunAltitude } = getLightingPhase()
     const darkFactor = Math.min(1, Math.max(0, (0.2 - sunAltitude) / 0.35))
-    const { selectedId, hoveredId } = useSelectedBuilding.getState()
+    const selectedId = townSel.current
+    const { hoveredId } = useTownHover.getState()
     const selNum = (idToNum && selectedId != null) ? (idToNum.get(selectedId) ?? -1) : -1
     const hovNum = (idToNum && hoveredId != null) ? (idToNum.get(hoveredId) ?? -1) : -1
     // X-ray: feed the camera pos + the always-on dissolve dist/band (so the
@@ -366,7 +372,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
   // Selection ring — mounted here (the live path mounts it per <Building>,
   // which is hidden in slab mode). Resolve the selected building's footprint
   // from the index. keyed by id so the pulse-in replays on each new select.
-  const selectedId = useSelectedBuilding((s) => s.selectedId)
+  const selectedId = givenSel
   const indexForRing = useSlabBuildingIndex((s) => s.index)
   const selectedEntry = (selectedId && indexForRing) ? indexForRing.byId.get(selectedId) : null
 
@@ -457,9 +463,11 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
   const isRoof = group.kind === 'roof'
   const isWall = group.kind === 'wall'
   const isFoundation = group.kind === 'foundation'
-  const select = useSelectedBuilding((s) => s.select)
-  const setHovered = useSelectedBuilding((s) => s.setHovered)
-  const clearHovered = useSelectedBuilding((s) => s.clearHovered)
+  // A click reports to the app (<Town onSelectBuilding>); hover is the renderer's own.
+  const townSelect = useTownContext().select
+  const select = (id) => townSelect?.(id)
+  const setHovered = useTownHover((s) => s.setHovered)
+  const clearHovered = useTownHover((s) => s.clearHovered)
 
   // scene.materialPhysics override (usually empty); mirrors the live useEffect.
   const phys = scene?.materialPhysics?.[isRoof ? `roof_${group.id}` : group.id] || {}

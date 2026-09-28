@@ -135,4 +135,34 @@ export async function fetchWeather({ snap = false } = {}) {
   }
 }
 
+// ── THE ONE POLL of the town's weather, per page ─────────────────────────────────
+// Whoever needs the live feed ACQUIRES it: <Town>'s WeatherPoller, and an app's own reader (useTownWeather in
+// Town.jsx — The Ward's Almanac runs on screens where no <Town> is mounted). The first acquirer starts it (an
+// immediate fetch, then every 5 min, and on returning to the tab); the last release stops it. One fetch per page,
+// never a second call to the provider reading a different number at a different time. The town is the placed
+// one (lib/townPlace.js) at each fetch — a page that polls without a <Town> must have placed its town.
+const POLL_INTERVAL = 5 * 60 * 1000
+let _holders = 0, _interval = null
+function _onVisibility() {
+  useSkyState.getState().setBackgroundTab(document.hidden)
+  if (!document.hidden) fetchWeather()   // back in front: fetch now
+}
+/** Start (or join) the page's one weather poll; returns the release. */
+export function acquireWeatherPoll() {
+  if (_holders++ === 0) {
+    fetchWeather({ snap: true })
+    _interval = setInterval(() => fetchWeather(), POLL_INTERVAL)
+    document.addEventListener('visibilitychange', _onVisibility)
+  }
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    if (--_holders === 0) {
+      clearInterval(_interval); _interval = null
+      document.removeEventListener('visibilitychange', _onVisibility)
+    }
+  }
+}
+
 export default fetchWeather

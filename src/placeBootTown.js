@@ -8,6 +8,6 @@
  * <Town town> moves the place to whatever town it draws.
  */
 import { INSTANCE } from './instance.js'
-import { placeTown } from './components/TownBridge.jsx'
+import { placeTown } from './components/TownPlace.jsx'
 
 placeTown(INSTANCE, INSTANCE.lookId)

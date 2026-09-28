@@ -1,7 +1,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import useCamera from '../hooks/useCamera'
+import { useTownShot } from './townContext.js'
 import useSkyState from '../hooks/useSkyState'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { SKY_RADIUS } from './CelestialBodies'
@@ -13,7 +13,7 @@ let _driftSnapEpoch = useAtmosphere.getState().snapEpoch
 
 function CloudDome() {
   const materialRef = useRef()
-  const shot = useCamera((s) => s.townShot)
+  const shot = useTownShot()
 
   const cloudMaterial = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {

@@ -10,6 +10,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import RegimeControls from '../components/RegimeControls.jsx'
 import Town from '../components/Town.jsx'
 import { deviceQuality } from '../lib/qualityProfile.js'
+import useListings from '../hooks/useListings'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
@@ -1226,6 +1227,8 @@ const QUALITY = deviceQuality()
 function CanvasContents({ layers, shot, setShot }) {
   const lookId = resolvePreviewLookId()
   const town = useMemo(() => townForLook(lookId), [lookId])
+  // Preview takes no clicks (interactive={false}); it draws the listings the page loaded, as production does.
+  const listings = useListings((s) => s.listings)
   // ?dofDebug=1 paints the DoF CoC zones (green = sharp, red = full blur) — the
   // shared dofDriver reads window.__dofDebug.
   useEffect(() => {
@@ -1237,7 +1240,7 @@ function CanvasContents({ layers, shot, setShot }) {
   // BasicLights — an inspection fallback lit only while the sky layer is off.
   return (
     <>
-      <Town town={town} lookId={lookId} quality={QUALITY} shot={TOWN_SHOT[shot]} interactive={false}
+      <Town town={town} lookId={lookId} quality={QUALITY} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,
