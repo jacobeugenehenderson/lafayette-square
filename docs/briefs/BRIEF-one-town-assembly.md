@@ -92,6 +92,14 @@ go into the assembly); markers and the click-catcher are the player's (overlay a
   productization step (Jacob). Stage's live overrides may keep reaching the store for now; the
   assembly must simply not *require* the old player's stores.
 
+### Ruled 2026-09-27 (Jacob): live palette retint for every town
+Stage-on-Lafayette-Square drew the LIVE building path (`LafayetteScene`) so the palette sliders retint
+instantly; every other town draws `SlabBuildings`, whose colour is baked into its vertices, so the palette
+shows only after a bake. Jacob: **live retint for every town.** So `SlabBuildings` gains live retint
+(Stage's palette through `Town`'s `overrides`), Stage-on-LS then migrates onto `Town` like every app, and
+the legacy live-building path is **deleted**. Until then Stage-on-LS is the one remaining hand-assembly,
+reported red by name — migrated last, never given a second path inside `Town`.
+
 ## 6. Checks — the deliverable
 
 Write each check first, **see it fail**, then make it pass. A check that has never been seen to
