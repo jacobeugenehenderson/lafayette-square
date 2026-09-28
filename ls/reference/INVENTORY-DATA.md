@@ -40,7 +40,7 @@ Imported at JS module load, bundled into the JS chunk. No HTTP fetch; immutable 
 | Park paths | `src/data/park_paths.json` | `LafayettePark` | Already in ground bake (path ribbons); **retire live import** |
 | Street lamps | `src/data/street_lamps.json` | `lampLightmap.js` (shader glow `DataTexture`) | Production `BakedLamps` no longer reads this (2026-05-12, L1.1). `lampLightmap.js` still imports live → **L1.1b** to migrate the shader-glow source to `/baked/<look>/lamps.json`. |
 | Terrain elevation | `src/data/terrain.json` | `Terrain.jsx`, `utils/elevation.js`, `utils/terrainShader.js` | **Freeze** or bake into ground |
-| Bright stars catalog | `src/data/bright_stars.json` | `CelestialBodies`, `src/stage/StageSky.jsx` | **Freeze** — astronomical constant |
+| Bright stars catalog | `src/data/planetarium/bright_stars.json` | `CelestialBodies`, `src/stage/StageSky.jsx` | **Freeze** — astronomical constant |
 | Constellations | `src/data/planetarium/constellations.json` | `CelestialBodies`, `PlanetariumOverlay`, `StageSky` | **Freeze** |
 | Named stars | `src/data/planetarium/named_stars.json` | `PlanetariumOverlay` | **Freeze** |
 | Planets | `src/data/planetarium/planets.json` | `PlanetariumOverlay` | **Freeze** |

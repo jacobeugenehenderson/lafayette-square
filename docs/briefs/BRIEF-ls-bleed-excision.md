@@ -179,7 +179,7 @@ not prose.
    gating. ⭐ It immediately found two bleeds nobody had read (18, 19) — the class working as
    intended. ⚠️ Known limits, stated in its own footer: tracked files only, and the out-set is a
    source-text judgement, not a proof.
-2. **`checks/claims-no-static-shared-data-imports.mjs`** — **PARSE** the source for static
+2. ✅ **BUILT 2026-09-27 as `checks/claims-no-town-rides-in-the-bundle.mjs`** — walks the player's static import graph from `src/main.jsx` and fails on any JSON belonging to a town (town ids read from `cartograph/data/` and `public/looks/index.json`; `src/data/*.json` counts as one-town). Mutation-tested. It found ten, including the authoring store's two ribbons imports the audit had missed; all ten are gone. Originally specified as **`checks/claims-no-static-shared-data-imports.mjs`** — **PARSE** the source for static
    `import … from '…/data/<shared>.json'`; ⛔ never a hard-coded list of files, or it goes stale the
    day someone adds the next one. Derive the shared set by reading what sits at `src/data/*.json`
    versus `src/data/<look>/`. Exit 2 on any hit, naming file, line, and the per-scene path it should

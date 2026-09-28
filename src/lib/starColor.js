@@ -1,6 +1,6 @@
 // Star spectral color — the single source of truth.
 //
-// Maps a star's B–V color index (`ci` in bright_stars.json) to an approximate
+// Maps a star's B–V color index (`ci` in planetarium/bright_stars.json) to an approximate
 // RGB, a Ballesteros-style piecewise fit. Blue-hot (bv < 0) → white (~0.0) →
 // yellow (~0.6, Sun-like) → orange (~1.0) → deep red (bv > 1.6, e.g. Betelgeuse).
 //

@@ -6,7 +6,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import namedStarsData from '../data/planetarium/named_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import planetsData from '../data/planetarium/planets.json'
-import brightStars from '../data/bright_stars.json'
+import brightStars from '../data/planetarium/bright_stars.json'
 import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
 

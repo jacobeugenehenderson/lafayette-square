@@ -174,7 +174,7 @@ Mark these "kit-global, already acquired" so town #3 never sees them as work.
 
 | Input | Path | Source |
 |---|---|---|
-| **Bright-star catalogue** (~523 stars, mag ≤ 4.0, RA/Dec/mag/B–V) | `src/data/bright_stars.json` | **Yale BSC5** via VizieR/CDS, or **HYG database** (CC BY-SA) — repo fields (`ra`,`dec`,`mag`,`ci`) match HYG's schema exactly |
+| **Bright-star catalogue** (~523 stars, mag ≤ 4.0, RA/Dec/mag/B–V) | `src/data/planetarium/bright_stars.json` | **Yale BSC5** via VizieR/CDS, or **HYG database** (CC BY-SA) — repo fields (`ra`,`dec`,`mag`,`ci`) match HYG's schema exactly |
 | **Constellation figures** | `src/data/planetarium/constellations.json` | **Stellarium** `constellationship.fab` sky-cultures (GPL/CC) or **IAU** official data |
 | **Named stars** | `src/data/planetarium/named_stars.json` | as above |
 | **Planetary orbital elements** (Keplerian) | `src/data/planetarium/planets.json` | **JPL SSD "Approximate Positions of the Major Planets"** — US-gov public domain |

@@ -6,9 +6,7 @@ import {
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
   saveShapeFreeze, fetchRibbons, fetchMap, fetchGeography, fetchBoundary,
 } from '../api.js'
-import ribbonsData from '../../data/ribbons.json'
 import { setSceneMeasureSource } from '../measureModel.js'
-import toyRibbonsData from '../../data/toy/toy-ribbons.json'
 import { feCustomKey } from '../../lib/feCustomKey.js'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 
@@ -2416,9 +2414,18 @@ const useCartographStore = create((set, get) => ({
       // measure-free, a scene-blind LS lookup left every toy chain with
       // `undefined` measure → MeasureOverlay rendered no handles. Mirror
       // CartographApp's sceneCfg.ribbons keying.
-      const ribbonsFixture = scene === 'toy' ? toyRibbonsData
-        : BUNDLED_MAPS.has(scene) ? ribbonsData
-        : (fetchedRibbons || { streets: [] })
+      // The bundled towns' ribbons load as their OWN chunk, only for that town. A static import put
+      // them in every town's bundle — 6 MB of one town's ribbons downloaded by all of them
+      // (docs/briefs/BRIEF-slab-loading.md ③; ▶ node checks/claims-no-town-rides-in-the-bundle.mjs).
+      // Same stale() guard as every other await in this loader.
+      let bundledRibbons = null
+      if (BUNDLED_MAPS.has(scene)) {
+        bundledRibbons = (scene === 'toy'
+          ? await import('../../data/toy/toy-ribbons.json')
+          : await import('../../data/ribbons.json')).default
+        if (stale()) return
+      }
+      const ribbonsFixture = bundledRibbons ?? (fetchedRibbons || { streets: [] })
       // ⭐ Register THIS scene's fixture as the Measure seed source. Was a static
       // LS import inside measureModel (BRIEF-ls-bleed-excision site 9) — every
       // scene seeded its widths from Lafayette Square, keyed by street name.

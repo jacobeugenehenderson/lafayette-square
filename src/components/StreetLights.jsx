@@ -4,15 +4,8 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-// ⚠️ DEFERRED-TO-PRODUCER (Universal Reader Phase 2). street_lamps is render
-// geometry shared with the bake pipeline (bake-lamps → lamps.json; the ground takes lamp light
-// from the baked pool map via src/lib/groundLamp.js).
-// Kept static + LS-guarded so a non-LS look shows no lamps; its by-lookId load
-// belongs to the roster/render-emit arc alongside the lightmap. Owner: that arc.
-import lampData from '../data/street_lamps.json'
 import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { getElevationRaw } from '../utils/elevation'
-import { INSTANCE } from '../instance.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
@@ -61,10 +54,11 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
   // Effect that re-applies tint lives below the lampModel useState so the
   // dep array can include it (re-runs when the GLB finishes loading).
 
-  // HPDM-safety guard (byte-identical for LS today — INSTANCE.lookId is always
-  // 'lafayette-square' until instance-boot lands): a non-LS look shows no lamps
-  // rather than LS's.
-  const allLamps = lampsProp || (INSTANCE.lookId === 'lafayette-square' ? lampData.lamps : [])
+  // The town's lamps come from the caller — BakedLamps passes the slab's lamps.json. There is no
+  // fallback: this used to read one town's src/data/street_lamps.json when no lamps were passed,
+  // which bundled that file into every town (BRIEF-slab-loading ③). No caller relied on it.
+  if (!Array.isArray(lampsProp)) throw new Error('[StreetLights] no lamps passed — a town\'s lamps come from its slab (lamps.json)')
+  const allLamps = lampsProp
   // The lamps, binned for the building walls (lampPool.js#buildLampGrid) — from the list we DRAW.
   useEffect(() => {
     if (allLamps.length && !(reach > 0)) {

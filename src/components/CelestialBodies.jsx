@@ -35,7 +35,7 @@ const CONSTELLATIONS_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('constellatio
 const STARS_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('stars'))
 const MILKYWAY_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('milkyWay'))
 const SKY_GAIN_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('skyGain'))
-import brightStars from '../data/bright_stars.json'
+import brightStars from '../data/planetarium/bright_stars.json'
 import constellationsData from '../data/planetarium/constellations.json'
 import PlanetariumOverlay from './PlanetariumOverlay'
 import R3FErrorBoundary from './R3FErrorBoundary'

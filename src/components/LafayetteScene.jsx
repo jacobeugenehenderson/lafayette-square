@@ -85,32 +85,12 @@ function isDrag(e) {
   const dx = ce.clientX - _pdx, dy = ce.clientY - _pdy
   return dx * dx + dy * dy > 36
 }
-// ⚠️ DEFERRED-TO-PRODUCER exception (Universal Reader Phase 2). This is the
-// ONE reader data file left as a SYNC static import instead of the
-// loadInstanceData seam. It is NOT a universal file (like astronomy) — it is
-// installation-specific RENDER data (per-building foundation/roof overrides)
-// whose by-lookId loading is OWED by the roster/render emit arc, not this
-// reader phase. It can't go async here: `_overrides` feeds Foundations
-// geometry synchronously (getFoundationHeight → periodPedestalFor) through a
-// `useMemo([source])`, so the safe fix is a proper Foundations/buildings
-// ready-gate (not just a path flip) — exactly the geometry-pipeline
-// restructuring that arc is positioned to do and e2e against the bake.
-// Owner: roster/render producer-emit arc. See the HANDOFF producer-emit list.
-import buildingOverridesData from '../data/buildingOverrides.json'
 import { resolveLookId } from '../lib/resolveLookId.js'
 
-// ============ PER-BUILDING OVERRIDES ============
-// Override lookup: individual buildings can have custom roof_shape, foundation_height, etc.
-// Add entries to src/data/buildingOverrides.json to refine beyond rule-based defaults.
-// Guard: these overrides are LS-specific, so apply them ONLY under the LS look —
-// a non-LS look (`?look=…`) must never misapply them (the map is empty today,
-// so this is future-proofing that keeps "leave static" correct for install #2).
-const _overrides = (INSTANCE.lookId === 'lafayette-square' && buildingOverridesData.overrides) || {}
-
-function getOverride(buildingId, key) {
-  const o = _overrides[buildingId]
-  return o ? o[key] : undefined
-}
+// Per-building overrides (roof shape, foundation height, colour) are applied by the BAKE
+// (cartograph/bake-buildings.js) and reach the player through the slab. This live path used to
+// re-apply them from one town's src/data/buildingOverrides.json, which bundled that file into
+// every town (docs/briefs/BRIEF-slab-loading.md ③). It no longer reads them.
 
 // ============ FOUNDATION & ROOF HELPERS ============
 
@@ -129,7 +109,7 @@ function getGroundElevation(building) {
 // Thin alias preserving local call sites; canonical definition lives in
 // src/lib/foundationGeometry.js (shared with cartograph/bake-buildings.js).
 export function getFoundationHeight(building) {
-  return periodPedestalFor(building, _overrides)
+  return periodPedestalFor(building, null)
 }
 
 // Building Y = foundation height only. Terrain displacement handled by
@@ -141,9 +121,6 @@ function getBuildingY(building) {
 }
 
 function classifyRoof(building) {
-  const override = getOverride(building.id, 'roof_shape')
-  if (override !== undefined) return override
-
   const year = building.year_built
   const stories = building.stories || 1
   if (!year) return 'flat'
@@ -692,14 +669,12 @@ function Building({ building, neonInfo, palette, materialPhysics }) {
 
   const isSelected = selectedId === building.id
   const isHovered = hoveredId === building.id
-  // Effective tint: per-building override (buildingOverrides.color) wins,
-  // else the active Look's 12-slot palette (deterministic by id), else
+  // Effective tint: the active Look's 12-slot palette (deterministic by id), else
   // the legacy `building.color` from buildings.json. Palette comes from
   // scene.json (frozen-at-bake) in production; Stage's mount in
   // CartographApp passes a live-subscribed paletteOverride through
   // LafayetteScene so the Surfaces panel still retints in real time.
-  const colorOverride = getOverride(building.id, 'color')
-  const wallTintHex = effectiveBuildingColor(building, palette, colorOverride)
+  const wallTintHex = effectiveBuildingColor(building, palette, undefined)
   const baseColor = useMemo(() => new THREE.Color(wallTintHex), [wallTintHex])
 
   // Pre-compute night color: keep saturation, darken, cool-shift hue

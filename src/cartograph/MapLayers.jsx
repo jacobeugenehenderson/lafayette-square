@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { ParkTitleMesh } from '../components/LafayettePark.jsx'
+import { ParkTitleMesh } from '../components/LafayetteParkBody.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 // ── LS-DEFAULT data (the mold the kit was cast around). These stay static
 // imports because LS's render data lives at the shared default paths; a POURED

@@ -195,7 +195,7 @@ State, not doctrine — these belong in `ls/BACKLOG.md` once we decide to act. O
 - `src/components/CelestialBodies.jsx` — sky dome, sun, moon, stars; mounts `PlanetariumOverlay`; the `constellationsVisible` gate (channel × Hero/Street).
 - `src/components/PlanetariumOverlay.jsx` — constellation gold lines / spectral nodes (`vertexStarColor`) / gold labels + named stars (+ planet markers).
 - `src/lib/starColor.js` — `bvToRGB`, the shared B–V→RGB spectral-color SSoT (main field + overlay nodes).
-- `src/data/bright_stars.json` (ra/dec/mag/**ci**), `src/data/planetarium/{constellations,named_stars,planets}.json` — the catalogs.
+- `src/data/planetarium/{bright_stars,constellations,named_stars,planets}.json` — the catalogs (`bright_stars` carries ra/dec/mag/**ci**).
 - `src/components/Atmosphere.jsx` — volumetric clouds (couples to the sky's sun/sky color).
 - Authoring: `src/cartograph/CartographSkyLight.jsx`, `src/cartograph/skyLightChannels.js`, `cartograph/bake-scene.js` → `scene.json` SC.1 channels.
 

@@ -69,6 +69,16 @@ Instance #1 was not built by the kit. Measured, not asserted — re-derive befor
 
 ---
 
+### And the park component is deleted (Jacob, 2026-09-27)
+*"Why do we need the park to have all the stuff in the park?"* — we don't. Once this pour draws the lake
+as land-use **water** with its **bed**, the paths and steps as ground groups, the fence from mapped
+barriers, and the park's name through the label bake (Provincetown's ground already has every one of
+those groups), `src/components/LafayetteParkBody.jsx` and its wrapper `LafayettePark.jsx` are **deleted**,
+with `park_water.json`, `park-feature-elev.json`, the park polygon read and the park-title store field.
+Until then the wrapper loads the park as its own chunk, only in this town, so no other town downloads
+it (`checks/claims-no-town-rides-in-the-bundle.mjs`). ⭐ A town's feature is poured by a generic
+producer or declared as a set-piece — the renderer never names a town.
+
 ## Registers
 
 `cartograph/OPERATIONS.md` (the pour runbook gains its real worked example) · `FEATURES.md` if the hardwire retirements change what the kit can claim. Commit message names the register, or says "reaches no register."

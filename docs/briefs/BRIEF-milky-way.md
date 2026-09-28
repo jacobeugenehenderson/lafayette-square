@@ -28,7 +28,7 @@ we'll animate the Milky Way into the scene, so we'll really build out the planet
   resized. Even at full size one texel is about 1.8 arc-minutes, so at the Hero FOV (22°) each texel covers
   several screen pixels, and every photographed star becomes a smeared blob.
 - **The stars are already drawn sharply and separately** as points from a catalog
-  (`src/data/bright_stars.json`, plus filler stars), so the panorama's own stars are redundant.
+  (`src/data/planetarium/bright_stars.json`, plus filler stars), so the panorama's own stars are redundant.
 - Latitude and longitude come from `INSTANCE.geography`. Since `8e33f28c` that's the right town in Stage too
   (it was Lafayette Square's in every town's Stage before).
 - The canon's line about it: `ROADMAP.md`, *"Milky Way re-enable"*; `ls/STATUS.md` and `ls/OPERATIONS.md` (keep,
