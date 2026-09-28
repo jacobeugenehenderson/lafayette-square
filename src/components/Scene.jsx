@@ -19,10 +19,9 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useListings from '../hooks/useListings'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import MovieCamera from '../camera/MovieCamera.jsx'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
-import { resolveHeroKeyframes, useSceneStencil, applyRegime } from '../lib/cameraRegimes.js'
+import { applyRegime } from '../lib/cameraRegimes.js'
 import RegimeControls from './RegimeControls.jsx'
 
 
@@ -33,11 +32,9 @@ function easeInOutCubic(t) {
 }
 
 // ── Hero framing ─────────────────────────────────────────────────────────────
-// The hero camera plays the authored heroKeyframes through MovieCamera
-// (src/camera/MovieCamera.jsx) — the one driver Stage and Preview mount too.
-// Each keyframe carries its own aim; a town with none gets the opening view derived from its own disc (src/lib/cameraRegimes.js). ⛔ No
-// subject, no Lafayette Square pose: HERO_CENTER / HERO_TARGET and the
-// subject-centred derivedHeroPose are gone (BRIEF-camera-regimes, H-7).
+// The movie is played by <Town> (its MovieCamera — the one driver, mounted once, in Town); this rig flies INTO it
+// through the driver's handle. Each keyframe carries its own aim; a town with none gets the opening view derived from
+// its own disc (src/lib/cameraRegimes.js). ⛔ No subject, no Lafayette Square pose (BRIEF-camera-regimes, H-7).
 const _heroPos = new THREE.Vector3()
 const _heroTgt = new THREE.Vector3()
 
@@ -165,7 +162,7 @@ const _fromUp = new THREE.Vector3()
 const _toUp = new THREE.Vector3()
 const _lerpUp = new THREE.Vector3()
 
-function CameraRig() {
+function CameraRig({ movie }) {
   const { camera, gl, size } = useThree()
   const controlsRef = useRef()
   const initialized = useRef(false)
@@ -178,7 +175,6 @@ function CameraRig() {
   const scene = useSceneJson(INSTANCE.lookId)
   const shotsV       = scene?.shots?.values || SHOTS_FLAT_DEFAULTS
   const browseFov    = shotsV.browse?.fov         ?? SHOTS_FLAT_DEFAULTS.browse.fov
-  const heroFov      = shotsV.hero?.fov           ?? SHOTS_FLAT_DEFAULTS.hero.fov
   const streetFov    = shotsV.street?.fov         ?? SHOTS_FLAT_DEFAULTS.street.fov
   const streetEye    = shotsV.street?.eyeHeight   ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
 
@@ -196,21 +192,10 @@ function CameraRig() {
   const browseCx     = browseBounds?.cx ?? 0
   const browseCz     = browseBounds?.cz ?? 0
 
-  // Authored hero camera animation from the slab — the SAME keyframes Stage +
-  // Preview play, each with its own aim. No authored path → ONE keyframe, the
-  // opening view derived from this scene's own disc (static: heroKeyframeAnim
-  // with n = 1 is the keyframe verbatim). Null until the ground publishes the
-  // disc; the hero drive waits for it rather than inventing a pose.
-  const stencil = useSceneStencil()
-  const heroKeyframes = useMemo(
-    () => resolveHeroKeyframes(scene?.heroKeyframes, scene?.heroMotion, stencil, heroFov, 'production'),
-    [scene?.heroKeyframes, scene?.heroMotion, stencil, heroFov])
-  // ⛔ No default motion: a static shot needs none, and an animated one without
-  // its own { length, mode } is refused by resolveHeroKeyframes above.
-  const heroMotion = scene?.heroMotion ?? null
-  // The movie is played by MovieCamera (mounted below); entering it samples the path through its handle, on
-  // its clock — the random start on each entry (and on arrival) is the driver's (BRIEF-one-movie-driver).
-  const movie = useRef(null)
+  // The movie is played by <Town> (its MovieCamera); entering it samples the path through the driver's handle, on
+  // its clock — the random start on each entry (and on arrival) is the driver's. `movie` is the link Scene shares
+  // with <Town movie>: the handle Town fills, and the hold this rig answers while its transition owns the camera.
+  movie.hold = () => transitioning.current
 
   // Projection vertical offset (lens shift) for panel-aware reframe
 
@@ -507,14 +492,14 @@ function CameraRig() {
         const altitude = browseAltitude(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
         beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, BROWSE_TRANS_MS,
           browseUpFromHeading(browseHeadingDeg))
-      } else if (entering === 'hero' && heroKeyframes) {
+      } else if (entering === 'hero' && movie.handle.current?.pose(_heroPos, _heroTgt)) {
         // Glide onto the authored path: the destination is the keyframe pose
         // itself, and the chase below keeps it moving with the pan. Up returns
         // to [0,1,0] so Hero un-rolls smoothly out of Browse's overhead.
         // MovieCamera picks a random point in the pan on each entry → a returning user
         // sees a different part of the arc, not always the same start.
         transToHero.current = true
-        const { fov } = movie.current.pose(_heroPos, _heroTgt)
+        const { fov } = movie.handle.current.pose(_heroPos, _heroTgt)   // null until the town's path is loaded (guarded above)
         beginTransition(_heroPos.toArray(), _heroTgt.toArray(), fov, SHOT_TRANSITION_MS.hero, [0, 1, 0])
       }
     }
@@ -548,9 +533,9 @@ function CameraRig() {
 
       // If transitioning into hero, chase the moving keyframe-animated pose
       // so the transition lands on the authored path instead of a stale point.
-      if (transToHero.current && heroKeyframes) {
-        const { fov: kfFov } = movie.current.pose(_toPos, _toTarget)
-        toFov.current = kfFov
+      if (transToHero.current) {
+        const r = movie.handle.current?.pose(_toPos, _toTarget)
+        if (r) toFov.current = r.fov
       }
 
       const elapsed = Date.now() - transStart.current
@@ -624,11 +609,7 @@ function CameraRig() {
        `update()` itself (drei's own useFrame skips it while disabled).
        ⚠ MEASURED: drei bundles `three-stdlib`'s OrbitControls, which never sets
        `touch-action` on the canvas, so there is nothing else to undo. */
-    <>
-      <RegimeControls managed controlsRef={controlsRef} />
-      <MovieCamera keyframes={heroKeyframes} motion={heroMotion} quality={QUALITY} controlsRef={controlsRef} handle={movie}
-        active={() => useCamera.getState().viewMode === 'hero'} hold={() => transitioning.current} />
-    </>
+    <RegimeControls managed controlsRef={controlsRef} />
   )
 }
 
@@ -652,6 +633,9 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const select = useSelectedBuilding((s) => s.select)
   const deselect = useSelectedBuilding((s) => s.deselect)
   const onSelectBuilding = useCallback((id) => (id ? select(id) : deselect()), [select, deselect])
+  // The link between CameraRig's transitions and <Town>'s movie driver: Town fills the handle, the rig answers hold.
+  const movieLink = useMemo(() => ({ handle: { current: null }, hold: () => false }), [])
+  const movieHooks = useMemo(() => ({ handle: movieLink.handle, hold: () => movieLink.hold() }), [movieLink])
   const listings = useListings((s) => s.listings)
 
   // The movie shot needs CONTINUOUS rendering where the profile asks for it: under
@@ -709,14 +693,14 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
     >
       <SheetGround active={sheeted} ground={ground} />
       <Town town={INSTANCE} lookId={INSTANCE.lookId} quality={QUALITY} shot={shot} paused={paused} idle={idle}
-        selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
+        selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings} movie={movieHooks}
         layers={IS_GROUND ? GROUND_ONLY : undefined}>
         {/* The old player's overlays: the user's dot, the couriers, the map pins. */}
         {!IS_GROUND && <UserDot />}
         {!IS_GROUND && moduleOn('delivery') && <CourierDots />}
         {!IS_GROUND && <R3FErrorBoundary name="LandmarkMarkers"><LandmarkMarkers shot={SHOT_KEY[shot]} /></R3FErrorBoundary>}
       </Town>
-      <CameraRig />
+      <CameraRig movie={movieLink} />
     </Canvas>
     </div>
   )

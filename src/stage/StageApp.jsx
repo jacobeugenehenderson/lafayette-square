@@ -22,7 +22,6 @@ import StreetLights from '../components/StreetLights'
 import GatewayArch from '../components/GatewayArch'
 
 import { heroPoseAtTime } from '../preview/heroAnim'
-import MovieCamera from '../camera/MovieCamera.jsx'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import {
   cameraState, cameraPush, subscribeCameraState, pushCamera, publishCameraState,
@@ -858,7 +857,7 @@ function StreetCamera({ cam }) {
 
 // ── Hero preview animation (runs inside R3F) ────────────────────────────────
 
-export function HeroPreview({ keyframes, motion, quality }) {
+export function HeroPreview({ keyframes, motion }) {
   const { camera } = useThree()
   const controls = useThree((s) => s.controls)
   const frameCount = useRef(0)
@@ -905,14 +904,20 @@ export function HeroPreview({ keyframes, motion, quality }) {
     if (t) publishCameraState(camera, [t.x, t.y, t.z])
   })
 
-  // Play — MovieCamera, the one driver production and Preview mount too, so what is previewed here is what ships.
-  // Playback starts FROM THE PLAYHEAD and writes it back. ⛔ When not playing it touches nothing: the camera is the
-  // operator's whenever it is not playing (BRIEF-camera-regimes).
-  return (
-    <MovieCamera keyframes={keyframes} motion={motion} quality={quality} active={!!motion.preview && keyframes.length > 1}
-      start={() => heroScrub.t * motion.length}
-      onTime={(time) => { heroScrub.t = time / motion.length; notifyHeroScrub() }} />
-  )
+  // Play is <Town>'s MovieCamera (the one driver — what is previewed here is what ships), reached through
+  // useStageMovie below. ⛔ When not playing it touches nothing: the camera is the operator's (BRIEF-camera-regimes).
+  return null
+}
+
+/** Stage's hooks into <Town movie>: playback starts FROM THE PLAYHEAD and writes it back; Play is `playing`. */
+export function useStageMovie(keyframes, motion) {
+  const length = motion.length
+  const playing = !!motion.preview && keyframes.length > 1
+  return useMemo(() => ({
+    playing,
+    start: () => heroScrub.t * length,
+    onTime: (time) => { heroScrub.t = time / length; notifyHeroScrub() },
+  }), [playing, length])
 }
 
 // ── Hook: subscribe to live camera state from outside R3F ────────────────────

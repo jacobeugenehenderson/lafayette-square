@@ -40,6 +40,11 @@
  *                    that instant (sky, sun, light, neon's opening hours) and nothing ticks it; null is live (the
  *                    renderer's own clock). Absent (undefined), the app drives the clock store itself (the kit's
  *                    apps). ⛔ Never with holdScrubbedTime: one writer of the town's clock.
+ *   movie            optional — the app's hooks into the town's movie (MovieCamera, mounted here, once): { start
+ *                    ('random' | () => seconds — Stage's playhead), onTime (Stage's scrub readout), playing (Stage's
+ *                    Play; default true), hold (() => true while the app's tween owns the camera), handle (a ref
+ *                    filled with { pose() } — the app's tween samples the path on the driver's clock) }. The Ward
+ *                    passes none: shot='movie' plays the town's own baked path.
  *   children         the app's overlays, drawn in the town's frame (see <TownPoint>)
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
@@ -51,6 +56,9 @@ import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
 import { QualityProvider } from '../lib/qualityProfile.js'
 import { useTownPlace } from '../lib/townPlace.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import MovieCamera from '../camera/MovieCamera.jsx'
+import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
+import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { skyModeOf } from '../lib/skyMode'
 import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import { sceneExag } from '../utils/terrainShader'
@@ -97,7 +105,7 @@ export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
   'lantern', 'lampsOn', 'canopy', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
-  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint', 'wallPalettes', 'surfaces',
+  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint', 'wallPalettes', 'surfaces', 'heroKeyframes', 'heroMotion',
 ]
 // PostProcessing's view vocabulary (half-res AO off the movie shot, the street-level bloom bump).
 const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
@@ -237,7 +245,7 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, time, children,
+  holdScrubbedTime = false, time, movie, children,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
@@ -256,6 +264,13 @@ export default function Town({
   if (!Array.isArray(listings)) throw new Error('[Town] ⛔ needs the `listings` prop — the town\'s content listings (an array; [] for a town with none)')
   // What the leaves read (townContext.js) — the shot, the selection, the listings. No player store.
   const scope = useMemo(() => ({ shotKey: key, selectedId, select: onSelectBuilding ?? null, listings }), [key, selectedId, onSelectBuilding, listings])
+  // The town's movie: its baked path (heroKeyframes + heroMotion), or the opening view derived from its own disc
+  // when it has none — Stage's live keys arrive as overrides. The same resolution the apps used (cameraRegimes.js).
+  const stencil = useSceneStencil()
+  const heroFov = scene?.shots?.values?.hero?.fov ?? SHOTS_FLAT_DEFAULTS.hero.fov
+  const heroMotion = o.heroMotion ?? scene?.heroMotion ?? null
+  const heroKeyframes = useMemo(() => o.heroKeyframes ?? (scene ? resolveHeroKeyframes(scene.heroKeyframes, scene.heroMotion, stencil, heroFov, 'town') : null),
+    [o.heroKeyframes, scene, stencil, heroFov])
   // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
   const loaded = useTownLoaded(lookId)
   if (!loaded) return <TownPlace town={town} lookId={lookId} time={time} />
@@ -267,6 +282,12 @@ export default function Town({
     <QualityProvider quality={quality}>
     <TownScope value={scope}>
       <TownPlace town={town} lookId={lookId} time={time} />
+      {/* ⭐ THE MOVIE IS TOWN'S (Warden, 2026-09-28): the ONE mount of the driver, playing this town's own baked path
+          (Stage's live keys arrive as overrides). Mounted in every shot so an app's tween can sample the path before
+          it switches; it plays only in the movie shot. ▶ node checks/claims-one-movie-driver.mjs */}
+      <MovieCamera keyframes={heroKeyframes} motion={heroMotion} quality={quality}
+        active={shot === 'movie' && (movie?.playing ?? true)}
+        start={movie?.start ?? 'random'} onTime={movie?.onTime} hold={movie?.hold} handle={movie?.handle} />
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} />
       {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} />}
       <SkyStateTicker />

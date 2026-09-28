@@ -40,7 +40,7 @@ const stageKeys = (() => {
   const extra = app.match(/return useMemo\(\(\) => \(\{ \.\.\.channels, ([^}]*)\}\)/)
   return new Set([...(list ? [...list[1].matchAll(/'(\w+)'/g)].map(m => m[1]) : []), ...(extra ? extra[1].split(',').map(x => x.split(':')[0].trim()).filter(Boolean) : [])])
 })()
-const stageMountsTown = /<Town\b[^>]*overrides=\{townOverrides\}/.test(app) && /const townOverrides = useStageOverrides\(\)/.test(app)
+const stageMountsTown = /<Town\b[^>]*overrides=\{townOverrides\}/.test(app) && /const townOverrides = useStageOverrides\(/.test(app)
 
 /** Stage mounts of the lamps that do NOT pass the live lantern. */
 function deadMounts(text) {

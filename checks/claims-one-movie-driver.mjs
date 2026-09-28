@@ -14,7 +14,9 @@
  *   · no second start phase: randomizeHeroStart / _startOffsetSec exist nowhere;
  *   · the movie's near plane is the quality profile's `movieNear`, a finite number in EVERY profile, and no app
  *     writes camera.near itself (the harness excepted);
- *   · every app that mounts <Town> mounts <MovieCamera> (a src/harness/ file marked ⛔ HARNESS ONLY is exempt).
+ *   · EXACTLY ONE module mounts <MovieCamera>, and it is <Town> (Warden, 2026-09-28: the Ward may import only Town, and a
+ *     Town with shot='movie' played nothing — the per-app mounts in Scene/Preview/Stage are gone). Apps reach the
+ *     driver only through <Town movie={{ start, onTime, playing, hold, handle }}>.
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-one-movie-driver.mjs [--self-test]
  */
@@ -54,20 +56,13 @@ export function audit(files) {
   }
   const driver = files.find(x => x.path === DRIVER)
   if (driver && !/\bmovieNear\b/.test(code(driver.src))) f.push(`${DRIVER} does not read quality.movieNear`)
-  for (const x of files) {
-    const c = code(x.src)
-    if (x.path === 'src/components/Town.jsx' || !/<Canvas\b/.test(c) || !/<Town\b/.test(c)) continue
-    if (harness(x)) { info.push(`exempt: ${x.path} (harness)`); continue }
-    // Mounted here, or by a component this app imports from a local file and renders (Stage: HeroPreview).
-    const via = [...x.src.matchAll(/^import\s+(?:(\w+)|\{([^}]*)\})[^'\n]*from\s+'(\.[^']+)'/gm)].flatMap(m => {
-      const names = m[1] ? [m[1]] : m[2].split(',').map(n => n.trim().split(/\s+as\s+/).pop()).filter(Boolean)
-      const target = files.find(y => y.path.replace(/\.(jsx?|mjs)$/, '') === join(x.path, '..', m[3]).replace(/\.(jsx?|mjs)$/, ''))
-      return target && /<MovieCamera\b/.test(code(target.src)) ? names.filter(n => new RegExp(`<${n}\\b`).test(c)).map(n => `${n} (${target.path})`) : []
-    })
-    if (via.length) { info.push(`app: ${x.path} mounts <MovieCamera> through ${via.join(', ')}`); continue }
-    if (!/<MovieCamera\b/.test(c)) f.push(`${x.path} mounts <Town> but not <MovieCamera> — its movie shot has no driver, or a private one`)
-    else info.push(`app: ${x.path} mounts <MovieCamera>`)
-  }
+  const TOWN = 'src/components/Town.jsx'
+  const mounts = files.filter(x => /<MovieCamera\b/.test(code(x.src))).map(x => x.path)
+  if (mounts.length !== 1 || mounts[0] !== TOWN) f.push(`<MovieCamera> is mounted by ${mounts.join(', ') || 'nothing'} — exactly one module mounts it, and it is ${TOWN} (the Ward imports only Town)`)
+  else info.push(`<MovieCamera> is mounted once, by ${TOWN}`)
+  const town = files.find(x => x.path === TOWN)
+  if (town && !/shot\s*===\s*'movie'/.test(code(town.src))) f.push(`${TOWN} does not tie <MovieCamera> to shot === 'movie'`)
+  if (town && !/heroKeyframes/.test(code(town.src))) f.push(`${TOWN} does not play the town's own baked heroKeyframes`)
   return { f, info }
 }
 
@@ -81,8 +76,8 @@ if (process.argv.includes('--self-test')) {
     ['a second start phase', () => audit([...files, { path: 'src/fake/App.jsx', src: 'randomizeHeroStart(m)' }])],
     ['an app writes the near plane', () => audit([...files, { path: 'src/fake/App.jsx', src: 'camera.near = 10' }])],
     ['a profile loses movieNear', () => audit(swap(PROFILE, s => s.replace(/movieNear:\s*[\d.]+,?/, '')))],
-    ['Preview drops <MovieCamera>', () => audit(swap('src/preview/PreviewApp.jsx', s => s.replace(/<MovieCamera\b/g, '<Nothing')))],
-    ['Stage\'s HeroPreview drops <MovieCamera>', () => audit(swap('src/stage/StageApp.jsx', s => s.replace(/<MovieCamera\b/g, '<Nothing')))],
+    ['an app mounts its own <MovieCamera> again', () => audit([...files, { path: 'src/fake/App.jsx', src: '<Canvas><Town /><MovieCamera /></Canvas>' }])],
+    ['Town drops <MovieCamera>', () => audit(swap('src/components/Town.jsx', s => s.replace(/<MovieCamera\b/g, '<Nothing')))],
     ['the driver is deleted', () => audit(files.filter(x => x.path !== DRIVER))],
   ]
   let bad = 0
@@ -93,4 +88,4 @@ if (process.argv.includes('--self-test')) {
 const { f, info } = audit(files)
 console.log(info.join('\n'))
 if (f.length) { console.log(`⛔ FAIL — ${f.length}\n   ${f.join('\n   ')}`); process.exit(1) }
-console.log('✅ one movie driver: MovieCamera plays the path, owns its phase and its near plane, in every app')
+console.log('✅ one movie driver, mounted once by <Town>: it plays the town\'s path, owns its phase and its near plane')

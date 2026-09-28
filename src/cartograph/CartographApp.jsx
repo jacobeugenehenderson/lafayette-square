@@ -33,7 +33,7 @@ import { shallow } from 'zustand/shallow'
 import { reloadTerrain, onTerrainReload } from '../utils/terrainShader'
 import { streetEyeY } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { SHOTS, computeBrowseAltitude, HeroPreview } from '../stage/StageApp.jsx'
+import { SHOTS, computeBrowseAltitude, HeroPreview, useStageMovie } from '../stage/StageApp.jsx'
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
 import { derivedOpeningKeyframe } from '../lib/cameraRegimes.js'
 import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
@@ -789,7 +789,7 @@ const STAGE_CHANNELS = [
   'constellations', 'milkyWay', 'skyGain', 'stars', 'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo',
   'grade', 'grain', 'dof', 'surfaces',
 ]
-function useStageOverrides() {
+function useStageOverrides(heroKeyframes, heroMotion) {
   const channels = useCartographStore(s => Object.fromEntries(STAGE_CHANNELS.map(k => [k, activeChannel(s, k)])), shallow)
   const neonForceOn = useCartographStore(s => s.neonForceOn)
   const neonDensity = useCartographStore(s => s.neonDensity)
@@ -797,8 +797,8 @@ function useStageOverrides() {
   const dofFocus = useCartographStore(s => s.dofFocus)
   // Force Neon On OFF means "not forced" — neon follows each place's hours, as it ships. A literal `false`
   // told SceneNeon to switch every tube off, so Stage never showed the neon production draws.
-  return useMemo(() => ({ ...channels, neonForceOn: neonForceOn || undefined, neonDensity, lampsOn, dofFocus }),
-    [channels, neonForceOn, neonDensity, lampsOn, dofFocus])
+  return useMemo(() => ({ ...channels, neonForceOn: neonForceOn || undefined, neonDensity, lampsOn, dofFocus, heroKeyframes, heroMotion }),
+    [channels, neonForceOn, neonDensity, lampsOn, dofFocus, heroKeyframes, heroMotion])
 }
 // Stage's shots → the shot <Town> draws (Designer draws no <Town>).
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
@@ -845,7 +845,7 @@ export default function CartographApp() {
   const setKeyframes = setStoreKeyframes
   const [previewPlaying, setPreviewPlaying] = useState(false)
   const [previewSpeed, setPreviewSpeed] = useState(1)
-  const heroMotion = { ...storeMotion, preview: previewPlaying, speed: previewSpeed }
+  const heroMotion = useMemo(() => ({ ...storeMotion, preview: previewPlaying, speed: previewSpeed }), [storeMotion, previewPlaying, previewSpeed])
   const setHeroMotion = (next) => {
     const f = typeof next === 'function' ? next(heroMotion) : next
     if (f.length !== heroMotion.length || f.mode !== heroMotion.mode) {
@@ -922,7 +922,10 @@ export default function CartographApp() {
   const deselectStore = useSelectedBuilding((s) => s.deselect)
   const onSelectBuilding = useCallback((id) => (id ? selectStore(id) : deselectStore()), [selectStore, deselectStore])
   const listings = useListings((s) => s.listings)
-  const townOverrides = useStageOverrides()
+  // Stage's live path rides into <Town>'s movie driver as overrides (the keys, and the motion with Stage's speed);
+  // the playhead and Play come through <Town movie>.
+  const townOverrides = useStageOverrides(keyframes, heroMotion)
+  const stageMovie = useStageMovie(keyframes, heroMotion)
   const designAerialOnly = inDesigner && !tool && aerialVisible
   // When a tool is active, hide the giant off-map ground plane so the
   // background (curated or aerial) shows through under the streets.
@@ -1058,7 +1061,7 @@ export default function CartographApp() {
               included since SlabBuildings recolours the palette live (BRIEF-live-building-palette).
               ▶ node checks/claims-every-app-mounts-the-town.mjs */}
           {!inDesigner && activeTown && (
-            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs}
+            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs} movie={stageMovie}
               selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
               layers={{
@@ -1156,7 +1159,7 @@ export default function CartographApp() {
               thing". ⛔ Conflating "has a landmark" with "may move its camera" is
               the LS-gated-capability shape, seventh of the night. */}
           {shot === 'hero' && (
-            <HeroPreview keyframes={keyframes} motion={heroMotion} quality={QUALITY} />
+            <HeroPreview keyframes={keyframes} motion={heroMotion} />
           )}
         </Canvas>
 

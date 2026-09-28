@@ -16,7 +16,6 @@ import * as THREE from 'three'
 
 import { invalidateTreeAtlas } from '../components/treeAtlasMaterial'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
-import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { streetEyeY } from '../utils/elevation'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
@@ -32,7 +31,6 @@ import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
 import { createCameraTween } from './cameraTween'
 import { transitionMs } from '../camera/transitions.js'
-import MovieCamera from '../camera/MovieCamera.jsx'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
 import {
@@ -94,7 +92,7 @@ function resolveShotPose(shot, aspect, streetEye = SHOTS_FLAT_DEFAULTS.street.ey
 const _heroPos = new THREE.Vector3()
 const _heroTgt = new THREE.Vector3()
 
-function ShotCamera({ shot, setShot }) {
+function ShotCamera({ shot, setShot, movie }) {
   const { camera, size, gl } = useThree()
   const controlsRef = useRef()
   const tweenRef = useRef(null)
@@ -131,20 +129,7 @@ function ShotCamera({ shot, setShot }) {
   if (!tweenRef.current) tweenRef.current = createCameraTween()
   const tween = tweenRef.current
 
-  // Authored hero animation from the slab (same data and function Stage's
-  // HeroPreview plays).
   const scene = useSceneJson(resolvePreviewLookId())
-  // Each keyframe carries its own aim; no authored path → the opening view
-  // derived from this scene's own disc (src/lib/cameraRegimes.js). ⛔ No hero
-  // subject and no Lafayette Square pose (BRIEF-camera-regimes, H-7).
-  const stencil = useSceneStencil()
-  const heroFov = scene?.shots?.values?.hero?.fov ?? SHOTS.hero.fov
-  const heroKeyframes = useMemo(
-    () => resolveHeroKeyframes(scene?.heroKeyframes, scene?.heroMotion, stencil, heroFov, 'preview'),
-    [scene?.heroKeyframes, scene?.heroMotion, stencil, heroFov])
-  // ⛔ No default motion: a static shot needs none; an animated one without its
-  // own is refused above.
-  const heroMotion = scene?.heroMotion ?? null
   const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
 
   // Resolve the pose for a shot transition. Hero uses the keyframe path's
@@ -152,15 +137,15 @@ function ShotCamera({ shot, setShot }) {
   // instead of the legacy static center, avoiding a snap when the per-frame
   // animation below takes over. Browse up comes from the authored heading
   // (cosmetic screen orientation) — same scene.browseHeading production reads.
-  // The movie is played by MovieCamera (mounted below), which also picks a random point on the path on each entry
+  // The movie is played by <Town> (its MovieCamera), which also picks a random point on the path on each entry
   // ("the camera is supposed to pick up at randomized locations on the path", Jacob, 2026-09-21). The tween into
-  // Hero samples the path through its handle, on the driver's own clock, so it lands where the driver plays.
-  const movie = useRef(null)
+  // Hero samples the path through the driver's handle (`movie`, shared with <Town movie>), so it lands where it plays.
+  movie.hold = () => tween.isActive()
 
   function poseFor(shotKey, aspect) {
     if (shotKey === 'hero') {
       // ⛔ THE DRIVER'S CLOCK, or the tween lands on one pose and the driver plays from another.
-      const r = heroKeyframes && movie.current?.pose(_heroPos, _heroTgt)
+      const r = movie.handle.current?.pose(_heroPos, _heroTgt)
       if (!r) return null
       const { fov } = r
       return { pos: _heroPos.toArray(), target: _heroTgt.toArray(), fov, up: [0, 1, 0] }
@@ -239,7 +224,7 @@ function ShotCamera({ shot, setShot }) {
     })
   }, [shot, camera, size.width, size.height])
 
-  // Drive the tween every frame. In Hero, MovieCamera plays the authored path and holds while the tween runs.
+  // Drive the tween every frame. In Hero, <Town>'s MovieCamera plays the authored path and holds while the tween runs.
   useFrame(() => { if (tween.isActive()) tween.tick(performance.now()) })
 
   // One controls definition per regime (src/lib/cameraRegimes.js), the same as
@@ -247,13 +232,7 @@ function ShotCamera({ shot, setShot }) {
   // right-drag orbit is gone, Jacob 2026-09-26) · Street → street · Hero →
   // playback (the keyframes own the camera; a drag leaves for Browse, above).
   const regime = shot === 'browse' ? 'plan' : shot === 'street' ? 'street' : 'playback'
-  return (
-    <>
-      <RegimeControls key={shot} regime={regime} controlsRef={controlsRef} />
-      <MovieCamera keyframes={heroKeyframes} motion={heroMotion} quality={QUALITY} active={shot === 'hero'}
-        controlsRef={controlsRef} handle={movie} hold={() => tween.isActive()} />
-    </>
-  )
+  return <RegimeControls key={shot} regime={regime} controlsRef={controlsRef} />
 }
 
 const TOOLBAR_SHOTS = SHOTS
@@ -1202,6 +1181,9 @@ const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
 const QUALITY = deviceQuality()
 
 function CanvasContents({ layers, shot, setShot }) {
+  // The link between ShotCamera's tween and <Town>'s movie driver: Town fills the handle, the tween answers hold.
+  const movieLink = useMemo(() => ({ handle: { current: null }, hold: () => false }), [])
+  const movieHooks = useMemo(() => ({ handle: movieLink.handle, hold: () => movieLink.hold() }), [movieLink])
   const lookId = resolvePreviewLookId()
   const town = useMemo(() => townForLook(lookId, 'Preview'), [lookId])
   // Preview takes no clicks (interactive={false}); it draws the listings the page loaded, as production does.
@@ -1217,7 +1199,7 @@ function CanvasContents({ layers, shot, setShot }) {
   // BasicLights — an inspection fallback lit only while the sky layer is off.
   return (
     <>
-      <Town town={town} lookId={lookId} quality={QUALITY} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
+      <Town town={town} lookId={lookId} quality={QUALITY} listings={listings} shot={TOWN_SHOT[shot]} interactive={false} movie={movieHooks}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,
@@ -1230,7 +1212,7 @@ function CanvasContents({ layers, shot, setShot }) {
           <BasicLights />
         </group>
       </Town>
-      <ShotCamera shot={shot} setShot={setShot} />
+      <ShotCamera shot={shot} setShot={setShot} movie={movieLink} />
     </>
   )
 }
