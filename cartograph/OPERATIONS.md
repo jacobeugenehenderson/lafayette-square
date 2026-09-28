@@ -272,13 +272,20 @@ horizon ground disc is gone — the town's edge is the neighborhood fade, set in
 - **Tree anchors are part of the pour** — `tree-anchors` runs **after the tree bake** and seats every trunk on the *drawn* ground. The file names its placements (`placementKey`) and its terrain; the map refuses it, by name in the console, when either no longer matches. Trees hovering or sunk after a re-pour or a terrain re-bake ⇒ re-run this, not the tree bake: `node cartograph/bake-tree-anchors.js --look=<id> --scene=<id>`. ▶ `node checks/claims-anchors-follow-the-placements.mjs` · `node checks/claims-anchors-know-their-terrain.mjs` · measured seat: `node scratch/marram-tree-seating.mjs --looks=<id>`.
 - **The pour transcodes the impostor pages, LAST (since 2026-08-29)** — after the placements step, `pack-impostor-ktx2.mjs` encodes every hero + overhead page to KTX2/ETC1S and repoints `trees-atlas.json`. ⛔ **It has to be last and it is not optional:** the atlas step rewrites the manifest from source and hands back `.png`, so a pour that skipped this would silently ship ~4× the impostor VRAM (LS: 282 MB → 1,121 MB) and look exactly like a clean bake, because PNG pages render perfectly on the desktop doing the baking. A pack failure therefore **fails the whole pour** rather than returning a green slab nobody can tell is heavy — `basisu` is a hard requirement (`brew install basis_universal`). ⛔ **The pages must SHIP, and how that is enforced INVERTED on 2026-09-01.** This used to read *"do not gitignore the .ktx2 pages — the deploy is an actions/checkout, so an ignored page is a 404 in the canopy."* The whole baked tree is gitignored now and the pages ship from R2, so tracking has nothing to do with whether the canopy gets them. **The requirement is unchanged; the enforcement moved** — ▶ `node scripts/verify-baked-in-r2.mjs` reads the bucket and names any page that is absent. ▶ `node scratch/claims-every-declared-page-ships.mjs`
 - **The pour writes this town's public credits** — a `sources` step reads which inputs are actually on the scene's disk and bakes `public/baked/<look>/sources.json`, which is what the visitor's panel-footer credit and the info panel's **Sources** section render. ⭐ **Nothing to operate on a good day, and the one thing to read on a bad one: it prints what is still OWED.** An input that reached the render under terms the kit cannot state is listed there and is *not* credited — you close that by reading the licence **at the source** and recording it in `cartograph/intake-rows.mjs`'s `licence`. ⛔ **Never fill one in from memory or a search result** — the entry for Microsoft's footprints said ODbL for over a month and the dataset's own `LICENSE` says CDLA Permissive 2.0. ▶ `node cartograph/bake-sources.js --look=<id> --scene=<id>`
-- ⛔⛔ **THE POUR'S LAST STEP IS AN UPLOAD, AND IT CAN FAIL THE BAKE (2026-09-01).** `public/baked/` is
-  gitignored and served from R2, so **the upload — not a commit — is what carries a pour to a visitor.**
-  `scripts/upload-baked-to-r2.mjs` runs at the end of the bake and a failure **fails the whole bake (500)**
-  rather than returning a green slab that reached nobody. ⚠️ **And the pour is then live EVERYWHERE
-  immediately** — one bucket serves staging and prod at the same URLs, so a re-pour reaches
-  lafayette-square.com without a push. That is the settled model (`PREVIEW.md §0.2`: staging is redundant
-  for slab-data — **Preview is the gate**), but it is new in mechanism. ▶ `node scripts/verify-baked-in-r2.mjs`
+- ⛔⛔ **THE UPLOAD — NOT A COMMIT — CARRIES A POUR TO A VISITOR.** `public/baked/` is gitignored and served
+  from R2; the bake's last step, `scripts/upload-baked-to-r2.mjs --env=staging`, writes **staging** keys only
+  (prod is Promote), and a failed upload **fails the bake** rather than returning a green slab that reached nobody.
+  ▶ `node scripts/verify-baked-in-r2.mjs` (PUBLISH §6).
+  - ⭐ **Slab names — the knobs (built 2026-09-28; nothing run until Jacob's go).** `--names=sha256-16` also
+    writes every file under its content name (immutable), then `manifest.json` LAST, stamped; the player
+    (`src/lib/slabUrl.js`) follows the stamp. It **refuses a stale manifest** — run
+    `node cartograph/bake-manifest.mjs --town=<t>` first (the pour does not yet). Publish and Promote pass no
+    flag today. `node scripts/sweep-retired-slab-keys.mjs --env=<e> --look=<t>` retires old names (dry-run
+    unless `--apply`; keeps the last K ≥ 2 manifests). ⛔ Its `--retire-plain` must wait until this panel's
+    "already published" test reads `manifest.json` — today it reads the plain `scene.json`.
+  - ⛔ **Order: publish every town with its `manifest.json`, THEN deploy a Worker** — both decide a town is
+    live by it, and `wrangler deploy` refuses while it would darken one.
+    ▶ `node checks/claims-a-worker-deploy-darkens-no-town.mjs`
 - ### ⭐ **PAINT ORDER IS A BAKE-TIME FLATTEN, NOT A RENDER CONCERN** *(2026-09-21)*
   The Designer is a **2D paint stack** — layers overlap and the order decides what you see, and that
   is correct there; the overlap *is* authoring. **The bake is the 2D→3D crossing, and it is the last

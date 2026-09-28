@@ -265,7 +265,7 @@ have started the clock on a failing deploy.
 | Custom domain | `assets.theward.online` (zone moved to Cloudflare 2026-09-01; the R2 record is **proxied/orange** — it must be) |
 | Read at runtime by | `src/lib/bakedUrl.js` → `ASSET_BASE`; **not** `BASE_URL`, which is where the *site* is deployed |
 | Build-time switch | `VITE_ASSET_BASE`, a GitHub Actions **variable** (not a secret), in both workflows |
-| Cache | `public, max-age=300, must-revalidate` — deliberately **not** `immutable`, see below |
+| Cache | plain keys `public, max-age=300, must-revalidate` · content names `immutable` · `manifest.json` `no-cache` — below |
 
 **Unset `VITE_ASSET_BASE` and everything falls back to `BASE_URL`** — i.e. whatever is on local disk.
 That is the rollback (delete the variable, redeploy) and it is also how an author sees their own bake.
@@ -313,13 +313,13 @@ exclusions itself, which is the only reason it can catch a wrong definition.
 decisions `.gitignore` used to enforce**: `lod0` (353.3 MB the runtime cannot request) and the atlas
 viz sheets. Once the whole tree is ignored, per-file ignore rules discriminate nothing.
 
-### Why the cache TTL is short
+### Names and caching — content names (built 2026-09-28; the first upload waits on Jacob's go)
 
-38.3 MB of the LS slab carries **no version token** in a production build — both atlas PNGs, all 360
-KTX2 impostor pages, and the terrain/ground maps — because `bakeLastMs` is an authoring prop and is
-undefined in prod. `immutable` would pin a stale canopy at a URL nothing can change. ⛔ **Do not
-lengthen this TTL until those carry a token** (`plans/r2-asset-offload.md §3.5`). Cloudflare's zone
-**Browser Cache TTL** overrides origin headers and must stay on *Respect Existing Headers*.
+A PLAIN key (`ground.json`) keeps its URL when its bytes change, so it stays short-lived (300 s). A
+CONTENT name (`ground.<sha16>.json`) cannot go stale, so it is `immutable`; `manifest.json` is the
+switch, `no-cache`. `--names=sha256-16` writes both, then the manifest LAST; without it the upload is
+plain, and Publish/Promote pass no flag today. Cloudflare's zone **Browser Cache TTL** must stay on
+*Respect Existing Headers*. Order and knobs: `cartograph/OPERATIONS.md` § Publish.
 
 ### CORS
 

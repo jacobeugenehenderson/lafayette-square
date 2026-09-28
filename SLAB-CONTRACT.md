@@ -7,8 +7,8 @@ The slab is everything under `public/baked/`. Cartograph publishes; LS reads. Ne
 ⭐ **`public/baked/` IS THE PRODUCER'S PATH, NOT THE CONSUMER'S ADDRESS (2026-09-01).** The bake still
 writes there, and every path in this contract is still correct as a *layout*. But the tree is
 **gitignored and served from `https://assets.theward.online/baked/<look>/…`** — 516 MiB against a 1 GB
-GitHub Pages limit, growing 100–400 MB per town. The consumer resolves it through
-`src/lib/bakedUrl.js` (`ASSET_BASE`), **never `BASE_URL`**, which is where the *site* is deployed.
+GitHub Pages limit, growing 100–400 MB per town. The consumer resolves every file
+through `src/lib/slabUrl.js` (§10.2), on `ASSET_BASE` — **never `BASE_URL`**, which is where the *site* is deployed.
 ⛔ **So the contract now spans two copies**, and "the producer wrote it" no longer implies "the consumer
 can read it" — the upload is the step in between, and it can fail. ▶ `node scripts/verify-baked-in-r2.mjs`
 proves the bucket matches disk. Mechanics: `PUBLISH.md §6`.
@@ -62,7 +62,9 @@ public/baked/
 │                                       never shared, never inherited — see §8)
 ```
 
-⚠️ **`?t=` IS RETIRED (2026-09-28) — see `src/lib/slabUrl.js`; this paragraph is stale until the rewrite.** **Cache-busting:** consumers MUST request manifests with `?t=<bakeLastMs>` where `bakeLastMs` is a unique-per-bake timestamp from the consumer's store. `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial`, `LafayettePark`, `StageArch`, `SlabBuildings` all follow this pattern today. Reusing a stale `bakeLastMs` causes browser HTTP cache to serve last-bake artifacts. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) for the cache-bust rule + the historical bug.
+**`manifest.json`** (`cartograph/bake-manifest.mjs`) sits beside these and names every file with its size and sha256 — it is the slab's name table.
+
+**Naming and caching (2026-09-28).** On disk and inside every JSON the names above are the names. **Published**, a file may also be served under its content — `<dir>/<name>.<sha256[0..16]>.<ext>`, `immutable` — and `manifest.json`, at its one fixed name and `no-cache`, says which (`names: "sha256-16"`). The rule is `src/lib/slabNames.js`, read by the player, the uploader and the sweep alike. A consumer never spells a slab URL (§10.2). ▶ `node checks/claims-a-slab-name-is-its-content.mjs`
 
 ---
 
@@ -226,7 +228,7 @@ Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `
 }
 ```
 
-`bakedAt` is the bake's completion timestamp (epoch ms) written by `cartograph/bake-scene.js`. Consumer-side: this is the canonical `?t=<bakedAt>` cache-bust seed for production fetches of slab artifacts, decoupling production from the in-memory `useCartographStore.bakeLastMs`. Authoring contexts may continue to use the store's value; both should agree by construction (store seeds itself from `Date.now()` on bake completion; the bake writes the same epoch into `scene.json`). Per couplers plan CC.7.
+`bakedAt` is the bake's completion timestamp (epoch ms) written by `cartograph/bake-scene.js`. Consumer-side: it is the slab's **re-read key** where the app passes none (`<Town bakeLastMs>` defaults to it) — a new value re-reads the files; it never reaches a published URL (§10.2). Stage passes its own `bakeLastMs`, which agrees with it by construction (both are `Date.now()` at bake completion).
 
 `neon` carries the per-Look neon channel — `core · tube · bleed · emissive · tubeRadius · screenFloor · screenCeil`, keyed by time of day like every other channel (an unauthored Look bakes the kit's day). `NeonBands.jsx#NeonDriver` resolves it every frame in production and Preview; which buildings light is their listing hours'.
 
@@ -482,7 +484,7 @@ Consumers: `src/components/InstancedTrees.jsx` (production + Stage + Preview, sa
 
 1. **One bake = one consistent snapshot.** All artifacts under `public/baked/<look>/` must be coherent. A consumer reading `ground.json` and `scene.json` after the same bake MUST get matching layer colors / vis / palette. The `bake` button orchestrates this; manual invocation of one step must not leave the slab inconsistent.
 2. **Stencil null is a real value, not "TODO".** When a scene has no soft-circle silhouette, the producer writes `"stencil": null`, not an empty object or a 0-radius circle. Consumers branch on null.
-3. **`bin` paths are relative to the manifest.** Never absolute, never URL-style. The consumer resolves against the manifest's own URL.
+3. **A file named inside the slab's JSON is a LOGICAL name** — `ground.json#bin` (bare), `trees.json`'s `/trees/<sp>/…` (look-root) and `trees-atlas.json#atlas.colorPath` (`/baked/<look>/…`) are the three spellings in use. Never a URL, never another look's slab. The name a file is SERVED under is decided at upload, never written into the JSON; every file a JSON names must be one `manifest.json` records.
 4. **Compass frame, no exceptions.** No look or scene may inject a rotation constant into geometry. Cosmetic screen orientation is the consumer's `camera.up` concern.
 5. **Version bumps are explicit.** Any binary layout change, group-kind addition, or required-field addition is a `version` bump. Older consumers MUST fail loudly, not render garbage.
 6. **mtime-touch on no-op writes.** `writeIfChanged` MUST `utimesSync` even when the file content is byte-identical, so downstream dirty-checks don't cascade. See [`cartograph/FEATURES.md`](cartograph/FEATURES.md) and the `project_writeifchanged_touches_mtime` memory entry.
@@ -490,11 +492,10 @@ Consumers: `src/components/InstancedTrees.jsx` (production + Stage + Preview, sa
 ## 10. Consumer contract (what LS MUST guarantee)
 
 1. **Treat the slab as immutable.** The runtime never writes under `public/baked/`. If you find yourself wanting to, the bug is upstream.
-2. ⚠️ **`?t=` IS RETIRED (2026-09-28) — every slab URL comes from `src/lib/slabUrl.js`; the rest of this item and §1's "Cache-busting" paragraph are stale until the rewrite.** **Cache-bust with `?t=<bakeLastMs>`.** Use a unique-per-bake timestamp from your store, not the bake's *duration*. See [`cartograph/ARCHITECTURE.md` §8 "Bake chain"](cartograph/ARCHITECTURE.md) (cache-bust rule + historical bug).
+2. **Every slab URL comes from `src/lib/slabUrl.js`** — `slabFetch(look, rel)`, `slabUrl(look, rel)` (or `suspendSlabUrl` while rendering). It prefixes `ASSET_BASE` (`src/lib/bakedUrl.js`; never `BASE_URL`, which is where the *site* is deployed), reads the town's `manifest.json` remotely and serves content names when it says so, and passes JSON cross-references through §9.3's spellings. **No version token.** On disk (Stage, dev) a caller's re-read key — Stage's last bake time — rides as `?bake=`, only because r3f's `useLoader` and drei's `useGLTF` cache in memory by URL. ▶ `node checks/claims-every-slab-url-is-resolved.mjs`
 3. **Refuse unknown versions.** A `version` you don't recognize is a failed fetch, not a best-effort render.
 4. **Branch on `stencil: null`.** Skip the radial-fade shader cleanly; don't synthesize a fake stencil.
 5. **Don't infer schema beyond this doc.** If a field appears in a manifest that isn't listed here, ignore it. The producer is allowed to add forward-compatible fields without bumping `version`; the consumer must tolerate them.
-6. **Route slab fetches through `import.meta.env.BASE_URL`.** Never hardcode root-absolute paths. The same consumer build deploys to root (`lafayette-square.com`) or any subpath (e.g., `jacobeugenehenderson.github.io/lafayette-square-staging/`) without code changes; the Vite `--base` flag at build time sets the value. Pattern: `` fetch(`${import.meta.env.BASE_URL}baked/${look}/ground.json?t=${t}`) ``. Anti-pattern: `` fetch(`/baked/${look}/ground.json?t=${t}`) `` (resolves to deploy-host root, not subpath). See memory `project_kit_deploy_path_agnostic`.
 
 ---
 
