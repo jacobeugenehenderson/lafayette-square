@@ -81,6 +81,11 @@ if (process.argv.includes('--self-test')) {
 }
 
 const { f, preBake } = audit({ sources, towns })
-console.log(`ⓘ  scenes baked before the town palette (they keep the old palette until their scene is re-baked): ${preBake.join(', ') || 'none — delete the pre-palette branch in categoryColor.js'}`)
+// ⏳ PRE_PALETTE_HEX (src/lib/categoryColor.js) is a TRANSITIONAL fallback: it serves the OLD palette to a scene baked
+// before the palette rule. Its deletion is the next step the moment this list is empty.
+// It FAILS once nothing needs it and it is still there, so the deletion cannot be forgotten.
+const branchLives = /PRE_PALETTE_HEX/.test(readFileSync(join(ROOT, 'src/lib/categoryColor.js'), 'utf8'))
+if (preBake.length) console.log(`⏳ TRANSITIONAL until every town is re-baked — PRE_PALETTE_HEX (categoryColor.js) still serves the old palette to: ${preBake.join(', ')}`)
+else if (branchLives) f.push('every scene is palette-baked, and the PRE_PALETTE_HEX branch in src/lib/categoryColor.js is still there — delete it now')
 if (f.length) { console.log(`⛔ FAIL — ${f.length}\n   ${f.join('\n   ')}`); process.exit(1) }
 console.log('✅ a town\'s category colours are its own — authored, or the neutral default; never another town\'s')
