@@ -1,0 +1,24 @@
+<!doctype html>
+<!--
+  THE LEGIBILITY HARNESS — a town's plan view at phone half-height, measured (BRIEF-map-legibility-floor).
+  ▶ http://localhost:5173/legibility.html?look=huron&at=noon          (at = noon | dusk | midnight)
+  ▶ node scripts/legibility-report.mjs                                 (every town × every hour → a report)
+  (vite is already running on 5173; ⛔ do not start another)
+
+  ⛔ HARNESS ONLY. Not in any app; not built. It measures, and sets no threshold — Jacob calibrates by eye.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Legibility harness</title>
+    <style>
+      html, body, #root { margin: 0; background: #0d1014; }
+      body { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; color: #dfe6ee; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/harness/lab/legibility.jsx"></script>
+  </body>
+</html>
