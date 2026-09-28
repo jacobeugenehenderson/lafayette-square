@@ -83,9 +83,6 @@ const INTENDED_PREVIEW_ONLY = [
   // ⛔ deliberately empty. Preview is the confirming view: anything it draws that
   // Stage does not is something the operator cannot see while authoring.
 ]
-// Populations whose presence is a function of TIME OF DAY, not of the app. They are
-// compared only when both censuses agree on the clock.
-const CLOCK_DEPENDENT = [/^CelestialBodies>(Moon|Sun|Stars)/]
 
 // ─────────────────────────────────────────────────────────────────────────────
 const PROBE = String.raw`
@@ -100,8 +97,23 @@ const PROBE = String.raw`
 
   // ⚠️ LIVENESS FIRST. Everything below is a lie if the tab is not in front.
   const f0 = st.gl.info.render.frame
+  const p0 = st.camera.position.toArray(), fov0 = st.camera.fov ?? null
   await new Promise(r => setTimeout(r, 1200))
   const f1 = st.gl.info.render.frame
+  const p1 = st.camera.position.toArray()
+  // Did the camera move in that window (the movie plays; a paused or plan camera does not)?
+  const moving = Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]) > 1e-3 || (st.camera.fov ?? null) !== fov0
+  // The view's CLOCK: the time-of-day store every app's clock lands in (Preview's <Town time>, Stage's scrub,
+  // production's live tick). Read, never set.
+  let clock = null
+  try {
+    const u = performance.getEntriesByType('resource').map(e => e.name).filter(n => /\/hooks\/useTimeOfDay\.js/.test(n)).pop()
+    const t = u && (await import(u)).default.getState().currentTime
+    if (t) clock = { minute: Math.floor(new Date(t).getTime() / 60000), iso: new Date(t).toISOString() }
+  } catch (e) { clock = null }
+  // The movie's PATH PHASE is MovieCamera's own clock, a ref no app exports — not reachable from here, and no door is
+  // opened to reach it (Warden, 2026-09-28). null ⇒ a moving camera's fov is NOT COMPARABLE.
+  const phase = null
 
   const chain = new Map()
   const nameOf = (f) => {
@@ -175,6 +187,7 @@ const PROBE = String.raw`
     scene, bakedScenesTouched,
     takenAt: new Date().toISOString(),
     live: { f0, f1, advancing: f1 > f0, visibility: document.visibilityState },
+    clock, phase, moving,
     cam: { type: st.camera.type, near: st.camera.near, far: st.camera.far,
            fov: st.camera.fov ?? null, zoom: +(st.camera.zoom ?? 1).toFixed(4) },
     gl: { dpr: st.gl.getPixelRatio(), shadows: st.gl.shadowMap.enabled, shadowType: st.gl.shadowMap.type,
@@ -203,131 +216,181 @@ if (argv[0] === '--record') {
   process.exit(0)
 }
 
-const fail = []
-const ok = []
-const note = []
-
 // ── 1. The censuses must exist, be live, and describe the build we have now.
-const loaded = {}
-for (const view of ['stage', 'preview', 'production']) {
-  const p = CENSUS(view)
-  if (!fs.existsSync(p)) {
-    fail.push(`⛔ no ${view} census at ${path.relative(ROOT, p)}. PARITY IS UNKNOWN, which is the state this check exists to make loud — not a reason to pass. Run \`node checks/claims-stage-preview-parity.mjs --probe\` and take one.`)
-    continue
+function loadCensuses() {
+  const fail = [], loaded = {}
+  for (const view of ['stage', 'preview', 'production']) {
+    const p = CENSUS(view)
+    if (!fs.existsSync(p)) {
+      fail.push(`⛔ no ${view} census at ${path.relative(ROOT, p)}. PARITY IS UNKNOWN, which is the state this check exists to make loud — not a reason to pass. Run \`node checks/claims-stage-preview-parity.mjs --probe\` and take one.`)
+      continue
+    }
+    const c = JSON.parse(fs.readFileSync(p, 'utf8'))
+    if (!c.live?.advancing) {
+      fail.push(`⛔ the ${view} census was taken in a tab that was NOT rendering (frames ${c.live?.f0}→${c.live?.f1}, visibility=${c.live?.visibility}). A background tab runs no requestAnimationFrame; every number in that file describes a scene that never drew.`)
+      continue
+    }
+    const age = fs.statSync(p).mtimeMs
+    const stale = WATCHED.filter(w => { const f = path.join(ROOT, w); return fs.existsSync(f) && fs.statSync(f).mtimeMs > age })
+    if (stale.length) {
+      fail.push(`⛔ the ${view} census predates ${stale.join(', ')}. It describes an app that has since been edited — re-take it before trusting a word of it.`)
+      continue
+    }
+    loaded[view] = c
   }
-  const c = JSON.parse(fs.readFileSync(p, 'utf8'))
-  if (!c.live?.advancing) {
-    fail.push(`⛔ the ${view} census was taken in a tab that was NOT rendering (frames ${c.live?.f0}→${c.live?.f1}, visibility=${c.live?.visibility}). A background tab runs no requestAnimationFrame; every number in that file describes a scene that never drew.`)
-    continue
-  }
-  const age = fs.statSync(p).mtimeMs
-  const stale = WATCHED.filter(w => { const f = path.join(ROOT, w); return fs.existsSync(f) && fs.statSync(f).mtimeMs > age })
-  if (stale.length) {
-    fail.push(`⛔ the ${view} census predates ${stale.join(', ')}. It describes an app that has since been edited — re-take it before trusting a word of it.`)
-    continue
-  }
-  loaded[view] = c
-}
-// Every census is compared with PREVIEW, the confirming view: Stage (what the operator authors
-// against) and production (what ships). A side with no live, current census is already a failure.
-const PAIRS = [['stage', 'Stage', INTENDED_STAGE_ONLY], ['production', 'Production', INTENDED_PRODUCTION_ONLY]]
-for (const [v, c] of Object.entries(loaded)) {
-  if (c.bakedScenesTouched?.length > 1) {
-    fail.push(`⛔ ${v} fetched baked artifacts for MORE THAN ONE town in a single load: ${c.bakedScenesTouched.join(', ')}. In a kit that is a cross-town leak, and it is invisible on the town you happen to be looking at.`)
-  }
-}
-for (const [key, SN, ledgerS] of PAIRS) {
-  if (!loaded[key] || !loaded.preview) continue
-  const [s, p] = [loaded[key], loaded.preview]
-  if (!s.scene || !p.scene) {
-    fail.push(`⛔ a census does not declare its town (${key}=${s.scene}, preview=${p.scene}). Comparing two views of two different towns proves nothing; load each with an explicit \`?scene=\`.`)
-  } else if (s.scene !== p.scene) {
-    fail.push(`⛔ ${key} census is "${s.scene}", preview census is "${p.scene}". Two towns, no comparison.`)
-  } else {
-    ok.push(`${key} and preview censuses are live and describe ${s.scene}`)
-    comparePair(s, p, SN, 'Preview', ledgerS, INTENDED_PREVIEW_ONLY)
-  }
+  return { fail, loaded }
 }
 
-function comparePair(S, P, SN, PN, ledgerS, ledgerP) {
+// ⭐ TIME AND PHASE (Warden, 2026-09-28). Some fields are a function of the CLOCK (the sun, the fog's time-of-day
+// curve, which lights are lit, neon's hours) and the movie camera's fov is a function of its PATH PHASE. A difference
+// between two views at different times is not a divergence, and a match between them is not a pass. Such a field is
+// compared only between censuses on the SAME clock (minute) / the same phase; otherwise it is printed NOT COMPARABLE,
+// by name — never counted as a pass — and the check cannot be green while any comparable pair is missing.
+const CLOCK_SHAPED_POPULATION = [/CelestialBodies>(Moon|Sun|Stars|CounterBody)/, /SceneNeon>NeonBands/]
 
-  // ── 2. Populations. The heart of it.
-  const sameClock = S.sunIntensity !== null && P.sunIntensity !== null &&
-    Math.abs(S.sunIntensity - P.sunIntensity) < 0.25
-  if (!sameClock) {
-    note.push(`the two views are at different points of the day (shadow-caster intensity ${S.sunIntensity} vs ${P.sunIntensity}); clock-dependent populations are reported, not failed`)
+export function compare(loaded) {
+  const fail = [], ok = [], note = [], notComparable = []
+  // Every census is compared with PREVIEW, the confirming view: Stage (what the operator authors against) and
+  // production (what ships). A side with no live, current census is already a failure.
+  const PAIRS = [['stage', 'Stage', INTENDED_STAGE_ONLY], ['production', 'Production', INTENDED_PRODUCTION_ONLY]]
+  for (const [v, c] of Object.entries(loaded)) {
+    if (c.bakedScenesTouched?.length > 1) {
+      fail.push(`⛔ ${v} fetched baked artifacts for MORE THAN ONE town in a single load: ${c.bakedScenesTouched.join(', ')}. In a kit that is a cross-town leak, and it is invisible on the town you happen to be looking at.`)
+    }
   }
-  const declared = (name, ledger) => ledger.find(([re]) => re.test(name))
-  const clockish = (name) => CLOCK_DEPENDENT.some(re => re.test(name))
-  const keys = [...new Set([...Object.keys(S.populations), ...Object.keys(P.populations)])]
-    .filter(k => k && k !== '(unowned)' && k !== '')
-
-  for (const k of keys.sort()) {
-    const a = S.populations[k], b = P.populations[k]
-    if (a && !b) {
-      const d = declared(k, ledgerS)
-      if (d) { ok.push(`${SN.toLowerCase()}-only "${k}" — declared: ${d[1]}`); continue }
-      if (clockish(k) && !sameClock) { note.push(`${SN.toLowerCase()}-only "${k}" — clock-dependent, and the clocks differ`); continue }
-      fail.push(`⛔ "${k}" draws in ${SN.toUpperCase()} and not in ${PN.toUpperCase()} (${a.meshes} meshes / ${a.instances} instances / ${a.tris} tris). The operator is authoring against something that does not ship.`)
-    } else if (b && !a) {
-      const d = declared(k, ledgerP)
-      if (d) { ok.push(`${PN.toLowerCase()}-only "${k}" — declared: ${d[1]}`); continue }
-      if (clockish(k) && !sameClock) { note.push(`${PN.toLowerCase()}-only "${k}" — clock-dependent, and the clocks differ`); continue }
-      fail.push(`⛔ "${k}" draws in ${PN.toUpperCase()} and not in ${SN.toUpperCase()} (${b.meshes} meshes / ${b.instances} instances / ${b.tris} tris). It ships, and the operator cannot see it while authoring.`)
+  for (const [key, SN, ledgerS] of PAIRS) {
+    if (!loaded[key] || !loaded.preview) continue
+    const [s, p] = [loaded[key], loaded.preview]
+    if (!s.scene || !p.scene) {
+      fail.push(`⛔ a census does not declare its town (${key}=${s.scene}, preview=${p.scene}). Comparing two views of two different towns proves nothing; load each with an explicit \`?scene=\`.`)
+    } else if (s.scene !== p.scene) {
+      fail.push(`⛔ ${key} census is "${s.scene}", preview census is "${p.scene}". Two towns, no comparison.`)
     } else {
-      if (a.instances !== b.instances) {
-        fail.push(`⛔ "${k}" draws ${a.instances} instances in ${SN} and ${b.instances} in ${PN}. Same component, different data.`)
-      } else if (a.meshes !== b.meshes || Math.abs(a.tris - b.tris) > Math.max(16, a.tris * 0.001)) {
-        fail.push(`⛔ "${k}" draws ${a.meshes} meshes / ${a.tris} tris in ${SN} and ${b.meshes} / ${b.tris} in ${PN}.`)
+      ok.push(`${key} and preview censuses are live and describe ${s.scene}`)
+      comparePair(s, p, SN, 'Preview', ledgerS, INTENDED_PREVIEW_ONLY)
+    }
+  }
+
+  function comparePair(S, P, SN, PN, ledgerS, ledgerP) {
+    const pair = `${SN}/${PN}`
+    // The clock: the same minute on the view's own time store. A census without one cannot be matched.
+    const sameClock = !!(S.clock && P.clock && S.clock.minute === P.clock.minute)
+    const clockWhy = !S.clock || !P.clock ? `a census carries no clock (${SN} ${S.clock?.iso ?? '—'}, ${PN} ${P.clock?.iso ?? '—'}) — re-take it with this probe`
+      : `the clocks differ (${SN} ${S.clock.iso}, ${PN} ${P.clock.iso})`
+    const nc = (field, detail) => notComparable.push(`${pair} ${field}: NOT COMPARABLE — ${detail}`)
+    // The phase: fov is shot optics when the camera is still; on a moving camera it is where the path is.
+    const phaseComparable = (!S.moving && !P.moving) || (S.phase != null && P.phase != null && Math.abs(S.phase - P.phase) < 1e-3)
+    const phaseWhy = `the camera is moving (${SN} ${S.moving ? 'moving' : 'still'}, ${PN} ${P.moving ? 'moving' : 'still'}) and the path phase is ${S.phase == null || P.phase == null ? 'not recorded (MovieCamera exports no readout)' : `${S.phase} vs ${P.phase}`}`
+
+    // ── 2. Populations. The heart of it.
+    const declared = (name, ledger) => ledger.find(([re]) => re.test(name))
+    const clockish = (name) => CLOCK_SHAPED_POPULATION.some(re => re.test(name))
+    const keys = [...new Set([...Object.keys(S.populations), ...Object.keys(P.populations)])]
+      .filter(k => k && k !== '(unowned)' && k !== '')
+    for (const k of keys.sort()) {
+      const a = S.populations[k], b = P.populations[k]
+      if (clockish(k) && !sameClock) {
+        if (JSON.stringify(a ?? null) !== JSON.stringify(b ?? null)) nc(`"${k}"`, `${clockWhy}; ${SN} ${a ? `${a.meshes}m/${a.tris}t` : 'absent'}, ${PN} ${b ? `${b.meshes}m/${b.tris}t` : 'absent'}`)
+        else nc(`"${k}"`, `${clockWhy} (they happen to match, which proves nothing)`)
+        continue
+      }
+      if (a && !b) {
+        const d = declared(k, ledgerS)
+        if (d) { ok.push(`${SN.toLowerCase()}-only "${k}" — declared: ${d[1]}`); continue }
+        fail.push(`⛔ "${k}" draws in ${SN.toUpperCase()} and not in ${PN.toUpperCase()} (${a.meshes} meshes / ${a.instances} instances / ${a.tris} tris). The operator is authoring against something that does not ship.`)
+      } else if (b && !a) {
+        const d = declared(k, ledgerP)
+        if (d) { ok.push(`${PN.toLowerCase()}-only "${k}" — declared: ${d[1]}`); continue }
+        fail.push(`⛔ "${k}" draws in ${PN.toUpperCase()} and not in ${SN.toUpperCase()} (${b.meshes} meshes / ${b.instances} instances / ${b.tris} tris). It ships, and the operator cannot see it while authoring.`)
+      } else {
+        if (a.instances !== b.instances) {
+          fail.push(`⛔ "${k}" draws ${a.instances} instances in ${SN} and ${b.instances} in ${PN}. Same component, different data.`)
+        } else if (a.meshes !== b.meshes || Math.abs(a.tris - b.tris) > Math.max(16, a.tris * 0.001)) {
+          fail.push(`⛔ "${k}" draws ${a.meshes} meshes / ${a.tris} tris in ${SN} and ${b.meshes} / ${b.tris} in ${PN}.`)
+        }
       }
     }
-  }
-  if (!fail.some(f => /draws/.test(f))) ok.push(`${SN} and ${PN}: every shared population draws the same geometry`)
 
-  // ── 3. The camera the frame is actually rendered through.
-  for (const f of ['type', 'near', 'far', 'fov']) {
-    if (S.cam[f] !== P.cam[f]) {
-      fail.push(`⛔ camera.${f}: ${SN} ${S.cam[f]}, ${PN} ${P.cam[f]}. The two views frame the same shot through different optics — depth precision, DoF and z-fighting all follow this.`)
+    // ── 3. The camera the frame is actually rendered through.
+    for (const f of ['type', 'near', 'far']) {
+      if (S.cam[f] !== P.cam[f]) fail.push(`⛔ camera.${f}: ${SN} ${S.cam[f]}, ${PN} ${P.cam[f]}. The two views frame the same shot through different optics — depth precision, DoF and z-fighting all follow this.`)
     }
-  }
-  if (S.cam.type === P.cam.type && S.cam.near === P.cam.near && S.cam.far === P.cam.far) {
-    ok.push(`${SN} and ${PN} render the shot through a ${S.cam.type} at ${S.cam.near}–${S.cam.far}`)
-  }
+    if (!phaseComparable) nc('camera.fov', `${phaseWhy}; ${SN} ${S.cam.fov}, ${PN} ${P.cam.fov}`)
+    else if (S.cam.fov !== P.cam.fov) fail.push(`⛔ camera.fov: ${SN} ${S.cam.fov}, ${PN} ${P.cam.fov}. The two views frame the same shot through different optics.`)
+    if (S.cam.type === P.cam.type && S.cam.near === P.cam.near && S.cam.far === P.cam.far) ok.push(`${SN} and ${PN} render the shot through a ${S.cam.type} at ${S.cam.near}–${S.cam.far}`)
 
-  // ── 4. The renderer.
-  for (const f of ['shadows', 'shadowType', 'toneMapping', 'colorSpace', 'logDepth', 'dpr']) {
-    if (S.gl[f] !== P.gl[f]) {
-      fail.push(`⛔ renderer.${f}: ${SN} ${S.gl[f]}, ${PN} ${P.gl[f]}. Every pixel the operator judges passes through this.`)
+    // ── 4. The renderer.
+    for (const f of ['shadows', 'shadowType', 'toneMapping', 'colorSpace', 'logDepth', 'dpr']) {
+      if (S.gl[f] !== P.gl[f]) fail.push(`⛔ renderer.${f}: ${SN} ${S.gl[f]}, ${PN} ${P.gl[f]}. Every pixel the operator judges passes through this.`)
     }
-  }
-  if (S.fog !== P.fog) fail.push(`⛔ fog: ${SN} ${S.fog}, ${PN} ${P.fog}.`)
+    if (!sameClock) nc('fog', `${clockWhy}; ${SN} ${S.fog}, ${PN} ${P.fog}`)
+    else if (S.fog !== P.fog) fail.push(`⛔ fog: ${SN} ${S.fog}, ${PN} ${P.fog}.`)
 
-  // ── 5. The light rig — and shadow casters especially.
-  const casters = (c) => c.lights.filter(l => l.castShadow && l.visible && l.intensity > 0)
-  const sc = casters(S), pc = casters(P)
-  if (sc.length !== pc.length) {
-    fail.push(`⛔ ${sc.length} shadow caster(s) in ${SN}, ${pc.length} in ${PN} (${[...sc, ...pc].map(l => l.owner).join(', ')}). A second caster doubles every shadow in one view only.`)
-  } else {
-    for (let i = 0; i < sc.length; i++) {
+    // ── 5. The light rig. The shadow FRUSTUM is configuration (compared always, when both cast); which lights are
+    //       lit and how bright is the clock's.
+    const casters = (c) => c.lights.filter(l => l.castShadow && l.visible && l.intensity > 0)
+    const sc = casters(S), pc = casters(P)
+    for (let i = 0; i < Math.min(sc.length, pc.length); i++) {
       const [x, y] = [sc[i], pc[i]]
       if (x.owner !== y.owner || x.shadow.halfExtent !== y.shadow.halfExtent || x.shadow.near !== y.shadow.near || x.shadow.far !== y.shadow.far || x.shadow.map !== y.shadow.map) {
         fail.push(`⛔ shadow caster ${i}: ${SN} ${x.owner} map${x.shadow.map} ${x.shadow.near}–${x.shadow.far} ±${x.shadow.halfExtent}; ${PN} ${y.owner} map${y.shadow.map} ${y.shadow.near}–${y.shadow.far} ±${y.shadow.halfExtent}. ⭐ A half-extent that does not change with the town is a Lafayette Square number, and it will crop the shadows of the next town silently.`)
       }
     }
-    if (sc.length) ok.push(`${SN} and ${PN} cast shadows from the same ${sc.length} light(s), same frustum`)
+    const rig = (c) => c.lights.filter(l => l.visible && l.intensity > 0).map(l => `${l.owner}:${l.type}`).sort()
+    const [sr, pr] = [rig(S), rig(P)]
+    const only = (a, b) => a.filter(x => !b.includes(x))
+    if (!sameClock) {
+      nc('the lit light rig and shadow casters', `${clockWhy}; ${SN} ${sc.length} caster(s) at ${S.sunIntensity}, ${PN} ${pc.length} at ${P.sunIntensity}${only(sr, pr).length || only(pr, sr).length ? `; lit only in ${SN}: ${only(sr, pr).join(', ') || '—'}; only in ${PN}: ${only(pr, sr).join(', ') || '—'}` : ''}`)
+    } else {
+      if (sc.length !== pc.length) fail.push(`⛔ ${sc.length} shadow caster(s) in ${SN}, ${pc.length} in ${PN} (${[...sc, ...pc].map(l => l.owner).join(', ')}). A second caster doubles every shadow in one view only.`)
+      else if (sc.length) ok.push(`${SN} and ${PN} cast shadows from the same ${sc.length} light(s), same frustum`)
+      if (only(sr, pr).length) fail.push(`⛔ lights lit in ${SN} and not in ${PN}: ${only(sr, pr).join(', ')}`)
+      if (only(pr, sr).length) fail.push(`⛔ lights lit in ${PN} and not in ${SN}: ${only(pr, sr).join(', ')}`)
+    }
   }
-  const rig = (c) => c.lights.filter(l => l.visible && l.intensity > 0).map(l => `${l.owner}:${l.type}`).sort()
-  const [sr, pr] = [rig(S), rig(P)]
-  const only = (a, b) => a.filter(x => !b.includes(x))
-  if (only(sr, pr).length) fail.push(`⛔ lights lit in ${SN} and not in ${PN}: ${only(sr, pr).join(', ')}`)
-  if (only(pr, sr).length) fail.push(`⛔ lights lit in ${PN} and not in ${SN}: ${only(pr, sr).join(', ')}`)
+  return { fail, ok, note, notComparable }
 }
 
+// ── The self-test: the gate on comparability, on fixture censuses (no browser).
+if (argv[0] === '--self-test') {
+  const census = (view, o = {}) => ({ view, scene: 'town-x', live: { advancing: true }, clock: { minute: 100, iso: 'T100' }, phase: null, moving: false,
+    cam: { type: 'PerspectiveCamera', near: 1, far: 60000, fov: 30 }, gl: { shadows: true, shadowType: 2, toneMapping: 4, colorSpace: 'srgb', logDepth: true, dpr: 1 },
+    fog: 'FogExp2@0.0001', sunIntensity: 2, lights: [{ owner: 'Town>CelestialBodies>PrimaryOrb', type: 'DirectionalLight', intensity: 2, visible: true, castShadow: true, shadow: { map: 4096, near: 1, far: 9, halfExtent: 500 } }],
+    populations: { 'Town>BakedGround': { meshes: 3, instances: 0, tris: 900 }, 'Town>CelestialBodies>Moon': { meshes: 2, instances: 0, tris: 4 } }, ...o })
+  const three = (o = {}) => ({ stage: census('stage', o.stage), preview: census('preview', o.preview), production: census('production', o.production) })
+  const verdict = (r) => r.fail.length || r.notComparable.length ? 'red' : 'green'
+  const cases = [
+    ['identical censuses, same clock, still camera → green', three(), 'green'],
+    ['same clock, fog differs → red', three({ stage: { fog: 'FogExp2@0.0002' } }), 'red'],
+    ['different clocks, fog differs → NOT COMPARABLE, and not green', three({ stage: { clock: { minute: 200, iso: 'T200' }, fog: 'FogExp2@0.0002' } }), 'red'],
+    ['different clocks, everything MATCHES → still not green (a match across clocks proves nothing)', three({ stage: { clock: { minute: 200, iso: 'T200' } } }), 'red'],
+    ['a census with no clock → not green', three({ stage: { clock: null } }), 'red'],
+    ['moving camera, no phase, fov differs → NOT COMPARABLE, not green', three({ stage: { moving: true, cam: { type: 'PerspectiveCamera', near: 1, far: 60000, fov: 22 } }, preview: { moving: true } }), 'red'],
+    ['moving camera, same phase, same fov → green', three({ stage: { moving: true, phase: 5 }, preview: { moving: true, phase: 5 }, production: { moving: true, phase: 5 } }), 'green'],
+    ['same clock, Moon only in production → red', three({ preview: { populations: { 'Town>BakedGround': { meshes: 3, instances: 0, tris: 900 } } } }), 'red'],
+  ]
+  let bad = 0
+  for (const [name, loaded, want] of cases) {
+    const got = verdict(compare(loaded))
+    if (got !== want) bad++
+    console.log(`${got === want ? '✅' : '⛔ WRONG'} ${name} (got ${got})`)
+  }
+  // Mutation: a gate that counted NOT COMPARABLE as a pass must be caught by the cases above.
+  const lenient = (r) => r.fail.length ? 'red' : 'green'
+  const caught = cases.some(([, loaded, want]) => lenient(compare(loaded)) !== want)
+  console.log(`${caught ? '✅ caught' : '⛔ MISSED'} — the gate counting NOT COMPARABLE as a pass`)
+  process.exit(bad || !caught ? 1 : 0)
+}
+
+const { fail: loadFail, loaded } = loadCensuses()
+const { fail, ok, note, notComparable } = compare(loaded)
+fail.unshift(...loadFail)
 for (const line of ok) console.log(`  ✅ ${line}`)
 for (const line of note) console.log(`  ⓘ  ${line}`)
-if (fail.length) {
-  console.error('\n' + fail.join('\n'))
-  console.error(`\n⛔ ${fail.length} divergence(s) between the surface the operator authors on and the surface that confirms what ships.`)
+for (const line of notComparable) console.log(`  ◌  ${line}`)
+if (fail.length || notComparable.length) {
+  if (fail.length) console.error('\n' + fail.join('\n'))
+  console.error(`\n⛔ ${fail.length} divergence(s)${notComparable.length ? ` · ${notComparable.length} field(s) NOT COMPARABLE — parity is unproven there, not passed; re-take the censuses on one clock (and one path phase, or a still camera)` : ''}.`)
   process.exit(1)
 }
 console.log(`\n✅ Stage, Preview and production draw the same town the same way, apart from the declared authoring aids and the player's overlays.`)
