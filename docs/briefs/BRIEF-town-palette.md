@@ -35,6 +35,8 @@ portal."* And: the CSS must be generic.
 - **The taxonomy's own text is generic too.** `categories.js` subtitles name one town's places
   (the parks subtitle names its park). Subtitles come from the town's data or say nothing.
 - Lafayette Square keeps exactly its current look, now as **its** authored palette.
+- **The manifest carries it:** `taxonomy.categories[].color` (hex), one per category, from the same Look the map
+  reads. The Ward's chips read that key and nothing else; a category without it is reported, never drawn.
 
 ### And the town's categories and types (added 2026-09-27)
 The same rule covers the taxonomy's **words**, not just its colours. The town manifest
