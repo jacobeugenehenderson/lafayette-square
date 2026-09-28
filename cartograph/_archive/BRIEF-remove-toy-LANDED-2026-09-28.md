@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: HOLD
+status: LANDED
 dispatched: Tamp
 written: 2026-09-27
 evict-when: RULING: Jacob confirms the 9 known baked/toy objects are deleted from R2 (the rest landed: 40d59e12…e539a34a)
