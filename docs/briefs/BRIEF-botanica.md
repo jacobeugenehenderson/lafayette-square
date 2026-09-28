@@ -1,9 +1,12 @@
 <!-- BRIEF-STATE
-status: FUTURE — not dispatchable yet
+status: PARKED
 dispatched: no
 written: 2026-09-26
 evict-when: a specialized land-use class (farmland first) can be populated with plant impostors grown from a staged model, placed by the class's own planting rule, and Jacob has eyed it.
 -->
+
+> *State, as the header carried it until 2026-09-28:* FUTURE — not dispatchable yet
+
 
 # Botanica — plants for the specialized land uses
 

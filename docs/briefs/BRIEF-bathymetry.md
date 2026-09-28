@@ -1,9 +1,12 @@
 <!-- BRIEF-STATE
-status: OPEN — the BlueTopo rung and the merge LANDED (Loam, 2026-09-27); NCMP, CUDEM and datum conversion open
+status: OPEN
 dispatched: yes (Strand's subagent 2026-09-26, research only; taken over by Loam 2026-09-27)
 written: 2026-09-26
 evict-when: every town with water bakes its bed from a real floor (a named bathymetry source, or verified-absent on the record — which needs every rung built); `node checks/claims-the-shore-is-closed.mjs` holds the profile's deepening rule on the cells the profile still draws and passes with the floor laid; Jacob has seen Huron and Provincetown shaded by real depth.
 -->
+
+> *State, as the header carried it until 2026-09-28:* OPEN — the BlueTopo rung and the merge LANDED (Loam, 2026-09-27); NCMP, CUDEM and datum conversion open
+
 
 # Bathymetry: real depth, only where it shows
 

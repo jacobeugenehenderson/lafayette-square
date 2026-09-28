@@ -1,11 +1,14 @@
 # BRIEF — Build the highway as the positive object (H-3)
 
 <!-- BRIEF-STATE
-status: BUILT (steps 0–6) · OPEN items below · builder Gantry
+status: OPEN
 written: 2026-09-23 · state rewritten 2026-09-25 (docs pass)
 plan as dispatched: cartograph/_archive/BRIEF-highway-build-plan-2026-09-23.md (steps, checks table, the comb)
 evict-when: its checks are green on huron AND LS, and each open item below is closed or re-homed
 -->
+
+> *State, as the header carried it until 2026-09-28:* BUILT (steps 0–6) · OPEN items below · builder Gantry
+
 
 **What this is.** `ROADMAP H-3`'s live state. A motorway/trunk is the positive object H: an alignment swept by a
 typical section built from its lanes and cited values, not ①'s negative space. **Rulings live in

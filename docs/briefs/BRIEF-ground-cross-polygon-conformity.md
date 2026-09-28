@@ -1,9 +1,12 @@
 <!-- BRIEF-STATE
-status: BUILT on huron (2026-09-23, Seam) — awaiting the street-level eye gate; other towns re-bake after it
+status: UNVERIFIED
 dispatched: yes
 written: 2026-09-21
 evict-when: node checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs
 -->
+
+> *State, as the header carried it until 2026-09-28:* BUILT on huron (2026-09-23, Seam) — awaiting the street-level eye gate; other towns re-bake after it
+
 
 # The ground must stretch, not break
 

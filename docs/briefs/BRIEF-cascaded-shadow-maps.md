@@ -1,8 +1,12 @@
 <!-- BRIEF-STATE
-status: SUPERSEDED 2026-09-22 — read the correction below before anything else
+written: 2026-09-21
+status: PARKED
 dispatched: yes
 evict-when: H-24 closes; this brief's live remnant is `docs/briefs/BRIEF-texture-unit-headroom.md`
 -->
+
+> *State, as the header carried it until 2026-09-28:* SUPERSEDED 2026-09-22 — read the correction below before anything else
+
 
 # ⛔⛔ THIS BRIEF'S CENTRAL PREMISE WAS WRONG. READ THIS FIRST.
 

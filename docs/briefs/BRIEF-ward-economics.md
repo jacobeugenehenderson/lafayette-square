@@ -1,11 +1,14 @@
 # BRIEF — Ward economics: the Host split and the Ward fund, in The Ask and The Split (Operations later)
 
 <!-- BRIEF-STATE
-status: OPEN — THE MONEY PANEL (§ below) is the current direction; the Split's "from other sources" line landed 2026-09-26 (theward-online `ward-economics`, e69515a, unpushed) — awaiting Jacob's review and his word to push
+status: OPEN
 dispatched: 2026-09-25, Tally (window closed 2026-09-26; a fresh agent picks up from the branch)
 written: 2026-09-25
 evict-when: The Ask and The Split model the 10% fund skim, the per-year reserve and the Host's overflow budget as scenario knobs, and Jacob has approved both; the Operations ledger (phase 3) gets its own go.
 -->
+
+> *State, as the header carried it until 2026-09-28:* OPEN — THE MONEY PANEL (§ below) is the current direction; the Split's "from other sources" line landed 2026-09-26 (theward-online `ward-economics`, e69515a, unpushed) — awaiting Jacob's review and his word to push
+
 
 **Status:** built on the unpushed `ward-economics` branch; awaiting Jacob's review. One agent, sequenced; **stop after each phase for Jacob.**
 
