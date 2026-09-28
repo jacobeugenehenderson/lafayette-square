@@ -38,11 +38,6 @@ export function atBearing([cx, cz], bearing, r) {
   return [cx + r * Math.sin(b), cz - r * Math.cos(b)]
 }
 
-/** The bearing (degrees true) of a town-frame point as seen from `center`. */
-export function bearingOf([cx, cz], [x, z]) {
-  return norm(Math.atan2(x - cx, -(z - cz)) * 180 / Math.PI)
-}
-
 /**
  * The bezel for one town.
  * @param stencil  `ground.json`'s stencil ({ center:[x,z], radius }) — or null
