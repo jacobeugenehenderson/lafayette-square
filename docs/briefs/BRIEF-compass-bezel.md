@@ -15,8 +15,11 @@ as on a watch bezel. The four cardinal ticks are heavier, with small N · E · S
 ## 2. Totally runtime — nothing new in the slab, nothing new in the bake
 Everything it needs is already published:
 - **The circle:** `ground.json`'s `stencil` — `center` and `radius` per town.
-- **Street exits** (optional layer, §3): `labels.json` carries every named street as a polyline. Intersect each
-  with the circle once, on load; the name sits at its crossing, on the bezel.
+- **Street exits** (optional layer, §3): `labels.json` carries every named street as a polyline, clipped by the
+  label bake to the neighbourhood's membership polygon (`bake-labels.js` `clipToHood`). An exit is where a street
+  **leaves the neighbourhood**: the last in-hood point of its polyline. Its name sits on the bezel at that
+  point's **bearing** from the town's centre. (The polylines do not reach the circle on every town — the
+  neighbourhood can be smaller than the disc — so the bearing, not a crossing, is what is true everywhere.)
 - **True north from the phone's heading:** the World Magnetic Model, computed in the player from the town's
   latitude/longitude and **today's date** — more correct than a baked number, because declination drifts.
 - **The heading:** the device orientation API. iOS needs a user tap to grant it, so it starts from a control.
@@ -53,15 +56,20 @@ Everything it needs is already published:
   true.
 
 ## 5. Where the pieces live
-- **The kit** (`Town` layer `compass`): ticks, cardinals, optional street exits, drawn from the stencil and
-  labels; takes a `heading` prop (degrees true, or null) for Street's indicator.
+- **The kit** (`Town` layer `compass`): one model (`compassBezel.js` — ticks, cardinals, optional street exits,
+  from the stencil and labels), two renderings: on the ground at the rim in plan, and a screen-space bezel in
+  Street driven by a `heading` prop (degrees true, or null).
 - **The Ward:** the "face my direction" control, the device-orientation permission, the declination, the
   map's rotation, and the spoken readout.
 
 ## 6. Checks — each seen to fail first
-- Street exits computed from `labels.json` match the circle to within a metre on two towns.
+- Each street exit's bezel position equals the bearing of its street's last in-hood point, within a stated
+  angular tolerance, on every town with a v3 `labels.json`. A town with no `labels.json` or a v1 one (no
+  polylines) is **reported**, never skipped.
 - The declination for a known town and date matches NOAA's published value within its stated tolerance.
-- The bezel meets the map legibility floor (`BRIEF-map-legibility-floor`) at noon, dusk and midnight.
+- The bezel meets the map legibility floor (`BRIEF-map-legibility-floor`) at noon, dusk and midnight — this
+  check waits on that brief's harness and Jacob-calibrated threshold. Until then the bezel's colours are
+  authored values with a neutral default, never a town's constant.
 - No constant in the bezel is a town's: radius, centre and tick count come from the town's own disc.
 
 ## 7. Eye gate
