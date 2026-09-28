@@ -42,11 +42,10 @@ cannot get without importing the old player.
 - Runtime: under a Town-only page, a shot change moves the camera over ≥ N frames (not one), and lands on the shot's
   destination (the movie pose on the driver's clock; the plan frame).
 
-## 4. Open questions for Warden / Jacob
-- Does Stage's shot switching join this (its Designer ↔ Browse framing hand-off is its own)? My read: Stage's
-  movie/plan/street shots yes; Designer stays Stage's.
-- Plan's destination: the whole disc (today's browse bounds) or the densest cluster (`frameDensest`)? The compass
-  moved off the rim precisely so plan can open on the places.
+## 4. Rulings (Warden, 2026-09-28)
+- **Stage does NOT join.** Stage is authoring: it cuts (`<Town flight={false}>`), and its Designer ↔ Browse framing
+  hand-off stays its own.
+- **Plan's destination is `frameDensest`'s frame** (the places), as ruled for the plan opening.
 
 ## 5. Out of scope
 The old player's cutover. Gestures inside a shot (orbit, pan, street look). The Designer camera.
