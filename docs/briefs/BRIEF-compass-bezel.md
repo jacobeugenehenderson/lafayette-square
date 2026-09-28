@@ -30,7 +30,13 @@ Everything it needs is already published:
   card — never about the dot, and it never follows or recentres on the person** (Jacob, 2026-09-28: "it
   should center in its center. it just rotates like a compass"). The dot moves across the town; the town
   only turns. **Pan and zoom stay the person's, in every mode** (Jacob: "the user can still drag the map
-  horizontally and zoom") — the heading drives ROTATION only, never position or scale. It moves because the *person* moved — "the scene never
+  horizontally and zoom") — the heading drives ROTATION only, never position or scale.
+- **Pinch zooms and twist rotates, in every mode** (Jacob: "pinch scale and rotate, too"). ⭐ **The person's
+  hand always wins over the sensor:** a twist while "Face my direction" is on hands rotation to the person —
+  the switch shows "rotated by hand" and the heading stops steering. **Tapping the bezel's N**, or the switch,
+  returns to north-up or to "Face my direction". That is the visible way back, and twist's button equivalent.
+  ⚠️ The old player's plan camera disables rotation (`cameraRegimes.js` plan regime) — the Ward's plan camera
+  enables it. It moves because the *person* moved — "the scene never
   takes you anywhere" holds.
 - **A control, always:** "North up" / "Face my direction" is a named switch whenever it applies, so a
   person inside can hold the map still. iOS asks permission for the heading on a tap; until granted, the
