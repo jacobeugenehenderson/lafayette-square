@@ -30,6 +30,13 @@ portal."* And: the CSS must be generic.
   (the parks subtitle names its park). Subtitles come from the town's data or say nothing.
 - Lafayette Square keeps exactly its current look, now as **its** authored palette.
 
+### And the town's categories and types (added 2026-09-27)
+The same rule covers the taxonomy's **words**, not just its colours. The town manifest
+(`cartograph/bake-manifest.mjs`, v0) carries `taxonomy: { authored, categories[{id,label,types}] }`;
+today every town gets the kit's list with `authored: false`. ⚠️ **Open, for Jacob:** who authors a town's
+own list (a Host through Operations, or the operator in Stage), and where it lives before the bake reads
+it. Whoever authors it, the manifest carries it and `authored` turns true.
+
 ## Checks
 - No colour literal in `categories.js` or any neon consumer; every category colour is read from
   the look.
