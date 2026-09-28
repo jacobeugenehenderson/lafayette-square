@@ -93,10 +93,13 @@ export async function fetchWeather({ snap = false } = {}) {
       humidity: c.relative_humidity_2m != null ? c.relative_humidity_2m / 100 : null,
       temperatureF: c.temperature_2m ?? null,
       currentWeatherCode: saneCode,
-      weatherAt: Date.now(),
       directRadiation:  c.direct_radiation  ?? null,
       diffuseRadiation: c.diffuse_radiation ?? null,
     })
+
+    // When the live reading arrived — about the reading, not a weather value, so it is not a weather target (a
+    // preset writes every target; this is only ever the feed's).
+    useSkyState.setState({ weatherAt: Date.now() })
 
     // Parse hourly forecast
     if (data.hourly) {

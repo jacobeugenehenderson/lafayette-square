@@ -95,7 +95,6 @@ const useSkyState = create((set, get) => ({
       humidity: data.humidity !== undefined ? data.humidity : get().humidity,
       temperatureF: data.temperatureF !== undefined ? data.temperatureF : get().temperatureF,
       currentWeatherCode: data.currentWeatherCode !== undefined ? data.currentWeatherCode : get().currentWeatherCode,
-      weatherAt: data.weatherAt !== undefined ? data.weatherAt : get().weatherAt,
       directRadiation:  data.directRadiation  !== undefined ? data.directRadiation  : get().directRadiation,
       diffuseRadiation: data.diffuseRadiation !== undefined ? data.diffuseRadiation : get().diffuseRadiation,
     })
