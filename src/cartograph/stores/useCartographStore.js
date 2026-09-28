@@ -1723,6 +1723,9 @@ const useCartographStore = create((set, get) => ({
   activeLookId: readActiveLookFromStorage(),
   // The served 0-state Look id (index.json `default`). null until _loadLooks.
   defaultLookId: null,
+  // Set when a ?look= link was refused (it names no Look, or disagrees with ?scene=): no town is resolved, and
+  // nothing may quietly resolve one (Toolbar's self-correction stands down) until the operator picks a Look.
+  lookRefused: null,
   _looksHydrated: false,
 
   _loadLooks: async () => {
@@ -1748,6 +1751,30 @@ const useCartographStore = create((set, get) => ({
       // makes a geometry/design edit that re-stales them. Without this,
       // every hard-refresh would surface a stale Stage button and a click
       // would re-bake unnecessarily.
+      // ⭐ A ?look= LINK OPENS THAT LOOK AND ITS SCENE — never the default town (measured 2026-09-28: ?look=huron opened
+      // Lafayette Square, because the scene booted to the default installation and the alignment below then pulled
+      // the Look to it). A link naming no Look, or disagreeing with ?scene=, resolves NO town and says why.
+      // ▶ node checks/claims-a-look-link-opens-that-town.mjs
+      let urlLook = null
+      try { urlLook = new URLSearchParams(window.location.search).get('look') } catch { /* ignore */ }
+      if (urlLook) {
+        const entry = looks.find(l => l.id === urlLook)
+        let urlSceneForLook = null
+        try { urlSceneForLook = new URLSearchParams(window.location.search).get('scene') } catch { /* ignore */ }
+        const refuse = entry?.scene
+          ? (urlSceneForLook && urlSceneForLook !== entry.scene ? `?look=${urlLook} is a Look of "${entry.scene}", but ?scene=${urlSceneForLook} asks for another town` : null)
+          : `?look=${urlLook} names no town's Look in the index (have: ${looks.filter(l => l.scene).map(l => l.id).join(', ')})`
+        if (refuse) {
+          console.error(`[looks] ⛔ ${refuse} — no town is opened`)
+          set({ looks, defaultLookId, activeLookId: null, lookRefused: refuse, lookMissingForScene: urlSceneForLook || urlLook, status: refuse, _looksHydrated: true })
+          return
+        }
+        set({ looks, defaultLookId, activeLookId: urlLook, lookMissingForScene: null, _looksHydrated: true, bakeStale: !entry.bakedAt })
+        // setScene loads that town's data and keeps this Look (it is the scene's own). Not awaited: this may run
+        // inside another scene's load, which sees the scene move and stands down.
+        if (entry.scene !== get().scene) get().setScene(entry.scene)
+        return
+      }
       const activeEntry = looks.find(l => l.id === activeLookId)
       // Align the store's scene with the active Look's scene field. This
       // covers cold boots where localStorage's `cartograph-scene` may
@@ -1798,6 +1825,7 @@ const useCartographStore = create((set, get) => ({
       return
     }
     try { localStorage.setItem(ACTIVE_LOOK_KEY, id) } catch { /* ignore */ }
+    if (get().lookRefused) set({ lookRefused: null })
     const newScene = entry?.scene || get().scene
     const sceneChanged = newScene !== get().scene
     set({ activeLookId: id })

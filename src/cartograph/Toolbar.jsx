@@ -215,10 +215,13 @@ function LooksMenu() {
   // Self-correct to THIS scene's own Look. A lying label is bad; silently baking to
   // another neighborhood's Look is worse — so fix the STATE, not just the text.
   const ownId = sceneLooks[0]?.id
+  // ⛔ Except after a refused ?look= link: then NO town is resolved on purpose, and picking this scene's Look here
+  // would open the default town the link did not ask for. The operator picks one from this menu.
+  const lookRefused = useCartographStore(s => s.lookRefused)
   useEffect(() => {
-    if (!activeIsForeign) return
+    if (!activeIsForeign || lookRefused) return
     if (ownId && ownId !== activeLookId) setActiveLook(ownId)
-  }, [activeIsForeign, ownId, activeLookId, setActiveLook])
+  }, [activeIsForeign, ownId, activeLookId, setActiveLook, lookRefused])
   // Prefer the active Look when it IS this scene's; else this scene's own. Before
   // `looks` loads, fall back to the persisted id / scene — never another hood's name.
   const ownEntry = (activeEntry && activeEntry.scene === scene) ? activeEntry : sceneLooks[0]

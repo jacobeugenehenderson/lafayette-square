@@ -911,7 +911,9 @@ export default function CartographApp() {
   // declutters via per-layer visibility toggles in the Designer Panel.
   const sceneCfg = useMemo(() => sceneConfig(scene, sceneBoundary), [scene, sceneBoundary])
   // The active Look's installation — <Town town>, never the page's boot one.
-  const activeTown = useMemo(() => townForLook(activeLookId), [activeLookId])
+  // ⛔ No Look yet ⇒ no town. townForLook(null) answers the BOOT town, and Stage drew that town under a null Look
+  // (a blank page on a fresh profile: placeTown / <Town> refuse a null lookId).
+  const activeTown = useMemo(() => (activeLookId ? townForLook(activeLookId) : null), [activeLookId])
   // Stage places the town it is on, like every app's entry: in Designer no <Town> is mounted, and the sun, the
   // moon, the season and Stage's own panels still follow the active town. (Terrain is reloaded above.)
   useLayoutEffect(() => { if (activeTown) placeTown(activeTown, activeLookId) }, [activeTown, activeLookId])
@@ -1056,7 +1058,7 @@ export default function CartographApp() {
           {/* ⭐ Every town draws through <Town> — the assembly production and Preview mount, Lafayette Square
               included since SlabBuildings recolours the palette live (BRIEF-live-building-palette).
               ▶ node checks/claims-every-app-mounts-the-town.mjs */}
-          {!inDesigner && (
+          {!inDesigner && activeTown && (
             <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs}
               selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
@@ -1077,7 +1079,8 @@ export default function CartographApp() {
               the thin SceneMapLayers substitute (buildings+LU only) are retired,
               so a poured scene gets the full Designer view — road paint, alleys,
               barriers, parking, labels — not just footprints. */}
-          {(!toolAerialFocus || surveyMode) && !designAerialOnly && (
+          {/* Only once a Look is resolved: MapLayers draws the ACTIVE Look's labels, and a null Look is refused. */}
+          {activeLookId && (!toolAerialFocus || surveyMode) && !designAerialOnly && (
             <MapLayers hiddenLayers={inDesigner ? decorationsHidden : hiddenLayers} inShot={!inDesigner}
               surveyActive={tool === 'surveyor' && inDesigner}
               measureActive={tool === 'measure' && inDesigner} />

@@ -49,13 +49,17 @@ S = (await cdp('Target.attachToTarget', { targetId, flatten: true }, null)).sess
 await cdp('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] })
 await cdp('Runtime.enable'); await cdp('Page.enable')
 await cdp('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false })
-await cdp('Page.navigate', { url: `${BASE}/cartograph.html?look=${look}` })
+// ?scene= — `?look=` alone is overridden by the scene's default in a fresh profile (measured 2026-09-28: ?look=huron
+// opened Lafayette Square). The town actually loaded is asserted below.
+await cdp('Page.navigate', { url: `${BASE}/cartograph.html?scene=${look}` })
 await sleep(25000)
 const ev = async (expr) => (await cdp('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true })).result.value
 const STORE = `(await import(performance.getEntriesByType('resource').map(e => e.name).filter(n => n.includes('/stores/useCartographStore.js')).pop())).default`
 const keys = async () => ev(`(async () => (${STORE}).getState().heroKeyframes.map(k => k.t))()`)
 const log = async (what) => console.log(`${what.padEnd(46)} store keys ${JSON.stringify(await keys())}  saves so far ${saves.length}`)
 await log('loaded (Designer)')
+const loaded = await ev(`(async () => (${STORE}).getState().activeLookId)()`)
+if (loaded !== look) { console.log(`⛔ CANNOT RUN — asked for "${look}", Stage loaded "${loaded}"`); process.exit(2) }
 await ev(`(async () => { (${STORE}).getState().setShot('hero') })()`); await sleep(8000)
 await log('shot → hero')
 // Open the Camera card (a Collapsible: a button whose text ends with the label).
@@ -65,7 +69,7 @@ await log('Camera card opened')
 const readTracks = () => ev(`(() => [...document.querySelectorAll('div')].filter(d => d.className?.includes?.('touch-none') && d.className.includes('h-6')).map(t => { const r = t.getBoundingClientRect(); const m = [...t.children].filter(c => c.title && !/again/.test(c.title)).map(c => { const b = c.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2] }); return { x: r.x, y: r.y + r.height / 2, w: r.width, markers: m } }))()`)
 const tracks = await readTracks()
 const track = tracks.find(t => t.markers.length > 1)
-if (!track) { console.log(`⛔ CANNOT RUN — no hero timeline with ≥ 2 keys on "${look}" (the check needs a key to drag)`); process.exit(2) }
+if (!track) { console.log(`⛔ CANNOT RUN — no hero timeline with ≥ 2 keys on "${look}" (the check needs a key to drag); tracks seen: ${JSON.stringify(tracks)}; buttons: ${await ev(`[...document.querySelectorAll('button')].map(b => b.textContent.trim()).filter(Boolean).slice(0, 60).join(' | ')`)}; body text: ${JSON.stringify(await ev('document.body.innerText.slice(0, 300)'))}; exceptions: ${JSON.stringify(errors.slice(0, 4))}`); process.exit(2) }
 const mouse = (type, x, y, mod = 0) => cdp('Input.dispatchMouseEvent', { type, x, y, modifiers: mod, button: 'left', buttons: type === 'mouseReleased' ? 0 : 1, clickCount: 1, pointerType: 'mouse' })
 const drag = async (x0, x1, y, mod = 0) => { await mouse('mousePressed', x0, y, mod); for (let i = 1; i <= 20; i++) { await mouse('mouseMoved', x0 + (x1 - x0) * i / 20, y, mod); await sleep(30) } await mouse('mouseReleased', x1, y, mod); await sleep(800) }
 const fails = []
