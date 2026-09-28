@@ -26,7 +26,7 @@ import MarkerFAB from './MarkerFAB.jsx'
 import { DesignerArch } from './DesignerArch.jsx'
 import Town from '../components/Town.jsx'
 import { placeTown } from '../components/Town.jsx'
-import { deviceQuality } from '../lib/qualityProfile.js'
+import { deviceQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import { shallow } from 'zustand/shallow'
 
 // Shot-only (environment paint-in)
@@ -806,6 +806,8 @@ function useStageOverrides(heroKeyframes, heroMotion) {
 // Stage's shots → the shot <Town> draws (Designer draws no <Town>).
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
 const QUALITY = deviceQuality()
+// The Canvas the town is drawn through, from the same profile <Town> is given.
+const townCanvas = townCanvasProps(QUALITY)
 
 // ── App ─────────────────────────────────────────────────────────────────────
 export default function CartographApp() {
@@ -977,26 +979,14 @@ export default function CartographApp() {
         : bgColor !== '#1a1a18' ? { background: bgColor } : undefined}>
       <div className="carto-canvas-wrap" style={{ cursor }}>
         <Canvas
+          {...townCanvas}
           orthographic
           frameloop="always"
+          // The Canvas-level camera is the Designer's orthographic one (Town is never drawn through it); the shots'
+          // PerspectiveCamera below is Town's. Everything else is the quality profile's (townCanvasProps — the same
+          // profile <Town> is given).
           camera={{ position: [0, 500, 0], zoom: 3, near: 0.1, far: 2000 }}
-          gl={{
-            alpha: false, antialias: true, stencil: true,
-            powerPreference: 'high-performance',
-            toneMapping: THREE.ACESFilmicToneMapping,
-            // toneMappingExposure now derives from scene.exposure (SC.3,
-            // 2026-05-13) via the shared PostProcessing consumer reading
-            // useCartographStore.exposure as the live override.
-            // Logarithmic depth buffer — redistributes 24-bit precision
-            // logarithmically so distance-dependent sort failures (water
-            // sinking into ground, treelawn snapping at high altitude)
-            // resolve cleanly across the scene's full near/far range. See
-            // FEATURES.md §"Layering / coplanar stacking / depth precision".
-            logarithmicDepthBuffer: true,
-          }}
           onCreated={({ gl }) => { gl.setClearColor(0x2a2a26, 1) }}
-          dpr={[1, 1.5]}
-          shadows="soft"
           style={{ position: 'absolute', inset: 0 }}
         >
           <PerspectiveCamera

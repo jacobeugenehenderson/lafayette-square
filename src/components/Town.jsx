@@ -99,6 +99,8 @@ import MountainBackdrop from './MountainBackdrop'
 export { deviceQuality } from '../lib/qualityProfile.js'
 // …and places its town at boot (before any screen mounts), for readers that run without a <Town> (TownPlace.jsx).
 export { placeTown } from './TownPlace.jsx'
+// The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
+export { townCanvasProps } from '../lib/qualityProfile.js'
 
 const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt

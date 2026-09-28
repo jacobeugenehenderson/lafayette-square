@@ -16,6 +16,7 @@
  * and it lands HERE, not in the pipeline.
  */
 import { createContext, createElement, useContext } from 'react'
+import { ACESFilmicToneMapping } from 'three'
 import { IS_MOBILE } from './isMobile.js'
 
 export const QUALITY = {
@@ -55,6 +56,30 @@ export const QUALITY = {
     staggerLabels: true,
     postFx: 'mobile',
   },
+}
+
+/**
+ * ⭐ THE CANVAS A TOWN IS DRAWN THROUGH, from its profile — the ONE source (Warden, 2026-09-28). A component cannot change
+ * these once the Canvas exists (the depth buffer, antialiasing, the pixel ratio, the shadow map), so every app that
+ * mounts <Town> spreads them: `<Canvas {...townCanvasProps(quality)} …>`, with the SAME quality it hands <Town>. The app
+ * adds only what is its own (frameloop, the opening camera pose, onCreated, preserveDrawingBuffer). The far plane is
+ * <Town>'s at runtime (it reaches its own sky). ▶ node checks/claims-the-canvas-is-the-towns.mjs
+ */
+export function townCanvasProps(quality) {
+  if (!quality?.id) throw new Error('[quality] ⛔ townCanvasProps needs a profile from src/lib/qualityProfile.js')
+  return {
+    gl: {
+      alpha: false,
+      antialias: quality.antialias,
+      logarithmicDepthBuffer: quality.logDepth,
+      stencil: true,
+      powerPreference: 'high-performance',
+      toneMapping: ACESFilmicToneMapping,
+    },
+    dpr: quality.dpr,
+    shadows: quality.shadows,
+    camera: { near: 1 },
+  }
 }
 
 /** The profile for the device this page is running on. */

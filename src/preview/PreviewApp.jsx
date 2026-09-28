@@ -9,7 +9,7 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import RegimeControls from '../components/RegimeControls.jsx'
 import Town from '../components/Town.jsx'
-import { deviceQuality } from '../lib/qualityProfile.js'
+import { deviceQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import useListings from '../hooks/useListings'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -1108,23 +1108,12 @@ export default function PreviewApp() {
 
   const canvas = (
     <Canvas
+      {...townCanvas}
       frameloop="always"
-      camera={{ position: SHOTS.hero.position, fov: SHOTS.hero.fov, near: 1 }}   // far: <Town>'s (it reaches its own sky)
-      gl={{
-        alpha: false, antialias: true, stencil: true,
-        // Lets "Capture hero → preview" read the current slab frame off the
-        // canvas between renders. Preview-only (production Scene omits it).
-        preserveDrawingBuffer: true,
-        powerPreference: 'high-performance',
-        toneMapping: THREE.ACESFilmicToneMapping,
-        // toneMappingExposure now derives from scene.exposure (SC.3,
-        // 2026-05-13) via the shared PostProcessing consumer.
-        // Logarithmic depth buffer — parity with Cartograph Stage. See
-        // cartograph/FEATURES.md §"Layering / coplanar stacking".
-        logarithmicDepthBuffer: true,
-      }}
-      dpr={[1, 1.5]}
-      shadows="soft"
+      camera={{ ...townCanvas.camera, position: SHOTS.hero.position, fov: SHOTS.hero.fov }}
+      // The Canvas is the quality profile's (townCanvasProps — the same profile <Town> is given); Preview adds only
+      // preserveDrawingBuffer, so "Capture hero → preview" can read the slab frame off the canvas between renders.
+      gl={{ ...townCanvas.gl, preserveDrawingBuffer: true }}
       onCreated={({ camera, gl }) => { camera.lookAt(...SHOTS.hero.target); _ogCaptureGL = gl }}
     >
       <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} />
@@ -1179,6 +1168,8 @@ function resolvePreviewLookId() {
 // Preview's shots → the shot <Town> draws; its layer toggles → <Town layers>.
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
 const QUALITY = deviceQuality()
+// The Canvas this town is drawn through, from the same profile <Town> is given.
+const townCanvas = townCanvasProps(QUALITY)
 
 function CanvasContents({ layers, shot, setShot }) {
   // The link between ShotCamera's tween and <Town>'s movie driver: Town fills the handle, the tween answers hold.

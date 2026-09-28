@@ -2,7 +2,7 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { INSTANCE, moduleOn } from '../instance.js'
-import { deviceQuality } from '../lib/qualityProfile.js'
+import { deviceQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import { framedPresence } from '../lib/framedPresence.js'
 import { FRAMED } from '../hooks/useCamera'
 import { browseAltitude } from '../lib/browseAltitude.js'
@@ -622,6 +622,8 @@ const GROUND_ONLY = { buildings: false, trees: false, lamps: false, setPieces: f
 const SHOT_OF_MODE = { hero: 'movie', browse: 'plan', planetarium: 'street' }
 // The device this page runs on decides the quality — in lib/qualityProfile.js, not here.
 const QUALITY = deviceQuality()
+// The Canvas this town is drawn through, from the same profile <Town> is given.
+const townCanvas = townCanvasProps(QUALITY)
 
 function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const viewMode = useCamera((s) => s.viewMode)
@@ -650,32 +652,13 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
       position: 'relative', width: '100%', height: '100%', background: '#000',
     }}>
     <Canvas
+      {...townCanvas}
       style={{ position: 'relative' }}
       frameloop={frameloop}
-      camera={{
-        // A placeholder for the frames before the hero drive has a pose: the
-        // local frame's origin, which is every town's centre by construction.
-        // ⛔ Not a town's hero pose — that comes only from its keyframes.
-        position: [0, 1, 0],
-        // Canvas's initial fov fires at mount time, before scene.json
-        // resolves. Use the flat default — CameraRig will retarget once
-        // the slab loads (~100ms).
-        fov: SHOTS_FLAT_DEFAULTS.hero.fov,
-        near: 1,   // the far plane is <Town>'s (it reaches its own sky)
-      }}
-      gl={{
-        alpha: false,
-        antialias: QUALITY.antialias,
-        // Log depth where the profile asks for it — the validated authoring regime
-        // (Stage/Preview run it): far-field precision at near:1/far:60000, and NeonBands
-        // auto-enables its LOG path. The phone profile stays linear (see qualityProfile.js).
-        logarithmicDepthBuffer: QUALITY.logDepth,
-        stencil: true,
-        powerPreference: 'high-performance',
-        toneMapping: THREE.ACESFilmicToneMapping,
-        // toneMappingExposure derives from scene.exposure: the post pipeline
-        // writes gl.toneMappingExposure each tick from the authored channel.
-      }}
+      // A placeholder pose for the frames before the hero drive has one: the local frame's origin, every town's centre
+      // by construction (never a town's hero pose — that comes only from its keyframes); the flat-default fov until
+      // the slab resolves. The Canvas itself is the quality profile's (townCanvasProps) — one source with <Town>'s.
+      camera={{ ...townCanvas.camera, position: [0, 1, 0], fov: SHOTS_FLAT_DEFAULTS.hero.fov }}
       onCreated={({ gl }) => {
         gl.setClearColor(0x1a1a18, 1)
         const canvas = gl.domElement
@@ -687,8 +670,7 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
           console.info('[WebGL] Context restored')
         })
       }}
-      dpr={QUALITY.dpr}
-      shadows={IS_GROUND ? false : QUALITY.shadows}
+      shadows={IS_GROUND ? false : townCanvas.shadows}
     >
       <SheetGround active={sheeted} ground={ground} />
       <Town town={INSTANCE} lookId={INSTANCE.lookId} quality={QUALITY} shot={shot} paused={paused} idle={idle}
