@@ -1,5 +1,10 @@
 // claims-stage-preview-parity.mjs — DOES THE SURFACE JACOB JUDGES DRAW WHAT SHIPS?
 //
+// ⭐ THREE SIDES (2026-09-27, BRIEF-one-town-assembly). Stage and Preview were compared with each
+// other and never with PRODUCTION — a parity check that never looks at what ships. Production is
+// the third census now, compared with Preview (the confirming view). All three mount <Town>, so a
+// divergence here is a prop or an app's overlay, never a hand-kept list.
+//
 // ⭐⭐ THE INVARIANT: the pipeline is SEQUENTIAL — Stage → Preview → staging. Preview
 // is where work is CONFIRMED. So for every population that ships, the two views must
 // mount the SAME COMPONENT from the SAME SOURCE, and any divergence must be one
@@ -19,10 +24,12 @@
 // ▶ HOW TO RUN IT (three commands, in this order):
 //     node checks/claims-stage-preview-parity.mjs --probe
 //       → prints the browser snippet. Paste it into the DevTools console of each view
-//         (Stage = /cartograph.html, Preview = /preview) with that tab IN FRONT, same
+//         (Stage = /cartograph.html, Preview = /preview, production = /) with that tab IN FRONT, same
 //         `?scene=`, same shot. It copies/prints one JSON blob per view.
 //     node checks/claims-stage-preview-parity.mjs --record stage   < stage.json
 //     node checks/claims-stage-preview-parity.mjs --record preview < preview.json
+//     node checks/claims-stage-preview-parity.mjs --record production < production.json
+//         (production = the player at /, same `?scene=`, left in its opening hero shot)
 //     node checks/claims-stage-preview-parity.mjs
 //       → compares, exits 1 on any undeclared divergence.
 //
@@ -46,6 +53,8 @@ const CENSUS = (view) => path.join(ROOT, 'scratch', `parity-census-${view}.json`
 // The apps whose edits can rot parity. A census older than any of these describes a
 // build that no longer exists.
 const WATCHED = [
+  'src/components/Town.jsx',
+  'src/components/Scene.jsx',
   'src/cartograph/CartographApp.jsx',
   'src/preview/PreviewApp.jsx',
   'src/components/PostProcessing.jsx',
@@ -64,6 +73,11 @@ const INTENDED_STAGE_ONLY = [
   [/Debug$/,                  'a debug overlay'],
   [/^Designer/,               'Designer-mode proxies (trees/lamps/arch) — never in a shot'],
   [/^Measure|^Survey/,        'authoring instruments'],
+]
+// Production against Preview. The player's overlays are children the app supplies to <Town>,
+// never the town itself (BRIEF-one-town-assembly §4).
+const INTENDED_PRODUCTION_ONLY = [
+  [/(^|>)(UserDot|CourierDots|LandmarkMarkers|MapPin)(>|$)/, 'the old player\'s overlays — children it supplies to <Town>'],
 ]
 const INTENDED_PREVIEW_ONLY = [
   // ⛔ deliberately empty. Preview is the confirming view: anything it draws that
@@ -152,7 +166,7 @@ const PROBE = String.raw`
   const scene = qScene || (bakedScenesTouched.length === 1 ? bakedScenesTouched[0] : null)
 
   return {
-    view: /preview/.test(location.pathname) ? 'preview' : 'stage',
+    view: /preview/.test(location.pathname) ? 'preview' : /cartograph/.test(location.pathname) ? 'stage' : 'production',
     href: location.pathname + location.search,
     scene, bakedScenesTouched,
     takenAt: new Date().toISOString(),
@@ -174,7 +188,7 @@ const argv = process.argv.slice(2)
 if (argv[0] === '--probe') { console.log(PROBE); process.exit(0) }
 if (argv[0] === '--record') {
   const view = argv[1]
-  if (view !== 'stage' && view !== 'preview') { console.error('⛔ --record needs "stage" or "preview"'); process.exit(2) }
+  if (!['stage', 'preview', 'production'].includes(view)) { console.error('⛔ --record needs "stage", "preview" or "production"'); process.exit(2) }
   const raw = fs.readFileSync(0, 'utf8')
   let c
   try { c = JSON.parse(raw) } catch (e) { console.error('⛔ stdin is not the census JSON: ' + e.message); process.exit(2) }
@@ -191,7 +205,7 @@ const note = []
 
 // ── 1. The censuses must exist, be live, and describe the build we have now.
 const loaded = {}
-for (const view of ['stage', 'preview']) {
+for (const view of ['stage', 'preview', 'production']) {
   const p = CENSUS(view)
   if (!fs.existsSync(p)) {
     fail.push(`⛔ no ${view} census at ${path.relative(ROOT, p)}. PARITY IS UNKNOWN, which is the state this check exists to make loud — not a reason to pass. Run \`node checks/claims-stage-preview-parity.mjs --probe\` and take one.`)
@@ -210,24 +224,28 @@ for (const view of ['stage', 'preview']) {
   }
   loaded[view] = c
 }
-if (Object.keys(loaded).length === 2) {
-  const [s, p] = [loaded.stage, loaded.preview]
-  if (!s.scene || !p.scene) {
-    fail.push(`⛔ a census does not declare its town (stage=${s.scene}, preview=${p.scene}). Comparing two views of two different towns proves nothing; load each with an explicit \`?scene=\`.`)
-  } else if (s.scene !== p.scene) {
-    fail.push(`⛔ stage census is "${s.scene}", preview census is "${p.scene}". Two towns, no comparison.`)
-  } else {
-    ok.push(`both censuses are live and describe ${s.scene}`)
+// Every census is compared with PREVIEW, the confirming view: Stage (what the operator authors
+// against) and production (what ships). A side with no live, current census is already a failure.
+const PAIRS = [['stage', 'Stage', INTENDED_STAGE_ONLY], ['production', 'Production', INTENDED_PRODUCTION_ONLY]]
+for (const [v, c] of Object.entries(loaded)) {
+  if (c.bakedScenesTouched?.length > 1) {
+    fail.push(`⛔ ${v} fetched baked artifacts for MORE THAN ONE town in a single load: ${c.bakedScenesTouched.join(', ')}. In a kit that is a cross-town leak, and it is invisible on the town you happen to be looking at.`)
   }
-  for (const [v, c] of Object.entries(loaded)) {
-    if (c.bakedScenesTouched?.length > 1) {
-      fail.push(`⛔ ${v} fetched baked artifacts for MORE THAN ONE town in a single load: ${c.bakedScenesTouched.join(', ')}. In a kit that is a cross-town leak, and it is invisible on the town you happen to be looking at.`)
-    }
+}
+for (const [key, SN, ledgerS] of PAIRS) {
+  if (!loaded[key] || !loaded.preview) continue
+  const [s, p] = [loaded[key], loaded.preview]
+  if (!s.scene || !p.scene) {
+    fail.push(`⛔ a census does not declare its town (${key}=${s.scene}, preview=${p.scene}). Comparing two views of two different towns proves nothing; load each with an explicit \`?scene=\`.`)
+  } else if (s.scene !== p.scene) {
+    fail.push(`⛔ ${key} census is "${s.scene}", preview census is "${p.scene}". Two towns, no comparison.`)
+  } else {
+    ok.push(`${key} and preview censuses are live and describe ${s.scene}`)
+    comparePair(s, p, SN, 'Preview', ledgerS, INTENDED_PREVIEW_ONLY)
   }
 }
 
-if (Object.keys(loaded).length === 2) {
-  const S = loaded.stage, P = loaded.preview
+function comparePair(S, P, SN, PN, ledgerS, ledgerP) {
 
   // ── 2. Populations. The heart of it.
   const sameClock = S.sunIntensity !== null && P.sunIntensity !== null &&
@@ -243,62 +261,62 @@ if (Object.keys(loaded).length === 2) {
   for (const k of keys.sort()) {
     const a = S.populations[k], b = P.populations[k]
     if (a && !b) {
-      const d = declared(k, INTENDED_STAGE_ONLY)
-      if (d) { ok.push(`stage-only "${k}" — declared: ${d[1]}`); continue }
-      if (clockish(k) && !sameClock) { note.push(`stage-only "${k}" — clock-dependent, and the clocks differ`); continue }
-      fail.push(`⛔ "${k}" draws in STAGE and not in PREVIEW (${a.meshes} meshes / ${a.instances} instances / ${a.tris} tris). The operator is authoring against something that does not ship.`)
+      const d = declared(k, ledgerS)
+      if (d) { ok.push(`${SN.toLowerCase()}-only "${k}" — declared: ${d[1]}`); continue }
+      if (clockish(k) && !sameClock) { note.push(`${SN.toLowerCase()}-only "${k}" — clock-dependent, and the clocks differ`); continue }
+      fail.push(`⛔ "${k}" draws in ${SN.toUpperCase()} and not in ${PN.toUpperCase()} (${a.meshes} meshes / ${a.instances} instances / ${a.tris} tris). The operator is authoring against something that does not ship.`)
     } else if (b && !a) {
-      const d = declared(k, INTENDED_PREVIEW_ONLY)
-      if (d) { ok.push(`preview-only "${k}" — declared: ${d[1]}`); continue }
-      if (clockish(k) && !sameClock) { note.push(`preview-only "${k}" — clock-dependent, and the clocks differ`); continue }
-      fail.push(`⛔ "${k}" draws in PREVIEW and not in STAGE (${b.meshes} meshes / ${b.instances} instances / ${b.tris} tris). It ships, and the operator cannot see it while authoring.`)
+      const d = declared(k, ledgerP)
+      if (d) { ok.push(`${PN.toLowerCase()}-only "${k}" — declared: ${d[1]}`); continue }
+      if (clockish(k) && !sameClock) { note.push(`${PN.toLowerCase()}-only "${k}" — clock-dependent, and the clocks differ`); continue }
+      fail.push(`⛔ "${k}" draws in ${PN.toUpperCase()} and not in ${SN.toUpperCase()} (${b.meshes} meshes / ${b.instances} instances / ${b.tris} tris). It ships, and the operator cannot see it while authoring.`)
     } else {
       if (a.instances !== b.instances) {
-        fail.push(`⛔ "${k}" draws ${a.instances} instances in Stage and ${b.instances} in Preview. Same component, different data.`)
+        fail.push(`⛔ "${k}" draws ${a.instances} instances in ${SN} and ${b.instances} in ${PN}. Same component, different data.`)
       } else if (a.meshes !== b.meshes || Math.abs(a.tris - b.tris) > Math.max(16, a.tris * 0.001)) {
-        fail.push(`⛔ "${k}" draws ${a.meshes} meshes / ${a.tris} tris in Stage and ${b.meshes} / ${b.tris} in Preview.`)
+        fail.push(`⛔ "${k}" draws ${a.meshes} meshes / ${a.tris} tris in ${SN} and ${b.meshes} / ${b.tris} in ${PN}.`)
       }
     }
   }
-  if (!fail.some(f => /draws/.test(f))) ok.push(`every shared population draws the same geometry in both views`)
+  if (!fail.some(f => /draws/.test(f))) ok.push(`${SN} and ${PN}: every shared population draws the same geometry`)
 
   // ── 3. The camera the frame is actually rendered through.
   for (const f of ['type', 'near', 'far', 'fov']) {
     if (S.cam[f] !== P.cam[f]) {
-      fail.push(`⛔ camera.${f}: Stage ${S.cam[f]}, Preview ${P.cam[f]}. The two views frame the same shot through different optics — depth precision, DoF and z-fighting all follow this.`)
+      fail.push(`⛔ camera.${f}: ${SN} ${S.cam[f]}, ${PN} ${P.cam[f]}. The two views frame the same shot through different optics — depth precision, DoF and z-fighting all follow this.`)
     }
   }
   if (S.cam.type === P.cam.type && S.cam.near === P.cam.near && S.cam.far === P.cam.far) {
-    ok.push(`both views render the shot through a ${S.cam.type} at ${S.cam.near}–${S.cam.far}`)
+    ok.push(`${SN} and ${PN} render the shot through a ${S.cam.type} at ${S.cam.near}–${S.cam.far}`)
   }
 
   // ── 4. The renderer.
   for (const f of ['shadows', 'shadowType', 'toneMapping', 'colorSpace', 'logDepth', 'dpr']) {
     if (S.gl[f] !== P.gl[f]) {
-      fail.push(`⛔ renderer.${f}: Stage ${S.gl[f]}, Preview ${P.gl[f]}. Every pixel the operator judges passes through this.`)
+      fail.push(`⛔ renderer.${f}: ${SN} ${S.gl[f]}, ${PN} ${P.gl[f]}. Every pixel the operator judges passes through this.`)
     }
   }
-  if (S.fog !== P.fog) fail.push(`⛔ fog: Stage ${S.fog}, Preview ${P.fog}.`)
+  if (S.fog !== P.fog) fail.push(`⛔ fog: ${SN} ${S.fog}, ${PN} ${P.fog}.`)
 
   // ── 5. The light rig — and shadow casters especially.
   const casters = (c) => c.lights.filter(l => l.castShadow && l.visible && l.intensity > 0)
   const sc = casters(S), pc = casters(P)
   if (sc.length !== pc.length) {
-    fail.push(`⛔ ${sc.length} shadow caster(s) in Stage, ${pc.length} in Preview (${[...sc, ...pc].map(l => l.owner).join(', ')}). A second caster doubles every shadow in one view only.`)
+    fail.push(`⛔ ${sc.length} shadow caster(s) in ${SN}, ${pc.length} in ${PN} (${[...sc, ...pc].map(l => l.owner).join(', ')}). A second caster doubles every shadow in one view only.`)
   } else {
     for (let i = 0; i < sc.length; i++) {
       const [x, y] = [sc[i], pc[i]]
       if (x.owner !== y.owner || x.shadow.halfExtent !== y.shadow.halfExtent || x.shadow.near !== y.shadow.near || x.shadow.far !== y.shadow.far || x.shadow.map !== y.shadow.map) {
-        fail.push(`⛔ shadow caster ${i}: Stage ${x.owner} map${x.shadow.map} ${x.shadow.near}–${x.shadow.far} ±${x.shadow.halfExtent}; Preview ${y.owner} map${y.shadow.map} ${y.shadow.near}–${y.shadow.far} ±${y.shadow.halfExtent}. ⭐ A half-extent that does not change with the town is a Lafayette Square number, and it will crop the shadows of the next town silently.`)
+        fail.push(`⛔ shadow caster ${i}: ${SN} ${x.owner} map${x.shadow.map} ${x.shadow.near}–${x.shadow.far} ±${x.shadow.halfExtent}; ${PN} ${y.owner} map${y.shadow.map} ${y.shadow.near}–${y.shadow.far} ±${y.shadow.halfExtent}. ⭐ A half-extent that does not change with the town is a Lafayette Square number, and it will crop the shadows of the next town silently.`)
       }
     }
-    if (sc.length) ok.push(`both views cast shadows from the same ${sc.length} light(s), same frustum`)
+    if (sc.length) ok.push(`${SN} and ${PN} cast shadows from the same ${sc.length} light(s), same frustum`)
   }
   const rig = (c) => c.lights.filter(l => l.visible && l.intensity > 0).map(l => `${l.owner}:${l.type}`).sort()
   const [sr, pr] = [rig(S), rig(P)]
   const only = (a, b) => a.filter(x => !b.includes(x))
-  if (only(sr, pr).length) fail.push(`⛔ lights lit in Stage and not in Preview: ${only(sr, pr).join(', ')}`)
-  if (only(pr, sr).length) fail.push(`⛔ lights lit in Preview and not in Stage: ${only(pr, sr).join(', ')}`)
+  if (only(sr, pr).length) fail.push(`⛔ lights lit in ${SN} and not in ${PN}: ${only(sr, pr).join(', ')}`)
+  if (only(pr, sr).length) fail.push(`⛔ lights lit in ${PN} and not in ${SN}: ${only(pr, sr).join(', ')}`)
 }
 
 for (const line of ok) console.log(`  ✅ ${line}`)
@@ -308,4 +326,4 @@ if (fail.length) {
   console.error(`\n⛔ ${fail.length} divergence(s) between the surface the operator authors on and the surface that confirms what ships.`)
   process.exit(1)
 }
-console.log(`\n✅ Stage and Preview draw the same town the same way, apart from the declared authoring aids.`)
+console.log(`\n✅ Stage, Preview and production draw the same town the same way, apart from the declared authoring aids and the player's overlays.`)
