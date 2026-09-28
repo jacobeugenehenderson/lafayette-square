@@ -693,7 +693,12 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // Depth is measured from the water's level, not from the terrain's zero (the survey flight's level).
          float wDepth = mix(max(0.0, vLevel - texture2D(uTerrainMap, _terrainUV(wUV)).r), uVisibleM, wPast);
          float wSeen = 1.0 - smoothstep(uVisibleM - uFadeM, uVisibleM, wDepth);   // 1 = the bottom shows
-         diffuseColor.a = mix(1.0, diffuseColor.a * clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
+         // ⭐ Deep water keeps a FAINT see-through over the bed — the sheet's own ripple alpha (0.72-0.88), as the look
+         // Jacob loved had it (2026-09-27: "yes faint see thru"; 4ab1dae3 had made it opaque, and with the tide at HIGH
+         // the town's water measured mean alpha 0.93 against that look's 0.71). ⛔ Past the drawing's rim there is no
+         // bed, only the horizon disc beneath: there it stays opaque, or the disc shows as a second, darker sea.
+         float wDeepA = mix(diffuseColor.a, 1.0, wPast);
+         diffuseColor.a = mix(wDeepA, diffuseColor.a * clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
        }
 ` : ''}       if (uHorizonOut > 0.0) diffuseColor.a *= 1.0 - smoothstep(uHorizonIn, uHorizonOut, length(vWaterWorld.xz - uHorizonC));
        // ⭐⭐ THE WAVE NORMAL — THE SUN AND MOON PATH LIVES HERE, and it is the
