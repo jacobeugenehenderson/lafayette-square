@@ -31,12 +31,13 @@
  *   holdScrubbedTime a scrubbed clock stays where the operator put it (Stage)
  *   children         the app's overlays, drawn in the town's frame (see <TownPoint>)
  */
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import TownBridge, { SHOT_KEY } from './TownBridge.jsx'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
 import { QualityProvider } from '../lib/qualityProfile.js'
+import { INSTANCE, townForLook } from '../instance.js'   // ⏳ interim — see the refusal in Town
 import { useTownPlace } from '../lib/townPlace.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
@@ -45,6 +46,7 @@ import { sceneExag } from '../utils/terrainShader'
 import { terrainExag } from '../utils/terrainShader'
 import { getElevationRaw } from '../utils/elevation'
 import useSkyState from '../hooks/useSkyState'
+import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { PostProcessing, StageFog, StageShadows, LampGlowDriver } from './PostProcessing.jsx'
 import { NeonDriver } from './NeonBands.jsx'
 import CascadedShadows, { CSM_ENABLED } from './CascadedShadows.jsx'
@@ -67,6 +69,9 @@ import GatewayArch from './GatewayArch'
 import SetPiece from './SetPiece.jsx'
 import HorizonDisc from './HorizonDisc.jsx'
 import MountainBackdrop from './MountainBackdrop'
+
+// The props contract comes through the one entry: an app asks this for its quality profile.
+export { deviceQuality } from '../lib/qualityProfile.js'
 
 const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt
@@ -111,6 +116,40 @@ export function Cascades() {
 }
 
 /**
+ * Where each of the town's buildings stands, READ-ONLY, for an app's overlays and camera moves (The Ward's
+ * Society frames the lit buildings with it): Map(id → { x, z, radius }) in the town's local metres — the
+ * footprint's centroid and the farthest corner from it. The ids are the slab's, the same ids
+ * onSelectBuilding hands the app. null until the town's buildings have loaded. Mount-context: inside <Town>.
+ */
+export function useBuildingPlaces() {
+  const index = useSlabBuildingIndex((s) => s.index)
+  return useMemo(() => {
+    if (!index) return null
+    const out = new Map()
+    for (const e of index.byNum) {
+      const fp = e.footprint
+      if (!fp?.length) continue
+      let x = 0, z = 0
+      for (const [px, pz] of fp) { x += px; z += pz }
+      x /= fp.length; z /= fp.length
+      let radius = 0
+      for (const [px, pz] of fp) radius = Math.max(radius, Math.hypot(px - x, pz - z))
+      out.set(e.id, { x, z, radius })
+    }
+    return out
+  }, [index])
+}
+
+/** The circle that holds a set of buildings: { x, z, radius }, or null when none of `ids` has a place. */
+export function frameBuildings(places, ids) {
+  const ps = [...ids].map((id) => places?.get(id)).filter(Boolean)
+  if (!ps.length) return null
+  const x = ps.reduce((a, p) => a + p.x, 0) / ps.length
+  const z = ps.reduce((a, p) => a + p.z, 0) / ps.length
+  return { x, z, radius: Math.max(...ps.map((p) => Math.hypot(p.x - x, p.z - z) + p.radius)) }
+}
+
+/**
  * Puts its children on the drawn ground at a place in the town: local metres `x z`, or `lat lon`
  * projected through the town's own place (lib/townPlace.js). `lift` raises them above the ground.
  * The ground's height follows the terrain exaggeration of the shot, every frame.
@@ -135,6 +174,14 @@ export default function Town({
   if (!lookId) throw new Error('[Town] ⛔ needs lookId — the Look to draw')
   if (!quality?.id) throw new Error('[Town] ⛔ needs quality — a profile from src/lib/qualityProfile.js')
   if (!SHOT_KEY[shot]) throw new Error(`[Town] ⛔ shot "${shot}" is not one of ${Object.keys(SHOT_KEY).join(' · ')}`)
+  // ⏳ INTERIM (Warden, 2026-09-28) — deleted by the INSTANCE work, when <Town town> is passed in and nothing
+  // Town reaches reads the kit's instance. Until then two pieces of the town still come from the page's boot
+  // identity (listings, the live buildings, the terrain), and instance.js falls back to town #1 for a Look it
+  // cannot place, with only a console line. Refuse to draw in either case rather than draw the mould.
+  // ⛔ NOT "lookId !== INSTANCE.lookId": Stage boots on `?scene=` with no `?look=`, so its INSTANCE is always
+  // the default town, and that test would refuse every poured town in Stage.
+  if (INSTANCE.identityResolved === false) throw new Error(`[Town] ⛔ asked to draw "${lookId}" but this page's installation did not resolve: it fell back to "${INSTANCE.mapId}" (identityResolved=false)`)
+  if (!townForLook(lookId)) throw new Error(`[Town] ⛔ asked to draw "${lookId}", which the kit's looks index places in no town`)
   if (liveIds) throw new Error('[Town] ⛔ liveIds: the live-announcement mark is not built yet (a design question with Jacob) — nothing would draw it')
   for (const k of Object.keys(layers || {})) if (!LAYERS.includes(k)) throw new Error(`[Town] ⛔ unknown layer "${k}" (have: ${LAYERS.join(' ')})`)
   for (const k of Object.keys(overrides)) if (!OVERRIDE_KEYS.includes(k)) throw new Error(`[Town] ⛔ unknown override "${k}"`)
