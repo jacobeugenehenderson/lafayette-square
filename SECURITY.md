@@ -492,6 +492,13 @@ Found by Quire: deleting a post leaves its threads open · `postComment` does no
 no server-side length limits (the 1000/500-character limits are client-only) · `is_mine` matches the exact
 device hash while standing counts linked devices, so your own post is not "mine" on your linked device.
 
+### F-20 · MEDIUM · The admin token travels in a URL query string  *(new, 2026-09-28)*
+`src/lib/api.js#getClaimSecret` (admin path: `get('claim-secret', { lid, admin: token })`) and the kit's CodeDesk
+copy (`public/codedesk/qr_sync_pipeline.js`, `&admin=…`) send the operator's admin token as a GET query
+parameter, so it lands in every server, proxy and browser log that records URLs. Found by Tamp (CodeDesk brief).
+**Fix:** send it in a POST body (or a header) and never in a URL; the Apps Script reads it from there. The Ward's
+admin surface (step 5) must not reproduce the pattern. The CodeDesk copy dies with the kit's `public/codedesk/`.
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
