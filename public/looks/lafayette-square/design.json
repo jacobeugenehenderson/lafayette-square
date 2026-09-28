@@ -763,7 +763,19 @@
   },
   "surveyDefault": null,
   "blockLandUse": {},
-  "materialColors": {},
+  "materialColors": {
+    "neon_dining": "#C2185B",
+    "neon_historic": "#D4A337",
+    "neon_arts": "#8E4585",
+    "neon_parks": "#3DAF8A",
+    "neon_shopping": "#C27F94",
+    "neon_services": "#3674A5",
+    "neon_hospitality": "#3674A5",
+    "neon_community": "#B86B4A",
+    "neon_residential": "#7A8B6F",
+    "neon_commercial": "#D4A337",
+    "neon_industrial": "#3674A5"
+  },
   "materialPhysics": {},
   "buildingPalette": [
     "#dcdcdc",
