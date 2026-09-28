@@ -732,7 +732,7 @@ const useCartographStore = create((set, get) => ({
   materialPhysics: {},
   // 12-slot building tint palette. Each building deterministically picks
   // palette[hash(building.id) % 12]. Operator authors per-Look; per-building
-  // overrides (in buildingOverrides.json) can still trump the palette so
+  // overrides (cartograph/data/<town>/building-overrides.json) can still trump the palette so
   // landmarks/known-real colors lock to specific values.
   buildingPalette: [...BUILDING_PALETTE_DEFAULT],
   // ── Time-of-day slots ───────────────────────────────────────

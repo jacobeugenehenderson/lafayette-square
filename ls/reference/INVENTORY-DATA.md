@@ -34,7 +34,6 @@ Imported at JS module load, bundled into the JS chunk. No HTTP fetch; immutable 
 |---|---|---|---|
 | Buildings catalog | `src/data/buildings.json` (lazy via `buildings.js`) | `LafayetteScene`, `Controls`, `GlassSearch`, `SidePanel`, `useListings`, `CheckinPage` | Load-bearing for per-id; merged-mesh bake exists separately; **decide: hybrid (slab mesh + per-id index) or stay live + freeze** |
 | Streets (label data) | `src/data/streets.json` | `LafayetteScene` (street labels), `SidePanel` | **Freeze** or bake |
-| Building overrides | `src/data/buildingOverrides.json` | `LafayetteScene` | **Freeze** or fold into `buildings.json` |
 | Facade mapping (photos + descriptions) | `src/data/facade_mapping.json` | `PlaceCard.jsx` | **Keep live** — consumer-surface catalog (~2600 lines), no perf benefit to baking |
 | Park water polygons | `src/data/park_water.json` | `LafayettePark` | Already in ground bake; **retire live import** |
 | Park paths | `src/data/park_paths.json` | `LafayettePark` | Already in ground bake (path ribbons); **retire live import** |

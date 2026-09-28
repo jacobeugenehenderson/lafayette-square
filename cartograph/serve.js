@@ -2828,7 +2828,6 @@ createServer(async (req, res) => {
         await runIfDirty('buildings',
           [MAP_JSON, DESIGN, SCENE_DESIGN, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,   // ⭐ the terrain: Huron's buildings at y=0
            join(SCENE_DIR, 'buildings.json'), bakePaths.boundary, join(SCENE_DIR, 'building-overrides.json'),
-           join(REPO_ROOT, 'src', 'data', 'buildingOverrides.json'),   // ⚠️ one file for EVERY town — a finding, not changed here
            join(here, 'bake-buildings.js')],
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,

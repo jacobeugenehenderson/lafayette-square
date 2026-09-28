@@ -45,7 +45,6 @@ const MANIFESTS = {
     // In-place: shared with authoring + bake pipeline; moves belong to the
     // producer-emit arc. Loaded by lookId here regardless of physical path.
     buildings:        () => import('./buildings.json'),
-    buildingOverrides:() => import('./buildingOverrides.json'),
     streets:          () => import('./streets.json'),
     // Installation #1's listings, consolidated 2026-09-24 into its own content dir like every other town.
     landmarks:        () => import('../../cartograph/data/lafayette-square/content/listings.json'),
