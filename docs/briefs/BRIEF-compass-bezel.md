@@ -31,16 +31,13 @@ Everything it needs is already published:
   should center in its center. it just rotates like a compass"). The dot moves across the town; the town
   only turns. **Pan and zoom stay the person's, in every mode** (Jacob: "the user can still drag the map
   horizontally and zoom") — the heading drives ROTATION only, never position or scale.
-- **Pinch zooms and twist rotates, in every mode** (Jacob: "pinch scale and rotate, too"). ⭐ **The person's
-  hand always wins over the sensor:** a twist while "Face my direction" is on hands rotation to the person —
-  the switch shows "rotated by hand" and the heading stops steering. **Tapping the bezel's N**, or the switch,
-  returns to north-up or to "Face my direction". That is the visible way back, and twist's button equivalent.
+- **Pinch zooms and twist rotates, in every mode** (Jacob: "pinch scale and rotate, too"). ⭐ **A twist is
+  momentary: on release the map settles back to the correct bearing** (Jacob: "the map settles in the correct
+  direction") — true north outside the neighbourhood, the person's heading inside it — with the same eased
+  "give" as the end of a drag. The map is never left pointing the wrong way, so there is no "rotated by hand"
+  mode to escape from. Reduced motion: it returns without the ease.
   ⚠️ The old player's plan camera disables rotation (`cameraRegimes.js` plan regime) — the Ward's plan camera
-  enables it. It moves because the *person* moved — "the scene never
-  takes you anywhere" holds.
-- **A control, always:** "North up" / "Face my direction" is a named switch whenever it applies, so a
-  person inside can hold the map still. iOS asks permission for the heading on a tap; until granted, the
-  map stays north-up and the switch asks.
+  enables it.
 - **In Street,** the bezel shows which way the camera faces, and replaces the old `CompassRose.jsx` (delete it;
   one compass, not two).
 - **Street names at the rim — undecided ("unknown").** Build it as a Town layer, switchable, and show Jacob a
