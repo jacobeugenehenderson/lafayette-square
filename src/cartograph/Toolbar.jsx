@@ -82,9 +82,6 @@ export default function Toolbar() {
             </button>
           </div>
 
-          {/* Looks pulldown also surfaces the Toy scene as an option, so
-              one consolidated context switcher replaces the old separate
-              Toy button. */}
           <LooksMenu />
         </>
       ) : (

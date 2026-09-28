@@ -52,8 +52,9 @@ console.log('CORNER DECLINES vs THE PARTITION — is `bandRem-empty` firing wher
 
 for (const scene of scenes) {
   const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/baked', scene, 'shape.json'), 'utf8'))
-  const tiles = Array.isArray(raw) ? raw : raw.tiles
-  if (!Array.isArray(tiles) || !tiles.length) { console.log(`── ${scene}: no tiles in shape.json — NOT MEASURED\n`); continue }
+  const tiles = raw.tiles
+  if (!Array.isArray(tiles)) throw new Error(`public/baked/${scene}/shape.json has no .tiles array — not a {tiles, highway} freeze`)
+  if (!tiles.length) { console.log(`── ${scene}: no tiles in shape.json — NOT MEASURED\n`); continue }
   const look = path.join(ROOT, 'public/looks', scene, 'design.json')
   const bc = fs.existsSync(look) ? (JSON.parse(fs.readFileSync(look, 'utf8')).blockCustoms || null) : null
 

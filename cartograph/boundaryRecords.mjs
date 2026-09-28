@@ -101,8 +101,8 @@ export function sameFade(a, b) {
  *
  * → { kind: 'authored' | 'generated' | 'absent', fade }
  *
- * `absent` is LEGAL and meaningful, not a hole to fill: `toy` carries no fade
- * fields at all, and that absence is READ — it signals "no soft-circle silhouette"
+ * `absent` is LEGAL and meaningful, not a hole to fill: a scene that carries no fade
+ * fields at all has that absence READ — it signals "no soft-circle silhouette"
  * to `bake-ground.js` and `BakedGround`. A sentinel that nothing reads is not a
  * value; this one is read, so it is. Only a PARTIAL set is a defect.
  */
@@ -127,7 +127,7 @@ export function classifyFade(nb, where = 'boundary') {
  *
  * `keyOrder` + `carry` exist so `compose` is BYTE-identical, not merely
  * value-identical: `carry` holds every top-level key that is none of the three
- * records' business (`description` on LS, `_comment` on toy — authored operator
+ * records' business (`description` on LS, `_comment` — authored operator
  * text that the fresh-object construction used to drop on the floor).
  */
 export function splitBoundary(nb, where = 'boundary') {

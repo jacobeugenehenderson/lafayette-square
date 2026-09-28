@@ -952,7 +952,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // Re-clip to the stencil — V2 already clipped its own output, but
   // our injected overlays haven't seen the clipper yet. Run it again
   // so nothing leaks past the silhouette. No-op when stencil.clipPolygon
-  // is null (toy / unmigrated scenes).
+  // is null (a scene with no neighborhood_boundary.json).
   if (stencil.clipPolygon) clipAllToStencil(byMaterial, byFaceUse, stencil.clipPolygon)
 
   // ⛔⛔ THE SILENT DROP, MADE LOUD. PAINT_ORDER is an ALLOW-LIST: anything
@@ -1383,7 +1383,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const bz1 = stencil.center[1] + _bakeHalf
 
   // manifest.stencil = null when the scene didn't author a soft-circle
-  // fade (toy). BakedGround already handles null → skip radial fade shader.
+  // fade. BakedGround already handles null → skip radial fade shader.
   // When fade IS authored, emit the full block so the runtime can patch the
   // shader uniforms without a side import.
   //

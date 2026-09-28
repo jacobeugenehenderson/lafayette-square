@@ -302,8 +302,7 @@ export default function CornerEditHandles() {
       // as at rest — so the drag preview IS the bake and physically cannot
       // detach. tileGround re-runs on commit (live == bake). rAF-throttle caps it
       // to one rebuild per frame; on heavy scenes (LS) the rebuild can exceed a
-      // frame, so the arc lags the cursor slightly — correct over smooth, and
-      // toy (the authoring surface) keeps up.
+      // frame, so the arc lags the cursor slightly — correct over smooth.
       pendingCommitRef.current = baseR
       // Only drive the store once the gesture is unambiguously a DRAG (moved past
       // the tap threshold) — a tap commits nothing (it toggles the origin marker

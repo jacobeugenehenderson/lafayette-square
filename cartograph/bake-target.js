@@ -61,7 +61,7 @@ export function assertBakeTarget(tool, look, scene) {
     throw new Error(
       `[${tool}] no such look: public/looks/${look}/ does not exist. ` +
       `Baking it would write a phantom baked/${look}/ that nothing reads. ` +
-      `Pass --look=lafayette-square (the real LS surface) or --look=toy.`
+      `Pass an existing look, e.g. --look=lafayette-square.`
     )
   }
 

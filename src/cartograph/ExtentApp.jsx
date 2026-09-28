@@ -930,7 +930,7 @@ export default function ExtentApp() {
   // untouched by the Look loader) and reads that. "New neighborhood" clears to null
   // = the EMPTY WORKSPACE; a search establishes a new hood's OWN scene (slug).
   const [scene, setSceneLocal] = useState(() => {
-    const ok = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s) && s !== 'toy'
+    const ok = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
     try {
       const ext = localStorage.getItem(EXTENT_SCENE_KEY)
       if (ok(ext)) return ext

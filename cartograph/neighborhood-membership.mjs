@@ -81,8 +81,8 @@ export function makeMembership(boundaryPath) {
   // ⛔⛔ THE GATE IS THE POINT: an absent `fadeBand` means the scene authored NO
   // dissolve, and that absence is LEGAL AND READ elsewhere in the kit
   // (`classifyFade` → 'absent'; `sceneStencil` → `manifest.stencil = null`). Deriving
-  // unconditionally would INVENT a band for such a scene — toy (radius 180, no
-  // fadeBand) would gain a dissolve across its entire disc, 0 → 180, where the
+  // unconditionally would INVENT a band for such a scene — a radius-180 disc with
+  // no fadeBand would gain a dissolve across its entire disc, 0 → 180, where the
   // author asked for none. ⭐ That is a sentinel treated as a value
   // (`project_a_sentinel_is_not_a_value`). For a scene with no authored fade, a hard
   // cut AT the radius is the intended behaviour, so fadeIn === fadeOut === R is

@@ -43,7 +43,7 @@ const ARG_CONVENTIONS = [
   ['--look', /--look\b/],
 ]
 // A roster typed into the file: an array (or pushes) of scene-name string literals.
-const TYPED_ROSTER = /(\[|push\()\s*['"](lafayette-square|toy|hipointe-demun|altadena)['"]/
+const TYPED_ROSTER = /(\[|push\()\s*['"](lafayette-square|hipointe-demun|altadena)['"]/
 // ⛔ AND THE SINGLE-SCENE SPELLING, which is the SAME defect and which this instrument missed
 //    until 2026-09-13 — after it had already missed `process.argv.slice(2)` and invented a
 //    phantom class off the back of it. `const scene = process.argv[2] || 'lafayette-square'` is a
@@ -52,7 +52,7 @@ const TYPED_ROSTER = /(\[|push\()\s*['"](lafayette-square|toy|hipointe-demun|alt
 //    ⚠️ TWO DETECTORS HAVE NOW BEEN WRONG ABOUT THIS CLASS THREE TIMES BETWEEN TWO SESSIONS
 //    (mine missed slice(2) then this; another session's missed slice(2) too, and published "58
 //    stuck on town #1" off it). ⛔ So do not quote this instrument's count either — run it.
-const TYPED_DEFAULT = /^\s*(?:const|let)\s+(?:\w*[Ss]cene\w*|SCENE\w*|LOOK\w*)\s*=\s*(?:[^\n]*?\|\|\s*)?['"](?:lafayette-square|toy|hipointe-demun|altadena)['"]\s*$/m
+const TYPED_DEFAULT = /^\s*(?:const|let)\s+(?:\w*[Ss]cene\w*|SCENE\w*|LOOK\w*)\s*=\s*(?:[^\n]*?\|\|\s*)?['"](?:lafayette-square|hipointe-demun|altadena)['"]\s*$/m
 // Scenes read off disk — the shape that survives a new pour.
 const DISCOVERS = /readdirSync\s*\([^)]*(looks|baked|data)|looks\/index\.json|\b(ribbonScenes|feedScenes|scenes)\s*\(|from '[^']*_scenes\.mjs'/
 

@@ -78,7 +78,8 @@ const showTiles = process.argv.includes('--tiles')
 
 const shapeP = path.join(ROOT, 'public/baked', argScene, 'shape.json')
 if (!fs.existsSync(shapeP)) { console.error(`⛔ no baked shape for ${argScene} — NOT MEASURED`); process.exit(2) }
-const tiles = (j => Array.isArray(j) ? j : j.tiles)(JSON.parse(fs.readFileSync(shapeP, 'utf8')))
+const tiles = JSON.parse(fs.readFileSync(shapeP, 'utf8')).tiles
+if (!Array.isArray(tiles)) throw new Error(`${shapeP}: shape.json has no .tiles array — not a {tiles, highway} freeze`)
 const designP = path.join(ROOT, 'public/looks', argScene, 'design.json')
 const bc = fs.existsSync(designP) ? (JSON.parse(fs.readFileSync(designP, 'utf8')).blockCustoms || null) : null
 

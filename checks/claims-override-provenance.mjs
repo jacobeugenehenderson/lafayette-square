@@ -82,7 +82,8 @@ const readBake = (scene) => {
   let raw
   try { raw = JSON.parse(readFileSync(p, 'utf8')) }
   catch (err) { return { scene, broken: String(err.message) } }
-  const tiles = Array.isArray(raw) ? raw : (raw.tiles || [])   // toy freezes a bare array
+  const tiles = raw.tiles
+  if (!Array.isArray(tiles)) throw new Error(`${scene}: shape.json has no .tiles array — not a {tiles, highway} freeze`)
   const triples = new Set(), streets = new Set()
   for (const t of tiles) for (const r of (t.runs || [])) {
     triples.add(`${r.skelId}|${r.side}|${r.segOrd}`)

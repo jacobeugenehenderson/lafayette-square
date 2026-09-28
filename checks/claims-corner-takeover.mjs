@@ -77,7 +77,8 @@ const DECLINES = ['tile-gate:bandRem-empty', 'tile-gate:no-fillets', 'tile-gate:
 
 const readScene = (scene) => {
   const raw = JSON.parse(readFileSync(join(BAKED, scene, 'shape.json'), 'utf8'))
-  const tiles = Array.isArray(raw) ? raw : (raw.tiles || [])   // toy freezes a bare array
+  const tiles = raw.tiles
+  if (!Array.isArray(tiles)) throw new Error(`${scene}: shape.json has no .tiles array — not a {tiles, highway} freeze`)
   const look = join(LOOKS, scene, 'design.json')
   const design = existsSync(look) ? JSON.parse(readFileSync(look, 'utf8')) : null
   // An override slot is only ever READ if its key matches a frozen run's

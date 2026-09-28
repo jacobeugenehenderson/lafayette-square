@@ -101,7 +101,8 @@ let worstExit = 0
 for (const scene of scenes) {
   requireArtifact(`public/baked/${scene}/shape.json`, 'baked shape.json')
   const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/baked', scene, 'shape.json'), 'utf8'))
-  const tiles = Array.isArray(raw) ? raw : (raw.tiles || [])
+  const tiles = raw.tiles
+  if (!Array.isArray(tiles)) throw new Error(`public/baked/${scene}/shape.json has no .tiles array — not a {tiles, highway} freeze`)
   const designP = path.join(ROOT, 'public/looks', scene, 'design.json')
   const design = fs.existsSync(designP) ? JSON.parse(fs.readFileSync(designP, 'utf8')) : {}
   const bc = design.blockCustoms || null

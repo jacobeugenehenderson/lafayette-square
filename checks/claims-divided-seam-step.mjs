@@ -47,7 +47,8 @@ const designP = path.join(ROOT, 'public/looks', scene, 'design.json')
 for (const p of [shapeP, ribP]) {
   if (!fs.existsSync(p)) { console.error(`⛔ missing input: ${p} — NOT MEASURED`); process.exit(2) }
 }
-const tiles = (j => Array.isArray(j) ? j : j.tiles)(JSON.parse(fs.readFileSync(shapeP, 'utf8')))
+const tiles = JSON.parse(fs.readFileSync(shapeP, 'utf8')).tiles
+if (!Array.isArray(tiles)) throw new Error(`${shapeP}: shape.json has no .tiles array — not a {tiles, highway} freeze`)
 const streets = JSON.parse(fs.readFileSync(ribP, 'utf8')).streets || []
 const bc = fs.existsSync(designP) ? (JSON.parse(fs.readFileSync(designP, 'utf8')).blockCustoms || {}) : {}
 

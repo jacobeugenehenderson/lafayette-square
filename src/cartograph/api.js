@@ -1,7 +1,7 @@
 const BASE = '/api/cartograph'
 
 // Scene-aware route helper. The server accepts both /<verb> (default scene)
-// and /<scene>/<verb> (explicit). Pass scene='lafayette-square' or 'toy'.
+// and /<scene>/<verb> (explicit). Pass the scene id, e.g. 'lafayette-square'.
 // Omitting scene falls through to the server's default-scene alias — kept
 // for any caller that genuinely shouldn't care (currently none in the store
 // after Phase 0c, but the alias keeps small CLIs / probes working).
@@ -22,8 +22,8 @@ export async function saveMarkers(strokes, scene) {
   })
 }
 
-// The post-bake ribbons artifact (streets/intersections/faces/tiles). LS + toy
-// ship this as a bundled vite import; a non-bundled scene (e.g. hipointe-demun)
+// The post-bake ribbons artifact (streets/intersections/faces/tiles). LS
+// ships this as a bundled vite import; a non-bundled scene (e.g. hipointe-demun)
 // fetches it per-scene from the server instead of bloating the bundle.
 export async function fetchRibbons(scene) {
   const res = await fetch(sceneUrl(scene, 'ribbons'))

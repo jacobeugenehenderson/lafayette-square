@@ -620,7 +620,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl, 
   const scene = useSceneJson(lookName, bakeLastMs)
   const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
 
-  // Placement source: an explicit bakeUrl prop (Preview/Stage/toy, where the
+  // Placement source: an explicit bakeUrl prop (Preview/Stage, where the
   // scene and the Look differ) wins as-is; otherwise it is the Look's own
   // placements. Every neighbourhood ships baked/<scene>/trees.json — LS
   // included, since 2026-07-15. There is no global fallback any more: the old

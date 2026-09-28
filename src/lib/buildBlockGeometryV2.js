@@ -6,7 +6,7 @@
  *   Round-corners is applied to the BLOCK polygon's convex vertices
  *   (which are concave vertices of the asphalt void).
  *
- * v0 scope (toy v1): compute the asphalt union, identify IX corners,
+ * v0 scope: compute the asphalt union, identify IX corners,
  * apply default-R rule with k=0.5 pinch, return both sharp and rounded
  * asphalt rings for visual debug. Strip bands, corner caps, curb stroke,
  * and authoring-kit overrides land in later passes.
@@ -121,7 +121,7 @@ function computePerps(pts) {
 //                         another chain at an IX)
 // Cap fields read both `street.capStart`/`street.capEnd` (live store shape,
 // from SurveyorPanel) and `street.capEnds.start`/`.end` (baked ribbons.json
-// shape, from derive-toy.js) — so the same helper serves live + bake.
+// shape) — so the same helper serves live + bake.
 
 function unionRings(rings) {
   const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
@@ -654,7 +654,7 @@ function pointInRing(px, pz, ring) {
 // IX-identity source: when `ixSet` (Set<pointIdx>) is provided, those
 // indices are the IX vertices. When omitted, falls back to trusting
 // `street.intersections[].ix` integers — historical behavior, retained
-// for safety but known to be stale (~36% on LS, and on toy when a chain
+// for safety but known to be stale (~36% on LS, and whenever a chain
 // has interior bends preceding an IX). The walker and emitter share
 // `resolveChainSegmentation`-produced ixSets so segOrd↔edgeOrd
 // mappings stay consistent.
@@ -1417,7 +1417,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     curbWidth = CURB_WIDTH, blockCustoms = null,
     blockLandUse = null,
     smooth = 0,
-    useRingBandEmitter = false } = opts  // C4 flag — toy on, LS off until C5
+    useRingBandEmitter = false } = opts  // C4 flag — every caller passes true since C5
   // ⛔ The inner-edge anchor transform that used to run here is DELETED
   // (2026-08-13, streetProfiles.js). It re-applied `derive.js innerEdgeAssign`'s
   // ped-zeroing through the persisted `innerSign` key — a constant `-1` on every

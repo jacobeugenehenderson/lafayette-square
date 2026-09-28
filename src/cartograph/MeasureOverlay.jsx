@@ -220,7 +220,7 @@ const HANDLE_BORDER = 0.35
 //
 // IX identity: when `ixSet` is provided (coord-match from
 // resolveChainSegmentation), use it. Otherwise fall back to
-// `intersections[].ix` — stale on LS / toy-bend chains, kept only as
+// `intersections[].ix` — stale on chains with interior bends, kept only as
 // a safety net. The walker, emitter, and this overlay MUST agree on
 // the partition or findFeForSide will resolve to a different fe than
 // the bands were emitted against.

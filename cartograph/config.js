@@ -20,8 +20,7 @@
  *
  * ⛔ SCENE RESOLUTION LIVES IN `scene.js`, NOT HERE — and importing THIS file to
  * ask what scene you are on is a mistake. `_loadGeography()` runs at module load
- * and exits when a named scene has no geography.json (the `toy` fixture has
- * none), so a writer that only needs the scene's NAME must import `scene.js`
+ * and exits when a named scene has no geography.json, so a writer that only needs the scene's NAME must import `scene.js`
  * directly. The names are re-exported below purely so existing importers of
  * `config.js` keep working; `scene.js`'s header explains why the split is
  * load-bearing and must not be undone.

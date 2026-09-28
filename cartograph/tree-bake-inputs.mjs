@@ -51,7 +51,7 @@ export function treeLibraryFiles() {
  * The NEIGHBOURHOOD a Look is a Look OF. This is the axis split, in one function.
  *
  * Every Look's `scene` currently equals its `id` (`lafayette-square→lafayette-square`,
- * `toy→toy`, …), which is why passing a Look id where a scene was wanted has been
+ * `huron→huron`, …), which is why passing a Look id where a scene was wanted has been
  * ACCIDENTALLY correct everywhere except the one path that used the fossil
  * `default`. That 1:1 is history, not a constraint — the day a second Look sits
  * over one neighbourhood (a winter Lafayette Square), the two would fight over one
@@ -81,12 +81,6 @@ export function mapForLook(lookId) {
 export const placementsPathForMap = (scene) => `public/baked/${scene}/trees.json`
 
 /**
- * The toy fixture's census is hand-authored and lives outside the scene data
- * dirs (`project_toy_canonical_input_path`).
- */
-const TOY_PLACEMENTS = 'src/data/toy/toy-trees.json'
-
-/**
  * @param {string} scene — the NEIGHBOURHOOD id (a Look's `scene` field), never a Look id.
  * @returns {{scene, placements?, speciesMapPath?, forbiddenMapPath?, output, inputs}|null}
  *   Spread straight into `bakeTrees({ ...inputs, heroLook })`. `inputs` is the
@@ -99,17 +93,6 @@ export function treeBakeInputsForMap(scene) {
   // scene's data dir under the ordinary per-hood convention, so LS now falls
   // through to the poured branch below like every other neighbourhood — one
   // intake path, no special case. (`HANDOFF-ls-statistical-planting.md` Move 2.)
-
-  if (scene === 'toy') {
-    // Hand-authored centerlines with no hardscape polygons in this frame, so no
-    // forbidden-surface mask — matching the documented toy re-bake command.
-    return {
-      scene,
-      placements: [TOY_PLACEMENTS],
-      output: placementsPathForMap(scene),
-      inputs: [join(REPO_ROOT, TOY_PLACEMENTS)],
-    }
-  }
 
   // A poured installation: union whichever census layers exist. They are
   // spatially DISJOINT layers of one census, not alternatives — the City

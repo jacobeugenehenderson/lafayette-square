@@ -276,10 +276,9 @@ function slabPathspecs(id) {
 // directory; the second loses races against the first's writes.
 const _bakesInFlight = new Set()
 
-// Per-scene file resolver. Phase 0a only wires the default scene
-// (lafayette-square) and toy through here; further scenes follow the same
-// pattern. The raw/ + clean/ split inside each scene matches the existing
-// LS layout (raw = OSM ingestion / authored input; clean = derived).
+// Per-scene file resolver. Every scene resolves through here. The raw/ +
+// clean/ split inside each scene matches the existing LS layout (raw = OSM
+// ingestion / authored input; clean = derived).
 function mapDataPaths(scene) {
   const raw = mapRawDir(scene)
   const clean = mapCleanDir(scene)
@@ -1098,7 +1097,8 @@ const SCENE_KEYED_DESIGN_FIELDS = [
 function bakedStreetNames(scene) {
   const raw = readJsonOrNull(join(PUBLIC_DIR, 'baked', scene, 'shape.json'))
   if (!raw) return null
-  const tiles = Array.isArray(raw) ? raw : (raw.tiles || [])
+  const tiles = raw.tiles
+  if (!Array.isArray(tiles)) throw new Error(`baked/${scene}/shape.json has no .tiles array — not a {tiles, highway} freeze`)
   const names = new Set()
   for (const t of tiles) for (const r of (t.runs || [])) names.add(String(r.skelId))
   return names
@@ -1318,7 +1318,7 @@ createServer(async (req, res) => {
   }
 
   // ── Per-scene data routes ──────────────────────────────────────────────
-  // Canonical: /<scene>/<verb> (e.g. /lafayette-square/centerlines, /toy/overlay).
+  // Canonical: /<scene>/<verb> (e.g. /lafayette-square/centerlines, /huron/overlay).
   // Legacy: /<verb> with no scene prefix resolves to the default scene; this
   // alias exists so older clients keep working through Phase 0c's store
   // migration. Once every caller is scene-aware we can retire it.
@@ -1569,7 +1569,7 @@ createServer(async (req, res) => {
     const scenes = []
     try {
       for (const id of readdirSync(dataDir)) {
-        if (id.startsWith('_') || id.startsWith('.') || id === 'toy') continue
+        if (id.startsWith('_') || id.startsWith('.')) continue
         let st; try { st = statSync(join(dataDir, id)) } catch { continue }
         if (!st.isDirectory()) continue
         const hasData = existsSync(join(dataDir, id, 'geography.json'))
@@ -2009,7 +2009,7 @@ createServer(async (req, res) => {
         // (polygon ∪ activate) − (exclusions ∪ hide), with the disc dropping out of
         // the predicate entirely and going back to its one job, rendering. A scene
         // with no polygon still falls back to the circle, so every hood poured under
-        // the excluder model (altadena, ksi-y-m-yn, toy) is byte-identical.
+        // the excluder model (e.g. altadena) is byte-identical.
         //
         // Accepts lon/lat anchors (frame-independent, like exclusions) and flattens
         // into the NOW re-centered frame, so a re-commit never drifts the boundary.
@@ -2648,7 +2648,7 @@ createServer(async (req, res) => {
       // skeleton.json is a pipeline input, so a re-skeleton reaches Survey
       // through this Bake. (Until 2026-09-23 this ran on LS only, and Huron's
       // A19 roads sat in skeleton.json and never reached the ribbons.) A town
-      // with no raw/osm.json (toy: hand-authored centerlines) has nothing to derive.
+      // with no raw/osm.json has nothing to derive.
       // ▶ node checks/claims-ribbons-are-not-older-than-the-skeleton.mjs
       const hasOsm = existsSync(join(bakePaths.raw, 'osm.json'))
       // ⚠️ OWED, not settled: a poured town runs the pipeline exactly as the Pour

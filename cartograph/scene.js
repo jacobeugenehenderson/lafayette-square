@@ -20,10 +20,8 @@
  *
  * (1) THE RESOLVER MUST BE SIDE-EFFECT-FREE. `config.js` runs `_loadGeography()` at
  *     module load and `process.exit(2)`s when a named scene has no `geography.json`.
- *     The `toy` scene has none — it is a hand-authored fixture with no real-world
- *     coordinates — so a baker that imported `config.js` merely to ask "what scene?"
- *     would die on `--scene=toy` before `main()` ran, taking out a live bake path
- *     (`public/baked/toy/` is real and fully poured). Asking the scene's NAME must
+ *     A baker that imported `config.js` merely to ask "what scene?" would die on a
+ *     scene without geography before `main()` ran. Asking the scene's NAME must
  *     never force loading its GEOGRAPHY. The exit stays loud in `config.js`, where
  *     geography is actually used; it does not follow the name around.
  *

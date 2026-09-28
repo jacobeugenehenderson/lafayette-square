@@ -24,9 +24,9 @@ export const STRIPE_MIN = 1.0  // meters — thinnest a stripe can be dragged
 // ⛔⛔ EXCISED 2026-07-31 — this was an LS BLEED (`BRIEF-ls-bleed-excision` site 9,
 // Class B). It statically imported Lafayette Square's ribbons.json and built a
 // seed map keyed by street NAME, consulted in EVERY scene. Its own comment named
-// the assumption — "Toy and LS identities are disjoint, so one merged map
-// resolves each correctly" — which held for toy vs LS and is FALSE for LS vs any
-// other American town. MEASURED: 24 Altadena streets silently inherited St. Louis
+// the assumption — that street identities across scenes are disjoint, so one
+// merged map resolves each correctly — which is FALSE for LS vs any other
+// American town. MEASURED: 24 Altadena streets silently inherited St. Louis
 // measurements (Allen Ave, Iowa Ave), Hi-Pointe 6, both Polish pours 0 — so the
 // defect was invisible in exactly the scenes used to prove the kit travels.
 //

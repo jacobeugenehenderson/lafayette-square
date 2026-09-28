@@ -251,8 +251,7 @@ export const DIRMOON_FIELD_KEYS  = ['value']
 // (per-instance attribute, not animated). See HANDOFF-neon.md §"Render
 // model — three coupled emissive layers". Defaults are flat-on (1/1/1)
 // per HANDOFF-neon.md: at Night the canonical curve has all three full.
-// Both shipped Looks (lafayette-square, toy) author exactly 1/1/1 flat
-// and rely on LafayetteScene's `openPlaces` business-hours filter to
+// Shipped Looks author 1/1/1 flat and rely on LafayetteScene's `openPlaces` business-hours filter to
 // gate visibility — neon shines all day in the shader, but only the
 // open-this-minute places enter the merged mesh. Operator can still
 // animate a slower warm-up via TOD slots; the flat default matches

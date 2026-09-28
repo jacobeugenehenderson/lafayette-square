@@ -551,13 +551,13 @@ function serializeDesign(s) {
 }
 
 // The kit is installation-agnostic: any neighborhood opens BY ID (its data is
-// fetched per-scene from serve.js). The two names below are NOT a registry of
-// installations — they're the only two with a bundled fast-path: the default
-// installation ('lafayette-square') and the diagnostic fixture ('toy'). A new
-// installation (hipointe-demun, provincetown, …) is never added here; it
-// fetches. Nothing enumerates the set of installations in code.
+// fetched per-scene from serve.js). The name below is NOT a registry of
+// installations — it's the only one with a bundled fast-path: the default
+// installation ('lafayette-square'). A new installation (hipointe-demun,
+// provincetown, …) is never added here; it fetches. Nothing enumerates the set
+// of installations in code.
 const DEFAULT_INSTALLATION = 'lafayette-square'
-const BUNDLED_MAPS = new Set([DEFAULT_INSTALLATION, 'toy'])
+const BUNDLED_MAPS = new Set([DEFAULT_INSTALLATION])
 // A scene id is any lowercase slug; existence is validated by the server (a
 // missing installation just serves empty). No hardcoded installation list.
 const isValidMapId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
@@ -639,7 +639,7 @@ const useCartographStore = create((set, get) => ({
   // Per-block land-use overrides. Keyed by stable centroid hash
   // (`${cx.toFixed(2)},${cy.toFixed(2)}` of the block's outer ring).
   // Empty by default → buildBlockGeometryV2 falls through to a weighted
-  // deterministic hash of the centroid for variety in toy. Real LS
+  // deterministic hash of the centroid for variety. Real
   // blocks would seed this map from `ribbons.faces[].use`.
   //   blockLandUse[blockKey] = 'residential' | 'commercial' | …
   blockLandUse: {},
@@ -1026,7 +1026,7 @@ const useCartographStore = create((set, get) => ({
   // SURVEY · Revert to Skeleton — clear EVERY Survey edit → the frame as delivered
   // (surveyed widths + AASHTO radii). Survey edits live in TWO places: blockCustoms
   // (per-block mode) AND the chain measure / segmentMeasures on centerlineData
-  // (global mode → overlay). Both must clear (mirrors resetToyNeighborhood). No
+  // (global mode → overlay). Both must clear. No
   // rebake — Survey re-renders live off centerlineData.
   revertSurveyToSkeleton: () => {
     const cd = get().centerlineData
@@ -1093,69 +1093,6 @@ const useCartographStore = create((set, get) => ({
       const m = bc[skel][side][seg]; if (get()._SECTION_FE_FIELDS.some(f => m[f] !== undefined)) n++
     }
     return n
-  },
-  // Reset the toy's user-authored SESSION layer back to the fixture baseline
-  // (the toy-reset arc, shipped 2026-05-30; Stadia's (a1) target). The toy bake reads
-  // its generic + test-feature baseline from the AUTHORED fixture
-  // (src/data/toy/toy-input.json → toy-ribbons.json), NOT from overlay/derive —
-  // so those files are never touched here. Benton's one-side asymmetry and
-  // Waverly's bare segment are fixture and MUST survive. Reset strips only the
-  // override layers stacked on top:
-  //   • overlay chain measures + segmentMeasures (Survey/Measure live edits) —
-  //     cleared on centerlineData so mergeLiveRibbons falls the live render back
-  //     to the toy-ribbons baseline (mergeLiveRibbons only overrides a measure
-  //     when the live entry has BOTH sides), then _saveOverlay strips them on disk.
-  //   • blockCustoms (per-fe authoring).
-  //   • corner-radius overrides (Neighborhood only).
-  // _saveOverlay is AWAITED so the /overlay POST lands before runBake's /bake POST
-  // reads it (the flush-before-dependent-POST hazard); runBake flushes the design
-  // debounce so design.json (blockCustoms + corners) is current too. Toy-only;
-  // both buttons are confirm()-gated in Panel.
-  //
-  // NOTE (finding #2, separate arc): because the toy bake never reads overlay,
-  // clearing overlay measures resets the LIVE render but the baked measures were
-  // already the fixture baseline. blockCustoms + corners are what the rebake
-  // actually changes in the artifact.
-
-  // Reset Selected — the currently-selected chain only.
-  resetToySelected: async () => {
-    const { selectedStreet, centerlineData } = get()
-    if (selectedStreet == null) return
-    const st = centerlineData.streets?.[selectedStreet]
-    if (!st) return
-    // Drop this chain's measure override (+ segmentMeasures) so the live render
-    // falls back to the toy-ribbons fixture baseline. id/name preserved, so the
-    // blockCustoms chain-wipe below still resolves the chain.
-    const streets = centerlineData.streets.map((s, i) =>
-      i === selectedStreet ? { ...s, measure: undefined, segmentMeasures: undefined } : s
-    )
-    set({ centerlineData: { ...centerlineData, streets }, bakeStale: true })
-    // Drop per-fe customs on this chain (existing chain-scoped wipe).
-    get().clearBlockEdgeCustomsForChain(selectedStreet)
-    // Persist the stripped overlay to disk and WAIT before the bake reads it.
-    await get()._saveOverlay()
-    await get().runBake()
-  },
-
-  // Reset Neighborhood — every chain, all three override layers, scene-wide.
-  resetToyNeighborhood: async () => {
-    const { centerlineData } = get()
-    const streets = (centerlineData.streets || []).map(s => ({
-      ...s, measure: undefined, segmentMeasures: undefined,
-    }))
-    set({
-      centerlineData: { ...centerlineData, streets },
-      blockCustoms: {},
-      cornerRadiusScale: 1,
-      cornerRadiusOverrides: {},
-      cornerCornerRadiusOverrides: {},
-      bakeStale: true,
-    })
-    // design.json carries blockCustoms + corner overrides.
-    get()._saveDesignDebounced()
-    // Persist the stripped overlay to disk and WAIT before the bake reads it.
-    await get()._saveOverlay()
-    await get().runBake()
   },
   // Look-level corner-radius multiplier. Clamp at 0 (square) and a
   // generous upper bound to keep the slider sane.
@@ -1803,7 +1740,7 @@ const useCartographStore = create((set, get) => ({
       // Align the store's scene with the active Look's scene field. This
       // covers cold boots where localStorage's `cartograph-scene` may
       // disagree with the persisted active Look (e.g. user closed the tab
-      // while on toy, then we set a different default Look later).
+      // on one Look, then we set a different default Look later).
       // A ?scene= URL override is authoritative — don't let the active Look's
       // scene field pull us back to it. Lets you open a neighborhood the Looks
       // don't cover yet (e.g. a freshly-poured frame with no Look of its own).
@@ -1967,9 +1904,9 @@ const useCartographStore = create((set, get) => ({
   // effect in BlockGeometryV2Debug (HANDOFF-authoring-session-hardening §B).
   shapeFreezePending: null,
   freezeShape: async (artifact) => {
-    // Artifact is the { tiles, highway } freeze object (G1); tolerate a legacy
-    // bare tiles array too. Skip empties so we never persist a hollow freeze.
-    const tiles = Array.isArray(artifact) ? artifact : artifact?.tiles
+    // Artifact is the { tiles, highway } freeze object (G1). Skip empties so we
+    // never persist a hollow freeze.
+    const tiles = artifact?.tiles
     if (!tiles || !tiles.length) return
     const scene = get().scene
     const p = saveShapeFreeze(artifact, scene)
@@ -1981,7 +1918,7 @@ const useCartographStore = create((set, get) => ({
     if (get().shapeFreezePending === p) set({ shapeFreezePending: null })
   },
   // → re-reads a poured town's ribbons + map.json after a bake and rebuilds the 2D map from them in place.
-  // Bundled scenes (LS, toy) read static imports and are refreshed by the dev server, not here.
+  // The bundled scene (LS) reads a static import and is refreshed by the dev server, not here.
   _refreshPouredMap: async () => {
     const sc = get().scene, held = get().sceneRibbons
     if (BUNDLED_MAPS.has(sc) || !held) return
@@ -2105,8 +2042,7 @@ const useCartographStore = create((set, get) => ({
     return 'designer'
   })(),
   // Scene = what geometry we're looking at — the dataset name that data/<scene>/
-  // holds. Currently 'lafayette-square' (the real neighborhood) or 'toy' (the
-  // shipped diagnostic / training fixture). Mirrored from the active Look's
+  // holds (any installation id). Mirrored from the active Look's
   // `scene` field so selecting a Look determines the scene; setActiveLook is
   // the canonical way to switch. Hydrates from localStorage on cold boot
   // before _loadLooks resolves; the legacy 'neighborhood' value is rewritten
@@ -2126,7 +2062,7 @@ const useCartographStore = create((set, get) => ({
     return DEFAULT_INSTALLATION
   })(),
   // Active installation's data, loaded BY ID (null until fetched). The bundled
-  // fast-path scenes (default + toy) leave sceneRibbons null and read their
+  // fast-path scene (the default) leaves sceneRibbons null and reads its
   // static import; every other installation fetches these per-scene.
   sceneRibbons: null,
   // Set when the server's ribbons no longer match the copy this page loaded (BakeModal shows it, with Reload).
@@ -2365,8 +2301,8 @@ const useCartographStore = create((set, get) => ({
         fetchCenterlines(scene).catch(() => ({ streets: [] })),
         fetchOverlay(scene).catch(() => ({ version: 1, streets: {} })),
       ])
-      // Load the active installation's data BY ID. The bundled fast-path scenes
-      // (default + toy) read static imports for ribbons; every other installation
+      // Load the active installation's data BY ID. The bundled fast-path scene
+      // (the default) reads a static import for ribbons; every other installation
       // fetches ribbons + its geography + boundary per-scene. Geography/boundary
       // are fetched for ALL scenes (small) so the kit reads them uniformly.
       let fetchedRibbons = get().sceneRibbons
@@ -2407,22 +2343,16 @@ const useCartographStore = create((set, get) => ({
       // run. anchor + innerSign + pairId are auto-detected by derive.js for
       // divided carriageways and forwarded via ribbons.json.
       // Scene-aware fixture: the third-tier measure/cap fallback (rb?.*)
-      // must read the SAME ribbon fixture the scene renders. Toy chains are
-      // skelId-keyed HW*/VW* and live in toy-ribbons.json; the LS import only
-      // has the 242 LS chains. Before the V1.6 overlay cleanup, toy's overlay
-      // carried measure so ov?.measure masked this — once the overlay went
-      // measure-free, a scene-blind LS lookup left every toy chain with
-      // `undefined` measure → MeasureOverlay rendered no handles. Mirror
-      // CartographApp's sceneCfg.ribbons keying.
+      // must read the SAME ribbons the scene renders — a scene-blind LS lookup
+      // leaves every other town's chain with `undefined` measure → MeasureOverlay
+      // renders no handles. Mirror CartographApp's sceneCfg.ribbons keying.
       // The bundled towns' ribbons load as their OWN chunk, only for that town. A static import put
       // them in every town's bundle — 6 MB of one town's ribbons downloaded by all of them
       // (docs/briefs/BRIEF-slab-loading.md ③; ▶ node checks/claims-no-town-rides-in-the-bundle.mjs).
       // Same stale() guard as every other await in this loader.
       let bundledRibbons = null
       if (BUNDLED_MAPS.has(scene)) {
-        bundledRibbons = (scene === 'toy'
-          ? await import('../../data/toy/toy-ribbons.json')
-          : await import('../../data/ribbons.json')).default
+        bundledRibbons = (await import('../../data/ribbons.json')).default
         if (stale()) return
       }
       const ribbonsFixture = bundledRibbons ?? (fetchedRibbons || { streets: [] })
@@ -2685,7 +2615,7 @@ const useCartographStore = create((set, get) => ({
     }
     // overlay.json carries geometry only — design has moved to the active
     // Look's design.json (see _saveDesignDebounced). Returned so callers that
-    // POST a dependent /bake (the toy reset path) can await the write landing
+    // POST a dependent /bake can await the write landing
     // first — the flush-before-dependent-POST hazard.
     // The save is going through — clear any prior loud "edits not saving" flag.
     if (get().overlaySaveBlocked) set({ overlaySaveBlocked: false })

@@ -197,7 +197,7 @@ throws(() => splitBoundary({ ...base, fadeBand: 'wide' }, 'fixture'), 'fadeBand'
     'a GENERATED scene keeps the default band across a radius change')
 }
 
-// ── G. the absent fade set stays absent and legal (toy) ──────────────────────
+// ── G. the absent fade set stays absent and legal ────────────────────────────
 console.log('\n── G. an ABSENT fade set is a value, not a hole ─────────────────')
 const absent = scenes.filter(s => prov[s] === 'absent')
 if (!absent.length) console.log('   ·  no scene currently carries an absent fade set')

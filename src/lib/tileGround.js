@@ -2745,7 +2745,7 @@ export function extractFaces(streets) {
 // documented in the walk above, bijective). Rings are copied: the parsed
 // artifact arrays live for the session and downstream must never alias them
 // across rebuilds. Returns null (caller falls back to the live walk) when
-// the artifact carries no tiles (toy / pre-D2 data) or a skelId no longer
+// the artifact carries no tiles (pre-D2 data) or a skelId no longer
 // resolves (stale artifact — topology must then be re-frozen, not papered).
 // [F — EDGE OF MAP] The skelId a perimeter tile's map-edge carries (frozen by
 // derive.js's D2 freeze when it injects the boundary ring as closing edges). It
@@ -5530,8 +5530,8 @@ export function buildTileGround(ribbons, opts = {}) {
   //   blunt/none  → flat asphalt, NO ped wrap (the street just ends, LU abuts)
   // (tipKey is module-level now — shared with sectionPass.)
   // Dead-end DEGREE is computed GEOMETRICALLY (count segments incident to each
-  // node), not from `caps.degree` — toy ribbons carry no `caps` field, so
-  // gating on it skipped every toy dead-end. A street endpoint whose node has
+  // node), not from `caps.degree` — ribbons without a `caps` field would
+  // otherwise skip every dead-end. A street endpoint whose node has
   // exactly one incident segment is a real tip. The cap TYPE comes from the
   // authored capEnds / capStart|End (the Survey end-cap assigner mirrors its
   // capStart/capEnd into capEnds via mergeLiveRibbons) → caps.cap → round.
@@ -5614,7 +5614,7 @@ export function buildTileGround(ribbons, opts = {}) {
 
   // [D2] Consume the FROZEN tile topology (prebake artifact) instead of
   // re-walking the chain graph per build; extractFaces stays as the fallback
-  // for artifacts that carry no tiles (toy / pre-D2). SMOOTHING WRINKLE
+  // for artifacts that carry no tiles (pre-D2). SMOOTHING WRINKLE
   // (PREBAKE-POLYGONIZATION-PLAN §1, decided): the frozen topology is
   // UNSMOOTHED. Render-time smoothing is retired (smooth=0 everywhere since
   // 2026-06-04 — see streetSmooth above); if the dormant smooth>0 knob is
@@ -5659,7 +5659,7 @@ export function buildTileGround(ribbons, opts = {}) {
   }
 
   if (!tiles) {
-    // Live fallback (toy / pre-D2, no frozen artifact): derive dead-end cap
+    // Live fallback (pre-D2, no frozen artifact): derive dead-end cap
     // identity HERE — the only place it can come from when nothing is frozen.
     // The FROZEN path reads caps stamped ONCE at prebake (derive.js); it never
     // re-derives (that's the "freeze, don't derive live" decision, 2026-07-17).
@@ -5687,7 +5687,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // [E3.2] When the junction map is consumed, a median fragment ABSORBED by a
   // node's apron (m.absorbedBy — the 69 m² S-18th nose piece) stops painting
   // as median: its ring rides the apron as junction asphalt instead (the trim
-  // E3.1 specified). Without a junctionMap (toy / old data) nothing changes.
+  // E3.1 specified). Without a junctionMap (old data) nothing changes.
   const consumeJM = !!(ribbons?.junctionMap?.nodes?.length)
   const collectKind = (kind, excludeAbsorbed) => {
     const polys = (ribbons?.medians || [])
@@ -5729,7 +5729,7 @@ export function buildTileGround(ribbons, opts = {}) {
   //      fragment the apron absorbed (absorbsMedians) rides it as asphalt
   //      (the S-18th 69 m² trim).
   // Everything lands in aFill via the same bbox-filtered per-tile clip the E2
-  // merge patches use. No junctionMap (toy / old data) → no-op by construction.
+  // merge patches use. No junctionMap (old data) → no-op by construction.
   const k3 = (p) => p[0].toFixed(3) + ',' + p[1].toFixed(3)
   const jPolys = []           // window polys + aprons + absorbed median rings
   const jTrims = new Map()    // `${skelId}|${side}|${k3(runEndpoint)}` → trim distance
@@ -6319,7 +6319,7 @@ export function buildTileGround(ribbons, opts = {}) {
   //      degenerate to today's geometry — the construction self-gates).
   // W keeps the blend under the fillet turn-tol (atan(Δw/2W) < 18°), so no
   // spurious corner can be minted at a blend kink — corners only where real
-  // legs meet. Toy data (no customs, straight chains) → zero stations → no-op.
+  // legs meet. No customs on straight chains → zero stations → no-op.
   //
   // [THRU-T] A genuine deg-3 T (one through-street + one side street that ENDS
   // at the node) is NOT "nothing to construct" even when straight + uniform

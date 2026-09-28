@@ -31,14 +31,13 @@ import { deriveFade } from './boundaryRecords.mjs'
 // so BakedGround skips the radial fade shader.
 //
 // "fade authored?" gate: a `boundary` with no `fadeBand` clips but emits
-// manifest.stencil=null → runtime renders flat (toy: rectangular clip, no dissolve).
+// manifest.stencil=null → runtime renders flat (no dissolve).
 //
 // ⛔ THE UNAUTHORED-FADE BRANCH — `targetR = radius`, NO scale-out. Ruled by Jacob
 // 2026-09-20. The +50 exists to protect a feather; with no feather there is nothing
 // to protect and the margin would keep a ring of geometry that nothing fades into.
 // ⚠️ This branch is reachable by ANY town poured before its fade is authored — it is
-// the kit case, NOT a toy quirk (toy never reaches it; CartographApp.jsx:859 hands
-// toy a literal box). No scene on disk exercises it, so it has no eye-gate and is
+// the kit case. No scene on disk exercises it, so it has no eye-gate and is
 // proven by fixture only: `node checks/claims-fade-derives-from-radius.mjs`.
 export function loadSceneStencil(root, scene) {
   const path = join(root, 'cartograph', 'data', scene, 'neighborhood_boundary.json')

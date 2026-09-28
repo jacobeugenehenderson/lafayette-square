@@ -67,7 +67,7 @@ if (scenes.length === 0) {
 // Scope is rule lines only: a comment ignores nothing, and the historical note in the data block
 // names the towns this check was written for on purpose. Scope is cartograph/data/ only —
 // `public/photos/<scene>/` is a different policy and out of this check's bounds, so it is a note.
-// The name must match as a delimited token, so a short scene name ("toy") cannot trip on an
+// The name must match as a delimited token, so a short scene name cannot trip on an
 // unrelated word that merely contains it.
 const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const ignoreLines = readFileSync(IGNORE_FILE, 'utf-8').split('\n')

@@ -22,7 +22,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2, differenceRings } from '../lib/buildBlockGeometryV2.js'
-import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
+import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — tiles (shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
 import { expandCustomsAcrossFeSegOrds } from '../lib/feCustomKey.js'  // spread a per-fe custom across all its segOrds so split (T) block-edges render the flip (renderer reads per-run-segOrd; store keys min-segOrd)
 import { STREET_SMOOTH } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the MeasureOverlay navy draw (SSoT; SKELETON.md §3.5)
 import { buildPathRibbons } from '../lib/buildPathRibbons.js'
@@ -352,8 +352,7 @@ export default function BlockGeometryV2Debug({
   // selectedStreet indexes centerlineData.streets (skeleton order, N
   // entries). V2's `byChain` and `frontageEdges.chainIdx` index
   // liveRibbons.streets (ribbons order, M entries — derive.js inserts
-  // extra carriageways for divided roads). Toy hits this hard
-  // (M=15 vs N=9). Translate once by skelId; use this everywhere
+  // extra carriageways for divided roads). Translate once by skelId; use this everywhere
   // byChain or chainIdx is indexed against `selectedStreet`.
   // Color resolution: Look-level overrides (layerColors / luColors from the
   // active design) win over BAND_COLORS / DEFAULT_LU_COLORS defaults.
@@ -460,7 +459,7 @@ export default function BlockGeometryV2Debug({
   // Identity translation: V2's `chainIdx` indexes `liveRibbons.streets`
   // (ordered like the static ribbons artifact). MeasureOverlay's
   // `streetIdx` indexes `centerlineData.streets` (live-store order) —
-  // a different ordering on toy + LS. Each fe carries `chainSkelId`/
+  // a different ordering. Each fe carries `chainSkelId`/
   // `chainName` so consumers match by identity instead of array index.
   //
   // buildFrontageEdges now stamps these at construction (the SINGLE source
@@ -616,11 +615,10 @@ export default function BlockGeometryV2Debug({
         console.timeEnd(`[LOAD] shape.json fetch+parse (${scene})`)
         done = true
         if (dead) return
-        // [G1] New shape.json form is { tiles, highway }; legacy was a bare tiles
-        // array (no highway). Normalize to { tiles, highway } so the frozen path
-        // always knows the grade-sep group (empty for legacy freezes).
-        const tiles = Array.isArray(d) ? d : (Array.isArray(d?.tiles) ? d.tiles : null)
-        const highway = Array.isArray(d) ? [] : (Array.isArray(d?.highway) ? d.highway : [])
+        // [G1] shape.json is { tiles, highway }. Anything else reads as NO freeze,
+        // which the banner below says out loud.
+        const tiles = Array.isArray(d?.tiles) ? d.tiles : null
+        const highway = Array.isArray(d?.highway) ? d.highway : []
         setFrozenPending(false)
         setFrozenShape(tiles && tiles.length ? { tiles, highway } : null)
         // [ROADMAP A02] Door 1 — the freeze is ABSENT (404, or a shape with no

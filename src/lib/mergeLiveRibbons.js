@@ -1,5 +1,5 @@
 // mergeLiveRibbons — overlays Survey/Measure store edits onto a baked
-// ribbons artifact (toy-ribbons.json or src/data/ribbons.json).
+// ribbons artifact (src/data/ribbons.json, or a poured town's fetched ribbons).
 //
 // Static ribbons own structural data: chain points, IX positions, face
 // rings, skelIds. The live store owns operator intent: measure values,

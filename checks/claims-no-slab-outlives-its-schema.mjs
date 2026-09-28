@@ -49,7 +49,7 @@ for (const root of roots) {
     if (!existsSync(f)) continue
     let m; try { m = JSON.parse(readFileSync(f, 'utf8')) } catch { ok(false, `${root}/${look}: ground.json unparseable`); continue }
     const s = m.stencil
-    if (!s) { console.log(`  ·  ${(root + '/' + look).padEnd(40)} stencil null — no dissolve (legal: toy)`); continue }
+    if (!s) { console.log(`  ·  ${(root + '/' + look).padEnd(40)} stencil null — no dissolve (legal: no authored fade)`); continue }
     const legacy = isLegacy(s)
     seen.push({ root, look, s, legacy })
     console.log(`  ${legacy ? '⚠️ ' : '✅'} ${(root + '/' + look).padEnd(40)} ${legacy ? 'LEGACY (v1, inward, two bands)' : 'CURRENT (v2, additive, one band)'}`)

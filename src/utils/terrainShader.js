@@ -45,7 +45,7 @@ import { resolveLookId } from '../lib/resolveLookId.js'
 // privileged: production LS fetches its own slab terrain (byte-identical to the
 // old bundled bake); Preview / any ?look= fetches that look's; the authoring
 // Stage re-points live via reloadTerrain() on a scene switch. A look with no
-// terrain (toy, un-baked) falls back to FLAT — renders flat, never crashes.
+// terrain (un-baked) falls back to FLAT — renders flat, never crashes.
 // (feedback_installations_are_independent; multi-instance routing 2026-07-02.)
 
 // A 2×2 zero heightfield → getElevation()==0 everywhere, exag lifts nothing.

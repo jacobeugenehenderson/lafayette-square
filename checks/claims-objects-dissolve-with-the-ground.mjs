@@ -19,8 +19,8 @@
  * makeMembership. A grep for the field name would have found them; nothing did.
  *
  * ⭐ AND THE OTHER HALF, WHICH IS THE OPPOSITE ERROR: deriving unconditionally would
- * INVENT a band for a scene that authored none. `toy` has no fadeBand, and that
- * absence is read as a value across the kit. This check pins BOTH directions,
+ * INVENT a band for a scene that authored none. An absent fadeBand is read as a
+ * value across the kit. This check pins BOTH directions,
  * because the fix for one is the bug for the other.
  *
  * ▶ node checks/claims-objects-dissolve-with-the-ground.mjs

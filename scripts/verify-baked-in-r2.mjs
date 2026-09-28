@@ -3,7 +3,7 @@
  * verify-baked-in-r2.mjs — prove the slab in R2 is COMPLETE and matches local.
  *
  *   node scripts/verify-baked-in-r2.mjs              # every look
- *   node scripts/verify-baked-in-r2.mjs --look=toy   # one look
+ *   node scripts/verify-baked-in-r2.mjs --look=huron # one look
  *
  * ⛔⛔ RUN THIS BEFORE REMOVING ANYTHING FROM GIT, AND AFTER EVERY POUR.
  *

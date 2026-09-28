@@ -18,7 +18,7 @@
 
 // Resolve true IX identity per chain by COORDINATE-MATCH rather than
 // trusting `street.intersections[].ix` integers (which are stale on LS
-// ~36% and broken on toy where chain interior bends shift point indices).
+// ~36% and broken wherever chain interior bends shift point indices).
 //
 // Returns: Map<street, Set<pointIdx>> — for each chain, the set of point
 // indices whose coordinate is shared by ≥2 distinct chains within EPS.

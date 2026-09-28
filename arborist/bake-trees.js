@@ -840,26 +840,20 @@ export async function bakeTrees({
     if (dbhGlobal.length) console.log(`[bake-trees] dbh: ${dbhGlobal.length} measured (${dbhBySpecies.size} species) → ${park.trees.length - dbhGlobal.length} estimated by empirical sampling`)
   }
 
-  // Surface tester:
-  //   • FROZEN Section surfaces (shape.json) — the one honest model. It sees the
-  //     road (the grout between tiles) and paints curb/treelawn/sidewalk/LU.
-  //   • None — ONLY the toy fixture (hand-authored centerlines, no hardscape).
-  // A poured scene missing its shape.json is an ERROR, not a fallback: there is no
+  // Surface tester: the FROZEN Section surfaces (shape.json) — the one honest
+  // model. It sees the road (the grout between tiles) and paints
+  // curb/treelawn/sidewalk/LU. A scene missing its shape.json is an ERROR, not a fallback: there is no
   // honest forbidden-surface without the frozen shape, and the old paint-layer mask
   // it used to fall through to scattered trees into the carriageway. Bake the
   // ground first. (`forbidden-surface.mjs` header — the legacy tester is deleted.)
   const membership = boundaryPath
     ? makeMembership(path.resolve(REPO_ROOT, boundaryPath))
     : null
-  if (forbiddenMapPath && !zoneShapePath) {
-    throw new Error(`[bake-trees] no shape.json for '${mapName}' — bake the ground first. ` +
-      `There is no honest forbidden-surface without the frozen shape; refusing to place trees against a wrong mask.`)
-  }
-  // ⚠️ No zone shape at all → NO allow-test runs and every tree lands wherever its
-  // census row says, roads and rooftops included. That is never a legitimate bake
-  // for a scene whose ground HAS been baked; it means the caller didn't resolve
-  // its scene inputs (the bare CLI did exactly this on 2026-07-22 and wiped the
-  // allow-zone — the tell was `0 forbidden-surface drops`). Refuse, loudly.
+  // ⚠️ No zone shape → NO allow-test would run and every tree would land wherever
+  // its census row says, roads and rooftops included. Never a legitimate bake: it
+  // means the ground isn't baked, or the caller didn't resolve its scene inputs
+  // (the bare CLI did exactly this on 2026-07-22 and wiped the allow-zone — the
+  // tell was `0 forbidden-surface drops`). Refuse, loudly.
   if (!zoneShapePath) {
     const bakedShape = path.join(REPO_ROOT, 'public', 'baked', mapName, 'shape.json')
     if (existsSync(bakedShape)) {
@@ -868,6 +862,8 @@ export async function bakeTrees({
         `that would place trees with NO allowed-zone test (bare plantable LU is the only legal ground). ` +
         `Resolve inputs via cartograph/tree-bake-inputs.mjs#treeBakeInputsForMap, or pass --zone-shape explicitly.`)
     }
+    throw new Error(`[bake-trees] no shape.json for '${mapName}' — bake the ground first. ` +
+      `There is no honest forbidden-surface without the frozen shape; refusing to place trees against a wrong mask.`)
   }
   // The Look's design.json — its blockCustoms + curbWidth so the rebuilt Section
   // surfaces match what the operator authored (WYSIWYG with the Design view).
@@ -881,19 +877,17 @@ export async function bakeTrees({
     rosterSpecies = new Set((_d.trees || []).map(t => t.species).filter(Boolean))
   } catch { rosterSpecies = new Set() }
   TWIN_SWAPS.clear()
-  const isForbidden = zoneShapePath
-    ? makeZoneTester({
-        shapePath: path.resolve(REPO_ROOT, zoneShapePath),
-        mapPath: forbiddenMapPath ? path.resolve(REPO_ROOT, forbiddenMapPath) : undefined,
-        designPath: existsSync(_designPath) ? _designPath : undefined,
-        // Left FALSE deliberately. The tester's "outside every curb" bucket can't
-        // yet separate carriageway from un-poured, so allowing it would put trees
-        // back in the road — the whole bug. It costs nothing here: the greater
-        // circle IS poured (tiles reach 1256 m of a 1251 m disc), so it gets its
-        // trees from real tiles. Only the ~7.8% genuinely-untiled holes go bare,
-        // and those sit in the annulus where the dissolve governs anyway.
-      })
-    : null   // toy fixture only
+  const isForbidden = makeZoneTester({
+    shapePath: path.resolve(REPO_ROOT, zoneShapePath),
+    mapPath: forbiddenMapPath ? path.resolve(REPO_ROOT, forbiddenMapPath) : undefined,
+    designPath: existsSync(_designPath) ? _designPath : undefined,
+    // Left FALSE deliberately. The tester's "outside every curb" bucket can't
+    // yet separate carriageway from un-poured, so allowing it would put trees
+    // back in the road — the whole bug. It costs nothing here: the greater
+    // circle IS poured (tiles reach 1256 m of a 1251 m disc), so it gets its
+    // trees from real tiles. Only the ~7.8% genuinely-untiled holes go bare,
+    // and those sit in the annulus where the dissolve governs anyway.
+  })
 
   const instances = []
   // Parallel to `instances` (pushed in lock-step) — per-tree canopy bounding
@@ -907,18 +901,15 @@ export async function bakeTrees({
 
   // Hero pan + canopy dims for the heroTier classifier, both read from the active
   // Look's baked slab (render-truth — the SAME hero the runtime plays + the dims
-  // bake-look measured from the rendered roster trees). Skipped for the toy
-  // fixture (no hero shot). Absent → heroTier omitted; runtime falls back to
+  // bake-look measured from the rendered roster trees). Skipped for a Look
+  // with no hero shot. Absent → heroTier omitted; runtime falls back to
   // all-mesh (version-agnostic tree path).
   // ⭐ Gated on "does this Look HAVE a hero pan", never on `placements`.
   //
-  // This read `if (!placements)` until 2026-07-15. The intent was to skip the toy
-  // fixture (no hero shot) — but `placements` is also how EVERY poured scene feeds
-  // its census, so the toy-skip silently disabled the optimizer for every
-  // neighbourhood we pour. It ran on LS (745 trees, culling 44% as
-  // never-meaningfully-visible) and was off on Hi-Pointe/DeMun's 6,967. Backwards:
-  // switched on where it barely mattered, off where it mattered most. The toy is
-  // still skipped — correctly, and for the real reason: it has no hero keyframes.
+  // This read `if (!placements)` until 2026-07-15 — a proxy for "no hero shot" —
+  // but `placements` is how EVERY poured scene feeds its census, so the proxy
+  // silently disabled the optimizer for every neighbourhood we pour. Gate on the
+  // real reason, never a correlate of it.
   const effHeroLook = heroLook || mapName
   let heroPan = null
   let resolveCanopy = null
@@ -971,18 +962,16 @@ export async function bakeTrees({
       dissolved++
       continue
     }
-    if (isForbidden) {
-      const reason = isForbidden(tx, tz)
-      if (reason) {
-        const canNudge = tree.__kind !== 'derived' && typeof isForbidden.nudge === 'function'
-        const moved = canNudge ? isForbidden.nudge(tx, tz) : null
-        if (moved) {
-          tx = moved[0]; tz = moved[1]
-          nudged[reason] = (nudged[reason] || 0) + 1
-        } else {
-          forbiddenCounts[reason] = (forbiddenCounts[reason] || 0) + 1
-          continue
-        }
+    const reason = isForbidden(tx, tz)
+    if (reason) {
+      const canNudge = tree.__kind !== 'derived' && typeof isForbidden.nudge === 'function'
+      const moved = canNudge ? isForbidden.nudge(tx, tz) : null
+      if (moved) {
+        tx = moved[0]; tz = moved[1]
+        nudged[reason] = (nudged[reason] || 0) + 1
+      } else {
+        forbiddenCounts[reason] = (forbiddenCounts[reason] || 0) + 1
+        continue
       }
     }
     // Rotation: operator's rotationOverride.y picks the variant's "best
@@ -1136,20 +1125,18 @@ export async function bakeTrees({
   // ground (a nudge that landed badly, an override that pushed a tree off legal
   // ground, a future policy drift). Loud, with a per-zone breakdown — so a wrong
   // mask can never quietly ship a slab that plants on hardscape again.
-  if (isForbidden) {
-    const illegal = {}
-    for (const inst of instances) {
-      const reason = isForbidden(inst.x, inst.z)
-      if (reason) illegal[reason] = (illegal[reason] || 0) + 1
-    }
-    const illegalTotal = Object.values(illegal).reduce((a, b) => a + b, 0)
-    if (illegalTotal) {
-      const breakdown = Object.entries(illegal).sort((a, b) => b[1] - a[1])
-        .map(([z, n]) => `${z}:${n}`).join(', ')
-      throw new Error(`[bake-trees] eligibility guard FAILED for '${mapName}': ` +
-        `${illegalTotal} placed tree(s) on forbidden ground (${breakdown}). ` +
-        `A kept tree must stand on exposed, plantable Land Use — refusing to write a slab that plants on hardscape.`)
-    }
+  const illegal = {}
+  for (const inst of instances) {
+    const reason = isForbidden(inst.x, inst.z)
+    if (reason) illegal[reason] = (illegal[reason] || 0) + 1
+  }
+  const illegalTotal = Object.values(illegal).reduce((a, b) => a + b, 0)
+  if (illegalTotal) {
+    const breakdown = Object.entries(illegal).sort((a, b) => b[1] - a[1])
+      .map(([z, n]) => `${z}:${n}`).join(', ')
+    throw new Error(`[bake-trees] eligibility guard FAILED for '${mapName}': ` +
+      `${illegalTotal} placed tree(s) on forbidden ground (${breakdown}). ` +
+      `A kept tree must stand on exposed, plantable Land Use — refusing to write a slab that plants on hardscape.`)
   }
 
   // Hero-tier classification (Phase A). Assign `heroTier` per instance in
