@@ -69,6 +69,12 @@ Bundled into the app by static import, so every town downloads it:
 What the player needs from it belongs baked into the slab (`BRIEF-one-town-assembly.md` §5's
 authoring separation, seen from the data side).
 
+### ⑥a The dev server answers a missing slab file with 200 and `index.html`
+Vite's single-page fallback serves `index.html` for any missing path, so in development a town with no
+overlay or no optional file gets a 200 of the wrong type instead of a 404. Staging and production answer
+404. The Ward reports it loudly (wrong content type), which is correct; the dev server should 404 under
+`/baked/` and `/live/` so development behaves like production. (Found by Quire, 2026-09-27.)
+
 ### ⑦ Shipped and never loaded
 `public/textures/milky_way.jpg` (17 MB; its sphere is commented out), `public/models/lamp-posts/`
 (~255 MB, one file used), `public/trees/` (~5.3 GB, copied into `dist/`), `public/data/landmarks.json`,
