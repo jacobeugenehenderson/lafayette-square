@@ -37,6 +37,15 @@ today every town gets the kit's list with `authored: false`. ⚠️ **Open, for 
 own list (a Host through Operations, or the operator in Stage), and where it lives before the bake reads
 it. Whoever authors it, the manifest carries it and `authored` turns true.
 
+### Finding (Quire, 2026-09-27): a town's content uses ids its taxonomy doesn't have
+Huron's published listings and roster carry category/type pairs the kit's taxonomy lacks
+(`services/automotive`, `shopping/retail` — `retail` exists only under `commercial`), null types in parks,
+services and dining, and 13 listings + 345 roster buildings with no category at all. The Ward shows them
+under a plain "Not in a category" heading and reports the unknown ids — it never guesses a home.
+⚠️ The producer (`cartograph/bake-content.js`) emits ids the taxonomy it ships beside does not define.
+**Check to add:** every category and type id in a town's published content exists in that town's manifest
+taxonomy, or the bake fails naming them.
+
 ## Checks
 - No colour literal in `categories.js` or any neon consumer; every category colour is read from
   the look.
