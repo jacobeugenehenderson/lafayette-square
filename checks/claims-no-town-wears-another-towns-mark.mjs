@@ -64,26 +64,43 @@ if (resolver) {
   } else ok("townMark falls back to the town's own initial, never to a town")
 }
 
-// 3. Every registered town must resolve to something, and no two share an authored mark.
-const reg = readFileSync(path.join(ROOT, 'src/instances/registry.js'), 'utf8')
-// ⛔ Both forms: `'lafayette-square': lafayetteSquare,` AND the ES shorthand `huron,`.
-// Reading only the first silently skipped huron — a check that misses a town is worse
-// than no check, because the town it misses is the one nobody has looked at.
-const body = (reg.match(/const INSTANCES = \{([\s\S]*?)\n\}/) || [, ''])[1]
-const maps = body.split('\n').map((l) => l.trim().replace(/,$/, '')).filter(Boolean)
-  .map((l) => (l.includes(':') ? l.split(':')[0] : l).replace(/'/g, '').trim())
-  .filter((k) => /^[a-z][\w-]*$/.test(k))
-const seen = new Map()
-for (const m of maps) {
-  let src
-  try { src = readFileSync(path.join(ROOT, `src/instances/${m}.js`), 'utf8') } catch { continue }
-  const mark = (src.match(/\bmark:\s*'([^']+)'/) || [])[1]
-  const svg = (src.match(/\bmarkSvg:\s*'([^']+)'/) || [])[1]
-  const authored = mark || svg
-  if (!authored) { ok(`'${m}' authors no mark — draws its own initial, honestly`); continue }
-  if (seen.has(authored)) bad(`'${m}' and '${seen.get(authored)}' both author the mark ${authored} — one is wearing the other's`)
-  else { seen.set(authored, m); ok(`'${m}' authors ${authored}`) }
+// 3. No two TOWNS share the mark the Ward wears. READ, never regex'd: the registry is imported (a declared alias —
+// LS's staging copy — is the same module, so the same town) and the mark is the Look's identity.mark, its source
+// (src/lib/townIdentity.js). Not the old player's `markSvg`: that player is frozen, the channel goes at cutover, and
+// its one shared value (LS and HPDM's arch) is Jacob's ruling, 2026-09-25 — shown below, never judged.
+// ⛔ Found 2026-09-28: the old text-match read single quotes only (provincetown's "⚓" was "no mark", hiding that it
+// shares huron's) and skipped a map without a file of its own silently.
+const { registeredMaps, instanceForMap } = await import(path.join(ROOT, 'src/instances/registry.js'))
+const lookMark = (m) => {
+  try { return JSON.parse(readFileSync(path.join(ROOT, `public/looks/${m}/design.json`), 'utf8')).identity?.mark ?? null }
+  catch { return null }
 }
+const towns = new Map()                                  // module → { maps, marks }
+for (const m of registeredMaps()) {
+  const inst = instanceForMap(m)
+  if (!inst) { bad(`'${m}' is registered but resolves to no module`); continue }
+  const t = towns.get(inst) || { maps: [], marks: new Set() }
+  t.maps.push(m)
+  const lm = lookMark(m); if (lm) t.marks.add(`emoji ${lm}`)
+  if (inst.branding?.markSvg) t.oldPlayer = inst.branding.markSvg
+  towns.set(inst, t)
+}
+function collisions(list) {
+  const seen = new Map(), out = []
+  for (const t of list) for (const k of t.marks) {
+    if (seen.has(k)) out.push(`${t.maps.join('/')} and ${seen.get(k).maps.join('/')} both author the ${k} mark — two towns, one mark`)
+    else seen.set(k, t)
+  }
+  return out
+}
+const list = [...towns.values()]
+for (const t of list) ok(`'${t.maps.join("' = '")}' authors ${[...t.marks].join(' + ') || 'no mark — draws its own initial, honestly'}${t.oldPlayer ? ` (old player: svg ${t.oldPlayer})` : ''}`)
+for (const c of collisions(list)) bad(c)
+// Mutation, every run: give a second town the first town's mark; the collision test must see it.
+const [m1, m2] = list.filter((t) => t.marks.size)
+const caught = m1 && m2 && collisions([m1, { maps: m2.maps, marks: new Set(m1.marks) }]).length > 0
+if (caught) console.log(`  mutation (give ${m2.maps[0]} ${m1.maps[0]}'s mark) caught ✓`)
+else bad('MUTATION NOT CAUGHT — the collision test is blind (or fewer than two towns author a mark)')
 
 console.log(failed ? `\n⛔ ${failed} failure(s)\n` : '\n✅ every town wears its own mark\n')
 process.exit(failed ? 1 : 0)
