@@ -13,7 +13,9 @@
  *   · every source declares `covers`, and every code in it is a known country or group;
  *   · every scene with a geography.json has a jurisdiction.json naming its country — absent is a FAILURE, never a guess;
  *   · for every town × row, the source shown covers the town's country or is global, and "none known" is returned only
- *     when no source covers it.
+ *     when no source covers it;
+ *   · a row's ACTION is its shown source's: every source carries act + where, no row does, and the panel reads
+ *     res.shown.act, never row.act.
  * ⭐ MUTATION-TESTED EVERY RUN: the old behaviour (show sources[0]) must fail on at least one town.
  *
  *   node checks/claims-a-towns-sources-are-its-own.mjs
@@ -37,10 +39,35 @@ for (const r of rows) for (const s of r.sources) {
   for (const c of s.covers) if (!/^[A-Z]{2}$/.test(c) && !(cat.COUNTRY_GROUPS && c in cat.COUNTRY_GROUPS)) fails.push(`"${r.name}" › "${s.name}" covers unknown code "${c}"`)
 }
 
+// 1b. The action belongs to the SOURCE (Poland's register is a fetch, the US one a hand procedure): every source carries
+// a known act and a where; no row carries one; and the panel draws a row's action from the source it shows — read off
+// the panel's own code, mutation-tested below.
+const ACTS = new Set([cat.FETCH, cat.DOC, cat.OWED, cat.NONE, cat.CHOOSE])
+for (const r of rows) {
+  if ('act' in r || 'where' in r) fails.push(`"${r.name}" carries a row-level act/where — the action belongs to each source`)
+  for (const s of r.sources) {
+    if (!ACTS.has(s.act)) fails.push(`"${r.name}" › "${s.name}" has no known act (${JSON.stringify(s.act)})`)
+    if (typeof s.where !== 'string' || !s.where) fails.push(`"${r.name}" › "${s.name}" has no where`)
+  }
+}
+const actionFromShown = (src) => {
+  const out = []
+  if (!/const act = res\?\.shown\?\.act\b/.test(src)) out.push('SourcesPanel.jsx does not take a row\'s action from the source it shows (res.shown.act)')
+  if (/\brow\.(act|where)\b/.test(src)) out.push('SourcesPanel.jsx reads row.act / row.where — a row-level action, not the shown source\'s')
+  return out
+}
+const panel = readFileSync(join(ROOT, 'src/cartograph/SourcesPanel.jsx'), 'utf8')
+fails.push(...actionFromShown(panel))
+const panelMutant = actionFromShown(panel + '\n{row.act === FETCH}')
+console.log(`   mutation (the panel reads row.act again) ${panelMutant.length ? 'caught ✓' : 'NOT caught'}`)
+if (!panelMutant.length) fails.push('MUTATION NOT CAUGHT: a panel reading row.act passes')
+
 // 2. Every scene knows its country.
-const towns = []
+// A retired scene declares it in its own directory (RETIRED.md — the kit's convention, not a list here) and is not a town.
+const towns = [], retired = []
 for (const d of readdirSync(join(ROOT, 'cartograph/data'), { withFileTypes: true })) {
   if (!d.isDirectory() || !existsSync(join(ROOT, 'cartograph/data', d.name, 'geography.json'))) continue
+  if (existsSync(join(ROOT, 'cartograph/data', d.name, 'RETIRED.md'))) { retired.push(d.name); continue }
   const p = join(ROOT, 'cartograph/data', d.name, 'jurisdiction.json')
   if (!existsSync(p)) { fails.push(`${d.name} has no jurisdiction.json — its country is unknown (node cartograph/fetch-jurisdiction.mjs --town=${d.name})`); continue }
   const j = JSON.parse(readFileSync(p, 'utf8'))
@@ -66,6 +93,7 @@ if (typeof cat.resolveRow === 'function' && typeof cat.coversCountry === 'functi
   if (!oldWay.length) fails.push('MUTATION NOT CAUGHT: the old sources[0] behaviour passes — the check is blind (or no town is outside the first source\'s country)')
 }
 
+if (retired.length) console.log(`   retired (their own RETIRED.md), not towns: ${retired.join(', ')}`)
 console.log(`rows ${rows.length} · sources ${rows.reduce((n, r) => n + r.sources.length, 0)} · towns with a country: ${towns.map((t) => `${t.town} ${t.jurisdiction.country}${t.jurisdiction.subdivision ? '-' + t.jurisdiction.subdivision : ''}`).join(', ') || 'none'}`)
 for (const f of fails) console.log(`⛔ ${f}`)
 console.log(fails.length ? `\n⛔ FAIL — ${fails.length}` : '\n✅ PASS — every town is shown its own sources, or told none is known')

@@ -218,6 +218,8 @@ export default function SourcesPanel({ scene, onClose, onOpenIdentity }) {
                 const added = extra[id] || []
                 const res = juris === undefined || juris.error ? null : resolveRow(row, juris)
                 const sources = townSources(row)
+                // The row's action is the action of the source it shows this town (none shown → owed).
+                const act = res?.shown?.act, where = res?.shown?.where
                 const alts = sources.length - (res?.shown ? 1 : 0) + added.length
                 return (
                   <div key={id}>
@@ -237,15 +239,16 @@ export default function SourcesPanel({ scene, onClose, onOpenIdentity }) {
                           : <span className="carto-sources-unknown" title="node cartograph/fetch-jurisdiction.mjs --town=<id>">country unknown</span>}
                         {alts > 0 && <span className="carto-sources-more"> +{alts}</span>}
                       </button>
-                      <span className={`carto-sources-action carto-sources-action--${locked && !(res && !res.shown) ? 'locked' : (row.act === CHOOSE && unchosen) || (res && !res.shown) ? 'owed' : row.act}`}>
-                        {res && !res.shown ? <><b>⚠</b> {res.state === 'none-known' ? `no source known for ${juris.country}` : 'fetch the town\'s country first'}</>
+                      <span className={`carto-sources-action carto-sources-action--${!act ? 'owed' : locked ? 'locked' : act === CHOOSE && unchosen ? 'owed' : act}`}>
+                        {juris === undefined ? '…'
+                          : !act ? <><b>⚠</b> {res?.state === 'none-known' ? `no source known for ${juris.country}` : juris.error ? 'intake unreadable' : 'fetch the town\'s country first'}</>
                           : locked ? 'included'
-                          : row.act === FETCH ? <><b>Fetch</b> · {row.where}</>
-                          : row.act === DOC ? <><b>→</b> {row.where}</>
-                          : row.act === OWED ? <><b>⚠</b> {row.where} — unwritten</>
-                          : row.act === CHOOSE ? <button className="carto-sources-choose" onClick={onOpenIdentity}>
+                          : act === FETCH ? <><b>Fetch</b> · {where}</>
+                          : act === DOC ? <><b>→</b> {where}</>
+                          : act === OWED ? <><b>⚠</b> {where} — unwritten</>
+                          : act === CHOOSE ? <button className="carto-sources-choose" onClick={onOpenIdentity}>
                               <b>choose it here</b>{unchosen ? ` · ${unchosen} to do` : ' · done'}</button>
-                          : row.where}
+                          : where}
                       </span>
                     </div>
 

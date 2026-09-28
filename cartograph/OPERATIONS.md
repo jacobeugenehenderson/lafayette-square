@@ -133,7 +133,7 @@ The full channel inventory + where each persists is `STAGE.md §1`; the cards be
 
 ### Sources *(toolbar)*
 
-Every input a town is poured from, what to do about it, and where it can come from — **for this town's country**: a row names the source that covers it (from `cartograph/data/<town>/jurisdiction.json`), then global ones; another country's sources are listed after it, tagged **"<country> only"**. A row nothing covers reads **none known for <country>** (⚠); a town whose country was never fetched reads **country unknown** — fetch it: `node cartograph/fetch-jurisdiction.mjs --town=<id>`. The hand-off and agent-assist text use the same order and tags. ▶ `node checks/claims-a-towns-sources-are-its-own.mjs`
+Every input a town is poured from, what to do about it, and where it can come from — **for this town's country**: a row names the source that covers it (from `cartograph/data/<town>/jurisdiction.json`), then global ones; another country's sources are listed after it, tagged **"<country> only"**. The row's action (Fetch · Overpass, → a doc, ⚠ unwritten) is **that source's** — Poland's heritage register is a fetch, the US one a hand procedure. A row nothing covers reads **none known for <country>** (⚠); a town whose country was never fetched reads **country unknown** — fetch it: `node cartograph/fetch-jurisdiction.mjs --town=<id>`. The hand-off and agent-assist text use the same order and tags. ▶ `node checks/claims-a-towns-sources-are-its-own.mjs`
 
 ### Identity *(toolbar, beside Sources)*
 

@@ -3,7 +3,8 @@
  * Plain data (no React), so the panel (SourcesPanel.jsx) draws it and a check can read it. Moved out of the panel
  * 2026-09-28; the rulings on its shape are in the comments below, kept with the rows they rule.
  */
-// What the operator DOES about a row.
+// What the operator DOES about a SOURCE — each source carries its own `act` + `where` (a row's action is the action of
+// the source it shows this town: Poland's register is a fetch, the US one a hand procedure).
 export const FETCH = 'fetch'   // an endpoint exists — one button (BRIEF §2.2b)
 export const DOC   = 'doc'     // a written procedure; go read/update it
 export const OWED  = 'owed'    // ⚠ the procedure exists only in someone's head
@@ -60,15 +61,15 @@ export const GROUPS = [
     // operator never has to think about them at all. Listing them is not a
     // chore; it is the reassurance that the floor is already under you.
     rows: [
-      { name: 'Street & building base', act: FETCH, where: 'Overpass',
-        sources: [{ name: 'OpenStreetMap', note: 'ODbL · global · free · no account', covers: 'global' }],
+      { name: 'Street & building base',
+        sources: [{ name: 'OpenStreetMap', note: 'ODbL · global · free · no account', covers: 'global', act: FETCH, where: 'Overpass' }],
         steps: ['Nothing to obtain by hand — the Extent tool fetches it when you pour.',
                 'Carries storey counts, roof shapes and materials wherever the local mappers recorded them.'] },
-      { name: 'Building footprints', act: FETCH, where: 'fetch-msbf',
+      { name: 'Building footprints',
         sources: [
-          { name: 'Microsoft Global ML Footprints', note: 'best in the US · no coverage off-continent', covers: ['US'] },
-          { name: 'OpenStreetMap', note: 'better in Europe — ~2× the vertex detail', covers: 'global' },
-          { name: 'Overture', note: 'aggregate alternative', unverified: true, covers: 'global' },
+          { name: 'Microsoft Global ML Footprints', note: 'best in the US · no coverage off-continent', covers: ['US'], act: FETCH, where: 'fetch-msbf' },
+          { name: 'OpenStreetMap', note: 'better in Europe — ~2× the vertex detail', covers: 'global', act: FETCH, where: 'Overpass' },
+          { name: 'Overture', note: 'aggregate alternative', unverified: true, covers: 'global', act: OWED, where: 'an Overture buildings fetch (fetch-overture-places is places only)' },
         ],
         steps: ['Free, no account.',
                 'In the US, take Microsoft — it is more accurate than the older US OSM imports.',
@@ -83,10 +84,10 @@ export const GROUPS = [
     // are a genuine hunt for the right municipal portal. The gathering lives
     // here, and it is the tier an agent can most usefully be pointed at.
     rows: [
-      { name: 'Ground elevation', act: FETCH, where: 'USGS',
+      { name: 'Ground elevation',
         sources: [
-          { name: 'USGS 3DEP 1/3 arc-sec', note: 'US · ~10 m · public domain · lat/lon', covers: ['US'] },
-          { name: 'USGS 3DEP 1 metre', note: 'US · ~100× denser · UTM · several tiles fine', covers: ['US'] },
+          { name: 'USGS 3DEP 1/3 arc-sec', note: 'US · ~10 m · public domain · lat/lon', covers: ['US'], act: FETCH, where: 'USGS' },
+          { name: 'USGS 3DEP 1 metre', note: 'US · ~100× denser · UTM · several tiles fine', covers: ['US'], act: FETCH, where: 'USGS' },
         ],
         steps: ['Free, no account.',
                 'Run the bake with no source — it prints the exact tile(s) THIS town needs, and the curl for both resolutions.',
@@ -98,75 +99,75 @@ export const GROUPS = [
                 '⚠️ On a coastal town expect ~20% nodata — lidar returns nothing off open water. Normal there, a red flag anywhere else; the bake prints the share and says which case it is.',
                 'Outside the US: a national elevation GeoTIFF covering your bbox.',
                 'Check the no-data value — the US one is USGS-specific and other sources differ.'] },
-      { name: 'Parcels, zoning, year built', act: DOC, where: 'cartograph/INTAKE.md',
+      { name: 'Parcels, zoning, year built',
         sources: [
-          { name: 'the county assessor', note: 'ArcGIS or Socrata · per-jurisdiction', covers: ['US'] },
-          { name: 'INSPIRE Cadastral Parcels', note: 'EU · geometry and id, rarely valuation', unverified: true, covers: ['EU'] },
+          { name: 'the county assessor', note: 'ArcGIS or Socrata · per-jurisdiction', covers: ['US'], act: DOC, where: 'cartograph/INTAKE.md' },
+          { name: 'INSPIRE Cadastral Parcels', note: 'EU · geometry and id, rarely valuation', unverified: true, covers: ['EU'], act: OWED, where: 'the INSPIRE procedure' },
         ],
         steps: ['Usually free; some counties require a free account.',
                 'Search "<your county> assessor open data" or "<county> GIS parcels".',
                 'Look for an ArcGIS FeatureServer or Socrata endpoint — you want the download URL, not the map viewer.',
                 'Export the parcel layer as GeoJSON covering your neighbourhood.',
                 'Outside the US this often does not exist in this shape. Addresses do not depend on it — they come from OpenStreetMap.'] },
-      { name: 'Tree census', act: DOC, where: 'TREE-INTAKE.md',
+      { name: 'Tree census',
         // The census UNIONS every well it finds — losing one silently prints
         // park-only trees (2026-07-22 regression). Each source below is a well.
         sources: [
-          { name: 'OpenStreetMap', note: 'natural=tree · real positions · fetched with the base — the "osm" well', covers: 'global' },
-          { name: 'city forestry inventory', note: 'ArcGIS FeatureServer · free · no key — the "city-inventory" well', covers: 'global' },
-          { name: 'authored park census', note: 'hand-curated for a signature park — the "park" well', covers: 'global' },
-          { name: 'opentrees.org', note: 'aggregates several hundred municipal inventories', unverified: true, covers: 'global' },
-          { name: 'a public-records request', note: 'when the contractor never published it', covers: 'global' },
+          { name: 'OpenStreetMap', note: 'natural=tree · real positions · fetched with the base — the "osm" well', covers: 'global', act: DOC, where: 'TREE-INTAKE.md' },
+          { name: 'city forestry inventory', note: 'ArcGIS FeatureServer · free · no key — the "city-inventory" well', covers: 'global', act: DOC, where: 'TREE-INTAKE.md' },
+          { name: 'authored park census', note: 'hand-curated for a signature park — the "park" well', covers: 'global', act: DOC, where: 'TREE-INTAKE.md' },
+          { name: 'opentrees.org', note: 'aggregates several hundred municipal inventories', unverified: true, covers: 'global', act: DOC, where: 'TREE-INTAKE.md' },
+          { name: 'a public-records request', note: 'when the contractor never published it', covers: 'global', act: DOC, where: 'TREE-INTAKE.md' },
         ],
         steps: ['The census UNIONS all its wells — OSM trees + city inventory + authored park — deduped by trunk.',
                 'OSM natural=tree comes free with the street fetch; the city inventory is the hand-found part.',
                 'Search "<your city> tree inventory open data" or "<city> street trees GIS" for the inventory.',
                 'Export as GeoJSON — species, diameter and condition per tree if offered.',
                 'This locates YOUR trees. What each species looks like ships with the platform.'] },
-      { name: 'Canopy raster', act: FETCH, where: 'MRLC',
+      { name: 'Canopy raster',
         sources: [
-          { name: 'NLCD Tree Canopy (USDA)', note: 'US · public domain', covers: ['US'] },
-          { name: 'ESA WorldCover', note: '10 m · global · CC BY', covers: 'global' },
+          { name: 'NLCD Tree Canopy (USDA)', note: 'US · public domain', covers: ['US'], act: FETCH, where: 'MRLC' },
+          { name: 'ESA WorldCover', note: '10 m · global · CC BY', covers: 'global', act: DOC, where: 'TREE-INTAKE.md' },
         ],
         steps: ['Free, no account.',
                 'Fills yards and parkland no per-tree survey reaches.',
                 'Optional — a town can ship counted trees only, which is what Lafayette Square does.'] },
-      { name: 'Historic designation', act: FETCH, where: 'Overpass',
+      { name: 'Historic designation',
         sources: [
-          { name: 'NID rejestr zabytków', note: 'Poland · already on the public map', covers: ['PL'] },
-          { name: 'National Register (NPS)', note: 'US · free PDFs · needs OCR', covers: ['US'] },
-          { name: 'Historic England', note: 'UK · per-building', unverified: true, covers: ['GB'] },
+          { name: 'NID rejestr zabytków', note: 'Poland · already on the public map', covers: ['PL'], act: FETCH, where: 'Overpass' },
+          { name: 'National Register (NPS)', note: 'US · free PDFs · needs OCR', covers: ['US'], act: DOC, where: 'INTAKE-CATALOGUE.md §3.2' },
+          { name: 'Historic England', note: 'UK · per-building', unverified: true, covers: ['GB'], act: OWED, where: 'the Historic England procedure' },
         ],
         steps: ['Free everywhere it exists.',
                 'In much of Europe this arrives free with the street fetch — it is already tagged.',
                 'In the US it is a National Register nomination PDF from NPGallery, and the per-building table has to be read out of the scan by hand.'] },
-      { name: 'Street lamps', act: FETCH, where: 'Overpass',
+      { name: 'Street lamps',
         sources: [
-          { name: 'OpenStreetMap', note: 'highway=street_lamp · global · free · no account', covers: 'global' },
-          { name: 'city lighting GIS', note: 'where a municipality publishes its lamp inventory', unverified: true, covers: 'global' },
+          { name: 'OpenStreetMap', note: 'highway=street_lamp · global · free · no account', covers: 'global', act: FETCH, where: 'Overpass' },
+          { name: 'city lighting GIS', note: 'where a municipality publishes its lamp inventory', unverified: true, covers: 'global', act: FETCH, where: 'Overpass' },
         ],
         steps: ['Free, no account.',
                 'Real lamp positions where OSM mappers recorded them — St. Louis has thousands.',
                 'Fetched from OSM with the street base; a town OSM never mapped can fall back to procedural placement.'] },
-      { name: 'Facade imagery', act: DOC, where: 'cartograph/INTAKE.md',
-        sources: [{ name: 'Mapillary', note: 'street-level · free account · API key', covers: 'global' }],
+      { name: 'Facade imagery',
+        sources: [{ name: 'Mapillary', note: 'street-level · free account · API key', covers: 'global', act: DOC, where: 'cartograph/INTAKE.md' }],
         steps: ['Free, but needs an account and a token.',
                 'Create a Mapillary account, then generate a client token in developer settings.',
                 'Optional — used for matching building facades.'] },
-      { name: 'Species dossiers', act: DOC, where: 'arborist/dossiers/_SCHEMA.md',
+      { name: 'Species dossiers',
         sources: [
-          { name: 'USDA PLANTS', note: 'free', covers: ['US', 'CA'] },
-          { name: 'Silvics of North America', note: 'USDA Forest Service · free', covers: ['US', 'CA'] },
-          { name: 'i-Tree Species', note: 'USFS · free', covers: ['US'] },
-          { name: 'a national flora', note: 'outside North America', unverified: true, covers: 'global' },
+          { name: 'USDA PLANTS', note: 'free', covers: ['US', 'CA'], act: DOC, where: 'arborist/dossiers/_SCHEMA.md' },
+          { name: 'Silvics of North America', note: 'USDA Forest Service · free', covers: ['US', 'CA'], act: DOC, where: 'arborist/dossiers/_SCHEMA.md' },
+          { name: 'i-Tree Species', note: 'USFS · free', covers: ['US'], act: DOC, where: 'arborist/dossiers/_SCHEMA.md' },
+          { name: 'a national flora', note: 'outside North America', unverified: true, covers: 'global', act: DOC, where: 'arborist/dossiers/_SCHEMA.md' },
         ],
         steps: ['Free sources; the writing is the work — about 20 minutes per species.',
                 'One profile per species in your mix: habit, branching, seasonal colour, how it ages.',
                 'Scored against a fixed rubric so two species can be compared, not merely described.',
                 'A good agent-assist candidate — the sources are public and the rubric is closed.'] },
-      { name: 'Species routing', act: DOC, where: 'TREE-INTAKE.md',
+      { name: 'Species routing',
         sources: [
-          { name: 'the city planting list', note: 'plus hardiness zone and a state extension guide', covers: 'global' },
+          { name: 'the city planting list', note: 'plus hardiness zone and a state extension guide', covers: 'global', act: DOC, where: 'TREE-INTAKE.md' },
         ],
         steps: ['Free; a table you write once per region.',
                 'Maps the species names in your census onto the species the library carries.',
@@ -191,27 +192,27 @@ export const GROUPS = [
       // calling the whole row a button would promise the part that is not.
       // How the town looks — its mark, accent, rating mark, lit tint, category colours. Nothing to fetch: the town chooses, and the
       // choosing is done in the Identity panel (IdentityPanel.jsx). A to-do until every channel is chosen.
-      { name: 'Identity', act: CHOOSE, where: 'Identity',
-        sources: [{ name: 'the town', note: 'its own choice — never another town\'s', covers: 'global' }],
+      { name: 'Identity',
+        sources: [{ name: 'the town', note: 'its own choice — never another town\'s', covers: 'global', act: CHOOSE, where: 'Identity' }],
         steps: ['Ask the town: the emoji it goes by, the one it rates with, its accent colour, the tint for lit roofs, and a colour for each category of place.',
                 'Choose each in the Identity panel. Until then the kit\'s neutral value shows, and says so.'] },
-      { name: 'Businesses & hours', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md',
+      { name: 'Businesses & hours',
         sources: [
-          { name: 'Overture Places', note: 'free · one command, any town · ⛔ licence is per record', covers: 'global' },
-          { name: 'OpenStreetMap POIs', note: 'free · the default base', covers: 'global' },
+          { name: 'Overture Places', note: 'free · one command, any town · ⛔ licence is per record', covers: 'global', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md' },
+          { name: 'OpenStreetMap POIs', note: 'free · the default base', covers: 'global', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md' },
         ],
         steps: ['Free base; the corrections are the work.',
                 'Two bases: OSM POIs by default, or Overture Places where a town\'s OSM is thin — declared as meta.baseSource in listings.overrides.json.',
                 'The base gets you names and rough categories.',
                 'Real hours, descriptions and what a place is actually for come from visiting the websites one at a time.'] },
-      { name: 'Menus', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md',
-        sources: [{ name: 'the restaurant', note: 'no endpoint exists', covers: 'global' }],
+      { name: 'Menus',
+        sources: [{ name: 'the restaurant', note: 'no endpoint exists', covers: 'global', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md' }],
         steps: ['No source exists — you ask, or you read the menu off their site.',
                 'Lafayette Square, the most complete install, is at about 25% coverage. Partial is normal.'] },
-      { name: 'Photographs & logos', act: DOC, where: 'content/ASSETS.md',
+      { name: 'Photographs & logos',
         sources: [
-          { name: 'the business', note: 'credit their domain · never hotlink', covers: 'global' },
-          { name: 'Wikimedia Commons', note: 'for landmarks · free', covers: 'global' },
+          { name: 'the business', note: 'credit their domain · never hotlink', covers: 'global', act: DOC, where: 'content/ASSETS.md' },
+          { name: 'Wikimedia Commons', note: 'for landmarks · free', covers: 'global', act: DOC, where: 'content/ASSETS.md' },
         ],
         steps: ['Free, but hand-collected, and the eye is the only real check.',
                 'Save the file locally — never link to someone else\'s server.',
@@ -240,7 +241,8 @@ export function coversCountry(source, country) {
 
 /**
  * A row as THIS town sees it. `jurisdiction` is the intake's ({ country, … }; country null = not yet fetched).
- * → { shown: the source to name (null when none applies), state: 'ok' | 'none-known' | 'country-unknown',
+ * → { shown: the source to name (null when none applies) — the row's action is ITS act/where,
+ *     state: 'ok' | 'none-known' | 'country-unknown',
  *     ordered: the town's sources, then the global ones, then everyone else's — each tagged `foreign` with who it is for }
  */
 export function resolveRow(row, jurisdiction) {

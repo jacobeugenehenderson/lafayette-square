@@ -1,0 +1,15 @@
+{
+  "country": "US",
+  "subdivision": "CA",
+  "name": "California, United States",
+  "source": {
+    "service": "OpenStreetMap Nominatim reverse (zoom 5)",
+    "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+    "osm": "relation/165475",
+    "at": [
+      34.19212,
+      -118.13529
+    ]
+  },
+  "at": "2026-09-28T20:31:26.604Z"
+}
