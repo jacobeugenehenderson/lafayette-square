@@ -20,8 +20,7 @@
  *               roster (one record per baked building — bare-building cards read it) and listings
  *               (bake-content.js), and the hand-authored profile, menus and events. Each is named
  *               with its size and sha256, or `null` when the town has none — absent is said, never
- *               guessed. `mark.svg` is the town's drawn mark when it authors one (branding.markSvg names it;
- *               the player draws it as a mask, so the file's own colours never matter). The source stays
+ *               guessed. The source stays
  *               cartograph/data/<town>/content/; this is its publication,
  *               like the slab's. The override sidecars are inputs to bake-content, not payload.
  *   board     — the town's bulletin groups and sections. None authored yet: the kit's list, `authored:
@@ -73,7 +72,7 @@ const categories = Object.entries(CATEGORIES).map(([id, c]) => ({
 
 // ── content: publish the payload the player reads ─────────────────────────────
 // The player's content payload, by name. Declared once, here: these are what a player reads.
-const CONTENT_PAYLOAD = ['roster.json', 'listings.json', 'profile.json', 'menus.json', 'events.json', 'mark.svg']
+const CONTENT_PAYLOAD = ['roster.json', 'listings.json', 'profile.json', 'menus.json', 'events.json']
 const contentSrc = resolve(ROOT, 'cartograph/data', town, 'content')
 const contentOut = resolve(slabDir, 'content')
 const content = {}
@@ -81,8 +80,7 @@ for (const name of CONTENT_PAYLOAD) {
   const src = resolve(contentSrc, name)
   if (!existsSync(src)) { content[name] = null; continue }
   const buf = readFileSync(src)
-  if (name.endsWith('.json')) { try { JSON.parse(buf.toString('utf8')) } catch (e) { console.error(`⛔ ${relative(ROOT, src)} is not valid JSON: ${e.message}`); process.exit(2) } }
-  else if (name.endsWith('.svg') && !/<svg[\s>]/.test(buf.toString('utf8'))) { console.error(`⛔ ${relative(ROOT, src)} is not an SVG`); process.exit(2) }
+  try { JSON.parse(buf.toString('utf8')) } catch (e) { console.error(`⛔ ${relative(ROOT, src)} is not valid JSON: ${e.message}`); process.exit(2) }
   mkdirSync(contentOut, { recursive: true })
   writeFileSync(resolve(contentOut, name), buf)
   content[name] = { bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
