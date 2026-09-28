@@ -40,7 +40,7 @@
 const MANIFESTS = {
   'lafayette-square': {
     // Relocated into the look dir (reader-private).
-    menus:            () => import('./lafayette-square/menus.json'),
+    menus:            () => import('../../cartograph/data/lafayette-square/content/menus.json'),
     seedEvents:       () => import('./lafayette-square/seedEvents.json'),
     // In-place: shared with authoring + bake pipeline; moves belong to the
     // producer-emit arc. Loaded by lookId here regardless of physical path.

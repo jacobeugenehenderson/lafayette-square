@@ -24,7 +24,7 @@
  * ⛔ READ-ONLY. Exit 2 on any hit, naming the importer, the line, and the file.
  *
  * MUTATION TEST (a check only ever seen to pass is not evidence):
- *   echo "import x from '../data/lafayette-square/menus.json'; export default x" > src/components/__mut.js
+ *   echo "import x from '../data/lafayette-square/seedEvents.json'; export default x" > src/components/__mut.js
  *   echo "import './components/__mut.js'" >> src/main.jsx
  *   node checks/claims-no-town-rides-in-the-bundle.mjs   # ⇒ must FAIL naming menus.json
  *   git checkout src/main.jsx && rm src/components/__mut.js

@@ -26,7 +26,7 @@ import { ensureMenuIds, auditMenuIds, indexMenuItems } from '../src/lib/menuIden
 //    which is the worst shape for a check about identity. Discovered now; LS's bundled location is
 //    the same palimpsest asymmetry as its ribbons (`ORIENTATION`, the shared-default paths).
 const menusPath = (s) => s === 'lafayette-square'
-  ? 'src/data/lafayette-square/menus.json'
+  ? 'cartograph/data/lafayette-square/content/menus.json'
   : `cartograph/data/${s}/content/menus.json`
 const PAYLOADS = scenes('<scene>', {
   has: (s) => existsSync(new URL(`../${menusPath(s)}`, import.meta.url)),

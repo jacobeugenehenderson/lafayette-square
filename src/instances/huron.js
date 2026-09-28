@@ -33,6 +33,9 @@ export default {
   },
 
   name: 'Huron',
+  // The town's locale — authored, never the viewer's browser and never another town's (Jacob, 2026-09-28:
+  // "localize the almanac"). Every date, time, temperature and price the Ward shows is formatted from this.
+  locale: { language: 'en-US', temperature: 'fahrenheit', currency: 'USD' },
   domain: null,   // ⛔ NOT A SOURCE (2026-09-26): the production domain lives in Operations (src/lib/townOrigin.js).
 
   contentRoot: 'content/huron/',
