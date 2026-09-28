@@ -191,7 +191,7 @@ export function generatedFade(R) {
 ```
 
 ⭐ **② AND ③ ARE DIFFERENT FORMULAE FOR THE SAME NUMBERS**, and ① shadows both — every field is
-`??`, so **a stored literal always wins and the derivation is dead code in every town but `toy`.**
+`??`, so **a stored literal always wins and the derivation is dead code in every town on disk.**
 
 |                    | ③ `generatedFade` | ② `boundary.js` default |
 |--------------------|-------------------|--------------------------|
@@ -210,7 +210,6 @@ huron              3539     3339 → 3539     3399 → 3699      ③ generatedFa
 hipointe-demun     1251     1051 → 1251     1111 → 1411      ③ generatedFade exactly
 altadena           4161     3961 → 4161     4021 → 4321      ③ generatedFade exactly
 lafayette-square    892      758 →  892      800 → 1000      ② boundary.js defaults exactly
-toy                 180     (absent)        (absent)          — derives at read time
 ```
 
 ⛔⛔ **`fade.outer === radius` in ALL FOUR.** Exactly, every time. It is a **redundant copy of
@@ -264,9 +263,8 @@ nothing — which is the point: it pins the invariant *before* someone moves a r
 **Yes, and name the surface.** The fade set is **on disk** in `neighborhood_boundary.json`, so a
 check reads files, not the live app — `node -e` it in one line and it is decisive.
 
-⭐ **`toy` is your controlled fixture and it already exists** — it carries `radius: 180` and **no
-`fade`/`streetFade` at all**, so it is the ONLY scene that exercises the derivation path today.
-Per BOZ §3.8, route validation through it via the production path. ⛔ Do not build a parallel spike.
+⭐ **Validate on the town the work is about, via the production path** (BOZ §3.8). ⛔ Do not build a
+parallel spike.
 
 ⚠️ **Eye-gate surface — ⛔ CORRECTED 2026-09-20, the original was WRONG:** Survey renders **live**;
 Section renders from the frozen **`shape.json`** (`BlockGeometryV2Debug.jsx:611`). ⛔⛔ **NOT the baked
@@ -383,29 +381,27 @@ earlier table listed five scenes and missed this one.
 — you no longer need to bring him two renders. ⚠️ **LS moves 134 → 200 and its look changes.** That is
 the ruling, not a defect; ⭐ and the staging twin above is the reason it is the right one.
 
-Also verified in all five fade-carrying scenes (toy has none): **`fade.outer === radius` exactly**, and
+Also verified in all five fade-carrying scenes: **`fade.outer === radius` exactly**, and
 **`fade.inner === radius − innerFadeOffset` exactly.**
 
 ## 7e. ⚠️ THE **UNAUTHORED-FADE** BRANCH — the one thing still genuinely open
 
-> ⛔ **DO NOT CALL THIS "the toy branch."** Quill checked it at the call sites 2026-09-20:
-> `stencilFromBoundary` has exactly **two** call sites — `CartographApp.jsx:793` (`LS_STENCIL`,
-> module-level, LS only) and `:903` (`sceneBoundary ? stencilFromBoundary(sceneBoundary) : null`, the
-> generic poured-scene path). **Toy reaches neither** — `:859` hands it `TOY_STENCIL`, a literal
-> 360×360 box, plus `useBoundary: false`.
+> Quill checked it at the call sites 2026-09-20: `stencilFromBoundary` has exactly **two** call
+> sites — `CartographApp.jsx:793` (`LS_STENCIL`, module-level, LS only) and `:903`
+> (`sceneBoundary ? stencilFromBoundary(sceneBoundary) : null`, the generic poured-scene path).
 >
 > ⇒ ⭐⭐ **The `?? radius) + 50` fallback is reachable ONLY at `:903`: a poured scene that HAS a
 > boundary but has NOT yet had its fade authored.** That is **town #7 between its pour and its fade**,
 > and **there is no scene on disk in that state today** — which is exactly why a 50 m split has sat
-> in the code unseen. ⛔ **Framing it as a toy bug would have "fixed" the one scene that cannot reach
-> the code**, and left town #7 broken. This is Layer 0's whole argument in one line.
+> in the code unseen. ⛔ **No scene on disk reaches it, so fixing it against any of them fixes
+> nothing**, and leaves town #7 broken. This is Layer 0's whole argument in one line.
 
-**The two stencil twins already disagree, today, on `toy`:**
+**The two stencil twins disagree on a town with radius R and no authored fade:**
 
-| | expression | toy |
+| | expression | no fade |
 |---|---|---|
-| `CartographApp.jsx:788` | `(nb?.streetFade?.outer ?? radius) + 50` | **230** |
-| `cartograph/sceneStencil.js:41` | `streetFade ? streetFade.outer + 50 : radius` | **180** |
+| `CartographApp.jsx:788` | `(nb?.streetFade?.outer ?? radius) + 50` | **R + 50** |
+| `cartograph/sceneStencil.js:41` | `streetFade ? streetFade.outer + 50 : radius` | **R** |
 
 **50 m apart**, and `sceneStencil.js`'s own header already flags the Designer twin as unreconciled.
 ⛔ `targetR = fade.outer + 50` fixes both **only if the no-fade branch is decided too** — a town with
@@ -423,7 +419,7 @@ branch.
 
 ## 8. The validation surface that already exists
 
-`toy` (above) for the derivation path. For the record round-trip, **`checks/claims-boundary-record-split.mjs`
+The town the work is about, for the derivation path. For the record round-trip, **`checks/claims-boundary-record-split.mjs`
 already exists and already tests this area** — ⚠️ but its section **D** (`:121-129`) asserts
 `pipeline.js still binds 'const keepR ='`, which died with the clip excision (`ec7dd3f4`,
 2026-09-05); the check names its own remedy in the assertion string. **Its other six sections pass.**

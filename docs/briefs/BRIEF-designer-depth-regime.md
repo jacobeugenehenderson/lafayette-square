@@ -276,12 +276,9 @@ config ↔ 2D map stacking), so it belongs with the *operation*, not in either t
 ## 6. The validation surface that already exists
 
 ⛔ **Do not build a parallel spike, a scratch renderer or an SVG harness**
-(`feedback_no_parallel_pipeline_for_scenes`, `feedback_toy_is_the_construction_spike_surface`).
+(`feedback_no_parallel_pipeline_for_scenes`).
 
-- **The `toy` scene is the controlled fixture** and it exists on disk (`cartograph/data/toy/clean/`
-  carries `skeleton.json` + `overlay.json`). ⚠️ **PREMISE TO CONFIRM:** `cartograph/BACKLOG.md`
-  records that *"the toy scene … is no longer reachable from Cartograph."* If that is still true,
-  **say so and use `huron`** — do not build a way to reach toy as a side quest.
+- **Validate on the town the work is about.**
 - **`docs/agents/AGENT-VALIDATION-SURFACES.md`** — read it for where to validate.
 - The production path here **is** the Designer. Validate in it.
 

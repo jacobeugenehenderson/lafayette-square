@@ -149,13 +149,11 @@ rather than name it, and the next one to appear would be silent again.
 
 ## 8. The validation surface that already exists
 
-⭐ **`toy` is the controlled fixture** — it is a real registered scene with a deliberate-false
-boundary, so **A→toy→A is a legitimate scene-switch cycle that costs nothing and touches no
-authored town.** Route your reproduction through it via the production path, per
-`feedback_toy_is_the_construction_spike_surface`. ⛔ Do **not** build a parallel harness app.
+⭐ **Reproduce on the town the work is about, via the production path** — a scene-switch cycle
+A→B→A inside the app. ⛔ Do **not** build a parallel harness app.
 
-⚠️ **But reproduce Jacob's ACTUAL repro at least once** — Extent→LS→Designer — because it crosses the
-two-apps-one-store seam that a toy cycle inside one app does not.
+⚠️ **And reproduce Jacob's ACTUAL repro at least once** — Extent→LS→Designer — because it crosses the
+two-apps-one-store seam that a cycle inside one app does not.
 
 ---
 

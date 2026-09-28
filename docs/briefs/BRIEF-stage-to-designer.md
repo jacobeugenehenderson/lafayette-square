@@ -58,8 +58,8 @@ not in the baked files. **Cause not established:** Boz has not reproduced it or 
 ⭐ The check is the deliverable: **drive a switch, then compare against a fresh load.** Designer → Stage →
 Designer and a fresh Designer load of the same town should produce the same scene-graph inventory (mesh
 count, which layers draw, each material's defines and uniforms, the terrain source), with no differences
-allowed. Mutation-test it: leave one holder unfixed and watch it fail. Run it on every registered town,
-including `toy` as the controlled fixture. Then Jacob's eye.
+allowed. Mutation-test it: leave one holder unfixed and watch it fail. Run it on every registered town.
+Then Jacob's eye.
 
 ## Bounds
 
