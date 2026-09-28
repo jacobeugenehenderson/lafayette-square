@@ -1,3 +1,8 @@
+/**
+ * UserDot — THE OLD PLAYER'S visitor dot, FROZEN until the cutover (fixes only). A town's live dots are
+ * src/components/Movers.jsx, mounted in <Town> (<Town movers>): this look is ported there as kind 'you'.
+ * ▶ node checks/claims-a-mover-stands-where-it-is.mjs
+ */
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'

@@ -27,6 +27,11 @@
  *   flightRef        a ref Town fills: { from, to, t, eased, duration, at, landed, interrupted } — at t = 0 before the first
  *                    painted frame of a flight, then every frame; `eased` is the camera's own curve (drive a panel by it)
  *   onFlightEnd      (f) => void, once per shot change: landed, or interrupted by a pointerdown / wheel
+ *   movers           live dots the APP positions: [{ id, kind: 'you' | 'courier', lat, lon, active (couriers) }] — the
+ *                    town projects them through its own place, seats them on its ground, draws each kind's look
+ *                    (src/components/Movers.jsx); none in the movie or outside the disc. Unknown fields throw.
+ *   onMovers         ([{ id, x, z, inside }]) => void, when the set, a position or the disc changes — `inside` by the
+ *                    town's own disc
  *   paused           draw no frames (a full-screen overlay is up) — under a demand frameloop
  *   idle             the embedding page has scrolled us mostly out of view: draw a third of the frames
  *   selectedId       the selected building's id, or null — the app owns the selection
@@ -67,6 +72,7 @@ import { useStreetLabels } from '../lib/streetLabels.js'
 import { labelStyleOf } from '../lib/labelStyle.js'
 import MovieCamera from '../camera/MovieCamera.jsx'
 import ShotFlight from '../camera/ShotFlight.jsx'
+import Movers from './Movers.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { skyModeOf } from '../lib/skyMode'
@@ -281,7 +287,7 @@ function TownOptics({ quality }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, children,
+  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movers, onMovers, children,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
@@ -413,6 +419,9 @@ export default function Town({
         bloomOverride={o.bloom} aoOverride={o.ao} exposureOverride={o.exposure} warmthOverride={o.warmth}
         fillOverride={o.fill} haloOverride={o.halo} gradeOverride={o.grade} grainOverride={o.grain}
         dofOverride={o.dof} dofFocusOverride={o.dofFocus} />}
+      {/* The town's live dots — the visitor, couriers — positioned by the app, placed and drawn by the town.
+          ▶ node checks/claims-a-mover-stands-where-it-is.mjs */}
+      {movers ? <Movers movers={movers} shot={shot} onMovers={onMovers} /> : null}
       {children}
     </TownScope>
     </QualityProvider>

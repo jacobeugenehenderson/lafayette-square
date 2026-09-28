@@ -1,5 +1,8 @@
 /**
- * Live courier dots on the 3D map.
+ * Live courier dots on the 3D map — THE OLD PLAYER'S, FROZEN until the cutover (fixes only). A town's live dots are
+ * src/components/Movers.jsx, mounted in <Town> (<Town movers>): this look is ported there as kind 'courier', on the
+ * drawn ground and projected through the town's own place (this file stands dots at a fixed 35 m and projects with
+ * the boot town's geography — neither was carried over).
  *
  * Subscribes to courier_locations via Supabase real-time.
  * Blue dot = courier on an active delivery, yellow = idle/available.

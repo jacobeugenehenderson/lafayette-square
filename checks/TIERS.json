@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 326,
+  "total": 328,
   "counts": {
-    "safe": 178,
+    "safe": 179,
     "local-effect": 6,
-    "live": 142
+    "live": 143
   },
   "checks": [
     {
@@ -203,6 +203,13 @@
       ]
     },
     {
+      "file": "checks/claims-a-mover-stands-where-it-is.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-a-pour-adds-no-gitignore-lines.mjs",
       "tier": "safe",
       "why": [
@@ -385,6 +392,14 @@
       "why": [
         "computed import of src/tokens/categories.js — read, safe",
         "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-towns-sources-are-its-own.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports src/cartograph/sourcesCatalogue.js, which can: calls fetch()"
       ]
     },
     {

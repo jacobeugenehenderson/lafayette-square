@@ -110,6 +110,16 @@ const PREVIEW_INSET = (() => {
   if (![top, right, bottom, left].every(Number.isFinite)) throw new Error(`[Preview] ?inset=${q} — four numbers: top,right,bottom,left (CSS px)`)
   return { top, right, bottom, left }
 })()
+// ?movers=you@lat,lon;courier@lat,lon,active|idle — inspect <Town movers>: each kind's look on this town's ground.
+const PREVIEW_MOVERS = (() => {
+  const q = new URLSearchParams(window.location.search).get('movers')
+  if (!q) return undefined
+  return q.split(';').map((one, i) => {
+    const [kind, rest = ''] = one.split('@')
+    const [lat, lon, state] = rest.split(',')
+    return { id: `${kind}-${i}`, kind, lat: Number(lat), lon: Number(lon), ...(kind === 'courier' ? { active: state === 'active' } : {}) }
+  })
+})()
 
 const APP_BAR_H = 48
 
@@ -1102,6 +1112,7 @@ function CanvasContents({ layers, shot, setShot, quality }) {
     <>
       <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
         flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={PREVIEW_STREET_AT} viewInset={PREVIEW_INSET}
+        movers={PREVIEW_MOVERS} onMovers={PREVIEW_MOVERS ? (m) => { window.__movers = m } : undefined}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,

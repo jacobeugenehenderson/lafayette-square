@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 142. Never in a default run.
+## ⛔ live — 143. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -47,6 +47,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-swap-never-happens-mid-street.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-a-town-page-fetches-no-authoring.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-towns-listings-reach-its-surfaces.mjs` | unreadable | computed import of src/tokens/categories.js — read, safe · child_process with a non-literal command — cannot be read |
+| `checks/claims-a-towns-sources-are-its-own.mjs` | outbound | imports src/cartograph/sourcesCatalogue.js, which can: calls fetch() |
 | `checks/claims-a-tree-is-refused-for-what-stands-under-it.mjs` | unreadable | imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-a-worker-deploy-darkens-no-town.mjs` | outbound | calls fetch() |
 | `checks/claims-alley-stub-pairs.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
@@ -183,7 +184,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 180. This is `npm test`.
+## safe — 179. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -201,6 +202,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs` | every spawn of a Look-strict tool passes `--look`. |
 | `checks/claims-a-menu-price-is-in-cents.mjs` | a menu price is an integer count of cents, on every |
 | `checks/claims-a-missing-revetment-is-not-a-shoreless-town.mjs` | town.mjs |
+| `checks/claims-a-mover-stands-where-it-is.mjs` | "DOES A LIVE DOT — THE VISITOR, A COURIER — STAND WHERE IT IS, IN ANY TOWN, DRAWN BY THE TOWN?" |
 | `checks/claims-a-pour-adds-no-gitignore-lines.mjs` | "DOES A POUR ADD LINES TO .gitignore?" — the standing guard on scene tracking. |
 | `checks/claims-a-production-host-serves-only-its-own-town.mjs` | A TOWN'S PRODUCTION DOMAIN SERVES THAT TOWN AND NOTHING ELSE — and only a domain we own, live. |
 | `checks/claims-a-published-edit-reaches-the-map.mjs` | a Host's published correction is what the map shows. |
