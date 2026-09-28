@@ -252,6 +252,7 @@ function doGet(e) {
       case 'claim-secret':   return getClaimSecret(e.parameter.lid, e.parameter.dh, e.parameter.admin)
       case 'listing-staff':  return getListingStaff(e.parameter.lid, e.parameter.dh)
       case 'guardian-check': return getGuardianCheck(e.parameter.lid, e.parameter.dh, e.parameter.perm, e.parameter.s)
+      case 'my-role':        return getMyRole(e.parameter.lid, e.parameter.dh)
       case 'create-link-token':  return createLinkToken(e.parameter.dh)
       case 'check-link-token':   return checkLinkToken(e.parameter.token)
       case 'linked-devices':     return getLinkedDeviceCount(e.parameter.dh)
@@ -1003,6 +1004,28 @@ function getGuardianCheck(listingId, deviceHash, perm, secret) {
   })
 }
 
+/**
+ * my-role — what THIS device (and the devices linked to it) is at one listing:
+ * { listing_id, role: 'guardian' | 'keyholder' | null, permissions: [...] }.
+ * The Ward's one read for "what am I here?" (theward src/you/roles.js, roleAt),
+ * so a player shows a Guardian's tools from the Guardians sheet, not from a
+ * copy it kept when the device claimed. Reveals nothing about anyone else.
+ * Every write is still checked on its own (staffHasPermission, isFullGuardianOf).
+ */
+function getMyRole(listingId, deviceHash) {
+  if (!listingId || !deviceHash) return errorResponse('Missing fields', 'bad_request')
+  var rows = sheetToObjects(getSheet('Guardians'))
+  var hashes = getLinkedHashes(deviceHash)
+  var row = rows.find(function (r) { return r.listing_id === listingId && hashes.indexOf(r.device_hash) !== -1 })
+  var role = row ? ((!row.role || row.role === 'guardian') ? 'guardian' : row.role) : null
+  return jsonResponse({ listing_id: listingId, role: role, permissions: role ? getStaffPermissions(listingId, deviceHash) : [] })
+}
+
+/** A sheet's anonymous flag, however Sheets stored it (true, 'true', 'TRUE'). */
+function isAnonymousFlag(v) {
+  return v === true || v === 'true' || v === 'TRUE'
+}
+
 /** Returns parsed permissions array for a staff member */
 function getStaffPermissions(listingId, deviceHash) {
   const rows = sheetToObjects(getSheet('Guardians'))
@@ -1535,6 +1558,13 @@ function postStartThread(body) {
   if (!bulletin) return errorResponse('Bulletin not found', 'not_found')
   if (bulletin.rowData.status !== 'active') return errorResponse('Bulletin no longer active', 'bad_request')
 
+  // ⛔ F-18: a private thread on an anonymous post would hand its author's handle to
+  // whoever started it (a_handle below, returned by getThreads). An anonymous post
+  // takes comments, never private messages.
+  if (isAnonymousFlag(bulletin.rowData.anonymous)) {
+    return errorResponse('Anonymous posts cannot be messaged privately', 'forbidden')
+  }
+
   const posterHash = bulletin.rowData.device_hash
   if (posterHash === device_hash) {
     return errorResponse('Cannot message yourself', 'bad_request')
@@ -1598,6 +1628,11 @@ function getThreads(deviceHash) {
 
   const threads = sheetToObjects(getSheet('Threads'))
   const messages = sheetToObjects(getSheet('Messages'))
+  // F-18: threads opened on an anonymous post before start-thread refused them must
+  // not name the post's author. A post that is gone is treated as anonymous too:
+  // its flag can no longer be read, so its author is never revealed by default.
+  const postIsAnon = {}
+  sheetToObjects(getSheet('Bulletins')).forEach(b => { postIsAnon[b.id] = isAnonymousFlag(b.anonymous) })
 
   const active = threads.filter(t =>
     t.status === 'active' &&
@@ -1611,7 +1646,9 @@ function getThreads(deviceHash) {
     const lastMsg = threadMsgs[0] || null
 
     // Determine the other party's handle
-    const otherHandle = t.party_a_hash === deviceHash ? t.b_handle : t.a_handle
+    const otherIsPoster = t.party_a_hash !== deviceHash
+    const hidePoster = otherIsPoster && postIsAnon[t.bulletin_id] !== false
+    const otherHandle = hidePoster ? null : (otherIsPoster ? t.a_handle : t.b_handle)
 
     return {
       id: t.id,
