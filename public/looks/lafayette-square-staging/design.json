@@ -1,9 +1,4 @@
 {
-  "identity": {
-    "mark": "⚜️",
-    "accent": "#D9B25A",
-    "ratingMark": "⚜️"
-  },
   "layerVis": {
     "street": true,
     "highway": true,

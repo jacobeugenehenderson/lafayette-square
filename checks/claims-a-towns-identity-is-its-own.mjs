@@ -25,7 +25,12 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const { registeredMaps, instanceForMap } = await import(join(ROOT, 'src/instances/registry.js'))
 const readJson = (rel) => JSON.parse(readFileSync(join(ROOT, rel), 'utf8'))
 
-const looks = readJson('public/looks/index.json').looks.map((l) => l.id)
+// A retired scene declares it in its own directory (cartograph/data/<scene>/RETIRED.md — the kit's convention, not a
+// list here). Its Look is not a town's: reported, never judged.
+const index = readJson('public/looks/index.json').looks
+const isRetired = (scene) => !!scene && existsSync(join(ROOT, 'cartograph/data', scene, 'RETIRED.md'))
+const retired = index.filter((l) => isRetired(l.scene ?? l.id)).map((l) => l.id)
+const looks = index.map((l) => l.id).filter((id) => !retired.includes(id))
 const fails = []
 const identities = {}
 for (const id of looks) {
@@ -51,7 +56,7 @@ const drift = (maps, markOf) => {
   }
   return out
 }
-const maps = registeredMaps()
+const maps = registeredMaps().filter((m) => !isRetired(m))
 const markOf = (t) => instanceForMap(t)?.branding?.mark
 fails.push(...drift(maps, markOf))
 const others = IDENTITY_CHANNELS.filter((k) => k !== 'mark')
@@ -68,6 +73,7 @@ const victim = maps.find((t) => t in identities)
 const caught = victim && drift([victim], () => (markOf(victim) === '🧪' ? '🔬' : '🧪')).length === 1
 if (!caught) fails.push(`MUTATION NOT CAUGHT: flipping ${victim ?? '(no town with a Look)'}'s mark did not fail the drift test — the check is blind`)
 
+if (retired.length) console.log(`   retired (their own RETIRED.md), not towns: ${retired.join(', ')}`)
 console.log(`Looks ${Object.keys(identities).length} · towns ${maps.length} · authored: ${Object.entries(identities).map(([k, v]) => `${k}{${Object.keys(v).join(',') || '—'}}`).join(' ')}`)
 console.log(`   mutation (flip ${victim}'s mark) ${caught ? 'caught ✓' : 'NOT caught'}`)
 for (const f of fails) console.log(`⛔ ${f}`)
