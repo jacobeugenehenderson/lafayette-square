@@ -30,7 +30,11 @@ the LS-named default inbox goes ("Agreed about the emails and LS email address, 
 3. **`contact-sms` routes by town:** the Ward names its town, the function looks up that town's contact, and a
    town with none configured is refused loudly. No default address, and no town's address used for another.
    Its allowed origins cover every Ward origin (the town domains, staging, local dev) from one list.
-4. **Retire the kit's copies** at cutover with the old player: the instance fields, the manifest's `identity.contact`
+4. **The operator's message inbox moves to Operations** (Jacob, 2026-09-28: "we should move it into operations").
+   Today it is the old player's `SmsInbox.jsx`, opened with the admin token (SECURITY F-20). In Operations it is
+   signed in by Operations' own auth, lists every town's threads, and replies through `sms-reply`. The Ward never
+   carries an operator inbox.
+5. **Retire the kit's copies** at cutover with the old player: the instance fields, the manifest's `identity.contact`
    and `identity.cary`. The Ward never reads them.
 
 ## 3. Checks
