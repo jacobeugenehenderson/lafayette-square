@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { CATEGORY_HEX, UNKNOWN_HEX } from '../tokens/categories'
+import { categoryHex } from '../lib/categoryColor.js'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
@@ -244,12 +244,10 @@ function buildTube(building, tubeRadius) {
 // category the palette did not know, which reads on screen as a deliberate hot-pink
 // accent rather than as an error. `UNKNOWN_HEX` is the one colour that means "we do not
 // know", and an unknown category is exactly that, so it is the honest stand-in for both.
-// ⭐ The operator's neon colours are `materialColors.neon_<category>` — the Surfaces card's Neon swatches (live in
-// Stage, baked into scene.json for production). An unset category keeps its CATEGORY_HEX colour. (The swatches
-// existed for months and drove nothing — OPERATIONS promised them; wired 2026-09-26, Jacob: "Neon must be buildable".)
-function categoryColorVec(category, materialColors) {
-  const key = (category || '').replace(/^neon_/, '')
-  const c = new THREE.Color(materialColors?.[`neon_${key}`] || CATEGORY_HEX[key] || UNKNOWN_HEX)
+// ⭐ The town's neon colours are ITS OWN: `materialColors.neon_<category>` (Stage › Surfaces › Neon, baked into
+// scene.json); a category it did not author draws the kit's neutral default — src/lib/categoryColor.js decides.
+function categoryColorVec(category, paletteScene) {
+  const c = new THREE.Color(categoryHex(category, paletteScene))
   return [c.r, c.g, c.b]
 }
 
@@ -347,7 +345,9 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   // Stage's live colours, else the baked ones. Keyed on the neon entries only, so an unrelated material edit
   // doesn't rebuild the tubes (the colour lives in the geometry).
   const materialColors = materialColorsOverride ?? scene?.materialColors
-  const neonColorKey = JSON.stringify(Object.entries(materialColors || {}).filter(([k]) => k.startsWith('neon_')).sort())
+  // Stage's live values are the next bake's: unauthored categories draw the neutral default there too.
+  const paletteScene = materialColorsOverride ? { materialColors: materialColorsOverride, neonAuthored: [] } : scene
+  const neonColorKey = JSON.stringify([Array.isArray(paletteScene?.neonAuthored), Object.entries(materialColors || {}).filter(([k]) => k.startsWith('neon_')).sort()])
 
   // Match the renderer's ACTUAL depth encoding. The Canvas this neon mounts in
   // may run linear depth (production Scene.jsx) or logarithmic (Stage / Preview,
@@ -404,7 +404,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
 
       const tube = buildTube(p, r)
       if (!tube) continue
-      const rgb = categoryColorVec(p.neon.category, materialColors)
+      const rgb = categoryColorVec(p.neon.category, paletteScene)
       const count = tube.positions.length / 3
       for (let i = 0; i < tube.positions.length;  i++) positions.push(tube.positions[i])
       for (let i = 0; i < tube.normals.length;    i++) normals.push(tube.normals[i])

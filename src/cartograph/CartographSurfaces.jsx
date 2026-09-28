@@ -17,7 +17,7 @@ import { useState } from 'react'
 import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import TodChannel from './TodChannel.jsx'
-import { CATEGORY_HEX } from '../tokens/categories'
+import { NEUTRAL_CATEGORY_HEX } from '../lib/categoryColor.js'
 import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS, CANOPY_FIELDS, CANOPY_FLAT_DEFAULTS } from './skyLightChannels.js'
 import { StoreChannel } from './CartographSkyLight.jsx'
 import { WATER_LOOK_DEFAULTS } from '../components/waterMaterial.js'
@@ -58,9 +58,9 @@ const DEFAULT_MATERIAL_COLORS = {
   roof_flat: '#2a2a2e', roof_metal: '#555560', roof_slate: '#3a3a42',
   // Building
   foundation: '#B8A88A',
-  // Neon (per-category sign tint) — the renderer's own table, one source (tokens/categories.js#CATEGORY_HEX)
-  ...Object.fromEntries(['dining', 'historic', 'arts', 'parks', 'shopping', 'services', 'community', 'residential']
-    .map(k => [`neon_${k}`, CATEGORY_HEX[k]])),
+  // Neon (per-category sign tint): an unauthored category shows what it draws — the kit's NEUTRAL default
+  // (src/lib/categoryColor.js, one source). The town's own colours are what the operator sets here.
+  ...Object.fromEntries(Object.entries(NEUTRAL_CATEGORY_HEX).map(([k, hex]) => [`neon_${k}`, hex])),
   // Park (interior)
   park_path: '#cccccc',
 }
@@ -233,6 +233,9 @@ const TABS = [
       { id: 'neon_services',    label: 'Services',    kind: 'material' },
       { id: 'neon_community',   label: 'Community',   kind: 'material' },
       { id: 'neon_residential', label: 'Residential', kind: 'material' },
+      { id: 'neon_hospitality', label: 'Hospitality', kind: 'material' },
+      { id: 'neon_commercial',  label: 'Commercial',  kind: 'material' },
+      { id: 'neon_industrial',  label: 'Industrial',  kind: 'material' },
     ],
   },
   {

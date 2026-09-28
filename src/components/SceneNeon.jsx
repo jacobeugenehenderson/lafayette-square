@@ -22,7 +22,7 @@ import { isOpenAt } from '../lib/openNow.js'
 import { useTownContext } from './townContext.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { CATEGORY_HEX, UNKNOWN_HEX } from '../tokens/categories'
+import { CATEGORY_LABELS } from '../tokens/categories'
 import { lookOf } from '../lib/lookOf.js'
 import NeonBands from './NeonBands.jsx'
 
@@ -108,9 +108,9 @@ export function useNeonLookup() {
       if (l.status === 'closed') return
       if (l._bare) return // synthetic zoning listing — not a real POI, no neon
       const bid = l.building_id || l.id
-      const hex = CATEGORY_HEX[l.category]
-      if (!bid || !hex) return
-      map[bid] = { hex, hours: l.hours || null, category: l.category }
+      // A category the TAXONOMY knows (its colour is the town's — categoryColor.js — not a gate here).
+      if (!bid || !CATEGORY_LABELS[l.category]) return
+      map[bid] = { hours: l.hours || null, category: l.category }
     })
     return map
   }, [listings])
