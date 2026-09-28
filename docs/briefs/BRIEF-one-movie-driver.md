@@ -1,10 +1,13 @@
 <!-- BRIEF-STATE
-status: BUILT — open until the parity census is re-taken and the operator's eye has seen the movie, after merge
+status: HOLD
 dispatched: yes (Mortise)
 written: 2026-09-28
 evict-when: node checks/claims-one-movie-driver.mjs
 -->
 # BRIEF — One movie driver: the authored camera path is played by one component
+
+**State (2026-09-28):** built and landed (`2f2673fb`…`b488b4e1`). Held for the parity census re-take and the
+operator's eye on the movie.
 
 **For:** Mortise (who wrote it), after Warden reads it. **Sibling of** `BRIEF-one-town-assembly.md`: that brief
 gave every app one `<Town>`; this gives them one player of the town's movie.
