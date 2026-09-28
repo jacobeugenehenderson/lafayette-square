@@ -131,7 +131,6 @@ lafayette-square        ✓                 ✓
 hipointe-demun          ✓                 ✓
 altadena                ✗                 ✗
 huron                   ✗                 ✗
-toy                     ✗                 ✗
 ```
 
 ⇒ ⛔⛔ **BAKE TREES ON HURON TODAY AND AN OHIO LAKESHORE TOWN IS PLANTED WITH ST. LOUIS'S SPECIES
@@ -295,8 +294,8 @@ County) and Huron City, **Michigan**. That false match has already cost this pro
 the harness; it runs per scene and reports per source.
 ⭐ **LS and HPDM are the two REFERENCE consumers** — both carry a full well set and a species map, so
 they are what "complete" looks like. ⛔ **Never the subject, and never the template**: LS's map is the
-thing that bleeds. **altadena and toy are in the same empty state as huron** — ⭐ if your fix is real,
-it makes their absence loud too, without being told about them. **That is the town-#2 test for this
+thing that bleeds. **altadena is in the same empty state as huron** — ⭐ if your fix is real,
+it makes its absence loud too, without being told about it. **That is the town-#2 test for this
 brief: check it.**
 
 ---
@@ -311,4 +310,4 @@ brief: check it.**
 3. A hand-authored huron mix, **its three sources cited, approved by Jacob** — not invented.
 4. Trees on huron, eye-gated, with the unplaceable species **counted and named, not substituted**.
 5. The stencil-growth question answered for trees and lamps — **even if the answer is "no change."**
-6. altadena and toy's absence is **loud too**, without either being named in code.
+6. altadena's absence is **loud too**, without being named in code.

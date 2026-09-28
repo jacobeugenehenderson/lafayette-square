@@ -149,7 +149,7 @@ how this line itself was wrong for a few hours on 2026-09-13. **Run it before tr
 7. **Write/commit bounds** (canon is off-limits unless stated), and **surface scope drift, don't absorb it.**
 8. **⛔ The validation surface that already exists.** Before drafting any brief that constructs or validates
    geometry, shaders, data-flow or render output, ask: **does the production path already run on a
-   controlled fixture?** (the toy, the Salon, the Stage). If yes, the brief routes validation *through that
+   controlled surface?** (the Designer, the Salon, the Stage). If yes, the brief routes validation *through that
    fixture via the production path* — ⛔ never parallel spike/SVG/scratch tooling that bypasses it. Jacob
    built those surfaces deliberately; designing validation from scratch spends the agent's session and
    erodes the kit. [[feedback_toy_is_the_construction_spike_surface]] · [[feedback_no_parallel_pipeline_for_scenes]]

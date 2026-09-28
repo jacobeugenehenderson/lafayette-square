@@ -212,7 +212,7 @@ The build pipeline (Jacob's order: **intake → skeleton → prebake → survey 
 
 - **[`SHOW-BIBLE.md`](SHOW-BIBLE.md)** — the master package: the whole project for three audiences (Marketing / Fundraising / Engineering) + the productization roadmap. The synthesis the audit campaign produced; points into the corpus.
 - **[`SLAB-CONTRACT.md`](SLAB-CONTRACT.md)** — the formal cartograph↔LS boundary (the slab format; owned by neither app).
-- **[`docs/agents/AGENT-VALIDATION-SURFACES.md`](docs/agents/AGENT-VALIDATION-SURFACES.md)** — where to validate (toy vs LS); the guardrails.
+- **[`docs/agents/AGENT-VALIDATION-SURFACES.md`](docs/agents/AGENT-VALIDATION-SURFACES.md)** — where to validate (which surface for which work); the guardrails.
 - **[`_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`](_archive/AUDIT-MATRIX-DIARY-2026-09-13.md)** (the instrument) + the filed findings `scratch/audit-{cartograph,arborist,ls-app,docs}.md` — the forensic-audit campaign (the four walks landed; the dispatch briefs retired).
 - **[`plans/`](plans/)** — forward/strategic: productization, basemap-swap, pre-public-cleanout, kit-couplers, **[clean-for-handoff](plans/clean-for-handoff.md)** (the human-dev handoff campaign — leads with render-pipeline-install; DoD = the zero-open corpse-lie ledger + one render pipeline).
 - **[`PUBLISH.md`](PUBLISH.md)** — deploy procedures · `ls/BUSINESS_LISTINGS.md` · `_handoffs/CARY-BRIEF.md`.

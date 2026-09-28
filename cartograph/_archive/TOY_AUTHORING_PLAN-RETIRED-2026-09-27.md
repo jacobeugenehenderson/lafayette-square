@@ -244,3 +244,48 @@ Each affordance is a sub-phase; do them in this order, validate V2 after each.
 - This file lives until Phase 3 exits, then gets archived to NOTES.md.
 - Mid-stream blockers / bugs go into BACKLOG.md, not here.
 - Each phase ends with a one-paragraph entry in NOTES.md describing what landed and what surfaced.
+
+---
+
+## Addendum 2026-09-27: Toy removed. The lessons it taught, moved here from the code that carried them
+
+Jacob ruled on 2026-09-27 (`docs/briefs/BRIEF-remove-toy.md`) that Toy be removed completely: the scene, its look, its fixtures and every branch that accommodated it. No replacement test town was designated. Each lesson below was recorded in a code comment that named Toy. The code or comment is now gone or rewritten, so the lesson lives here.
+
+- **Flush before a dependent POST.** Toy's Reset Selected / Reset Neighborhood actions (`resetToySelected`, `resetToyNeighborhood` in `useCartographStore`, with confirm-gated buttons in `SurveyorPanel`) AWAITED `_saveOverlay()` so the `/overlay` POST landed before `runBake`'s `/bake` POST read it. `runBake` flushes the design debounce for the same reason. Any action that writes and then bakes must order its writes this way.
+- **A fixture bake that ignores the overlay resets nothing.** The Toy bake read its baseline from the authored fixture (`toy-input.json → derive-toy.js → toy-ribbons.json`), never from overlay/derive. So clearing overlay measures reset the LIVE render only; only `blockCustoms` + corner radii changed the baked artifact ("finding #2").
+- **Asking a scene's NAME must not load its GEOGRAPHY.** `config.js` exits when a scene has no `geography.json`. Toy had none, so a baker that imported `config.js` just to learn the scene died on `--scene=toy` before `main()`. That is reason (1) `scene.js` is a separate, side-effect-free resolver.
+- **Gate on the real reason, never on a correlate.** `bake-trees.js` skipped the hero-tier optimizer with `if (!placements)`, meaning "Toy has no hero shot". But every poured town feeds its census through `placements`, so the optimizer was off everywhere that mattered (on for LS's 745 trees, off for Hi-Pointe/DeMun's 6,967) until 2026-07-15. It now gates on "does this Look have hero keyframes".
+- **Dead-end degree is geometric.** Gating dead-end caps on `caps.degree` skipped every Toy dead-end, because Toy's ribbons had no `caps` field. `tileGround` counts incident segments instead.
+- **Cross-scene identity is never disjoint.** `measureModel` once merged LS's ribbons into every scene on the premise "Toy and LS identities are disjoint". That held for Toy vs LS and was false for LS vs any American town (the LS bleed, `BRIEF-ls-bleed-excision` site 9).
+- **Measure must seed from the ribbons the scene renders.** After the V1.6 overlay went measure-free, a scene-blind LS ribbons lookup left every Toy chain with `undefined` measure, and MeasureOverlay drew no handles. The store now registers the active scene's own ribbons as the Measure seed.
+- **Skeleton order ≠ ribbons order.** `derive.js` inserts extra carriageways for divided roads. On Toy that was M=15 ribbons vs N=9 skeleton streets, so `selectedStreet` must translate by `skelId`, never index.
+- **Two shape.json formats hid a silent zero.** Toy froze `shape.json` as a bare tile array; everything else writes `{tiles, highway}`. A reader of `.tiles` alone saw 0 tiles and reported NOT CHECKED. With Toy gone, every reader requires `.tiles` and throws when it is absent.
+
+---
+
+## Addendum 2026-09-27: `docs/agents/AGENT-VALIDATION-SURFACES.md §Toy` as it read at removal
+
+**What it is.** A 4+4 grid of 9 authored blocks in `src/data/toy/toy-input.json` (re-derived to `toy-ribbons.json` via `cartograph/derive-toy.js`), plus boundary stencil + lamps + buildings — the kit's design surface and the cleanest place in cartograph to develop emitter + geometry changes. Full V2 pipeline live (block fills, ribbons, corner authoring kit, smoothing, curb, bake). Three deliberate topology irregularities: VW3's bent chain, HW3's 45° saw-tooth jog, a dead-end stub. Plus Benton-toy teardrop (Type-A closed-chain) and Waverly-toy couplet (Type-B divided pair).
+
+**⛔ REACH IT AT THE URL: `cartograph.html?scene=toy`.** Toy is DELIBERATELY absent from the neighborhood picker (the Extent hub) and the Look pulldown — those are for real, map-based neighborhoods, and **toy has no map and never will**: it's a purpose-built, simplified, *smaller-than-a-real-neighborhood* fixture so geometry is easier to work out. The URL is its home; don't look for it in a menu (2026-07-11).
+
+**⛔ BOSSY DIRECTIVE — intractable geometry goes to toy.** When a corner / block / ribbon / curb / tile-ground problem resists a fix on LS or a real hood, STOP fighting it at full scale. Reproduce it in **toy (`?scene=toy`)** — 9 authored blocks + the three deliberate topology irregularities give you a minimal, deterministic, **hard-refresh-live** surface with no bake in the loop. The hardest geometry code (`tileGround.js`, the derivers, the corner/block emitters) is written and reasoned against toy as *the* controlled case — meet the problem there, shrink it, solve it, then flip the flag on for LS. This is what toy is *for*; it is not a fallback, it is the first move.
+
+**Use it for.** Geometry, construction, data-flow, derivers, deterministic-bake behavior. The production code path runs on toy identically to LS: `node cartograph/bake-ground.js` bakes toy via the scene-parametric pipeline (`c109a9f`); results render live in Toy designer; per-fixture diagnostics inspectable through the same console/overlays as LS.
+
+**Use it like this.**
+1. Land code changes directly in production files (`src/lib/buildBlockGeometryV2.js`, `cartograph/bake-ground.js`, etc.) behind a flag (`opts.useX`).
+2. Turn the flag on **for toy only**, off for LS, in the scene-parametric path.
+3. Run `node cartograph/bake-ground.js` (it bakes both scenes; check `dist/baked/toy/`).
+4. Open Toy designer; look at the rendered result.
+5. If clean: flip the flag on for LS, re-bake, eyeball LS.
+
+**Do NOT.**
+- Build scratch JS that simulates the construction outside the production code path. ([[feedback_toy_is_the_construction_spike_surface]] — the positive directive missed twice on 2026-05-28.)
+- Generate scratch SVGs when the bake produces renderable artifacts. The doctrine "toy IS a scene, not a parallel pipeline" ([[feedback_no_parallel_pipeline_for_scenes]]) applies to spike tooling too.
+- Declare a shader/material/visibility result "good in toy" — toy is ~36m × 68m with camera ~70m away; LS Browse is 200–600m altitude. ([[feedback_toy_not_proving_ground_for_ls_visibility]].)
+- Trust a verification that depends on instance-coord-shifted data (pedestal lifts, period tags, hour gating). ([[feedback_toy_hides_instance_data_bugs]].)
+
+**Authoring data:** canonical source is `src/data/toy/toy-input.json` → `derive-toy.js` → `src/data/toy/toy-ribbons.json`. Per-IX measure overrides go through `blockCustoms` via the Measure tool (no `derive-toy.js` rerun). `cartograph/data/toy/raw/centerlines.json` is **vestigial** ([[project_toy_canonical_input_path]]).
+
+---

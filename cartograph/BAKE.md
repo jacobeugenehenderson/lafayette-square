@@ -36,7 +36,7 @@ Two load-bearing facts:
 | **Outputs (the slab)** | everything under `public/baked/<id>/` — see §2 for what each step writes, and **`SLAB-CONTRACT.md`** for the byte format. ⛔ **Written there, but PUBLISHED to R2** — the tree is gitignored and the pour's last step uploads it (below) |
 | **Who consumes it** | the **runtime** (LS app) and the cartograph **Stage** / **Preview** players — read-only, cache-busted by `?t=<bakedAt>` (Preview is the inspection surface — `PREVIEW.md`) |
 
-⚠️ **The bake re-derives first.** For every town with a `raw/osm.json`, `pipeline.js` + `promote-ribbons.js` run inside the bake, so an authoring edit (`overlay.json`, `skeleton.json`) re-derives `map.json` → ribbons before the geometry bakes. A town without OSM (the hand-authored **toy**) skips both, said by name. The Pour tool (`POST /:scene/pour`) runs the same two steps and then the bake.
+⚠️ **The bake re-derives first.** For every town with a `raw/osm.json`, `pipeline.js` + `promote-ribbons.js` run inside the bake, so an authoring edit (`overlay.json`, `skeleton.json`) re-derives `map.json` → ribbons before the geometry bakes. A town without OSM skips both, said by name. The Pour tool (`POST /:scene/pour`) runs the same two steps and then the bake.
 
 ---
 

@@ -87,7 +87,7 @@ factor than the ground it stands on is the shape of this symptom.
 (a multiplier on what?), where the size band comes from
 (`node scratch/claims-every-placed-asset-has-a-size-band.mjs`), and whether the rendered
 metre height matches the dossier band for a sample of species. ⛔ Note the check currently
-FAILS on hipointe/staging/toy but PASSES on lafayette-square — do not report those other
+FAILS on hipointe/staging but PASSES on lafayette-square — do not report those other
 towns' failures as this town's.
 
 ---

@@ -27,7 +27,7 @@ Cross-refs: [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) (producer
 
 **Look ID:** each slab is identified by a `look` string (e.g., `lafayette-square`). The look ID determines the directory under `public/baked/<look>/`. The consumer chooses which look to mount via a prop or store; the producer never picks for the consumer.
 
-**Scene vs. Look:** a *scene* is a dataset (the neighborhood — `lafayette-square`, `toy`, future others). A *Look* is a styling snapshot keyed by scene. The slab artifacts are scene-keyed, not look-keyed: `public/baked/lafayette-square/` is the LS scene; `public/baked/toy/` is the toy scene; per-Look variation today is folded into the single set of artifacts for each scene via the active design.json.
+**Scene vs. Look:** a *scene* is a dataset (the neighborhood — `lafayette-square`, `huron`, future others). A *Look* is a styling snapshot keyed by scene. The slab artifacts are scene-keyed, not look-keyed: `public/baked/lafayette-square/` is the LS scene; `public/baked/huron/` is Huron's; per-Look variation today is folded into the single set of artifacts for each scene via the active design.json.
 
 **The slab is one of three payloads.** This contract governs the **slab** — the baked *render* (`public/baked/<look>/`). The consumer app is a generic player that reads two more the slab does not carry: **content** (names / listings / menus / roster / profile — a per-installation layer read *alongside* the slab, loaded by `INSTANCE.lookId`; the render↔content line is the §6.3 "C2 boundary" below) and the **installation config** (`src/instances/<look>.js`, selected by `?look=` — identity / geography / branding / legal + the module manifest; `ls/ARCHITECTURE.md §2` + §6). A slab consumer trusts the slab blindly; content and config resolve on the reader side and never reach back into the bake.
 
@@ -90,7 +90,7 @@ The single-mesh ground slab. One JSON manifest + one binary buffer.
 | `version` | number | ✅ | Slab format version (1) |
 | `look` | string | ✅ | Identifier; must match the directory name |
 | `bbox` | `{min:[x,y,z], max:[x,y,z]}` | ✅ | World-meters bounding box of all ground vertices. `y` typically 0. |
-| `stencil` | object \| `null` | ✅ | Radial-fade silhouette parameters; **MAY be `null`** for scenes with no soft-circle silhouette (toy). Consumers MUST skip the radial-fade shader when null. |
+| `stencil` | object \| `null` | ✅ | Radial-fade silhouette parameters; **MAY be `null`** for scenes with no soft-circle silhouette (no authored fade). Consumers MUST skip the radial-fade shader when null. |
 | `bin` | string | ✅ | Filename of the binary buffer, relative to this manifest |
 | `positionFormat` | `"float32"` | ✅ | |
 | `indexFormat` | `"uint32"` | ✅ | |

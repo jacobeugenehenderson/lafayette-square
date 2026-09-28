@@ -521,7 +521,7 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
     the environment. Both are read in exactly one place (`cartograph/scene.js`), so they cannot
     disagree — which they did until 2026-09-19, when eight of ten bakers parsed the flag themselves
     and ignored the variable, and an env-named bake quietly rebuilt LS while passing every guard.
-    ⛔ Note the `=`: `--scene toy` is not the flag, and you will get the refusal, not a guess.
+    ⛔ Note the `=`: `--scene huron` is not the flag, and you will get the refusal, not a guess.
   - **You will not get a wrong map, you will get an exit.** A writer with no scene prints what it
     refused and why, and exits 2. That is the whole design: an unnamed scene is a question, and the
     kit's rule is that a question is never answered with a plausible-looking default.

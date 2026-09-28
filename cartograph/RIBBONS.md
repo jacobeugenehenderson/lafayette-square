@@ -1362,7 +1362,7 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
                                                           //    substrate, frozen at prebake by derive.js
                                                           //    and consumed by tilesFromFrozen(). The
                                                           //    live extractFaces walk is the FALLBACK
-                                                          //    for artifacts that carry none (toy/pre-D2).
+                                                          //    for artifacts that carry none (pre-D2).
   medians: [...],        // 52 — CONSTRUCTED at prebake, load-bearing (tileGround dereferences it)
   corridors: [...],      // 0 on LS
   junctionMap: { nodes: [...] },   // 233 nodes on LS

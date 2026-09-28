@@ -46,10 +46,9 @@ Neither is "baked" the way Cartograph bakes ground.svg. Saves write directly thr
 
 - Stage's existing **Sky and Light** card gains one new TodChannel row: **Clouds**. Same primitive as the other rows (Sky gradient, Mist, Halo, etc.) — keyframeable per TOD slot. The slot value is `{ presetId }`: which Teapot preset is the Look's default at that TOD.
 - Inside the Clouds row, a **"launch meteorologist"** button. Click →
-  - Scene swaps to toy (4-way corner from `src/toy/Toy*.jsx`).
+  - Scene swaps to the canary scene (`CanaryScene.jsx`: flat ground + one hero tree + the Look's sky).
   - Right panel takes over with the Meteorologist authoring surfaces (see "UI" below).
   - Top-bar exit button restores normal Stage view.
-- The existing Toy toggle in Cartograph's toolbar stays as-is — it's the developer's shader-R&D entrance, separate door, same room. Two affordances, two purposes.
 
 ### Composition order at runtime
 
@@ -240,7 +239,7 @@ The build is complete for v1 when **all** of these are true:
 12. **Silver lining** visible on thin cloud edges with low backlit sun.
 13. **Self-shadowing** visibly differentiates thick vs. thin cumulus regions.
 14. **Domain warping** produces cauliflower lobing — `cumulus_humilis` reads as puffs, not noise.
-15. **Tweening works** — fake-weather changes in the Almanac Editor smoothly transition the toy preview over `transitionMs`. Same in Preview when live weather updates.
+15. **Tweening works** — fake-weather changes in the Almanac Editor smoothly transition the canary preview over `transitionMs`. Same in Preview when live weather updates.
 16. **Wind cross-talk** — directive's `wind.scale` propagates through `useWindState` and visibly moves Arborist trees.
 17. **Per-Look override** — a Look's `atmosphereOverrides.lightDome` overrides the Almanac in that Look only.
 18. **Preview integration** — `/preview` renders the active Look + live weather payload through the published Almanac → `<Atmosphere />` end-to-end.
@@ -267,7 +266,7 @@ The build is complete for v1 when **all** of these are true:
 
 ## Build order
 
-1. **`atmosphere-materials.js` + raymarch shader.** Get a hardcoded `cumulus_humilis` rendering in the toy scene with three-tier lighting + silver lining + self-shadowing + domain warping + vertical density gradient. The visual core; everything else hangs off this.
+1. **`atmosphere-materials.js` + raymarch shader.** Get a hardcoded `cumulus_humilis` rendering in the canary scene with three-tier lighting + silver lining + self-shadowing + domain warping + vertical density gradient. The visual core; everything else hangs off this.
 2. **`Atmosphere.jsx`** — slab geometry, hardcoded directive. Mount in Stage. Verify it renders.
 3. **`useDeviceTier` hook + quality-tier uniform** wiring. Verify phone LoD switches.
 4. **`almanac-eval.js`** — pure function. Tested against fixtures.

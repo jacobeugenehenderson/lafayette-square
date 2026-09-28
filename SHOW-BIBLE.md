@@ -69,7 +69,7 @@ Raw data flows downhill; each stage freezes a thing the next trusts (`PIPELINE.m
 The hard-won doctrine: *the skeleton is the first bake · chains die at the wall · the curb is a concentric offset of the centerline · every output is a best guess, and everything is overridable* (`NEIGHBORHOOD-INPUTS §0.0`).
 
 ### The inventory at a glance
-The forensic audit walked every rendering environment (Designer · Toy · Stage · Preview · Production) across all domains and inventoried **~108 classified capabilities** (the three code domains; plus 86 docs): **~58 keep · ~31 fix · ~10 queued-for-removal**. The dev-doc spine is healthy; the cruft is contained and tagged. Full rollup + per-item detail: **`_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` "THE MASTER MATRIX"** → `scratch/audit-*.md`.
+The forensic audit walked every rendering environment (Designer · Stage · Preview · Production) across all domains and inventoried **~108 classified capabilities** (the three code domains; plus 86 docs): **~58 keep · ~31 fix · ~10 queued-for-removal**. The dev-doc spine is healthy; the cruft is contained and tagged. Full rollup + per-item detail: **`_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` "THE MASTER MATRIX"** → `scratch/audit-*.md`.
 
 ### The inputs are real, not guessed
 OpenStreetMap geometry · City of St. Louis parcels + right-of-way + land-use (municipal) · operator-measured street widths (61/68 LS streets) · ML building footprints · Mapillary facades · elevation DEM — all fortified against max-res aerials. A generic 3D map extrudes a default city; ours is grounded in the actual record, block by block. (`cartograph/INTAKE.md`.)

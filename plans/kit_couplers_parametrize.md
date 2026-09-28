@@ -72,7 +72,7 @@ Justification: `lookId` is identity (per-instance, module-shaped); the rest is s
 
 ### What breaks if this is wrong
 
-Wrong `lookId` → every slab fetch 404s; `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial` all error to their boundary. The scene mounts but the ground is gone, no trees, no lamps. Loud failure — won't ship by accident. Worse case: a `lookId` that exists but is the wrong scene (e.g. `"toy"`) — geometry renders but bbox / stencil / palette is for a different place; user sees a stylized-correct but spatially-nonsensical scene. Mobile users on cellular pay the slab download for nothing. The verification gate below is designed to catch both.
+Wrong `lookId` → every slab fetch 404s; `BakedGround`, `BakedLamps`, `InstancedTrees`, `treeAtlasMaterial` all error to their boundary. The scene mounts but the ground is gone, no trees, no lamps. Loud failure — won't ship by accident. Worse case: a `lookId` that exists but is the wrong scene (e.g. `"huron"`) — geometry renders but bbox / stencil / palette is for a different place; user sees a stylized-correct but spatially-nonsensical scene. Mobile users on cellular pay the slab download for nothing. The verification gate below is designed to catch both.
 
 ### V1 carve-out
 
@@ -84,7 +84,7 @@ Ship full. The Cartograph helper is the most mature in the kit; the slab is alre
 ### Verification gate
 
 1. **Mobile, cellular-throttled:** load `/` on iPhone UA (Safari, Chrome iOS). DevTools Network filter `baked/` — every request returns 200 with `?t=<epoch>` matching `bakedAt`. No console errors from any of the five consumers. Ground renders; lamps glow at sunset; trees stand; no visual gaps where the park's water/paths would be (`LafayettePark` lift is correct).
-2. **Look swap (sanity):** temporarily set `INSTANCE.lookId = 'toy'`. Reload. The scene should render the toy fixture — not LS — confirming the lookId is the only steering variable. Revert.
+2. **Look swap (sanity):** temporarily set `INSTANCE.lookId = 'huron'`. Reload. The scene should render Huron — not LS — confirming the lookId is the only steering variable. Revert.
 3. **No cartograph chunk in main bundle:** `dist/assets/main-*.js` and `dist/assets/index-*.js` contain no `useCartographStore` references after the seam collapse. (This is the link to `pre_public_cleanout.md`; gate here is structural — if `useCartographStore` survives in `main`, this coupler isn't done.)
 
 ### Cross-references

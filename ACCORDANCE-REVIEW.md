@@ -39,7 +39,7 @@ code — and the ranked work to close the gap in **both** directions:
 ### Bottom line
 A **real, working, and unusually sophisticated** codebase — not a demo or a docs-heavy shell.
 ~118k lines of first-party code, ~2,024 commits over ~5 months, a live pipeline that has already
-poured four distinct neighborhoods (`lafayette-square`, `altadena`, `hipointe-demun`, `toy`) into real
+poured distinct neighborhoods (`lafayette-square`, `altadena`, `hipointe-demun`, `huron`, `provincetown`) into real
 binary artifacts on disk. The differentiated IP is genuine and concentrated in two hard domains: a
 **survey-grounded computational-geometry engine** and a **hand-written GPU rendering layer**. The
 material risks are not "is it real" — they are **single-author concentration** and a **pre-production

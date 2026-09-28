@@ -128,8 +128,8 @@ records a fixed instance of the same class, `08d61ce1`). Retire the imports → 
 the root instead of site-by-site.
 ✅ **MEASURED 2026-09-19 — THEY ARE NOT LIVE. All three are scene-gated, and a non-LS scene gets EMPTY,
 never LS.** Read the gates, don't take this sentence's word for it:
-`useCartographStore.js` — `scene === 'toy' ? toyRibbonsData : BUNDLED_MAPS.has(scene) ? ribbonsData :
-(fetchedRibbons || { streets: [] })`, where `BUNDLED_MAPS = {DEFAULT_INSTALLATION, 'toy'}` ·
+`useCartographStore.js` — `BUNDLED_MAPS.has(scene) ? ribbonsData : (fetchedRibbons || { streets: [] })`,
+where `BUNDLED_MAPS = {DEFAULT_INSTALLATION}` ·
 `MapLayers.jsx` — `isLS ? _lsRibbonsData : (sceneRibbonsRaw || _EMPTY_RIBBONS)` ·
 `CartographApp.jsx` — the import sits **inside `MAP_REGISTRY['lafayette-square']`**, keyed to LS by
 construction. *(The one that WAS live — `measureModel.js`, every scene seeding its widths from LS by

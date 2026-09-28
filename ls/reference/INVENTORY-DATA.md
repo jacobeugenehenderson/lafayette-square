@@ -22,7 +22,7 @@ Last verified: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. For narr
 | Buildings (merged mesh, v2 + render index) | `public/baked/<look>/buildings.json` + `buildings.bin` | `src/components/SlabBuildings.jsx` | ✅ **[CORRECTED 2026-05-26]** **Production** (L1.3) — `SlabBuildings` is the prod + Preview consumer; raycast→id resolves against the slab index. (Old `BakedBuildings` Preview consumer deleted; live per-`<Building>` path kept only for Stage authoring retint.) |
 | Cloud presets + almanac + modulators | `public/clouds/presets.json` + `almanac.json` + `modulators.json` | `src/components/Atmosphere` via `useAtmosphereDirective.js` + `atmosphere-materials.js` | ⚠ **[CORRECTED]** Consumer **wired**, but **gated off by default** — production ships the cheap `<CloudDome/>`; `<Atmosphere/>` only mounts under `?sky=volumetric` (skyMode stopgap). Not "unconsumed." |
 
-**Available Looks today:** `lafayette-square` (the v1 instance), `default` (arborist tree placements), `toy` (test rig). **[CORRECTED]** The runtime Look is **not** a hardcode — it resolves from `INSTANCE.lookId` (`src/instance.js`, Couplers §6) with a `?look=` URL override where wired (`Scene.jsx:243`). The old "`Scene.jsx:942` hardcodes `lookId`" claim is stale (INSTANCE module shipped).
+**Available Looks today:** `lafayette-square` (the v1 instance), `default` (arborist tree placements). **[CORRECTED]** The runtime Look is **not** a hardcode — it resolves from `INSTANCE.lookId` (`src/instance.js`, Couplers §6) with a `?look=` URL override where wired (`Scene.jsx:243`). The old "`Scene.jsx:942` hardcodes `lookId`" claim is stale (INSTANCE module shipped).
 
 ---
 

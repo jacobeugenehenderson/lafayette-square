@@ -183,7 +183,7 @@ src/tokens/design.css                 # transitively imported via src/index.css
 - **Math for the library; bake only the Hero swath.** *(Narrowed 2026-06-08 — originally a blanket "Math, not bakes.")* The preset **library + authoring stay procedural** — no KTX2/GLB texture assets, no preset bakes; presets are params, rendered by raymarch. What's permitted now: the **runtime** may bake the **Hero-keyframe-visible sky swath** as a relightable impostor — a bounded, refresh-on-change *cache*, not a shipped texture asset. The keyframe-bounded swath makes the texture-memory cost negligible, which is what justified narrowing the rule. See `TUNER.md §4.1` + decision D1.
 - **No bake ceremony.** Saves write directly to `public/clouds/*.json` after validation. No drafts/published split.
 - **Mirror existing UX.** Stage's `TodChannel.jsx` slot system is the canonical TOD authoring primitive. Don't invent a new timeline; add the Clouds row using the existing chip-row UX.
-- **Toy stays as developer's separate door.** The existing Cartograph toolbar's Toy toggle stays untouched. The Meteorologist mode entrance is the new "launch meteorologist" button inside the Clouds row.
+- **One entrance.** The Meteorologist mode entrance is the "launch meteorologist" button inside the Clouds row.
 - **Per-Look overrides** apply only to dome visual-styling (sun tint, halo, lightDome). Never to cloud-math drivers, never to Almanac rules.
 
 ---

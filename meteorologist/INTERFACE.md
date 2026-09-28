@@ -316,7 +316,7 @@ src/meteorologist/
   ConditionsLibrary.jsx          # flat list, click → setActiveCondition
   ConditionEditor.jsx            # header / slot tabs / viewport / right rail
   SlotTabs.jsx                   # shared CLOUD CHAMBER | GROUND component
-  CanaryScene.jsx                # the toy scene (flat ground + hero tree + sky)
+  CanaryScene.jsx                # the canary scene (flat ground + hero tree + sky)
   stores/
     useMeteorologistStore.js     # zustand: active mode / active cloud id /
                                  # active condition id / preview-context id /
