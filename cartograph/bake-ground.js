@@ -41,6 +41,7 @@ import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
+import { LANDSCAPE_OVERLAY_KEYS, horizonRecord } from './groundCover.mjs'   // one definition of areal cover (the horizon, its check)
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
@@ -994,10 +995,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // 50 m block-corner samples. Ribbon bands (asphalt/curb/sidewalk/etc.)
   // are already dense at the centerline so they bypass refinement —
   // their existing vertex density captures the local heightfield fine.
-  const LANDSCAPE_OVERLAY_KEYS = new Set([
-    'parking_lot', 'garden', 'playground', 'swimming_pool',
-    'pitch', 'sports_centre', 'wood', 'scrub',
-  ])
   // Ribbon groups that cross ROLLING terrain and must follow the contour.
   // Ribbons normally bypass refinement (their authored density matches FLAT
   // blocks), but the park gravel paths run over the park's hill — with no
@@ -1400,6 +1397,17 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     radius: stencil.radius,
     fade: stencil.faceFade,
   } : null
+  // ⭐ THE HORIZON TAKES THE TOWN'S COVER, not whatever crosses the rim (Jacob, 2026-09-28): per direction, the dominant
+  // areal cover over a band just inside the rim, and points on it (groundCover.mjs). HorizonDisc averages the colour map
+  // there and low-passes across directions. It REPLACED the single edge sample that streaked every road, stripe and
+  // water band crossing the rim out to the horizon (Lafayette Square: 66 of 256 directions sampled a linear feature).
+  if (manifestStencil) {
+    const t0 = Date.now()
+    manifestStencil.horizon = horizonRecord(groups, (i) => ({ positions: positionChunks[i], indices: indexChunks[i] }), manifestStencil)
+    const h = manifestStencil.horizon, bare = h.cover.filter(c => !c).length
+    const tally = {}; for (const c of h.cover) if (c) tally[c] = (tally[c] || 0) + 1
+    console.log(`  [bake-ground] horizon: ${h.sectors} directions — cover ${Object.entries(tally).sort((p, q) => q[1] - p[1]).slice(0, 5).map(([k, v]) => k + ' ' + v).join(', ')}${bare ? ` · ${bare} with no areal cover (water/coast: the nearest cover fills them)` : ''} (${((Date.now() - t0) / 1000).toFixed(1)}s)`)
+  }
 
   // ⭐⭐ groundKey — FNV-1a over the geometry the AO is baked AGAINST. The AO pass
   // stamps this key into its own block; BakedGround refuses a lightmap whose key
