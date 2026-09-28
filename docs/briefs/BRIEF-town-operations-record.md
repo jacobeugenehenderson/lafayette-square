@@ -30,7 +30,11 @@ the LS-named default inbox goes ("Agreed about the emails and LS email address, 
 3. **`contact-sms` routes by town:** the Ward names its town, the function looks up that town's contact, and a
    town with none configured is refused loudly. No default address, and no town's address used for another.
    Its allowed origins cover every Ward origin (the town domains, staging, local dev) from one list.
-4. **The operator's message inbox moves to Operations** (Jacob, 2026-09-28: "we should move it into operations").
+4. **Every operator power moves to Operations** (Jacob, 2026-09-28: "That is what we should do"): listing
+   setup and claim codes, resident verification, photo folders, the Manage tab, and delivery testing (an
+   "open this town as a tester" link that turns delivery on for that device only). The Ward has no admin mode, so
+   SECURITY F-20's passphrase-in-a-URL goes away instead of being fixed. ⏳ The texting parts are zero priority for now.
+   **The operator's message inbox moves to Operations** (Jacob, 2026-09-28: "we should move it into operations").
    Today it is the old player's `SmsInbox.jsx`, opened with the admin token (SECURITY F-20). In Operations it is
    signed in by Operations' own auth, lists every town's threads, and replies through `sms-reply`. The Ward never
    carries an operator inbox.
