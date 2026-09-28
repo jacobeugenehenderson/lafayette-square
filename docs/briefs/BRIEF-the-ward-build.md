@@ -159,6 +159,12 @@ registers rewritten for what shipped (README §10), and a commit that says what 
 - **The review endpoint keeps less than the old form offered:** it `parseInt`s the rating (half ratings
   lost) and drops photo, avatar and vignette. The Ward asks only for what the server keeps.
 
+### Ruled 2026-09-28 (Jacob): no Google stars
+The old card showed an imported Google rating and count beside local reviews. **Ruling: ditch them.** The
+Ward shows no third-party rating anywhere; reviews are the town's own, earned by standing. A plain outbound
+"See this place on Google Maps" link is allowed — a link, never a number. The imported rating fields in some
+listings are left unread (their provenance and terms were never established).
+
 ### Ruled 2026-09-28 (Jacob): couriers are per map
 The census's courier count was Cary's global count (`courier_profiles` has no town column). **Ruling: per
 map.** `courier_profiles` gains the map a courier works in; onboarding writes it; the census counts that
