@@ -23,6 +23,7 @@ import useAtmosphereDirective, { getPresetsCache } from '../hooks/useAtmosphereD
 import useSkyState from '../hooks/useSkyState.js'
 import { deriveSkyScalars } from '../lib/sky-scalars.js'
 import { lerpDirective } from '../lib/directive-blend.js'
+import { easeInOutCubic } from '../lib/ease.js'
 
 // ⭐ The sky's weather numbers ride the SAME tweened directive the rain reads, so the
 // lights, dome and exposure cannot part ways with the precipitation (`lib/sky-scalars.js`).
@@ -33,9 +34,6 @@ function publishTweened(directive) {
 
 const TWEEN_DURATION_MS = 45000  // 45s. Reads as "weather changing", not "scene cut".
 
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-}
 
 
 

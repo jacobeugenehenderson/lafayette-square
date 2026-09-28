@@ -18,7 +18,15 @@
  *                    town itself. Absent or without geography, it throws naming the prop.
  *   lookId           REQUIRED — the Look to draw (Stage passes the active one; it switches towns live)
  *   quality          a profile from lib/qualityProfile.js — deviceQuality() is the device's own
- *   shot             'movie' | 'plan' | 'street'
+ *   shot             'movie' | 'plan' | 'street'. A CHANGE FLIES (src/camera/ShotFlight.jsx): production's move, the
+ *                    durations of src/camera/transitions.js, to the town's own destination for the shot.
+ *   flight           true (default) flies · 'cut' lands at once · false: hands off, the app places the camera (Stage)
+ *   streetAt         [x, z] town metres — where the street eye stands; required with shot='street'
+ *   viewInset        { top, right, bottom, left } CSS px the app's UI covers: plan and street frame into the rest (a
+ *                    camera view offset; the canvas stays full-page); the movie is full frame. Eased on the flight.
+ *   flightRef        a ref Town fills: { from, to, t, eased, duration, at, landed, interrupted } — at t = 0 before the first
+ *                    painted frame of a flight, then every frame; `eased` is the camera's own curve (drive a panel by it)
+ *   onFlightEnd      (f) => void, once per shot change: landed, or interrupted by a pointerdown / wheel
  *   paused           draw no frames (a full-screen overlay is up) — under a demand frameloop
  *   idle             the embedding page has scrolled us mostly out of view: draw a third of the frames
  *   selectedId       the selected building's id, or null — the app owns the selection
@@ -28,7 +36,7 @@
  *   litIds           Set of building ids — a chosen category, a search: their ROOFS take the town's lit
  *                    tint day and night (SlabBuildings), and only they carry neon
  *   interactive      buildings take the pointer (default true)
- *   bakeLastMs       cache-bust token (default: the slab's bakedAt)
+ *   bakeLastMs       the slab's re-read key (default: its bakedAt) — src/lib/slabUrl.js
  *   layers           visibility, default all on: ground buildings trees park lamps setPieces neon
  *                    labels sky clouds fog shadows post
  *   postFx           Preview's per-pass inspection matrix ({ toggles })
@@ -42,9 +50,8 @@
  *                    apps). ⛔ Never with holdScrubbedTime: one writer of the town's clock.
  *   movie            optional — the app's hooks into the town's movie (MovieCamera, mounted here, once): { start
  *                    ('random' | () => seconds — Stage's playhead), onTime (Stage's scrub readout), playing (Stage's
- *                    Play; default true), hold (() => true while the app's tween owns the camera), handle (a ref
- *                    filled with { pose() } — the app's tween samples the path on the driver's clock) }. The Ward
- *                    passes none: shot='movie' plays the town's own baked path.
+ *                    Play; default true), hold (() => true while the app's own camera code owns it — Stage), handle
+ *                    (a ref filled with { pose() }) }. The Ward passes none: shot='movie' plays the town's own path.
  *   children         the app's overlays, drawn in the town's frame (see <TownPoint>)
  */
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -59,6 +66,7 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { useStreetLabels } from '../lib/streetLabels.js'
 import { labelStyleOf } from '../lib/labelStyle.js'
 import MovieCamera from '../camera/MovieCamera.jsx'
+import ShotFlight from '../camera/ShotFlight.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { skyModeOf } from '../lib/skyMode'
@@ -117,15 +125,16 @@ const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
 // Under a demand frameloop nothing renders unless invalidated. The movie shot on a profile that
 // asks for it renders every frame; everything else every other frame, a third while idle. Never
 // zero while unpaused: going idle is what makes Chrome drop the WebGL surface.
-function FrameLimiter({ paused, idle, everyFrame }) {
+function FrameLimiter({ paused, idle, everyFrame, flying }) {
   const invalidate = useThree((s) => s.invalidate)
   const now = useRef(null)
-  now.current = { paused, idle, everyFrame }
+  now.current = { paused, idle, everyFrame, flying }
   useEffect(() => {
     let n = 0, id
     const loop = () => {
-      const { paused, idle, everyFrame } = now.current
-      if (!paused && n % (idle ? 3 : everyFrame ? 1 : 2) === 0) invalidate()
+      const { paused, idle, everyFrame, flying } = now.current
+      // A flight is drawn every frame: it lasts ~2.5 s and it is the thing being watched.
+      if (!paused && n % (idle ? 3 : (everyFrame || flying?.current()) ? 1 : 2) === 0) invalidate()
       n++
       id = requestAnimationFrame(loop)
     }
@@ -272,7 +281,7 @@ function TownOptics({ quality }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, time, movie, children,
+  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, children,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
@@ -304,6 +313,13 @@ export default function Town({
   const heroMotion = o.heroMotion ?? scene?.heroMotion ?? null
   const heroKeyframes = useMemo(() => o.heroKeyframes ?? (scene ? resolveHeroKeyframes(scene.heroKeyframes, scene.heroMotion, stencil, heroFov, 'town') : null),
     [o.heroKeyframes, scene, stencil, heroFov])
+  // The flight between shots (src/camera/ShotFlight.jsx): the plan opens on the lit places, else every listed one.
+  const places = useBuildingPlaces()
+  const placeIds = useMemo(() => (litIds?.size ? [...litIds] : listings.map((l) => l.building_id).filter(Boolean)), [litIds, listings])
+  const ownHandle = useRef(null)
+  const flightHold = useRef(() => false)
+  const movieHandle = movie?.handle ?? ownHandle
+  const movieHold = useMemo(() => () => flightHold.current() || !!movie?.hold?.(), [movie])
   // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
   const loaded = useTownLoaded(lookId)
   if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} /></>
@@ -321,8 +337,12 @@ export default function Town({
           it switches; it plays only in the movie shot. ▶ node checks/claims-one-movie-driver.mjs */}
       <MovieCamera keyframes={heroKeyframes} motion={heroMotion} quality={quality}
         active={shot === 'movie' && (movie?.playing ?? true)}
-        start={movie?.start ?? 'random'} onTime={movie?.onTime} hold={movie?.hold} handle={movie?.handle} />
-      <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} />
+        start={movie?.start ?? 'random'} onTime={movie?.onTime} hold={movieHold} handle={movieHandle} />
+      {/* ⭐ A SHOT CHANGE FLIES (BRIEF-town-shot-flight): the town knows where each shot puts the camera and flies
+          there with the one tween, holding the movie while it does. ▶ node checks/claims-one-shot-flight.mjs */}
+      <ShotFlight shot={shot} flight={flight} streetAt={streetAt} viewInset={viewInset} flightRef={flightRef}
+        onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} />
+      <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} flying={flightHold} />
       {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} />}
       <SkyStateTicker />
       {/* Names the material when a program fails to link — the failure that draws nothing and says nothing. */}

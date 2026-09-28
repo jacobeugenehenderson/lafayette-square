@@ -1,12 +1,12 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
+status: LANDED
+dispatched: yes (Mortise)
 written: 2026-09-28
 evict-when: node checks/claims-one-shot-flight.mjs
 -->
 # BRIEF — The flight between shots: `<Town>` animates a shot change
 
-**For:** Mortise, after Warden reads it. **Written, not built** (Warden, 2026-09-28). **Why:** the old player flew
+**For:** Mortise. **Built 2026-09-28 — §6.** **Why:** the old player flew
 hero → plan in one continuous move; the Ward **cuts**, because it mounts `<Town>` alone and `<Town>` does not own the
 camera outside the movie. Now that the movie lives in `<Town>` (`80a1baa8`), the flight is the next thing the Ward
 cannot get without importing the old player.
@@ -47,5 +47,28 @@ cannot get without importing the old player.
   hand-off stays its own.
 - **Plan's destination is `frameDensest`'s frame** (the places), as ruled for the plan opening.
 
+- **The old player keeps its own motion (Warden, 2026-09-28).** `Scene.jsx#CameraRig` is frozen to fixes and runs
+  lafayette-square.com; it mounts `<Town flight={false}>` and keeps its beginTransition — THE ONE SANCTIONED SECOND
+  TWEEN, exempt by name in the check, **retired at the cutover**. Its motion is the reference the one tween ports.
+
 ## 5. Out of scope
 The old player's cutover. Gestures inside a shot (orbit, pan, street look). The Designer camera.
+
+## 6. Built (2026-09-28)
+- **One tween:** `src/camera/cameraTween.js` (Preview's, promoted; `src/preview/cameraTween.js` deleted) with production's
+  chase (`chase` re-samples a moving destination each tick). **One easing:** `src/lib/ease.js#easeInOutCubic` (the
+  weather fade imports it too).
+- **`src/camera/ShotFlight.jsx`, mounted in `<Town>`:** a shot change flies to the town's destination — movie: the
+  driver's pose, chased; plan: frameDensest over the lit places else every listed one, fitted to the free region under
+  browseHeading, a true overhead on landing (no placed place → the Extent, said); street: the eye at `streetAt`.
+  Controls held off while flying, handed back on landing. A pointerdown/wheel ends it where it is.
+- **The app's links (agreed with Quire):** `flight` (true · 'cut' · false = hands off), `streetAt`, `viewInset`
+  (a camera view offset; the movie full frame; eased on the flight), `flightRef` ({ from, to, t, eased, duration, at,
+  landed, interrupted }, t = 0 set in a layout effect), `onFlightEnd` (once). A cut whose destination is not known yet
+  reports landed only when placed, and never for a shot already left.
+- **Preview** keeps only its hero-exit gesture and controls; **Stage**, the **old player** and the legibility harness
+  pass `flight={false}` (they place their own camera).
+- ▶ `node checks/claims-one-shot-flight.mjs` (static; red 18 → 0) · `node checks/claims-a-shot-change-flies.mjs`
+  (runtime: movie → plan runs 2400 ms on the frame clock, position linear in easeInOutCubic to 0.0000 of the move, true
+  overhead; plan → movie lands at the movie's pace; a wheel interrupts; with `?inset=320,0,0,0` the plan target sits at
+  the free region's centre ±3 px and the offset rides the eased curve; mutations — linear ease, 1500 ms — both caught).

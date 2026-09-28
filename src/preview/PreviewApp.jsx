@@ -12,13 +12,9 @@ import Town from '../components/Town.jsx'
 import { QUALITY as QUALITY_PROFILES, townCanvasProps } from '../lib/qualityProfile.js'
 import useListings from '../hooks/useListings'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import * as THREE from 'three'
 
 import { invalidateTreeAtlas } from '../components/treeAtlasMaterial'
-import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
-import { useSceneJson } from '../lib/useSceneJson.js'
-import { streetEyeY } from '../utils/elevation'
-import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { SHOTS } from '../stage/StageApp.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { INSTANCE, townForLook } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
@@ -29,9 +25,6 @@ import { setActiveProfileId } from './deviceProfiles'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
-import { createCameraTween } from './cameraTween'
-import { transitionMs } from '../camera/transitions.js'
-import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
 import {
   GpuMonitorTicker, GpuPanel, noteEvent, measureToggle,
@@ -66,42 +59,14 @@ function ForceDaytimeOnMount() {
 // Preview targets a continuously-rendering runtime (mobile/desktop app):
 // frameloop="always" is more honest about cost than demand+invalidate.
 
-// Resolve a shot's target pose (position/target/fov), accounting for
-// browse's aspect-fit altitude. Pure — no side effects.
-function resolveShotPose(shot, aspect, streetEye = SHOTS_FLAT_DEFAULTS.street.eyeHeight) {
-  const s = SHOTS[shot]
-  if (!s) return null
-  let pos = s.position
-  let target = s.target
-  if (shot === 'browse') {
-    const y = computeBrowseAltitude(aspect, s.fov)
-    pos = [s.position[0], y, s.position[2]]
-  }
-  if (shot === 'street') {
-    // The eye stands 5′8″ above the drawn ground at its point — the one method,
-    // shared by every app (utils/elevation#streetEyeY). No fallback.
-    const [x, , z] = s.position
-    const y = streetEyeY(x, z, streetEye)
-    pos = [x, y, z]
-    target = [s.target[0], y, s.target[2]]
-  }
-  return { pos, target, fov: s.fov, up: s.up || [0, 1, 0] }
-}
-
-// Reused temp for the hero keyframe pose (allocation-free hot path).
-const _heroPos = new THREE.Vector3()
-const _heroTgt = new THREE.Vector3()
-
-function ShotCamera({ shot, setShot, movie }) {
-  const { camera, size, gl } = useThree()
-  const controlsRef = useRef()
-  const tweenRef = useRef(null)
-  const lastShotRef = useRef(null)
+// The camera between shots is <Town>'s (src/camera/ShotFlight.jsx): it knows where each shot puts the camera and
+// flies there with production's move. What stays Preview's: the gesture that leaves the movie, and the controls.
+function ShotCamera({ shot, setShot }) {
+  const { gl } = useThree()
 
   // Hero is an auto-playing cinematic pan; a deliberate drag (>6px) or wheel
   // must interrupt it and pull back to Browse — mirrors production's Hero↔Browse
-  // exit gesture (Scene.jsx CameraRig). The per-frame pan keeps overriding the
-  // camera so OrbitControls can't visibly rotate; this just detects intent.
+  // exit gesture (Scene.jsx CameraRig).
   useEffect(() => {
     if (shot !== 'hero') return
     const canvas = gl.domElement
@@ -126,116 +91,25 @@ function ShotCamera({ shot, setShot, movie }) {
     }
   }, [shot, gl, setShot])
 
-  if (!tweenRef.current) tweenRef.current = createCameraTween()
-  const tween = tweenRef.current
-
-  const scene = useSceneJson(resolvePreviewLookId())
-  const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
-
-  // Resolve the pose for a shot transition. Hero uses the keyframe path's
-  // pose (position + its own target) so the tween lands on the authored path
-  // instead of the legacy static center, avoiding a snap when the per-frame
-  // animation below takes over. Browse up comes from the authored heading
-  // (cosmetic screen orientation) — same scene.browseHeading production reads.
-  // The movie is played by <Town> (its MovieCamera), which also picks a random point on the path on each entry
-  // ("the camera is supposed to pick up at randomized locations on the path", Jacob, 2026-09-21). The tween into
-  // Hero samples the path through the driver's handle (`movie`, shared with <Town movie>), so it lands where it plays.
-  movie.hold = () => tween.isActive()
-
-  function poseFor(shotKey, aspect) {
-    if (shotKey === 'hero') {
-      // ⛔ THE DRIVER'S CLOCK, or the tween lands on one pose and the driver plays from another.
-      const r = movie.handle.current?.pose(_heroPos, _heroTgt)
-      if (!r) return null
-      const { fov } = r
-      return { pos: _heroPos.toArray(), target: _heroTgt.toArray(), fov, up: [0, 1, 0] }
-    }
-    const pose = resolveShotPose(shotKey, aspect, scene?.shots?.values?.street?.eyeHeight)
-    if (shotKey === 'browse' && pose) pose.up = browseUpFromHeading(browseHeadingDeg)
-    return pose
-  }
-
-  // Fire a transition when shot changes. First mount = instant set
-  // (no tween) so the initial Hero pose is honest from frame 0.
-  useEffect(() => {
-    const aspect = size.width / Math.max(size.height, 1)
-    const pose = poseFor(shot, aspect)
-    if (!pose) return
-
-    const isFirstMount = lastShotRef.current == null
-    lastShotRef.current = shot
-
-    if (isFirstMount) {
-      camera.position.set(...pose.pos)
-      camera.up.set(...pose.up)
-      camera.fov = pose.fov
-      camera.lookAt(...pose.target)
-      camera.updateProjectionMatrix()
-      if (controlsRef.current) {
-        controlsRef.current.target.set(...pose.target)
-        controlsRef.current.update()
-      }
-      return
-    }
-
-    // Tween from current pose to new pose — IDENTICAL to production now
-    // (camera-SSOT, 2026-06-21): durations from transitions.js (Hero→Browse
-    // 2400ms) and a SMOOTH up-vector tilt into overhead (the shared tween lerps
-    // + normalizes `up`; no more snap).
-    const ctl = controlsRef.current
-    const fromUp = [camera.up.x, camera.up.y, camera.up.z]
-    const fromTarget = ctl
-      ? [ctl.target.x, ctl.target.y, ctl.target.z]
-      : pose.target
-    const duration = transitionMs(shot)
-    if (ctl) ctl.enabled = false
-    const spanId = `camera:${shot}:${performance.now()}`
-    phoneBusStartSpan(spanId, 'camera', `→${shot}`, '#7dd3fc')
-    tween.start({
-      from: {
-        pos: [camera.position.x, camera.position.y, camera.position.z],
-        target: fromTarget,
-        fov: camera.fov,
-        up: fromUp,
-      },
-      to: { pos: pose.pos, target: pose.target, fov: pose.fov, up: pose.up },
-      duration,
-      ease: 'easeInOutCubic',
-      label: `→${shot}`,
-      onUpdate: (p, t, fov, _e, u) => {
-        camera.position.copy(p)
-        camera.fov = fov
-        if (u) camera.up.copy(u)        // smooth up-tilt across the glide
-        camera.updateProjectionMatrix()
-        if (ctl) {
-          ctl.target.copy(t)
-          ctl.update()
-        } else {
-          camera.lookAt(t.x, t.y, t.z)
-        }
-      },
-      onComplete: () => {
-        // Hand back only where the regime has input — Hero is playback.
-        if (ctl) ctl.enabled = shot !== 'hero'
-        camera.up.set(...pose.up)        // settle exactly on target up
-        phoneBusEndSpan(spanId)
-        phoneBusStop()
-      },
-    })
-  }, [shot, camera, size.width, size.height])
-
-  // Drive the tween every frame. In Hero, <Town>'s MovieCamera plays the authored path and holds while the tween runs.
-  useFrame(() => { if (tween.isActive()) tween.tick(performance.now()) })
-
   // One controls definition per regime (src/lib/cameraRegimes.js), the same as
   // production and Stage: Browse → plan (pan + zoom, no rotate — the hidden
   // right-drag orbit is gone, Jacob 2026-09-26) · Street → street · Hero →
   // playback (the keyframes own the camera; a drag leaves for Browse, above).
   const regime = shot === 'browse' ? 'plan' : shot === 'street' ? 'street' : 'playback'
-  return <RegimeControls key={shot} regime={regime} controlsRef={controlsRef} />
+  return <RegimeControls regime={regime} />
 }
 
 const TOOLBAR_SHOTS = SHOTS
+// Preview's Street button stands the eye where it always has (SHOTS.street's point); production stands it at a tap.
+const PREVIEW_STREET_AT = [SHOTS.street.position[0], SHOTS.street.position[2]]
+// ?inset=top,right,bottom,left (CSS px) — inspect <Town viewInset>: the plan frames into what an app's UI leaves free.
+const PREVIEW_INSET = (() => {
+  const q = new URLSearchParams(window.location.search).get('inset')
+  if (!q) return undefined
+  const [top, right, bottom, left] = q.split(',').map(Number)
+  if (![top, right, bottom, left].every(Number.isFinite)) throw new Error(`[Preview] ?inset=${q} — four numbers: top,right,bottom,left (CSS px)`)
+  return { top, right, bottom, left }
+})()
 
 const APP_BAR_H = 48
 
@@ -1204,9 +1078,13 @@ const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
 const TIER_QUALITY = { desktop: QUALITY_PROFILES.desktop, 'phone-hi': QUALITY_PROFILES.phone, 'phone-lo': QUALITY_PROFILES.phone }
 
 function CanvasContents({ layers, shot, setShot, quality }) {
-  // The link between ShotCamera's tween and <Town>'s movie driver: Town fills the handle, the tween answers hold.
-  const movieLink = useMemo(() => ({ handle: { current: null }, hold: () => false }), [])
-  const movieHooks = useMemo(() => ({ handle: movieLink.handle, hold: () => movieLink.hold() }), [movieLink])
+  // The town's flight between shots reports here; exposed for claims-a-shot-change-flies (an inspection surface).
+  const flightRef = useRef(null)
+  useEffect(() => { window.__flight = flightRef; return () => { if (window.__flight === flightRef) delete window.__flight } }, [])
+  // The phone bus's camera span: one per flight, closed when the town says it landed.
+  const span = useRef(null)
+  useEffect(() => { span.current = `camera:${shot}:${performance.now()}`; phoneBusStartSpan(span.current, 'camera', `→${shot}`, '#7dd3fc') }, [shot])
+  const onFlightEnd = useMemo(() => () => { if (span.current) { phoneBusEndSpan(span.current); span.current = null; phoneBusStop() } }, [])
   const lookId = resolvePreviewLookId()
   const town = useMemo(() => townForLook(lookId, 'Preview'), [lookId])
   // Preview takes no clicks (interactive={false}); it draws the listings the page loaded, as production does.
@@ -1222,7 +1100,8 @@ function CanvasContents({ layers, shot, setShot, quality }) {
   // BasicLights — an inspection fallback lit only while the sky layer is off.
   return (
     <>
-      <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false} movie={movieHooks}
+      <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
+        flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={PREVIEW_STREET_AT} viewInset={PREVIEW_INSET}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,
@@ -1235,7 +1114,7 @@ function CanvasContents({ layers, shot, setShot, quality }) {
           <BasicLights />
         </group>
       </Town>
-      <ShotCamera shot={shot} setShot={setShot} movie={movieLink} />
+      <ShotCamera shot={shot} setShot={setShot} />
     </>
   )
 }

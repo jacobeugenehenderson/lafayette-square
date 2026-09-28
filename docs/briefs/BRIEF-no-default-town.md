@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: BUILT 2026-09-28 (authoring scope) — DEFAULT_LOOK remains only for non-authoring pages (the old player), which go at cutover
+status: OPEN
 dispatched: yes (Mortise)
 written: 2026-09-28
 evict-when: node checks/claims-a-look-link-opens-that-town.mjs (extended by §4) is green with DEFAULT_LOOK gone from src/instance.js

@@ -239,7 +239,7 @@ function App() {
           const ctx = gl.getContext(), dbg = ctx.getExtension('WEBGL_debug_renderer_info')
           glInfo.current = dbg ? ctx.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : ctx.getParameter(ctx.RENDERER)
         }}>
-        <Town town={townForLook(LOOK, 'the legibility harness')} lookId={LOOK} quality={QUALITY_PROFILE} shot="plan" time={time} listings={lit.rows}
+        <Town town={townForLook(LOOK, 'the legibility harness')} lookId={LOOK} quality={QUALITY_PROFILE} shot="plan" flight={false} time={time} listings={lit.rows}
           weatherMode="clear" interactive={false} layers={layers} litIds={step[1].lit ? lit.ids : undefined}>
           <FitCamera stencil={stencil} litIds={lit.ids} onFramed={(c) => { framed.current = c; if (!ready) setReady(true) }} />
           {ready && <Recorder step={step[0]} onFrame={onFrame} />}

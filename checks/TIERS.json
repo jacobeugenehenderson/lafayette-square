@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 323,
+  "total": 326,
   "counts": {
-    "safe": 176,
+    "safe": 178,
     "local-effect": 6,
-    "live": 141
+    "live": 142
   },
   "checks": [
     {
@@ -286,6 +286,18 @@
       ]
     },
     {
+      "file": "checks/claims-a-shot-change-flies.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "opens a WebSocket",
+        "writeFileSync",
+        "deletes files",
+        "runs `/Applications/Google Chrome.app/Contents` — not a known-local command"
+      ]
+    },
+    {
       "file": "checks/claims-a-slab-name-is-its-content.mjs",
       "tier": "live",
       "reasonClass": "outbound",
@@ -357,6 +369,13 @@
       "tier": "safe",
       "why": [
         "imports package(s) x — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a-towns-identity-is-its-own.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/instances/registry.js — read, safe"
       ]
     },
     {
@@ -1232,7 +1251,7 @@
       "file": "checks/claims-no-town-wears-another-towns-mark.mjs",
       "tier": "safe",
       "why": [
-        "reads repo files only"
+        "computed import of src/instances/registry.js — read, safe"
       ]
     },
     {
@@ -1274,6 +1293,13 @@
     },
     {
       "file": "checks/claims-one-movie-driver.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-one-shot-flight.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

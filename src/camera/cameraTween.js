@@ -1,22 +1,17 @@
 /**
- * cameraTween — pure-JS camera transition state machine.
+ * cameraTween — THE camera tween (BRIEF-town-shot-flight). <Town>'s flight between shots drives it
+ * (src/camera/ShotFlight.jsx); Stage's shot glide and the Grove's reframe use it too. Its motion is production's
+ * (Scene.jsx CameraRig, the reference feel, retired at the cutover): position, target and fov lerped on the ease, the
+ * up vector lerped and normalised (the smooth tilt into a true overhead), and — with `chase` — the destination
+ * re-sampled every frame, so a flight into the movie lands on the MOVING path, not a pose sampled at entry.
+ * ▶ node checks/claims-one-shot-flight.mjs
  *
- * Extracted from src/components/Scene.jsx (CameraRig, lines 482–775).
- * The legacy app keeps the same logic inline; this module is the
- * portable form for /preview and (eventually) /stage to share.
- *
- * No React. Construct an instance, call start({...}) when a transition
- * fires, call tick(performance.now()) every frame; the instance writes
- * the interpolated pose via onUpdate. onComplete fires once at t≥1.
- *
- * Allocation-aware: reuses internal Vector3 scratchpads. tick() does
- * no allocations on the hot path.
+ * No React. Construct an instance, call start({...}) when a transition fires, call tick(performance.now()) every
+ * frame; the instance writes the interpolated pose via onUpdate. onComplete fires once at t≥1. Allocation-aware:
+ * tick() does no allocations on the hot path.
  */
 import * as THREE from 'three'
-
-export function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-}
+import { easeInOutCubic } from '../lib/ease.js'
 
 const EASES = {
   linear: (t) => t,
@@ -51,7 +46,9 @@ export function createCameraTween() {
 
   let onUpdate = null
   let onComplete = null
+  let chase = null
   let label = null
+  let lastT = 0, lastE = 0, lastAt = 0
 
   function start(opts) {
     fromPos.set(opts.from.pos[0], opts.from.pos[1], opts.from.pos[2])
@@ -68,7 +65,10 @@ export function createCameraTween() {
     easeFn = EASES[opts.ease] || easeInOutCubic
     onUpdate = opts.onUpdate || null
     onComplete = opts.onComplete || null
+    // chase(toPos, toTarget) → { fov } | null: re-sample a MOVING destination every tick (the movie's pose).
+    chase = opts.chase || null
     label = opts.label ?? null
+    lastT = 0; lastE = 0; lastAt = t0
     t0 = performance.now()
     active = true
   }
@@ -78,6 +78,8 @@ export function createCameraTween() {
     const tRaw = (nowMs - t0) / dur
     const t = tRaw >= 1 ? 1 : tRaw
     const e = easeFn(t)
+    lastT = t; lastE = e; lastAt = nowMs
+    if (chase) { const r = chase(toPos, toTarget); if (r && Number.isFinite(r.fov)) toFov = r.fov }
     outPos.lerpVectors(fromPos, toPos, e)
     outTarget.lerpVectors(fromTarget, toTarget, e)
     outUp.lerpVectors(fromUp, toUp, e).normalize()   // smooth up-tilt (matches production)
@@ -92,9 +94,11 @@ export function createCameraTween() {
     return true
   }
 
+  // Stop where it is (a gesture interrupted it): no onComplete.
   function cancel() {
     active = false
     onComplete = null
+    chase = null
   }
 
   return {
@@ -103,5 +107,6 @@ export function createCameraTween() {
     cancel,
     isActive: () => active,
     getLabel: () => label,
+    progress: () => ({ t: lastT, eased: lastE, duration: dur, at: lastAt }),
   }
 }

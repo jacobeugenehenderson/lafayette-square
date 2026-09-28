@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 141. Never in a default run.
+## ⛔ live — 142. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -41,6 +41,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-salon-save-keeps-provenance.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command, imports arborist/salon-options.js, which can: imports arborist/recommend-plates.mjs, which can: writeFileSync, mkdirSync, imports arborist/library-builder.js, which can: writeFileSync, mkdirSync, deletes files, copies/renames files |
 | `checks/claims-a-scene-switch-drops-the-old-town.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `checks/claims-a-scrub-never-writes-the-keys.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
+| `checks/claims-a-shot-change-flies.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-slab-name-is-its-content.mjs` | outbound | writeFileSync · mkdirSync · deletes files · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync · imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs` | unreadable | imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-a-swap-never-happens-mid-street.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
@@ -182,7 +183,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 176. This is `npm test`.
+## safe — 180. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -210,6 +211,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-town-is-live-by-its-manifest.mjs` | "DOES EACH WORKER DECIDE A TOWN IS LIVE BY THE ONE FILE WHOSE NAME NEVER CHANGES?" |
 | `checks/claims-a-town-never-bakes-from-the-whole-library.mjs` | library.mjs — CAN A TREE BAKE PLANT A SPECIES FROM OUTSIDE THE TOWN'S GROVE? |
 | `checks/claims-a-towns-colours-are-its-own.mjs` | "ARE A TOWN'S CATEGORY COLOURS — ITS NEON, ITS CHIPS — ITS OWN?" |
+| `checks/claims-a-towns-identity-is-its-own.mjs` | own.mjs — IS HOW A TOWN LOOKS AUTHORED IN ONE PLACE, AND CARRIED WHOLE? |
 | `checks/claims-a-tree-card-starts-at-the-ground.mjs` | ground.mjs — DOES EVERY HERO TREE CARD START AT THE GROUND? |
 | `checks/claims-a16-materials-write.mjs` | A16 GATE — "does a materials flip invent authoring, and did the resolver fix |
 | `checks/claims-akas-never-merge-species.mjs` | species.mjs — DO COLLOQUIAL NAMES ROUTE WITHOUT MERGING TWO SPECIES INTO ONE? |
@@ -291,6 +293,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-node-pair-key-parity.mjs` | SLICE 1 of "fix the key". PROVE, DON'T SWITCH. |
 | `checks/claims-objects-dissolve-with-the-ground.mjs` | CLAIM: trees, lamps and labels thin out over the SAME band the ground fades on — |
 | `checks/claims-one-movie-driver.mjs` | "IS THE TOWN'S MOVIE PLAYED BY ONE COMPONENT?" |
+| `checks/claims-one-shot-flight.mjs` | "IS THE FLIGHT BETWEEN SHOTS ONE MOTION, OWNED BY THE TOWN?" |
 | `checks/claims-open-now-has-one-home-and-handles-midnight.mjs` | one predicate, and it survives a |
 | `checks/claims-opting-out-of-the-fade-is-explicit.mjs` | CLAIM: a population that does not fade says so EXPLICITLY, and buildings are one. |
 | `checks/claims-orphaned-customs.mjs` | It reported "27 of 76 authored leg slots are never read" (commit c430f4e9). |

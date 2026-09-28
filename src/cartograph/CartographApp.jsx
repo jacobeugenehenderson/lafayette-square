@@ -38,7 +38,7 @@ import { SHOTS, computeBrowseAltitude, HeroPreview, useStageMovie } from '../sta
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
 import { derivedOpeningKeyframe } from '../lib/cameraRegimes.js'
 import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
-import { createCameraTween } from '../preview/cameraTween.js'
+import { createCameraTween } from '../camera/cameraTween.js'
 import { transitionMs } from '../camera/transitions.js'
 
 import ribbonsRaw from '../data/ribbons.json'
@@ -1079,7 +1079,7 @@ export default function CartographApp() {
               included since SlabBuildings recolours the palette live (BRIEF-live-building-palette).
               ▶ node checks/claims-every-app-mounts-the-town.mjs */}
           {!inDesigner && activeTown && (
-            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs} movie={stageMovie}
+            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} flight={false} bakeLastMs={bakeLastMs} movie={stageMovie}
               selectedId={selectedId} onSelectBuilding={onSelectBuilding} listings={listings}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
               layers={{
