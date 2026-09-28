@@ -29,7 +29,7 @@ import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { getElevationRaw } from '../utils/elevation'
 import { CATEGORY_HEX, UNKNOWN_HEX } from '../tokens/categories'
-import { INSTANCE } from '../instance.js'
+import { lookOf } from '../lib/lookOf.js'
 import NeonBands from './NeonBands.jsx'
 import { getFoundationHeight, roofTopRingFor } from './LafayetteScene.jsx'
 
@@ -148,7 +148,8 @@ function _densityKeeps(id, density) {
 
 // `litIds` (a Set of building ids, from <Town litIds>): only those places carry neon — how an app shows a chosen
 // category or a search. Absent: every open place is lit, as before.
-export default function SceneNeon({ forceNeonOn, density, materialColors, litIds, lookId = INSTANCE.lookId }) {
+export default function SceneNeon({ forceNeonOn, density, materialColors, litIds, lookId }) {
+  lookOf(lookId, 'SceneNeon')
   const neonLookup = useNeonLookup()
 
   // Re-check open/closed every 60s so bands mount/unmount as places open

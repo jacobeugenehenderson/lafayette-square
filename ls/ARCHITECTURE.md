@@ -16,7 +16,9 @@ Last verified: 2026-06-02 (forensic inventory pass §§1–6 — `scratch/ls-for
 
 ⭐ **One assembly draws the town, in every app.** `src/components/Town.jsx` mounts the whole renderer; production
 (`Scene.jsx`), Preview and Stage each mount `<Town>` inside their own `<Canvas>`, and The Ward imports the same file.
-What varies by app arrives as a prop; what varies by town arrives from the slab and the town's instance (`lookId`).
+What varies by app arrives as a prop; what varies by town arrives from the slab and the town's identity, passed IN
+(`town`, a town manifest's `identity` — the kit's apps pass their instance module — beside `lookId`). Nothing Town
+reaches resolves a town from the kit.
 The camera is the app's, mounted beside `<Town>`. ▶ `node checks/claims-every-app-mounts-the-town.mjs` ·
 `node checks/claims-the-town-reads-no-player-store.mjs`. ⏳ Stage on Lafayette Square still draws through its old
 `MAP_REGISTRY` assembly until live building-palette retint lands (`docs/briefs/BRIEF-live-building-palette.md`); the
@@ -27,10 +29,12 @@ index.html → main.jsx → App.jsx              ← URL route switch, top-level
     ├── SceneBoundary
     │   └── Scene.jsx                         the old player: <Canvas> sized by the quality profile
     │       ├── SheetGround                   (embed sheet: the scene paints only the sheet's colour)
-    │       ├── Town lookId quality shot paused idle      ← src/components/Town.jsx
+    │       ├── Town town lookId quality shot paused idle      ← src/components/Town.jsx
     │       │   ├── TownBridge                the ONE writer of the renderer's internal state: the shot
     │       │   │                             (useCamera.townShot), selection in/out, the town's place
     │       │   │                             on the globe (lib/townPlace.js — sun, moon, season, sky)
+    │       │   │                             and its terrain (reloadTerrain). Town draws nothing until
+    │       │   │                             both are this town's.
     │       │   ├── FrameLimiter · TimeTicker · SkyStateTicker · ShaderLinkGuard · Cascades (?csm=1)
     │       │   ├── StageShadows · StageFog · LampGlowDriver · NeonDriver
     │       │   ├── WeatherPoller · AtmosphereDirectiveDriver · WeatherEffects
@@ -50,7 +54,8 @@ index.html → main.jsx → App.jsx              ← URL route switch, top-level
 **The modules that own what used to be hard-wired in the apps.** `lib/qualityProfile.js` — the ONE place the device
 is asked about (antialiasing, log depth, pixel ratio, shadows, which pieces mount in which shot, building textures,
 lamp halo, post passes, label staggering); an app passes `deviceQuality()` or any profile. `lib/townPlace.js` — the
-town's place, moved by `<Town lookId>`. `components/SkyTickers.jsx` — the clock and weather tickers (sky-only
+town's place: empty until placed (it throws), placed at boot by `src/placeBootTown.js` (every entry imports it
+FIRST) and moved by `<Town town>`. `utils/terrainShader.js` loads no town at import; Town loads its own. `components/SkyTickers.jsx` — the clock and weather tickers (sky-only
 canvases import them too). `components/LandmarkMarkers.jsx` — the old player's pins, an overlay, not the town.
 
 **Preview** mounts `<Town>` with its layer toggles as `layers`, its per-pass matrix as `postFx`, and its own

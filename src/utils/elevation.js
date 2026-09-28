@@ -1,9 +1,8 @@
 // Thin compatibility shim — the canonical home for the bilinear sampler and
 // displaceGeometry is `src/lib/terrainCommon.js`; the town's exaggeration comes
 // from `terrainShader.sceneExag()` and is passed in below. Terrain
-// payload arrives via terrainShader.js's top-level-await of terrain.bin;
-// this module re-uses that already-decoded Float32Array so the binary
-// isn't parsed twice.
+// payload arrives via terrainShader.js's reloadTerrain(); this module re-uses
+// that already-decoded Float32Array so the binary isn't parsed twice.
 import { currentTerrain, onTerrainReload, sceneExag } from './terrainShader.js'
 import { makeElevationSampler } from '../lib/terrainCommon.js'
 
@@ -14,7 +13,9 @@ import { makeElevationSampler } from '../lib/terrainCommon.js'
 // ⛔ THE EXAG IS THE TOWN'S, NOT A CONSTANT, and it is re-read on every reload — the sampler
 // closes over it, so rebuilding is the only way it can change (site 15). terrainShader re-points
 // `sceneExag()` BEFORE firing these callbacks, so this reads the incoming look's value.
-let sampler = makeElevationSampler(currentTerrain(), sceneExag())
+// Before any town's terrain is loaded the heightfield is FLAT (terrainShader.js), whose heights are all 0, so
+// the exaggeration is moot until the first reload — and sceneExag() refuses to answer before one.
+let sampler = makeElevationSampler(currentTerrain(), 1)
 onTerrainReload(() => { sampler = makeElevationSampler(currentTerrain(), sceneExag()) })
 
 export const getElevation    = (x, z) => sampler.getElevation(x, z)

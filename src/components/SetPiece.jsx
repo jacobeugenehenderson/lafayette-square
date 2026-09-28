@@ -8,8 +8,8 @@
  * own declaration (`setPiece.kind` in src/instances/<town>.js).
  * ▶ node checks/claims-every-app-mounts-the-set-piece.mjs
  *
- * `lookId` names the town. Stage switches towns live, so a mount there passes the active
- * look; the global INSTANCE is only the page's boot town. Absent `lookId` means INSTANCE.
+ * `town` is the installation being drawn (<Town town>): its `setPiece` declaration and its Look. Nothing
+ * here resolves a town from the kit.
  * A town with no set-piece renders nothing. A `kind` with no renderer THROWS: it never
  * quietly draws nothing.
  *
@@ -29,7 +29,6 @@
  * channel, not by the town's instance, and it carries its own Stage overrides. Folding
  * it in is ROADMAP H-7's set-piece question, not a mount change.
  */
-import { townForLook as townFor } from '../instance.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import PilgrimMonument from './PilgrimMonument.jsx'
 import SetPieceUplights from './SetPieceUplights.jsx'
@@ -41,12 +40,10 @@ const RENDERERS = {
   'pilgrim-monument': PilgrimMonument,
 }
 
-/** The set-piece a Look's town declares, or null — for panels that show its controls only where it exists. */
-export function setPieceOf(lookId) { return townFor(lookId)?.setPiece ?? null }
-
-export default function SetPiece({ lookId, lightOverride, ...props }) {
-  const town = townFor(lookId)
-  const scene = useSceneJson(town?.lookId ?? lookId)
+export default function SetPiece({ town, lookId, lightOverride, ...props }) {
+  if (!town) throw new Error('[SetPiece] ⛔ needs `town` — the installation being drawn')
+  if (!lookId) throw new Error('[SetPiece] ⛔ needs `lookId` — the Look being drawn')
+  const scene = useSceneJson(lookId)
   const index = useSlabBuildingIndex(s => s.index)
   const select = useSelectedBuilding(s => s.select)
   const setHovered = useSelectedBuilding(s => s.setHovered)
@@ -54,20 +51,20 @@ export default function SetPiece({ lookId, lightOverride, ...props }) {
   const sp = town?.setPiece
   if (!sp) return null
   const R = RENDERERS[sp.kind]
-  if (!R) throw new Error(`[SetPiece] ⛔ "${town.lookId}" declares a set-piece of kind "${sp.kind}", and no renderer exists for it (have: ${Object.keys(RENDERERS).join(', ')})`)
-  if (!sp.buildingId) throw new Error(`[SetPiece] ⛔ "${town.lookId}" declares a set-piece with no buildingId — a set-piece stands on one of the town's buildings`)
+  if (!R) throw new Error(`[SetPiece] ⛔ "${lookId}" declares a set-piece of kind "${sp.kind}", and no renderer exists for it (have: ${Object.keys(RENDERERS).join(', ')})`)
+  if (!sp.buildingId) throw new Error(`[SetPiece] ⛔ "${lookId}" declares a set-piece with no buildingId — a set-piece stands on one of the town's buildings`)
   // The slab for THIS town has not loaded yet (Stage switches towns live): nothing to seat on yet.
-  if (index?.look !== town.lookId) return null
+  if (index?.look !== lookId) return null
   const b = index.byId.get(sp.buildingId)
-  if (!b) throw new Error(`[SetPiece] ⛔ "${town.lookId}" puts its set-piece on building ${sp.buildingId}, and the slab has no such building — is it hidden in building-overrides.json, or is the bake older than the claim?`)
-  if (b.ranges?.wall || b.ranges?.roof || b.ranges?.foundation) throw new Error(`[SetPiece] ⛔ "${town.lookId}": the slab built geometry for ${sp.buildingId}, the set-piece's building — it would stand twice. Re-bake the buildings.`)
+  if (!b) throw new Error(`[SetPiece] ⛔ "${lookId}" puts its set-piece on building ${sp.buildingId}, and the slab has no such building — is it hidden in building-overrides.json, or is the bake older than the claim?`)
+  if (b.ranges?.wall || b.ranges?.roof || b.ranges?.foundation) throw new Error(`[SetPiece] ⛔ "${lookId}": the slab built geometry for ${sp.buildingId}, the set-piece's building — it would stand twice. Re-bake the buildings.`)
   const id = sp.buildingId
   return (
     <group
       onPointerMove={(e) => { e.stopPropagation(); setHovered(id); document.body.style.cursor = 'pointer' }}
       onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
       onClick={(e) => { e.stopPropagation(); if (e.delta > 6) return; select(id) }}>
-      <R town={town} footprint={b.footprint} {...props}>
+      <R town={town} lookId={lookId} footprint={b.footprint} {...props}>
         <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} />
       </R>
     </group>

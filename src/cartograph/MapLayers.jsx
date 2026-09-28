@@ -15,6 +15,7 @@ import _lsParkWaterData from '../data/lafayette-square/park_water.json'
 import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius, makeBoundary } from './boundary.js'
 import { fetchMap } from './api.js'
 import useCartographStore from './stores/useCartographStore.js'
+import { townForLook } from '../instance.js'
 import StreetLabels from '../components/StreetLabels.jsx'
 import { useStreetLabels } from '../lib/streetLabels.js'
 import { useLabelPlacements } from '../lib/useLabelPlacements.js'
@@ -1046,7 +1047,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           ⭐ `isLS` three hundred lines up is the same question asked of the STORE,
           which is the thing that actually changes. One file had two answers to
           "am I Lafayette Square" and the label picked the frozen one. */}
-      {!hide.parkTitle && isLS && <ParkTitleMesh y={2.6} />}
+      {!hide.parkTitle && isLS && <ParkTitleMesh town={townForLook(activeLookId)} y={2.6} />}
     </group>
   )
 }

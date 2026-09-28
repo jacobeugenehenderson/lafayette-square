@@ -38,7 +38,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { resolveSkyAtMinute } from '../cartograph/skyGrid.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { INSTANCE } from '../instance.js'
+import { lookOf } from '../lib/lookOf.js'
 import { townPlace } from '../lib/townPlace.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { getPresetsCache } from '../hooks/useAtmosphereDirective.js'
@@ -136,7 +136,7 @@ function bindUniformsFromDirective(material, directive, minute, slotMinutes, pre
 export default function Atmosphere({ lookId, displayBaseAlt } = {}) {
   const material = useMemo(() => createAtmosphereMaterial(), [])
   const meshRef = useRef()
-  const scene = useSceneJson(lookId || INSTANCE.lookId)
+  const scene = useSceneJson(lookOf(lookId, 'Atmosphere'))
 
   useFrame(({ clock, camera }) => {
     material.uniforms.uTime.value = clock.elapsedTime

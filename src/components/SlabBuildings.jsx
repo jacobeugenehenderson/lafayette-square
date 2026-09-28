@@ -36,7 +36,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useCityModelActive from '../hooks/useCityModelActive'
-import { INSTANCE } from '../instance.js'
+import { lookOf } from '../lib/lookOf.js'
 
 import { useQuality } from '../lib/qualityProfile.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
@@ -108,14 +108,6 @@ function isDrag(e) {
 
 const _NIGHT_FOUND = new THREE.Color('#3d3530') // foundation night target (linear)
 
-function getLookId(propLook) {
-  if (propLook) return propLook
-  if (typeof window !== 'undefined') {
-    const m = window.location.search.match(/look=([^&]+)/)
-    if (m) return decodeURIComponent(m[1])
-  }
-  return INSTANCE.lookId
-}
 
 /**
  * Stands down to INDEX-ONLY (loads, parses and publishes the identity index, but
@@ -148,7 +140,7 @@ function useLivePaletteNotice(paletteOverride, bakedScene) {
 }
 
 export default function SlabBuildings({ lookId, interactive = true, renderGeometry = true, materialPhysicsOverride, paletteOverride } = {}) {
-  const LOOK_ID = useMemo(() => getLookId(lookId), [lookId])
+  const LOOK_ID = lookOf(lookId, 'SlabBuildings')
   const [data, setData] = useState(null)   // { manifest, bin }
   const [bakedScene, setScene] = useState(null)
   const scene = useMemo(() => (materialPhysicsOverride && bakedScene

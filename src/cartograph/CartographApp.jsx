@@ -28,7 +28,7 @@ import { DesignerArch } from './DesignerArch.jsx'
 import SetPiece from '../components/SetPiece.jsx'
 import Town, { Cascades } from '../components/Town.jsx'
 import SlabRevetment from '../components/SlabRevetment.jsx'
-import { TownPlace } from '../components/TownBridge.jsx'
+import { TownPlace, useTownLoaded } from '../components/TownBridge.jsx'
 import { TimeTicker, SkyStateTicker } from '../components/SkyTickers.jsx'
 import { QualityProvider, deviceQuality } from '../lib/qualityProfile.js'
 import { shallow } from 'zustand/shallow'
@@ -45,7 +45,7 @@ import CascadedShadows, { CSM_ENABLED } from '../components/CascadedShadows.jsx'
 import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import Atmosphere from '../components/Atmosphere'
 import CloudDome from '../components/CloudDome'
-import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
+import { skyModeOf } from '../lib/skyMode'
 import WeatherPoller from '../components/WeatherPoller'
 import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../components/WeatherEffects'
@@ -801,12 +801,13 @@ const MAP_REGISTRY = {
       const neonDensity             = useCartographStore(s => s.neonDensity)
       return <>
         {!hiddenLayers.park && (
-          <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="LafayettePark"><LafayettePark town={townForLook(lookId)} lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         )}
         {!hiddenLayers.tree && (
           <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bakeLastMs} canopyOverride={canopyOverride} /></R3FErrorBoundary>
         )}
         <R3FErrorBoundary name="LafayetteScene"><LafayetteScene
+          town={townForLook(lookId)}
           lookId={lookId}
           bakeLastMs={bakeLastMs}
           paletteOverride={paletteOverride}
@@ -1016,6 +1017,10 @@ export default function CartographApp() {
   const sceneCfg = useMemo(() => sceneConfig(scene, sceneBoundary), [scene, sceneBoundary])
   // ⏳ The town still on Stage's hand-assembly: the registered one (Lafayette Square).
   const legacy = !!MAP_REGISTRY[scene]
+  // The active Look's installation — <Town town> and every legacy mount that needs the town, never the page's boot one.
+  const activeTown = useMemo(() => townForLook(activeLookId), [activeLookId])
+  // The hand-assembly draws once the active town's place and terrain are in, as <Town> does.
+  const townIn = useTownLoaded(activeLookId)
   const townOverrides = useStageOverrides()
   const designAerialOnly = inDesigner && !tool && aerialVisible
   // When a tool is active, hide the giant off-map ground plane so the
@@ -1097,8 +1102,8 @@ export default function CartographApp() {
             far={60000}
           />
           <CameraRig orthoRef={orthoRef} perspRef={perspRef} controlsRef={controlsRef} />
-          {legacy && !inDesigner && <TimeTicker holdScrubbedTime />}
-          {legacy && !inDesigner && <SkyStateTicker />}
+          {legacy && !inDesigner && townIn && <TimeTicker holdScrubbedTime />}
+          {legacy && !inDesigner && townIn && <SkyStateTicker />}
 
 
           {/* ── Ground:
@@ -1155,8 +1160,8 @@ export default function CartographApp() {
               mount. ⏳ Lafayette Square keeps the hand-assembly below until SlabBuildings
               retints the palette live for every town (BRIEF-live-building-palette; Jacob ruled 2026-09-27).
               ▶ node checks/claims-every-app-mounts-the-town.mjs reports it, red, until then. */}
-          {!legacy && !inDesigner && (
-            <Town lookId={activeLookId} town={townForLook(activeLookId)} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs}
+          {!legacy && !inDesigner && townIn && (
+            <Town lookId={activeLookId} town={activeTown} quality={QUALITY} shot={TOWN_SHOT[shot]} bakeLastMs={bakeLastMs}
               overrides={townOverrides} weatherMode={weatherMode} holdScrubbedTime
               layers={{
                 buildings: !hiddenLayers.building, neon: !hiddenLayers.building, trees: !hiddenLayers.tree,
@@ -1164,11 +1169,11 @@ export default function CartographApp() {
               }} />
           )}
           {/* The sun, the moon and the season follow the active town in every mode, Designer included. */}
-          {(legacy || inDesigner) && <TownPlace lookId={activeLookId} />}
-          {legacy && !inDesigner && (
+          {(legacy || inDesigner) && activeTown && <TownPlace town={activeTown} lookId={activeLookId} />}
+          {legacy && !inDesigner && townIn && (
             <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={activeLookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
           )}
-          {legacy && !inDesigner && (
+          {legacy && !inDesigner && townIn && (
             <R3FErrorBoundary name="BakedGround">
               <BakedGround
                 lookId={activeLookId}
@@ -1240,17 +1245,17 @@ export default function CartographApp() {
           </>}
 
           {/* ── Shot-only (environment paint — must exactly mirror runtime) ── */}
-          {legacy && !inDesigner && <StageShadows
+          {legacy && !inDesigner && townIn && <StageShadows
             lookId={activeLookId}
             bakeLastMs={bakeLastMs}
             shadowOverride={shadowOverride}
           />}
-          {legacy && !inDesigner && <StageFog
+          {legacy && !inDesigner && townIn && <StageFog
             lookId={activeLookId}
             bakeLastMs={bakeLastMs}
             mistOverride={mistOverride}
           />}
-          {legacy && !inDesigner && <PostProcessing
+          {legacy && !inDesigner && townIn && <PostProcessing
             lookId={activeLookId}
             bakeLastMs={bakeLastMs}
             bloomOverride={bloomOverride}
@@ -1265,7 +1270,7 @@ export default function CartographApp() {
             dofFocusOverride={dofFocusOverride}
           />}
           {!inDesigner && <DofFocusPicker />}
-          {legacy && <group visible={!inDesigner}>
+          {legacy && townIn && <group visible={!inDesigner}>
             {/* ⚠️ `?csm=1` — cascaded shadow maps, dark by default. Mounted HERE as well as
                 Preview because Stage is where the operator has camera control and the
                 Look panel; a render change that cannot be driven cannot be judged. */}
@@ -1295,7 +1300,7 @@ export default function CartographApp() {
             <WeatherEffects />
             {/* Sky renderer stopgap (skyMode): cheap <CloudDome/> ships,
                 <Atmosphere/> slab mounts under ?sky=volumetric. */}
-            <R3FErrorBoundary name="Atmosphere">{SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}</R3FErrorBoundary>
+            <R3FErrorBoundary name="Atmosphere">{skyModeOf(activeTown) === 'volumetric' ? <Atmosphere lookId={activeLookId} /> : <CloudDome />}</R3FErrorBoundary>
             {/* Terrain mesh hidden — the ribbons + land-use fills ARE the
                 visible ground. Terrain still mounts so its shader uniforms
                 drive displacement for ribbons/buildings. */}
@@ -1310,7 +1315,7 @@ export default function CartographApp() {
             {/* The town's set-piece — the ONE mount every app uses, in Stage AND Designer
                 (top-down it reads as its plan square). Keyed to the ACTIVE look, since
                 Stage switches towns live. ▶ checks/claims-every-app-mounts-the-set-piece.mjs */}
-            <R3FErrorBoundary name="SetPiece"><SetPiece lookId={activeLookId} lightOverride={setPieceLightOverride} /></R3FErrorBoundary>
+            <R3FErrorBoundary name="SetPiece"><SetPiece town={activeTown} lookId={activeLookId} lightOverride={setPieceLightOverride} /></R3FErrorBoundary>
             {/* The ground from the town's rim to the horizon — every town, the same component production mounts. */}
             <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={activeLookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
             {!inDesigner && sceneCfg.StageEnvironment && (
@@ -1329,8 +1334,8 @@ export default function CartographApp() {
               gets live retint via the single mount and the doubled
               EffectComposer is gone. */}
 
-          {legacy && !inDesigner && <LampGlowDriver lookId={activeLookId} bakeLastMs={bakeLastMs} lampGlowOverride={townOverrides.lampGlow} />}
-          {legacy && !inDesigner && <NeonDriver lookId={activeLookId} bakeLastMs={bakeLastMs} neonOverride={townOverrides.neon} />}
+          {legacy && !inDesigner && townIn && <LampGlowDriver lookId={activeLookId} bakeLastMs={bakeLastMs} lampGlowOverride={townOverrides.lampGlow} />}
+          {legacy && !inDesigner && townIn && <NeonDriver lookId={activeLookId} bakeLastMs={bakeLastMs} neonOverride={townOverrides.neon} />}
           <Controls controlsRef={controlsRef} heroPlaying={previewPlaying} />
           {/* ⛔⛔ `sceneCfg.hasHero` GATED THIS AND WAS TRUE FOR LAFAYETTE SQUARE
               ONLY — removed 2026-09-21. HeroPreview is not a decoration, it IS the

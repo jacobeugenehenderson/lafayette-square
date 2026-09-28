@@ -33,7 +33,7 @@ import useCartographStore, { activeChannel } from '../cartograph/stores/useCarto
 import TodChannel from '../cartograph/TodChannel.jsx'
 import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
 import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
-import { setPieceOf } from '../components/SetPiece.jsx'
+import { setPieceOf } from '../instance.js'
 import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, MIST_FIELDS, MIST_FLAT_DEFAULTS, HALO_FIELDS, HALO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { townRanges } from '../lib/townRange.js'

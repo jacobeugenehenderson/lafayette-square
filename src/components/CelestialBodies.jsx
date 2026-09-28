@@ -45,7 +45,7 @@ import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights
 import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
 // Production passes no `lookId`; Stage threads the operator's active Look.
@@ -1423,7 +1423,7 @@ function CelestialBodies({
 } = {}) {
   // debugLevel: 0 = full, 1 = lights only (no sky/moon/orbs), 2 = ambient only, 3 = nothing (just compute)
   const { currentTime } = useTimeOfDay()
-  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const scene = useSceneJson(lookOf(lookId, 'CelestialBodies'), bakeLastMs)
 
   // Resolve each authored channel: live override (Stage) wins, else
   // scene.json (frozen-at-bake), else the inline flat-default envelope

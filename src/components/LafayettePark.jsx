@@ -13,7 +13,6 @@
  * canvas never waits on the park.
  */
 import { lazy, Suspense } from 'react'
-import { INSTANCE } from '../instance.js'
 
 // The park's town — the same guard the body applies itself.
 const PARK_TOWN = 'lafayette-square'
@@ -23,12 +22,12 @@ const Title = lazy(() => import('./LafayetteParkBody.jsx').then(m => ({ default:
 
 // Guarded on the town being DRAWN (`lookId`, which <Town> passes), not the page's boot town: Stage
 // switches towns live, and a park guarded on the boot town followed Lafayette Square into the next one.
-export default function LafayettePark({ lookId = INSTANCE.lookId, ...props }) {
+export default function LafayettePark({ town, lookId, ...props }) {
   if (lookId !== PARK_TOWN) return null
-  return <Suspense fallback={null}><Body lookId={lookId} {...props} /></Suspense>
+  return <Suspense fallback={null}><Body town={town} lookId={lookId} {...props} /></Suspense>
 }
 
-export function ParkTitle({ lookId = INSTANCE.lookId, ...props }) {
+export function ParkTitle({ town, lookId, ...props }) {
   if (lookId !== PARK_TOWN) return null
-  return <Suspense fallback={null}><Title lookId={lookId} {...props} /></Suspense>
+  return <Suspense fallback={null}><Title town={town} lookId={lookId} {...props} /></Suspense>
 }

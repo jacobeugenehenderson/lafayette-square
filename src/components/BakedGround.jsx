@@ -39,7 +39,7 @@ import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 // ── Surface treatment: albedo desaturation + value-range lift ────────────────
 // Jacob 2026-06-30 (Option A): surfaces should be DESATURATED and lit by
@@ -754,7 +754,7 @@ function extendWaterToHorizon(positions, indices, stencil) {
 
 export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag(), surfacesOverride } = {}) {
   const [data, setData] = useState(null)
-  const resolvedLookId = resolveLookId(lookId)
+  const resolvedLookId = lookOf(lookId, 'BakedGround')
 
   // Scene.json comes through the slab data adapter (couplers plan §1).
   // Passing bakeLastMs as cacheBust makes Stage authoring reactive to ↻

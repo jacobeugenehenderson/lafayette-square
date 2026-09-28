@@ -81,7 +81,7 @@ export default function SkyEmbed() {
       <SkyStateTicker />
       <WeatherPoller />
       <AtmosphereDirectiveDriver lookId={INSTANCE.lookId} />
-      <CelestialBodies />
+      <CelestialBodies lookId={INSTANCE.lookId} />
       <CloudDome />
       <WeatherEffects />
     </Canvas>

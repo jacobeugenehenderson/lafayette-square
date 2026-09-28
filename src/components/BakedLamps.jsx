@@ -18,7 +18,7 @@ import StreetLights from './StreetLights'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { currentTerrainIdentity } from '../utils/terrainShader'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 
 /**
@@ -28,7 +28,7 @@ import { resolveLookId } from '../lib/resolveLookId.js'
  *                                      production omits and uses scene.bakedAt.
  */
 export default function BakedLamps({ lookId, bakeLastMs, lanternOverride, lampsOnOverride } = {}) {
-  const resolvedLookId = resolveLookId(lookId)
+  const resolvedLookId = lookOf(lookId, 'BakedLamps')
   const scene = useSceneJson(resolvedLookId, bakeLastMs)
   const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
 

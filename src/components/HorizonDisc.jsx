@@ -13,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useSkyState from '../hooks/useSkyState'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 const _warned = new Set()
@@ -24,7 +24,7 @@ const DISC_R = 2.8, FADE_IN_R = 1.05, FADE_OUT_R = 3.53
 export const horizonFor = (townRadius) => ({ radius: DISC_R * townRadius, fadeInner: FADE_IN_R * townRadius, fadeOuter: FADE_OUT_R * townRadius })
 
 export default function HorizonDisc({ lookId, bakeLastMs }) {
-  const look = resolveLookId(lookId)
+  const look = lookOf(lookId, 'HorizonDisc')
   const [stencil, setStencil] = useState(null)
   const matRef = useRef(null)
   const meshRef = useRef(null)

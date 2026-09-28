@@ -14,14 +14,13 @@
 // four hardcoded LS corridors. Doctrine [[project_labels_encourage_walking]],
 // [[project_preview_equals_ls_literally]], slab-is-the-contract.
 import { useState, useEffect } from 'react'
-import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from './bakedUrl.js'
-import { resolveLookId } from './resolveLookId.js'
+import { lookOf } from './lookOf.js'
 
 
 /**
  * @param {string} [lookId]     — explicit Look id (cartograph passes activeLookId);
- *                                falls back to the URL `?look=` param, then INSTANCE.
+ *                                required: the Look being drawn (never a guessed one).
  * @param {number} [cacheBust]  — bump to re-fetch after a Stage/Designer re-bake.
  * @returns {{labels: Array<{name,widthM,points}>, style: {sizeK?:number, letterSpacing?:number}}}
  *   `labels` is [] until loaded / if the scene has none. `style` is the LAYOUT
@@ -36,7 +35,7 @@ import { resolveLookId } from './resolveLookId.js'
  * useLabelPlacements.js, which asserted they could not drift.
  */
 export function useStreetLabels(lookId, cacheBust) {
-  const resolved = resolveLookId(lookId)
+  const resolved = lookOf(lookId, 'streetLabels')
   const [data, setData] = useState(EMPTY)
   useEffect(() => {
     let cancelled = false

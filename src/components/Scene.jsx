@@ -737,7 +737,7 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
       shadows={IS_GROUND ? false : QUALITY.shadows}
     >
       <SheetGround active={sheeted} ground={ground} />
-      <Town lookId={INSTANCE.lookId} quality={QUALITY} shot={shot} paused={paused} idle={idle}
+      <Town town={INSTANCE} lookId={INSTANCE.lookId} quality={QUALITY} shot={shot} paused={paused} idle={idle}
         layers={IS_GROUND ? GROUND_ONLY : undefined}>
         {/* The old player's overlays: the user's dot, the couriers, the map pins. */}
         {!IS_GROUND && <UserDot />}

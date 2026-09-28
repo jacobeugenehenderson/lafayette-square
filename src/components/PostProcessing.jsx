@@ -57,7 +57,7 @@ import {
 // 2026-06-30). ExposureTicker still writes _exposureRef.
 import { usePostFxDriver, _exposureRef } from './usePostFxDriver.js'
 import { RenderPipeline } from './renderPipeline.jsx'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 // Look id resolution — same shape as CelestialBodies / BakedGround.
 
@@ -87,7 +87,7 @@ const DOF_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('dof'))
 
 export function ExposureTicker({ lookId, bakeLastMs, exposureOverride }) {
   const { gl } = useThree()
-  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const scene = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const channel = exposureOverride ?? scene?.exposure ?? EXPOSURE_DEFAULT_CHANNEL
   useFrame(() => {
     const tod = useTimeOfDay.getState()
@@ -113,7 +113,7 @@ export function PostProcessing({
 }) {
   const bloomRef = useRef()
   const aoRef = useRef()
-  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const scene = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
 
   const bloomChannel    = bloomOverride    ?? scene?.bloom    ?? BLOOM_DEFAULT_CHANNEL
   const aoChannel       = aoOverride       ?? scene?.ao       ?? AO_DEFAULT_CHANNEL
@@ -175,7 +175,7 @@ export function PostProcessing({
 
 let _penumbraWarned = false
 export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
-  const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const sceneJson = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const channel = shadowOverride ?? sceneJson?.shadow ?? SHADOW_DEFAULT_CHANNEL
   const tod = useTimeOfDay()
   const slotMins = getTodSlotMinutes(tod.currentTime)
@@ -261,7 +261,7 @@ let _mistWarned = false
 export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
   const { scene: threeScene } = useThree()
   const fogRef = useRef()
-  const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const sceneJson = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const mistChannel = mistOverride ?? sceneJson?.mist ?? MIST_DEFAULT_CHANNEL
 
   useEffect(() => {
@@ -307,7 +307,7 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
 const LAMPGLOW_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('lampGlow'))
 
 export function LampGlowDriver({ lookId, bakeLastMs, lampGlowOverride }) {
-  const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const sceneJson = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const channel = lampGlowOverride ?? sceneJson?.lampGlow ?? LAMPGLOW_DEFAULT_CHANNEL
   useFrame(() => {
     const tod = useTimeOfDay.getState()

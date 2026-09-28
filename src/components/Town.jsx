@@ -12,7 +12,11 @@
  *
  * WHAT VARIES BY APP ARRIVES AS A PROP; what varies by town arrives from the slab and the town's
  * instance (`lookId`). The camera is the app's: mount it as a sibling of <Town>.
- *   lookId           the Look to draw (Stage passes the active one; it switches towns live)
+ *   town             REQUIRED — the installation's identity: a town manifest's `identity` ({ geography,
+ *                    skyMode, profile, setPiece, … }). The kit's apps pass their instance module (the same
+ *                    fields) — townForLook(lookId) from src/instance.js. Nothing <Town> reaches resolves a
+ *                    town itself. Absent or without geography, it throws naming the prop.
+ *   lookId           REQUIRED — the Look to draw (Stage passes the active one; it switches towns live)
  *   quality          a profile from lib/qualityProfile.js — deviceQuality() is the device's own
  *   shot             'movie' | 'plan' | 'street'
  *   paused           draw no frames (a full-screen overlay is up) — under a demand frameloop
@@ -34,13 +38,12 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import R3FErrorBoundary from './R3FErrorBoundary'
-import TownBridge, { SHOT_KEY } from './TownBridge.jsx'
+import TownBridge, { SHOT_KEY, useTownLoaded } from './TownBridge.jsx'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
 import { QualityProvider } from '../lib/qualityProfile.js'
-import { INSTANCE, townForLook } from '../instance.js'   // ⏳ interim — see the refusal in Town
 import { useTownPlace } from '../lib/townPlace.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { SKY_IS_VOLUMETRIC } from '../lib/skyMode'
+import { skyModeOf } from '../lib/skyMode'
 import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import { sceneExag } from '../utils/terrainShader'
 import { terrainExag } from '../utils/terrainShader'
@@ -167,21 +170,13 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 }
 
 export default function Town({
-  lookId, quality, shot, paused = false, idle = false, selectedId, onSelectBuilding, litIds, liveIds,
+  town, lookId, quality, shot, paused = false, idle = false, selectedId, onSelectBuilding, litIds, liveIds,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
   holdScrubbedTime = false, children,
 }) {
   if (!lookId) throw new Error('[Town] ⛔ needs lookId — the Look to draw')
   if (!quality?.id) throw new Error('[Town] ⛔ needs quality — a profile from src/lib/qualityProfile.js')
   if (!SHOT_KEY[shot]) throw new Error(`[Town] ⛔ shot "${shot}" is not one of ${Object.keys(SHOT_KEY).join(' · ')}`)
-  // ⏳ INTERIM (Warden, 2026-09-28) — deleted by the INSTANCE work, when <Town town> is passed in and nothing
-  // Town reaches reads the kit's instance. Until then two pieces of the town still come from the page's boot
-  // identity (listings, the live buildings, the terrain), and instance.js falls back to town #1 for a Look it
-  // cannot place, with only a console line. Refuse to draw in either case rather than draw the mould.
-  // ⛔ NOT "lookId !== INSTANCE.lookId": Stage boots on `?scene=` with no `?look=`, so its INSTANCE is always
-  // the default town, and that test would refuse every poured town in Stage.
-  if (INSTANCE.identityResolved === false) throw new Error(`[Town] ⛔ asked to draw "${lookId}" but this page's installation did not resolve: it fell back to "${INSTANCE.mapId}" (identityResolved=false)`)
-  if (!townForLook(lookId)) throw new Error(`[Town] ⛔ asked to draw "${lookId}", which the kit's looks index places in no town`)
   if (liveIds) throw new Error('[Town] ⛔ liveIds: the live-announcement mark is not built yet (a design question with Jacob) — nothing would draw it')
   for (const k of Object.keys(layers || {})) if (!LAYERS.includes(k)) throw new Error(`[Town] ⛔ unknown layer "${k}" (have: ${LAYERS.join(' ')})`)
   for (const k of Object.keys(overrides)) if (!OVERRIDE_KEYS.includes(k)) throw new Error(`[Town] ⛔ unknown override "${k}"`)
@@ -191,13 +186,16 @@ export default function Town({
   const scene = useSceneJson(lookId)
   const bake = bakeLastMs ?? scene?.bakedAt ?? null
   const key = SHOT_KEY[shot]
+  // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
+  const loaded = useTownLoaded(lookId)
+  if (!loaded) return <TownBridge town={town} lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} />
   const targetExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // The phone profile mounts the arch and the horizon in the movie shot only (its budget).
   const heavy = !quality.heroOnlyPieces || shot === 'movie'
 
   return (
     <QualityProvider quality={quality}>
-      <TownBridge lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} />
+      <TownBridge town={town} lookId={lookId} shot={shot} selectedId={selectedId} onSelectBuilding={onSelectBuilding} />
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} />
       <TimeTicker holdScrubbedTime={holdScrubbedTime} />
       <SkyStateTicker />
@@ -220,7 +218,7 @@ export default function Town({
       </group>
       <group visible={on('clouds')}>
         {/* Sky renderer stopgap (skyMode): <CloudDome/> ships, <Atmosphere/> under ?sky=volumetric. */}
-        <R3FErrorBoundary name="Atmosphere">{SKY_IS_VOLUMETRIC ? <Atmosphere /> : <CloudDome />}</R3FErrorBoundary>
+        <R3FErrorBoundary name="Atmosphere">{skyModeOf(town) === 'volumetric' ? <Atmosphere lookId={lookId} /> : <CloudDome />}</R3FErrorBoundary>
       </group>
       {/* Hidden: it keeps the shared terrainExag uniform live; the ribbons and fills ARE the ground. */}
       <group visible={false}>
@@ -234,7 +232,7 @@ export default function Town({
         </group>
         {/* Neon, street labels and the park title. Its live buildings stay hidden: the slab draws them. */}
         <R3FErrorBoundary name="LafayetteScene">
-          <LafayetteScene lookId={lookId} bakeLastMs={bake} litIds={litIds} labelViewMode={key}
+          <LafayetteScene town={town} lookId={lookId} bakeLastMs={bake} litIds={litIds} labelViewMode={key}
             forceNeonOn={o.neonForceOn} neonDensity={o.neonDensity}
             materialColorsOverride={o.materialColors}
             hiddenLayers={{ building: true, neon: !on('neon'), labels: !on('labels'), parkTitle: scene?.layerVis?.parkTitle === false }} />
@@ -248,14 +246,14 @@ export default function Town({
           <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bake} canopyOverride={o.canopy} /></R3FErrorBoundary>
         </group>
         <group visible={on('park')}>
-          <R3FErrorBoundary name="LafayettePark"><LafayettePark lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="LafayettePark"><LafayettePark town={town} lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
         </group>
         <group visible={on('lamps')}>
           <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bake} lanternOverride={o.lantern} lampsOnOverride={o.lampsOn} /></R3FErrorBoundary>
         </group>
         <group visible={on('setPieces')}>
           {heavy && <R3FErrorBoundary name="GatewayArch"><GatewayArch lookId={lookId} bakeLastMs={bake} archOverride={o.arch} archLightOverride={o.archLight} /></R3FErrorBoundary>}
-          <R3FErrorBoundary name="SetPiece"><SetPiece lookId={lookId} lightOverride={o.setPieceLight} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SetPiece"><SetPiece town={town} lookId={lookId} lightOverride={o.setPieceLight} /></R3FErrorBoundary>
         </group>
         {heavy && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
         {/* A mesh behind everything, at its true geo spot; nothing unless the Look ships a landscape. */}

@@ -37,7 +37,7 @@ import {
   ARCH_FLAT_DEFAULTS,
   ARCHLIGHT_FLAT_DEFAULTS, ARCHLIGHT_FIELD_KEYS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 // NPS catenary equation converted to meters:
 const A = 211.5
@@ -126,7 +126,7 @@ export default function GatewayArch({
   const geometry = useMemo(() => createArchGeometry(), [])
   const meshRef = useRef()
   const shaderRef = useRef(null)
-  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const scene = useSceneJson(lookOf(lookId, 'GatewayArch'), bakeLastMs)
   const archChannel = archOverride ?? scene?.arch ?? null
   const arch    = (archChannel ?? ARCH_DEFAULT_CHANNEL).values
   // Arch Lighting is a TOD-animatable channel — keep the whole channel

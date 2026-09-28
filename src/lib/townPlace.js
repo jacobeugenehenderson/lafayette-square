@@ -1,19 +1,17 @@
 /**
  * THE TOWN'S PLACE ON THE GLOBE — where the sun, the moon, the stars, the season and the sky's
- * schedule are computed from. One module owns it; everything that needs a latitude asks here.
+ * schedule are computed from. One module holds it; everything that needs a latitude asks here.
  *
- * ⭐ WHY (BRIEF-one-town-assembly, Warden's ruling (b), 2026-09-27). Ten renderer files read
- * `INSTANCE.geography` at module load: the boot town's latitude, frozen. Stage switches towns live,
- * so a switch from Lafayette Square to Provincetown kept St. Louis's sun, moon, stars, season and
- * sky schedule over Cape Cod. <Town lookId> now moves the place (TownBridge.jsx → setTownPlace), and
- * every reader resolves it AT USE, so the sun, the moon and the calendar change on the same frame.
- * ▶ node checks/claims-the-town-reads-no-player-store.mjs fails any other renderer read of it.
+ * ⭐ WHY (BRIEF-one-town-assembly, Warden's rulings, 2026-09-27/28). Ten renderer files read
+ * `INSTANCE.geography` at module load: the boot town's latitude, frozen, resolved by the kit's own
+ * instance.js — which falls back to town #1 for a town it cannot place. The place is now MOVED here by
+ * whoever knows the town: <Town town> (TownBridge.jsx), or an app's entry for its own boot town
+ * (placeTown). Every reader resolves it AT USE, so the sun, the moon and the calendar change together.
+ * ▶ node checks/claims-the-town-reads-no-player-store.mjs
  *
- * The page's boot town is the starting place — every app boots on a town (`?look=`), and a sky
- * embed that mounts no <Town> draws that town. It is where the page IS, not a fallback for an unknown.
+ * ⛔ It starts EMPTY and a read before anything is placed THROWS. There is no default town.
  */
 import { useSyncExternalStore } from 'react'
-import { INSTANCE } from '../instance.js'
 
 function placeOf(geography, lookId) {
   const { lat, lon, timezone, lonToMeters, latToMeters } = geography || {}
@@ -23,19 +21,25 @@ function placeOf(geography, lookId) {
   return Object.freeze({ lookId, lat, lon, timezone, lonToMeters, latToMeters })
 }
 
-let _place = placeOf(INSTANCE.geography, INSTANCE.lookId)
+let _place = null
 const _subs = new Set()
 
-/** Where the town being drawn stands: { lookId, lat, lon, timezone, lonToMeters, latToMeters }. */
-export function townPlace() { return _place }
+/** Where the town being drawn stands: { lookId, lat, lon, timezone, lonToMeters, latToMeters }. Throws until placed. */
+export function townPlace() {
+  if (!_place) throw new Error('[townPlace] ⛔ no town has been placed — mount <Town town>, or call placeTown(town) at the app\'s entry')
+  return _place
+}
 
-/** Move the place to a town's geography. Written by TownBridge.jsx only. */
+/** Move the place to a town's geography. Called by TownBridge.jsx only. */
 export function setTownPlace(geography, lookId) {
-  if (_place.lookId === lookId && _place.lat === geography?.lat && _place.lon === geography?.lon) return
+  if (_place && _place.lookId === lookId && _place.lat === geography?.lat && _place.lon === geography?.lon) return
   _place = placeOf(geography, lookId)
   for (const fn of _subs) fn()
 }
 
 function subscribe(fn) { _subs.add(fn); return () => _subs.delete(fn) }
-/** The place, re-rendering when <Town> moves it. */
+/** The place, re-rendering when it moves. Throws until placed, like townPlace(). */
 export function useTownPlace() { return useSyncExternalStore(subscribe, townPlace) }
+/** The Look the place belongs to, or null — for a gate that waits for it. */
+export function placedLook() { return _place?.lookId ?? null }
+export function onPlaceMoved(fn) { return subscribe(fn) }

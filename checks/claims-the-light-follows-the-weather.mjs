@@ -29,6 +29,11 @@ const json = (p) => JSON.parse(read(p))
 
 const { selectDirectiveWithStrengths } = await import(path.join(ROOT, 'src/lib/almanac-eval.js'))
 const { buildWeatherPayload } = await import(path.join(ROOT, 'src/lib/weather-payload.js'))
+// The payload's sun is computed at the placed town (src/lib/townPlace.js starts empty and throws). This check
+// used to get INSTANCE's town implicitly, which under Node is the default (Lafayette Square); it now names it.
+const { setTownPlace } = await import(path.join(ROOT, 'src/lib/townPlace.js'))
+const { instanceForMap } = await import(path.join(ROOT, 'src/instances/registry.js'))
+setTownPlace(instanceForMap('lafayette-square').geography, 'lafayette-square')
 const { deriveSignals } = await import(path.join(ROOT, 'src/lib/weather-signals.js'))
 const { deriveSkyScalars, weatherExposureScale } = await import(path.join(ROOT, 'src/lib/sky-scalars.js'))
 const useSkyState = (await import(path.join(ROOT, 'src/hooks/useSkyState.js'))).default

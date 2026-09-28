@@ -178,6 +178,9 @@ export const INSTANCE = resolveInstance()
  * towns live, so a renderer drawing a town it was GIVEN asks this rather than reading INSTANCE (the
  * page's boot town). null for a Look we cannot place.
  */
+/** The set-piece a Look's town declares, or null — for panels that show its controls only where it exists. */
+export function setPieceOf(lookId) { return townForLook(lookId)?.setPiece ?? null }
+
 export function townForLook(lookId) {
   if (!lookId || lookId === INSTANCE.lookId) return INSTANCE
   const map = mapForLook(lookId)

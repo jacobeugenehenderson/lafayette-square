@@ -20,7 +20,7 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { streetEyeY } from '../utils/elevation'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { INSTANCE } from '../instance.js'
+import { INSTANCE, townForLook } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { RENDER_TIERS } from '../lib/renderTiers.js'
 import { setActiveProfileId } from './deviceProfiles'
@@ -1225,6 +1225,7 @@ const QUALITY = deviceQuality()
 
 function CanvasContents({ layers, shot, setShot }) {
   const lookId = resolvePreviewLookId()
+  const town = useMemo(() => townForLook(lookId), [lookId])
   // ?dofDebug=1 paints the DoF CoC zones (green = sharp, red = full blur) — the
   // shared dofDriver reads window.__dofDebug.
   useEffect(() => {
@@ -1236,7 +1237,7 @@ function CanvasContents({ layers, shot, setShot }) {
   // BasicLights — an inspection fallback lit only while the sky layer is off.
   return (
     <>
-      <Town lookId={lookId} quality={QUALITY} shot={TOWN_SHOT[shot]} interactive={false}
+      <Town town={town} lookId={lookId} quality={QUALITY} shot={TOWN_SHOT[shot]} interactive={false}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,

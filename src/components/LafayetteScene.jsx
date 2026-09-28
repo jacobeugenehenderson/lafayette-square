@@ -78,7 +78,7 @@ function isDrag(e) {
   const dx = ce.clientX - _pdx, dy = ce.clientY - _pdy
   return dx * dx + dy * dy > 36
 }
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 // Per-building overrides (roof shape, foundation height, colour) are applied by the BAKE
 // (cartograph/bake-buildings.js) and reach the player through the slab. This live path used to
@@ -1034,12 +1034,12 @@ export function useBrowseContentReady(shot, forceContentReady, delayMs) {
   return ready
 }
 
-function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn, neonDensity, litIds, hiddenLayers, labelViewMode, forceContentReady } = {}) {
+function LafayetteScene({ town, lookId, bakeLastMs, paletteOverride, materialPhysicsOverride, materialColorsOverride, forceNeonOn, neonDensity, litIds, hiddenLayers, labelViewMode, forceContentReady } = {}) {
   // Panel layer toggles: { building, labels, ... } → boolean. Empty object in
   // production (no overrides). Stage passes the live store map; baked Stage
   // reads scene.json.layerVis. Foundations are tied to Building visibility.
   const hide = hiddenLayers || {}
-  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const scene = useSceneJson(lookOf(lookId, 'LafayetteScene'), bakeLastMs)
   // Stage's mount in CartographApp passes live-subscribed overrides from
   // the cartograph store so Surfaces panel drags retint instantly.
   // Production omits the overrides and reads scene.json frozen-at-bake.
@@ -1083,7 +1083,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
   // store, so the layout style has to arrive from the slab or the labels lay
   // out at defaults — which is exactly what they were doing. See
   // useLabelPlacements.js.
-  const { labels: streetLabels, style: labelStyle } = useStreetLabels()
+  const { labels: streetLabels, style: labelStyle } = useStreetLabels(lookOf(lookId, 'LafayetteScene'), bakeLastMs)
   const labelPlacements = useLabelPlacements(streetLabels, labelStyle)
 
   return (
@@ -1107,7 +1107,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
           with no rebuild — it's one merged mesh, resident as in production
           (Vernier Phase 1b). */}
       <group visible={!hide.neon}>
-        <SceneNeon forceNeonOn={forceNeonOn} density={neonDensity} materialColors={materialColorsOverride} lookId={resolveLookId(lookId)} litIds={litIds} />
+        <SceneNeon forceNeonOn={forceNeonOn} density={neonDensity} materialColors={materialColorsOverride} lookId={lookOf(lookId, 'LafayetteScene')} litIds={litIds} />
       </group>
 
       {/* Street labels — the shared StreetLabels group (same component the
@@ -1121,7 +1121,7 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
           street labels), so the operator shows/hides it independently. NOT
           gated by labelsReady: it's a landmark establishing label shown in
           every shot (incl. Hero), unlike the browse-only street labels. */}
-      {!hide.parkTitle && <ParkTitle lookId={resolveLookId(lookId)} />}
+      {!hide.parkTitle && <ParkTitle town={town} lookId={lookOf(lookId, 'LafayetteScene')} />}
     </group>
   )
 }

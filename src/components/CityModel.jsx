@@ -60,7 +60,7 @@ import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { useQuality } from '../lib/qualityProfile.js'
-import { INSTANCE } from '../instance.js'
+import { lookOf } from '../lib/lookOf.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCityModelActive from '../hooks/useCityModelActive'
@@ -168,7 +168,7 @@ function flattenTile(gltfScene, idFor) {
 }
 
 export default function CityModel({ lookId: propLookId, interactive = true } = {}) {
-  const lookId = propLookId || INSTANCE.lookId
+  const lookId = lookOf(propLookId, 'CityModel')
   const textured = useQuality().buildingTextures
   const [manifest, setManifest] = useState(null)
   const [tiles, setTiles] = useState([])

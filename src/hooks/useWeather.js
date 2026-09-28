@@ -1,14 +1,19 @@
 import useSkyState from './useSkyState'
 import useAtmosphere from './useAtmosphere.js'
 import { deriveStorminess } from '../lib/weatherPresets.js'
-import { INSTANCE } from '../instance.js'
+import { townPlace } from '../lib/townPlace.js'
 
 // Halo 2026-05-20 Phase 6: added direct_radiation + diffuse_radiation to
 // current (modulators read the ratio for haze / wildfire-smoke detection)
 // and pressure_msl + past_hours=4 to hourly (so deriveSignals can compute
 // pressure_trend_3hr from the back-fill instead of maintaining an
 // in-memory ring buffer — Approach B from the Phase 6 brief).
-const API_URL = `https://api.open-meteo.com/v1/forecast?latitude=${INSTANCE.geography.lat}&longitude=${INSTANCE.geography.lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation&hourly=temperature_2m,weather_code,pressure_msl&past_hours=4&forecast_hours=48&temperature_unit=fahrenheit&wind_speed_unit=ms&timezone=${encodeURIComponent(INSTANCE.geography.timezone)}`
+// The forecast for the town being drawn — built at FETCH time from its place (lib/townPlace.js), never from the
+// kit's boot town at module load (which drew the boot town's weather over any other).
+function apiUrl() {
+  const { lat, lon, timezone } = townPlace()
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation&hourly=temperature_2m,weather_code,pressure_msl&past_hours=4&forecast_hours=48&temperature_unit=fahrenheit&wind_speed_unit=ms&timezone=${encodeURIComponent(timezone)}`
+}
 
 /**
  * Reconcile Open-Meteo's current `weather_code` against the live Degrees.
@@ -53,7 +58,7 @@ function deriveTurbidity(visibility) {
  */
 export async function fetchWeather({ snap = false } = {}) {
   try {
-    const res = await fetch(API_URL)
+    const res = await fetch(apiUrl())
     if (!res.ok) return
     const data = await res.json()
     // Stage's Weather switch is standing a preset: the live feed writes nothing.

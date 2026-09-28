@@ -34,7 +34,6 @@ import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
 import { DEFAULT_V_EXAG, terrainIdentity } from '../lib/terrainCommon.js'
-import { resolveLookId } from '../lib/resolveLookId.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
 //
@@ -51,9 +50,11 @@ import { resolveLookId } from '../lib/resolveLookId.js'
 // A 2×2 zero heightfield → getElevation()==0 everywhere, exag lifts nothing.
 const FLAT_TERRAIN = { width: 2, height: 2, bounds: { minX: -1, maxX: 1, minZ: -1, maxZ: 1 }, data: new Float32Array([0, 0, 0, 0]) }
 
-// The active look at module load: ?look= override (Preview / any deep-link),
-// else the deployment's default installation. The authoring app drives live
-// changes through reloadTerrain(), so it doesn't need cartograph internals here.
+// ⭐ NO TOWN AT MODULE LOAD (BRIEF-one-town-assembly, Warden 2026-09-28). This used to fetch the page's boot
+// Look at import (resolveLookId → instance.js, which falls back to town #1), so an app drawing a town the kit
+// did not boot stood on the wrong ground until something reloaded it. The terrain is now loaded by whoever
+// knows the town: <Town town> (TownBridge.jsx → reloadTerrain), and <Town> draws nothing until it has
+// arrived (terrainLook() === its Look). Until then the module holds FLAT, which nothing draws on.
 
 // ── THE TOWN'S AUTHORED VERTICAL EXAGGERATION — the CEILING the hero shot lerps toward.
 //
@@ -93,15 +94,19 @@ async function fetchTerrain(lookId) {
 
 // Live terrain state — reassigned by reloadTerrain(). Exported as `let` so late
 // re-reads see fresh values; the heavy consumers (elevation.js CPU sampler)
-// subscribe to onTerrainReload() to rebuild. Top-level await keeps first paint
-// correct (elevation.js builds its sampler from valid initial data).
-let _lookId = resolveLookId()
-let _terrain = await fetchTerrain(_lookId)
+// subscribe to onTerrainReload() to rebuild.
+let _lookId = null
+let _terrain = FLAT_TERRAIN
 // The active town's authored ceiling. `let` + a getter, because reloadTerrain() re-points it
 // and late readers (elevation.js's sampler rebuild) must see the fresh value, not a snapshot.
-let _sceneExag = await fetchSceneExag(_lookId)
-/** The ACTIVE look's authored vertical exaggeration (the hero ceiling). Re-points on reload. */
-export function sceneExag() { return _sceneExag }
+let _sceneExag = null
+/** The ACTIVE look's authored vertical exaggeration (the hero ceiling). Re-points on reload. Throws before a town's terrain is loaded. */
+export function sceneExag() {
+  if (_sceneExag == null) throw new Error('[terrain] ⛔ no town\'s terrain is loaded yet — <Town> loads it (reloadTerrain) before it draws')
+  return _sceneExag
+}
+/** The Look whose terrain is loaded, or null. <Town> draws once this is its own. */
+export function terrainLook() { return _lookId }
 /** The ACTIVE look's bed record (terrain.json `bed`: the profile and the visibility depth), or null. Re-points on reload. */
 export function terrainBed() { return _terrain.bed || null }
 /** The ACTIVE look's water levels record (terrain.json `water`: its low and high tide or lake level), or null. Re-points on reload. */

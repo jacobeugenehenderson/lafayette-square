@@ -40,7 +40,7 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { defaultWindState, resolveWindState } from '../lib/wind-field.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 
 // URL → species. The rewritten GLB path is
@@ -616,7 +616,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl, 
   // Active Look: explicit prop wins; otherwise URL `?look=` fallback; final
   // default 'lafayette-square'. Cartograph passes the active Look explicitly
   // via the StageEnvironment thread; Preview reads ?look= from the URL.
-  const lookName = resolveLookId(propLookId)
+  const lookName = lookOf(propLookId, 'InstancedTrees')
   const scene = useSceneJson(lookName, bakeLastMs)
   const cacheBust = bakeLastMs ?? scene?.bakedAt ?? null
 

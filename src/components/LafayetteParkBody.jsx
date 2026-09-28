@@ -18,7 +18,6 @@ import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polyg
 import { getElevationRaw } from '../utils/elevation'
 import { sceneExag } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { INSTANCE } from '../instance.js'
 import { makeWaterMaterial, ringExtentDiag } from './waterMaterial.js'
 import { terrainExag, patchTerrain } from '../utils/terrainShader'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
@@ -27,7 +26,7 @@ import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
 import { buildStairGeometry } from '../lib/buildStairGeometry.js'
 import featureElev from '../data/park-feature-elev.json'
 import { makeGravelPathMaterial } from './gravelPathMaterial.js'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 // Lafayette Park: ~350m square park (30 acres) centered at origin.
 // Bounded by Park Ave (N), Lafayette Ave (S), Mississippi Ave (W),
@@ -96,7 +95,7 @@ const TAU = Math.PI * 2
 const PATH_BRIDGE_Y = 0.5  // clear water (0.35) + island top (0.4)
 
 function ParkBridge({ lookId, bakeLastMs }) {
-  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const scene = useSceneJson(lookOf(lookId, 'LafayettePark'), bakeLastMs)
   const hidden = scene?.layerVis?.park_path === false
   const tintHex = scene?.layerColors?.park_path
   const roughness = scene?.materialPhysics?.park_path?.roughness
@@ -159,7 +158,7 @@ function lookupStepElev(a, b, records) {
 }
 
 function ParkStairs({ lookId, bakeLastMs }) {
-  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const scene = useSceneJson(lookOf(lookId, 'LafayettePark'), bakeLastMs)
   const hidden = scene?.layerVis?.steps === false
   const mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#A0907E', roughness: 0.9 }), [])
   const stairs = useMemo(() => {
@@ -211,7 +210,7 @@ function ParkStairs({ lookId, bakeLastMs }) {
 
 // ── Park Water Features (Lake + Grotto Pond) ─────────────────────────
 function ParkWater({ lookId, bakeLastMs }) {
-  const resolvedLookId = resolveLookId(lookId)
+  const resolvedLookId = lookOf(lookId, 'LafayettePark')
   const scene = useSceneJson(resolvedLookId, bakeLastMs)
   const waterHidden = scene?.layerVis?.water === false
 
@@ -560,7 +559,8 @@ function ElevatedGroup({ at, children }) {
 // The title + subtitle drawn onto one texture (canvas 2D), so it can ride a
 // plain quad printed on the grass. Title white, subtitle grey, dark outline —
 // matching the old troika look. Built once.
-export function useParkTitleTexture() {
+// `town` is the installation being drawn (<Town town>): its landmark's name and founding, never the kit's boot town.
+export function useParkTitleTexture(town) {
   // Same panel `labels` style the street labels use (SceneLabel reads the same),
   // so the park title stays consistent with them AND the Labels-panel controls
   // (halo, fill, weight, spacing, font) govern it too — not just the street labels.
@@ -576,8 +576,8 @@ export function useParkTitleTexture() {
     if (typeof document === 'undefined') return null
     const applyCase = t => caseMode === 'upper' ? t.toUpperCase()
                          : caseMode === 'lower' ? t.toLowerCase() : t
-    const title = applyCase(INSTANCE.profile.landmarkName)
-    const sub = applyCase(`EST. ${INSTANCE.profile.founded} · ${INSTANCE.geography.cityState}`)
+    const title = applyCase(town.profile.landmarkName)
+    const sub = applyCase(`EST. ${town.profile.founded} · ${town.geography.cityState}`)
     const W = 2048, H = 512
     const canvas = document.createElement('canvas')
     canvas.width = W; canvas.height = H
@@ -615,8 +615,8 @@ export function useParkTitleTexture() {
 // depthTest flag didn't hold (its internal render material ignored it), which is
 // why the word kept shearing ("AFAYETTE PARK"). `y` = height above whatever
 // ground the caller sits it on. LS-only geometry (LABEL_TITLE_POS).
-export function ParkTitleMesh({ y = 0.25, occlude = false }) {
-  const tex = useParkTitleTexture()
+export function ParkTitleMesh({ town, y = 0.25, occlude = false }) {
+  const tex = useParkTitleTexture(town)
   // Size knob (proportional scale, Auto/absent = 1×) scales the whole quad — the
   // same sizeK the street labels use, so the one control drives both.
   const sizeK = useCartographStore(s => s.labels?.sizeK) ?? 1
@@ -644,23 +644,22 @@ export function ParkTitleMesh({ y = 0.25, occlude = false }) {
 // 3D scene: the same mesh printed on the grass at its LOCAL ground height. The
 // ElevatedGroup samples terrain at the (possibly moved) center so the lift
 // tracks the title.
-export function ParkTitle() {
+export function ParkTitle({ town, lookId }) {
   const posOverride = useCartographStore(s => s.parkTitlePos)
-  if (INSTANCE.lookId !== 'lafayette-square') return null   // HPDM-safety
+  if (lookId !== 'lafayette-square') return null   // HPDM-safety: guarded on the Look being drawn
   const cx = posOverride ? posOverride[0] : PARK_TITLE_DEFAULT_CENTER[0]
   const cz = posOverride ? posOverride[1] : PARK_TITLE_DEFAULT_CENTER[1]
   return (
     <ElevatedGroup at={[cx, cz]}>
-      <ParkTitleMesh y={0.25} occlude />
+      <ParkTitleMesh town={town} y={0.25} occlude />
     </ElevatedGroup>
   )
 }
 
 function LafayettePark({ lookId, bakeLastMs } = {}) {
   // HPDM-safety: LS-specific landmark render (see deferred-to-producer note at the
-  // imports). Guarded to LS — byte-identical today (INSTANCE.lookId is always
-  // 'lafayette-square' until instance-boot lands); a non-LS look renders no park.
-  if (INSTANCE.lookId !== 'lafayette-square') return null
+  // imports). Guarded on the Look being DRAWN (<Town lookId>); a non-LS look renders no park.
+  if (lookId !== 'lafayette-square') return null
   return (
     <group>
       <ParkWater lookId={lookId} bakeLastMs={bakeLastMs} />

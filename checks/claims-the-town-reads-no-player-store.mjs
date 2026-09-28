@@ -26,6 +26,11 @@
  *     a live town switch must not keep the boot town's sun. A place NAME (cityState, stateCode) is
  *     a label, not a position, and is not this class. ONE module owns the boot town's place,
  *     src/lib/townPlace.js; the renderer asks it, and only the bridge moves it (setTownPlace).
+ *   · ANY file Town pulls in — walked THROUGH the player stores this time, because the bundle does —
+ *     imports src/instance.js or src/instances/ (Warden, 2026-09-28, from Quire's measurement). The
+ *     town is <Town town>, passed in. instance.js resolves an unknown Look to the default town with
+ *     only a console line to say so (Layer 0 q2 inside the assembly), and the registry carries every
+ *     town's identity into any app that imports <Town>.
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-the-town-reads-no-player-store.mjs [--self-test]
  */
@@ -40,6 +45,12 @@ const PROFILE = 'src/lib/qualityProfile.js'
 const PLACE = 'src/lib/townPlace.js'
 const PLAYER_STORES = ['useCamera', 'useSelectedBuilding', 'useLandmarkFilter', 'useListings', 'useUserLocation']
 const OVERLAY_STORES = ['useUserLocation', 'useLandmarkFilter']
+// ⏳ KNOWN OPEN, still RED: the failure names the brief that closes it. Not an exemption — a time-box made visible.
+const OPEN = {
+  'src/data/buildings.js': 'the live-building path (LafayetteScene\'s live Buildings, SceneNeon\'s no-slab fallback) — deleted by docs/briefs/BRIEF-live-building-palette.md',
+  'src/hooks/useListings.js': 'reached through SceneNeon (neon reads each place\'s hours) — the leaves brief moves neon onto props (Warden, 2026-09-28)',
+  'src/instance.js': 'reached only through the two loaders above',
+}
 const GLOBE_RE = /INSTANCE\.geography(?!\.(cityState|stateCode)\b)/
 const EXTS = ['', '.js', '.jsx', '.mjs', '/index.js', '/index.jsx']
 
@@ -61,12 +72,12 @@ function resolveSpec(byPath, fromPath, spec) {
   return null
 }
 const isStoreModule = (p) => PLAYER_STORES.some(s => new RegExp(`/hooks/${s}\\.jsx?$`).test(p))
-export function closureOf(files, entry) {
+export function closureOf(files, entry, { throughStores = false } = {}) {
   const byPath = new Map(files.map(x => [x.path, x]))
   const seen = new Set([entry]), q = [entry]
   while (q.length) {
     const p = q.shift(), x = byPath.get(p)
-    if (!x || isStoreModule(p)) continue
+    if (!x || (!throughStores && isStoreModule(p))) continue
     for (const s of specsOf(x.src)) { const r = resolveSpec(byPath, p, s); if (r && !seen.has(r)) { seen.add(r); q.push(r) } }
   }
   return [...seen].map(p => byPath.get(p)).filter(Boolean)
@@ -91,6 +102,11 @@ export function audit(files) {
     if (/useCamera\.getState\(\)\.viewMode|useCamera\(\s*\(?\w+\)?\s*=>\s*\w+\.viewMode/.test(code(x.src))) f.push(`${x.path} (renderer) reads the old player's viewMode — read townShot (<Town shot>)`)
     if (x.path !== PROFILE && importsSniff(x)) f.push(`${x.path} (renderer) imports the device sniff — read the quality profile (${PROFILE})`)
     if (x.path !== PLACE && GLOBE_RE.test(x.src.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ''))) f.push(`${x.path} (renderer) reads the boot town's place on the globe (INSTANCE.geography) — not the town it is drawing`)
+  }
+  // The town's identity is passed in: nothing Town reaches — stores included — resolves it from the kit.
+  for (const x of closureOf(files, TOWN, { throughStores: true })) {
+    const hit = specsOf(x.src).filter(sp => /(^|\/)instance(\.js)?$|\/instances\//.test(sp))
+    if (hit.length) f.push(`${x.path} (reached by <Town>) imports ${hit.join(', ')} — the town is <Town town>, never the kit's registry${OPEN[x.path] ? `\n      ⏳ OPEN: ${OPEN[x.path]}` : ''}`)
   }
   for (const x of files) {
     if (x.path === BRIDGE) continue
@@ -121,10 +137,13 @@ if (process.argv.includes('--self-test')) {
     ['a leaf reads the player\'s viewMode', () => audit(swap(leaf, s => s + `\nconst v = useCamera.getState().viewMode`)).f.length],
     ['an app that mounts Town sniffs the device', () => audit(swap('src/components/Scene.jsx', s => `import { IS_MOBILE } from '../lib/isMobile.js'\n` + s)).f.length],
     ['an app moves the town\'s place', () => audit(swap('src/cartograph/CartographApp.jsx', s => s + `\nsetTownPlace(geo, look)`)).f.length],
+    ['a leaf imports the kit\'s instance', () => audit(swap(leaf, s => `import { INSTANCE } from '../instance.js'\n` + s)).f.length],
     ['the bridge is unreachable', () => audit(swap(TOWN, s => s.replace(/^import .*TownBridge.*$/m, ''))).f.length],
   ]
+  // Caught means MORE failures than the tree has now — the known-open loaders keep the baseline red.
+  const base = audit(files).f.length
   let bad = 0
-  for (const [n, run] of cases) { const c = run() > 0; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
+  for (const [n, run] of cases) { const c = run() > base; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
   process.exit(bad ? 1 : 0)
 }
 

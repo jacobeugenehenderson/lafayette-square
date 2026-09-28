@@ -17,6 +17,8 @@
  * ⭐ THE TOWN IS A PAGE LOAD, NOT A TOGGLE: the terrain module and the instance
  * (geography → the sun) resolve `?look=` once at import. Switching town reloads.
  */
+// ⛔ FIRST: places the boot town before any other module is evaluated (placeBootTown.js).
+import '../../placeBootTown.js'
 import { WEATHER_PRESETS } from '../../lib/weatherPresets.js'
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -46,7 +48,7 @@ import useTimeOfDay from '../../hooks/useTimeOfDay'
 import useSkyState from '../../hooks/useSkyState'
 import useAtmosphere from '../../hooks/useAtmosphere.js'
 import { getElevationRaw } from '../../utils/elevation'
-import { UNIFORMS as TERRAIN_UNIFORMS } from '../../utils/terrainShader.js'
+import { UNIFORMS as TERRAIN_UNIFORMS, reloadTerrain } from '../../utils/terrainShader.js'
 import { SAND_UNIFORMS, CROP_UNIFORMS } from '../../components/grassMaterial.js'
 import { INSTANCE } from '../../instance.js'
 // Every town the kit knows — the same index the app resolves `?look=` against. A town with
@@ -65,6 +67,9 @@ window.__labTick = setInterval(() => { if (document.hidden) advance(performance.
 
 const params = new URLSearchParams(window.location.search)
 const LOOK = INSTANCE.lookId
+// The town is placed (placeBootTown.js, imported first) and its terrain loaded before anything draws: the
+// renderer resolves no town itself.
+await reloadTerrain(LOOK)
 const STAGE = params.get('at') || 'class:park'
 // ⭐ `?as=<surface>` renders the stage's class with that surface, through BakedGround's
 // surfacesOverride — the operator's own remap channel (`scene.surfaces.classes`), so the
@@ -243,7 +248,7 @@ function App() {
           <group visible={layers.revetment}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.lamps}><R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
           <group visible={layers.buildings}><R3FErrorBoundary name="SlabBuildings"><SlabBuildings lookId={LOOK} interactive={false} /></R3FErrorBoundary></group>
-          <R3FErrorBoundary name="SetPiece"><SetPiece graniteOverride={GRANITE_PREVIEW} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="SetPiece"><SetPiece town={INSTANCE} lookId={LOOK} graniteOverride={GRANITE_PREVIEW} /></R3FErrorBoundary>
           <group visible={layers.trees}><R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary></group>
         </Suspense>
         {layers.post && <PostProcessing lookId={LOOK} bakeLastMs={bakeLastMs} />}

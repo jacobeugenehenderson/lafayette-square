@@ -125,11 +125,11 @@ function Model({ path }) {
   return scene ? <primitive object={scene} /> : null
 }
 
-export default function PilgrimMonument({ town, footprint, graniteOverride, children } = {}) {
+export default function PilgrimMonument({ town, lookId, footprint, graniteOverride, children } = {}) {
   if (!town || !footprint) throw new Error('[PilgrimMonument] ⛔ no town or footprint — mount <SetPiece>, which passes both')
   const sp = town.setPiece
   // The operator's layer (`scene.surfaces.params['pilgrim-granite']`); the lab may override it for a preview.
-  const scene = useSceneJson(town.lookId)
+  const scene = useSceneJson(lookId)
   const authored = graniteOverride || scene?.surfaces?.params?.[SURFACE] || null
   const active = sp?.kind === 'pilgrim-monument'
   const site = useMemo(() => {
@@ -169,7 +169,7 @@ export default function PilgrimMonument({ town, footprint, graniteOverride, chil
   return (
     <group ref={ref} name="pilgrim-monument" position={[site.x, groundRaw * terrainExag.value, site.z]}
            rotation={[0, southFacingYaw(site), 0]}>
-      {sp.model ? <Model path={sp.model} /> : <Placeholder authored={authored} lookId={town.lookId} />}
+      {sp.model ? <Model path={sp.model} /> : <Placeholder authored={authored} lookId={lookId} />}
       {children /* the slot's lighting, in the tower's base frame (SetPiece.jsx) */}
       {label && (
         <group ref={labelRef}>

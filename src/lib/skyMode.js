@@ -27,17 +27,15 @@
  * becomes the only sky. Drop this module, collapse the three mounts back
  * to <Atmosphere/>, and remove CloudDome. No schema scars.
  */
-import { INSTANCE } from '../instance.js'
-
-function resolveSkyMode() {
+// ⭐ A FUNCTION OF THE TOWN BEING DRAWN, not a module constant resolved from the kit's boot instance
+// (BRIEF-one-town-assembly, 2026-09-28): <Town> asks with the town it was given.
+/** 'volumetric' | 'cheap' — `?sky=` overrides for a debug session, else the town's own `skyMode`. */
+export function skyModeOf(town) {
   if (typeof window !== 'undefined') {
     try {
       const p = new URLSearchParams(window.location.search).get('sky')
       if (p === 'volumetric' || p === 'cheap') return p
-    } catch { /* SSR / no location — fall through to deploy default */ }
+    } catch { /* SSR / no location — fall through to the town's */ }
   }
-  return INSTANCE.skyMode === 'volumetric' ? 'volumetric' : 'cheap'
+  return town?.skyMode === 'volumetric' ? 'volumetric' : 'cheap'
 }
-
-export const SKY_MODE = resolveSkyMode()
-export const SKY_IS_VOLUMETRIC = SKY_MODE === 'volumetric'

@@ -39,7 +39,7 @@ import useSkyState from '../hooks/useSkyState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { LANDSCAPE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 const LANDSCAPE_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANDSCAPE_FLAT_DEFAULTS } })
 const PLACEMENT_KEYS = ['bearingX', 'bearingZ', 'distance', 'scale', 'rotation', 'yOffset']
@@ -53,7 +53,7 @@ function cacheBust(bakeLastMs) {
 }
 
 export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride }) {
-  const resolvedLookId = resolveLookId(lookId)
+  const resolvedLookId = lookOf(lookId, 'MountainBackdrop')
   const meshRef = useRef()
   const shaderRef = useRef(null)
   const scene = useSceneJson(resolvedLookId, bakeLastMs)

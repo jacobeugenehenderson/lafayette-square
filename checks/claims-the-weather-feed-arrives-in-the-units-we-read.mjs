@@ -14,13 +14,14 @@ import path from 'node:path'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const src = readFileSync(path.join(ROOT, 'src/hooks/useWeather.js'), 'utf8')
-const url = src.match(/const API_URL = `([^`]+)`/)?.[1]
+// The forecast URL template — built per call from the placed town (apiUrl() in useWeather.js).
+const url = src.match(/`(https:\/\/api\.open-meteo\.com\/v1\/forecast\?[^`]+)`/)?.[1]
 
 let failed = 0
 const bad = (m) => { failed++; console.log(`  ⛔ ${m}`) }
 console.log('\nThe weather feed arrives in the units we read')
 
-if (!url) bad('API_URL not found in src/hooks/useWeather.js')
+if (!url) bad('the open-meteo forecast URL was not found in src/hooks/useWeather.js')
 else {
   // field consumed → the query parameter that fixes its unit, and the value the code assumes.
   // (Open-Meteo's defaults: °C, km/h, mm. Precipitation's mm is the default and is what the

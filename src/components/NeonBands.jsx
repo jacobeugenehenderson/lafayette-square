@@ -8,7 +8,7 @@ import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
-import { resolveLookId } from '../lib/resolveLookId.js'
+import { lookOf } from '../lib/lookOf.js'
 
 /**
  * NeonBands — wall-mounted glass-tube signage along the rooftop perimeter
@@ -503,7 +503,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
 const NEON_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('neon'))
 // `neonOverride`: Stage's live channel (an operator drag shows without a bake); absent, the slab's.
 export function NeonDriver({ lookId, bakeLastMs, neonOverride } = {}) {
-  const scene = useSceneJson(resolveLookId(lookId), bakeLastMs)
+  const scene = useSceneJson(lookOf(lookId, 'NeonDriver'), bakeLastMs)
   const channel = neonOverride ?? scene?.neon ?? NEON_DEFAULT_CHANNEL
   useFrame(() => {
     const tod = useTimeOfDay.getState()
