@@ -47,11 +47,7 @@ const PLACE = 'src/lib/townPlace.js'
 const PLAYER_STORES = ['useCamera', 'useSelectedBuilding', 'useLandmarkFilter', 'useListings', 'useUserLocation']
 const OVERLAY_STORES = ['useUserLocation', 'useLandmarkFilter']
 // ⏳ KNOWN OPEN, still RED: the failure names the brief that closes it. Not an exemption — a time-box made visible.
-const OPEN = {
-  'src/components/LafayetteScene.jsx': 'its LIVE Building (selection + hover) — the live-building path is deleted by docs/briefs/BRIEF-live-building-palette.md',
-  'src/data/buildings.js': 'the live-building path (LafayetteScene\'s live Buildings, SceneNeon\'s no-slab fallback) — deleted by docs/briefs/BRIEF-live-building-palette.md',
-  'src/instance.js': 'reached only through the loader above',
-}
+const OPEN = {}
 const GLOBE_RE = /INSTANCE\.geography(?!\.(cityState|stateCode)\b)/
 const EXTS = ['', '.js', '.jsx', '.mjs', '/index.js', '/index.jsx']
 
@@ -109,6 +105,15 @@ export function audit(files) {
     if (x.path !== PROFILE && importsSniff(x)) f.push(`${x.path} (renderer) imports the device sniff — read the quality profile (${PROFILE})`)
     if (x.path !== PLACE && GLOBE_RE.test(x.src.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ''))) f.push(`${x.path} (renderer) reads the boot town's place on the globe (INSTANCE.geography) — not the town it is drawing`)
   }
+  // ⛔ THE AUTHORING STORE IS NOT THE TOWN'S (2026-09-28, measured). Merely importing src/cartograph/stores/* ran the
+  // whole authoring load under a dev server (the skeleton, the overlay, the Look's design — a SyntaxError on every
+  // Ward page) and hands the renderer the authoring store's DEFAULTS, never the town's authored values. A renderer
+  // takes what it draws from the slab or from <Town> props (Stage's live values arrive as `overrides`).
+  // ▶ the runtime half: node checks/claims-a-town-page-fetches-no-authoring.mjs
+  for (const x of closureOf(files, TOWN, { throughStores: true })) {
+    const hit = specsOf(x.src).filter(sp => /(^|\/)cartograph\/stores\//.test(sp) || (x.path.startsWith('src/cartograph/') && /(^|\/)stores\//.test(sp)))
+    if (hit.length) f.push(`${x.path} (reached by <Town>) imports the authoring store (${hit.join(', ')}) — take it from the slab or from <Town overrides>`)
+  }
   // The town's identity is passed in: nothing Town reaches — stores included — resolves it from the kit.
   for (const x of closureOf(files, TOWN, { throughStores: true })) {
     const hit = specsOf(x.src).filter(sp => /(^|\/)instance(\.js)?$|\/instances\//.test(sp))
@@ -130,6 +135,7 @@ if (process.argv.includes('--self-test')) {
   const swap = (path, fn) => files.map(x => x.path === path ? { ...x, src: fn(x.src) } : x)
   const leaf = closureOf(files, TOWN).filter(x => !isStoreModule(x.path)).find(x => x.path.endsWith('SlabBuildings.jsx')).path
   const cases = [
+    ['a leaf imports the authoring store', () => audit(swap(leaf, s => `import useCartographStore from '../cartograph/stores/useCartographStore.js'\n` + s)).f.length],
     ['Town imports a player store', () => audit(swap(TOWN, s => `import useCamera from '../hooks/useCamera'\n` + s)).f.length],
     ['a leaf imports the device sniff', () => audit(swap(leaf, s => `import { IS_MOBILE } from '../lib/isMobile.js'\n` + s)).f.length],
     ['a leaf reads data-scene-pause', () => audit(swap(leaf, s => s + `\nconst p = document.querySelector('[data-scene-pause]')`)).f.length],

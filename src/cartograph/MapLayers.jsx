@@ -19,6 +19,7 @@ import { townForLook } from '../instance.js'
 import StreetLabels from '../components/StreetLabels.jsx'
 import { useStreetLabels } from '../lib/streetLabels.js'
 import { useLabelPlacements } from '../lib/useLabelPlacements.js'
+import { labelStyleOf } from '../lib/labelStyle.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import {
   assignTerrainUniforms,
@@ -645,7 +646,15 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // Designer / Preview / LS never drift. The Designer shows the ACTIVE look's
   // own names (Łódź shows Łódź), not a static LS import.
   const activeLookId = useCartographStore(s => s.activeLookId)
-  const { labels: labelData, style: labelStyle } = useStreetLabels(activeLookId)
+  const labelsArtifact = useStreetLabels(activeLookId)
+  const labelData = labelsArtifact.labels
+  // The Designer authors live: once the Look's design is in the store, its label style (and the park title's moved
+  // position) are the store's; before that, the baked ones. The renderer never reads this store (it takes <Town>'s).
+  const designHydrated = useCartographStore(s => s._designHydrated)
+  const storeLabels = useCartographStore(s => s.labels)
+  const storeParkTitlePos = useCartographStore(s => s.parkTitlePos)
+  const labelStyle = designHydrated ? labelStyleOf(labelsArtifact, storeLabels) : labelStyleOf(labelsArtifact)
+  const parkTitlePos = designHydrated ? storeParkTitlePos : (labelsArtifact.setPieceTitles?.['lafayette-park'] ?? null)
   const labelPlacements = useLabelPlacements(labelData, labelStyle)
 
   // ── Park water (flat plan-view; park-local, rotated below) ────
@@ -1034,7 +1043,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       {/* Labels — the shared StreetLabels group: laid out by labelLayout.js
           (repeat + size k × widthM + fit/abbrev) and thinned by the runtime
           zoom-LOD (labelLod.js). Same component the player mounts. */}
-      {!hide.labels && <StreetLabels placements={labelPlacements} y={2.5} />}
+      {!hide.labels && <StreetLabels placements={labelPlacements} y={2.5} style={labelStyle} />}
 
       {/* Park title — the SHARED ParkTitleMesh (one source, used by the 3D scene
           too, so they're in both by construction). Reliable depth-off quad, so
@@ -1047,7 +1056,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           ⭐ `isLS` three hundred lines up is the same question asked of the STORE,
           which is the thing that actually changes. One file had two answers to
           "am I Lafayette Square" and the label picked the frozen one. */}
-      {!hide.parkTitle && isLS && <ParkTitleMesh town={townForLook(activeLookId, 'MapLayers')} y={2.6} />}
+      {!hide.parkTitle && isLS && <ParkTitleMesh town={townForLook(activeLookId, 'MapLayers')} style={labelStyle} pos={parkTitlePos} y={2.6} />}
     </group>
   )
 }

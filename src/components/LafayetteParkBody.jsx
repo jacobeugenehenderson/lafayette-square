@@ -20,7 +20,7 @@ import { sceneExag } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { makeWaterMaterial, ringExtentDiag } from './waterMaterial.js'
 import { terrainExag, patchTerrain } from '../utils/terrainShader'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { useTownContext } from './townContext.js'
 import { ringsToFlatGeo } from '../lib/ringsToFlatGeo.js'
 import { buildParkPathRings, mergeRings } from '../lib/parkPaths.js'
 import { buildStairGeometry } from '../lib/buildStairGeometry.js'
@@ -560,18 +560,14 @@ function ElevatedGroup({ at, children }) {
 // plain quad printed on the grass. Title white, subtitle grey, dark outline —
 // matching the old troika look. Built once.
 // `town` is the installation being drawn (<Town town>): its landmark's name and founding, never the kit's boot town.
-export function useParkTitleTexture(town) {
-  // Same panel `labels` style the street labels use (SceneLabel reads the same),
-  // so the park title stays consistent with them AND the Labels-panel controls
-  // (halo, fill, weight, spacing, font) govern it too — not just the street labels.
-  const style = useCartographStore(s => s.labels) || {}
-  const fill = style.fill ?? '#e8e8f0'
-  const halo = style.halo ?? '#14141c'
-  const haloWidth = style.haloWidth ?? 0.07
-  const weight = style.weight ?? 600
-  const tracking = style.letterSpacing ?? 0.05
+// `style` is the town's label style (the street labels' own — labelStyleOf, complete), so the Labels panel governs
+// the park title too.
+export function useParkTitleTexture(town, style) {
+  if (!style) throw new Error('[ParkTitle] ⛔ needs the town\'s label style (src/lib/labelStyle.js#labelStyleOf)')
+  const { fill, halo, haloWidth, weight } = style
+  const tracking = style.letterSpacing
   const fam = (style.fontFamily || '').trim()
-  const caseMode = style.case ?? 'mixed'
+  const caseMode = style.case
   return useMemo(() => {
     if (typeof document === 'undefined') return null
     const applyCase = t => caseMode === 'upper' ? t.toUpperCase()
@@ -615,12 +611,14 @@ export function useParkTitleTexture(town) {
 // depthTest flag didn't hold (its internal render material ignored it), which is
 // why the word kept shearing ("AFAYETTE PARK"). `y` = height above whatever
 // ground the caller sits it on. LS-only geometry (LABEL_TITLE_POS).
-export function ParkTitleMesh({ town, y = 0.25, occlude = false }) {
-  const tex = useParkTitleTexture(town)
+// `style` = the label style; `pos` = the title's [x, z] (the operator's moved position — this set-piece's own entry
+// in labels.json `setPieceTitles` — or null for the default). The Designer passes its live values; the town, its baked.
+export function ParkTitleMesh({ town, style, pos = null, y = 0.25, occlude = false }) {
+  const tex = useParkTitleTexture(town, style)
   // Size knob (proportional scale, Auto/absent = 1×) scales the whole quad — the
   // same sizeK the street labels use, so the one control drives both.
-  const sizeK = useCartographStore(s => s.labels?.sizeK) ?? 1
-  const posOverride = useCartographStore(s => s.parkTitlePos)
+  const sizeK = style.sizeK ?? 1
+  const posOverride = pos
   const mat = useMemo(() => tex && new THREE.MeshBasicMaterial({
     map: tex, transparent: true, depthTest: !!occlude, depthWrite: false, toneMapped: false,
   }), [tex, occlude])
@@ -645,13 +643,15 @@ export function ParkTitleMesh({ town, y = 0.25, occlude = false }) {
 // ElevatedGroup samples terrain at the (possibly moved) center so the lift
 // tracks the title.
 export function ParkTitle({ town, lookId }) {
-  const posOverride = useCartographStore(s => s.parkTitlePos)
+  // This set-piece's own title position (labels.json setPieceTitles — only this set-piece reads it).
+  const { labelStyle, setPieceTitles } = useTownContext()
+  const posOverride = setPieceTitles?.['lafayette-park'] ?? null
   if (lookId !== 'lafayette-square') return null   // HPDM-safety: guarded on the Look being drawn
   const cx = posOverride ? posOverride[0] : PARK_TITLE_DEFAULT_CENTER[0]
   const cz = posOverride ? posOverride[1] : PARK_TITLE_DEFAULT_CENTER[1]
   return (
     <ElevatedGroup at={[cx, cz]}>
-      <ParkTitleMesh town={town} y={0.25} occlude />
+      <ParkTitleMesh town={town} style={labelStyle} pos={posOverride} y={0.25} occlude />
     </ElevatedGroup>
   )
 }

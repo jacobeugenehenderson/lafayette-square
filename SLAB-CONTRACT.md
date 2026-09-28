@@ -45,6 +45,7 @@ public/baked/
 │   ├── ground.colormap.png          ← baked ground-albedo raster (trunk-base blend, 2026-06-22)
 │   ├── scene.json                   ← look-side palette, layer colors, vis flags, lamp glow + lantern, arch lighting
 │   ├── lamps.json                   ← lamp point cloud + ground anchors (§5)
+│   ├── labels.json                  ← street-label geometry + the town's whole label style (§5.1)
 │   ├── context.json                 ← context channels manifest (§3.3)
 │   ├── context.coastDist.bin        ← metres to the nearest shoreline, uint16 (§3.3)
 │   ├── sources.json                 ← this town's data credits + licences, and what is still owed one
@@ -264,6 +265,34 @@ Per-look styling metadata. Consumed alongside `ground.json` (and `lamps.json`, `
 Consumer: `src/components/BakedLamps.jsx` → `StreetLights`.
 
 ---
+
+## 5.1. `labels.json` — street labels and the town's label style (v4, 2026-09-28)
+
+The town's street names, where they run, and **the one home of its label style** (Warden's ruling, 2026-09-28): the
+style travels beside the geometry it lays out. Written by `cartograph/bake-labels.js`; read once by `<Town>`, which
+hands the labels and the resolved style to every label reader through its context (street labels, set-piece labels,
+the park title). Stage's live edits arrive as `<Town overrides.labels>` on top.
+
+```jsonc
+{
+  "version": 4, "scene": "<scene>", "look": "<look>", "count": <n>,
+  "style": { "weight": 500, "fill": "#ffffff", "halo": "#000000", "haloWidth": 0.07, "letterSpacing": 0.04,
+             "opacity": 0.9, "case": "upper", "fontFamily": "", "sizeK": 0.7, "bg": "#3a3a38", "bgAlpha": 1, … },
+  "setPieceTitles": { "lafayette-park": [-22.48, -97.31] },   // a set-piece's own title position; read only by it
+  "labels": [ { "name": "Park Avenue", "widthM": 12.4, "points": [[x, z], …] }, … ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `style` | The Look's authored `labels` block, whole (`design.json#labels`, halo width migrated). An unauthored Look bakes `{}`, which draws the kit's neutral style (`src/lib/labelStyle.js#LABEL_STYLE_DEFAULT` — the one default). |
+| `setPieceTitles` | A set-piece's own title placement, keyed by set-piece (`lafayette-park` ← `design.json#parkTitlePos`). Only that set-piece reads its entry; a town without it never does. |
+| `labels` | The street-name polylines. Placement is computed at runtime (`labelLayout.js`) from them and `style.sizeK` / `style.letterSpacing`. |
+
+**v3** carried only `style: { sizeK, letterSpacing }`; the player drew every other field from the authoring store's
+defaults (measured on staging, huron: mixed case, where the town authored upper case). A v3
+artifact still draws, filling the unbaked fields from the kit default — ⏳ until each town's labels are re-baked
+(▶ `node checks/claims-the-labels-carry-their-style.mjs` lists them); then a v3 artifact is refused loudly.
 
 ## 6. `buildings.json` — building geometry manifest
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useStreetLabels } from '../lib/streetLabels.js'
+import { useTownContext } from './townContext.js'
 import { useLabelPlacements } from '../lib/useLabelPlacements.js'
 import StreetLabels from './StreetLabels.jsx'
 import { ParkTitle } from './LafayettePark'
@@ -140,11 +140,9 @@ function LafayetteScene({ town, lookId, bakeLastMs, materialColorsOverride, forc
   // getStreetLabelPlacements, its SAME_NAME_MIN_DIST / ANY_LABEL_MIN_DIST
   // collision skip, and the EAST_OF_TRUMAN_ALLOWED whitelist are retired — the
   // collision de-dup now lives in labelLayout.js, the hood gate in the bake.
-  // ⭐ THE STYLE COMES WITH THEM. The player does not hydrate the Cartograph
-  // store, so the layout style has to arrive from the slab or the labels lay
-  // out at defaults — which is exactly what they were doing. See
-  // useLabelPlacements.js.
-  const { labels: streetLabels, style: labelStyle } = useStreetLabels(lookOf(lookId, 'LafayetteScene'), bakeLastMs)
+  // ⭐ THE STYLE COMES WITH THEM: <Town> reads labels.json once and hands the labels and the town's label style
+  // (its baked style, under Stage's live override) through its context. See src/lib/labelStyle.js.
+  const { streetLabels, labelStyle } = useTownContext()
   const labelPlacements = useLabelPlacements(streetLabels, labelStyle)
 
   return (
@@ -164,7 +162,7 @@ function LafayetteScene({ town, lookId, bakeLastMs, materialColorsOverride, forc
           Designer mounts, so they never drift): repeat + size k × widthM +
           fit/abbrev from labelLayout.js, thinned by the runtime zoom-LOD
           (labelLod.js) as the camera pulls out / in. */}
-      {labelsReady && !hide.labels && <StreetLabels placements={labelPlacements} y={0.08} />}
+      {labelsReady && !hide.labels && <StreetLabels placements={labelPlacements} y={0.08} style={labelStyle} />}
 
       {/* Park title — the "LAFAYETTE PARK" landmark label. Has its OWN
           `parkTitle` toggle in the Labels panel (separate from `labels` =

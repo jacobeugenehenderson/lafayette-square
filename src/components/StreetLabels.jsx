@@ -10,7 +10,7 @@ import { prepareLabelLod, assignLabelLod, metersPerPixel, SCREEN_LABEL_SPACING_P
 // (Designer, ortho) and LafayetteScene (player, perspective) so they never drift
 // ([[project_preview_equals_ls_literally]]). `.visible` is toggled imperatively
 // on the wrapping group — no React re-render, no geometry churn.
-export default function StreetLabels({ placements, y = 0 }) {
+export default function StreetLabels({ placements, y = 0, style }) {
   const camera = useThree(s => s.camera)
   const heightPx = useThree(s => s.size.height)
   const refs = useRef([])
@@ -37,6 +37,7 @@ export default function StreetLabels({ placements, y = 0 }) {
         fontSize={p.fontSize}
         position={[p.x, y, p.z]}
         rotation={[-Math.PI / 2, 0, -p.angle]}
+        style={style}
       />
     </group>
   ))

@@ -19,7 +19,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import SceneLabel from './SceneLabel.jsx'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
+import { useTownContext } from './townContext.js'
 import { labelFontSize } from '../lib/labelLayout.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { makeGraniteMasonryMaterial } from './graniteMasonryMaterial.js'
@@ -147,7 +147,7 @@ export default function PilgrimMonument({ town, lookId, footprint, graniteOverri
   // The label: the set-piece's name printed on the ground just off its south face, read
   // from the south. Sized by the street labels' own law with the plinth as the width, and
   // styled by the same Labels panel. It rides the terrain at ITS OWN point, not the seat's.
-  const labelStyle = useCartographStore(s => s.labels) || {}
+  const { labelStyle } = useTownContext()
   const label = useMemo(() => {
     if (!site || !sp.name) return null
     const plinthM = DOSSIER.foundationTopSq * FT
@@ -173,7 +173,7 @@ export default function PilgrimMonument({ town, lookId, footprint, graniteOverri
       {children /* the slot's lighting, in the tower's base frame (SetPiece.jsx) */}
       {label && (
         <group ref={labelRef}>
-          <SceneLabel text={sp.name} fontSize={label.fontSize} position={[0, 0, label.dz]} rotation={[-Math.PI / 2, 0, 0]} />
+          <SceneLabel text={sp.name} fontSize={label.fontSize} position={[0, 0, label.dz]} rotation={[-Math.PI / 2, 0, 0]} style={labelStyle} />
         </group>
       )}
     </group>

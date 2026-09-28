@@ -1,5 +1,4 @@
 import { Text } from '@react-three/drei'
-import useCartographStore from '../cartograph/stores/useCartographStore.js'
 
 // Shared street label renderer — a DUMB drawer. drei <Text> (TroikaText/SDF)
 // sized in world units, so labels live inside the cartographic surface and
@@ -14,10 +13,11 @@ import useCartographStore from '../cartograph/stores/useCartographStore.js'
 // terrain-displaced ground or median grass.
 const RENDER_ORDER = 16
 
-export default function SceneLabel({ position, rotation, text, fontSize = 4 }) {
-  const style = useCartographStore(s => s.labels) || {}
+// `style` is the town's label style, resolved upstream (labelStyleOf — complete, never partial).
+export default function SceneLabel({ position, rotation, text, fontSize = 4, style }) {
+  if (!style) throw new Error('[SceneLabel] ⛔ needs `style` — the town\'s label style (src/lib/labelStyle.js#labelStyleOf)')
 
-  const caseMode = style.case ?? 'mixed'
+  const caseMode = style.case
   const displayText = caseMode === 'upper' ? String(text).toUpperCase()
                     : caseMode === 'lower' ? String(text).toLowerCase()
                     : text
@@ -25,7 +25,7 @@ export default function SceneLabel({ position, rotation, text, fontSize = 4 }) {
   // = Troika's built-in default (Roboto). If the chosen family doesn't
   // publish the chosen weight, the load fails and Troika falls back.
   const family = (style.fontFamily || '').trim()
-  const weight = style.weight || 400
+  const weight = style.weight
   const fontUrl = family
     ? `https://cdn.jsdelivr.net/fontsource/fonts/${family}@latest/latin-${weight}-normal.ttf`
     : undefined
@@ -36,12 +36,12 @@ export default function SceneLabel({ position, rotation, text, fontSize = 4 }) {
       rotation={rotation || [0, 0, 0]}
       fontSize={fontSize}
       font={fontUrl}
-      color={style.fill ?? '#e8e8f0'}
-      outlineWidth={`${((style.haloWidth ?? 0.07) * 100).toFixed(1)}%`}
-      outlineColor={style.halo ?? '#14141c'}
-      letterSpacing={style.letterSpacing ?? 0.05}
-      fillOpacity={style.opacity ?? 1}
-      outlineOpacity={style.opacity ?? 1}
+      color={style.fill}
+      outlineWidth={`${(style.haloWidth * 100).toFixed(1)}%`}
+      outlineColor={style.halo}
+      letterSpacing={style.letterSpacing}
+      fillOpacity={style.opacity}
+      outlineOpacity={style.opacity}
       anchorX="center"
       anchorY="middle"
       renderOrder={RENDER_ORDER}

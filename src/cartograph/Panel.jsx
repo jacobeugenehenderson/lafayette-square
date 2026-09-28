@@ -11,6 +11,7 @@
  *    hide here is hidden everywhere. Toggling visibility stales the bake
  *    (it's a real Look edit); re-exposing a layer requires a re-bake.
  */
+import { LABEL_STYLE_DEFAULT } from '../lib/labelStyle.js'
 import { useEffect, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import SurveyorPanel from './SurveyorPanel.jsx'
@@ -275,7 +276,8 @@ function FontFamilySelect({ value, onChange }) {
 function LabelsSubsection() {
   const style = useCartographStore(s => s.labels) || {}
   const setLabelStyle = useCartographStore(s => s.setLabelStyle)
-  const get = (k, fb) => (style[k] !== undefined ? style[k] : fb)
+  // Unset fields show the kit's one label default (src/lib/labelStyle.js) — never a copy of it here.
+  const get = (k) => (style[k] !== undefined ? style[k] : LABEL_STYLE_DEFAULT[k])
   return (
     <>
       <div className="carto-row carto-row--wrap">
@@ -288,7 +290,7 @@ function LabelsSubsection() {
       <div className="carto-row">
         <label className="carto-label-fixed">Weight</label>
         <select className="carto-select"
-          value={get('weight', 600)}
+          value={get('weight')}
           onChange={e => setLabelStyle({ weight: parseInt(e.target.value, 10) })}>
           <option value={300}>Light (300)</option>
           <option value={400}>Regular (400)</option>
@@ -300,30 +302,30 @@ function LabelsSubsection() {
       <div className="carto-row">
         <label className="carto-label-fixed">Fill</label>
         <input type="color" className="carto-input"
-          value={get('fill', '#e8e8f0')}
+          value={get('fill')}
           onChange={e => setLabelStyle({ fill: e.target.value })} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="Glyph outline color + width as a fraction of fontSize (Troika convention). 0.07 ≈ 7% of glyph height — the halo scales with the label so big and small labels share the same typographic feel.">Halo</label>
         <input type="color" className="carto-input"
-          value={get('halo', '#14141c')}
+          value={get('halo')}
           onChange={e => setLabelStyle({ halo: e.target.value })} />
         <DraftRangeInput min="0" max="0.2" step="0.01"
-          value={get('haloWidth', 0.07)}
+          value={get('haloWidth')}
           onCommit={v => setLabelStyle({ haloWidth: v })}
           formatLabel={v => `${Math.round(Number(v) * 100)}%`} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="TroikaText letterSpacing in fontSize units.">Tracking</label>
         <DraftRangeInput min="0" max="0.3" step="0.01"
-          value={get('letterSpacing', 0.05)}
+          value={get('letterSpacing')}
           onCommit={v => setLabelStyle({ letterSpacing: v })}
           formatLabel={v => Number(v).toFixed(2)} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed" title="Text case transform applied at render time.">Case</label>
         <select className="carto-select"
-          value={get('case', 'mixed')}
+          value={get('case')}
           onChange={e => setLabelStyle({ case: e.target.value })}>
           <option value="mixed">Mixed</option>
           <option value="upper">UPPER</option>
@@ -333,13 +335,13 @@ function LabelsSubsection() {
       <div className="carto-row">
         <label className="carto-label-fixed" title="Google Fonts catalog via fontsource. URL is built from family + Weight at render time.">Font</label>
         <FontFamilySelect
-          value={get('fontFamily', '')}
+          value={get('fontFamily')}
           onChange={v => setLabelStyle({ fontFamily: v })} />
       </div>
       <div className="carto-row">
         <label className="carto-label-fixed">Opacity</label>
         <DraftRangeInput min="0" max="1" step="0.05"
-          value={get('opacity', 1)}
+          value={get('opacity')}
           onCommit={v => setLabelStyle({ opacity: v })}
           formatLabel={v => Number(v).toFixed(2)} />
       </div>

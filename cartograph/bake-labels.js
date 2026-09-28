@@ -29,6 +29,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeMembership } from './neighborhood-membership.mjs'
 import { requireExplicitMap } from './scene.js'
+import { migrateLabels, LABELS_FULL_STYLE_VERSION } from '../src/lib/labelStyle.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -163,40 +164,27 @@ function main() {
   }
   const labels = computeLabels(ribbons, keepPoint)
 
-  // ⛔⛔ THE STYLE TRAVELS WITH THE ARTIFACT, AND THIS IS A BUG FIX (2026-09-05).
-  // Placement is computed at RUNTIME by labelLayout.js from two style fields —
-  // `sizeK` and `letterSpacing` — and `useLabelPlacements` was reading both out
-  // of the CARTOGRAPH STORE, which only Cartograph ever hydrates from
-  // design.json. So the Designer laid out at the authored style and the player
-  // laid out at store DEFAULTS. Measured on lafayette-square: sizeK 0.7 vs 1
-  // (43% larger type) and letterSpacing 0.04 vs 0.05 — different sizes mean
-  // different fit gating, different abbreviation and different repeat spacing,
-  // so the rendered labels were not the ones the operator had approved.
-  // ⚠️ useLabelPlacements.js asserted in its own header that the two "never
-  // drift". They did, silently, because nothing compared them.
-  // ⭐ So the two layout inputs are baked next to the geometry they lay out.
-  // Doctrine: slab-is-the-contract — the runtime reads the artifact, never an
-  // authoring store it does not fill.
-  let style = {}
+  // ⭐ THE TOWN'S LABEL STYLE LIVES HERE — the whole authored block, beside the geometry it lays out (v4; Warden's
+  // ruling (A), 2026-09-28). v3 baked only the two layout fields and said the rest "is read from the Look at draw" —
+  // false: the player read the AUTHORING store, which it never fills, and so drew the kit defaults. Every label reader
+  // (street labels, set-piece labels, the park title) now takes its style from this artifact (src/lib/labelStyle.js).
+  // A set-piece's title position is a label too: it travels here keyed by its set-piece, and only that set-piece reads it.
+  let style = {}, setPieceTitles = {}
   try {
     const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
     if (existsSync(designPath)) {
       const d = JSON.parse(readFileSync(designPath, 'utf-8'))
-      const L = d.labels || {}
-      // Only the fields that affect LAYOUT. Colour, weight, halo and case are
-      // render-time and are read from the Look at draw; baking them here would
-      // create a second source for them.
-      if (L.sizeK != null) style.sizeK = L.sizeK
-      if (L.letterSpacing != null) style.letterSpacing = L.letterSpacing
+      style = migrateLabels(d.labels || {})
+      if (Array.isArray(d.parkTitlePos) && d.parkTitlePos.length === 2) setPieceTitles['lafayette-park'] = d.parkTitlePos
     }
-  } catch (e) { console.warn('[bake-labels] design.json unreadable, baking Auto style:', e.message) }
+  } catch (e) { console.warn('[bake-labels] design.json unreadable, baking the kit label style:', e.message) }
 
   const outDir = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
   const outPath = join(outDir, 'labels.json')
-  writeFileSync(outPath, JSON.stringify({ version: 3, scene, look, count: labels.length, style, labels }))
+  writeFileSync(outPath, JSON.stringify({ version: LABELS_FULL_STYLE_VERSION, scene, look, count: labels.length, style, setPieceTitles, labels }))
   console.log(`[bake-labels] scene=${scene} look=${look}: ${labels.length} street labels → ${outPath}`)
-  console.log(`  layout style: ${JSON.stringify(style)}${Object.keys(style).length ? '' : '  (Auto — design.json set neither sizeK nor letterSpacing)'}`)
+  console.log(`  label style: ${Object.keys(style).length ? JSON.stringify(style) : '(none authored — the kit style)'}${Object.keys(setPieceTitles).length ? ` · set-piece titles ${JSON.stringify(setPieceTitles)}` : ''}`)
   if (labels.length) console.log('  e.g. ' + labels.slice(0, 8).map(l => l.name).join(' · '))
 }
 main()

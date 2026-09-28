@@ -787,7 +787,7 @@ const STAGE_CHANNELS = [
   'buildingPalette', 'wallPalettes', 'materialPhysics', 'materialColors', 'neon', 'lampGlow', 'lantern', 'canopy', 'arch',
   'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon',
   'constellations', 'milkyWay', 'skyGain', 'stars', 'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo',
-  'grade', 'grain', 'dof', 'surfaces',
+  'grade', 'grain', 'dof', 'surfaces', 'labels',
 ]
 function useStageOverrides(heroKeyframes, heroMotion) {
   const channels = useCartographStore(s => Object.fromEntries(STAGE_CHANNELS.map(k => [k, activeChannel(s, k)])), shallow)
@@ -797,8 +797,11 @@ function useStageOverrides(heroKeyframes, heroMotion) {
   const dofFocus = useCartographStore(s => s.dofFocus)
   // Force Neon On OFF means "not forced" — neon follows each place's hours, as it ships. A literal `false`
   // told SceneNeon to switch every tube off, so Stage never showed the neon production draws.
-  return useMemo(() => ({ ...channels, neonForceOn: neonForceOn || undefined, neonDensity, lampsOn, dofFocus, heroKeyframes, heroMotion }),
-    [channels, neonForceOn, neonDensity, lampsOn, dofFocus, heroKeyframes, heroMotion])
+  // The park title's live position (Designer's drag handle) — that set-piece's own entry, as labels.json bakes it.
+  const parkTitlePos = useCartographStore(s => s.parkTitlePos)
+  const setPieceTitles = useMemo(() => (parkTitlePos ? { 'lafayette-park': parkTitlePos } : undefined), [parkTitlePos])
+  return useMemo(() => ({ ...channels, neonForceOn: neonForceOn || undefined, neonDensity, lampsOn, dofFocus, setPieceTitles, heroKeyframes, heroMotion }),
+    [channels, neonForceOn, neonDensity, lampsOn, dofFocus, setPieceTitles, heroKeyframes, heroMotion])
 }
 // Stage's shots → the shot <Town> draws (Designer draws no <Town>).
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }

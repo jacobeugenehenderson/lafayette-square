@@ -22,9 +22,10 @@ import { lookOf } from './lookOf.js'
  * @param {string} [lookId]     — explicit Look id (cartograph passes activeLookId);
  *                                required: the Look being drawn (never a guessed one).
  * @param {number} [cacheBust]  — bump to re-fetch after a Stage/Designer re-bake.
- * @returns {{labels: Array<{name,widthM,points}>, style: {sizeK?:number, letterSpacing?:number}}}
- *   `labels` is [] until loaded / if the scene has none. `style` is the LAYOUT
- *   style baked beside them (v3+); {} on an older artifact, which lays out Auto.
+ * @returns {{labels, style, version, setPieceTitles}} — the labels.json artifact: `labels` is [] until loaded / if the
+ *   scene has none; `style` is the town's label style baked beside them (the whole authored block from v4; v3 carried
+ *   only { sizeK, letterSpacing }) — resolve it with labelStyleOf (src/lib/labelStyle.js); `setPieceTitles` places a
+ *   set-piece's own title (read only by that set-piece).
  *
  * ⛔⛔ THE STYLE COMES BACK WITH THE GEOMETRY, AND THAT IS A BUG FIX. Placement
  * is computed at runtime from `sizeK` and `letterSpacing`, and both were being
@@ -42,7 +43,7 @@ export function useStreetLabels(lookId, cacheBust) {
     const bust = cacheBust != null ? `?t=${cacheBust}` : ''
     fetch(`${ASSET_BASE}baked/${resolved}/labels.json${bust}`)
       .then(r => (r.ok ? r.json() : null))
-      .then(j => { if (!cancelled) setData(j?.labels ? { labels: j.labels, style: j.style || {} } : EMPTY) })
+      .then(j => { if (!cancelled) setData(j?.labels ? { labels: j.labels, style: j.style || {}, version: j.version ?? 0, setPieceTitles: j.setPieceTitles || {} } : EMPTY) })
       .catch(e => { console.warn('[streetLabels] load failed:', e); if (!cancelled) setData(EMPTY) })
     return () => { cancelled = true }
   }, [resolved, cacheBust])
@@ -50,4 +51,4 @@ export function useStreetLabels(lookId, cacheBust) {
 }
 
 // Stable identity so a failed/empty load does not re-render consumers forever.
-const EMPTY = { labels: [], style: {} }
+const EMPTY = { labels: [], style: {}, version: 0, setPieceTitles: {} }

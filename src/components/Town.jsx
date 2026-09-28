@@ -56,6 +56,8 @@ import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
 import { QualityProvider } from '../lib/qualityProfile.js'
 import { useTownPlace } from '../lib/townPlace.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import { useStreetLabels } from '../lib/streetLabels.js'
+import { labelStyleOf } from '../lib/labelStyle.js'
 import MovieCamera from '../camera/MovieCamera.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
@@ -105,7 +107,7 @@ export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
   'lantern', 'lampsOn', 'canopy', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
-  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint', 'wallPalettes', 'surfaces', 'heroKeyframes', 'heroMotion',
+  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
 ]
 // PostProcessing's view vocabulary (half-res AO off the movie shot, the street-level bloom bump).
 const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
@@ -263,7 +265,13 @@ export default function Town({
   const key = SHOT_KEY[shot]
   if (!Array.isArray(listings)) throw new Error('[Town] ⛔ needs the `listings` prop — the town\'s content listings (an array; [] for a town with none)')
   // What the leaves read (townContext.js) — the shot, the selection, the listings. No player store.
-  const scope = useMemo(() => ({ shotKey: key, selectedId, select: onSelectBuilding ?? null, listings }), [key, selectedId, onSelectBuilding, listings])
+  // The town's labels and their style: labels.json, read once, the style under Stage's live override. Every label
+  // reader takes them from here (src/lib/labelStyle.js) — never the authoring store.
+  const labelsArtifact = useStreetLabels(lookId, bake)
+  const labelStyle = useMemo(() => labelStyleOf(labelsArtifact, o.labels), [labelsArtifact, o.labels])
+  const setPieceTitles = useMemo(() => ({ ...labelsArtifact.setPieceTitles, ...(o.setPieceTitles || {}) }), [labelsArtifact, o.setPieceTitles])
+  const scope = useMemo(() => ({ shotKey: key, selectedId, select: onSelectBuilding ?? null, listings, streetLabels: labelsArtifact.labels, labelStyle, setPieceTitles }),
+    [key, selectedId, onSelectBuilding, listings, labelsArtifact, labelStyle, setPieceTitles])
   // The town's movie: its baked path (heroKeyframes + heroMotion), or the opening view derived from its own disc
   // when it has none — Stage's live keys arrive as overrides. The same resolution the apps used (cameraRegimes.js).
   const stencil = useSceneStencil()

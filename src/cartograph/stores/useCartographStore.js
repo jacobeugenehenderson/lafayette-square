@@ -1,3 +1,4 @@
+import { LABEL_STYLE_DEFAULT, migrateLabels } from '../../lib/labelStyle.js'
 import { create } from 'zustand'
 import {
   fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton,
@@ -283,14 +284,6 @@ function createGroupChannelActions({ name, fieldKeys, flatDefaults }, set, get) 
 // value > 0.21 is in the absolute-meters range and would render as a
 // massive outline (e.g. 0.3 → 30% of glyph height) when re-interpreted
 // as a percentage — reset those to the canonical default.
-function migrateLabels(labels) {
-  if (!labels) return labels
-  const out = { ...labels }
-  if (typeof out.haloWidth === 'number' && out.haloWidth > 0.21) {
-    out.haloWidth = 0.07
-  }
-  return out
-}
 
 // ── Per-Look design block — ONE source of truth ─────────────────────────────
 // These design fields were hand-maintained in THREE places (two hydrate blocks
@@ -314,17 +307,6 @@ function migrateLabels(labels) {
 // ⭐ Absent now means THE KIT DEFAULT — a fixed constant, never another town's
 // live state. Referenced by both the hydrator and the initial state so the two
 // cannot drift (the same one-descriptor rule the block below was written for).
-const LABELS_DEFAULT = {
-  // sizeK absent → Auto (size ∝ real width). Set to a number to override scale.
-  weight:        600,          // 300 | 400 | 500 | 600 | 700
-  fill:          '#e8e8f0',
-  halo:          '#14141c',
-  haloWidth:     0.07,         // fontSize units (Troika outlineWidth) — % of glyph height
-  letterSpacing: 0.05,         // fontSize units (TroikaText letterSpacing)
-  opacity:       1,
-  case:          'mixed',      // 'mixed' | 'upper' | 'lower' — applied at render time
-  fontFamily:    '',           // fontsource id (e.g. 'inter'); empty = Troika default (Roboto)
-}
 // 12 generic tints. Genuinely a KIT default — no town's authoring in it; the
 // bake carries the same list as DEFAULT_PALETTE (bake-buildings.js:702).
 const BUILDING_PALETTE_DEFAULT = [
@@ -389,7 +371,7 @@ const DESIGN_FIELDS = [
   // move survives and ships.
   { key: 'parkTitlePos', hydrate: (d) => Array.isArray(d.parkTitlePos) && d.parkTitlePos.length === 2 ? d.parkTitlePos : null },
   { key: 'alleyCap',     hydrate: (d) => ['square', 'rounded', 'round'].includes(d.alleyCap) ? d.alleyCap : 'square' },
-  { key: 'labels',       hydrate: (d) => migrateLabels({ ...LABELS_DEFAULT, ...(_isObj(d.labels) ? d.labels : {}) }) },
+  { key: 'labels',       hydrate: (d) => migrateLabels({ ...LABEL_STYLE_DEFAULT, ...(_isObj(d.labels) ? d.labels : {}) }) },
   { key: 'blockCustoms', hydrate: (d) => _isObj(d.blockCustoms) ? d.blockCustoms : {} },
   // The blessed Survey "Default" (Set Default snapshots the curated state here;
   // Revert to Default restores it). null until the operator blesses one.
@@ -602,7 +584,7 @@ const useCartographStore = create((set, get) => ({
   // UPPER/lower at render. `fontFamily` is a fontsource id (empty =
   // Troika default, Roboto). Landmark labels (park title, etc.) are authored
   // directly in their components — singular, not part of this kit.
-  labels: { ...LABELS_DEFAULT },
+  labels: { ...LABEL_STYLE_DEFAULT },
   // Look-level global curb width (meters). V2 emits the curb as a single
   // unified stroke around the rounded asphalt boundary, so width is
   // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
@@ -2288,10 +2270,9 @@ const useCartographStore = create((set, get) => ({
   // truth — regeneratable from OSM. Non-geometric operator intent (caps,
   // couplers, measurements) currently back-filled from legacy
   // centerlines.json by name; a proper overlay file is TBD.
-  // ⛔ Concurrency dedupe. THREE callers fire this on a single dev page load —
-  // React StrictMode double-invokes CartographApp's mount effect, and the
-  // `if (import.meta.hot)` block at the bottom of this file runs at MODULE EVAL
-  // on every dev load (not just on a hot update). The guards below
+  // ⛔ Concurrency dedupe. Two callers fire this on a single dev page load —
+  // React StrictMode double-invokes CartographApp's mount effect (the module-scope
+  // HMR load that made it three is gone, 2026-09-28). The guards below
   // (`!fetchedRibbons`, `!get().mapGeography`) are read-BEFORE-await, so
   // concurrent callers all sail past them → 2-3x the 13.9 MB ribbons + 3.4 MB
   // skeleton on the wire, and every downstream memo (sectionOpen, tileGeos)
@@ -2576,7 +2557,12 @@ const useCartographStore = create((set, get) => ({
       // Re-hydrated from disk → _saveOverlay's guard will pass again; clear
       // the loud save-blocked flag.
       set({ ...hydrateDesign(design), _designHydrated: true, overlaySaveBlocked: false })
-    } catch (e) { console.warn('[skeleton] load failed:', e) }
+    } catch (e) {
+      // ⛔ LOUD: a failed skeleton load leaves the Designer with no centerlines — edits would save over a town that did
+      // not load. Block them and say so (it was a console.warn that the Designer never showed).
+      console.error('[skeleton] ⛔ the town\'s authoring data failed to load — edits are blocked:', e)
+      set({ overlaySaveBlocked: true, status: `The town's authoring data failed to load (${e?.message || e}) — edits are blocked until it loads` })
+    }
   },
 
   // Persistence write path. Builds the skelId-keyed overlay JSON from
@@ -3020,16 +3006,8 @@ export default useCartographStore
 // Dev hook: expose the store on window for quick inspection.
 if (typeof window !== 'undefined') window.cs = useCartographStore
 
-// Vite HMR resilience: reloading this module resets the store to initial
-// defaults, but CartographApp's _loadCenterlines effect (deps []) doesn't
-// re-fire on a store-only HMR. Re-trigger the load so design + centerlines
-// rehydrate from overlay.json, instead of sitting in the empty-guard state
-// until the next full page reload.
-if (import.meta.hot) {
-  import.meta.hot.accept()
-  if (typeof window !== 'undefined') {
-    useCartographStore.getState()._loadCenterlines()
-    useCartographStore.getState()._loadMarkers?.()
-    useCartographStore.getState()._loadMeasurements?.()
-  }
-}
+// ⛔ No module-scope load (removed 2026-09-28). An `if (import.meta.hot) { … _loadCenterlines() … }` block here ran the
+// WHOLE authoring load on every module evaluation under a dev server — not only on a hot swap — so any page that
+// imported this store (the renderer's label pieces did) fetched a town's skeleton, overlay and design from
+// /api/cartograph (the Ward's `[skeleton] load failed`). The authoring app loads its own data (CartographApp); a store
+// edit now hot-reloads up to it, and a full reload re-runs that load. ▶ node checks/claims-a-town-page-fetches-no-authoring.mjs
