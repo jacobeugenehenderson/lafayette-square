@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: BUILT — awaiting the first promote
+status: LANDED
 dispatched: yes (Lintel)
 written: 2026-09-26
 evict-when: Promote to Production puts a town on its own .online domain without touching any other town, and Lafayette Square's cutover from lafayette-square.com is either done or boarded with Jacob's ruling.
@@ -61,6 +61,8 @@ hands anyone a shopping list. Staging links stay unlisted (`BRIEF-a-link-per-tow
 
 8. ✅ **Public URLs the player prints (QRs, share links) use the town's PRODUCTION domain from Operations — on staging too** (Jacob, 2026-09-26, on Lintel's `https://null` finding: PlaceCard's check-in and claim QRs, place share, bulletin share, legal back link). Both Workers look the domain up via the same Operations call Promote uses and write it into the page; the player reads it through one helper. No domain in Operations ⇒ no QR, no share URL, a console.error — never `https://null`, never a staging address on a printed card. Lintel's bounds widened to those components for this.
 9. ✅ **Operations change approved (Jacob):** a read-only "publisher" role for an allowlisted service token (config, not DB) + one endpoint returning a town's domain, ownership and zone status. Deploy, token and Access policy are Jacob's Cloudflare steps.
+
+## Status (2026-09-28): LANDED. provincetown.online was promoted and verified live (ward-look=provincetown, slab served through the domain). Owed, on ROADMAP: the button's "done" ignores the host switch and locks itself. LS's cutover is `BRIEF-ls-cutover-to-its-address`.
 
 ## Status (2026-09-27)
 
