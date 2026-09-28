@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-27
+evict-when: RULING: every town's manifest names content-hashed files, and The Ward's first- and return-visit weight check passes
+-->
 # BRIEF — What the player loads, from where, and when
 
 **For:** a fresh agent, in the kit. **Written:** 2026-09-27, from a read of the player's code and

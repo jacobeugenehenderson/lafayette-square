@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: Mortise
+written: 2026-09-27
+evict-when: node checks/claims-every-app-mounts-the-town.mjs && node checks/claims-the-town-reads-no-player-store.mjs
+-->
 # BRIEF — One town assembly: every app mounts the same renderer
 
 **For:** a fresh coding agent, working in the kit (`lafayette-square.nosync`).

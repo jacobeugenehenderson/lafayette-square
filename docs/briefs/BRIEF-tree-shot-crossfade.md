@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-27
+evict-when: RULING: Jacob's eye gate on movie ↔ plan ↔ street, two towns
+-->
 # BRIEF — Trees cross-fade between shots; never swap during one
 
 **For:** a fresh agent, in the kit. **Written:** 2026-09-27. **Depends on:**

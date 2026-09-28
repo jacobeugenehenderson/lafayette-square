@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: Quire
+written: 2026-09-27
+evict-when: npm --prefix ~/Desktop/dev.nosync/theward run check
+-->
 # BRIEF — Build The Ward, steps 1–6
 
 **For:** a fresh coding agent. **You build in:** `~/Desktop/dev.nosync/theward` (the new app).

@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-28
+evict-when: test ! -e public/codedesk && echo "kit copy retired"
+-->
 # BRIEF — CodeDesk: one source, one contract, real procedures
 
 **For:** a fresh agent. **Written:** 2026-09-28 (Warden). **Report to:** Warden.

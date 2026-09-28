@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-27
+evict-when: RULING: Jacob calibrates the floor on sample frames, and the per-town check exists and passes
+-->
 # BRIEF — A legibility floor for the plan-view map
 
 **For:** a fresh agent, in the kit. **Written:** 2026-09-27.

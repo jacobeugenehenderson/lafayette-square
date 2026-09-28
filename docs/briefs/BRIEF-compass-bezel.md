@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: Tamp
+written: 2026-09-28
+evict-when: RULING: Jacob's eye gate on two towns — north-up and facing, street exits on and off
+-->
 # BRIEF — The town's edge as a compass bezel
 
 **For:** a fresh agent, kit and Ward. **Written:** 2026-09-28 (Warden). **Report to:** Warden.

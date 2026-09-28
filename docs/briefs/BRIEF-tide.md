@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-27
+evict-when: RULING: the computed-vs-NOAA tide check exists and passes on every tidal town
+-->
 # BRIEF — Tide, for towns that have one
 
 **For:** a fresh agent, in the kit. **Written:** 2026-09-27.

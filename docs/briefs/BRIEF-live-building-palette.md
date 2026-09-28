@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-27
+evict-when: node checks/claims-every-app-mounts-the-town.mjs
+-->
 # BRIEF — Live building palette, for every town
 
 **For:** a fresh agent, in the kit. **Written:** 2026-09-27 (Warden, from Mortise's analysis).

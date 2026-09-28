@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-28
+evict-when: test ! -e src/components/TownBridge.jsx && echo "bridge gone"
+-->
 # BRIEF — The renderer's leaves take their state from Town, not from player stores
 
 **For:** a fresh agent, in the kit. **Written:** 2026-09-28 (Warden, from Mortise's census).

@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: HOLD
+dispatched: Tamp
+written: 2026-09-27
+evict-when: RULING: Jacob confirms the 9 known baked/toy objects are deleted from R2 (the rest landed: 40d59e12…e539a34a)
+-->
 # BRIEF — Remove Toy
 
 **For:** a fresh agent, in the kit. **Written:** 2026-09-27 (Warden). **Report to:** Warden.

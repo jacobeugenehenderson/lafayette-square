@@ -1,3 +1,9 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-27
+evict-when: RULING: every town's neon, categories and rating mark come from its Look, and Jacob approves the rating-mark shortlist
+-->
 # BRIEF — Each town's colours are its own
 
 **For:** a fresh agent, in the kit. **Written:** 2026-09-27. **Works under:**
