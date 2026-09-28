@@ -16,20 +16,20 @@ categories in particular. The neon is meant to convey things about the neighborh
 portal."* And: the CSS must be generic.
 
 ## Premises — confirm, and say what you found
-1. **One global palette serves every town.** `src/tokens/categories.js` declares a "Victorian
-   palette" (Claret · Antique Gold · Aubergine · Verdigris · Mauve · Prussian Blue · Terra Cotta ·
-   Sage), exported as `CATEGORY_HEX` and consumed by the neon (`SceneNeon.jsx`, `NeonBands.jsx`),
-   `LafayetteScene.jsx`, `src/cartograph/CartographSurfaces.jsx`, and the old player's own
-   panels. ▶ `grep -rln "CATEGORY_HEX\|COLOR_CLASSES" src`
+1. **One global palette served every town** — CONFIRMED 2026-09-28 (Mortise): `CATEGORY_HEX` (the Victorian palette,
+   i.e. Lafayette Square's decor) fed the neon's fallback, `SceneNeon`'s gate, Stage's swatch defaults, and the old
+   player's panels. (`LafayetteScene.jsx` no longer read it — stale here.)
 2. **Styles are keyed by the colour's own name** (`COLOR_CLASSES`, "keyed by Victorian color
    name"), so a town whose dining neon is teal would still be styled `claret`.
 3. `UNKNOWN_HEX` (slate, for unclassified buildings) exists to make "unknown" visible. That is
    correct and stays.
 
 ## The work
-- **The palette becomes the town's authored value**, carried with its look (authored in Stage,
-  baked into `scene.json` like every other look channel — confirm the channel pattern in
-  `cartograph/STAGE.md` before adding one).
+- ⚠️ **FALSE PREMISE, corrected 2026-09-28: the channel ALREADY EXISTED** — the Look's `materialColors.neon_<category>`
+  (Stage › Surfaces › Neon, baked into `scene.json`, read by NeonBands). No town had authored it. It IS the palette; no
+  second channel was added. **Built:** `src/lib/categoryColor.js` decides a category's colour (the Look's, else the
+  kit's neutral default) for the neon, Stage's swatches and the manifest (`19c10388`, and the bake side). LS's current
+  look was written into its Look as its own (`072990bb`). ▶ `node checks/claims-a-towns-colours-are-its-own.mjs`
 - **A neutral default that reads as unauthored** — visibly, never another town's decor.
 - **Tokens named by role**: a category's colour is `category.<id>`, never `claret`.
 - **The taxonomy's own text is generic too.** `categories.js` subtitles name one town's places

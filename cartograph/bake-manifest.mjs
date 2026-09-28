@@ -41,6 +41,7 @@
  * Usage: node cartograph/bake-manifest.mjs --town=<map id>     (e.g. --town=provincetown)
  */
 
+import { categoryHex, isAuthoredCategory } from '../src/lib/categoryColor.js'
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { resolve, relative, dirname, sep } from 'node:path'
@@ -64,9 +65,15 @@ if (!existsSync(slabDir)) { console.error(`⛔ no slab on disk for "${town}" (${
 const { lookId, domain, ...identity } = inst
 
 // ── taxonomy: the kit's list, marked unauthored ───────────────────────────────
+// Each category's colour is the town's (its Look's neon, baked into scene.json), else the kit's neutral default —
+// `colorAuthored` says which. A category is never dropped for having no colour of its own (src/lib/categoryColor.js).
+const bakedScene = JSON.parse(readFileSync(resolve(slabDir, 'scene.json'), 'utf8'))
+if (!Array.isArray(bakedScene.neonAuthored)) { console.error(`⛔ "${town}"'s scene.json predates the town-palette bake (no neonAuthored) — re-bake its scene first, or the manifest would publish another town's colours`); process.exit(2) }
 const categories = Object.entries(CATEGORIES).map(([id, c]) => ({
   id,
   label: c.label,
+  color: categoryHex(id, bakedScene),
+  colorAuthored: isAuthoredCategory(id, bakedScene),
   types: Object.entries(c.subcategories || {}).map(([tid, t]) => ({ id: tid, label: t.label })),
 }))
 

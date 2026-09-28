@@ -193,6 +193,7 @@ All Image channels are TOD. Grouped by intent:
 ### Surfaces / Materials card
 
 - **Per-layer / per-LU swatch** — pick any map layer or land-use class from the tabbed list (Streets, Blocks, Land Use, Paths, Land Cover, Furniture, Labels, Roofs, Building, Neon, Trees, Park, Infra) and set its **Color** (hex swatch) and **Visible** (checkbox). Visibility here is also a bake lever (`BAKE.md §2`). *(Not TOD — a flat per-Look property.)*
+  - ⭐ **Neon › <category> is the town's category colour** — its neon AND its chips in the Ward (the scene bake stamps which it authored; the town manifest publishes `taxonomy.categories[].color` + `colorAuthored`). A category left unset draws the kit's **neutral** colour, which reads as unauthored. ▶ `node checks/claims-a-towns-colours-are-its-own.mjs` (also lists the towns whose scene still predates it).
 - **3D material editor** (for the selected PBR material) — **Roughness**, **Metalness**, a **Texture** dropdown (none / brick variants / stone / stucco / wood / slate / metal) with **Texture Scale** + **Texture Strength** when a texture is chosen, and **Emissive** (colour swatch + intensity).
 - **Building palette** — a 16-swatch colour grid that drives the per-building tint mix.
 

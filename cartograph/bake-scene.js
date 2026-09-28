@@ -30,6 +30,7 @@
 //     public/baked/<look>/scene.json. Touches no data/<scene>/ path, so an explicit scene
 //     would be a refusal the operator cannot act on. --scene is accepted for CLI uniformity
 //     and says out loud that it is ignored.
+import { authoredCategories } from '../src/lib/categoryColor.js'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -77,6 +78,9 @@ export async function bakeScene({ look } = {}) {
     wallPalettes:    design.wallPalettes || {},
     materialPhysics: design.materialPhysics || {},
     materialColors:  design.materialColors  || {},
+    // The categories whose neon colour the Look authored (materialColors.neon_<id>); every other category draws the
+    // kit's neutral default. Its presence also marks a scene baked with the town-palette rule (src/lib/categoryColor.js).
+    neonAuthored:    authoredCategories(design.materialColors),
     layerColors:     design.layerColors     || {},
     luColors:        design.luColors        || {},
     layerVis:        design.layerVis        || {},
