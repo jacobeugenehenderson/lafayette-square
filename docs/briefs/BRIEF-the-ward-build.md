@@ -138,6 +138,17 @@ registers rewritten for what shipped (README §10), and a commit that says what 
   3) every printable address resolves. Contrast over the rendered scene waits on the renderer.
 - Delete `not-yet-built.mjs` when it is empty.
 
+## 5a. Findings from the build, for their owners (Quire, 2026-09-27)
+- **No server read of a device's role at a listing.** `guardian-check` is commerce-only; `listing-staff`
+  answers only a full guardian. The old player showed Guardian tools from a local record written at claim
+  and never refreshed, so a revoked keyholder kept the tools. The Ward uses the claim response honestly and
+  clears it on the server's refusal. ⚠️ **For Jacob:** a one-action Apps Script read (`my-role`) is the
+  right design and needs a deploy.
+- **CodeDesk builds card URLs from `location.origin`** (`public/codedesk/`), so a card printed on staging
+  carries the staging address. It should use the town's domain (Operations), and refuse without one.
+- **The review endpoint keeps less than the old form offered:** it `parseInt`s the rating (half ratings
+  lost) and drops photo, avatar and vignette. The Ward asks only for what the server keeps.
+
 ## 6. Out of this brief
 
 - **Street and walking tours** — later, after steps 1–6 (README §2a). Nothing adequate is built.
