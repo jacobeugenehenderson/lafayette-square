@@ -58,18 +58,18 @@ taxonomy, or the bake fails naming them.
 ### And the town's rating mark (Jacob, 2026-09-28) — part of the Look, not yet planned in
 *"The town picks whatever they want and we put it in a vignette"* · *"the town can choose and change any time"* ·
 *"the emoji is another part of the town's Look."* Lafayette Square's is ⚜️; the kit's neutral default is ⭐.
-- A **Look channel** (`ratingMark`, one emoji), authored in Stage beside the palette, saved in the Look's
-  `design.json`, baked into `scene.json`, and surfaced in the town's manifest so the player reads it without
-  the authoring file. Changing it is re-authoring the Look.
+- **Kit half BUILT (Tamp, 2026-09-28):** `ratingMark` is a channel of the Look's `identity` block (`src/lib/townIdentity.js`),
+  baked into `scene.json` and published as the manifest's `look.ratingMark` + `ratingMarkAuthored`. LS authors ⚜️. The
+  Identity panel that authors it is next.
 - The PLAYER draws it: a round vignette whose field is chosen at runtime by measuring the glyph's legible ink
   on the device (never derived from the emoji's colours), and half-cut (full colour | desaturated) for halves.
   That half is the Ward's (Quire); this brief carries only the channel.
 
 ### And the town's lit tint (Warden → Jacob, 2026-09-28) — the RENDERER half is built, the channel is not
-- A **Look channel** `litTint` = `{ color, strength }`: the roof tint a lit set (<Town litIds>, a chosen category or
-  a search) and the selected building take, day and night (`SlabBuildings.jsx` litUniforms, 92a68e41). Read from
-  `scene.litTint`; absent, the kit's neutral `LIT_TINT_DEFAULT` (#f2c14e at 0.45 — no town's). ⛔ Not yet authored
-  in Stage nor carried through the bake: same path as the palette and the rating mark. Jacob's eye picks the default.
+- `litTint` = `{ color, strength }`: the roof tint a lit set (<Town litIds>) and the selected building take, day and
+  night (`SlabBuildings.jsx` litUniforms). **Now a channel of the Look's `identity` block** (baked, published as
+  `look.litTint` + `litTintAuthored`); unchosen, the kit's neutral #f2c14e at 0.45 (`IDENTITY_NEUTRAL`). No town has
+  chosen one yet; Jacob's eye picks the neutral, with the neutral accent.
 
 ## Checks
 - No colour literal in `categories.js` or any neon consumer; every category colour is read from

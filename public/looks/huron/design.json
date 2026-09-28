@@ -1,4 +1,7 @@
 {
+  "identity": {
+    "mark": "⚓"
+  },
   "layerVis": {
     "street": true,
     "highway": true,

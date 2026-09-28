@@ -9,12 +9,15 @@
  * Everything written is the town's OWN fact (geography.json, neighborhood.json) or null, and
  * null is DECLARED, never borrowed. ⭐ The mark is authored by the operator, not produced:
  * `mark: null` means "no mark yet" — the town shows its own initial, and
- * `checks/claims-every-town-has-a-mark.mjs` stays red on it until one is authored.
+ * `checks/claims-every-town-has-a-mark.mjs` stays red on it until one is authored. `--mark` writes it to its source,
+ * the Look's design.json `identity.mark` (src/lib/townIdentity.js), and the instance's copy the old player reads
+ * until cutover (checks/claims-a-towns-identity-is-its-own.mjs holds the two equal).
  *
  *   node cartograph/scaffold-instance.mjs --scene=<map> [--mark=<emoji>]
  * Refuses if the module exists (a module is authored state; never overwritten).
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { validateIdentity } from '../src/lib/townIdentity.js'
 import { join } from 'node:path'
 
 const ROOT = join(import.meta.dirname, '..')
@@ -59,7 +62,7 @@ export default {
   branding: {
     title: ${q(name)},
     faviconUrl: null,
-    // ${mark ? 'Authored.' : '⛔ NO MARK YET — the operator authors one (an emoji). Until then the town shows its own initial.'}
+    // ${mark ? "OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source)." : '⛔ NO MARK YET — the operator authors one (an emoji), in the Look. Until then the town shows its own initial.'}
     mark: ${q(mark)},
     ogImage: null,
     assetSlug: ${q(scene)},
@@ -89,6 +92,14 @@ export default {
   contact: { email: null },
 }
 `
+// The mark's source is the Look (validated first — a malformed mark writes nothing).
+const designP = join(ROOT, 'public', 'looks', scene, 'design.json')
+if (mark) {
+  if (!existsSync(designP)) { console.error(`⛔ --mark needs the town's Look (${designP}) — create the Look first`); process.exit(2) }
+  const design = JSON.parse(readFileSync(designP, 'utf8'))
+  design.identity = validateIdentity({ ...(design.identity || {}), mark }, `${scene}'s design.json`)
+  writeFileSync(designP, JSON.stringify(design, null, 2) + '\n')
+}
 writeFileSync(out, src)
 // Register it: one import + one entry in the map-keyed registry.
 const regP = join(ROOT, 'src', 'instances', 'registry.js')

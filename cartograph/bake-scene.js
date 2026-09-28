@@ -31,6 +31,7 @@
 //     would be a refusal the operator cannot act on. --scene is accepted for CLI uniformity
 //     and says out loud that it is ignored.
 import { authoredCategories } from '../src/lib/categoryColor.js'
+import { validateIdentity } from '../src/lib/townIdentity.js'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -81,6 +82,9 @@ export async function bakeScene({ look } = {}) {
     // The categories whose neon colour the Look authored (materialColors.neon_<id>); every other category draws the
     // kit's neutral default. Its presence also marks a scene baked with the town-palette rule (src/lib/categoryColor.js).
     neonAuthored:    authoredCategories(design.materialColors),
+    // How the town looks — mark, accent, rating mark, lit tint (src/lib/townIdentity.js): only what the Look authored,
+    // checked here (a malformed channel fails the bake). Its presence marks a scene baked with the identity block.
+    identity:        validateIdentity(design.identity, `${look}'s design.json`),
     layerColors:     design.layerColors     || {},
     luColors:        design.luColors        || {},
     layerVis:        design.layerVis        || {},

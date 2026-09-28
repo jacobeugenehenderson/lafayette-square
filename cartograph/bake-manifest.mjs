@@ -15,7 +15,11 @@
  *   taxonomy  — the town's categories and types. No town authors its own yet, so this writes the
  *               KIT's list (ids and labels from src/tokens/categories.js) with `authored: false`, and
  *               drops the subtitles, which carry one town's wording. The player shows `authored:
- *               false` as visibly unauthored. Colours are not here: that is BRIEF-town-palette.
+ *               false` as visibly unauthored. Each category carries its colour in two forms, `neon` and
+ *               `detail`, with `colorAuthored` (src/lib/categoryColor.js).
+ *   look      — how the town looks: mark, accent, ratingMark, litTint, each with `<channel>Authored`
+ *               (src/lib/townIdentity.js). From the baked scene.json's `identity`, i.e. the Look's
+ *               design.json; an unchosen channel is the kit's neutral value, never another town's.
  *   content   — the town's content, PUBLISHED beside the slab into baked/<town>/content/: the derived
  *               roster (one record per baked building — bare-building cards read it) and listings
  *               (bake-content.js), and the hand-authored profile, menus and events. Each is named
@@ -42,6 +46,7 @@
  */
 
 import { categoryNeon, categoryDetail, isAuthoredCategory } from '../src/lib/categoryColor.js'
+import { resolveIdentity } from '../src/lib/townIdentity.js'
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { resolve, relative, dirname, sep } from 'node:path'
@@ -78,6 +83,11 @@ const categories = Object.entries(CATEGORIES).map(([id, c]) => ({
   colorAuthored: isAuthoredCategory(id, bakedScene),
   types: Object.entries(c.subcategories || {}).map(([tid, t]) => ({ id: tid, label: t.label })),
 }))
+
+// ── look: how the town looks (src/lib/townIdentity.js) — each channel the Look authored, else the kit's neutral value,
+// with `<channel>Authored` so the Ward can say which. From the baked scene, the same one the map reads.
+if (!bakedScene.identity || typeof bakedScene.identity !== 'object') { console.error(`⛔ "${town}"'s scene.json predates the identity block — re-bake its scene first`); process.exit(2) }
+const look = resolveIdentity(bakedScene.identity)
 
 // ── content: publish the payload the player reads ─────────────────────────────
 // The player's content payload, by name. Declared once, here: these are what a player reads.
@@ -189,6 +199,7 @@ const manifest = {
   town,
   writtenAt: new Date().toISOString(),
   identity,
+  look,
   taxonomy: { authored: false, categories },
   board: { authored: false, groups: boardGroups },
   content,

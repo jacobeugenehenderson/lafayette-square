@@ -386,6 +386,9 @@ const DESIGN_FIELDS = [
   // save (2026-09-26: `surfaces`, the operator layer of cartograph/surfaces.mjs, was). ▶ checks/
   // claims-autosave-keeps-what-bakes-read.mjs fails on a design.json key a bake reads that is not listed here.
   { key: 'surfaces',     hydrate: (d) => _isObj(d.surfaces) ? d.surfaces : null },
+  // How the town looks — mark, accent, rating mark, lit tint (src/lib/townIdentity.js), authored in the Identity panel.
+  // Only what the town chose; an unchosen channel is absent (the kit's neutral value is the reader's, never written).
+  { key: 'identity',     hydrate: (d) => _isObj(d.identity) ? d.identity : {} },
   { key: 'wallMix',      hydrate: (d) => _isObj(d.wallMix) ? d.wallMix : null },       // bake-buildings: undescribed walls
   { key: 'wallPalettes', hydrate: (d) => _isObj(d.wallPalettes) ? d.wallPalettes : null },
   { key: 'lamps',        hydrate: (d) => _isObj(d.lamps) ? d.lamps : null },             // bake-lamps: { derive: false } = surveyed + authored only
@@ -526,6 +529,8 @@ function serializeDesign(s) {
   // Same rule for the arch set-piece (see the `arch` hydrate above): a Look that
   // doesn't carry the block must not acquire one on its next autosave.
   if (!out.arch) delete out.arch
+  // …and the identity block: a Look that chose nothing carries none.
+  if (!Object.keys(out.identity || {}).length) delete out.identity
   // ⭐ A channel still equal to THE KIT'S DAY is not written (Jacob, 2026-09-27: "Code default … should [reach
   // existing towns], now"). Writing it would freeze today's default into the town, and the next change to the
   // kit's day would never reach it. Only what the operator actually authored is the town's.

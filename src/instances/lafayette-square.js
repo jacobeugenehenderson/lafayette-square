@@ -64,7 +64,7 @@ export default {
     markSvg: 'arch',   // the OLD player's mark (it reads this first), kept until the old player is retired
     // The Ward's mark — an emoji like every town's (Jacob, 2026-09-28: the fleur-de-lis, "in keeping with the
     // kit"; "only in the Ward"). The picker for a town to choose its own mark is not built yet.
-    mark: '⚜️',
+    mark: '⚜️',   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
     ogImage: 'https://lafayette-square.com/photos/og-preview.jpg', // index.html (Phase 4)
     assetSlug: 'lafayette-square',                               // per-look asset filenames; == lookId for #1
   },

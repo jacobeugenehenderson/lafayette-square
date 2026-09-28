@@ -38,6 +38,7 @@ import useTownHover from './townHover.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useCityModelActive from '../hooks/useCityModelActive'
 import { lookOf } from '../lib/lookOf.js'
+import { IDENTITY_NEUTRAL } from '../lib/townIdentity.js'
 
 import { useQuality } from '../lib/qualityProfile.js'
 import { buildingColors } from '../lib/buildingTint.js'
@@ -79,16 +80,15 @@ if (typeof window !== 'undefined') {
 // passing <Town litIds>; neon alone could not show it, because neon draws only for places OPEN now — at 10 a.m.
 // or after hours a chosen category was invisible. So a lit building's ROOF mixes toward the town's lit tint,
 // day and night, and the selected building gets the same mix, stronger. Neon still adds on top when open.
-// ⭐ The tint is a Look channel (`scene.litTint` = { color, strength }), authored per town; absent, the kit's
-// neutral default below, which is no town's. One set of uniforms shared by every roof material, so a change
+// ⭐ The tint is a Look identity channel (`scene.identity.litTint` = { color, strength }, src/lib/townIdentity.js),
+// authored per town; absent, the kit's neutral one, which is no town's. One set of uniforms shared by every roof material, so a change
 // of lit set or tint re-uploads a small texture and never recompiles a shader.
-export const LIT_TINT_DEFAULT = { color: '#f2c14e', strength: 0.45 }
 export const litUniforms = {
   uLitTex: { value: null },
   uLitTexSize: { value: new THREE.Vector2(1, 1) },
   uLitOn: { value: 0 },
-  uLitColor: { value: new THREE.Color(LIT_TINT_DEFAULT.color) },
-  uLitStrength: { value: LIT_TINT_DEFAULT.strength },
+  uLitColor: { value: new THREE.Color(IDENTITY_NEUTRAL.litTint.color) },
+  uLitStrength: { value: IDENTITY_NEUTRAL.litTint.strength },
 }
 function litTexture(byNum, litIds) {
   const n = Math.max(1, byNum.length)
@@ -210,10 +210,10 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     litUniforms.uLitOn.value = litIds ? 1 : 0
     if (prev) prev.dispose()
   }, [litIndex, litIds, LOOK_ID])
-  const tint = litTintOverride ?? bakedScene?.litTint ?? LIT_TINT_DEFAULT
+  const tint = litTintOverride ?? bakedScene?.identity?.litTint ?? IDENTITY_NEUTRAL.litTint
   useEffect(() => {
-    litUniforms.uLitColor.value.set(tint.color ?? LIT_TINT_DEFAULT.color)
-    litUniforms.uLitStrength.value = Number.isFinite(tint.strength) ? tint.strength : LIT_TINT_DEFAULT.strength
+    litUniforms.uLitColor.value.set(tint.color)
+    litUniforms.uLitStrength.value = tint.strength
   }, [tint.color, tint.strength])
   // The city model covers only the buildings OSM also mapped, so we keep DRAWING
   // and keep the geometry mounted — suppression is PER BUILDING (aCovered below),

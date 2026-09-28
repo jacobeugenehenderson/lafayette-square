@@ -1,4 +1,7 @@
 {
+  "identity": {
+    "mark": "⚓"
+  },
   "layerVis": {
     "lu-greenhouse": true,
     "lamp": true,
