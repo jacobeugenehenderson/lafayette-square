@@ -54,8 +54,10 @@ is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_co
   (2) **untagged pier material** (most piers in both towns): timber, concrete, or refuse; (3) **metal decks**: as
   concrete, or refuse. Breakwaters are sized against the LOW level (ruled 2026-09-27, 0962f27b), so the tide covers them.
 - **OPEN — the revetment's bottom edge, "once and for all" (Jacob, 2026-09-27):** the contact of two materials, a
-  blend both ways (the sand coloured where it meets stone, the stone where it meets sand), not more geometry. First
-  read Furrow's ground-contact work and say whether that mechanism carries over. Proposed after the tide lands.
+  blend both ways (the sand coloured where it meets stone, the stone where it meets sand), not more geometry. ⏭ NOT
+  STARTED (2026-09-28). Next step: read Furrow's ground-contact work (`git log --grep Furrow`; the ground surfaces and
+  yard rules — `cartograph/surfaces.mjs`, bake-ground-ao's rulemap) and report to Jacob whether that mechanism carries
+  over to stone↔sand, before any code. The tide has landed, so it is unblocked.
 - **OPEN:** · each town's own water
   clarity (`references/` q-water-clarity-per-town) · real depth inside the visible band (`BRIEF-bathymetry.md`).
   **Not walked:** Lafayette Square's pond (drawn outside the slab).
