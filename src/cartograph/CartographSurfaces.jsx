@@ -17,7 +17,7 @@ import { useState } from 'react'
 import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import TodChannel from './TodChannel.jsx'
-import { NEUTRAL_CATEGORY_HEX } from '../lib/categoryColor.js'
+import { NEUTRAL_CATEGORY_NEON } from '../lib/categoryColor.js'
 import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS, CANOPY_FIELDS, CANOPY_FLAT_DEFAULTS } from './skyLightChannels.js'
 import { StoreChannel } from './CartographSkyLight.jsx'
 import { WATER_LOOK_DEFAULTS } from '../components/waterMaterial.js'
@@ -60,7 +60,7 @@ const DEFAULT_MATERIAL_COLORS = {
   foundation: '#B8A88A',
   // Neon (per-category sign tint): an unauthored category shows what it draws — the kit's NEUTRAL default
   // (src/lib/categoryColor.js, one source). The town's own colours are what the operator sets here.
-  ...Object.fromEntries(Object.entries(NEUTRAL_CATEGORY_HEX).map(([k, hex]) => [`neon_${k}`, hex])),
+  ...Object.fromEntries(Object.entries(NEUTRAL_CATEGORY_NEON).map(([k, hex]) => [`neon_${k}`, hex])),
   // Park (interior)
   park_path: '#cccccc',
 }

@@ -10,10 +10,12 @@
  * Asserts, reading the sources and the baked artifacts:
  *   · no neon consumer (NeonBands, SceneNeon, Stage's swatches) nor the manifest bake reads CATEGORY_HEX — the colour
  *     comes from categoryColor.js;
- *   · the neutral default covers EVERY category of the taxonomy (read from tokens/categories.js) with DISTINCT colours
- *     (categories must still be told apart);
- *   · a category the Look authored draws that colour; one it did not draws the neutral default — never another town's;
- *   · every baked manifest's taxonomy.categories[].color / colorAuthored equal what its own scene.json gives;
+ *   · ONE source per category, TWO derived forms (Jacob, 2026-09-28): `neon` (the map's tubes) and `detail` (the pastel
+ *     for chips, dots, accents). The neutral hues cover EVERY category of the taxonomy (read from tokens/categories.js)
+ *     and stay DISTINCT in both forms (categories must still be told apart);
+ *   · an authored category's neon is the Look's hex EXACTLY, its detail derived from it; an unauthored one draws the
+ *     neutral — never another town's;
+ *   · every baked manifest's taxonomy.categories[].neon / detail / colorAuthored equal what its own scene.json gives;
  *   · LISTS the towns whose scene.json predates the palette bake (no `neonAuthored`) — they keep the old palette until
  *     their scene is re-baked; the pre-palette branch is deleted when the list is empty.
  *
@@ -22,28 +24,34 @@
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join } from 'path'
 import CATEGORIES from '../src/tokens/categories.js'
-import { categoryHex, isAuthoredCategory, NEUTRAL_CATEGORY_HEX } from '../src/lib/categoryColor.js'
+import { categoryNeon, categoryDetail, detailOf, isAuthoredCategory, NEUTRAL_CATEGORY_HUE, neutralNeon } from '../src/lib/categoryColor.js'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const BAKED = join(ROOT, 'public/baked')
 const CONSUMERS = ['src/components/NeonBands.jsx', 'src/components/SceneNeon.jsx', 'src/cartograph/CartographSurfaces.jsx', 'cartograph/bake-manifest.mjs']
 const code = (s) => s.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
 
-export function audit({ sources, towns, neutral = NEUTRAL_CATEGORY_HEX, hexOf = categoryHex }) {
+export function audit({ sources, towns, hues = NEUTRAL_CATEGORY_HUE, neonOf = categoryNeon }) {
   const f = [], preBake = []
   for (const [path, src] of Object.entries(sources)) if (/\bCATEGORY_HEX\b/.test(code(src))) f.push(`${path} reads CATEGORY_HEX — a town's category colour comes from src/lib/categoryColor.js`)
   const ids = Object.keys(CATEGORIES)
-  const missing = ids.filter(id => !neutral[id]); if (missing.length) f.push(`the neutral default has no colour for ${missing.join(', ')}`)
-  const seen = new Map(); for (const [id, hex] of Object.entries(neutral)) { const k = hex.toLowerCase(); if (seen.has(k)) f.push(`the neutral default gives ${seen.get(k)} and ${id} the same colour (${hex}) — categories must be told apart`); seen.set(k, id) }
-  // The rule, on a fixture Look: authored → its colour; unauthored → neutral.
+  const missing = ids.filter(id => hues[id] == null); if (missing.length) f.push(`the neutral default has no hue for ${missing.join(', ')}`)
+  for (const [form, of] of [['neon', (id) => neutralNeon(id)], ['detail', (id) => detailOf(neutralNeon(id))]]) {
+    const seen = new Map()
+    for (const id of Object.keys(hues)) { const k = of(id); if (seen.has(k)) f.push(`the neutral ${form} form gives ${seen.get(k)} and ${id} the same colour (${k}) — categories must be told apart`); seen.set(k, id) }
+  }
+  const hueSeen = new Map(); for (const [id, h] of Object.entries(hues)) { if (hueSeen.has(h)) f.push(`the neutral hues give ${hueSeen.get(h)} and ${id} the same hue (${h}°)`); hueSeen.set(h, id) }
+  // The rule, on a fixture Look: authored → its hex exactly (detail derived); unauthored → the neutral.
   const look = { materialColors: { neon_dining: '#123456' }, neonAuthored: ['dining'] }
-  if (hexOf('dining', look) !== '#123456') f.push('an authored category does not draw the Look\'s colour')
-  if (hexOf('parks', look) !== neutral.parks) f.push('an unauthored category does not draw the neutral default')
+  if (neonOf('dining', look) !== '#123456') f.push('an authored category\'s neon is not the Look\'s hex exactly')
+  if (categoryDetail('dining', look) !== detailOf('#123456')) f.push('an authored category\'s detail is not derived from its neon')
+  if (neonOf('parks', look) !== neutralNeon('parks')) f.push('an unauthored category does not draw the neutral default')
   for (const t of towns) {
     if (!Array.isArray(t.scene?.neonAuthored)) { preBake.push(t.id); continue }
     for (const c of t.manifest?.taxonomy?.categories || []) {
-      if (c.color === undefined) { f.push(`${t.id}: manifest category ${c.id} carries no color`); continue }
-      if (c.color !== hexOf(c.id, t.scene)) f.push(`${t.id}: manifest ${c.id} color ${c.color} ≠ its scene's ${hexOf(c.id, t.scene)}`)
+      if (c.neon === undefined || c.detail === undefined) { f.push(`${t.id}: manifest category ${c.id} carries no neon/detail`); continue }
+      if (c.neon !== neonOf(c.id, t.scene)) f.push(`${t.id}: manifest ${c.id} neon ${c.neon} ≠ its scene's ${neonOf(c.id, t.scene)}`)
+      if (c.detail !== detailOf(neonOf(c.id, t.scene))) f.push(`${t.id}: manifest ${c.id} detail ${c.detail} is not derived from its neon`)
       if (c.colorAuthored !== isAuthoredCategory(c.id, t.scene)) f.push(`${t.id}: manifest ${c.id} colorAuthored ${c.colorAuthored} ≠ its scene's`)
     }
   }
@@ -61,10 +69,11 @@ if (process.argv.includes('--self-test')) {
   const base = audit({ sources, towns }).f.length
   const cases = [
     ['a neon consumer reads CATEGORY_HEX again', () => audit({ sources: { ...sources, 'src/components/NeonBands.jsx': 'import { CATEGORY_HEX } from "x"; CATEGORY_HEX[k]' }, towns })],
-    ['the neutral default loses a category', () => audit({ sources, towns, neutral: Object.fromEntries(Object.entries(NEUTRAL_CATEGORY_HEX).slice(1)) })],
-    ['two categories share a neutral colour', () => audit({ sources, towns, neutral: { ...NEUTRAL_CATEGORY_HEX, arts: NEUTRAL_CATEGORY_HEX.dining } })],
-    ['an unauthored category draws another town\'s palette', () => audit({ sources, towns, hexOf: (id, s) => (id === 'parks' ? '#3DAF8A' : categoryHex(id, s)) })],
-    ['a manifest colour disagrees with its scene', () => audit({ sources, towns: [{ id: 'x', scene: { materialColors: {}, neonAuthored: [] }, manifest: { taxonomy: { categories: [{ id: 'dining', color: '#000000', colorAuthored: false }] } } }] })],
+    ['the neutral default loses a category', () => audit({ sources, towns, hues: Object.fromEntries(Object.entries(NEUTRAL_CATEGORY_HUE).slice(1)) })],
+    ['two categories share a neutral hue', () => audit({ sources, towns, hues: { ...NEUTRAL_CATEGORY_HUE, arts: NEUTRAL_CATEGORY_HUE.dining } })],
+    ['an unauthored category draws another town\'s palette', () => audit({ sources, towns, neonOf: (id, s) => (id === 'parks' ? '#3DAF8A' : categoryNeon(id, s)) })],
+    ['a manifest neon disagrees with its scene', () => audit({ sources, towns: [{ id: 'x', scene: { materialColors: {}, neonAuthored: [] }, manifest: { taxonomy: { categories: [{ id: 'dining', neon: '#000000', detail: detailOf('#000000'), colorAuthored: false }] } } }] })],
+    ['a manifest detail is stored, not derived', () => audit({ sources, towns: [{ id: 'x', scene: { materialColors: {}, neonAuthored: [] }, manifest: { taxonomy: { categories: [{ id: 'dining', neon: neutralNeon('dining'), detail: '#BBBBBB', colorAuthored: false }] } } }] })],
   ]
   let bad = 0
   for (const [n, run] of cases) { const c = run().f.length > base; if (!c) bad++; console.log(`${c ? '✅ caught' : '⛔ MISSED'} — ${n}`) }

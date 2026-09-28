@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { categoryHex } from '../lib/categoryColor.js'
+import { categoryNeon } from '../lib/categoryColor.js'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
@@ -247,7 +247,7 @@ function buildTube(building, tubeRadius) {
 // ⭐ The town's neon colours are ITS OWN: `materialColors.neon_<category>` (Stage › Surfaces › Neon, baked into
 // scene.json); a category it did not author draws the kit's neutral default — src/lib/categoryColor.js decides.
 function categoryColorVec(category, paletteScene) {
-  const c = new THREE.Color(categoryHex(category, paletteScene))
+  const c = new THREE.Color(categoryNeon(category, paletteScene))
   return [c.r, c.g, c.b]
 }
 
