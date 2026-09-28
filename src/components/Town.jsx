@@ -30,11 +30,7 @@
  *   interactive      buildings take the pointer (default true)
  *   bakeLastMs       cache-bust token (default: the slab's bakedAt)
  *   layers           visibility, default all on: ground buildings trees park lamps setPieces neon
- *                    labels sky clouds fog shadows post — and `compass`, default OFF: an app opts in
- *                    (`compass: true`), so an app that never asks draws exactly what it drew before
- *   compassDial      with `compass`: where the compass dial sits and how big — the app's layout, per shot:
- *                    { at: 'top-center'|'top-left'|'top-right'|'bottom-left'|'bottom-right', px, inset } (CompassBezel)
- *   compassWhen      with `compass`: the app's media query for its narrow layout — the compass shows only there
+ *                    labels sky clouds fog shadows post
  *   postFx           Preview's per-pass inspection matrix ({ toggles })
  *   overrides        Stage's live authoring channels (see OVERRIDE_KEYS) — an operator drag shows
  *                    without a bake
@@ -87,7 +83,6 @@ import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import SetPiece from './SetPiece.jsx'
 import HorizonDisc from './HorizonDisc.jsx'
-import CompassBezel from './CompassBezel.jsx'
 import MountainBackdrop from './MountainBackdrop'
 
 // The props contract comes through the one entry: an app asks this for its quality profile.
@@ -95,7 +90,7 @@ export { deviceQuality } from '../lib/qualityProfile.js'
 // …and places its town at boot (before any screen mounts), for readers that run without a <Town> (TownPlace.jsx).
 export { placeTown } from './TownPlace.jsx'
 
-const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'compass', 'sky', 'clouds', 'fog', 'shadows', 'post']
+const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt
 // override would otherwise do nothing, silently, while the operator drags a slider.
 export const OVERRIDE_KEYS = [
@@ -242,7 +237,7 @@ export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, compassDial, compassWhen, time, children,
+  holdScrubbedTime = false, time, children,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
   if (time != null && !(time instanceof Date && Number.isFinite(time.getTime()))) throw new Error(`[Town] ⛔ \`time\` is a Date or null (live); got ${time}`)
@@ -335,8 +330,6 @@ export default function Town({
         {/* The ground past the rim, out to the horizon — the movie and the street only. In PLAN the town is one closed
             circle ending at its soft rim (Jacob, 2026-09-28; ▶ claims-the-plan-shot-ends-at-the-rim). */}
         {heavy && shot !== 'plan' && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
-        {/* The compass: one screen-space dial, on the app's narrow layout, turned by the camera; none in the movie. */}
-        {layers?.compass === true && <R3FErrorBoundary name="CompassBezel"><CompassBezel lookId={lookId} shot={shot} dial={compassDial} when={compassWhen} /></R3FErrorBoundary>}
         {/* A mesh behind everything, at its true geo spot; nothing unless the Look ships a landscape. */}
         <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop lookId={lookId} bakeLastMs={bake} landscapeOverride={o.landscape} /></R3FErrorBoundary>
       </Suspense>

@@ -1,10 +1,16 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: SUPERSEDED
 dispatched: Tamp (kit) · Quire (the Ward)
 written: 2026-09-28
 evict-when: RULING: Jacob's eye on the phone ring (north-up and turned, noon and night) and the computer rose
 -->
-# BRIEF — The compass
+# BRIEF — The compass (SUPERSEDED 2026-09-28)
+
+> Retired the same day. Jacob, on seeing the Ward: *"I don't like the compass ring; it's a gimmick and we've been working
+> to get rid of those."* The compass is the old player's little rose, which the Ward carries itself. The kit's dial
+> (CompassBezel, compassBezel.js, Town's `compass` layer) was deleted in the commit that moved this here. Kept as the
+> record of the design and its rulings (the rim version before it:
+> `BRIEF-compass-bezel-rim-SUPERSEDED-2026-09-28.md`).
 
 **For:** the kit (Tamp) and the Ward (Quire). **Rewritten:** 2026-09-28 (the rim design it replaces is in the Diary:
 `cartograph/_archive/BRIEF-compass-bezel-rim-SUPERSEDED-2026-09-28.md`). **Report to:** Warden.
