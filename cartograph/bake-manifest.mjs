@@ -22,6 +22,8 @@
  *               with its size and sha256, or `null` when the town has none — absent is said, never
  *               guessed. The source stays cartograph/data/<town>/content/; this is its publication,
  *               like the slab's. The override sidecars are inputs to bake-content, not payload.
+ *   board     — the town's bulletin groups and sections. None authored yet: the kit's list, `authored:
+ *               false`, generic labels, ids kept stable; Cary's group only where delivery is on.
  *   files     — every file of the slab with its size and sha256. ⚠️ v0 LISTS the existing names; it
  *               does not yet rename files by content. That, and the Worker and R2 side of it, is
  *               BRIEF-slab-loading §3 step 3.
@@ -77,6 +79,28 @@ for (const name of CONTENT_PAYLOAD) {
   content[name] = { bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
 }
 
+// ── board: the town's bulletin sections ───────────────────────────────────────
+// No town authors its own yet, so this is the KIT's list, marked unauthored. Ids are kept stable so
+// posts already filed under them still sort; labels are generic ("Notes", not one town's place name).
+// Cary's group appears only where the town runs delivery (identity.modules.delivery.enabled).
+const BOARD_DEFAULT = [
+  { id: 'marketplace', label: 'Marketplace', sections: [
+    { id: 'buy-nothing', label: 'Buy Nothing' }, { id: 'for-sale', label: 'For Sale' } ] },
+  { id: 'services', label: 'Services', sections: [
+    { id: 'professional-services', label: 'Professional' }, { id: 'domestic-services', label: 'Domestic' },
+    { id: 'concierge', label: 'Concierge' } ] },
+  { id: 'neighbors', label: 'Neighbors', sections: [
+    { id: 'square-notes', label: 'Notes', anonymousByDefault: true },
+    { id: 'missed-connections', label: 'Missed Connections', anonymousByDefault: true },
+    { id: 'emergency-supplies', label: 'Emergency', anonymousByDefault: true } ] },
+  { id: 'cary', label: 'Cary', requiresModule: 'delivery', sections: [
+    { id: 'courier-board', label: 'Courier Board' }, { id: 'delivery-errands', label: 'Delivery & Errands' } ] },
+]
+const deliveryOn = !!(identity.modules && identity.modules.delivery && identity.modules.delivery.enabled)
+const boardGroups = BOARD_DEFAULT
+  .filter(g => g.requiresModule !== 'delivery' || deliveryOn)
+  .map(({ requiresModule, ...g }) => g)
+
 // ── files ─────────────────────────────────────────────────────────────────────
 function* walk(dir) {
   for (const name of readdirSync(dir)) {
@@ -99,6 +123,7 @@ const manifest = {
   writtenAt: new Date().toISOString(),
   identity,
   taxonomy: { authored: false, categories },
+  board: { authored: false, groups: boardGroups },
   content,
   files,
 }

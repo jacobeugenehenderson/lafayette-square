@@ -472,6 +472,19 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   (Authentication → Users). `auth.users` is not readable with the anon key, so this was NOT verified here.
 
 
+### F-18 · HIGH · Starting a thread on an ANONYMOUS bulletin post reveals its author  *(new, 2026-09-28)*
+`apps-script/Code.js#postStartThread` does not refuse a thread on an anonymous post: it stores the poster's
+real handle as `a_handle`, and `getThreads` returns it to the thread's starter as `other_handle`. So anyone
+who calls `start-thread` directly on a Missed Connections or Emergency post learns who wrote it. Only the old
+client hid the "Message" button; the gate must be the server's. Found by Quire (The Ward build).
+**Fix:** refuse `start-thread` on an anonymous post, or never return the anonymous party's handle.
+Rides the same Apps Script deploy as `my-role` (pull + diff the live script first).
+
+### F-19 · LOW · Bulletin server gaps  *(new, 2026-09-28)*
+Found by Quire: deleting a post leaves its threads open · `postComment` does not check the post exists ·
+no server-side length limits (the 1000/500-character limits are client-only) · `is_mine` matches the exact
+device hash while standing counts linked devices, so your own post is not "mine" on your linked device.
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
