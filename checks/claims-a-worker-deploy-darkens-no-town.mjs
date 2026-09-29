@@ -21,6 +21,13 @@
  * the deploy itself refuses. ▶ The cure is the order in PUBLISH.md §0.5: (a) publish every town with
  * its manifest, THEN (b) deploy.
  *
+ * ⭐ STAGING ONLY: AN OPERATOR MAY ACCEPT A TOWN GOING DARK, BY NAME, FOR ONE DEPLOY (Jacob,
+ * 2026-09-29: "3 is fine for today" — LS left off staging while provincetown and huron go to the Ward).
+ *   ACCEPT_DARK=lafayette-square npx wrangler deploy      (comma-separate several)
+ * Each accepted town is printed as going dark BY THAT DECISION. ⛔ Never production. ⛔ A town named
+ * that would NOT go dark fails the gate — an acknowledgment that outlives its reason is a stale skip.
+ * ⛔ It lives on the command line of one deploy, never in this file or in wrangler.jsonc.
+ *
  * Usage: node checks/claims-a-worker-deploy-darkens-no-town.mjs [--env=staging|prod]   (default: both)
  */
 import { registeredMaps } from '../src/instances/registry.js'
@@ -37,6 +44,8 @@ const head = async (key) => {
   return 'unreachable'
 }
 
+const accepted = new Set((process.env.ACCEPT_DARK || '').split(',').map((t) => t.trim()).filter(Boolean))
+const acceptedUsed = new Set()
 let dark = 0, uncertain = 0
 for (const env of want ? [want] : Object.keys(ENVS)) {
   const pre = ENVS[env]
@@ -49,14 +58,19 @@ for (const env of want ? [want] : Object.keys(ENVS)) {
       const record = env === 'staging' ? await head(`staging/sites/${town}/player.json`) : 200
       if (record === 'unreachable') { uncertain++; console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} player record could not be read — refusing to say it is safe`); continue }
       if (record === 200) { console.log(`  ✅ ${env.padEnd(8)}${town.padEnd(26)} manifest.json present${env === 'staging' ? ' · player record present' : ''}`); continue }
+      if (accepted.has(town)) { acceptedUsed.add(town); console.warn(`  ⚠️ ${env.padEnd(8)}${town.padEnd(26)} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — no player record`); continue }
       dark++
       console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} names no player (staging/sites/${town}/player.json ${record}) — this Worker would 404 it. `
         + `▶ node scripts/set-staging-player.mjs --map=${town} --player=ward`)
       continue
     }
+    if (env === 'staging' && accepted.has(town)) { acceptedUsed.add(town); console.warn(`  ⚠️ ${env.padEnd(8)}${town.padEnd(26)} goes DARK on staging BY YOUR DECISION (ACCEPT_DARK) — no manifest.json`); continue }
     dark++
     console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} published (scene.json ${scene}) with NO manifest.json — this Worker would 404 it`)
   }
+}
+for (const t of accepted) {
+  if (!acceptedUsed.has(t)) { dark++; console.error(`  ⛔ ACCEPT_DARK names "${t}", which would NOT go dark on staging here — drop it; a stale acknowledgment is a skip list`) }
 }
 if (dark || uncertain) {
   console.error(`\n⛔ ${dark} town(s) would go dark${uncertain ? `, ${uncertain} unreadable` : ''}. Publish each with its manifest first `
