@@ -506,7 +506,8 @@ Until it deploys, the Ward has no operator sign-in.
 `apps-script/Code.js` `postUpdateListing`'s `EDITABLE` includes `rating` and `review_count`, so a full Guardian can
 write their own listing's rating through `update-listing`. No client sends them, but the endpoint accepts them. A
 place's rating is the town's own (the Ward's rating marks), never the owner's. Found by Quire (menu editor).
-**Fix:** drop both from `EDITABLE`; the rating's writer is the operator's path only. ⏳ A `clasp` deploy: Jacob's go.
+**Fix:** drop both from `EDITABLE`; the rating's writer is the operator's path only. ✅ **Fixed in code 2026-09-29**
+(Jacob's go); ⏳ live once `clasp` deploys it.
 ✅ **Ruled 2026-09-28 (Jacob):** `category`/`subcategory` **stay Guardian-editable** — a Guardian may add and
 remove categories and tags; only `rating`/`review_count` leave `EDITABLE`.
 
@@ -517,7 +518,8 @@ mode then writes it into the new device as its own key (`adoptIdentity`), so lin
 and Keyholder roles included. Linking needs no credential: `getLinkedHashes` already links devices by shared handle.
 Found by Quire (◉, device link).
 **Fix:** `check-link-token` returns status only; push payloads stop carrying `device_hash`; pull mode is removed. The
-Ward links push-only and never reads `device_hash` from it. ⏳ A `clasp` deploy: Jacob's go.
+Ward links push-only and never reads `device_hash` from it. ✅ **Fixed in code 2026-09-29** (Jacob's go): status only,
+no key in the payload, pull mode gone (a device without a handle makes no code); ⏳ live once `clasp` deploys it.
 
 ### F-23 · HIGH · Any device can make itself a verified resident of any building  *(new, 2026-09-28)*
 `apps-script/Code.js` `postClaimResidence` trusts `auto_verify` from the request body. POST `claim-residence`
@@ -527,7 +529,10 @@ the client's word. Related: `verify-resident` takes another device's `target_has
 needs a device key handed over. Found by Quire (arrival pages).
 **Fix:** the server verifies on a per-building secret (`/home/<id>/<secret>`, like `/claim`'s), never on a client
 flag, and neighbour verification stops taking a device key. The address change is Jacob's (Ward README §2).
-Until then the Ward claims without `auto_verify` (pending only). ⏳ A `clasp` deploy: Jacob's go.
+Until then the Ward claims without `auto_verify` (pending only). ✅ **Holes closed in code 2026-09-29** (Jacob's go):
+`auto_verify` is never trusted (a claim is pending unless the operator makes it, or the same handle is verified there
+on another device), and `verify-resident` is closed rather than taking a device key — only the operator verifies until
+the neighbour flow is ruled. ⏳ Live once `clasp` deploys it.
 **Ruled in part 2026-09-28 (Jacob):** *"The Host or neighbors verify residents. There is indeed a secret intended on
 building cards."* ⇒ both verifiers stay; building cards carry a secret. ⛔ **Unruled — a conversation owed:** how a
 neighbour verifies without the target device's key, and how the card's secret and the Host's verification fit

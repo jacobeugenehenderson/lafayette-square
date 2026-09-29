@@ -28,7 +28,21 @@
 const SPREADSHEET_ID = '1UuNAXIbrWTKYrhpRcf3MSRmM_XHyGjlasvvwgGpiZso'
 const LOCAL_THRESHOLD = 3          // check-ins needed to become a local
 const LOCAL_WINDOW_DAYS = 14       // rolling window for distinct-day counting
-const TIMEZONE = 'America/Chicago' // Central Time for date calculations
+const TIMEZONE = 'America/Chicago' // the default look's zone (Lafayette Square)
+// Each town's day in its OWN zone (Jacob's timezone fix, 2026-09-29): a check-in, a review's day and an event's date
+// fall on the town's calendar, not Chicago's. The zones are the ones each town's baked manifest names
+// (identity.timezone); a look not listed here keeps the default's and says so in the log.
+const TOWN_ZONES = {
+  'lafayette-square': 'America/Chicago',
+  'hipointe-demun': 'America/Chicago',
+  'provincetown': 'America/New_York',
+  'huron': 'America/New_York',
+}
+function townZone() {
+  var z = TOWN_ZONES[CURRENT_LOOK]
+  if (!z) { console.warn('[timezone] look "' + CURRENT_LOOK + '" has no zone in TOWN_ZONES — using ' + TIMEZONE); return TIMEZONE }
+  return z
+}
 var PHOTO_FOLDER_ID = PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') || ''
 const MAX_PHOTOS_PER_LISTING = 10
 
@@ -163,14 +177,14 @@ function nowISO() {
 }
 
 function todayCentral() {
-  return Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd')
+  return Utilities.formatDate(new Date(), townZone(), 'yyyy-MM-dd')
 }
 
 // Sheets auto-converts date strings to Date objects; normalize for string comparison
 function toDateStr(val) {
   try {
-    if (val instanceof Date) return Utilities.formatDate(val, TIMEZONE, 'yyyy-MM-dd')
-    if (typeof val === 'number') return Utilities.formatDate(new Date(val), TIMEZONE, 'yyyy-MM-dd')
+    if (val instanceof Date) return Utilities.formatDate(val, townZone(), 'yyyy-MM-dd')
+    if (typeof val === 'number') return Utilities.formatDate(new Date(val), townZone(), 'yyyy-MM-dd')
   } catch (_) {}
   return String(val || '')
 }
@@ -346,7 +360,7 @@ function fetchCommunityCounts() {
   var checkins = sheetToObjects(getSheet('Checkins'))
   var cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
-  var cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  var cutoffStr = Utilities.formatDate(cutoff, townZone(), 'yyyy-MM-dd')
   var deviceDays = {}
   checkins.forEach(function(r) {
     var d = toDateStr(r.date)
@@ -494,13 +508,13 @@ function fetchEventsData() {
   const active = rows.filter(r => {
     var endRaw = r.end_date || r.start_date
     var end = endRaw instanceof Date
-      ? Utilities.formatDate(endRaw, TIMEZONE, 'yyyy-MM-dd')
+      ? Utilities.formatDate(endRaw, townZone(), 'yyyy-MM-dd')
       : String(endRaw)
     return end >= today
   })
   active.forEach(r => {
-    if (r.start_date instanceof Date) r.start_date = Utilities.formatDate(r.start_date, TIMEZONE, 'yyyy-MM-dd')
-    if (r.end_date instanceof Date) r.end_date = Utilities.formatDate(r.end_date, TIMEZONE, 'yyyy-MM-dd')
+    if (r.start_date instanceof Date) r.start_date = Utilities.formatDate(r.start_date, townZone(), 'yyyy-MM-dd')
+    if (r.end_date instanceof Date) r.end_date = Utilities.formatDate(r.end_date, townZone(), 'yyyy-MM-dd')
   })
   return active.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
 }
@@ -521,7 +535,7 @@ function getCheckinStatus(deviceHash) {
   const hashes = getLinkedHashes(deviceHash)
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
-  const cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  const cutoffStr = Utilities.formatDate(cutoff, townZone(), 'yyyy-MM-dd')
 
   const distinctDates = new Set()
   rows.forEach(r => {
@@ -564,7 +578,7 @@ function postCheckin(body) {
 
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
-  const cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  const cutoffStr = Utilities.formatDate(cutoff, townZone(), 'yyyy-MM-dd')
   const distinctDates = new Set()
   existing.forEach(r => {
     var d = toDateStr(r.date)
@@ -594,7 +608,7 @@ function postReview(body) {
   const checkins = sheetToObjects(getSheet('Checkins'))
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
-  const cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  const cutoffStr = Utilities.formatDate(cutoff, townZone(), 'yyyy-MM-dd')
   const distinctDates = new Set()
   checkins.forEach(r => {
     if (r.device_hash === device_hash && r.date >= cutoffStr) {
@@ -746,7 +760,7 @@ function postUpdateListing(body) {
   // Whitelist of editable fields
   const EDITABLE = [
     'name', 'address', 'category', 'subcategory', 'phone', 'website',
-    'description', 'logo', 'home_based', 'rating', 'review_count',
+    'description', 'logo', 'home_based',  // SECURITY F-21: never 'rating' / 'review_count' — a place's rating is its townies'
     'hours_json', 'amenities_json', 'tags_json', 'photos_json', 'history_json',
     'reservation_url', 'menu_url', 'menu_json'
   ]
@@ -865,7 +879,7 @@ function isTownie(deviceHash) {
   const hashes = getLinkedHashes(deviceHash)
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
-  const cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  const cutoffStr = Utilities.formatDate(cutoff, townZone(), 'yyyy-MM-dd')
   const distinctDates = new Set()
   checkins.forEach(r => {
     const d = toDateStr(r.date)
@@ -1192,8 +1206,7 @@ function createLinkToken(deviceHash) {
   if (deviceHash) {
     var handleRow = findRow(getSheet('Handles'), 'device_hash', deviceHash)
     if (handleRow && handleRow.rowData.handle) {
-      var payload = JSON.stringify({
-        device_hash: deviceHash,
+      var payload = JSON.stringify({  // SECURITY F-22: no device_hash — linking needs none (getLinkedHashes, by handle)
         handle: handleRow.rowData.handle,
         avatar: handleRow.rowData.avatar || null,
         vignette: handleRow.rowData.vignette || null
@@ -1203,8 +1216,8 @@ function createLinkToken(deviceHash) {
     }
   }
 
-  cache.put('link_' + token, 'pending', 300)
-  return jsonResponse({ token: token, mode: 'pull' })
+  // SECURITY F-22: pull mode is gone (it copied a device's key). Only a device with a handle makes a code.
+  return errorResponse('Choose a handle on this device first, then link another to it', 'bad_request')
 }
 
 function postClaimLinkToken(body) {
@@ -1216,39 +1229,21 @@ function postClaimLinkToken(body) {
   var val = cache.get('link_' + token)
   if (!val) return errorResponse('Invalid or expired token', 'bad_request')
 
-  // ── Push mode: token already contains identity from creating device ──
-  // Scanning device receives the identity and registers itself
-  if (val !== 'pending') {
-    try {
-      var source = JSON.parse(val)
-      if (source.handle) {
-        // Register this device with the same handle/avatar
-        var sheet = getSheet('Handles')
-        var existing = findRow(sheet, 'device_hash', deviceHash)
-        if (!existing) {
-          sheet.appendRow([deviceHash, source.handle, source.avatar || '', nowISO(), source.vignette || ''])
-        }
-        cache.remove('link_' + token)
-        return jsonResponse({ success: true, handle: source.handle, avatar: source.avatar, vignette: source.vignette })
+  // Push mode, the only mode (SECURITY F-22): the code carries the creating device's handle, never its key, and the
+  // scanning device registers itself under that handle.
+  try {
+    var source = JSON.parse(val)
+    if (source && source.handle) {
+      var sheet = getSheet('Handles')
+      var existing = findRow(sheet, 'device_hash', deviceHash)
+      if (!existing) {
+        sheet.appendRow([deviceHash, source.handle, source.avatar || '', nowISO(), source.vignette || ''])
       }
-    } catch (e) { /* fall through */ }
-    return errorResponse('Invalid token data', 'bad_request')
-  }
-
-  // ── Pull mode: scanning device has the handle, pushes it into token ──
-  var result = findRow(getSheet('Handles'), 'device_hash', deviceHash)
-  if (!result || !result.rowData.handle) {
-    return jsonResponse({ error: 'No handle on this device' })
-  }
-
-  var payload = JSON.stringify({
-    device_hash: deviceHash,
-    handle: result.rowData.handle,
-    avatar: result.rowData.avatar || null,
-    vignette: result.rowData.vignette || null
-  })
-  cache.put('link_' + token, payload, 300)
-  return jsonResponse({ success: true, handle: result.rowData.handle })
+      cache.remove('link_' + token)
+      return jsonResponse({ success: true, handle: source.handle, avatar: source.avatar, vignette: source.vignette })
+    }
+  } catch (e) { /* not a push payload */ }
+  return errorResponse('Invalid or expired token', 'bad_request')
 }
 
 function getLinkedDeviceCount(deviceHash) {
@@ -1266,7 +1261,8 @@ function checkLinkToken(token) {
   if (val === 'pending') return jsonResponse({ status: 'pending' })
   try {
     var data = JSON.parse(val)
-    return jsonResponse({ status: 'claimed', device_hash: data.device_hash, handle: data.handle, avatar: data.avatar, vignette: data.vignette || null })
+    // SECURITY F-22: status only. The code is 6 characters and unauthenticated; it never hands out a device's key.
+    return jsonResponse({ status: data && data.handle ? 'claimed' : 'expired' })
   } catch (e) {
     return jsonResponse({ status: 'expired' })
   }
@@ -1878,24 +1874,15 @@ function postClaimResidence(body) {
   }
 
   // Check if resident of a DIFFERENT building — admin can be resident of multiple buildings
-  // QR invite (auto_verify) auto-leaves the old residence so neighbors can move freely
   var existingElsewhere = rows.filter(function(r) { return r.device_hash === dh && r.building_id !== bid })[0]
   if (existingElsewhere && !isAdmin) {
-    if (body.auto_verify) {
-      // Auto-leave old residence for QR invite flow
-      var allData = sheet.getDataRange().getValues()
-      for (var i = allData.length - 1; i >= 1; i--) {
-        if (allData[i][0] === dh && allData[i][1] !== bid) {
-          sheet.deleteRow(i + 1)
-        }
-      }
-    } else {
-      return errorResponse('Already a resident of ' + existingElsewhere.building_id + '. Leave that residence first.', 'conflict')
-    }
+    return errorResponse('Already a resident of ' + existingElsewhere.building_id + '. Leave that residence first.', 'conflict')
   }
 
-  // Auto-verify if: admin, QR invite, OR caller's handle is already a verified resident of this building on another device
-  var autoVerify = isAdmin || !!body.auto_verify
+  // SECURITY F-23: a claim is PENDING unless the operator (admin) makes it, or the caller's handle is already a
+  // verified resident here on another device. `auto_verify` from the request is never trusted — any device could
+  // send it for any building. The building card's secret that will verify outright is unruled and not built.
+  var autoVerify = isAdmin
   if (!autoVerify) {
     var handleRow = findRow(getSheet('Handles'), 'device_hash', dh)
     if (handleRow && handleRow.rowData.handle) {
@@ -1912,13 +1899,13 @@ function postClaimResidence(body) {
   }
 
   var status = autoVerify ? 'verified' : 'pending'
-  var verifiedBy = autoVerify ? (isAdmin ? 'admin' : body.auto_verify ? (body.source || 'qr-invite') : 'linked-device') : ''
+  var verifiedBy = autoVerify ? (isAdmin ? 'admin' : 'linked-device') : ''
   var verifiedAt = autoVerify ? nowISO() : ''
 
   // Residency expires 1 year from verification (or claim date if pending)
   var expiryDate = new Date()
   expiryDate.setFullYear(expiryDate.getFullYear() + 1)
-  var expiresAt = Utilities.formatDate(expiryDate, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss'Z'")
+  var expiresAt = Utilities.formatDate(expiryDate, 'UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'")
 
   sheet.appendRow([dh, bid, status, verifiedBy, nowISO(), verifiedAt, expiresAt])
 
@@ -1939,7 +1926,7 @@ function grantTownieStatus(deviceHash) {
   // Count existing distinct days in the window
   var cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
-  var cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  var cutoffStr = Utilities.formatDate(cutoff, townZone(), 'yyyy-MM-dd')
   // ⭐ Same resolution again, for a different reason: without it a claim or a
   // residence-verify on a SECOND device backfills days the person already has,
   // writing synthetic check-ins nobody needs.
@@ -1959,52 +1946,18 @@ function grantTownieStatus(deviceHash) {
   for (var i = 0; i < needed; i++) {
     var d = new Date(now)
     d.setDate(d.getDate() - i)
-    var dateStr = Utilities.formatDate(d, TIMEZONE, 'yyyy-MM-dd')
+    var dateStr = Utilities.formatDate(d, townZone(), 'yyyy-MM-dd')
     if (!distinctDates[dateStr]) {
-      var ts = Utilities.formatDate(d, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss'Z'")
+      var ts = Utilities.formatDate(d, 'UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'")
       sheet.appendRow([deviceHash, 'resident-grant', ts, dateStr])
     }
   }
 }
 
 function postVerifyResident(body) {
-  var verifierHash = body.verifier_hash
-  var targetHash = body.target_hash
-  var bid = body.building_id
-  if (!verifierHash || !targetHash || !bid) return errorResponse('Missing required fields', 'bad_request')
-
-  var sheet = getSheet('Residents')
-  var data = sheet.getDataRange().getValues()
-  var headers = data[0]
-  var dhCol = headers.indexOf('device_hash')
-  var bidCol = headers.indexOf('building_id')
-  var statusCol = headers.indexOf('status')
-  var verifiedByCol = headers.indexOf('verified_by')
-  var verifiedAtCol = headers.indexOf('verified_at')
-
-  // Check verifier is a verified resident of this building
-  var verifierOk = false
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][dhCol] === verifierHash && data[i][bidCol] === bid && data[i][statusCol] === 'verified') {
-      verifierOk = true
-      break
-    }
-  }
-  if (!verifierOk) return errorResponse('Verifier is not a verified resident of this building', 'forbidden')
-
-  // Find target pending row
-  for (var j = 1; j < data.length; j++) {
-    if (data[j][dhCol] === targetHash && data[j][bidCol] === bid && data[j][statusCol] === 'pending') {
-      sheet.getRange(j + 1, statusCol + 1).setValue('verified')
-      sheet.getRange(j + 1, verifiedByCol + 1).setValue(verifierHash)
-      sheet.getRange(j + 1, verifiedAtCol + 1).setValue(nowISO())
-      // Co-resident verify also grants townie — parity with the auto-verify paths (postClaimResidence:1758)
-      grantTownieStatus(targetHash)
-      return jsonResponse({ success: true })
-    }
-  }
-
-  return errorResponse('No pending resident found for this building', 'not_found')
+  // SECURITY F-23: a neighbour's verification no longer takes another device's key (target_hash). How a neighbour
+  // verifies without one is unruled (Jacob), so until it is, only the operator verifies. Closed, not redesigned.
+  return errorResponse('Neighbour verification is closed for now; the town\'s Host verifies residents', 'forbidden')
 }
 
 function postLobbyPost(body) {
@@ -2543,7 +2496,7 @@ function seedEvents() {
   for (var i = 0; i < 7; i++) {
     var dd = new Date(d)
     dd.setDate(dd.getDate() + i)
-    dates.push(Utilities.formatDate(dd, TIMEZONE, 'yyyy-MM-dd'))
+    dates.push(Utilities.formatDate(dd, townZone(), 'yyyy-MM-dd'))
     days.push(dd.getDay()) // 0=Sun … 6=Sat
   }
 
