@@ -50,13 +50,13 @@ the town's feeds.
 
 **Where the notes are stale, this brief wins** (rulings made after the notes were written):
 - A full page's return is a **round 44 px ←** in the left zone, named for its destination ("Back to Society"), with
-  that room lit. Not the notes' "‹". ⚠️ **Open:** ◉'s sheet and the about pages have no room to light, so a bare ←
-  says nothing to a sighted visitor there. Ask Jacob before building those two (a short label, or light the room
-  they were opened from).
+  that room lit. Not the notes' "‹". **◉'s sheet closes with ✕** (Jacob, 2026-09-29): it returns
+  you to where you opened it. An about page opened from inside the sheet uses ←, back to the sheet (Boz's proposal;
+  Jacob's eye on staging decides).
 - There is no ring around the moon (the notes' "the ring around it is data" is from v10).
 - The roof dot is a **selection mark, not a map pin** (Jacob: *"There is no map pin."*). §2's "map pins" line stands.
 
-**Still to rule — build the strip so either works:** the sky behind the day strip, **blended or in phases**.
+**The day strip's sky is IN PHASES** (Jacob, 2026-09-29): the 09-28 Day Strip's solid phase blocks, each sized to that phase's length today. Not the blended gradient.
 
 **New work, not ports:**
 - the next-full-moon date;
