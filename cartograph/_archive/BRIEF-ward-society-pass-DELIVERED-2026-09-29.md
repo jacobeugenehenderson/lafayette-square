@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: DELIVERED 2026-09-29
 dispatched: no
 written: 2026-09-29
 evict-when: §A and §C are live on staging and eye-gated by Jacob, and §B has shipped against the approved v4 mock

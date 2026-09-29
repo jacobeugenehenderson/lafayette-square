@@ -37,11 +37,10 @@ contradicts this brief, **stop and flag it**.
   5 red. Of the reds, one is an endpoint, `gas:verify-resident`, waiting on Jacob's resident-verification
   ruling. The other four need a running app or Tamp's harness. Cary is **cut from the cutover** (Jacob,
   2026-09-28); its 11 endpoints are retired as deferred.
-- ⛔ **Promote cannot pin a Ward build yet.** `scripts/promote-player-to-prod.mjs` copies only
-  `staging/player/`, which is the OLD player. The Ward's staging build lives under the Ward's own prefix,
-  and nothing carries it or the kit bundle to production. **This is the one unbuilt piece** between LS on
-  staging and LS on production (Phase 2).
-
+- ✅ **Promote pins the Ward (Phase 2 DELIVERED 2026-09-29, `30bcd111`).** It pins whichever player the town's
+  staging record names; no record refuses by name. ▶ `node checks/claims-a-production-town-plays-the-player-promote-pinned.mjs`
+- ✅ **Provincetown and Huron play the Ward on staging** (2026-09-29, records `ward`). **LS is dark on staging**
+  until Phase 1 runs for it: the Arborist's re-shoot, then Stage Bake, then Publish, then its record.
 ---
 
 ## Phase 1 — LS plays in the Ward on staging · **Jacob's buttons, no agent**
@@ -68,30 +67,7 @@ In order. Boz checks each result before the next.
 ⚠️ `lafayette-square-staging` is a different map (the one ROADMAP says to excise eventually). It is
 not touched here.
 
-## Phase 2 — Promote learns the Ward · **kit agent: WARM → Lintel** (built the staging half and the `kitUrl` contract). If Lintel's window has been cleared, **FRESH**, and ask it what it holds before briefing it on anything.
-
-**The job:** Promote pins whichever player a town's staging record names.
-- **Read:** `cartograph/serve.js` `POST /looks/<id>/promote` (steps 1–6 in its header: slab, then player,
-  then address, then switch, then proof), `scripts/promote-player-to-prod.mjs`,
-  `workers/production-sites/src/{index,route}.js` (serves `/_player/` from `player/<map>/` and reads
-  `hosts/<domain>.json`), `scripts/set-staging-player.mjs`, `workers/staging-sites/src/index.js`, and the
-  Ward's `scripts/publish-staging.mjs` header (its prefix, and `current.json`'s `kit`).
-- **Build:**
-  - If the town's record says `ward`, copy the Ward build that staging served **and** the kit bundle it
-    names (`staging/kit/<sha>/` → a prod key). Use the same byte-verified copy rule, never a rebuild.
-    Pin both in the host record.
-  - `workers/production-sites` stamps `ward-kit-base` exactly as staging does.
-  - `legacy` keeps today's path. **No record, or an unknown value, refuses by name.** ⛔ No default
-    player.
-- **Check:** extend `claims-a-staging-town-names-its-player` or add a production twin. Show it failing
-  before you trust it: mutation-test by adding a default player.
-- **Chain:**
-  - Trusted by the production Worker and by `siteUrlsForLook` (it refuses LS today while
-    `src/instances/lafayette-square.js#domain` exists; that is Phase 3's switch).
-  - ⚠️ provincetown.online is live on the old player. Promoting it again **after** its staging record says
-    `ward` moves it to the Ward. That is a real production change and Jacob's call. Say so in the commit.
-- **Bounds:** no deploy, no Promote, no push. The register is `cartograph/OPERATIONS.md § Production
-  sites`. The Ward's `OPERATIONS.md` gets a note via Warden.
+## Phase 2 — Promote learns the Ward · ✅ **DELIVERED 2026-09-29** (`30bcd111`, Lintel). As briefed: `cartograph/_archive/BRIEF-ward-on-staging-DELIVERED-2026-09-29.md` (appendix); `cartograph/OPERATIONS.md § Production sites` is the register.
 
 ## Phase 3 — LS's address: `lafayette-square` → `lafayettesquare`, on lafayettesquare.online · **its own brief**
 

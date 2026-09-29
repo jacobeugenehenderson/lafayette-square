@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: DELIVERED 2026-09-29
 dispatched: no
 written: 2026-09-29
 evict-when: every ticker item opens the card of the place it happens at, with that happening featured, on staging, and Jacob has eye-gated it on Provincetown and Huron

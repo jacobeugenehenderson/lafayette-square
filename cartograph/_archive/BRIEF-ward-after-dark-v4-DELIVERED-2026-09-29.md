@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: DELIVERED 2026-09-29
 dispatched: no
 written: 2026-09-29
 evict-when: Jacob approves "The Ward, After Dark" v4 and Warden's build brief (BRIEF-ward-society-pass §B) can start

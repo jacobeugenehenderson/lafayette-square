@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: DELIVERED 2026-09-29
 dispatched: no
 written: 2026-09-28
 evict-when: every town's staging site plays the player its R2 record names; a town with no record returns a 404 that names it; the renderer's own assets load on staging from a versioned kit bundle the page names; and the Ward's staging dry-run passes against it
@@ -136,3 +136,39 @@ cutover's work (Ward README §9), not yours. Say so in the commit.
 
 This is the staging site itself (through `wrangler dev` locally), and the Ward's own
 `npm run publish:staging -- --dry-run`. ⛔ Don't build a parallel harness that bypasses the Worker.
+
+
+---
+## Appendix: BRIEF-ls-onto-the-ward Phase 2 as briefed (delivered 2026-09-29, `30bcd111`)
+
+- ⛔ **Promote cannot pin a Ward build yet.** `scripts/promote-player-to-prod.mjs` copies only
+  `staging/player/`, which is the OLD player. The Ward's staging build lives under the Ward's own prefix,
+  and nothing carries it or the kit bundle to production. **This is the one unbuilt piece** between LS on
+  staging and LS on production (Phase 2).
+
+
+## Phase 2 — Promote learns the Ward · **kit agent: WARM → Lintel** (built the staging half and the `kitUrl` contract). If Lintel's window has been cleared, **FRESH**, and ask it what it holds before briefing it on anything.
+
+**The job:** Promote pins whichever player a town's staging record names.
+- **Read:** `cartograph/serve.js` `POST /looks/<id>/promote` (steps 1–6 in its header: slab, then player,
+  then address, then switch, then proof), `scripts/promote-player-to-prod.mjs`,
+  `workers/production-sites/src/{index,route}.js` (serves `/_player/` from `player/<map>/` and reads
+  `hosts/<domain>.json`), `scripts/set-staging-player.mjs`, `workers/staging-sites/src/index.js`, and the
+  Ward's `scripts/publish-staging.mjs` header (its prefix, and `current.json`'s `kit`).
+- **Build:**
+  - If the town's record says `ward`, copy the Ward build that staging served **and** the kit bundle it
+    names (`staging/kit/<sha>/` → a prod key). Use the same byte-verified copy rule, never a rebuild.
+    Pin both in the host record.
+  - `workers/production-sites` stamps `ward-kit-base` exactly as staging does.
+  - `legacy` keeps today's path. **No record, or an unknown value, refuses by name.** ⛔ No default
+    player.
+- **Check:** extend `claims-a-staging-town-names-its-player` or add a production twin. Show it failing
+  before you trust it: mutation-test by adding a default player.
+- **Chain:**
+  - Trusted by the production Worker and by `siteUrlsForLook` (it refuses LS today while
+    `src/instances/lafayette-square.js#domain` exists; that is Phase 3's switch).
+  - ⚠️ provincetown.online is live on the old player. Promoting it again **after** its staging record says
+    `ward` moves it to the Ward. That is a real production change and Jacob's call. Say so in the commit.
+- **Bounds:** no deploy, no Promote, no push. The register is `cartograph/OPERATIONS.md § Production
+  sites`. The Ward's `OPERATIONS.md` gets a note via Warden.
+
