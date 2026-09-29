@@ -7,8 +7,8 @@ evict-when: §A and §C are live on staging and eye-gated by Jacob, and §B has 
 
 # BRIEF — The Ward, Society pass: Explore flies to Browse, the counter goes, one emoji per town
 
-**Agent: WARM → Warden** — you built the consumer look (`b6d6ab1`) and hold the Ward. Tell Boz first
-what you still hold in context; if the window was cleared, say so and read this as FRESH.
+**Agent: Warden, FRESH on the consumer look** (this window did not build `b6d6ab1`; it holds the
+migration, staging and kitUrl work). The look's record: `b6d6ab1`'s message, README §5, the v3 mock.
 
 **Asked by Jacob, 2026-09-29**, reviewing Provincetown and Huron on the Ward on staging
 (`staging.theward.online/{provincetown,huron}/`, Ward `18263ff`, kit `c8e6719b`).
