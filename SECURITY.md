@@ -507,7 +507,8 @@ Until it deploys, the Ward has no operator sign-in.
 write their own listing's rating through `update-listing`. No client sends them, but the endpoint accepts them. A
 place's rating is the town's own (the Ward's rating marks), never the owner's. Found by Quire (menu editor).
 **Fix:** drop both from `EDITABLE`; the rating's writer is the operator's path only. ⏳ A `clasp` deploy: Jacob's go.
-Open for Jacob: whether `category`/`subcategory` stay Guardian-editable (they drive the map's lit set and tint).
+✅ **Ruled 2026-09-28 (Jacob):** `category`/`subcategory` **stay Guardian-editable** — a Guardian may add and
+remove categories and tags; only `rating`/`review_count` leave `EDITABLE`.
 
 ### F-22 · HIGH · A 6-character link code hands over another device's credential  *(new, 2026-09-28)*
 `apps-script/Code.js` GET `check-link-token` returns the SOURCE device's `device_hash` to anyone holding the code
@@ -527,6 +528,10 @@ needs a device key handed over. Found by Quire (arrival pages).
 **Fix:** the server verifies on a per-building secret (`/home/<id>/<secret>`, like `/claim`'s), never on a client
 flag, and neighbour verification stops taking a device key. The address change is Jacob's (Ward README §2).
 Until then the Ward claims without `auto_verify` (pending only). ⏳ A `clasp` deploy: Jacob's go.
+**Ruled in part 2026-09-28 (Jacob):** *"The Host or neighbors verify residents. There is indeed a secret intended on
+building cards."* ⇒ both verifiers stay; building cards carry a secret. ⛔ **Unruled — a conversation owed:** how a
+neighbour verifies without the target device's key, and how the card's secret and the Host's verification fit
+together. The fix above is not built until that lands, and no building card prints before it.
 
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
