@@ -147,6 +147,16 @@ Fourth top-level mode. The Salon pivots from *generation* (Procedural / LiDAR �
 
 **Bark plumbing (Brief 1.5a):** `generate-salon.js#patchManifestForSalon` writes the first composition's bark spec into `public/trees/<species>/manifest.json#bark` after `publish-glb.js` completes, in the exact shape `bake-look.js#flatten` expects (`materialRef`/`uvScale`/`tintBase`/`tintJitterRange`/`roughnessOverride`). Runtime `InstancedTrees.jsx#applyBarkUniforms` then drives per-draw uniforms — the operator's tintBase / uvScale / roughnessOverride / per-instance jitter visibly land at LS. Single bark spec per species (procedural's model); per-composition bark texture variation lives in each variant's GLB. `qualityOverride: 4` (Hero tier) so Salon variants win their bucket's quality lottery vs the procedural fillers. Salon's `main()` also calls `syncLookRoster('lafayette-square', ...)` so the published variants appear in LS placements after the next bake-look + bake-trees (Brief 1 deferred this; 1.5a closed the loop).
 
+### Leaves drawn from the dossier (2026-09-28)
+
+A species' leaf can be **drawn instead of photographed**: its dossier carries a `leafModel` (a
+family and every parameter as a range — lobes, sinus depth, teeth, veins, stalk) beside the
+`leaf.season` colours it already had, and `leaf-generator.mjs` draws a pack of varied leaves with
+every channel from one shape — alpha, summer and fall colour, a normal map, and where the stalk
+ends. On the tree, each leaf is turned so its stalk meets the wood, and the size knob grows it
+from that point. Red maple is the first (`red_maple`); the season renderer and a Leaf Studio to
+tune it live are next. ⭐ Change the dossier, re-run, re-bake — the pack is output, never edited.
+
 ### Leaf undersides — the silver flash (2026-08-28)
 
 Real leaves are paler underneath, and a wind that turns them makes a whole canopy flash — **silver maple is the extreme case and the reason this exists.** The Salon's **Leaves** panel now carries three controls that reach the render: **Tint front**, **Tint back**, and **Underside** (0–100%, the strength of the effect).

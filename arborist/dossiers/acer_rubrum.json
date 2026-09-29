@@ -261,5 +261,112 @@
     "bark": "have",
     "leaf": "have",
     "_barkNote": "stretch→have 2026-06-18: Bark003 is an exact ridged match (the live matcher found it)"
+  },
+  "leafModel": {
+    "_doc": "Drawn by arborist/leaf-generator.mjs. Every range is [lo, hi]; each variant draws within it. Lengths are × blade length, angles in degrees from the midrib (lobes) or the blade base (base_opening). Source: standard botanical descriptions of Acer rubrum — 3 main lobes, often 2 small basal lobes; shallow V sinuses; irregularly doubly-serrate; long red petiole.",
+    "family": "palmate-lobed",
+    "morphology": "palmate",
+    "grid": [
+      4,
+      2
+    ],
+    "leafAxes": {
+      "leaf.type": "simple",
+      "leaf.margin": "lobed"
+    },
+    "params": {
+      "side_lobe_angle": [
+        45,
+        58
+      ],
+      "side_lobe_length": [
+        0.72,
+        0.86
+      ],
+      "lobe_half_width": [
+        42,
+        52
+      ],
+      "basal_lobe_chance": 0.55,
+      "basal_lobe_angle": [
+        98,
+        114
+      ],
+      "basal_lobe_length": [
+        0.24,
+        0.34
+      ],
+      "sinus_depth": [
+        0.4,
+        0.52
+      ],
+      "tip_sharpness": [
+        0.55,
+        0.75
+      ],
+      "tooth_count": [
+        55,
+        75
+      ],
+      "tooth_size": [
+        0.035,
+        0.06
+      ],
+      "tooth_double": [
+        0.4,
+        0.7
+      ],
+      "irregularity": [
+        0.03,
+        0.06
+      ],
+      "asymmetry": [
+        0,
+        0.06
+      ],
+      "base_opening": [
+        4,
+        10
+      ],
+      "vein_width": [
+        0.012,
+        0.016
+      ],
+      "secondary_count": [
+        5,
+        7
+      ],
+      "secondary_angle": [
+        42,
+        55
+      ],
+      "petiole_length": [
+        0.35,
+        0.5
+      ],
+      "petiole_width": [
+        0.018,
+        0.024
+      ],
+      "petiole_curvature": 0.2,
+      "petiole_color": "#9e2b25",
+      "hue_jitter": 5,
+      "light_jitter": 0.05,
+      "mottle": 0.07,
+      "fall_palette": [
+        "#d32414",
+        "#c0301a",
+        "#e0621c",
+        "#e8a020"
+      ],
+      "dome": 0.6,
+      "vein_depth": 0.35,
+      "wave": 0.3,
+      "normal_strength": 3,
+      "base_span": [
+        50,
+        70
+      ]
+    }
   }
 }

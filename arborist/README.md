@@ -83,6 +83,7 @@ Artifacts are **deterministic** + **pristine**: same recipe + same on-disk parts
 | `node arborist/recommend-plates.mjs --species <id> --scientific "…" [--label "…" --build]` | Rank each plate S > G > T with reasons; `--build` composes the top picks, marked `auto` |
 | `node arborist/generate-salon.js --look <id> [--species <id>]` | Headless Salon republish (compositions → GLBs), adding them to that Look's roster |
 | `node arborist/build-leaf-atlas.mjs` | Compose varied tile-grid atlases for scanned leaf packs |
+| `node arborist/leaf-generator.mjs --species <dossier> --pack <id>` | **Draw** a species' leaf pack from its dossier's `leafModel` + `leaf.season` — alpha, summer/fall albedo, normal, and the stalk point. Families: `palmate-lobed` |
 | `node arborist/bake-look.js --look <id>` | Pack the per-Look master atlas (the ship-to-slab bake) |
 | `node arborist/bake-trees.js --scene <name>` | Place the NEIGHBOURHOOD's census onto the roster |
 

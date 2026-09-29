@@ -9,7 +9,9 @@
         "ref": "Bark015"
       },
       "leaves": {
-        "scale": 1.5
+        "scale": 1.5,
+        "pack": "red_maple",
+        "mode": "authored"
       },
       "deformer": {},
       "transform": {
@@ -28,5 +30,5 @@
       "derivedFrom": "red_maple_c"
     }
   ],
-  "savedAt": 1782356359961
+  "savedAt": 1790650578010
 }

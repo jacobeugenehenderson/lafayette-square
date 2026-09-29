@@ -1,0 +1,32 @@
+{
+  "morphology": "palmate",
+  "naturalSize": 9,
+  "tileGrid": [
+    4,
+    2
+  ],
+  "quality": "procedural",
+  "recommendedSpecies": [
+    "acer_rubrum"
+  ],
+  "leafAxes": {
+    "leaf.type": "simple",
+    "leaf.margin": "lobed"
+  },
+  "stalk": [
+    0.5,
+    0.985
+  ],
+  "channels": {
+    "albedo": "shape.png",
+    "normal": "normal.png",
+    "fall": "fall.png"
+  },
+  "source": {
+    "generator": "arborist/leaf-generator.mjs",
+    "family": "palmate-lobed",
+    "dossier": "arborist/dossiers/acer_rubrum.json",
+    "modelHash": "b27ed6027485"
+  },
+  "_doc": "Generated — do not hand-edit. Re-run: node arborist/leaf-generator.mjs --species acer_rubrum --pack red_maple. fall.png is drawn but not yet rendered (no season renderer)."
+}

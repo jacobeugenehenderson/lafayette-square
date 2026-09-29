@@ -152,6 +152,11 @@ async function fullRebuild({ species, slot, composition, dir, cur, t0 }) {
   ])
   const leafShapeBuf = await fs.readFile(path.join(LEAF_SHAPES_DIR, composition.leaves.pack, 'shape.png'))
     .catch(() => null)
+  // A pack that declares a normal channel (a generated pack does) lights like the tree it ships on.
+  const leafMeta = JSON.parse(await fs.readFile(path.join(LEAF_SHAPES_DIR, composition.leaves.pack, 'meta.json'), 'utf8').catch(() => '{}'))
+  const leafNormalBuf = leafMeta.channels?.normal
+    ? await fs.readFile(path.join(LEAF_SHAPES_DIR, composition.leaves.pack, leafMeta.channels.normal))
+    : null
 
   const stops = Array.isArray(composition.bark.gradientStops) && composition.bark.gradientStops.length >= 2
     ? composition.bark.gradientStops
@@ -167,7 +172,7 @@ async function fullRebuild({ species, slot, composition, dir, cur, t0 }) {
   let leaves = null
   if (leafShapeBuf) {
     const leafDims = await imgDims(leafShapeBuf)
-    leaves = await bakeLeavesPage(leafShapeBuf, leafDims, dir)
+    leaves = await bakeLeavesPage(leafShapeBuf, leafNormalBuf, leafDims, dir)
   }
   let gradient = null
   if (lutBuf) gradient = await bakeGradientPage(lutBuf, dir)
@@ -308,7 +313,7 @@ function snapshotFromComposition(c) {
     // composition params don't change when the build LOGIC does, so a re-preview
     // would otherwise 'noop' to a stale build. Bump this on any leaf-emission
     // logic change to force a full rebuild.
-    buildVersion: 'bark-photo-wrapped-per-fragment-2026-09-28',
+    buildVersion: 'leaf-stalk-to-twig-normal-2026-09-28',
   }
 }
 
@@ -371,14 +376,16 @@ async function bakeBarkPage(colorBuf, normalBuf, dims, outDir) {
   }
 }
 
-async function bakeLeavesPage(shapeBuf, dims, outDir) {
+async function bakeLeavesPage(shapeBuf, normalBuf, dims, outDir) {
   const { w, h } = dims
   const W = w + GUTTER * 2
   const H = h + GUTTER * 2
   const cx = GUTTER, cy = GUTTER
   const ext = { top: GUTTER, bottom: GUTTER, left: GUTTER, right: GUTTER, extendWith: 'copy' }
   const cPng = await sharp(shapeBuf).extend(ext).png().toBuffer()
-  const nPng = await sharp({ create: { width: W, height: H, channels: 4, background: { r: 128, g: 128, b: 255, alpha: 1 } } }).png().toBuffer()
+  const nPng = normalBuf
+    ? await sharp(normalBuf).resize(w, h, { fit: 'fill' }).ensureAlpha().extend(ext).png().toBuffer()
+    : await sharp({ create: { width: W, height: H, channels: 4, background: { r: 128, g: 128, b: 255, alpha: 1 } } }).png().toBuffer()
   await fs.writeFile(path.join(outDir, 'trees-atlas-leaves-color.png'), cPng)
   await fs.writeFile(path.join(outDir, 'trees-atlas-leaves-normal.png'), nPng)
   return {

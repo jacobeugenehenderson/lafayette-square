@@ -302,9 +302,13 @@ async function readLeafPackMeta(packId) {
     const grid = Array.isArray(m.tileGrid) && m.tileGrid.length === 2
       ? [Math.max(1, m.tileGrid[0] | 0), Math.max(1, m.tileGrid[1] | 0)]
       : [1, 1]
-    return { tileGrid: grid }
+    // `stalk`: where the leaf's stalk END sits in each cell (glTF UV, v down). Declared by a
+    // generated pack (leaf-generator.mjs); a scanned/vendor pack without it keeps the vendor's
+    // own orientation on the card.
+    const stalk = Array.isArray(m.stalk) && m.stalk.length === 2 ? m.stalk : null
+    return { tileGrid: grid, stalk, normal: m.channels?.normal || null }
   } catch {
-    return { tileGrid: [1, 1] }
+    return { tileGrid: [1, 1], stalk: null, normal: null }
   }
 }
 
@@ -827,12 +831,11 @@ function leafComponents(prim) {
 // ⛔ REPLACED 2026-09-28: a topology guess (`maxUse === 1` ⇒ cards) routed every real
 // quad-card chassis (whose two triangles share two verts, maxUse 2) to a whole-PRIM
 // rescale, so an entire tree drew ONE pack cell and a pack's variety never showed.
-function rewriteLeafPrimUVs(prim, tileGrid, rng, doc) {
+function rewriteLeafPrimUVs(prim, packMeta, rng, doc, root, attach) {
   const uvAttr = prim.getAttribute('TEXCOORD_0')
   if (!uvAttr) return // missing UVs → skip per brief edge case
-  const [cols, rows] = tileGrid || [1, 1]
+  const [cols, rows] = packMeta.tileGrid || [1, 1]
   if (cols < 1 || rows < 1) return
-  const root = leafComponents(prim)
   if (!root) return
   const uvs = uvAttr.getArray()
   const vc = root.length
@@ -851,15 +854,87 @@ function rewriteLeafPrimUVs(prim, tileGrid, rng, doc) {
   for (const k of rect.keys()) {
     cell.set(k, [Math.floor(rng() * cols) * tileW, Math.floor(rng() * rows) * tileH])
   }
+  // ⭐ STALK TO TWIG. When the pack declares where its stalk ends, each leaf is turned (a
+  // quarter-turn at a time — a rotation, never a mirror) so that edge of the picture lands on
+  // the edge of its card nearest the wood. Without it the picture keeps the vendor card's
+  // orientation, whose stalk may point anywhere (about half of red maple's pointed away).
+  const turn = new Map()
+  if (packMeta.stalk && attach) {
+    const stalkEdge = nearestEdge(packMeta.stalk[0], packMeta.stalk[1])
+    for (const [k, v] of attach) {
+      const r = rect.get(k); const du = r[2] - r[0], dv = r[3] - r[1]
+      if (!(du > 1e-6 && dv > 1e-6)) continue
+      const woodEdge = nearestEdge((uvs[v * 2] - r[0]) / du, (uvs[v * 2 + 1] - r[1]) / dv)
+      turn.set(k, (woodEdge - stalkEdge + 4) % 4)
+    }
+  }
   const out = new Float32Array(uvs.length)
   for (let v = 0; v < vc; v++) {
     const r = rect.get(root[v]), c = cell.get(root[v])
     const du = r[2] - r[0], dv = r[3] - r[1]
     // A degenerate rect (all verts share one UV) samples the cell centre, not a corner.
-    out[v * 2]     = c[0] + (du > 1e-6 ? (uvs[v * 2]     - r[0]) / du : 0.5) * tileW
-    out[v * 2 + 1] = c[1] + (dv > 1e-6 ? (uvs[v * 2 + 1] - r[1]) / dv : 0.5) * tileH
+    let a = du > 1e-6 ? (uvs[v * 2] - r[0]) / du : 0.5
+    let b = dv > 1e-6 ? (uvs[v * 2 + 1] - r[1]) / dv : 0.5
+    ;[a, b] = rotateInCell(a, b, turn.get(root[v]) || 0)
+    out[v * 2]     = c[0] + a * tileW
+    out[v * 2 + 1] = c[1] + b * tileH
   }
   prim.setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(out))
+}
+
+// Edges of a unit cell, numbered clockwise in UV (v down): 0 top, 1 right, 2 bottom, 3 left.
+function nearestEdge(a, b) {
+  const d = [b, 1 - a, 1 - b, a]
+  let best = 0; for (let i = 1; i < 4; i++) if (d[i] < d[best]) best = i
+  return best
+}
+// Card-local (a,b) → where to sample the picture, turned k quarter-turns clockwise so the
+// picture's edge e lands on card edge (e + k) mod 4.
+function rotateInCell(a, b, k) {
+  switch (k) {
+    case 1: return [b, 1 - a]
+    case 2: return [1 - a, 1 - b]
+    case 3: return [1 - b, a]
+    default: return [a, b]
+  }
+}
+
+// A spatial hash over the wood's vertices: nearest-wood distance² for any point, searching the
+// 27 cells around it (∞ past one cell — "far from wood" is all a leaf's attach choice needs).
+function woodProximity(barkPositions) {
+  if (!barkPositions.length) return null
+  const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity]
+  for (let i = 0; i < barkPositions.length; i += 3) for (let c = 0; c < 3; c++) { lo[c] = Math.min(lo[c], barkPositions[i + c]); hi[c] = Math.max(hi[c], barkPositions[i + c]) }
+  const cell = Math.max(1e-3, Math.max(hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]) / 100)
+  const grid = new Map()
+  const key = (x, y, z) => `${Math.floor(x / cell)},${Math.floor(y / cell)},${Math.floor(z / cell)}`
+  for (let i = 0; i < barkPositions.length; i += 3) {
+    const k = key(barkPositions[i], barkPositions[i + 1], barkPositions[i + 2])
+    let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(i)
+  }
+  return (x, y, z) => {
+    const cx = Math.floor(x / cell), cy = Math.floor(y / cell), cz = Math.floor(z / cell)
+    let best = Infinity
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) {
+      const a = grid.get(`${cx + i},${cy + j},${cz + k}`); if (!a) continue
+      for (const o of a) { const d = (barkPositions[o] - x) ** 2 + (barkPositions[o + 1] - y) ** 2 + (barkPositions[o + 2] - z) ** 2; if (d < best) best = d }
+    }
+    return best
+  }
+}
+// Each leaf's attach vertex = its vertex nearest the wood. A leaf with no wood within reach has
+// none, and keeps its vendor orientation and centroid pivot.
+function leafAttachVertices(prim, root, nearWood) {
+  if (!root || !nearWood) return null
+  const pos = prim.getAttribute('POSITION').getArray()
+  const best = new Map() // root → [dist², vertex]
+  for (let v = 0; v < root.length; v++) {
+    const d = nearWood(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2])
+    if (!Number.isFinite(d)) continue
+    const b = best.get(root[v]); if (!b || d < b[0]) best.set(root[v], [d, v])
+  }
+  const out = new Map(); for (const [k, [, v]] of best) out.set(k, v)
+  return out
 }
 
 // Leaf size on the AUTHORED/natural-leaf path (operator 2026-06-23): resize
@@ -873,25 +948,26 @@ function rewriteLeafPrimUVs(prim, tileGrid, rng, doc) {
 // 4 verts/leaf) or a connected sculpted mesh (blackgum, ~5–8 verts/leaf) —
 // verified: every species splits into thousands of small components, never
 // one blob, so this never moves leaves around, only resizes them.
-function scaleLeafCardsInPlace(prim, scale, doc) {
+function scaleLeafCardsInPlace(prim, scale, doc, root = leafComponents(prim), attach = null) {
   if (!(scale > 0) || Math.abs(scale - 1) < 1e-4) return
   const posAttr = prim.getAttribute('POSITION')
-  const idxAcc = prim.getIndices()
-  if (!posAttr || !idxAcc) return
+  if (!posAttr || !root) return
   const pos = posAttr.getArray()
   const vc = pos.length / 3
-  const root = leafComponents(prim)
-  // Per-component centroid.
-  const cent = new Map() // root → [sx, sy, sz, count]
+  // Pivot per leaf: its ATTACH vertex when known (it grows from the twig), else its centroid.
+  const pivot = new Map() // root → [x, y, z, count]
   for (let v = 0; v < vc; v++) {
     const r = root[v]
-    let s = cent.get(r); if (!s) { s = [0, 0, 0, 0]; cent.set(r, s) }
+    let s = pivot.get(r); if (!s) { s = [0, 0, 0, 0]; pivot.set(r, s) }
     s[0] += pos[v * 3]; s[1] += pos[v * 3 + 1]; s[2] += pos[v * 3 + 2]; s[3]++
   }
-  // Scale each vert about its leaf's centroid.
+  for (const [r, s] of pivot) {
+    const a = attach?.get(r)
+    if (a != null) { s[0] = pos[a * 3]; s[1] = pos[a * 3 + 1]; s[2] = pos[a * 3 + 2]; s[3] = 1 }
+  }
   const out = new Float32Array(pos.length)
   for (let v = 0; v < vc; v++) {
-    const s = cent.get(root[v])
+    const s = pivot.get(root[v])
     const cx = s[0] / s[3], cy = s[1] / s[3], cz = s[2] / s[3]
     out[v * 3]     = cx + (pos[v * 3]     - cx) * scale
     out[v * 3 + 1] = cy + (pos[v * 3 + 1] - cy) * scale
@@ -1202,6 +1278,26 @@ export function resolveChassisPath(chassis) {
     ` in ${CHASSIS_DIR}`)
 }
 
+// The Salon leaf material: the pack's colour+alpha, and its normal map when the pack carries
+// one (the atlas bake reads both off this material). One builder for the vendor-card and the
+// spray paths, so they cannot drift.
+async function createSalonLeafMaterial(doc, packId, packMeta) {
+  const leafBlob = await readLeafBytes(packId)
+  const leafTex = doc.createTexture(`salon_leaf_${packId}`).setImage(leafBlob.bytes).setMimeType(leafBlob.mime)
+  const mat = doc.createMaterial('salonLeaves')
+    .setBaseColorTexture(leafTex)
+    .setAlphaMode('MASK')
+    .setAlphaCutoff(0.5)
+    .setDoubleSided(true)
+    .setRoughnessFactor(0.85)
+    .setMetallicFactor(0)
+  if (packMeta.normal) {
+    const nBytes = await fs.readFile(path.join(LEAF_SHAPES_DIR_NEW, packId, packMeta.normal))
+    mat.setNormalTexture(doc.createTexture(`salon_leaf_${packId}_normal`).setImage(nBytes).setMimeType('image/png'))
+  }
+  return mat
+}
+
 async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false }) {
   const chassisPath = resolveChassisPath(chassis)
   const io = makeIO()
@@ -1330,24 +1426,21 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     // material; rewrite per-card UVs to sample one tile from the tile grid
     // per card. Material settings mirror the spray-path material so the
     // shader-program cache key matches (Bloom stability, AC #7).
-    const leafBlob = await readLeafBytes(leaves.pack)
-    const leafTex = chassisDoc.createTexture(`salon_leaf_${leaves.pack}`)
-      .setImage(leafBlob.bytes).setMimeType(leafBlob.mime)
-    const leafMat = chassisDoc.createMaterial('salonLeaves')
-      .setBaseColorTexture(leafTex)
-      .setAlphaMode('MASK')
-      .setAlphaCutoff(0.5)
-      .setDoubleSided(true)
-      .setRoughnessFactor(0.85)
-      .setMetallicFactor(0)
     const packMeta = await readLeafPackMeta(leaves.pack)
+    const leafMat = await createSalonLeafMaterial(chassisDoc, leaves.pack, packMeta)
+    // Where the wood is — each leaf's ATTACH point is its vertex nearest to it. The pack's
+    // stalk is turned to that point, and the size knob scales the leaf about it, so a leaf
+    // grows and shrinks from its twig instead of drifting off it.
+    const nearWood = woodProximity(positionsCombined)
     // Operator leaf-size knob applies to authored leaves too (2026-06-23):
     // a direct multiplier on the model's own card size, in place.
     const vendorLeafScale = typeof leaves.scale === 'number' ? leaves.scale : 1.0
     for (const { prim } of vendorLeafPrims) {
       prim.setMaterial(leafMat)
-      rewriteLeafPrimUVs(prim, packMeta.tileGrid, rng, chassisDoc)
-      scaleLeafCardsInPlace(prim, vendorLeafScale, chassisDoc)
+      const leavesOf = leafComponents(prim)
+      const attach = leafAttachVertices(prim, leavesOf, nearWood)
+      rewriteLeafPrimUVs(prim, packMeta, rng, chassisDoc, leavesOf, attach)
+      scaleLeafCardsInPlace(prim, vendorLeafScale, chassisDoc, leavesOf, attach)
     }
     // Slot label + return early — vendor path doesn't run the spray code.
     const scene = chassisDoc.getRoot().getDefaultScene() || chassisDoc.getRoot().listScenes()[0]
@@ -1417,16 +1510,7 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
   }, rng)
 
   if (leafGeo) {
-    const leafBlob = await readLeafBytes(leaves.pack)
-    const leafTex = chassisDoc.createTexture(`salon_leaf_${leaves.pack}`)
-      .setImage(leafBlob.bytes).setMimeType(leafBlob.mime)
-    const leafMat = chassisDoc.createMaterial('salonLeaves')
-      .setBaseColorTexture(leafTex)
-      .setAlphaMode('MASK')
-      .setAlphaCutoff(0.5)
-      .setDoubleSided(true)
-      .setRoughnessFactor(0.85)
-      .setMetallicFactor(0)
+    const leafMat = await createSalonLeafMaterial(chassisDoc, leaves.pack, packMeta)
 
     // GLB spec: 0–1 buffers. The chassis already carries one buffer with
     // vendor geometry; reuse it for our leaf accessors so writeBinary doesn't
