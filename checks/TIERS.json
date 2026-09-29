@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 339,
+  "total": 340,
   "counts": {
-    "safe": 186,
+    "safe": 187,
     "local-effect": 6,
     "live": 147
   },
@@ -828,6 +828,13 @@
     },
     {
       "file": "checks/claims-every-baked-species-has-an-impostor.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-building-has-a-roof-to-seat-on.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

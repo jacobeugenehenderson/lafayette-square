@@ -36,6 +36,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useTownContext } from './townContext.js'
 import useTownHover from './townHover.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
+import { roofTops } from '../lib/roofTop.js'
 import useCityModelActive from '../hooks/useCityModelActive'
 import { lookOf } from '../lib/lookOf.js'
 import { IDENTITY_NEUTRAL } from '../lib/townIdentity.js'
@@ -266,19 +267,9 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     const roView = manifest.roofOutlineByteOffset != null
       ? new Float32Array(bin, manifest.roofOutlineByteOffset, manifest.roofOutlinePointCount * 2)
       : null
-    // ⭐ Each building's ROOF PEAK (pre-terrain-lift local Y): the highest vertex of its own roof range, read from the
-    // roof group it was baked into (groups are keyed kind:material). What <TownPoint building> seats on. No roof ⇒ null.
-    const roofPos = new Map(manifest.groups.filter((g) => g.kind === 'roof')
-      .map((g) => [g.id, new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)]))
-    const roofTopOf = (b) => {
-      const pos = b.ranges?.roof && roofPos.get(b.roofMaterial)
-      if (!pos) return null
-      const [start, count] = b.ranges.roof
-      let top = -Infinity
-      for (let v = start; v < start + count; v++) top = Math.max(top, pos[v * 3 + 1])
-      return Number.isFinite(top) ? top : null
-    }
-    const byNum = manifest.buildings.map((b) => {
+    // ⭐ Each building's roof peak — what <TownPoint building> seats on (src/lib/roofTop.js).
+    const tops = roofTops(manifest, bin)
+    const byNum = manifest.buildings.map((b, bi) => {
       const [ptStart, ptCount] = b.footprintRange
       const footprint = new Array(ptCount)
       for (let i = 0; i < ptCount; i++) footprint[i] = [fpView[(ptStart + i) * 2], fpView[(ptStart + i) * 2 + 1]]
@@ -289,7 +280,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
         for (let i = 0; i < rCount; i++) roofOutline[i] = [roView[(rStart + i) * 2], roView[(rStart + i) * 2 + 1]]
       }
       return {
-        id: b.id, footprint, roofOutline, centroidY: b.centroidY, baseY: b.baseY, roofTopY: roofTopOf(b),
+        id: b.id, footprint, roofOutline, centroidY: b.centroidY, baseY: b.baseY, roofTopY: tops[bi],
         wallMaterial: b.wallMaterial, roofMaterial: b.roofMaterial, zoning: b.zoning,
         ranges: b.ranges,
       }

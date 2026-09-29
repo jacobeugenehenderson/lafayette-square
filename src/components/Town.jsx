@@ -107,6 +107,7 @@ import { resolveSkyAtMinute } from '../cartograph/skyGrid.js'
 import { lookOf } from '../lib/lookOf.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
+import { rooflessWhy } from '../lib/roofTop.js'
 import { PostProcessing, StageFog, StageShadows, LampGlowDriver } from './PostProcessing.jsx'
 import { NeonDriver } from './NeonBands.jsx'
 import CascadedShadows, { CSM_ENABLED } from './CascadedShadows.jsx'
@@ -282,18 +283,29 @@ export function frameBuildings(places, ids) {
  * The ground's height follows the terrain exaggeration of the shot, every frame.
  * ⭐ `building={id}` instead seats them ON THAT BUILDING'S ROOF — its highest point, over its footprint's centre, lifted
  * exactly as the building is drawn (`roofTopY + centroidY × exaggeration`), every frame; `lift` is then metres above
- * the roof. The one home for "on the roof". Draws nothing until the town's buildings load; ⛔ an id the town does not
- * have, or a building with no roof, throws by name — never a guessed height.
+ * the roof. The one home for "on the roof". Draws nothing until the town's buildings load.
+ * ⛔ An id the town does not have, or a building with no roof (a set piece's building — Provincetown's monument — or one
+ * left open), seats NOTHING and says so by name: console.error, and `onError(message)` if given. ⛔ It never throws: the
+ * app's children are not behind a boundary, so a throw here would black the town's canvas on one tap. Never a guessed
+ * height. ▶ node checks/claims-every-building-has-a-roof-to-seat-on.mjs
  */
 export function TownPoint({ building, ...rest }) {
   return building != null ? <RoofPoint building={building} {...rest} /> : <GroundPoint {...rest} />
 }
-function RoofPoint({ building, lift = 0, children, ...props }) {
+function RoofPoint({ building, lift = 0, onError, children, ...props }) {
   const index = useSlabBuildingIndex((s) => s.index)
   const ref = useRef()
-  const e = index?.byId.get(building)
-  if (index && !e) throw new Error(`[TownPoint] ⛔ this town has no building "${building}"`)
-  if (e && e.roofTopY == null) throw new Error(`[TownPoint] ⛔ building "${building}" has no roof in the slab — nothing to seat on`)
+  const found = index?.byId.get(building)
+  const problem = !index ? null
+    : !found ? `this town has no building "${building}"`
+      : found.roofTopY == null ? `building "${building}" has no roof in the slab${rooflessWhy(found) === 'setPiece' ? ' (its 3D is the town\'s set piece)' : ''} — nothing to seat on`
+        : null
+  useEffect(() => {
+    if (!problem) return
+    console.error(`[TownPoint] ⛔ ${problem}`)
+    onError?.(problem)
+  }, [problem]) // eslint-disable-line react-hooks/exhaustive-deps
+  const e = problem ? null : found
   const at = useMemo(() => {
     if (!e) return null
     let x = 0, z = 0
