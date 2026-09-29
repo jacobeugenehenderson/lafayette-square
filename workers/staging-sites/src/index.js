@@ -1,13 +1,22 @@
 /**
- * theward-staging-sites — every town's staging site, from one Worker and ONE player.
+ * theward-staging-sites — every town's staging site, from one Worker; each town names its player.
  *
- *   `staging.theward.online/_player/<file>` →  R2 `staging/player/<file>`   (shared bytes)
- *   `staging.theward.online/<map>/…`        →  that same player's index.html
+ *   `staging.theward.online/_player/<file>`      →  R2 `staging/player/<file>`     (the kit's player)
+ *   `staging.theward.online/_ward/<sha>/<file>`  →  R2 `staging/ward/<sha>/<file>` (The Ward's build)
+ *   `staging.theward.online/<map>/…`             →  the document of the player that town's record names
  *
- * ⭐⭐ THERE IS ONE BUILD, NOT ONE PER TOWN. The Ward is the universal player and a town is
- * a slab instantiated inside it, so the player is compiled once and every town's address
- * serves the same bytes; the app reads its town off the first path segment
- * (`src/instance.js#readLookParam`) and fetches that town's slab from R2 at runtime. ⛔ A
+ * ⭐⭐ EACH TOWN NAMES ITS PLAYER, AND A TOWN THAT NAMES NONE IS A 404 (BRIEF-ward-on-staging, 2026-09-28).
+ * `staging/sites/<map>/player.json` says `ward` or `legacy`; `scripts/set-staging-player.mjs` writes it.
+ * ⛔ There is no default player: a town silently served the wrong one is the plausible-looking
+ * success `CLAUDE.md` Layer 0 q2 forbids. `ward` serves the build `staging/ward/current.json` points at
+ * and stamps `<meta name="ward-kit-base">` — the versioned renderer bundle on the asset host
+ * (`scripts/publish-kit-bundle.mjs`) for the kit that build was made against. `legacy` serves the kit's
+ * player below, which declares its own kit base. ⚠️ `/_player/` and `legacy` are deleted at cutover
+ * (the Ward's README §9), not before: until then `legacy` needs them.
+ *
+ * ⭐⭐ ONE BUILD PER PLAYER, NOT ONE PER TOWN. A town is a slab instantiated inside the player,
+ * so each player is compiled once and every town on it is served the same bytes; the app
+ * reads its town off the first path segment and fetches that town's slab from R2 at runtime. ⛔ A
  * build per town was the first design and it was a category error — N compilations of the
  * thing defined by being one thing, and a build + upload for every pour.
  * ⚠️ Which is also why the player's assets are absolute under `/_player/`, not relative:
@@ -30,8 +39,13 @@
 // A missing .js or .png served as HTML is the classic silent-corruption bug: the browser
 // reports a syntax error in a file that was never JavaScript.
 const looksLikeFile = (p) => /\.[a-z0-9]{2,5}$/i.test(p)
-// The one path segment that is NOT a town. ⛔ Keep in step with the player build's `--base`.
+// The path segments that are NOT towns (a map id cannot start with `_`). ⛔ Keep each in step
+// with its build's `--base`.
 const PLAYER_SEGMENT = '_player'
+// The Ward's builds, one immutable prefix per Ward commit (`theward/scripts/publish-staging.mjs`).
+const WARD_SEGMENT = '_ward'
+const text = (body, status) => new Response(body + '\n', { status,
+  headers: { 'content-type': 'text/plain; charset=utf-8' } })
 
 // ⭐ Hashed build assets are immutable; HTML is not. Vite fingerprints everything under
 // `assets/`, so those may be cached hard and the document must never be — otherwise a
@@ -87,6 +101,18 @@ export default {
       return serve(request, obj)
     }
 
+    // ── The Ward's builds. `/_ward/<sha>/…` is only ever that Ward commit's bytes; ⛔ never a
+    // kit file, and never another sha's (the kit's bundle lives on the asset host, not here).
+    if (map === WARD_SEGMENT) {
+      const rel = parts.join('/')
+      if (!/^[0-9a-f]{40}\/./.test(rel)) return text(`not a Ward build path: "/${WARD_SEGMENT}/${rel}"`, 404)
+      const obj = await env.ASSETS.get(`${env.WARD_PREFIX}${rel}`)
+      if (!obj) return text(`the Ward build has no "${rel}" — publish it (theward: npm run publish:staging).`, 404)
+      // The Ward's publish sets each object's cache policy (immutable, but no-cache for its
+      // index.html and build.json); honour it rather than re-guess it from the name.
+      return serve(request, obj, obj.httpMetadata?.cacheControl)
+    }
+
     // The bare host lists nothing and guesses nothing: there is no "default town" here,
     // because picking one would be the bleed this regime removes.
     if (!map) {
@@ -114,27 +140,67 @@ export default {
         { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } })
     }
 
-    // Anything under a town that looks like a FILE is that town's own asset; everything
-    // else is an SPA route and gets the shared player.
-    const wantsTownFile = Boolean(rest) && looksLikeFile(rest)
-    const obj = wantsTownFile
-      ? await env.ASSETS.get(`${env.SITE_PREFIX}${map}/${rest}`)
-      : await env.ASSETS.get(`${env.PLAYER_PREFIX}index.html`)
-    if (!obj) {
-      // ⛔ SAY WHICH THING IS MISSING. These two failures look identical from the outside
-      // and have nothing to do with each other: one is a town without an asset, the other
-      // is a DEPLOY with no player in it — and the second is every town at once.
-      const why = wantsTownFile
-        ? `"${map}" has no "${rest}".`
-        : `the player is not published — nothing at ${env.PLAYER_PREFIX}index.html. `
-          + `This affects EVERY town, not just "${map}". `
-          + `▶ node scripts/publish-player-to-staging.mjs`
-      return new Response(why + '\n', { status: 404,
-        headers: { 'content-type': 'text/plain; charset=utf-8' } })
+    // ⛔⛔ WHICH PLAYER — the town's record says, and nothing else may. No record is a 404 that
+    // names the town and the record; an unreadable or unknown record is a 500 that says so.
+    const recordKey = `${env.SITE_PREFIX}${map}/player.json`
+    const recordObj = await env.ASSETS.get(recordKey)
+    if (!recordObj) {
+      return text(`"${map}" names no player — nothing at ${recordKey}. There is no default player. `
+        + `▶ node scripts/set-staging-player.mjs --map=${map} --player=ward`, 404)
     }
-    if (wantsTownFile) return serve(request, obj)
-    return shareCard(serve(request, obj), map, url, env)
+    let player
+    try { player = (await recordObj.json()).player } catch { player = undefined }
+
+    // Anything under a town that looks like a FILE is that town's own asset; everything
+    // else is an SPA route and gets the town's player.
+    const wantsTownFile = Boolean(rest) && looksLikeFile(rest)
+    if (wantsTownFile) {
+      const obj = await env.ASSETS.get(`${env.SITE_PREFIX}${map}/${rest}`)
+      return obj ? serve(request, obj) : text(`"${map}" has no "${rest}".`, 404)
+    }
+
+    // ⛔ SAY WHICH THING IS MISSING. A town without an asset and a DEPLOY with no player in it
+    // look identical from outside; the second is every town on that player at once.
+    if (player === 'legacy') {
+      const obj = await env.ASSETS.get(`${env.PLAYER_PREFIX}index.html`)
+      if (!obj) {
+        return text(`the kit's player is not published — nothing at ${env.PLAYER_PREFIX}index.html. `
+          + `This affects EVERY town on "legacy", not just "${map}". ▶ node scripts/publish-player-to-staging.mjs`, 404)
+      }
+      return shareCard(serve(request, obj), map, url, env, null)
+    }
+    if (player === 'ward') {
+      const ward = await wardBuild(env)
+      if (ward.error) return text(`${ward.error} This affects EVERY town on "ward", not just "${map}".`, ward.status)
+      return shareCard(serve(request, ward.doc), map, url, env, `${env.SLAB_BASE}kit/${ward.kit}/`)
+    }
+    return text(`${recordKey} names player ${JSON.stringify(player)}; a town's player is "ward" or "legacy". `
+      + `▶ node scripts/set-staging-player.mjs --map=${map} --player=ward`, 500)
   },
+}
+
+/**
+ * The Ward build every "ward" town serves: `current.json` (written LAST by the Ward's publish, so a
+ * half-upload never serves), that build's document, and proof its kit bundle is on the asset host —
+ * a page pointed at a missing bundle would draw with no textures and no clouds, and look like a site.
+ */
+async function wardBuild(env) {
+  const pointerKey = `${env.WARD_PREFIX}current.json`
+  const pointer = await env.ASSETS.get(pointerKey)
+  if (!pointer) return { status: 404, error: `the Ward is not published — nothing at ${pointerKey}. ▶ theward: npm run publish:staging` }
+  let cur
+  try { cur = await pointer.json() } catch { cur = null }
+  const isSha = (v) => typeof v === 'string' && /^[0-9a-f]{40}$/.test(v)
+  if (!isSha(cur?.sha) || !isSha(cur?.kit)) {
+    return { status: 500, error: `${pointerKey} must name a Ward commit ("sha") and the kit commit it was built against ("kit"); it says ${JSON.stringify(cur)}.` }
+  }
+  const bundleKey = `staging/kit/${cur.kit}/manifest.json`
+  if (!(await env.ASSETS.head(bundleKey))) {
+    return { status: 404, error: `the kit bundle for ${cur.kit} is not published — nothing at ${bundleKey}. ▶ node scripts/publish-kit-bundle.mjs --sha=${cur.kit}` }
+  }
+  const doc = await env.ASSETS.get(`${env.WARD_PREFIX}${cur.sha}/index.html`)
+  if (!doc) return { status: 404, error: `the Ward build ${cur.sha} has no index.html, though ${pointerKey} points at it.` }
+  return { doc, kit: cur.kit }
 }
 
 /**
@@ -188,7 +254,7 @@ function emojiIcon(glyph) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${glyph}</text></svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
-async function shareCard(response, map, url, env) {
+async function shareCard(response, map, url, env, kitBase) {
   const t = (await townsIndex(env))[map] || null
   const { domain } = await townDomain(env, map)
   const title = t?.title || map
@@ -199,8 +265,11 @@ async function shareCard(response, map, url, env) {
     // ⭐ WHERE THE SLAB IS — the published player is built with `VITE_ASSET_BASE=runtime` and
     // reads this (`src/lib/bakedUrl.js`), so the same bytes can be promoted to a town's domain.
     // ⛔ `SLAB_BASE` is required: without it the player refuses to load rather than guess.
+    // ⭐ WHERE THE RENDERER'S OWN FILES ARE — for a Ward town, the kit bundle its build pins
+    // (`src/lib/kitUrl.js`); the kit's player declares its own, so it gets none here.
     .on('head', { element(el) {
       el.prepend(`<meta name="ward-asset-base" content="${env.SLAB_BASE}" />`
+        + (kitBase ? `<meta name="ward-kit-base" content="${kitBase}" />` : '')
         + (domain ? `<meta name="ward-domain" content="${domain}" />` : ''), { html: true })
     } })
     .on('title', { element(el) { el.setInnerContent(title) } })
@@ -214,12 +283,12 @@ async function shareCard(response, map, url, env) {
     .transform(await response)
 }
 
-function serve(request, obj) {
+function serve(request, obj, cacheControl) {
   const key = obj.key
   const contentType = obj.httpMetadata?.contentType || typeFor(key)
   const headers = new Headers({
     'content-type': contentType,
-    'cache-control': cacheFor(key, contentType),
+    'cache-control': cacheControl || cacheFor(key, contentType),
     etag: obj.httpEtag,
     // Unlisted, but durable (ruled 2026-09-21): a partner holds this address and returns
     // to it. ⛔ Unlisted is not private — it is simply not advertised — so the only thing

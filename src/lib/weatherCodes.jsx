@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { kitUrl } from './kitUrl.js'
 
 /**
  * Map WMO weather code → { label, iconKey }
@@ -29,7 +30,7 @@ export function getWeatherIconName(wmoCode, isNight = false) {
 }
 
 /**
- * Animated Meteocons weather icon (loaded from /weather-icons/).
+ * Animated Meteocons weather icon (the kit's `weather-icons/`, through kitUrl).
  * Inlined as live SVG DOM so SMIL animations play on all browsers (mobile Safari
  * strips animations from <img>-loaded SVGs).
  */
@@ -38,7 +39,7 @@ const svgCache = new Map()
 
 function fetchSvg(name) {
   if (svgCache.has(name)) return svgCache.get(name)
-  const promise = fetch(`${import.meta.env.BASE_URL}weather-icons/${name}.svg`)
+  const promise = fetch(kitUrl(`weather-icons/${name}.svg`))
     .then((r) => r.text())
     .then((text) => {
       // Force SVG to fill its container

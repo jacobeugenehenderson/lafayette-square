@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 144. Never in a default run.
+## ⛔ live — 145. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -44,6 +44,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-scrub-never-writes-the-keys.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · computed import() with no readable target — runs arbitrary modules · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-shot-change-flies.mjs` | outbound | calls fetch() · opens a WebSocket · writeFileSync · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
 | `checks/claims-a-slab-name-is-its-content.mjs` | outbound | writeFileSync · mkdirSync · deletes files · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync · imports scripts/sweep-retired-slab-keys.mjs, which can: calls fetch(), writeFileSync |
+| `checks/claims-a-staging-town-names-its-player.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · runs `npm` — not a known-local command · imports package(s) esbuild — not read from source |
 | `checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs` | unreadable | imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-a-swap-never-happens-mid-street.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-a-town-page-fetches-no-authoring.mjs` | outbound | calls fetch() · opens a WebSocket · deletes files · runs `/Applications/Google Chrome.app/Contents` — not a known-local command |
@@ -209,6 +210,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-published-edit-reaches-the-map.mjs` | a Host's published correction is what the map shows. |
 | `checks/claims-a-scene-is-named-not-numbered.mjs` | numbered.mjs — a neighborhood's scene id is the slug |
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | twice.mjs |
+| `checks/claims-a-suggested-palette-passes.mjs` | passes.mjs — DOES WHAT STAGE SUGGESTS FROM A MARK CLEAR THE PLAYER'S RULES? |
 | `checks/claims-a-tile-is-one-tree.mjs` | A TILE IS ONE TREE. |
 | `checks/claims-a-town-event-is-not-clock-dependent.mjs` | a dated event with no times runs all day, |
 | `checks/claims-a-town-is-live-by-its-manifest.mjs` | "DOES EACH WORKER DECIDE A TOWN IS LIVE BY THE ONE FILE WHOSE NAME NEVER CHANGES?" |
@@ -268,6 +270,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-highway-handedness.mjs` | CLAIM — A ONE-WAY CARRIAGEWAY'S WIDE SIDE IS ON THE DRIVER'S RIGHT (H-3 check 4). |
 | `checks/claims-highway-sweep-is-finite.mjs` | CLAIM — EVERY HIGHWAY SWEEP IS A VALID POLYGON (H-3 step 2; the Provincetown failure, 2026-09-24). |
 | `checks/claims-highway-width-from-lanes.mjs` | CLAIM — A HIGHWAY'S WIDTH IS ITS LANES, AND EVERY VALUE SAYS WHERE IT CAME FROM (H-3 check 2). |
+| `checks/claims-identity-colours-obey-the-policy.mjs` | policy.mjs — DOES EVERY COLOUR A TOWN SETS MEET THE CONTRAST POLICY, BY EVERY PATH? |
 | `checks/claims-inboard-side-convention.mjs` | READ-ONLY. Two questions left by claims-side-chain-falsifiers.mjs: |
 | `checks/claims-inner-edge-deletion-gates.mjs` | the regression gates for deleting |
 | `checks/claims-inner-edge-side-selector.mjs` | WHAT actually selects the ped-zeroed side on |
@@ -341,6 +344,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-key-light-is-a-real-body.mjs` | body.mjs — IS ANYTHING ACTUALLY THERE? |
 | `checks/claims-the-labels-carry-their-style.mjs` | "DOES EVERY TOWN'S labels.json CARRY ITS WHOLE LABEL STYLE — AND IS THERE ONE DEFAULT?" |
 | `checks/claims-the-light-follows-the-weather.mjs` | one weather state drives the rain AND the light. |
+| `checks/claims-the-mark-palette-is-never-live.mjs` | live.mjs — IS "SUGGEST FROM MARK" AUTHORING-ONLY? |
 | `checks/claims-the-plan-opens-on-its-places.mjs` | "DOES THE PLAN MAP OPEN ON THE TOWN'S PLACES — THEIR DENSEST CLUSTER, INSIDE THE EXTENT, WITH NOTHING HIDDEN?" |
 | `checks/claims-the-publish-button-can-say-it-is-done.mjs` | its condition measures what it ships. |
 | `checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` | THE PUBLISH GATE MUST PUSH WHERE THE DEPLOY ACTUALLY LISTENS. |

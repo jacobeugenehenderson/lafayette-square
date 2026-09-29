@@ -10,12 +10,12 @@ import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedP
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { buildLampGrid, canopyWipe } from '../lib/lampPool.js'
+import { kitUrl } from '../lib/kitUrl.js'
 
 const LANTERN_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('lantern'))
 
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const LAMP_URL = `${import.meta.env.BASE_URL}models/lamp-posts/victorian-lamp.glb`
 const LAMP_MODEL_HEIGHT = 2.65
 const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
 const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
@@ -262,7 +262,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
     const loader = new GLTFLoader()
     loader.setMeshoptDecoder(MeshoptDecoder)
     loader.load(
-      LAMP_URL,
+      kitUrl('models/lamp-posts/victorian-lamp.glb'),
       (gltf) => {
         let found = false
         gltf.scene.updateMatrixWorld(true)

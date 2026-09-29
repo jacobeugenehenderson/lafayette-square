@@ -28,6 +28,7 @@ import useSkyState from './useSkyState.js'
 import useTimeOfDay from './useTimeOfDay.js'
 import useAtmosphere from './useAtmosphere.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
+import { kitUrl } from '../lib/kitUrl.js'
 
 let _almanacPromise = null
 let _presetsPromise = null
@@ -39,19 +40,19 @@ let _modulatorsCache = null
 function ensureLoaded() {
   if (_almanacCache && _presetsCache && _modulatorsCache) return Promise.resolve()
   if (!_almanacPromise) {
-    _almanacPromise = fetch(`${import.meta.env.BASE_URL}clouds/almanac.json`)
+    _almanacPromise = fetch(kitUrl('clouds/almanac.json'))
       .then(r => r.ok ? r.json() : null)
       .then(j => { _almanacCache = j })
       .catch(e => { console.warn('[useAtmosphereDirective] almanac load failed:', e) })
   }
   if (!_presetsPromise) {
-    _presetsPromise = fetch(`${import.meta.env.BASE_URL}clouds/presets.json`)
+    _presetsPromise = fetch(kitUrl('clouds/presets.json'))
       .then(r => r.ok ? r.json() : null)
       .then(j => { _presetsCache = j })
       .catch(e => { console.warn('[useAtmosphereDirective] presets load failed:', e) })
   }
   if (!_modulatorsPromise) {
-    _modulatorsPromise = fetch(`${import.meta.env.BASE_URL}clouds/modulators.json`)
+    _modulatorsPromise = fetch(kitUrl('clouds/modulators.json'))
       .then(r => r.ok ? r.json() : { modulators: [] })
       // 404 (artifact missing) is non-fatal — modulators are additive;
       // absence means the base directive is published unmodulated. This

@@ -13,6 +13,10 @@
  * promoted towns (legacy prod keys read by lafayette-square.com's Pages site are not its concern). Names every town that would go dark. Read-only HEADs through the
  * public bucket origin.
  *
+ * ⭐ STAGING ALSO NEEDS THE TOWN'S PLAYER RECORD (`staging/sites/<map>/player.json`, BRIEF-ward-on-staging,
+ * 2026-09-28): the staging Worker 404s a town that names no player, so a town published before its record
+ * would go dark. ▶ node scripts/set-staging-player.mjs --map=<t> --player=ward, then deploy.
+ *
  * ⭐ IT RUNS BEFORE EVERY `wrangler deploy` of either Worker (each wrangler.jsonc's build.command), so
  * the deploy itself refuses. ▶ The cure is the order in PUBLISH.md §0.5: (a) publish every town with
  * its manifest, THEN (b) deploy.
@@ -41,14 +45,23 @@ for (const env of want ? [want] : Object.keys(ENVS)) {
       env === 'prod' ? head(`player/${town}/index.html`) : 200])
     if (scene === 'unreachable' || manifest === 'unreachable' || player === 'unreachable') { uncertain++; console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} could not be read — refusing to say it is safe`); continue }
     if ((scene !== 200 && manifest !== 200) || player !== 200) continue  // not served by this env's Worker
-    if (manifest === 200) { console.log(`  ✅ ${env.padEnd(8)}${town.padEnd(26)} manifest.json present`); continue }
+    if (manifest === 200) {
+      const record = env === 'staging' ? await head(`staging/sites/${town}/player.json`) : 200
+      if (record === 'unreachable') { uncertain++; console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} player record could not be read — refusing to say it is safe`); continue }
+      if (record === 200) { console.log(`  ✅ ${env.padEnd(8)}${town.padEnd(26)} manifest.json present${env === 'staging' ? ' · player record present' : ''}`); continue }
+      dark++
+      console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} names no player (staging/sites/${town}/player.json ${record}) — this Worker would 404 it. `
+        + `▶ node scripts/set-staging-player.mjs --map=${town} --player=ward`)
+      continue
+    }
     dark++
     console.error(`  ⛔ ${env.padEnd(8)}${town.padEnd(26)} published (scene.json ${scene}) with NO manifest.json — this Worker would 404 it`)
   }
 }
 if (dark || uncertain) {
   console.error(`\n⛔ ${dark} town(s) would go dark${uncertain ? `, ${uncertain} unreadable` : ''}. Publish each with its manifest first `
-    + '(node cartograph/bake-manifest.mjs --town=<t>, then upload), then deploy. PUBLISH.md §0.5.')
+    + '(node cartograph/bake-manifest.mjs --town=<t>, then upload) and, on staging, '
+    + 'its player record (node scripts/set-staging-player.mjs), then deploy. PUBLISH.md §0.5.')
   process.exit(1)
 }
 console.log('\n✅ every published town has its manifest.json — deploying the Workers darkens none')

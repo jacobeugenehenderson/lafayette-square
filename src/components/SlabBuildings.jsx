@@ -45,7 +45,7 @@ import { buildingColors } from '../lib/buildingTint.js'
 import { slabFetch } from '../lib/slabUrl.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL } from '../lib/lampPool.js'
-const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
+import { kitUrl } from '../lib/kitUrl.js'
 
 // ── Camera x-ray — always on (2026-06-28) ─────────────────────────────────
 // When the camera passes THROUGH a building (its body within DIST metres of the
@@ -105,7 +105,7 @@ const _texCache = new Map()
 function loadTexture(id, textured) {
   if (id === 'none' || !id || !textured) return null
   if (_texCache.has(id)) return _texCache.get(id)
-  const tex = new THREE.TextureLoader().load(`${TEXTURE_BASE}${id}.jpg`)
+  const tex = new THREE.TextureLoader().load(kitUrl(`textures/buildings/${id}.jpg`))
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping
   tex.colorSpace = THREE.SRGBColorSpace
   tex.minFilter = THREE.LinearMipmapLinearFilter

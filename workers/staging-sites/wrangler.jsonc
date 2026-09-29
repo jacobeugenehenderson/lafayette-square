@@ -42,8 +42,11 @@
   ],
   "vars": {
     "SITE_PREFIX": "staging/sites/",
-    // The ONE player build every town is served from.
+    // The kit's player — served to a town whose record (`staging/sites/<map>/player.json`) says
+    // "legacy". Deleted at cutover.
     "PLAYER_PREFIX": "staging/player/",
+    // The Ward's builds, one prefix per Ward commit, and `current.json` — the one a "ward" town serves.
+    "WARD_PREFIX": "staging/ward/",
     // Where the page is told its slab lives (`<meta name="ward-asset-base">`). ⛔ Must end in
     // `/staging/`; the Worker refuses to serve otherwise.
     "SLAB_BASE": "https://assets.theward.online/staging/",

@@ -53,6 +53,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { kitUrl } from '../lib/kitUrl.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
@@ -110,7 +111,7 @@ const _texCache = new Map()
 function loadTexture(id, textured) {
   if (!id || id === 'none' || !textured) return null   // the phone profile stays untextured, like the slab
   if (_texCache.has(id)) return _texCache.get(id)
-  const t = new THREE.TextureLoader().load(`${import.meta.env.BASE_URL}textures/buildings/${id}.jpg`)
+  const t = new THREE.TextureLoader().load(kitUrl(`textures/buildings/${id}.jpg`))
   t.wrapS = t.wrapT = THREE.RepeatWrapping
   t.colorSpace = THREE.SRGBColorSpace
   t.minFilter = THREE.LinearMipmapLinearFilter

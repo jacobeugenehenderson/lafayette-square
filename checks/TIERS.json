@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 329,
+  "total": 333,
   "counts": {
-    "safe": 179,
+    "safe": 182,
     "local-effect": 6,
-    "live": 144
+    "live": 145
   },
   "checks": [
     {
@@ -328,11 +328,32 @@
       ]
     },
     {
+      "file": "checks/claims-a-staging-town-names-its-player.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import() with no readable target — runs arbitrary modules",
+        "runs `npm` — not a known-local command",
+        "imports package(s) esbuild — not read from source"
+      ]
+    },
+    {
       "file": "checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs",
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
         "imports cartograph/bake-revetment.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-a-suggested-palette-passes.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/cartograph/suggestFromMark.js — read, safe",
+        "computed import of src/lib/colourPolicy.js — read, safe",
+        "computed import of src/lib/categoryColor.js — read, safe",
+        "computed import of src/lib/colourMath.js — read, safe",
+        "computed import of src/tokens/playerChrome.js — read, safe"
       ]
     },
     {
@@ -1051,6 +1072,15 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-identity-colours-obey-the-policy.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/lib/colourPolicy.js — read, safe",
+        "computed import of src/lib/colourMath.js — read, safe",
+        "computed import of src/tokens/playerChrome.js — read, safe"
       ]
     },
     {
@@ -2004,7 +2034,16 @@
         "computed import of src/lib/sky-scalars.js — read, safe",
         "computed import of src/hooks/useSkyState.js — read, safe",
         "computed import of src/hooks/useAtmosphere.js — read, safe",
+        "computed import of src/lib/almanac-eval.js — read, safe",
+        "computed import of a data: module — hermetic",
         "runs `grep -rlE \"setState\\\\(\\\\{[^}]*` — local, read-only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-mark-palette-is-never-live.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

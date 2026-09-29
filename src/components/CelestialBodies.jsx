@@ -46,6 +46,7 @@ import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
 import { lookOf } from '../lib/lookOf.js'
+import { kitUrl } from '../lib/kitUrl.js'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
 // Production passes no `lookId`; Stage threads the operator's active Look.
@@ -521,7 +522,7 @@ function SecondaryOrb({ color, intensity, intensityMulRef }) {
 function Moon({ position, phase, illumination, sunDirection, dayFactor, visible }) {
   const moonRef = useRef()
   const glowRef = useRef()
-  const moonTexture = useTexture(`${import.meta.env.BASE_URL}textures/moon.jpg`)
+  const moonTexture = useTexture(kitUrl('textures/moon.jpg'))
 
   const moonMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -706,7 +707,7 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
 function MilkyWaySphere({ nightFactor, milkyWayChannel }) {
   const groupRef = useRef()
   const matRef   = useRef()
-  const mwTexture = useTexture(`${import.meta.env.BASE_URL}textures/milky_way.jpg`)
+  const mwTexture = useTexture(kitUrl('textures/milky_way.jpg'))
 
   // Filtering: disable mipmaps + max anisotropy so the panorama stays
   // sharp at Hero/Street FOV (default LinearMipmapLinear blurs star

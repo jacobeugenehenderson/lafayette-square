@@ -35,7 +35,9 @@ const expect = async (what, res, wantIndex) => {
 console.log('The device-link page is served on both sites\n')
 
 const stgEnv = { SLAB_BASE: 'https://assets.theward.online/staging/', PLAYER_PREFIX: 'staging/player/', SITE_PREFIX: 'staging/sites/',
-  ASSETS: bucket({ 'staging/player/index.html': 'STAGING-INDEX', 'staging/baked/huron/manifest.json': '{}' }) }
+  ASSETS: bucket({ 'staging/player/index.html': 'STAGING-INDEX', 'staging/baked/huron/manifest.json': '{}',
+    // A staging town serves the player its record names (claims-a-staging-town-names-its-player); this route is the kit's.
+    'staging/sites/huron/player.json': JSON.stringify({ player: 'legacy' }) }) }
 await expect('staging  /huron/link/AbC123 → the player page',
   await staging.fetch(new Request('https://staging.theward.online/huron/link/AbC123'), stgEnv), 'STAGING-INDEX')
 

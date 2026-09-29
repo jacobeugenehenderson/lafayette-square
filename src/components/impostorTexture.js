@@ -23,6 +23,7 @@
  */
 import * as THREE from 'three'
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js'
+import { kitUrl } from '../lib/kitUrl.js'
 
 let _ktx2 = null
 /**
@@ -34,7 +35,7 @@ function ktx2Loader(gl) {
   if (_ktx2) return _ktx2
   if (!gl) return null
   _ktx2 = new KTX2Loader()
-    .setTranscoderPath(`${import.meta.env.BASE_URL}basis/`)
+    .setTranscoderPath(kitUrl('basis/'))
     .detectSupport(gl)
   return _ktx2
 }

@@ -3,6 +3,22 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
 
+// ⭐ EVERY KIT PAGE DECLARES WHERE THE RENDERER'S OWN FILES LIVE (`src/lib/kitUrl.js`, ruled
+// 2026-09-28 in BRIEF-ward-on-staging §4.3). In the kit's apps they ship out of `public/` at the
+// app's own base, so the declaration is that base — resolved by Vite, written into the page. The
+// renderer reads only the tag and throws without it; ⛔ it never falls back to BASE_URL itself,
+// because inside The Ward BASE_URL is the Ward's build and carries none of these files.
+const withKitBase = (html, base) =>
+  html.replace(/<head>/i, `<head>\n    <meta name="ward-kit-base" content="${base}" />`)
+function declareKitBase() {
+  let base = '/'
+  return {
+    name: 'declare-kit-base',
+    configResolved(config) { base = config.base },
+    transformIndexHtml: { order: 'pre', handler: (html) => withKitBase(html, base) },
+  }
+}
+
 // Serve helper-app routes (/cartograph, /arborist, /preview) as separate
 // HTML entry points. Each helper has its own `*.html` at repo root and
 // `main.jsx` under `src/<helper>/`. Add new helpers by appending here +
@@ -27,7 +43,8 @@ function serveHelperApps() {
             const filePath = path.resolve(r.file)
             if (fs.existsSync(filePath)) {
               res.setHeader('Content-Type', 'text/html; charset=utf-8')
-              res.end(fs.readFileSync(filePath, 'utf-8'))
+              // Served raw, past transformIndexHtml — so the kit base is declared here too.
+              res.end(withKitBase(fs.readFileSync(filePath, 'utf-8'), server.config.base))
               return
             }
           }
@@ -188,7 +205,7 @@ function mirrorInstallationContent() {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [serveHelperApps(), serveCodedesk(), serveAuthoringAssets(), serveInstallationContent(), mirrorInstallationContent(), looksIndexFresh(), react()],
+  plugins: [declareKitBase(), serveHelperApps(), serveCodedesk(), serveAuthoringAssets(), serveInstallationContent(), mirrorInstallationContent(), looksIndexFresh(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
     // poly2tri's UMD shim references `global`; polyfill to globalThis so
