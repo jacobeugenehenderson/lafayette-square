@@ -119,3 +119,9 @@ Huron, with the town and URL recorded.
 - ⛔ **For this build:** nothing may refuse or preclude an event-owned card. Keep the ticker item's target
   generic (a place with `?event=` today, an event's card later), not hard-wired to "always a place card".
 - Design: Nocturne, after this build lands. Its commerce side (a sponsor's offer) is its own conversation.
+- **Parked with it — an unlisted building** (Jacob, 2026-09-29): *"People can list their places using an event card."*
+  Tapping an unlisted building today does nothing (`Society.jsx:100`, a console error). Its shape when built:
+  the building card says **not listed** and offers **the way to list it**, which is posting a happening. No
+  facts are shown unless they're sourced: outside LS the slab's zoning and storeys are empty, and its wall
+  material is a render choice (measured in the baked `buildings.json`, 2026-09-29). A home lists only through a
+  verified resident (F-23).
