@@ -56,7 +56,7 @@ import { execFileSync } from 'node:child_process'
 import { smoothWeldBark } from './decimate-tree.mjs'
 // ⛔ ONE resolver, shared with the readiness checks — never a second species→dossier
 // mapping (salon ids like `maple_silver` reach `acer_saccharinum` only through it).
-import { dossierForSalonSpecies } from './salon-options.js'
+import { dossierForSalonSpecies, matureHeightFor } from './salon-options.js'
 
 // Chassis GLBs (from Whittle's survey-deleaf.js) preserve vendor source
 // extensions including EXT_texture_webp; matching ALL_EXTENSIONS registration
@@ -269,7 +269,12 @@ export async function listLeafPacks() {
   const out = []
   try {
     const entries = await fs.readdir(LEAF_SHAPES_DIR_NEW, { withFileTypes: true })
-    for (const e of entries) if (e.isDirectory()) out.push({ packId: e.name, kind: 'dir' })
+    for (const e of entries) if (e.isDirectory()) {
+      // A generated pack carries one-leaf `thumb.png` + `quality: 'procedural'`: the plate shows ONE leaf
+      // (its variants, seasons and age are the generator's business, not the picker's).
+      let meta = {}; try { meta = JSON.parse(await fs.readFile(path.join(LEAF_SHAPES_DIR_NEW, e.name, 'meta.json'), 'utf8')) } catch { /* scanned/vendor packs may have none */ }
+      out.push({ packId: e.name, kind: 'dir', quality: meta.quality || null, thumb: meta.channels?.thumb || 'shape.png' })
+    }
   } catch { /* no shapes/ dir yet */ }
   try {
     const entries = await fs.readdir(LEAF_SHAPES_DIR_FLAT, { withFileTypes: true })
@@ -306,9 +311,10 @@ async function readLeafPackMeta(packId) {
     // generated pack (leaf-generator.mjs); a scanned/vendor pack without it keeps the vendor's
     // own orientation on the card.
     const stalk = Array.isArray(m.stalk) && m.stalk.length === 2 ? m.stalk : null
-    return { tileGrid: grid, stalk, normal: m.channels?.normal || null }
+    // `cellMetres` + `source.dossier`: a generated pack knows its real size and whose twigs it hangs on.
+    return { tileGrid: grid, stalk, normal: m.channels?.normal || null, cellMetres: Array.isArray(m.cellMetres) ? m.cellMetres : null, dossier: m.source?.dossier || null }
   } catch {
-    return { tileGrid: [1, 1], stalk: null, normal: null }
+    return { tileGrid: [1, 1], stalk: null, normal: null, cellMetres: null, dossier: null }
   }
 }
 
@@ -932,8 +938,8 @@ function rotateInCell(a, b, k) {
   }
 }
 
-// A spatial hash over the wood's vertices: nearest-wood distance² for any point, searching the
-// 27 cells around it (∞ past one cell — "far from wood" is all a leaf's attach choice needs).
+// A spatial hash over the wood's vertices: the nearest wood to any point — its distance² and the
+// wood vertex itself, so a twig can start ON the wood.
 function woodProximity(barkPositions) {
   if (!barkPositions.length) return null
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity]
@@ -945,14 +951,21 @@ function woodProximity(barkPositions) {
     const k = key(barkPositions[i], barkPositions[i + 1], barkPositions[i + 2])
     let a = grid.get(k); if (!a) grid.set(k, a = []); a.push(i)
   }
+  // Search shells of cells outward until the nearest wood is certainly found — a shell at ring R
+  // can only hold points ≥ (R−1)·cell away — or MAX_RING is reached (∞: genuinely far from wood).
+  const MAX_RING = 12
   return (x, y, z) => {
     const cx = Math.floor(x / cell), cy = Math.floor(y / cell), cz = Math.floor(z / cell)
-    let best = Infinity
-    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) {
-      const a = grid.get(`${cx + i},${cy + j},${cz + k}`); if (!a) continue
-      for (const o of a) { const d = (barkPositions[o] - x) ** 2 + (barkPositions[o + 1] - y) ** 2 + (barkPositions[o + 2] - z) ** 2; if (d < best) best = d }
+    let best = Infinity, at = -1
+    for (let R = 0; R <= MAX_RING; R++) {
+      if (best < ((R - 1) * cell) ** 2) break
+      for (let i = -R; i <= R; i++) for (let j = -R; j <= R; j++) for (let k = -R; k <= R; k++) {
+        if (Math.max(Math.abs(i), Math.abs(j), Math.abs(k)) !== R) continue
+        const a = grid.get(`${cx + i},${cy + j},${cz + k}`); if (!a) continue
+        for (const o of a) { const d = (barkPositions[o] - x) ** 2 + (barkPositions[o + 1] - y) ** 2 + (barkPositions[o + 2] - z) ** 2; if (d < best) { best = d; at = o } }
+      }
     }
-    return best
+    return [best, at]   // distance², and the wood vertex's offset into barkPositions
   }
 }
 // Each leaf's attach vertex = its vertex nearest the wood. A leaf with no wood within reach has
@@ -962,7 +975,7 @@ function leafAttachVertices(prim, root, nearWood) {
   const pos = prim.getAttribute('POSITION').getArray()
   const best = new Map() // root → [dist², vertex]
   for (let v = 0; v < root.length; v++) {
-    const d = nearWood(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2])
+    const [d] = nearWood(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2])
     if (!Number.isFinite(d)) continue
     const b = best.get(root[v]); if (!b || d < b[0]) best.set(root[v], [d, v])
   }
@@ -1311,6 +1324,181 @@ export function resolveChassisPath(chassis) {
     ` in ${CHASSIS_DIR}`)
 }
 
+// ── THE TWIG LAYER ────────────────────────────────────────────────────────
+// A generated leaf pack does not re-skin the chassis's leaf cards — it hangs its own leaves
+// on drawn twigs, so SIZE (real metres), COUNT (the density knob) and PLACEMENT (the species'
+// arrangement) come from the species, not from whoever modelled the chassis.
+//   · SITES: where the chassis's own leaves meet its wood — the modeller's map of where foliage
+//     lives — thinned on a grid whose spacing is the density knob (twigModel.site_spacing_m,
+//     sparse→dense across occupancy 0→1). The vendor leaves are then dropped.
+//   · TWIG: from the site, outward and a little up, curving toward the light; `pairs` nodes an
+//     internode apart; thickness by the PIPE RULE — a segment's radius is the petiole radius ×
+//     √(leaves it carries).
+//   · LEAVES: at each node, per the dossier's leaf.arrangement — opposite pairs turning 90° node
+//     to node (decussate), or one leaf per node on the golden angle (alternate). Each leaf is a
+//     card whose stalk end (pack `stalk`) sits ON the node, at its cell's real size
+//     (pack `cellMetres`) × the size knob, blade angled out from the twig and faced to the sky.
+// ⛔ Throws when the species cannot be measured: no mature height, no twigModel, no arrangement.
+function buildTwigLayer({ sites, packMeta, twig, arrangement, occupancy, scale, unitsPerMetre, rng }) {
+  const U = unitsPerMetre
+  const v3 = {
+    add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+    mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+    dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+    cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+    norm: (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l] },
+  }
+  const draw = (r) => Array.isArray(r) ? r[0] + (r[1] - r[0]) * rng() : r
+  const UP = [0, 1, 0]
+  const rotAbout = (v, axis, ang) => { // Rodrigues
+    const c = Math.cos(ang), s = Math.sin(ang), k = axis
+    return v3.add(v3.add(v3.mul(v, c), v3.mul(v3.cross(k, v), s)), v3.mul(k, v3.dot(k, v) * (1 - c)))
+  }
+  const [cols, rows] = packMeta.tileGrid
+  const L = { pos: [], nor: [], uv: [], idx: [] }   // leaves
+  const T = { pos: [], nor: [], uv: [], idx: [] }   // twigs
+  const opposite = arrangement === 'opposite' || arrangement === 'whorled'
+  const perNode = opposite ? 2 : 1
+  const GOLDEN = Math.PI * (3 - Math.sqrt(5))
+
+  // thin the sites on the density grid
+  const [sparse, dense] = twig.site_spacing_m
+  const spacing = (sparse + (dense - sparse) * Math.max(0, Math.min(1, occupancy))) * U
+  const kept = new Map()
+  for (const s of sites) {
+    const k = `${Math.floor(s.target[0] / spacing)},${Math.floor(s.target[1] / spacing)},${Math.floor(s.target[2] / spacing)}`
+    if (!kept.has(k)) kept.set(k, s)
+  }
+
+  for (const site of kept.values()) {
+    const pairs = Math.round(draw(twig.pairs))
+    const internode = draw(twig.internode_m) * U
+    let d = v3.norm(v3.add(site.out, v3.mul(UP, twig.twig_up)))
+    let side = v3.norm(v3.cross(d, Math.abs(d[1]) > 0.95 ? [1, 0, 0] : UP))
+    side = rotAbout(side, d, rng() * Math.PI)
+    // A bare stem carries the shoot out toward its target; the leafy part clusters at the end,
+    // as it does on a real shoot. Then nodes along a gently up-curving leafy length.
+    const leafy = pairs * internode
+    const stem = Math.max(0, (site.reach || 0) - leafy)
+    const nodes = [site.at]
+    let p = site.at
+    if (stem > 0) { p = v3.add(p, v3.mul(d, stem)); nodes.push(p) }
+    const first = nodes.length
+    for (let i = 1; i <= pairs; i++) {
+      d = v3.norm(v3.add(d, v3.mul(UP, twig.curve / pairs)))
+      p = v3.add(p, v3.mul(d, internode))
+      nodes.push(p)
+    }
+    const leafNodes = new Set(); for (let i = first; i < nodes.length; i++) leafNodes.add(i)
+    const leafCount = pairs * perNode
+    // twig tube: 5 sides, pipe-rule radius from the leaves each segment carries
+    const base = T.pos.length / 3
+    const SIDES = 5
+    for (let i = 0; i < nodes.length; i++) {
+      let carried = 0; for (const k of leafNodes) if (k > i || (k === i && i === nodes.length - 1)) carried += perNode
+      carried = Math.max(1, carried)
+      const r = twig.petiole_radius_m * Math.sqrt(carried) * U
+      const dir = v3.norm(i < nodes.length - 1 ? v3.sub(nodes[i + 1], nodes[i]) : v3.sub(nodes[i], nodes[i - 1]))
+      const a1 = v3.norm(v3.cross(dir, Math.abs(dir[1]) > 0.95 ? [1, 0, 0] : UP)), a2 = v3.cross(dir, a1)
+      for (let k = 0; k < SIDES; k++) {
+        const ang = (k / SIDES) * 2 * Math.PI
+        const n = v3.add(v3.mul(a1, Math.cos(ang)), v3.mul(a2, Math.sin(ang)))
+        const q = v3.add(nodes[i], v3.mul(n, r))
+        T.pos.push(...q); T.nor.push(...n); T.uv.push(k / SIDES, (i ? v3.dot(v3.sub(nodes[i], nodes[0]), dir) : 0) / (2 * Math.PI * r))
+      }
+    }
+    for (let i = 0; i < nodes.length - 1; i++) for (let k = 0; k < SIDES; k++) {
+      const a = base + i * SIDES + k, b = base + i * SIDES + (k + 1) % SIDES
+      const c = a + SIDES, e = b + SIDES
+      T.idx.push(a, c, b, b, c, e)
+    }
+    // leaves, from the tip back: node i carries `perNode` leaves
+    for (const i of leafNodes) {
+      const node = nodes[i]
+      const tw = v3.norm(v3.sub(node, nodes[i - 1]))
+      const turn = opposite ? (i % 2) * Math.PI / 2 : i * GOLDEN
+      for (let j = 0; j < perNode; j++) {
+        const around = rotAbout(side, tw, turn + j * Math.PI + (rng() - 0.5) * 0.3)
+        const ang = draw(twig.leaf_angle_deg) * Math.PI / 180
+        let b = v3.norm(v3.add(v3.mul(tw, Math.cos(ang)), v3.mul(around, Math.sin(ang))))
+        b = v3.norm(v3.sub(b, v3.mul(UP, draw(twig.droop))))
+        let n = v3.sub(UP, v3.mul(b, v3.dot(UP, b)))
+        n = Math.hypot(...n) < 1e-3 ? around : v3.norm(n)
+        n = rotAbout(n, b, (rng() - 0.5) * 2 * twig.tilt_deg * Math.PI / 180)
+        const sv = v3.norm(v3.cross(b, n))
+        const cell = Math.floor(rng() * cols * rows)
+        const E = packMeta.cellMetres[cell] * scale * U
+        const c0 = (cell % cols) / cols, r0 = Math.floor(cell / cols) / rows
+        const [su, sv0] = packMeta.stalk
+        const lb = L.pos.length / 3
+        for (const [u, v] of [[0, 0], [1, 0], [1, 1], [0, 1]]) {
+          const q = v3.add(node, v3.add(v3.mul(sv, (u - su) * E), v3.mul(b, (sv0 - v) * E)))
+          L.pos.push(...q); L.nor.push(...n); L.uv.push(c0 + u / cols, r0 + v / rows)
+        }
+        L.idx.push(lb, lb + 1, lb + 2, lb, lb + 2, lb + 3)
+      }
+    }
+  }
+  return { leaves: L, twigs: T, sites: kept.size, candidates: sites.length }
+}
+
+// Sites from the chassis's own leaves, then the twig layer in their place.
+function hangTwigs({ chassisDoc, vendorLeafPrims, barkMat, leafMat, packMeta, leaves, species, chassis, positionsCombined, nearWood, rng }) {
+  if (!species) throw new Error(`the "${leaves.pack}" pack hangs leaves at real size, which needs the species being composed — none was passed`)
+  const mature = matureHeightFor(species)
+  if (!(mature > 0)) throw new Error(`${species}: no mature height (dossier chassis.size or mature-heights.json) — the twig layer cannot tell how big a metre is`)
+  const leafDossier = JSON.parse(fsSync.readFileSync(path.join(REPO_ROOT, packMeta.dossier), 'utf8'))
+  const twig = leafDossier.twigModel
+  const arrangement = leafDossier.required?.['leaf.arrangement']?.target
+  if (!twig) throw new Error(`${packMeta.dossier}: no twigModel — the "${leaves.pack}" leaves have no shoot to hang on`)
+  if (!arrangement) throw new Error(`${packMeta.dossier}: no leaf.arrangement — opposite or alternate is the twig's first question`)
+  if (!nearWood) throw new Error(`chassis "${chassis}" has no wood to hang twigs on`)
+  // metres: the chassis is scaled to the species' mature height at publish (publish-glb normalizeScale)
+  let lo = Infinity, hi = -Infinity
+  for (const mesh of chassisDoc.getRoot().listMeshes()) for (const prim of mesh.listPrimitives()) {
+    const P = prim.getAttribute('POSITION').getArray()
+    for (let i = 1; i < P.length; i += 3) { if (P[i] < lo) lo = P[i]; if (P[i] > hi) hi = P[i] }
+  }
+  const unitsPerMetre = (hi - lo) / mature
+  // sites: every vertex of the chassis's own foliage is a TARGET — somewhere a leaf lives — and its
+  // shoot starts on the nearest wood. The density grid thins the targets, so a chassis modelled
+  // as a thousand sculpted clumps fills its crown as fully as one modelled as fifty thousand cards.
+  const sites = []
+  for (const { prim } of vendorLeafPrims) {
+    const pos = prim.getAttribute('POSITION').getArray()
+    for (let v = 0; v < pos.length; v += 3) {
+      const [d2, o] = nearWood(pos[v], pos[v + 1], pos[v + 2])
+      if (!Number.isFinite(d2) || o < 0) continue
+      const at = [positionsCombined[o], positionsCombined[o + 1], positionsCombined[o + 2]]
+      const target = [pos[v], pos[v + 1], pos[v + 2]]
+      let out = [target[0] - at[0], target[1] - at[1], target[2] - at[2]]
+      const reach = Math.hypot(...out)
+      if (reach < 1e-6) out = [at[0], 0, at[2]]
+      const l = Math.hypot(...out) || 1
+      sites.push({ at, target, reach, out: out.map(x => x / l) })
+    }
+  }
+  for (const { prim, mesh } of vendorLeafPrims) { mesh.removePrimitive(prim); prim.dispose() }
+  vendorLeafPrims.length = 0
+  const occupancy = typeof leaves.occupancy === 'number' ? leaves.occupancy : DEFAULTS.leaves.occupancy
+  const scale = typeof leaves.scale === 'number' ? leaves.scale : 1
+  const built = buildTwigLayer({ sites, packMeta, twig, arrangement, occupancy, scale, unitsPerMetre, rng })
+  const buf = chassisDoc.getRoot().listBuffers()[0] || chassisDoc.createBuffer()
+  const prim = (g, mat, kind) => chassisDoc.createPrimitive()
+    .setAttribute('POSITION', chassisDoc.createAccessor().setType('VEC3').setArray(new Float32Array(g.pos)).setBuffer(buf))
+    .setAttribute('NORMAL', chassisDoc.createAccessor().setType('VEC3').setArray(new Float32Array(g.nor)).setBuffer(buf))
+    .setAttribute('TEXCOORD_0', chassisDoc.createAccessor().setType('VEC2').setArray(new Float32Array(g.uv)).setBuffer(buf))
+    .setIndices(chassisDoc.createAccessor().setType('SCALAR').setArray(new Uint32Array(g.idx)).setBuffer(buf))
+    .setMaterial(mat).setExtras({ atlasKind: kind })
+  const mesh = chassisDoc.createMesh('salonTwigs')
+    .addPrimitive(prim(built.twigs, barkMat, 'bark'))
+    .addPrimitive(prim(built.leaves, leafMat, 'leaf'))
+  const scene = chassisDoc.getRoot().getDefaultScene() || chassisDoc.getRoot().listScenes()[0]
+  scene.addChild(chassisDoc.createNode('salonTwigs').setMesh(mesh))
+  console.log(`[twigs] ${species} on ${chassis}: ${built.sites} twigs (of ${built.candidates} leaf sites), ${built.leaves.idx.length / 6} leaves, ${(1 / unitsPerMetre).toFixed(3)} m per unit`)
+}
+
 // The Salon leaf material: the pack's colour+alpha, and its normal map when the pack carries
 // one (the atlas bake reads both off this material). One builder for the vendor-card and the
 // spray paths, so they cannot drift.
@@ -1331,7 +1519,7 @@ async function createSalonLeafMaterial(doc, packId, packMeta) {
   return mat
 }
 
-async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false }) {
+async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false, species = null }) {
   const chassisPath = resolveChassisPath(chassis)
   const io = makeIO()
   const chassisDoc = await io.read(chassisPath)
@@ -1479,7 +1667,10 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     // Operator leaf-size knob applies to authored leaves too (2026-06-23):
     // a direct multiplier on the model's own card size, in place.
     const vendorLeafScale = typeof leaves.scale === 'number' ? leaves.scale : 1.0
-    for (const { prim } of vendorLeafPrims) {
+    if (packMeta.cellMetres) {
+      // A generated pack hangs its own leaves on drawn twigs — see buildTwigLayer.
+      hangTwigs({ chassisDoc, vendorLeafPrims, barkMat, leafMat, packMeta, leaves, species, chassis, positionsCombined, nearWood, rng })
+    } else for (const { prim } of vendorLeafPrims) {
       prim.setMaterial(leafMat)
       const leavesOf = leafComponents(prim)
       if (!prim.getAttribute('TEXCOORD_0')) projectLeafUVs(prim, leavesOf, chassisDoc)
@@ -1643,6 +1834,7 @@ async function writeMultiCompositionGLB({ species, compositions, outPath }) {
       bark: c.effective.bark,
       leaves: c.effective.leaves,
       slotName,
+      species,
       // Leaf Source 'bare' (2026-07-07) ships leafless — an authored state, not
       // a preview-only peek. Drops vendor + skips spray in buildCompositionDocument.
       hideLeaves: c.effective.leaves?.mode === 'bare',
@@ -1723,7 +1915,7 @@ async function writeMultiCompositionGLB({ species, compositions, outPath }) {
 
 // ── Single-composition preview GLB (workstage live preview) ─────────────
 
-export async function generateSingleCompositionGLB({ chassis, bark, leaves, lod = 0, slotLabel = 'preview' }) {
+export async function generateSingleCompositionGLB({ chassis, bark, leaves, lod = 0, slotLabel = 'preview', species = null }) {
   if (!chassis) throw new Error('chassis is required')
   const effective = {
     chassis,
@@ -1740,6 +1932,7 @@ export async function generateSingleCompositionGLB({ chassis, bark, leaves, lod 
     leaves: effective.leaves,
     slotName: slotLabel,
     hideLeaves,
+    species,
   })
   // Linden 2026-06-23: smooth-weld the bark in the PREVIEW too, so the Salon
   // shows the same unlocked/smooth bark as the published artifact (closes the

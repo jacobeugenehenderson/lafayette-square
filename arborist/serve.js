@@ -1753,14 +1753,14 @@ const server = createServer(async (req, res) => {
     // Returns the GLB binary directly. Used by the workstage live preview.
     if (req.method === 'POST' && path === '/salon/generate') {
       const body = await readBody(req)
-      const { chassis, bark, leaves, lod } = body || {}
+      const { chassis, bark, leaves, lod, species } = body || {}
       if (!chassis || typeof chassis !== 'string') {
         return jsonRes(res, 400, { error: 'chassis is required' })
       }
       const lodN = (lod === 1 || lod === 2) ? lod : 0
       try {
         const buf = await generateSingleCompositionGLB({
-          chassis, bark: bark || {}, leaves: leaves || {}, lod: lodN,
+          chassis, bark: bark || {}, leaves: leaves || {}, lod: lodN, species: species || null,
         })
         res.writeHead(200, {
           'Content-Type': 'model/gltf-binary',

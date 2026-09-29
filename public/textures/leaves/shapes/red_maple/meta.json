@@ -17,10 +17,21 @@
     0.5,
     0.985
   ],
+  "cellMetres": [
+    0.1393,
+    0.1287,
+    0.1316,
+    0.1375,
+    0.1398,
+    0.1307,
+    0.1349,
+    0.134
+  ],
   "channels": {
     "albedo": "shape.png",
     "normal": "normal.png",
-    "fall": "fall.png"
+    "fall": "fall.png",
+    "thumb": "thumb.png"
   },
   "source": {
     "generator": "arborist/leaf-generator.mjs",

@@ -1332,14 +1332,14 @@ function SalonControlsPanel({
           { id: '__bare__', label: 'Bare', note: 'No leaves (an authored, leafless state)', icon: <span style={{ fontSize: 20, color: '#8a93a0', lineHeight: 1 }}>∅</span> },
           ...(nativePack && leafPacks.some(p => p.packId === nativePack) ? [{ id: nativePack, label: plateLabel(plateLabels.leaf, nativePack), badge: 'native', note: `${plateLabel(plateLabels.leaf, nativePack)} — this species' own leaf: ${marks.leaf[nativePack].reason}` }] : []),
           ...leafPacks.filter(p => p.packId !== nativePack).map(p => { const m = marks?.leaf?.[p.packId], label = plateLabel(plateLabels.leaf, p.packId)
-            return { id: p.packId, label, note: m ? `${label} — ${m.reason}` : label, missing: p.kind === 'flat', ...(m ? { badge: m.tier } : {}) } }),
+            return { id: p.packId, label, note: m ? `${label} — ${m.reason}` : label, missing: p.kind === 'flat', ...(m ? { badge: m.tier } : {}), ...(p.quality === 'procedural' ? { badge: 'procedural' } : {}) } }),
         ]}
         current={leaves?.mode === 'bare' ? '__bare__' : (leaves?.pack || null)}
         onPick={(id) => id === '__bare__'
           ? onParams({ leaves: { mode: 'bare' } })
           : onParams({ leaves: { pack: id, mode: leaves?.mode === 'synthesized' ? 'synthesized' : 'authored' } })}
         onAdd={() => salonAddStub('leaf')}
-        thumb={(id) => `/textures/leaves/shapes/${id}/shape.png`}
+        thumb={(id) => `/textures/leaves/shapes/${id}/${leafPacks.find(p => p.packId === id)?.thumb || 'shape.png'}`}
         fit="contain" />
       {leaves?.mode !== 'bare' && (
         <>

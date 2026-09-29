@@ -30,7 +30,7 @@ import { MeshoptSimplifier } from 'meshoptimizer'
 import { rebuildIndex } from './build-index.js'
 import { decimateLeafPrimitives, decimateBarkPrimitives, decimateLeafPrimitivesConnectedMesh, loadDecimationConfig, smoothWeldBark, crushFlooredBark, trunkCutBark } from './decimate-tree.mjs'
 import { stampAtlasKind } from './atlas-kind-classifier.js'
-import { dossierForSalonSpecies } from './salon-options.js'
+import { dossierForSalonSpecies, matureHeightFor } from './salon-options.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -794,17 +794,8 @@ async function main() {
   // trees ship RELATIVELY CORRECT to one another (a 21m maple over an 8m dogwood)
   // — matching the Salon preview's effectiveScale. Falls back to the per-category
   // TARGET_HEIGHT for species with no dossier.
-  let matureHeight = null
-  try { matureHeight = dossierForSalonSpecies(args.species)?.required?.['chassis.size']?.target ?? null } catch {}
-  // Fallback: stopgap mature-height map for roster species without a full dossier
-  // yet (so they aren't stuck at the 12m category default). The dossier wins when
-  // it exists; this map is a placeholder until the real annotation lands.
-  if (matureHeight == null) {
-    try {
-      const hm = JSON.parse(await fs.readFile(path.join(__dirname, 'mature-heights.json'), 'utf8'))
-      if (typeof hm[args.species] === 'number') matureHeight = hm[args.species]
-    } catch { /* no map → category default */ }
-  }
+  // Dossier, then the stopgap map — the same lookup the twig layer measures metres by.
+  const matureHeight = matureHeightFor(args.species)
 
   // Read existing manifest (if any) and capture per-variant operator
   // overrides so a republish doesn't blow them away. Rating UI writes

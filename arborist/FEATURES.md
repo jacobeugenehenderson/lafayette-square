@@ -153,9 +153,14 @@ A species' leaf can be **drawn instead of photographed**: its dossier carries a 
 family and every parameter as a range — lobes, sinus depth, teeth, veins, stalk) beside the
 `leaf.season` colours it already had, and `leaf-generator.mjs` draws a pack of varied leaves with
 every channel from one shape — alpha, summer and fall colour, a normal map, and where the stalk
-ends. On the tree, each leaf is turned so its stalk meets the wood, and the size knob grows it
-from that point. Red maple is the first (`red_maple`); the season renderer and a Leaf Studio to
-tune it live are next. ⭐ Change the dossier, re-run, re-bake — the pack is output, never edited.
+ends. **A drawn pack hangs its leaves on drawn twigs** instead of re-skinning the chassis's own
+leaf cards: every place the chassis carried foliage becomes a target, a shoot grows to it from
+the nearest wood, and the species' leaves hang at its tip in the dossier's arrangement (red maple:
+opposite pairs, turning 90° node to node) at **real size** — the chassis is scaled to the species'
+mature height, so a 9 cm leaf is 9 cm on every chassis. Shoots thicken by the pipe rule. The
+Salon's **Leaf size** is now × real size (1 = true), and **Density** is real: it sets how closely
+the shoots are spaced (the dossier's `twigModel.site_spacing_m`). Red maple is the first
+(`red_maple`); the season renderer and a Leaf Studio to tune it live are next. ⭐ Change the dossier, re-run, re-bake — the pack is output, never edited.
 
 ### Leaf undersides — the silver flash (2026-08-28)
 

@@ -24,6 +24,22 @@ const SPECIES_CURATION = 'arborist/state/_species-curation.json'
 const readJSON = (p) => JSON.parse(readFileSync(p, 'utf8'))
 
 /** Find the dossier for a Salon species id (roster slug OR botanical canonicalId). */
+/**
+ * The species' MATURE HEIGHT in metres — the one lookup the publish scale (publish-glb
+ * normalizeScale) and the twig layer's metres (generate-salon#buildTwigLayer) share, so the tree
+ * and its leaves agree on how big a metre is. Dossier `chassis.size` first, then the stopgap
+ * `mature-heights.json`; null when neither knows (the caller decides what that means).
+ */
+export function matureHeightFor(speciesId) {
+  const t = dossierForSalonSpecies(speciesId)?.required?.['chassis.size']?.target
+  if (typeof t === 'number' && t > 0) return t
+  try {
+    const hm = JSON.parse(readFileSync(join('arborist', 'mature-heights.json'), 'utf8'))
+    if (typeof hm[speciesId] === 'number') return hm[speciesId]
+  } catch { /* no map */ }
+  return null
+}
+
 export function dossierForSalonSpecies(speciesId) {
   const p = dossierFileForSalonSpecies(speciesId)
   return p ? readJSON(p) : null

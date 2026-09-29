@@ -237,7 +237,8 @@ async function drawVariant(model, season, seed) {
     cellN[i * 3] = Math.round((nx * 0.5 + 0.5) * 255); cellN[i * 3 + 1] = Math.round((ny * 0.5 + 0.5) * 255); cellN[i * 3 + 2] = Math.round((nz * 0.5 + 0.5) * 255)
   }
   const down = (buf, ch) => sharp(buf, { raw: { width: R, height: R, channels: ch } }).resize(CELL, CELL, { kernel: 'lanczos3' }).raw().toBuffer()
-  return { summer: await down(cellS, 4), fall: await down(cellF, 4), normal: await down(cellN, 3) }
+  // How many blade-lengths one cell edge spans — × the species' leaf length, the cell's real size.
+  return { summer: await down(cellS, 4), fall: await down(cellF, 4), normal: await down(cellN, 3), cellBlades: R / L.s }
 }
 
 // ── the pack ───────────────────────────────────────────────────────────────
@@ -254,8 +255,12 @@ export async function generateLeafPack({ species, pack, cell = 512, outDir = nul
   const modelHash = crypto.createHash('sha1').update(JSON.stringify({ model, season })).digest('hex').slice(0, 12)
   const seed0 = parseInt(modelHash.slice(0, 8), 16)
   const sheets = { summer: [], fall: [], normal: [] }
+  const leafLenM = dossier.required?.['leaf.length']?.target
+  if (!(leafLenM > 0)) throw new Error(`⛔ ${species}: dossier leaf.length has no target — the leaf has no real size.`)
+  const cellMetres = []
   for (let i = 0; i < cols * rows; i++) {
     const cell = await drawVariant(model, season, (seed0 + i * 7919) >>> 0)
+    cellMetres.push(+(cell.cellBlades * leafLenM / 100).toFixed(4))
     for (const k of Object.keys(sheets)) sheets[k].push({ input: cell[k], raw: { width: CELL, height: CELL, channels: k === 'normal' ? 3 : 4 }, left: (i % cols) * CELL, top: Math.floor(i / cols) * CELL })
   }
   const out = outDir || path.join(SHAPES, pack)
@@ -265,6 +270,8 @@ export async function generateLeafPack({ species, pack, cell = 512, outDir = nul
   await blank(4, { r: 0, g: 0, b: 0, alpha: 0 }).composite(sheets.summer).png().toFile(path.join(out, 'shape.png'))
   await blank(4, { r: 0, g: 0, b: 0, alpha: 0 }).composite(sheets.fall).png().toFile(path.join(out, 'fall.png'))
   await blank(3, { r: 128, g: 128, b: 255 }).composite(sheets.normal).removeAlpha().png().toFile(path.join(out, 'normal.png'))
+  // The plate's picture: ONE leaf (the first variant, summer) — the picker shows a leaf, not the sheet.
+  await sharp(sheets.summer[0].input, { raw: sheets.summer[0].raw }).png().toFile(path.join(out, 'thumb.png'))
   const meta = {
     morphology: model.morphology,
     naturalSize: dossier.required?.['leaf.length']?.target ?? null,
@@ -273,7 +280,9 @@ export async function generateLeafPack({ species, pack, cell = 512, outDir = nul
     recommendedSpecies: [species],
     leafAxes: model.leafAxes || {},
     stalk: STALK,
-    channels: { albedo: 'shape.png', normal: 'normal.png', fall: 'fall.png' },
+    // Real metres one cell edge spans, per cell (row-major): the leaf is placed at its true size.
+    cellMetres,
+    channels: { albedo: 'shape.png', normal: 'normal.png', fall: 'fall.png', thumb: 'thumb.png' },
     source: { generator: 'arborist/leaf-generator.mjs', family: model.family, dossier: `arborist/dossiers/${species}.json`, modelHash },
     _doc: 'Generated — do not hand-edit. Re-run: node arborist/leaf-generator.mjs --species ' + species + ' --pack ' + pack + '. fall.png is drawn but not yet rendered (no season renderer).',
   }

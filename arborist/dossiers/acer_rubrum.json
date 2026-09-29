@@ -368,5 +368,32 @@
         70
       ]
     }
+  },
+  "twigModel": {
+    "_doc": "The shoot the leaves hang on (arborist/generate-salon.js#buildTwigLayer). Leaf arrangement comes from required[\"leaf.arrangement\"]. Lengths in metres. Source: Acer rubrum — opposite, decussate buds; slender reddish twigs; leaves clustered toward shoot tips.",
+    "pairs": [
+      2,
+      4
+    ],
+    "internode_m": [
+      0.035,
+      0.07
+    ],
+    "leaf_angle_deg": [
+      45,
+      70
+    ],
+    "droop": [
+      0.1,
+      0.35
+    ],
+    "tilt_deg": 20,
+    "twig_up": 0.35,
+    "curve": 0.25,
+    "petiole_radius_m": 0.0012,
+    "site_spacing_m": [
+      0.55,
+      0.18
+    ]
   }
 }

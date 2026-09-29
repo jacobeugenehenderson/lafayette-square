@@ -4,14 +4,15 @@
     {
       "slot": 1,
       "name": "Slot 1",
-      "chassis": "oval_28",
+      "chassis": "pyramidal_14",
       "bark": {
-        "ref": "Bark015"
+        "ref": "bark_platanus"
       },
       "leaves": {
-        "scale": 1.5,
+        "scale": 1,
         "pack": "red_maple",
-        "mode": "authored"
+        "mode": "authored",
+        "occupancy": 0.6
       },
       "deformer": {},
       "transform": {
@@ -30,5 +31,5 @@
       "derivedFrom": "red_maple_c"
     }
   ],
-  "savedAt": 1790650578010
+  "savedAt": 1790653401040
 }
