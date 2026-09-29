@@ -186,7 +186,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 182. This is `npm test`.
+## safe — 183. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -212,6 +212,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-a-shore-is-not-traced-twice.mjs` | twice.mjs |
 | `checks/claims-a-suggested-palette-passes.mjs` | passes.mjs — DOES WHAT STAGE SUGGESTS FROM A MARK CLEAR THE PLAYER'S RULES? |
 | `checks/claims-a-tile-is-one-tree.mjs` | A TILE IS ONE TREE. |
+| `checks/claims-a-town-draws-the-trees-its-atlas-was-built-for.mjs` | "DOES A TOWN DRAW THE TREES ITS ATLAS WAS BUILT FOR — READ FROM ITS SLAB?" |
 | `checks/claims-a-town-event-is-not-clock-dependent.mjs` | a dated event with no times runs all day, |
 | `checks/claims-a-town-is-live-by-its-manifest.mjs` | "DOES EACH WORKER DECIDE A TOWN IS LIVE BY THE ONE FILE WHOSE NAME NEVER CHANGES?" |
 | `checks/claims-a-town-never-bakes-from-the-whole-library.mjs` | library.mjs — CAN A TREE BAKE PLANT A SPECIES FROM OUTSIDE THE TOWN'S GROVE? |

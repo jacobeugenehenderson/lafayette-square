@@ -1295,6 +1295,10 @@ export async function bakeLook(lookName, opts = {}) {
     generatedAt: new Date().toISOString(),
     lookName,
     rosterSize: roster.length,
+    // ⭐ THE SET THIS ATLAS WAS BUILT FOR — the selection above, the one set bake-trees places from
+    // and the Salon captures for. The runtime draws exactly these (`src/lib/treeRoster.js`); it
+    // no longer reads design.json#trees, which the player cannot fetch and which is not this set.
+    roster: roster.map((v) => ({ species: v.species, variantId: v.variantId })),
     materialDefaults: { roughness: 0.85, metalness: 0.0 },
     atlas: unified ? {
       width: unified.width, height: unified.height,

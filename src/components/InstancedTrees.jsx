@@ -810,8 +810,8 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
         `${rawBake.instances.length} placements: their species is not in this slab's atlas, so it has ` +
         `no GLB and loading one would 404 and take the WHOLE canopy down — ` +
         `${[...missing].map(([sp, n]) => `${sp}(${n})`).join(', ')}. ` +
-        `▶ compose them in the Salon and re-bake the Grove, or remove them from ` +
-        `public/looks/<look>/design.json#trees. ` +
+        `▶ compose them in the Salon and re-bake the Grove, or take them out of the town's Grove ` +
+        `selection (arborist/selection.mjs) and re-bake. ` +
         `▶ node checks/claims-every-baked-species-has-an-impostor.mjs`)
     }
     return keep.length === rawBake.instances.length ? rawBake : { ...rawBake, instances: keep }

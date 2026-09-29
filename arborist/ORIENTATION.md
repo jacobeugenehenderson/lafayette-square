@@ -162,10 +162,10 @@ arborist/state/<species>/compositions.json          ← AUTHORED. the recipe.
 public/trees/<species>/{skeleton-N-lod{0,1,2}.glb, tips-N.json, manifest.json}
 public/trees/index.json                              ← the catalog + the shippable variants
         │
-        │  bake-look.js --look <id>   reads the LOOK's roster: looks/<look>/design.json#/trees
+        │  bake-look.js --look <id>   builds for THE SELECTION (selection.mjs — one set, 2026-08-25)
         │      unifyAtlases — sha1-dedupes bark + leaf tiles across the roster
         ▼
-public/baked/<look>/trees-atlas.json + the master PNGs
+public/baked/<look>/trees-atlas.json + the master PNGs   ← `#roster` is that set; the runtime draws exactly it
         │
         │  bake-trees.js --scene <name>   reads the NEIGHBOURHOOD's census + routing
         ▼
@@ -195,7 +195,7 @@ Any doc telling you to publish before baking is stale.
 | what | where |
 |---|---|
 | the recipe for a species | `arborist/state/<species>/compositions.json` |
-| which trees are in a Look (**"atlas inclusion"**) | `public/looks/<look>/design.json#/trees` |
+| which trees are in a Look (**"atlas inclusion"**) | the selection: coverage × `public/looks/<look>/design.json#groveThreshold` (`arborist/selection.mjs`); `#/trees` is only its fallback |
 | which library species a roster name routes to | `cartograph/data/<scene>/tree-species-map.json` |
 | roster name merges | `arborist/roster-name-canon.json` |
 | chassis approve / rename / notes | `arborist/state/_chassis-curation.json` |

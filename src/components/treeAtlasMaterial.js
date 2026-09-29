@@ -19,6 +19,7 @@ import { LAMP_WIPE_GLSL } from '../lib/lampPool.js'
 import { groundColor as _groundColor } from './groundColorState'
 import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
+import { rosterOf } from '../lib/treeRoster.js'
 
 // Module-level cache: one material set per look. Sharing materials across
 // component remounts keeps program count at 2 even if the tree component
@@ -1285,19 +1286,11 @@ function loadNormalTexture(url) {
 }
 
 async function buildMaterials(lookName) {
-  const designUrl = `${import.meta.env.BASE_URL}looks/${lookName}/design.json?t=${Date.now()}`
-  const [manifestRes, designRes] = await Promise.all([
-    slabFetch(lookName, 'trees-atlas.json'),
-    fetch(designUrl),
-  ])
+  const manifestRes = await slabFetch(lookName, 'trees-atlas.json')
   if (!manifestRes.ok) throw new Error(`atlas manifest ${manifestRes.url} → ${manifestRes.status}`)
-  if (!designRes.ok) throw new Error(`design ${designUrl} → ${designRes.status}`)
   const manifest = await manifestRes.json()
-  const design = await designRes.json()
-  const roster = new Set()
-  for (const t of (design.trees || [])) {
-    roster.add(`${t.species}:${t.variantId}`)
-  }
+  // The set the atlas was built for, from the slab — never the authoring design.json (src/lib/treeRoster.js).
+  const roster = rosterOf(manifest, lookName)
 
   const { atlas, materialDefaults } = manifest
   if (!atlas) throw new Error(`atlas missing in manifest for ${lookName}`)

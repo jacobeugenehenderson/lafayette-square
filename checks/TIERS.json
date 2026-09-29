@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 333,
+  "total": 334,
   "counts": {
-    "safe": 182,
+    "safe": 183,
     "local-effect": 6,
     "live": 145
   },
@@ -369,6 +369,13 @@
       "tier": "safe",
       "why": [
         "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-draws-the-trees-its-atlas-was-built-for.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
