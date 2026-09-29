@@ -104,3 +104,10 @@ Ward repo only; kit changes are named for Lintel, not made. No deploy, no Promot
 only on Jacob's go. Registers: the Ward's `README` (the rulings above), `FEATURES`, `OPERATIONS`.
 **Checks:** extend the Ward's `npm run check` where a rule can be checked (no counter in the kicker; one
 mark source) — mutation-test each. **DoD: Jacob's eye on staging,** with the town and URL recorded.
+
+## §D — after the Almanac: rulings of 2026-09-29, evening (the mock is final at **version 41**)
+Jacob's go on all of it. One commit each, README lines in each:
+- **Ticker as a departures board** (v31): vertical, one item at a time, hold = named product values (base · reading wpm · cap) replacing `TICKER_TURN_SECONDS`; ellipsis, never a sideways slide; two lines, the name in **20px Fraunces** (the ruled §5 exception), **warm white with the category's dot** before it; live = the amber dot and time.
+- **The Bulletin: v31's restyle and no further.** Jacob: *"the bulletin is restyled enough."* CSS only; closing a private thread never uses ✕.
+- **The rooms drawer** (v40/v41): hangs from the band; on Home at rest it slides up under the ticker; out everywhere else, place cards included; ◉'s sheet has none. ⌕ stays at rest, and its first tap only wakes.
+- **Mark style** (v38/v39): `look.markStyle = 'regular' | 'engraved' | 'colored'`, **default `engraved`** (Lintel, replacing `c894a485`'s colour|white). ◉'s field is always `#141519`. It applies to `band__you--town` only; ratings and a person's emoji stay in colour. ⛔ No authored field colour, no cap (v35–v37 superseded).
