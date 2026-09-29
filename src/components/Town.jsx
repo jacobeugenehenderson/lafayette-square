@@ -137,6 +137,9 @@ export { glyphInk, EMOJI_FONT, COLOUR_ALPHA } from '../lib/glyphInk.js'
 // The player's chrome: its grounds, the colours that carry meaning, the contrast floors (src/tokens/playerChrome.js).
 // The Ward's tokens.css must equal these; its check reads them here.
 export { GROUNDS, MEANING, CONTRAST } from '../tokens/playerChrome.js'
+// Where the renderer's own files live (the page's ward-kit-base; src/lib/kitUrl.js) — the Ward's Almanac reads the
+// weather icons through it, so they have one home: the kit bundle.
+export { kitUrl } from '../lib/kitUrl.js'
 
 const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt
