@@ -1,9 +1,4 @@
 {
-  "identity": {
-    "mark": "⚜️",
-    "accent": "#D9B25A",
-    "ratingMark": "⚜️"
-  },
   "layerVis": {
     "street": true,
     "highway": true,
@@ -92,7 +87,6 @@
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.381,
-  "terrainExag": 1.5,
   "parkTitlePos": [
     -22.48,
     -97.31
@@ -107,17 +101,6 @@
     "opacity": 0.9,
     "case": "upper",
     "fontFamily": "",
-    "size": 3.75,
-    "tierScale": {
-      "street": 1,
-      "park": 2.8
-    },
-    "targetPx": 24,
-    "minPx": 8,
-    "maxPx": 128,
-    "font": "",
-    "bg": "#3a3a38",
-    "bgAlpha": 1,
     "sizeK": 0.7
   },
   "blockCustoms": {
@@ -796,11 +779,18 @@
     "#b22222",
     "#808080"
   ],
-  "smaa": {
-    "values": {
-      "value": 1
-    }
+  "surfaces": null,
+  "identity": {
+    "mark": "⚜️",
+    "accent": "#D9B25A",
+    "ratingMark": "⚜️"
   },
+  "wallMix": null,
+  "wallPalettes": null,
+  "lamps": {
+    "derive": false
+  },
+  "terrainExag": 1.5,
   "sky": {
     "overrides": []
   },
@@ -808,6 +798,7 @@
     "kind": "arch",
     "id": "arch"
   },
+  "dofFocus": null,
   "heroKeyframes": [
     {
       "position": [
@@ -906,8 +897,9 @@
       "overrides": null
     }
   },
+  "shotLooks": {},
   "openSections": {
-    "Streets": true,
+    "Streets": false,
     "Blocks": false,
     "Paths": false,
     "Features": false,
@@ -970,8 +962,5 @@
       "species": "platanus_acerifolia",
       "variantId": 4
     }
-  ],
-  "lamps": {
-    "derive": false
-  }
+  ]
 }
