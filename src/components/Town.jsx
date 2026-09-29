@@ -31,8 +31,12 @@
  *   frameKey         the plan's ONE move: the plan frames its places on entering the shot and again only when this
  *                    changes (a Return, a category chosen). litIds alone only light — typing never moves the camera.
  *                    The in-plan move runs transitions.js' `frame` (1200 ms, easeInOutCubic).
+ *   frameIds         what the plan frames when it frames (entering the shot, a frameKey change), apart from what it
+ *                    lights — an iterable of building ids; absent: litIds, else every listing. Lights nothing. Given
+ *                    but empty (or with no id placed), the plan frames the whole Extent with a warning, as for any set
+ *                    with nothing placed, and onFramed says so (placed 0) — never another set of places.
  *   onFramed         ({ x, z, radius, placed, of, outside, unplaced }) => void, each time the plan frames — frameDensest's
- *                    disclosure of the places it could not put down (litIds may carry nulls; they come back unplaced)
+ *                    disclosure of the places it could not put down (frameIds / litIds may carry nulls; they come back unplaced)
  *   planHeading      'town' (default: the town's authored browseHeading) | 'north' | { follow: headingRef } — the
  *                    reader's TRUE heading (degrees, the direction they face; the app's compass, already smoothed),
  *                    or null (no sensor / no permission → north up). Following turns screen-up to it EVERY frame, no
@@ -324,7 +328,7 @@ function TownOptics({ quality }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, onFramed, planHeading = 'town', bearingRef,
+  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, onFramed, planHeading = 'town', bearingRef,
   controls = false, movers, onMovers, children,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
@@ -360,7 +364,9 @@ export default function Town({
   // The flight between shots (src/camera/ShotFlight.jsx): the plan opens on the lit places, else every listed one.
   const places = useBuildingPlaces()
   // Listings with no building are kept (as null): the plan's disclosure names them unplaced, never drops them.
-  const placeIds = useMemo(() => (litIds?.size ? [...litIds] : listings.map((l) => l.building_id ?? null)), [litIds, listings])
+  // What the plan FRAMES — never what it lights (frameIds, header). Absent: the lit set, else every listing.
+  const placeIds = useMemo(() => (frameIds != null ? [...frameIds]
+    : litIds?.size ? [...litIds] : listings.map((l) => l.building_id ?? null)), [frameIds, litIds, listings])
   const ownHandle = useRef(null)
   const flightHold = useRef(() => false)
   const movieHandle = movie?.handle ?? ownHandle
