@@ -882,6 +882,39 @@ function rewriteLeafPrimUVs(prim, packMeta, rng, doc, root, attach) {
   prim.setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(out))
 }
 
+// A leaf with no UVs gets them from its own shape: each leaf is flattened onto its best-fit
+// plane (its two widest directions). rewriteLeafPrimUVs then fits that rect into a pack cell
+// and turns it stalk-to-wood, exactly as for a vendor card.
+function projectLeafUVs(prim, root, doc) {
+  const pos = prim.getAttribute('POSITION').getArray()
+  const members = new Map()
+  for (let v = 0; v < root.length; v++) { let a = members.get(root[v]); if (!a) members.set(root[v], a = []); a.push(v) }
+  const uv = new Float32Array(root.length * 2).fill(0.5)
+  for (const vs of members.values()) {
+    if (vs.length < 3) continue
+    let c = [0, 0, 0]; for (const v of vs) for (let k = 0; k < 3; k++) c[k] += pos[v * 3 + k] / vs.length
+    const C = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    for (const v of vs) { const d = [pos[v * 3] - c[0], pos[v * 3 + 1] - c[1], pos[v * 3 + 2] - c[2]]; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) C[i][j] += d[i] * d[j] }
+    // the two widest directions: power iteration, then again with the first removed
+    const top = (M, not) => {
+      let x = [1, 0.7, 0.3]
+      for (let it = 0; it < 24; it++) {
+        let y = [0, 1, 2].map(i => M[i][0] * x[0] + M[i][1] * x[1] + M[i][2] * x[2])
+        if (not) { const dp = y[0] * not[0] + y[1] * not[1] + y[2] * not[2]; y = y.map((q, i) => q - dp * not[i]) }
+        const n = Math.hypot(...y) || 1; x = y.map(q => q / n)
+      }
+      return x
+    }
+    const e1 = top(C, null), e2 = top(C, e1)
+    for (const v of vs) {
+      const d = [pos[v * 3] - c[0], pos[v * 3 + 1] - c[1], pos[v * 3 + 2] - c[2]]
+      uv[v * 2] = d[0] * e1[0] + d[1] * e1[1] + d[2] * e1[2]
+      uv[v * 2 + 1] = d[0] * e2[0] + d[1] * e2[1] + d[2] * e2[2]
+    }
+  }
+  prim.setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(uv))
+}
+
 // Edges of a unit cell, numbered clockwise in UV (v down): 0 top, 1 right, 2 bottom, 3 left.
 function nearestEdge(a, b) {
   const d = [b, 1 - a, 1 - b, a]
@@ -1329,6 +1362,17 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     }
   }
 
+  // ⛔ WOOD WITH NO UV CANNOT WEAR A BARK PHOTO — say so, by name. (21 of 241 chassis on
+  // 2026-09-28: the willows, the garden mixes, the procedural sugar maples, white_fir_a.) It
+  // used to reach the atlas with UVs of 0 and paint one flat texel; the bark contract now paints
+  // it magenta, which is loud but says nothing. Generating bark UVs waits on a real-world bark size.
+  const bareWood = barkPrims.filter(({ prim }) => !prim.getAttribute('TEXCOORD_0')).length
+  if (bareWood) {
+    const err = new Error(`chassis "${chassis}" has ${bareWood} wood primitive(s) with no UVs — it cannot wear a bark photo yet. Choose another chassis.`)
+    err.statusCode = 422
+    throw err
+  }
+
   // Gather bark positions for fallback leaf-attachment sampling (only used
   // when vendor leaf prims are absent and the spray path runs).
   const positionsCombined = []
@@ -1438,6 +1482,7 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     for (const { prim } of vendorLeafPrims) {
       prim.setMaterial(leafMat)
       const leavesOf = leafComponents(prim)
+      if (!prim.getAttribute('TEXCOORD_0')) projectLeafUVs(prim, leavesOf, chassisDoc)
       const attach = leafAttachVertices(prim, leavesOf, nearWood)
       rewriteLeafPrimUVs(prim, packMeta, rng, chassisDoc, leavesOf, attach)
       scaleLeafCardsInPlace(prim, vendorLeafScale, chassisDoc, leavesOf, attach)

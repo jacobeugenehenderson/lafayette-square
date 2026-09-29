@@ -313,7 +313,7 @@ function snapshotFromComposition(c) {
     // composition params don't change when the build LOGIC does, so a re-preview
     // would otherwise 'noop' to a stale build. Bump this on any leaf-emission
     // logic change to force a full rebuild.
-    buildVersion: 'leaf-stalk-to-twig-normal-2026-09-28',
+    buildVersion: 'bare-leaf-uvs-bare-wood-refused-2026-09-28',
   }
 }
 

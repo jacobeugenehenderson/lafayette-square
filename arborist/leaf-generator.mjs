@@ -23,9 +23,9 @@ const REPO = path.resolve(__dirname, '..')
 const SHAPES = path.join(REPO, 'public/textures/leaves/shapes')
 const DOSSIERS = path.join(__dirname, 'dossiers')
 
-const CELL = 512          // shipped cell edge, px
 const SS = 2              // supersample factor for the draw
-const R = CELL * SS       // draw resolution per cell
+let CELL = 512            // shipped cell edge, px (the pack); a close-up render may raise it
+let R = CELL * SS         // draw resolution per cell
 const STALK = [0.5, 0.985] // where the stalk END sits in every cell, glTF UV (v grows down)
 
 // ── deterministic randomness ──────────────────────────────────────────────
@@ -241,7 +241,8 @@ async function drawVariant(model, season, seed) {
 }
 
 // ── the pack ───────────────────────────────────────────────────────────────
-export async function generateLeafPack({ species, pack }) {
+export async function generateLeafPack({ species, pack, cell = 512, outDir = null }) {
+  CELL = cell; R = CELL * SS
   const dossier = JSON.parse(await fs.readFile(path.join(DOSSIERS, `${species}.json`), 'utf8'))
   const model = dossier.leafModel
   if (!model) throw new Error(`⛔ ${species}: dossier has no leafModel — nothing to draw from. Author one first.`)
@@ -257,7 +258,7 @@ export async function generateLeafPack({ species, pack }) {
     const cell = await drawVariant(model, season, (seed0 + i * 7919) >>> 0)
     for (const k of Object.keys(sheets)) sheets[k].push({ input: cell[k], raw: { width: CELL, height: CELL, channels: k === 'normal' ? 3 : 4 }, left: (i % cols) * CELL, top: Math.floor(i / cols) * CELL })
   }
-  const out = path.join(SHAPES, pack)
+  const out = outDir || path.join(SHAPES, pack)
   await fs.mkdir(out, { recursive: true })
   const W = cols * CELL, H = rows * CELL
   const blank = (ch, bg) => sharp({ create: { width: W, height: H, channels: ch, background: bg } })
@@ -284,7 +285,11 @@ const isCli = import.meta.url === `file://${process.argv[1]}`
 if (isCli) {
   const arg = k => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : null }
   const species = arg('species'), pack = arg('pack')
-  if (!species || !pack) { console.error('usage: node arborist/leaf-generator.mjs --species <dossier id> --pack <pack id>'); process.exit(2) }
-  const { out, meta } = await generateLeafPack({ species, pack })
+  if (!species || !pack) { console.error('usage: node arborist/leaf-generator.mjs --species <dossier id> --pack <pack id> [--cell <px> --out <dir>]'); process.exit(2) }
+  // --cell/--out: a close-up render for the eye (same leaves, same seeds, more pixels), written
+  // anywhere but the pack — the pack's cell size is what the atlas is built for.
+  const cell = arg('cell') ? Number(arg('cell')) : 512, outDir = arg('out') ? path.resolve(arg('out')) : null
+  if (cell !== 512 && !outDir) { console.error('⛔ --cell other than 512 needs --out: a close-up must not overwrite the pack'); process.exit(2) }
+  const { out, meta } = await generateLeafPack({ species, pack, cell, outDir })
   console.log(`✅ ${pack}: ${meta.tileGrid[0] * meta.tileGrid[1]} leaves → ${path.relative(REPO, out)} (model ${meta.source.modelHash})`)
 }

@@ -790,7 +790,8 @@ function SlotCard({
         body: JSON.stringify({ chassis, bark, leaves: previewLeaves }),
       })
         .then(r => {
-          if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error || `HTTP ${r.status}`)))
+          // The server's own sentence (e.message) names what is wrong — the generic label alone told the operator nothing.
+          if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.message || e.error || `HTTP ${r.status}`)))
           return r.json()
         })
         .then(data => {
