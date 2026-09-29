@@ -737,10 +737,11 @@ function buildBaseListings(pois, buildingGrid, luByBuilding) {
  * vocabulary (`src/tokens/categories.js`) — the same pairs `classifyPoi`
  * returns. NOT a new taxonomy, and not an extension of that one.
  *
- * ⛔ A `null` SUBCATEGORY IS THE HONEST ANSWER where Overture's second level
- * does not resolve to one of ours; `useListings.js:89` already tolerates it.
- * Inventing a sub-bucket to fill the column would be a confident wrong answer
- * about a real business, which is worse than an empty field.
+ * Every second level Overture uses for a town's places maps to a type of ours
+ * (Jacob, 2026-09-29: "Add the sections" — a place with no type fell out of the
+ * Society pages). ⛔ A `null` subcategory is still the answer for a level-2 the
+ * kit has never seen, never a nearby-looking guess; add the pair here instead.
+ * `useListings.js:89` tolerates it.
  */
 const OVERTURE_ROOTS = {
   food_and_drink: {
@@ -753,8 +754,39 @@ const OVERTURE_ROOTS = {
     },
   },
   shopping: { default: ['shopping', 'retail'], l2: { market: ['shopping', 'grocery'], food_and_beverage_retail: ['shopping', 'grocery'] } },
-  services_and_business: { default: ['services', null], l2: {} },
-  lifestyle_services: { default: ['services', null], l2: { beauty_service: ['services', 'beauty'], fitness_or_wellness_service: ['services', 'fitness'] } },
+  services_and_business: {
+    default: ['services', null],
+    l2: {
+      financial_service: ['services', 'financial'],
+      legal_service: ['services', 'legal'],
+      real_estate_service: ['services', 'real-estate'],
+      home_service: ['services', 'home'],
+      building_or_construction_service: ['services', 'home'],
+      b2b_service: ['services', 'industrial'],
+      printing_service: ['services', 'advertising'],
+      design_service: ['services', 'architecture'],
+      event_or_party_service: ['services', 'events'],
+      professional_service: ['services', 'professional'],
+      corporate_or_business_office: ['services', 'professional'],
+      technical_service: ['services', 'professional'],
+      family_service: ['services', 'professional'],
+      rental_service: ['services', 'professional'],
+      housing_or_property_service: ['services', 'health'],
+      agricultural_service: ['shopping', 'local-makers'],
+      shipping_or_delivery_service: ['community', 'organizations'],
+    },
+  },
+  lifestyle_services: {
+    default: ['services', null],
+    l2: {
+      beauty_service: ['services', 'beauty'],
+      personal_or_beauty_service: ['services', 'beauty'],
+      fitness_or_wellness_service: ['services', 'fitness'],
+      wellness_service: ['services', 'health'],
+      animal_or_pet_service: ['services', 'pets'],
+      food_service: ['dining', 'restaurants'],
+    },
+  },
   health_care: { default: ['services', 'health'], l2: {} },
   education: { default: ['community', 'schools'], l2: {} },
   community_and_government: { default: ['community', 'organizations'], l2: {} },
@@ -768,11 +800,11 @@ const OVERTURE_ROOTS = {
       cultural_center: ['arts', 'venues'],
     },
   },
-  arts_and_entertainment: { default: ['arts', 'venues'], l2: { museum: ['arts', 'galleries'], art_gallery: ['arts', 'galleries'] } },
+  arts_and_entertainment: { default: ['arts', 'venues'], l2: { museum: ['arts', 'museum'], art_gallery: ['arts', 'galleries'], movie_theater: ['arts', 'cinema'] } },
   sports_and_recreation: { default: ['parks', 'recreation'], l2: { park: ['parks', 'parks'], garden: ['parks', 'gardens'] } },
   lodging: { default: ['hospitality', 'hotels'], l2: { bed_and_breakfast: ['hospitality', 'bed-and-breakfast'] } },
-  travel_and_transportation: { default: ['services', null], l2: { parking: ['services', 'parking'], fueling_station: ['services', 'automotive'], vehicle_service: ['services', 'automotive'] } },
-  geographic_entities: { default: ['parks', null], l2: { water_feature: ['parks', null], land_feature: ['parks', null] } },
+  travel_and_transportation: { default: ['services', 'transport'], l2: { parking: ['services', 'parking'], fueling_station: ['services', 'automotive'], vehicle_service: ['services', 'automotive'], travel_service: ['services', 'transport'], air_transport_facility_or_service: ['services', 'transport'] } },
+  geographic_entities: { default: ['parks', 'parks'], l2: { water_feature: ['parks', 'parks'], land_feature: ['parks', 'parks'], built_feature: ['parks', 'recreation'] } },
 }
 
 /**

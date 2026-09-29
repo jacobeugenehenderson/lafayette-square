@@ -80,6 +80,9 @@ const CATEGORIES = {
       studios:   { label: 'Studios', emoji: '\ud83c\udfa8' },
       venues:    { label: 'Venues', emoji: '\ud83c\udfb5' },
       tattoo:    { label: 'Tattoo & Body Art', emoji: '\ud83e\ude78' },
+      museum:    { label: 'Museums', emoji: '\ud83c\udfdb\ufe0f' },
+      cinema:    { label: 'Cinema', emoji: '\ud83c\udfac' },
+      landmark:  { label: 'Landmarks', emoji: '\ud83d\uddfc' },
     },
   },
   parks: {
@@ -100,6 +103,7 @@ const CATEGORIES = {
       parks:       { label: 'Parks', emoji: '\ud83c\udf33' },
       gardens:     { label: 'Gardens', emoji: '\ud83c\udf3a' },
       recreation:  { label: 'Pool & Recreation', emoji: '\ud83c\udfca' },
+      pavilions:   { label: 'Pavilions', emoji: '\ud83d\uded6' },
     },
   },
   shopping: {
@@ -127,6 +131,7 @@ const CATEGORIES = {
       pharmacy:       { label: 'Pharmacy', emoji: '\ud83d\udc8a' },
       discount:       { label: 'Discount & General', emoji: '\ud83c\udff7\ufe0f' },
       wellness:       { label: 'Wellness & CBD', emoji: '\ud83c\udf3f' },
+      retail:         { label: 'Shops', emoji: '\ud83c\udfec' },
     },
   },
   services: {
@@ -157,6 +162,13 @@ const CATEGORIES = {
       industrial:           { label: 'Industrial', emoji: '\ud83c\udfed' },
       coworking:            { label: 'Coworking', emoji: '\ud83d\udcbb' },
       cleaners:             { label: 'Cleaners', emoji: '\ud83e\uddf9' },
+      parking:              { label: 'Parking', emoji: '\ud83c\udd7f\ufe0f' },
+      automotive:           { label: 'Automotive & Fuel', emoji: '\ud83d\ude97' },
+      home:                 { label: 'Home & Trades', emoji: '\ud83d\udd28' },
+      pets:                 { label: 'Pet Care', emoji: '\ud83d\udc3e' },
+      events:               { label: 'Catering & Events', emoji: '\ud83c\udf71' },
+      professional:         { label: 'Professional Services', emoji: '\ud83d\udcbc' },
+      transport:            { label: 'Travel & Transport', emoji: '\u2708\ufe0f' },
     },
   },
   hospitality: {
@@ -198,6 +210,7 @@ const CATEGORIES = {
       organizations: { label: 'Organizations', emoji: '\ud83e\udd1d' },
       library:       { label: 'Library', emoji: '\ud83d\udcda' },
       'events-venue': { label: 'Events & Venues', emoji: '\ud83c\udf89' },
+      university:    { label: 'University', emoji: '\ud83c\udfeb' },
     },
   },
   residential: {
@@ -220,6 +233,7 @@ const CATEGORIES = {
       townhouses:     { label: 'Townhouses & Duplexes', emoji: '\ud83c\udfe0' },
       houses:         { label: 'Single-Family Homes', emoji: '\ud83c\udfe1' },
       'historic-homes': { label: 'Historic Homes', emoji: '\ud83c\udfdb\ufe0f' },
+      apartments:     { label: 'Apartments', emoji: '\ud83c\udfe2' },
       unnamed:        { label: 'Unnamed Buildings', emoji: '\ud83c\udfe2' },
     },
   },

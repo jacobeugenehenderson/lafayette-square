@@ -4454,7 +4454,9 @@
       "_what_is_it": "A branded fuel station at 508 Berlin Rd. The brand is certain from the name; everything about the individual site — hours, store, car wash, operator — is unsourced, and the attached URL is corporate, not local.",
       "_beat": "community",
       "_tier": "CAVEATED",
-      "_display_id_at_research": "huro-lst-0013"
+      "_display_id_at_research": "huro-lst-0013",
+      "category": "services",
+      "subcategory": "automotive"
     },
     "ovt-78ba3737-c417-4e30-be0b-34b414c67359": {
       "_confidence": "STRONG evidence this is a stale/duplicate record, not a real, separate operating station. The held phone +14194332140 belongs to Holiday Harbor Marina at 944 Main St (confirmed via web search), not to any gas station. Meanwhile the actual, currently-operating station at 805 S. Main St is the Mobil/Hy-Miler #2234 site (huro-lst-0282/huro-lst-0060), phone 419-433-6597. Yelp separately shows a \"SHELL HY-MILER - CLOSED\" listing (for the 2026 Cleveland Rd W site, not this address), indicating Shell-Hy-Miler co-branding has since been dropped in this town generally. No evidence 805 Main St hosts an independently operating Shell station today.",
@@ -4466,7 +4468,9 @@
       "description": "Likely a stale directory duplicate for the Mobil/Hy-Miler #2234 station at this address, not a separately operating Shell station; the phone number on file belongs to an unrelated marina.",
       "_beat": "services2",
       "_tier": "CLEAN",
-      "_display_id_at_research": "huro-lst-0126"
+      "_display_id_at_research": "huro-lst-0126",
+      "category": "services",
+      "subcategory": "automotive"
     },
     "ovt-a33596f6-ee0e-430a-a71c-8a3b4bedc6c8": {
       "_confidence": "NO PHOTO, AND THE HELD URL IS A PARKED PAGE. hy-miler.com returns HTTP 200 with 1,391 bytes whose entire body is \"Lost Redirection - The page you are trying to access uses the redirection services of DNS Made Easy / Constellix / DigiCert DNS.\" Zero occurrences of \"Huron\". It is a DNS redirect that no longer redirects anywhere.",
@@ -4969,7 +4973,9 @@
       "phone": "+14194332030",
       "_beat": "services2",
       "_tier": "CAVEATED",
-      "_display_id_at_research": "huro-lst-0002"
+      "_display_id_at_research": "huro-lst-0002",
+      "category": "hospitality",
+      "subcategory": "hotels"
     },
     "ovt-048d4b4b-5cf8-4cfb-8b32-af134cb1af9a": {
       "_confidence": "The locator returned no address-specific page; Blue Rhino cages are self-serve exchange racks hosted outside a retail store and carry no independent posted hours of their own — access follows the host store's (Hy-Miler #2235 / Mobil, 508 Berlin Rd) hours, 06:00-23:00 daily per that station's own page, but this was not separately confirmed for the propane cage itself.",
@@ -5441,7 +5447,9 @@
       "phone": "+14193667392",
       "_beat": "services2",
       "_tier": "CLEAN",
-      "_display_id_at_research": "huro-lst-0098"
+      "_display_id_at_research": "huro-lst-0098",
+      "category": "services",
+      "subcategory": "professional"
     },
     "ovt-68f554fb-7d9a-4bfd-bc00-114e2385477e": {
       "_confidence": "The held URL is CORRECT despite the suspicious domain name -- findlayfostorialaw.com is in fact the live site for Alicia Wolph Roshong Esq., a solo attorney; it is not about attorneys in Findlay or Fostoria, Ohio (the domain name is misleading but the content matches this business). Phone number on the site, (419) 433-2525, matches the held record exactly, which further confirms identity. No office address or hours are published on the page itself.",
@@ -6043,7 +6051,9 @@
       "description": "Routh at Rye is a private lakefront vacation rental cottage in the Rye Beach neighborhood of Huron, booked via Airbnb.",
       "_beat": "services2",
       "_tier": "CLEAN",
-      "_display_id_at_research": "huro-lst-0233"
+      "_display_id_at_research": "huro-lst-0233",
+      "category": "hospitality",
+      "subcategory": "bed-and-breakfast"
     },
     "ovt-e60239d0-d429-4a1a-9f68-da080d0096e8": {
       "_confidence": "Address (908 Main St) and phone (419-433-2000) corroborated across 6+ sources, high confidence. Hours are aggregator-only (never confirmed first-party) — treat as directional, not authoritative. Aggregators also state 'in business since 2002' and 'auto detailing + residential/commercial power washing' — plausible but unconfirmed by a first-party source.",
@@ -7190,7 +7200,9 @@
       "_what_is_it": "A licensed counseling practice (Ashley Modolo, LPCC-S), confirmed from its own site. High confidence.",
       "_beat": "community",
       "_tier": "CLEAN",
-      "_display_id_at_research": "huro-lst-0273"
+      "_display_id_at_research": "huro-lst-0273",
+      "category": "services",
+      "subcategory": "health"
     },
     "ovt-cf3fce97-7ca0-442c-aebe-ca79b2521ef2": {
       "_match_name": "Subconscious Sarah",
@@ -7209,7 +7221,9 @@
       "_what_is_it": "A one-practitioner hypnotherapy and coaching practice, largely delivered online. Sourced to her own site. High confidence on what it is; LOW confidence that 103 Wall St is a premises the public can visit.",
       "_beat": "community",
       "_tier": "CAVEATED",
-      "_display_id_at_research": "huro-lst-0216"
+      "_display_id_at_research": "huro-lst-0216",
+      "category": "services",
+      "subcategory": "health"
     },
     "ovt-f40f6d4a-676e-431e-a330-cdfcd559745c": {
       "_match_name": "Pabodie Design Studios",
@@ -7227,7 +7241,9 @@
       "_what_is_it": "An art print business trading online as pabodie.art. Confirmed from the site the listing's own URL redirects to. Confident about the business; NOT confident it is a visitable storefront.",
       "_beat": "community",
       "_tier": "CAVEATED",
-      "_display_id_at_research": "huro-lst-0265"
+      "_display_id_at_research": "huro-lst-0265",
+      "category": "shopping",
+      "subcategory": "retail"
     },
     "ovt-27acf59c-35a0-48d9-9c01-48a30065f8fb": {
       "_match_name": "CrystalMic Premium Audio",
@@ -7245,7 +7261,9 @@
       "_what_is_it": "An e-commerce audio brand on Shopify. LOW confidence that it corresponds to a visitable place in Huron: the store front-page is generic dropship-style catalogue and names no location.",
       "_beat": "community",
       "_tier": "CAVEATED",
-      "_display_id_at_research": "huro-lst-0030"
+      "_display_id_at_research": "huro-lst-0030",
+      "category": "shopping",
+      "subcategory": "retail"
     },
     "ovt-4d6162c9-d487-492a-99ec-c14ded2bbce7": {
       "_match_name": "Wolph Title Inc",
@@ -7284,7 +7302,9 @@
       "_what_is_it": "A title agency, confirmed from its own site, which lists Huron as one of its two offices. High confidence.",
       "_beat": "community",
       "_tier": "CAVEATED",
-      "_display_id_at_research": "huro-lst-0073"
+      "_display_id_at_research": "huro-lst-0073",
+      "category": "services",
+      "subcategory": "real-estate"
     },
     "ovt-5e657673-68f6-48d7-a7f2-541f4511ac1a": {
       "_match_name": "Edward Jones - Financial Advisor: Ryan M Reffner, AAMS®",
@@ -7324,7 +7344,9 @@
       "_what_is_it": "A single-advisor Edward Jones branch office. Confirmed from Edward Jones' own advisor page. High confidence.",
       "_beat": "community",
       "_tier": "CLEAN",
-      "_display_id_at_research": "huro-lst-0090"
+      "_display_id_at_research": "huro-lst-0090",
+      "category": "services",
+      "subcategory": "financial"
     },
     "ovt-b749730a-95a1-4813-871f-d874f0d1a158": {
       "_match_name": "Bowling Green State University, Firelands College",
@@ -7403,6 +7425,60 @@
       "_beat": "civic-deep",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0195"
+    },
+    "retype:Medicare Insurance Advisors Huron": {
+      "_match_name": "Medicare Insurance Advisors Huron",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "services",
+      "subcategory": "financial"
+    },
+    "retype:Marcellas Pizza Huron": {
+      "_match_name": "Marcellas Pizza Huron",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "dining",
+      "subcategory": "restaurants"
+    },
+    "retype:Huron Lake Front Market": {
+      "_match_name": "Huron Lake Front Market",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "shopping",
+      "subcategory": "grocery"
+    },
+    "retype:Mindology Counseling, Llc.": {
+      "_match_name": "Mindology Counseling, Llc.",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "services",
+      "subcategory": "health"
+    },
+    "retype:Market on Main": {
+      "_match_name": "Market on Main",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "shopping",
+      "subcategory": "grocery"
+    },
+    "retype:Huron Butterfly Garden": {
+      "_match_name": "Huron Butterfly Garden",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "parks",
+      "subcategory": "gardens"
+    },
+    "retype:Old Plat": {
+      "_match_name": "Old Plat",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "dining",
+      "subcategory": "restaurants"
+    },
+    "retype:Two Rivers Waterfront Homes in Huron": {
+      "_match_name": "Two Rivers Waterfront Homes in Huron",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "services",
+      "subcategory": "real-estate"
+    },
+    "retype:Lake Erie Massotherapy": {
+      "_match_name": "Lake Erie Massotherapy",
+      "_retyped": "2026-09-29, Jacob: \"Re-type the data\" — its real type, where Overture gave none or a wrong one",
+      "category": "services",
+      "subcategory": "health"
     }
   },
   "drops": [],
