@@ -30,8 +30,8 @@ contradicts this brief, **stop and flag it**.
   throws without it. Commits `93507e02`, `e3e3f482`. ▶ `node checks/claims-a-staging-town-names-its-player.mjs`
 - **Trees read their roster from the slab** (`cc7e2a8b`). Every tree is an impostor unless the Arborist
   says model (`55214db5`), and the hero-band is retired (`8bae92b8`). ⛔ **A town draws NO trees until it
-  is re-baked with the roster.** LS's grove is re-baked; its impostor captures were still running at
-  00:55 on 2026-09-29 (the Master Arborist session).
+  is re-baked with the roster.** LS's grove is re-baked, but its impostor captures **have not run**:
+  the overnight run stopped before them (Master Arborist, 09:35). ▶ `node checks/claims-a-tree-card-starts-at-the-ground.mjs`
 - **Provincetown is published to staging** (Jacob, 2026-09-29).
 - **The Ward** (`~/Desktop/dev.nosync/theward`) is pinned to kit `e3e3f482`. Its suite is 12 green /
   5 red. Of the reds, one is an endpoint, `gas:verify-resident`, waiting on Jacob's resident-verification
