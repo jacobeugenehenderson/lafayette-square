@@ -103,3 +103,19 @@ Ward repo only. A kit change is named for Lintel, not made. No deploy, no Promot
 Jacob's go. **Registers:** README §3 (the ticker tap; the "happening" definition), FEATURES (the capability,
 in a visitor's words), OPERATIONS (the backend items). **DoD:** Jacob's eye on staging, Provincetown and
 Huron, with the town and URL recorded.
+
+## Not in this build — keep the door open: DISTRIBUTED EVENTS (Jacob, 2026-09-29)
+*"This is GREAT because it allows sponsors to have distributed events; Carnival in Provincetown or the Jinglebell Crawl."*
+- **An event can have its own card.** Trick-or-treat, a house tour, Carnival, a crawl: the **event** gets a card,
+  and **buildings opt in to it**. A tap on the ticker serves **the event's card**, which lights its buildings on the
+  map and lists them (in order, for a tour or a crawl).
+- **Two kinds of happening:** *at one place* (this build: the place's card with the happening featured) and
+  *across many places* (the event's own card). v46's "no separate Event card" applies to the first only.
+- **Proposed, for Jacob to rule when it's designed:** an event names its **sponsor** (a place or an organisation),
+  so it's never placeless; the lit roofs take an event colour authored with the event, with its legibility
+  checked like any neon.
+- **Opt-in:** a business, through its Guardian, can join now. **A home joins only through a verified resident**,
+  so homes wait on SECURITY F-23.
+- ⛔ **For this build:** nothing may refuse or preclude an event-owned card. Keep the ticker item's target
+  generic (a place with `?event=` today, an event's card later), not hard-wired to "always a place card".
+- Design: Nocturne, after this build lands. Its commerce side (a sponsor's offer) is its own conversation.
