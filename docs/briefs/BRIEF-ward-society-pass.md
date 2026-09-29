@@ -40,19 +40,42 @@ for you"* gains one occasion, arrival, and you write that line. The user then zo
 happening now is its own case — say what the plan frames then, loudly, not a silent fallback to densest.
 Flattening the terrain on arrival is **not** wanted back (Jacob: he doesn't care now).
 
-## §B — after Jacob approves v4 (don't start before)
-The header (one arrangement on every screen: ticker · search · ◉; the search field is Leisure's door;
-no pills), **the peek** (a tap on a building, in Society and in the Leisure movie, shows its row lifted,
-pinned to the screen, **dot-coordinated with its building**), and compact Society rows.
-- ⭐ **Confirm now, so §B isn't blocked later:** does `<Town>` report a building tap on the **movie** shot,
-  and can it put a mark **on** a building the camera is moving past (for the peek's dot)? README says the
-  movie *"cannot be touched at all"*, so probably not. If either is missing it is a **kit** change — name it
-  for Lintel, with the prop you'd want.
-- **README edits land with the build:** §2's *"⌕ Explore"* door (replaced, Jacob 2026-09-29), §2's
-  *"the movie itself cannot be touched"*, §3's *"the map never launches anything"*, §3's blockquote *"the movie itself cannot be touched at all"*, and
-  `src/leisure/Leisure.jsx`'s must-never. (The peek's roof dot is a **selection mark, not a map pin** — Jacob:
-  *"There is no map pin."* §2's "map pins" line stands untouched.) The ruling's purpose
-  was **no unwanted navigation**; the peek keeps it, because only its → goes anywhere.
+## §B — the v4–v30 design pass: build it (the mock is final, Jacob 2026-09-29, bar one open ruling)
+
+**The source is the mock, "The Ward, After Dark", version 30** (https://claude.ai/artifact/4cp1o7pkZWaAd3BEiiAcSM,
+read with the Artifact tool): its phones, and its section **"Notes for Boz and Warden"**, which lists every README
+line superseded and every code site. ⛔ **Its code is illustration, not source** (Nocturne never saw a full render;
+v9 shipped broken). ⛔ **Every sky, weather and tide figure in it is a hand-set sample.** Build from the kit's sky and
+the town's feeds.
+
+**Where the notes are stale, this brief wins** (rulings made after the notes were written):
+- A full page's return is a **round 44 px ←** in the left zone, named for its destination ("Back to Society"), with
+  that room lit. Not the notes' "‹". ⚠️ **Open:** ◉'s sheet and the about pages have no room to light, so a bare ←
+  says nothing to a sighted visitor there. Ask Jacob before building those two (a short label, or light the room
+  they were opened from).
+- There is no ring around the moon (the notes' "the ring around it is data" is from v10).
+- The roof dot is a **selection mark, not a map pin** (Jacob: *"There is no map pin."*). §2's "map pins" line stands.
+
+**Still to rule — build the strip so either works:** the sky behind the day strip, **blended or in phases**.
+
+**New work, not ports:**
+- the next-full-moon date;
+- the tide read at the scrubbed time (`tideExtrema(tide, from, …)` already takes it, kit `cartograph/tide.mjs:167`),
+  and the tide chart is draggable: one time, two windows, one slider for keys and readers;
+- "Their menu" (`menu_url`) shows only when the Ward holds no menu for the place (`src/place/Actions.jsx:49`);
+- "DAY 272 OF 365": the 365 comes from the year (366 in a leap year).
+
+**Check on a device, not in automation:**
+- a horizontal drag on the tide chart must not close the swept-up back (its gesture is vertical);
+- the red and blue high/low dots against every sky colour of the strip (the mock measured them as text, not as
+  marks on the sky);
+- the movie's capture-phase pointerdown (RegimeControls) lets a building tap through.
+
+**README rot to evict with the build:** §11's *"Tide data: there is no prediction source yet"*. A tidal town's
+manifest carries NOAA harmonic constituents, and the kit's `tidePhase` computes from them.
+
+**Owed from §A:** a check on arrival framing (frameIds: framed = the happening-now set, lit = none). It also guards
+kit `48c8f161`'s prop.
 
 ## §C — one emoji per town: its map ID **and** its rating (ruled, Jacob 2026-09-29)
 *"Emojis are supposed to be the ratings and the map vis ID."* **One value, `look.mark`.**
