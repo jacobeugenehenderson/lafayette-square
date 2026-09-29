@@ -84,4 +84,5 @@ try {
 // A write the host doesn't read back is not done.
 const after = await read(recordKey)
 if (after === null || JSON.parse(after).player !== player) fail(`wrote ${recordKey}, but the asset host answers ${after ?? '404'}`)
-console.log(`✅ "${map}" serves ${player} on staging — https://staging.theward.online/${map}/`)
+console.log(`✅ "${map}"'s staging record says ${player} (written and read back). The staging Worker serves it by this record `
+  + `once it is deployed with the switch — ▶ curl -s https://staging.theward.online/${map}/ | grep -E 'ward-build|ward-kit-base'`)
