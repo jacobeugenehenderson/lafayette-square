@@ -46,6 +46,8 @@
  * code shot which record — that missing information IS the defect being closed.
  *
  * Per-pool so a hero-side change does not re-shoot every overhead band for nothing.
+ *   overhead 5 · hero 6 — 2026-09-28: bark is the real photo, wrapped per fragment
+ *                (posterize, detail overlay and bark tier removed).
  *   overhead 4 · hero 5 — 2026-09-28: the pool shoots the baked lod0 (the full tree)
  *                instead of lod1, whose crushed bark left the leaves floating.
  *   overhead 3 — 2026-09-03: the capture pool now sources the ATLAS-REWRITTEN baked GLB
@@ -56,7 +58,7 @@
  *   hero     3 — same
  *   (2 — 2026-08-28 capture frame, local-vs-world; 1 — the implicit, unversioned era.)
  */
-export const CAPTURE_FORMAT = { overhead: 4, hero: 5 }
+export const CAPTURE_FORMAT = { overhead: 5, hero: 6 }
 
 // FNV-1a over the stable-stringified inputs. Short, dependency-free, and stable
 // across runs/machines (JSON.stringify with sorted keys — plain object key order
@@ -89,8 +91,6 @@ export function computeCaptureKey(manifest, species, dials = null, format = null
   return fnv1a(stableStringify({
     canopy: m.canopyByVariant?.[species] ?? null,
     bark: m.barkBySpecies?.[species] ?? null,
-    barkDetail: m.barkDetailBySpecies?.[species] ?? null,
-    barkPosterized: m.barkPosterizedBySpecies?.[species] ?? null,
     deformer: m.deformerBySpecies?.[species] ?? null,
     dials: dials ?? null,
     format: format ?? null,

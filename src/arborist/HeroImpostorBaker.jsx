@@ -77,9 +77,8 @@ function readbackToPng(rb, target) {
 // transparent PNG, the manifest looks complete, and the species simply stops
 // existing in the hero shot. `platanus_acerifolia` shipped all 18 layers blank
 // this way — 442 placements, LS's second most common tree, invisible on the pan
-// with its ground shadow still printing. (Root cause: a species with no
-// `barkDetailBySpecies` record renders with uBarkTileScale (0,0), so every layer
-// samples an empty atlas region. Only Salon-composed species get that record.)
+// with its ground shadow still printing. A species absent from the atlas's
+// `barkBySpecies` cannot draw its bark.
 const BLANK_COVERAGE = 0.002
 function alphaCoverage(rb) {
   if (!rb?.data) return 0
@@ -94,7 +93,7 @@ async function postHeroImpostor(look, species, meta, layers) {
   if (blanks.length) {
     throw new Error(
       `${blanks.length}/${layers.length} layers rendered blank — refusing to ship an invisible species. ` +
-      `Check that '${species}' has a barkDetailBySpecies record (Salon-composed) and a sane canopy base.`)
+      `Check that '${species}' is in this atlas (barkBySpecies — otherwise its bark cannot be drawn) and has a sane canopy base.`)
   }
   const body = {
     heightM: meta.heightM, canopyRadiusM: meta.canopyRadiusM, canopyBaseNorm: meta.canopyBaseNorm,
@@ -200,18 +199,18 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
           if (!prep) throw new Error('capture could not be prepared (no scene or no atlas material) — nothing was shot')
           if (prep) {
             // Bind THIS species' atlas config to the shared material per draw (the
-            // mesh path does this via SubmeshInstances#onBeforeRender; the plain
-            // material assignment never did → uBarkTileScale (0,0) → blank bark).
+            // mesh path does this via SubmeshInstances#onBeforeRender).
             const man = atlas.manifest
             const barkSettings = man?.barkBySpecies?.[sp.species] || null
-            const detailSlot = man?.barkDetailBySpecies?.[sp.species] || null
-            const posterizedSlot = man?.barkPosterizedBySpecies?.[sp.species] || null
+            if (!barkSettings) {
+              console.warn(`[hero-impostor-bake] ${sp.species}: not in this atlas (no barkBySpecies record) — its bark cannot be drawn`)
+            }
             const deformerRange = man?.deformerBySpecies?.[sp.species]?.range || null
             const leafFace = man?.leafFaceBySpecies?.[sp.species] || null
             prep.scene.traverse((o) => {
               if (!o.isMesh) return
               o.onBeforeRender = () => {
-                applyBarkUniforms(atlas.treeMaterial, barkSettings, null, detailSlot, posterizedSlot)
+                applyBarkUniforms(atlas.treeMaterial, barkSettings, null)
                 applyDeformerUniforms(atlas.treeMaterial, deformerRange)
                 applyLeafFaceUniforms(atlas.treeMaterial, leafFace)
               }

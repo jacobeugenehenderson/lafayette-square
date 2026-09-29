@@ -598,7 +598,7 @@ const useArboristStore = create((set, get) => ({
   //   withheld — never ships even ABOVE the bar (we HAVE a model and judge it not good
   //              enough — distinct from `not-available`, which means we have nothing)
   // ⭐ The immediate customer is platanus_acerifolia: a legitimate London Plane match, now
-  // green, that renders BLANK (no barkDetail, both impostor bakes refused it). Without
+  // green, that renders BLANK (not in the atlas, both impostor bakes refused it). Without
   // `withheld` the only way to keep it out is to un-green a true statement.
   //   topN     — the IMPOSTOR bar: how deep gets its own composed identity (cheap)
   //   meshTopN — the MESH bar: which of those also ship geometry (expensive, ~34x)

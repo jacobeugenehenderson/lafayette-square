@@ -1776,7 +1776,7 @@ async function patchManifestForSalon(species, compositions) {
 // the roster, and then the impostor bakers correctly refused to capture it
 // (HeroImpostorBaker: "refusing to ship an invisible species" — capture renders
 // through the shared atlas material and a species with no composition has no
-// barkDetailBySpecies record). The result was a species admitted by one gate and
+// barkBySpecies record). The result was a species admitted by one gate and
 // rejected by the next, permanently mesh-only, showing up as a red capture
 // FAILURE for a promotion that should never have happened.
 // On LS that was platanus_acerifolia x4 variants = 921 placements stuck on mesh.

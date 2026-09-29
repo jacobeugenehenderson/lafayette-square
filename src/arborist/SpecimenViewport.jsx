@@ -33,8 +33,6 @@ import {
   stampTreeVertexAttrs,
   measureChassisRadius,
   treeSwayUniforms,
-  treeBarkTierUniform,
-  treeBarkTierPinned,
 } from '../components/treeAtlasMaterial.js'
 import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc, buildHeroImpostorCard } from '../components/impostorGeometry.js'
 import { prepareOverheadBands, captureOverheadBand, prepareHeroBands, captureHeroBand } from '../components/captureImpostor.js'
@@ -106,38 +104,16 @@ function studioFraming(treeH = 12) {
   return { height: treeH / 2, distance }
 }
 
-// Brief 13 (Vantage 2026-05-23, refined post-ship same-session): two
-// preset camera framings driving Brief 10's bark-shader tier
-// (uBarkShaderTier 0/1/2) via auto-binding from camera distance.
-//   overhead → literal top-down plan view. Camera at (0, treeH+20, 0)
-//              looking at (0,0,0). Yardstick + tree fan-out read in
-//              plan; trunk = centered dot. topDown:true so DollyCam
-//              swaps camera.up to (0,0,-1) (avoids the +Y/-Y gimbal
-//              singularity) and routes wheel-zoom to height instead
-//              of distance. Pins tier 0.
-//   ground   → current studio framing (Hero default). Existing
-//              Option+drag + wheel-zoom + key cranes preserved. Tier
-//              auto-binds from distance per-frame: distance > 20m =>
-//              tier 1 (hero), distance < 20m => tier 2 (street).
-// Threshold 20m is first-pass per refinement note; tune from visual
-// feel. Generic studio-inspection — NOT cartograph SHOT imports per
-// project_kit_helpers_pattern.
-const GROUND_TIER_DISTANCE_THRESHOLD = 20
 // The three viewing CONTEXTS = the LsoD (operator, 2026-06-23): Street
-// (full detail), Hero (size-managed), Browse (overhead). Each preset frames
-// the camera so DollyCam's distance-based auto-bind lands on the matching
-// bark tier — street (close, <threshold) → tier 2, hero (mid, >threshold)
-// → tier 1, browse (top-down) → tier 0. Geometry-LOD binds to these same
-// contexts as the LoD build lands (street=lod0 / hero=lod1 / browse=lod2).
+// (full detail), Hero (size-managed), Browse (overhead).
 function presetFraming(preset, treeH = 12) {
   switch (preset) {
     case 'browse': {
-      // Browse — literal top-down plan view (tier 0, aerial / overhead).
+      // Browse — literal top-down plan view (aerial / overhead).
       return { distance: 0, height: treeH + 20, lookAtY: 0, topDown: true }
     }
     case 'street': {
-      // Street — eye-level, close. distance < GROUND_TIER_DISTANCE_THRESHOLD
-      // so the auto-bind picks tier 2 (street, full PBR). Full-sized trees.
+      // Street — eye-level, close. Full-sized trees.
       return { distance: 8, height: 1.7, lookAtY: 1.7, topDown: false }
     }
     case 'worm': {
@@ -156,8 +132,7 @@ function presetFraming(preset, treeH = 12) {
     }
     case 'hero':
     default: {
-      // Hero — studio mid framing (tier 1, size-managed). distance >
-      // threshold → auto tier 1. The authoring default.
+      // Hero — studio mid framing. The authoring default.
       const f = studioFraming(treeH)
       return { distance: f.distance, height: f.height, lookAtY: f.height, topDown: false }
     }
@@ -203,16 +178,6 @@ function DollyCam({ cameraStateRef, dragPanRef, rotationY = 0, rotationOffset, o
       if (camera.up.y !== 1) camera.up.set(0, 1, 0)
       camera.position.set(0, s.height, s.distance)
       camera.lookAt(0, s.height, 0)
-    }
-    // Auto-bind uBarkShaderTier per Brief 13 refinement: Overhead → 0,
-    // Ground distance < 20m → 2 (street), else → 1 (hero). Yields to
-    // the debug pin (treeBarkTierPinned) so the operator can verify
-    // cross-pairs via window.__setBarkShaderTier(n).
-    if (!treeBarkTierPinned.value) {
-      const desired = s.topDown
-        ? 0
-        : (s.distance < GROUND_TIER_DISTANCE_THRESHOLD ? 2 : 1)
-      if (treeBarkTierUniform.value !== desired) treeBarkTierUniform.value = desired
     }
   })
 
@@ -944,8 +909,6 @@ function Skeleton({
     return {
       barkSettings:    (sp && m.barkBySpecies?.[sp]) || null,
       gradientSlot:    (sp && m.barkGradientByVariant?.[sp]?.[vid]) || null,
-      detailSlot:      (sp && m.barkDetailBySpecies?.[sp]) || null,
-      posterizedSlot:  (sp && m.barkPosterizedBySpecies?.[sp]) || null,
     }
   }, [atlas.manifest])
   useFrame(() => {
@@ -954,8 +917,6 @@ function Skeleton({
       atlas.treeMaterial,
       barkUniformsState.barkSettings,
       barkUniformsState.gradientSlot,
-      barkUniformsState.detailSlot,
-      barkUniformsState.posterizedSlot,
     )
   })
 
@@ -1537,11 +1498,7 @@ export default function SpecimenViewport({
   const [variantCount, setVariantCount] = useState(1)  // 1 = single authoring tree; 3 = review the deformer spread
   // Preview the three viewing CONTEXTS (the LsoD, 2026-06-23): 'street'
   // (eye-level close — full detail), 'hero' (studio mid — size-managed,
-  // default), 'browse' (top-down — overhead/aerial). Each frames the camera
-  // so DollyCam's distance auto-bind lands the matching bark tier (street→2,
-  // hero→1, browse→0); geometry-LOD will bind to the same contexts as the
-  // LoD build lands. (Evolved from Brief 13 Vantage's two ground/overhead
-  // presets — the Hero/Street distinction is now explicit, not just a dolly.)
+  // default), 'browse' (top-down — overhead/aerial).
   const [camPreset, setCamPreset] = useState('hero')
   // Overhead relight PREVIEW — one slider from overcast (flat, all ambient) to
   // sunny (low ambient + strong sun → the baked AO deepens → contrast). Drives the
@@ -1647,23 +1604,16 @@ export default function SpecimenViewport({
       {/* Studio/Worm gizmo-mode toggle retired 2026-06-25 — Worm rode the
           (removed) Oubliette + the Street preset covers eye-level; the gizmo
           now defaults to the full Studio handles. */}
-      {/* Brief 13 (Vantage, refined 2026-05-23) — two preset cameras
-          driving Brief 10's bark-shader tier auto-binding. Overhead
-          pins tier 0 (aerial). Ground hands off to distance-based
-          tier-switching (per-frame in DollyCam): distance > 20m → tier 1
-          (hero), distance < 20m → tier 2 (street). Debug pin via
-          window.__setBarkShaderTier(n) overrides the auto-binding;
-          window.__releaseBarkShaderTier() restores it. */}
       <div style={{
         position: 'absolute', top: 12, left: 12,
         display: 'flex', gap: 6,
       }}>
         {[
           ['worm',   'Worm',   'Worm POV — low to the ground, looking at the trunk base, to check the tree sits flat.'],
-          ['street', 'Street', 'Eye-level, close — Street context (tier 2, full detail). What street-view sees: full-sized trees.'],
-          ['hero',   'Hero',   'Studio mid framing — Hero context (tier 1, size-managed). The authoring default.'],
+          ['street', 'Street', 'Eye-level, close — Street context (full detail). What street-view sees: full-sized trees.'],
+          ['hero',   'Hero',   'Studio mid framing — Hero context (size-managed). The authoring default.'],
           ['heroimp','Hero Imp','Side-on, level with the canopy — eye-gate the HERO canopy-band impostor (the side-on twin of Browse). Set the Wind slider to see it breathe.'],
-          ['browse', 'Browse', 'Top-down plan — Browse context (tier 0, aerial / overhead). Shows the OVERHEAD hula impostor (ruffle/hula knobs, bottom-right). Wheel zooms altitude.'],
+          ['browse', 'Browse', 'Top-down plan — Browse context (aerial / overhead). Shows the OVERHEAD hula impostor (ruffle/hula knobs, bottom-right). Wheel zooms altitude.'],
         ].map(([key, label, title]) => (
           <button key={key}
             onClick={() => setCamPreset(key)}

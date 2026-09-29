@@ -309,8 +309,6 @@ export default function Grove() {
         // same way (string and number key, because JSON objects stringify their keys).
         // Guessing "the first one" would paint variant 2 with variant 1's gradient.
         gradientByVariant: m.barkGradientByVariant?.[species] || null,
-        detailSlot:     m.barkDetailBySpecies?.[species] || null,
-        posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
         // leaf.face — the paler underside, per species. Bound in the same per-draw
         // call for the same reason the bark slots are: ten species, one material.
         leafFace:       m.leafFaceBySpecies?.[species] || null,
@@ -1133,7 +1131,7 @@ function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered,
 // parity`'s "wrong shapes to avoid": *"Preview renders raw GLB materials; runtime renders
 // through treeAtlasMaterial. Two materials, two implementations, drift inevitable."* Everything
 // atlas-driven was therefore invisible here — bark gradient, tint base, tint jitter, the
-// posterize substrate, the detail overlay, the region split — so the Grove could show a tree
+// region split — so the Grove could show a tree
 // green while the slab shipped it otherwise, and did.
 //
 // ⭐ Now it loads the BAKED per-Look GLB and mounts the SAME shared material the map mounts,
@@ -1190,7 +1188,7 @@ function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHov
       // same reason (its comment: "the prior draw's species values are still on the uniforms").
       // ⛔ ALWAYS CALL IT — never skip on "this species has nothing authored".
       // `applyBarkUniforms(mat, null, …)` RESETS the uniforms to identity
-      // (treeAtlasMaterial.js:1996); an early return leaves the PREVIOUS draw's species on
+      // (treeAtlasMaterial.js#applyBarkUniforms); an early return leaves the PREVIOUS draw's species on
       // the shared material. Three.js sorts opaque meshes by distance, so draw order changes
       // as the camera orbits — which is how every trunk in the Grove flipped red halfway
       // round the circle: it was inheriting `acer_saccharum`'s bark gradient, the only one in
@@ -1200,8 +1198,6 @@ function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHov
           treeMaterial,
           barkUniforms?.barkSettings ?? null,
           gradientSlot,
-          barkUniforms?.detailSlot ?? null,
-          barkUniforms?.posterizedSlot ?? null,
         )
         // ⛔ ALWAYS CALL IT, for the reason spelled out above: a null resets to
         // identity, an early return leaves the previous tile's underside bound.

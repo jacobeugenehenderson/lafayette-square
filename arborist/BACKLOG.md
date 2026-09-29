@@ -196,37 +196,23 @@ high-pass detail overlay carrying grain* — with the substrate promoted from ra
 
 ### ⛔ THE ORDER IS LOAD-BEARING. Steps 2–3 measured before step 1 are measured through a defect.
 
-**1. TILING — `ARCHITECTURE §"Bark tile wrap is the open shader question (Phase B.2)"`, option 1:
-WebGL2 texture arrays.** Everything here needs *"stitching to be a blasé operation"* and we do
-not have it. The atlas is `ClampToEdge`; `RepeatWrapping` would wrap the whole sheet into
-another species' tile; so `bake-look#transformUVs` folds tiling away with a per-vertex `frac()`.
-⭐ **It also kills the tear for free** — most of a trunk's triangles straddle a repeat line and
-run the texture backwards across the tile.
-▶ `node checks/claims-atlas-uv-rect-survives-the-bake.mjs`
-⛔ Option 3 (a texture per species) breaks Bloom's single-program constraint. Not viable.
+**1. TILING — ✅ DONE 2026-09-28, without texture arrays.** Bark UVs name their tile and the
+fragment wraps with `textureGrad` (`ARCHITECTURE §Bark is the photo`). ▶ `node checks/claims-bark-uvs-name-their-tile.mjs`
 
 **2. THE GREYSCALE LIBRARY** — sized against the rubric's bark **types**, not per species. One
 channel, not three; tileable, so a tile stops needing to be large — repetition supplies area.
 
-**3. VECTOR COLOUR** — the new work. Today's posterize is an indexed PNG: quantised raster, not
-resolution-independent. `extract-bark-posterized.mjs` is the producer to grow, not replace.
-⚠️ **This inverts a LOOK decision, not just a budget.** Today `treeBarkTierUniform` sends
-street (<20 m) → tier 2 → **vendor bitmap**, hero/browse → tiers 0/1 → **posterized**, and the
-comment records that as deliberate: the kit illustrated look far, PBR realism near. Jacob's
-order is the reverse — stylised near, photographic far — because a vector does not degrade as
-you walk up to it and a bitmap is least useful when minified. **Confirm the look intent when
-this step starts; it is an artistic call, not a perf one.**
+**3. VECTOR COLOUR** — ⚠️ **REOPENED by the 2026-09-28 ruling, not settled by it.** Jacob ruled
+the trunk shows the bark PHOTO ("the posterize was designed for smallness"), and the posterize
+producer is gone. Whether a vector colour layer still earns its place over a photo — for
+colour-as-a-knob, not for bytes — is an open question for Jacob, not a deletion.
 
 **4. REPACK THE SHEET** — independent of 1–3, do it whenever. Half the atlas is empty.
 ▶ `node scratch/atlas-occupancy.mjs`
 
 ### What is already built — do not rebuild it
-- **Posterize**: `arborist/extract-bark-posterized.mjs` (Brief 10B), bound for every composed
-  species, and far smaller than the vendor bitmap it stands in for.
-- **View-aware tiering**: `treeBarkTierUniform` + the tier gate in `treeAtlasMaterial`.
-- **A detail-overlay slot**: `barkDetailBySpecies` — the grain half of the near tier already
-  has a home.
-▶ `node -e "const a=require('./public/baked/lafayette-square/trees-atlas.json');for(const k of ['barkBySpecies','barkPosterizedBySpecies','barkDetailBySpecies'])console.log(k,Object.keys(a[k]||{}).length)"`
+- **The photo path** — per-fragment wrap, the bark tile table, the photo at source resolution.
+- **The gradient LUT** — `compileGradientLUT` → the atlas LUT tile → `barkGradientByVariant`.
 
 ### Absorbed from the 2026-08-23 punch list
 **"The trunks look too artificial."** Already diagnosed there and it is this arc's root: the

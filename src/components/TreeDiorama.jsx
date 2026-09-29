@@ -15,7 +15,7 @@ import { QualityProvider, deviceQuality } from '../lib/qualityProfile.js'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { treeSwayUniforms } from './treeAtlasMaterial'
 import {
-  useTreeAtlas, stampTreeVertexAttrs, measureChassisRadius, setLeafTransmission, treeBarkTierUniform,
+  useTreeAtlas, stampTreeVertexAttrs, measureChassisRadius, setLeafTransmission,
   applyBarkUniforms, applyDeformerUniforms, applyLeafFaceUniforms, setTrunkGround, setWindTiering,
 } from './treeAtlasMaterial'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
@@ -320,26 +320,6 @@ function ShadowFocus({ height, spread }) {
  * nobody chose. Same class as the missing `ExposureTicker`.
  */
 
-// `treeBarkTierUniform` defaults to 1 (hero) and NOTHING here wrote it, so the
-// bark fragment took the tier ≤ 1 branch: `useVendor = step(1.5, tier)` in
-// treeAtlasMaterial replaces the trunk's diffuse with the POSTERIZED 16-colour
-// substrate. That is the whole of "the trunk looks smooth and low-poly" — the
-// linden's trunk is 116,794 triangles; it was never low-poly, it was wearing a
-// quantised texture built for browse/hero DISTANCE.
-//
-// ⛔ Do NOT copy the Salon's distance auto-bind (`< 20 m → 2`): this camera
-// frames a whole tree head-to-foot and sits FURTHER back than that, so the
-// auto-bind would re-select tier 1 and change nothing. The diorama is a single
-// street-level hero specimen — tier 2 is an AUTHORED choice, not a derived one.
-// Tier 2 keeps the detail overlay (`step(0.5, tier)`) and adds vendor colour.
-function useDioramaBarkTier() {
-  useEffect(() => {
-    const prev = treeBarkTierUniform.value
-    treeBarkTierUniform.value = 2
-    return () => { treeBarkTierUniform.value = prev }
-  }, [])
-}
-
 // The ground blend + contact ring are NOT new features — they ship in the map.
 // But they sample the BAKED ground by world-XZ, and this specimen stands at the
 // origin of a procedural grass disc, not at a real placement, so there is
@@ -541,8 +521,7 @@ function useDioramaGround(measured, alpha) {
  *                               stretched across a 20 m trunk — the whole of
  *                               "there is still no texture on this trunk"
  *   uBarkTileOffset -> (0,0)  \ the tile-local UV recovery is wrong, so the
- *   uBarkTileScale  -> (1,1)  / detail overlay + posterized substrate sample
- *                               the wrong region of the atlas entirely
+ *   uBarkTileScale  -> (1,1)  / bark samples the wrong region of the atlas
  * plus tintBase / tintJitter / roughnessOverride, all unset.
  *
  * ⭐ The atlas tile itself was never the problem: the linden's bark tile carries
@@ -561,8 +540,6 @@ function BarkSlots({ atlas, species, variantId }) {
       barkSettings:   m.barkBySpecies?.[species] || null,
       gradientSlot:   m.barkGradientByVariant?.[species]?.[variantId]
                         || m.barkGradientByVariant?.[species]?.[String(variantId)] || null,
-      detailSlot:     m.barkDetailBySpecies?.[species] || null,
-      posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
       deformerRange:  m.deformerBySpecies?.[species]?.range || null,
       leafFace:       m.leafFaceBySpecies?.[species] || null,
     }
@@ -572,7 +549,7 @@ function BarkSlots({ atlas, species, variantId }) {
     if (!atlas?.treeMaterial || !slots) return
     applyBarkUniforms(
       atlas.treeMaterial, slots.barkSettings,
-      slots.gradientSlot, slots.detailSlot, slots.posterizedSlot,
+      slots.gradientSlot,
     )
     applyDeformerUniforms(atlas.treeMaterial, slots.deformerRange, null)
     applyLeafFaceUniforms(atlas.treeMaterial, slots.leafFace)
@@ -768,7 +745,6 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
   const atlas = useTreeAtlas(look)
   const [measured, setMeasured] = useState(null)
   const ground = useDioramaGround(measured, alpha)
-  useDioramaBarkTier()
   useDioramaTrunkGround()
   useDioramaWindTiering()
   const nightChannels = useDioramaNightChannels(look)

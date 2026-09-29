@@ -28,8 +28,6 @@ import {
   applyDeformerUniforms,
   applyLeafFaceUniforms,
   setWhipRadius,
-  treeBarkTierUniform,
-  treeBarkTierPinned,
   stampWindTier,
   measureChassisRadius,
 } from './treeAtlasMaterial'
@@ -83,7 +81,7 @@ function pumpFramesAfterLoad(invalidate, frames = 15) {
   return () => { if (id) cancelAnimationFrame(id) }
 }
 
-function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange, leafFace }) {
+function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, deformerRange, leafFace }) {
   const { scene } = useGLTF(url)
   // This component only mounts AFTER useGLTF resolves (it's inside <Suspense>),
   // so this effect runs exactly when the GLB has loaded — the moment we must
@@ -320,8 +318,6 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
           groundRaws={groundRaws}
           barkSettings={barkSettings}
           gradientSlot={gradientSlot}
-          detailSlot={detailSlot}
-          posterizedSlot={posterizedSlot}
           deformerRange={deformerRange}
           leafFace={leafFace}
         />
@@ -334,7 +330,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 // Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
 // setup as the LS runtime. Imported above.
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, groundRaws, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange, leafFace }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, groundRaws, barkSettings, gradientSlot, deformerRange, leafFace }) {
   const ref = useRef(null)
   // Canvas runs frameloop="demand": R3F auto-invalidates on React reconciliation
   // (mount) but NOT on the imperative matrix/attribute fills below. Without an
@@ -397,7 +393,7 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   // ⚠️ applyDeformerUniforms and setWhipRadius below ride the same call and are UNMEASURED.
   const onBeforeRender = useMemo(() => {
     return () => {
-      applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot, posterizedSlot)
+      applyBarkUniforms(material, barkSettings, gradientSlot)
       // Per-draw chassis radius for the whip ramp's radial axis (derived from
       // position.xz in the shader — see treeWindTiering). Rides userData, not a
       // vertex attribute: the shader is AT the 16-attribute ceiling.
@@ -410,7 +406,7 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
       // a species with none resets to strength 0 rather than inheriting the last.
       applyLeafFaceUniforms(material, leafFace)
     }
-  }, [material, geometry, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange, leafFace])
+  }, [material, geometry, barkSettings, gradientSlot, deformerRange, leafFace])
 
   return (
     <instancedMesh
@@ -434,7 +430,7 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
 // cards get DoF'd/fogged/graded/terrain-lifted exactly like real geometry), and
 // the cards hula off the SHARED wind uniforms (base-anchored sway ∝ height) with
 // zero per-frame geometry cost — ~a dozen quads replace ~15K leaf cards.
-function ImpostorSpecies({ species, record, instances, treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange, leafFace }) {
+function ImpostorSpecies({ species, record, instances, treeMaterial, barkSettings, deformerRange, leafFace }) {
   const ref = useRef(null)
   // demand-mode frame request after imperative fills — same reason as
   // SubmeshInstances (see the note there).
@@ -501,17 +497,17 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
   }, [matrices, invalidate])
 
   // Per-draw bark uniforms — same shared-material mutation as the mesh path so
-  // the impostor's bark/leaf fragments pick up this species' tint/gradient/
-  // posterize (color match with the near trees, 3A.5). gradientSlot omitted
+  // the impostor's bark/leaf fragments pick up this species' tint (color
+  // match with the near trees, 3A.5). gradientSlot omitted
   // (the impostor samples the species' primary bark/leaf rect, not a per-variant
   // gradient — Phase 1).
   const onBeforeRender = useMemo(() => {
     return () => {
-      applyBarkUniforms(treeMaterial, barkSettings, null, detailSlot, posterizedSlot)
+      applyBarkUniforms(treeMaterial, barkSettings, null)
       applyDeformerUniforms(treeMaterial, deformerRange)
       applyLeafFaceUniforms(treeMaterial, leafFace)
     }
-  }, [treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange, leafFace])
+  }, [treeMaterial, barkSettings, deformerRange, leafFace])
 
   if (!geometry || instances.length === 0) return null
 
@@ -536,51 +532,13 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
 // without uploading per-instance attributes per frame.
 const _swayWindState = defaultWindState()
 
-// Brief 11 lightweight (Plumb) — LS-runtime bark-tier auto-bind. Mirrors
-// Vantage's Salon-side DollyCam binding (SpecimenViewport.jsx) so operator
-// iterating in Salon can predict LS behavior: one shared uniform, one
-// shared pin, recognizably the same algorithm.
-//
-// LS has no "tree at origin" the way Salon does; the discriminating signal
-// is camera altitude (y-up world frame). Calibration against Scene.jsx
-// PRESETS: HERO_CENTER y = 55m, browse default y = 600m (zoom range
-// 50–4000m), street eyeHeight = 1.73m. Thresholds pick the gaps:
-//   y > 150 → aerial (browse default 600 well above; hero 55 well below)
-//   y < 5   → street (eyeHeight 1.73 well below; hero 55 well above)
-//   else    → hero
-// Snap only — no hysteresis, mirroring Vantage. If operator zooms browse
-// in past minDistance 50 (below the 150 threshold), tier flips to hero,
-// which is the correct quality level for that close a framing.
-const TIER_AERIAL_MIN_ALTITUDE = 150
-const TIER_STREET_MAX_ALTITUDE = 5
-
-function computeTier(camera) {
-  const y = camera.position.y
-  if (y > TIER_AERIAL_MIN_ALTITUDE) return 0
-  if (y < TIER_STREET_MAX_ALTITUDE) return 2
-  return 1
-}
-
-function TierDriver() {
-  const camera = useThree(s => s.camera)
-  useFrame(() => {
-    if (treeBarkTierPinned.value) return
-    const desired = computeTier(camera)
-    if (treeBarkTierUniform.value !== desired) {
-      treeBarkTierUniform.value = desired
-    }
-  })
-  return null
-}
-
 // GeoTierDriver (the runtime camera-altitude geometry-LOD swap) RETIRED
 // 2026-06-25 — it served the cut-trunk lod2 to high telephoto / shallow-browse
 // framings. Geometry is chosen by the operator's mesh bar (`meshTier`) ALONE — the Arborist
 // specifies a model tree, nothing else does (Jacob, 2026-09-22) — ⛔ NOT by `heroTier`, which this line claimed for months
 // and which sent a 2026-09-03 audit chasing the wrong field. `heroTier` drives only the
 // read-only QC tint, and on a slab whose hero foundation is on it reaches no pixel at all.
-// (role-at-bake doctrine). `computeTier` is kept below for TierDriver (bark
-// shader detail, a uniform — not geometry).
+// (role-at-bake doctrine).
 
 // ⭐ EXPORTED for TreeDiorama (`?embed=tree` / the Arborist's full-monte view).
 // A single specimen needs the SAME wind the map's 745 trees get — driven off the
@@ -1096,20 +1054,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     return atlas?.manifest?.barkGradientByVariant || {}
   }, [atlas?.manifest?.barkGradientByVariant])
 
-  // Brief 2.1a (Cinder): per-species detail uvTransform + bark-tile bounds.
-  // Looked up by URL→species at draw time. Variants without an entry render
-  // through identity (composite short-circuits when slot is missing).
-  const barkDetailBySpecies = useMemo(() => {
-    return atlas?.manifest?.barkDetailBySpecies || {}
-  }, [atlas?.manifest?.barkDetailBySpecies])
-
-  // Brief 10B (Vellum): per-species posterized substrate uvTransform. Same
-  // URL→species lookup pattern as detail; absent slot → identity-safe
-  // (uBarkPosterizedTileScale=0 → vendor color flows through unchanged).
-  const barkPosterizedBySpecies = useMemo(() => {
-    return atlas?.manifest?.barkPosterizedBySpecies || {}
-  }, [atlas?.manifest?.barkPosterizedBySpecies])
-
   // Brief 3A (Cant): per-species deformer ranges from trees-atlas.json (bake-
   // look surfaces manifest.json#deformer.range into deformerBySpecies, same
   // single-spec-per-species model as barkBySpecies). Looked up by URL→species
@@ -1158,7 +1102,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   return (
     <>
       <SwayDriver />
-      <TierDriver />
       <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} canopyChannel={canopyOverride ?? scene?.canopy} />
       {/* All-mesh (+ hero impostor) render. ⛔ THIS GROUP NO LONGER HIDES AS A BLOCK.
           It used to be `visible={!overheadMode}`, which made the comment on the overhead
@@ -1186,8 +1129,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
           const gradientSlot = (species && variantId)
             ? (barkGradientByVariant[species]?.[variantId] || barkGradientByVariant[species]?.[Number(variantId)] || null)
             : null
-          const detailSlot = species ? (barkDetailBySpecies[species] || null) : null
-          const posterizedSlot = species ? (barkPosterizedBySpecies[species] || null) : null
           const deformerRange = species ? (deformerBySpecies[species]?.range || null) : null
           const leafFace = species ? (leafFaceBySpecies[species] || null) : null
           return (
@@ -1202,8 +1143,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
                 treeMaterial={mats.treeMaterial}
                 barkSettings={barkSettings}
                 gradientSlot={gradientSlot}
-                detailSlot={detailSlot}
-                posterizedSlot={posterizedSlot}
                 deformerRange={deformerRange}
                 leafFace={leafFace}
               />
@@ -1217,8 +1156,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
           the SAME shared atlas material → full optical parity (DoF/fog/bloom). */}
       {mats.status === 'ready' && !treeDbg('noImpostor') && !treeDbg('noTrees') && impostors && impostorRecords && Array.from(impostors.entries()).map(([species, instances]) => {
         const barkSettings = barkBySpeciesEffective[species] || null
-        const detailSlot = barkDetailBySpecies[species] || null
-        const posterizedSlot = barkPosterizedBySpecies[species] || null
         const deformerRange = deformerBySpecies[species]?.range || null
         const leafFace = leafFaceBySpecies[species] || null
         return (
@@ -1232,8 +1169,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
             instances={instances}
             treeMaterial={mats.treeMaterial}
             barkSettings={barkSettings}
-            detailSlot={detailSlot}
-            posterizedSlot={posterizedSlot}
             deformerRange={deformerRange}
             leafFace={leafFace}
           />

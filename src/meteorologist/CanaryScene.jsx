@@ -412,8 +412,6 @@ function HeroTree({ lookId }) {
       barkSettings:   m.barkBySpecies?.[species] || null,
       gradientSlot:   m.barkGradientByVariant?.[species]?.[variantId]
                         || m.barkGradientByVariant?.[species]?.[String(variantId)] || null,
-      detailSlot:     m.barkDetailBySpecies?.[species] || null,
-      posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
       deformerRange:  m.deformerBySpecies?.[species]?.range || null,
       leafFace:       m.leafFaceBySpecies?.[species] || null,
     }
@@ -428,8 +426,6 @@ function HeroTree({ lookId }) {
       atlas.treeMaterial,
       barkUniforms.barkSettings,
       barkUniforms.gradientSlot,
-      barkUniforms.detailSlot,
-      barkUniforms.posterizedSlot,
     )
     applyDeformerUniforms(atlas.treeMaterial, barkUniforms.deformerRange, null)
     applyLeafFaceUniforms(atlas.treeMaterial, barkUniforms.leafFace)

@@ -239,10 +239,10 @@
         1
       ],
       "plain": "How deep the furrows cut.",
-      "home": "master bark shader knob (§6, barkDetail machinery — shipped)",
+      "home": "UNBUILT — a bark shader knob. (It pointed at the barkDetail overlay, retired 2026-09-28: the trunk now shows the bark photo itself.)",
       "tagging": "operator",
       "orthogonality": "One detail knob of the furrowed/ridged types; independent of plate_size and scale_frequency.",
-      "seededFrom": "barkDetail / barkPosterized (extract-bark-detail.mjs, extract-bark-posterized.mjs)",
+      "seededFrom": "the retired barkDetail / barkPosterized pages",
       "unit": "ratio-0-1"
     },
     {
@@ -258,7 +258,7 @@
       "home": "master bark shader knob (§6)",
       "tagging": "operator",
       "orthogonality": "Detail knob of the plated type only.",
-      "seededFrom": "barkDetail machinery",
+      "seededFrom": "the retired barkDetail machinery",
       "unit": "ratio-0-1"
     },
     {
@@ -274,7 +274,7 @@
       "home": "master bark shader knob (§6)",
       "tagging": "operator",
       "orthogonality": "Detail knob of the scaly type only.",
-      "seededFrom": "barkDetail machinery",
+      "seededFrom": "the retired barkDetail machinery",
       "unit": "ratio-0-1"
     },
     {

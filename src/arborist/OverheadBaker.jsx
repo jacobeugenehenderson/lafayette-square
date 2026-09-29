@@ -85,8 +85,8 @@ function readbackToPng(rb, target) {
 // renders to ~nothing is a FAILED capture, not a thin canopy — the species'
 // disc comes out empty and that layer silently disappears in Browse. The two
 // known ways to get here both produce a fully transparent PNG rather than an
-// error: the bark sub-region collapsing to (0,0) when a species has no
-// `barkDetailBySpecies` record (see the uniform-binding note below), and band
+// error: a species absent from the atlas's `barkBySpecies` (its bark cannot be
+// drawn — see the uniform-binding note below), and band
 // cuts landing in empty space on a mis-scaled asset. Both shipped blanks into
 // the slab undetected (platanus branch+canopy, linden canopy — 2026-07-22),
 // which is exactly the class of defect that must never be silent again.
@@ -203,31 +203,21 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone, on
           // "no impostor" banner (which lists failedNames) could never name it. (2026-09-25)
           if (!prep) throw new Error('capture could not be prepared (no scene or no atlas material) — nothing was shot')
           if (prep) {
-            // Bind THIS species' atlas config to the shared material for its capture.
-            // The mesh path does this per-draw (SubmeshInstances#onBeforeRender →
-            // applyBarkUniforms); the baker's plain `o.material = treeMaterial` never
-            // did, so uBarkTileScale stayed (0,0) → the bark sub-region collapsed and
-            // every band sampled an empty atlas → a fully transparent (blank) PNG.
+            // Bind THIS species' atlas config to the shared material for its capture,
+            // per draw — as the mesh path does (SubmeshInstances#onBeforeRender).
             const man = atlas.manifest
             const barkSettings = man?.barkBySpecies?.[sp.species] || null
-            const detailSlot = man?.barkDetailBySpecies?.[sp.species] || null
-            // No detail slot → applyBarkUniforms sets uBarkTileScale (0,0) and
-            // ALL this species' bark samples an empty atlas region → the woody
-            // bands render blank. Only Salon-composed species get a record
-            // (patchManifestForSalon writes manifest#bark; bake-look surfaces
-            // it), so a roster species adopted some other way — the merged
-            // London plane, `platanus_acerifolia` — has none and cannot bake a
-            // usable overhead. Say so; the blank guard below stops the ship.
-            if (!detailSlot) {
-              console.warn(`[overhead-bake] ${sp.species}: no barkDetailBySpecies record — bark will render blank (species has no Salon composition)`)
+            // A species absent from the atlas cannot draw its bark. Say so; the
+            // blank guard below stops the ship.
+            if (!barkSettings) {
+              console.warn(`[overhead-bake] ${sp.species}: not in this atlas (no barkBySpecies record) — its bark cannot be drawn`)
             }
-            const posterizedSlot = man?.barkPosterizedBySpecies?.[sp.species] || null
             const deformerRange = man?.deformerBySpecies?.[sp.species]?.range || null
             const leafFace = man?.leafFaceBySpecies?.[sp.species] || null
             prep.scene.traverse((o) => {
               if (!o.isMesh) return
               o.onBeforeRender = () => {
-                applyBarkUniforms(atlas.treeMaterial, barkSettings, null, detailSlot, posterizedSlot)
+                applyBarkUniforms(atlas.treeMaterial, barkSettings, null)
                 applyDeformerUniforms(atlas.treeMaterial, deformerRange)
                 applyLeafFaceUniforms(atlas.treeMaterial, leafFace)
               }

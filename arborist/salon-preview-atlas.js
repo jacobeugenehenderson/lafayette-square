@@ -13,7 +13,6 @@
  *        - bake bark color + bark normal sub-page (one tile)
  *        - bake leaves color sub-page (one tile)
  *        - compileGradientLUT + bake gradient sub-page (one tile, when stops authored)
- *        - bake detail sub-page (one tile, when detail.png exists)
  *        - unifyAtlases (the same helper bake-look uses)
  *        - rewriteGLB (the same helper bake-look uses) on the chassis bytes
  *        - emit a single-entry preview manifest in trees-atlas.json shape
@@ -40,12 +39,11 @@ import sharp from 'sharp'
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import {
-  compileGradientLUT, unifyAtlases, rewriteGLB,
+  compileGradientLUT, unifyAtlases, rewriteGLB, barkTileRects, BARK_GUTTER,
 } from './bake-look.js'
 import {
   DEFAULTS, generateSingleCompositionGLB,
 } from './generate-salon.js'
-import { ensurePosterizedForRef } from './extract-bark-posterized.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.dirname(__dirname)
@@ -57,7 +55,7 @@ const GUTTER = 4
 const LUT_W = 256
 const LUT_H = 1
 // Synthetic species/variant key for the preview manifest. SpecimenViewport
-// uses this to look up the bark/gradient/detail slots in applyBarkUniforms.
+// uses this to look up the bark/gradient slots in applyBarkUniforms.
 const PREVIEW_SPECIES = 'preview'
 const PREVIEW_VARIANT = 1
 
@@ -146,23 +144,12 @@ async function fullRebuild({ species, slot, composition, dir, cur, t0 }) {
   })
 
   // 2. Load raw textures from disk (bark color + normal, leaf shape, optional
-  //    bark detail). Sharp determines content dimensions per page.
+  //    Sharp determines content dimensions per page.
   const barkRef = composition.bark.ref
   const [barkColorBuf, barkNormalBuf] = await Promise.all([
     fs.readFile(path.join(BARK_DIR, barkRef, 'color.jpg')),
     fs.readFile(path.join(BARK_DIR, barkRef, 'normal.jpg')),
   ])
-  const barkDetailBuf = await fs.readFile(path.join(BARK_DIR, barkRef, 'detail.png')).catch(() => null)
-  // Brief 10B (Vellum): posterized substrate. Auto-trigger the extract if
-  // the source posterized.png is missing for this composition's bark ref —
-  // identical pattern to bake-look.js's auto-trigger so Salon preview and
-  // LS runtime share substrate identity from the very first cold-boot
-  // operator interaction (load-bearing per feedback_salon_preview_is_authoring_surface).
-  try { await ensurePosterizedForRef(barkRef) } catch (err) {
-    console.warn(`[salon-preview-atlas] posterize auto-trigger failed for ${barkRef}: ${err.message}`)
-  }
-  const barkPosterizedBuf = await fs.readFile(path.join(BARK_DIR, barkRef, 'posterized.png')).catch(() => null)
-
   const leafShapeBuf = await fs.readFile(path.join(LEAF_SHAPES_DIR, composition.leaves.pack, 'shape.png'))
     .catch(() => null)
 
@@ -184,21 +171,10 @@ async function fullRebuild({ species, slot, composition, dir, cur, t0 }) {
   }
   let gradient = null
   if (lutBuf) gradient = await bakeGradientPage(lutBuf, dir)
-  let detail = null
-  if (barkDetailBuf) {
-    const detailDims = await imgDims(barkDetailBuf)
-    detail = await bakeDetailPage(barkDetailBuf, detailDims, dir)
-  }
-  let posterized = null
-  if (barkPosterizedBuf) {
-    const postDims = await imgDims(barkPosterizedBuf)
-    posterized = await bakePosterizedPage(barkPosterizedBuf, postDims, dir)
-  }
-
   // 4. Unify into one master atlas using bake-look's helper. lookName is
   //    synthetic — only used as a colorPath prefix that we rewrite below.
   const unifiedLookName = `__salon-preview__/${species}/${slot}`
-  const unified = await unifyAtlases(bark, leaves, gradient, detail, posterized, dir, unifiedLookName)
+  const unified = await unifyAtlases(bark, leaves, gradient, dir, unifiedLookName)
 
   // unifyAtlases writes trees-atlas-color.png + trees-atlas-normal.png to
   // `dir`. Rename to our atlas-color/normal.png convention.
@@ -332,7 +308,7 @@ function snapshotFromComposition(c) {
     // composition params don't change when the build LOGIC does, so a re-preview
     // would otherwise 'noop' to a stale build. Bump this on any leaf-emission
     // logic change to force a full rebuild.
-    buildVersion: 'leaf-cell-per-leaf-2026-09-28',
+    buildVersion: 'bark-photo-wrapped-per-fragment-2026-09-28',
   }
 }
 
@@ -367,10 +343,12 @@ async function imgDims(buf) {
 
 async function bakeBarkPage(colorBuf, normalBuf, dims, outDir) {
   const { w, h } = dims
-  const W = w + GUTTER * 2
-  const H = h + GUTTER * 2
-  const cx = GUTTER, cy = GUTTER
-  const ext = { top: GUTTER, bottom: GUTTER, left: GUTTER, right: GUTTER, extendWith: 'copy' }
+  // Bark wraps inside its tile (bake-look#BARK_GUTTER): repeat-extended, same width as the Look's.
+  const G = BARK_GUTTER
+  const W = w + G * 2
+  const H = h + G * 2
+  const cx = G, cy = G
+  const ext = { top: G, bottom: G, left: G, right: G, extendWith: 'repeat' }
   const cPng = await sharp(colorBuf).extend(ext).png().toBuffer()
   const nPng = normalBuf
     ? await sharp(normalBuf).extend(ext).png().toBuffer()
@@ -444,57 +422,7 @@ async function bakeGradientPage(lutBuf, outDir) {
   }
 }
 
-async function bakeDetailPage(detailBuf, dims, outDir) {
-  const { w, h } = dims
-  const W = w + GUTTER * 2
-  const H = h + GUTTER * 2
-  const cx = GUTTER, cy = GUTTER
-  const ext = { top: GUTTER, bottom: GUTTER, left: GUTTER, right: GUTTER, extendWith: 'copy' }
-  const cPng = await sharp(detailBuf).extend(ext).png().toBuffer()
-  await fs.writeFile(path.join(outDir, 'trees-atlas-bark-detail-color.png'), cPng)
-  return {
-    width: W, height: H,
-    colorPath: 'unused',
-    tiles: [{
-      tileIndex: 0,
-      key: 'preview-detail',
-      atlas: 'barkDetail',
-      classification: 'barkDetail',
-      classifiedBy: 'preview',
-      refs: [{ species: PREVIEW_SPECIES }],
-      content: { x: cx, y: cy, w, h },
-      uvTransform: { offsetU: cx / W, offsetV: cy / H, scaleU: w / W, scaleV: h / H },
-    }],
-  }
-}
 
-// Brief 10B (Vellum): mirror bakeDetailPage for the posterized substrate
-// tile. The source posterized.png is an indexed PNG (median-cut quantized);
-// sharp transparently decodes it to RGBA on the .extend().png() roundtrip,
-// so the master atlas composite never sees palette mode.
-async function bakePosterizedPage(postBuf, dims, outDir) {
-  const { w, h } = dims
-  const W = w + GUTTER * 2
-  const H = h + GUTTER * 2
-  const cx = GUTTER, cy = GUTTER
-  const ext = { top: GUTTER, bottom: GUTTER, left: GUTTER, right: GUTTER, extendWith: 'copy' }
-  const cPng = await sharp(postBuf).extend(ext).png().toBuffer()
-  await fs.writeFile(path.join(outDir, 'trees-atlas-bark-posterized-color.png'), cPng)
-  return {
-    width: W, height: H,
-    colorPath: 'unused',
-    tiles: [{
-      tileIndex: 0,
-      key: 'preview-posterized',
-      atlas: 'barkPosterized',
-      classification: 'barkPosterized',
-      classifiedBy: 'preview',
-      refs: [{ species: PREVIEW_SPECIES }],
-      content: { x: cx, y: cy, w, h },
-      uvTransform: { offsetU: cx / W, offsetV: cy / H, scaleU: w / W, scaleV: h / H },
-    }],
-  }
-}
 
 // ── GLB UV-rewrite lookup ───────────────────────────────────────────────
 
@@ -540,40 +468,6 @@ function buildPreviewManifest({ species, slot, composition, unified, hashAmp }) 
     }
   }
 
-  const barkDetailBySpecies = {}
-  // Mirror bake-look's `barkTileUV` field (the species's primary bark tile in
-  // unified-atlas space) so the runtime fragment chunk can recover local-UV.
-  const primaryBark = unified.tiles?.find(t => t.classification === 'bark')
-  for (const dt of unified.detailTiles || []) {
-    if (!primaryBark) continue
-    barkDetailBySpecies[PREVIEW_SPECIES] = {
-      uvTransform: {
-        offsetU: dt.uvTransform.offsetU,
-        offsetV: dt.uvTransform.offsetV,
-        scaleU: dt.uvTransform.scaleU,
-        scaleV: dt.uvTransform.scaleV,
-      },
-      barkTileUV: primaryBark.uvTransform,
-    }
-  }
-
-  // Brief 10B (Vellum): per-species posterized substrate uvTransform — same
-  // shape as detail, runtime reads at tier ≤ 1 to resample from the
-  // posterized region instead of the vendor bark color.
-  const barkPosterizedBySpecies = {}
-  for (const pt of unified.posterizedTiles || []) {
-    if (!primaryBark) continue
-    barkPosterizedBySpecies[PREVIEW_SPECIES] = {
-      uvTransform: {
-        offsetU: pt.uvTransform.offsetU,
-        offsetV: pt.uvTransform.offsetV,
-        scaleU: pt.uvTransform.scaleU,
-        scaleV: pt.uvTransform.scaleV,
-      },
-      barkTileUV: primaryBark.uvTransform,
-    }
-  }
-
   return {
     generatedAt: new Date().toISOString(),
     salonPreview: { species, slot, sourceSpecies: species },
@@ -585,13 +479,12 @@ function buildPreviewManifest({ species, slot, composition, unified, hashAmp }) 
       normalPath: `/api/arborist/preview-atlas/${species}/${slot}/atlas-normal.png`,
       alphaMode: 'MASK', alphaCutoff: 0.5, alphaTest: 0.5,
       doubleSided: true,
+      barkTileRects: barkTileRects(unified.tiles || []),
     },
     tiles: unified.tiles || [],
     tilesByKey,
     barkBySpecies,
     barkGradientByVariant,
-    barkDetailBySpecies,
-    barkPosterizedBySpecies,
     previewKey: {
       species: PREVIEW_SPECIES,
       variantId: PREVIEW_VARIANT,

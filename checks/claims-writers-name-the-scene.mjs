@@ -186,7 +186,7 @@ const isGuarded = f => calls(src[f], GUARD)
 
 // ── IS THIS WRITER EVEN IN THE DOMAIN? ────────────────────────────────────────────────────────
 // ⭐⭐ THE INVARIANT IS NOT "THIS FILE WRITES" — IT IS "THIS FILE WRITES SOMEWHERE A SCENE NAME
-// SELECTS." `vite.config.js` writing a build and `extract-bark-detail.mjs` writing textures are
+// SELECTS." `vite.config.js` writing a build and `build-leaf-atlas.mjs` writing textures are
 // not near-misses to be exempted; they are OUT OF DOMAIN, and a predicate that cannot tell them
 // apart is asking the wrong question — which is this brief's own recurring lesson.
 // Without this, widening the roster raised 52 failures of which ~46 were not bugs, and 46

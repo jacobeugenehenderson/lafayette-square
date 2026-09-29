@@ -20,6 +20,7 @@ import { groundColor as _groundColor } from './groundColorState'
 import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { rosterOf } from '../lib/treeRoster.js'
+import { BARK_UV_STRIDE, BARK_TILE_MAX } from '../lib/barkUV.js'
 
 // Module-level caches, per look. ⭐ TWO, BECAUSE THE PLAYER NEEDS ONE (ruled 2026-09-28): every
 // tree is an impostor unless the Arborist specifies a model (ARCHITECTURE §Tree-render reality),
@@ -74,23 +75,10 @@ export const treeSwayUniforms = {
   uRustleAmplitude:   { value: 0.005 },
 }
 
-// Brief 10A (Cork, 2026-05-23) — view-aware bark tier selector. Single
-// uniform gates which fragment path runs on bark fragments:
-//   0 = aerial (gradient-LUT-only, sampled at the SAME luminance axis as
-//       hero — Brief 2.1's Rec.601 luminance + uBarkGradientHashAmp; the
-//       aerial path skips the Brief 2.1a detail Overlay composite, that's
-//       the only difference from hero. Camera-angle-independent sampling.)
-//   1 = hero   (current Brief 2.1 + 2.1a path — posterized substrate lands in 10B)
-//   2 = street (full PBR — tier 2 falls back to hero until 10C ships)
-// Promoted to module-scope (mirrors `treeSwayUniforms` pattern) so flipping
-// the value once propagates to BOTH the LS-runtime material and every
-// Salon-preview material simultaneously, with no per-draw plumbing. Honors
-// the single-shader-program doctrine: uniform branch, NOT customProgramCacheKey.
-export const treeBarkTierUniform = { value: 1 }
 
 // ⭐ TRUNK-GROUND CONTACT — shared, module-scoped, defaulting to TODAY'S values
 // so the map renders bit-identical until someone turns a knob. Same pattern as
-// treeSwayUniforms / treeBarkTierUniform: one write drives every mounted tree.
+// treeSwayUniforms: one write drives every mounted tree.
 //   blend     — how strongly the trunk base takes the ground colour
 //   blendTop  — how far UP the trunk that reaches, in metres
 //   shadowStr — how hard the ground's contact-shadow (G) darkens it
@@ -201,27 +189,6 @@ if (typeof window !== 'undefined') {
   } catch { /* no URL, no dial */ }
 }
 
-// Brief 13 refinement (Vantage 2026-05-23) — auto-tier binding from
-// Salon camera distance + preset. The Salon viewport drives the uniform
-// per-frame from `cameraStateRef` (Overhead → 0, Ground+distance>20 → 1,
-// Ground+distance<20 → 2). The debug setter still works as an override:
-// calling `__setBarkShaderTier(n)` PINS the tier so the auto-binding
-// yields; `__releaseBarkShaderTier()` releases the pin and auto-binding
-// resumes. Use the pin to verify "what does street tier look like from
-// overhead camera" — the inspection that motivated the conservative
-// no-coupling stance in Brief 13's original draft.
-export const treeBarkTierPinned = { value: false }
-
-// Debug setter — drives the shared uniform AND pins it so per-frame
-// auto-binding (Salon SpecimenViewport) yields until release.
-export function setBarkShaderTier(tier) {
-  if (tier == null) { treeBarkTierPinned.value = false; return }
-  const t = Number(tier)
-  if (!Number.isFinite(t)) return
-  treeBarkTierUniform.value = Math.max(0, Math.min(2, Math.round(t)))
-  treeBarkTierPinned.value = true
-}
-export function releaseBarkShaderTier() { treeBarkTierPinned.value = false }
 
 // ── LEAF TRANSMISSION (Jacob, 2026-08-23) ──────────────────────────────────
 //
@@ -262,17 +229,12 @@ export function setLeafTransmission(amount, sharpness) {
   }
   return { amount: treeLeafTransmission.value, sharpness: treeLeafTransmissionSharpness.value }
 }
-if (typeof window !== 'undefined') {
-  window.__setBarkShaderTier = setBarkShaderTier
-  window.__releaseBarkShaderTier = releaseBarkShaderTier
-}
-
 // Phase A (Azimuth) — hero-tier QC overlay. READ-ONLY visualization: when > 0,
 // every tree fragment tints by its per-instance `aHeroTier` (mesh → green,
 // impostor → magenta) so the operator can eyeball the DERIVED classification
 // through the hero pan (the A→B seam). Default 0 → bit-identical render (the
 // gate short-circuits; no functional change). Module-scope shared uniform +
-// debug setter mirror the treeBarkTier pattern, so flipping it once drives every
+// debug setter mirror the treeSwayUniforms pattern, so flipping it once drives every
 // mounted tree material (LS runtime + Salon preview) with no per-draw plumbing,
 // honoring the single-shader-program constraint (uniform branch, not a variant).
 export const treeHeroTierQC = { value: 0 }
@@ -327,6 +289,19 @@ if (typeof window !== 'undefined') {
     treeSanitizeUniform.value = (v === 0 || v === false) ? 0 : 1
     console.log(`[tree] fragment output sanitize ${treeSanitizeUniform.value ? 'ON' : 'OFF'} (NaN/Inf/neg → clamped)`)
   }
+}
+
+// ── THE BARK TILE TABLE ────────────────────────────────────────────────────────
+// ⛔ BARK_UV_STRIDE / BARK_TILE_MAX: the contract with arborist/bake-look.js#encodeBarkUVs (src/lib/barkUV.js).
+const EMPTY_BARK_TILE_RECTS = { value: Array.from({ length: BARK_TILE_MAX }, () => new THREE.Vector4()) }
+// Bind the atlas's bark tile table onto a material, before it compiles. `rects` is the
+// manifest's `atlas.barkTileRects` — [offsetU, offsetV, scaleU, scaleV] per bark tile index.
+// ⛔ Missing on an atlas that has bark ⇒ throw: every bark would paint magenta.
+export function setBarkTileTable(material, rects) {
+  if (!Array.isArray(rects)) throw new Error(`${material?.name || 'tree material'}: atlas has no barkTileRects — re-bake the Look (bake-look) so bark UVs and the table agree`)
+  if (rects.length > BARK_TILE_MAX) throw new Error(`atlas has ${rects.length} bark tiles; the shader holds ${BARK_TILE_MAX}. Raise BARK_TILE_MAX (src/lib/barkUV.js).`)
+  const value = EMPTY_BARK_TILE_RECTS.value.map((_, i) => rects[i] ? new THREE.Vector4(...rects[i]) : new THREE.Vector4())
+  material.userData.barkTileRects = { value }
 }
 
 export function injectFoliageSway(material) {
@@ -415,40 +390,10 @@ export function injectFoliageSway(material) {
     // pairs render pixel-identical across instances. >0 sub-amplitude
     // hash offset preserves species character with subtle variety.
     shader.uniforms.uBarkGradientHashAmp = { value: 0 }
-    // Brief 2.1a (Cinder) — bark Detail Texturing composite. Detail tile
-    // packs into the same unified atlas as bark/leaves/gradient; sampled
-    // via `map` at vMapUv * Scale + Offset, Overlay-blended over whatever
-    // bark color the prior path produced (single-tint, gradient-on,
-    // gradient-off all unaffected). Identity baseline: when no slot is
-    // bound (default 0.5-grey offset + zero scale → samples top-left of
-    // atlas which may be non-grey), uBarkDetailStrength=0 forces identity.
-    shader.uniforms.uBarkDetailTileOffset = { value: new THREE.Vector2(0, 0) }
-    shader.uniforms.uBarkDetailTileScale = { value: new THREE.Vector2(0, 0) }
-    shader.uniforms.uBarkDetailStrength = { value: 1.0 }
-    // The species's primary bark tile bounds in unified-atlas space; the
-    // shader uses these to recover [0,1] local-UV from vMapUv before
-    // mapping into the detail sub-region. Without this, vMapUv (which
-    // lives inside a small atlas sub-region) would alias to a single
-    // detail-tile corner. Scale=0 keeps the composite identity-safe when
-    // no slot is bound.
-    shader.uniforms.uBarkTileOffset = { value: new THREE.Vector2(0, 0) }
-    shader.uniforms.uBarkTileScale = { value: new THREE.Vector2(1, 1) }
-    // Brief 10B (Vellum) — posterized substrate sub-region. Under tier ≤ 1,
-    // the bark fragment chunk resamples from this region at the same tile-
-    // local UV used for detail (recovered from vMapUv via uBarkTileOffset/
-    // Scale) and replaces diffuseColor.rgb's bark pixels BEFORE Brief 2.1's
-    // luminance gradient REPLACE runs. Identity-safe when scale=0 (no slot
-    // bound — fresh checkout, no posterized.png, first cold bake fallback).
-    // Tier 2 (street) keeps vendor color via the same gating shape Brief 10A
-    // uses for the detail composite (forward-compat with 10C street-PBR).
-    shader.uniforms.uBarkPosterizedTileOffset = { value: new THREE.Vector2(0, 0) }
-    shader.uniforms.uBarkPosterizedTileScale = { value: new THREE.Vector2(0, 0) }
-    // Brief 10A (Cork) — view-aware bark tier. Shared module-scope uniform
-    // object so a single mutation drives every mounted tree material at
-    // once (LS runtime + Salon preview). Aerial samples the gradient LUT
-    // at the same Brief 2.1 luminance axis as hero but skips the Brief 2.1a
-    // detail composite; hero is the existing path; street currently falls
-    // back to hero (10C wires full PBR).
+    // The ATLAS's bark tile table — one rect per bark tile, bound once per material from the
+    // manifest (setBarkTileTable). A bark UV names its own tile (bake-look#encodeBarkUVs), so
+    // no per-species uniform exists to go stale between draws.
+    shader.uniforms.uBarkTileRects = material.userData.barkTileRects || EMPTY_BARK_TILE_RECTS
     // ⭐ leaf.face (adaxial/abaxial two-tone) — the rubric axis that was declared,
     // authored on 10 dossiers and wired to NOTHING until 2026-08-28. Silver maple's
     // silvery underside is the seed case ("the whole canopy flashes silver in wind").
@@ -459,7 +404,6 @@ export function injectFoliageSway(material) {
     shader.uniforms.uLeafFaceFront    = { value: new THREE.Color('#ffffff') }
     shader.uniforms.uLeafFaceBack     = { value: new THREE.Color('#ffffff') }
     shader.uniforms.uLeafFaceStrength = { value: 0.0 }
-    shader.uniforms.uBarkShaderTier = treeBarkTierUniform
     // Phase A (Azimuth) — hero-tier QC overlay gate (shared module-scope uniform).
     shader.uniforms.uHeroTierQC = treeHeroTierQC
     // Brief 3A (Cant) — per-instance deformer ranges. Three vec2 [lo,hi]
@@ -835,14 +779,18 @@ export function injectFoliageSway(material) {
          uniform vec2  uBarkGradientTileOffset;
          uniform vec2  uBarkGradientTileScale;
          uniform float uBarkGradientHashAmp;
-         uniform vec2  uBarkDetailTileOffset;
-         uniform vec2  uBarkDetailTileScale;
-         uniform float uBarkDetailStrength;
-         uniform vec2  uBarkTileOffset;
-         uniform vec2  uBarkTileScale;
-         uniform vec2  uBarkPosterizedTileOffset;
-         uniform vec2  uBarkPosterizedTileScale;
-         uniform float uBarkShaderTier;
+         uniform vec4  uBarkTileRects[${BARK_TILE_MAX}];
+         // A bark UV carries its tile: u = ${BARK_UV_STRIDE}·(tile+1) + the vendor's own tiling u
+         // (bake-look#encodeBarkUVs). The fragment wraps it inside that tile's rect and samples
+         // with the gradients of the UNWRAPPED uv — so a trunk triangle spanning many repeats
+         // draws them all, forwards, at the mip of its real texel rate, with no wrap-line seam.
+         bool barkEncoded(vec2 uv) { return uv.x >= ${BARK_UV_STRIDE.toFixed(1)}; }
+         vec4 barkWrapSample(sampler2D tex, vec2 uv, vec2 gx, vec2 gy) {
+           float idx = floor(uv.x / ${BARK_UV_STRIDE.toFixed(1)});
+           vec4 r = uBarkTileRects[int(idx) - 1];
+           vec2 local = fract(vec2(uv.x - idx * ${BARK_UV_STRIDE.toFixed(1)}, uv.y));
+           return textureGrad(tex, r.xy + local * r.zw, gx * r.zw, gy * r.zw);
+         }
          uniform vec3  uLeafFaceFront;
          uniform vec3  uLeafFaceBack;
          uniform float uLeafFaceStrength;
@@ -876,39 +824,16 @@ export function injectFoliageSway(material) {
            else                    { if (vBark < 0.5) discard; }
          }
          {
-           // Brief 10B (Vellum) — posterized substrate swap (tier ≤ 1).
-           // localUV computation lifted to the top of the bark chunk so both
-           // the substrate swap (10B) and the detail Overlay composite (2.1a)
-           // share one local-UV recovery from vMapUv. vMapUv lives inside the
-           // bark sub-region of the unified atlas; (vMapUv - uBarkTileOffset)
-           // / uBarkTileScale recovers the [0,1] tile-local UV. fract()
-           // wraps in case the bark UVs spilled past [0,1] pre-rewrite (per
-           // arborist/NOTES.md Cinder 2026-05-21 local-UV recovery).
-           vec2 localUV = (uBarkTileScale.x > 0.0 && uBarkTileScale.y > 0.0)
-             ? (vMapUv - uBarkTileOffset) / uBarkTileScale
-             : vec2(0.5);
-           localUV = fract(localUV);
-           // Posterized substrate sample at the same tile-local UV. When no
-           // slot is bound (uBarkPosterizedTileScale=0 — fresh checkout / no
-           // posterized.png yet), the ternary clamps postUV to (0.5, 0.5) so
-           // the wasted sample stays inside the atlas; havePosterized then
-           // gates the mix and the vendor diffuseColor passes through.
-           vec2 postUV = (uBarkPosterizedTileScale.x > 0.0 && uBarkPosterizedTileScale.y > 0.0)
-             ? (localUV * uBarkPosterizedTileScale + uBarkPosterizedTileOffset)
-             : vec2(0.5);
-           vec3 posterizedSample = texture2D(map, postUV).rgb;
-           // tier 0+1 → use posterized; tier 2 → keep vendor (street-PBR
-           // forward-compat with 10C). havePosterized gates the unbound case.
-           float useVendor = step(1.5, uBarkShaderTier);
-           float havePosterized = step(0.001, uBarkPosterizedTileScale.x * uBarkPosterizedTileScale.y);
-           vec3 substrate = mix(posterizedSample, diffuseColor.rgb, max(useVendor, 1.0 - havePosterized));
-           // Bark-fragment-only substrate replacement; leaves pass through
-           // <map_fragment>'s vendor sample untouched. Brief 2.1's luminance
-           // math + Brief 2.1a's detail Overlay below now operate on the
-           // kit-quantized substrate when tier ≤ 1 — cleaner LUT indexing
-           // (discrete luminance buckets → discrete gradient stops) + kit
-           // illustrated look at Browse + Hero distance.
-           diffuseColor.rgb = mix(diffuseColor.rgb, substrate, vBark);
+           // THE BARK IS THE PHOTO — the same picture the Salon chip shows (Jacob, 2026-09-28:
+           // "the trunks should have texture"). <map_fragment> above sampled the unwrapped uv
+           // raw; bark fragments resample it wrapped into their tile. Gradients are taken
+           // OUTSIDE the branch — implicit derivatives are undefined in divergent flow.
+           vec2 barkGx = dFdx(vMapUv), barkGy = dFdy(vMapUv);
+           if (vBark > 0.5) {
+             diffuseColor.rgb = barkEncoded(vMapUv)
+               ? diffuse * barkWrapSample(map, vMapUv, barkGx, barkGy).rgb
+               : vec3(1.0, 0.0, 1.0); // ⛔ LOUD: a bark UV that names no tile was never baked for this atlas
+           }
 
            float jh1 = fract(sin(dot(vWorldXZ.xz, vec2(127.1, 311.7))) * 43758.5453);
            float jh2 = fract(sin(dot(vWorldXZ.xz, vec2(269.5, 183.3))) * 43758.5453);
@@ -948,40 +873,6 @@ export function injectFoliageSway(material) {
            vec3 gradientColor = texture2D(map, lutUV).rgb;
            vec3 legacyBark = diffuseColor.rgb * barkTint;
            vec3 barkColor = mix(legacyBark, gradientColor, uUseBarkGradient);
-           // Brief 2.1a (Cinder) Detail Texturing composite — Unreal Detail
-           // Texture / Unity HDRP Detail Albedo. Uses the localUV computed
-           // at the top of this block (lifted by Brief 10B so substrate
-           // swap + detail composite share one local-UV recovery). Overlay
-           // blend on the final bark color, additive over the tint/gradient
-           // path. Identity-safe when uBarkTileScale=0 (no slot bound) since
-           // uBarkDetailStrength is mixed against the unmodified barkColor.
-           vec2 detailUV = localUV * uBarkDetailTileScale + uBarkDetailTileOffset;
-           vec3 detailSample = texture2D(map, detailUV).rgb;
-           // Overlay blend: per-channel, energy-preserving, bidirectionally
-           // clamped. step() midtone branch is sRGB-standard; the
-           // atlas texture is SRGBColorSpace-tagged so sample is linearized
-           // on read — the blend lives in linear space, which is fine for
-           // an additive luminance multiplier.
-           vec3 ovLo = 2.0 * barkColor * detailSample;
-           vec3 ovHi = 1.0 - 2.0 * (1.0 - barkColor) * (1.0 - detailSample);
-           vec3 composite = mix(ovLo, ovHi, step(vec3(0.5), barkColor));
-           // Brief 10A revision (Cork, post-review pivot 2026-05-23) — aerial
-           // tier samples the gradient LUT at the SAME luminance axis as hero
-           // (Brief 2.1's Rec.601 luminance + uBarkGradientHashAmp), not at a
-           // per-vertex normalized chassis Y. The original world-Y axis read
-           // camera-angle-dependent (Overhead vs Ground saw different gradient
-           // distributions because different portions of bark surface were
-           // visible per framing); luminance is per-pixel texture-driven and
-           // identical regardless of camera. The only architectural difference
-           // between aerial (tier 0) and hero (tier 1) becomes: aerial skips
-           // the Brief 2.1a detail Overlay composite; hero includes it. Gate
-           // the detail step by step(0.5, uBarkShaderTier): aerial → 0 → no
-           // detail; hero/street → 1 → full detail.
-           //   tier 0 (aerial) — Brief 2.1 luminance REPLACE, NO detail Overlay
-           //   tier 1 (hero)   — Brief 2.1 luminance REPLACE + Brief 2.1a detail Overlay
-           //   tier 2 (street) — falls back to hero; 10C wires full-PBR
-           float tierDetail = step(0.5, uBarkShaderTier);
-           barkColor = mix(barkColor, composite, uBarkDetailStrength * tierDetail);
            diffuseColor.rgb = mix(diffuseColor.rgb, barkColor, vBark);
            // ── leaf.face — the paler UNDERSIDE, flashing in wind ────────────────
            // The mirror of the bark retint above, on the other side of the same
@@ -1052,6 +943,23 @@ export function injectFoliageSway(material) {
       .replace(
         // Roughness override slot: clamp roughnessFactor on bark fragments
         // when the per-species override is >= 0. Leaf fragments untouched.
+        // The bark's relief wraps exactly as its colour does (same tile rect, same atlas
+        // layout in the normal page). Leaves sample as three would, with explicit gradients.
+        '#include <normal_fragment_maps>',
+        `#ifdef USE_NORMALMAP_TANGENTSPACE
+         {
+           vec2 nGx = dFdx(vNormalMapUv), nGy = dFdy(vNormalMapUv);
+           vec3 mapN = ((vBark > 0.5 && barkEncoded(vNormalMapUv))
+             ? barkWrapSample(normalMap, vNormalMapUv, nGx, nGy)
+             : textureGrad(normalMap, vNormalMapUv, nGx, nGy)).xyz * 2.0 - 1.0;
+           mapN.xy *= normalScale;
+           normal = normalize(tbn * mapN);
+         }
+         #else
+         #include <normal_fragment_maps>
+         #endif`
+      )
+      .replace(
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
          {
@@ -1327,6 +1235,7 @@ async function buildMaterials(lookName, manifest) {
     alphaTest: atlas.alphaTest ?? 0.5,
   })
   treeMaterial.name = `tree-atlas:${lookName}`
+  setBarkTileTable(treeMaterial, atlas.barkTileRects)
   injectFoliageSway(treeMaterial)
   // Each tree is an instance; lift every instance to its own ground sample
   // via the shared uExag uniform. Chains AFTER sway so the foliage
@@ -1356,6 +1265,7 @@ async function buildMaterials(lookName, manifest) {
     alphaTest: 0,          // OFF → opaque → early-Z → zero overdraw (the tier's point)
   })
   opaqueCanopyMaterial.name = `tree-atlas:${lookName}:opaque`
+  opaqueCanopyMaterial.userData.barkTileRects = treeMaterial.userData.barkTileRects
   injectFoliageSway(opaqueCanopyMaterial)
   patchTerrainInstancedBaked(opaqueCanopyMaterial)
 
@@ -1401,6 +1311,7 @@ export function cloneTreeMaterial(src) {
     alphaTest: src.alphaTest,
   })
   m.name = `${src.name || 'tree-atlas'}#per-species`
+  m.userData.barkTileRects = src.userData.barkTileRects
   // ⛔ SAME patches, SAME order — that is what keeps the shader source byte-identical and
   // therefore the program shared. Diverging here silently multiplies programs and is exactly
   // what Bloom cannot take.
@@ -1563,6 +1474,7 @@ async function buildPreviewMaterials(manifestUrl) {
     alphaTest: atlas.alphaTest ?? 0.5,
   })
   treeMaterial.name = `tree-atlas:salon-preview`
+  setBarkTileTable(treeMaterial, atlas.barkTileRects)
   injectFoliageSway(treeMaterial)
   // NB: NO patchTerrainInstanced — workstage preview is a flat-ground
   // single-tree composition; LS-runtime terrain lift isn't applicable.
@@ -2346,7 +2258,7 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
 // per-draw uniform setup. Single implementation across LS runtime and
 // workstage preview — drift-prevention is the structural reason this
 // function lives here, next to its uniform contract.
-export function applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot, posterizedSlot) {
+export function applyBarkUniforms(material, barkSettings, gradientSlot) {
   const shader = material?.userData?.shader
   if (!shader) return
   // Gradient slot
@@ -2358,37 +2270,6 @@ export function applyBarkUniforms(material, barkSettings, gradientSlot, detailSl
   } else {
     shader.uniforms.uUseBarkGradient.value = 0
     shader.uniforms.uBarkGradientHashAmp.value = 0
-  }
-  // Detail slot (also carries the species's primary bark tile bounds —
-  // uBarkTileOffset/Scale — which the substrate swap reuses for local-UV
-  // recovery; if posterized binds but detail doesn't, the bark tile bounds
-  // still need to be set, see posterized-only branch below).
-  if (detailSlot) {
-    const d = detailSlot.uvTransform
-    const b = detailSlot.barkTileUV
-    shader.uniforms.uBarkDetailTileOffset.value.set(d.offsetU, d.offsetV)
-    shader.uniforms.uBarkDetailTileScale.value.set(d.scaleU, d.scaleV)
-    shader.uniforms.uBarkTileOffset.value.set(b.offsetU, b.offsetV)
-    shader.uniforms.uBarkTileScale.value.set(b.scaleU, b.scaleV)
-  } else {
-    shader.uniforms.uBarkDetailTileScale.value.set(0, 0)
-    shader.uniforms.uBarkTileScale.value.set(0, 0)
-  }
-  // Brief 10B (Vellum): posterized substrate slot. Shares the bark-tile-
-  // bounds uniforms (uBarkTileOffset/Scale) with the detail composite for
-  // local-UV recovery; when posterized binds but detail doesn't, lift those
-  // bark bounds from posterizedSlot.barkTileUV so local-UV is correct.
-  if (posterizedSlot) {
-    const p = posterizedSlot.uvTransform
-    shader.uniforms.uBarkPosterizedTileOffset.value.set(p.offsetU, p.offsetV)
-    shader.uniforms.uBarkPosterizedTileScale.value.set(p.scaleU, p.scaleV)
-    if (!detailSlot && posterizedSlot.barkTileUV) {
-      const b = posterizedSlot.barkTileUV
-      shader.uniforms.uBarkTileOffset.value.set(b.offsetU, b.offsetV)
-      shader.uniforms.uBarkTileScale.value.set(b.scaleU, b.scaleV)
-    }
-  } else {
-    shader.uniforms.uBarkPosterizedTileScale.value.set(0, 0)
   }
   // Bark settings (region split or legacy single-spec)
   if (!barkSettings) {

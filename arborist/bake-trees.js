@@ -242,8 +242,8 @@ function treeSeed(tree, idx) {
 // asset and a RAW LATIN twin — `blackgum`/`nyssa_sylvatica`, `oak_white`/`quercus_alba`,
 // `maple_sugar`/`acer_saccharum`, `linden_american`/`tilia_americana`. The raw one has
 // no Salon composition, so a placement that lands on it is GUARANTEED permanent mesh:
-// no composition → no `barkDetailBySpecies` → `uBarkTileScale` stays (0,0) → every bark
-// sample hits an empty atlas region → a blank band → `OverheadBaker` correctly refuses
+// no composition → no `barkBySpecies` record → its bark was never baked into the atlas
+// → a blank band → `OverheadBaker` correctly refuses
 // to POST. The Grove has reported the symptom for months ("no impostor:
 // nyssa_sylvatica, quercus_alba — these render as mesh at every distance") and no
 // re-bake could ever clear it, because the cause is upstream of the capture.
