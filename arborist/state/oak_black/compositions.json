@@ -6,10 +6,11 @@
       "name": "Slot 1 (auto)",
       "chassis": "rounded_06",
       "bark": {
-        "ref": "bark_brown_01"
+        "ref": "Bark007"
       },
       "leaves": {
-        "pack": "eastern_black_oak"
+        "pack": "california_black_oak",
+        "mode": "authored"
       },
       "deformer": {},
       "transform": {},
@@ -36,5 +37,5 @@
       }
     }
   ],
-  "savedAt": 1790382489359
+  "savedAt": 1790645905401
 }

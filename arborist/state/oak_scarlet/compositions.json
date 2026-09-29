@@ -4,12 +4,16 @@
     {
       "slot": 1,
       "name": "Slot 1 (auto)",
-      "chassis": "rounded_06",
+      "chassis": "rounded_09",
       "bark": {
-        "ref": "bark_brown_01"
+        "ref": "Bark007"
       },
       "leaves": {
-        "pack": "lobed"
+        "pack": "lobed",
+        "occupancy": 0.89,
+        "mode": "authored",
+        "ways": "alternate",
+        "scale": 1.5
       },
       "deformer": {},
       "transform": {},
@@ -36,5 +40,5 @@
       }
     }
   ],
-  "savedAt": 1790382489503
+  "savedAt": 1790645833172
 }

@@ -4,7 +4,7 @@
     {
       "slot": 1,
       "name": "Slot 1",
-      "chassis": "pyramidal_14",
+      "chassis": "oval_24",
       "bark": {
         "ref": "bark_platanus"
       },
@@ -31,5 +31,5 @@
       "derivedFrom": "red_maple_c"
     }
   ],
-  "savedAt": 1790653401040
+  "savedAt": 1790659462832
 }
