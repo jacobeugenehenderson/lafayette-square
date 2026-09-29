@@ -42,6 +42,7 @@ __pycache__/
 # full-res originals kept locally for re-baking higher-res atlases.
 assets/botanical-reference-hires/
 assets/leaf-packs-2026/
+assets/cleared-leaves/
 models/
 public/models/
 # Allow the victorian lamp model (needed at runtime)
