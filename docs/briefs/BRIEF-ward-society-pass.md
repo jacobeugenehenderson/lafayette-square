@@ -49,7 +49,9 @@ pinned to the screen, **dot-coordinated with its building**), and compact Societ
   movie *"cannot be touched at all"*, so probably not. If either is missing it is a **kit** change — name it
   for Lintel, with the prop you'd want.
 - **README edits land with the build:** §2's *"⌕ Explore"* door (replaced, Jacob 2026-09-29), §2's
-  *"the movie itself cannot be touched"*, §3's *"the map never launches anything"* — the ruling's purpose
+  *"the movie itself cannot be touched"*, §3's *"the map never launches anything"*, §3's blockquote *"the movie itself cannot be touched at all"*,
+  `src/leisure/Leisure.jsx`'s must-never, and §2's "absent from the first commit: map pins" (the peek's dot is
+  the exception: on the roof, no stem, only while selected — Nocturne's framing) — the ruling's purpose
   was **no unwanted navigation**; the peek keeps it, because only its → goes anywhere.
 
 ## §C — one emoji per town: its map ID **and** its rating (ruled, Jacob 2026-09-29)
