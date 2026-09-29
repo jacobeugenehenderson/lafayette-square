@@ -6,8 +6,10 @@
  *
  *   mark        the town's ONE emoji: avatar, load screen, tab, and what its places are rated in (Jacob, 2026-09-29:
  *               "emojis are supposed to be the ratings and the map vis ID" — there is no second rating emoji)
- *   markStyle   how the town's mark is drawn in the Ward header's ◉, on every screen where ◉ shows the town rather
- *               than a person: 'colour' (the emoji as it is) | 'white' (Jacob, 2026-09-29; how 'white' looks is the Ward's)
+ *   markStyle   how the town's generic mark is drawn in the Ward header's ◉, on every screen where ◉ shows the town
+ *               rather than a person (Jacob, 2026-09-29, final: mock v38/v39): 'regular' — a white silhouette ·
+ *               'engraved' — greyscale lifted to white · 'colored' — as the emoji draws. Always on ◉'s one dark neutral
+ *               field (#141519, the Ward's; the kit carries no field). Rating and a person's emoji are untouched.
  *   accent      the Ward's chrome accent, '#rrggbb'
  *   litTint     { color: '#rrggbb', strength: 0..1 } — the roof tint of a lit set and the selected building
  *
@@ -24,14 +26,14 @@ export const IDENTITY_CHANNELS = ['mark', 'markStyle', 'accent', 'litTint']
 /** The kit's neutral identity. `accent: null` — the kit has not chosen one yet (Jacob's eye). */
 export const IDENTITY_NEUTRAL = {
   mark: null,
-  markStyle: 'colour',
+  markStyle: 'engraved',
   accent: null,
   litTint: { color: '#f2c14e', strength: 0.45 },
 }
 
 const HEX = /^#[0-9a-f]{6}$/i
 /** How the mark may be drawn in the Ward's ◉. ⛔ A new value is a ruling (Jacob), and the Ward must draw it. */
-export const MARK_STYLES = ['colour', 'white']
+export const MARK_STYLES = ['regular', 'engraved', 'colored']
 const oneEmoji = (s) => typeof s === 'string'
   && [...new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s)].length === 1
   && /\p{Extended_Pictographic}/u.test(s)

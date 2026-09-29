@@ -76,15 +76,21 @@ if (!caught) fails.push(`MUTATION NOT CAUGHT: flipping ${victim ?? '(no town wit
 // ⭐ MARK STYLE (Jacob, 2026-09-29; Boz: "a validator nobody has seen fail is a claim, not a check"). Every run:
 //   · a value outside MARK_STYLES is REFUSED by name (an unknown style must never reach the Ward's ◉);
 //   · every allowed value is accepted;
-//   · an UNCHOSEN style is REPORTED — markStyleAuthored: false beside the neutral — never a silent 'colour'.
+//   · the RETIRED values ('colour', 'white' — c894a485, superseded by Jacob's final) are refused by name;
+//   · an UNCHOSEN style is REPORTED — markStyleAuthored: false beside the neutral — never a silent 'engraved'.
 let refusedUnknown = false
 try { validateIdentity({ markStyle: 'sepia' }, 'mutation') } catch (e) { refusedUnknown = /markStyle/.test(e.message) }
 if (!refusedUnknown) fails.push('MUTATION NOT CAUGHT: identity.markStyle = "sepia" was accepted — an unknown mark style must be refused by name')
+for (const old of ['colour', 'white']) {
+  let refused = false
+  try { validateIdentity({ markStyle: old }, 'retired') } catch (e) { refused = /markStyle/.test(e.message) }
+  if (!refused) fails.push(`the retired markStyle "${old}" was accepted — it must be refused by name (the ruled values are ${MARK_STYLES.join(' | ')})`)
+}
 for (const v of MARK_STYLES) { try { validateIdentity({ markStyle: v }, 'check') } catch (e) { fails.push(`markStyle "${v}" is a ruled value but was refused: ${e.message}`) } }
 const unchosen = resolveIdentity({})
 if (unchosen.markStyleAuthored !== false) fails.push(`an unchosen markStyle resolves with markStyleAuthored ${JSON.stringify(unchosen.markStyleAuthored)} — it must be reported (false), never a silent '${unchosen.markStyle}'`)
-const chosen = resolveIdentity({ markStyle: 'white' })
-if (chosen.markStyle !== 'white' || chosen.markStyleAuthored !== true) fails.push(`a chosen markStyle "white" resolves as ${JSON.stringify({ v: chosen.markStyle, a: chosen.markStyleAuthored })}`)
+const chosen = resolveIdentity({ markStyle: 'colored' })
+if (chosen.markStyle !== 'colored' || chosen.markStyleAuthored !== true) fails.push(`a chosen markStyle "colored" resolves as ${JSON.stringify({ v: chosen.markStyle, a: chosen.markStyleAuthored })}`)
 console.log(`   markStyle: unknown value ${refusedUnknown ? 'refused ✓' : 'ACCEPTED'} · unchosen ${unchosen.markStyleAuthored === false ? 'reported ✓' : 'NOT reported'}`)
 
 if (retired.length) console.log(`   retired (their own RETIRED.md), not towns: ${retired.join(', ')}`)

@@ -27,7 +27,7 @@ import CATEGORIES from '../tokens/categories.js'
 
 const ROWS = [
   { id: 'mark', label: 'Mark', kind: 'emoji', hint: 'The avatar, load screen and tab — and what places are rated in. One emoji.' },
-  { id: 'markStyle', label: 'Mark style', kind: 'choice', options: MARK_STYLES, hint: 'How the mark is drawn in the Ward\'s header ◉, on every screen where ◉ shows the town (not a person).' },
+  { id: 'markStyle', label: 'Mark style', kind: 'choice', options: MARK_STYLES, hint: 'How the town\'s mark is drawn in the Ward\'s header ◉ wherever it shows the town (not a person): regular — a white silhouette · engraved — greyscale lifted to white · colored — as the emoji draws.' },
   { id: 'accent', label: 'Accent', kind: 'color', hint: 'The Ward\'s chrome accent.' },
   { id: 'litTint', label: 'Lit tint', kind: 'tint', hint: 'The roofs of a chosen category or search, and the selected building.' },
 ]
