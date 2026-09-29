@@ -188,7 +188,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 185. This is `npm test`.
+## safe — 186. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -363,6 +363,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-shore-says-what-it-is-made-of.mjs` | of.mjs — CAN THE KIT TELL STONE FROM SAND? |
 | `checks/claims-the-slab-envs-do-not-collide.mjs` | STAGING AND PRODUCTION MUST NOT SERVE THE SAME SLAB. |
 | `checks/claims-the-tide-phase-stays-in-bounds.mjs` | bounds.mjs — the water never leaves the town's own low and high (BRIEF-tide). |
+| `checks/claims-the-town-moon-is-the-sky-moon.mjs` | "IS THE TOWN'S MOON PICTURE THE SKY'S OWN MOON — ON THE TOWN'S ONE WEBGL CONTEXT?" |
 | `checks/claims-the-town-reads-no-player-store.mjs` | "CAN AN APP DRAW THE TOWN WITHOUT BEING THE OLD PLAYER?" |
 | `checks/claims-the-town-sees-its-sky.mjs` | "DOES <Town> DRAW ITS SKY IN ANY APP'S CANVAS — OR ONLY IN ONE WHOSE CAMERA HAPPENS TO REACH IT?" |
 | `checks/claims-the-weather-feed-arrives-in-the-units-we-read.mjs` | the Open-Meteo request names the |

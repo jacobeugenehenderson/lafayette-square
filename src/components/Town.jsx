@@ -79,6 +79,7 @@
  *   children         the app's overlays, drawn in the town's frame (see <TownPoint>)
  */
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { TownMoonPainter } from './TownMoon.jsx'
 import { useFrame, useThree } from '@react-three/fiber'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { TownPlace, useTownLoaded } from './TownPlace.jsx'
@@ -144,6 +145,8 @@ export { GROUNDS, MEANING, CONTRAST } from '../tokens/playerChrome.js'
 // Where the renderer's own files live (the page's ward-kit-base; src/lib/kitUrl.js) — the Ward's Almanac reads the
 // weather icons through it, so they have one home: the kit bundle.
 export { kitUrl } from '../lib/kitUrl.js'
+// The town's moon as a picture, drawn on THIS canvas's context (no second one) — src/components/TownMoon.jsx.
+export { useTownMoonImage } from './TownMoon.jsx'
 
 const LAYERS = ['ground', 'buildings', 'trees', 'park', 'lamps', 'setPieces', 'neon', 'labels', 'sky', 'clouds', 'fog', 'shadows', 'post']
 // Stage's live channels, by the piece that takes them. Anything else is refused: a misspelt
@@ -398,6 +401,8 @@ export default function Town({
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} flying={flightHold} />
       {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} paused={paused} />}
       <SkyStateTicker paused={paused} />
+      {/* Lends this canvas's context to useTownMoonImage; draws nothing, needs no frame. */}
+      <Suspense fallback={null}><TownMoonPainter /></Suspense>
       {/* Names the material when a program fails to link — the failure that draws nothing and says nothing. */}
       <ShaderLinkGuard />
       {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><Cascades /></R3FErrorBoundary>}

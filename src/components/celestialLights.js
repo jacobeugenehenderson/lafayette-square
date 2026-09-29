@@ -25,6 +25,7 @@
  * rather than restating them. That is the only reason the invariant can be held.
  */
 import * as THREE from 'three'
+import SunCalc from 'suncalc'
 
 // The key light stays close: LIGHT_RADIUS also sizes the shadow frustum's depth
 // slab, and pushing it out to clear a big town would change the look.
@@ -150,3 +151,34 @@ export function sunColor(sunAlt) {
   if (sunAlt >= -0.12) return mixHex('#ff6644', '#ffaa66', (sunAlt + 0.12) / 0.17)
   return '#ff6644'
 }
+
+// The visual sky sphere: the sun's and moon's DISCS sit this far out, far enough to eliminate parallax.
+export const SUN_VISUAL_RADIUS = 50000
+export const MOON_RADIUS = 50000
+const _right = new THREE.Vector3(), _up = new THREE.Vector3(), _fwd = new THREE.Vector3()
+
+/**
+ * The sun's direction in the moon billboard's own frame (X right, Y up, Z toward the viewer) — what the moon shader
+ * lights by, and so what fixes the crescent AND its bright-limb angle as seen by `camera`.
+ */
+export function moonSunDir3D(sunDirection, camera, out) {
+  const camRight = _right.set(1, 0, 0).applyQuaternion(camera.quaternion)
+  const camUp = _up.set(0, 1, 0).applyQuaternion(camera.quaternion)
+  camera.getWorldDirection(_fwd)
+  // Negate: the camera looks INTO the scene, but the billboard's +Z points TOWARD the camera
+  return out.set(sunDirection.dot(camRight), sunDirection.dot(camUp), -sunDirection.dot(_fwd))
+}
+
+/**
+ * Where the sun and the moon are, and the moon's phase, for a place at a time — the ONE computation the sky draws by
+ * and the Almanac's picture is taken from. `out` carries the two world positions (module temps for the sky).
+ */
+export function moonSky(time, place, out = { sunVisual: new THREE.Vector3(), moonPosition: new THREE.Vector3() }) {
+  const sunPos = SunCalc.getPosition(time, place.lat, place.lon)
+  const moonPos = SunCalc.getMoonPosition(time, place.lat, place.lon)
+  const illum = SunCalc.getMoonIllumination(time)
+  celestialToPosition(sunPos.azimuth + Math.PI, sunPos.altitude, SUN_VISUAL_RADIUS, out.sunVisual, 100)
+  celestialToPosition(moonPos.azimuth + Math.PI, moonPos.altitude, MOON_RADIUS, out.moonPosition)
+  return { sunPos, moonPos, illum, sunVisual: out.sunVisual, moonPosition: out.moonPosition }
+}
+

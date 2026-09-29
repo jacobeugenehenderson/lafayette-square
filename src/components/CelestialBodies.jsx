@@ -41,7 +41,7 @@ import PlanetariumOverlay from './PlanetariumOverlay'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { bvToRGB } from '../lib/starColor'
 import { townPlace, useTownPlace } from '../lib/townPlace.js'
-import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights.js'
+import { bodyLights, celestialToPosition, LIGHT_RADIUS, SUN_VISUAL_RADIUS, MOON_RADIUS, moonSky, moonSunDir3D } from './celestialLights.js'
 import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
@@ -61,8 +61,6 @@ import { kitUrl } from '../lib/kitUrl.js'
 // standing in for a directional carries 1/4 of its number to deliver the same
 // light. ⛔ Derived, not dialled — the only number the fill swap introduces.
 const HEMI_FOR_DIRECTIONAL = 0.25
-const SUN_VISUAL_RADIUS = 50000 // visual orb — far enough to eliminate parallax
-const MOON_RADIUS = 50000
 export const SKY_RADIUS = 55000
 
 // Pre-allocated vectors for lighting computation (avoids per-frame GC pressure)
@@ -78,7 +76,6 @@ const _sunD = new THREE.Vector3()
 // moon. ONE derivation of one physical fact — read it, never recompute it.
 const _keyD = new THREE.Vector3()
 const _moonD = new THREE.Vector3()
-const _camFwd = new THREE.Vector3()
 const _lc1 = new THREE.Color()
 const _lc2 = new THREE.Color()
 
@@ -93,8 +90,7 @@ function lerpColor(color1, color2, t) {
 // Avoids drawing 1,729 buildings into a 4K shadow map 60x/sec.
 const _prevShadowPos = new THREE.Vector3()
 // Camera-fitted shadow frustum scratch (module scope — no per-frame GC).
-// ⛔ `_camFwd` above is already owned by the lighting code; this pass needs its
-// own so a refit can never stomp a value mid-frame.
+// Its own scratch, so a refit can never stomp a value another pass holds mid-frame.
 const _shadowFwd = new THREE.Vector3()
 const _focus = new THREE.Vector3()
 const _prevFocus = new THREE.Vector3(Infinity, Infinity, Infinity)
@@ -519,22 +515,24 @@ function SecondaryOrb({ color, intensity, intensityMulRef }) {
   )
 }
 
-function Moon({ position, phase, illumination, sunDirection, dayFactor, visible }) {
-  const moonRef = useRef()
-  const glowRef = useRef()
-  const moonTexture = useTexture(kitUrl('textures/moon.jpg'))
-
-  const moonMaterial = useMemo(() => {
-    return new THREE.ShaderMaterial({
+/**
+ * THE MOON'S MATERIAL — one home for the sky's moon and the Almanac's picture (`src/lib/townMoonImage.js`): the
+ * photographed surface (kit `textures/moon.jpg`), lit for its phase by the real sun direction. Set `phase`, `dayFactor`
+ * and `sunDir3D` (moonSunDir3D) per draw.
+ */
+export function createMoonMaterial(moonTexture) {
+  return new THREE.ShaderMaterial({
       uniforms: {
         moonMap: { value: moonTexture },
-        phase: { value: phase },
+        phase: { value: 0 },
         dayFactor: { value: 0.0 },
         // Full 3D sun direction in billboard-local space (X=right, Y=up, Z=toward camera).
         // The Z component is critical: when the sun is angularly far from the moon
         // (crescent phases), Z is large and negative, creating a narrow crescent.
         // Without Z, the shader can't distinguish a crescent from a gibbous phase.
         sunDir3D: { value: new THREE.Vector3(1, 0, 0) },
+        // 1 = the sky's soft horizon fade; 0 = the moon on its own (the Almanac's picture shows it below the horizon too)
+        horizonFade: { value: 1.0 },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -550,6 +548,7 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
         uniform float phase;
         uniform float dayFactor;
         uniform vec3 sunDir3D;
+        uniform float horizonFade;
         varying vec2 vUv;
         varying vec3 vWorldPos;
         #define PI 3.14159265359
@@ -596,7 +595,7 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
           // Soft horizon fade — moon emerges smoothly from behind the horizon.
           vec3 viewDir = normalize(vWorldPos - cameraPosition);
           float elevAngle = asin(viewDir.y);
-          litAlpha *= smoothstep(-0.02, 0.008, elevAngle);
+          litAlpha *= mix(1.0, smoothstep(-0.02, 0.008, elevAngle), horizonFade);
           if (litAlpha < 0.005) discard;
 
           gl_FragColor = vec4(color, litAlpha);
@@ -605,7 +604,14 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
       transparent: true,
       depthWrite: false,
     })
-  }, [moonTexture, 5])
+}
+
+function Moon({ position, phase, illumination, sunDirection, dayFactor, visible }) {
+  const moonRef = useRef()
+  const glowRef = useRef()
+  const moonTexture = useTexture(kitUrl('textures/moon.jpg'))
+
+  const moonMaterial = useMemo(() => createMoonMaterial(moonTexture), [moonTexture])
 
   const glowMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -664,16 +670,7 @@ function Moon({ position, phase, illumination, sunDirection, dayFactor, visible 
       // far from the moon, so Z is large and negative (sun behind the moon
       // from the camera's POV). This makes NdotL negative for most of the
       // front-facing hemisphere, producing a thin crescent.
-      if (sunDirection) {
-        const camRight = _sunD.set(1, 0, 0).applyQuaternion(camera.quaternion)
-        const camUp = _moonD.set(0, 1, 0).applyQuaternion(camera.quaternion)
-        camera.getWorldDirection(_camFwd)
-        const sx = sunDirection.dot(camRight)
-        const sy = sunDirection.dot(camUp)
-        // Negate: camFwd points INTO scene, but billboard +Z points TOWARD camera
-        const sz = -sunDirection.dot(_camFwd)
-        moonRef.current.material.uniforms.sunDir3D.value.set(sx, sy, sz)
-      }
+      if (sunDirection) moonSunDir3D(sunDirection, camera, moonRef.current.material.uniforms.sunDir3D.value)
     }
     if (glowRef.current) {
       glowRef.current.quaternion.copy(camera.quaternion)
@@ -1463,9 +1460,7 @@ function CelestialBodies({
   // The town being drawn: a live switch moves the sun and the moon on the same render.
   const place = useTownPlace()
   const lighting = useMemo(() => {
-    const sunPos = SunCalc.getPosition(currentTime, place.lat, place.lon)
-    const moonPos = SunCalc.getMoonPosition(currentTime, place.lat, place.lon)
-    const moonIllum = SunCalc.getMoonIllumination(currentTime)
+    const { sunPos, moonPos, illum: moonIllum } = moonSky(currentTime, place, { sunVisual: _sunVP, moonPosition: _moonP })
 
     const sunAlt = sunPos.altitude
     const moonAlt = moonPos.altitude
@@ -1475,8 +1470,6 @@ function CelestialBodies({
     const isGoldenHour = sunAlt >= 0.05 && sunAlt < 0.3
 
     celestialToPosition(sunPos.azimuth + Math.PI, sunPos.altitude, LIGHT_RADIUS, _sunLP, 100)
-    celestialToPosition(sunPos.azimuth + Math.PI, sunPos.altitude, SUN_VISUAL_RADIUS, _sunVP, 100)
-    celestialToPosition(moonPos.azimuth + Math.PI, moonPos.altitude, MOON_RADIUS, _moonP)
 
     let primary = {}
     let secondary = {}

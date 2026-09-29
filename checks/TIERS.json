@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 338,
+  "total": 339,
   "counts": {
-    "safe": 185,
+    "safe": 186,
     "local-effect": 6,
     "live": 147
   },
@@ -2227,6 +2227,13 @@
     },
     {
       "file": "checks/claims-the-tide-phase-stays-in-bounds.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-town-moon-is-the-sky-moon.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
