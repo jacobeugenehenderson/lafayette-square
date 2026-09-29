@@ -28,6 +28,8 @@
  * next morning.
  */
 
+import { townClockOf } from './townClock.js'
+
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 
 // `m` is minutes-from-midnight of the day the SLOT belongs to, so a caller testing
@@ -57,10 +59,10 @@ function _within(slot, m) {
  * 01:00 belongs to YESTERDAY, and reaching for today's would read `undefined.close` and
  * take the surface down. The boolean and the label must come from one resolution.
  */
-export function openSlotAt(hours, when) {
+export function openSlotAt(hours, when, timeZone) {
   if (!hours) return null
-  const mins = when.getHours() * 60 + when.getMinutes()
-  const dow = when.getDay()
+  // ⛔ THE TOWN'S clock, never the viewer's (src/lib/townClock.js): hours are the town's wall-clock hours.
+  const { minuteOfDay: mins, dow } = townClockOf(when, timeZone)
   const today = hours[DAYS[dow]]
   if (_within(today, mins)) return today
   const yesterday = hours[DAYS[(dow + 6) % 7]]
@@ -69,8 +71,8 @@ export function openSlotAt(hours, when) {
 }
 
 /** True when `hours` (a {day: {open, close}} map) covers the instant `when`. */
-export function isOpenAt(hours, when) {
-  return openSlotAt(hours, when) !== null
+export function isOpenAt(hours, when, timeZone) {
+  return openSlotAt(hours, when, timeZone) !== null
 }
 
 export { DAYS as OPEN_NOW_DAYS }

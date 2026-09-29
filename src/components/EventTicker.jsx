@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { isOpenAt, openSlotAt } from '../lib/openNow.js'
+import { townClockOf } from '../lib/townClock.js'
 import { getEvents } from '../lib/api'
 import useListings from '../hooks/useListings'
 import useEvents, { isActiveEvent } from '../hooks/useEvents'
@@ -107,9 +108,9 @@ function _dateRangeLabel(e) {
 
 function buildTickerEntries(allListings, allEvents, clockTime) {
   const now = clockTime || new Date()
-  const dayAbbrev = DAY_ABBREVS[now.getDay()]
-  const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
-  const dateStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
+  // ⛔ The TOWN's clock (src/lib/townClock.js): its weekday, time and date, never the viewer's.
+  const { dow, hhmm: timeStr, date: dateStr } = townClockOf(now)
+  const dayAbbrev = DAY_ABBREVS[dow]
 
   const entries = new Map() // listing_id -> ticker entry
 

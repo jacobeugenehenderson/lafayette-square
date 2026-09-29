@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback, useContext, useRef } from 'react'
 import { INSTANCE } from '../instance.js'
+import { townClockOf } from '../lib/townClock.js'
+import { openSlotAt } from '../lib/openNow.js'
 import { indexMenuItems, lineKey, mintItemId } from '../lib/menuIdentity.js'
 import { itemOrderability, resolveCart, BLOCKED, BLOCKED_COPY } from '../lib/commerce.js'
 import useCommerce, { useListingCommerce } from '../hooks/useCommerce'
@@ -61,66 +63,32 @@ function formatTime(time) {
   return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`
 }
 
+// ⛔ The TOWN's clock (src/lib/townClock.js) and ONE open/closed resolution (src/lib/openNow.js) — this was a fourth copy
+// of the predicate, read in the VIEWER's zone, so a card could say "Closed" while the neon on the same place was lit.
 function getOpenStatus(hours) {
   if (!hours) return { isOpen: null, text: 'Hours not available' }
 
   const now = new Date()
-  const dayName = DAY_NAMES[now.getDay()]
-  const todayHours = hours[dayName]
-
-  if (!todayHours) {
-    for (let i = 1; i <= 7; i++) {
-      const nextDayIndex = (now.getDay() + i) % 7
-      const nextDay = DAY_NAMES[nextDayIndex]
-      if (hours[nextDay]) {
-        return {
-          isOpen: false,
-          text: `Closed \u00B7 Opens ${DAY_LABELS[nextDay]} ${formatTime(hours[nextDay].open)}`
-        }
-      }
-    }
-    return { isOpen: false, text: 'Closed' }
-  }
-
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
-  if (typeof todayHours.open !== 'string' || typeof todayHours.close !== 'string'
-      || todayHours.open.indexOf(':') === -1 || todayHours.close.indexOf(':') === -1) {
+  const { dow, minuteOfDay } = townClockOf(now)
+  const todayHours = hours[DAY_NAMES[dow]]
+  if (todayHours && (typeof todayHours.open !== 'string' || typeof todayHours.close !== 'string'
+      || todayHours.open.indexOf(':') === -1 || todayHours.close.indexOf(':') === -1)) {
     return { isOpen: null, text: 'Hours not available' }
   }
-  const [openH, openM] = todayHours.open.split(':').map(Number)
-  const [closeH, closeM] = todayHours.close.split(':').map(Number)
-  const openMinutes = openH * 60 + openM
-  let closeMinutes = closeH * 60 + closeM
+  const slot = openSlotAt(hours, now)
+  if (slot) return { isOpen: true, text: `Open \u00B7 Closes ${formatTime(slot.close)}` }
 
-  if (closeMinutes < openMinutes) {
-    closeMinutes += 24 * 60
-    if (currentMinutes < openMinutes) {
-      const adjustedCurrent = currentMinutes + 24 * 60
-      if (adjustedCurrent < closeMinutes) {
-        return { isOpen: true, text: `Open \u00B7 Closes ${formatTime(todayHours.close)}` }
-      }
-    }
+  if (todayHours) {
+    const [openH, openM] = todayHours.open.split(':').map(Number)
+    if (minuteOfDay < openH * 60 + openM) return { isOpen: false, text: `Closed \u00B7 Opens ${formatTime(todayHours.open)}` }
   }
-
-  if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
-    return { isOpen: true, text: `Open \u00B7 Closes ${formatTime(todayHours.close)}` }
-  }
-
-  if (currentMinutes < openMinutes) {
-    return { isOpen: false, text: `Closed \u00B7 Opens ${formatTime(todayHours.open)}` }
-  }
-
   for (let i = 1; i <= 7; i++) {
-    const nextDayIndex = (now.getDay() + i) % 7
-    const nextDay = DAY_NAMES[nextDayIndex]
+    const nextDay = DAY_NAMES[(dow + i) % 7]
     if (hours[nextDay]) {
-      if (i === 1) {
-        return { isOpen: false, text: `Closed \u00B7 Opens tomorrow ${formatTime(hours[nextDay].open)}` }
-      }
+      if (i === 1 && todayHours) return { isOpen: false, text: `Closed \u00B7 Opens tomorrow ${formatTime(hours[nextDay].open)}` }
       return { isOpen: false, text: `Closed \u00B7 Opens ${DAY_LABELS[nextDay]} ${formatTime(hours[nextDay].open)}` }
     }
   }
-
   return { isOpen: false, text: 'Closed' }
 }
 
@@ -2868,8 +2836,8 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
     const available = new Set(menus.map(m => m.key))
     const sched = menu?.schedule || {}
     const now = menuTime
-    const dayAbbrev = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()]
-    const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+    const { dow, hhmm: timeStr } = townClockOf(now)   // the TOWN's clock (src/lib/townClock.js)
+    const dayAbbrev = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dow]
 
     // Find all menu types active right now, pick the one with latest start time
     let best = null
@@ -2905,8 +2873,8 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
   const DAY_ABBREVS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
 
   const orderableMenus = useMemo(() => {
-    const dayAbbrev = DAY_ABBREVS[menuTime.getDay()]
-    const timeStr = String(menuTime.getHours()).padStart(2, '0') + ':' + String(menuTime.getMinutes()).padStart(2, '0')
+    const { dow, hhmm: timeStr } = townClockOf(menuTime)   // the TOWN's clock (src/lib/townClock.js)
+    const dayAbbrev = DAY_ABBREVS[dow]
 
     const available = new Set()
     for (const [menuKey, daySched] of Object.entries(schedule)) {

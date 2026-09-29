@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 341,
+  "total": 342,
   "counts": {
     "safe": 188,
     "local-effect": 6,
-    "live": 147
+    "live": 148
   },
   "checks": [
     {
@@ -397,6 +397,17 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-town-keeps-its-own-clock.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import of src/lib/openNow.js — read, safe",
+        "computed import of src/lib/townClock.js — read, safe",
+        "computed import of src/lib/townPlace.js — read, safe",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
