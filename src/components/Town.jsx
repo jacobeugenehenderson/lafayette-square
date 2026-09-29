@@ -280,8 +280,32 @@ export function frameBuildings(places, ids) {
  * Puts its children on the drawn ground at a place in the town: local metres `x z`, or `lat lon`
  * projected through the town's own place (lib/townPlace.js). `lift` raises them above the ground.
  * The ground's height follows the terrain exaggeration of the shot, every frame.
+ * ⭐ `building={id}` instead seats them ON THAT BUILDING'S ROOF — its highest point, over its footprint's centre, lifted
+ * exactly as the building is drawn (`roofTopY + centroidY × exaggeration`), every frame; `lift` is then metres above
+ * the roof. The one home for "on the roof". Draws nothing until the town's buildings load; ⛔ an id the town does not
+ * have, or a building with no roof, throws by name — never a guessed height.
  */
-export function TownPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
+export function TownPoint({ building, ...rest }) {
+  return building != null ? <RoofPoint building={building} {...rest} /> : <GroundPoint {...rest} />
+}
+function RoofPoint({ building, lift = 0, children, ...props }) {
+  const index = useSlabBuildingIndex((s) => s.index)
+  const ref = useRef()
+  const e = index?.byId.get(building)
+  if (index && !e) throw new Error(`[TownPoint] ⛔ this town has no building "${building}"`)
+  if (e && e.roofTopY == null) throw new Error(`[TownPoint] ⛔ building "${building}" has no roof in the slab — nothing to seat on`)
+  const at = useMemo(() => {
+    if (!e) return null
+    let x = 0, z = 0
+    for (const [px, pz] of e.footprint) { x += px; z += pz }
+    return { x: x / e.footprint.length, z: z / e.footprint.length }
+  }, [e])
+  const y = () => e.roofTopY + e.centroidY * terrainExag.value + lift
+  useFrame(() => { if (ref.current && e) ref.current.position.y = y() })
+  if (!e) return null
+  return <group ref={ref} position={[at.x, y(), at.z]} {...props}>{children}</group>
+}
+function GroundPoint({ x, z, lat, lon, lift = 0, children, ...props }) {
   const place = useTownPlace()
   const geo = lat != null || lon != null
   const px = geo ? (lon - place.lon) * place.lonToMeters : x

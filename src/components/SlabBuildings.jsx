@@ -266,6 +266,18 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     const roView = manifest.roofOutlineByteOffset != null
       ? new Float32Array(bin, manifest.roofOutlineByteOffset, manifest.roofOutlinePointCount * 2)
       : null
+    // ⭐ Each building's ROOF PEAK (pre-terrain-lift local Y): the highest vertex of its own roof range, read from the
+    // roof group it was baked into (groups are keyed kind:material). What <TownPoint building> seats on. No roof ⇒ null.
+    const roofPos = new Map(manifest.groups.filter((g) => g.kind === 'roof')
+      .map((g) => [g.id, new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)]))
+    const roofTopOf = (b) => {
+      const pos = b.ranges?.roof && roofPos.get(b.roofMaterial)
+      if (!pos) return null
+      const [start, count] = b.ranges.roof
+      let top = -Infinity
+      for (let v = start; v < start + count; v++) top = Math.max(top, pos[v * 3 + 1])
+      return Number.isFinite(top) ? top : null
+    }
     const byNum = manifest.buildings.map((b) => {
       const [ptStart, ptCount] = b.footprintRange
       const footprint = new Array(ptCount)
@@ -277,7 +289,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
         for (let i = 0; i < rCount; i++) roofOutline[i] = [roView[(rStart + i) * 2], roView[(rStart + i) * 2 + 1]]
       }
       return {
-        id: b.id, footprint, roofOutline, centroidY: b.centroidY, baseY: b.baseY,
+        id: b.id, footprint, roofOutline, centroidY: b.centroidY, baseY: b.baseY, roofTopY: roofTopOf(b),
         wallMaterial: b.wallMaterial, roofMaterial: b.roofMaterial, zoning: b.zoning,
         ranges: b.ranges,
       }
