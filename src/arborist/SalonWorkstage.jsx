@@ -834,12 +834,11 @@ function SlotCard({
   const viewKey = `${species}:${slot}:${chassis || 'none'}:${bark?.ref || ''}:${leaves?.pack || ''}`
 
   // Brief 19 (Quartz): the authored gizmo transform (lean/tilt X-Z, rotateY,
-  // posOffset, scale) — straightens/centers/scales mis-oriented vendor
+  // posOffset) — straightens/centers mis-oriented vendor
   // chassis. Persisted to composition.transform and baked into the published
   // geometry (was inspection-only + thrown away on every slot/chassis switch).
   const [rotationY, setRotationY] = useState(0)
   const [posOffset, setPosOffset] = useState([0, 0, 0])
-  const [scaleOverride, setScaleOverride] = useState(1)
   const [tiltX, setTiltX] = useState(0)
   const [tiltZ, setTiltZ] = useState(0)
   // HYDRATE from the persisted transform on slot/chassis switch (was: reset
@@ -856,7 +855,6 @@ function SlotCard({
     setRotationY(rot[1] || 0)
     setTiltX(rot[0] || 0)
     setTiltZ(rot[2] || 0)
-    setScaleOverride(typeof t.scale === 'number' ? t.scale : 1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [species, slot, chassis])
 
@@ -878,7 +876,6 @@ function SlotCard({
         0,
         over.tiltZ ?? tiltZ,
       ],
-      scale: over.scaleOverride ?? scaleOverride,
     } })
   }
 

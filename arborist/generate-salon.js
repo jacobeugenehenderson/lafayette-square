@@ -157,7 +157,9 @@ export const DEFAULTS = {
   // gizmo at preview; BAKED into the published geometry at publish
   // (writeMultiCompositionGLB → buildCompositionDocument), so the chassis
   // ships oriented/placed/scaled exactly as the operator authored it.
-  transform: { posOffset: [0, 0, 0], rotation: [0, 0, 0], scale: 1 },
+  // No scale: a tree's size is its species' mature height (publish-glb normalizeScale). The
+  // gizmo's scale was retired 2026-09-28 — publish re-normalised it away, so it only misled.
+  transform: { posOffset: [0, 0, 0], rotation: [0, 0, 0] },
 }
 
 // ── leaf.size derivation (§2.3) ──────────────────────────────────────────
@@ -1141,9 +1143,6 @@ function mat4Mul(a, b) {
 function mat4Translate(tx, ty, tz) {
   return [1,0,0,0, 0,1,0,0, 0,0,1,0, tx,ty,tz,1]
 }
-function mat4Scale(s) {
-  return [s,0,0,0, 0,s,0,0, 0,0,s,0, 0,0,0,1]
-}
 // Euler XYZ → column-major rotation matrix, byte-for-byte the same formula
 // three.js Matrix4.makeRotationFromEuler uses for order 'XYZ' (the order a
 // single <group rotation={[rx,ry,rz]}> applies). Replicating it exactly is
@@ -1228,10 +1227,8 @@ function isIdentityTransform(t) {
   if (!t) return true
   const po  = Array.isArray(t.posOffset) ? t.posOffset : [0, 0, 0]
   const rot = Array.isArray(t.rotation)  ? t.rotation  : [0, 0, 0]
-  const s   = typeof t.scale === 'number' ? t.scale : 1
   return po[0] === 0 && po[1] === 0 && po[2] === 0
     && rot[0] === 0 && rot[1] === 0 && rot[2] === 0
-    && s === 1
 }
 
 // Bake the authored transform into every prim's POSITION + NORMAL. No-op
@@ -1240,24 +1237,17 @@ function bakeAuthoredTransform(doc, transform) {
   if (isIdentityTransform(transform)) return
   const po  = Array.isArray(transform.posOffset) ? transform.posOffset : [0, 0, 0]
   const rot = Array.isArray(transform.rotation)  ? transform.rotation  : [0, 0, 0]
-  // Uniform scale only — the gizmo emits a scalar (scaleOverride). Coerce +
-  // guard so an accidental array can't smuggle in a non-uniform scale (which
-  // the upper-3×3 normal bake below does NOT handle correctly).
-  const s = typeof transform.scale === 'number' ? transform.scale : 1
-
   const pivot = computeAutoCenterPivot(doc)
   // T_autocenter centers the trunk base on the origin (centerX=-x, ground=
   // -minY, centerZ=-z), exactly as the viewport's <Skeleton> inner group.
   const Tc    = pivot ? mat4Translate(-pivot.x, -pivot.minY, -pivot.z) : mat4Translate(0, 0, 0)
   const TcInv = pivot ? mat4Translate( pivot.x,  pivot.minY,  pivot.z) : mat4Translate(0, 0, 0)
   const Toff  = mat4Translate(po[0], po[1], po[2])
-  const S     = mat4Scale(s)
   const R     = eulerXYZToMat4(rot[0], rot[1], rot[2])
 
-  // M = TcInv · R · S · Toff · Tc   (compose inner→outer)
+  // M = TcInv · R · Toff · Tc   (compose inner→outer)
   let m = Tc
   m = mat4Mul(Toff, m)
-  m = mat4Mul(S, m)
   m = mat4Mul(R, m)
   m = mat4Mul(TcInv, m)
 

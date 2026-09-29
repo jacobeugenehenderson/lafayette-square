@@ -553,11 +553,13 @@ function TreeGizmo({ position, rotation = [0, 0, 0], scale, topY, overheadY = 13
       <group position={[0, overheadY, 0]}>
         <AxisArrow color={Y_COLOR} direction="y" length={armLen} tipR={tipR}
           onDown={startYTranslate} onMove={onMove} onUp={releaseCapture} />
-        <mesh position={[1.5, 0, 0]}>
+        {/* The scale cube + its arm draw only where a caller takes a scale (the retired
+            workstages). The Salon does not: a tree's size is its species' mature height. */}
+        {onScale && <mesh position={[1.5, 0, 0]}>
           <boxGeometry args={[2.4, 0.05, 0.05]} />
           <meshBasicMaterial color="#ff8a3d" transparent opacity={0.6} />
-        </mesh>
-        <mesh
+        </mesh>}
+        {onScale && <mesh
           position={[3.0, 0, 0]}
           onPointerDown={startScale}
           onPointerMove={onMove}
@@ -566,7 +568,7 @@ function TreeGizmo({ position, rotation = [0, 0, 0], scale, topY, overheadY = 13
         >
           <boxGeometry args={[0.8, 0.8, 0.8]} />
           <meshStandardMaterial color="#ff8a3d" emissive="#ff5500" emissiveIntensity={0.6} />
-        </mesh>
+        </mesh>}
       </group>
 
       {/* Rotation ring at the bullseye. Tree on bullseye → rotates
