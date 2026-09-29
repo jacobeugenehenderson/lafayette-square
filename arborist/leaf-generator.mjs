@@ -384,7 +384,11 @@ async function drawVariant(model, season, seed, { age = 1, fall = 1 } = {}) {
     // a pixel turns once `fall` passes its threshold — junctions and veins have the lowest
     const fallAt = smooth(0.7 - readiness * 0.6, 1 - readiness * 0.6, fall + 0.3 * fall)
     fc = shift(fc, mott * 8, 0, mott * P.mottle)
-    fc = mix(fc, shift(fc, 22, 0, 0.1), Math.min(1, vn * 1.2) * (0.5 + 0.5 * J))
+    // the veins (and most of all their junctions) lose green first and go yellow-orange; the
+    // middle of each space between veins is where the red runs deepest
+    fc = mix(fc, shift(fc, -8, 0, -0.07), (1 - nearVein) * P.fall_areole_dark)
+    fc = mix(fc, hex(P.fall_vein_color), Math.min(1, vn * 1.3) * (0.55 + 0.45 * J))
+    fc = mix(fc, hex(P.fall_vein_color), J * P.fall_junction_glow)
     fc = mix(fc, shift(fc, 14, 0, 0.05), an * 0.4)
     fc = mix(s, fc, fallAt)
     if (stalk[i] > inB) { s = mix(stalkCol, s, 0); fc = shift(stalkCol, 0, 0, -0.05) }

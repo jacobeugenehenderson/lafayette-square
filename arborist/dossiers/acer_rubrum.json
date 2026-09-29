@@ -325,8 +325,8 @@
         0.06
       ],
       "vein_width": [
-        0.0022,
-        0.0028
+        0.0018,
+        0.0023
       ],
       "petiole_width_factor": [
         0.9,
@@ -348,10 +348,10 @@
       "light_jitter": 0.05,
       "mottle": 0.06,
       "fall_palette": [
-        "#d32414",
-        "#c0301a",
-        "#e0621c",
-        "#e8a020"
+        "#c8141a",
+        "#d42a18",
+        "#b8101c",
+        "#dc3a16"
       ],
       "dome": 0.6,
       "vein_depth": 0.5,
@@ -373,7 +373,10 @@
       "scallop_depth": [
         0,
         0.015
-      ]
+      ],
+      "fall_vein_color": "#f0a020",
+      "fall_areole_dark": 0.6,
+      "fall_junction_glow": 0.16
     }
   },
   "twigModel": {
