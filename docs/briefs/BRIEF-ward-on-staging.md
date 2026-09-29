@@ -27,8 +27,9 @@ pieces that the Ward's `OPERATIONS.md` (lines ~140–145) describes as existing.
 
 1. **The per-town player switch** — `scripts/set-staging-player.mjs --map=<map> --player=ward`, which
    writes `staging/sites/<map>/player.json`.
-2. **The kit bundle** — the renderer's own files published under `kit/<kit-sha>/` and served at
-   `/_ward/<sha>/`, with the page naming them in `<meta name="ward-kit-base">`.
+2. **The kit bundle** — the renderer's own files published under `kit/<kit-sha>/`, with the page naming
+   them in `<meta name="ward-kit-base">`. *(The Ward's doc said "served at `/_ward/<sha>/`"; settled
+   2026-09-28 as the asset host instead — §4 item 3.)*
 
 Until both exist, no town on staging can draw inside the Ward. **Nothing in the Ward's code calls either
 name yet** (Warden, 2026-09-28), so you are defining the kit's half of an agreed interface, not chasing a
@@ -82,10 +83,16 @@ caller.
    assets; `legacy` serves today's `/_player/` path. **No record means a 404 that names the map and
    the missing record** — never a default. Keep the existing slab-existence 404 and `shareCard()`
    behaviour for both players.
-3. **The kit bundle.** Publish the renderer's own assets once per kit revision under `kit/<kit-sha>/`
-   (immutable, cached hard). Serve them at `/_ward/<sha>/`. Whatever writes the Ward's document names the
-   pinned sha in `<meta name="ward-kit-base">`. **Settle with Warden which side stamps that meta** before
-   you build it, and tell Boz. The kit sha is a git commit, never a date or a counter.
+3. **The kit bundle.** Publish the renderer's own assets once per kit revision to the **asset host** at
+   `staging/kit/<kit-sha>/` (immutable, cached hard) — read through the asset base like the slab, as
+   `BRIEF-slab-loading §⑥b` rules; ⛔ not a path on the site Worker. **Settled 2026-09-28 (Boz, with
+   Warden + the kit agent):** (a) **the Worker stamps** `<meta name="ward-kit-base">` into the Ward's
+   document, from the kit sha pinned in the Ward's publish record (`current.json`'s `kit`); (b) the bundle
+   lives at `staging/kit/<kit-sha>/`; (c) the renderer's `kitUrl()` reads that tag and **throws** without
+   it — ⛔ no fallback to `BASE_URL`. ⚠️ **The kit's own apps (Cartograph, Stage, Preview) must declare
+   their kit base explicitly too**, the same tag or an equivalent explicit value, so the throw never fires
+   in authoring and the old `BASE_URL` read is deleted, not kept beside. The kit sha is a git commit, never
+   a date or a counter.
 4. **Dry-run end to end** against one town, with no deploy: the record, the routed paths and the bundle
    manifest, all printed.
 
@@ -111,7 +118,7 @@ The Worker runs remotely. Test it locally with `wrangler dev` (or through Minifl
 uses it) against a local R2. A check that reads only the source proves the shape, not the behaviour; you
 need both. On staging, after Jacob deploys:
 `curl -s https://staging.theward.online/<map>/ | grep ward-kit-base` names a sha, and that sha's
-`/_ward/<sha>/basis/…` returns 200. A map with no record returns a 404 that names it.
+`staging/kit/<sha>/basis/…` on the asset host returns 200. A map with no record returns a 404 that names it.
 
 ## 7. Bounds
 
