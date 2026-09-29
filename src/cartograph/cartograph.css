@@ -1486,6 +1486,11 @@ input[type="range"]:active { cursor: grabbing; }
 .carto-identity-unset { opacity: 0.35; }
 .carto-identity-todo { font-size: var(--type-label-sm); color: var(--warning); }
 .carto-identity-error { grid-column: 1 / -1; font-size: var(--type-caption); color: var(--error); }
+.carto-identity-advice { grid-column: 1 / -1; font-size: var(--type-caption); color: var(--warning); display: flex; align-items: center; gap: 6px; }
+.carto-identity-sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: middle; border: 1px solid var(--outline-variant); }
+.carto-identity-suggest { grid-column: 1 / -1; }
+.carto-identity-proposal { grid-column: 1 / -1; font-size: var(--type-label-sm); display: flex; flex-direction: column; gap: 6px; padding: 8px; border: 1px solid var(--outline-variant); border-radius: var(--carto-radius); }
+.carto-identity-neon { display: inline-flex; gap: 2px; }
 
 /* Expanded alternatives — the accumulating directory of public wells. */
 .carto-sources-alts {

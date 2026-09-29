@@ -66,6 +66,7 @@ import {
 } from '../skyLightChannels.js'
 import { migrateSkyChannel, SKY_BANDS, SKY_HOURS } from '../skyGrid.js'
 import { validateIdentity } from '../../lib/townIdentity.js'
+import { assertHardPolicy } from '../../lib/colourPolicy.js'
 
 const ACTIVE_LOOK_KEY = 'cartograph-active-look'
 // ⛔⛔ There is deliberately NO `DEFAULT_LOOK_ID = 'lafayette-square'` here any
@@ -841,12 +842,14 @@ const useCartographStore = create((set, get) => ({
   },
   // Move the park title. pos = [x,z] world, or null to reset to the default.
   // The Identity panel: choose one channel (src/lib/townIdentity.js), or `null` to un-choose it (the kit's neutral
-  // value shows). A malformed value THROWS — the panel shows the message; nothing is saved.
+  // value shows). A malformed value, or one under the contrast policy's hard floor, THROWS — nothing is saved.
   setIdentityChannel: (channel, value) => {
     const next = { ...get().identity }
     if (value == null) delete next[channel]
     else next[channel] = value
-    set({ identity: validateIdentity(next, 'Identity'), bakeStale: true })
+    const identity = validateIdentity(next, 'Identity')
+    assertHardPolicy({ identity }, 'Identity')     // the contrast policy's hard tier (src/lib/colourPolicy.js)
+    set({ identity, bakeStale: true })
     get()._saveDesignDebounced()
   },
   setParkTitlePos: (pos) => {
@@ -1203,6 +1206,7 @@ const useCartographStore = create((set, get) => ({
   // where it always was, materialColors.neon_<category>; `null` un-chooses it (the kit's neutral hue shows).
   setCategoryNeon: (category, hex) => {
     if (hex != null && !/^#[0-9a-f]{6}$/i.test(hex)) throw new Error(`neon_${category} = ${JSON.stringify(hex)} — must be '#rrggbb'`)
+    if (hex != null) assertHardPolicy({ materialColors: { [`neon_${category}`]: hex } }, 'Identity')   // its chip ≥ 3:1
     set(s => {
       const next = { ...s.materialColors }
       if (hex == null) delete next[`neon_${category}`]

@@ -35,6 +35,7 @@
  *   TownBridge.jsx is gone — BRIEF-renderer-leaves-take-props's death condition.
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs'
+import { walk, specsOf, closure } from './_imports.mjs'
 import { join, relative, resolve, dirname } from 'path'
 
 const ROOT = new URL('..', import.meta.url).pathname
@@ -49,35 +50,10 @@ const OVERLAY_STORES = ['useUserLocation', 'useLandmarkFilter']
 // ⏳ KNOWN OPEN, still RED: the failure names the brief that closes it. Not an exemption — a time-box made visible.
 const OPEN = {}
 const GLOBE_RE = /INSTANCE\.geography(?!\.(cityState|stateCode)\b)/
-const EXTS = ['', '.js', '.jsx', '.mjs', '/index.js', '/index.jsx']
 
-function walk(dir, out = []) {
-  for (const n of readdirSync(dir)) {
-    const p = join(dir, n)
-    if (statSync(p).isDirectory()) walk(p, out)
-    else if (/\.(jsx?|mjs)$/.test(n)) out.push(p)
-  }
-  return out
-}
-
-const SPEC_RE = /(?:^\s*(?:import|export)\b[^;'"()]*?\bfrom\s*['"]([^'"]+)['"]|^\s*import\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\))/gm
-function specsOf(src) { return [...src.matchAll(SPEC_RE)].map(m => m[1] || m[2] || m[3]) }
-function resolveSpec(byPath, fromPath, spec) {
-  if (!spec.startsWith('.')) return null
-  const base = relative(ROOT, resolve(ROOT, dirname(fromPath), spec.split('?')[0]))
-  for (const e of EXTS) if (byPath.has(base + e)) return base + e
-  return null
-}
 const isStoreModule = (p) => PLAYER_STORES.some(s => new RegExp(`/hooks/${s}\\.jsx?$`).test(p))
 export function closureOf(files, entry, { throughStores = false } = {}) {
-  const byPath = new Map(files.map(x => [x.path, x]))
-  const seen = new Set([entry]), q = [entry]
-  while (q.length) {
-    const p = q.shift(), x = byPath.get(p)
-    if (!x || (!throughStores && isStoreModule(p))) continue
-    for (const s of specsOf(x.src)) { const r = resolveSpec(byPath, p, s); if (r && !seen.has(r)) { seen.add(r); q.push(r) } }
-  }
-  return [...seen].map(p => byPath.get(p)).filter(Boolean)
+  return closure(files, entry, throughStores ? () => false : isStoreModule)
 }
 const importsStore = (x, store) => specsOf(x.src).some(s => new RegExp(`/${store}(\\.jsx?)?$`).test(s))
 const code = (src) => src.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')

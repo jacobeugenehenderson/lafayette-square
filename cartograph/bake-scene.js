@@ -32,6 +32,7 @@
 //     and says out loud that it is ignored.
 import { authoredCategories } from '../src/lib/categoryColor.js'
 import { validateIdentity } from '../src/lib/townIdentity.js'
+import { assertHardPolicy } from '../src/lib/colourPolicy.js'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -69,6 +70,10 @@ export async function bakeScene({ look } = {}) {
   } else {
     console.warn(`[bake-scene] no design.json at ${designPath}; using defaults`)
   }
+
+  // The contrast policy's HARD tier (src/lib/colourPolicy.js): an accent under 7:1 or a category chip under 3:1 on the
+  // player's grounds fails the bake — a hand-edited design.json cannot pass what the Identity panel refuses.
+  assertHardPolicy({ identity: validateIdentity(design.identity, `${look}'s design.json`), materialColors: design.materialColors || {} }, `${look}'s design.json`)
 
   const scene = {
     version: 1,

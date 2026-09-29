@@ -139,6 +139,8 @@ Every input a town is poured from, what to do about it, and where it can come fr
 
 How the town looks, chosen in one place: its **Mark** (one emoji — avatar, load screen, tab), **Accent** (the Ward's chrome colour), **Rating mark** (one emoji, what a place is rated in) and **Lit tint** (colour + strength of the roofs of a chosen category or search, and of the selected building — previewed live). Saved in the Look's `design.json` `identity`, baked into `scene.json`, published as the manifest's `look` (each channel with `…Authored`). A channel not chosen says so and names the kit's neutral value it shows; **clear** un-chooses one. A malformed value is refused with the reason, and nothing is saved. Sources lists **Identity** with **choose it here** and a to-do count until every channel is chosen. Not here: the town's name and locale (Operations), its label style (Designer). ▶ `node checks/claims-a-towns-identity-is-its-own.mjs`
 
+**Colour policy** (every colour here): accent ≥ 7:1 and each category chip ≥ 3:1 on the Ward's grounds, else not saved (nearest passing offered; the bake refuses it too); near a meaning colour → ⚑ advice only. **Suggest from mark** proposes accent, tint and neon from the mark (the Ward's default if it has no colour). ▶ `node checks/claims-identity-colours-obey-the-policy.mjs`
+
 **Neon — category colours** *(moved here from Surfaces, 2026-09-28)*: each category's colour is the town's own — its neon AND its chips in the Ward — **one colour per category, two forms derived from it**: **neon** (the map's tubes: your hex exactly) and **detail** (a pastel of its hue for the Ward's chips, dots and accents). Stored as `materialColors.neon_<category>`; the scene bake stamps which you chose; the manifest publishes `taxonomy.categories[].neon` + `.detail` + `colorAuthored`. Not chosen → the kit's **neutral** hue (full-saturation neon, a pastel detail that reads as unauthored), and it counts on Sources' to-do. ▶ `node checks/claims-a-towns-colours-are-its-own.mjs` (also lists the towns whose scene still predates it).
 
 ### Time of Day card
@@ -276,13 +278,11 @@ horizon ground disc is gone — the town's edge is the neighborhood fade, set in
   from R2; the bake's last step, `scripts/upload-baked-to-r2.mjs --env=staging`, writes **staging** keys only
   (prod is Promote), and a failed upload **fails the bake** rather than returning a green slab that reached nobody.
   ▶ `node scripts/verify-baked-in-r2.mjs` (PUBLISH §6).
-  - ⭐ **Slab names — the knobs (built 2026-09-28; nothing run until Jacob's go).** `--names=sha256-16` also
-    writes every file under its content name (immutable), then `manifest.json` LAST, stamped; the player
-    (`src/lib/slabUrl.js`) follows the stamp. It **refuses a stale manifest** — run
-    `node cartograph/bake-manifest.mjs --town=<t>` first (the pour does not yet). Publish and Promote pass no
-    flag today. `node scripts/sweep-retired-slab-keys.mjs --env=<e> --look=<t>` retires old names (dry-run
-    unless `--apply`; keeps the last K ≥ 2 manifests). ⛔ Its `--retire-plain` must wait until this panel's
-    "already published" test reads `manifest.json` — today it reads the plain `scene.json`.
+  - ⭐ **Slab names** (`--names=sha256-16`: content-named files, `manifest.json` last) — each step Jacob's go:
+    (a) apply `scratch/serve-a/serve-names-a.patch`, then Publish each town · (b) deploy both Workers once
+    `node checks/claims-a-worker-deploy-darkens-no-town.mjs` is green · (c) add `--names` to Promote's prod upload ·
+    (d) Promote each production host · (e) `node scripts/sweep-retired-slab-keys.mjs --env=<e> --look=<t>`
+    (⛔ `--apply` deletes — Jacob only).
   - ⛔ **Order: publish every town with its `manifest.json`, THEN deploy a Worker** — both decide a town is
     live by it, and `wrangler deploy` refuses while it would darken one.
     ▶ `node checks/claims-a-worker-deploy-darkens-no-town.mjs`

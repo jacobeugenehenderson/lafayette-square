@@ -11,7 +11,8 @@
  * ▶ node checks/claims-the-town-reads-no-player-store.mjs — the renderer's inputs are these props.
  *
  * WHAT VARIES BY APP ARRIVES AS A PROP; what varies by town arrives from the slab and the town's
- * instance (`lookId`). The camera is the app's: mount it as a sibling of <Town>.
+ * instance (`lookId`). Town poses the Canvas's default camera for its shots — the app mounts none — except with
+ * flight={false}, where the app places it (Stage).
  *   town             REQUIRED — the installation's identity: a town manifest's `identity` ({ geography,
  *                    skyMode, profile, setPiece, … }). The kit's apps pass their instance module (the same
  *                    fields) — townForLook(lookId) from src/instance.js. Nothing <Town> reaches resolves a
