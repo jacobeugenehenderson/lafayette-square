@@ -9,7 +9,8 @@
  *
  * DESTINATIONS (the town's, never the app's):
  *   movie  the movie's own pose on MovieCamera's clock, re-sampled every frame (it lands on the path as it plays)
- *   plan   frameDensest's frame (the lit places, else every listed place — BRIEF ruling), fitted to the free region,
+ *   plan   the frame of its places (frameMode: 'densest' — frameDensest's cluster, the default · 'all' — every placed
+ *          member, frameAll), the lit places, else every listed place — BRIEF ruling — fitted to the free region,
  *          under the town's browseHeading; a true overhead on landing. No placed place → the whole Extent, said.
  *   street the eye at `streetAt`, 5′8″ above the drawn ground (utils/elevation#streetEyeY), looking north
  *
@@ -33,7 +34,8 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { createCameraTween } from './cameraTween.js'
 import { transitionMs } from './transitions.js'
-import { frameDensest } from '../lib/frameDensest.js'
+import { framePlaces } from '../lib/frameDensest.js'
+import { planAltitude, insetOffset } from './planPose.js'
 import { browseUpFromHeading, bearingOf } from '../lib/browseHeading.js'
 import { getSceneStencil } from '../components/sceneStencilState.js'
 import { streetEyeY } from '../utils/elevation'
@@ -49,7 +51,7 @@ const insetKey = (i) => (i ? `${i.top | 0},${i.right | 0},${i.bottom | 0},${i.le
 const _p = new THREE.Vector3(), _t = new THREE.Vector3(), _fwd = new THREE.Vector3()
 const _warned = new Set()
 
-export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds,
+export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds, frameMode = 'densest',
   frameKey, onFramed, planHeading = 'town', bearingRef }) {
   if (flight !== true && flight !== false && flight !== 'cut') throw new Error(`[Town] ⛔ flight must be true, 'cut' or false (got ${flight})`)
   const following = planHeading && typeof planHeading === 'object'
@@ -66,7 +68,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const tween = useRef(null)
   if (!tween.current) tween.current = createCameraTween()
   const live = useRef({})
-  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, size, onFramed, planHeading }
+  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, size, onFramed, planHeading }
   const prev = useRef(null)            // the last shot this component saw
   const pending = useRef(null)         // { shot, landed }: a cut whose destination is not known yet — landed when placed
   const flying = useRef(null)          // { from, to, toUp, fromOff, toOff }
@@ -80,8 +82,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
 
   // The view offset that centres the frame in the free region; the movie is full frame.
   const offsetFor = (s) => {
-    const i = s === PLAYBACK ? ZERO : { ...ZERO, ...(live.current.viewInset || {}) }
-    return { x: (i.right - i.left) / 2, y: (i.bottom - i.top) / 2 }
+    return insetOffset(s === PLAYBACK ? ZERO : { ...ZERO, ...(live.current.viewInset || {}) })
   }
   const applyOffset = (o) => {
     const { width: W, height: H } = live.current.size
@@ -112,25 +113,23 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
         chase: (toPos, toTarget) => movieHandle.current?.pose(toPos, toTarget) }
     }
     const i = { ...ZERO, ...(live.current.viewInset || {}) }
-    const fh = Math.max(0.05, (H - i.top - i.bottom) / H), fw = Math.max(0.05, (W - i.left - i.right) / W)
     if (s === 'plan') {
       const stencil = getSceneStencil()
       if (!stencil) return null
       const fov = v.browse?.fov ?? SHOTS_FLAT_DEFAULTS.browse.fov
       const pad = v.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding ?? 1.05
       const ids = live.current.placeIds || []
-      let frame = live.current.places ? frameDensest(live.current.places, ids, stencil) : null
+      let frame = live.current.places ? framePlaces(live.current.places, ids, stencil, live.current.frameMode) : null
       if (!frame) {
         const why = `${stencil.center}:${ids.length}`
         if (!_warned.has(why)) { _warned.add(why); console.warn(`[Town] plan: no listed place has a building in this town (${ids.length} ids) — the plan frames the whole Extent`) }
-        // The disclosure still names every id: none has a place inside the disc (frameDensest's own partition).
+        // The disclosure still names every id: none has a place inside the disc (the frames' own partition).
         const at = (id) => (id == null ? null : live.current.places?.get(id))
         const outside = ids.filter((id) => at(id) && Math.hypot(at(id).x - stencil.center[0], at(id).z - stencil.center[1]) > stencil.radius)
         frame = { x: stencil.center[0], z: stencil.center[1], radius: stencil.radius, placed: 0, of: ids.length,
           outside, unplaced: ids.filter((id) => !at(id)).map((id) => id ?? null) }
       }
-      const tanH = Math.tan((fov * Math.PI) / 360)
-      const alt = (frame.radius * pad) / (tanH * Math.min(fh, (W / H) * fw))
+      const alt = planAltitude(frame.radius, { fov, pad, W, H, inset: i })
       return { pos: [frame.x, alt, frame.z + 1], target: [frame.x, 0, frame.z], fov, up: planUp(), overhead: true, frame }
     }
     const [x, z] = live.current.streetAt
@@ -168,7 +167,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     if (landed) end(landed)
     return true
   }
-  // The plan says what it framed, and what it could not put down (frameDensest's disclosure).
+  // The plan says what it framed, and what it could not put down (the frame's disclosure).
   const framed = (d) => {
     const f = d?.frame
     if (!f) return

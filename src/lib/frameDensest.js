@@ -18,18 +18,57 @@
  * ids (null/undefined allowed and disclosed), stencil = { center: [x, z], radius }. Returns
  * { x, z, radius, count, placed, of, outside: [ids], unplaced: [ids] }, or null when no id has a place in the disc.
  */
-export function frameDensest(places, ids, stencil) {
-  if (!(stencil?.radius > 0) || !Array.isArray(stencil.center)) throw new Error('[frameDensest] ⛔ needs the Extent — the slab\'s stencil { center, radius }')
-  const [cx, cz] = stencil.center, R = stencil.radius
+/** The partition every frame shares: placed inside the Extent, beyond it, or with no place. */
+function partition(places, ids, stencil, who) {
+  if (!(stencil?.radius > 0) || !Array.isArray(stencil.center)) throw new Error(`[${who}] ⛔ needs the Extent — the slab's stencil { center, radius }`)
+  const [cx, cz] = stencil.center
   const all = [...ids]
   const pts = [], outside = [], unplaced = []
   for (const id of all) {
     const p = id == null ? null : places?.get(id)
     if (!p) unplaced.push(id ?? null)
-    else if (Math.hypot(p.x - cx, p.z - cz) > R) outside.push(id)
+    else if (Math.hypot(p.x - cx, p.z - cz) > stencil.radius) outside.push(id)
     else pts.push(p)
   }
-  const disclosure = { placed: pts.length, of: all.length, outside, unplaced }
+  return { pts, disclosure: { placed: pts.length, of: all.length, outside, unplaced } }
+}
+
+/** The circle about [x, z] that holds `chosen` (each with its footprint radius), moved and shrunk to lie inside the Extent. */
+function circleIn(chosen, stencil, [x, z]) {
+  const [cx, cz] = stencil.center, R = stencil.radius
+  let radius = Math.max(...chosen.map((p) => Math.hypot(p.x - x, p.z - z) + p.radius))
+  if (radius >= R) { x = cx; z = cz; radius = R }
+  else {
+    const d = Math.hypot(x - cx, z - cz)
+    if (d + radius > R) { const s = (R - radius) / d; x = cx + (x - cx) * s; z = cz + (z - cz) * s }
+  }
+  return { x, z, radius }
+}
+
+/**
+ * frameAll — a frame that holds EVERY placed member of the set, footprints and all (Jacob, 2026-09-29: "Dining should
+ * frame all the bars and restaurants" · at arrival "we want to see everything that's open"). Same partition and Extent
+ * bound as frameDensest; bounded by the Extent, so a set wider than the town frames the whole town and says which
+ * members lie beyond it (`outside`). Same return shape.
+ */
+export function frameAll(places, ids, stencil) {
+  const { pts, disclosure } = partition(places, ids, stencil, 'frameAll')
+  if (!pts.length) return null
+  // Centred on the members' extent (footprints included), so the circle is as tight as it simply can be.
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+  for (const p of pts) { x0 = Math.min(x0, p.x - p.radius); x1 = Math.max(x1, p.x + p.radius); z0 = Math.min(z0, p.z - p.radius); z1 = Math.max(z1, p.z + p.radius) }
+  return { ...circleIn(pts, stencil, [(x0 + x1) / 2, (z0 + z1) / 2]), count: pts.length, ...disclosure }
+}
+
+/** The one switch Town's `frameMode` names: 'densest' (the default) | 'all'. ⛔ Anything else throws by name. */
+export function framePlaces(places, ids, stencil, mode = 'densest') {
+  if (mode === 'all') return frameAll(places, ids, stencil)
+  if (mode === 'densest') return frameDensest(places, ids, stencil)
+  throw new Error(`[framePlaces] ⛔ frameMode "${mode}" — the plan frames 'densest' or 'all'`)
+}
+
+export function frameDensest(places, ids, stencil) {
+  const { pts, disclosure } = partition(places, ids, stencil, 'frameDensest')
   const n = pts.length
   if (!n) return null
 
@@ -45,15 +84,7 @@ export function frameDensest(places, ids, stencil) {
     chosen = pts.filter((q) => Math.hypot(q.x - o.x, q.z - o.z) <= reach)
   }
 
-  const x0 = chosen.reduce((a, p) => a + p.x, 0) / chosen.length
-  const z0 = chosen.reduce((a, p) => a + p.z, 0) / chosen.length
-  let radius = Math.max(...chosen.map((p) => Math.hypot(p.x - x0, p.z - z0) + p.radius))
-  let x = x0, z = z0
-  // Bound by the Extent: never beyond the rim.
-  if (radius >= R) { x = cx; z = cz; radius = R }
-  else {
-    const d = Math.hypot(x - cx, z - cz)
-    if (d + radius > R) { const s = (R - radius) / d; x = cx + (x - cx) * s; z = cz + (z - cz) * s }
-  }
-  return { x, z, radius, count: chosen.length, ...disclosure }
+  // Centred on the cluster's mean (unchanged since Jacob chose this frame, 2026-09-28).
+  const mean = [chosen.reduce((a, p) => a + p.x, 0) / chosen.length, chosen.reduce((a, p) => a + p.z, 0) / chosen.length]
+  return { ...circleIn(chosen, stencil, mean), count: chosen.length, ...disclosure }
 }

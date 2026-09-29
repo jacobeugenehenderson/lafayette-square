@@ -188,7 +188,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 187. This is `npm test`.
+## safe — 188. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -351,6 +351,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-labels-carry-their-style.mjs` | "DOES EVERY TOWN'S labels.json CARRY ITS WHOLE LABEL STYLE — AND IS THERE ONE DEFAULT?" |
 | `checks/claims-the-light-follows-the-weather.mjs` | one weather state drives the rain AND the light. |
 | `checks/claims-the-mark-palette-is-never-live.mjs` | live.mjs — IS "SUGGEST FROM MARK" AUTHORING-ONLY? |
+| `checks/claims-the-plan-frames-all-it-is-given.mjs` | "WHEN THE PLAN IS ASKED TO FRAME ALL OF A SET, IS EVERY PLACED MEMBER INSIDE THE FREE REGION?" |
 | `checks/claims-the-plan-opens-on-its-places.mjs` | "DOES THE PLAN MAP OPEN ON THE TOWN'S PLACES — THEIR DENSEST CLUSTER, INSIDE THE EXTENT, WITH NOTHING HIDDEN?" |
 | `checks/claims-the-publish-button-can-say-it-is-done.mjs` | its condition measures what it ships. |
 | `checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` | THE PUBLISH GATE MUST PUSH WHERE THE DEPLOY ACTUALLY LISTENS. |

@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 340,
+  "total": 341,
   "counts": {
-    "safe": 187,
+    "safe": 188,
     "local-effect": 6,
     "live": 147
   },
@@ -2098,6 +2098,13 @@
       "reasonClass": "unreadable",
       "why": [
         "imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-the-plan-frames-all-it-is-given.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) three, densest — not read from source"
       ]
     },
     {
