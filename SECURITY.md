@@ -507,7 +507,7 @@ Until it deploys, the Ward has no operator sign-in.
 write their own listing's rating through `update-listing`. No client sends them, but the endpoint accepts them. A
 place's rating is the town's own (the Ward's rating marks), never the owner's. Found by Quire (menu editor).
 **Fix:** drop both from `EDITABLE`; the rating's writer is the operator's path only. ✅ **Fixed in code 2026-09-29**
-(Jacob's go); ⏳ live once `clasp` deploys it.
+(Jacob's go); ✅ **Live 2026-09-29** (web app @69).
 ✅ **Ruled 2026-09-28 (Jacob):** `category`/`subcategory` **stay Guardian-editable** — a Guardian may add and
 remove categories and tags; only `rating`/`review_count` leave `EDITABLE`.
 
@@ -519,7 +519,7 @@ and Keyholder roles included. Linking needs no credential: `getLinkedHashes` alr
 Found by Quire (◉, device link).
 **Fix:** `check-link-token` returns status only; push payloads stop carrying `device_hash`; pull mode is removed. The
 Ward links push-only and never reads `device_hash` from it. ✅ **Fixed in code 2026-09-29** (Jacob's go): status only,
-no key in the payload, pull mode gone (a device without a handle makes no code); ⏳ live once `clasp` deploys it.
+no key in the payload, pull mode gone (a device without a handle makes no code); ✅ **Live 2026-09-29** (web app @69).
 
 ### F-23 · HIGH · Any device can make itself a verified resident of any building  *(new, 2026-09-28)*
 `apps-script/Code.js` `postClaimResidence` trusts `auto_verify` from the request body. POST `claim-residence`
@@ -532,7 +532,7 @@ flag, and neighbour verification stops taking a device key. The address change i
 Until then the Ward claims without `auto_verify` (pending only). ✅ **Holes closed in code 2026-09-29** (Jacob's go):
 `auto_verify` is never trusted (a claim is pending unless the operator makes it, or the same handle is verified there
 on another device), and `verify-resident` is closed rather than taking a device key — only the operator verifies until
-the neighbour flow is ruled. ⏳ Live once `clasp` deploys it.
+the neighbour flow is ruled. ✅ **Live 2026-09-29** (web app @69).
 **Ruled in part 2026-09-28 (Jacob):** *"The Host or neighbors verify residents. There is indeed a secret intended on
 building cards."* ⇒ both verifiers stay; building cards carry a secret. ⛔ **Unruled — a conversation owed:** how a
 neighbour verifies without the target device's key, and how the card's secret and the Host's verification fit
