@@ -332,7 +332,7 @@ function snapshotFromComposition(c) {
     // composition params don't change when the build LOGIC does, so a re-preview
     // would otherwise 'noop' to a stale build. Bump this on any leaf-emission
     // logic change to force a full rebuild.
-    buildVersion: 'uv-rect-2026-08-26-asset-seed-no-frac-on-rects',
+    buildVersion: 'leaf-cell-per-leaf-2026-09-28',
   }
 }
 

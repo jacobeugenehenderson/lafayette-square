@@ -80,3 +80,18 @@ distance to the authored camera path. Measured on LS: 2323 mesh / ~86M tris → 
 15.0M tris**, cutoff 181m. A count budget lets one heavy species eat the frame; this cannot.
 ◻ **Still owed: the BAR ITSELF is not bound to that budget** — it remains UI + persistence
 read by nothing. It now has something true to read, which it never had before.
+
+
+---
+
+## Also retired 2026-09-28 — the Grove shot its impostors from lod1
+
+Excised from `ORIENTATION.md §4`, where it was listed as a consequence "mistaken for a defect":
+
+> 2. **The Grove reads two artifacts at two densities inside one surface** — you judge lod0
+>    from the pool while the captures that ship are made from lod1 out of the bake.
+
+It was a defect. lod1 crushes the bark to a few thousand triangles and cuts connected leaves to
+20% while keeping the cards, so every shipped impostor photographed leaves floating off twigs
+that were gone (oak_white median leaf→wood 0.07 m at lod0, 0.61 m at lod1). With every tree an
+impostor there is no size reason to shoot the thin tier. Both Grove readers now take baked lod0.

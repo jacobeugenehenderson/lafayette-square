@@ -798,119 +798,68 @@ function buildLeafGeometryFromAttachments(attachments, opts, rng) {
   return { positions, normals, uvs, indices, count: N }
 }
 
-// Brief 5: rewrite a vendor leaf primitive's TEXCOORD_0 so the chassis
-// renders with the picked pack's content. Two topology classes show up in
-// vendor stock:
+// One leaf = one CONNECTED COMPONENT of a leaf primitive (union-find over triangle
+// verts). Every vendor leaf topology splits this way — independent quad cards (4 verts,
+// 2 tris sharing an edge), triangle cards, sculpted multi-vertex leaves — so nothing
+// downstream has to guess the topology. Returns the root id of every vertex.
+function leafComponents(prim) {
+  const posAttr = prim.getAttribute('POSITION')
+  const idxAcc = prim.getIndices()
+  if (!posAttr || !idxAcc) return null
+  const vc = posAttr.getCount()
+  const idx = idxAcc.getArray()
+  const par = new Int32Array(vc)
+  for (let i = 0; i < vc; i++) par[i] = i
+  const find = (x) => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x] } return x }
+  const uni = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) par[ra] = rb }
+  for (let i = 0; i + 2 < idx.length; i += 3) { uni(idx[i], idx[i + 1]); uni(idx[i + 1], idx[i + 2]) }
+  const root = new Int32Array(vc)
+  for (let v = 0; v < vc; v++) root[v] = find(v)
+  return root
+}
+
+// Re-skin a vendor leaf primitive with the picked pack: EACH LEAF gets its own random
+// pack cell, its vendor UV rect fitted into that cell. Orientation within the rect is
+// the vendor's. Pack-local UVs — atlas-survey remaps onto the master atlas at bake
+// (`feedback_atlas_subregion_uv_recovery`). `rng` is the per-composition mulberry32
+// stream, drawn once per leaf in first-vertex order, so re-runs are byte-identical.
 //
-//   1. CARD-BASED — each card is 4 consecutive verts in the vertex buffer
-//      with corner-pattern UVs (vendor's "uniform UV [0,1] per card"). The
-//      indices buffer slices them into triangles, often interleaved across
-//      cards. Detection: max vertex-use in the index buffer == 1 (each vert
-//      appears in exactly one triangle) AND vertCount is divisible by 4.
-//      Example: Robinia (580k verts / 4 = 145k cards, each card = 2 tris,
-//      6 verts referenced once each — wait, that's 4 verts × 2 tris = 8
-//      vert refs per card if quads share corners. Robinia avg-use is 1.0
-//      so each tri has its own 3 verts → triangle-cards, 580k/3 ≈ 193k
-//      tri-cards with the vert buffer holding 4 verts per quad-shape but
-//      only 3 referenced per tri. The 4-vert grouping still holds because
-//      vendor lays them out card-by-card.)
-//   2. CONNECTED MESH — sculpted 3D leaf geometry with continuous UVs
-//      across the canopy. Verts are heavily shared between triangles
-//      (max-use > 1). Vendor UVs span a small sub-region of the vendor
-//      leaf atlas (not [0,1]). Per-card UV rewriting is meaningless;
-//      instead, rescale the whole UV cluster into a single random pack
-//      tile so the existing leaf-shape geometry samples valid pack
-//      content (no alpha cutoffs eating the leaves).
-//      Example: Linden (470k verts, max-use=8, UV range
-//      [0.445,0.989]×[0.619,0.770]).
-//
-// Both paths write pack-texture-local UVs — atlas-survey at bake time
-// remaps onto the master atlas (`feedback_atlas_subregion_uv_recovery`).
-// `rng` is the per-composition mulberry32 stream so re-runs are byte-
-// identical (determinism, AC #8).
+// ⛔ REPLACED 2026-09-28: a topology guess (`maxUse === 1` ⇒ cards) routed every real
+// quad-card chassis (whose two triangles share two verts, maxUse 2) to a whole-PRIM
+// rescale, so an entire tree drew ONE pack cell and a pack's variety never showed.
 function rewriteLeafPrimUVs(prim, tileGrid, rng, doc) {
-  const idx = prim.getIndices()
   const uvAttr = prim.getAttribute('TEXCOORD_0')
-  if (!idx || !uvAttr) return // missing UVs → skip per brief edge case
+  if (!uvAttr) return // missing UVs → skip per brief edge case
   const [cols, rows] = tileGrid || [1, 1]
   if (cols < 1 || rows < 1) return
-  const indices = idx.getArray()
+  const root = leafComponents(prim)
+  if (!root) return
   const uvs = uvAttr.getArray()
-  const vertCount = uvs.length / 2
-  // Topology classifier — single pass over the index buffer.
-  let maxUse = 0
-  const use = new Uint8Array(vertCount)
-  for (let i = 0; i < indices.length; i++) {
-    const v = indices[i]
-    const next = use[v] + 1
-    use[v] = next > 255 ? 255 : next
-    if (next > maxUse) maxUse = next
+  const vc = root.length
+  // Per-leaf UV rect.
+  const rect = new Map() // root → [minU, minV, maxU, maxV]
+  for (let v = 0; v < vc; v++) {
+    const u = uvs[v * 2], w = uvs[v * 2 + 1]
+    let r = rect.get(root[v])
+    if (!r) { r = [u, w, u, w]; rect.set(root[v], r); continue }
+    if (u < r[0]) r[0] = u; if (w < r[1]) r[1] = w
+    if (u > r[2]) r[2] = u; if (w > r[3]) r[3] = w
   }
-  const cardBased = (maxUse === 1) && (vertCount % 4 === 0)
-  if (cardBased) {
-    rewriteCardUVs(prim, uvs, vertCount, cols, rows, rng, doc)
-  } else {
-    rescaleConnectedUVsToTile(prim, uvs, cols, rows, rng, doc)
+  // One cell per leaf, drawn in first-vertex order (Map preserves insertion order).
+  const tileW = 1 / cols, tileH = 1 / rows
+  const cell = new Map()
+  for (const k of rect.keys()) {
+    cell.set(k, [Math.floor(rng() * cols) * tileW, Math.floor(rng() * rows) * tileH])
   }
-}
-
-function rewriteCardUVs(prim, uvs, vertCount, cols, rows, rng, doc) {
-  // Per-card random tile assignment. Vert layout: card K occupies verts
-  // [4K, 4K+1, 4K+2, 4K+3]. Vendor UVs at those verts are corner-pattern
-  // (typically (0,0)/(0,1)/(1,0)/(1,1) in some order — see Robinia).
-  // Remap: new_uv = tile_origin + vendor_uv * tile_size.
-  if (cols === 1 && rows === 1) return // 1×1 grid is identity on [0,1] inputs
-  const tileW = 1 / cols
-  const tileH = 1 / rows
-  const newUvs = new Float32Array(uvs.length)
-  const cardCount = vertCount / 4
-  for (let k = 0; k < cardCount; k++) {
-    const tileCol = Math.floor(rng() * cols)
-    const tileRow = Math.floor(rng() * rows)
-    const u0 = tileCol * tileW
-    const v0 = tileRow * tileH
-    for (let i = 0; i < 4; i++) {
-      const ui = (k * 4 + i) * 2
-      newUvs[ui]     = u0 + uvs[ui]     * tileW
-      newUvs[ui + 1] = v0 + uvs[ui + 1] * tileH
-    }
+  const out = new Float32Array(uvs.length)
+  for (let v = 0; v < vc; v++) {
+    const r = rect.get(root[v]), c = cell.get(root[v])
+    const du = r[2] - r[0], dv = r[3] - r[1]
+    // A degenerate rect (all verts share one UV) samples the cell centre, not a corner.
+    out[v * 2]     = c[0] + (du > 1e-6 ? (uvs[v * 2]     - r[0]) / du : 0.5) * tileW
+    out[v * 2 + 1] = c[1] + (dv > 1e-6 ? (uvs[v * 2 + 1] - r[1]) / dv : 0.5) * tileH
   }
-  const acc = doc.createAccessor().setType('VEC2').setArray(newUvs)
-  prim.setAttribute('TEXCOORD_0', acc)
-}
-
-function rescaleConnectedUVsToTile(prim, uvs, cols, rows, rng, doc) {
-  // Connected sculpted-mesh fallback. Find the used UV range, rescale it
-  // to fill one random tile. Without this, vendor UVs (often a tiny
-  // sub-region of the vendor's atlas) sample whatever happens to be at
-  // that spot in the Salon pack — usually empty alpha, giving the
-  // "leaves cut off" symptom Tendril hit on Linden 2026-05-22.
-  let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity
-  for (let i = 0; i < uvs.length; i += 2) {
-    const u = uvs[i], v = uvs[i + 1]
-    if (u < minU) minU = u
-    if (u > maxU) maxU = u
-    if (v < minV) minV = v
-    if (v > maxV) maxV = v
-  }
-  const rangeU = maxU - minU
-  const rangeV = maxV - minV
-  if (!isFinite(rangeU) || !isFinite(rangeV) || rangeU < 1e-6 || rangeV < 1e-6) return
-  const tileW = 1 / cols
-  const tileH = 1 / rows
-  const tileCol = Math.floor(rng() * cols)
-  const tileRow = Math.floor(rng() * rows)
-  const u0 = tileCol * tileW
-  const v0 = tileRow * tileH
-  const newUvs = new Float32Array(uvs.length)
-  for (let i = 0; i < uvs.length; i += 2) {
-    const nU = (uvs[i] - minU) / rangeU
-    const nV = (uvs[i + 1] - minV) / rangeV
-    newUvs[i]     = u0 + nU * tileW
-    newUvs[i + 1] = v0 + nV * tileH
-  }
-  const acc = doc.createAccessor().setType('VEC2').setArray(newUvs)
-  prim.setAttribute('TEXCOORD_0', acc)
+  prim.setAttribute('TEXCOORD_0', doc.createAccessor().setType('VEC2').setArray(out))
 }
 
 // Leaf size on the AUTHORED/natural-leaf path (operator 2026-06-23): resize
@@ -930,25 +879,19 @@ function scaleLeafCardsInPlace(prim, scale, doc) {
   const idxAcc = prim.getIndices()
   if (!posAttr || !idxAcc) return
   const pos = posAttr.getArray()
-  const idx = idxAcc.getArray()
   const vc = pos.length / 3
-  // Union-find: connect the three verts of every triangle → one leaf per root.
-  const par = new Int32Array(vc)
-  for (let i = 0; i < vc; i++) par[i] = i
-  const find = (x) => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x] } return x }
-  const uni = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) par[ra] = rb }
-  for (let i = 0; i + 2 < idx.length; i += 3) { uni(idx[i], idx[i + 1]); uni(idx[i + 1], idx[i + 2]) }
+  const root = leafComponents(prim)
   // Per-component centroid.
   const cent = new Map() // root → [sx, sy, sz, count]
   for (let v = 0; v < vc; v++) {
-    const r = find(v)
+    const r = root[v]
     let s = cent.get(r); if (!s) { s = [0, 0, 0, 0]; cent.set(r, s) }
     s[0] += pos[v * 3]; s[1] += pos[v * 3 + 1]; s[2] += pos[v * 3 + 2]; s[3]++
   }
   // Scale each vert about its leaf's centroid.
   const out = new Float32Array(pos.length)
   for (let v = 0; v < vc; v++) {
-    const s = cent.get(find(v))
+    const s = cent.get(root[v])
     const cx = s[0] / s[3], cy = s[1] / s[3], cz = s[2] / s[3]
     out[v * 3]     = cx + (pos[v * 3]     - cx) * scale
     out[v * 3 + 1] = cy + (pos[v * 3 + 1] - cy) * scale

@@ -269,7 +269,12 @@ export default function Grove() {
           + `is not rewritten to it, so any capture would sample the wrong atlas regions. SKIPPED, loudly.`)
         continue
       }
-      const glbUrl = slabUrl(activeLookId, bakedGlbRel(t.species, t.variantId, 'lod1'))
+      // ⭐ lod0 — the FULL tree, the one the operator authored and judges. lod1 is the
+      // model-tree tier: its bark is crushed and its leaves cut to a fifth, so a card shot
+      // from it showed leaves floating off twigs that were no longer there (median leaf→wood
+      // 0.07 m at lod0, 0.61 m at lod1 on oak_white). Every tree ships as an impostor, and
+      // the capture is authoring-time, so it pays nothing to photograph the real one.
+      const glbUrl = slabUrl(activeLookId, bakedGlbRel(t.species, t.variantId, 'lod0'))
       if (!glbUrl) { console.warn(`[grove-bake] "${t.species}" has no GLB url in the slab — cannot capture.`); continue }
       out.push({ species: t.species, glbUrl })
     }
@@ -1043,10 +1048,10 @@ class TileBoundary extends Component {
 // ⭐ ONE definition of where a baked specimen lives. The capture pool built this path
 // inline and the Tile now needs the same one; a second spelling is how a surface ends up
 // silently loading a different artifact than the one it is judging.
-// ⛔ DEFAULT lod1, NOT lod0. lod0 is not published (.gitignore), so a caller that
-// omits the argument used to build a URL that 404s on every deployed build — the
-// same defect that blanked theward.online's diorama on 2026-08-28.
-function bakedGlbRel(species, variantId, lod = 'lod1') {
+// ⛔ NO DEFAULT LOD. Both Grove callers want lod0 (the full tree the capture shoots), and
+// lod0 is never deployed — so a default either way hides a choice a caller must make.
+function bakedGlbRel(species, variantId, lod) {
+  if (!lod) throw new Error('bakedGlbRel: name the LOD')
   return `trees/${species}/skeleton-${variantId}-${lod}.glb`
 }
 
@@ -1141,7 +1146,8 @@ function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHov
   // ⛔ The baked GLB, not the published one — this is what the map loads.
   // `rev` versions the load: drei caches by URL, INCLUDING a failed load, so an unversioned URL
   // keeps serving the pre-bake 404 after the bake wrote the file.
-  const url = suspendSlabUrl(lookId, bakedGlbRel(speciesId, variantId), rev || null)
+  // lod0, the same GLB the impostor capture photographs — judge what ships.
+  const url = suspendSlabUrl(lookId, bakedGlbRel(speciesId, variantId, 'lod0'), rev || null)
   const { scene } = useGLTF(url)
   // Clone so each tile has its own scene graph (drei caches by URL).
   const cloned = useMemo(() => scene.clone(true), [scene])

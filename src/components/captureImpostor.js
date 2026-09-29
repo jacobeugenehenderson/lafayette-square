@@ -96,7 +96,7 @@ export function invalidateImpostorCaptures(lookName) {
 }
 
 /**
- * Render one tree (its lod1 GLB scene) to a transparent RT, front-on ortho, and
+ * Render one tree (the GLB scene the caller loaded — the Grove pool passes lod0) to a transparent RT, front-on ortho, and
  * return the RT's color texture. Pure capture: saves + restores every renderer
  * state it touches so the caller's main render is byte-undisturbed.
  *

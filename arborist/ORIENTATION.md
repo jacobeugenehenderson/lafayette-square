@@ -124,23 +124,21 @@ when two surfaces disagree it reads as a bug, and it is usually two different fi
 | surface | reads | density |
 |---|---|---|
 | **Salon** | a **freshly built preview** — POSTs `{chassis,bark,leaves}`, gets a per-composition GLB + atlas that exists nowhere on disk | authoring |
-| **Grove — gallery** | the **authoring pool**, `/trees/<sp>/…` | **lod0** |
-| **Grove — impostor bakers** | the **bake**, `baked/<look>/trees/…` | **lod1** |
+| **Grove — gallery** | the **bake**, `baked/<look>/trees/…` | **lod0** |
+| **Grove — impostor bakers** | the **bake**, `baked/<look>/trees/…` | **lod0** — the full tree; lod1 is the model-tier and floats its leaves |
 | **Shelves** | the **chassis library** only, `public/trees/_chassis/` | — |
 | **Coverage** | **no geometry at all** — a join over census × routing × index | — |
 | **Diorama** | the **bake** | **lod0** |
-| **LS runtime** | the **bake** + the impostor records | **lod1** + impostors |
+| **the map (every town)** | the impostor records; a mesh-bar species also loads its **lod1** | impostors |
 
-▶ `grep -n "glbUrl" arborist/serve.js src/arborist/Grove.jsx src/components/TreeDiorama.jsx`
+▶ `grep -n "glbUrl\|bakedGlbRel(" arborist/serve.js src/arborist/Grove.jsx src/components/TreeDiorama.jsx` · leaves on wood in what the capture shoots: `node checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs`
 
-**Three consequences, all currently mistaken for defects:**
+**Two consequences, both currently mistaken for defects:**
 1. **The Salon will never match the diorama**, because one is a fresh build and the other
    is a frozen file. ⛔ **This does NOT mean a worse-looking diorama is correct.** It means
    the difference is *the bake*, and a thin bake is a defect in the bake — never something
    the viewer can fix.
-2. **The Grove reads two artifacts at two densities inside one surface** — you judge lod0
-   from the pool while the captures that ship are made from lod1 out of the bake.
-3. **`public/trees/` is gitignored and never deployed** (`.gitignore:235`). It is the
+2. **`public/trees/` is gitignored and never deployed** (`.gitignore:235`). It is the
    **authoring pool**. Only `public/baked/<look>/` ships.
 
 ---

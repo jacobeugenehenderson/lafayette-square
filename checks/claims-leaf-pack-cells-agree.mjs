@@ -1,8 +1,8 @@
 /**
  * A leaf pack's CELLS MUST BE INTERCHANGEABLE — the system assumes it and nothing checked.
  *
- * ⛔ THE DEFECT THIS EXISTS FOR (Jacob's eye, 2026-08-25). `generate-salon`'s
- * `rewriteCardUVs` does PER-CARD RANDOM TILE ASSIGNMENT across a pack's tileGrid: every
+ * ⛔ THE DEFECT THIS EXISTS FOR (Jacob's eye, 2026-08-25).
+ * `generate-salon#rewriteLeafPrimUVs` does PER-LEAF RANDOM CELL ASSIGNMENT across a pack's tileGrid: every
  * leaf card draws a random cell. That is only sound if the cells are variations of the
  * SAME leaf. `eastern_black_oak` is a 2×2 of four arbitrary scans — one green, three
  * autumn — so a random draw produced a roughly 3:1 RED canopy on every white oak, mixed
