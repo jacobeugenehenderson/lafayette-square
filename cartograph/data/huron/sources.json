@@ -41,5 +41,15 @@
     }
   ],
   "landUseCodes": null,
-  "_landUseCodes_why": "null is a POSITIVE statement, not an omission \u2014 see cartograph/sources.js. Ohio's StateLUC arrives self-describing: `500: Res-Vacant Land`, `640: Exm-Municipality`. The code and its meaning are one string, so there is no decode table to acquire and a St-Louis-shaped county-land-use-codes.csv would be inventing a step that does not exist in this state."
+  "_landUseCodes_why": "null is a POSITIVE statement, not an omission \u2014 see cartograph/sources.js. Ohio's StateLUC arrives self-describing: `500: Res-Vacant Land`, `640: Exm-Municipality`. The code and its meaning are one string, so there is no decode table to acquire and a St-Louis-shaped county-land-use-codes.csv would be inventing a step that does not exist in this state.",
+  "addressPoints": [
+    {
+      "id": "ohio-lbrs",
+      "provider": "ohio-lbrs",
+      "file": "oh_address_points.json",
+      "attribution": "Ohio Statewide LBRS Address Points \u2014 OGRIP (Ohio Geographically Referenced Information Program)",
+      "where": "COUNTY = 'Erie'",
+      "_why": "Huron (Erie County, Ohio). OSM carries 28 addressed buildings here against 3,700 in the slab; the statewide LBRS layer is the county's E-911 address points, field-verified, one endpoint for all 88 counties \u2014 the KIT answer for any Ohio town (declared 2026-09-29, Jacob's go). Joined by containment: in the footprint, or in the parcel the building stands in (ohio-statewide parcels above)."
+    }
+  ]
 }

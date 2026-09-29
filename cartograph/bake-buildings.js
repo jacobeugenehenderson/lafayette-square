@@ -29,7 +29,8 @@ import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { createMembershipFilter } from './membership.mjs'
-import { resolveAddress, addressCensus, addressOfTags, offeredBy } from './building-address.mjs'
+import { resolveAddress, addressCensus, addressOfTags, offeredBy, parcelPointsOf } from './building-address.mjs'
+import { loadAddressPoints, loadParcelRings } from './address-points.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
 // ⭐ THE TINT RULES ARE ONE MODULE, shared with the player (SlabBuildings' live palette): a drag equals a re-bake.
 // ▶ node checks/claims-live-palette-equals-the-bake.mjs
@@ -717,17 +718,23 @@ export async function bakeBuildings({ look, scene } = {}) {
   const osmTagsById = new Map((rawOsm?.buildings || []).map((o) => [o.osmId, o.tags]))
   const addrPois = (rawOsm?.pois || []).map((p) => ({ address: addressOfTags(p.tags), x: p.coords?.[0]?.x, z: p.coords?.[0]?.z }))
     .filter((p) => p.address && Number.isFinite(p.x) && Number.isFinite(p.z))
+  // The town's DECLARED address points (county/state E-911 — sources.json `addressPoints`), and its parcels as the
+  // containment that reaches them. Undeclared / declared-none is said in the census, never read as "no addresses".
+  const ap = loadAddressPoints(scene)
+  const parcelPoints = ap.points.length ? parcelPointsOf(loadParcelRings(scene), ap.points) : () => []
+  const ringsOf = (b) => b.addrIn?.rings ?? (b.footprint ? [b.footprint.map(([x, z]) => ({ x, z }))] : [])
   const addressOf = (b) => resolveAddress({
     authored: b.address ?? null,
     ownTags: b.addrIn?.ownTags ?? null,
     twinTags: (b.addrIn?.twinOsmIds || []).map((id) => osmTagsById.get(id)).filter(Boolean),
-    rings: b.addrIn?.rings ?? (b.footprint ? [b.footprint.map(([x, z]) => ({ x, z }))] : []),
-  }, addrPois)
+    rings: ringsOf(b),
+  }, addrPois, { addressPoints: ap.points, parcelPoints })
   // What the input OFFERS (addressed OSM buildings' centroids + address points), to count what the join LOSES.
   const offerPoints = [
     ...(rawOsm?.buildings || []).filter((o) => addressOfTags(o.tags) && o.coords?.length >= 3)
       .map((o) => ({ x: o.coords.reduce((a, q) => a + q.x, 0) / o.coords.length, z: o.coords.reduce((a, q) => a + q.z, 0) / o.coords.length })),
     ...addrPois,
+    ...ap.points,
   ]
   const isOffered = offeredBy(offerPoints)
   // ⛔ A POUR THAT PREDATES THE OSM TWIN JOIN (building-union.mjs, 2026-09-25) carries no twins, so the addresses it has
@@ -741,8 +748,10 @@ export async function bakeBuildings({ look, scene } = {}) {
   const resolvedAddresses = []
   const addressFields = (b) => {
     const r = addressOf(b)
-    resolvedAddresses.push({ ...r, id: b.id, offered: isOffered(b.addrIn?.rings ?? (b.footprint ? [b.footprint.map(([x, z]) => ({ x, z }))] : [])) })
-    return { address: r.address, addressSource: r.addressSource, ...(r.addressCandidates && { addressCandidates: r.addressCandidates }) }
+    const rings = ringsOf(b)
+    resolvedAddresses.push({ ...r, id: b.id, offered: isOffered(rings) || parcelPoints({ rings }).length > 0 })
+    return { address: r.address, addressSource: r.addressSource, ...(r.addressCandidates && { addressCandidates: r.addressCandidates }),
+      ...(r.addressUnits && { addressUnits: r.addressUnits }) }
   }
 
   const unextrudable = []
@@ -1094,7 +1103,7 @@ export async function bakeBuildings({ look, scene } = {}) {
     buildingCount: buildings.length,
     renderedBuildingCount: buildingIndex.length,
     // What was carried: counts by source, and what has none or is ambiguous (checks/claims-every-building-has-an-address).
-    addressCensus: addressCensus(resolvedAddresses, addressIncomplete),
+    addressCensus: { ...addressCensus(resolvedAddresses, addressIncomplete), addressPoints: ap.state, ...(ap.reason && { addressPointsAbsentReason: ap.reason }) },
     buildings: buildingIndex,
     groups,
   }

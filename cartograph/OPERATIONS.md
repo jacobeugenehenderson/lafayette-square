@@ -608,6 +608,12 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
      (`--dry-run` first: it prints the parcel count and one sample row without writing).
   3. **Bake** — `node cartograph/bake-content.js --scene=<id>`. It reports the match rate and, now,
      how much of the town it could **not** classify or address.
+  - ⭐ **Building street addresses** (the Ward's card, "This is my house") come from the town's own record, its declared
+    **address points**, then OSM — never guessed, never the nearest point. Declare a town's E-911 address points in the
+    same `sources.json` — `"addressPoints": [{ "id", "provider", "file" }]` (provider `ohio-lbrs` for any Ohio town), or
+    `"addressPoints": [], "addressPoints_absent_reason": "…"` — then `CARTOGRAPH_SCENE=<id> node cartograph/fetch-address-points.mjs`
+    (`--dry-run` first), then re-bake the town's buildings. Points join a building by standing in its footprint or in the
+    parcel it stands on. ▶ `node checks/claims-every-building-has-an-address.mjs`
   - ⛔ **"No parcels" has THREE meanings and the kit keeps them apart.** *Undeclared* (no
     `sources.json`) means **nobody has looked into it** and shouts; *declared-none* is an honest zero
     with a written reason; *declared* is a real well. ⛔ A town that yields zero because nobody

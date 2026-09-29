@@ -20,9 +20,9 @@
  * emit, so `bake-content.js#loadParcels` consumes every town identically.
  */
 
-import { writeFileSync, readFileSync, mkdirSync, rmSync } from 'fs'
+import { writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
-import { execFileSync } from 'child_process'
+import { arcgisGet } from './arcgis-fetch.mjs'
 import { BBOX, mapRawDir, SCENE, wgs84ToLocal } from './config.js'
 import { requireExplicitMap } from './scene.js'
 import { readSources, undeclaredMessage, sourcesPath, PARCEL_FIELDS } from './sources.js'
@@ -31,34 +31,10 @@ import { readSources, undeclaredMessage, sourcesPath, PARCEL_FIELDS } from './so
 requireExplicitMap('fetch-parcels')
 
 const dryRun = process.argv.includes('--dry-run')
-const UA = 'lafayette-square-cartograph/1.0 (neighborhood pour kit)'
 const PAGE = 2000
 
-// ⭐ curl to a FILE, not through a pipe — the same reason `fetch.js` does: a county
-// parcel layer over a generous envelope runs to tens of MB and a pipe's maxBuffer
-// becomes a silent ceiling on how big a town may be.
-// ⛔ execFileSync with an ARGV, never a shell string. A `where` clause is operator text
-// from the declaration (`County = 'Erie'`) and interpolating it into a shell command is
-// both an injection and, more prosaically, four different quoting bugs.
-function getJson(url, params) {
-  const tmp = join(mapRawDir(SCENE), '._parcels_page.json')
-  const args = ['-sS', '-m', '180', '-A', UA, '-o', tmp, '--get']
-  for (const [k, v] of Object.entries(params)) args.push('--data-urlencode', `${k}=${v}`)
-  args.push(url)
-  try {
-    execFileSync('curl', args, { stdio: ['ignore', 'ignore', 'inherit'] })
-    const txt = readFileSync(tmp, 'utf8')
-    let j
-    try { j = JSON.parse(txt) } catch {
-      throw new Error(`endpoint did not return JSON (first 200 chars): ${txt.slice(0, 200)}`)
-    }
-    // ⛔ ArcGIS reports failure INSIDE a 200. A page that errors must not read as "no
-    // more pages" — that is how a partial fetch becomes a town with half its parcels
-    // and nothing to say about it.
-    if (j.error) throw new Error(`ArcGIS error ${j.error.code}: ${j.error.message} ${(j.error.details || []).join('; ')}`)
-    return j
-  } finally { rmSync(tmp, { force: true }) }
-}
+// The ArcGIS GET (curl to a file, argv not shell, errors-inside-200 are errors) — cartograph/arcgis-fetch.mjs.
+const getJson = (url, params) => arcgisGet(url, params, join(mapRawDir(SCENE), '._parcels_page.json'))
 
 function ringCentroid(rings) {
   let sx = 0, sy = 0, n = 0

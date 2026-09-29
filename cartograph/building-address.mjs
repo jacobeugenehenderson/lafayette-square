@@ -4,12 +4,18 @@
  * WHY (Jacob, 2026-09-29: "I think we need addresses… that's barely private"; rulings by Boz the same day). The Ward's
  * building card and "This is my house" need the address; the bake used to drop it.
  *
- * WHERE AN ADDRESS COMES FROM — in this order, and a lower source NEVER overwrites a higher one:
- *   1. `authored`             — the town's own record (its buildings ledger's `address`)
- *   2. `osm-building`         — the building's OWN OSM `addr:*` tags, then its OSM TWINS' (`twinOsmIds`: the OSM
- *                               buildings building-union.mjs matched to this footprint by containment/coverage)
- *   3. `osm-poi-in-footprint` — an OSM point carrying `addr:*` that lies INSIDE the footprint or one of its twin rings
- *                               (`joinRings`). ⛔ By containment only — never the nearest point.
+ * WHERE AN ADDRESS COMES FROM — in this order (Jacob, 2026-09-29), and a lower source NEVER overwrites a higher one:
+ *   1. `authored`                — the town's own record (its buildings ledger's `address`)
+ *   2. `address-point`           — a declared address point (county/state E-911 — cartograph/address-points.mjs) INSIDE
+ *                                  the footprint or a twin ring
+ *   3. `address-point-in-parcel` — the address points inside the PARCEL the building's centroid stands in (E-911 points
+ *                                  sit toward the road, off the roof; the parcel is the containment that reaches them)
+ *   4. `osm-building`            — the building's OWN OSM `addr:*` tags, then its OSM TWINS' (`twinOsmIds`: the OSM
+ *                                  buildings building-union.mjs matched to this footprint by containment/coverage)
+ *   5. `osm-poi-in-footprint`    — an OSM point carrying `addr:*` INSIDE the footprint or a twin ring
+ * ⛔ Every join is containment — never the nearest point.
+ * ⭐ E-911 points outrank OSM: field-verified and maintained for dispatch, where OSM is volunteer-drawn.
+ * ⭐ An address point's units (2115 A / 2115 B) ride as `addressUnits`; the building's address has no unit.
  * ⛔ SEVERAL DIFFERENT ADDRESSES AT ONE LEVEL (a corner building, a duplex, two twins) → `address: null` and
  *    `addressCandidates: [...]` — never pick one. No address → null. Never guessed, never interpolated.
  * ⭐ The words are the source's: housenumber + street, whitespace collapsed, nothing expanded or re-cased (the Ward
@@ -25,7 +31,8 @@ export function addressOfTags(tags) {
 }
 export const tidy = (s) => String(s).replace(/\s+/g, ' ').trim()
 
-function inRing(x, z, ring) {
+/** Is (x, z) inside `ring` ([{x,z}])? Even-odd. The one containment test every address join uses. */
+export function inRing(x, z, ring) {
   let c = false
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const a = ring[i], b = ring[j]
@@ -38,25 +45,31 @@ const uniq = (xs) => [...new Set(xs.filter(Boolean))]
 /**
  * @param b    { authored?: string, ownTags?: object, twinTags?: object[], rings: [{x,z}][] }
  * @param pois [{ address, x, z }] — the town's OSM points with an address
- * @returns    { address, addressSource, addressCandidates?, disagrees: boolean }
+ * @param ctx  { addressPoints?: [{ address, unit, x, z }], parcelPoints?: (b) => [{ address, unit }] }
+ * @returns    { address, addressSource, addressCandidates?, addressUnits?, disagrees: boolean }
  */
-export function resolveAddress(b, pois) {
-  const poiAddrs = () => uniq(pois.filter((p) => b.rings.some((r) => r.length >= 3 && inRing(p.x, p.z, r))).map((p) => p.address))
-  const pick = (source, cands) => {
-    if (cands.length === 1) {
-      const lower = source === 'osm-poi-in-footprint' ? [] : poiAddrs()
-      return { address: cands[0], addressSource: source, disagrees: lower.some((a) => a !== cands[0]) }
-    }
-    return { address: null, addressSource: source, addressCandidates: cands, disagrees: false }
-  }
-  if (b.authored) return pick('authored', [tidy(b.authored)])
+export function resolveAddress(b, pois, ctx = {}) {
+  const inside = (pts) => pts.filter((p) => b.rings.some((r) => r.length >= 3 && inRing(p.x, p.z, r)))
+  const apIn = inside(ctx.addressPoints || [])
+  const apParcel = ctx.parcelPoints ? ctx.parcelPoints(b) : []
   const own = addressOfTags(b.ownTags)
-  if (own) return pick('osm-building', [own])
-  const twins = uniq((b.twinTags || []).map(addressOfTags))
-  if (twins.length) return pick('osm-building', twins)
-  const inside = poiAddrs()
-  if (inside.length) return pick('osm-poi-in-footprint', inside)
-  return { address: null, addressSource: null, disagrees: false }
+  // Each level: [source, its distinct addresses, the points it came from (for units)]. ⛔ Order is precedence.
+  const levels = [
+    ['authored', b.authored ? [tidy(b.authored)] : [], []],
+    ['address-point', uniq(apIn.map((p) => p.address)), apIn],
+    ['address-point-in-parcel', uniq(apParcel.map((p) => p.address)), apParcel],
+    ['osm-building', own ? [own] : [], []],
+    ['osm-building', uniq((b.twinTags || []).map(addressOfTags)), []],
+    ['osm-poi-in-footprint', uniq(inside(pois).map((p) => p.address)), []],
+  ]
+  const at = levels.findIndex(([, cands]) => cands.length)
+  if (at < 0) return { address: null, addressSource: null, disagrees: false }
+  const [source, cands, pts] = levels[at]
+  if (cands.length > 1) return { address: null, addressSource: source, addressCandidates: cands, disagrees: false }
+  const address = cands[0]
+  const units = uniq(pts.filter((p) => p.address === address).map((p) => p.unit)).sort()
+  const disagrees = levels.slice(at + 1).some(([, lower]) => lower.some((a) => a !== address))
+  return { address, addressSource: source, ...(units.length && { addressUnits: units }), disagrees }
 }
 
 /**
@@ -78,6 +91,34 @@ export function offeredBy(points, cell = 50) {
           for (const p of grid.get(key(i, j)) || []) if (inRing(p.x, p.z, r)) return true
     }
     return false
+  }
+}
+
+/**
+ * The parcel each building stands in, and the points each parcel holds — the containment that reaches E-911 points
+ * sitting toward the road. `parcels` = [rings] ([[{x,z}]]), `points` = [{address, unit, x, z}]. Returns
+ * (b) => the points inside the parcel containing b's footprint centroid (none when it stands in no parcel).
+ */
+export function parcelPointsOf(parcels, points, cell = 100) {
+  const grid = new Map(), key = (i, j) => `${i},${j}`
+  const bbox = parcels.map((rings) => {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+    for (const r of rings) for (const q of r) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); z0 = Math.min(z0, q.z); z1 = Math.max(z1, q.z) }
+    return { x0, x1, z0, z1 }
+  })
+  bbox.forEach((bb, i) => {
+    for (let a = Math.floor(bb.x0 / cell); a <= Math.floor(bb.x1 / cell); a++)
+      for (let c = Math.floor(bb.z0 / cell); c <= Math.floor(bb.z1 / cell); c++) { const k = key(a, c); if (!grid.has(k)) grid.set(k, []); grid.get(k).push(i) }
+  })
+  const parcelAt = (x, z) => (grid.get(key(Math.floor(x / cell), Math.floor(z / cell))) || []).find((i) => parcels[i].some((r) => inRing(x, z, r)))
+  const held = new Map()
+  for (const p of points) { const i = parcelAt(p.x, p.z); if (i == null) continue; if (!held.has(i)) held.set(i, []); held.get(i).push(p) }
+  return (b) => {
+    const r = b.rings?.[0]
+    if (!r?.length) return []
+    const cx = r.reduce((a, q) => a + q.x, 0) / r.length, cz = r.reduce((a, q) => a + q.z, 0) / r.length
+    const i = parcelAt(cx, cz)
+    return i == null ? [] : (held.get(i) || [])
   }
 }
 

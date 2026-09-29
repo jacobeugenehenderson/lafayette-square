@@ -2,9 +2,9 @@
   "generated_by": "node checks/tier.mjs --json",
   "total": 343,
   "counts": {
-    "safe": 189,
+    "safe": 188,
     "local-effect": 6,
-    "live": 148
+    "live": 149
   },
   "checks": [
     {
@@ -858,9 +858,10 @@
     },
     {
       "file": "checks/claims-every-building-has-an-address.mjs",
-      "tier": "safe",
+      "tier": "live",
+      "reasonClass": "unreadable",
       "why": [
-        "reads repo files only"
+        "imports cartograph/address-points.mjs, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {

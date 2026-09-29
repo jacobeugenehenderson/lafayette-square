@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 148. Never in a default run.
+## ⛔ live — 149. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -67,6 +67,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-corner-takeover.mjs` | unreadable | imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-deadend-set-decomposition.mjs` | unreadable | imports scratch/coupler-fold-legs.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-app-mounts-the-set-piece.mjs` | unreadable | computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
+| `checks/claims-every-building-has-an-address.mjs` | unreadable | imports cartograph/address-points.mjs, which can: imports cartograph/config.js, which can: imports cartograph/geography.mjs, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-corner-is-configured.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-corner-is-one-of-three.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-every-lit-town-has-lamps.mjs` | unreadable | imports cartograph/bake-lamps.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/terrainLoad.js, which can: imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/forbidden-surface.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read, imports cartograph/derive.js, which can: imports cartograph/speedContext.mjs, which can: child_process with a non-literal command — cannot be read, imports cartograph/lamp-spacing.mjs, which can: writeFileSync, imports cartograph/derive-lamps.mjs, which can: writeFileSync, mkdirSync |
@@ -189,7 +190,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 189. This is `npm test`.
+## safe — 188. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -258,7 +259,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-app-mounts-the-town.mjs` | "DOES EVERY APP THAT DRAWS A TOWN DRAW IT THROUGH THE ONE ASSEMBLY?" |
 | `checks/claims-every-baked-species-has-an-impostor.mjs` | every species in a baked census is in that slab’s atlas. |
 | `checks/claims-every-building-has-a-roof-to-seat-on.mjs` | "DOES EVERY BUILDING A VISITOR CAN TAP HAVE A ROOF TO SEAT ITS SELECTION ON?"  — a per-town census. |
-| `checks/claims-every-building-has-an-address.mjs` | "DOES EVERY BUILDING CARRY THE ADDRESS ITS TOWN'S INPUTS GIVE IT — AND IS A MISSING ONE SAID, NEVER GUESSED?" |
 | `checks/claims-every-category-has-a-full-treatment.mjs` | every category resolves to a COMPLETE class set. |
 | `checks/claims-every-ground-surface-takes-the-lamp.mjs` | lamp.mjs — DOES A LAMP LIGHT WHATEVER GROUND IT STANDS OVER? |
 | `checks/claims-every-lu-tag-has-a-home.mjs` | home.mjs — CAN A TOWN BRING A WORD WE DO NOT KNOW? |

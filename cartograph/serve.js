@@ -21,7 +21,7 @@ import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { productionDomainFor } from './operations-domain.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
-import { readSources, declaredParcelPaths, sourcesPath } from './sources.js'
+import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPath } from './sources.js'
 import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
 import { unionFootprints } from './building-union.mjs'
 import { writeIfChanged } from './io.js'
@@ -2838,7 +2838,9 @@ createServer(async (req, res) => {
           [MAP_JSON, DESIGN, SCENE_DESIGN, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,   // ⭐ the terrain: Huron's buildings at y=0
            join(SCENE_DIR, 'buildings.json'), bakePaths.boundary, join(SCENE_DIR, 'building-overrides.json'),
            join(bakePaths.raw, 'osm.json'),   // the addresses: OSM twins' addr:* and address points (building-address.mjs)
-           join(here, 'bake-buildings.js'), join(here, 'building-address.mjs')],
+           // …and the town's declared E-911 address points, with its parcels as their join (address-points.mjs)
+           ...declaredAddressPointPaths(bakeScene), ...declaredParcelPaths(bakeScene), sourcesPath(bakeScene),
+           join(here, 'bake-buildings.js'), join(here, 'building-address.mjs'), join(here, 'address-points.mjs')],
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 300000 })

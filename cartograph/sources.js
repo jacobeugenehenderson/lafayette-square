@@ -168,3 +168,38 @@ export function undeclaredMessage(scene, path) {
     `     { "parcels": [], "parcels_absent_reason": "<what was searched, and why nothing was adopted>" }`,
   ].join('\n')
 }
+
+/**
+ * ADDRESS POINTS — a town's street-address points (county/state E-911, OpenAddresses…), joined to buildings by
+ * containment (cartograph/building-address.mjs). Declared in the same sources.json, with the same three states:
+ *   UNDECLARED    — no `addressPoints` key: nobody has looked. Reported as such, never read as "none".
+ *   DECLARED-NONE — `addressPoints: []` + `addressPoints_absent_reason`.
+ *   DECLARED      — [{ id, provider, file, attribution?, endpoint?, where? }], `provider` one the kit knows
+ *                   (cartograph/address-points.mjs#ADDRESS_POINT_PROVIDERS). Fetched by fetch-address-points.mjs.
+ * ⛔ A malformed declaration throws; it is never read as undeclared.
+ */
+export function readAddressPointSources(scene, providers) {
+  const p = sourcesPath(scene)
+  if (!existsSync(p)) return { state: 'undeclared', path: p, sources: [] }
+  const j = JSON.parse(readFileSync(p, 'utf8'))
+  if (!('addressPoints' in j)) return { state: 'undeclared', path: p, sources: [] }
+  if (!Array.isArray(j.addressPoints)) throw new Error(`${p}: \`addressPoints\` must be an array`)
+  if (!j.addressPoints.length) {
+    if (!j.addressPoints_absent_reason) throw new Error(`${p} declares no address-point source but gives no \`addressPoints_absent_reason\` — "none" is a finding; say what was searched.`)
+    return { state: 'none', path: p, sources: [], absentReason: j.addressPoints_absent_reason }
+  }
+  const seen = new Set()
+  for (const src of j.addressPoints) {
+    const who = src.id ? `addressPoints[${src.id}]` : `addressPoints[#${j.addressPoints.indexOf(src)}]`
+    for (const req of ['id', 'provider', 'file']) if (!src[req]) throw new Error(`${p}: ${who} is missing \`${req}\``)
+    if (seen.has(src.id)) throw new Error(`${p}: duplicate address-point source id "${src.id}"`)
+    seen.add(src.id)
+    if (providers && !providers[src.provider]) throw new Error(`${p}: ${who} names provider "${src.provider}", which the kit does not know (${Object.keys(providers).join(', ')})`)
+  }
+  return { state: 'declared', path: p, sources: j.addressPoints }
+}
+
+/** The files a town's declared address-point sources land at (absolute); [] when undeclared or declared-none. */
+export function declaredAddressPointPaths(scene) {
+  return readAddressPointSources(scene).sources.map((s) => join(mapDir(scene), 'raw', s.file))
+}

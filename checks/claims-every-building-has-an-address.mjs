@@ -7,7 +7,9 @@
  * `addressCandidates`, and the manifest's `addressCensus`). The Ward's card and "This is my house" read it.
  *
  * Two halves:
- *   A. THE RULES, on fixtures, every run: authored > osm-building (own, then twins) > osm-poi-in-footprint; a lower source
+ *   A. THE RULES, on fixtures, every run: authored > address-point > address-point-in-parcel > osm-building (own, then
+ *      twins) > osm-poi-in-footprint (Jacob, 2026-09-29); an E-911 point's units ride as addressUnits and never enter the
+ *      address; a lower source
  *      never overwrites (its disagreement is counted); several different → null + candidates, never one picked; an address
  *      point is joined by CONTAINMENT only — one a metre outside is not the building's; the source's words, whitespace
  *      collapsed, nothing expanded; an offered-but-missing address is counted LOST.
@@ -25,7 +27,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
-import { resolveAddress, addressCensus, addressOfTags, offeredBy } from '../cartograph/building-address.mjs'
+import { resolveAddress, addressCensus, addressOfTags, offeredBy, parcelPointsOf } from '../cartograph/building-address.mjs'
+import { ADDRESS_POINT_PROVIDERS } from '../cartograph/address-points.mjs'
 
 const fails = []
 const sq = (x, z, s = 5) => [{ x, z }, { x: x + s, z }, { x: x + s, z: z + s }, { x, z: z + s }]
@@ -45,6 +48,21 @@ eq('two twins disagree → null + candidates', { a: amb.address, c: amb.addressC
 eq('a point inside the footprint', resolveAddress({ rings: ring }, poiIn).addressSource, 'osm-poi-in-footprint')
 eq('a point one metre OUTSIDE is not the building\'s (never nearest)', resolveAddress({ rings: ring }, [{ address: '1 Next Door', x: 6, z: 2 }]).address, null)
 eq('a twin ring counts as the building', resolveAddress({ rings: [sq(0, 0), sq(20, 0)] }, [{ address: '3 Twin Way', x: 22, z: 2 }]).address, '3 Twin Way')
+// Address points (E-911): in the footprint, or in the parcel the building stands in.
+const apIn = [{ address: '2115 CLEVELAND RD W', unit: 'A', x: 1, z: 1 }, { address: '2115 CLEVELAND RD W', unit: 'B', x: 3, z: 3 }]
+const lbrs = ADDRESS_POINT_PROVIDERS['ohio-lbrs'].compose({ HOUSENUM: 2115, UNITNUM: 'A', ST_NAME: 'CLEVELAND', ST_TYPE: 'RD', ST_SUFFIX: 'W', ST_PREFIX: ' ' })
+eq('an LBRS record composes without its unit', { a: lbrs.address, u: lbrs.unit }, { a: '2115 CLEVELAND RD W', u: 'A' })
+eq('authored beats an address point', resolveAddress({ authored: '1 Mine St', rings: ring }, [], { addressPoints: apIn }).address, '1 Mine St')
+const withUnits = resolveAddress({ ownTags: tags('5', 'Elm'), rings: ring }, [], { addressPoints: apIn })
+eq('an address point beats OSM, and its units ride alongside', { a: withUnits.address, s: withUnits.addressSource, u: withUnits.addressUnits, d: withUnits.disagrees },
+  { a: '2115 CLEVELAND RD W', s: 'address-point', u: ['A', 'B'], d: true })
+const parcel = [[{ x: -20, z: -20 }, { x: 30, z: -20 }, { x: 30, z: 30 }, { x: -20, z: 30 }]]
+const roadside = [{ address: '44 SHORE DR', unit: null, x: 25, z: 25 }]           // in the parcel, off the roof
+const pp = parcelPointsOf([parcel], roadside)
+eq('a point in the building\'s PARCEL, off the roof, reaches it', resolveAddress({ ownTags: tags('5', 'Elm'), rings: ring }, [], { addressPoints: roadside, parcelPoints: pp }).addressSource, 'address-point-in-parcel')
+eq('a point outside the building\'s parcel does not', resolveAddress({ rings: ring }, [], { addressPoints: [{ address: '9 AWAY', x: 60, z: 60 }], parcelPoints: parcelPointsOf([parcel], [{ address: '9 AWAY', x: 60, z: 60 }]) }).address, null)
+const condo = parcelPointsOf([parcel], [{ address: '921 RIDGEVIEW DR', x: 20, z: 20 }, { address: '923 RIDGEVIEW DR', x: 22, z: 22 }])
+eq('a parcel holding several addresses → ambiguous, none picked', resolveAddress({ rings: ring }, [], { parcelPoints: condo }).addressCandidates, ['921 RIDGEVIEW DR', '923 RIDGEVIEW DR'])
 const offer = offeredBy([{ x: 2, z: 2 }])
 const cen = addressCensus([{ address: null, addressSource: null, offered: offer(ring), id: 'lost-1' }, { address: '5 Elm', addressSource: 'osm-building', offered: true }])
 eq('an offered, uncarried address is LOST', { lost: cen.lost, ids: cen.lostIds }, { lost: 1, ids: ['lost-1'] })
