@@ -19,7 +19,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { validateIdentity, IDENTITY_CHANNELS } from '../src/lib/townIdentity.js'
+import { validateIdentity, resolveIdentity, IDENTITY_CHANNELS, MARK_STYLES } from '../src/lib/townIdentity.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const { registeredMaps, instanceForMap } = await import(join(ROOT, 'src/instances/registry.js'))
@@ -72,6 +72,20 @@ for (const town of maps) {
 const victim = maps.find((t) => t in identities)
 const caught = victim && drift([victim], () => (markOf(victim) === '🧪' ? '🔬' : '🧪')).length === 1
 if (!caught) fails.push(`MUTATION NOT CAUGHT: flipping ${victim ?? '(no town with a Look)'}'s mark did not fail the drift test — the check is blind`)
+
+// ⭐ MARK STYLE (Jacob, 2026-09-29; Boz: "a validator nobody has seen fail is a claim, not a check"). Every run:
+//   · a value outside MARK_STYLES is REFUSED by name (an unknown style must never reach the Ward's ◉);
+//   · every allowed value is accepted;
+//   · an UNCHOSEN style is REPORTED — markStyleAuthored: false beside the neutral — never a silent 'colour'.
+let refusedUnknown = false
+try { validateIdentity({ markStyle: 'sepia' }, 'mutation') } catch (e) { refusedUnknown = /markStyle/.test(e.message) }
+if (!refusedUnknown) fails.push('MUTATION NOT CAUGHT: identity.markStyle = "sepia" was accepted — an unknown mark style must be refused by name')
+for (const v of MARK_STYLES) { try { validateIdentity({ markStyle: v }, 'check') } catch (e) { fails.push(`markStyle "${v}" is a ruled value but was refused: ${e.message}`) } }
+const unchosen = resolveIdentity({})
+if (unchosen.markStyleAuthored !== false) fails.push(`an unchosen markStyle resolves with markStyleAuthored ${JSON.stringify(unchosen.markStyleAuthored)} — it must be reported (false), never a silent '${unchosen.markStyle}'`)
+const chosen = resolveIdentity({ markStyle: 'white' })
+if (chosen.markStyle !== 'white' || chosen.markStyleAuthored !== true) fails.push(`a chosen markStyle "white" resolves as ${JSON.stringify({ v: chosen.markStyle, a: chosen.markStyleAuthored })}`)
+console.log(`   markStyle: unknown value ${refusedUnknown ? 'refused ✓' : 'ACCEPTED'} · unchosen ${unchosen.markStyleAuthored === false ? 'reported ✓' : 'NOT reported'}`)
 
 if (retired.length) console.log(`   retired (their own RETIRED.md), not towns: ${retired.join(', ')}`)
 console.log(`Looks ${Object.keys(identities).length} · towns ${maps.length} · authored: ${Object.entries(identities).map(([k, v]) => `${k}{${Object.keys(v).join(',') || '—'}}`).join(' ')}`)
