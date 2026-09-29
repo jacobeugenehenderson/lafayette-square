@@ -1,6 +1,9 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
+status: BUILT — awaiting Jacob's eye on Provincetown
+dispatched: built in e456051e (band-spread per-tree scale); PT + Huron re-baked 2026-09-29 (Jacob's go)
+note: the near, far and overhead drawings all multiply by the instance's `scale` (InstancedTrees, HeroImpostorTrees,
+  OverheadTrees). NOT re-measured here: defect 2's per-species base heights (impostorBySpecies vs
+  heroImpostorBySpecies heightM) — re-run the size check below before calling it evicted.
 written: 2026-09-26
 evict-when: every placed tree in every town carries its own size within its species' band, the near and far drawings agree on it, and Jacob has eye-gated Provincetown.
 -->
