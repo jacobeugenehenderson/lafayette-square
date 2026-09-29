@@ -8,7 +8,7 @@
 // declared point, so the Salon re-skin can turn each leaf until its stalk meets its twig.
 //
 // ⛔ No fallbacks: a dossier with no leafModel, or a family this file does not draw, throws.
-// Families drawn today: 'palmate-lobed'.
+// Families drawn today: 'palmate-lobed' (v2, veins first — 2026-09-28).
 //
 //   node arborist/leaf-generator.mjs --species acer_rubrum --pack red_maple
 // Writes public/textures/leaves/shapes/<pack>/{shape.png, fall.png, normal.png, meta.json}.
@@ -65,92 +65,197 @@ function hsl2rgb([h, s, l]) {
 const shift = (c, dh, ds, dl) => { const [h, s, l] = rgb2hsl(c); return hsl2rgb([h + dh, Math.max(0, Math.min(1, s + ds)), Math.max(0, Math.min(1, l + dl))]) }
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
 
-// ── the palmate-lobed family ──────────────────────────────────────────────
-// Leaf space: blade base (stalk junction) at the origin, +y along the midrib, blade length 1.
-// The outline is a radius per angle — the union of the lobes (each a tapered wedge toward its
-// tip), a floor that sets the sinus depth, the margin's teeth, and a slow wobble.
+// ── the palmate-lobed family — THE VEINS BUILD THE LEAF ────────────────────
+// Leaf space: blade base (where the stalk meets the blade) at the origin, +y along the midrib,
+// the longest lobe = length 1. Built the way a leaf is (tips first, flowing back):
+//   1. LOBE TIPS — the main veins' ends. All main veins leave from the base.
+//   2. SINUSES between neighbouring lobes, and the BASE sinus at the stalk.
+//   3. Each LOBE EDGE runs sinus → tip; TOOTH TIPS sit along it; between two teeth a notch.
+//      Some teeth carry a smaller second tooth (doubly serrate).
+//   4. Every tooth tip is a vein's end: a secondary leaves its main vein at the species' angle
+//      and runs to it; a minor tooth's vein leaves that secondary. The MARGIN is the curve
+//      through those ends — the outline is derived, never drawn on its own.
+//   5. Widths by the PIPE RULE: a vein's width ∝ √(tips it serves) wherever you cut it;
+//      the stalk carries them all.
+// Returns the outline, the veins (points + per-point width), the junctions, and the stalk.
 function palmateLobed(p, rng) {
-  const lobes = []
-  const push = (ang, len, half) => lobes.push({ ang: ang * Math.PI / 180, len, half: half * Math.PI / 180 })
-  const asym = 1 + (rng() - 0.5) * 2 * draw(rng, p.asymmetry)
-  const sideAng = draw(rng, p.side_lobe_angle), sideLen = draw(rng, p.side_lobe_length), half = draw(rng, p.lobe_half_width)
-  push(90, 1, half)
-  push(90 - sideAng, sideLen * asym, half * 0.95)
-  push(90 + sideAng, sideLen / asym, half * 0.95)
+  const deg = Math.PI / 180
+  const P = (a, r) => [Math.cos(a) * r, Math.sin(a) * r]
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1]], add = (a, b) => [a[0] + b[0], a[1] + b[1]]
+  const mul = (a, k) => [a[0] * k, a[1] * k], len = a => Math.hypot(a[0], a[1])
+  const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+  const jit = (amt) => (rng() - 0.5) * 2 * amt
+  const irr = draw(rng, p.irregularity)
+
+  // 1. lobe tips
+  const asym = 1 + jit(draw(rng, p.asymmetry))
+  const sideAng = draw(rng, p.side_lobe_angle), sideLen = draw(rng, p.side_lobe_length)
+  const lobes = [{ ang: 90, len: 1 }, { ang: 90 - sideAng, len: sideLen * asym }, { ang: 90 + sideAng, len: sideLen / asym }]
   if (rng() < p.basal_lobe_chance) {
-    const bAng = draw(rng, p.basal_lobe_angle), bLen = draw(rng, p.basal_lobe_length)
-    push(90 - bAng, bLen * asym, half * 0.7)
-    push(90 + bAng, bLen / asym, half * 0.7)
+    const bA = draw(rng, p.basal_lobe_angle), bL = draw(rng, p.basal_lobe_length)
+    lobes.push({ ang: 90 - bA, len: bL * asym }, { ang: 90 + bA, len: bL / asym })
   }
-  const floor = draw(rng, p.sinus_depth)          // radius at the bottom of a sinus, × blade length
-  const tipSharp = draw(rng, p.tip_sharpness)
-  const teeth = draw(rng, p.tooth_count), toothAmp = draw(rng, p.tooth_size), tooth2 = draw(rng, p.tooth_double)
-  const wob = valueNoise2((rng() * 1e9) | 0), wobAmp = draw(rng, p.irregularity)
-  const baseHalf = draw(rng, p.base_opening) * Math.PI / 180
-  const baseSpan = draw(rng, p.base_span) * Math.PI / 180
-  const radius = (th) => {
-    let r = 0
-    for (const L of lobes) {
-      let d = Math.abs(th - L.ang); if (d > Math.PI) d = 2 * Math.PI - d
-      const x = d / L.half
-      if (x < 1) r = Math.max(r, L.len * Math.pow(1 - x, tipSharp))
+  lobes.sort((a, b) => a.ang - b.ang)
+  for (const l of lobes) { l.a = (l.ang + jit(3 * irr / 0.05)) * deg; l.len *= 1 + jit(irr); l.tip = P(l.a, l.len) }
+
+  // 2. sinuses — between neighbours, and the base sinus at the stalk (below the origin = cordate)
+  const sinusDepth = draw(rng, p.sinus_depth)
+  const sinus = []
+  for (let i = 0; i < lobes.length - 1; i++) {
+    const A = lobes[i], B = lobes[i + 1]
+    sinus.push(P((A.a + B.a) / 2, sinusDepth * Math.min(A.len, B.len) * (1 + jit(irr * 2))))
+  }
+  const baseSinus = [0, -draw(rng, p.base_depth)]
+
+  // 3 + 4. EDGES, recursively: lobe → SUB-POINTS → teeth, one rule at three scales.
+  // Each lobe edge (sinus → lobe tip) carries a few SUB-POINTS — small lobes of their own, each
+  // with a secondary vein to its tip; between them the margin is a smooth concave SCALLOP (a
+  // sinus at the smaller scale). Serration, if the species has any, rides the scallops: each
+  // tooth's vein leaves the secondary of the next sub-point (or the main vein past the last).
+  const subN = p.sub_points, subH = draw(rng, p.sub_point_height), concave = draw(rng, p.scallop_depth)
+  const fullness = draw(rng, p.lobe_fullness), perUnit = draw(rng, p.teeth_per_unit)
+  const toothDepth = draw(rng, p.tooth_depth)
+  const secAng = draw(rng, p.secondary_angle) * deg
+  const primaries = lobes.map(l => ({ lobe: l, subs: [], teeth: [] }))   // sub-point tips; tooth tips
+  const outline = [baseSinus]
+  const edgeSeq = []  // [from, to, lobeIndex, fromIsSinus]
+  for (let i = 0; i < lobes.length; i++) {
+    const left = i === 0 ? baseSinus : sinus[i - 1], right = i === lobes.length - 1 ? baseSinus : sinus[i]
+    edgeSeq.push([left, lobes[i].tip, i, true], [lobes[i].tip, right, i, false])
+  }
+  const branchFor = (lobe, axis, at) => {
+    const tp = at[0] * axis[0] + at[1] * axis[1]
+    const perp = Math.abs(at[0] * axis[1] - at[1] * axis[0])
+    return Math.max(0.04 * lobe.len, Math.min(lobe.len * 0.9, tp - perp / Math.tan(secAng) - perp * 0.25))
+  }
+  for (const [from, to, li, fromSinus] of edgeSeq) {
+    const lobe = lobes[li], axis = [Math.cos(lobe.a), Math.sin(lobe.a)]
+    const S = fromSinus ? from : to, T = lobe.tip          // parametrise sinus(0) → tip(1)
+    const chord = sub(T, S), L = len(chord)
+    let n = [-chord[1] / L, chord[0] / L]                  // outward = away from the lobe's own axis
+    const mid = lerp(S, T, 0.5)
+    const side = Math.sign(axis[0] * mid[1] - axis[1] * mid[0]) || 1
+    if (Math.sign(axis[0] * n[1] - axis[1] * n[0]) !== side) n = mul(n, -1)
+    const t_ = chord.map(c => c / L)
+    const edge = u => add(lerp(S, T, u), mul(n, fullness * L * 4 * u * (1 - u)))
+    // the sub-points: count scales with the edge's length; each protrudes and leans toward the tip
+    const k = Math.max(0, Math.round(draw(rng, subN) * L / lobe.len))
+    const anchors = [{ at: S, u: 0 }]
+    for (let j = 0; j < k; j++) {
+      const u = 0.22 + 0.6 * (j + 0.5 + jit(0.25)) / k
+      const h = subH * lobe.len * Math.sin(Math.PI * Math.min(0.95, u)) * (1 + jit(irr * 5))
+      anchors.push({ at: add(add(edge(u), mul(n, h)), mul(t_, h * 0.45)), u, sub: true })
     }
-    // the base: the sinus floor fades out toward straight down, so the blade meets the stalk
-    // across a truncate-to-shallow base instead of wrapping under it
-    let dDown = Math.abs(th + Math.PI / 2); if (dDown > Math.PI) dDown = 2 * Math.PI - dDown
-    const bt = Math.min(1, Math.max(0, (dDown - baseHalf) / baseSpan))
-    r = Math.max(r, floor * bt * bt * (3 - 2 * bt))
-    // teeth: an asymmetric saw, forward-leaning; a finer second set for a doubly-toothed margin
-    const saw = (t) => { const f = t - Math.floor(t); return f < 0.7 ? f / 0.7 : (1 - f) / 0.3 }
-    r *= 1 + toothAmp * (saw(th * teeth / (2 * Math.PI)) - 0.5) + toothAmp * tooth2 * 0.5 * (saw(th * teeth * 2.6 / (2 * Math.PI)) - 0.5)
-    r *= 1 + wobAmp * (wob(th * 3, 7.3) - 0.5)
-    return r
-  }
-  // outline: sweep from just right of straight-down, all the way round, to just left of it
-  const start = -Math.PI / 2 + baseHalf, end = 3 * Math.PI / 2 - baseHalf, N = 1400
-  const pts = [[0, 0]]
-  for (let i = 0; i <= N; i++) { const th = start + (end - start) * i / N; const r = radius(th); pts.push([r * Math.cos(th), r * Math.sin(th)]) }
-  // veins: a primary to each lobe tip, secondaries off each primary toward the margin
-  const veins = []
-  const vw = draw(rng, p.vein_width)
-  for (const L of lobes) {
-    const tipR = radius(L.ang) * 0.93
-    const bend = (rng() - 0.5) * 0.08
-    veins.push({ pts: [[0, 0], [Math.cos(L.ang + bend) * tipR * 0.5, Math.sin(L.ang + bend) * tipR * 0.5], [Math.cos(L.ang) * tipR, Math.sin(L.ang) * tipR]], w0: vw * (L.len > 0.9 ? 1 : 0.8), w1: vw * 0.25 })
-    const nSec = Math.max(2, Math.round(draw(rng, p.secondary_count) * L.len))
-    const secAng = draw(rng, p.secondary_angle) * Math.PI / 180
-    for (let k = 1; k <= nSec; k++) {
-      const t = k / (nSec + 1)
-      const ox = Math.cos(L.ang) * tipR * t, oy = Math.sin(L.ang) * tipR * t
-      for (const side of [-1, 1]) {
-        const a = L.ang + side * secAng
-        const len = Math.max(0.05, radius(a) * 0.85 - tipR * t * Math.cos(secAng)) * 0.75
-        veins.push({ pts: [[ox, oy], [ox + Math.cos(a) * len * 0.55, oy + Math.sin(a) * len * 0.55], [ox + Math.cos(a) * len, oy + Math.sin(a) * len]], w0: vw * 0.45, w1: vw * 0.1 })
+    anchors.push({ at: T, u: 1 })
+    // between consecutive anchors: a concave scallop, serrated if the species is
+    const pts = []
+    for (let a = 0; a < anchors.length - 1; a++) {
+      const A = anchors[a].at, Bp = anchors[a + 1].at, seg = sub(Bp, A), sl = len(seg)
+      let m = [-seg[1] / sl, seg[0] / sl]; if (m[0] * n[0] + m[1] * n[1] < 0) m = mul(m, -1)
+      const scal = u => add(lerp(A, Bp, u), mul(m, -concave * sl * 4 * u * (1 - u)))
+      const teeth = Math.round(perUnit * sl)
+      const us = []
+      for (let q = 0; q < teeth; q++) us.push((q + 0.5 + jit(0.3)) / (teeth + 0.4))
+      us.sort((x, y) => x - y)
+      // Each tooth: a NOTCH a little past the previous tip (long proximal flank), then the TIP, which
+      // stands out from the edge and leans toward the lobe tip — straight flanks, a sharp point.
+      // With no teeth the segment is the smooth scallop alone.
+      const STEPS = 10
+      if (!us.length) for (let st = 1; st < STEPS; st++) pts.push({ at: scal(st / STEPS) })
+      let prevU = 0
+      for (let q = 0; q < us.length; q++) {
+        const u1 = us[q], gap = u1 - prevU
+        const d = toothDepth * lobe.len * (1 + jit(irr * 6))
+        pts.push({ at: add(scal(prevU + gap * 0.22), mul(m, -d * 0.65)), notch: true })
+        pts.push({ at: add(add(scal(u1), mul(m, d * 0.35)), mul(seg, (d * 0.8) / sl)), tooth: true })
+        prevU = u1
       }
+      if (us.length) pts.push({ at: add(scal(prevU + (1 - prevU) * 0.3), mul(m, -toothDepth * lobe.len * 0.5)), notch: true })
+      if (anchors[a + 1].sub) pts.push({ at: Bp, sub: true })
     }
+    for (const q of pts) {
+      if (q.sub) primaries[li].subs.push({ t: branchFor(lobe, axis, q.at), tip: q.at })
+      else if (q.tooth) primaries[li].teeth.push(q.at)
+    }
+    const ordered = fromSinus ? pts : pts.slice().reverse()
+    for (const q of ordered) outline.push(q.at)
+    outline.push(fromSinus ? T : to)
   }
-  const petiole = { len: draw(rng, p.petiole_length), w: draw(rng, p.petiole_width), curve: (rng() - 0.5) * draw(rng, p.petiole_curvature) }
-  return { outline: pts, veins, petiole }
+
+  // 5. veins with pipe-rule widths, junctions where they meet
+  const w1 = draw(rng, p.vein_width)
+  const W = n => w1 * Math.sqrt(n)
+  const veins = [], junctions = [[0, 0]]
+  let total = 0
+  // Every vein MERGES TANGENTIALLY — it leaves its parent running alongside it and curves away
+  // to its tip, as a stream joins a river (Jacob, 2026-09-28). A main vein leaves the base heading
+  // along the stalk (tangency p.merge_tangency) before fanning to its lobe; a secondary leaves its
+  // main vein along it; a minor-tooth vein leaves its secondary along it.
+  const tang = draw(rng, p.merge_tangency)
+  const bez = (a, c, b) => ({ at: t => lerp(lerp(a, c, t), lerp(c, b, t), t), d: t => { const v = add(mul(sub(c, a), 2 * (1 - t)), mul(sub(b, c), 2 * t)); const l = len(v) || 1; return [v[0] / l, v[1] / l] } })
+  const curveFrom = (from, along, tip) => bez(from, lerp(add(from, mul(along, len(sub(tip, from)) * 0.3)), tip, 0.3), lerp(from, tip, 0.985))
+  for (const pr of primaries) {
+    const l = pr.lobe
+    const dir = [Math.cos(l.a), Math.sin(l.a)]
+    // an upward main vein leans with the stalk's line; a sideways or downward one leaves straight
+    const tg = tang * Math.max(0, Math.sin(l.a))
+    const lean = [dir[0] * (1 - tg), dir[1] * (1 - tg) + tg]
+    const B = bez([0, 0], mul(lean, l.len * 0.42 / (len(lean) || 1)), l.tip)
+    const N = 48, arc = [0]
+    for (let k = 1; k <= N; k++) arc.push(arc[k - 1] + len(sub(B.at(k / N), B.at((k - 1) / N))))
+    const sOf = t => { const target = (t / l.len) * arc[N]; let k = 1; while (k < N && arc[k] < target) k++; return (k - 1 + (target - arc[k - 1]) / Math.max(1e-9, arc[k] - arc[k - 1])) / N }
+    // the sub-point secondaries
+    const secs = pr.subs.map(sb => { const s0 = sOf(sb.t); const Q = curveFrom(B.at(s0), B.d(s0), sb.tip); return { s0, Q, teeth: [] } })
+    // every tooth joins the NEAREST vein already there — a secondary or the main vein — tangentially
+    const onPrimary = []
+    for (const tip of pr.teeth) {
+      let best = Infinity, pick = null
+      for (let k = 2; k <= N - 1; k++) { const d = len(sub(B.at(k / N), tip)); if (d < best) { best = d; pick = { on: 'p', s: k / N } } }
+      for (const sc of secs) for (let k = 3; k <= 13; k++) { const d = len(sub(sc.Q.at(k / 14), tip)); if (d < best) { best = d; pick = { on: sc, s: k / 14 } } }
+      if (pick.on === 'p') onPrimary.push({ s: pick.s, tip }); else pick.on.teeth.push({ s: pick.s, tip })
+    }
+    const servedBeyond = sK => 1 + secs.filter(sc => sc.s0 > sK).reduce((a, sc) => a + 1 + sc.teeth.length, 0) + onPrimary.filter(o => o.s > sK).length
+    total += servedBeyond(-1)
+    const pts = [], ws = []
+    for (let k = 0; k <= 24; k++) { pts.push(B.at(k / 24)); ws.push(W(servedBeyond(k / 24))) }
+    veins.push({ pts, ws, order: 1 })
+    const twig = (Qp, s0, tip, order, w) => {
+      const from = Qp.at(s0); junctions.push(from)
+      const C = curveFrom(from, Qp.d(s0), tip)
+      veins.push({ pts: [0, 0.25, 0.5, 0.75, 1].map(C.at), ws: [1, 0.9, 0.8, 0.7, 0.6].map(k => w * k), order })
+    }
+    for (const sc of secs) {
+      junctions.push(sc.Q.at(0))
+      const sp = [], sw = []
+      for (let k = 0; k <= 14; k++) { const t = k / 14; sp.push(sc.Q.at(t)); sw.push(W(1 + sc.teeth.filter(o => o.s > t).length) * 0.9) }
+      veins.push({ pts: sp, ws: sw, order: 2 })
+      for (const o of sc.teeth) twig(sc.Q, o.s, o.tip, 3, W(1) * 0.7)
+    }
+    for (const o of onPrimary) twig(B, o.s, o.tip, 3, W(1) * 0.75)
+  }
+  const petiole = { len: draw(rng, p.petiole_length), w: W(total) * draw(rng, p.petiole_width_factor), curve: jit(draw(rng, p.petiole_curvature)) }
+  return { outline, veins, junctions, petiole }
 }
 const FAMILIES = { 'palmate-lobed': palmateLobed }
 
 // ── lay one leaf into a cell: stalk end at STALK, blade filling the rest ───
-function layout(leaf) {
-  let halfW = 0, maxY = 0
-  for (const [x, y] of leaf.outline) { halfW = Math.max(halfW, Math.abs(x)); maxY = Math.max(maxY, y) }
+// `age` (0 bud → 1 mature) shrinks the leaf toward its stalk. It is a knob, and the pack is drawn
+// at age 1; growth animation evaluates the same seed at smaller ages.
+function layout(leaf, age = 1) {
+  let halfW = 0, minY = 0, maxY = 0
+  for (const [x, y] of leaf.outline) { halfW = Math.max(halfW, Math.abs(x)); maxY = Math.max(maxY, y); minY = Math.min(minY, y) }
+  const bladeBelow = Math.max(0, -minY)
   const s = Math.min((R * (STALK[1] - 0.03)) / (maxY + leaf.petiole.len), (R * 0.47) / halfW)
-  const baseY = R * STALK[1] - s * leaf.petiole.len
-  return { s, map: ([x, y]) => [R * STALK[0] + s * x, baseY - s * y] }
+  const sa = s * (0.25 + 0.75 * age)
+  const baseY = R * STALK[1] - s * Math.max(leaf.petiole.len, bladeBelow + 0.05)
+  return { s, map: ([x, y]) => [R * STALK[0] + sa * x, baseY - sa * y] }
 }
 const pathOf = (pts, f) => 'M' + pts.map(p => f(p).map(v => v.toFixed(2)).join(' ')).join(' L') + ' Z'
-function strokeSvg(v, f, s) {
-  // a tapered vein as a chain of segments with falling width
-  const out = [], [a, b, c] = v.pts, n = 12
-  for (let i = 0; i < n; i++) {
-    const t0 = i / n, t1 = (i + 1) / n
-    const q = t => [(1 - t) * (1 - t) * a[0] + 2 * (1 - t) * t * b[0] + t * t * c[0], (1 - t) * (1 - t) * a[1] + 2 * (1 - t) * t * b[1] + t * t * c[1]]
-    const [x0, y0] = f(q(t0)), [x1, y1] = f(q(t1))
-    out.push(`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke-width="${(s * (v.w0 + (v.w1 - v.w0) * t0)).toFixed(2)}"/>`)
+function veinSvg(v, f, s) {
+  const out = []
+  for (let i = 0; i < v.pts.length - 1; i++) {
+    const [x0, y0] = f(v.pts[i]), [x1, y1] = f(v.pts[i + 1])
+    out.push(`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke-width="${Math.max(0.6, s * v.ws[i]).toFixed(2)}"/>`)
   }
   return out.join('')
 }
@@ -161,85 +266,156 @@ async function rasterGray(svgBody) {
   return out
 }
 async function blurGray(arr, sigma) {
-  const buf = Buffer.alloc(R * R); for (let i = 0; i < buf.length; i++) buf[i] = Math.round(arr[i] * 255)
-  const { data } = await sharp(buf, { raw: { width: R, height: R, channels: 1 } }).blur(sigma).raw().toBuffer({ resolveWithObject: true })
+  const buf = Buffer.alloc(R * R); for (let i = 0; i < buf.length; i++) buf[i] = Math.round(Math.min(1, arr[i]) * 255)
+  // ⛔ sharp's blur hands back THREE channels for a one-channel input; read as one, every blurred
+  // layer came out squashed and misregistered against the outline. Keep one channel explicitly.
+  const { data } = await sharp(buf, { raw: { width: R, height: R, channels: 1 } }).blur(sigma).extractChannel(0).raw().toBuffer({ resolveWithObject: true })
   const out = new Float32Array(R * R); for (let i = 0; i < out.length; i++) out[i] = data[i] / 255
   return out
 }
+// Chamfer distance (px) to the nearest set pixel — the areoles pucker and pale by it.
+function distanceTo(mask) {
+  const D = new Float32Array(R * R).fill(1e9)
+  for (let i = 0; i < D.length; i++) if (mask[i] > 0.5) D[i] = 0
+  const a = 1, b = Math.SQRT2
+  for (let y = 0; y < R; y++) for (let x = 0; x < R; x++) {
+    const i = y * R + x; let d = D[i]
+    if (x > 0) d = Math.min(d, D[i - 1] + a)
+    if (y > 0) { d = Math.min(d, D[i - R] + a); if (x > 0) d = Math.min(d, D[i - R - 1] + b); if (x < R - 1) d = Math.min(d, D[i - R + 1] + b) }
+    D[i] = d
+  }
+  for (let y = R - 1; y >= 0; y--) for (let x = R - 1; x >= 0; x--) {
+    const i = y * R + x; let d = D[i]
+    if (x < R - 1) d = Math.min(d, D[i + 1] + a)
+    if (y < R - 1) { d = Math.min(d, D[i + R] + a); if (x < R - 1) d = Math.min(d, D[i + R + 1] + b); if (x > 0) d = Math.min(d, D[i + R - 1] + b) }
+    D[i] = d
+  }
+  return D
+}
+// The finest veins: the boundaries of cells around points scattered in the blade (areoles).
+function areoleNet(blade, count, rng) {
+  const seeds = []
+  for (let tries = 0; seeds.length < count && tries < count * 40; tries++) {
+    const x = rng() * R, y = rng() * R
+    if (blade[(y | 0) * R + (x | 0)] > 0.5) seeds.push([x, y])
+  }
+  const B = Math.max(8, Math.round(R / 24)), grid = new Map()
+  seeds.forEach((s, i) => { const k = `${(s[0] / B) | 0},${(s[1] / B) | 0}`; (grid.get(k) || grid.set(k, []).get(k)).push(i) })
+  const owner = new Int32Array(R * R).fill(-1)
+  for (let y = 0; y < R; y++) for (let x = 0; x < R; x++) {
+    const i = y * R + x; if (blade[i] < 0.5) continue
+    const gx = (x / B) | 0, gy = (y / B) | 0; let best = 1e18, bi = -1
+    for (let r = 0; r <= 3 && bi < 0 || r <= 1; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const a = grid.get(`${gx + dx},${gy + dy}`); if (!a) continue
+      for (const j of a) { const d = (seeds[j][0] - x) ** 2 + (seeds[j][1] - y) ** 2; if (d < best) { best = d; bi = j } }
+    }
+    owner[i] = bi
+  }
+  const net = new Float32Array(R * R)
+  for (let y = 0; y < R - 1; y++) for (let x = 0; x < R - 1; x++) {
+    const i = y * R + x; if (owner[i] < 0) continue
+    if ((owner[i + 1] >= 0 && owner[i + 1] !== owner[i]) || (owner[i + R] >= 0 && owner[i + R] !== owner[i])) net[i] = 1
+  }
+  return net
+}
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
 
-// ── one variant → three RGBA/RGB cells at render resolution ────────────────
-async function drawVariant(model, season, seed) {
+// ── one variant → RGBA/RGB cells at render resolution ──────────────────────
+// Knobs: `fall` 0 (summer) → 1 (full fall) — the change STARTS at the vein junctions and runs
+// along the veins before it takes the blade; `age` 0 (bud) → 1 (mature). The pack is drawn at
+// age 1, fall 0 and 1; anything between is the same leaf, later or earlier.
+async function drawVariant(model, season, seed, { age = 1, fall = 1 } = {}) {
   const rng = mulberry32(seed)
-  const leaf = FAMILIES[model.family](model.params, rng)
-  const L = layout(leaf)
-  const f = L.map
-  const bladeD = pathOf(leaf.outline, f)
-  // stalk: from the blade base down to STALK, a gentle curve
+  const P = model.params
+  const leaf = FAMILIES[model.family](P, rng)
+  const L = layout(leaf, age)
+  const f = L.map, sa = L.s * (0.25 + 0.75 * age)
+  const blade = await rasterGray(`<path d="${pathOf(leaf.outline, f)}" fill="white"/>`)
   const [bx, by] = f([0, 0]), ex = R * STALK[0], ey = R * STALK[1]
-  const mx = (bx + ex) / 2 + leaf.petiole.curve * L.s, my = (by + ey) / 2
-  const petW = leaf.petiole.w * L.s
-  const petioleSvg = `<path d="M${bx} ${by} Q${mx} ${my} ${ex} ${ey}" stroke="white" stroke-width="${petW.toFixed(2)}" fill="none" stroke-linecap="round"/>`
-  const blade = await rasterGray(`<path d="${bladeD}" fill="white"/>`)
-  const stalk = await rasterGray(petioleSvg)
-  const veinsA = await rasterGray(`<g stroke="white" stroke-linecap="round">${leaf.veins.map(v => strokeSvg(v, f, L.s)).join('')}</g>`)
-  const dome = await blurGray(blade, R * 0.035)
-  const veinSoft = await blurGray(veinsA, 1.2)
+  const mx = (bx + ex) / 2 + leaf.petiole.curve * sa, my = (by + ey) / 2
+  const stalk = await rasterGray(`<path d="M${bx} ${by} Q${mx} ${my} ${ex} ${ey}" stroke="white" stroke-width="${Math.max(1.5, leaf.petiole.w * sa).toFixed(2)}" fill="none" stroke-linecap="round"/>`)
+  const veinsHard = await rasterGray(`<g stroke="white" stroke-linecap="round">${leaf.veins.map(v => veinSvg(v, f, sa)).join('')}</g>`)
+  const veins = await blurGray(veinsHard, 0.8)
+  if (process.env.LEAF_DEBUG_DIR) {   // the skeleton alone, outline over veins, for the eye
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${R}" height="${R}"><rect width="100%" height="100%" fill="white"/><path d="${pathOf(leaf.outline, f)}" fill="#dfe9d8" stroke="#6a8" stroke-width="1"/><g stroke="#1a3" stroke-linecap="round">${leaf.veins.map(v => veinSvg(v, f, sa)).join('')}</g>${leaf.junctions.map(j => { const [x, y] = f(j); return `<circle cx="${x}" cy="${y}" r="3" fill="#d33"/>` }).join('')}</svg>`
+    await sharp(Buffer.from(svg)).png().toFile(path.join(process.env.LEAF_DEBUG_DIR, `skeleton-${seed}.png`))
+    const g = Buffer.alloc(R * R); for (let i = 0; i < g.length; i++) g[i] = Math.round(veinsHard[i] * 255)
+    await sharp(g, { raw: { width: R, height: R, channels: 1 } }).png().toFile(path.join(process.env.LEAF_DEBUG_DIR, `veinsraster-${seed}.png`))
+  }
+  const net = areoleNet(blade, Math.round(draw(rng, P.areole_count)), rng)
+  const netSoft = await blurGray(net, 0.7)
+  const dVein = distanceTo(veinsHard)
+  const dome = await blurGray(blade, R * 0.03)
+  const junc = await blurGray(await rasterGray(leaf.junctions.map(j => { const [x, y] = f(j); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(R * 0.012).toFixed(1)}" fill="white"/>` }).join('')), R * P.junction_spread)
   const n1 = valueNoise2(seed ^ 0x9e3779b9), n2 = valueNoise2(seed ^ 0x85ebca6b)
 
-  // per-leaf colour: each leaf its own draw around the season anchor
-  const summer0 = shift(hex(season.summer), (rng() - 0.5) * 2 * model.params.hue_jitter, 0, (rng() - 0.5) * 2 * model.params.light_jitter)
-  const fallPal = (model.params.fall_palette || [season.fall]).map(hex)
+  const summer0 = shift(hex(season.summer), jit1(rng, P.hue_jitter), 0, jit1(rng, P.light_jitter))
+  const young = season.spring ? hex(season.spring) : summer0
+  const fallPal = (P.fall_palette || [season.fall]).map(hex)
   const fallA = fallPal[Math.floor(rng() * fallPal.length)], fallB = fallPal[Math.floor(rng() * fallPal.length)]
   const fallMix = rng()
-  const stalkCol = hex(model.params.petiole_color)
-
-  const alpha = new Float32Array(R * R), height = new Float32Array(R * R)
-  const sum = new Float32Array(R * R * 3), fal = new Float32Array(R * R * 3)
-  let accS = [0, 0, 0], accF = [0, 0, 0], accN = 0
+  const stalkCol = hex(P.petiole_color)
+  const cellPx = R / 512
+  // `fall`: the 'fall' page shows the leaf at this progress (the pack draws it at 1)
+  const out = { summer: Buffer.alloc(R * R * 4), fall: Buffer.alloc(R * R * 4), normal: Buffer.alloc(R * R * 3) }
+  const height = new Float32Array(R * R)
+  const cols = { summer: new Float32Array(R * R * 3), fall: new Float32Array(R * R * 3) }
+  const acc = { summer: [0, 0, 0], fall: [0, 0, 0] }; let accN = 0
+  const baseCol = mix(young, summer0, age)
   for (let y = 0; y < R; y++) for (let x = 0; x < R; x++) {
-    const i = y * R + x
-    const a = Math.min(1, blade[i] + stalk[i]); alpha[i] = a
-    const u = x / R, v = y / R
-    const mott = fbm(n1, u * 18, v * 18) - 0.5
-    const inner = Math.min(1, Math.max(0, (dome[i] - 0.5) * 2))   // 0 at the margin → 1 well inside
-    const vn = veinSoft[i] * blade[i]
-    // SUMMER: anchor ± mottle; veins paler and yellower; margin a touch darker
-    let s = shift(summer0, mott * 6, 0, mott * model.params.mottle)
-    s = mix(s, shift(summer0, 18, -0.05, 0.16), Math.min(1, vn * 1.4))
-    s = mix(s, shift(summer0, -6, 0, -0.05), (1 - inner) * 0.35)
-    // FALL: two palette colours blended across the leaf; margin reddens, veins hold yellow
-    const g = Math.min(1, Math.max(0, fallMix + (fbm(n2, u * 5, v * 5) - 0.5) * 1.2))
+    const i = y * R + x, u = x / R, v = y / R
+    const inB = blade[i], vn = veins[i] * inB, an = netSoft[i] * inB * (1 - vn)
+    const dv = dVein[i] / cellPx                         // distance to a vein, in 512-cell px
+    const J = Math.min(1, junc[i] * 3)                   // the junction field
+    const nearVein = Math.exp(-dv / 6)
+    const mott = fbm(n1, u * 14, v * 14) - 0.5
+    const inner = smooth(0.5, 1, dome[i])
+    // SUMMER — the blade darkest between veins, paler and yellower toward them; the mottle gathers
+    // at the junctions (where the season will begin).
+    let s = shift(baseCol, mott * 5, 0, mott * P.mottle - (1 - nearVein) * 0.03)
+    s = mix(s, shift(baseCol, 10, -0.02, 0.06), J * P.junction_mottle)
+    s = mix(s, shift(baseCol, 18, -0.06, 0.15), Math.min(1, vn * 1.3))
+    s = mix(s, shift(baseCol, 12, -0.03, 0.07), an * 0.5)
+    s = mix(s, shift(baseCol, -6, 0, -0.05), (1 - inner) * 0.3)
+    // FALL — progress runs junctions → veins → blade; the veins change with it
+    const g = smooth(0, 1, fallMix + (fbm(n2, u * 5, v * 5) - 0.5) * 1.2)
     let fc = mix(fallA, fallB, g)
-    fc = shift(fc, mott * 8, 0, mott * model.params.mottle)
-    fc = mix(fc, shift(fc, 25, 0, 0.1), Math.min(1, vn * 1.1))
-    fc = mix(fc, shift(fc, -10, 0.05, -0.08), (1 - inner) * 0.5)
-    if (stalk[i] > blade[i]) { s = stalkCol; fc = shift(stalkCol, 0, 0, -0.05) }
-    for (let c = 0; c < 3; c++) { sum[i * 3 + c] = s[c]; fal[i * 3 + c] = fc[c] }
-    if (a > 0.5) { for (let c = 0; c < 3; c++) { accS[c] += s[c]; accF[c] += fc[c] } accN++ }
-    // height: domed blade, sunken veins (upper face), slow wave
-    height[i] = blade[i] * (dome[i] * model.params.dome - vn * model.params.vein_depth + (fbm(n2, u * 4, v * 4) - 0.5) * model.params.wave) + stalk[i] * 0.6
+    const readiness = Math.min(1, 0.55 * J + 0.3 * nearVein + 0.3 * (fbm(n2, u * 9 + 3, v * 9) - 0.2))
+    // a pixel turns once `fall` passes its threshold — junctions and veins have the lowest
+    const fallAt = smooth(0.7 - readiness * 0.6, 1 - readiness * 0.6, fall + 0.3 * fall)
+    fc = shift(fc, mott * 8, 0, mott * P.mottle)
+    fc = mix(fc, shift(fc, 22, 0, 0.1), Math.min(1, vn * 1.2) * (0.5 + 0.5 * J))
+    fc = mix(fc, shift(fc, 14, 0, 0.05), an * 0.4)
+    fc = mix(s, fc, fallAt)
+    if (stalk[i] > inB) { s = mix(stalkCol, s, 0); fc = shift(stalkCol, 0, 0, -0.05) }
+    for (let c = 0; c < 3; c++) { cols.summer[i * 3 + c] = s[c]; cols.fall[i * 3 + c] = fc[c] }
+    const a = Math.min(1, inB + stalk[i])
+    if (a > 0.5) { for (let c = 0; c < 3; c++) { acc.summer[c] += s[c]; acc.fall[c] += fc[c] } accN++ }
+    // HEIGHT — the blade domed; each areole puckers up between its veins; veins sunk into the face
+    height[i] = inB * (dome[i] * P.dome + (1 - Math.exp(-dv / 5)) * P.areole_pucker - vn * P.vein_depth - an * P.vein_depth * 0.3
+      + (fbm(n2, u * 4, v * 4) - 0.5) * P.wave) + stalk[i] * 0.6
   }
-  // Transparent texels carry the leaf's mean colour, so mips and filtering never pull in black.
-  const meanS = accS.map(c => c / Math.max(1, accN)), meanF = accF.map(c => c / Math.max(1, accN))
-  const cellS = Buffer.alloc(R * R * 4), cellF = Buffer.alloc(R * R * 4), cellN = Buffer.alloc(R * R * 3)
-  const k = model.params.normal_strength * R / 512
+  const mean = k => acc[k].map(c => c / Math.max(1, accN))
+  const k = P.normal_strength * R / 512
   for (let y = 0; y < R; y++) for (let x = 0; x < R; x++) {
-    const i = y * R + x, a = alpha[i]
-    for (let c = 0; c < 3; c++) {
-      cellS[i * 4 + c] = Math.round(a > 0.02 ? sum[i * 3 + c] : meanS[c])
-      cellF[i * 4 + c] = Math.round(a > 0.02 ? fal[i * 3 + c] : meanF[c])
+    const i = y * R + x, a = Math.min(1, blade[i] + stalk[i])
+    for (const key of ['summer', 'fall']) {
+      const m = mean(key)
+      for (let c = 0; c < 3; c++) out[key][i * 4 + c] = Math.round(Math.max(0, Math.min(255, a > 0.02 ? cols[key][i * 3 + c] : m[c])))
+      out[key][i * 4 + 3] = Math.round(a * 255)
     }
-    cellS[i * 4 + 3] = cellF[i * 4 + 3] = Math.round(a * 255)
     const hx = height[y * R + Math.min(R - 1, x + 1)] - height[y * R + Math.max(0, x - 1)]
     const hy = height[Math.min(R - 1, y + 1) * R + x] - height[Math.max(0, y - 1) * R + x]
     // OpenGL tangent space (+Y up); image rows grow down, so +Y = -rows ⇒ ny = +hy
-    let nx = -hx * k, ny = hy * k, nz = 1; const len = Math.hypot(nx, ny, nz); nx /= len; ny /= len; nz /= len
-    cellN[i * 3] = Math.round((nx * 0.5 + 0.5) * 255); cellN[i * 3 + 1] = Math.round((ny * 0.5 + 0.5) * 255); cellN[i * 3 + 2] = Math.round((nz * 0.5 + 0.5) * 255)
+    let nx = -hx * k, ny = hy * k, nz = 1; const ln = Math.hypot(nx, ny, nz); nx /= ln; ny /= ln; nz /= ln
+    out.normal[i * 3] = Math.round((nx * 0.5 + 0.5) * 255); out.normal[i * 3 + 1] = Math.round((ny * 0.5 + 0.5) * 255); out.normal[i * 3 + 2] = Math.round((nz * 0.5 + 0.5) * 255)
   }
   const down = (buf, ch) => sharp(buf, { raw: { width: R, height: R, channels: ch } }).resize(CELL, CELL, { kernel: 'lanczos3' }).raw().toBuffer()
   // How many blade-lengths one cell edge spans — × the species' leaf length, the cell's real size.
-  return { summer: await down(cellS, 4), fall: await down(cellF, 4), normal: await down(cellN, 3), cellBlades: R / L.s }
+  return { summer: await down(out.summer, 4), fall: await down(out.fall, 4), normal: await down(out.normal, 3), cellBlades: R / L.s }
 }
+const jit1 = (rng, amt) => (rng() - 0.5) * 2 * amt
+
 
 // ── the pack ───────────────────────────────────────────────────────────────
 export async function generateLeafPack({ species, pack, cell = 512, outDir = null }) {

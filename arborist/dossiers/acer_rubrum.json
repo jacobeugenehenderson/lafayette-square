@@ -263,7 +263,7 @@
     "_barkNote": "stretch→have 2026-06-18: Bark003 is an exact ridged match (the live matcher found it)"
   },
   "leafModel": {
-    "_doc": "Drawn by arborist/leaf-generator.mjs. Every range is [lo, hi]; each variant draws within it. Lengths are × blade length, angles in degrees from the midrib (lobes) or the blade base (base_opening). Source: standard botanical descriptions of Acer rubrum — 3 main lobes, often 2 small basal lobes; shallow V sinuses; irregularly doubly-serrate; long red petiole.",
+    "_doc": "Drawn by arborist/leaf-generator.mjs (palmate-lobed v2 — THE VEINS BUILD THE LEAF: lobe tips → sinuses → SUB-POINTS on each lobe edge (smooth concave scallops between) → serration → a vein to every tooth tip → outline through them; pipe-rule vein widths). Every range is [lo, hi]; each variant draws within it. Lengths × the longest lobe; angles in degrees. Source: standard botanical descriptions of Acer rubrum — 3 main lobes, often 2 small basal; shallow acute V sinuses; irregularly (doubly) serrate; long red petiole.",
     "family": "palmate-lobed",
     "morphology": "palmate",
     "grid": [
@@ -276,83 +276,77 @@
     },
     "params": {
       "side_lobe_angle": [
-        45,
-        58
+        40,
+        50
       ],
       "side_lobe_length": [
-        0.72,
-        0.86
-      ],
-      "lobe_half_width": [
-        42,
-        52
+        0.75,
+        0.9
       ],
       "basal_lobe_chance": 0.55,
       "basal_lobe_angle": [
-        98,
-        114
+        100,
+        118
       ],
       "basal_lobe_length": [
-        0.24,
-        0.34
+        0.3,
+        0.42
       ],
       "sinus_depth": [
-        0.4,
-        0.52
-      ],
-      "tip_sharpness": [
         0.55,
-        0.75
+        0.68
       ],
-      "tooth_count": [
-        55,
-        75
+      "base_depth": [
+        -0.02,
+        0.05
       ],
-      "tooth_size": [
-        0.035,
-        0.06
+      "lobe_fullness": [
+        0.05,
+        0.1
       ],
-      "tooth_double": [
-        0.4,
-        0.7
+      "teeth_per_unit": [
+        12,
+        16
+      ],
+      "tooth_depth": [
+        0.026,
+        0.04
+      ],
+      "secondary_angle": [
+        38,
+        52
       ],
       "irregularity": [
-        0.03,
-        0.06
+        0.02,
+        0.04
       ],
       "asymmetry": [
         0,
         0.06
       ],
-      "base_opening": [
-        4,
-        10
-      ],
       "vein_width": [
-        0.012,
-        0.016
+        0.0022,
+        0.0028
       ],
-      "secondary_count": [
-        5,
-        7
-      ],
-      "secondary_angle": [
-        42,
-        55
+      "petiole_width_factor": [
+        0.9,
+        1.1
       ],
       "petiole_length": [
         0.35,
         0.5
       ],
-      "petiole_width": [
-        0.018,
-        0.024
-      ],
       "petiole_curvature": 0.2,
       "petiole_color": "#9e2b25",
+      "areole_count": [
+        700,
+        1100
+      ],
+      "junction_spread": 0.012,
+      "junction_mottle": 0.5,
       "hue_jitter": 5,
       "light_jitter": 0.05,
-      "mottle": 0.07,
+      "mottle": 0.06,
       "fall_palette": [
         "#d32414",
         "#c0301a",
@@ -360,12 +354,25 @@
         "#e8a020"
       ],
       "dome": 0.6,
-      "vein_depth": 0.35,
+      "vein_depth": 0.5,
+      "areole_pucker": 0.25,
       "wave": 0.3,
       "normal_strength": 3,
-      "base_span": [
-        50,
-        70
+      "merge_tangency": [
+        0.35,
+        0.5
+      ],
+      "sub_points": [
+        1,
+        2
+      ],
+      "sub_point_height": [
+        0.04,
+        0.07
+      ],
+      "scallop_depth": [
+        0,
+        0.015
       ]
     }
   },

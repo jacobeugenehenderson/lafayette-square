@@ -18,14 +18,14 @@
     0.985
   ],
   "cellMetres": [
-    0.1393,
-    0.1287,
+    0.1384,
+    0.1324,
+    0.1357,
+    0.1363,
     0.1316,
-    0.1375,
-    0.1398,
-    0.1307,
-    0.1349,
-    0.134
+    0.1359,
+    0.1379,
+    0.1369
   ],
   "channels": {
     "albedo": "shape.png",
@@ -37,7 +37,7 @@
     "generator": "arborist/leaf-generator.mjs",
     "family": "palmate-lobed",
     "dossier": "arborist/dossiers/acer_rubrum.json",
-    "modelHash": "b27ed6027485"
+    "modelHash": "1d3876bc2b6b"
   },
   "_doc": "Generated — do not hand-edit. Re-run: node arborist/leaf-generator.mjs --species acer_rubrum --pack red_maple. fall.png is drawn but not yet rendered (no season renderer)."
 }
