@@ -6,6 +6,8 @@
  *
  *   mark        the town's ONE emoji: avatar, load screen, tab, and what its places are rated in (Jacob, 2026-09-29:
  *               "emojis are supposed to be the ratings and the map vis ID" — there is no second rating emoji)
+ *   markStyle   how the town's mark is drawn in the Ward header's ◉, on every screen where ◉ shows the town rather
+ *               than a person: 'colour' (the emoji as it is) | 'white' (Jacob, 2026-09-29; how 'white' looks is the Ward's)
  *   accent      the Ward's chrome accent, '#rrggbb'
  *   litTint     { color: '#rrggbb', strength: 0..1 } — the roof tint of a lit set and the selected building
  *
@@ -17,22 +19,26 @@
  * ▶ node checks/claims-a-towns-identity-is-its-own.mjs
  */
 
-export const IDENTITY_CHANNELS = ['mark', 'accent', 'litTint']
+export const IDENTITY_CHANNELS = ['mark', 'markStyle', 'accent', 'litTint']
 
 /** The kit's neutral identity. `accent: null` — the kit has not chosen one yet (Jacob's eye). */
 export const IDENTITY_NEUTRAL = {
   mark: null,
+  markStyle: 'colour',
   accent: null,
   litTint: { color: '#f2c14e', strength: 0.45 },
 }
 
 const HEX = /^#[0-9a-f]{6}$/i
+/** How the mark may be drawn in the Ward's ◉. ⛔ A new value is a ruling (Jacob), and the Ward must draw it. */
+export const MARK_STYLES = ['colour', 'white']
 const oneEmoji = (s) => typeof s === 'string'
   && [...new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s)].length === 1
   && /\p{Extended_Pictographic}/u.test(s)
 
 const VALID = {
   mark: (v) => oneEmoji(v) || 'one emoji',
+  markStyle: (v) => MARK_STYLES.includes(v) || MARK_STYLES.map((s) => `'${s}'`).join(' | '),
   accent: (v) => HEX.test(v) || "'#rrggbb'",
   litTint: (v) => (v && typeof v === 'object' && HEX.test(v.color) && Number.isFinite(v.strength) && v.strength >= 0 && v.strength <= 1
     && Object.keys(v).every((k) => k === 'color' || k === 'strength')) || "{ color: '#rrggbb', strength: 0..1 }",

@@ -17,7 +17,8 @@
  *               drops the subtitles, which carry one town's wording. The player shows `authored:
  *               false` as visibly unauthored. Each category carries its colour in two forms, `neon` and
  *               `detail`, with `colorAuthored` (src/lib/categoryColor.js).
- *   look      — how the town looks: mark (also what its places are rated in), accent, litTint, each with `<channel>Authored`
+ *   look      — how the town looks: mark (also what its places are rated in), markStyle (colour | white, the header ◉'s town mark),
+ *               accent, litTint, each with `<channel>Authored`
  *               (src/lib/townIdentity.js). From the baked scene.json's `identity`, i.e. the Look's
  *               design.json; an unchosen channel is the kit's neutral value, never another town's.
  *   content   — the town's content, PUBLISHED beside the slab into baked/<town>/content/: the derived

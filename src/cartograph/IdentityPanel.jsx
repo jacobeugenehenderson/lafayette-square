@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import useCartographStore from './stores/useCartographStore'
-import { IDENTITY_NEUTRAL } from '../lib/townIdentity.js'
+import { IDENTITY_NEUTRAL, MARK_STYLES } from '../lib/townIdentity.js'
 import { neutralNeon } from '../lib/categoryColor.js'
 import { accentPolicy, neonPolicy, litTintPolicy } from '../lib/colourPolicy.js'
 import { glyphInk } from '../lib/glyphInk.js'
@@ -27,6 +27,7 @@ import CATEGORIES from '../tokens/categories.js'
 
 const ROWS = [
   { id: 'mark', label: 'Mark', kind: 'emoji', hint: 'The avatar, load screen and tab — and what places are rated in. One emoji.' },
+  { id: 'markStyle', label: 'Mark style', kind: 'choice', options: MARK_STYLES, hint: 'How the mark is drawn in the Ward\'s header ◉, on every screen where ◉ shows the town (not a person).' },
   { id: 'accent', label: 'Accent', kind: 'color', hint: 'The Ward\'s chrome accent.' },
   { id: 'litTint', label: 'Lit tint', kind: 'tint', hint: 'The roofs of a chosen category or search, and the selected building.' },
 ]
@@ -136,6 +137,10 @@ export default function IdentityPanel({ onClose }) {
                     <input className="carto-input carto-identity-emoji" value={drafts[r.id] ?? v ?? ''} placeholder="—" aria-label={r.label}
                       onChange={(e) => choose(r.id, e.target.value.trim() || null)} />
                   )}
+                  {r.kind === 'choice' && r.options.map((o) => (
+                    <button key={o} className={`carto-btn-sm${v === o ? ' is-active' : ''}`} aria-pressed={v === o}
+                      onClick={() => choose(r.id, o)}>{o}</button>
+                  ))}
                   {r.kind === 'color' && (
                     <input type="color" value={refused.accent?.hex ?? v ?? '#808080'} aria-label={r.label}
                       className={v == null ? 'carto-identity-unset' : ''}
