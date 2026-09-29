@@ -21,14 +21,17 @@ import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { rosterOf } from '../lib/treeRoster.js'
 
-// Module-level cache: one material set per look. Sharing materials across
-// component remounts keeps program count at 2 even if the tree component
-// tree re-renders.
-const _cache = new Map()  // lookName -> { manifest, barkMaterial, leavesMaterial, status, error }
+// Module-level caches, per look. ⭐ TWO, BECAUSE THE PLAYER NEEDS ONE (ruled 2026-09-28): every
+// tree is an impostor unless the Arborist specifies a model (ARCHITECTURE §Tree-render reality),
+// and impostors draw from the MANIFEST alone. The atlas PNGs + material are loaded only when a
+// placement actually takes geometry — so an all-impostor town never fetches them, and a missing
+// PNG can no longer switch its trees off. Sharing materials across remounts keeps program count at 2.
+const _manifests = new Map()  // lookName -> { status, manifest, roster, error }
+const _materials = new Map()  // lookName -> { status, treeMaterial, opaqueCanopyMaterial, error }
 
 // Shared completion subscription. The async atlas build is owned by whichever
 // useTreeAtlas() instance kicks it off, but its result lands in the shared
-// _cache — so EVERY mounted consumer must be re-rendered when it completes, not
+// caches — so EVERY mounted consumer must be re-rendered when it completes, not
 // just the initiator. Without this, a second consumer (or the SAME component
 // remounting while a load is in flight — e.g. React StrictMode's dev
 // mount→unmount→remount, which fires on nearly every load) returns early from
@@ -283,11 +286,11 @@ if (typeof window !== 'undefined') {
   // material → solid rectangles (ugly!) but FULLY OPAQUE → early-Z kicks in,
   // so the gauge shows the no-overdraw CEILING. `window.__treeAlphaTest(0.5)`
   // restores the normal cutout. If the gauge drops hard at 0, the real z-prepass
-  // (early-Z while KEEPING the cutout look) is worth building. _cache holds the
+  // (early-Z while KEEPING the cutout look) is worth building. _materials holds the
   // live MeshStandardMaterial per look (alphaTest is a #define → needsUpdate).
   window.__treeAlphaTest = (v = 0) => {
     let n = 0
-    for (const e of _cache.values()) {
+    for (const e of _materials.values()) {
       if (e?.treeMaterial) { e.treeMaterial.alphaTest = v; e.treeMaterial.needsUpdate = true; n++ }
     }
     console.log(`[tree] alphaTest=${v} on ${n} material(s) — ${v === 0 ? 'SOLID/early-Z (overdraw ceiling; rectangles)' : 'normal cutout'}. Watch the gauge.`)
@@ -1285,13 +1288,17 @@ function loadNormalTexture(url) {
   })
 }
 
-async function buildMaterials(lookName) {
+async function loadManifest(lookName) {
   const manifestRes = await slabFetch(lookName, 'trees-atlas.json')
   if (!manifestRes.ok) throw new Error(`atlas manifest ${manifestRes.url} → ${manifestRes.status}`)
   const manifest = await manifestRes.json()
   // The set the atlas was built for, from the slab — never the authoring design.json (src/lib/treeRoster.js).
-  const roster = rosterOf(manifest, lookName)
+  return { manifest, roster: rosterOf(manifest, lookName) }
+}
 
+// The atlas PNGs + the shared tree material — what MODEL trees (and the Arborist's captures) draw
+// through. ⛔ Loaded only on demand (useTreeMaterials); impostors never wait for it.
+async function buildMaterials(lookName, manifest) {
   const { atlas, materialDefaults } = manifest
   if (!atlas) throw new Error(`atlas missing in manifest for ${lookName}`)
   const roughness = materialDefaults?.roughness ?? 0.85
@@ -1352,7 +1359,7 @@ async function buildMaterials(lookName) {
   injectFoliageSway(opaqueCanopyMaterial)
   patchTerrainInstancedBaked(opaqueCanopyMaterial)
 
-  return { manifest, treeMaterial, opaqueCanopyMaterial, roster }
+  return { treeMaterial, opaqueCanopyMaterial }
 }
 
 /**
@@ -1402,62 +1409,85 @@ export function cloneTreeMaterial(src) {
   return m
 }
 
-/**
- * Resolve atlas materials for a Look. Returns:
- *   { status: 'idle' | 'loading' | 'ready' | 'error',
- *     barkMaterial, leavesMaterial, manifest, error }
- *
- * If lookName is falsy, returns idle.
- * Caches per lookName at module scope.
- */
-export function useTreeAtlas(lookName) {
+// Every status change, from any consumer's load or an invalidate, re-renders every live consumer.
+function useAtlasBump() {
   const [bump, setBump] = useState(0)
-
-  const entry = lookName ? _cache.get(lookName) : null
-
-  // Subscribe to shared completion notifications: ANY status change (from any
-  // instance's load, or invalidateTreeAtlas) re-renders this consumer. This is
-  // what makes the trees reliably appear when the async build finishes —
-  // independent of which instance owns the in-flight promise (see _atlasListeners).
   useEffect(() => {
     const listener = () => setBump((b) => b + 1)
     _atlasListeners.add(listener)
     return () => { _atlasListeners.delete(listener) }
   }, [])
+  return bump
+}
 
+function useCachedLoad(cache, lookName, enabled, load, what) {
+  // `present` re-arms the load after invalidateTreeAtlas empties the cache (its notify re-renders us).
+  const present = !!(lookName && cache.get(lookName))
   useEffect(() => {
-    if (!lookName) return
-    const cached = _cache.get(lookName)
-    if (cached?.status === 'ready' || cached?.status === 'loading') return
-    _cache.set(lookName, { status: 'loading' })
+    if (!lookName || !enabled) return
+    const cached = cache.get(lookName)
+    if (cached?.status === 'ready' || cached?.status === 'loading' || cached?.status === 'error') return
+    cache.set(lookName, { status: 'loading' })
     _notifyAtlasChange()
-    buildMaterials(lookName)
-      .then((built) => {
-        _cache.set(lookName, { status: 'ready', ...built })
-        _notifyAtlasChange()
-      })
+    load()
+      .then((built) => { cache.set(lookName, { status: 'ready', ...built }); _notifyAtlasChange() })
       .catch((err) => {
-        console.warn('[treeAtlas] bake failed for', lookName, err)
-        _cache.set(lookName, { status: 'error', error: err })
+        console.error(`[treeAtlas] ⛔ ${what} failed for "${lookName}":`, err)
+        cache.set(lookName, { status: 'error', error: err })
         _notifyAtlasChange()
       })
-  }, [lookName])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lookName, enabled, present])
+}
 
-  return useMemo(() => {
-    if (!lookName) return { status: 'idle' }
-    const e = _cache.get(lookName) || { status: 'idle' }
-    return e
+/**
+ * The look's atlas MANIFEST and its roster — all an impostor-only town needs.
+ *   { status: 'idle' | 'loading' | 'ready' | 'error', manifest, roster, error }
+ */
+export function useTreeManifest(lookName) {
+  const bump = useAtlasBump()
+  useCachedLoad(_manifests, lookName, true, () => loadManifest(lookName), 'the atlas manifest')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => (lookName && _manifests.get(lookName)) || { status: 'idle' }, [lookName, bump])
+}
+
+/**
+ * The atlas PNGs + shared tree material, loaded only while `enabled` — i.e. while some placement
+ * is a MODEL tree (the Arborist specified it) or an authoring surface draws through the atlas.
+ *   { status: 'idle' | 'loading' | 'ready' | 'error', treeMaterial, opaqueCanopyMaterial, error }
+ */
+export function useTreeMaterials(lookName, enabled) {
+  const bump = useAtlasBump()
+  const m = lookName ? _manifests.get(lookName) : null
+  const go = !!enabled && m?.status === 'ready'
+  useCachedLoad(_materials, lookName, go, () => buildMaterials(lookName, m.manifest), 'the atlas material')
+  return useMemo(() => (go && _materials.get(lookName)) || { status: 'idle' },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lookName, bump, entry?.status])
+    [lookName, go, bump])
+}
+
+/**
+ * Manifest AND material together — for the Arborist's surfaces (Grove, the impostor bakers,
+ * the Salon), which draw or capture through the atlas material. 'ready' only when both are.
+ */
+export function useTreeAtlas(lookName) {
+  const man = useTreeManifest(lookName)
+  const mat = useTreeMaterials(lookName, true)
+  return useMemo(() => {
+    if (man.status !== 'ready') return man
+    const status = mat.status === 'idle' ? 'loading' : mat.status
+    return { ...man, ...mat, status, error: mat.error }
+  }, [man, mat])
 }
 
 /**
  * Force a refresh — call after the Grove rebakes the atlas (e.g. after a
- * roster change). Drops cache for that Look and triggers reload.
+ * roster change). Drops both caches for that Look and triggers reload.
  */
 export function invalidateTreeAtlas(lookName) {
   if (!lookName) return
-  _cache.delete(lookName)
+  _manifests.delete(lookName)
+  _materials.delete(lookName)
   // Wake live consumers so they re-run their load effect against the now-empty
   // cache (re-bake after a Grove republish), instead of waiting for a stray
   // re-render.

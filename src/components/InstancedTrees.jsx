@@ -19,8 +19,10 @@ import { useGLTF } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { drawsThroughAtlas } from '../lib/treeGeometry.js'
 import {
-  useTreeAtlas,
+  useTreeManifest,
+  useTreeMaterials,
   treeSwayUniforms,
   applyBarkUniforms,
   applyDeformerUniforms,
@@ -573,8 +575,8 @@ function TierDriver() {
 
 // GeoTierDriver (the runtime camera-altitude geometry-LOD swap) RETIRED
 // 2026-06-25 — it served the cut-trunk lod2 to high telephoto / shallow-browse
-// framings. Geometry is chosen by the operator's mesh bar (`meshTier`) and then the baked
-// pan-distance band (`heroRole`) — ⛔ NOT by `heroTier`, which this line claimed for months
+// framings. Geometry is chosen by the operator's mesh bar (`meshTier`) ALONE — the Arborist
+// specifies a model tree, nothing else does (Jacob, 2026-09-22) — ⛔ NOT by `heroTier`, which this line claimed for months
 // and which sent a 2026-09-03 audit chasing the wrong field. `heroTier` drives only the
 // read-only QC tint, and on a slab whose hero foundation is on it reaches no pixel at all.
 // (role-at-bake doctrine). `computeTier` is kept below for TierDriver (bark
@@ -720,7 +722,9 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     return () => { cancelled = true }
   }, [reread, lookName])
 
-  const atlas = useTreeAtlas(lookName)
+  // ⭐ The MANIFEST only: impostors draw from it. The atlas PNGs + material load further down,
+  // and only if some placement is a model tree (useTreeMaterials).
+  const atlas = useTreeManifest(lookName)
 
   // Impostor records (Arc 2, Phase 1) — per-species layer-card plans baked by
   // arborist/bake-impostors.js into the atlas manifest. Keyed by species; the
@@ -731,41 +735,14 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     return atlas?.manifest?.impostorBySpecies || null
   }, [atlas?.manifest?.impostorBySpecies])
 
-  // HERO canopy-impostor foundation (Phase 2). The manifest's heroImpostorBySpecies
-  // (baked side-on, all-azimuth variety pool) is the FOUNDATION: every tree paints as
-  // a canopy impostor by default; geometry is layered onto the TALL ∩ FOREGROUND trees
-  // (Jacob 2026-07-17). The split is stable at load (dbh proxy for height now; the
-  // pan-distance band folds in with the bake), NOT a per-frame camera swap.
+  // HERO canopy-impostor foundation. The manifest's heroImpostorBySpecies (baked side-on,
+  // all-azimuth variety pool) is the FOUNDATION: EVERY tree paints as a canopy impostor.
+  // ⛔⛔ "THERE ARE NO MESHES UNLESS SPECIFIED IN THE ARBORIST, PERIOD." (Jacob, 2026-09-22;
+  // arborist/ARCHITECTURE.md §Tree-render reality.) A placement keeps geometry only when its
+  // species is on the Arborist's mesh bar (`meshTier`, stamped at bake) — no height rule, no
+  // shot rule, no automatic anchors.
   const heroImpostorRecords = useMemo(() => atlas?.manifest?.heroImpostorBySpecies || null, [atlas?.manifest?.heroImpostorBySpecies])
   const heroFoundationEnabled = !!heroImpostorRecords && scene?.heroImpostor !== false && !treeDbg('noHeroImpostor')
-  // Geometry budget = fraction of trees (tallest-first by dbh) that KEEP mesh geometry;
-  // the rest drop to the impostor foundation. A pyramid bracket / the Phase-4 Stage
-  // knob. Tunable live via ?heroGeom=0.15. (The "∩ foreground" axis lands with the bake.)
-  // ⛔⛔ DEFAULT OFF, AND IT STAYS OFF UNTIL AN EYE GATES IT. I flipped this to default-on
-  // on 2026-09-03 without reading the decision three lines below: someone had already run
-  // this experiment, got a sparse thin canopy (2323 real trees -> 403 in one step, the rest
-  // canopy cards), and parked it behind the flag ON PURPOSE. The rule they wrote is the one
-  // I broke: A SHARED CHANGE SHIPS AS A KNOB DEFAULTING TO TODAY'S VALUES, so the map is
-  // unchanged until someone turns it. Reverted at Jacob's instruction the same night.
-  // Historical note on what the flip does: it was opt-in via
-  // `?heroBand=1` "until the budget has been eye-gated" — and it never was, so since
-  // 2026-08-24 the bake computed a band every pour and the runtime threw it away, falling
-  // back to the legacy dbh cut. Measured on LS: legacy draws 792 meshes / 34.1 M mesh
-  // triangles against a `triangleBudget` of 15 M the slab reports as SPENT; the band draws
-  // 335 / 15.0 M. The slab was describing a budget nobody was spending.
-  // ⛔ dbh is the wrong axis and the code said so itself — 55% of LS placements have no
-  // measured DBH at all (OSM sources get one SAMPLED from the species distribution), so for
-  // most of the map the mesh/card decision was made on a synthesised number that "predicts
-  // neither cost nor visibility". The band is measured pan distance.
-  // `?heroBand=0` restores the legacy split for comparison.
-  const useBakedBand = useMemo(() => {
-    try { return new URLSearchParams(window.location.search).get('heroBand') === '1' } catch { return false }
-  }, [])
-  const heroGeomFraction = useMemo(() => {
-    const q = new URLSearchParams(window.location.search).get('heroGeom')
-    const v = q != null ? parseFloat(q) : 0.15
-    return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.15
-  }, [])
 
   // Geometry representation is a per-placement ROLE decided at BAKE, NOT a live
   // camera-distance/altitude swap (role-at-bake doctrine, 2026-06-25 — see
@@ -922,29 +899,18 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     }
     const lodUrlOf = (o, inst) => (o && o.lods && o.lods[lodForRole(inst)]) || (o && o.url)
 
-    // HERO foundation split threshold — the dbh cut so the TALLEST `heroGeomFraction`
-    // keep mesh geometry (the anchors) and the rest drop to the impostor foundation.
-    // Computed from the placements' own dbh distribution → scene-generic (no magic px).
-    let heroDbhCut = Infinity
-    if (heroFoundationEnabled && heroGeomFraction < 1) {
-      const dbhs = bake.instances.map(i => Number(i.dbh) || 0).sort((a, b) => a - b)
-      const idx = Math.floor((1 - heroGeomFraction) * (dbhs.length - 1))
-      heroDbhCut = dbhs[Math.max(0, Math.min(dbhs.length - 1, idx))]
-    }
-
     const m = new Map()  // lookUrl -> Map<tileId, instances[]>  (mesh role)
     const impostors = new Map()  // species -> instances[]  (impostor role)
     const heroImpostors = new Map()  // species -> instances[]  (hero canopy foundation)
     let heroFoundationCount = 0
-    // ⭐ WHY a placement kept geometry. Mesh is the EXPENSIVE role, and today the
-    // gate below routes to it for two completely different reasons — one intended,
-    // one a missing asset. Counting them as one number is what let 53% of the
-    // neighborhood sit in full lod1 without anyone seeing it.
-    //   anchor  = tall enough to EARN geometry (dbh >= cut). The budget working.
-    //   noRecord= its species has NO baked hero impostor. NOT a decision — an
-    //             absent asset silently upgraded to the most expensive role.
-    let meshAnchor = 0
-    let bandRoles = 0, legacyRoles = 0
+    // ⭐ WHY a placement kept geometry. Mesh is the EXPENSIVE role, and the gate below
+    // routes to it for two completely different reasons — one intended, one a missing
+    // asset. Counting them as one number is what let 53% of the neighborhood sit in full
+    // lod1 without anyone seeing it.
+    //   specified = the Arborist put its species on the mesh bar. The operator's decision.
+    //   noRecord  = its species has NO baked hero impostor. NOT a decision — an absent
+    //               asset silently upgraded to the most expensive role.
+    let meshSpecified = 0
     let meshNoRecord = 0
     const meshNoRecordBySpecies = new Map()  // species -> count
     // ALL non-culled instances by rendered species — the WHOLE-SCENE overhead
@@ -976,51 +942,17 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
 
       // HERO canopy-impostor FOUNDATION (Phase 2) — this REPLACES the old hero-pan
       // prominence tiers (mesh/opaque/impostor/cull) for the whole neighborhood. Every
-      // tree paints as a side-on canopy card UNLESS it's tall enough (dbh ≥ cut) to earn
-      // geometry (the sprinkled anchors → fall through to mesh). Crucially it runs
+      // tree paints as a side-on canopy card UNLESS the Arborist specified its species
+      // as a model (meshTier) → fall through to mesh. Crucially it runs
       // BEFORE — and RETIRES — the legacy `heroTier==='cull'` verdict, which was scored
       // for the hero-pan shot and over-culled ~69% of placements (the "drastic reduction"
       // + bare shadow-spots). The foundation paints the whole neighborhood; impostors are
-      // cheap billboards, so nothing gets dropped. (∩-foreground pan-distance axis: later.)
+      // cheap billboards, so nothing gets dropped.
       if (heroFoundationEnabled && heroImpostorRecords) {
-        // ⭐ The BAKED band decides, when the slab carries one (hero-band.mjs):
-        // distance to the authored camera path, spending a TRIANGLE budget.
-        // `dbh < cut` is the LEGACY axis and predicts neither cost nor
-        // visibility — kept only for slabs baked before the band existed.
-        // ⛔ DEFAULT OFF. The baked band is the better AXIS — distance to the pan
-        // predicts cost and visibility, dbh predicts neither — but the budget it
-        // spends is an EYE call and mine was wrong: 15M tris took hero from 2323
-        // real trees to 403 in one step, and everything removed became a canopy
-        // card. Sparse, small, with the ground still carrying a contact shadow
-        // for all 5127 placements. Landing it as the DEFAULT broke the rule this
-        // surface runs on: a shared change ships as a knob defaulting to TODAY'S
-        // values, so the map is unchanged until someone turns it.
-        // Turn it on with ?heroBand=1 once the budget has been eye-gated.
-        // ⭐⭐ THE MESH BAR OWNS THE GEOMETRY BUDGET (Jacob, 2026-08-25). `meshTier` is
-        // stamped at bake from the operator's mesh bar: false means this species may NEVER
-        // carry geometry, however tall the tree. heroGeomFraction then chooses WHICH
-        // placements among the eligible species keep it.
-        // ⛔ Before this the bar controlled nothing — dragging a bar labelled "mesh" left
-        // the geometry count unmoved, because the cut was taken over ALL placements
-        // regardless of which species the operator had selected for geometry.
-        // ⛔⛔ ASK THE SLAB WHETHER THE FIELD IS STAMPED — never read absence as permission.
-        // This was `inst.meshTier !== false`, and that single `!==` inverted the operator's
-        // gesture: meshTopN:0 ("no species carries geometry") produced an EMPTY eligible set,
-        // the bake then OMITTED the field, and absence read as TRUE ⇒ every species eligible.
-        // The authored zero became a silent maximum, which is Layer 0 q2 committed in a
-        // comparison operator. `meshTierStamped` is the slab-level fact the absence was
-        // standing in for: present ⇒ the boolean is real and the bar is authoritative, zero
-        // included; absent ⇒ a pre-2026-09-03 slab, keep the old behaviour. (2026-09-03)
-        const meshAllowed = bake?.meshTierStamped
-          ? inst.meshTier === true
-          : inst.meshTier !== false
-        const wantsImpostor = !meshAllowed
-          ? true
-          : (useBakedBand && inst.heroRole)
-            ? inst.heroRole === 'impostor'
-            : ((Number(inst.dbh) || 0) < heroDbhCut)
-        if (useBakedBand && inst.heroRole) bandRoles++; else legacyRoles++
-        if (heroImpostorRecords[renderSpecies] && wantsImpostor) {
+        // ⭐⭐ THE MESH BAR IS THE WHOLE DECISION (Jacob, 2026-08-25 + 2026-09-22). `meshTier` is
+        // stamped at bake from the Arborist's mesh bar: true means this species is a MODEL tree.
+        // The one rule (src/lib/treeGeometry.js) — the upload and its verifier read it too.
+        if (!drawsThroughAtlas({ foundation: true, heroRecords: heroImpostorRecords, trees: bake, inst, renderSpecies })) {
           if (!heroImpostors.has(renderSpecies)) heroImpostors.set(renderSpecies, [])
           heroImpostors.get(renderSpecies).push(inst)
           heroFoundationCount++
@@ -1028,7 +960,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
         }
         // else → mesh. Two reasons, and they are NOT the same event — attribute it.
         if (heroImpostorRecords[renderSpecies]) {
-          meshAnchor++
+          meshSpecified++
         } else {
           meshNoRecord++
           meshNoRecordBySpecies.set(renderSpecies, (meshNoRecordBySpecies.get(renderSpecies) || 0) + 1)
@@ -1044,7 +976,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
         }
       }
 
-      // Mesh ROLE — the tall anchors (foundation on), or the full mesh path (foundation
+      // Mesh ROLE — the Arborist's model trees (foundation on), or the full mesh path (foundation
       // off; the legacy cull/impostor role handled above). Impostor with no baked record
       // also falls through here → real geometry, never blank.
       const url = inRoster ? lodUrlOf(inst, inst) : lodUrlOf(sub, inst)
@@ -1082,29 +1014,22 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     // asset silently upgraded to the most expensive role. It looks exactly like a
     // scene that simply has more anchors, which is why it survived unnoticed.
     // Fix is to SHOOT the missing impostors in the Grove (browser-GPU; the CLI
-    // bake cannot reproduce them), never to widen the dbh cut.
-    // ⛔ Which axis actually decided this frame. A slab with no baked band falls
-    // back to the legacy dbh split — legitimate for an old slab, but it must not
-    // look like the band ran.
-    if (legacyRoles > 0 && bandRoles === 0) {
-      console.warn(`[InstancedTrees] ⛔ no baked heroRole on this slab — role chosen by the LEGACY dbh cut (${heroDbhCut.toFixed(2)}), which predicts neither cost nor visibility. Re-bake to get the pan-distance band.`)
-    }
+    // bake cannot reproduce them), never by marking the species a model.
     if (meshNoRecord > 0) {
       const worst = [...meshNoRecordBySpecies.entries()].sort((a, b) => b[1] - a[1])
-      const budget = Math.round(heroGeomFraction * bake.instances.length)
       console.warn(
         `[InstancedTrees] ⛔ ${meshNoRecord} of ${bake.instances.length} placements ` +
         `(${(100 * meshNoRecord / bake.instances.length).toFixed(1)}%) kept MESH because their species has NO baked hero impostor — ` +
-        `not because they earned it. Geometry budget is ${budget} (heroGeom=${heroGeomFraction}); ` +
-        `actual mesh is ${meshAnchor + meshNoRecord} (${meshAnchor} earned + ${meshNoRecord} leaked). ` +
+        `not because the Arborist specified a model. ` +
+        `Actual mesh is ${meshSpecified + meshNoRecord} (${meshSpecified} specified + ${meshNoRecord} leaked). ` +
         `Shoot these in the Grove: ` + worst.map(([sp, n]) => `${sp}(${n})`).join(' ')
       )
     }
     // ⛔ THE CULL, SAID OUT LOUD. `heroTier === 'cull'` can only fire with the foundation
     // OFF — a legitimate branch (`ARCHITECTURE.md §Tree-render reality at LS`: the cull is
     // retired "in foundation mode" only) that was nonetheless the quietest number here. It
-    // sat mid-string in the info log below while its two LESSER siblings above
-    // (`meshNoRecord`, `legacyRoles`) each got their own ⛔ warn.
+    // sat mid-string in the info log below while its LESSER sibling above
+    // (`meshNoRecord`) got its own ⛔ warn.
     // ⭐ WHY IT MUST BE LOUD: the ground stamps a contact-shadow ring for EVERY placement,
     // unconditionally, at bake. So a foundation-off look renders rings over bare ground and
     // still looks like a map — the operator sees circles without trees and has to work out
@@ -1123,9 +1048,15 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
         `reproduce them). ⛔ Never widen the cull — it is retired, not a density lever.`
       )
     }
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp, dbhCut=${heroDbhCut === Infinity ? 'off' : heroDbhCut.toFixed(2)}) mesh=${meshAnchor}earned+${meshNoRecord}leaked role=${bandRoles ? 'band' : 'legacy-dbh'} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp) mesh=${meshSpecified}specified+${meshNoRecord}leaked impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
     return { meshGroups: m, impostors, bySpecies, heroImpostors }
-  }, [bake, maxVariants, atlas, lookName, impostorRecords, heroImpostorRecords, heroFoundationEnabled, heroGeomFraction])
+  }, [bake, maxVariants, atlas, lookName, impostorRecords, heroImpostorRecords, heroFoundationEnabled])
+
+  // ⭐ THE ATLAS MATERIAL ONLY WHEN SOMETHING DRAWS THROUGH IT: a model tree (mesh group) or a
+  // legacy layer-card impostor. An all-impostor town (every town today) never fetches the atlas
+  // PNGs — and so a missing PNG cannot switch its trees off.
+  const needsMaterials = !!groups && (groups.meshGroups.size > 0 || groups.impostors.size > 0)
+  const mats = useTreeMaterials(lookName, needsMaterials)
 
   // ── Cold-load reconcile flush (the REAL fix) ───────────────────────────
   // The Canvas runs frameloop="demand". On a COLD load each per-variant
@@ -1262,7 +1193,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
           : null
       })}
       {/* Mesh-role trees: real 3D geometry (lod1). */}
-      {!treeDbg('noMesh') && !treeDbg('noTrees') && Array.from(meshGroups.entries()).flatMap(([url, byTile]) =>
+      {mats.status === 'ready' && !treeDbg('noMesh') && !treeDbg('noTrees') && Array.from(meshGroups.entries()).flatMap(([url, byTile]) =>
         Array.from(byTile.entries()).map(([tileId, instances]) => {
           const species = urlToSpecies(url)
           const variantId = urlToVariantId(url)
@@ -1283,7 +1214,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
               <VariantInstances
                 url={url}
                 instances={instances}
-                treeMaterial={atlas.treeMaterial}
+                treeMaterial={mats.treeMaterial}
                 barkSettings={barkSettings}
                 gradientSlot={gradientSlot}
                 detailSlot={detailSlot}
@@ -1299,7 +1230,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
       {/* Impostor-role trees: cheap stamped-2D layer cards (Arc 2, Phase 1).
           One geometry per rendered species, instanced across placements. Rides
           the SAME shared atlas material → full optical parity (DoF/fog/bloom). */}
-      {!treeDbg('noImpostor') && !treeDbg('noTrees') && impostors && impostorRecords && Array.from(impostors.entries()).map(([species, instances]) => {
+      {mats.status === 'ready' && !treeDbg('noImpostor') && !treeDbg('noTrees') && impostors && impostorRecords && Array.from(impostors.entries()).map(([species, instances]) => {
         const barkSettings = barkBySpeciesEffective[species] || null
         const detailSlot = barkDetailBySpecies[species] || null
         const posterizedSlot = barkPosterizedBySpecies[species] || null
@@ -1314,7 +1245,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
             species={species}
             record={impostorRecords[species]}
             instances={instances}
-            treeMaterial={atlas.treeMaterial}
+            treeMaterial={mats.treeMaterial}
             barkSettings={barkSettings}
             detailSlot={detailSlot}
             posterizedSlot={posterizedSlot}

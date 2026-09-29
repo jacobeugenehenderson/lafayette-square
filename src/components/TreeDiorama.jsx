@@ -733,8 +733,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
   // value, on the surface that exists to choose it.
   //   ?leafT=<0..4>   how much light comes through a leaf
   //   ?leafK=<0.25..16> how tightly the glow hugs the light's direction
-  // Same shape as InstancedTrees' `?heroGeom=`. ⛔ Not a fallback: with no
-  // parameter this writes nothing at all and the default stands.
+  // ⛔ Not a fallback: with no parameter this writes nothing at all and the default stands.
   useEffect(() => {
     let t = null, k = null
     try {

@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 334,
+  "total": 335,
   "counts": {
     "safe": 183,
     "local-effect": 6,
-    "live": 145
+    "live": 146
   },
   "checks": [
     {
@@ -495,6 +495,17 @@
         "mkdirSync",
         "deletes files",
         "runs `node` — not a known-local command"
+      ]
+    },
+    {
+      "file": "checks/claims-an-impostor-town-fetches-no-atlas.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync"
       ]
     },
     {

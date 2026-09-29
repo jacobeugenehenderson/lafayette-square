@@ -234,8 +234,8 @@ trunk diameter, which predicts neither cost nor visibility (`arborist/hero-band.
 `role-at-bake` preserved, so no pop). And the runtime now says out loud when a placement kept
 mesh **because its species has no baked impostor** rather than because it earned it.
 ▶ `node -e "const t=require('./public/baked/lafayette-square/trees.json');console.log(t.heroBandMeta)"`
-The **impostor foundation**: every placement paints as a captured canopy billboard and the
-tallest fraction keeps real `lod1` mesh as anchors (`?heroGeom=`); two capture systems split
+The **impostor foundation**: every placement paints as a captured canopy billboard; a species
+draws real `lod1` mesh only when the Arborist's mesh bar says so (`meshTier`); two capture systems split
 by viewing hemisphere, overhead for browse and azimuthal bands for the side-on pan, both RTT
 captures of the real tree. The Look roster and the slab agree exactly. Botanical mature
 heights ship. The NO-FILLER gate keeps generic and procedural assets out of the runtime pool.

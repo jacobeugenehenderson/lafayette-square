@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 145. Never in a default run.
+## ⛔ live — 146. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -54,6 +54,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | `checks/claims-a-worker-deploy-darkens-no-town.mjs` | outbound | calls fetch() |
 | `checks/claims-alley-stub-pairs.mjs` | unreadable | imports scratch/_proto-feed.mjs, which can: imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read |
 | `checks/claims-an-external-base-survives-a-bake.mjs` | unreadable | writeFileSync · mkdirSync · deletes files · runs `node` — not a known-local command |
+| `checks/claims-an-impostor-town-fetches-no-atlas.mjs` | outbound | writeFileSync · mkdirSync · deletes files · imports scripts/upload-baked-to-r2.mjs, which can: calls fetch(), writeFileSync |
 | `checks/claims-authored-skelids-keep-their-ways.mjs` | unreadable | deletes files · child_process with a non-literal command — cannot be read |
 | `checks/claims-baked-consumers-get-a-cache-bust.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `checks/claims-band-is-one-ring.mjs` | unreadable | imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read · imports package(s) clipper-lib — not read from source |

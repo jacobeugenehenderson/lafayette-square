@@ -26,6 +26,8 @@
 import { readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ATLAS_ONLY_FILE } from '../src/lib/treeGeometry.js'
+import { treeGeometryOfTown } from './slab-tree-geometry.mjs'
 
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
 const BAKED_ROOT = join(REPO_ROOT, 'public/baked')
@@ -53,9 +55,13 @@ if (argLook) {
 
 const files = []
 for (const l of looks) {
+  // An all-impostor town publishes no model GLBs or atlas PNGs. Asked of the RUNTIME's rule
+  // (src/lib/treeGeometry.js), not of the uploader — so the two can still disagree.
+  const geom = treeGeometryOfTown(join(BAKED_ROOT, l), l)
   for (const abs of walk(join(BAKED_ROOT, l))) {
     const key = relative(REPO_ROOT, abs).split('\\').join('/').replace(/^public\//, '')
     if (EXCLUDE.some((e) => e.test('/' + key))) continue
+    if (!geom.needed && ATLAS_ONLY_FILE('/' + key)) continue
     files.push({ key, bytes: statSync(abs).size })
   }
 }

@@ -790,8 +790,8 @@ export async function bakeTrees({
     const selected = new Set()
     for (const b of board) if (b.tier !== 'out') for (const l of (b.ownsLibIds || [])) selected.add(l)
     // ⭐⭐ THE MESH BAR OWNS THE GEOMETRY BUDGET (Jacob, 2026-08-25). Only species above the
-    // MESH bar may carry geometry at all; heroGeomFraction then chooses WHICH of their
-    // placements do. Decided at BAKE per the role-at-bake doctrine — the runtime must not
+    // MESH bar are model trees — every placement of them (src/lib/treeGeometry.js; no height or
+    // shot rule chooses among them). Decided at BAKE per the role-at-bake doctrine — the runtime must not
     // re-derive eligibility from a roster it cannot read.
     // ⛔ Before this the bar controlled nothing: InstancedTrees never read meshTopN, so
     // dragging a bar labelled "mesh" left the geometry count unmoved.

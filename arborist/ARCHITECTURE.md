@@ -91,11 +91,13 @@ runtime printing `mesh=0earned+0leaked` is the CORRECT state, not a deficiency.
 > an unbuilt intent filed as done — surfaced here as WORK, per `CLAUDE.md`'s ASPIRATION
 > rule, rather than evicted.
 >
-> ⚠️ **THE MACHINERY IS STILL IN THE CODE** and still prints every load —
-> `heroGeomFraction`, `?heroGeom=`, the legacy `dbhCut`. It reaches nothing under the
-> ruling. ⛔ Do not read its output as a defect, and do not "fix" it by turning anchors on.
-> ⚠️ **AND THE SLAB STILL CARRIES THE GEOMETRY:** huron ships **47 `lod1` GLBs, 222 MB**,
-> which nothing can consume while the ruling stands. Measured 2026-09-22; not addressed.
+> ⭐ **THE CODE NOW MATCHES THE RULING (2026-09-28).** The mesh bar (`meshTier`) is the only route
+> to geometry — one rule, `src/lib/treeGeometry.js`, read by the runtime, the slab upload and its
+> verifier. Model trees stay possible (Jacob, 2026-09-28: *"maintain the ability to have model
+> trees, but for now, all trees are impostors"*), and only a model tree pays for them: the player
+> loads the atlas PNGs + material on demand (`useTreeMaterials`), and Publish leaves an
+> all-impostor town's model GLBs and atlas PNGs out of R2.
+> ▶ `node checks/claims-an-impostor-town-fetches-no-atlas.mjs`
 
 ### ⭐ WHY THE CANOPY STILL READS AS ALIVE WITHOUT MESH — the parallax finding
 Jacob, 2026-09-22, eye-gating the flutter on huron: *"the pan hides the effect and what we

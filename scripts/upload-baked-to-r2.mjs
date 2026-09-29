@@ -66,6 +66,8 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { createHash } from 'node:crypto'
 import { HASHED, CACHE, contentName, shaOf } from '../src/lib/slabNames.js'
+import { ATLAS_ONLY_FILE } from '../src/lib/treeGeometry.js'
+import { treeGeometryOfTown } from './slab-tree-geometry.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -167,10 +169,16 @@ export function plan({ look, prefix, root = BAKED_ROOT, names } = {}) {
     const town = join(root, l)
     const base = `${prefix}baked/${l}/`
     const own = []
+    // ⭐ MODEL-TREE FILES ONLY WHEN A TREE IS A MODEL (Jacob, 2026-09-28). Every tree is a hero
+    // impostor unless the Arborist specifies a model; an all-impostor town's GLBs and atlas PNGs are
+    // never fetched, so they are not published. The rule is the RUNTIME's (src/lib/treeGeometry.js),
+    // so this can never withhold a file the player would ask for.
+    const geom = treeGeometryOfTown(town, l)
     for (const abs of walk(town)) {
       const rel = relative(town, abs).split('\\').join('/')      // <rel> under baked/<look>/
       const key = base + rel
       const ex = EXCLUDE.find((e) => e.test('/' + key))
+        || (!geom.needed && ATLAS_ONLY_FILE('/' + key) ? { why: `no model trees — ${geom.why}` } : null)
       if (ex) { skipped.push({ key, bytes: statSync(abs).size, why: ex.why }); continue }
       own.push({ abs, rel, key, bytes: statSync(abs).size, cache: CACHE.plain })
     }
