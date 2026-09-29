@@ -25,6 +25,7 @@
  * to []; operators add `{ hour, band, hex }` cells via the Sky Builder.
  */
 import SunCalc from 'suncalc'
+import { townClockOf, townDayOfYear, townDateAtDayOfYear, townDateAtMinute } from '../lib/townClock.js'
 import useCalendar from '../hooks/useCalendar.js'
 import { townPlace } from '../lib/townPlace.js'
 import { buildAnchorCards, standardUtcOffsetHours } from '../../cartograph/proceduralSky.js'
@@ -100,11 +101,8 @@ function lerpHex(a, b, t) {
 }
 
 // ─── Anchor / day math ────────────────────────────────────────────────
-function dayOfYearFromDate(date) {
-  const start = Date.UTC(date.getFullYear(), 0, 1)
-  const cur = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  return Math.floor((cur - start) / 86400000) + 1
-}
+// The TOWN's day of the year (src/lib/townClock.js), never the viewer's.
+const dayOfYearFromDate = (date) => townDayOfYear(date)
 
 // Given a day-of-year (1..365), return [anchorA, anchorB, t] where the
 // date falls cyclically between A and B on the year ring (winter→spring
@@ -214,7 +212,7 @@ export function buildMosaicForDate(date, overrides = [], minuteWithinDay = null)
   // If no minute given, use noon — primarily for editor preview rendering.
   const m = minuteWithinDay != null
     ? minuteWithinDay
-    : (date.getHours() * 60 + date.getMinutes())
+    : townClockOf(date).minuteOfDay
 
   const out = base.map(cell => ({ ...cell }))
   for (const O of overrides) {
@@ -250,9 +248,8 @@ export function resolveSkyAtMinute(channel, minute, slotMinutes, dayOfYear) {
   // user's year-scrub position.
   let date
   if (dayOfYear != null) {
-    const year = (typeof window !== 'undefined' ? new Date().getFullYear() : 2026)
-    date = new Date(year, 0, 1)
-    date.setDate(dayOfYear)
+    // That day of the town's current year, at town noon — so no zone can tip it into a neighbouring day.
+    date = townDateAtDayOfYear(townDateAtMinute(new Date(), 12 * 60), dayOfYear)
   } else {
     date = useCalendar.getState().currentDate
   }

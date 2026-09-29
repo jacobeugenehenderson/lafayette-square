@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { townClockOf, townDayOfYear, townDateAtDayOfYear } from '../lib/townClock.js'
 import { townPlace } from '../lib/townPlace.js'
 import useTimeOfDay from './useTimeOfDay.js'
 
@@ -31,16 +32,11 @@ function seasonFromDoy(doy, lat) {
   return s
 }
 
-function dayOfYearFromDate(date) {
-  // Use UTC math on the local Y/M/D so DST transitions don't subtract
-  // an hour and round the day-count down.
-  const start = Date.UTC(date.getFullYear(), 0, 1)
-  const cur = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  return Math.floor((cur - start) / 86400000) + 1
-}
+// ⛔ The TOWN's calendar (src/lib/townClock.js), never the viewer's: near midnight the two are different days.
+const dayOfYearFromDate = (date) => townDayOfYear(date)
 
 function isLeapYearFromDate(date) {
-  const y = date.getFullYear()
+  const y = townClockOf(date).year
   return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
 }
 
@@ -83,15 +79,8 @@ const useCalendar = create((set, get) => ({
 
   setDayOfYear: (doy) => {
     const { currentDate } = get()
-    const next = new Date(currentDate.getFullYear(), 0, 1)
-    next.setDate(doy)
-    // Preserve TOD from current state so doy jumps don't reset the clock.
-    next.setHours(
-      currentDate.getHours(),
-      currentDate.getMinutes(),
-      currentDate.getSeconds(),
-      currentDate.getMilliseconds(),
-    )
+    // The town's day `doy`, at the town's current time of day (a date scrub never resets the clock).
+    const next = townDateAtDayOfYear(currentDate, doy)
     set({ currentDate: next, isLive: false })
     useTimeOfDay.setState({ currentTime: next, isLive: false })
   },

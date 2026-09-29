@@ -15,6 +15,7 @@
  * matrix"; year-strip drag in DawnTimeline scrubs the date.
  */
 import { useState, useMemo, useEffect, Fragment } from 'react'
+import { townMinuteOf } from '../lib/townClock.js'
 import SunCalc from 'suncalc'
 import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -69,7 +70,7 @@ function EditorGrid({ sky, currentDate, tick }) {
   // Solar-noon hour for the active date (for the sun-overhead marker).
   const solarNoonHour = useMemo(() => {
     const t = SunCalc.getTimes(currentDate, townPlace().lat, townPlace().lon)
-    return t.solarNoon.getHours() + t.solarNoon.getMinutes() / 60
+    return townMinuteOf(t.solarNoon) / 60   // the TOWN's clock
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate])
 

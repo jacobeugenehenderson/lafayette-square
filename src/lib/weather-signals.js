@@ -31,6 +31,8 @@
  *   - hour_of_day (0..23 integer)
  *   - minute_of_day (0..1439 integer)
  */
+import { townClockOf } from './townClock.js'
+
 
 const ALL_SIGNAL_KEYS = [
   // payload pass-through
@@ -72,8 +74,8 @@ export function deriveSignals(payload, currentTime, extras = {}) {
     weathercode:     extras?.currentWeatherCode ?? null,
     pressure_trend_3hr: pressureTrend3hr(payload?.pressureMb, extras?.hourlyForecast, currentTime),
     direct_ratio:    directRatio(extras?.directRadiation, extras?.diffuseRadiation),
-    hour_of_day:     currentTime ? currentTime.getHours() : null,
-    minute_of_day:   currentTime ? currentTime.getHours() * 60 + currentTime.getMinutes() : null,
+    hour_of_day:     currentTime ? townClockOf(currentTime).hours : null,         // the TOWN's clock
+    minute_of_day:   currentTime ? townClockOf(currentTime).minuteOfDay : null,
   }
   return s
 }

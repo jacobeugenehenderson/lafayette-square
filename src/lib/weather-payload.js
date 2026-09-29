@@ -13,6 +13,7 @@
  * first-class fields so the Almanac can rule on them.
  */
 import SunCalc from 'suncalc'
+import { townClockOf } from './townClock.js'
 import { townPlace } from './townPlace.js'
 
 // WMO weather codes → precip kind enum from weather-payload.schema.json
@@ -50,7 +51,7 @@ function deriveTod(sunAlt, hour) {
 }
 
 function deriveSeason(date, lat) {
-  const m = date.getMonth() + 1
+  const m = townClockOf(date).month   // the TOWN's month
   const north = lat >= 0
   // Astronomical-ish quarters; matches schema enum spring/summer/fall/winter.
   if (north) {
@@ -114,7 +115,7 @@ export function buildWeatherPayload(weatherTargets, currentTime) {
     stormDistanceKm: weatherTargets?.stormDistanceKm ?? 100,
     sunElevationDeg: sun.altitude * 180 / Math.PI,
     sunAzimuthDeg: sunAzimuthDeg,
-    tod: deriveTod(sun.altitude, currentTime.getHours()),
+    tod: deriveTod(sun.altitude, townClockOf(currentTime).hours),   // the TOWN's hour
     season: deriveSeason(currentTime, lat),
   }
 

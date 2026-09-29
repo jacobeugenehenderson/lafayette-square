@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { townClockOf, townDateAtMinute } from '../lib/townClock.js'
 import SunCalc from 'suncalc'
 import { townPlace } from '../lib/townPlace.js'
 import useCalendar from './useCalendar.js'
@@ -49,27 +50,23 @@ const useTimeOfDay = create((set, get) => ({
   // views drifted apart on every chip click — the exact lockstep the comment promises.
   // ⭐ Both keep the CURRENT DATE and change only the time (2026-09-27): they rebuilt from `new Date()`, so a
   // time-chip click snapped the date and season back to today.
+  // ⛔ The TOWN's clock (src/lib/townClock.js): "set 18:30" is 18:30 in the town, whoever is scrubbing — never the
+  // viewer's zone (Jacob tunes ToD keyframes from Central; every town not in his zone would be tuned wrong).
   setHour: (hour) => {
-    const now = new Date(get().currentTime)
-    const wholeHour = Math.floor(hour)
-    const minutes = Math.round((hour - wholeHour) * 60)
-    now.setHours(wholeHour, minutes, 0, 0)
+    const now = townDateAtMinute(get().currentTime, Math.round(hour * 60))
     set({ currentTime: now, isLive: false })
     useCalendar.setState({ currentDate: now, isLive: false })
   },
 
   setMinuteOfDay: (minutes) => {
-    const now = new Date(get().currentTime)
-    const hours = Math.floor(minutes / 60)
-    const mins = Math.round(minutes % 60)
-    now.setHours(hours, mins, 0, 0)
+    const now = townDateAtMinute(get().currentTime, Math.round(minutes))
     set({ currentTime: now, isLive: false })
     useCalendar.setState({ currentDate: now, isLive: false })
   },
 
   getMinuteOfDay: () => {
     const { currentTime } = get()
-    return currentTime.getHours() * 60 + currentTime.getMinutes()
+    return townClockOf(currentTime).minuteOfDay
   },
 
   tick: (deltaMs) => {

@@ -39,6 +39,7 @@
 // Per-Look serialization stores slot ids; minutes are computed live from
 // SunCalc each frame so the envelope shifts seasonally with the real sun.
 import SunCalc from 'suncalc'
+import { townMinuteOf } from '../lib/townClock.js'
 import { townPlace } from '../lib/townPlace.js'
 import { LAMPGLOW_FLAT_DEFAULTS, LAMPGLOW_RADIUS_V } from './skyLightChannels.js'
 
@@ -72,7 +73,7 @@ export function getTodSlotMinutes(date) {
   const times = SunCalc.getTimes(date || new Date(), lat, lon)
   const toMin = (d) => {
     if (!d || isNaN(d.getTime?.())) return null
-    return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60
+    return townMinuteOf(d)   // the TOWN's clock (src/lib/townClock.js), as the channels are keyed
   }
   return {
     dawn:    toMin(times.dawn),

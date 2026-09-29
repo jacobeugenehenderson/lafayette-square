@@ -51,6 +51,7 @@
  * from animatedParam (the canonical slot vocabulary).
  */
 import { useState } from 'react'
+import { townMinuteOf } from '../lib/townClock.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCartographStore from './stores/useCartographStore.js'
 import SliderRow from './SliderRow.jsx'
@@ -336,7 +337,7 @@ export default function TodChannel({
   // slot id is the keyframe key (its time is stamped), so writing to it never
   // needs the live clock — editing a value never jogs the timeline; the
   // playhead moves on chip-click alone (onChipClick).
-  const minute = currentTime.getHours() * 60 + currentTime.getMinutes() + currentTime.getSeconds() / 60
+  const minute = townMinuteOf(currentTime)   // the TOWN's clock — keyframes are authored in town time
   const slotMinutes = getTodSlotMinutes(currentTime)
   const playheadSlotId = todSlotAtMinute(minute, currentTime)
   const editTarget = playheadSlotId

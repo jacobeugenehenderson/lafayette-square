@@ -29,6 +29,7 @@
  * regardless of which face of the box the rasterizer hit.
  */
 import { useRef, useMemo } from 'react'
+import { townClockOf } from '../lib/townClock.js'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import SunCalc from 'suncalc'
@@ -144,7 +145,7 @@ export default function Atmosphere({ lookId, displayBaseAlt } = {}) {
 
     const tod = useTimeOfDay.getState()
     const currentTime = tod.currentTime
-    const minute = currentTime.getHours() * 60 + currentTime.getMinutes()
+    const minute = townClockOf(currentTime).minuteOfDay   // the TOWN's clock
     const slotMinutes = getTodSlotMinutes(currentTime)
 
     // Drive shape + lighting uniforms. Authoring path wins: if

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { townClockOf, townDateAtMinute } from './lib/townClock.js'
 import SunCalc from 'suncalc'
 import { INSTANCE, moduleOn, TOWN_PATH_PREFIX } from './instance.js'
 import { currentSiteUrl } from './lib/townOrigin.js'
@@ -718,15 +719,14 @@ function App() {
       // (DawnTimeline). Flagged rather than fixed in the store: nothing else
       // calls those two, so the mismatch is latent, and which side is wrong is
       // a decision rather than a cleanup.
-      const at = new Date()
-      at.setHours(Math.floor(m.minute / 60), Math.round(m.minute % 60), 0, 0)
+      const at = townDateAtMinute(new Date(), m.minute)   // that minute on the TOWN's clock, today in the town
       tod.setTime(at)
     }
     window.addEventListener('message', onTime)
 
     let last = -1
     const announce = (st) => {
-      const minute = st.currentTime.getHours() * 60 + st.currentTime.getMinutes()
+      const minute = townClockOf(st.currentTime).minuteOfDay   // the TOWN's clock
       if (minute === last) return
       last = minute
       try { window.parent.postMessage({ type: 'ward-time', minute, isLive: st.isLive }, '*') } catch { /* gone */ }

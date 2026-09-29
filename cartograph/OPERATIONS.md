@@ -147,6 +147,8 @@ How the town looks, chosen in one place: its **Mark** (one emoji — avatar, loa
 
 The time readout and **⟲ live**, the **time-of-day chips** (Dawn … Night) above the day slider, the **season chips** above the year slider, and:
 
+⭐ **Every time here is the TOWN's clock, in the town's own zone** — the slider, the chips, the keyframes you author, and what a visitor sees — wherever you sit (2026-09-29: keyframes tuned on a Central clock were tuned wrong for every town elsewhere). ▶ `node checks/claims-a-town-keeps-its-own-clock.mjs`
+
 **Weather (Stage only)** — the card's last row, a segmented pill: **Live · Clear · Overcast · Rain · Snow.** Stage opens in **Clear**; Live is your choice, like the live clock, and a reload keeps what you picked. *Live* is the town's real weather; *Clear* is the baseline for judging a look. The rest are courtesy stand-ins (`src/lib/weatherPresets.js`, shared with the surface lab) until the Meteorologist supplies simulated weather too. A click lands at once and is the same every time: the ground starts dry and bare and builds toward the chosen weather, and wind and cloud drift start fresh. Every weather, live or chosen, draws its sky from the Almanac (`public/clouds/almanac.json`, first match wins). Session-only: never saved, never baked; production always runs live. ▶ `node checks/claims-the-light-follows-the-weather.mjs`.
 
 ### How to operate any TOD channel (the universal mechanic)

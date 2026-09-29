@@ -26,6 +26,7 @@
  * cartograph chunk where store reach is acceptable.
  */
 import { useMemo, useRef } from 'react'
+import { townMinuteOf } from '../lib/townClock.js'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -333,7 +334,7 @@ export default function GatewayArch({
 
       // Resolve the TOD-animated Arch Lighting channel at the current
       // minute (cone authored in degrees → cos for the shader).
-      const alMinute = currentTime.getHours() * 60 + currentTime.getMinutes() + currentTime.getSeconds() / 60
+      const alMinute = townMinuteOf(currentTime)   // the TOWN's clock
       const al = resolveGroupAtMinute(
         archLightChannel, alMinute, getTodSlotMinutes(currentTime),
         ARCHLIGHT_FIELD_KEYS, ARCHLIGHT_FLAT_DEFAULTS,
