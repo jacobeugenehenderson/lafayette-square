@@ -9,8 +9,8 @@ import { suggestFromMark } from './suggestFromMark.js'
 import CATEGORIES from '../tokens/categories.js'
 
 /**
- * IDENTITY — how the town looks, chosen in one place (Warden's ruling, 2026-09-28): its mark, its accent, the mark it
- * rates with, the tint a lit set of roofs takes, and its category colours (Neon — its signs and its Ward chips, stored
+ * IDENTITY — how the town looks, chosen in one place (Warden's ruling, 2026-09-28): its mark (which is also what its
+ * places are rated in), its accent, the tint a lit set of roofs takes, and its category colours (Neon — its signs and its Ward chips, stored
  * as materialColors.neon_<category>, decided by src/lib/categoryColor.js). Saved in the Look's design.json (the store's
  * autosave), baked into scene.json, published in the manifest's `look` (src/lib/townIdentity.js).
  * Reached from the Stage toolbar beside Sources, and from Sources' "Identity" row.
@@ -26,9 +26,8 @@ import CATEGORIES from '../tokens/categories.js'
  */
 
 const ROWS = [
-  { id: 'mark', label: 'Mark', kind: 'emoji', hint: 'The avatar, load screen and tab. One emoji.' },
+  { id: 'mark', label: 'Mark', kind: 'emoji', hint: 'The avatar, load screen and tab — and what places are rated in. One emoji.' },
   { id: 'accent', label: 'Accent', kind: 'color', hint: 'The Ward\'s chrome accent.' },
-  { id: 'ratingMark', label: 'Rating mark', kind: 'emoji', hint: 'What a place is rated in. One emoji.' },
   { id: 'litTint', label: 'Lit tint', kind: 'tint', hint: 'The roofs of a chosen category or search, and the selected building.' },
 ]
 

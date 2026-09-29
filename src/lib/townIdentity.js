@@ -4,9 +4,9 @@
  * manifest `look` block by cartograph/bake-manifest.mjs (Warden's ruling, 2026-09-28). Pure; the bake, the manifest
  * and the renderer all import it.
  *
- *   mark        the town's emoji mark (avatar, load screen, tab)
+ *   mark        the town's ONE emoji: avatar, load screen, tab, and what its places are rated in (Jacob, 2026-09-29:
+ *               "emojis are supposed to be the ratings and the map vis ID" — there is no second rating emoji)
  *   accent      the Ward's chrome accent, '#rrggbb'
- *   ratingMark  the emoji the town rates with (the Ward draws it in a vignette)
  *   litTint     { color: '#rrggbb', strength: 0..1 } — the roof tint of a lit set and the selected building
  *
  * ⛔ A channel the town has not chosen is the kit's NEUTRAL value below — no town's — and is published with
@@ -17,13 +17,12 @@
  * ▶ node checks/claims-a-towns-identity-is-its-own.mjs
  */
 
-export const IDENTITY_CHANNELS = ['mark', 'accent', 'ratingMark', 'litTint']
+export const IDENTITY_CHANNELS = ['mark', 'accent', 'litTint']
 
 /** The kit's neutral identity. `accent: null` — the kit has not chosen one yet (Jacob's eye). */
 export const IDENTITY_NEUTRAL = {
   mark: null,
   accent: null,
-  ratingMark: '⭐',
   litTint: { color: '#f2c14e', strength: 0.45 },
 }
 
@@ -35,7 +34,6 @@ const oneEmoji = (s) => typeof s === 'string'
 const VALID = {
   mark: (v) => oneEmoji(v) || 'one emoji',
   accent: (v) => HEX.test(v) || "'#rrggbb'",
-  ratingMark: (v) => oneEmoji(v) || 'one emoji',
   litTint: (v) => (v && typeof v === 'object' && HEX.test(v.color) && Number.isFinite(v.strength) && v.strength >= 0 && v.strength <= 1
     && Object.keys(v).every((k) => k === 'color' || k === 'strength')) || "{ color: '#rrggbb', strength: 0..1 }",
 }

@@ -10,7 +10,7 @@
  *   · ⛔ OLD PLAYER ONLY, UNTIL CUTOVER (Warden, 2026-09-28): the town's instance `branding.mark` is a copy the frozen old
  *     player still reads. It must EQUAL the Look's mark — the Look is the source, the copy follows — so the two cannot
  *     drift. The copy (and `markSvg`) is deleted when the new Ward cuts over;
- *   · no instance file carries any other identity channel (accent, ratingMark, litTint belong to the Look).
+ *   · no instance file carries any other identity channel (accent, litTint belong to the Look).
  * ⭐ MUTATION-TESTED EVERY RUN: one town's mark is flipped in memory and the drift test must then fail.
  *
  *   node checks/claims-a-towns-identity-is-its-own.mjs
