@@ -28,11 +28,10 @@
  *   public/baked/<scene>/trees.json
  *
  * Schema:
- *   { generatedAt, scene, lod, activeStyles, count, heroTierMeta, heroBandMeta,
+ *   { generatedAt, scene, lod, activeStyles, count, heroTierMeta,
  *     tiles: { cols, rows, minX, minZ, tileW, tileD,
  *              instancesByTile: [{ tileX, tileZ, instances: [...] }, ...] } | null,
- *     instances: [{ x, z, url, scale?, sizeFrom?, rotY, species, variantId, heroTier?,
- *                  heroRole?('mesh'|'impostor'), panDist? }] }
+ *     instances: [{ x, z, url, scale?, sizeFrom?, rotY, species, variantId, heroTier? }] }
  *
  * `heroTier` ('mesh'|'opaque'|'impostor'|'cull') is a purely DERIVED per-tree visibility class
  * for the Hero shot (no authored override). Omitted when no hero pan is found.
@@ -53,7 +52,6 @@ import { fileURLToPath } from 'node:url'
 // (vs reimplementing) keeps the bake-time classifier's camera locus in lock-step
 // with what Scene/Preview/Stage actually render. Node-safe ESM.
 import { heroPathPose, assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
-import { assignHeroBand, glbTriangleCount } from './hero-band.mjs'
 import { canopyLightAt } from '../src/lib/lampPool.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -223,17 +221,6 @@ function parseArgs() {
     }
   }
   return args
-}
-
-// ⛔ A numeric flag with no value parses as `true`, and Number(true) is 1 — a
-// budget of one triangle that bakes an all-impostor slab and says nothing. Any
-// non-finite/non-positive value is a LOUD failure, never a quiet default.
-function numFlag(name, raw) {
-  const v = typeof raw === 'string' ? Number(raw) : NaN
-  if (!Number.isFinite(v) || v <= 0) {
-    throw new Error(`[bake-trees] --${name} needs a positive number, got ${JSON.stringify(raw)}`)
-  }
-  return v
 }
 
 function hash01(seed, salt = 0) {
@@ -603,14 +590,6 @@ export async function bakeTrees({
   // scene's OWN Look — never a literal 'lafayette-square', which would tier a
   // poured scene's trees against LS's camera in LS's coordinate frame (garbage).
   heroLook = null,
-  // ⭐ THE GEOMETRY BUDGET, in TRIANGLES — the hero band's only real dial, and
-  // the thing LEDGER §E1 says the left-column bar should have been wired to all
-  // along ("wire it to geometry weight, or remove it"). A count-based budget lets
-  // one heavy species eat the frame; this cannot.
-  heroTriangleBudget = 15e6,
-  // Hard distance ceiling: never promote past this even with budget to spare, so
-  // an empty foreground cannot spend the whole budget on trees nobody can see.
-  heroBandMaxM = 250,
   placements,    // override path (string) or paths (array, unioned)
   output,        // override output path; defaults to public/baked/<scene>/trees.json
   speciesMapPath, // override COMMON->library routing; defaults to THIS scene's map, else empty
@@ -1176,53 +1155,6 @@ export async function bakeTrees({
     }
   }
 
-  // ── HERO GEOMETRY BAND (the ∩-foreground axis, 2026-08-24) ─────────────────
-  // Decide WHO KEEPS GEOMETRY in the hero shot here, at bake, by distance to the
-  // authored camera path — spending a TRIANGLE budget, not a tree count.
-  // See hero-band.mjs for why dbh was the wrong axis on both cost and visibility.
-  // ⛔ No hero pan → emit NOTHING and say so. The runtime keeps its old dbh split
-  // and warns; a guessed band would look like a working budget while misplacing
-  // every tree in a town nobody has inspected.
-  let heroBandMeta = null
-  if (heroPan && instances.length) {
-    const triCache = new Map()   // lod1 url -> triangle count (or null)
-    const trisFor = (inst) => {
-      const rel = inst?.lods?.lod1
-      if (!rel) return null
-      if (!triCache.has(rel)) {
-        // The band must weigh what the HERO shot actually draws: the baked lod1
-        // in this Look's slab, not the authoring-pool copy under public/trees/.
-        const abs = path.join(REPO_ROOT, 'public', 'baked', effHeroLook, rel.replace(/^\//, ''))
-        triCache.set(rel, existsSync(abs) ? glbTriangleCount(abs) : null)
-      }
-      return triCache.get(rel)
-    }
-    const band = assignHeroBand(instances, heroPan, {
-      triangleBudget: heroTriangleBudget,
-      bandMaxM: heroBandMaxM,
-      trisFor,
-    })
-    if (band) {
-      for (let i = 0; i < instances.length; i++) {
-        instances[i].heroRole = band.roles[i]
-        instances[i].panDist = Math.round(band.dists[i] * 10) / 10
-      }
-      heroBandMeta = { heroLook: effHeroLook, ...band.meta }
-      const m = band.meta
-      console.log(`[bake-trees] heroBand: ${m.mesh} mesh / ${m.impostor} impostor — `
-        + `${(m.trianglesSpent / 1e6).toFixed(1)}M of ${(m.triangleBudget / 1e6).toFixed(1)}M tris, `
-        + `cutoff ${m.bandCutoffM}m`)
-      const unk = Object.entries(m.unmeasurableBySpecies)
-      if (unk.length) {
-        console.warn(`[bake-trees] ⛔ heroBand could not weigh ${unk.reduce((n, [, c]) => n + c, 0)} placement(s) — `
-          + `no readable baked lod1, so they were LEFT AS IMPOSTORS rather than given free budget: `
-          + unk.map(([sp, c]) => `${sp}(${c})`).join(' '))
-      }
-    }
-  } else if (instances.length) {
-    console.warn('[bake-trees] ⛔ no authored hero pan — heroRole NOT emitted; the runtime will fall back to its dbh split')
-  }
-
   // Stats
   const variantUseCount = new Map()
   for (const i of instances) {
@@ -1289,7 +1221,6 @@ export async function bakeTrees({
     // Hero-tier classification summary (Phase A). null when no hero pan/dims;
     // per-instance `heroTier` lives on each entry in `instances`.
     heroTierMeta,
-    heroBandMeta,
     tiles,
     instances,
   }
@@ -1411,13 +1342,6 @@ if (isDirect) {
     styles: (args.styles || 'realistic').split(',').map(s => s.trim()).filter(Boolean),
     lod: args.lod,
     heroLook: args.heroLook,
-    // ⭐ The geometry budget + its distance ceiling, reachable from the CLI. Both
-    // default to the function's own defaults when the flag is absent, so a bake
-    // with no flags is byte-identical to one before they existed.
-    ...(args['hero-triangle-budget'] != null
-      ? { heroTriangleBudget: numFlag('hero-triangle-budget', args['hero-triangle-budget']) } : {}),
-    ...(args['hero-band-max-m'] != null
-      ? { heroBandMaxM: numFlag('hero-band-max-m', args['hero-band-max-m']) } : {}),
     placements: typeof args.placements === 'string'
       ? args.placements.split(',').map(s => s.trim()).filter(Boolean)
       : sceneInputs.placements,

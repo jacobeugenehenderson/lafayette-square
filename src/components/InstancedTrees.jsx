@@ -869,35 +869,20 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     //
     //   ?meshLod=1          lod1 everywhere (the default, stated explicitly)
     //   ?meshLod=far        lod1far everywhere — the extreme, to see the tier bare
-    //   ?meshLod=auto:60    lod1 within 60 m of the authored pan, lod1far beyond it
     //
     // ⛔ lod2 IS DELIBERATELY NOT OFFERED. It is trunk-cut for the overhead browse view
     // (publish-glb#trunkCutBark) — measured 1.15 m of missing trunk on oak_white, 2.67 m
     // on linden_american — so on a side-on pan every tree floats. Its 17× triangle saving
     // is real and unspendable here, and offering it as a "cheaper LOD" is how someone
     // spends an afternoon eye-gating a shape error.
-    //
-    // ⭐ `panDist` is BAKED — each placement's distance to the authored hero pan — so
-    // grading by it is role-at-bake, not the retired runtime camera swap (`GeoTierDriver`).
     const meshLodParam = treeDbgVal('meshLod')
-    const lodForRole = (inst) => {
+    const lodForRole = () => {
       if (!meshLodParam || meshLodParam === '1') return 'lod1'
       if (meshLodParam === 'far') return 'lod1far'
-      if (meshLodParam.startsWith('auto')) {
-        const cut = Number(meshLodParam.split(':')[1])
-        if (!Number.isFinite(cut)) {
-          console.warn(`[InstancedTrees] ?meshLod=${meshLodParam} has no distance — use auto:<metres>. Falling back to lod1.`)
-          return 'lod1'
-        }
-        // ⛔ No panDist means this slab predates the hero band. Do not guess it is far.
-        const d = inst?.panDist
-        if (typeof d !== 'number') return 'lod1'
-        return d > cut ? 'lod1far' : 'lod1'
-      }
-      console.warn(`[InstancedTrees] ?meshLod=${meshLodParam} is not a value I know (1 | far | auto:<m>). Using lod1.`)
+      console.warn(`[InstancedTrees] ?meshLod=${meshLodParam} is not a value I know (1 | far). Using lod1.`)
       return 'lod1'
     }
-    const lodUrlOf = (o, inst) => (o && o.lods && o.lods[lodForRole(inst)]) || (o && o.url)
+    const lodUrlOf = (o) => (o && o.lods && o.lods[lodForRole()]) || (o && o.url)
 
     const m = new Map()  // lookUrl -> Map<tileId, instances[]>  (mesh role)
     const impostors = new Map()  // species -> instances[]  (impostor role)
@@ -979,7 +964,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
       // Mesh ROLE — the Arborist's model trees (foundation on), or the full mesh path (foundation
       // off; the legacy cull/impostor role handled above). Impostor with no baked record
       // also falls through here → real geometry, never blank.
-      const url = inRoster ? lodUrlOf(inst, inst) : lodUrlOf(sub, inst)
+      const url = inRoster ? lodUrlOf(inst) : lodUrlOf(sub)
       // The atlas manifest's generatedAt is the GLBs' re-read key: an open Stage tab picks up
       // rewritten UVs after a rebake instead of holding drei's useGLTF cache for the same path.
       const lookUrl = url.startsWith('/trees/') ? slabUrl(lookName, url, generatedAt) : url

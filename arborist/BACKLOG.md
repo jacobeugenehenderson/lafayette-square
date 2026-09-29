@@ -140,44 +140,14 @@ This widens the sanctioned axis. ⛔ It is NOT a revival of runtime geometry swa
 truncated all the way to a billboard. The ladder jumps from *full mesh + full shader* to *2D
 card* with nothing between. "Keep the mesh, collapse the shading" is the missing middle.
 
-### ✅ SETTLED 2026-08-27 — the counts, and the budget arithmetic
+### ✅ SETTLED 2026-09-28 — who draws as a model tree
 
-**FOUR fields, three meanings, ONE authority.** They read alike; they answer different questions.
-▶ `node -e "const I=require('./public/baked/lafayette-square/trees.json').instances;const f={};for(const i of I)for(const k of ['meshTier','heroTier','heroRole'])if(i[k]!==undefined)f[k+'='+i[k]]=(f[k+'='+i[k]]||0)+1;console.log(f)"`
-
-| field | LS | what it is | authority |
-|---|---|---|---|
-| `meshTier` | 2,282 true | **species**-level operator eligibility, from the Grove bar (`b.tier==='mesh'`) | not a render decision |
-| `heroTier` | 114 mesh / 5,013 cull | the Phase-A classifier | **QC tint only** (`aHeroTier`) |
-| `heroRole` | **399 mesh / 4,728 impostor** | the geometry budget | ⭐ **the one the runtime obeys** (`InstancedTrees.jsx:859`) |
-
-⛔ **AND THE BUDGET RECONCILES EXACTLY — I claimed otherwise and was wrong.**
-Σ lod1 triangles of the 399 = **14,979,130** = `trianglesSpent`, to the triangle. The error was
-assuming the runtime draws each instance's `url` (lod2); `InstancedTrees#lodForRole` overrides it
-to **lod1** for mesh role, so weighing lod1 is correct.
-▶ `node scratch/hero-band-reconcile.mjs`
-
-### ⭐⭐ AND THE MEASUREMENT FOUND THE LEVER
-
-Same 399 placements, both ladders:
-```
-Σ lod1   14,979,130   ← charged AND drawn
-Σ lod2      878,524   ← 17× cheaper
-```
-**`lodForRole = (_inst) => 'lod1'`** (`InstancedTrees.jsx:770`) takes the instance and throws it
-away. Every placement already carries **`panDist`**, baked — its distance to the authored hero pan.
-⇒ A distance-graded LOD is **already plumbed and unused**, and grading by `panDist` is role-at-bake
-(a baked distance, not a live camera), so it is on the sanctioned side of the LOD line.
-
-⚠️ **The same 15M budget would afford roughly 17× more mesh trees** if the far half of the band drew
-lod2. ⛔ NOT a licence to change the constant — what lod2 looks like at band distance is an eye
-question, and the 2026-06-24 regression (lod1 decimated to specks) is what that mistake looks like.
-
-⭐ **This does NOT displace Jacob's proposal — it is the geometry half of the same idea.** His is the
-shading half. Triangles are a *vertex*-cost proxy; the cost that hurts at distance is fragments and
-overdraw, which alpha-tested leaf cards make worse by defeating early-Z (`opaqueCanopyMaterial`'s
-own comment). **Whether the budget's currency should be fragments rather than triangles is still
-open, and still question 2.**
+**Only the Arborist's mesh bar (`meshTier`) makes a model tree** — one rule, `src/lib/treeGeometry.js`,
+read by the runtime, the slab upload and its verifier (Jacob, 2026-09-22 + 2026-09-28). `heroTier` is
+the QC tint and the legacy no-foundation path only. The triangle-budget band (`heroRole`, `panDist`,
+`hero-band.mjs`) is retired; its record, and the lod1-vs-lod2 arithmetic, is in
+`_archive/hero-band-retired-2026-09-28.md`. ◻ **Still open (question 2):** whether a model tree's cost
+should be counted in fragments rather than triangles — the shading half of Jacob's proposal.
 
 ### Already built — ⛔ do not rebuild
 - **lod2 for mesh-role placements** — done. All 2,282 already point at `lod2`.

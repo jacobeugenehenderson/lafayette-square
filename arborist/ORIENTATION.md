@@ -228,12 +228,9 @@ The publish→bake→slab spine, deterministic and byte-verified. The single mas
 sha1 tile dedupe — **atlas cost scales with distinct PARTS, not species count**, so a dozen
 pines sharing one bark and one needle pack are nearly free.
 ▶ `node -e "const j=require('./public/baked/lafayette-square/trees-atlas.json');const b={};for(const t of j.tiles)b[t.classification]=(b[t.classification]||0)+1;console.log(b,'rosterSize',j.rosterSize)"`
-The **geometry budget** (2026-08-24): who keeps mesh in the hero shot is decided at BAKE by
-distance to the authored camera path, spending a **triangle** budget — not a tree count, not
-trunk diameter, which predicts neither cost nor visibility (`arborist/hero-band.mjs`;
-`role-at-bake` preserved, so no pop). And the runtime now says out loud when a placement kept
-mesh **because its species has no baked impostor** rather than because it earned it.
-▶ `node -e "const t=require('./public/baked/lafayette-square/trees.json');console.log(t.heroBandMeta)"`
+A **model tree** is the Arborist's mesh bar alone (`meshTier`, `src/lib/treeGeometry.js`) — no
+height, distance or budget rule chooses among trees. And the runtime now says out loud when a placement kept
+mesh **because its species has no baked impostor** rather than because the Arborist specified it.
 The **impostor foundation**: every placement paints as a captured canopy billboard; a species
 draws real `lod1` mesh only when the Arborist's mesh bar says so (`meshTier`); two capture systems split
 by viewing hemisphere, overhead for browse and azimuthal bands for the side-on pan, both RTT

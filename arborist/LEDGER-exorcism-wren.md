@@ -187,12 +187,9 @@ run** — they are browser-GPU authored inside the Grove and the CLI bake cannot
 ## E. ⛔ ASPIRATION — needs Jacob before anyone touches it
 
 **E1 · The left-column bar (`groveThreshold`).** ✅ **RULED + WIRED 2026-08-24 (`b01fdffb`).**
-The verdict here — *"wire it to geometry weight"* — is now real: `arborist/hero-band.mjs`
-spends a **TRIANGLE budget** (`heroTriangleBudget`, `heroBandMaxM`) down a list sorted by
-distance to the authored camera path. Measured on LS: 2323 mesh / ~86M tris → **403 mesh /
-15.0M tris**, cutoff 181m. A count budget lets one heavy species eat the frame; this cannot.
-◻ **Still owed: the BAR ITSELF is not bound to that budget** — it remains UI + persistence
-read by nothing. It now has something true to read, which it never had before.
+⛔ **The triangle-budget band it was wired to is RETIRED 2026-09-28** (Jacob: *"there are no meshes
+unless specified in the Arborist"*): the mesh bar is now the whole decision (`src/lib/treeGeometry.js`).
+Record: `_archive/hero-band-retired-2026-09-28.md`.
 
 **E2 · `Native` is already taken.** In the app it means *the leaf this species actually has*
 (`Bare · Native · Synthetic`). **No regional-nativeness concept exists.** Grouping by region
