@@ -1469,6 +1469,18 @@ function hangTwigs({ chassisDoc, vendorLeafPrims, barkMat, leafMat, packMeta, le
       sites.push({ at, target, reach, out: out.map(x => x / l) })
     }
   }
+  // A CANOPY IS A SHELL: leaves crowd the lit outside; the shaded interior is bare wood, which is why
+  // a tree shows its branches. Per height band, the crown's radius is measured from the chassis's own
+  // foliage; a target is kept only in the outer `crown_shell` of it (dossier twigModel).
+  const shell = typeof twig.crown_shell === 'number' ? twig.crown_shell : null
+  if (shell == null) throw new Error(`${packMeta.dossier}: twigModel has no crown_shell — how deep the leaves reach into the crown is the species'`)
+  const bands = 24, rMax = new Float64Array(bands)
+  const yLo = lo, ySpan = (hi - lo) || 1
+  const band = y => Math.min(bands - 1, Math.max(0, Math.floor(((y - yLo) / ySpan) * bands)))
+  const rOf = p => Math.hypot(p[0], p[2])
+  for (const st of sites) { const b = band(st.target[1]); rMax[b] = Math.max(rMax[b], rOf(st.target)) }
+  const shelled = sites.filter(st => rOf(st.target) >= (1 - shell) * rMax[band(st.target[1])])
+  sites.length = 0; for (const st of shelled) sites.push(st)
   for (const { prim, mesh } of vendorLeafPrims) { mesh.removePrimitive(prim); prim.dispose() }
   vendorLeafPrims.length = 0
   const occupancy = typeof leaves.occupancy === 'number' ? leaves.occupancy : DEFAULTS.leaves.occupancy

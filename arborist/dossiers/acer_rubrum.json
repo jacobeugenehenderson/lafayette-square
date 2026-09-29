@@ -404,6 +404,7 @@
     "site_spacing_m": [
       0.55,
       0.18
-    ]
+    ],
+    "crown_shell": 0.45
   }
 }

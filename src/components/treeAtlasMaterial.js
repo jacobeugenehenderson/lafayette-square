@@ -830,9 +830,12 @@ export function injectFoliageSway(material) {
            // OUTSIDE the branch — implicit derivatives are undefined in divergent flow.
            vec2 barkGx = dFdx(vMapUv), barkGy = dFdy(vMapUv);
            if (vBark > 0.5) {
-             diffuseColor.rgb = barkEncoded(vMapUv)
-               ? diffuse * barkWrapSample(map, vMapUv, barkGx, barkGy).rgb
-               : vec3(1.0, 0.0, 1.0); // ⛔ LOUD: a bark UV that names no tile was never baked for this atlas
+             // ⛔ The WHOLE colour, alpha included: <map_fragment> above sampled the raw, encoded uv,
+             // which lands outside the atlas (often on transparent texels). Keeping its alpha let the
+             // alpha test discard the bark — trunks vanished depending on what sat at the atlas edge.
+             diffuseColor = barkEncoded(vMapUv)
+               ? vec4(diffuse * barkWrapSample(map, vMapUv, barkGx, barkGy).rgb, opacity)
+               : vec4(1.0, 0.0, 1.0, 1.0); // ⛔ LOUD: a bark UV that names no tile was never baked for this atlas
            }
 
            float jh1 = fract(sin(dot(vWorldXZ.xz, vec2(127.1, 311.7))) * 43758.5453);
