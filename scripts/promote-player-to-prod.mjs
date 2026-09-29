@@ -5,6 +5,24 @@
  *   node scripts/promote-player-to-prod.mjs --map=<map> --look=<look>
  *   node scripts/promote-player-to-prod.mjs --map=<map> --look=<look> --dry-run
  *
+ * ⭐⭐ WHICH PLAYER IS THE TOWN'S STAGING RECORD (BRIEF-ls-onto-the-ward Phase 2): the one the
+ * staging Worker serves it by, `staging/sites/<map>/player.json` (`scripts/set-staging-player.mjs`).
+ * ⛔ No record, or anything but "ward" | "legacy", refuses by name before a byte moves — never a
+ * default player. The last line of stdout is the JSON Promote writes the host record from.
+ *
+ *   legacy → the kit's player, below: `staging/player/` → `player/<map>/`.
+ *   ward   → the Ward build `staging/ward/current.json` names → `ward/<sha>/`, and the kit bundle
+ *            that build pins → `kit/<kit>/` — each verified against its own sha256 list (the Ward's
+ *            `build.json`, the bundle's `manifest.json`), the list written LAST.
+ *            ⛔⛔ WRITE-ONCE. These keys are per COMMIT, shared by every town that pins that commit.
+ *            A key already in production is verified against the list and skipped, NEVER
+ *            overwritten; a mismatch refuses by name. That is what makes "promoting one town changes
+ *            no other town's bytes" true rather than probable. ⛔ And nothing may delete a
+ *            `ward/<sha>/` or `kit/<sha>/` that any `hosts/*.json` still names (the old player's
+ *            removal, Phase 4, must honour it).
+ *            The town's share card (`towns.json`, beside the kit's player) is pinned at
+ *            `player/<map>/towns.json` too, as staging reads it for both players.
+ *
  * ⭐⭐ COPY, NOT REBUILD (Jacob, 2026-09-26). Production gets the exact bytes that staging served:
  * the build named by `staging/player/build.json`, file by file from its `manifest.json`, each one
  * checked against the manifest's MD5 before it is written. ⛔ A rebuild here would ship a player
@@ -34,7 +52,9 @@ const arg = (k) => (process.argv.find((a) => a.startsWith(`--${k}=`)) || '').spl
 const map = arg('map'), look = arg('look')
 const dryRun = process.argv.includes('--dry-run')
 const MAP_ID = /^[a-z0-9][a-z0-9-]{0,63}$/
+const SHA = /^[0-9a-f]{40}$/
 const md5 = (buf) => createHash('md5').update(buf).digest('hex')
+const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
 const MIME = {
   html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8',
@@ -54,11 +74,12 @@ const cacheOf = (rel) => /^assets\/[^/]+-[A-Za-z0-9_-]{8,}\./.test(rel) ? 'publi
 const TRANSIENT = new Set(['ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_SOCKET'])
 const TRIES = 5
 
-async function getBytes(key) {
+async function getBytes(key, { missingOk = false } = {}) {
   for (let i = 1; ; i++) {
     let r
     try {
       r = await fetch(PUBLIC_BASE + key, { cache: 'no-store' })
+      if (missingOk && r.status === 404) return null
       if (!r.ok) throw new Error(`${key} → HTTP ${r.status}`)
       return Buffer.from(await r.arrayBuffer())
     } catch (e) {
@@ -70,10 +91,10 @@ async function getBytes(key) {
   }
 }
 
-function putBytes(key, buf, rel) {
+function putBytes(key, buf, rel, cache = cacheOf(rel)) {
   return new Promise((resolve, reject) => {
     const p = spawn('npx', ['wrangler', 'r2', 'object', 'put', `${BUCKET}/${key}`, '--pipe', '--remote',
-      '--content-type', typeOf(rel), '--cache-control', cacheOf(rel)], { cwd: REPO_ROOT })
+      '--content-type', typeOf(rel), '--cache-control', cache], { cwd: REPO_ROOT })
     let err = ''
     p.stderr.on('data', (d) => { err += d })
     p.on('error', reject)
@@ -81,16 +102,98 @@ function putBytes(key, buf, rel) {
     p.stdin.end(buf)
   })
 }
-async function put(key, buf, rel) {
+async function put(key, buf, rel, cache) {
   let last
   for (let i = 0; i < 3; i++) {
-    try { return await putBytes(key, buf, rel) } catch (e) { last = e; await new Promise((r) => setTimeout(r, 400 * 2 ** i)) }
+    try { return await putBytes(key, buf, rel, cache) } catch (e) { last = e; await new Promise((r) => setTimeout(r, 400 * 2 ** i)) }
   }
   throw new Error(`put failed after 3 attempts: ${key}\n${last?.message}`)
 }
 
+/**
+ * The Ward build staging serves, and the kit bundle it pins, → production, write-once (header).
+ * ⛔ Every byte copied is checked against its list; every byte already there is checked and kept.
+ */
+async function promoteWard() {
+  const cur = JSON.parse(await getBytes('staging/ward/current.json', { missingOk: true }) || 'null')
+  if (!cur) throw new Error('"ward" is this town\'s staging player, but the Ward is not published to staging (no staging/ward/current.json).')
+  if (!SHA.test(cur.sha || '') || !SHA.test(cur.kit || '')) throw new Error(`staging/ward/current.json must name "sha" and "kit" commits; it says ${JSON.stringify(cur)}`)
+
+  const buildBuf = await getBytes(`staging/ward/${cur.sha}/build.json`)
+  const build = JSON.parse(buildBuf)
+  if (build.ward !== cur.sha || build.kit !== cur.kit) {
+    throw new Error(`staging/ward/${cur.sha}/build.json says Ward ${build.ward} on kit ${build.kit}, not current.json's ${cur.sha} on ${cur.kit} — a publish is mid-flight. Promote again.`)
+  }
+  const kitBuf = await getBytes(`staging/kit/${cur.kit}/manifest.json`, { missingOk: true })
+  if (!kitBuf) throw new Error(`the kit bundle for ${cur.kit} is not on staging (no staging/kit/${cur.kit}/manifest.json). ▶ node scripts/publish-kit-bundle.mjs --sha=${cur.kit}`)
+  const kitMan = JSON.parse(kitBuf)
+  if (kitMan.kit !== cur.kit) throw new Error(`staging/kit/${cur.kit}/manifest.json names kit ${kitMan.kit}`)
+  const WARD_CACHE = (rel) => (rel === 'index.html' || rel === 'build.json') ? 'no-cache' : 'public, max-age=31536000, immutable'
+  const KIT_CACHE = () => 'public, max-age=31536000, immutable'
+  const sets = [
+    { from: `staging/ward/${cur.sha}/`, to: `ward/${cur.sha}/`, files: build.files || {}, list: ['build.json', buildBuf], cache: WARD_CACHE },
+    { from: `staging/kit/${cur.kit}/`, to: `kit/${cur.kit}/`, files: kitMan.files || {}, list: ['manifest.json', kitBuf], cache: KIT_CACHE },
+  ]
+  // The share card, byte-checked against the kit player's own manifest (the file staging reads).
+  const stagedMan = JSON.parse(await getBytes(`${STAGED}manifest.json`))
+  const towns = stagedMan.files.find((f) => f.rel === 'towns.json')
+  if (!towns) throw new Error(`${STAGED}manifest.json lists no towns.json — the share card has no source. Publish to Staging again.`)
+
+  // ── Plan: what each key needs. ⛔ Existing bytes are READ and compared, never assumed.
+  const toCopy = [], problems = []
+  let kept = 0
+  for (const set of sets) {
+    const entries = Object.entries(set.files).map(([rel, want]) => ({ rel, want }))
+    const queue = [...entries]
+    await Promise.all(Array.from({ length: 16 }, async () => {
+      for (let f = queue.pop(); f; f = queue.pop()) {
+        const have = await getBytes(set.to + f.rel, { missingOk: true })
+        if (!have) { toCopy.push({ set, ...f }); continue }
+        if (sha256(have) === f.want) { kept++; continue }
+        problems.push(`${set.to}${f.rel} is already in production with different bytes — it is write-once; nothing was changed`)
+      }
+    }))
+    const listHave = await getBytes(set.to + set.list[0], { missingOk: true })
+    if (listHave && sha256(listHave) !== sha256(set.list[1])) problems.push(`${set.to}${set.list[0]} is already in production and differs from staging's — write-once; nothing was changed`)
+    set.listPresent = !!listHave
+  }
+  if (problems.length) throw new Error(`the Ward build or kit bundle cannot be pinned:\n  ${problems.join('\n  ')}`)
+  console.log(`ward     ${cur.sha} on kit ${cur.kit} → ${BUCKET}/ward/${cur.sha}/ + kit/${cur.kit}/`)
+  console.log(`copy     ${toCopy.length} files (${kept} already in production, verified)`)
+  if (dryRun) { console.log('\n--dry-run: nothing copied.'); console.log(JSON.stringify({ ok: true, dryRun: true, map, look, player: 'ward', ward: cur.sha, kit: cur.kit, builtAt: build.builtAt ?? null, copied: 0 })); return }
+
+  // ── Copy, each byte checked against its list before it is written.
+  const work = [...toCopy]
+  await Promise.all(Array.from({ length: CONC }, async () => {
+    for (let f = work.pop(); f; f = work.pop()) {
+      const buf = await getBytes(f.set.from + f.rel)
+      if (sha256(buf) !== f.want) throw new Error(`${f.set.from}${f.rel} does not match its list — staging changed under this promote. Nothing is switched; promote again.`)
+      await put(f.set.to + f.rel, buf, f.rel, f.set.cache(f.rel))
+    }
+  }))
+  // The lists LAST: they say "this commit is complete in production".
+  for (const set of sets) if (!set.listPresent) await put(set.to + set.list[0], set.list[1], set.list[0], set.cache(set.list[0]))
+  const townsBuf = await getBytes(`${STAGED}towns.json`)
+  if (md5(townsBuf) !== towns.md5) throw new Error(`${STAGED}towns.json does not match its manifest — promote again.`)
+  await put(`player/${map}/towns.json`, townsBuf, 'towns.json')
+
+  console.log(`\n✅ Ward ${cur.sha.slice(0, 12)} + kit ${cur.kit.slice(0, 12)} pinned for ${map}`)
+  console.log(JSON.stringify({ ok: true, map, look, player: 'ward', ward: cur.sha, kit: cur.kit, builtAt: build.builtAt ?? null, copied: toCopy.length }))
+}
+
 ;(async () => {
   if (!MAP_ID.test(map || '') || !MAP_ID.test(look || '')) throw new Error('--map=<map> and --look=<look> are both required')
+
+  // ── 0. WHICH player — the town's staging record, and nothing else.
+  const recKey = `staging/sites/${map}/player.json`
+  const recBuf = await getBytes(recKey, { missingOk: true })
+  if (!recBuf) throw new Error(`"${map}" names no player on staging — nothing at ${recKey}. There is no default player. `
+    + `▶ node scripts/set-staging-player.mjs --map=${map} --player=ward|legacy, check it on staging, then promote.`)
+  let app
+  try { app = JSON.parse(recBuf).player } catch { app = undefined }
+  if (app === 'ward') return promoteWard()
+  if (app !== 'legacy') throw new Error(`${recKey} names player ${JSON.stringify(app)}; a town plays "ward" or "legacy".`)
+
   const dest = `player/${map}/`
 
   // ── 1. WHICH build. The stamp names it; the manifest must be the stamp's.
@@ -146,5 +249,5 @@ async function put(key, buf, rel) {
   await put(`${dest}manifest.json`, manBuf, 'manifest.json')
   await put(`${dest}build.json`, stampBuf, 'build.json')
   console.log(`\n✅ player ${stamp.builtAt} pinned for ${map}`)
-  console.log(JSON.stringify({ ok: true, map, look, builtAt: stamp.builtAt, copied: pending.length }))
+  console.log(JSON.stringify({ ok: true, map, look, player: 'legacy', builtAt: stamp.builtAt, copied: pending.length }))
 })().catch((e) => { console.error('\n⛔ promote-player FAILED:', e.message, e.cause?.code ? `(${e.cause.code})` : ''); process.exit(1) })

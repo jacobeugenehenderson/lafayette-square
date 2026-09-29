@@ -11,7 +11,7 @@
 import { route, wwwRedirect } from '../workers/production-sites/src/route.js'
 import { decideProductionDomain } from '../src/lib/productionDomain.js'
 
-const rec = { map: 'provincetown', look: 'provincetown' }
+const rec = { v: 2, app: 'legacy', map: 'provincetown', look: 'provincetown' }
 let failed = 0
 const expect = (what, ok, got) => {
   if (ok) console.log(`  ✅ ${what}`)

@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 335,
+  "total": 338,
   "counts": {
-    "safe": 183,
+    "safe": 185,
     "local-effect": 6,
-    "live": 146
+    "live": 147
   },
   "checks": [
     {
@@ -242,6 +242,15 @@
       ]
     },
     {
+      "file": "checks/claims-a-production-town-plays-the-player-promote-pinned.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "imports a network module",
+        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
+      ]
+    },
+    {
       "file": "checks/claims-a-published-edit-reaches-the-map.mjs",
       "tier": "safe",
       "why": [
@@ -332,9 +341,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target — runs arbitrary modules",
-        "runs `npm` — not a known-local command",
-        "imports package(s) esbuild — not read from source"
+        "imports checks/_miniflare.mjs, which can: computed import() with no readable target — runs arbitrary modules, runs `npm` — not a known-local command"
       ]
     },
     {
@@ -589,6 +596,13 @@
       "reasonClass": "unreadable",
       "why": [
         "imports src/lib/tileGround.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "checks/claims-bark-uvs-name-their-tile.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
       ]
     },
     {
@@ -2024,6 +2038,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-impostor-shoots-a-tree-whose-leaves-touch-wood.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
       ]
     },
     {

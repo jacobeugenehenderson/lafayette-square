@@ -1,9 +1,16 @@
 /**
  * theward-production-sites — every town's own production site, from one Worker.
  *
- *   provincetown.online/_player/<file>  →  R2 `player/provincetown/<file>`   (that town's pinned copy)
+ *   provincetown.online/_player/<file>  →  R2 `player/provincetown/<file>`   (a "legacy" town: its pinned copy)
+ *   provincetown.online/_ward/<sha>/…   →  R2 `ward/<sha>/…`                 (a "ward" town: its pinned Ward build)
+ *   provincetown.online/kit/<sha>/…     →  R2 `kit/<sha>/…`                  (a "ward" town: the renderer's own files)
  *   provincetown.online/baked/<look>/…  →  R2 `baked/<look>/…`               (the prod slab, same origin)
- *   provincetown.online/<anything else> →  that pinned player's index.html, told which town it is
+ *   provincetown.online/<anything else> →  that town's player's index.html, told which town it is
+ *
+ * ⭐ WHICH PLAYER is the host record's (`route.js#appOf`), written by Promote from the town's staging
+ * record — the player that was checked there. A "ward" page is also told `ward-kit-base`,
+ * `<origin>/kit/<kit>/`: the same `<ward-asset-base>kit/<sha>/` shape staging stamps, same-origin
+ * here as the slab is (no per-town CORS).
  *   www.provincetown.online/…           →  301 to the apex
  *
  * ⭐ THE STAGING ADDRESS BELONGS TO THE WARD; THE PRODUCTION ADDRESS BELONGS TO THE TOWN
@@ -70,6 +77,14 @@ export default {
       return serve(request, obj, { slab: true })
     }
 
+    if (r.kind === 'ward' || r.kind === 'kit') {
+      const obj = await env.ASSETS.get(r.key)
+      if (!obj) return text(`"${rec.map}"'s pinned ${r.kind === 'ward' ? 'Ward build' : 'kit bundle'} has no "${r.key}" — promote the town again.`, 404)
+      // Promote copies each object's own cache policy from staging (immutable, but the Ward's
+      // index.html and build.json are no-cache); honour it.
+      return serve(request, obj, { stored: true })
+    }
+
     if (r.kind === 'player') {
       const obj = await env.ASSETS.get(r.key)
       if (!obj) {
@@ -86,9 +101,17 @@ export default {
     if (!(await env.ASSETS.head(slab))) {
       return text(`"${rec.look}" has no production slab — nothing at ${slab}.`, 404)
     }
+    let kitBase = null
+    if (r.app === 'ward') {
+      // ⛔ A Ward page pointed at a kit bundle that is not there draws with no textures and no
+      // clouds, and looks like a site. Ask the bundle's manifest (written last by Promote).
+      const kitManifest = `kit/${rec.kit}/manifest.json`
+      if (!(await env.ASSETS.head(kitManifest))) return text(`"${rec.map}" pins kit ${rec.kit}, but its bundle is not in production — nothing at ${kitManifest}. Promote it again.`, 404)
+      kitBase = `${url.origin}/kit/${rec.kit}/`
+    }
     const obj = await env.ASSETS.get(r.key)
     if (!obj) return text(`"${rec.map}" has no pinned player — nothing at ${r.key}. Promote it.`, 404)
-    return townPage(serve(request, obj), rec, url, env)
+    return townPage(serve(request, obj, r.app === 'ward' ? { stored: true } : {}), rec, url, env, kitBase)
   },
 }
 
@@ -99,7 +122,9 @@ export default {
  * ⛔ The share card comes from the town's own pinned `towns.json`; a town missing from it gets
  * NEUTRAL tags (its id, no image), never Lafayette Square's.
  */
-async function townPage(response, rec, url, env) {
+async function townPage(response, rec, url, env, kitBase) {
+  // The share card's towns.json — Promote pins it at `player/<map>/` for either player, as staging
+  // reads the one beside the kit's player for both.
   const tObj = await env.ASSETS.get(`player/${rec.map}/towns.json`)
   const t = (tObj ? await tObj.json() : {})[rec.map] || null
   const title = t?.title || rec.map
@@ -111,6 +136,7 @@ async function townPage(response, rec, url, env) {
     .on('head', { element(el) {
       el.prepend(`<meta name="ward-look" content="${esc(rec.look)}" />`
         + `<meta name="ward-asset-base" content="${esc(url.origin)}/" />`
+        + (kitBase ? `<meta name="ward-kit-base" content="${esc(kitBase)}" />` : '')
         // ⭐ The domain Operations confirmed when this town was promoted (Promote writes it into
         // the host record). The same value the staging Worker asks Operations for live; read from
         // the record here so a production page never depends on Operations being up.
@@ -135,19 +161,20 @@ function emojiIcon(glyph) {
  * ⭐ Hashed build assets are immutable; HTML is not. The slab keeps the cache header its uploader
  * wrote (`PUBLISH.md §6`: short on purpose, because 38 MB of it carries no version token).
  */
-function cacheFor(key, contentType, stored, slab) {
+function cacheFor(key, contentType, stored, slab, useStored) {
   if (slab) return stored || 'public, max-age=300, must-revalidate'
+  if (useStored && stored) return stored
   if (/\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.[a-z0-9]+$/i.test(key)) return 'public, max-age=31536000, immutable'
   if (contentType.startsWith('text/html')) return 'no-cache'
   return 'public, max-age=3600'
 }
 
-function serve(request, obj, { slab = false } = {}) {
+function serve(request, obj, { slab = false, stored = false } = {}) {
   const key = obj.key
   const contentType = obj.httpMetadata?.contentType || typeFor(key)
   const headers = new Headers({
     'content-type': contentType,
-    'cache-control': cacheFor(key, contentType, obj.httpMetadata?.cacheControl, slab),
+    'cache-control': cacheFor(key, contentType, obj.httpMetadata?.cacheControl, slab, stored),
     etag: obj.httpEtag,
     'accept-ranges': 'bytes',
   })

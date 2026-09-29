@@ -193,13 +193,22 @@ const STAGING_SITE_BASE = 'https://staging.theward.online/'
  * town's own domain which town it names and which pour it serves. Read off the SERVED page and
  * slab, never off what Promote believes it wrote.
  */
-async function proveProduction(domain, look, bakedAt) {
+async function proveProduction(domain, look, bakedAt, pinned = {}) {
   try {
     const page = await fetch(`https://${domain}/?cb=${Date.now()}`, { cache: 'no-store' })
     const html = await page.text()
     if (!page.ok) return { ok: false, why: `https://${domain}/ answered ${page.status}: ${html.slice(0, 160).trim()}` }
     const named = (html.match(/<meta name="ward-look" content="([^"]+)"/) || [])[1] || null
     if (named !== look) return { ok: false, why: `https://${domain}/ names town "${named}", not "${look}"` }
+    // ⭐ A Ward town must serve the Ward build it was pinned to, told where ITS kit bundle is.
+    if (pinned.player === 'ward') {
+      const build = (html.match(/<meta name="ward-build" content="([0-9a-f]+)"/) || [])[1] || null
+      if (build !== pinned.ward) return { ok: false, why: `https://${domain}/ serves Ward build ${build}, not ${pinned.ward}` }
+      const kitBase = (html.match(/<meta name="ward-kit-base" content="([^"]+)"/) || [])[1] || null
+      if (kitBase !== `https://${domain}/kit/${pinned.kit}/`) return { ok: false, why: `https://${domain}/ names kit base ${kitBase}, not its pinned kit ${pinned.kit}` }
+      const kit = await fetch(`${kitBase}manifest.json?cb=${Date.now()}`, { cache: 'no-store' })
+      if (!kit.ok) return { ok: false, why: `its kit bundle answered ${kit.status}` }
+    }
     const scene = await fetch(`https://${domain}/baked/${look}/scene.json?cb=${Date.now()}`, { cache: 'no-store' })
     if (!scene.ok) return { ok: false, why: `its slab answered ${scene.status}` }
     const served = (await scene.json()).bakedAt ?? null
@@ -3185,13 +3194,24 @@ createServer(async (req, res) => {
       // the one staging now serves? Read off both stamps in the bucket. ⛔ No git here: production
       // no longer ships through a branch, so a commit count cannot answer for it.
       const sites = await siteUrlsForLook(id)
+      // ⭐ Which player is the town's staging record's; a Ward town is current when its host record
+      // pins the Ward build staging serves now.
       let prodPlayer = { current: false, why: 'no production player pinned for this town yet' }
       if (sites.mapId) {
         try {
-          const [p, st] = await Promise.all([`player/${sites.mapId}/build.json`, 'staging/player/build.json']
-            .map(k => fetch(`${ASSET_BASE_URL}${k}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null)))
-          if (p) prodPlayer = { current: !!st && p.builtAt === st.builtAt, builtAt: p.builtAt,
-            why: st && p.builtAt === st.builtAt ? null : 'production carries an older player than staging' }
+          const get = (k) => fetch(`${ASSET_BASE_URL}${k}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null)
+          const rec = await get(`staging/sites/${sites.mapId}/player.json`)
+          if (!rec) prodPlayer = { current: false, why: 'this town names no player on staging — set it before promoting' }
+          else if (rec.player === 'ward') {
+            const [host, cur] = await Promise.all([sites.prod?.domain ? get(`hosts/${sites.prod.domain}.json`) : null, get('staging/ward/current.json')])
+            const current = !!host && !!cur && host.app === 'ward' && host.ward === cur.sha && host.kit === cur.kit
+            prodPlayer = { current, app: 'ward', ward: host?.ward ?? null,
+              why: current ? null : 'production does not yet carry the Ward build staging serves' }
+          } else {
+            const [p, st] = await Promise.all([`player/${sites.mapId}/build.json`, 'staging/player/build.json'].map(get))
+            if (p) prodPlayer = { current: !!st && p.builtAt === st.builtAt, app: 'legacy', builtAt: p.builtAt,
+              why: st && p.builtAt === st.builtAt ? null : 'production carries an older player than staging' }
+          }
         } catch { /* unreachable ⇒ not known to be current */ }
       }
 
@@ -3379,7 +3399,10 @@ createServer(async (req, res) => {
   // THE ORDER IS THE SAFETY — nothing a visitor can reach changes until step 5:
   //   1. WHERE: the town's domain, asked of Operations (owned, zone active LIVE) — or a refusal.
   //   2. THE SLAB → the prod keys (`baked/<look>/`). ⛔ SLAB BEFORE CODE (`plans/r2-asset-offload.md §5`).
-  //   3. THE PLAYER → `player/<map>/`, the exact build that was checked on staging, byte-verified.
+  //   3. THE PLAYER the town's STAGING RECORD names (`staging/sites/<map>/player.json`) — the exact
+  //      build that was checked there, byte-verified: `legacy` → `player/<map>/`; `ward` → the Ward
+  //      build + its kit bundle, write-once at `ward/<sha>/` + `kit/<sha>/`. ⛔ No record refuses,
+  //      and is asked BEFORE step 2, so a refused promote ships nothing.
   //   4. THE ADDRESS → `<domain>` and `www.<domain>` bound to the production Worker
   //      (`scripts/bind-production-domain.mjs`): the first promote of a town binds them, every later
   //      one finds them bound. Until step 5 the domain answers "no town promoted", never another town.
@@ -3396,6 +3419,10 @@ createServer(async (req, res) => {
       if (!site.prod.url) throw new Error(`no production address: ${site.prod.why}`)
       const { domain } = site.prod, map = site.mapId
 
+      // Which player, and can it be pinned — asked before anything ships.
+      const plan = await runCapture(`node scripts/promote-player-to-prod.mjs --map=${map} --look=${id} --dry-run`, { cwd: REPO_ROOT, timeout: 600000 })
+      if (plan.code !== 0) throw new Error(`nothing was shipped: ${(plan.stderr || plan.stdout).trim().split('\n').pop()}`)
+
       const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=prod --look=${id}`, { cwd: REPO_ROOT, timeout: 900000 })
       if (up.code !== 0) throw new Error(`the slab did not reach production — nothing was switched: ${up.stderr || up.stdout || `exit ${up.code}`}`)
       const r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
@@ -3409,7 +3436,10 @@ createServer(async (req, res) => {
 
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
-      const record = { map, look: id, domain, player: pinned.builtAt, bakedAt, promotedAt: new Date().toISOString() }
+      // ⭐ v2: the record names the player (`workers/production-sites/src/route.js#appOf`).
+      const record = pinned.player === 'ward'
+        ? { v: 2, app: 'ward', map, look: id, domain, ward: pinned.ward, kit: pinned.kit, builtAt: pinned.builtAt, bakedAt, promotedAt: new Date().toISOString() }
+        : { v: 2, app: 'legacy', map, look: id, domain, player: pinned.builtAt, bakedAt, promotedAt: new Date().toISOString() }
       const recPath = join(REPO_ROOT, '.promote-host.json')
       writeFileSync(recPath, JSON.stringify(record, null, 2))
       const sw = await runCapture(`npx wrangler r2 object put theward-assets/hosts/${domain}.json --file ${recPath} --remote `
@@ -3417,8 +3447,8 @@ createServer(async (req, res) => {
       rmSync(recPath, { force: true })
       if (sw.code !== 0) throw new Error(`the slab and player are in production but ${domain} was NOT switched to them: ${sw.stderr || sw.stdout}`)
 
-      const proof = await proveProduction(domain, id, bakedAt)
-      const body = { ok: proof.ok, shipped: true, r2, player: pinned.builtAt, copied: pinned.copied, bakedAt,
+      const proof = await proveProduction(domain, id, bakedAt, pinned)
+      const body = { ok: proof.ok, shipped: true, r2, app: pinned.player, player: pinned.builtAt, ward: pinned.ward, kit: pinned.kit, copied: pinned.copied, bakedAt,
         prodUrl: site.prod.url, prod: site.prod, proof }
       if (!proof.ok) body.error = `shipped, but ${domain} is not serving it yet: ${proof.why}`
       say(proof.ok ? 200 : 502, body)

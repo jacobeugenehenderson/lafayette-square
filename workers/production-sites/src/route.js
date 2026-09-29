@@ -13,6 +13,11 @@
 
 export const MAP_ID = /^[a-z0-9][a-z0-9-]{0,63}$/
 export const PLAYER_SEGMENT = '_player'
+// The Ward's build (`ward/<sha>/`) and the renderer's own files (`kit/<sha>/`) — each keyed by a git
+// commit, immutable, copied from staging by Promote (`scripts/promote-player-to-prod.mjs`).
+export const WARD_SEGMENT = '_ward'
+export const KIT_SEGMENT = 'kit'
+const SHA = /^[0-9a-f]{40}$/
 export const looksLikeFile = (p) => /\.[a-z0-9]{2,5}$/i.test(p)
 
 /** `hosts/<host>.json` — written by Promote, the only writer. */
@@ -32,21 +37,62 @@ export function wwwRedirect(url) {
 }
 
 /**
+ * ⛔⛔ WHICH PLAYER — the host record says, and nothing else may (BRIEF-ls-onto-the-ward Phase 2).
+ * A `v: 2` record names `app: 'ward' | 'legacy'`; a Ward record also pins `ward` and `kit` shas.
+ * ⭐ A record with NO `v` is legacy ONLY IF ITS SHAPE PROVES IT (Boz, 2026-09-29): Promote before the
+ * field wrote `player` as the kit player's build TIMESTAMP, and could pin nothing else. ⛔ A v-less
+ * record without that timestamp is not "probably legacy" — it is a 500 that names the town;
+ * reading bare absence as legacy would be the default player the brief forbids, renamed.
+ * ⛔ A v2 record with any other app, or any other version, refuses.
+ * @returns {{app: 'ward'|'legacy'} | {refuse: string}}
+ */
+export function appOf(rec) {
+  if (rec?.v == null) {
+    const t = rec?.player
+    if (typeof t === 'string' && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(t) && !Number.isNaN(Date.parse(t))) return { app: 'legacy' }
+    return { refuse: `"${rec?.map}"'s host record names no player: no "v"/"app", and no pre-v2 player build timestamp. Promote it again.` }
+  }
+  if (rec.v !== 2) return { refuse: `this host's record is version ${JSON.stringify(rec.v)}; this Worker reads 2.` }
+  if (rec.app === 'legacy') return { app: 'legacy' }
+  if (rec.app === 'ward') {
+    if (!SHA.test(rec.ward || '') || !SHA.test(rec.kit || '')) {
+      return { refuse: `this host's record plays the Ward but does not pin a Ward commit ("ward") and a kit commit ("kit"): ${JSON.stringify(rec)}` }
+    }
+    return { app: 'ward' }
+  }
+  return { refuse: `this host's record names player ${JSON.stringify(rec.app)}; a town plays "ward" or "legacy". Promote it again.` }
+}
+
+/**
  * @param {string} pathname  the request path
- * @param {{map: string, look: string}} rec  the host's record
+ * @param {{map: string, look: string, v?: 2, app?: string, ward?: string, kit?: string}} rec  the host's record
  * @returns {{kind: 'player'|'slab'|'document'|'refuse', key?: string, status?: number, why?: string}}
  */
 export function route(pathname, rec) {
   if (!rec || !MAP_ID.test(rec.map || '') || !MAP_ID.test(rec.look || '')) {
     return { kind: 'refuse', status: 500, why: `this host's record is malformed: ${JSON.stringify(rec)}` }
   }
+  const which = appOf(rec)
+  if (which.refuse) return { kind: 'refuse', status: 500, why: which.refuse }
+  const ward = which.app === 'ward'
   const parts = pathname.replace(/^\/+/, '').split('/')
   const first = parts[0] || ''
+  if (parts.includes('..')) return { kind: 'refuse', status: 400, why: `not a path: "${pathname}"` }
 
   if (first === PLAYER_SEGMENT) {
+    if (ward) return { kind: 'refuse', status: 404, why: `"${rec.map}" plays the Ward; there is no ${PLAYER_SEGMENT} here.` }
     const rel = parts.slice(1).join('/') || 'index.html'
-    if (rel.split('/').includes('..')) return { kind: 'refuse', status: 400, why: `not a path: "${rel}"` }
     return { kind: 'player', key: playerPrefix(rec.map) + rel }
+  }
+  // ⛔ Only the ONE pinned commit of each: another sha is not this town's, whatever the bucket holds.
+  if (first === WARD_SEGMENT || first === KIT_SEGMENT) {
+    const pinned = first === WARD_SEGMENT ? rec.ward : rec.kit
+    const rel = parts.slice(2).join('/')
+    if (!ward) return { kind: 'refuse', status: 404, why: `"${rec.map}" plays the kit's player; there is no /${first}/ here.` }
+    if (parts[1] !== pinned || !rel) {
+      return { kind: 'refuse', status: 404, why: `"${rec.map}" pins ${first === WARD_SEGMENT ? 'Ward build' : 'kit'} ${pinned}; "${parts[1] || ''}" is not it.` }
+    }
+    return { kind: first === WARD_SEGMENT ? 'ward' : 'kit', key: `${first === WARD_SEGMENT ? 'ward' : 'kit'}/${pinned}/${rel}` }
   }
 
   const rest = parts.join('/')
@@ -62,5 +108,7 @@ export function route(pathname, rec) {
   }
 
   // Everything else is a route inside the SPA and gets this town's player.
-  return { kind: 'document', key: playerPrefix(rec.map) + 'index.html' }
+  return ward
+    ? { kind: 'document', app: 'ward', key: `ward/${rec.ward}/index.html` }
+    : { kind: 'document', app: 'legacy', key: playerPrefix(rec.map) + 'index.html' }
 }
