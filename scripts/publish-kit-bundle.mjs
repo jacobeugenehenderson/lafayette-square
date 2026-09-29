@@ -89,8 +89,32 @@ for (const [want, sites] of [...wants].sort()) console.log(`  ${want.padEnd(40)}
 for (const f of list) console.log(`    ${f.rel.padEnd(48)} ${(f.size / 1024).toFixed(0).padStart(7)} KB`)
 console.log(`base     ${PUBLIC_BASE}${PREFIX}   (the Worker stamps this as ward-kit-base)`)
 
+// ⭐ Ask the host for every byte back, by content: a GET and a sha256 against what this commit holds.
+// ⛔ Not a HEAD's Content-Length — the CDN compresses text for a client that accepts it and then
+// sends no length at all (measured 2026-09-29: every .svg/.json "missing" while all 25 were there).
+async function verifyOnHost() {
+  const want = { ...Object.fromEntries(list.map((f) => [f.rel, null])), 'manifest.json': null }
+  const problems = []
+  await Promise.all(Object.keys(want).map(async (rel) => {
+    try {
+      const r = await fetch(`${PUBLIC_BASE}${PREFIX}${rel}`, { cache: 'no-store' })
+      if (r.status !== 200) return problems.push(`${rel}: HTTP ${r.status}`)
+      const got = createHash('sha256').update(Buffer.from(await r.arrayBuffer())).digest('hex')
+      const f = files.get(rel)
+      const expect = f ? createHash('sha256').update(git(['cat-file', 'blob', f.blob])).digest('hex') : null
+      if (expect && got !== expect) problems.push(`${rel}: bytes differ from ${sha.slice(0, 12)}'s`)
+    } catch (e) { problems.push(`${rel}: ${e.message}`) }
+  }))
+  return problems
+}
+
 const published = await fetch(`${PUBLIC_BASE}${PREFIX}manifest.json`, { method: 'HEAD', cache: 'no-store' }).then((r) => r.status).catch((e) => `unreachable (${e.message})`)
-if (published === 200) { console.log(`✅ already published — ${PREFIX}manifest.json answers; a kit bundle is immutable, nothing to do`); process.exit(0) }
+if (published === 200) {
+  const problems = await verifyOnHost()
+  if (problems.length) fail(`${PREFIX} is published but does not match ${sha.slice(0, 12)} — a kit bundle is immutable, so this is a defect to look at, not to overwrite:\n  ${problems.join('\n  ')}`)
+  console.log(`✅ already published and verified byte for byte — ${list.length + 1} files at ${PUBLIC_BASE}${PREFIX}; nothing to do`)
+  process.exit(0)
+}
 if (published !== 404) fail(`could not tell whether ${PREFIX} is published: ${published}`)
 if (dryRun) { console.log('dry run: nothing uploaded'); process.exit(0) }
 
@@ -123,12 +147,7 @@ try {
   await put(`${PREFIX}manifest.json`, mAbs)
 } catch (e) { fail(e.message) } finally { rmSync(STAGE, { recursive: true, force: true }) }
 
-// ── 4. Ask the host: the manifest, and every file at its size.
-const problems = []
-await Promise.all(list.concat([{ rel: 'manifest.json' }]).map(async (f) => {
-  const r = await fetch(`${PUBLIC_BASE}${PREFIX}${f.rel}`, { method: 'HEAD', cache: 'no-store' }).catch((e) => ({ status: e.message }))
-  if (r.status !== 200) problems.push(`${f.rel}: ${r.status}`)
-  else if (f.size != null && Number(r.headers.get('content-length')) !== f.size) problems.push(`${f.rel}: ${r.headers.get('content-length')} bytes, want ${f.size}`)
-}))
+// ── 4. Ask the host for every byte back.
+const problems = await verifyOnHost()
 if (problems.length) fail(`uploaded, but the asset host doesn't confirm it:\n  ${problems.join('\n  ')}`)
 console.log(`✅ kit bundle ${sha.slice(0, 12)} published — ${PUBLIC_BASE}${PREFIX}`)
