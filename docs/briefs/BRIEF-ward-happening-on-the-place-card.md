@@ -32,7 +32,9 @@ Acupuncture at its open house. ⛔ Its code is illustration, not source, and eve
 2. **No separate Event card, no `/event` route, no new screen.** The address is the place's own, with the
    happening named: `/place/<id>/<name>?event=<source>:<id>`, where source is `menu:<menu>`, `post:<id>`
    or `town:<id>`. It can be linked and shared, and back returns where you came from.
-3. **Every happening has a place.** A town calendar event names its venue. A happening with no place is
+3. **Every happening has a place** — *"There is nothing without places"* (Jacob). A town calendar event joins
+   its venue's one ticker slot and competes by rank (announcement = calendar > serving > open, then the
+   earlier start); the loser is listed under "Also here". A town calendar event names its venue. A happening with no place is
    **refused loudly when it is posted**, never shown as a dead end.
 4. **No person is shown on a happening** ("Holiday open house at Sample Acupuncture"). The server records who
    posted it; the card never names them.
