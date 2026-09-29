@@ -189,7 +189,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 188. This is `npm test`.
+## safe — 189. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -258,6 +258,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-every-app-mounts-the-town.mjs` | "DOES EVERY APP THAT DRAWS A TOWN DRAW IT THROUGH THE ONE ASSEMBLY?" |
 | `checks/claims-every-baked-species-has-an-impostor.mjs` | every species in a baked census is in that slab’s atlas. |
 | `checks/claims-every-building-has-a-roof-to-seat-on.mjs` | "DOES EVERY BUILDING A VISITOR CAN TAP HAVE A ROOF TO SEAT ITS SELECTION ON?"  — a per-town census. |
+| `checks/claims-every-building-has-an-address.mjs` | "DOES EVERY BUILDING CARRY THE ADDRESS ITS TOWN'S INPUTS GIVE IT — AND IS A MISSING ONE SAID, NEVER GUESSED?" |
 | `checks/claims-every-category-has-a-full-treatment.mjs` | every category resolves to a COMPLETE class set. |
 | `checks/claims-every-ground-surface-takes-the-lamp.mjs` | lamp.mjs — DOES A LAMP LIGHT WHATEVER GROUND IT STANDS OVER? |
 | `checks/claims-every-lu-tag-has-a-home.mjs` | home.mjs — CAN A TOWN BRING A WORD WE DO NOT KNOW? |

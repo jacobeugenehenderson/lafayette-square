@@ -2837,7 +2837,8 @@ createServer(async (req, res) => {
         await runIfDirty('buildings',
           [MAP_JSON, DESIGN, SCENE_DESIGN, SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN,   // ⭐ the terrain: Huron's buildings at y=0
            join(SCENE_DIR, 'buildings.json'), bakePaths.boundary, join(SCENE_DIR, 'building-overrides.json'),
-           join(here, 'bake-buildings.js')],
+           join(bakePaths.raw, 'osm.json'),   // the addresses: OSM twins' addr:* and address points (building-address.mjs)
+           join(here, 'bake-buildings.js'), join(here, 'building-address.mjs')],
           [join(LOOK_DIR, 'buildings.json'), join(LOOK_DIR, 'buildings.bin')],
           `node bake-buildings.js --look=${id} ${sceneFlag}`,
           { cwd: here, timeout: 300000 })

@@ -283,6 +283,23 @@ export function frameBuildings(places, ids) {
 }
 
 /**
+ * A building's street address, as the town's slab carries it (SLAB-CONTRACT §6.3, cartograph/building-address.mjs):
+ *   null                                   the buildings have not loaded yet
+ *   { error }                              an id this town does not have, or a slab baked before addresses — say so
+ *   { address, source, candidates? }       address null = none known, or ambiguous (then `candidates` lists what the
+ *                                          town's inputs disagree on — the Ward shows them or none, never picks one)
+ * The words are the source's (whitespace collapsed); formatting for display is the app's.
+ */
+export function useBuildingAddress(id) {
+  const index = useSlabBuildingIndex((s) => s.index)
+  if (!index || id == null) return null
+  const e = index.byId.get(id)
+  if (!e) return { error: `this town has no building "${id}"` }
+  if (e.address === undefined) return { error: 'this town\'s slab was baked before addresses — re-bake its buildings' }
+  return { address: e.address, source: e.addressSource, ...(e.addressCandidates && { candidates: e.addressCandidates }) }
+}
+
+/**
  * Puts its children on the drawn ground at a place in the town: local metres `x z`, or `lat lon`
  * projected through the town's own place (lib/townPlace.js). `lift` raises them above the ground.
  * The ground's height follows the terrain exaggeration of the shot, every frame.

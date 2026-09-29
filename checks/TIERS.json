@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 342,
+  "total": 343,
   "counts": {
-    "safe": 188,
+    "safe": 189,
     "local-effect": 6,
     "live": 148
   },
@@ -846,6 +846,13 @@
     },
     {
       "file": "checks/claims-every-building-has-a-roof-to-seat-on.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-building-has-an-address.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

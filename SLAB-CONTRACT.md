@@ -371,7 +371,7 @@ The four per-vertex attributes are sliced by per-group byte offsets, then indice
 
 ### 6.3. Per-building render index (`buildings`)
 
-The render-scoped per-building index. One entry per *rendered* building (skips `<3`-point footprints), carrying only what the 3D render + neon + click-identity path needs — **not** the LS content record (name / address / architect / historic_status / sqft / style / lot_acres → those stay in the content layer; see the C2 boundary below). The numeric building id used by the consumer = the entry's position in this array (stamped per-vertex as `aBuildingId`).
+The render-scoped per-building index. One entry per *rendered* building (skips `<3`-point footprints), carrying what the 3D render + neon + click-identity path needs, plus its street address — **not** the rest of the content record (name / architect / historic_status / sqft / style / lot_acres → those stay in the content layer; see the C2 boundary below). The numeric building id used by the consumer = the entry's position in this array (stamped per-vertex as `aBuildingId`).
 
 ```jsonc
 {
@@ -383,6 +383,9 @@ The render-scoped per-building index. One entry per *rendered* building (skips `
   "wallMaterial": "brick_red",
   "roofMaterial": "flat",
   "zoning": "F",                             // drives neon's default category for non-listing buildings
+  "address": "1732 CHOUTEAU AV",               // the street address, the SOURCE's words (whitespace collapsed); null = none, or ambiguous
+  "addressSource": "authored",                // 'authored' | 'osm-building' | 'osm-poi-in-footprint' | null — cartograph/building-address.mjs
+  "addressCandidates": ["24 Pearl Street", "9A Conwell Street"],   // ONLY when ambiguous (address null): what the inputs disagree on
   "tint": { "palette": "brick_red" },         // v3: where the wall tint comes from — { fixed: '#hex' } (an override; never moves) or { palette: 'base' | <wallMaterial> }; the slot is hashStr(id) % length
   "ranges": {                                // GROUP-LOCAL [startVert, count] into the building's group
     "wall":       [v0, n],
@@ -396,7 +399,9 @@ The render-scoped per-building index. One entry per *rendered* building (skips `
 - **`footprint`** is the building outline (world XZ). **`roofOutline`** is the actual rooftop-edge ring of the baked roof — `= footprint` for flat roofs, the inset cap ring for mansard, and a **degenerate 1–2 point** ridge/apex for hip (a hip has no closed top ring). Consumers of `roofOutline` MUST handle `ptCount < 3`. `roofOutline` is additive within v2 — nothing in the slab consumer reads it yet; the neon-roof-depth brief is its consumer.
 - **`zoning`** is carried verbatim (including compound codes like `"BC"`, which fall to the residential default under the same `_NEON_ZONING_CATEGORY` lookup the runtime uses). Listing `hours`/`category` are NOT here — they live in the separate `useListings` content store.
 
-**C2 boundary (why the index is render-scoped, not a full per-building record):** `buildings.json` (source) does two jobs — a *geometry/render* record (footprint, materials, zoning, anchors), which belongs in the slab, and a *content* record (name, address, architect, historic_status…), which is LS app content. The slab doctrine ("production trusts the slab, never reaches into source") is about the **3D render** trusting baked geometry/optics; it never required dissolving the content DB into the bake. So the render path resolves `raycast → id` against the slab, and the content layer resolves `id → record` via `buildingMap` / `useListings`. Relocating the content DB off `src/data/buildings` is a *separate future brief*, not part of L1.3.
+- **`address`** (additive, 2026-09-29 — Jacob: *"I think we need addresses… that's barely private"*): carried by identity, never by nearest — `authored` (the town's buildings ledger) > `osm-building` (its own OSM `addr:*`, then its OSM twins') > `osm-poi-in-footprint` (an OSM address point inside the footprint or a twin ring). Several at one level → `address: null` + `addressCandidates`; none → null. The manifest's `addressCensus` counts what was carried. Consumers: the Ward's building card and "This is my house". ▶ `node checks/claims-every-building-has-an-address.mjs`
+
+**The index is render-scoped plus the address:** the slab carries what the 3D render, neon and click-identity need, and — since 2026-09-29 — the street address, because the town's own player reads it. The rest of a building's *content* record (name, architect, historic_status, sqft) stays with the content layer (`buildingMap` / `useListings`), not the slab.
 
 ---
 

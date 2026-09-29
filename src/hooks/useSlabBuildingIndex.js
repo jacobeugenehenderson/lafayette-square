@@ -8,6 +8,7 @@ import { create } from 'zustand'
  * here once; downstream consumers (SceneNeon, selection/place-state) read
  * `id → { footprint, roofOutline, centroidY, baseY, roofTopY, wallMaterial, roofMaterial, zoning }`
  * (`roofTopY`: the roof's highest point, local Y before the terrain lift `centroidY × exaggeration`; null = no roof)
+ * (`address` / `addressSource` / `addressCandidates`: the street address the slab carries — SLAB-CONTRACT §6.3)
  * instead of reaching into live `src/data/buildings`. The slab owns spatial
  * identity; the content layer (buildingMap / useListings) still owns what to
  * display. See SLAB-CONTRACT §6 + HANDOFF-buildings-bake.md (C2).

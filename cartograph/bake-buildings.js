@@ -29,6 +29,7 @@ import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { createMembershipFilter } from './membership.mjs'
+import { resolveAddress, addressCensus, addressOfTags, offeredBy } from './building-address.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
 // ⭐ THE TINT RULES ARE ONE MODULE, shared with the player (SlabBuildings' live palette): a drag equals a re-bake.
 // ▶ node checks/claims-live-palette-equals-the-bake.mjs
@@ -88,6 +89,9 @@ function adaptMapBuildings(mapBuildings) {
     const roofShape = mapOsmRoofShape(tags['roof:shape'])
     out.push({
       id, footprint: fp, size,
+      // What the address is resolved from (cartograph/building-address.mjs): this building's OWN OSM tags (an OSM-only
+      // building), its OSM twins' ids, and its footprint + twin rings (for an address point inside it).
+      addrIn: { ownTags: b.osmId != null ? tags : null, twinOsmIds: b.twinOsmIds || [], rings: [r, ...(b.joinRings || [])] },
       ...(stories !== undefined && { stories }),
       ...(wallMat && { wall_material: wallMat }),
       ...(roofShape && { roof_shape: roofShape }),
@@ -706,6 +710,41 @@ export async function bakeBuildings({ look, scene } = {}) {
   // Membership deliberately KEEPS a <3-vertex footprint (it is an intake defect,
   // not a membership answer — cartograph/membership.mjs); this is where it stops,
   // and it says so. ROADMAP A08.
+  // ── ADDRESSES (cartograph/building-address.mjs): authored > the building's OSM (own, then twins) > an OSM address
+  // point inside its footprint — by identity and containment, never by nearest. The town's raw OSM is read once.
+  const rawOsmP = join(ROOT, 'cartograph', 'data', scene, 'raw', 'osm.json')
+  const rawOsm = existsSync(rawOsmP) ? JSON.parse(readFileSync(rawOsmP, 'utf-8')) : null
+  const osmTagsById = new Map((rawOsm?.buildings || []).map((o) => [o.osmId, o.tags]))
+  const addrPois = (rawOsm?.pois || []).map((p) => ({ address: addressOfTags(p.tags), x: p.coords?.[0]?.x, z: p.coords?.[0]?.z }))
+    .filter((p) => p.address && Number.isFinite(p.x) && Number.isFinite(p.z))
+  const addressOf = (b) => resolveAddress({
+    authored: b.address ?? null,
+    ownTags: b.addrIn?.ownTags ?? null,
+    twinTags: (b.addrIn?.twinOsmIds || []).map((id) => osmTagsById.get(id)).filter(Boolean),
+    rings: b.addrIn?.rings ?? (b.footprint ? [b.footprint.map(([x, z]) => ({ x, z }))] : []),
+  }, addrPois)
+  // What the input OFFERS (addressed OSM buildings' centroids + address points), to count what the join LOSES.
+  const offerPoints = [
+    ...(rawOsm?.buildings || []).filter((o) => addressOfTags(o.tags) && o.coords?.length >= 3)
+      .map((o) => ({ x: o.coords.reduce((a, q) => a + q.x, 0) / o.coords.length, z: o.coords.reduce((a, q) => a + q.z, 0) / o.coords.length })),
+    ...addrPois,
+  ]
+  const isOffered = offeredBy(offerPoints)
+  // ⛔ A POUR THAT PREDATES THE OSM TWIN JOIN (building-union.mjs, 2026-09-25) carries no twins, so the addresses it has
+  // cannot travel. Not repaired here (one producer for the twin join): said, with the fix.
+  const fromMap = buildings.some((b) => b.addrIn)
+  const hasTwins = buildings.some((b) => b.addrIn && (b.addrIn.twinOsmIds.length || b.addrIn.rings.length > 1))
+  const addressIncomplete = fromMap && !hasTwins && offerPoints.length
+    ? `${scene}'s clean/map.json predates the OSM twin join — re-pour ${scene} to carry the addresses its OSM has`
+    : null
+  if (addressIncomplete) console.error(`[bake-buildings] ⛔ addresses: ${addressIncomplete}`)
+  const resolvedAddresses = []
+  const addressFields = (b) => {
+    const r = addressOf(b)
+    resolvedAddresses.push({ ...r, id: b.id, offered: isOffered(b.addrIn?.rings ?? (b.footprint ? [b.footprint.map(([x, z]) => ({ x, z }))] : [])) })
+    return { address: r.address, addressSource: r.addressSource, ...(r.addressCandidates && { addressCandidates: r.addressCandidates }) }
+  }
+
   const unextrudable = []
   for (const b of buildings) {
     const fp = b.footprint
@@ -839,6 +878,9 @@ export async function bakeBuildings({ look, scene } = {}) {
       // renders "—" rather than asserting a one-storey building.
       stories: b.stories ?? null,
       zoning: b.zoning ?? null,
+      // The street address, the source's words (cartograph/building-address.mjs). null = none, or ambiguous (then
+      // addressCandidates lists what the inputs disagree on — never one picked).
+      ...addressFields(b),
       ranges,
     })
   }
@@ -1051,6 +1093,8 @@ export async function bakeBuildings({ look, scene } = {}) {
     roofOutlinePointCount: roofOutlineData.length / 2,
     buildingCount: buildings.length,
     renderedBuildingCount: buildingIndex.length,
+    // What was carried: counts by source, and what has none or is ambiguous (checks/claims-every-building-has-an-address).
+    addressCensus: addressCensus(resolvedAddresses, addressIncomplete),
     buildings: buildingIndex,
     groups,
   }
@@ -1062,6 +1106,9 @@ export async function bakeBuildings({ look, scene } = {}) {
   const totalTris = groups.reduce((s, g) => s + g.indexCount / 3, 0)
   const totalVerts = groups.reduce((s, g) => s + g.vertexCount, 0)
   const skipped = buildings.length - buildingIndex.length
+  const ac = manifest.addressCensus
+  console.log(`[bake-buildings] addresses: ${ac.withAddress}/${ac.buildings} (${Object.entries(ac.bySource).map(([k, n]) => `${k} ${n}`).join(' · ') || 'none'})`
+    + `${ac.ambiguous ? ` · ⚠️ ${ac.ambiguous} ambiguous` : ''}${ac.none ? ` · ⛔ ${ac.none} with none` : ''}${ac.lost ? ` · ⛔ ${ac.lost} LOST (the input offers one)` : ''}${ac.disagreements ? ` · ${ac.disagreements} lower-source disagreements (not applied)` : ''}`)
   console.log(`[bake-buildings] look=${look}: ${buildings.length} buildings (${buildingIndex.length} rendered${skipped ? `, ${skipped} skipped <3pt footprints` : ''}), ${groups.length} groups, ${totalVerts} verts, ${totalTris} tris, ${footprintData.length / 2} footprint pts, ${roofOutlineData.length / 2} roofOutline pts, ${sizeKb} KB`)
   return manifest
 }

@@ -282,6 +282,8 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       return {
         id: b.id, footprint, roofOutline, centroidY: b.centroidY, baseY: b.baseY, roofTopY: tops[bi],
         wallMaterial: b.wallMaterial, roofMaterial: b.roofMaterial, zoning: b.zoning,
+        // The street address as the slab carries it (cartograph/building-address.mjs); undefined on a slab baked before it.
+        address: b.address, addressSource: b.addressSource, addressCandidates: b.addressCandidates,
         ranges: b.ranges,
       }
     })

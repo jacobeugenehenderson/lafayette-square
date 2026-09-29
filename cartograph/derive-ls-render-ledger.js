@@ -18,7 +18,9 @@
  *
  * RENDER_FIELDS = exactly what bake-buildings.js reads off a building object
  * (audited 2026-07-04): footprint · size · stories · wall_material ·
- * roof_material · color · id (override/palette key) · zoning · year_built.
+ * roof_material · color · id (override/palette key) · zoning · year_built · address.
+ * `address` (2026-09-29, Jacob): LS's AUTHORED street address, carried into the slab as `addressSource: 'authored'`
+ * (cartograph/building-address.mjs) — so the Ward reads it from the slab and nothing reads src/data for it.
  * `zoning`/`year_built` read content-ish but the bake bakes them, so they are
  * render inputs by the byte-identity gate.
  */
@@ -38,7 +40,7 @@ const OUT = join(ROOT, 'cartograph', 'data', 'lafayette-square', 'buildings.json
 
 const RENDER_FIELDS = [
   'id', 'footprint', 'size', 'color', 'stories',
-  'wall_material', 'roof_material', 'zoning', 'year_built',
+  'wall_material', 'roof_material', 'zoning', 'year_built', 'address',
 ]
 
 const raw = JSON.parse(readFileSync(SRC, 'utf-8'))
