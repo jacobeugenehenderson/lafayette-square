@@ -58,8 +58,11 @@ pinned to the screen, **dot-coordinated with its building**), and compact Societ
   'accent', 'ratingMark', 'litTint']`, with `ratingMark` defaulting to ⭐; the Ward's
   `src/content/ratingMark.js:62` reads `look.ratingMark`, `src/you/townMark.js` reads `look.mark`.
   ⇒ **Ward half (yours):** ratings draw `look.mark`; an unauthored mark is reported, as `townMark.js` does
-  now, ⛔ never a silent ⭐. **Kit half (Lintel's):** retire the `ratingMark` channel from `townIdentity`,
-  the Identity panel and `bake-manifest` — the old channel goes in the same change.
+  now, ⛔ never a silent ⭐. **Kit half (Lintel's):** the operator already picks the emoji in the cartograph —
+  **Stage toolbar → Identity** (`src/cartograph/IdentityPanel.jsx`, `ROWS` `:29–31`), which today has
+  **two** emoji rows, *Mark* and *Rating mark*. Retire the *Rating mark* row and the `ratingMark` channel
+  (`townIdentity`, `bake-manifest`) in the same change, and let *Mark*'s hint say it is also what places
+  are rated in. ⛔ Nothing is hard-wired per town, and nothing may become so.
 - ⚠️ **Why Provincetown shows no 🦞 today (measured):** its staged manifest was written
   **2026-09-28 06:20** and has **no `look` block at all** (`identity.branding.mark` = ⚓); the 🦞 was
   authored in `public/looks/provincetown/design.json` (`1dc1e553`) after it. Huron's, re-baked today,
