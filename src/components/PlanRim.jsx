@@ -5,7 +5,8 @@
  * Owns two flat shapes, both sized from the scene's disc (sceneStencilState — `ground.json#stencil`, the one radius
  * and its fade band) and nothing else:
  *   · the BASE: a lit disc under the town, to the rim, so where the ground's data stops short of the rim (Huron's frame
- *     is its bounding box) the gap reads as plain land, not a ragged black band;
+ *     is its bounding box) the gap reads as plain land, not a ragged black band; at night it keeps the chrome's surface
+ *     tone, a shade above the page's ink, so the circle still reads;
  *   · the SURROUND: from the rim outward, in the page's ink (the player chrome's GROUNDS.ink, the Ward's --ground),
  *     unlit, fading in across the SAME band the ground fades out on (fade.inner → fade.outer) and opaque beyond, drawn
  *     over everything — so past the rim there is only the page, never the sky's underside.
@@ -60,7 +61,9 @@ export default function PlanRim() {
     <group position={[cx, 0, cz]} rotation={[-Math.PI / 2, 0, 0]}>
       {/* Under the ground, so wherever the ground is drawn it covers this. */}
       <mesh geometry={shapes.base} position={[0, 0, -30]} renderOrder={-1}>
-        <meshLambertMaterial color="#38393b" />
+        {/* Lit like land by day; at night never darker than the chrome's surface (GROUNDS.surface), so the disc still
+            stands a shade above the page's ink and the circle reads. */}
+        <meshLambertMaterial color="#38393b" emissive={GROUNDS.surface} />
       </mesh>
       <mesh geometry={shapes.surround} material={shapes.material} renderOrder={1000} />
     </group>
