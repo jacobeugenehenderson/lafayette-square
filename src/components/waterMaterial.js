@@ -925,7 +925,9 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // own RMS slope so "steep" means the same thing in a calm and a gale.
          float wFleck = smoothstep(FLECK_SIGMA_LO, FLECK_SIGMA_HI,
                                    length(wSlope * uGlint) / max(uSlopeRms, 1e-4));
-         totalEmissiveRadiance += pow(wSkyF, vec3(2.2)) * wF * wGl * wFleck * SKY_FLECK_GAIN;
+         // In the overhead plan the flecks and glints go: at map scale they are speckle, not sparkle (Jacob's "the lake's
+         // speckle"). The plan's water is the calm wash above (WATER_PLAN).
+         totalEmissiveRadiance += pow(wSkyF, vec3(2.2)) * wF * wGl * wFleck * SKY_FLECK_GAIN * (1.0 - uWaterPlan);
 
          // ── LAYER 3: THE BODY. "Those much more pronounced 'radioactive but
          // romantically so' ripples can follow the light sources." (Jacob.)
@@ -950,7 +952,7 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // ⛔ The key's LUMINANCE is kept, so the moon still glints far dimmer
          // than the sun. It is the hue that is dropped, not the brightness.
          float wKeyLum = dot(uKeyColor, vec3(0.2126, 0.7152, 0.0722));
-         totalEmissiveRadiance += vec3(wKeyLum) * (wSparkle * GLINT_GAIN * uKeyUp * wF * wGl);
+         totalEmissiveRadiance += vec3(wKeyLum) * (wSparkle * GLINT_GAIN * uKeyUp * wF * wGl) * (1.0 - uWaterPlan);
        }`
     )
 
