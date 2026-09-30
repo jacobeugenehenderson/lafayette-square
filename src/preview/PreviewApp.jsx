@@ -604,6 +604,9 @@ function PublishPanel({ lookId }) {
   const [msg, setMsg] = useState(null)          // { kind:'ok'|'err', text }
   const [deploys, setDeploys] = useState({ staging: null, prod: null }) // {status:'building'|'ready', bakedAt, url}
   const [capturing, setCapturing] = useState(false)
+  // A bake that would RE-POUR the town (the server's 428: the pour's code changed) is a question, never "bake failed"
+  // (Jacob, 2026-09-29: Provincetown's Publish printed the raw JSON). { files } while the operator decides.
+  const [repour, setRepour] = useState(null)
   // ⭐ THE DEV DRAWER, AND IT IS FOR THE DEVELOPER — NOT THE OPERATOR (Jacob, 2026-09-04:
   // "a collapsible git area for you, basically, to get through developing").
   // ⛔ This does NOT reverse "no git in this panel" (2026-08-29). That rule is about the
@@ -673,10 +676,17 @@ function PublishPanel({ lookId }) {
     return () => { cancelled = true; clearInterval(iv) }
   }, [deploys, API])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function publishStaging() {
-    setBusy('staging'); setMsg(null)
+  async function publishStaging(confirmRepour = false) {
+    setBusy('staging'); setMsg(null); setRepour(null)
     try {
-      const bake = await fetch(`${API}/bake`, { method: 'POST' })
+      const bake = await fetch(`${API}/bake${confirmRepour ? '?repour=1' : ''}`, { method: 'POST' })
+      // 428 = this bake would re-pour the town because the pour's code changed; nothing ran. Ask, as BakeModal does.
+      if (bake.status === 428) {
+        const body = await bake.json().catch(() => ({}))
+        setRepour({ files: body.repour?.files || [] })
+        setBusy(null)
+        return
+      }
       if (!bake.ok) throw new Error(`bake failed: ${(await bake.text()).slice(0, 160)}`)
       const pub = await fetch(`${API}/publish`, { method: 'POST' })
       const data = await pub.json()
@@ -830,7 +840,7 @@ function PublishPanel({ lookId }) {
         title="Snapshot the current slab view (center-square, no UI) as the SMS/link-preview image. It is committed with the next Publish.">
         {capturing ? 'Capturing…' : '📷 Capture SMS Hero'}
       </button>
-      {targetRow('staging', <button disabled={!!busy || stagingDone} onClick={publishStaging}
+      {targetRow('staging', <button disabled={!!busy || stagingDone || !!repour} onClick={() => publishStaging()}
         style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>
         {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : 'Publish to Staging'}
       </button>)}
@@ -845,6 +855,15 @@ function PublishPanel({ lookId }) {
           panel's no-git rule forbids in as many words. A thing that
           worked needs no receipt; a thing that failed does. */}
       {msg && msg.kind === 'err' && <div style={{ marginTop: 8, color: '#f87171', wordBreak: 'break-word' }}>{msg.text}</div>}
+      {repour && (
+        <div style={{ marginTop: 8, color: '#fde68a', wordBreak: 'break-word' }}>
+          This re-pours {lookId} because the pour's code changed{repour.files.length ? `: ${repour.files.join(', ')}` : ''}.
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <button onClick={() => publishStaging(true)} style={btn({ background: 'rgba(250,204,21,0.18)', color: '#fde68a' })}>Re-pour and publish</button>
+            <button onClick={() => setRepour(null)} style={btn({ background: 'rgba(255,255,255,0.06)', color: '#e5e7eb' })}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
     {/* ⛔⛔ THE DEV DRAWER — TWO SHIPMENTS PER TARGET, NEVER ONE.
         Code ships in a commit; the SLAB ships to R2 and is in no commit at all. Reading
