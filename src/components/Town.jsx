@@ -134,6 +134,7 @@ import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import SetPiece from './SetPiece.jsx'
 import HorizonDisc from './HorizonDisc.jsx'
+import PlanRim from './PlanRim.jsx'
 import MountainBackdrop from './MountainBackdrop'
 
 // The props contract comes through the one entry: an app asks this for its quality profile.
@@ -524,6 +525,8 @@ export default function Town({
         {/* The ground past the rim, out to the horizon — the movie and the street only. In PLAN the town is one closed
             circle ending at its soft rim (Jacob, 2026-09-28; ▶ claims-the-plan-shot-ends-at-the-rim). */}
         {heavy && shot !== 'plan' && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
+        {/* …and the plan's clean circle at that same one radius: land to the rim, the page's ink past it (PlanRim). */}
+        {shot === 'plan' && <R3FErrorBoundary name="PlanRim"><PlanRim /></R3FErrorBoundary>}
         {/* A mesh behind everything, at its true geo spot; nothing unless the Look ships a landscape. */}
         <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop lookId={lookId} bakeLastMs={bake} landscapeOverride={o.landscape} /></R3FErrorBoundary>
       </Suspense>
