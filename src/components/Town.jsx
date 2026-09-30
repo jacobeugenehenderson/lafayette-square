@@ -465,7 +465,10 @@ export default function Town({
       <ShaderLinkGuard />
       {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><Cascades /></R3FErrorBoundary>}
       {on('shadows') && quality.shadows && <StageShadows lookId={lookId} bakeLastMs={bake} shadowOverride={o.shadow} />}
-      <StageFog lookId={lookId} bakeLastMs={bake} mistOverride={o.mist} enabled={on('fog')} />
+      {/* No fog in the overhead plan, ever (Jacob, 2026-09-29): from the plan camera's height the town's mist veils the
+          whole map. The movie and the street keep it. The post chain's haze and grain are zeroed there too
+          (usePostFxDriver). */}
+      <StageFog lookId={lookId} bakeLastMs={bake} mistOverride={o.mist} enabled={on('fog') && shot !== 'plan'} />
       <LampGlowDriver lookId={lookId} bakeLastMs={bake} lampGlowOverride={o.lampGlow} />
       <NeonDriver lookId={lookId} bakeLastMs={bake} neonOverride={o.neon} />
       <WeatherPoller mode={weatherMode} />

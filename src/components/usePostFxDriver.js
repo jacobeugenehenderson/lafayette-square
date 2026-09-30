@@ -106,6 +106,11 @@ export function usePostFxDriver({
     // axis). Fill remains canonical.
     const grain = resolveGroupAtMinute(grainChannel, minute, slotMins, ['scale'], GRAIN_FLAT_DEFAULTS)
     _grainScaleRef.current = grain.scale
+    // ⛔ THE OVERHEAD PLAN ('browse') IS A MAP, NOT WEATHER (Jacob, 2026-09-29: the mist and fog "must not show in
+    // browse"): no aerial haze and no film grain there, whatever the Look authors. Zeroed here, per frame, rather than
+    // unmounting the passes — that would remount the composer on every shot change. The movie and street keep theirs;
+    // Stage (viewMode undefined) shows the authored values. The fog itself is Town.jsx's (StageFog, off in plan).
+    if (viewMode === 'browse') { _haloStrengthRef.current = 0; _grainScaleRef.current = 0 }
 
     // gl.toneMappingExposure tracks the authored exposure. EffectComposer
     // overrides this in the FilmGrade pass; we still mirror it so any
