@@ -199,7 +199,7 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 ## ⏸ LATER / PARKED
 - **From the Ward pass, 2026-09-29** (details: `cartograph/_archive/BRIEF-ward-happening-on-the-place-card-DELIVERED-2026-09-29.md`, bottom sections):
   - **Distributed events** (Jacob: *"sponsors … Carnival in Provincetown or the Jinglebell Crawl"*): an event's own card that buildings opt in to, its lit roofs, and its sponsor. Design first (Nocturne); the ticker's tap target is already generic.
-  - **A home as a place** (listing a home, posting at one) waits on **SECURITY F-23**. Jacob's stance: no ID checks for ordinary people.
+  - **A home as a place** (listing a home, posting at one) waits on the **resident-verification flows** (NEXT UP; `verify-resident` itself is closed, F-23, Apps Script @69). Jacob's stance: no ID checks for ordinary people.
   - **The monument has no roof seat** for the selection dot: `claims-every-building-has-a-roof-to-seat-on` is red on provincetown `osm-164024699` (a set piece). Seat it on the set piece's own top.
   - **Addresses: HPDM + altadena need a re-pour** (poured before the OSM twin join); the bake says so by name. ▶ `node checks/claims-every-building-has-an-address.mjs`.
   - **`claims-a-bake-step-declares-what-it-reads`**: the buildings step reaches `intake-rows.mjs` + 19 data names undeclared (Lintel, 2026-09-29).

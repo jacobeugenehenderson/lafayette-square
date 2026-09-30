@@ -81,9 +81,9 @@ production.
   Phase 3 does. If Jacob wants LS's address to go before HPDM's rename, that is a new ruling. Ask him; ⛔
   don't infer it.
 - **Gates that production has and staging doesn't:**
-  - **Resident verification** (SECURITY F-23; the options sheet is Warden's artifact). ⛔ **No building
+  - **Resident verification**: `verify-resident` is closed (F-23, @69); the neighbour and building-card flows are **NEXT UP** (Jacob, 2026-09-29; Warden's options sheet; no ID checks for ordinary people). ⛔ **No building
     card prints before it is ruled.**
-  - The **Apps Script batch** (F-21 · F-22 · the timezone fix) needs Jacob's go.
+  - ✅ The **Apps Script batch** (F-21 · F-22 · F-23 closed · each town's day in its own zone) is **live at @69** (2026-09-29, `8d6e401a`).
   - **Legal:** Missouri's terms are shared by LS and HPDM by declaration.
 
 ## Phase 4 — the old player is deleted · **after the LAST town, not after LS**
