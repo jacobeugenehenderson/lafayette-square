@@ -16,6 +16,11 @@ is small and mechanical. The **rename** is a naming decision with a 2,018-refere
 unresolved collision. Do not let the second ride along on the first because they were asked in one
 sentence.
 
+> ⭐ **Naming statement from Jacob, 2026-09-30:** *"The kit is no longer called LS: it's called the Ward."* This feeds §4's
+> ruling; it doesn't settle it. Still open: the identifiers (the folder `lafayette-square.nosync`, the GitHub repo
+> `jacobeugenehenderson/lafayette-square`, which is **PUBLIC**) and the collision with the consumer app's own repo,
+> `~/Desktop/dev.nosync/theward`.
+
 ---
 
 ## 1. The move — small, and one thing breaks silently
