@@ -134,6 +134,7 @@ import BakedLamps from './BakedLamps'
 import GatewayArch from './GatewayArch'
 import SetPiece from './SetPiece.jsx'
 import HorizonDisc from './HorizonDisc.jsx'
+import { WATER_PLAN } from './waterMaterial.js'
 import PlanRim from './PlanRim.jsx'
 import MountainBackdrop from './MountainBackdrop'
 
@@ -402,6 +403,8 @@ export default function Town({
   for (const k of Object.keys(layers || {})) if (!LAYERS.includes(k)) throw new Error(`[Town] ⛔ unknown layer "${k}" (have: ${LAYERS.join(' ')})`)
   for (const k of Object.keys(overrides)) if (!OVERRIDE_KEYS.includes(k)) throw new Error(`[Town] ⛔ unknown override "${k}"`)
   const on = (k) => layers?.[k] !== false
+  // The overhead plan's water reflects the sky as seen across it, not the zenith (waterMaterial WATER_PLAN).
+  useEffect(() => { WATER_PLAN.value = shot === 'plan' ? 1 : 0 }, [shot])
   const o = overrides
 
   const scene = useSceneJson(lookId)

@@ -291,6 +291,16 @@ export function waveKForExtent(extentDiag) {
 /** Mist › Over water — the share of the town's fog the water takes. One uniform, written by StageFog each frame. */
 export const WATER_MIST = { value: 0.3 }
 /**
+ * The overhead plan's water (Jacob, 2026-09-29: "I set the time to noon and the water is very dark"). Seen straight
+ * down, water mirrors the zenith at Schlick's ~2%, so what shows is the body colour — a turbid lake's is near black —
+ * and in plan nothing (no fog, no haze, since 2662a6d6) lifts it. 1 = the plan shot (Town.jsx writes it): the wash
+ * reflects the sky 35° above the horizon with a Fresnel floor, as a lake reads to a person looking across it, so the
+ * map's water is the colour of the town's sky. 0 everywhere else — the movie and street are untouched.
+ */
+export const WATER_PLAN = { value: 0 }
+const PLAN_SKY_DIR = [0.819, 0.574, 0.0]  // 35° above the horizon
+const PLAN_FRESNEL_FLOOR = 0.35
+/**
  * Surfaces › Water — the town's authored look of its water (design.json#surfaces.params.water; Jacob, 2026-09-28).
  * ⭐ NEUTRAL kit defaults: `clarity` 1 = the town's own measured visibility depth (bake-terrain `bed.visibleToM`, from
  * its Secchi); lower shows the bottom less far. ⛔ Never above 1: the bed is baked down to that depth, and seeing past
@@ -405,6 +415,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     if (shader.fragmentShader.includes('wGlitterSlope')) return
     Object.assign(shader.uniforms, uniforms)
     shader.uniforms.uWaterMist = WATER_MIST
+    shader.uniforms.uWaterPlan = WATER_PLAN
     if (terrain) terrain.assign(shader)
     // The town's Mist lies on the water only by Mist › Over water (0 clear … 1 as on land). Fully fogged, the far sea
     // became a flat, electric slab (Jacob, 2026-09-27: "the town to get misty without the electric mist over the
@@ -447,6 +458,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform float uSunAltitude;
        uniform float uWaveK;
        uniform float uGlint;
+       uniform float uWaterPlan;
        uniform vec3  uBodyDeep;
        uniform vec3  uBodyMid;
        uniform vec3  uBodyShallow;
@@ -869,6 +881,14 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // three's own specular already evaluates from it. One flat evaluation,
          // no fifth power of noise.
          float wF = waterFresnel(wFlatN, wV);
+         // The overhead plan (WATER_PLAN): the sky as seen across the water, not the zenith straight down.
+         if (uWaterPlan > 0.5) {
+           vec3 wRp = normalize(vec3(${PLAN_SKY_DIR.join(', ')}));
+           wSky = skyDomeColor(wRp, uBandHorizon, uBandLow, uBandMid, uBandHigh,
+                               uTurbidity, uSunDir, uSunAltitude, uSkyGlow)
+                + milkyWayColor(wRp, uGalPole, uGalCtr, uMwGate);
+           wF = max(wF, ${PLAN_FRESNEL_FLOOR.toFixed(2)});
+         }
          float wGl = min(uGlint, 1.0);
 
          // ── LAYER 1: the broad wash. The mean surface reflecting the mean sky.
