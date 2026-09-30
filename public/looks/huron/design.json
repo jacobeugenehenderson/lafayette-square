@@ -133,15 +133,27 @@
     "#efe3c6",
     "#d9d4c6"
   ],
-  "smaa": {
-    "values": {
-      "value": 1
-    }
+  "surfaces": null,
+  "wallMix": {
+    "wood_siding": 0.75,
+    "brick_red": 0.25
   },
+  "wallPalettes": {
+    "brick_red": [
+      "#8a4636",
+      "#7c3b2d",
+      "#9a5442",
+      "#b99b72",
+      "#a8875f"
+    ]
+  },
+  "lamps": null,
+  "terrainExag": null,
   "sky": {
     "overrides": []
   },
   "heroSubject": null,
+  "dofFocus": null,
   "heroKeyframes": [
     {
       "position": [
@@ -229,6 +241,7 @@
       "overrides": null
     }
   },
+  "shotLooks": {},
   "openSections": {
     "Streets": false,
     "Blocks": false,
@@ -270,19 +283,6 @@
       "variantId": 1
     }
   ],
-  "wallMix": {
-    "wood_siding": 0.75,
-    "brick_red": 0.25
-  },
-  "wallPalettes": {
-    "brick_red": [
-      "#8a4636",
-      "#7c3b2d",
-      "#9a5442",
-      "#b99b72",
-      "#a8875f"
-    ]
-  },
   "water": {
     "lakeLevel": "mean",
     "lakeLevelSource": "Jacob, 2026-09-27: the lake mean — NOAA CO-OPS 9063079 Marblehead, mean of 240 monthly means 2006–2025 = 174.354 m IGLD85 (raw/water-datums.json, fetch-water-datums.mjs)"
