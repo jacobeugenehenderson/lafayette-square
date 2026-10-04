@@ -145,6 +145,9 @@ export { deviceQuality } from '../lib/qualityProfile.js'
 export { placeTown } from './TownPlace.jsx'
 // …and hands over the manifest it already fetched, so the page reads it once (src/lib/slabUrl.js#adoptSlabManifest).
 export { adoptSlabManifest } from '../lib/slabUrl.js'
+// …and reads its town's identity record the kit's way: the backend key and the tab title (src/lib/townRecord.js),
+// one reader for the kit's apps and the Ward.
+export { tenantOf, titleOf } from '../lib/townRecord.js'
 // The weather at an instant is one answer (lib/weatherAt.js); an app catches its out-of-forecast error by this class.
 export { WeatherRangeError } from '../lib/weatherAt.js'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
