@@ -65,5 +65,7 @@ export default function BakedLamps({ lookId, bakeLastMs, lanternOverride, lampsO
   if ((lampsOnOverride ?? scene?.layerVis?.lamp) === false) return null
   // Lantern channel (brightness, glow, colour): Stage live override > baked scene > the kit's day.
   const lantern = lanternOverride ?? scene?.lantern ?? null
-  return <StreetLights lamps={data.lamps} reach={data.reach} lantern={lantern} />
+  // The lamp model is the town's authored choice (design.json#lamps.model → scene.json#lampModel); absent ⇒ the
+  // kit's standard post, which lampModels.js says aloud.
+  return <StreetLights lamps={data.lamps} reach={data.reach} lantern={lantern} model={scene?.lampModel} town={resolvedLookId} />
 }

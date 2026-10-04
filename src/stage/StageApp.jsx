@@ -18,7 +18,6 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-import StreetLights from '../components/StreetLights'
 import GatewayArch from '../components/GatewayArch'
 
 import { heroPoseAtTime } from '../preview/heroAnim'

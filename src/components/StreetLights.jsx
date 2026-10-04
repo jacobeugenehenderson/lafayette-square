@@ -1,8 +1,6 @@
 import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { getElevationRaw } from '../utils/elevation'
@@ -10,19 +8,14 @@ import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedP
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { buildLampGrid, canopyWipe } from '../lib/lampPool.js'
-import { kitUrl } from '../lib/kitUrl.js'
+import { lampModelOf } from '../lib/lampModels.js'
 
 const LANTERN_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('lantern'))
 
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const LAMP_MODEL_HEIGHT = 2.65
-const LAMP_TARGET_HEIGHT = 3.66  // 12ft real-world Victorian streetlamp
-const LAMP_SCALE = LAMP_TARGET_HEIGHT / LAMP_MODEL_HEIGHT  // ~1.38
-
 import { useQuality } from '../lib/qualityProfile.js'
 const LAMP_COLOR_ON = new THREE.Color(LANTERN_FLAT_DEFAULTS.color)  // until the first frame applies the keyed colour
-const GLOW_Y = 3.3       // world Y of lantern center
 const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern center
 // (The ground light pool AND the lamp contact shadow moved into the baked
 // ground FX map — see BakedGround / grassMaterial / bake-ground-ao.js.
@@ -30,7 +23,10 @@ const BULB_RADIUS = 0.05                      // sharp bulb dot at lantern cente
 
 const GLOW_SIZE_FIELD = LANTERN_FIELDS.find(f => f.key === 'glowSize')
 
-function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {}) {
+function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model: modelId, town } = {}) {
+  // The town's lamp model — its authored choice, or the kit's standard post (lampModels.js).
+  const model = useMemo(() => lampModelOf(modelId, town), [modelId, town])
+  const GLOW_Y = model.headY   // world Y of the lit head above its ground
   const glowRadius = useQuality().lampHaloRadius
   const lampRef = useRef()
   const glowRef = useRef()
@@ -78,7 +74,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
     _lampGrid.uLampHeadY.value = GLOW_Y          // the lantern's height above its ground
     _lampGrid.uLampReach.value = reach
     return () => { _lampGrid.uLampGridDims.value.set(0, 0, 0); _lampGrid.uLampGrid.value = null; tex.dispose() }
-  }, [allLamps, reach])
+  }, [allLamps, reach, GLOW_Y])
 
   // Baked ground anchor per lamp (groundSampler): the raw field where the DRAWN
   // ground sits under each lamp → rigid-lift onto the rendered surface, no float
@@ -250,109 +246,74 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
   // diffuse DIRECTLY so the ring reads in daytime. Sampled by grass + FadeMesh;
   // see bake-ground-ao.js. The floating pool/base discs are retired.)
 
-  // ── Load Victorian GLTF ─────────────────────────────────────────────────────
-  // Strip KHR_materials_transmission (incompatible with InstancedMesh).
-  // Glass panels are cut out via alphaTest so glow orbs show through the cage.
+  // ── Load the town's lamp model ──────────────────────────────────────────────
+  // Its lit-part mask (`txMap`) becomes the emissive map; glass areas glow, iron stays dark.
   const [lampModel, setLampModel] = useState(null)
 
   // A freshly loaded lamp model (or glow material) has not had the colour yet — re-apply on the next frame.
   useEffect(() => { appliedColor.current = null }, [lampModel, haloMat])
 
   useEffect(() => {
-    const loader = new GLTFLoader()
-    loader.setMeshoptDecoder(MeshoptDecoder)
-    loader.load(
-      kitUrl('models/lamp-posts/victorian-lamp.glb'),
-      (gltf) => {
-        let found = false
-        gltf.scene.updateMatrixWorld(true)
-        gltf.scene.traverse(child => {
-          if (child.isMesh && !found) {
-            found = true
-            const mat = child.material
+    let cancelled = false
+    model.load().then(({ geometry, txMap, material: mat, nodeMatrix, scale }) => {
+      if (cancelled) return
+      // Glass glow: the mask → emissiveMap. The Bulb knob drives emissiveIntensity — real HDR light, so
+      // bloom takes it. (A post-tonemap colour shift was tried 2026-09-26 and read ~1% as strong: it can
+      // never exceed display white, so nothing blooms.)
+      mat.emissive = LAMP_COLOR_ON.clone()
+      mat.emissiveMap = txMap
+      mat.emissiveIntensity = 0
 
-            // Save transmission texture (identifies glass vs iron areas)
-            const txMap = mat.transmissionMap
+      // Enable transparency so glass panels can fade to clear during day
+      mat.transparent = true
 
-            // Strip transmission (incompatible with InstancedMesh)
-            mat.transmission = 0
-            mat.transmissionMap = null
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uSunAltitude = sunAltUniform.current
+        shader.uniforms.uBulbOn = bulbOnUniform.current
+        shader.uniforms.uTxMap = { value: txMap }
 
-            // Glass glow: transmissionTexture becomes emissiveMap
-            // Glass areas glow warm amber at night, iron stays dark
-            // Glass glow: the transmission texture is the glass mask → emissiveMap. The Bulb knob drives
-            // emissiveIntensity — real HDR light, so bloom takes it. (A post-tonemap colour shift was tried
-            // 2026-09-26 and read ~1% as strong: it can never exceed display white, so nothing blooms.)
-            mat.emissive = LAMP_COLOR_ON.clone()
-            mat.emissiveMap = txMap
-            mat.emissiveIntensity = 0
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <common>',
+          `#include <common>
+          uniform float uSunAltitude;
+          uniform float uBulbOn;
+          uniform sampler2D uTxMap;`
+        )
 
-            // Enable transparency so glass panels can fade to clear during day
-            mat.transparent = true
+        // Force flat dark wrought-iron on non-glass areas, night-darken all
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+          vec3 ironColor = pow(vec3(0.04, 0.04, 0.04), vec3(2.2));
+          float ironMask = 1.0 - texture2D(uTxMap, vMapUv).r;
+          diffuseColor.rgb = mix(diffuseColor.rgb, ironColor, ironMask);
+          float nightDarken = mix(0.15, 1.0, smoothstep(-0.1, 0.1, uSunAltitude));
+          diffuseColor.rgb *= nightDarken;`
+        )
 
-            mat.onBeforeCompile = (shader) => {
-              shader.uniforms.uSunAltitude = sunAltUniform.current
-              shader.uniforms.uBulbOn = bulbOnUniform.current
-              if (txMap) {
-                shader.uniforms.uTxMap = { value: txMap }
-              }
+        // Glass alpha: clear during day, opaque at night (smooth golden hour fade)
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <dithering_fragment>',
+          `#include <dithering_fragment>
+          float glassMask = texture2D(uTxMap, vMapUv).r;
+          // Lit glass shows as much as the Bulb is on — keys × daylight — and reads clear when it is off.
+          float glassVisible = clamp(uBulbOn, 0.0, 1.0);
+          gl_FragColor.a *= mix(1.0, glassVisible, glassMask);`
+        )
+      }
 
-              shader.fragmentShader = shader.fragmentShader.replace(
-                '#include <common>',
-                `#include <common>
-                uniform float uSunAltitude;
-                uniform float uBulbOn;
-                ${txMap ? 'uniform sampler2D uTxMap;' : ''}`
-              )
+      // Chain terrain displacement for instanced mesh lift.
+      patchTerrainInstancedBaked(mat)
+      lampMatRef.current = mat
+      // The lantern's horizontal half-diagonal, in world metres — how far the glow sits in front of it.
+      geometry.computeBoundingBox()
+      const sz = new THREE.Vector3(); geometry.boundingBox.getSize(sz)
+      haloMat.uniforms.uPush.value = 0.5 * Math.hypot(sz.x, sz.z) * new THREE.Vector3().setFromMatrixScale(nodeMatrix).x * scale
 
-              // Force flat dark wrought-iron on non-glass areas, night-darken all
-              shader.fragmentShader = shader.fragmentShader.replace(
-                '#include <color_fragment>',
-                `#include <color_fragment>
-                vec3 ironColor = pow(vec3(0.04, 0.04, 0.04), vec3(2.2));
-                ${txMap ? `
-                float ironMask = 1.0 - texture2D(uTxMap, vMapUv).r;
-                diffuseColor.rgb = mix(diffuseColor.rgb, ironColor, ironMask);
-                ` : `
-                diffuseColor.rgb = ironColor;
-                `}
-                float nightDarken = mix(0.15, 1.0, smoothstep(-0.1, 0.1, uSunAltitude));
-                diffuseColor.rgb *= nightDarken;`
-              )
-
-              // Glass alpha: clear during day, opaque at night (smooth golden hour fade)
-              if (txMap) {
-                shader.fragmentShader = shader.fragmentShader.replace(
-                  '#include <dithering_fragment>',
-                  `#include <dithering_fragment>
-                  float glassMask = texture2D(uTxMap, vMapUv).r;
-                  // Lit glass shows as much as the Bulb is on — keys × daylight — and reads clear when it is off.
-                  float glassVisible = clamp(uBulbOn, 0.0, 1.0);
-                  gl_FragColor.a *= mix(1.0, glassVisible, glassMask);`
-                )
-              }
-            }
-
-            // Chain terrain displacement for instanced mesh lift.
-            patchTerrainInstancedBaked(mat)
-            lampMatRef.current = mat
-            // The lantern's horizontal half-diagonal, in world metres — how far the glow sits in front of it.
-            child.geometry.computeBoundingBox()
-            const bb = child.geometry.boundingBox, sz = new THREE.Vector3(); bb.getSize(sz)
-            haloMat.uniforms.uPush.value = 0.5 * Math.hypot(sz.x, sz.z) * child.matrixWorld.getMaxScaleOnAxis() * LAMP_SCALE
-
-            setLampModel({
-              geometry: child.geometry,
-              material: mat,
-              nodeMatrix: child.matrixWorld.clone(),
-            })
-          }
-        })
-      },
-      undefined,
-      (err) => console.warn('Victorian lamp model failed to load:', err)
-    )
-  }, [])
+      setLampModel({ geometry, material: mat, nodeMatrix, scale })
+    }).catch(err => console.error(`[StreetLights] lamp model "${model.id}" failed to load — no lamp posts drawn:`, err))
+    return () => { cancelled = true }
+  }, [model, haloMat])
 
   // ── Instance transforms — lamp posts ────────────────────────────────────────
   useEffect(() => {
@@ -363,7 +324,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
     allLamps.forEach((lamp, i) => {
       d.position.set(lamp.x, -0.08, lamp.z)
       d.rotation.set(0, Math.random() * Math.PI * 2, 0)
-      d.scale.setScalar(LAMP_SCALE)
+      d.scale.setScalar(lampModel.scale)
       d.updateMatrix()
       combined.copy(d.matrix).multiply(lampModel.nodeMatrix)
       lampRef.current.setMatrixAt(i, combined)
@@ -387,7 +348,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
     glowRef.current.instanceMatrix.needsUpdate = true
     glowGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
     invalidate()
-  }, [allLamps, lampModel, aGroundRaw, glowGeo, invalidate, glowRadius])
+  }, [allLamps, lampModel, aGroundRaw, glowGeo, invalidate, glowRadius, GLOW_Y])
 
   // ── Instance transforms — sharp bulb dot ───────────────────────────────────
   useEffect(() => {
@@ -403,7 +364,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
     bulbRef.current.instanceMatrix.needsUpdate = true
     bulbGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
     invalidate()
-  }, [allLamps, lampModel, aGroundRaw, bulbGeo, invalidate])
+  }, [allLamps, lampModel, aGroundRaw, bulbGeo, invalidate, GLOW_Y])
 
   // ── Instance transforms — the soft GLOW around each lantern (restored 2026-09-26: haloMat was
   //    defined and never mounted). Depth-TESTED (three's default), so what stands in front hides it.
@@ -420,7 +381,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
     haloRef.current.instanceMatrix.needsUpdate = true
     haloGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
     invalidate()
-  }, [allLamps, lampModel, aGroundRaw, haloGeo, invalidate])
+  }, [allLamps, lampModel, aGroundRaw, haloGeo, invalidate, GLOW_Y])
 
   // (Lamp base-ring instance transforms removed — the contact shadow is baked
   // into the ground FX map now, not a per-lamp disc.)
@@ -477,7 +438,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel } = {})
 
   return (
     <group>
-      {/* Victorian lamp posts — iron with glass cutouts (1 draw call) */}
+      {/* Lamp posts — the town's model, iron with a lit glass part (1 draw call) */}
       <instancedMesh
         ref={lampRef}
         args={[lampModel.geometry, lampModel.material, allLamps.length]}

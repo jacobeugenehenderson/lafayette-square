@@ -185,6 +185,9 @@ export async function bakeScene({ look } = {}) {
     archLight: migrateArchLight(design),
     setPieceLight: design.setPieceLight || kitDayChannel('setPieceLight'),   // the set-piece's uplights
     lantern:   design.lantern   || kitDayChannel('lantern'),
+    // The town's lamp model, its authored choice (src/lib/lampModels.js). No choice ⇒ the key is omitted and
+    // the runtime draws the kit's standard post, saying so — never inferred from the town's name.
+    ...(design.lamps?.model ? { lampModel: design.lamps.model } : {}),
     // SC.6 — Meteorologist coupler scaffolding. Forward-compat field for
     // the future <Atmosphere /> raymarched runtime. v1's CloudDome
     // ignores `clouds`; the field round-trips through bake so Atmosphere

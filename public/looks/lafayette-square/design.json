@@ -787,7 +787,8 @@
   "wallMix": null,
   "wallPalettes": null,
   "lamps": {
-    "derive": false
+    "derive": false,
+    "model": "victorian"
   },
   "terrainExag": 1.5,
   "sky": {
