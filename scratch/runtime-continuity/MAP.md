@@ -1,6 +1,6 @@
 # Continuity map: Designer → Stage → Bake → Preview → Player (the Ward)
 
-*Thread, for `docs/briefs/BRIEF-runtime-continuity.md`, delivered to Jacob in chat 2026-10-04. Read-only: nothing in
+*Thread, for `cartograph/_archive/BRIEF-runtime-continuity-DELIVERED-2026-10-04.md`, delivered to Jacob in chat 2026-10-04. Read-only: nothing in
 `src/`, `cartograph/`, `public/`, the docs or scene data was edited; no pours, bakes or servers.*
 
 **What I measured against:** kit `a6efab65` and the Ward `cac0290`. The Ward is pinned to kit `c81f7bf6`, and
