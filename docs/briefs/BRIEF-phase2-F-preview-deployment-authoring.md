@@ -93,6 +93,10 @@ OPENED). ⛔ **Dependency:** the runtime must first be able to defer each asset 
 warm on entering Browse, `useOverheadWarm`); there is no general mechanism. Board the engineering and v2 on ROADMAP as one item; ⛔ don't
 build a control that defers nothing.
 
+## ⭐ The goal this serves, and where the cost is (Jacob, 2026-10-04)
+F v1 is the floor of a bigger goal: **Preview as a first-class technical-director app**, whose centrepiece is **two dials, the timeline (WHEN) and the pyramid (HOW MUCH)**, with per-effect toggles as the coarse fallback (ROADMAP, "GOAL: Preview becomes a first-class technical-director app"). Build v1 so both dials can write the same `deployment.json` later.
+⚠️ **Rank by where the cost actually is.** Jacob: *"we [think we] know the main draws are in the ground layer and trees, so switching off the little channels barely moves the relevant needle."* Trees are measured (25.36M of ~28M tris, LS Browse). The ground is 0.17M tris, so its cost, if large, is shading/fill: **time it by toggle delta as the diagnosis's first reading**, and say plainly if it isn't large. ⛔ Don't let a tidy list of small effect toggles dominate the panel; lead with trees and ground.
+
 ## Deliverable
 
 v1, its checks, the registers, and the v2 + engineering ROADMAP item. **Read this, the spec (verbatim at the end of
