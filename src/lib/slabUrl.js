@@ -37,6 +37,17 @@ export function slabManifest(look) {
   return fetch(ASSET_BASE + manifestPath(look), { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null))
 }
 
+function settle(t, look, url, m) {
+  t.manifest = m
+  t.hashed = ASSET_BASE_IS_REMOTE && m?.names === HASHED
+  if (ASSET_BASE_IS_REMOTE && !m) {
+    console.error(`[slabUrl] ⛔ "${look}" has no published manifest.json at ${url} — `
+      + 'its files are read at their plain names. Publish the town to give it one.')
+  }
+  t.done = true
+  return t
+}
+
 function townOf(look) {
   let t = _towns.get(look)
   if (t) return t
@@ -44,18 +55,27 @@ function townOf(look) {
   const url = ASSET_BASE + manifestPath(look)
   t.ready = fetch(url, { cache: 'no-cache' })
     .then(r => (r.ok ? r.json() : null))
-    .then(m => {
-      t.manifest = m
-      t.hashed = ASSET_BASE_IS_REMOTE && m?.names === HASHED
-      if (ASSET_BASE_IS_REMOTE && !m) {
-        console.error(`[slabUrl] ⛔ "${look}" has no published manifest.json at ${url} — `
-          + 'its files are read at their plain names. Publish the town to give it one.')
-      }
-      t.done = true
-      return t
-    })
+    .then(m => settle(t, look, url, m))
   _towns.set(look, t)
   return t
+}
+
+/**
+ * ⭐ ONE READ OF THE MANIFEST PER PAGE. An app that has already fetched the town's manifest (The Ward reads it
+ * first, to boot) hands it here, and the slab resolver names files from that copy instead of fetching its own.
+ * `url` is where the app fetched it. ⛔ THROWS if that is not the URL this resolver would read (two hosts would mean
+ * two different slabs), or if this page has already read the town's manifest (that would be the second read).
+ */
+export function adoptSlabManifest(look, manifest, url) {
+  requireLook(look)
+  const own = ASSET_BASE + manifestPath(look)
+  if (url !== own) throw new Error(`[slabUrl] ⛔ "${look}"'s manifest was read from ${url}, but its slab is at ${own} — one town, two hosts. Refusing.`)
+  if (!manifest || typeof manifest !== 'object') throw new Error(`[slabUrl] ⛔ adoptSlabManifest("${look}") was handed no manifest`)
+  if (_towns.has(look)) throw new Error(`[slabUrl] ⛔ "${look}"'s manifest was already read on this page — adopt it before anything draws the town`)
+  const t = { manifest: null, hashed: false, done: false }
+  settle(t, look, url, manifest)
+  t.ready = Promise.resolve(t)
+  _towns.set(look, t)
 }
 
 /** Resolves once `slabUrl(look, …)` can answer synchronously. Immediate on disk. */
@@ -75,6 +95,21 @@ export function slabUrl(look, rel, reread) {
   const t = townOf(look)
   if (!t.done) throw new Error(`[slabUrl] "${look}"'s manifest has not been read — await slabReady("${look}") before slabUrl("${rel}")`)
   return ASSET_BASE + slabPath(look, rel, { remote: true, manifest: t.manifest, hashed: t.hashed })
+}
+
+/**
+ * A slab JSON's own stamp (`look`) must name the town it was fetched under. Returns the JSON; THROWS on a
+ * mismatch. A slab folder moved or copied to a new name keeps its old stamp — drawing it would address its
+ * files by a town that isn't this one (HPDM, 2026-10-04: broke until re-baked, silently). Address every file by
+ * the look you fetched from, never by the stamp. ▶ node checks/claims-the-slab-addresses-files-by-where-it-was-fetched.mjs
+ */
+export function slabStamped(look, json, file) {
+  requireLook(look)
+  if (json?.look !== look) {
+    throw new Error(`[slab] ⛔ baked/${look}/${file} says it belongs to "${json?.look}" — this slab was baked for another `
+      + `town (a moved or copied folder?). It is not drawn under "${look}". ▶ re-bake "${look}".`)
+  }
+  return json
 }
 
 /** fetch() a slab file by name, after the town's naming is known. */

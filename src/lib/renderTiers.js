@@ -4,7 +4,7 @@
  * ⛔⛔ UNFINISHED — THIS REACHES NOTHING THAT RENDERS (re-verified 2026-10-04, Phase 2 D). Three breaks, each its own:
  *   1. Nothing imports `pyramidDegreeFor`; Preview's tuner edits a copy of RENDER_TIERS and hands it only to its sliders.
  *   2. `DownsamplePyramid` accepts and IGNORES levels / radius / resolutionScale (the dial was removed 2026-06-28).
- *   3. The pyramid is `platform: 'desktop'` (renderPipeline.jsx) — a phone, and Preview's phone tiers, never run it.
+ *   3. The phone profile switches the pyramid off (qualityProfile.js `postFxOff`) — a phone, and Preview's phone tiers, never run it.
  * ⭐ KEPT ON PURPOSE (Jacob, 2026-10-04): it is ASPIRATION, not rot — the intent that a phone runs EVERY effect at a
  * lower rung of the one shared ladder instead of dropping passes (`plans/clean-for-handoff.md §W1`,
  * `_handoffs/HANDOFF-mobile-profile.md §2`, board row `ROADMAP.md H1`). Drop-vs-low-rung is Jacob's call, after the

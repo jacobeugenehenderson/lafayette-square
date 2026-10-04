@@ -38,7 +38,7 @@ import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil } from './sceneStencilState'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { slabUrl, slabFetch } from '../lib/slabUrl.js'
+import { slabUrl, slabFetch, slabStamped } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
 
 // ── Surface treatment: albedo desaturation + value-range lift ────────────────
@@ -196,7 +196,7 @@ function fadeForGroup(group, stencil) {
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
 
-function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLastMs, surfacesOverride }) {
+function GroundMeshes({ look, manifest, bin, context, coast, scene: bakedScene, bakeLastMs, surfacesOverride }) {
   // ⭐ `surfacesOverride` is the live-authoring layer, the same pattern PostProcessing's
   // *Override props follow: it sits over the baked `scene.surfaces`, never beside it.
   const scene = useMemo(() => (surfacesOverride
@@ -208,8 +208,8 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
   useEffect(() => {
     const r = setGroundRules(scene?.surfaces?.rules)
     const on = ['buildingFoot', 'buildingGreen', 'pavedEdge'].filter(k => r[k].strength > 0)
-    if (on.length && !manifest.rulemap) console.error(`[BakedGround] ⛔ "${manifest.look}": ground rule(s) ${on.join(', ')} are ON but this ground has no ground.rulemap.png — they draw NOTHING. ▶ re-run bake-ground-ao for this look.`)
-  }, [scene?.surfaces?.rules, manifest.rulemap, manifest.look])
+    if (on.length && !manifest.rulemap) console.error(`[BakedGround] ⛔ "${look}": ground rule(s) ${on.join(', ')} are ON but this ground has no ground.rulemap.png — they draw NOTHING. ▶ re-run bake-ground-ao for this look.`)
+  }, [scene?.surfaces?.rules, manifest.rulemap, look])
   const layerVis = scene?.layerVis
   const surfaceTable = useMemo(() => resolveClassTable(scene?.surfaces?.classes), [scene?.surfaces?.classes])
   const stencil = manifest.stencil || null
@@ -257,17 +257,17 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
     if (!manifest.lightmap) return
     if (!lmOk) {
       console.error(`[BakedGround] ⛔ ground.lightmap.png was baked against DIFFERENT ground `
-        + `(groundKey ${lmKey} ≠ ${manifest.groundKey} for this ground.json) on "${manifest.look}". `
+        + `(groundKey ${lmKey} ≠ ${manifest.groundKey} for this ground.json) on "${look}". `
         + `Its contact shadows belong to geometry that has since changed. AO DISCARDED — the ground `
-        + `renders unoccluded. ▶ node cartograph/bake-ground-ao.js --scene=${manifest.look} --look=${manifest.look}`)
+        + `renders unoccluded. ▶ node cartograph/bake-ground-ao.js --scene=${look} --look=${look}`)
     } else if (manifest.groundKey && lmKey == null) {
       console.warn(`[BakedGround] ground.lightmap.png has no groundKey (baked before 2026-09-20) on `
-        + `"${manifest.look}" — cannot prove it matches this ground. Using it; re-bake to get the key.`)
+        + `"${look}" — cannot prove it matches this ground. Using it; re-bake to get the key.`)
     }
-  }, [lmOk, lmKey, manifest.groundKey, manifest.look, manifest.lightmap])
+  }, [lmOk, lmKey, manifest.groundKey, look, manifest.lightmap])
 
   const lightmapUrl = (manifest.lightmap && lmOk)
-    ? slabUrl(manifest.look, manifest.lightmap.image, bakeLastMs || null)
+    ? slabUrl(look, manifest.lightmap.image, bakeLastMs || null)
     : null
   const lightmap = lightmapUrl ? useLoader(THREE.TextureLoader, lightmapUrl) : null
 
@@ -283,7 +283,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
   // ground shaders (grass + FadeMesh) at world-XZ × the TOD Pool value.
   const poolMeta = manifest.poolmap || null
   const poolmapUrl = poolMeta
-    ? slabUrl(manifest.look, poolMeta.image, bakeLastMs || null)
+    ? slabUrl(look, poolMeta.image, bakeLastMs || null)
     : null
   const poolmap = poolmapUrl ? useLoader(THREE.TextureLoader, poolmapUrl) : null
   useEffect(() => {
@@ -313,7 +313,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
 
   // The ground rules' baked distances (ground.rulemap.png, bake-ground-ao): R = to a building, G = to paving.
   const ruleMeta = manifest.rulemap || null
-  const rulemapUrl = ruleMeta ? slabUrl(manifest.look, ruleMeta.image, bakeLastMs || null) : null
+  const rulemapUrl = ruleMeta ? slabUrl(look, ruleMeta.image, bakeLastMs || null) : null
   const rulemap = rulemapUrl ? useLoader(THREE.TextureLoader, rulemapUrl) : null
   useEffect(() => {
     if (rulemap) {
@@ -333,7 +333,7 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
   // sample decodes to linear and mixes correctly with the (linear) trunk diffuse.
   const colorMeta = manifest.colormap || null
   const colormapUrl = colorMeta
-    ? slabUrl(manifest.look, colorMeta.image, bakeLastMs || null)
+    ? slabUrl(look, colorMeta.image, bakeLastMs || null)
     : null
   const colormap = colormapUrl ? useLoader(THREE.TextureLoader, colormapUrl) : null
   useEffect(() => {
@@ -457,12 +457,12 @@ function GroundMeshes({ manifest, bin, context, coast, scene: bakedScene, bakeLa
         // ⛔ A per-field surface on a group baked without field ids cannot know which way its rows
         // run: said once, and drawn in the class's flat colour (what a class with no generator gets).
         if (draw.noFields) {
-          reportNoFields(manifest.look, group.id, surface)
+          reportNoFields(look, group.id, surface)
           return <FadeMesh key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
         }
-        if (surface && SURFACES[surface].perField && !geometry.attributes.aFieldEdge) reportNoEdge(manifest.look, group.id)
+        if (surface && SURFACES[surface].perField && !geometry.attributes.aFieldEdge) reportNoEdge(look, group.id)
         return draw.kind === 'surface'
-          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={manifest.look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} coast={surface === 'sand' ? coast : null} />
+          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} coast={surface === 'sand' ? coast : null} />
           : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
       })}
     </group>
@@ -773,17 +773,19 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
     let cancelled = false
     ;(async () => {
       try {
-        const m = await slabFetch(resolvedLookId, 'ground.json', undefined, bake).then(r => r.json())
-        const bin = await slabFetch(m.look, m.bin, undefined, bake)
+        // Every file is addressed by the look it was fetched under; the stamp must agree (slabStamped).
+        const look = resolvedLookId
+        const m = slabStamped(look, await slabFetch(look, 'ground.json', undefined, bake).then(r => r.json()), 'ground.json')
+        const bin = await slabFetch(look, m.bin, undefined, bake)
           .then(r => r.arrayBuffer())
         // The context bake's RESOLVED surface params (physics + this town's derived values).
         // Absent file → null, and SurfaceMesh names it; never a default.
-        const context = await slabFetch(m.look, 'context.json', undefined, bake)
+        const context = await slabFetch(look, 'context.json', undefined, bake)
           .then(r => (r.ok ? r.json() : null)).catch(() => null)
-        const coast = await loadCoastDist(m.look, context, bake)
+        const coast = await loadCoastDist(look, context, bake)
         if (!cancelled) setData({ manifest: m, bin, context, coast })
       } catch (e) {
-        console.warn('[BakedGround] load failed:', e)
+        console.error('[BakedGround] ⛔ the ground is not drawn:', e)
       }
     })()
     return () => { cancelled = true }
@@ -797,7 +799,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
           manifest (poolmap may flip absent→present across a bake), and a bare
           re-render would change hook order and crash. Remount is fine: the
           geometry already rebuilds on manifest change. */}
-      {data && scene && <GroundMeshes key={bake ?? 'static'} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} scene={scene} bakeLastMs={bake} surfacesOverride={surfacesOverride} />}
+      {data && scene && <GroundMeshes key={bake ?? 'static'} look={resolvedLookId} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} scene={scene} bakeLastMs={bake} surfacesOverride={surfacesOverride} />}
     </>
   )
 }

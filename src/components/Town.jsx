@@ -142,6 +142,8 @@ import MountainBackdrop from './MountainBackdrop'
 export { deviceQuality } from '../lib/qualityProfile.js'
 // …and places its town at boot (before any screen mounts), for readers that run without a <Town> (TownPlace.jsx).
 export { placeTown } from './TownPlace.jsx'
+// …and hands over the manifest it already fetched, so the page reads it once (src/lib/slabUrl.js#adoptSlabManifest).
+export { adoptSlabManifest } from '../lib/slabUrl.js'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
 export { townCanvasProps } from '../lib/qualityProfile.js'
 // An emoji as this device draws it, and its inked pixels — one home for the method (src/lib/glyphInk.js); the Ward's

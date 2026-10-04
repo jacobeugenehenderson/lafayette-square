@@ -43,7 +43,7 @@ import { IDENTITY_NEUTRAL } from '../lib/townIdentity.js'
 
 import { useQuality } from '../lib/qualityProfile.js'
 import { buildingColors } from '../lib/buildingTint.js'
-import { slabFetch } from '../lib/slabUrl.js'
+import { slabFetch, slabStamped } from '../lib/slabUrl.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL } from '../lib/lampPool.js'
 import { kitUrl } from '../lib/kitUrl.js'
@@ -234,7 +234,8 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     let cancelled = false
     ;(async () => {
       try {
-        const m = await slabFetch(LOOK_ID, 'buildings.json').then(r => r.json())
+        // Every file is addressed by the look it was fetched under; the stamp must agree (slabStamped).
+        const m = slabStamped(LOOK_ID, await slabFetch(LOOK_ID, 'buildings.json').then(r => r.json()), 'buildings.json')
         // Refuse unknown versions (SLAB-CONTRACT §0 / §10.3). v2 added the
         // render-scoped index + footprints section this consumer requires.
         // Refuse unknown versions (SLAB-CONTRACT §0 / §10.3). v3 adds each building's tint source (the live
@@ -243,12 +244,12 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
           console.error(`[SlabBuildings] refusing buildings.json version ${m.version} (expected 2 or 3)`)
           return
         }
-        const bin = await slabFetch(m.look, m.bin).then(r => r.arrayBuffer())
-        const sc = await slabFetch(m.look, 'scene.json')
+        const bin = await slabFetch(LOOK_ID, m.bin).then(r => r.arrayBuffer())
+        const sc = await slabFetch(LOOK_ID, 'scene.json')
           .then(r => r.ok ? r.json() : null).catch(() => null)
         if (!cancelled) { setData({ manifest: m, bin }); setScene(sc) }
       } catch (e) {
-        console.warn('[SlabBuildings] load failed:', e)
+        console.error('[SlabBuildings] ⛔ the buildings are not drawn:', e)
       }
     })()
     return () => { cancelled = true }
