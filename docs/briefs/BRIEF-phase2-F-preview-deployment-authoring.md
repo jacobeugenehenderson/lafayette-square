@@ -95,7 +95,7 @@ build a control that defers nothing.
 
 ## ⭐ The goal this serves, and where the cost is (Jacob, 2026-10-04)
 F v1 is the floor of a bigger goal: **Preview as a first-class technical-director app**, whose centrepiece is **two dials, the timeline (WHEN) and the pyramid (HOW MUCH)**, with per-effect toggles as the coarse fallback (ROADMAP, "GOAL: Preview becomes a first-class technical-director app"). Build v1 so both dials can write the same `deployment.json` later.
-⚠️ **Rank by where the cost actually is.** Jacob: *"we [think we] know the main draws are in the ground layer and trees, so switching off the little channels barely moves the relevant needle."* Trees are measured (25.36M of ~28M tris, LS Browse). The ground is 0.17M tris, so its cost, if large, is shading/fill: **time it by toggle delta as the diagnosis's first reading**, and say plainly if it isn't large. ⛔ Don't let a tidy list of small effect toggles dominate the panel; lead with trees and ground.
+⚠️ **Rank purely by measurement; presume nothing.** Jacob's *"we [think we] know the main draws are in the ground layer and trees, so switching off the little channels barely moves the relevant needle"* is a **hypothesis the diagnosis should confirm or refute**, not a priority to hard-code (Jacob, 2026-10-04: *"the diagnosis doesn't need to prioritize trees and ground costs first"*). ⛔ A fixed ordering would be right for today's towns and wrong for some town #2 (`CLAUDE.md` Layer 0, Class D). The real requirement: **measure every kind of cost**, so a piece whose cost is shading/fill (the ground: 0.17M tris, cost unmeasured) can't hide behind a small triangle count. Trees are measured at 25.36M of ~28M tris in LS Browse.
 
 ## Deliverable
 
