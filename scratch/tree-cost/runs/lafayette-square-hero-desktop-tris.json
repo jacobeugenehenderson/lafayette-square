@@ -1,0 +1,377 @@
+{
+ "town": "lafayette-square",
+ "shot": "hero",
+ "mode": "desktop",
+ "tier": {
+  "stored": "desktop",
+  "target": "desktop",
+  "dpr": 1,
+  "buf": "1600x865",
+  "logDepth": true,
+  "shadows": true
+ },
+ "arrival": [
+  {
+   "t": 2,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 162,
+     "tris": 776304,
+     "shownTris": 776304,
+     "instances": 16173,
+     "trisPerInst": [
+      8,
+      128
+     ],
+     "texReady": 162,
+     "texTotal": 162,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 789212,
+    "calls": 188,
+    "gpuMs": 79.311702,
+    "target": "desktop"
+   }
+  },
+  {
+   "t": 3,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 0,
+     "tris": 776304,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 12060,
+    "calls": 24,
+    "gpuMs": 90.39904886363637,
+    "target": "desktop"
+   }
+  },
+  {
+   "t": 6,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 162,
+     "tris": 776304,
+     "shownTris": 776304,
+     "instances": 16173,
+     "trisPerInst": [
+      8,
+      128
+     ],
+     "texReady": 162,
+     "texTotal": 162,
+     "where": []
+    },
+    "overhead": {
+     "meshes": 27,
+     "shownMeshes": 0,
+     "tris": 25359264,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    },
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 2545040,
+     "shownTris": 2496320,
+     "instances": 580,
+     "trisPerInst": [
+      4304
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 5983563,
+    "calls": 249,
+    "gpuMs": 91.67249116666667,
+    "target": "desktop"
+   }
+  },
+  {
+   "t": 8,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 162,
+     "tris": 776304,
+     "shownTris": 776304,
+     "instances": 16173,
+     "trisPerInst": [
+      8,
+      128
+     ],
+     "texReady": 162,
+     "texTotal": 162,
+     "where": []
+    },
+    "overhead": {
+     "meshes": 27,
+     "shownMeshes": 0,
+     "tris": 25359264,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    },
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 2545040,
+     "shownTris": 2496320,
+     "instances": 580,
+     "trisPerInst": [
+      4304
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 8518591,
+    "calls": 307,
+    "gpuMs": 102.9101967,
+    "target": "desktop"
+   }
+  }
+ ],
+ "residentAt": 2,
+ "census": {
+  "hero": {
+   "meshes": 162,
+   "shownMeshes": 162,
+   "tris": 776304,
+   "shownTris": 776304,
+   "instances": 16173,
+   "trisPerInst": [
+    8,
+    128
+   ],
+   "texReady": 162,
+   "texTotal": 162,
+   "where": []
+  },
+  "overhead": {
+   "meshes": 27,
+   "shownMeshes": 0,
+   "tris": 25359264,
+   "shownTris": 0,
+   "instances": 0,
+   "trisPerInst": [],
+   "texReady": 0,
+   "texTotal": 0,
+   "where": []
+  },
+  "tree?": {
+   "meshes": 4,
+   "shownMeshes": 1,
+   "tris": 2545040,
+   "shownTris": 2496320,
+   "instances": 580,
+   "trisPerInst": [
+    4304
+   ],
+   "texReady": 1,
+   "texTotal": 1,
+   "where": [
+    "town:lamps"
+   ]
+  }
+ },
+ "frame0": {
+  "target": "desktop",
+  "wallMs": 161.6,
+  "calls": 304,
+  "tris": 8518555,
+  "gpuSupported": true,
+  "gpuMs": 184.22301746666665,
+  "mainMs": 182.71000000064572,
+  "loaf": {
+   "n": 28,
+   "worstMs": 2130.2999999970198,
+   "scriptMs": 7348.100000008941,
+   "last": [
+    {
+     "at": 2403,
+     "ms": 95.39999999850988,
+     "scriptMs": 38.6000000089407,
+     "blockingMs": 0
+    },
+    {
+     "at": 2557.10000000149,
+     "ms": 164.79999999701977,
+     "scriptMs": 85.50000000745058,
+     "blockingMs": 0.9
+    },
+    {
+     "at": 2738.5,
+     "ms": 142.29999999701977,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 2880.89999999851,
+     "ms": 77.70000000298023,
+     "scriptMs": 43.70000000298023,
+     "blockingMs": 0
+    },
+    {
+     "at": 2958.7999999970198,
+     "ms": 51.100000001490116,
+     "scriptMs": 37.30000000447035,
+     "blockingMs": 0
+    },
+    {
+     "at": 3010.10000000149,
+     "ms": 128,
+     "scriptMs": 77.00000000745058,
+     "blockingMs": 0
+    },
+    {
+     "at": 3138.2999999970198,
+     "ms": 121.40000000596046,
+     "scriptMs": 95.80000000447035,
+     "blockingMs": 12.4
+    },
+    {
+     "at": 3405.7000000029802,
+     "ms": 143.29999999701977,
+     "scriptMs": 124.10000000149012,
+     "blockingMs": 0
+    },
+    {
+     "at": 3549.39999999851,
+     "ms": 101.20000000298023,
+     "scriptMs": 54.99999999254942,
+     "blockingMs": 0
+    },
+    {
+     "at": 3660.2000000029802,
+     "ms": 61.69999999552965,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 3722,
+     "ms": 54.20000000298023,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 3776.2999999970198,
+     "ms": 158.40000000596046,
+     "scriptMs": 126.29999999701977,
+     "blockingMs": 13.7
+    },
+    {
+     "at": 3934.7999999970198,
+     "ms": 56.70000000298023,
+     "scriptMs": 52.29999999701977,
+     "blockingMs": 5.8
+    },
+    {
+     "at": 3991.7000000029802,
+     "ms": 1445.7999999970198,
+     "scriptMs": 1445.4000000059605,
+     "blockingMs": 1395.7
+    },
+    {
+     "at": 5437.60000000149,
+     "ms": 317.3999999985099,
+     "scriptMs": 316,
+     "blockingMs": 266.3
+    },
+    {
+     "at": 5771.70000000298,
+     "ms": 2130.2999999970198,
+     "scriptMs": 2125.2000000029802,
+     "blockingMs": 2076.9
+    },
+    {
+     "at": 7941.10000000149,
+     "ms": 617.5,
+     "scriptMs": 553.7999999970198,
+     "blockingMs": 504.7
+    },
+    {
+     "at": 8589.5,
+     "ms": 671.5,
+     "scriptMs": 547.6000000014901,
+     "blockingMs": 498.3
+    },
+    {
+     "at": 9289.39999999851,
+     "ms": 700.6000000014901,
+     "scriptMs": 526.5,
+     "blockingMs": 477.2
+    },
+    {
+     "at": 10022.79999999702,
+     "ms": 169.80000000447035,
+     "scriptMs": 7.0999999940395355,
+     "blockingMs": 0
+    }
+   ]
+  }
+ },
+ "toggles": [
+  {
+   "label": "hero",
+   "offTris": 7742251,
+   "offCalls": 142
+  },
+  {
+   "label": "tree?",
+   "offTris": 995323,
+   "offCalls": 244
+  },
+  {
+   "label": "all trees",
+   "offTris": 253250,
+   "offCalls": 137
+  }
+ ],
+ "pixels": [],
+ "grids": [],
+ "log": [
+  "== lafayette-square · hero · desktop · headless Chrome, this desktop's GPU (M1) ==",
+  "  t+ 2s  hero 162m/0.78M tex 162/162  | frame tris 0.79M gpu 79.3 [desktop]",
+  "  t+ 3s  (no tree shown)  | frame tris 0.01M gpu 90.4 [desktop]",
+  "  t+ 6s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.98M gpu 91.7 [desktop]",
+  "  t+ 8s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 8.52M gpu 102.9 [desktop]",
+  "  resident at t+2s",
+  "  tier: {\"stored\":\"desktop\",\"target\":\"desktop\",\"dpr\":1,\"buf\":\"1600x865\",\"logDepth\":true,\"shadows\":true}",
+  "  AT REST census (shown): hero: 162 meshes, 16173 inst, 0.78M tris, tris/inst 8|128 · tree?: 1 meshes, 580 inst, 2.50M tris, tris/inst 4304 under town:lamps",
+  "  hidden (mounted, not shown): hero 0m/0.00M · overhead 27m/25.36M · tree? 3m/0.05M",
+  "  frame (all passes, GpuMonitor): 304 draws · 8.52M tris · gpu 184.2 ms",
+  "  off hero               hid 162 meshes · frame 142 draws, 7.74M tris",
+  "  off tree?              hid 1 meshes · frame 244 draws, 1.00M tris",
+  "  off all trees          hid 163 meshes · frame 137 draws, 0.25M tris"
+ ]
+}
