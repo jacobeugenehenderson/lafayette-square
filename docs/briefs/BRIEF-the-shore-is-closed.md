@@ -5,7 +5,7 @@ written: 2026-09-26 · REWRITTEN 2026-10-04 as the shore MEDIAN (Jacob, Huron pu
 evict-when: every town with water carries the shore median as a baked, inspectable region; every point of it holds a treatment from the grain continuum; a render-side walk of every shore finds zero views of the sky dome or a building foundation riser, and is seen to FAIL when one treatment is removed; Jacob has walked Huron and Provincetown at the water's edge, near and far.
 -->
 
-# The shore median: the space between the shoreline and the water, and what fills it
+# The shore median: the space between the coast chain's two sides, and what fills it
 
 **You are the dispatched agent. Name yourself: one word, yours, and not one a RUNNING session holds** (`ListAgents`, then
 ask Jacob to `/rename`). **Agent: FRESH.** The shore's earlier agents (Strand, Revetment, Loam) are gone, and this brief
@@ -30,17 +30,20 @@ one Ward · proving grounds **Huron and Provincetown**, neither encoded as the s
 
 ## The rulings (Jacob, 2026-10-04)
 
-1. **The median is the space between two edges, not an offset from one** — the road median's construction, applied to
-   the shore. **Inner edge:** the SHORELINE, the drawn coast (the land side of ①'s two-sided coast chain, `ROADMAP H-4`).
-   **Outer edge:** where the bottom passes below visible depth, measured from the **LOWEST** water the town's water can
-   reach.
-2. **The waterline moves INSIDE the median and never bounds it.** On Provincetown the tide moves it; on Huron the lake has
-   no tide, but **weather does** (wind setup, waves) — *"the waves are a relevant thing to track."* The waterline's job is
-   wetness (sand darkens below it, the swash band above it), a look applied to the median.
-3. **The treatment continues under the water to visible depth** — so wherever the water stands, it stands on treated ground.
-4. **Grain size follows the space available.** Widest → boulders → rocks → gravel → sand (a continuous fine surface).
-   The transition follows the median, never a hard line. The finest end is a surface, so there is no width at which
-   nothing is drawn.
+1. **The median is the space between the coast chain's own two sides, and its edges have nothing to do with water.**
+   ①'s two-sided split of the coastline gives a LAND side and a WATER side (`ROADMAP H-4`); the median is the space
+   between them, the road median's construction. *(Jacob chose this, option (a), over (b) the bed / visible depth;
+   relayed by Shingle 2026-10-04. It replaces Boz's first draft, which put the outer edge at visible depth below the
+   lowest water.)*
+2. **The water moves inside the median and never bounds it.** Huron stays at its mean / recorded average level; its
+   "tide" comes in with storms, and that touches only the wet look. ⇒ No low-water sourcing for Huron, and Provincetown's
+   high-water flood landward of the drawn shore (208 ha at MHW, `terrain.json` `water.flood`) is no longer a contradiction.
+3. **The treatment continues under the water to visible depth** (Jacob, 2026-10-04: *"that would be ideal, yes"*, given
+   before ruling 1 was corrected). ⚠️ How that relates to the median's water-independent edges is not ruled; ask before
+   building it.
+4. **The grain continuum is a TRANSITION, not a map over the whole shore.** Boulders → rocks → gravel → sand: one treatment
+   hands off to the next **as the space narrows**. The finest end is a surface, so there is no width at which nothing is
+   drawn.
 5. **Regime is a separate axis that bounds the grain range:** stone today; steel or concrete may replace boulders; a beach
    may cap the coarsest grain or omit large objects.
    ⚠️ **OWED — confirm with Jacob before building any regime control.** On 2026-09-21 he ruled *"no authored parameters —
@@ -84,9 +87,7 @@ has a name**, which the rulings above now forbid. Re-run all five yourself; don'
 ## The chain — what this trusts, and what trusts it
 
 - **Trusts:** ①'s two-sided coast chain (`ROADMAP H-4`) · the bed (`writeBed`) and the real floor (`BRIEF-bathymetry.md`)
-  · the town's water levels (`waterLevel.mjs`; `BRIEF-tide.md` — levels ours, timing NOAA). ⛔ **A lake's low water is
-  not a constant:** Huron's level record is a non-tidal Great Lakes gauge (`public/baked/huron/terrain.json` → `water`).
-  Source the low end from the town's own record and say it out loud; if it can't be sourced, fail loudly.
+  · the town's water levels (`waterLevel.mjs`; `BRIEF-tide.md` — levels ours, timing NOAA). The water level sets no edge (ruling 2).
 - **Trusted by:** `bake-ground.js` (the `bed` ground group) · the revetment renderers · the sand surface and its ground
   rules (`surfaces.mjs` `duneGrass` reads `beachBandM`) · the water shader's shallows · future pier footings.
 - ⭐ **The constraint crosses topics, so it belongs in a check:** *every point of the median holds a treatment.* That
