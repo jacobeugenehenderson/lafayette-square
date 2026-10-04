@@ -303,6 +303,9 @@ weather, so expect more motion than the old calm-day rule, and the lean now poin
 The model trees in the Salon, Grove, canary and Full Monte move on the same wind: the Salon's slider and the Grove's
 breeze are named winds; the canary and Full Monte follow the town's real weather — ⚠️ so on a calm day they are calm
 (their old fallback breezes are gone; the per-shot wind look Jacob ruled will set how much they move).
+**A capture is shot against the atlas the bake just wrote (2026-10-04).** Bake → Slab and ⟳ now wait until the page
+has loaded the atlas on disk before choosing and shooting species. Before this, a Grove page that had already shown a
+town captured against that town's previous atlas, silently skipping species the bake had just added or changed.
 **Browse trees have a deep core (2026-10-04, overhead format 6).** The capture paints the region under the canopy band's silhouette, in the two bands beneath it, one solid canopy colour taken from that tree's own canopy. Sway shows dark canopy there, never ground. ⚠️ **Every town needs one Bake → Slab to get it.** Until then Browse draws the old bands, and the console names each species still un-cored (`[overhead] ⛔ … carry no baked deep core`). ▶ `node checks/claims-the-overhead-core-is-baked.mjs` lists, per town, how many species are cored.
 
 The Grove's master atlas (`bake-look.js:unifyAtlases`) is the load-bearing innovation that makes hero species nearly free to add: `atlas-survey.js` dedupes tiles by sha1 hash before pack, so hero bark + leaf-cluster tiles collapse against the filler roster's identical content. See `ARCHITECTURE.md` for the full story.

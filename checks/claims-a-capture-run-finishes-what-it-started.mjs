@@ -9,12 +9,14 @@
 //   ① `species` is not in the run effect's dependency list;
 //   ② every capture POST is immediately guarded by alive(), and the retry catch re-throws the cancel;
 //   ③ the per-shot wait is the shared nextCaptureFrame (hidden-tab safe), never raw rAF;
-//   ④ Grove's "not loaded yet" empties are one stable identity (no `|| []` on the batch inputs).
+//   ④ Grove's "not loaded yet" empties are one stable identity (no `|| []` on the batch inputs);
+//   ⑤ both capture gestures await the atlas ON DISK (its generatedAt) before ticking the baker.
 // Static: this is browser capture code with no harness. It reads the source.
 //
 // ▶ MUTATION-TEST IT:
 //     · HeroImpostorBaker.jsx deps: add `species` back → ① RED
 //     · OverheadBaker.jsx: delete the `alive()` line before postOverhead → ② RED
+//     · Grove.jsx bakeAll: delete its `await awaitDiskAtlas(` line → ⑤ RED
 //
 //   node checks/claims-a-capture-run-finishes-what-it-started.mjs
 import fs from 'fs'
@@ -52,6 +54,16 @@ console.log('Grove.jsx')
   for (const v of ['rosterSpecies', 'activeLookTrees']) {
     const m = s.match(new RegExp(`const ${v} = ([^\\n]+)`))
     !m ? bad(`Grove.jsx: no \`const ${v}\``) : /\|\|\s*\[\]/.test(m[1]) ? bad(`Grove.jsx: ${v} falls back to a fresh [] each render: ${m[1]}`) : ok(`④ ${v} has a stable empty`)
+   }
+  // ⑤ A capture is judged and shot against the atlas ON DISK, not this page's cached one (2026-10-04: four towns
+  // captured against the previous atlas — 6 of Provincetown's 8 species never shot). Both gestures await the disk
+  // atlas before ticking the baker, and the wait compares the atlas's own stamp.
+  const wait = s.match(/const awaitDiskAtlas = async[\s\S]*?\n  \}\n/)?.[0] || ''
+  ;/generatedAt === stamp/.test(wait) && /invalidateTreeAtlas\(lookId\)/.test(wait) ? ok('⑤ awaitDiskAtlas drops the cache and waits for the stamp on disk') : bad('Grove.jsx: awaitDiskAtlas missing, or it does not wait for the disk atlas\'s generatedAt')
+  for (const fn of ['const bakeAll = async', 'const recaptureImpostors = async']) {
+    const body = s.slice(s.indexOf(fn), s.indexOf(fn) + 4000)
+    const iWait = body.indexOf('await awaitDiskAtlas('), iTick = body.indexOf('setOverheadTick(')
+    s.includes(fn) && iWait > 0 && iTick > iWait ? ok(`⑤ ${fn.split(' ')[1]} awaits the disk atlas before ticking the baker`) : bad(`Grove.jsx: ${fn.split(' ')[1]} ticks the baker without awaiting the disk atlas (wait ${iWait}, tick ${iTick})`)
   } }
 console.log(red ? `\n⛔ FAIL — ${red}` : '\n✅ PASS')
 process.exit(red ? 1 : 0)

@@ -371,6 +371,37 @@ export default function Grove() {
   // when the operator forced a re-capture.
   const overheadBatch = forceAll.current ? overheadSpecies : overheadDirty
   const heroBatch = forceAll.current ? overheadSpecies : heroDirty
+  // Read by the async gestures below, whose closures hold the render they started in.
+  const atlasRef = useRef(groveAtlas); atlasRef.current = groveAtlas
+  const poolRef = useRef(overheadSpecies); poolRef.current = overheadSpecies
+
+  // ⛔⛔ CAPTURE ONLY AGAINST THE ATLAS ON DISK (2026-10-04, four towns). The capture pool's bark gate, the dirty
+  // test, and the capture's own material all read this page's CACHED atlas — and the roster bake rewrites the atlas
+  // on disk without touching that cache. So a capture judged and shot against the PREVIOUS atlas: species the bake
+  // had just added were "not in this atlas" (Provincetown: 6 of 8 never shot), species whose inputs it had just
+  // moved read "current" against old inputs (oak_white + linden_american, LS and Huron), and what WAS shot went
+  // through the old atlas textures against GLBs rewritten to the new one.
+  // ⭐ So: read the atlas's stamp off disk, drop the cache, and WAIT until this page holds exactly that atlas. The
+  // render that then ticks the baker derives the pool, the batch and the material from it. It lands BEFORE the
+  // capture starts, never during one (a swap mid-capture aborts it — the reason the refresh had been deferred).
+  const awaitDiskAtlas = async (lookId) => {
+    const r = await slabFetch(lookId, 'trees-atlas.json')
+    if (!r.ok) throw new Error(`the atlas on disk could not be read (HTTP ${r.status})`)
+    const stamp = (await r.json())?.generatedAt
+    if (!stamp) throw new Error('the atlas on disk carries no generatedAt — nothing to wait for')
+    invalidateTreeAtlas(lookId)
+    const t0 = performance.now()
+    while (!(atlasRef.current?.status === 'ready' && atlasRef.current?.manifest?.generatedAt === stamp)) {
+      if (performance.now() - t0 > 60000) throw new Error(`this page never loaded the atlas on disk (${stamp}) within 60 s`)
+      await new Promise((res) => setTimeout(res, 100))
+    }
+  }
+  const captureBlocked = (why) => {
+    console.error(`[grove-bake] ⛔ capture NOT started: ${why}`)
+    setOverheadProg(null); setHeroProg(null)
+    setToast(`Capture could not start — ${why}`)
+    clearTimeout(toastTimerRef.current); toastTimerRef.current = setTimeout(() => setToast(null), 6000)
+  }
 
   // Bake→Slab: run the HTTP roster bake, THEN kick the in-Canvas overhead capture.
   const bakeAll = async ({ ifDirty = false } = {}) => {
@@ -390,22 +421,10 @@ export default function Grove() {
     // pool IS that file's species list — capturing off a stale read would shoot the
     // PREVIOUS bake's species.
     await loadSlabSpecies(activeLookId)
-    // ⛔ THE ATLAS REFRESH MOVED — it used to happen HERE, immediately before the capture
-    // kick below, and that is what stalled the bake at "Overhead 0/10…". Invalidating swaps
-    // `atlas.treeMaterial`, which is one of the baker effect's deps, so the reload landed
-    // MID-CAPTURE, aborted it, and the retry guard then refused to restart it.
-    // ⭐ It now runs after BOTH captures (see the hero baker's onDone), which is also more
-    // correct: the captures POST into the manifest, so re-reading before them would read a
-    // manifest they are about to rewrite. The tiles show the previous bytes until then —
-    // that is the waiting room, and the button says so.
-    // Re-read dirt AFTER the roster bake — bake-look just rewrote the atlas, and a
-    // species whose inputs moved becomes dirty exactly here.
-    // ⛔ NO TOTAL HERE. `overheadBatch` is this closure's STALE value — captured before the
-    // awaits above, when the atlas manifest had not loaded and `overheadDirty` therefore
-    // reported EVERY species dirty. That is where "Overhead 0/10…" came from while the
-    // baker was handed an empty batch: two different renders, two different answers.
-    // ⭐ The baker owns the total — it is the only party that knows the real batch.
-    if (overheadSpecies.length) { setOverheadProg({ done: 0, total: null }); setOverheadTick((t) => t + 1) }
+    // The roster bake just rewrote the atlas: capture against THAT one (awaitDiskAtlas). The baker owns the total —
+    // it is the only party that sees the batch the fresh render derives.
+    try { await awaitDiskAtlas(activeLookId) } catch (e) { captureBlocked(e.message); return }
+    if (poolRef.current.length) { setOverheadProg({ done: 0, total: null }); setOverheadTick((t) => t + 1) }
   }
   // ⭐⭐ ARRIVAL IS THE BAKE (Jacob, 2026-08-26). The Grove is "a little courtesy waiting area
   // so you can peruse and shop while the bake is happening" — so the tens of seconds the bake
@@ -439,14 +458,16 @@ export default function Grove() {
   // two pools are one product split by viewing hemisphere, and refreshing one
   // against an atlas the other hasn't seen is a drift waiting to happen.
   // Overhead's onDone chains hero, so kicking overhead runs both. (2026-07-22)
-  const recaptureImpostors = () => {
+  const recaptureImpostors = async () => {
+    // The cache may hold an atlas some other bake has since rewritten (a second page, a CLI bake): same rule.
+    try { await awaitDiskAtlas(activeLookId) } catch (e) { captureBlocked(e.message); return }
     // ⛔⛔ A PRESSED BUTTON MUST NEVER DO NOTHING IN SILENCE. This was `if (!length) return`
     // — no toast, no console line, no state change — so every failed press was
     // indistinguishable from a dead control, and the operator's only working move was to
     // leave for the Salon and come back, which defeats the button entirely.
     // (Jacob, 2026-09-03: "Clicked it and nothing happened. Again." / "It hasn't worked
     // this whole time.")
-    if (!overheadSpecies.length) {
+    if (!poolRef.current.length) {
       const why = !activeLookId ? 'no active Look selected'
         : !groveAtlas?.manifest ? 'the atlas is still loading — press it again in a moment'
         : !slabSpecies.length && !activeLookTrees.length ? 'the slab has no placed species to capture'
