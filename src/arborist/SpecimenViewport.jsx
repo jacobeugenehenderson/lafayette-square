@@ -35,6 +35,8 @@ import {
   treeSwayUniforms,
 } from '../components/treeAtlasMaterial.js'
 import { OVERHEAD_ALPHA_TEST } from '../components/overheadCore.js'
+import WindSheet from '../components/WindSheet.jsx'
+import { QualityProvider, authoringQuality } from '../lib/qualityProfile.js'
 import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc, buildHeroImpostorCard } from '../components/impostorGeometry.js'
 import { prepareOverheadBands, captureOverheadBand, prepareHeroBands, captureHeroBand } from '../components/captureImpostor.js'
 
@@ -748,6 +750,15 @@ function RotatorRing({ rotationY = 0, radius = 2.5, onRotate }) {
 }
 
 // ── Cyclorama (white sweep) ───────────────────────────────────────────
+// The Salon's stage: the floor's side, and the wind sheet's named specimen extent (the specimen stands at the centre).
+const SALON_STAGE_M = 600
+// The workstage's wind slider (0..1) as the sheet's named specimen wind — the same synthetic state the mesh preview
+// gets through treeSwayUniforms (Skeleton's useFrame): ~5 m/s east-bound (FROM the west) at full, light gusts.
+const salonWind = (strength) => {
+  const s = Math.max(0, strength || 0)
+  return { speedMps: s * 5.0, dirDeg: 270, gustsMps: s * 5.0 + s * 4.0 }
+}
+
 function Cyclorama() {
   return (
     <>
@@ -761,7 +772,7 @@ function Cyclorama() {
         shadow-camera-near={0.5} shadow-camera-far={80}
       />
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[600, 600]} />
+        <planeGeometry args={[SALON_STAGE_M, SALON_STAGE_M]} />
         <meshStandardMaterial color="#f7f5f1" roughness={1} />
       </mesh>
       {/* Big cyc sweep — pushed back + scaled up so the camera never
@@ -1554,6 +1565,10 @@ export default function SpecimenViewport({
         camera={{ near: 0.1, far: 500, fov: 38 }}
       >
         <Cyclorama />
+        {/* The card wind (the overhead snapshot, hero cards, the procedural relic) reads the WIND SHEET, as in the player. */}
+        <QualityProvider quality={authoringQuality()}>
+          <WindSheet extent={{ center: [0, 0], radius: SALON_STAGE_M / 2 }} wind={salonWind(windStrength)} />
+        </QualityProvider>
         {/* Bullseye (centering reticle) retired 2026-06-25 — centering is
             automatic (Brief 20) and the gizmo is gone, so the floor target rings
             are vestigia. */}

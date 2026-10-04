@@ -262,68 +262,35 @@ export function buildOverheadHulaGeometry(rec, season = 'summer', opts = {}) {
 }
 
 /**
- * buildOverheadBandDisc — ONE FLAT, tessellated disc for a single height BAND of
- * the 3-slice overhead snapshot (branch / mid / canopy), positioned at the band's
- * real height so three of them stack as parallax layers. It's just the carrier
- * plane for the baked-ahead full-res STAMP — flat, planar [0,1] UVs so the square
- * band capture maps straight on. No dome, no ruche. It DOES carry aOverhead +
- * aTreeHeightNorm (= the band's centre height) so the shared WIND deformer
- * (injectOverheadWiggle) can preview the eventual wind wiggle: the disc sways in
- * xz, base-anchored, so the high canopy band moves more than the low branch band.
+ * buildOverheadBandDisc — the carrier for ONE height BAND of the 3-slice overhead snapshot (branch / mid / canopy):
+ * a flat 2-triangle QUAD over the band's whole square capture frame, at the band's real height, so three stack as
+ * parallax layers. The captured picture carries the tree's silhouette in its alpha (a disc clipped an off-centre
+ * canopy), with planar [0,1] UVs: uv = position.xz / (2·half) + 0.5. aOverhead + aTreeHeightNorm (the band's centre
+ * height) let the card wind move it, base-anchored.
+ * ⭐ TWO TRIANGLES (2026-10-04). It was a 28×28 grid (1,568 triangles) only so its vertices could flutter, and that
+ * grid was the whole Browse tree cost (scratch/tree-cost/VERDICT.md: 25.36M triangles on LS, geometry not fill). The
+ * flutter now slides the PICTURE per fragment (treeAtlasMaterial.js OVERHEAD_FLUTTER_*), so no vertex needs to move.
+ * ⛔ No default dims: a record without its measured height and radius is a broken capture, not a 14 m tree.
  *
  * @param {object} rec   { heightM, canopyRadiusM }
- * @param {object} opts  { yLoNorm, yHiNorm, perimeter, radialRings, pad }
+ * @param {object} opts  { yLoNorm, yHiNorm, pad }
  */
 export function buildOverheadBandDisc(rec, opts = {}) {
-  if (!rec) return null
-
-  const H = rec.heightM || 14
-  const R = Math.max(0.5, rec.canopyRadiusM || 5)
-  const pad = opts.pad ?? IMPOSTOR_FRAME_PAD_M
-  const half = R + pad                            // half-side of the SQUARE capture frame
-
-  // A tessellated full QUAD over the whole square capture frame — NOT a disc.
-  // The captured PNG already carries the tree's real silhouette in its alpha;
-  // a circular disc geometry clipped everything outside its inscribed circle
-  // (the "stenciled by a circle on one side" artifact — worse when the canopy
-  // is off-centre or wider than canopyRadiusM). Covering the full frame lets
-  // alphaTest alone define the shape; the tessellation is only for wind flutter.
-  const N = Math.max(2, Math.round(opts.grid ?? 28))   // grid cells per side
-
-  const yLoN = Math.min(1, Math.max(0, opts.yLoNorm ?? 0.7))
-  const yHiN = Math.min(1, Math.max(yLoN, opts.yHiNorm ?? 1.0))
+  if (!(rec?.heightM > 0) || !(rec?.canopyRadiusM > 0)) throw new Error(`[buildOverheadBandDisc] ⛔ the record has no measured heightM/canopyRadiusM (${rec?.heightM}, ${rec?.canopyRadiusM}) — re-capture it`)
+  if (!Number.isFinite(opts.yLoNorm) || !Number.isFinite(opts.yHiNorm)) throw new Error(`[buildOverheadBandDisc] ⛔ the band has no yLoNorm/yHiNorm (${opts.yLoNorm}, ${opts.yHiNorm})`)
+  const H = rec.heightM
+  const half = Math.max(0.5, rec.canopyRadiusM) + (opts.pad ?? IMPOSTOR_FRAME_PAD_M)   // half-side of the SQUARE capture frame
+  const yLoN = Math.min(1, Math.max(0, opts.yLoNorm))
+  const yHiN = Math.min(1, Math.max(yLoN, opts.yHiNorm))
   const centerNorm = (yLoN + yHiN) / 2
   const y = centerNorm * H                          // flat plane at the band's centre height
 
-  const positions = []
-  const uvs = []
-  const aOverhead = []
-  const aTreeHeightNorm = []
-  const indices = []
-
-  for (let iz = 0; iz <= N; iz++) {
-    for (let ix = 0; ix <= N; ix++) {
-      const u = ix / N, v = iz / N
-      positions.push((u * 2 - 1) * half, y, (v * 2 - 1) * half)
-      uvs.push(u, v)                                 // full [0,1] → full square capture, corners included
-      aOverhead.push(1); aTreeHeightNorm.push(centerNorm)
-    }
-  }
-  for (let iz = 0; iz < N; iz++) {
-    for (let ix = 0; ix < N; ix++) {
-      const a = iz * (N + 1) + ix, b = a + 1, c = a + (N + 1), d = c + 1
-      indices.push(a, c, b, b, c, d)
-    }
-  }
-
-  if (positions.length === 0) return null
-
   const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute(aOverhead, 1))
-  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
-  g.setIndex(indices)
+  g.setAttribute('position', new THREE.Float32BufferAttribute([-half, y, -half, half, y, -half, -half, y, half, half, y, half], 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 1, 1], 2))
+  g.setAttribute('aOverhead', new THREE.Float32BufferAttribute([1, 1, 1, 1], 1))
+  g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute([centerNorm, centerNorm, centerNorm, centerNorm], 1))
+  g.setIndex([0, 2, 1, 1, 2, 3])
   g.computeBoundingSphere()
   return g
 }

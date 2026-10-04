@@ -21,6 +21,7 @@ import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { rosterOf } from '../lib/treeRoster.js'
 import { BARK_UV_STRIDE, BARK_TILE_MAX } from '../lib/barkUV.js'
+import { WIND_SHEET_GLSL, bindWindSheet } from '../lib/windSheet.js'
 
 // Module-level caches, per look. ⭐ TWO, BECAUSE THE PLAYER NEEDS ONE (ruled 2026-09-28): every
 // tree is an impostor unless the Arborist specifies a model (ARCHITECTURE §Tree-render reality),
@@ -1706,77 +1707,81 @@ export function applyOverheadDeformerUniforms(material, overhead) {
 // (one weather system) and the same uRuffleDepth/uHulaAmount the knobs drive via
 // applyOverheadDeformerUniforms. Gated per-vertex by aOverhead. Cheap: opaque,
 // flat, writes depth (early-Z) — the branch structure you see from directly above.
-// Shared overhead-wind vertex GLSL (used by both the procedural relic wiggle and
-// the stamp material). fBm turbulence + hula + flutter; wind-only, no floor.
-const OVERHEAD_WIND_COMMON = `
+// ── The cards' wind — read off the WIND SHEET (src/lib/windSheet.js), never computed here ──────────────────────
+// Every card carrier (overhead bands, hero cards, the Salon's procedural relic) takes its motion from the one field:
+// `windAt` once per TREE (the felt wind at the instance's world XZ: sprung, so it lags a gust and sways back) for the
+// rigid lean + hula, and `windDetail` for the ~1.8 m flutter. ⛔ No wind noise of our own (the sheet's authority,
+// ▶ checks/claims-the-wind-has-one-authority.mjs). What stays ours is LOOK: the per-carrier floor (calm ≠ dead) and
+// the gains below, metres of motion per m/s of felt wind (the weather terms the fBm block carried, kept).
+const CARD_LEAN_GAIN_M_PER_MPS  = 0.035
+const CARD_FLUTTER_GAIN_M_PER_MPS = 0.05
+const CARD_WIND_COMMON = WIND_SHEET_GLSL + `
          attribute float aLampGlow;   // per-tree lamp light (src/lib/lampPool.js) — absent ⇒ 0
          varying float vLampGlow;
-         uniform float uTime;
-         uniform vec3  uWindForce;
-         uniform float uWindIntensity;
-         uniform float uGustsScale;
-         uniform float uGustEnvelope;
          uniform float uWindFloor;
          uniform float uExag;
          attribute float aGroundRaw;
          attribute float aOverhead;
          attribute float aTreeHeightNorm;
          attribute float aLeafBody;   // 0 at the glued stem → 1 at the blade tip
-         attribute float aLeafPhase;  // per-leaf random flutter phase
-         // Fractal (fBm) value-noise — real wind is turbulent, not a clean sine.
-         float ovHash21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
-         float ovVNoise(vec2 p){
-           vec2 i = floor(p), f = fract(p);
-           float a = ovHash21(i), b = ovHash21(i + vec2(1.0, 0.0));
-           float c = ovHash21(i + vec2(0.0, 1.0)), d = ovHash21(i + vec2(1.0, 1.0));
-           vec2 u = f * f * (3.0 - 2.0 * f);
-           return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-         }
-         float ovFbm(vec2 p){
-           float v = 0.0, a = 0.5;
-           for (int o = 0; o < 3; o++) { v += a * ovVNoise(p); p *= 2.0; a *= 0.5; }
-           return v;   // ~[0,1]
-         }`
-const OVERHEAD_WIND_BEGIN = `
+         attribute float aLeafPhase;  // per-leaf random flutter phase`
+// The RIGID motion, per tree: hula (a periodic drift on the sheet's clock, phase-shifted per tree) + lean (downwind).
+// Defines ovWorldXZ / ovFeltDir / ovFlutAmp for the flutter chunks after it.
+const CARD_WIND_RIGID = `
+         vec2  ovWorldXZ = vec2(0.0);
+         float ovFlutAmp = 0.0;
          if (aOverhead > 0.5) {
-           // MOTION = an always-on ambient FLOOR + the shared WEATHER on top,
-           // base-anchored (aTreeHeightNorm). The floor keeps the plan-view canopy
-           // alive in dead-calm (mirrors the mesh's rustle floor); weather ADDS, so a
-           // breeze reads as more. ALIVE (not a flat rigid slide) = HULA + FLUTTER.
-           // WORLD-XZ of this tree (instance translation at runtime, model at Salon)
-           // seeds the turbulence + hula phase so 7,000 instanced trees DE-SYNC and
-           // the weather ADVECTS across the neighbourhood — while the downwind LEAN
-           // stays shared (all trees lean the same way = one moving front).
            #ifdef USE_INSTANCING
-             vec2 ovWorldXZ = instanceMatrix[3].xz;
+             ovWorldXZ = instanceMatrix[3].xz;
            #else
-             vec2 ovWorldXZ = modelMatrix[3].xz;
+             ovWorldXZ = modelMatrix[3].xz;
            #endif
-           vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
-           float wI    = uWindIntensity;
-           float gust  = uGustsScale * uGustEnvelope * ovFbm(vec2(uTime * 0.4) + wd * uTime * 0.2);
-           float drift  = uTime * 0.25;
-           vec2  hulaDir = vec2(cos(drift), sin(drift));
-           float amp    = (0.12 * uWindFloor + 0.035 * wI + 0.07 * gust) * aTreeHeightNorm;  // ambient breeze FLOOR (calm ≠ dead), scaled PER CARRIER; weather ADDS on top
+           vec4  ovW    = windAt(ovWorldXZ);
+           vec2  ovDir  = ovW.z > 1e-3 ? ovW.xy / ovW.z : vec2(0.0);
+           float t      = windSheetTime;
+           float amp    = (0.12 * uWindFloor + ${CARD_LEAN_GAIN_M_PER_MPS} * ovW.z) * aTreeHeightNorm;
+           float drift  = t * 0.25;
            float hulaPh = dot(ovWorldXZ, vec2(0.017, 0.011));   // per-tree phase de-sync
-           vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4 + hulaPh));
-           vec2  lean   = wd * (amp * 0.7);
-           // Flutter noise sampled at WORLD coords → advects downwind across the map.
-           vec2  np      = (ovWorldXZ + position.xz) * 0.55 + wd * uTime * 1.2;
-           float flutAmp = (0.05 * uWindFloor + 0.05 * wI) * aTreeHeightNorm;  // ambient flutter floor (per carrier) + weather
-           vec2  flutter = (vec2(ovFbm(np), ovFbm(np + 41.7)) - 0.5) * (2.0 * flutAmp);
-           transformed.xz += hula + lean + flutter;
-           if (aLeafBody > 0.001) {   // legacy per-leaf flutter (procedural relic)
-             float ft  = uTime * 3.4 + aLeafPhase;
-             float amp2 = (0.1 + wI * 0.06) * aLeafBody;
+           vec2  hula   = vec2(cos(drift), sin(drift)) * (amp * sin(t * 0.9 - aTreeHeightNorm * 2.4 + hulaPh));
+           transformed.xz += hula + ovDir * (amp * 0.7);
+           ovFlutAmp = (0.05 * uWindFloor + ${CARD_FLUTTER_GAIN_M_PER_MPS} * ovW.z) * aTreeHeightNorm;
+           if (aLeafBody > 0.001) {   // the Salon relic's per-leaf flutter (periodic, on the sheet's clock)
+             float ft  = t * 3.4 + aLeafPhase;
+             float amp2 = (0.1 + ovW.z * 0.06) * aLeafBody;
              transformed.y  += sin(ft) * amp2;
              transformed.xz += vec2(cos(ft * 0.9), sin(ft * 1.3)) * (amp2 * 0.55);
            }
          }`
+// Flutter at the VERTICES — carriers that keep a grid for it (the hero front shell 8×8, the Salon relic).
+const CARD_FLUTTER_VERTEX = `
+         if (aOverhead > 0.5) transformed.xz += windDetail(ovWorldXZ + position.xz) * ovFlutAmp;`
+// Flutter per FRAGMENT — the overhead band is a 2-triangle quad with no interior vertex to move, so the PICTURE slides
+// instead: the vertex hands down the fragment's rest world XZ, the per-tree amplitude, and the band's UV-per-metre basis
+// (its local axes ÷ the frame's size in metres; a band is flat and affine, so interpolating these is exact).
+const OVERHEAD_FLUTTER_VARYINGS = `
+         varying vec2  vOvXZ;
+         varying float vOvFlutAmp;
+         varying vec4  vOvUvPerM;`
+const OVERHEAD_FLUTTER_VERTEX = `
+         {
+           #ifdef USE_INSTANCING
+             mat4 ovM = instanceMatrix;
+           #else
+             mat4 ovM = modelMatrix;
+           #endif
+           vOvXZ = (ovM * vec4(position, 1.0)).xz;
+           vOvFlutAmp = ovFlutAmp;
+           // buildOverheadBandDisc: uv = position.xz / (2·half) + 0.5, and every corner sits at ±half.
+           float ovFrameM = 2.0 * abs(position.x) * dot(ovM[0].xyz, ovM[0].xyz);
+           vOvUvPerM = vec4(ovM[0].xz, ovM[2].xz) / max(ovFrameM, 1e-4);
+         }`
+const OVERHEAD_FLUTTER_FRAG = `
+         vec2 ovFlut = windDetail(vOvXZ) * vOvFlutAmp;
+         vec2 ovUv = vMapUv - vec2(dot(ovFlut, vOvUvPerM.xy), dot(ovFlut, vOvUvPerM.zw));`
 
 // ── The ambient wind FLOOR, per carrier (Jacob, 2026-08-28: "turn up the base-level
 // wind on the browse trees… still subtle, still the pre-weather base") ───────────
-// `OVERHEAD_WIND_BEGIN` is SHARED by the browse discs and the hero cards, so raising
+// `CARD_WIND_RIGID` is SHARED by the browse bands and the hero cards, so raising
 // its constants would move both. The wind itself stays ONE shared state (the doctrine
 // this file runs on); what differs is how much of the FLOOR each carrier expresses —
 // a disc read from 600 m up needs more motion to register than a card read side-on at
@@ -1811,24 +1816,20 @@ const OVERHEAD_GROUND_LIFT = `
          #endif
          vLampGlow = aLampGlow;`
 
-function bindOverheadWindUniforms(shader, floorUniform) {
+function bindCardWindUniforms(shader, floorUniform) {
   // ⛔ Default 1.0 → byte-identical for any caller that does not pass a floor.
-  shader.uniforms.uWindFloor     = floorUniform || { value: 1.0 }
-  shader.uniforms.uExag          = terrainExag   // LIVE per-shot exag; never a constant
-  shader.uniforms.uTime          = treeSwayUniforms.uTime
-  shader.uniforms.uWindForce     = treeSwayUniforms.uWindForce
-  shader.uniforms.uWindIntensity = treeSwayUniforms.uWindIntensity
-  shader.uniforms.uGustsScale    = treeSwayUniforms.uGustsScale
-  shader.uniforms.uGustEnvelope  = treeSwayUniforms.uGustEnvelope
+  shader.uniforms.uWindFloor = floorUniform || { value: 1.0 }
+  shader.uniforms.uExag      = terrainExag   // LIVE per-shot exag; never a constant
+  bindWindSheet(shader)                      // throws when no <WindSheet> is mounted — never reads zeros
 }
 
 export function injectOverheadWiggle(material) {
   material.onBeforeCompile = (shader) => {
-    bindOverheadWindUniforms(shader)
+    bindCardWindUniforms(shader)
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
-      .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN + OVERHEAD_GROUND_LIFT)
+      .replace('#include <common>', '#include <common>' + CARD_WIND_COMMON)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + CARD_WIND_RIGID + CARD_FLUTTER_VERTEX + OVERHEAD_GROUND_LIFT)
   }
 }
 
@@ -2028,7 +2029,7 @@ function bindCardLightUniforms(shader) {
 // ⭐ A SECOND LIGHT ON THE SAME ALBEDO, INSIDE THE RELIGHT: albedo × (relight + lamp). ⛔ Never
 // added after the relight on its own — that is the glow the trunk joint below refuses; a term
 // proportional to the card's own albedo cannot glow brighter than a lit leaf.
-// Declared in OVERHEAD_WIND_COMMON / LIT_CARDS_FRAG_COMMON and written in OVERHEAD_GROUND_LIFT — the
+// Declared in CARD_WIND_COMMON / LIT_CARDS_FRAG_COMMON and written in OVERHEAD_GROUND_LIFT — the
 // blocks every card program already compiles with — so claims-shader-fragments-declare-what-they-use sees them.
 function bindCardLampUniforms(shader) {
   shader.uniforms.uLampGlow  = _lampGlow.treesUniform
@@ -2142,22 +2143,27 @@ const HERO_STAMP_FRAG_COMMON = LIT_CARDS_FRAG_COMMON + `
          uniform float uTrunkShadowStr;`
 
 // The hero VERTEX common — the shared wind block plus the two card axes the
-// fragment half needs. Declared here rather than in OVERHEAD_WIND_COMMON so the
+// fragment half needs. Declared here rather than in CARD_WIND_COMMON so the
 // overhead disc, which shares that block, never carries varyings it cannot write.
-const HERO_VERT_COMMON = OVERHEAD_WIND_COMMON + `
+const HERO_VERT_COMMON = CARD_WIND_COMMON + `
          varying vec3  vHeroRight;
          varying vec3  vHeroFwd;
          varying vec3  vHeroWorldXZ;
          varying float vHeroLocalY;`
 
+// The overhead band's two halves: the card wind + the flutter's varyings (vertex), and the sheet's chunk + the same
+// varyings + the card relight (fragment). Named, so the link check pairs them.
+const OVERHEAD_VERT_COMMON = CARD_WIND_COMMON + OVERHEAD_FLUTTER_VARYINGS + ``
+const OVERHEAD_FRAG_COMMON = WIND_SHEET_GLSL + OVERHEAD_FLUTTER_VARYINGS + LIT_CARDS_FRAG_COMMON + ``
+
 // injectOverheadStamp — the RUNTIME-RELIT overhead stamp material (MeshBasic +
-// map=ALBEDO). Vertex: the shared overhead wind. Fragment: albedo × (ambient +
+// map=ALBEDO). Vertex: the wind sheet's rigid motion. Fragment: the flutter slides the picture, then albedo × (ambient +
 // sun·AO), sampling the baked AO channel — so overcast light (high ambient / low
 // sun) flattens the tree and strong sun deepens the occlusion (optical parity).
 export function injectOverheadStamp(material, aoTex) {
   material.customProgramCacheKey = () => 'overheadStamp'   // distinct from heroImpostorStamp
   material.onBeforeCompile = (shader) => {
-    bindOverheadWindUniforms(shader, browseWindFloor)
+    bindCardWindUniforms(shader, browseWindFloor)
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
@@ -2165,11 +2171,14 @@ export function injectOverheadStamp(material, aoTex) {
     bindCardLampUniforms(shader)
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
-      .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN + OVERHEAD_GROUND_LIFT)
+      .replace('#include <common>', '#include <common>' + OVERHEAD_VERT_COMMON)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + CARD_WIND_RIGID + OVERHEAD_FLUTTER_VERTEX + OVERHEAD_GROUND_LIFT)
+    // The band's picture slides by the flutter: the albedo (and with it the cutout) and the AO read at ovUv.
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>' + LIT_CARDS_FRAG_COMMON)
-      .replace('#include <map_fragment>', '#include <map_fragment>' + OVERHEAD_STAMP_FRAG)
+      .replace('#include <common>', '#include <common>' + OVERHEAD_FRAG_COMMON)
+      // ⛔ Joined with newlines: three's chunk opens with `#ifdef USE_MAP`, and a directive that does not start its
+      // line fails the COMPILE — the band then draws nothing, silently (2026-10-04, Jacob's Browse went treeless).
+      .replace('#include <map_fragment>', [OVERHEAD_FLUTTER_FRAG, THREE.ShaderChunk.map_fragment.replaceAll('vMapUv', 'ovUv'), OVERHEAD_STAMP_FRAG.replaceAll('vMapUv', 'ovUv')].join('\n'))
   }
 }
 
@@ -2180,7 +2189,7 @@ export function injectOverheadStamp(material, aoTex) {
 // can freely turn to the viewer without a per-frame swap. The instance matrices are
 // built TRANSLATION-ONLY (no rotY) so the shader owns orientation. Local card coords:
 // x = canopy width, y = canopy height (world-up, kept vertical), z = shell depth
-// (front shells pushed toward the camera → parallax). Then the shared overhead wind
+// (front shells pushed toward the camera → parallax). Then the wind sheet
 // leans/gusts it (base-anchored) and the relight tracks the weather — same as the disc.
 const HERO_BILLBOARD_BEGIN = `
          {
@@ -2215,7 +2224,7 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
   // the other (the billboard/relight silently not applying). [[feedback_unique_program_cache_key_before_wrappers]]
   material.customProgramCacheKey = () => 'heroImpostorStamp'
   material.onBeforeCompile = (shader) => {
-    bindOverheadWindUniforms(shader, heroWindFloor)
+    bindCardWindUniforms(shader, heroWindFloor)
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
@@ -2249,7 +2258,7 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
       .replace('#include <common>', '#include <common>' + HERO_VERT_COMMON)
       // Billboard FIRST (re-seat transformed facing the camera), THEN the shared wind
       // leans/gusts transformed.xz base-anchored on top.
-      .replace('#include <begin_vertex>', '#include <begin_vertex>' + HERO_BILLBOARD_BEGIN + OVERHEAD_WIND_BEGIN + OVERHEAD_GROUND_LIFT)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + HERO_BILLBOARD_BEGIN + CARD_WIND_RIGID + CARD_FLUTTER_VERTEX + OVERHEAD_GROUND_LIFT)
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>' + HERO_STAMP_FRAG_COMMON)
       .replace('#include <map_fragment>', '#include <map_fragment>' + HERO_STAMP_FRAG)

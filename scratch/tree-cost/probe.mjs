@@ -121,7 +121,10 @@ for (let s = 0; s < 90; s++) {
   if (isRes && !resident) { resident = true; residentAt = +el }
   if (resident && +el >= residentAt + 6) break
 }
-for (const x of [...new Set(pageErrors)].slice(0, 8)) say('  page ' + x)
+// ⛔ A program that did not compile/link draws NOTHING while its meshes still count as shown — a census cannot see it.
+const deadShaders = pageErrors.filter((x) => /SHADER DID NOT LINK/.test(x))
+if (deadShaders.length) { for (const x of deadShaders) say('  ⛔ ' + x); say('  ⛔ a shader did not link — every number below would describe an empty draw'); cleanup(); process.exit(1) }
+for (const x of [...new Set(pageErrors)].filter((x) => !/deep core/.test(x)).slice(0, 8)) say('  page ' + x)
 say(resident ? `  resident at t+${residentAt}s` : '  ⛔ never resident within 90 s; the at-rest numbers below are NOT steady state')
 await sleep(TRIS_ONLY ? 3000 : 8000)
 

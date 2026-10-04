@@ -40,6 +40,8 @@ import { writeCanaryTree, useCanaryTree } from '../lib/canaryTree.js'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
 import { slabUrl, slabFetch, suspendSlabUrl } from '../lib/slabUrl.js'
+import WindSheet from '../components/WindSheet.jsx'
+import { QualityProvider, authoringQuality } from '../lib/qualityProfile.js'
 
 const EMPTY = Object.freeze([])   // one identity for "nothing loaded yet" — see rosterSpecies
 
@@ -829,6 +831,12 @@ export default function Grove() {
               reads as alive (Hero specimens rustle, Browse discs wiggle), through
               the SAME uniforms/shader the player uses. See GroveWind. */}
           <GroveWind />
+          {/* The card wind: the impostors (Browse bands, hero cards) read the WIND SHEET, as in the player. The Grove has
+              no weather, so it gives the sheet a named specimen wind — the same breeze GroveWind feeds the mesh
+              specimens — over the ring's own extent. */}
+          <QualityProvider quality={authoringQuality()}>
+            <WindSheet extent={{ center: [0, 0], radius: ringRadius + TILE_SPACING }} wind={GROVE_WIND} />
+          </QualityProvider>
           <hemisphereLight args={['#ffffff', '#e8e4dc', 0.85]} />
           <directionalLight
             position={[40, 80, 30]} intensity={0.55} castShadow
@@ -939,15 +947,14 @@ export default function Grove() {
   )
 }
 
-// GroveWind — the Grove's SwayDriver. It has no live weather feed, so it drives a
-// constant gentle authoring breeze (the canary's calm fallback, HERO_BREEZE_MPS =
-// 3.0) into the SHARED treeSwayUniforms + advances uTime. Every tree shader in the
-// scene — the Hero specimens' injectFoliageSway rustle AND the Browse discs'
-// injectOverheadStamp wiggle — reads these same uniforms, so nothing renders a
-// parallel path: what breathes here breathes in the player. (Systemic follow-on:
-// a baseline rustle floor on the OVERHEAD path so calm weather isn't dead-still in
-// the live map too — task #15 "B".)
+// GroveWind — the Grove's SwayDriver for the MESH specimens (injectFoliageSway reads the shared treeSwayUniforms;
+// the mesh path has not moved onto the wind sheet). It has no live weather feed, so it drives a constant gentle
+// authoring breeze into those uniforms + advances uTime. The CARDS read the wind sheet, fed the same breeze
+// (GROVE_WIND) — what breathes here breathes in the player.
 const GROVE_BREEZE_MPS = 3.0
+// The same breeze as the sheet's named specimen wind: FROM the west (blowing +X, as GroveWind's force), the gust's
+// peak 1.5 m/s above the mean (GroveWind's uGustsScale).
+const GROVE_WIND = Object.freeze({ speedMps: GROVE_BREEZE_MPS, dirDeg: 270, gustsMps: GROVE_BREEZE_MPS + 1.5 })
 function GroveWind() {
   useFrame((_, dt) => {
     treeSwayUniforms.uTime.value += dt

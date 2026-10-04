@@ -256,7 +256,7 @@ export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
   const invalidate = useThree(s => s.invalidate)
 
   const discs = useMemo(() => {
-    const rec = { heightM: asset.heightM || 14, canopyRadiusM: asset.canopyRadiusM || 5 }
+    const rec = { heightM: asset.heightM, canopyRadiusM: asset.canopyRadiusM }
     const n = asset.bands.length
     return asset.bands.map((b, i) => {
       const bright = n > 1 ? 0.3 + 0.7 * (i / (n - 1)) : 1.0

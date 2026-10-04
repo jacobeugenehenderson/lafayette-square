@@ -36,10 +36,15 @@ const src = readFileSync(path.join(ROOT, FILE), 'utf8')
 // shared block without either duplicating the shared text or declaring identifiers
 // into a sibling material that cannot write them. Resolve the prefix, or the check
 // reads the additions and misses everything they were added to.
+// ⭐ IMPORTED GLSL modules are read FIRST, so a block that concatenates one (the wind sheet's chunk, 2026-10-04) resolves
+// to what it really compiles with instead of reading as an undeclared name.
+const IMPORTED = ['src/lib/windSheet.js']
 const blocks = new Map()
-for (const m of src.matchAll(/const ([A-Z0-9_]+) = ((?:[A-Z0-9_]+ \+ )*)`([\s\S]*?)`/g)) {
-  const prefix = m[2].split('+').map(t => t.trim()).filter(Boolean).map(n => blocks.get(n) ?? '').join('\n')
-  blocks.set(m[1], prefix + m[3])
+for (const text of [...IMPORTED.map((f) => readFileSync(path.join(ROOT, f), 'utf8')), src]) {
+  for (const m of text.matchAll(/(?:export )?const ([A-Z0-9_]+) = (?:\/\* glsl \*\/)?\s*((?:[A-Z0-9_]+ \+ )*)`([\s\S]*?)`/g)) {
+    const prefix = m[2].split('+').map(t => t.trim()).filter(Boolean).map(n => blocks.get(n) ?? '').join('\n')
+    blocks.set(m[1], prefix + m[3])
+  }
 }
 
 // Injection sites pair a COMMON with the code injected alongside it. BOTH shader
@@ -58,7 +63,9 @@ const pairs = []
 for (const line of src.split('\n')) {
   const c = line.match(/'#include <common>'\s*\+\s*([A-Z0-9_]+)/)
   if (c) pairs.push({ common: c[1], begins: [] })
-  const b = line.match(/'#include <(?:begin_vertex|map_fragment)>'\s*\+\s*(.+)$/)
+  // Appended (`'#include <map_fragment>' + Y`) or REPLACING the chunk (`'#include <map_fragment>', Y + …`, the overhead
+  // band's sliding picture, 2026-10-04) — either way Y compiles with this common.
+  const b = line.match(/'#include <(?:begin_vertex|map_fragment)>'\s*[+,]\s*(.+)$/)
   if (b && pairs.length) {
     for (const n of b[1].matchAll(/([A-Z0-9_]{4,})/g)) if (blocks.has(n[1])) pairs[pairs.length - 1].begins.push(n[1])
   }

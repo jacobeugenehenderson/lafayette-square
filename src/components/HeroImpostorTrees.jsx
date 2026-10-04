@@ -206,9 +206,8 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       for (const layer of azSet.layers) {
         // ⭐⭐ THE FRONT-SHELL LEVER (Jacob, 2026-08-28: "only the FRONT leaf shell needs
         // to flutter; the under shell and bark can be flat cards").
-        // The card's tessellation exists for ONE term: the fbm flutter in
-        // OVERHEAD_WIND_BEGIN samples noise at `position.xz`, so it needs interior
-        // vertices to warp. Hula and lean scale by `aTreeHeightNorm` and survive on a
+        // The card's tessellation exists for ONE term: the flutter (CARD_FLUTTER_VERTEX,
+        // the wind sheet's windDetail at `position.xz`) needs interior vertices to warp. Hula and lean scale by `aTreeHeightNorm` and survive on a
         // 2×2 card, so a flat under-shell still LEANS with the wind, it just stops
         // paying for per-vertex flutter nobody can see through the front shell's
         // alphaTest. ⛔ Not a blanket cut: a previous attempt flattened EVERY layer and

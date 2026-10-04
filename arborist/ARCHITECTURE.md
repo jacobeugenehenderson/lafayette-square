@@ -130,9 +130,16 @@ truth. It is a per-shot look decision (`scene.shotLooks`), not a geometry one.
 > Each card was a **20×20 grid = 800 tris**, ×3 cards/tree. On huron's 17,575 placements
 > that is **42.18 M triangles every frame**, and it was the entire cost: trees off took the
 > scene **9.8 → 23.6 FPS**; suppressing only `drawElementsInstanced` did the same.
-> ⭐ **The tessellation exists for ONE term** — the fbm flutter in `OVERHEAD_WIND_BEGIN`
-> samples noise at `position.xz`, so it needs interior vertices to warp. Hula and lean scale
-> by `aTreeHeightNorm` and survive on a 2×2 card.
+> ⭐ **The tessellation exists for ONE term** — the vertex flutter (`CARD_FLUTTER_VERTEX`, the
+> wind sheet's `windDetail` at `position.xz`) needs interior vertices to warp. Hula and lean scale
+> by `aTreeHeightNorm` and survive on a 2×2 card. ⭐ **The overhead bands took this to its end
+> (2026-10-04):** each band is **2 triangles** and its flutter slides the PICTURE per fragment
+> (`OVERHEAD_FLUTTER_*`), so no vertex moves — LS Browse 25.36M → 0.03M tree triangles
+> (`scratch/tree-cost/VERDICT.md`; ▶ `node checks/claims-the-overhead-band-is-two-triangles.mjs`).
+> **Every card reads the wind sheet** (`src/lib/windSheet.js`): `windAt` once per tree, `windDetail`
+> for flutter; the Grove and Salon mount a named specimen sheet. ⛔ Open: the mesh path
+> (`injectFoliageSway`) still reads `treeSwayUniforms` — a second wind, so
+> `claims-the-wind-has-one-authority` is red until it migrates (Grain, next).
 > ⇒ **Landed: front shell 8×8, the two occluded layers flat (2 tris).** 42.18 M → **2.32 M**.
 > Eye-gated by Jacob on huron at the pan and at rest; `?frontGrid=` / `?backGrid=` override.
 > ⛔ **NOT a blanket cut — that was tried and reverted** (`c0056ffd` → `4433b301`): dropping
