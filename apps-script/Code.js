@@ -88,7 +88,6 @@ var TENANT_PATTERN = /^tw-[a-z0-9]{8}$/
 // ▶ node checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs
 var LEGACY_LOOK_TENANT = {
   'lafayette-square': 'tw-2721jg7t',   // until: LS's cutover (its player on `main`, GitHub Pages)
-  'provincetown':     'tw-zmc6ejej',   // until: host provincetown.online is re-promoted (pinned Ward build sends look)
 }
 
 /** The town this request is for, or null — and a null is refused by the caller, never defaulted. */
