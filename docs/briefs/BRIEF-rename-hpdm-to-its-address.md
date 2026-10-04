@@ -84,5 +84,6 @@ staging site.
 ## Bounds
 
 The renamed paths above, `cartograph/bake-content.js` (the prefix), `workers/staging-sites/` (the
-redirect), and a check. Operations and R2 writes are Jacob's to approve. Commit messages name the
+redirect), the Apps Script tenant key (`apps-script/Code.js`, `src/lib/api.js`; drafted, Jacob deploys), and a check.
+Operations, R2 and Apps Script writes are Jacob's to approve. Commit messages name the
 register (`OPERATIONS § Production sites` already states the rule and this job).
