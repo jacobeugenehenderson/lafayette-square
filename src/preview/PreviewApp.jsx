@@ -488,7 +488,7 @@ function PyramidTuner({ envId, degree, onChange }) {
   )
 }
 
-function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree, quality, profilerTab, setProfilerTab, deployment }) {
+function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree, quality, profilerTab, setProfilerTab, deployment, shot }) {
   // The passes this tier's profile ships at all (gates aside): the rest have nothing to toggle.
   const tierPasses = new Set(mountedPasses({ quality, dofOn: true }).map((e) => e.id))
   const notOnTier = new Set(FX_LAYERS.map(([k]) => k).filter((k) => !tierPasses.has(k)))
@@ -532,7 +532,7 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
 
       {/* What this surface SHIPS (deployment.json) — authored, autosaved; below it, what you are inspecting (temporary). */}
       {deployment}
-      <DiagnosisPanel surface={envId} layers={diagnosed} measure={measureLayer} />
+      <DiagnosisPanel surface={envId} shot={shot} layers={diagnosed} measure={measureLayer} />
 
       <LayerSection title="Scene" layerList={SCENE_LAYERS} layers={layers}
         setLayer={setLayer} metric="draws" footer={<SceneCaveats />} />
@@ -1159,7 +1159,7 @@ function PreviewTown({ town }) {
       <RightPanel layers={layers} setLayer={setLayer} top={panelTop} bottom={panelBottom}
         envId={mode} degree={activeDegree} onTuneDegree={setActiveDegree} quality={quality}
         deployment={<DeploymentPanel map={town.mapId} surface={mode} state={dep} setState={setDep} labels={FX_LABELS} />}
-        profilerTab={profilerTab} setProfilerTab={setProfilerTab} />
+        profilerTab={profilerTab} setProfilerTab={setProfilerTab} shot={shot} />
       {!isPhone && <PublishPanel lookId={lookId} />}
     </div>
   )

@@ -9,6 +9,8 @@
  *     cost inside it reads "≈ 0". Non-additive: overdraw is shared, so rows never sum to the frame. This desktop's GPU.
  *   · triangles · meshes · memory — static, per <Town> piece (Residency.jsx): they hold across devices, so they rank by SHARE.
  * Over/under a budget is said only against deviceProfiles.js, and those phone budgets are INTERIM: said wherever shown.
+ * Readings are pinned to the view they were taken in (shot · viewport · surface, said beside them); the Hero movie moves,
+ * so the panel will not measure there (Lens: a before/after compares one view).
  * Each row names its kind of remedy:
  *   · deployment — a switch in the deployment panel above (a post-effect pass);
  *   · creative — authored in Stage (the Look, framing, density): "this costs X; change it in Stage". Never ranked as
@@ -40,7 +42,7 @@ const M = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3
  * `layers`: [{ key, label, piece?, pass? }] — the shown Scene layers (piece = its <Town> piece) and the post-effect
  * passes this surface ships (pass = true). `measure(key)`: takes the layer out and back, resolving when its cost is in.
  */
-export default function DiagnosisPanel({ surface, layers, measure }) {
+export default function DiagnosisPanel({ surface, shot, layers, measure }) {
   const r = useResidency()
   const [costs, setCosts] = useState({})     // key → { gpuMs, noise }, this session's diagnosis run
   const [run, setRun] = useState(null)       // { i, n, key } while measuring
@@ -68,11 +70,12 @@ export default function DiagnosisPanel({ surface, layers, measure }) {
 
   const measureAll = async () => {
     stop.current = false
+    const at = { shot, w: window.innerWidth, h: window.innerHeight, surface }
     const todo = layers.map((l) => l.key)
     for (let i = 0; i < todo.length && !stop.current; i++) {
       setRun({ i, n: todo.length, key: todo[i] })
       const c = await measure(todo[i])
-      setCosts((m) => ({ ...m, [todo[i]]: c }))
+      setCosts((m) => ({ ...m, [todo[i]]: { ...c, at } }))
     }
     setRun(null)
   }
@@ -90,10 +93,13 @@ export default function DiagnosisPanel({ surface, layers, measure }) {
           a row inside its own noise reads ≈ 0, and one that read negative past it reads unstable: measure again.
         </div>
         <div className="profiler-row" style={{ gap: 6, marginBottom: 6 }}>
-          {run
+          {shot === 'hero'
+            ? <span className="profiler-note">The Hero movie moves the camera, so a before/after there compares two views: measure in Browse or Street.</span>
+            : run
             ? <><span style={{ flex: 1 }}>measuring {run.key} ({run.i + 1}/{run.n})… the view flickers as layers go out and back</span><button className="profiler-panel" style={{ padding: '2px 8px' }} onClick={() => { stop.current = true }}>stop</button></>
             : <button className="profiler-panel" style={{ padding: '2px 8px', cursor: 'pointer' }} onClick={measureAll}>measure each layer (GPU ms, by toggle)</button>}
         </div>
+        {measured && (() => { const a = Object.values(costs).find((c) => c.at)?.at; return a ? <div className="profiler-note">measured in {a.shot} · {a.w}×{a.h} · {a.surface}{a.shot !== shot || a.surface !== surface ? ' — not this view: measure again to compare' : ''}</div> : null })()}
         <div className="profiler-head">
           <span style={{ flex: 1 }}>{measured ? 'ranked by GPU ms (toggle, non-additive)' : 'ranked by triangle share (measure for time)'}</span>
           <span style={{ width: 54, textAlign: 'right' }}>GPU ms</span><span style={{ width: 44, textAlign: 'right' }}>tris</span>
