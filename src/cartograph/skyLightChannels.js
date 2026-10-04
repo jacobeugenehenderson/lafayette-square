@@ -384,10 +384,13 @@ export function migrateArchLight(design) {
 // the town disc fit (browseFitAltitude) / Hero keyframes / double-click
 // handler respectively (hardwires-come-out doctrine, category 3).
 // Single flat-value channel (not TOD-animated; FOV doesn't change
-// through the day). Defaults match the legacy module-scope SHOTS const
-// verbatim so unauthored Looks are byte-identical to pre-SC.5.
+// through the day).
+// ⛔ NO `bounds` DEFAULT (Phase 2 C, 2026-10-04). It was Lafayette Square's building footprint
+// {cx:95,cz:-158,w:1292,h:1025}: the store hydrated it into every town and autosaved it back as if authored, so
+// all five towns carried LS's box. A box is a PLACE; there is no neutral one. Unauthored, Browse frames the town's
+// own disc (ShotFlight, Scene.jsx). ▶ node checks/claims-no-town-carries-the-mould.mjs
 export const SHOTS_FLAT_DEFAULTS = {
-  browse: { fov: 45, padding: 1.05, bounds: { cx: 95, cz: -158, w: 1292, h: 1025 } },
+  browse: { fov: 45, padding: 1.05 },
   hero:   { fov: 22 },
   street: { fov: 75, eyeHeight: 1.73 },
 }

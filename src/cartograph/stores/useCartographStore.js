@@ -430,8 +430,8 @@ const DESIGN_FIELDS = [
   // partial author (e.g. only shots.values.hero.fov) inherits the rest.
   { key: 'shots', hydrate: (d) => d.shots?.values
     ? { values: {
-        browse: { ...SHOTS_FLAT_DEFAULTS.browse, ...(d.shots.values.browse || {}),
-          bounds: { ...SHOTS_FLAT_DEFAULTS.browse.bounds, ...(d.shots.values.browse?.bounds || {}) } },
+        // ⛔ No default box is merged in: it was LS's footprint, autosaved into every town (SHOTS_FLAT_DEFAULTS).
+        browse: { ...SHOTS_FLAT_DEFAULTS.browse, ...(d.shots.values.browse || {}) },
         hero:   { ...SHOTS_FLAT_DEFAULTS.hero,   ...(d.shots.values.hero   || {}) },
         street: { ...SHOTS_FLAT_DEFAULTS.street, ...(d.shots.values.street || {}) },
       } }

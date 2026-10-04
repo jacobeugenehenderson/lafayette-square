@@ -142,13 +142,7 @@
     "values": {
       "browse": {
         "fov": 45,
-        "padding": 1.05,
-        "bounds": {
-          "cx": 95,
-          "cz": -158,
-          "w": 1292,
-          "h": 1025
-        }
+        "padding": 1.05
       },
       "hero": {
         "fov": 22

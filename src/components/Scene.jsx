@@ -21,6 +21,7 @@ import R3FErrorBoundary from './R3FErrorBoundary'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { getSceneStencil } from './sceneStencilState.js'
 import { applyRegime } from '../lib/cameraRegimes.js'
 import RegimeControls from './RegimeControls.jsx'
 
@@ -187,10 +188,17 @@ function CameraRig({ movie }) {
   // neighborhood (cx/cz), fit altitude to the viewport, exactly as Stage/Preview
   // do. Replaces the legacy hardcoded PRESETS.browse [0,0,0]/600 that framed
   // off-center + at the wrong altitude (Vernier Phase 2).
-  const browseBounds = shotsV.browse?.bounds || SHOTS_FLAT_DEFAULTS.browse.bounds
   const browsePad    = shotsV.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding ?? 1.05
-  const browseCx     = browseBounds?.cx ?? 0
-  const browseCz     = browseBounds?.cz ?? 0
+  // ⛔ The authored box, else the town's own disc (as <Town>'s ShotFlight frames it), else NO move, said aloud. This read
+  // LS's building footprint for any town without a box (skyLightChannels.js#SHOTS_FLAT_DEFAULTS, Phase 2 C).
+  const browseFrame = () => {
+    const b = shotsV.browse?.bounds
+    if (b) return b
+    const s = getSceneStencil()
+    if (s) return { cx: s.center[0], cz: s.center[1], w: 2 * s.radius, h: 2 * s.radius }
+    console.error('[Scene] ⛔ Browse: the town authored no bounds and its disc is not loaded — the camera stays put')
+    return null
+  }
 
   // The movie is played by <Town> (its MovieCamera); entering it samples the path through the driver's handle, on
   // its clock — the random start on each entry (and on arrival) is the driver's. `movie` is the link Scene shares
@@ -458,11 +466,13 @@ function CameraRig({ movie }) {
         // center (slab browse bounds), at the bounds-fit overhead altitude.
         const loc = useUserLocation.getState()
         const hasUserPos = loc.active && loc.inBounds && loc.x != null
-        const cx = hasUserPos ? loc.x : browseCx
-        const cz = hasUserPos ? loc.z : browseCz
+        const frame = hasUserPos ? null : browseFrame()
+        if (hasUserPos || frame) {
+        const cx = hasUserPos ? loc.x : frame.cx
+        const cz = hasUserPos ? loc.z : frame.cz
         const altitude = hasUserPos
           ? 300
-          : browseAltitude(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
+          : browseAltitude(size.width / Math.max(size.height, 1), browseFov, frame, browsePad)
         beginTransition(
           [cx, altitude, cz + 1],
           [cx, 0, cz],
@@ -470,6 +480,7 @@ function CameraRig({ movie }) {
           BROWSE_TRANS_MS,
           browseUpFromHeading(browseHeadingDeg)   // tilt into a true overhead
         )
+        }
       } else if (entering === 'planetarium') {
         // Street-level sky view at the clicked position. fov + eyeHeight
         // are authored (scene.shots.values.street); origin is a runtime
@@ -489,9 +500,12 @@ function CameraRig({ movie }) {
       } else if (entering === 'browse') {
         // Browse entered from a non-hero shot (e.g. planetarium→browse): same
         // slab-authored overhead framing as the hero→browse path above.
-        const altitude = browseAltitude(size.width / Math.max(size.height, 1), browseFov, browseBounds, browsePad)
-        beginTransition([browseCx, altitude, browseCz + 1], [browseCx, 0, browseCz], browseFov, BROWSE_TRANS_MS,
-          browseUpFromHeading(browseHeadingDeg))
+        const frame = browseFrame()
+        if (frame) {
+          const altitude = browseAltitude(size.width / Math.max(size.height, 1), browseFov, frame, browsePad)
+          beginTransition([frame.cx, altitude, frame.cz + 1], [frame.cx, 0, frame.cz], browseFov, BROWSE_TRANS_MS,
+            browseUpFromHeading(browseHeadingDeg))
+        }
       } else if (entering === 'hero' && movie.handle.current?.pose(_heroPos, _heroTgt)) {
         // Glide onto the authored path: the destination is the keyframe pose
         // itself, and the chase below keeps it moving with the pan. Up returns
