@@ -27,6 +27,9 @@ if (!scene || !/^[a-z0-9][a-z0-9-]*$/.test(scene)) { console.error('scaffold-ins
 const out = join(ROOT, 'src', 'instances', `${scene}.js`)
 if (existsSync(out)) { console.error(`scaffold-instance: ${out} exists — a module is authored state, not overwritten`); process.exit(2) }
 const dir = join(ROOT, 'cartograph', 'data', scene)
+// ⛔ A town is registered WITH its sealed backend id (src/instances/registry.js#withId), or not at all: registered without
+// one it would have no tenant, and the registry refuses to load it. The id is sealed once, by hand — never minted here.
+if (!existsSync(join(dir, 'town-id.json'))) { console.error(`scaffold-instance: ⛔ ${scene} has no cartograph/data/${scene}/town-id.json — seal its backend id first ({"townId": "tw-" + 8 lowercase letters/digits}); ▶ node checks/claims-a-town-has-one-sealed-id.mjs`); process.exit(2) }
 const geo = JSON.parse(readFileSync(join(dir, 'geography.json'), 'utf8'))
 let nb = {}; try { nb = JSON.parse(readFileSync(join(dir, 'neighborhood.json'), 'utf8')) } catch { /* no draft yet */ }
 const name = nb.name || null
@@ -60,7 +63,6 @@ export default {
   contentRoot: 'content/${scene}/',
 
   branding: {
-    title: ${q(name)},
     faviconUrl: null,
     // ${mark ? "OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source)." : '⛔ NO MARK YET — the operator authors one (an emoji), in the Look. Until then the town shows its own initial.'}
     mark: ${q(mark)},
@@ -108,6 +110,10 @@ const ident = scene.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase()).replace(/
 const imports = [...reg.matchAll(/^import .* from '\.\/[^']+\.js'\n/gm)]
 const last = imports.at(-1)
 reg = reg.slice(0, last.index + last[0].length) + `import ${ident} from './${scene}.js'\n` + reg.slice(last.index + last[0].length)
-reg = reg.replace(/const INSTANCES = \{\n([\s\S]*?)\n\}/, (m, body) => `const INSTANCES = {\n${body}\n  '${scene}': ${ident},\n}`)
+const ids = [...reg.matchAll(/^import \w+Id from '\.\.\/\.\.\/cartograph\/data\/[^']+\/town-id\.json' with \{ type: 'json' \}\n/gm)]
+const lastId = ids.at(-1)
+if (!lastId) { console.error('scaffold-instance: ⛔ registry.js imports no town-id.json — its shape changed; register by hand'); process.exit(2) }
+reg = reg.slice(0, lastId.index + lastId[0].length) + `import ${ident}Id from '../../cartograph/data/${scene}/town-id.json' with { type: 'json' }\n` + reg.slice(lastId.index + lastId[0].length)
+reg = reg.replace(/const INSTANCES = \{\n([\s\S]*?)\n\}/, (m, body) => `const INSTANCES = {\n${body}\n  '${scene}': withId(${ident}, ${ident}Id),\n}`)
 writeFileSync(regP, reg)
 console.log(`scaffold-instance: wrote src/instances/${scene}.js and registered it (mark: ${mark ?? 'NONE YET — shows its initial'})`)

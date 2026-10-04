@@ -45,6 +45,7 @@ import lafayetteSquare from './lafayette-square.js'
 import hipointeDemun from './hipointedemun.js'
 import huron from './huron.js'
 import provincetown from './provincetown.js'
+import altadena from './altadena.js'
 // ⭐ EACH TOWN'S BACKEND KEY — opaque, minted once, sealed in `cartograph/data/<map>/town-id.json` (Jacob,
 // 2026-10-04). Every backend keys a town by it (the Apps Script tenant, the Operations overlay, the Ward's
 // calls), so a town's name and address stay free to change. Never shown to operators.
@@ -53,6 +54,7 @@ import lafayetteSquareId from '../../cartograph/data/lafayette-square/town-id.js
 import hipointeDemunId from '../../cartograph/data/hipointedemun/town-id.json' with { type: 'json' }
 import huronId from '../../cartograph/data/huron/town-id.json' with { type: 'json' }
 import provincetownId from '../../cartograph/data/provincetown/town-id.json' with { type: 'json' }
+import altadenaId from '../../cartograph/data/altadena/town-id.json' with { type: 'json' }
 import { TOWN_ID } from '../lib/townRecord.js'
 
 const withId = (town, { townId }) => {
@@ -65,6 +67,7 @@ const INSTANCES = {
   'hipointedemun': withId(hipointeDemun, hipointeDemunId),
   huron: withId(huron, huronId),
   'provincetown': withId(provincetown, provincetownId),
+  'altadena': withId(altadena, altadenaId),
 }
 
 /**
