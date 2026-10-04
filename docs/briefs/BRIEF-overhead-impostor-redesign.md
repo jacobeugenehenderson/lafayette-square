@@ -37,6 +37,9 @@ in a hurry as much as I want to get it done solidly."* No interim step.
    flat quad's wiggle needs) beside `overheadBySpecies` in the atlas manifest; `OverheadTrees` draws what was baked. ⛔ The runtime
    doesn't reconstruct it.
 
+## Then, as its own commit: the mesh-tree wind (Jacob, 2026-10-04)
+After the overhead redesign lands, move the mesh-tree path's wind (`treeAtlasMaterial.js#injectFoliageSway`) onto Gale's API too, so `claims-the-wind-has-one-authority` goes green. Not urgent (no town draws mesh trees today; it runs in the Grove/Salon), but it's the last second wind in the code.
+
 ## Dependencies and bounds
 
 - **Gale's wind sheet** (`docs/briefs/BRIEF-wind-sheet.md`) supplies `windAt`/`windDetail`. ⚠️ **Sequence with Gale:** build against
