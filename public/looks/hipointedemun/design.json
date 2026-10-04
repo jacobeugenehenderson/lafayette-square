@@ -102,18 +102,7 @@
     "letterSpacing": 0.05,
     "opacity": 1,
     "case": "mixed",
-    "fontFamily": "",
-    "size": 4,
-    "tierScale": {
-      "street": 1,
-      "park": 2.8
-    },
-    "targetPx": 24,
-    "minPx": 8,
-    "maxPx": 128,
-    "font": "",
-    "bg": "#3a3a38",
-    "bgAlpha": 1
+    "fontFamily": ""
   },
   "blockCustoms": {
     "de-mun-avenue-3": {
@@ -235,19 +224,24 @@
     "#b22222",
     "#808080"
   ],
-  "smaa": {
-    "values": {
-      "value": 1
-    }
+  "surfaces": null,
+  "identity": {
+    "mark": "⚜️",
+    "markStyle": "regular"
   },
+  "wallMix": null,
+  "wallPalettes": null,
+  "lamps": null,
+  "terrainExag": null,
   "sky": {
     "overrides": []
   },
   "heroSubject": null,
+  "dofFocus": null,
   "heroKeyframes": [],
   "heroMotion": {
-    "period": 1360,
-    "easing": "sine"
+    "length": 360,
+    "mode": "bounce"
   },
   "shots": {
     "values": {
@@ -264,6 +258,7 @@
       }
     }
   },
+  "browseFrame": null,
   "browseHeading": {
     "values": {
       "value": 0
@@ -275,6 +270,7 @@
       "overrides": null
     }
   },
+  "shotLooks": {},
   "openSections": {
     "Streets": false,
     "Blocks": false,

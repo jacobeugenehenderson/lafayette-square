@@ -11,7 +11,7 @@
       "name": "Lafayette Square",
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
-      "bakedAt": 1791095504811,
+      "bakedAt": 1791140302030,
       "updatedAt": 1790637026300
     },
     {
@@ -19,8 +19,8 @@
       "name": "HiPointe-DeMun",
       "scene": "hipointedemun",
       "createdAt": 1782000000000,
-      "bakedAt": 1791125201176,
-      "updatedAt": 1791124213165
+      "bakedAt": 1791138684349,
+      "updatedAt": 1791136820299
     },
     {
       "id": "altadena",
@@ -35,7 +35,7 @@
       "name": "huron",
       "scene": "huron",
       "createdAt": 1789875167347,
-      "bakedAt": 1790731840002,
+      "bakedAt": 1791139334452,
       "updatedAt": 1790572253612
     },
     {
@@ -43,7 +43,7 @@
       "name": "Provincetown",
       "scene": "provincetown",
       "createdAt": 1790285800621,
-      "bakedAt": 1790733071220,
+      "bakedAt": 1791140138226,
       "updatedAt": 1790582275495
     }
   ]
