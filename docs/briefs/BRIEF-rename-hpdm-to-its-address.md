@@ -50,6 +50,12 @@ Map, Ward, slab, Look and instance all become `hipointedemun`. The Apps Script t
 ### ✅ RULED 2026-10-04 (Jacob): the stable key is an OPAQUE ID
 Jacob, on reusing the old name as the key: *"I don't get the emergency permanence as regards an operator facing quantity"* ⇒ **opaque id**: minted once per town, sealed in its identity, baked into `manifest.identity`, **never shown to operators**, never derived from a name. Every backend keys by it: the Apps Script tenant, Operations' publish key (`live/<id>/…`) and its stored scene field, the Ward's tenant and overlay read (`theward/src/content/api.js`, `content.js#overlay`), and the kit's `api.js`. Cost accepted: each existing town's backend data moves **once** (HPDM, LS, Huron, PT), proven zero rows lost against before-counts. One job, owned by Tamp, committed per repo. *(Found by Tamp: the Ward and Operations key by the path name too, so a rename would have silently dropped Host edits; a kit-only key could not cover it.)*
 
+### ✅ RULED 2026-10-04 (Jacob): LS's translation table, and Altadena moves too
+- **LS production** (`main`, legacy player) sends `look=lafayette-square` until its cutover. The Apps Script keeps a **finite look → id table** for that one client, **deleted at LS's cutover**, and a check fails if it outlives it.
+- **Altadena is included**: its own opaque id, its 23 Operations listings move.
+- **Where the id lives (Tamp):** `cartograph/data/<map>/town-id.json`, sealed. The kit's map registry attaches it to the instance (so `api.js` and `manifest.identity` carry it); the Operations importer and the migrations read the same file. No instance module is needed to hold one.
+- **Sheet "before" state (Jacob's screenshots):** HPDM has 11 `…__hipointe-demun` tabs; row counts not taken. ⇒ The Apps Script migration counts every tab it moves, before and after, in the same run, refuses to remove a source whose count doesn't match its destination, and opens tabs strictly (a missing one throws; `getSheet` auto-creates on read).
+
 ## What moves (▶ re-derive; never quote a count)
 
 - `git grep -l -- hipointe-demun` lists every tracked file that names it. The live ones: `cartograph/data/hipointe-demun/`
