@@ -66,12 +66,18 @@ In Hero, **Preview drops to Browse on any drag over 6 px or any scroll** (`src/p
 control unless I am recording or playing back keyframes."* On 2026-10-03 Jacob, in Preview, read this as Stage
 misbehaving. The two surfaces carry the same Hero / Browse / Street bar, so it is easy to be in one and believe you are in
 the other.
-✅ **RULED 2026-10-03 (Jacob): ditch it.** *"If we are looking at things in their 'real runtime environments' Hero
-doesn't have manipulable controls, and browse's are limited."* ⇒ **Preview presents each shot with its real runtime's
-controls:** Hero is the movie, so a drag or scroll does nothing (no camera move, no drop to Browse). Browse keeps its
-limited plan controls. The gesture leaves `ShotCamera`.
-▶ Not built: it's a tranche-2 row, not this tranche's to make. **Report** whether the Ward drops to Browse when a visitor
-touches the movie. If it does, Preview and Player differ on that one gesture **by ruling**, and the map must say so.
+✅ **RULED 2026-10-03 (Jacob), in two steps, and the second is the ruling.** First: *"ditch it… in their 'real runtime
+environments' Hero doesn't have manipulable controls, and browse's are limited."* Then, sharpened: *"those things are
+possible in a spectrum of outcomes; the things you just described might be different from map to map; there are
+editable camera controls so depending on the design the system will have to reproduce it in Preview."*
+⇒ **Preview reproduces the camera controls the town's design specifies, shot by shot.** ⛔ **No gesture is hard-coded in
+Preview, in either direction:** not "drop to Browse", and not "Hero does nothing". The town's authored controls are the
+**one authority**, and Preview and the Player both read it. This is the spec's *"one explicit authority for authored
+framing"* extended to *how* the camera may be driven, not only *where* it points.
+▶ **Trace, don't build:** does a per-town, per-shot camera-controls setting exist today as data (Look / `scene.json` /
+instance), and who reads it? `RegimeControls`' regimes (`plan` / `orbit` / `street` / `playback`) are fixed per shot in
+code today, read in source. If no authored setting exists, that is **unbuilt intent**: surface it as tranche-2 work, don't
+patch it. Report what the Ward does on a touch in each shot.
 
 ## Second exhibit: machinery the Player still loads (Bake → Player)
 
