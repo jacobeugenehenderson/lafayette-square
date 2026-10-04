@@ -3,8 +3,8 @@
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: no
-written: 2026-09-03
-evict-when: git grep -q MeshBasicMaterial -- src/components/HeroImpostorTrees.jsx src/components/OverheadTrees.jsx || echo LANDED
+written: 2026-09-03 · re-scoped 2026-10-04 (Boz, Jacob's go)
+evict-when: STEP A — the HERO cards take the scene's light diffusely (sun and moon direction, the lamps' light, AO folded into the direction), the trunk meets the ground through the ported blend, the sun direction is published once, the comparison flag is deleted after Jacob's eye, and the checks are green; step B (baked normals, shadows) and the overhead discs are recorded, not built
 -->
 
 Root, measured 2026-09-03: the cards are `MeshBasicMaterial` — UNLIT
@@ -40,6 +40,27 @@ Pool today: 426 pages, 22.3 MB KTX2 (hero 360 / 20.6 MB, overhead 66 / 1.7 MB).
 parity… weather relight"; `ACCORDANCE-REVIEW.md:69` says "relightable impostors."
 True only as a global dimmer. This is the ASPIRATION case — surface it as work, do not
 quietly rewrite it.
+
+## ⭐⭐⭐ RE-SCOPED 2026-10-04 (Jacob: "I *do* want to fix the lighting on the impostors now"). READ THIS FIRST; it overrides "The work" below
+
+**You are the dispatched agent. Name yourself: one word, yours, and not one a RUNNING session holds** (`ListAgents`; ask Jacob to `/rename`). **Agent: FRESH.**
+
+**STEP A, build now: the HERO cards** (the side-on impostors seen in Hero and Street, where low sun, dusk and lamps make flat lighting obvious): `src/components/HeroImpostorTrees.jsx` and the hero stamp in `treeAtlasMaterial.js` (`injectHeroImpostorStamp`).
+- **Diffuse only.** Jacob: *"I don't want shiny arbors."* ⛔ No specular, no gloss. That rules out swapping to `MeshStandardMaterial` (it brings sheen); keep a custom matte term.
+- **A real directional term without new pages:** a synthetic rounded normal from the card's own UV (cards are Y-billboards, so view-space facing is +Z), lit by the sun's and moon's directions taken into view space. Fold the baked AO into the directional term rather than replacing it. Measure it before considering baked normals.
+- **The sun's direction has ONE source:** publish it from `CelestialBodies.jsx` (the `lighting` memo's `sunDir`, the value the sky dome and the directional light already use). ⛔ Never recompute it. This is Phase 2's "one explicit authority" applied to light.
+- **The lamps' light** reaches the cards through the existing light model (`src/lib/lampPool.js`, the baked nearest-lamp map and `lamps.json#reach`), not 3,000 real lights.
+- **Port the trunk/ground joint blend** to the hero BARK layer (section below), so trees stop meeting the ground with a hard edge.
+- **The flag dies.** `?litCards=1` (default off) exists only so Jacob can compare before and after. After his eye passes, the flag is **deleted** and lit cards are simply how trees draw. ⛔ A permanent flag would be a second quality regime, which the Phase 2 spec forbids.
+- **The look is signed off; only the lighting response changes** (acceptance below): the test is a before/after pair at the same camera, frame and time, at noon, dusk and night. Remember: trees are the main GPU cost today (Grain's verdict, `scratch/tree-cost/VERDICT.md`), so measure the frame cost of the lighting with E's gauges (`frameCost.js`) and report it.
+
+**Not yours, and why:**
+- **The overhead discs.** **Grain** is rewriting them now (`docs/briefs/BRIEF-overhead-impostor-redesign.md`: drop the wiggle grid, wind sheet, deep core), and **Gale** is building the wind sheet those shaders will sample (`docs/briefs/BRIEF-wind-sheet.md`). The same lighting goes onto the NEW overhead impostor after Grain lands. Agree with Grain and Gale before touching `treeAtlasMaterial.js`, which all three of you edit; work only in the hero stamp's parts of it.
+- **STEP B, recorded, later (Arborist depth work):** baked normal pages per card (Q2–Q5 below: capture, KTX2 normal encoding, `CAPTURE_FORMAT` bump, +50% pages) and trees casting and receiving shadows.
+
+**Bounds:** ⛔ no pours or bakes; `node scripts/bake-in-flight.mjs` before saving anything the dev servers import; ports 5173 / 5180; commit only your own paths through a private index. A kit change reaches the Ward at the next pin move; batch it, and the push and bundle publish need Jacob's confirmation in your window. Shader linking: `node checks/claims-shader-fragments-declare-what-they-use.mjs` and a live `VALIDATE_STATUS` check, since a uniform declared in the wrong half makes the canopy vanish silently. **Three-part fix:** `arborist/FEATURES.md`, and the two overclaims named below (`arborist/ARCHITECTURE.md`, `ACCORDANCE-REVIEW.md`) corrected to what's true after step A.
+
+**Read this, the sections below and the code, tell Jacob what you found, then build. If the code contradicts the brief, stop and flag him.** Line numbers below date from 2026-09-03; re-derive them.
 
 ## ⭐⭐ THE ACCEPTANCE, IN THE OPERATOR'S WORDS
 
