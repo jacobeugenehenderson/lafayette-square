@@ -141,15 +141,13 @@ export async function bakeScene({ look } = {}) {
     // it fails in the worst direction — the operator authors, sees it work, and
     // the slab quietly carries nothing.
     canopy:   design.canopy   || kitDayChannel('canopy'),
-    // SC.5 — per-shot camera + Hero authoring + Browse heading. Runtime
-    // inputs (Browse altitude, Hero target, Street position/target)
-    // explicitly NOT baked: they come from computeBrowseAltitude(aspect),
-    // Hero subject centroid, and the double-click handler respectively.
-    // See `hardwires-come-out-when-channels-install` category 3.
+    // SC.5 — the camera block (claims-authored-framing-reaches-the-player reads it: every key here needs a reader in
+    // the Ward). Per-device values are NOT baked: Browse's height is fitted to each screen from browseFrame
+    // (src/camera/browseFrame.js), and Street stands where the viewer taps.
     shots:         design.shots         || { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
     browseHeading: design.browseHeading || { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
-    // SC.5 — the authored Browse frame. null when the town is unframed; ⛔ NO
-    // default, so an unframed town bakes `null` and each camera derives as before.
+    // The authored Browse frame { center, altitude }; null = not authored, and every surface opens Browse on the
+    // town's own disc. ⛔ No kit default (it would be one town's place in another's frame).
     browseFrame:   design.browseFrame || null,
     heroSubject:   design.heroSubject   || null,
     dofFocus:      design.dofFocus      || null,   // the picked focus point, or null = the camera's aim

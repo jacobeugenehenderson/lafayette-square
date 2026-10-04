@@ -14,6 +14,9 @@
 //  (c) ONE SHOT-ADJACENCY TABLE (Phase 2 B). Which shot reaches which is defined
 //      only in src/camera/shots.js; fails on any other file that builds the table
 //      (a `hero: new Set(` literal). It was copied into three pickers.
+//  (d) PREVIEW IS THE PLAYER'S EXPERIENCE (Jacob, 2026-10-04). Preview adds no camera
+//      gesture of its own: no wheel / pointer listener in src/preview/PreviewApp.jsx. Its
+//      "drag or wheel in Hero → Browse" rule was a gesture the player does not have.
 //
 // Scans the kit AND the Ward (theward/src, Phase 2 B): the Ward draws through the
 // kit, so a camera it defined for itself would be a second definition. A missing
@@ -59,7 +62,10 @@ const subjectRe = /\b(resolveHeroSubject|FALLBACK_HERO_SUBJECT)\b|lib\/heroSubje
 const sixthArgRe = /heroKeyframeAnim\(([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?,([^()]|\([^()]*\))*?\)/
 
 const adjRe = /\bhero\s*:\s*new\s+Set\s*\(/
-const hits = { a: [], b: [], c: [] }
+const hits = { a: [], b: [], c: [], d: [] }
+const PREVIEW = 'src/preview/PreviewApp.jsx'
+if (!files.includes(PREVIEW)) { console.error(`⛔ ${PREVIEW} is missing — (d) is blind`); process.exit(1) }
+if (/addEventListener\(\s*['"](wheel|pointer(down|move|up))['"]/.test(code(fs.readFileSync(PREVIEW, 'utf8')))) hits.d.push(`${PREVIEW}: listens for a canvas gesture of its own`)
 for (const f of files) {
   const src = code(fs.readFileSync(f, 'utf8'))
   if (subjectRe.test(src)) hits.a.push(`${f}: names the hero-subject resolver or its fallback`)
@@ -76,4 +82,6 @@ console.log(`(b) controls come only from ${HOME}  ${hits.b.length ? '⛔ ' + hit
 for (const h of hits.b) console.log(`      ${h}`)
 console.log(`(c) shot adjacency only in ${ADJ_HOME}     ${hits.c.length ? '⛔ ' + hits.c.length : '✅'}`)
 for (const h of hits.c) console.log(`      ${h}`)
-process.exit(hits.a.length || hits.b.length || hits.c.length ? 1 : 0)
+console.log(`(d) Preview adds no camera gesture          ${hits.d.length ? '⛔ ' + hits.d.length : '✅'}`)
+for (const h of hits.d) console.log(`      ${h}`)
+process.exit(hits.a.length || hits.b.length || hits.c.length || hits.d.length ? 1 : 0)

@@ -35,6 +35,7 @@ A lands**: A makes the map/Look/shot state authoritative and edits the same came
      be different from map to map; there are editable camera controls so depending on the design the system will have to
      reproduce it in Preview."* ⛔ **No gesture is hard-coded in Preview, in either direction.**
    - `H-7`: "hero" is only the set-piece; the camera is not tied to it.
+   - **2026-10-04, at work (agent Lens):** Browse frame = centre + camera height, read as a square everywhere; default the town's radius; set only by a Stage button; Stage's camera stays where the operator works. Society opens on the frame; a category or search zooms. **Row 3 narrowed:** Preview is the player's experience (Hero takes no input) and Stage is the authoring camera; per-town camera settings are **deferred** ("it makes sense to parameterize the settings, but not today"), and the gesture table stays fixed.
 
 ## The work
 

@@ -6,7 +6,7 @@
  * The GPU monitor (right panel) governs additions — every layer toggle
  * notes a Δ-event so spikes are tagged with their cause.
  */
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import Town from '../components/Town.jsx'
 import { QUALITY as QUALITY_PROFILES, townCanvasProps } from '../lib/qualityProfile.js'
 import useListings from '../hooks/useListings'
@@ -64,41 +64,9 @@ function ForceDaytimeOnMount() {
 // Preview targets a continuously-rendering runtime (mobile/desktop app):
 // frameloop="always" is more honest about cost than demand+invalidate.
 
-// The camera between shots is <Town>'s (src/camera/ShotFlight.jsx): it knows where each shot puts the camera and
-// flies there with production's move. What stays Preview's: the gesture that leaves the movie, and the controls.
-function ShotCamera({ shot, setShot }) {
-  const { gl } = useThree()
-
-  // Hero is an auto-playing cinematic pan; a deliberate drag (>6px) or wheel
-  // must interrupt it and pull back to Browse — mirrors production's Hero↔Browse
-  // exit gesture (Scene.jsx CameraRig).
-  useEffect(() => {
-    if (shot !== 'hero') return
-    const canvas = gl.domElement
-    let downXY = null
-    const onDown = (e) => { downXY = { x: e.clientX, y: e.clientY } }
-    const onMove = (e) => {
-      if (!downXY) return
-      const dx = e.clientX - downXY.x, dy = e.clientY - downXY.y
-      if (dx * dx + dy * dy > 36) { downXY = null; setShot('browse') }
-    }
-    const onUp = () => { downXY = null }
-    const onWheel = () => setShot('browse')
-    canvas.addEventListener('pointerdown', onDown)
-    canvas.addEventListener('pointermove', onMove)
-    canvas.addEventListener('pointerup', onUp)
-    canvas.addEventListener('wheel', onWheel, { passive: true })
-    return () => {
-      canvas.removeEventListener('pointerdown', onDown)
-      canvas.removeEventListener('pointermove', onMove)
-      canvas.removeEventListener('pointerup', onUp)
-      canvas.removeEventListener('wheel', onWheel)
-    }
-  }, [shot, gl, setShot])
-
-  // The controls are <Town controls>'s: one regime per shot (src/lib/cameraRegimes.js).
-  return null
-}
+// The camera is <Town>'s: ShotFlight flies between shots, <Town controls> mounts one regime per shot
+// (src/lib/cameraRegimes.js). ⛔ Preview adds no gesture of its own: it is the player's experience, and in the player the
+// movie takes no input (Jacob, 2026-10-04). Its drag/wheel → Browse rule is gone.
 
 // ?frameloop=demand — inspect <Town paused> as the Ward runs it (Preview draws "always" by default).
 const PREVIEW_FRAMELOOP = new URLSearchParams(window.location.search).get('frameloop') === 'demand' ? 'demand' : 'always'
@@ -1065,7 +1033,7 @@ function PreviewTown({ town }) {
       gl={{ ...townCanvas.gl, preserveDrawingBuffer: true }}
       onCreated={({ gl }) => { _ogCaptureGL = gl }}
     >
-      <CanvasContents key={reloadKey} town={town} layers={layers} shot={shot} setShot={setShot} quality={quality} />
+      <CanvasContents key={reloadKey} town={town} layers={layers} shot={shot} quality={quality} />
     </Canvas>
   )
 
@@ -1125,7 +1093,7 @@ const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
 // ▶ node checks/claims-the-canvas-is-the-towns.mjs · node checks/claims-preview-phone-runs-production-passes.mjs
 const TIER_QUALITY = { desktop: QUALITY_PROFILES.desktop, 'phone-hi': QUALITY_PROFILES.phone, 'phone-lo': QUALITY_PROFILES.phone }
 
-function CanvasContents({ town, layers, shot, setShot, quality }) {
+function CanvasContents({ town, layers, shot, quality }) {
   // The town's flight between shots reports here; exposed for claims-a-shot-change-flies (an inspection surface).
   const flightRef = useRef(null)
   const bearingRef = useRef(null)
@@ -1184,7 +1152,6 @@ function CanvasContents({ town, layers, shot, setShot, quality }) {
           <BasicLights />
         </group>
       </Town>
-      <ShotCamera shot={shot} setShot={setShot} />
     </>
   )
 }
