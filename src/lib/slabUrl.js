@@ -19,6 +19,7 @@
  */
 import { ASSET_BASE, ASSET_BASE_IS_REMOTE } from './bakedUrl.js'
 import { HASHED, slabPath, manifestPath } from './slabNames.js'
+import { markStartup } from './startupMarks.js'
 
 const _towns = new Map()   // look → { ready: Promise, manifest, hashed, done }
 
@@ -35,10 +36,12 @@ export function slabManifest(look) {
   requireLook(look)
   if (ASSET_BASE_IS_REMOTE) return townOf(look).ready.then(t => t.manifest)
   return fetch(ASSET_BASE + manifestPath(look), { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null))
+    .then((m) => { if (m) markStartup('manifest'); return m })
 }
 
 function settle(t, look, url, m) {
   t.manifest = m
+  if (m) markStartup('manifest')
   t.hashed = ASSET_BASE_IS_REMOTE && m?.names === HASHED
   if (ASSET_BASE_IS_REMOTE && !m) {
     console.error(`[slabUrl] ⛔ "${look}" has no published manifest.json at ${url} — `

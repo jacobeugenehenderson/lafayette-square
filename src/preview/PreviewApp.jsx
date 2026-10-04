@@ -28,6 +28,8 @@ import { mountedPasses } from '../components/renderPipeline.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
+import StartupPanel from './StartupPanel.jsx'
+import { ResidencyPanel, ResidencyProbe } from './Residency.jsx'
 import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
 import {
   GpuMonitorTicker, GpuPanel, noteEvent, measureToggle,
@@ -483,6 +485,10 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
       <div className="glass-panel rounded-xl p-3">
         <TimeControl />
       </div>
+
+      {/* The cold start of this page: the spec's sequence, TIME TO WARD, and each artifact's cost (StartupPanel.jsx). */}
+      <StartupPanel />
+      <ResidencyPanel />
 
       {/* Pyramid tuner leads the tools; it and the roster cards below
           twirl-collapse (default closed) to cut the clutter. */}
@@ -1172,6 +1178,7 @@ function CanvasContents({ town, layers, shot, setShot, quality }) {
         postFx={{ toggles: layers }}>
         <ForceDaytimeOnMount />
         <GpuMonitorTicker />
+        <ResidencyProbe lookId={lookId} />
         <group visible={!layers.celestial}>
           <BasicLights />
         </group>

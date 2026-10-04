@@ -138,6 +138,11 @@ import HorizonDisc from './HorizonDisc.jsx'
 import { WATER_PLAN } from './waterMaterial.js'
 import PlanRim from './PlanRim.jsx'
 import MountainBackdrop from './MountainBackdrop'
+import DrawnAnchor from './DrawnAnchor.jsx'
+import { markStartup } from '../lib/startupMarks.js'
+
+// The application runtime has arrived: the renderer's module is evaluated (src/lib/startupMarks.js).
+markStartup('runtime')
 
 // The props contract comes through the one entry: an app asks this for its quality profile.
 export { deviceQuality } from '../lib/qualityProfile.js'
@@ -500,13 +505,13 @@ export default function Town({
       <AtmosphereDirectiveDriver lookId={lookId} />
       <WeatherEffects />
 
-      <group visible={on('sky')}>
+      <group name="town:sky" visible={on('sky')}>
         <R3FErrorBoundary name="CelestialBodies"><CelestialBodies lookId={lookId} bakeLastMs={bake}
           skyOverride={o.sky} ambientOverride={o.ambient} hemiOverride={o.hemi} dirSunOverride={o.dirSun}
           dirMoonOverride={o.dirMoon} constellationsOverride={o.constellations} milkyWayOverride={o.milkyWay}
           skyGainOverride={o.skyGain} starsOverride={o.stars} /></R3FErrorBoundary>
       </group>
-      <group visible={on('clouds')}>
+      <group name="town:clouds" visible={on('clouds')}>
         {/* Sky renderer stopgap (skyMode): <CloudDome/> ships, <Atmosphere/> under ?sky=volumetric. */}
         <R3FErrorBoundary name="Atmosphere">{skyModeOf(town) === 'volumetric' ? <Atmosphere lookId={lookId} /> : <CloudDome />}</R3FErrorBoundary>
       </group>
@@ -516,9 +521,10 @@ export default function Town({
       </group>
 
       <Suspense fallback={null}>
-        <group visible={on('ground')}>
+        <group name="town:ground" visible={on('ground')}>
           <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
           <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
+          <DrawnAnchor id="ground" />
         </group>
         {/* Neon, street labels and the park title. Its live buildings stay hidden: the slab draws them. */}
         <R3FErrorBoundary name="LafayetteScene">
@@ -527,22 +533,24 @@ export default function Town({
             materialColorsOverride={o.materialColors}
             hiddenLayers={{ building: true, neon: !on('neon'), labels: !on('labels'), parkTitle: scene?.layerVis?.parkTitle === false }} />
         </R3FErrorBoundary>
-        <group visible={on('buildings')}>
+        <group name="town:buildings" visible={on('buildings')}>
           <R3FErrorBoundary name="SlabBuildings"><SlabBuildings key={`slab-${bake || 0}`} lookId={lookId} interactive={interactive}
             materialPhysicsOverride={o.materialPhysics} paletteOverride={o.buildingPalette} wallPalettesOverride={o.wallPalettes}
             litIds={litIds} litTintOverride={o.litTint} /></R3FErrorBoundary>
           <R3FErrorBoundary name="CityModel"><CityModel key={`city-${bake || 0}`} lookId={lookId} interactive={interactive} /></R3FErrorBoundary>
+          <DrawnAnchor id="buildings" />
         </group>
-        <group visible={on('trees')}>
+        <group name="town:trees" visible={on('trees')}>
           <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bake} canopyOverride={o.canopy} /></R3FErrorBoundary>
+          <DrawnAnchor id="trees" />
         </group>
-        <group visible={on('park')}>
+        <group name="town:park" visible={on('park')}>
           <R3FErrorBoundary name="LafayettePark"><LafayettePark town={town} lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
         </group>
-        <group visible={on('lamps')}>
+        <group name="town:lamps" visible={on('lamps')}>
           <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bake} lanternOverride={o.lantern} lampsOnOverride={o.lampsOn} /></R3FErrorBoundary>
         </group>
-        <group visible={on('setPieces')}>
+        <group name="town:setPieces" visible={on('setPieces')}>
           {heavy && <R3FErrorBoundary name="GatewayArch"><GatewayArch lookId={lookId} bakeLastMs={bake} archOverride={o.arch} archLightOverride={o.archLight} /></R3FErrorBoundary>}
           <R3FErrorBoundary name="SetPiece"><SetPiece town={town} lookId={lookId} lightOverride={o.setPieceLight} /></R3FErrorBoundary>
         </group>

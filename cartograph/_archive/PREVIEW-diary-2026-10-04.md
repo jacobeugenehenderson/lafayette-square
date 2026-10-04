@@ -67,3 +67,39 @@ The **Pyramid · <env>** card, collapsed by default (click its heading to open).
 ---
 
 The per-platform **inclusion manifest** — *which channels ship to desktop vs. mobile* — is a **cost-driven deployment decision**, so it's authored here at the gate, beside the instrument that responds (`PREVIEW.md §0.2`). ⚠️ **Not yet built** — the editorial surface lands with the v0.2 measurement regime (`HANDOFF-preview-measurement.md`, Phase 3–4). Until then Preview writes nothing; its product is the operator's *verdict* ("ship the slab" / "back to Stage").
+
+---
+
+**Evicted from `PREVIEW.md` 2026-10-04 (Phase 2 E, Plumb).** §4's third caveat — *"Neon is forced on — worst-case, unlike production's authored/TOD-gated neon (§3)"* — described a Preview override removed in `55fdab64`; `SceneCaveats` no longer carries it. The header's *"In flight — the v0.2 measurement-regime arc … Not yet built"* was replaced by §4a, the startup and residency gauges that landed.
+
+**Also evicted the same day: `PREVIEW.md §6 Status`**, which repeated §2's toolkit as a checklist and cited line numbers that had drifted (`PreviewApp.jsx:619`). As it stood:
+
+## 6. Status — done / partial
+
+**DONE (shipping, verified in code):**
+- ✅ **Render parity** — Preview mounts production's exact tree (slab buildings + foundations + neon off the slab index; L1.3 cutover 2026-05-26). `BakedBuildings` deleted; no separate render path.
+- ✅ **GPU profiler** — per-frame draws/tris off `renderer.info` (autoReset off, delta'd for post-FX honesty), rolling CPU frame-time, spike log with cause attribution.
+- ✅ **Per-layer cost** — settled pre/post-toggle attribution (Vernier Phase-0 timing fix); live cost bars on every Scene + Post-FX layer.
+- ✅ **Phone mode**, **layer matrix**, **TOD scrub**, **shot picker** (adjacency-gated), **soft-reload**, **trigger/phoneBus spans** — all live.
+- ✅ **Hero parity** — the authored bounce replays through the shared `heroAnim.js`, identical to Stage and production.
+
+**PARTIAL / the tail:**
+- 🟡 **Cold reload** — soft-reload remounts `CanvasContents` (re-fetch); a true cold reload via `sessionStorage` handoff is sketched, not built (`PreviewApp.jsx:619`).
+- 🟡 **`BasicLights` fallback** — a Preview-only inspection light for "celestial off"; held resident-but-hidden, never drawn in the all-on path (no production analog).
+
+---
+
+**Also evicted: `PREVIEW.md §0`'s retired-doctrine banner** ("STAGING IS REDUNDANT FOR SLAB-DATA" IS RETIRED), reduced to its surviving sufficiency line. Its last paragraph ("Promote to Prod is `git push origin <branch>:main`") was rot: `OPERATIONS.md` § Publish records that Promote ships one Map and no longer pushes `main` (2026-09-26). As it stood:
+
+> ### ⛔⛔ "STAGING IS REDUNDANT FOR SLAB-DATA" IS RETIRED — IT WAS REVERSED ON 2026-09-03, AND THIS PAGE OUTLIVED IT BY A DAY
+> This paragraph read: *"because Preview already renders the slab in production's exact tree, **staging is REDUNDANT for slab-data** — the publish flow pushes straight to prod; staging-first applies only to code/structural changes."* Settled 2026-06-30, and **true until the bucket stopped being one key space.**
+> **What replaced it:** one bucket, **two prefixes** (`staging/` and the un-prefixed prod keys). ⛔ **A bake may only ever write `staging/`**; production is a separate, deliberate promotion. The reason is the one the old rule could not price: *"the bigger issue is there's no way to preview it before it goes live"* (Jacob) — a pour reached `lafayette-square.com` the instant it uploaded, with no gate and no way back except re-baking a slab that may no longer exist.
+> ⭐⭐ **THE COST OF THIS SENTENCE OUTLIVING ITS TRUTH, MEASURED 2026-09-04 — it was load-bearing in CODE, not just prose, in three places:**
+> - **`/promote` shipped code and no slab.** Under the old rule the bake *did* reach prod directly, so promotion had nothing to upload; the split moved the mechanism and left the wiring. Nothing anywhere ran `--env=prod`. **830 of 915 prod objects were stale** — a complete but older canopy, rendering plausibly, telling nobody.
+> - **`/deployed?target=` accepted the target and discarded it,** reading prod's keys for both rows — *citing this paragraph by name to justify it.* The staging row reported production's slab, so the panel's two gestures could not disagree.
+> - **`PUBLISH.md §6`** carried the matching sentence ("per-environment prefixes are the fix if it ever bites"). It bit.
+>
+> ⭐ **The doctrine that survives is the half about *sufficiency*: Preview is still the gate for a slab** — it renders the slab in production's exact tree, and no amount of staging soak tells you more than that. What died is the claim about *mechanism*: that shipping a slab therefore needs no separate environment. It does now, because the two environments hold **different bytes**.
+> ▶ `PUBLISH.md §6` · `node checks/claims-the-slab-envs-do-not-collide.mjs`
+> ⛔⛔ **BUT READ WHAT THE BUTTON DOES, NOT WHAT THE DOCTRINE INTENDS (2026-08-28).** "Promote to Prod" is `git push origin <branch>:main` — it fast-forwards prod to your whole working HEAD, so **every commit you are carrying ships, not just the baked look.** The doctrine above is about *sufficiency* (a slab needs no staging soak); the mechanism is a full release. ⭐ The slab COMMIT is properly scoped (`slabPathspecs` cannot sweep unrelated dirty files) — it is the PUSH TARGET that is wide.
+> ⛔ And the staging target must be derived, never quoted: it was pinned to a branch nothing had deployed for four weeks, so the button reported success and staging never moved. ▶ `node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs`
