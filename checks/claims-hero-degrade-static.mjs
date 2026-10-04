@@ -56,6 +56,21 @@ console.log('\n[loud] a degenerate disc must refuse, not substitute')
   else bad('an unpublished disc produced a pose')
 }
 
+// ── 5. SAID ──────────────────────────────────────────────────────────────────
+console.log('\n[said] a derived movie must say it was derived, once per disc')
+{
+  const quiet = console.warn; const said = []
+  console.warn = (m) => { said.push(String(m)) }
+  const disc = { center: [1234, -567], radius: 891 }
+  derivedOpeningKeyframe(disc, 22); derivedOpeningKeyframe(disc, 22)
+  const other = derivedOpeningKeyframe({ center: [0, 0], radius: 12 }, 22)
+  console.warn = quiet
+  const named = said.filter(m => /DERIVED/.test(m))
+  if (named.length === 2) ok('derived movie logged once for each of 2 discs (3 calls)')
+  else bad(`expected 2 "DERIVED" lines for 2 discs over 3 calls, got ${named.length}: ${JSON.stringify(said)}`)
+  if (!other) bad('a small valid disc produced no pose')
+}
+
 // ── 2. TRACKS ────────────────────────────────────────────────────────────────
 console.log('\n[tracks] the pose must follow the disc it is given')
 {

@@ -12,21 +12,9 @@ import {
   getMode as getRecMode,
   setMode as setRecMode,
 } from './phoneBus'
+import { shotReachable } from '../camera/shots.js'
 
-// Shot adjacency graph — mirrors LS production gestures: Hero ↔ Browse,
-// Browse ↔ Street. No direct Hero ↔ Street edge; the end user can't
-// reach Street directly from Hero (or vice versa) via any gesture, so
-// the Preview shot-picker disables the non-adjacent button.
-const SHOT_ADJACENCY = {
-  hero:   new Set(['browse']),
-  browse: new Set(['hero', 'street']),
-  street: new Set(['browse']),
-}
-function shotReachable(currentShot, candidateShot) {
-  if (currentShot === candidateShot) return true
-  const adj = SHOT_ADJACENCY[currentShot]
-  return !adj || adj.has(candidateShot)
-}
+// The shot picker disables a shot not adjacent to this one (src/camera/shots.js, the one table).
 
 const MODE_KEY = 'preview.recMode.v1'
 function loadMode() {

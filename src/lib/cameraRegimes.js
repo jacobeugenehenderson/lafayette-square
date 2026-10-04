@@ -47,6 +47,7 @@ import { assertKeyframesAimed, assertHeroMotion } from '../preview/heroAnim.js'
 const OPENING_STANDOFF_RATIO = 0.75           // eye distance from centre / radius
 const OPENING_EYE_RATIO      = 0.13           // eye height / radius
 const OPENING_BEARING        = [-0.80, 0.60]  // unit XZ direction from centre to eye
+const _derivedSaid = new Set()
 
 /**
  * @param stencil `{ center:[x,z], radius }` — the scene's disc, or null
@@ -66,6 +67,12 @@ export function derivedOpeningKeyframe(stencil, fov) {
     return null
   }
   const d = r * OPENING_STANDOFF_RATIO
+  // Said once per disc: a movie nobody authored is a reconstruction, and the operator must be able to tell.
+  const said = `${c[0]},${c[1]},${r}`
+  if (!_derivedSaid.has(said)) {
+    _derivedSaid.add(said)
+    console.warn(`[camera] no hero keyframes: the movie is DERIVED from the scene disc (centre ${c.map(Math.round)}, radius ${Math.round(r)} m), not authored`)
+  }
   return {
     position: [c[0] + OPENING_BEARING[0] * d, r * OPENING_EYE_RATIO, c[1] + OPENING_BEARING[1] * d],
     target: [c[0], 0, c[1]],

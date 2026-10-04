@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { invalidateTreeAtlas } from '../components/treeAtlasMaterial'
 import { SHOTS } from '../stage/StageApp.jsx'
+import { shotReachable } from '../camera/shots.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { INSTANCE } from '../instance.js'
 import { slabManifest } from '../lib/slabUrl.js'
@@ -123,18 +124,6 @@ const PREVIEW_MOVERS = (() => {
 
 const APP_BAR_H = 48
 
-// Shot adjacency graph — mirrors LS production gestures: Hero ↔ Browse,
-// Browse ↔ Street. No direct Hero ↔ Street edge.
-const SHOT_ADJACENCY = {
-  hero:   new Set(['browse']),
-  browse: new Set(['hero', 'street']),
-  street: new Set(['browse']),
-}
-function shotReachable(currentShot, candidateShot) {
-  if (currentShot === candidateShot) return true
-  const adj = SHOT_ADJACENCY[currentShot]
-  return !adj || adj.has(candidateShot)
-}
 
 function TopAppBar({ shot, setShot, mode, setMode }) {
   const btn = (k, label, active, onClick, disabled = false) => (

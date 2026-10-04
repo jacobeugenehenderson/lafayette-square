@@ -2,25 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import SourcesPanel from './SourcesPanel.jsx'
 import IdentityPanel from './IdentityPanel.jsx'
+import { shotReachable } from '../camera/shots.js'
 
 const SHOTS = ['browse', 'hero', 'street']
 
-// Navigation graph mirroring LS production gestures: Hero ↔ Browse,
-// Browse ↔ Street. There is no Hero ↔ Street edge — the end user can't
-// reach Street directly from Hero (or vice versa) via any gesture, so
-// the Stage shot-picker disables the non-adjacent button to keep
-// authoring intent-faithful to production.
-const SHOT_ADJACENCY = {
-  hero:   new Set(['browse']),
-  browse: new Set(['hero', 'street']),
-  street: new Set(['browse']),
-  // Designer is always reachable as a mode swap (handled elsewhere).
-}
-function shotEnabled(currentShot, candidateShot) {
-  if (currentShot === candidateShot) return true
-  const adj = SHOT_ADJACENCY[currentShot]
-  return !adj || adj.has(candidateShot)
-}
+// The shot picker disables a shot not adjacent to this one (src/camera/shots.js, the one table); the Designer is
+// a mode swap, reachable from anywhere.
 
 function cap(s) { return s[0].toUpperCase() + s.slice(1) }
 
@@ -145,7 +132,7 @@ export default function Toolbar() {
             items={SHOTS.map(id => ({
               id,
               label: cap(id),
-              disabled: !shotEnabled(shot, id),
+              disabled: !shotReachable(shot, id),
             }))}
             active={shot}
             onSelect={setShot}
