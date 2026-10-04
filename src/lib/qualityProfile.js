@@ -10,10 +10,13 @@
  * A profile is data, so an app may choose one that is not its own device's: Preview's tier emulator
  * can hand a desktop browser the phone profile. The device's own is deviceQuality().
  *
- * ⚠️ `postFx` still names the renderPipeline.jsx platform tag the profile includes ('desktop' runs
- * every pass, 'mobile' drops those tagged desktop). The brief wants that inclusion to come from
- * Preview's phone measurement instead of a fixed tag (Jacob, 2026-09-27) — that is the next step,
- * and it lands HERE, not in the pipeline.
+ * ⭐ WHICH POST-EFFECTS RUN is the profile's too: `postFxOff` lists the passes it switches off, by
+ * the pipeline's ids, and `includesPass` is the ONE place anything asks (the installer, Preview's
+ * toggle matrix, the checks). Per-surface inclusion is data, not a tag on the pass (Phase 2 D,
+ * 2026-10-04; it was `platform: 'desktop'` in renderPipeline.jsx): Jacob wants every effect
+ * switchable per surface — desktop, phone-hi, phone-lo — "we don't want to 'cancel bloom' because we
+ * can't get it going on a lo phone." That per-surface setting (the deployment policy) and Preview's
+ * phone measurement that fills it are unbuilt; when they land they plug in HERE.
  */
 import { createContext, createElement, useContext } from 'react'
 import { ACESFilmicToneMapping } from 'three'
@@ -35,7 +38,8 @@ export const QUALITY = {
     buildingTextures: true,
     lampHaloRadius: 0.18,
     staggerLabels: false,
-    postFx: 'desktop',
+    // Every pass runs.
+    postFxOff: [],
   },
   phone: {
     id: 'phone',
@@ -54,7 +58,8 @@ export const QUALITY = {
     lampHaloRadius: 0.25,
     // Street labels and markers arrive over a few seconds so the GPU compiles in batches.
     staggerLabels: true,
-    postFx: 'mobile',
+    // The phone's passes: grade, smaa, grain. A fixed list today, not a measurement (see the header).
+    postFxOff: ['ao', 'pyramid', 'heroLadder', 'bloom', 'dof', 'aerial'],
   },
 }
 
@@ -80,6 +85,12 @@ export function townCanvasProps(quality) {
     shadows: quality.shadows,
     camera: { near: 1 },
   }
+}
+
+/** Does this profile run the post-FX pass `id` (renderPipeline.jsx's manifest id)? The one question, asked here. */
+export function includesPass(quality, id) {
+  if (!Array.isArray(quality?.postFxOff)) throw new Error(`[quality] ⛔ profile "${quality?.id}" has no postFxOff — which post-effects it runs is unknown`)
+  return !quality.postFxOff.includes(id)
 }
 
 /** The profile for the device this page is running on. */

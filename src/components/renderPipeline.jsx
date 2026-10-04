@@ -5,14 +5,15 @@
  * Phase 2 of the render-pipeline install (HANDOFF-render-pipeline-install.md).
  * The doctrine "ONE consumer — Production, Stage, and Preview render the same
  * pipeline" is made STRUCTURAL here instead of asserted: `POSTFX_PIPELINE` is
- * the literal ship list (order, channel, platform inclusion, mount gate), and
+ * the literal ship list (order, channel, mount gate; which devices run each pass
+ * is the quality profile's, `includesPass`), and
  * `RenderPipeline` is the single installer that consumes it. Add a pass, change
  * an order, fix a prop → it touches ONE place and every surface inherits it.
  *
  * Inspection (Preview's per-pass toggle matrix + cost gauges) is a PARAMETER on
- * this one install (`inspect`), never a parallel composer — so Preview cannot
- * drift from production by construction. Production/Stage install with no
- * `inspect` and render byte-identical to the old hand-wired `<EffectComposer>`.
+ * this one install (`inspect`), never a parallel composer, and it can only REMOVE
+ * a pass the tier ships — so Preview cannot drift from production by construction.
+ * ▶ node checks/claims-preview-phone-runs-production-passes.mjs
  *
  * The three inline film effects (FilmGrade/FilmGrain/AerialPerspective) live
  * here because the manifest references them at module-eval time; keeping them in
@@ -25,7 +26,7 @@ import { Effect, SMAAPreset } from 'postprocessing'
 import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { useQuality } from '../lib/qualityProfile.js'
+import { useQuality, includesPass } from '../lib/qualityProfile.js'
 import { AO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { RomanceDoF } from './RomanceDoF.jsx'
 import { DownsamplePyramid } from './DownsamplePyramid.jsx'
@@ -198,7 +199,7 @@ export const AerialPerspective = forwardRef((_, ref) => {
 //   channel   — the authored scene.json channel that drives it (documentary;
 //               the actual driving is usePostFxDriver — this records the wiring)
 //   order     — install position (low → early); the array is already ordered
-//   platform  — inclusion axis: 'desktop' = desktop only; absent = every device
+//   (which DEVICES run a pass is not here: it is the quality profile's — qualityProfile.js#includesPass)
 //   ref       — which ctx.refs entry to forward (so the driver can reach the
 //               live pass instance: N8AO.configuration, CustomBloom uniforms)
 //   gate(ctx) — conditional mount (DoF only when enabled, SMAA when on); absent
@@ -207,7 +208,7 @@ export const AerialPerspective = forwardRef((_, ref) => {
 //   props(ctx)— per-pass props resolved from the render context.
 export const POSTFX_PIPELINE = [
   {
-    id: 'ao', pass: N8AO, channel: 'ao', order: 10, platform: 'desktop', ref: 'ao',
+    id: 'ao', pass: N8AO, channel: 'ao', order: 10, ref: 'ao',
     props: (ctx) => ({
       // half-res AO in any non-hero view (undefined viewMode = Stage, full-res).
       halfRes: ctx.viewMode !== undefined && ctx.viewMode !== 'hero',
@@ -219,10 +220,9 @@ export const POSTFX_PIPELINE = [
   },
   // Shared full-scene blur pyramid — built after N8AO (post-AO scene). A PURE
   // RESOURCE bloom and DoF both SAMPLE (never each other's result). `dependsOn`
-  // is honored only while inspecting (Preview): the pyramid is pointless when no
-  // consumer is mounted, so a toggle-off of both DoF and bloom drops it too.
-  // Production/Stage mount it unconditionally (bloom always ships).
-  { id: 'pyramid', pass: DownsamplePyramid, order: 20, platform: 'desktop', dependsOn: ['dof', 'bloom'] },
+  // mounts while a consumer it feeds is mounted (`mountedPasses`): production
+  // always (bloom always ships); Preview drops it when DoF and bloom are toggled off.
+  { id: 'pyramid', pass: DownsamplePyramid, order: 20, dependsOn: ['dof', 'bloom'] },
   // ⭐ BLOOM BEFORE DoF — the order HANDOFF-real-dof Phase 1 specified (scene → N8AO → pyramid → Bloom → DoF).
   // Bloom glows the sharp scene; DoF then lerps each pixel toward the pyramid (built BEFORE bloom) by its own
   // focus, so a defocused region shows the blurred scene and an in-focus one keeps its glow. The build had
@@ -231,12 +231,12 @@ export const POSTFX_PIPELINE = [
   // full-screen pass (bloom no longer merges with grade/grain).
   // The hero alone, so DoF can take it back out of the shared blur (no halo of the sharp subject). Scissored to the
   // hero's patch of the screen; after the shared pyramid (it reads its Karis weights), before bloom (same image).
-  { id: 'heroLadder', pass: HeroLadder, order: 21, platform: 'desktop', gate: (ctx) => ctx.dofOn },
-  { id: 'bloom', pass: CustomBloom, channel: 'bloom', order: 25, platform: 'desktop', ref: 'bloom' },
+  { id: 'heroLadder', pass: HeroLadder, order: 21, gate: (ctx) => ctx.dofOn },
+  { id: 'bloom', pass: CustomBloom, channel: 'bloom', order: 25, ref: 'bloom' },
   // DoF — single-focal romance DoF, after the pyramid (it samples it) and after bloom (see above).
-  // Desktop only; mounts when any key's Blur is above 0.
-  { id: 'dof', pass: RomanceDoF, channel: 'dof', order: 30, platform: 'desktop', gate: (ctx) => ctx.dofOn },
-  { id: 'aerial', pass: AerialPerspective, channel: 'halo', order: 50, platform: 'desktop' },
+  // Mounts when any key's Blur is above 0.
+  { id: 'dof', pass: RomanceDoF, channel: 'dof', order: 30, gate: (ctx) => ctx.dofOn },
+  { id: 'aerial', pass: AerialPerspective, channel: 'halo', order: 50 },
   { id: 'grade', pass: FilmGrade, channel: 'grade', order: 60 },
   // SMAA — cleans shader-contrast edges MSAA can't (curb lines, slab seams, thin
   // poles); on mobile it is the ONLY antialiasing. After grade, before grain.
@@ -247,52 +247,48 @@ export const POSTFX_PIPELINE = [
 
 // ── The installer — consumes the manifest, parameterized by mode ─────────────
 /**
- * Mount the post-FX pipeline from POSTFX_PIPELINE.
+ * WHICH PASSES MOUNT — the one answer, for production, Stage and Preview alike (a pure function, so
+ * `checks/claims-preview-phone-runs-production-passes.mjs` can ask it directly).
+ *
+ * @param quality   the quality profile — which passes it runs at all is `includesPass(quality, id)`.
+ * @param dofOn     the resolved DoF gate.
+ * @param inspect   Preview only: { toggles:{id:bool} }. ⭐ A toggle can only take a pass OUT of what the tier ships —
+ *                  never add one. So Preview's phone tiers run a production phone's passes, and Preview's "all on"
+ *                  is production's mount list, gates included (Phase 2 D, 2026-10-04: before this, inspecting
+ *                  installed all nine desktop passes on every tier and ignored the gates).
+ * @returns the mounted manifest entries, in install order.
+ */
+export function mountedPasses({ quality, dofOn, inspect }) {
+  const ctx = { dofOn }
+  const included = POSTFX_PIPELINE.filter((e) => includesPass(quality, e.id))
+  const ships = (e) => (e.gate ? e.gate(ctx) : true)
+  const toggledOff = (e) => inspect && (inspect.toggles?.[e.id] ?? true) === false
+  const mounts = (e) => {
+    if (toggledOff(e) || !ships(e)) return false
+    // A shared resource (the pyramid) mounts while a consumer it feeds is mounted. Production ships bloom always,
+    // so there it always mounts; Preview drops it when inspection has turned every consumer off.
+    if (e.dependsOn) return included.some((d) => e.dependsOn.includes(d.id) && mounts(d))
+    return true
+  }
+  return included.filter(mounts)
+}
+
+/**
+ * Mount the post-FX pipeline from POSTFX_PIPELINE (which passes: `mountedPasses`).
  *
  * @param refs      { ao, bloom } — refs the driver reaches the live passes through.
  * @param viewMode  production's view mode (undefined in Stage → full-res AO).
  * @param dofOn     resolved DoF on/off (drives the DoF gate + remount key).
- * @param inspect   Preview only: { toggles:{id:bool} } — the per-pass visibility
- *                  matrix (Preview's sanctioned divergence: an FX toggle
- *                  mounts/unmounts its pass to measure it). When present the
- *                  TOGGLE decides each mount (not the channel gate — the operator
- *                  chooses what to inspect, e.g. force DoF on to tune it), the
- *                  whole desktop-shaped pipeline is offered, and every pass joins
- *                  the remount key. Absent for production/Stage → byte-identical
- *                  to the old hand-wired JSX. (Per-pass cost is measured
- *                  externally off renderer.info via GpuMonitor's measureToggle;
- *                  no in-installer probe needed.)
+ * @param inspect   Preview only: { toggles:{id:bool} } — the per-pass visibility matrix (an FX toggle unmounts its
+ *                  pass to measure it). Per-pass cost is measured externally off renderer.info via GpuMonitor's
+ *                  measureToggle.
  */
 export function RenderPipeline({ refs, viewMode, dofOn, inspect }) {
   const ctx = { refs, viewMode, dofOn }
   // Which passes run is the quality profile's (qualityProfile.js), never a device sniff here.
-  const platform = useQuality().postFx
-  // Inspecting (Preview) offers the whole desktop-shaped pipeline and lets the
-  // toggle matrix decide what mounts — the operator inspects every pass
-  // regardless of the running device (the tier emulator varies the pyramid
-  // resolution, not the pass SET; the v0.2 measurement regime will let Preview
-  // honor/edit per-platform inclusion). Production/Stage apply platform inclusion
-  // (mobile drops ao/pyramid/dof/bloom/aerial).
-  const included = inspect ? POSTFX_PIPELINE : POSTFX_PIPELINE.filter((e) => !e.platform || e.platform === platform)
-
-  // Mount decision. Production/Stage: the channel gate (dofOn) decides.
-  // Preview: the inspect TOGGLE decides; a shared-resource pass (`dependsOn`, the
-  // pyramid) mounts only while a consumer it feeds is toggled on.
-  const mountOn = (e) => {
-    if (inspect) {
-      if ((inspect.toggles?.[e.id] ?? true) === false) return false
-      if (e.dependsOn) return e.dependsOn.some((dep) => inspect.toggles?.[dep] ?? false)
-      return true
-    }
-    return e.gate ? e.gate(ctx) : true
-  }
-  // EffectComposer can only add/remove passes on REMOUNT, so its key must change
-  // whenever the mounted set changes. Key only on entries whose mount can vary
-  // (gated passes; every pass while inspecting) so production/Stage keep today's
-  // exact remount cadence — flips only with dofOn.
-  const varying = inspect ? included : included.filter((e) => e.gate)
-  const key = 'fx-' + varying.map((e) => `${e.id}:${mountOn(e) ? 1 : 0}`).join('-')
-  const mounted = included.filter(mountOn)
+  const mounted = mountedPasses({ quality: useQuality(), dofOn, inspect })
+  // EffectComposer can only add/remove passes on REMOUNT, so its key is the mounted set.
+  const key = 'fx-' + mounted.map((e) => e.id).join('-')
   // Empty composer would flip tone-mapping to NoToneMapping and blit for nothing;
   // Preview with all FX off wants the raw scene (as the old fork's null return
   // did). Production/Stage always have grade/grain mounted → never null.

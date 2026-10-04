@@ -20,7 +20,9 @@ import DawnTimeline from '../components/DawnTimeline'
 import { RENDER_TIERS } from '../lib/renderTiers.js'
 import { setActiveProfileId } from './deviceProfiles'
 // Preview mounts the SHARED PostProcessing consumer with `inspect` (the per-pass
-// toggle matrix) — the retired PreviewPostFx forked its own composer + driver.
+// toggle matrix, which can only take out a pass the tier ships) — the retired
+// PreviewPostFx forked its own composer + driver.
+import { mountedPasses } from '../components/renderPipeline.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
@@ -215,22 +217,17 @@ const FX_LAYERS = [
   ['grade',  'Film Grade'],
   ['grain',  'Film Grain'],
   ['smaa',   'SMAA (AA)'],
-  ['dof',    'DoF (WIP)'],   // two-focal depth-of-field — verify via ?dofDebug=1
+  ['dof',    'DoF'],   // mounts only where the Look authors a blur (its gate) — verify via ?dofDebug=1
 ]
 
-// TEMPORARY DEFAULTS — these belong in design.json#/postFx, not in
-// Preview's source. Per `feedback_stage_is_source_preview_is_mirror.md`:
-// Stage authors, Look serializes, Preview reads. When phone-profile.json
-// lands, the field-of-truth moves there and this object goes away.
-//   neon  — now mounts via <SceneNeon> (parity pass 2026-05-26); the
-//           Preview toggle forces all tubes on, mirroring Stage's Force
-//           Neon On QA bypass so cost is profiled worst-case.
+// EVERY TOGGLE STARTS ON — the inspection's starting state is the shipping render;
+// a toggle only takes something out to measure it.
+//   neon  — mounts via <SceneNeon>, lit by the Look's authored hours as in
+//           production (only Stage forces tubes on).
 //   fog   — <StageFog> reads scene.mist; on by default for parity.
-//   bloom — SOUND (the "known-broken pending tree-atlas work" flag was stale —
-//           cleared 2026-06-21, Jacob; the cited project_bloom_diagnosis_actual.md
-//           never existed). Kept default-off here only so a reload doesn't burn
-//           into a black scene; revisit defaulting it on for production parity.
-//   AO + aerial + grade + grain — full-fidelity desktop targets, on
+//   post-FX — every pass ON, because a toggle can only take OUT what the tier
+//           ships (renderPipeline.jsx#mountedPasses): all on = production's
+//           mount list for the tier, DoF and the hero ladder by the scene's gate.
 const DEFAULT_LAYERS = {
   // `buildings` gates the merged-mesh slab's visibility (production ships the
   // L1.3 slab; the live LafayetteScene buildings stay unmounted, as in
@@ -239,8 +236,7 @@ const DEFAULT_LAYERS = {
   ground: true, buildings: true, trees: true,
   park: true, lights: true, arch: true, neon: true,
   celestial: true, clouds: true, fog: true,
-  ao: true, bloom: false, aerial: true, grade: true, grain: true, smaa: true,
-  dof: false,   // WIP two-focal DoF — off by default; toggle to verify/tune
+  ao: true, bloom: true, aerial: true, grade: true, grain: true, smaa: true, dof: true,
 }
 
 // v3 (Vernier Phase 2): retired the `slabBuildings` A/B key — one `buildings`
@@ -345,7 +341,7 @@ function LayerRow({ layerKey, label, on, onToggle, disabled, metric, groupMax })
 // computes the group's heaviest cost (its metric), and feeds every row its
 // share. Keeping a single subscription here (vs. per-row) is what lets the
 // share-of-heaviest bar stay consistent across rows on the same render.
-function LayerSection({ title, layerList, layers, setLayer, metric, footer, defaultExpanded = false }) {
+function LayerSection({ title, layerList, layers, setLayer, metric, footer, defaultExpanded = false, notOnTier = null }) {
   const [, force] = useState(0)
   useEffect(() => layerCostSubscribe(() => force(n => n + 1)), [])
   // Twirl-collapsible, collapsed by default — there's a lot of roster to look at
@@ -368,8 +364,8 @@ function LayerSection({ title, layerList, layers, setLayer, metric, footer, defa
         <>
           <div className="space-y-1">
             {layerList.map(([key, label]) => (
-              <LayerRow key={key} layerKey={key} label={label}
-                metric={metric} groupMax={groupMax}
+              <LayerRow key={key} layerKey={key} label={notOnTier?.has(key) ? `${label} — not on this tier` : label}
+                metric={metric} groupMax={groupMax} disabled={notOnTier?.has(key)}
                 on={!!layers[key]} onToggle={(v) => setLayer(key, v)} />
             ))}
           </div>
@@ -415,7 +411,7 @@ function ProfilerTab({ tab, setTab }) {
 // How to read the per-layer numbers — caveats that, unstated, would mislead
 // (Vernier Phase 2). Bars rank by share of the heaviest layer (relative weight,
 // not a budget call — that's the scene verdict); render cost, not memory;
-// non-additive; neon forced on.
+// non-additive.
 function SceneCaveats() {
   return (
     <div className="glass-text-dim" style={{
@@ -425,7 +421,6 @@ function SceneCaveats() {
       <div><b>ranked by share of heaviest</b> — bars show each layer's draws relative to the biggest hog, not a budget %. The budget call is the scene verdict (gpu tab).</div>
       <div><b>render cost, not memory</b> — toggles hide a layer (skip its draw); geometry stays GPU-resident.</div>
       <div><b>deltas don't sum</b> — overdraw is shared (hiding trees also cuts buildings' fill); trust the all-on total, not the sum of layers.</div>
-      <div><b>neon forced on</b> — all tubes lit for worst-case profiling, unlike production's authored/TOD-gated neon.</div>
     </div>
   )
 }
@@ -442,9 +437,10 @@ function FxCaveats() {
 }
 
 // Pyramid tuner — edits the ACTIVE environment's blur bracket (meta phase 2).
-// The SAME panel for every env (the "same-but-different" surface); switching the
-// env toggle swaps which env's degree these sliders bind to. Levels/radius/
-// resolution update the live pyramid without a composer rebuild.
+// ⛔ UNFINISHED: IT REACHES NOTHING YET. The degree it edits is never handed to the
+// renderer, DownsamplePyramid ignores levels/radius/resolutionScale, and phones do
+// not run the pyramid at all. Kept on purpose (Jacob, 2026-10-04): it is the intent
+// that phones run every effect at a lower rung — renderTiers.js says why and where.
 function PyramidTuner({ envId, degree, onChange }) {
   // Twirl-collapsible, collapsed by default, like the roster cards below (Jacob, 2026-09-27).
   const [expanded, setExpanded] = useState(false)
@@ -469,7 +465,7 @@ function PyramidTuner({ envId, degree, onChange }) {
         style={{ gap: 6, padding: 0, background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
         <span style={{ display: 'inline-block', width: 10, color: 'var(--on-surface-subtle)',
           transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 120ms' }}>▸</span>
-        <span className="section-heading" style={{ marginBottom: 0 }}>Pyramid · {envId}</span>
+        <span className="section-heading" style={{ marginBottom: 0 }}>Pyramid · {envId} · unfinished</span>
       </button>
       {expanded && (
         <>
@@ -477,8 +473,8 @@ function PyramidTuner({ envId, degree, onChange }) {
           {row('resolutionScale', 'Resolution', 0.1, 1, 0.05, 2)}
           {row('radius', 'Radius', 0, 1, 0.05, 2)}
           <div className="glass-text-dim" style={{ fontSize: 9, lineHeight: 1.4 }}>
-            The blur bracket for this environment — fewer levels / lower resolution =
-            cheaper, tighter bloom + DoF. Switch the env toggle to bracket another tier.
+            Unfinished — these values do not reach the render yet. They are the planned
+            blur bracket per tier (phones running every effect at a lower rung).
           </div>
         </>
       )}
@@ -486,7 +482,10 @@ function PyramidTuner({ envId, degree, onChange }) {
   )
 }
 
-function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree }) {
+function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree, quality }) {
+  // The passes this tier's profile ships at all (gates aside): the rest have nothing to toggle.
+  const tierPasses = new Set(mountedPasses({ quality, dofOn: true }).map((e) => e.id))
+  const notOnTier = new Set(FX_LAYERS.map(([k]) => k).filter((k) => !tierPasses.has(k)))
   return (
     <div className="absolute z-10 flex flex-col gap-3 pointer-events-auto overflow-y-auto"
       style={{ top, right: 24, bottom, width: RIGHT_PANEL_W }}>
@@ -503,7 +502,7 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
         setLayer={setLayer} metric="draws" footer={<SceneCaveats />} />
 
       <LayerSection title="Post-FX" layerList={FX_LAYERS} layers={layers}
-        setLayer={setLayer} metric="ms" footer={<FxCaveats />} />
+        setLayer={setLayer} metric="ms" footer={<FxCaveats />} notOnTier={notOnTier} />
     </div>
   )
 }
@@ -512,7 +511,8 @@ const MODE_KEY = 'preview.mode.v1'
 // Environments = device-regime tiers (same ids as deviceProfiles / renderTiers).
 // Extended from the old binary desktop|phone — the mode toggle IS the env
 // selector (the device-regime workflow, meta phase 1). phone-hi/phone-lo both
-// render the phone frame; they differ in the render degree (pyramid bracket).
+// render the phone frame through the phone profile; today they differ only in the
+// gauge budgets they are judged against (deviceProfiles.js) — see renderTiers.js.
 const ENV_IDS = ['desktop', 'phone-hi', 'phone-lo']
 function loadMode() {
   if (typeof localStorage === 'undefined') return 'desktop'
@@ -1082,7 +1082,7 @@ function PreviewTown() {
 
       <TopAppBar shot={shot} setShot={setShot} mode={mode} setMode={setMode} />
       <RightPanel layers={layers} setLayer={setLayer} top={panelTop} bottom={panelBottom}
-        envId={mode} degree={activeDegree} onTuneDegree={setActiveDegree} />
+        envId={mode} degree={activeDegree} onTuneDegree={setActiveDegree} quality={quality} />
       {!isPhone && <PublishPanel lookId={lookId} />}
     </div>
   )
@@ -1098,9 +1098,10 @@ function resolvePreviewLookId() {
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
 // ⭐ EACH TIER DRAWS WITH ITS OWN PROFILE (Jacob: "The entire Preview authoring space is designed to test these things
 // for use in a mobile space"). Phone hi / Phone lo pass the PHONE profile to <Town> AND to the Canvas (linear depth, no
-// shadow map, the hero-only pieces, the phone post-FX) — they differ in the pyramid degree. Before 2026-09-28 every
-// tier drew the device's own profile, so "phone" measured the phone's frame through a desktop renderer.
-// ▶ node checks/claims-the-canvas-is-the-towns.mjs
+// shadow map, the hero-only pieces, the phone's post-FX passes: grade, smaa, grain). They render identically; they
+// differ only in the gauge budgets (deviceProfiles.js). Before 2026-09-28 every tier drew the device's own profile,
+// and before 2026-10-04 every tier ran all nine desktop passes.
+// ▶ node checks/claims-the-canvas-is-the-towns.mjs · node checks/claims-preview-phone-runs-production-passes.mjs
 const TIER_QUALITY = { desktop: QUALITY_PROFILES.desktop, 'phone-hi': QUALITY_PROFILES.phone, 'phone-lo': QUALITY_PROFILES.phone }
 
 function CanvasContents({ layers, shot, setShot, quality }) {

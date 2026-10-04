@@ -22,14 +22,10 @@ Two load-bearing facts:
    > ▶ `node scripts/verify-baked-in-r2.mjs`. ⛔ **And do not set `VITE_ASSET_BASE` while authoring**, or
    > Preview inspects R2's older slab and §7's "a wrong Preview is a wrong bake" fires on a bake that was fine. Whatever Preview draws, the **desktop** app draws, byte-for-byte: the same `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies`, `SceneNeon`, post-FX stack.
 
-> ### ⛔⛔ THE PARITY CLAIM IS DESKTOP-ONLY, AND THIS PAGE USED TO STATE IT UNCONDITIONALLY *(corrected 2026-09-02)*
-> **Production drops five post-FX passes on mobile** — `renderPipeline.jsx:252`, `platform = IS_MOBILE ? 'mobile' : 'desktop'`, and the manifest marks **`ao` · `pyramid` · `dof` · `bloom` · `aerial`** as `platform: 'desktop'`. **A phone renders `grade` + `smaa` + `grain` and nothing else.**
+> ### ⭐ PARITY HOLDS PER TIER — Preview mounts each tier's own pass set *(2026-10-04, Phase 2 D)*
+> Which post-FX passes a device runs is its **quality profile's** (`qualityProfile.js#includesPass`, the profile's `postFxOff` list) — the one question every surface asks. A **phone** runs `grade` · `smaa` · `grain`; **desktop** runs all nine (`ao` · `pyramid` · `heroLadder` · `bloom` · `dof` · `aerial` + those three), `heroLadder`/`dof` only where the Look authors a blur. Preview's phone tiers hand `<Town>` the phone profile, so they mount exactly what a phone ships, and its FX toggles can only **take out** a pass the tier ships, never force one in (`renderPipeline.jsx#mountedPasses`); a pass the tier doesn't run shows greyed "not on this tier". ▶ `node checks/claims-preview-phone-runs-production-passes.mjs`
 >
-> ⛔ **AND PREVIEW CANNOT SHOW YOU THAT.** `const included = inspect ? POSTFX_PIPELINE : …filter(…)` — **inspecting installs the WHOLE desktop pipeline regardless of tier**, by design, so the toggle matrix can reach every pass. `IS_MOBILE` is a user-agent sniff, so on the desktop doing the inspecting it is always `false`. **`phone-hi`/`phone-lo` are a desktop render at a phone-ish pyramid resolution inside a phone bezel** — the device selector swaps the *yardstick* (`deviceProfiles.js` budgets) and the pyramid *degree*, never the *pass set*. The code comment at `renderPipeline.jsx:253` says exactly this; only this doc overclaimed.
->
-> ⭐ **Two consequences worth holding.** The **pyramid tuner's phone rungs tune a pass no phone runs** (`RENDER_TIERS['phone-lo'].pyramid` feeds `DownsamplePyramid`, which is desktop-only) — so a number read off them is not a mobile number. And the **all-on cost total is a DESKTOP cost**: §3's "all on == production" holds for desktop and overstates mobile, which runs five fewer passes.
->
-> ▶ **This is a known arc, not an oversight** — `_handoffs/HANDOFF-mobile-profile.md` ("~20 `IS_MOBILE` branches across 6 files silently decide what mobile users get") plans `INSTANCE.mobileQuality` + per-profile slab channels, and the v0.2 regime (§0.2) is what would let Preview *honor* per-platform inclusion. ⭐ **Both handoffs are now TRACKED (2026-09-02)** — they were in the gitignored `_handoffs/`, which is why this read as undecided rather than merely unbuilt. Board row: **`ROADMAP.md H1`**.
+> ⚠️ **What is still fixed, and unbuilt:** the phone's list is a constant, not a measurement, and `phone-hi`/`phone-lo` share one profile — they render identically and differ only in the gauge budgets (`deviceProfiles.js`). Jacob wants every effect switchable **per surface** (desktop · phone-hi · phone-lo) — *"we don't want to 'cancel bloom' because we can't get it going on a lo phone"* — and that per-surface data plugs into `includesPass`. The **pyramid tuner** is the other unfinished half (it reaches nothing that renders yet; `renderTiers.js` header says why). Board row **`ROADMAP.md H1`**; design `_handoffs/HANDOFF-mobile-profile.md §2`.
 
 The *only other* divergences are the GPU profiler, the phone frame, and the layer-toggle matrix laid over the top. This is what makes the desktop cost numbers honest — they measure the shipping desktop render, not a proxy.
 
@@ -115,19 +111,17 @@ player's `viewMode` (reading `viewMode` is what kept Preview's Browse on the her
 
 Every Scene-layer toggle gates `.visible` on a `<group>`, **never the mount** (the *Vernier convention*, `PreviewApp.jsx:339`). The rationale is load-bearing:
 
-- **"All on" must equal production's literal mount list** — so the all-on cost number is the shipping cost. ⛔ **True of DESKTOP production only** (§0.1): mobile ships five fewer passes, so all-on *overstates* the mobile cost and no toggle state reproduces the mobile set. A toggle is a clean per-frame on/off, not a destructive unmount/dispose/re-upload that would churn the GPU meter and lie about steady-state cost.
+- **"All on" must equal production's literal mount list, per tier** — so the all-on cost number is the shipping cost of the tier selected (§0.1). A toggle is a clean per-frame on/off, not a destructive unmount/dispose/re-upload that would churn the GPU meter and lie about steady-state cost.
 - A layer whose cost is a **draw** (geometry) → wrapped in `<group visible>`.
 - A layer that is a **scene property** (fog) → passed an `enabled` prop; the component nulls the property instead of unmounting.
 - **The one sanctioned mount-gate:** the live `LafayetteScene` buildings stay *unmounted*, exactly as in production where the merged-mesh **slab** replaces them (L1.3, 2026-05-26). The `Buildings` toggle gates the *slab's* `.visible`; `LafayetteScene` stays mounted only for `SceneNeon` + labels + markers + the click-catcher.
 - **Post-FX is NO LONGER a fork (2026-06-30).** It used to be the exception — Preview ran its own `PreviewPostFx` composer, which drifted (its DoF driver was silently wrong). Now the post-FX stack is **one declared manifest installed by mode** (`renderPipeline.jsx` → `RenderPipeline`; `ARCHITECTURE.md §8 "Render pipeline"`): production/Stage install it plain, Preview installs the *same* one with `inspect={toggles,onCost}`. An FX toggle mounts/unmounts its pass *through the manifest* (the composer rebuilds on the toggle set) — inspection is a parameter, not a parallel composer. `PreviewPostFx` is **retired**; "Preview == Production" post-FX is structural, not asserted. (The transient caveat, §4, still applies to a toggled pass.)
 
-The layer roster (`PreviewApp.jsx:361`): **Scene** — Ground, Buildings, Trees, Park, Streetlamps, Gateway Arch, Neon, Sky+Sun, Clouds, Atmospheric Fog. **Post-FX** — N8AO, Bloom, Aerial Perspective, Film Grade, Film Grain.
+The layer roster (`PreviewApp.jsx#SCENE_LAYERS`, `#FX_LAYERS`): **Scene** — Ground, Buildings, Trees, Park, Streetlamps, Gateway Arch, Neon, Sky+Sun, Clouds, Atmospheric Fog. **Post-FX** — N8AO, Bloom, Halo, Film Grade, Film Grain, SMAA, DoF (the pyramid and the hero ladder follow the passes that read them).
 
 ⭐ **Ground-contact effects ride the Ground layer (parity automatic, no separate toggle).** The lamp light-pools + tree/lamp contact shadows (`ground.poolmap.png`) and the trunk-base ground blend (`ground.colormap.png`) are baked into the ground textures, sampled by the ground/grass + trunk shaders (`SLAB-CONTRACT §3.1/§3.2`) — so toggling **Ground** gates them and "all-on" == production by construction. They're natural candidates for the per-platform channel-listing (a measurable mobile-cost line) once the v0.2 measurement regime lands.
 
-Two deliberate default-state divergences from production, both QA bypasses (`DEFAULT_LAYERS`, `PreviewApp.jsx:392`):
-- **Neon is forced all-tubes-on** for worst-case profiling (production gates neon by open-by-hours / TOD) — mirrors Stage's "Force Neon On."
-- **Bloom defaults off** (in Preview only) — *not* because it's broken (that flag was stale — cleared 2026-06-21, Jacob; the cited `project_bloom_diagnosis_actual` never existed); off only so a reload doesn't burn into a black scene. Revisit defaulting it on for parity.
+Every `DEFAULT_LAYERS` entry is on, post-FX included (bloom and DoF were default-off until 2026-10-04).
 
 ---
 
@@ -168,15 +162,14 @@ Preview closes the authoring loop without authoring anything: it is the operator
 
 **PARTIAL / the tail:**
 - 🟡 **Cold reload** — soft-reload remounts `CanvasContents` (re-fetch); a true cold reload via `sessionStorage` handoff is sketched, not built (`PreviewApp.jsx:619`).
-- 🟡 **Temporary local defaults** — `DEFAULT_LAYERS` (neon-forced / bloom-off) live in Preview's source; they belong in a `phone-profile.json` field-of-truth once that lands (`feedback_stage_is_source_preview_is_mirror`). Stage authors, the Look serializes, Preview reads — the defaults object is a placeholder until then.
 - 🟡 **`BasicLights` fallback** — a Preview-only inspection light for "celestial off"; held resident-but-hidden, never drawn in the all-on path (no production analog).
 
 ---
 
 ## 7. The doctrine, in one place
 
-- **Preview *is* production + bolt-ons — on DESKTOP.** Same render tree, byte-for-byte, plus the profiler, phone frame and toggle matrix. ⛔ **On mobile it is not:** production drops `ao`/`pyramid`/`dof`/`bloom`/`aerial`, Preview installs them all regardless of tier, and no tier selector changes that (§0.1). The cost numbers are honest **desktop** numbers.
-- **Preview mirrors the Look; it authors deployment policy.** Stage authors the art, the Look serializes, Preview mirrors it cold (no store, no save, no re-derivation of the Look). But *per-platform inclusion* — what ships to desktop vs. mobile — is **authored in Preview**, the publish gate beside the cost instrument (§0.2, amended 2026-06-17).
+- **Preview *is* production + bolt-ons, per tier.** Same render tree and the tier's own pass set (§0.1), plus the profiler, phone frame and toggle matrix.
+- **Preview mirrors the Look; it authors deployment policy.** Stage authors the art, the Look serializes, Preview mirrors it cold (no store, no save, no re-derivation of the Look). But *per-platform inclusion* — what ships to desktop, phone-hi and phone-lo — is **to be authored in Preview**, the publish gate beside the cost instrument (§0.2, amended 2026-06-17). ⚠️ Not built: today each profile's list is fixed in `qualityProfile.js`.
 - **"All on" equals the shipping cost.** Toggles gate `.visible`, never the mount; the all-on total is the production render's cost.
 - **Trust the all-on total, not the sum of deltas.** Shared overdraw makes per-layer deltas non-additive; they isolate *causes*, the total measures *cost*.
 - **Milliseconds are the budget.** Draws/tris are context; frame-time is what users feel. 16ms is the per-layer bar anchor; 33ms is the spike line.

@@ -321,7 +321,7 @@ horizon ground disc is gone — the town's edge is the neighborhood fade, set in
 
 **Which town:** `?look=<id>`, else the town Stage last had open, else **none** — Preview offers the towns to choose from; it never falls back to Lafayette Square. ▶ `node checks/claims-a-look-link-opens-that-town.mjs`
 
-GPU profiler · device frame · layer-toggle matrix · TOD scrub. Walks the *shipping* render with a profiler strapped on. **The layer-toggle matrix is *ephemeral inspection* ("what am I measuring") — never persisted as policy; "all-on" equals production.** Separately, the operator authors **deployment policy** here: the per-platform channel-listing (desktop vs. mobile inclusion), the one thing Preview writes. Keystone Reference: **`PREVIEW.md`** (the model — what it inspects + how to read the numbers). *(In flight — the virtual-device emulator + device-budget gauges + thermal/memory/transition readouts: `HANDOFF-preview-measurement.md`.)*
+GPU profiler · device frame · layer-toggle matrix · TOD scrub. Walks the *shipping* render with a profiler strapped on. **The layer-toggle matrix is *ephemeral inspection* ("what am I measuring") — never persisted as policy; "all-on" equals production for the selected tier.** **Deployment policy** (which effects ship on each surface) is planned to be authored here but is **not built** (§ Deployment policy, below). Keystone Reference: **`PREVIEW.md`** (the model — what it inspects + how to read the numbers). *(In flight — the virtual-device emulator + device-budget gauges + thermal/memory/transition readouts: `HANDOFF-preview-measurement.md`.)*
 
 ### Publish — where the buttons actually push
 
@@ -360,7 +360,7 @@ Unlike Stage, **Preview authors almost nothing** — its knobs set up an *inspec
 ### Device / environment selector — Desktop · Phone-hi · Phone-lo
 
 The top-bar device picker switches the render environment *and* the budget the gauges read against — the cost is benchmarked to **two real reference phones**, not the operator's desktop. Exclusive toggle; persists to `localStorage` (`preview.mode.v1`). Phone modes also draw the canvas inside the phone bezel (below).
-- ⭐ **Each tier draws with its own quality profile** — the phone tiers with the **phone** profile, in both `<Town>` and the Canvas (linear depth, no shadow map, the hero-only pieces, no building textures, the phone post-FX); Desktop with the desktop profile. The Canvas is re-created on a tier switch (depth can't change live). Until 2026-09-28 every tier drew the device's own profile, so "phone" measured the phone's frame through a desktop renderer. ▶ `node checks/claims-the-canvas-is-the-towns.mjs`
+- ⭐ **Each tier draws with its own quality profile** — the phone tiers with the **phone** profile, in both `<Town>` and the Canvas (linear depth, no shadow map, the hero-only pieces, no building textures, and the phone's post-FX passes only: grade, SMAA, grain); Desktop with the desktop profile. The Canvas is re-created on a tier switch (depth can't change live). ⚠️ `phone-hi` and `phone-lo` render identically today; they differ only in the budgets below. ▶ `node checks/claims-the-canvas-is-the-towns.mjs` · `node checks/claims-preview-phone-runs-production-passes.mjs`
 - **`phone-hi` = iPhone 16 Pro Max** — Apple A18 Pro (6-core GPU), 8 GB RAM, 6.9″ 2868×1320 (~460 ppi). The best-case ceiling (and the device the PhoneFrame bezel is modeled on).
 - **`phone-lo` = Samsung Galaxy A54/A55** — the floor we *guarantee*. Anchored to the weaker A54 (Exynos 1380, Mali-G68 MP5, 8 GB, 6.4″ 2340×1080); the A55 (Exynos 1480, RDNA-based Xclipse 530) is the stronger sibling, so an A54-clean slab covers it.
 - **`desktop`** — a 60fps target with a generous-but-present draw/tri ceiling (trips only on a pathological scene / weak laptop GPU).
@@ -380,15 +380,14 @@ The shared **DawnTimeline** — scrub dawn → day → dusk → night to inspect
 
 The right panel lists every render layer with a per-layer cost bar; each checkbox gates that layer's `.visible` (never the mount), so **"all on" is the literal shipping cost** (`PREVIEW.md §3`). Toggling a layer off attributes its measured Δ. Inspection state persists to `localStorage` (`preview.layers.v3`) — but this is *measurement* setup, **not** the deployment manifest (those are separate; see below).
 - **Scene layers** — Ground (carries the baked lamp-pools / contact-shadows / trunk-blend), Buildings (the slab merged mesh), Trees, Park, Streetlamps, Gateway Arch, Neon, Sky+Sun, Clouds, Atmospheric Fog.
-- **Post-FX layers** — N8AO, Bloom, Halo (aerial perspective), Film Grade, Film Grain, SMAA, **DoF** *(WIP)*.
-- **Two deliberate default divergences from production** (`DEFAULT_LAYERS`): **Neon is forced all-on** (worst-case profiling, vs. production's TOD-gated neon), and **Bloom defaults off** (only so a reload doesn't burn into a black scene — not because it's broken). Flip them on for true parity.
+- **Post-FX layers** — N8AO, Bloom, Halo (aerial perspective), Film Grade, Film Grain, SMAA, DoF. Everything starts on. A toggle can only take out a pass the tier ships: on a phone tier the passes a phone doesn't run show greyed *"not on this tier"*, and DoF mounts only where the Look authors a blur. To tune DoF, use Stage.
 
 ### Reading the gauges
 
 - **GPU panel** — the numeric tab: a **scene-vs-budget verdict** (one chip per device, green/amber/red against that device's budget), live **frame ms · fps**, **draws / tris** vs. budget, resident **geos / tex / progs**, and a rolling **spike log** (each spike tagged with the gesture that caused it). **Milliseconds are the budget** — draws/tris are context, frame-time is what users feel (`PREVIEW.md §4`).
 - **Strip chart** (phone mode) — a rolling work-ratio equalizer against the device budget line, with cluster detection (≥3 events bunched → "stagger" hint) and a hover caret (when stopped) for per-frame detail.
 - **Recording mode** (phone mode) — **event** (a trigger arms a ~5 s capture window) vs. **ambient** (a continuous rolling window, triggers disabled). Persists to `localStorage` (`preview.recMode.v1`).
-- ⚠️ **Three caveats** when reading per-layer cost (`PREVIEW.md §4`): it's *render* cost, not VRAM; deltas **don't sum** (shared overdraw) — trust the all-on total; neon is forced-on.
+- ⚠️ **Three caveats** when reading per-layer cost (`PREVIEW.md §4`): it's *render* cost, not VRAM; deltas **don't sum** (shared overdraw) — trust the all-on total.
 
 ### ⛔⛔ A BLANK SURFACE MAY BE A SHADER THAT DID NOT LINK — check this FIRST
 
@@ -422,13 +421,13 @@ authored map is all it takes, and the operator sees a map and trusts it.
 - ⛔⛔ **AN EYE-GATE TAKEN IN PREVIEW IS TRUSTWORTHY AS OF 2026-09-20 — AND WAS NOT BEFORE.** Preview mounted its nine baked consumers with **no cache-bust token**, so the browser's HTTP cache served the *previous* bake at an unchanging URL. A re-bake was made, the operator looked, reported "unchanged", and the A/B was read backwards — ⭐ **a stale viewer is worse than no viewer, because it makes the operator confidently wrong, and the operator's eye is the gate we trust most.** Now threaded from `scene.bakedAt`, which changes exactly when a bake happens. ⚠️ **The same bug was in production** (a visitor's browser served the previous bake after a deploy) and is fixed the same way. ⚠️ **Treat any Preview verdict recorded before this date as possibly taken on a stale slab.** ▶ `node checks/claims-baked-consumers-get-a-cache-bust.mjs`
 - **Trigger bar** (phone mode) — shot-jump + reload buttons that fire a recording span, so a spike is attributable to a specific gesture.
 
-### The pyramid tuner — *in flight* ⏳
+### The pyramid tuner — *unfinished: it reaches nothing yet* ⏳
 
-The **Pyramid · <env>** card, collapsed by default (click its heading to open). Per-device sliders (**Levels · Resolution · Radius**) that tune the **shared downsample pyramid** feeding Bloom + DoF — `Resolution` is the looks↔cost dial (finer mips cost perf). Persists per-environment to `localStorage` (`preview.renderTiers.v1`). ⚠️ **This is part of the in-flight measurement-regime / shared-pyramid arc, not settled doctrine** — the pyramid being shared + re-bracketable per device tier is still being worked out (`HANDOFF-preview-measurement.md`, `[[preview-equals-pyramid-tier-ladder]]`). Document/operate it as provisional; the channel set and where it lives may still move.
+The **Pyramid · <env> · unfinished** card (collapsed by default). Per-tier sliders (**Levels · Resolution · Radius**) persisted to `localStorage` (`preview.renderTiers.v1`). ⛔ **Moving them changes nothing on screen**: the values never reach the renderer, the pyramid ignores them, and phones don't run the pyramid. It is kept as the *intent* that a phone runs every effect at a lower rung instead of dropping it; whether to finish it is Jacob's call after the phone measurement. The `src/lib/renderTiers.js` header lists the breaks. Board row `ROADMAP.md H1`.
 
 ### Deployment policy — the one thing Preview writes *(planned)*
 
-The per-platform **inclusion manifest** — *which channels ship to desktop vs. mobile* — is a **cost-driven deployment decision**, so it's authored here at the gate, beside the instrument that responds (`PREVIEW.md §0.2`). ⚠️ **Not yet built** — the editorial surface lands with the v0.2 measurement regime (`HANDOFF-preview-measurement.md`, Phase 3–4). Until then Preview writes nothing; its product is the operator's *verdict* ("ship the slab" / "back to Stage").
+The per-surface **inclusion** — *which effects run on desktop, phone-hi and phone-lo, each switchable on its own* — is a **cost-driven deployment decision**, so it's authored here at the gate, beside the instrument that responds (`PREVIEW.md §0.2`). ⚠️ **Not yet built.** Today each device profile carries a fixed `postFxOff` list in `src/lib/qualityProfile.js`, and `includesPass` there is the one function everything asks, which is where the authored setting will plug in. Until then Preview writes nothing; its product is the operator's *verdict* ("ship the slab" / "back to Stage").
 
 ## Photographs — we host them, we do not hotlink them
 

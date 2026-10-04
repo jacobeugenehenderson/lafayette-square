@@ -1,36 +1,18 @@
 /**
- * renderTiers — the per-environment RENDER-KNOB home (device-regime, meta phase 1).
+ * renderTiers — the per-environment pyramid DEGREE (the planned mobile ladder).
  *
- * The render-path knobs the canon reserves for INSTANCE.mobileQuality get their
- * first home here — starting with the one knob the device-regime workflow needs:
- * the DownsamplePyramid DEGREE per environment.
+ * ⛔⛔ UNFINISHED — THIS REACHES NOTHING THAT RENDERS (re-verified 2026-10-04, Phase 2 D). Three breaks, each its own:
+ *   1. Nothing imports `pyramidDegreeFor`; Preview's tuner edits a copy of RENDER_TIERS and hands it only to its sliders.
+ *   2. `DownsamplePyramid` accepts and IGNORES levels / radius / resolutionScale (the dial was removed 2026-06-28).
+ *   3. The pyramid is `platform: 'desktop'` (renderPipeline.jsx) — a phone, and Preview's phone tiers, never run it.
+ * ⭐ KEPT ON PURPOSE (Jacob, 2026-10-04): it is ASPIRATION, not rot — the intent that a phone runs EVERY effect at a
+ * lower rung of the one shared ladder instead of dropping passes (`plans/clean-for-handoff.md §W1`,
+ * `_handoffs/HANDOFF-mobile-profile.md §2`, board row `ROADMAP.md H1`). Drop-vs-low-rung is Jacob's call, after the
+ * phone measurement. Finishing it is ladder work: the degree goes into the quality profile (qualityProfile.js — the
+ * device question's one home), the pyramid reads it, and the phone profile's pass set changes there. Until then
+ * phone-hi and phone-lo render identically and a number read off these rungs is not a measurement of anything.
  *
- * ⛔⛔ THESE PHONE RUNGS CURRENTLY TUNE A PASS NO PHONE RUNS (verified 2026-09-02).
- * DownsamplePyramid is `platform: 'desktop'` in renderPipeline.jsx's manifest and is
- * filtered out for mobile at `:259`, along with ao / dof / bloom / aerial — a phone
- * renders grade + smaa + grain and nothing else. So `phone-hi`/`phone-lo` below are
- * real only inside PREVIEW, which installs the whole desktop pipeline regardless of
- * tier. ⭐ A number read off them is NOT a mobile number.
- * ▶ The finish is `plans/clean-for-handoff.md §W1` — that arc was justified on turning
- * `platform` from an on/off drop into a RESOLUTION BRACKET (mobile ships every effect
- * at a low rung) and shipped everything except that. Until it lands, this file is a
- * Preview knob, not a device profile.
- * ▶ The fuller design is `_handoffs/HANDOFF-mobile-profile.md §2` — ⭐ TRACKED as of
- * 2026-09-02 (it and HANDOFF-preview-measurement.md are the two exceptions to the
- * `_handoffs/` ignore, precisely because source cites them). Board row: `ROADMAP.md H1`.
- * Also: `plans/clean-for-handoff.md §W1` · `cartograph/PREVIEW.md §0.1` · `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`. Keyed by the SAME ids as deviceProfiles.js (desktop / phone-hi /
- * phone-lo) so the gauge budget and the render degree speak one vocabulary.
- *
- * This is "Preview = Pyramid" made data: each environment is a BRACKET POSITION
- * on the pyramid (memory: preview-equals-pyramid-tier-ladder). Desktop = full
- * degree (mirrors DownsamplePyramid's PYRAMID_DESKTOP); the phone rungs dial it
- * down (cheaper, slightly softer bloom/DoF blur). The live tier selector
- * (Preview's mode toggle) picks the active one; the tuner (meta phase 2) edits
- * these values.
- *
- * ⚠️ Scope: render KNOBS, not budgets (those stay in deviceProfiles.js). Fold
- * into the full mobileQuality home (dpr / AA / logDepth / post-fx set) when it
- * lands; reconciling the two homes is the mobile-profile/render-conformance arc.
+ * Keyed by the SAME ids as deviceProfiles.js (desktop / phone-hi / phone-lo).
  */
 export const RENDER_TIERS = {
   desktop:    { pyramid: { levels: 8, radius: 0.85, resolutionScale: 0.5  } },

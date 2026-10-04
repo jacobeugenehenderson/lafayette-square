@@ -133,11 +133,10 @@ export function PostProcessing({
     ? Object.values(dofChannel.values || {}).some(s => (s?.blur ?? 0) > 0)
     : (dofChannel?.values?.blur ?? DOF_FLAT_DEFAULTS.blur) > 0
 
-  // DoF drives (applyDofFrame) exactly when the DoF pass is MOUNTED: in
-  // production/Stage that's the channel gate (dofOn); in Preview it's the
-  // inspect toggle (the operator forces DoF on to tune it, independent of the
-  // Look's authored enable). Drive-when-mounted keeps _dofRefs from going stale.
-  const dofMounted = inspect ? (inspect.toggles?.dof ?? false) : dofOn
+  // DoF drives (applyDofFrame) exactly when the DoF pass is MOUNTED: the channel gate (dofOn), which Preview's
+  // inspect toggle can only switch OFF — never force on (renderPipeline.jsx#mountedPasses). Tuning DoF is Stage's.
+  // Drive-when-mounted keeps _dofRefs from going stale.
+  const dofMounted = dofOn && (inspect?.toggles?.dof ?? true) !== false
 
   // The per-frame post-FX driving — one hook for all three surfaces. It resolves
   // every channel above → the module refs (owned there) → uniforms, drives the
@@ -152,7 +151,7 @@ export function PostProcessing({
   })
 
   // Mount the ONE installer from the manifest. Ordering, per-platform inclusion
-  // (mobile drops AO/pyramid/DoF/bloom/aerial), the DoF mount gate, the
+  // (mobile drops ao/pyramid/heroLadder/bloom/dof/aerial), the DoF mount gate, the
   // composer remount key, and Preview's per-pass toggle matrix (`inspect`) all
   // live in renderPipeline.jsx — production and Stage install with no `inspect`,
   // byte-identical to the old hand-wired chain.
