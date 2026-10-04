@@ -46,7 +46,6 @@ The *only other* divergences are the GPU profiler, the phone frame, and the laye
 | **Inputs** | the slab — `public/baked/<look>/{ground.json,ground.bin,ground.lightmap.png,buildings.json,buildings.bin,lamps.json,scene.json,trees.json}` — every URL from `src/lib/slabUrl.js` (published: content names; on disk: `?bake=<re-read key>`). ▶ `node checks/claims-every-slab-url-is-resolved.mjs`; the retired `?t=<bakedAt>` scheme is in `cartograph/_archive/slab-cache-bust-scheme-RETIRED-2026-09-28.md`. |
 | **Look selection** | The town the address names (`?look=`, else the one Stage last had open), resolved by the shared authoring resolver (`PreviewApp.jsx#resolvePreviewLookId`) |
 | **Town identity** | The slab's baked `manifest.json#identity`, the record the Ward reads, never the authoring source. A Look with no manifest refuses with "bake it in Stage first" (`PreviewApp.jsx#FrozenTown`) |
-| **Who serves it** | the cartograph dev server (`serve.js:735` maps `/` → `/preview.html`); entry `src/preview/main.jsx` → `PreviewApp` |
 | **Who reads the slab** | the **shared runtime components** — `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies` / `Atmosphere` / `CloudDome`, `LafayettePark`, `SceneNeon` (via `LafayetteScene`), all fed by `useSceneJson(lookId)` |
 | **Format SSOT** | `SLAB-CONTRACT.md` |
 | **Output** | the **Look is read-only** (Preview persists nothing of the render). Its product is the operator's *verdict*: "ship the slab" or "back to Stage." **Exception (amended 2026-06-17, §0.2):** Preview *does* author the per-platform **inclusion manifest** — its one sanctioned write, deployment policy decided at the gate. |
@@ -64,6 +63,7 @@ The bolt-ons over the production render — the only things Preview adds that LS
 | **GPU profiler** | per-frame cost off `renderer.info` (draws / triangles) + a rolling CPU frame-time from rAF deltas; spike log tagged with its cause | `GpuMonitor.jsx` |
 | **Per-layer cost** | toggle a layer → measured Δ (ms / draws / tris) attributed to that layer (§4) | `measureToggle`, `getLayerCost` |
 | **Cold start** | the strip's first recording is the page's load: a startup lane ticks the spec's marks (`ward:*`, set by the shared renderer), the header carries TIME TO WARD, each fetched file is an assets span (hover: its sizes); the **files** tab is its table, per class opening onto files (§4a) | `phoneBus.js#recordColdStart`, `StripChart.jsx`, `FilesTab.jsx`, `src/lib/startupMarks.js`, `src/components/DrawnAnchor.jsx` |
+| **Deployment · Diagnosis** | what the surface ships, autosaved to `deployment.json` (§0.1), and beside it the measured problem ranked with its remedy (§4a) | `DeploymentPanel.jsx`, `DiagnosisPanel.jsx` |
 | **Residency** | each Scene layer row: MB held · in view · in the slab; the GPU panel: GPU memory in bytes (textures · geometry · post-FX targets) beside the count ceilings (§4a) | `Residency.jsx`, `glLedger.js` |
 | **Profiler** (strip · gpu · files) | under the phone on the phone tiers; on desktop in the right panel, closed to one line (TIME TO WARD · GPU MB). Opaque (`.profiler-panel`, project tokens), one fixed height | `StripChart.jsx`, `GpuPanel` |
 | **Phone mode** | renders the canvas inside `<PhoneFrame>` (iPhone bezel, target scale 0.65) to read deployed mobile aspect; persisted to `localStorage` (`preview.mode.v1`) | `PhoneFrame.jsx`, `usePhoneScale` |
@@ -145,7 +145,10 @@ Two caveats that, unstated, would mislead (`PreviewApp.jsx#SceneCaveats`):
 - **Frame cost.** GPU ms (timer query, from the frame's first render call) and main ms (the frame's callbacks) apart,
   plus long-animation-frame entries. ⚠️ On ANGLE/Metal the GPU timer read above the frame interval (cause not
   established): relative there, and the panel flags it.
-- **Blind spots.** Off-main-thread work (KTX2 transcode), the driver's own copies, images the browser holds.
+- **Diagnosis** (right panel, per surface): ranks by measurement only (no fixed order) — GPU ms per layer by a bracketed
+  toggle (rest · out · rest; the rests' spread is the row's noise: inside it reads ≈ 0, negative past it reads *unstable*),
+  and tris / meshes / memory by share. Each row names its remedy: **deployment** (a switch above), **creative** (Stage),
+  **engineering** (a ROADMAP row). Blind spots: off-main-thread work (KTX2), the driver's copies, images the browser holds.
 - ▶ `node checks/claims-startup-marks-fire-in-order.mjs [--town=]` (order; a hidden ground marks nothing and reads 0
   VISIBLE; the ledger counts to the byte) · `node checks/claims-preview-frame-cost-splits.mjs` (each load moves only its
   own number). `window.__startup()` / `__residency()` / `__previewFrame()` return the data.
@@ -178,9 +181,6 @@ Preview closes the authoring loop without authoring anything: it is the operator
 - **`STAGE.md`** — the Look-authoring tool whose `design.json` the bake freezes; Preview's upstream source.
 - **`BAKE.md`** — the publish stage that pours the slab Preview reads; the paired keystone (`BAKE.md §3` lists every artifact).
 - **`SLAB-CONTRACT.md`** — the slab's byte format + producer/consumer contracts (the SSOT this doc points to for §1).
-- **`HANDOFF-preview-measurement.md`** *(State — in flight)* — the v0.2 measurement-regime arc: the virtual-device emulator, device-budget gauges, thermal/memory/transition axes, and the per-platform channel-listing this doc's §0.2 reversal enables. The forward plan; this doc becomes its Reference home on landing.
-- **`FEATURES.md §3 "Preview"`** — the user/investor re-voicing of this doc (the role table + the three-environments walkthrough).
-- **`OPERATIONS.md "Preview — the slab inspector"`** — the operator manual entry (defers here for the model).
-- **`_archive/RENDER-PATH-CENSUS.md`** *(archived)* — the render-path audit; Preview as the shipping-render measurement surface.
+- **`FEATURES.md §3`** (the capability, in a marketer's words) · **`OPERATIONS.md` § Preview** (the knobs) · **`HANDOFF-preview-measurement.md`** (the June design; what is still unbuilt of it: thermal and a real-device reading, §4a).
 - **Code:** `src/preview/PreviewApp.jsx` (render tree + toggle convention) · `src/preview/GpuMonitor.jsx` (cost attribution) · `StripChart.jsx` · `PhoneFrame.jsx` · `TriggerBar.jsx` · `phoneBus.js` · `heroAnim.js` (shared camera model).
 - **Memory:** `project_preview_equals_ls_literally`, `feedback_stage_is_source_preview_is_mirror`, `project_ls_parity_pipeline`, `[[project_two_bakes_two_walls]]`.

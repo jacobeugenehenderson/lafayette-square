@@ -114,3 +114,12 @@ The per-platform **inclusion manifest** — *which channels ship to desktop vs. 
 > Which post-FX passes a device runs is its **quality profile's** (`qualityProfile.js#includesPass`, the profile's `postFxOff` list) — the one question every surface asks. A **phone** runs `grade` · `smaa` · `grain`; **desktop** runs all nine (`ao` · `pyramid` · `heroLadder` · `bloom` · `dof` · `aerial` + those three), `heroLadder`/`dof` only where the Look authors a blur. Preview's phone tiers hand `<Town>` the phone profile, so they mount exactly what a phone ships, and its FX toggles can only **take out** a pass the tier ships, never force one in (`renderPipeline.jsx#mountedPasses`); a pass the tier doesn't run shows greyed "not on this tier". ▶ `node checks/claims-preview-phone-runs-production-passes.mjs`
 >
 > ⚠️ **What is still fixed, and unbuilt:** the phone's list is a constant, not a measurement, and `phone-hi`/`phone-lo` share one profile — they render identically and differ only in the gauge budgets (`deviceProfiles.js`). Jacob wants every effect switchable **per surface** (desktop · phone-hi · phone-lo) — *"we don't want to 'cancel bloom' because we can't get it going on a lo phone"* — and that per-surface data plugs into `includesPass`. The **pyramid tuner** is the other unfinished half (it reaches nothing that renders yet; `renderTiers.js` header says why). Board row **`ROADMAP.md H1`**; design `_handoffs/HANDOFF-mobile-profile.md §2`.
+
+**Also evicted (Phase 2 F):** `PREVIEW.md §1`'s "Who serves it" row (it cited `serve.js:735`, a drifted line), and four cross-reference lines folded into one; the archived `RENDER-PATH-CENSUS.md` pointer dropped (archived for currency). As they stood:
+
+| **Who serves it** | the cartograph dev server (`serve.js:735` maps `/` → `/preview.html`); entry `src/preview/main.jsx` → `PreviewApp` |
+
+- **`HANDOFF-preview-measurement.md`** *(State — in flight)* — the v0.2 measurement-regime arc: the virtual-device emulator, device-budget gauges, thermal/memory/transition axes, and the per-platform channel-listing this doc's §0.2 reversal enables. The forward plan; this doc becomes its Reference home on landing.
+- **`FEATURES.md §3 "Preview"`** — the user/investor re-voicing of this doc (the role table + the three-environments walkthrough).
+- **`OPERATIONS.md "Preview — the slab inspector"`** — the operator manual entry (defers here for the model).
+- **`_archive/RENDER-PATH-CENSUS.md`** *(archived)* — the render-path audit; Preview as the shipping-render measurement surface.

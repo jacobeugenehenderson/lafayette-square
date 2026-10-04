@@ -9,6 +9,8 @@
  *   layer groups (`town:<piece>`), which three also keeps on the CPU.
  * - VISIBLE: the part of a piece's geometry whose mesh is shown and inside the camera's frustum this second. Per MESH:
  *   a merged mesh that is partly in view counts whole, so VISIBLE is an upper bound.
+ * - TRIANGLES and MESHES per piece: what each shown piece submits (index ÷ 3 × instances, before frustum culling) —
+ *   the diagnosis's static attribution (DiagnosisPanel.jsx).
  * - SELECTED / OPENED: not reachable in Preview — it takes no taps (`<Town interactive={false}>`). Reported as such.
  *
  * It measures and never changes what is resident (BRIEF-phase2-E).
@@ -46,10 +48,17 @@ function measure(scene, camera, baked) {
     let piece = 'other'
     for (let p = o.parent; p; p = p.parent) if (p.name?.startsWith('town:')) { piece = p.name.slice(5); break }
     const b = geomBytes(o.geometry, seen)
-    if (!b) return
-    const e = pieces[piece] ||= { piece, resident: 0, visible: 0, meshes: 0 }
+    const e = pieces[piece] ||= { piece, resident: 0, visible: 0, meshes: 0, shownMeshes: 0, tris: 0 }
     e.resident += b; e.meshes++
     if (shown(o)) {
+      // Static attribution (F §3): triangles the piece submits when shown — index (or vertex) count ÷ 3 × instances,
+      // before frustum culling. Agreed with renderer.info's count to ~9% on LS Browse (2026-10-04); the gap is unexplained.
+      const g = o.geometry
+      if (o.isMesh && g?.attributes?.position) {
+        const n = Math.min(g.index ? g.index.count : g.attributes.position.count, g.drawRange?.count ?? Infinity)
+        e.tris += (n / 3) * (o.isInstancedMesh ? o.count : 1)
+      }
+      e.shownMeshes++
       if (o.isInstancedMesh && !o.boundingSphere) o.computeBoundingSphere?.()
       const s = o.isInstancedMesh ? o.boundingSphere : (o.geometry.boundingSphere || (o.geometry.computeBoundingSphere(), o.geometry.boundingSphere))
       const inView = !s || o.frustumCulled === false || frustum.intersectsSphere(s.clone().applyMatrix4(o.matrixWorld))

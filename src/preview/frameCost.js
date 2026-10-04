@@ -19,6 +19,21 @@ import { addAfterEffect, addEffect } from '@react-three/fiber'
 
 const WINDOW = 30
 export const frameCost = { gpuSupported: null, gpuMs: null, mainMs: 0, loaf: { n: 0, worstMs: 0, scriptMs: 0, last: [] } }
+// Every resolved frame's own GPU time, timestamped when it resolved: what a bracketed reading averages (gpuWindow).
+const series = []
+const SERIES_MAX = 2000
+
+/**
+ * The mean GPU ms of the frames that resolve over the next `ms` (fresh samples only, never the rolling average), and
+ * how many there were. The diagnosis brackets a change with two of these (DiagnosisPanel.jsx).
+ */
+export function gpuWindow(ms) {
+  const t0 = performance.now()
+  return new Promise((resolve) => setTimeout(() => {
+    const xs = series.filter((x) => x.t >= t0).map((x) => x.ms)
+    resolve({ ms: xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null, n: xs.length })
+  }, ms))
+}
 
 const avg = (a) => (a.length ? a.reduce((s, v) => s + v, 0) / a.length : null)
 
@@ -55,7 +70,11 @@ export function installFrameCost(renderer) {
     while (pending.length && gl.getQueryParameter(pending[0], gl.QUERY_RESULT_AVAILABLE)) {
       const q = pending.shift()
       const disjoint = gl.getParameter(ext.GPU_DISJOINT_EXT)
-      if (!disjoint) { gpu.push(gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6); if (gpu.length > WINDOW) gpu.shift() }
+      if (!disjoint) {
+        const v = gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6
+        gpu.push(v); if (gpu.length > WINDOW) gpu.shift()
+        series.push({ t: performance.now(), ms: v }); if (series.length > SERIES_MAX) series.shift()
+      }
       gl.deleteQuery(q)
     }
     frameCost.gpuMs = avg(gpu)

@@ -10,6 +10,8 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import Town from '../components/Town.jsx'
 import { surfaceQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import DeploymentPanel, { liveDeployment, useDeployment } from './DeploymentPanel.jsx'
+import DiagnosisPanel from './DiagnosisPanel.jsx'
+import { gpuWindow } from './frameCost.js'
 import useListings from '../hooks/useListings'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -490,6 +492,29 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
   // The passes this tier's profile ships at all (gates aside): the rest have nothing to toggle.
   const tierPasses = new Set(mountedPasses({ quality, dofOn: true }).map((e) => e.id))
   const notOnTier = new Set(FX_LAYERS.map(([k]) => k).filter((k) => !tierPasses.has(k)))
+  // The diagnosis measures what is SHOWN and SHIPPED: the Scene layers that are on, and the passes this surface ships.
+  const diagnosed = [
+    ...SCENE_LAYERS.filter(([k]) => layers[k]).map(([key, label]) => ({ key, label, piece: LAYER_PIECE[key] })),
+    ...FX_LAYERS.filter(([k]) => tierPasses.has(k) && layers[k]).map(([key, label]) => ({ key, label, pass: true })),
+  ]
+  // One layer out and back, bracketed by fresh GPU readings (frameCost.js#gpuWindow): at rest · out · at rest. The cost
+  // is rest − out; the two rests' spread is that row's noise. Temporary: the layer is back on before the next.
+  // ⛔ Not GpuMonitor's measureToggle: its baseline is a 30-sample rolling window, so back to back it still held the
+  // previous layer's "out" frames and read costs as large as −38 ms (2026-10-04).
+  // Settle long enough for a post pass's composer rebuild (and its shader compile) at a few frames a second.
+  const SETTLE_MS = 3000, WINDOW_MS = 2500
+  const settle = () => new Promise((r) => setTimeout(r, SETTLE_MS))
+  const measureLayer = async (key) => {
+    const rest1 = await gpuWindow(WINDOW_MS)
+    setLayer(key, false); noteEvent(`${key}=off (diagnosis)`)
+    await settle()
+    const out = await gpuWindow(WINDOW_MS)
+    setLayer(key, true); noteEvent(`${key}=on (diagnosis)`)
+    await settle()
+    const rest2 = await gpuWindow(WINDOW_MS)
+    if (rest1.ms == null || out.ms == null || rest2.ms == null) return { gpuMs: null, noise: null }
+    return { gpuMs: (rest1.ms + rest2.ms) / 2 - out.ms, noise: Math.abs(rest1.ms - rest2.ms), rest: (rest1.ms + rest2.ms) / 2 }
+  }
   return (
     <div className="absolute z-10 flex flex-col gap-3 pointer-events-auto overflow-y-auto"
       style={{ top, right: 24, bottom, width: RIGHT_PANEL_W }}>
@@ -507,6 +532,7 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
 
       {/* What this surface SHIPS (deployment.json) — authored, autosaved; below it, what you are inspecting (temporary). */}
       {deployment}
+      <DiagnosisPanel surface={envId} layers={diagnosed} measure={measureLayer} />
 
       <LayerSection title="Scene" layerList={SCENE_LAYERS} layers={layers}
         setLayer={setLayer} metric="draws" footer={<SceneCaveats />} />
