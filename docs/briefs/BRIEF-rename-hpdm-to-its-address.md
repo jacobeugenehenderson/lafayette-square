@@ -44,6 +44,9 @@ staging page carries no production domain, so QR codes and share links are withh
   staging link.
 - **The validation surface:** the real staging site and the real Promote. No parallel harness.
 
+### ✅ RULED 2026-10-04 (Jacob): "a, rename everything with a stable backend key."
+Map, Ward, slab, Look and instance all become `hipointedemun`. The Apps Script tenant is keyed by a **stable id**, not the display name or Look id, so no rename moves the sheet tabs; HPDM's existing rows stay attached (prove it before and after). The listing prefix is read from the registry. *(Rejected: keeping the Look id `hipointe-demun`. On staging the path, the staging record and the Look are one string; the Ward copies the path into `ward-look` (`theward/src/main.jsx#boot`, `src/town/page.js#readPage`), and an unregistered Look resolves to Lafayette Square.)* Premise corrections from Tamp's read: a naive prefix change already **throws** (`listing-identity.json` `meta.prefix`); live files naming the town are ~86, not a dozen.
+
 ## What moves (▶ re-derive; never quote a count)
 
 - `git grep -l -- hipointe-demun` lists every tracked file that names it. The live ones: `cartograph/data/hipointe-demun/`
