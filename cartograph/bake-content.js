@@ -37,8 +37,8 @@
  *     — the OSM join yields ~0 there, so only the surviving adds got written.
  *     Declared in DATA, not by scene name, so the next non-OSM town is covered.
  *
- *   node cartograph/bake-content.js --scene hipointe-demun
- *   node cartograph/bake-content.js --scene hipointe-demun --dry-run   (stats, no write)
+ *   node cartograph/bake-content.js --scene=hipointe-demun
+ *   node cartograph/bake-content.js --scene=hipointe-demun --dry-run   (stats, no write)
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs'
@@ -1247,10 +1247,11 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   const rosterOverrides = loadJsonOr(join(contentDir(scene), 'roster.overrides.json'), { patches: {} })
   const { listings: merged, report } = applyListingOverrides(baseListings, listingOverrides,
     { buildingGrid, bakedIds, parcels, parcelByAddr })
-  const prefix = scene.split('-')[0] === 'hipointe' ? 'hpdm' : scene.slice(0, 4)
   // ⭐ PERMANENT LISTING IDS — sealed by the scene's registry (`listing-identity.js`, ROADMAP H-29).
+  // The prefix is sealed WITH the registry and read back from it; the scene's name seeds it only on
+  // the first seal, so renaming a town never renames its listings.
   const idPath = listingIdPath(contentDir(scene))
-  const { registry: listingIds, report: idReport } = assignListingIds(merged, prefix, loadListingIds(idPath))
+  const { registry: listingIds, report: idReport } = assignListingIds(merged, loadListingIds(idPath), { sealPrefix: scene.slice(0, 4) })
   if (idReport.sealed) {
     // The first sealed bake numbers positionally; that carries today's ids over only if the input
     // is unchanged since the last bake. Prove it against the file on disk before sealing.

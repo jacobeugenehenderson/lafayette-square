@@ -21,7 +21,7 @@
 // and refuses an authored id that would renumber a business it already numbered.
 //
 // ⛔ NO FALLBACKS. An unpinned listing without a `_key`, two listings with one key, a pinned id
-// the registry already gave away, or a registry for a different prefix all THROW — each is a
+// the registry already gave away, or a registry with no prefix all THROW — each is a
 // question about the data, and answering it with a plausible number is the failure this file
 // exists to end.
 
@@ -45,13 +45,15 @@ const format = (prefix, n) => `${prefix}-lst-${String(n).padStart(4, '0')}`
 
 /**
  * Give every listing its permanent display id.
- *   existing registry — reuse each key's id; new keys append at ++highWater.
+ *   existing registry — reuse each key's id; new keys append at ++highWater, under the registry's OWN
+ *                       prefix. `sealPrefix` is not read: the prefix was sealed with the registry, so
+ *                       renaming the town can never change it.
  *   null registry     — a scene's FIRST sealed bake: number exactly as the old positional scheme did
  *                       (sorted by key, skipping pinned ids), so today's ids carry over unchanged,
- *                       and freeze that numbering for every bake after.
+ *                       and freeze that numbering — and `sealPrefix` — for every bake after.
  * Mutates each listing's `id`; returns the (new) registry and what happened.
  */
-export function assignListingIds(listings, prefix, registry) {
+export function assignListingIds(listings, registry, { sealPrefix } = {}) {
   const pinned = new Set(listings.filter(l => l.id).map(l => l.id))
   const unpinned = listings.filter(l => !l.id)
 
@@ -65,6 +67,8 @@ export function assignListingIds(listings, prefix, registry) {
 
   if (!registry) {
     // The seal: the old positional numbering, frozen.
+    if (!/^[a-z0-9]{2,8}$/.test(sealPrefix || '')) throw new Error(`listing-identity: sealing a registry needs a prefix of 2–8 lowercase letters or digits, got ${JSON.stringify(sealPrefix)}.`)
+    const prefix = sealPrefix
     let n = 1, high = 0
     const ids = {}
     for (const l of byKey) {
@@ -75,8 +79,9 @@ export function assignListingIds(listings, prefix, registry) {
     return { registry: { meta: { prefix, highWater: high }, ids }, report: { sealed: true, reused: 0, minted: byKey.length } }
   }
 
-  if (registry.meta?.prefix !== prefix) {
-    throw new Error(`listing-identity: the registry numbers "${registry.meta?.prefix}-lst-*" but this scene's prefix is "${prefix}" — refusing to mix two numberings.`)
+  const prefix = registry.meta?.prefix
+  if (!/^[a-z0-9]{2,8}$/.test(prefix || '')) {
+    throw new Error(`listing-identity: the registry records no usable prefix (meta.prefix = ${JSON.stringify(prefix)}) — it cannot number a new listing.`)
   }
   const ids = { ...registry.ids }
   const issued = new Set(Object.values(ids))

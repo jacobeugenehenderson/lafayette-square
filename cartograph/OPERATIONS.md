@@ -498,8 +498,9 @@ intake cannot destroy it. ▶ `host/README.md` · `ROADMAP` H-28.
 
 ⭐ **A listing's id is permanent.** `content/listing-identity.json` seals each source key
 (`ovt-<GERS>` / `osm-<id>`) to its `…-lst-NNNN` on the first bake; a new business appends, a closed
-one's number is never reused, and every listing ships its `source_key`. ⛔ Commit the registry and never
-hand-edit it. The bake refuses an authored `id` that would renumber a business the registry numbered.
+one's number is never reused, and every listing ships its `source_key`. The `…` prefix is sealed in the
+registry's `meta.prefix` too and read back on every bake, so renaming a town renames no listing. ⛔ Commit
+the registry and never hand-edit it. The bake refuses an authored `id` that would renumber a business the registry numbered.
 
 ⭐ **What a visitor sees is three layers:** this file < the Apps Script sheet < the layer operations
 publishes (`<ASSET_BASE>live/<look>/listings.json`). A correction made in operations wins over both.

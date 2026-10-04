@@ -32,19 +32,19 @@ console.log('\nA listing keeps its id')
 
 // ── the seal reproduces the old positional numbering, so today's ids carry over ──
 const sealed = base(['ovt-c', 'ovt-a', 'ovt-b'])
-const s1 = assignListingIds(sealed, 'test', null)
+const s1 = assignListingIds(sealed, null, { sealPrefix: 'test' })
 if (idOf(sealed, 'ovt-a') === 'test-lst-0001' && idOf(sealed, 'ovt-c') === 'test-lst-0003' && s1.report.sealed) ok('the first bake seals the existing sorted numbering')
 else bad('the seal did not reproduce the sorted numbering — every existing id would move on the first sealed bake')
 
 // ── a new key that sorts FIRST moves nothing ──
 const grown = base(['ovt-0', 'ovt-a', 'ovt-b', 'ovt-c'])
-const s2 = assignListingIds(grown, 'test', s1.registry)
+const s2 = assignListingIds(grown, s1.registry)
 if (idOf(grown, 'ovt-a') === 'test-lst-0001' && idOf(grown, 'ovt-c') === 'test-lst-0003' && idOf(grown, 'ovt-0') === 'test-lst-0004') ok('a new business that sorts first appends; no existing id moves')
 else bad(`a new listing renumbered the others: ${grown.map(l => `${l._key}=${l.id}`).join(' ')}`)
 
 // ── a vanished key's id stays reserved ──
 const shrunk = base(['ovt-a', 'ovt-c', 'ovt-new'])
-const s3 = assignListingIds(shrunk, 'test', s2.registry)
+const s3 = assignListingIds(shrunk, s2.registry)
 if (idOf(shrunk, 'ovt-new') !== 'test-lst-0002' && idOf(shrunk, 'ovt-c') === 'test-lst-0003') ok("a closed business's id is never handed to another")
 else bad('a vanished key\'s id was reissued — a claim on the closed business would now point at a new one')
 if (s3.registry.ids['ovt-b'] === 'test-lst-0002') ok('the registry keeps the retired key')
@@ -52,24 +52,34 @@ else bad('the registry forgot a retired key')
 
 // ── authored ids ──
 const withAdd = [...base(['ovt-a', 'ovt-z']), { id: 'test-lst-0002', name: 'Authored', building_id: 'b-x' }]
-const s4 = assignListingIds(withAdd, 'test', null)
+const s4 = assignListingIds(withAdd, null, { sealPrefix: 'test' })
 if (idOf(withAdd, 'ovt-z') !== 'test-lst-0002') ok('the seal skips an authored id')
 else bad('the seal handed an authored id to a base listing')
 const clash = [...base(['ovt-a']), { id: s4.registry.ids['ovt-a'], name: 'Clash', building_id: 'b-y' }]
-if (throws(() => assignListingIds(clash, 'test', s4.registry))) ok('an authored id that the registry already issued throws')
+if (throws(() => assignListingIds(clash, s4.registry))) ok('an authored id that the registry already issued throws')
 else bad('an authored id silently reused a permanent id')
 
 const renumbered = [{ ...base(['ovt-a'])[0], id: 'test-lst-0099' }]
-if (throws(() => assignListingIds(renumbered, 'test', s1.registry))) ok('authoring a new id for a business the registry numbered throws')
+if (throws(() => assignListingIds(renumbered, s1.registry))) ok('authoring a new id for a business the registry numbered throws')
 else bad('an authored id silently renumbered a registry-numbered business')
 
 // ── unanswerable inputs throw ──
-if (throws(() => assignListingIds([{ name: 'No key' }], 'test', null))) ok('a listing with no id and no source key throws')
+if (throws(() => assignListingIds([{ name: 'No key' }], null, { sealPrefix: 'test' }))) ok('a listing with no id and no source key throws')
 else bad('a listing with no source key was numbered anyway')
-if (throws(() => assignListingIds(base(['ovt-a', 'ovt-a']), 'test', null))) ok('two listings with one source key throw')
+if (throws(() => assignListingIds(base(['ovt-a', 'ovt-a']), null, { sealPrefix: 'test' }))) ok('two listings with one source key throw')
 else bad('a duplicated source key was numbered twice')
-if (throws(() => assignListingIds(base(['ovt-a']), 'other', s1.registry))) ok("another scene's registry throws")
-else bad('a registry with a different prefix was accepted')
+
+// ── the prefix is the registry's, so renaming the town renames no listing ──
+const renamed = base(['ovt-a', 'ovt-new'])
+assignListingIds(renamed, s1.registry, { sealPrefix: 'othr' })
+if (idOf(renamed, 'ovt-a') === 'test-lst-0001' && /^test-lst-/.test(idOf(renamed, 'ovt-new'))) ok("a renamed town keeps its registry's prefix, for old and new listings alike")
+else bad(`a rename changed the listing prefix: ${renamed.map(l => `${l._key}=${l.id}`).join(' ')} — Host edits and claims keyed by id would detach`)
+if (throws(() => assignListingIds(base(['ovt-a']), { meta: { highWater: 1 }, ids: {} }))) ok('a registry with no prefix throws')
+else bad('a registry with no prefix numbered listings anyway')
+if (throws(() => assignListingIds(base(['ovt-a']), null))) ok('sealing with no prefix throws')
+else bad('a registry was sealed with no prefix')
+if (/assignListingIds\(merged,[^\n]*\{\s*sealPrefix:/.test(readFileSync(path.join(ROOT, 'cartograph/bake-content.js'), 'utf8'))) ok('bake-content hands the name over only as the SEAL prefix')
+else bad('bake-content does not call assignListingIds(…, { sealPrefix }) — the prefix may be derived from the name again')
 
 // ── the safety net compares same-named twins as a set ──
 const twins = [{ id: 'x-1', name: 'School', building_id: 'b' }, { id: 'x-2', name: 'School', building_id: 'b' }]
@@ -98,7 +108,9 @@ for (const scene of readdirSync(dataDir)) {
   const lst = path.join(dataDir, scene, 'content/listings.json')
   if (!existsSync(reg) || !existsSync(lst)) continue
   scenes++
-  const { ids } = JSON.parse(readFileSync(reg, 'utf8'))
+  const { meta, ids } = JSON.parse(readFileSync(reg, 'utf8'))
+  const foreign = Object.values(ids).filter(id => !id.startsWith(`${meta?.prefix}-lst-`))
+  if (!meta?.prefix || foreign.length) bad(`${scene}: ${foreign.length} sealed id(s) do not carry the registry's prefix "${meta?.prefix}" — e.g. ${foreign[0]}`)
   const listings = JSON.parse(readFileSync(lst, 'utf8')).listings
   // A listing the registry never numbered carries an AUTHORED id (a patch pins it) — that is the
   // operator's, not a defect. The claim is only that no numbered business has drifted from its id.
