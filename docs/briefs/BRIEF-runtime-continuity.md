@@ -58,6 +58,42 @@ For **each handoff**, establish what **survives**, what **is added**, what **is 
 5. **Camera / framing along the same trace:** where authored framing is written, where each stage reads it, and where a
    failed handoff falls back to whole-neighborhood framing.
 
+## ⭐⭐ The lead exhibit: one Stage, two behaviours (Jacob's eye, 2026-10-03)
+
+*"Supposedly this is the same STAGE that Huron was in, Provincetown was in… there should be no reason/way for there to be
+out of sync settings such as this."* On **HPDM in Stage**, manipulating the camera (a drag, a scroll) in Hero **drops the
+shot to Browse**. That is the old Lafayette Square player's behaviour. Huron and Provincetown in the same Stage do not do
+it. Jacob's rule: *"I am supposed to have full camera control unless I am recording or playing back keyframes."*
+**Start the trace here.** This is the spec's thesis failing in front of the operator.
+
+What Boz established that night (re-derive all of it; ⛔ the cause is NOT established):
+- **The drag/scroll → Browse rule exists in exactly two places,** read in source: the old player
+  `src/components/Scene.jsx` (`onMove` / `onWheel` → `cam.setMode('browse')`, mounted only by `src/App.jsx`) and Preview
+  `src/preview/PreviewApp.jsx` (`ShotCamera`, `setShot('browse')`, a deliberate mirror of production). **Stage
+  (`CartographApp.jsx`) has no such handler.** Its only lock is playback (`Controls` → `RegimeControls` regime `playback`
+  while `previewPlaying`), and that matches Jacob's rule as written.
+- **The instance modules are identical** in every camera-related field (`src/instances/{hipointe-demun,huron,provincetown}.js`).
+- **The only per-town differences measured are in the Look's camera authoring:** HPDM has `heroKeyframes: []` (its copied
+  LS keyframes were removed 2026-09-26, `ROADMAP A11`), no `browseFrame`, no `shotLooks`, and a `heroMotion` in an older
+  shape (`{period, easing}`; the other three are `{length, mode}`). Huron, PT and LS have 3 keyframes and a `browseFrame`.
+- ⚠️ **First confirm the surface.** Establish at runtime which app and which component handle the gesture on HPDM. A
+  `pointermove`/`wheel` listener census on the canvas will do, and **every** listener counts, including ones mounted
+  through `<Town>`. ⛔ Don't settle it by grepping JSX; the parity brief already found that a grep understates what Stage
+  mounts.
+
+## Second exhibit: machinery the Player still loads (Bake → Player)
+
+HPDM's tree species all carry `meshTier: false` (no model trees), so once the hero impostors are captured no tree draws as a
+mesh. **The Grove needs the bark, leaf and deformer data to capture the cards** (`HeroImpostorBaker`, `OverheadBaker`,
+`Grove.jsx` read them). The runtime does not need them, yet it still loads the ~58 MB colour/normal mesh atlas
+(`treeAtlasMaterial`; Stage logged `[treeAtlas] coverage mips … 4067×4240` on HPDM). `trees-atlas-{bark,leaves}-viz.png`
+(~23 MB per town) have **no reader in `src/` at all**: only `arborist/bake-look.js` writes them. Whether they are uploaded
+with the slab: not checked. This is the spec's *"bake the answer, not the machinery"* and *"don't load that yet"* with a
+number on it.
+**Related, measured the same night:** with no `heroImpostorBySpecies` baked, all 10,825 HPDM trees drew as full meshes, at
+**~440M triangles/frame** and ~2 s frames, which froze Stage. Capturing the impostors (Grove) fixed it. The runtime
+degraded to "draw every tree at full weight" without failing loudly (`ROADMAP B4`). Trace it as a silent substitution.
+
 ## Premises to confirm first (claims, not facts — say what you found)
 
 1. ⭐ **There is no standalone Stage.** The spec asks that *"standalone Stage and Stage inside Cartograph operate against the
@@ -137,7 +173,7 @@ Write **"cause not established"** wherever it isn't. ⛔ No fixes.
 
 ## The instruction
 
-**Read the spec below in full first, then the evidence. Confirm the four premises and tell Jacob what you found before tracing
+**Read the spec below in full first, then the evidence. Start with the lead exhibit (one Stage, two behaviours). Confirm the four premises and tell Jacob what you found before tracing
 further.** If the code contradicts this brief, stop and flag it. The stop is a deliverable.
 
 ---
