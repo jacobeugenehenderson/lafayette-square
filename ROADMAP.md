@@ -82,6 +82,11 @@
 - **Why it matters:** the Player can tell "a phone" (a UA sniff, `src/lib/isMobile.js`) but not hi from lo, so everything authored for phone-hi waits on this. Jacob: *"I fear we'll be really limited, although perhaps we'll be surprised at what we'll be able to achieve. That's what all the knobs are for!"*
 - **The work:** classify the device at runtime (GPU renderer string, memory, a short benchmark, or a mix), choose the surface, and say which one it chose. ⛔ No silent guess: an unclassifiable device takes phone-lo and says so. A check, and Preview showing which surface a real device would get. M · → `src/lib/qualityProfile.js`, `BRIEF-phase2-F-preview-deployment-authoring.md`.
 
+### ⭐⭐ TREES ARE THE COST, AND THE TRIANGLES ARE THE WIND *(2026-10-04; Jacob: "it's the triangles there (as I suspected)")*
+- **Measured:** trees ≈48% of LS Browse's GPU time on desktop, ≈71% on phone-hi (Plumb, toggle deltas); 25.36M of ~28M triangles. Grain's forensic (`docs/briefs/BRIEF-tree-cost-forensic.md`) points at the overhead impostors.
+- **Read in source:** each overhead band is a full quad tessellated **28×28** (`impostorGeometry.js#buildOverheadBandDisc`, `opts.grid ?? 28`), 1,568 tris, ×3 bands per tree = **4,704 tris per tree**, ×~5,400 ≈ 25M. Its comment: *"the tessellation is only for wind flutter."* ⏳ Grain confirms by measurement.
+- ✅ **Ruled (Jacob): BOTH remedies.** ① **Interim:** cut the grid and raise the flutter amplitude to compensate (the H-9 precedent: the hero front shell 20→8, *"amplitude is free"*, Huron 11 → 24.6 FPS); the grid size is set by Grain's numbers, and the canopy's motion needs Jacob's eye. ② **Proper:** the shared **wind sheet** (Jacob's "universal triangulator layer"): flat quads (2 tris per band) fluttering by sampling one town-wide field, ~6 tris per tree (`arborist/BACKLOG.md`, 2026-10-04). Every tree is kept either way. Builder for ① not yet named.
+
 ### ⭐⭐ HURON — THE FIRST POUR OF A TOWN NOBODY HAD LOOKED AT (2026-09-19, Jacob's eye)
 > **The protopolygon did "pretty good".** What follows is what the first genuinely
 > unfamiliar town exposed — the evidence base `ORIENTATION` says the kit exists to
