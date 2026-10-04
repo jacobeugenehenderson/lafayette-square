@@ -119,39 +119,36 @@ Every `DEFAULT_LAYERS` entry is on, post-FX included (bloom and DoF were default
 
 ## 4. Reading the numbers — three caveats and the budget
 
-The per-layer cost is measured by **toggle, not by sum**: on a toggle, `GpuMonitor` captures the settled rolling-average baseline (`SAMPLE_WINDOW=30`), discards the post-toggle transient (`SETTLE_SAMPLES=2` — re-upload spikes / first-draw shader compile / the `.visible` flip settling), then averages `POST_SAMPLES=5` purely-post-toggle samples; the signed delta (positive when toggling **on**) is the layer's steady-state cost (`GpuMonitor.jsx:53`, `:160`). *(The earlier design read `post` too soon and diluted every delta to ~10% of true — the Vernier Phase-0 fix.)*
+The per-layer cost is measured by **toggle, not by sum**: on a toggle, `GpuMonitor` captures the settled rolling-average baseline (`SAMPLE_WINDOW=30`), discards the post-toggle transient (`SETTLE_SAMPLES=2` — re-upload spikes / first-draw shader compile / the `.visible` flip settling), then averages `POST_SAMPLES=5` purely-post-toggle samples; the signed delta (positive when toggling **on**) is the layer's steady-state cost (`GpuMonitor.jsx#measureToggle`). *(The earlier design read `post` too soon and diluted every delta to ~10% of true — the Vernier Phase-0 fix.)*
 
 Two caveats that, unstated, would mislead (`PreviewApp.jsx#SceneCaveats`):
 
 1. **Render cost, not memory** — a toggle hides a layer (skips its draw); the geometry stays GPU-resident. The meter reads draw cost, not VRAM.
 2. **Deltas don't sum** — overdraw is shared (hiding trees also cuts the buildings' fill behind them). **Trust the all-on total, not the sum of the per-layer deltas.**
 
-**The budget is anchored to milliseconds**, the only thing that directly determines smoothness. Per-layer bars are scaled to `BUDGET_MS=16` (`PreviewApp.jsx:431`); the GPU panel warns frame-time amber >22ms, red >33ms, and shows draws / tris against soft caps (200 draws, 1M tris). Draws + tris are shown for context but **don't drive the bar color** — a layer that takes 1ms but uploads a million tris is fine on a modern GPU. Spike detection fires on the same thresholds (`SPIKE = {ms:33, calls:200, tris:1_000_000}`) plus any metric doubling its tracked baseline, and tags the spike with the most-recent gesture label.
+**Budgets are per target** (`deviceProfiles.js`, INTERIM until a real-device reading): the GPU panel colours frame time and draws / tris against the active target's; per-layer bars rank by share of the heaviest layer, not a budget. A spike fires past the target's thresholds or on any metric doubling its baseline, tagged with the last gesture (`noteEvent`) and its GPU / main split.
 
-`frameloop="always"` is deliberate (`PreviewApp.jsx:648`): Preview targets a continuously-rendering mobile/desktop runtime, so an honest always-on loop reports cost more truthfully than `demand`+`invalidate` would.
+`frameloop="always"` is deliberate (`PreviewApp.jsx#PREVIEW_FRAMELOOP`): Preview targets a continuously-rendering mobile/desktop runtime, so an honest always-on loop reports cost more truthfully than `demand`+`invalidate` would.
 
-## 4a. Startup and residency — what each gauge reads, and what it cannot
+## 4a. Startup, residency and frame cost — what each gauge reads, and what it cannot
 
-- **The sequence** (spec, *Cold Start / Time to Ward*): HTML → application runtime → scene manifest → minimum ground →
-  minimum buildings → **FIRST TRUTHFUL FRAME** → progressive. **WARD USABLE = FIRST TRUTHFUL FRAME** (Jacob, 2026-10-04:
-  ground and buildings on screen, the visitor can move and tap; the controls mount before either draws). **TIME TO
-  WARD** = that mark's time from navigation start. Ground, buildings and trees are marked on their first **draw**
-  (`DrawnAnchor`), so a hidden layer never marks. The marks live in the shared renderer, so the Ward carries them too
-  once its kit pin includes them.
-- **Marks are once per page.** A soft reload (↻) re-fetches but does not re-mark: reload the page for a cold number.
-- **Source.** Locally the slab comes off the kit dev server's disk, and the code is Vite's unbundled dev modules, so
-  fetch times and the `code` row are not a visitor's. The panel prints its source; a network number comes from a
-  build pointed at R2.
-- **Target.** Every number is taken on this desktop's GPU; the phone tiers draw the phone profile here, they do not
-  run on a phone. phone-hi and phone-lo draw the same frame (§0.1).
-- **Residency.** GPU bytes are computed from the allocation calls (`glLedger.js`), not from file sizes; a format it
-  cannot size is printed, never defaulted. VISIBLE is per mesh (a merged mesh partly in view counts whole: an upper
-  bound). **SELECTED / OPENED are not reachable in Preview** — it takes no taps (`interactive={false}`).
-- **Blind spots.** Work off the main thread (KTX2 transcoding), the driver's own copies, and decoded images the
-  browser holds outside the page.
-- ▶ `node checks/claims-startup-marks-fire-in-order.mjs [--town=]` — the marks fire once and in order; a hidden ground
-  marks neither ground nor the truthful frame and reads 0 VISIBLE; the ledger counts a known allocation to the byte.
-  `window.__startup()` / `window.__residency()` return the panels' data.
+- **The sequence** (spec, *Cold Start / Time to Ward*): HTML → runtime → manifest → minimum ground → minimum buildings
+  → **FIRST TRUTHFUL FRAME = WARD USABLE** (Jacob, 2026-10-04: ground and buildings on screen, the visitor can move and
+  tap) → progressive. **TIME TO WARD** = that mark from navigation start. Pieces mark on their first **draw**
+  (`DrawnAnchor`), so a hidden layer never marks; the marks are the shared renderer's, so the Ward carries them too.
+  Once per page: ↻ does not re-mark, reload the page for a cold number.
+- **Source and target.** Locally the slab comes off disk and the code is Vite's unbundled modules, so fetch times and
+  the `code` row are not a visitor's (the panel prints its source). Every number is this desktop's GPU running the
+  target's profile; phone-hi and phone-lo draw the same frame (§0.1).
+- **Residency.** GPU bytes come from the allocation calls (`glLedger.js`), never file sizes; an unsized format is
+  printed, not defaulted. VISIBLE is per mesh, an upper bound. **SELECTED / OPENED: not reachable** (no taps).
+- **Frame cost.** GPU ms (timer query, from the frame's first render call) and main ms (the frame's callbacks) apart,
+  plus long-animation-frame entries. ⚠️ On ANGLE/Metal the GPU timer read above the frame interval (cause not
+  established): relative there, and the panel flags it.
+- **Blind spots.** Off-main-thread work (KTX2 transcode), the driver's own copies, images the browser holds.
+- ▶ `node checks/claims-startup-marks-fire-in-order.mjs [--town=]` (order; a hidden ground marks nothing and reads 0
+  VISIBLE; the ledger counts to the byte) · `node checks/claims-preview-frame-cost-splits.mjs` (each load moves only its
+  own number). `window.__startup()` / `__residency()` / `__previewFrame()` return the data.
 
 ---
 

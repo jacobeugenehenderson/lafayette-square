@@ -489,6 +489,8 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
       {/* The cold start of this page: the spec's sequence, TIME TO WARD, and each artifact's cost (StartupPanel.jsx). */}
       <StartupPanel />
       <ResidencyPanel />
+      {/* The phone tiers show the GPU panel under the phone; the desktop tier shows it here. */}
+      {envId === 'desktop' && <div className="glass-panel rounded-xl p-3"><GpuPanel /></div>}
 
       {/* Pyramid tuner leads the tools; it and the roster cards below
           twirl-collapse (default closed) to cut the clutter. */}

@@ -5,7 +5,7 @@
  *   - calls    (draw calls — the mobile-critical number)
  *   - triangles
  *   - geometries / textures / programs (resident counts)
- * Plus a rolling CPU frame-time average from rAF deltas.
+ * Plus a rolling wall-clock frame interval from rAF deltas, and GPU vs main-thread time apart (frameCost.js).
  *
  * Δ-event log: when frame time, draws, or tris jump significantly,
  * capture the most-recent cause label (set externally via `noteEvent`).
@@ -14,6 +14,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
 import { pushFrame as phoneBusPushFrame } from './phoneBus'
 import { ACTIVE_PROFILE, DEVICE_PROFILES, getActiveProfile, getActiveProfileId, subscribeActiveProfile } from './deviceProfiles'
+import { frameCost, installFrameCost } from './frameCost.js'
 
 const eventBus = { last: null, log: [] }
 export function noteEvent(label) {
@@ -113,6 +114,12 @@ export function GpuMonitorTicker() {
     prevCalls.current = gl.info.render.calls
     prevTris.current  = gl.info.render.triangles
   }, [gl])
+  // GPU time and main-thread time, apart (frameCost.js); the wall-clock frame below is rAF deltas.
+  useEffect(() => {
+    const off = installFrameCost(gl)
+    window.__previewFrame = () => ({ target: getActiveProfileId(), wallMs: stats.frameMs, calls: stats.calls, tris: stats.tris, ...frameCost })
+    return () => { off(); delete window.__previewFrame }
+  }, [gl])
 
   useFrame(() => {
     const now = performance.now()
@@ -195,6 +202,8 @@ export function GpuMonitorTicker() {
         at: Date.now(),
         cause,
         ms: stats.frameMs,
+        gpuMs: frameCost.gpuMs,
+        mainMs: frameCost.mainMs,
         calls: stats.calls,
         tris: stats.tris,
       }
@@ -339,6 +348,16 @@ export function GpuPanel() {
         </span>
       </div>
 
+      <div className="flex items-baseline justify-between font-mono" style={{ fontSize: 11 }}>
+        <span className="glass-text-secondary">GPU · main</span>
+        <span>{frameCost.gpuSupported === false ? 'GPU timer not exposed by this browser' : `${frameCost.gpuMs == null ? '—' : frameCost.gpuMs.toFixed(1)} ms`} · {frameCost.mainMs.toFixed(1)} ms</span>
+      </div>
+      <div className="glass-text-dim font-mono" style={{ fontSize: 9 }}>
+        {frameCost.loaf ? `long frames (≥50 ms): ${frameCost.loaf.n} · worst ${Math.round(frameCost.loaf.worstMs)} ms · script ${Math.round(frameCost.loaf.scriptMs)} ms total` : 'long-animation-frame not exposed by this browser'}
+        {' '}· {getActiveProfileId()} profile on this desktop's GPU, not a phone
+        {frameCost.gpuMs != null && stats.frameMs > 0 && frameCost.gpuMs > stats.frameMs * 1.05
+          ? <span style={{ color: 'var(--warning, #f5a623)' }}> · ⚠️ GPU reads above the frame interval: read it as relative, not absolute (cause not established)</span> : null}
+      </div>
       <Row label="draws" value={stats.calls}    cap={prof.drawBudget} fmt={fmt} />
       <Row label="tris"  value={stats.tris}     cap={prof.triBudget} fmt={fmt} />
 
@@ -399,7 +418,7 @@ function SpikeLog() {
       <div style={{ height: ROW_H * SLOTS }}>
         {log.map((e, i) => (
           <div key={e.at + ':' + i} className="font-mono glass-text-muted" style={{ fontSize: 10, height: ROW_H, lineHeight: `${ROW_H}px`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {new Date(e.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · {e.cause} · {e.ms}ms · {fmt(e.calls)} draws
+            {new Date(e.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · {e.cause} · {e.ms}ms (gpu {e.gpuMs == null ? '—' : e.gpuMs.toFixed(0)} · main {e.mainMs.toFixed(0)}) · {fmt(e.calls)} draws
           </div>
         ))}
       </div>
