@@ -1474,20 +1474,10 @@ const useCartographStore = create((set, get) => ({
   setShots: (patch) => {
     set(s => {
       const cur = s.shots?.values || {}
-      // Deep-ish merge: shallow-merge each shot's tuple so caller can pass
-      // {browse: {fov: 50}} without clobbering bounds/padding.
+      // Shallow-merge each shot's tuple, so {browse: {fov: 50}} keeps browse.padding. Written by Stage's Camera
+      // card (Browse FOV · Street FOV and Eye Height).
       const next = { ...cur }
-      for (const k of Object.keys(patch || {})) {
-        if (k === 'browse' && patch.browse?.bounds) {
-          next.browse = {
-            ...(cur.browse || {}),
-            ...patch.browse,
-            bounds: { ...(cur.browse?.bounds || {}), ...patch.browse.bounds },
-          }
-        } else {
-          next[k] = { ...(cur[k] || {}), ...(patch[k] || {}) }
-        }
-      }
+      for (const k of Object.keys(patch || {})) next[k] = { ...(cur[k] || {}), ...(patch[k] || {}) }
       return { shots: { values: next } }
     })
     get()._saveDesignDebounced()

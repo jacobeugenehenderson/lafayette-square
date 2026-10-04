@@ -797,6 +797,7 @@ function BrowseCamera({ cam }) {
   // The town's Browse frame — what playback opens on (src/camera/browseFrame.js). Authored only here, by the button:
   // panning is the working view, and authors nothing (Jacob, 2026-10-04). The counterpart of Hero's Key here.
   const frame = useCartographStore(s => s.browseFrame)
+  const setShots = useCartographStore(s => s.setShots)
   const setBrowseFrame = useCartographStore(s => s.setBrowseFrame)
   const clearBrowseFrame = useCartographStore(s => s.clearBrowseFrame)
   const here = [Math.round(cam.target[0]), Math.round(cam.target[2])], hereAlt = Math.round(cam.position[1])
@@ -836,8 +837,9 @@ function BrowseCamera({ cam }) {
       </div>
       <SliderRow label="Altitude" value={cam.position[1]} min={50} max={altitudeMax || 50} suffix="m"
         onChange={(v) => pushCamera({ position: [cam.position[0], v, cam.position[2]] })} />
+      {/* The town's Browse FOV (shots.browse.fov): every surface opens Browse at it, and the frame's square scales with it. */}
       <SliderRow label="FOV" value={cam.fov} min={10} max={90} suffix="°"
-        onChange={(v) => pushCamera({ fov: v })} />
+        onChange={(v) => { pushCamera({ fov: v }); setShots({ browse: { fov: v } }) }} />
       {/* Site-wide cosmetic screen-orientation. 0° = compass-N up. */}
       <SliderRow label="Heading" value={Math.round(headingFromUp)} min={-180} max={180} suffix="°"
         onChange={(v) => { setBrowseHeading(v); pushCamera({ up: browseUpFromHeading(v) }) }} />
@@ -850,12 +852,14 @@ function StreetCamera({ cam }) {
   // absolute Y: an absolute 1–5 m stood the eye underground on raised terrain.
   const [x, , z] = cam.position
   const ground = streetEyeY(x, z, 0)
+  // Both are the town's authored Street shot (shots.street): every surface stands its Street eye by them.
+  const setShots = useCartographStore(s => s.setShots)
   return (
     <div className="space-y-2">
       <SliderRow label="Eye Height" value={Math.round((cam.position[1] - ground) * 10) / 10} min={1} max={5} step={0.1} suffix="m" scale="body"
-        onChange={(v) => pushCamera({ position: [x, streetEyeY(x, z, v), z] })} />
+        onChange={(v) => { pushCamera({ position: [x, streetEyeY(x, z, v), z] }); setShots({ street: { eyeHeight: v } }) }} />
       <SliderRow label="FOV" value={cam.fov} min={30} max={120} suffix="°"
-        onChange={(v) => pushCamera({ fov: v })} />
+        onChange={(v) => { pushCamera({ fov: v }); setShots({ street: { fov: v } }) }} />
     </div>
   )
 }
