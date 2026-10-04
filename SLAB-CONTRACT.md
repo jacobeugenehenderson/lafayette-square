@@ -62,7 +62,7 @@ public/baked/
 │                                       never shared, never inherited — see §8)
 ```
 
-**`manifest.json`** (`cartograph/bake-manifest.mjs`) sits beside these and names every file with its size and sha256 — it is the slab's name table.
+**`manifest.json`** (`cartograph/bake-manifest.mjs`, the bake's `manifest` step) sits beside these and names every **published** file with its size and sha256 (`scripts/slab-publish-rule.mjs`). It is the slab's name table, and its `identity` is the town's, frozen at that bake.
 
 **Naming and caching (2026-09-28).** On disk and inside every JSON the names above are the names. **Published**, a file may also be served under its content — `<dir>/<name>.<sha256[0..16]>.<ext>`, `immutable` — and `manifest.json`, at its one fixed name and `no-cache`, says which (`names: "sha256-16"`). The rule is `src/lib/slabNames.js`, read by the player, the uploader and the sweep alike. A consumer never spells a slab URL (§10.2). ▶ `node checks/claims-a-slab-name-is-its-content.mjs`
 

@@ -70,11 +70,9 @@ if (!SCENE_KEYED) {
   process.exit(2)
 }
 
-// Channels that encode a PLACE or a town's own composition. Not the same set as
-// SCENE_KEYED (which is about keys); these are about values in a local frame.
-// Jacob, 2026-09-19: "the camera motion is not something that carries
-// realistically from hood to hood" ⇒ the kit stores no camera.
-const CAMERA_AND_PLACE = ['heroKeyframes', 'shots', 'browseFrame', 'heroSubject', 'parkTitlePos', 'dofFocus']
+// Channels that encode a PLACE or a town's own composition — read from the one declaration the seed strip also uses
+// (cartograph/lookDesign.mjs#PLACE_DESIGN_FIELDS), never copied here.
+const { PLACE_DESIGN_FIELDS: CAMERA_AND_PLACE } = await import(join(ROOT, 'cartograph/lookDesign.mjs'))
 
 const idx = readJsonOrNull(join(PUBLIC_DIR, 'looks/index.json'))
 if (!idx) { console.error('⛔ FAIL — public/looks/index.json unreadable.'); process.exit(2) }

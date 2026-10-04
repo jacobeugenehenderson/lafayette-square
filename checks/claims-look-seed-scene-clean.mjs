@@ -54,9 +54,10 @@ if (missing.length) {
 // Evaluate them with only the bindings they need. `readJsonOrNull`/`join`/
 // `PUBLIC_DIR` are serve.js's own helpers, re-supplied identically here.
 const readJsonOrNull = (p) => { try { return JSON.parse(readFileSync(p, 'utf-8')) } catch { return null } }
-const mod = new Function('join', 'PUBLIC_DIR', 'readJsonOrNull',
+const { SEED_STRIPPED_FIELDS } = await import(join(ROOT, 'cartograph/lookDesign.mjs'))   // the town + place fields serve.js imports
+const mod = new Function('join', 'PUBLIC_DIR', 'readJsonOrNull', 'SEED_STRIPPED_FIELDS',
   parts.map(([, s]) => s).join('\n\n') + `\nreturn { ${WANT.join(', ')} }`)
-const { SCENE_KEYED_DESIGN_FIELDS, bakedStreetNames, seedDesignForScene } = mod(join, PUBLIC_DIR, readJsonOrNull)
+const { SCENE_KEYED_DESIGN_FIELDS, bakedStreetNames, seedDesignForScene } = mod(join, PUBLIC_DIR, readJsonOrNull, SEED_STRIPPED_FIELDS)
 
 // ── the cases ───────────────────────────────────────────────────────────────
 const idx = JSON.parse(readFileSync(join(PUBLIC_DIR, 'looks/index.json'), 'utf8'))
@@ -98,13 +99,24 @@ check('every declared scene-keyed field is dropped on a cross-scene seed', () =>
 })
 
 // 3. Style must still travel — a guard that strips everything is not a fix.
-check('style still travels (palette / exposure / labels / trees survive)', () => {
+//    ⛔ `trees` is NOT style: a roster holds only its own town's species (Jacob, 2026-09-25;
+//    claims-a-look-holds-only-its-towns-grove), so it is a town field and is stripped (check 3b).
+check('style still travels (palette / exposure / labels survive)', () => {
   const { design: d } = seedDesignForScene(design('hipointedemun'), 'hipointedemun', 'altadena')
   const src = design('hipointedemun')
-  const styled = ['luColors', 'materialColors', 'labels', 'exposure', 'bloom', 'trees'].filter(f => src[f] != null)
+  const styled = ['luColors', 'materialColors', 'labels', 'exposure', 'bloom'].filter(f => src[f] != null)
   if (!styled.length) return 'fixture carries no style fields; test is vacuous'
   const lost = styled.filter(f => JSON.stringify(d[f]) !== JSON.stringify(src[f]))
   return lost.length ? `style was stripped too: ${lost.join(', ')}` : null
+})
+
+// 3b. The town's fields and its places never cross towns (lookDesign.mjs#SEED_STRIPPED_FIELDS) — Huron's copy of LS's
+//     parkTitlePos is the instance this closes.
+check("a cross-town seed carries none of the seed town's fields or places", () => {
+  const src = { ...design('lafayette-square'), parkTitlePos: [-22.48, -97.31], trees: [{ species: 'x' }], terrainExag: 1.5 }
+  const { design: d } = seedDesignForScene(src, 'lafayette-square', 'altadena')
+  const left = SEED_STRIPPED_FIELDS.filter(f => d[f] != null)
+  return left.length ? `travelled to another town: ${left.join(', ')}` : null
 })
 
 // 4. Same-scene cloning is untouched — duplicating a Look inside one town must

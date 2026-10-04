@@ -38,6 +38,20 @@ export const TOWN_DESIGN_FIELDS = [
   'lamps',                         // whether lamps are derived
 ]
 
+/**
+ * Fields that hold a PLACE or a camera in the town's own frame — another town's are meaningless here, and LS's were
+ * inherited this way (Huron's `parkTitlePos`, 2026-10-04). Jacob, 2026-09-19: "the camera motion is not something that
+ * carries realistically from hood to hood" ⇒ the kit stores no camera.
+ */
+export const PLACE_DESIGN_FIELDS = ['heroKeyframes', 'shots', 'browseFrame', 'heroSubject', 'parkTitlePos', 'dofFocus']
+
+/**
+ * ⭐ WHAT A LOOK SEEDED FROM ANOTHER TOWN'S LOOK MAY NOT CARRY: the town's own fields and its places. Everything else is
+ * the Look's (cosmetic) and travels. Declared here, from the two lists above, so a field added to either is stripped
+ * the day it is added (Phase 2 C row 5). `serve.js#seedDesignForScene` adds its street-keyed list and its residue refusal.
+ */
+export const SEED_STRIPPED_FIELDS = [...new Set([...TOWN_DESIGN_FIELDS, ...PLACE_DESIGN_FIELDS])]
+
 export const designPath = (look) => join(ROOT, 'public', 'looks', look, 'design.json')
 
 /** A design.json's text, parsed — or a refusal. Split out so the check can refuse fixtures, never a live town's file. */

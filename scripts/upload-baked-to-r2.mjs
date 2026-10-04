@@ -16,7 +16,7 @@
  * visitor holding the previous manifest keeps resolving the files it named, which are never
  * overwritten. ⛔ It REFUSES a town whose manifest.json disagrees with the files on disk — the
  * manifest is the name table, and a stale one names bytes that are not being uploaded.
- * ▶ node cartograph/bake-manifest.mjs --town=<town>, then upload.
+ * The bake writes it (its `manifest` step); by hand: ▶ node cartograph/bake-manifest.mjs --town=<town>.
  * Without the flag the upload is exactly the plain one below.
  *
  * ⭐ INCREMENTAL BY DEFAULT. It HEADs each key first and puts only what is missing or

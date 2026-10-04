@@ -19,6 +19,7 @@ import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
+import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor } from './operations-domain.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPath } from './sources.js'
@@ -1138,7 +1139,9 @@ function seedDesignForScene(seedDesign, seedScene, newScene) {
   if (seedScene && newScene && seedScene === newScene) return { design: seedDesign, stripped: [] }
   const design = { ...seedDesign }
   const stripped = []
-  for (const f of SCENE_KEYED_DESIGN_FIELDS) {
+  // ⛔ The town's fields and its places never cross towns (lookDesign.mjs#SEED_STRIPPED_FIELDS), with the street-keyed
+  // list above; whatever survives is checked for residue below.
+  for (const f of new Set([...SCENE_KEYED_DESIGN_FIELDS, ...SEED_STRIPPED_FIELDS])) {
     if (design[f] == null) continue
     const n = typeof design[f] === 'object' ? Object.keys(design[f]).length : 1
     if (n) stripped.push(`${f} (${n})`)
@@ -2609,9 +2612,8 @@ createServer(async (req, res) => {
       const RIBBONS    = isDefaultMap ? join(REPO_ROOT, 'src', 'data', 'ribbons.json') : bakePaths.ribbons
       const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')
       const DESIGN    = join(REPO_ROOT, 'public', 'looks', id, 'design.json')
-      // ⚠️ terrainLoad.js reads `terrainExag` from the TOWN's design (public/looks/<scene>/design.json), and bake-trees
-      // reads its grove/roster from it too — not this Look's. The same file only while look id = scene id. Declared
-      // because it is READ; the keying is a finding (BRIEF-dirty-graph), not changed here.
+      // The TOWN's design fields (cartograph/lookDesign.mjs#TOWN_DESIGN_FIELDS) are read from the town's home Look for
+      // every Look of it, so a step that reads them declares this file. Declared because it is READ.
       const SCENE_DESIGN = join(REPO_ROOT, 'public', 'looks', bakeScene, 'design.json')
       const LOOK_DIR  = join(REPO_ROOT, 'public', 'baked', id)
       const sceneFlag = `--scene=${bakeScene}`
@@ -2656,10 +2658,10 @@ createServer(async (req, res) => {
       // so a stale artifact (if one exists from when it was last shown) is never
       // fetched; re-showing flips design.json → the sub-bake is dirty → re-runs.
       // The Look's design.json, parsed ONCE — layerVis gates the sub-bakes below,
-      // and design.landscape.source gates the landscape step (a20619cc). Missing or
-      // unparseable → {}, and every consumer degrades to its default.
-      let bakeDesign = {}
-      try { bakeDesign = JSON.parse(readFileSync(DESIGN, 'utf-8')) || {} } catch {}
+      // and design.landscape.source gates the landscape step (a20619cc). ⛔ Missing or
+      // unparseable REFUSES the bake (lookDesign.mjs): it used to become {}, and every
+      // consumer quietly baked its default. A plan (GET) refuses the same way.
+      const bakeDesign = readBakeDesign(id, bakeScene, 'bake')
       const bakeLayerVis = bakeDesign.layerVis || {}
       const layerOn = (layerId) => bakeLayerVis[layerId] !== false
 
@@ -3095,6 +3097,13 @@ createServer(async (req, res) => {
       const idx2 = readLooksIndex()
       const entry = idx2.looks.find(l => l.id === id)
       if (entry) { entry.bakedAt = stampedAt; saveLooksIndex(idx2) }
+      // ⭐ THE MANIFEST IS A BAKE STEP (Jacob, 2026-10-04): Stage authors, Bake freezes, Preview and the Ward read what is
+      // frozen. It was hand-run, so the identity a player read was whenever someone last remembered. It runs AFTER the
+      // bakedAt stamp, because it hashes scene.json, and before the upload, which ships it. ⛔ A town with no instance
+      // module has no identity to freeze: bake-manifest exits 2 and the bake fails, naming it.
+      if (id !== bakeScene) throw new Error(`Look "${id}" is not its town's home Look ("${bakeScene}") — a manifest is one per town, and a second Look's slab has no manifest yet. Refusing to ship a slab without one.`)
+      await runStep(P, 'manifest', `node bake-manifest.mjs --town=${id}`, { cwd: here })
+      ran('manifest')
       // ⛔⛔ SHIP THE SLAB TO R2 — the last step of the pour (2026-09-01).
       // public/baked/ is gitignored, so this upload is the ONLY thing that carries
       // a pour to a visitor. If it is skipped, the pour lives nowhere: the map
