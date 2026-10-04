@@ -49,10 +49,15 @@ import * as THREE from 'three'
 // frame per consumer (not per-pixel; per-pixel work is in the shader).
 // -------------------------------------------------------------------------
 
+// ⭐ AN INTEGER HASH, EXACT IN FLOAT32 — so the GPU wind sheet (`windSheet.js`, which evaluates this same field
+// in GLSL) and this CPU function agree to the bit on the lattice. The sin-hash it replaced (2026-10-04) cannot:
+// `sin(x·12.98)·43758` at a lattice index in the thousands is a different number in a float32 shader than in a JS
+// double, so the two would have drawn two winds. Every product here stays below 2^24 (578·34·578 ≈ 11.4M), so
+// float32 represents it exactly. ⚠️ The lattice is periodic in 289 — the wind sheet wraps its clock on that period.
+const mod289 = (x) => x - Math.floor(x * (1 / 289)) * 289
+const permute = (x) => mod289((x * 34 + 1) * x)
 function hash3(x, y, z) {
-  // Mix three floats into a [0, 1) pseudo-random using sin-hash.
-  const s = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453123
-  return s - Math.floor(s)
+  return permute(permute(permute(mod289(x)) + mod289(y)) + mod289(z)) / 289
 }
 
 function smoothstep(t) { return t * t * (3 - 2 * t) }
@@ -226,4 +231,51 @@ export const WIND_FIELD = Object.freeze({
   SMOOTHMAX_K: 8,
   SPIKE_RATE: 1.5,
   SPATIAL_NOISE_SCALE: 0.01,          // ~100m correlation length
+  // The hash lattice repeats every 289 cells, so the spike phase (t × SPIKE_RATE) repeats every 289 / SPIKE_RATE s.
+  // A clock wrapped on this period is seamless; the wind sheet's is.
+  LATTICE_PERIOD: 289,
 })
+
+/**
+ * ⭐ THE SAME FIELD, IN GLSL — `windAt` above, line for line, for the GPU wind sheet (`windSheet.js`). It lives HERE,
+ * beside the JS, so the two are one definition read twice: change one and you change both, in one file.
+ * ▶ node checks/claims-the-wind-has-one-authority.mjs (runs both on the same inputs and compares).
+ *
+ *   vec2 windFieldAt(float t, vec2 posXZ, vec2 baseForce, vec2 frontVel, float amp)
+ *     baseForce = baseDirection.xz × baseSpeedMps · frontVel = gustFrontVelocity.xz · amp = gustsScale × gustEnvelope
+ */
+export const WIND_FIELD_GLSL = /* glsl */`
+  float wfMod289(float x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+  float wfPermute(float x) { return wfMod289((x * 34.0 + 1.0) * x); }
+  float wfHash3(float x, float y, float z) {
+    return wfPermute(wfPermute(wfPermute(wfMod289(x)) + wfMod289(y)) + wfMod289(z)) / 289.0;
+  }
+  float wfValueNoise2D(float x, float y) {
+    float xi = floor(x), yi = floor(y);
+    float xf = x - xi, yf = y - yi;
+    float tx = xf * xf * (3.0 - 2.0 * xf), ty = yf * yf * (3.0 - 2.0 * yf);
+    float n00 = wfHash3(xi,       yi,       0.0) * 2.0 - 1.0;
+    float n10 = wfHash3(xi + 1.0, yi,       0.0) * 2.0 - 1.0;
+    float n01 = wfHash3(xi,       yi + 1.0, 0.0) * 2.0 - 1.0;
+    float n11 = wfHash3(xi + 1.0, yi + 1.0, 0.0) * 2.0 - 1.0;
+    return (n00 * (1.0 - tx) + n10 * tx) * (1.0 - ty) + (n01 * (1.0 - tx) + n11 * tx) * ty;
+  }
+  float wfSmoothmax(float a, float b, float k) {
+    float m = max(a, b);
+    float ea = exp(k * (a - m)), eb = exp(k * (b - m));
+    return (a * ea + b * eb) / (ea + eb);
+  }
+  vec2 windFieldAt(float t, vec2 p, vec2 baseForce, vec2 frontVel, float amp) {
+    vec2 force = baseForce;
+    if (amp > 1e-5) {
+      float frontLenSq = dot(frontVel, frontVel);
+      float phaseOffset = frontLenSq > 1e-6 ? dot(p, frontVel) / frontLenSq : 0.0;
+      float phase = t - phaseOffset;
+      float raw = wfValueNoise2D(phase * ${WIND_FIELD.SPIKE_RATE.toFixed(4)}, p.x * ${WIND_FIELD.SPATIAL_NOISE_SCALE.toFixed(4)} + p.y * ${WIND_FIELD.SPATIAL_NOISE_SCALE.toFixed(4)} * 0.7);
+      float spike = wfSmoothmax(raw, 0.0, ${WIND_FIELD.SMOOTHMAX_K.toFixed(1)}) * amp;
+      vec2 baseDir = length(baseForce) > 1e-6 ? normalize(baseForce) : vec2(1.0, 0.0);
+      force += frontLenSq > 1e-6 ? frontVel * (spike / sqrt(frontLenSq)) : baseDir * spike;
+    }
+    return force;
+  }
+`

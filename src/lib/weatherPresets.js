@@ -11,7 +11,7 @@
 // NEUTRAL (no signal) unless the weather itself implies it.
 export const NEUTRAL_WEATHER = {
   storminess: 0, turbidity: 0,
-  windVector: { x: 0, y: 0 }, windSpeedMs: 0, windDirDeg: 0,
+  windVector: { x: 0, y: 0 }, windSpeedMs: 0, windDirDeg: 0, windGustsMs: 0,
   pressureMb: null, humidity: null,
   directRadiation: null, diffuseRadiation: null,
 }

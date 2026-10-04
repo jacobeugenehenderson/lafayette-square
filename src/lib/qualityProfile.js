@@ -39,6 +39,9 @@ export const QUALITY = {
     // Pieces that mount in every shot.
     heroOnlyPieces: false,
     buildingTextures: true,
+    // The wind sheet's resolution: texels per gust correlation length (100 m, lib/windSheet.js) — 8.3 m here. Its SIZE
+    // is the town's: Huron's ~7 km disc is 851² (≈12 MB for the ping-pong pair); 24 had made it 1701² (≈46 MB).
+    windTexelsPerCorrelation: 12,
     lampHaloRadius: 0.18,
     staggerLabels: false,
     // Which passes run is the town's deployment policy, per surface (surfaceQuality, below); the bare profile runs all.
@@ -58,6 +61,7 @@ export const QUALITY = {
     // The Gateway Arch and the horizon disc mount in the movie shot only (the phone's budget).
     heroOnlyPieces: true,
     buildingTextures: false,
+    windTexelsPerCorrelation: 6,
     lampHaloRadius: 0.25,
     // Street labels and markers arrive over a few seconds so the GPU compiles in batches.
     staggerLabels: true,

@@ -105,6 +105,7 @@ import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { skyModeOf } from '../lib/skyMode'
 import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
+import WindSheet from './WindSheet.jsx'
 import { sceneExag } from '../utils/terrainShader'
 import { terrainExag } from '../utils/terrainShader'
 import { getElevationRaw } from '../utils/elevation'
@@ -157,6 +158,8 @@ export { adoptSlabManifest } from '../lib/slabUrl.js'
 export { tenantOf, titleOf } from '../lib/townRecord.js'
 // The weather at an instant is one answer (lib/weatherAt.js); an app catches its out-of-forecast error by this class.
 export { WeatherRangeError } from '../lib/weatherAt.js'
+// The wind sheet's API — the field every wind consumer reads (lib/windSheet.js; contract ARCHITECTURE §8).
+export { WIND_SHEET_GLSL, bindWindSheet } from '../lib/windSheet.js'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
 export { townCanvasProps } from '../lib/qualityProfile.js'
 // An emoji as this device draws it, and its inked pixels — one home for the method (src/lib/glyphInk.js); the Ward's
@@ -506,6 +509,8 @@ export default function Town({
       <WeatherPoller mode={weatherMode} />
       <AtmosphereDirectiveDriver lookId={lookId} />
       <WeatherEffects />
+      {/* The wind, computed once per frame over the town's own disc; every wind consumer reads it. */}
+      <R3FErrorBoundary name="WindSheet"><WindSheet extent="town" /></R3FErrorBoundary>
 
       <group name="town:sky" visible={on('sky')}>
         <R3FErrorBoundary name="CelestialBodies"><CelestialBodies lookId={lookId} bakeLastMs={bake}

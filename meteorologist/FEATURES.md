@@ -205,7 +205,7 @@ No `/bake` endpoint. Saves are direct.
 | Cloud capabilities (`precipKinds`, `electrified`) on preset.schema | Queued | 3b |
 | Modulators — continuous atmospheric phenomena (cold front, tornado green, wildfire smoke, …) | ✅ Shipped 2026-05-20 (Halo) — 7 starter modulators | 6 |
 | Atmospheric consumers — rain particles + wet-surface, snow particles + accumulation, lightning scene-flash + cloud pulse | ✅ Shipped 2026-05-20 (Tempest) | 7b/c/d |
-| Atmospheric consumers — wind field + multi-scale tree response | Deferred until production trees mount (cross-helper) | **7a** |
+| Atmospheric consumers — wind field (`lib/windSheet.js`, one per-frame field from the town's weather) | ✅ Built 2026-10-04 (Gale); consumers migrate after (trees: Grain) | **7a** |
 | Audiologist helper — rain audio, snow muffle, thunder delay | Queued (post-Phase-7 v1.x) | future helper |
 | Camera orbit controls in viewport | Queued | 5b+ |
 | Mobile quality tier (`uQualityTier`-driven step counts) | Queued | 5b+ |
@@ -226,7 +226,7 @@ As of 2026-05-20 (Phase 6 — Modulators; building on 5a + 4b.3), every producti
 2. **Per-cloud preset params** — `bindUniformsFromDirective` reads each cloud in the directive's `clouds[]`, resolves each preset's 12 channel-shaped params via `resolveGroupAtMinute`, computes a weighted blend by `weight`, writes to shader uniforms.
 3. **Sky / sun band coloring** — `useSceneJson(activeLookId).sky` channel resolved per minute → `sky.sunGlow` and `sky.low` feed `uSunColor` and `uSkyColor` (sky-light coupling amendment). When a directive is active, its `sun.tint` + `lightDome.{horizon,ambientFloor}` override cloud-lighting (sky channel still owns the dome itself).
 4. **Sun direction** — `SunCalc.getPosition(currentTime, INSTANCE.lat, INSTANCE.lon)` projected to world space.
-5. **Wind** — `directive.wind.{speed, dir}` feeds Atmosphere's `uWindScale` + `uWindDir` for cloud advection; same source feeds `InstancedTrees`' sway shader uniforms once trees are mounted in production.
+5. **Wind** — the measured wind (`weatherAt`: speed, direction, gusts) drives the **wind sheet** (`cartograph/ARCHITECTURE.md §8`); trees, grass and water read it as they migrate. ⚠️ Until they do, the trees still sway to `directive.wind`, which only three storm rules carry (scale, no direction), mirrored north↔south by `resolveWindState`.
 
 All composition happens in the runtime, not in Meteorologist. Meteorologist authors; runtime composes.
 

@@ -6,7 +6,7 @@ import { townPlace } from '../lib/townPlace.js'
 // The quantities a reading carries, asked for BOTH as `current` and `hourly`, so a forecast hour is a whole weather —
 // the sky can be drawn from it at a scrubbed time (lib/weatherAt.js), not only the label. (Until 2026-10-04 the hourly
 // carried temperature, code and pressure only, so a scrubbed sky could only show current conditions.)
-const QUANTITIES = 'temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation'
+const QUANTITIES = 'temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,direct_radiation,diffuse_radiation'
 // The forecast for the town being drawn — built at FETCH time from its place (lib/townPlace.js), never from the
 // kit's boot town at module load (which drew the boot town's weather over any other).
 // ⭐ The window: yesterday 00:00 → tomorrow 23:00 in the town (`past_days=1&forecast_days=2`; `forecast_hours` would
@@ -58,7 +58,7 @@ function readingOf(src, i = null) {
   return {
     temperatureF: v('temperature_2m'), humidity: v('relative_humidity_2m'), pressureMb: v('pressure_msl'),
     cloudCover: v('cloud_cover'), precipitation: v('precipitation'), weatherCode: v('weather_code'),
-    visibility: v('visibility'), windSpeedMs: v('wind_speed_10m'), windDirDeg: v('wind_direction_10m'),
+    visibility: v('visibility'), windSpeedMs: v('wind_speed_10m'), windDirDeg: v('wind_direction_10m'), windGustsMs: v('wind_gusts_10m'),
     directRadiation: v('direct_radiation'), diffuseRadiation: v('diffuse_radiation'),
   }
 }
@@ -80,6 +80,7 @@ export function targetsOf(r) {
     windVector: { x: Math.sin(dirRad) * speed, y: Math.cos(dirRad) * speed },
     windSpeedMs: speed,
     windDirDeg: r.windDirDeg ?? 0,
+    windGustsMs: r.windGustsMs ?? null,
     pressureMb: r.pressureMb ?? null,
     humidity: r.humidity != null ? r.humidity / 100 : null,
     temperatureF: r.temperatureF ?? null,

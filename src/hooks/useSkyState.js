@@ -55,6 +55,7 @@ const useSkyState = create((set, get) => ({
   windVector: new THREE.Vector2(0, 0),
   windSpeedMs: 0,          // raw scalar speed (m/s), surfaced so Almanac evaluator gets windKph without re-deriving from windVector
   windDirDeg: 0,           // meteorological convention — degrees the wind blows FROM
+  windGustsMs: null,       // the 10 m gust (m/s, Open-Meteo wind_gusts_10m); null = no reading. The wind sheet's gust amplitude.
   pressureMb: null,        // open-meteo pressure_msl (mb / hPa)
   humidity: null,          // open-meteo relative_humidity_2m, normalized to 0..1
   temperatureF: null,  // real temp from Open-Meteo (°F), null until first fetch
@@ -92,6 +93,7 @@ const useSkyState = create((set, get) => ({
       _targetWind: data.windVector ?? get()._targetWind,
       windSpeedMs: data.windSpeedMs !== undefined ? data.windSpeedMs : get().windSpeedMs,
       windDirDeg: data.windDirDeg !== undefined ? data.windDirDeg : get().windDirDeg,
+      windGustsMs: data.windGustsMs !== undefined ? data.windGustsMs : get().windGustsMs,
       pressureMb: data.pressureMb !== undefined ? data.pressureMb : get().pressureMb,
       humidity: data.humidity !== undefined ? data.humidity : get().humidity,
       temperatureF: data.temperatureF !== undefined ? data.temperatureF : get().temperatureF,

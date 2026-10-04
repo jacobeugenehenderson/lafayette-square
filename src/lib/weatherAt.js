@@ -16,13 +16,13 @@
  * ⛔ A time outside the forecast THROWS (a WeatherRangeError). It used to fall back to `now`, silently — a scrubbed
  * hour labelled with this minute's weather. The caller says it cannot show that hour.
  *
- * A reading: { temperatureF, cloudCover (%), precipitation (mm), visibility (m), windSpeedMs, windDirDeg,
+ * A reading: { temperatureF, cloudCover (%), precipitation (mm), visibility (m), windSpeedMs, windDirDeg, windGustsMs,
  * humidity (%), pressureMb, weatherCode, directRadiation, diffuseRadiation } — Open-Meteo's quantities, as
  * hooks/useWeather.js#fetchWeather parses them for both `current` and every `hourly` entry (`time` on the hours).
  * ▶ node checks/claims-one-weather-per-instant.mjs
  */
 
-const SMOOTH = ['temperatureF', 'cloudCover', 'precipitation', 'visibility', 'windSpeedMs', 'humidity', 'pressureMb', 'directRadiation', 'diffuseRadiation']
+const SMOOTH = ['temperatureF', 'cloudCover', 'precipitation', 'visibility', 'windSpeedMs', 'windGustsMs', 'humidity', 'pressureMb', 'directRadiation', 'diffuseRadiation']
 const NEAREST = ['weatherCode', 'windDirDeg']
 
 export class WeatherRangeError extends Error {}
