@@ -1,13 +1,13 @@
 {
  "meta": {
-  "scene": "hipointe-demun",
+  "scene": "hipointedemun",
   "schema": "NEIGHBORHOOD-INPUTS §5.1.1 — Layer 0 (installation profile)",
   "generated": "2026-07-05",
   "note": "Singular per-installation record. De-hardcodes the reader's Bulletin masthead + InfoModal. Every value is a best-guess, operator-overridable (§0.0). Buildings/Places/Streets stats auto-derive from the slab+content — only population and the about-copy are hardcoded in the reader today."
  },
  "name": "Hi-Pointe–DeMun",
  "short_name": "Hi-Pointe / DeMun",
- "slug": "hipointe-demun",
+ "slug": "hipointedemun",
  "city": "St. Louis",
  "state": "MO",
  "population": 6500,

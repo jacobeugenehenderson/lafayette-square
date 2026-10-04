@@ -7,7 +7,7 @@
  * every renderer and the pour read). neighborhood.json carried Extent's unapplied DRAFT
  * under the SAME key, `radius`, and two readers took it for the applied value: Extent's
  * reopen (so an unapplied edit showed as applied) and fetch.js's heavy pass. Measured
- * 2026-09-25: provincetown 5,290 vs 7,065 m, hipointe-demun 1,260 vs 1,251 m.
+ * 2026-09-25: provincetown 5,290 vs 7,065 m, hipointedemun 1,260 vs 1,251 m.
  *
  * Asserts (reading the files and the source, never restating them):
  *   · no town's neighborhood.json carries `radius` — the draft is `draftRadius`;

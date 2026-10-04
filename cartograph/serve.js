@@ -2011,7 +2011,7 @@ createServer(async (req, res) => {
         // intent was "everything the disc happened to catch" — which is how one
         // exclusion loop silently removed 147 Księży Młyn buildings including the
         // Church of St. Anne, with no per-building record of why. It also meant a
-        // first pour DESTROYED any authored polygon (hipointe-demun's 4-point ring
+        // first pour DESTROYED any authored polygon (hipointedemun's 4-point ring
         // was one Bake from gone; `rescope` got a guard, this path never had one).
         //
         // Now an inclusion polygon is first-class and PRESERVED: membership becomes
@@ -2246,13 +2246,13 @@ createServer(async (req, res) => {
           // ⚠️ THIS BRANCH USED TO DROP THE INCLUSION POLYGON UNCONDITIONALLY, and
           // ExtentApp always sends an exclusions array — so ANY extent edit silently
           // deleted an authored boundary, even with zero loops. That is destructive:
-          // hipointe-demun is the EXEMPLAR hood (4 authored boundary streets + hand-
+          // hipointedemun is the EXEMPLAR hood (4 authored boundary streets + hand-
           // activated edge buildings) and was one Bake away from becoming a bare circle.
           //
           // The original reason for the drop was Altadena's stale 628-pt snap-route
           // ring clipping to the OLD boundary. That reason has expired: Altadena now
           // carries NO polygon. So preserving is strictly protective today.
-          // (⚠️ this comment read "hipointe-demun is the only scene with one" as of
+          // (⚠️ this comment read "hipointedemun is the only scene with one" as of
           // 2026-07-20; centrum has carried an 815-pt polygon since — the guard now
           // protects more than one hood. Corrected 2026-07-21.)
           //

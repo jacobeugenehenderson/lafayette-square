@@ -4748,7 +4748,7 @@
         "motorway": "70.9 m incl. ramps (2 towns)"
       },
       "command": "node cartograph/lamp-spacing.mjs --write-prior",
-      "sites": "every scene on disk + scratch/lamp-sample towns (fetched by scratch/lamp-sample/fetch.mjs): hipointe-demun, lafayette-square-staging (LS counted once), ann-arbor-mi, delft-nl, madison-wi, newport-ri, traverse-city-mi, tubingen-de — a town votes on a group only with ≥10 same-side gaps",
+      "sites": "every scene on disk + scratch/lamp-sample towns (fetched by scratch/lamp-sample/fetch.mjs): hipointedemun, lafayette-square-staging (LS counted once), ann-arbor-mi, delft-nl, madison-wi, newport-ri, traverse-city-mi, tubingen-de — a town votes on a group only with ≥10 same-side gaps",
       "inputs": [
         "osm"
       ],

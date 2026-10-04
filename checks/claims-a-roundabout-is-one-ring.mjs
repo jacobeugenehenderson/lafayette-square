@@ -19,7 +19,7 @@
 // Reads the street classes out of `skeleton.js` (STREET_CLASSES) rather than restating them.
 //
 //   node checks/claims-a-roundabout-is-one-ring.mjs [scene…]
-//   node checks/claims-a-roundabout-is-one-ring.mjs hipointe-demun --skeleton=/tmp/skel.json
+//   node checks/claims-a-roundabout-is-one-ring.mjs hipointedemun --skeleton=/tmp/skel.json
 //
 // MUTATION (must go red): `weldRoundabouts(streets)` commented out in skeleton.js, run it to a temp
 // --out, pass that file as --skeleton ⇒ HPDM reports its 5 split rings by street id.

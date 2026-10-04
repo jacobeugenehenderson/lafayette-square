@@ -11,7 +11,7 @@ as the City parcels so downstream consumes both uniformly, tagged
 `jurisdiction: "county"`.
 
 Scene-aware: set CARTOGRAPH_SCENE so config.py resolves the extent + RAW_DIR
-(e.g. CARTOGRAPH_SCENE=hipointe-demun python scripts/03b-fetch-stlco-parcels.py).
+(e.g. CARTOGRAPH_SCENE=hipointedemun python scripts/03b-fetch-stlco-parcels.py).
 
 Output: <scene>/raw/stlco_parcels.json
 Source: maps.stlouisco.com OpenData FeatureServer/7 (Tax Parcels)

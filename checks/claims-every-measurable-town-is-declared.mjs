@@ -13,7 +13,7 @@
  *    a comment. This file makes it a CLAIM, with its own name and its own red.
  *
  * WHY IT MATTERS (2026-09-13). 45 checks each ended with a typed roster —
- * `['lafayette-square', 'hipointe-demun']` — a skip list distributed across 45 files that nobody
+ * `['lafayette-square', 'hipointedemun']` — a skip list distributed across 45 files that nobody
  * had named one. Pour a new town and every one of them ignored it, and nothing failed. That class
  * was closed by deriving the roster from this manifest, which makes the manifest LOAD-BEARING for
  * the whole suite: a town missing from it is now invisible to every check at once. The blast radius

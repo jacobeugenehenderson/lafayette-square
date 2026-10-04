@@ -27,7 +27,7 @@
  *        §4.1's load-bearing ⭐⭐ claim, and measurement ④ is the test of it.
  *
  * usage: node checks/claims-node-pair-key-parity.mjs [scene ...]
- *        default scenes: lafayette-square hipointe-demun
+ *        default scenes: lafayette-square hipointedemun
  *        (altadena is declared and measurable — size on it. It was listed here as CHILLERED
  *        alongside two towns that have since been excised; it never shared their status.)
  */

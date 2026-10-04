@@ -4,7 +4,7 @@
  * while baking another scene is a hardwire (the LS-fallback bug class).
  *
  *   NODE_OPTIONS="--require ./cartograph/tripwire-ls-reads.cjs" \
- *   node cartograph/bake-X.js --look=hipointe-demun --scene=hipointe-demun
+ *   node cartograph/bake-X.js --look=hipointedemun --scene=hipointedemun
  *
  * Logs (does not throw) so ONE run surfaces every hardwire, not just the first.
  * readFileSync = a real data hardwire (LS bytes used). existsSync = a guard

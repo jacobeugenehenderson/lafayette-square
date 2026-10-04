@@ -15,7 +15,7 @@
  *     parcel coded 601 (a commercial bucket) both came back 'residential',
  *     because the mapper only knew St. Louis CITY's 4-digit ranges and every
  *     3-digit County code falls through all of them.
- *   - Measured 2026-08-01: 14,587 of hipointe-demun's 14,597 County parcels
+ *   - Measured 2026-08-01: 14,587 of hipointedemun's 14,597 County parcels
  *     flunk the city-only ranges. The County half of that neighborhood would
  *     have been mapped wholesale to a wrong answer that renders beautifully —
  *     `CLAUDE.md` Layer 0's fallback shape exactly. Not reading the file at all

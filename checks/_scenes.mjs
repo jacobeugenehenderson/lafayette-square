@@ -2,7 +2,7 @@
  * WHICH TOWNS DOES THIS CHECK RUN ON? — asked once, here, instead of typed into 45 files.
  *
  * WHY THIS EXISTS (2026-09-13). 45 checks accepted a scene argument and then fell back to a roster
- * TYPED INTO THE FILE — `['lafayette-square', 'hipointe-demun', …]`. Each copy looks like a sensible
+ * TYPED INTO THE FILE — `['lafayette-square', 'hipointedemun', …]`. Each copy looks like a sensible
  * default, which is exactly why it survived: the corpus had a skip list distributed across 45 files
  * and nothing named it one. Pour a new town and it is invisible to every one of them until a human
  * remembers to edit 45 files, and nothing fails when they don't — the checks just quietly keep

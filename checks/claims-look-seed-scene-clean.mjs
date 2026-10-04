@@ -81,7 +81,7 @@ check('the 2026-07-14 regression cannot recur — LS authoring does not reach a 
   if (!slotCount(lsAuthored.blockCustoms)) return 'the replay fixture carries no authoring; test is vacuous'
   // Target names only — `seedDesignForScene` is pure, so these need not be real towns. One that
   // does not exist is deliberate: the stripping must be scene-generic, i.e. correct for town #2.
-  for (const target of ['altadena', 'hipointe-demun', 'a-town-nobody-has-poured-yet']) {
+  for (const target of ['altadena', 'hipointedemun', 'a-town-nobody-has-poured-yet']) {
     const { design: d, stripped } = seedDesignForScene(lsAuthored, 'lafayette-square', target)
     if (slotCount(d.blockCustoms)) return `${target} still received ${slotCount(d.blockCustoms)} blockCustoms slots`
     if (!stripped.length) return `${target}: nothing reported stripped — the drop was silent`
@@ -99,8 +99,8 @@ check('every declared scene-keyed field is dropped on a cross-scene seed', () =>
 
 // 3. Style must still travel — a guard that strips everything is not a fix.
 check('style still travels (palette / exposure / labels / trees survive)', () => {
-  const { design: d } = seedDesignForScene(design('hipointe-demun'), 'hipointe-demun', 'altadena')
-  const src = design('hipointe-demun')
+  const { design: d } = seedDesignForScene(design('hipointedemun'), 'hipointedemun', 'altadena')
+  const src = design('hipointedemun')
   const styled = ['luColors', 'materialColors', 'labels', 'exposure', 'bloom', 'trees'].filter(f => src[f] != null)
   if (!styled.length) return 'fixture carries no style fields; test is vacuous'
   const lost = styled.filter(f => JSON.stringify(d[f]) !== JSON.stringify(src[f]))
@@ -108,11 +108,11 @@ check('style still travels (palette / exposure / labels / trees survive)', () =>
 })
 
 // 4. Same-scene cloning is untouched — duplicating a Look inside one town must
-//    keep that town's authoring. (`hipointe-demun` has 17 real slots.)
+//    keep that town's authoring. (`hipointedemun` has 17 real slots.)
 check('a SAME-scene clone keeps its own authoring', () => {
-  const src = design('hipointe-demun')
+  const src = design('hipointedemun')
   if (!slotCount(src.blockCustoms)) return 'fixture carries no authoring; test is vacuous'
-  const { design: d, stripped } = seedDesignForScene(src, 'hipointe-demun', 'hipointe-demun')
+  const { design: d, stripped } = seedDesignForScene(src, 'hipointedemun', 'hipointedemun')
   if (slotCount(d.blockCustoms) !== slotCount(src.blockCustoms)) return `lost ${slotCount(src.blockCustoms) - slotCount(d.blockCustoms)} slots`
   return stripped.length ? `reported a strip on a same-scene clone: ${stripped.join(', ')}` : null
 })

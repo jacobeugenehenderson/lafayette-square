@@ -312,7 +312,7 @@ horizon ground disc is gone — the town's edge is the neighborhood fade, set in
   - ▶ `node checks/claims-coplanar-groups-do-not-overlap.mjs` — asserts both directions: groups
     sharing a Y must not overlap, **and** a group alone on its slot must overlap something (without
     the second half, the broken state — every group on its own slot — passes trivially). ⚠️ Three
-    towns (altadena, hipointe-demun, lafayette-square-staging) **cannot re-bake** and still warn:
+    towns (altadena, hipointedemun, lafayette-square-staging) **cannot re-bake** and still warn:
     they carry no frozen protopolygon because they have not been poured since ① landed. That is a
     **re-pour**, and it is the operator's call.
 - **Ground-contact effects** (baked; tune via the bake constants in **CLI / bake operations** below): the **lamp light pools**, the **dark contact rings** under trees + lamps (visible in daylight), and the **tree trunk-base ground blend** (the lowest of each trunk takes on the ground colour beneath it). All three bake into ground textures + sample in the ground/tree shaders — **re-bake to see them**, hard-refresh to pick up the slab.
@@ -349,7 +349,7 @@ GPU profiler · device frame · layer-toggle matrix · TOD scrub. Walks the *shi
 - ⚠️ **Switching a live town to the Ward is a production change:** set its staging record to `ward`, check it on staging, then Promote — e.g. re-promoting provincetown.online after its record says `ward` moves it off the old player. Until a town has a staging record, Promote refuses it.
 - ▶ `node checks/claims-a-production-town-plays-the-player-promote-pinned.mjs`
 
-**A town's name is its address** (Jacob, 2026-09-27): the name before the dot of its Ward's **Domain** in Operations — `provincetown.online` → `provincetown` — and the map is poured under that name. It is a value: change the Ward's Domain and the name follows. ⚠️ Two towns predate the rule and are renamed as their own jobs: `hipointe-demun` → `hipointedemun` (before its first promote), `lafayette-square` → `lafayettesquare` (at its cutover).
+**A town's name is its address** (Jacob, 2026-09-27): the name before the dot of its Ward's **Domain** in Operations — `provincetown.online` → `provincetown` — and the map is poured under that name. It is a value: change the Ward's Domain and the name follows. ⚠️ Two towns predate the rule and are renamed as their own jobs: `hipointedemun` → `hipointedemun` (before its first promote), `lafayette-square` → `lafayettesquare` (at its cutover).
 
 **Machine setup — done 2026-09-27, listed so it can be redone:** the Access service token `ward-publisher` (its id in theward-operations `PUBLISHER_CLIENT_IDS`, a **Service Auth** policy on the Operations application) · `OPS_ACCESS_CLIENT_ID` / `OPS_ACCESS_CLIENT_SECRET` exported in the shell that runs `npm run dev` (⛔ `serve.js` does **not** read `.env`) and set as secrets on `theward-staging-sites` · both Workers deployed · Wrangler signed in on this machine (`npx wrangler login`), which is what binds domains and uploads to R2.
 
@@ -726,7 +726,7 @@ for (const scene of scenes('public/baked/<scene>/shape.json')) { … }   // any 
 ```
 
 **Why this is a rule and not a style note.** 45 checks used to end
-`if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')`. Every copy looked like a
+`if (!scenes.length) scenes.push('lafayette-square', 'hipointedemun')`. Every copy looked like a
 sensible default, which is exactly why it survived: the corpus carried **a skip list spread across
 45 files and nothing named it one.** Pour a new town and it was invisible to all of them until
 somebody edited 45 files — and **nothing failed when they didn't.** The checks just kept reporting

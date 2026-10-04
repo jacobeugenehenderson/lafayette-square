@@ -2,7 +2,7 @@
  * INSTANCE — per-installation configuration, selected at boot by `?look=`.
  *
  * The runtime reads from this module instead of hardcoding LS-specific values;
- * a different installation (`?look=hipointe-demun`) boots its own config. This
+ * a different installation (`?look=hipointedemun`) boots its own config. This
  * is the CONSUMER-face instance-boot of the two-faces frame
  * (`plans/front-front-end-and-productization.md §The two faces`): the app is a
  * generic reader; Lafayette Square is installation #1 (the default).

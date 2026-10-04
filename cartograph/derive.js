@@ -251,7 +251,7 @@ export const OSM_LU_KIND = {
 // contain, and a tag it lacked NEVER BECAME AN LU POLYGON AT ALL — the face fell
 // to the parcel vote, else to the bare `'residential'` default. So huron's corn
 // arrived as somebody's lawn, confidently. Measured across LS · huron ·
-// hipointe-demun · altadena at the widening: 111 distinct tags on disk with no
+// hipointedemun · altadena at the widening: 111 distinct tags on disk with no
 // home. ▶ re-derive, never quote: `node checks/claims-every-lu-tag-has-a-home.mjs`.
 //
 // ⛔⛔ EVERY LU-BEARING TAG IS NOW EITHER MAPPED HERE OR DECLARED IN
@@ -302,7 +302,7 @@ export const OSM_TO_LU = {
   // ⚠️ `natural:wood` STAYS `recreation`, and that is a DELIBERATE non-change.
   // Re-pointing it to `forest` is defensible on the merits — a wood is not a
   // ballfield — but it is an EXISTING mapping, i.e. somebody's decision, and it
-  // reaches LS (19 features) and hipointe-demun (85), neither of which may be
+  // reaches LS (19 features) and hipointedemun (85), neither of which may be
   // re-poured without Jacob. A commit that fills holes must not also restyle the
   // mould town's woods. ▶ Jacob's call, not absorbed here.
   'natural:wood': 'recreation',
@@ -1024,7 +1024,7 @@ function clipParcelsToRoundedBlocks(parcels, roundedBlocks, classify) {
 
 // ⛔ The city-only `classifyLandUse(code)` that lived here is GONE. It knew only
 // St. Louis City's 4-digit ranges and ended `return 'residential'`, so every
-// County 3-digit code — 14,587 of hipointe-demun's 14,597 — came back
+// County 3-digit code — 14,587 of hipointedemun's 14,597 — came back
 // 'residential' as confidently as a real single-family parcel. The replacement
 // is `parcel-landuse.mjs` (jurisdiction-aware, no catch-all, returns null for a
 // code it cannot read) wrapped by deriveLayers's `classifyLandUse(parcel)`,
@@ -3535,7 +3535,7 @@ export function deriveLayers(highways) {
             // uses for a face backed by 40 single-family parcels. That is
             // `CLAUDE.md` Layer 0's fallback shape: a failure rendered as a
             // plausible success, invisible to an operator who has not walked
-            // the street. Measured before this change: 121 of hipointe-demun's
+            // the street. Measured before this change: 121 of hipointedemun's
             // 302 faces (17.6% of its area, largest 97,393 m²) and 19 of
             // lafayette-square's 173.
             //

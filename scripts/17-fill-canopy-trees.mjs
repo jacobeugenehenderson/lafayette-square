@@ -17,7 +17,7 @@
  * with the kit's `geotiff` lib (same as bake-terrain.js — Python here has no
  * rasterio). Generalizable per-town: nothing scene-specific but the inputs.
  *
- * Usage: CARTOGRAPH_SCENE=hipointe-demun node scripts/17-fill-canopy-trees.mjs
+ * Usage: CARTOGRAPH_SCENE=hipointedemun node scripts/17-fill-canopy-trees.mjs
  * Output: cartograph/data/<scene>/clean/derived_trees.json  (census schema)
  */
 import { fromFile } from 'geotiff'

@@ -4,7 +4,7 @@
 
 ## Layout
 ```
-cartograph/data/hipointe-demun/content/
+cartograph/data/hipointedemun/content/
   logos/<slug>.<ext>          ← one brand logo per business
   photos/<slug>/NN.jpg        ← 1..N place photos per business (01.jpg, 02.jpg…)
 ```

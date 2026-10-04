@@ -1,6 +1,6 @@
 {
  "meta": {
-  "scene": "hipointe-demun",
+  "scene": "hipointedemun",
   "schema": "NEIGHBORHOOD-INPUTS §5.1.1",
   "layer": "Layer 2 — listings (business POIs, building_id → slab id, 0..N per building)",
   "generated": "2026-07-07",

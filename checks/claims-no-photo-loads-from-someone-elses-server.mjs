@@ -44,7 +44,7 @@ for (const scene of readdirSync(path.join(ROOT, 'cartograph/data'))) {
   if (!photos.length) continue
   scenes++
 
-  // ⛔ CROSS-ORIGIN MEANS IT NAMES A HOST, not "lacks a leading slash". hipointe-demun
+  // ⛔ CROSS-ORIGIN MEANS IT NAMES A HOST, not "lacks a leading slash". hipointedemun
   // writes `photos/cheshire/01.jpg` without one — relative, and entirely ours. The first
   // version of this check called 20 of its own files foreign.
   const isRemote = (u) => /^(https?:)?\/\//i.test(u || '')
@@ -60,7 +60,7 @@ for (const scene of readdirSync(path.join(ROOT, 'cartograph/data'))) {
 
   // ⭐ CREDIT IS OWED ON WHAT WE COPIED FROM SOMEONE, not on what was shot for the project.
   // A photograph with no `source_url` predates this tooling and may well be the project's
-  // own — hipointe-demun's twenty are exactly that, and failing them would be demanding a
+  // own — hipointedemun's twenty are exactly that, and failing them would be demanding a
   // credit for an image we already own.
   const copied = photos.filter(([, p]) => p.source_url)
   const noCredit = copied.filter(([, p]) => !p.credit)

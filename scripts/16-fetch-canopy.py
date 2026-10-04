@@ -18,7 +18,7 @@ so we use WMS GetMap with format=image/geotiff, which returns the RAW % values
 hardcoding it.
 
 Scene-aware via CARTOGRAPH_SCENE. Usage:
-  CARTOGRAPH_SCENE=hipointe-demun python3 scripts/16-fetch-canopy.py
+  CARTOGRAPH_SCENE=hipointedemun python3 scripts/16-fetch-canopy.py
 Output: cartograph/data/<scene>/raw/canopy.tif  (GeoTIFF, % canopy, EPSG:4326)
 """
 

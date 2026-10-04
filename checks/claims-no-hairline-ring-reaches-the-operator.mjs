@@ -22,7 +22,7 @@
 //
 //
 // ⛔⛔ READ THE `① SOURCE` LINE BEFORE QUOTING A CROSS-TOWN NUMBER. Only
-// lafayette-square carries a FROZEN ①; hipointe-demun, altadena and
+// lafayette-square carries a FROZEN ①; hipointedemun, altadena and
 // lafayette-square-staging have not been poured since ① landed, so their rows
 // come from the LIVE re-derivation (`ROADMAP A20`). The check prints which one
 // produced every row — it does not hide the difference and it does not refuse

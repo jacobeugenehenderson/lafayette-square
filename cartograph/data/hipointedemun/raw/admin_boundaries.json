@@ -1,5 +1,5 @@
 {
-  "_comment": "Administrative boundary: the St. Louis CITY limit (OSM rel 1180533, 'Saint Louis', admin_level=6 — an independent city) clipped to the hipointe-demun extent. This is the real City/County jurisdictional divide: EAST/center = City of St. Louis (Hi-Pointe); WEST = St. Louis County / City of Clayton (DeMun). Consequence: DeMun parcels are NOT in the STL City assessor (03-fetch-stl-parcels) — they need the St. Louis County assessor. Intended as a first-class rendered feature (visual City/County distinction). Local frame = hipointe-demun (geography.json).",
+  "_comment": "Administrative boundary: the St. Louis CITY limit (OSM rel 1180533, 'Saint Louis', admin_level=6 — an independent city) clipped to the hipointedemun extent. This is the real City/County jurisdictional divide: EAST/center = City of St. Louis (Hi-Pointe); WEST = St. Louis County / City of Clayton (DeMun). Consequence: DeMun parcels are NOT in the STL City assessor (03-fetch-stl-parcels) — they need the St. Louis County assessor. Intended as a first-class rendered feature (visual City/County distinction). Local frame = hipointedemun (geography.json).",
   "divide": "city_of_st_louis / st_louis_county",
   "source": "OpenStreetMap relation 1180533 (out geom), clipped to extent",
   "segments": [

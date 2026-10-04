@@ -46,7 +46,7 @@ const scenes = readdirSync(DATA)
 // the neighborhood and the band — which lies INSIDE the disc — is entirely shadowed.
 // ⭐⭐ THAT IS A STANDING FINDING, NOT A CHECK BUG: on those scenes the dissolve has
 // never run, and their zero-regression reading earlier today meant UNREACHABLE, not
-// CORRECT. Only hipointe-demun carries a polygon, of six scenes. bake-trees already
+// CORRECT. Only hipointedemun carries a polygon, of six scenes. bake-trees already
 // warns about it ("no boundary-street polygon — the disc is standing in for the
 // neighborhood") and evidently nobody reads that line.
 h('A. where a dissolve can exist at all, it RAMPS')

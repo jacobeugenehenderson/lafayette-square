@@ -566,7 +566,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > per-town mix, the two dead gates. They described `sectionPassTile`'s conditional takeover, which was
 > scoped in this doc as *"still live on UNSTAMPED tiles."*
 > ⭐ **THAT POPULATION IS EMPTY.** ▶ re-derive, never quote:
-> `node -e "import('./scratch/_proto-feed.mjs').then(async({feed,buildProto})=>{const M=await import('./src/lib/tileGround.js');for(const s of ['lafayette-square','hipointe-demun']){const f=feed(s);if(!f)continue;const T=buildProto(f,{protoArtifact:true}).protoShapeTiles;console.log(s,T.length,'tiles ·',T.filter(t=>M.hasStampInquiry(t)).length,'stamped')}})"`
+> `node -e "import('./scratch/_proto-feed.mjs').then(async({feed,buildProto})=>{const M=await import('./src/lib/tileGround.js');for(const s of ['lafayette-square','hipointedemun']){const f=feed(s);if(!f)continue;const T=buildProto(f,{protoArtifact:true}).protoShapeTiles;console.log(s,T.length,'tiles ·',T.filter(t=>M.hasStampInquiry(t)).length,'stamped')}})"`
 > ⛔ **A correction banner sitting next to the false sentence it corrects is the anti-pattern**
 > (`CLAUDE.md`): the false sentence is shorter and gets read first. The banner's job is done when its
 > subject is gone, so the subject is gone. ⚠️ If the legacy walk painter is ever reachable again, the

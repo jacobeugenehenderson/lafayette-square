@@ -41,7 +41,7 @@ This mirrors the one enforcement that already works (`sectionPass` closure), mov
 > ▶ `node scratch/a07-producer-disclosure.mjs`
 >
 > The carved share ranges from a small minority of tiles (altadena) upward, with lafayette-square,
-> lafayette-square-staging and hipointe-demun spread across that range — **LS sits mid-range, not at
+> lafayette-square-staging and hipointedemun spread across that range — **LS sits mid-range, not at
 > either extreme.** ⛔ Re-derive with the command; never quote a figure from here.
 >
 > ⚠️ **THE TOP OF THE RANGE WENT WITH THE POLISH SCENES (excised 2026-09-19), AND THAT COSTS THIS

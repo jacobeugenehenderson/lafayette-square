@@ -1125,7 +1125,7 @@
 > **punch-out**, which has a stencil. It is **NOT** available to a bare face-walk: **a walk over the
 > street graph does not close the perimeter.** Walked unclipped with no ring injected, of the tiles that
 > today carry a `__boundary__` edge, the number that close on real streets alone is
-> **LS 14/31 · staging 33/48 · ksi-y-m-yn 0/1 · hipointe-demun 25/53 · centrum 34/68 · altadena 10/43** —
+> **LS 14/31 · staging 33/48 · ksi-y-m-yn 0/1 · hipointedemun 25/53 · centrum 34/68 · altadena 10/43** —
 > the rest are part of the single unbounded face. ⭐ **The control is what makes it trustworthy: every
 > INTERIOR tile lands inside a bounded face on all six scenes** (70/70 · 68/68 · 76/76 · 143/143 ·
 > 503/503 · 651/651), so the misses are the graph, not the instrument. **Cause not established** — LS's

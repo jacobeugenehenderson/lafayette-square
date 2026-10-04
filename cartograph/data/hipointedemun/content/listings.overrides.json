@@ -1,6 +1,6 @@
 {
  "meta": {
-  "scene": "hipointe-demun",
+  "scene": "hipointedemun",
   "schema": "NEIGHBORHOOD-INPUTS §5.1.1 — override layer (the §0.0 \"override wins\" seam)",
   "generated": "2026-07-08",
   "note": "Hand-authored SSOT that bake-content applies OVER the raw join and never clobbers. adds = records OSM never surfaced (each carries an anchor so building_id re-resolves against the current baked set). patches = enrichment on machine-found OSM listings, keyed by name-match. Migrated once from the pre-pipeline listings.json.",

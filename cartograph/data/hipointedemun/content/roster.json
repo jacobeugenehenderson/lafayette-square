@@ -1,6 +1,6 @@
 {
  "meta": {
-  "scene": "hipointe-demun",
+  "scene": "hipointedemun",
   "schema": "NEIGHBORHOOD-INPUTS §5.1.1",
   "layer": "Layer 1 — building ledger (one record per slab building)",
   "generated": "2026-07-07",

@@ -7,8 +7,8 @@
  * data/<scene>/geography.json (the pre-bake extent/projection SSOT that later
  * bakes into the slab — multi-instance routing decision, 2026-07-02). This is
  * how the fetch/prebake pipeline targets neighborhood #2 without hand-editing
- * instance.js or clobbering LS: `CARTOGRAPH_SCENE=hipointe-demun node fetch.js`
- * fetches HiPointe's extent and writes to data/hipointe-demun/raw/. With the
+ * instance.js or clobbering LS: `CARTOGRAPH_SCENE=hipointedemun node fetch.js`
+ * fetches HiPointe's extent and writes to data/hipointedemun/raw/. With the
  * env unset, every export below is byte-identical to before.
  * ⛔ IT IMPORTS THE MAP **REGISTRY**, NOT `src/instance.js` (2026-09-21). instance.js
  * statically imports `public/looks/index.json`, which the dev server REWRITES on

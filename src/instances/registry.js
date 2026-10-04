@@ -42,7 +42,7 @@
  * hold. What lives HERE is the fixed truth the slab does not carry.
  */
 import lafayetteSquare from './lafayette-square.js'
-import hipointeDemun from './hipointe-demun.js'
+import hipointeDemun from './hipointedemun.js'
 import huron from './huron.js'
 import provincetown from './provincetown.js'
 // ⭐ EACH TOWN'S BACKEND KEY — opaque, minted once, sealed in `cartograph/data/<map>/town-id.json` (Jacob,
@@ -50,7 +50,7 @@ import provincetown from './provincetown.js'
 // calls), so a town's name and address stay free to change. Never shown to operators.
 // ▶ node checks/claims-a-town-has-one-sealed-id.mjs
 import lafayetteSquareId from '../../cartograph/data/lafayette-square/town-id.json' with { type: 'json' }
-import hipointeDemunId from '../../cartograph/data/hipointe-demun/town-id.json' with { type: 'json' }
+import hipointeDemunId from '../../cartograph/data/hipointedemun/town-id.json' with { type: 'json' }
 import huronId from '../../cartograph/data/huron/town-id.json' with { type: 'json' }
 import provincetownId from '../../cartograph/data/provincetown/town-id.json' with { type: 'json' }
 
@@ -61,7 +61,7 @@ const withId = (town, { townId }) => {
 
 const INSTANCES = {
   'lafayette-square': withId(lafayetteSquare, lafayetteSquareId),
-  'hipointe-demun': withId(hipointeDemun, hipointeDemunId),
+  'hipointedemun': withId(hipointeDemun, hipointeDemunId),
   huron: withId(huron, huronId),
   'provincetown': withId(provincetown, provincetownId),
 }

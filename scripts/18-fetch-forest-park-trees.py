@@ -5,7 +5,7 @@ The City Forestry service (13-fetch-city-trees.py) reads layer **1** (CITY_TREES
 street trees). Layer **4** (FOREST_PARK_TREES) is a SEPARATE, far richer managed
 inventory on the SAME trusted endpoint — Scientific_Name / Genus / Family / DBH /
 Condition / Height / Crown_Spread / Native — that we'd been ignoring. For a scene
-that borders Forest Park (hipointe-demun), a big block of its trees fall inside the
+that borders Forest Park (hipointedemun), a big block of its trees fall inside the
 boundary, real and species-bearing. This is the "free win" from the census
 recovery (HANDOFF-tree-spokes-and-census.md §Ranked sources #2).
 
@@ -13,7 +13,7 @@ Written to a SEPARATE well (`clean/forest_park_trees.json`) so it composes with 
 never clobbers — the City (layer 1) census and OSM. Real → meta.kind:'census'
 (bake-trees nudges, never drops). Deduped against the other real wells at bake.
 
-Usage:  CARTOGRAPH_SCENE=hipointe-demun python3 scripts/18-fetch-forest-park-trees.py
+Usage:  CARTOGRAPH_SCENE=hipointedemun python3 scripts/18-fetch-forest-park-trees.py
 Output: cartograph/data/<scene>/clean/forest_park_trees.json
         cartograph/data/<scene>/raw/forest_park_trees_raw.json
 """

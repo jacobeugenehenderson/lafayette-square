@@ -322,7 +322,7 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 > *(agent Gimbal, `aa7bdf44`. The retired "settled" text + a clause-by-clause verdict:
 > `cartograph/_archive/EXTENT-4.1-node-pair-key-asserted-spec-2026-08-12.md`. ⭐ It was **ASPIRATION
 > filed as done** — `CLAUDE.md`'s third mismatch cause — so it is surfaced as work, never evicted.)*
-> ▶ **`node checks/claims-node-pair-key-parity.mjs`** — LS + hipointe-demun, authoring ON, six gates.
+> ▶ **`node checks/claims-node-pair-key-parity.mjs`** — LS + hipointedemun, authoring ON, six gates.
 > ⛔ **Reproduce, never quote.** In the order that matters:
 > - ✅ **THE SUPERSET QUESTION IS CLOSED, AND IT WAS NEVER A COVERAGE GAP** *(2026-08-21)*. The nodes the
 >   key could not find are **vertices the CLIP manufactured after `junctionMap` was frozen** — no source

@@ -7,7 +7,7 @@
   ],
   "osmBase": {
     "altadena": null,
-    "hipointe-demun": null,
+    "hipointedemun": null,
     "huron": null,
     "lafayette-square": null,
     "lafayette-square-staging": null,
@@ -26,7 +26,7 @@
       "spacing": 27,
       "towns": [
         {
-          "town": "hipointe-demun",
+          "town": "hipointedemun",
           "p50": 43.3,
           "n": 186
         },
@@ -81,7 +81,7 @@
       "spacing": 70.9,
       "towns": [
         {
-          "town": "hipointe-demun",
+          "town": "hipointedemun",
           "p50": 90,
           "n": 24
         },

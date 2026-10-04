@@ -382,7 +382,7 @@ out body;>;out skel qt;`
   // ⭐ `man_made` IS THE RAILWAY BUG, THIRD INSTANCE (2026-09-20). It has been in
   // `HEAVY_WAYS` and `HEAVY_NODES` above — fetched, carried, tagged — and was in NO
   // bucket, so every one of its features fell to `ground.other[]`, which has ZERO
-  // consumers anywhere in the kit. Measured across LS · huron · hipointe-demun ·
+  // consumers anywhere in the kit. Measured across LS · huron · hipointedemun ·
   // altadena: 443 features, huron's whole waterfront among them (pier 183,
   // breakwater 21, groyne, lighthouse). ⛔ It is a BUCKET, not a filter — the tag
   // was always carried; a consumer reading `ground.man_made` got nothing and had no

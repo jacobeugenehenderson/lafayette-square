@@ -67,7 +67,7 @@ export default {
     // ⛔⛔ NULL ON PURPOSE, AND DELIBERATELY NOT A PLACEHOLDER NUMBER. A wrong
     // rate is a wrong charge on a real transaction and nothing in the build
     // catches it — so this stays empty until someone sets it from the Erie
-    // County / Ohio authority. ⚠️ This diverges from hipointe-demun, which ships
+    // County / Ohio authority. ⚠️ This diverges from hipointedemun, which ships
     // a placeholder figure: a plausible-looking wrong number is the failure mode
     // this kit can least afford, and delivery is OFF here so nothing needs one.
     // ▶ Set it when `modules.delivery.enabled` becomes true, not before.

@@ -34,7 +34,7 @@
  * look dir is explicitly the roster/render (producer-emit) arc's job —
  * NOT this reader phase. When those files move, only the thunk path here
  * changes; every consumer stays untouched. A new installation (e.g.
- * hipointe-demun) adds its own `MANIFESTS[<lookId>]` block.
+ * hipointedemun) adds its own `MANIFESTS[<lookId>]` block.
  */
 
 const MANIFESTS = {
@@ -58,13 +58,13 @@ const MANIFESTS = {
     parkPolygon:      () => import('../../cartograph/data/lafayette-square/clean/park-polygon.json'),
   },
 
-  'hipointe-demun': {
-    // Installation #2 — content in its OWN payload (cartograph/data/hipointe-demun/
+  'hipointedemun': {
+    // Installation #2 — content in its OWN payload (cartograph/data/hipointedemun/
     // content/), authored in §5.1.1 shape. The envelope normalizer (below) unwraps
     // {meta,listings}/{meta,menus} into the reader's {landmarks}/flat-menus shape.
-    landmarks: () => import('../../cartograph/data/hipointe-demun/content/listings.json'),
-    menus:     () => import('../../cartograph/data/hipointe-demun/content/menus.json'),
-    buildings: () => import('../../cartograph/data/hipointe-demun/content/roster.json'),
+    landmarks: () => import('../../cartograph/data/hipointedemun/content/listings.json'),
+    menus:     () => import('../../cartograph/data/hipointedemun/content/menus.json'),
+    buildings: () => import('../../cartograph/data/hipointedemun/content/roster.json'),
     // seedEvents / streets / facadeMapping / render geometry: HPDM has none here —
     // loadInstanceData returns null and consumers guard (empty events, no facade
     // photo, streets stat 0). Park/labels/lamps are LS-guarded off for non-LS looks.
@@ -87,7 +87,7 @@ const MANIFESTS = {
   //
   // Measured 2026-09-21 — ▶ re-derive, never quote:
   //   huron           3,678 buildings · 3,573 address (97%) · 3,340 category (91%)  → WIRED
-  //   hipointe-demun  1,281 buildings · 1,133 address (88%) · 1,281 category (100%) → wired above
+  //   hipointedemun  1,281 buildings · 1,133 address (88%) · 1,281 category (100%) → wired above
   //   altadena       15,397 buildings ·     0 address  (0%) · 15,397 category       → ⛔ NOT WIRED
   //
   // ⛔ ALTADENA IS DELIBERATELY ABSENT AND THAT IS THE POINT OF THIS BLOCK. Its roster

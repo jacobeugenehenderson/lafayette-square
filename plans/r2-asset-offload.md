@@ -34,7 +34,7 @@ git ls-files public/baked | while read f; do echo "$(stat -f%z "$f") ${f##*.}"; 
   | awk '{a[$2]+=$1} END{for(k in a) printf "%.1f MB  %s\n", a[k]/1048576, k}' | sort -rn
 ```
 
-→ `lafayette-square` 189M · `hipointe-demun` 174M · `altadena` 117M · `lafayette-square-staging` 15M
+→ `lafayette-square` 189M · `hipointedemun` 174M · `altadena` 117M · `lafayette-square-staging` 15M
 · `default` 14M · `toy` 4M.  By kind: png 189.7 · bin 155.8 · glb 101.3 · json 46.0 · ktx2 20.4 MB.
 
 **Why now.** GitHub Pages soft-limits a published site at 1 GB. The deployed payload is
@@ -286,8 +286,8 @@ before. If the canopy renders, the risky part survived. Per look, in a real brow
    the console**. A blocked preflight shows as a console error and a failed row, never as a 404.
 3. The canopy is present and textured (not untextured grey, which is the atlas failing to load).
 4. Ground lightmap/pool/colormap present; buildings present; lamps present; street labels present.
-5. Repeat under `?look=hipointe-demun`, `?look=altadena`, `?look=toy` — the toy look is the one that
-   exercises the fixed `ToyTrees.jsx` hardcode, and `hipointe-demun` is the one that proves the
+5. Repeat under `?look=hipointedemun`, `?look=altadena`, `?look=toy` — the toy look is the one that
+   exercises the fixed `ToyTrees.jsx` hardcode, and `hipointedemun` is the one that proves the
    change is not LS-shaped.
 
 Re-derive the cache-group split at any time:

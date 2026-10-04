@@ -23,7 +23,7 @@ export async function saveMarkers(strokes, scene) {
 }
 
 // The post-bake ribbons artifact (streets/intersections/faces/tiles). LS
-// ships this as a bundled vite import; a non-bundled scene (e.g. hipointe-demun)
+// ships this as a bundled vite import; a non-bundled scene (e.g. hipointedemun)
 // fetches it per-scene from the server instead of bloating the bundle.
 export async function fetchRibbons(scene) {
   const res = await fetch(sceneUrl(scene, 'ribbons'))

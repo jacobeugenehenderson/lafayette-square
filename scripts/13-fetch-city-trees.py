@@ -20,7 +20,7 @@ redirect into cartograph/data/<scene>/. Intended for poured neighborhood scenes
 (needs cartograph/data/<scene>/neighborhood_boundary.json); LS keeps its own
 park-clipped 12-process-park-trees.py.
 
-Usage:  CARTOGRAPH_SCENE=hipointe-demun python3 scripts/13-fetch-city-trees.py
+Usage:  CARTOGRAPH_SCENE=hipointedemun python3 scripts/13-fetch-city-trees.py
 
 Output: cartograph/data/<scene>/clean/park_trees.json  (the scene census)
         cartograph/data/<scene>/raw/city_trees_raw.json (raw ArcGIS features)

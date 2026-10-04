@@ -37,8 +37,8 @@
  *     — the OSM join yields ~0 there, so only the surviving adds got written.
  *     Declared in DATA, not by scene name, so the next non-OSM town is covered.
  *
- *   node cartograph/bake-content.js --scene=hipointe-demun
- *   node cartograph/bake-content.js --scene=hipointe-demun --dry-run   (stats, no write)
+ *   node cartograph/bake-content.js --scene=hipointedemun
+ *   node cartograph/bake-content.js --scene=hipointedemun --dry-run   (stats, no write)
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs'

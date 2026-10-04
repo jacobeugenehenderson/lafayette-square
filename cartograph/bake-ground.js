@@ -435,7 +435,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // proves on every commit.
   const PROTO = !!opts.proto   // from buildTileBakeShape's own opts, not the bake's
   // ⛔⛔ ① AS THE DEFAULT PRODUCER REQUIRES A SCENE THAT CAN ACTUALLY PRODUCE IT. Measured
-  // 2026-09-06 the moment the default flipped: hipointe-demun has no frozen protopolygon and no
+  // 2026-09-06 the moment the default flipped: hipointedemun has no frozen protopolygon and no
   // boundary, so it LIVE-MINTED ①, skipped the circle stamp, and baked 1103 tiles of the WHOLE
   // FRAME where it had 196 — a plausible-looking wrong map, which is the one outcome Layer 0 q2
   // names as worse than a failure. ⛔ And it destroyed the old artifact doing it: baked output is

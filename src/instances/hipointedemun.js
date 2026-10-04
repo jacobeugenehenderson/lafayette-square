@@ -1,19 +1,19 @@
 /**
  * Installation config — Hi-Pointe–DeMun (installation #2). Authored from the
- * installation's own payload: cartograph/data/hipointe-demun/geography.json +
+ * installation's own payload: cartograph/data/hipointedemun/geography.json +
  * content/profile.json (NEIGHBORHOOD-INPUTS §5.1.1 Layer 0 / §5.1.2). Self-
  * contained — references nothing about any other installation.
  *
- * Boots via `?look=hipointe-demun`. Its baked slab (public/baked/hipointe-demun/)
+ * Boots via `?look=hipointedemun`. Its baked slab (public/baked/hipointedemun/)
  * + content (content/{listings,menus,roster,profile}.json) load through the
  * exact seam LS uses. Delivery (Cary) is NOT live here — module.delivery.enabled
  * is false; the Cary/legal/commerce fields are placeholders until it is.
  */
 export default {
-  lookId: 'hipointe-demun',
+  lookId: 'hipointedemun',
   skyMode: 'cheap',
 
-  // Geography — from cartograph/data/hipointe-demun/geography.json (center =
+  // Geography — from cartograph/data/hipointedemun/geography.json (center =
   // boundary-polygon centroid; bbox = fetch extent).
   geography: {
     lat: 38.64231,
@@ -33,9 +33,9 @@ export default {
   domain: null,   // ⛔ NOT A SOURCE (2026-09-26): the production domain lives in Operations (src/lib/townOrigin.js).
 
   // Content asset root (§5.1.2), relative to BASE_URL. HPDM is the clean template:
-  // its logos/photos live in its own payload (cartograph/data/hipointe-demun/
-  // content/), served in dev by the vite middleware at /content/hipointe-demun/.
-  contentRoot: 'content/hipointe-demun/',
+  // its logos/photos live in its own payload (cartograph/data/hipointedemun/
+  // content/), served in dev by the vite middleware at /content/hipointedemun/.
+  contentRoot: 'content/hipointedemun/',
 
   branding: {
     title: 'Hi-Pointe–DeMun',
@@ -45,7 +45,7 @@ export default {
     markSvg: 'arch',
     mark: null,   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
     ogImage: null,
-    assetSlug: 'hipointe-demun',
+    assetSlug: 'hipointedemun',
   },
 
   // Delivery not live → legal/commerce are placeholders (the operator is the

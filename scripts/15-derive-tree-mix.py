@@ -21,7 +21,7 @@ Downstream unchanged: bake-look (atlas from roster) -> bake-trees (routes census
 COMMON -> palette via the species map) -> runtime. City COMMON we don't map fall
 to the keyword collapse below, so honor-real coverage is near-total.
 
-Usage: CARTOGRAPH_SCENE=hipointe-demun python3 scripts/15-derive-tree-mix.py
+Usage: CARTOGRAPH_SCENE=hipointedemun python3 scripts/15-derive-tree-mix.py
 """
 
 import json

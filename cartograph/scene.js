@@ -31,7 +31,7 @@
  *     seed — which read the FLAG and ignored the ENV. Eight of ten bakers never
  *     mentioned `CARTOGRAPH_SCENE` at all. So:
  *
- *         CARTOGRAPH_SCENE=hipointe-demun node bake-ground.js --look=lafayette-square
+ *         CARTOGRAPH_SCENE=hipointedemun node bake-ground.js --look=lafayette-square
  *
  *     …named a scene, passed every guard (this file sees the env; `assertBakeTarget`
  *     sees scene==look because the local parser had silently fallen back to LS) —

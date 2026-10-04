@@ -49,7 +49,7 @@ const RIM_EPS = 0.5
 
 // ⛔⛔ THE MINT-VINTAGE GUARD, AND IT FIRED ON THE FIRST RUN OF THIS PROBE.
 // _substrate-feed's default for a non-LS scene is clean/ribbons.json, which on
-// hipointe-demun is the PRE-MINT bundle — 2015 nodes, via:'cap' 0. Walking it
+// hipointedemun is the PRE-MINT bundle — 2015 nodes, via:'cap' 0. Walking it
 // reports 62 no-node failures that are the ABSENT MINT, not the clip, and the
 // partition below would have read as "the clip is not the whole class." 9f53ef39
 // mints a cap coupler at EVERY degree-1 tip, so via:'cap' 0 on a town that has

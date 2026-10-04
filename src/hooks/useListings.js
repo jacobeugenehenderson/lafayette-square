@@ -21,7 +21,7 @@ import { classifyZoning } from '../tokens/categories.js'
  * Bare buildings (no landmark listing) are included as synthetic listings, categorised
  * by THE BUILDING'S OWN `category` where it has one, and only by the St. Louis zoning
  * letter where it does not. ⛔ "Categorised by zoning" describes Lafayette Square — the
- * one town that ships zoning and no category — never the kit: huron, hipointe-demun and
+ * one town that ships zoning and no category — never the kit: huron, hipointedemun and
  * altadena all ship a category and no zoning at all.
  *
  * Consumers access `listings` (the array) or use the lookup helpers.

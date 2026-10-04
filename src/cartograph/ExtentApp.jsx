@@ -60,7 +60,7 @@ import {
 const EXTENT_SCENE_KEY = 'cartograph-extent-scene'
 
 // A hood's display name: the authored name wins, else the slug prettified
-// (hipointe-demun → "Hipointe Demun"). Shared by the selector label + the tab title.
+// (hipointedemun → "Hipointe Demun"). Shared by the selector label + the tab title.
 const prettyHoodName = (name, scene) =>
   (name || '').trim()
   || (scene ? scene.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '')
@@ -861,7 +861,7 @@ function NeighborhoodSelector({ scenes, current, currentName, onOpen, onNew, onD
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
-  // Prettify an unnamed hood's slug for display (hipointe-demun → "Hipointe Demun");
+  // Prettify an unnamed hood's slug for display (hipointedemun → "Hipointe Demun");
   // an authored name (from Name & blurb) always wins.
   const label = prettyHoodName(currentName, current) || 'Select a neighborhood'
   return (
@@ -1368,7 +1368,7 @@ export default function ExtentApp() {
     // Mirrors pipeline.js:246-255 EXACTLY, including the polygon branch:
     //   hide → out · activate → in · inside any loop → out · then polygon, else circle.
     // The polygon branch was missing here, so on the one scene that had a polygon
-    // (hipointe-demun) the operator's preview disagreed with what the pour produced.
+    // (hipointedemun) the operator's preview disagreed with what the pour produced.
     for (const c of buildingCentroids) {
       let out
       if (hide.has(c.id)) out = true

@@ -13,7 +13,7 @@ const BASE = import.meta.env.BASE_URL
  *                      resolve against BASE_URL only.
  *   · `logos/x.jpg`  → INSTANCE-RELATIVE → resolve against this installation's
  *                      `contentRoot` (LS = '' i.e. the web root, byte-identical;
- *                      HPDM = 'content/hipointe-demun/', served from its payload).
+ *                      HPDM = 'content/hipointedemun/', served from its payload).
  */
 export function assetUrl(url) {
   if (!url) return url

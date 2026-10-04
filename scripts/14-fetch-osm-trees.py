@@ -32,7 +32,7 @@ real species resolver downstream — here we just want honest POSITIONS.
 Scene-aware via CARTOGRAPH_SCENE. Same park_trees.json schema, written to a
 SEPARATE file so it composes with (never clobbers) the City census.
 
-Usage:  CARTOGRAPH_SCENE=hipointe-demun python3 scripts/14-fetch-osm-trees.py
+Usage:  CARTOGRAPH_SCENE=hipointedemun python3 scripts/14-fetch-osm-trees.py
         …            --reuse-raw   re-derive from the raw well already on disk
                                    (no Overpass hit — the fetch is rate-limited
                                    and the raw nodes don't change hourly)
@@ -161,7 +161,7 @@ def fetch_overpass(ring_bbox):
 
 
 # A tree recorded by BOTH the City and OSM is the same trunk twice. Measured on
-# hipointe-demun: 43 pairs within 2 m, 55 within 3 m, 67 within 5 m — a flat tail,
+# hipointedemun: 43 pairs within 2 m, 55 within 3 m, 67 within 5 m — a flat tail,
 # so 3 m sits comfortably past the real coincidences without eating neighbours
 # (street trees are planted ~7 m apart; MIN_DIST in the canopy fill).
 DEDUP_M = 3.0

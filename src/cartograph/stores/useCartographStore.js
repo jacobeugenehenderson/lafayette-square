@@ -543,7 +543,7 @@ function serializeDesign(s) {
 // The kit is installation-agnostic: any neighborhood opens BY ID (its data is
 // fetched per-scene from serve.js). The name below is NOT a registry of
 // installations — it's the only one with a bundled fast-path: the default
-// installation ('lafayette-square'). A new installation (hipointe-demun,
+// installation ('lafayette-square'). A new installation (hipointedemun,
 // provincetown, …) is never added here; it fetches. Nothing enumerates the set
 // of installations in code.
 // The one town whose ribbons ship as a static import (src/data/ribbons.json) — named, not a default: Stage opens no
