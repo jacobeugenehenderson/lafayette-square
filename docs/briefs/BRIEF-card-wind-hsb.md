@@ -2,10 +2,10 @@
 status: OPEN
 dispatched: no
 written: 2026-10-04
-evict-when: the card wind is one brightness/saturation/hue triple per Look, forked per shot, and `browseWindFloor`/`heroWindFloor` and the two card gains are gone; a gust reaches a visible floor of N screen pixels at each tree's own depth, and zero extra in calm; the pixel probe reads the live gains and passes on LS and Huron Browse and Hero; checks green and mutation-tested; Jacob has eyed a calm day and a gusty day in Browse and Hero.
+evict-when: the card wind is one amplitude/depth/frequency triple per Look, forked per shot, and `browseWindFloor`/`heroWindFloor` and the two card gains are gone; a gust reaches a visible floor of N screen pixels at each tree's own depth, and zero extra in calm; the pixel probe reads the live gains and passes on LS and Huron Browse and Hero; checks green and mutation-tested; Jacob has eyed a calm day and a gusty day in Browse and Hero.
 -->
 
-# BRIEF — Card wind: one brightness · saturation · hue per Look, and a gust you can see
+# BRIEF — Card wind: one amplitude · depth · frequency per Look, and a gust you can see
 
 **Boz the Younger drafted this 2026-10-04; Jacob dispatches.**
 
@@ -23,10 +23,16 @@ seam with Gale before either of you writes it (`ListAgents` → `SendMessage`).
 
 ## What Jacob approved (2026-10-04, all three; ROADMAP "Card wind: brightness · saturation · hue")
 
-1. **One triple per Look, forked per shot through the channel path, like Canopy Light.** Brightness = how much motion ·
-   Saturation = wind-driven versus always-on · Hue = lean versus flutter. It **replaces** `browseWindFloor`,
-   `heroWindFloor` and the two gains.
-2. **A per-tree visible floor of N screen pixels**, converted to metres at each tree's own depth (`windMetresForPixels`,
+1. **One triple per Look, forked per shot through the channel path, like Canopy Light.** It **replaces**
+   `browseWindFloor`, `heroWindFloor` and the two gains. **Named in wave terms** (Jacob, 2026-10-04, relayed by Gale;
+   not Brightness/Saturation/Hue):
+   - **Amplitude** = how far the trees move overall.
+   - **Depth** = how much the wind drives the motion versus the always-on sway (modulation depth: the steady sway is the
+     carrier, gusts ride on it). Panel hint, one line: *"how much the wind, versus the steady sway, drives the motion."*
+   - **Frequency** = lean versus flutter: moves the motion toward the fast end (flutter) or the slow end (crown lean).
+     ⛔ It must **not** speed up a single motion, or the name lies.
+   ⛔ **No "Send a gust" button:** *"We should just hand tune it"* — Jacob tunes these by eye against the real weather.
+2. **A per-tree visible floor of N screen pixels — a minimum on Depth's gust term**, converted to metres at each tree's own depth (`windMetresForPixels`,
    in Gale's sheet chunk; there is no single metres-per-pixel, because it varies with depth). Shared later with grass and
    water.
 3. **The floor applies to the gust excess only**, scaled by the town's own gust amplitude through `windGustAt(xz)` =
@@ -81,9 +87,10 @@ Eye-gate surface: **Stage** for the authoring, **Preview** for the result, on a 
    **deleted**, and the commit message says so.
 2. In calm, the gust floor adds exactly zero (check, mutation-tested: force `windGustAt` to 1 and watch it fail).
 3. The probe, reading live values, shows gust peaks ≥ N px on LS and Huron in Browse and Hero.
-4. A check that no wind amplitude lives as a bare constant in the card shaders (it reads the source; mutation-test it by
+4. ⏳ **The visible-floor CHECK (gate 3) is NOT yet confirmed by Jacob** — Gale asked; build it only on his yes.
+5. A check that no wind amplitude lives as a bare constant in the card shaders (it reads the source; mutation-test it by
    re-adding one).
-5. Jacob has eyed Browse and Hero, calm and gusty, and set N.
+6. Jacob has eyed Browse and Hero, calm and gusty, and set N.
 
 **Confirm-then-build:** read the code sites, tell Jacob what you found, and if the code contradicts this brief, stop and
 flag him.
