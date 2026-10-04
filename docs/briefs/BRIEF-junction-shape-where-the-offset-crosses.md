@@ -61,7 +61,7 @@ established. Not caught by `claims-proto-tip-has-two-apexes` (the needles are no
 ## Not in scope
 
 - **Whether an expressway keeps its curb:** `references/` question `q-atgrade-expressway-edge`, open. (Jacob also flagged *"You can also see: Curb"* on the same screenshot; the curb on US 6 is that question, not yours. If a curb shows on a highway in the H-3 classes, that **is** a defect: tell Boz.)
-- **The roundabout weld** (A19: HPDM's unwelded split roundabout pieces) → `BRIEF-roundabout-is-one-ring.md`.
+- **The roundabout weld** (A19: HPDM's unwelded split roundabout pieces) → landed 2026-10-03, `cartograph/_archive/BRIEF-roundabout-is-one-ring-DELIVERED-2026-10-03.md`.
 
 ## The canon you must read first, and the rulings that bind the fix
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CLAIM — EVERY ROUNDABOUT OSM DECLARES ARRIVES AS ONE CLOSED CHAIN (docs/briefs/BRIEF-roundabout-is-one-ring.md).
+// CLAIM — EVERY ROUNDABOUT OSM DECLARES ARRIVES AS ONE CLOSED CHAIN (cartograph/_archive/BRIEF-roundabout-is-one-ring-DELIVERED-2026-10-03.md).
 //
 // OSM cuts a roundabout into a way at every entry; each unnamed piece used to become its own chain,
 // so the ring drew as arcs and its island never closed as a block. `skeleton.js` `weldRoundabouts`
