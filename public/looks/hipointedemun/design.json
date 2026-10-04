@@ -233,11 +233,72 @@
   "wallPalettes": null,
   "lamps": null,
   "terrainExag": null,
+  "dof": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "blur": 0.2,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "sunrise": {
+        "blur": 0.15,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "noon": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.4,
+        "melt": 0
+      },
+      "golden": {
+        "blur": 0.46,
+        "heroBlur": 0.02,
+        "softness": 0.2,
+        "melt": 0.1
+      },
+      "sunset": {
+        "blur": 0.08,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "dusk": {
+        "blur": 0.1,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "night": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "deep": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      }
+    }
+  },
   "sky": {
     "overrides": []
   },
   "heroSubject": null,
-  "dofFocus": null,
+  "dofFocus": {
+    "point": [
+      -123.56,
+      15.63,
+      -81.06
+    ],
+    "label": "the ground here",
+    "box": null
+  },
   "heroKeyframes": [],
   "heroMotion": {
     "length": 360,

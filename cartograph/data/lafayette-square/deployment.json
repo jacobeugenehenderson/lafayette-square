@@ -1,7 +1,27 @@
 {
   "surfaces": {
-    "desktop": { "postFxOff": [] },
-    "phone-hi": { "postFxOff": ["ao", "pyramid", "heroLadder", "bloom", "dof", "aerial"] },
-    "phone-lo": { "postFxOff": ["ao", "pyramid", "heroLadder", "bloom", "dof", "aerial"] }
+    "desktop": {
+      "postFxOff": []
+    },
+    "phone-hi": {
+      "postFxOff": [
+        "ao",
+        "pyramid",
+        "heroLadder",
+        "bloom",
+        "dof",
+        "aerial"
+      ]
+    },
+    "phone-lo": {
+      "postFxOff": [
+        "ao",
+        "pyramid",
+        "heroLadder",
+        "bloom",
+        "dof",
+        "aerial"
+      ]
+    }
   }
 }
