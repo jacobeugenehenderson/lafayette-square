@@ -42,7 +42,7 @@ export default {
     // the custom arch"). It is HPDM's own authored choice, not an inheritance from LS.
     faviconUrl: 'https://lafayette-square.com/favicon.svg',
     markSvg: 'arch',
-    mark: null,   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
+    mark: '⚜️',   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
     ogImage: null,
     assetSlug: 'hipointedemun',
   },
