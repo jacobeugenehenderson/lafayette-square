@@ -79,18 +79,13 @@ instance), and who reads it? `RegimeControls`' regimes (`plan` / `orbit` / `stre
 code today, read in source. If no authored setting exists, that is **unbuilt intent**: surface it as tranche-2 work, don't
 patch it. Report what the Ward does on a touch in each shot.
 
-## Second exhibit: machinery the Player still loads (Bake → Player)
+## Second exhibit: machinery loaded where no tree needs it (local Stage only)
 
-HPDM's tree species all carry `meshTier: false` (no model trees), so once the hero impostors are captured no tree draws as a
-mesh. **The Grove needs the bark, leaf and deformer data to capture the cards** (`HeroImpostorBaker`, `OverheadBaker`,
-`Grove.jsx` read them). The runtime does not need them, yet it still loads the ~58 MB colour/normal mesh atlas
-(`treeAtlasMaterial`; Stage logged `[treeAtlas] coverage mips … 4067×4240` on HPDM). `trees-atlas-{bark,leaves}-viz.png`
-(~23 MB per town) have **no reader in `src/` at all**: only `arborist/bake-look.js` writes them. Whether they are uploaded
-with the slab: not checked. This is the spec's *"bake the answer, not the machinery"* and *"don't load that yet"* with a
-number on it.
-**Related, measured the same night:** with no `heroImpostorBySpecies` baked, all 10,825 HPDM trees drew as full meshes, at
-**~440M triangles/frame** and ~2 s frames, which froze Stage. Capturing the impostors (Grove) fixed it. The runtime
-degraded to "draw every tree at full weight" without failing loudly (`ROADMAP B4`). Trace it as a silent substitution.
+*(Corrected 2026-10-04 by Thread's trace.)* On an impostor-only town the **published** Player does NOT load the mesh atlases:
+`needsMaterials` is false and the atlas PNGs aren't published (they 404 on R2), which is `OPERATIONS § Publish` as written. What
+loads them anyway is **local Stage** (`[treeAtlas] coverage mips … 4067×4240` on HPDM). `trees-atlas-{bark,leaves}-viz.png` have no
+reader in `src/`. The 440M-triangle all-mesh freeze when `heroImpostorBySpecies` was missing is still the live silent-substitution
+case (`ROADMAP B4`).
 
 ## Third exhibit: one instant, two weathers (live handoff)
 
