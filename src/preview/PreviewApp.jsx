@@ -15,7 +15,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { invalidateTreeAtlas } from '../components/treeAtlasMaterial'
 import { SHOTS } from '../stage/StageApp.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { INSTANCE, townForLook } from '../instance.js'
+import { INSTANCE } from '../instance.js'
+import { slabManifest } from '../lib/slabUrl.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { RENDER_TIERS } from '../lib/renderTiers.js'
 import { setActiveProfileId } from './deviceProfiles'
@@ -955,10 +956,36 @@ function TownChooser() {
 }
 
 export default function PreviewApp() {
-  return resolvePreviewLookId() ? <PreviewTown /> : <TownChooser />
+  const lookId = resolvePreviewLookId()
+  return lookId ? <FrozenTown lookId={lookId} /> : <TownChooser />
 }
 
-function PreviewTown() {
+// ⭐ PREVIEW DRAWS THE TOWN A BAKE FROZE (Jacob, 2026-10-04: Stage authors, Bake freezes, Preview and the Ward read what is
+// frozen). Its identity is the slab's `manifest.json#identity`, the record the Ward reads, never the authoring source
+// (`src/instances/<map>.js`), so Preview shows what ships. ⛔ No manifest, no identity: it refuses and says to bake.
+function FrozenTown({ lookId }) {
+  const [state, setState] = useState({ town: null, error: null })
+  useEffect(() => {
+    let live = true
+    slabManifest(lookId).then((m) => {
+      if (!m) throw new Error(`"${lookId}" has no baked manifest.json. Preview draws what a bake froze: bake it in Stage first.`)
+      if (!m.identity || typeof m.identity !== 'object') throw new Error(`"${lookId}"'s manifest.json carries no identity. Re-bake it.`)
+      if (live) setState({ town: { ...m.identity, lookId, mapId: m.town }, error: null })
+    }).catch((e) => { if (live) setState({ town: null, error: e.message }) })
+    return () => { live = false }
+  }, [lookId])
+  if (state.error) {
+    console.error(`[Preview] ⛔ ${state.error}`)
+    return (
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#141416', color: '#ddd' }}>
+        <div style={{ maxWidth: 480, fontSize: 13 }}><div style={{ opacity: 0.7, marginBottom: 8 }}>Preview</div>{state.error}</div>
+      </div>
+    )
+  }
+  return state.town ? <PreviewTown town={state.town} /> : null
+}
+
+function PreviewTown({ town }) {
   // ⛔ NOT ALWAYS HERO (2026-09-05). Preview opened on the Hero shot every
   // time, which dates from when arriving on the hero was the emotionally
   // resonant thing to do. It is now just a camera you have to click out of
@@ -1044,7 +1071,7 @@ function PreviewTown() {
       gl={{ ...townCanvas.gl, preserveDrawingBuffer: true }}
       onCreated={({ camera, gl }) => { camera.lookAt(...SHOTS.hero.target); _ogCaptureGL = gl }}
     >
-      <CanvasContents key={reloadKey} layers={layers} shot={shot} setShot={setShot} quality={quality} />
+      <CanvasContents key={reloadKey} town={town} layers={layers} shot={shot} setShot={setShot} quality={quality} />
     </Canvas>
   )
 
@@ -1104,7 +1131,7 @@ const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
 // ▶ node checks/claims-the-canvas-is-the-towns.mjs · node checks/claims-preview-phone-runs-production-passes.mjs
 const TIER_QUALITY = { desktop: QUALITY_PROFILES.desktop, 'phone-hi': QUALITY_PROFILES.phone, 'phone-lo': QUALITY_PROFILES.phone }
 
-function CanvasContents({ layers, shot, setShot, quality }) {
+function CanvasContents({ town, layers, shot, setShot, quality }) {
   // The town's flight between shots reports here; exposed for claims-a-shot-change-flies (an inspection surface).
   const flightRef = useRef(null)
   const bearingRef = useRef(null)
@@ -1129,7 +1156,6 @@ function CanvasContents({ layers, shot, setShot, quality }) {
   useEffect(() => { span.current = `camera:${shot}:${performance.now()}`; phoneBusStartSpan(span.current, 'camera', `→${shot}`, '#7dd3fc') }, [shot])
   const onFlightEnd = useMemo(() => () => { if (span.current) { phoneBusEndSpan(span.current); span.current = null; phoneBusStop() } }, [])
   const lookId = resolvePreviewLookId()
-  const town = useMemo(() => townForLook(lookId, 'Preview'), [lookId])
   // Preview takes no clicks (interactive={false}); it draws the listings the page loaded, as production does.
   const listings = useListings((s) => s.listings)
   listingsRef.current = listings

@@ -55,7 +55,8 @@ The *only other* divergences are the GPU profiler, the phone frame, and the laye
 | | |
 |---|---|
 | **Inputs** | the slab — `public/baked/<look>/{ground.json,ground.bin,ground.lightmap.png,buildings.json,buildings.bin,lamps.json,scene.json,trees.json}` — every URL from `src/lib/slabUrl.js` (published: content names; on disk: `?bake=<re-read key>`). ▶ `node checks/claims-every-slab-url-is-resolved.mjs`; the retired `?t=<bakedAt>` scheme is in `cartograph/_archive/slab-cache-bust-scheme-RETIRED-2026-09-28.md`. |
-| **Look selection** | `?look=<id>` on the URL (`resolvePreviewLookId`, `PreviewApp.jsx:705`); defaults to `INSTANCE.lookId` |
+| **Look selection** | The town the address names (`?look=`, else the one Stage last had open), resolved by the shared authoring resolver (`PreviewApp.jsx#resolvePreviewLookId`) |
+| **Town identity** | The slab's baked `manifest.json#identity`, the record the Ward reads, never the authoring source. A Look with no manifest refuses with "bake it in Stage first" (`PreviewApp.jsx#FrozenTown`) |
 | **Who serves it** | the cartograph dev server (`serve.js:735` maps `/` → `/preview.html`); entry `src/preview/main.jsx` → `PreviewApp` |
 | **Who reads the slab** | the **shared runtime components** — `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies` / `Atmosphere` / `CloudDome`, `LafayettePark`, `SceneNeon` (via `LafayetteScene`), all fed by `useSceneJson(lookId)` |
 | **Format SSOT** | `SLAB-CONTRACT.md` |
