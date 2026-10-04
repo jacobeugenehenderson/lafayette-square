@@ -36,6 +36,7 @@
  * the frozen shape — a scene missing it must bake the ground first, not fall through
  * to a wrong mask.
  */
+import { readTownDesign } from './lookDesign.mjs'
 import { readFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -127,8 +128,9 @@ export function polyWithBbox(ring, holes) {
  *
  * @param {string}  shapePath   public/baked/<scene>/shape.json (the WALL artifact)
  * @param {string}  mapPath     the scene's clean/map.json (obstruction footprints)
- * @param {string}  designPath  the Look's design.json — its blockCustoms + curbWidth
- *   so the rebuilt surfaces match what the operator authored (absent → defaults).
+ * @param {string}  scene       the town (map id). Its blockCustoms + curbWidth are the TOWN's design fields, read
+ *   from its home Look (`cartograph/lookDesign.mjs#readTownDesign`), so the rebuilt surfaces match the ground the
+ *   operator authored — for every Look of the town. ⛔ Required: no town ⇒ no surfaces, never kit defaults.
  * @param {number}  curbWidth   overrides the curb-stroke depth; else design.curbWidth
  *   ?? the fixed CURB_WIDTH the ground bake uses (`streetProfiles.js`).
  * @param {boolean} allowUnpoured  treat ground outside every tile but off the
@@ -138,9 +140,9 @@ export function polyWithBbox(ring, holes) {
  * @returns {function} classify(x,z) → forbidden reason, or null when plantable.
  *   Carries `.zoneOf(x,z)` (reporting) and `.nudge(x,z)` (nearest legal ground).
  */
-export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allowUnpoured = false, scene = null, quiet = false } = {}) {
+export function makeZoneTester({ shapePath, mapPath, curbWidth, allowUnpoured = false, scene = null, quiet = false } = {}) {
   const shape = JSON.parse(readFileSync(shapePath, 'utf-8'))
-  const design = designPath ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
+  const design = readTownDesign(scene, 'zone tester')
   const cw = Number.isFinite(curbWidth) ? curbWidth
            : Number.isFinite(design.curbWidth) ? design.curbWidth : CURB_WIDTH
   const blockCustoms = (design.blockCustoms && typeof design.blockCustoms === 'object') ? design.blockCustoms : null
@@ -173,9 +175,9 @@ export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allo
   const treelawn = prep(Object.values(pr.treelawnByLu || {}).flat())   // plantable, any LU
   // Resolve the LU policy for THIS scene against the classes it actually carries,
   // so an unrecognized class defaults plantable and ANNOUNCES itself rather than
-  // silently blanking its blocks. `scene` falls back to the shape path's own
-  // directory (public/baked/<scene>/shape.json) so existing callers need no change.
-  const mapId = scene || path.basename(path.dirname(shapePath || '')) || null
+  // silently blanking its blocks. `scene` is required (the town's design is read above), so it is never guessed
+  // from the shape path's folder — which is the LOOK's, not the town's.
+  const mapId = scene
   const classesPresent = Object.keys(pr.luByClass || {})
 
   // ── ⭐ A GROUND-COVER BLOCK IS ASKED AT THE POINT, NOT AT THE BLOCK (2026-09-26) ──

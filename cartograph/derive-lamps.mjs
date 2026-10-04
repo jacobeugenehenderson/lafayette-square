@@ -115,10 +115,8 @@ export function deriveLamps(scene, { quiet = false } = {}) {
   const osmPath = join(sceneDir, 'raw', 'osm.json')
   for (const [p, why] of [[shapePath, 'bake the ground first — the curb arcs live there'], [skelPath, 'run the pipeline first — road classes live there'], [osmPath, 'fetch the town first — the lit tags live there']])
     if (!existsSync(p)) throw new Error(`[derive-lamps] ${scene}: no ${p} — ${why}. Refusing to invent lamps without it.`)
-  const designPath = join(ROOT, 'public', 'looks', scene, 'design.json')
   const zoneOf = makeZoneTester({
-    shapePath, mapPath: join(sceneDir, 'clean', 'map.json'),
-    designPath: existsSync(designPath) ? designPath : undefined, scene, quiet: true,
+    shapePath, mapPath: join(sceneDir, 'clean', 'map.json'), scene, quiet: true,
   }).zoneOf
 
   const spacing = spacingForScene(sceneDir)

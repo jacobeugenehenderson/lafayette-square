@@ -33,9 +33,7 @@ for (const scene of scenes('public/baked/<scene>/trees.json')) {
   console.log(`\n── ${scene}`)
   const inp = treeBakeInputsForMap(scene)
   if (!inp?.zoneShapePath || !inp.placements?.some(existsSync)) { console.log('  NOT CHECKED — no census well or shape resolves.'); continue }
-  const designPath = `${ROOT}/public/looks/${scene}/design.json`
-  const tester = makeZoneTester({ shapePath: inp.zoneShapePath, mapPath: inp.forbiddenMapPath,
-    designPath: existsSync(designPath) ? designPath : undefined, scene, quiet: true })
+  const tester = makeZoneTester({ shapePath: inp.zoneShapePath, mapPath: inp.forbiddenMapPath, scene, quiet: true })
   const covered = new Set(tester.askedAtPoint)
   measured++
   if (!covered.size) { console.log('  no ground-cover tiles — every land-use refusal is the block\'s own class.'); continue }

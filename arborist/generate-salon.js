@@ -2158,7 +2158,7 @@ export function rosterAdditions({ lookName, speciesList, onlySpecies = null, rou
 }
 
 async function syncLookRoster(lookName, speciesList) {
-  const p = path.join(REPO_ROOT, 'public/looks', lookName, 'design.json')
+  const p = path.join(REPO_ROOT, 'public/looks', lookName, 'design.json')   // @design-writer: Salon publish adds variants to the Look's roster (authoring, not a bake read)
   let design
   try { design = JSON.parse(await fs.readFile(p, 'utf8')) }
   catch { return 0 /* look doesn't exist — operator hasn't picked one */ }

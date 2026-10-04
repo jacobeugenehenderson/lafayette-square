@@ -11,6 +11,7 @@
 import fs from 'fs'
 import { join } from 'path'
 import { CARTOGRAPH_DIR } from './config.js'
+import { readLookDesign } from './lookDesign.mjs'
 
 /** Registry findings the bed reads. */
 export const TERRAIN_FINDINGS = ['f-cem-dean-a-table', 'f-cem-nj-beach-d50', 'r-bottom-visibility-default']
@@ -26,10 +27,9 @@ export function terrainValueReads(scene) {
   const idx = JSON.parse(fs.readFileSync(join(ROOT, 'public', 'looks', 'index.json'), 'utf8'))
   const water = []
   for (const l of (idx.looks || []).filter(l => l.scene === scene)) {
-    const p = join(ROOT, 'public', 'looks', l.id, 'design.json')
     // Read as `design.water` so claims-autosave-keeps-what-bakes-read sees the key: it is authored outside Stage, and
     // the autosave must preserve it (serve.js) or the next save wipes the town's water level.
-    const design = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {}
+    const design = readLookDesign(l.id, 'terrain bake')
     const w = design.water || {}
     water.push([l.id, Object.fromEntries(TERRAIN_WATER_KEYS.filter(k => w[k] != null).map(k => [k, w[k]]))])
   }

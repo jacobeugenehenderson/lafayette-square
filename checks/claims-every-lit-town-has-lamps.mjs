@@ -70,9 +70,9 @@ for (const scene of scenes('public/baked/<scene>/shape.json')) {
   // ④ No invented lamp in the road.
   const derived = (j.lamps || []).filter(l => l.source === 'derived')
   if (!derived.length) continue
-  const design = join('public/looks', scene, 'design.json'), map = join('cartograph/data', scene, 'clean/map.json')
+  const map = join('cartograph/data', scene, 'clean/map.json')
   const zoneOf = makeZoneTester({ shapePath: join('public/baked', scene, 'shape.json'), mapPath: existsSync(map) ? map : undefined,
-    designPath: existsSync(design) ? design : undefined, scene, quiet: true }).zoneOf
+    scene, quiet: true }).zoneOf
   const onIllegal = {}
   for (const l of derived) { const z = zoneOf(l.x, l.z); if (!DERIVED_LEGAL.has(z)) onIllegal[z] = (onIllegal[z] || 0) + 1 }
   Object.keys(onIllegal).length ? bad(`④ derived lamps on illegal ground: ${JSON.stringify(onIllegal)}`) : ok(`④ all ${derived.length} derived lamps on legal ground`)

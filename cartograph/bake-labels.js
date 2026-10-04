@@ -24,6 +24,7 @@
  *
  * Run: node cartograph/bake-labels.js --scene <id>
  */
+import { readBakeDesign } from './lookDesign.mjs'
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -170,15 +171,10 @@ function main() {
   // (street labels, set-piece labels, the park title) now takes its style from this artifact (src/lib/labelStyle.js).
   // A set-piece's title position is a label too: it travels here keyed by its set-piece, and only that set-piece reads it.
   let style = {}, setPieceTitles = {}
-  try {
-    const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
-    if (existsSync(designPath)) {
-      const d = JSON.parse(readFileSync(designPath, 'utf-8'))
-      style = authoredLabelStyle(d.labels)   // complete (the default under the authored block), read fields only
-      if (Array.isArray(d.parkTitlePos) && d.parkTitlePos.length === 2) setPieceTitles['lafayette-park'] = d.parkTitlePos
-    }
-  } catch (e) { console.warn('[bake-labels] design.json unreadable, baking the kit label style:', e.message); style = authoredLabelStyle(null) }
-  if (!Object.keys(style).length) style = authoredLabelStyle(null)   // no design.json: the kit style, whole
+  // ⛔ No design ⇒ no bake (lookDesign.mjs): this used to bake the kit's label style over a missing or broken file.
+  const d = readBakeDesign(look, scene, 'bake-labels')
+  style = authoredLabelStyle(d.labels)   // complete (the default under the authored block), read fields only
+  if (Array.isArray(d.parkTitlePos) && d.parkTitlePos.length === 2) setPieceTitles['lafayette-park'] = d.parkTitlePos
 
   const outDir = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })

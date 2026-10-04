@@ -24,6 +24,7 @@ import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
 import { requireSceneTerrain } from './terrainLoad.js'
+import { readTownDesign } from './lookDesign.mjs'
 import { makeGroundSampler } from './groundSampler.js'
 import { makeMembership } from './neighborhood-membership.mjs'
 import { makeZoneTester } from './forbidden-surface.mjs'
@@ -147,15 +148,13 @@ function nudge(zoneOf, x, z, rings = 6, step = 1) {
   return null
 }
 
-/** The Look's authored lamp settings. `derive: false` = real lamps only (surveyed + authored); neutral default derives. */
-export function lampSettings(look) {
-  const p = join(ROOT, 'public', 'looks', look, 'design.json')
-  const l = existsSync(p) ? JSON.parse(readFileSync(p, 'utf-8')).lamps : null
-  return { derive: l?.derive !== false }
+/** The town's authored lamp settings (a TOWN field, lookDesign.mjs). `derive: false` = real lamps only; unauthored derives. */
+export function lampSettings(scene) {
+  return { derive: readTownDesign(scene, 'bake-lamps').lamps?.derive !== false }
 }
 
 function loadLampsForMap(scene, look, derivedPath) {
-  const { derive } = lampSettings(look)
+  const { derive } = lampSettings(scene)
   if (!derive) console.warn(`[bake-lamps] ${look}: design.json#lamps.derive = false — REAL lamps only (surveyed + authored); the derived fill is off by authoring.`)
   const census = readLampCensus(scene, { derivedPath, derive })
   const { perWell, deduped } = census
@@ -166,10 +165,8 @@ function loadLampsForMap(scene, look, derivedPath) {
   // ── Legal ground: the frozen shape's painted zones (the tree mask's own surfaces) ──
   const shapePath = join(ROOT, 'public', 'baked', look, 'shape.json')
   if (!existsSync(shapePath)) throw new Error(`[bake-lamps] no ${shapePath} — bake the ground first; without it there is no honest answer to "is this lamp in the road?".`)
-  const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
   const mapPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
-  const zoneOf = makeZoneTester({ shapePath, mapPath: existsSync(mapPath) ? mapPath : undefined,
-    designPath: existsSync(designPath) ? designPath : undefined, scene, quiet: true }).zoneOf
+  const zoneOf = makeZoneTester({ shapePath, mapPath: existsSync(mapPath) ? mapPath : undefined, scene, quiet: true }).zoneOf
 
   // ── Bounds: real lamps stop at the rim; invented ones dissolve across the fade band ──
   const bp = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')

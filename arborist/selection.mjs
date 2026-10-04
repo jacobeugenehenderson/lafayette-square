@@ -26,11 +26,12 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { resolveGrove } from './grove-eligibility.mjs'
 import { computeCoverage } from './roster-coverage.js'
+import { readTownDesign } from '../cartograph/lookDesign.mjs'
 
 const REPO_ROOT = path.join(import.meta.dirname, '..')
 
 export async function selectionForScene(scene) {
-  const design = JSON.parse(await readFile(path.join(REPO_ROOT, 'public/looks', scene, 'design.json'), 'utf8'))
+  const design = readTownDesign(scene, 'tree selection')
   const board = resolveGrove((await computeCoverage(scene)).species, design.groveThreshold || {})
 
   const species = new Set(), meshTier = new Set()

@@ -27,7 +27,8 @@ import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../src/lib/foundati
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
-import { loadSceneTerrain } from './terrainLoad.js'
+import { requireSceneTerrain } from './terrainLoad.js'
+import { readBakeDesign } from './lookDesign.mjs'
 import { createMembershipFilter } from './membership.mjs'
 import { resolveAddress, addressCensus, addressOfTags, offeredBy, parcelPointsOf } from './building-address.mjs'
 import { loadAddressPoints, loadParcelRings } from './address-points.mjs'
@@ -626,8 +627,9 @@ export async function bakeBuildings({ look, scene } = {}) {
   // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;
   // SlabBuildings multiplies by `uExag` (the ground-displacement uniform) so
   // buildings rise/fall in lockstep with the ground. Uses getElevationRaw (NOT
-  // getElevation) — the scene's own terrain; flat if it has none.
-  const terrain = loadSceneTerrain(scene) || { getElevationRaw: () => 0 }
+  // getElevation) — the scene's own terrain. ⛔ Flat only when the town has put "no elevation" on the record;
+  // otherwise a missing terrain refuses (terrainLoad.js#requireSceneTerrain) rather than sitting a hilly town at y = 0.
+  const terrain = requireSceneTerrain(scene, 'bake-buildings')
   const getElevationRaw = (x, z) => terrain.getElevationRaw(x, z)
   // Per-building overrides (roof shape, foundation height, colour) are the TOWN's own: the `overrides` map in
   // cartograph/data/<town>/building-overrides.json. ⛔ They used to be read from src/data/buildingOverrides.json — one
@@ -635,14 +637,8 @@ export async function bakeBuildings({ look, scene } = {}) {
   const townOvP = join(ROOT, 'cartograph', 'data', scene, 'building-overrides.json')
   const overrides = existsSync(townOvP) ? (JSON.parse(readFileSync(townOvP, 'utf-8')).overrides || {}) : {}
 
-  // Read the Look's design.json for palette + materialPhysics. Without
-  // it, fall back to defaults (matches the runtime fallback chain).
-  const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
-  let design = {}
-  if (existsSync(designPath)) {
-    try { design = JSON.parse(readFileSync(designPath, 'utf-8')) }
-    catch (e) { console.warn(`[bake-buildings] design.json unreadable: ${e.message}`) }
-  }
+  // The Look's design.json for palette + materialPhysics. ⛔ No design ⇒ no bake (lookDesign.mjs).
+  const design = readBakeDesign(look, scene, 'bake-buildings')
   const palette = design.buildingPalette || DEFAULT_PALETTE
   const physics = design.materialPhysics || {}
   // ⭐ A TOWN'S OWN WALLS (Jacob, 2026-09-26 — "a cosmetic, decorative presumption"; authoring, not

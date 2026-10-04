@@ -9,6 +9,7 @@
 // retired; feedback_installations_are_independent). Returns null when the
 // scene has no terrain baked yet — a legitimate state (bake flat / no lift),
 // NOT an error.
+import { readTownDesign } from './lookDesign.mjs'
 import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -34,13 +35,13 @@ export function mapTerrainPaths(scene) {
 // and facets the hill. Both now read the same authored number (site 15).
 // ⚠️ Read from the LOOK's design.json, which is the authoring SSoT; the slab's scene.json is
 // the runtime's copy of it and is written by bake-scene from this same field.
+// ⛔ A town with no readable design REFUSES (lookDesign.mjs#readTownDesign); a design that has not authored the field
+// takes the kit's neutral DEFAULT_V_EXAG, which is the honest answer for "not authored".
 function authoredExag(scene) {
-  const p = join(CARTOGRAPH_DIR, '..', 'public', 'looks', scene, 'design.json')
-  if (!existsSync(p)) return DEFAULT_V_EXAG
-  try {
-    const v = JSON.parse(readFileSync(p, 'utf-8'))?.terrainExag
-    return typeof v === 'number' && isFinite(v) && v >= 0 ? v : DEFAULT_V_EXAG
-  } catch { return DEFAULT_V_EXAG }
+  const v = readTownDesign(scene, 'terrain').terrainExag
+  if (v == null) return DEFAULT_V_EXAG   // unauthored: absent, or the null Stage's store saves for "not set"
+  if (typeof v !== 'number' || !isFinite(v) || v < 0) throw new Error(`[terrain] ⛔ ${scene}'s design.json terrainExag = ${JSON.stringify(v)} is not a non-negative number`)
+  return v
 }
 
 export function loadSceneTerrain(scene) {

@@ -42,6 +42,7 @@
 import { promises as fs } from 'node:fs'
 import { readFileSync, existsSync } from 'node:fs'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
+import { readTownDesign } from '../cartograph/lookDesign.mjs'
 import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
 import { DEFAULT_MAP, requireExplicitMap } from '../cartograph/config.js'
 import { resolveSpecies } from './vocabulary.mjs'
@@ -764,7 +765,7 @@ export async function bakeTrees({
     const [{ resolveGrove }, { computeCoverage }] = await Promise.all([
       import('./grove-eligibility.mjs'), import('./roster-coverage.js'),
     ])
-    const design = JSON.parse(await fs.readFile(path.join(REPO_ROOT, 'public/looks', scene, 'design.json'), 'utf8'))
+    const design = readTownDesign(scene, 'bake-trees')
     const board = resolveGrove((await computeCoverage(scene)).species, design.groveThreshold || {})
     const selected = new Set()
     for (const b of board) if (b.tier !== 'out') for (const l of (b.ownsLibIds || [])) selected.add(l)
@@ -844,22 +845,15 @@ export async function bakeTrees({
     throw new Error(`[bake-trees] no shape.json for '${mapName}' — bake the ground first. ` +
       `There is no honest forbidden-surface without the frozen shape; refusing to place trees against a wrong mask.`)
   }
-  // The Look's design.json — its blockCustoms + curbWidth so the rebuilt Section
-  // surfaces match what the operator authored (WYSIWYG with the Design view).
-  const _designPath = path.join(REPO_ROOT, 'public', 'looks', heroLook || mapName, 'design.json')
-  // ⭐ The operator's curated roster for this town — the tiebreak between composed twins.
-  // Read from the Look, never enumerated here. Absent/unreadable ⇒ an EMPTY set, which
-  // DISABLES the roster rule rather than guessing at one (see preferComposedTwin).
-  let rosterSpecies = new Set()
-  try {
-    const _d = JSON.parse(readFileSync(_designPath, 'utf8'))
-    rosterSpecies = new Set((_d.trees || []).map(t => t.species).filter(Boolean))
-  } catch { rosterSpecies = new Set() }
+  // ⭐ The operator's curated roster for this town — the tiebreak between composed twins. A TOWN field, from its home
+  // Look (cartograph/lookDesign.mjs). Unauthored ⇒ an EMPTY set, which DISABLES the roster rule rather than guessing at
+  // one (see preferComposedTwin). ⛔ A missing or unreadable design refuses; it used to read as "no roster".
+  const rosterSpecies = new Set((readTownDesign(mapName, 'bake-trees').trees || []).map(t => t.species).filter(Boolean))
   TWIN_SWAPS.clear()
   const isForbidden = makeZoneTester({
     shapePath: path.resolve(REPO_ROOT, zoneShapePath),
     mapPath: forbiddenMapPath ? path.resolve(REPO_ROOT, forbiddenMapPath) : undefined,
-    designPath: existsSync(_designPath) ? _designPath : undefined,
+    scene: mapName,   // the zone tester reads the town's blockCustoms + curbWidth itself
     // Left FALSE deliberately. The tester's "outside every curb" bucket can't
     // yet separate carriageway from un-poured, so allowing it would put trees
     // back in the road — the whole bug. It costs nothing here: the greater

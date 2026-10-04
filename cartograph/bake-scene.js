@@ -38,6 +38,8 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
+import { readBakeDesign } from './lookDesign.mjs'
+import { mapForLook } from './tree-bake-inputs.mjs'
 import { migrateSkyChannel } from '../src/cartograph/skyGrid.js'
 import { assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
 import {
@@ -60,16 +62,12 @@ const ROOT = join(__dirname, '..')
 
 export async function bakeScene({ look } = {}) {
   assertBakeTarget('bake-scene', look)
-  const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
   const outDir     = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
-  let design = {}
-  if (existsSync(designPath)) {
-    design = JSON.parse(readFileSync(designPath, 'utf-8'))
-  } else {
-    console.warn(`[bake-scene] no design.json at ${designPath}; using defaults`)
-  }
+  // ⛔ No design ⇒ no bake (cartograph/lookDesign.mjs): this used to warn and bake the kit's defaults as the town's scene.
+  // The town's fields (terrainExag, …) come from its home Look, so the runtime copy matches what the ground was built for.
+  const design = readBakeDesign(look, mapForLook(look), 'bake-scene')
 
   // The contrast policy's HARD tier (src/lib/colourPolicy.js): an accent under 7:1 or a category chip under 3:1 on the
   // player's grounds fails the bake — a hand-edited design.json cannot pass what the Identity panel refuses.

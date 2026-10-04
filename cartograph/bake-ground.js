@@ -54,6 +54,7 @@ import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { waterLevels } from './waterLevel.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
+import { readBakeDesign } from './lookDesign.mjs'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 import { SURFACES, resolveClassTable } from './surfaces.mjs'
@@ -838,7 +839,6 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     ? join(ROOT, 'src', 'data', 'ribbons.json')
     : join(ROOT, 'cartograph', 'data', scene, 'clean', 'ribbons.json')
   const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
-  const designPath  = join(ROOT, 'public', 'looks', look, 'design.json')
   // outDir: write the slab elsewhere (a scratch A/B) instead of over the live one.
   const outDir      = outDirOpt || join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
@@ -852,7 +852,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const surveyStreets = existsSync(surveyPath)
     ? (JSON.parse(readFileSync(surveyPath, 'utf-8')).streets || null) : null
   const mapData = existsSync(mapPath) ? JSON.parse(readFileSync(mapPath, 'utf-8')) : { layers: {} }
-  const design  = existsSync(designPath) ? JSON.parse(readFileSync(designPath, 'utf-8')) : {}
+  // ⛔ No design ⇒ no bake; the town's fields (blockCustoms, corners, land use) from its home Look (lookDesign.mjs).
+  const design  = readBakeDesign(look, scene, 'bake-ground')
   // Park footpaths: the clip polygon + water (the bridge split) for the
   // `park-path` group. Scene-keyed; absent → no park-path group emitted.
   // (Water-overlap bridge detection is a Phase-1 stopgap — Phase 5 carries
