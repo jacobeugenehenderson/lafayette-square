@@ -33,7 +33,7 @@ function run(S) {
   const assert = (name, ok, detail) => out.push({ name, ok: !!ok, detail })
   const missing = S.maps.filter(m => !(m in S.towns))
   assert('every-map-has-a-module', missing.length === 0,
-    `map(s) with a Look but no src/instances module — they boot as ANOTHER town: ${missing.join(', ')} — node cartograph/scaffold-instance.mjs --scene=<map> --mark=<emoji>`)
+    `map(s) with a Look but no src/instances module — they have no identity (Stage opens no town, the player refuses): ${missing.join(', ')} — node cartograph/scaffold-instance.mjs --scene=<map> --mark=<emoji>`)
   const unmarked = Object.entries(S.towns).filter(([, b]) => !b.mark && !b.markSvg).map(([m]) => m)
   assert('every-module-has-a-mark', unmarked.length === 0,
     `module(s) with no authored mark (they show an initial): ${unmarked.join(', ')}`)

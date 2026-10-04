@@ -38,7 +38,6 @@ export default {
   contentRoot: 'content/hipointedemun/',
 
   branding: {
-    title: 'Hi-Pointe–DeMun',
     // ⭐ AUTHORED: the Gateway Arch, by DECLARATION (Jacob, 2026-09-25: "LS and HPDM can keep
     // the custom arch"). It is HPDM's own authored choice, not an inheritance from LS.
     faviconUrl: 'https://lafayette-square.com/favicon.svg',

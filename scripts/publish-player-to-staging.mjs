@@ -213,10 +213,11 @@ async function alreadyThere(files) {
   // here — so a town with a module gets its own card and a town without one gets neutral
   // tags from the worker, never LS's.
   const { registeredMaps, instanceForMap } = await import(join(REPO_ROOT, 'src', 'instances', 'registry.js'))
+  const { titleOf } = await import(join(REPO_ROOT, 'src', 'lib', 'townRecord.js'))
   const towns = {}
   for (const m of registeredMaps()) {
     const t = instanceForMap(m), b = t.branding || {}
-    towns[m] = { title: b.title || t.name || null, description: t.profile?.tagline || null,
+    towns[m] = { title: titleOf(t), description: t.profile?.tagline || null,
       ogImage: b.ogImage || null, faviconUrl: b.faviconUrl || null, mark: b.mark || null, markSvg: b.markSvg || null }
   }
   const townsTmp = join(DIST, 'towns.json')

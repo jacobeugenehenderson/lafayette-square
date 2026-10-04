@@ -23,6 +23,7 @@
  * authors `markSvg: 'arch'`, so production is byte-identical. The arch is Lafayette
  * Square's mark; it was never the kit's.
  */
+import { titleOf } from './townRecord.js'
 import { INSTANCE } from '../instance.js'
 
 /**
@@ -39,7 +40,7 @@ export function townMark(instance = INSTANCE) {
 
 /** The tab/share name. ⛔ Never another town's. */
 export function townTitle(instance = INSTANCE) {
-  return instance?.branding?.title || instance?.name || 'The Ward'
+  return titleOf(instance)
 }
 
 /**

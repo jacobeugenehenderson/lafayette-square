@@ -1,5 +1,9 @@
 /**
- * THE TOWN'S BACKEND KEY — the one reader of it, for every app that calls a backend.
+ * READERS OF A TOWN'S IDENTITY RECORD — pure, so the kit (its source identity, `src/instance.js`) and the Ward (the
+ * baked `manifest.identity`) read one record the same way. ⛔ Imports nothing: the Ward imports this, and must never
+ * pull in `src/instance.js`.
+ *
+ * ── The backend key (`tenantOf`) ──
  *
  * Every backend (the Apps Script tenant, the Operations overlay, the content and commerce calls) names a town by its
  * sealed opaque id, minted once in `cartograph/data/<map>/town-id.json` (Jacob, 2026-10-04), never by its look, map
@@ -17,4 +21,13 @@ export function tenantOf(identity, who) {
     throw new Error(`[townTenant] ${who} carries no sealed town id (townId = ${JSON.stringify(id)}) — refusing to call the backend as a guess.`)
   }
   return id
+}
+
+/**
+ * The town's tab / share title: `branding.title` where the town authored one (Huron: "Huron Online"), else its `name` —
+ * the one name authority. ⛔ Never another town's: a record with neither is "The Ward", the player's own name.
+ * Read by the kit's tab, the Ward's tab and the share card (scripts/publish-player-to-staging.mjs).
+ */
+export function titleOf(identity) {
+  return identity?.branding?.title || identity?.name || 'The Ward'
 }

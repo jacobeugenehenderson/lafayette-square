@@ -21,7 +21,7 @@
  * Doctrine: project_slab_is_the_instance_identity, project_kit_helpers_pattern.
  */
 import { instanceForMap, registeredMaps, DEFAULT_MAP } from './instances/registry.js'
-import { tenantOf } from './lib/townTenant.js'
+import { tenantOf } from './lib/townRecord.js'
 // ⛔⛔ THE LOOK→MAP TABLE, STATICALLY — AND THIS IMPORT IS WHY `registry.js` EXISTS.
 // It is the authoring index, bundled at BUILD time, which is the right currency
 // here: the player ships with slabs baked at build time, so a Look the build never
@@ -178,7 +178,7 @@ export const INSTANCE = resolveInstance()
 
 /**
  * The town's backend key: its sealed opaque id (`cartograph/data/<map>/town-id.json`, attached by the registry).
- * One reader, shared with the Ward (`src/lib/townTenant.js#tenantOf`). ⛔ A page with no town, or one wearing the default
+ * One reader, shared with the Ward (`src/lib/townRecord.js#tenantOf`). ⛔ A page with no town, or one wearing the default
  * town (A12), has no tenant: it throws.
  */
 export function townTenant() {

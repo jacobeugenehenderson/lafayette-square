@@ -27,7 +27,6 @@ export default {
   contentRoot: 'content/provincetown/',
 
   branding: {
-    title: "Provincetown",
     faviconUrl: null,
     mark: "🦞",   // OLD PLAYER ONLY, UNTIL CUTOVER: a copy of the Look's identity.mark (the source). ▶ node checks/claims-a-towns-identity-is-its-own.mjs
     ogImage: null,

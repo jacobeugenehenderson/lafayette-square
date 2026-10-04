@@ -53,7 +53,7 @@ import lafayetteSquareId from '../../cartograph/data/lafayette-square/town-id.js
 import hipointeDemunId from '../../cartograph/data/hipointedemun/town-id.json' with { type: 'json' }
 import huronId from '../../cartograph/data/huron/town-id.json' with { type: 'json' }
 import provincetownId from '../../cartograph/data/provincetown/town-id.json' with { type: 'json' }
-import { TOWN_ID } from '../lib/townTenant.js'
+import { TOWN_ID } from '../lib/townRecord.js'
 
 const withId = (town, { townId }) => {
   if (!TOWN_ID.test(townId || '')) throw new Error(`[instances] "${town.name}" has no sealed town id (town-id.json townId = ${JSON.stringify(townId)})`)
