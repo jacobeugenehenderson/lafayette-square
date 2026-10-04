@@ -10,6 +10,13 @@
 
 ---
 
+## ▶ 2026-10-04 — THE GROVE SHOULD BE READY BEFORE YOU OPEN IT *(Jacob; not now, "doesn't want to be sidetracked")*
+
+1. **Bake in the background once a light is green.** *"I want this to all be done by the time we're in the grove. Once a light turns green and it is within the 'Ship' brackets in the roster, it should start baking in the background."* ⭐ **Ruling: grey card trees must be impossible in the Grove.** A tree is there only because all of its pieces exist, are assembled, and are ready. Not built.
+2. **The roster's green lights may be wrong.** In Jacob's screenshots, moving the Ship bar from 10 to 8 turned rows **below** the bar green (Sycamore, Scarlet oak, now "substitutes") that had been yellow inside the bracket. **Cause not established**; nobody has looked.
+3. **⛔ The Salon loader ignores HTTP status:** a dead arborist server reads as *"Chassis library is empty"* (`useArboristStore#loadSalonLibraries`). That's a silent fallback; an unreachable server must say so. Seen 2026-10-04, when the arborist server had crashed (the cause is in Jacob's terminal).
+4. *Context, the same morning:* HPDM's Grove drew untextured grey trees because `trees-atlas.json` still carried `/baked/hipointe-demun/` paths after the rename; `treeAtlasMaterial.js` does read `atlas.colorPath`. The Grove bake rewrote the atlas at 09:25/09:35. ▶ Root class: `ROADMAP` "a slab finds its own files by the name stamped into it". Whether the trees textured after a reload: **not confirmed**.
+
 ## ▶ 2026-08-28 — ⛔ VOCABULARY RULING: **WE BAKE THE GROVE. THE GROVE IS POURED INTO THE SLAB.** *(Jacob)*
 
 > *"The Slab is a particular thing, and this isn't it. This is the Grove."*
