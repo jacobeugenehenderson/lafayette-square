@@ -58,28 +58,18 @@ For **each handoff**, establish what **survives**, what **is added**, what **is 
 5. **Camera / framing along the same trace:** where authored framing is written, where each stage reads it, and where a
    failed handoff falls back to whole-neighborhood framing.
 
-## ⭐⭐ The lead exhibit: one Stage, two behaviours (Jacob's eye, 2026-10-03)
+## First exhibit: Preview copies a Player gesture into the technical-director surface (Preview → Player)
 
-*"Supposedly this is the same STAGE that Huron was in, Provincetown was in… there should be no reason/way for there to be
-out of sync settings such as this."* On **HPDM in Stage**, manipulating the camera (a drag, a scroll) in Hero **drops the
-shot to Browse**. That is the old Lafayette Square player's behaviour. Huron and Provincetown in the same Stage do not do
-it. Jacob's rule: *"I am supposed to have full camera control unless I am recording or playing back keyframes."*
-**Start the trace here.** This is the spec's thesis failing in front of the operator.
-
-What Boz established that night (re-derive all of it; ⛔ the cause is NOT established):
-- **The drag/scroll → Browse rule exists in exactly two places,** read in source: the old player
-  `src/components/Scene.jsx` (`onMove` / `onWheel` → `cam.setMode('browse')`, mounted only by `src/App.jsx`) and Preview
-  `src/preview/PreviewApp.jsx` (`ShotCamera`, `setShot('browse')`, a deliberate mirror of production). **Stage
-  (`CartographApp.jsx`) has no such handler.** Its only lock is playback (`Controls` → `RegimeControls` regime `playback`
-  while `previewPlaying`), and that matches Jacob's rule as written.
-- **The instance modules are identical** in every camera-related field (`src/instances/{hipointe-demun,huron,provincetown}.js`).
-- **The only per-town differences measured are in the Look's camera authoring:** HPDM has `heroKeyframes: []` (its copied
-  LS keyframes were removed 2026-09-26, `ROADMAP A11`), no `browseFrame`, no `shotLooks`, and a `heroMotion` in an older
-  shape (`{period, easing}`; the other three are `{length, mode}`). Huron, PT and LS have 3 keyframes and a `browseFrame`.
-- ⚠️ **First confirm the surface.** Establish at runtime which app and which component handle the gesture on HPDM. A
-  `pointermove`/`wheel` listener census on the canvas will do, and **every** listener counts, including ones mounted
-  through `<Town>`. ⛔ Don't settle it by grepping JSX; the parity brief already found that a grep understates what Stage
-  mounts.
+In Hero, **Preview drops to Browse on any drag over 6 px or any scroll** (`src/preview/PreviewApp.jsx`, `ShotCamera`,
+`setShot('browse')`). It deliberately mirrors the old player (`src/components/Scene.jsx`, `onMove`/`onWheel` →
+`cam.setMode('browse')`). **Stage has no such rule.** Its only lock is playback, which is Jacob's rule: *"full camera
+control unless I am recording or playing back keyframes."* On 2026-10-03 Jacob, in Preview, read this as Stage
+misbehaving. The two surfaces carry the same Hero / Browse / Street bar, so it is easy to be in one and believe you are in
+the other.
+⇒ **Classify it, don't fix it:** is "touch the movie, drop to Browse" a Player behaviour that Preview must reproduce, so
+it measures what ships, or a visitor gesture the technical-director surface should not inherit? That's Jacob's ruling,
+in the spec's terms (*Preview sees what Player ships* vs *Preview is the technical-director surface*). Also report which
+Player, old or the Ward, actually carries the gesture today.
 
 ## Second exhibit: machinery the Player still loads (Bake → Player)
 
@@ -173,7 +163,7 @@ Write **"cause not established"** wherever it isn't. ⛔ No fixes.
 
 ## The instruction
 
-**Read the spec below in full first, then the evidence. Start with the lead exhibit (one Stage, two behaviours). Confirm the four premises and tell Jacob what you found before tracing
+**Read the spec below in full first, then the evidence. Confirm the four premises and tell Jacob what you found before tracing
 further.** If the code contradicts this brief, stop and flag it. The stop is a deliverable.
 
 ---
