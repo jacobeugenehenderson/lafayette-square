@@ -22,7 +22,7 @@
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-startup-marks-fire-in-order.mjs [--town=lafayette-square] [--base=http://localhost:5173]
  */
-import { spawn } from 'node:child_process'
+import { spawn, execSync } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -35,7 +35,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const profile = mkdtempSync(join(tmpdir(), 'startup-marks-'))
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0',
   `--user-data-dir=${profile}`, '--no-first-run', '--window-size=1280,800', 'about:blank'], { stdio: 'ignore' })
-const cleanup = () => { try { chrome.kill('SIGKILL') } catch {} ; try { rmSync(profile, { recursive: true, force: true }) } catch {} }
+// chrome.kill reaches only the launcher pid; the browser's own processes survive it, so they are killed by profile too
+// (they leaked for an hour once, contending for the GPU with another session's probe).
+const cleanup = () => { try { chrome.kill('SIGKILL') } catch {} ; try { execSync(`pkill -9 -f 'user-data-dir=${profile}'`) } catch {} ; try { rmSync(profile, { recursive: true, force: true }) } catch {} }
+process.on('uncaughtException', (e) => { console.error(e); cleanup(); process.exit(2) })
+process.on('unhandledRejection', (e) => { console.error(e); cleanup(); process.exit(2) })
 let port; for (let i = 0; i < 100 && !port; i++) { const f = join(profile, 'DevToolsActivePort'); if (existsSync(f)) port = readFileSync(f, 'utf8').split('\n')[0]; else await sleep(100) }
 const ws = new WebSocket((await (await fetch(`http://127.0.0.1:${port}/json/version`)).json()).webSocketDebuggerUrl)
 await new Promise((r, j) => { ws.onopen = r; ws.onerror = j })
