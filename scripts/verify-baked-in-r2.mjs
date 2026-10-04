@@ -35,8 +35,8 @@ const BASE = (process.env.ASSET_BASE || 'https://assets.theward.online/').replac
 
 // Re-declared, NOT imported from the uploader — see the header note.
 const EXCLUDE = [
-  { test: (p) => /-lod0\.glb$/.test(p),                        why: 'lod0 (.gitignore:287)' },
-  { test: (p) => /\/trees-atlas-[^/]*-viz\.png$/.test(p),      why: 'atlas viz (.gitignore:242)' },
+  { test: (p) => /-lod0\.glb$/.test(p),                        why: 'lod0 (.gitignore, "lod0")' },
+  { test: (p) => /\/trees-atlas-[^/]*-viz\.png$/.test(p),      why: 'atlas viz (.gitignore, "-viz.png")' },
 ]
 
 const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => {

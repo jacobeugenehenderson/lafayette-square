@@ -36,7 +36,7 @@
  *               its datums, from raw/tide.json (fetch-water-datums --tide-only). The player times
  *               the tide from them (cartograph/tide.mjs); the levels stay the town's own. Kept whole, unrounded
  *               (Jacob: "keep the data"). A tidal town without them exits 2; a non-tidal town has no key at all.
- *   files     — every file of the slab with its size and sha256. ⚠️ v0 LISTS the existing names; it
+ *   files     — every PUBLISHED file of the slab with its size and sha256 (scripts/slab-publish-rule.mjs). ⚠️ v0 LISTS the existing names; it
  *               does not yet rename files by content. That, and the Worker and R2 side of it, is
  *               BRIEF-slab-loading §3 step 3.
  *
@@ -54,6 +54,7 @@ import { resolve, relative, dirname, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { instanceForMap, registeredMaps } from '../src/instances/registry.js'
 import CATEGORIES from '../src/tokens/categories.js'
+import { notPublished } from '../scripts/slab-publish-rule.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = process.argv.find(a => a.startsWith('--town='))
@@ -167,10 +168,16 @@ function* walk(dir) {
     else yield p
   }
 }
+// ⛔ Only what is PUBLISHED (scripts/slab-publish-rule.mjs, the uploader's own rule): a name here that R2 never holds is
+// a file the manifest promises and no player can fetch. The rest are listed by count in the log line, never silently.
 const files = {}
+const notPublishedWhy = notPublished(slabDir, town)
+const unlisted = {}
 for (const p of walk(slabDir)) {
   const rel = relative(slabDir, p).split(sep).join('/')
   if (rel === 'manifest.json' || rel.startsWith('content/')) continue
+  const no = notPublishedWhy(rel)
+  if (no) { unlisted[no] = (unlisted[no] || 0) + 1; continue }
   const buf = readFileSync(p)
   files[rel] = { bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') }
 }
@@ -213,4 +220,4 @@ const total = Object.values(files).reduce((s, f) => s + f.bytes, 0)
 const missingPhotos = Object.entries(photos).filter(([, v]) => !v).map(([k]) => k)
 if (missingPhotos.length) console.error(`⚠️ ${missingPhotos.length} photo(s) named by listings are missing on disk: ${missingPhotos.slice(0, 5).join(', ')}${missingPhotos.length > 5 ? ' …' : ''}`)
 const have = Object.entries(content).filter(([, v]) => v).map(([k]) => k.replace('.json', ''))
-console.log(`✅ ${relative(ROOT, resolve(slabDir, 'manifest.json'))} — ${Object.keys(files).length} slab files, ${(total / 1e6).toFixed(1)} MB · content: ${have.join(', ') || 'none'} · photos ${Object.values(photos).filter(Boolean).length}/${Object.keys(photos).length}${photosOutsideTown ? ` (${photosOutsideTown} from the app's public/photos/)` : ''} · ${categories.length} categories (unauthored)${tide ? ` · tide: ${tide.constituents.length} constituents, station ${tide.station}` : ''}`)
+console.log(`✅ ${relative(ROOT, resolve(slabDir, 'manifest.json'))} — ${Object.keys(files).length} slab files, ${(total / 1e6).toFixed(1)} MB · content: ${have.join(', ') || 'none'} · photos ${Object.values(photos).filter(Boolean).length}/${Object.keys(photos).length}${photosOutsideTown ? ` (${photosOutsideTown} from the app's public/photos/)` : ''} · ${categories.length} categories (unauthored)${tide ? ` · tide: ${tide.constituents.length} constituents, station ${tide.station}` : ''}${Object.keys(unlisted).length ? ` · not published, so not listed: ${Object.entries(unlisted).map(([w, n]) => `${n} × ${w}`).join('; ')}` : ''}`)
