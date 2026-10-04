@@ -58,6 +58,10 @@ with **A** and **C**.
 6. **Fix the vacuous check.** `claims-baked-consumers-get-a-cache-bust` passes while checking **0 mount sites**. A check that counts
    zero must fail.
 
+## ✅ Rulings at dispatch (Jacob, 2026-10-04; agent Vane)
+- **Row 3: the tier tuner is NOT deleted.** It is unfinished, not dead (the aspiration case: surface, never evict). Its phone rungs are the intent that phones run every effect at a lower ladder rung instead of dropping passes (`renderTiers.js`, `plans/clean-for-handoff.md §W1`). Label it honestly; finishing it is separate ladder work, and drop vs low-rung is Jacob's call after measurement.
+- **Row 6: re-aim the cache-bust check** at the current slab URL scheme (the `?t=` scheme was retired in `0c619894`), and a zero count fails.
+
 ## Out of scope
 
 The **deployment-policy file** (the per-platform channel listing). The map shows it doesn't exist; fix the doc that says it does, but

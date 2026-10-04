@@ -29,6 +29,11 @@ parallel with **C** and **D**. **B** (camera and framing) starts after A lands, 
 2. **The map**: `scratch/runtime-continuity/MAP.md` **§1** (Designer → Stage rows), **§2** duplicate authority 2, **§5** (the Stage
    URL, traced). Its rows are your premises: confirm each against the code and say what you found **before** building.
 
+## ✅ Rulings at dispatch (Jacob, 2026-10-04; agent Compass)
+- The URL's shot outranks "Stage opens on Hero": the URL's shot, then the saved shot, then Hero as the default.
+- **One bake-plan function**, called by both Stage-entry staleness and the bake's re-pour decision.
+- instance.js order: package C (Seal) shrinks it first, then A points the authoring branch at the shared resolver.
+
 ## The work (each a row of the map)
 
 1. **Stage by URL.** The address names the map, the Look and the shot (e.g. `?scene=&look=&shot=`). Today map and Look already come

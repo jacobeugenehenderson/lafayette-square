@@ -32,6 +32,9 @@ with **A** and **D**.
    reads the identity fields the manifest bakes** (Jacob, 2026-10-04): `cary`, `commerce`, `legal`, `contact`, `profile`, `modules`
    each get a Ward reader as the feature using it is built. Until then they're "baked, awaiting a reader", ⛔ **not dropped**.
 
+## ✅ Rulings at dispatch (Jacob, 2026-10-04; agent Seal). ⛔ They REPLACE row 1 below
+Seal found the code contradicts row 1: Stage authors identity, ten modules read it at file load, and no bake step writes `manifest.json`. **Ruled:** the authoring apps (Designer, Stage) read identity from **source** (`src/instances/<map>.js` + `town-id.json`); **Preview and the Ward read the baked manifest**; **the bake route writes `manifest.json` as a step** (no hand-run). *Stage authors, Bake freezes, Preview and the Player read what's frozen.* Altadena gets an instance module, or a town without one fails loudly.
+
 ## The work
 
 1. **The kit's apps read identity from the baked manifest, as the Ward does.** The Ward never loads `instance.js`; it reads
