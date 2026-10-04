@@ -12,17 +12,18 @@
  * Each frame: the air (wind-field.js#windAt, in GLSL, driven by windStateOfWeather — the town's one weather) → a
  * damped spring per texel (the canopy's memory) → a half-float ping-pong pair. Consumers bind the read side.
  *
- * Debug: `?windDebug` lays the field over the map (colour = strength, streaks = direction, moving with it) with a
- * readout; `window.__windSheet` reads texels back and evaluates the CPU field at the same instant (the check uses it).
+ * Debug: the tools column's Wind sheet card (WindSheetCard.jsx) shows the readout, and its "Show on map" lays the field
+ * over the terrain (colour = strength, streaks travel with it). `window.__windSheet` reads texels back and evaluates the
+ * CPU field at the same instant (the check uses it).
  * `__windSheet.probeAir(points)` draws the AIR alone (no spring) into a scratch target and reads it back, for the
  * authority check. `__windSheet.spring = false` switches the memory off live (BRIEF step 3's measurement).
  */
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WIND_FIELD, WIND_FIELD_GLSL, windAtAdvect, gustLengths } from '../lib/wind-field.js'
 import { WeatherRangeError } from '../lib/weatherAt.js'
-import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted } from '../lib/windSheet.js'
+import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted, _publishWindSheetReadout, onWindSheetReadout, getWindSheetOverlay } from '../lib/windSheet.js'
 import { onSceneStencil } from './sceneStencilState.js'
 import { UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { useQuality } from '../lib/qualityProfile.js'
@@ -34,7 +35,6 @@ function wsOf(a) {
   return { baseSpeedMps: a.baseSpeedMps, baseDirection: new THREE.Vector3(a.baseDirection[0], 0, a.baseDirection[1]),
     gustsScale: a.gustsScale, gustEnvelope: a.gustEnvelope, gustFrontVelocity: new THREE.Vector3(a.frontVel[0], 0, a.frontVel[1]), gustShape: a.gustShape }
 }
-const urlFlag = (k) => { try { return new URLSearchParams(window.location.search).get(k) } catch { return null } }
 
 const passVert = /* glsl */`
   varying vec2 vUv;
@@ -77,7 +77,7 @@ export default function WindSheet({ extent, wind }) {
   const specimenWind = extent === 'town' ? null : windStateOfSpecimen(wind)
   const gl = useThree((s) => s.gl)
   const quality = useQuality()
-  const debug = urlFlag('windDebug') != null
+  const overlay = useSyncExternalStore(onWindSheetReadout, getWindSheetOverlay)
 
   // The extent: the town's stencil (live — a pour or scene switch republishes it), or the named specimen's.
   const extentRef = useRef(extent === 'town' ? null : extent)
@@ -162,6 +162,7 @@ export default function WindSheet({ extent, wind }) {
   const enabled = useRef(true)
 
   const mainMs = useRef(0)
+  const publishTick = useRef(0)
   useFrame(() => {
     const now = performance.now()
     const dt = lastMs.current ? Math.min(0.1, (now - lastMs.current) / 1000) : 0
@@ -191,6 +192,7 @@ export default function WindSheet({ extent, wind }) {
     windSheetUniforms.windSheetTime.value += dt
     windSheetUniforms.uWindDetailOffset.value.copy(c.detail)
 
+    if (++publishTick.current % 15 === 1) _publishWindSheetReadout({ status: { ...status.current, sim: pass.material.uniforms.uSpring.value ? 'spring' : 'stateless' }, air: a, layout: layoutRef.current, gust: c.L })
     if (!targets.current || !enabled.current) return
     const u = pass.material.uniforms
     u.uAdvect.value = c.adv
@@ -306,13 +308,13 @@ export default function WindSheet({ extent, wind }) {
     return () => { if (window.__windSheet) delete window.__windSheet }
   }, [gl, pass])
 
-  return debug ? <WindSheetDebug status={status} air={air} layoutRef={layoutRef} /> : null
+  return overlay ? <WindSheetDebug air={air} layoutRef={layoutRef} /> : null
 }
 
 const EMPTY = windSheetUniforms.uWindSheet.value
 
-/** `?windDebug` — the field laid over the map, and a readout. Draws over everything; a debug view, not a look. */
-function WindSheetDebug({ status, air, layoutRef }) {
+/** The card's "Show on map" — the field laid over the terrain. A debug view, not a look. */
+function WindSheetDebug({ air, layoutRef }) {
   const meshRef = useRef()
   // ⭐ DRAPED and CLIPPED (Jacob, 2026-10-04: a flat plane floated against the terrain and its square ran past the
   // town). The overlay lifts each vertex by the ground's own terrain sample (terrainShader's shared uniforms — the same
@@ -352,14 +354,7 @@ function WindSheetDebug({ status, air, layoutRef }) {
         gl_FragColor = vec4(c + streak * across * 0.8, 0.55);
       }`,
   }), [])
-  const hud = useMemo(() => {
-    const el = document.createElement('div')
-    el.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9999;font:11px/1.4 ui-monospace,monospace;color:#fff;background:rgba(0,0,0,.72);padding:8px 10px;border-radius:6px;pointer-events:none;white-space:pre'
-    document.body.appendChild(el)
-    return el
-  }, [])
-  useEffect(() => () => { hud.remove(); material.dispose() }, [hud, material])
-  const tick = useRef(0)
+  useEffect(() => () => material.dispose(), [material])
   useFrame(() => {
     const L = layoutRef.current
     const m = meshRef.current
@@ -372,15 +367,6 @@ function WindSheetDebug({ status, air, layoutRef }) {
     }
     const a = air.current
     material.uniforms.uMax.value = Math.max(4, (a.baseSpeedMps + a.gustsScale) * 1.2)
-    if (++tick.current % 15) return
-    const s = status.current
-    const deg = Math.round(((Math.atan2(-a.baseDirection[0], a.baseDirection[1]) * 180) / Math.PI + 360) % 360)
-    hud.textContent = `WIND SHEET (${window.__windSheet?.status.sim})\n` +
-      `extent   ${s.extent}${L ? ` · ${L.size}² · ${L.mPerTexel.toFixed(2)} m/texel · ${Math.round(L.span)} m` : ' — unallocated'}\n` +
-      `weather  ${s.weather}\n` +
-      `wind     ${a.baseSpeedMps.toFixed(1)} m/s from ${deg}°\n` +
-      `gusts    ${a.hasGusts ? `+${a.gustsScale.toFixed(1)} m/s above the mean` : 'no gust reading'}\n` +
-      `shape    ${a.gustShape.toFixed(2)} (0 patches · 1 squall lines) · storminess ${a.storminess.toFixed(2)}${window.__windSheet?.gust ? ` · ${Math.round(window.__windSheet.gust.along)} × ${Math.round(window.__windSheet.gust.across)} m` : ''}`
   })
   return (
     <mesh ref={meshRef} material={material} rotation={[-Math.PI / 2, 0, 0]} renderOrder={10000} frustumCulled={false}>

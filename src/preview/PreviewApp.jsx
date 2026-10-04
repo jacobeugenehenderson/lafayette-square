@@ -11,6 +11,7 @@ import Town from '../components/Town.jsx'
 import { surfaceQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import DeploymentPanel, { liveDeployment, useDeployment } from './DeploymentPanel.jsx'
 import DiagnosisPanel from './DiagnosisPanel.jsx'
+import { WindSheetPreviewCard } from '../components/WindSheetCard.jsx'
 import { gpuWindow } from './frameCost.js'
 import useListings from '../hooks/useListings'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -533,6 +534,7 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
       {/* What this surface SHIPS (deployment.json) — authored, autosaved; below it, what you are inspecting (temporary). */}
       {deployment}
       <DiagnosisPanel surface={envId} shot={shot} layers={diagnosed} measure={measureLayer} />
+      <WindSheetPreviewCard />
 
       <LayerSection title="Scene" layerList={SCENE_LAYERS} layers={layers}
         setLayer={setLayer} metric="draws" footer={<SceneCaveats />} />

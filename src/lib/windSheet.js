@@ -178,3 +178,17 @@ export const WIND_SHEET_GLSL = /* glsl */`
     return vec2(wsNoise(p) * 0.67 + wsNoise(q) * 0.33, wsNoise(p + 41.7) * 0.67 + wsNoise(q + 41.7) * 0.33) * 2.0 - 1.0;
   }
 `
+
+// ── The readout — what the tools column's Wind sheet card shows (Jacob, 2026-10-04: "it should go in the same tools
+// column as everything else"). <WindSheet> publishes; WindSheetCard reads. `overlay` is the card's "show on map".
+let _readout = null
+let _overlay = false
+const _readoutSubs = new Set()
+const _notify = () => { for (const cb of _readoutSubs) cb() }
+/** @internal — <WindSheet> publishes a few times a second. */
+export function _publishWindSheetReadout(r) { _readout = r; _notify() }
+export function getWindSheetReadout() { return _readout }
+export function getWindSheetOverlay() { return _overlay }
+export function setWindSheetOverlay(on) { _overlay = !!on; _notify() }
+/** Subscribe to readout and overlay changes; returns an unsubscribe. */
+export function onWindSheetReadout(cb) { _readoutSubs.add(cb); return () => _readoutSubs.delete(cb) }

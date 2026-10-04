@@ -13,6 +13,7 @@
  * has no default export. See feedback_stage_standalone_should_die.md.
  */
 
+import { WindSheetReadout } from '../components/WindSheetCard.jsx'
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -1050,6 +1051,13 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
         <Collapsible label="Image">
           {postSlot}
+        </Collapsible>
+      </div>
+
+      {/* Wind sheet — the town's wind field: its readout, and "Show on map" (lib/windSheet.js). */}
+      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+        <Collapsible label="Wind sheet">
+          <WindSheetReadout />
         </Collapsible>
       </div>
     </div>
