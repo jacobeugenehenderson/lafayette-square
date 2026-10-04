@@ -42,9 +42,12 @@ const lib = strip(readFileSync(join(ROOT, 'src/lib/windSheet.js'), 'utf8'))
 const fn = lib.match(/export function windStateOfWeather[\s\S]*?\n}\n/)
 if (!fn) fails.push('lib/windSheet.js has no windStateOfWeather — re-aim this check')
 else if (!/\bweatherAt\(/.test(fn[0])) fails.push('windStateOfWeather does not ask weatherAt — the sheet\'s wind is not the town\'s one weather')
+else if (!/gustShape:/.test(fn[0])) fails.push('windStateOfWeather does not carry the gust\'s shape — it is part of the one cable, not a separate input')
 const drv = strip(readFileSync(join(ROOT, 'src/components/WindSheet.jsx'), 'utf8'))
 if (!/windStateOfWeather\(/.test(drv)) fails.push('WindSheet.jsx does not take its air from windStateOfWeather')
 for (const bad of ['tweenedDirective', 'useAtmosphere', 'resolveWindState', 'treeSwayUniforms']) if (drv.includes(bad)) fails.push(`WindSheet.jsx reads ${bad} — a second wind authority`)
+// ⭐ THE ONE CABLE: the sheet's frame reads the weather ONLY through that state — no store or weather read of its own.
+for (const bad of ['feedStorminess', 'windSpeedMs', 'windDirDeg', 'windGustsMs', 'hourlyForecast']) if (drv.includes(bad)) fails.push(`WindSheet.jsx reads ${bad} itself — the weather reaches the sheet through windStateOfWeather's one object`)
 // A specimen's named wind is the ONLY other input, and only where there is no town: a town + wind prop must throw.
 if (!/extent === 'town' && wind !== undefined\) throw/.test(drv)) fails.push('WindSheet.jsx accepts a wind prop on a town extent — a town\'s wind is its weather')
 if (!/specimenWind = extent === 'town' \? null : windStateOfSpecimen\(wind\)/.test(drv)) fails.push('WindSheet.jsx takes a specimen wind other than through windStateOfSpecimen, or on a town')

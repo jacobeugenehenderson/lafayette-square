@@ -28,6 +28,7 @@
 import * as THREE from 'three'
 import { WIND_FIELD } from './wind-field.js'
 import { weatherAt } from './weatherAt.js'
+import { deriveStorminess } from './weatherPresets.js'
 
 // ── Sizing — derived from the field's own physics and the scene's disc ───────────────────────────────────────────
 /** The gust's correlation length, metres — what the sheet's texels are counted against (wind-field.js). */
@@ -52,6 +53,11 @@ export function windSheetLayout(extent, texelsPerCorrelation, maxTextureSize) {
 
 // ── The wind from the weather — the one source (Jacob, 2026-10-04: "connect it to weather") ──────────────────────
 /**
+ * ⭐⭐ THE ONE CABLE (Jacob, 2026-10-04: "when the time comes we do not want to collect 500 loose cables to wire into
+ * the Meteorologist; ideally we have 1"). Everything the sheet knows about the weather arrives in the object this
+ * returns, and nowhere else. Today it is filled from weatherAt; when the Meteorologist has the final say it fills THIS
+ * object, and no consumer changes. A new weather-driven property of the wind is a new FIELD here, never a new input.
+ *
  * The air's state from the weather at this instant. Mirrors the atmosphere directive's own reading rule
  * (useAtmosphereDirective): the store's targets while the clock is live or a preset stands, else the forecast hour
  * through weatherAt. Returns { status, baseSpeedMps, baseDirection:[x,z] (TO), gustsScale, gustEnvelope, frontVel:[x,z] }.
@@ -59,16 +65,17 @@ export function windSheetLayout(extent, texelsPerCorrelation, maxTextureSize) {
  * ⛔ Outside the forecast weatherAt THROWS a WeatherRangeError; the caller holds its last state and says so (as the sky).
  */
 export function windStateOfWeather(sky, clock) {
-  let status, speed, dirDeg, gusts
+  let status, speed, dirDeg, gusts, storminess
   if (clock.isLive || sky.feedPaused) {
     if (!sky.feedPaused && sky.weatherAt == null) return { status: 'no-weather', ...CALM }
     status = sky.feedPaused ? 'preset' : 'live'
-    speed = sky.windSpeedMs; dirDeg = sky.windDirDeg; gusts = sky.windGustsMs
+    speed = sky.windSpeedMs; dirDeg = sky.windDirDeg; gusts = sky.windGustsMs; storminess = sky.feedStorminess
   } else {
     if (!sky.hourlyForecast?.length) return { status: 'no-weather', ...CALM }
     const r = weatherAt(clock.currentTime, { live: false, hourly: sky.hourlyForecast })
     status = 'forecast'
     speed = r.windSpeedMs; dirDeg = r.windDirDeg; gusts = r.windGustsMs
+    storminess = deriveStorminess(r.weatherCode ?? 0, r.precipitation ?? 0)   // the rule the sky's own targets use
   }
   speed = Number.isFinite(speed) ? Math.max(0, speed) : 0
   // Meteorological: degrees the wind blows FROM. The world is +X east, +Z SOUTH (bake-landscape.js), so the TO vector
@@ -83,8 +90,14 @@ export function windStateOfWeather(sky, clock) {
     status, baseSpeedMps: speed, baseDirection: dir, gustsScale, gustEnvelope: 1,
     frontVel: [dir[0] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS, dir[1] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS],
     hasGusts: Number.isFinite(gusts),
+    // The gust's shape (wind-field.js#gustLengths): a storm's gusts arrive as straight squall lines, an ordinary day's
+    // as patches drifting downwind (Jacob, 2026-10-04: "this linear wind looks like a storm"). Lines at a
+    // thunderstorm's storminess and above (weatherPresets.deriveStorminess gives a thunderstorm 0.8), patches at calm.
+    gustShape: Math.min(1, Math.max(0, (storminess ?? 0) / STORM_LINES_AT)),
+    storminess: storminess ?? 0,
   }
 }
+const STORM_LINES_AT = 0.8
 /**
  * A SPECIMEN's wind — the Grove / Salon / a diorama, which have no town and so no weather. Named, like its extent:
  * `{ speedMps, dirDeg (FROM), gustsMps }` (gustsMps = the gust's peak, as the weather reports it). Same shape out as
@@ -96,9 +109,11 @@ export function windStateOfSpecimen(wind) {
   const dir = [-Math.sin(from), Math.cos(from)]
   const speed = Math.max(0, wind.speedMps)
   return { status: 'specimen', baseSpeedMps: speed, baseDirection: dir, gustsScale: Math.max(0, wind.gustsMps - speed), gustEnvelope: 1,
-    frontVel: [dir[0] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS, dir[1] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS], hasGusts: true }
+    frontVel: [dir[0] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS, dir[1] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS], hasGusts: true,
+    // A preview has no weather: its breeze is an ordinary day's, so its gusts are patches. Not part of the cable.
+    gustShape: 0, storminess: 0 }
 }
-const CALM = { baseSpeedMps: 0, baseDirection: [1, 0], gustsScale: 0, gustEnvelope: 0, frontVel: [WIND_FIELD.GUST_FRONT_DEFAULT_MPS, 0], hasGusts: false }
+const CALM = { baseSpeedMps: 0, baseDirection: [1, 0], gustsScale: 0, gustEnvelope: 0, frontVel: [WIND_FIELD.GUST_FRONT_DEFAULT_MPS, 0], hasGusts: false, gustShape: 0, storminess: 0 }
 
 // ── The canopy's spring — the memory (BRIEF step 3) ──────────────────────────────────────────────────────────────
 /**

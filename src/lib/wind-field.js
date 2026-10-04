@@ -96,6 +96,9 @@ export function smoothmax(a, b, k = 8) {
 // -------------------------------------------------------------------------
 
 const GUST_FRONT_DEFAULT_MPS = 10  // operator-authored default per ADR S2
+const SPIKE_RATE = 1.5             // lattice cells per second at a squall front (gustShape 1)
+const SPATIAL_NOISE_SCALE = 0.01   // 1 / the gust's correlation length across the wind (100 m)
+const SMOOTHMAX_K = 8
 
 const _tmpForce = new THREE.Vector3()
 const _tmpDir   = new THREE.Vector3()
@@ -108,6 +111,7 @@ export function defaultWindState() {
     gustsScale:        0,
     gustEnvelope:      0,
     gustFrontVelocity: new THREE.Vector3(GUST_FRONT_DEFAULT_MPS, 0, 0),
+    gustShape:         1,  // the squall line this field always drew; the wind sheet's state sets its own
   }
 }
 
@@ -179,43 +183,52 @@ export function resolveWindState(directive, out) {
  */
 export function windAt(t, pos, windState, out) {
   const ws = windState || defaultWindState()
-  const dst = out || { force: new THREE.Vector3(), intensity: 0 }
+  const L = gustLengths(ws)
+  return windAtAdvect(t * L.advectRate, pos, ws, out)
+}
 
+/**
+ * ⭐ THE GUST'S SHAPE — how long a gust is along the wind against across it (Jacob, 2026-10-04: "this linear wind
+ * looks like a storm"). `ws.gustShape` 0..1: 1 = a squall line (a thin front, ~7 m deep at the default front speed,
+ * 100 m long, the shape this field always had), 0 = round patches 100 m across drifting downwind. Across the wind a
+ * gust is always the correlation length (100 m); along it the length runs from that down to front speed ÷ spike rate.
+ *   advectRate = cells per second the pattern moves past a fixed point (so a squall pulses fast, a patch slowly).
+ */
+export function gustLengths(ws) {
+  const across = 1 / SPATIAL_NOISE_SCALE
+  const frontSpeed = Math.hypot(ws.gustFrontVelocity.x, ws.gustFrontVelocity.z)
+  const shape = Math.min(1, Math.max(0, ws.gustShape ?? 1))
+  const along = frontSpeed > 1e-3 ? across + (frontSpeed / SPIKE_RATE - across) * shape : across
+  return { along, across, advectRate: frontSpeed > 1e-3 ? frontSpeed / along : 0 }
+}
+
+/**
+ * The field at an ADVECTION (cells the gust pattern has moved downwind) instead of a time. windAt is this at
+ * `t × advectRate`; the wind sheet accumulates the advection frame by frame, wrapped on the lattice period, so a
+ * change of shape or speed never makes the pattern jump and float32 never runs out of precision.
+ */
+export function windAtAdvect(advect, pos, windState, out) {
+  const ws = windState || defaultWindState()
+  const dst = out || { force: new THREE.Vector3(), intensity: 0 }
   // 1. DRIFT
   _tmpForce.copy(ws.baseDirection).multiplyScalar(ws.baseSpeedMps)
-
-  // 2/3. GUST ENVELOPE × SPIKES (with spatial advection)
-  const env = ws.gustEnvelope
-  const amp = ws.gustsScale * env
+  // 2. GUSTS — a 2D pattern in the front's own frame, moving downwind with it.
+  const amp = ws.gustsScale * ws.gustEnvelope
   if (amp > 1e-5) {
-    _tmpFront.copy(ws.gustFrontVelocity)
-    const frontLenSq = _tmpFront.lengthSq()
-    let phaseOffset = 0
-    if (frontLenSq > 1e-6) {
-      const px = (pos && pos.x) || 0
-      const pz = (pos && pos.z) || 0
-      // dot(pos.xz, frontVel.xz) / |front|²  → seconds the front took to
-      // travel from origin to pos along its own axis.
-      phaseOffset = (px * _tmpFront.x + pz * _tmpFront.z) / frontLenSq
-    }
-    const phase = t - phaseOffset
-    // Smooth random shape; smoothmax against 0 gives sharp positive spikes.
-    // Spatial scale `0.01` (~100 m) means neighboring trees see correlated
-    // spikes; far apart trees see independent noise within the wave.
     const px = (pos && pos.x) || 0
     const pz = (pos && pos.z) || 0
-    const raw = valueNoise2D(phase * 1.5, px * 0.01 + pz * 0.01 * 0.7)
-    const spike = smoothmax(raw, 0, 8) * amp
-    // Spike vector aligns with the gust front direction (the front
-    // carries the wind it's pushing — outflow boundary semantics).
-    if (frontLenSq > 1e-6) {
-      _tmpDir.copy(_tmpFront).multiplyScalar(spike / Math.sqrt(frontLenSq))
-    } else {
-      _tmpDir.copy(ws.baseDirection).multiplyScalar(spike)
-    }
-    _tmpForce.add(_tmpDir)
+    _tmpFront.copy(ws.gustFrontVelocity)
+    const fl = Math.hypot(_tmpFront.x, _tmpFront.z)
+    const fx = fl > 1e-3 ? _tmpFront.x / fl : ws.baseDirection.x
+    const fz = fl > 1e-3 ? _tmpFront.z / fl : ws.baseDirection.z
+    const L = gustLengths(ws)
+    const u = advect - (px * fx + pz * fz) / L.along
+    const v = (-px * fz + pz * fx) / L.across
+    const spike = smoothmax(valueNoise2D(u, v), 0, SMOOTHMAX_K) * amp
+    // The spike blows along the front (the front carries the wind it pushes — outflow boundary semantics).
+    _tmpForce.x += fx * spike
+    _tmpForce.z += fz * spike
   }
-
   dst.force.copy(_tmpForce)
   dst.intensity = _tmpForce.length()
   return dst
@@ -228,11 +241,10 @@ export function windAt(t, pos, windState, out) {
 export const WIND_FIELD = Object.freeze({
   GUST_FRONT_DEFAULT_MPS,
   RUSTLE_AMPLITUDE_DEFAULT_M: 0.005,  // ~5 mm leaf-tip — operator spec
-  SMOOTHMAX_K: 8,
-  SPIKE_RATE: 1.5,
-  SPATIAL_NOISE_SCALE: 0.01,          // ~100m correlation length
-  // The hash lattice repeats every 289 cells, so the spike phase (t × SPIKE_RATE) repeats every 289 / SPIKE_RATE s.
-  // A clock wrapped on this period is seamless; the wind sheet's is.
+  SMOOTHMAX_K,
+  SPIKE_RATE,
+  SPATIAL_NOISE_SCALE,                // ~100m correlation length
+  // The hash lattice repeats every 289 cells, so an advection wrapped on 289 is seamless; the wind sheet's is.
   LATTICE_PERIOD: 289,
 })
 
@@ -265,16 +277,13 @@ export const WIND_FIELD_GLSL = /* glsl */`
     float ea = exp(k * (a - m)), eb = exp(k * (b - m));
     return (a * ea + b * eb) / (ea + eb);
   }
-  vec2 windFieldAt(float t, vec2 p, vec2 baseForce, vec2 frontVel, float amp) {
+  // windAtAdvect: advect = cells moved downwind; frontDir = unit front direction; lengths = (along, across) metres.
+  vec2 windFieldAt(float advect, vec2 p, vec2 baseForce, vec2 frontDir, vec2 lengths, float amp) {
     vec2 force = baseForce;
     if (amp > 1e-5) {
-      float frontLenSq = dot(frontVel, frontVel);
-      float phaseOffset = frontLenSq > 1e-6 ? dot(p, frontVel) / frontLenSq : 0.0;
-      float phase = t - phaseOffset;
-      float raw = wfValueNoise2D(phase * ${WIND_FIELD.SPIKE_RATE.toFixed(4)}, p.x * ${WIND_FIELD.SPATIAL_NOISE_SCALE.toFixed(4)} + p.y * ${WIND_FIELD.SPATIAL_NOISE_SCALE.toFixed(4)} * 0.7);
-      float spike = wfSmoothmax(raw, 0.0, ${WIND_FIELD.SMOOTHMAX_K.toFixed(1)}) * amp;
-      vec2 baseDir = length(baseForce) > 1e-6 ? normalize(baseForce) : vec2(1.0, 0.0);
-      force += frontLenSq > 1e-6 ? frontVel * (spike / sqrt(frontLenSq)) : baseDir * spike;
+      float u = advect - dot(p, frontDir) / lengths.x;
+      float v = dot(p, vec2(-frontDir.y, frontDir.x)) / lengths.y;
+      force += frontDir * (wfSmoothmax(wfValueNoise2D(u, v), 0.0, ${SMOOTHMAX_K.toFixed(1)}) * amp);
     }
     return force;
   }

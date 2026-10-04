@@ -20,7 +20,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { WIND_FIELD, WIND_FIELD_GLSL, windAt as cpuWindAt } from '../lib/wind-field.js'
+import { WIND_FIELD, WIND_FIELD_GLSL, windAtAdvect, gustLengths } from '../lib/wind-field.js'
 import { WeatherRangeError } from '../lib/weatherAt.js'
 import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted } from '../lib/windSheet.js'
 import { onSceneStencil } from './sceneStencilState.js'
@@ -29,7 +29,11 @@ import { useQuality } from '../lib/qualityProfile.js'
 import useSkyState from '../hooks/useSkyState.js'
 import useTimeOfDay from '../hooks/useTimeOfDay.js'
 
-const SPIKE_PERIOD_S = WIND_FIELD.LATTICE_PERIOD / WIND_FIELD.SPIKE_RATE
+/** The sheet's state (arrays) as wind-field.js reads it (Vector3s) — the same object both sides evaluate. */
+function wsOf(a) {
+  return { baseSpeedMps: a.baseSpeedMps, baseDirection: new THREE.Vector3(a.baseDirection[0], 0, a.baseDirection[1]),
+    gustsScale: a.gustsScale, gustEnvelope: a.gustEnvelope, gustFrontVelocity: new THREE.Vector3(a.frontVel[0], 0, a.frontVel[1]), gustShape: a.gustShape }
+}
 const urlFlag = (k) => { try { return new URLSearchParams(window.location.search).get(k) } catch { return null } }
 
 const passVert = /* glsl */`
@@ -41,10 +45,11 @@ const passFrag = /* glsl */`
   uniform sampler2D uPrev;
   uniform vec2  uOrigin;
   uniform float uSpan;
-  uniform float uT;
+  uniform float uAdvect;   // cells the gust pattern has moved downwind (wrapped on the lattice period)
   uniform float uDt;
   uniform vec2  uBaseForce;
-  uniform vec2  uFrontVel;
+  uniform vec2  uFrontDir;
+  uniform vec2  uLengths;  // the gust's length along / across the wind, metres (wind-field.js#gustLengths)
   uniform float uAmp;
   uniform float uOmega;
   uniform float uZeta;
@@ -53,7 +58,7 @@ const passFrag = /* glsl */`
   ${WIND_FIELD_GLSL}
   void main() {
     vec2 xz = uOrigin + vUv * uSpan;
-    vec2 air = windFieldAt(uT, xz, uBaseForce, uFrontVel, uAmp);
+    vec2 air = windFieldAt(uAdvect, xz, uBaseForce, uFrontDir, uLengths, uAmp);
     if (uSpring < 0.5) { gl_FragColor = vec4(air, 0.0, 0.0); return; }
     vec4 prev = uReset > 0.5 ? vec4(air, 0.0, 0.0) : texture2D(uPrev, vUv);
     vec2 x = prev.xy, v = prev.zw;
@@ -86,8 +91,8 @@ export default function WindSheet({ extent, wind }) {
       name: 'windSheet:pass',
       vertexShader: passVert, fragmentShader: passFrag, depthTest: false, depthWrite: false, toneMapped: false,
       uniforms: {
-        uPrev: { value: null }, uOrigin: { value: new THREE.Vector2() }, uSpan: { value: 1 }, uT: { value: 0 }, uDt: { value: 0 },
-        uBaseForce: { value: new THREE.Vector2() }, uFrontVel: { value: new THREE.Vector2() }, uAmp: { value: 0 },
+        uPrev: { value: null }, uOrigin: { value: new THREE.Vector2() }, uSpan: { value: 1 }, uAdvect: { value: 0 }, uDt: { value: 0 },
+        uBaseForce: { value: new THREE.Vector2() }, uFrontDir: { value: new THREE.Vector2(1, 0) }, uLengths: { value: new THREE.Vector2(100, 100) }, uAmp: { value: 0 },
         uOmega: { value: (2 * Math.PI) / WIND_SPRING.PERIOD_S }, uZeta: { value: WIND_SPRING.DAMPING },
         uSpring: { value: 1 }, uReset: { value: 1 },
       },
@@ -150,9 +155,9 @@ export default function WindSheet({ extent, wind }) {
   }, [extent === 'town' ? 'town' : `${extent.center?.[0]},${extent.center?.[1]},${extent.radius}`, quality.windTexelsPerCorrelation, pass])
 
   // The air's state. Held across a WeatherRangeError (as the sky holds its directive), and said once.
-  const air = useRef({ status: 'no-weather', baseSpeedMps: 0, baseDirection: [1, 0], gustsScale: 0, gustEnvelope: 0, frontVel: [WIND_FIELD.GUST_FRONT_DEFAULT_MPS, 0], hasGusts: false })
+  const air = useRef({ status: 'no-weather', baseSpeedMps: 0, baseDirection: [1, 0], gustsScale: 0, gustEnvelope: 0, frontVel: [WIND_FIELD.GUST_FRONT_DEFAULT_MPS, 0], hasGusts: false, gustShape: 0, storminess: 0 })
   const lastMs = useRef(0)
-  const clock = useRef({ t: 0, detail: new THREE.Vector2() })
+  const clock = useRef({ adv: 0, detail: new THREE.Vector2(), ws: null, L: null })
   const said = useRef('')
   const enabled = useRef(true)
 
@@ -174,7 +179,12 @@ export default function WindSheet({ extent, wind }) {
     const a = air.current
     // Clocks, both wrapped on the noise lattice so they never lose float precision and never seam.
     const c = clock.current
-    c.t = (c.t + dt) % SPIKE_PERIOD_S
+    // The gust pattern advances by its own rate (cells/s) — so a change of shape or front speed never jumps it.
+    const ws = wsOf(a)
+    const L = gustLengths(ws)
+    c.adv = (c.adv + L.advectRate * dt) % WIND_FIELD.LATTICE_PERIOD
+    c.ws = ws
+    c.L = L
     const drift = WIND_DETAIL_DRIFT * a.baseSpeedMps * dt
     c.detail.x = (c.detail.x - a.baseDirection[0] * drift + WIND_FIELD.LATTICE_PERIOD) % WIND_FIELD.LATTICE_PERIOD
     c.detail.y = (c.detail.y - a.baseDirection[1] * drift + WIND_FIELD.LATTICE_PERIOD) % WIND_FIELD.LATTICE_PERIOD
@@ -183,10 +193,13 @@ export default function WindSheet({ extent, wind }) {
 
     if (!targets.current || !enabled.current) return
     const u = pass.material.uniforms
-    u.uT.value = c.t
+    u.uAdvect.value = c.adv
     u.uDt.value = dt
     u.uBaseForce.value.set(a.baseDirection[0] * a.baseSpeedMps, a.baseDirection[1] * a.baseSpeedMps)
-    u.uFrontVel.value.set(a.frontVel[0], a.frontVel[1])
+    const fl = Math.hypot(a.frontVel[0], a.frontVel[1])
+    if (fl > 1e-3) u.uFrontDir.value.set(a.frontVel[0] / fl, a.frontVel[1] / fl)
+    else u.uFrontDir.value.set(a.baseDirection[0], a.baseDirection[1])
+    u.uLengths.value.set(L.along, L.across)
     u.uAmp.value = a.gustsScale * a.gustEnvelope
     u.uReset.value = reset.current ? 1 : 0
     const [read, write] = targets.current
@@ -213,7 +226,10 @@ export default function WindSheet({ extent, wind }) {
       get status() { return { ...status.current, sim: pass.material.uniforms.uSpring.value ? 'spring' : 'stateless' } },
       set spring(v) { pass.material.uniforms.uSpring.value = v ? 1 : 0; reset.current = true },
       get air() { return air.current },
-      get t() { return clock.current.t },
+      get advect() { return clock.current.adv },
+      get gust() { return clock.current.L },
+      /** What the pass last drew with — for a sheet that reads back zeros. */
+      get pass() { const u = pass.material.uniforms; return { allocated: !!targets.current, enabled: enabled.current, baseForce: u.uBaseForce.value.toArray(), amp: u.uAmp.value, lengths: u.uLengths.value.toArray(), frontDir: u.uFrontDir.value.toArray(), advect: u.uAdvect.value } },
       /** The main thread's time in the sheet's frame callback, ms (the weather read, the uniforms, the draw's submission). */
       get mainMs() { return mainMs.current },
       set enabled(v) { enabled.current = !!v },
@@ -283,10 +299,7 @@ export default function WindSheet({ extent, wind }) {
         const L = layoutRef.current
         const px = Math.floor(((x - L.origin[0]) / L.span) * L.size), pz = Math.floor(((z - L.origin[1]) / L.span) * L.size)
         const cx = L.origin[0] + ((px + 0.5) / L.size) * L.span, cz = L.origin[1] + ((pz + 0.5) / L.size) * L.span
-        const a = air.current
-        const ws = { baseSpeedMps: a.baseSpeedMps, baseDirection: new THREE.Vector3(a.baseDirection[0], 0, a.baseDirection[1]),
-          gustsScale: a.gustsScale, gustEnvelope: a.gustEnvelope, gustFrontVelocity: new THREE.Vector3(a.frontVel[0], 0, a.frontVel[1]) }
-        const r = cpuWindAt(pass.material.uniforms.uT.value, { x: cx, z: cz }, ws)
+        const r = windAtAdvect(clock.current.adv, { x: cx, z: cz }, clock.current.ws)
         return [r.force.x, r.force.z]
       },
     }
@@ -366,7 +379,8 @@ function WindSheetDebug({ status, air, layoutRef }) {
       `extent   ${s.extent}${L ? ` · ${L.size}² · ${L.mPerTexel.toFixed(2)} m/texel · ${Math.round(L.span)} m` : ' — unallocated'}\n` +
       `weather  ${s.weather}\n` +
       `wind     ${a.baseSpeedMps.toFixed(1)} m/s from ${deg}°\n` +
-      `gusts    ${a.hasGusts ? `+${a.gustsScale.toFixed(1)} m/s above the mean` : 'no gust reading'}`
+      `gusts    ${a.hasGusts ? `+${a.gustsScale.toFixed(1)} m/s above the mean` : 'no gust reading'}\n` +
+      `shape    ${a.gustShape.toFixed(2)} (0 patches · 1 squall lines) · storminess ${a.storminess.toFixed(2)}${window.__windSheet?.gust ? ` · ${Math.round(window.__windSheet.gust.along)} × ${Math.round(window.__windSheet.gust.across)} m` : ''}`
   })
   return (
     <mesh ref={meshRef} material={material} rotation={[-Math.PI / 2, 0, 0]} renderOrder={10000} frustumCulled={false}>
