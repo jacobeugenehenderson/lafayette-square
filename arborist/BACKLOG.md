@@ -10,6 +10,21 @@
 
 ---
 
+## ▶ 2026-10-04 — THE OVERHEAD IMPOSTOR, REDESIGNED: BAKED RINGS WITH A DEEP CORE, ON THE WIND SHEET *(Jacob's design; with the depth work)*
+
+**The cost it answers (measured 2026-10-04):** trees ≈48% of LS Browse's GPU time on desktop, ≈71% on phone-hi; 25.36M of ~28M tris (Plumb). Read in source: each overhead band is a full quad tessellated 28×28 (`impostorGeometry.js#buildOverheadBandDisc`, *"the tessellation is only for wind flutter"*) ×3 bands = 4,704 tris per tree. ⏳ Grain's forensic confirms by measurement and splits geometry from overdraw (`docs/briefs/BRIEF-tree-cost-forensic.md`).
+
+**Jacob's design, in three moves:**
+1. **Punch out the hidden core at the Grove bake.** From overhead the canopy band hides most of the bands beneath it. Take the top band's silhouette from its alpha, inset it (*"maybe a circle but also maybe an irregular offset shape made from the top shape"*), and cut that region from the lower bands: *"eliminating pixels **and** triangles."*
+2. **Fill the hole with a solid deeper canopy colour** *(Jacob)*: the lower bands become a textured RIM plus a flat-coloured CORE. Sway or a slight tilt then shows plausible dark canopy, never ground, so the inset no longer has to cover the full sway amplitude, and the fill is the cheapest pixel there is (no texture lookup, no alpha test). The colour is per species, taken from the capture.
+3. **Flat, on the shared wind sheet** (the section below): each band is a few triangles fluttering by sampling one town-wide field, not a vertex grid.
+
+**Where it lives:** in the BAKE, not the runtime. The Grove capture emits per-species band geometry (rim + core) beside `overheadBySpecies` in the atlas manifest, and `OverheadTrees` draws what was baked instead of building a generic quad. *Bake the answer, not the machinery* (Phase 2 spec).
+
+**What it unlocks: mild parallax in Browse** *(Jacob: "I think adding perspective would be nice; mild parallax")*. Browse is strictly top-down today because stacked bands only hold up straight down; the deep core lets Browse tilt slightly without the trees coming apart. ⇒ build it knowing about the deferred camera item (`ROADMAP`: "the camera's transitions and ownership rules as per-town data"), which is where Browse tilt and parallax would be authored.
+
+**Interim, also ruled:** cut the 28×28 grid and raise the flutter amplitude (the H-9 precedent) for relief before this lands; the size is set by Grain's numbers; builder not yet named.
+
 ## ▶ 2026-10-04 — ONE SHARED SHEET CARRIES THE WIND *(Jacob's design; with the depth work, not now)*
 
 **The idea (Jacob):** like the shared downres ladder for blur, a **single dense mesh, about a million triangles, laid over the town**, on which the wind and shimmer are computed **once per frame**; every tree (and grass, water) takes its motion from the point of the sheet it stands in. One expensive thing, many readers.
