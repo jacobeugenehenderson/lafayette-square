@@ -35,6 +35,11 @@ with **A** and **D**.
 ## ✅ Rulings at dispatch (Jacob, 2026-10-04; agent Seal). ⛔ They REPLACE row 1 below
 Seal found the code contradicts row 1: Stage authors identity, ten modules read it at file load, and no bake step writes `manifest.json`. **Ruled:** the authoring apps (Designer, Stage) read identity from **source** (`src/instances/<map>.js` + `town-id.json`); **Preview and the Ward read the baked manifest**; **the bake route writes `manifest.json` as a step** (no hand-run). *Stage authors, Bake freezes, Preview and the Player read what's frozen.* Altadena gets an instance module, or a town without one fails loudly.
 
+### ✅ More rulings (Jacob, 2026-10-04, via Seal)
+- **LS's values come out of other towns:** Huron's `parkTitlePos` is removed (`05c76f49`); the Browse box goes when the store default changes (coordinate with Compass; it's Stage's store, and B owns the camera half).
+- **Altadena is scaffolded** with its own module and sealed id (`49fc9fde`).
+- **Row 7 narrowed:** a Look's name is the operator's casual label, not the town's formal name. "One name" covers the **town's identity** (name and title) only; Look names stay free.
+
 ## The work
 
 1. **The kit's apps read identity from the baked manifest, as the Ward does.** The Ward never loads `instance.js`; it reads
