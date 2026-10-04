@@ -8,7 +8,7 @@
 //      opaque, and left untouched elsewhere (AO pages at their own size included);
 //   ③ the Grove sends it: OverheadBaker runs the blank guard on the RAW capture, then bakeOverheadCore, then encodes;
 //   ④ the server persists `core` per band, and the runtime says so, loudly, when a lower band carries none;
-//   ⑤ (report, not a gate) which towns' slabs still carry pre-core captures — the re-bake is the operator's.
+//   ⑤ (report, not a gate) per town, how many PLACED species are cored — the re-bake is the operator's.
 //
 // ▶ MUTATION-TEST IT:
 //     · overheadCore.js silhouetteMask: return `solid` (skip the flood) → ① RED
@@ -94,15 +94,21 @@ console.log('④ persisted, and its absence is loud')
   ;/slice\(0, -1\)\.filter\(\(b\) => !b\.core\)/.test(rt) && /console\.error\(`\[overhead\] ⛔/.test(rt) ? ok('OverheadTrees errors on a lower band without a core') : bad('the runtime is silent about a missing core')
 }
 
-console.log('⑤ slabs still carrying pre-core captures (report; the re-bake is the operator\'s)')
+console.log('⑤ placed species still carrying pre-core captures (report; the re-bake is the operator\'s)')
+// ⭐ The denominator is the species PLACED in the town (trees.json), not every overhead record: the atlas also holds
+// records for roster species no tree uses, and counting them read HPDM 7/17 when all 7 placed species were cored.
 for (const town of fs.readdirSync(path.join(REPO, 'public/baked'))) {
-  const f = path.join(REPO, 'public/baked', town, 'trees-atlas.json')
-  if (!fs.existsSync(f)) continue
+  const f = path.join(REPO, 'public/baked', town, 'trees-atlas.json'), t = path.join(REPO, 'public/baked', town, 'trees.json')
+  if (!fs.existsSync(f) || !fs.existsSync(t)) continue
   const oh = JSON.parse(fs.readFileSync(f, 'utf8')).overheadBySpecies || {}
-  const sp = Object.entries(oh)
-  if (!sp.length) continue
-  const stale = sp.filter(([, r]) => (r.bands || []).slice(0, -1).some((b) => !b.core)).map(([k]) => k)
-  console.log(`   ${stale.length ? '⚠️ ' : '✅'} ${town}: ${sp.length - stale.length}/${sp.length} species cored${stale.length ? ` — awaiting a Grove re-bake` : ''}`)
+  const placed = [...new Set((JSON.parse(fs.readFileSync(t, 'utf8')).instances || []).map((i) => i.species))].filter(Boolean)
+  if (!placed.length) continue
+  const noRecord = placed.filter((sp) => !oh[sp])
+  const stale = placed.filter((sp) => oh[sp] && (oh[sp].bands || []).slice(0, -1).some((b) => !b.core))
+  const cored = placed.length - noRecord.length - stale.length
+  console.log(`   ${stale.length || noRecord.length ? '⚠️ ' : '✅'} ${town}: ${cored}/${placed.length} placed species cored`
+    + (stale.length ? ` — ${stale.length} awaiting a Grove re-bake` : '')
+    + (noRecord.length ? ` — ${noRecord.length} with no overhead record at all (${noRecord.join(', ')})` : ''))
 }
 
 console.log(red ? `\n⛔ ${red} claim(s) RED` : '\n✅ the overhead core is baked, sent, persisted, and loud when absent')
