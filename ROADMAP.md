@@ -77,6 +77,11 @@
 
 ## ⚠️ Live / blocking defects — do on contact
 
+### ⭐⭐⭐ SOON — A RUNTIME DEVICE CLASSIFIER, so phone-hi and phone-lo can each get their own deployment policy *(Jacob, 2026-10-04: "we should put that in an honored spot in the backlog so we get to it soon")*
+- **Ruled meanwhile (option 1):** every phone gets **phone-lo's** deployment policy, phone-lo being the floor we guarantee (Galaxy A54). Phone-hi stays authorable in Preview (`deployment.json`, Phase 2 F), ready for when detection exists.
+- **Why it matters:** the Player can tell "a phone" (a UA sniff, `src/lib/isMobile.js`) but not hi from lo, so everything authored for phone-hi waits on this. Jacob: *"I fear we'll be really limited, although perhaps we'll be surprised at what we'll be able to achieve. That's what all the knobs are for!"*
+- **The work:** classify the device at runtime (GPU renderer string, memory, a short benchmark, or a mix), choose the surface, and say which one it chose. ⛔ No silent guess: an unclassifiable device takes phone-lo and says so. A check, and Preview showing which surface a real device would get. M · → `src/lib/qualityProfile.js`, `BRIEF-phase2-F-preview-deployment-authoring.md`.
+
 ### ⭐⭐ HURON — THE FIRST POUR OF A TOWN NOBODY HAD LOOKED AT (2026-09-19, Jacob's eye)
 > **The protopolygon did "pretty good".** What follows is what the first genuinely
 > unfamiliar town exposed — the evidence base `ORIENTATION` says the kit exists to
