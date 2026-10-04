@@ -22,6 +22,7 @@
  */
 import { instanceForMap, registeredMaps, DEFAULT_MAP } from './instances/registry.js'
 import { tenantOf } from './lib/townRecord.js'
+import { readAddress, resolveTown } from './lib/authoringAddress.js'
 // ⛔⛔ THE LOOK→MAP TABLE, STATICALLY — AND THIS IMPORT IS WHY `registry.js` EXISTS.
 // It is the authoring index, bundled at BUILD time, which is the right currency
 // here: the player ships with slabs baked at build time, so a Look the build never
@@ -45,6 +46,9 @@ import looksIndex from '../public/looks/index.json' with { type: 'json' }
 // ⭐ IT IS THE ANSWER FOR THE BUILD THAT OWNS THE BARE DOMAIN, and only that one. Every
 // other town is addressed by PATH — see `readLookParam` below.
 const DEFAULT_LOOK = 'lafayette-square'
+
+// An authoring page (Designer/Stage, Preview) declares itself with `<meta name="ward-authoring">`.
+const AUTHORING_PAGE = (() => { try { return !!document.querySelector('meta[name="ward-authoring"]') } catch { return false } })()
 
 /**
  * Which look this page is. `?look=` wins; otherwise the FIRST PATH SEGMENT, if it names a
@@ -76,33 +80,19 @@ function readLookParam() {
   try {
     const host = document.querySelector('meta[name="ward-look"]')?.getAttribute('content')
     if (host) return host
-    const q = new URLSearchParams(window.location.search).get('look')
-    if (q) return q
-    // ⭐ THE AUTHORING APP STARTS AS THE TOWN YOU LAST HAD OPEN (Jacob, 2026-09-26: "Stage
-    // Must Not Start Up As Lafayette Square"). cartograph.html names the key its store
-    // persists the active Look under. Without this every module that reads INSTANCE at load
-    // (the sun's latitude/longitude, the sky grid, the terrain's exaggeration) took LS's
-    // values in every town's Stage. Only a Look with a map counts.
-    const authoringKey = document.querySelector('meta[name="ward-authoring"]')?.getAttribute('content')
-    if (authoringKey) {
-      // ⭐ AN AUTHORING PAGE'S INSTANCE IS THE TOWN IT OPENS, OR NONE (BRIEF-no-default-town, 2026-09-28). ?scene= names
-      // the town the store opens, so it names INSTANCE too — Stage opened by ?scene=huron kept Lafayette Square's
-      // INSTANCE and drew huron with LS's listings. Nothing named, nothing stored: NO town (the Look picker offers them);
-      // it used to start as Lafayette Square.
-      const towns = (looksIndex.looks || []).filter(l => l.scene)
-      const stored = localStorage.getItem(authoringKey)
-      const scene = new URLSearchParams(window.location.search).get('scene')
-      if (scene) {
-        const own = towns.filter(l => l.scene === scene)
-        const pick = own.find(l => l.id === stored) || own[0]
-        if (pick) return pick.id
-        console.error(`[instance] ⛔ ?scene=${scene} names no town's Look — no town is opened`)
-        return null
-      }
-      if (stored && towns.some(l => l.id === stored)) return stored
-      console.warn(`[instance] the authoring app has no town open (localStorage '${authoringKey}' is ${stored ? `"${stored}", not a town` : 'empty'}) — choose one`)
+    // ⭐ AN AUTHORING PAGE'S INSTANCE IS THE TOWN ITS ADDRESS OPENS, OR NONE — answered by the SAME resolver the
+    // cartograph store asks (`src/lib/authoringAddress.js#resolveTown`; Phase 2 A, 2026-10-04). ⛔ Asked BEFORE the raw
+    // `?look=`: reading that first put the page in the `?look=` town while the store refused the link and opened none.
+    // Nothing named and nothing remembered: NO town (the Look picker offers them); it used to start as Lafayette Square.
+    if (AUTHORING_PAGE) {
+      const town = resolveTown(looksIndex.looks || [], readAddress())
+      if (town.lookId && town.scene) return town.lookId
+      if (town.refused) console.error(`[instance] ⛔ ${town.refused} — no town is opened`)
+      else console.warn('[instance] the authoring app has no town open — choose one')
       return null
     }
+    const q = new URLSearchParams(window.location.search).get('look')
+    if (q) return q
     const seg = window.location.pathname.split('/').filter(Boolean)[0]
     if (seg && (looksIndex.looks || []).some(l => l.id === seg)) return seg
     return DEFAULT_LOOK
@@ -151,8 +141,7 @@ export function mapForLook(lookId) {
 // ② ⛔ A REGISTERED Look whose MAP HAS NO MODULE never wears another town's identity (Jacob, 2026-10-04). That is a
 //   real town poured without its identity (altadena), and dressing it as LS — name, geography, legal jurisdiction — is
 //   the inheritance the spec forbids. An authoring page (`<meta name="ward-authoring">`: Designer, Stage, Preview) opens
-//   with NO town and says why, so the operator can still switch; any other page throws at boot.
-const AUTHORING_PAGE = (() => { try { return !!document.querySelector('meta[name="ward-authoring"]') } catch { return false } })()
+//   with NO town and says why, so the operator can still switch; any other page throws at boot (`AUTHORING_PAGE`, above).
 
 function resolveInstance() {
   const lookId = readLookParam()

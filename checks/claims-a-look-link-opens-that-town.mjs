@@ -24,6 +24,20 @@ import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 const BASE = 'http://localhost:5173'
+
+// ⭐ ONE RESOLVER (Phase 2 A, 2026-10-04): the store and src/instance.js answer "which town is this page" by the same
+// function, and nothing else in the authoring app parses the address. Read from the source, before anything runs.
+const ROOT = join(import.meta.dirname, '..')
+const src = (p) => readFileSync(join(ROOT, p), 'utf8')
+const staticFails = []
+for (const f of ['src/instance.js', 'src/cartograph/stores/useCartographStore.js'])
+  if (!/\bresolveTown\(/.test(src(f))) staticFails.push(`${f} does not ask authoringAddress.js#resolveTown`)
+for (const f of ['src/cartograph/stores/useCartographStore.js', 'src/preview/PreviewApp.jsx'])
+  if (/\.get\(['"](?:look|scene|shot)['"]\)|search\.match\(\/(?:look|scene|shot)=/.test(src(f))) staticFails.push(`${f} parses the address (look/scene/shot) itself — read it through authoringAddress.js`)
+const inst = src('src/instance.js'), fn = inst.slice(inst.indexOf('function readLookParam'))
+if (fn.indexOf('AUTHORING_PAGE') < 0 || fn.indexOf("get('look')") < fn.indexOf('AUTHORING_PAGE'))
+  staticFails.push("instance.js#readLookParam reads ?look= before the authoring branch — the page and the store can open different towns")
+console.log(staticFails.length ? staticFails.map(f => `⛔ ${f}`).join('\n') : '✅ one resolver: the store and instance.js both ask resolveTown; nothing else parses the address')
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 const idx = await (await fetch(`${BASE}/api/cartograph/looks`)).json()
 const towns = idx.looks.filter(l => l.scene)

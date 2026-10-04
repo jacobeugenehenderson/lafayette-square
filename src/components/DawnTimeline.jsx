@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useCallback, useEffect } from 'react'
+import React, { useMemo, useRef, useState, useCallback, useEffect, useSyncExternalStore } from 'react'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCalendar from '../hooks/useCalendar'
@@ -7,7 +7,7 @@ import {
   getDawnWindow, dateToFraction, fractionToDate, getHiLo,
 } from '../lib/dawnTimeline'
 import { NAMED_TOD_SLOTS } from '../cartograph/animatedParam'
-import { townPlace } from '../lib/townPlace.js'
+import { townPlace, placedLook, onPlaceMoved } from '../lib/townPlace.js'
 
 // The town being drawn — the PLACED one (lib/townPlace.js), read at use; never the boot town's geography at load.
 
@@ -116,7 +116,14 @@ function preserveTickFraction(oldDate, newDateAnchor) {
 
 // showHiLo + useCelsius are opt-in (production Almanac) — authoring callers
 // render <TodStrip/> bare and get the original chrome-free strip unchanged.
-export function TodStrip({ showHiLo = false, useCelsius = false }) {
+// ⛔ No town placed ⇒ no strip: its dawn-to-dawn window is the PLACED town's sun, and an authoring page may have no town
+// open (a cold Stage, a refused link) — its picker must still draw. It used to throw from getDawn and take Stage down.
+export function TodStrip(props) {
+  const placed = useSyncExternalStore(onPlaceMoved, placedLook)
+  return placed == null ? null : <PlacedTodStrip {...props} />
+}
+
+function PlacedTodStrip({ showHiLo = false, useCelsius = false }) {
   const currentTime = useTimeOfDay((s) => s.currentTime)
   const setTime = useTimeOfDay((s) => s.setTime)
   const hourlyForecast = useSkyState((s) => s.hourlyForecast)

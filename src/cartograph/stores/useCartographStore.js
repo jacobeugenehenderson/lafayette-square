@@ -8,6 +8,7 @@ import {
   saveShapeFreeze, fetchRibbons, fetchMap, fetchGeography, fetchBoundary,
 } from '../api.js'
 import { setSceneMeasureSource } from '../measureModel.js'
+import { readAddress, resolveTown, lookForScene, isValidMapId, ADDRESS_STORAGE } from '../../lib/authoringAddress.js'
 import { feCustomKey } from '../../lib/feCustomKey.js'
 import useTimeOfDay from '../../hooks/useTimeOfDay'
 
@@ -68,41 +69,17 @@ import { migrateSkyChannel, SKY_BANDS, SKY_HOURS } from '../skyGrid.js'
 import { validateIdentity } from '../../lib/townIdentity.js'
 import { assertHardPolicy } from '../../lib/colourPolicy.js'
 
-const ACTIVE_LOOK_KEY = 'cartograph-active-look'
+const ACTIVE_LOOK_KEY = ADDRESS_STORAGE.look
 // ⛔⛔ There is deliberately NO `DEFAULT_LOOK_ID = 'lafayette-square'` here any
 // more. It was the client's own copy of "when in doubt, Lafayette Square" — the
 // A00 class — and it outlived the server-side fixes because it is a literal in
 // the browser bundle. The 0-state Look id is SERVED (`index.json`'s `default`,
 // now the town-less `kit-default`) and lands in `defaultLookId` below.
-// ⭐ useArboristStore / useMeteorologistStore have always done it this way;
-// this store was the outlier.
 
-// ⛔ THE LOOK FOR A SCENE. Design autosave writes to the ACTIVE Look, so the active Look must belong to the
-// store's scene — else one town's edits land in another town's design.json (2026-09-25: Extent's openScene
-// switched the scene and left the Look on the previous town). The active Look wins when it already belongs to
-// the scene, else the first Look of that scene. None ⇒ null: nothing saves and the StatusBar says so.
-// ⛔ Never the served default — `kit-default` has no scene; it is not a town.
-function lookForScene(looks, scene, activeLookId) {
-  const own = looks.filter(l => l.scene === scene)
-  return (own.find(l => l.id === activeLookId) || own[0])?.id || null
-}
-
-function readActiveLookFromStorage() {
-  // ?look=<id> wins (deep-link any installation's baked Look directly, symmetric
-  // with ?scene=) — transient, not persisted; a nav without it reverts to storage.
-  try {
-    const urlLook = new URLSearchParams(window.location.search).get('look')
-    if (urlLook) return urlLook
-  } catch { /* ignore */ }
-  try {
-    const v = localStorage.getItem(ACTIVE_LOOK_KEY)
-    if (v && typeof v === 'string') return v
-  } catch { /* ignore */ }
-  // ⛔ null, not a town. Nothing is stored and nothing is deep-linked, so the
-  // honest answer is "not resolved yet" — `_loadLooks` fills it from the served
-  // index default. Returning a Look id here guessed, and it guessed LS.
-  return null
-}
+// ⛔ THE LOOK FOR A SCENE (`lookForScene`, src/lib/authoringAddress.js). Design autosave writes to the ACTIVE Look, so
+// the active Look must belong to the store's scene — else one town's edits land in another town's design.json
+// (2026-09-25: Extent's openScene switched the scene and left the Look on the previous town). None ⇒ null: nothing
+// saves and the StatusBar says so. ⛔ Never the served default — `kit-default` has no scene; it is not a town.
 
 // ── Channel-variant cascade (HANDOFF-channel-variant-cascade.md, Phase 2) ──
 // IMPLICIT per-shot override cascade: editing a LOOK channel while a forkable
@@ -351,16 +328,10 @@ const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']
 // Designer. The URL is written back as you move (CartographApp, `?scene=&look=&shot=`), so a copied link reopens
 // in the shot it was copied from. It replaces "every Stage shot reloads as Hero" (2026-09-26).
 function initialShot() {
-  try {
-    const url = new URLSearchParams(window.location.search).get('shot')
-    if (ALL_SHOTS.includes(url)) return url
-    if (url) console.error(`[stage] ⛔ ?shot=${url} is not a shot (have: ${ALL_SHOTS.join(', ')}) — ignored`)
-  } catch { /* ignore */ }
-  try {
-    const saved = localStorage.getItem('cartograph-shot')
-    if (ALL_SHOTS.includes(saved)) return saved
-  } catch { /* ignore */ }
-  return 'designer'
+  const { url, stored } = readAddress()
+  if (ALL_SHOTS.includes(url.shot)) return url.shot
+  if (url.shot) console.error(`[stage] ⛔ ?shot=${url.shot} is not a shot (have: ${ALL_SHOTS.join(', ')}) — ignored`)
+  return ALL_SHOTS.includes(stored.shot) ? stored.shot : 'designer'
 }
 
 const _isObj = (v) => v && typeof v === 'object'
@@ -566,7 +537,6 @@ function serializeDesign(s) {
 const BUNDLED_MAPS = new Set(['lafayette-square'])
 // A scene id is any lowercase slug; existence is validated by the server (a
 // missing installation just serves empty). No hardcoded installation list.
-const isValidMapId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
 
 // In-flight _loadCenterlines, KEYED BY SCENE — see the dedupe note on
 // _loadCenterlines. The key is not optional: _loadCenterlinesImpl captures
@@ -1750,7 +1720,8 @@ const useCartographStore = create((set, get) => ({
   // Geometry (centerlines, measures, caps, couplers) stays in overlay.json
   // and is shared across every Look — Looks vary styling, not shape.
   looks: [],
-  activeLookId: readActiveLookFromStorage(),
+  // Provisional until _loadLooks resolves the address against the index: the URL's Look, else the remembered one.
+  activeLookId: (({ url, stored }) => url.look || stored.look)(readAddress()),
   // The served 0-state Look id (index.json `default`). null until _loadLooks.
   defaultLookId: null,
   // Set when a ?look= link was refused (it names no Look, or disagrees with ?scene=): no town is resolved, and
@@ -1763,72 +1734,34 @@ const useCartographStore = create((set, get) => ({
       const idx = await fetchLooks()
       const looks = Array.isArray(idx.looks) ? idx.looks : []
       const defaultLookId = idx.default || null
-      let activeLookId = get().activeLookId
-      if (activeLookId && !looks.some(l => l.id === activeLookId)) {
-        // ⛔ A stored Look the index no longer has resolves NOTHING — it used to fall to the index default, and with
-        // the scene booted to the default installation that opened Lafayette Square. The picker offers the towns.
-        console.error(`[looks] the stored Look "${activeLookId}" is not in the index — no town is opened`)
-        activeLookId = null
+      // ⭐ ONE RESOLVER (Phase 2 A): the address — URL, else remembered — against the index, by the same function
+      // src/instance.js asks for the page's INSTANCE (`resolveTown`). The URL mirrors the store once hydrated
+      // (CartographApp), so a warm call resolves from where the store already is.
+      // ⭐ A ?look= LINK OPENS THAT LOOK AND ITS SCENE — never the default town (measured 2026-09-28: ?look=huron opened
+      // Lafayette Square). A link naming no Look, or disagreeing with ?scene=, resolves NO town and says why.
+      // ▶ node checks/claims-a-look-link-opens-that-town.mjs
+      const town = resolveTown(looks, readAddress())
+      if (town.dropped) {
+        // ⛔ A stored Look the index no longer has resolves NOTHING — it used to fall to the index default.
+        console.error(`[looks] the stored Look "${town.dropped}" is not in the index — no town is opened`)
         try { localStorage.removeItem(ACTIVE_LOOK_KEY) } catch { /* ignore */ }
       }
-      // ⭐ A ?look= LINK OPENS THAT LOOK AND ITS SCENE — never the default town (measured 2026-09-28: ?look=huron opened
-      // Lafayette Square, because the scene booted to the default installation and the alignment below then pulled
-      // the Look to it). A link naming no Look, or disagreeing with ?scene=, resolves NO town and says why.
-      // ▶ node checks/claims-a-look-link-opens-that-town.mjs
-      let urlLook = null
-      try { urlLook = new URLSearchParams(window.location.search).get('look') } catch { /* ignore */ }
-      if (urlLook) {
-        const entry = looks.find(l => l.id === urlLook)
-        let urlSceneForLook = null
-        try { urlSceneForLook = new URLSearchParams(window.location.search).get('scene') } catch { /* ignore */ }
-        const refuse = entry?.scene
-          ? (urlSceneForLook && urlSceneForLook !== entry.scene ? `?look=${urlLook} is a Look of "${entry.scene}", but ?scene=${urlSceneForLook} asks for another town` : null)
-          : `?look=${urlLook} names no town's Look in the index (have: ${looks.filter(l => l.scene).map(l => l.id).join(', ')})`
-        if (refuse) {
-          console.error(`[looks] ⛔ ${refuse} — no town is opened`)
-          set({ looks, defaultLookId, activeLookId: null, lookRefused: refuse, lookMissingForScene: urlSceneForLook || urlLook, status: refuse, _looksHydrated: true })
-          return
-        }
-        set({ looks, defaultLookId, activeLookId: urlLook, lookMissingForScene: null, _looksHydrated: true })
-        get()._measureSlabAge()
-        // setScene loads that town's data and keeps this Look (it is the scene's own). Not awaited: this may run
-        // inside another scene's load, which sees the scene move and stands down.
-        if (entry.scene !== get().scene) get().setScene(entry.scene)
+      if (town.refused) {
+        console.error(`[looks] ⛔ ${town.refused} — no town is opened`)
+        set({ looks, defaultLookId, activeLookId: null, lookRefused: town.refused, lookMissingForScene: town.missing, status: town.refused, _looksHydrated: true })
         return
       }
-      const activeEntry = looks.find(l => l.id === activeLookId)
-      // Align the store's scene with the active Look's scene field. This
-      // covers cold boots where localStorage's `cartograph-scene` may
-      // disagree with the persisted active Look (e.g. user closed the tab
-      // on one Look, then we set a different default Look later).
-      // A ?scene= URL override is authoritative — don't let the active Look's
-      // scene field pull us back to it. Lets you open a neighborhood the Looks
-      // don't cover yet (e.g. a freshly-poured frame with no Look of its own).
-      let urlScene = null
-      try { urlScene = new URLSearchParams(window.location.search).get('scene') } catch { /* ignore */ }
-      const urlSceneWins = isValidMapId(urlScene)
-      const lookScene = activeEntry?.scene
-      // The persisted user scene WINS over the active Look's scene — the Look's
-      // scene only fills in when there's no valid persisted scene. Without this,
-      // a neighborhood the Looks don't cover yet (freshly poured, or being built
-      // in the Extent tool — e.g. Altadena, which has only the LS Look) gets
-      // yanked back to the Look's scene (LS) on every COLD boot (a warm refresh
-      // races ahead of _loadLooks and survives; a restart loses the race).
-      const sceneUpdate = (!urlSceneWins && lookScene && !isValidMapId(get().scene)) ? { scene: lookScene } : {}
-      if (sceneUpdate.scene) {
-        try { localStorage.setItem('cartograph-scene', sceneUpdate.scene) } catch { /* ignore */ }
-      }
-      // Once the scene is known, the Look is the scene's own (see lookForScene) — a persisted Look from another
-      // town, or the town-less default, is not where this scene's design saves.
-      const scene = sceneUpdate.scene || get().scene
-      let lookMissingForScene = null
-      if (isValidMapId(scene)) {
-        activeLookId = lookForScene(looks, scene, activeLookId)
-        if (activeLookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ } }
-        else { lookMissingForScene = scene; console.error(`[looks] no Look belongs to scene "${scene}" — Designer edits will not save`) }
-      }
-      set({ looks, activeLookId, defaultLookId, lookMissingForScene, _looksHydrated: true, ...sceneUpdate })
+      if (town.missing) console.error(`[looks] no Look belongs to scene "${town.missing}" — Designer edits will not save`)
+      if (town.lookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, town.lookId) } catch { /* ignore */ } }
+      const cur = get().scene
+      // A store booted with no town takes the resolved one directly (CartographApp's loaders follow `scene`); a store
+      // already on another town switches through setScene, the one path that drops the old town.
+      const sceneUpdate = town.scene && !isValidMapId(cur) ? { scene: town.scene } : {}
+      if (sceneUpdate.scene) { try { localStorage.setItem(ADDRESS_STORAGE.scene, sceneUpdate.scene) } catch { /* ignore */ } }
+      set({ looks, defaultLookId, activeLookId: town.lookId, lookMissingForScene: town.missing, _looksHydrated: true, ...sceneUpdate })
       get()._measureSlabAge()
+      // Not awaited: this may run inside another scene's load, which sees the scene move and stands down.
+      if (town.scene && isValidMapId(cur) && town.scene !== cur) get().setScene(town.scene)
     } catch (err) {
       console.warn('[looks] load failed:', err)
       set({ _looksHydrated: true })
@@ -2106,23 +2039,10 @@ const useCartographStore = create((set, get) => ({
   // Scene = what geometry we're looking at — the dataset name that data/<scene>/
   // holds (any installation id). Mirrored from the active Look's
   // `scene` field so selecting a Look determines the scene; setActiveLook is
-  // the canonical way to switch. Hydrates from localStorage on cold boot
-  // before _loadLooks resolves; the legacy 'neighborhood' value is rewritten
-  // to 'lafayette-square' on read for backward compat.
-  scene: (() => {
-    // ?scene=<id> wins (open any installation directly), then the persisted
-    // choice, else NO town — the Look picker offers them all (never a default town).
-    try {
-      const urlScene = new URLSearchParams(window.location.search).get('scene')
-      if (isValidMapId(urlScene)) return urlScene
-    } catch { /* ignore */ }
-    try {
-      const saved = localStorage.getItem('cartograph-scene')
-      if (saved === 'neighborhood') return 'lafayette-square'   // the legacy stored name of that one town
-      if (isValidMapId(saved)) return saved
-    } catch { /* ignore */ }
-    return null
-  })(),
+  // the canonical way to switch.
+  // Provisional until _loadLooks resolves the address: ?scene= wins, then the remembered town, else NO town — the
+  // Look picker offers them all (never a default town).
+  scene: (({ url, stored }) => isValidMapId(url.scene) ? url.scene : isValidMapId(stored.scene) ? stored.scene : null)(readAddress()),
   // Active installation's data, loaded BY ID (null until fetched). The bundled
   // fast-path scene (the default) leaves sceneRibbons null and reads its
   // static import; every other installation fetches these per-scene.
@@ -2144,7 +2064,7 @@ const useCartographStore = create((set, get) => ({
   // reads the loaders' set() calls and fails if a key they write is not reset here.
   setScene: async (scene) => {
     if (!isValidMapId(scene) || scene === get().scene) return
-    try { localStorage.setItem('cartograph-scene', scene) } catch { /* ignore */ }
+    try { localStorage.setItem(ADDRESS_STORAGE.scene, scene) } catch { /* ignore */ }
     const s = get()
     const activeLookId = s._looksHydrated ? lookForScene(s.looks, scene, s.activeLookId) : s.activeLookId
     if (s._looksHydrated && !activeLookId) console.error(`[looks] no Look belongs to scene "${scene}" — Designer edits will not save`)
@@ -2225,7 +2145,7 @@ const useCartographStore = create((set, get) => ({
       set({ tool: 'surveyor', status: 'Click a street to inspect.' })
       try { localStorage.setItem('cartograph-tool', 'surveyor') } catch { /* ignore */ }
     }
-    try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
+    try { localStorage.setItem(ADDRESS_STORAGE.shot, shot) } catch { /* ignore */ }
     // The last Stage shot is also recorded for PREVIEW, which opens on it (its own ruling, 2026-09-05).
     if (isStageShot(shot)) {
       try { localStorage.setItem('cartograph-last-stage-shot', shot) } catch { /* ignore */ }

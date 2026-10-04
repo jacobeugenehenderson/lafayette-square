@@ -83,7 +83,10 @@ const TOD_PLACE_KEY = 'stage-tod-place'
   const tod = useTimeOfDay.getState()
   if (saved?.live) return                                    // it was following the clock: stay live
   if (Number.isFinite(saved?.t)) { tod.setTime(new Date(saved.t)); tod.setPaused(!!saved.paused); return }
-  tod.setHour(12)
+  // Noon is the TOWN's noon (setHour reads its zone), so with no town placed yet (a cold Stage, a refused link) it waits
+  // for one — it used to throw here, at module load, and take the page down before the Look picker could draw.
+  if (placedLook()) { tod.setHour(12); return }
+  const off = onPlaceMoved(() => { if (placedLook()) { off(); useTimeOfDay.getState().setHour(12) } })
 })()
 // A stopped clock is a still moment: channels keyed on the tile it stands on show their key, fades aside.
 // No town placed yet (a cold Stage, the picker open): the tile depends on the town's sun, so there is none until one is.
@@ -915,8 +918,11 @@ export default function CartographApp() {
   // a ?scene= link or the Looks alignment — the page reloads onto it (the store has persisted it; the URL is set to it).
   // It used to reload only on a pick, so ?scene=huron drew huron with Lafayette Square's listings. ⛔ Never over unsaved
   // edits: that blocks the switch, loudly. ⛔ Once per town: a reload that still disagrees says so and stops.
+  // ⛔ Only on the RESOLVED Look: before _loadLooks the store holds the raw address, and following a refused link's
+  // `?look=` reloaded the page onto the very town the refusal had declined.
+  const looksHydrated = useCartographStore(s => s._looksHydrated)
   useEffect(() => {
-    if (!activeLookId) return
+    if (!activeLookId || !looksHydrated) return
     const map = mapForLook(activeLookId)
     if (!map || map === INSTANCE?.mapId) { try { sessionStorage.removeItem('stage-follow-town') } catch { /* ignore */ } ; return }
     const st = useCartographStore.getState()
@@ -930,7 +936,7 @@ export default function CartographApp() {
     try { sessionStorage.setItem('stage-follow-town', activeLookId) } catch { /* ignore */ }
     const url = new URL(window.location.href); url.searchParams.delete('look'); url.searchParams.set('scene', map)
     window.location.replace(url.toString())
-  }, [activeLookId])
+  }, [activeLookId, looksHydrated])
   // ⭐ THE ADDRESS IS WHERE YOU ARE (Phase 2 A). `?scene=&look=&shot=` is written from the store's triple as it moves, so
   // a copied link reopens this town, this Look, this shot (the store reads all three back: `initialShot`, `_loadLooks`).
   // ⛔ Not before the Looks are known, and never over a REFUSED link — the bad address stays on screen with its alarm.
