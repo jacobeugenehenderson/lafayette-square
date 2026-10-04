@@ -54,10 +54,10 @@ one Ward · proving grounds **Huron and Provincetown**, neither encoded as the s
 |---|---|
 | armour is **binary**, decided by bank **height** against one stone's size: `armour: h >= MIN_ARMOUR_D50_M`, else `'below-one-course'` | `cartograph/shore-armour.mjs:200` (`shoreArmourFor` :164; `MIN_ARMOUR_D50_M = 0.5` :71) |
 | stone size is a function of **height**, clamped 0.5–1.5 m | `cartograph/shore-armour.mjs:74` (`d50For`) |
-| the bake labels a bare station `below-one-course` | `cartograph/bake-revetment.js:563` (`bakeRevetment` :188) |
+| the bake labels a bare SHORE station from `shoreArmourFor` (above); `bake-revetment.js:563` is the breakwater/groyne walk's own `below-one-course` | `cartograph/bake-revetment.js` (`bakeRevetment` :188) |
 | where armour stops, the heap tapers to nothing at `crest / tan(repose)` | `src/lib/revetmentFromSlab.js:62` (`crestAndEnds`) |
 | the bed under the water, to visible depth | `cartograph/bake-terrain.js:571` (`writeBed`; visibility :586) |
-| water levels and the (stub) tide | `cartograph/waterLevel.mjs:26` (`tidePhase`), `:39` (`waterLevels`); `BRIEF-tide.md` |
+| water levels and the tide clock (wired: `tidePhase` → `cartograph/tide.mjs` `tidePhaseClock`) | `cartograph/waterLevel.mjs:26` (`tidePhase`), `:39` (`waterLevels`); `BRIEF-tide.md` |
 | the coast's id in the slab | `cartograph/shoreRuns.mjs:10` (`WATER_EDGE_SKEL`), `waterRuns` :13 |
 | the shore is bare of curb/sidewalk | `src/lib/tileGround.js:4625`, `:4634` (`shoreAt`) |
 | sand, and how far it reaches inland | `cartograph/surfaces.mjs:39` (`sand`), `:58` (`beachBandM`) |
