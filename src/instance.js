@@ -21,6 +21,7 @@
  * Doctrine: project_slab_is_the_instance_identity, project_kit_helpers_pattern.
  */
 import { instanceForMap, registeredMaps, DEFAULT_MAP } from './instances/registry.js'
+import { tenantOf } from './lib/townTenant.js'
 // ⛔⛔ THE LOOK→MAP TABLE, STATICALLY — AND THIS IMPORT IS WHY `registry.js` EXISTS.
 // It is the authoring index, bundled at BUILD time, which is the right currency
 // here: the player ships with slabs baked at build time, so a Look the build never
@@ -39,7 +40,7 @@ import looksIndex from '../public/looks/index.json' with { type: 'json' }
 // ⛔ The PLAYER's default look — what the BARE address shows, with no `?look=`. It is
 // NOT `looksIndex.default`: that is the authoring 0-state (`kit-default`), an empty Look
 // bound to no map with nothing baked, and defaulting a visitor to it would render
-// nothing. (`DEFAULT_MAP` is the registry's, imported above — one constant, one home.)
+// nothing.
 //
 // ⭐ IT IS THE ANSWER FOR THE BUILD THAT OWNS THE BARE DOMAIN, and only that one. Every
 // other town is addressed by PATH — see `readLookParam` below.
@@ -143,23 +144,16 @@ export function mapForLook(lookId) {
   return entry.scene || null
 }
 
-// ⭐ An UNKNOWN look must announce itself, not quietly become Lafayette Square.
-//
-// This was a bare `INSTANCES[resolveLookId()] || INSTANCES[DEFAULT_LOOK]`, so
-// `?look=provincetown` — a real poured slab with no instance file — rendered
-// that town's geometry wearing LS's name, geography, park label, tax rate and
-// legal jurisdiction, with NO warning anywhere.
-//
-// We still fall back (a blank screen would be worse), but loudly, and the
-// fallback is legible in the console instead of invisible.
-// ⚠️ ROADMAP A12 asks for MORE than loud — "an unregistered look must fail
-// loudly, not draw the mould." A refusal need not be a blank screen (an explicit
-// "this installation is not configured" state would satisfy both), but that is a
-// product decision and is NOT taken here. Flagged, not decided.
-//
-// ⭐ WHAT DID CHANGE: `lookId` is now the look that was ASKED FOR, not the
-// fallback town's own id. The slab pointer and the town identity are two
-// different questions and this used to answer both with "lafayette-square".
+// Two cases, two rulings.
+// ① A Look NOT IN THE INDEX (`?look=<unregistered>`) resolves to the default town, loudly — ROADMAP A12, ruled closed
+//   as accepted behaviour (Jacob, 2026-09-20). It keeps the ASKED-FOR `lookId` and is marked `identityResolved: false`,
+//   so it has no backend tenant (`townTenant` throws): it may draw LS, it may never write LS's rows.
+// ② ⛔ A REGISTERED Look whose MAP HAS NO MODULE never wears another town's identity (Jacob, 2026-10-04). That is a
+//   real town poured without its identity (altadena), and dressing it as LS — name, geography, legal jurisdiction — is
+//   the inheritance the spec forbids. An authoring page (`<meta name="ward-authoring">`: Designer, Stage, Preview) opens
+//   with NO town and says why, so the operator can still switch; any other page throws at boot.
+const AUTHORING_PAGE = (() => { try { return !!document.querySelector('meta[name="ward-authoring"]') } catch { return false } })()
+
 function resolveInstance() {
   const lookId = readLookParam()
   if (lookId === null) return null   // an authoring page with no town open — no identity is guessed
@@ -167,37 +161,29 @@ function resolveInstance() {
   if (!mapId) {
     console.error(
       `[instance] Look "${lookId}" is not in public/looks/index.json, so there is no ` +
-      `map to resolve its identity from. Falling back to "${DEFAULT_MAP}" — THIS PAGE ` +
-      `IS NOW WEARING ANOTHER TOWN'S identity, geography and legal jurisdiction.`)
+      `map to resolve its identity from. Falling back to "${DEFAULT_MAP}" (ROADMAP A12) — this page has no backend tenant.`)
     return { ...instanceForMap(DEFAULT_MAP), lookId, mapId: DEFAULT_MAP, identityResolved: false }
   }
   const town = instanceForMap(mapId)
-  if (!town) {
-    console.error(
-      `[instance] No installation module for map "${mapId}" (look "${lookId}") — ` +
-      `src/instances/${mapId}.js is not registered (registry has: ` +
-      `${registeredMaps().join(', ')}). Falling back to "${DEFAULT_MAP}", so ` +
-      `THIS PAGE IS NOW WEARING ANOTHER TOWN'S identity, geography and legal ` +
-      `jurisdiction. Register the map before shipping it.`)
-    return { ...instanceForMap(DEFAULT_MAP), lookId, mapId, identityResolved: false }
-  }
   // ⛔ `lookId` last: it OVERRIDES the module's own literal, which names the map.
-  return { ...town, lookId, mapId, identityResolved: true }
+  if (town) return { ...town, lookId, mapId, identityResolved: true }
+  const msg = `[instance] ⛔ map "${mapId}" (look "${lookId}") has no installation module — src/instances/${mapId}.js ` +
+    `is not registered (registry has: ${registeredMaps().join(', ')}). This page has NO town identity; it will not borrow ` +
+    `another town's. ▶ node cartograph/scaffold-instance.mjs --scene=${mapId}, then register it in src/instances/registry.js.`
+  if (AUTHORING_PAGE) { console.error(msg); return null }
+  throw new Error(msg)
 }
 
 export const INSTANCE = resolveInstance()
 
 /**
  * The town's backend key: its sealed opaque id (`cartograph/data/<map>/town-id.json`, attached by the registry).
- * Every backend call names the town by THIS, never by its look or map name, so a rename moves no data.
- * ⛔ A page that resolved no town, or is wearing another town's identity after a loud fallback, has NO tenant:
- * it would read and write that other town's rows. It throws instead.
+ * One reader, shared with the Ward (`src/lib/townTenant.js#tenantOf`). ⛔ A page with no town, or one wearing the default
+ * town (A12), has no tenant: it throws.
  */
 export function townTenant() {
-  if (!INSTANCE?.identityResolved || !INSTANCE.townId) {
-    throw new Error(`[instance] look "${INSTANCE?.lookId ?? '(none)'}" resolved no town of its own, so it has no backend tenant — refusing to call the backend as another town.`)
-  }
-  return INSTANCE.townId
+  if (INSTANCE && !INSTANCE.identityResolved) throw new Error(`[instance] look "${INSTANCE.lookId}" is wearing the default town (ROADMAP A12), so it has no backend tenant — refusing to call the backend as another town.`)
+  return tenantOf(INSTANCE, INSTANCE ? `look "${INSTANCE.lookId}"` : 'this page (no town open)')
 }
 
 /**
