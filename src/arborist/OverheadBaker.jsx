@@ -20,6 +20,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { useTreeAtlas, applyBarkUniforms, applyDeformerUniforms, applyLeafFaceUniforms } from '../components/treeAtlasMaterial.js'
 import { prepareOverheadBands, captureOverheadBand, nextCaptureFrame, CAPTURE_CANCELLED } from '../components/captureImpostor.js'
+import { bakeOverheadCore } from '../components/overheadCore.js'
 
 // ⛔ MESHOPT DECODER REQUIRED. This baker reads the BAKED per-look GLBs, which
 // bake-look now writes quantized + meshopt-compressed. drei's useGLTF wires this
@@ -100,29 +101,31 @@ function alphaCoverage(rb) {
 }
 
 async function postOverhead(look, species, heightM, canopyRadiusM, bands, captureKey) {
-  const blanks = []
-  const encoded = bands.map((b) => {
-    const coverage = alphaCoverage(b.albedoTex?.userData?.readback)
-    if (coverage < BLANK_COVERAGE) {
-      blanks.push(`${b.key} (${(coverage * 100).toFixed(2)}% opaque)`)
-      return null
-    }
-    return {
-      key: b.key, yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,
-      albedo: readbackToPng(b.albedoTex?.userData?.readback, 512),
-      ao: readbackToPng(b.aoTex?.userData?.readback, 256),
-    }
-  }).filter((b) => b && b.albedo && b.ao)
+  const readbacks = bands.map((b) => ({ key: b.key, albedo: b.albedoTex?.userData?.readback, ao: b.aoTex?.userData?.readback }))
+  // ⛔ The blank guard reads the RAW capture, before the core paints the lower bands opaque.
+  const blanks = readbacks
+    .map((r) => [r.key, alphaCoverage(r.albedo)])
+    .filter(([, c]) => c < BLANK_COVERAGE)
+    .map(([k, c]) => `${k} (${(c * 100).toFixed(2)}% opaque)`)
   // Refuse the whole species rather than ship a partial stack — a missing band
   // is a hole in the parallax, and a silently-2-band tree reads as "fine" in the
   // manifest. Loud failure sends it back to the Salon where it can be fixed.
   if (blanks.length) {
     throw new Error(`blank band(s): ${blanks.join(', ')} — capture rendered nothing`)
   }
+  if (readbacks.some((r) => !r.albedo?.data || !r.ao?.data)) throw new Error('a band has no readback — nothing to encode')
+  // The DEEP CORE (src/components/overheadCore.js): the top band's silhouette, painted solid into
+  // every band below it, in the pixels about to be encoded.
+  const cores = bakeOverheadCore(readbacks)
+  const encoded = bands.map((b, k) => ({
+    key: b.key, yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,
+    albedo: readbackToPng(readbacks[k].albedo, 512),
+    ao: readbackToPng(readbacks[k].ao, 256),
+    ...(cores[k] ? { core: cores[k] } : {}),
+  }))
   // captureKey rides along so the NEXT bake can tell this species is already
   // current and skip it (drain-on-bake). See src/arborist/captureKey.js.
   const body = { heightM, canopyRadiusM, captureKey: captureKey ?? null, bands: encoded }
-  if (!body.bands.length) return
   const res = await fetch(`/api/arborist/overhead/${encodeURIComponent(look)}/${encodeURIComponent(species)}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   })

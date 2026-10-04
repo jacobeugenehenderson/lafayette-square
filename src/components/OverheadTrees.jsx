@@ -25,6 +25,7 @@ import { useThree, useFrame } from '@react-three/fiber'
 import { loadImpostorTexture } from './impostorTexture.js'
 import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
+import { OVERHEAD_ALPHA_TEST } from './overheadCore.js'
 import { injectOverheadStamp, overheadLightUniforms, litCards } from './treeAtlasMaterial.js'
 import { treeGroundRaw } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
@@ -210,6 +211,11 @@ export function useOverheadAssets({ enabled, lookName, overheadBySpecies, specie
     for (const sp of species) {
       const rec = overheadBySpecies[sp]
       if (!rec?.bands?.length) continue
+      // ⛔ A band below the top with no baked DEEP CORE (overheadCore.js) is a capture older than
+      // CAPTURE_FORMAT overhead 6. It still draws, as shot, but never silently: a re-bake of the Grove clears it.
+      const stale = rec.bands.slice(0, -1).filter((b) => !b.core).map((b) => b.key)
+      if (stale.length) console.error(`[overhead] ⛔ ${lookName}/${sp}: band(s) ${stale.join(', ')} carry no baked deep core — `
+        + 'a capture older than the core; re-bake the Grove (Bake → Slab) to re-shoot it')
       const bands = rec.bands.map((b) => {
         const url = (p) => (p && p.startsWith('/trees/') ? slabUrl(lookName, p) : p)
         return {
@@ -263,7 +269,7 @@ export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
       const mat = new THREE.MeshBasicMaterial({
         map: b.albedoTex,
         color: dbgC ? new THREE.Color(dbgC[0], dbgC[1], dbgC[2]) : new THREE.Color(bright, bright, bright),
-        transparent: false, alphaTest: 0.4,
+        transparent: false, alphaTest: OVERHEAD_ALPHA_TEST,
         side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
       })
       if (!dbgC) injectOverheadStamp(mat, b.aoTex)

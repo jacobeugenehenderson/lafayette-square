@@ -34,6 +34,7 @@ import {
   measureChassisRadius,
   treeSwayUniforms,
 } from '../components/treeAtlasMaterial.js'
+import { OVERHEAD_ALPHA_TEST } from '../components/overheadCore.js'
 import { buildBranchSkeleton, buildUmbrellaShell, buildGradientCloud, buildLeafClusters, buildOverheadBandDisc, buildHeroImpostorCard } from '../components/impostorGeometry.js'
 import { prepareOverheadBands, captureOverheadBand, prepareHeroBands, captureHeroBand } from '../components/captureImpostor.js'
 
@@ -1090,7 +1091,7 @@ function Skeleton({
       const b = n > 1 ? 0.3 + 0.7 * (i / (n - 1)) : 1.0
       const m = new THREE.MeshBasicMaterial({
         map: albedoTex, color: new THREE.Color(b, b, b),
-        transparent: false, alphaTest: 0.4,
+        transparent: false, alphaTest: OVERHEAD_ALPHA_TEST,
         side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
       })
       injectOverheadStamp(m, aoTex)

@@ -1569,7 +1569,7 @@ const server = createServer(async (req, res) => {
     // into the look's slab. The Salon Browse capture auto-POSTs here (no publish
     // button — everything autopersists until pour). Body:
     //   { heightM, canopyRadiusM, bands:[{key, yLoNorm, yHiNorm,
-    //     albedo:<png dataURL>, ao:<png dataURL>}] }  (bottom→top)
+    //     albedo:<png dataURL>, ao:<png dataURL>, core?:{shape, ratio, rgb, ao, coverage}}] }  (bottom→top)
     // Writes the band PNGs under public/baked/<look>/trees/overhead/<species>/ and
     // merges an overheadBySpecies[species] entry into that look's trees-atlas.json.
     // The runtime (OverheadTrees) reads that manifest + lazy-loads the PNGs.
@@ -1595,6 +1595,9 @@ const server = createServer(async (req, res) => {
             key: b.key, yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,
             albedo: write('albedo', b.albedo),
             ao: write('ao', b.ao),
+            // The deep core the capture painted into this band (src/components/overheadCore.js);
+            // every band below the top carries one. The runtime reads its absence as a stale capture.
+            ...(b.core ? { core: b.core } : {}),
           }
         })
         // Merge into the look's trees-atlas.json (read-modify-write). bake-look

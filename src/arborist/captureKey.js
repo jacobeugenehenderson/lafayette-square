@@ -46,6 +46,8 @@
  * code shot which record — that missing information IS the defect being closed.
  *
  * Per-pool so a hero-side change does not re-shoot every overhead band for nothing.
+ *   overhead 6 — 2026-10-04: the lower bands carry the baked DEEP CORE (overheadCore.js), and
+ *                the manifest records it per band; a record without it is a stale capture.
  *   overhead 5 · hero 6 — 2026-09-28: bark is the real photo, wrapped per fragment
  *                (posterize, detail overlay and bark tier removed).
  *   overhead 4 · hero 5 — 2026-09-28: the pool shoots the baked lod0 (the full tree)
@@ -58,7 +60,7 @@
  *   hero     3 — same
  *   (2 — 2026-08-28 capture frame, local-vs-world; 1 — the implicit, unversioned era.)
  */
-export const CAPTURE_FORMAT = { overhead: 5, hero: 6 }
+export const CAPTURE_FORMAT = { overhead: 6, hero: 6 }
 
 // FNV-1a over the stable-stringified inputs. Short, dependency-free, and stable
 // across runs/machines (JSON.stringify with sorted keys — plain object key order
