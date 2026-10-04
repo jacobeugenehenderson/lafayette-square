@@ -2,10 +2,10 @@
 status: OPEN
 dispatched: no
 written: 2026-10-04
-evict-when: the card wind is one amplitude/depth/frequency triple per Look, forked per shot, and `browseWindFloor`/`heroWindFloor` and the two card gains are gone; a gust reaches a visible floor of N screen pixels at each tree's own depth, and zero extra in calm; the pixel probe reads the live gains and passes on LS and Huron Browse and Hero; checks green and mutation-tested; Jacob has eyed a calm day and a gusty day in Browse and Hero.
+evict-when: the card wind is one amplitude/pocket/frequency triple per Look, forked per shot, and `browseWindFloor`/`heroWindFloor` and the two card gains are gone; a gust reaches a visible floor of N screen pixels at each tree's own depth, and zero extra in calm; the pixel probe reads the live gains and passes on LS and Huron Browse and Hero; checks green and mutation-tested; Jacob has eyed a calm day and a gusty day in Browse and Hero.
 -->
 
-# BRIEF — Card wind: one amplitude · depth · frequency per Look, and a gust you can see
+# BRIEF — Card wind: one amplitude · pocket · frequency per Look, and a gust you can see
 
 **Boz the Younger drafted this 2026-10-04; Jacob dispatches.**
 
@@ -24,15 +24,16 @@ seam with Gale before either of you writes it (`ListAgents` → `SendMessage`).
 ## What Jacob approved (2026-10-04, all three; ROADMAP "Card wind: brightness · saturation · hue")
 
 1. **One triple per Look, forked per shot through the channel path, like Canopy Light.** It **replaces**
-   `browseWindFloor`, `heroWindFloor` and the two gains. **Named in wave terms** (Jacob, 2026-10-04, relayed by Gale;
-   not Brightness/Saturation/Hue):
+   `browseWindFloor`, `heroWindFloor` and the two gains. **Named in wave terms** (Jacob, 2026-10-04, final, relayed by Gale;
+   not Brightness/Saturation/Hue, and "Pocket" replaced "Depth"):
    - **Amplitude** = how far the trees move overall.
-   - **Depth** = how much the wind drives the motion versus the always-on sway (modulation depth: the steady sway is the
-     carrier, gusts ride on it). Panel hint, one line: *"how much the wind, versus the steady sway, drives the motion."*
+   - **Pocket** = how much the motion gathers where the gusts are, versus the steady sway everywhere. Panel hint, one
+     line: *"how much the motion gathers where the gusts are."* ⛔ It is **not** the size of the gust pockets; that is the
+     weather's `gustShape`, in the one cable.
    - **Frequency** = lean versus flutter: moves the motion toward the fast end (flutter) or the slow end (crown lean).
      ⛔ It must **not** speed up a single motion, or the name lies.
    ⛔ **No "Send a gust" button:** *"We should just hand tune it"* — Jacob tunes these by eye against the real weather.
-2. **A per-tree visible floor of N screen pixels — a minimum on Depth's gust term**, converted to metres at each tree's own depth (`windMetresForPixels`,
+2. **A per-tree visible floor of N screen pixels — a minimum on Pocket's gust term**, converted to metres at each tree's own depth (`windMetresForPixels`,
    in Gale's sheet chunk; there is no single metres-per-pixel, because it varies with depth). Shared later with grass and
    water.
 3. **The floor applies to the gust excess only**, scaled by the town's own gust amplitude through `windGustAt(xz)` =
