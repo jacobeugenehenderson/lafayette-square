@@ -2,7 +2,7 @@
 status: OPEN
 dispatched: no
 written: 2026-09-27
-evict-when: Lafayette Square is the map `lafayettesquare`, served at lafayettesquare.online by Promote; lafayette-square.com 301s to it with paths kept (printed QR codes land); and GitHub Pages production is retired.
+evict-when: Lafayette Square is the map `lafayettesquare`, served at lafayettesquare.online by Promote; lafayette-square.com 301s to it with paths kept (old links land); and GitHub Pages production is retired.
 -->
 
 # Lafayette Square's cutover: `lafayette-square` → `lafayettesquare`, on lafayettesquare.online
@@ -17,7 +17,7 @@ proven the rename path, and not before Boz boards it.
   `lafayettesquare`. Same rule and same mechanics as the HPDM rename. Reuse that brief's redirect record
   and listing-prefix fix; ⛔ don't rebuild them.
 - **`lafayette-square.com` redirects to `lafayettesquare.online`**, a permanent redirect that **keeps the
-  path**, so old links and printed QR codes still land. ⛔ Only once `lafayettesquare.online` is serving and
+  path**, so old links and shared URLs still land. *(No cards or QR codes have been printed — Jacob, 2026-10-04 — so this protects links, not paper.)* ⛔ Only once `lafayettesquare.online` is serving and
   Jacob has seen it. Never before.
 
 ## Why this is bigger than HPDM (▶ `git grep -l -- lafayette-square`)
@@ -41,7 +41,7 @@ A default that merely changes spelling is the same bleed with a new name.
    read `lafayettesquare.online`.
 4. **Publish to Staging → Promote.** Promote binds the domain and `www.` itself. Jacob opens the site.
 5. **Only then, the redirect**: `lafayette-square.com` (and `www.`) → `https://lafayettesquare.online/<same
-   path>`, e.g. a Cloudflare redirect rule on the `.com` zone. ▶ Check each printed-card path:
+   path>`, e.g. a Cloudflare redirect rule on the `.com` zone. ▶ Check each card-route path:
    `/checkin/<id>`, `/claim/<id>/<secret>`, `/place/<id>`, `/link/<token>` — each must 301 to the same path
    on `.online` and open the right page there.
 6. **Retire what served `.com`**: `.github/workflows/deploy.yml`, `public/CNAME`, `PUBLISH.md §1` (to the
