@@ -9,7 +9,8 @@
  *
  * STATIC (reads the source):
  *   · lib/windSheet.js#windStateOfWeather asks weatherAt; WindSheet.jsx takes its air from windStateOfWeather and
- *     reads neither the atmosphere directive nor resolveWindState.
+ *     reads neither the atmosphere directive nor resolveWindState. The one other input is a SPECIMEN's named wind
+ *     (windStateOfSpecimen), refused on a town extent and required on a specimen one.
  *   · no file but wind-field.js defines the GLSL field (windFieldAt / wfValueNoise2D).
  *   · every CONSUMER (a src file that injects WIND_SHEET_GLSL or calls bindWindSheet, beyond the sheet's own three
  *     files) defines no noise function and reads no other wind (uWindForce, uGustsScale, windSpeedMs…).
@@ -44,6 +45,11 @@ else if (!/\bweatherAt\(/.test(fn[0])) fails.push('windStateOfWeather does not a
 const drv = strip(readFileSync(join(ROOT, 'src/components/WindSheet.jsx'), 'utf8'))
 if (!/windStateOfWeather\(/.test(drv)) fails.push('WindSheet.jsx does not take its air from windStateOfWeather')
 for (const bad of ['tweenedDirective', 'useAtmosphere', 'resolveWindState', 'treeSwayUniforms']) if (drv.includes(bad)) fails.push(`WindSheet.jsx reads ${bad} — a second wind authority`)
+// A specimen's named wind is the ONLY other input, and only where there is no town: a town + wind prop must throw.
+if (!/extent === 'town' && wind !== undefined\) throw/.test(drv)) fails.push('WindSheet.jsx accepts a wind prop on a town extent — a town\'s wind is its weather')
+if (!/specimenWind = extent === 'town' \? null : windStateOfSpecimen\(wind\)/.test(drv)) fails.push('WindSheet.jsx takes a specimen wind other than through windStateOfSpecimen, or on a town')
+const spec = lib.match(/export function windStateOfSpecimen[\s\S]*?\n}\n/)
+if (!spec || !/throw new Error/.test(spec[0])) fails.push('windStateOfSpecimen does not refuse a specimen without a named wind')
 
 const OWN = new Set(['src/lib/windSheet.js', 'src/components/WindSheet.jsx', 'src/components/Town.jsx', 'src/lib/wind-field.js'])
 const NOISE = /\bfloat\s+\w*(?:hash|noise|fbm)\w*\s*\(/i

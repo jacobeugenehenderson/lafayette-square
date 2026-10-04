@@ -85,6 +85,19 @@ export function windStateOfWeather(sky, clock) {
     hasGusts: Number.isFinite(gusts),
   }
 }
+/**
+ * A SPECIMEN's wind — the Grove / Salon / a diorama, which have no town and so no weather. Named, like its extent:
+ * `{ speedMps, dirDeg (FROM), gustsMps }` (gustsMps = the gust's peak, as the weather reports it). Same shape out as
+ * windStateOfWeather, status 'specimen'. ⛔ Every field is required — a specimen that does not say its wind throws.
+ */
+export function windStateOfSpecimen(wind) {
+  if (!wind || !['speedMps', 'dirDeg', 'gustsMps'].every((k) => Number.isFinite(wind[k]))) throw new Error('[windSheet] ⛔ a specimen extent needs a named wind {speedMps, dirDeg, gustsMps} — it has no weather to read, and there is no default breeze')
+  const from = (wind.dirDeg * Math.PI) / 180
+  const dir = [-Math.sin(from), Math.cos(from)]
+  const speed = Math.max(0, wind.speedMps)
+  return { status: 'specimen', baseSpeedMps: speed, baseDirection: dir, gustsScale: Math.max(0, wind.gustsMps - speed), gustEnvelope: 1,
+    frontVel: [dir[0] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS, dir[1] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS], hasGusts: true }
+}
 const CALM = { baseSpeedMps: 0, baseDirection: [1, 0], gustsScale: 0, gustEnvelope: 0, frontVel: [WIND_FIELD.GUST_FRONT_DEFAULT_MPS, 0], hasGusts: false }
 
 // ── The canopy's spring — the memory (BRIEF step 3) ──────────────────────────────────────────────────────────────

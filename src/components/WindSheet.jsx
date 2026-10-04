@@ -6,6 +6,8 @@
  *                          sheet is UNALLOCATED and says so; ⛔ there is no default size (CLAUDE.md Layer 0, Class D).
  *   extent={center,radius} a NAMED specimen extent — the Grove / Salon / a diorama, which have no town.
  *   ⛔ No extent prop throws: a mount that does not say which world it covers is a bug, not a default.
+ *   wind={speedMps, dirDeg, gustsMps}  a specimen's NAMED wind — required with a specimen extent (it has no weather),
+ *                          and ⛔ refused with extent="town" (a town's wind is its weather, never a prop).
  *
  * Each frame: the air (wind-field.js#windAt, in GLSL, driven by windStateOfWeather — the town's one weather) → a
  * damped spring per texel (the canopy's memory) → a half-float ping-pong pair. Consumers bind the read side.
@@ -20,7 +22,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WIND_FIELD, WIND_FIELD_GLSL, windAt as cpuWindAt } from '../lib/wind-field.js'
 import { WeatherRangeError } from '../lib/weatherAt.js'
-import { windSheetLayout, windStateOfWeather, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted } from '../lib/windSheet.js'
+import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted } from '../lib/windSheet.js'
 import { onSceneStencil } from './sceneStencilState.js'
 import { useQuality } from '../lib/qualityProfile.js'
 import useSkyState from '../hooks/useSkyState.js'
@@ -61,10 +63,12 @@ const passFrag = /* glsl */`
   }
 `
 
-export default function WindSheet({ extent }) {
+export default function WindSheet({ extent, wind }) {
   if (extent !== 'town' && !(extent && Number.isFinite(extent.radius))) {
     throw new Error('[WindSheet] ⛔ needs extent="town" or a named specimen extent {center:[x,z], radius} — there is no default world to cover')
   }
+  if (extent === 'town' && wind !== undefined) throw new Error('[WindSheet] ⛔ a town\'s wind is its weather (weatherAt) — a wind prop is for a specimen extent only')
+  const specimenWind = extent === 'town' ? null : windStateOfSpecimen(wind)
   const gl = useThree((s) => s.gl)
   const quality = useQuality()
   const debug = urlFlag('windDebug') != null
@@ -157,7 +161,7 @@ export default function WindSheet({ extent }) {
     const dt = lastMs.current ? Math.min(0.1, (now - lastMs.current) / 1000) : 0
     lastMs.current = now
     try {
-      air.current = windStateOfWeather(useSkyState.getState(), useTimeOfDay.getState())
+      air.current = specimenWind || windStateOfWeather(useSkyState.getState(), useTimeOfDay.getState())
     } catch (e) {
       if (!(e instanceof WeatherRangeError)) throw e
       if (said.current !== e.message) { said.current = e.message; console.error(`[WindSheet] ⛔ no weather for this time — holding the last wind: ${e.message}`) }
