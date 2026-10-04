@@ -30,20 +30,23 @@ one Ward · proving grounds **Huron and Provincetown**, neither encoded as the s
 
 ## The rulings (Jacob, 2026-10-04)
 
-1. **The median is the space between the coast chain's own two sides, and its edges have nothing to do with water.**
-   ①'s two-sided split of the coastline gives a LAND side and a WATER side (`ROADMAP H-4`); the median is the space
-   between them, the road median's construction. *(Jacob chose this, option (a), over (b) the bed / visible depth;
-   relayed by Shingle 2026-10-04. It replaces Boz's first draft, which put the outer edge at visible depth below the
-   lowest water.)*
+1. **The median is the space between the DRAWN SHORELINE and the LIDAR'S WATERLINE** — where the surveyed ground meets
+   the water the survey was flown at (y = 0). Two separate lines, like a divided road, so the width varies by itself.
+   *(Jacob, relayed by Shingle 2026-10-04. Supersedes both earlier versions of this ruling: visible depth below the
+   lowest water, and "the coast chain's own two sides", which are ε apart by construction, `ROADMAP H-4`.)*
+   ▶ Measured by Shingle from the pre-bed lidar (scratch only), gap shore → lidar waterline: Huron p50 5 m · p90 11 m ·
+   max 36 m (62% of samples within one 5 m grid step) · Provincetown p50 41 m · p90 363 m · max 664 m, with the lidar
+   ground running past the drawn shore on 79% of samples. ⚠️ Huron: 158 ha of lidar-wet ground behind the drawn shore,
+   joined to the lake — cause not established.
 2. **The water moves inside the median and never bounds it.** Huron stays at its mean / recorded average level; its
    "tide" comes in with storms, and that touches only the wet look. ⇒ No low-water sourcing for Huron, and Provincetown's
    high-water flood landward of the drawn shore (208 ha at MHW, `terrain.json` `water.flood`) is no longer a contradiction.
 3. **The treatment continues under the water to visible depth** (Jacob, 2026-10-04: *"that would be ideal, yes"*, given
    before ruling 1 was corrected). ⚠️ How that relates to the median's water-independent edges is not ruled; ask before
    building it.
-4. **The grain continuum is a TRANSITION, not a map over the whole shore.** Boulders → rocks → gravel → sand: one treatment
-   hands off to the next **as the space narrows**. The finest end is a surface, so there is no width at which nothing is
-   drawn.
+4. **The grain continuum is a TRANSITION, not a map over the whole shore.** Grain is **zero at the lidar waterline** and
+   grows toward the drawn shoreline as the gap opens: sand → gravel → rocks → boulders. Where the two lines touch:
+   **sand, never nothing.** Compute it at the **1 m lidar**, not the 5 m bake grid.
 5. **Regime is a separate axis that bounds the grain range:** stone today; steel or concrete may replace boulders; a beach
    may cap the coarsest grain or omit large objects.
    ⚠️ **OWED — confirm with Jacob before building any regime control.** On 2026-09-21 he ruled *"no authored parameters —
