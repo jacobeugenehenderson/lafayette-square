@@ -1,111 +1,144 @@
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: no
-written: 2026-09-26
-evict-when: along every shore of every town, no point between the water and the land is bare; a check walks the shoreline and proves it; Provincetown and Huron pass; and Jacob has seen both at the water's edge.
+written: 2026-09-26 · REWRITTEN 2026-10-04 as the shore MEDIAN (Jacob, Huron punch list); the 09-26 body is in cartograph/_archive/BRIEF-the-shore-is-closed-2026-09-26.md
+evict-when: every town with water carries the shore median as a baked, inspectable region; every point of it holds a treatment from the grain continuum; a render-side walk of every shore finds zero views of the sky dome or a building foundation riser, and is seen to FAIL when one treatment is removed; Jacob has walked Huron and Provincetown at the water's edge, near and far.
 -->
 
-# The shore is closed: no bare space between the water and the land
+# The shore median: the space between the shoreline and the water, and what fills it
 
-**You are the dispatched agent. Name yourself: one word, not a name another RUNNING session holds**
-(check `ListAgents`, then ask Jacob to `/rename`). **Agent: FRESH.**
+**You are the dispatched agent. Name yourself: one word, yours, and not one a RUNNING session holds** (`ListAgents`, then
+ask Jacob to `/rename`). **Agent: FRESH.** The shore's earlier agents (Strand, Revetment, Loam) are gone, and this brief
+changes the representation they built on, so a warm context would carry the old frame.
 
-## The ask (Jacob, 2026-09-26)
+## The ask (Jacob, 2026-10-04, verbatim)
 
-*"The revetment still has never succeeded fully; there's just lots of space with no fill. It seems like we need a
-more straightforward rule that there must be no bare space between the water and the land, no matter what
-it's made of, no matter what distance or angle. This is PTown and Huron."*
+> *"The shoreline is a 2D concept. The protopolygon already splits chains into two sided chains; I am bringing that up so
+> that we can determine, fundamentally, where the shoreline is as opposed to the waterline. I believe this is the median
+> problem revisited. The revetment itself is challenging to discuss without first really determining the space it's
+> supposed to occupy; if we take as a granted that 'boulders would only go in a space this big' there are many spaces
+> smaller than that in ever growing/shrinking median space. Right now that means lots of gaps where we have neither
+> revetment nor gravel or sand or anything. The revetment currently stops abruptly in a rather hard line, then there is
+> exposed geometry between the shoreline and itself. I think we need a material that can anticipate that median, and fill
+> it with size-appropriate objects. Where it's widest, we have boulders which give way to rocks which in turn become
+> gravel which is finally sand. Perhaps someday we have a way to select 'steel' or 'concrete' as a replacement for
+> boulders; perhaps we have a knob that says 'Long Island beaches only get to this level of small-grain sand/is gravel'."*
 
-## ⭐ The rule, and why it replaces a question
+And from the punch list: **"Nothing fits" must never mean "nothing exists."** · no valid shoreline condition may expose
+the void · **study before deployment** — ⛔ do not close gaps by extending revetment geometry by hand or adding filler to
+one Ward · proving grounds **Huron and Provincetown**, neither encoded as the special case.
 
-**The water and the land always meet.** What fills the meeting is a separate question: stone, sand, a wall, or
-the ground running to the waterline. **"Bare" is never one of the answers**, at any distance or camera angle.
+## The rulings (Jacob, 2026-10-04)
 
-This is the kit's closed-shape doctrine applied to the shore: the neighborhood is one closed shape, and an edge
-is **an edge of the drawing, never an absence** (`[[project_neighborhood_is_a_compound_shape]]`).
+1. **The median is the space between two edges, not an offset from one** — the road median's construction, applied to
+   the shore. **Inner edge:** the SHORELINE, the drawn coast (the land side of ①'s two-sided coast chain, `ROADMAP H-4`).
+   **Outer edge:** where the bottom passes below visible depth, measured from the **LOWEST** water the town's water can
+   reach.
+2. **The waterline moves INSIDE the median and never bounds it.** On Provincetown the tide moves it; on Huron the lake has
+   no tide, but **weather does** (wind setup, waves) — *"the waves are a relevant thing to track."* The waterline's job is
+   wetness (sand darkens below it, the swash band above it), a look applied to the median.
+3. **The treatment continues under the water to visible depth** — so wherever the water stands, it stands on treated ground.
+4. **Grain size follows the space available.** Widest → boulders → rocks → gravel → sand (a continuous fine surface).
+   The transition follows the median, never a hard line. The finest end is a surface, so there is no width at which
+   nothing is drawn.
+5. **Regime is a separate axis that bounds the grain range:** stone today; steel or concrete may replace boulders; a beach
+   may cap the coarsest grain or omit large objects.
+   ⚠️ **OWED — confirm with Jacob before building any regime control.** On 2026-09-21 he ruled *"no authored parameters —
+   derive"* for the revetment (`BRIEF-boulder-revetment §6`). Boz's reading, NOT yet ratified: the regime is **derived** by
+   default from the predicates that already exist (`shore-armour.mjs` `HARD_TAGS` / `SOFT_TAGS` / `SOFT_LU`), and the knob
+   is an operator **override** on that default. Ask; don't assume.
 
-⛔ **What changes:** the revetment is one filler, not the thing that closes the shore.
-- `BRIEF-boulder-revetment.md` §6 asks *"is every shoreline a wall?"*. That stays a real question about which
-  **material**, but it no longer decides whether the shore is closed.
-- The revetment bake prints on every run how much drawn shore it leaves **bare, and for which named
-  reason**. Since 2026-09-26 the drawn water's edge IS the shoreline (Jacob), so nothing is declined as
-  "not at the water" any more; on Provincetown most of the shore is now bare as **soft shore**. ▶
-  `node checks/claims-every-metre-of-drawn-shore-is-named.mjs --code`. **A bare metre must still be filled
-  by something.**
+## What the code does today — read in source by Boz 2026-10-04. ⛔ Confirm each before you trust it.
 
-## What the bare space was, and the state now (Strand, 2026-09-27)
+| what | where |
+|---|---|
+| armour is **binary**, decided by bank **height** against one stone's size: `armour: h >= MIN_ARMOUR_D50_M`, else `'below-one-course'` | `cartograph/shore-armour.mjs:200` (`shoreArmourFor` :164; `MIN_ARMOUR_D50_M = 0.5` :71) |
+| stone size is a function of **height**, clamped 0.5–1.5 m | `cartograph/shore-armour.mjs:74` (`d50For`) |
+| the bake labels a bare station `below-one-course` | `cartograph/bake-revetment.js:563` (`bakeRevetment` :188) |
+| where armour stops, the heap tapers to nothing at `crest / tan(repose)` | `src/lib/revetmentFromSlab.js:62` (`crestAndEnds`) |
+| the bed under the water, to visible depth | `cartograph/bake-terrain.js:571` (`writeBed`; visibility :586) |
+| water levels and the (stub) tide | `cartograph/waterLevel.mjs:26` (`tidePhase`), `:39` (`waterLevels`); `BRIEF-tide.md` |
+| the coast's id in the slab | `cartograph/shoreRuns.mjs:10` (`WATER_EDGE_SKEL`), `waterRuns` :13 |
+| the shore is bare of curb/sidewalk | `src/lib/tileGround.js:4625`, `:4634` (`shoreAt`) |
+| sand, and how far it reaches inland | `cartograph/surfaces.mjs:39` (`sand`), `:58` (`beachBandM`) |
+| the renderers | `src/components/SlabRevetment.jsx:84` · `InstancedBoulders.jsx` · `src/lib/shoreChunks.js` |
 
-- **It was a void standing on its edge.** The water is a level sheet, the land is draped; nothing lay under the
-  water, so wherever the land's edge stood above the sheet the sky showed through (seen on Provincetown's harbour).
-- **Closed by the bed, and the bed is in the terrain.** Jacob, 2026-09-26: *"water is always flat, and the edge of
-  water is always where the flat plane meets any other plane."* `bake-terrain` writes the USACE beach profile under
-  the mapped water down to the visibility depth (`BAKE.md`); the `bed` ground group drapes over it, and the water
-  thins over the shallows. The shore is bare of curb/sidewalk (`tileGround.js` `shoreAt`); land no longer paints
-  over the water (the flatten is strictly simple, `52cba914`). ▶ `node checks/claims-the-shore-is-closed.mjs`
-- ✅ **EYE GATE — the water over the bed** (Jacob, 2026-09-27, Provincetown, relayed by Boz): *"OH MY GOD it looks
-  so beautiful and real!"* Still owed: the revetment's heap ends, and both towns at the water's edge near and far.
-- **STRUCTURES OVER WATER — ruled 2026-09-27, partly built.** Landed: `structures.mjs` (every OSM bucket, by tag),
-  the rock kept under breakwaters/groynes (`cde379d0`), shore-armour reading every bucket (`e521e577`). A groyne also
-  tagged `barrier=wall` is TWO structures (Jacob: "perhaps it's 2"). **Stone on every mapped breakwater/groyne**, the
-  ones the drawing left inside the water included: `bake-revetment` walks each outline (▶
-  `node checks/claims-every-mapped-stone-structure-is-stone.mjs`, red on the live artifacts until the re-bake below).
-  Deck thickness is sourced (`f-fhwa-concrete-deck-min` 7 in, `f-usfs-timber-deck-min` 5½ in). ⛔ **Rulings owed before
-  the decks are built:** (1) **floating docks** at land height, or 16–24 in above the WATER (UFC 4-152-07 §6-3.3.1);
-  (2) **untagged pier material** (most piers in both towns): timber, concrete, or refuse; (3) **metal decks**: as
-  concrete, or refuse. Breakwaters are sized against the LOW level (ruled 2026-09-27, 0962f27b), so the tide covers them.
-- **OPEN — the revetment's bottom edge, "once and for all" (Jacob, 2026-09-27):** the contact of two materials, a
-  blend both ways (the sand coloured where it meets stone, the stone where it meets sand), not more geometry. ⏭ NOT
-  STARTED (2026-09-28). Next step: read Furrow's ground-contact work (`git log --grep Furrow`; the ground surfaces and
-  yard rules — `cartograph/surfaces.mjs`, bake-ground-ao's rulemap) and report to Jacob whether that mechanism carries
-  over to stone↔sand, before any code. The tide has landed, so it is unblocked.
-- **OPEN:** · each town's own water
-  clarity (`references/` q-water-clarity-per-town) · real depth inside the visible band (`BRIEF-bathymetry.md`).
-  **Not walked:** Lafayette Square's pond (drawn outside the slab).
+⇒ **Boz's inference, unverified:** the grain is sized by **how tall the bank is**, while the ruling sizes it by **how wide
+the space is**. If so, that is the root of "boulders only in a space this big," and it is a different input, not a
+different threshold. Confirm or refute it in code before anything else.
 
-## Read first
+## Measured 2026-10-04 (Boz): every shore check is GREEN, and Jacob sees sky
 
-- `docs/briefs/BRIEF-boulder-revetment.md` (all of it: the shore's rulings, what was measured false, and
-  §6's 2026-09-26 ruling that the drawn water is the shore, which retired `r-coast-trust-the-lidar`).
-- `docs/briefs/BRIEF-ground-cross-polygon-conformity.md` (the ground must stretch, not break; Huron's shore
-  seam) and `BRIEF-bathymetry.md` (the depth under the water; the old distance-to-shore path is in the Diary).
-- The coast-distance channel (`cartograph/bake-coast-distance.js`, `context.coastDist.bin`) and the sand surface
-  (`cartograph/surfaces.mjs#sand`: `beachBandM` is derived per town from the waterline).
-- The tools already written: `scratch/huron-shore-transect/` (`negatives.mjs`, `predicate.mjs`, `profiles.mjs`).
-  ⛔ Run them; don't rebuild them.
+| check | Huron | Provincetown |
+|---|---|---|
+| `claims-the-shore-is-closed` | 11.96 km walked, none bare | 51.11 km walked, none bare |
+| `claims-every-metre-of-drawn-shore-is-named` | 9.03 of 11.79 km armoured · bare: **1.37 km below-one-course**, 1.16 km soft-shore, 0.07 km stub | 2.03 of 50.39 km armoured · bare: **47.68 km soft-shore** |
+| `claims-the-armoured-shore-is-never-empty` | ✅ — and it says itself it does NOT prove the geometry reaches the screen | ✅ |
+| `claims-every-mapped-stone-structure-is-stone` · `claims-a-level-body-has-one-surface` | ✅ | ✅ |
 
-## Can the instrument see it?
+⇒ **The instruments cannot see the defect.** `the-shore-is-closed` asks whether there is ground under a point on the
+shore line — a heightfield question. The void is a **render** outcome: a ray passing between separately generated
+geometry (revetment, ground, bed, building foundations). And `every-metre…-is-named` **passes a bare metre if its reason
+has a name**, which the rulings above now forbid. Re-run all five yourself; don't quote this table.
 
-⭐ **The check is the deliverable.** Walk every shoreline at a fixed step in metres (derive the step from the
-terrain grid, not a constant). At each point, cast from the water side to the land side and record what the ray
-hits first: water, a filler (named), ground with a surface, or **nothing**. Any "nothing" fails, with its
-coordinate. Mutation-test it: remove one filler and watch it fail. Run it on every town with water (LS's pond
-included, which must stay green and unchanged). Then Jacob's eye: Provincetown and Huron at the water's edge,
-near and far.
+## The chain — what this trusts, and what trusts it
+
+- **Trusts:** ①'s two-sided coast chain (`ROADMAP H-4`) · the bed (`writeBed`) and the real floor (`BRIEF-bathymetry.md`)
+  · the town's water levels (`waterLevel.mjs`; `BRIEF-tide.md` — levels ours, timing NOAA). ⛔ **A lake's low water is
+  not a constant:** Huron's level record is a non-tidal Great Lakes gauge (`public/baked/huron/terrain.json` → `water`).
+  Source the low end from the town's own record and say it out loud; if it can't be sourced, fail loudly.
+- **Trusted by:** `bake-ground.js` (the `bed` ground group) · the revetment renderers · the sand surface and its ground
+  rules (`surfaces.mjs` `duneGrass` reads `beachBandM`) · the water shader's shallows · future pier footings.
+- ⭐ **The constraint crosses topics, so it belongs in a check:** *every point of the median holds a treatment.* That
+  check travels with the operation, not with any one doc.
+
+## The work, in order. Stop and report to Jacob at the end of each step.
+
+0. **Confirm the premises.** Read this brief, `BRIEF-boulder-revetment.md` (all of it: §5 the cross-section, §6 the rulings
+   and the predicate), `cartograph/BAKE.md`'s shore rule and the bed, and `ROADMAP H-4`. Open every code site above. Tell
+   Jacob what you found, especially the height-vs-width inference. ⛔ If the code contradicts this brief, stop and flag.
+1. **The median as a region, made visible.** Build it per town from the two edges in ruling 1. Make it independently
+   visible as a **solid diagnostic region with every treatment off**, on the production surfaces (Stage/Preview — ⛔ not a
+   scratch SVG or a parallel renderer). The view must let Jacob tell apart three failures:
+   **(a)** the median geometry is missing or wrong · **(b)** a treatment failed to generate · **(c)** a bake/runtime
+   seam or a precision failure.
+2. **The void instrument — before any fix, and it must FAIL today.** A walk of every shore, from the water side and the
+   land side, near and far, on the production render, counting views that reach the **sky dome** or a **building
+   foundation riser**, each with its coordinate and which of (a)/(b)/(c) it is. Jacob already sees gaps, so a green first
+   run means the instrument is wrong. Mutation-test it: remove one treatment and watch it go red. Derive the walk step
+   from the terrain grid, not a constant.
+3. **The treatment rules, on paper, to Jacob — before any build.** Grain as a function of local median width; the
+   boulder → rock → gravel → sand handoffs; where placed objects hand off to a surface material (that seam is the
+   still-open "revetment bottom edge" item from 2026-09-27, which this absorbs); how the regime bounds the range; the
+   wet/dry look from the moving waterline. Every number carries a unit and a source; ⛔ no constant whose value happens
+   to suit one town (`CLAUDE.md` Layer 0, Class D).
+4. **Build, on Jacob's go.** Then the three-part fix: the binary armour gate and the "named bare passes" semantics are
+   **removed**, not left beside the new path (`claims-every-metre-of-drawn-shore-is-named` changes meaning — rewrite it,
+   don't leave it green beside the new check) · registers `cartograph/BAKE.md` (the shore rule), `OPERATIONS`,
+   `FEATURES` · superseded text to the Diary.
+
+## Can the instrument see the change?
+
+The existing checks read **baked artifacts on disk**; the void is a **render** outcome. So step 2's instrument must look
+at the rendered production surface, and a re-bake is needed before any artifact reflects a change. **Eye-gate surface:**
+Preview, Huron and Provincetown, ⛔ from the water **and** from the street, close up (*"if it looks nice we'll get close
+to it to show it off"*).
 
 ## Bounds
 
-- Measure and report first. The fix will likely touch the ground bake, the water mesh and the revetment; say
-  which, and why, **before building**.
-- No bake or pour without Jacob's go in your own window. LS is not re-poured.
-- Commit only your own paths (`git commit -- <paths>`); the working tree is shared. ⚠️ Furrow holds
-  `bake-ground.js`, and a revetment bake ran for Provincetown at 15:39. Coordinate through Boz before touching
-  either.
-- Canon: `cartograph/BAKE.md` (the shore rule), `OPERATIONS`, and the revetment brief's §6 updated to point
-  here. Commit messages name the register reached.
+- ⛔ No pour or bake without Jacob's go in your window. LS is untouched (its pond is drawn outside the slab and is not
+  walked — say so in the check's output, as the current one does).
+- ⛔ No hand-extended revetment geometry, no per-Ward filler, no skip list.
+- Commit only your own paths (`git commit -- <paths>`); the tree is shared. Ports 5173 / 5180; reuse the running servers.
+- Surface scope drift; don't absorb it.
 
-**The instruction is confirm-then-build:** measure, tell Jacob what the bare space is and your proposal, then
-build. If the code contradicts this brief, stop and flag him.
+## Not this brief (homes elsewhere)
 
-## ▶ READY TO RUN on Jacob's go (Strand's handoff, 2026-09-27 night; not run, since a peer can't give the go)
-The terrain changed (the rock stays under breakwaters and groynes, cde379d0), so each town, **provincetown first, then huron**:
-```
-cd cartograph && node bake-terrain.js --scene=T && cp data/T/clean/terrain.json ../public/baked/T/ && cp data/T/clean/terrain.bin ../public/baked/T/ \
-  && node bake-ground.js --look=T --scene=T && node bake-ground-ao.js --look=T --scene=T && node bake-lamps.js --look=T --scene=T
-```
-then the trees with the flags from `tree-bake-inputs.mjs#treeBakeInputsForMap(T)` (as serve.js builds them), then
-`node bake-tree-anchors.js --look=T --scene=T`, then `node bake-revetment.js --scene=T` (every OSM bucket, the toe berm, and the
-breakwater/groyne walks). Checks: `claims-the-shore-is-closed`, `claims-the-ground-has-no-cross-polygon-t-junctions`,
-`claims-a-level-body-has-one-surface`, `claims-every-metre-of-drawn-shore-is-named`, `claims-every-mapped-stone-structure-is-stone`,
-`claims-the-armoured-shore-is-never-empty`. LS: prove terrain.bin byte-identical (no coast, so the step never runs).
-**Next:** solid decks after the rulings above, lifting what stands on them. **His eye:** the breakwaters, the revetment's heap ends,
-and both towns at the water's edge near and far.
+- **Piers and decks** — three rulings owed by Jacob (floating dock height · untagged pier material · metal decks); the
+  record is in `cartograph/_archive/BRIEF-the-shore-is-closed-2026-09-26.md` ("STRUCTURES OVER WATER").
+- **Water look** (horizon shimmer, foreground glint, ripple quantization, opacity, colour bias) — `BRIEF-water-glint.md` /
+  `BRIEF-water-shader.md`.
+- **Each town's water clarity** (`references/` q-water-clarity-per-town) · **real depth** — `BRIEF-bathymetry.md`.
+
+**The instruction is confirm-then-build:** read both, tell Jacob what you found, and if the code contradicts this brief,
+stop and flag him. **The stop is the deliverable, not a failure of the brief.**
