@@ -66,10 +66,12 @@ In Hero, **Preview drops to Browse on any drag over 6 px or any scroll** (`src/p
 control unless I am recording or playing back keyframes."* On 2026-10-03 Jacob, in Preview, read this as Stage
 misbehaving. The two surfaces carry the same Hero / Browse / Street bar, so it is easy to be in one and believe you are in
 the other.
-⇒ **Classify it, don't fix it:** is "touch the movie, drop to Browse" a Player behaviour that Preview must reproduce, so
-it measures what ships, or a visitor gesture the technical-director surface should not inherit? That's Jacob's ruling,
-in the spec's terms (*Preview sees what Player ships* vs *Preview is the technical-director surface*). Also report which
-Player, old or the Ward, actually carries the gesture today.
+✅ **RULED 2026-10-03 (Jacob): ditch it.** *"If we are looking at things in their 'real runtime environments' Hero
+doesn't have manipulable controls, and browse's are limited."* ⇒ **Preview presents each shot with its real runtime's
+controls:** Hero is the movie, so a drag or scroll does nothing (no camera move, no drop to Browse). Browse keeps its
+limited plan controls. The gesture leaves `ShotCamera`.
+▶ Not built: it's a tranche-2 row, not this tranche's to make. **Report** whether the Ward drops to Browse when a visitor
+touches the movie. If it does, Preview and Player differ on that one gesture **by ruling**, and the map must say so.
 
 ## Second exhibit: machinery the Player still loads (Bake → Player)
 
