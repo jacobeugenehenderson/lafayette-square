@@ -4,6 +4,7 @@
  *   `staging.theward.online/_player/<file>`      →  R2 `staging/player/<file>`     (the kit's player)
  *   `staging.theward.online/_ward/<sha>/<file>`  →  R2 `staging/ward/<sha>/<file>` (The Ward's build)
  *   `staging.theward.online/<map>/…`             →  the document of the player that town's record names
+ *   `staging.theward.online/<former map>/…`      →  301 to `/<map>/…`, from R2 `staging/renamed.json`
  *
  * ⭐⭐ EACH TOWN NAMES ITS PLAYER, AND A TOWN THAT NAMES NONE IS A 404 (BRIEF-ward-on-staging, 2026-09-28).
  * `staging/sites/<map>/player.json` says `ward` or `legacy`; `scripts/set-staging-player.mjs` writes it.
@@ -126,6 +127,18 @@ export default {
     }
 
     const rest = parts.join('/')
+
+    // ── A RENAMED TOWN KEEPS ITS OLD LINKS. Staging links are unlisted but durable (a partner returns
+    // months later), so a former name 301s to the current one, path and query kept. The table is DATA
+    // (`staging/renamed.json`, `{ "<old>": "<new>" }`), written by the rename, so the next rename needs
+    // no deploy. ⛔ A redirect to a name with no slab is a 404 that names both, never a hop to nothing.
+    const renamedTo = (await renamedTable(env))[map]
+    if (renamedTo) {
+      if (!(await env.ASSETS.head(`staging/baked/${renamedTo}/manifest.json`))) {
+        return text(`"${map}" was renamed to "${renamedTo}", and "${renamedTo}" has no staging slab yet.`, 404)
+      }
+      return Response.redirect(`${url.origin}/${renamedTo}/${rest}${url.search}`, 301)
+    }
 
     // ⛔ A TOWN IS ONLY REAL IF ITS SLAB IS PUBLISHED. The player would happily render its
     // loud "look is not in the index" fallback for a town nobody has poured — a page that
@@ -254,6 +267,20 @@ function emojiIcon(glyph) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${glyph}</text></svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
+// Former map names → current ones (`staging/renamed.json`). Read at most once a minute per isolate;
+// ⛔ a record that is not a { string: string } object throws — a broken table is never "no renames".
+let _renamed = null
+async function renamedTable(env) {
+  if (_renamed && Date.now() - _renamed.at < 60_000) return _renamed.table
+  const obj = await env.ASSETS.get('staging/renamed.json')
+  const table = obj ? await obj.json() : {}
+  if (!table || typeof table !== 'object' || Array.isArray(table) || Object.values(table).some(v => typeof v !== 'string' || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(v))) {
+    throw new Error('staging/renamed.json is not a { "<old map>": "<new map>" } table')
+  }
+  _renamed = { table, at: Date.now() }
+  return table
+}
+
 async function shareCard(response, map, url, env, kitBase) {
   const t = (await townsIndex(env))[map] || null
   const { domain } = await townDomain(env, map)
