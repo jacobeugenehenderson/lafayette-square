@@ -53,6 +53,11 @@ point at the right render.
 - **Say whether a number came from disk, the network, or the GPU,** and on which target. A desktop number is never a phone number:
   name the target on every reading.
 
+## ✅ Rulings at dispatch (Jacob, 2026-10-04; agent Plumb)
+- **WARD USABLE = FIRST TRUTHFUL FRAME = the first frame with ground and buildings drawn.** The two moments are one; TIME TO WARD is measured to it.
+- The startup marks (`performance.mark('ward:…')`) live in the shared renderer (`Town.jsx`, `slabUrl.js`), and `loadAudit.js` is retired (`1debf2a2`).
+- `PreviewApp.jsx` is split with package B (Lens): the RightPanel and a child beside `<GpuMonitorTicker/>` are E's; `ShotCamera`, the shot tables, the Canvas camera/`onCreated` and `<Town>`'s props are B's.
+
 ## The work
 
 1. **Startup, exposed.** The spec's sequence: *HTML → application runtime → scene manifest → minimum ground → minimum buildings →
