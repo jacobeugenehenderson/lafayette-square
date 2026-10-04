@@ -226,7 +226,7 @@ export default function WindSheet({ extent, wind }) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     const half = new Uint16Array(4)
-    window.__windSheet = {
+    const handle = window.__windSheet = {
       get layout() { return layoutRef.current },
       get status() { return { ...status.current, sim: pass.material.uniforms.uSpring.value ? 'spring' : 'stateless' } },
       set spring(v) { pass.material.uniforms.uSpring.value = v ? 1 : 0; reset.current = true },
@@ -308,7 +308,8 @@ export default function WindSheet({ extent, wind }) {
         return [r.force.x, r.force.z]
       },
     }
-    return () => { if (window.__windSheet) delete window.__windSheet }
+    // Only our own handle: under a remount the new sheet's effect runs before the old one's cleanup.
+    return () => { if (window.__windSheet === handle) delete window.__windSheet }
   }, [gl, pass])
 
   return overlay ? <WindSheetDebug air={air} layoutRef={layoutRef} /> : null
