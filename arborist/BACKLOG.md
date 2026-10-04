@@ -23,7 +23,7 @@
 
 **What it unlocks: mild parallax in Browse** *(Jacob: "I think adding perspective would be nice; mild parallax")*. Browse is strictly top-down today because stacked bands only hold up straight down; the deep core lets Browse tilt slightly without the trees coming apart. ⇒ build it knowing about the deferred camera item (`ROADMAP`: "the camera's transitions and ownership rules as per-town data"), which is where Browse tilt and parallax would be authored.
 
-**Interim, also ruled:** cut the 28×28 grid and raise the flutter amplitude (the H-9 precedent) for relief before this lands; the size is set by Grain's numbers; builder not yet named.
+**No interim** (Jacob, 2026-10-04: done solidly, not in a hurry). Sequence: Grain's forensic → one trees-scoped brief → Grain builds it, warm.
 
 ## ▶ 2026-10-04 — ONE SHARED SHEET CARRIES THE WIND *(Jacob's design; with the depth work, not now)*
 
