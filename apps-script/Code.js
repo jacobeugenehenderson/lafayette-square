@@ -82,11 +82,14 @@ function isValidAdminToken(token) {
 var CURRENT_TENANT = null
 var TENANT_PATTERN = /^tw-[a-z0-9]{8}$/
 
-// ⛔⛔ FINITE, AND DELETED AT LAFAYETTE SQUARE'S CUTOVER (Jacob, 2026-10-04). LS's
-// production player on `main` predates town ids and still sends `look=lafayette-square`.
-// It is the ONE client this translates; every other client sends `tenant`.
+// ⛔⛔ FINITE: ONE ENTRY PER LIVE PLAYER THAT PREDATES TOWN IDS, EACH DELETED WHEN ITS TOWN NO
+// LONGER SERVES ONE (Jacob, 2026-10-04). Such a player still sends `look=<map>`; everything newer
+// sends `tenant`. Each entry names what it is waiting on, and a check fails the day it outlives it.
 // ▶ node checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs
-var LEGACY_LOOK_TENANT = { 'lafayette-square': 'tw-2721jg7t' }
+var LEGACY_LOOK_TENANT = {
+  'lafayette-square': 'tw-2721jg7t',   // until: LS's cutover (its player on `main`, GitHub Pages)
+  'provincetown':     'tw-zmc6ejej',   // until: host provincetown.online is re-promoted (pinned Ward build sends look)
+}
 
 /** The town this request is for, or null — and a null is refused by the caller, never defaulted. */
 function resolveTenant(tenant, look) {
