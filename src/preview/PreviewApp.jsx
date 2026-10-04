@@ -28,9 +28,10 @@ import { mountedPasses } from '../components/renderPipeline.jsx'
 import PhoneFrame, { BODY_W as PHONE_FRAME_W, BODY_H as PHONE_FRAME_H } from './PhoneFrame'
 import StripChart from './StripChart'
 import TriggerBar from './TriggerBar'
-import StartupPanel from './StartupPanel.jsx'
-import { ResidencyPanel, ResidencyProbe } from './Residency.jsx'
-import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan } from './phoneBus'
+import FilesTab from './FilesTab.jsx'
+import { ResidencyProbe, pieceMemory, useResidency } from './Residency.jsx'
+import { stop as phoneBusStop, startSpan as phoneBusStartSpan, endSpan as phoneBusEndSpan, recordColdStart } from './phoneBus'
+import { STARTUP_SEQUENCE, readStartupMarks } from '../lib/startupMarks.js'
 import {
   GpuMonitorTicker, GpuPanel, noteEvent, measureToggle,
   getLayerCost, layerCostSubscribe,
@@ -155,6 +156,12 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
 // toggle once the new path is operator-confirmed. (This is the convention
 // Azimuth's Phase-C tree-impostor flag adopts — the retired `slabBuildings`
 // A/B is the worked example.)
+// The page's cold start is the strip's first recording (phoneBus recordColdStart): the startup marks as ticks, every
+// fetched file as an assets span labelled with its size.
+const fmtKB = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.round(b / 1024)} KB`)
+recordColdStart({ sequence: STARTUP_SEQUENCE, readMarks: readStartupMarks,
+  describe: (e) => `${fmtKB(e.decodedBodySize)} decoded · ${fmtKB(e.transferSize)} wire` })
+
 const SCENE_LAYERS = [
   ['ground',     'Ground'],
   ['buildings',  'Buildings'],
@@ -240,7 +247,12 @@ function layerMetricValue(cost, metric) {
 // (a single layer can dwarf the per-frame ceiling); that's a category error.
 // Budget-% is a SCENE-TOTAL question and now lives in the verdict (GpuPanel).
 // Heat is RELATIVE WEIGHT (which layers are the hogs), not a good/bad call.
+// A Scene layer's <Town> piece (its `town:<piece>` group), for the row's memory line (Residency.jsx).
+const LAYER_PIECE = { ground: 'ground', buildings: 'buildings', trees: 'trees', park: 'park', lights: 'lamps', arch: 'setPieces', celestial: 'sky', clouds: 'clouds' }
+const fmtMB = (b) => `${(b / 1048576).toFixed(b < 10485760 ? 1 : 0)}`
+
 function LayerRow({ layerKey, label, on, onToggle, disabled, metric, groupMax }) {
+  const mem = pieceMemory(useResidency(), LAYER_PIECE[layerKey])
   const cost = getLayerCost(layerKey)
   const draws = cost ? Math.max(0, cost.calls) : 0
   const tris  = cost ? Math.max(0, cost.tris)  : 0
@@ -290,6 +302,11 @@ function LayerRow({ layerKey, label, on, onToggle, disabled, metric, groupMax })
           {readout}
         </span>
       </div>
+      {mem && (
+        <div className="profiler-note" style={{ paddingLeft: 22 }} title="held = geometry + this piece's slab textures on the GPU · in view = shown and in frustum (per mesh) · slab = the baked files">
+          {fmtMB(mem.held)} MB held · {fmtMB(mem.visible)} in view{mem.baked != null ? ` · slab ${fmtMB(mem.baked)}` : ''}
+        </div>
+      )}
     </div>
   )
 }
@@ -342,12 +359,38 @@ function TimeControl() {
   )
 }
 
+// The profiler's three instruments, one at a time: the strip (frames against budget, with the cold start's marks and
+// fetches on its lanes), the GPU panel (draws / tris / memory / GPU vs main), and the files table (FilesTab.jsx).
+function ProfilerBody({ tab }) {
+  if (tab === 'strip') return <StripChart height={220} />
+  // The strip's height, so switching tabs never pushes the phone off the screen; the panel scrolls inside it.
+  return <div className="profiler-panel" style={{ height: 220, overflowY: 'auto' }}>{tab === 'gpu' ? <GpuPanel /> : <FilesTab />}</div>
+}
+
+// Desktop: the same profiler in the right panel, closed to one line until opened.
+function DesktopProfiler({ tab, setTab }) {
+  const [open, setOpen] = useState(false)
+  const r = useResidency()
+  const ttw = readStartupMarks()['first-truthful-frame']
+  return (
+    <div className="profiler-panel">
+      <button onClick={() => setOpen(!open)} className="section-heading" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
+        {open ? '▾' : '▸'} profiler · TIME TO WARD {ttw == null ? '—' : `${(ttw / 1000).toFixed(2)} s`} · GPU {r ? `${Math.round(r.gpu.total / 1048576)} MB` : '—'}
+      </button>
+      {open && <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <ProfilerTab tab={tab} setTab={setTab} />
+        <ProfilerBody tab={tab} />
+      </div>}
+    </div>
+  )
+}
+
 function ProfilerTab({ tab, setTab }) {
   const btn = (id, label) => (
     <button
       key={id}
       onClick={() => setTab(id)}
-      className="glass-panel rounded-md"
+      className="profiler-panel"
       style={{
         padding: '4px 10px',
         fontSize: 11,
@@ -361,6 +404,7 @@ function ProfilerTab({ tab, setTab }) {
     <div style={{ display: 'flex', gap: 4, flex: 'none' }}>
       {btn('strip', 'strip')}
       {btn('gpu', 'gpu')}
+      {btn('files', 'files')}
     </div>
   )
 }
@@ -439,7 +483,7 @@ function PyramidTuner({ envId, degree, onChange }) {
   )
 }
 
-function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree, quality }) {
+function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree, quality, profilerTab, setProfilerTab }) {
   // The passes this tier's profile ships at all (gates aside): the rest have nothing to toggle.
   const tierPasses = new Set(mountedPasses({ quality, dofOn: true }).map((e) => e.id))
   const notOnTier = new Set(FX_LAYERS.map(([k]) => k).filter((k) => !tierPasses.has(k)))
@@ -451,11 +495,8 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
         <TimeControl />
       </div>
 
-      {/* The cold start of this page: the spec's sequence, TIME TO WARD, and each artifact's cost (StartupPanel.jsx). */}
-      <StartupPanel />
-      <ResidencyPanel />
-      {/* The phone tiers show the GPU panel under the phone; the desktop tier shows it here. */}
-      {envId === 'desktop' && <div className="glass-panel rounded-xl p-3"><GpuPanel /></div>}
+      {/* The phone tiers show the profiler under the phone; the desktop tier shows it here, closed to one line. */}
+      {envId === 'desktop' && <DesktopProfiler tab={profilerTab} setTab={setProfilerTab} />}
 
       {/* Pyramid tuner leads the tools; it and the roster cards below
           twirl-collapse (default closed) to cut the clutter. */}
@@ -1058,9 +1099,7 @@ function PreviewTown({ town }) {
                 </div>
                 <ProfilerTab tab={profilerTab} setTab={setProfilerTab} />
               </div>
-              {profilerTab === 'strip'
-                ? <StripChart height={220} />
-                : <div className="glass-panel rounded-xl p-3"><GpuPanel /></div>}
+              <ProfilerBody tab={profilerTab} />
             </div>
           </>
         ) : (
@@ -1070,7 +1109,8 @@ function PreviewTown({ town }) {
 
       <TopAppBar shot={shot} setShot={setShot} mode={mode} setMode={setMode} />
       <RightPanel layers={layers} setLayer={setLayer} top={panelTop} bottom={panelBottom}
-        envId={mode} degree={activeDegree} onTuneDegree={setActiveDegree} quality={quality} />
+        envId={mode} degree={activeDegree} onTuneDegree={setActiveDegree} quality={quality}
+        profilerTab={profilerTab} setProfilerTab={setProfilerTab} />
       {!isPhone && <PublishPanel lookId={lookId} />}
     </div>
   )

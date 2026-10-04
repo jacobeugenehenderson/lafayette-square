@@ -1,5 +1,7 @@
 /**
  * Residency — what the Ward HOLDS, by piece, along the spec's progression BAKED → VISIBLE → SELECTED → OPENED.
+ * Read in the existing instruments: each Scene layer row carries its piece's line (PreviewApp LayerRow), and the GPU panel
+ * carries the totals in bytes (GpuMonitor GpuPanel). This module measures; it draws nothing of its own.
  *
  * - BAKED: bytes the slab carries (`manifest.json#files`), by artifact class (artifactClass.js). What exists in the Ward.
  * - RESIDENT: what this page holds now. GPU: the GL ledger (glLedger.js) — textures by the file they came from, buffers,
@@ -20,7 +22,6 @@ import { slabClass } from './artifactClass.js'
 import { getLedger } from './glLedger.js'
 import { getActiveProfileId } from './deviceProfiles'
 
-const MB = (b) => `${(b / 1048576).toFixed(1)}`
 let latest = null
 const subs = new Set()
 
@@ -107,47 +108,22 @@ export function ResidencyProbe({ lookId }) {
   return null
 }
 
-export function ResidencyPanel() {
+/** The latest residency report (null until the probe's first second), re-rendering on each new one. */
+export function useResidency() {
   const [, tick] = useState(0)
-  const [open, setOpen] = useState(true)
   useEffect(() => { const f = () => tick((n) => n + 1); subs.add(f); return () => subs.delete(f) }, [])
-  const r = latest
-  const bakedTotal = r?.baked ? Object.values(r.baked).reduce((s, b) => s + b, 0) : null
-  return (
-    <div className="glass-panel rounded-xl p-3" style={{ fontSize: 11 }}>
-      <button className="section-heading" onClick={() => setOpen(!open)} style={{ cursor: 'pointer', background: 'none', border: 0, padding: 0, color: 'inherit' }}>
-        {open ? '▾' : '▸'} residency · GPU {r ? MB(r.gpu.total) : '—'} MB{bakedTotal != null ? ` · slab ${MB(bakedTotal)} MB` : ''}
-      </button>
-      {open && r && <>
-        <div className="glass-text-dim" style={{ fontSize: 9, margin: '4px 0 6px', lineHeight: 1.4 }}>
-          target {r.target} · BAKED = the slab's files · resident = held now · VISIBLE = shown and in frustum (per mesh, an upper bound)
-          · SELECTED / OPENED: {r.selected}
-        </div>
-        <div className="flex font-mono glass-text-dim" style={{ fontSize: 9 }}>
-          <span style={{ flex: 1 }}>geometry by piece (MB)</span><span style={{ width: 56, textAlign: 'right' }}>resident</span><span style={{ width: 56, textAlign: 'right' }}>VISIBLE</span>
-        </div>
-        {r.pieces.map((p) => (
-          <div key={p.piece} className="flex font-mono" style={{ fontSize: 10, lineHeight: '15px' }}>
-            <span style={{ flex: 1 }}>{p.piece} · {p.meshes} meshes</span>
-            <span style={{ width: 56, textAlign: 'right' }}>{MB(p.resident)}</span><span style={{ width: 56, textAlign: 'right' }}>{MB(p.visible)}</span>
-          </div>
-        ))}
-        <div className="flex font-mono glass-text-dim" style={{ fontSize: 9, marginTop: 6 }}>
-          <span style={{ flex: 1 }}>GPU by source (MB)</span><span style={{ width: 56, textAlign: 'right' }}>resident</span><span style={{ width: 56, textAlign: 'right' }}>BAKED</span>
-        </div>
-        {r.gpu.textures.map((t) => (
-          <div key={t.cls} className="flex font-mono" style={{ fontSize: 10, lineHeight: '15px' }}>
-            <span style={{ flex: 1 }}>textures · {t.cls} · {t.n}</span>
-            <span style={{ width: 56, textAlign: 'right' }}>{MB(t.bytes)}</span><span style={{ width: 56, textAlign: 'right' }}>{r.baked?.[t.cls] != null ? MB(r.baked[t.cls]) : ''}</span>
-          </div>
-        ))}
-        <div className="flex font-mono" style={{ fontSize: 10, lineHeight: '15px' }}><span style={{ flex: 1 }}>buffers (all geometry)</span><span style={{ width: 56, textAlign: 'right' }}>{MB(r.gpu.buffers)}</span><span style={{ width: 56 }} /></div>
-        <div className="flex font-mono" style={{ fontSize: 10, lineHeight: '15px' }}><span style={{ flex: 1 }}>renderbuffers</span><span style={{ width: 56, textAlign: 'right' }}>{MB(r.gpu.renderbuffers)}</span><span style={{ width: 56 }} /></div>
-        <div className="glass-text-dim" style={{ fontSize: 9, marginTop: 4, lineHeight: 1.4 }}>
-          CPU: geometry above is also held on the CPU (three keeps the arrays) · JS heap {r.jsHeap != null ? `${MB(r.jsHeap)} MB` : 'not exposed by this browser'}
-          · decoded images held by the browser are not visible to the page{r.unknownFormats.length ? ` · ⚠️ unsized formats: ${r.unknownFormats.join(', ')}` : ''}
-        </div>
-      </>}
-    </div>
-  )
+  return latest
+}
+
+// <Town>'s piece → the slab class whose files it draws (artifactClass.js), where it has one.
+export const PIECE_SLAB = { ground: 'slab:ground', buildings: 'slab:buildings', trees: 'slab:trees', lamps: 'slab:lamps' }
+
+/** One piece's line: geometry + its slab files' textures held, the part in view, and what the slab holds. */
+export function pieceMemory(r, piece) {
+  if (!r) return null
+  const p = r.pieces.find((x) => x.piece === piece)
+  const cls = PIECE_SLAB[piece]
+  const tex = cls ? (r.gpu.textures.find((t) => t.cls === cls)?.bytes || 0) : 0
+  if (!p && !tex) return null
+  return { held: (p?.resident || 0) + tex, visible: p?.visible || 0, baked: cls ? r.baked?.[cls] ?? null : null }
 }

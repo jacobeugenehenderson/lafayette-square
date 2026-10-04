@@ -5,7 +5,7 @@
  *   HTML → application runtime → scene manifest → minimum ground → minimum buildings → FIRST TRUTHFUL FRAME → progressive
  * Each boundary is marked ONCE per page, where the shared renderer crosses it, so Preview and the Ward carry the same
  * marks from the same code. A mark draws nothing and costs one timestamp; it is read by Preview's startup gauge
- * (src/preview/StartupPanel.jsx); the drawn ones by `<DrawnAnchor>` (src/components/DrawnAnchor.jsx) or by anything holding a PerformanceObserver.
+ * (the strip's cold start, src/preview/phoneBus.js#recordColdStart, and the files tab); the drawn ones by `<DrawnAnchor>` (src/components/DrawnAnchor.jsx) or by anything holding a PerformanceObserver.
  *
  * ⭐ "Drawn" means DRAWN: `<DrawnAnchor>` fires on the first draw call of a mesh under its group (three's
  * `onAfterRender`), not on a fetch landing or a component mounting. A hidden group (Preview's layer toggle) never draws,
@@ -18,15 +18,15 @@
  */
 export const MARK_PREFIX = 'ward:'
 
-/** The sequence, in the spec's order. `html` is the browser's own (navigation timing), not a mark. */
+/** The sequence, in the spec's order (`short`: the strip's tick label). `html` is the browser's own (navigation timing), not a mark. */
 export const STARTUP_SEQUENCE = [
-  { id: 'html', label: 'HTML', blocking: true },
-  { id: 'runtime', label: 'application runtime', blocking: true },
-  { id: 'manifest', label: 'scene manifest', blocking: true },
-  { id: 'ground', label: 'minimum ground', blocking: true },
-  { id: 'buildings', label: 'minimum buildings', blocking: true },
-  { id: 'first-truthful-frame', label: 'FIRST TRUTHFUL FRAME = WARD USABLE', blocking: true },
-  { id: 'trees', label: 'trees (progressive)', blocking: false },
+  { id: 'html', label: 'HTML', short: 'HTML', blocking: true },
+  { id: 'runtime', label: 'application runtime', short: 'runtime', blocking: true },
+  { id: 'manifest', label: 'scene manifest', short: 'manifest', blocking: true },
+  { id: 'ground', label: 'minimum ground', short: 'ground', blocking: true },
+  { id: 'buildings', label: 'minimum buildings', short: 'buildings', blocking: true },
+  { id: 'first-truthful-frame', label: 'FIRST TRUTHFUL FRAME = WARD USABLE', short: 'USABLE', blocking: true },
+  { id: 'trees', label: 'trees (progressive)', short: 'trees', blocking: false },
 ]
 
 // The two pieces a truthful frame needs; when both have drawn, the frame is marked.

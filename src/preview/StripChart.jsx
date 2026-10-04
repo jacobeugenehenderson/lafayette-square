@@ -1,7 +1,9 @@
 /**
  * StripChart — event-bounded recording renderer.
  *
- * Renders the current phoneBus session fit-to-width. While recording,
+ * Renders the current phoneBus session fit-to-width. On load, the session is the page's COLD START (phoneBus
+ * recordColdStart): t = 0 is navigation start, the startup lane ticks the spec's marks, the header carries TIME TO WARD,
+ * and each fetched file is an assets span whose hover gives its size. While recording,
  * the chart extends as new frames arrive. When stopped, the chart
  * is frozen and supports hover-to-inspect.
  *
@@ -11,8 +13,8 @@
  *   ├─ meter rectangle ───────────────────────┤
  *   │  [bars = % of device budget]            │
  *   │  ............ budget ...................│
- *   ├─ swimlanes (only when spans present) ───┤
- *   │  [event spans]                          │
+ *   ├─ swimlanes (always the full registry) ──┤
+ *   │  startup ticks · camera · assets · …     │
  *   └─────────────────────────────────────────┘
  *
  * ⚠️ The bars plot WORK as a % of the active device budget (max of
@@ -80,6 +82,7 @@ const LANE_GAP = 2
 // when no spans were captured for that category in the recording.
 // Predictable structure beats space-saving emptiness.
 const LANES = [
+  { id: 'startup', label: 'startup', hint: 'the spec\'s cold-start marks (startupMarks.js): ticks, ■ before WARD USABLE' },
   { id: 'camera',  label: 'camera',  hint: 'tween between shots' },
   { id: 'assets',  label: 'assets',  hint: 'fetch / texture / GLB' },
   { id: 'compile', label: 'compile', hint: 'shader compile (todo)' },
@@ -326,6 +329,7 @@ export default function StripChart({ height = 110 }) {
           i = j - 1
         }
       }
+      let hintRight = -Infinity
       for (const c of clusters) {
         const x0 = barLeft + Math.max(0, (c.t0 - t0) * xPerMs)
         const x1 = barLeft + (c.t1 - t0) * xPerMs
@@ -337,21 +341,42 @@ export default function StripChart({ height = 110 }) {
         ctx.moveTo(x0 + 0.5, laneTop0); ctx.lineTo(x0 + 0.5, laneTop0 + laneAreaH)
         ctx.moveTo(x1 - 0.5, laneTop0); ctx.lineTo(x1 - 0.5, laneTop0 + laneAreaH)
         ctx.stroke()
-        // small "stagger" hint above the cluster
-        if (x1 - x0 > 30) {
+        // small "stagger" hint above the cluster, unless it would overprint the previous one
+        const hint = `${c.count}× cluster — stagger`
+        ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace'
+        if (x1 - x0 > 30 && x0 + 4 > hintRight) {
+          hintRight = x0 + 4 + ctx.measureText(hint).width + 6
           ctx.fillStyle = 'rgba(253, 230, 138, 0.7)'
           ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace'
           ctx.textAlign = 'left'
-          ctx.fillText(`${c.count}× cluster — stagger`, x0 + 4, laneTop0 - 2)
+          ctx.fillText(hint, x0 + 4, laneTop0 - 2)
           ctx.textAlign = 'start'
         }
       }
 
       // Spans
+      let tickLabelRight = -Infinity
       for (const e of s.spans) {
         const t1 = e.t1 == null ? tEnd : e.t1
         const laneIdx = laneIdxOf.get(e.lane)
         if (laneIdx == null) continue
+        if (e.tick) {
+          // A startup mark: a tick, with its name beside it when there is room (and on the meter, a guide line).
+          const x = barLeft + (e.t0 - t0) * xPerMs
+          const y = laneTop0 + laneIdx * (LANE_H + LANE_GAP)
+          ctx.fillStyle = e.color
+          ctx.fillRect(x - 1, y, 2, LANE_H)
+          ctx.globalAlpha = 0.35
+          ctx.fillRect(x - 0.5, meterTop, 1, meterH)
+          ctx.globalAlpha = 1
+          const text = e.short || e.label
+          if (x + 3 > tickLabelRight) {
+            ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace'
+            ctx.fillText(text, x + 3, y + LANE_H / 2 + 1)
+            tickLabelRight = x + 3 + ctx.measureText(text).width + 4
+          }
+          continue
+        }
         const x0 = barLeft + Math.max(0, (e.t0 - t0) * xPerMs)
         const x1 = barLeft + (t1 - t0) * xPerMs
         const y = laneTop0 + laneIdx * (LANE_H + LANE_GAP)
@@ -408,10 +433,12 @@ export default function StripChart({ height = 110 }) {
       const dt = Math.abs(f.t - tAtX)
       if (dt < bestDt) { bestDt = dt; nearest = f }
     }
+    // A tick (a startup mark) has no width: it is "active" within a few pixels of the caret.
+    const slop = (4 / barAreaW) * dur
     const activeSpans = (s.spans || []).filter(sp => {
       const t1 = sp.t1 == null ? s.t1 : sp.t1
-      return nearest.t >= sp.t0 && nearest.t <= t1
-    })
+      return sp.tick ? Math.abs(tAtX - sp.t0) <= slop : nearest.t >= sp.t0 && nearest.t <= t1
+    }).slice(0, 8)
     setHover({ x, y, frame: nearest, t: nearest.t - s.t0, spans: activeSpans })
   }
   const onLeave = () => setHover(null)
@@ -490,12 +517,16 @@ function Tooltip({ x, y, frame, t, spans, containerW }) {
         </div>
       )}
       <Row label="frame ms" value={frame.ms.toFixed(1)} cap={`${BUDGET.ms}`}    over={frame.ms - BUDGET.ms} dominant={c.axis === 'ms' && isOver} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10 }}>
+        <span style={{ color: '#9ca3af' }}>GPU · main ms</span>
+        <span>{frame.gpuMs == null ? '—' : frame.gpuMs.toFixed(1)} · {frame.mainMs == null ? '—' : frame.mainMs.toFixed(1)}</span>
+      </div>
       <Row label="draws"    value={fmt(frame.calls)}     cap={`${BUDGET.draws}`} over={frame.calls - BUDGET.draws} dominant={c.axis === 'draws' && isOver} />
       <Row label="tris"     value={fmt(frame.tris)}      cap="1M"                over={frame.tris - BUDGET.tris}    dominant={c.axis === 'tris' && isOver} />
       {spans.length > 0 && (
         <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           {spans.map((sp, i) => (
-            <div key={i} style={{ color: sp.color, fontSize: 10 }}>· {sp.lane}: {sp.label}</div>
+            <div key={i} style={{ color: sp.color, fontSize: 10 }}>· {sp.lane}: {sp.label}{sp.tick ? ` @ ${(sp.t0 / 1000).toFixed(2)}s` : ''}</div>
           ))}
         </div>
       )}

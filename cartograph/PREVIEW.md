@@ -63,9 +63,9 @@ The bolt-ons over the production render — the only things Preview adds that LS
 |---|---|---|
 | **GPU profiler** | per-frame cost off `renderer.info` (draws / triangles) + a rolling CPU frame-time from rAF deltas; spike log tagged with its cause | `GpuMonitor.jsx` |
 | **Per-layer cost** | toggle a layer → measured Δ (ms / draws / tris) attributed to that layer (§4) | `measureToggle`, `getLayerCost` |
-| **Startup** | the spec's sequence as invisible marks the shared renderer sets (`performance.mark`, `ward:*`), TIME TO WARD, and per artifact class: wire / decoded bytes, fetch, JSON parse, decode+upload time (§4a) | `StartupPanel.jsx`, `src/lib/startupMarks.js`, `src/components/DrawnAnchor.jsx` |
-| **Residency** | BAKED (the slab's files) vs resident (GPU, from the GL ledger; geometry by `<Town>` piece) vs VISIBLE (shown and in frustum) (§4a) | `Residency.jsx`, `glLedger.js` |
-| **Strip chart / GPU panel** | two profiler tabs — a rolling frame-time strip vs. the numeric draws/tris/geos/tex/progs readout | `StripChart.jsx`, `GpuPanel` |
+| **Cold start** | the strip's first recording is the page's load: a startup lane ticks the spec's marks (`ward:*`, set by the shared renderer), the header carries TIME TO WARD, each fetched file is an assets span (hover: its sizes); the **files** tab is its table, per class opening onto files (§4a) | `phoneBus.js#recordColdStart`, `StripChart.jsx`, `FilesTab.jsx`, `src/lib/startupMarks.js`, `src/components/DrawnAnchor.jsx` |
+| **Residency** | each Scene layer row: MB held · in view · in the slab; the GPU panel: GPU memory in bytes (textures · geometry · post-FX targets) beside the count ceilings (§4a) | `Residency.jsx`, `glLedger.js` |
+| **Profiler** (strip · gpu · files) | under the phone on the phone tiers; on desktop in the right panel, closed to one line (TIME TO WARD · GPU MB). Opaque (`.profiler-panel`, project tokens), one fixed height | `StripChart.jsx`, `GpuPanel` |
 | **Phone mode** | renders the canvas inside `<PhoneFrame>` (iPhone bezel, target scale 0.65) to read deployed mobile aspect; persisted to `localStorage` (`preview.mode.v1`) | `PhoneFrame.jsx`, `usePhoneScale` |
 | **Layer toggle matrix** | live per-layer visibility for Scene + Post-FX layers, each with its cost bar | `RightPanel`, `LayerRow` |
 | **Time-of-day** | the shared `DawnTimeline` scrub — test the look at dawn / day / dusk / night | `TimeControl` |

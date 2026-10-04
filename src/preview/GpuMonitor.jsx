@@ -15,13 +15,14 @@ import { useEffect, useRef, useState } from 'react'
 import { pushFrame as phoneBusPushFrame } from './phoneBus'
 import { ACTIVE_PROFILE, DEVICE_PROFILES, getActiveProfile, getActiveProfileId, subscribeActiveProfile } from './deviceProfiles'
 import { frameCost, installFrameCost } from './frameCost.js'
+import { useResidency } from './Residency.jsx'
 
 const eventBus = { last: null, log: [] }
 export function noteEvent(label) {
   eventBus.last = { label, at: Date.now() }
 }
 
-const stats = { fps: 0, frameMs: 0, calls: 0, tris: 0, geos: 0, tex: 0, progs: 0 }
+const stats = { fps: 0, frameMs: 0, calls: 0, tris: 0, geos: 0, tex: 0, progs: 0, trisNaN: 0 }
 const subs = new Set()
 const subscribe = (fn) => { subs.add(fn); return () => subs.delete(fn) }
 const notify = () => { for (const fn of subs) fn() }
@@ -131,12 +132,16 @@ export function GpuMonitorTicker() {
     // Per-frame strip-chart sample. Delta from last frame's accumulator
     // = the work this frame's render(s) added — covers all post-FX passes.
     const totalCalls = gl.info.render.calls
-    const totalTris  = gl.info.render.triangles
+    let totalTris  = gl.info.render.triangles
+    // three's triangle counter accumulates (autoReset is off, above), so ONE draw that adds NaN poisoned it for the
+    // rest of the session: every reading after read NaN (seen 2026-10-04 during a cold load; which draw, cause not
+    // established). Restart it and COUNT the event, shown on the panel, instead of showing NaN forever.
+    if (!Number.isFinite(totalTris)) { gl.info.render.triangles = 0; prevTris.current = 0; totalTris = 0; stats.trisNaN++ }
     const dCalls = Math.max(0, totalCalls - prevCalls.current)
     const dTris  = Math.max(0, totalTris  - prevTris.current)
     prevCalls.current = totalCalls
     prevTris.current  = totalTris
-    phoneBusPushFrame(now, frameMs, dCalls, dTris)
+    phoneBusPushFrame(now, frameMs, dCalls, dTris, frameCost.gpuMs, frameCost.mainMs)
     // Hold the latest per-frame delta so GpuPanel's draws/tris readouts
     // reflect this-frame work, not the renderer's cumulative since init.
     stats.calls = dCalls
@@ -360,15 +365,31 @@ export function GpuPanel() {
       </div>
       <Row label="draws" value={stats.calls}    cap={prof.drawBudget} fmt={fmt} />
       <Row label="tris"  value={stats.tris}     cap={prof.triBudget} fmt={fmt} />
+      {stats.trisNaN > 0 && <div className="profiler-note" style={{ color: 'var(--warning, #f5a623)' }}>⚠️ a draw reported NaN triangles on {stats.trisNaN} frame{stats.trisNaN > 1 ? 's' : ''}: those frames' tris are not counted (cause not established)</div>}
 
-      {/* Resident memory ceiling (Vernier Phase 2). COUNTS, not bytes — three.js
-          exposes counts, not VRAM bytes; a coarse proxy for the never-crash
-          OOM gauge. Budget numbers are INTERIM/generous (deviceProfiles.js). */}
+      {/* Resident counts against the target's INTERIM count ceiling (deviceProfiles.js memBudgetCounts) — the budget
+          vocabulary the verdict reads — and beside them the BYTES those counts hold, measured from the allocation
+          calls (glLedger.js via Residency.jsx). No byte budget is set yet (memBudgetMB is reserved), so bytes have no cap. */}
       <Row label="geos"  value={stats.geos}     cap={mem?.geometries ?? null} fmt={fmt} />
       <Row label="tex"   value={stats.tex}      cap={mem?.textures   ?? null} fmt={fmt} />
       <Row label="progs" value={stats.progs}    cap={mem?.programs   ?? null} fmt={fmt} />
+      <GpuBytes budgetMB={prof.memBudgetMB} />
 
       <SpikeLog />
+    </div>
+  )
+}
+
+const MB = (b) => `${(b / 1048576).toFixed(0)} MB`
+function GpuBytes({ budgetMB }) {
+  const r = useResidency()
+  if (!r) return null
+  const tex = r.gpu.textures.filter((t) => t.cls !== 'render targets').reduce((s, t) => s + t.bytes, 0)
+  const rt = (r.gpu.textures.find((t) => t.cls === 'render targets')?.bytes || 0) + r.gpu.renderbuffers
+  return (
+    <div className="profiler-note" style={{ marginTop: 2 }}>
+      GPU memory {MB(r.gpu.total)}{budgetMB ? ` / ${budgetMB} MB` : ' · no byte budget set'} — textures {MB(tex)} · geometry {MB(r.gpu.buffers)} ·
+      post-FX targets {MB(rt)}{r.jsHeap != null ? ` · JS heap ${MB(r.jsHeap)}` : ''}
     </div>
   )
 }

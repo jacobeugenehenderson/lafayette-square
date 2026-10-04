@@ -155,6 +155,22 @@ input, textarea, select {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   }
 
+  /* Profiler — Preview's instrument panels (strip / gpu / files, the layer rows' cost lines). OPAQUE, unlike
+     .glass-panel: they sit over the phone frame's dark backdrop and the scene, and must read over both. */
+  .profiler-panel {
+    background: var(--surface);
+    color: var(--on-surface);
+    border: 1px solid var(--outline);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+  .profiler-row  { display: flex; line-height: 15px; color: var(--on-surface); }
+  .profiler-head { display: flex; font-size: 9px; color: var(--on-surface-variant); }
+  .profiler-sub  { color: var(--on-surface-variant); }
+  .profiler-note { font-size: 9px; line-height: 1.4; color: var(--on-surface-variant); }
+
   /* ── Glass text hierarchy ───────────────────────────────────── */
   /* Readable on any scene brightness via text-shadow lift.
      Adjust --on-surface tokens in design.css for global changes. */

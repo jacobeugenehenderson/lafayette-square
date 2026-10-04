@@ -20,6 +20,8 @@
 
 const MAX_FRAMES = 1200         // hard cap for event recordings (~20s)
 const MAX_SPANS = 200
+const MAX_SPANS_COLD = 4000     // a cold start fetches hundreds of files; each is a span on the assets lane
+const COLD_CAP_MS = 30000       // a cold-start recording stops at the last startup mark, or here
 const AUTO_STOP_MS = 5000       // event recordings auto-stop after 5s
 const AMBIENT_WINDOW_MS = 8000  // ambient rolling window
 const WARMUP_FRAMES = 2         // skip first frames after start()
@@ -70,6 +72,7 @@ export function setMode(m) {
 export function start(label) {
   if (mode !== 'event') return
   if (autoStopTimer) { clearTimeout(autoStopTimer); autoStopTimer = null }
+  if (coldTimer) { clearInterval(coldTimer); coldTimer = null }
   session = {
     status: 'recording',
     label,
@@ -84,7 +87,43 @@ export function start(label) {
   notify()
 }
 
+// ── The cold start: the page's own load, as a recording ──────────────
+// t0 is navigation start (0), so the strip reads the spec's sequence from the first byte: every file this page
+// fetched is a span on the assets lane (Resource Timing, backfilled), and each startup mark (src/lib/startupMarks.js)
+// is a tick on the startup lane. The header carries TIME TO WARD once the FIRST TRUTHFUL FRAME marks. It stops a second
+// after every mark is in, or at COLD_CAP_MS; a shot change's stop() does not end it early.
+let coldTimer = null
+export function recordColdStart({ sequence, readMarks, describe }) {
+  if (mode !== 'event' || session.cold) return
+  session = { status: 'recording', label: 'cold start', t0: 0, t1: 0, frames: [], spans: [], _warmup: 0, cold: true }
+  startPerfObserver({ buffered: true, describe })
+  const seen = new Set()
+  coldTimer = setInterval(() => {
+    const marks = readMarks()
+    for (const s of sequence) {
+      const t = marks[s.id]
+      if (t == null || seen.has(s.id)) continue
+      seen.add(s.id)
+      session.spans.push({ id: `mark:${s.id}`, lane: 'startup', label: s.label, short: s.short, color: s.blocking ? '#fbbf24' : '#a3a3a3', t0: t, t1: t, tick: true })
+      if (s.id === 'first-truthful-frame') session.label = `cold start · TIME TO WARD ${(t / 1000).toFixed(2)}s`
+    }
+    // Done when EVERY mark is in (they need not arrive in the sequence's order: trees can draw before the ground), plus
+    // a second; or at the cap.
+    const all = sequence.every((s) => marks[s.id] != null)
+    const end = all ? Math.max(...sequence.map((s) => marks[s.id])) + 1000 : null
+    if ((end != null && performance.now() > end) || performance.now() > COLD_CAP_MS) {
+      clearInterval(coldTimer); coldTimer = null
+      if (marks['first-truthful-frame'] == null) session.label = `cold start · no FIRST TRUTHFUL FRAME in ${COLD_CAP_MS / 1000}s`
+      session.cold = 'done'
+      stop()
+    }
+    notify()
+  }, 250)
+  notify()
+}
+
 export function stop() {
+  if (session.cold === true) return   // the cold start ends itself (recordColdStart)
   if (autoStopTimer) { clearTimeout(autoStopTimer); autoStopTimer = null }
   if (mode === 'event') stopPerfObserver()
   if (session.status !== 'recording') return
@@ -115,9 +154,9 @@ export function getSession() {
 }
 
 // ── Frame + span ingest ──────────────────────────────────────────────
-export function pushFrame(t, ms, calls, tris) {
+export function pushFrame(t, ms, calls, tris, gpuMs = null, mainMs = null) {
   if (mode === 'ambient') {
-    ambient.frames.push({ t, ms, calls, tris })
+    ambient.frames.push({ t, ms, calls, tris, gpuMs, mainMs })
     pruneAmbient()
     if (ambient.frames.length % 6 === 0) notify()
     return
@@ -131,14 +170,14 @@ export function pushFrame(t, ms, calls, tris) {
     notify()
     return
   }
-  session.frames.push({ t, ms, calls, tris })
+  session.frames.push({ t, ms, calls, tris, gpuMs, mainMs })
   if (session.frames.length % 6 === 0) notify()
 }
 
 export function startSpan(id, lane, label, color = '#7dd3fc') {
   const target = mode === 'ambient' ? ambient : session
   if (mode === 'event' && session.status !== 'recording') return
-  if (target.spans.length >= MAX_SPANS) return
+  if (target.spans.length >= (target.cold ? MAX_SPANS_COLD : MAX_SPANS)) return
   target.spans.push({ id, lane, label, color, t0: performance.now(), t1: null })
 }
 
@@ -163,7 +202,7 @@ function pruneAmbient() {
 }
 
 // ── PerformanceObserver — assets lane ────────────────────────────────
-function startPerfObserver() {
+function startPerfObserver({ buffered = false, describe = null } = {}) {
   if (perfObserver) return
   if (typeof PerformanceObserver === 'undefined') return
   try {
@@ -186,17 +225,18 @@ function startPerfObserver() {
             return segs[segs.length - 1] || u.pathname
           } catch { return entry.name }
         })()
+        if (target.spans.length >= (target.cold ? MAX_SPANS_COLD : MAX_SPANS)) return
         target.spans.push({
           id: `r:${entry.name}:${entry.startTime}`,
           lane: 'assets',
-          label: name,
+          label: describe ? `${name} · ${describe(entry)}` : name,
           color: '#a78bfa',
           t0: t0e,
           t1: t1e,
         })
       }
     })
-    perfObserver.observe({ entryTypes: ['resource'] })
+    perfObserver.observe(buffered ? { type: 'resource', buffered: true } : { entryTypes: ['resource'] })
   } catch { /* ignore — older browsers */ }
 }
 function stopPerfObserver() {

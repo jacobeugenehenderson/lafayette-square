@@ -4,7 +4,7 @@
  * Owns: a ledger of every WebGL2 texture, buffer and renderbuffer this page allocates (bytes, by artifact class,
  * net of deletes), the main-thread time of every upload call (an image's decode happens inside its upload, so that
  * time is decode + upload), and the parse time of every `Response.json()`. Installed on import, before three creates
- * its context (src/preview/main.jsx imports it first). Read by StartupPanel and ResidencyPanel.
+ * its context (src/preview/main.jsx imports it first). Read by the files tab (FilesTab.jsx) and Residency.jsx.
  * Must never: run in an app a visitor opens — it wraps WebGL2RenderingContext.prototype, an inspection bolt-on.
  *
  * ⭐ Bytes are COMPUTED FROM THE CALLS, not estimated from file size: a texture's bytes are its allocated levels ×
@@ -66,7 +66,7 @@ function levelBytes(fmt, w, h, d, levels) {
 
 function install() {
   // The browser keeps 250 Resource Timing entries by default; Vite's dev modules alone are ~235, so the slab's files
-  // fell off the end and read as never fetched. Keep them all (StartupPanel reads them).
+  // fell off the end and read as never fetched. Keep them all (the files tab and the strip's cold start read them).
   if (typeof performance !== 'undefined' && performance.setResourceTimingBufferSize) performance.setResourceTimingBufferSize(20000)
   if (!GL || GL.prototype.__glLedger) return
   GL.prototype.__glLedger = true
