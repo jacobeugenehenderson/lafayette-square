@@ -10,6 +10,10 @@ evict-when: browseFrame reaches the Ward's plan view; no LS values in any town's
 **Boz drafted this 2026-10-04 from Thread's continuity map; Jacob dispatches.** Phase 2, tranche 2, package **B**. ⛔ **Starts after
 A lands**: A makes the map/Look/shot state authoritative and edits the same camera code.
 
+## ⭐ STATE 2026-10-04 (Boz): Lens dismissed; what landed and what remains
+**Landed:** row 1 `25178a3e` (the Browse frame: set by a button, opened on everywhere) · row 2 `03134460`, `13d29aae` (StageApp#SHOTS gone; the card writes shots) · row 3 `1509ed2e`, `0e5787a9` (narrowed by Jacob: the town's camera VALUES bake now; the transitions and ownership rules are deferred, recorded on ROADMAP) · rows 4–5 partial `5f4333ca` (one shot-adjacency table; the derived movie says so) · `fd3cf5a5` (a cold Preview opens on Street again). Ward `c6e3049` on kit `c87ab09b`, pushed; on staging in Ward `d926b63`.
+**Remains (small; anyone can pick it up cold):** ① row 5's rest: ONE shot-name mapping table instead of ShotFlight ENTRY / Preview TOWN_SHOT / Town's regime ternary / the legacy REGIME_OF_MODE + SHOT_OF_MODE, and Stage's CameraRig placement sharing ShotFlight's destination (files: `src/camera/{shots.js,ShotFlight.jsx}`, `src/components/Town.jsx`, `src/preview/PreviewApp.jsx`, `src/cartograph/CartographApp.jsx`) · ② the Ward's `checks/society-frames-what-it-lights` predates "society = radius" (ROADMAP; needs Jacob's ruling) · ③ Jacob's eye on the framing in Stage, Preview and the Ward. LS, PT and Huron's Browse frames came from the old recorder; Jacob may re-set them with the button.
+
 ## Who you are, and the bounds
 
 **You are the dispatched agent. Name yourself: one word, yours, and not one a RUNNING session holds** (`ListAgents`; ask Jacob to
