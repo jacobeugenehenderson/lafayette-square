@@ -7,7 +7,7 @@
  * screen orientation is the consumer's camera.up concern, never a geometry
  * rotation).
  *
- * deg 0 → [0, 0, -1] (compass-N up on screen), matching SHOTS.browse.up.
+ * deg 0 → [0, 0, -1] (compass-N up on screen), Browse's north-up overhead.
  * Shared by Stage (StageApp), Preview (ShotCamera), and production
  * (Scene.jsx CameraRig) so all three read the authored `scene.browseHeading`
  * identically. Pure; no React, no store.

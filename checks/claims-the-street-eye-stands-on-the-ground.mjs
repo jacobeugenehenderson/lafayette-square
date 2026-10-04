@@ -14,10 +14,11 @@
 //      no fallback.
 //  (b) EVERY PLACER USES IT. Every source that places a Street eye (reads the authored
 //      `street…eyeHeight`) calls streetEyeY and samples the ground no other way.
-//  (c) NO HEIGHT TO COPY. SHOTS.street's position and target carry no Y (null), so no
-//      code path can stand the eye at an authored absolute height.
-//  (d) EVERY TOWN, NOT ONE BRANCH. Stage applies streetEyeY OUTSIDE its poured-town
-//      reframe, so LS takes it too (the branch the first version missed).
+//  (c) NO HEIGHT TO COPY. The one stand point with no tap (src/camera/shots.js#streetStandOf)
+//      is [x, z] off the town's own disc; no fixed pose table exists to copy a height —
+//      or a town's coordinate — from (StageApp#SHOTS stood every town at LS's [0,-50]).
+//  (d) EVERY TOWN, NOT ONE BRANCH. Stage and Preview both take the stand point from
+//      streetStandOf, and Stage's camera code names no town.
 //  (e) IT RUNS. For every town with terrain, the method at its stand point gives a
 //      finite eye 1.73 m above the ground the street view draws.
 //
@@ -61,40 +62,31 @@ for (const f of placers) {
   if (/\bgetElevation(Raw)?\(/.test(src)) fails.push(`(b) ${f} samples the ground itself — use streetEyeY`)
 }
 
-// (c) no height to copy
-const stage = read('src/stage/StageApp.jsx')
-const street = (stage.match(/^\s*street:\s*\{[^\n]*\}/m) || [''])[0]
-if (!/position:\s*\[[^,\]]+,\s*null\s*,/.test(street) || !/target:\s*\[[^,\]]+,\s*null\s*,/.test(street)) {
-  fails.push(`(c) SHOTS.street carries an absolute height: ${street.trim() || '(not found)'}`)
-}
+// (c) no height to copy, and no pose table
+const shots = read('src/camera/shots.js')
+if (!/export function streetStandOf\(/.test(shots)) fails.push('(c) src/camera/shots.js has no streetStandOf — where does a Street eye with no tap stand?')
+if (/^\s*street:\s*\{\s*position:/m.test(read('src/stage/StageApp.jsx'))) fails.push('(c) StageApp carries a fixed Street pose again')
 
-// (d) Stage applies it for every town: the streetEyeY call must lie OUTSIDE the
-// poured-town reframe block (brace-matched), or LS never gets it.
+// (d) every town: both no-tap placers take the one stand point, and Stage's camera names no town
 const app = read('src/cartograph/CartographApp.jsx')
-const reframeAt = app.indexOf("if (mapKey !== 'lafayette-square' && nb?.radius > 0")
-const callAt = app.indexOf('streetEyeY(')
-if (reframeAt < 0 || callAt < 0) fails.push('(d) could not find the Stage reframe block or the streetEyeY call')
-else {
-  let i = app.indexOf('{', reframeAt), depth = 0, end = -1
-  for (; i < app.length; i++) {
-    if (app[i] === '{') depth++
-    else if (app[i] === '}' && --depth === 0) { end = i; break }
-  }
-  if (callAt > reframeAt && callAt < end) fails.push('(d) Stage applies streetEyeY only inside the poured-town reframe — LS stands at an absolute height')
+for (const p of ['src/cartograph/CartographApp.jsx', 'src/preview/PreviewApp.jsx']) {
+  if (!/\bstreetStandOf\(/.test(read(p))) fails.push(`(d) ${p} stands the Street eye without streetStandOf`)
 }
+if (/mapKey\s*[!=]==?\s*'/.test(app.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, ''))) fails.push('(d) Stage\'s camera code gates on a town name')
 
 // (e) it runs, on every town's own terrain (raw = exag 1, what the street view draws)
 const EYE = 1.73
 const { loadSceneTerrain } = await import('../cartograph/terrainLoad.js')
-const pt = (stage.match(/street:\s*\{\s*position:\s*\[\s*([-\d.]+)\s*,\s*null\s*,\s*([-\d.]+)/) || []).slice(1).map(Number)
+const { streetStandOf } = await import('../src/camera/shots.js')
 for (const scene of fs.readdirSync('cartograph/data')) {
   if (!fs.existsSync(`cartograph/data/${scene}/clean/terrain.json`)) continue
   const t = loadSceneTerrain(scene)
   if (!t) { fails.push(`(e) ${scene}: terrain.json present but no sampler`); continue }
   const b = fs.existsSync(`cartograph/data/${scene}/neighborhood_boundary.json`)
     ? JSON.parse(read(`cartograph/data/${scene}/neighborhood_boundary.json`)) : null
-  const pts = [['SHOTS.street', pt]]
-  if (b?.radius > 0) pts.push(['poured stand point', [0, b.radius * 0.08]])
+  const at = b ? streetStandOf(b) : null
+  if (!at) { fails.push(`(e) ${scene}: no disc, so no stand point`); continue }
+  const pts = [['stand point', at]]
   for (const [name, [x, z]] of pts) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) { fails.push(`(e) ${scene}: ${name} has no x/z`); continue }
     const g = t.getElevationRaw(x, z)

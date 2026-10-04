@@ -1,7 +1,7 @@
 /**
  * Stage — shared utility module for cartograph-hosted Stage.
  *
- * Exports arch defaults, the SHOTS table, Hero preview helpers, and the
+ * Exports arch defaults, Hero preview helpers, and the
  * StagePanel UI. Consumed by CartographApp.jsx (the real Stage host)
  * and PreviewApp.jsx. Post-FX (FilmGrade / FilmGrain / AerialPerspective
  * / PostProcessing / StageFog / StageShadows) live in
@@ -218,18 +218,6 @@ function HorizonControls() {
 
 // ── Camera ──────────────────────────────────────────────────────────────────
 
-export const SHOTS = {
-  hero:   { position: [-400, 55, 230], target: [400, 45, -100], fov: 22, label: 'Hero' },
-  // Browse = pure overhead (90°) centered on the neighborhood's building
-  // centroid; `bounds` is the axis-aligned footprint of every building in LS's src/data/buildings.json.
-  // ⛔ Stage's CameraRig no longer frames from these (Phase 2 A): Browse and Street read the town's own disc.
-  browse: {
-    position: [95, 1300, -158], target: [95, 0, -158], up: [0, 0, -1], fov: 45, label: 'Browse',
-    bounds: { cx: 95, cz: -158, w: 1292, h: 1025 }, padding: 1.05,
-  },
-  // ⛔ No height: the Street eye's Y is ALWAYS streetEyeY (utils/elevation) at this x/z.
-  street: { position: [0, null, -50], target: [0, null, -50.5], fov: 75, label: 'Street' },
-}
 
 // Live camera state bridge (R3F ↔ React DOM) — lives in ./cameraBridge.js so
 // the Cartograph app's own CameraRig fills the SAME record this panel reads.

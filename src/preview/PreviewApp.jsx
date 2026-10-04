@@ -13,8 +13,8 @@ import useListings from '../hooks/useListings'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { invalidateTreeAtlas } from '../components/treeAtlasMaterial'
-import { SHOTS } from '../stage/StageApp.jsx'
-import { shotReachable } from '../camera/shots.js'
+import { shotReachable, SHOT_LABELS, streetStandOf } from '../camera/shots.js'
+import { useSceneStencil } from '../lib/cameraRegimes.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { INSTANCE } from '../instance.js'
 import { slabManifest } from '../lib/slabUrl.js'
@@ -100,9 +100,6 @@ function ShotCamera({ shot, setShot }) {
   return null
 }
 
-const TOOLBAR_SHOTS = SHOTS
-// Preview's Street button stands the eye where it always has (SHOTS.street's point); production stands it at a tap.
-const PREVIEW_STREET_AT = [SHOTS.street.position[0], SHOTS.street.position[2]]
 // ?frameloop=demand — inspect <Town paused> as the Ward runs it (Preview draws "always" by default).
 const PREVIEW_FRAMELOOP = new URLSearchParams(window.location.search).get('frameloop') === 'demand' ? 'demand' : 'always'
 // ?inset=top,right,bottom,left (CSS px) — inspect <Town viewInset>: the plan frames into what an app's UI leaves free.
@@ -161,8 +158,8 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
       {btn('phone-hi', 'Phone hi', mode === 'phone-hi', () => { setMode('phone-hi'); noteEvent('mode→phone-hi') })}
       {btn('phone-lo', 'Phone lo', mode === 'phone-lo', () => { setMode('phone-lo'); noteEvent('mode→phone-lo') })}
       {divider('d2')}
-      {Object.entries(TOOLBAR_SHOTS).map(([k, s]) =>
-        btn(k, s.label, shot === k, () => { setShot(k); noteEvent(`shot→${k}`) }, !shotReachable(shot, k))
+      {Object.entries(SHOT_LABELS).map(([k, label]) =>
+        btn(k, label, shot === k, () => { setShot(k); noteEvent(`shot→${k}`) }, !shotReachable(shot, k))
       )}
     </div>
   )
@@ -1062,11 +1059,11 @@ function PreviewTown({ town }) {
       key={quality.id}
       {...townCanvas}
       frameloop={PREVIEW_FRAMELOOP}
-      camera={{ ...townCanvas.camera, position: SHOTS.hero.position, fov: SHOTS.hero.fov }}
+      camera={townCanvas.camera}
       // The Canvas is the quality profile's (townCanvasProps — the same profile <Town> is given); Preview adds only
       // preserveDrawingBuffer, so "Capture hero → preview" can read the slab frame off the canvas between renders.
       gl={{ ...townCanvas.gl, preserveDrawingBuffer: true }}
-      onCreated={({ camera, gl }) => { camera.lookAt(...SHOTS.hero.target); _ogCaptureGL = gl }}
+      onCreated={({ gl }) => { _ogCaptureGL = gl }}
     >
       <CanvasContents key={reloadKey} town={town} layers={layers} shot={shot} setShot={setShot} quality={quality} />
     </Canvas>
@@ -1141,6 +1138,8 @@ function CanvasContents({ town, layers, shot, setShot, quality }) {
   const [probePaused, setProbePaused] = useState(false)
   const framedLog = useRef([])
   const listingsRef = useRef([])
+  // Preview's Street button has no tap: the eye stands at the one stand point, near the town's own centre (shots.js).
+  const streetAt = streetStandOf(useSceneStencil()) ?? undefined
   useEffect(() => {
     window.__flight = flightRef
     window.__townProbe = { bearingRef, followRef, framed: framedLog.current, setFrameKey, setPlanHeading, setPaused: setProbePaused,
@@ -1168,7 +1167,7 @@ function CanvasContents({ town, layers, shot, setShot, quality }) {
   return (
     <>
       <Town town={town} lookId={lookId} quality={quality} listings={listings} shot={TOWN_SHOT[shot]} interactive={false}
-        flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={PREVIEW_STREET_AT} viewInset={PREVIEW_INSET} controls
+        flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={streetAt} viewInset={PREVIEW_INSET} controls
         frameKey={frameKey} planHeading={planHeading} bearingRef={bearingRef} litIds={litIds ?? undefined} paused={probePaused}
         onFramed={(f) => { framedLog.current.push(f); if (framedLog.current.length > 20) framedLog.current.shift() }}
         movers={PREVIEW_MOVERS} onMovers={PREVIEW_MOVERS ? (m) => { window.__movers = m } : undefined}

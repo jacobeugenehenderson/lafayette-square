@@ -6,7 +6,7 @@
  * unbounded navigation makes spatial bearing impossible; pinning the
  * cameras to the production views fixes the "where am I?" problem.)
  *
- * BROWSE — pure overhead, mirrors production SHOTS.browse (90° down,
+ * BROWSE — pure overhead, mirrors Browse's true overhead (90° down,
  *   up:[0,0,-1], fov 45-ish). The operator sees the cloud field from
  *   above the way the deployed app's Browse shot will. Ground + tree
  *   hidden (these slot views are about reading the sky, not the
@@ -28,7 +28,7 @@ import { CANARY_GROUND_CAMERA } from '../components/canaryCamera.js'
 
 export const CANARY_CAMERAS = {
   browse: {
-    // True 90° overhead, mirrors production SHOTS.browse.
+    // True 90° overhead, mirrors Browse's true overhead.
     // Camera at y=4000 looking straight down at the origin; slab
     // sits at y∈[1200, 1700], so we're 2300-2800m above the cloud
     // tops. At fov 50 this frames roughly a 2300m wide patch of the

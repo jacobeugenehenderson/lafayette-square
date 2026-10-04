@@ -2,7 +2,7 @@
  * SlotTabs — BROWSE | GROUND switcher.
  *
  * The two slots mirror the production app's two main viewpoints:
- *   BROWSE = 90° overhead, matches production SHOTS.browse
+ *   BROWSE = 90° overhead, matches Browse's true overhead
  *   GROUND = eye-level under the cloud, with hero tree for scale
  *
  * Each opens a different CanaryScene camera framing; the cloud is

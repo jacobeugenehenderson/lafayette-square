@@ -34,7 +34,8 @@ import { shallow } from 'zustand/shallow'
 import { reloadTerrain, onTerrainReload } from '../utils/terrainShader'
 import { streetEyeY } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { SHOTS, HeroPreview, useStageMovie } from '../stage/StageApp.jsx'
+import { HeroPreview, useStageMovie } from '../stage/StageApp.jsx'
+import { SHOT_LABELS, streetStandOf } from '../camera/shots.js'
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
 import { derivedOpeningKeyframe } from '../lib/cameraRegimes.js'
 import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
@@ -273,43 +274,26 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         if (ctl) { ctl.target.set(cam.position.x, 0, cam.position.z); ctl.update() }
       } else {
         const cam = perspRef.current
-        const s = SHOTS[shot]
-        if (!cam || !s) return
-        // SC.5 — fov comes from the operator's authored `shots` channel
-        // (live in Stage; frozen in production+preview). position/target/up
-        // are runtime-input scaffolds — SHOTS const remains the canonical
-        // Stage shot-switch framing until per-shot position authoring lands.
+        if (!cam || !SHOT_LABELS[shot]) return
+        // fov is the town's authored `shots` channel; WHERE each shot puts the camera is below (Browse: hand-off,
+        // working view, frame · Hero: the keyframes · Street: the stand point) — never a fixed pose.
         const storeShots = useCartographStore.getState().shots?.values
         // ⭐ THE TOWN'S OWN DISC frames whatever is neither handed off nor authored — Browse's first entry and Street's
         // stand point — in EVERY town, LS included. ⛔ It was gated on the town's NAME (`mapKey !== 'lafayette-square'`),
-        // and LS, or any town whose boundary had not loaded, stood on SHOTS' LS-authored absolute poses. No disc ⇒
+        // and LS, or any town whose boundary had not loaded, stood on LS's absolute poses (StageApp#SHOTS, removed). No disc ⇒
         // nothing to frame, said out loud (as Hero does), never another town's pose.
         const disc = sceneBoundary?.radius > 0 && Array.isArray(sceneBoundary.center) && sceneBoundary.center.every(Number.isFinite)
           ? { c: sceneBoundary.center, R: sceneBoundary.radius } : null
-        let fov = storeShots?.[shot]?.fov ?? s.fov
+        let fov = storeShots?.[shot]?.fov ?? SHOTS_FLAT_DEFAULTS[shot].fov
         const workingView = shot === 'browse' ? readBrowseView(mapKey) : null
         const frameSquare = shot === 'browse' && !workingView
           ? browseSquare(useCartographStore.getState().browseFrame, disc && { center: disc.c, radius: disc.R }, fov, 'stage') : null
         let toPos
-        let toTarget = [...s.target]
+        let toTarget
         if (shot === 'browse') {
-          // ⛔⛔ THE HANDOFF WAS ONE-WAY, AND THAT IS THE BUG (2026-09-05).
-          // Browse → Designer has carried the view for a long time (see the
-          // designer branch above: copy x/z, back-compute zoom from altitude).
-          // Designer → Browse did NOT: it snapped to SHOTS.browse.position —
-          // the building centroid — at the altitude that fits EVERY building.
-          // So an operator framing a corner in the Designer and stepping into
-          // 3D lost the framing and could not get it back, because the 3D
-          // pose was derived, not authored. The persistence comment further
-          // down claimed "Browse-↔-Designer view sync is handled by the
-          // cross-camera handoff" — half true, and the missing half is the
-          // direction the work actually flows in.
-          // ⭐ THE MATH IS THE EXACT INVERSE of the Browse → Designer line, so
-          // the round trip is lossless: there, zoom = viewportH / visibleH;
-          // here, visibleH = viewportH / zoom and altitude = visibleH / 2tan(fov/2).
-          // ⚠️ TARGET MOVES WITH IT. Browse looks straight down, so the target
-          // is the point under the camera — leaving it at SHOTS.browse.target
-          // aimed the camera back at the centroid from wherever it now stood.
+          // ⭐ THE HAND-OFF RUNS BOTH WAYS (2026-09-05): Designer → Browse is the exact inverse of the Browse →
+          // Designer line above (there zoom = viewportH / visibleH; here altitude = visibleH / 2tan(fov/2)), so the
+          // round trip is lossless, and the target is the point under the camera (Browse looks straight down).
           const ortho = orthoRef.current
           if (ortho && prevShot.current === 'designer' && ortho.zoom > 0) {
             const visibleH = size.height / ortho.zoom
@@ -336,7 +320,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
           // fov; HeroPreview plays from there. A town with none gets the opening
           // view derived from its own disc (cameraRegimes.js), the same one
           // Preview and production open on.
-          // ⛔ No hero subject and no SHOTS.hero (a Lafayette Square pose): the
+          // ⛔ No hero subject and no fixed pose (StageApp#SHOTS.hero was Lafayette Square's): the
           // camera is never aimed at a designation (BRIEF-camera-regimes, H-7).
           const kfs = useCartographStore.getState().heroKeyframes
           const open = kfs?.length
@@ -352,9 +336,10 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             toTarget = ctl ? [ctl.target.x, ctl.target.y, ctl.target.z] : toPos
           }
         } else if (disc) {
-          // Street: a ground-level stand point near the centre of the town's own disc (its height is set below).
-          toPos = [disc.c[0], 0, disc.c[1] + disc.R * 0.08]
-          toTarget = [disc.c[0], 0, disc.c[1] + disc.R * 0.08 - 0.5]
+          // Street: the one stand point with no tap (src/camera/shots.js#streetStandOf; its height is set below).
+          const [sx, sz] = streetStandOf({ center: disc.c, radius: disc.R })
+          toPos = [sx, 0, sz]
+          toTarget = [sx, 0, sz - 0.5]
         } else {
           console.error('[stage] street: no scene disc (neighborhood_boundary.json) — nothing to stand on')
           toPos = [cam.position.x, cam.position.y, cam.position.z]
@@ -362,14 +347,14 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         }
         // ⛔ STREET, EVERY TOWN (LS included): the eye stands 5′8″ above the
         // drawn ground at its own point — the one method (utils/elevation#streetEyeY).
-        // SHOTS.street carries no height, so nothing else can stand it anywhere.
+        // No stand point carries a height, so nothing else can stand it anywhere.
         if (shot === 'street') {
           const eye = storeShots?.street?.eyeHeight ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
           const y = streetEyeY(toPos[0], toPos[2], eye)
           toPos = [toPos[0], y, toPos[2]]
           toTarget = [toTarget[0], y, toTarget[2]]
         }
-        const toUp = s.up || [0, 1, 0]
+        const toUp = shot === 'browse' ? [0, 0, -1] : [0, 1, 0]   // Browse: a true overhead, north up
 
         // Snap (no tween) on first entry into a perspective shot from
         // Designer/null prev (the shot family hasn't been live — no "from"
@@ -1011,8 +996,7 @@ export default function CartographApp() {
           <PerspectiveCamera
             ref={perspRef}
             makeDefault={!inDesigner}
-            position={SHOTS.browse.position}
-            fov={SHOTS.browse.fov}
+            fov={SHOTS_FLAT_DEFAULTS.browse.fov}
             near={1}
           />
           <CameraRig orthoRef={orthoRef} perspRef={perspRef} controlsRef={controlsRef} />
