@@ -64,8 +64,10 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   }
   // The heading mode, as a value: a new { follow } object each render is the same mode while it names the same ref.
   const headingMode = following ? planHeading.follow : planHeading
-  if (shot === 'street' && flight !== false && !(Array.isArray(streetAt) && streetAt.length === 2 && streetAt.every(Number.isFinite))) {
-    throw new Error('[Town] ⛔ shot="street" needs streetAt={[x, z]} — the eye stands at a point the app chooses (a tap, a place)')
+  // streetAt null = the app's point is not known yet (Preview's stand point waits for the disc): the shot waits, as the
+  // plan does for its disc. Absent or malformed throws — an app that forgot it.
+  if (shot === 'street' && flight !== false && streetAt !== null && !(Array.isArray(streetAt) && streetAt.length === 2 && streetAt.every(Number.isFinite))) {
+    throw new Error('[Town] ⛔ shot="street" needs streetAt={[x, z]} — the eye stands at a point the app chooses (a tap, a place); null while it is not known yet')
   }
   const { camera, size, gl } = useThree()
   const getControls = useThree((s) => s.get)
@@ -145,6 +147,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
       const alt = planAltitude(frame.radius, { fov, pad, W, H, inset: i })
       return { pos: [frame.x, alt, frame.z + 1], target: [frame.x, 0, frame.z], fov, up: planUp(), overhead: true, frame }
     }
+    if (live.current.streetAt == null) return null   // not known yet: the cut waits (pending) until it is
     const [x, z] = live.current.streetAt
     const y = streetEyeY(x, z, v.street?.eyeHeight ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight)
     return { pos: [x, y, z], target: [x, y, z - 0.5], fov: v.street?.fov ?? SHOTS_FLAT_DEFAULTS.street.fov, up: [0, 1, 0] }

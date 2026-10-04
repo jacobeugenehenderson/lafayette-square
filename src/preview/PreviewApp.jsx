@@ -1189,7 +1189,7 @@ function CanvasContents({ town, layers, shot, quality }) {
   const framedLog = useRef([])
   const listingsRef = useRef([])
   // Preview's Street button has no tap: the eye stands at the one stand point, near the town's own centre (shots.js).
-  const streetAt = streetStandOf(useSceneStencil()) ?? undefined
+  const streetAt = streetStandOf(useSceneStencil())   // null until the disc is published: Street waits (ShotFlight)
   useEffect(() => {
     window.__flight = flightRef
     window.__townProbe = { bearingRef, followRef, framed: framedLog.current, setFrameKey, setPlanHeading, setPaused: setProbePaused,

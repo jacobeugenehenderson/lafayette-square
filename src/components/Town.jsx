@@ -22,7 +22,8 @@
  *   shot             'movie' | 'plan' | 'street'. A CHANGE FLIES (src/camera/ShotFlight.jsx): production's move, the
  *                    durations of src/camera/transitions.js, to the town's own destination for the shot.
  *   flight           true (default) flies · 'cut' lands at once · false: hands off, the app places the camera (Stage)
- *   streetAt         [x, z] town metres — where the street eye stands; required with shot='street'
+ *   streetAt         [x, z] town metres — where the street eye stands; required with shot='street' (null: not known yet — the
+ *                    shot waits for it, as the plan waits for the disc)
  *   viewInset        { top, right, bottom, left } CSS px the app's UI covers: plan and street frame into the rest (a
  *                    camera view offset; the canvas stays full-page); the movie is full frame. Eased on the flight.
  *   flightRef        a ref Town fills: { from, to, t, eased, duration, at, landed, interrupted } — at t = 0 before the first
