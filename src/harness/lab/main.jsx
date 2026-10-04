@@ -33,6 +33,7 @@ import BakedLamps from '../../components/BakedLamps'
 import SlabRevetment from '../../components/SlabRevetment.jsx'
 import SlabBuildings from '../../components/SlabBuildings'
 import InstancedTrees from '../../components/InstancedTrees'
+import WindSheet from '../../components/WindSheet.jsx'
 import SetPiece from '../../components/SetPiece.jsx'
 import CelestialBodies from '../../components/CelestialBodies'
 import CloudDome from '../../components/CloudDome'
@@ -240,6 +241,8 @@ function App() {
         <LampGlowDriver lookId={LOOK} bakeLastMs={bakeLastMs} />
         <NeonDriver lookId={LOOK} bakeLastMs={bakeLastMs} />
         <ShaderLinkGuard />
+        {/* The wind every tree card reads (as <Town> mounts it): without it their materials refuse to compile. */}
+        <R3FErrorBoundary name="WindSheet"><WindSheet extent="town" /></R3FErrorBoundary>
         <R3FErrorBoundary name="CelestialBodies"><CelestialBodies lookId={LOOK} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         <R3FErrorBoundary name="CloudDome"><CloudDome /></R3FErrorBoundary>
 
