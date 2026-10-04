@@ -36,7 +36,8 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import { defaultWindState, resolveWindState } from '../lib/wind-field.js'
+import WindSheet from '../components/WindSheet.jsx'
+import { QualityProvider, authoringQuality } from '../lib/qualityProfile.js'
 import { applyDegrees, DEFAULT_DEGREES } from '../lib/condition-degrees.js'
 import CelestialBodies from '../components/CelestialBodies.jsx'
 import Atmosphere from '../components/Atmosphere.jsx'
@@ -47,7 +48,6 @@ import {
   applyDeformerUniforms,
   applyLeafFaceUniforms,
   stampTreeVertexAttrs,
-  treeSwayUniforms,
 } from '../components/treeAtlasMaterial.js'
 import { CANARY_CAMERAS } from './canaryCamera.js'
 import { StageFog } from '../components/PostProcessing.jsx'
@@ -55,15 +55,8 @@ import { useCanaryTree } from '../lib/canaryTree.js'
 import { suspendSlabUrl } from '../lib/slabUrl.js'
 import { deriveSkyScalars, directiveDarkness } from '../lib/sky-scalars.js'
 
-// Gentle authoring breeze used when the active Condition's directive
-// carries no wind yet (Phase 5 directive→viewport wiring still pending).
-// Keeps the canopy reading as alive; once a Condition supplies real wind
-// the resolved directive overrides this. m/s.
-const HERO_BREEZE_MPS = 3.0
-// Module-scoped wind state, reused per frame (mirrors InstancedTrees'
-// SwayDriver — one allocation, mutated in place).
-const _heroWindState = defaultWindState()
-
+// The canary's ground plane side (m): the stage the tree stands on, and its wind sheet's extent.
+const CANARY_GROUND_M = 200
 const HERO_TREE_SPECIES = 'platanus_acerifolia'
 // ⛔ lod1, NOT lod0 — and this is a correctness fix, not a downgrade (2026-08-28).
 // lod0 is NOT PUBLISHED (.gitignore): it is 56% of a town's payload and the map
@@ -138,6 +131,12 @@ export default function CanaryScene({ slot = 'browse', directive = null, degrees
       </Suspense>
 
       {cam.showGround && <GroundPlane />}
+      {/* The wind the canary tree reads: the town's real weather, over the canary's own ground. */}
+      {cam.showGround && (
+        <QualityProvider quality={authoringQuality()}>
+          <WindSheet extent={{ center: [0, 0], radius: CANARY_GROUND_M / 2 }} wind="weather" />
+        </QualityProvider>
+      )}
       {cam.showGround && activeLookId && (
         <Suspense fallback={null}>
           <HeroTree lookId={activeLookId} />
@@ -313,7 +312,7 @@ function ConditionEnvironmentDriver({ directive, degrees = DEFAULT_DEGREES }) {
 function GroundPlane() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-      <planeGeometry args={[200, 200]} />
+      <planeGeometry args={[CANARY_GROUND_M, CANARY_GROUND_M]} />
       <meshStandardMaterial color="#5c5040" roughness={0.95} />
     </mesh>
   )
@@ -332,7 +331,7 @@ function GroundPlane() {
 // Conditions "feels" like production. Mirrors SpecimenViewport's Skeleton
 // (Salon's single-tree authoring surface): stamp per-vertex attrs →
 // replace material → per-frame applyBarkUniforms/applyDeformerUniforms;
-// wind via treeSwayUniforms (SwayDriver pattern).
+// wind via the canary's wind sheet (the town's real weather over the canary's ground).
 //
 // Tree selection: reads `meteorologist-canary-tree` from localStorage (set
 // by Arborist's Grove/Workstage canary-picker button per the 2026-05-20
@@ -429,31 +428,6 @@ function HeroTree({ lookId }) {
     )
     applyDeformerUniforms(atlas.treeMaterial, barkUniforms.deformerRange, null)
     applyLeafFaceUniforms(atlas.treeMaterial, barkUniforms.leafFace)
-  })
-
-  // Wind → shared foliage-sway uniforms (SwayDriver pattern). Sourced from
-  // the active Condition's directive when present; falls back to a gentle
-  // authoring breeze so the canopy reads as alive before the Phase 5
-  // directive→viewport wiring lands. The vertex shader synthesises its own
-  // per-tree advected gusts from these uniforms.
-  useFrame((_, delta) => {
-    treeSwayUniforms.uTime.value += delta
-    const directive = useAtmosphere.getState().tweenedDirective
-    resolveWindState(directive, _heroWindState)
-    const ws = _heroWindState
-    if (ws.baseSpeedMps < 0.5) {
-      treeSwayUniforms.uWindForce.value.set(HERO_BREEZE_MPS, 0, 0)
-      treeSwayUniforms.uWindIntensity.value = HERO_BREEZE_MPS
-      treeSwayUniforms.uGustFrontVelocity.value.set(HERO_BREEZE_MPS * 2.5, 0, 0)
-      treeSwayUniforms.uGustsScale.value   = 1.5
-      treeSwayUniforms.uGustEnvelope.value = 1.0
-    } else {
-      treeSwayUniforms.uWindForce.value.copy(ws.baseDirection).multiplyScalar(ws.baseSpeedMps)
-      treeSwayUniforms.uWindIntensity.value = ws.baseSpeedMps
-      treeSwayUniforms.uGustFrontVelocity.value.copy(ws.gustFrontVelocity)
-      treeSwayUniforms.uGustsScale.value   = ws.gustsScale
-      treeSwayUniforms.uGustEnvelope.value = ws.gustEnvelope
-    }
   })
 
   return (

@@ -16,14 +16,13 @@
  */
 import { Suspense, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { drawsThroughAtlas } from '../lib/treeGeometry.js'
 import {
   useTreeManifest,
   useTreeMaterials,
-  treeSwayUniforms,
   applyBarkUniforms,
   applyDeformerUniforms,
   applyLeafFaceUniforms,
@@ -37,8 +36,6 @@ import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.
 import { getElevationRaw, slabYIsUnstamped } from '../utils/elevation'
 import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
-import useAtmosphere from '../hooks/useAtmosphere.js'
-import { defaultWindState, resolveWindState } from '../lib/wind-field.js'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
 
@@ -523,14 +520,6 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
   )
 }
 
-// Brief 9a (Sough) — wind-field consumer. Resolves the directive into a
-// `windState` once per frame via the shared wind-field.js seam, then
-// writes the drift component + gust parameters into the shared sway
-// uniforms. The vertex shader synthesises its own per-tree spatially-
-// advected gust spikes from `uGustsScale` + `uGustEnvelope` +
-// `uGustFrontVelocity`, so spatial advection (AC #5) is preserved
-// without uploading per-instance attributes per frame.
-const _swayWindState = defaultWindState()
 
 // GeoTierDriver (the runtime camera-altitude geometry-LOD swap) RETIRED
 // 2026-06-25 — it served the cut-trunk lod2 to high telephoto / shallow-browse
@@ -539,38 +528,6 @@ const _swayWindState = defaultWindState()
 // and which sent a 2026-09-03 audit chasing the wrong field. `heroTier` drives only the
 // read-only QC tint, and on a slab whose hero foundation is on it reaches no pixel at all.
 // (role-at-bake doctrine).
-
-// ⭐ EXPORTED for TreeDiorama (`?embed=tree` / the Arborist's full-monte view).
-// A single specimen needs the SAME wind the map's 745 trees get — driven off the
-// live atmosphere directive, not a hand-rolled breeze — so the diorama's canopy
-// and its sky are moved by one weather state. Grove has its OWN driver
-// (`Grove.jsx#GroveWind`) only because it has no weather feed; anything that
-// mounts the real sky must use this one.
-export function SwayDriver() {
-  const lastMs = useRef(0)
-  useFrame(() => {
-    // Advance the sway clock off WALL-CLOCK, not the R3F delta: under
-    // frameloop='demand' (browse/street) the R3F clock reads ~2fps (Scene.jsx
-    // CameraRig note), so `+= delta` froze the ambient canopy motion. Wall-clock
-    // keeps uTime smooth as long as FrameLimiter pumps invalidate (~30fps non-hero).
-    const now = performance.now()
-    const dt = lastMs.current ? Math.min(0.1, (now - lastMs.current) / 1000) : 0
-    lastMs.current = now
-    treeSwayUniforms.uTime.value += dt
-    const directive = useAtmosphere.getState().tweenedDirective
-    resolveWindState(directive, _swayWindState)
-    // Drift = baseDirection × baseSpeedMps (constant across the scene).
-    treeSwayUniforms.uWindForce.value
-      .copy(_swayWindState.baseDirection)
-      .multiplyScalar(_swayWindState.baseSpeedMps)
-    treeSwayUniforms.uWindIntensity.value = _swayWindState.baseSpeedMps
-    // Gust parameters drive the shader's per-tree spike computation.
-    treeSwayUniforms.uGustFrontVelocity.value.copy(_swayWindState.gustFrontVelocity)
-    treeSwayUniforms.uGustsScale.value   = _swayWindState.gustsScale
-    treeSwayUniforms.uGustEnvelope.value = _swayWindState.gustEnvelope
-  })
-  return null
-}
 
 function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOverride }) {
   // Active Look: explicit prop wins; otherwise URL `?look=` fallback; final
@@ -1101,7 +1058,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
 
   return (
     <>
-      <SwayDriver />
       <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} canopyChannel={canopyOverride ?? scene?.canopy} />
       {/* All-mesh (+ hero impostor) render. ⛔ THIS GROUP NO LONGER HIDES AS A BLOCK.
           It used to be `visible={!overheadMode}`, which made the comment on the overhead

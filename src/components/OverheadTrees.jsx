@@ -63,7 +63,7 @@ const _lp = new THREE.Vector3(), _tp = new THREE.Vector3()
 // Feeds the shared overheadLightUniforms from the atmosphere directive so the
 // plan-view canopy tracks the weather: overcast (high ambient floor) → flat,
 // clear (low ambient floor / strong sun) → the baked AO deepens → contrast. Same
-// directive the sky (Atmosphere.jsx) + the wind (SwayDriver) read — one weather
+// directive the sky (Atmosphere.jsx) reads — one weather
 // system. No directive (e.g. the Salon, which has no weather) → leaves the shared
 // uniforms alone so the Salon's Light slider / the default still governs.
 // uAmbient + uSun sum to 1: the ratio is the CONTRAST. The BRIGHTNESS is the scene's own lights (below).

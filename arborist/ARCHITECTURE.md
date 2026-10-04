@@ -136,10 +136,12 @@ truth. It is a per-shot look decision (`scene.shotLooks`), not a geometry one.
 > (2026-10-04):** each band is **2 triangles** and its flutter slides the PICTURE per fragment
 > (`OVERHEAD_FLUTTER_*`), so no vertex moves — LS Browse 25.36M → 0.03M tree triangles
 > (`scratch/tree-cost/VERDICT.md`; ▶ `node checks/claims-the-overhead-band-is-two-triangles.mjs`).
-> **Every card reads the wind sheet** (`src/lib/windSheet.js`): `windAt` once per tree, `windDetail`
-> for flutter; the Grove and Salon mount a named specimen sheet. ⛔ Open: the mesh path
-> (`injectFoliageSway`) still reads `treeSwayUniforms` — a second wind, so
-> `claims-the-wind-has-one-authority` is red until it migrates (Grain, next).
+> **Every tree reads the wind sheet** (`src/lib/windSheet.js`) — cards and mesh alike: `windAt` once per
+> tree (sway, lean), `windDetail` for card flutter; the mesh keeps its per-tier damping and tempo, which
+> are the tree's, not the air's. A surface outside `<Town>` mounts its own sheet: the Grove and Salon a
+> NAMED wind (an authoring breeze; the Salon's slider), the canary and the Full Monte diorama the town's
+> real weather (`wind="weather"`). ⛔ `treeSwayUniforms` carries only the rustle LOOK now; SwayDriver,
+> GroveWind and the per-surface wind loops are gone. ▶ `node checks/claims-the-wind-has-one-authority.mjs`
 > ⇒ **Landed: front shell 8×8, the two occluded layers flat (2 tris).** 42.18 M → **2.32 M**.
 > Eye-gated by Jacob on huron at the pan and at rest; `?frontGrid=` / `?backGrid=` override.
 > ⛔ **NOT a blanket cut — that was tried and reverted** (`c0056ffd` → `4433b301`): dropping

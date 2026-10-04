@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, readFileSync, existsSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3) ?? d
-const TOWN = arg('town', 'lafayette-square'), SHOT = arg('shot', 'browse'), Q = arg('q', ''), OUT = arg('out', '/tmp/shot.png'), EVAL = arg('eval', '')
+const URL_ARG = arg('url', ''), TOWN = arg('town', 'lafayette-square'), SHOT = arg('shot', 'browse'), Q = arg('q', ''), OUT = arg('out', '/tmp/shot.png'), EVAL = arg('eval', '')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const profile = mkdtempSync(join(tmpdir(), 'tree-cost-'))
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' })
@@ -21,7 +21,7 @@ const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' })
 const { sessionId: S } = await cdp('Target.attachToTarget', { targetId, flatten: true })
 await cdp('Page.enable', {}, S); await cdp('Runtime.enable', {}, S)
 await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('preview.mode.v1', 'desktop'); localStorage.setItem('cartograph-last-stage-shot', '${SHOT}')` }, S)
-await cdp('Page.navigate', { url: `http://localhost:5173/preview.html?look=${TOWN}${Q ? '&' + Q : ''}` }, S)
+await cdp('Page.navigate', { url: URL_ARG || `http://localhost:5173/preview.html?look=${TOWN}${Q ? '&' + Q : ''}` }, S)
 await sleep(22000)
 if (EVAL) { const r = await cdp('Runtime.evaluate', { expression: EVAL, returnByValue: true, awaitPromise: true }, S); console.log('eval:', JSON.stringify(r.result?.value ?? r.exceptionDetails?.exception?.description)) }
 const { data } = await cdp('Page.captureScreenshot', { format: 'png' }, S)

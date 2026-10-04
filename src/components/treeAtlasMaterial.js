@@ -44,35 +44,12 @@ const _materials = new Map()  // lookName -> { status, treeMaterial, opaqueCanop
 const _atlasListeners = new Set()
 function _notifyAtlasChange() { _atlasListeners.forEach((fn) => { try { fn() } catch {} }) }
 
-// Shared sway uniforms — single object mutated each frame by the runtime.
-// Both the LS InstancedTrees consumer and the Salon workstage preview
-// write into the SAME object; only one renders at a time (different
-// routes) so they don't fight, and sharing the uniform set keeps the
-// shader program count at one regardless of which surface is active.
-//
-// Brief 9a (Sough, 2026-05-22) — Phase 7a wind contract. Replaces the
-// Phase 5a scalar `uSwayWindSpeed` + `uSwayWindDir` pair (retired) with
-// the wind-field.js contract: a composed force/intensity pair plus the
-// gust-front velocity for spatial advection inside the vertex shader,
-// plus a tiny rustle-floor amplitude.
+// The mesh tree's own sway LOOK, shared by reference. The wind state that used to live here (uWindForce, gusts,
+// gust fronts, a clock, written each frame by SwayDriver / GroveWind / each surface) moved onto the wind sheet
+// (2026-10-04): one wind, read by every tree, card and mesh alike.
 export const treeSwayUniforms = {
-  uTime:              { value: 0 },
-  // Composed wind vector (m/s, world-space XZ) from `windAt(t, camera, ws)`.
-  // Direction = unit(uWindForce.xz); amplitude = uWindIntensity.
-  uWindForce:         { value: new THREE.Vector3(0, 0, 0) },
-  uWindIntensity:     { value: 0 },
-  // Spatial advection — vertex shader offsets its phase by
-  // dot(instanceWorldXZ, uGustFrontVelocity.xz) / |front|² so gust fronts
-  // visibly travel through the scene.
-  uGustFrontVelocity: { value: new THREE.Vector3(10, 0, 0) },
-  // Phase 7a gust parameters — vertex shader computes the spike itself
-  // (spatially advected per tree). CPU windAt() is used by non-shader
-  // consumers (Atmosphere in Brief 9b for cloud advection); the tree
-  // shader keeps full per-tree spatial variation by sampling its own
-  // spike phase. Both reach the same answer in expectation.
-  uGustsScale:        { value: 0 },
-  uGustEnvelope:      { value: 0 },
-  // Rustle floor amplitude in metres (operator spec: ~5 mm leaf-tip sway).
+  // Rustle floor amplitude in metres (operator spec: ~5 mm leaf-tip sway). LOOK, not weather: the wind itself
+  // reaches every tree through the wind sheet (src/lib/windSheet.js), never through this object.
   uRustleAmplitude:   { value: 0.005 },
 }
 
@@ -308,12 +285,8 @@ export function setBarkTileTable(material, rects) {
 export function injectFoliageSway(material) {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uTreeSanitizeOn    = treeSanitizeUniform
-    shader.uniforms.uTime              = treeSwayUniforms.uTime
-    shader.uniforms.uWindForce         = treeSwayUniforms.uWindForce
-    shader.uniforms.uWindIntensity     = treeSwayUniforms.uWindIntensity
-    shader.uniforms.uGustFrontVelocity = treeSwayUniforms.uGustFrontVelocity
-    shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
-    shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
+    // The wind: the sheet (windAt per tree, its clock for the periodic motion). Throws when no <WindSheet> is mounted.
+    bindWindSheet(shader)
     shader.uniforms.uRustleAmplitude   = treeSwayUniforms.uRustleAmplitude
     // Wind tiering — shared by REFERENCE (see `treeWindTiering`). Defaults
     // reproduce the legacy buckets exactly; uWhipBlend=0 is bit-identical.
@@ -447,12 +420,7 @@ export function injectFoliageSway(material) {
       .replace(
         '#include <common>',
         `#include <common>
-         uniform float uTime;
-         uniform vec3  uWindForce;
-         uniform float uWindIntensity;
-         uniform vec3  uGustFrontVelocity;
-         uniform float uGustsScale;
-         uniform float uGustEnvelope;
+         ${WIND_SHEET_GLSL}
          uniform float uRustleAmplitude;
          attribute float aLampGlow;
          attribute float aBark;
@@ -577,15 +545,15 @@ export function injectFoliageSway(material) {
            //    into a starfish (Jacob, 2026-07-06). Vertical-only keeps the
            //    canopy silhouette intact and just ripples the surface up/down.
            //    Amplitude in metres, flexed gently over time. Scale ~2 m at full.
-           float breathe = 1.0 + 0.15 * sin(uTime * 0.5);
+           float breathe = 1.0 + 0.15 * sin(windSheetTime * 0.5);
            transformed.y += aRuffle * uRuffleDepth * 2.0 * breathe;
            // 2. HULA — the tree's own gentle life. The whole disc-stack rocks on
            //    a horizontal axis whose direction slowly DRIFTS (non-directional),
            //    base-anchored (amplitude ∝ aTreeHeightNorm → trunk-height layers
            //    barely move, the crown rocks) and phase-LAGGED up the stack so
            //    the column bends in a soft S-wave rather than swinging rigidly.
-           float hulaT   = uTime * 0.7;
-           float hulaDrA = uTime * 0.22;                 // slow drift of the bend axis
+           float hulaT   = windSheetTime * 0.7;
+           float hulaDrA = windSheetTime * 0.22;                 // slow drift of the bend axis
            vec2  hulaDir = vec2(cos(hulaDrA), sin(hulaDrA));
            float hulaLag = aTreeHeightNorm * 2.4;        // lag up the column → S-curve
            float hulaBend = uHulaAmount * aTreeHeightNorm * sin(hulaT - hulaLag);
@@ -664,7 +632,7 @@ export function injectFoliageSway(material) {
            float ampScale   = mix(ampLegacy,   ampCont,   uWhipBlend);
            float tempoScale = mix(tempoLegacy, tempoCont, uWhipBlend);
            {
-             float rt = uTime * 2.5 * tempoScale;
+             float rt = windSheetTime * 2.5 * tempoScale;
              float rphase = phase + position.y * 0.3;
              vec2 rustle = vec2(
                sin(rt + rphase),
@@ -672,69 +640,20 @@ export function injectFoliageSway(material) {
              ) * uRustleAmplitude * ampScale * h;
              transformed.xz += rustle;
            }
-           // DIRECTIVE WIND — sampled from wind-field.js#windAt on the
-           // CPU side; uWindForce already encodes direction × intensity
-           // (m/s, XZ-plane). Vertex shader applies spatial advection so
-           // gust fronts visibly travel across the scene at
-           // |uGustFrontVelocity| m/s. Multi-scale damping per aWindTier.
-           //
-           // Composition is additive on top of the rustle floor — calm
-           // weather has uWindIntensity ≈ 0 and this block contributes
-           // ~nothing; storm weather swamps the floor.
+           // THE WIND — the sheet's felt wind at this tree (src/lib/windSheet.js#windAt): world XZ, m/s, TO direction,
+           // sprung, so a gust BUILDS, the canopy overshoots and sways back, and a gust front travels across the town
+           // as the field does. ⛔ No gust model here: the per-tree advected sine "spikes" this block synthesised from
+           // uGustsScale/uGustFrontVelocity were a second wind, mirrored north–south (resolveWindState's Z).
+           // Per-tier damping (ampScale) and tempo stay: how wood and leaves answer the wind is the tree's, not the air's.
            {
-             // Spatial advection: phase-offset proportional to position
-             // along the gust-front direction. Far-upwind trees lead
-             // far-downwind trees by Δd/|front| seconds. The gust
-             // contribution alone uses this offset; the drift component
-             // is spatially uniform (all trees feel the same baseline).
-             float frontLenSq = dot(uGustFrontVelocity.xz, uGustFrontVelocity.xz);
-             float phaseOffset = (frontLenSq > 1e-4)
-               ? dot(instWorld.xz, uGustFrontVelocity.xz) / frontLenSq
-               : 0.0;
-             // Drift (uniform across scene) — uses raw uTime.
-             float wtDrift = uTime;
-             // Gust spike (per-tree advected) — uses offset uTime.
-             float wtGust  = uTime - phaseOffset;
-             // Direction of horizontal sway: prefer the composed wind
-             // direction; fall back to gust-front direction if drift is
-             // zero (calm with active gust front — unusual but possible
-             // under e.g. a thunderstorm outflow).
-             vec2 windDirXZ;
-             if (uWindIntensity > 1e-3) {
-               windDirXZ = uWindForce.xz / uWindIntensity;
-             } else if (frontLenSq > 1e-4) {
-               windDirXZ = uGustFrontVelocity.xz / sqrt(frontLenSq);
-             } else {
-               windDirXZ = vec2(0.0);
-             }
-             // Sway amplitude: drift component (constant intensity) +
-             // spike component (per-tree advected). The 0.012 converts
-             // m/s of wind into roughly metres of leaf-tip sway per
-             // metre of height — tuned for the operator's "flutter
-             // visibly but trunks barely move" target.
-             //
-             // Spike: cheap noise-product gated by max(_,0) to give the
-             // smoothmax-shaped sharp positive spikes the CPU windAt
-             // produces. Spatial correlation length ~100 m (0.01 m⁻¹).
-             float spikePhase  = wtGust * 1.5 + instWorld.x * 0.01 + instWorld.z * 0.007;
-             float spikeRaw    = sin(spikePhase) * 0.6
-                               + sin(spikePhase * 1.7 + 1.3) * 0.3
-                               + sin(spikePhase * 0.31 + 0.7) * 0.1;
-             float spikeShape  = max(spikeRaw - 0.35, 0.0) * 2.2;
-             float gustAmp     = uGustsScale * uGustEnvelope * spikeShape;
-             float driftOsc    = sin(wtDrift * tempoScale + phase);
-             float gustOsc     = sin(wtGust  * tempoScale * 1.9 + phase * 1.7);
-             // Drift sway scales with intensity; gust sway is its own
-             // amplitude on top. Both pass through the per-tier ampScale.
-             float swayMps     = uWindIntensity * driftOsc + gustAmp * gustOsc;
-             float swayMetres  = ampScale * swayMps * 0.012 * h;
-             transformed.xz += windDirXZ * swayMetres;
-             // Static lean — small constant offset toward wind dir
-             // proportional to total intensity. Sustained wind tips
-             // the canopy; trunks barely lean (heavy damping); leaves
-             // lean a lot.
-             float leanMps     = uWindIntensity + gustAmp * 0.5;
-             transformed.xz += windDirXZ * (ampScale * leanMps * 0.012 * h * 0.3);
+             vec4  w = windAt(instWorld.xz);
+             vec2  windDirXZ = w.z > 1e-3 ? w.xy / w.z : vec2(0.0);
+             // Sway: the felt wind, oscillating at the tier's tempo (the periodic motion is ours, on the sheet's clock).
+             // The 0.012 converts m/s of wind into metres of leaf-tip sway per metre of height.
+             float driftOsc   = sin(windSheetTime * tempoScale + phase);
+             transformed.xz  += windDirXZ * (ampScale * w.z * driftOsc * 0.012 * h);
+             // Static lean toward the wind, proportional to the felt speed: trunks barely lean, leaves lean a lot.
+             transformed.xz  += windDirXZ * (ampScale * w.z * 0.012 * h * 0.3);
            }
            // Per-instance world-XZ for fragment hue jitter. We sample the
            // instance translation column (constant within a draw) so every

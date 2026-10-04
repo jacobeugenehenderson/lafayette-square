@@ -12,8 +12,7 @@ import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
 import { QualityProvider, authoringQuality } from '../lib/qualityProfile.js'
-import { SwayDriver } from './InstancedTrees.jsx'
-import { treeSwayUniforms } from './treeAtlasMaterial'
+import WindSheet from './WindSheet.jsx'
 import {
   useTreeAtlas, stampTreeVertexAttrs, measureChassisRadius, setLeafTransmission,
   applyBarkUniforms, applyDeformerUniforms, applyLeafFaceUniforms, setTrunkGround, setWindTiering,
@@ -39,8 +38,8 @@ import { suspendSlabUrl } from '../lib/slabUrl.js'
  * relationship to. ⛔ Do not split this.
  *
  * ⭐ EVERYTHING HERE IS THE PRODUCTION COMPONENT. The sky pieces are the ones
- * `Scene` mounts; the sway is `InstancedTrees#SwayDriver`, driven off the live
- * atmosphere directive; the material is the shared per-Look tree atlas the map's
+ * `Scene` mounts; the sway is the wind sheet (`WindSheet`, the town's real weather
+ * over this diorama's ground); the material is the shared per-Look tree atlas the map's
  * trees use. Nothing below is a diorama-only copy — that is the whole claim this
  * surface makes about how the product is built, so it had better be true.
  *
@@ -86,60 +85,6 @@ function readParam(name) {
  * a silent substitution, so `stampTreeVertexAttrs` (the same helper the Salon
  * preview uses) does the stamping rather than a local copy that could drift.
  */
-/**
- * ⭐ DioramaWind — a BREEZE FLOOR, mounted after SwayDriver.
- *
- * The diorama mounts `SwayDriver`, which resolves wind from the atmosphere
- * directive — and the meteorologist authors no `wind` block into it, so
- * `baseSpeedMps` is 0, `uWindIntensity` is 0, and the ONLY motion left is the
- * ~5 mm leaf-tip rustle floor. That is exactly "the chassis doesn't move and the
- * canopy doesn't move in a sophisticated manner" (Jacob, 2026-08-23): with
- * intensity 0 the shader's whole apparatus — per-tier damping (trunk / branch /
- * twig / leaf), gust envelope, spatially-advected gust spikes — never runs.
- *
- * ⭐ THIS IS THE GROVE'S ANSWER, NOT A NEW ONE. `Grove.jsx#GroveWind` does the
- * same thing for the same reason (a surface with no live weather feed). The one
- * difference: this FLOORS rather than overrides, so a real authored wind still
- * wins the moment the meteorologist supplies one — calm never means dead, and
- * authored never gets clobbered.
- *
- * ⛔ Ordering is load-bearing: r3f runs useFrame callbacks in mount order, so
- * this must be mounted AFTER <SwayDriver /> or SwayDriver's zero overwrites it.
- *
- * Tune by eye: `?wind=` (m/s) and `?gust=`.
- */
-// ⚠️ Jacob, 2026-08-23: 3.0 (the Grove's value) is "way too crazy" here — and
-// he is right that at this magnitude "we would want wind this big in a STORM".
-// The Grove shows a rack of small tiles where gross motion reads as life; a
-// single tree at a few metres shows every centimetre. Calm-day breeze, not
-// weather. Dial live with `?wind=`.
-const BREEZE_FLOOR_MPS = 0.7
-function DioramaWind() {
-  const [floor, gust] = useMemo(() => {
-    let w = BREEZE_FLOOR_MPS, g = 0.6
-    try {
-      const q = new URLSearchParams(window.location.search)
-      const a = parseFloat(q.get('wind')); if (Number.isFinite(a)) w = Math.max(0, a)
-      const b = parseFloat(q.get('gust')); if (Number.isFinite(b)) g = Math.max(0, b)
-    } catch { /* no URL, no dial */ }
-    return [w, g]
-  }, [])
-
-  useFrame(() => {
-    // SwayDriver has already written the directive's answer this frame. Only
-    // step in when it is effectively calm.
-    if (treeSwayUniforms.uWindIntensity.value >= floor) return
-    treeSwayUniforms.uWindForce.value.set(floor, 0, 0)
-    treeSwayUniforms.uWindIntensity.value = floor
-    // Gusts are what make it read as weather rather than a fan: the shader
-    // builds a per-tree spike that TRAVELS across the scene at this velocity.
-    treeSwayUniforms.uGustFrontVelocity.value.set(floor * 2.0, 0, 0)
-    treeSwayUniforms.uGustsScale.value   = gust
-    treeSwayUniforms.uGustEnvelope.value = 1.0
-  })
-  return null
-}
-
 function Specimen({ url, material, onMeasured }) {
   const { scene } = useGLTF(url)
 
@@ -557,7 +502,9 @@ function BarkSlots({ atlas, species, variantId }) {
   return null
 }
 
-function Ground({ radius = 90, fx = null }) {
+// The diorama's ground disc, and the extent of its wind sheet.
+const DIORAMA_GROUND_RADIUS_M = 90
+function Ground({ radius = DIORAMA_GROUND_RADIUS_M, fx = null }) {
   const material = useMemo(
     () => makeGrassMaterial({
       fade: { center: [0, 0], inner: radius * 0.42, outer: radius },
@@ -811,10 +758,8 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
       {!alpha && <CloudDome />}
       <WeatherEffects />
 
-      {/* The canopy moves off the same wind that moves the clouds — and a
-          breeze FLOOR beneath it, because the directive carries no wind yet. */}
-      <SwayDriver />
-      <DioramaWind />
+      {/* The canopy moves on the town's real weather, through the one wind sheet, over this diorama's own ground. */}
+      <WindSheet extent={{ center: [0, 0], radius: DIORAMA_GROUND_RADIUS_M }} wind="weather" />
 
       {!alpha && <Ground fx={ground} />}
       {/* ⭐ THE PRODUCTION CHAIN — AO, the authored grade, bloom. Jacob: "the AO

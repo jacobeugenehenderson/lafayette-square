@@ -32,7 +32,7 @@ import { HeroImpostorBaker } from './HeroImpostorBaker.jsx'
 import { partitionByDirt, CAPTURE_FORMAT } from './captureKey.js'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
 import {
-  useTreeAtlas, treeSwayUniforms,
+  useTreeAtlas,
   stampTreeVertexAttrs, measureChassisRadius, applyBarkUniforms, applyLeafFaceUniforms, invalidateTreeAtlas,
   cloneTreeMaterial,
 } from '../components/treeAtlasMaterial.js'
@@ -827,13 +827,7 @@ export default function Grove() {
               loadGrove()
             }}
           />
-          {/* Ambient breeze — advances the shared foliage-sway clock so the Grove
-              reads as alive (Hero specimens rustle, Browse discs wiggle), through
-              the SAME uniforms/shader the player uses. See GroveWind. */}
-          <GroveWind />
-          {/* The card wind: the impostors (Browse bands, hero cards) read the WIND SHEET, as in the player. The Grove has
-              no weather, so it gives the sheet a named specimen wind — the same breeze GroveWind feeds the mesh
-              specimens — over the ring's own extent. */}
+          {/* The wind every tree here reads (GROVE_WIND), over the ring's own extent. */}
           <QualityProvider quality={authoringQuality()}>
             <WindSheet extent={{ center: [0, 0], radius: ringRadius + TILE_SPACING }} wind={GROVE_WIND} />
           </QualityProvider>
@@ -947,25 +941,10 @@ export default function Grove() {
   )
 }
 
-// GroveWind — the Grove's SwayDriver for the MESH specimens (injectFoliageSway reads the shared treeSwayUniforms;
-// the mesh path has not moved onto the wind sheet). It has no live weather feed, so it drives a constant gentle
-// authoring breeze into those uniforms + advances uTime. The CARDS read the wind sheet, fed the same breeze
-// (GROVE_WIND) — what breathes here breathes in the player.
-const GROVE_BREEZE_MPS = 3.0
-// The same breeze as the sheet's named specimen wind: FROM the west (blowing +X, as GroveWind's force), the gust's
-// peak 1.5 m/s above the mean (GroveWind's uGustsScale).
-const GROVE_WIND = Object.freeze({ speedMps: GROVE_BREEZE_MPS, dirDeg: 270, gustsMps: GROVE_BREEZE_MPS + 1.5 })
-function GroveWind() {
-  useFrame((_, dt) => {
-    treeSwayUniforms.uTime.value += dt
-    treeSwayUniforms.uWindForce.value.set(GROVE_BREEZE_MPS, 0, 0)
-    treeSwayUniforms.uWindIntensity.value = GROVE_BREEZE_MPS
-    treeSwayUniforms.uGustFrontVelocity.value.set(GROVE_BREEZE_MPS * 2.5, 0, 0)
-    treeSwayUniforms.uGustsScale.value   = 1.5
-    treeSwayUniforms.uGustEnvelope.value = 1.0
-  })
-  return null
-}
+// The Grove's wind: it has no weather, so its wind sheet takes a NAMED specimen wind — a gentle authoring breeze FROM
+// the west, the gust's peak 1.5 m/s above the mean. Every tree here (mesh specimens and cards) reads that one sheet,
+// as the map's trees read the town's — what breathes here breathes in the player.
+const GROVE_WIND = Object.freeze({ speedMps: 3.0, dirDeg: 270, gustsMps: 4.5 })
 
 function ViewCamera({ view, count, radius, transitioning }) {
   // Snap the camera to the committed view's pose on mount / count change — but NOT

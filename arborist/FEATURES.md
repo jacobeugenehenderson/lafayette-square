@@ -300,6 +300,9 @@ Per-Look roster curation. Reads `public/looks/<look>/design.json#/trees`; lets t
 **Browse trees are two triangles a band and move with the town's wind (2026-10-04).** Each overhead band is a flat
 quad; its leaves flutter by sliding the picture, and every card leans and sways with the one wind sheet (the measured
 weather, so expect more motion than the old calm-day rule, and the lean now points the right way north–south).
+The model trees in the Salon, Grove, canary and Full Monte move on the same wind: the Salon's slider and the Grove's
+breeze are named winds; the canary and Full Monte follow the town's real weather — ⚠️ so on a calm day they are calm
+(their old fallback breezes are gone; the per-shot wind look Jacob ruled will set how much they move).
 **Browse trees have a deep core (2026-10-04, overhead format 6).** The capture paints the region under the canopy band's silhouette, in the two bands beneath it, one solid canopy colour taken from that tree's own canopy. Sway shows dark canopy there, never ground. ⚠️ **Every town needs one Bake → Slab to get it.** Until then Browse draws the old bands, and the console names each species still un-cored (`[overhead] ⛔ … carry no baked deep core`). ▶ `node checks/claims-the-overhead-core-is-baked.mjs` lists, per town, how many species are cored.
 
 The Grove's master atlas (`bake-look.js:unifyAtlases`) is the load-bearing innovation that makes hero species nearly free to add: `atlas-survey.js` dedupes tiles by sha1 hash before pack, so hero bark + leaf-cluster tiles collapse against the filler roster's identical content. See `ARCHITECTURE.md` for the full story.

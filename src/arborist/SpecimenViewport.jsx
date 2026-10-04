@@ -32,7 +32,6 @@ import {
   overheadLightUniforms,
   stampTreeVertexAttrs,
   measureChassisRadius,
-  treeSwayUniforms,
 } from '../components/treeAtlasMaterial.js'
 import { OVERHEAD_ALPHA_TEST } from '../components/overheadCore.js'
 import WindSheet from '../components/WindSheet.jsx'
@@ -752,8 +751,8 @@ function RotatorRing({ rotationY = 0, radius = 2.5, onRotate }) {
 // ── Cyclorama (white sweep) ───────────────────────────────────────────
 // The Salon's stage: the floor's side, and the wind sheet's named specimen extent (the specimen stands at the centre).
 const SALON_STAGE_M = 600
-// The workstage's wind slider (0..1) as the sheet's named specimen wind — the same synthetic state the mesh preview
-// gets through treeSwayUniforms (Skeleton's useFrame): ~5 m/s east-bound (FROM the west) at full, light gusts.
+// The workstage's wind slider (0..1) as the sheet's named specimen wind, read by every tree on the stage (mesh and
+// cards): ~5 m/s east-bound (FROM the west) at full, gusts peaking 4 m/s above it; 0 = calm (the rustle floor stays).
 const salonWind = (strength) => {
   const s = Math.max(0, strength || 0)
   return { speedMps: s * 5.0, dirDeg: 270, gustsMps: s * 5.0 + s * 4.0 }
@@ -816,7 +815,6 @@ function Skeleton({
   positionOffset = [0, 0, 0],
   rotationOffset = [0, 0, 0],
   onTopY,
-  windStrength = 0,
   deformerRange = null,
   deformerSeed = null,
   leafFace = null,
@@ -834,23 +832,6 @@ function Skeleton({
   // visible position.
   const lod0Url = url.replace(/-lod[12]\.glb($|\?)/, '-lod0.glb$1')
   const { scene: anchorScene } = useGLTF(lod0Url)
-
-  // Brief 9a (Sough) — workstage drives the SHARED treeSwayUniforms;
-  // Phase W's wind chunks live in `treeAtlasMaterial.js#injectFoliageSway`
-  // now, so Salon preview and LS runtime share the same vertex-shader
-  // wind path. The local `windStrength` slider (0..1) maps to a synthetic
-  // wind state — ~5 m/s drift + light gusts at strength=1, with the
-  // rustle floor visible at strength=0. Direction is fixed east-bound
-  // for the workstage (no preview-only direction knob today).
-  useFrame((_, dt) => {
-    treeSwayUniforms.uTime.value += dt
-    const speed = Math.max(0, windStrength) * 5.0
-    treeSwayUniforms.uWindForce.value.set(speed, 0, 0)
-    treeSwayUniforms.uWindIntensity.value = speed
-    treeSwayUniforms.uGustFrontVelocity.value.set(10, 0, 0)
-    treeSwayUniforms.uGustsScale.value   = windStrength * 4.0
-    treeSwayUniforms.uGustEnvelope.value = windStrength > 0 ? 1.0 : 0.0
-  })
 
   // Brief 7 (Cambium): the shared treeAtlasMaterial owns the bark gradient
   // path now. Birch's gradientUniformsRef + fallback texture + per-prop
@@ -902,9 +883,9 @@ function Skeleton({
     // Brief 9a (Sough): workstage's onBeforeCompile wind chunk is RETIRED
     // — Phase W wind logic + rustle floor now live in the shared
     // `treeAtlasMaterial.js#injectFoliageSway` (single path, both
-    // consumers). The workstage drives the wind via `treeSwayUniforms`
-    // uniforms in the useFrame above. `feedback_salon_preview_is_authoring_surface`
-    // is honored — wind effects fire identically here and in LS.
+    // consumers). The workstage's wind is its stage's wind sheet (the slider is
+    // its named wind). `feedback_salon_preview_is_authoring_surface` is honored —
+    // wind effects fire identically here and in LS.
   }, [scene, atlas.treeMaterial])
 
   // Brief 7: apply per-composition bark uniforms each frame. material.user
@@ -1118,7 +1099,7 @@ function Skeleton({
   // snapshot. One azimuth (az=0, facing +Z at the camera) × heroShells depth shells,
   // captured canopy-only + level, ONE shot per frame (crash-safe), skinned onto
   // vertical cards. The eye-gate: does the leaf mass read as this species from the
-  // side, and does it BREATHE with the wind (windStrength slider → treeSwayUniforms)?
+  // side, and does it BREATHE with the wind (windStrength slider → the stage's wind sheet)?
   // Persistence (all N azimuths) rides the Grove Bake→Slab (HeroImpostorBaker); this
   // Salon preview is eye-gate only, front azimuth only.
   const [heroSnapshot, setHeroSnapshot] = useState(null)   // { shots:[{shellIdx,shellCount,albedoTex,aoTex,depthLoFrac,depthHiFrac}], heightM, canopyBaseNorm }
@@ -1592,7 +1573,6 @@ export default function SpecimenViewport({
               positionOffset={positionOffset}
               rotationOffset={rotationOffset}
               onTopY={(y) => { topYRef.current = y; setTopY(y) }}
-              windStrength={windStrength}
               deformerRange={deformerRange}
               leafFace={leafFace}
               deformerSeed={deformerSeed}
