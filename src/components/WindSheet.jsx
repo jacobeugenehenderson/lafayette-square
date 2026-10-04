@@ -24,6 +24,7 @@ import { WIND_FIELD, WIND_FIELD_GLSL, windAt as cpuWindAt } from '../lib/wind-fi
 import { WeatherRangeError } from '../lib/weatherAt.js'
 import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted } from '../lib/windSheet.js'
 import { onSceneStencil } from './sceneStencilState.js'
+import { UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { useQuality } from '../lib/qualityProfile.js'
 import useSkyState from '../hooks/useSkyState.js'
 import useTimeOfDay from '../hooks/useTimeOfDay.js'
@@ -300,14 +301,34 @@ const EMPTY = windSheetUniforms.uWindSheet.value
 /** `?windDebug` — the field laid over the map, and a readout. Draws over everything; a debug view, not a look. */
 function WindSheetDebug({ status, air, layoutRef }) {
   const meshRef = useRef()
+  // ⭐ DRAPED and CLIPPED (Jacob, 2026-10-04: a flat plane floated against the terrain and its square ran past the
+  // town). The overlay lifts each vertex by the ground's own terrain sample (terrainShader's shared uniforms — the same
+  // field the ground is displaced by) plus a small lift, depth-tests so trees and buildings stand in front of it, and
+  // discards outside the town's disc.
   const material = useMemo(() => new THREE.ShaderMaterial({
-    name: 'windSheet:debug', transparent: true, depthTest: false, depthWrite: false,
-    uniforms: { ...windSheetUniforms, uMax: { value: 10 } },
-    vertexShader: /* glsl */`varying vec2 vXZ; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vXZ = w.xz; gl_Position = projectionMatrix * viewMatrix * w; }`,
-    fragmentShader: /* glsl */`
-      uniform sampler2D uWindSheet; uniform vec2 uWindSheetOrigin; uniform float uWindSheetSpan; uniform float windSheetTime; uniform float uMax;
+    name: 'windSheet:debug', transparent: true, depthTest: true, depthWrite: false,
+    uniforms: { ...windSheetUniforms, ...TERRAIN_UNIFORMS, uMax: { value: 10 }, uDiscC: { value: new THREE.Vector2() }, uDiscR: { value: 1 }, uLift: { value: 1.0 } },
+    vertexShader: /* glsl */`
+      #include <common>
+      #include <logdepthbuf_pars_vertex>
+      ${TERRAIN_DECL}
+      uniform float uLift;
       varying vec2 vXZ;
       void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        w.y = texture2D(uTerrainMap, _terrainUV(vec2((w.x - uBMinX) / uSpanX, (w.z - uBMinZ) / uSpanZ))).r * uExag + uLift;
+        vXZ = w.xz;
+        gl_Position = projectionMatrix * viewMatrix * w;
+        #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader: /* glsl */`
+      #include <logdepthbuf_pars_fragment>
+      uniform sampler2D uWindSheet; uniform vec2 uWindSheetOrigin; uniform float uWindSheetSpan; uniform float windSheetTime; uniform float uMax;
+      uniform vec2 uDiscC; uniform float uDiscR;
+      varying vec2 vXZ;
+      void main() {
+        #include <logdepthbuf_fragment>
+        if (distance(vXZ, uDiscC) > uDiscR) discard;
         vec4 s = texture2D(uWindSheet, (vXZ - uWindSheetOrigin) / uWindSheetSpan);
         float m = clamp(length(s.xy) / uMax, 0.0, 1.0);
         vec3 c = mix(vec3(0.05, 0.15, 0.6), vec3(1.0, 0.85, 0.1), m);
@@ -331,7 +352,10 @@ function WindSheetDebug({ status, air, layoutRef }) {
     const m = meshRef.current
     if (m) {
       m.visible = !!L
-      if (L) { m.position.set(L.origin[0] + L.span / 2, 0.5, L.origin[1] + L.span / 2); m.scale.set(L.span, L.span, 1) }
+      if (L) {
+        m.position.set(L.center[0], 0, L.center[1]); m.scale.set(2 * L.radius, 2 * L.radius, 1)
+        material.uniforms.uDiscC.value.set(L.center[0], L.center[1]); material.uniforms.uDiscR.value = L.radius
+      }
     }
     const a = air.current
     material.uniforms.uMax.value = Math.max(4, (a.baseSpeedMps + a.gustsScale) * 1.2)
@@ -346,7 +370,8 @@ function WindSheetDebug({ status, air, layoutRef }) {
   })
   return (
     <mesh ref={meshRef} material={material} rotation={[-Math.PI / 2, 0, 0]} renderOrder={10000} frustumCulled={false}>
-      <planeGeometry args={[1, 1]} />
+      {/* Dense enough to follow the terrain: the ground's relief is sampled per vertex. */}
+      <planeGeometry args={[1, 1, 256, 256]} />
     </mesh>
   )
 }

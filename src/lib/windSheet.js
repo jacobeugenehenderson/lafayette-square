@@ -47,7 +47,7 @@ export function windSheetLayout(extent, texelsPerCorrelation, maxTextureSize) {
   const span = 2 * extent.radius + 2 * mPerTexel
   const size = Math.ceil(span / mPerTexel)
   if (maxTextureSize && size > maxTextureSize) throw new Error(`[windSheet] ⛔ a ${Math.round(span)} m town at ${mPerTexel.toFixed(2)} m/texel needs a ${size}² sheet, over this device's ${maxTextureSize}² limit — lower the rung for this surface`)
-  return { origin: [cx - span / 2, cz - span / 2], span, size, mPerTexel }
+  return { origin: [cx - span / 2, cz - span / 2], span, size, mPerTexel, center: [cx, cz], radius: extent.radius }
 }
 
 // ── The wind from the weather — the one source (Jacob, 2026-10-04: "connect it to weather") ──────────────────────
