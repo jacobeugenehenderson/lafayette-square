@@ -92,6 +92,20 @@ number on it.
 **~440M triangles/frame** and ~2 s frames, which froze Stage. Capturing the impostors (Grove) fixed it. The runtime
 degraded to "draw every tree at full weight" without failing loudly (`ROADMAP B4`). Trace it as a silent substitution.
 
+## Third exhibit: one instant, two weathers (live handoff)
+
+At a scrubbed time the Ward's **label** reads that hour's forecast (`theward/src/almanac/weather.js`, via `useTownWeather`), while
+the **sky** is fed Open-Meteo `current` (`src/hooks/useWeather.js#fetchWeather` → `useSkyState`). Measured 2026-10-04 00:15 on LS:
+current 100% cloud, forecast noon 0%, so "Clear Sky" over an overcast sky (Jacob saw it on staging). Two authorities for weather
+at one instant: the spec's *"live handoffs"* and *"one explicit authority"*. Trace who owns weather-at-a-time. ▶ `ROADMAP` Quick wins.
+
+## Fourth exhibit: a slab that finds its files by a stamped name (Bake → Player)
+
+Every baked JSON carries `"look": "<name>"`, and the renderer builds asset URLs from it (`BakedGround` → `slabUrl(manifest.look, …)`);
+`trees-atlas.json` carries absolute `/baked/<name>/` paths. Moving HPDM's slab to its new name broke it until it was re-baked
+(2026-10-04). That's the spec's *"bake the answer, not the machinery"*: classify the stamp, and say what a slab should address its
+files by. ▶ `ROADMAP` Quick wins.
+
 ## Premises to confirm first (claims, not facts — say what you found)
 
 1. ⭐ **There is no standalone Stage.** The spec asks that *"standalone Stage and Stage inside Cartograph operate against the
@@ -122,7 +136,7 @@ degraded to "draw every tree at full weight" without failing loudly (`ROADMAP B4
 - **Preview:** `src/preview/PreviewApp.jsx` · `src/lib/useSceneJson.js` · `src/lib/slabUrl.js` · `src/preview/deviceProfiles.js`.
 - **The shared renderer:** `src/components/Town.jsx` · `src/lib/qualityProfile.js` · `src/lib/renderTiers.js` ·
   `src/components/renderPipeline.jsx`.
-- **Identity:** `src/instance.js` · `src/instances/registry.js` · `src/instances/{lafayette-square,hipointe-demun,huron,provincetown}.js`.
+- **Identity:** `src/instance.js` · `src/instances/registry.js` · `src/instances/{lafayette-square,hipointedemun,huron,provincetown}.js` · **each town's sealed opaque id** `cartograph/data/<map>/town-id.json` (`townId`, baked into `manifest.identity`; every backend keys by it since 2026-10-04, ▶ `node checks/claims-a-town-has-one-sealed-id.mjs`).
 - **Player:** `src/components/Scene.jsx` (old) · `~/Desktop/dev.nosync/theward/src` and its `vite.config.js` (how it imports
   the kit) · its `OPERATIONS.md` ("The kit the Ward is built against").
 
@@ -147,8 +161,7 @@ degraded to "draw every tree at full weight" without failing loudly (`ROADMAP B4
 
 Say for every row whether the evidence came from **disk** (an artifact) or **live** (a running app), and **which app at which
 commit**. The Ward runs a pinned kit, so "live in the Ward" and "live in Preview" are two different code bases until premise 2
-is resolved. Record artifact timestamps: tonight HPDM's slab is half-baked locally (a failed bake), so don't use HPDM's
-`public/baked/` as a clean exhibit.
+is resolved. Record artifact timestamps. *(Since 2026-10-04: HPDM is `hipointedemun`, re-baked and live at hipointedemun.online; the Ward pins kit `c81f7bf6`; LS + HPDM baselines are committed.)*
 
 ## The validation surface
 
