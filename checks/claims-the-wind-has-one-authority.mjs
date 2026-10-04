@@ -50,7 +50,7 @@ for (const bad of ['tweenedDirective', 'useAtmosphere', 'resolveWindState', 'tre
 for (const bad of ['feedStorminess', 'windSpeedMs', 'windDirDeg', 'windGustsMs', 'hourlyForecast']) if (drv.includes(bad)) fails.push(`WindSheet.jsx reads ${bad} itself — the weather reaches the sheet through windStateOfWeather's one object`)
 // A specimen's named wind is the ONLY other input, and only where there is no town: a town + wind prop must throw.
 if (!/extent === 'town' && wind !== undefined\) throw/.test(drv)) fails.push('WindSheet.jsx accepts a wind prop on a town extent — a town\'s wind is its weather')
-if (!/specimenWind = extent === 'town' \? null : windStateOfSpecimen\(wind\)/.test(drv)) fails.push('WindSheet.jsx takes a specimen wind other than through windStateOfSpecimen, or on a town')
+if (!/specimenWind = extent === 'town' \|\| wind === 'weather' \? null : windStateOfSpecimen\(wind\)/.test(drv)) fails.push('WindSheet.jsx takes a specimen wind other than through windStateOfSpecimen, or on a town')
 const spec = lib.match(/export function windStateOfSpecimen[\s\S]*?\n}\n/)
 if (!spec || !/throw new Error/.test(spec[0])) fails.push('windStateOfSpecimen does not refuse a specimen without a named wind')
 

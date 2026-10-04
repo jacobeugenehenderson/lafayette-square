@@ -8,6 +8,7 @@
  *   ⛔ No extent prop throws: a mount that does not say which world it covers is a bug, not a default.
  *   wind={speedMps, dirDeg, gustsMps}  a specimen's NAMED wind — required with a specimen extent (it has no weather),
  *                          and ⛔ refused with extent="town" (a town's wind is its weather, never a prop).
+ *   wind="weather"         a specimen under the real weather (canary, diorama): the one cable, over its own extent.
  *
  * Each frame: the air (wind-field.js#windAt, in GLSL, driven by windStateOfWeather — the town's one weather) → a
  * damped spring per texel (the canopy's memory) → a half-float ping-pong pair. Consumers bind the read side.
@@ -74,7 +75,9 @@ export default function WindSheet({ extent, wind }) {
     throw new Error('[WindSheet] ⛔ needs extent="town" or a named specimen extent {center:[x,z], radius} — there is no default world to cover')
   }
   if (extent === 'town' && wind !== undefined) throw new Error('[WindSheet] ⛔ a town\'s wind is its weather (weatherAt) — a wind prop is for a specimen extent only')
-  const specimenWind = extent === 'town' ? null : windStateOfSpecimen(wind)
+  // A specimen under the REAL weather (the Meteorologist's canary, the tree diorama) says wind="weather": its own extent,
+  // the town's air through the one cable — so it never reads the weather itself.
+  const specimenWind = extent === 'town' || wind === 'weather' ? null : windStateOfSpecimen(wind)
   const gl = useThree((s) => s.gl)
   const quality = useQuality()
   const overlay = useSyncExternalStore(onWindSheetReadout, getWindSheetOverlay)
