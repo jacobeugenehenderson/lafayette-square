@@ -73,6 +73,11 @@ point at the right render.
    ceiling. Say what the emulation can and cannot tell, and propose how a real-device reading gets in (a real phone pointed at the
    staging Ward, reporting back) without building it unasked.
 
+## Leads from the 2026-10-04 Ward build (measure them; ⛔ don't fix them here)
+- **`glyphInk` is a 1.98 MB chunk (673 KB gzipped)** in the Ward build (`theward` `npm run publish:staging`, build `2807a239`). Where it sits in the startup sequence, and whether it blocks FIRST TRUTHFUL FRAME: measure.
+- **`LafayetteParkBody` (234 KB) ships in the Ward bundle for every town.** That's an LS-named component in a town-blind player: a possible LS bleed (`CLAUDE.md` Layer 0). Establish whether non-LS towns load or execute it, and report it as its own row.
+- **Preview has no weather/time control**, so it cannot show the weather the Player shows (Jacob, 2026-10-04). Report it as a parity gap; the fix (Preview reading the same `lib/weatherAt.js` as the Ward) is a row for the next tranche, not this one.
+
 ## Out of scope (next, and named so nobody builds it here)
 
 **Technical-Director controls** and **Deployment / Mastering** (the per-surface effect switches Jacob ruled 2026-10-04: every effect
