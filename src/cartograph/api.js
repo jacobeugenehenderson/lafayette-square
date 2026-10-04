@@ -410,6 +410,16 @@ export async function bakeLook(lookId, { force = false, repour = false } = {}) {
   return res.json()
 }
 
+// ⭐ IS THIS SLAB OLDER THAN WHAT THE BAKE READS? (serve.js GET /looks/<id>/bake): the bake route walked as a plan —
+// the same content records and re-pour question, nothing run — answering { stale: [{ step, why, repour? }], bakedAt }.
+export async function fetchBakePlan(lookId) {
+  const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake`)
+  if (res.status === 409) return { baking: true, stale: [] }
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body.error || `bake plan failed: ${res.status}`)
+  return body
+}
+
 // The running bake's steps (serve.js GET /looks/<id>/bake/status) — BakeModal polls it.
 export async function fetchBakeStatus(lookId) {
   const res = await fetch(`${BASE}/looks/${encodeURIComponent(lookId)}/bake/status`)

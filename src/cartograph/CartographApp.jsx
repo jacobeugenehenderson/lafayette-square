@@ -34,7 +34,7 @@ import { shallow } from 'zustand/shallow'
 import { reloadTerrain, onTerrainReload } from '../utils/terrainShader'
 import { streetEyeY } from '../utils/elevation'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { SHOTS, computeBrowseAltitude, HeroPreview, useStageMovie } from '../stage/StageApp.jsx'
+import { SHOTS, HeroPreview, useStageMovie } from '../stage/StageApp.jsx'
 import { assertKeyframesAimed } from '../preview/heroAnim.js'
 import { derivedOpeningKeyframe } from '../lib/cameraRegimes.js'
 import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
@@ -284,6 +284,12 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         // Stage shot-switch framing until per-shot position authoring lands.
         const storeShots = useCartographStore.getState().shots?.values
         const browseFrame = shot === 'browse' ? authoredBrowseFrame() : null
+        // ⭐ THE TOWN'S OWN DISC frames whatever is neither handed off nor authored — Browse's first entry and Street's
+        // stand point — in EVERY town, LS included. ⛔ It was gated on the town's NAME (`mapKey !== 'lafayette-square'`),
+        // and LS, or any town whose boundary had not loaded, stood on SHOTS' LS-authored absolute poses. No disc ⇒
+        // nothing to frame, said out loud (as Hero does), never another town's pose.
+        const disc = sceneBoundary?.radius > 0 && Array.isArray(sceneBoundary.center) && sceneBoundary.center.every(Number.isFinite)
+          ? { c: sceneBoundary.center, R: sceneBoundary.radius } : null
         let fov = storeShots?.[shot]?.fov ?? s.fov
         let toPos
         let toTarget = [...s.target]
@@ -323,12 +329,16 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             // — authoring is what makes that frame STICK, not what overrides it.
             toPos = [browseFrame.center[0], browseFrame.altitude, browseFrame.center[1]]
             toTarget = [browseFrame.center[0], 0, browseFrame.center[1]]
+          } else if (disc) {
+            // Nothing inherited and nothing authored (first entry into a town): true overhead over the town's own
+            // disc, fit to it in the binding viewport axis (portrait-safe) + pad — the same fit the Altitude
+            // slider's range is twice of (townRange.js).
+            toPos = [disc.c[0], browseFitAltitude(disc.R, size.width / Math.max(size.height, 1), fov), disc.c[1]]
+            toTarget = [disc.c[0], 0, disc.c[1]]
           } else {
-            // Nothing inherited and nothing authored (first entry into a town):
-            // fit the whole neighborhood.
-            const aspect = size.width / Math.max(size.height, 1)
-            const y = computeBrowseAltitude(aspect, fov)
-            toPos = [s.position[0], y, s.position[2]]
+            console.error('[stage] browse: no hand-off, no authored frame and no scene disc (neighborhood_boundary.json) — nothing to frame')
+            toPos = [cam.position.x, cam.position.y, cam.position.z]
+            toTarget = ctl ? [ctl.target.x, ctl.target.y, ctl.target.z] : toPos
           }
         } else if (shot === 'hero') {
           // Hero framing is the operator's KEYFRAMES, each with its own aim.
@@ -351,37 +361,14 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             toPos = [cam.position.x, cam.position.y, cam.position.z]
             toTarget = ctl ? [ctl.target.x, ctl.target.y, ctl.target.z] : toPos
           }
+        } else if (disc) {
+          // Street: a ground-level stand point near the centre of the town's own disc (its height is set below).
+          toPos = [disc.c[0], 0, disc.c[1] + disc.R * 0.08]
+          toTarget = [disc.c[0], 0, disc.c[1] + disc.R * 0.08 - 0.5]
         } else {
-          toPos = [...s.position]
-        }
-        // Poured scene (not LS): the SHOTS above are LS-authored
-        // ABSOLUTE poses — browse sits on LS's building centroid (95,-158) with
-        // LS's 1292×1025 bounds; hero is an LS oblique. A fresh hood is centered
-        // at origin (0,0) with its OWN radius, so reframe generically: browse =
-        // true overhead over center fit to the circle; street = ground-level at
-        // center. Until per-scene shot authoring lands. (Hero is not here: it is
-        // the keyframes, or the derived opening view, above — in every town.)
-        const nb = sceneBoundary
-        // ⛔ `browseFrame` short-circuits this for Browse: the generic reframe is
-        // the scaffold for a town NOBODY has framed yet ("until per-scene shot
-        // authoring lands"), and an authored frame IS that authoring. Without
-        // this guard the feature would work on LS and be silently overridden in
-        // every other town — the kit's signature failure shape.
-        if (mapKey !== 'lafayette-square' && nb?.radius > 0 && !browseFrame) {
-          const R = nb.radius
-          if (shot === 'browse') {
-            // fit the 2R circle in the binding viewport axis (portrait-safe) + pad — the same fit the
-            // Altitude slider's range is twice of (townRange.js)
-            toPos = [0, browseFitAltitude(R, size.width / Math.max(size.height, 1), fov), 0]
-            toTarget = [0, 0, 0]
-          } else if (shot === 'street') {
-            // Street: a ground-level stand point near the centre (its height is set below).
-            // ⛔ `else if`, never a bare `else`: a bare else also caught HERO and stood the
-            // camera on the street point, overwriting the first keyframe on every reload
-            // ("scene STILL opens underwater", Jacob 2026-09-26). Hero is the keyframes.
-            toPos = [0, 0, R * 0.08]
-            toTarget = [0, 0, R * 0.08 - 0.5]
-          }
+          console.error('[stage] street: no scene disc (neighborhood_boundary.json) — nothing to stand on')
+          toPos = [cam.position.x, cam.position.y, cam.position.z]
+          toTarget = ctl ? [ctl.target.x, ctl.target.y, ctl.target.z] : toPos
         }
         // ⛔ STREET, EVERY TOWN (LS included): the eye stands 5′8″ above the
         // drawn ground at its own point — the one method (utils/elevation#streetEyeY).
@@ -944,6 +931,25 @@ export default function CartographApp() {
     const url = new URL(window.location.href); url.searchParams.delete('look'); url.searchParams.set('scene', map)
     window.location.replace(url.toString())
   }, [activeLookId])
+  // ⭐ THE ADDRESS IS WHERE YOU ARE (Phase 2 A). `?scene=&look=&shot=` is written from the store's triple as it moves, so
+  // a copied link reopens this town, this Look, this shot (the store reads all three back: `initialShot`, `_loadLooks`).
+  // ⛔ Not before the Looks are known, and never over a REFUSED link — the bad address stays on screen with its alarm.
+  // ▶ OPERATIONS.md §"Open Stage by URL"
+  useEffect(() => {
+    const write = (s) => {
+      if (!s._looksHydrated || s.lookRefused) return
+      const url = new URL(window.location.href)
+      for (const [k, v] of [['scene', s.scene], ['look', s.activeLookId], ['shot', s.shot]]) {
+        if (v) url.searchParams.set(k, v); else url.searchParams.delete(k)
+      }
+      if (url.href !== window.location.href) window.history.replaceState(window.history.state, '', url)
+    }
+    write(useCartographStore.getState())
+    return useCartographStore.subscribe((s, prev) => {
+      if (s.scene !== prev.scene || s.activeLookId !== prev.activeLookId || s.shot !== prev.shot
+        || s._looksHydrated !== prev._looksHydrated || s.lookRefused !== prev.lookRefused) write(s)
+    })
+  }, [])
   // Stage places the town it is on, like every app's entry: in Designer no <Town> is mounted, and the sun, the
   // moon, the season and Stage's own panels still follow the active town. (Terrain is reloaded above.)
   useLayoutEffect(() => { if (activeTown) placeTown(activeTown, activeLookId) }, [activeTown, activeLookId])

@@ -16,7 +16,6 @@
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { browseAltitude } from '../lib/browseAltitude.js'
 
 import StreetLights from '../components/StreetLights'
 import GatewayArch from '../components/GatewayArch'
@@ -222,23 +221,14 @@ function HorizonControls() {
 export const SHOTS = {
   hero:   { position: [-400, 55, 230], target: [400, 45, -100], fov: 22, label: 'Hero' },
   // Browse = pure overhead (90°) centered on the neighborhood's building
-  // centroid. `bounds` is the axis-aligned footprint of every building in
-  // src/data/buildings.json — computeBrowseAltitude() fits altitude to the
-  // viewport aspect so all buildings stay in frame (map gets cropped on
-  // the binding axis).
+  // centroid; `bounds` is the axis-aligned footprint of every building in LS's src/data/buildings.json.
+  // ⛔ Stage's CameraRig no longer frames from these (Phase 2 A): Browse and Street read the town's own disc.
   browse: {
     position: [95, 1300, -158], target: [95, 0, -158], up: [0, 0, -1], fov: 45, label: 'Browse',
     bounds: { cx: 95, cz: -158, w: 1292, h: 1025 }, padding: 1.05,
   },
   // ⛔ No height: the Street eye's Y is ALWAYS streetEyeY (utils/elevation) at this x/z.
   street: { position: [0, null, -50], target: [0, null, -50.5], fov: 75, label: 'Street' },
-}
-
-// Fit Browse altitude to viewport aspect so SHOTS.browse.bounds always frames
-// in. Returns the altitude (camera Y) for a 90° overhead camera with the
-// given fov and viewport aspect (width / height).
-export function computeBrowseAltitude(aspect, fov = SHOTS.browse.fov) {
-  return browseAltitude(aspect, fov, SHOTS.browse.bounds, SHOTS.browse.padding ?? 1.05)
 }
 
 // Live camera state bridge (R3F ↔ React DOM) — lives in ./cameraBridge.js so

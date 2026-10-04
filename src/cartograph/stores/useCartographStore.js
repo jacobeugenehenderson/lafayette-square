@@ -3,7 +3,7 @@ import { create } from 'zustand'
 import {
   fetchMarkers, saveMarkers, fetchCenterlines, fetchSkeleton,
   fetchMeasurements, saveMeasurements, fetchOverlay, saveOverlay,
-  fetchLooks, fetchLookDesign, saveLookDesign, bakeLook, fetchBakeStatus,
+  fetchLooks, fetchLookDesign, saveLookDesign, bakeLook, fetchBakeStatus, fetchBakePlan,
   createLook as apiCreateLook, deleteLook as apiDeleteLook,
   saveShapeFreeze, fetchRibbons, fetchMap, fetchGeography, fetchBoundary,
 } from '../api.js'
@@ -347,6 +347,21 @@ const isStageShot = (shot) => STAGE_SHOTS.includes(shot)
 // Every valid destination. ⛔ NOT a superset to test Stage-ness with: 'designer'
 // and 'extent' are here precisely because they are NOT Stage shots.
 const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']
+// ⭐ WHERE THE PAGE OPENS (Phase 2 A; Jacob's ruling 2026-10-04): the URL's `?shot=`, then the saved shot, then the
+// Designer. The URL is written back as you move (CartographApp, `?scene=&look=&shot=`), so a copied link reopens
+// in the shot it was copied from. It replaces "every Stage shot reloads as Hero" (2026-09-26).
+function initialShot() {
+  try {
+    const url = new URLSearchParams(window.location.search).get('shot')
+    if (ALL_SHOTS.includes(url)) return url
+    if (url) console.error(`[stage] ⛔ ?shot=${url} is not a shot (have: ${ALL_SHOTS.join(', ')}) — ignored`)
+  } catch { /* ignore */ }
+  try {
+    const saved = localStorage.getItem('cartograph-shot')
+    if (ALL_SHOTS.includes(saved)) return saved
+  } catch { /* ignore */ }
+  return 'designer'
+}
 
 const _isObj = (v) => v && typeof v === 'object'
 // An absent channel hydrates to THE KIT'S DAY where the day keys it (skyLightChannels.js#kitDayChannel), else to the
@@ -1756,12 +1771,6 @@ const useCartographStore = create((set, get) => ({
         activeLookId = null
         try { localStorage.removeItem(ACTIVE_LOOK_KEY) } catch { /* ignore */ }
       }
-      // The store inits with bakeStale=true (no prior session knowledge).
-      // If the looks index reports a non-null bakedAt for the active Look,
-      // the artifacts exist on disk and are presumed valid until the user
-      // makes a geometry/design edit that re-stales them. Without this,
-      // every hard-refresh would surface a stale Stage button and a click
-      // would re-bake unnecessarily.
       // ⭐ A ?look= LINK OPENS THAT LOOK AND ITS SCENE — never the default town (measured 2026-09-28: ?look=huron opened
       // Lafayette Square, because the scene booted to the default installation and the alignment below then pulled
       // the Look to it). A link naming no Look, or disagreeing with ?scene=, resolves NO town and says why.
@@ -1780,7 +1789,8 @@ const useCartographStore = create((set, get) => ({
           set({ looks, defaultLookId, activeLookId: null, lookRefused: refuse, lookMissingForScene: urlSceneForLook || urlLook, status: refuse, _looksHydrated: true })
           return
         }
-        set({ looks, defaultLookId, activeLookId: urlLook, lookMissingForScene: null, _looksHydrated: true, bakeStale: !entry.bakedAt })
+        set({ looks, defaultLookId, activeLookId: urlLook, lookMissingForScene: null, _looksHydrated: true })
+        get()._measureSlabAge()
         // setScene loads that town's data and keeps this Look (it is the scene's own). Not awaited: this may run
         // inside another scene's load, which sees the scene move and stands down.
         if (entry.scene !== get().scene) get().setScene(entry.scene)
@@ -1817,8 +1827,8 @@ const useCartographStore = create((set, get) => ({
         if (activeLookId) { try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ } }
         else { lookMissingForScene = scene; console.error(`[looks] no Look belongs to scene "${scene}" — Designer edits will not save`) }
       }
-      const wasBaked = !!looks.find(l => l.id === activeLookId)?.bakedAt
-      set({ looks, activeLookId, defaultLookId, lookMissingForScene, _looksHydrated: true, bakeStale: !wasBaked, ...sceneUpdate })
+      set({ looks, activeLookId, defaultLookId, lookMissingForScene, _looksHydrated: true, ...sceneUpdate })
+      get()._measureSlabAge()
     } catch (err) {
       console.warn('[looks] load failed:', err)
       set({ _looksHydrated: true })
@@ -1849,12 +1859,11 @@ const useCartographStore = create((set, get) => ({
       await get().setScene(newScene)
       return
     }
-    // Hydrate the panel from the new Look's design.json. Bake-stale derives
-    // from whether the Look has bakedAt recorded — switching to a never-
-    // baked Look should still surface the Stage button as stale.
+    // Hydrate the panel from the new Look's design.json, and measure its slab's age.
     try {
       const design = await fetchLookDesign(id)
-      set({ ...hydrateDesign(design), bakeStale: !entry?.bakedAt })
+      set(hydrateDesign(design))
+      get()._measureSlabAge()
     } catch (err) {
       console.warn('[looks] hydrate failed for', id, err)
     }
@@ -1899,7 +1908,23 @@ const useCartographStore = create((set, get) => ({
   // `bakeStale` flips true on every authoring edit; `bakeRunning` drives the
   // modal. After a successful bake we hand off to Hero.
   bakeRunning: false,
-  bakeStale: true,           // true on app boot — never baked yet this session
+  bakeStale: true,           // true on app boot, until _measureSlabAge answers
+  // ⭐ THE SLAB'S AGE, MEASURED (Phase 2 A): null = not yet measured · { stale: [{ step, why }], bakedAt } = the bake
+  // route's own plan (serve.js GET /looks/<id>/bake) · { error }. It was `bakeStale = !entry.bakedAt` — "ever baked",
+  // so a slab older than an overlay, skeleton or code edit opened in Stage as current. StatusBar alarms on it in Stage.
+  // ▶ node checks/claims-a-stage-entry-knows-its-slab-age.mjs
+  slabAge: null,
+  _measureSlabAge: async () => {
+    const lookId = get().activeLookId
+    if (!lookId) { set({ slabAge: null }); return }
+    set({ slabAge: null })
+    let slabAge
+    try { slabAge = await fetchBakePlan(lookId) } catch (e) { slabAge = { error: e.message || String(e) } }
+    if (get().activeLookId !== lookId) return   // the Look moved on while we asked
+    if (slabAge.error) console.error(`[stage] ⛔ could not measure the age of "${lookId}"'s slab: ${slabAge.error}`)
+    else if (slabAge.stale.length) console.warn(`[stage] "${lookId}"'s slab is older than what the bake reads:`, slabAge.stale)
+    set({ slabAge, bakeStale: !!slabAge.error || slabAge.stale.length > 0 })
+  },
   bakeLastMs: null,
   bakeError: null,
   markBakeStale: () => set({ bakeStale: true }),
@@ -2043,9 +2068,8 @@ const useCartographStore = create((set, get) => ({
       // every store derived from them (centerlines, ①, the measure seed, the design hydrate).
       // ⛔ Never a silent stale map: the modal appears only when that refresh FAILS, and says so.
       await get()._refreshPouredMap()
-      // Optional navigation tied to bake success. Designer's "Stage →"
-      // passes navigateTo='browse' so the operator lands at the matching
-      // overhead view immediately after the bake.
+      get()._measureSlabAge()
+      // Optional navigation tied to bake success: Designer's "Stage →" passes 'hero', the opening keyframe.
       if (navigateTo) get().setShot(navigateTo)
     } catch (err) {
       // the server stopped before a CODE-driven re-pour: ask, and remember how to resume (BakeModal)
@@ -2070,28 +2094,15 @@ const useCartographStore = create((set, get) => ({
   // `cartograph-tool` is written by setTool ('design' encodes the null/neutral).
   tool: (() => {
     try {
-      const savedShot = localStorage.getItem('cartograph-shot')
-      if (isStageShot(savedShot)) return null
+      if (isStageShot(initialShot())) return null
       const savedTool = localStorage.getItem('cartograph-tool')
       if (savedTool === 'surveyor' || savedTool === 'measure') return savedTool
       if (savedTool === 'design') return null
     } catch { /* ignore */ }
     return 'surveyor'
   })(),
-  shot: (() => {
-    try {
-      const saved = localStorage.getItem('cartograph-shot')
-      // ⛔ A DIFFERENT SET, deliberately: every VALID destination, not the Stage
-      // subset. 'designer' and 'extent' belong here and must never be folded into
-      // STAGE_SHOTS — conflating the two is the bug fixed above.
-      // ⭐ STAGE OPENS ON THE OPENING KEYFRAME (Jacob, 2026-09-26: "the camera should
-      // default to the opening keyframe on load, IN STAGE"). A reload in any Stage
-      // shot lands in Hero, whose entry places the camera on the first key, paused.
-      if (isStageShot(saved)) return 'hero'
-      if (ALL_SHOTS.includes(saved)) return saved
-    } catch { /* ignore */ }
-    return 'designer'
-  })(),
+  // ⛔ ALL_SHOTS, deliberately: every VALID destination, not the Stage subset (see STAGE_SHOTS above).
+  shot: initialShot(),
   // Scene = what geometry we're looking at — the dataset name that data/<scene>/
   // holds (any installation id). Mirrored from the active Look's
   // `scene` field so selecting a Look determines the scene; setActiveLook is
@@ -2215,8 +2226,7 @@ const useCartographStore = create((set, get) => ({
       try { localStorage.setItem('cartograph-tool', 'surveyor') } catch { /* ignore */ }
     }
     try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
-    // The last Stage shot is still recorded for PREVIEW, which opens on it (its own
-    // ruling, 2026-09-05). Stage itself always opens on the opening keyframe.
+    // The last Stage shot is also recorded for PREVIEW, which opens on it (its own ruling, 2026-09-05).
     if (isStageShot(shot)) {
       try { localStorage.setItem('cartograph-last-stage-shot', shot) } catch { /* ignore */ }
     }

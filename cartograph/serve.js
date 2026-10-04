@@ -100,6 +100,7 @@ function markStep(P, label, state, extra = {}) {
   return st
 }
 async function runStep(P, label, cmd, opts = {}) {
+  if (P.plan) return   // a PLAN (GET /looks/<id>/bake) runs nothing: runIfDirty has already recorded why the step would run
   if (P.cancel) throw new Error(`cancelled by operator before step "${label}"`)
   const { timeout, ...rest } = opts        // ⛔ no wall-clock kill on a bake step (see above)
   const st = markStep(P, label, 'running', { t0: Date.now(), lastLine: null, frac: null, sub: null })
@@ -2516,8 +2517,14 @@ createServer(async (req, res) => {
   // / lamps / scene / trees / ground-ao) from its design.json. Steps run
   // via `runShell` (async spawn) so other API requests keep flowing during
   // the bake. Per-look lock rejects concurrent bakes against the same Look.
-  if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/bake$/))) {
+  // ⭐ GET /looks/<id>/bake — THE SAME ROUTE AS A PLAN: "is this slab older than what the bake reads, and why?"
+  // It walks this exact body with `P.plan` set, so every decision below (the re-pour question, each step's
+  // content record, a missing output) is asked the one way; nothing runs and nothing is written, and the answer
+  // is `{ stale: [{ step, why }] }`. ⛔ There is no second staleness model: Stage's entry reads this.
+  // ▶ node checks/claims-a-stage-entry-knows-its-slab-age.mjs
+  if ((req.method === 'POST' || req.method === 'GET') && (m = path.match(/^\/looks\/([^/]+)\/bake$/))) {
     const id = m[1]
+    const planning = req.method === 'GET'
     const idx = readLooksIndex()
     if (!idx.looks.some(l => l.id === id)) {
       res.writeHead(404, { 'Content-Type': 'application/json' })
@@ -2529,9 +2536,10 @@ createServer(async (req, res) => {
       res.end(JSON.stringify({ error: 'bake already in progress for this look', lookId: id }))
       return
     }
-    _bakesInFlight.add(id)
-    const P = { lookId: id, startedAt: Date.now(), finishedAt: null, steps: bakePlan().map(label => ({ label, state: 'waiting' })), current: null, cancel: null, child: null }
-    _bakeProgress.set(id, P)
+    if (!planning) _bakesInFlight.add(id)
+    const P = { lookId: id, startedAt: Date.now(), finishedAt: null, steps: bakePlan().map(label => ({ label, state: 'waiting' })), current: null, cancel: null, child: null,
+                plan: planning ? { stale: [] } : null }
+    if (!planning) _bakeProgress.set(id, P)
     try {
       const t0 = Date.now()
       // Full bake chain — every step the operator might forget rolled into
@@ -2614,7 +2622,7 @@ createServer(async (req, res) => {
       P.scene = bakeScene
       const timings = readBakeTimings(MAP_JSON)
       for (const st of P.steps) { const t = timings[`${id}:${st.label}`]; if (t) st.est = t.ms }
-      const ran = (label) => { ranSteps.push(label); const st = P.steps.find(x => x.label === label); if (st?.t0 && st?.t1) saveBakeTiming(MAP_JSON, id, label, st.t1 - st.t0) }
+      const ran = (label) => { if (P.plan) return; ranSteps.push(label); const st = P.steps.find(x => x.label === label); if (st?.t0 && st?.t1) saveBakeTiming(MAP_JSON, id, label, st.t1 - st.t0) }
       // ⭐ BY CONTENT (Boz's rulings, 2026-09-26; BRIEF-dirty-graph §5). A step's CODE is its declared scripts' whole
       // import closure; its DATA is every other declared input. Both are compared with what it read when it last ran
       // (`bake-reads.json`), so a change to a helper it imports re-runs it, and a date that moved alone does not.
@@ -2624,6 +2632,7 @@ createServer(async (req, res) => {
       const runIfDirty = async (label, inputs, outputs, cmd, { judge, ...opts } = {}) => {
         if (judge === 'mtime') {
           if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
+          if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
           await runStep(P, label, cmd, opts); ran(label); return
         }
         const isCode = (f) => /\.m?js$/.test(f)
@@ -2633,6 +2642,7 @@ createServer(async (req, res) => {
         const why = was ? [...contentChanged(was.code, code, who), ...contentChanged(was.data, data, who)] : contentChanged(undefined, [], who)
         const missing = outputs.filter(o => !existsSync(o))
         if (!force && !why.length && !missing.length) { skip(label); return }
+        if (P.plan) { P.plan.stale.push({ step: label, why: [...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)] }); return }
         console.log(`[bake] ${label}: ${[...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)].slice(0, 5).join(', ')}`)
         await runStep(P, label, cmd, opts)
         // recorded AFTER the run: an input that is also an output (ground-ao's ground.json) is recorded as it left it
@@ -2697,7 +2707,8 @@ createServer(async (req, res) => {
         // promote-ribbons writes LS's src/data/ribbons.json; with no record of what it last read it would run, so ask.
         const lsAsks = isDefaultMap && !bakeReads[`${id}:promote-ribbons`]
           ? ['src/data/ribbons.json → promote-ribbons has no record yet, so this Bake would re-promote LS\'s committed ribbons'] : []
-        if ((codeNewer.length || lsAsks.length) && !repourConfirmed) {
+        if (P.plan && (codeNewer.length || lsAsks.length)) P.plan.stale.push({ step: 'pipeline', repour: true, why: [...codeNewer, ...lsAsks] })
+        else if ((codeNewer.length || lsAsks.length) && !repourConfirmed) {
           res.writeHead(428, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ lookId: id, repour: { scene: bakeScene, files: [...codeNewer, ...lsAsks] } }))
           return
@@ -2794,7 +2805,11 @@ createServer(async (req, res) => {
 
       // terrain-slab: publish the scene terrain into this Look's slab (the runtime fetches /baked/<look>/terrain.* by
       // lookId). A BYTE compare, not a date: writeIfChanged writes only what differs, and says whether it did.
-      if (existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
+      if (P.plan && existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
+        const same = (from, to) => existsSync(to) && readFileSync(to).equals(readFileSync(from))
+        if (!same(SCENE_TERRAIN_JSON, join(LOOK_DIR, 'terrain.json')) || !same(SCENE_TERRAIN_BIN, join(LOOK_DIR, 'terrain.bin')))
+          P.plan.stale.push({ step: 'terrain-slab', why: ["the town's terrain differs from this Look's copy"] })
+      } else if (existsSync(SCENE_TERRAIN_JSON) && existsSync(SCENE_TERRAIN_BIN)) {
         mkdirSync(LOOK_DIR, { recursive: true })
         const a = writeIfChanged(join(LOOK_DIR, 'terrain.json'), readFileSync(SCENE_TERRAIN_JSON), { touch: false })
         const b = writeIfChanged(join(LOOK_DIR, 'terrain.bin'), readFileSync(SCENE_TERRAIN_BIN), { touch: false })
@@ -3042,6 +3057,13 @@ createServer(async (req, res) => {
         [join(LOOK_DIR, 'ground.lightmap.png')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
+      // the plan ends here: everything below stamps, indexes and ships a pour that ran
+      if (P.plan) {
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, lookId: id, scene: bakeScene, stale: P.plan.stale,
+          bakedAt: readLooksIndex().looks.find(l => l.id === id)?.bakedAt ?? null }))
+        return
+      }
       const ms = Date.now() - t0
       // ⛔⛔ THE SLAB'S FRESHNESS KEY MUST ADVANCE WHENEVER ANY ARTIFACT DOES (2026-08-28).
       // `scene.json#bakedAt` is the cache-bust key for the WHOLE slab — every cold consumer
@@ -3114,7 +3136,7 @@ createServer(async (req, res) => {
       res.end(JSON.stringify({ error: err.message, ...(P.cancel ? { cancelled: true, step: P.cancel.step } : {}) }))
     } finally {
       P.finishedAt = Date.now()
-      _bakesInFlight.delete(id)
+      if (!planning) _bakesInFlight.delete(id)
     }
     return
   }

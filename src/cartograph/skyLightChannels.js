@@ -381,7 +381,7 @@ export function migrateArchLight(design) {
 // the slab. Authored-only knobs: FOVs, Browse bounds + padding, Street
 // eye height. Runtime inputs (Browse altitude, Hero target, Street
 // position/target) explicitly NOT here — those come from
-// computeBrowseAltitude(aspect) / Hero subject centroid / double-click
+// the town disc fit (browseFitAltitude) / Hero keyframes / double-click
 // handler respectively (hardwires-come-out doctrine, category 3).
 // Single flat-value channel (not TOD-animated; FOV doesn't change
 // through the day). Defaults match the legacy module-scope SHOTS const
