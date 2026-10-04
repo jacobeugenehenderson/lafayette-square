@@ -965,7 +965,6 @@ function PreviewTown() {
   // before you can look at what you came to look at.
   // ⭐ It lands on the last Stage shot the operator was actually in —
   // `cartograph-last-stage-shot`, which Stage records on every shot change.
-  // (Stage itself now always opens on the opening keyframe, 2026-09-26.)
   const [shot, setShot] = useState(() => {
     try {
       const saved = localStorage.getItem('cartograph-last-stage-shot')
@@ -1088,10 +1087,11 @@ function PreviewTown() {
   )
 }
 
+// ⭐ Preview is an authoring page: its town is the one INSTANCE resolved from the address (`?look=`, else the town Stage
+// last had open) by the shared resolver, src/lib/authoringAddress.js#resolveTown. ⛔ It parsed `?look=` a third time,
+// and opened a Look the index does not have as though it were a town.
 function resolvePreviewLookId() {
-  if (typeof window === 'undefined') return INSTANCE?.lookId ?? null
-  const m = window.location.search.match(/look=([^&]+)/)
-  return m ? decodeURIComponent(m[1]) : (INSTANCE?.lookId ?? null)
+  return INSTANCE?.lookId ?? null
 }
 
 // Preview's shots → the shot <Town> draws; its layer toggles → <Town layers>.
