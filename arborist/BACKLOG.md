@@ -10,6 +10,16 @@
 
 ---
 
+## ▶ 2026-10-04 — ONE SHARED SHEET CARRIES THE WIND *(Jacob's design; with the depth work, not now)*
+
+**The idea (Jacob):** like the shared downres ladder for blur, a **single dense mesh, about a million triangles, laid over the town**, on which the wind and shimmer are computed **once per frame**; every tree (and grass, water) takes its motion from the point of the sheet it stands in. One expensive thing, many readers.
+
+- **Today, read in source:** the wind's **state** is shared (one set of uniforms: `uWindForce`, `uWindIntensity`, gusts), but **every consumer computes its own noise** from it. Each hero/overhead card vertex runs 3-octave fBm several times a frame (`treeAtlasMaterial.js` `OVERHEAD_WIND_BEGIN`), and grass, water and clouds have their own (`grassMaterial.js`, `WaterSurface.jsx`, `CloudDome.jsx`, …).
+- **How it runs:** a draw can't read another mesh's moving vertices, so the sheet's motion is written to a texture each frame, and consumers sample it by world XZ. ~700×700 ⇒ ~2.5 m spacing over LS. ⛔ The sheet's extent comes from the scene's own disc (`ground.json#stencil`), never a constant (`CLAUDE.md` Layer 0, Class D).
+- **What it buys:** (1) **one authority for the wind**: a gust is one visible front across grass, trees and water; (2) **wind with memory**: the sheet can be *simulated* (momentum, gusts that build and decay, canopies that lag and sway back), which memoryless per-vertex noise cannot; (3) cheaper trees: one texture read instead of repeated fBm, and the front leaf shell can go flat, fluttering in the fragment shader (today it's an 8×8 grid only so its vertices can move, `HeroImpostorTrees.jsx` `FRONT_GRID`); (4) its own resolution ladder (coarser for phones and distance).
+- ⛔ **First step, before any build: measure texture-unit headroom** on every surface that would read it. Receivers already sit at the 16-sampler hard limit that blocks cascades (`ROADMAP H-24`, `BRIEF-texture-unit-headroom`); one sampler too many is `VALIDATE_STATUS false` and nothing draws. Packing the field into a texture those shaders already sample may avoid a new slot (an idea, unchecked). Also confirm float render targets on the phone-lo profile.
+- **Sits with** `BRIEF-impostor-light-participation` (both change how cards respond to the scene). Its main win is look and motion, not frame cost, so it doesn't wait on Phase 2's measurements; it does obey Phase 2's ladder rule (extend the existing ladder, don't add a second regime).
+
 ## ▶ 2026-10-04 — THE GROVE SHOULD BE READY BEFORE YOU OPEN IT *(Jacob; not now, "doesn't want to be sidetracked")*
 
 1. **Bake in the background once a light is green.** *"I want this to all be done by the time we're in the grove. Once a light turns green and it is within the 'Ship' brackets in the roster, it should start baking in the background."* ⭐ **Ruling: grey card trees must be impossible in the Grove.** A tree is there only because all of its pieces exist, are assembled, and are ready. Not built.
