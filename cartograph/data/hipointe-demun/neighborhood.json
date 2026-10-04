@@ -2,7 +2,7 @@
   "committed": true,
   "name": "Hi-Pointe–DeMun",
   "blurb": "A 1920s streetcar-era garden-city district straddling the St. Louis city limit and Clayton at the southwest corner of Forest Park, bounded by Big Bend, Forest Park Parkway, Skinker, and Clayton Road.",
-  "draftRadius": 1318,
+  "draftRadius": 1389,
   "timezone": "America/Chicago",
   "sides": [
     "Big Bend Boulevard",
@@ -16,8 +16,23 @@
       "closed": true,
       "anchors": [
         {
-          "lon": -90.29339589915811,
-          "lat": 38.63989216216216,
+          "lon": -90.29267845884897,
+          "lat": 38.64043189189189,
+          "type": "corner"
+        },
+        {
+          "lon": -90.29378153195013,
+          "lat": 38.63494207207207,
+          "type": "corner"
+        },
+        {
+          "lon": -90.29800497584763,
+          "lat": 38.63353351351351,
+          "type": "corner"
+        },
+        {
+          "lon": -90.29758863504624,
+          "lat": 38.635602792792795,
           "type": "corner"
         },
         {
@@ -71,23 +86,23 @@
           "type": "corner"
         },
         {
-          "lon": -90.3224140479367,
-          "lat": 38.63550297297297,
+          "lon": -90.32387434604591,
+          "lat": 38.63552486486487,
           "type": "corner"
         },
         {
-          "lon": -90.32598652803975,
-          "lat": 38.642605045045045,
+          "lon": -90.32674675254175,
+          "lat": 38.642651531531534,
           "type": "corner"
         },
         {
-          "lon": -90.32249363573631,
-          "lat": 38.65132477477478,
+          "lon": -90.32329997975802,
+          "lat": 38.652773063063066,
           "type": "corner"
         },
         {
-          "lon": -90.3098849500851,
-          "lat": 38.65530567567568,
+          "lon": -90.30998788517275,
+          "lat": 38.655521801801804,
           "type": "corner"
         },
         {
@@ -106,13 +121,13 @@
       "closed": true,
       "anchors": [
         {
-          "lon": -90.32149349772277,
-          "lat": 38.63511414414415,
+          "lon": -90.32373196209228,
+          "lat": 38.63541828828829,
           "type": "corner"
         },
         {
-          "lon": -90.31853943322446,
-          "lat": 38.63493801801802,
+          "lon": -90.31853149744676,
+          "lat": 38.635084594594595,
           "type": "corner"
         },
         {
@@ -186,8 +201,8 @@
           "type": "corner"
         },
         {
-          "lon": -90.2976413102084,
-          "lat": 38.63523918918919,
+          "lon": -90.29800497584763,
+          "lat": 38.635151531531534,
           "type": "corner"
         },
         {
@@ -212,5 +227,6 @@
         }
       ]
     }
-  ]
+  ],
+  "bakedSig": "{\"r\":1389,\"p\":0,\"p0\":null,\"x\":[20,21],\"a\":[\"msbf-1383\",\"msbf-2298\",\"msbf-2506\",\"msbf-2584\",\"msbf-3050\",\"msbf-3228\",\"msbf-3442\",\"msbf-4179\",\"msbf-4225\",\"msbf-5088\",\"msbf-5167\",\"msbf-5265\",\"msbf-557\",\"msbf-6650\",\"msbf-9572\",\"msbf-9748\"],\"h\":[],\"c\":null,\"n\":\"Hi-Pointe–DeMun\",\"b\":\"A 1920s streetcar-era garden-city district straddling the St. Louis city limit and Clayton at the southwest corner of Forest Park, bounded by Big Bend, Forest Park Parkway, Skinker, and Clayton Road.\"}"
 }
