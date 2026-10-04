@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: DONE
 dispatched: no
 written: 2026-09-27
 evict-when: the map, its Ward, its slab, its look and its instance module are all named `hipointedemun`; `staging.theward.online/hipointe-demun/` redirects; HPDM's listing ids are unchanged; and Promote has put it on hipointedemun.online.
@@ -63,7 +63,8 @@ Jacob, on reusing the old name as the key: *"I don't get the emergency permanenc
 - **Promoted 2026-10-04 14:01** — https://hipointedemun.online/ serves Ward `cac0290`, kit `c81f7bf6`, slab `townId tw-316uoro4`. Operations re-imported: 196 listings (the 10-03 four included).
 - **PT re-promoted 14:14** on Ward `cac0290` (manifest `tw-zmc6ejej`); its `LEGACY_LOOK_TENANT` entry deleted (`0356eed6`, Apps Script @71: `look=provincetown` refused, `tenant=tw-zmc6ejej` served).
 - **HPDM re-promoted ~15:00** — production's atlas is the 14:34 Grove bake, `/baked/hipointedemun/…`.
-- **Left:** ⑤ the old-name staging slab `staging/baked/hipointe-demun/` can be swept (the redirect never reaches it) — Jacob's go.
+- **Swept:** the old-name staging slab `staging/baked/hipointe-demun/` (292 objects, listed by the R2 API, all deleted, prefix re-listed empty). The redirect is unaffected.
+- **Left: nothing.** Every evict-when condition holds — ready for Boz to archive.
 
 ## What moves (▶ re-derive; never quote a count)
 
