@@ -10,8 +10,7 @@
  * WHAT v0 CARRIES
  *   identity  — the town's fixed identity, read from its module in src/instances/ (the single source
  *               today): name, geography, branding, legal, commerce, profile, modules, set-piece,
- *               contact. Not `lookId` or `domain` — a look is not the town, and the domain lives in
- *               Operations (src/lib/townOrigin.js).
+ *               contact. Not `lookId`, `domain` or `contentRoot` (see the destructure below).
  *   taxonomy  — the town's categories and types. No town authors its own yet, so this writes the
  *               KIT's list (ids and labels from src/tokens/categories.js) with `authored: false`, and
  *               drops the subtitles, which carry one town's wording. The player shows `authored:
@@ -69,7 +68,9 @@ const slabDir = resolve(ROOT, 'public/baked', town)
 if (!existsSync(slabDir)) { console.error(`⛔ no slab on disk for "${town}" (${relative(ROOT, slabDir)}) — pour and bake it first`); process.exit(2) }
 
 // ── identity ──────────────────────────────────────────────────────────────────
-const { lookId, domain, ...identity } = inst
+// Not baked: `lookId` (a look is not the town), `domain` (Operations owns it, src/lib/townOrigin.js), `contentRoot` (the
+// kit app's own content URL prefix — machinery; a player reads `content` below). ▶ checks/claims-the-ward-reads-what-the-manifest-bakes.mjs
+const { lookId, domain, contentRoot, ...identity } = inst
 
 // ── taxonomy: the kit's list, marked unauthored ───────────────────────────────
 // Each category's colour is the town's (its Look's neon, baked into scene.json), else the kit's neutral default —
