@@ -24,8 +24,9 @@ function declareKitBase() {
 // `main.jsx` under `src/<helper>/`. Add new helpers by appending here +
 // adding the `*.html` to `build.rollupOptions.input` below.
 //
-// /stage is intentionally absent — Stage is cartograph-hosted, not a
-// standalone route. See feedback_stage_standalone_should_die.md.
+// ⭐ /stage/<town>/<shot> is the SAME cartograph.html (Jacob, 2026-10-04: one way into Stage): a clean address
+// into the one app, read by src/lib/authoringAddress.js#readAddress. ⛔ Not a standalone Stage page — that one
+// (StageCamera) drifted and was excised 2026-09-26 (feedback_stage_standalone_should_die.md).
 function serveHelperApps() {
   const routes = [
     { url: '/cartograph', file: 'cartograph.html' },
@@ -38,6 +39,11 @@ function serveHelperApps() {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = (req.url || '').split('?')[0]
+        if (/^\/stage\/[^/.]+(\/[^/.]+)?\/?$/.test(url)) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8')
+          res.end(withKitBase(fs.readFileSync(path.resolve('cartograph.html'), 'utf-8'), server.config.base))
+          return
+        }
         for (const r of routes) {
           if (url === r.url || url === r.url + '/') {
             const filePath = path.resolve(r.file)

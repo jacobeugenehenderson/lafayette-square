@@ -1,7 +1,8 @@
 /**
  * WHERE AM I — the authoring page's one answer (Phase 2 A, 2026-10-04).
  *
- * An authoring page (`<meta name="ward-authoring">`: Designer/Stage, Preview) is addressed by `?scene=&look=&shot=`,
+ * An authoring page (`<meta name="ward-authoring">`: Designer/Stage, Preview) is addressed by `?scene=&look=&shot=`, or —
+ * for Stage — by the clean path `/stage/<town>/<shot>` (`?look=` only when it is not the town's own; `stagePath`),
  * and remembers the same three in localStorage. Two readers used to answer "which town is this page" from them
  * separately — `src/instance.js#readLookParam` at module load, the cartograph store's `_loadLooks` once the index came
  * back — and Preview parsed `?look=` a third time. They disagreed on a refused link (the page wore the `?look=` town
@@ -16,6 +17,40 @@ export const ADDRESS_STORAGE = { scene: 'cartograph-scene', look: 'cartograph-ac
 
 export const isValidMapId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
 
+/** `/stage/<town>[/<shot>]` → { scene, shot } (a bare town opens on Hero, the opening keyframe), else null. */
+export function parseStagePath(pathname) {
+  const m = /^\/stage\/([^/]+)(?:\/([^/]+))?\/?$/.exec(pathname || '')
+  return m ? { scene: decodeURIComponent(m[1]), shot: m[2] ? decodeURIComponent(m[2]) : 'hero' } : null
+}
+
+/**
+ * The clean Stage address for a town and shot: `/stage/<town>/<shot>`, plus `?look=` only when the Look is not the one
+ * the town opens on (`lookForScene`). Built here, beside its reader, so the two cannot disagree.
+ */
+export function stagePath(looks, { scene, lookId, shot }) {
+  const own = lookForScene(looks, scene, null)
+  return `/stage/${encodeURIComponent(scene)}/${encodeURIComponent(shot)}${lookId && lookId !== own ? `?look=${encodeURIComponent(lookId)}` : ''}`
+}
+
+/**
+ * The page's address for where it is: a Stage shot → `/stage/<town>/<shot>` (`stagePath`); the Designer or Extent →
+ * `/cartograph?scene=&look=&shot=`. Same app either way. Other query parameters (inspection flags) are kept.
+ * The one builder for every writer (the address effect, the town-switch reload), so none writes a stale form.
+ */
+export function addressUrl(href, looks, { scene, lookId, shot, stage }) {
+  const url = new URL(href)
+  for (const k of ['scene', 'look', 'shot']) url.searchParams.delete(k)
+  if (stage && scene && shot) {
+    const clean = new URL(stagePath(looks, { scene, lookId, shot }), url.origin)
+    url.pathname = clean.pathname
+    clean.searchParams.forEach((v, k) => url.searchParams.set(k, v))
+    return url
+  }
+  url.pathname = '/cartograph'
+  for (const [k, v] of [['scene', scene], ['look', lookId], ['shot', shot]]) if (v) url.searchParams.set(k, v)
+  return url
+}
+
 /** The address as written: the URL's three and the remembered three. Nothing is resolved here. */
 export function readAddress() {
   const url = { scene: null, look: null, shot: null }
@@ -23,6 +58,13 @@ export function readAddress() {
   try {
     const q = new URLSearchParams(window.location.search)
     for (const k of Object.keys(url)) url[k] = q.get(k) || null
+    // ⭐ The path names the town and shot; `?look=` may still name another Look of it. ⛔ A query that names a
+    // different town or shot than the path is the path's to answer: said, and ignored.
+    const p = parseStagePath(window.location.pathname)
+    if (p) {
+      for (const k of ['scene', 'shot']) if (url[k] && url[k] !== p[k]) console.error(`[address] ⛔ ?${k}=${url[k]} disagrees with the path's "${p[k]}" — the path wins`)
+      url.scene = p.scene; url.shot = p.shot
+    }
   } catch { /* no window: a node importer */ }
   try {
     for (const [k, key] of Object.entries(ADDRESS_STORAGE)) stored[k] = localStorage.getItem(key) || null

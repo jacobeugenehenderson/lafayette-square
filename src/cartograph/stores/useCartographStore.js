@@ -321,7 +321,7 @@ const HERO_KEYFRAMES_DEFAULT = []
 // ("Restore the EXACT tool + shot the operator left"). Introduced by 1452bdfe,
 // the commit that split the Tool/Shot axes; reported from the screen 2026-09-19.
 const STAGE_SHOTS = ['browse', 'hero', 'street']
-const isStageShot = (shot) => STAGE_SHOTS.includes(shot)
+export const isStageShot = (shot) => STAGE_SHOTS.includes(shot)
 // Every valid destination. ⛔ NOT a superset to test Stage-ness with: 'designer'
 // and 'extent' are here precisely because they are NOT Stage shots.
 const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']
@@ -1932,7 +1932,7 @@ const useCartographStore = create((set, get) => ({
     } catch (e) { why = e.message || String(e) }
     if (why) set({ ribbonsStale: `the 2D map could not be refreshed after the bake: ${why}` })
   },
-  runBake: async ({ force = false, navigateTo = null, repour = false } = {}) => {
+  runBake: async ({ force = false, repour = false } = {}) => {
     if (get().bakeRunning) return
     // ── The settle-gate (2026-06-21, HANDOFF-authoring-session-hardening §2) ──
     // (a) REFUSE to bake on an un-hydrated store (real boot before
@@ -1989,11 +1989,9 @@ const useCartographStore = create((set, get) => ({
       // ⛔ Never a silent stale map: the modal appears only when that refresh FAILS, and says so.
       await get()._refreshPouredMap()
       get()._measureSlabAge()
-      // Optional navigation tied to bake success: Designer's "Stage →" passes 'hero', the opening keyframe.
-      if (navigateTo) get().setShot(navigateTo)
     } catch (err) {
       // the server stopped before a CODE-driven re-pour: ask, and remember how to resume (BakeModal)
-      if (err.code === 'REPOUR_CONFIRM') { set({ bakeRunning: false, repourConfirm: { ...(err.repour || {}), resume: { force, navigateTo } } }); return }
+      if (err.code === 'REPOUR_CONFIRM') { set({ bakeRunning: false, repourConfirm: { ...(err.repour || {}), resume: { force } } }); return }
       set({ bakeRunning: false, bakeError: String(err.message || err) })
     }
   },
@@ -2137,7 +2135,13 @@ const useCartographStore = create((set, get) => ({
     if (isStageShot(shot)) {
       try { localStorage.setItem('cartograph-last-stage-shot', shot) } catch { /* ignore */ }
     }
+    // ⭐ ONE WAY INTO STAGE (Jacob, 2026-10-04: "this shouldn't be baking if it's not dirty, and it shouldn't open in
+    // Stage without a note if it's dirty"). Entering Stage never bakes; it asks the bake's one plan how old the slab is,
+    // and StatusBar's alarm (with its Bake button) says so when it is stale. A reload or a link measures at load
+    // (`_loadLooks`); moving in from the Designer or Extent measures here. ▶ node checks/claims-one-way-into-stage.mjs
+    const entering = isStageShot(shot) && !isStageShot(get().shot)
     set({ shot, status: '' })
+    if (entering) get()._measureSlabAge()
   },
   toggleMarker: () => {
     const cur = get().markerActive

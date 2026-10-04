@@ -16,7 +16,7 @@ import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
-import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads } from './pour-code.mjs'
+import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY } from './pour-code.mjs'
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
@@ -2631,18 +2631,25 @@ createServer(async (req, res) => {
       // ⛔ `judge: 'mtime'` is the POUR only: its code, geography, registry and other data reads are judged by content
       // above (map.json's records, behind the question); its authoring inputs re-pour on a newer mtime, unasked.
       const bakeReads = readBakeReads(MAP_JSON)
-      const runIfDirty = async (label, inputs, outputs, cmd, { judge, ...opts } = {}) => {
+      // ⭐ THE TOWN'S RECORD IS DATA, NOT CODE (2026-10-04). Every step's code closure reached cartograph/config.js →
+      // src/instances/registry.js → every town's module and town-id.json, so adding a town, or editing any town's
+      // tagline, made every step of every town dirty. The closure stops at the registry, as the pour's already does
+      // (pour-code.mjs#pourCodeClosure), and the step reads THIS town's record by value: an edit to Huron reaches Huron.
+      const townRecord = { value: `the town record of "${bakeScene}"`, read: () => instanceForMap(bakeScene) ?? null }
+      // `absentOk`: outputs a step may legitimately not write (revetment on a town with no shore). Missing after a
+      // recorded run is that step's answer, not a stale slab; missing with no record still runs it.
+      const runIfDirty = async (label, inputs, outputs, cmd, { judge, absentOk = [], ...opts } = {}) => {
         if (judge === 'mtime') {
           if (!force && !needsRebuild(inputs, outputs)) { skip(label); return }
           if (P.plan) { P.plan.stale.push({ step: label, why: ['an authoring input is newer than its output'] }); return }
           await runStep(P, label, cmd, opts); ran(label); return
         }
         const isCode = (f) => /\.m?js$/.test(f)
-        const code = importClosure(inputs.filter(f => typeof f === 'string' && isCode(f)))
-        const data = inputs.filter(f => typeof f !== 'string' || !isCode(f))   // files by content, and { value, read } inputs
+        const code = importClosure(inputs.filter(f => typeof f === 'string' && isCode(f)), { stopAt: [TOWN_REGISTRY] })
+        const data = [...inputs.filter(f => typeof f !== 'string' || !isCode(f)), townRecord]   // files by content, and { value, read } inputs
         const was = bakeReads[`${id}:${label}`], who = `step "${label}"`
         const why = was ? [...contentChanged(was.code, code, who), ...contentChanged(was.data, data, who)] : contentChanged(undefined, [], who)
-        const missing = outputs.filter(o => !existsSync(o))
+        const missing = outputs.filter(o => !existsSync(o) && !(was && absentOk.includes(o)))
         if (!force && !why.length && !missing.length) { skip(label); return }
         if (P.plan) { P.plan.stale.push({ step: label, why: [...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)] }); return }
         console.log(`[bake] ${label}: ${[...why, ...missing.map(o => `${o.replace(REPO_ROOT + '/', '')} missing`)].slice(0, 5).join(', ')}`)
@@ -2836,7 +2843,8 @@ createServer(async (req, res) => {
            join(here, 'bake-revetment.js')],
           [join(LOOK_DIR, 'revetment.json')],
           `node bake-revetment.js --look=${id} ${sceneFlag}`,
-          { cwd: here, timeout: 120000 })
+          // a town with no shore gets no revetment.json, and the runtime reads that 404 as "none" (SlabRevetment.jsx)
+          { cwd: here, timeout: 120000, absentOk: [join(LOOK_DIR, 'revetment.json')] })
       }
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named
@@ -3007,7 +3015,10 @@ createServer(async (req, res) => {
             // lamps / atlas / scene (hero keyframes) — keyed by SCENE, as bake-trees opens them (Class D row 10)
             [...treeInputs.inputs, ...treeLibraryFiles(), SCENE_DESIGN, bakePaths.geography,
              join(REPO_ROOT, 'public', 'baked', bakeScene, 'lamps.json'), join(REPO_ROOT, 'public', 'baked', bakeScene, 'trees-atlas.json'),
-             join(REPO_ROOT, 'public', 'baked', bakeScene, 'scene.json'), join(SCENE_DIR, 'lu-policy.json'), join(bakePaths.raw, 'osm.json'),
+             // ⛔ scene.json by VALUE, without `bakedAt`: the bake re-stamps that field at its very end, so by file the trees
+             // step was stale after every bake (and tree-anchors and ground-ao after it). What bake-trees reads is the rest.
+             { value: `baked/${bakeScene}/scene.json without its bakedAt stamp`, read: () => { const sc = readJsonOrNull(join(REPO_ROOT, 'public', 'baked', bakeScene, 'scene.json')); if (sc) delete sc.bakedAt; return sc } },
+             join(SCENE_DIR, 'lu-policy.json'), join(bakePaths.raw, 'osm.json'),
              join(REPO_ROOT, 'arborist', 'bake-trees.js')],
             [join(REPO_ROOT, treeInputs.output)],
             `node arborist/bake-trees.js ${flags}`,

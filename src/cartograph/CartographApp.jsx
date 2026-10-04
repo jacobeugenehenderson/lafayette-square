@@ -62,7 +62,8 @@ import BakeModal from './BakeModal.jsx'
 import CartographSurfaces from './CartographSurfaces.jsx'
 
 // Hooks + store
-import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
+import useCartographStore, { activeChannel, isStageShot } from './stores/useCartographStore.js'
+import { addressUrl } from '../lib/authoringAddress.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
@@ -900,8 +901,8 @@ export default function CartographApp() {
     let tried = null; try { tried = sessionStorage.getItem('stage-follow-town') } catch { /* ignore */ }
     if (tried === activeLookId) { console.error(`[stage] ⛔ reloaded onto "${activeLookId}" but the page is still "${INSTANCE?.lookId ?? 'no town'}" — not reloading again`); return }
     try { sessionStorage.setItem('stage-follow-town', activeLookId) } catch { /* ignore */ }
-    const url = new URL(window.location.href); url.searchParams.delete('look'); url.searchParams.set('scene', map)
-    window.location.replace(url.toString())
+    const s = useCartographStore.getState()
+    window.location.replace(addressUrl(window.location.href, s.looks, { scene: map, lookId: activeLookId, shot: s.shot, stage: isStageShot(s.shot) }).toString())
   }, [activeLookId, looksHydrated])
   // ⭐ THE ADDRESS IS WHERE YOU ARE (Phase 2 A). `?scene=&look=&shot=` is written from the store's triple as it moves, so
   // a copied link reopens this town, this Look, this shot (the store reads all three back: `initialShot`, `_loadLooks`).
@@ -910,10 +911,8 @@ export default function CartographApp() {
   useEffect(() => {
     const write = (s) => {
       if (!s._looksHydrated || s.lookRefused) return
-      const url = new URL(window.location.href)
-      for (const [k, v] of [['scene', s.scene], ['look', s.activeLookId], ['shot', s.shot]]) {
-        if (v) url.searchParams.set(k, v); else url.searchParams.delete(k)
-      }
+      // ⭐ A Stage shot is written as the clean `/stage/<town>/<shot>` (authoringAddress.js#addressUrl).
+      const url = addressUrl(window.location.href, s.looks, { scene: s.scene, lookId: s.activeLookId, shot: s.shot, stage: isStageShot(s.shot) })
       if (url.href !== window.location.href) window.history.replaceState(window.history.state, '', url)
     }
     write(useCartographStore.getState())

@@ -110,19 +110,14 @@ export default function Toolbar() {
           <button
             className="carto-stage-btn"
             disabled={bakeRunning}
-            onClick={(e) => {
-              // Navigation is tied to the bake's success path inside
-              // runBake itself (navigateTo param), not chained via .then —
-              // .then closures got stranded across HMR re-renders, which
-              // left the operator in Designer after long bakes.
-              //
-              // ⭐ Stage opens on the opening keyframe (Jacob, 2026-09-26): Hero,
-              // whose entry places the camera on the first key, paused.
-              runBake({ force: e.altKey, navigateTo: 'hero' })
+            onClick={() => {
+              // ⭐ Navigation only (Jacob, 2026-10-04): it never bakes. Stage measures the slab on entry (setShot) and
+              // its status bar says when a bake is due. Stage opens on the opening keyframe (2026-09-26): Hero.
+              setShot('hero')
             }}
             title={bakeRunning
               ? 'Baking…'
-              : 'Bake + enter Stage on the opening keyframe. ⌥-click forces full rebuild. Use Stage\'s ↻ to re-bake without navigating.'}>
+              : 'Enter Stage on the opening keyframe. If the slab is older than what the bake reads, Stage says so and offers the Bake.'}>
             {bakeRunning ? 'Baking…' : 'Stage →'}
           </button>
         </div>
