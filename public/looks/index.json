@@ -19,7 +19,7 @@
       "name": "HiPointe-DeMun",
       "scene": "hipointe-demun",
       "createdAt": 1782000000000,
-      "bakedAt": 1784701750406,
+      "bakedAt": 1791087184623,
       "updatedAt": 1784701476066
     },
     {
@@ -29,14 +29,6 @@
       "createdAt": 1784014203676,
       "bakedAt": 1784097709671,
       "updatedAt": 1784097375258
-    },
-    {
-      "id": "lafayette-square-staging",
-      "name": "LS (staging / re-skeleton)",
-      "scene": "lafayette-square-staging",
-      "createdAt": 1784789317317,
-      "bakedAt": 1784842912485,
-      "updatedAt": 1785517518609
     },
     {
       "id": "huron",
