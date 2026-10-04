@@ -819,7 +819,8 @@ The dev server **autosaves** source on every edit (Survey/Stage debounce → `ov
 
 - **To discard churn** (the default habit while iterating): from a quiet tree (no active drag), `git restore .` returns to the last commit. Safe — source autosaves are already on disk; this just throws away uncommitted derived churn + unwanted source edits.
 - **To save a slab** (you authored something to keep): bake it (⌥-click a bake button = force, or `POST /looks/<id>/bake?force=1`) so the derived artifacts match source, then commit **source + derived together** in one commit (`bake(...)` or `feat(...)`). The slab must travel as a coherent set (`SLAB-CONTRACT §9` rule 1) — never commit a `design.json` edit without its re-baked artifacts, or the deploy ships intent the slab doesn't reflect.
-- **⚠️ The dev server reads the *main worktree's* branch.** Work done in an agent worktree is **invisible** on the lit app (`:5173`) until merged into the checked-out branch. "Still not fixed" usually means "not merged yet," not "the fix failed."
+- **The ports are canonical and pinned with `--strictPort`:** the kit's `dev:web` (here) and the Ward's `dev` (`theward/package.json`) — read the scripts, not this line. A taken port **refuses to start** rather than drifting to the next one, so a stale server can never pass for the live one. The three `serve.js` backends carry their own ports in source.
+- **⚠️ The dev server reads the *main worktree's* branch.** Work done in an agent worktree is **invisible** on the lit app until merged into the checked-out branch. "Still not fixed" usually means "not merged yet," not "the fix failed."
 
 ### How it ships — local bake → commit → CI serves as-is
 
