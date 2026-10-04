@@ -90,10 +90,6 @@
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.381,
-  "parkTitlePos": [
-    -22.48,
-    -97.31
-  ],
   "alleyCap": "square",
   "labels": {
     "weight": 500,
