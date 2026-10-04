@@ -62,6 +62,8 @@ with **A** and **C**.
 - **Row 3: the tier tuner is NOT deleted.** It is unfinished, not dead (the aspiration case: surface, never evict). Its phone rungs are the intent that phones run every effect at a lower ladder rung instead of dropping passes (`renderTiers.js`, `plans/clean-for-handoff.md §W1`). Label it honestly; finishing it is separate ladder work, and drop vs low-rung is Jacob's call after measurement.
 - **Row 6: re-aim the cache-bust check** at the current slab URL scheme (the `?t=` scheme was retired in `0c619894`), and a zero count fails.
 
+- **Per-surface switches (Jacob, 2026-10-04):** *"we'll still have to have the option to disable things in any of the surfaces: desktop, phone hi or phone lo; we don't want to 'cancel bloom' because we can't get it going on a lo phone."* ⇒ the target is per-surface inclusion **as data** (the unbuilt deployment-policy setting; not D's to build). Row 1 reads inclusion through ONE function in `qualityProfile.js`, where that data will plug in. ⛔ Don't spread or harden the fixed `platform: 'desktop'` tag.
+
 ## Out of scope
 
 The **deployment-policy file** (the per-platform channel listing). The map shows it doesn't exist; fix the doc that says it does, but
