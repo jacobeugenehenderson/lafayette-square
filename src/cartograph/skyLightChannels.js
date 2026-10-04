@@ -377,18 +377,12 @@ export function migrateArchLight(design) {
 }
 
 
-// Shots (Hero & Horizon — SC.5) — per-shot framing knobs that bake into
-// the slab. Authored-only knobs: FOVs, Browse bounds + padding, Street
-// eye height. Runtime inputs (Browse altitude, Hero target, Street
-// position/target) explicitly NOT here — those come from
-// the town disc fit (browseFitAltitude) / Hero keyframes / double-click
-// handler respectively (hardwires-come-out doctrine, category 3).
-// Single flat-value channel (not TOD-animated; FOV doesn't change
-// through the day).
-// ⛔ NO `bounds` DEFAULT (Phase 2 C, 2026-10-04). It was Lafayette Square's building footprint
-// {cx:95,cz:-158,w:1292,h:1025}: the store hydrated it into every town and autosaved it back as if authored, so
-// all five towns carried LS's box. A box is a PLACE; there is no neutral one. Unauthored, Browse frames the town's
-// own disc (ShotFlight, Scene.jsx). ▶ node checks/claims-no-town-carries-the-mould.mjs
+// Shots (SC.5) — per-shot framing knobs that bake into the slab: FOVs, the padding round a set of framed places,
+// Street eye height. Single flat-value channel (not TOD-animated). WHERE a shot puts the camera is not here: Browse
+// opens on the town's authored browseFrame, else its disc (src/camera/browseFrame.js); Hero is the keyframes; Street
+// stands where the app says.
+// ⛔ NO `bounds` (Phase 2 C, 2026-10-04): it was Lafayette Square's building footprint, hydrated into every town and
+// autosaved back as if authored. A box is a PLACE; there is no neutral one. ▶ node checks/claims-no-town-carries-the-mould.mjs
 export const SHOTS_FLAT_DEFAULTS = {
   browse: { fov: 45, padding: 1.05 },
   hero:   { fov: 22 },

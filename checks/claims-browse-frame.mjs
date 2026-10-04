@@ -25,11 +25,16 @@
  *     catch this one — it walks object KEYS for street names, and this is a
  *     numeric VALUE — so the declaration is the only defence.
  *
- *  4. ⛔ THERE IS NO DEFAULT. Absent = the town is unframed and the camera
- *     derives as before. A kit default would be LS's coordinates handed to
- *     every town — the bleed this repo keeps paying for.
+ *  4. ⛔ THERE IS NO KIT DEFAULT. Absent = Browse opens on the town's own disc
+ *     (src/camera/browseFrame.js). A kit default would be LS's coordinates
+ *     handed to every town — the bleed this repo keeps paying for.
  *
- * NOT covered: the live half (drain / publish / record in CameraRig's useFrame,
+ *  5. ⛔ ONLY THE BUTTON AUTHORS IT (Jacob, 2026-10-04). Stage used to record the
+ *     frame on every settle of the Browse camera, so checking a corner's light
+ *     moved the town's runtime frame. The Camera card's "Set as Browse frame" is
+ *     the one writer; panning keeps only the per-tab working view.
+ *
+ * NOT covered: the live half (drain / publish / working view in CameraRig's useFrame,
  * and the apply precedence). That needs a running render loop and the
  * operator's eye — see the report this shipped with.
  */
@@ -91,6 +96,13 @@ check(`${FIELD} bakes as null when unauthored`,
   new RegExp(`${FIELD}\\s*:\\s*design\\.${FIELD}\\s*\\|\\|\\s*null`).test(bake))
 check(`${FIELD} has no seeded coordinates anywhere`,
   ![store, bake, carto].some(s => new RegExp(`${FIELD}[^\\n]*center:\\s*\\[\\s*-?\\d`).test(s)))
+
+// ── 5. only the button authors it ───────────────────────────────────────────
+const writers = ['src/stage/StageApp.jsx', 'src/cartograph/CartographApp.jsx', 'src/preview/PreviewApp.jsx',
+  'src/components/Town.jsx', 'src/camera/ShotFlight.jsx'].filter(p => /\bsetBrowseFrame\s*\(/.test(read(p).replace(/\/\/.*$/gm, '')))
+check('setBrowseFrame is called only by the Camera card (StageApp)',
+  writers.length === 1 && writers[0] === 'src/stage/StageApp.jsx', `callers: ${writers.join(', ') || 'none'}`)
+check('the card has the button', />Set as Browse frame</.test(read('src/stage/StageApp.jsx')))
 
 // ── report ──────────────────────────────────────────────────────────────────
 for (const o of ok) console.log('  ok   ' + o)

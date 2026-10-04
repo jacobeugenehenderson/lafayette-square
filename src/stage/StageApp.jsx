@@ -466,6 +466,11 @@ const fmtSec = (s) => `${Math.round(s)} s`
 //     Toggling redistributes the keys' times: ×(n−1)/n into a loop, and back
 //     out by whatever puts the last key on the end (the exact inverse).
 // ⛔ No "+ After" and no separate "Update": adding at a key's time IS updating it.
+// A Camera-card button's style (Hero's Key here, Browse's Set as Browse frame).
+const cardBtn = (extra = {}) => ({
+  background: 'var(--surface-container-high)', color: 'var(--on-surface)',
+  border: '1px solid var(--outline-variant)', ...extra,
+})
 const SNAP = 0.012   // fraction of the track a click snaps to a key within
 const DRAG_PX = 3
 
@@ -625,10 +630,7 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     if (g && !g.moved) { if (g.i == null) { pause(); showAt(1) } else goTo(g.i) }
   }
 
-  const btn = (extra = {}) => ({
-    background: 'var(--surface-container-high)', color: 'var(--on-surface)',
-    border: '1px solid var(--outline-variant)', ...extra,
-  })
+  const btn = cardBtn
   const marker = (x, i, linked) => {
     const active = !playing && (linked ? onKey === 0 && f > 0.5 : onKey === i && !(loop && i === 0 && f > 0.5))
     const pulsing = !linked && pulse === i
@@ -804,8 +806,33 @@ function BrowseCamera({ cam }) {
   // ⛔ Unknown town size → the slider collapses and says so; never a guessed range.
   const boundary = useCartographStore(s => s.sceneBoundary)
   const altitudeMax = townRanges({ boundary, aspect: window.innerWidth / Math.max(1, window.innerHeight), fov: cam.fov })?.['town.browseAltitude']
+  // The town's Browse frame — what playback opens on (src/camera/browseFrame.js). Authored only here, by the button:
+  // panning is the working view, and authors nothing (Jacob, 2026-10-04). The counterpart of Hero's Key here.
+  const frame = useCartographStore(s => s.browseFrame)
+  const setBrowseFrame = useCartographStore(s => s.setBrowseFrame)
+  const clearBrowseFrame = useCartographStore(s => s.clearBrowseFrame)
+  const here = [Math.round(cam.target[0]), Math.round(cam.target[2])], hereAlt = Math.round(cam.position[1])
+  const isHere = frame && frame.center[0] === here[0] && frame.center[1] === here[1] && frame.altitude === hereAlt
   return (
     <div className="space-y-2">
+      <div className="text-caption px-1" style={{ color: 'var(--on-surface-variant)' }}>
+        {!frame ? 'Browse frame: the town’s disc — frame a view and set it'
+          : <>Browse frame · {frame.center[0]}, {frame.center[1]} · {frame.altitude} m · {isHere
+            ? <span style={{ color: 'var(--success)' }}>✓ the view is the frame</span> : 'the view has moved'}</>}
+      </div>
+      <div className="flex gap-1.5">
+        <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
+          style={isHere ? cardBtn({ color: 'var(--on-surface-subtle)' }) : cardBtn({ background: 'var(--success-dim)', color: 'var(--success)', border: '1px solid var(--success)' })}
+          onClick={() => setBrowseFrame(here, hereAlt)}
+          title="Playback opens Browse on this view, fitted whole to every screen"
+        >Set as Browse frame</button>
+        <button className="hero-btn px-3 py-2 rounded-lg text-body-sm cursor-pointer transition-all"
+          style={cardBtn({ background: 'transparent' })}
+          disabled={!frame}
+          onClick={clearBrowseFrame}
+          title="Playback opens Browse on the town’s whole disc"
+        >Town disc</button>
+      </div>
       {!altitudeMax && <span className="text-caption" style={{ color: 'var(--error)' }}>Altitude: town size unknown</span>}
       <div className="flex gap-2">
         <div className="flex-1">

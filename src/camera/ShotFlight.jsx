@@ -9,9 +9,12 @@
  *
  * DESTINATIONS (the town's, never the app's):
  *   movie  the movie's own pose on MovieCamera's clock, re-sampled every frame (it lands on the path as it plays)
- *   plan   the frame of its places (frameMode: 'densest' — frameDensest's cluster, the default · 'all' — every placed
- *          member, frameAll), the lit places, else every listed place — BRIEF ruling — fitted to the free region,
- *          under the town's browseHeading; a true overhead on landing. No placed place → the whole Extent, said.
+ *   plan   ENTERING: the town's Browse frame (src/camera/browseFrame.js — authored in Stage, else the town's disc,
+ *          said), a square fitted whole into the free region (Jacob, 2026-10-04: the frame is where the plan opens).
+ *          A frameKey CHANGE (a category or a search chosen): the frame of its places (frameMode: 'densest' —
+ *          frameDensest's cluster, the default · 'all' — every placed member, frameAll), the lit places, else every
+ *          listed place. No placed place → back to the Browse frame, said. Under the town's browseHeading; a true
+ *          overhead on landing.
  *   street the eye at `streetAt`, 5′8″ above the drawn ground (utils/elevation#streetEyeY), looking north
  *
  * THE APP'S LINKS (agreed with Quire, 2026-09-28):
@@ -38,6 +41,7 @@ import { framePlaces } from '../lib/frameDensest.js'
 import { planAltitude, insetOffset } from './planPose.js'
 import { browseUpFromHeading, bearingOf } from '../lib/browseHeading.js'
 import { getSceneStencil } from '../components/sceneStencilState.js'
+import { browseSquare, browseSquareAltitude } from './browseFrame.js'
 import { streetEyeY } from '../utils/elevation'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { prefersReducedMotion } from '../lib/reducedMotion.js'
@@ -74,6 +78,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const flying = useRef(null)          // { from, to, toUp, fromOff, toOff }
   const off = useRef({ x: 0, y: 0 })   // the view offset now, CSS px
   const lastInset = useRef(null)
+  const planOn = useRef('home')       // what the plan is framing: 'home' (the Browse frame) or 'places' (a frameKey move)
   holdRef.current = () => !!flying.current
 
   const controls = () => getControls().controls
@@ -115,19 +120,27 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     const i = { ...ZERO, ...(live.current.viewInset || {}) }
     if (s === 'plan') {
       const stencil = getSceneStencil()
-      if (!stencil) return null
       const fov = v.browse?.fov ?? SHOTS_FLAT_DEFAULTS.browse.fov
-      const pad = v.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding ?? 1.05
+      const home = () => {
+        const sq = browseSquare(sc?.browseFrame, stencil, fov, 'town')
+        if (!sq) return null
+        const alt = browseSquareAltitude(sq.half, { fov, W, H, inset: i })
+        return { pos: [sq.x, alt, sq.z + 1], target: [sq.x, 0, sq.z], fov, up: planUp(), overhead: true }
+      }
+      if (planOn.current === 'home') return home()
+      if (!stencil) return null
+      const pad = v.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding
       const ids = live.current.placeIds || []
-      let frame = live.current.places ? framePlaces(live.current.places, ids, stencil, live.current.frameMode) : null
+      const frame = live.current.places ? framePlaces(live.current.places, ids, stencil, live.current.frameMode) : null
       if (!frame) {
         const why = `${stencil.center}:${ids.length}`
-        if (!_warned.has(why)) { _warned.add(why); console.warn(`[Town] plan: no listed place has a building in this town (${ids.length} ids) — the plan frames the whole Extent`) }
+        if (!_warned.has(why)) { _warned.add(why); console.warn(`[Town] plan: no listed place has a building in this town (${ids.length} ids) — the plan goes back to its Browse frame`) }
         // The disclosure still names every id: none has a place inside the disc (the frames' own partition).
         const at = (id) => (id == null ? null : live.current.places?.get(id))
         const outside = ids.filter((id) => at(id) && Math.hypot(at(id).x - stencil.center[0], at(id).z - stencil.center[1]) > stencil.radius)
-        frame = { x: stencil.center[0], z: stencil.center[1], radius: stencil.radius, placed: 0, of: ids.length,
-          outside, unplaced: ids.filter((id) => !at(id)).map((id) => id ?? null) }
+        const d = home()
+        return d && { ...d, frame: { x: d.target[0], z: d.target[2], radius: 0, placed: 0, of: ids.length,
+          outside, unplaced: ids.filter((id) => !at(id)).map((id) => id ?? null) } }
       }
       const alt = planAltitude(frame.radius, { fov, pad, W, H, inset: i })
       return { pos: [frame.x, alt, frame.z + 1], target: [frame.x, 0, frame.z], fov, up: planUp(), overhead: true, frame }
@@ -219,6 +232,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     const from = prev.current
     prev.current = shot
     if (from === shot) return
+    planOn.current = 'home'
     const { flight: mode } = live.current
     if (tween.current.isActive()) tween.current.cancel()
     flying.current = null
@@ -238,6 +252,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
     if (Object.is(lastKey.current, frameKey)) return
     lastKey.current = frameKey
     if (shot !== 'plan' || live.current.flight === false) return
+    planOn.current = 'places'
     const d = destination('plan')
     if (!d) return
     if (tween.current.isActive()) tween.current.cancel()

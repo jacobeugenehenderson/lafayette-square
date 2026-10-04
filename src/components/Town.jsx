@@ -28,19 +28,20 @@
  *   flightRef        a ref Town fills: { from, to, t, eased, duration, at, landed, interrupted } — at t = 0 before the first
  *                    painted frame of a flight, then every frame; `eased` is the camera's own curve (drive a panel by it)
  *   onFlightEnd      (f) => void, once per shot change: landed, or interrupted by a pointerdown / wheel
- *   frameKey         the plan's ONE move: the plan frames its places on entering the shot and again only when this
- *                    changes (a Return, a category chosen). litIds alone only light — typing never moves the camera.
+ *   frameKey         the plan's ONE move: the plan OPENS on the town's Browse frame (src/camera/browseFrame.js) and
+ *                    frames its places only when this changes (a Return, a category chosen). litIds alone only light —
+ *                    typing never moves the camera.
  *                    The in-plan move runs transitions.js' `frame` (1200 ms, easeInOutCubic).
- *   frameIds         what the plan frames when it frames (entering the shot, a frameKey change), apart from what it
- *                    lights — an iterable of building ids; absent: litIds, else every listing. Lights nothing. Given
- *                    but empty (or with no id placed), the plan frames the whole Extent with a warning, as for any set
- *                    with nothing placed, and onFramed says so (placed 0) — never another set of places.
+ *   frameIds         what the plan frames on a frameKey change, apart from what it lights — an iterable of building
+ *                    ids; absent: litIds, else every listing. Lights nothing. Given but empty (or with no id placed),
+ *                    the plan goes back to its Browse frame with a warning, as for any set with nothing placed, and
+ *                    onFramed says so (placed 0) — never another set of places.
  *   frameMode        how the plan frames its places: 'densest' (default — the densest cluster, frameDensest; Jacob, 2026-09-28)
  *                    | 'all' — EVERY placed member, footprints and all, fitted into viewInset with the town's browse
  *                    padding (frameAll; Jacob, 2026-09-29: "Dining should frame all the bars and restaurants"). Bounded
  *                    by the Extent either way; members beyond it come back in onFramed.outside. Anything else throws.
  *                    ▶ node checks/claims-the-plan-frames-all-it-is-given.mjs
- *   onFramed         ({ x, z, radius, placed, of, outside, unplaced }) => void, each time the plan frames — the frame's
+ *   onFramed         ({ x, z, radius, placed, of, outside, unplaced }) => void, each time the plan frames places — the frame's
  *                    disclosure of the places it could not put down (frameIds / litIds may carry nulls; they come back unplaced)
  *   planHeading      'town' (default: the town's authored browseHeading) | 'north' | { follow: headingRef } — the
  *                    reader's TRUE heading (degrees, the direction they face; the app's compass, already smoothed),
@@ -452,7 +453,7 @@ export default function Town({
   const heroMotion = o.heroMotion ?? scene?.heroMotion ?? null
   const heroKeyframes = useMemo(() => o.heroKeyframes ?? (scene ? resolveHeroKeyframes(scene.heroKeyframes, scene.heroMotion, stencil, heroFov, 'town') : null),
     [o.heroKeyframes, scene, stencil, heroFov])
-  // The flight between shots (src/camera/ShotFlight.jsx): the plan opens on the lit places, else every listed one.
+  // The flight between shots (src/camera/ShotFlight.jsx): the plan opens on the Browse frame; a frameKey frames places.
   const places = useBuildingPlaces()
   // Listings with no building are kept (as null): the plan's disclosure names them unplaced, never drops them.
   // What the plan FRAMES — never what it lights (frameIds, header). Absent: the lit set, else every listing.

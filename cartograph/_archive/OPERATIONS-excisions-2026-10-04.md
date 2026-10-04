@@ -11,3 +11,11 @@ age from the bake's own plan; "Stage →" bakes first and navigates after, which
 Stage opens on the **opening keyframe**: Designer's "Stage →" and a reload in any Stage shot both land in Hero, on the first key, paused.
 
 - **Bake buttons** — Designer's **"Stage →"** = navigate to Stage on the opening keyframe immediately, bake async in the background (the slab refreshes when done).
+
+
+## Lens, Phase 2 B: the Browse frame (2026-10-04)
+
+Superseded *Camera / Shots* › **Browse camera**, verbatim. Live home: the same entry. Why: the frame is authored by a button and
+read by every runtime; the "not remembered" arc closed (`_archive/STAGE-browse-frame-5.1-2026-10-04.md`).
+
+- **Browse camera** — the overhead default: **Center X / Center Z** (the look-at point; numeric inputs, click-to-edit or drag-to-scrub), **Altitude** (the slider reaches twice the town's own overhead fit, `townRange.js#browseFitAltitude`), **FOV**, and **Heading** (screen orientation — the one fully-baked camera channel today). ⛔⛔ **THE FRAME IS NOT REMEMBERED, AND AN ATTEMPT TO FIX THAT IS IN THE TREE UNPROVEN (2026-09-09).** Browse's pose is *derived* every time you enter it — handed off from the Designer's live pan/zoom, else fitted to the whole neighbourhood — so **a series of screenshots cannot be made to line up**, and any entry the hand-off does not cover silently gives you the whole-neighbourhood overview with no error. ⚠️ A `browseFrame` design field + the wiring is in the tree: **it DOES record** (the frame lands in `design.json`), but it **does not apply on the Designer → "Stage →" → Browse path**, which is the only path that matters here — the hand-off outranks it by design. Do not rely on it and do not cite it as shipped — `STAGE.md §5.1`.

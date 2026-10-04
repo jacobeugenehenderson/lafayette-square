@@ -5,7 +5,7 @@ import { INSTANCE, moduleOn } from '../instance.js'
 import { deviceQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import { framedPresence } from '../lib/framedPresence.js'
 import { FRAMED } from '../hooks/useCamera'
-import { browseAltitude } from '../lib/browseAltitude.js'
+import { browseSquare, browseSquareAltitude } from '../camera/browseFrame.js'
 import { SHOT_TRANSITION_MS } from '../camera/transitions.js'
 import Town from './Town.jsx'
 import { SHOT_KEY } from './townContext.js'
@@ -184,21 +184,15 @@ function CameraRig({ movie }) {
   // transition snap below). deg 0 → [0,0,-1], identical to today's framing.
   const browseHeadingDeg = scene?.browseHeading?.values?.value ?? 0
 
-  // Browse overhead framing from the SLAB's authored bounds — center on the
-  // neighborhood (cx/cz), fit altitude to the viewport, exactly as Stage/Preview
-  // do. Replaces the legacy hardcoded PRESETS.browse [0,0,0]/600 that framed
-  // off-center + at the wrong altitude (Vernier Phase 2).
-  const browsePad    = shotsV.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding ?? 1.05
-  // ⛔ The authored box, else the town's own disc (as <Town>'s ShotFlight frames it), else NO move, said aloud. This read
-  // LS's building footprint for any town without a box (skyLightChannels.js#SHOTS_FLAT_DEFAULTS, Phase 2 C).
+  // Browse opens on the town's Browse frame (src/camera/browseFrame.js — the one authority, as <Town>'s ShotFlight
+  // reads it): authored in Stage, else the town's disc; neither ⇒ NO move, said aloud.
   const browseFrame = () => {
-    const b = shotsV.browse?.bounds
-    if (b) return b
-    const s = getSceneStencil()
-    if (s) return { cx: s.center[0], cz: s.center[1], w: 2 * s.radius, h: 2 * s.radius }
-    console.error('[Scene] ⛔ Browse: the town authored no bounds and its disc is not loaded — the camera stays put')
+    const sq = browseSquare(scene?.browseFrame, getSceneStencil(), browseFov, 'legacy')
+    if (sq) return sq
+    console.error('[Scene] ⛔ Browse: no Browse frame and the disc is not loaded — the camera stays put')
     return null
   }
+  const browseAltitudeOf = (sq) => browseSquareAltitude(sq.half, { fov: browseFov, W: size.width, H: Math.max(size.height, 1) })
 
   // The movie is played by <Town> (its MovieCamera); entering it samples the path through the driver's handle, on
   // its clock — the random start on each entry (and on arrival) is the driver's. `movie` is the link Scene shares
@@ -468,11 +462,11 @@ function CameraRig({ movie }) {
         const hasUserPos = loc.active && loc.inBounds && loc.x != null
         const frame = hasUserPos ? null : browseFrame()
         if (hasUserPos || frame) {
-        const cx = hasUserPos ? loc.x : frame.cx
-        const cz = hasUserPos ? loc.z : frame.cz
+        const cx = hasUserPos ? loc.x : frame.x
+        const cz = hasUserPos ? loc.z : frame.z
         const altitude = hasUserPos
           ? 300
-          : browseAltitude(size.width / Math.max(size.height, 1), browseFov, frame, browsePad)
+          : browseAltitudeOf(frame)
         beginTransition(
           [cx, altitude, cz + 1],
           [cx, 0, cz],
@@ -502,8 +496,8 @@ function CameraRig({ movie }) {
         // slab-authored overhead framing as the hero→browse path above.
         const frame = browseFrame()
         if (frame) {
-          const altitude = browseAltitude(size.width / Math.max(size.height, 1), browseFov, frame, browsePad)
-          beginTransition([frame.cx, altitude, frame.cz + 1], [frame.cx, 0, frame.cz], browseFov, BROWSE_TRANS_MS,
+          const altitude = browseAltitudeOf(frame)
+          beginTransition([frame.x, altitude, frame.z + 1], [frame.x, 0, frame.z], browseFov, BROWSE_TRANS_MS,
             browseUpFromHeading(browseHeadingDeg))
         }
       } else if (entering === 'hero' && movie.handle.current?.pose(_heroPos, _heroTgt)) {

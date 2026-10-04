@@ -36,7 +36,7 @@ import SunCalc from 'suncalc'
 import Town, { useBuildingPlaces, frameBuildings } from '../../components/Town.jsx'
 import { QUALITY } from '../../lib/qualityProfile.js'
 import { SCREEN_W, SCREEN_H } from '../../preview/PhoneFrame.jsx'
-import { browseFitAltitude } from '../../lib/townRange.js'
+import { browseSquareAltitude } from '../../camera/browseFrame.js'
 import { slabFetch } from '../../lib/slabUrl.js'
 import { INSTANCE, townForLook } from '../../instance.js'
 import { reloadTerrain } from '../../utils/terrainShader.js'
@@ -175,7 +175,7 @@ function FitCamera({ stencil, litIds, onFramed }) {
     if (!circle) return
     const cx = circle.x, cz = circle.z
     camera.fov = FOV; camera.near = 1; camera.far = 1e6
-    camera.position.set(cx, browseFitAltitude(circle.radius, W / H, FOV), cz)
+    camera.position.set(cx, browseSquareAltitude(circle.radius, { fov: FOV, W, H }), cz)
     camera.up.set(0, 0, -1)                    // north (−z) up
     camera.lookAt(cx, 0, cz)
     camera.updateProjectionMatrix()

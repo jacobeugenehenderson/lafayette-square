@@ -12,6 +12,7 @@
  * ▶ node checks/claims-stage-controls-are-live.mjs (④ fails a metre slider with a literal max)
  */
 import { getSceneStencil, shadowMaxMetresPerTexel, shadowMetresPerTexel } from '../components/sceneStencilState.js'
+import { browseSquareAltitude } from '../camera/browseFrame.js'
 
 /** Texels of penumbra the PCSS sample budget can carry (StageShadows clamps to this). One model, two readers. */
 export const penumbraBudgetTexels = (samples) => Math.max(8, samples * 1.5)
@@ -20,11 +21,6 @@ export const penumbraBudgetTexels = (samples) => Math.max(8, samples * 1.5)
 export function penumbraMetresPerTexel(stencil = getSceneStencil()) {
   const capped = shadowMaxMetresPerTexel()
   return (capped > 0 && Number.isFinite(capped)) ? capped : shadowMetresPerTexel(stencil)
-}
-
-/** Altitude at which an overhead camera fits the town's 2R circle in the binding viewport axis, padded 12%. */
-export function browseFitAltitude(radius, aspect, fovDeg) {
-  return (radius * 1.12) / (Math.min(1, aspect) * Math.tan((fovDeg * Math.PI / 180) / 2))
 }
 
 const ceilTo = (v, step) => Math.ceil(v / step) * step
@@ -41,8 +37,8 @@ export function townRanges({ boundary, aspect = 1, fov = 45, samples = 16 } = {}
   const [cx, cz] = boundary.center
   const mpt = penumbraMetresPerTexel()
   return {
-    // Twice the fit, so the operator can pull back past the framed town.
-    'town.browseAltitude': ceilTo(2 * browseFitAltitude(R, aspect, fov), 100),
+    // Twice the height that fits the town's disc whole (the Browse frame's own fit), so the operator can pull back past it.
+    'town.browseAltitude': ceilTo(2 * browseSquareAltitude(R, { fov, W: aspect, H: 1 }), 100),
     // The widest penumbra the current sample budget renders; above it StageShadows clamps.
     'render.penumbra': mpt > 0 ? Math.max(1, +(penumbraBudgetTexels(samples) * mpt).toFixed(1)) : null,
   }
