@@ -20,6 +20,8 @@
  * strengths are published to useAtmosphere.activeStrengths so the
  * editor's live indicator can read what's firing now.
  */
+import { weatherAt, WeatherRangeError } from '../lib/weatherAt.js'
+import { targetsOf } from './useWeather.js'
 import { useEffect, useRef } from 'react'
 import { selectDirectiveWithStrengths } from '../lib/almanac-eval.js'
 import { buildWeatherPayload } from '../lib/weather-payload.js'
@@ -95,31 +97,55 @@ export default function useAtmosphereDirective(lookId) {
   const override = scene?.clouds?.values?.preset || null
 
   const _lastEvalKey = useRef(null)
+  const _reportedRange = useRef(null)
+  // A scrub, a return to live, a new forecast or a preset stood: each changes which reading the sky is drawn from.
+  const _isLive = useTimeOfDay((s) => s.isLive)
+  const _hourly = useSkyState((s) => s.hourlyForecast)
+  const _feedPaused = useSkyState((s) => s.feedPaused)
 
   useEffect(() => {
     let cancelled = false
     ensureLoaded().then(() => {
       if (cancelled) return
       const sky = useSkyState.getState()
-      const time = useTimeOfDay.getState().currentTime
-      const weatherTargets = {
-        cloudCover: sky.feedCloudCover,
-        storminess: sky.feedStorminess,
-        turbidity: sky.feedTurbidity,
-        precipitationIntensity: sky.feedPrecipitation,
-        windVector: sky._targetWind,
-        windSpeedMs: sky.windSpeedMs,
-        windDirDeg: sky.windDirDeg,
-        pressureMb: sky.pressureMb,
-        humidity: sky.humidity,
-        temperatureF: sky.temperatureF,
-        currentWeatherCode: sky.currentWeatherCode,
+      const { currentTime: time, isLive } = useTimeOfDay.getState()
+      // ⭐ ONE WEATHER PER INSTANT (lib/weatherAt.js). The feed (current conditions, or a preset Stage or the lab
+      // stands) while the clock is live or a preset stands; at a scrubbed time, the FORECAST at that time — the
+      // same reading the Almanac's label shows. Until 2026-10-04 the sky drew current conditions under a scrubbed
+      // hour's sun. ⛔ A scrubbed time outside the forecast is said, and the sky holds its last directive.
+      let weatherTargets
+      if (isLive || sky.feedPaused) {
+        weatherTargets = {
+          cloudCover: sky.feedCloudCover,
+          storminess: sky.feedStorminess,
+          turbidity: sky.feedTurbidity,
+          precipitationIntensity: sky.feedPrecipitation,
+          windVector: sky._targetWind,
+          windSpeedMs: sky.windSpeedMs,
+          windDirDeg: sky.windDirDeg,
+          pressureMb: sky.pressureMb,
+          humidity: sky.humidity,
+          temperatureF: sky.temperatureF,
+          currentWeatherCode: sky.currentWeatherCode,
+          directRadiation: sky.directRadiation,
+          diffuseRadiation: sky.diffuseRadiation,
+        }
+      } else {
+        // No forecast yet: the first fetch is in flight (a failed one is said by fetchWeather). Wait for it.
+        if (!sky.hourlyForecast.length) return
+        try {
+          weatherTargets = targetsOf(weatherAt(time, { live: false, hourly: sky.hourlyForecast }))
+        } catch (e) {
+          if (!(e instanceof WeatherRangeError)) throw e
+          if (_reportedRange.current !== e.message) { _reportedRange.current = e.message; console.error(`[atmosphere] ⛔ the sky cannot show this time's weather — ${e.message}`) }
+          return
+        }
       }
       const payload = buildWeatherPayload(weatherTargets, time)
       const signals = deriveSignals(payload, time, {
-        currentWeatherCode: sky.currentWeatherCode,
-        directRadiation: sky.directRadiation,
-        diffuseRadiation: sky.diffuseRadiation,
+        currentWeatherCode: weatherTargets.currentWeatherCode,
+        directRadiation: weatherTargets.directRadiation,
+        diffuseRadiation: weatherTargets.diffuseRadiation,
         hourlyForecast: sky.hourlyForecast,
       })
       const { directive, strengths } = selectDirectiveWithStrengths({
@@ -150,7 +176,7 @@ export default function useAtmosphereDirective(lookId) {
   }, [
     _targetCloudCover, _targetPrecip, _targetWindMs, _targetWindDir,
     _humidity, _pressure, _tempF, _wmo, _direct, _diffuse,
-    currentMinuteOfHour,
+    currentMinuteOfHour, _isLive, _hourly, _feedPaused,
     override,
   ])
 }

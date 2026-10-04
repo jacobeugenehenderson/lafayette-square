@@ -18,7 +18,7 @@ import { BrowseView, NewPostView, ThreadListView, ThreadDetailView } from './Bul
 import useSkyState from '../hooks/useSkyState'
 import { INSTANCE, moduleOn } from '../instance.js'
 import { getWeatherCondition, WeatherIcon } from '../lib/weatherCodes.jsx'
-import { interpolateForecast } from '../lib/dawnTimeline'
+import { weatherAt, WeatherRangeError } from '../lib/weatherAt.js'
 import { TodStrip } from './DawnTimeline'
 import { useContact } from './ContactModal'
 import { useInfo } from './InfoModal'
@@ -298,7 +298,8 @@ export function AlmanacTab() {
     (currentTime - new Date(currentTime.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)
   )
 
-  // Weather: live from store, or interpolated from forecast when scrubbing
+  // Weather at the shown instant — the ONE answer (lib/weatherAt.js): live → now; scrubbed → the forecast's. Outside
+  // the forecast it is said, and the panel shows no condition rather than this minute's.
   const liveTemp = useSkyState((s) => s.temperatureF)
   const liveCode = useSkyState((s) => s.currentWeatherCode)
   const hourlyForecast = useSkyState((s) => s.hourlyForecast)
@@ -306,15 +307,19 @@ export function AlmanacTab() {
   const isNight = sunElevation < -0.12
 
   const displayWeather = useMemo(() => {
-    if (isLive) {
-      return { temperatureF: liveTemp, weatherCode: liveCode }
+    // No forecast yet: the first fetch is in flight (a failed one is said by fetchWeather).
+    if (!isLive && !hourlyForecast.length) return { temperatureF: null, weatherCode: null }
+    try {
+      const r = weatherAt(currentTime, { live: isLive, now: { temperatureF: liveTemp, weatherCode: liveCode }, hourly: hourlyForecast })
+      return { temperatureF: r.temperatureF, weatherCode: r.weatherCode }
+    } catch (e) {
+      if (!(e instanceof WeatherRangeError)) throw e
+      console.error(`[SidePanel] ⛔ no weather shown for this time — ${e.message}`)
+      return { temperatureF: null, weatherCode: null }
     }
-    const interp = interpolateForecast(currentTime, hourlyForecast)
-    if (interp) return { temperatureF: interp.temperatureF, weatherCode: interp.weatherCode }
-    return { temperatureF: liveTemp, weatherCode: liveCode }
   }, [isLive, currentTime, hourlyForecast, liveTemp, liveCode])
 
-  const condition = getWeatherCondition(displayWeather.weatherCode ?? 0)
+  const condition = displayWeather.weatherCode == null ? null : getWeatherCondition(displayWeather.weatherCode)
   const headerTempF = displayWeather.temperatureF != null ? Math.round(displayWeather.temperatureF) : null
   const headerTempC = headerTempF != null ? Math.round((headerTempF - 32) * 5 / 9) : null
   const headerTemp = headerTempF != null ? (useCelsius ? headerTempC : headerTempF) : '--'
@@ -388,12 +393,12 @@ export function AlmanacTab() {
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <WeatherIcon
+              {condition && <WeatherIcon
                 code={displayWeather.weatherCode}
                 isNight={isNight}
                 size={36}
-              />
-              <span className="text-body-sm text-on-surface-subtle">{condition.label}</span>
+              />}
+              <span className="text-body-sm text-on-surface-subtle">{condition ? condition.label : '--'}</span>
             </div>
             <div
               className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"

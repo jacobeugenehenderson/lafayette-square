@@ -116,6 +116,7 @@ import { rooflessWhy } from '../lib/roofTop.js'
 import { PostProcessing, StageFog, StageShadows, LampGlowDriver } from './PostProcessing.jsx'
 import { NeonDriver } from './NeonBands.jsx'
 import CascadedShadows, { CSM_ENABLED } from './CascadedShadows.jsx'
+import { weatherAt } from '../lib/weatherAt.js'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import WeatherEffects from './WeatherEffects'
@@ -144,6 +145,8 @@ export { deviceQuality } from '../lib/qualityProfile.js'
 export { placeTown } from './TownPlace.jsx'
 // …and hands over the manifest it already fetched, so the page reads it once (src/lib/slabUrl.js#adoptSlabManifest).
 export { adoptSlabManifest } from '../lib/slabUrl.js'
+// The weather at an instant is one answer (lib/weatherAt.js); an app catches its out-of-forecast error by this class.
+export { WeatherRangeError } from '../lib/weatherAt.js'
 // The Canvas the town is drawn through, from its quality profile — an app spreads it (the Ward imports only Town).
 export { townCanvasProps } from '../lib/qualityProfile.js'
 // An emoji as this device draws it, and its inked pixels — one home for the method (src/lib/glyphInk.js); the Ward's
@@ -204,11 +207,15 @@ export function Cascades() {
 /**
  * The town's weather as the renderer reads it — ONE reading, the live feed WeatherPoller fetches for the placed
  * town (hooks/useWeather.js), READ-ONLY, or null before the first reading:
- *   { now: { tempC, code, isDay, at }, hourly: [{ at, tempC, code }], fetchedAt }
+ *   { now: { tempC, code, isDay, at }, hourly: [{ at, tempC, code }], fetchedAt, at(date, live) }
  * An app shows it rather than fetching its own: two calls to one provider read different numbers at different
  * times. `code` is WMO (current reconciled against precipitation and cloud); `isDay` is the sun above the town's
- * horizon at the town's clock; `at` / `fetchedAt` are ms epochs; hourly spans the provider's past 4 h and next 48 h,
- * its hours placed with the town's own UTC offset. °C out.
+ * horizon at the town's clock; `at` / `fetchedAt` are ms epochs; hourly spans yesterday 00:00 to tomorrow 23:00 in
+ * the town, its hours placed with the town's own UTC offset. °C out.
+ * ⭐ `at(date, live)` is THE weather at an instant — `now` when live, else the forecast's at `date` — through the same
+ * lib/weatherAt.js the sky is drawn from, so a label never disagrees with the sky above it: { tempC, code }.
+ * ⛔ Outside the forecast it THROWS a WeatherRangeError (exported here): the app says it has no weather for that
+ * hour, never shows this minute's.
  * ⭐ It needs NO <Town>: it joins the page's ONE weather poll (acquireWeatherPoll, hooks/useWeather.js), which
  * <Town>'s WeatherPoller shares — The Ward's Almanac runs on screens with no <Town> mounted, and still one fetch.
  * The page must have placed its town (placeTown) — the forecast is for the placed place.
@@ -221,11 +228,20 @@ export function useTownWeather() {
   const at = useSkyState((s) => s.weatherAt)
   const forecast = useSkyState((s) => s.hourlyForecast)
   const isDay = useTimeOfDay((s) => s.getLightingPhase().sunAltitude > 0)
-  return useMemo(() => (at == null || tempF == null ? null : {
-    now: { tempC: fToC(tempF), code, isDay, at },
-    hourly: (forecast || []).map((h) => ({ at: h.time.getTime(), tempC: fToC(h.temperatureF), code: h.weatherCode })),
-    fetchedAt: at,
-  }), [tempF, code, isDay, at, forecast])
+  return useMemo(() => {
+    if (at == null || tempF == null) return null
+    const now = { tempC: fToC(tempF), code, isDay, at }
+    return {
+      now,
+      hourly: (forecast || []).map((h) => ({ at: h.time.getTime(), tempC: fToC(h.temperatureF), code: h.weatherCode })),
+      fetchedAt: at,
+      at: (date, live) => {
+        if (live) return now
+        const r = weatherAt(date, { live: false, hourly: forecast })
+        return { tempC: fToC(r.temperatureF), code: r.weatherCode }
+      },
+    }
+  }, [tempF, code, isDay, at, forecast])
 }
 
 /**

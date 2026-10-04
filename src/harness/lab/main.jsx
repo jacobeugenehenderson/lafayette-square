@@ -179,7 +179,9 @@ function App() {
     useTimeOfDay.getState().setPaused(true)
     useTimeOfDay.getState().setTime(solarDate(month, hour))
   }, [month, hour])
-  useEffect(() => { useSkyState.getState().setWeatherTargets(WEATHER[wx]) }, [wx])
+  // A STOOD weather, as WeatherPoller stands a preset: paused, so the sky reads it at the lab's scrubbed time
+  // instead of the (absent) forecast (useAtmosphereDirective, lib/weatherAt.js).
+  useEffect(() => { const sky = useSkyState.getState(); sky.setFeedPaused(true); sky.setWeatherTargets(WEATHER[wx]) }, [wx])
 
   // What the environment is ACTUALLY doing — read back, never assumed.
   useEffect(() => {

@@ -62,7 +62,8 @@ const useSkyState = create((set, get) => ({
   weatherAt: null,  // ms epoch of the last live reading, null until the first fetch
   directRadiation:  null,    // open-meteo direct_radiation (W/m²)
   diffuseRadiation: null,    // open-meteo diffuse_radiation (W/m²)
-  hourlyForecast: [],  // Array<{ time: Date, temperatureF: number, weatherCode: number, pressureMb: number|null }>
+  hourlyForecast: [],  // Array<{ time: Date, …a whole reading }> — lib/weatherAt.js's shape (hooks/useWeather.js#readingOf)
+  currentReading: null,  // the live feed's last reading, in the same shape — what weatherAt returns while the clock is live
   feedPaused: false,   // true while Stage's Weather switch stands a preset: the live fetch writes nothing
 
   // ── Creative / derived ──

@@ -71,45 +71,6 @@ export function getWaypoints(window) {
     }))
 }
 
-/**
- * Interpolate forecast data for an arbitrary date.
- * Temp: linear interpolation between surrounding hours.
- * Weather code: snap to nearest hour.
- */
-export function interpolateForecast(date, hourlyForecast) {
-  if (!hourlyForecast || hourlyForecast.length === 0) return null
-
-  const t = date.getTime()
-
-  // Find bracketing hours
-  let before = null
-  let after = null
-  for (let i = 0; i < hourlyForecast.length; i++) {
-    const ht = hourlyForecast[i].time.getTime()
-    if (ht <= t) before = i
-    if (ht >= t && after === null) after = i
-  }
-
-  // Edge cases: before or after entire forecast
-  if (before === null && after === null) return null
-  if (before === null) return { ...hourlyForecast[after] }
-  if (after === null) return { ...hourlyForecast[before] }
-
-  const b = hourlyForecast[before]
-  const a = hourlyForecast[after]
-
-  if (before === after) return { ...b }
-
-  // Linear interpolation for temperature
-  const span = a.time.getTime() - b.time.getTime()
-  const frac = span > 0 ? (t - b.time.getTime()) / span : 0
-  const temperatureF = b.temperatureF + (a.temperatureF - b.temperatureF) * frac
-
-  // Nearest-snap for weather code
-  const weatherCode = frac < 0.5 ? b.weatherCode : a.weatherCode
-
-  return { temperatureF, weatherCode, time: date }
-}
 
 /**
  * Find hi/lo temps within the dawn window from hourly forecast.

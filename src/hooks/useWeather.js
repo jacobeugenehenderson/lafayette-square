@@ -3,16 +3,18 @@ import useAtmosphere from './useAtmosphere.js'
 import { deriveStorminess } from '../lib/weatherPresets.js'
 import { townPlace } from '../lib/townPlace.js'
 
-// Halo 2026-05-20 Phase 6: added direct_radiation + diffuse_radiation to
-// current (modulators read the ratio for haze / wildfire-smoke detection)
-// and pressure_msl + past_hours=4 to hourly (so deriveSignals can compute
-// pressure_trend_3hr from the back-fill instead of maintaining an
-// in-memory ring buffer — Approach B from the Phase 6 brief).
+// The quantities a reading carries, asked for BOTH as `current` and `hourly`, so a forecast hour is a whole weather —
+// the sky can be drawn from it at a scrubbed time (lib/weatherAt.js), not only the label. (Until 2026-10-04 the hourly
+// carried temperature, code and pressure only, so a scrubbed sky could only show current conditions.)
+const QUANTITIES = 'temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation'
 // The forecast for the town being drawn — built at FETCH time from its place (lib/townPlace.js), never from the
 // kit's boot town at module load (which drew the boot town's weather over any other).
+// ⭐ The window: yesterday 00:00 → tomorrow 23:00 in the town (`past_days=1&forecast_days=2`; `forecast_hours` would
+// override `past_days` and start at this hour). It holds the Almanac's whole dawn-to-dawn scrub, and the back-fill
+// deriveSignals reads for the pressure trend.
 function apiUrl() {
   const { lat, lon, timezone } = townPlace()
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,pressure_msl,cloud_cover,precipitation,weather_code,visibility,wind_speed_10m,wind_direction_10m,direct_radiation,diffuse_radiation&hourly=temperature_2m,weather_code,pressure_msl&past_hours=4&forecast_hours=48&temperature_unit=fahrenheit&wind_speed_unit=ms&timezone=${encodeURIComponent(timezone)}`
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${QUANTITIES}&hourly=${QUANTITIES}&past_days=1&forecast_days=2&temperature_unit=fahrenheit&wind_speed_unit=ms&timezone=${encodeURIComponent(timezone)}`
 }
 
 /**
@@ -50,89 +52,86 @@ function deriveTurbidity(visibility) {
   return 1 - (visibility - 1000) / (50000 - 1000)
 }
 
+/** One Open-Meteo reading (current, or hourly column `i`) → the shape lib/weatherAt.js reads. */
+function readingOf(src, i = null) {
+  const v = (k) => (i == null ? src[k] : src[k]?.[i]) ?? null
+  return {
+    temperatureF: v('temperature_2m'), humidity: v('relative_humidity_2m'), pressureMb: v('pressure_msl'),
+    cloudCover: v('cloud_cover'), precipitation: v('precipitation'), weatherCode: v('weather_code'),
+    visibility: v('visibility'), windSpeedMs: v('wind_speed_10m'), windDirDeg: v('wind_direction_10m'),
+    directRadiation: v('direct_radiation'), diffuseRadiation: v('diffuse_radiation'),
+  }
+}
+
 /**
- * Fetch current weather from Open-Meteo and push targets to useSkyState.
+ * A reading → the sky's weather targets (the shape `useSkyState.setWeatherTargets` and the atmosphere directive
+ * read). Shared by the live feed and the directive's scrubbed hour, so both derive the sky the same way.
+ */
+export function targetsOf(r) {
+  // Trust the Degrees over a possibly-stale weather_code (see reconcile above).
+  const code = reconcileWeatherCode(r.weatherCode ?? 0, r.precipitation ?? 0, r.cloudCover ?? 0)
+  const speed = r.windSpeedMs ?? 0
+  const dirRad = ((r.windDirDeg ?? 0) * Math.PI) / 180
+  return {
+    cloudCover: (r.cloudCover ?? 0) / 100,
+    storminess: deriveStorminess(code, r.precipitation ?? 0),
+    turbidity: deriveTurbidity(r.visibility ?? 50000),
+    precipitationIntensity: r.precipitation ?? 0,
+    windVector: { x: Math.sin(dirRad) * speed, y: Math.cos(dirRad) * speed },
+    windSpeedMs: speed,
+    windDirDeg: r.windDirDeg ?? 0,
+    pressureMb: r.pressureMb ?? null,
+    humidity: r.humidity != null ? r.humidity / 100 : null,
+    temperatureF: r.temperatureF ?? null,
+    currentWeatherCode: code,
+    directRadiation: r.directRadiation ?? null,
+    diffuseRadiation: r.diffuseRadiation ?? null,
+  }
+}
+
+/**
+ * Fetch the town's weather from Open-Meteo: the current reading → the live feed (useSkyState), and the hourly
+ * forecast → `hourlyForecast` (whole readings, lib/weatherAt.js).
  * `snap`: the operator chose Live on Stage's Weather switch, so this reading lands
  * at once instead of easing in over the directive tween. The snap is requested when
  * the reading arrives, not when it was asked for, so a slow fetch still lands at once.
+ * ⛔ A failed fetch is SAID (console.error), never swallowed: the sky then holds its last reading, and the page says
+ * why. (Until 2026-10-04 a non-OK answer and every exception returned in silence.)
  */
 export async function fetchWeather({ snap = false } = {}) {
+  let data
   try {
     const res = await fetch(apiUrl())
-    if (!res.ok) return
-    const data = await res.json()
-    // Stage's Weather switch is standing a preset: the live feed writes nothing.
-    if (useSkyState.getState().feedPaused) return
-    const c = data.current
-
-    // Trust the Degrees over a possibly-stale weather_code (see reconcile above).
-    const saneCode = reconcileWeatherCode(c.weather_code ?? 0, c.precipitation ?? 0, c.cloud_cover ?? 0)
-    const cloudCover = (c.cloud_cover ?? 0) / 100
-    const storminess = deriveStorminess(saneCode, c.precipitation ?? 0)
-    const turbidity = deriveTurbidity(c.visibility ?? 50000)
-    const precipitationIntensity = c.precipitation ?? 0
-
-    // Wind: speed (m/s) + direction (degrees) → Vector2
-    const speed = c.wind_speed_10m ?? 0
-    const dirRad = ((c.wind_direction_10m ?? 0) * Math.PI) / 180
-    const windVector = {
-      x: Math.sin(dirRad) * speed,
-      y: Math.cos(dirRad) * speed,
-    }
-
-    if (snap) useAtmosphere.getState().requestSnap()
-    useSkyState.getState().setWeatherTargets({
-      cloudCover,
-      storminess,
-      turbidity,
-      precipitationIntensity,
-      windVector,
-      windSpeedMs: speed,
-      windDirDeg: c.wind_direction_10m ?? 0,
-      pressureMb: c.pressure_msl ?? null,
-      humidity: c.relative_humidity_2m != null ? c.relative_humidity_2m / 100 : null,
-      temperatureF: c.temperature_2m ?? null,
-      currentWeatherCode: saneCode,
-      directRadiation:  c.direct_radiation  ?? null,
-      diffuseRadiation: c.diffuse_radiation ?? null,
-    })
-
-    // When the live reading arrived — about the reading, not a weather value, so it is not a weather target (a
-    // preset writes every target; this is only ever the feed's).
-    useSkyState.setState({ weatherAt: Date.now() })
-
-    // Parse hourly forecast
-    if (data.hourly) {
-      const times = data.hourly.time || []
-      const temps = data.hourly.temperature_2m || []
-      const codes = data.hourly.weather_code || []
-      const press = data.hourly.pressure_msl || []
-      // Open-Meteo returns times in the requested timezone without offset suffix.
-      // Use utc_offset_seconds from response to build proper Date objects.
-      // ⛔ The offset is the TOWN's, as the provider answered for its timezone. It used to fall back to -21600
-      // (CST: Lafayette Square's) — every other town's forecast would have been shifted silently. Absent, the
-      // forecast is not parsed, and that is said.
-      const utcOffset = data.utc_offset_seconds
-      if (!Number.isFinite(utcOffset)) { console.error('[weather] ⛔ the forecast carries no utc_offset_seconds — its hours cannot be placed; hourly forecast not read'); return }
-      const offsetMs = utcOffset * 1000
-      const hourly = times.map((t, i) => {
-        // t is like "2026-02-19T14:00" — parse as local by appending offset
-        const offsetHours = Math.floor(Math.abs(utcOffset) / 3600)
-        const offsetMins = Math.floor((Math.abs(utcOffset) % 3600) / 60)
-        const sign = utcOffset >= 0 ? '+' : '-'
-        const suffix = `${sign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`
-        return {
-          time: new Date(`${t}${suffix}`),
-          temperatureF: temps[i],
-          weatherCode: codes[i],
-          pressureMb: press[i] ?? null,
-        }
-      })
-      useSkyState.getState().setHourlyForecast(hourly)
-    }
+    if (!res.ok) { console.error(`[weather] ⛔ the forecast provider answered ${res.status} — the weather is not updated`); return }
+    data = await res.json()
   } catch (e) {
-    // Silently ignore — sky stays at current values
+    console.error('[weather] ⛔ the forecast could not be fetched — the weather is not updated:', e)
+    return
   }
+  // Stage's Weather switch is standing a preset: the live feed writes nothing.
+  if (useSkyState.getState().feedPaused) return
+  if (!data?.current) { console.error('[weather] ⛔ the forecast carries no current reading — the weather is not updated'); return }
+
+  const now = readingOf(data.current)
+  if (snap) useAtmosphere.getState().requestSnap()
+  useSkyState.getState().setWeatherTargets(targetsOf(now))
+  // When the live reading arrived — about the reading, not a weather value, so it is not a weather target (a
+  // preset writes every target; this is only ever the feed's).
+  useSkyState.setState({ weatherAt: Date.now(), currentReading: now })
+
+  // Open-Meteo returns times in the requested timezone without offset suffix.
+  // ⛔ The offset is the TOWN's, as the provider answered for its timezone. It used to fall back to -21600
+  // (CST: Lafayette Square's) — every other town's forecast would have been shifted silently. Absent, the
+  // forecast is not parsed, and that is said.
+  if (!data.hourly) { console.error('[weather] ⛔ the forecast carries no hourly readings — a scrubbed time has no weather'); return }
+  const utcOffset = data.utc_offset_seconds
+  if (!Number.isFinite(utcOffset)) { console.error('[weather] ⛔ the forecast carries no utc_offset_seconds — its hours cannot be placed; hourly forecast not read'); return }
+  const offsetHours = Math.floor(Math.abs(utcOffset) / 3600)
+  const offsetMins = Math.floor((Math.abs(utcOffset) % 3600) / 60)
+  const suffix = `${utcOffset >= 0 ? '+' : '-'}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`
+  // t is like "2026-02-19T14:00" — placed in the town by appending its offset.
+  const hourly = (data.hourly.time || []).map((t, i) => ({ time: new Date(`${t}${suffix}`), ...readingOf(data.hourly, i) }))
+  useSkyState.getState().setHourlyForecast(hourly)
 }
 
 // ── THE ONE POLL of the town's weather, per page ─────────────────────────────────
