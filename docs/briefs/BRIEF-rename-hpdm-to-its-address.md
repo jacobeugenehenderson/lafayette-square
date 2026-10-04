@@ -18,6 +18,32 @@ HPDM is one of the two towns that predate the rule: its map is `hipointe-demun`,
 `hipointedemun.online`. ⛔ Until this lands, Promote finds no Ward for the map `hipointe-demun`, and its
 staging page carries no production domain, so QR codes and share links are withheld.
 
+## ⭐ Updated 2026-10-04 (Boz): state at dispatch, and a hazard this brief did not carry
+
+**Agent: FRESH**, named per `docs/agents/BOZ.md §3` item 1: one word, not one a **running** session holds (`ListAgents`).
+
+- **Start from a committed baseline.** HPDM was re-skeletoned, re-poured and baked on 2026-10-03 (roundabout weld
+  `d9f367cd`; hero impostors captured in the Grove). That night's bake also rewrote tracked `content/` files and minted
+  **4 new listing ids** (`hpdm-lst-0172`…`0175`, high-water 171 → 175). ⛔ **Confirm with Jacob that the baseline is
+  committed before you rename anything**; the "listing ids unchanged" gate below is measured against that commit, not
+  against whatever is on disk.
+- ⛔⛔ **THE LIVE BACKEND IS KEYED BY THE LOOK ID. This brief missed it.** The Apps Script tenant keeps each town's rows in
+  suffixed sheet tabs (`apps-script/Code.js`: *"Other looks resolve to a suffixed tab ('Listings__hipointe-demun')"*), and
+  its timezone table is keyed `'hipointe-demun'`. The app sends `look: INSTANCE.lookId` on every read and write
+  (`src/lib/api.js`). ⇒ **A naive rename silently points HPDM at empty `__hipointedemun` tabs: claims and guardian edits
+  detach, and nothing errors.** That's Layer 0 q2. Decide the backend half **before** renaming: move the tabs, or let the
+  backend's tenant key be the town's stable id rather than its display name. ⭐ The second fixes the class, the same move
+  as the listing prefix below. ⛔ Changing the deployed Apps Script is a live production change: draft it, and Jacob
+  deploys (`clasp push && clasp deploy`).
+- **HPDM has no staging record** (`staging/sites/hipointe-demun/player.json` is absent; the address 404s). After the
+  rename: `node scripts/set-staging-player.mjs --map=hipointedemun --player=ward` (dry-run first; Jacob's go). Then
+  Publish to Staging, then Promote. **Promote is the last step and Jacob presses it.**
+- **The chain.** *Trusts:* Operations' Domain `hipointedemun.online` (owned, zone active, read live by Promote); the sealed
+  `identity-registry.json` and `listing-identity.json`. *Trusted by:* the Ward on staging and production (`ward-look`,
+  `ward-domain`), the Apps Script tenant, Operations' Host edits (keyed by listing id), and partners holding the old
+  staging link.
+- **The validation surface:** the real staging site and the real Promote. No parallel harness.
+
 ## What moves (▶ re-derive; never quote a count)
 
 - `git grep -l -- hipointe-demun` lists every tracked file that names it. The live ones: `cartograph/data/hipointe-demun/`
