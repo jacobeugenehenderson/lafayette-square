@@ -72,11 +72,13 @@ assert(/revoke\s+all\s+on\s+commerce_item_events/i.test(sql), 'audit table fully
 
 // ── 5b. The gate asks about THIS town ─────────────────────────────────────
 // Without a town the backend reads Lafayette Square's Guardians tab for every town's listing.
-assert(/action=guardian-check&look=\$\{encodeURIComponent\(look\)\}/.test(body), 'the Guardian check names the town',
-  'mayEditMenu asks guardian-check without look — the backend would answer from the default town')
-assert(/if \(!\/\^\[a-z0-9\]\[a-z0-9-\]\{0,63\}\$\/\.test\(look\)\) return json\(\{ code: 'bad_request'/.test(fn), 'a request with no town is refused',
-  'commerce-write accepts a request without look — it would check a guessed town')
-assert(/look: INSTANCE\.lookId/.test(read('src/lib/commerceApi.js')), 'the app sends its town', 'commerceApi does not send look')
+assert(/action=guardian-check&tenant=\$\{encodeURIComponent\(tenant\)\}/.test(body), 'the Guardian check names the town by its sealed tenant',
+  'mayEditMenu asks guardian-check without tenant — the backend would refuse it, or answer for another town')
+assert(/if \(body\?\.tenant !== tenant\)[^\n]*return false/.test(body), 'an answer for another tenant is refused',
+  'mayEditMenu trusts an answer that is not for this town — a backend predating town ids would answer from another town')
+assert(/if \(!\/\^tw-\[a-z0-9\]\{8\}\$\/\.test\(tenant\)\) return json\(\{ code: 'bad_request'/.test(fn), 'a request with no town is refused',
+  'commerce-write accepts a request without a sealed tenant — it would check a guessed town')
+assert(/tenant: townTenant\(\)/.test(read('src/lib/commerceApi.js')), 'the app sends its town', 'commerceApi does not send its sealed tenant (townTenant())')
 
 // ── 6. tax_remitter is not guardian-settable ───────────────────────────────
 assert(!/patch\.tax_remitter\s*=/.test(fn) && !/tax_remitter:\s*body\./.test(fn), 'tax_remitter not settable',

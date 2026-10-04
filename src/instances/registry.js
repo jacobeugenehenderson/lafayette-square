@@ -45,12 +45,25 @@ import lafayetteSquare from './lafayette-square.js'
 import hipointeDemun from './hipointe-demun.js'
 import huron from './huron.js'
 import provincetown from './provincetown.js'
+// ⭐ EACH TOWN'S BACKEND KEY — opaque, minted once, sealed in `cartograph/data/<map>/town-id.json` (Jacob,
+// 2026-10-04). Every backend keys a town by it (the Apps Script tenant, the Operations overlay, the Ward's
+// calls), so a town's name and address stay free to change. Never shown to operators.
+// ▶ node checks/claims-a-town-has-one-sealed-id.mjs
+import lafayetteSquareId from '../../cartograph/data/lafayette-square/town-id.json' with { type: 'json' }
+import hipointeDemunId from '../../cartograph/data/hipointe-demun/town-id.json' with { type: 'json' }
+import huronId from '../../cartograph/data/huron/town-id.json' with { type: 'json' }
+import provincetownId from '../../cartograph/data/provincetown/town-id.json' with { type: 'json' }
+
+const withId = (town, { townId }) => {
+  if (!/^tw-[a-z0-9]{8}$/.test(townId || '')) throw new Error(`[instances] "${town.name}" has no sealed town id (town-id.json townId = ${JSON.stringify(townId)})`)
+  return { ...town, townId }
+}
 
 const INSTANCES = {
-  'lafayette-square': lafayetteSquare,
-  'hipointe-demun': hipointeDemun,
-  huron,
-  'provincetown': provincetown,
+  'lafayette-square': withId(lafayetteSquare, lafayetteSquareId),
+  'hipointe-demun': withId(hipointeDemun, hipointeDemunId),
+  huron: withId(huron, huronId),
+  'provincetown': withId(provincetown, provincetownId),
 }
 
 /**

@@ -28,19 +28,20 @@
 const SPREADSHEET_ID = '1UuNAXIbrWTKYrhpRcf3MSRmM_XHyGjlasvvwgGpiZso'
 const LOCAL_THRESHOLD = 3          // check-ins needed to become a local
 const LOCAL_WINDOW_DAYS = 14       // rolling window for distinct-day counting
-const TIMEZONE = 'America/Chicago' // the default look's zone (Lafayette Square)
+const TIMEZONE = 'America/Chicago' // the zone of a town not listed below
 // Each town's day in its OWN zone (Jacob's timezone fix, 2026-09-29): a check-in, a review's day and an event's date
 // fall on the town's calendar, not Chicago's. The zones are the ones each town's baked manifest names
-// (identity.timezone); a look not listed here keeps the default's and says so in the log.
+// (identity.timezone), keyed by the town's sealed id; a town not listed here keeps TIMEZONE and says so in the log.
 const TOWN_ZONES = {
-  'lafayette-square': 'America/Chicago',
-  'hipointe-demun': 'America/Chicago',
-  'provincetown': 'America/New_York',
-  'huron': 'America/New_York',
+  'tw-2721jg7t': 'America/Chicago',      // Lafayette Square
+  'tw-316uoro4': 'America/Chicago',      // Hi-Pointe–DeMun
+  'tw-zmc6ejej': 'America/New_York',     // Provincetown
+  'tw-pn6z7r22': 'America/New_York',     // Huron
+  'tw-uqjgk00g': 'America/Los_Angeles',  // Altadena
 }
 function townZone() {
-  var z = TOWN_ZONES[CURRENT_LOOK]
-  if (!z) { console.warn('[timezone] look "' + CURRENT_LOOK + '" has no zone in TOWN_ZONES — using ' + TIMEZONE); return TIMEZONE }
+  var z = TOWN_ZONES[CURRENT_TENANT]
+  if (!z) { console.warn('[timezone] tenant "' + CURRENT_TENANT + '" has no zone in TOWN_ZONES — using ' + TIMEZONE); return TIMEZONE }
   return z
 }
 var PHOTO_FOLDER_ID = PropertiesService.getScriptProperties().getProperty('PHOTO_FOLDER_ID') || ''
@@ -63,66 +64,73 @@ function isValidAdminToken(token) {
   return CacheService.getScriptCache().get('admin_' + token) === 'valid'
 }
 
-// ─── Per-look tenancy ────────────────────────────────────────────────────────
-// Each neighborhood ("look") gets its own area of this one shared backend, so a
-// non-LS install (e.g. ?look=hipointe-demun) reads/writes its OWN live rows and
-// is physically incapable of touching another neighborhood's. Isolation is
-// structural: every sheet access flows through getSheet → tabNameFor, which maps
-// a logical sheet name to the current look's physical tab.
+// ─── Per-town tenancy ────────────────────────────────────────────────────────
+// Each town gets its own area of this one shared backend: its rows live in tabs
+// suffixed with its SEALED TOWN ID ('Listings__tw-316uoro4'), so a town reads and
+// writes only its own rows. Every sheet access flows through getSheet → tabNameFor.
 //
-//   - DEFAULT_LOOK uses the BARE tab names → zero migration; LS's data never
-//     moves (getSheet('Listings') → the existing 'Listings' tab).
-//   - Other looks resolve to a suffixed tab ('Listings__hipointe-demun'),
-//     auto-created on demand by cloning the bare tab's header row (no manual
-//     setup, no seeding — local content is the display base; the tab accrues
-//     live activity only). See HANDOFF-neighborhood-backend-tenancy.md.
+// ⭐ THE KEY IS THE TOWN'S OPAQUE ID, NEVER ITS NAME (Jacob, 2026-10-04). The id is
+// minted once in the kit (cartograph/data/<map>/town-id.json), baked into the town's
+// manifest, and sent by every client as `tenant`; it is never shown to operators. A
+// town's name and address stay free to change, and no rename moves a row.
+// ⛔ NO DEFAULT TENANT. A request that names no town is refused; it used to land in
+// Lafayette Square's bare tabs, so another town's write became LS's data.
 //
-// CURRENT_LOOK is a request-scoped global: Apps Script runs one execution per
-// request, and doGet/doPost set it from the client-declared `look` before any
-// getSheet call (defaulting to DEFAULT_LOOK for old clients + LS back-compat).
-var DEFAULT_LOOK = 'lafayette-square'
-var CURRENT_LOOK = DEFAULT_LOOK
+// CURRENT_TENANT is a request-scoped global: Apps Script runs one execution per
+// request, and doGet/doPost set it (resolveTenant) before any getSheet call. Every
+// reply echoes it (jsonResponse), and the clients refuse a reply that doesn't.
+var CURRENT_TENANT = null
+var TENANT_PATTERN = /^tw-[a-z0-9]{8}$/
 
-// Sheets whose rows are shared across ALL neighborhoods. Identity is one-per-
-// person everywhere, so Handles always resolves to the bare tab regardless of
-// look. (Link tokens live in CacheService, not a tab — no tenancy concern.)
+// ⛔⛔ FINITE, AND DELETED AT LAFAYETTE SQUARE'S CUTOVER (Jacob, 2026-10-04). LS's
+// production player on `main` predates town ids and still sends `look=lafayette-square`.
+// It is the ONE client this translates; every other client sends `tenant`.
+// ▶ node checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs
+var LEGACY_LOOK_TENANT = { 'lafayette-square': 'tw-2721jg7t' }
+
+/** The town this request is for, or null — and a null is refused by the caller, never defaulted. */
+function resolveTenant(tenant, look) {
+  if (tenant != null && tenant !== '') return TENANT_PATTERN.test(String(tenant)) ? String(tenant) : null
+  return LEGACY_LOOK_TENANT[String(look || '')] || null
+}
+
+// Sheets whose rows are shared across ALL towns. Identity is one-per-person
+// everywhere, so Handles always resolves to the bare tab regardless of tenant.
+// (Link tokens live in CacheService, not a tab — no tenancy concern.)
 var GLOBAL_SHEETS = { 'Handles': true }
 
-/**
- * Normalize a client-declared look into a safe tab-name slug. Canonical
- * INSTANCE.lookId values (lafayette-square, hipointe-demun) pass through
- * unchanged; casing/whitespace/illegal-char variants collapse to a clean slug
- * (or fall back to the default look) so a look can never error a request or
- * silently fragment a tenant into a junk tab.
- */
-function normalizeLook(raw) {
-  var s = String(raw || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
-  return s || DEFAULT_LOOK
+// The one schema: every tab this backend opens, and the header row a new town's tab
+// is created with. ▶ node checks/claims-a-town-has-one-sealed-id.mjs
+var TAB_HEADERS = {
+  'Listings': [
+    'id', 'building_id', 'name', 'address', 'category', 'subcategory',
+    'phone', 'website', 'description', 'logo', 'home_based', 'status',
+    'rating', 'review_count', 'hours_json', 'amenities_json', 'tags_json',
+    'photos_json', 'history_json', 'reservation_url', 'menu_url',
+    'created_by', 'accepted', 'accepted_at',
+    'guardian_hash', 'guardian_token', 'claim_secret', 'created_at', 'updated_at'
+  ],
+  'Checkins':  ['device_hash', 'location_id', 'timestamp', 'date'],
+  'Reviews':   ['id', 'listing_id', 'device_hash', 'handle', 'text', 'rating', 'timestamp'],
+  'Events':    ['id', 'listing_id', 'device_hash', 'type', 'title', 'description', 'start_date', 'end_date', 'created_at'],
+  'Handles':   ['device_hash', 'handle', 'avatar', 'created_at', 'vignette'],
+  'Bulletins': ['id', 'device_hash', 'handle', 'section', 'text', 'anonymous', 'created_at', 'expires_at', 'status'],
+  'Threads':   ['id', 'bulletin_id', 'party_a_hash', 'party_b_hash', 'a_handle', 'b_handle', 'status', 'created_at', 'expires_at'],
+  'Messages':  ['id', 'thread_id', 'sender_hash', 'text', 'created_at'],
+  'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
+  'Replies':   ['id', 'review_id', 'listing_id', 'device_hash', 'handle', 'text', 'created_at'],
+  'Guardians': ['listing_id', 'device_hash', 'role', 'permissions', 'created_at'],
+  'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at'],
+  'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
+  'Designs':   ['biz_id', 'design_json', 'updated_at'],
 }
 
-/** Resolve a logical sheet name to the current look's physical tab name. */
+/** Resolve a logical sheet name to the current town's physical tab name. */
 function tabNameFor(name) {
+  if (!TAB_HEADERS[name]) throw new Error('getSheet: "' + name + '" is not a tab this backend knows')
   if (GLOBAL_SHEETS[name]) return name
-  if (!CURRENT_LOOK || CURRENT_LOOK === DEFAULT_LOOK) return name
-  return name + '__' + CURRENT_LOOK
-}
-
-/**
- * Header row for a freshly-created tab. Prefer cloning the default-look (bare)
- * tab's header row so a new neighborhood inherits the exact schema with no
- * manual setup; fall back to the known HEADERS map (the two tabs the original
- * auto-create seeded) when the bare tab doesn't exist yet.
- */
-function headersFor(name, ss) {
-  var bare = ss.getSheetByName(name)
-  if (bare && bare.getLastRow() >= 1 && bare.getLastColumn() >= 1) {
-    return bare.getRange(1, 1, 1, bare.getLastColumn()).getValues()[0]
-  }
-  var HEADERS = {
-    'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at'],
-    'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
-  }
-  return HEADERS[name] || null
+  if (!CURRENT_TENANT) throw new Error('getSheet: no tenant resolved for this request')
+  return name + '__' + CURRENT_TENANT
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -132,11 +140,9 @@ function getSheet(name) {
   var physical = tabNameFor(name)
   var sheet = ss.getSheetByName(physical)
   if (!sheet) {
-    // Auto-create the look's tab on demand, seeding its header row (cloned from
-    // the bare tab for non-default looks — see headersFor).
+    // A town's tab is created on its first use, with the schema's header row.
     sheet = ss.insertSheet(physical)
-    var headers = headersFor(name, ss)
-    if (headers && headers.length) sheet.appendRow(headers)
+    sheet.appendRow(TAB_HEADERS[name])
   }
   return sheet
 }
@@ -158,6 +164,7 @@ function jsonResponse(data, status) {
   const output = ContentService.createTextOutput(JSON.stringify({
     status: status || 'ok',
     data: data,
+    tenant: CURRENT_TENANT,   // the town this reply is for; the clients refuse a reply for another
     timestamp: new Date().toISOString()
   }))
   output.setMimeType(ContentService.MimeType.JSON)
@@ -245,8 +252,9 @@ function deleteRowsByColumn(sheet, columnName, value) {
 // ─── GET handler ────────────────────────────────────────────────────────────
 
 function doGet(e) {
-  // Resolve tenancy for this request before any getSheet call (default = LS).
-  CURRENT_LOOK = normalizeLook(e && e.parameter && e.parameter.look)
+  // Resolve the town before any getSheet call. ⛔ None named, none served.
+  CURRENT_TENANT = resolveTenant(e && e.parameter && e.parameter.tenant, e && e.parameter && e.parameter.look)
+  if (!CURRENT_TENANT) return errorResponse('No town: send tenant (the town\'s sealed id)', 'bad_request')
   const action = (e.parameter.action || '').toLowerCase()
 
   try {
@@ -294,8 +302,9 @@ function doPost(e) {
     return errorResponse('Invalid JSON body', 'bad_request')
   }
 
-  // Resolve tenancy for this request before any getSheet call (default = LS).
-  CURRENT_LOOK = normalizeLook(body.look)
+  // Resolve the town before any getSheet call. ⛔ None named, none served.
+  CURRENT_TENANT = resolveTenant(body.tenant, body.look)
+  if (!CURRENT_TENANT) return errorResponse('No town: send tenant (the town\'s sealed id)', 'bad_request')
 
   const action = (body.action || '').toLowerCase()
 
@@ -1734,15 +1743,6 @@ function saveDesign(body) {
   if (!design || typeof design !== 'object') return errorResponse('Missing design', 'bad_request')
 
   var sheet = getSheet('Designs')
-  if (!sheet) {
-    // Defensive/unreachable: getSheet auto-creates the (look-aware) tab and never
-    // returns null. Kept as a guard — route through tabNameFor so it stays in the
-    // current tenant rather than writing the bare LS 'Designs' tab.
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID)
-    sheet = ss.insertSheet(tabNameFor('Designs'))
-    sheet.getRange(1, 1, 1, 3).setValues([['biz_id', 'design_json', 'updated_at']])
-    sheet.getRange(1, 1, 1, 3).setFontWeight('bold')
-  }
 
   var headerMap = getHeaderMap(sheet)
   var designJson = JSON.stringify(design)
@@ -2036,53 +2036,6 @@ function postLeaveResidence(body) {
   }
 
   return jsonResponse({ success: true }) // no-op if not a resident
-}
-
-// ─── Utility: Create all tabs with headers ──────────────────────────────────
-
-// Provisions the DEFAULT-LOOK (bare) tabs and their canonical headers. These
-// bare tabs double as the header-clone source for every per-look tab (see
-// headersFor), so this is intentionally look-UNAWARE: it sets up the default
-// tenant. Manual admin utility, not reachable from doGet/doPost.
-function setupSheets() {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID)
-
-  const tabs = {
-    'Listings': [
-      'id', 'building_id', 'name', 'address', 'category', 'subcategory',
-      'phone', 'website', 'description', 'logo', 'home_based', 'status',
-      'rating', 'review_count', 'hours_json', 'amenities_json', 'tags_json',
-      'photos_json', 'history_json', 'reservation_url', 'menu_url',
-      'created_by', 'accepted', 'accepted_at',
-      'guardian_hash', 'guardian_token', 'claim_secret', 'created_at', 'updated_at'
-    ],
-    'Checkins':  ['device_hash', 'location_id', 'timestamp', 'date'],
-    'Reviews':   ['id', 'listing_id', 'device_hash', 'handle', 'text', 'rating', 'timestamp'],
-    'Events':    ['id', 'listing_id', 'device_hash', 'type', 'title', 'description', 'start_date', 'end_date', 'created_at'],
-    'Handles':   ['device_hash', 'handle', 'avatar', 'created_at', 'vignette'],
-    'Bulletins': ['id', 'device_hash', 'handle', 'section', 'text', 'anonymous', 'created_at', 'expires_at', 'status'],
-    'Threads':   ['id', 'bulletin_id', 'party_a_hash', 'party_b_hash', 'a_handle', 'b_handle', 'status', 'created_at', 'expires_at'],
-    'Messages':  ['id', 'thread_id', 'sender_hash', 'text', 'created_at'],
-    'Comments':  ['id', 'bulletin_id', 'device_hash', 'handle', 'anonymous', 'text', 'created_at'],
-    'Replies':   ['id', 'review_id', 'listing_id', 'device_hash', 'handle', 'text', 'created_at'],
-    'Guardians': ['listing_id', 'device_hash', 'role', 'permissions', 'created_at'],
-    'Residents': ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at'],
-    'LobbyPosts': ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at'],
-    'Designs':   ['biz_id', 'design_json', 'updated_at'],
-  }
-
-  Object.entries(tabs).forEach(([name, headers]) => {
-    let sheet = ss.getSheetByName(name)
-    if (!sheet) {
-      sheet = ss.insertSheet(name)
-    }
-    if (sheet.getLastRow() === 0 || sheet.getRange(1, 1).getValue() !== headers[0]) {
-      sheet.getRange(1, 1, 1, headers.length).setValues([headers])
-      sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold')
-    }
-  })
-
-  Logger.log('All tabs created with headers')
 }
 
 // ─── Photo Upload ──────────────────────────────────────────────────────────
@@ -2593,4 +2546,90 @@ function syncBellwetherPhotos() {
   ]
   sheet.getRange(found.rowIndex, col + 1).setValue(JSON.stringify(photos))
   Logger.log('Updated Bellwether photos_json (' + photos.length + ' photos)')
+}
+
+// ─── ONE-TIME: every town's tabs move to its sealed town id ─────────────────
+// ⛔ DELETE THIS SECTION once migrateToTownIds() has run clean (BRIEF-rename-hpdm-to-its-address).
+// Order: `clasp push` → run migrateToTownIds_dryRun() in the editor and read its log → `clasp deploy` →
+// run migrateToTownIds() at once. Deploy FIRST: in the seconds between, the new web app creates a town's
+// tab empty on first use, which the move replaces; a write that lands there makes the move REFUSE, loudly.
+// (Migrating first would let the old web app recreate the old tabs and split a write off silently.)
+//   · A tab MOVES by rename — its rows, formatting and history go with it; nothing is copied or deleted.
+//   · Every move is counted before and after, in the same run, and reopened strictly by its new name.
+//   · The whole plan is checked first: a destination that already holds rows, a tab with no mapping, or a
+//     header row unlike the schema stops the run before anything moves.
+var TOWN_ID_MIGRATION = {
+  '':               'tw-2721jg7t',   // Lafayette Square: the bare tabs
+  'hipointe-demun': 'tw-316uoro4',
+  'huron':          'tw-pn6z7r22',
+  'provincetown':   'tw-zmc6ejej',
+  'altadena':       'tw-uqjgk00g',
+}
+function migrateToTownIds_dryRun() { return migrateToTownIds_(true) }
+function migrateToTownIds() { return migrateToTownIds_(false) }
+
+function migrateToTownIds_(dryRun) {
+  var lock = LockService.getScriptLock()
+  lock.waitLock(30000)
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID)
+    var log = [], problems = [], moves = []
+    var all = ss.getSheets().map(function (sh) { return sh.getName() })
+    log.push('Every tab before (' + all.length + '):')
+    all.forEach(function (n) { var sh = ss.getSheetByName(n); log.push('  ' + n + '  rows=' + sh.getLastRow() + ' cols=' + sh.getLastColumn()) })
+
+    // Every tab must be accounted for: global, a mapped town's, or already a town id's.
+    all.forEach(function (n) {
+      var parts = n.split('__'), base = parts[0], suffix = parts.length > 1 ? parts.slice(1).join('__') : ''
+      if (!TAB_HEADERS[base]) { log.push('  ⚠ not a backend tab, left alone: ' + n); return }
+      if (GLOBAL_SHEETS[base] && !suffix) return
+      if (TENANT_PATTERN.test(suffix)) return
+      if (!(suffix in TOWN_ID_MIGRATION)) problems.push('no town id for tab "' + n + '" (suffix "' + suffix + '")')
+    })
+
+    Object.keys(TOWN_ID_MIGRATION).forEach(function (from) {
+      var to = TOWN_ID_MIGRATION[from]
+      Object.keys(TAB_HEADERS).forEach(function (name) {
+        if (GLOBAL_SHEETS[name]) return
+        var srcName = from ? name + '__' + from : name
+        var dstName = name + '__' + to
+        var src = ss.getSheetByName(srcName)
+        if (!src) return                                   // this town never used this tab
+        var dst = ss.getSheetByName(dstName)
+        if (dst && dst.getLastRow() > 1) { problems.push(dstName + ' already holds ' + (dst.getLastRow() - 1) + ' row(s); ' + srcName + ' would collide with it'); return }
+        var header = src.getLastColumn() ? src.getRange(1, 1, 1, src.getLastColumn()).getValues()[0].map(String) : []
+        var want = TAB_HEADERS[name]
+        var extra = header.filter(function (h) { return h && want.indexOf(h) === -1 })
+        var missing = want.filter(function (h) { return header.indexOf(h) === -1 })
+        if (extra.length || missing.length) log.push('  ⚠ ' + srcName + ' header differs from the schema: extra [' + extra.join(', ') + '] missing [' + missing.join(', ') + ']')
+        moves.push({ src: srcName, dst: dstName, rows: src.getLastRow(), cols: src.getLastColumn(), replaceEmpty: !!dst })
+      })
+    })
+
+    log.push('Plan (' + moves.length + ' moves):')
+    moves.forEach(function (m) { log.push('  ' + m.src + ' → ' + m.dst + '  rows=' + m.rows + (m.replaceEmpty ? '  (replaces an empty ' + m.dst + ')' : '')) })
+    if (problems.length) {
+      log.push('⛔ REFUSED — nothing moved:'); problems.forEach(function (p) { log.push('  ' + p) })
+      Logger.log(log.join('\n')); throw new Error('migrateToTownIds refused: ' + problems.length + ' problem(s); see the log')
+    }
+    if (dryRun) { log.push('DRY RUN — nothing moved.'); Logger.log(log.join('\n')); return log.join('\n') }
+
+    var failed = []
+    moves.forEach(function (m) {
+      var empty = ss.getSheetByName(m.dst)
+      if (empty) { if (empty.getLastRow() > 1) { failed.push(m.dst + ' gained rows during the run'); return } ss.deleteSheet(empty) }
+      ss.getSheetByName(m.src).setName(m.dst)
+      var moved = ss.getSheetByName(m.dst)
+      var after = moved ? moved.getLastRow() : -1, cols = moved ? moved.getLastColumn() : -1
+      var same = after === m.rows && cols === m.cols && !ss.getSheetByName(m.src)
+      log.push('  ' + (same ? '✓ ' : '⛔ ') + m.src + ' → ' + m.dst + '  rows ' + m.rows + ' → ' + after + '  cols ' + m.cols + ' → ' + cols)
+      if (!same) failed.push(m.src + ' → ' + m.dst)
+    })
+    log.push(failed.length ? '⛔ ' + failed.length + ' MOVE(S) DID NOT VERIFY: ' + failed.join('; ') : 'All ' + moves.length + ' moves verified: every row count and column count equal before and after.')
+    Logger.log(log.join('\n'))
+    if (failed.length) throw new Error('migrateToTownIds: ' + failed.length + ' move(s) did not verify; see the log')
+    return log.join('\n')
+  } finally {
+    lock.releaseLock()
+  }
 }

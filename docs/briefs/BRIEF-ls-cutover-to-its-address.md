@@ -46,7 +46,10 @@ A default that merely changes spelling is the same bleed with a new name.
    on `.online` and open the right page there.
 6. **Retire what served `.com`**: `.github/workflows/deploy.yml`, `public/CNAME`, `PUBLISH.md §1` (to the
    Diary), the bucket CORS entries for `lafayette-square.com`, and the `main` branch's role as production.
-   ⛔ Nothing is pushed to `main` as part of this.
+   ⛔ Nothing is pushed to `main` as part of this. **And the Apps Script's `LEGACY_LOOK_TENANT`** (the one
+   look it still translates, for `main`'s player) with `resolveTenant`'s `look` argument: drafted, Jacob
+   deploys. ▶ `node checks/claims-the-legacy-look-table-dies-at-ls-cutover.mjs` fails until it is gone.
+   *(LS's backend is keyed by its sealed id since 2026-10-04, so renaming the map moves no data.)*
 
 ## Can the instrument see it?
 

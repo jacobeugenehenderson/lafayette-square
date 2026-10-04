@@ -188,6 +188,19 @@ function resolveInstance() {
 export const INSTANCE = resolveInstance()
 
 /**
+ * The town's backend key: its sealed opaque id (`cartograph/data/<map>/town-id.json`, attached by the registry).
+ * Every backend call names the town by THIS, never by its look or map name, so a rename moves no data.
+ * ⛔ A page that resolved no town, or is wearing another town's identity after a loud fallback, has NO tenant:
+ * it would read and write that other town's rows. It throws instead.
+ */
+export function townTenant() {
+  if (!INSTANCE?.identityResolved || !INSTANCE.townId) {
+    throw new Error(`[instance] look "${INSTANCE?.lookId ?? '(none)'}" resolved no town of its own, so it has no backend tenant — refusing to call the backend as another town.`)
+  }
+  return INSTANCE.townId
+}
+
+/**
  * The town a Look belongs to — its instance module, carrying that Look's id and map. Stage switches
  * towns live, so a renderer drawing a town it was GIVEN asks this rather than reading INSTANCE (the
  * page's boot town). null for a Look we cannot place.

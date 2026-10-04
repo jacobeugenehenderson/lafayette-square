@@ -63,21 +63,24 @@ const json = (body: unknown, status = 200, cors: Record<string, string> = {}) =>
  * missing field — all return false. The one outcome that must never arise is
  * "we could not reach the authority, so we allowed it."
  */
-async function mayEditMenu(listingId: string, deviceHash: string, look: string): Promise<boolean> {
+async function mayEditMenu(listingId: string, deviceHash: string, tenant: string): Promise<boolean> {
   const base = Deno.env.get('GAS_API_URL')
   const secret = Deno.env.get('COMMERCE_SHARED_SECRET')
   if (!base || !secret) return false
 
-  // ⛔ The town is named on every check. Without it the backend used to read Lafayette Square's
-  // Guardians tab for every town's listing — a real Guardian elsewhere refused, and an id shared
-  // across towns checked against the wrong town's claims.
-  const url = `${base}?action=guardian-check&look=${encodeURIComponent(look)}&lid=${encodeURIComponent(listingId)}` +
+  // ⛔ The town is named on every check, by its sealed tenant id. Without it the backend used to read
+  // Lafayette Square's Guardians tab for every town's listing — a real Guardian elsewhere refused, and
+  // an id shared across towns checked against the wrong town's claims.
+  const url = `${base}?action=guardian-check&tenant=${encodeURIComponent(tenant)}&lid=${encodeURIComponent(listingId)}` +
               `&dh=${encodeURIComponent(deviceHash)}&perm=menu&s=${encodeURIComponent(secret)}`
   try {
     const res = await fetch(url, { redirect: 'follow' })
     if (!res.ok) return false
     const body = await res.json()
-    return body?.allowed === true
+    // ⛔ A backend that predates town ids ignores `tenant`; its answer is about some other town's Guardians.
+    if (body?.tenant !== tenant) { console.error('[commerce-write] guardian-check answered for tenant', body?.tenant, 'not', tenant); return false }
+    // The backend's reply is its envelope `{ status, data, tenant }`; the answer is `data.allowed`.
+    return body?.data?.allowed === true
   } catch (e) {
     console.error('[commerce-write] guardian-check unreachable —', (e as Error)?.message)
     return false
@@ -100,13 +103,13 @@ Deno.serve(async (req) => {
   const listingId = String(body.listing_id || '').trim()
   const deviceHash = String(body.device_hash || req.headers.get('x-device-hash') || '').trim()
   const op = String(body.op || '').trim()
-  const look = String(body.look || '').trim()
+  const tenant = String(body.tenant || '').trim()
   if (!listingId || !deviceHash) return json({ code: 'bad_request', error: 'listing_id and device_hash are required' }, 400, cors)
   // ⛔ No town, no write. Never defaulted: a guess here is a write checked against another town.
-  if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(look)) return json({ code: 'bad_request', error: 'look (the town) is required' }, 400, cors)
+  if (!/^tw-[a-z0-9]{8}$/.test(tenant)) return json({ code: 'bad_request', error: 'tenant (the town\'s sealed id) is required' }, 400, cors)
 
   // ── The gate. Nothing below runs until GAS says yes. ──────────────────────
-  if (!(await mayEditMenu(listingId, deviceHash, look))) {
+  if (!(await mayEditMenu(listingId, deviceHash, tenant))) {
     return json({ code: 'unauthorized', error: 'Not a guardian of this listing, or the menu permission is not granted' }, 403, cors)
   }
 

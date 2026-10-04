@@ -503,7 +503,8 @@ registry's `meta.prefix` too and read back on every bake, so renaming a town ren
 the registry and never hand-edit it. The bake refuses an authored `id` that would renumber a business the registry numbered.
 
 ⭐ **What a visitor sees is three layers:** this file < the Apps Script sheet < the layer operations
-publishes (`<ASSET_BASE>live/<look>/listings.json`). A correction made in operations wins over both.
+publishes (`<ASSET_BASE>live/<town id>/listings.json`, keyed by the town's sealed id in
+`cartograph/data/<map>/town-id.json`, never its name). A correction made in operations wins over both.
 ▶ `node checks/claims-a-listing-keeps-its-id.mjs`.
 
 ---

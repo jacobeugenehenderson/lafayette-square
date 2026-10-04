@@ -2,11 +2,12 @@
  * API client for the Google Apps Script backend.
  * Set VITE_API_URL in .env to the deployed Apps Script web app URL.
  *
- * Every request carries the active installation's `look` so the backend serves
- * this neighborhood's own tenant (its per-look Sheet tabs). LS is the default
- * look → bare tabs → byte-identical behavior. See the backend's getSheet.
+ * Every request carries the town's `tenant` — its sealed opaque id (`townTenant`), never its look or
+ * map name — so the backend serves this town's own Sheet tabs and a rename moves nothing. The backend
+ * echoes the tenant it served; a reply that doesn't is refused (`servedBy`), so a client running against
+ * a backend that predates town ids fails loudly instead of reading another town's rows.
  */
-import { INSTANCE } from '../instance.js'
+import { townTenant } from '../instance.js'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 const USE_MOCKS = !API_URL && import.meta.env.DEV
@@ -151,25 +152,32 @@ async function get(action, params = {}) {
   if (USE_MOCKS && MOCKS[action]) return MOCKS[action](params)
   const url = new URL(API_URL)
   url.searchParams.set('action', action)
-  url.searchParams.set('look', INSTANCE.lookId)
+  const tenant = townTenant()
+  url.searchParams.set('tenant', tenant)
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v))
   url.searchParams.set('_t', Date.now())
 
   const res = await fetch(url, { method: 'GET', credentials: 'omit' })
   if (!res.ok) throw new Error(`API GET ${action} failed: ${res.status}`)
-  return res.json()
+  return servedBy(tenant, action, await res.json())
+}
+
+function servedBy(tenant, action, reply) {
+  if (reply?.tenant !== tenant) throw new Error(`API ${action}: the backend served tenant ${JSON.stringify(reply?.tenant)}, not this town's ${tenant} — it predates town ids, or answered for another town.`)
+  return reply
 }
 
 async function post(action, body = {}) {
   if (USE_MOCKS && MOCKS[action]) return MOCKS[action](body)
+  const tenant = townTenant()
   const res = await fetch(API_URL, {
     method: 'POST',
     credentials: 'omit',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action, look: INSTANCE.lookId, ...body }),
+    body: JSON.stringify({ action, tenant, ...body }),
   })
   if (!res.ok) throw new Error(`API POST ${action} failed: ${res.status}`)
-  return res.json()
+  return servedBy(tenant, action, await res.json())
 }
 
 // ── Check-in (local determiner) ─────────────────────────────────────────

@@ -317,7 +317,7 @@ shape as a town calendar pointed the other way, and it is unbuilt.
 **Facade mapping** — `src/data/facade_mapping.json` (LS only), from **Mapillary** street-level imagery + a matching pass.
 
 ### 3.4 CLAIMED — no acquisition endpoint exists, by design
-Guardian claims · residents/residence claims · check-ins/townie ladder · bulletin posts/comments/DMs · reviews/events/handles/QR designs. All live in the Apps Script → Sheets backend, **now per-look tenanted** (`api.js:154,169` set `look: INSTANCE.lookId`; `Handles` stays global).
+Guardian claims · residents/residence claims · check-ins/townie ladder · bulletin posts/comments/DMs · reviews/events/handles/QR designs. All live in the Apps Script → Sheets backend, **tenanted by each town's sealed opaque id** (`cartograph/data/<map>/town-id.json`, sent as `tenant` by `src/lib/api.js#townTenant`; never the town's name, so a rename moves no row; `Handles` stays global). ▶ `node checks/claims-a-town-has-one-sealed-id.mjs`.
 ⭐ **The manifest must show these as "opens empty, fills over time" — never as a gap.** The app *is* the acquisition tool.
 
 ### 3.5 ⭐ The join-key invariant — HOLDS, and is well-defended
