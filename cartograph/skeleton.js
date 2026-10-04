@@ -322,8 +322,8 @@ function scoreOnewayPair(aCoords, bCoords) {
 }
 
 function analyzePhases(name, fragments, rejoinAdj) {
-  const oneway = fragments.filter(f => f.tags?.oneway === 'yes')
-  const bidi = fragments.filter(f => f.tags?.oneway !== 'yes')
+  const oneway = fragments.filter(f => onewayOf(f.tags))
+  const bidi = fragments.filter(f => !onewayOf(f.tags))
 
   // Score every candidate oneway pair, then resolve by ascending gap so
   // the cleanest matches claim partners first. Greedy first-match was
@@ -362,7 +362,7 @@ function analyzePhases(name, fragments, rejoinAdj) {
   }
 
   const classified = fragments.map(f => {
-    if (f.tags?.oneway === 'yes') {
+    if (onewayOf(f.tags)) {
       const p = paired.get(f.osmId)
       if (p) return { osmId: f.osmId, kind: 'divided', role: p.role, partner: p.partner, gap: p.gap, pairKey: p.pairKey }
       return { osmId: f.osmId, kind: 'single-oneway' }
@@ -481,7 +481,7 @@ function weldChains(fragments, signatureByOsmId, pairKeyByOsmId) {
     // every weld so splitAtFolds can attribute each slice to its real ways.
     segSources: new Array(Math.max(0, f.coords.length - 1)).fill(f.osmId),
     tags: f.tags,
-    oneway: f.tags?.oneway === 'yes',
+    oneway: onewayOf(f.tags),
     isClosed: f.isClosed,
     signature: signatureByOsmId.get(f.osmId) || 'single-bidi',
     pairKey: pairKeyByOsmId.get(f.osmId) || null,
@@ -1173,6 +1173,15 @@ function isExpressway(sources) {
   }
   return n > 0
 }
+// ⭐ THE TAG DECIDES ONE-WAY. OSM's `junction=roundabout|circular` IMPLIES `oneway=yes`;
+// read literally, an untagged ring seeded TWO lanes (`seedSection`: `oneway ? 1 : 2`).
+// An explicit `oneway` tag still wins. Every site that asks "is this way one-way?" asks this.
+const RING_JUNCTIONS = new Set(['roundabout', 'circular'])
+const isRingWay = (tags) => RING_JUNCTIONS.has(tags?.junction)
+function onewayOf(tags) {
+  if (tags?.oneway != null) return tags.oneway === 'yes'
+  return isRingWay(tags)
+}
 function seedSection(highway, lanes, oneway, { expressway = false } = {}) {
   const base = highway && highway.replace(/_link$/, '')
   const cls = STD_SECTION[base] ? base : 'residential'
@@ -1723,6 +1732,111 @@ function weldHighwayChains(streets) {
   if (cycles.length) console.log(`  ⛔ ${cycles.length} chain(s) in a closed all-degree-2 loop NOT welded: ${cycles.join(', ')}`)
 }
 
+// ⭐ THE ROUNDABOUT WELD (BRIEF-roundabout-is-one-ring). OSM cuts a roundabout into a way at
+// every entry, and each unnamed piece became its own chain — so the ring was drawn as arcs, the
+// terminal-node sweep never saw "0 tips = a ring", the closed-loop fit never ran, and the island
+// never closed as a block. ⭐ THE TAG IS THE IDENTITY: `junction=roundabout|circular` says which
+// ways form the ring. ⛔ Never inferred from geometry (circularity, closure by proximity) — that
+// is the forbidden recovery shape (`A15`). Ring pieces chain TAIL→HEAD; a cycle of them is one
+// ring and welds into ONE closed chain (first point === last), across the entry nodes (degree
+// ≥ 3 by construction — the tag, not the node degree, says it is one road).
+// - Runs AFTER the synthetic numbering, so no other chain's `<highway> <n>` shifts. The survivor
+//   keeps its id (the one named chain if there is one, else the lowest-numbered piece); member ids
+//   go to `weldedFrom`, their ways to `sources`/`osmIds`. Lanes per span in `laneProfile`, as the
+//   highway weld carries them.
+// - ⛔ NOT WELDED, PRINTED BY NAME — the pieces stay as they are: a ring that does not close
+//   tail→head, a chain carrying ring AND non-ring ways, mixed classes around one ring, two
+//   different real names, a piece that is a divided carriageway, an ambiguous joint.
+// ▶ node checks/claims-a-roundabout-is-one-ring.mjs
+function weldRoundabouts(streets) {
+  const isSyn = s => !!s.synthetic
+  const isClosed = s => s.points.length >= 4 && vKey(s.points[0]) === vKey(s.points[s.points.length - 1])
+  const held = { mixed: [], open: [], cls: [], name: [], divided: [], ambiguous: [] }
+  const cand = []
+  let alreadyOne = 0
+  for (const s of streets) {
+    const src = s.sources || []
+    const nRing = src.filter(id => isRingWay(WAY_TAGS_BY_ID.get(id))).length
+    if (!nRing) continue
+    if (nRing < src.length) { held.mixed.push(`${s.id} (${nRing} of ${src.length} ways are ring)`); continue }
+    if (isClosed(s)) { alreadyOne++; continue }
+    cand.push(s)
+  }
+  const byHead = new Map()
+  for (const s of cand) {
+    const k = vKey(s.points[0])
+    byHead.set(k, byHead.has(k) ? null : s)           // two pieces leaving one node ⇒ ambiguous
+  }
+  const next = new Map()
+  for (const s of cand) {
+    const k = vKey(s.points[s.points.length - 1])
+    if (!byHead.has(k)) continue
+    const b = byHead.get(k)
+    if (b === null) { held.ambiguous.push(`${s.id} (two ring pieces leave its tail)`); continue }
+    next.set(s, b)
+  }
+  // Cycles of `next` are rings; whatever is not on a cycle does not close.
+  const onCycle = new Set(), rings = []
+  for (const s of cand) {
+    if (onCycle.has(s)) continue
+    const run = [s], seen = new Set([s])
+    let c = next.get(s)
+    while (c && !seen.has(c)) { run.push(c); seen.add(c); c = next.get(c) }
+    if (c !== s) continue                               // walked off the end, or into another loop
+    run.forEach(m => onCycle.add(m))
+    rings.push(run)
+  }
+  const openPieces = cand.filter(s => !onCycle.has(s))
+  if (openPieces.length) held.open.push(...openPieces.map(s => s.id))
+  const gone = new Set()
+  let welded = 0, pieces = 0, laneSteps = 0
+  for (const ring of rings) {
+    const label = ring.map(m => m.id).join('+')
+    if (ring.some(m => m.phase?.kind === 'divided')) { held.divided.push(label); continue }
+    const classes = [...new Set(ring.map(m => m.highway))]
+    if (classes.length > 1) { held.cls.push(`${label} (${classes.join('/')})`); continue }
+    const names = [...new Set(ring.filter(m => !isSyn(m)).map(m => m.name))]
+    if (names.length > 1) { held.name.push(`${label} (${names.join(' / ')})`); continue }
+    const named = ring.filter(m => !isSyn(m))
+    const keep = named.length ? named[0] : ring.reduce((a, m) => streets.indexOf(m) < streets.indexOf(a) ? m : a)
+    const i0 = ring.indexOf(keep)
+    const run = [...ring.slice(i0), ...ring.slice(0, i0)]  // start the ring at the survivor's head
+    const points = [], sources = [], osmIds = [], laneProfile = []
+    let s0 = 0
+    for (const m of run) {
+      const pts = points.length ? m.points.slice(1) : m.points
+      const len = polylineLengthXZ(m.points)
+      const n = chainLanes(m.sources)
+      const lanes = Number.isFinite(n) && n > 0 ? n : null
+      if (laneProfile.length && laneProfile[laneProfile.length - 1].lanes !== lanes) laneSteps++
+      laneProfile.push({ s0: +s0.toFixed(2), s1: +(s0 + len).toFixed(2), lanes, from: m.id })
+      s0 += len
+      points.push(...pts)
+      sources.push(...(m.sources || [])); osmIds.push(...(m.osmIds || m.sources || []))
+      if (m !== keep) gone.add(m)
+    }
+    const lanes = chainLanes(sources)
+    delete keep.lanes
+    Object.assign(keep, {
+      points, sources, osmIds, ref: chainRef(sources),
+      ...(Number.isFinite(lanes) && lanes > 0 ? { lanes } : {}),
+      laneProfile, length: +s0.toFixed(2),
+      weldedFrom: run.map(m => m.id),
+      seed: seedSection(keep.highway, lanes, keep.oneway, { expressway: isExpressway(sources) }),
+      ...gradeFields(keep.highway, sources),
+    })
+    welded++; pieces += run.length
+  }
+  for (let i = streets.length - 1; i >= 0; i--) if (gone.has(streets[i])) streets.splice(i, 1)
+  console.log(`\nRoundabout weld (the tag decides): ${welded} ring(s) welded from ${pieces} piece(s) · ${alreadyOne} already one closed chain · lanes step at ${laneSteps} welded joint(s), carried in laneProfile`)
+  if (held.open.length) console.log(`  ⛔ ${held.open.length} roundabout piece(s) do NOT close tail→head — NOT welded: ${held.open.join(', ')}`)
+  if (held.mixed.length) console.log(`  ⛔ ${held.mixed.length} chain(s) carry ring AND non-ring ways — NOT welded: ${held.mixed.join(', ')}`)
+  if (held.cls.length) console.log(`  ⛔ ${held.cls.length} ring(s) mix classes — NOT welded: ${held.cls.join(', ')}`)
+  if (held.name.length) console.log(`  ⛔ ${held.name.length} ring(s) carry two real names — NOT welded: ${held.name.join(', ')}`)
+  if (held.divided.length) console.log(`  ⛔ ${held.divided.length} ring(s) contain a divided carriageway — NOT welded: ${held.divided.join(', ')}`)
+  if (held.ambiguous.length) console.log(`  ⛔ ${held.ambiguous.length} ambiguous ring joint(s) — NOT welded: ${held.ambiguous.join(', ')}`)
+}
+
 // --- Main pipeline --------------------------------------------------------
 
 function main() {
@@ -1950,7 +2064,7 @@ function main() {
     const f = unnamedVehicular[i]
     const hw = f.tags?.highway
     const synthName = `${hw} ${i + 1}`
-    const oneway = f.tags?.oneway === 'yes'
+    const oneway = onewayOf(f.tags)
     const lanes = parseInt(f.tags?.lanes, 10)
     streets.push({
       id: slugify(synthName),
@@ -1976,6 +2090,7 @@ function main() {
     })
   }
   weldHighwayChains(streets)
+  weldRoundabouts(streets)
   // ⭐ H-3 step 0 disclosure, every pour: the frame facts a highway's section is chosen by.
   {
     const hwy = streets.filter(s => LIMITED_ACCESS.has(s.highway))
@@ -2607,7 +2722,7 @@ function makeStreet(id, name, sourceTags, chain, extras = {}) {
   // leaving divided carriageways flagged oneway=false. The welded chain carries
   // its own oneway (the seed fragment's flag, true for any carriageway); prefer
   // it so Survey's One-way checkbox reads the carriageway honestly.
-  const oneway = typeof chain?.oneway === 'boolean' ? chain.oneway : (sourceTags?.oneway === 'yes')
+  const oneway = typeof chain?.oneway === 'boolean' ? chain.oneway : onewayOf(sourceTags)
   // [E1] lanes summarized over ALL of the chain's source ways — sourceTags is
   // the group's FIRST fragment, and on a multi-way chain the lanes tag often
   // lives on other fragments (South 18th: lanes sit mid-corridor; fragment[0]
