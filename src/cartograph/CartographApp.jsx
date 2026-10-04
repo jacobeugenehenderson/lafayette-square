@@ -27,7 +27,7 @@ import MarkerFAB from './MarkerFAB.jsx'
 import { DesignerArch } from './DesignerArch.jsx'
 import Town from '../components/Town.jsx'
 import { placeTown } from '../components/Town.jsx'
-import { deviceQuality, townCanvasProps } from '../lib/qualityProfile.js'
+import { authoringQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import { shallow } from 'zustand/shallow'
 
 // Shot-only (environment paint-in)
@@ -767,7 +767,8 @@ function useStageOverrides(heroKeyframes, heroMotion) {
 }
 // Stage's shots → the shot <Town> draws (Designer draws no <Town>).
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
-const QUALITY = deviceQuality()
+// Stage authors creative intent, so it draws every pass; what each surface ships is Preview's deployment layer.
+const QUALITY = authoringQuality()
 // The Canvas the town is drawn through, from the same profile <Town> is given.
 const townCanvas = townCanvasProps(QUALITY)
 

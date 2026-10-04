@@ -14,8 +14,8 @@
  *   · the <Canvas> tag hand-sets none of antialias / logarithmicDepthBuffer / dpr / shadows (literal values);
  *   · Town.jsx re-exports townCanvasProps;
  *   · Preview's tiers draw with the profile their LABEL names (Jacob: "The entire Preview authoring space is designed to
- *     test these things for use in a mobile space") — every tier in TIER_QUALITY maps desktop → the desktop profile and
- *     phone-* → the phone profile, and Preview's quality comes from that map.
+ *     test these things for use in a mobile space"): qualityProfile.js#surfaceQuality, CALLED for every surface, maps
+ *     desktop → the desktop profile and phone-* → the phone profile, and Preview's quality comes from it.
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-the-canvas-is-the-towns.mjs [--self-test]
  */
@@ -64,21 +64,23 @@ export function audit(files) {
   const preview = files.find(x => x.path === 'src/preview/PreviewApp.jsx')
   if (preview) {
     const c = code(preview.src)
-    const map = (c.match(/const\s+TIER_QUALITY\s*=\s*\{([^}]*)\}/) || [])[1]
-    if (!map) f.push('src/preview/PreviewApp.jsx has no TIER_QUALITY — its tiers do not name the profile they draw with')
-    else {
-      for (const m of map.matchAll(/['"]?([\w-]+)['"]?\s*:\s*([\w.]+)/g)) {
-        const [, tier, profile] = m
-        const want = /phone/.test(tier) ? 'phone' : /desktop/.test(tier) ? 'desktop' : null
-        if (want && !profile.endsWith(`.${want}`)) f.push(`Preview's "${tier}" tier draws with ${profile} — its label names the ${want} profile`)
-      }
-      if (!/=\s*TIER_QUALITY\[\s*mode\s*\]/.test(c)) f.push('Preview\'s quality does not come from TIER_QUALITY[mode] — the tier toggle and the profile can disagree')
-    }
+    // The tier → profile map is qualityProfile.js#surfaceQuality's (checked below, by calling it); Preview must draw through it.
+    if (!/surfaceQuality\(\s*mode\s*,/.test(c)) f.push('Preview\'s quality does not come from surfaceQuality(mode, …) — the tier toggle and the profile can disagree')
   }
   return { f, info }
 }
 
 const files = walk(join(ROOT, 'src')).map(p => ({ path: relative(ROOT, p), src: readFileSync(p, 'utf8') }))
+// The surface → profile map, by calling the one function that holds it.
+{
+  const { surfaceQuality } = await import(join(ROOT, 'src/lib/qualityProfile.js'))
+  const { SURFACES } = await import(join(ROOT, 'src/lib/deployment.js'))
+  for (const sfc of SURFACES) {
+    const want = sfc === 'desktop' ? 'desktop' : 'phone'
+    const got = surfaceQuality(sfc, { authored: false }).id
+    if (got !== want) { console.error(`⛔ surface "${sfc}" draws with the ${got} profile — its label names ${want}`); process.exit(1) }
+  }
+}
 if (process.argv.includes('--self-test')) {
   const base = audit(files).f.length
   const add = (src) => audit([...files, { path: 'src/fake/App.jsx', src }]).f.length
@@ -86,7 +88,7 @@ if (process.argv.includes('--self-test')) {
     ['an app hand-builds its Canvas', () => add(`<Canvas gl={{ antialias: true }}><Town quality={Q} /></Canvas>`)],
     ['an app spreads another profile than Town gets', () => add(`<Canvas {...townCanvasProps(QUALITY.phone)}><Town quality={QUALITY} /></Canvas>`)],
     ['an app pins shadows beside the spread', () => add(`<Canvas {...townCanvasProps(Q)} shadows="soft"><Town quality={Q} /></Canvas>`)],
-    ['a phone tier draws with the desktop profile', () => audit(files.map(x => x.path === 'src/preview/PreviewApp.jsx' ? { ...x, src: x.src.replace("'phone-lo': QUALITY_PROFILES.phone", "'phone-lo': QUALITY_PROFILES.desktop") } : x)).f.length],
+    ['Preview draws a tier without surfaceQuality', () => audit(files.map(x => x.path === 'src/preview/PreviewApp.jsx' ? { ...x, src: x.src.replace(/surfaceQuality\(\s*mode\s*,/g, 'pickProfile(mode,') } : x)).f.length],
     ['Town stops re-exporting it', () => audit(files.map(x => x.path === TOWN ? { ...x, src: x.src.replace(/\btownCanvasProps\b/g, 'x') } : x)).f.length],
   ]
   let bad = 0

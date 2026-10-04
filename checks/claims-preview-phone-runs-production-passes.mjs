@@ -7,8 +7,9 @@
  * `inspect` installed the whole desktop pipeline on every tier (9 passes) while a production phone ran 3, and it
  * ignored the gates (the hero ladder mounted with DoF off). Every Preview phone number described a desktop render.
  *
- * READS THE SOURCE: asks `renderPipeline.jsx#mountedPasses` (the one function the installer uses) for every profile
- * in `qualityProfile.js#QUALITY` (inclusion is the profile's `includesPass`), under Preview's own default toggles (`PreviewApp.jsx#DEFAULT_LAYERS`, parsed, not
+ * READS THE SOURCE: asks `renderPipeline.jsx#mountedPasses` (the one function the installer uses) for every surface of
+ * every town's deployment (`cartograph/data/<map>/deployment.json`, laid on the profile by `qualityProfile.js#surfaceQuality`;
+ * inclusion is the profile's `includesPass`), plus a town with none (`{ authored: false }`), under Preview's own default toggles (`PreviewApp.jsx#DEFAULT_LAYERS`, parsed, not
  * copied), against the same call with no inspection, with the DoF gate both ways. A toggle-OFF must remove only that
  * pass (and a resource nothing mounted reads).
  *
@@ -25,7 +26,12 @@ const fails = []
 let compared = 0
 try {
   const { mountedPasses, POSTFX_PIPELINE } = await vite.ssrLoadModule('/src/components/renderPipeline.jsx')
-  const { QUALITY } = await vite.ssrLoadModule('/src/lib/qualityProfile.js')
+  const { surfaceQuality } = await vite.ssrLoadModule('/src/lib/qualityProfile.js')
+  const { SURFACES, readDeployment } = await vite.ssrLoadModule('/src/lib/deployment.js')
+  const { readdirSync, existsSync } = await import('node:fs')
+  const towns = readdirSync(join(ROOT, 'cartograph/data')).filter((t) => existsSync(join(ROOT, 'cartograph/data', t, 'deployment.json')))
+  const deployments = [['(none authored)', { authored: false }],
+    ...towns.map((t) => [t, readDeployment(JSON.parse(readFileSync(join(ROOT, 'cartograph/data', t, 'deployment.json'), 'utf8')), t)])]
 
   // Preview's own "all on": the DEFAULT_LAYERS literal, evaluated as written.
   const src = readFileSync(join(ROOT, 'src/preview/PreviewApp.jsx'), 'utf8')
@@ -34,12 +40,12 @@ try {
   const toggles = Function(`return (${lit[1]})`)()
 
   const ids = (list) => list.map((e) => e.id).join(',')
-  const profiles = Object.values(QUALITY)
+  const profiles = deployments.flatMap(([t, d]) => SURFACES.map((s) => ({ ...surfaceQuality(s, d), id: `${t}/${s}` })))
   if (!profiles.length || !POSTFX_PIPELINE.length) throw new Error('no profiles or no passes — nothing to compare')
 
   // The profile's switches name real passes — a misspelt id would silently keep a pass on.
   const known = new Set(POSTFX_PIPELINE.map((e) => e.id))
-  for (const q of profiles) for (const id of q.postFxOff || []) if (!known.has(id)) fails.push(`${q.id}.postFxOff names "${id}", which is no pass in POSTFX_PIPELINE`)
+  for (const q of profiles) for (const id of q.postFxOff || []) if (!known.has(id)) fails.push(`${q.id}: postFxOff names "${id}", which is no pass in POSTFX_PIPELINE`)
 
   for (const q of profiles) {
     for (const dofOn of [true, false]) {
@@ -47,7 +53,7 @@ try {
       const preview = mountedPasses({ quality: q, dofOn, inspect: { toggles } })
       compared++
       if (ids(ships) !== ids(preview)) fails.push(`${q.id} (dof ${dofOn ? 'on' : 'off'}): production mounts [${ids(ships)}], Preview's defaults mount [${ids(preview)}]`)
-      else console.log(`   ${q.id.padEnd(8)} dof ${dofOn ? 'on ' : 'off'}: ${ships.length} passes [${ids(ships)}]`)
+      else console.log(`   ${q.id.padEnd(30)} dof ${dofOn ? 'on ' : 'off'}: ${ships.length} passes [${ids(ships)}]`)
 
       // Every toggle can only remove: OFF never adds a pass, and never removes one the toggle doesn't own.
       for (const e of ships) {

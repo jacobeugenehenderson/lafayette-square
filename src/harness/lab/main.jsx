@@ -27,7 +27,7 @@ import RegimeControls from '../../components/RegimeControls.jsx'
 import * as THREE from 'three'
 
 import R3FErrorBoundary from '../../components/R3FErrorBoundary'
-import { QualityProvider, deviceQuality } from '../../lib/qualityProfile.js'
+import { QualityProvider, authoringQuality } from '../../lib/qualityProfile.js'
 import BakedGround from '../../components/BakedGround.jsx'
 import BakedLamps from '../../components/BakedLamps'
 import SlabRevetment from '../../components/SlabRevetment.jsx'
@@ -228,7 +228,7 @@ function App() {
           }, 1000)
         }}
       >
-        <QualityProvider quality={deviceQuality()}>
+        <QualityProvider quality={authoringQuality()}>
         {/* ── the environment: Preview's own mounts, verbatim components ── */}
         <TimeTicker />
         <SkyStateTicker />

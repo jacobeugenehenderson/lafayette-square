@@ -14,6 +14,7 @@ import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
 import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
+import { readDeployment } from '../src/lib/deployment.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 import { registryReadChanged } from '../src/cartograph/streetProfiles.js'
 import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, contentRecord, contentChanged, pourDataReads, TOWN_REGISTRY } from './pour-code.mjs'
@@ -2332,6 +2333,48 @@ createServer(async (req, res) => {
   // Returns {} (not 404) for an existing Look without a design yet, so the
   // client can hydrate without a special-case error path.
   let m
+  // GET /maps/<map>/deployment — what each surface ships (src/lib/deployment.js): the town's deployment.json (`file`,
+  // null when it has none) and what its baked manifest carries (`baked`, null when it has no manifest), so Preview can
+  // say whether the next bake still has to carry an edit. ⛔ Town-keyed, not Look-keyed: deployment is per town.
+  // POST /maps/<map>/deployment — Preview's deployment panel autosaves the whole file. Checked (readDeployment) before
+  // it is written; nothing else is touched: the next bake's manifest step carries it.
+  if ((m = path.match(/^\/maps\/([^/]+)\/deployment$/)) && (req.method === 'GET' || req.method === 'POST')) {
+    const map = m[1]
+    const dir = join(import.meta.dirname, 'data', map)
+    if (!/^[a-z0-9-]+$/.test(map) || !existsSync(join(dir, 'town-id.json'))) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: `"${map}" is no town (no cartograph/data/${map}/town-id.json)` }))
+      return
+    }
+    const file = join(dir, 'deployment.json')
+    if (req.method === 'GET') {
+      const manifestP = join(import.meta.dirname, '..', 'public', 'baked', map, 'manifest.json')
+      const body = orFail(res, () => ({
+        file: existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null,
+        baked: existsSync(manifestP) ? (JSON.parse(readFileSync(manifestP, 'utf8')).deployment ?? null) : null,
+      }))
+      if (body === undefined) return
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(body))
+      return
+    }
+    let body = ''
+    req.on('data', c => body += c)
+    req.on('end', () => {
+      try {
+        const parsed = JSON.parse(body)
+        readDeployment(parsed, `the deployment posted for "${map}"`)
+        writeJson(file, { surfaces: parsed.surfaces })
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end('{"ok":true}')
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: err.message }))
+      }
+    })
+    return
+  }
+
   if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/design$/))) {
     const id = m[1]
     const idx = readLooksIndex()

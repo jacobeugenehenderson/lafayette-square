@@ -11,7 +11,7 @@ import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './SkyTickers.jsx'
-import { QualityProvider, deviceQuality } from '../lib/qualityProfile.js'
+import { QualityProvider, authoringQuality } from '../lib/qualityProfile.js'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { treeSwayUniforms } from './treeAtlasMaterial'
 import {
@@ -779,7 +779,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
       dpr={IS_MOBILE ? 1 : [1, 2]}
       shadows
     >
-      <QualityProvider quality={deviceQuality()}>
+      <QualityProvider quality={authoringQuality()}>
       {/* The clock, and the weather it drives — the same seam every other embed
           uses, so an embedding page's slider moves this sky, this light and
           this wind together. */}

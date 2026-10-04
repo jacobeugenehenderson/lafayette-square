@@ -18,7 +18,7 @@
  *                    fields) — townForLook(lookId) from src/instance.js. Nothing <Town> reaches resolves a
  *                    town itself. Absent or without geography, it throws naming the prop.
  *   lookId           REQUIRED — the Look to draw (Stage passes the active one; it switches towns live)
- *   quality          a profile from lib/qualityProfile.js — deviceQuality() is the device's own
+ *   quality          a profile from lib/qualityProfile.js — a player's is deviceQuality(manifest.deployment)
  *   shot             'movie' | 'plan' | 'street'. A CHANGE FLIES (src/camera/ShotFlight.jsx): production's move, the
  *                    durations of src/camera/transitions.js, to the town's own destination for the shot.
  *   flight           true (default) flies · 'cut' lands at once · false: hands off, the app places the camera (Stage)

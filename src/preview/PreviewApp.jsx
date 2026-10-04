@@ -8,7 +8,8 @@
  */
 import { Canvas, useFrame } from '@react-three/fiber'
 import Town from '../components/Town.jsx'
-import { QUALITY as QUALITY_PROFILES, townCanvasProps } from '../lib/qualityProfile.js'
+import { surfaceQuality, townCanvasProps } from '../lib/qualityProfile.js'
+import DeploymentPanel, { liveDeployment, useDeployment } from './DeploymentPanel.jsx'
 import useListings from '../hooks/useListings'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -183,6 +184,8 @@ const FX_LAYERS = [
   ['smaa',   'SMAA (AA)'],
   ['dof',    'DoF'],   // mounts only where the Look authors a blur (its gate) — verify via ?dofDebug=1
 ]
+// The deployment panel's names for the passes (the inspection rows' names, and the one they do not list).
+const FX_LABELS = { ...Object.fromEntries(FX_LAYERS), heroLadder: 'Hero ladder (DoF)' }
 
 // EVERY TOGGLE STARTS ON — the inspection's starting state is the shipping render;
 // a toggle only takes something out to measure it.
@@ -483,7 +486,7 @@ function PyramidTuner({ envId, degree, onChange }) {
   )
 }
 
-function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree, quality, profilerTab, setProfilerTab }) {
+function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree, quality, profilerTab, setProfilerTab, deployment }) {
   // The passes this tier's profile ships at all (gates aside): the rest have nothing to toggle.
   const tierPasses = new Set(mountedPasses({ quality, dofOn: true }).map((e) => e.id))
   const notOnTier = new Set(FX_LAYERS.map(([k]) => k).filter((k) => !tierPasses.has(k)))
@@ -501,6 +504,9 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
       {/* Pyramid tuner leads the tools; it and the roster cards below
           twirl-collapse (default closed) to cut the clutter. */}
       <PyramidTuner envId={envId} degree={degree} onChange={onTuneDegree} />
+
+      {/* What this surface SHIPS (deployment.json) — authored, autosaved; below it, what you are inspecting (temporary). */}
+      {deployment}
 
       <LayerSection title="Scene" layerList={SCENE_LAYERS} layers={layers}
         setLayer={setLayer} metric="draws" footer={<SceneCaveats />} />
@@ -1039,9 +1045,16 @@ function PreviewTown({ town }) {
   }
 
   const isPhone = mode !== 'desktop'
-  // The tier's profile — the one <Town> and the Canvas are both given.
-  const quality = TIER_QUALITY[mode]
-  const townCanvas = useMemo(() => townCanvasProps(quality), [quality])
+  // ⭐ EACH SURFACE DRAWS WHAT IT SHIPS: its render profile with the town's DEPLOYMENT policy for that surface laid on it,
+  // through qualityProfile.js#surfaceQuality — the one function the Ward applies the manifest's copy through. Preview
+  // reads the live deployment.json (its deployment panel edits it), so an edit shows before the bake carries it.
+  // phone-hi and phone-lo draw the phone profile; they differ by their policies and budgets (deviceProfiles.js).
+  // ▶ node checks/claims-deployment-has-one-authority.mjs · claims-preview-phone-runs-production-passes.mjs
+  const [dep, setDep] = useDeployment(town.mapId)
+  const deployment = liveDeployment(dep)
+  const depKey = JSON.stringify(deployment ?? null)
+  const quality = useMemo(() => (deployment ? surfaceQuality(mode, deployment) : null), [mode, depKey])
+  const townCanvas = useMemo(() => (quality ? townCanvasProps(quality) : null), [quality])
   const phoneScale = usePhoneScale(isPhone)
 
   // Stage spans from below the app bar to the bottom of the window, leaving
@@ -1061,6 +1074,15 @@ function PreviewTown({ town }) {
         gap: STAGE_PADDING,
       }
     : { position: 'absolute', top: APP_BAR_H, left: 0, right: 0, bottom: 0 }
+
+  // ⛔ No deployment, no render: Preview cannot say what a surface ships without it.
+  if (!quality) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: '#141416', color: '#ddd', fontSize: 13 }}>
+        {dep.error ? `⛔ Preview ${dep.error}` : 'reading the deployment…'}
+      </div>
+    )
+  }
 
   const canvas = (
     <Canvas
@@ -1110,6 +1132,7 @@ function PreviewTown({ town }) {
       <TopAppBar shot={shot} setShot={setShot} mode={mode} setMode={setMode} />
       <RightPanel layers={layers} setLayer={setLayer} top={panelTop} bottom={panelBottom}
         envId={mode} degree={activeDegree} onTuneDegree={setActiveDegree} quality={quality}
+        deployment={<DeploymentPanel map={town.mapId} surface={mode} state={dep} setState={setDep} labels={FX_LABELS} />}
         profilerTab={profilerTab} setProfilerTab={setProfilerTab} />
       {!isPhone && <PublishPanel lookId={lookId} />}
     </div>
@@ -1125,13 +1148,6 @@ function resolvePreviewLookId() {
 
 // Preview's shots → the shot <Town> draws; its layer toggles → <Town layers>.
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
-// ⭐ EACH TIER DRAWS WITH ITS OWN PROFILE (Jacob: "The entire Preview authoring space is designed to test these things
-// for use in a mobile space"). Phone hi / Phone lo pass the PHONE profile to <Town> AND to the Canvas (linear depth, no
-// shadow map, the hero-only pieces, the phone's post-FX passes: grade, smaa, grain). They render identically; they
-// differ only in the gauge budgets (deviceProfiles.js). Before 2026-09-28 every tier drew the device's own profile,
-// and before 2026-10-04 every tier ran all nine desktop passes.
-// ▶ node checks/claims-the-canvas-is-the-towns.mjs · node checks/claims-preview-phone-runs-production-passes.mjs
-const TIER_QUALITY = { desktop: QUALITY_PROFILES.desktop, 'phone-hi': QUALITY_PROFILES.phone, 'phone-lo': QUALITY_PROFILES.phone }
 
 function CanvasContents({ town, layers, shot, quality }) {
   // The town's flight between shots reports here; exposed for claims-a-shot-change-flies (an inspection surface).

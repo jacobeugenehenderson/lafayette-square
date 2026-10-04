@@ -35,6 +35,10 @@
  *               its datums, from raw/tide.json (fetch-water-datums --tide-only). The player times
  *               the tide from them (cartograph/tide.mjs); the levels stay the town's own. Kept whole, unrounded
  *               (Jacob: "keep the data"). A tidal town without them exits 2; a non-tidal town has no key at all.
+ *   deployment — what each surface ships (src/lib/deployment.js): the town's cartograph/data/<town>/deployment.json,
+ *               authored in Preview per surface, checked by readDeployment; `{ authored: false }` when the town has none
+ *               (every surface then ships everything — said, never guessed). The only input of the manifest that a
+ *               policy edit changes, so a policy change costs this step and nothing geometric.
  *   files     — every PUBLISHED file of the slab with its size and sha256 (scripts/slab-publish-rule.mjs). ⚠️ v0 LISTS the existing names; it
  *               does not yet rename files by content. That, and the Worker and R2 side of it, is
  *               BRIEF-slab-loading §3 step 3.
@@ -46,6 +50,7 @@
  */
 
 import { categoryNeon, categoryDetail, isAuthoredCategory } from '../src/lib/categoryColor.js'
+import { readDeployment } from '../src/lib/deployment.js'
 import { resolveIdentity } from '../src/lib/townIdentity.js'
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync } from 'node:fs'
 import { createHash } from 'node:crypto'
@@ -203,6 +208,14 @@ if (water?.tidal === true) {
   tide = clock
 }
 
+// ── deployment: what each surface ships ─────────────────────────────────────
+const deploymentP = resolve(ROOT, 'cartograph/data', town, 'deployment.json')
+let deployment = { authored: false }
+if (existsSync(deploymentP)) {
+  try { deployment = readDeployment(JSON.parse(readFileSync(deploymentP, 'utf8')), relative(ROOT, deploymentP)) }
+  catch (e) { console.error(`⛔ ${e.message}`); process.exit(2) }
+}
+
 const manifest = {
   version: 0,
   town,
@@ -214,6 +227,7 @@ const manifest = {
   content,
   photos,
   ...(tide ? { tide } : {}),
+  deployment,
   files,
 }
 writeFileSync(resolve(slabDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
@@ -221,4 +235,4 @@ const total = Object.values(files).reduce((s, f) => s + f.bytes, 0)
 const missingPhotos = Object.entries(photos).filter(([, v]) => !v).map(([k]) => k)
 if (missingPhotos.length) console.error(`⚠️ ${missingPhotos.length} photo(s) named by listings are missing on disk: ${missingPhotos.slice(0, 5).join(', ')}${missingPhotos.length > 5 ? ' …' : ''}`)
 const have = Object.entries(content).filter(([, v]) => v).map(([k]) => k.replace('.json', ''))
-console.log(`✅ ${relative(ROOT, resolve(slabDir, 'manifest.json'))} — ${Object.keys(files).length} slab files, ${(total / 1e6).toFixed(1)} MB · content: ${have.join(', ') || 'none'} · photos ${Object.values(photos).filter(Boolean).length}/${Object.keys(photos).length}${photosOutsideTown ? ` (${photosOutsideTown} from the app's public/photos/)` : ''} · ${categories.length} categories (unauthored)${tide ? ` · tide: ${tide.constituents.length} constituents, station ${tide.station}` : ''}${Object.keys(unlisted).length ? ` · not published, so not listed: ${Object.entries(unlisted).map(([w, n]) => `${n} × ${w}`).join('; ')}` : ''}`)
+console.log(`✅ ${relative(ROOT, resolve(slabDir, 'manifest.json'))} — ${Object.keys(files).length} slab files, ${(total / 1e6).toFixed(1)} MB · content: ${have.join(', ') || 'none'} · photos ${Object.values(photos).filter(Boolean).length}/${Object.keys(photos).length}${photosOutsideTown ? ` (${photosOutsideTown} from the app's public/photos/)` : ''} · ${categories.length} categories (unauthored)${tide ? ` · tide: ${tide.constituents.length} constituents, station ${tide.station}` : ''} · deployment ${deployment.authored ? 'authored' : 'none authored'}${Object.keys(unlisted).length ? ` · not published, so not listed: ${Object.entries(unlisted).map(([w, n]) => `${n} × ${w}`).join('; ')}` : ''}`)

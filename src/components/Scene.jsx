@@ -2,7 +2,7 @@ import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { INSTANCE, moduleOn } from '../instance.js'
-import { deviceQuality, townCanvasProps } from '../lib/qualityProfile.js'
+import { authoringQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import { framedPresence } from '../lib/framedPresence.js'
 import { FRAMED } from '../hooks/useCamera'
 import { browseSquare, browseSquareAltitude } from '../camera/browseFrame.js'
@@ -628,8 +628,10 @@ const IS_GROUND = window.location.search.includes('ground')
 const GROUND_ONLY = { buildings: false, trees: false, lamps: false, setPieces: false, neon: false, labels: false, fog: false, shadows: false, post: false }
 // The old player's camera modes → the shot <Town> draws.
 const SHOT_OF_MODE = { hero: 'movie', browse: 'plan', planetarium: 'street' }
-// The device this page runs on decides the quality — in lib/qualityProfile.js, not here.
-const QUALITY = deviceQuality()
+// The device this page runs on decides the quality — in lib/qualityProfile.js, not here. ⚠️ This legacy player reads no
+// manifest, so it applies no deployment policy: every pass runs. No staging or production record serves it (every town
+// names the Ward; lafayette-square.com runs an older build), and it is retired at LS's cutover.
+const QUALITY = authoringQuality()
 // The Canvas this town is drawn through, from the same profile <Town> is given.
 const townCanvas = townCanvasProps(QUALITY)
 
