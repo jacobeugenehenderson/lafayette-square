@@ -1,0 +1,9 @@
+{
+  "_comment": "Where provincetown's data wells are. Shape: cartograph/sources.js; the wells themselves live in the state record (cartograph/states/ma.mjs).",
+  "_jurisdiction": "Provincetown, Massachusetts — Barnstable County. MassGIS TOWN_ID 242 (verified 2026-10-05: the layer's records under TOWN_ID = 242 all read CITY = PROVINCETOWN; 4,955 parcels).",
+  "state": "MA",
+  "select": { "town_id": 242 },
+  "parcels": [{ "from": "state", "id": "massgis-l3" }],
+  "landUseCodes": null,
+  "_landUseCodes_why": "USE_CODE is Massachusetts' DOR property-class code, read by the state's own vocabulary (states/ma.mjs#readMaDorCode); there is no decode table to fetch."
+}

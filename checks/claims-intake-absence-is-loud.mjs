@@ -82,9 +82,12 @@ function loadSources() {
  */
 function readConsumers() {
   const out = {}
+  const r0 = (rel, name) => `${rel}/${name}`
   const walk = (rel) => {
     for (const d of readdirSync(join(ROOT, rel), { withFileTypes: true })) {
-      if (['_archive', 'data', 'node_modules'].includes(d.name)) continue
+      // ⭐ `data/` (a town's sources.json) and `cartograph/states/` (a state's wells, 2026-10-05) are where a well is
+      // DECLARED — naming its file there is the declaration, not a hardcode. Every other file is a consumer.
+      if (['_archive', 'data', 'node_modules'].includes(d.name) || r0(rel, d.name) === 'cartograph/states') continue
       const r = `${rel}/${d.name}`
       if (d.isDirectory()) walk(r)
       else if (/\.(m?js|jsx)$/.test(d.name)) out[r] = read(r)
@@ -188,7 +191,7 @@ function run(S) {
     .filter(([, src]) => /['"`](stl|stlco)_parcels\.json['"`]/.test(codeLines(src))).map(([f]) => f)
   assert('assessor/no-hardcoded-filenames',
     hardcoded.length === 0,
-    `a St. Louis parcel filename is hardcoded in code, not read from sources.json: ${hardcoded.join(', ')}`)
+    `a St. Louis parcel filename is hardcoded in code, not read from a declaration (sources.json / cartograph/states/): ${hardcoded.join(', ')}`)
   assert('assessor/reads-the-declaration',
     /readSources\(scene\)/.test(S.bakeContent) && existsSync(join(ROOT, 'cartograph/sources.js')),
     'bake-content.js does not read a per-town sources declaration')

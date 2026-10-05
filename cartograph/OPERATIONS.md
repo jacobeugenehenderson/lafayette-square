@@ -608,9 +608,12 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
   buildings **by address**, so a town without one opens nearly empty no matter how good its geometry
   is. OSM `addr:*` carries it in much of the world; in the US the assessor is the well, and it also
   carries what OSM never does — **valuation, zoning, year built, units**.
-  1. **Declare the well** — `data/<scene>/sources.json`. It names the endpoint, maps their column
-     names onto ours, and — the part that matters — lists the fields the well **does not have**.
-     The shape and a worked example are in `cartograph/sources.js`.
+  1. **Declare the well** — `data/<scene>/sources.json`. ⭐ **In a state the kit knows (Ohio, Massachusetts,
+     Missouri), take it from the state:** `"state": "MA", "select": { "town_id": 242 }, "parcels": [{ "from": "state",
+     "id": "massgis-l3" }]` — the endpoint, column map, absent fields and code vocabulary come from
+     `cartograph/states/<st>.mjs`; the town says only what it takes and how it selects, and its declared state must be
+     the one its own map votes. Elsewhere, declare the well in full (shape: `cartograph/sources.js`) — or write the
+     state's record. ▶ `node checks/claims-a-state-gives-its-towns-their-wells.mjs`
   2. **Fetch** — the Extent's **Fetch this view** now runs it for any town with a declaration, and
      reports *undeclared* when there is none. By hand: `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
      (`--dry-run` first: it prints the parcel count and one sample row without writing).
@@ -618,7 +621,7 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
      how much of the town it could **not** classify or address.
   - ⭐ **Building street addresses** (the Ward's card, "This is my house") come from the town's own record, its declared
     **address points**, then OSM — never guessed, never the nearest point. Declare a town's E-911 address points in the
-    same `sources.json` — `"addressPoints": [{ "id", "provider", "file" }]` (provider `ohio-lbrs` for any Ohio town), or
+    same `sources.json` — `"addressPoints": [{ "from": "state", "id": "ohio-lbrs" }]` for an Ohio town (its `select.county` picks the county), or
     `"addressPoints": [], "addressPoints_absent_reason": "…"` — then `CARTOGRAPH_SCENE=<id> node cartograph/fetch-address-points.mjs`
     (`--dry-run` first), then re-bake the town's buildings. Points join a building by standing in its footprint or in the
     parcel it stands on. ▶ `node checks/claims-every-building-has-an-address.mjs`

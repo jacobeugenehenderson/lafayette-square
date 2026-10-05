@@ -9,6 +9,7 @@ import { OSM_TO_LU, layerLandEvidence } from '../../cartograph/derive.js'
 import { unreadableFace } from '../../cartograph/osm-vocabulary.mjs'
 import { classifyParcelLandUse, classifyUseFromText, loadCountyCodeTable, UNDERIVED } from '../../cartograph/parcel-landuse.mjs'
 import { readSources } from '../../cartograph/sources.js'
+import { LAND_USE_READERS } from '../../cartograph/states/index.mjs'
 import { piecesOfIA, prepareEvidence } from '../../src/lib/tileGround.js'
 import { differenceRings } from '../../src/lib/buildBlockGeometryV2.js'
 const [town, ...want] = process.argv.slice(2)
@@ -26,7 +27,7 @@ export function evidenceFor(town) {
   for (const d of S.parcels || []) for (const p of Object.values(JSON.parse(fs.readFileSync(join(raw, d.file))).parcels || {})) {
     let lu = null
     if (d.land_use_code_format === 'stl-assessor-numeric') lu = classifyParcelLandUse(p.land_use_code, d.jurisdiction, table)
-    else if (d.land_use_code_format === 'self-describing' && p.land_use_code != null) { const u = classifyUseFromText(String(p.land_use_code)).use; lu = u === 'unknown' ? null : u }
+    else if (LAND_USE_READERS[d.land_use_code_format] && p.land_use_code != null) { const u = LAND_USE_READERS[d.land_use_code_format](String(p.land_use_code)).use; lu = u === 'unknown' ? null : u }
     if (lu && lu !== UNDERIVED && p.rings?.length) parcels.push({ lu, rings: p.rings }) }
   return layerLandEvidence(polys, parcels)
 }

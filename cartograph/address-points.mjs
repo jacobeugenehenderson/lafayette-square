@@ -7,8 +7,7 @@
  *    "2115 A CLEVELAND RD W" and "2115 B CLEVELAND RD W" are one building's "2115 CLEVELAND RD W" (the units ride
  *    alongside as `unit`). That is the source's words, assembled — never expanded, re-cased or guessed. A record with
  *    no house number or no street name is not an address and is dropped, counted.
- * ⭐ A provider is a kit entry, not a town patch: an Ohio town declares 'ohio-lbrs' and gets it; another state is a new
- *    provider row, not an edit to the bake (CLAUDE.md Layer 0 q1).
+ * ⭐ A provider is a STATE's well (cartograph/states/): an Ohio town takes 'ohio-lbrs' from its state and gets it.
  * Joined by containment only (cartograph/building-address.mjs): a point inside the footprint, or inside the parcel the
  * building stands in. ⛔ Never the nearest point.
  */
@@ -16,24 +15,13 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { mapDir } from './config.js'
 import { readAddressPointSources, declaredParcelPaths } from './sources.js'
-import { tidy } from './building-address.mjs'
+import { STATES } from './states/index.mjs'
 
-const s = (v) => (v == null ? '' : String(v).trim())
-
-export const ADDRESS_POINT_PROVIDERS = {
-  // Ohio's Statewide LBRS Address Points (OGRIP; all 88 counties, E-911 field-verified). Public use "as is".
-  'ohio-lbrs': {
-    endpoint: 'https://services2.arcgis.com/MlJ0G8iWUyC7jAmu/arcgis/rest/services/Statewide_LBRS_Address_Points/FeatureServer/0/query',
-    attribution: 'Ohio Statewide LBRS Address Points — OGRIP (Ohio Geographically Referenced Information Program)',
-    outFields: 'HOUSENUM,UNITNUM,ST_PREFIX,ST_NAME,ST_TYPE,ST_SUFFIX,ST_SUFFIX2',
-    compose(a) {
-      const n = s(a.HOUSENUM)
-      const street = [a.ST_PREFIX, a.ST_NAME, a.ST_TYPE, a.ST_SUFFIX, a.ST_SUFFIX2].map(s).filter(Boolean).join(' ')
-      if (!n || n === '0' || !s(a.ST_NAME)) return null
-      return { housenumber: n, street, unit: s(a.UNITNUM) || null, address: tidy(`${n} ${street}`) }
-    },
-  },
-}
+// ⭐ The providers the kit knows ARE the address-point wells of its state records (cartograph/states/) — Ohio's LBRS
+// lives in states/oh.mjs with its endpoint, fields and `compose`. Another state is a new well in its record, not an
+// edit here (CLAUDE.md Layer 0 q1).
+export const ADDRESS_POINT_PROVIDERS = Object.fromEntries(Object.values(STATES).flatMap(r =>
+  Object.entries(r.addressPoints || {}).map(([, w]) => [w.provider, { endpoint: w.endpoint, attribution: w.attribution, outFields: w.outFields, compose: w.compose }])))
 
 /**
  * The town's address points, as the bake reads them: { state, points: [{ address, unit, x, z }], reason? }.

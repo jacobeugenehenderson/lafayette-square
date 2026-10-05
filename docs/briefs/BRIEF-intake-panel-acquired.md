@@ -21,7 +21,7 @@ evict-when: every row in cartograph/intake-rows.mjs has a decided fate (auto-acq
 - Lamps: the row's path is a hand export nothing writes; poles ≠ lamps; the derived-lamps ruling is unbuilt.
 - The tree files are still named after St. Louis layers (`park_trees` / `forest_park_trees`).
 - Per-row loud status on every pour, and a computed "not looked for" state.
-- The suggest/confirm surface for wells; provincetown's MassGIS parcels unconfirmed (`claims-intake-absence-is-loud` red on it).
+- The suggest/confirm surface for wells. (provincetown's MassGIS parcels: ✅ declared + fetched 2026-10-05 through `cartograph/states/ma.mjs`.)
 - huron + provincetown need a re-fetch (`claims-osm-ground-has-no-duplicates` red on both) — Jacob's call.
 - The discovery method's probes: `scratch/intake-{artifact-discovery,jurisdiction-host,server-crawl}-probe.mjs`; the blind host harvest (`intake-host-discovery-probe`) is a negative result.
 

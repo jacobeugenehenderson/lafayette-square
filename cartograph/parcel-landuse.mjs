@@ -208,11 +208,12 @@ export function classifyUseFromText(text) {
   // ▶ node checks/claims-farmland-reads-as-agricultural.mjs
   if (/\bagr\b|\bagr-|agricultur|\bfarm(s|land|stead)?\b|\bcauv\b|grain|livestock|dairy|\bcrops?\b/i.test(t)) return { use: 'agricultural', use_subtype: null, use_confidence: 'medium' }
   if (/vacant/i.test(t)) return { use: 'vacant', use_subtype: null, use_confidence: 'medium' }
-  if (/industrial|utility|warehouse|manufactur/i.test(t)) return { use: 'industrial', use_subtype: null, use_confidence: 'medium' }
+  if (/industrial|utility|warehouse|manufactur|\bind-|\butl-/i.test(t)) return { use: 'industrial', use_subtype: null, use_confidence: 'medium' }
   if (/exempt|exm|church|school|municipal|government|public|cemetery|hospital/i.test(t)) return { use: 'institutional', use_subtype: null, use_confidence: 'medium' }
   if (/commercial|retail|office|com-/i.test(t)) return { use: 'commercial', use_subtype: null, use_confidence: 'medium' }
   if (/single|1-family|one family/i.test(t)) return { use: 'residential', use_subtype: 'single_family', use_confidence: 'medium' }
   if (/multi|duplex|apartment|two family|2-family/i.test(t)) return { use: 'residential', use_subtype: 'multi_family', use_confidence: 'medium' }
-  if (/^\s*res\b|residential|dwelling/i.test(t)) return { use: 'residential', use_subtype: null, use_confidence: 'low' }
+  // ⭐ `res-` anywhere, not only at the start: a self-describing code leads with its number ("550: Res-Condo").
+  if (/^\s*res\b|\bres-|residential|dwelling|condo/i.test(t)) return { use: 'residential', use_subtype: null, use_confidence: 'low' }
   return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
 }

@@ -41,6 +41,7 @@
  *   node cartograph/bake-content.js --scene=hipointedemun --dry-run   (stats, no write)
  */
 
+import { LAND_USE_READERS } from './states/index.mjs'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -438,12 +439,10 @@ function classifyUse(parcel, luMap) {
   //   taxonomy after St. Louis is the point: a town adopting it is asserting its codes
   //   mean what St. Louis's mean, which is a claim someone has to actually make.
   const fmt = parcel.land_use_code_format
-  if (fmt === 'self-describing') {
-    // ⭐ Text, not ranges. The word after the code is English land-use vocabulary and is
-    // the same vocabulary the `bucket` fallback at the end of this function already
-    // matches — so this reuses that classifier rather than adding a second one, and it
-    // is not keyed to any state.
-    return buildingUseOf(classifyUseFromText(String(code)))
+  if (LAND_USE_READERS[fmt]) {
+    // ⭐ Text, or a state's vocabulary (cartograph/states/index.mjs#LAND_USE_READERS) — read as LAND use, then mapped
+    // to a BUILDING use once (`buildingUseOf`). 'self-describing' is the kit's text reader, keyed to no state.
+    return buildingUseOf(LAND_USE_READERS[fmt](String(code)))
   }
   if (fmt !== 'stl-assessor-numeric') {
     return { use: 'unknown', use_subtype: null, use_confidence: 'low' }

@@ -14,6 +14,7 @@
 //   2. restore `farm|agricultur → residential`, drop the new test      → every farm case
 //   3. in bake-content.js, make `buildingUseOf` return its input       → the building case
 //   4. drop the word boundary on `farm`                                → "Farmers market"
+//   5. drop `\bres-` from the residential test                       → "550: Res-Condo"
 //
 //   node checks/claims-farmland-reads-as-agricultural.mjs
 // Read-only, hermetic.
@@ -30,6 +31,7 @@ for (const [t, want] of [
   ['500: Res-Vacant Land', 'vacant'], ['510: Res-Single Family', 'residential'],
   ['630: Exm-Township', 'institutional'], ['499: Com-Other', 'commercial'],
   ['Farmers market', 'unknown'],
+  ['550: Res-Condo', 'residential'], ['599: Res-Other', 'residential'], ['399: Ind-Other', 'industrial'], ['830: Utl-Land and Improvement', 'industrial'],
 ]) say(reads(t) === want, `"${t}" reads as ${want} — got ${reads(t)}`)
 // the building on farmland stays a dwelling: bake-content.js's one mapping
 {

@@ -47,6 +47,11 @@
  *     "landUseCodes": { "file": "county-land-use-codes.csv" }   // or null — see below
  *   }
  *
+ * ⭐ A WELL FROM THE STATE (2026-10-05): `"state": "OH", "select": { "county": "Erie" }, "parcels": [{ "from": "state",
+ * "id": "ohio-statewide" }]` — resolved here against `cartograph/states/<st>.mjs` (endpoint, fields, absent, format), the
+ * selector substituted into the well's `where`, stamped `fromState`. An unknown state, an unlisted well or a missing
+ * selector THROWS. A full declaration (above) still works for a town in a state with no record.
+ *
  * ⭐ `landUseCodes: null` is a POSITIVE statement, not an omission: it means the
  * well's code is self-describing and needs no decode table. Ohio's `StateLUC` arrives
  * as `"500: Res-Vacant Land"` — the code and its meaning in one string — so a St-Louis
@@ -56,6 +61,7 @@
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { mapDir } from './config.js'
+import { resolveFromState } from './states/index.mjs'
 
 export const SOURCES_FILE = 'sources.json'
 
@@ -98,6 +104,9 @@ export function readSources(scene) {
     throw new Error(`${p} has no \`parcels\` array. Declare the wells, or declare none:\n` +
       `  "parcels": [], "parcels_absent_reason": "<why this town has no parcel well>"`)
   }
+  // ⭐ A well taken from the town's STATE (`{ "from": "state", "id": … }`) resolves to the state's record, selected
+  // for this town and stamped `fromState` — cartograph/states/index.mjs. A full declaration passes through.
+  j.parcels = j.parcels.map(e => resolveFromState(e, 'parcels', j, `${p}: `))
 
   const seen = new Set()
   for (const src of j.parcels) {
@@ -137,6 +146,7 @@ export function readSources(scene) {
     declared: true,
     path: p,
     parcels: j.parcels,
+    state: j.state || null,
     // ⭐ `undefined` (key absent) and `null` (declared self-describing) are different
     // states and are kept different. Absent means the town never said.
     landUseCodes: 'landUseCodes' in j ? j.landUseCodes : undefined,
@@ -184,6 +194,7 @@ export function readAddressPointSources(scene, providers) {
   const j = JSON.parse(readFileSync(p, 'utf8'))
   if (!('addressPoints' in j)) return { state: 'undeclared', path: p, sources: [] }
   if (!Array.isArray(j.addressPoints)) throw new Error(`${p}: \`addressPoints\` must be an array`)
+  j.addressPoints = j.addressPoints.map(e => resolveFromState(e, 'addressPoints', j, `${p}: `))
   if (!j.addressPoints.length) {
     if (!j.addressPoints_absent_reason) throw new Error(`${p} declares no address-point source but gives no \`addressPoints_absent_reason\` — "none" is a finding; say what was searched.`)
     return { state: 'none', path: p, sources: [], absentReason: j.addressPoints_absent_reason }

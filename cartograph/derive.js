@@ -29,8 +29,9 @@ import { expresswaySpeeds } from './speedContext.mjs'
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
-import { classifyParcelLandUse, classifyUseFromText, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
+import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources, undeclaredMessage } from './sources.js'
+import { LAND_USE_READERS } from './states/index.mjs'
 import { coastRings } from './coastline.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
@@ -1510,8 +1511,11 @@ export function deriveLayers(highways) {
       // A self-describing code ("500: Res-Vacant Land") is read as text, with the SAME
       // classifier bake-content uses. Any other or undeclared format is UNREADABLE and
       // counted as such, never guessed in another town's taxonomy.
-      if (fmt === 'self-describing' && parcel.land_use_code != null) {
-        const u = classifyUseFromText(String(parcel.land_use_code)).use
+      // ⭐ Every other format is read by its READER — the kit's text reader, or a state's vocabulary
+      // (cartograph/states/: Massachusetts' DOR codes). A format with no reader is UNREADABLE, counted.
+      const reader = LAND_USE_READERS[fmt]
+      if (reader && parcel.land_use_code != null) {
+        const u = reader(String(parcel.land_use_code)).use
         lu = u === 'unknown' ? null : u
       }
       const k = fmt || '(undeclared format)'

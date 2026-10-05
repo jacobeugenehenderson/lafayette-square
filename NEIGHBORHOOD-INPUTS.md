@@ -317,7 +317,7 @@ Not yet a runbook; the honest skeleton of one, sequenced by Jacob's acquisition 
 
 1. **Extent + geography** — pick center + radius; fill `src/instances/<map>.js` and register it in `src/instances/registry.js` (weather goes live immediately, §3).
 2. **Automated fetch (Tier ①)** — OSM, footprints, LiDAR, Mapillary → the map + building geometry. Same scripts, new extent.
-3. **Re-point the municipal wells (Tier ②)** — the new town's assessor parcels + tree census. *The one engineering task per town* (new fetch adapter). HiPointe ≈ free; PTown = MassGIS adapter.
+3. **Re-point the municipal wells (Tier ②)** — the new town's assessor parcels + tree census. ⭐ **A town in a state the kit knows takes them from its STATE** (`cartograph/states/`: OH · MA · MO, 2026-10-05) and declares only its selector; a new STATE is the engineering task (one record: its wells + its code vocabulary), not a new town. ▶ `node checks/claims-a-state-gives-its-towns-their-wells.mjs`
 4. **Author SHAPE debt to zero** — survey widths; drive curated-centerline count toward 0 (kit invariant).
 5. **Content bootstrap (Tier ③, the long pole)** — LLM-assisted listing compilation + description drafting; handmade verification; per-building ledger (§5.1) for building metadata. Photos: hand-source/shoot.
 6. **Author the look** — tree palette + color, Looks/Stage, any cloud-condition tuning.
