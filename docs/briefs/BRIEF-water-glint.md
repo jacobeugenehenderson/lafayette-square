@@ -1,8 +1,8 @@
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: no
-written: 2026-09-20 · the GLINT half landed and was retired 2026-09-21; what remains is the WAVES arc
-evict-when: RULING: Jacob's eye on huron's lake with Gerstner crests and Jacobian foam, at the crossover hour, from a LOW camera angle. There is no mechanical proxy for "the waves read as graphic"; the acceptance is the operator's view.
+written: 2026-09-20 · the GLINT half landed and was retired 2026-09-21; what remains is the WAVES arc · 2026-10-04: the Huron punch list's six water items lead (Jacob)
+evict-when: the six punch-list items are each measured before and after on Huron and Provincetown and Jacob has eyed them; THEN, for the waves arc, RULING: Jacob's eye on huron's lake with Gerstner crests and Jacobian foam, at the crossover hour, from a LOW camera angle. There is no mechanical proxy for "the waves read as graphic"; the acceptance is the operator's view.
 -->
 
 # BRIEF — The waves, and the weather they make visible
@@ -10,6 +10,44 @@ evict-when: RULING: Jacob's eye on huron's lake with Gerstner crests and Jacobia
 > ⚠️ **THIS FILE'S ORIGINAL SUBJECT — THE GLINT — HAS LANDED. The filename is kept so the
 > commit record's citations of "the glint brief" still resolve.** What remains below is the
 > arc that was recorded here as downstream direction and **was never started**.
+
+## ⭐ FIRST — THE HURON PUNCH LIST'S WATER (Jacob, 2026-10-04). Do this before the waves arc below.
+
+**You are the dispatched agent. Name yourself: one word, yours, not one a RUNNING session holds** (`ListAgents`; ask
+Jacob to `/rename`). **Agent: FRESH** (the glint's builders are gone). Boz the Younger wrote this section.
+
+**The six items, verbatim:** *"Reduce excessive/noisy horizon shimmer. Preserve dramatic but believable distant sparkle.
+Add/improve true foreground glint. Remove visible quantization from foreground ripples. Increase opacity so water remains
+convincingly blue to shore. Add/adjust water color bias so water can be corrected independently of sky color."*
+
+**Measure each one before you change it, and say what you measured.** None is measured today. Surface: **Preview** on
+Huron and Provincetown, near and far, at more than one time of day; Stage mounts the **same** `WaterSurface` (read its
+header comment: two materials that "happen to agree" already cost an evening). ⛔ "Looks better" is not a measurement;
+a before/after capture at fixed cameras is.
+
+| item | where it lives today (read by Boz; confirm) |
+|---|---|
+| horizon shimmer · distant sparkle | specular antialiasing for sub-pixel waves (`src/components/waterMaterial.js`, the comment after `SWELL_STEEP`) · `GLITTER_OCTAVES` :127 · Cox–Munk `coxMunkSlopeVariance` :187, `maxRoughnessForWind` :233, `slopeScaleForWind` :243 · the horizon fade :368, :729 |
+| foreground glint | the specular lobe vs the slope distribution (the glint half, landed — summary below) · `uGlint` :329 |
+| ripple quantization | the value-noise lattice note (`waterMaterial.js` ~:258: *"value noise shows its cell borders in its slope"*) · `wCrest` :682 |
+| opacity to shore | `opacity: 0.78` :394 · ripple alpha 0.72–0.88 :709 · the visibility fade `wSeen` :721 · `deepSeeThrough` (`WATER_LOOK_DEFAULTS` :311) |
+| colour bias independent of the sky | body colours `uBodyDeep/Mid/Shallow` :636–638 (`makeWaterMaterial` :313, `bodyColors`) · the sky reaches the water through the reflection (`uBand*`, `WaterSurface.jsx` :95–100) |
+| where a town authors water | Stage › Surfaces › Water (`src/cartograph/CartographSurfaces.jsx` :661, `clarity` / `deepSeeThrough`) → `design.json#surfaces.params.water` (`useCartographStore.js` :799) |
+
+⚠️ **The code argues against one item, and Jacob has now asked for it.** The colour comment (`waterMaterial.js`
+~:630) says per-town water colour is *"a CALLER PARAMETER with a sane default, never a new operator knob."* Jacob's
+2026-10-04 ask is a colour bias the operator sets, independent of the sky. ⇒ His ask is the design; the comment is what
+changes (`CLAUDE.md`: *the override is the product*). Build the bias as a Water row beside `clarity`, with a neutral default,
+and **remove** the comment's ruling in the same commit.
+
+⛔ **Bounds:** the water material and its Water rows only. **Shingle** holds the shore median (ground, revetment, bed);
+the water's edge is shared ground, so agree with Shingle before touching anything at the shoreline. No bake needed for a
+shader change; no pour. Commit only your paths; three-part fix; registers `cartograph/OPERATIONS.md` (Water knobs),
+`cartograph/FEATURES.md`. LS's pond is the control: it must come out unchanged unless Jacob says otherwise.
+
+**Confirm-then-build:** measure all six, tell Jacob what you found, and stop if the code contradicts this.
+
+---
 
 ## ✅ THE GLINT HALF, LANDED 2026-09-20/21 — compressed to its outcome
 

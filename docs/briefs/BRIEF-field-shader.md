@@ -46,8 +46,9 @@ evict-when: huron's fields play the season — dirt → tilled rows → sprouts 
 > ✅ **The surface cycle is built and baked on huron:** `crop` in `surfaces.mjs` (dates `f-usda-corn-grain-dates-{state}`,
 > spacing `f-ars-corn-row-traditional`, ridge `f-nrcs-346-ridge-min-height`; `growFrac`/`headlandM` authored), field ids in
 > the ground bake (`src/lib/fieldAxis.js`), the albedo + relief in `grassMaterial.js`, `greenhouse` its own class.
-> ▶ `node checks/claims-crop-rows-derived-per-field.mjs` (mutation-tested each run). ⚠️ A "field" is a FACE: huron has
-> 9, up to 179 ha — OSM's farmland polygons are the finer unit, not built. **OPEN: the plant impostors** · Jacob's eye.
+> ▶ `node checks/claims-crop-rows-derived-per-field.mjs` (mutation-tested each run). ⚠️ A "field" is a FACE (the check prints the count;
+> OSM's farmland polygons are the finer unit, not built). **OPEN: Jacob's eye only** — the plants moved to `BRIEF-botanica.md`
+> (PARKED) by the 2026-09-26 ruling above. *(Boz the Younger, 2026-10-04: the check is green, 6 fields on 6 axes.)*
 
 ---
 
