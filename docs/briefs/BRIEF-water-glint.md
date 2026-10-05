@@ -30,7 +30,7 @@ a before/after capture at fixed cameras is.
 | horizon shimmer · distant sparkle | specular antialiasing for sub-pixel waves (`src/components/waterMaterial.js`, the comment after `SWELL_STEEP`) · `GLITTER_OCTAVES` :127 · Cox–Munk `coxMunkSlopeVariance` :187, `maxRoughnessForWind` :233, `slopeScaleForWind` :243 · the horizon fade :368, :729 |
 | foreground glint | the specular lobe vs the slope distribution (the glint half, landed — summary below) · `uGlint` :329 |
 | ripple quantization | the value-noise lattice note (`waterMaterial.js` ~:258: *"value noise shows its cell borders in its slope"*) · `wCrest` :682 |
-| opacity to shore | `opacity: 0.78` :394 · ripple alpha 0.72–0.88 :709 · the visibility fade `wSeen` :721 · `deepSeeThrough` (`WATER_LOOK_DEFAULTS` :311) |
+| opacity to shore | ripple alpha 0.72–0.88 · the depth law `a·d/V` and `wSeen` (the `uVisibleM` block) · `deepSeeThrough`. ⛔ The material's `opacity: 0.78` / `color` are DEAD — the patch writes `diffuseColor` outright |
 | colour bias independent of the sky | body colours `uBodyDeep/Mid/Shallow` :636–638 (`makeWaterMaterial` :313, `bodyColors`) · the sky reaches the water through the reflection (`uBand*`, `WaterSurface.jsx` :95–100) |
 | where a town authors water | Stage › Surfaces › Water (`src/cartograph/CartographSurfaces.jsx` :661, `clarity` / `deepSeeThrough`) → `design.json#surfaces.params.water` (`useCartographStore.js` :799) |
 
@@ -46,6 +46,27 @@ shader change; no pour. Commit only your paths; three-part fix; registers `carto
 `cartograph/FEATURES.md`. LS's pond is the control: it must come out unchanged unless Jacob says otherwise.
 
 **Confirm-then-build:** measure all six, tell Jacob what you found, and stop if the code contradicts this.
+
+**MEASURED 2026-10-04 (Ripple) — nothing landed.** Harness + numbers: `scratch/water-measure/` (`run.mjs` fixed cameras on
+Town · `analyze.mjs`/`compare.mjs` bands · `opacity.mjs` · `quant.mjs` + `quant-control.mjs`). Per item:
+- **shimmer / distant sparkle** — ONE layer carries both: the sky flecks, a per-pixel slope clip with no footprint filter
+  (`SPEC_AA_K` reaches only the PBR lobe). Flecks off (huron noon, 60 m eye): 1–3 km speckle 7.72→1.90, flicker
+  1.76→0.36, bright duty 6.5%→0.5%. ⇒ filter to the pixel footprint, never delete.
+- **foreground glint** — at low sun the path is one lobe (largest blob 91% of the bright area); post off → 29.5%→0.01%
+  bright: it is BLOOM over a weak reflection. Glint layer off barely moves it. Cause of the weakness not established.
+- **quantization (Jacob: "grid")** — each glitter octave's |slope| varies 1.37× with position in its value-noise cell; stack
+  1.24×; lattice-free control 1.05. Two offset lattices/octave → 1.13, three → 1.10. Gradient noise is worse (1.49–1.75).
+  ⛔ give the glitter its own noise: LS's pond reads `wNoise` (body ramp, caustics) and `glint: 0` does not protect it.
+- **opacity to shore** — the depth law is linear: ≥95% of water within 25 m of shore has alpha < 0.5 (huron, PT at MHW);
+  PT at MLLW is under 0.8 EVERYWHERE (BlueTopo depth never reaches V). ⭐ And normal blending multiplied the SURFACE
+  (reflection, glints) by that alpha: in 0.25 m of water it drew at ~8%, so shallows read as bare sand (Jacob's screenshot).
+- **colour bias** — Jacob ruled it a small LEVELS control (black + grey point), tone not hue, few knobs.
+- **Tried and PULLED (Jacob: "pull Ripple's water")**, kept in `scratch/water-measure/staged/landed-v2/`: surface at full
+  strength over the depth-alpha body (premultiplied) + a 3 cm wetness gate at the waterline + the Levels bar. Over sand it
+  read MILKY — the sky was ADDED over an undimmed bed — and Levels then only peeled the water back to sand (PT 60–250 m:
+  200.7 → 186 vs 183.8 before). ▶ Untested next step: the Fresnel partition — the bed loses what the surface reflects,
+  alpha' = 1 − (1 − a)(1 − F) (probe `fresnelPart` in `scratch/water-measure/water.jsx`). ⚠️ The wetness gate reads the
+  5 m baked terrain; Shingle's fill stands at 1 m lidar — they can disagree at the waterline (unmeasured).
 
 ---
 
