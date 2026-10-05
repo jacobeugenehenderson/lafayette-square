@@ -70,7 +70,7 @@
  *   bakeLastMs       the slab's re-read key (default: its bakedAt) — src/lib/slabUrl.js
  *   layers           visibility, default all on: ground buildings trees park lamps setPieces neon
  *                    labels sky clouds fog shadows post · and one DIAGNOSTIC, default OFF (true to show):
- *                    shoreMedian — the shore median as a solid region with the revetment hidden (components/ShoreMedian.jsx)
+ *                    shoreMedian — the shore median as a solid region with its treatments (fill, revetment) hidden
  *   postFx           Preview's per-pass inspection matrix ({ toggles })
  *   overrides        Stage's live authoring channels (see OVERRIDE_KEYS) — an operator drag shows
  *                    without a bake
@@ -131,6 +131,7 @@ import Terrain from './Terrain'
 import BakedGround from './BakedGround.jsx'
 import SlabRevetment from './SlabRevetment.jsx'
 import ShoreMedian from './ShoreMedian.jsx'
+import ShoreFill from './ShoreFill.jsx'
 import LafayetteScene from './LafayetteScene'
 import SlabBuildings from './SlabBuildings'
 import CityModel from './CityModel'
@@ -534,8 +535,12 @@ export default function Town({
       <Suspense fallback={null}>
         <group name="town:ground" visible={on('ground')}>
           <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
-          {/* The shore median diagnostic shows the region with every treatment OFF, so the revetment hides while it is on. */}
-          <group visible={!on('shoreMedian')}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary></group>
+          {/* The shore's treatments: the median's fill and the revetment on it. The shore median diagnostic shows the region
+              with every treatment OFF, so both hide while it is on. */}
+          <group visible={!on('shoreMedian')}>
+            <R3FErrorBoundary name="ShoreFill"><ShoreFill lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
+            <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
+          </group>
           {on('shoreMedian') && <R3FErrorBoundary name="ShoreMedian"><ShoreMedian lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
           <DrawnAnchor id="ground" />
         </group>

@@ -180,7 +180,7 @@ const SCENE_LAYERS = [
 ]
 // Diagnostics: not part of the shipped render, so they start OFF (the one exception to 'every toggle starts on').
 const DIAG_LAYERS = [
-  ['shoreMedian', 'Shore median (revetment hidden)'],
+  ['shoreMedian', 'Shore median (treatments hidden)'],
 ]
 const FX_LAYERS = [
   ['ao',     'N8AO'],

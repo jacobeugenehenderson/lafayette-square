@@ -979,7 +979,7 @@ function ShoreMedianSwitch() {
   return (
     <label className="flex items-center gap-2 text-xs" style={{ cursor: 'pointer' }}>
       <input type="checkbox" checked={on} onChange={(e) => set(e.target.checked)} />
-      Shore median (revetment hidden)
+      Shore median (treatments hidden)
     </label>
   )
 }

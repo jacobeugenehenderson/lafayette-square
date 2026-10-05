@@ -31,7 +31,10 @@
 
 import * as THREE from 'three'
 
-export function makeRevetmentMaterial({ block = 0.75, color = '#8d8b86', waterY = 0, bandH = 1.0 } = {}) {
+/** The revetment's stone colour — one copy, read by the shore median's fill (ShoreFill.jsx) for its coarse end. */
+export const REVETMENT_STONE_COLOR = '#8d8b86'
+
+export function makeRevetmentMaterial({ block = 0.75, color = REVETMENT_STONE_COLOR, waterY = 0, bandH = 1.0 } = {}) {
   const uniforms = {
     uBlock: { value: block },
     uDetail: { value: 1 },      // 0 = shader detail off, for the A/B in the harness

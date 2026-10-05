@@ -74,7 +74,9 @@ const geom = (p, c) => {
   return g
 }
 
-export default function ShoreMedian({ lookId, bakeLastMs }) {
+/** The baked median, fetched once per bake. `warnAbsent`: the diagnostic says so when a town has none (the operator
+ *  turned it on to look); the shipped fill stays quiet, because an inland town has none by design. */
+export function useShoreMedianDoc(lookId, bakeLastMs, { warnAbsent = false } = {}) {
   const [doc, setDoc] = useState(null)
   useEffect(() => {
     if (!lookId) return
@@ -83,15 +85,19 @@ export default function ShoreMedian({ lookId, bakeLastMs }) {
       .then(r => {
         const kind = revetmentResponseKind(r.status, r.headers.get('content-type'))
         if (kind === 'present') return r.json()
-        // ⛔ An inland town writes none, and that is normal — but the operator turned this layer ON to look, so say it.
-        if (kind === 'absent') { console.warn(`[ShoreMedian] ${lookId}: no shore-median.json — an inland town, or one not baked since the median step landed. ▶ node cartograph/bake-shore-median.mjs --scene=<id>`); return null }
+        if (kind === 'absent') { if (warnAbsent) console.warn(`[ShoreMedian] ${lookId}: no shore-median.json — an inland town, or one not baked since the median step landed. ▶ node cartograph/bake-shore-median.mjs --scene=<id>`); return null }
         if (kind === 'unverifiable') { console.warn(`[ShoreMedian] ${lookId}: the server answered ${r.status} '${r.headers.get('content-type')}' — not the artifact, and NOT proof the town has none.`); return null }
         throw new Error(`HTTP ${r.status}`)
       })
       .then(d => { if (!dead) setDoc(d) })
       .catch(e => console.error(`[ShoreMedian] ${lookId}: FAILED to load shore-median.json —`, e))
     return () => { dead = true }
-  }, [lookId, bakeLastMs])
+  }, [lookId, bakeLastMs, warnAbsent])
+  return doc
+}
+
+export default function ShoreMedian({ lookId, bakeLastMs }) {
+  const doc = useShoreMedianDoc(lookId, bakeLastMs, { warnAbsent: true })
 
   const built = useMemo(() => {
     if (!doc) return null

@@ -35,6 +35,8 @@
  *   `wetSideOf`'s own kinds. Each is counted in metres of drawn shore and printed every bake.
  *
  *   node cartograph/bake-shore-median.mjs --scene=<id> [--look=<id>] [--out=<dir>]
+ * Per face, per station: xs/zs (on the drawn shore) · ex/ez (the other end) · w (metres between) · k (KINDS index) ·
+ * h (lidar metres above the datum at the station) · he (at the other end: the waterline, or the last lidar value read).
  * Writes public/baked/<look>/shore-median.json (or <dir>/shore-median.json). Reads the network (range requests) when
  * the town's elevation is a URL list, as bake-terrain does.
  */
@@ -193,7 +195,7 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
         const s = f.st[k]
         const h0 = at(s.x, s.z)
         s.h = h0
-        if (!Number.isFinite(h0)) { s.kind = 'no-lidar'; s.w = 0; continue }
+        if (!Number.isFinite(h0)) { s.kind = 'no-lidar'; s.w = 0; s.he = NaN; continue }
         const dry = h0 > ABOVE_WATER_M
         // dry: the lidar ground runs into the drawn water — walk waterward until wet. wet: walk landward until dry.
         const dir = dry ? 1 : -1
@@ -201,19 +203,19 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
         const bound = dry ? s.boundSea : s.boundLand
         for (let d = stationM; d <= bound + 1e-9; d += stationM) {
           const v = at(s.x + dir * s.nx * d, s.z + dir * s.nz * d)
-          if (!Number.isFinite(v)) { s.kind = 'lidar-ends'; s.w = d - stationM; found = true; break }
+          if (!Number.isFinite(v)) { s.kind = 'lidar-ends'; s.w = d - stationM; s.he = prev; found = true; break }
           // ⛔ A waterward walk ends where the DRAWN water ends: past it is drawn land, and the median cannot reach
           // beyond the water it belongs to. The lidar showed no water across this drawn water — say so, by name.
-          if (dry && !inWater(s.x + s.nx * d, s.z + s.nz * d)) { s.kind = 'drawn-water-dry'; s.w = d - stationM; found = true; break }
+          if (dry && !inWater(s.x + s.nx * d, s.z + s.nz * d)) { s.kind = 'drawn-water-dry'; s.w = d - stationM; s.he = prev; found = true; break }
           if ((v > ABOVE_WATER_M) !== dry) {
             // the crossing of ABOVE_WATER_M between the two samples, linearly — the waterline to a fraction of a pixel
             const t = (prev - ABOVE_WATER_M) / ((prev - v) || 1e-9)
             s.w = d - stationM + Math.max(0, Math.min(1, t)) * stationM
-            s.kind = dry ? 'seaward' : 'landward'; found = true; break
+            s.kind = dry ? 'seaward' : 'landward'; s.he = ABOVE_WATER_M; found = true; break
           }
           prev = v
         }
-        if (!found) { s.kind = 'no-waterline'; s.w = 0 }
+        if (!found) { s.kind = 'no-waterline'; s.w = 0; s.he = NaN }
         s.dir = dir
       }
       win.length = 0
@@ -227,17 +229,17 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   const widths = []
   let shoreM = 0
   const outFaces = faces.map(f => {
-    const n = f.st.length, xs = [], zs = [], ex = [], ez = [], w = [], k = [], h = []
+    const n = f.st.length, xs = [], zs = [], ex = [], ez = [], w = [], k = [], h = [], he = []
     for (let i = 0; i < n; i++) {
       const s = f.st[i]
       const own = ((i ? Math.hypot(s.x - f.st[i - 1].x, s.z - f.st[i - 1].z) : 0) + (i < n - 1 ? Math.hypot(f.st[i + 1].x - s.x, f.st[i + 1].z - s.z) : 0)) / 2
       shoreM += own; byKindM[s.kind] += own
       if (s.kind === 'seaward' || s.kind === 'landward') widths.push([s.w, own])
       const dir = s.dir || 1
-      xs.push(r2(s.x)); zs.push(r2(s.z)); w.push(r2(s.w)); k.push(KINDS.indexOf(s.kind)); h.push(Number.isFinite(s.h) ? r2(s.h) : null)
+      xs.push(r2(s.x)); zs.push(r2(s.z)); w.push(r2(s.w)); k.push(KINDS.indexOf(s.kind)); h.push(Number.isFinite(s.h) ? r2(s.h) : null); he.push(Number.isFinite(s.he) ? r2(s.he) : null)
       ex.push(r2(s.x + dir * s.nx * s.w)); ez.push(r2(s.z + dir * s.nz * s.w))
     }
-    return { run: f.run, side: f.side, xs, zs, ex, ez, w, k, h }
+    return { run: f.run, side: f.side, xs, zs, ex, ez, w, k, h, he }
   })
   // Width by metres of drawn shore, at the finest level.
   widths.sort((p, q) => p[0] - q[0])
@@ -265,7 +267,9 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   console.log(`  ⭐ MEDIAN: ${km(shoreM)} km of drawn shore · width p50 ${out.totals.widthP50M} m · p90 ${out.totals.widthP90M} m · max ${out.totals.widthMaxM} m`)
   console.log(`    lidar ground runs into the drawn water along ${km(byKindM.seaward)} km · lidar water reaches behind the drawn shore along ${km(byKindM.landward)} km`)
   console.log(`    ${histogram.map(b => `${b.fromM}–${b.toM ?? '∞'} m: ${km(b.shoreM)} km`).join(' · ')}`)
-  for (const k of ['no-waterline', 'lidar-ends', 'no-lidar', 'drawn-water-dry']) if (byKindM[k] > 0) console.warn(`  ⛔ ${km(byKindM[k])} km of drawn shore: ${k} — the median is NOT KNOWN there`)
+  for (const k of ['no-waterline', 'no-lidar']) if (byKindM[k] > 0) console.warn(`  ⛔ ${km(byKindM[k])} km of drawn shore: ${k} — the median is NOT KNOWN there`)
+  if (byKindM['lidar-ends'] > 0) console.warn(`  ⚠️ ${km(byKindM['lidar-ends'])} km of drawn shore: lidar-ends — the median runs only as far as the lidar does`)
+  if (byKindM['drawn-water-dry'] > 0) console.warn(`  ⚠️ ${km(byKindM['drawn-water-dry'])} km of drawn shore: drawn-water-dry — the lidar shows ground across the whole drawn water there; the median runs to its far edge`)
   for (const r of refused) console.warn(`  ⛔ refused run #${r.run} (${r.lengthM} m): ${r.kind} — ${r.why}`)
   if (outsideM > 0) console.log(`    ${km(outsideM)} km of shoreline outside the drawing (beyond the ${Math.round(discR)} m disc) — not walked`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : wrote ? 'wrote' : 'unchanged'} ${outPath} (${(JSON.stringify(out).length / 1024).toFixed(0)} KB)`)
