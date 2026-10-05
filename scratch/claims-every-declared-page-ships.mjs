@@ -43,6 +43,10 @@ if (!/\/\\\.ktx2\(\$\|\\\?\)\/i\.test\(url\)/.test(LOADER_SRC.replace(/\s+/g, ''
 // Bytes-per-pixel once resident. PNG is a FILE format: it decompresses to raw RGBA
 // on upload. A transcoded page lands in a 4×4 block format and stays there.
 const BPP = { '.png': 4, '.ktx2': 1 }
+// ⭐ The ONE page that is PNG by design (2026-10-04, BRIEF-hero-card-depth option 2): a hero layer's AO+DEPTH page
+// (`aoDepth`), kept uncompressed because block codecs lose metres of depth, and uploaded as RG8 — 2 bytes/px.
+// It is named by the manifest's own flag, never by a path pattern, and every OTHER declared .png still fails.
+const RG8_BPP = 2
 const MIP = 1.333   // the full chain
 
 function pngDims(p) {
@@ -58,6 +62,11 @@ const tracked = new Set(
     .toString().split('\n').filter(Boolean),
 )
 
+function aoDepthPages(m) {
+  const s = new Set()
+  for (const rec of Object.values(m.heroImpostorBySpecies || {})) for (const l of rec.layers || []) if (l.aoDepth && l.ao) s.add(l.ao)
+  return s
+}
 function* declaredPages(m) {
   for (const rec of Object.values(m.heroImpostorBySpecies || {})) for (const l of rec.layers || []) { yield l.albedo; yield l.ao }
   for (const rec of Object.values(m.overheadBySpecies || {})) for (const b of rec.bands || []) { yield b.albedo; yield b.ao }
@@ -78,11 +87,12 @@ for (const look of looks) {
   if (!pages.length) { console.log(`  ·  ${look.padEnd(24)} declares no impostor pages`); continue }
 
   const gone = [], wontShip = []
+  const rg = aoDepthPages(m)
   let vram = 0, byExt = {}
   for (const url of pages) {
     const rel = path.join('public/baked', look, url.replace(/^\//, ''))
     const abs = path.join(ROOT, rel)
-    const ext = path.extname(url).toLowerCase()
+    const ext = rg.has(url) ? '.png(ao+depth RG8)' : path.extname(url).toLowerCase()
     byExt[ext] = (byExt[ext] || 0) + 1
     if (!existsSync(abs)) { gone.push(url); continue }
     if (!tracked.has(rel)) wontShip.push(url)
@@ -90,7 +100,7 @@ for (const look of looks) {
     // the honest source for pixel count and is still on disk beside it.
     const png = ext === '.ktx2' ? abs.replace(/\.ktx2$/i, '.png') : abs
     const d = existsSync(png) ? pngDims(png) : null
-    if (d) vram += d[0] * d[1] * (BPP[ext] ?? 4) * MIP
+    if (d) vram += d[0] * d[1] * (rg.has(url) ? RG8_BPP : (BPP[ext] ?? 4)) * MIP
   }
 
   const mb = (vram / 1e6).toFixed(0)
@@ -136,7 +146,7 @@ for (const look of looks) {
     failed++
     let heavy = 0
     for (const url of pages) {
-      if (path.extname(url).toLowerCase() !== '.png') continue
+      if (path.extname(url).toLowerCase() !== '.png' || rg.has(url)) continue
       const abs = path.join(ROOT, 'public/baked', look, url.replace(/^\//, ''))
       const d = existsSync(abs) ? pngDims(abs) : null
       if (d) heavy += d[0] * d[1] * 3 * MIP   // the 4 bytes it costs now vs the 1 it would
