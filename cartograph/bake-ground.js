@@ -962,7 +962,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     if (existsSync(medPath)) {
       const doc = JSON.parse(readFileSync(medPath, 'utf-8'))
       const here = shoreFingerprint(shapeNow)
-      if (doc.shoreFingerprint !== here) {
+      // ⛔ A median from an older bake-shore-median (another version) is STALE in the same way: this pass runs before the
+      // 'shore-median' step rewrites it, so it paints nothing and says so rather than throwing (it threw once, 2026-10-05,
+      // and stopped huron's bake at its first ground pass). 'ground-shore' repaints from the fresh one.
+      if (doc.version !== 2) {
+        console.warn(`  ⛔ SHORE: shore-median.json is version ${doc.version}, this bake reads v2 (the traced waterline) — NO shore sand painted. ▶ the 'shore-median' step rewrites it; 'ground-shore' repaints.`)
+      } else if (doc.shoreFingerprint !== here) {
         console.warn(`  ⛔ SHORE: shore-median.json was walked on another shoreline (${doc.shoreFingerprint ?? 'unstamped'}, this bake writes ${here}) — NO shore sand painted. ▶ the 'shore-median' step re-walks it; 'ground-shore' repaints.`)
       } else {
         const s = shoreMedianItems(doc)
