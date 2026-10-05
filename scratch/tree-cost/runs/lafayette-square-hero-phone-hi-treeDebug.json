@@ -32,7 +32,7 @@
    "f": {
     "tris": 789189,
     "calls": 173,
-    "gpuMs": 4.158905625,
+    "gpuMs": 5.947573555555555,
     "target": "phone-hi"
    }
   },
@@ -70,9 +70,9 @@
     }
    },
    "f": {
-    "tris": 5992419,
-    "calls": 248,
-    "gpuMs": 10.558707814814815,
+    "tris": 5983703,
+    "calls": 218,
+    "gpuMs": 8.1048537,
     "target": "phone-hi"
    }
   },
@@ -122,8 +122,8 @@
    },
    "f": {
     "tris": 5992407,
-    "calls": 247,
-    "gpuMs": 13.1975302,
+    "calls": 250,
+    "gpuMs": 13.952667633333332,
     "target": "phone-hi"
    }
   },
@@ -172,9 +172,9 @@
     }
    },
    "f": {
-    "tris": 5992395,
-    "calls": 246,
-    "gpuMs": 13.6828161,
+    "tris": 5992419,
+    "calls": 251,
+    "gpuMs": 13.610117499999998,
     "target": "phone-hi"
    }
   },
@@ -223,9 +223,9 @@
     }
    },
    "f": {
-    "tris": 5992383,
-    "calls": 245,
-    "gpuMs": 13.644111933333335,
+    "tris": 5992419,
+    "calls": 251,
+    "gpuMs": 13.378900999999997,
     "target": "phone-hi"
    }
   },
@@ -274,9 +274,9 @@
     }
    },
    "f": {
-    "tris": 5992383,
-    "calls": 245,
-    "gpuMs": 13.741809033333334,
+    "tris": 5992419,
+    "calls": 251,
+    "gpuMs": 15.393306466666669,
     "target": "phone-hi"
    }
   },
@@ -325,9 +325,9 @@
     }
    },
    "f": {
-    "tris": 5992383,
-    "calls": 245,
-    "gpuMs": 13.7272453,
+    "tris": 5992419,
+    "calls": 251,
+    "gpuMs": 15.256455166666665,
     "target": "phone-hi"
    }
   }
@@ -378,57 +378,57 @@
  "frame0": {
   "target": "phone-hi",
   "wallMs": 16.7,
-  "calls": 239,
-  "tris": 5991673,
+  "calls": 251,
+  "tris": 5992419,
   "gpuSupported": true,
-  "gpuMs": 14.217474500000002,
-  "mainMs": 3.0733333334326742,
+  "gpuMs": 14.72064963333333,
+  "mainMs": 3.466666665673256,
   "loaf": {
    "n": 7,
-   "worstMs": 299.40000000596046,
-   "scriptMs": 1020,
+   "worstMs": 292.30000001192093,
+   "scriptMs": 1048.7999999821186,
    "last": [
     {
-     "at": 640.1000000089407,
-     "ms": 134.20000000298023,
-     "scriptMs": 129.5,
-     "blockingMs": 80.4
+     "at": 627,
+     "ms": 135.5,
+     "scriptMs": 127.20000000298023,
+     "blockingMs": 77.9
     },
     {
-     "at": 870.3000000119209,
-     "ms": 105.3999999910593,
-     "scriptMs": 99.99999998509884,
-     "blockingMs": 7.9
+     "at": 863.7000000029802,
+     "ms": 115.8999999910593,
+     "scriptMs": 111.70000000298023,
+     "blockingMs": 20.2
     },
     {
-     "at": 1180.9000000059605,
-     "ms": 53.599999994039536,
-     "scriptMs": 0,
+     "at": 1149.7999999970198,
+     "ms": 85.40000000596046,
+     "scriptMs": 34.099999994039536,
      "blockingMs": 0
     },
     {
-     "at": 1236.300000011921,
-     "ms": 124.19999998807907,
-     "scriptMs": 42.1000000089407,
+     "at": 1236.5999999940395,
+     "ms": 110.90000000596046,
+     "scriptMs": 6.0999999940395355,
      "blockingMs": 0
     },
     {
-     "at": 1593,
-     "ms": 219.40000000596046,
-     "scriptMs": 217.49999998509884,
-     "blockingMs": 168.9
+     "at": 1854.8999999910593,
+     "ms": 292.30000001192093,
+     "scriptMs": 290.70000000298023,
+     "blockingMs": 242.1
     },
     {
-     "at": 1813.7000000029802,
-     "ms": 299.40000000596046,
-     "scriptMs": 297.6000000089407,
-     "blockingMs": 248.9
+     "at": 2148.5999999940395,
+     "ms": 286.70000000298023,
+     "scriptMs": 284.69999998807907,
+     "blockingMs": 236
     },
     {
-     "at": 2131.6000000089407,
-     "ms": 237.70000000298023,
-     "scriptMs": 233.30000001192093,
-     "blockingMs": 186
+     "at": 2436.5,
+     "ms": 201.3999999910593,
+     "scriptMs": 194.29999999701977,
+     "blockingMs": 149.4
     }
    ]
   }
@@ -436,21 +436,21 @@
  "toggles": [
   {
    "label": "hero",
-   "d": 4.463664317660042,
-   "rest": 14.553891830993376,
-   "noise": 0.6241098709933768
+   "d": 2.7525408321633495,
+   "rest": 15.082981501037523,
+   "noise": 0.02994581229580362
   },
   {
    "label": "tree?",
-   "d": 8.099543594348784,
-   "rest": 14.226438587682114,
-   "noise": 0.20488389231787796
+   "d": 5.753348298850172,
+   "rest": 15.459836070662252,
+   "noise": 0.06915073066225386
   },
   {
    "label": "all trees",
-   "d": 9.378922619183221,
-   "rest": 14.794175679183223,
-   "noise": 0.1994024341501106
+   "d": 9.483901639933773,
+   "rest": 15.45113145326711,
+   "noise": 0.04592143339955701
   }
  ],
  "pixels": [
@@ -458,29 +458,29 @@
    "k": 1,
    "buf": "242x525",
    "label": "all trees @px×1",
-   "d": 9.481422655143493,
-   "rest": 14.751226328476829,
-   "noise": 0.12172212847682395
+   "d": 9.72885495766005,
+   "rest": 15.213416288785876,
+   "noise": 0.1060370754525346
   },
   {
    "k": 4.8,
    "buf": "1161x2524",
    "label": "all trees @px×4.8",
-   "d": 10.035923424900663,
-   "rest": 15.80324456490066,
-   "noise": 0.4689789649006624
+   "d": 10.774925600246085,
+   "rest": 16.18121062691275,
+   "noise": 0.24024555308725226
   }
  ],
  "grids": [],
  "log": [
   "== lafayette-square · hero · phone-hi · headless Chrome, this desktop's GPU (M1) ==",
-  "  t+ 1s  hero 162m/0.78M tex 162/162  | frame tris 0.79M gpu 4.2 [phone-hi]",
-  "  t+ 2s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 10.6 [phone-hi]",
-  "  t+ 3s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 13.2 [phone-hi]",
-  "  t+ 4s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 13.7 [phone-hi]",
-  "  t+ 5s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 13.6 [phone-hi]",
-  "  t+ 6s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 13.7 [phone-hi]",
-  "  t+ 7s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 13.7 [phone-hi]",
+  "  t+ 1s  hero 162m/0.78M tex 162/162  | frame tris 0.79M gpu 5.9 [phone-hi]",
+  "  t+ 2s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.98M gpu 8.1 [phone-hi]",
+  "  t+ 3s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 14.0 [phone-hi]",
+  "  t+ 4s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 13.6 [phone-hi]",
+  "  t+ 5s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 13.4 [phone-hi]",
+  "  t+ 6s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 15.4 [phone-hi]",
+  "  t+ 7s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 15.3 [phone-hi]",
   "  page ERR [SlabRevetment] ⛔ waterLevels: terrain.json carries no `water` record — the town has no chosen level. ▶ re-bake the terrain — the stone's wetted band has no level to stand at",
   "  page ERR [StageFog] the scene disc has no radius — Mist cannot be sized to the town, so fog is OFF",
   "  page ERR [dof] no focus point (no controls target) — depth of field is off",
@@ -488,13 +488,13 @@
   "  tier: {\"stored\":\"phone-hi\",\"target\":\"phone-hi\",\"dpr\":1,\"buf\":\"242x525\",\"logDepth\":false,\"shadows\":false}",
   "  AT REST census (shown): hero: 162 meshes, 16173 inst, 0.78M tris, tris/inst 8|128 · tree?: 1 meshes, 580 inst, 2.50M tris, tris/inst 4304 under town:lamps",
   "  hidden (mounted, not shown): hero 0m/0.00M · overhead 27m/0.03M · tree? 3m/0.05M",
-  "  frame (all passes, GpuMonitor): 239 draws · 5.99M tris · gpu 14.2 ms",
-  "  off hero               hid 162 meshes (still shown after: 0) · Δgpu 4.5 ms of 14.6 (noise ±0.6, n 150/150/151) · frame tris off 5.22M",
-  "  off tree?              hid 1 meshes (still shown after: 0) · Δgpu 8.1 ms of 14.2 (noise ±0.2, n 151/150/150) · frame tris off 1.00M",
-  "  off all trees          hid 163 meshes (still shown after: 0) · Δgpu 9.4 ms of 14.8 (noise ±0.2, n 151/150/150) · frame tris off 0.22M",
+  "  frame (all passes, GpuMonitor): 251 draws · 5.99M tris · gpu 14.7 ms",
+  "  off hero               hid 162 meshes (still shown after: 0) · Δgpu 2.8 ms of 15.1 (noise ±0.0, n 151/151/150) · frame tris off 5.22M",
+  "  off tree?              hid 1 meshes (still shown after: 0) · Δgpu 5.8 ms of 15.5 (noise ±0.1, n 151/149/150) · frame tris off 1.00M",
+  "  off all trees          hid 163 meshes (still shown after: 0) · Δgpu 9.5 ms of 15.5 (noise ±0.0, n 151/150/150) · frame tris off 0.22M",
   "  ── pixel ratio ×1 (buffer 242x525)",
-  "  off all trees @px×1    hid 163 meshes (still shown after: 0) · Δgpu 9.5 ms of 14.8 (noise ±0.1, n 151/150/150) · frame tris off 0.22M",
+  "  off all trees @px×1    hid 163 meshes (still shown after: 0) · Δgpu 9.7 ms of 15.2 (noise ±0.1, n 151/151/150) · frame tris off 0.22M",
   "  ── pixel ratio ×4.8 (buffer 1161x2524)",
-  "  off all trees @px×4.8  hid 163 meshes (still shown after: 0) · Δgpu 10.0 ms of 15.8 (noise ±0.5, n 151/150/150) · frame tris off 0.22M"
+  "  off all trees @px×4.8  hid 163 meshes (still shown after: 0) · Δgpu 10.8 ms of 16.2 (noise ±0.2, n 149/150/150) · frame tris off 0.22M"
  ]
 }

@@ -43,7 +43,9 @@ await cdp('Page.enable', {}, S); await cdp('Runtime.enable', {}, S)
 await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('preview.mode.v1', '${MODE}'); localStorage.setItem('cartograph-last-stage-shot', '${SHOT === 'street' ? 'browse' : SHOT}')` }, S)
 const js = async (expr) => { const r = await cdp('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }, S); if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 600)); return r.result?.value }
 const t0 = Date.now()
-await cdp('Page.navigate', { url: `${BASE}/preview.html?look=${TOWN}` }, S)
+// --q=treeDebug=noHeroDepth … extra URL flags (an A/B in one session)
+const Q = arg('q', '')
+await cdp('Page.navigate', { url: `${BASE}/preview.html?look=${TOWN}${Q ? '&' + Q : ''}` }, S)
 
 // In-page helpers, installed once the renderer exists.
 const HELPERS = `(() => {
@@ -188,5 +190,5 @@ if (present.includes('overhead')) {
 }
 
 const out = join(dirname(fileURLToPath(import.meta.url)), 'runs'); mkdirSync(out, { recursive: true })
-writeFileSync(join(out, `${TOWN}-${SHOT}-${MODE}.json`), JSON.stringify({ ...results, log }, null, 1))
+writeFileSync(join(out, `${TOWN}-${SHOT}-${MODE}${Q ? '-' + Q.replace(/\W+/g, '_') : ''}.json`), JSON.stringify({ ...results, log }, null, 1))
 ws.close(); cleanup(); process.exit(0)

@@ -32,7 +32,7 @@
    "f": {
     "tris": 789212,
     "calls": 188,
-    "gpuMs": 28.0328225,
+    "gpuMs": 55.0717425,
     "target": "desktop"
    }
   },
@@ -53,17 +53,6 @@
      "texTotal": 162,
      "where": []
     },
-    "overhead": {
-     "meshes": 27,
-     "shownMeshes": 0,
-     "tris": 32346,
-     "shownTris": 0,
-     "instances": 0,
-     "trisPerInst": [],
-     "texReady": 0,
-     "texTotal": 0,
-     "where": []
-    },
     "tree?": {
      "meshes": 4,
      "shownMeshes": 1,
@@ -81,9 +70,9 @@
     }
    },
    "f": {
-    "tris": 5983663,
-    "calls": 231,
-    "gpuMs": 27.4869301,
+    "tris": 8523311,
+    "calls": 394,
+    "gpuMs": 68.441555,
     "target": "desktop"
    }
   },
@@ -132,9 +121,9 @@
     }
    },
    "f": {
-    "tris": 5989130,
-    "calls": 291,
-    "gpuMs": 50.4735148,
+    "tris": 8523299,
+    "calls": 393,
+    "gpuMs": 87.99513276666666,
     "target": "desktop"
    }
   },
@@ -183,9 +172,9 @@
     }
    },
    "f": {
-    "tris": 5989130,
-    "calls": 291,
-    "gpuMs": 66.11572176666665,
+    "tris": 8523299,
+    "calls": 393,
+    "gpuMs": 104.95775356666667,
     "target": "desktop"
    }
   },
@@ -234,9 +223,9 @@
     }
    },
    "f": {
-    "tris": 5989130,
-    "calls": 291,
-    "gpuMs": 66.3405357,
+    "tris": 8523299,
+    "calls": 393,
+    "gpuMs": 109.53096193333334,
     "target": "desktop"
    }
   },
@@ -285,9 +274,9 @@
     }
    },
    "f": {
-    "tris": 5989106,
-    "calls": 289,
-    "gpuMs": 66.20713846666666,
+    "tris": 8523287,
+    "calls": 392,
+    "gpuMs": 107.93757173333331,
     "target": "desktop"
    }
   }
@@ -337,99 +326,135 @@
  },
  "frame0": {
   "target": "desktop",
-  "wallMs": 46.3,
-  "calls": 286,
-  "tris": 5988432,
+  "wallMs": 79.6,
+  "calls": 391,
+  "tris": 8523275,
   "gpuSupported": true,
-  "gpuMs": 67.00314959999999,
-  "mainMs": 4.246666666865349,
+  "gpuMs": 109.45696196666668,
+  "mainMs": 7.383333331843217,
   "loaf": {
-   "n": 14,
-   "worstMs": 397.29999999701977,
-   "scriptMs": 2022.4000000208616,
+   "n": 149,
+   "worstMs": 869,
+   "scriptMs": 3352.6999999284744,
    "last": [
     {
-     "at": 558.3000000119209,
-     "ms": 194.69999998807907,
-     "scriptMs": 182.59999999403954,
-     "blockingMs": 133.4
-    },
-    {
-     "at": 877.3000000119209,
-     "ms": 109.69999998807907,
-     "scriptMs": 106.8999999910593,
-     "blockingMs": 18.4
-    },
-    {
-     "at": 1247.1000000089407,
-     "ms": 60.8999999910593,
-     "scriptMs": 35.79999999701977,
+     "at": 12784.10000000894,
+     "ms": 86.79999999701977,
+     "scriptMs": 6.200000002980232,
      "blockingMs": 0
     },
     {
-     "at": 1864.800000011921,
-     "ms": 397.29999999701977,
-     "scriptMs": 396.70000000298023,
-     "blockingMs": 347
-    },
-    {
-     "at": 2262.300000011921,
-     "ms": 264.8999999910593,
-     "scriptMs": 263.90000000596046,
-     "blockingMs": 214.2
-    },
-    {
-     "at": 2527.2000000029802,
-     "ms": 310.40000000596046,
-     "scriptMs": 303.1000000089407,
-     "blockingMs": 257.4
-    },
-    {
-     "at": 2877.4000000059605,
-     "ms": 131,
-     "scriptMs": 104.20000000298023,
-     "blockingMs": 54.8
-    },
-    {
-     "at": 3064.7000000029802,
-     "ms": 187,
-     "scriptMs": 149.90000000596046,
-     "blockingMs": 100.6
-    },
-    {
-     "at": 3277.800000011921,
-     "ms": 128,
-     "scriptMs": 97,
-     "blockingMs": 47.9
-    },
-    {
-     "at": 3476.7000000029802,
-     "ms": 178.5,
-     "scriptMs": 151.70000000298023,
-     "blockingMs": 102.2
-    },
-    {
-     "at": 3677,
-     "ms": 85.5,
-     "scriptMs": 73.20000000298023,
-     "blockingMs": 23.8
-    },
-    {
-     "at": 3817.4000000059605,
-     "ms": 188.5,
-     "scriptMs": 146.79999999701977,
-     "blockingMs": 97.5
-    },
-    {
-     "at": 7697.9000000059605,
-     "ms": 50,
-     "scriptMs": 5.5,
+     "at": 12871.20000000298,
+     "ms": 75.90000000596046,
+     "scriptMs": 5.800000011920929,
      "blockingMs": 0
     },
     {
-     "at": 7839.9000000059605,
-     "ms": 50.5,
-     "scriptMs": 5.100000008940697,
+     "at": 12947.20000000298,
+     "ms": 75.90000000596046,
+     "scriptMs": 6,
+     "blockingMs": 0
+    },
+    {
+     "at": 13023.20000000298,
+     "ms": 73.1000000089407,
+     "scriptMs": 6.199999988079071,
+     "blockingMs": 0
+    },
+    {
+     "at": 13096.40000000596,
+     "ms": 87.09999999403954,
+     "scriptMs": 6.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 13183.5,
+     "ms": 89.1000000089407,
+     "scriptMs": 8.400000005960464,
+     "blockingMs": 0
+    },
+    {
+     "at": 13272.800000011921,
+     "ms": 74,
+     "scriptMs": 8.900000005960464,
+     "blockingMs": 0
+    },
+    {
+     "at": 13347.300000011921,
+     "ms": 75.09999999403954,
+     "scriptMs": 8.099999994039536,
+     "blockingMs": 0
+    },
+    {
+     "at": 13422.5,
+     "ms": 76.80000001192093,
+     "scriptMs": 10.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 13499.5,
+     "ms": 77.20000000298023,
+     "scriptMs": 12.599999994039536,
+     "blockingMs": 0
+    },
+    {
+     "at": 13576.90000000596,
+     "ms": 75.29999999701977,
+     "scriptMs": 9.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 13652.40000000596,
+     "ms": 73.90000000596046,
+     "scriptMs": 9.600000008940697,
+     "blockingMs": 0
+    },
+    {
+     "at": 13726.40000000596,
+     "ms": 80.59999999403954,
+     "scriptMs": 11.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 13807.20000000298,
+     "ms": 81.29999999701977,
+     "scriptMs": 10.399999991059303,
+     "blockingMs": 0
+    },
+    {
+     "at": 13888.70000000298,
+     "ms": 77.40000000596046,
+     "scriptMs": 9.700000002980232,
+     "blockingMs": 0
+    },
+    {
+     "at": 13966.20000000298,
+     "ms": 81.5,
+     "scriptMs": 11.5,
+     "blockingMs": 0
+    },
+    {
+     "at": 14047.90000000596,
+     "ms": 72.59999999403954,
+     "scriptMs": 9.899999991059303,
+     "blockingMs": 0
+    },
+    {
+     "at": 14120.60000000894,
+     "ms": 76.79999999701977,
+     "scriptMs": 9.600000008940697,
+     "blockingMs": 0
+    },
+    {
+     "at": 14197.60000000894,
+     "ms": 73.79999999701977,
+     "scriptMs": 10.200000002980232,
+     "blockingMs": 0
+    },
+    {
+     "at": 14271.60000000894,
+     "ms": 81.29999999701977,
+     "scriptMs": 11.600000008940697,
      "blockingMs": 0
     }
    ]
@@ -438,21 +463,21 @@
  "toggles": [
   {
    "label": "hero",
-   "d": 13.574940136340906,
-   "rest": 67.11220178249476,
-   "noise": 0.41402227306079453
+   "d": 24.08399348749998,
+   "rest": 108.2582481875,
+   "noise": 0.28534637499998894
   },
   {
    "label": "tree?",
-   "d": 4.926844063352668,
-   "rest": 67.78531796335268,
-   "noise": 0.4476871520319321
+   "d": 8.204610339919356,
+   "rest": 108.72749673991935,
+   "noise": 0.3541303850806514
   },
   {
    "label": "all trees",
-   "d": 17.29697485388145,
-   "rest": 66.69508644847605,
-   "noise": 0.578957910014509
+   "d": 29.602781065972238,
+   "rest": 108.04001384375,
+   "noise": 0.43300906250000537
   }
  ],
  "pixels": [
@@ -460,28 +485,20 @@
    "k": 1,
    "buf": "1600x865",
    "label": "all trees @px×1",
-   "d": 18.067527015015806,
-   "rest": 67.67862248076923,
-   "noise": 0.8674899807692285
-  },
-  {
-   "k": 0.5,
-   "buf": "800x432",
-   "label": "all trees @px×0.5",
-   "d": 17.534126042491593,
-   "rest": 67.1654044824916,
-   "noise": 0.19210940841750812
+   "d": 27.871706711647775,
+   "rest": 108.90614273437501,
+   "noise": 0.7942330156249966
   }
  ],
  "grids": [],
  "log": [
   "== lafayette-square · hero · desktop · headless Chrome, this desktop's GPU (M1) ==",
-  "  t+ 1s  hero 162m/0.78M tex 162/162  | frame tris 0.79M gpu 28.0 [desktop]",
-  "  t+ 3s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.98M gpu 27.5 [desktop]",
-  "  t+ 4s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 50.5 [desktop]",
-  "  t+ 5s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 66.1 [desktop]",
-  "  t+ 6s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 66.3 [desktop]",
-  "  t+ 7s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 5.99M gpu 66.2 [desktop]",
+  "  t+ 1s  hero 162m/0.78M tex 162/162  | frame tris 0.79M gpu 55.1 [desktop]",
+  "  t+ 3s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 8.52M gpu 68.4 [desktop]",
+  "  t+ 4s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 8.52M gpu 88.0 [desktop]",
+  "  t+ 5s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 8.52M gpu 105.0 [desktop]",
+  "  t+ 6s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 8.52M gpu 109.5 [desktop]",
+  "  t+ 7s  hero 162m/0.78M tex 162/162 · tree? 1m/2.50M tex 1/1  | frame tris 8.52M gpu 107.9 [desktop]",
   "  page ERR [SlabRevetment] ⛔ waterLevels: terrain.json carries no `water` record — the town has no chosen level. ▶ re-bake the terrain — the stone's wetted band has no level to stand at",
   "  page ERR [StageFog] the scene disc has no radius — Mist cannot be sized to the town, so fog is OFF",
   "  page ERR [dof] no focus point (no controls target) — depth of field is off",
@@ -489,13 +506,11 @@
   "  tier: {\"stored\":\"desktop\",\"target\":\"desktop\",\"dpr\":1,\"buf\":\"1600x865\",\"logDepth\":true,\"shadows\":true}",
   "  AT REST census (shown): hero: 162 meshes, 16173 inst, 0.78M tris, tris/inst 8|128 · tree?: 1 meshes, 580 inst, 2.50M tris, tris/inst 4304 under town:lamps",
   "  hidden (mounted, not shown): hero 0m/0.00M · overhead 27m/0.03M · tree? 3m/0.05M",
-  "  frame (all passes, GpuMonitor): 286 draws · 5.99M tris · gpu 67.0 ms",
-  "  off hero               hid 162 meshes (still shown after: 0) · Δgpu 13.6 ms of 67.1 (noise ±0.4, n 54/65/53) · frame tris off 5.21M",
-  "  off tree?              hid 1 meshes (still shown after: 0) · Δgpu 4.9 ms of 67.8 (noise ±0.4, n 53/60/52) · frame tris off 1.00M",
-  "  off all trees          hid 163 meshes (still shown after: 0) · Δgpu 17.3 ms of 66.7 (noise ±0.6, n 52/74/53) · frame tris off 0.22M",
+  "  frame (all passes, GpuMonitor): 391 draws · 8.52M tris · gpu 109.5 ms",
+  "  off hero               hid 162 meshes (still shown after: 0) · Δgpu 24.1 ms of 108.3 (noise ±0.3, n 32/40/32) · frame tris off 5.22M",
+  "  off tree?              hid 1 meshes (still shown after: 0) · Δgpu 8.2 ms of 108.7 (noise ±0.4, n 31/35/32) · frame tris off 1.03M",
+  "  off all trees          hid 163 meshes (still shown after: 0) · Δgpu 29.6 ms of 108.0 (noise ±0.4, n 32/45/32) · frame tris off 0.22M",
   "  ── pixel ratio ×1 (buffer 1600x865)",
-  "  off all trees @px×1    hid 163 meshes (still shown after: 0) · Δgpu 18.1 ms of 67.7 (noise ±0.9, n 52/73/52) · frame tris off 0.25M",
-  "  ── pixel ratio ×0.5 (buffer 800x432)",
-  "  off all trees @px×0.5  hid 163 meshes (still shown after: 0) · Δgpu 17.5 ms of 67.2 (noise ±0.2, n 55/75/54) · frame tris off 0.22M"
+  "  off all trees @px×1    hid 163 meshes (still shown after: 0) · Δgpu 27.9 ms of 108.9 (noise ±0.8, n 32/44/32) · frame tris off 0.26M"
  ]
 }
