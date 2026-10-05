@@ -1,5 +1,7 @@
+> **DIARY — retired 2026-10-05.** Built (Grain `4709745d`), eye-gated by Jacob ("chopping and wind look great"), then the knobs were REMOVED at his ask (`a79480ba`): every tree is an endemic rustle + the real weather at ×1; the 2 px gust floor stays wired. ▶ `node checks/claims-the-tree-wind-is-the-looks.mjs`
+
 <!-- BRIEF-STATE
-status: OPEN
+status: LANDED
 dispatched: no
 written: 2026-10-04
 evict-when: the card wind is one amplitude/pocket/frequency triple per Look, forked per shot, and `browseWindFloor`/`heroWindFloor` and the two card gains are gone; a gust reaches a visible floor of N screen pixels at each tree's own depth, and zero extra in calm; the pixel probe reads the live gains and passes on LS and Huron Browse and Hero; checks green and mutation-tested; Jacob has eyed a calm day and a gusty day in Browse and Hero.

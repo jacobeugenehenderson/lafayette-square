@@ -20,7 +20,7 @@ evict-when: every hero card writes per-pixel depth from a baked depth channel, e
 
 ## Who you are, and the bounds
 
-**Agent: WARM → Grain, after the card-wind brief** (`BRIEF-card-wind-hsb.md`). Grain built the hero and overhead cards and
+**Agent: WARM → Grain, after the card-wind brief** (`cartograph/_archive/BRIEF-card-wind-hsb-2026-10-05.md`). Grain built the hero and overhead cards and
 the Grove's capture format 6; this changes both.
 - The hero card shader, the Grove's hero capture, and the atlas packing. ⛔ No pours. **The Grove re-bake writes slabs in every
   town: Jacob's go, and a fresh page per town** (the stale-manifest fix `dcd3a3c4` is not yet proven live). Announce before a

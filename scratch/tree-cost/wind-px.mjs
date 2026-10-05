@@ -1,4 +1,4 @@
-// The card-wind GATE (BRIEF-card-wind-hsb, Grain 2026-10-04): how many screen pixels the card wind moves a crown top,
+// The card-wind GATE (cartograph/_archive/BRIEF-card-wind-hsb-2026-10-05.md, Grain 2026-10-04): how many screen pixels the card wind moves a crown top,
 // per on-screen tree, at rest-wind and at a GUST PEAK (windGustAt = 1 ⇒ felt = base + gust amplitude).
 // ⭐ READS THE LIVE VALUES: the Tree Wind uniforms off each compiled card material and the wind state the sheet feeds
 // (uWindBaseSpeed / uWindGustAmp), never copied gains. The one thing mirrored is the shader's own arithmetic,
