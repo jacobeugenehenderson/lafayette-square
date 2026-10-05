@@ -2046,6 +2046,8 @@ const HERO_STAMP_FRAG = `
          // space, moves the fragment's view z; it is then written in the depth space this surface runs: three's own log
          // formula on desktop (logarithmicDepthBuffer), the projection on phones (linear). uHeroDepthHalfM 0 = a page
          // with no depth → offset 0, i.e. exactly the card's plane. ⛔ Written on EVERY path (a partial write is undefined).
+         // ?treeDebug=noHeroDepth compiles it out entirely — the A/B for what writing depth costs (dev instrument only).
+         #ifndef HERO_NO_DEPTH
          {
            float hdTree  = (texture2D(uAO, vMapUv).g - 0.5) * 2.0 * uHeroDepthHalfM;
            float hdOff   = uHeroDepthHalfM > 0.0 ? (hdTree - vHeroCardZ) * vHeroScale : 0.0;
@@ -2056,6 +2058,7 @@ const HERO_STAMP_FRAG = `
              gl_FragDepth = 0.5 * (projectionMatrix[2][2] * hdViewZ + projectionMatrix[3][2]) / (-hdViewZ) + 0.5;
            #endif
          }
+         #endif
          float ovAO = texture2D(uAO, vMapUv).r;
          vec2  ovD  = (vMapUv * 2.0 - 1.0) * uCardBulge;
          float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
@@ -2259,6 +2262,10 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false, depth
     // set) but gated to 1 only on the woody layer — a leaf shell has no joint to make.
     shader.uniforms.uCardIsBark      = { value: isBark ? 1 : 0 }
     shader.uniforms.uHeroDepthHalfM  = { value: depthHalfM || 0 }
+    // Dev instrument (?treeDebug=noHeroDepth): no depth write at all, to measure what it costs. Never in production.
+    if (typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('treeDebug') || '').split(',').includes('noHeroDepth')) {
+      shader.defines = { ...(shader.defines || {}), HERO_NO_DEPTH: '' }
+    }
     shader.uniforms.uGroundColorMap  = _groundColor.mapUniform
     shader.uniforms.uGroundColorMin  = _groundColor.minUniform
     shader.uniforms.uGroundColorSpan = _groundColor.spanUniform
