@@ -150,15 +150,6 @@ let _mounted = 0
 /** @internal — <WindSheet> marks itself mounted so a consumer with no sheet fails loudly instead of reading zeros. */
 export function _markWindSheetMounted(delta) { _mounted += delta }
 
-/**
- * ⭐ THE VISIBLE FLOOR (Jacob, 2026-10-04: "we have to set a visible floor"; "my eye is the gate for now … just set an
- * arbitrary floor"). Where a gust passes at its peak, the motion it adds is at least this many SCREEN PIXELS (scaled by
- * windGustAt, so calm trees are not pushed). ⚠️ ARBITRARY BY RULING, not measured or derived; Jacob tunes the response
- * by eye (Amplitude · Pocket · Frequency). In pixels, so it means the same in every shot and town. Measured
- * 2026-10-04 on LS desktop: a gust peak added ~0.6 px (scratch/wind-sheet/px-per-shot.js).
- */
-export const WIND_VISIBLE_FLOOR_PX = 2
-
 /** windDetail's cell, metres — the flutter's wavelength (today's overhead flutter: 0.55 cycles/m ⇒ ~1.8 m). */
 export const WIND_DETAIL_CELL_M = 1.8
 /**

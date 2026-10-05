@@ -40,7 +40,7 @@ seam with Gale before either of you writes it (`ListAgents` → `SendMessage`).
    clamp((|felt| − base) / gustAmp, 0, 1). Zero in calm, full at a peak, and no threshold constant.
 **N is set by Jacob's eye.** It lives in the Look with a neutral default, never as a kit constant.
 
-## Why (Gale, `909e4867`, `scratch/wind-sheet/px-per-shot.js`)
+## Why (Gale, `909e4867`; its probe was retired once the Tree Wind landed, and the live gate is `scratch/tree-cost/wind-px.mjs`)
 
 LS Preview, desktop 1695×1659, forecast 0.8 m/s with gusts +3.0. **Computed from the live scene, not frame-measured.**
 Crown-top motion, median [p10–p90]:
