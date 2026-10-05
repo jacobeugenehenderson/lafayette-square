@@ -1,22 +1,16 @@
 /**
- * ShoreMedian — THE SHORE MEDIAN, DRAWN AS A SOLID DIAGNOSTIC REGION (BRIEF-the-shore-is-closed step 1).
+ * ShoreMedian — THE SHORE MEDIAN, DRAWN AS A SOLID DIAGNOSTIC REGION (BRIEF-the-shore-is-closed).
  *
- * The region between the DRAWN SHORELINE and the LIDAR'S WATERLINE, as `cartograph/bake-shore-median.mjs` baked it
- * (`baked/<look>/shore-median.json`). Nothing here decides a treatment; it shows the space a treatment must fill, so
- * Jacob can tell three failures apart:
- *   (a) the median is missing or wrong — the solid region, its two edges and its named failures (red) show it;
- *   (b) a treatment failed to generate — <Town> hides the revetment while this layer is on, so what shows is the
- *       region with every treatment off. Today no treatment fills the median at all: everything shown is (b);
- *   (c) a seam or precision failure — the region stands at the LIDAR's heights (station at its lidar height, the
- *       waterline at y = 0), not the 5 m baked ground's: where the baked ground covers it or it floats above the
- *       ground, the two surfaces disagree there.
+ * The region between the DRAWN SHORELINE and the TRACED LIDAR WATERLINE, as `cartograph/bake-shore-median.mjs` baked it
+ * (`baked/<look>/shore-median.json`, v2). It shows the space with every treatment OFF (<Town> hides the revetment while
+ * this layer is on; the ground's own `shore` sand is what it replaces), so Jacob can tell apart: (a) the median is
+ * missing or wrong (the region and its outline) · (b) a treatment failed (what the shipped render draws there).
  *
- * COLOURS (unlit, so they read at any hour):
- *   region — ORANGE where the lidar ground runs on into the drawn water ('seaward') · MAGENTA where the lidar water
- *            reaches in behind the drawn shore ('landward')
- *   drawn shoreline — WHITE · YELLOW where the two lines touch (width under one station: SAND, never nothing) · RED
- *            where the median is NOT KNOWN (no-waterline · lidar-ends · no-lidar — the bake prints each in metres)
- *   lidar waterline — CYAN
+ * COLOURS (unlit, drawn over everything, so they read at any hour and through the ground):
+ *   ORANGE — drawn water the lidar shows dry (the lidar ground runs on into the drawn water)
+ *   MAGENTA — drawn land the lidar shows wet (the lidar water reaches in behind the drawn shore)
+ *   CYAN — every edge of the median: the drawn shoreline where it bounds it, and the traced waterline
+ * Where the bake found NO lidar value the median is not known and is not drawn (the bake prints the hectares).
  *
  * Off by default: a diagnostic, not part of the shipped render (`<Town layers={{ shoreMedian: true }}>`).
  */
@@ -26,46 +20,8 @@ import * as THREE from 'three'
 import { slabFetch } from '../lib/slabUrl.js'
 import { revetmentResponseKind } from '../lib/revetmentFromSlab.js'
 import { terrainExag } from '../utils/terrainShader'
-
-const C = {
-  seaward: new THREE.Color('#ff7a1a'), landward: new THREE.Color('#e93cff'),
-  shore: new THREE.Color('#ffffff'), sand: new THREE.Color('#ffe14a'), unknown: new THREE.Color('#ff1e1e'),
-  waterline: new THREE.Color('#22e6ff'),
-}
-
-/** Pure: the artifact → { region, shore, waterline } position/colour arrays (metres, raw heights). Exported for checks. */
-export function shoreMedianBuffers(doc) {
-  if (!doc || doc.version !== 1) throw new Error(`ShoreMedian: unsupported shore-median.json version ${doc && doc.version}`)
-  const K = doc.kinds, sea = K.indexOf('seaward'), land = K.indexOf('landward')
-  if (sea < 0 || land < 0) throw new Error('ShoreMedian: shore-median.json names no seaward/landward kinds')
-  const stationM = doc.stationM
-  // Two neighbouring crossings further apart than one terrain grid step are not one waterline: the transects met it in
-  // different places (a bend, a channel). The line and the region BREAK there rather than bridge the gap.
-  const joinM = doc.gridM
-  if (!(stationM > 0) || !(joinM > 0)) throw new Error('ShoreMedian: shore-median.json carries no stationM/gridM')
-  const rp = [], rc = [], sp = [], sc = [], wp = []
-  for (const f of doc.faces) {
-    const n = f.xs.length
-    const known = (i) => f.k[i] === sea || f.k[i] === land
-    const hy = (i) => Number.isFinite(f.h[i]) ? f.h[i] : 0
-    for (let i = 0; i + 1 < n; i++) {
-      // The drawn shoreline, coloured by what the median is at this station.
-      const col = !known(i) ? C.unknown : f.w[i] < stationM ? C.sand : C.shore
-      sp.push(f.xs[i], hy(i), f.zs[i], f.xs[i + 1], hy(i + 1), f.zs[i + 1]); for (let k = 0; k < 2; k++) sc.push(col.r, col.g, col.b)
-      if (!known(i) || !known(i + 1)) continue
-      if (Math.hypot(f.ex[i + 1] - f.ex[i], f.ez[i + 1] - f.ez[i]) > joinM) continue
-      // The lidar waterline (y = 0 by definition).
-      wp.push(f.ex[i], 0, f.ez[i], f.ex[i + 1], 0, f.ez[i + 1])
-      // The region: a quad from the shoreline to the waterline, where both stations agree which way it lies.
-      if (f.k[i] !== f.k[i + 1]) continue
-      const c = f.k[i] === sea ? C.seaward : C.landward
-      const a = [f.xs[i], hy(i), f.zs[i]], b = [f.xs[i + 1], hy(i + 1), f.zs[i + 1]]
-      const e = [f.ex[i], 0, f.ez[i]], g = [f.ex[i + 1], 0, f.ez[i + 1]]
-      rp.push(...a, ...b, ...g, ...a, ...g, ...e); for (let k = 0; k < 6; k++) rc.push(c.r, c.g, c.b)
-    }
-  }
-  return { region: { p: rp, c: rc }, shore: { p: sp, c: sc }, waterline: { p: wp } }
-}
+import { getElevationRaw } from '../utils/elevation'
+import { shoreMedianBuffers, SHORE_MEDIAN_COLORS as C } from '../lib/shoreMedianGeometry.js'
 
 const geom = (p, c) => {
   const g = new THREE.BufferGeometry()
@@ -75,7 +31,7 @@ const geom = (p, c) => {
 }
 
 /** The baked median, fetched once per bake. `warnAbsent`: the diagnostic says so when a town has none (the operator
- *  turned it on to look); the shipped fill stays quiet, because an inland town has none by design. */
+ *  turned it on to look). */
 export function useShoreMedianDoc(lookId, bakeLastMs, { warnAbsent = false } = {}) {
   const [doc, setDoc] = useState(null)
   useEffect(() => {
@@ -101,12 +57,11 @@ export default function ShoreMedian({ lookId, bakeLastMs }) {
 
   const built = useMemo(() => {
     if (!doc) return null
-    const b = shoreMedianBuffers(doc)
+    const b = shoreMedianBuffers(doc, getElevationRaw)
     return {
-      region: geom(b.region.p, b.region.c), shore: geom(b.shore.p, b.shore.c), waterline: geom(b.waterline.p),
-      regionMat: new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-      shoreMat: new THREE.LineBasicMaterial({ vertexColors: true, depthTest: false }),
-      waterMat: new THREE.LineBasicMaterial({ color: C.waterline, depthTest: false }),
+      region: geom(b.region.p, b.region.c), edge: geom(b.edge.p),
+      regionMat: new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide, depthTest: false, transparent: true, opacity: 0.85 }),
+      edgeMat: new THREE.LineBasicMaterial({ color: C.edge, depthTest: false }),
     }
   }, [doc])
   useEffect(() => () => { if (built) for (const v of Object.values(built)) v.dispose?.() }, [built])
@@ -119,8 +74,7 @@ export default function ShoreMedian({ lookId, bakeLastMs }) {
   return (
     <group ref={setGroup} name="shoreMedian">
       <mesh geometry={built.region} material={built.regionMat} renderOrder={40} />
-      <lineSegments geometry={built.shore} material={built.shoreMat} renderOrder={41} />
-      <lineSegments geometry={built.waterline} material={built.waterMat} renderOrder={41} />
+      <lineSegments geometry={built.edge} material={built.edgeMat} renderOrder={41} />
     </group>
   )
 }

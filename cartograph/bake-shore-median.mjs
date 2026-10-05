@@ -4,45 +4,46 @@
  *
  * ⭐⭐ RULED 2026-10-04 (Jacob, BRIEF-the-shore-is-closed): the shore median is the road median's construction —
  * TWO separate lines and the ground between them, whose width varies by itself because the lines drift apart:
- *   · the DRAWN SHORELINE — the slab's `__water__` ink (`shoreRuns.mjs`), which is the drawn water's edge;
+ *   · the DRAWN SHORELINE — the drawn water's edge (`clean/map.json#layers.water`, whose edge is the slab's
+ *     `__water__` ink, `shoreRuns.mjs`);
  *   · the LIDAR'S WATERLINE — where the surveyed ground meets the water the survey was flown at (y = 0, the
- *     terrain's datum). ⛔ Not a tide level and not the town's LOW/HIGH: the water moves INSIDE the median, it
- *     never bounds it.
- * Grain is ZERO at the lidar waterline and grows toward the drawn shoreline as the gap opens; where the two lines
- * touch, the treatment is SAND, never nothing. This step builds the REGION only. No treatment is decided here.
+ *     terrain's datum). ⛔ Not a tide level and not the town's LOW/HIGH: the water moves INSIDE the median.
+ * Where the two lines touch the treatment is SAND, never nothing. This step builds the REGION only.
  *
- * ⭐ AT THE SOURCE'S FINEST LEVEL, NOT THE TERRAIN GRID (Jacob: "1 m"; "the finest detail possible"). Measured
- * 2026-10-04: on huron 62% of the drawn shore has a gap under one 5 m grid step, so the bake grid erases it. The
- * station spacing is the elevation source's own native pixel, read off the tile — never a number chosen here.
+ * ⭐⭐ THE WATERLINE IS TRACED AS ONE CONTINUOUS LINE (Jacob, 2026-10-05: "trace the lidar waterline as one continuous
+ * line across the 1 m lidar"). The first cut walked a transect out from every 1 m station and joined the landing
+ * points; neighbouring walks landed metres apart wherever the waterline bent, so the median's outer edge was a
+ * sawtooth — measured 9.5 hairpins (> 135°) per km on huron, 7 per km on provincetown, against 0 on the drawn
+ * shoreline. Retired; the line is now a contour.
  *
- * ── HOW, per station on the drawn shore ──────────────────────────────────────
- *   1. Which side of the shore is the drawn water: `wetSideOf` (shore-armour.mjs), the revetment's own reader.
- *   2. Is the lidar dry or wet AT the station (above / at-or-below the datum's own 1 cm bucket, ABOVE_WATER_M)?
- *      dry ⇒ the lidar ground runs on into the drawn water: walk WATERWARD until it is wet ('seaward').
- *      wet ⇒ the lidar water reaches in behind the drawn shore: walk LANDWARD until it is dry ('landward').
- *   3. The walk's bound is DERIVED: the same walk on the terrain grid first (the whole town read once at the grid
- *      step), then at the finest level out to that crossing plus two grid steps — the coarse grid can misplace a
- *      crossing by one cell, and bilinear reads one more. ⛔ No distance constant.
- *   The median at that station is the strip from the station to the crossing, along the shore's normal.
- *   ⚠️ A TRANSECT, not a 2-D region growth: a lidar waterline that runs off the normal (a channel entering at an
- *   angle) is met where the normal meets it. Disclosed, not hidden: the step prints how many crossings it found.
+ * ── HOW ────────────────────────────────────────────────────────────────────────
+ *   1. THE BAND — how far from the drawn shoreline to look. Along each shoreline arc the terrain grid (the whole
+ *      town read once at its own step) is walked both ways to its first change of state; the band reaches that far
+ *      plus two grid steps (the coarse grid can misplace a crossing by a cell, bilinear reads one more). ⛔ No
+ *      distance constant.
+ *   2. THE LIDAR'S WATER — inside the band, the source is sampled on a regular 1 m grid in town metres, at its own
+ *      finest level, and the water's edge (ABOVE_WATER_M: the datum's own 1 cm bucket) is traced by MARCHING SQUARES
+ *      into closed polygons — a line with sub-pixel corners, not a staircase of pixels.
+ *   3. THE MEDIAN — where the drawing and the lidar DISAGREE, inside the band, touching the drawn shoreline:
+ *        'seaward'  = drawn water the lidar shows dry (the lidar ground runs on into the drawn water)
+ *        'landward' = drawn land the lidar shows wet (the lidar water reaches in behind the drawn shore)
+ *      Disagreement that does not touch the shoreline (an inland puddle, a dry islet far out) is not this median.
+ *   ⭐ The grid step is the source's own pixel in metres (measured at the town's centre), never a number chosen here.
  *
- * ── WHAT FAILS LOUDLY, BY NAME ────────────────────────────────────────────────
- *   'drawn-water-dry' — a waterward walk crossed the whole drawn water and the lidar showed no water in it (measured
- *   on huron 2026-10-04: a drawn strip ~12 m wide standing 0.25–0.5 m above the lake, then 4 km of land) ·
- *   'no-waterline' — no crossing within the derived bound · 'lidar-ends' — the source has no value before a
- *   crossing (lidar returns nothing off open water) · 'no-lidar' — none at the station itself · refused arcs by
- *   `wetSideOf`'s own kinds. Each is counted in metres of drawn shore and printed every bake.
+ * ── WHAT IS SAID, BY NAME ──────────────────────────────────────────────────────
+ *   arcs `wetSideOf` refuses (stub · ink without water) · band area where the source has NO value (the median is
+ *   NOT KNOWN there: cut out of both regions, printed in hectares) · where the two lines drift farthest apart.
  *
  *   node cartograph/bake-shore-median.mjs --scene=<id> [--look=<id>] [--out=<dir>]
- * Per face, per station: xs/zs (on the drawn shore) · ex/ez (the other end) · w (metres between) · k (KINDS index) ·
- * h (lidar metres above the datum at the station) · he (at the other end: the waterline, or the last lidar value read).
- * Writes public/baked/<look>/shore-median.json (or <dir>/shore-median.json). Reads the network (range requests) when
- * the town's elevation is a URL list, as bake-terrain does.
+ * Writes public/baked/<look>/shore-median.json (or <dir>/shore-median.json): `regions.seaward|landward` as
+ * [{ outer, holes }] in town metres, and `shoreFingerprint`, the shoreline it was traced against (bake-ground paints
+ * the median as sand only onto that same shoreline). Reads the network (range requests) when the town's elevation is
+ * a URL list, as bake-terrain does.
  */
 import { readFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import clipperLib from 'clipper-lib'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { wetSideOf, drawnWaterTest } from './shore-armour.mjs'
@@ -50,14 +51,98 @@ import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastAgreement, resample, 
 import { elevationSpecs, openRasters, readWindow, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
+const { Clipper, ClipperOffset, Paths, Path, IntPoint, ClipType, PolyType, PolyFillType, PolyTree, JoinType, EndType } = clipperLib
+const SCALE = 1000                                                  // clipper units per metre: 1 mm
+const toPath = (ring) => { const p = new Path(); for (const [x, z] of ring) p.push(new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE))); return p }
+const toRing = (path) => path.map(q => [Math.round(q.X / SCALE * 100) / 100, Math.round(q.Y / SCALE * 100) / 100])
+const run = (op, subj, clip, fill = PolyFillType.pftNonZero) => {
+  const c = new Clipper(), out = new Paths()
+  c.AddPaths(subj, PolyType.ptSubject, true)
+  if (clip) c.AddPaths(clip, PolyType.ptClip, true)
+  if (!c.Execute(op, out, fill, PolyFillType.pftNonZero)) throw new Error('bake-shore-median: a clipper operation FAILED')
+  return out
+}
+const ringArea = (r) => Math.abs(r.reduce((t, p, i) => { const q = r[(i + 1) % r.length]; return t + p[0] * q[1] - q[0] * p[1] }, 0) / 2)
+// Paths → [{ outer, holes }] (a PolyTree walk). `minM2`: a ring smaller than this is below what the source resolves and
+// is dropped (an outer with its holes; a hole alone) — the caller passes (2 × the source pixel)², two samples across.
+const toItems = (paths, minM2 = 0) => {
+  const c = new Clipper(); c.AddPaths(paths, PolyType.ptSubject, true)
+  const tree = new PolyTree(); c.Execute(ClipType.ctUnion, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+  const out = []
+  const walk = (node) => { for (const ch of node.Childs()) {
+    const outer = toRing(ch.m_polygon)
+    if (ringArea(outer) >= minM2) out.push({ outer, holes: ch.Childs().map(h => toRing(h.m_polygon)).filter(h => ringArea(h) >= minM2) })
+    for (const h of ch.Childs()) walk(h) } }
+  walk(tree)
+  return out
+}
+const areaOf = (paths) => paths.reduce((t, p) => t + Clipper.Area(p), 0) / (SCALE * SCALE)
 
-/** Station kinds — the codes the artifact carries per station (`k`), named here once. */
-export const KINDS = ['seaward', 'landward', 'no-waterline', 'lidar-ends', 'no-lidar', 'drawn-water-dry']
+/** The square tile, in metres, that the 1 m grid is sampled in. ⛔ Not a geometric value: the tiles overlap by one
+ *  sample and are unioned, so where the tile edges fall changes nothing; it bounds memory and one read's size. */
+const TILE_M = 256
 
-/** A ceiling for one finest-level read, in pixels — memory, and how many blocks one read asks the host for at once (S3
- *  drops connections when a read asks for too many). ⛔ Not a geometric parameter: it decides how the shore is
- *  CHUNKED for reading, and no result depends on it (a station's walk reads the same pixels whichever chunk holds it). */
-const WINDOW_BUDGET_PX = 1 << 20
+/**
+ * MARCHING SQUARES over one tile's grid: the closed loops of f ≤ 0 (wet). The grid is padded with a DRY ring so every
+ * loop closes inside the tile; loops are returned unoriented and must be filled EVEN-ODD (a hole is a loop inside a loop).
+ * @param f  Float32Array (nx × nz, row-major by z), x0/z0 the first sample's town metres, step metres
+ */
+export function wetLoops(f, nx, nz, x0, z0, step) {
+  const NX = nx + 2, NZ = nz + 2, g = new Float32Array(NX * NZ).fill(1)   // the dry pad
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) g[(j + 1) * NX + i + 1] = f[j * nx + i]
+  const X = (i) => x0 + (i - 1) * step, Z = (j) => z0 + (j - 1) * step
+  const val = (i, j) => g[j * NX + i]
+  // an edge's crossing point and its key: 'h' edges join (i,j)-(i+1,j), 'v' edges join (i,j)-(i,j+1)
+  const pt = new Map()
+  const cross = (kind, i, j) => {
+    const key = `${kind}${i},${j}`
+    if (!pt.has(key)) {
+      const a = val(i, j), b = kind === 'h' ? val(i + 1, j) : val(i, j + 1), t = a / (a - b)
+      pt.set(key, kind === 'h' ? [X(i) + t * step, Z(j)] : [X(i), Z(j) + t * step])
+    }
+    return key
+  }
+  const segs = []
+  for (let j = 0; j < NZ - 1; j++) for (let i = 0; i < NX - 1; i++) {
+    const tl = val(i, j) <= 0, tr = val(i + 1, j) <= 0, br = val(i + 1, j + 1) <= 0, bl = val(i, j + 1) <= 0
+    const code = (tl ? 8 : 0) | (tr ? 4 : 0) | (br ? 2 : 0) | (bl ? 1 : 0)
+    if (code === 0 || code === 15) continue
+    const T = () => cross('h', i, j), R = () => cross('v', i + 1, j), Bm = () => cross('h', i, j + 1), L = () => cross('v', i, j)
+    switch (code) {
+      case 1: case 14: segs.push([L(), Bm()]); break
+      case 2: case 13: segs.push([Bm(), R()]); break
+      case 3: case 12: segs.push([L(), R()]); break
+      case 4: case 11: segs.push([T(), R()]); break
+      case 6: case 9: segs.push([T(), Bm()]); break
+      case 7: case 8: segs.push([L(), T()]); break
+      // saddles: the cell's mean decides which diagonal pair joins
+      case 5: { const m = (val(i, j) + val(i + 1, j) + val(i + 1, j + 1) + val(i, j + 1)) / 4
+        if (m <= 0) { segs.push([L(), T()]); segs.push([Bm(), R()]) } else { segs.push([L(), Bm()]); segs.push([T(), R()]) } break }
+      case 10: { const m = (val(i, j) + val(i + 1, j) + val(i + 1, j + 1) + val(i, j + 1)) / 4
+        if (m <= 0) { segs.push([L(), Bm()]); segs.push([T(), R()]) } else { segs.push([L(), T()]); segs.push([Bm(), R()]) } break }
+    }
+  }
+  // stitch: every edge key is shared by exactly two segments (the pad guarantees it)
+  const at = new Map()
+  segs.forEach((s, k) => { for (const e of s) (at.get(e) || at.set(e, []).get(e)).push(k) })
+  const used = new Uint8Array(segs.length), loops = []
+  for (let k0 = 0; k0 < segs.length; k0++) {
+    if (used[k0]) continue
+    const loop = []
+    let k = k0, from = segs[k0][0]
+    while (!used[k]) {
+      used[k] = 1
+      const to = segs[k][0] === from ? segs[k][1] : segs[k][0]
+      loop.push(pt.get(from))
+      from = to
+      const nxt = at.get(to).find(q => !used[q])
+      if (nxt === undefined) break
+      k = nxt
+    }
+    if (loop.length >= 3) loops.push(loop)
+  }
+  return loops
+}
 
 export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, write = true }) {
   const lookId = look || scene
@@ -80,12 +165,12 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   const agree = coastAgreement(tm.datum, runs.length)
   if (agree === 'inland') {
     console.log(`[bake-shore-median] scene=${scene}: terrain datum "${tm.datum ?? 'unset'}" and no ${WATER_EDGE_SKEL} runs — inland. No median.`)
-    return { faces: [], reason: 'no-coast' }
+    return { regions: null, reason: 'no-coast' }
   }
   if (agree === 'stale-terrain') throw new Error(`bake-shore-median: ${scene} — the slab has ${runs.length} ${WATER_EDGE_SKEL} run(s) but the terrain datum is "${tm.datum}", not the water. The lidar's waterline is y = 0 only when the datum IS the water. ▶ re-bake the terrain, then run this again.`)
   if (!runs.length) {
     console.log(`[bake-shore-median] scene=${scene}: no ${WATER_EDGE_SKEL} runs in the slab — no drawn shoreline, no median.`)
-    return { faces: [], reason: 'no-shoreline' }
+    return { regions: null, reason: 'no-shoreline' }
   }
   const baseElev = tm.baseElev
   if (!Number.isFinite(baseElev)) throw new Error(`bake-shore-median: ${scene}'s terrain.json has no baseElev — the lidar's water cannot be found without it`)
@@ -131,148 +216,141 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
     return (i < 0 || j < 0 || i >= W || j >= H) ? undefined : grid[j * W + i]   // undefined = off the grid; NaN = no lidar
   }
   // The coarse walk: the first change of state along (nx, nz), in grid steps; Infinity if none before leaving the grid.
-  const coarseCross = (x, z, nx, nz, dry) => {
+  const coarseCross = (x, z, nx, nz, dry, stop = null) => {
     for (let d = gridM; ; d += gridM) {
       const v = gridAt(x + nx * d, z + nz * d)
       if (v === undefined) return Infinity
+      if (stop && stop(x + nx * d, z + nz * d)) return d
       if (!Number.isFinite(v)) return d
       if ((v > ABOVE_WATER_M) !== dry) return d
     }
   }
 
-  // ── The stations, per face of every arc in the drawing ──────────────────────────────────────────────────────────
-  const faces = [], refused = []
-  let outsideM = 0
+  // ── THE BAND: along every shoreline arc in the drawing, as far as the terrain grid says the lines drift apart ─────
+  const refused = []
+  let outsideM = 0, shoreM = 0
   const clipped = []
   for (const r of runs) { const { inside, outsideM: cut } = clipTraceToDisc(r, discC, discR); outsideM += cut; clipped.push(...inside) }
+  const bandParts = new Paths(), shorePts = [], far = []
   for (let idx = 0; idx < clipped.length; idx++) {
     const trace = clipped[idx]
     const len = trace.reduce((a, p, i) => i ? a + Math.hypot(p[0] - trace[i - 1][0], p[1] - trace[i - 1][1]) : 0, 0)
     const wet = wetSideOf(trace, inWater, gridM)
     if (!wet.side) { refused.push({ run: idx, lengthM: +len.toFixed(1), kind: wet.kind, why: wet.why }); continue }
-    const path = resample(trace, stationM)
-    for (const side of wet.side === 'both' ? ['left', 'right'] : [wet.side]) {
-      // wetSideOf names RIGHT of the walk as (-tz, tx); the water normal points to the named side.
-      const sgn = side === 'right' ? 1 : -1
-      const st = []
-      for (let i = 0; i < path.length; i++) {
-        const a = path[Math.max(0, i - 1)], b = path[Math.min(path.length - 1, i + 1)]
-        const tx = b[0] - a[0], tz = b[1] - a[1], m = Math.hypot(tx, tz) || 1
-        st.push({ x: path[i][0], z: path[i][1], nx: sgn * -tz / m, nz: sgn * tx / m })
+    shoreM += len
+    for (const p of resample(trace, stationM)) shorePts.push(p)
+    // per grid step along the arc, how far the lines drift apart there: from a station the coarse grid reads DRY, walk
+    // toward the drawn water until it reads wet; from one it reads WET, walk inland until it reads dry. Only the side the
+    // median lies on is walked (a walk the other way runs on into the hinterland and makes the band a town).
+    const path = resample(trace, gridM)
+    const sides = wet.side === 'both' ? [1, -1] : [wet.side === 'right' ? 1 : -1]   // wetSideOf names RIGHT as (-tz, tx)
+    const reach = path.map((p, i) => {
+      const a = path[Math.max(0, i - 1)], b = path[Math.min(path.length - 1, i + 1)]
+      const tx = b[0] - a[0], tz = b[1] - a[1], m = Math.hypot(tx, tz) || 1
+      const g = gridAt(p[0], p[1]), dry = Number.isFinite(g) && g > ABOVE_WATER_M
+      let r = gridM
+      for (const sg of sides) {
+        const ux = sg * -tz / m, uz = sg * tx / m                     // toward the drawn water
+        // a walk toward the water ENDS where the drawn water ends: the median belongs to the water it borders (huron,
+        // 2026-10-04: a drawn strip the lidar shows dry, then 4 km of land beyond it)
+        const d = dry ? coarseCross(p[0], p[1], ux, uz, true, (x, z) => !inWater(x, z)) : coarseCross(p[0], p[1], -ux, -uz, false)
+        if (Number.isFinite(d)) r = Math.max(r, d)
       }
-      faces.push({ run: idx, side, lengthM: len, st })
+      far.push({ r, x: p[0], z: p[1] })
+      return r + 2 * gridM
+    })
+    for (let a = 0; a < path.length - 1; ) {
+      let b = a + 1, R = Math.max(reach[a], reach[b])
+      while (b + 1 < path.length && Math.max(R, reach[b + 1]) <= R * 1.5) { b++; R = Math.max(R, reach[b]) }
+      const co = new ClipperOffset(), out = new Paths()
+      co.AddPath(toPath(path.slice(a, b + 1)), JoinType.jtRound, EndType.etOpenRound)
+      co.Execute(out, R * SCALE)
+      for (const q of out) bandParts.push(q)
+      a = b
     }
   }
+  const band = run(ClipType.ctUnion, bandParts, null)
+  const drawn = run(ClipType.ctUnion, waterRings.map(toPath), null)
 
-  // ── PASS B: the finest level, read in chunks along each face ────────────────────────────────────────────────────
-  let windows = 0
-  for (const f of faces) {
-    // First, each station's two coarse bounds — waterward to the first wet cell, landward to the first dry one. The
-    // coarse grid decides only how far to walk; the finest read decides the state and the crossing.
-    for (const s of f.st) {
-      const sea = coarseCross(s.x, s.z, s.nx, s.nz, true), land = coarseCross(s.x, s.z, -s.nx, -s.nz, false)
-      s.boundSea = (Number.isFinite(sea) ? sea : gridM) + 2 * gridM
-      s.boundLand = (Number.isFinite(land) ? land : gridM) + 2 * gridM
-      s.bound = Math.max(s.boundSea, s.boundLand)   // the window must hold either walk
+  // ── THE LIDAR'S WATER, traced on a 1 m grid in tiles over the band ─────────────────────────────────────────────
+  let bx0 = Infinity, bx1 = -Infinity, bz0 = Infinity, bz1 = -Infinity
+  for (const p of band) for (const q of p) { bx0 = Math.min(bx0, q.X / SCALE); bx1 = Math.max(bx1, q.X / SCALE); bz0 = Math.min(bz0, q.Y / SCALE); bz1 = Math.max(bz1, q.Y / SCALE) }
+  const step = stationM, wetParts = new Paths(), unknownParts = new Paths()
+  let tiles = 0, samples = 0, noValue = 0
+  for (let tz = Math.floor(bz0 / TILE_M) * TILE_M; tz < bz1; tz += TILE_M) for (let tx = Math.floor(bx0 / TILE_M) * TILE_M; tx < bx1; tx += TILE_M) {
+    const sq = toPath([[tx, tz], [tx + TILE_M, tz], [tx + TILE_M, tz + TILE_M], [tx, tz + TILE_M]])
+    const inTile = run(ClipType.ctIntersection, [sq], band)
+    if (!inTile.length) continue
+    tiles++
+    if (tiles % 50 === 0) console.log(`  [progress] waterline tiles ${tiles}`)
+    const m = 2 * step
+    const win = await readWindow(opened, { cornersLL: [toLL(tx - m, tz - m), toLL(tx + TILE_M + m, tz - m), toLL(tx - m, tz + TILE_M + m), toLL(tx + TILE_M + m, tz + TILE_M + m)], stepM: null, quiet: true })
+    const n = Math.round(TILE_M / step) + 2                           // one sample of overlap into the next tile
+    const f = new Float32Array(n * n), u = new Float32Array(n * n).fill(1)
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      const v = sampleSources(win, ...toLL(tx + i * step, tz + j * step)) - baseElev
+      samples++
+      if (!Number.isFinite(v)) { noValue++; f[j * n + i] = 1; u[j * n + i] = -1 }   // no value: NOT KNOWN (cut out, below)
+      else f[j * n + i] = v - ABOVE_WATER_M
     }
-    // Chunk the face so each finest window stays under the budget.
-    let a = 0
-    while (a < f.st.length) {
-      let b = a, x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
-      const grow = (s) => { for (const d of [0, s.bound, -s.bound]) { const x = s.x + s.nx * d, z = s.z + s.nz * d; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } }
-      grow(f.st[a])
-      while (b + 1 < f.st.length) {
-        const save = [x0, x1, z0, z1]
-        grow(f.st[b + 1])
-        if (((x1 - x0) / stationM + 4) * ((z1 - z0) / stationM + 4) > WINDOW_BUDGET_PX && b > a) { [x0, x1, z0, z1] = save; break }
-        b++
-      }
-      const win = await readWindow(opened, { cornersLL: [toLL(x0, z0), toLL(x1, z0), toLL(x0, z1), toLL(x1, z1)], stepM: null, quiet: true })
-      windows++
-      if (windows % 25 === 0) console.log(`  … ${windows} finest window(s) read`)
-      const at = (x, z) => sampleSources(win, ...toLL(x, z)) - baseElev
-      for (let k = a; k <= b; k++) {
-        const s = f.st[k]
-        const h0 = at(s.x, s.z)
-        s.h = h0
-        if (!Number.isFinite(h0)) { s.kind = 'no-lidar'; s.w = 0; s.he = NaN; continue }
-        const dry = h0 > ABOVE_WATER_M
-        // dry: the lidar ground runs into the drawn water — walk waterward until wet. wet: walk landward until dry.
-        const dir = dry ? 1 : -1
-        let prev = h0, found = false
-        const bound = dry ? s.boundSea : s.boundLand
-        for (let d = stationM; d <= bound + 1e-9; d += stationM) {
-          const v = at(s.x + dir * s.nx * d, s.z + dir * s.nz * d)
-          if (!Number.isFinite(v)) { s.kind = 'lidar-ends'; s.w = d - stationM; s.he = prev; found = true; break }
-          // ⛔ A waterward walk ends where the DRAWN water ends: past it is drawn land, and the median cannot reach
-          // beyond the water it belongs to. The lidar showed no water across this drawn water — say so, by name.
-          if (dry && !inWater(s.x + s.nx * d, s.z + s.nz * d)) { s.kind = 'drawn-water-dry'; s.w = d - stationM; s.he = prev; found = true; break }
-          if ((v > ABOVE_WATER_M) !== dry) {
-            // the crossing of ABOVE_WATER_M between the two samples, linearly — the waterline to a fraction of a pixel
-            const t = (prev - ABOVE_WATER_M) / ((prev - v) || 1e-9)
-            s.w = d - stationM + Math.max(0, Math.min(1, t)) * stationM
-            s.kind = dry ? 'seaward' : 'landward'; s.he = ABOVE_WATER_M; found = true; break
-          }
-          prev = v
-        }
-        if (!found) { s.kind = 'no-waterline'; s.w = 0; s.he = NaN }
-        s.dir = dir
-      }
-      win.length = 0
-      a = b + 1
-    }
+    win.length = 0
+    const loops = wetLoops(f, n, n, tx, tz, step)
+    if (loops.length) for (const q of run(ClipType.ctUnion, loops.map(toPath), null, PolyFillType.pftEvenOdd)) wetParts.push(q)
+    const holes = wetLoops(u, n, n, tx, tz, step)
+    if (holes.length) for (const q of run(ClipType.ctUnion, holes.map(toPath), null, PolyFillType.pftEvenOdd)) unknownParts.push(q)
   }
+  const wet = run(ClipType.ctUnion, wetParts, null)
+  const unknown = run(ClipType.ctUnion, unknownParts, null)
+  const unknownM2 = areaOf(run(ClipType.ctIntersection, unknown, band))
+
+  // ── THE MEDIAN: drawing and lidar disagree, inside the band, touching the drawn shoreline ────────────────────────
+  const known = run(ClipType.ctDifference, band, unknown)
+  const inBand = (paths) => run(ClipType.ctIntersection, paths, known)
+  const touching = (paths) => {
+    const tol = 1.5 * step
+    const keep = new Paths()
+    for (const p of toItems(paths)) {
+      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+      for (const [x, z] of p.outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) }
+      const ring = toPath(p.outer)
+      const hit = shorePts.some(([x, z]) => x >= x0 - tol && x <= x1 + tol && z >= z0 - tol && z <= z1 + tol &&
+        (Clipper.PointInPolygon(new IntPoint(Math.round(x * SCALE), Math.round(z * SCALE)), ring) !== 0 ||
+         p.outer.some((a, i) => { const b = p.outer[(i + 1) % p.outer.length], dx = b[0] - a[0], dz = b[1] - a[1], L = dx * dx + dz * dz
+           const t = L ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L)) : 0
+           return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz) <= tol })))
+      if (hit) { keep.push(ring); for (const h of p.holes) keep.push(toPath(h)) }
+    }
+    return keep
+  }
+  const seaward = touching(inBand(run(ClipType.ctDifference, drawn, wet)))
+  const landward = touching(inBand(run(ClipType.ctDifference, wet, drawn)))
+  const seaM2 = areaOf(run(ClipType.ctUnion, seaward, null, PolyFillType.pftEvenOdd)), landM2 = areaOf(run(ClipType.ctUnion, landward, null, PolyFillType.pftEvenOdd))
 
   // ── The artifact ────────────────────────────────────────────────────────────────────────────────────────────────
-  const r2 = (v) => Math.round(v * 100) / 100
-  const byKindM = Object.fromEntries(KINDS.map(k => [k, 0]))
-  const widths = []
-  let shoreM = 0
-  const outFaces = faces.map(f => {
-    const n = f.st.length, xs = [], zs = [], ex = [], ez = [], w = [], k = [], h = [], he = []
-    for (let i = 0; i < n; i++) {
-      const s = f.st[i]
-      const own = ((i ? Math.hypot(s.x - f.st[i - 1].x, s.z - f.st[i - 1].z) : 0) + (i < n - 1 ? Math.hypot(f.st[i + 1].x - s.x, f.st[i + 1].z - s.z) : 0)) / 2
-      shoreM += own; byKindM[s.kind] += own
-      if (s.kind === 'seaward' || s.kind === 'landward') widths.push([s.w, own])
-      const dir = s.dir || 1
-      xs.push(r2(s.x)); zs.push(r2(s.z)); w.push(r2(s.w)); k.push(KINDS.indexOf(s.kind)); h.push(Number.isFinite(s.h) ? r2(s.h) : null); he.push(Number.isFinite(s.he) ? r2(s.he) : null)
-      ex.push(r2(s.x + dir * s.nx * s.w)); ez.push(r2(s.z + dir * s.nz * s.w))
-    }
-    return { run: f.run, side: f.side, xs, zs, ex, ez, w, k, h, he }
-  })
-  // Width by metres of drawn shore, at the finest level.
-  widths.sort((p, q) => p[0] - q[0])
-  const tot = widths.reduce((t, p) => t + p[1], 0)
-  const pct = (q) => { let acc = 0; for (const [v, m] of widths) { acc += m; if (acc >= q * tot) return r2(v) } return widths.length ? r2(widths[widths.length - 1][0]) : null }
-  const bins = [0, stationM, 2 * gridM, 4 * gridM, 16 * gridM, Infinity]
-  const histogram = bins.slice(1).map((hi, i) => ({ fromM: r2(bins[i]), toM: Number.isFinite(hi) ? r2(hi) : null,
-    shoreM: r2(widths.filter(([v]) => v >= bins[i] && v < hi).reduce((t, p) => t + p[1], 0)) }))
-
+  // ⭐ Below what the source resolves: a region (or hole) smaller than two samples square is lidar noise, not a shore —
+  // measured on huron 2026-10-05, 289 of the outline's 508 hairpins were in rings under 4 m² (at 1 m).
+  const minM2 = (2 * step) ** 2
+  const regions = { seaward: toItems(seaward, minM2), landward: toItems(landward, minM2) }
   const out = {
-    version: 1, scene, look: lookId,
-    shoreFrom: 'drawn-water (the slab\'s __water__ ink)',
-    // ⭐ Which shoreline this median was walked on (shoreRuns.mjs shoreFingerprint of shape.json). bake-ground paints
-    // the median's sand only onto the SAME shoreline.
+    version: 2, scene, look: lookId,
+    shoreFrom: 'drawn-water (clean/map.json#layers.water; its edge is the slab\'s __water__ ink)',
+    waterlineFrom: `the lidar at y = 0 (the terrain datum, ${tm.datum}; baseElev ${baseElev} m), traced by marching squares at ${+step.toFixed(3)} m: above = more than ABOVE_WATER_M (${ABOVE_WATER_M} m)`,
     shoreFingerprint: shoreFingerprint(shape),
-    waterlineFrom: `the lidar at y = 0 (the terrain datum, ${tm.datum}; baseElev ${baseElev} m): above = more than ABOVE_WATER_M (${ABOVE_WATER_M} m)`,
     stationM: +stationM.toFixed(3), gridM: +gridM.toFixed(3), aboveWaterM: ABOVE_WATER_M,
-    kinds: KINDS,
-    totals: { shoreM: r2(shoreM), outsideM: r2(outsideM), byKindM: Object.fromEntries(Object.entries(byKindM).map(([k, v]) => [k, r2(v)])),
-              refusedM: r2(refused.reduce((t, r) => t + r.lengthM, 0)), widthP50M: pct(0.5), widthP90M: pct(0.9), widthMaxM: widths.length ? r2(widths[widths.length - 1][0]) : null },
-    histogram, refused, faces: outFaces,
+    totals: { shoreM: +shoreM.toFixed(1), outsideM: +outsideM.toFixed(1), refusedM: +refused.reduce((t, r) => t + r.lengthM, 0).toFixed(1),
+              seawardM2: Math.round(seaM2), landwardM2: Math.round(landM2), meanWidthM: +((seaM2 + landM2) / Math.max(1, shoreM)).toFixed(2),
+              tiles, samples, noValueSamples: noValue, unknownM2: Math.round(unknownM2) },
+    regions, refused,
   }
 
   let wrote = false
   if (write) { mkdirSync(outDir, { recursive: true }); wrote = writeIfChanged(outPath, JSON.stringify(out)) }
-  const km = (m) => (m / 1000).toFixed(2)
-  console.log(`[bake-shore-median] scene=${scene} look=${lookId}: ${outFaces.length} face(s) · stations every ${stationM.toFixed(2)} m (the source's own pixel) · ${windows} finest window(s)`)
-  console.log(`  ⭐ MEDIAN: ${km(shoreM)} km of drawn shore · width p50 ${out.totals.widthP50M} m · p90 ${out.totals.widthP90M} m · max ${out.totals.widthMaxM} m`)
-  console.log(`    lidar ground runs into the drawn water along ${km(byKindM.seaward)} km · lidar water reaches behind the drawn shore along ${km(byKindM.landward)} km`)
-  console.log(`    ${histogram.map(b => `${b.fromM}–${b.toM ?? '∞'} m: ${km(b.shoreM)} km`).join(' · ')}`)
-  for (const k of ['no-waterline', 'no-lidar']) if (byKindM[k] > 0) console.warn(`  ⛔ ${km(byKindM[k])} km of drawn shore: ${k} — the median is NOT KNOWN there`)
-  if (byKindM['lidar-ends'] > 0) console.warn(`  ⚠️ ${km(byKindM['lidar-ends'])} km of drawn shore: lidar-ends — the median runs only as far as the lidar does`)
-  if (byKindM['drawn-water-dry'] > 0) console.warn(`  ⚠️ ${km(byKindM['drawn-water-dry'])} km of drawn shore: drawn-water-dry — the lidar shows ground across the whole drawn water there; the median runs to its far edge`)
+  const km = (m) => (m / 1000).toFixed(2), ha = (m2) => (m2 / 1e4).toFixed(2)
+  console.log(`[bake-shore-median] scene=${scene} look=${lookId}: the lidar waterline traced at ${step.toFixed(2)} m (the source's own pixel) over ${tiles} tile(s), ${samples.toLocaleString()} samples`)
+  console.log(`  ⭐ MEDIAN: ${km(shoreM)} km of drawn shore · ${ha(seaM2)} ha where the lidar ground runs into the drawn water (${regions.seaward.length} region(s)) · ${ha(landM2)} ha where the lidar water reaches behind it (${regions.landward.length}) · mean width ${out.totals.meanWidthM} m`)
+  if (noValue) console.warn(`  ⛔ ${ha(unknownM2)} ha of the band has NO lidar value (${noValue.toLocaleString()} samples) — the median is NOT KNOWN there and is not drawn`)
+  far.sort((a, b) => b.r - a.r)
+  console.log(`    the lines drift farthest apart at: ${far.slice(0, 3).map(q => `${Math.round(q.r)} m at (${Math.round(q.x)}, ${Math.round(q.z)})`).join(' · ')}`)
   for (const r of refused) console.warn(`  ⛔ refused run #${r.run} (${r.lengthM} m): ${r.kind} — ${r.why}`)
   if (outsideM > 0) console.log(`    ${km(outsideM)} km of shoreline outside the drawing (beyond the ${Math.round(discR)} m disc) — not walked`)
   console.log(`  ${!write ? 'NOT WRITTEN (dry run)' : wrote ? 'wrote' : 'unchanged'} ${outPath} (${(JSON.stringify(out).length / 1024).toFixed(0)} KB)`)

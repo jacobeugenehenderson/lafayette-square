@@ -617,58 +617,29 @@ function _pathToRing(path) {
 }
 
 /**
- * The shore median (bake-shore-median.mjs `shore-median.json`) as sand polygons for the `shore` layer.
- * Per station whose median is known, a quad from the drawn shoreline to the median's other end. Two neighbouring
- * stations whose far ends lie more than one terrain grid step apart are not one strip (it breaks, counted). ⭐ At a
- * tight bend the far ends run BACKWARD while the shoreline runs on (measured 2026-10-04: 2.2% of huron's strips, 4.3%
- * of provincetown's): the far end is held where it was, so the strip fans instead of folding over itself.
- * Each unbroken run becomes ONE ring, made simple (non-zero) on its own, before it reaches the paint stack, whose
- * even-odd subject fill would otherwise cut a hole wherever a ring crosses itself.
- * @returns { items: [{ outer, holes }], filledM, brokenM, heldFolds }
+ * The shore median (bake-shore-median.mjs `shore-median.json`, v2) as sand polygons for the `shore` layer: its two
+ * regions — drawn water the lidar shows dry, drawn land the lidar shows wet — are already polygons bounded by the
+ * drawn shoreline and the TRACED lidar waterline (one continuous line, not per-station landing points), so they are
+ * only UNIONED here (non-zero), because the paint stack's even-odd subject fill would cut a hole where two overlap.
+ * @returns { items: [{ outer, holes }], areaM2 }
  */
-const SHORE_FILLED = ['seaward', 'landward', 'drawn-water-dry', 'lidar-ends']
 export function shoreMedianItems(doc) {
-  if (!doc || doc.version !== 1) throw new Error(`bake-ground: unsupported shore-median.json version ${doc && doc.version}`)
-  if (!(doc.gridM > 0)) throw new Error('bake-ground: shore-median.json carries no gridM')
-  const filled = new Set(SHORE_FILLED.map(k => doc.kinds.indexOf(k)))
-  if (filled.has(-1)) throw new Error(`bake-ground: shore-median.json is missing a kind (${SHORE_FILLED.join(', ')})`)
-  const runs = []                                                 // each unbroken run: [near…] and [far…]
-  let filledM = 0, brokenM = 0, heldFolds = 0
-  for (const f of doc.faces) {
-    const ok = (i) => filled.has(f.k[i]) && f.w[i] > 0
-    let cur = null, px = null, pz = null                           // the run so far; the previous (held) far end
-    const close = () => { if (cur && cur.near.length >= 2) runs.push(cur); cur = null }
-    for (let i = 0; i < f.xs.length; i++) {
-      if (!ok(i)) { close(); px = null; continue }
-      let ex = f.ex[i], ez = f.ez[i]
-      if (cur) {
-        const ax = f.xs[i] - f.xs[i - 1], az = f.zs[i] - f.zs[i - 1], segM = Math.hypot(ax, az)
-        if ((ex - px) * ax + (ez - pz) * az < 0) { ex = px; ez = pz; heldFolds++ }
-        if (Math.hypot(ex - px, ez - pz) > doc.gridM) { brokenM += segM; close() }
-        else filledM += segM
-      }
-      if (!cur) cur = { near: [], far: [] }
-      cur.near.push([f.xs[i], f.zs[i]]); cur.far.push([ex, ez])
-      px = ex; pz = ez
-    }
-    close()
-  }
-  // ⭐ One ring per run (the shoreline out, the waterline back), each made simple ON ITS OWN. ⛔ Not one union of every
-  // station's quad: measured 2026-10-05, that union ran past 2 min on huron and 5 min on provincetown and hung the bake.
-  // ⭐ …and then ONE non-zero union of those few hundred rings, because two runs can overlap (the two banks of a narrow
-  // drawn channel): left apart, the paint stack's even-odd fill made each overlap a HOLE in the sand while still
-  // removing the bed under it — measured 2026-10-05, 0.07 km of huron's drawn water with nothing under it.
+  if (!doc || doc.version !== 2) throw new Error(`bake-ground: shore-median.json version ${doc && doc.version} — this bake reads v2 (the traced waterline). ▶ re-run bake-shore-median`)
   const c = new _Clipper()
-  for (const r of runs) c.AddPaths(_Clipper.SimplifyPolygon(_ringToPath([...r.near, ...r.far.reverse()]), _PolyFillType.pftNonZero), _PolyType.ptSubject, true)
+  for (const k of ['seaward', 'landward']) for (const p of doc.regions?.[k] || []) {
+    c.AddPath(_ringToPath(p.outer), _PolyType.ptSubject, true)
+    for (const h of p.holes || []) c.AddPath(_ringToPath(h), _PolyType.ptSubject, true)
+  }
   const tree = new _PolyTree()
-  if (!c.Execute(_ClipType.ctUnion, tree, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error('bake-ground: the shore median union FAILED')
+  if (!c.Execute(_ClipType.ctUnion, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftEvenOdd)) throw new Error('bake-ground: the shore median union FAILED')
   const items = []
+  let areaM2 = 0
   const walk = (node) => { for (const ch of node.Childs()) {
     const outer = _pathToRing(ch.m_polygon)
-    if (outer.length >= 3) items.push({ outer, holes: ch.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
-    for (const h of ch.Childs()) walk(h) } }
+    if (outer.length >= 3) { items.push({ outer, holes: ch.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) }); areaM2 += _Clipper.Area(ch.m_polygon) / (CLIP_SCALE * CLIP_SCALE) }
+    for (const h of ch.Childs()) { areaM2 -= Math.abs(_Clipper.Area(h.m_polygon)) / (CLIP_SCALE * CLIP_SCALE); walk(h) } } }
   walk(tree)
-  return { items, filledM, brokenM, heldFolds }
+  return { items, areaM2: Math.abs(areaM2) }
 }
 
 // ── PRESS THE PAINT STACK DOWN ──────────────────────────────────────────────
@@ -997,7 +968,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         const s = shoreMedianItems(doc)
         if (!byMaterial.has('shore')) byMaterial.set('shore', [])
         byMaterial.get('shore').push(...s.items)
-        console.log(`  ⭐ SHORE: the median painted as sand along ${(s.filledM / 1000).toFixed(2)} km of drawn shore (${s.items.length} polygon(s)) · ${(s.brokenM / 1000).toFixed(2)} km broken where neighbouring far ends jump · ${s.heldFolds} fold(s) held at bends`)
+        console.log(`  ⭐ SHORE: the median painted as sand — ${(s.areaM2 / 1e4).toFixed(2)} ha in ${s.items.length} polygon(s), between the drawn shoreline and the traced lidar waterline`)
       }
     } else if (waterRuns(shapeNow).length) {
       console.warn(`  ⛔ SHORE: this town has a drawn shoreline but no shore-median.json — NO shore sand painted. ▶ the 'shore-median' step, then 'ground-shore'.`)
