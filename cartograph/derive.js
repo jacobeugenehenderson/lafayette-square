@@ -342,6 +342,12 @@ export const OSM_TO_LU = {
   'landuse:railway': 'railway',
   // — hardscape lots —
   'amenity:parking': 'parking', 'amenity:parking_space': 'parking',
+  // — provincetown's harbour and beach brought these (2026-10-05), each mapped like its nearest kin above —
+  'amenity:ranger_station': 'institutional', 'amenity:ferry_terminal': 'institutional',   // public facilities, like fire_station
+  'amenity:bus_station': 'institutional',
+  'amenity:waste_transfer_station': 'industrial',                                          // like waste_disposal
+  'amenity:taxi': 'parking', 'landuse:garages': 'parking',                                  // a vehicle stand, a row of garages
+  'leisure:resort': 'commercial',                                                           // hospitality, like a hotel's lot
 }
 
 /**
@@ -3530,6 +3536,12 @@ export function deriveLayers(highways) {
     'place:islet':              'none: land inside water; the water producer carries its holes',
     'natural:water':            'none: water has its OWN producer (`layers.water`, the coast/relation path) and both renderers skip it here on purpose. ⚠️ Whether a small INLAND pond reaches that producer is NOT established — see cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md §6.',
     'natural:reef':             'none: submerged; belongs to the water producer, not to land use',
+    'natural:coastline':        'none: a LINE — the shore is coastline.mjs\'s, and the coast is an edge of the drawing, not a face',
+    'natural:bay':              'none: water; belongs to the water producer',
+    'natural:peninsula':        'none: a named landform spanning many uses, not a land use',
+    'man_made:quay':            'map-layer (STRUCTURE): a waterfront edge, like man_made:pier',
+    'amenity:shower':           'map-layer: a fixture (a beach shower), like amenity:toilets',
+    'amenity:dressing_room':    'map-layer: a fixture (a beach changing room), like amenity:shelter',
   }
   // Collect every OSM polygon with an LU mapping, annotate with centroid + area.
   function ringArea(coords) {

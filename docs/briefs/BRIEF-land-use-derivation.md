@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: no
 written: 2026-07-21
-evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intended final set? The board says 32 and cites classify.js, which is the wrong file. Cause not established.
+evict-when: Jacob rules the four open questions in §NEXT (CDL crop where OSM maps no field · meadow/farmyard rows or grass · building-derived Phase 3 park or build · `natural:wood` recreation or forest), each landed or parked.
 -->
 
 **Status: 🟡 PHASE 1 LANDED 2026-08-01 · EYE-GATED AND FAILED 2026-08-02 · the arc continues under a CORRECTED diagnosis.** Boz drafted 2026-07-21 from the HPDM bald-blocks investigation with Jacob. Detail-home for the ROADMAP line.
@@ -42,13 +42,17 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 > 1. **`OSM_TO_LU` is a 32-entry allow-list.** HPDM brings **54 subtypes it cannot read, 2,446,607 m²** — `amenity:college` 445k · `amenity:hospital` 112k · `landuse:forest` 48k · `natural:grassland` 58k. Same shape as the `lu-policy` vocabulary gap, one stage upstream at ingest.
 > 2. ~~**The OSM vote asks "is the POLYGON's centroid in the face?"**~~ ✅ **CLOSED 2026-09-25** — a face now takes the land use that **COVERS** it, by area share of the overlap, and a compound feature votes as **outer MINUS its holes**. ⭐ The scale of what the centroid test was losing: Provincetown's median block face is 6,148 m² against a 4,130,249 m² `natural=sand` — **672×** — and 391 of 1,406 features were larger than the median face. ▶ `node checks/claims-a-face-takes-the-land-use-that-covers-it.mjs`
 >
-> ## ▶ NEXT, in dependency order — they do NOT ship independently
-> Fixing only the first moves the seminary from grey `unknown` to grey `parking`.
-> 1. **Stop the hijack** — an unreadable overlay must fall through to the size fallback, not capture the face.
-> 2. **Make the ingest vocabulary fail loudly**, the way `lu-policy.mjs` already does one stage down.
-> 3. ✅ **Containment direction settled 2026-10-05:** the paint reads the evidence polygons (`layerLandEvidence`), not a face's vote.
->
-> *Then* **Phase 2** (§3 — area-weighted join; ✅ `pickLuFromHash` deleted 2026-10-04) and **Phase 3** (§3 — building-derived LU, still the portable rung for assessor-less towns).
+> ## ▶ NEXT — what is still open (2026-10-05)
+> ✅ The hijack, the vocabulary gate and the containment direction are settled: the paint reads the evidence polygons
+> (`layerLandEvidence`), so a face's type no longer paints anything; every LU-bearing tag on disk is mapped or declared
+> (▶ `node checks/claims-every-lu-tag-has-a-home.mjs`); parcels vote by area (Phase 2); `pickLuFromHash` is deleted.
+> **Open, each a ruling for Jacob:**
+> 1. **CDL where OSM maps no field** — USDA's Cropland Data Layer reads 78% crop on huron's 724.7 ha of farm parcels with no
+>    mapped field (96% on the mapped ones). Paint crop from it, or keep grass? ▶ `scratch/huron-median-lu/cdl-measure.mjs`
+> 2. **`landuse=meadow` / `farmyard`** map to `agricultural` and so grow crop rows (huron: 12 meadows, 13.4 ha). Rows or grass?
+> 3. **Phase 3, building-derived land use** — little is left for it now: buildings on still-underived ground are LS 0 ·
+>    HPDM 9 · huron 37 · provincetown 158 (after its MassGIS parcels). Park, or build? ▶ `scratch/huron-median-lu/buildings-on-underived.mjs`
+> 4. **`natural:wood` → `recreation`** is kept by an existing decision (`derive.js`); `forest` is defensible. Jacob's call.
 >
 > ⚠️ **Bounds in §6 all still apply** — especially: **no LS re-pour or re-bake without Jacob's explicit go-ahead** (~19 of its 173 faces move), and **do not recolour the Look** (the `underived` colour shipped as a flagged **placeholder** at both palette sites, pending Jacob's call).
 >
