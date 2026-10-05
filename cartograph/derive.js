@@ -416,6 +416,66 @@ export function luCoverageForFace(faceRing, luPolys) {
 }
 
 /**
+ * ⭐⭐⭐ THE LAND IS PAINTED BY ITS EVIDENCE, POLYGON BY POLYGON (Jacob, 2026-10-05).
+ * A block can be half a row of houses and half a field — Huron's tile 6 is 27% mapped field, 26% residential
+ * parcels and 195 buildings — and one class per block paints one half wrong. So the paint reads the
+ * evidence itself, as a set of DISJOINT regions, each with its class:
+ *   1. an OSM land-use polygon paints its class where it lies — ground COVER over an untyped tag over a
+ *      MANAGEMENT boundary (`OSM_LU_KIND`, the face vote's own precedence), and within a kind the SMALLER
+ *      polygon over the larger (the more specific claim; "smallest containing face" kept as a layering);
+ *   2. elsewhere each readable assessor parcel paints its class (unreadable codes are not evidence);
+ *   3. ground neither reaches is NOT here — the painter leaves it `underived` (grass), by Jacob's ruling.
+ * ⛔ Where parcels of DIFFERENT classes overlap, the overlap is evidence of nothing: it goes to neither and is
+ * COUNTED (`parcelConflictM2`), never handed to whichever class came first.
+ * @param osm      the vote's own polygons: [{ lu, tag, ring:[{x,z}], holes }]
+ * @param parcels  [{ lu, rings:[[x,z]...] }] — readable parcels only
+ * @returns {{ evidence: [{ lu, src: 'osm'|'parcel', tag?, rings: [[x,z]...] }], parcelConflictM2: number }}
+ * ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs
+ */
+export function layerLandEvidence(osm, parcels) {
+  const rank = (tag) => OSM_LU_KIND[tag] === 'cover' ? 0 : OSM_LU_KIND[tag] === 'management' ? 2 : 1
+  const pathOf = (r) => r.map(q => toClipper(q.x ?? q[0], q.z ?? q[1]))
+  const regionOf = (outer, holes) => {     // outer MINUS its holes, as Clipper paths
+    const c = new Clipper(); c.AddPath(pathOf(outer), PolyType.ptSubject, true)
+    for (const h of holes || []) if (h?.length >= 3) c.AddPath(pathOf(h), PolyType.ptClip, true)
+    const out = new Paths(); c.Execute(ClipType.ctDifference, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return out
+  }
+  const op = (type, a, b) => { const c = new Clipper(); c.AddPaths(a, PolyType.ptSubject, true); if (b.length) c.AddPaths(b, PolyType.ptClip, true)
+    const out = new Paths(); c.Execute(type, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero); return out }
+  const areaOf = (ps) => Math.abs(ps.reduce((t, q) => t + Clipper.Area(q), 0)) / (SCALE * SCALE)
+  const toRings = (ps) => ps.map(q => q.map(pt => [pt.X / SCALE, pt.Y / SCALE]))
+  const evidence = []
+  const bbOf = (ps) => { let b = [Infinity, -Infinity, Infinity, -Infinity]; for (const q of ps) for (const pt of q) { if (pt.X < b[0]) b[0] = pt.X; if (pt.X > b[1]) b[1] = pt.X; if (pt.Y < b[2]) b[2] = pt.Y; if (pt.Y > b[3]) b[3] = pt.Y } return b }
+  const meets = (a, b) => !(a[0] > b[1] || a[1] < b[0] || a[2] > b[3] || a[3] < b[2])
+  // ⭐ Each polygon is differenced only against the earlier claims its bbox meets — never against one growing
+  // union of everything (that was O(n²) and ran past 9 minutes on hipointedemun's 4,959 polygons).
+  const claims = []
+  const items = (osm || []).filter(o => o?.ring?.length >= 3).map(o => ({ o, region: regionOf(o.ring, o.holes) }))
+    .map(x => ({ ...x, a: areaOf(x.region), k: rank(x.o.tag), bb: bbOf(x.region) })).filter(x => x.a > 0)
+    .sort((x, y) => x.k - y.k || x.a - y.a)
+  for (const { o, region, bb } of items) {
+    const over = claims.filter(c => meets(c.bb, bb)).flatMap(c => c.region)
+    const mine = over.length ? op(ClipType.ctDifference, region, over) : region
+    if (areaOf(mine) > 0) evidence.push({ lu: o.lu, src: 'osm', tag: o.tag, rings: toRings(mine) })
+    claims.push({ region, bb })
+  }
+  const claimed = claims.length ? op(ClipType.ctUnion, claims.flatMap(c => c.region), []) : new Paths()
+  // parcels: one region per class, minus the OSM evidence, minus every OTHER class's parcels (a conflict)
+  const byClass = new Map()
+  for (const p of parcels || []) for (const r of p.rings || []) if (r?.length >= 3) (byClass.get(p.lu) || byClass.set(p.lu, []).get(p.lu)).push(pathOf(r))
+  const unions = new Map([...byClass].map(([lu, ps]) => [lu, op(ClipType.ctUnion, ps, [])]))
+  let parcelConflictM2 = 0
+  for (const [lu, u] of unions) {
+    const others = [...unions].filter(([l]) => l !== lu).flatMap(([, q]) => q)
+    const free = op(ClipType.ctDifference, u, [...claimed, ...others])
+    const conflict = others.length ? op(ClipType.ctIntersection, op(ClipType.ctDifference, u, claimed), others) : []
+    parcelConflictM2 += areaOf(conflict) / 2      // each overlap is seen from both classes
+    if (areaOf(free) > 0) evidence.push({ lu, src: 'parcel', rings: toRings(free) })
+  }
+  return { evidence, parcelConflictM2 }
+}
+
+/**
  * ⭐⭐ THE PARCEL RUNG WEIGHS BY AREA (Jacob, 2026-10-05 — "yes to underived grass and the rest").
  * A face no OSM land use covers takes the class its assessor parcels cover MOST OF, by the area each
  * parcel shares with the face. ⛔ It used to COUNT parcels: huron's tile 21 is 133.1 ha of farm parcels
@@ -5094,6 +5154,15 @@ export function deriveLayers(highways) {
     return m
   })()
 
+  // ⭐ The evidence the painter reads (see `layerLandEvidence`): the vote's own OSM polygons, and every
+  // parcel whose code this town's reader can read, in its class.
+  const landEvidence = layerLandEvidence(osmLUPolys,
+    parcels.map(p => ({ lu: classifyLandUse(p), rings: p.rings })).filter(p => p.lu && p.lu !== UNDERIVED))
+  {
+    const by = {}; for (const e of landEvidence.evidence) { const k = `${e.src}:${e.lu}`; by[k] = (by[k] || 0) + Math.abs(e.rings.reduce((t, r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return t + a / 2 }, 0)) }
+    console.log(`    land evidence: ${landEvidence.evidence.length} region(s) — ${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(v / 1e4).toFixed(1)} ha`).join(' · ')}`)
+    if (landEvidence.parcelConflictM2 > 0) console.warn(`    ⛔ ${(landEvidence.parcelConflictM2 / 1e4).toFixed(2)} ha where parcels of DIFFERENT classes overlap — evidence of nothing, painted underived.`)
+  }
   const ribbonsLayer = {
     streets: ribbonStreets.map(st => ({
       skelId: st.skelId,
@@ -5205,16 +5274,9 @@ export function deriveLayers(highways) {
       streets: ix.streets.map(s => ({ name: s.name, ix: s.ix })),
     })),
     faces: faceFills,
-    // ⭐ THE MAPPED FIELDS — every OSM polygon the vocabulary reads as `agricultural`, outer + holes.
-    // Ruled by Jacob 2026-10-04: crop rows grow ONLY where a field is mapped; the rest of a piece the
-    // vote calls agricultural is grass (`underived`). The vote above reads these and used to discard
-    // them, so the paint had nothing to confine the crop to — on huron 405.6 of 544.4 ha of crop lay
-    // under no field at all. Read off `OSM_TO_LU` through `osmLUPolys`, never a tag list typed here.
-    fields: osmLUPolys.filter(o => o.lu === 'agricultural').map(o => ({
-      tag: o.tag,
-      ring: o.ring.map(p => [p.x ?? p[0], p.z ?? p[1]]),
-      holes: (o.holes || []).map(h => h.map(p => [p.x ?? p[0], p.z ?? p[1]])),
-    })),
+    // ⭐ THE LAND EVIDENCE — disjoint regions, each with its class: OSM polygons, then readable parcels
+    // (`layerLandEvidence`). The painter paints each piece by these, and `underived` where none reaches.
+    landEvidence: landEvidence.evidence,
     // [E2] constructed medians (kind:'median') — consumed by identity in
     // tileGround (median-tile detection + the merge-region asphalt fill).
     medians: medians.map(m => ({ kind: m.kind, name: m.name, streets: m.streets, chains: m.chains, pairKey: m.pairKey, ...(m.loopId ? { loopId: m.loopId } : {}), ...(m.absorbedBy ? { absorbedBy: m.absorbedBy } : {}), ring: m.ring })),

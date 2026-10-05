@@ -46,7 +46,7 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 > Fixing only the first moves the seminary from grey `unknown` to grey `parking`.
 > 1. **Stop the hijack** — an unreadable overlay must fall through to the size fallback, not capture the face.
 > 2. **Make the ingest vocabulary fail loudly**, the way `lu-policy.mjs` already does one stage down.
-> 3. **Settle the containment direction** between `classify`/the OSM vote and the per-piece paint (`landUseByPiece`).
+> 3. ✅ **Containment direction settled 2026-10-05:** the paint reads the evidence polygons (`layerLandEvidence`), not a face's vote.
 >
 > *Then* **Phase 2** (§3 — area-weighted join; ✅ `pickLuFromHash` deleted 2026-10-04) and **Phase 3** (§3 — building-derived LU, still the portable rung for assessor-less towns).
 >
@@ -90,7 +90,8 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
   no floor**: the 100–190 ha single-class tiles take `agricultural` with farmland at 13–26% while **67–78% of the tile is
   covered by no OSM polygon at all**. ✅ **RULED (Jacob, 2026-10-05, "yes to underived grass and the rest"): land nothing
   covers rests as `underived`, drawn as grass** (tint `#6E8A5E`, a Look colour, `luColors.underived`) until the ladder fills
-  it; crop rows grow only inside mapped fields (`ribbons.fields`). ② ✅
+  it; ✅ **each piece is painted by its evidence, polygon by polygon** (OSM → parcels → `underived`; `ribbons.landEvidence`), and
+  crop rows grow only on mapped OSM fields — a farm parcel paints grass. ② ✅
   **CLOSED in code, not poured: one tag is one claim** (unioned, not summed). Moves one face in six towns: huron's tiles
   66 + 119 go `greenhouse → agricultural`, so huron loses `greenhouse` entirely until ① is ruled.
   ▶ `node checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` · `node scratch/huron-median-lu/union-before-after.mjs`

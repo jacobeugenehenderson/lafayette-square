@@ -2372,32 +2372,59 @@ export function tilePieceLus(st) {
   }
   throw new Error('[tileGround][LU] a tile carries neither `luByPiece` nor `lu` — no land use was minted for it. Refusing to paint a class nobody derived.')
 }
-// ⭐⭐ CROP ROWS GROW ONLY WHERE A FIELD IS MAPPED (Jacob, 2026-10-04: the rest is grass, "for now").
-// The vote may call a whole piece `agricultural` on a 13–37% plurality of mapped farmland; the crop
-// surface is a claim about what is PLANTED, and that needs the field itself. So an agricultural piece
-// is painted `agricultural` only inside the mapped fields (`ribbons.fields`, written by the pour) and
-// `underived` — grass — everywhere else. ⛔ The piece's CLASS is still the vote's answer; only the
-// paint is confined. ▶ node checks/claims-every-piece-takes-its-own-land-use.mjs
+// ⭐⭐⭐ EACH PIECE IS PAINTED BY ITS EVIDENCE, POLYGON BY POLYGON (Jacob, 2026-10-05). The pour lays the
+// land evidence out as disjoint regions (`derive.js` `layerLandEvidence`: OSM polygons, then readable parcels);
+// a piece paints each region it holds in that region's class and `underived` — grass — wherever none
+// reaches. A block that is half houses and half field paints both. ⭐ Crop rows grow only on a MAPPED field
+// (Jacob, 2026-10-04): a parcel the reader calls farmland is evidence the land is farmed, not of what is
+// planted, so it paints grass. ⛔ The piece's CLASS (`luByPiece`) is now its LABEL — the class holding most
+// of it — for the operator; the paint is the evidence. ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs
 export const CROP_LU = 'agricultural'
-export function fieldRegionOf(fields) {
-  if (!Array.isArray(fields)) return null
-  const rings = []
-  for (const f of fields) {
-    if (!(f?.ring?.length >= 3)) continue
-    rings.push(signedArea(f.ring) < 0 ? f.ring.slice().reverse() : f.ring)
-    for (const h of f.holes || []) if (h?.length >= 3) rings.push(signedArea(h) > 0 ? h.slice().reverse() : h)
+const paintClassOf = (e) => (e.src === 'parcel' && e.lu === CROP_LU) ? UNDERIVED_LU : e.lu
+// Grouped by (evidence class, paint class): one boolean per class per piece, not one per region.
+export function prepareEvidence(evidence) {
+  if (!Array.isArray(evidence)) return null
+  const groups = new Map()
+  for (const e of evidence) {
+    if (!e?.rings?.length) continue
+    const paint = paintClassOf(e), k = `${e.lu}|${paint}`
+    const g = groups.get(k) || groups.set(k, { lu: e.lu, paint, rings: [] }).get(k)
+    for (const r of e.rings) g.rings.push({ r, bb: ringBB(r) })
   }
-  return unionRings(rings)
+  return [...groups.values()]
 }
-// Per piece (aligned to `iA`): the mapped-field part of each AGRICULTURAL piece; null elsewhere.
-export function cropByPiece(iA, luByPiece, fieldRegion) {
+// Per piece (aligned to `iA`): [{ lu: the PAINT class, ev: the evidence class, rings }]; null for a piece painted
+// whole (a verge/JR ruling, an operator's override) and for a hole.
+export function evidenceByPiece(iA, groups, wholeByPiece) {
   const out = (iA || []).map(() => null)
-  for (const p of piecesOfIA(iA)) if (luByPiece[p.i] === CROP_LU) out[p.i] = fieldRegion.length ? intersectRings([p.outer, ...p.holes], fieldRegion) : []
+  for (const p of piecesOfIA(iA)) {
+    if (wholeByPiece?.[p.i]) continue
+    const pb = ringBB(p.outer), region = [p.outer, ...p.holes], parts = []
+    for (const g of groups) {
+      const near = g.rings.filter(x => !(x.bb[0] > pb[1] || x.bb[1] < pb[0] || x.bb[2] > pb[3] || x.bb[3] < pb[2])).map(x => x.r)
+      if (!near.length) continue
+      const r = intersectRings(region, near); if (r.length) parts.push({ lu: g.paint, ev: g.lu, rings: r })
+    }
+    out[p.i] = parts
+  }
   return out
 }
-let _noFieldsWarned = false
-const noFieldsWarn = () => { if (_noFieldsWarned) return; _noFieldsWarned = true
-  console.warn(`[tileGround][LU] ⛔ this artifact carries NO mapped fields (\`ribbons.fields\` / \`cropByPiece\`): every ${CROP_LU} piece is painted crop WHOLE, including ground no field covers. RE-POUR, then re-bake, to confine the crop to the fields.`) }
+// The LABEL of each piece: the evidence class holding most of it (`underived` when evidence holds none, or less
+// than the ground nothing reaches). Read off the parts already cut — no second pass.
+export function labelFromEvidence(iA, parts, fixedOrOverride) {
+  const out = (iA || []).map(() => null)
+  for (const p of piecesOfIA(iA)) {
+    if (fixedOrOverride) { out[p.i] = fixedOrOverride; continue }
+    const by = {}; let held = 0
+    for (const e of parts[p.i] || []) { const a = ringsArea(e.rings); by[e.ev] = (by[e.ev] || 0) + a; held += a }
+    by[UNDERIVED_LU] = (by[UNDERIVED_LU] || 0) + Math.max(0, ringsArea([p.outer, ...p.holes]) - held)
+    out[p.i] = Object.entries(by).sort((a, b) => b[1] - a[1])[0][0]
+  }
+  return out
+}
+let _noEvidenceWarned = false
+const noEvidenceWarn = () => { if (_noEvidenceWarned) return; _noEvidenceWarned = true
+  console.warn('[tileGround][LU] ⛔ this artifact carries NO land evidence (`ribbons.landEvidence` / `evidenceByPiece`): each piece is painted WHOLE in its one class — a block that is half houses and half field paints one half wrong. RE-POUR, then re-bake.') }
 
 // Move the geometry a painter struck under `OWN_LU` to each piece's own class. Every other key
 // (a divided road's `median`) is left exactly where the painter put it.
@@ -2405,32 +2432,29 @@ export function rekeyByPiece(st, byLu) {
   const own = byLu[OWN_LU]; delete byLu[OWN_LU]
   if (!own?.length) return byLu
   const lus = tilePieceLus(st), pieces = piecesOfIA(st.iA)
-  const crop = Array.isArray(st.cropByPiece) ? st.cropByPiece : null
-  // (class, region) per piece — an agricultural piece splits into its fields (crop) and the rest (grass).
+  const ev = Array.isArray(st.evidenceByPiece) ? st.evidenceByPiece : null
+  if (st.evidenceByPiece === undefined) noEvidenceWarn()   // absent = an artifact from before the evidence; null = by design
+  // (class, region) per piece: each evidence region in its class, and `underived` where none reaches.
   const parts = []
   for (const p of pieces) {
-    const lu = lus[p.i], region = [p.outer, ...p.holes]
-    if (lu === CROP_LU && crop) {
-      const fieldPart = crop[p.i] || []
-      parts.push({ lu: CROP_LU, region: fieldPart })
-      parts.push({ lu: UNDERIVED_LU, region: fieldPart.length ? differenceRings(region, fieldPart) : region })
-    } else {
-      if (lu === CROP_LU) noFieldsWarn()
-      parts.push({ lu, region })
-    }
+    const region = [p.outer, ...p.holes], mine = ev?.[p.i]
+    if (!Array.isArray(mine)) { parts.push({ lu: lus[p.i], region }); continue }   // whole: ruled, authored, or a pre-evidence artifact
+    for (const e of mine) parts.push({ lu: e.lu, region: e.rings })
+    const held = mine.flatMap(e => e.rings)
+    parts.push({ lu: UNDERIVED_LU, region: held.length ? differenceRings(region, held) : region })
   }
   const classes = [...new Set(parts.filter(x => x.region.length).map(x => x.lu))]
-  if (classes.length === 1 && parts.every(x => x.lu === classes[0] || !x.region.length) && !(crop && classes[0] === CROP_LU)) {
-    (byLu[classes[0]] ||= []).push(...own); return byLu
-  }
+  if (classes.length === 1 && !ev) { (byLu[classes[0]] ||= []).push(...own); return byLu }
   for (const lu of classes) {
     const part = intersectRings(own, parts.filter(x => x.lu === lu).flatMap(x => x.region))
     if (part.length) (byLu[lu] ||= []).push(...part)
   }
   // ⛔ COUNTED, NEVER DROPPED UNSEEN: land-use paint lying in NO piece has no class to take. The
   // painters confine it to `iA`, so this should be 0 m²; if it is not, it is said, not reassigned.
+  // ⭐ Tolerance = Clipper's 1 mm lattice × the paint's own perimeter — a property of the geometry, not a number picked.
   const outside = ringsArea(differenceRings(own, pieces.flatMap(p => [p.outer, ...p.holes])))
-  if (outside > 0) console.warn(`[tileGround][LU] ⛔ ${outside.toFixed(2)} m² of a split tile's land-use paint lies in none of its pieces — not painted (no piece to take its class from).`)
+  const tol = own.reduce((t, r) => { let q = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) q += Math.hypot(r[i][0] - r[j][0], r[i][1] - r[j][1]); return t + q }, 0) * 0.001
+  if (outside > tol) console.warn(`[tileGround][LU] ⛔ ${outside.toFixed(2)} m² of a split tile's land-use paint lies in none of its pieces — not painted (no piece to take its class from).`)
   return byLu
 }
 
@@ -6657,9 +6681,18 @@ export function buildTileGround(ribbons, opts = {}) {
   })
   const blockLandUse = (opts.blockLandUse && typeof opts.blockLandUse === 'object') ? opts.blockLandUse : null
   const overrideFor = (blockRing) => (blockLandUse && blockLandUse[blockKeyFromRing(blockRing)]) || null
-  // The mapped fields (`ribbons.fields`); null when the pour predates them — said, once, at paint.
-  const fieldRegion = fieldRegionOf(ribbons?.fields)
-  const cropFor = (iA, lus) => fieldRegion ? cropByPiece(iA, lus, fieldRegion) : undefined
+  // The land evidence (`ribbons.landEvidence`); null when the pour predates it — then each piece is labelled by the
+  // face vote and painted whole, and the painter SAYS so once.
+  const landEv = prepareEvidence(ribbons?.landEvidence)
+  // label + evidence for one tile's pieces, after its final cut. `labelOnly`: a producer whose tiles are not
+  // painted (the chain path inside a ① build) gets the face-vote label and no evidence — the work is discarded.
+  const landOf = (iA, { fixed = null, override = null, labelOnly = false }) => {
+    if (!landEv) return { luByPiece: landUseByPiece(iA, { faces: faceList, fixed, override }) }
+    if (labelOnly) return { luByPiece: landUseByPiece(iA, { faces: faceList, fixed, override }), evidenceByPiece: null }   // ⭐ null = not painted from evidence, by design
+    const whole = fixed || override
+    const evidenceByPiece_ = evidenceByPiece(iA, landEv, whole ? iA.map(() => true) : null)
+    return { luByPiece: labelFromEvidence(iA, evidenceByPiece_, whole), evidenceByPiece: evidenceByPiece_ }
+  }
 
   // Asphalt/curb/sidewalk are single-material (merged). Treelawn (M2) + the LU
   // remainder (M1) are grouped by the tile's class so they paint that class's
@@ -7443,7 +7476,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
     // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
     // not mask it with a disk. Each = { apex, C, r, tA, tB } from filletRing.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, ...(() => { const luByPiece = landUseByPiece(iA, { faces: faceList, override: overrideFor(tile.ring) }); return { luByPiece, cropByPiece: cropFor(iA, luByPiece) } })(), roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink,
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, ...landOf(iA, { override: overrideFor(tile.ring), labelOnly: !!opts.protoProducer }), roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink,
       // [A07] WHICH PRODUCER BUILT THIS CURB, and why. The docs promise a single
       // concentric offset; on LS 41 of 101 tiles are not one. Recorded so an
       // operator on a town nobody has inspected can tell, and so A06 has a test.
@@ -9068,8 +9101,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // the cut is what handed every disc piece, and every piece of a split block, one answer.
         for (const t of protoShapeTiles) {
           const { fixed, override } = t._luSeed
-          t.luByPiece = landUseByPiece(t.iA, { faces: faceList, fixed, override })
-          t.cropByPiece = cropFor(t.iA, t.luByPiece)
+          Object.assign(t, landOf(t.iA, { fixed, override }))
           delete t._luSeed
         }
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
@@ -9275,7 +9307,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // doesn't paint over the per-class block centres.
     let big = null, bigA = 0
     for (const r of perimeter) { const a = signedArea(r); if (a > bigA) { bigA = a; big = r } }
-    const perimClass = big ? landUseByPiece([big], { faces: faceList, override: overrideFor(big) })[0] : UNDERIVED_LU
+    const perimClass = big ? landOf([big], { override: overrideFor(big) }).luByPiece[0] : UNDERIVED_LU
     pushLu(tlByLu, perimClass, pTree)
     pushLu(luByLu, perimClass, differenceRings(perimeter, unionRings([...pAsphalt, ...pCurb, ...pTree, ...pSide])))
     asphalt  = intersectRings(asphalt,  [stencil])
