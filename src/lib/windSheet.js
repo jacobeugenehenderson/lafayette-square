@@ -228,14 +228,36 @@ export function setWindSheetOverlay(on) { _overlay = !!on; _notify() }
 /** Subscribe to readout and overlay changes; returns an unsubscribe. */
 export function onWindSheetReadout(cb) { _readoutSubs.add(cb); return () => _readoutSubs.delete(cb) }
 
-// ── The operator's override — the card's editable fields (Jacob, 2026-10-04: "I wouldn't even mind the wind card if
-// the text entry fields were editable"). Session-only, like Stage's Weather switch: never saved, never baked. It is
-// laid on the ONE CABLE's object (applyWindOverride), so the sheet and every consumer see it exactly as they would
-// that weather. A field left null follows the weather.
+// ── The operator's override — set by the wind PILLS (below; WindSheetCard.jsx). Session-only, like Stage's Weather
+// switch: never saved, never baked. It is laid on the ONE CABLE's object (applyWindOverride), so the sheet and every
+// consumer see it exactly as they would that weather. A field left null follows the weather.
 let _override = { speedMps: null, fromDeg: null, gustsMps: null, gustShape: null }
 export function getWindOverride() { return _override }
-export function setWindOverride(patch) { _override = { ..._override, ...patch }; _notify() }
 export function clearWindOverride() { _override = { speedMps: null, fromDeg: null, gustsMps: null, gustShape: null }; _notify() }
+
+// ── The wind PILLS (Jacob, 2026-10-05: "build the wind pills") — the intuitive face of the override above. Four winds to
+// judge the Tree Wind against, plus `weather` (no override). Speed and the gust PEAK in m/s, shape 0 (round patches) →
+// 1 (squall lines). ⛔ No direction: a pill leaves fromDeg to the weather, i.e. the live wind's, or a Stage preset's
+// still air from the town's own tendency (weatherPresets.js) — never a kit bearing. Session-only, like the override.
+export const WIND_PILLS = Object.freeze({
+  still:  { speedMps: 1,  gustsMps: 2,  gustShape: 0 },
+  breezy: { speedMps: 4,  gustsMps: 7,  gustShape: 0.2 },
+  windy:  { speedMps: 8,  gustsMps: 13, gustShape: 0.4 },
+  storm:  { speedMps: 18, gustsMps: 30, gustShape: 0.8 },
+})
+export function setWindPill(name) {
+  if (name === 'weather') return clearWindOverride()
+  const p = WIND_PILLS[name]
+  if (!p) throw new Error(`[windSheet] ⛔ unknown wind pill '${name}' (have: weather, ${Object.keys(WIND_PILLS).join(', ')})`)
+  _override = { speedMps: p.speedMps, fromDeg: null, gustsMps: p.gustsMps, gustShape: p.gustShape }
+  _notify()
+}
+/** Which pill the override is, or 'weather' when there is none. */
+export function windPillOf(o) {
+  if (![o.speedMps, o.fromDeg, o.gustsMps, o.gustShape].some((v) => v != null)) return 'weather'
+  return Object.keys(WIND_PILLS).find((k) => WIND_PILLS[k].speedMps === o.speedMps && WIND_PILLS[k].gustsMps === o.gustsMps
+    && WIND_PILLS[k].gustShape === o.gustShape && o.fromDeg == null) ?? null
+}
 const _set = (v) => v !== null && v !== undefined && Number.isFinite(v)
 /** The cable's state with the operator's override laid on it. Untouched (same object) when nothing is overridden. */
 export function applyWindOverride(state) {

@@ -1,47 +1,36 @@
 /**
- * WindSheetCard — the wind the trees get, EDITABLE, in an app's tools column (Jacob, 2026-10-04: "it should go in the
- * same tools column as everything else"; "I wouldn't even mind the wind card if the text entry fields were editable";
- * the map colours and the developer readout were "rather irrelevant", so they live on window.__windSheet now).
- * Each field shows the weather's value as its placeholder and, typed into, overrides it for this session through the
- * one cable (lib/windSheet.js#applyWindOverride): never saved, never baked. Blank = follow the weather.
- * Each column wraps the body in its own card shell: Stage's glass-panel Collapsible, Preview's profiler-panel twirl.
+ * WindSheetCard — the wind the trees get, as PILLS (Jacob, 2026-10-05: "build the wind pills"; the typed fields
+ * before them, 2026-10-04, asked for a bearing nobody had a reason to choose). Weather follows the town's weather;
+ * Still · Breezy · Windy · Storm stand the trees in that wind for this session (lib/windSheet.js#WIND_PILLS): never
+ * saved, never baked. Direction is always the weather's (a Stage preset's: the town's own tendency). One line says
+ * what the trees are getting. The Tree Wind look is tuned against these (Stage › Surfaces › Trees).
  */
 import { useState, useSyncExternalStore } from 'react'
-import { getWindSheetReadout, onWindSheetReadout, getWindOverride, setWindOverride, clearWindOverride } from '../lib/windSheet.js'
+import { getWindSheetReadout, onWindSheetReadout, getWindOverride, setWindPill, windPillOf, WIND_PILLS } from '../lib/windSheet.js'
 
 const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
 const fromDegOf = (dir) => ((Math.atan2(-dir[0], dir[1]) * 180) / Math.PI + 360) % 360
 const compass = (deg) => COMPASS[Math.round(deg / 22.5) % 16]
+const PILLS = ['weather', ...Object.keys(WIND_PILLS)]
 
-function Field({ label, unit, value, placeholder, onChange, step = 0.5, min = 0, max }) {
-  return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '3px 0' }}>
-      <span style={{ width: 52, opacity: 0.7 }}>{label}</span>
-      <input type="number" step={step} min={min} max={max} value={value ?? ''} placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-        style={{ width: 72, background: 'rgba(0,0,0,.25)', color: 'inherit', border: '1px solid rgba(255,255,255,.15)', borderRadius: 4, padding: '2px 4px' }} />
-      <span style={{ opacity: 0.6 }}>{unit}</span>
-    </label>
-  )
-}
-
-/** The card's body: the wind as the trees get it, each value editable for this session. */
-export function WindSheetReadout() {
+/** The wind pills + what the trees are getting. Stage puts it under the Weather switch; Preview in its panel. */
+export function WindSwitch() {
   const r = useSyncExternalStore(onWindSheetReadout, getWindSheetReadout)
   const o = useSyncExternalStore(onWindSheetReadout, getWindOverride)
-  if (!r) return <div className="profiler-note">No wind sheet mounted.</div>
-  const w = r.air.weather || r.air   // the weather's own values (under any override)
-  const wFrom = fromDegOf(w.baseDirection)
-  const overridden = [o.speedMps, o.fromDeg, o.gustsMps, o.gustShape].some((v) => v != null)
+  const on = windPillOf(o)
+  const a = r?.air
   return (
-    <div style={{ fontSize: 11, lineHeight: 1.5 }}>
-      <Field label="wind" unit="m/s" value={o.speedMps} placeholder={w.baseSpeedMps.toFixed(1)} onChange={(v) => setWindOverride({ speedMps: v })} />
-      <Field label="from" unit={`° ${compass(o.fromDeg ?? wFrom)}`} step={5} max={360} value={o.fromDeg} placeholder={Math.round(wFrom)} onChange={(v) => setWindOverride({ fromDeg: v })} />
-      <Field label="gusts" unit="m/s peak" value={o.gustsMps} placeholder={(w.baseSpeedMps + w.gustsScale).toFixed(1)} onChange={(v) => setWindOverride({ gustsMps: v })} />
-      <Field label="shape" unit="0 patches · 1 squall lines" step={0.1} max={1} value={o.gustShape} placeholder={w.gustShape.toFixed(1)} onChange={(v) => setWindOverride({ gustShape: v })} />
-      <div className="profiler-note" style={{ marginTop: 4, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <span>{overridden ? `overriding the ${w.status} weather for this session` : `from the weather (${w.status}) · type to override`}</span>
-        {overridden && <button onClick={clearWindOverride} style={{ background: 'none', border: '1px solid rgba(255,255,255,.25)', borderRadius: 4, color: 'inherit', padding: '0 6px', cursor: 'pointer' }}>reset</button>}
+    <div>
+      <div className="mode-pill mt-3" role="group" aria-label="Wind">
+        {PILLS.map((m) => (
+          <button key={m} type="button" onClick={() => setWindPill(m)} aria-pressed={on === m}
+            title={m === 'weather' ? 'The wind of the weather above (live, or a preset\'s still air)' : `Stand the trees in a ${m} wind (this session only, not saved)`}
+          >{m}</button>
+        ))}
+      </div>
+      <div className="profiler-note" style={{ marginTop: 4, fontSize: 11 }}>
+        {!a ? 'No wind sheet mounted.'
+          : `${on === 'weather' ? `from the weather (${(a.weather || a).status})` : `${on ?? 'custom'} wind`} · ${a.baseSpeedMps.toFixed(1)} m/s, gusts to ${(a.baseSpeedMps + a.gustsScale).toFixed(1)} · from ${compass(fromDegOf(a.baseDirection))}`}
       </div>
     </div>
   )
@@ -55,7 +44,7 @@ export function WindSheetPreviewCard() {
       <button onClick={() => setOpen(!open)} className="section-heading" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
         {open ? '▾' : '▸'} wind
       </button>
-      {open && <WindSheetReadout />}
+      {open && <WindSwitch />}
     </div>
   )
 }

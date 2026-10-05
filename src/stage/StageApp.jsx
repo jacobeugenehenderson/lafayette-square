@@ -13,7 +13,7 @@
  * has no default export. See feedback_stage_standalone_should_die.md.
  */
 
-import { WindSheetReadout } from '../components/WindSheetCard.jsx'
+import { WindSwitch } from '../components/WindSheetCard.jsx'
 import { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -1002,6 +1002,8 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         <div className="section-heading mb-2">Time of Day</div>
         <Timeline />
         <WeatherSwitch />
+        {/* The wind the trees get, beside the weather it rides on (pills; session-only). */}
+        <WindSwitch />
       </div>
 
       {/* Sky & Light — TOD-animatable atmospheric + lighting channels.
@@ -1071,12 +1073,6 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         </Collapsible>
       </div>
 
-      {/* Wind — the wind the trees get, editable for this session (lib/windSheet.js#applyWindOverride). */}
-      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <Collapsible label="Wind">
-          <WindSheetReadout />
-        </Collapsible>
-      </div>
     </div>
   )
 }
