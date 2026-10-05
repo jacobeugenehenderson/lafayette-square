@@ -1053,9 +1053,9 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         </Collapsible>
       </div>
 
-      {/* Wind sheet — the town's wind field: its readout, and "Show on map" (lib/windSheet.js). */}
+      {/* Wind — the wind the trees get, editable for this session (lib/windSheet.js#applyWindOverride). */}
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
-        <Collapsible label="Wind sheet">
+        <Collapsible label="Wind">
           <WindSheetReadout />
         </Collapsible>
       </div>

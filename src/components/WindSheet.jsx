@@ -24,7 +24,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WIND_FIELD, WIND_FIELD_GLSL, windAtAdvect, gustLengths } from '../lib/wind-field.js'
 import { WeatherRangeError } from '../lib/weatherAt.js'
-import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted, _publishWindSheetReadout, onWindSheetReadout, getWindSheetOverlay } from '../lib/windSheet.js'
+import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted, _publishWindSheetReadout, onWindSheetReadout, getWindSheetOverlay, setWindSheetOverlay, applyWindOverride } from '../lib/windSheet.js'
 import { onSceneStencil } from './sceneStencilState.js'
 import { UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { useQuality } from '../lib/qualityProfile.js'
@@ -171,7 +171,7 @@ export default function WindSheet({ extent, wind }) {
     const dt = lastMs.current ? Math.min(0.1, (now - lastMs.current) / 1000) : 0
     lastMs.current = now
     try {
-      air.current = specimenWind || windStateOfWeather(useSkyState.getState(), useTimeOfDay.getState())
+      air.current = specimenWind || applyWindOverride(windStateOfWeather(useSkyState.getState(), useTimeOfDay.getState()))
     } catch (e) {
       if (!(e instanceof WeatherRangeError)) throw e
       if (said.current !== e.message) { said.current = e.message; console.error(`[WindSheet] ⛔ no weather for this time — holding the last wind: ${e.message}`) }
@@ -236,6 +236,9 @@ export default function WindSheet({ extent, wind }) {
       get air() { return air.current },
       get advect() { return clock.current.adv },
       get gust() { return clock.current.L },
+      /** The field laid over the terrain (colour = strength). A developer view; not in the card. */
+      set showMap(v) { setWindSheetOverlay(v) },
+      get showMap() { return getWindSheetOverlay() },
       /** What the pass last drew with — for a sheet that reads back zeros. */
       get pass() { const u = pass.material.uniforms; return { allocated: !!targets.current, enabled: enabled.current, baseForce: u.uBaseForce.value.toArray(), amp: u.uAmp.value, lengths: u.uLengths.value.toArray(), frontDir: u.uFrontDir.value.toArray(), advect: u.uAdvect.value } },
       /** The main thread's time in the sheet's frame callback, ms (the weather read, the uniforms, the draw's submission). */

@@ -237,3 +237,26 @@ export function getWindSheetOverlay() { return _overlay }
 export function setWindSheetOverlay(on) { _overlay = !!on; _notify() }
 /** Subscribe to readout and overlay changes; returns an unsubscribe. */
 export function onWindSheetReadout(cb) { _readoutSubs.add(cb); return () => _readoutSubs.delete(cb) }
+
+// ── The operator's override — the card's editable fields (Jacob, 2026-10-04: "I wouldn't even mind the wind card if
+// the text entry fields were editable"). Session-only, like Stage's Weather switch: never saved, never baked. It is
+// laid on the ONE CABLE's object (applyWindOverride), so the sheet and every consumer see it exactly as they would
+// that weather. A field left null follows the weather.
+let _override = { speedMps: null, fromDeg: null, gustsMps: null, gustShape: null }
+export function getWindOverride() { return _override }
+export function setWindOverride(patch) { _override = { ..._override, ...patch }; _notify() }
+export function clearWindOverride() { _override = { speedMps: null, fromDeg: null, gustsMps: null, gustShape: null }; _notify() }
+const _set = (v) => v !== null && v !== undefined && Number.isFinite(v)
+/** The cable's state with the operator's override laid on it. Untouched (same object) when nothing is overridden. */
+export function applyWindOverride(state) {
+  const o = _override
+  if (![o.speedMps, o.fromDeg, o.gustsMps, o.gustShape].some(_set)) return state
+  const speed = _set(o.speedMps) ? Math.max(0, o.speedMps) : state.baseSpeedMps
+  let dir = state.baseDirection
+  if (_set(o.fromDeg)) { const f = (o.fromDeg * Math.PI) / 180; dir = [-Math.sin(f), Math.cos(f)] }
+  // The gust's amplitude is the peak above the mean, as from the weather (gustsMps is the PEAK, like wind_gusts_10m).
+  const gustsScale = _set(o.gustsMps) ? Math.max(0, o.gustsMps - speed) : state.gustsScale
+  return { ...state, status: 'override', baseSpeedMps: speed, baseDirection: dir, gustsScale, hasGusts: state.hasGusts || _set(o.gustsMps),
+    frontVel: [dir[0] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS, dir[1] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS],
+    gustShape: _set(o.gustShape) ? Math.min(1, Math.max(0, o.gustShape)) : state.gustShape, weather: state }
+}

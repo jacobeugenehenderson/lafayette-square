@@ -1,37 +1,48 @@
 /**
- * WindSheetCard — the wind sheet's readout and "show on map" toggle, as a card in an app's tools column (Jacob,
- * 2026-10-04: "it should go in the same tools column as everything else"; it had floated over Preview's Publish card).
- * The body is one component; each column wraps it in its own card shell — Stage's glass-panel Collapsible, Preview's
- * profiler-panel twirl — so it reads like its neighbours. ▶ the sheet: lib/windSheet.js · cartograph/ARCHITECTURE.md §8.
+ * WindSheetCard — the wind the trees get, EDITABLE, in an app's tools column (Jacob, 2026-10-04: "it should go in the
+ * same tools column as everything else"; "I wouldn't even mind the wind card if the text entry fields were editable";
+ * the map colours and the developer readout were "rather irrelevant", so they live on window.__windSheet now).
+ * Each field shows the weather's value as its placeholder and, typed into, overrides it for this session through the
+ * one cable (lib/windSheet.js#applyWindOverride): never saved, never baked. Blank = follow the weather.
+ * Each column wraps the body in its own card shell: Stage's glass-panel Collapsible, Preview's profiler-panel twirl.
  */
 import { useState, useSyncExternalStore } from 'react'
-import { getWindSheetReadout, getWindSheetOverlay, setWindSheetOverlay, onWindSheetReadout } from '../lib/windSheet.js'
+import { getWindSheetReadout, onWindSheetReadout, getWindOverride, setWindOverride, clearWindOverride } from '../lib/windSheet.js'
 
-const fmtDeg = (dir) => Math.round(((Math.atan2(-dir[0], dir[1]) * 180) / Math.PI + 360) % 360)
+const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+const fromDegOf = (dir) => ((Math.atan2(-dir[0], dir[1]) * 180) / Math.PI + 360) % 360
+const compass = (deg) => COMPASS[Math.round(deg / 22.5) % 16]
 
-/** The card's body: the sheet's state and the overlay toggle. */
+function Field({ label, unit, value, placeholder, onChange, step = 0.5, min = 0, max }) {
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '3px 0' }}>
+      <span style={{ width: 52, opacity: 0.7 }}>{label}</span>
+      <input type="number" step={step} min={min} max={max} value={value ?? ''} placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+        style={{ width: 72, background: 'rgba(0,0,0,.25)', color: 'inherit', border: '1px solid rgba(255,255,255,.15)', borderRadius: 4, padding: '2px 4px' }} />
+      <span style={{ opacity: 0.6 }}>{unit}</span>
+    </label>
+  )
+}
+
+/** The card's body: the wind as the trees get it, each value editable for this session. */
 export function WindSheetReadout() {
   const r = useSyncExternalStore(onWindSheetReadout, getWindSheetReadout)
-  const overlay = useSyncExternalStore(onWindSheetReadout, getWindSheetOverlay)
+  const o = useSyncExternalStore(onWindSheetReadout, getWindOverride)
   if (!r) return <div className="profiler-note">No wind sheet mounted.</div>
-  const { status, air: a, layout: L, gust } = r
-  const rows = [
-    ['extent', `${status.extent}${L ? ` · ${L.size}² · ${L.mPerTexel.toFixed(2)} m/texel · ${Math.round(L.span)} m` : ' — unallocated'}`],
-    ['weather', status.weather],
-    ['wind', `${a.baseSpeedMps.toFixed(1)} m/s from ${fmtDeg(a.baseDirection)}°`],
-    ['gusts', a.hasGusts ? `+${a.gustsScale.toFixed(1)} m/s above the mean` : 'no gust reading'],
-    ['shape', `${a.gustShape.toFixed(2)} (0 patches · 1 squall lines) · storminess ${a.storminess.toFixed(2)}${gust ? ` · ${Math.round(gust.along)} × ${Math.round(gust.across)} m` : ''}`],
-    ['memory', status.sim],
-  ]
+  const w = r.air.weather || r.air   // the weather's own values (under any override)
+  const wFrom = fromDegOf(w.baseDirection)
+  const overridden = [o.speedMps, o.fromDeg, o.gustsMps, o.gustShape].some((v) => v != null)
   return (
     <div style={{ fontSize: 11, lineHeight: 1.5 }}>
-      <label style={{ display: 'flex', gap: 6, alignItems: 'center', margin: '4px 0 6px', cursor: 'pointer' }}>
-        <input type="checkbox" checked={overlay} onChange={(e) => setWindSheetOverlay(e.target.checked)} />
-        Show on map <span className="profiler-note">(colour = strength · streaks travel with it)</span>
-      </label>
-      {rows.map(([k, v]) => (
-        <div key={k} style={{ display: 'flex', gap: 8 }}><span style={{ opacity: 0.6, width: 56, flex: 'none' }}>{k}</span><span>{v}</span></div>
-      ))}
+      <Field label="wind" unit="m/s" value={o.speedMps} placeholder={w.baseSpeedMps.toFixed(1)} onChange={(v) => setWindOverride({ speedMps: v })} />
+      <Field label="from" unit={`° ${compass(o.fromDeg ?? wFrom)}`} step={5} max={360} value={o.fromDeg} placeholder={Math.round(wFrom)} onChange={(v) => setWindOverride({ fromDeg: v })} />
+      <Field label="gusts" unit="m/s peak" value={o.gustsMps} placeholder={(w.baseSpeedMps + w.gustsScale).toFixed(1)} onChange={(v) => setWindOverride({ gustsMps: v })} />
+      <Field label="shape" unit="0 patches · 1 squall lines" step={0.1} max={1} value={o.gustShape} placeholder={w.gustShape.toFixed(1)} onChange={(v) => setWindOverride({ gustShape: v })} />
+      <div className="profiler-note" style={{ marginTop: 4, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <span>{overridden ? `overriding the ${w.status} weather for this session` : `from the weather (${w.status}) · type to override`}</span>
+        {overridden && <button onClick={clearWindOverride} style={{ background: 'none', border: '1px solid rgba(255,255,255,.25)', borderRadius: 4, color: 'inherit', padding: '0 6px', cursor: 'pointer' }}>reset</button>}
+      </div>
     </div>
   )
 }
@@ -42,7 +53,7 @@ export function WindSheetPreviewCard() {
   return (
     <div className="profiler-panel">
       <button onClick={() => setOpen(!open)} className="section-heading" style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-        {open ? '▾' : '▸'} wind sheet
+        {open ? '▾' : '▸'} wind
       </button>
       {open && <WindSheetReadout />}
     </div>
