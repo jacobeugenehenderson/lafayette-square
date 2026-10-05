@@ -11,7 +11,7 @@
  * frame by `<WindSheet>` (src/components/WindSheet.jsx). Each texel holds the wind the canopy at that point FEELS:
  *   RG = the felt wind, world XZ, m/s, TO direction (sprung: it lags the air and overshoots on the way back)
  *   BA = its rate of change, m/s per s (zero where it is steady; the flick of a leaf when a gust arrives)
- * The air it springs toward is `wind-field.js#windAt` — the ONE definition, evaluated in GLSL (`WIND_FIELD_GLSL`).
+ * The air it springs toward is `wind-field.js#windAtAdvect` — the ONE definition, evaluated in GLSL (`WIND_FIELD_GLSL`).
  * The air's drift, direction and gusts come from `weatherAt` (the town's one weather), through `windStateOfWeather`.
  *
  * THE API — a material injects `WIND_SHEET_GLSL` in either stage and calls `bindWindSheet(shader)` in onBeforeCompile:
@@ -79,9 +79,8 @@ export function windStateOfWeather(sky, clock) {
   }
   speed = Number.isFinite(speed) ? Math.max(0, speed) : 0
   // Meteorological: degrees the wind blows FROM. The world is +X east, +Z SOUTH (bake-landscape.js), so the TO vector
-  // is (east, south) = (−sin from, +cos from) — as WaterSurface has it. ⛔ NOT wind-field.js#resolveWindState's
-  // (−sin, −cos): that mirrors the wind north↔south (measured 2026-10-04: a 284° wind blew the trees toward 76°,
-  // not 104°). It stays until the trees migrate onto this sheet; the sheet does not inherit it.
+  // is (east, south) = (−sin from, +cos from) — as WaterSurface has it. (The retired resolveWindState used (−sin, −cos)
+  // and mirrored the wind north↔south; measured 2026-10-04: a 284° wind blew the trees toward 76°, not 104°.)
   const from = ((dirDeg ?? 0) * Math.PI) / 180
   const dir = [-Math.sin(from), Math.cos(from)]
   // The gust spike's amplitude is how far the 10 m gust stands above the mean: the reading, not a knob.
@@ -260,3 +259,11 @@ export function applyWindOverride(state) {
     frontVel: [dir[0] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS, dir[1] * WIND_FIELD.GUST_FRONT_DEFAULT_MPS],
     gustShape: _set(o.gustShape) ? Math.min(1, Math.max(0, o.gustShape)) : state.gustShape, weather: state }
 }
+
+// ── The live wind — what the sheet drew this frame, for CPU readers (the volumetric sky's cloud drift). The same
+// state and advection the GPU field used, so a CPU reader agrees with the sheet by construction.
+let _live = null
+/** @internal — <WindSheet> publishes every frame. */
+export function _publishLiveWind(ws, advect) { _live = { ws, advect } }
+/** { ws, advect } of the frame just drawn, or null when no sheet is mounted. Sample with wind-field.js#windAtAdvect. */
+export function getLiveWind() { return _live }

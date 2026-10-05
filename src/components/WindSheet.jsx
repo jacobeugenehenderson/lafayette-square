@@ -10,7 +10,7 @@
  *                          and ⛔ refused with extent="town" (a town's wind is its weather, never a prop).
  *   wind="weather"         a specimen under the real weather (canary, diorama): the one cable, over its own extent.
  *
- * Each frame: the air (wind-field.js#windAt, in GLSL, driven by windStateOfWeather — the town's one weather) → a
+ * Each frame: the air (wind-field.js#windAtAdvect, in GLSL, driven by windStateOfWeather — the town's one weather) → a
  * damped spring per texel (the canopy's memory) → a half-float ping-pong pair. Consumers bind the read side.
  *
  * Debug: the tools column's Wind sheet card (WindSheetCard.jsx) shows the readout, and its "Show on map" lays the field
@@ -24,7 +24,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WIND_FIELD, WIND_FIELD_GLSL, windAtAdvect, gustLengths } from '../lib/wind-field.js'
 import { WeatherRangeError } from '../lib/weatherAt.js'
-import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted, _publishWindSheetReadout, onWindSheetReadout, getWindSheetOverlay, setWindSheetOverlay, applyWindOverride } from '../lib/windSheet.js'
+import { windSheetLayout, windStateOfWeather, windStateOfSpecimen, windSheetUniforms, WIND_SPRING, WIND_DETAIL_DRIFT, _markWindSheetMounted, _publishWindSheetReadout, onWindSheetReadout, getWindSheetOverlay, setWindSheetOverlay, applyWindOverride, _publishLiveWind } from '../lib/windSheet.js'
 import { onSceneStencil } from './sceneStencilState.js'
 import { UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
 import { useQuality } from '../lib/qualityProfile.js'
@@ -189,6 +189,7 @@ export default function WindSheet({ extent, wind }) {
     c.adv = (c.adv + L.advectRate * dt) % WIND_FIELD.LATTICE_PERIOD
     c.ws = ws
     c.L = L
+    _publishLiveWind(ws, c.adv)
     const drift = WIND_DETAIL_DRIFT * dt   // a fixed flutter rate, never ∝ wind speed (WIND_DETAIL_DRIFT)
     c.detail.x = (c.detail.x - a.baseDirection[0] * drift + WIND_FIELD.LATTICE_PERIOD) % WIND_FIELD.LATTICE_PERIOD
     c.detail.y = (c.detail.y - a.baseDirection[1] * drift + WIND_FIELD.LATTICE_PERIOD) % WIND_FIELD.LATTICE_PERIOD
@@ -305,7 +306,7 @@ export default function WindSheet({ extent, wind }) {
         if (disjoint) return { disjoint: true }
         return { msPerPass: ns / 1e6 / n, spring: springOn, size: L.size }
       },
-      /** The air (CPU wind-field.js#windAt) at the texel centre nearest (x, z), at the sheet's last instant. */
+      /** The air (CPU wind-field.js#windAtAdvect) at the texel centre nearest (x, z), at the sheet's last instant. */
       airAt(x, z) {
         const L = layoutRef.current
         const px = Math.floor(((x - L.origin[0]) / L.span) * L.size), pz = Math.floor(((z - L.origin[1]) / L.span) * L.size)

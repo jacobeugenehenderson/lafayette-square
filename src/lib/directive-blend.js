@@ -84,8 +84,8 @@ export function lerpDirective(from, to, t) {
     out.wind = {
       scale: lerp(fw.scale ?? tw.scale ?? 1, tw.scale ?? fw.scale ?? 1, t),
       dir:   lerp(fw.dir   ?? tw.dir   ?? 0, tw.dir   ?? fw.dir   ?? 0, t),
-      // Brief 9a — m/s authority for wind-field.js. `speed` falls back
-      // to `scale * 3` upstream (`resolveWindState`) if absent.
+      // Authored, but unread since 2026-10-04: the wind reaches consumers through windSheet.js#windStateOfWeather (the
+      // one cable). The Meteorologist fills that object when it takes the final say (meteorologist/ARCHITECTURE.md §9).
       speed:        lerp(fw.speed        ?? tw.speed        ?? 0, tw.speed        ?? fw.speed        ?? 0, t),
       gustsScale:   lerp(fw.gustsScale   ?? tw.gustsScale   ?? 0, tw.gustsScale   ?? fw.gustsScale   ?? 0, t),
       gustEnvelope: lerp(fw.gustEnvelope ?? tw.gustEnvelope ?? 1, tw.gustEnvelope ?? fw.gustEnvelope ?? 1, t),

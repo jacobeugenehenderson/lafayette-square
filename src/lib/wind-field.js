@@ -1,43 +1,17 @@
 /**
- * wind-field — frozen cross-helper seam between Meteorologist (publisher)
- * and Arborist (tree sway consumer; Brief 9b will add Atmosphere). Neither
- * helper imports the other. Both import this module. Precedent:
- * `src/lib/almanac-eval.js`.
+ * wind-field — THE AIR: one definition of the wind field, read by the CPU (windAtAdvect) and, line for line, by the GPU
+ * (WIND_FIELD_GLSL, which the wind sheet draws every frame — src/lib/windSheet.js, cartograph/ARCHITECTURE.md §8).
  *
- * Contract: see scratch/wind-contract-phase7a.md (signed off 2026-05-22).
+ *   windAtAdvect(advect, pos, windState) → { force: Vector3 (m/s, world XZ, TO direction), intensity: m/s }
  *
- *   windAt(t, pos, windState) → { force: Vector3 (m/s), intensity: number (m/s) }
+ *   1. DRIFT — baseDirection × baseSpeedMps.
+ *   2. GUSTS — a 2D noise pattern in the gust front's own frame, moving downwind with it; its size along and across
+ *      the wind is the gust's SHAPE (gustLengths: squall lines ↔ round patches). `advect` = cells the pattern has moved.
  *
- * Composes three temporal scales:
- *   1. DRIFT — `baseDirection * baseSpeedMps`. Constant within a tween window.
- *   2. GUST ENVELOPE — slow (~30s) modulator-authored amplitude on spikes.
- *   3. GUST SPIKES — smoothmax-shaped 1–2s spikes whose phase is offset by
- *      `dot(pos, gustFrontVelocity) / |gustFrontVelocity|²` seconds. Trees on
- *      the upwind side of the front see the spike before trees downwind,
- *      so the gust visibly travels through the scene.
- *
- * Pure: identical (t, pos, windState) → identical output. No globals.
- *
- * `windState` is the resolved state Meteorologist publishes once per frame:
- *
- *   {
- *     baseSpeedMps,      // number, m/s (directive.wind.speed)
- *     baseDirection,     // Vector3 unit, XZ-plane, world-space TO direction
- *     gustsScale,        // number, m/s peak (directive.wind.gustsScale)
- *     gustEnvelope,      // number in [0,1], slow modulator-authored
- *     gustFrontVelocity, // Vector3 m/s, world-space (independent of base wind
- *                        // per ADR decision S2; default = baseDirection × 10)
- *   }
- *
- * Use `resolveWindState(tweenedDirective)` to derive a `windState` from the
- * directive channel; consumers that want overrides (e.g. Salon workstage
- * wind toggle) can build their own.
- *
- * NOTE on directive.wind.dir: directive.schema.json declares `dir` as the
- * bearing the wind is blowing TO; `<Atmosphere />` (line 188–199) treats
- * it as FROM and flips. We match Atmosphere's reading here for visual
- * parity — a degree of disagreement between schema-doc and code that
- * predates this brief. Surfaced in commit body.
+ * Pure: identical inputs → identical output. `windState` is the ONE CABLE's object (windSheet.js#windStateOfWeather,
+ * or a specimen's named wind) as Vector3s: { baseSpeedMps, baseDirection, gustsScale, gustEnvelope, gustFrontVelocity,
+ * gustShape }. ⛔ There is no other way in: the directive reader (resolveWindState) was deleted 2026-10-04 with its
+ * last caller, and it had mirrored the wind north↔south (the world is +X east, +Z south).
  */
 
 import * as THREE from 'three'
@@ -104,88 +78,9 @@ const _tmpForce = new THREE.Vector3()
 const _tmpDir   = new THREE.Vector3()
 const _tmpFront = new THREE.Vector3()
 
-export function defaultWindState() {
-  return {
-    baseSpeedMps:      0,
-    baseDirection:     new THREE.Vector3(1, 0, 0),
-    gustsScale:        0,
-    gustEnvelope:      0,
-    gustFrontVelocity: new THREE.Vector3(GUST_FRONT_DEFAULT_MPS, 0, 0),
-    gustShape:         1,  // the squall line this field always drew; the wind sheet's state sets its own
-  }
-}
-
-/**
- * Resolve a `windState` from a tweenedDirective. Meteorologist publishes
- * `directive.wind` as `{ scale, dir, speed?, gustsScale?, gustEnvelope?,
- * gustFrontVelocity? }`; we derive the canonical state from those.
- *
- * Backwards-compat: if `speed` is absent we fall back to `scale * 3` (a
- * generous heuristic — 5 ⇒ "stiff breeze" 15 m/s — used only until the
- * directive schema migration lands in deployed look files). Briefs 9a and
- * 9b ship with `wind.speed` added to the schema.
- */
-export function resolveWindState(directive, out) {
-  const state = out || defaultWindState()
-  const w = directive?.wind
-  if (!w) {
-    state.baseSpeedMps = 0
-    state.baseDirection.set(1, 0, 0)
-    state.gustsScale = 0
-    state.gustEnvelope = 0
-    state.gustFrontVelocity.set(GUST_FRONT_DEFAULT_MPS, 0, 0)
-    return state
-  }
-
-  state.baseSpeedMps = w.speed ?? (w.scale != null ? w.scale * 3 : 0)
-
-  // directive.wind.dir: see header NOTE. Treated as degrees-FROM to match
-  // Atmosphere.jsx; convert to a TO unit vector via (-sin, 0, -cos).
-  const fromRad = ((w.dir ?? 0) * Math.PI) / 180
-  state.baseDirection.set(-Math.sin(fromRad), 0, -Math.cos(fromRad))
-
-  state.gustsScale   = w.gustsScale   ?? 0
-  state.gustEnvelope = w.gustEnvelope ?? 1.0
-
-  // gustFrontVelocity defaults to baseDirection * 10 m/s; modulators may
-  // author it (carried in directive as either a {x,z} pair or a magnitude
-  // + direction; the simple {x,z} shape is what the schema sketch shows).
-  if (w.gustFrontVelocity) {
-    const g = w.gustFrontVelocity
-    state.gustFrontVelocity.set(g.x ?? 0, 0, g.z ?? 0)
-  } else {
-    state.gustFrontVelocity.copy(state.baseDirection).multiplyScalar(GUST_FRONT_DEFAULT_MPS)
-  }
-  return state
-}
-
 // -------------------------------------------------------------------------
-// windAt — the contract function
+// The field
 // -------------------------------------------------------------------------
-
-/**
- * Sample the wind field at time `t` (seconds) and world position `pos`
- * (Vector3 or {x, z}).
- *
- * Returns `{ force, intensity }` where `force` is a Vector3 in m/s
- * (XZ-plane) and `intensity = |force|`. Caller may pass an `out` object
- * with a reusable Vector3 `force` to avoid allocations in a hot loop.
- *
- * Spatial advection: the gust front is treated as a plane moving with
- * velocity `gustFrontVelocity`. A point at `pos` lies a signed distance
- * `s = dot(pos, gustFrontVelocity)/|gustFrontVelocity|²` "ahead" of the
- * origin in front-time units; the spike phase at `pos` is therefore
- * `t - s`. Downstream points see the same phase later → the gust visibly
- * travels.
- *
- * Determinism: pure function of inputs. Two calls with bit-identical
- * arguments return bit-identical outputs.
- */
-export function windAt(t, pos, windState, out) {
-  const ws = windState || defaultWindState()
-  const L = gustLengths(ws)
-  return windAtAdvect(t * L.advectRate, pos, ws, out)
-}
 
 /**
  * ⭐ THE GUST'S SHAPE — how long a gust is along the wind against across it (Jacob, 2026-10-04: "this linear wind
@@ -203,12 +98,12 @@ export function gustLengths(ws) {
 }
 
 /**
- * The field at an ADVECTION (cells the gust pattern has moved downwind) instead of a time. windAt is this at
- * `t × advectRate`; the wind sheet accumulates the advection frame by frame, wrapped on the lattice period, so a
+ * The field at an ADVECTION (cells the gust pattern has moved downwind), not a time. The wind sheet accumulates the advection frame by frame, wrapped on the lattice period, so a
  * change of shape or speed never makes the pattern jump and float32 never runs out of precision.
  */
 export function windAtAdvect(advect, pos, windState, out) {
-  const ws = windState || defaultWindState()
+  if (!windState) throw new Error('[wind-field] ⛔ windAtAdvect needs the one cable\'s windState — there is no default wind')
+  const ws = windState
   const dst = out || { force: new THREE.Vector3(), intensity: 0 }
   // 1. DRIFT
   _tmpForce.copy(ws.baseDirection).multiplyScalar(ws.baseSpeedMps)

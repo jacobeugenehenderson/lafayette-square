@@ -62,7 +62,7 @@ The continuous layer already has a home: **Modulators** (Phase 6) are signal-dri
 Faithfulness is bounded by the source's resolution, so "fine timescale" splits in two:
 
 - **Polled weather — coarse floor (~10–15 min).** The service's *current conditions* refresh roughly every 15 minutes; polling faster buys no new information. Condition + raw Degrees update at that cadence, then **tween continuously between samples** so nothing steps.
-- **Computed continuous — per-frame (60 fps).** The fast-moving things aren't polled, they're *calculated*: sun position → luma/shadow (SunCalc, continuous in time), wind **gusts** (`wind-field.js#windAt`), cloud **advection/drift** (shader `uTime`). These carry the sub-second life.
+- **Computed continuous — per-frame (60 fps).** The fast-moving things aren't polled, they're *calculated*: sun position → luma/shadow (SunCalc, continuous in time), wind **gusts** (the wind sheet: `wind-field.js#windAtAdvect`, drawn once a frame), cloud **advection/drift** (shader `uTime`). These carry the sub-second life.
 
 So: **poll at the source cadence → tween → and let the computed quantities animate per-frame.** Maximum faithfulness without pretending to resolution the feed doesn't have.
 

@@ -43,20 +43,16 @@ import { lookOf } from '../lib/lookOf.js'
 import { townPlace } from '../lib/townPlace.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { getPresetsCache } from '../hooks/useAtmosphereDirective.js'
-import { defaultWindState, resolveWindState, windAt } from '../lib/wind-field.js'
+import { windAtAdvect } from '../lib/wind-field.js'
+import { getLiveWind } from '../lib/windSheet.js'
 
-// Brief 9b — Atmosphere consumes `wind-field.js#windAt(t, cameraPos, ws)`
-// in place of reading `directive.wind.scale` + `wind.dir` directly. One
-// module-scoped windState + sample buffer mirror InstancedTrees.SwayDriver's
-// allocation-free pattern.
-const _windState = defaultWindState()
+// The clouds drift on the town's ONE wind: the state and gust position the wind sheet drew this frame
+// (windSheet.js#getLiveWind), sampled at the camera with the field's own CPU function. Until 2026-10-04 this read the
+// Almanac directive through resolveWindState — a second wind, mirrored north↔south, and calm on most days.
 const _windSample = { force: new THREE.Vector3(), intensity: 0 }
+let _saidNoSheet = false
 
-// uWindScale is a unitless multiplier the cloud shader scales advection by
-// (~1.0 in calm Phase 5a weather). `windAt().intensity` is m/s. The legacy
-// conversion lives in `resolveWindState`: `baseSpeedMps = wind.speed ?? wind.scale * 3`,
-// so a directive scale of 1.0 resolves to 3 m/s — we mirror the inverse
-// here so cloud advection rate in calm weather is byte-identical pre/post 9b.
+// uWindScale is a unitless multiplier the cloud shader scales advection by: m/s ÷ this.
 const WIND_MPS_PER_SCALE = 3.0
 
 
@@ -226,18 +222,16 @@ export default function Atmosphere({ lookId, displayBaseAlt } = {}) {
       }
     }
 
-    // Wind via the shared seam (Brief 9b). `windAt(t, cameraPos, ws)`
-    // composes drift + gust envelope + spatially-advected gust spikes;
-    // sampling at camera position aligns the gust window with what the
-    // operator is looking at, and the same field drives tree sway, so
-    // clouds + trees catch the same gust front in lockstep. `.force` is
-    // already a world-space TO vector (resolveWindState bakes the
-    // FROM→TO flip), so no degree conversion is needed here.
-    resolveWindState(directive, _windState)
-    windAt(clock.elapsedTime, camera.position, _windState, _windSample)
-    material.uniforms.uWindScale.value = _windSample.intensity / WIND_MPS_PER_SCALE
-    if (_windSample.intensity > 1e-5) {
-      material.uniforms.uWindDir.value.copy(_windSample.force).normalize()
+    // Wind: the town's one wind (the sheet's live state), sampled at the camera so the gust window is the one the
+    // operator is looking at. `.force` is a world-space TO vector. ⛔ No sheet mounted → said once, no drift: never a
+    // substitute wind.
+    const live = getLiveWind()
+    if (!live) {
+      if (!_saidNoSheet) { _saidNoSheet = true; console.error('[Atmosphere] ⛔ no <WindSheet> is mounted — the clouds have no wind to drift on') }
+    } else {
+      windAtAdvect(live.advect, camera.position, live.ws, _windSample)
+      material.uniforms.uWindScale.value = _windSample.intensity / WIND_MPS_PER_SCALE
+      if (_windSample.intensity > 1e-5) material.uniforms.uWindDir.value.copy(_windSample.force).normalize()
     }
 
     // Real sun direction — same projection CelestialBodies uses

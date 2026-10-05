@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * claims-the-wind-has-one-authority — the wind sheet is driven by the town's ONE weather (lib/weatherAt.js), its air
- * is wind-field.js#windAt (one definition, read by the CPU and, as WIND_FIELD_GLSL, by the GPU), and a material that
+ * is wind-field.js#windAtAdvect (one definition, read by the CPU and, as WIND_FIELD_GLSL, by the GPU), and a material that
  * samples the sheet computes no wind noise of its own.
  *
  * ⛔ THE CLASS: two winds. Before the sheet the overhead cards ran their own fBm, the water read the raw feed, the
@@ -54,6 +54,10 @@ if (!/specimenWind = extent === 'town' \|\| wind === 'weather' \? null : windSta
 const spec = lib.match(/export function windStateOfSpecimen[\s\S]*?\n}\n/)
 if (!spec || !/throw new Error/.test(spec[0])) fails.push('windStateOfSpecimen does not refuse a specimen without a named wind')
 
+// ⭐ The volumetric sky's cloud drift reads the sheet's live state (getLiveWind), never the directive's wind.
+const atmo = strip(readFileSync(join(ROOT, 'src/components/Atmosphere.jsx'), 'utf8'))
+if (!/getLiveWind\(\)/.test(atmo)) fails.push('Atmosphere.jsx does not take its wind from the sheet (windSheet.js#getLiveWind)')
+if (/directive\??\.wind\b|resolveWindState/.test(atmo)) fails.push('Atmosphere.jsx reads the directive\'s wind — a second authority beside the one cable')
 const OWN = new Set(['src/lib/windSheet.js', 'src/components/WindSheet.jsx', 'src/components/Town.jsx', 'src/lib/wind-field.js'])
 const NOISE = /\bfloat\s+\w*(?:hash|noise|fbm)\w*\s*\(/i
 const OTHER_WIND = /\b(?:uWindForce|uWindIntensity|uGustsScale|uGustEnvelope|uGustFrontVelocity|windSpeedMs|windDirDeg|uWindDir)\b/

@@ -201,24 +201,9 @@ When the volumetric species work lands, the plan (per `skyMode.js`'s "delete-on-
 
 ## 9. Wind contract (cross-helper)
 
-Wind direction + speed live in the atmospheric directive Meteorologist publishes (Almanac + Phase 6 modulators). Phase 7a / Brief 9a (Sough, 2026-05-23) landed the cross-helper seam at `src/lib/wind-field.js` — ADR at `scratch/wind-contract-phase7a.md`.
+**Live state (2026-10-04).** The wind reaches every consumer through **one cable**: the state object `src/lib/windSheet.js#windStateOfWeather` returns (speed, direction and gusts from `weatherAt`, the gust's shape from storminess). The wind sheet draws it once per frame (`cartograph/ARCHITECTURE.md §8`), and trees, the volumetric sky (`Atmosphere.jsx`, via `getLiveWind`) and future consumers read the sheet. The air is `wind-field.js#windAtAdvect`, one definition for CPU and GPU. The old seam (`windAt(t, …)` + `resolveWindState(directive)`) is retired to `cartograph/_archive/WIND-CONTRACT-phase7a-retired-2026-10-04.md`.
 
-**The seam.** Both helpers import `src/lib/wind-field.js`; neither helper imports the other (mirrors the canary contract discipline in `arborist/ARCHITECTURE.md`). Exports `windAt(t, pos, windState) → { force, intensity }` (pure, m/s) + `resolveWindState(directive)` + `defaultWindState()`.
-
-**Three temporal scales composed inside `windAt`.** Drift (`baseDirection × baseSpeedMps`), gust envelope ([0,1] slow modulator-authored), gust spikes (smoothmax-shaped 1–2 s spikes phase-offset by `dot(pos, gustFrontVelocity)/|front|²` seconds — spatial advection makes fronts visibly travel across the scene).
-
-**Directive fields (post-Brief 9b, see `pipeline/schema/directive.schema.json`):**
-- `wind.scale` — legacy unitless multiplier. Post-Brief 9b, no live consumer reads it directly; `resolveWindState` only references it via the `baseSpeedMps = scale * 3` fallback for un-migrated look files lacking `wind.speed`. Safe to drop once those look files are migrated.
-- `wind.dir` — bearing the wind blows TO (degrees). Note: the runtime treats it as FROM and flips internally; the schema-vs-code wording disagreement predates 9a.
-- `wind.speed` — m/s, the m/s authority for `wind-field.js`.
-- `wind.gustsScale` — m/s peak gust-spike amplitude. Modulators author it.
-- `wind.gustEnvelope` — [0,1] slow modulator on spike amplitude.
-- `wind.gustFrontVelocity` — `{x, z}` independent of base wind (default `baseDirection × 10 m/s`; modulators may override).
-
-**Consumers.**
-- **InstancedTrees + the shared `treeAtlasMaterial.js`** — drift + gust params flow into `treeSwayUniforms`; vertex shader synthesises per-tree spatially-advected spikes from `uGustFrontVelocity`. Multi-scale damping per runtime-merged `aWindTier` (trunk/branch/twig/leaf). Salon-preview parity preserved.
-- **`<Atmosphere />`** — Brief 9b (Wisp, 2026-05-23) retargeted onto `windAt(clock.elapsedTime, camera.position, ws)`. `uWindScale = sample.intensity / 3.0` (the `/3` mirrors `resolveWindState`'s `baseSpeedMps = scale * 3` legacy heuristic so Phase 5a calm-weather cloud advection is byte-identical pre/post 9b). `uWindDir = normalize(sample.force)` — the FROM→TO flip lives inside `resolveWindState`, not at the consumer. Cloud advection now inherits gust spikes; far trees catch the spatial gust front later than the cloud canopy and the trees nearest the camera, in lockstep.
-- **Future.** Rain particles (already wind-tilted; could subscribe), audio (gated on speed thresholds), heat-haze (low-wind gated).
+⚠️ **OPEN WORK (an unbuilt intent, not rot).** The directive's wind fields (`wind.scale · dir · speed · gustsScale · gustEnvelope · gustFrontVelocity`, `pipeline/schema/directive.schema.json`) are still authored in the Almanac and modulators, but **nothing reads them since 2026-10-04**. The intent below stands. When the Meteorologist takes the final say, it fills `windStateOfWeather`'s object, and no consumer changes (Jacob: "ideally we have 1" cable). ⛔ Don't delete the fields as dead, and don't wire a second reader to them.
 
 Wind belongs to Meteorologist; consumers subscribe but don't author.
 

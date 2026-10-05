@@ -226,7 +226,7 @@ As of 2026-05-20 (Phase 6 — Modulators; building on 5a + 4b.3), every producti
 2. **Per-cloud preset params** — `bindUniformsFromDirective` reads each cloud in the directive's `clouds[]`, resolves each preset's 12 channel-shaped params via `resolveGroupAtMinute`, computes a weighted blend by `weight`, writes to shader uniforms.
 3. **Sky / sun band coloring** — `useSceneJson(activeLookId).sky` channel resolved per minute → `sky.sunGlow` and `sky.low` feed `uSunColor` and `uSkyColor` (sky-light coupling amendment). When a directive is active, its `sun.tint` + `lightDome.{horizon,ambientFloor}` override cloud-lighting (sky channel still owns the dome itself).
 4. **Sun direction** — `SunCalc.getPosition(currentTime, INSTANCE.lat, INSTANCE.lon)` projected to world space.
-5. **Wind** — the measured wind (`weatherAt`: speed, direction, gusts) drives the **wind sheet** (`cartograph/ARCHITECTURE.md §8`); trees, grass and water read it as they migrate. ⚠️ Until they do, the trees still sway to `directive.wind`, which only three storm rules carry (scale, no direction), mirrored north↔south by `resolveWindState`.
+5. **Wind** — the measured wind (`weatherAt`: speed, direction, gusts) drives the **wind sheet** (`cartograph/ARCHITECTURE.md §8`); trees, grass and water read it as they migrate. Every tree and the volumetric sky read it now. ⚠️ The directive's own wind fields are unread until the Meteorologist fills the one cable (`meteorologist/ARCHITECTURE.md §9`).
 
 All composition happens in the runtime, not in Meteorologist. Meteorologist authors; runtime composes.
 
