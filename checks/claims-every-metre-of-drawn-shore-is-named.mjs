@@ -27,8 +27,8 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
-import { waterRuns } from '../cartograph/shoreRuns.mjs'
-import { clipTraceToDisc, bakeRevetment } from '../cartograph/bake-revetment.js'
+import { waterRuns, clipTraceToDisc } from '../cartograph/shoreRuns.mjs'
+import { bakeRevetment } from '../cartograph/bake-revetment.js'
 
 const read = (rel) => readFileSync(join(ROOT, rel), 'utf8')
 const len = (t) => t.reduce((a, p, i) => i ? a + Math.hypot(p[0] - t[i-1][0], p[1] - t[i-1][1]) : 0, 0)

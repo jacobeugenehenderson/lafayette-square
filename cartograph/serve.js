@@ -2888,6 +2888,15 @@ createServer(async (req, res) => {
           `node bake-revetment.js --look=${id} ${sceneFlag}`,
           // a town with no shore gets no revetment.json, and the runtime reads that 404 as "none" (SlabRevetment.jsx)
           { cwd: here, timeout: 120000, absentOk: [join(LOOK_DIR, 'revetment.json')] })
+        // Shore median (BRIEF-the-shore-is-closed): the region between the drawn shoreline and the lidar's waterline,
+        // read off the town's own elevation source at its finest level. A town with no coast writes none (ShoreMedian.jsx
+        // reads the 404 as none). ⚠️ A URL list's TILES are read over the network: not tracked, as for the terrain.
+        await runIfDirty('shore-median',
+          [join(LOOK_DIR, 'shape.json'), MAP_JSON, bakePaths.boundary, bakePaths.geography, SCENE_TERRAIN_JSON,
+           ELEVATION_TIF, ELEVATION_LIST, join(bakePaths.raw, 'elevation'), join(here, 'bake-shore-median.mjs')],
+          [join(LOOK_DIR, 'shore-median.json')],
+          `node bake-shore-median.mjs --look=${id} ${sceneFlag}`,
+          { cwd: here, absentOk: [join(LOOK_DIR, 'shore-median.json')] })
       }
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named

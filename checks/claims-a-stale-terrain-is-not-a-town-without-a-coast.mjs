@@ -33,7 +33,7 @@
 //
 //   node checks/claims-a-stale-terrain-is-not-a-town-without-a-coast.mjs
 // Read-only. Exits 1 if any case resolves the wrong way.
-import { coastAgreement } from '../cartograph/bake-revetment.js'
+import { coastAgreement } from '../cartograph/shoreRuns.mjs'
 
 // [datum, water runs in the slab, expected, why it matters]
 const CASES = [

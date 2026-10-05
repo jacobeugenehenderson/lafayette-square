@@ -178,6 +178,10 @@ const SCENE_LAYERS = [
   ['clouds',     'Clouds'],
   ['fog',        'Atmospheric Fog'],
 ]
+// Diagnostics: not part of the shipped render, so they start OFF (the one exception to 'every toggle starts on').
+const DIAG_LAYERS = [
+  ['shoreMedian', 'Shore median (revetment hidden)'],
+]
 const FX_LAYERS = [
   ['ao',     'N8AO'],
   ['bloom',  'Bloom'],
@@ -207,6 +211,7 @@ const DEFAULT_LAYERS = {
   park: true, lights: true, arch: true, neon: true,
   celestial: true, clouds: true, fog: true,
   ao: true, bloom: true, aerial: true, grade: true, grain: true, smaa: true, dof: true,
+  shoreMedian: false,
 }
 
 // v3 (Vernier Phase 2): retired the `slabBuildings` A/B key — one `buildings`
@@ -541,6 +546,8 @@ function RightPanel({ layers, setLayer, top, bottom, envId, degree, onTuneDegree
 
       <LayerSection title="Post-FX" layerList={FX_LAYERS} layers={layers}
         setLayer={setLayer} metric="ms" footer={<FxCaveats />} notOnTier={notOnTier} />
+
+      <LayerSection title="Diagnostic" layerList={DIAG_LAYERS} layers={layers} setLayer={setLayer} metric="draws" />
     </div>
   )
 }
@@ -1226,7 +1233,7 @@ function CanvasContents({ town, layers, shot, quality }) {
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,
-          clouds: layers.clouds, fog: layers.fog,
+          clouds: layers.clouds, fog: layers.fog, shoreMedian: layers.shoreMedian,
         }}
         postFx={{ toggles: layers }}>
         <ForceDaytimeOnMount />

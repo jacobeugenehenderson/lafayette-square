@@ -28,7 +28,7 @@
 //
 //   node checks/claims-shore-outside-the-drawing-is-not-refused.mjs
 // Read-only. Exits 1 on either invariant.
-import { clipTraceToDisc } from '../cartograph/bake-revetment.js'
+import { clipTraceToDisc } from '../cartograph/shoreRuns.mjs'
 
 let failed = false
 const say = (ok, msg) => { if (!ok) failed = true; console.log(`  ${ok ? '✅' : '⛔'} ${msg}`) }
