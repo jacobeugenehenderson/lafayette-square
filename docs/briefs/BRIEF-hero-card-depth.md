@@ -5,6 +5,15 @@ written: 2026-10-04
 evict-when: every hero card writes per-pixel depth from a baked depth channel, every town's Grove is re-baked with it, the fill cost is measured on a phone-sized buffer in the depth regime phones actually run, and Jacob's eye says the chopping is gone in the Hero move.
 -->
 
+> ### STATE at Grain's dismissal (2026-10-05): BUILT, baked on all 4 towns, eye owed
+> Landed `d39cc6f8` (depth on the AO page) · `986a0ac4` (compile before the first shot) · `c7a07a03` (the Grove captures against
+> THIS town's roster board). Every placed species carries depth (`claims-hero-cards-write-their-depth` ⑥). Depth-write cost on the
+> M1 at phone tier: within noise; ⛔ a REAL phone GPU is unmeasured (and the GPU gauge reads ~2× high, `7bf82e90`).
+> **Owed:** Jacob's eye on the chopping in the Hero move (calm + Storm) · any wrong-coloured leaves on cards captured 2026-10-04 ·
+> **live proof** of `c7a07a03` + `986a0ac4`: one Grove run that switches towns on ONE page, gated by rebake-verify listing every
+> placed species on the second town and no "uCaptureMask not found". Not established: LS's doubled tick-1 / second "done" report
+> (wrote nothing; needs the page's own logs next time).
+
 # BRIEF — Hero cards write their depth, so crowns meet as volumes and stop chopping
 
 **Boz the Younger drafted this 2026-10-04 from Jacob's ruling (relayed by Gale); Jacob dispatches.**
