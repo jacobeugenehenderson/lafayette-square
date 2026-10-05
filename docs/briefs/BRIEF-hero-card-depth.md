@@ -48,9 +48,13 @@ front and back of a crown move differently (no new sheet API). ⛔ Ask before bu
 
 ## The must-haves (the ruling, plus Grain's read from inside the card code, 2026-10-04)
 
-1. **Where the depth lives.** Hero cards bind 4 of 16 fragment sampler units today (Gale's count). Depth is either a **5th
-   page** or rides a spare channel of the AO page, and riding AO sends it through AO's lossy encode. Decide, and say why.
-2. **Encoding, measured in metres.** KTX2/ETC1S is block-lossy and quantised per block, so depth stored there steps at block
+1. ✅ **RULED (Jacob, 2026-10-04): depth rides the AO page.** The AO page becomes ONE **uncompressed two-channel** page:
+   AO in R, depth in G (today's shader reads only `.r`). Grain measured it on LS's 180 hero pages: the same GPU memory as a
+   separate page (128 KB/page either way); download ~4.35 MB against 2.90 MB AO-KTX2 today (+2.2 MB a separate page would
+   add); samplers stay 4/16; AO becomes lossless. ⛔ **The loader must upload it as two-channel (RG8), not RGBA**, or memory
+   doubles. ⛔ **The phone measurement includes memory:** some phones transcode today's AO to ETC1 at 0.5 B/px, so the
+   uncompressed page costs more there.
+2. **Encoding, measured in metres** (settled by item 1: uncompressed; Grain measured block codecs losing 1–5 m at p99). KTX2/ETC1S is block-lossy and quantised per block, so depth stored there steps at block
    edges, which is exactly where crowns intersect. It likely wants its own encode (UASTC, or R8 PNG; the master atlas is
    already kept out of KTX2 for a similar reason). Measure the depth error in metres for each candidate before choosing.
 3. **The right depth space, on two paths.** Desktop runs `logarithmicDepthBuffer`, where three already writes `gl_FragDepth`
