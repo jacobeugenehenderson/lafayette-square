@@ -605,6 +605,10 @@ const useArboristStore = create((set, get) => ({
   // ⛔ NESTED: meshTopN can never exceed topN. A mesh species still needs an impostor,
   // because only its TALLEST placements keep geometry and the rest render as impostors.
   groveThreshold: { topN: null, meshTopN: null, pinned: [], withheld: [] },
+  // ⛔ WHOSE board this is. The coverage + bar above are per-Look and load async on a Look switch, so for a while after
+  // one they still hold the PREVIOUS Look's. The Grove's capture waits until this names the Look it is capturing
+  // (2026-10-05: HPDM→Huron captured Huron against HPDM's board — oak_white + linden_american read `out`, silently).
+  rosterBoardLook: null,
   loadRosterCoverage: async () => {
     set({ rosterLoading: true, rosterError: null })
     try {
@@ -615,14 +619,18 @@ const useArboristStore = create((set, get) => ({
       const r = await fetch(`/api/arborist/coverage?t=${Date.now()}${lookQ}`)
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const d = await r.json()
+      // A response for a Look the operator has already left is the previous town's board: drop it.
+      if (get().activeLookId !== look) return
       set({ rosterCoverage: d, rosterLoading: false })
       // The Grove build-eligibility bar is a per-Look setting; load it alongside.
       if (look) {
         try {
           const gr = await fetch(`/api/cartograph/looks/${encodeURIComponent(look)}/grove-threshold?t=${Date.now()}`)
-          if (gr.ok) set({ groveThreshold: await gr.json() })
+          if (gr.ok && get().activeLookId === look) set({ groveThreshold: await gr.json() })
         } catch { /* non-fatal — bar defaults to no cut */ }
       }
+      // Both halves of the board are this Look's now.
+      if (get().activeLookId === look) set({ rosterBoardLook: look })
     } catch (err) {
       set({ rosterError: String(err), rosterLoading: false })
     }

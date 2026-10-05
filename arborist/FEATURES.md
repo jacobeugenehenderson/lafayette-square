@@ -303,8 +303,9 @@ weather, so expect more motion than the old calm-day rule, and the lean now poin
 The model trees in the Salon, Grove, canary and Full Monte move on the same wind: the Salon's slider and the Grove's
 breeze are named winds; the canary and Full Monte follow the town's real weather — ⚠️ so on a calm day they are calm
 (their old fallback breezes are gone). How much every tree moves is the Look's Tree Wind (Stage › Surfaces › Trees).
-**A capture is shot against the atlas the bake just wrote (2026-10-04).** Bake → Slab and ⟳ now wait until the page
-has loaded the atlas on disk before choosing and shooting species. Before this, a Grove page that had already shown a
+**A capture is shot against the atlas the bake just wrote, and this town's roster (2026-10-04/05).** Bake → Slab and ⟳ now
+wait until the page has loaded the atlas on disk AND this town's roster board before choosing and shooting species, so
+switching towns in the Grove is safe (it used to judge the new town by the previous town's roster). Before this, a Grove page that had already shown a
 town captured against that town's previous atlas, silently skipping species the bake had just added or changed. ⟳ also
 stamps each species' fingerprint now; it used to stamp none, so the next Bake → Slab re-shot everything ⟳ had touched.
 **Browse trees have a deep core (2026-10-04, overhead format 6).** The capture paints the region under the canopy band's silhouette, in the two bands beneath it, one solid canopy colour taken from that tree's own canopy. Sway shows dark canopy there, never ground. ⚠️ **Every town needs one Bake → Slab to get it.** Until then Browse draws the old bands, and the console names each species still un-cored (`[overhead] ⛔ … carry no baked deep core`). ▶ `node checks/claims-the-overhead-core-is-baked.mjs` lists, per town, how many species are cored.

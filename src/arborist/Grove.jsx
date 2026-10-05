@@ -68,6 +68,11 @@ export default function Grove() {
   const loadGrove   = useArboristStore(s => s.loadGrove)
   const looks       = useArboristStore(s => s.looks)
   const activeLookId = useArboristStore(s => s.activeLookId)
+  // ⛔ The Grove loads its OWN roster board for its Look. It used to rely on the Salon's effect, which is UNMOUNTED
+  // while the Grove is open (ArboristApp renders one or the other), so a Look switch inside the Grove never reloaded
+  // the board and the previous Look's stayed in the store (2026-10-05, HPDM→Huron).
+  const loadRosterCoverage = useArboristStore(s => s.loadRosterCoverage)
+  useEffect(() => { loadRosterCoverage() }, [activeLookId, loadRosterCoverage])
   const setActiveLook = useArboristStore(s => s.setActiveLook)
   const looksRosters = useArboristStore(s => s.looksRosters)
   const toggleInLook = useArboristStore(s => s.toggleInLook)
@@ -78,6 +83,7 @@ export default function Grove() {
   // ⛔ A STABLE empty. `|| []` built a new array every render while coverage was unloaded, and that
   // re-derived the board → eligibility → the capture batch on every render.
   const rosterSpecies = rosterCoverage?.species || EMPTY
+  const rosterBoardLook = useArboristStore(s => s.rosterBoardLook)
   const unownedRef = useRef(new Set())
 
   // ⭐⭐ THE CAPTURE POOL IS WHAT THE SLAB PLACES — which is what the button has always
@@ -114,6 +120,7 @@ export default function Grove() {
   }, [])
   useEffect(() => { loadSlabSpecies(activeLookId) }, [activeLookId, loadSlabSpecies])
   const warnedNoBoardRef = useRef(false)
+  const warnedOutRef = useRef(new Set())
   const groveBoard = useMemo(
     () => resolveGrove(rosterSpecies || [], groveThreshold || {}),
     [rosterSpecies, groveThreshold],
@@ -224,7 +231,14 @@ export default function Grove() {
           warnedNoBoardRef.current = true
           console.warn('[grove-bake] roster board not loaded — capturing the FULL look roster ungated.')
         }
-      } else if (!eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard, unownedRef)) continue
+      } else if (!eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard, unownedRef)) {
+        // ⛔ A species the SLAB places, cut by the roster bar, is never re-shot: its trees keep whatever pages they had.
+        if (slabSpecies.length && !warnedOutRef.current.has(`${activeLookId}:${t.species}`)) {
+          warnedOutRef.current.add(`${activeLookId}:${t.species}`)
+          console.error(`[grove-bake] ⛔ "${t.species}" is PLACED in ${activeLookId} but its roster row is out of the bar — it will not be captured.`)
+        }
+        continue
+      }
       // The BAKED per-look GLB (UVs rewritten to the unified atlas) — capture parity
       // with the runtime, which loads this same GLB + the baked atlas material.
       // Prefer the BAKED per-look GLB (UVs rewritten to the unified atlas) — that is what
@@ -383,6 +397,7 @@ export default function Grove() {
   const heroBatch = forceAll.current ? heroForced : heroDirty
   // Read by the async gestures below, whose closures hold the render they started in.
   const atlasRef = useRef(groveAtlas); atlasRef.current = groveAtlas
+  const boardLookRef = useRef(rosterBoardLook); boardLookRef.current = rosterBoardLook
   const poolRef = useRef(overheadSpecies); poolRef.current = overheadSpecies
 
   // ⛔⛔ CAPTURE ONLY AGAINST THE ATLAS ON DISK (2026-10-04, four towns). The capture pool's bark gate, the dirty
@@ -403,6 +418,17 @@ export default function Grove() {
     const t0 = performance.now()
     while (!(atlasRef.current?.status === 'ready' && atlasRef.current?.manifest?.generatedAt === stamp)) {
       if (performance.now() - t0 > 60000) throw new Error(`this page never loaded the atlas on disk (${stamp}) within 60 s`)
+      await new Promise((res) => setTimeout(res, 100))
+    }
+  }
+  // ⛔⛔ AND AGAINST THIS LOOK'S ROSTER BOARD (2026-10-05, HPDM→Huron on one page). The pool's eligibility gate reads the
+  // roster coverage + bar, which load async on a Look switch; awaitDiskAtlas made the ATLAS fresh but the BOARD was
+  // still HPDM's, where oak_white + linden_american are `out` — so Huron's two placed species were skipped, silently.
+  // Wait until the store names THIS Look as the board's owner, exactly as the atlas wait does.
+  const awaitRosterBoard = async (lookId) => {
+    const t0 = performance.now()
+    while (boardLookRef.current !== lookId) {
+      if (performance.now() - t0 > 60000) throw new Error(`this page never loaded ${lookId}'s roster board within 60 s (it holds ${boardLookRef.current ?? 'none'}'s)`)
       await new Promise((res) => setTimeout(res, 100))
     }
   }
@@ -433,7 +459,7 @@ export default function Grove() {
     await loadSlabSpecies(activeLookId)
     // The roster bake just rewrote the atlas: capture against THAT one (awaitDiskAtlas). The baker owns the total —
     // it is the only party that sees the batch the fresh render derives.
-    try { await awaitDiskAtlas(activeLookId) } catch (e) { captureBlocked(e.message); return }
+    try { await awaitRosterBoard(activeLookId); await awaitDiskAtlas(activeLookId) } catch (e) { captureBlocked(e.message); return }
     if (poolRef.current.length) { setOverheadProg({ done: 0, total: null }); setOverheadTick((t) => t + 1) }
   }
   // ⭐⭐ ARRIVAL IS THE BAKE (Jacob, 2026-08-26). The Grove is "a little courtesy waiting area
@@ -469,8 +495,9 @@ export default function Grove() {
   // against an atlas the other hasn't seen is a drift waiting to happen.
   // Overhead's onDone chains hero, so kicking overhead runs both. (2026-07-22)
   const recaptureImpostors = async () => {
-    // The cache may hold an atlas some other bake has since rewritten (a second page, a CLI bake): same rule.
-    try { await awaitDiskAtlas(activeLookId) } catch (e) { captureBlocked(e.message); return }
+    // The cache may hold an atlas some other bake has since rewritten (a second page, a CLI bake), and the board may be
+    // the previous Look's: same rule for both.
+    try { await awaitRosterBoard(activeLookId); await awaitDiskAtlas(activeLookId) } catch (e) { captureBlocked(e.message); return }
     // ⛔⛔ A PRESSED BUTTON MUST NEVER DO NOTHING IN SILENCE. This was `if (!length) return`
     // — no toast, no console line, no state change — so every failed press was
     // indistinguishable from a dead control, and the operator's only working move was to

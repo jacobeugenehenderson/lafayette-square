@@ -12,7 +12,8 @@
 //   ④ Grove's "not loaded yet" empties are one stable identity (no `|| []` on the batch inputs);
 //   ⑤ both capture gestures await the atlas ON DISK (its generatedAt) before ticking the baker;
 //   ⑥ a forced (⟳) batch carries computed capture keys (never null);
-//   ⑦ the tree material is compiled before the first masked/depth shot, and a missing switch throws.
+//   ⑦ the tree material is compiled before the first masked/depth shot, and a missing switch throws;
+//   ⑧ both gestures await THIS Look's roster board (the store stamps its owner) before ticking the baker.
 // Static: this is browser capture code with no harness. It reads the source.
 //
 // ▶ MUTATION-TEST IT:
@@ -21,6 +22,7 @@
 //     · Grove.jsx bakeAll: delete its `await awaitDiskAtlas(` line → ⑤ RED
 //     · Grove.jsx: `forceAll.current ? overheadSpecies` (the raw pool) → ⑥ RED
 //     · captureImpostor.js: delete the `gl.compile(scene, cam)` retry → ⑦ RED
+//     · Grove.jsx bakeAll: delete its `await awaitRosterBoard(activeLookId);` → ⑧ RED
 //
 //   node checks/claims-a-capture-run-finishes-what-it-started.mjs
 import fs from 'fs'
@@ -61,6 +63,16 @@ console.log('captureImpostor.js — the first shot')
   ;/capturing whole tree/.test(s) ? bad('captureImpostor.js: a missing capture switch still falls back to a whole-tree capture') : ok('⑦ a missing capture switch throws; it never captures the whole tree') }
 
 console.log('Grove.jsx')
+{ const s = src('src/arborist/Grove.jsx'), st = src('src/arborist/stores/useArboristStore.js')
+  // ⑧ …and against THIS Look's roster board (2026-10-05: HPDM→Huron judged Huron by HPDM's board, two placed species
+  // silently `out`). The store stamps whose board it holds; both gestures wait for it before ticking the baker.
+  ;/if \(get\(\)\.activeLookId === look\) set\(\{ rosterBoardLook: look \}\)/.test(st) ? ok('⑧ the store stamps whose roster board it holds') : bad('useArboristStore: the roster board is not stamped with its Look')
+  ;/useEffect\(\(\) => \{ loadRosterCoverage\(\) \}, \[activeLookId, loadRosterCoverage\]\)/.test(s) ? ok('⑧ the Grove loads its own roster board on every Look change') : bad('Grove.jsx: the Grove does not load its own roster board — a Look switch keeps the previous board')
+  for (const fn of ['const bakeAll = async', 'const recaptureImpostors = async']) {
+    const body = s.slice(s.indexOf(fn), s.indexOf(fn) + 4000)
+    const iB = body.indexOf('await awaitRosterBoard('), iTick = body.indexOf('setOverheadTick(')
+    iB > 0 && iTick > iB ? ok(`⑧ ${fn.split(' ')[1]} awaits this Look's roster board before ticking`) : bad(`Grove.jsx: ${fn.split(' ')[1]} ticks without awaiting this Look's roster board`)
+  } }
 { const s = src('src/arborist/Grove.jsx')
   for (const v of ['rosterSpecies', 'activeLookTrees']) {
     const m = s.match(new RegExp(`const ${v} = ([^\\n]+)`))
