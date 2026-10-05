@@ -207,6 +207,22 @@ export function setLeafTransmission(amount, sharpness) {
 // mounted tree material (LS runtime + Salon preview) with no per-draw plumbing,
 // honoring the single-shader-program constraint (uniform branch, not a variant).
 export const treeHeroTierQC = { value: 0 }
+// PROTOTYPE (Jacob 2026-10-05, the canopies read "too smooth"): live switches, so one page can shoot the same moment
+// with and without. bumps 1 = per-pixel normals from the depth page's slope (HERO_STAMP_FRAG). (A deeper back shell,
+// ×0.5 for ×0.6, was tried alongside and read too dark — Jacob, 2026-10-05.) URL: ?treeDebug=heroBumps · live:
+// __setCanopyRelief({ bumps }).
+export const treeCanopyRelief = { bumps: { value: 0 } }
+export function setCanopyRelief({ bumps } = {}) {
+  if (bumps != null) treeCanopyRelief.bumps.value = bumps ? 1 : 0
+  return { bumps: treeCanopyRelief.bumps.value }
+}
+if (typeof window !== 'undefined') {
+  window.__setCanopyRelief = setCanopyRelief
+  try {
+    const f = (new URLSearchParams(window.location.search).get('treeDebug') || '').split(',')
+    setCanopyRelief({ bumps: f.includes('heroBumps') })
+  } catch {}
+}
 export function setHeroTierQC(on) { treeHeroTierQC.value = on ? 1 : 0 }
 if (typeof window !== 'undefined') {
   window.__setHeroTierQC = setHeroTierQC
@@ -2050,6 +2066,19 @@ const HERO_STAMP_FRAG = `
          vec2  ovD  = (vMapUv * 2.0 - 1.0) * uCardBulge;
          float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
          vec3  ovN  = vHeroRight * ovD.x + vec3(0.0, ovD.y, 0.0) + vHeroFwd * sqrt(1.0 - ovR2);
+         // PROTOTYPE (?treeDebug=heroBumps, Jacob 2026-10-05: "too smooth … needs a highpass for surface shadows").
+         // The depth page's slope is the crown's surface: a central difference over one page texel, in tree metres
+         // (G × uHeroDepthHalfM over 2·uHeroHalfM / page width), gives a per-pixel normal in the card's own frame. It
+         // modulates the SUN term only, against the card's plane (bumps facing the key brighten, facing away darken;
+         // a flat patch is unchanged), so it is matte and never adds a highlight. Leaf layers only.
+         if (uHeroBumps > 0.5 && uHeroDepthHalfM > 0.0 && uCardIsBark < 0.5) {
+           vec2  hbT  = 1.0 / vec2(textureSize(uAO, 0));
+           float hbK  = uHeroDepthHalfM / (uHeroHalfM * hbT.x);   // ΔG over 2 texels → slope (m per m); the 2s cancel
+           float hbDx = (texture2D(uAO, vMapUv + vec2(hbT.x, 0.0)).g - texture2D(uAO, vMapUv - vec2(hbT.x, 0.0)).g) * hbK;
+           float hbDy = (texture2D(uAO, vMapUv + vec2(0.0, hbT.y)).g - texture2D(uAO, vMapUv - vec2(0.0, hbT.y)).g) * hbK;
+           vec3  hbN  = normalize(-hbDx * vHeroRight - hbDy * vec3(0.0, 1.0, 0.0) + vHeroFwd);
+           ovAO *= clamp(1.0 + (dot(hbN, uKeyDir) - dot(vHeroFwd, uKeyDir)) * 0.5, 0.0, 2.0);
+         }
          // Lamps light the foliage layer only — the mesh path gates the same way (vCanopyW).
          diffuseColor.rgb *= litCardsRelight(ovN, ovAO) + uLampColor * lampWipe(vLampGlow, uCanopyWipe) * uLampGlow * (1.0 - uCardIsBark);
          // ── THE TRUNK/GROUND JOINT ────────────────────────────────────────────
@@ -2129,6 +2158,8 @@ const HERO_STAMP_FRAG_COMMON = LIT_CARDS_FRAG_COMMON + `
          uniform vec2  uGroundFxSpan;
          uniform float uTrunkShadowStr;
          uniform float uHeroDepthHalfM;
+         uniform float uHeroHalfM;
+         uniform float uHeroBumps;
          uniform mat4  projectionMatrix;
          varying float vHeroCardZ;
          varying float vHeroScale;
@@ -2224,7 +2255,7 @@ const HERO_BILLBOARD_BEGIN = `
 const HERO_VIEW_Z = `
          vHeroViewZ = mvPosition.z;`
 
-export function injectHeroImpostorStamp(material, aoTex, { isBark = false, depthHalfM = 0 } = {}) {
+export function injectHeroImpostorStamp(material, aoTex, { isBark = false, depthHalfM = 0, heroHalfM = 0 } = {}) {
   // Distinct program cache key — MeshBasic+map+onBeforeCompile collides with the
   // overhead-disc material otherwise, and three can serve one's compiled program to
   // the other (the billboard/relight silently not applying). [[feedback_unique_program_cache_key_before_wrappers]]
@@ -2249,6 +2280,8 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false, depth
     // set) but gated to 1 only on the woody layer — a leaf shell has no joint to make.
     shader.uniforms.uCardIsBark      = { value: isBark ? 1 : 0 }
     shader.uniforms.uHeroDepthHalfM  = { value: depthHalfM || 0 }
+    shader.uniforms.uHeroHalfM       = { value: heroHalfM || 1 }
+    shader.uniforms.uHeroBumps       = treeCanopyRelief.bumps
     // Dev instrument (?treeDebug=noHeroDepth): no depth write at all, to measure what it costs. Never in production.
     if (typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('treeDebug') || '').split(',').includes('noHeroDepth')) {
       shader.defines = { ...(shader.defines || {}), HERO_NO_DEPTH: '' }

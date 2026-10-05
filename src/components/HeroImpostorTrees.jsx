@@ -239,7 +239,7 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
         })
         // isBark gates the trunk/ground joint to the woody layer — the card's
         // equivalent of the mesh path's per-vertex vBark gate.
-        injectHeroImpostorStamp(mat, layer.aoTex, { isBark: layer.kind === 'bark', depthHalfM: layer.depthHalfM })
+        injectHeroImpostorStamp(mat, layer.aoTex, { isBark: layer.kind === 'bark', depthHalfM: layer.depthHalfM, heroHalfM: geo.userData.heroHalfM })
         out.push({ key: `az${azSet.azIdx}_${layer.kind}${layer.shellIdx}`, geo, mat, instances: groupInstances })
       }
     }

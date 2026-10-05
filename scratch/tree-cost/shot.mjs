@@ -24,7 +24,15 @@ await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setIt
 await cdp('Page.navigate', { url: URL_ARG || `http://localhost:5173/preview.html?look=${TOWN}${Q ? '&' + Q : ''}` }, S)
 await sleep(22000)
 if (EVAL) { const r = await cdp('Runtime.evaluate', { expression: EVAL, returnByValue: true, awaitPromise: true }, S); console.log('eval:', JSON.stringify(r.result?.value ?? r.exceptionDetails?.exception?.description)) }
+// --states='expr::expr::…': one page, the SAME moment as near as can be — eval each, wait two frames, shoot OUT-<i>.png
+// (an A/B/A run shows the camera's own drift as the A–A difference).
+const STATES = arg('states', '')
+if (STATES) for (const [i, ex] of STATES.split('::').entries()) {
+  await cdp('Runtime.evaluate', { expression: `(${ex}, new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))`, awaitPromise: true }, S)
+  const { data } = await cdp('Page.captureScreenshot', { format: 'png' }, S)
+  writeFileSync(OUT.replace(/\.png$/, `-${i}.png`), Buffer.from(data, 'base64'))
+} else {
 const { data } = await cdp('Page.captureScreenshot', { format: 'png' }, S)
-writeFileSync(OUT, Buffer.from(data, 'base64'))
+writeFileSync(OUT, Buffer.from(data, 'base64')) }
 for (const e of [...new Set(errs)].filter((x) => /SHADER DID NOT LINK|VALIDATE|WebGL/i.test(x))) console.log('⛔ console:', e)
 console.log('wrote', OUT); ws.close(); cleanup(); process.exit(0)

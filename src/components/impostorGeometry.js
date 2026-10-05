@@ -382,6 +382,7 @@ export function buildHeroImpostorCard(rec, opts = {}) {
   g.setAttribute('aTreeHeightNorm', new THREE.Float32BufferAttribute(aTreeHeightNorm, 1))
   g.setIndex(indices)
   g.computeBoundingSphere()
+  g.userData.heroHalfM = half   // the card's half-side in tree metres: one page texel = 2·half / page width
   return g
 }
 
