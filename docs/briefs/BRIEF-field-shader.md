@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: LANDED
 dispatched: no
 written: 2026-09-20 · re-scoped 2026-09-26 (the six-month cycle + plant impostors, Jacob)
 evict-when: huron's fields play the season — dirt → tilled rows → sprouts → plants → harvest → back — and Jacob has eyed it near and far, with LS's park grass unchanged.
@@ -47,7 +47,9 @@ evict-when: huron's fields play the season — dirt → tilled rows → sprouts 
 > spacing `f-ars-corn-row-traditional`, ridge `f-nrcs-346-ridge-min-height`; `growFrac`/`headlandM` authored), field ids in
 > the ground bake (`src/lib/fieldAxis.js`), the albedo + relief in `grassMaterial.js`, `greenhouse` its own class.
 > ▶ `node checks/claims-crop-rows-derived-per-field.mjs` (mutation-tested each run). ⚠️ A "field" is a FACE (the check prints the count;
-> OSM's farmland polygons are the finer unit, not built). **OPEN: Jacob's eye only** — the plants moved to `BRIEF-botanica.md`
+> OSM's farmland polygons are the finer unit, not built). ✅ **EYE-GATED 2026-10-04 (Jacob): "that already looked good, it was just applied to the wrong places."** The surface is done; WHERE it
+> paints is land use's: `BRIEF-land-use-per-piece-and-the-control.md` + `BRIEF-land-use-derivation.md`. ⏭ Retire to the Diary at the next
+> sweep (17 citations to repoint, some in code). The plants moved to `BRIEF-botanica.md`
 > (PARKED) by the 2026-09-26 ruling above. *(Boz the Younger, 2026-10-04: the check is green, 6 fields on 6 axes.)*
 
 ---
