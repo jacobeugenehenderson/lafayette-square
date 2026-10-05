@@ -745,7 +745,7 @@ function sceneConfig(scene, sceneBoundary) {
 // (Town.jsx OVERRIDE_KEYS) is wired here once, not per piece. activeChannel resolves the active
 // shot's fork (the channel-variant cascade). Doctrine: project_authoring_is_live_production_is_static.
 const STAGE_CHANNELS = [
-  'buildingPalette', 'wallPalettes', 'materialPhysics', 'materialColors', 'neon', 'lampGlow', 'lantern', 'canopy', 'arch',
+  'buildingPalette', 'wallPalettes', 'materialPhysics', 'materialColors', 'neon', 'lampGlow', 'lantern', 'canopy', 'treeWind', 'arch',
   'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon',
   'constellations', 'milkyWay', 'skyGain', 'stars', 'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo',
   'grade', 'grain', 'dof', 'surfaces', 'labels',

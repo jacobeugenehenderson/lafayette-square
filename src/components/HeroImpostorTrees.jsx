@@ -166,8 +166,8 @@ const _q = (k, d) => {
 // parallax from the layered cards does all the work."
 // ⇒ The flutter's spatial detail is only legible at rest; during motion the layered
 // cards' parallax carries the canopy, so the fine grid is paying for something the shot
-// hides. ⛔ AMPLITUDE IS FREE — `window.__setHeroWindFloor(v)` is a uniform multiply, so
-// a coarser grid is compensated by turning the floor UP, not by more triangles.
+// hides. ⛔ AMPLITUDE IS FREE — the Look's Tree Wind Amplitude is a uniform multiply, so
+// a coarser grid is compensated by turning Amplitude UP, not by more triangles.
 const FRONT_GRID = _q('frontGrid', 8)
 const BACK_GRID  = _q('backGrid', 1)
 

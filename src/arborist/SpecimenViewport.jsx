@@ -1288,7 +1288,7 @@ function Skeleton({
   }, [branchMat, umbrellaMat, cloudMat, leafMat, leafTex])
 
   // Match the canopy tints to the chassis's authored leaf tints. (Motion is the
-  // shared wind — driven by the Wind toggle via treeSwayUniforms — not per-material
+  // shared wind — the stage's wind sheet (the Wind slider) + the Look's Tree Wind — not per-material
   // dials, so nothing to bind here beyond colour.)
   useFrame(() => {
     if (!overheadMode) return

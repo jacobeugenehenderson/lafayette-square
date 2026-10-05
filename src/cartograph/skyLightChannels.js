@@ -479,6 +479,37 @@ export const CANOPY_FIELDS = [
 export const CANOPY_FLAT_DEFAULTS = { directional: 0, gain: 0.85, bulge: 0.9 }
 export const CANOPY_FIELD_KEYS = CANOPY_FIELDS.map(f => f.key)
 
+// Tree Wind (Surfaces → Trees) — how every tree answers the ONE wind (the wind sheet, src/lib/windSheet.js). LOOK,
+// not weather: the weather arrives through the sheet; this says how far and in what way the canopy moves with it.
+// Named in wave terms (Jacob, 2026-10-04). At Amplitude 1 · Pocket 0.5 · Frequency 0.5 every carrier moves exactly as
+// the constants it replaces did (the hero card's floor of 1; Browse's 1.5 is a per-shot fork now, not a kit constant).
+//   Amplitude — how far the trees move overall (a plain multiplier).
+//   Pocket    — how much the motion gathers where the gusts are, versus the steady sway everywhere (0 = all steady,
+//               1 = all with the wind). ⛔ Not the gust pockets' SIZE: that is the weather's gustShape.
+//   Frequency — lean versus flutter: moves the motion toward the slow crown lean (0) or the fast leaf flutter (1).
+//               ⛔ It shares motion between the two; it never speeds a single motion up.
+//   Visible floor — at a gust's peak, the gust's part of the motion reaches at least this many SCREEN pixels at each
+//               tree's own depth (windMetresForPixels); scaled by windGustAt, so it adds exactly zero in calm.
+// The rest are the REFERENCES the triple scales — metres, held by the Look so no wind amplitude is a bare constant in a
+// shader. Defaults are the values the shaders carried until 2026-10-04. Not on the panel; a Look may author them.
+export const TREE_WIND_FIELDS = [
+  { key: 'amplitude', label: 'Amplitude',     min: 0, max: 4, step: 0.05 },
+  { key: 'pocket',    label: 'Pocket',        min: 0, max: 1, step: 0.05, hint: 'how much the motion gathers where the gusts are' },
+  { key: 'frequency', label: 'Frequency',     min: 0, max: 1, step: 0.05, hint: 'toward the slow crown lean (0) or the fast leaf flutter (1)' },
+  { key: 'floorPx',   label: 'Visible floor', min: 0, max: 8, step: 0.5, unit: ' px', hint: 'a gust at its peak moves the canopy at least this far on screen' },
+]
+export const TREE_WIND_REF_KEYS = ['leanRefM', 'leanPerMps', 'flutterRefM', 'flutterPerMps', 'meshRustleM', 'meshSwayPerMps', 'meshLeanShare']
+export const TREE_WIND_FLAT_DEFAULTS = {
+  amplitude: 1, pocket: 0.5, frequency: 0.5,
+  // Jacob, 2026-10-04: "my eye is the gate for now … just set an arbitrary floor." Arbitrary by ruling; tuned per Look.
+  floorPx: 2,
+  // Cards: steady crown sway (m) · its gain with the felt wind (m per m/s) · steady flutter (m) · its gain (m per m/s).
+  leanRefM: 0.12, leanPerMps: 0.035, flutterRefM: 0.05, flutterPerMps: 0.05,
+  // Mesh trees: the rustle floor at a leaf tip (m) · sway per m/s per metre of height · the share that leans statically.
+  meshRustleM: 0.005, meshSwayPerMps: 0.012, meshLeanShare: 0.3,
+}
+export const TREE_WIND_FIELD_KEYS = [...TREE_WIND_FIELDS.map(f => f.key), ...TREE_WIND_REF_KEYS]
+
 // Clouds (Sky & Light, ATMOSPHERE group — SC.6) — atmospheric state
 // channel for the future <Atmosphere /> volumetric runtime
 // (Meteorologist v3). v1 keeps the procedural CloudDome as the actual
@@ -631,6 +662,8 @@ const DAY = {
   // move it by time of day like every other channel.
   canopy:   { directional: [0, 0, 0, 0, 0, 0, 0, 0], gain: [0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85, 0.85],
               bulge: [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9] },
+  // The trees' answer to the wind (TREE_WIND_FIELDS): flat across the day, keyed like every channel.
+  treeWind: Object.fromEntries(Object.entries(TREE_WIND_FLAT_DEFAULTS).map(([k, v]) => [k, Array(8).fill(v)])),
   lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [0.5, 0.5, null, null, 1.25, 1.4, 2.2, 0.25],
               radius: [0.85, 0.75, null, null, 0.75, 1, 1, 1], centre: [1.2, 1.2, null, null, 0.25, 1.2, 1.2, 1.2],
               trees: [0.3, 0.3, null, null, 0.8, 2, 0.7, 0.3] },

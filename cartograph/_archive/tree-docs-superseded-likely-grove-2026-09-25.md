@@ -31,3 +31,16 @@
 Superseded by the live `CAPTURE_FORMAT` paragraph there; the incident it records:
 
 ⛔ **RE-BAKE EVERY LOOK BAKED BEFORE 2026-08-28.** The impostor capture measured the tree's height in the un-scaled chassis frame while the camera framed and clipped in world metres, so **stored card heights are wrong** (`maple_silver` shipped 29.7 m for a 21.0 m tree; HPDM's `picea_abies` 681 m) and any species whose GLB node scale is **under 1** lost its top band and could not capture at all — it went missing from Browse with no error. Fixed at the capture. ⛔ **BUT "one Bake → Slab per Look clears it" IS FALSE, and this line said it for a week.** The Grove bakes DIRTY species only (drain-on-bake), and `captureKey` fingerprints the tree's *inputs* — canopy dims, bark records, hero dials. It deliberately carries **no notion of the capture CODE's version**, so a record shot in the pre-fix frame is indistinguishable from a current one and is skipped forever. Measured 2026-09-03: LS was re-baked that afternoon and still carried 3 pre-fix records — `quercus_alba`'s overhead pages had not been rewritten since 08-25. ✅ **FIXED 2026-09-03 — `CAPTURE_FORMAT` in `src/arborist/captureKey.js`.** A per-pool format version is folded into the fingerprint, so bumping it makes every affected record dirty **by construction**, in every town, on the next ordinary bake — no skip list, no per-town note, no operator who has to know to press ⟳. ⛔ **Bump it whenever the capture CODE changes what a page contains or how a stored measure is framed**; that is the whole contract. A bump re-shoots that pool once, including records that happened to be fine — correct, because we cannot tell post-hoc which code shot which record, and that missing information *was* the defect. The ⟳ gesture stays for what a fingerprint genuinely cannot see (a suspect asset on disk, a half-written capture). ▶ `node checks/claims-the-capture-frame-is-the-clip-frame.mjs` says which Looks still carry pre-fix records.
+
+
+---
+
+## Moved 2026-10-04 from `arborist/ARCHITECTURE.md` (Grain): the per-carrier wind floor
+
+Closed by the Look's Tree Wind channel (`treeWind`):
+
+> ⭐ **AMPLITUDE IS FREE.** `window.__setHeroWindFloor(v)` is a uniform multiply — a coarser
+> grid is compensated by turning the floor UP, never by more triangles.
+> ⚠️ **OWED: the floor is two bare constants** — `heroWindFloor = 1.0`, `browseWindFloor = 1.5`
+> in `treeAtlasMaterial.js`, with no per-town authoring. A windier town cannot say so
+> (`CLAUDE.md` Layer 0 q1). It wants to be an authored channel, forkable per shot.

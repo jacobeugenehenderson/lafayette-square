@@ -184,7 +184,7 @@ const DIAGNOSTIC_LAYERS = new Set(['shoreMedian'])
 // override would otherwise do nothing, silently, while the operator drags a slider.
 export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
-  'lantern', 'lampsOn', 'canopy', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist',
+  'lantern', 'lampsOn', 'canopy', 'treeWind', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
   'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
 ]
@@ -559,7 +559,7 @@ export default function Town({
           <DrawnAnchor id="buildings" />
         </group>
         <group name="town:trees" visible={on('trees')}>
-          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bake} canopyOverride={o.canopy} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bake} canopyOverride={o.canopy} treeWindOverride={o.treeWind} /></R3FErrorBoundary>
           <DrawnAnchor id="trees" />
         </group>
         <group name="town:park" visible={on('park')}>

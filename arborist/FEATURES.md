@@ -302,7 +302,7 @@ quad; its leaves flutter by sliding the picture, and every card leans and sways 
 weather, so expect more motion than the old calm-day rule, and the lean now points the right way north–south).
 The model trees in the Salon, Grove, canary and Full Monte move on the same wind: the Salon's slider and the Grove's
 breeze are named winds; the canary and Full Monte follow the town's real weather — ⚠️ so on a calm day they are calm
-(their old fallback breezes are gone; the per-shot wind look Jacob ruled will set how much they move).
+(their old fallback breezes are gone). How much every tree moves is the Look's Tree Wind (Stage › Surfaces › Trees).
 **A capture is shot against the atlas the bake just wrote (2026-10-04).** Bake → Slab and ⟳ now wait until the page
 has loaded the atlas on disk before choosing and shooting species. Before this, a Grove page that had already shown a
 town captured against that town's previous atlas, silently skipping species the bake had just added or changed. ⟳ also

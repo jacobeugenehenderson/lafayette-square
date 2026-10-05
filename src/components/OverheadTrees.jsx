@@ -26,18 +26,19 @@ import { loadImpostorTexture } from './impostorTexture.js'
 import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
 import { OVERHEAD_ALPHA_TEST } from './overheadCore.js'
-import { injectOverheadStamp, overheadLightUniforms, litCards } from './treeAtlasMaterial.js'
+import { injectOverheadStamp, overheadLightUniforms, litCards, treeWindUniforms } from './treeAtlasMaterial.js'
 import { treeGroundRaw } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useSkyState from '../hooks/useSkyState.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
-import { CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
+import { CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS, TREE_WIND_FIELD_KEYS, TREE_WIND_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 
 // Boot-time envelope for a look whose slab predates the channel — identical to what
 // bake-scene emits for an unauthored town, so first paint matches the bake rather
 // than flashing a different canopy for a frame.
 const CANOPY_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('canopy'))
+const TREE_WIND_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('treeWind'))
 import { useTownShot } from './townContext.js'
 import { slabUrl } from '../lib/slabUrl.js'
 
@@ -137,6 +138,28 @@ export function OverheadLightDriver({ enabled = true, canopyChannel }) {
     const amb = Math.min(0.92, Math.max(0.34, af))
     overheadLightUniforms.uAmbient.value = amb
     overheadLightUniforms.uSun.value = 1.0 - amb
+  })
+  return null
+}
+
+// ── TREE WIND — the Look's channel → the shared tree-wind uniforms (treeAtlasMaterial.js#treeWindUniforms) ─────────
+// Every tree program (cards and mesh) reads those uniforms by reference, so one write per frame moves them all.
+// Resolved per frame against the live TOD minute, like every look channel; the per-shot fork is already applied to
+// `scene` (useSceneJson), and Stage's live edit arrives as `channel` before a bake. A slab baked before the channel
+// existed boots on exactly what bake-scene emits for an unauthored town (kitDayChannel('treeWind')).
+const TREE_WIND_UNIFORM_OF = {
+  amplitude: 'uTreeWindAmp', pocket: 'uTreeWindPocket', frequency: 'uTreeWindFreq', floorPx: 'uTreeWindFloorPx',
+  leanRefM: 'uTreeWindLeanRefM', leanPerMps: 'uTreeWindLeanPerMps', flutterRefM: 'uTreeWindFlutRefM',
+  flutterPerMps: 'uTreeWindFlutPerMps', meshRustleM: 'uTreeWindMeshRustleM', meshSwayPerMps: 'uTreeWindMeshSwayPerMps',
+  meshLeanShare: 'uTreeWindMeshLeanShare',
+}
+export function TreeWindDriver({ channel }) {
+  const resolved = channel ?? TREE_WIND_DEFAULT_CHANNEL
+  useFrame(() => {
+    const tod = useTimeOfDay.getState()
+    const slotMinutes = resolved.animated ? getTodSlotMinutes(tod.currentTime) : null
+    const c = resolveGroupAtMinute(resolved, tod.getMinuteOfDay(), slotMinutes, TREE_WIND_FIELD_KEYS, TREE_WIND_FLAT_DEFAULTS)
+    for (const k of TREE_WIND_FIELD_KEYS) treeWindUniforms[TREE_WIND_UNIFORM_OF[k]].value = c[k] ?? TREE_WIND_FLAT_DEFAULTS[k]
   })
   return null
 }

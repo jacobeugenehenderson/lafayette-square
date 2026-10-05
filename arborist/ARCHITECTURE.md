@@ -147,11 +147,10 @@ truth. It is a per-shot look decision (`scene.shotLooks`), not a geometry one.
 > ⛔ **NOT a blanket cut — that was tried and reverted** (`c0056ffd` → `4433b301`): dropping
 > *every* layer to a flat quad killed the flutter outright and the canopy went visibly dead
 > within minutes of the operator looking. The front shell's flutter is the motion that reads.
-> ⭐ **AMPLITUDE IS FREE.** `window.__setHeroWindFloor(v)` is a uniform multiply — a coarser
-> grid is compensated by turning the floor UP, never by more triangles.
-> ⚠️ **OWED: the floor is two bare constants** — `heroWindFloor = 1.0`, `browseWindFloor = 1.5`
-> in `treeAtlasMaterial.js`, with no per-town authoring. A windier town cannot say so
-> (`CLAUDE.md` Layer 0 q1). It wants to be an authored channel, forkable per shot.
+> ⭐ **AMPLITUDE IS FREE.** The Look's Tree Wind **Amplitude** is a uniform multiply — a coarser
+> grid is compensated by turning it UP, never by more triangles. Every tree's wind LOOK is the Look's
+> channel (`treeWind`: Amplitude · Pocket · Frequency · a visible floor in screen pixels, scaling metre
+> references the Look holds), forkable per shot; ▶ `node checks/claims-the-tree-wind-is-the-looks.mjs`.
 > ▶ `node scratch/hero-actual-triangles.mjs`
 
 **TWO impostor systems, split by VIEWING HEMISPHERE — both live.** They are different constructions of the same tree, not competing versions; a top-down cross reads as an ugly line and a hero-viewed disc-stack reads as flat plates, so each hemisphere gets its own carrier:

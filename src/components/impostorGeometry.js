@@ -145,7 +145,7 @@ export function buildImpostorGeometry(rec, season = 'summer') {
  *   1. ruche-flex — a STANDING rim scallop (aRuffle = sin(FOLDS·θ)·radialFrac, NO
  *                   travel term) whose amplitude flexes with uRuffleDepth
  *   2. hula-rock  — each disc rocks base-anchored + phase-lagged up the stack (uHulaAmount)
- *   3. shared wind — treeSwayUniforms leans + gusts the stack downwind.
+ *   3. shared wind — the wind sheet leans + gusts the stack downwind.
  * Per-instance fold phase is free: the scallop is baked local; instance rotY
  * shifts its world phase → no stamped grid across a neighbourhood.
  *
@@ -312,7 +312,7 @@ export function buildOverheadBandDisc(rec, opts = {}) {
  *
  * Carries aOverhead + aTreeHeightNorm so the SAME injectOverheadStamp material
  * relights it (albedo × ambient+sun·AO) AND sways it base-anchored off the shared
- * treeSwayUniforms — the whole canopy leans + gusts sideways, top-most most. No
+ * the wind sheet — the whole canopy leans + gusts sideways, top-most most. No
  * dome, no ruche: it's a flat billboard, the mass breathes, the tall geometry
  * anchors (foundation doctrine) carry the articulated truth.
  *

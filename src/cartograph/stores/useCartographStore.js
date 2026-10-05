@@ -48,6 +48,7 @@ import {
   GRAIN_FIELD_KEYS, GRAIN_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
   CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS,
+  TREE_WIND_FIELD_KEYS, TREE_WIND_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS,
   BROWSE_HEADING_FIELD_KEYS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS,
@@ -400,6 +401,7 @@ const DESIGN_FIELDS = [
   { key: 'dof', hydrate: (d) => _kit('dof', d, (v) => migrateGroupChannel(migrateDof(v), DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)) },
   _grp('shadow',         SHADOW_FIELD_KEYS,         SHADOW_FLAT_DEFAULTS),
   _grp('canopy',         CANOPY_FIELD_KEYS,         CANOPY_FLAT_DEFAULTS),
+  _grp('treeWind',       TREE_WIND_FIELD_KEYS,      TREE_WIND_FLAT_DEFAULTS),
   _grp('constellations', CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
   _grp('milkyWay',       MILKYWAY_FIELD_KEYS,       MILKYWAY_FLAT_DEFAULTS),
   _grp('neon',           NEON_FIELD_KEYS,           NEON_FLAT_DEFAULTS),
@@ -1418,6 +1420,11 @@ const useCartographStore = create((set, get) => ({
     name: 'canopy',
     fieldKeys: CANOPY_FIELD_KEYS,
     flatDefaults: CANOPY_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'treeWind',
+    fieldKeys: TREE_WIND_FIELD_KEYS,
+    flatDefaults: TREE_WIND_FLAT_DEFAULTS,
   }, set, get),
   ...createGroupChannelActions({
     name: 'browseHeading',

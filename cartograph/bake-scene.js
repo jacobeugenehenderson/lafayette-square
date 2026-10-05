@@ -141,6 +141,9 @@ export async function bakeScene({ look } = {}) {
     // it fails in the worst direction — the operator authors, sees it work, and
     // the slab quietly carries nothing.
     canopy:   design.canopy   || kitDayChannel('canopy'),
+    // How every tree answers the wind (skyLightChannels.js#TREE_WIND_FIELDS). Named here or it ships nowhere — the same
+    // trap as canopy above. The kit default is the motion the shaders carried before the channel existed.
+    treeWind: design.treeWind || kitDayChannel('treeWind'),
     // SC.5 — the camera block (claims-authored-framing-reaches-the-player reads it: every key here needs a reader in
     // the Ward). Per-device values are NOT baked: Browse's height is fitted to each screen from browseFrame
     // (src/camera/browseFrame.js), and Street stands where the viewer taps.

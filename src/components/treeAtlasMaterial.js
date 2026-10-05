@@ -21,7 +21,8 @@ import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
 import { rosterOf } from '../lib/treeRoster.js'
 import { BARK_UV_STRIDE, BARK_TILE_MAX } from '../lib/barkUV.js'
-import { WIND_SHEET_GLSL, bindWindSheet } from '../lib/windSheet.js'
+import { WIND_SHEET_GLSL, WIND_SHEET_VERTEX_GLSL, bindWindSheet } from '../lib/windSheet.js'
+import { TREE_WIND_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
 // Module-level caches, per look. ⭐ TWO, BECAUSE THE PLAYER NEEDS ONE (ruled 2026-09-28): every
 // tree is an impostor unless the Arborist specifies a model (ARCHITECTURE §Tree-render reality),
@@ -44,19 +45,9 @@ const _materials = new Map()  // lookName -> { status, treeMaterial, opaqueCanop
 const _atlasListeners = new Set()
 function _notifyAtlasChange() { _atlasListeners.forEach((fn) => { try { fn() } catch {} }) }
 
-// The mesh tree's own sway LOOK, shared by reference. The wind state that used to live here (uWindForce, gusts,
-// gust fronts, a clock, written each frame by SwayDriver / GroveWind / each surface) moved onto the wind sheet
-// (2026-10-04): one wind, read by every tree, card and mesh alike.
-export const treeSwayUniforms = {
-  // Rustle floor amplitude in metres (operator spec: ~5 mm leaf-tip sway). LOOK, not weather: the wind itself
-  // reaches every tree through the wind sheet (src/lib/windSheet.js), never through this object.
-  uRustleAmplitude:   { value: 0.005 },
-}
-
-
 // ⭐ TRUNK-GROUND CONTACT — shared, module-scoped, defaulting to TODAY'S values
 // so the map renders bit-identical until someone turns a knob. Same pattern as
-// treeSwayUniforms: one write drives every mounted tree.
+// treeWindUniforms: one write drives every mounted tree.
 //   blend     — how strongly the trunk base takes the ground colour
 //   blendTop  — how far UP the trunk that reaches, in metres
 //   shadowStr — how hard the ground's contact-shadow (G) darkens it
@@ -81,7 +72,7 @@ export function setTrunkGround({ blend, blendTop, shadowStr } = {}) {
 // ⭐ WIND TIERING — how per-vertex sway amplitude is distributed through the
 // tree. Shared, module-scoped, defaulting to TODAY'S values so every tree in
 // the map is bit-identical until someone turns `blend`. Same pattern as
-// treeSwayUniforms / treeTrunkGround: one write drives every mounted tree.
+// treeWindUniforms / treeTrunkGround: one write drives every mounted tree.
 //
 // blend = 0 → the legacy FOUR BUCKETS (aWindTier 0/1/2/3 → 0.05/0.30/0.60/1.00).
 // blend = 1 → a CONTINUOUS ramp from a near-still bole to whipping tips, driven
@@ -197,7 +188,7 @@ export const treeLeafTransmission = { value: 0 }
 export const treeLeafTransmissionSharpness = { value: 3 }
 
 // Debug/authoring setter. Drives every mounted tree at once — one write, because
-// the uniform object is shared by reference, exactly like treeSwayUniforms.
+// the uniform object is shared by reference, exactly like treeWindUniforms.
 export function setLeafTransmission(amount, sharpness) {
   const a = Number(amount)
   if (Number.isFinite(a)) treeLeafTransmission.value = Math.max(0, Math.min(4, a))
@@ -212,7 +203,7 @@ export function setLeafTransmission(amount, sharpness) {
 // impostor → magenta) so the operator can eyeball the DERIVED classification
 // through the hero pan (the A→B seam). Default 0 → bit-identical render (the
 // gate short-circuits; no functional change). Module-scope shared uniform +
-// debug setter mirror the treeSwayUniforms pattern, so flipping it once drives every
+// debug setter mirror the treeWindUniforms pattern, so flipping it once drives every
 // mounted tree material (LS runtime + Salon preview) with no per-draw plumbing,
 // honoring the single-shader-program constraint (uniform branch, not a variant).
 export const treeHeroTierQC = { value: 0 }
@@ -287,7 +278,7 @@ export function injectFoliageSway(material) {
     shader.uniforms.uTreeSanitizeOn    = treeSanitizeUniform
     // The wind: the sheet (windAt per tree, its clock for the periodic motion). Throws when no <WindSheet> is mounted.
     bindWindSheet(shader)
-    shader.uniforms.uRustleAmplitude   = treeSwayUniforms.uRustleAmplitude
+    bindTreeWindUniforms(shader)   // the Look's Tree Wind channel (rustle, sway, lean) — the same one the cards read
     // Wind tiering — shared by REFERENCE (see `treeWindTiering`). Defaults
     // reproduce the legacy buckets exactly; uWhipBlend=0 is bit-identical.
     shader.uniforms.uWhipBlend         = treeWindTiering.blendUniform
@@ -421,7 +412,8 @@ export function injectFoliageSway(material) {
         '#include <common>',
         `#include <common>
          ${WIND_SHEET_GLSL}
-         uniform float uRustleAmplitude;
+         ${WIND_SHEET_VERTEX_GLSL}
+         ${TREE_WIND_GLSL}
          attribute float aLampGlow;
          attribute float aBark;
          attribute float aBarkRegion;
@@ -631,13 +623,22 @@ export function injectFoliageSway(material) {
            }
            float ampScale   = mix(ampLegacy,   ampCont,   uWhipBlend);
            float tempoScale = mix(tempoLegacy, tempoCont, uWhipBlend);
+           // The Look's Tree Wind (TREE_WIND_GLSL): x = the steady rustle at a leaf tip (m), y = the wind's sway per metre
+           // of height, lifted to the visible floor at this vertex's depth where a gust is (zero in calm).
+           vec4  meshW  = windAt(instWorld.xz);
+           #ifdef USE_INSTANCING
+             vec3 meshRest = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
+           #else
+             vec3 meshRest = (modelMatrix * vec4(transformed, 1.0)).xyz;
+           #endif
+           vec2  meshTw = treeWindMesh(meshW.z, windGustAt(instWorld.xz), windMetresForPixels(meshRest, uTreeWindFloorPx), h);
            {
              float rt = windSheetTime * 2.5 * tempoScale;
              float rphase = phase + position.y * 0.3;
              vec2 rustle = vec2(
                sin(rt + rphase),
                sin(rt * 0.83 + rphase * 1.4 + 1.7)
-             ) * uRustleAmplitude * ampScale * h;
+             ) * meshTw.x * ampScale * h;
              transformed.xz += rustle;
            }
            // THE WIND — the sheet's felt wind at this tree (src/lib/windSheet.js#windAt): world XZ, m/s, TO direction,
@@ -646,14 +647,12 @@ export function injectFoliageSway(material) {
            // uGustsScale/uGustFrontVelocity were a second wind, mirrored north–south (resolveWindState's Z).
            // Per-tier damping (ampScale) and tempo stay: how wood and leaves answer the wind is the tree's, not the air's.
            {
-             vec4  w = windAt(instWorld.xz);
-             vec2  windDirXZ = w.z > 1e-3 ? w.xy / w.z : vec2(0.0);
-             // Sway: the felt wind, oscillating at the tier's tempo (the periodic motion is ours, on the sheet's clock).
-             // The 0.012 converts m/s of wind into metres of leaf-tip sway per metre of height.
+             vec2  windDirXZ = meshW.z > 1e-3 ? meshW.xy / meshW.z : vec2(0.0);
+             // Sway: the wind's part, oscillating at the tier's tempo (the periodic motion is ours, on the sheet's clock).
              float driftOsc   = sin(windSheetTime * tempoScale + phase);
-             transformed.xz  += windDirXZ * (ampScale * w.z * driftOsc * 0.012 * h);
-             // Static lean toward the wind, proportional to the felt speed: trunks barely lean, leaves lean a lot.
-             transformed.xz  += windDirXZ * (ampScale * w.z * 0.012 * h * 0.3);
+             transformed.xz  += windDirXZ * (ampScale * meshTw.y * driftOsc * h);
+             // Static lean toward the wind (the Look's lean share of it): trunks barely lean, leaves lean a lot.
+             transformed.xz  += windDirXZ * (ampScale * meshTw.y * h * uTreeWindMeshLeanShare);
            }
            // Per-instance world-XZ for fragment hue jitter. We sample the
            // instance translation column (constant within a draw) so every
@@ -1622,22 +1621,79 @@ export function applyOverheadDeformerUniforms(material, overhead) {
 // procedural parts (branch skeleton, umbrella shells): the SAME base-anchored
 // hula wiggle + shared wind + vertical ruffle as injectFoliageSway's overhead
 // block, but with NO atlas/bark fragment machinery — a plain MeshStandard
-// fragment (flat-shaded, solid color, no map). Reuses the shared treeSwayUniforms
+// fragment (flat-shaded, solid color, no map). Reuses the wind sheet + the Look's treeWindUniforms
 // (one weather system) and the same uRuffleDepth/uHulaAmount the knobs drive via
 // applyOverheadDeformerUniforms. Gated per-vertex by aOverhead. Cheap: opaque,
 // flat, writes depth (early-Z) — the branch structure you see from directly above.
+// ── TREE WIND — the Look's channel, as uniforms every tree program shares by reference ──────────────────────────
+// Replaced the two per-carrier floors (browse 1.5, hero 1.0) and their window.__set…WindFloor dials, and the card
+// gains, 2026-10-04: one Amplitude · Pocket · Frequency per Look, forked per shot like every channel (Browse's
+// livelier floor is now Browse's fork, authored, not a kit constant). Driven per frame by OverheadTrees#TreeWindDriver
+// from scene.treeWind (Stage's live edit wins); a surface with no Look (Grove, Salon, canary) runs the kit defaults.
+export const treeWindUniforms = {
+  uTreeWindAmp:            { value: TREE_WIND_FLAT_DEFAULTS.amplitude },
+  uTreeWindPocket:         { value: TREE_WIND_FLAT_DEFAULTS.pocket },
+  uTreeWindFreq:           { value: TREE_WIND_FLAT_DEFAULTS.frequency },
+  uTreeWindFloorPx:        { value: TREE_WIND_FLAT_DEFAULTS.floorPx },
+  uTreeWindLeanRefM:       { value: TREE_WIND_FLAT_DEFAULTS.leanRefM },
+  uTreeWindLeanPerMps:     { value: TREE_WIND_FLAT_DEFAULTS.leanPerMps },
+  uTreeWindFlutRefM:       { value: TREE_WIND_FLAT_DEFAULTS.flutterRefM },
+  uTreeWindFlutPerMps:     { value: TREE_WIND_FLAT_DEFAULTS.flutterPerMps },
+  uTreeWindMeshRustleM:    { value: TREE_WIND_FLAT_DEFAULTS.meshRustleM },
+  uTreeWindMeshSwayPerMps: { value: TREE_WIND_FLAT_DEFAULTS.meshSwayPerMps },
+  uTreeWindMeshLeanShare:  { value: TREE_WIND_FLAT_DEFAULTS.meshLeanShare },
+}
+function bindTreeWindUniforms(shader) { for (const k in treeWindUniforms) shader.uniforms[k] = treeWindUniforms[k] }
+
+// The channel's arithmetic, ONE place for every carrier (vertex stage). Weights are 2·share, so the neutral
+// 0.5 / 0.5 is exactly ×1 and today's motion is Amplitude 1. Pocket shares motion between the STEADY sway and the
+// part that answers the felt wind; Frequency shares it between crown LEAN and leaf FLUTTER — amplitudes only, never a
+// rate. The visible floor lifts the wind's part (lean + flutter, in their own proportion) to `floorM` metres where
+// windGustAt says a gust is: × windGustAt, so it adds exactly zero in calm and with no gusts in the reading.
+//   treeWindCrown(felt m/s, gust 0..1, metres-for-the-floor-pixels at this vertex) → vec2(lean m, flutter m) at the crown
+//   treeWindMesh(...)  → vec2(steady rustle m at a leaf tip, wind sway m per metre of height) for the mesh trees
+const TREE_WIND_GLSL = `
+         uniform float uTreeWindAmp;
+         uniform float uTreeWindPocket;
+         uniform float uTreeWindFreq;
+         uniform float uTreeWindFloorPx;
+         uniform float uTreeWindLeanRefM;
+         uniform float uTreeWindLeanPerMps;
+         uniform float uTreeWindFlutRefM;
+         uniform float uTreeWindFlutPerMps;
+         uniform float uTreeWindMeshRustleM;
+         uniform float uTreeWindMeshSwayPerMps;
+         uniform float uTreeWindMeshLeanShare;
+         vec4 treeWindWeights() {   // steady, wind, lean, flutter
+           float pk = clamp(uTreeWindPocket, 0.0, 1.0), fq = clamp(uTreeWindFreq, 0.0, 1.0);
+           return vec4(2.0 * (1.0 - pk), 2.0 * pk, 2.0 * (1.0 - fq), 2.0 * fq) * vec4(uTreeWindAmp, uTreeWindAmp, 1.0, 1.0);
+         }
+         vec2 treeWindCrown(float felt, float gust, float floorM) {
+           vec4 w = treeWindWeights();
+           vec2 steady = vec2(w.z * w.x * uTreeWindLeanRefM, w.w * w.x * uTreeWindFlutRefM);
+           vec2 windy  = vec2(w.z * w.y * uTreeWindLeanPerMps, w.w * w.y * uTreeWindFlutPerMps) * felt;
+           float lift  = gust * floorM, have = windy.x + windy.y;
+           vec2 share  = vec2(1.0 - clamp(uTreeWindFreq, 0.0, 1.0), clamp(uTreeWindFreq, 0.0, 1.0));
+           windy = have > 1e-6 ? windy * max(1.0, lift / have) : share * lift;
+           return steady + windy;
+         }
+         vec2 treeWindMesh(float felt, float gust, float floorM, float heightM) {
+           vec4 w = treeWindWeights();
+           float sway = w.z * w.y * uTreeWindMeshSwayPerMps * felt;            // per metre of height
+           sway = max(sway, heightM > 1e-3 ? gust * floorM / heightM : 0.0);
+           return vec2(w.w * w.x * uTreeWindMeshRustleM, sway);
+         }`
+
 // ── The cards' wind — read off the WIND SHEET (src/lib/windSheet.js), never computed here ──────────────────────
 // Every card carrier (overhead bands, hero cards, the Salon's procedural relic) takes its motion from the one field:
 // `windAt` once per TREE (the felt wind at the instance's world XZ: sprung, so it lags a gust and sways back) for the
 // rigid lean + hula, and `windDetail` for the ~1.8 m flutter. ⛔ No wind noise of our own (the sheet's authority,
-// ▶ checks/claims-the-wind-has-one-authority.mjs). What stays ours is LOOK: the per-carrier floor (calm ≠ dead) and
-// the gains below, metres of motion per m/s of felt wind (the weather terms the fBm block carried, kept).
-const CARD_LEAN_GAIN_M_PER_MPS  = 0.035
-const CARD_FLUTTER_GAIN_M_PER_MPS = 0.05
-const CARD_WIND_COMMON = WIND_SHEET_GLSL + `
+// ▶ checks/claims-the-wind-has-one-authority.mjs). What stays ours is LOOK, and it is the Look's: the Tree Wind channel
+// (Amplitude · Pocket · Frequency · the visible floor, and the metre references they scale — treeWindUniforms below,
+// skyLightChannels.js#TREE_WIND_FIELDS). ⛔ No wind amplitude is a bare constant here: ▶ claims-the-tree-wind-is-the-looks.
+const CARD_WIND_COMMON = WIND_SHEET_GLSL + WIND_SHEET_VERTEX_GLSL + TREE_WIND_GLSL + `
          attribute float aLampGlow;   // per-tree lamp light (src/lib/lampPool.js) — absent ⇒ 0
          varying float vLampGlow;
-         uniform float uWindFloor;
          uniform float uExag;
          attribute float aGroundRaw;
          attribute float aOverhead;
@@ -1658,15 +1714,23 @@ const CARD_WIND_RIGID = `
            vec4  ovW    = windAt(ovWorldXZ);
            vec2  ovDir  = ovW.z > 1e-3 ? ovW.xy / ovW.z : vec2(0.0);
            float t      = windSheetTime;
-           float amp    = (0.12 * uWindFloor + ${CARD_LEAN_GAIN_M_PER_MPS} * ovW.z) * aTreeHeightNorm;
+           // The Look's answer to the felt wind (TREE_WIND_GLSL): crown lean and flutter in metres at the crown, the
+           // gust's part lifted to the visible floor at THIS vertex's depth where a gust is (zero in calm).
+           #ifdef USE_INSTANCING
+             vec3 ovRest = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
+           #else
+             vec3 ovRest = (modelMatrix * vec4(transformed, 1.0)).xyz;
+           #endif
+           vec2  tw     = treeWindCrown(ovW.z, windGustAt(ovWorldXZ), windMetresForPixels(ovRest, uTreeWindFloorPx));
+           float amp    = tw.x * aTreeHeightNorm;
            float drift  = t * 0.25;
            float hulaPh = dot(ovWorldXZ, vec2(0.017, 0.011));   // per-tree phase de-sync
            vec2  hula   = vec2(cos(drift), sin(drift)) * (amp * sin(t * 0.9 - aTreeHeightNorm * 2.4 + hulaPh));
            transformed.xz += hula + ovDir * (amp * 0.7);
-           ovFlutAmp = (0.05 * uWindFloor + ${CARD_FLUTTER_GAIN_M_PER_MPS} * ovW.z) * aTreeHeightNorm;
+           ovFlutAmp = tw.y * aTreeHeightNorm;
            if (aLeafBody > 0.001) {   // the Salon relic's per-leaf flutter (periodic, on the sheet's clock)
              float ft  = t * 3.4 + aLeafPhase;
-             float amp2 = (0.1 + ovW.z * 0.06) * aLeafBody;
+             float amp2 = 2.0 * tw.y * aLeafBody;
              transformed.y  += sin(ft) * amp2;
              transformed.xz += vec2(cos(ft * 0.9), sin(ft * 1.3)) * (amp2 * 0.55);
            }
@@ -1698,24 +1762,6 @@ const OVERHEAD_FLUTTER_FRAG = `
          vec2 ovFlut = windDetail(vOvXZ) * vOvFlutAmp;
          vec2 ovUv = vMapUv - vec2(dot(ovFlut, vOvUvPerM.xy), dot(ovFlut, vOvUvPerM.zw));`
 
-// ── The ambient wind FLOOR, per carrier (Jacob, 2026-08-28: "turn up the base-level
-// wind on the browse trees… still subtle, still the pre-weather base") ───────────
-// `CARD_WIND_RIGID` is SHARED by the browse bands and the hero cards, so raising
-// its constants would move both. The wind itself stays ONE shared state (the doctrine
-// this file runs on); what differs is how much of the FLOOR each carrier expresses —
-// a disc read from 600 m up needs more motion to register than a card read side-on at
-// street distance. Weather still ADDS on top of whatever the floor is.
-// ⭐ SUBTLE IS AN EYE CALL, NOT A CONSTANT — dial it live and keep what looks right:
-//     window.__setBrowseWindFloor(1.8)   // browse discs
-//     window.__setHeroWindFloor(1.0)     // hero cards (1.0 = today's behaviour)
-export const browseWindFloor = { value: 1.5 }
-export const heroWindFloor   = { value: 1.0 }
-if (typeof window !== 'undefined') {
-  window.__setBrowseWindFloor = (v) => { browseWindFloor.value = Math.max(0, Number(v) || 0); return browseWindFloor.value }
-  window.__setHeroWindFloor   = (v) => { heroWindFloor.value   = Math.max(0, Number(v) || 0); return heroWindFloor.value }
-}
-
-
 // ⛔⛔ SEAT ON THE DRAWN GROUND, PER FRAME (Jacob's eye, 2026-08-28, dragging the ground in
 // Browse: "the trees aren't stuck to or near the ground at all... rendered off the ground
 // very high in the air"). The ground's exaggeration is a LIVE ANIMATED uniform, per shot —
@@ -1735,11 +1781,10 @@ const OVERHEAD_GROUND_LIFT = `
          #endif
          vLampGlow = aLampGlow;`
 
-function bindCardWindUniforms(shader, floorUniform) {
-  // ⛔ Default 1.0 → byte-identical for any caller that does not pass a floor.
-  shader.uniforms.uWindFloor = floorUniform || { value: 1.0 }
-  shader.uniforms.uExag      = terrainExag   // LIVE per-shot exag; never a constant
-  bindWindSheet(shader)                      // throws when no <WindSheet> is mounted — never reads zeros
+function bindCardWindUniforms(shader) {
+  shader.uniforms.uExag = terrainExag   // LIVE per-shot exag; never a constant
+  bindWindSheet(shader)                 // throws when no <WindSheet> is mounted — never reads zeros
+  bindTreeWindUniforms(shader)
 }
 
 export function injectOverheadWiggle(material) {
@@ -1753,7 +1798,7 @@ export function injectOverheadWiggle(material) {
 }
 
 // Runtime atmosphere for the card stamps — ONE shared light state (like
-// treeSwayUniforms is one shared wind), fed by OverheadLightDriver.
+// treeWindUniforms is one shared wind look), fed by OverheadLightDriver.
 // uAmbient + uSun sum to 1: the weather's CONTRAST (the ratio), never the brightness.
 // ⭐ THE BRIGHTNESS IS uSceneLight (Jacob, 2026-09-27: "I have the light on the trees turned to 0 and they
 // are still pretty bright in an otherwise very dark scene"). A card is MeshBasic — no scene light reaches it —
@@ -2082,7 +2127,7 @@ const OVERHEAD_FRAG_COMMON = WIND_SHEET_GLSL + OVERHEAD_FLUTTER_VARYINGS + LIT_C
 export function injectOverheadStamp(material, aoTex) {
   material.customProgramCacheKey = () => 'overheadStamp'   // distinct from heroImpostorStamp
   material.onBeforeCompile = (shader) => {
-    bindCardWindUniforms(shader, browseWindFloor)
+    bindCardWindUniforms(shader)
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
@@ -2143,7 +2188,7 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
   // the other (the billboard/relight silently not applying). [[feedback_unique_program_cache_key_before_wrappers]]
   material.customProgramCacheKey = () => 'heroImpostorStamp'
   material.onBeforeCompile = (shader) => {
-    bindCardWindUniforms(shader, heroWindFloor)
+    bindCardWindUniforms(shader)
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun

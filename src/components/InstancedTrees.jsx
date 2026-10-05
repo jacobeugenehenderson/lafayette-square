@@ -31,7 +31,7 @@ import {
   measureChassisRadius,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
-import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
+import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
 import { getElevationRaw, slabYIsUnstamped } from '../utils/elevation'
 import { currentTerrainIdentity } from '../utils/terrainShader'
@@ -529,7 +529,7 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
 // read-only QC tint, and on a slab whose hero foundation is on it reaches no pixel at all.
 // (role-at-bake doctrine).
 
-function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOverride }) {
+function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOverride, treeWindOverride }) {
   // Active Look: explicit prop wins; otherwise URL `?look=` fallback; final
   // default 'lafayette-square'. Cartograph passes the active Look explicitly
   // via the StageEnvironment thread; Preview reads ?look= from the URL.
@@ -1059,6 +1059,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   return (
     <>
       <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} canopyChannel={canopyOverride ?? scene?.canopy} />
+      <TreeWindDriver channel={treeWindOverride ?? scene?.treeWind} />
       {/* All-mesh (+ hero impostor) render. ⛔ THIS GROUP NO LONGER HIDES AS A BLOCK.
           It used to be `visible={!overheadMode}`, which made the comment on the overhead
           group below ("a species with no baked asset simply stays on mesh — never blank")
@@ -1149,10 +1150,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   )
 }
 
-// `canopyOverride`: Stage's live Canopy Light channel, laid over the baked scene.canopy so an edit shows
+// `canopyOverride` / `treeWindOverride`: Stage's live Canopy Light and Tree Wind channels, laid over the baked
+// scene.canopy / scene.treeWind so an edit shows
 // before a bake (Loupe's audit, 2026-09-26: it reached nothing on a poured town until bake-scene ran).
-export default function InstancedTrees({ maxVariants, lookId, bakeLastMs, canopyOverride } = {}) {
+export default function InstancedTrees({ maxVariants, lookId, bakeLastMs, canopyOverride, treeWindOverride } = {}) {
   // No default maxVariants — atlas collapses materials to 2 shared instances,
   // so unbounded variant count is now safe.
-  return <ParkPopulation maxVariants={maxVariants} lookId={lookId} bakeLastMs={bakeLastMs} canopyOverride={canopyOverride} />
+  return <ParkPopulation maxVariants={maxVariants} lookId={lookId} bakeLastMs={bakeLastMs} canopyOverride={canopyOverride} treeWindOverride={treeWindOverride} />
 }
