@@ -241,28 +241,33 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   // uCaptureMask for THIS pass only (1 = leaf-only, 2 = bark-only, 0/absent =
   // whole tree). Reset in finally so no other render sees it. The overhead +
   // front-on paths never pass it → unaffected.
+  // ⛔⛔ COMPILE BEFORE THE FIRST SHOT (2026-10-04, HPDM). The capture switches live on the COMPILED shader's
+  // uniforms, which do not exist until the material's first render — and the Grove hands the baker a FRESH material
+  // (awaitDiskAtlas), so the first shot of every run fired before it: no leaf/bark mask, woody leaking into the first
+  // leaf shell, logged as a warning and shipped anyway. Now the material is compiled against this capture's own scene
+  // and camera first, and a switch still missing is a THROWN error (the species fails loudly and retries), never a
+  // whole-tree capture.
+  const captureUniforms = () => {
+    let u = null
+    glbScene.traverse((o) => { if (!u && o.isMesh && o.material?.userData?.shader?.uniforms?.uCaptureMask) u = o.material.userData.shader.uniforms })
+    return u
+  }
+  let shaderUniforms = null
+  if (opts.captureMask || opts.captureDepth) {
+    shaderUniforms = captureUniforms()
+    if (!shaderUniforms) { gl.compile(scene, cam); shaderUniforms = captureUniforms() }
+    if (!shaderUniforms) throw new Error('[captureImpostor] ⛔ the tree material has no capture switches even after compiling — this shot would leak woody into leaves (or colour into depth)')
+  }
   let maskUniform = null, prevMask = 0
   const wantMask = opts.captureMask || 0
-  if (wantMask) {
-    glbScene.traverse((o) => {
-      if (maskUniform || !o.isMesh) return
-      const u = o.material?.userData?.shader?.uniforms?.uCaptureMask
-      if (u) maskUniform = u
-    })
-    if (maskUniform) { prevMask = maskUniform.value; maskUniform.value = wantMask }
-    else console.warn('[captureImpostor] uCaptureMask not found (shader not compiled yet?) — capturing whole tree')
-  }
+  if (wantMask) { maskUniform = shaderUniforms.uCaptureMask; prevMask = maskUniform.value; maskUniform.value = wantMask }
   // Hero DEPTH pass (treeAtlasMaterial uCaptureDepth): the same render, writing depth toward the camera instead of
   // colour. ⛔ Side-on only, and loud when the shader lacks the switch: a depth page of colour would be wrong depth.
   let depthUniforms = null
   if (opts.captureDepth) {
     if (!sideOnDepth) throw new Error('[captureImpostor] a depth capture needs the side-on (hero) camera')
-    glbScene.traverse((o) => {
-      if (depthUniforms || !o.isMesh) return
-      const u = o.material?.userData?.shader?.uniforms
-      if (u?.uCaptureDepth) depthUniforms = u
-    })
-    if (!depthUniforms) throw new Error('[captureImpostor] uCaptureDepth not found on the tree material (shader not compiled yet?) — no depth page')
+    depthUniforms = shaderUniforms.uCaptureDepth ? shaderUniforms : null
+    if (!depthUniforms) throw new Error('[captureImpostor] uCaptureDepth not found on the compiled tree material — no depth page')
     depthUniforms.uCaptureDepth.value = sideOnDepth.D
     depthUniforms.uCaptureDepthHalf.value = sideOnDepth.half
   }

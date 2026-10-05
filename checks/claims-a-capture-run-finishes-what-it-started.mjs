@@ -11,7 +11,8 @@
 //   ③ the per-shot wait is the shared nextCaptureFrame (hidden-tab safe), never raw rAF;
 //   ④ Grove's "not loaded yet" empties are one stable identity (no `|| []` on the batch inputs);
 //   ⑤ both capture gestures await the atlas ON DISK (its generatedAt) before ticking the baker;
-//   ⑥ a forced (⟳) batch carries computed capture keys (never null).
+//   ⑥ a forced (⟳) batch carries computed capture keys (never null);
+//   ⑦ the tree material is compiled before the first masked/depth shot, and a missing switch throws.
 // Static: this is browser capture code with no harness. It reads the source.
 //
 // ▶ MUTATION-TEST IT:
@@ -19,6 +20,7 @@
 //     · OverheadBaker.jsx: delete the `alive()` line before postOverhead → ② RED
 //     · Grove.jsx bakeAll: delete its `await awaitDiskAtlas(` line → ⑤ RED
 //     · Grove.jsx: `forceAll.current ? overheadSpecies` (the raw pool) → ⑥ RED
+//     · captureImpostor.js: delete the `gl.compile(scene, cam)` retry → ⑦ RED
 //
 //   node checks/claims-a-capture-run-finishes-what-it-started.mjs
 import fs from 'fs'
@@ -50,6 +52,13 @@ for (const [rel, post] of [['src/arborist/HeroImpostorBaker.jsx', 'postHeroImpos
 console.log('captureImpostor.js')
 { const s = src('src/components/captureImpostor.js')
   ;/export function nextCaptureFrame\(\)[\s\S]{0,300}document\.hidden[\s\S]{0,120}setTimeout/.test(s) ? ok('③ nextCaptureFrame steps on a timer when the tab is hidden') : bad('nextCaptureFrame has no hidden-tab path') }
+
+console.log('captureImpostor.js — the first shot')
+{ const s = src('src/components/captureImpostor.js')
+  // ⑦ The capture switches exist only on a COMPILED shader, and the Grove hands the baker a fresh material, so the
+  // first shot of every run fired before compile and captured the whole tree (2026-10-04, HPDM: woody into a leaf shell).
+  ;/if \(!shaderUniforms\) \{ gl\.compile\(scene, cam\); shaderUniforms = captureUniforms\(\) \}/.test(s) ? ok('⑦ the material is compiled before the first masked/depth shot') : bad('captureImpostor.js: no compile before the first shot — the first hero shot of a run captures the whole tree')
+  ;/capturing whole tree/.test(s) ? bad('captureImpostor.js: a missing capture switch still falls back to a whole-tree capture') : ok('⑦ a missing capture switch throws; it never captures the whole tree') }
 
 console.log('Grove.jsx')
 { const s = src('src/arborist/Grove.jsx')
