@@ -53,6 +53,7 @@ import ExtentApp from './ExtentApp.jsx'
 import StatusBar from './StatusBar.jsx'
 import Panel from './Panel.jsx'
 import StagePanelReal from './StagePanel.jsx'
+import { useDiagnostics } from '../stage/diagnostics.js'
 import CartographSkyLight from './CartographSkyLight.jsx'
 import CartographPost from './CartographPost.jsx'
 import { authoredBrowseFrame, browseSquare, browseSquareAltitude } from '../camera/browseFrame.js'
@@ -869,6 +870,7 @@ export default function CartographApp() {
   // baked value, so turning lamps on did nothing until a bake (Jacob's Dawn pass, 2026-09-27).
   const effectiveLayerVis = inDesigner ? layerVis : { ...(bakedLayerVis || {}), lamp: layerVis?.lamp }
   const hiddenLayers = {}
+  const shoreMedian = useDiagnostics(s => s.shoreMedian)
   for (const k in effectiveLayerVis) {
     if (effectiveLayerVis[k] === false) hiddenLayers[k] = true
   }
@@ -1062,6 +1064,7 @@ export default function CartographApp() {
               layers={{
                 buildings: !hiddenLayers.building, neon: !hiddenLayers.building, trees: !hiddenLayers.tree,
                 lamps: !hiddenLayers.lamp, park: !hiddenLayers.park, labels: !hiddenLayers.labels,
+                shoreMedian,
               }} />
           )}
           {/* ── Map layers (flat ground geometry — neighborhood only).

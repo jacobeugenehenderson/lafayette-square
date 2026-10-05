@@ -36,6 +36,7 @@ import { setPieceOf } from '../instance.js'
 import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, MIST_FIELDS, MIST_FLAT_DEFAULTS, HALO_FIELDS, HALO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { townRanges } from '../lib/townRange.js'
+import { useDiagnostics } from './diagnostics.js'
 import SliderRow from '../cartograph/SliderRow.jsx'
 
 
@@ -973,6 +974,16 @@ function Collapsible({ label, costMs, defaultOpen = false, children }) {
 
 // ── Stage Panel ─────────────────────────────────────────────────────────────
 
+function ShoreMedianSwitch() {
+  const on = useDiagnostics(s => s.shoreMedian), set = useDiagnostics(s => s.setShoreMedian)
+  return (
+    <label className="flex items-center gap-2 text-xs" style={{ cursor: 'pointer' }}>
+      <input type="checkbox" checked={on} onChange={(e) => set(e.target.checked)} />
+      Shore median (revetment hidden)
+    </label>
+  )
+}
+
 export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion, setHeroMotion, surfacesSlot, skyLightSlot, postSlot, lookForkSlot }) {
   const cam = useCameraState()
 
@@ -1050,6 +1061,13 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
       <div className="glass-panel rounded-xl p-3 pointer-events-auto">
         <Collapsible label="Image">
           {postSlot}
+        </Collapsible>
+      </div>
+
+      {/* Diagnostic — session-only switches that show what the render hides (stage/diagnostics.js). */}
+      <div className="glass-panel rounded-xl p-3 pointer-events-auto">
+        <Collapsible label="Diagnostic">
+          <ShoreMedianSwitch />
         </Collapsible>
       </div>
 
