@@ -302,7 +302,7 @@ quad; its leaves flutter by sliding the picture, and every card leans and sways 
 weather, so expect more motion than the old calm-day rule, and the lean now points the right way north–south).
 The model trees in the Salon, Grove, canary and Full Monte move on the same wind: the Salon's slider and the Grove's
 breeze are named winds; the canary and Full Monte follow the town's real weather — ⚠️ so on a calm day they are calm
-(their old fallback breezes are gone). How much every tree moves is the Look's Tree Wind (Stage › Surfaces › Trees).
+(their old fallback breezes are gone). Every tree's motion is an endemic rustle plus that wind (no look knobs; the figures are the Look's `treeWind`).
 **A capture is shot against the atlas the bake just wrote, and this town's roster (2026-10-04/05).** Bake → Slab and ⟳ now
 wait until the page has loaded the atlas on disk AND this town's roster board before choosing and shooting species, so
 switching towns in the Grove is safe (it used to judge the new town by the previous town's roster). Before this, a Grove page that had already shown a

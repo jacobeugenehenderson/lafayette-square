@@ -147,10 +147,11 @@ truth. It is a per-shot look decision (`scene.shotLooks`), not a geometry one.
 > ⛔ **NOT a blanket cut — that was tried and reverted** (`c0056ffd` → `4433b301`): dropping
 > *every* layer to a flat quad killed the flutter outright and the canopy went visibly dead
 > within minutes of the operator looking. The front shell's flutter is the motion that reads.
-> ⭐ **AMPLITUDE IS FREE.** The Look's Tree Wind **Amplitude** is a uniform multiply — a coarser
-> grid is compensated by turning it UP, never by more triangles. Every tree's wind LOOK is the Look's
-> channel (`treeWind`: Amplitude · Pocket · Frequency · a visible floor in screen pixels, scaling metre
-> references the Look holds), forkable per shot; ▶ `node checks/claims-the-tree-wind-is-the-looks.mjs`.
+> ⭐ **AMPLITUDE IS FREE.** The Look's `treeWind` figures are uniforms — a coarser grid is compensated by
+> raising them, never by more triangles. Every tree's motion is an **endemic rustle + the real weather**
+> (the felt wind off the wind sheet), with one visible floor in screen pixels on the weather's part; the
+> figures live in the Look's `treeWind` channel, no knobs (eye-gated as is, 2026-10-05);
+> ▶ `node checks/claims-the-tree-wind-is-the-looks.mjs`.
 > ▶ `node scratch/hero-actual-triangles.mjs`
 
 **TWO impostor systems, split by VIEWING HEMISPHERE — both live.** They are different constructions of the same tree, not competing versions; a top-down cross reads as an ugly line and a hero-viewed disc-stack reads as flat plates, so each hemisphere gets its own carrier:
@@ -489,7 +490,7 @@ Cross-helper seam for the Meteorologist's CanaryScene hero tree. Mirrors the hel
 ⭐ **Superseded 2026-10-04 by the wind sheet** (`cartograph/ARCHITECTURE.md §8`). Every tree carrier (mesh, hero cards, overhead bands, the Grove and Salon) reads one per-frame field: `windAt(xz)` per tree, `windDetail(xz)` for flutter. The air is `wind-field.js#windAtAdvect`, fed only by the one cable (`windSheet.js#windStateOfWeather`, or a specimen's named wind). `treeSwayUniforms` carries only the rustle look. ▶ `node checks/claims-the-wind-has-one-authority.mjs`. The retired seam (`windAt(t, …)` + `resolveWindState`, which mirrored the wind north↔south) is in the Diary: `cartograph/_archive/WIND-CONTRACT-phase7a-retired-2026-10-04.md`. What follows is still live:
 
 - **`aWindTier` is runtime-merged (ADR S4).** Classified per vertex in `InstancedTrees.jsx#meshes` (LS path) and `stampTreeVertexAttrs` (Salon preview path) from local radial distance + Y. Chassis GLBs and `trees-atlas.json` stay byte-identical — the attribute materializes at merge time, not bake time. The pattern's load-bearing slot stayed open through Brief 10A's review pivot — Cork's `aBarkWorldYNorm` was retired in favor of per-pixel luminance — so the next runtime-only per-vertex consumer (e.g. 10C displacement-gate, if vendor packs ship one) still has the precedent.
-- **Rustle floor is `injectFoliageSway` (ADR S3).** Always-on, ~5 mm leaf-tip noise gated by `uRustleAmplitude`. Operator-stated 2026-05-22: "very subtle 'rustle' as the 'floor' for ambient 'life'." Wind sway composes additively on top. Calm-weather scene shows rustle floor only; storm swamps it.
+- **The endemic rustle (ADR S3) — now the Look's `treeWind.meshRustleM` (mesh) and `leanRefM`/`flutterRefM` (cards).** Always-on, ~5 mm at a mesh leaf tip. Operator-stated 2026-05-22: "very subtle 'rustle' as the 'floor' for ambient 'life'." The real weather composes additively on top; calm shows the rustle only, a storm swamps it.
 - **Single shader program preserved.** All new logic is uniform-driven; no `#define` branches, no parallel materials. Bloom remains stable.
 
 ---

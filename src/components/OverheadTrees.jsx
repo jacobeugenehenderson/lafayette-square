@@ -148,7 +148,7 @@ export function OverheadLightDriver({ enabled = true, canopyChannel }) {
 // `scene` (useSceneJson), and Stage's live edit arrives as `channel` before a bake. A slab baked before the channel
 // existed boots on exactly what bake-scene emits for an unauthored town (kitDayChannel('treeWind')).
 const TREE_WIND_UNIFORM_OF = {
-  amplitude: 'uTreeWindAmp', pocket: 'uTreeWindPocket', frequency: 'uTreeWindFreq', floorPx: 'uTreeWindFloorPx',
+  floorPx: 'uTreeWindFloorPx',
   leanRefM: 'uTreeWindLeanRefM', leanPerMps: 'uTreeWindLeanPerMps', flutterRefM: 'uTreeWindFlutRefM',
   flutterPerMps: 'uTreeWindFlutPerMps', meshRustleM: 'uTreeWindMeshRustleM', meshSwayPerMps: 'uTreeWindMeshSwayPerMps',
   meshLeanShare: 'uTreeWindMeshLeanShare',

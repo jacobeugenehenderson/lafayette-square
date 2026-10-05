@@ -401,6 +401,7 @@ const DESIGN_FIELDS = [
   { key: 'dof', hydrate: (d) => _kit('dof', d, (v) => migrateGroupChannel(migrateDof(v), DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)) },
   _grp('shadow',         SHADOW_FIELD_KEYS,         SHADOW_FLAT_DEFAULTS),
   _grp('canopy',         CANOPY_FIELD_KEYS,         CANOPY_FLAT_DEFAULTS),
+  // No panel edits it (no knobs, 2026-10-05); kept so a value a town authors in design.json reaches Stage and the bake.
   _grp('treeWind',       TREE_WIND_FIELD_KEYS,      TREE_WIND_FLAT_DEFAULTS),
   _grp('constellations', CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
   _grp('milkyWay',       MILKYWAY_FIELD_KEYS,       MILKYWAY_FLAT_DEFAULTS),
@@ -1420,11 +1421,6 @@ const useCartographStore = create((set, get) => ({
     name: 'canopy',
     fieldKeys: CANOPY_FIELD_KEYS,
     flatDefaults: CANOPY_FLAT_DEFAULTS,
-  }, set, get),
-  ...createGroupChannelActions({
-    name: 'treeWind',
-    fieldKeys: TREE_WIND_FIELD_KEYS,
-    flatDefaults: TREE_WIND_FLAT_DEFAULTS,
   }, set, get),
   ...createGroupChannelActions({
     name: 'browseHeading',

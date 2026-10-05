@@ -1,19 +1,20 @@
 // claims-the-tree-wind-is-the-looks.mjs — IS EVERY TREE'S WIND LOOK THE LOOK'S, AND DOES THE VISIBLE FLOOR ADD NOTHING IN CALM?
 //
-// BRIEF-card-wind-hsb (Jacob, 2026-10-04): one Amplitude · Pocket · Frequency (+ a visible floor in screen pixels) per
-// Look, forked per shot, replacing the two per-carrier floors and the card gains. Holds:
+// How every tree moves (Jacob, 2026-10-05): an ENDEMIC RUSTLE + the REAL WEATHER, with one visible floor in screen
+// pixels — figures held by the Look's `treeWind` channel, no knobs (the Amplitude · Pocket · Frequency triple of
+// BRIEF-card-wind-hsb was removed once the look was approved at ×1). Holds:
 //   ① no wind amplitude is a bare constant in the tree shaders: the old metre constants appear in no wind expression,
 //     and the floors / gains / dials they lived in are gone from src/;
 //   ② the visible floor lifts only the GUST: every floor term is multiplied by windGustAt (0 in calm), in the card
 //     arithmetic and the mesh arithmetic, and both carriers pass windGustAt — never a constant — as the gust;
-//   ③ the neutral Look (Amplitude 1 · Pocket 0.5 · Frequency 0.5) reproduces the constants it replaced, exactly;
+//   ③ the approved look holds — the kit figures ARE it — and there are no look knobs (removed 2026-10-05);
 //   ④ the channel ships: bake-scene names it, Stage's live channels and <Town>'s overrides carry it, and the trees'
 //     driver reads scene.treeWind.
 // Static: it reads the source. The live gate (pixels at a gust peak, reading the live uniforms) is
 // scratch/tree-cost/wind-px.mjs.
 //
 // ▶ MUTATION-TEST IT:
-//     · treeAtlasMaterial.js TREE_WIND_GLSL: put `0.12 *` back into treeWindCrown's steady term → ① RED
+//     · treeAtlasMaterial.js TREE_WIND_GLSL: put `0.12 *` back into treeWindCrown's endemic term → ① RED
 //     · treeAtlasMaterial.js CARD_WIND_RIGID: pass `1.0` instead of `windGustAt(ovWorldXZ)` → ② RED
 //
 //   node checks/claims-the-tree-wind-is-the-looks.mjs
@@ -43,7 +44,7 @@ console.log('① no bare wind amplitude in the tree shaders')
     const hits = lines.filter((l) => OLD.some((c) => new RegExp(`(^|[^\\d.])${c.replace('.', '\\.')}(?![\\d])`).test(l)))
     hits.length ? bad(`a bare wind amplitude is back: ${hits.map((l) => l.trim()).join(' | ')}`) : ok('no old metre constant in any wind expression (cards and mesh)')
   }
-  const gone = ['browseWindFloor', 'heroWindFloor', '__setBrowseWindFloor', '__setHeroWindFloor', 'CARD_LEAN_GAIN_M_PER_MPS', 'CARD_FLUTTER_GAIN_M_PER_MPS', 'uWindFloor', 'treeSwayUniforms', 'uRustleAmplitude']
+  const gone = ['browseWindFloor', 'heroWindFloor', '__setBrowseWindFloor', '__setHeroWindFloor', 'CARD_LEAN_GAIN_M_PER_MPS', 'CARD_FLUTTER_GAIN_M_PER_MPS', 'uWindFloor', 'treeSwayUniforms', 'uRustleAmplitude', 'uTreeWindAmp', 'uTreeWindPocket', 'uTreeWindFreq', 'TREE_WIND_FIELDS']
   const walk = (d, out = []) => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p, out); else if (/\.(jsx?|mjs)$/.test(e.name)) out.push(p) } return out }
   const left = []
   for (const f of walk(path.join(REPO, 'src'))) { const s = strip(fs.readFileSync(f, 'utf8')); for (const g of gone) if (new RegExp(`\\b${g.replace(/[$]/g, '\\$')}\\b`).test(s)) left.push(`${path.relative(REPO, f)}: ${g}`) }
@@ -60,16 +61,17 @@ console.log('② the floor lifts only the gust, and the gust is windGustAt')
   ;/treeWindMesh\(\s*meshW\.z,\s*windGustAt\(instWorld\.xz\)/.test(strip(T)) ? ok('the mesh trees pass windGustAt as the gust') : bad('the mesh trees do not pass windGustAt as the gust — the floor would fire in calm')
 }
 
-console.log('③ the neutral Look reproduces the constants it replaced')
+console.log('③ the approved look holds, and it has no knobs')
 {
   const { TREE_WIND_FLAT_DEFAULTS: D } = await import(pathToFileURL(path.join(REPO, 'src/cartograph/skyLightChannels.js')))
-  const want = { leanRefM: 0.12, leanPerMps: 0.035, flutterRefM: 0.05, flutterPerMps: 0.05, meshRustleM: 0.005, meshSwayPerMps: 0.012, meshLeanShare: 0.3 }
+  const want = { floorPx: 2, leanRefM: 0.12, leanPerMps: 0.035, flutterRefM: 0.05, flutterPerMps: 0.05, meshRustleM: 0.005, meshSwayPerMps: 0.012, meshLeanShare: 0.3 }
   const off = Object.entries(want).filter(([k, v]) => D[k] !== v)
-  off.length ? bad(`kit references moved off the replaced constants: ${off.map(([k, v]) => `${k} ${D[k]} ≠ ${v}`).join(', ')}`) : ok('kit references = the replaced constants')
-  // The weights are 2·share: at Pocket 0.5 · Frequency 0.5 · Amplitude 1 each is exactly 1.
-  const w = [2 * (1 - D.pocket) * D.amplitude, 2 * D.pocket * D.amplitude, 2 * (1 - D.frequency), 2 * D.frequency]
-  w.every((x) => Math.abs(x - 1) < 1e-9) ? ok(`neutral weights are ×1 (A ${D.amplitude} · P ${D.pocket} · F ${D.frequency})`) : bad(`neutral weights are not ×1: ${w}`)
-  ;/2\.0 \* \(1\.0 - pk\), 2\.0 \* pk, 2\.0 \* \(1\.0 - fq\), 2\.0 \* fq/.test(block('TREE_WIND_GLSL') || '') ? ok('the shader weighs by 2·share') : bad('the shader no longer weighs by 2·share — the neutral Look would not reproduce today')
+  off.length ? bad(`kit figures moved off the approved look: ${off.map(([k, v]) => `${k} ${D[k]} ≠ ${v}`).join(', ')}`) : ok('kit figures = the approved look (endemic rustle, weather gains, floor 2 px)')
+  const knobs = ['amplitude', 'pocket', 'frequency'].filter((k) => k in D)
+  knobs.length ? bad(`look knobs are back in the channel: ${knobs.join(', ')}`) : ok('no Amplitude · Pocket · Frequency in the channel (removed 2026-10-05)')
+  const g = block('TREE_WIND_GLSL') || ''
+  ;/vec2 endemic = vec2\(uTreeWindLeanRefM, uTreeWindFlutRefM\);/.test(g) && /vec2 weather = vec2\(uTreeWindLeanPerMps, uTreeWindFlutPerMps\) \* felt;/.test(g)
+    ? ok('the arithmetic is endemic rustle + real weather, unweighted') : bad('the tree-wind arithmetic is no longer endemic rustle + real weather')
 }
 
 console.log('④ the channel ships')

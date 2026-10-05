@@ -44,3 +44,12 @@ Closed by the Look's Tree Wind channel (`treeWind`):
 > ⚠️ **OWED: the floor is two bare constants** — `heroWindFloor = 1.0`, `browseWindFloor = 1.5`
 > in `treeAtlasMaterial.js`, with no per-town authoring. A windier town cannot say so
 > (`CLAUDE.md` Layer 0 q1). It wants to be an authored channel, forkable per shot.
+
+
+---
+
+## Moved 2026-10-05 from `arborist/ARCHITECTURE.md` (Grain): the rustle floor's old uniform
+
+- **Rustle floor is `injectFoliageSway` (ADR S3).** Always-on, ~5 mm leaf-tip noise gated by `uRustleAmplitude`. Operator-stated 2026-05-22: "very subtle 'rustle' as the 'floor' for ambient 'life'." Wind sway composes additively on top. Calm-weather scene shows rustle floor only; storm swamps it.
+
+(`uRustleAmplitude` was retired with `treeSwayUniforms`, be900ca1; the Amplitude · Pocket · Frequency knobs that followed were removed 2026-10-05.)

@@ -33,17 +33,16 @@ if (errs.some((x) => /SHADER DID NOT LINK/.test(x))) { console.log('⛔ a shader
 const r = await cdp('Runtime.evaluate', { returnByValue: true, awaitPromise: true, expression: `(async () => {
   const threeUrl = performance.getEntriesByType('resource').map((e) => e.name).find((n) => /\\/deps\\/three\\.js/.test(n)); const T = await import(threeUrl)
   const R = window.__renderer, cam = window.__camera, size = R.getDrawingBufferSize(new T.Vector2())
-  const meshes = []; window.__scene.getObjectByName('town:trees').traverse((o) => { if (!o.isInstancedMesh || !o.count) return; for (let p = o; p; p = p.parent) if (!p.visible) return; const u = R.properties.get(o.material)?.uniforms; if (u?.uTreeWindAmp) meshes.push([o, u]) })
+  const meshes = []; window.__scene.getObjectByName('town:trees').traverse((o) => { if (!o.isInstancedMesh || !o.count) return; for (let p = o; p; p = p.parent) if (!p.visible) return; const u = R.properties.get(o.material)?.uniforms; if (u?.uTreeWindFloorPx) meshes.push([o, u]) })
   if (!meshes.length) return { error: 'no shown card mesh carries the Tree Wind uniforms' }
   const u = meshes[0][1], v = (k) => u[k].value
   const base = v('uWindBaseSpeed'), gustAmp = v('uWindGustAmp')
   // ── mirror of TREE_WIND_GLSL treeWindCrown (lean m, flutter m at the crown) ──
-  const pk = Math.min(1, Math.max(0, v('uTreeWindPocket'))), fq = Math.min(1, Math.max(0, v('uTreeWindFreq'))), A = v('uTreeWindAmp')
-  const W = [2 * (1 - pk) * A, 2 * pk * A, 2 * (1 - fq), 2 * fq]
-  const crown = (felt, gust, floorM) => { const st = [W[2] * W[0] * v('uTreeWindLeanRefM'), W[3] * W[0] * v('uTreeWindFlutRefM')]
-    let wi = [W[2] * W[1] * v('uTreeWindLeanPerMps') * felt, W[3] * W[1] * v('uTreeWindFlutPerMps') * felt]
+  // ── mirror of TREE_WIND_GLSL treeWindCrown: endemic rustle + real weather, the weather's part floored at gusts ──
+  const crown = (felt, gust, floorM) => { const st = [v('uTreeWindLeanRefM'), v('uTreeWindFlutRefM')]
+    let wi = [v('uTreeWindLeanPerMps') * felt, v('uTreeWindFlutPerMps') * felt]
     const lift = gust * floorM, have = wi[0] + wi[1]
-    wi = have > 1e-6 ? wi.map((x) => x * Math.max(1, lift / have)) : [(1 - fq) * lift, fq * lift]
+    wi = have > 1e-6 ? wi.map((x) => x * Math.max(1, lift / have)) : [0.5 * lift, 0.5 * lift]
     return { steady: st, wind: wi } }
   const proj = (p) => { const q = p.clone().project(cam); return { x: (q.x * 0.5 + 0.5) * size.x, y: (q.y * 0.5 + 0.5) * size.y, z: q.z } }
   const dir = new T.Vector3(1, 0, 0), M = new T.Matrix4(), Wm = new T.Matrix4(), out = []
@@ -60,7 +59,7 @@ const r = await cdp('Runtime.evaluate', { returnByValue: true, awaitPromise: tru
     } }
   const q = (arr, k) => { const s = arr.slice().sort((x, y) => x - y); return +s[Math.min(s.length - 1, Math.floor(k * s.length))].toFixed(2) }
   const by = (f) => [q(out.map(f), 0.1), q(out.map(f), 0.5), q(out.map(f), 0.9)]
-  return { n: out.length, buffer: [size.x, size.y], live: { A, pocket: pk, frequency: fq, floorPx: v('uTreeWindFloorPx'), base: +base.toFixed(2), gustAmp: +gustAmp.toFixed(2) },
+  return { n: out.length, buffer: [size.x, size.y], live: { floorPx: v('uTreeWindFloorPx'), base: +base.toFixed(2), gustAmp: +gustAmp.toFixed(2) },
     steadyPx: by((o) => o.steady), windAtRestPx: by((o) => o.windRest), gustPeakWindPx: by((o) => o.gustPeak), mPerPx: by((o) => o.mPerPx) }
 })()` }, S)
 const v = r.result?.value

@@ -226,13 +226,9 @@ function TodAnimationRow({ attachedIds, parkedSlotId, onScrub, onFill, onRemove,
 
 function ChannelSlider({ field, value, editable, onChange }) {
   return (
-    <>
-      <SliderRow label={field.label} value={value} min={field.min ?? 0} max={field.max} step={field.step}
-        suffix={field.unit ?? ''} disabled={!editable} title={editable ? (field.hint ?? '') : 'Park on a slot to edit'}
-        onChange={onChange} />
-      {/* A field's one-line hint (e.g. Tree Wind's Pocket), under its slider. */}
-      {field.hint && <div className="text-caption" style={{ color: 'var(--on-surface-variant)', fontSize: 'var(--type-caption)', marginTop: -2 }}>{field.hint}</div>}
-    </>
+    <SliderRow label={field.label} value={value} min={field.min ?? 0} max={field.max} step={field.step}
+      suffix={field.unit ?? ''} disabled={!editable} title={editable ? '' : 'Park on a slot to edit'}
+      onChange={onChange} />
   )
 }
 

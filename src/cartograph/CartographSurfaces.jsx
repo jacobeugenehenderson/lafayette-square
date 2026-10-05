@@ -17,7 +17,7 @@ import { useState } from 'react'
 import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import TodChannel from './TodChannel.jsx'
-import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS, CANOPY_FIELDS, CANOPY_FLAT_DEFAULTS, TREE_WIND_FIELDS, TREE_WIND_FLAT_DEFAULTS } from './skyLightChannels.js'
+import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS, CANOPY_FIELDS, CANOPY_FLAT_DEFAULTS } from './skyLightChannels.js'
 import { StoreChannel } from './CartographSkyLight.jsx'
 import { WATER_LOOK_DEFAULTS } from '../components/waterMaterial.js'
 
@@ -225,8 +225,6 @@ const TABS = [
       // Whether the canopy answers to the scene's light. (The 14 leaf-morphology swatches that sat
       // below it were removed 2026-09-26: nothing read them — materialColors keys trees by species.)
       { id: 'canopy_light',    label: 'Canopy Light', kind: 'canopy_light' },
-      // How every tree answers the one wind (Amplitude · Pocket · Frequency · the visible floor).
-      { id: 'tree_wind',       label: 'Tree Wind',    kind: 'tree_wind' },
     ],
   },
   {
@@ -407,10 +405,7 @@ export default function CartographSurfaces() {
       {selectedItem && selectedItem.kind === 'canopy_light' && (
         <CanopyLightEditor />
       )}
-      {selectedItem && selectedItem.kind === 'tree_wind' && (
-        <StoreChannel name="treeWind" label="Tree Wind" fields={TREE_WIND_FIELDS} flatDefaults={TREE_WIND_FLAT_DEFAULTS} />
-      )}
-      {selectedItem && selectedItem.kind !== 'palette' && selectedItem.kind !== 'canopy_light' && selectedItem.kind !== 'tree_wind' && (() => {
+      {selectedItem && selectedItem.kind !== 'palette' && selectedItem.kind !== 'canopy_light' && (() => {
         // Hide the color picker for textured materials — their color
         // comes from the building palette + per-building overrides, not
         // from this swatch. Foundation/Night Shift have no texture, so
