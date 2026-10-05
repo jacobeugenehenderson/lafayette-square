@@ -378,6 +378,13 @@ export function luCoverageForFace(faceRing, luPolys) {
     if (z < fMinZ) fMinZ = z; if (z > fMaxZ) fMaxZ = z
   }
   const facePath = faceRing.map(p => toClipper(p[0] ?? p.x, p[1] ?? p.z))
+  // ⛔⛔ ONE TAG IS ONE CLAIM: its features' overlaps are UNIONED, never summed. Summing
+  // counted ground twice wherever a town maps one tag nested or overlapping. MEASURED on
+  // huron: two `landuse=greenhouse_horticulture` polygons (Mucci Farms, 33.1 ha lying wholly
+  // inside 47.1 ha) voted 80.2 ha, beat farmland's 56.2 ha, and painted a 156 ha block
+  // `greenhouse`. Each feature is still cut as outer MINUS its own holes first; only then are
+  // the pieces merged, NonZero, so one feature's hole is filled only where another covers it.
+  const byTag = new Map()
   for (const o of luPolys) {
     // cheap reject — a boolean op per (face × feature) is the whole cost of this vote
     if (o.bb[0] > fMaxX || o.bb[1] < fMinX || o.bb[2] > fMaxZ || o.bb[3] < fMinZ) continue
@@ -387,14 +394,23 @@ export function luCoverageForFace(faceRing, luPolys) {
     for (const h of o.holes || []) c.AddPath(h.map(q => toClipper(q.x ?? q[0], q.z ?? q[1])), PolyType.ptClip, true)
     const sol = new Paths()
     if (!c.Execute(ClipType.ctIntersection, sol, PolyFillType.pftNonZero, PolyFillType.pftEvenOdd)) continue
+    if (!sol.length) continue
+    const e = byTag.get(o.tag) || (byTag.set(o.tag, { lu: o.lu, paths: [] }), byTag.get(o.tag))
+    for (const path of sol) e.paths.push(path)
+  }
+  for (const [tag, { lu, paths }] of byTag) {
+    const u = new Clipper()
+    u.AddPaths(paths, PolyType.ptSubject, true)
+    const merged = new Paths()
+    if (!u.Execute(ClipType.ctUnion, merged, PolyFillType.pftNonZero, PolyFillType.pftNonZero)) continue
     // ⛔⛔ SUM THE SIGNED AREAS, THEN TAKE THE MAGNITUDE ONCE. `Math.abs` PER PATH destroys
     // the hole's sign and ADDS it instead of subtracting — a 40,000 m² wood with a 10,000 m²
     // pond measured 50,000 m² rather than 30,000, i.e. the hole voted for its own enclosing
     // class, twice over. ⭐ Caught by this function's own check, not by reading it.
     let a = 0
-    for (const path of sol) a += Clipper.Area(path) / (SCALE * SCALE)
+    for (const path of merged) a += Clipper.Area(path) / (SCALE * SCALE)
     a = Math.abs(a)
-    if (a > 0) { const e = out[o.tag] || (out[o.tag] = { lu: o.lu, area: 0 }); e.area += a }
+    if (a > 0) out[tag] = { lu, area: a }
   }
   return out
 }

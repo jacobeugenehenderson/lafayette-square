@@ -88,10 +88,10 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 
 - **Huron, measured 2026-10-04 (Sward, `scratch/huron-median-lu/`), two causes now named:** ① **a plurality vote with
   no floor**: the 100–190 ha single-class tiles take `agricultural` with farmland at 13–26% while **67–78% of the tile is
-  covered by no OSM polygon at all**. ② **Nested polygons are summed, not unioned**: `luCoverageForFace`
-  (`cartograph/derive.js:371`) gives tile 66 `greenhouse` from two nested Mucci Farms polygons, 80.2 ha summed against a
-  47.1 ha union, beating farmland's 56.2 ha. ⇒ ② is a code defect; ① needs Jacob's ruling on what an uncovered
-  remainder is (⛔ never an invented class: Layer 0 q2).
+  covered by no OSM polygon at all** — needs Jacob's ruling on the uncovered remainder (⛔ never an invented class). ② ✅
+  **CLOSED in code, not poured: one tag is one claim** (unioned, not summed). Moves one face in six towns: huron's tiles
+  66 + 119 go `greenhouse → agricultural`, so huron loses `greenhouse` entirely until ① is ruled.
+  ▶ `node checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` · `node scratch/huron-median-lu/union-before-after.mjs`
 
 ## 1. The finding
 
