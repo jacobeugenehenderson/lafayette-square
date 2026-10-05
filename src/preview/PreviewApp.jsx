@@ -652,6 +652,10 @@ function PublishPanel({ lookId }) {
   // A bake that would RE-POUR the town (the server's 428: the pour's code changed) is a question, never "bake failed"
   // (Jacob, 2026-09-29: Provincetown's Publish printed the raw JSON). { files } while the operator decides.
   const [repour, setRepour] = useState(null)
+  // ⭐ WHAT A BAKE STILL OWES, asked of the bake itself (GET /bake: the plan, nothing runs). Publish bakes first only when
+  // this lists a step, because a bake that owes nothing still re-stamps the slab and so would re-ship it for no reason.
+  // null = not read yet, or a bake is running (409): the label says so rather than guessing.
+  const [owed, setOwed] = useState(null)
   // ⭐ THE DEV DRAWER, AND IT IS FOR THE DEVELOPER — NOT THE OPERATOR (Jacob, 2026-09-04:
   // "a collapsible git area for you, basically, to get through developing").
   // ⛔ This does NOT reverse "no git in this panel" (2026-08-29). That rule is about the
@@ -668,6 +672,13 @@ function PublishPanel({ lookId }) {
       if (!r.ok) return setStatus(false)
       setStatus(await r.json())
     } catch { setStatus(false) }   // no dev backend (deployed Preview) → hide
+    setOwed(await readOwed().catch(() => null))
+  }
+  async function readOwed() {
+    const r = await fetch(`${API}/bake`)
+    const j = await r.json().catch(() => ({}))
+    if (!r.ok) throw new Error(j.error || `the bake check answered HTTP ${r.status}`)
+    return j.stale.map((x) => x.step)
   }
   useEffect(() => { load() }, [lookId])  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -721,18 +732,24 @@ function PublishPanel({ lookId }) {
     return () => { cancelled = true; clearInterval(iv) }
   }, [deploys, API])  // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ⭐ PUBLISH IS THE UPLOAD (Jacob, 2026-10-04). A bake ends on disk; this bakes first only when the bake check owes a
+  // step (asked fresh, never from the label's copy), then the server freezes the manifest — which is where what you set in
+  // the deployment panel is accepted — and uploads the slab, and the player if staging's is behind the source.
   async function publishStaging(confirmRepour = false) {
     setBusy('staging'); setMsg(null); setRepour(null)
     try {
-      const bake = await fetch(`${API}/bake${confirmRepour ? '?repour=1' : ''}`, { method: 'POST' })
-      // 428 = this bake would re-pour the town because the pour's code changed; nothing ran. Ask, as BakeModal does.
-      if (bake.status === 428) {
-        const body = await bake.json().catch(() => ({}))
-        setRepour({ files: body.repour?.files || [] })
-        setBusy(null)
-        return
+      const steps = await readOwed()
+      if (status.unbaked || steps.length || confirmRepour) {
+        const bake = await fetch(`${API}/bake${confirmRepour ? '?repour=1' : ''}`, { method: 'POST' })
+        // 428 = this bake would re-pour the town because the pour's code changed; nothing ran. Ask, as BakeModal does.
+        if (bake.status === 428) {
+          const body = await bake.json().catch(() => ({}))
+          setRepour({ files: body.repour?.files || [] })
+          setBusy(null)
+          return
+        }
+        if (!bake.ok) throw new Error(`bake failed: ${(await bake.text()).slice(0, 160)}`)
       }
-      if (!bake.ok) throw new Error(`bake failed: ${(await bake.text()).slice(0, 160)}`)
       const pub = await fetch(`${API}/publish`, { method: 'POST' })
       const data = await pub.json()
       if (!pub.ok || data.error) throw new Error(data.error || 'publish failed')
@@ -812,14 +829,31 @@ function PublishPanel({ lookId }) {
   // compares the published build marker against local source. ⛔ An absent marker counts as
   // STALE — an unstamped player is not a current one.
   const playerCurrent = status.player ? status.player.stale === false : false
-  const stagingDone = clean && slabCurrent('staging') && playerCurrent
+  // ⭐ EACH BUTTON NAMES WHAT IT WILL SHIP (Jacob, 2026-10-04: "make the buttons and the action more truthy"). The slab is
+  // stale when a bake is owed, when the site serves an older pour, or when it serves another deployment than the one the
+  // panel holds (a toggle edit ships in the manifest, and bakedAt cannot see it). ⛔ Unknown counts as stale.
+  const bakeOwed = !!status.unbaked || owed === null || owed.length > 0
+  const stagingSlab = !clean || bakeOwed || !slabCurrent('staging') || status.deployment?.shipped !== true
+  const stagingPlayer = !playerCurrent
+  const stagingDone = !stagingSlab && !stagingPlayer
+  const shipping = (verb, slab, player) => `${verb} ${slab && player ? 'slab + player' : slab ? 'slab' : 'player'}`
   // ⭐ PROD SHIPS THE SAME TWO THINGS NOW (2026-09-26): the slab, and the player this town has
   // PINNED — current when it is the build staging serves. No git: Promote no longer pushes a
   // branch, so a commit count would never return to zero and the button would never rest.
   // ⛔ A town still on legacy hosting (LS until its cutover) or with no address is not "done" —
   // the button stays live and Promote refuses with the reason.
-  const prodDone    = clean && slabCurrent('prod') && status.prodPlayer?.current === true
-  const prodBlocked = !status.sites?.prod?.url || status.sites?.prod?.legacy
+  const prodSlab    = !clean || !slabCurrent('prod') || status.prodDeployment?.shipped !== true
+  const prodPlayer  = status.prodPlayer?.current !== true
+  const prodDone    = !prodSlab && !prodPlayer
+  // ⛔⛔ A BLOCKED PROMOTE SAYS WHY, ON THE PANEL (2026-10-04: a greyed button with its reason on hover read as "it doesn't
+  // know it's got player updates"). Promote ships THIS disk's slab, so staging must carry it first: what reaches
+  // production has been seen.
+  const prodWhy = status.sites?.prod?.legacy ? status.sites.prod.why
+    : !status.sites?.prod?.url ? `No production address: ${status.sites?.prod?.why || 'this town names none'}.`
+    : status.prodPlayer?.blocked ? `${status.prodPlayer.why}.`
+    : !stagingDone ? 'Staging is not current yet — Publish first, check it, then promote.'
+    : null
+  const prodBlocked = !!prodWhy
   const btn = (extra) => ({ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 6, ...extra })
   // ⛔ NO GIT IN THIS PANEL (Jacob, 2026-08-29: "the user shouldn't know about the git").
   // A branch name and a commit count answer a question the operator does not have. The
@@ -878,7 +912,8 @@ function PublishPanel({ lookId }) {
           {drawer ? '⟨' : '⟩'}
         </button>
       </div>
-      {status.unbaked && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Unbaked edits — Publish bakes first.</div>}
+      {(status.unbaked || owed?.length > 0) && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Publish bakes first{owed?.length ? `: ${owed.join(', ')}` : ' (unbaked edits)'}.</div>}
+      {owed === null && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ The bake check could not be read (a bake may be running): Publish asks it again.</div>}
 
       <button disabled={!!busy || capturing} onClick={smsCapture}
         style={btn({ background: 'rgba(168,85,247,0.18)', color: '#e9d5ff', opacity: (busy || capturing) ? 0.6 : 1 })}
@@ -887,13 +922,13 @@ function PublishPanel({ lookId }) {
       </button>
       {targetRow('staging', <button disabled={!!busy || stagingDone || !!repour} onClick={() => publishStaging()}
         style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>
-        {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : 'Publish to Staging'}
+        {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : shipping('Publish', stagingSlab, stagingPlayer)}
       </button>)}
       {targetRow('prod', <button disabled={!!busy || prodDone || prodBlocked} onClick={promoteProd}
-        title={prodBlocked ? status.sites?.prod?.why : undefined}
         style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || prodDone || prodBlocked) ? 0.45 : 1, cursor: (prodDone || prodBlocked) ? 'default' : 'pointer' })}>
-        {busy === 'prod' ? 'Promoting…' : prodDone ? 'Promoted to Prod' : 'Promote to Prod'}
+        {busy === 'prod' ? 'Promoting…' : prodDone ? 'Promoted to Prod' : shipping('Promote', prodSlab, prodPlayer)}
       </button>)}
+      {!prodDone && prodWhy && <div style={{ marginTop: 4, color: '#9ca3af', fontSize: 11, lineHeight: 1.4, wordBreak: 'break-word' }}>{prodWhy}</div>}
       {/* ⛔ ERRORS ONLY. The success line was a second place the panel said what
           the button already says — and it said it in GIT: "Promoted to prod ·
           1032 commits" put a commit count in front of the operator, which the

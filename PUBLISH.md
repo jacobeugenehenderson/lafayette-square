@@ -34,13 +34,13 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
 
 | What changed | What to do |
 |---|---|
-| Frontend → **staging** | press **Publish to Staging** in Preview — it uploads the slab check + the shared player to R2; no branch. ▶ `node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` |
+| Frontend → **staging** | press **Publish** in Preview — it uploads the slab + the shared player to R2; no branch. ▶ `node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` |
 | Promote **staging → prod** | press **Promote to Production** in Preview, per town — slab → `baked/<look>/`, the staged player pinned to `player/<map>/`, then the host record; the town's own domain is then asked what it serves (§0.5). ⛔ No git push. Lafayette Square: legacy, §1 |
 | Apps Script only | `cd apps-script && npx clasp push && npx clasp deploy -i <ID>` |
 | Both | Do both. Order doesn't matter. |
 | Worker only | Update in Cloudflare dashboard |
 | New env var needed in prod | Add to GitHub Secrets + `deploy.yml`, push to trigger rebuild |
-| **Re-poured a town** | nothing to push — the bake uploads the slab to R2 **STAGING** (`staging/baked/…`) and it is live on the staging site immediately. ⛔ **It does NOT reach production.** Verify on staging, then promote: `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` (§6) |
+| **Re-poured a town** | nothing to push — the pour stays on disk until **Publish** uploads it to R2 **STAGING** (`staging/baked/…`). ⛔ **Neither reaches production.** Verify on staging, then Promote (§6) |
 | **Promote a slab to prod** | part of Promote (above). By hand: `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` — writes the production keys every production site reads. ⛔ `--env` is required and has no default. ▶ `node checks/claims-the-slab-envs-do-not-collide.mjs` |
 | **Slab looks stale / canopy missing** | `node scripts/verify-baked-in-r2.mjs` — reads the bucket, compares to disk, names what is absent |
 | **A Host's or staff listing edits** | published from **operations.theward.online** (a Ward → Listings → Publish): a small layer at `<ASSET_BASE>live/<look>/listings.json` (staging under `staging/`), no push. At boot a town's listings are **file < Apps Script sheet < published layer**, each laid over the last — `src/lib/publishedLayer.js`. The layer also carries places added to the map (`adds`): each joins the town's listings and takes its building from the zoning stand-in there. Hosts publish to staging; staff to production. ▶ `node checks/claims-a-published-edit-reaches-the-map.mjs` |
@@ -112,7 +112,7 @@ There is a **second** Pages target for previewing slab/look work before it reach
 
 Push a feature branch to the trunk to stage it; push the trunk to `main` to ship. **CI does not bake** — both workflows are `vite build` over an `actions/checkout`.
 
-⛔⛔ **BUT THE SLAB IS NO LONGER WHAT YOU COMMIT (2026-09-01).** This line used to read *"serve the committed slab, so the artifacts you committed are exactly what deploys (bake + commit before you push)"* — **that instruction is now wrong and following it ships nothing.** `public/baked/` is gitignored and served from R2 (§6). The pour uploads it; git carries only `design.json`, `looks/index.json`, `ribbons.json` and the OG image. ⭐ **So a slab reaches its environment WITHOUT a push, and code still needs one.** ⚠️ **Corrected 2026-09-03:** this line, and the row above, used to say a pour was *"live immediately, on staging AND prod"* — it was, and that was the defect, not the design. One bucket, one un-prefixed key space, both workflows resolving the same `VITE_ASSET_BASE`: a pour reached lafayette-square.com with **no preview and no gate**, while code had a full staging loop. The bake now writes `staging/baked/…` only; promotion is its own deliberate gesture. The slab save→ship discipline (source-vs-derived, dirty-tree triage, the symptom→door table) lives in **`cartograph/OPERATIONS.md §Save → ship`**.
+⛔⛔ **BUT THE SLAB IS NO LONGER WHAT YOU COMMIT (2026-09-01).** This line used to read *"serve the committed slab, so the artifacts you committed are exactly what deploys (bake + commit before you push)"* — **that instruction is now wrong and following it ships nothing.** `public/baked/` is gitignored and served from R2 (§6). Publish uploads it; git carries only `design.json`, `looks/index.json`, `ribbons.json` and the OG image. ⭐ **So a slab reaches its environment WITHOUT a push, and code still needs one.** ⚠️ **Corrected 2026-09-03:** this line, and the row above, used to say a pour was *"live immediately, on staging AND prod"* — it was, and that was the defect, not the design. One bucket, one un-prefixed key space, both workflows resolving the same `VITE_ASSET_BASE`: a pour reached lafayette-square.com with **no preview and no gate**, while code had a full staging loop. Publish writes `staging/baked/…` only (a bake writes nothing remote); promotion is its own deliberate gesture. The slab save→ship discipline (source-vs-derived, dirty-tree triage, the symptom→door table) lives in **`cartograph/OPERATIONS.md §Save → ship`**.
 
 ### Build-time environment (GitHub Secrets)
 
@@ -275,13 +275,10 @@ look — a town that fails to load and shows Lafayette Square is not a bug an op
 
 ### How a pour reaches a visitor
 
-The bake endpoint runs `scripts/upload-baked-to-r2.mjs` as its **last step** and **fails the bake**
-(500) if the upload fails — a green bake that reached nothing is the one outcome worth refusing.
-
-⭐ **A bake may only ever write `staging/`; `--env=prod` is the separate, deliberate promotion.**
-*(The paragraph that stood here — "one bucket serves staging and production at the same URLs… per-
-environment prefixes are the fix if it ever bites" — is retired: it bit on 2026-09-03 and the
-prefixes landed. `--env` is now required and has no default.)*
+**A bake ends on disk.** Publish (`POST /looks/<id>/publish`) freezes the manifest, then runs
+`scripts/upload-baked-to-r2.mjs --env=staging` and **fails** if the upload fails — a Publish that
+reached nothing is the one outcome worth refusing. `--env=prod` is Promote's, the separate, deliberate
+promotion; `--env` is required and has no default. ▶ `node checks/claims-a-bake-never-uploads.mjs`
 
 ⭐ **The upload is INCREMENTAL.** It HEADs every key and re-puts only what is missing or whose bytes
 differ, comparing the local MD5 against R2's ETag — so a pour whose dirty-gate skipped every bake

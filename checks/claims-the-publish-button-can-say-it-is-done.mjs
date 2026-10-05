@@ -39,13 +39,17 @@ const m = panel.match(/const stagingDone\s*=\s*([^\n]+)/)
 if (!m) {
   bad('src/preview/PreviewApp.jsx no longer declares `stagingDone` — update this check.')
 } else {
-  const cond = m[1]
+  // ⭐ Since 2026-10-05 the condition is built from two named halves (`stagingSlab`, `stagingPlayer`), because the
+  // button's LABEL names whichever is stale; the halves are read and checked in place of the one line.
+  const half = (name) => (panel.match(new RegExp(`const ${name}\\s*=\\s*([^\\n]+)`)) || [])[1] || ''
+  const cond = `${m[1]} ${half('stagingSlab')} ${half('stagingPlayer')}`
   if (/ahead\w*\s*===\s*0/.test(cond)) {
     bad(`\`stagingDone\` depends on a branch commit count — ${cond.trim()}\n`
       + '       Staging does not ship by branch any more, so that count never reaches 0 and the\n'
       + '       button can never say "Published to Staging".')
   } else ok('`stagingDone` does not depend on a branch commit count')
-  for (const [what, re] of [['the slab', /slabCurrent\(\s*'staging'\s*\)/], ['the player', /playerCurrent/]]) {
+  if (!/stagingSlab/.test(m[1]) || !/stagingPlayer/.test(m[1])) bad(`\`stagingDone\` is not built from both halves — ${m[1].trim()}`)
+  for (const [what, re] of [['the slab', /slabCurrent\(\s*'staging'\s*\)/], ['the deployment the slab carries', /status\.deployment\?\.shipped/], ['the player', /playerCurrent/]]) {
     if (re.test(cond)) ok(`it measures ${what}`)
     else bad(`\`stagingDone\` does not measure ${what} — a staging publish ships it, so the button `
       + 'would report done while that half is behind.')

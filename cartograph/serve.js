@@ -269,8 +269,8 @@ async function siteUrlsForLook(lookId) {
 function slabPathspecs(id) {
   return [
     // ⛔ `public/baked/${id}` is DELIBERATELY ABSENT (2026-09-01). The baked tree
-    // now lives in R2 and is gitignored; a publish uploads it (see the R2 step in
-    // the bake endpoint) rather than committing it. Re-adding it here would stage
+    // now lives in R2 and is gitignored; a publish uploads it (the upload step of
+    // POST /looks/<id>/publish) rather than committing it. Re-adding it here would stage
     // an ignored path — `git add` would match nothing, `git status --porcelain`
     // would report nothing, and because design.json/index.json keep specs.length
     // non-zero the `if (!specs.length) throw` guard below would NOT fire: the
@@ -360,6 +360,44 @@ function newestMtime(p) {
  */
 const PLAYER_SRC = ['src', 'index.html', 'vite.config.js', 'package.json']
 const playerSrcPaths = (root) => PLAYER_SRC.map((p) => join(root, p))
+
+/**
+ * ⭐ IS STAGING'S PLAYER BEHIND THE SOURCE? — ONE ANSWER, read by the status (the button's label) and by Publish (whether
+ * it rebuilds). Read off the published artifact: its build marker records the newest source mtime that build was made
+ * from. It replaced a local `.player-published` stamp Publish kept for itself, so the label and the act can no longer
+ * disagree (2026-10-05, BRIEF-publish-is-the-upload).
+ * ⛔ NO MARKER ⇒ STALE. An unstamped player was published before this existed, or there is none, or the bucket is
+ * unreachable; the honest answer to each is "not known to be current".
+ */
+async function stagingPlayerState(root) {
+  try {
+    const r = await fetch(`${ASSET_BASE_URL}staging/player/build.json`, { cache: 'no-store' })
+    if (!r.ok) return { published: false, stale: true, why: `no build marker at staging/player/build.json (HTTP ${r.status})` }
+    const m = await r.json()
+    const localSrc = Math.max(...playerSrcPaths(root).map(newestMtime))
+    const stale = !(m.srcMtimeMs > 0) || localSrc > m.srcMtimeMs
+    return { published: true, stale, builtAt: m.builtAt ?? null,
+      why: stale ? 'the player on staging was built before your latest source change' : null }
+  } catch (e) { return { published: false, stale: true, why: `staging's player could not be read: ${e.message}` } }
+}
+
+/**
+ * ⭐ DOES THIS ENVIRONMENT CARRY THE TOWN'S DEPLOYMENT? Preview's deployment panel autosaves `deployment.json`; Publish
+ * freezes it into the manifest and ships it, and Promote copies that manifest to production. Compared with the manifest
+ * the environment SERVES, never the local one, because the local one is rewritten by every bake and says nothing about
+ * what a visitor gets. ⭐ `bakedAt` cannot answer this: a deployment-only Publish re-freezes the manifest without a bake,
+ * so two environments can share a `bakedAt` and differ in what they ship. `null` = could not be read (not "shipped").
+ */
+async function deploymentShipped(map, look, env) {
+  const fileP = join(import.meta.dirname, 'data', map, 'deployment.json')
+  const local = existsSync(fileP) ? readDeployment(JSON.parse(readFileSync(fileP, 'utf8')), `cartograph/data/${map}/deployment.json`) : { authored: false }
+  try {
+    const r = await fetch(`${ASSET_BASE_URL}${ASSET_ENV_PREFIX[env]}baked/${look}/manifest.json`, { cache: 'no-store' })
+    if (!r.ok) return { shipped: false }
+    const served = (await r.json()).deployment ?? null
+    return { shipped: JSON.stringify(served) === JSON.stringify(local) }
+  } catch { return { shipped: null } }
+}
 
 // ⭐ The pour's code closure, its content record and the geography it read live in `pour-code.mjs` — pipeline.js
 // stamps the record, this file compares it, and one module means the two can never disagree about what counts.
@@ -2334,10 +2372,10 @@ createServer(async (req, res) => {
   // client can hydrate without a special-case error path.
   let m
   // GET /maps/<map>/deployment — what each surface ships (src/lib/deployment.js): the town's deployment.json (`file`,
-  // null when it has none) and what its baked manifest carries (`baked`, null when it has no manifest), so Preview can
-  // say whether the next bake still has to carry an edit. ⛔ Town-keyed, not Look-keyed: deployment is per town.
+  // null when it has none) and whether staging's manifest carries it (`shipped`: true · false · null = unreadable), so
+  // Preview can say whether the next Publish still has to carry an edit. ⛔ Town-keyed, not Look-keyed: deployment is per town.
   // POST /maps/<map>/deployment — Preview's deployment panel autosaves the whole file. Checked (readDeployment) before
-  // it is written; nothing else is touched: the next bake's manifest step carries it.
+  // it is written; nothing else is touched: the next Publish freezes it into the manifest and ships it.
   if ((m = path.match(/^\/maps\/([^/]+)\/deployment$/)) && (req.method === 'GET' || req.method === 'POST')) {
     const map = m[1]
     const dir = join(import.meta.dirname, 'data', map)
@@ -2348,12 +2386,9 @@ createServer(async (req, res) => {
     }
     const file = join(dir, 'deployment.json')
     if (req.method === 'GET') {
-      const manifestP = join(import.meta.dirname, '..', 'public', 'baked', map, 'manifest.json')
-      const body = orFail(res, () => ({
-        file: existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null,
-        baked: existsSync(manifestP) ? (JSON.parse(readFileSync(manifestP, 'utf8')).deployment ?? null) : null,
-      }))
+      const body = orFail(res, () => ({ file: existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : null }))
       if (body === undefined) return
+      try { body.shipped = (await deploymentShipped(map, map, 'staging')).shipped } catch (e) { body.shipped = null; body.why = e.message }
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify(body))
       return
@@ -3171,46 +3206,18 @@ createServer(async (req, res) => {
       if (entry) { entry.bakedAt = stampedAt; saveLooksIndex(idx2) }
       // ⭐ THE MANIFEST IS A BAKE STEP (Jacob, 2026-10-04): Stage authors, Bake freezes, Preview and the Ward read what is
       // frozen. It was hand-run, so the identity a player read was whenever someone last remembered. It runs AFTER the
-      // bakedAt stamp, because it hashes scene.json, and before the upload, which ships it. ⛔ A town with no instance
-      // module has no identity to freeze: bake-manifest exits 2 and the bake fails, naming it.
+      // bakedAt stamp, because it hashes scene.json. ⛔ A town with no instance module has no identity to freeze:
+      // bake-manifest exits 2 and the bake fails, naming it. (Publish runs it again, so what it accepts from Preview — the
+      // deployment — is what it ships: POST /looks/<id>/publish.)
       if (id !== bakeScene) throw new Error(`Look "${id}" is not its town's home Look ("${bakeScene}") — a manifest is one per town, and a second Look's slab has no manifest yet. Refusing to ship a slab without one.`)
       await runStep(P, 'manifest', `node bake-manifest.mjs --town=${id}`, { cwd: here })
       ran('manifest')
-      // ⛔⛔ SHIP THE SLAB TO R2 — the last step of the pour (2026-09-01).
-      // public/baked/ is gitignored, so this upload is the ONLY thing that carries
-      // a pour to a visitor. If it is skipped, the pour lives nowhere: the map
-      // renders from the PREVIOUS slab and nothing says so.
-      // ⭐ IT GOES TO STAGING, NOT PRODUCTION (fixed 2026-09-03). This comment used to
-      // read "AND IT GOES LIVE IMMEDIATELY, EVERYWHERE… per-environment prefixes are the
-      // fix if it ever bites" — it bit. One bucket served staging and prod at the same
-      // keys, so a pour reached lafayette-square.com the instant it uploaded: no push, no
-      // gate, no preview, and no way back except re-baking a slab that may no longer
-      // exist. Code had a staging loop and DATA had none, which is invisible from a button
-      // labelled "Stage →". (Jacob: "the bigger issue is there's no way to preview it
-      // before it goes live.")
-      // ⛔ A BAKE MAY ONLY EVER WRITE STAGING. Promotion is a separate, deliberate gesture
-      // (`--env=prod`), because "I poured a slab" and "visitors should see it" are two
-      // different decisions and this button only ever meant the first.
-      let r2 = null
-      markStep(P, 'upload', 'running', { t0: Date.now() })
-      try {
-        const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=staging --look=${id}`,
-          { cwd: REPO_ROOT, timeout: 900000 })
-        if (up.code !== 0) throw new Error(up.stderr || up.stdout || `exit ${up.code}`)
-        r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
-        console.log(`[bake] R2 ${r2}`)
-        markStep(P, 'upload', 'done', { t1: Date.now() })
-      } catch (e) {
-        markStep(P, 'upload', 'failed', { t1: Date.now(), error: e.message })
-        // ⛔ Loud, and the request FAILS. A 200 here would tell the operator the pour
-        // shipped when it reached nothing.
-        console.error(`[bake] ⛔ R2 upload FAILED for "${id}" — the pour is on disk only: ${e.message}`)
-        res.writeHead(500, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: `baked, but the R2 upload failed — the slab reaches nobody: ${e.message}`, lookId: id }))
-        return
-      }
+      // ⛔⛔ THE BAKE ENDS ON DISK (Jacob, 2026-10-04: "I don't think it makes sense to 'upload' at that step"). It used to
+      // upload the slab to staging as its last step, so every bake reached staging and every Publish, which bakes first,
+      // uploaded the same slab a second time. Publish is the upload now; it carries the move's comment and its loud failure.
+      // ▶ node checks/claims-a-bake-never-uploads.mjs
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force, r2 }))
+      res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force }))
     } catch (err) {
       // ⭐ the failing step NAMES itself (runStep), and an operator's Cancel is its own answer, not a 500
       res.writeHead(P.cancel ? 499 : 500, { 'Content-Type': 'application/json' })
@@ -3281,20 +3288,14 @@ createServer(async (req, res) => {
       // untouched and the panel could not tell whether staging carried the operator's fix
       // (Jacob, 2026-09-21: "it's hard to tell"). This is the other half, read off the
       // published artifact rather than remembered here: the build marker records the
-      // newest source mtime that build was made from.
-      // ⛔ NO MARKER ⇒ STALE. An unstamped player was published before this existed, or
-      // there is none; either way the honest answer is "not known to be current".
-      let player = { published: false, stale: true, why: 'no build marker at staging/player/build.json' }
-      try {
-        const r = await fetch(`${ASSET_BASE_URL}staging/player/build.json`, { cache: 'no-store' })
-        if (r.ok) {
-          const m = await r.json()
-          const localSrc = Math.max(...playerSrcPaths(REPO_ROOT).map(newestMtime))
-          const stale = !(m.srcMtimeMs > 0) || localSrc > m.srcMtimeMs
-          player = { published: true, stale, builtAt: m.builtAt ?? null,
-            why: stale ? 'the player on staging was built before your latest source change' : null }
-        }
-      } catch { /* unreachable ⇒ leave "not known to be current" */ }
+      // newest source mtime that build was made from (stagingPlayerState).
+      const player = await stagingPlayerState(REPO_ROOT)
+      // ⭐ AND THE DEPLOYMENT, which ships in the slab's manifest: a toggle edit makes the slab stale on staging even when
+      // no bake is owed (the bake check reads none of it).
+      const scene = readLooksIndex().looks.find(l => l.id === id)?.scene
+      const [deployment, prodDeployment] = scene
+        ? await Promise.all(['staging', 'prod'].map((env) => deploymentShipped(scene, id, env)))
+        : [{ shipped: null }, { shipped: null }]
 
       // ⭐ PRODUCTION'S PLAYER, the same question one step on: is the build this town has PINNED
       // the one staging now serves? Read off both stamps in the bucket. ⛔ No git here: production
@@ -3307,7 +3308,8 @@ createServer(async (req, res) => {
         try {
           const get = (k) => fetch(`${ASSET_BASE_URL}${k}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null)
           const rec = await get(`staging/sites/${sites.mapId}/player.json`)
-          if (!rec) prodPlayer = { current: false, why: 'this town names no player on staging — set it before promoting' }
+          // ⛔ BLOCKED, not merely behind: Promote's dry run refuses a town with no record, so the panel says so up front.
+          if (!rec) prodPlayer = { current: false, blocked: true, why: 'this town names no player on staging — set it before promoting' }
           else if (rec.player === 'ward') {
             const [host, cur] = await Promise.all([sites.prod?.domain ? get(`hosts/${sites.prod.domain}.json`) : null, get('staging/ward/current.json')])
             const current = !!host && !!cur && host.app === 'ward' && host.ward === cur.sha && host.kit === cur.kit
@@ -3323,7 +3325,7 @@ createServer(async (req, res) => {
 
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({
-        ok: true, branch, unbaked, dirty, vsStaging, bakedAt, player, prodPlayer,
+        ok: true, branch, unbaked, dirty, vsStaging, bakedAt, player, prodPlayer, deployment, prodDeployment,
         // ⛔ Per-look, derived. Each side is { url, … } or { url: null, why } — the panel
         // shows the reason instead of a link it cannot honestly offer.
         sites,
@@ -3419,13 +3421,18 @@ createServer(async (req, res) => {
   // somebody poured a different town. Ruled out: one address per Map, the Publish button
   // is the unit. Now the button ships to R2, which is where both artifacts already live.
   //
+  // ⭐ PUBLISH IS THE UPLOAD (Jacob, 2026-10-04). A bake ends on disk; what the operator adjusts in Preview (the
+  // deployment panel: which effects each surface ships) is ACCEPTED here, because the manifest step runs again before the
+  // upload and freezes deployment.json into what ships. The panel bakes first only when the bake check says a step is owed.
+  //
   // THE TWO ARTIFACTS, AND THEY HAVE DIFFERENT LIFECYCLES:
-  //   · the SLAB — this town's, written by the bake to `staging/baked/<look>/`. Already
-  //     uploaded by the time this runs; verified here, never assumed.
+  //   · the SLAB — this town's, `public/baked/<look>/` → `staging/baked/<look>/`. Uploaded here, then proven in the
+  //     bucket, never assumed.
   //   · the PLAYER — the universal build, `staging/player/`, ONE for every town. Rebuilt
-  //     only when the source is newer than the last publish, because it costs a full vite
-  //     build. ⚠️ AND IT IS SHARED: republishing it reaches every town at once. That is
-  //     correct — it is one product — but it means a code change is never "just this town".
+  //     only when staging's build is behind the source (stagingPlayerState, the same read the
+  //     button's label comes from), because it costs a full vite build. ⚠️ AND IT IS SHARED:
+  //     republishing it reaches every town at once. That is correct — it is one product — but
+  //     it means a code change is never "just this town".
   //
   // ⛔ The git commit stays. It is the AUTHORING state (design.json, the looks index),
   // which must survive a machine, and it is not what gets served.
@@ -3458,26 +3465,45 @@ createServer(async (req, res) => {
       const site = await siteUrlsForLook(id)
       if (!site.staging.url) throw new Error(site.staging.why)
 
-      // ── 1. The SLAB must actually be in the bucket. ⛔ ASK, never assume: the bake
-      // uploads it, and the bake can fail at the upload while everything else succeeded
-      // (it did, tonight). Reporting an address for a slab that is not there is the
+      // ── 1. THE SLAB: freeze the manifest (it carries the deployment), then ship it.
+      const scene = readLooksIndex().looks.find(l => l.id === id)?.scene
+      if (scene !== id) throw new Error(`Look "${id}" is not its town's home Look ("${scene ?? 'none'}") — a manifest is one per town, so this Look's slab cannot ship. Nothing was uploaded.`)
+      const man = await runCapture(`node bake-manifest.mjs --town=${id}`, { cwd: import.meta.dirname, timeout: 300000 })
+      if (man.code !== 0) throw new Error(`the manifest could not be frozen, so nothing was uploaded: ${(man.stderr || man.stdout).trim().split('\n').pop()}`)
+      // ⛔⛔ SHIP THE SLAB TO R2 (2026-09-01; moved here from the bake 2026-10-05).
+      // public/baked/ is gitignored, so this upload is the ONLY thing that carries
+      // a pour to a visitor. If it is skipped, the pour lives nowhere: the map
+      // renders from the PREVIOUS slab and nothing says so.
+      // ⭐ IT GOES TO STAGING, NOT PRODUCTION (fixed 2026-09-03). The bake's version of this
+      // comment used to read "AND IT GOES LIVE IMMEDIATELY, EVERYWHERE… per-environment
+      // prefixes are the fix if it ever bites" — it bit. One bucket served staging and prod
+      // at the same keys, so a pour reached lafayette-square.com the instant it uploaded: no
+      // push, no gate, no preview, and no way back except re-baking a slab that may no longer
+      // exist. (Jacob: "the bigger issue is there's no way to preview it before it goes live.")
+      // ⛔ PUBLISH MAY ONLY EVER WRITE STAGING, and a bake writes nothing remote at all.
+      // Promotion is the separate, deliberate gesture (`--env=prod`), because "I want to see
+      // it" and "visitors should see it" are two different decisions.
+      const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=staging --look=${id}`, { cwd: REPO_ROOT, timeout: 900000 })
+      // ⛔ Loud, and the request FAILS. A 200 here would tell the operator the pour shipped when it reached nothing.
+      if (up.code !== 0) {
+        console.error(`[publish] ⛔ R2 upload FAILED for "${id}" — the pour is on disk only`)
+        throw new Error(`the slab upload failed — staging still serves the previous slab: ${(up.stderr || up.stdout || `exit ${up.code}`).trim().split('\n').pop()}`)
+      }
+      const r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
+      console.log(`[publish] R2 ${r2}`)
+      // ⛔ ASK, never assume: reporting an address for a slab that is not there is the
       // plausible-looking success this whole panel exists to prevent.
       const slabKey = `${ASSET_ENV_PREFIX.staging}baked/${id}/scene.json`
       const slabHead = await fetch(`${ASSET_BASE_URL}${slabKey}`, { method: 'HEAD' }).catch(() => null)
       if (!slabHead?.ok) {
-        throw new Error(`this Look's slab is not in the bucket (${slabKey} → `
-          + `${slabHead ? slabHead.status : 'unreachable'}). Bake it first — the bake is what uploads it.`)
+        throw new Error(`the upload reported success but the slab is not in the bucket (${slabKey} → `
+          + `${slabHead ? slabHead.status : 'unreachable'}).`)
       }
 
-      // ── 2. The PLAYER, rebuilt only when the source moved. `needsRebuild` is the same
-      // mtime gate the bake chain uses, against a stamp written by the publish script.
-      const PLAYER_STAMP = join(REPO_ROOT, '.player-published')
-      const playerInputs = playerSrcPaths(REPO_ROOT)
+      // ── 2. THE PLAYER, rebuilt only when staging's build is behind the source.
       let playerPublished = false
-      const playerLive = await fetch(`${ASSET_BASE_URL}staging/player/index.html`, { method: 'HEAD' }).catch(() => null)
-      if (!playerLive?.ok || needsRebuild(playerInputs, [PLAYER_STAMP])) {
+      if ((await stagingPlayerState(REPO_ROOT)).stale) {
         await runShell('node scripts/publish-player-to-staging.mjs', { cwd: REPO_ROOT, timeout: 1800000 })
-        writeFileSync(PLAYER_STAMP, new Date().toISOString())
         playerPublished = true
       }
 
@@ -3486,7 +3512,7 @@ createServer(async (req, res) => {
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, committed, changed, branch, bakedAt, playerPublished,
+      res.end(JSON.stringify({ ok: true, committed, changed, branch, bakedAt, r2, playerPublished,
         stagingUrl: site.staging.url, staging: site.staging }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })

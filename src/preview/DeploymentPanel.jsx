@@ -1,7 +1,7 @@
 /**
  * DeploymentPanel — Preview's DEPLOYMENT layer: what the selected surface ships, authored here, autosaved to the
- * town's `cartograph/data/<map>/deployment.json` (src/lib/deployment.js), carried into `manifest.deployment` by the next
- * bake. "When I click Phone hi, I can adjust the relevant controls, and where I leave them is where they bake" (Jacob,
+ * town's `cartograph/data/<map>/deployment.json` (src/lib/deployment.js), frozen into `manifest.deployment` and shipped by
+ * the next Publish (it is ACCEPTED at Publish: Jacob, 2026-10-04). "When I click Phone hi, I can adjust the relevant controls, and where I leave them is where they bake" (Jacob,
  * 2026-10-04). No try, no commit: where the controls are left is the policy.
  *
  * ⛔⛔ NOT AN INSPECTION TOGGLE. Preview's mute/solo (the Scene / Post-FX rows, `preview.layers.v3`) is temporary and
@@ -29,13 +29,14 @@ function withResources(off) {
 
 /** Loads the town's deployment, and keeps the caller's live copy (what Preview renders through) in step with edits. */
 export function useDeployment(map) {
-  const [state, setState] = useState({ file: undefined, baked: undefined, error: null, saving: false })
+  // `shipped`: does staging's manifest carry this file (true · false · null = could not be read)? Read on load; an edit makes it false.
+  const [state, setState] = useState({ file: undefined, shipped: undefined, error: null, saving: false })
   useEffect(() => {
     let live = true
     fetch(api(map)).then(async (r) => {
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`)
-      if (live) setState({ file: j.file, baked: j.baked, error: null, saving: false })
+      if (live) setState({ file: j.file, shipped: j.shipped, error: null, saving: false })
     }).catch((e) => { if (live) setState((s) => ({ ...s, error: `could not read the deployment: ${e.message}` })) })
     return () => { live = false }
   }, [map])
@@ -55,10 +56,9 @@ export default function DeploymentPanel({ map, surface, state, setState, labels 
   if (state.file === undefined) return null
   const surfaces = state.file?.surfaces || {}
   const off = surfaces[surface]?.postFxOff ?? []
-  const baked = JSON.stringify(state.baked) === JSON.stringify(state.file ? { authored: true, surfaces } : { authored: false })
 
   const save = (file) => {
-    setState((s) => ({ ...s, file, saving: true }))
+    setState((s) => ({ ...s, file, shipped: false, saving: true }))
     clearTimeout(timer.current)
     timer.current = setTimeout(async () => {
       try {
@@ -82,8 +82,8 @@ export default function DeploymentPanel({ map, surface, state, setState, labels 
       </button>
       {open && <>
         <div className="profiler-note" style={{ margin: '4px 0 6px' }}>
-          Where you leave these is what {surface} ships: autosaved to deployment.json, carried by the next bake.
-          {' '}{state.saving ? 'saving…' : baked ? 'baked.' : 'saved · ships at the next bake.'}
+          Where you leave these is what {surface} ships: autosaved to deployment.json, accepted at the next Publish.
+          {' '}{state.saving ? 'saving…' : state.shipped === true ? 'on staging.' : state.shipped === null ? 'saved · staging could not be read.' : 'saved · ships at the next Publish.'}
           {surface !== RUNTIME_PHONE_SURFACE && surface !== 'desktop' ? ` ⚠️ Every phone runs ${RUNTIME_PHONE_SURFACE} until phones can be told apart: this is stored, not yet shipped.` : ''}
           {!state.file ? ' This town has no deployment.json: every surface ships everything until you change one.' : ''}
         </div>

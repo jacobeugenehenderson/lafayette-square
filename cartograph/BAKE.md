@@ -10,13 +10,10 @@
 
 The **bake** is the publish stage: it turns the frozen pipeline (`map.json` → `ribbons.json`) plus the active Look's authored intent (`design.json`) into the **slab** — the read-only static artifacts under `public/baked/<look>/` that the LS runtime mounts.
 
-⛔⛔ **AND THE POUR'S LAST STEP IS AN UPLOAD (2026-09-01).** `public/baked/` is gitignored; the slab is
-served from R2. `scripts/upload-baked-to-r2.mjs` runs at the end of the bake and **a failed upload fails
-the whole bake (500)** — a green bake that reached nobody is the one outcome worth refusing, and it is
-exactly the shape this pipeline refuses everywhere else. ⚠️ **The pour is then live on staging AND
-production immediately**, at the same URLs, without a push; `PREVIEW.md §0.2` settled that Preview — not
-staging — is the gate for slab data. Operator view: `cartograph/OPERATIONS.md §Bake`. Mechanics:
-`PUBLISH.md §6`. It is the boundary between the **authoring** world (cartograph: stores, live re-derivation, the operator's eye) and the **runtime** world (LS: trust the slab, never reach back).
+⛔⛔ **A BAKE ENDS ON DISK; PUBLISH IS THE UPLOAD (2026-10-05).** `public/baked/` is gitignored and the slab is served
+from R2, so nothing a bake writes reaches anyone until Preview's **Publish** uploads it to staging (and fails loudly if
+the upload does); Promote alone writes production. ▶ `node checks/claims-a-bake-never-uploads.mjs`. Operator view:
+`cartograph/OPERATIONS.md §Bake`. Mechanics: `PUBLISH.md §6`. It is the boundary between the **authoring** world (cartograph: stores, live re-derivation, the operator's eye) and the **runtime** world (LS: trust the slab, never reach back).
 
 Two load-bearing facts:
 
