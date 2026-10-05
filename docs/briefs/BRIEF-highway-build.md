@@ -38,4 +38,8 @@ typical section built from its lanes and cited values, not ①'s negative space.
 - **Towns poured before `7d1db6db`** print their flares NOT DRAWN ("re-pour").
 - **The expressway CONSTRUCTION** (branch `gantry/expwy-iii`: the shoulder from Table 302.1, a bare edge, the median as verge by identity, `d-expressway-median-verge`): NOT LANDED. The live instance is hipointe-demun's Forest Park Parkway (posted 40 mph); its skeleton predates chain tags, so the proof is a re-skeleton + pour of HPDM, which needs Jacob's go.
 - **① labels:** fixed 2026-09-25 (rotate on the flip + a minted vertex takes its containing edge's record); `claims-every-proto-edge-lies-on-its-owner` now also judges side, span and caps. Red until each town is re-poured; after that, an open residual on a chain's END segment (cause not established). A re-pour moves authored widths unless `blockCustoms` is re-keyed with it (hipointe-demun, LS, and lafayette-square-staging if re-poured).
+- **The mainline's median strip is not its own tile** (Sward, 2026-10-04, `scratch/huron-median-lu/`): on Huron it is a
+  second `iA` component of a giant tile (tile 63: 3.44 ha, mean width 21.5 m; tile 108: 9.55 ha) and takes that tile's
+  land use through a single sample point, so the crop draws in the median. The 14 verge tiles are other medians. Why the
+  strip is not minted as a verge tile: cause not established.
 - **Statutory predicates held as [U]:** a U.S. route as a "state route" (ORC 4511.01(JJ)), a business district (NN), a thickly settled district (MGL c.90 §17) — `q-statutory-speed-default`.
