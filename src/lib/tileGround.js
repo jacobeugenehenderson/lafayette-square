@@ -2372,17 +2372,59 @@ export function tilePieceLus(st) {
   }
   throw new Error('[tileGround][LU] a tile carries neither `luByPiece` nor `lu` — no land use was minted for it. Refusing to paint a class nobody derived.')
 }
+// ⭐⭐ CROP ROWS GROW ONLY WHERE A FIELD IS MAPPED (Jacob, 2026-10-04: the rest is grass, "for now").
+// The vote may call a whole piece `agricultural` on a 13–37% plurality of mapped farmland; the crop
+// surface is a claim about what is PLANTED, and that needs the field itself. So an agricultural piece
+// is painted `agricultural` only inside the mapped fields (`ribbons.fields`, written by the pour) and
+// `underived` — grass — everywhere else. ⛔ The piece's CLASS is still the vote's answer; only the
+// paint is confined. ▶ node checks/claims-every-piece-takes-its-own-land-use.mjs
+export const CROP_LU = 'agricultural'
+export function fieldRegionOf(fields) {
+  if (!Array.isArray(fields)) return null
+  const rings = []
+  for (const f of fields) {
+    if (!(f?.ring?.length >= 3)) continue
+    rings.push(signedArea(f.ring) < 0 ? f.ring.slice().reverse() : f.ring)
+    for (const h of f.holes || []) if (h?.length >= 3) rings.push(signedArea(h) > 0 ? h.slice().reverse() : h)
+  }
+  return unionRings(rings)
+}
+// Per piece (aligned to `iA`): the mapped-field part of each AGRICULTURAL piece; null elsewhere.
+export function cropByPiece(iA, luByPiece, fieldRegion) {
+  const out = (iA || []).map(() => null)
+  for (const p of piecesOfIA(iA)) if (luByPiece[p.i] === CROP_LU) out[p.i] = fieldRegion.length ? intersectRings([p.outer, ...p.holes], fieldRegion) : []
+  return out
+}
+let _noFieldsWarned = false
+const noFieldsWarn = () => { if (_noFieldsWarned) return; _noFieldsWarned = true
+  console.warn(`[tileGround][LU] ⛔ this artifact carries NO mapped fields (\`ribbons.fields\` / \`cropByPiece\`): every ${CROP_LU} piece is painted crop WHOLE, including ground no field covers. RE-POUR, then re-bake, to confine the crop to the fields.`) }
+
 // Move the geometry a painter struck under `OWN_LU` to each piece's own class. Every other key
 // (a divided road's `median`) is left exactly where the painter put it.
 export function rekeyByPiece(st, byLu) {
   const own = byLu[OWN_LU]; delete byLu[OWN_LU]
   if (!own?.length) return byLu
   const lus = tilePieceLus(st), pieces = piecesOfIA(st.iA)
-  const classes = [...new Set(pieces.map(p => lus[p.i]))]
-  if (classes.length === 1) { (byLu[classes[0]] ||= []).push(...own); return byLu }
+  const crop = Array.isArray(st.cropByPiece) ? st.cropByPiece : null
+  // (class, region) per piece — an agricultural piece splits into its fields (crop) and the rest (grass).
+  const parts = []
+  for (const p of pieces) {
+    const lu = lus[p.i], region = [p.outer, ...p.holes]
+    if (lu === CROP_LU && crop) {
+      const fieldPart = crop[p.i] || []
+      parts.push({ lu: CROP_LU, region: fieldPart })
+      parts.push({ lu: UNDERIVED_LU, region: fieldPart.length ? differenceRings(region, fieldPart) : region })
+    } else {
+      if (lu === CROP_LU) noFieldsWarn()
+      parts.push({ lu, region })
+    }
+  }
+  const classes = [...new Set(parts.filter(x => x.region.length).map(x => x.lu))]
+  if (classes.length === 1 && parts.every(x => x.lu === classes[0] || !x.region.length) && !(crop && classes[0] === CROP_LU)) {
+    (byLu[classes[0]] ||= []).push(...own); return byLu
+  }
   for (const lu of classes) {
-    const region = pieces.filter(p => lus[p.i] === lu).flatMap(p => [p.outer, ...p.holes])
-    const part = intersectRings(own, region)
+    const part = intersectRings(own, parts.filter(x => x.lu === lu).flatMap(x => x.region))
     if (part.length) (byLu[lu] ||= []).push(...part)
   }
   // ⛔ COUNTED, NEVER DROPPED UNSEEN: land-use paint lying in NO piece has no class to take. The
@@ -6615,6 +6657,9 @@ export function buildTileGround(ribbons, opts = {}) {
   })
   const blockLandUse = (opts.blockLandUse && typeof opts.blockLandUse === 'object') ? opts.blockLandUse : null
   const overrideFor = (blockRing) => (blockLandUse && blockLandUse[blockKeyFromRing(blockRing)]) || null
+  // The mapped fields (`ribbons.fields`); null when the pour predates them — said, once, at paint.
+  const fieldRegion = fieldRegionOf(ribbons?.fields)
+  const cropFor = (iA, lus) => fieldRegion ? cropByPiece(iA, lus, fieldRegion) : undefined
 
   // Asphalt/curb/sidewalk are single-material (merged). Treelawn (M2) + the LU
   // remainder (M1) are grouped by the tile's class so they paint that class's
@@ -7398,7 +7443,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
     // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
     // not mask it with a disk. Each = { apex, C, r, tA, tB } from filletRing.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, luByPiece: landUseByPiece(iA, { faces: faceList, override: overrideFor(tile.ring) }), roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink,
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, ...(() => { const luByPiece = landUseByPiece(iA, { faces: faceList, override: overrideFor(tile.ring) }); return { luByPiece, cropByPiece: cropFor(iA, luByPiece) } })(), roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink,
       // [A07] WHICH PRODUCER BUILT THIS CURB, and why. The docs promise a single
       // concentric offset; on LS 41 of 101 tiles are not one. Recorded so an
       // operator on a town nobody has inspected can tell, and so A06 has a test.
@@ -9024,6 +9069,7 @@ export function buildTileGround(ribbons, opts = {}) {
         for (const t of protoShapeTiles) {
           const { fixed, override } = t._luSeed
           t.luByPiece = landUseByPiece(t.iA, { faces: faceList, fixed, override })
+          t.cropByPiece = cropFor(t.iA, t.luByPiece)
           delete t._luSeed
         }
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)

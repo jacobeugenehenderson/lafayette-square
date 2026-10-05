@@ -25,18 +25,27 @@
 //   2. return `pickLuFromHash`'s kind of answer for an uncovered piece instead of `underived`
 //      (any class not under the piece)                                      → the hermetic part
 //   3. vote each piece by ONE interior point instead of by area             → the hermetic part
+//   4. paint an agricultural piece crop WHOLE, ignoring its mapped fields    → the hermetic part
+//
+// ⭐⭐ AND CROP ROWS ONLY WHERE A FIELD IS MAPPED (Jacob, 2026-10-04): an agricultural piece paints
+// `agricultural` inside the pour's mapped fields (`ribbons.fields`) and `underived` (grass) elsewhere.
+// Per town, ⛔ FAILS when agricultural paint lies outside every mapped field by more than Clipper's
+// 1 mm lattice × the paint's own perimeter. A town poured before the fields existed is NOT MEASURED
+// on this leg, and says so — it is not a pass.
 // ⭐ The HERMETIC part runs first and needs no town, so mutation 2 cannot pass vacuously on a town
 // where every piece happens to lie under some face (measured: none of the five is wholly uncovered).
 //
 //   node checks/claims-every-piece-takes-its-own-land-use.mjs [scene ...]
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
-import { piecesOfIA, tilePieceLus, landUseByPiece, UNDERIVED_LU } from '../src/lib/tileGround.js'
+import { piecesOfIA, tilePieceLus, landUseByPiece, rekeyByPiece, cropByPiece, fieldRegionOf, CROP_LU, UNDERIVED_LU } from '../src/lib/tileGround.js'
+import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 
 const A = r => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return a / 2 }
 const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
 const bbOf = r => { let b = [Infinity, -Infinity, Infinity, -Infinity]; for (const [x, z] of r) b = [Math.min(b[0], x), Math.max(b[1], x), Math.min(b[2], z), Math.max(b[3], z)]; return b }
 
 let failed = false, measured = 0
+const cropUnmeasured = []
 const say = (ok, msg) => { if (!ok) failed = true; console.log(`  ${ok ? '✅' : '⛔'} ${msg}`) }
 // ── HERMETIC: the mint itself, on pieces with known ground ───────────────────────
 {
@@ -60,13 +69,21 @@ const say = (ok, msg) => { if (!ok) failed = true; console.log(`  ${ok ? '✅' :
   // a hole is not a piece and takes no class
   const holed = landUseByPiece([box(0, 0, 100, 100), box(40, 40, 60, 60).reverse()], { faces })
   say(holed[0] === 'agricultural' && holed[1] === null, `a hole takes no class — got ${holed.join(' / ')}`)
+  // crop only where a field is mapped: a 100×100 agricultural piece with a field on its west 40%
+  const st = { iA: [box(0, 0, 100, 100)], luByPiece: [CROP_LU] }
+  st.cropByPiece = cropByPiece(st.iA, st.luByPiece, fieldRegionOf([{ ring: box(-10, -10, 40, 110) }]))
+  const k = rekeyByPiece(st, { '\u0000own': [box(0, 0, 100, 100)] })
+  const ar = (rs) => Math.abs((rs || []).reduce((t, r) => t + A(r), 0))
+  say(Math.abs(ar(k[CROP_LU]) - 4000) < 1 && Math.abs(ar(k[UNDERIVED_LU]) - 6000) < 1,
+    `an agricultural piece is crop only inside its mapped field (4,000 m²) and grass outside it (6,000 m²) — got ${Math.round(ar(k[CROP_LU]))} / ${Math.round(ar(k[UNDERIVED_LU]))}`)
 }
 
 const want = process.argv.slice(2)
 for (const scene of (want.length ? want : feedScenes())) {
   const f = feed(scene); if (!f) continue
   const prev = console.warn; console.warn = () => {}
-  let T; try { T = buildProto(f, { protoArtifact: true }).protoShapeTiles } finally { console.warn = prev }
+  let G; try { G = buildProto(f, { protoArtifact: true, protoProducer: true }) } finally { console.warn = prev }
+  const T = G.protoShapeTiles
   if (!T?.length) { console.log(`⛔ ${scene}: no protoShapeTiles — NOT measured`); continue }
   measured++
   const faces = (f.ribbons.faces || []).filter(x => x?.ring?.length >= 3 && x.use).map(x => ({ use: x.use, ring: x.ring, bb: bbOf(x.ring), a: Math.abs(A(x.ring)) }))
@@ -99,7 +116,17 @@ for (const scene of (want.length ? want : feedScenes())) {
   for (const s of bad.slice(0, 12)) console.log(`     ${s}`)
   if (minority.length) { console.log(`  · ${minority.length} piece(s) where sampling and the exact vote disagree (near a tie — listed, not failed):`); for (const s of minority.slice(0, 6)) console.log(`     ${s}`) }
   if (bad.length) failed = true
+  // ── crop only where a field is mapped ──
+  if (!Array.isArray(f.ribbons.fields)) cropUnmeasured.push(scene), console.log(`  ⛔ NOT MEASURED — crop confinement: this pour carries no mapped fields (\`ribbons.fields\`); re-pour ${scene}. Not a pass.`)
+  else {
+    const ag = G.luByClass[CROP_LU] || [], per = ag.reduce((t, r) => { let q = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) q += Math.hypot(r[i][0] - r[j][0], r[i][1] - r[j][1]); return t + q }, 0)
+    const outside = Math.abs(differenceRings(ag, fieldRegionOf(f.ribbons.fields)).reduce((t, r) => t + A(r), 0)), tol = per * 0.001
+    console.log(`  ${outside <= tol ? '✅' : '⛔'} crop paint outside every mapped field: ${outside.toFixed(2)} m² (lattice tolerance ${tol.toFixed(2)} m²) · ${f.ribbons.fields.length} field(s)`)
+    if (outside > tol) failed = true
+  }
 }
 if (!measured) { console.log('\n⛔ NOT MEASURED — no scene could be built.'); process.exit(2) }
-console.log(`\n${failed ? '⛔ RED' : '✅ GREEN — every piece wears a class from its own ground.'}`)
-process.exit(failed ? 1 : 0)
+if (failed) { console.log('\n⛔ RED'); process.exit(1) }
+if (cropUnmeasured.length) { console.log(`\n⛔ NOT FULLY MEASURED — every piece wears a class from its own ground, but crop confinement could not be measured on: ${cropUnmeasured.join(', ')} (no mapped fields in the pour). Re-pour them.`); process.exit(2) }
+console.log('\n✅ GREEN — every piece wears a class from its own ground, and crop grows only on mapped fields.')
+process.exit(0)

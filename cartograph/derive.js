@@ -5169,6 +5169,16 @@ export function deriveLayers(highways) {
       streets: ix.streets.map(s => ({ name: s.name, ix: s.ix })),
     })),
     faces: faceFills,
+    // ⭐ THE MAPPED FIELDS — every OSM polygon the vocabulary reads as `agricultural`, outer + holes.
+    // Ruled by Jacob 2026-10-04: crop rows grow ONLY where a field is mapped; the rest of a piece the
+    // vote calls agricultural is grass (`underived`). The vote above reads these and used to discard
+    // them, so the paint had nothing to confine the crop to — on huron 405.6 of 544.4 ha of crop lay
+    // under no field at all. Read off `OSM_TO_LU` through `osmLUPolys`, never a tag list typed here.
+    fields: osmLUPolys.filter(o => o.lu === 'agricultural').map(o => ({
+      tag: o.tag,
+      ring: o.ring.map(p => [p.x ?? p[0], p.z ?? p[1]]),
+      holes: (o.holes || []).map(h => h.map(p => [p.x ?? p[0], p.z ?? p[1]])),
+    })),
     // [E2] constructed medians (kind:'median') — consumed by identity in
     // tileGround (median-tile detection + the merge-region asphalt fill).
     medians: medians.map(m => ({ kind: m.kind, name: m.name, streets: m.streets, chains: m.chains, pairKey: m.pairKey, ...(m.loopId ? { loopId: m.loopId } : {}), ...(m.absorbedBy ? { absorbedBy: m.absorbedBy } : {}), ring: m.ring })),
