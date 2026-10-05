@@ -12,6 +12,10 @@
  *               field (#141519, the Ward's; the kit carries no field). Rating and a person's emoji are untouched.
  *   accent      the Ward's chrome accent, '#rrggbb'
  *   litTint     { color: '#rrggbb', strength: 0..1 } — the roof tint of a lit set and the selected building
+ *   locals      { one, many } — what the town calls its locals, the Ward's check-in standing ("Townie" /
+ *               "Townies"), wherever the Ward names that standing (Jacob, 2026-10-05). Both authored, never a plural
+ *               derived; the kit's neutral is Local / Locals ("Townie" is Lafayette Square's own, declared in its Look).
+ *               ⛔ Words, not identifiers: `counts.townies`, `is_local`, `not_townie`, the `townie` standing key stay.
  *
  * ⛔ A channel the town has not chosen is the kit's NEUTRAL value below — no town's — and is published with
  *    `<channel>Authored: false`, so the Ward says so. `null` neutral = the kit has no value: the reader reports it.
@@ -21,7 +25,7 @@
  * ▶ node checks/claims-a-towns-identity-is-its-own.mjs
  */
 
-export const IDENTITY_CHANNELS = ['mark', 'markStyle', 'accent', 'litTint']
+export const IDENTITY_CHANNELS = ['mark', 'markStyle', 'accent', 'litTint', 'locals']
 
 /** The kit's neutral identity. `accent: null` — the kit has not chosen one yet (Jacob's eye). */
 export const IDENTITY_NEUTRAL = {
@@ -29,6 +33,7 @@ export const IDENTITY_NEUTRAL = {
   markStyle: 'engraved',
   accent: null,
   litTint: { color: '#f2c14e', strength: 0.45 },
+  locals: { one: 'Local', many: 'Locals' },
 }
 
 const HEX = /^#[0-9a-f]{6}$/i
@@ -37,6 +42,8 @@ export const MARK_STYLES = ['regular', 'engraved', 'colored']
 const oneEmoji = (s) => typeof s === 'string'
   && [...new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s)].length === 1
   && /\p{Extended_Pictographic}/u.test(s)
+// A name the Ward sets in a sentence: words on one line, no space at either end.
+const aName = (s) => typeof s === 'string' && s.length > 0 && s === s.trim() && !/[\n\r\t]/.test(s)
 
 const VALID = {
   mark: (v) => oneEmoji(v) || 'one emoji',
@@ -44,6 +51,8 @@ const VALID = {
   accent: (v) => HEX.test(v) || "'#rrggbb'",
   litTint: (v) => (v && typeof v === 'object' && HEX.test(v.color) && Number.isFinite(v.strength) && v.strength >= 0 && v.strength <= 1
     && Object.keys(v).every((k) => k === 'color' || k === 'strength')) || "{ color: '#rrggbb', strength: 0..1 }",
+  locals: (v) => (v && typeof v === 'object' && aName(v.one) && aName(v.many)
+    && Object.keys(v).every((k) => k === 'one' || k === 'many')) || "{ one, many } — both names, singular and plural, each on one line",
 }
 
 /** The authored block, checked. Throws on an unknown channel or a malformed value; returns only authored channels. */

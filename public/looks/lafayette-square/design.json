@@ -782,7 +782,11 @@
   "surfaces": null,
   "identity": {
     "mark": "⚜️",
-    "accent": "#D9B25A"
+    "accent": "#D9B25A",
+    "locals": {
+      "one": "Townie",
+      "many": "Townies"
+    }
   },
   "wallMix": null,
   "wallPalettes": null,

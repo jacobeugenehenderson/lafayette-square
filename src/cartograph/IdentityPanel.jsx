@@ -10,7 +10,7 @@ import CATEGORIES from '../tokens/categories.js'
 
 /**
  * IDENTITY — how the town looks, chosen in one place (Warden's ruling, 2026-09-28): its mark (which is also what its
- * places are rated in), its accent, the tint a lit set of roofs takes, and its category colours (Neon — its signs and its Ward chips, stored
+ * places are rated in), what it calls its locals (singular and plural, wherever the Ward names that standing), its accent, the tint a lit set of roofs takes, and its category colours (Neon — its signs and its Ward chips, stored
  * as materialColors.neon_<category>, decided by src/lib/categoryColor.js). Saved in the Look's design.json (the store's
  * autosave), baked into scene.json, published in the manifest's `look` (src/lib/townIdentity.js).
  * Reached from the Stage toolbar beside Sources, and from Sources' "Identity" row.
@@ -28,6 +28,7 @@ import CATEGORIES from '../tokens/categories.js'
 const ROWS = [
   { id: 'mark', label: 'Mark', kind: 'emoji', hint: 'The avatar, load screen and tab — and what places are rated in. One emoji.' },
   { id: 'markStyle', label: 'Mark style', kind: 'choice', options: MARK_STYLES, hint: 'How the town\'s mark is drawn in the Ward\'s header ◉ wherever it shows the town (not a person): regular — a white silhouette · engraved — greyscale lifted to white · colored — as the emoji draws.' },
+  { id: 'locals', label: 'Locals are called', kind: 'names', hint: 'What the Ward calls the town\'s check-in standing, wherever it names it ("You\'re a Townie", "4 townies"). Both forms: the plural is never made by adding an s.' },
   { id: 'accent', label: 'Accent', kind: 'color', hint: 'The Ward\'s chrome accent.' },
   { id: 'litTint', label: 'Lit tint', kind: 'tint', hint: 'The roofs of a chosen category or search, and the selected building.' },
 ]
@@ -36,7 +37,28 @@ const neutralText = (id) => {
   const v = IDENTITY_NEUTRAL[id]
   if (v == null) return id === 'mark' ? 'the town\'s initial' : 'the Ward\'s own'
   if (id === 'litTint') return `${v.color} at ${v.strength}`
+  if (id === 'locals') return `${v.one} / ${v.many}`
   return v
+}
+
+/** The two names, typed as text and saved whole: both filled is the town's pair, both empty is the kit's neutral, one of
+ *  them alone is refused (the panel's error) and stays on screen until the other is typed. */
+function Names({ value, onChoose }) {
+  const [words, setWords] = useState({ one: value?.one ?? '', many: value?.many ?? '' })
+  useEffect(() => { setWords({ one: value?.one ?? '', many: value?.many ?? '' }) }, [value?.one, value?.many])
+  const type = (k, text) => {
+    const next = { ...words, [k]: text }
+    setWords(next)
+    const one = next.one.trim(), many = next.many.trim()
+    onChoose(one || many ? { one, many } : null)
+  }
+  const n = IDENTITY_NEUTRAL.locals
+  return (
+    <>
+      <input className="carto-input" value={words.one} placeholder={n.one} aria-label="One local" onChange={(e) => type('one', e.target.value)} />
+      <input className="carto-input" value={words.many} placeholder={n.many} aria-label="Many locals" onChange={(e) => type('many', e.target.value)} />
+    </>
+  )
 }
 
 const Swatch = ({ hex }) => <i className="carto-identity-sw" style={{ background: hex }} />
@@ -137,6 +159,7 @@ export default function IdentityPanel({ onClose }) {
                     <input className="carto-input carto-identity-emoji" value={drafts[r.id] ?? v ?? ''} placeholder="—" aria-label={r.label}
                       onChange={(e) => choose(r.id, e.target.value.trim() || null)} />
                   )}
+                  {r.kind === 'names' && <Names value={v} onChoose={(w) => choose(r.id, w)} />}
                   {r.kind === 'choice' && r.options.map((o) => (
                     <button key={o} className={`carto-btn-sm${v === o ? ' is-active' : ''}`} aria-pressed={v === o}
                       onClick={() => choose(r.id, o)}>{o}</button>

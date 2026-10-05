@@ -1,8 +1,9 @@
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: yes (Tally, 2026-10-05) — built in both repos; owed: bake-scene + bake-manifest for every town (Boz's held pass), the pin move, Jacob's eye
+rulings: (Jacob, 2026-10-05) only where the Ward NAMES the standing, never prose ("be a local") · Visitor HELD — no Ward text names visitors, so the field waits for the first that does · words shown as written, capitals and all
 written: 2026-10-05
-evict-when: a town's Identity names its locals and its visitors (singular + plural) with the kit default Local / Visitor; the words bake into the manifest's look block and every visitor-facing Ward string reads them; the Ward composes the review refusal itself from the status code; a check that reads the Ward source fails on any hard-coded "Townie"/"Visitor" in visible text (mutation-tested); LS keeps "Townie" by declaration; Jacob has seen Provincetown say "Washashores".
+evict-when: every town's manifest carries look.locals after the bake pass and the pin move; Jacob has seen a town (e.g. Provincetown) call its locals the word he chose in Identity, and LS still say "Townie". (Built: the Identity field with the kit default Local / Locals · the Ward reads it wherever it names the standing · the Ward composes the not_townie refusal · theward checks/the-town-names-its-locals.mjs, mutation-tested · LS declares Townie. Visitor is held, see rulings.)
 -->
 
 # BRIEF — What a town calls its locals, and its visitors
