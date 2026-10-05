@@ -2,12 +2,35 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: yes (Wick, 2026-10-04; dismissed same day)
 written: 2026-10-04
 evict-when: a low-poly standard lamppost is the kit default and every town but LS uses it; the lamp model is a town's authored choice (LS keeps its Victorian by declaration); off-screen lamps are not drawn; lamp shadows are measured and decided; the lamp cost is re-measured on LS and Huron with Grain's probe; the bulb glows on the new model; checks green and mutation-tested; Jacob has eyed the standard post by day and night
 -->
 
 **Boz drafted this 2026-10-04 at Jacob's request; Jacob dispatches.**
+
+## State at Wick's dismissal (2026-10-04)
+
+**Landed — `451a60a0`.** The lamp library `src/lib/lampModels.js`: `standard` (procedural post-top, 160 tris, lit glass
+3.2–3.6 m) is the kit default; `victorian` (4,304 tris) is LS's choice, declared in `design.json#lamps.model`, stamped by
+bake-scene into `scene.json#lampModel`. Absent ⇒ standard, said in the console; an unknown id throws. Head height and lit-part
+mask are the model's. ▶ `node checks/claims-a-town-chooses-its-lamp.mjs` (mutation-tested). LS's scene.json re-baked
+(`lampModel: victorian`); not yet published. Steps 2–3 done; **the bulb glow on the standard post is not yet eyed.**
+
+**Bought models (evaluated only; never in this repo or R2; licence unresolved):** urban-streetlight-pack `Streetlight5.1`
+fits the slot best — 354 tris, post-top, glass 3.21–3.60 m as its own material. The "lowpoly" collection is 10–23k tris.
+
+**Measured (step 1)** — `node scratch/lamp-cost/probe.mjs --town=<huron|lafayette-square> --shot=<hero|browse> --mode=<desktop|phone-hi>`.
+Posts off, as a share of the frame: Huron/standard 3.7 % Hero · 3.2 % Browse (Grain's Huron/Victorian Hero run: 29 %) ·
+LS/Victorian 9.5 % Hero · 7.5 % Browse · phone-hi ≈0–17 % of an ~8 ms floor. ⚠️ Taken under a node-check batch at ~100 % CPU
+per process; `gpuWindow` is suspect — read ratios, not ms.
+
+**Open:**
+- **The shadow reading is not evidence yet.** Post-shadow-off read ≈0 everywhere, but the probe's class was read off
+  `castShadow`, so its restore and its "all lamps" row found nothing (fixed in the probe since; **not re-run**). LS Browse also
+  showed no triangle drop with the post shadow off — cause not established. Re-run, then bring Jacob the options (step 5).
+- **Culling (step 4)** — not built. With the standard post, all posts cost ≤ ~4 % of the frame, so its value is LS-sized.
+- **Jacob's eye**: the standard post by day and night (Huron), and LS's Victorian back after the scene re-bake. Gate before publish.
 
 ## Who you are, and the bounds
 
