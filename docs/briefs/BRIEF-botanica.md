@@ -13,7 +13,7 @@ evict-when: a specialized land-use class (farmland first) can be populated with 
 **Status: a future brief, recorded so it is not lost.** Jacob, 2026-09-26: *"eventually (maybe soon) we'll ALSO
 populate the specialized LU with impostors"* — and, to Furrow the same day: *"develop the Botanica: an
 Arborist-like workspace, crop impostors eventually (bought staged model to sequenced impostors), and the ground
-shader."* ⚠️ **The ground shader is NOT this brief** — it is `BRIEF-field-shader.md`, running now.
+shader."* ⚠️ **The ground shader is NOT this brief** — it is `cartograph/_archive/BRIEF-field-shader-2026-10-04.md`, running now.
 
 ## What it is
 An Arborist-like workspace for **non-tree planting**: take a bought, **staged** model (one per growth stage) and
@@ -23,7 +23,7 @@ that class's own rule — `cartograph/lu-policy.mjs#plantingOf` (`agricultural �
 
 ## What is known today (2026-09-26)
 - The Arborist has **no crop species** (no `zea_mays` dossier, model or atlas region) — Furrow.
-- The field ground already carries the season and row bearing per field (`BRIEF-field-shader.md`); plants must
+- The field ground already carries the season and row bearing per field (`cartograph/_archive/BRIEF-field-shader-2026-10-04.md`); plants must
   follow the same calendar and the same per-field row bearing.
 - `lu-policy.mjs` declares `planted` classes whose generator does not exist; this is that generator.
 

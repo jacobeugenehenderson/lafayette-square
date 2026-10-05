@@ -134,7 +134,7 @@ const SAND_STATE = `
 export const SAND_UNIFORMS = { uDuneView: { value: 0 } }
 if (typeof window !== 'undefined') window.__duneView = SAND_UNIFORMS.uDuneView
 
-// ⭐ ROW CROPS — the six-month field (BRIEF-field-shader). One scalar, the crop STATE `cropC` ∈ [0, 4]:
+// ⭐ ROW CROPS — the six-month field (_archive/BRIEF-field-shader-2026-10-04). One scalar, the crop STATE `cropC` ∈ [0, 4]:
 // 0 bare dirt · 1 tilled raised rows · 2 sprouts · 4 full plants. It rises from each field's planting
 // day over `uGrowFrac` of its season, holds to harvest, and harvest plays the SAME states back.
 // ⭐ ONE ROUGH GRAYSCALE MAP (`cropBW`) is the colour, the depth AND the distortion (Jacob, 2026-09-26):
@@ -339,7 +339,7 @@ const ALBEDO = { grass: GRASS_ALBEDO, sand: SAND_ALBEDO + SAND_STATE, crop: CROP
 /**
  * The ground-surface factory. `surface` picks the albedo chunk; every other socket —
  * weather, sun altitude, the lamp pool, contact shadow, fade — is shared, so a
- * new surface inherits the whole environment by construction (`BRIEF-field-shader §4`:
+ * new surface inherits the whole environment by construction (`_archive/BRIEF-field-shader-2026-10-04 §4`:
  * extend the factory, never a parallel material). Which group gets which surface is
  * `cartograph/surfaces.mjs`.
  */

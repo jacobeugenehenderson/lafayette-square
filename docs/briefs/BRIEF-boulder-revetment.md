@@ -133,7 +133,7 @@ else is fixed). This one has a unit and its stability is physical.
 > who wants the wall elsewhere **moves the shore** — the same gesture that moves any other shape.
 > That satisfies *"the override is the product"* (`ORIENTATION`) without inventing a control.
 > ⇒ ⚠️ **This answers the trailing gate for THIS brief, in the opposite direction from what it
-> assumed.** Worth testing the same way on `BRIEF-field-shader` (row bearing may be the field
+> assumed.** Worth testing the same way on `_archive/BRIEF-field-shader-2026-10-04` (row bearing may be the field
 > polygon's principal axis) and `BRIEF-water-shader` (wave direction already comes from the weather
 > poller) **before anyone builds a parameter home for three briefs that may need none.**
 
@@ -220,6 +220,6 @@ your 22 breakwaters.** They are a different structure and a bigger population. *
 > constant**, the angle of repose of riprap, which is a property of stone rather than of a town.
 > ⇒ ✅ **Nothing to hold, so no parameter home to invent** — which is what the gate was trying to
 > prevent, reached from the other side.
-> ⚠️ **`BRIEF-field-shader` and `BRIEF-water-shader` still owe their own answer.** ⛔ **Do not build a
+> ⚠️ **`_archive/BRIEF-field-shader-2026-10-04` and `BRIEF-water-shader` still owe their own answer.** ⛔ **Do not build a
 > parameter home for three briefs until each has been asked whether it needs one** — this one did not,
 > and the reason (the data was already there) may hold for the others too.

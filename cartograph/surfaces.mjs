@@ -79,7 +79,7 @@ export const SURFACES = {
         { t: 0.00, color: '#8a7456' }, { t: 0.40, color: '#b89e78' }, { t: 0.75, color: '#d6c29e' }, { t: 1.00, color: '#ece0c4' } ] },
     },
   },
-  // ⭐ ROW CROPS — the six-month field (BRIEF-field-shader, 2026-09-26): bare dirt → tilled raised
+  // ⭐ ROW CROPS — the six-month field (_archive/BRIEF-field-shader-2026-10-04, 2026-09-26): bare dirt → tilled raised
   // rows → sprouts → plants → harvest, then the same states played back. Driven by the shared
   // calendar (useCalendar dayOfYear). Generator: grassMaterial.js CROP_ALBEDO.
   // ⭐ `perField`: the bake writes a field id per vertex and each field's own axis, so the rows'

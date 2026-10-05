@@ -174,7 +174,7 @@ function pathFromClipper(p) {
  * `leisure=nature_reserve` runs to 29,047×. 391 of 1,406 LU features are larger than the
  * median face. So a town's beach classified one block and left the hundreds it lay across to
  * fall through to parcels or `underived`. (`BRIEF-land-use-derivation` item #2;
- * `BRIEF-field-shader §3` measured the same on huron's farmland.)
+ * `_archive/BRIEF-field-shader-2026-10-04 §3` measured the same on huron's farmland.)
  *
  * ⭐ HOLES ARE SUBTRACTED, and that is the other half of the ruling: the clip side is filled
  * `pftEvenOdd`, so an outer ring and its islands arrive as one region with the islands
@@ -3520,7 +3520,7 @@ export function deriveLayers(highways) {
       // **672× the median face**; `leisure=nature_reserve` runs to 29,047×. 391 of 1,406 LU
       // features are larger than the median face. So a town's beach classified one block and
       // left the several hundred it lay across to fall through to parcels or `underived`.
-      // (`BRIEF-land-use-derivation` item #2; `BRIEF-field-shader §3` measured the same on
+      // (`BRIEF-land-use-derivation` item #2; `_archive/BRIEF-field-shader-2026-10-04 §3` measured the same on
       // huron's farmland, 24 of 52 with their centroid in no face at all.)
       // ⭐ The overlap is computed with the holes SUBTRACTED, so a pond inside a wood does not
       // vote "wood" for the faces under the pond — that is the even-odd half of the ruling.

@@ -1816,7 +1816,7 @@
     {
       "id": "q-crop-calendar",
       "ask": "When is a town's row crop planted and harvested (day of year)?",
-      "neededBy": "BRIEF-field-shader 2026-09-26: the six-month field cycle",
+      "neededBy": "_archive/BRIEF-field-shader-2026-10-04 2026-09-26: the six-month field cycle",
       "status": "answered",
       "findings": [
         "f-usda-corn-grain-dates-OH"
@@ -1829,7 +1829,7 @@
     {
       "id": "q-crop-row-spacing",
       "ask": "Centre-to-centre spacing of corn rows",
-      "neededBy": "BRIEF-field-shader: the row frequency",
+      "neededBy": "_archive/BRIEF-field-shader-2026-10-04: the row frequency",
       "status": "answered",
       "findings": [
         "f-ars-corn-row-traditional"
@@ -1841,7 +1841,7 @@
     {
       "id": "q-crop-ridge-height",
       "ask": "How high a tilled/ridged row stands above its furrow",
-      "neededBy": "BRIEF-field-shader: the raised rows' relief",
+      "neededBy": "_archive/BRIEF-field-shader-2026-10-04: the raised rows' relief",
       "status": "answered",
       "findings": [
         "f-nrcs-346-ridge-min-height"

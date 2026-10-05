@@ -112,7 +112,7 @@ already is.
 **In bounds:** `OSM_LU_DECLARED`'s `map-layer` rows · a bake group + `layerVis` id per layer ·
 `Panel.jsx`'s `FURNITURE_DEFS`/`LAND_COVER_DEFS` · `MapLayers.jsx` · the check extension.
 ⛔ **OUT:** `OSM_TO_LU` and the LU classes (landed; do not reopen) · `man_made:bridge` and the `none:`
-rows · the crop/water shaders (`BRIEF-field-shader.md`, `BRIEF-water-shader.md`) · the revetment
+rows · the crop/water shaders (`cartograph/_archive/BRIEF-field-shader-2026-10-04.md`, `BRIEF-water-shader.md`) · the revetment
 geometry (`BRIEF-boulder-revetment.md`).
 ⛔ **A re-pour is required** — the bucket and the tables run at pour time. **huron is safe to
 re-pour; LS, HPDM and altadena are NOT — come back to Jacob.**

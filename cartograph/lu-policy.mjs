@@ -56,7 +56,7 @@
  * substitution this module exists to refuse. The face still PAINTS its own
  * colour, so the land reads as worked ground rather than going bald.
  * ⭐ `plantingOf(lu)` is the socket the generator will read. Its first customers
- * are `BRIEF-field-shader.md` (crop rows) and `orchard`.
+ * are `cartograph/_archive/BRIEF-field-shader-2026-10-04.md` (crop rows) and `orchard`.
  */
 import { readFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
@@ -275,7 +275,7 @@ export function resolveLuPolicy(scene, classesPresent = []) {
       lines.push(`   🌾 ${awaitingPlanting.length} class(es) declared PLANTED: ${awaitingPlanting.join(', ')}`)
       lines.push(`   ⛔ NO PLANTING GENERATOR EXISTS — nothing in the kit reads \`plantingOf()\`, so these`)
       lines.push(`      faces paint their own colour and grow NOTHING. They are not bald by accident and`)
-      lines.push(`      they are not planted; they are AWAITING a generator. (docs/briefs/BRIEF-field-shader.md)`)
+      lines.push(`      they are not planted; they are AWAITING a generator. (cartograph/_archive/BRIEF-field-shader-2026-10-04.md)`)
     }
     if (unrecognized.length) {
       lines.push('')

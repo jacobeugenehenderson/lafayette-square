@@ -3,7 +3,7 @@
  *
  * ⭐ The crop surface (`cartograph/surfaces.mjs` SURFACES.crop, `perField`) needs each field's own
  * row bearing: rows follow the field's long axis, and a fixed bearing across a town reads as
- * wallpaper (`BRIEF-field-shader §4①`). The bake merges every face of a class into one mesh, so
+ * wallpaper (`_archive/BRIEF-field-shader-2026-10-04 §4①`). The bake merges every face of a class into one mesh, so
  * the field a vertex belongs to is written here, at bake, from the class's own face polygons.
  *
  * ⛔ PURE (no fs, no three): the bake and `checks/claims-crop-rows-derived-per-field.mjs` both

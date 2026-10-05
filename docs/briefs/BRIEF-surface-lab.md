@@ -9,7 +9,7 @@ evict-when: Provincetown's dunes are a surface Jacob has eyed at eye level, mid 
 
 Jacob: *"Let's hire a shader designer … rowcrops and sand dunes … The boulder helper app was very
 successful … elaborate that harness out into a GL test environment."* Dunes first; row crops next,
-in the same lab (`BRIEF-field-shader.md`).
+in the same lab (`cartograph/_archive/BRIEF-field-shader-2026-10-04.md`).
 
 ## 1. The rule: import, never re-implement
 The lab mounts the map's own components; it owns controls and cameras only.

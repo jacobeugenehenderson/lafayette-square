@@ -1,6 +1,6 @@
 // claims-crop-rows-derived-per-field.mjs — DO A TOWN'S CROP ROWS RUN EACH FIELD'S OWN WAY?
 //
-// ⭐ THE INVARIANT (`BRIEF-field-shader §7`): rows follow each field's long axis, DERIVED per field.
+// ⭐ THE INVARIANT (`_archive/BRIEF-field-shader-2026-10-04 §7`): rows follow each field's long axis, DERIVED per field.
 // A fixed bearing across a town reads as wallpaper and is the single most likely way a crop ships
 // looking wrong — and it looks PLAUSIBLE, so nothing else would say so.
 //
