@@ -46,6 +46,7 @@ await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setIt
 const js = async (expr) => { const r = await cdp('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }, S); if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 400)); return r.result?.value }
 await cdp('Page.navigate', { url: `${BASE}/preview.html?look=${TOWN}` }, S)
 
+const BURST = Number(arg('burst', '20'))
 const HELPERS = `(async () => {
   if (window.__gt) return true
   if (!window.__renderer || !window.__previewFrame) return false
@@ -74,14 +75,21 @@ const HELPERS = `(async () => {
     if (n) { for (let i = 0; i < n; i++) { gl.bindFramebuffer(gl.FRAMEBUFFER, fb); gl.viewport(0, 0, 1, 1); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); gl.flush() } r.resetState() }
     return v
   }
+  // ⭐ CANDIDATE 2, THE BURST (Jacob, 2026-10-05: bring it in-house): draw the frame K times in one task with r3f's own
+  // advance(), then read ONE pixel back — readPixels cannot return before the GPU has produced it, so the wait is real.
+  // Drained first by the same readback, so nothing from before is counted. ms per frame = the frame's true cost.
+  const px = new Uint8Array(4)
+  const drain = () => { r.setRenderTarget(null); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px) }
+  const burst = (K) => { drain(); const t0 = performance.now(); for (let i = 0; i < K; i++) R3F.advance(performance.now()); drain(); return (performance.now() - t0) / K }
   window.__gt = { read: async (ms) => { let f = 0, live = true; const tick = () => { if (!live) return; f++; requestAnimationFrame(tick) }; requestAnimationFrame(tick)
     const c0 = window.__renderCalls, t0 = performance.now(); const g = await fc.gpuWindow(ms); live = false; const wall = performance.now() - t0
     const xs = serial.filter((x) => x.t >= t0).map((x) => x.ms)
-    return { gauge: g.ms, n: g.n, frame: wall / f, frames: f, serial: xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null, callsPerFrame: (window.__renderCalls - c0) / f } } }
+    const bs = [burst(${BURST}), burst(${BURST}), burst(${BURST})].sort((a, b) => a - b)
+    return { burst: bs[1], gauge: g.ms, n: g.n, frame: wall / f, frames: f, serial: xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null, callsPerFrame: (window.__renderCalls - c0) / f } } }
   return true
 })()`
 let ok = false
-for (let s = 0; s < 120 && !ok; s++) { await sleep(1000); try { ok = await js(HELPERS) } catch {} }
+for (let s = 0; s < 120 && !ok; s++) { await sleep(1000); try { ok = await js(HELPERS) } catch (e) { if (s > 30) console.log("  helper: " + e.message.slice(0, 300)) } }
 if (!ok) { console.error('⛔ helpers never installed'); cleanup(); process.exit(1) }
 console.log(`== ${TOWN} · ${MODE} · headless, vsync ${process.argv.includes('--capped') ? 'ON' : 'off'} · settling ${SETTLE_S} s`); await sleep(SETTLE_S * 1000)
 
@@ -90,16 +98,17 @@ const read = () => js(`__gt.read(${W})`)
 const rows = []
 const bracket = async (label, enter, leave) => {
   const a = await read(); await js(enter); await sleep(1500); const x = await read(); await js(leave); await sleep(1500); const b = await read()
-  const restG = (a.gauge + b.gauge) / 2, restF = (a.frame + b.frame) / 2, restS = (a.serial + b.serial) / 2
+  const restG = (a.gauge + b.gauge) / 2, restF = (a.frame + b.frame) / 2, restS = (a.serial + b.serial) / 2, restB = (a.burst + b.burst) / 2
   const row = { label, restG, xG: x.gauge, dG: x.gauge - restG, noiseG: Math.abs(a.gauge - b.gauge) / 2,
     restF, xF: x.frame, dF: x.frame - restF, noiseF: Math.abs(a.frame - b.frame) / 2, calls: x.callsPerFrame, n: [a.n, x.n, b.n],
-    restS, xS: x.serial, dS: x.serial - restS, noiseS: Math.abs(a.serial - b.serial) / 2 }
+    restS, xS: x.serial, dS: x.serial - restS, noiseS: Math.abs(a.serial - b.serial) / 2,
+    restB, xB: x.burst, dB: x.burst - restB, noiseB: Math.abs(a.burst - b.burst) / 2 }
   rows.push(row)
-  console.log(`  ${label.padEnd(30)} gauge ${restG.toFixed(2)} → ${x.gauge.toFixed(2)} (Δ ${row.dG.toFixed(2)} ±${row.noiseG.toFixed(2)}) ‖ frame ${restF.toFixed(2)} → ${x.frame.toFixed(2)} (Δ ${row.dF.toFixed(2)} ±${row.noiseF.toFixed(2)}) ‖ serial ${restS.toFixed(2)} → ${x.serial.toFixed(2)} (Δ ${row.dS.toFixed(2)} ±${row.noiseS.toFixed(2)})`)
+  console.log(`  ${label.padEnd(30)} gauge ${restG.toFixed(2)} → ${x.gauge.toFixed(2)} (Δ ${row.dG.toFixed(2)} ±${row.noiseG.toFixed(2)}) ‖ frame ${restF.toFixed(2)} → ${x.frame.toFixed(2)} (Δ ${row.dF.toFixed(2)} ±${row.noiseF.toFixed(2)}) ‖ serial Δ ${row.dS.toFixed(2)} ‖ BURST ${restB.toFixed(2)} → ${x.burst.toFixed(2)} (Δ ${row.dB.toFixed(2)} ±${row.noiseB.toFixed(2)})`)
 }
 if (process.argv.includes('--serial')) await js('window.__serialOn = true; true')
 const SER = (process.argv.includes('--serial') ? '-serial' : '') + (process.argv.includes('--capped') ? '-capped' : '')
-const rest = await read(); console.log(`  at rest: gauge ${rest.gauge?.toFixed(2)} ms · frame ${rest.frame.toFixed(2)} ms · ratio ${(rest.gauge / rest.frame).toFixed(2)}× · serial ${rest.serial?.toFixed(2)} ms · ${rest.callsPerFrame.toFixed(1)} render calls/frame`)
+const rest = await read(); console.log(`  at rest: gauge ${rest.gauge?.toFixed(2)} ms · frame ${rest.frame.toFixed(2)} ms · ratio ${(rest.gauge / rest.frame).toFixed(2)}× · serial ${rest.serial?.toFixed(2)} ms · BURST ${rest.burst?.toFixed(2)} ms · ${rest.callsPerFrame.toFixed(1)} render calls/frame`)
 for (let k = 0; k < REPS; k++) {
   await bracket(`work: ${LOOPS} shader loops`, `window.__burnGpuLoops = ${LOOPS}`, 'window.__burnGpuLoops = 0')
   await bracket(`breaks: ${BREAKS} empty passes/call`, `window.__breaks = ${BREAKS}`, 'window.__breaks = 0')
