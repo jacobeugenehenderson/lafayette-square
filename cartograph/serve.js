@@ -2867,7 +2867,7 @@ createServer(async (req, res) => {
         const b = writeIfChanged(join(LOOK_DIR, 'terrain.bin'), readFileSync(SCENE_TERRAIN_BIN), { touch: false })
         if (a || b) { markStep(P, 'terrain-slab', 'done'); ranSteps.push('terrain-slab') } else skip('terrain-slab')
       }
-      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · shape.json (its own output, written beside ground.json)
+      // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · shape.json (its own output, written beside ground.json) · shore-median.json (read and painted as sand only when walked on the shoreline this bake writes; its freshness is the 'ground-shore' step's, below)
       await runIfDirty('ground',
         [MAP_JSON, DESIGN, SCENE_DESIGN, RIBBONS, bakePaths.boundary, join(bakePaths.raw, 'survey.json'),
          join(bakePaths.clean, 'park-polygon.json'), join(REPO_ROOT, 'src', 'data', bakeScene, 'park_water.json'),
@@ -2897,6 +2897,15 @@ createServer(async (req, res) => {
           [join(LOOK_DIR, 'shore-median.json')],
           `node bake-shore-median.mjs --look=${id} ${sceneFlag}`,
           { cwd: here, absentOk: [join(LOOK_DIR, 'shore-median.json')] })
+        // The shore median painted as sand (bake-ground PAINT_ORDER 'shore'). The ground bake WRITES the shoreline the
+        // median is walked on, so it cannot wait for it: when the median just changed, the ground is baked AGAIN with it.
+        // Inputs are the median and the shoreline only, so an ordinary bake (median unchanged) skips this.
+        // not-inputs: building-overrides.json (the ground step's input — it re-runs ground when this changes) · buildings.json (the ground step's input — it re-runs ground when this changes) · centerlines.json (the ground step's input — it re-runs ground when this changes) · derived_trees.json (the ground step's input — it re-runs ground when this changes) · design.json (the ground step's input — it re-runs ground when this changes) · elevation-sources.txt (the ground step's input — it re-runs ground when this changes) · elevation.tif (the ground step's input — it re-runs ground when this changes) · forest_park_trees.json (the ground step's input — it re-runs ground when this changes) · geography.json (the ground step's input — it re-runs ground when this changes) · index.json (the ground step's input — it re-runs ground when this changes) · intake-sources.json (the ground step's input — it re-runs ground when this changes) · intake.json (the ground step's input — it re-runs ground when this changes) · jurisdiction.json (the ground step's input — it re-runs ground when this changes) · map.json (the ground step's input — it re-runs ground when this changes) · measurements.json (the ground step's input — it re-runs ground when this changes) · msbf.json (the ground step's input — it re-runs ground when this changes) · neighborhood_boundary.json (the ground step's input — it re-runs ground when this changes) · neighborhood.json (the ground step's input — it re-runs ground when this changes) · osm_trees.json (the ground step's input — it re-runs ground when this changes) · osm.json (the ground step's input — it re-runs ground when this changes) · overture-places.json (the ground step's input — it re-runs ground when this changes) · park_trees.json (the ground step's input — it re-runs ground when this changes) · park_water.json (the ground step's input — it re-runs ground when this changes) · park-polygon.json (the ground step's input — it re-runs ground when this changes) · ribbons.json (the ground step's input — it re-runs ground when this changes) · sources.json (the ground step's input — it re-runs ground when this changes) · survey.json (the ground step's input — it re-runs ground when this changes) · terrain.bin (the ground step's input — it re-runs ground when this changes) · terrain.json (the ground step's input — it re-runs ground when this changes) · tree-species-map.json (the ground step's input — it re-runs ground when this changes)
+        await runIfDirty('ground-shore',
+          [join(LOOK_DIR, 'shore-median.json'), join(LOOK_DIR, 'shape.json'), join(here, 'bake-ground.js')],
+          [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
+          `node bake-ground.js --look=${id} ${sceneFlag}`,
+          { cwd: here, timeout: 300000 })
       }
       // Context channel: metres from every terrain texel to the nearest shoreline run
       // (BRIEF-surface-lab §3). Always writes context.json — a coastless town gets a named

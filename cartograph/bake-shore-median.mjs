@@ -46,7 +46,7 @@ import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { wetSideOf, drawnWaterTest } from './shore-armour.mjs'
-import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastAgreement, resample } from './shoreRuns.mjs'
+import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastAgreement, resample, shoreFingerprint } from './shoreRuns.mjs'
 import { elevationSpecs, openRasters, readWindow, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -252,6 +252,9 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   const out = {
     version: 1, scene, look: lookId,
     shoreFrom: 'drawn-water (the slab\'s __water__ ink)',
+    // ⭐ Which shoreline this median was walked on (shoreRuns.mjs shoreFingerprint of shape.json). bake-ground paints
+    // the median's sand only onto the SAME shoreline.
+    shoreFingerprint: shoreFingerprint(shape),
     waterlineFrom: `the lidar at y = 0 (the terrain datum, ${tm.datum}; baseElev ${baseElev} m): above = more than ABOVE_WATER_M (${ABOVE_WATER_M} m)`,
     stationM: +stationM.toFixed(3), gridM: +gridM.toFixed(3), aboveWaterM: ABOVE_WATER_M,
     kinds: KINDS,

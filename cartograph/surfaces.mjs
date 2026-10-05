@@ -282,6 +282,7 @@ export const SURFACE_OF_MATERIAL = {
   treelawn: 'grass',
   median:   'grass',
   bed:      'sand',   // the ground under the water (bake-ground.js PAINT_ORDER 'bed')
+  shore:    'sand',   // the shore median: the drawn shoreline → the lidar's waterline (bake-ground.js PAINT_ORDER 'shore')
   // OSM ground overlays (`leisure=garden|pitch`, `natural=wood|scrub`) painted over the blocks: they are
   // ground too, and a flat fill over a textured block reads as a sticker (Jacob, 2026-09-27: "3 greens,
   // only one is grass?").

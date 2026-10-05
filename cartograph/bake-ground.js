@@ -53,6 +53,7 @@ import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoot
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { waterLevels } from './waterLevel.mjs'
+import { waterRuns, shoreFingerprint } from './shoreRuns.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign } from './lookDesign.mjs'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
@@ -207,6 +208,11 @@ const PAINT_ORDER = [
   ['mat', 'wood'],
   ['mat', 'scrub'],
   ['mat', 'tree_row'],
+  // ⭐ THE SHORE MEDIAN, AS SAND (BRIEF-the-shore-is-closed; Jacob's go 2026-10-04): the ground between the drawn
+  // shoreline and the lidar's waterline (bake-shore-median.mjs) is the town's sand. Above the land-use faces and the
+  // natural overlays, so it replaces them there; below every road and ribbon, so a street that runs to the water keeps
+  // its street. One partition: it CUTS what is beneath it (the one-plane rule), never a sheet floated over it.
+  ['mat', 'shore'],
   // Grade-separated roads sit ABOVE the land-use faces (so the freeway shows in its
   // corridor, not buried under the LU perimeter fill) but BELOW the local ribbon
   // network below (treelawn/sidewalk/curb/asphalt occlude them at crossings) —
@@ -610,6 +616,53 @@ function _pathToRing(path) {
   return out
 }
 
+/**
+ * The shore median (bake-shore-median.mjs `shore-median.json`) as sand polygons for the `shore` layer.
+ * Per station whose median is known, a quad from the drawn shoreline to the median's other end. Two neighbouring
+ * stations whose far ends lie more than one terrain grid step apart are not one strip (it breaks, counted). ⭐ At a
+ * tight bend the far ends run BACKWARD while the shoreline runs on (measured 2026-10-04: 2.2% of huron's strips, 4.3%
+ * of provincetown's): the far end is held where it was, so the strip fans instead of folding over itself.
+ * Each unbroken run becomes ONE ring, made simple (non-zero) on its own, before it reaches the paint stack, whose
+ * even-odd subject fill would otherwise cut a hole wherever a ring crosses itself.
+ * @returns { items: [{ outer, holes }], filledM, brokenM, heldFolds }
+ */
+const SHORE_FILLED = ['seaward', 'landward', 'drawn-water-dry', 'lidar-ends']
+export function shoreMedianItems(doc) {
+  if (!doc || doc.version !== 1) throw new Error(`bake-ground: unsupported shore-median.json version ${doc && doc.version}`)
+  if (!(doc.gridM > 0)) throw new Error('bake-ground: shore-median.json carries no gridM')
+  const filled = new Set(SHORE_FILLED.map(k => doc.kinds.indexOf(k)))
+  if (filled.has(-1)) throw new Error(`bake-ground: shore-median.json is missing a kind (${SHORE_FILLED.join(', ')})`)
+  const runs = []                                                 // each unbroken run: [near…] and [far…]
+  let filledM = 0, brokenM = 0, heldFolds = 0
+  for (const f of doc.faces) {
+    const ok = (i) => filled.has(f.k[i]) && f.w[i] > 0
+    let cur = null, px = null, pz = null                           // the run so far; the previous (held) far end
+    const close = () => { if (cur && cur.near.length >= 2) runs.push(cur); cur = null }
+    for (let i = 0; i < f.xs.length; i++) {
+      if (!ok(i)) { close(); px = null; continue }
+      let ex = f.ex[i], ez = f.ez[i]
+      if (cur) {
+        const ax = f.xs[i] - f.xs[i - 1], az = f.zs[i] - f.zs[i - 1], segM = Math.hypot(ax, az)
+        if ((ex - px) * ax + (ez - pz) * az < 0) { ex = px; ez = pz; heldFolds++ }
+        if (Math.hypot(ex - px, ez - pz) > doc.gridM) { brokenM += segM; close() }
+        else filledM += segM
+      }
+      if (!cur) cur = { near: [], far: [] }
+      cur.near.push([f.xs[i], f.zs[i]]); cur.far.push([ex, ez])
+      px = ex; pz = ez
+    }
+    close()
+  }
+  // ⭐ One ring per run (the shoreline out, the waterline back), each made simple ON ITS OWN. ⛔ Not one union of every
+  // station's quad: measured 2026-10-05, that union ran past 2 min on huron and 5 min on provincetown and hung the bake.
+  const items = []
+  for (const r of runs) {
+    const simple = _Clipper.SimplifyPolygon(_ringToPath([...r.near, ...r.far.reverse()]), _PolyFillType.pftNonZero)
+    for (const path of simple) { const outer = _pathToRing(path); if (outer.length >= 3) items.push({ outer, holes: [] }) }
+  }
+  return { items, filledM, brokenM, heldFolds }
+}
+
 // ── PRESS THE PAINT STACK DOWN ──────────────────────────────────────────────
 // ⭐⭐ THE ARCHITECTURE, in Jacob's words (2026-09-21): "In Stage it's a flattened
 // 2D representation which is baked into the 3D ready one. This is where we should
@@ -921,6 +974,27 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     pushMat(item.subtype ? `water:${item.subtype}` : 'water', ringFromOSM(item.ring))
     pushMat('bed', ringFromOSM(item.ring))   // the ground under it (PAINT_ORDER 'bed')
   }
+  // ⭐ THE SHORE MEDIAN, AS SAND (PAINT_ORDER 'shore'). The median is walked on the shoreline THIS bake writes
+  // (shape.json), so it is read only when its stamp matches that shoreline; otherwise nothing is painted and it says
+  // so — the bake's 'shore-median' step then re-walks it and 'ground-shore' re-runs this bake (serve.js).
+  {
+    const shapeNow = { tiles: shapeArtifact || [] }
+    const medPath = join(outDir, 'shore-median.json')
+    if (existsSync(medPath)) {
+      const doc = JSON.parse(readFileSync(medPath, 'utf-8'))
+      const here = shoreFingerprint(shapeNow)
+      if (doc.shoreFingerprint !== here) {
+        console.warn(`  ⛔ SHORE: shore-median.json was walked on another shoreline (${doc.shoreFingerprint ?? 'unstamped'}, this bake writes ${here}) — NO shore sand painted. ▶ the 'shore-median' step re-walks it; 'ground-shore' repaints.`)
+      } else {
+        const s = shoreMedianItems(doc)
+        if (!byMaterial.has('shore')) byMaterial.set('shore', [])
+        byMaterial.get('shore').push(...s.items)
+        console.log(`  ⭐ SHORE: the median painted as sand along ${(s.filledM / 1000).toFixed(2)} km of drawn shore (${s.items.length} polygon(s)) · ${(s.brokenM / 1000).toFixed(2)} km broken where neighbouring far ends jump · ${s.heldFolds} fold(s) held at bends`)
+      }
+    } else if (waterRuns(shapeNow).length) {
+      console.warn(`  ⛔ SHORE: this town has a drawn shoreline but no shore-median.json — NO shore sand painted. ▶ the 'shore-median' step, then 'ground-shore'.`)
+    }
+  }
   // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
   for (const item of (mapLayers.barrier || [])) {
     const hw = POLYLINE_HALF_WIDTHS[item.kind]
@@ -1088,7 +1162,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // visible. Landscape overlays keep the legacy fine uniform spacing
     // (crisp-edged, tiny budget). Ribbon bands bypass refinement entirely.
     // The bed is a fill too: it must follow the terrain under the water, or it chords over it.
-    const isSoftFill = kind === 'face' || key === 'bed'
+    const isSoftFill = kind === 'face' || key === 'bed' || key === 'shore'
     const isHardOverlay = LANDSCAPE_OVERLAY_KEYS.has(key)
     const isContourRibbon = CONTOUR_REFINE_KEYS.has(key)   // park_path: rides the park hill
     let refinePolicy = null
@@ -1259,8 +1333,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     let color
     if (kind === 'face') {
       color = designLuColors[key] || DEFAULT_LU_COLORS[key] || LAND_USE_COLORS[key] || LAND_USE_COLORS.unknown
-    } else if (key === 'bed') {
-      // The bed is sand (Jacob, 2026-09-26), so it takes sand's colour.
+    } else if (key === 'bed' || key === 'shore') {
+      // The bed is sand (Jacob, 2026-09-26), so it takes sand's colour — and so does the shore median, which is the
+      // same sand above the water (Jacob, 2026-10-04: "supposed to meet with sand, not 'yellow'").
       color = designLuColors.beach || DEFAULT_LU_COLORS.beach
     } else if (key.startsWith('treelawn:')) {
       // Per-LU treelawn variants inherit the adjacent parcel's LU color.

@@ -129,3 +129,15 @@ export function coastAgreement(datum, waterRunCount) {
   if (datum === 'water') return 'build'
   return waterRunCount > 0 ? 'stale-terrain' : 'inland'
 }
+
+/**
+ * A fingerprint of the slab's shoreline: FNV-1a over the deduped `__water__` runs, in a fixed order. The shore median
+ * stamps the shoreline it walked; the ground bake, which WRITES that shoreline (shape.json), paints the median's sand
+ * only when the two match — a median walked on another shoreline is refused by name, never painted.
+ */
+export function shoreFingerprint(shape) {
+  const runs = waterRuns(shape).map(r => { const f = JSON.stringify(r), b = JSON.stringify([...r].reverse()); return f < b ? f : b }).sort()
+  let h = 0x811c9dc5
+  for (const s of runs) for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0 }
+  return `${runs.length}:${h.toString(16)}`
+}
