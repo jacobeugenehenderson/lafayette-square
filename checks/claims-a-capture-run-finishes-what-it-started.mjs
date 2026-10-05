@@ -10,13 +10,15 @@
 //   ② every capture POST is immediately guarded by alive(), and the retry catch re-throws the cancel;
 //   ③ the per-shot wait is the shared nextCaptureFrame (hidden-tab safe), never raw rAF;
 //   ④ Grove's "not loaded yet" empties are one stable identity (no `|| []` on the batch inputs);
-//   ⑤ both capture gestures await the atlas ON DISK (its generatedAt) before ticking the baker.
+//   ⑤ both capture gestures await the atlas ON DISK (its generatedAt) before ticking the baker;
+//   ⑥ a forced (⟳) batch carries computed capture keys (never null).
 // Static: this is browser capture code with no harness. It reads the source.
 //
 // ▶ MUTATION-TEST IT:
 //     · HeroImpostorBaker.jsx deps: add `species` back → ① RED
 //     · OverheadBaker.jsx: delete the `alive()` line before postOverhead → ② RED
 //     · Grove.jsx bakeAll: delete its `await awaitDiskAtlas(` line → ⑤ RED
+//     · Grove.jsx: `forceAll.current ? overheadSpecies` (the raw pool) → ⑥ RED
 //
 //   node checks/claims-a-capture-run-finishes-what-it-started.mjs
 import fs from 'fs'
@@ -64,6 +66,11 @@ console.log('Grove.jsx')
     const body = s.slice(s.indexOf(fn), s.indexOf(fn) + 4000)
     const iWait = body.indexOf('await awaitDiskAtlas('), iTick = body.indexOf('setOverheadTick(')
     s.includes(fn) && iWait > 0 && iTick > iWait ? ok(`⑤ ${fn.split(' ')[1]} awaits the disk atlas before ticking the baker`) : bad(`Grove.jsx: ${fn.split(' ')[1]} ticks the baker without awaiting the disk atlas (wait ${iWait}, tick ${iTick})`)
-  } }
+  }
+  // ⑥ A FORCED (⟳) batch carries each species' captureKey: the raw pool has none, and a null key makes the next
+  // ordinary bake re-shoot every species ⟳ touched (2026-10-04: all 9 LS overhead records written null).
+  const forced = (s.match(/const overheadBatch = forceAll\.current \? (\w+)/) || [])[1], forcedH = (s.match(/const heroBatch = forceAll\.current \? (\w+)/) || [])[1]
+  const keyed = (name) => name && new RegExp(`const ${name} = useMemo\\([\\s\\S]{0,300}captureKey: computeCaptureKey\\(`).test(s)
+  keyed(forced) && keyed(forcedH) ? ok('⑥ a forced (⟳) batch carries computed capture keys, overhead and hero') : bad(`Grove.jsx: the forced batch (${forced} / ${forcedH}) does not carry computed capture keys — ⟳ would stamp null`) }
 console.log(red ? `\n⛔ FAIL — ${red}` : '\n✅ PASS')
 process.exit(red ? 1 : 0)

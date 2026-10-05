@@ -29,7 +29,7 @@ import * as THREE from 'three'
 import { createCameraTween } from '../camera/cameraTween.js'
 import { OverheadBaker } from './OverheadBaker.jsx'
 import { HeroImpostorBaker } from './HeroImpostorBaker.jsx'
-import { partitionByDirt, CAPTURE_FORMAT } from './captureKey.js'
+import { partitionByDirt, computeCaptureKey, CAPTURE_FORMAT } from './captureKey.js'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
 import {
   useTreeAtlas,
@@ -369,8 +369,18 @@ export default function Grove() {
   }, [overheadSpecies, groveAtlas?.manifest, heroDials])
   // What each baker actually receives this run — the dirty subset, or everything
   // when the operator forced a re-capture.
-  const overheadBatch = forceAll.current ? overheadSpecies : overheadDirty
-  const heroBatch = forceAll.current ? overheadSpecies : heroDirty
+  // ⛔ A FORCED batch still carries each species' fingerprint. The raw pool has none, so ⟳ used to POST
+  // `captureKey: null` for every species it shot (measured 2026-10-04: all 9 of LS's overhead records), and the next
+  // ordinary Bake → Slab then read every one as dirty and re-shot the lot. Keyed off the same manifest the dirty
+  // test reads — the atlas on disk, by the time the baker ticks (awaitDiskAtlas).
+  const overheadForced = useMemo(() => groveAtlas?.manifest
+    ? overheadSpecies.map((sp) => ({ ...sp, captureKey: computeCaptureKey(groveAtlas.manifest, sp.species, null, CAPTURE_FORMAT.overhead) }))
+    : overheadSpecies, [overheadSpecies, groveAtlas?.manifest])
+  const heroForced = useMemo(() => groveAtlas?.manifest
+    ? overheadSpecies.map((sp) => ({ ...sp, captureKey: computeCaptureKey(groveAtlas.manifest, sp.species, heroDials, CAPTURE_FORMAT.hero) }))
+    : overheadSpecies, [overheadSpecies, groveAtlas?.manifest, heroDials])
+  const overheadBatch = forceAll.current ? overheadForced : overheadDirty
+  const heroBatch = forceAll.current ? heroForced : heroDirty
   // Read by the async gestures below, whose closures hold the render they started in.
   const atlasRef = useRef(groveAtlas); atlasRef.current = groveAtlas
   const poolRef = useRef(overheadSpecies); poolRef.current = overheadSpecies

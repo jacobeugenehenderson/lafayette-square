@@ -305,7 +305,8 @@ breeze are named winds; the canary and Full Monte follow the town's real weather
 (their old fallback breezes are gone; the per-shot wind look Jacob ruled will set how much they move).
 **A capture is shot against the atlas the bake just wrote (2026-10-04).** Bake → Slab and ⟳ now wait until the page
 has loaded the atlas on disk before choosing and shooting species. Before this, a Grove page that had already shown a
-town captured against that town's previous atlas, silently skipping species the bake had just added or changed.
+town captured against that town's previous atlas, silently skipping species the bake had just added or changed. ⟳ also
+stamps each species' fingerprint now; it used to stamp none, so the next Bake → Slab re-shot everything ⟳ had touched.
 **Browse trees have a deep core (2026-10-04, overhead format 6).** The capture paints the region under the canopy band's silhouette, in the two bands beneath it, one solid canopy colour taken from that tree's own canopy. Sway shows dark canopy there, never ground. ⚠️ **Every town needs one Bake → Slab to get it.** Until then Browse draws the old bands, and the console names each species still un-cored (`[overhead] ⛔ … carry no baked deep core`). ▶ `node checks/claims-the-overhead-core-is-baked.mjs` lists, per town, how many species are cored.
 
 The Grove's master atlas (`bake-look.js:unifyAtlases`) is the load-bearing innovation that makes hero species nearly free to add: `atlas-survey.js` dedupes tiles by sha1 hash before pack, so hero bark + leaf-cluster tiles collapse against the filler roster's identical content. See `ARCHITECTURE.md` for the full story.
