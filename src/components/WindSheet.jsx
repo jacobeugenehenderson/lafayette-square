@@ -189,7 +189,7 @@ export default function WindSheet({ extent, wind }) {
     c.adv = (c.adv + L.advectRate * dt) % WIND_FIELD.LATTICE_PERIOD
     c.ws = ws
     c.L = L
-    const drift = WIND_DETAIL_DRIFT * a.baseSpeedMps * dt
+    const drift = WIND_DETAIL_DRIFT * dt   // a fixed flutter rate, never ∝ wind speed (WIND_DETAIL_DRIFT)
     c.detail.x = (c.detail.x - a.baseDirection[0] * drift + WIND_FIELD.LATTICE_PERIOD) % WIND_FIELD.LATTICE_PERIOD
     c.detail.y = (c.detail.y - a.baseDirection[1] * drift + WIND_FIELD.LATTICE_PERIOD) % WIND_FIELD.LATTICE_PERIOD
     windSheetUniforms.windSheetTime.value += dt

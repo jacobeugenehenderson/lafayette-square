@@ -162,8 +162,14 @@ export const WIND_VISIBLE_FLOOR_PX = 2
 
 /** windDetail's cell, metres — the flutter's wavelength (today's overhead flutter: 0.55 cycles/m ⇒ ~1.8 m). */
 export const WIND_DETAIL_CELL_M = 1.8
-/** windDetail's drift, cells per second per m/s of wind — it advects downwind as fast as the wind is strong. */
-export const WIND_DETAIL_DRIFT = 0.22
+/**
+ * windDetail's drift, cells per second, downwind, whatever the wind's strength: the rate the cards' own flutter always
+ * had (OVERHEAD_WIND_BEGIN: `np = xz·0.55 + windDir·t·1.2`). ⛔ Not proportional to wind speed. The first cut of the
+ * sheet made it so (0.22 cells/s per m/s), which slowed leaf flutter ~7× at a light 0.8 m/s and FROZE it in calm (Jacob,
+ * 2026-10-04: "as the camera marches across, I see no ambient leaf motion"). Wind strength scales the flutter's
+ * AMPLITUDE (the consumer's gain × windAt), never this rate.
+ */
+export const WIND_DETAIL_DRIFT = 1.2
 
 /**
  * VERTEX STAGE ONLY (it reads three's projectionMatrix / viewMatrix, which a fragment shader does not declare): the world
