@@ -146,7 +146,7 @@ how this line itself was wrong for a few hours on 2026-09-13. **Run it before tr
    ground slab at all.**)* ⭐ `baked/<look>/ground.json` is read by `BakedGround` / `GatewayArch` /
    `CartographSurfaces` — **the 3D side, downstream of Stage.** ▶ The precise statement, with both
    line cites, lives in `ROADMAP.md` (search `Section renders from the frozen`); this is the pointer.
-7. **Write/commit bounds** (canon is off-limits unless stated), and **surface scope drift, don't absorb it.**
+7. **Write/commit bounds** (canon is off-limits unless stated), and **surface scope drift, don't absorb it.** Commits go through `git commit -- <paths>` or a private index built from HEAD; ⛔ never a bare commit from the shared index, which a peer's private-index commit leaves stale (committing it reverts their files; 2026-10-05, `e843bf75` → restored `7daaedad`).
 8. **⛔ The validation surface that already exists.** Before drafting any brief that constructs or validates
    geometry, shaders, data-flow or render output, ask: **does the production path already run on a
    controlled surface?** (the Designer, the Salon, the Stage). If yes, the brief routes validation *through that
