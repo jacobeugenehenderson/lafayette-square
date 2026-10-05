@@ -43,3 +43,32 @@ export const WEATHER_PRESETS = {
   rain:     complete({ cloudCover: 0.95, precipitationIntensity: 4, currentWeatherCode: 63, temperatureF: 55 }),
   snow:     complete({ cloudCover: 0.95, precipitationIntensity: 2, currentWeatherCode: 73, temperatureF: 25 }),
 }
+
+// ── STILL AIR — the wind a preset stands in (Jacob, 2026-10-05: "1, x, 2, 0 provides a good amount of motion at rest").
+// NEUTRAL's wind 0 is read by the wind sheet as DEAD CALM, so every preset froze the canopy to its steady sway and the
+// Tree Wind's visible floor (it lifts only GUSTS) could never fire in Stage. A preset now carries a calm day's air:
+// 1 m/s gusting to 2, shape from the preset's own storminess. ⛔ Its DIRECTION is not a kit constant (a westerly is
+// right for the first towns and wrong for a trade-wind or southern one): it is THIS town's tendency, the speed-weighted
+// mean of its own forecast's wind, passed in by the caller. No local reading → no direction → the preset stays calm,
+// and the caller says so.
+export const STILL_AIR = Object.freeze({ speedMps: 1, gustsMps: 2 })
+
+/** The town's tendency: the speed-weighted mean FROM bearing of its readings (degrees), or null with none. */
+export function windTendencyFromDeg(readings) {
+  let x = 0, y = 0
+  for (const r of readings || []) {
+    const s = Number(r?.windSpeedMs), d = Number(r?.windDirDeg)
+    if (!(s > 0) || !Number.isFinite(d)) continue
+    x += Math.sin((d * Math.PI) / 180) * s; y += Math.cos((d * Math.PI) / 180) * s
+  }
+  if (Math.hypot(x, y) < 1e-6) return null
+  return ((Math.atan2(x, y) * 180) / Math.PI + 360) % 360
+}
+
+/** A preset standing in still air from `fromDeg` (this town's tendency); `fromDeg` null → the preset as is (calm). */
+export function withStillAir(preset, fromDeg) {
+  if (fromDeg == null) return preset
+  const r = (fromDeg * Math.PI) / 180, s = STILL_AIR.speedMps
+  // windVector exactly as the live feed builds it (useWeather: sin/cos of the FROM bearing × speed).
+  return { ...preset, windSpeedMs: s, windGustsMs: STILL_AIR.gustsMps, windDirDeg: fromDeg, windVector: { x: Math.sin(r) * s, y: Math.cos(r) * s } }
+}

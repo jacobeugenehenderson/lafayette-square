@@ -20,7 +20,7 @@ ws.onmessage = (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.
 const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' })
 const { sessionId: S } = await cdp('Target.attachToTarget', { targetId, flatten: true })
 await cdp('Page.enable', {}, S); await cdp('Runtime.enable', {}, S)
-await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('preview.mode.v1', 'desktop'); localStorage.setItem('cartograph-last-stage-shot', '${SHOT}')` }, S)
+await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('preview.mode.v1', 'desktop'); localStorage.setItem('cartograph-last-stage-shot', '${SHOT}')${arg('init', '') ? '; ' + arg('init', '') : ''}` }, S)
 await cdp('Page.navigate', { url: URL_ARG || `http://localhost:5173/preview.html?look=${TOWN}${Q ? '&' + Q : ''}` }, S)
 await sleep(22000)
 if (EVAL) { const r = await cdp('Runtime.evaluate', { expression: EVAL, returnByValue: true, awaitPromise: true }, S); console.log('eval:', JSON.stringify(r.result?.value ?? r.exceptionDetails?.exception?.description)) }

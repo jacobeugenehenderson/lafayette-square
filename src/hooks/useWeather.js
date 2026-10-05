@@ -1,6 +1,6 @@
 import useSkyState from './useSkyState'
 import useAtmosphere from './useAtmosphere.js'
-import { deriveStorminess } from '../lib/weatherPresets.js'
+import { deriveStorminess, windTendencyFromDeg } from '../lib/weatherPresets.js'
 import { townPlace } from '../lib/townPlace.js'
 
 // The quantities a reading carries, asked for BOTH as `current` and `hourly`, so a forecast hour is a whole weather —
@@ -133,6 +133,24 @@ export async function fetchWeather({ snap = false } = {}) {
   // t is like "2026-02-19T14:00" — placed in the town by appending its offset.
   const hourly = (data.hourly.time || []).map((t, i) => ({ time: new Date(`${t}${suffix}`), ...readingOf(data.hourly, i) }))
   useSkyState.getState().setHourlyForecast(hourly)
+}
+
+/**
+ * The town's wind TENDENCY (degrees FROM): the speed-weighted mean of its forecast's hourly wind — for a Stage preset's
+ * still air, which has no reading of its own (lib/weatherPresets.js#withStillAir). Read-only: writes NOTHING to the
+ * weather. null when the forecast can't be had, and said.
+ */
+export async function fetchWindTendencyFromDeg() {
+  try {
+    const res = await fetch(apiUrl())
+    if (!res.ok) { console.error(`[weather] ⛔ the forecast provider answered ${res.status} — no wind tendency for the preset`); return null }
+    const data = await res.json()
+    const n = data?.hourly?.time?.length || 0
+    return windTendencyFromDeg(Array.from({ length: n }, (_, i) => readingOf(data.hourly, i)))
+  } catch (e) {
+    console.error('[weather] ⛔ the forecast could not be fetched — no wind tendency for the preset:', e)
+    return null
+  }
 }
 
 // ── THE ONE POLL of the town's weather, per page ─────────────────────────────────
