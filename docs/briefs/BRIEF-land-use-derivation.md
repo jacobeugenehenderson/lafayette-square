@@ -96,6 +96,11 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 - ✅ **CLOSED in code, not poured: each piece of a tile takes its own land use**, by area (`BRIEF-land-use-per-piece-and-the-control.md`
   step 1). ▶ `node checks/claims-every-piece-takes-its-own-land-use.mjs`. The mechanisms that split tiles are `BRIEF-highway-build.md` Open.
 
+- **The parcel rung COUNTS parcels, and a tie falls to order** (Sward, measured on the fresh Huron slab 2026-10-04): tile 21,
+  covered by no OSM land use, took `residential` from derive's parcel rung, where 8 Agr-CAUV farm parcels (133.1 ha) tied 8
+  residential lots (4.3 ha) and list order broke the tie. By area it is farmland. ⇒ Phase 2's fix: weigh parcels by AREA, and
+  a genuine tie is reported, never resolved by order (Layer 0 q2).
+
 ## 1. The finding
 
 Jacob, looking at the HPDM render: *"we have whole areas which have no trees (or grass) because they look to be mismarked or something"* — then, at a large green area rendered as hardscape: **"The verdant greenbelt is *not* 'Vacant'."**
