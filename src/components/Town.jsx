@@ -131,7 +131,6 @@ import Terrain from './Terrain'
 import BakedGround from './BakedGround.jsx'
 import SlabRevetment from './SlabRevetment.jsx'
 import ShoreMedian from './ShoreMedian.jsx'
-import ShoreFill from './ShoreFill.jsx'
 import LafayetteScene from './LafayetteScene'
 import SlabBuildings from './SlabBuildings'
 import CityModel from './CityModel'
@@ -534,13 +533,10 @@ export default function Town({
 
       <Suspense fallback={null}>
         <group name="town:ground" visible={on('ground')}>
-          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
-          {/* The shore's treatments: the median's fill and the revetment on it. The shore median diagnostic shows the region
-              with every treatment OFF, so both hide while it is on. */}
-          <group visible={!on('shoreMedian')}>
-            <R3FErrorBoundary name="ShoreFill"><ShoreFill lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
-            <R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
-          </group>
+          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} surfacesOverride={o.surfaces} shoreFill={!on('shoreMedian')} /></R3FErrorBoundary>
+          {/* The shore's treatments: the median's fill (drawn by BakedGround, as the bed's sand) and the revetment on it.
+              The shore median diagnostic shows the region with every treatment OFF, so both hide while it is on. */}
+          <group visible={!on('shoreMedian')}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary></group>
           {on('shoreMedian') && <R3FErrorBoundary name="ShoreMedian"><ShoreMedian lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
           <DrawnAnchor id="ground" />
         </group>

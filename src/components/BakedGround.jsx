@@ -40,6 +40,7 @@ import { setSceneStencil } from './sceneStencilState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { slabUrl, slabFetch, slabStamped } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
+import { useShoreFillGeometry } from './ShoreFill.jsx'
 
 // ── Surface treatment: albedo desaturation + value-range lift ────────────────
 // Jacob 2026-06-30 (Option A): surfaces should be DESATURATED and lit by
@@ -196,7 +197,25 @@ function fadeForGroup(group, stencil) {
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
 
-function GroundMeshes({ look, manifest, bin, context, coast, scene: bakedScene, bakeLastMs, surfacesOverride }) {
+// ⭐ THE SHORE FILL IS THE TOWN'S SAND (Jacob, 2026-10-04: "supposed to meet with sand, not 'yellow'"). Drawn with the BED's
+// own surface material — the group it meets under the water — so the two cannot differ. ⛔ A town with no bed group,
+// or a bed not drawn by a surface generator, says so and draws no fill rather than a stand-in colour.
+const _saidFill = new Set()
+function ShoreFillMesh({ look, meshes, geometry, layerVis, surfaceTable, scene, context, coast, stencil, lightmap, poolmap, poolMeta }) {
+  const bed = meshes.find(m => m.group.kind === 'mat' && m.group.id === 'bed')
+  const draw = bed ? groundMaterialFor(bed.group, surfaceTable, { hasFieldAxis: false }) : null
+  if (!bed || draw.kind !== 'surface') {
+    if (!_saidFill.has(look)) { _saidFill.add(look); console.error(`[BakedGround] ⛔ "${look}": the shore fill has no sand to be — ${!bed ? 'no bed group in ground.json' : 'the bed is not drawn by a surface generator (' + draw.kind + ')'}. No fill drawn.`) }
+    return null
+  }
+  if (!isGroupVisible(bed.group, layerVis)) return null
+  const surface = draw.surface
+  return <SurfaceMesh surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined}
+    look={look} group={bed.group} geometry={geometry} lightmap={null} fade={fadeForGroup(bed.group, stencil)} poolmap={poolmap} poolMeta={poolMeta}
+    coast={surface === 'sand' ? coast : null} lift={false} />
+}
+
+function GroundMeshes({ look, manifest, bin, context, coast, scene: bakedScene, bakeLastMs, surfacesOverride, shoreFill = null }) {
   // ⭐ `surfacesOverride` is the live-authoring layer, the same pattern PostProcessing's
   // *Override props follow: it sits over the baked `scene.surfaces`, never beside it.
   const scene = useMemo(() => (surfacesOverride
@@ -465,6 +484,8 @@ function GroundMeshes({ look, manifest, bin, context, coast, scene: bakedScene, 
           ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} coast={surface === 'sand' ? coast : null} />
           : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
       })}
+      {shoreFill && <ShoreFillMesh look={look} meshes={meshes} geometry={shoreFill} layerVis={layerVis} surfaceTable={surfaceTable} scene={scene}
+        context={context} coast={coast} stencil={stencil} lightmap={lightmap} poolmap={poolmap} poolMeta={poolMeta} />}
     </group>
   )
 }
@@ -504,7 +525,9 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
   )
 }
 
-function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightmap, fade, poolmap, poolMeta, coast }) {
+// `lift`: false for a mesh that carries its OWN heights (the shore fill, at the lidar's) — it is not lifted onto the
+// terrain; it scales about y = 0 with the town's exaggeration, as the terrain shader does.
+function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightmap, fade, poolmap, poolMeta, coast, lift = true }) {
   useEffect(() => { reportAbsentParams(look, surface, params, resolved) }, [look, surface, params, resolved])
   useEffect(() => {
     if (surface !== 'sand' || !coast?.absent || _saidAbsent.has(look + '|coast')) return
@@ -543,10 +566,10 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
       // Y stack. (z-fight fix 2026-06-17, ARCHITECTURE §8.)
       // Same parity move as FadeMesh — every BakedGround material rises
       // with the shared terrain displacement.
-      patchTerrain(built.material, { perVertex: true, terrainNormals: true })
+      if (lift) patchTerrain(built.material, { perVertex: true, terrainNormals: true })
       return built
     },
-    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams, geometry, coast]
+    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams, geometry, coast, lift]
   )
   useEffect(() => {
     if (lightmap) {
@@ -560,14 +583,10 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
     s.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     if (surface === 'crop') CROP_UNIFORMS.uDoy.value = useCalendar.getState().dayOfYear()
   })
-  return (
-    <mesh
-      geometry={geometry}
-      material={material}
-      renderOrder={group.renderOrder}
-      receiveShadow
-    />
-  )
+  const own = useRef(null)
+  useFrame(() => { if (!lift && own.current) own.current.scale.y = terrainExag.value })
+  const mesh = <mesh geometry={geometry} material={material} renderOrder={group.renderOrder} receiveShadow />
+  return lift ? mesh : <group ref={own}>{mesh}</group>
 }
 
 // Park footpaths — the Voronoi pebble gravel shader, shared with the live
@@ -752,7 +771,8 @@ function extendWaterToHorizon(positions, indices, stencil) {
   return { positions: new Float32Array(P), indices: new Uint32Array(I), bodyExtent }
 }
 
-export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag(), surfacesOverride } = {}) {
+// `shoreFill`: draw the shore median's fill (the bed's sand) — false while the shore median diagnostic is on.
+export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag(), surfacesOverride, shoreFill: fillOn = true } = {}) {
   const [data, setData] = useState(null)
   const resolvedLookId = lookOf(lookId, 'BakedGround')
 
@@ -767,6 +787,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
   // below; the URL itself is the resolver's (on disk it carries the key, so useLoader's
   // in-memory cache sees a new URL — src/lib/slabNames.js#slabPath).
   const bake = bakeLastMs ?? scene?.bakedAt ?? null
+  const fillGeometry = useShoreFillGeometry(resolvedLookId, bake, fillOn)
 
   useEffect(() => {
     if (bake == null) return
@@ -799,7 +820,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
           manifest (poolmap may flip absent→present across a bake), and a bare
           re-render would change hook order and crash. Remount is fine: the
           geometry already rebuilds on manifest change. */}
-      {data && scene && <GroundMeshes key={bake ?? 'static'} look={resolvedLookId} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} scene={scene} bakeLastMs={bake} surfacesOverride={surfacesOverride} />}
+      {data && scene && <GroundMeshes key={bake ?? 'static'} look={resolvedLookId} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} scene={scene} bakeLastMs={bake} surfacesOverride={surfacesOverride} shoreFill={fillOn ? fillGeometry : null} />}
     </>
   )
 }
