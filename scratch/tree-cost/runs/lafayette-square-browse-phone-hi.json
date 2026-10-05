@@ -14,225 +14,1245 @@
   {
    "t": 2,
    "c": {
-    "hero": {
-     "meshes": 162,
-     "shownMeshes": 0,
-     "tris": 776304,
-     "shownTris": 0,
-     "instances": 0,
-     "trisPerInst": [],
-     "texReady": 0,
-     "texTotal": 0,
-     "where": []
-    },
-    "overhead": {
-     "meshes": 27,
-     "shownMeshes": 27,
-     "tris": 25359264,
-     "shownTris": 25359264,
-     "instances": 16173,
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 141520,
+     "shownTris": 92800,
+     "instances": 580,
      "trisPerInst": [
-      1568
+      0
      ],
-     "texReady": 27,
-     "texTotal": 27,
-     "where": []
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
     }
    },
    "f": {
-    "tris": 25367333,
-    "calls": 35,
-    "gpuMs": 6.509937166666667,
+    "tris": 100869,
+    "calls": 9,
+    "gpuMs": 7.3121712500000005,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 3,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 141520,
+     "shownTris": 92800,
+     "instances": 580,
+     "trisPerInst": [
+      0
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 103484,
+    "calls": 201,
+    "gpuMs": 9.365256466666668,
     "target": "phone-hi"
    }
   },
   {
    "t": 4,
    "c": {
-    "hero": {
-     "meshes": 162,
+    "tree?": {
+     "meshes": 4,
      "shownMeshes": 0,
-     "tris": 776304,
+     "tris": 141520,
      "shownTris": 0,
      "instances": 0,
      "trisPerInst": [],
      "texReady": 0,
      "texTotal": 0,
      "where": []
-    },
-    "overhead": {
-     "meshes": 27,
-     "shownMeshes": 27,
-     "tris": 25359264,
-     "shownTris": 25359264,
-     "instances": 16173,
-     "trisPerInst": [
-      1568
-     ],
-     "texReady": 27,
-     "texTotal": 27,
-     "where": []
     }
    },
    "f": {
-    "tris": 25369948,
-    "calls": 227,
-    "gpuMs": 55.436117611111115,
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 12.197168966666668,
     "target": "phone-hi"
    }
   },
   {
    "t": 5,
    "c": {
-    "hero": {
-     "meshes": 162,
+    "tree?": {
+     "meshes": 4,
      "shownMeshes": 0,
-     "tris": 776304,
+     "tris": 141520,
      "shownTris": 0,
      "instances": 0,
      "trisPerInst": [],
      "texReady": 0,
      "texTotal": 0,
      "where": []
-    },
-    "overhead": {
-     "meshes": 27,
-     "shownMeshes": 27,
-     "tris": 25359264,
-     "shownTris": 25359264,
-     "instances": 16173,
-     "trisPerInst": [
-      1568
-     ],
-     "texReady": 27,
-     "texTotal": 27,
-     "where": []
-    },
-    "tree?": {
-     "meshes": 4,
-     "shownMeshes": 1,
-     "tris": 2545040,
-     "shownTris": 2496320,
-     "instances": 580,
-     "trisPerInst": [
-      4304
-     ],
-     "texReady": 1,
-     "texTotal": 1,
-     "where": [
-      "town:lamps"
-     ]
     }
    },
    "f": {
-    "tris": 30569667,
-    "calls": 296,
-    "gpuMs": 58.66023143333334,
-    "target": "phone-hi"
-   }
-  },
-  {
-   "t": 6,
-   "c": {
-    "hero": {
-     "meshes": 162,
-     "shownMeshes": 0,
-     "tris": 776304,
-     "shownTris": 0,
-     "instances": 0,
-     "trisPerInst": [],
-     "texReady": 0,
-     "texTotal": 0,
-     "where": []
-    },
-    "overhead": {
-     "meshes": 27,
-     "shownMeshes": 27,
-     "tris": 25359264,
-     "shownTris": 25359264,
-     "instances": 16173,
-     "trisPerInst": [
-      1568
-     ],
-     "texReady": 27,
-     "texTotal": 27,
-     "where": []
-    },
-    "tree?": {
-     "meshes": 4,
-     "shownMeshes": 1,
-     "tris": 2545040,
-     "shownTris": 2496320,
-     "instances": 580,
-     "trisPerInst": [
-      4304
-     ],
-     "texReady": 1,
-     "texTotal": 1,
-     "where": [
-      "town:lamps"
-     ]
-    }
-   },
-   "f": {
-    "tris": 30569667,
-    "calls": 296,
-    "gpuMs": 49.15450913333334,
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 10.80242586666667,
     "target": "phone-hi"
    }
   },
   {
    "t": 7,
    "c": {
-    "hero": {
-     "meshes": 162,
+    "tree?": {
+     "meshes": 4,
      "shownMeshes": 0,
-     "tris": 776304,
+     "tris": 141520,
      "shownTris": 0,
      "instances": 0,
      "trisPerInst": [],
      "texReady": 0,
      "texTotal": 0,
      "where": []
-    },
-    "overhead": {
-     "meshes": 27,
-     "shownMeshes": 27,
-     "tris": 25359264,
-     "shownTris": 25359264,
-     "instances": 16173,
-     "trisPerInst": [
-      1568
-     ],
-     "texReady": 27,
-     "texTotal": 27,
-     "where": []
-    },
-    "tree?": {
-     "meshes": 4,
-     "shownMeshes": 1,
-     "tris": 2545040,
-     "shownTris": 2496320,
-     "instances": 580,
-     "trisPerInst": [
-      4304
-     ],
-     "texReady": 1,
-     "texTotal": 1,
-     "where": [
-      "town:lamps"
-     ]
     }
    },
    "f": {
-    "tris": 30569667,
-    "calls": 296,
-    "gpuMs": 43.891300933333326,
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 12.243914799999999,
     "target": "phone-hi"
    }
   },
   {
    "t": 8,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 12.080028600000002,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 9,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 11.98833423333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 10,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 7.112623066666668,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 11,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 7.777869033333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 12,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 6.568256399999998,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 13,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 5.333049533333334,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 14,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 6.157882866666667,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 15,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.946905066666664,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 16,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 8.096717566666667,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 17,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.563988366666665,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 18,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.0804370999999997,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 19,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.3461968,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 20,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 5.100929866666667,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 21,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.817307866666669,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 22,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.541902266666667,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 24,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.3504093333333334,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 25,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 5.842732933333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 26,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.7996495333333336,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 27,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.377656466666666,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 28,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 6.1832202333333335,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 29,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.205185533333334,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 30,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.278270133333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 31,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.1176563666666666,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 32,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.657568933333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 33,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 5.112148033333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 34,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 2.8720926333333323,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 35,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.5708926333333326,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 36,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 5.333334300000001,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 37,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.338505033333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 38,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.843160633333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 39,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.106045266666668,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 41,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.0515980666666658,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 42,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.511850966666667,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 43,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 2.336252266666667,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 44,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 2.8007370999999996,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 45,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.935566133333334,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 46,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 2.4013231000000004,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 47,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 5.7124383,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 48,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.181493866666666,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 49,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.305205233333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 50,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.102734366666667,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 51,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.428932933333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 52,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 2.647168866666667,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 53,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 2.8818925999999996,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 54,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.239086866666666,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 55,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 2.8698871000000006,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 56,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 4.477187099999998,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 57,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.6661522666666664,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 59,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.3885231666666678,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 60,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.7402287000000003,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 61,
+   "c": {
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 0,
+     "tris": 141520,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    }
+   },
+   "f": {
+    "tris": 8069,
+    "calls": 8,
+    "gpuMs": 3.341977300000001,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 62,
    "c": {
     "hero": {
      "meshes": 162,
@@ -248,11 +1268,11 @@
     "overhead": {
      "meshes": 27,
      "shownMeshes": 27,
-     "tris": 25359264,
-     "shownTris": 25359264,
+     "tris": 32346,
+     "shownTris": 32346,
      "instances": 16173,
      "trisPerInst": [
-      1568
+      2
      ],
      "texReady": 27,
      "texTotal": 27,
@@ -261,11 +1281,11 @@
     "tree?": {
      "meshes": 4,
      "shownMeshes": 1,
-     "tris": 2545040,
-     "shownTris": 2496320,
+     "tris": 141520,
+     "shownTris": 92800,
      "instances": 580,
      "trisPerInst": [
-      4304
+      0
      ],
      "texReady": 1,
      "texTotal": 1,
@@ -275,14 +1295,314 @@
     }
    },
    "f": {
-    "tris": 30569667,
+    "tris": 0,
+    "calls": 290,
+    "gpuMs": 6.119127433333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 63,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 0,
+     "tris": 776304,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    },
+    "overhead": {
+     "meshes": 27,
+     "shownMeshes": 27,
+     "tris": 32346,
+     "shownTris": 32346,
+     "instances": 16173,
+     "trisPerInst": [
+      2
+     ],
+     "texReady": 27,
+     "texTotal": 27,
+     "where": []
+    },
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 141520,
+     "shownTris": 92800,
+     "instances": 580,
+     "trisPerInst": [
+      0
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 342910,
     "calls": 296,
-    "gpuMs": 43.575454933333326,
+    "gpuMs": 20.050037033333336,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 64,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 0,
+     "tris": 776304,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    },
+    "overhead": {
+     "meshes": 27,
+     "shownMeshes": 27,
+     "tris": 32346,
+     "shownTris": 32346,
+     "instances": 16173,
+     "trisPerInst": [
+      2
+     ],
+     "texReady": 27,
+     "texTotal": 27,
+     "where": []
+    },
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 141520,
+     "shownTris": 92800,
+     "instances": 580,
+     "trisPerInst": [
+      0
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 342910,
+    "calls": 296,
+    "gpuMs": 17.358548133333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 65,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 0,
+     "tris": 776304,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    },
+    "overhead": {
+     "meshes": 27,
+     "shownMeshes": 27,
+     "tris": 32346,
+     "shownTris": 32346,
+     "instances": 16173,
+     "trisPerInst": [
+      2
+     ],
+     "texReady": 27,
+     "texTotal": 27,
+     "where": []
+    },
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 141520,
+     "shownTris": 92800,
+     "instances": 580,
+     "trisPerInst": [
+      0
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 342910,
+    "calls": 296,
+    "gpuMs": 18.58342183333333,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 66,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 0,
+     "tris": 776304,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    },
+    "overhead": {
+     "meshes": 27,
+     "shownMeshes": 27,
+     "tris": 32346,
+     "shownTris": 32346,
+     "instances": 16173,
+     "trisPerInst": [
+      2
+     ],
+     "texReady": 27,
+     "texTotal": 27,
+     "where": []
+    },
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 141520,
+     "shownTris": 92800,
+     "instances": 580,
+     "trisPerInst": [
+      0
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 342910,
+    "calls": 296,
+    "gpuMs": 19.543141133333336,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 67,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 0,
+     "tris": 776304,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    },
+    "overhead": {
+     "meshes": 27,
+     "shownMeshes": 27,
+     "tris": 32346,
+     "shownTris": 32346,
+     "instances": 16173,
+     "trisPerInst": [
+      2
+     ],
+     "texReady": 27,
+     "texTotal": 27,
+     "where": []
+    },
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 141520,
+     "shownTris": 92800,
+     "instances": 580,
+     "trisPerInst": [
+      0
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 342910,
+    "calls": 296,
+    "gpuMs": 15.853535600000004,
+    "target": "phone-hi"
+   }
+  },
+  {
+   "t": 68,
+   "c": {
+    "hero": {
+     "meshes": 162,
+     "shownMeshes": 0,
+     "tris": 776304,
+     "shownTris": 0,
+     "instances": 0,
+     "trisPerInst": [],
+     "texReady": 0,
+     "texTotal": 0,
+     "where": []
+    },
+    "overhead": {
+     "meshes": 27,
+     "shownMeshes": 27,
+     "tris": 32346,
+     "shownTris": 32346,
+     "instances": 16173,
+     "trisPerInst": [
+      2
+     ],
+     "texReady": 27,
+     "texTotal": 27,
+     "where": []
+    },
+    "tree?": {
+     "meshes": 4,
+     "shownMeshes": 1,
+     "tris": 141520,
+     "shownTris": 92800,
+     "instances": 580,
+     "trisPerInst": [
+      0
+     ],
+     "texReady": 1,
+     "texTotal": 1,
+     "where": [
+      "town:lamps"
+     ]
+    }
+   },
+   "f": {
+    "tris": 342910,
+    "calls": 296,
+    "gpuMs": 17.000274400000002,
     "target": "phone-hi"
    }
   }
  ],
- "residentAt": 2,
+ "residentAt": 62,
  "census": {
   "hero": {
    "meshes": 162,
@@ -298,11 +1618,11 @@
   "overhead": {
    "meshes": 27,
    "shownMeshes": 27,
-   "tris": 25359264,
-   "shownTris": 25359264,
+   "tris": 32346,
+   "shownTris": 32346,
    "instances": 16173,
    "trisPerInst": [
-    1568
+    2
    ],
    "texReady": 27,
    "texTotal": 27,
@@ -311,11 +1631,11 @@
   "tree?": {
    "meshes": 4,
    "shownMeshes": 1,
-   "tris": 2545040,
-   "shownTris": 2496320,
+   "tris": 141520,
+   "shownTris": 92800,
    "instances": 580,
    "trisPerInst": [
-    4304
+    0
    ],
    "texReady": 1,
    "texTotal": 1,
@@ -326,134 +1646,134 @@
  },
  "frame0": {
   "target": "phone-hi",
-  "wallMs": 49.4,
+  "wallMs": 35.4,
   "calls": 296,
-  "tris": 30569667,
+  "tris": 342910,
   "gpuSupported": true,
-  "gpuMs": 45.32122869999999,
-  "mainMs": 5.353333333631356,
+  "gpuMs": 13.399868866666663,
+  "mainMs": 4.236666665474574,
   "loaf": {
-   "n": 96,
-   "worstMs": 917.8999999985099,
-   "scriptMs": 3241.999999962747,
+   "n": 171,
+   "worstMs": 787.5,
+   "scriptMs": 2804.60000000149,
    "last": [
     {
-     "at": 12608.60000000149,
-     "ms": 64.09999999403954,
+     "at": 74509.5,
+     "ms": 57.20000000298023,
      "scriptMs": 0,
      "blockingMs": 0
     },
     {
-     "at": 12748.19999999553,
+     "at": 74602.60000000149,
+     "ms": 51.600000001490116,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 74675.70000000298,
+     "ms": 62.20000000298023,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 74758.80000000447,
+     "ms": 58.79999999701977,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 74844.40000000596,
+     "ms": 69.69999999552965,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 74931.90000000596,
+     "ms": 62.599999994039536,
+     "scriptMs": 6.899999998509884,
+     "blockingMs": 0
+    },
+    {
+     "at": 75019.20000000298,
+     "ms": 60.20000000298023,
+     "scriptMs": 0,
+     "blockingMs": 0
+    },
+    {
+     "at": 75101.60000000149,
      "ms": 58.600000001490116,
      "scriptMs": 0,
      "blockingMs": 0
     },
     {
-     "at": 13019.39999999851,
-     "ms": 100.60000000149012,
+     "at": 75195,
+     "ms": 61.20000000298023,
      "scriptMs": 0,
      "blockingMs": 0
     },
     {
-     "at": 13272,
-     "ms": 60.100000001490116,
+     "at": 75277.40000000596,
+     "ms": 69.89999999850988,
      "scriptMs": 0,
      "blockingMs": 0
     },
     {
-     "at": 13412.5,
-     "ms": 53,
-     "scriptMs": 6,
+     "at": 75365.10000000149,
+     "ms": 61.70000000298023,
+     "scriptMs": 0,
      "blockingMs": 0
     },
     {
-     "at": 13508.10000000149,
-     "ms": 67.39999999850988,
-     "scriptMs": 5.4000000059604645,
+     "at": 75459.60000000149,
+     "ms": 54.399999998509884,
+     "scriptMs": 0,
      "blockingMs": 0
     },
     {
-     "at": 13649,
-     "ms": 62,
-     "scriptMs": 8,
+     "at": 75533.60000000149,
+     "ms": 61.20000000298023,
+     "scriptMs": 0,
      "blockingMs": 0
     },
     {
-     "at": 13799.89999999851,
-     "ms": 66.10000000149012,
-     "scriptMs": 8.600000001490116,
+     "at": 75636.60000000149,
+     "ms": 61.600000001490116,
+     "scriptMs": 5.0999999940395355,
      "blockingMs": 0
     },
     {
-     "at": 13866.29999999702,
-     "ms": 62.899999998509884,
-     "scriptMs": 7.600000001490116,
+     "at": 75726.30000000447,
+     "ms": 63.29999999701977,
+     "scriptMs": 6.800000004470348,
      "blockingMs": 0
     },
     {
-     "at": 14006,
-     "ms": 63.19999999552965,
-     "scriptMs": 9.100000001490116,
+     "at": 75820.5,
+     "ms": 52.80000000447035,
+     "scriptMs": 5.799999997019768,
      "blockingMs": 0
     },
     {
-     "at": 14111.10000000149,
-     "ms": 51.69999999552965,
-     "scriptMs": 6.399999998509884,
+     "at": 75911.10000000149,
+     "ms": 57.399999998509884,
+     "scriptMs": 5.299999997019768,
      "blockingMs": 0
     },
     {
-     "at": 14245.39999999851,
-     "ms": 50.20000000298023,
-     "scriptMs": 5.5,
+     "at": 76005.40000000596,
+     "ms": 63,
+     "scriptMs": 6.199999995529652,
      "blockingMs": 0
     },
     {
-     "at": 14296,
-     "ms": 66.79999999701977,
-     "scriptMs": 6.5,
+     "at": 76085,
+     "ms": 60.20000000298023,
+     "scriptMs": 0,
      "blockingMs": 0
     },
     {
-     "at": 14409.79999999702,
-     "ms": 59.899999998509884,
-     "scriptMs": 7,
-     "blockingMs": 0
-    },
-    {
-     "at": 14504.69999999553,
-     "ms": 59,
-     "scriptMs": 7.100000001490116,
-     "blockingMs": 0
-    },
-    {
-     "at": 14605.79999999702,
-     "ms": 75.70000000298023,
-     "scriptMs": 8.100000001490116,
-     "blockingMs": 0
-    },
-    {
-     "at": 14722.29999999702,
-     "ms": 66.80000000447035,
-     "scriptMs": 8,
-     "blockingMs": 0
-    },
-    {
-     "at": 14869.5,
-     "ms": 55,
-     "scriptMs": 7,
-     "blockingMs": 0
-    },
-    {
-     "at": 14967,
-     "ms": 115.39999999850988,
-     "scriptMs": 8.899999998509884,
-     "blockingMs": 0
-    },
-    {
-     "at": 15212.69999999553,
-     "ms": 60.900000005960464,
+     "at": 76181.5,
+     "ms": 60.70000000298023,
      "scriptMs": 0,
      "blockingMs": 0
     }
@@ -463,21 +1783,21 @@
  "toggles": [
   {
    "label": "overhead",
-   "d": 28.957892180755113,
-   "rest": 43.86908847862745,
-   "noise": 0.7781943413725472
+   "d": 4.284944816576692,
+   "rest": 18.374159124269,
+   "noise": 0.8612181520467868
   },
   {
    "label": "tree?",
-   "d": 6.741009754166662,
-   "rest": 44.69965927083333,
-   "noise": 1.8094235208333274
+   "d": -1.1543487755358015,
+   "rest": 16.06279461113087,
+   "noise": 0.19275916518492853
   },
   {
    "label": "all trees",
-   "d": 36.605419977006804,
-   "rest": 44.26298646367347,
-   "noise": 0.7444969036734612
+   "d": 0.45824339605484354,
+   "rest": 14.358147978333331,
+   "noise": 2.0278115283333316
   }
  ],
  "pixels": [
@@ -485,85 +1805,121 @@
    "k": 1,
    "buf": "242x525",
    "label": "all trees @px×1",
-   "d": 36.29431522022763,
-   "rest": 43.93641504022763,
-   "noise": 0.8281150209968651
+   "d": 3.8122817792532615,
+   "rest": 15.886532169497166,
+   "noise": 0.7284402720612695
   },
   {
-   "k": 0.5,
-   "buf": "121x262",
-   "label": "all trees @px×0.5",
-   "d": 36.584231744901956,
-   "rest": 44.50572733823529,
-   "noise": 0.18463083823529658
+   "k": 2.4,
+   "buf": "580x1262",
+   "label": "all trees @px×2.4",
+   "d": -1.7030199094922285,
+   "rest": 12.648931837495722,
+   "noise": 0.5023790273691411
+  },
+  {
+   "k": 4.8,
+   "buf": "1161x2524",
+   "label": "all trees @px×4.8",
+   "d": 3.936859232681014,
+   "rest": 15.590173205283756,
+   "noise": 1.7030584518591052
   }
  ],
  "grids": [
   {
-   "N": 28,
-   "ohTris": 25359264,
-   "frameTris": 30569667,
-   "gpuMs": 43.48344019230769,
-   "n": 52
-  },
-  {
-   "N": 16,
-   "ohTris": 8280576,
-   "frameTris": 13490979,
-   "gpuMs": 27.02547811538462,
-   "n": 78
-  },
-  {
-   "N": 8,
-   "ohTris": 2070144,
-   "frameTris": 7280547,
-   "gpuMs": 18.479411065420564,
-   "n": 107
-  },
-  {
-   "N": 4,
-   "ohTris": 517536,
-   "frameTris": 5727939,
-   "gpuMs": 14.15033508965517,
-   "n": 145
-  },
-  {
    "N": 1,
    "ohTris": 32346,
-   "frameTris": 5242749,
-   "gpuMs": 15.599257873333332,
-   "n": 150
+   "frameTris": 342910,
+   "gpuMs": 15.257917779220785,
+   "n": 77
   }
  ],
  "log": [
   "== lafayette-square · browse · phone-hi · headless Chrome, this desktop's GPU (M1) ==",
-  "  t+ 2s  overhead 27m/25.36M tex 27/27  | frame tris 25.37M gpu 6.5 [phone-hi]",
-  "  t+ 4s  overhead 27m/25.36M tex 27/27  | frame tris 25.37M gpu 55.4 [phone-hi]",
-  "  t+ 5s  overhead 27m/25.36M tex 27/27 · tree? 1m/2.50M tex 1/1  | frame tris 30.57M gpu 58.7 [phone-hi]",
-  "  t+ 6s  overhead 27m/25.36M tex 27/27 · tree? 1m/2.50M tex 1/1  | frame tris 30.57M gpu 49.2 [phone-hi]",
-  "  t+ 7s  overhead 27m/25.36M tex 27/27 · tree? 1m/2.50M tex 1/1  | frame tris 30.57M gpu 43.9 [phone-hi]",
-  "  t+ 8s  overhead 27m/25.36M tex 27/27 · tree? 1m/2.50M tex 1/1  | frame tris 30.57M gpu 43.6 [phone-hi]",
+  "  t+ 2s  tree? 1m/0.09M tex 1/1  | frame tris 0.10M gpu 7.3 [phone-hi]",
+  "  t+ 3s  tree? 1m/0.09M tex 1/1  | frame tris 0.10M gpu 9.4 [phone-hi]",
+  "  t+ 4s  (no tree shown)  | frame tris 0.01M gpu 12.2 [phone-hi]",
+  "  t+ 5s  (no tree shown)  | frame tris 0.01M gpu 10.8 [phone-hi]",
+  "  t+ 7s  (no tree shown)  | frame tris 0.01M gpu 12.2 [phone-hi]",
+  "  t+ 8s  (no tree shown)  | frame tris 0.01M gpu 12.1 [phone-hi]",
+  "  t+ 9s  (no tree shown)  | frame tris 0.01M gpu 12.0 [phone-hi]",
+  "  t+10s  (no tree shown)  | frame tris 0.01M gpu 7.1 [phone-hi]",
+  "  t+11s  (no tree shown)  | frame tris 0.01M gpu 7.8 [phone-hi]",
+  "  t+12s  (no tree shown)  | frame tris 0.01M gpu 6.6 [phone-hi]",
+  "  t+13s  (no tree shown)  | frame tris 0.01M gpu 5.3 [phone-hi]",
+  "  t+14s  (no tree shown)  | frame tris 0.01M gpu 6.2 [phone-hi]",
+  "  t+15s  (no tree shown)  | frame tris 0.01M gpu 4.9 [phone-hi]",
+  "  t+16s  (no tree shown)  | frame tris 0.01M gpu 8.1 [phone-hi]",
+  "  t+17s  (no tree shown)  | frame tris 0.01M gpu 3.6 [phone-hi]",
+  "  t+18s  (no tree shown)  | frame tris 0.01M gpu 3.1 [phone-hi]",
+  "  t+19s  (no tree shown)  | frame tris 0.01M gpu 4.3 [phone-hi]",
+  "  t+20s  (no tree shown)  | frame tris 0.01M gpu 5.1 [phone-hi]",
+  "  t+21s  (no tree shown)  | frame tris 0.01M gpu 4.8 [phone-hi]",
+  "  t+22s  (no tree shown)  | frame tris 0.01M gpu 4.5 [phone-hi]",
+  "  t+24s  (no tree shown)  | frame tris 0.01M gpu 3.4 [phone-hi]",
+  "  t+25s  (no tree shown)  | frame tris 0.01M gpu 5.8 [phone-hi]",
+  "  t+26s  (no tree shown)  | frame tris 0.01M gpu 4.8 [phone-hi]",
+  "  t+27s  (no tree shown)  | frame tris 0.01M gpu 3.4 [phone-hi]",
+  "  t+28s  (no tree shown)  | frame tris 0.01M gpu 6.2 [phone-hi]",
+  "  t+29s  (no tree shown)  | frame tris 0.01M gpu 3.2 [phone-hi]",
+  "  t+30s  (no tree shown)  | frame tris 0.01M gpu 4.3 [phone-hi]",
+  "  t+31s  (no tree shown)  | frame tris 0.01M gpu 3.1 [phone-hi]",
+  "  t+32s  (no tree shown)  | frame tris 0.01M gpu 3.7 [phone-hi]",
+  "  t+33s  (no tree shown)  | frame tris 0.01M gpu 5.1 [phone-hi]",
+  "  t+34s  (no tree shown)  | frame tris 0.01M gpu 2.9 [phone-hi]",
+  "  t+35s  (no tree shown)  | frame tris 0.01M gpu 3.6 [phone-hi]",
+  "  t+36s  (no tree shown)  | frame tris 0.01M gpu 5.3 [phone-hi]",
+  "  t+37s  (no tree shown)  | frame tris 0.01M gpu 4.3 [phone-hi]",
+  "  t+38s  (no tree shown)  | frame tris 0.01M gpu 3.8 [phone-hi]",
+  "  t+39s  (no tree shown)  | frame tris 0.01M gpu 3.1 [phone-hi]",
+  "  t+41s  (no tree shown)  | frame tris 0.01M gpu 3.1 [phone-hi]",
+  "  t+42s  (no tree shown)  | frame tris 0.01M gpu 3.5 [phone-hi]",
+  "  t+43s  (no tree shown)  | frame tris 0.01M gpu 2.3 [phone-hi]",
+  "  t+44s  (no tree shown)  | frame tris 0.01M gpu 2.8 [phone-hi]",
+  "  t+45s  (no tree shown)  | frame tris 0.01M gpu 3.9 [phone-hi]",
+  "  t+46s  (no tree shown)  | frame tris 0.01M gpu 2.4 [phone-hi]",
+  "  t+47s  (no tree shown)  | frame tris 0.01M gpu 5.7 [phone-hi]",
+  "  t+48s  (no tree shown)  | frame tris 0.01M gpu 3.2 [phone-hi]",
+  "  t+49s  (no tree shown)  | frame tris 0.01M gpu 4.3 [phone-hi]",
+  "  t+50s  (no tree shown)  | frame tris 0.01M gpu 3.1 [phone-hi]",
+  "  t+51s  (no tree shown)  | frame tris 0.01M gpu 4.4 [phone-hi]",
+  "  t+52s  (no tree shown)  | frame tris 0.01M gpu 2.6 [phone-hi]",
+  "  t+53s  (no tree shown)  | frame tris 0.01M gpu 2.9 [phone-hi]",
+  "  t+54s  (no tree shown)  | frame tris 0.01M gpu 4.2 [phone-hi]",
+  "  t+55s  (no tree shown)  | frame tris 0.01M gpu 2.9 [phone-hi]",
+  "  t+56s  (no tree shown)  | frame tris 0.01M gpu 4.5 [phone-hi]",
+  "  t+57s  (no tree shown)  | frame tris 0.01M gpu 3.7 [phone-hi]",
+  "  t+59s  (no tree shown)  | frame tris 0.01M gpu 3.4 [phone-hi]",
+  "  t+60s  (no tree shown)  | frame tris 0.01M gpu 3.7 [phone-hi]",
+  "  t+61s  (no tree shown)  | frame tris 0.01M gpu 3.3 [phone-hi]",
+  "  t+62s  overhead 27m/0.03M tex 27/27 · tree? 1m/0.09M tex 1/1  | frame tris 0.00M gpu 6.1 [phone-hi]",
+  "  t+63s  overhead 27m/0.03M tex 27/27 · tree? 1m/0.09M tex 1/1  | frame tris 0.34M gpu 20.1 [phone-hi]",
+  "  t+64s  overhead 27m/0.03M tex 27/27 · tree? 1m/0.09M tex 1/1  | frame tris 0.34M gpu 17.4 [phone-hi]",
+  "  t+65s  overhead 27m/0.03M tex 27/27 · tree? 1m/0.09M tex 1/1  | frame tris 0.34M gpu 18.6 [phone-hi]",
+  "  t+66s  overhead 27m/0.03M tex 27/27 · tree? 1m/0.09M tex 1/1  | frame tris 0.34M gpu 19.5 [phone-hi]",
+  "  t+67s  overhead 27m/0.03M tex 27/27 · tree? 1m/0.09M tex 1/1  | frame tris 0.34M gpu 15.9 [phone-hi]",
+  "  t+68s  overhead 27m/0.03M tex 27/27 · tree? 1m/0.09M tex 1/1  | frame tris 0.34M gpu 17.0 [phone-hi]",
   "  page ERR [SlabRevetment] ⛔ waterLevels: terrain.json carries no `water` record — the town has no chosen level. ▶ re-bake the terrain — the stone's wetted band has no level to stand at",
   "  page ERR [PlanRim] the scene disc has no radius yet — the plan draws no rim until the ground publishes one",
   "  page ERR [dof] no focus point (no controls target) — depth of field is off",
-  "  resident at t+2s",
+  "  page ERR [CelestialBodies] no scene stencil after 5s — sun shadows are OFF. ground.json#stencil is the source and nothing has published it; BakedGround may not be mounted in this view, or its slab fetch failed.",
+  "  resident at t+62s",
   "  tier: {\"stored\":\"phone-hi\",\"target\":\"phone-hi\",\"dpr\":1,\"buf\":\"242x525\",\"logDepth\":false,\"shadows\":false}",
-  "  AT REST census (shown): overhead: 27 meshes, 16173 inst, 25.36M tris, tris/inst 1568 · tree?: 1 meshes, 580 inst, 2.50M tris, tris/inst 4304 under town:lamps",
+  "  AT REST census (shown): overhead: 27 meshes, 16173 inst, 0.03M tris, tris/inst 2 · tree?: 1 meshes, 580 inst, 0.09M tris, tris/inst 0 under town:lamps",
   "  hidden (mounted, not shown): hero 162m/0.78M · overhead 0m/0.00M · tree? 3m/0.05M",
-  "  frame (all passes, GpuMonitor): 296 draws · 30.57M tris · gpu 45.3 ms",
-  "  off overhead           hid 27 meshes (still shown after: 0) · Δgpu 29.0 ms of 43.9 (noise ±0.8, n 51/141/50) · frame tris off 5.21M",
-  "  off tree?              hid 1 meshes (still shown after: 0) · Δgpu 6.7 ms of 44.7 (noise ±1.8, n 52/60/48) · frame tris off 25.58M",
-  "  off all trees          hid 28 meshes (still shown after: 0) · Δgpu 36.6 ms of 44.3 (noise ±0.7, n 50/150/49) · frame tris off 0.22M",
+  "  frame (all passes, GpuMonitor): 296 draws · 0.34M tris · gpu 13.4 ms",
+  "  off overhead           hid 27 meshes (still shown after: 0) · Δgpu 4.3 ms of 18.4 (noise ±0.9, n 76/91/72) · frame tris off 0.31M",
+  "  off tree?              hid 1 meshes (still shown after: 0) · Δgpu -1.2 ms of 16.1 (noise ±0.2, n 76/75/74) · frame tris off 0.25M",
+  "  off all trees          hid 28 meshes (still shown after: 0) · Δgpu 0.5 ms of 14.4 (noise ±2.0, n 80/79/75) · frame tris off 0.22M",
   "  ── pixel ratio ×1 (buffer 242x525)",
-  "  off all trees @px×1    hid 28 meshes (still shown after: 0) · Δgpu 36.3 ms of 43.9 (noise ±0.8, n 49/150/52) · frame tris off 0.22M",
-  "  ── pixel ratio ×0.5 (buffer 121x262)",
-  "  off all trees @px×0.5  hid 28 meshes (still shown after: 0) · Δgpu 36.6 ms of 44.5 (noise ±0.2, n 52/150/51) · frame tris off 0.22M",
+  "  off all trees @px×1    hid 28 meshes (still shown after: 0) · Δgpu 3.8 ms of 15.9 (noise ±0.7, n 78/82/77) · frame tris off 0.22M",
+  "  ── pixel ratio ×2.4 (buffer 580x1262)",
+  "  off all trees @px×2.4  hid 28 meshes (still shown after: 0) · Δgpu -1.7 ms of 12.6 (noise ±0.5, n 79/83/74) · frame tris off 0.22M",
+  "  ── pixel ratio ×4.8 (buffer 1161x2524)",
+  "  off all trees @px×4.8  hid 28 meshes (still shown after: 0) · Δgpu 3.9 ms of 15.6 (noise ±1.7, n 73/73/70) · frame tris off 0.22M",
   "  overhead non-instanced attributes not rebuilt by the swap: []",
-  "  grid 28: overhead 25.36M tris (tris/inst 1568) · frame 30.57M · gpu 43.5 ms (n 52)",
-  "  grid 16: overhead 8.28M tris (tris/inst 512) · frame 13.49M · gpu 27.0 ms (n 78)",
-  "  grid  8: overhead 2.07M tris (tris/inst 128) · frame 7.28M · gpu 18.5 ms (n 107)",
-  "  grid  4: overhead 0.52M tris (tris/inst 32) · frame 5.73M · gpu 14.2 ms (n 145)",
-  "  grid  1: overhead 0.03M tris (tris/inst 2) · frame 5.24M · gpu 15.6 ms (n 150)",
-  "  grid restored: gpu 44.6 ms"
+  "  grid  1: overhead 0.03M tris (tris/inst 2) · frame 0.34M · gpu 15.3 ms (n 77)",
+  "  grid restored: gpu 18.9 ms"
  ]
 }

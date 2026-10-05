@@ -163,7 +163,8 @@ if (present.length > 1) results.toggles.push(await toggle('all trees', present))
 if (TRIS_ONLY) { const out = join(dirname(fileURLToPath(import.meta.url)), 'runs'); mkdirSync(out, { recursive: true }); writeFileSync(join(out, `${TOWN}-${SHOT}-${MODE}-tris.json`), JSON.stringify({ ...results, log }, null, 1)); ws.close(); cleanup(); process.exit(0) }
 // ── PIXELS: does the trees' ms scale with pixel count? Halve the pixel ratio (¼ the pixels) ────────────────────
 const pr0 = tier.dpr
-for (const k of [1, 0.5]) {
+// --px=1,0.5 (default) · pixel-ratio multipliers; e.g. --px=1,2.4,4.8 takes phone-hi's 242×525 to a real phone's ~1170×2530.
+for (const k of arg('px', '1,0.5').split(',').map(Number)) {
   await js(`window.__renderer.setPixelRatio(${pr0 * k}); true`); await sleep(SET)
   const buf = await js(`window.__renderer.domElement.width + 'x' + window.__renderer.domElement.height`)
   say(`  ── pixel ratio ×${k} (buffer ${buf})`)
