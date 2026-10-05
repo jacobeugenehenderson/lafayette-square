@@ -87,6 +87,7 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
     if (!enabled || !heroImpostorBySpecies || !species?.length) return null
     const out = new Map()
     const stale = []
+    const noDepth = []
     for (const sp of species) {
       const rec = heroImpostorBySpecies[sp]
       if (!rec?.layers?.length) continue
@@ -103,7 +104,9 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
             ? heroImpostorStack.barkDepth
             : l.cardDepthFrac,
           albedoTex: loadImpostorTexture(url(l.albedo), { srgb: true, gl }),
-          aoTex: loadImpostorTexture(url(l.ao), { srgb: false, gl }),
+          aoTex: loadImpostorTexture(url(l.ao), { srgb: false, gl, channels: l.aoDepth ? 'rg' : null }),
+          // The page's depth range (m, tree-local); 0 = this layer carries no depth (a capture older than hero format 7).
+          depthHalfM: l.aoDepth ? (rec.depth?.halfM ?? 0) : 0,
         })
       }
       const azSets = [...byAz.entries()]
@@ -111,6 +114,7 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
         .map(([azIdx, layers]) => ({ azIdx, layers }))
       if (!azSets.length) continue
       if (rec.frame?.v !== HERO_FRAME_VERSION) stale.push(sp)
+      if (!rec.depth?.halfM || !rec.layers.every((l) => l.aoDepth)) noDepth.push(sp)
       out.set(sp, {
         heightM: rec.heightM, canopyRadiusM: rec.canopyRadiusM, canopyBaseNorm: rec.canopyBaseNorm,
         frame: rec.frame ?? null,
@@ -119,6 +123,9 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
     }
     if (stale.length) console.error(`[HeroImpostorTrees] ⛔ ${lookName}: hero cards shot before the ground frame — ${stale.join(', ')}. `
       + `Their trunks stop above the ground until the Grove re-shoots them (Bake → Slab in the Grove).`)
+    // ⛔ A hero card without its depth page draws as a flat plane (the chopping it was baked to end). Loud, not silent.
+    if (noDepth.length) console.error(`[HeroImpostorTrees] ⛔ ${lookName}: hero cards with no depth page — ${noDepth.join(', ')}. `
+      + `They slice neighbouring crowns as flat planes until the Grove re-shoots them (Bake → Slab in the Grove).`)
     return out.size ? out : null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, lookName, heroImpostorBySpecies, species, gl])
@@ -232,7 +239,7 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
         })
         // isBark gates the trunk/ground joint to the woody layer — the card's
         // equivalent of the mesh path's per-vertex vBark gate.
-        injectHeroImpostorStamp(mat, layer.aoTex, { isBark: layer.kind === 'bark' })
+        injectHeroImpostorStamp(mat, layer.aoTex, { isBark: layer.kind === 'bark', depthHalfM: layer.depthHalfM })
         out.push({ key: `az${azSet.azIdx}_${layer.kind}${layer.shellIdx}`, geo, mat, instances: groupInstances })
       }
     }

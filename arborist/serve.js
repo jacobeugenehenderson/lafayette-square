@@ -1653,11 +1653,19 @@ const server = createServer(async (req, res) => {
             encodeToKtx2(join(dir, file), { force: true })
             return `/trees/hero-impostor/${species}/${file.replace(/\.png$/, '.ktx2')}`
           }
+          // ⛔ The AO+DEPTH page is NOT KTX2-encoded: ETC1S/UASTC lose 1–5 m of depth (p99) exactly where crowns meet
+          // (scratch/tree-cost/depth-codec.mjs). It ships as the uncompressed PNG and is uploaded RG8 (impostorTexture.js).
+          const writePng = (chan, dataUrl) => {
+            const file = `${stem}.${chan}.png`
+            writeFileSync(join(dir, file), decode(dataUrl))
+            return `/trees/hero-impostor/${species}/${file}`
+          }
           return {
             azIdx: l.azIdx, azimuthDeg: l.azimuthDeg,
             kind: l.kind, shellIdx: l.shellIdx, cardDepthFrac: l.cardDepthFrac,
             albedo: write('albedo', l.albedo),
-            ao: write('ao', l.ao),
+            ao: l.aoDepth ? writePng('ao', l.ao) : write('ao', l.ao),
+            ...(l.aoDepth ? { aoDepth: true } : {}),
           }
         })
         const atlasPath = join(ROOT, 'public', 'baked', look, 'trees-atlas.json')
@@ -1669,6 +1677,7 @@ const server = createServer(async (req, res) => {
           canopyRadiusM: body.canopyRadiusM ?? null,
           canopyBaseNorm: body.canopyBaseNorm ?? null,
           frame: body.frame ?? null,   // the frame the images were shot with (heroCardFrame)
+          depth: body.depth ?? null,   // the AO+depth pages' encoding range { halfM } (heroDepthPage.js)
           azimuths: body.azimuths ?? null,
           shells: body.shells ?? null,
           // Fingerprint — see the twin note in the overhead handler. The hero key

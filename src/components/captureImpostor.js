@@ -139,6 +139,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
   scene.add(glbScene)
 
   let cam
+  let sideOnDepth = null
   if (opts.topDown) {
     // OVERHEAD (plan-view) capture — the canopy from directly above, the skin
     // for the overhead "hula" impostor (HANDOFF-overhead-hula-impostor.md). Frame
@@ -184,6 +185,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     const near = Math.max(0.01, D - R + depthLoFrac * 2 * R)
     const far = Math.max(near + 0.05, D - R + depthHiFrac * 2 * R)
     cam = new THREE.OrthographicCamera(-half, half, half, -half, near, far)
+    sideOnDepth = { D, half }   // the depth pass's encoding: distance to the tree axis, ± the frame's half-size
     cam.position.set(Math.sin(azimuthRad) * D, midY, Math.cos(azimuthRad) * D)
     cam.up.set(0, 1, 0)
     cam.lookAt(0, midY, 0)
@@ -216,7 +218,8 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     magFilter: THREE.LinearFilter,
     format: THREE.RGBAFormat,
     type: THREE.UnsignedByteType,
-    colorSpace: THREE.SRGBColorSpace,   // match the main scene's output space
+    // A DEPTH pass writes data, not colour: a linear target, or the hardware would sRGB-encode the depth on write.
+    colorSpace: opts.captureDepth ? THREE.NoColorSpace : THREE.SRGBColorSpace,   // colour: match the main scene's output space
     generateMipmaps: !noMip,
     depthBuffer: true,
   })
@@ -248,6 +251,20 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     })
     if (maskUniform) { prevMask = maskUniform.value; maskUniform.value = wantMask }
     else console.warn('[captureImpostor] uCaptureMask not found (shader not compiled yet?) — capturing whole tree')
+  }
+  // Hero DEPTH pass (treeAtlasMaterial uCaptureDepth): the same render, writing depth toward the camera instead of
+  // colour. ⛔ Side-on only, and loud when the shader lacks the switch: a depth page of colour would be wrong depth.
+  let depthUniforms = null
+  if (opts.captureDepth) {
+    if (!sideOnDepth) throw new Error('[captureImpostor] a depth capture needs the side-on (hero) camera')
+    glbScene.traverse((o) => {
+      if (depthUniforms || !o.isMesh) return
+      const u = o.material?.userData?.shader?.uniforms
+      if (u?.uCaptureDepth) depthUniforms = u
+    })
+    if (!depthUniforms) throw new Error('[captureImpostor] uCaptureDepth not found on the tree material (shader not compiled yet?) — no depth page')
+    depthUniforms.uCaptureDepth.value = sideOnDepth.D
+    depthUniforms.uCaptureDepthHalf.value = sideOnDepth.half
   }
 
   try {
@@ -282,6 +299,7 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
     gl.shadowMap.enabled = prevShadowEnabled
     gl.shadowMap.type = prevShadowType
     if (maskUniform) maskUniform.value = prevMask
+    if (depthUniforms) depthUniforms.uCaptureDepth.value = 0
   }
 
   // Detach the GLB so disposing the throwaway scene's lights doesn't take the
@@ -688,23 +706,29 @@ export function captureHeroBand(gl, prep, i) {
     if (!keep && o.visible) { o.visible = false; hidden.push(o) }
   })
   const opts = { sideOn, captureMask: shot.captureMask }
-  let albedoTex, shadedTex, aoTex
+  let albedoTex, shadedTex, aoTex, depthTex
   try {
     albedoTex = renderTreeToTexture(gl, scene, heightM, rM, { ...opts, size: HERO_ALBEDO_SIZE, readback: true })
     shadedTex = renderTreeToTexture(gl, scene, heightM, rM, { ...opts, size: HERO_AO_SIZE, shaded: true })
     aoTex = compositeAO(gl, albedoTex, shadedTex, HERO_AO_SIZE, true)
+    // The DEPTH page (BRIEF-hero-card-depth): this shot's depth toward the camera, at the AO page's size, so the
+    // runtime card can write per-pixel depth and neighbouring crowns meet as volumes instead of slicing as planes.
+    depthTex = renderTreeToTexture(gl, scene, heightM, rM, { ...opts, size: HERO_AO_SIZE, readback: true, noMipmap: true, captureDepth: true })
   } finally {
     for (const o of hidden) o.visible = true
   }
   try { shadedTex.dispose() } catch {}
   albedoTex.name = `hero-albedo:az${shot.azimuthDeg}:${shot.kind}${shot.shellIdx}`
   aoTex.name = `hero-ao:az${shot.azimuthDeg}:${shot.kind}${shot.shellIdx}`
+  depthTex.name = `hero-depth:az${shot.azimuthDeg}:${shot.kind}${shot.shellIdx}`
   return {
     azIdx: shot.azIdx, azimuthDeg: shot.azimuthDeg,
     kind: shot.kind, shellIdx: shot.shellIdx, shellCount: shot.shellCount,
     depthLoFrac: shot.depthLoFrac, depthHiFrac: shot.depthHiFrac,
     cardDepthFrac: shot.cardDepthFrac,
-    albedoTex, aoTex,
+    albedoTex, aoTex, depthTex,
+    // The depth page's encoding range (m, tree-local): 0.5 = the axis, ±0.5 = ± this toward/away from the camera.
+    depthHalfM: heroCardFrame({ topM: maxY, radiusM: Math.max(0.5, rM) }).half,
   }
 }
 

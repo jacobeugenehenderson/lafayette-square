@@ -25,6 +25,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { useTreeAtlas, applyBarkUniforms, applyDeformerUniforms, applyLeafFaceUniforms } from '../components/treeAtlasMaterial.js'
 import { prepareHeroBands, captureHeroBand, nextCaptureFrame, CAPTURE_CANCELLED } from '../components/captureImpostor.js'
+import { composeAoDepthPage } from '../components/heroDepthPage.js'
 
 // ⛔ MESHOPT DECODER REQUIRED. This baker reads the BAKED per-look GLBs, which
 // bake-look now writes quantized + meshopt-compressed. drei's useGLTF wires this
@@ -61,6 +62,13 @@ function measureCanopyRadius(scene) {
 // Encode a capture's readback pixels → a right-sized PNG dataURL. WebGL readback is
 // bottom-up, so flip Y into the (downsized) target canvas. Interim box downsize — the
 // coverage-preserving mip + KTX2 fold in at slab-packing (the weight lever).
+// The AO+DEPTH page as a PNG (heroDepthPage.js builds it top-down, opaque — no canvas resize touches the depth).
+function pageToPng(page) {
+  const c = document.createElement('canvas'); c.width = page.width; c.height = page.height
+  c.getContext('2d').putImageData(new ImageData(page.data, page.width, page.height), 0, 0)
+  return c.toDataURL('image/png')
+}
+
 function readbackToPng(rb, target) {
   if (!rb?.data) return null
   const src = document.createElement('canvas'); src.width = rb.width; src.height = rb.height
@@ -101,11 +109,15 @@ async function postHeroImpostor(look, species, meta, layers) {
     // Rides along for drain-on-bake — see src/arborist/captureKey.js.
     captureKey: meta.captureKey ?? null,
     frame: meta.frame,
+    // The depth pages' encoding: 0.5 = the tree's axis, ± halfM metres toward/away from the camera (tree-local).
+    depth: { halfM: layers[0]?.depthHalfM ?? null },
     layers: layers
       .map((l) => ({
         azIdx: l.azIdx, azimuthDeg: l.azimuthDeg, kind: l.kind, shellIdx: l.shellIdx, cardDepthFrac: l.cardDepthFrac,
         albedo: readbackToPng(l.albedoTex?.userData?.readback, meta.albedoSize),
-        ao: readbackToPng(l.aoTex?.userData?.readback, meta.aoSize),
+        // R = AO, G = depth toward the camera (heroDepthPage.js); stored uncompressed, uploaded RG8.
+        ao: pageToPng(composeAoDepthPage(l.aoTex?.userData?.readback, l.depthTex?.userData?.readback, meta.aoSize)),
+        aoDepth: true,
       }))
       .filter((l) => l.albedo && l.ao),
   }
@@ -244,7 +256,7 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
                   console.warn(`[hero-bake] ${sp.species}: ${e.message} — retry ${attempt}/2`)
                 }
               } finally {
-                for (const l of layers) { try { l.albedoTex?.dispose() } catch {} try { l.aoTex?.dispose() } catch {} }
+                for (const l of layers) { try { l.albedoTex?.dispose() } catch {} try { l.aoTex?.dispose() } catch {} try { l.depthTex?.dispose() } catch {} }
               }
               if (!lastErr) break
               if (!/rendered blank/.test(lastErr.message)) break

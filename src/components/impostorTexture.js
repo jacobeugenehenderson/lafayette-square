@@ -42,8 +42,39 @@ function ktx2Loader(gl) {
 
 const _cache = new Map()   // url → THREE.Texture
 
-export function loadImpostorTexture(url, { srgb = true, gl = null } = {}) {
-  if (_cache.has(url)) return _cache.get(url)
+export function loadImpostorTexture(url, { srgb = true, gl = null, channels = null } = {}) {
+  const key = channels ? `${url}#${channels}` : url
+  if (_cache.has(key)) return _cache.get(key)
+  // ⭐ The hero card's AO+DEPTH page (heroDepthPage.js): an uncompressed PNG uploaded as RG8 — R = AO, G = depth.
+  // ⛔ Never as RGBA: a 4-channel upload of a 2-channel page doubles its GPU memory (BRIEF-hero-card-depth).
+  if (channels === 'rg') {
+    if (/\.ktx2($|\?)/i.test(url)) throw new Error(`[impostorTexture] an RG page is uncompressed PNG by construction — ${url}`)
+    const tex = new THREE.DataTexture(new Uint8Array([255, 128]), 1, 1, THREE.RGFormat, THREE.UnsignedByteType)
+    tex.colorSpace = THREE.NoColorSpace
+    tex.needsUpdate = true
+    _cache.set(key, tex)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height
+      const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0)
+      const px = g.getImageData(0, 0, img.width, img.height).data, W = img.width, H = img.height
+      const rg = new Uint8Array(W * H * 2)
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {   // image rows are top-down; a DataTexture's are bottom-up
+        const i = ((H - 1 - y) * W + x) * 4, o = (y * W + x) * 2
+        rg[o] = px[i]; rg[o + 1] = px[i + 1]
+      }
+      tex.image = { data: rg, width: W, height: H }
+      tex.generateMipmaps = true
+      tex.minFilter = THREE.LinearMipmapLinearFilter
+      tex.magFilter = THREE.LinearFilter
+      tex.needsUpdate = true
+      tex.onUpdate?.()
+    }
+    img.onerror = (err) => console.error(`[impostorTexture] ⛔ AO+depth page failed to load — ${url}. This layer will be blank.`, err)
+    img.src = url
+    return tex
+  }
   const space = srgb ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace
 
   if (/\.ktx2($|\?)/i.test(url)) {

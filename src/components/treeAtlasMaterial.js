@@ -398,6 +398,12 @@ export function injectFoliageSway(material) {
     // passes off the SAME tree (HANDOFF-hero-impostor-foundation.md). Set + reset
     // around the RTT render in captureImpostor#renderTreeToTexture (like toneMapping).
     shader.uniforms.uCaptureMask = { value: 0 }
+    // Hero DEPTH capture (RTT only, 0 = off everywhere else): the pass writes each fragment's depth toward the capture
+    // camera instead of its colour — the SAME geometry, cutout and deformers as the colour pass, so depth and picture
+    // agree pixel for pixel. uCaptureDepth = the camera's distance to the tree axis (orthographic, so view z IS that
+    // distance); uCaptureDepthHalf = the frame's half-size, the encoding's range. Set + reset in renderTreeToTexture.
+    shader.uniforms.uCaptureDepth = { value: 0 }
+    shader.uniforms.uCaptureDepthHalf = { value: 1 }
     // Phase B.1.a (revised): UV tiling is now PRE-BAKED into the bark
     // source texture at publish time (see arborist/generate-procedural.js
     // → preTileBark). The atlas tile content already carries N×M tiled
@@ -716,6 +722,8 @@ export function injectFoliageSway(material) {
          uniform float uHeroTierQC;
          uniform float uTreeSanitizeOn;
          uniform float uCaptureMask;
+         uniform float uCaptureDepth;
+         uniform float uCaptureDepthHalf;
          varying float vLampGlow;
          varying float vCanopyW;
          varying float vLocalY;
@@ -944,6 +952,15 @@ export function injectFoliageSway(material) {
            );
          }
          #include <opaque_fragment>`
+      )
+      // The hero depth capture's output (see uCaptureDepth): LAST, after the colour-space encode, so the value is
+      // written raw into a linear target. 0.5 = the tree's axis, 1 = half a frame toward the camera, 0 = away.
+      .replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+         if (uCaptureDepth > 0.5) {
+           gl_FragColor = vec4(vec3(clamp((uCaptureDepth - vViewPosition.z) / (2.0 * uCaptureDepthHalf) + 0.5, 0.0, 1.0)), 1.0);
+         }`
       )
   }
 }
@@ -2023,6 +2040,22 @@ const OVERHEAD_STAMP_FRAG = `
 // baked azimuth and there is nothing to rotate. Measure this before spending 213
 // pages and a CAPTURE_FORMAT bump on a captured normal.
 const HERO_STAMP_FRAG = `
+         // ── PER-PIXEL DEPTH (BRIEF-hero-card-depth): crowns meet as volumes, not planes ─────────────────────────────
+         // The page's G is this pixel's depth toward the camera in the tree's frame (0.5 = the axis, ± uHeroDepthHalfM).
+         // Its offset from the card's own plane, scaled to world metres and taken along the card's facing in VIEW
+         // space, moves the fragment's view z; it is then written in the depth space this surface runs: three's own log
+         // formula on desktop (logarithmicDepthBuffer), the projection on phones (linear). uHeroDepthHalfM 0 = a page
+         // with no depth → offset 0, i.e. exactly the card's plane. ⛔ Written on EVERY path (a partial write is undefined).
+         {
+           float hdTree  = (texture2D(uAO, vMapUv).g - 0.5) * 2.0 * uHeroDepthHalfM;
+           float hdOff   = uHeroDepthHalfM > 0.0 ? (hdTree - vHeroCardZ) * vHeroScale : 0.0;
+           float hdViewZ = min(vHeroViewZ + hdOff * (viewMatrix * vec4(vHeroFwd, 0.0)).z, -1e-3);
+           #if defined( USE_LOGDEPTHBUF ) && defined( USE_LOGDEPTHBUF_EXT )
+             gl_FragDepth = log2(1.0 - hdViewZ) * logDepthBufFC * 0.5;
+           #else
+             gl_FragDepth = 0.5 * (projectionMatrix[2][2] * hdViewZ + projectionMatrix[3][2]) / (-hdViewZ) + 0.5;
+           #endif
+         }
          float ovAO = texture2D(uAO, vMapUv).r;
          vec2  ovD  = (vMapUv * 2.0 - 1.0) * uCardBulge;
          float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
@@ -2104,7 +2137,12 @@ const HERO_STAMP_FRAG_COMMON = LIT_CARDS_FRAG_COMMON + `
          uniform sampler2D uGroundFxMap;
          uniform vec2  uGroundFxMin;
          uniform vec2  uGroundFxSpan;
-         uniform float uTrunkShadowStr;`
+         uniform float uTrunkShadowStr;
+         uniform float uHeroDepthHalfM;
+         uniform mat4  projectionMatrix;
+         varying float vHeroCardZ;
+         varying float vHeroScale;
+         varying float vHeroViewZ;`
 
 // The hero VERTEX common — the shared wind block plus the two card axes the
 // fragment half needs. Declared here rather than in CARD_WIND_COMMON so the
@@ -2113,7 +2151,10 @@ const HERO_VERT_COMMON = CARD_WIND_COMMON + `
          varying vec3  vHeroRight;
          varying vec3  vHeroFwd;
          varying vec3  vHeroWorldXZ;
-         varying float vHeroLocalY;`
+         varying float vHeroLocalY;
+         varying float vHeroCardZ;
+         varying float vHeroScale;
+         varying float vHeroViewZ;`
 
 // The overhead band's two halves: the card wind + the flutter's varyings (vertex), and the sheet's chunk + the same
 // varyings + the card relight (fragment). Named, so the link check pairs them.
@@ -2180,9 +2221,20 @@ const HERO_BILLBOARD_BEGIN = `
            // world elevation.
            vHeroWorldXZ = vec3(heroPivot.x, 0.0, heroPivot.z);
            vHeroLocalY = position.y;
+           // For the per-pixel depth: this card's plane in the tree's frame (m, toward the camera) and the instance's
+           // scale, so the page's tree-local depth lands in world metres.
+           vHeroCardZ = position.z;
+           #ifdef USE_INSTANCING
+             vHeroScale = length(instanceMatrix[0].xyz);
+           #else
+             vHeroScale = length(modelMatrix[0].xyz);
+           #endif
          }`
 
-export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}) {
+const HERO_VIEW_Z = `
+         vHeroViewZ = mvPosition.z;`
+
+export function injectHeroImpostorStamp(material, aoTex, { isBark = false, depthHalfM = 0 } = {}) {
   // Distinct program cache key — MeshBasic+map+onBeforeCompile collides with the
   // overhead-disc material otherwise, and three can serve one's compiled program to
   // the other (the billboard/relight silently not applying). [[feedback_unique_program_cache_key_before_wrappers]]
@@ -2206,6 +2258,7 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
     // The trunk/ground joint. Bound on EVERY hero material (one program, one uniform
     // set) but gated to 1 only on the woody layer — a leaf shell has no joint to make.
     shader.uniforms.uCardIsBark      = { value: isBark ? 1 : 0 }
+    shader.uniforms.uHeroDepthHalfM  = { value: depthHalfM || 0 }
     shader.uniforms.uGroundColorMap  = _groundColor.mapUniform
     shader.uniforms.uGroundColorMin  = _groundColor.minUniform
     shader.uniforms.uGroundColorSpan = _groundColor.spanUniform
@@ -2223,6 +2276,8 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
       // Billboard FIRST (re-seat transformed facing the camera), THEN the shared wind
       // leans/gusts transformed.xz base-anchored on top.
       .replace('#include <begin_vertex>', '#include <begin_vertex>' + HERO_BILLBOARD_BEGIN + CARD_WIND_RIGID + CARD_FLUTTER_VERTEX + OVERHEAD_GROUND_LIFT)
+      // The card's view z, for the per-pixel depth (HERO_STAMP_FRAG).
+      .replace('#include <project_vertex>', '#include <project_vertex>' + HERO_VIEW_Z)
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>' + HERO_STAMP_FRAG_COMMON)
       .replace('#include <map_fragment>', '#include <map_fragment>' + HERO_STAMP_FRAG)

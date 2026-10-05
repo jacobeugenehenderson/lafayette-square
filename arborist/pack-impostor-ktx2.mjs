@@ -81,7 +81,8 @@ let encoded = 0, reused = 0, missing = 0, pngBytes = 0, ktxBytes = 0
 
 // Every page path the manifest declares, wherever it lives in the two records.
 function* pagePaths(m) {
-  for (const rec of Object.values(m.heroImpostorBySpecies || {})) for (const l of rec.layers || []) yield [l, 'albedo'], yield [l, 'ao']
+  // ⛔ An AO+DEPTH page (aoDepth) stays PNG: block codecs lose metres of depth where crowns meet (heroDepthPage.js).
+  for (const rec of Object.values(m.heroImpostorBySpecies || {})) for (const l of rec.layers || []) { yield [l, 'albedo']; if (!l.aoDepth) yield [l, 'ao'] }
   for (const rec of Object.values(m.overheadBySpecies || {})) for (const b of rec.bands || []) yield [b, 'albedo'], yield [b, 'ao']
 }
 
