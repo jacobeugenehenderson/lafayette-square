@@ -135,6 +135,11 @@ export const windSheetUniforms = {
   windSheetTime:     { value: 0 },
   // windDetail's drift: an accumulated offset (wrapped on the lattice period, so it never loses float precision).
   uWindDetailOffset: { value: new THREE.Vector2(0, 0) },
+  // windGustAt's terms, from the one cable: the air's base speed and the gust amplitude above it (m/s).
+  uWindBaseSpeed:    { value: 0 },
+  uWindGustAmp:      { value: 0 },
+  // windMetresForPixels' viewport: the drawing buffer in pixels.
+  uWindViewport:     { value: new THREE.Vector2(1, 1) },
 }
 
 /** Wire a material's compiled shader to the sheet. Call in onBeforeCompile, beside injecting WIND_SHEET_GLSL. */
@@ -146,10 +151,35 @@ let _mounted = 0
 /** @internal — <WindSheet> marks itself mounted so a consumer with no sheet fails loudly instead of reading zeros. */
 export function _markWindSheetMounted(delta) { _mounted += delta }
 
+/**
+ * ⭐ THE VISIBLE FLOOR (Jacob, 2026-10-04: "we have to set a visible floor"; "my eye is the gate for now … just set an
+ * arbitrary floor"). Where a gust passes at its peak, the motion it adds is at least this many SCREEN PIXELS (scaled by
+ * windGustAt, so calm trees are not pushed). ⚠️ ARBITRARY BY RULING, not measured or derived; Jacob tunes the response
+ * by eye (Amplitude · Pocket · Frequency). In pixels, so it means the same in every shot and town. Measured
+ * 2026-10-04 on LS desktop: a gust peak added ~0.6 px (scratch/wind-sheet/px-per-shot.js).
+ */
+export const WIND_VISIBLE_FLOOR_PX = 2
+
 /** windDetail's cell, metres — the flutter's wavelength (today's overhead flutter: 0.55 cycles/m ⇒ ~1.8 m). */
 export const WIND_DETAIL_CELL_M = 1.8
 /** windDetail's drift, cells per second per m/s of wind — it advects downwind as fast as the wind is strong. */
 export const WIND_DETAIL_DRIFT = 0.22
+
+/**
+ * VERTEX STAGE ONLY (it reads three's projectionMatrix / viewMatrix, which a fragment shader does not declare): the world
+ * metres that move `px` screen pixels at `worldPos`, from the live camera. Per point, never one published number,
+ * because metres per pixel changes with depth. Inject AFTER WIND_SHEET_GLSL in a vertex shader.
+ *   float windMetresForPixels(vec3 worldPos, float px)
+ */
+export const WIND_SHEET_VERTEX_GLSL = /* glsl */`
+  uniform vec2 uWindViewport;
+  float windMetresForPixels(vec3 worldPos, float px) {
+    vec4 c = projectionMatrix * viewMatrix * vec4(worldPos, 1.0);
+    // NDC spans 2 across the buffer; one world metre at this depth spans P[0][0]/w (x) and P[1][1]/w (y) in NDC.
+    float ndcPerMetre = 0.5 * (projectionMatrix[0][0] * uWindViewport.x + projectionMatrix[1][1] * uWindViewport.y) / max(c.w, 1e-6);
+    return px * 2.0 / max(ndcPerMetre, 1e-9);
+  }
+`
 
 /** The chunk a consumer injects (vertex or fragment). Declares the uniforms itself — inject once per stage. */
 export const WIND_SHEET_GLSL = /* glsl */`
@@ -171,6 +201,15 @@ export const WIND_SHEET_GLSL = /* glsl */`
     vec2 i = floor(p), f = fract(p);
     vec2 u = f * f * (3.0 - 2.0 * f);
     return mix(mix(wsHash(i), wsHash(i + vec2(1.0, 0.0)), u.x), mix(wsHash(i + vec2(0.0, 1.0)), wsHash(i + vec2(1.0, 1.0)), u.x), u.y);
+  }
+  uniform float uWindBaseSpeed;
+  uniform float uWindGustAmp;
+  // How much of a gust is here, 0..1: 0 in calm, 1 at a gust's peak. The excess of the felt wind over the air's base
+  // speed, as a share of the town's own gust amplitude, so it means the same thing in any weather: no "gust if > X".
+  // A reading with no gusts returns 0 everywhere.
+  float windGustAt(vec2 xz) {
+    if (uWindGustAmp < 1e-3) return 0.0;
+    return clamp((windAt(xz).z - uWindBaseSpeed) / uWindGustAmp, 0.0, 1.0);
   }
   vec2 windDetail(vec2 xz) {
     vec2 p = xz * ${(1 / WIND_DETAIL_CELL_M).toFixed(4)} + uWindDetailOffset;

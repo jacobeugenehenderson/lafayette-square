@@ -194,6 +194,9 @@ export default function WindSheet({ extent, wind }) {
     c.detail.y = (c.detail.y - a.baseDirection[1] * drift + WIND_FIELD.LATTICE_PERIOD) % WIND_FIELD.LATTICE_PERIOD
     windSheetUniforms.windSheetTime.value += dt
     windSheetUniforms.uWindDetailOffset.value.copy(c.detail)
+    windSheetUniforms.uWindBaseSpeed.value = a.baseSpeedMps
+    windSheetUniforms.uWindGustAmp.value = a.gustsScale * a.gustEnvelope
+    gl.getDrawingBufferSize(windSheetUniforms.uWindViewport.value)
 
     if (++publishTick.current % 15 === 1) _publishWindSheetReadout({ status: { ...status.current, sim: pass.material.uniforms.uSpring.value ? 'spring' : 'stateless' }, air: a, layout: layoutRef.current, gust: c.L })
     if (!targets.current || !enabled.current) return
