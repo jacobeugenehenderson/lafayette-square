@@ -93,6 +93,12 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
   66 + 119 go `greenhouse → agricultural`, so huron loses `greenhouse` entirely until ① is ruled.
   ▶ `node checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` · `node scratch/huron-median-lu/union-before-after.mjs`
 
+- **A tile whose inner area falls into several pieces is painted whole by ONE point** (`tileGround.js` `luForRing`; Sward,
+  2026-10-04, `acff8071`). This is `PREBAKE-POLYGONIZATION-PLAN.md`'s "composite faces" warning (*"Don't silently coarsen"*),
+  now measured in every town: tiles with a second piece ≥ 100 m² — ▶ `node scratch/huron-median-lu/split-tile-census.mjs`.
+  It is how crop reached Huron's motorway median. ⇒ Each piece needs its own land use; the mechanisms that split the
+  tiles are in `BRIEF-highway-build.md` Open.
+
 ## 1. The finding
 
 Jacob, looking at the HPDM render: *"we have whole areas which have no trees (or grass) because they look to be mismarked or something"* — then, at a large green area rendered as hardscape: **"The verdant greenbelt is *not* 'Vacant'."**
