@@ -214,3 +214,28 @@ export function readAddressPointSources(scene, providers) {
 export function declaredAddressPointPaths(scene) {
   return readAddressPointSources(scene).sources.map((s) => join(mapDir(scene), 'raw', s.file))
 }
+
+/**
+ * CROPLAND — where crops grow (USDA's Cropland Data Layer, cartograph/cdl.mjs). The same three states as every well:
+ *   UNDECLARED    — no `cropland` key: nobody has looked. LOUD at the pour; crop then grows on mapped fields only.
+ *   DECLARED-NONE — `cropland: []` + `cropland_absent_reason`.
+ *   DECLARED      — [{ id: "usda-cdl", year }] — one raster per year at raw/cdl-<year>.tif.
+ * ⛔ A malformed declaration throws; it is never read as undeclared.
+ */
+export function readCroplandSources(scene) {
+  const p = sourcesPath(scene)
+  if (!existsSync(p)) return { state: 'undeclared', path: p, sources: [] }
+  const j = JSON.parse(readFileSync(p, 'utf8'))
+  if (!('cropland' in j)) return { state: 'undeclared', path: p, sources: [] }
+  if (!Array.isArray(j.cropland)) throw new Error(`${p}: \`cropland\` must be an array`)
+  if (!j.cropland.length) {
+    if (!j.cropland_absent_reason) throw new Error(`${p} declares no cropland source but gives no \`cropland_absent_reason\` — "none" is a finding; say why.`)
+    return { state: 'none', path: p, sources: [], absentReason: j.cropland_absent_reason }
+  }
+  for (const s of j.cropland) {
+    if (s.id !== 'usda-cdl') throw new Error(`${p}: cropland source "${s.id}" is not one the kit knows (usda-cdl)`)
+    if (!Number.isInteger(s.year)) throw new Error(`${p}: cropland usda-cdl needs an integer \`year\``)
+  }
+  if (j.cropland.length > 1) throw new Error(`${p}: declare ONE cropland year — two would disagree with nobody to rule between them`)
+  return { state: 'declared', path: p, sources: j.cropland }
+}

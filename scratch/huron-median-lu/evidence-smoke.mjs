@@ -13,7 +13,7 @@ import { LAND_USE_READERS } from '../../cartograph/states/index.mjs'
 import { piecesOfIA, prepareEvidence } from '../../src/lib/tileGround.js'
 import { differenceRings } from '../../src/lib/buildBlockGeometryV2.js'
 const [town, ...want] = process.argv.slice(2)
-export function evidenceFor(town) {
+export async function evidenceFor(town) {
   const raw = `cartograph/data/${town}/raw`, osm = JSON.parse(fs.readFileSync(`${raw}/osm.json`))
   const _src = fs.readFileSync('cartograph/derive.js', 'utf8'), _m = _src.slice(_src.indexOf('const OSM_LU_DECLARED = {'))
   const DECL = new Set([..._m.slice(0, _m.indexOf('\n  }')).matchAll(/'([a-z_]+:[a-z_]+)'/g)].map(x => x[1]))
@@ -29,17 +29,19 @@ export function evidenceFor(town) {
     if (d.land_use_code_format === 'stl-assessor-numeric') lu = classifyParcelLandUse(p.land_use_code, d.jurisdiction, table)
     else if (LAND_USE_READERS[d.land_use_code_format] && p.land_use_code != null) { const u = LAND_USE_READERS[d.land_use_code_format](String(p.land_use_code)).use; lu = u === 'unknown' ? null : u }
     if (lu && lu !== UNDERIVED && p.rings?.length) parcels.push({ lu, rings: p.rings }) }
-  return layerLandEvidence(polys, parcels)
+  const { loadCropland } = await import('../../cartograph/cdl.mjs'), { wgs84ToLocal } = await import('../../cartograph/config.js')
+  const cl = await loadCropland(town, raw, wgs84ToLocal)
+  return layerLandEvidence(polys, parcels, cl.crop?.rings || null)
 }
 import { fileURLToPath } from 'url'
 if (town && fileURLToPath(import.meta.url) === (await import('path')).resolve(process.argv[1])) {
-  const t0 = Date.now(), E = evidenceFor(town), t1 = Date.now()
+  const t0 = Date.now(), E = await evidenceFor(town), t1 = Date.now()
   const f = feed(town); f.ribbons = { ...f.ribbons, landEvidence: E.evidence }
   const w = console.warn, warns = []; console.warn = (m) => warns.push(String(m))
   const g = buildProto(f, { protoArtifact: true, protoProducer: true }); console.warn = w
   const SA = r => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return a / 2 }
   const ha = rs => Math.abs((rs || []).reduce((s, r) => s + SA(r), 0)) / 1e4
-  console.log(`${town}: evidence ${E.evidence.length} region(s) in ${((t1 - t0) / 1000).toFixed(1)}s, parcel conflicts ${(E.parcelConflictM2 / 1e4).toFixed(2)} ha · build ${((Date.now() - t1) / 1000).toFixed(1)}s`)
+  console.log(`${town}: evidence ${E.evidence.length} region(s) in ${((t1 - t0) / 1000).toFixed(1)}s, parcel conflicts ${(E.parcelConflictM2 / 1e4).toFixed(2)} ha, CDL crop on open ground ${((E.cdlM2 || 0) / 1e4).toFixed(1)} ha · build ${((Date.now() - t1) / 1000).toFixed(1)}s`)
   console.log('  paint by class (ha): ' + Object.entries(g.luByClass).map(([k, v]) => [k, ha(v)]).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v.toFixed(1)}`).join(' · '))
   for (const ti of want.map(Number)) { const t = g.protoShapeTiles[ti]
     for (const p of piecesOfIA(t.iA)) { const parts = t.evidenceByPiece?.[p.i]; const by = {}

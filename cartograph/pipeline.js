@@ -10,7 +10,8 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_MAP, requireExplicitMap, GEOGRAPHY_READ } from './config.js'
+import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_MAP, requireExplicitMap, GEOGRAPHY_READ, wgs84ToLocal } from './config.js'
+import { loadCropland } from './cdl.mjs'
 import { pourCodeRecord, contentRecord, pourDataReads } from './pour-code.mjs'
 import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
@@ -113,7 +114,9 @@ async function main() {
 
   // ── Derive ──────────────────────────────────────────────────────────
   console.log('\n[3/5] Deriving layers from centerlines + standards...')
-  const layers = deriveLayers(snapped.ground.highway || [])
+  // ⭐ the town's cropland (USDA CDL) is a raster, read async here and handed to the synchronous derive
+  const cropland = await loadCropland(SCENE, RAW_DIR, wgs84ToLocal)
+  const layers = deriveLayers(snapped.ground.highway || [], { cropland })
   let buildings = deriveBuildings(snapped.buildings, raw.buildingSource)
 
   // ── Elevation ───────────────────────────────────────────────────────

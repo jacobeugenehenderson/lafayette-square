@@ -614,6 +614,9 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
      `cartograph/states/<st>.mjs`; the town says only what it takes and how it selects, and its declared state must be
      the one its own map votes. Elsewhere, declare the well in full (shape: `cartograph/sources.js`) — or write the
      state's record. ▶ `node checks/claims-a-state-gives-its-towns-their-wells.mjs`
+     ⭐ **Cropland** (US towns): `"cropland": [{ "id": "usda-cdl", "year": 2024 }]`, then
+     `CARTOGRAPH_SCENE=<id> node cartograph/cdl.mjs` — USDA's Cropland Data Layer decides crop rows where OSM maps no
+     field. Outside the US: `"cropland": [], "cropland_absent_reason": "…"`. Undeclared is LOUD at the pour.
   2. **Fetch** — the Extent's **Fetch this view** now runs it for any town with a declaration, and
      reports *undeclared* when there is none. By hand: `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
      (`--dry-run` first: it prints the parcel count and one sample row without writing).

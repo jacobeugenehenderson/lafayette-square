@@ -20,5 +20,12 @@
       "id": "ohio-lbrs"
     }
   ],
-  "_state_wells": "The wells are taken from the state record (cartograph/states/oh.mjs) and resolved by cartograph/sources.js; this file declares only what the town takes and how it selects."
+  "_state_wells": "The wells are taken from the state record (cartograph/states/oh.mjs) and resolved by cartograph/sources.js; this file declares only what the town takes and how it selects.",
+  "cropland": [
+    {
+      "id": "usda-cdl",
+      "year": 2024
+    }
+  ],
+  "_cropland_why": "USDA's national Cropland Data Layer (cartograph/cdl.mjs): crop rows grow where OSM maps a field and, where it maps none, where the CDL reads crop (Jacob, 2026-10-05). 2024 is the latest year fetched."
 }

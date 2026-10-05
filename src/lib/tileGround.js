@@ -2375,12 +2375,21 @@ export function tilePieceLus(st) {
 // ⭐⭐⭐ EACH PIECE IS PAINTED BY ITS EVIDENCE, POLYGON BY POLYGON (Jacob, 2026-10-05). The pour lays the
 // land evidence out as disjoint regions (`derive.js` `layerLandEvidence`: OSM polygons, then readable parcels);
 // a piece paints each region it holds in that region's class and `underived` — grass — wherever none
-// reaches. A block that is half houses and half field paints both. ⭐ Crop rows grow only on a MAPPED field
-// (Jacob, 2026-10-04): a parcel the reader calls farmland is evidence the land is farmed, not of what is
-// planted, so it paints grass. ⛔ The piece's CLASS (`luByPiece`) is now its LABEL — the class holding most
+// reaches. A block that is half houses and half field paints both. ⭐ Crop rows grow where the pour flags `crop`
+// (`paintClassOf`, below). ⛔ The piece's CLASS (`luByPiece`) is now its LABEL — the class holding most
 // of it — for the operator; the paint is the evidence. ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs
 export const CROP_LU = 'agricultural'
-const paintClassOf = (e) => (e.src === 'parcel' && e.lu === CROP_LU) ? UNDERIVED_LU : e.lu
+// ⭐ Crop ROWS only where the pour says the ground grows them (`crop`, set in `layerLandEvidence`: a mapped field, or
+// farmland the USDA Cropland Data Layer reads as crop); meadow, farmyard and an unread farm parcel paint grass.
+let _noCropFlagWarned = false
+const paintClassOf = (e) => {
+  if (e.lu !== CROP_LU) return e.lu
+  if (e.crop === undefined) {           // evidence poured before the crop flag: the rule it was poured under, said once
+    if (!_noCropFlagWarned) { _noCropFlagWarned = true; console.warn('[tileGround][LU] ⛔ this land evidence predates the crop flag: crop rows grow on every OSM agricultural polygon (meadow and farmyard included) and nowhere else. RE-POUR.') }
+    return e.src === 'osm' ? CROP_LU : UNDERIVED_LU
+  }
+  return e.crop ? CROP_LU : UNDERIVED_LU
+}
 // Grouped by (evidence class, paint class): one boolean per class per piece, not one per region.
 export function prepareEvidence(evidence) {
   if (!Array.isArray(evidence)) return null

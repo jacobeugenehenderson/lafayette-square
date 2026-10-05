@@ -300,13 +300,10 @@ export const OSM_TO_LU = {
   'leisure:track': 'recreation', 'leisure:stadium': 'recreation',
   'leisure:sports_hall': 'recreation', 'leisure:horse_riding': 'recreation',
   'leisure:disc_golf_course': 'recreation', 'leisure:schoolyard': 'recreation',
-  // ⚠️ `natural:wood` STAYS `recreation`, and that is a DELIBERATE non-change.
-  // Re-pointing it to `forest` is defensible on the merits — a wood is not a
-  // ballfield — but it is an EXISTING mapping, i.e. somebody's decision, and it
-  // reaches LS (19 features) and hipointedemun (85), neither of which may be
-  // re-poured without Jacob. A commit that fills holes must not also restyle the
-  // mould town's woods. ▶ Jacob's call, not absorbed here.
-  'natural:wood': 'recreation',
+  // ⭐ A WOOD IS FOREST (Jacob, 2026-10-05: ruled with the land-use close-out). It sat at `recreation` — a ballfield's
+  // class — as an existing decision held for his call; ground cover is what you stand on (his 2026-09-25 ruling), and
+  // `natural:wood` is ground cover (`OSM_LU_KIND`), so it paints the forest floor (`litter`) like `landuse:forest`.
+  'natural:wood': 'forest',
   'natural:scrub': 'recreation', 'natural:tree_row': 'recreation',
   'natural:grass': 'recreation', 'natural:grassland': 'recreation',
   'natural:shrubbery': 'recreation',
@@ -325,7 +322,7 @@ export const OSM_TO_LU = {
   // took the crop surface, and huron's 47 ha of glasshouse sites would have grown rows.
   'landuse:greenhouse_horticulture': 'greenhouse',
   'landuse:orchard': 'orchard',           // trees, in rows, by a farmer
-  'landuse:forest': 'forest',   // ⚠️ `natural:wood` deliberately NOT re-pointed here — see above
+  'landuse:forest': 'forest',   // and `natural:wood`, above
   'natural:wetland': 'wetland', 'natural:mud': 'wetland',
   'natural:beach': 'beach', 'natural:sand': 'beach',
   // ⭐ A DUNE IS ITS OWN SURFACE (Jacob, 2026-09-24 — `docs/briefs/BRIEF-surface-lab.md §5`).
@@ -349,6 +346,11 @@ export const OSM_TO_LU = {
   'amenity:taxi': 'parking', 'landuse:garages': 'parking',                                  // a vehicle stand, a row of garages
   'leisure:resort': 'commercial',                                                           // hospitality, like a hotel's lot
 }
+/**
+ * ⭐ The OSM tags whose `agricultural` ground grows crop ROWS (Jacob, 2026-10-05). `landuse=meadow` (hay) and
+ * `landuse=farmyard` (the yard round the barns) are farmed land but not row crops — they paint grass.
+ */
+export const CROP_TAGS = new Set(['landuse:farmland', 'landuse:plant_nursery'])
 
 /**
  * ⭐ THE PRECEDENCE, applied to one face's coverage tally: if any GROUND COVER covers this
@@ -436,10 +438,15 @@ export function luCoverageForFace(faceRing, luPolys) {
  * COUNTED (`parcelConflictM2`), never handed to whichever class came first.
  * @param osm      the vote's own polygons: [{ lu, tag, ring:[{x,z}], holes }]
  * @param parcels  [{ lu, rings:[[x,z]...] }] — readable parcels only
- * @returns {{ evidence: [{ lu, src: 'osm'|'parcel', tag?, rings: [[x,z]...] }], parcelConflictM2: number }}
+ * @param cdl      the CDL's crop region, [[x,z]...] rings, or null (cartograph/cdl.mjs)
+ * ⭐ Every region carries `crop`: whether its ground grows crop ROWS (Jacob, 2026-10-05). True on a mapped field
+ * (`CROP_TAGS`) and on farmland the CDL reads as crop — a farm parcel's CDL-crop part, and ground no other evidence
+ * reaches where the CDL reads crop (src 'cdl'). False on meadow and farmyard (grass, by his ruling) and on a farm
+ * parcel's ground the CDL does not read as crop.
+ * @returns {{ evidence: [{ lu, src: 'osm'|'parcel'|'cdl', tag?, crop?, rings: [[x,z]...] }], parcelConflictM2: number, cdlM2: number }}
  * ▶ node checks/claims-the-land-is-painted-by-its-evidence.mjs
  */
-export function layerLandEvidence(osm, parcels) {
+export function layerLandEvidence(osm, parcels, cdl = null) {
   const rank = (tag) => OSM_LU_KIND[tag] === 'cover' ? 0 : OSM_LU_KIND[tag] === 'management' ? 2 : 1
   const pathOf = (r) => r.map(q => toClipper(q.x ?? q[0], q.z ?? q[1]))
   const regionOf = (outer, holes) => {     // outer MINUS its holes, as Clipper paths
@@ -452,6 +459,7 @@ export function layerLandEvidence(osm, parcels) {
   const areaOf = (ps) => Math.abs(ps.reduce((t, q) => t + Clipper.Area(q), 0)) / (SCALE * SCALE)
   const toRings = (ps) => ps.map(q => q.map(pt => [pt.X / SCALE, pt.Y / SCALE]))
   const evidence = []
+  const cdlPaths = cdl?.length ? op(ClipType.ctUnion, cdl.filter(r => r?.length >= 3).map(pathOf), []) : []
   const bbOf = (ps) => { let b = [Infinity, -Infinity, Infinity, -Infinity]; for (const q of ps) for (const pt of q) { if (pt.X < b[0]) b[0] = pt.X; if (pt.X > b[1]) b[1] = pt.X; if (pt.Y < b[2]) b[2] = pt.Y; if (pt.Y > b[3]) b[3] = pt.Y } return b }
   const meets = (a, b) => !(a[0] > b[1] || a[1] < b[0] || a[2] > b[3] || a[3] < b[2])
   // ⭐ Each polygon is differenced only against the earlier claims its bbox meets — never against one growing
@@ -463,7 +471,7 @@ export function layerLandEvidence(osm, parcels) {
   for (const { o, region, bb } of items) {
     const over = claims.filter(c => meets(c.bb, bb)).flatMap(c => c.region)
     const mine = over.length ? op(ClipType.ctDifference, region, over) : region
-    if (areaOf(mine) > 0) evidence.push({ lu: o.lu, src: 'osm', tag: o.tag, rings: toRings(mine) })
+    if (areaOf(mine) > 0) evidence.push({ lu: o.lu, src: 'osm', tag: o.tag, ...(o.lu === 'agricultural' ? { crop: CROP_TAGS.has(o.tag) } : {}), rings: toRings(mine) })
     claims.push({ region, bb })
   }
   const claimed = claims.length ? op(ClipType.ctUnion, claims.flatMap(c => c.region), []) : new Paths()
@@ -477,9 +485,23 @@ export function layerLandEvidence(osm, parcels) {
     const free = op(ClipType.ctDifference, u, [...claimed, ...others])
     const conflict = others.length ? op(ClipType.ctIntersection, op(ClipType.ctDifference, u, claimed), others) : []
     parcelConflictM2 += areaOf(conflict) / 2      // each overlap is seen from both classes
-    if (areaOf(free) > 0) evidence.push({ lu, src: 'parcel', rings: toRings(free) })
+    if (!(areaOf(free) > 0)) continue
+    if (lu !== 'agricultural') { evidence.push({ lu, src: 'parcel', rings: toRings(free) }); continue }
+    // a farm parcel: crop where the CDL reads crop, grass elsewhere
+    const rows = cdlPaths.length ? op(ClipType.ctIntersection, free, cdlPaths) : []
+    const rest = rows.length ? op(ClipType.ctDifference, free, cdlPaths) : free
+    if (areaOf(rows) > 0) evidence.push({ lu, src: 'parcel', crop: true, cropSource: 'usda-cdl', rings: toRings(rows) })
+    if (areaOf(rest) > 0) evidence.push({ lu, src: 'parcel', crop: false, rings: toRings(rest) })
   }
-  return { evidence, parcelConflictM2 }
+  // ground no OSM polygon and no parcel reaches: crop where the CDL reads crop
+  let cdlM2 = 0
+  if (cdlPaths.length) {
+    const taken = op(ClipType.ctUnion, [...claimed, ...[...unions.values()].flat()], [])
+    const open_ = op(ClipType.ctDifference, cdlPaths, taken)
+    cdlM2 = areaOf(open_)
+    if (cdlM2 > 0) evidence.push({ lu: 'agricultural', src: 'cdl', crop: true, cropSource: 'usda-cdl', rings: toRings(open_) })
+  }
+  return { evidence, parcelConflictM2, cdlM2 }
 }
 
 /**
@@ -1454,7 +1476,7 @@ function correctStreetWidths(streets, lamps, survey) {
 
 // ══════════════════════════════════════════════════════════════════
 
-export function deriveLayers(highways) {
+export function deriveLayers(highways, { cropland = null } = {}) {
   console.log(`  ${highways.length} highway features`)
 
   // ── Load parcels ──────────────────────────────────────────────
@@ -5172,8 +5194,14 @@ export function deriveLayers(highways) {
 
   // ⭐ The evidence the painter reads (see `layerLandEvidence`): the vote's own OSM polygons, and every
   // parcel whose code this town's reader can read, in its class.
+  // ⛔ CROPLAND IS DECLARED OR IT IS LOUD (cartograph/cdl.mjs): without it crop grows on mapped fields only.
+  if (!cropland) console.warn('    ⛔ cropland NOT LOADED (deriveLayers called without it) — crop rows on mapped OSM fields only')
+  else if (cropland.state === 'undeclared') console.warn(`    ⛔ cropland UNDECLARED for ${SCENE} — nobody has looked; crop rows grow on mapped OSM fields only. Declare "cropland" in sources.json (cartograph/cdl.mjs).`)
+  else if (cropland.state === 'none') console.log(`    cropland: declared none — ${cropland.reason}`)
   const landEvidence = layerLandEvidence(osmLUPolys,
-    parcels.map(p => ({ lu: classifyLandUse(p), rings: p.rings })).filter(p => p.lu && p.lu !== UNDERIVED))
+    parcels.map(p => ({ lu: classifyLandUse(p), rings: p.rings })).filter(p => p.lu && p.lu !== UNDERIVED),
+    cropland?.crop?.rings || null)
+  if (cropland?.crop) console.log(`    cropland: ${cropland.crop.attribution} ${cropland.crop.year} — ${cropland.crop.rings.length} crop run(s); ${(landEvidence.cdlM2 / 1e4).toFixed(1)} ha of crop, across the fetch extent, on ground no other evidence reaches`)
   {
     const by = {}; for (const e of landEvidence.evidence) { const k = `${e.src}:${e.lu}`; by[k] = (by[k] || 0) + Math.abs(e.rings.reduce((t, r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += r[j][0] * r[i][1] - r[i][0] * r[j][1]; return t + a / 2 }, 0)) }
     console.log(`    land evidence: ${landEvidence.evidence.length} region(s) — ${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${(v / 1e4).toFixed(1)} ha`).join(' · ')}`)

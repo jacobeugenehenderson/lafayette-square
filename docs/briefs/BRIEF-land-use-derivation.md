@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: no
 written: 2026-07-21
-evict-when: Jacob rules the four open questions in §NEXT (CDL crop where OSM maps no field · meadow/farmyard rows or grass · building-derived Phase 3 park or build · `natural:wood` recreation or forest), each landed or parked.
+evict-when: the 2026-10-05 build reaches every slab (final bake) and Jacob has eyed huron's crop; Phase 3 stays PARKED (see NEXT §3) — re-open only with a town whose buildings stand on underived ground in number.
 -->
 
 **Status: 🟡 PHASE 1 LANDED 2026-08-01 · EYE-GATED AND FAILED 2026-08-02 · the arc continues under a CORRECTED diagnosis.** Boz drafted 2026-07-21 from the HPDM bald-blocks investigation with Jacob. Detail-home for the ROADMAP line.
@@ -46,13 +46,15 @@ evict-when: Jacob rules the four open questions in §NEXT (CDL crop where OSM ma
 > ✅ The hijack, the vocabulary gate and the containment direction are settled: the paint reads the evidence polygons
 > (`layerLandEvidence`), so a face's type no longer paints anything; every LU-bearing tag on disk is mapped or declared
 > (▶ `node checks/claims-every-lu-tag-has-a-home.mjs`); parcels vote by area (Phase 2); `pickLuFromHash` is deleted.
-> **Open, each a ruling for Jacob:**
-> 1. **CDL where OSM maps no field** — USDA's Cropland Data Layer reads 78% crop on huron's 724.7 ha of farm parcels with no
->    mapped field (96% on the mapped ones). Paint crop from it, or keep grass? ▶ `scratch/huron-median-lu/cdl-measure.mjs`
-> 2. **`landuse=meadow` / `farmyard`** map to `agricultural` and so grow crop rows (huron: 12 meadows, 13.4 ha). Rows or grass?
-> 3. **Phase 3, building-derived land use** — little is left for it now: buildings on still-underived ground are LS 0 ·
->    HPDM 9 · huron 37 · provincetown 158 (after its MassGIS parcels). Park, or build? ▶ `scratch/huron-median-lu/buildings-on-underived.mjs`
-> 4. **`natural:wood` → `recreation`** is kept by an existing decision (`derive.js`); `forest` is defensible. Jacob's call.
+> **Ruled 2026-10-05 (Jacob: "go with your leans on all five"):**
+> 1. ✅ **CDL where OSM maps no field — BUILT.** Crop rows on a farm parcel's CDL-crop part and on ground no other evidence
+>    reaches where the CDL reads crop (`cartograph/cdl.mjs`, declared per town as `cropland`; undeclared is LOUD). Huron in
+>    memory: 713.4 ha of crop paint; tile 21's farm parcels grow rows. ▶ `scratch/huron-median-lu/evidence-smoke.mjs`
+> 2. ✅ **`landuse=meadow` / `farmyard` → GRASS — BUILT** (`CROP_TAGS`: farmland + plant_nursery grow rows).
+> 3. ⏸ **Phase 3, building-derived land use — PARKED.** Reason: once parcels are read, little ground is left for it
+>    (buildings on still-underived ground: LS 0 · HPDM 9 · huron 37 · provincetown 158, mostly `building=yes`).
+> 4. ✅ **`natural:wood` → `forest` — BUILT** (ground cover is what you stand on, his 2026-09-25 ruling).
+> ▶ All land-use paint rules: `node checks/claims-every-piece-takes-its-own-land-use.mjs`
 >
 > ⚠️ **Bounds in §6 all still apply** — especially: **no LS re-pour or re-bake without Jacob's explicit go-ahead** (~19 of its 173 faces move), and **do not recolour the Look** (the `underived` colour shipped as a flagged **placeholder** at both palette sites, pending Jacob's call).
 >
@@ -95,7 +97,7 @@ evict-when: Jacob rules the four open questions in §NEXT (CDL crop where OSM ma
   covered by no OSM polygon at all**. ✅ **RULED (Jacob, 2026-10-05, "yes to underived grass and the rest"): land nothing
   covers rests as `underived`, drawn as grass** (tint `#6E8A5E`, a Look colour, `luColors.underived`) until the ladder fills
   it; ✅ **each piece is painted by its evidence, polygon by polygon** (OSM → parcels → `underived`; `ribbons.landEvidence`), and
-  crop rows grow only on mapped OSM fields — a farm parcel paints grass. ② ✅
+  crop rows grow on mapped fields and, where OSM maps none, where the CDL reads crop (NEXT §1). ② ✅
   **CLOSED in code, not poured: one tag is one claim** (unioned, not summed). Moves one face in six towns: huron's tiles
   66 + 119 go `greenhouse → agricultural`, so huron loses `greenhouse` entirely until ① is ruled.
   ▶ `node checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` · `node scratch/huron-median-lu/union-before-after.mjs`

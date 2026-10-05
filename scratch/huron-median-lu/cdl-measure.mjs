@@ -25,7 +25,7 @@ function inverseAlbers(x, y) {        // EPSG:5070 → lon/lat (GRS80; lat1 29.5
 const group = (c) => (c >= 1 && c <= 35) || (c >= 38 && c <= 61) || (c >= 66 && c <= 77) || (c >= 204 && c <= 254) ? 'crop'
   : c === 36 || c === 37 ? 'hay' : c === 176 ? 'grass/pasture' : c >= 121 && c <= 124 ? 'developed' : c >= 141 && c <= 143 ? 'forest'
   : c === 190 || c === 195 ? 'wetland' : c === 111 ? 'water' : c === 0 ? 'no data' : 'other'
-const S = JSON.parse(fs.readFileSync(`public/baked/${town}/shape.json`)), E = evidenceFor(town).evidence
+const S = JSON.parse(fs.readFileSync(`public/baked/${town}/shape.json`)), E = (await evidenceFor(town)).evidence
 const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
 const bbx = r => { let b = [Infinity, -Infinity, Infinity, -Infinity]; for (const [x, z] of r) b = [Math.min(b[0], x), Math.max(b[1], x), Math.min(b[2], z), Math.max(b[3], z)]; return b }
 const inside = (x, z, rings) => rings.filter(o => x >= o.bb[0] && x <= o.bb[1] && z >= o.bb[2] && z <= o.bb[3] && pip(x, z, o.r)).length % 2 === 1

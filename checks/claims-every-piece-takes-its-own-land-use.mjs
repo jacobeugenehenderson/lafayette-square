@@ -30,11 +30,17 @@
 //   6. layer parcels OVER the OSM polygons                                → the hermetic part
 //   7. hand a parcel-class overlap to the first class                     → the hermetic part
 //   8. label every piece of a tile with its largest piece's label          → the per-piece leg (evidence pours)
+//   9. put `landuse:meadow` in CROP_TAGS                                    → the crop cases
+//  10. drop the CDL split of a farm parcel                                  → the crop cases
+//  11. let the CDL paint crop over a parcel of another class                → the crop cases
+// ⭐ CROP ROWS (Jacob, 2026-10-05): on a mapped field (`landuse=farmland`), and where OSM maps no field, where USDA's
+// Cropland Data Layer reads crop — on a farm parcel or on ground no other evidence reaches. Meadow, farmyard and a farm
+// parcel the CDL does not read as crop paint grass.
 //
 // ⭐⭐ AND EACH PIECE IS PAINTED BY ITS EVIDENCE, POLYGON BY POLYGON (Jacob, 2026-10-05): the pour lays out
 // disjoint evidence (`derive.js` `layerLandEvidence`: OSM polygons — cover over untyped over management, smaller
 // over larger — then readable parcels; a cross-class parcel overlap is nobody's), and a piece paints each region
-// in its class and `underived` (grass) elsewhere. Crop rows only on a mapped field: a farm PARCEL paints grass.
+// in its class and `underived` (grass) elsewhere. Crop rows: see the CROP ROWS note below.
 // Per town, ⛔ FAILS when a class's paint lies outside that class's own evidence by more than Clipper's 1 mm
 // lattice × the paint's perimeter. A town poured before the evidence is NOT MEASURED on this leg, and says so.
 // ⭐ The HERMETIC part runs first and needs no town, so mutation 2 cannot pass vacuously on a town
@@ -97,6 +103,18 @@ const say = (ok, msg) => { if (!ok) failed = true; console.log(`  ${ok ? '✅' :
   say(classAt(L3, 25, 25).join() === 'park' && classAt(L3, 75, 75).join() === 'residential', `an OSM polygon paints over a parcel; the parcel paints the rest — got ${classAt(L3, 25, 25)} / ${classAt(L3, 75, 75)}`)
   const L4 = layerLandEvidence([], [{ lu: 'residential', rings: [box(0, 0, 60, 100)] }, { lu: 'commercial', rings: [box(40, 0, 100, 100)] }])
   say(classAt(L4, 50, 50).length === 0 && Math.abs(L4.parcelConflictM2 - 2000) < 1, `where parcels of different classes overlap, the ground is nobody's and is COUNTED (2,000 m²) — got [${classAt(L4, 50, 50)}] · ${Math.round(L4.parcelConflictM2)} m²`)
+  // ── crop rows: a field, a meadow, a farm parcel half under CDL crop, a house lot under CDL crop, open ground under CDL crop
+  const cdl = [box(50, 0, 100, 100), box(150, 0, 200, 100), box(250, 0, 300, 100)]                 // CDL reads crop on these
+  const C = layerLandEvidence(
+    [{ lu: 'agricultural', tag: 'landuse:farmland', ring: sq(0, 0, 40, 100) }, { lu: 'agricultural', tag: 'landuse:meadow', ring: sq(400, 0, 500, 100) }],
+    [{ lu: 'agricultural', rings: [box(40, 0, 100, 100)] }, { lu: 'residential', rings: [box(150, 0, 200, 100)] }], cdl)
+  // ⭐ EVERY region at the point, joined — evidence is disjoint, so two names here is itself a failure
+  const cropAt = (x, z) => C.evidence.filter(q => q.rings.filter(r => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }).length % 2 === 1).map(e => `${e.lu}${e.lu === 'agricultural' ? (e.crop ? ':rows' : ':grass') : ''}`).join('+') || 'none'
+  say(cropAt(20, 50) === 'agricultural:rows', `a mapped field (farmland) grows rows — got ${cropAt(20, 50)}`)
+  say(cropAt(450, 50) === 'agricultural:grass', `a meadow is farmed but paints GRASS — got ${cropAt(450, 50)}`)
+  say(cropAt(75, 50) === 'agricultural:rows' && cropAt(45, 50) === 'agricultural:grass', `a farm parcel grows rows where the CDL reads crop and is grass elsewhere — got ${cropAt(75, 50)} / ${cropAt(45, 50)}`)
+  say(cropAt(175, 50) === 'residential', `the CDL never paints crop over a parcel of another class — got ${cropAt(175, 50)}`)
+  say(cropAt(275, 50) === 'agricultural:rows', `ground no other evidence reaches grows rows where the CDL reads crop — got ${cropAt(275, 50)}`)
 }
 
 const want = process.argv.slice(2)

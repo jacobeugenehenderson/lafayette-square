@@ -5,7 +5,7 @@
 import fs from 'fs'
 import { evidenceFor } from './evidence-smoke.mjs'
 const town = process.argv[2], raw = `cartograph/data/${town}/raw`
-const S = JSON.parse(fs.readFileSync(`public/baked/${town}/shape.json`)), E = evidenceFor(town).evidence
+const S = JSON.parse(fs.readFileSync(`public/baked/${town}/shape.json`)), E = (await evidenceFor(town)).evidence
 const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
 const bbx = r => { let b = [Infinity, -Infinity, Infinity, -Infinity]; for (const [x, z] of r) b = [Math.min(b[0], x), Math.max(b[1], x), Math.min(b[2], z), Math.max(b[3], z)]; return b }
 const inside = (x, z, L) => L.filter(o => x >= o.bb[0] && x <= o.bb[1] && z >= o.bb[2] && z <= o.bb[3] && pip(x, z, o.r)).length % 2 === 1

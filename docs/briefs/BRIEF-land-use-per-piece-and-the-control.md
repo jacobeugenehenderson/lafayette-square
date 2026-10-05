@@ -33,8 +33,9 @@ and the Huron tiles are loaded.
   `pickLuFromHash`. ⚠️ *Corrected by Sward:* three callers, and the poured towns took the proto mint's, which voted the whole
   `①` block **before** the disc cut, so every rim piece inherited it. ✅ **Step 1 landed (not poured):** `landUseByPiece`
   votes each piece by area after the cut; the hash is deleted. ✅ **Superseded 2026-10-05: a piece is painted by its evidence
-  polygons** (`layerLandEvidence` → `evidenceByPiece`); `luByPiece` is its label. ⏸ **Step 3 (the control) ON HOLD** — Jacob: "We may
-  not need the section controller anymore"; if built, it lives in SECTION (his ruling). ▶ `node checks/claims-every-piece-takes-its-own-land-use.mjs`
+  polygons** (`layerLandEvidence` → `evidenceByPiece`); `luByPiece` is its label. ⏸ **Steps 2–3 (the per-piece override key and the
+  Section type control) PARKED 2026-10-05** — Jacob: "We may not need the section controller anymore"; per-polygon
+  painting paints a mixed block correctly without one. If ever built, it lives in SECTION (his ruling). ▶ `node checks/claims-every-piece-takes-its-own-land-use.mjs`
 - **The key:** `blockKeyFromRing` (`src/lib/buildBlockGeometryV2.js:66`), the tile ring's bbox centre snapped to 0.5 m.
 
 ## The defect (Sward, measured)
