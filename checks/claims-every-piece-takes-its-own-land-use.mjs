@@ -29,6 +29,7 @@
 //   5. layer the LARGER polygon over the smaller                          → the hermetic part
 //   6. layer parcels OVER the OSM polygons                                → the hermetic part
 //   7. hand a parcel-class overlap to the first class                     → the hermetic part
+//   8. label every piece of a tile with its largest piece's label          → the per-piece leg (evidence pours)
 //
 // ⭐⭐ AND EACH PIECE IS PAINTED BY ITS EVIDENCE, POLYGON BY POLYGON (Jacob, 2026-10-05): the pour lays out
 // disjoint evidence (`derive.js` `layerLandEvidence`: OSM polygons — cover over untyped over management, smaller
@@ -107,7 +108,14 @@ for (const scene of (want.length ? want : feedScenes())) {
   if (!T?.length) { console.log(`⛔ ${scene}: no protoShapeTiles — NOT measured`); continue }
   measured++
   const faces = (f.ribbons.faces || []).filter(x => x?.ring?.length >= 3 && x.use).map(x => ({ use: x.use, ring: x.ring, bb: bbOf(x.ring), a: Math.abs(A(x.ring)) }))
-  const useAt = (x, z) => { let best = null, ba = Infinity; for (const g of faces) if (x >= g.bb[0] && x <= g.bb[1] && z >= g.bb[2] && z <= g.bb[3] && g.a < ba && pip(x, z, g.ring)) { ba = g.a; best = g.use } return best ?? UNDERIVED_LU }
+  // ⭐ The ground is what the PAINTER reads: the land evidence when the pour carries it (each piece's label is the
+  // evidence class holding most of it), else the face votes. ⛔ Judging an evidence-labelled piece by the coarser
+  // face votes reported Provincetown's park/residential labels as wrong while every class painted on its own
+  // evidence (2026-10-05) — the instrument, not the map.
+  const evGroups = Array.isArray(f.ribbons.landEvidence) ? prepareEvidence(f.ribbons.landEvidence) : null
+  const evAt = (x, z) => { for (const g of evGroups) { let n = 0; for (const q of g.rings) if (x >= q.bb[0] && x <= q.bb[1] && z >= q.bb[2] && z <= q.bb[3] && pip(x, z, q.r)) n++; if (n % 2) return g.lu } return UNDERIVED_LU }
+  const faceAt = (x, z) => { let best = null, ba = Infinity; for (const g of faces) if (x >= g.bb[0] && x <= g.bb[1] && z >= g.bb[2] && z <= g.bb[3] && g.a < ba && pip(x, z, g.ring)) { ba = g.a; best = g.use } return best ?? UNDERIVED_LU }
+  const useAt = evGroups ? evAt : faceAt
   const authored = new Set(Object.values(f.blockLandUse || {}))
   let pieces = 0, split = 0, mixed = 0, ruled = 0, byAuthor = 0
   const bad = [], minority = []
