@@ -655,11 +655,19 @@ export function shoreMedianItems(doc) {
   }
   // ⭐ One ring per run (the shoreline out, the waterline back), each made simple ON ITS OWN. ⛔ Not one union of every
   // station's quad: measured 2026-10-05, that union ran past 2 min on huron and 5 min on provincetown and hung the bake.
+  // ⭐ …and then ONE non-zero union of those few hundred rings, because two runs can overlap (the two banks of a narrow
+  // drawn channel): left apart, the paint stack's even-odd fill made each overlap a HOLE in the sand while still
+  // removing the bed under it — measured 2026-10-05, 0.07 km of huron's drawn water with nothing under it.
+  const c = new _Clipper()
+  for (const r of runs) c.AddPaths(_Clipper.SimplifyPolygon(_ringToPath([...r.near, ...r.far.reverse()]), _PolyFillType.pftNonZero), _PolyType.ptSubject, true)
+  const tree = new _PolyTree()
+  if (!c.Execute(_ClipType.ctUnion, tree, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) throw new Error('bake-ground: the shore median union FAILED')
   const items = []
-  for (const r of runs) {
-    const simple = _Clipper.SimplifyPolygon(_ringToPath([...r.near, ...r.far.reverse()]), _PolyFillType.pftNonZero)
-    for (const path of simple) { const outer = _pathToRing(path); if (outer.length >= 3) items.push({ outer, holes: [] }) }
-  }
+  const walk = (node) => { for (const ch of node.Childs()) {
+    const outer = _pathToRing(ch.m_polygon)
+    if (outer.length >= 3) items.push({ outer, holes: ch.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
+    for (const h of ch.Childs()) walk(h) } }
+  walk(tree)
   return { items, filledM, brokenM, heldFolds }
 }
 
@@ -1173,7 +1181,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       // coarse cap it used to emit here bred Provincetown's 10.3M slivers (Altadena, 2026-07-14, was the
       // first no-terrain blow-up — the fine mesh then; the cap now).
       refinePolicy = refineMode === 'adaptive' && refineSampler
-        ? { mode: 'adaptive', sampler: refineSampler, tol: key === 'bed' ? bedTol : refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge, band: tideBand }
+        ? { mode: 'adaptive', sampler: refineSampler, tol: key === 'bed' || key === 'shore' ? bedTol : refineTol, minEdge: refineMinEdge, maxEdge: refineMaxEdge, band: tideBand }
         : { mode: 'uniform', maxEdge: GROUND_REFINE_MAX_EDGE_M }
     } else if (isContourRibbon) {
       // Dense, EVEN sampling so the path follows the contour. Adaptive's
