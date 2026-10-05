@@ -9,6 +9,8 @@ evict-when: the card wind is one amplitude/pocket/frequency triple per Look, for
 
 **Boz the Younger drafted this 2026-10-04; Jacob dispatches.**
 
+> ✅ **EYE-GATED (Jacob, 2026-10-05): "chopping and wind look great actually, they did a great job."** The visible floor stays at its 2 px default unless he changes it in Stage.
+
 ## Who you are, and the bounds
 
 **Agent: WARM → Grain.** Grain built the overhead bands on the wind sheet (`fc2c8145`) and the mesh trees on it
