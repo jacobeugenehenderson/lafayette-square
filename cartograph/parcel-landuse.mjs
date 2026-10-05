@@ -199,12 +199,20 @@ export function parcelLandUseReport(scene, stats) {
 export function classifyUseFromText(text) {
   const t = String(text || '')
   if (!t.trim()) return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
+  // ⭐⭐ FARMLAND IS AGRICULTURAL, AND IT IS READ FIRST (Jacob, 2026-10-05: "add the fix"). This reader is
+  // a LAND-USE reader: derive.js paints the ground from it. It used to send `farm|agricultur` to
+  // `residential` — a building answer (a farmhouse is a dwelling), which on the ground painted 133 ha of
+  // huron's grain farms as houses — and it tested `vacant` first, so Ohio's "Agr-CAUV-Vacant Land" (farmland
+  // assessed in agricultural use) read as an empty lot. ⛔ Not keyed to Ohio: `agr`/`cauv` are the words such
+  // a code uses for farmland; the building category is mapped from it ONCE, in bake-content.js.
+  // ▶ node checks/claims-farmland-reads-as-agricultural.mjs
+  if (/\bagr\b|\bagr-|agricultur|\bfarm(s|land|stead)?\b|\bcauv\b|grain|livestock|dairy|\bcrops?\b/i.test(t)) return { use: 'agricultural', use_subtype: null, use_confidence: 'medium' }
   if (/vacant/i.test(t)) return { use: 'vacant', use_subtype: null, use_confidence: 'medium' }
   if (/industrial|utility|warehouse|manufactur/i.test(t)) return { use: 'industrial', use_subtype: null, use_confidence: 'medium' }
   if (/exempt|exm|church|school|municipal|government|public|cemetery|hospital/i.test(t)) return { use: 'institutional', use_subtype: null, use_confidence: 'medium' }
   if (/commercial|retail|office|com-/i.test(t)) return { use: 'commercial', use_subtype: null, use_confidence: 'medium' }
   if (/single|1-family|one family/i.test(t)) return { use: 'residential', use_subtype: 'single_family', use_confidence: 'medium' }
   if (/multi|duplex|apartment|two family|2-family/i.test(t)) return { use: 'residential', use_subtype: 'multi_family', use_confidence: 'medium' }
-  if (/^\s*res\b|residential|dwelling|farm|agricultur/i.test(t)) return { use: 'residential', use_subtype: null, use_confidence: 'low' }
+  if (/^\s*res\b|residential|dwelling/i.test(t)) return { use: 'residential', use_subtype: null, use_confidence: 'low' }
   return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
 }

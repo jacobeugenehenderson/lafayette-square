@@ -88,7 +88,9 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 
 - **Huron, measured 2026-10-04 (Sward, `scratch/huron-median-lu/`), two causes now named:** ① **a plurality vote with
   no floor**: the 100–190 ha single-class tiles take `agricultural` with farmland at 13–26% while **67–78% of the tile is
-  covered by no OSM polygon at all** — needs Jacob's ruling on the uncovered remainder (⛔ never an invented class). ✅ **Ruled for the crop only (Jacob, 2026-10-04, "grass for now"):** crop rows grow only inside mapped fields (`ribbons.fields`); the rest of an agricultural piece paints `underived` grass — tinted `#6E8A5E`, a Look colour (`luColors.underived`), retunable; Jacob: "greyer green is fine". Other classes' remainders: still open. ② ✅
+  covered by no OSM polygon at all**. ✅ **RULED (Jacob, 2026-10-05, "yes to underived grass and the rest"): land nothing
+  covers rests as `underived`, drawn as grass** (tint `#6E8A5E`, a Look colour, `luColors.underived`) until the ladder fills
+  it; crop rows grow only inside mapped fields (`ribbons.fields`). ② ✅
   **CLOSED in code, not poured: one tag is one claim** (unioned, not summed). Moves one face in six towns: huron's tiles
   66 + 119 go `greenhouse → agricultural`, so huron loses `greenhouse` entirely until ① is ruled.
   ▶ `node checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` · `node scratch/huron-median-lu/union-before-after.mjs`
@@ -96,10 +98,11 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 - ✅ **CLOSED in code, not poured: each piece of a tile takes its own land use**, by area (`BRIEF-land-use-per-piece-and-the-control.md`
   step 1). ▶ `node checks/claims-every-piece-takes-its-own-land-use.mjs`. The mechanisms that split tiles are `BRIEF-highway-build.md` Open.
 
-- **The parcel rung COUNTS parcels, and a tie falls to order** (Sward, measured on the fresh Huron slab 2026-10-04): tile 21,
-  covered by no OSM land use, took `residential` from derive's parcel rung, where 8 Agr-CAUV farm parcels (133.1 ha) tied 8
-  residential lots (4.3 ha) and list order broke the tie. By area it is farmland. ⇒ Phase 2's fix: weigh parcels by AREA, and
-  a genuine tie is reported, never resolved by order (Layer 0 q2).
+- ✅ **CLOSED in code, needs a re-pour: parcels vote by AREA; a tie is reported, never broken by order; unreadable codes
+  abstain** (`derive.js` `parcelWinnerByArea`). And the code READER answered the building question for the ground
+  (`farm|agricultur → residential`, `vacant` first): Ohio's farm codes now read `agricultural` (`parcel-landuse.mjs`), the
+  farmhouse stays a dwelling (`bake-content.js` `buildingUseOf`). Huron tile 21 → agricultural. ▶ `node checks/claims-parcels-vote-by-area.mjs`
+  · `node checks/claims-farmland-reads-as-agricultural.mjs` · moves: `node scratch/huron-median-lu/parcels-by-area-moves.mjs <town>`
 
 ## 1. The finding
 

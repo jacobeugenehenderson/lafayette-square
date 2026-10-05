@@ -443,7 +443,7 @@ function classifyUse(parcel, luMap) {
     // the same vocabulary the `bucket` fallback at the end of this function already
     // matches — so this reuses that classifier rather than adding a second one, and it
     // is not keyed to any state.
-    return classifyUseFromText(String(code))
+    return buildingUseOf(classifyUseFromText(String(code)))
   }
   if (fmt !== 'stl-assessor-numeric') {
     return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
@@ -464,10 +464,16 @@ function classifyUse(parcel, luMap) {
   // Exempt / institutional 9xx / city 9xxx
   if ((n >= 900) ) return { use: 'institutional', use_subtype: null, use_confidence: 'medium' }
   // fall back to the decode table's bucket text
-  return classifyUseFromText((luMap.get(c) || {}).bucket || '')
+  return buildingUseOf(classifyUseFromText((luMap.get(c) || {}).bucket || ''))
 }
 
-// `classifyUseFromText` lives in parcel-landuse.mjs — derive.js reads the same vocabulary.
+// `classifyUseFromText` lives in parcel-landuse.mjs — derive.js reads the same vocabulary, as LAND use.
+// ⭐ A BUILDING on farmland is a farmstead — a dwelling and its barns — so its building use is
+// `residential`, subtype `farm`. The ground under it stays `agricultural` (derive.js). One mapping,
+// here, rather than the land reader answering the building question for everyone.
+function buildingUseOf(u) {
+  return u.use === 'agricultural' ? { use: 'residential', use_subtype: 'farm', use_confidence: u.use_confidence } : u
+}
 
 // Refine the parcel-code use with the building's hosted OSM listing — the
 // original join "refined by OSM tags for named institutions and by spatial

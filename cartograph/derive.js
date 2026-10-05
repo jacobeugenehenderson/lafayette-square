@@ -415,6 +415,43 @@ export function luCoverageForFace(faceRing, luPolys) {
   return out
 }
 
+/**
+ * ⭐⭐ THE PARCEL RUNG WEIGHS BY AREA (Jacob, 2026-10-05 — "yes to underived grass and the rest").
+ * A face no OSM land use covers takes the class its assessor parcels cover MOST OF, by the area each
+ * parcel shares with the face. ⛔ It used to COUNT parcels: huron's tile 21 is 133.1 ha of farm parcels
+ * (8) against 4.3 ha of house lots (8) — the count tied and LIST ORDER handed 129 ha of farmland to
+ * `residential`. ⛔ A parcel whose code cannot be read ABSTAINS — it is evidence of nothing, so it may
+ * not vote `underived` over a readable neighbour by sheer size. ⛔ A genuine tie (equal area on the
+ * Clipper lattice) is RETURNED as a tie, never broken by order — the caller paints it `underived` and
+ * says so. ▶ node checks/claims-parcels-vote-by-area.mjs
+ * @returns {{ use: string|null, byUse: object, tie?: string[], tieArea?: number }}
+ */
+export function parcelWinnerByArea(faceRing, parcels, classify) {
+  const byUse = {}
+  if (!Array.isArray(faceRing) || faceRing.length < 3) return { use: null, byUse }
+  const facePath = faceRing.map(p => toClipper(p.x ?? p[0], p.z ?? p[1]))
+  for (const p of parcels || []) {
+    const u = classify(p)
+    if (!u || u === UNDERIVED) continue                     // unreadable: abstains
+    const rings = (p.rings || []).filter(r => Array.isArray(r) && r.length >= 3)
+    if (!rings.length) continue
+    const c = new Clipper()
+    c.AddPath(facePath, PolyType.ptSubject, true)
+    for (const r of rings) c.AddPath(r.map(q => toClipper(q.x ?? q[0], q.z ?? q[1])), PolyType.ptClip, true)
+    const sol = new Paths()
+    if (!c.Execute(ClipType.ctIntersection, sol, PolyFillType.pftNonZero, PolyFillType.pftEvenOdd)) continue
+    let a = 0; for (const path of sol) a += Clipper.Area(path); a = Math.abs(a)   // lattice units: exact, so a tie is a tie
+    if (a > 0) byUse[u] = (byUse[u] || 0) + a
+  }
+  const ranked = Object.entries(byUse).sort((x, y) => y[1] - x[1])
+  if (!ranked.length) return { use: null, byUse }
+  if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) {
+    const tie = ranked.filter(r => r[1] === ranked[0][1]).map(r => r[0]).sort()
+    return { use: null, byUse, tie, tieArea: ranked[0][1] / (SCALE * SCALE) }
+  }
+  return { use: ranked[0][0], byUse }
+}
+
 // Ray-casting point-in-polygon for {x, z} rings (from polygonize output)
 function pointInRing(px, pz, ring) {
   let inside = false
@@ -3505,6 +3542,7 @@ export function deriveLayers(highways) {
 
   const faceFills = []
   let osmClassified = 0, parcelClassified = 0, underivedFaces = 0
+  const parcelTies = []
   for (let fi = 0; fi < classifiedFaces.length; fi++) {
     const face = classifiedFaces[fi]
     if (face.type === 'fragment') continue
@@ -3534,16 +3572,13 @@ export function deriveLayers(highways) {
         if (bfi >= 0) {
           const faceParcels = faceParcelMap.get(bfi) || []
           if (faceParcels.length > 0) {
-            const useCounts = {}
-            for (const p of faceParcels) {
-              const u = classifyLandUse(p)
-              useCounts[u] = (useCounts[u] || 0) + 1
+            // ⭐ BY AREA, and a tie is SAID — `parcelWinnerByArea`.
+            const v = parcelWinnerByArea(face.ring, faceParcels, classifyLandUse)
+            if (v.use) { use = v.use; parcelClassified++ }
+            else {
+              use = UNDERIVED; underivedFaces++
+              if (v.tie) parcelTies.push(`${v.tie.join(' = ')} (${Math.round(v.tieArea)} m² each)`)
             }
-            let maxCount = 0
-            for (const [u, count] of Object.entries(useCounts)) {
-              if (count > maxCount) { maxCount = count; use = u }
-            }
-            parcelClassified++
           } else {
             // ⛔ THE THIRD RUNG USED TO BE `use = 'residential'`. No OSM polygon
             // covers this face and no assessor parcel overlaps it — nothing
@@ -3572,6 +3607,7 @@ export function deriveLayers(highways) {
     })
   }
   console.log(`    ${faceFills.length} face fills (${osmClassified} via OSM, ${parcelClassified} via parcels, ${underivedFaces} UNDERIVED)`)
+  if (parcelTies.length) console.warn(`    ⛔ ${parcelTies.length} face(s) where the parcels TIE by area — painted underived, NOT broken by list order: ${parcelTies.slice(0, 6).join(' · ')}`)
   // The parcel-code join, and the land-use gap, announced at pour time. An
   // operator pouring town #7 learns the assessor join failed HERE, not by
   // noticing weeks later that half the map is one colour (`lu-policy.mjs`).
