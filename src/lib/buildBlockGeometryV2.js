@@ -23,42 +23,6 @@ import { smoothChain } from './smoothCenterline.js'
 const SCALE = 1000
 const RAD = Math.PI / 180
 
-// Weighted random LU palette for unauthored blocks. Distribution tuned to
-// read as "a real neighborhood with anomalies" — residential dominant,
-// commercial secondary, edge cases sparse. Sums to 100.
-const LU_WEIGHTS = [
-  ['residential',         50],
-  ['commercial',          15],
-  ['vacant',               8],
-  ['vacant-commercial',    5],
-  ['parking',              7],
-  ['institutional',        5],
-  ['recreation',           7],
-  ['industrial',           3],
-]
-const LU_CUM = (() => {
-  const out = []
-  let acc = 0
-  for (const [name, w] of LU_WEIGHTS) { acc += w; out.push([name, acc]) }
-  return out
-})()
-export function pickLuFromHash(h) {
-  const r = (h % 100 + 100) % 100
-  for (const [name, c] of LU_CUM) { if (r < c) return name }
-  return 'residential'
-}
-// xmur3-style deterministic 32-bit hash from a key string. Stable across
-// runs; same key → same bucket.
-export function hashKey(s) {
-  let h = 1779033703 ^ s.length
-  for (let i = 0; i < s.length; i++) {
-    h = Math.imul(h ^ s.charCodeAt(i), 3432918353)
-    h = (h << 13) | (h >>> 19)
-  }
-  h = Math.imul(h ^ (h >>> 16), 2246822507)
-  h = Math.imul(h ^ (h >>> 13), 3266489909)
-  return (h ^ (h >>> 16)) >>> 0
-}
 // Stable per-block key from a ring's bounding-box center, snapped to 0.5m.
 // Bbox is more drift-tolerant than centroid when chain widths change —
 // the visible bbox of a block barely moves when a sidewalk widens by 1m,

@@ -22,7 +22,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
-import { classifyHighwayBlocks, sectionPassProtoTile } from '../src/lib/tileGround.js'
+import { classifyHighwayBlocks, sectionPassProtoTile, tilePieceLus } from '../src/lib/tileGround.js'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const strip = process.argv.includes('--strip-gradeend')
@@ -62,7 +62,8 @@ for (const scene of (arg('ribbons') ? named : scenes('cartograph/data/<scene>/ra
     for (const [ti, t] of (readJson(shapeP).tiles || []).entries()) {
       if (t.blockClass !== 'jr') continue
       jrTiles++
-      if (t.lu !== 'verge') bad.push(`JR tile ${ti}: land use ${t.lu}, not verge`)
+      const lus = tilePieceLus(t).filter(Boolean)   // ⭐ EVERY piece of a JR is verge
+      if (lus.some(l => l !== 'verge')) bad.push(`JR tile ${ti}: land use ${[...new Set(lus)].join('+')}, not verge`)
       const paint = (tile) => { const q = console.log, r = console.warn; console.log = console.warn = () => {}
         try { const out = sectionPassProtoTile(tile, cw, { outer: 'LU', inner: 'SW' }, null)
           return { sw: (out.Wacc || []).reduce((s, g) => s + area(g), 0), tl: Object.values(out.tlByLu || {}).flat().reduce((s, g) => s + area(g), 0) } }

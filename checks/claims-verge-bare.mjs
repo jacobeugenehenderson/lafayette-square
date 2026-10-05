@@ -21,7 +21,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
-import { sectionPassProtoTile, resolvePedDepths } from '../src/lib/tileGround.js'
+import { sectionPassProtoTile, resolvePedDepths, tilePieceLus } from '../src/lib/tileGround.js'
 
 const shapeOverride = process.argv.find(a => a.startsWith('--shape='))?.slice('--shape='.length)
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
@@ -52,7 +52,8 @@ for (const look of (shapeOverride ? named : scenes('public/baked/<scene>/shape.j
       if (t.blockClass === 'verge') {
         verge++
         const a = bands.reduce((s, r) => s + area(r), 0)
-        if (a > 1e-3 || t.lu !== 'verge') vergeBad.push(`tile ${ti} (lu ${t.lu}, ${a.toFixed(2)} m² of curb/ped)`)
+        const lus = tilePieceLus(t).filter(Boolean)   // ⭐ EVERY piece of a verge is verge
+        if (a > 1e-3 || lus.some(l => l !== 'verge')) vergeBad.push(`tile ${ti} (lu ${[...new Set(lus)].join('+')}, ${a.toFixed(2)} m² of curb/ped)`)
         continue
       }
       const runs = t.runs || []

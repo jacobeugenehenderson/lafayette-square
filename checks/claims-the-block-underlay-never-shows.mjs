@@ -10,7 +10,7 @@
 // ⛔ The gap is measured in m², per tile, against the tile's OWN block silhouette — never by eye.
 // ▶ node checks/claims-the-block-underlay-never-shows.mjs [scene ...]
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
-import { sectionPassProtoTile } from '../src/lib/tileGround.js'
+import { sectionPassProtoTile, tilePieceLus } from '../src/lib/tileGround.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 
 const SA = r => { let a = 0; for (let i = 0; i < r.length; i++) { const j = (i + 1) % r.length; a += r[i][0] * r[j][1] - r[j][0] * r[i][1] } return a / 2 }
@@ -35,7 +35,7 @@ for (const scene of feedScenes()) {
       ...Object.values(r.tlByLu || {}).flat(), ...Object.values(r.luByLu || {}).flat(),
     ]
     const gap = Math.max(0, area(differenceRings(block, painted)))
-    const lu = t.lu || 'unknown'
+    const lu = [...new Set(tilePieceLus(t).filter(Boolean))].join('+')
     blockTotal += bA; gapTotal += gap
     const e = byLu.get(lu) || { n: 0, gap: 0, blk: 0 }
     e.n++; e.gap += gap; e.blk += bA; byLu.set(lu, e)

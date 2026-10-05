@@ -18,7 +18,7 @@
 // ⛔ AND NOT THIS EITHER: counting unstamped CONTOUR POINTS. 0.5% of points is 4.7% of LENGTH,
 // because one long frontage is a single edge. Measure what the eye sees: metres, and closure.
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
-import { sectionPassProtoTile, resolvePedDepths } from '../src/lib/tileGround.js'
+import { sectionPassProtoTile, resolvePedDepths, tilePieceLus } from '../src/lib/tileGround.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 const SA = r => { let a = 0; for (let i = 0; i < r.length; i++) { const j = (i+1)%r.length; a += r[i][0]*r[j][1] - r[j][0]*r[i][1] } return a/2 }
 let bad = 0
@@ -33,7 +33,7 @@ for (const scene of feedScenes()) {
     const outers = differenceRings(r.Wacc, []).filter(g => SA(g) > 0)
     if (!outers.length) none++
     else if (outers.length === 1) one++
-    else { broken++; worst.push({ ti, lu: t.lu, n: outers.length }) }
+    else { broken++; worst.push({ ti, lu: [...new Set(tilePieceLus(t).filter(Boolean))].join('+'), n: outers.length }) }
     // ② and the painter still emits ONE arrangement per leg (a swap may not happen mid-leg)
     for (let ri = 0; ri < t.iaFull.length; ri++) {
       const stp = t.iaStamp[ri], c = t.iaCorner?.[ri], n = t.iaFull[ri].length

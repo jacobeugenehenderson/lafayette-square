@@ -41,6 +41,7 @@
 // ▶ node checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs [scene] [--list]
 import fs from 'fs'
 import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { tilePieceLus } from '../src/lib/tileGround.js'
 
 const src = fs.readFileSync(new URL('../src/lib/tileGround.js', import.meta.url), 'utf8')
 const m = src.match(/const FILLET_TURN_TOL\s*=\s*([0-9.]+)\s*\*\s*Math\.PI\s*\/\s*180/)
@@ -116,7 +117,7 @@ console.log(`  ⛔ tiles with a curb but NO arc stamp            : ${noStamp}`)
 if (dropped.length && LIST) {
   console.log(`\n  the dropped corners, sharpest first — ⭐ each is a place the operator gets no ADA pad:`)
   for (const d of [...dropped].sort((a,b) => b.turn - a.turn).slice(0, 25))
-    console.log(`    turn ${d.turn.toFixed(0).padStart(3)}°  ①v${String(d.i).padStart(3)}  lu=${String(d.tile.lu).padEnd(12)} @ ${d.at[0].toFixed(1)},${d.at[1].toFixed(1)}`)
+    console.log(`    turn ${d.turn.toFixed(0).padStart(3)}°  ①v${String(d.i).padStart(3)}  lu=${[...new Set(tilePieceLus(d.tile).filter(Boolean))].join('+').padEnd(12)} @ ${d.at[0].toFixed(1)},${d.at[1].toFixed(1)}`)
 }
 console.log(`\n  ⛔ THIS GATE IS RED WHILE A CORNER IS DROPPED. Its complement, \`claims-the-ease-is-the-corner\`,`)
 console.log(`     reads 100% through exactly the same map — it can only see arcs that EXIST. Run BOTH.\n`)

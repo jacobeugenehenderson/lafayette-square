@@ -28,7 +28,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import clipperLib from 'clipper-lib'
 import { ROOT, scenes } from './_scenes.mjs'
-import { sectionPassProtoTile, buildTileGround } from '../src/lib/tileGround.js'
+import { sectionPassProtoTile, buildTileGround, tilePieceLus } from '../src/lib/tileGround.js'
 
 const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3)
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
@@ -85,7 +85,7 @@ for (const scene of (arg('shape') ? named : scenes('public/baked/<scene>/shape.j
     if (!hs.length) continue
     const a = hs.reduce((s, h) => s + h.area, 0); holed++; total += a
     const big = hs.sort((x, y) => y.area - x.area)[0]
-    rows.push(`tile ${ti} (${t.lu}) ${hs.length} hole(s), ${a.toFixed(2)} m² — largest ${big.area.toFixed(2)} m² at (${big.at[0].toFixed(1)}, ${big.at[1].toFixed(1)})`)
+    rows.push(`tile ${ti} (${[...new Set(tilePieceLus(t).filter(Boolean))].join('+')}) ${hs.length} hole(s), ${a.toFixed(2)} m² — largest ${big.area.toFixed(2)} m² at (${big.at[0].toFixed(1)}, ${big.at[1].toFixed(1)})`)
   }
   const legacy = tiles.length - stamped.length
   console.log(`── ${scene} ── ${stamped.length} ① tile(s)${legacy ? ` (+${legacy} legacy, not judged)` : ''} · ${holed} with ground painted by nobody · ${total.toFixed(1)} m² ${holed ? '⛔' : '✅'}`)

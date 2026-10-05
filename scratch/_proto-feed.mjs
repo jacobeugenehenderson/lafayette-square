@@ -48,6 +48,10 @@ export function feed(scene) {
     scene, look,
     ribbons: JSON.parse(fs.readFileSync(rp, 'utf8')),
     blockCustoms: design.blockCustoms || null,
+    // ⛔ THE LAND-USE AUTHORING TOO — it was missing here, so every probe built through this feed
+    //    painted with the operator's `blockLandUse` switched off (Layer 0 q3), invisible only because
+    //    no town had authored one yet.
+    blockLandUse: design.blockLandUse || null,
     // ⛔ NO DEFAULT. The curb width is AUTHORED (Jacob, 2026-09-06) — it is a per-Look value in
     // `design.json`, and every downstream distance depends on it: the ped setback, and whether two
     // curbs TOUCH, which is what severs a block. Substituting 0.381 for a scene that authored
@@ -69,7 +73,7 @@ export function buildProto(f, { bare = false, quiet = true, ...rest } = {}) {
   try {
     return buildTileGround(f.ribbons, {
       grout: 'proto', smooth: 0, curbWidth: f.curbWidth,
-      blockCustoms: bare ? null : f.blockCustoms, ...rest,
+      blockCustoms: bare ? null : f.blockCustoms, blockLandUse: bare ? null : f.blockLandUse, ...rest,
     })
   } finally { console.log = prev }
 }

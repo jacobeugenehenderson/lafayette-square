@@ -29,11 +29,11 @@ and the Huron tiles are loaded.
   (`src/cartograph/stores/useCartographStore.js:907`) → `design.json#blockLandUse` (hydrate :369) → the live render
   (`BlockGeometryV2Debug.jsx`) and the bake (`cartograph/bake-ground.js:466`). `git grep setBlockLandUse` finds only its
   definition; every town's `public/looks/<town>/design.json` has **0** entries.
-- **The painter:** `luForRing` (`src/lib/tileGround.js:6532`): the override by `blockKeyFromRing`, else the smallest OSM face
-  containing **one interior point** of the tile ring, else `pickLuFromHash`. Called per tile at `:7135`.
+- **The painter** was `luForRing`: the override, else the smallest face holding **one interior point** of the tile ring, else
+  `pickLuFromHash`. ⚠️ *Corrected by Sward:* three callers, and the poured towns took the proto mint's, which voted the whole
+  `①` block **before** the disc cut, so every rim piece inherited it. ✅ **Step 1 landed (not poured):** `landUseByPiece`
+  votes each piece by area after the cut; the hash is deleted. ▶ `node checks/claims-every-piece-takes-its-own-land-use.mjs`
 - **The key:** `blockKeyFromRing` (`src/lib/buildBlockGeometryV2.js:66`), the tile ring's bbox centre snapped to 0.5 m.
-- ⛔ **The hash is a live fallback.** `pickLuFromHash` invents a class when nothing matches. `cartograph/DOC-CODE-COHERENCE.md`
-  C16 calls it effectively dead and the land-use brief's Phase 2 says delete it; it is still in the return path. Layer 0 q2.
 
 ## The defect (Sward, measured)
 

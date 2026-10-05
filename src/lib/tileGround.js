@@ -37,7 +37,7 @@
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
-import { pickLuFromHash, hashKey, blockKeyFromRing } from './buildBlockGeometryV2.js'
+import { blockKeyFromRing } from './buildBlockGeometryV2.js'
 import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
 // [SLICE 2 — TEMPORARY] The substrate walk, imported but NOT called unless the
@@ -2307,6 +2307,91 @@ function intersectRings(subjectRings, clipRings) {
   return out.map(p => p.map(fromClipper))
 }
 
+// ⭐⭐⭐ LAND USE IS PER PIECE, AND A PIECE TAKES THE CLASS THAT COVERS MOST OF IT
+// (Jacob, 2026-10-04 — `docs/briefs/BRIEF-land-use-per-piece-and-the-control.md`, option a).
+// A tile's inner area (`iA`) can fall into SEVERAL PIECES — a motorway median joined to a 186 ha
+// block through a 1–10 mm throat, a strip cut off by a trail's bands, the disc slicing a rim block.
+// ⛔ The tile used to take ONE class from ONE interior point of its ring, so every piece took the
+// class of wherever that point happened to land: Huron's median grew crop, and downtown Huron was
+// painted `residential` while 98% of it lay under a face voted `industrial` (the point landed on
+// road). ⭐ Now each piece is voted on its own, BY AREA: the faces under it are credited smallest
+// first (a face never re-claims ground a smaller face inside it already holds — the old
+// "smallest containing face" rule, kept as an area rule), and the class with the most ground wins.
+// ⛔⛔ NOTHING IS INVENTED: a piece no face covers is `underived`, by name. The weighted hash that
+// used to roll a class here (`pickLuFromHash`) is DELETED — Layer 0 q2.
+// ▶ node checks/claims-every-piece-takes-its-own-land-use.mjs
+export const UNDERIVED_LU = 'underived'
+// The painters strike a tile's own land-use + treelawn under this key; `rekeyByPiece` moves it to
+// each piece's class before any caller sees it. ⛔ Never a class, never returned.
+const OWN_LU = '\u0000own'
+const ringBB = (r) => { let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity
+  for (const p of r) { if (p[0] < a) a = p[0]; if (p[0] > b) b = p[0]; if (p[1] < c) c = p[1]; if (p[1] > d) d = p[1] } return [a, b, c, d] }
+const ringsArea = (rs) => Math.abs(rs.reduce((s, r) => s + signedArea(r), 0))
+// The pieces of an `iA`: each OUTER (positive) ring with the holes that lie inside it. `i` is the
+// outer's index into `iA`, which is what `luByPiece` is aligned to.
+export function piecesOfIA(iA) {
+  const rings = (iA || []).map((r, i) => ({ r, i, a: (r?.length >= 3) ? signedArea(r) : 0 }))
+  const outers = rings.filter(o => o.a > 0), holes = rings.filter(o => o.a < 0)
+  return outers.map(o => ({ i: o.i, outer: o.r, holes: holes.filter(h => pointInRing(h.r[0][0], h.r[0][1], o.r)).map(h => h.r) }))
+}
+// One class per piece, aligned to `iA` (a hole's slot is null).
+//   fixed    — the mint's own ruling for the whole block (`verge` / JR): no land-use choice.
+//   override — the operator's `blockLandUse` for this block (step 2 re-keys it per piece).
+//   faces    — the voted faces (`ribbons.faces`), each { use, ring }.
+export function landUseByPiece(iA, { faces, fixed = null, override = null }) {
+  const out = (iA || []).map(() => null)
+  for (const p of piecesOfIA(iA)) {
+    if (fixed) { out[p.i] = fixed; continue }
+    if (override) { out[p.i] = override; continue }
+    const region = [p.outer, ...p.holes], pb = ringBB(p.outer)
+    const cand = faces.filter(f => !(f.bb[0] > pb[1] || f.bb[1] < pb[0] || f.bb[2] > pb[3] || f.bb[3] < pb[2]))
+      .sort((x, y) => x.area - y.area)
+    const byUse = {}; let claimed = []
+    for (const f of cand) {
+      const under = intersectRings(region, [f.ring]); if (!under.length) continue
+      const mine = claimed.length ? differenceRings(under, claimed) : under
+      const a = ringsArea(mine)
+      if (a > 0) byUse[f.use] = (byUse[f.use] || 0) + a
+      claimed = unionRings([...claimed, f.ring])
+    }
+    let best = null, bestA = 0
+    for (const [u, a] of Object.entries(byUse)) if (a > bestA) { bestA = a; best = u }
+    out[p.i] = best || UNDERIVED_LU
+  }
+  return out
+}
+// The class of each piece of a FROZEN tile. ⛔ A tile frozen before per-piece land use carries one
+// `lu` for the whole tile: it is painted that way and SAID, once — the cure is a re-bake.
+let _wholeTileLuWarned = false
+export function tilePieceLus(st) {
+  if (Array.isArray(st?.luByPiece)) return st.luByPiece
+  if (typeof st?.lu === 'string') {
+    if (!_wholeTileLuWarned) { _wholeTileLuWarned = true
+      console.warn('[tileGround][LU] ⛔ this shape artifact predates per-piece land use: each tile carries ONE `lu`, so every piece of a split tile is painted with it. RE-BAKE to paint each piece its own class.') }
+    return (st.iA || []).map(r => (r?.length >= 3 && signedArea(r) > 0) ? st.lu : null)
+  }
+  throw new Error('[tileGround][LU] a tile carries neither `luByPiece` nor `lu` — no land use was minted for it. Refusing to paint a class nobody derived.')
+}
+// Move the geometry a painter struck under `OWN_LU` to each piece's own class. Every other key
+// (a divided road's `median`) is left exactly where the painter put it.
+export function rekeyByPiece(st, byLu) {
+  const own = byLu[OWN_LU]; delete byLu[OWN_LU]
+  if (!own?.length) return byLu
+  const lus = tilePieceLus(st), pieces = piecesOfIA(st.iA)
+  const classes = [...new Set(pieces.map(p => lus[p.i]))]
+  if (classes.length === 1) { (byLu[classes[0]] ||= []).push(...own); return byLu }
+  for (const lu of classes) {
+    const region = pieces.filter(p => lus[p.i] === lu).flatMap(p => [p.outer, ...p.holes])
+    const part = intersectRings(own, region)
+    if (part.length) (byLu[lu] ||= []).push(...part)
+  }
+  // ⛔ COUNTED, NEVER DROPPED UNSEEN: land-use paint lying in NO piece has no class to take. The
+  // painters confine it to `iA`, so this should be 0 m²; if it is not, it is said, not reassigned.
+  const outside = ringsArea(differenceRings(own, pieces.flatMap(p => [p.outer, ...p.holes])))
+  if (outside > 0) console.warn(`[tileGround][LU] ⛔ ${outside.toFixed(2)} m² of a split tile's land-use paint lies in none of its pieces — not painted (no piece to take its class from).`)
+  return byLu
+}
+
 // Segments the cap↔leg crossing is eased over (the shoulder dip-in). Enough to
 // read as a curve at walking scale; the band is only ~2 m long there.
 const XSTEPS = 10
@@ -3419,7 +3504,8 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
   // and the material override (.materials over the §3.1 ordering default).
   const runCustom = (run) => blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null
   {
-    const { ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, runs } = st
+    const { ring, iA, vertR, tl, sw, roundTips, bluntTips, runs } = st
+    const lu = OWN_LU   // the tile's own land use; re-keyed to each piece's class at return (`rekeyByPiece`)
     const fillets = st.fillets || []   // achieved curb arcs → the bent-corner sectors
     // [DEAD-END MOUTH WRAP] Per-mouth discs frozen by the shape pass (the bounded-local
     // splice — see the freeze block). At each, the through-road's wide leg-sector must
@@ -4358,7 +4444,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     }
     pushLu(luByLu, lu, luRemainder)                 // land-use remainder (per class)
   }
-  return { Wacc, tlByLu, luByLu }
+  return { Wacc, tlByLu: rekeyByPiece(st, tlByLu), luByLu: rekeyByPiece(st, luByLu) }
 }
 
 // Whole-map FILL — accumulate every tile's sectionPassTile contribution, in tile
@@ -4470,7 +4556,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   const empty = { Wacc: [], tlByLu: {}, luByLu: {}, curb: [] }
   if (!iA.length) return empty
   const inBlock = (rings) => (st.iA?.length && rings.length) ? intersectRings(rings, st.iA) : rings
-  const key = st.lu || 'unknown'
+  const key = OWN_LU   // re-keyed to each piece's own class at every return (`rekeyByPiece`)
   // ⛔ `si` — THE INDEX INTO `iA`/`iaStamp`, kept separately from `ri`, the index into `parts`.
   // Filtering short rings re-indexes, so using one for the other silently reads another ring's
   // stamps the moment any ring is dropped. It cost the leg map exactly that, caught by two of this
@@ -4667,7 +4753,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⛔⛔ A BLOCK TOO NARROW FOR EVEN THE CURB IS THE OPEN-FIELD LIMIT — all LU to centre. Not a
   // clamp (forcing WB = cw re-inverts the offset) and not an absence (`ARCHITECTURE §"The compound
   // shape"`: the drawing has no holes). A MATERIAL state, never a missing one.
-  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: { [key]: inBlock(insAt(0)) }, curb: [], capped, openField: true, feArcs, feRepeat }
+  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: rekeyByPiece(st, { [key]: inBlock(insAt(0)) }), curb: [], capped, openField: true, feArcs, feRepeat }
 
   // ── THE ARRANGEMENT, PER POINT. Two strips always — they SWAP, they never collapse (`§3.1`) —
   // so the inner one takes the rest of the envelope. ⛔ The depth belongs to the STRIP, not to the
@@ -5101,8 +5187,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   const Wp = env.length && W.length ? intersectRings(W, env) : []
   return {
     Wacc:   inBlock(Wp),
-    tlByLu: { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) },
-    luByLu: { [key]: inBlock(luIn) },
+    tlByLu: rekeyByPiece(st, { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) }),
+    luByLu: rekeyByPiece(st, { [key]: inBlock(luIn) }),
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
     feArcs, feRepeat,
@@ -5180,7 +5266,8 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     // ⛔ THIS IS LAYER 0 q2 INSIDE THE AUTHORING SURFACE — a stale artifact that still renders is
     // the canonical silent substitution, and `ORIENTATION` names exactly that shape. The tool must
     // not be able to show a map the current code did not draw.
-    const key = BUILD_NONCE + '|' + cw + '|' + stripMat.outer + stripMat.inner + '|' + tileSliceKey(st, blockCustoms)
+    // ⭐ and the class of every piece: a land-use override changes the paint's KEY, not its shape.
+    const key = BUILD_NONCE + '|' + cw + '|' + stripMat.outer + stripMat.inner + '|' + tileSliceKey(st, blockCustoms) + '|' + tilePieceLus(st).join(',')
     if (cache) { const hit = cache.get(i); if (hit && hit.key === key) return hit }
     // ⚠️⚠️ A STALE ARTIFACT PATH — AND IT IS LOUD, BECAUSE A QUIET ONE IS THE WORST CASE HERE.
     // ⛔ The producer no longer emits `bands`; ③'s FILL is struck LIVE off the stamp. So a tile
@@ -5200,17 +5287,12 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       const bundle = {
         key,
         W: b.sidewalk || [],
-        // ⭐ KEYED BY THE TILE'S OWN LAND USE, not a placeholder. Jacob: "LU is a gettable/knowable
-        // datapoint… stamp the LU into the initial ground map." The tile carries `lu`, so the bands
-        // bucket by it exactly as the chain path's per-class buckets do — every colour knob and
-        // visibility toggle rides these keys, and a private key costs the operator control silently
-        // (`bake-ground.js`'s PAINT_ORDER comment: a key no entry consumes "drops silently from the
-        // slab — that is exactly how the divided median vanished").
-        // ⛔ `unknown` is a REAL CLASS here, not a fallback: `luForRing` returns it when the data
-        // cannot say, and painting that as a distinct thing is what makes an unclassified block
-        // visible rather than plausible.
-        tlByLu: { [st.lu || 'unknown']: b.treelawn || [] },
-        luByLu: { [st.lu || 'unknown']: b.lu || [] },
+        // ⭐ KEYED BY EACH PIECE'S OWN LAND USE (`rekeyByPiece`), exactly as the live painters key —
+        // every colour knob and visibility toggle rides these keys, and a private key costs the
+        // operator control silently (`bake-ground.js`'s PAINT_ORDER comment: a key no entry consumes
+        // "drops silently from the slab — that is exactly how the divided median vanished").
+        tlByLu: rekeyByPiece(st, { [OWN_LU]: b.treelawn || [] }),
+        luByLu: rekeyByPiece(st, { [OWN_LU]: b.lu || [] }),
         A: differenceRings([st.ring], st.iA || []),   // asphalt is still tile − curb
         C: b.curb || [],
         block: st.iA || [],
@@ -6523,24 +6605,16 @@ export function buildTileGround(ribbons, opts = {}) {
   //     STANDARD best-effort depths — SECTION.md §3.1 — replacing the old per-tile
   //     averaged measure. Per-edge ASPHALT width, the dominant asymmetry, is kept.)
 
-  // M1 — each tile's land-use class. Reuse the figure-ground resolution:
-  // blockLandUse override (by bbox blockKey) → the OSM parcel (face.use) the
-  // tile's interior lands in → the deterministic hash palette. So a tile reads
-  // its real class (commercial / park / institutional / …), not all-residential.
-  const faceList = (ribbons?.faces || []).filter(f => f?.ring?.length >= 3 && f.use)
+  // M1 — each PIECE's land-use class (`landUseByPiece`): the operator's `blockLandUse` for the block
+  // (by bbox blockKey), else the class covering most of the piece among the voted faces, else
+  // `underived` by name. ⭐ Faces are wound CCW here once, so the area credit's NonZero booleans
+  // cannot cancel a clockwise face against its neighbour.
+  const faceList = (ribbons?.faces || []).filter(f => f?.ring?.length >= 3 && f.use).map(f => {
+    const ring = signedArea(f.ring) < 0 ? f.ring.slice().reverse() : f.ring
+    return { use: f.use, ring, bb: ringBB(ring), area: Math.abs(signedArea(ring)) }
+  })
   const blockLandUse = (opts.blockLandUse && typeof opts.blockLandUse === 'object') ? opts.blockLandUse : null
-  const luForRing = (ring) => {
-    if (blockLandUse) { const bk = blockKeyFromRing(ring); if (blockLandUse[bk]) return blockLandUse[bk] }
-    const [px, py] = ringInteriorPoint(ring)
-    let best = null, bestArea = Infinity
-    for (const f of faceList) {
-      if (pointInRing(px, py, f.ring)) {
-        const a = Math.abs(signedArea(f.ring))
-        if (a < bestArea) { best = f.use; bestArea = a }   // smallest containing face wins (donut-safe)
-      }
-    }
-    return best || pickLuFromHash(hashKey(blockKeyFromRing(ring)))
-  }
+  const overrideFor = (blockRing) => (blockLandUse && blockLandUse[blockKeyFromRing(blockRing)]) || null
 
   // Asphalt/curb/sidewalk are single-material (merged). Treelawn (M2) + the LU
   // remainder (M1) are grouped by the tile's class so they paint that class's
@@ -7132,7 +7206,6 @@ export function buildTileGround(ribbons, opts = {}) {
       }
       cornerSet.push({ key, V, legA, legB, vertR: vertR[vi], fillet })
     }
-    const lu = luForRing(tile.ring)
     // Dead-end caps + loop reversals make iA turn ~180°; a jtMiter inward offset
     // SELF-INTERSECTS there → needle spikes in the ped strips (the asphalt cap
     // rounds clean, the strips spike). Round the band join on JUST those tiles —
@@ -7325,7 +7398,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
     // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
     // not mask it with a disk. Each = { apex, C, r, tA, tB } from filletRing.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink,
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, luByPiece: landUseByPiece(iA, { faces: faceList, override: overrideFor(tile.ring) }), roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink,
       // [A07] WHICH PRODUCER BUILT THIS CURB, and why. The docs promise a single
       // concentric offset; on LS 41 of 101 tiles are not one. Recorded so an
       // operator on a town nobody has inspected can tell, and so A06 has a test.
@@ -8856,11 +8929,11 @@ export function buildTileGround(ribbons, opts = {}) {
             // off the ease that made it rather than matched back onto the contour afterwards.
             runs: runs2, iaStamp, iaCorner, iaFull: mine.map(EC => EC.ring),
             iaArc: mine.map(EC => EC.arc || EC.ring.map(() => null)),
-            // ⭐ `lu` — SUPPLIED. Jacob: "LU is a gettable/knowable datapoint… stamp the LU into the
-            // initial ground map and later add overrides." A fact about the world, read off the block
-            // itself, not a construction parameter. Overrides are a later layer and not scoped here.
+            // ⭐ The land use is SUPPLIED per piece (`luByPiece`), but only once the disc has cut the
+            // tile — see after the cut. Carried until then: the block's own ruling and its override.
             // ⭐ H-3 step 4: a verge and a JR's remainder are land use `verge` — no land-use choice.
-            lu: ((protoUseBlocks && MP.blockClass?.[k]) === 'verge' || (protoUseBlocks && MP.blockClass?.[k]) === 'jr') ? 'verge' : luForRing(ring),
+            _luSeed: { fixed: ((protoUseBlocks && MP.blockClass?.[k]) === 'verge' || (protoUseBlocks && MP.blockClass?.[k]) === 'jr') ? 'verge' : null,
+                       override: overrideFor(ring) },
             ...((protoUseBlocks && MP.blockClass?.[k] && MP.blockClass[k] !== 'block') ? { blockClass: MP.blockClass[k] } : {}),
             producer: 'proto',
             producerReason: 'offset from ①; bands struck from the curb; runs = identity only',
@@ -8945,6 +9018,14 @@ export function buildTileGround(ribbons, opts = {}) {
         // it. An instrument that reports a count taken before the count exists is the same defect as
         // no instrument at all, and worse, because it reads as evidence.
         if (protoShortRuns) console.warn(`[tileGround][PROTO②] ⛔ ${protoShortRuns} run(s) of a single vertex were DROPPED — their contour carries NO stamp, so nothing paints there and a handle over it has nothing to drag.`)
+        // ⭐⭐ LAND USE PER PIECE, ON THE FINAL CUT. Before the cut a rim block is one tile; after it,
+        // several — and each piece of each takes its OWN class (`landUseByPiece`). ⛔ Voting before
+        // the cut is what handed every disc piece, and every piece of a split block, one answer.
+        for (const t of protoShapeTiles) {
+          const { fixed, override } = t._luSeed
+          t.luByPiece = landUseByPiece(t.iA, { faces: faceList, fixed, override })
+          delete t._luSeed
+        }
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
         if (protoNoCurb) console.warn(`[tileGround][PROTO②] ⛔ ${protoNoCurb} block(s) yielded NO curb ring and are ABSENT from the artifact (${protoNoCurbArea.toFixed(0)} m² of ① block area). Their curbs meet, so there is no block between them — RULED CORRECT (\`RIBBONS §1\`), but it is a REAL ABSENCE and it is counted here rather than left to be discovered on a map.`)
       }
@@ -9148,7 +9229,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // doesn't paint over the per-class block centres.
     let big = null, bigA = 0
     for (const r of perimeter) { const a = signedArea(r); if (a > bigA) { bigA = a; big = r } }
-    const perimClass = big ? luForRing(big) : 'unknown'
+    const perimClass = big ? landUseByPiece([big], { faces: faceList, override: overrideFor(big) })[0] : UNDERIVED_LU
     pushLu(tlByLu, perimClass, pTree)
     pushLu(luByLu, perimClass, differenceRings(perimeter, unionRings([...pAsphalt, ...pCurb, ...pTree, ...pSide])))
     asphalt  = intersectRings(asphalt,  [stencil])

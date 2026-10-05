@@ -46,9 +46,9 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
 > Fixing only the first moves the seminary from grey `unknown` to grey `parking`.
 > 1. **Stop the hijack** — an unreadable overlay must fall through to the size fallback, not capture the face.
 > 2. **Make the ingest vocabulary fail loudly**, the way `lu-policy.mjs` already does one stage down.
-> 3. **Settle the containment direction** between `classify`/the OSM vote and `luForRing`.
+> 3. **Settle the containment direction** between `classify`/the OSM vote and the per-piece paint (`landUseByPiece`).
 >
-> *Then* **Phase 2** (§3 — area-weighted join, delete `pickLuFromHash`, which is now a cleanup rather than a fix) and **Phase 3** (§3 — building-derived LU, still the portable rung for assessor-less towns).
+> *Then* **Phase 2** (§3 — area-weighted join; ✅ `pickLuFromHash` deleted 2026-10-04) and **Phase 3** (§3 — building-derived LU, still the portable rung for assessor-less towns).
 >
 > ⚠️ **Bounds in §6 all still apply** — especially: **no LS re-pour or re-bake without Jacob's explicit go-ahead** (~19 of its 173 faces move), and **do not recolour the Look** (the `underived` colour shipped as a flagged **placeholder** at both palette sites, pending Jacob's call).
 >
@@ -93,11 +93,8 @@ evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intend
   66 + 119 go `greenhouse → agricultural`, so huron loses `greenhouse` entirely until ① is ruled.
   ▶ `node checks/claims-a-face-takes-the-land-use-that-covers-it.mjs` · `node scratch/huron-median-lu/union-before-after.mjs`
 
-- **A tile whose inner area falls into several pieces is painted whole by ONE point** (`tileGround.js` `luForRing`; Sward,
-  2026-10-04, `acff8071`). This is `PREBAKE-POLYGONIZATION-PLAN.md`'s "composite faces" warning (*"Don't silently coarsen"*),
-  now measured in every town: tiles with a second piece ≥ 100 m² — ▶ `node scratch/huron-median-lu/split-tile-census.mjs`.
-  It is how crop reached Huron's motorway median. ⇒ Each piece needs its own land use; the mechanisms that split the
-  tiles are in `BRIEF-highway-build.md` Open.
+- ✅ **CLOSED in code, not poured: each piece of a tile takes its own land use**, by area (`BRIEF-land-use-per-piece-and-the-control.md`
+  step 1). ▶ `node checks/claims-every-piece-takes-its-own-land-use.mjs`. The mechanisms that split tiles are `BRIEF-highway-build.md` Open.
 
 ## 1. The finding
 
