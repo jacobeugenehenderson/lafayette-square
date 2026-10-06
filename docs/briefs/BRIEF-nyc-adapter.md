@@ -124,6 +124,24 @@ and the Pour's Look id is `slugify(name)` (`serve.js` POST /looks) — "Jackson 
   deduped by proximity, provenance per tree. It feeds BOTH tree entry points (`tree-bake-inputs.mjs`,
   `bake-trees.js#SOURCE_BY_BASENAME`). ⭐ St. Louis's one-off `scripts/13` fetch should become MO's
   tree well by the same mechanism — note it, do not fold it in unasked.
+- **`addressPoints` — NYC AddressPoint (`uf93-f8nk`), the city's 911 dispatch layer** (*"some computer
+  aided dispatch systems use address points as the primary source"*). It is the existing `addressPoints`
+  kind, exactly as Ohio's LBRS is Huron's. Carries `bin`, `full_street_name`, `house_number`, and
+  `sosindicator` (side of street). ⭐ Measured by Boz on a 358-point sample in 11372: **every point lies
+  inside its own building's footprint, ~1.5 m in from a wall, and 355 of 358 in the half facing its
+  address street (306 within the front 15% of the depth).** ⇒ it names each building's FRONT and the
+  street it faces. ⛔ Whether its position ALONG the front marks the door: not established.
+- **`buildingAttributes` — Building Elevation and Subgrade (`bsin-59hv`, DCP 2023)**, joined by BIN:
+  `z_grade` (lowest adjacent grade), `z_floor` (lowest active floor), `subgrade` (Y/N), `notes2`
+  (ground-floor use: commercial / garage / lobby), `notes3` (basement access: door or window ·
+  walkway or driveway leading down). Acquire and join only — **no geometry in this brief.** It feeds the
+  facade-family work (stoops over areaway stairs, steps up, shopfronts at grade). ⚠️ `z_grade` is the
+  LOWEST adjacent grade — the bottom of an areaway, not the sidewalk; the dataset records no street
+  level. Measured in CD3 (Boz): 14,536 buildings; 2,362 have a raised first floor (≥4 ft) AND a walkway
+  down to the basement — the stoop-over-stairs rowhouse.
+- ⭐ **Width evidence, not used as input here:** the city centerline (`inkn-q76z`) carries
+  `streetwidth`, `number_travel_lanes`, `number_park_lanes`. The §3.3 rung is measured from `CURB`;
+  these may serve a check.
 - `CURB_CUT` is not on Open Data; it is a declared FILE well from the 2022 planimetrics geodatabase
   (GDAL is installed), acquired here, consumed by `BRIEF-corner-ramps-and-kerb.md`.
 
