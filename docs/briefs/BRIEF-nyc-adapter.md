@@ -91,19 +91,34 @@ and a fallback for inspection only. GDAL (`ogr2ogr`) is installed on this machin
 ⛔ **Units.** NYC data is EPSG:2263 (NY State Plane Long Island, **US feet**). Reproject at intake into
 the kit's frame. A metre-assuming constant downstream is Layer 0's Class D trap.
 
-**3.3 Width pre-fill (ruled "b").** After the skeleton exists (skelIds are minted there), measure the
-city's `CURB` line's perpendicular distance from each chain, per side, per segment, and write it as
-that frontage's half-width.
-- ❓ **Where it is written is the one open design question — bring it to Boz before writing code.**
-  It is a fact about the TOWN, not a Look's styling, which argues for the scene-level
-  `clean/overlay.json` (prebake reads it) over the per-Look `design.json#blockCustoms`. Read both
-  paths and say which can carry a per-segment value today.
-- ⭐ **Every pre-filled value is stamped with its source** (`source: "nyc-planimetrics-2022"` or
-  similar) — `ROADMAP A23`. An operator edit replaces the stamp. A value with no stamp is the operator's.
-- Where the city has no curb (or the measurement is degenerate), write nothing and **count it loudly**.
+**3.3 The city's width enters NATIVELY, as one rung of the curb's own resolver — ✅ RULED (Jacob, 2026-10-05).**
+*(Supersedes "pre-fill as authoring": Kerb's confirm-pass found no home that is per-block, per-scene and
+off the open `segOrd` key — `overlay.json` is per chain-side, `blockCustoms` is per-Look and on the open
+key. Jacob: build it native and choose our process "at the step when the curb ring stamps the street
+fes".)*
+- **The step:** under ① every curb edge takes its width from `protoMeasureOf(label)` in
+  `src/lib/tileGround.js` — today *operator override (`bcOf`) ?? the frozen base (`protoBase`)*, per ①
+  edge label (`protoOwners[label]` = skelId · side). ② is ① pushed in by that value per edge.
+- **The rung:** *operator override ?? **the city's measured width for this ① edge** ?? the kit's base.*
+  The operator still wins; the kit's base is unchanged where the city says nothing.
+- **Native and two-sided by construction.** ① already splits every street into its two sides, each its
+  own labelled edge. Measure the city's `CURB` **perpendicular from that ① edge**. ⛔ Not
+  `outerHWProfile` (one-sided and carriageway-gated **on purpose**, because of ①), not a vertex-position
+  profile, not `segOrd`, not `overlay.json`, not `blockCustoms`, and not `survey.json`'s name-keyed path.
+- **Measured at the pour, frozen with ①.** Right after ① is minted in prebake (`derive.js`,
+  `mintProtopolygon`), measure each edge against the city's curb and freeze the value beside ①'s
+  labels in the artifact, with its source (`nyc-planimetrics-2022`). Nothing is written to any
+  operator file, so `ROADMAP A23` does not arise.
+- ⛔ **No silent fill.** An edge the city has no curb for, or whose measurement is degenerate, carries
+  **no** measured value (never a 0, never the base copied in), and the pour **counts and prints** them
+  per town. ⭐ The operator must be able to tell "measured" from "kit default" on every edge.
+- ⚠️ **Confirm before building:** ①'s labels are indices into the frozen ①, so a re-pour re-measures
+  every edge. Say whether that holds end to end (pour → Survey → Section → bake) and whether any
+  consumer reads `protoMeasureOf` somewhere the measured rung must also reach.
+- ⭐ Kit-general: any town whose city publishes a curb layer gets the same rung; NYC is the first.
 
 **3.4 The checks — the deliverable.** Each RED-until-true, mutation-tested:
-- **curb vs city curb** — per block-side, with authoring LOADED, the distance from our curb to the
+- **curb vs city curb** — per ① edge, with authoring LOADED, the distance from our curb to the
   city's `CURB`. Reports which blocks disagree and by how much. ⛔ Never run with authoring off
   (`POLYGON-FIRST §5` Rule 1); an unmeasurable block is its own failing class (Rule 2).
 - **median vs city median** — our median blocks against `MEDIAN`.
