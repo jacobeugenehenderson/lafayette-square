@@ -185,17 +185,20 @@ re-pour** — today's `shape.json` predates the stamp, and the checks below fail
   `CURB_CUT` waits on `BRIEF-nyc-adapter` step 5. Binding = containment in the arc's span, never nearest.
 - **§0a item 9 — square crosswalks** (diagonal corners: ends where the square crosswalk meets the kerb). With item 8.
 - **The operator gesture** that writes `blockCustoms[…].ramps.{start,end}` — read by the painter, written by nothing.
-- **The kerb build** — rulings owed: where a riser goes (only curb↔asphalt, or also alleys / highway verge — LS has
-  ~22 km of alley edge with no curb); anchors lifted by h or buried; LS's kerb height (neutral default 0).
-- **With Jacob:** A1 — "ramp" means three things (SECTION §4's pad, the leg SLOPE, the curb cut); proposed: the drop
-  is a **curb cut**. A3 — is a warning strip a seam under RIBBONS §1's one-licensed-seam rule?
-- **The RIBBONS conformance draft, held for A1/A3.** Its findings, so they outlive the session: ROT — `RIBBONS §4`'s
+- **The kerb build — ✅ RULED (Jacob, 2026-10-06), unbuilt.** A riser goes **wherever a curb is drawn today**, and only
+  there — road types already ruled curbless (alleys, highway verge) get none. Anchors ride the lifted ground (§0a item 4).
+  LS: a **square curb, ~6 in (15 cm)** — height = width; kit default stays 0.
+- **✅ RULED (Jacob, 2026-10-06), unbuilt:** A1 — the drop is a **curb cut**; rename the code identifiers and the layer
+  label to match ("ramp" stays SECTION §4's pad and the leg slope). A3 — a warning strip or crosswalk is **paint on top**,
+  never a seam.
+- **The RIBBONS conformance pass — unblocked by A1/A3, unwritten.** Its findings, so they outlive the session: ROT — `RIBBONS §4`'s
   "FILL corner = the bent SECTOR … tangent-trimmed legs" (that is the walk painter; the map draws with
   `sectionPassProtoTile`), and `§2`'s / the glossary's "a run seam is a corner; `cornerAt` a≠b" (legacy walk path
   only). UNDERSTATES — `§1`'s corner test (the pad is licensed by the turn; whether a street meets it is
   `iaJunction`), invariants 1+3 (a marking on the asphalt is not the band), `§4`'s chain of homes (junction stamp,
   `ramp-norm.mjs`, crosswalks). Vocabulary — `§1` "a node is a handle configuration" vs `junctions[].node`.
-- **A T's far kerb gets no crosswalk** (LS 360 such crossings) — no rule built; Jacob's.
+- **A T's far kerb — ✅ RULED (Jacob, 2026-10-06), unbuilt:** a norm. Kit default = **no crosswalk** across the through
+  street (Jacob: most streets); **LS = add a curb cut on the far kerb and cross to it** (LS 360 such crossings).
 
 **Traps a fresh agent will hit:**
 - ⭐ **② contour runs OPPOSITE to ①'s block ring** (875 of 876 LS corners). Read a corner's arriving / leaving leg off
