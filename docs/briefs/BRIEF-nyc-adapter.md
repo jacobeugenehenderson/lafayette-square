@@ -234,3 +234,33 @@ renderer. Eye-gate: Jacob in Survey over the aerial, scene recorded.
 `ny.mjs` resolves Jackson Heights' wells; Jacob runs Extent on Jackson Heights and the pour prints
 what each well supplied; Survey opens with stamped, city-measured widths; the 3.4 checks run and are
 mutation-tested; Jacob's eye in Survey.
+
+## 9. STATE — 2026-10-06 (Kerb, end of night 1)
+
+**Landed** (each commit carries its proof; ▶ the check named is the receipt):
+- Step 0 web address `d9832ccf` · join-a-declared-folder fixes `ee16b44d` ▶ `claims-a-scene-is-named-not-numbered`
+- Step 1 `states/ny.mjs` + well `protocol` `8c522747` ▶ `claims-a-state-gives-its-towns-their-wells`
+- Step 2 Socrata reader + NYC AddressPoint `d50a1e66` ▶ `claims-socrata-reads-the-whole-envelope`
+- Step 3a one id minter + one footprint resolver `d8cc66d1` ▶ `claims-one-building-id-minter`
+- Step 3b NYC footprints by BIN, BES, by-BIN addresses, JH declared `fc490aaa` ▶ `claims-a-city-building-keeps-its-permanent-id`
+- Extent fetches every declared well `00f4dcf1` ▶ `claims-extent-fetches-every-declared-well`
+- Step 4 trees as a well kind + the supersession ruling `cd700124` ▶ `claims-a-tree-well-plants-only-standing-trees`
+- Tide: a named station `dc985658` ▶ `claims-a-tide-station-is-in-the-water-or-named`
+- A coast outside the drawing is no shore — terrain `b6dd1e17`, every shore step `a9221469` ▶ `claims-a-coast-outside-the-drawing-is-no-shore`
+
+**Open:** step 5 surfaces (CURB `5xvt-8cbk`, MEDIAN `ees7-4ufv` on Socrata; CURB_CUT a FILE well from the 2022 gdb) ·
+step 6 the §3.3 measured rung (incl. Section's own resolver, the live-mint disclosure, the handle fallbacks) · step 7
+the curb/median checks (§3.4). Jackson Heights owes a re-bake (its `clean/map.json` is gone after the last rollback).
+**Not this brief's, handed to Boz:** a JH tree-species-map (arborist; absent resolves EMPTY) · holed footprints
+unsupported end to end, OSM's too (Jacob) · 598 BINs with several city addresses → null + candidates (Jacob) ·
+`land_area` has no unit (ROADMAP) · huron's ArcGIS address `--dry-run` sample query 400s (pre-existing).
+
+**Traps a fresh agent will hit:**
+- A Socrata well's column list is `columns`, never `select` — `resolveFromState` strips `select` (the town selector).
+- Declare an NYC town's `sources.json` BEFORE its first Extent fetch: the identity registry seals on that fetch.
+- Saving anything `serve.js` imports (`sources.js`, `states/*`, `tree-bake-inputs.mjs`…) restarts it — mutation-test
+  restores included. Mutate a COPY, or run `node scripts/bake-in-flight.mjs` and ask first.
+- NYC BIN: normalise once (`permanent-id.mjs`); `x000000` placeholders are not ids; BES serves `4043753.0`.
+- `bake-terrain.js` refuses to load without a scene — its pure helpers live in `coast-in-drawing.mjs`.
+- `coastRings` closes against the FETCH bb; only `coastVerdict` / `ringsInDrawing` say what is in the town's drawing.
+- Commit through a private index built from HEAD; when a file carries a peer's hunks, commit a blob of HEAD + yours.
