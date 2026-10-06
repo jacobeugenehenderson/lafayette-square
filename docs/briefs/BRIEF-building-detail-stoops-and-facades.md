@@ -9,7 +9,8 @@ contradicts this brief — **stop and flag**.
 
 ⛔ **NOT DISPATCHABLE YET.** It consumes what `BRIEF-nyc-adapter.md` acquires (BIN identity, NYC address
 points, Building Elevation and Subgrade). Dispatch after that adapter lands, and after §2's door-position
-question is answered.
+question is answered. ⭐ **Jacob, 2026-10-05: roofs and stoops, with procedural windows and doors, are
+WANTED — they sell the shot, and cheaply.**
 
 ---
 
@@ -99,6 +100,22 @@ mirrored in pairs. Walk-up apartment buildings: one central entrance.
 3. **Stoops and areaways as geometry**, built from door position + first-floor height + the sidewalk
    height at the door. Check: every stoop's top meets its door's sill; every stoop's foot meets the drawn
    ground (no float, no sink — `ARCHITECTURE §8`).
+
+4. **Stepped roofs — ✅ in scope (Jacob, 2026-10-05: "we should totally do the roofs and the stoops").**
+   Source: NYC City Planning's 3D Building Model, one Rhino `.3dm` per community district (Queens CD3:
+   `~/Desktop/dev.nosync/NYC_Ward/NYC_3DModel_QN03.3dm`, 2014, feet). **Measured by Boz:** 19,378
+   buildings; every facade a single flat rectangle and every roof polygon perfectly flat (zero z-range on
+   all 25,635) — so it carries NO pitched roofs, windows or detail — but **24% of buildings have 2+ roof
+   levels** (14,393 one · 3,115 two · 953 three · 379 four or more): setbacks, bulkheads, lower rear
+   extensions. ⇒ the building becomes a stack of flat-roofed volumes instead of one prism.
+   - Read with `rhino3dm` (Python; not GDAL). Buildings are NOT joined objects — match each roof polygon to
+     its footprint by containment, then to the building by BIN (`BRIEF-nyc-adapter`). ⛔ An unmatched roof
+     piece is counted and printed, never dropped silently.
+   - A declared FILE well per community district (like `CURB_CUT`), not a per-envelope fetch. ⚠️ 2014
+     vintage: where the current footprint and the 2014 roof disagree, the current footprint wins and the
+     disagreement is counted.
+   - Check: every roof level lies inside its building's footprint; the highest level matches the
+     footprint dataset's `height_roof` within a tolerance stated with its reason.
 
 ## 7. Chain
 
