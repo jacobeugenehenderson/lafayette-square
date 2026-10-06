@@ -4,7 +4,7 @@
 (`ListAgents`, then `/rename`). **Agent: FRESH** — the corner canon is long and hard-won and must be read
 whole, with no assumptions carried in from another window.
 
-**Instruction: confirm-then-build.** Read the canon and code below, tell Boz what you found, and if the
+**Instruction: confirm-then-build.** Read the canon and code below, tell Boz what you found (**report to the session `lafayette-square-nosync-d5`, NOT "Boz the Elder"** — two coordinator seats are running; the Elder runs a separate work group), and if the
 code contradicts this brief — **stop and flag**. ⭐ This brief touches SECTION's ruled corner; the stop is
 cheaper than a fifth reverted corner pass (`_archive/RIBBONS-history-2026-06-12.md §7`).
 

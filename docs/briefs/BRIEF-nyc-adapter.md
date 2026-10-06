@@ -4,7 +4,7 @@
 (`ListAgents`, then `/rename`). **Agent: FRESH** — this is a new subsystem on a new town; nothing an
 existing window holds is load-bearing, and the state-adapter pattern you extend is fully in the code.
 
-**Instruction: confirm-then-build.** Read the canon and the code sites below, tell Boz what you found,
+**Instruction: confirm-then-build.** Read the canon and the code sites below, tell Boz what you found (**report to the session `lafayette-square-nosync-d5`, NOT "Boz the Elder"** — two coordinator seats are running; the Elder runs a separate work group),
 and if the code contradicts this brief — **stop and flag**. The stop is the deliverable, not a failure.
 
 ---
