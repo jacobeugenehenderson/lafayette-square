@@ -51,11 +51,13 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    `ramps: { start, end }` ("a ramp at my corner end"). Identity rides `iaStamp`; nothing is recovered.
    When the two legs disagree, **authored wins**, the same precedence the frontage resolution uses.
    No new authoring channel, no corner-keyed table, ⛔ never the per-ring arc ordinal.
-2. **+ 3. Stamp ①'s JUNCTION identity onto each corner at freeze.** It answers both flags with carried
-   identity: a corner at a junction (degree ≥ 3) gets ramps and crosswalks; a mid-block BEND keeps its
-   pad and gets no ramp; crosswalks pair by same junction + same crossing road. ⛔ Not the owner-change
-   test, not a ray-and-snap (proximity recovery, A15). ⚠️ It changes the frozen artifact ⇒ it lands with
-   the **next scheduled re-pour** of the towns, coordinated with Boz (another work group re-pours).
+2. **+ 3. THE LEGS DECIDE** (Jacob, 2026-10-06 — supersedes the junction-DEGREE stamp first ruled here: *"LS was
+   made with a mentality that a corner was a result of the legs which made it"*). A corner whose two legs (the runs
+   owning the edges either side of its arc, off the frozen `iaStamp`) are DIFFERENT roads is a junction — curb cuts +
+   crosswalks; the SAME road (`RIBBONS §3.3`: `roadId` OR `throughId` agrees) is a bend — pad only; a leg with no run
+   is UNKNOWN, counted by cause. Crosswalks pair on the mint's frozen chain-pair node (`nodes[legA|legB]`) + the
+   crossed chain's two sides. ⛔ Not a degree re-derived from the chains (`EXTENT-DESIGN §4.1`), not a ray-and-snap
+   (`A15`). ⚠️ It changes the frozen artifact ⇒ it reaches the map with the **re-pour**.
    **First, read-only:** measure per town how many eased corners are bends, and post it.
    ✅ **Measured (Flare, 2026-10-05, from `public/baked/<town>/shape.json`):** bends are LS 9.2% · HPDM
    13.1% · huron 10.9% · provincetown 27.9% of arcs — and the count MOVES with the road key (raw skelId
@@ -158,3 +160,54 @@ Section in the Designer (2D), then Stage/Preview (the kerb). ⛔ No parallel ren
 Every corner shows its ramps and crosswalks by rule, evidence or override, each with its source; the
 kerb stands up and drops at each ramp; the checks are mutation-tested; Jacob's eye in Section and Stage,
 scene recorded.
+
+## 9. STATE — 2026-10-06 (Flare, end of night 1)
+
+**Landed** (each commit carries its proof; ▶ the check named is the receipt). ⚠️ **None reaches the map until the
+re-pour** — today's `shape.json` predates the stamp, and the checks below fail on it with "re-pour owed", correctly.
+- The legs decide junction / bend / unknown, stamped at freeze (`iaJunction`, `junctions[]`) — `3589f711` (a junction
+  DEGREE, superseded) → `76d6958a` (the leg rule; the degree re-derivation excised) ▶ `claims-every-corner-knows-its-junction --build --live`
+  (live mint: LS 864 junction · 99 bend · 120 unknown; every unknown is `capEdge`, the dead-end mouth class, ROADMAP A0/A10).
+- The ramp norm ladder, scene → state → kit `none`, frozen with its rung — `a5760f95` (`cartograph/ramp-norm.mjs`);
+  LS = diagonal 1.5 m / 0.6 m — `5648749c` → `1d4d0389` (revised from perpendicular the same night).
+- Ramps on junction corners as slices of the walk band, per-leg override read, loud "N corners have no ramp source"
+  — `b315b5d9` ▶ `claims-every-junction-corner-has-a-ramp-source --live --selftest` (mutation-tested).
+- Crosswalks, ramp to ramp, paired by identity; `noNode` / `unpaired` / `ambiguous` counted — `38d934bf` (same check).
+- The kerb's cost, measured and stopped (as §3 asked) — in the pre-build thread, not a commit: risers +2.5–15.6% of
+  ground tris; anchors bury by h (the sampler ignores the mesh's y); AO cannot see a 15 cm step (texel 1.8–10 m).
+- Not this brief's, done the same night: the edge fade moved from Extent to the Look, and the clip to the radius —
+  `62955496` + `66547bfb` (Boz's task; `ROADMAP` carries the one open line, Altadena's disc past its bbox).
+
+**Open:**
+- **§0a item 8 — each corner's own style from evidence.** OSM keeps crossings as WAYS in `clean/skeleton.json`
+  `paths` (`footway=crossing`, full tags; LS 672, HPDM 1,940, huron 92, ptown 141); `kerb=lowered` is sparse. A
+  crossing way's middle vertex should be a shared node with the road it crosses — verify before binding. NYC
+  `CURB_CUT` waits on `BRIEF-nyc-adapter` step 5. Binding = containment in the arc's span, never nearest.
+- **§0a item 9 — square crosswalks** (diagonal corners: ends where the square crosswalk meets the kerb). With item 8.
+- **The operator gesture** that writes `blockCustoms[…].ramps.{start,end}` — read by the painter, written by nothing.
+- **The kerb build** — rulings owed: where a riser goes (only curb↔asphalt, or also alleys / highway verge — LS has
+  ~22 km of alley edge with no curb); anchors lifted by h or buried; LS's kerb height (neutral default 0).
+- **With Jacob:** A1 — "ramp" means three things (SECTION §4's pad, the leg SLOPE, the curb cut); proposed: the drop
+  is a **curb cut**. A3 — is a warning strip a seam under RIBBONS §1's one-licensed-seam rule?
+- **The RIBBONS conformance draft, held for A1/A3.** Its findings, so they outlive the session: ROT — `RIBBONS §4`'s
+  "FILL corner = the bent SECTOR … tangent-trimmed legs" (that is the walk painter; the map draws with
+  `sectionPassProtoTile`), and `§2`'s / the glossary's "a run seam is a corner; `cornerAt` a≠b" (legacy walk path
+  only). UNDERSTATES — `§1`'s corner test (the pad is licensed by the turn; whether a street meets it is
+  `iaJunction`), invariants 1+3 (a marking on the asphalt is not the band), `§4`'s chain of homes (junction stamp,
+  `ramp-norm.mjs`, crosswalks). Vocabulary — `§1` "a node is a handle configuration" vs `junctions[].node`.
+- **A T's far kerb gets no crosswalk** (LS 360 such crossings) — no rule built; Jacob's.
+
+**Traps a fresh agent will hit:**
+- ⭐ **② contour runs OPPOSITE to ①'s block ring** (875 of 876 LS corners). Read a corner's arriving / leaving leg off
+  its own flank stamps; never assume a winding.
+- **A corner's ① vertex is ε off the centreline** — four corners at one crossing have four. Pair across the street on
+  the mint's chain-pair node, which all of them share.
+- **`junctionMap.at` sits 1–10 cm off `ribbons.streets`' shared vertices** — exact-coordinate binding finds ~5%. Never
+  bind by coordinate (and never nearest). The divergence is boarded under `SKELETON §0.1`.
+- **A null flank stamp is UNKNOWN, never a bend** — a cap edge ends a run by construction (`capEdge`).
+- **The live mint and the frozen ① give different corner counts** (LS 1083 vs 1242) — compare like with like.
+- **Unnamed streets:** classify on `roadId` / `throughId`, never the ordinal-stripped skelId (`residential-70` ≠ `-73`).
+- **`git commit -o -- paths -F msg`** reads `-F` as a pathspec and commits nothing — options before `--`. And zsh does
+  not word-split `$VAR`: use an array for a path list.
+- **Saving `cartograph/serve.js` restarts the dev server** (`node --watch`).
+
