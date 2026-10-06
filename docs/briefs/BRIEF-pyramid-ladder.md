@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: yes (Strobe, 2026-10-06, after BRIEF-hero-arrival-perf's post-FX split)
 written: 2026-10-04
 evict-when: Jacob's theory test is measured and reported (phone-hi: DoF + bloom at a low rung vs switched off, cost and look); the pyramid reads levels / resolution / radius from the surface's authored deployment policy through qualityProfile.js; a surface can run the pyramid-fed effects at a rung instead of dropping them; Preview's tuner becomes a live deployment control (no longer "unfinished"); checks green and mutation-tested; Jacob has eyed a phone tier with effects at a low rung
 -->
@@ -14,14 +14,12 @@ the dial.
 
 ## Who you are, and the bounds
 
-**You are the dispatched agent. Name yourself: one word, yours, and not one a RUNNING session holds** (`ListAgents`; ask Jacob to
-`/rename`). **Agent: FRESH, or WARM → Plumb if Jacob prefers** (Plumb built E's gauges and F's deployment authority this package writes
-into; ask Jacob which).
-- The kit's post-FX and quality code. ⛔ No pours or bakes; `node scripts/bake-in-flight.mjs` before saving anything the dev servers
-  import; ports 5173 / 5180. Commit only your own paths through a private index.
-- ⚠️ Live in the same checkout: **Plumb** (Preview, `qualityProfile.js`, `deployment.js`), **Grain** (overhead trees), **Gale** (wind
-  sheet), **Lens** (camera), a lamps agent. Agree before touching their files (`ListAgents` → `SendMessage`).
-- A kit change reaches the Ward at the next pin move; batch it, and the push and bundle publish need Jacob's confirmation in your window.
+**Dispatched to Strobe (2026-10-06), as the fix for the cost `BRIEF-hero-arrival-perf` step 1 ranked first** (Huron: the post
+stack is ~16 of ~36 ms; confirmed in code that no reduced rung runs anywhere). **Report to the session `Boz the Younger`.**
+- The kit's post-FX and quality code. ⛔ No pours or bakes; confirm with Boz before saving anything the dev servers import.
+- ⚠️ Live in the same checkout: **Argon** (`SlabBuildings.jsx`, neon), **Sill** (`tileGround.js`, the raised kerb's anchors/shaders).
+  Agree before touching their files.
+- A kit change reaches the Ward at the next pin move; publishing the kit bundle needs Jacob's go.
 - **Three-part fix** (`CLAUDE.md`); registers `cartograph/PREVIEW.md`, `cartograph/OPERATIONS.md` § Preview, `cartograph/ARCHITECTURE.md
   §8`; the "unfinished" labels come off only when the thing they describe is true.
 
@@ -54,9 +52,9 @@ into; ask Jacob which).
 
 ## The work, in order
 
-1. **Jacob's theory test, before building anything permanent.** On the phone-hi surface, LS and Huron, Browse and Hero: measure **DoF + bloom
+1. **Jacob's theory test, before building anything permanent.** On the **desktop** surface (where Jacob feels it) and phone-hi, LS and Huron, Browse and Hero: measure **DoF + bloom
    at a low rung** (a temporary in-page override is fine for the test, in `scratch/`) against **both switched off** and against today's
-   desktop rung. Cost with E's gauges (`frameCost.js#gpuWindow`, bracketed rest/off/rest), and the look as screenshot pairs at a pinned
+   desktop rung. Cost with the frame-timeline recorder (`BRIEF-hero-arrival-perf` step 0; ⛔ not `frameCost.js#gpuWindow`, which is not GPU time on this M1), bracketed base/off/base, and the look as screenshot pairs at a pinned
    movie time and viewport. ⇒ **Report to Jacob before step 2**: if a low rung costs about what "off" costs, the dial wins and the rest is
    worth building; if not, say so plainly.
 2. **The pyramid reads its rung:** `DownsamplePyramid` takes levels / resolution / radius again, from the surface's policy. Find why the
