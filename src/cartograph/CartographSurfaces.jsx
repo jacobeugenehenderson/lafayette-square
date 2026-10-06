@@ -90,7 +90,7 @@ const TABS = [
       { id: 'lot',           label: 'Parcel',        kind: 'layer' },
       { id: 'curb',          label: 'Curb',          kind: 'layer' },
       { id: 'sidewalk',      label: 'Sidewalk',      kind: 'layer' },
-      { id: 'ramp',          label: 'Curb Ramps',    kind: 'layer' },
+      { id: 'curbCut',       label: 'Curb Cuts',     kind: 'layer' },
       { id: 'crosswalk',     label: 'Crosswalks',    kind: 'layer' },
       { id: 'treelawn',      label: 'Treelawn',      kind: 'layer' },
       { id: 'building',      label: 'Buildings',     kind: 'layer' },

@@ -67,8 +67,8 @@ for (const t of stamped) for (let si = 0; si < t.iaArc.length; si++) {
 }
 console.log(`${scene}${args.includes('--build') ? (args.includes('--live') ? ' (built, live ①)' : ' (built, frozen ①)') : ''}: ${arcs} corner arc(s)`)
 console.log(`  at a JUNCTION : ${junction}  (${nodes.size} distinct node(s)${noNode ? `; ${noNode} with no frozen node — crosswalks unpaired` : ''})`)
-console.log(`  BEND          : ${bend}  (pad, no ramp)`)
-console.log(`  UNKNOWN       : ${unknown}  (pad, no ramp — and NOT a bend)`)
+console.log(`  BEND          : ${bend}  (pad, no curb cut)`)
+console.log(`  UNKNOWN       : ${unknown}  (pad, no curb cut — and NOT a bend)`)
 if (census) console.log(`    why (per leg with no run): ${Object.entries(census.why || {}).map(([w, k]) => `${k} ${w}${w === 'capEdge' ? ' (the dead-end mouth class, ROADMAP A0/A10)' : ''}`).join(' · ') || '—'}`)
 else if (unknown) console.log('    why: read with --build (the reason is the pour\'s, not the artifact\'s)')
 if (mixed) console.log(`  ⛔ ${mixed} arc vertex/vertices disagree with their own arc's class`)

@@ -61,8 +61,6 @@ export const STANDARDS = {
   // ── Intersection geometry ─────────────────────────────────────────
   intersection: {
     curbReturnRadius:  15 * FT, // curb fillet radius at corners
-    curbRampWidth:      4 * FT, // ADA ramp width
-    curbRampDepth:      4 * FT, // ADA ramp landing depth
     crosswalkWidth:     8 * FT, // between outer edges
     stopBarOffset:      4 * FT, // from crosswalk edge
     stopBarWidth:      18 * 0.0254, // 18" wide

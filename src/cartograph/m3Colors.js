@@ -24,8 +24,8 @@ export const DEFAULT_LAYER_COLORS = {
   alley:      '#3E3E3C',  // narrower/darker than streets but still open
   curb:       '#A8826A',  // warm tan — reads as poured concrete in sun
   sidewalk:   '#B8B2A4',  // light warm cream
-  ramp:       '#D9A21B',  // curb-ramp detectable-warning strip (junction corners only)
-  crosswalk:  '#ECE8E0',  // ramp-to-ramp crosswalk paint on the asphalt
+  curbCut:    '#D9A21B',  // curb-cut detectable-warning strip (junction corners only)
+  crosswalk:  '#ECE8E0',  // curb-cut-to-curb-cut crosswalk paint on the asphalt
   treelawn:   '#5E8A3A',  // grass between sidewalk and curb
   median:     '#4E7A32',  // center divider grass (divided roads)
   footway:    '#9A8E78',  // slightly cooler than sidewalk — trail

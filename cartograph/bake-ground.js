@@ -226,11 +226,11 @@ const PAINT_ORDER = [
   ...TREELAWN_LU_VARIANTS.map(lu => ['mat', `treelawn:${lu}`]),
   ['mat', 'treelawn'],
   ['mat', 'sidewalk'],
-  // the junction corners' ramp warning strips — on the walk, under nothing (`rampsOnJunctionCorners`)
-  ['mat', 'ramp'],
+  // the junction corners' curb-cut warning strips — on the walk, under nothing (`curbCutsOnJunctionCorners`)
+  ['mat', 'curbCut'],
   ['mat', 'curb'],
   ['mat', 'asphalt'],
-  // ramp-to-ramp crosswalk paint — on the asphalt, cutting it (`crosswalksBetweenRamps`)
+  // curb-cut-to-curb-cut crosswalk paint — on the asphalt, cutting it (`crosswalksBetweenCurbCuts`)
   ['mat', 'crosswalk'],
   ['mat', 'median'],
   // Alley + path ribbons painted on top of streets where they cross.
@@ -510,7 +510,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   pushClipperRings('highway',  pr.highway)   // grade-separated highway-class roads → own layer/material
   pushClipperRings('curb',     pr.curb)
   pushClipperRings('sidewalk', pr.sidewalk)
-  pushClipperRings('ramp',     pr.ramp)
+  pushClipperRings('curbCut',  pr.curbCut)
   pushClipperRings('crosswalk', pr.crosswalk)
   for (const [lu, rings] of Object.entries(pr.treelawnByLu)) pushClipperRings(`treelawn:${lu}`, rings)
   for (const [lu, rings] of Object.entries(pr.luByClass)) {

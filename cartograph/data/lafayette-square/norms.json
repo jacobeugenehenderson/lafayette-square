@@ -1,4 +1,4 @@
 {
   "_ruled": "Jacob, 2026-10-05: one diagonal (45°) ramp per junction corner, 1.5 m wide, 0.6 m warning strip — revised the same day from a perpendicular pair. Crosswalks not ruled — left to the ladder (kit 'none', counted loud).",
-  "ramps": { "style": "diagonal", "width": 1.5, "warningDepth": 0.6 }
+  "curbCuts": { "style": "diagonal", "width": 1.5, "warningDepth": 0.6 }
 }
