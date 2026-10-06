@@ -4,9 +4,12 @@
 (`ListAgents`, then `/rename`). **Agent: FRESH** — the corner canon is long and hard-won and must be read
 whole, with no assumptions carried in from another window.
 
-**Instruction: confirm-then-build.** Read the canon and code below, tell Boz what you found (**report to the session `lafayette-square-nosync-d5`, NOT "Boz the Elder"** — two coordinator seats are running; the Elder runs a separate work group), and if the
-code contradicts this brief — **stop and flag**. ⭐ This brief touches SECTION's ruled corner; the stop is
-cheaper than a fifth reverted corner pass (`_archive/RIBBONS-history-2026-06-12.md §7`).
+**Instruction: confirm-then-build.** Read the canon and code below, tell Boz what you found (**report to the session
+`Boz the Younger`**), and if the code contradicts this brief — **stop and flag**. ⭐ This brief touches SECTION's ruled
+corner; the stop is cheaper than a fifth reverted corner pass (`_archive/RIBBONS-history-2026-06-12.md §7`).
+**Night 1 is landed (§9); your work is §3, in order.** ⭐ **Vocabulary (ruled 2026-10-06, A1):** the place the kerb
+drops is a **CURB CUT**; "ramp" stays SECTION §4's pad and the leg slope. This brief's older text says "ramp" for
+the curb cut — read it as curb cut.
 
 ---
 
@@ -90,9 +93,6 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    the square crosswalk meets the kerb and the apex ramp lands inside it. (Literal ramp-to-ramp at diagonal
    corners crosses the intersection box diagonally — Flare, landing 2.) Build it with per-corner style (item 8).
 
-**Order:** landing 1 = ramps by evidence/norm as 2D material on junction corners (needs the stamp ⇒
-with the re-pour) · landing 2 = crosswalks (same stamp) · landing 3 = the kerb, after its measurement.
-
 ## 1. Read first — whole, not sampled
 
 - `cartograph/SECTION.md` **§4 entire** (RAMP vs SLOPE, "the legs decide the corner", the TL↔TL blunt end)
@@ -114,19 +114,50 @@ with the re-pour) · landing 2 = crosswalks (same stamp) · landing 3 = the kerb
 | the flattened ground plane | `cartograph/bake-ground.js#flattenPaintStack`; renderer `src/components/BakedGround.jsx` |
 | ground conformance (anchors sit on the drawn ground) | `cartograph/ARCHITECTURE.md §8 "Ground conformance"` |
 
-## 3. Sequence — three landings, each eye-gated
+## 3. Sequence — the work after night 1 (Boz, 2026-10-06; Jacob: "attack all the corner brief issues now")
 
-1. **Ramps on the arc, 2D.** The corner record gains its ramp list; Section paints the warning strips and
-   marks the drop positions as material. Default = the rule; evidence overrides where present; operator
-   overrides last. **Check:** every recorded curb cut (where a town has them) lands on an arc ramp of the
-   right corner — per town, mutation-tested.
-2. **Crosswalks.** Ramp-to-ramp striping across the street, on the asphalt. **Check:** every crosswalk
-   ends at a ramp on both sides.
-3. **The raised kerb.** The kerb strip gets height, dropping to zero across each ramp. ⚠️ Before
-   building, **measure and report**: what the single-plane ground assumes, what height does to
-   `flattenPaintStack`, the coplanar-overlap check, ground-AO, the lamp/tree anchors, and frame cost on
-   phone-lo. ⛔ A kerb height is AUTHORED per town (a Look or town value) with a neutral default.
-   **Stop after the measurement and bring Boz the cost before building it.**
+Each step lands alone, with its check mutation-tested (seen to FAIL on the old code). Steps 0–3 share one re-pour
+of the four towns at the end; ⛔ confirm with Boz before ANY pour or bake — Jacob's machine is in use by day and
+Jackson Heights bakes tonight.
+
+0. **⛔ The town's norm never reaches the pour — fix first.** `cartograph/ramp-norm.mjs#resolveRampNorm` defaults
+   `dataRoot = 'cartograph/data'`, resolved against the CALLER's working directory. The pour runs `derive.js` from
+   `cartograph/`, so it looks in `cartograph/cartograph/data/…`, finds no `norms.json`, and freezes **`none (kit)`
+   without a word**. LS's diagonal norm has never reached its map (measured 2026-10-06: `src/data/ribbons.json`
+   `rampNorm` = none/kit; the resolver run from the repo root reads diagonal). The check passed because it runs from
+   the root. Fix: resolve from the module's own location; a scene whose data directory does not exist THROWS. The
+   check must run the resolver the way the pour does, and must fail on today's code.
+1. **The rename: curb cut** (A1). One commit; the old names are GONE — no alias, no dual-read, no shim.
+   | rename (the drop) | ⛔ do NOT rename |
+   |---|---|
+   | `ramp-norm.mjs`, `resolveRampNorm`, `RAMP_STYLES` · the frozen `rampNorm` (changes with the re-pour) · `norms.json` key `ramps` (LS's only file) · the leg slot `blockCustoms[…].ramps.{start,end}` (nothing authors it yet — grep all towns to confirm) · `tileGround.js`'s `rampsOnJunctionCorners`, `rampRecs`, `rampTally`, `noRamp`, `crosswalksBetweenRamps` · the ground class `ramp` (`bake-ground.js`, `bake-ground-ao.js`'s `PAVED`) · the layer id/label "Curb Ramps" and colour `ramp` (`Panel.jsx`, `CartographSurfaces.jsx`, `m3Colors.js`) · `checks/claims-every-junction-corner-has-a-ramp-source.mjs` · `OPERATIONS` lines on curb ramps, `FEATURES` | SECTION §4's RAMP (the pad) and SLOPE (`rampLen`) · highway ramps in `derive.js` (`rampedCarriageways`, `rampTerminalFlares`, `rampSign`, the H-3 flare) · `m3Colors.highway`'s comment |
+   ⚠️ Judge every hit by its SENSE, not its spelling; list in the commit what was renamed and what was left, and why.
+2. **Each corner's own style from evidence** (§0a item 8). OSM keeps crossings as WAYS in `clean/skeleton.json`
+   `paths` (`footway=crossing`, full tags); `kerb=lowered` is sparse. Verify a crossing's middle vertex is a node
+   SHARED with the road it crosses before binding on it. Binding = containment in the arc's span, never nearest.
+   Build the rung so a city's file well (NYC `CURB_CUT`, `BRIEF-nyc-adapter` step 5) slots in unchanged. The census
+   reports each rung (evidence · town norm · override · unreadable) separately.
+3. **Square crosswalks + the T's far kerb** (§0a item 9; T ruled 2026-10-06). At a diagonal corner the crosswalk ends
+   where the square crosswalk meets the kerb. The far kerb of a T is a NORM on the crosswalk ladder: kit default =
+   **no crosswalk** across the through street; **LS = a curb cut on the far kerb, crossed to** (LS 360 such crossings).
+4. **The operator gesture** that writes `blockCustoms[…].curbCuts.{start,end}` in Section — read by the painter,
+   written by nothing today. ⛔ Show Boz the gesture's design before building it; Jacob's eye rules a UI.
+5. **The raised kerb** (§0a item 4; ruled 2026-10-06). Cost already measured (§9).
+   - A riser **wherever a curb is drawn today**, and only there — road types already ruled curbless (alleys, highway
+     verge) get none.
+   - The whole block inboard of the kerb lifts; each curb cut slopes h → 0; asphalt stays at 0.
+   - Buildings, trees and lamps RIDE the lifted ground. Today the anchor sampler ignores the mesh's y, so they would
+     bury by h; fix the sampler, don't offset the objects.
+   - Height is a jurisdiction value on the same norm ladder (`norms.json` → state → kit **0**). LS = a **square curb,
+     ~6 in (0.15 m)** (Jacob). ⚠️ LS's Look authors `curbWidth: 0.381` — square at 0.15 m does not match it; **the
+     open question is Jacob's, ask Boz before writing either value.**
+   - Measured: AO cannot see a 15 cm step (texel 1.8–10 m). Report what the step looks like at the CLOSE camera;
+     ⛔ "it's only seen from far" is not an argument.
+6. **The docs, in the same landings as the code they describe:**
+   - `SECTION §6.1`'s "TL↔TL is GRASS AT THE KERB" and the painter comment near "THE CORNER — READ, NOT MEASURED" (§0a
+     item 6).
+   - The RIBBONS conformance pass, unblocked by A1/A3, with night 1's findings (§9). A3: a warning strip or crosswalk is
+     **paint on top, never a seam**.
 
 ## 4. The chain
 
@@ -147,11 +178,11 @@ Section in the Designer (2D), then Stage/Preview (the kerb). ⛔ No parallel ren
 
 ## 7. Bounds
 
-- Writes: `src/lib/tileGround.js` (Section corner), `cartograph/bake-ground.js` (kerb), checks under
-  `checks/`. ⛔ No change to ①/② shape construction.
-- ⛔ **Another work group is active (Boz the Elder).** Saves to `src/lib/` and `cartograph/` are bake
-  inputs — confirm with Boz that no bake is running before each landing. Commit through explicit paths
-  only (`BOZ §3.7`).
+- Writes: `src/lib/tileGround.js` (Section corner), `cartograph/ramp-norm.mjs` (renamed), `cartograph/bake-ground.js`
+  (kerb), the anchor sampler, the layer UI, checks under `checks/`. ⛔ No change to ①/② shape construction.
+- ⛔ Saves under `src/lib/` and `cartograph/` are bake inputs, and saving a file `serve.js` imports restarts the
+  server and kills a running bake — confirm with Boz before each landing. Commit through explicit paths only
+  (`BOZ §3.7`).
 - Registers: `FEATURES` (the capability), `OPERATIONS` (ramp style, kerb height knobs). Name them in the
   commit.
 
@@ -163,8 +194,7 @@ scene recorded.
 
 ## 9. STATE — 2026-10-06 (Flare, end of night 1)
 
-**Landed** (each commit carries its proof; ▶ the check named is the receipt). ⚠️ **None reaches the map until the
-re-pour** — today's `shape.json` predates the stamp, and the checks below fail on it with "re-pour owed", correctly.
+**Landed** (each commit carries its proof; ▶ the check named is the receipt). ⚠️ The four towns were re-poured 2026-10-06; LS still shows no curb cuts because its norm never reached the pour (§3 step 0).
 - The legs decide junction / bend / unknown, stamped at freeze (`iaJunction`, `junctions[]`) — `3589f711` (a junction
   DEGREE, superseded) → `76d6958a` (the leg rule; the degree re-derivation excised) ▶ `claims-every-corner-knows-its-junction --build --live`
   (live mint: LS 864 junction · 99 bend · 120 unknown; every unknown is `capEdge`, the dead-end mouth class, ROADMAP A0/A10).
@@ -178,27 +208,12 @@ re-pour** — today's `shape.json` predates the stamp, and the checks below fail
 - Not this brief's, done the same night: the edge fade moved from Extent to the Look, and the clip to the radius —
   `62955496` + `66547bfb` (Boz's task; `ROADMAP` carries the one open line, Altadena's disc past its bbox).
 
-**Open:**
-- **§0a item 8 — each corner's own style from evidence.** OSM keeps crossings as WAYS in `clean/skeleton.json`
-  `paths` (`footway=crossing`, full tags; LS 672, HPDM 1,940, huron 92, ptown 141); `kerb=lowered` is sparse. A
-  crossing way's middle vertex should be a shared node with the road it crosses — verify before binding. NYC
-  `CURB_CUT` waits on `BRIEF-nyc-adapter` step 5. Binding = containment in the arc's span, never nearest.
-- **§0a item 9 — square crosswalks** (diagonal corners: ends where the square crosswalk meets the kerb). With item 8.
-- **The operator gesture** that writes `blockCustoms[…].ramps.{start,end}` — read by the painter, written by nothing.
-- **The kerb build — ✅ RULED (Jacob, 2026-10-06), unbuilt.** A riser goes **wherever a curb is drawn today**, and only
-  there — road types already ruled curbless (alleys, highway verge) get none. Anchors ride the lifted ground (§0a item 4).
-  LS: a **square curb, ~6 in (15 cm)** — height = width; kit default stays 0.
-- **✅ RULED (Jacob, 2026-10-06), unbuilt:** A1 — the drop is a **curb cut**; rename the code identifiers and the layer
-  label to match ("ramp" stays SECTION §4's pad and the leg slope). A3 — a warning strip or crosswalk is **paint on top**,
-  never a seam.
-- **The RIBBONS conformance pass — unblocked by A1/A3, unwritten.** Its findings, so they outlive the session: ROT — `RIBBONS §4`'s
-  "FILL corner = the bent SECTOR … tangent-trimmed legs" (that is the walk painter; the map draws with
-  `sectionPassProtoTile`), and `§2`'s / the glossary's "a run seam is a corner; `cornerAt` a≠b" (legacy walk path
-  only). UNDERSTATES — `§1`'s corner test (the pad is licensed by the turn; whether a street meets it is
-  `iaJunction`), invariants 1+3 (a marking on the asphalt is not the band), `§4`'s chain of homes (junction stamp,
-  `ramp-norm.mjs`, crosswalks). Vocabulary — `§1` "a node is a handle configuration" vs `junctions[].node`.
-- **A T's far kerb — ✅ RULED (Jacob, 2026-10-06), unbuilt:** a norm. Kit default = **no crosswalk** across the through
-  street (Jacob: most streets); **LS = add a curb cut on the far kerb and cross to it** (LS 360 such crossings).
+**Open:** → §3 (the sequence). Kept here because §3 cites them — **the RIBBONS conformance findings:** ROT —
+`RIBBONS §4`'s "FILL corner = the bent SECTOR … tangent-trimmed legs" (that is the walk painter; the map draws with
+`sectionPassProtoTile`), and `§2`'s / the glossary's "a run seam is a corner; `cornerAt` a≠b" (legacy walk path only).
+UNDERSTATES — `§1`'s corner test (the pad is licensed by the turn; whether a street meets it is `iaJunction`),
+invariants 1+3 (a marking on the asphalt is not the band), `§4`'s chain of homes (junction stamp, the norm ladder,
+crosswalks). Vocabulary — `§1` "a node is a handle configuration" vs `junctions[].node`.
 
 **Traps a fresh agent will hit:**
 - ⭐ **② contour runs OPPOSITE to ①'s block ring** (875 of 876 LS corners). Read a corner's arriving / leaving leg off
