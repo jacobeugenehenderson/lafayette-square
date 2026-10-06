@@ -125565,7 +125565,7 @@
           615.5
         ]
       ],
-      "use": "recreation"
+      "use": "forest"
     },
     {
       "ring": [
@@ -125678,7 +125678,7 @@
           637.8000000000001
         ]
       ],
-      "use": "recreation"
+      "use": "forest"
     },
     {
       "ring": [
@@ -127282,7 +127282,7 @@
           430.90000000000003
         ]
       ],
-      "use": "recreation"
+      "use": "forest"
     },
     {
       "ring": [
@@ -137948,7 +137948,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -138668,7 +138668,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -138713,7 +138713,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -139130,7 +139130,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -139346,7 +139346,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -139500,7 +139500,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -139573,7 +139573,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -139682,7 +139682,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -139771,7 +139771,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -140434,7 +140434,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -140531,7 +140531,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -140616,7 +140616,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -140781,7 +140781,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -141047,7 +141047,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -141160,7 +141160,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -141313,7 +141313,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -141845,7 +141845,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -142283,7 +142283,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
@@ -142622,7 +142622,7 @@
       ]
     },
     {
-      "lu": "recreation",
+      "lu": "forest",
       "src": "osm",
       "tag": "natural:wood",
       "rings": [
