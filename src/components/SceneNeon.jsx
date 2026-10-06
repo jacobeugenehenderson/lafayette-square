@@ -1,21 +1,13 @@
 /**
- * SceneNeon — the single neon consumer, mounted identically by
- * LafayetteScene (Designer / Stage / LS production) and PreviewApp.
+ * SceneNeon — the single neon consumer, mounted by <Town> in every app. Neon belongs to a PLACE: each lit place gets its
+ * own stretch of its building's wall from the slab (src/lib/neonPlaces.js), drawn by NeonBands. Geometry is never
+ * baked — the slab carries the stretches' few points; the tubes and lines are built here, live.
  *
- * Doctrine: project_preview_equals_ls_literally + project_stage_consumer_parity.
- * Neon tube geometry is never baked (FEATURES.md §"Render environments"):
- * it is runtime-built from live `_allBuildings` in every environment that
- * mounts NeonBands. Previously the `openPlaces` computation lived inline in
- * LafayetteScene, so Preview — which renders baked merged-mesh buildings via
- * BakedBuildings, not LafayetteScene — had no way to mount neon. Extracting
- * the computation here lets Preview render neon literally as production does.
- *
- * Two gates, decided by prop presence (mirrors the old inline logic):
- *   - `forceNeonOn` defined (Stage passes a store bool): force-on QA bypass;
- *     hours filter skipped so authoring doesn't lie about the current TOD.
- *   - `forceNeonOn` undefined (production / Preview): `_isWithinHours` is the
- *     sole gate — tubes auto-glow when a listing's authored hours intersect
- *     the current TOD. Buildings without authored hours stay dark.
+ * Two gates, decided by prop presence:
+ *   - `forceNeonOn` defined (Stage passes a store bool): force-on QA bypass — every place lit, hours skipped, so
+ *     authoring doesn't lie about the current TOD.
+ *   - `forceNeonOn` undefined (production / Preview): a place's authored hours are the sole gate. A place without
+ *     hours stays dark.
  */
 import { useMemo, useState, useEffect, useReducer } from 'react'
 import { isOpenAt } from '../lib/openNow.js'
@@ -25,6 +17,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import { CATEGORY_LABELS } from '../tokens/categories'
 import { lookOf } from '../lib/lookOf.js'
 import NeonBands from './NeonBands.jsx'
+import { placeNeon } from '../lib/neonPlaces.js'
 
 // ── Open-by-hours filter ────────────────────────────────────────────
 // Glows when the place is currently open. ⛔ THERE IS NO DARKNESS TERM — this
@@ -60,63 +53,21 @@ function _neonOn({ forceNeonOn, hours, now }) {
   return _isWithinHours(hours, now)
 }
 
-// ── Default neon classification ─────────────────────────────────────
-// Buildings without a listings.json entry still get neon tube geometry.
-// The tube color is derived from St. Louis zoning code — the only
-// classification field populated on buildings.json. Buckets:
-//   A B C D E  →  residential   (Sage)
-//   F G H I    →  services      (Prussian Blue)
-//   J          →  community     (Terra Cotta)
-//
-// ⭐⭐ THIS TABLE IS DELIBERATELY NOT `STL_ZONING`, AND THAT IS A RULING (Jacob,
-// 2026-09-20), not drift. It maps zoning → NEON COLOUR; `categories.js#STL_ZONING`
-// maps zoning → SEARCH CATEGORY. `INTAKE-CATALOGUE §3.6` calls them *"two unrelated
-// systems"* and they are: F/G/H are commercial districts by ordinance, and reading
-// them as Prussian Blue "services" is a look decision about a night skyline, not a
-// claim about what the building is. ⛔ Do not unify these on your own judgement —
-// it was proposed and ruled against.
-const _NEON_ZONING_CATEGORY = {
-  A: 'residential', B: 'residential', C: 'residential', D: 'residential', E: 'residential',
-  F: 'services',    G: 'services',    H: 'services',    I: 'services',
-  J: 'community',
-}
-// ⛔⛔ `|| 'residential'` USED TO LIVE ON THE NEXT LINE, under a comment calling it a
-// *"safe default for the ~4% missing zoning"*. It is not safe and the 4% is an LS
-// figure: on a town with no St. Louis zoning letter at all it is 100%, and the whole
-// map poured Sage — a confident, beautiful, entirely wrong classification of every
-// building in the neighbourhood, visible to the operator as a normal night.
-// ⭐ Unknown now returns null and is painted `UNKNOWN_HEX` — slate, in no category —
-// so the gap is visible on the surface the operator actually eye-gates.
-function defaultNeonCategoryForZoning(zoning) {
-  return _NEON_ZONING_CATEGORY[zoning] || null
-}
-
-// ── neonLookup — buildingId → { hex, hours, category } for listings ──
-// Read by openPlaces.
-// Every REAL listing (a business/POI) is included, whether or not it has
-// authored `hours`; the openPlaces gate below decides on/off, and null `hours`
-// is dark (there is no default window — see _neonOn). Synthetic zoning-default listings (`_bare`) are EXCLUDED: a residential house
-// with no real POI stays dark, rather than the whole hood lighting up at night.
+// ── neonPlaceList — the town's REAL places that can carry neon ──
+// Every real listing (a business/POI), with or without authored `hours`; the gate decides on/off, and null `hours`
+// is dark (there is no default window — see _neonOn). Synthetic zoning listings (`_bare`) are not places, and a
+// category the taxonomy doesn't know has no colour to draw (its colour is the town's — categoryColor.js).
 // The listings are <Town listings> (townContext.js) — the app's, never the old player's store.
-export function useNeonLookup() {
+// ⭐ PER PLACE, NOT PER BUILDING: this used to be one entry per building, last write winning, so one closed listing
+// could darken a building where another place was open (6 of 22 lit buildings on Huron at 21:00, 2026-10-06).
+export function useNeonPlaceList() {
   const { listings } = useTownContext()
-  return useMemo(() => {
-    const map = {}
-    listings.forEach(l => {
-      if (l.status === 'closed') return
-      if (l._bare) return // synthetic zoning listing — not a real POI, no neon
-      const bid = l.building_id || l.id
-      // A category the TAXONOMY knows (its colour is the town's — categoryColor.js — not a gate here).
-      if (!bid || !CATEGORY_LABELS[l.category]) return
-      map[bid] = { hours: l.hours || null, category: l.category }
-    })
-    return map
-  }, [listings])
+  return useMemo(() => listings.filter((l) => l.status !== 'closed' && !l._bare && l.building_id && CATEGORY_LABELS[l.category]), [listings])
 }
 
 /**
- * SceneNeon — computes openPlaces and renders the one merged <NeonBands>
- * mesh. Self-gates: returns null when no place is currently lit.
+ * SceneNeon — places each open place's neon on its own stretch (src/lib/neonPlaces.js) and renders the merged
+ * <NeonBands>. Self-gates: returns null when no place is lit.
  */
 // Stage's neon DENSITY: a stable per-building draw, so raising the knob only ADDS buildings (never reshuffles).
 function _densityKeeps(id, density) {
@@ -128,50 +79,45 @@ function _densityKeeps(id, density) {
   return h / 4294967296 < density
 }
 
-// `litIds` (a Set of building ids, from <Town litIds>): only those places carry neon — how an app shows a chosen
-// category or a search. Absent: every open place is lit, as before.
+// `litIds` (a Set of building ids, from <Town litIds>): only those buildings' places carry neon — how an app shows a
+// chosen category or a search. Absent: every open place is lit.
 export default function SceneNeon({ forceNeonOn, density, materialColors, litIds, lookId }) {
   lookOf(lookId, 'SceneNeon')
-  const neonLookup = useNeonLookup()
+  const placeList = useNeonPlaceList()
 
-  // Re-check open/closed every 60s so bands mount/unmount as places open
-  // and close, rather than mounting all ~100+ and hiding with opacity 0.
+  // Re-check open/closed every 60s so bands mount/unmount as places open and close.
   const [neonTick, setNeonTick] = useState(0)
   useEffect(() => {
     const id = setInterval(() => setNeonTick(t => t + 1), 60000)
     return () => clearInterval(id)
   }, [])
 
-  // The tubes trace the slab's buildings (SlabBuildings publishes the index; no neon until it has). The live
-  // per-building fallback went with the live-building path (BRIEF-live-building-palette): every app draws the slab.
-  // Each place's hours and category come from <Town listings>.
+  // The stretches come from the slab (SlabBuildings publishes the index; no neon until it has).
   const slabIndex = useSlabBuildingIndex((s) => s.index)
-  // The town's clock by the minute: a scrubbed (or app-given) time re-decides which places are open, rather than
-  // waiting for the 60 s re-check below.
+  // The town's clock by the minute: a scrubbed (or app-given) time re-decides which places are open.
   const clockMinute = useTimeOfDay((s) => Math.floor(s.currentTime.getTime() / 60000))
 
-  // openPlaces — buildings eligible for tube geometry. Every building is a
-  // candidate; listings-authored ones carry their authored category via
-  // neonLookup, every other building falls back to a zoning-derived default.
-  const openPlaces = useMemo(() => {
-    const places = []
+  const { stretches, census } = useMemo(() => {
+    if (!slabIndex) return { stretches: [], census: null }
     const now = useTimeOfDay.getState().currentTime
+    return placeNeon({
+      entries: slabIndex.byNum,
+      places: placeList,
+      isLit: (p) => _neonOn({ forceNeonOn, hours: p.hours || null, now }),
+      keep: (id) => _densityKeeps(id, density) && (!litIds || litIds.has(id)),
+    })
+  }, [placeList, neonTick, forceNeonOn, density, slabIndex, litIds, clockMinute])
 
-    if (!slabIndex) return places
-    for (const e of slabIndex.byNum) {
-      // A record the slab built no walls for (a set-piece's building, SetPiece.jsx) has no eave to trace.
-      if (!e.ranges?.wall) continue
-      const listingInfo = neonLookup[e.id]
-      const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
-      const hours = listingInfo ? listingInfo.hours : null
-      const on = _neonOn({ forceNeonOn, hours, now })
-      if (!on || !_densityKeeps(e.id, density) || (litIds && !litIds.has(e.id))) continue
-      // baseY + groundYRaw (== centroidY) are baked into the index, so tubes lift in lockstep with their building
-      // on sloped terrain. NeonBands.buildTube traces the footprint at the eave.
-      places.push({ footprint: e.footprint, baseY: e.baseY, groundYRaw: e.centroidY, neon: { category } })
-    }
-    return places
-  }, [neonLookup, neonTick, forceNeonOn, density, slabIndex, litIds, clockMinute])
+  // ⛔ A lit place with no stretch is dark — SAY so, by cause, whenever the count changes (never a roofline instead).
+  const darkKey = census ? JSON.stringify(census.dark) : ''
+  useEffect(() => {
+    if (!census || !Object.keys(census.dark).length) return
+    const n = Object.values(census.dark).reduce((a, b) => a + b, 0)
+    console.warn(`[neon] ${n} of ${census.lit} lit places are dark (by address ${census.address} · by street frontage ${census.frontage}):`, census.dark)
+  }, [darkKey])   // eslint-disable-line react-hooks/exhaustive-deps
+
+  // NeonBands draws open stretches: the wall points, the outward side from the building's footprint, the eave.
+  const openPlaces = useMemo(() => stretches.map((s) => ({ pts: s.pts, footprint: s.footprint, baseY: s.y, groundYRaw: s.groundYRaw, neon: { category: s.category } })), [stretches])
 
   // Cold-load reconcile flush — the same frameloop="demand" issue that hid the
   // trees (see InstancedTrees ParkPopulation). On a cold load the neon mesh and

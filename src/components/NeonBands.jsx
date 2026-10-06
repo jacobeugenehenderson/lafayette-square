@@ -77,22 +77,23 @@ function detectOutwardSign(footprint) {
 }
 
 /**
- * Walk footprint → emit ring chain at uniform OFFSET_OUT outward.
- * Convex corners: arc sweep (smooth offset). Concave: mitred ring.
- * Near-straight: single averaged ring.
+ * Walk a place's stretch of wall → emit a ring chain at uniform OFFSET_OUT outward. The stretch is OPEN (a place's
+ * share of its building's face, src/lib/neonPlaces.js); its ends take their own edge's normal. Interior corners:
+ * convex → arc sweep, concave → mitred, near-straight → one averaged ring. `ws` is the outward sign of the building's
+ * footprint winding (the stretch runs in footprint order).
  *
  * Each ring carries { x, z, nx, nz } — center XZ + outward direction.
  * The outward direction is needed downstream to orient the tube's
  * cross-section.
  */
-function buildPath(footprint) {
-  const n = footprint.length
-  const ws = detectOutwardSign(footprint)
+function buildPath(pts, ws) {
+  const n = pts.length
   const rings = []
   for (let i = 0; i < n; i++) {
-    const prev = footprint[(i - 1 + n) % n]
-    const cur  = footprint[i]
-    const next = footprint[(i + 1) % n]
+    const cur  = pts[i]
+    // An end has one edge: use it on both sides, so the end ring takes that edge's normal.
+    const prev = i > 0 ? pts[i - 1] : [2 * cur[0] - pts[i + 1][0], 2 * cur[1] - pts[i + 1][1]]
+    const next = i < n - 1 ? pts[i + 1] : [2 * cur[0] - pts[i - 1][0], 2 * cur[1] - pts[i - 1][1]]
     const e1x = cur[0] - prev[0], e1z = cur[1] - prev[1]
     const e2x = next[0] - cur[0], e2z = next[1] - cur[1]
     const l1 = Math.hypot(e1x, e1z) || 1
@@ -144,42 +145,37 @@ function buildPath(footprint) {
  * (P00, P01, P10) yields a triangle whose geometric normal points
  * up-and-outward, matching the smooth vertex normals.
  *
- * Closure: one extra ring at i=m and one extra vertex at s=CROSS_SEGS
- * gives degenerate-free UV wrap. The closure vertices are positionally
- * identical to their counterparts at i=0 / s=0 — no extra draws since
- * they're index-referenced from neighboring quads.
+ * One extra vertex at s=CROSS_SEGS closes the cross-section for a degenerate-free UV wrap; the tube itself is open
+ * at both ends (a place's stretch, not a ring round the building).
  *
- * The LINE rides the same axis: one quad per ring-to-ring segment (closing included), each vertex carrying both
+ * The LINE rides the same axis: one quad per ring-to-ring segment, each vertex carrying both
  * segment ends (`aA`, `aB`), which end it sits at (`aT`) and which side (`aSide`); the vertex shader widens it to
  * linePx on screen.
  */
-function buildTube(building, tubeRadius) {
-  // Trace the building FOOTPRINT at the eave (the wall/roof joint), so neon hugs
-  // the building outline and matches its size on every roof type — including
-  // mansards, whose inset top-cap used to read as a small ring floating up at the
-  // peak (Jacob 2026-06-27). (Was: trace `roofOutline` at the roof peak.)
-  const fp = building.footprint
-  if (!fp || fp.length < 3) return null
+function buildTube(place, tubeRadius) {
+  // A place's stretch at the eave (the wall/roof joint) its slab entry names; the building's footprint gives the
+  // outward side. (Neon used to ring the whole footprint — one sign per building, whatever it held.)
+  const fp = place.footprint
+  if (!place.pts || place.pts.length < 2 || !fp || fp.length < 3) return null
   const r = tubeRadius
   // The axis sits one radius above the eave, so the tube's BOTTOM is flush with it.
-  const baseY = (building.baseY ?? building.size?.[1] ?? 0) + r
-  const path = buildPath(fp)
+  const baseY = place.baseY + r
+  const path = buildPath(place.pts, detectOutwardSign(fp))
   const m = path.length
   if (m < 2) return null
 
-  // Per-building terrain anchor: mean of footprint-corner raw elevations,
-  // matching Foundations (LafayetteScene.jsx:368) and Building walls
-  // (LafayetteScene.jsx:615). Threaded through openPlaces as place.groundYRaw.
-  const centroidY = building.groundYRaw ?? 0
+  // The building's terrain anchor (the slab index's centroidY: mean of footprint-corner raw elevations), the one
+  // Foundations and walls lift by.
+  const centroidY = place.groundYRaw ?? 0
 
   const VPR = CROSS_SEGS + 1
   const positions = []
   const normals = []
   const uvs = []
   const centroidYs = []
-  for (let i = 0; i <= m; i++) {
-    const ring = path[i % m]
-    const u = i / m
+  for (let i = 0; i < m; i++) {
+    const ring = path[i]
+    const u = i / (m - 1)
     for (let s = 0; s <= CROSS_SEGS; s++) {
       const theta = (s / CROSS_SEGS) * Math.PI * 2
       const cs = Math.cos(theta), sn = Math.sin(theta)
@@ -195,7 +191,7 @@ function buildTube(building, tubeRadius) {
   }
 
   const indices = []
-  for (let i = 0; i < m; i++) {
+  for (let i = 0; i < m - 1; i++) {
     const a = i * VPR
     const b = (i + 1) * VPR
     for (let s = 0; s < CROSS_SEGS; s++) {
@@ -205,8 +201,8 @@ function buildTube(building, tubeRadius) {
   }
 
   const line = { a: [], b: [], t: [], side: [], centroidYs: [], indices: [] }
-  for (let i = 0; i < m; i++) {
-    const p0 = path[i], p1 = path[(i + 1) % m]
+  for (let i = 0; i < m - 1; i++) {
+    const p0 = path[i], p1 = path[i + 1]
     const v0 = line.t.length
     for (const [t, side] of [[0, -1], [0, 1], [1, -1], [1, 1]]) {
       line.a.push(p0.x, baseY, p0.z); line.b.push(p1.x, baseY, p1.z)

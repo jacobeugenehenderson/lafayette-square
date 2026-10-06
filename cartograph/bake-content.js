@@ -53,6 +53,7 @@ import { classifyZoning } from '../src/tokens/categories.js'
 import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { rankRoster } from './prominence.mjs'
 import { buildingIdOf } from './membership.mjs'
+import { addressKey, addressParts, streetKey } from '../src/lib/addressKey.js'
 import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove, guardSeal } from './listing-identity.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -530,29 +531,12 @@ function rosterCategoryFromZoning(zoning, zoningFormat, use, use_subtype) {
 // Address normalization + NR join
 // ──────────────────────────────────────────────────────────────────────────
 
-const STREET_ABBR = { AVE: 'AVENUE', AV: 'AVENUE', BLVD: 'BOULEVARD', ST: 'STREET', RD: 'ROAD', DR: 'DRIVE', LN: 'LANE', PL: 'PLACE', CT: 'COURT', TER: 'TERRACE', PKWY: 'PARKWAY', BND: 'BEND' }
-function normAddress(addr) {
-  if (!addr) return null
-  let s = addr.toUpperCase().replace(/\s+/g, ' ').trim()
-  // strip duplicated house number ("7222 7222 WISE AVE")
-  s = s.replace(/^(\d+)\s+\1\b/, '$1')
-  // unit suffixes
-  s = s.replace(/\b(APT|UNIT|STE|SUITE|#)\s*\S+$/i, '').trim()
-  const parts = s.split(' ')
-  return parts.map(w => STREET_ABBR[w] || w).join(' ')
-}
-function addrHouseStreet(addr) {
-  const n = normAddress(addr)
-  if (!n) return null
-  const m = n.match(/^(\d+)\s+(.*)$/)
-  return m ? { house: m[1], street: m[2] } : null
-}
-
+// One canonical address form, shared with the player and the buildings bake (src/lib/addressKey.js).
 function buildNrIndex(nr) {
   const idx = new Map()
   for (const r of nr) {
     if (!r.housenum || !r.street) continue
-    const street = r.street.toUpperCase().replace(/\s+/g, ' ').trim().split(' ').map(w => STREET_ABBR[w] || w).join(' ')
+    const street = streetKey(r.street)
     idx.set(`${String(r.housenum).trim()}|${street}`, r)
   }
   return idx
@@ -944,7 +928,7 @@ function applyListingOverrides(base, overrides, ctx) {
     let bid = rec.building_id && bakedIds.has(rec.building_id) ? rec.building_id : null
     if (!bid) {
       // (a) by anchor address → parcel → nearest baked building
-      const na = normAddress(add.anchor && add.anchor.address ? add.anchor.address : rec.address)
+      const na = addressKey(add.anchor && add.anchor.address ? add.anchor.address : rec.address)
       const par = na ? parcelByAddr.get(na) : null
       if (par) bid = joinPointToBuilding(par.cx, par.cz, buildingGrid, 60)
       // (b) by explicit anchor x/z
@@ -1012,8 +996,8 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
     if (par) stat.parcel_matched++
 
     let use = classifyUse(par, luMap)
-    const hs = addrHouseStreet(par && par.address)
-    const nr = hs ? nrIndex.get(`${hs.house}|${hs.street}`) : null
+    const hs = addressParts(par && par.address)
+    const nr = hs.house ? nrIndex.get(`${hs.house}|${hs.street}`) : null
     if (nr) stat.nr_attributed++
 
     const jurisdiction = par ? par.jurisdiction : null
@@ -1176,7 +1160,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
 
   // parcel-by-normalized-address index (for override anchor re-resolution)
   const parcelByAddr = new Map()
-  for (const par of parcels) { const na = normAddress(par.address); if (na && !parcelByAddr.has(na)) parcelByAddr.set(na, par) }
+  for (const par of parcels) { const na = addressKey(par.address); if (na && !parcelByAddr.has(na)) parcelByAddr.set(na, par) }
 
   // ── Layer 2 — base listings. TWO PRODUCERS, SELECTED BY THE DATA. ─────────
   //

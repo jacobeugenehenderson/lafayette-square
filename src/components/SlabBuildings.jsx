@@ -285,6 +285,8 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
         wallMaterial: b.wallMaterial, roofMaterial: b.roofMaterial, zoning: b.zoning,
         // The street address as the slab carries it (cartograph/building-address.mjs); undefined on a slab baked before it.
         address: b.address, addressSource: b.addressSource, addressCandidates: b.addressCandidates,
+        // Where its places' neon goes (cartograph/neon-faces.mjs → src/lib/neonPlaces.js); null/undefined = none.
+        neon: b.neon,
         ranges: b.ranges,
       }
     })

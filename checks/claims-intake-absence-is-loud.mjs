@@ -66,7 +66,6 @@ function loadSources() {
   return {
     categories: read('src/tokens/categories.js'),
     useListings: read('src/hooks/useListings.js'),
-    sceneNeon: read('src/components/SceneNeon.jsx'),
     neonBands: read('src/components/NeonBands.jsx'),
     bakeContent: read('cartograph/bake-content.js'),
     placeCard: read('src/components/PlaceCard.jsx'),
@@ -146,7 +145,9 @@ function run(S) {
   // ── 2. No `|| 'residential'` fallback survives anywhere ────────────────────────
   // ⛔ The town-#2 killer, in its literal written form. A town with no St. Louis zoning
   // letter got every building residential and every neon tube sage.
-  for (const [file, src] of [['useListings.js', S.useListings], ['SceneNeon.jsx', S.sceneNeon], ['bake-content.js', S.bakeContent]]) {
+  // (SceneNeon.jsx left this list 2026-10-06: neon lights PLACES, coloured by their listing's category, and no longer
+  // classifies a building by zoning at all — src/lib/neonPlaces.js.)
+  for (const [file, src] of [['useListings.js', S.useListings], ['bake-content.js', S.bakeContent]]) {
     const live = [...codeLines(src).matchAll(/\|\|\s*'residential'/g)]
     assert(`no-fallback/${file}`, live.length === 0,
       `${file} still substitutes 'residential' for an unknown zoning (${live.length} live site(s))`)
@@ -163,8 +164,8 @@ function run(S) {
     !/UNKNOWN_HEX/.test(hexBlock),
     'UNKNOWN_HEX has leaked into CATEGORY_HEX — it would appear as a browsable category')
   assert('unknown-hex/painted-by-neon',
-    /UNKNOWN_HEX/.test(S.sceneNeon) && /UNKNOWN_HEX/.test(S.neonBands),
-    'both neon paths must paint UNKNOWN_HEX; otherwise an unclassified town renders as a normal or an empty night')
+    /UNKNOWN_HEX/.test(S.neonBands),
+    'neon must paint UNKNOWN_HEX for a category it cannot resolve; otherwise an unclassified town renders as a normal or an empty night')
   // ⛔ The magenta debug default was itself a silent substitution wearing a bright colour.
   assert('unknown-hex/no-debug-magenta',
     !/\|\|\s*'#ff66cc'/.test(codeLines(S.neonBands)),
@@ -241,8 +242,6 @@ function run(S) {
 const MUTATIONS = [
   { name: 'no-fallback/useListings.js',
     apply: (S) => ({ ...S, useListings: S.useListings.replace('const zoned = classifyZoning', "const _x = ZONING_CAT[z] || 'residential'\n      const zoned = classifyZoning") }) },
-  { name: 'no-fallback/SceneNeon.jsx',
-    apply: (S) => ({ ...S, sceneNeon: S.sceneNeon.replace('return _NEON_ZONING_CATEGORY[zoning] || null', "return _NEON_ZONING_CATEGORY[zoning] || 'residential'") }) },
   { name: 'zoning-table/D-is-residential-per-title-26',
     apply: (S) => ({ ...S, categories: S.categories.replace("D: { category: 'residential'", "D: { category: 'commercial'") }) },
   { name: 'zoning-table/H-is-commercial-per-title-26',

@@ -30,8 +30,9 @@ import { SCENE, requireExplicitMap } from './scene.js'
 import { requireSceneTerrain } from './terrainLoad.js'
 import { readBakeDesign } from './lookDesign.mjs'
 import { createMembershipFilter, buildingIdOf } from './membership.mjs'
-import { resolveAddress, addressCensus, addressOfTags, offeredBy, parcelPointsOf } from './building-address.mjs'
+import { resolveAddress, addressCensus, addressOfTags, offeredBy, parcelPointsOf, inRing } from './building-address.mjs'
 import { loadAddressPoints, loadParcelRings } from './address-points.mjs'
+import { neonFacesFor, streetIndex } from './neon-faces.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
 // ⭐ THE TINT RULES ARE ONE MODULE, shared with the player (SlabBuildings' live palette): a drag equals a re-bake.
 // ▶ node checks/claims-live-palette-equals-the-bake.mjs
@@ -762,6 +763,37 @@ export async function bakeBuildings({ look, scene } = {}) {
       ...(r.addressUnits && { addressUnits: r.addressUnits }) }
   }
 
+  // ── NEON, PER PLACE (cartograph/neon-faces.mjs): the stretches of wall a place's neon can light — the face each
+  // address point marks (points inside the footprint or its parcel, the address join's own containment), and the face
+  // toward each named street the building fronts (the skeleton's streets). The player joins an open place to one.
+  const skeletonP = join(ROOT, 'cartograph', 'data', scene, 'clean', 'skeleton.json')
+  const streetsIdx = streetIndex(existsSync(skeletonP) ? JSON.parse(readFileSync(skeletonP, 'utf-8')).streets || [] : [])
+  if (!streetsIdx.size) console.error(`[bake-buildings] ⛔ neon: ${scene} has no named skeleton streets (${skeletonP}) — no building carries a frontage, so a place without an address face cannot be placed`)
+  const apGrid = new Map(), AP_CELL = 50
+  for (const p of ap.points) { const k = `${Math.floor(p.x / AP_CELL)},${Math.floor(p.z / AP_CELL)}`; if (!apGrid.has(k)) apGrid.set(k, []); apGrid.get(k).push(p) }
+  const pointsIn = (rings) => {
+    const out = []
+    for (const r of rings) {
+      if (!r || r.length < 3) continue
+      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+      for (const q of r) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); z0 = Math.min(z0, q.z); z1 = Math.max(z1, q.z) }
+      for (let i = Math.floor(x0 / AP_CELL); i <= Math.floor(x1 / AP_CELL); i++)
+        for (let j = Math.floor(z0 / AP_CELL); j <= Math.floor(z1 / AP_CELL); j++)
+          for (const p of apGrid.get(`${i},${j}`) || []) if (inRing(p.x, p.z, r)) out.push(p)
+    }
+    return out
+  }
+  const neonCensus = { buildings: 0, withFaces: 0, faces: 0, withFrontage: 0, frontage: 0 }
+  const neonOf = (b, fp, y) => {
+    const rings = ringsOf(b)
+    const points = [...new Set([...pointsIn(rings), ...parcelPoints({ rings })])]
+    const r = neonFacesFor({ footprint: fp, y, points, streets: streetsIdx })
+    neonCensus.buildings++
+    if (r.faces.length) { neonCensus.withFaces++; neonCensus.faces += r.faces.length }
+    if (r.frontage.length) { neonCensus.withFrontage++; neonCensus.frontage += r.frontage.length }
+    return (r.faces.length || r.frontage.length) ? r : null
+  }
+
   const unextrudable = []
   for (const b of buildings) {
     const fp = b.footprint
@@ -898,6 +930,8 @@ export async function bakeBuildings({ look, scene } = {}) {
       // The street address, the source's words (cartograph/building-address.mjs). null = none, or ambiguous (then
       // addressCandidates lists what the inputs disagree on — never one picked).
       ...addressFields(b),
+      // Where this building's places' neon goes: { faces: [{ key, pts, y }], frontage: [{ street, pts, y }] } (SLAB-CONTRACT).
+      neon: neonOf(b, fp, baseY),
       ranges,
     })
   }
@@ -1114,6 +1148,8 @@ export async function bakeBuildings({ look, scene } = {}) {
     // What was carried: counts by source, and what has none or is ambiguous (checks/claims-every-building-has-an-address).
     addressCensus: { ...addressCensus(resolvedAddresses, addressIncomplete), addressPoints: ap.state, ...(ap.reason && { addressPointsAbsentReason: ap.reason }),
       ...(idContainmentDisagree.length && { idContainmentDisagree: idContainmentDisagree.length }) },
+    // Where the places' neon goes (cartograph/neon-faces.mjs): how many buildings carry address faces and frontages.
+    neonCensus,
     buildings: buildingIndex,
     groups,
   }
@@ -1128,6 +1164,9 @@ export async function bakeBuildings({ look, scene } = {}) {
   const ac = manifest.addressCensus
   console.log(`[bake-buildings] addresses: ${ac.withAddress}/${ac.buildings} (${Object.entries(ac.bySource).map(([k, n]) => `${k} ${n}`).join(' · ') || 'none'})`
     + `${ac.ambiguous ? ` · ⚠️ ${ac.ambiguous} ambiguous` : ''}${ac.none ? ` · ⛔ ${ac.none} with none` : ''}${ac.lost ? ` · ⛔ ${ac.lost} LOST (the input offers one)` : ''}${ac.disagreements ? ` · ${ac.disagreements} lower-source disagreements (not applied)` : ''}`)
+  const nc = manifest.neonCensus
+  console.log(`[bake-buildings] neon: ${nc.withFaces}/${nc.buildings} buildings carry address faces (${nc.faces}) · ${nc.withFrontage} carry a street frontage (${nc.frontage})`
+    + `${nc.buildings > nc.withFrontage ? ` · ⛔ ${nc.buildings - nc.withFrontage} with no frontage` : ''}`)
   console.log(`[bake-buildings] look=${look}: ${buildings.length} buildings (${buildingIndex.length} rendered${skipped ? `, ${skipped} skipped <3pt footprints` : ''}), ${groups.length} groups, ${totalVerts} verts, ${totalTris} tris, ${footprintData.length / 2} footprint pts, ${roofOutlineData.length / 2} roofOutline pts, ${sizeKb} KB`)
   return manifest
 }
