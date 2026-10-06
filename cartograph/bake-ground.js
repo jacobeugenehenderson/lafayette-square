@@ -230,7 +230,7 @@ const PAINT_ORDER = [
   ['mat', 'curbCut'],
   ['mat', 'curb'],
   ['mat', 'asphalt'],
-  // curb-cut-to-curb-cut crosswalk paint — on the asphalt, cutting it (`crosswalksBetweenCurbCuts`)
+  // crosswalk paint, square across the street — on the asphalt, cutting it (`crosswalksSquareAcross`)
   ['mat', 'crosswalk'],
   ['mat', 'median'],
   // Alley + path ribbons painted on top of streets where they cross.

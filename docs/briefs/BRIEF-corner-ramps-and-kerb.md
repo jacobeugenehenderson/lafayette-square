@@ -156,11 +156,8 @@ Jackson Heights bakes tonight.
      source for a town's height (a state standard, a city's data) is welcome as a rung; record which rung it came from.
    - Measured: AO cannot see a 15 cm step (texel 1.8–10 m). Report what the step looks like at the CLOSE camera;
      ⛔ "it's only seen from far" is not an argument.
-6. **The docs, in the same landings as the code they describe:**
-   - `SECTION §6.1`'s "TL↔TL is GRASS AT THE KERB" and the painter comment near "THE CORNER — READ, NOT MEASURED" (§0a
-     item 6).
-   - The RIBBONS conformance pass, unblocked by A1/A3, with night 1's findings (§9). A3: a warning strip or crosswalk is
-     **paint on top, never a seam**.
+6. ✅ **The docs** (Sill, 2026-10-06). `SECTION §6.1`'s TL↔TL line and the painter comment were already conformed when
+   checked; the RIBBONS conformance pass landed (A3: a warning strip or crosswalk is **paint on top, never a seam**).
 
 ## 4. The chain
 
@@ -211,12 +208,8 @@ scene recorded.
 - Not this brief's, done the same night: the edge fade moved from Extent to the Look, and the clip to the radius —
   `62955496` + `66547bfb` (Boz's task; `ROADMAP` carries the one open line, Altadena's disc past its bbox).
 
-**Open:** → §3 (the sequence). Kept here because §3 cites them — **the RIBBONS conformance findings:** ROT —
-`RIBBONS §4`'s "FILL corner = the bent SECTOR … tangent-trimmed legs" (that is the walk painter; the map draws with
-`sectionPassProtoTile`), and `§2`'s / the glossary's "a run seam is a corner; `cornerAt` a≠b" (legacy walk path only).
-UNDERSTATES — `§1`'s corner test (the pad is licensed by the turn; whether a street meets it is `iaJunction`),
-invariants 1+3 (a marking on the asphalt is not the band), `§4`'s chain of homes (junction stamp, the norm ladder,
-crosswalks). Vocabulary — `§1` "a node is a handle configuration" vs `junctions[].node`.
+**Open:** → §3 (the sequence). The RIBBONS conformance findings that sat here landed with step 6 (Sill, 2026-10-06; the
+commit names each).
 
 **Traps a fresh agent will hit:**
 - ⭐ **② contour runs OPPOSITE to ①'s block ring** (875 of 876 LS corners). Read a corner's arriving / leaving leg off

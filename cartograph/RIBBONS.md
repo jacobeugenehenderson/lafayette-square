@@ -198,9 +198,7 @@
 > ⭐ Also closed the same day: **a cap apex is where ONE chain's two sides meet** — the cap branch fired
 > on "either edge belongs to a tip", so in-disc street corners next to a dead end took the cap rule and a
 > blunt default returned R = 0. Same `skelId` both sides is the apex.
-> *(Mechanism, figures and the false "the owner changing is a corner" restatement: retired to
-> `_archive/RIBBONS-corner-radius-collapse-2026-09-07.md`. ⛔ That phrase is superseded — see the
-> corrected corner test in this §.)*
+> *(Mechanism and figures: `_archive/RIBBONS-corner-radius-collapse-2026-09-07.md`.)*
 >
 > ### ⛔⛔ AND IT SURFACED A SILENT ABSENCE THAT PREDATES IT: **66 blocks were already being dropped.**
 > `if (!mine.length) continue` — a block whose curb came back empty was skipped **with no count**,
@@ -234,10 +232,7 @@
 > **A tip is TWO ordinary corner vertices, not one node turning 180°** — ① butt-ends, so its left and
 > right boundaries each stand ε off the centreline and the two vertices sit 2ε apart, each turning about
 > a right angle. ▶ `node checks/claims-proto-tip-has-two-apexes.mjs`
-> *(The half-turn framing this replaced — "a single cubic cannot hold a half-turn, so the coupler is two
-> segments" — is retired to `_archive/RIBBONS-corner-radius-collapse-2026-09-07.md`. ⛔ Quoting a retired
-> framing beside its correction is the anti-pattern `CLAUDE.md` names: the false sentence is shorter and
-> gets read first.)*
+> *(The half-turn framing this replaced: `_archive/RIBBONS-corner-radius-collapse-2026-09-07.md`.)*
 > ⇒ **A cap is two ORDINARY corner nodes.** Nothing turns a half-turn, so no cubic is asked to.
 > - **blunt = both apexes at R=0** (zero-length handles) · **round = both eased.** One dial, no case split.
 > - ⭐ **`bbf4adf6`'s bulb is not an APPROXIMATION of anything** — it is what two full 90° eases produce.
@@ -248,7 +243,8 @@
 > the OTHER way, at the node. ⭐ The one live sentence: **a corner constructor grows guards — a
 > setback that diverges, a budget to stop it, a threshold the budget needs, a cluster-collapse to fix
 > the threshold — and each fix aims at the previous fix. That pattern is the signal to stop.** The
-> cure is the node's own handle configuration (below): no threshold, no budget, no decline, no revert.
+> cure is the ① vertex's own handle configuration (below): no threshold, no budget, no decline, no revert. (⛔ Not
+> `junctions[].node` — the mint's frozen chain-pair centreline vertex a crosswalk pairs on.)
 > Full history: `_archive/RIBBONS-s1-retired-detail-2026-09-06.md §A`.
 > ⭐ **THE WIDTH STEP AT A BLOCK BOUNDARY — RULED 2026-09-24 (Jacob): *"taper".*** Two adjacent grout edges
 > carrying different `pavementHW` meet by a TAPER, not a step and not a miter carried to the lines' meeting
@@ -471,7 +467,8 @@
 >   ⇒ **THE EASE IS THE CORNER TEST.** Where the contour turns past `FILLET_TURN_TOL` the ease made
 >   an arc, and that arc IS the corner. The owner still answers **WHOSE**; it may not answer
 >   **WHETHER**. ▶ `node checks/claims-the-ease-is-the-corner.mjs <scene>` — ⛔ re-run it; it keeps
->   its teeth after the fix (a residual arc with no ramp is still reported, with its turn).
+>   its teeth after the fix (a residual arc with no ramp is still reported, with its turn). Whether a STREET meets
+>   that corner (curb cuts, crosswalks) is a separate frozen fact, `iaJunction` — and it never decides the pad.
 >   ### ⛔⛔ AND READ IT OFF THE EASE'S OWN PER-VERTEX STAMP (`EC.arc`), NEVER OFF `protoTurns`
 >   `protoTurns` holds **LABELS** (`protoTurns.add(L[q])`), and a label spans a whole ① edge — so
 >   `protoTurns.has(labs[i])` marks **every ② vertex on that frontage** once its owner turns
@@ -1304,7 +1301,7 @@ These are substrate-independent corner principles. Building against them is mand
 
 1. **The corner is the band BENT around the arc** — a slice of the same continuous concentric offsets — **never a separately-constructed primitive** (no per-corner pad, no per-vertex fillet *as the corner*). §3.4, `SECTION.md §6`.
 2. **Concentric offsets use `jtMiter`, never `jtRound`** — jtMiter inherits an already-rounded ring's arcs as concentric nested arcs AND passes operator-authored R=0 squares through sharp; jtRound re-rounds every corner by radius=depth (a second rounding mechanism) and corrupts squares. The curb silhouette is rounded **once** by `filletRing`; the inward bands then `jtMiter`-inherit it. §3.3.
-3. **The ADA corner pad is a band-slice**, not predicated on the arc — so it works square OR round. (`SECTION.md §6` owns the ADA fill.)
+3. **The ADA corner pad is a band-slice**, not predicated on the arc — so it works square OR round (`SECTION.md §4`). A curb cut's warning strip is a slice of the same walk band; a crosswalk is paint on the asphalt, clipped to it — markings ON the band, never a seam IN it.
 4. **Mono-width** per block/run, not per-leg stitched. "Ribbon monowidth, strips variable" — the *outer* depth is uniform per block (clean concentric corners); what varies per-edge is the *divider* (where treelawn ends) and the *materials*.
 
 ### The ribbon as the entire object
@@ -1427,7 +1424,7 @@ as only a re-pour-survival device; **it is the Wall cure, and the Wall is why it
 
 ### `runs` / `groupRuns` — the leg identity
 
-`groupRuns(tile)` (`tileGround.js:764`) groups a tile's edges into **runs** — maximal spans of same-street edges. A run is a *leg*; a run seam (street changes) is a *corner*. This is the identity read of the Derivation Chain: `cornerAt(a,b)` = real corner iff `a !== b` (different street both sides), else a through-node. The same test governs construction (`filletRing`) AND authoring scope (`SKELETON §5g`).
+`groupRuns(tile)` (grep it) groups a tile's edges into **runs** — maximal spans of same-street edges; a run is a *leg*, the authoring unit (`SKELETON §5g`). ⛔ On the LEGACY walk path only, a run seam is also its corner (`cornerAt(a,b)`, a≠b). On ① a corner is where ① TURNS (§1, the corner test) and `cornerAt` retires.
 
 ---
 
@@ -1493,7 +1490,8 @@ The corner is the highest-stakes, most-re-derived topic. Hold the chain of homes
 
 - **Geometry doctrine (the 4 invariants):** §1 above. The corner is the band bent; jtMiter; ADA band-slice; mono-width.
 - **The SHAPE corner (curb arc):** `filletRing` rounds the curb offset once; radius from the 3-tier kit (`SKELETON §4` — Corners subsection). The corner is *two things in two tools*: **SHAPE in Survey, FILL in Section** (`ARCHITECTURE §2.1`).
-- **The FILL corner (ped bend + ADA):** `SECTION.md §6` — the bent SECTOR off the frozen fillet, exact tangent-trimmed legs, street-edge always concrete (ADA), the set-back walk sliding to the curb on its leg.
+- **The FILL corner (ped bend + ADA):** `SECTION.md §4` — the stamp painter (`sectionPassProtoTile`): the pad is a slice of the band, tangent to tangent; a leg's slope lives on the leg. (`§6.1`'s sector + tangent trim is the legacy WALK painter's, not what draws the map.)
+- **Curb cuts + crosswalks:** whether a street meets a corner is the frozen `iaJunction` (the legs decide, `classifyCornerLegs`); the cut's style is authored → recorded kerbs (`curb-cut-evidence.mjs`) → the town's norm (`curb-cut-norm.mjs`); crosswalks run square across (`crosswalksSquareAcross`). Knobs: `OPERATIONS` "Curb cuts".
 - **The divided false corner:** `SKELETON §5e` — the corner-builder must pair the corridor outer-edge legs, not the carriageway stubs. (Figure-ground skipped these IXs via the now-dead `cornersAtIx`; the tile path must build the *right* corner. The retired skip is documented in the figure-ground archive.)
 - **The width-step "dogleg":** `SKELETON §5a/§5g` — a per-fe `pavementHW` step at a through-node, usually a datum-data defect (drop/reconcile the deviating value), not a construction one. **Now reconciled by construction across `continuesAs` seams** (2026-06-15): `derive.js` sets each canonical `roadId`'s base `pavementHW` to one value per side (MAX across its chains), so a through-road carries one curb width — the seam no longer steps. ⚠️ A per-fe `blockCustoms` `pavementHW` override still wins over the base, so a deviating override on a through-road must still be corrected in the Survey/SHAPE SSoT (`blockCustoms`, `SURVEY.md:76`) — the residual curated-override gap. Detector: `through-width` (regression guard) + `curb-bump` (symptom) in `scratch/correctness-detector.mjs`.
 
@@ -1614,7 +1612,7 @@ Where a side street **dead-ends/T's into a through street**, `extractFaces` walk
 - **tile** — a block face of the centerline graph (`extractFaces`); the unit everything is painted onto.
 - **grout** — the centerlines, which form the tile edges (the tiles are the faces between them).
 - **iA** — the curb edge, the frozen SHAPE: under ① it is ② (`offsetRingByRects`, eased once); on the legacy tile path the per-side offset (`offsetRingVariable`) rounded by `filletRing`.
-- **run / leg** — a maximal span of same-street edges on a tile (`groupRuns`); a run seam (street changes) is a **corner**, same street both sides is a **through-node** (`cornerAt`). ⛔ *"Same street" by WHICH id is the live defect — `§3.3`.*
+- **run / leg** — a maximal span of same-street edges on a tile (`groupRuns`). A run seam is a corner only on the legacy walk path (`cornerAt`); on ① the corner is where ① turns (§1).
 - **fe / frontage edge** — a block-edge between two REAL corners; owns `skelId`, `side`, and the `segOrd`s spanning its through-nodes. The authoring unit (`feCustomKey`).
 - **segOrd** — count of IX vertices before a run; the densify-robust run key (vs `intersections.ix`, the fragile index key).
 - **mono-width** — one total ped depth per block (clean concentric corners); the divider + materials vary per-edge. "Ribbon monowidth, strips variable."
