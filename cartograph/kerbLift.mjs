@@ -14,10 +14,46 @@
 //     inside vertex takes the height field (`liftBuffer`).
 //   · the riser is every mesh edge with a lifted triangle on one side and an unlifted one on the other — built from
 //     the conformed mesh itself, so it shares the ground's vertices and cannot crack (`riserFromEdges`).
-// ⛔ Where the lifted side is NOT kerb (an alley, a path, a highway verge meeting the asphalt) the step has no riser;
-//   that edge is COUNTED by the pair of groups, and what to draw there is Jacob's call (Q1, pending).
+// ⭐ WHERE NO CURB IS DRAWN, THE BLOCK SLOPES DOWN FLUSH (Jacob, 2026-10-06, Q1): a highway shoulder, an alley mouth, land
+//   that just meets the road. Each curbless stretch of the block's edge (`curblessSegments`) carries a TAPER — a slice
+//   `taperRun` deep (the town's value, `kerb.taperRun`), 0 at the road to h at the run — so it has no step and no riser.
+//   Raised where a curb is, flush where none is. ⛔ A step left without a riser after that is a defect, and is counted.
+import clipperLib from 'clipper-lib'
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1]], dot = (a, b) => a[0] * b[0] + a[1] * b[1]
+const SCALE = 1000                                  // clipper integer units per metre → 1 mm, as the rest of the bake
+
+/** The stretches of the block edge with NO curb drawn: the block rings' outlines, as open paths, less the drawn curb
+ *  (the post-paint curb + cut strips, grown by 1 mm so a shared edge reads as covered). Returns [[A, B], …] segments. */
+export function curblessSegments(blockRings, curbRings) {
+  const { Clipper, ClipperOffset, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
+  const toP = (r) => r.map(([x, z]) => ({ X: Math.round(x * SCALE), Y: Math.round(z * SCALE) }))
+  const co = new ClipperOffset()
+  for (const r of curbRings) if (r?.length >= 3) co.AddPath(toP(r), JoinType.jtMiter, EndType.etClosedPolygon)
+  const grown = []; co.Execute(grown, 1)              // 1 clipper unit = 1 mm
+  const c = new Clipper()
+  for (const r of blockRings) if (r?.length >= 3) c.AddPath([...toP(r), toP(r)[0]], PolyType.ptSubject, false)
+  for (const g of grown) c.AddPath(g, PolyType.ptClip, true)
+  const tree = new PolyTree()
+  c.Execute(ClipType.ctDifference, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+  const segs = []
+  for (const path of Clipper.OpenPathsFromPolyTree(tree))
+    for (let i = 0; i + 1 < path.length; i++) segs.push([[path[i].X / SCALE, path[i].Y / SCALE], [path[i + 1].X / SCALE, path[i + 1].Y / SCALE]])
+  return segs.filter(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-3)
+}
+
+/** A TAPER per curbless segment: the segment × `taperRun` inward (the block side, by `inside`), 0 → h linearly. */
+export function taperRegions(segments, taperRun, inside) {
+  const out = []
+  for (const [A, B] of segments) {
+    const w = Math.hypot(B[0] - A[0], B[1] - A[1]), u = [(B[0] - A[0]) / w, (B[1] - A[1]) / w]
+    const M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], n0 = [-u[1], u[0]], dl = 1e-3 * w
+    const n = inside([M[0] + n0[0] * dl, M[1] + n0[1] * dl]) ? n0 : [-n0[0], -n0[1]]
+    const at = (s, t) => [A[0] + u[0] * s + n[0] * t, A[1] + u[1] * s + n[1] * t]
+    out.push({ kind: 'ramp', taper: true, A, u, inward: n, w, R: taperRun, F: null, poly: [at(0, 0), at(w, 0), at(w, taperRun), at(0, taperRun)] })
+  }
+  return out
+}
 
 /** Ramp + flare regions for every cut. Each: { kind, poly, A, u, inward, w, R, F }. */
 export function kerbRegions(ramps, { height: h, rampSlope, flareSlope }) {
@@ -73,9 +109,8 @@ export function sliceByRegions(rings, regions, ops) {
   return [...rest, ...pieces]
 }
 
-/** The height field: `inside(P)` = within the block union (even-odd over the curb rings), `y(P)` = h, or less inside a
- *  cut's ramp/flares (the lowest region wins). Rings are bucketed by z rows so a point costs one row of edges. */
-export function makeHeightField(blockRings, regions, h) {
+/** `inside(P)` = within the block union (even-odd over the curb rings), bucketed by z rows so a point costs one row. */
+export function blockInside(blockRings) {
   const ROW = 8, rows = new Map()
   for (const r of blockRings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
     const a = r[j], b = r[i]; if (a[1] === b[1]) continue
@@ -86,6 +121,12 @@ export function makeHeightField(blockRings, regions, h) {
     for (const [a, b] of rows.get(Math.floor(P[1] / ROW)) || [])
       if ((a[1] > P[1]) !== (b[1] > P[1]) && P[0] < (b[0] - a[0]) * (P[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c
     return c }
+  return inside
+}
+
+/** The height field: `inside` (from `blockInside`), and `y(P)` = h, or less inside a cut's ramp/flares or a curbless
+ *  taper (the lowest region wins). */
+export function makeHeightField(inside, regions, h) {
   const CELL = 16, cells = new Map()
   regions.forEach((g, gi) => { const [a, b, c, d] = bboxOf([g.poly])
     for (let x = Math.floor(a / CELL); x <= Math.floor(c / CELL); x++) for (let z = Math.floor(b / CELL); z <= Math.floor(d / CELL); z++)

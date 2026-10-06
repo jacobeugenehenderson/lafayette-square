@@ -1,5 +1,5 @@
 {
-  "_ruled": "Jacob, 2026-10-05: one diagonal (45°) ramp per junction corner, 1.5 m wide, 0.6 m warning strip — revised the same day from a perpendicular pair. Jacob, 2026-10-06: crosswalks follow the corner, lines 3.0/0.3, continental 0.6/0.6 × 3.0; a T's far kerb gets a curb cut, crossed to. Jacob, 2026-10-06: the kerb stands 0.15 m (~6 in); a cut ramps at 1:12 with 1:10 flares — the ADA standards (no national rung exists, so LS names them).",
+  "_ruled": "Jacob, 2026-10-05: one diagonal (45°) ramp per junction corner, 1.5 m wide, 0.6 m warning strip — revised the same day from a perpendicular pair. Jacob, 2026-10-06: crosswalks follow the corner, lines 3.0/0.3, continental 0.6/0.6 × 3.0; a T's far kerb gets a curb cut, crossed to. Jacob, 2026-10-06: the kerb stands 0.15 m (~6 in); a cut ramps at 1:12 with 1:10 flares — the ADA standards (no national rung exists, so LS names them). Jacob, 2026-10-06: flush where no curb, sloping over 1.0 m.",
   "curbCuts": {
     "style": "diagonal",
     "width": 1.5,
@@ -24,6 +24,7 @@
   "kerb": {
     "height": 0.15,
     "rampSlope": "1:12",
-    "flareSlope": "1:10"
+    "flareSlope": "1:10",
+    "taperRun": 1.0
   }
 }

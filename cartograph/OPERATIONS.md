@@ -127,11 +127,12 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   norm change needs a **skeleton pour**; the per-leg override is live. Every pour prints *"N corners have no curb-cut
   source"*. ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>` · a town whose frozen norm
   lags its `norms.json` (re-pour owed) ▶ `node checks/claims-the-pour-reads-the-towns-norm.mjs`
-- **Kerb height** — `norms.json` → `{"kerb": {"height", "rampSlope", "flareSlope"}}` (metres; slopes as `"rise:run"`, the
-  jurisdiction's — LS: 0.15, ADA 1:12 / 1:10). Kit = 0, one flat plane. Never tied to the Look's `curbWidth`. Read at derive
-  (skeleton pour); raised by the ground bake (`kerbLift.mjs`; a kerb face where the curb is drawn, each cut ramped). ⚠️ Not
-  yet bakeable with h > 0: the bake REFUSES while a lifted edge meets the road with no kerb (alleys, verges — Q1, Jacob's
-  call), and the renderer does not yet light the kerb face or seat anchors on it (`BRIEF-corner-ramps-and-kerb` step 5).
+- **Kerb height** — `norms.json` → `{"kerb": {"height", "rampSlope", "flareSlope", "taperRun"}}` (metres; slopes as
+  `"rise:run"`, the jurisdiction's — LS: 0.15, ADA 1:12 / 1:10, taper 1.0). Kit = 0, one flat plane. Never tied to the Look's
+  `curbWidth`. Read at derive (skeleton pour); raised by the ground bake (`kerbLift.mjs`): a kerb face where the curb is
+  drawn, each cut ramped, and where NO curb is drawn (alleys, shoulders) the block slopes flush over `taperRun`. A town with
+  h > 0 and cuts or curbless frontage but no slopes/run THROWS. ⚠️ The renderer does not yet light the kerb face or seat
+  anchors on the raised ground (`BRIEF-corner-ramps-and-kerb` step 5, pieces 4–5).
   ▶ `node checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs`
 - **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — square across the street, centred on the cut that serves them
   (or on a recorded OSM crossing whose ends land in that corner's arc — read from `osm.json`, nothing to fetch), kerb to kerb;

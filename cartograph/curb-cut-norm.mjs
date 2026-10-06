@@ -65,7 +65,9 @@ function validateCrosswalk(n, where) {
 // 2026-10-06). Kit = 0: a town that authors nothing stays one flat plane. ⛔ Never coupled to the curb's WIDTH, which is
 // the Look's cosmetic `curbWidth` slider. A cut ramps h → 0: `rampSlope` (along the ramp) and `flareSlope` (its sides)
 // are the jurisdiction's, given as "rise:run" — no kit default; the BAKE throws when a town with h > 0 has cuts and no
-// slopes. ⚠️ GAP: there is no NATIONAL rung (ADA is federal), so a US town names its slopes itself, citing ADA.
+// slopes. ⭐ Where no curb is drawn the block slopes down FLUSH over `taperRun` (metres, the town's; Jacob 2026-10-06);
+// the bake throws when a town with h > 0 has curbless frontage and no run. ⚠️ GAP: there is no NATIONAL rung (ADA is
+// federal), so a US town names its slopes itself, citing ADA.
 function validateKerb(n, where) {
   if (!n || typeof n !== 'object') throw new Error(`${where}: a kerb norm must be an object { height, rampSlope, flareSlope }`)
   if (!(Number.isFinite(n.height) && n.height >= 0)) throw new Error(`${where}: kerb \`height\` must be metres (>= 0)`)
@@ -74,6 +76,10 @@ function validateKerb(n, where) {
     const m = /^\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*$/.exec(String(n[k]))
     if (!m || !(+m[1] > 0 && +m[2] > 0)) throw new Error(`${where}: kerb \`${k}\` must be "rise:run" (e.g. "1:12"), got ${JSON.stringify(n[k])}`)
     out[k] = +m[1] / +m[2]; out[k + 'Text'] = `${m[1]}:${m[2]}`
+  }
+  if (n.taperRun != null) {
+    if (!(Number.isFinite(n.taperRun) && n.taperRun > 0)) throw new Error(`${where}: kerb \`taperRun\` must be metres (> 0) — where no curb is drawn the block slopes flush over it`)
+    out.taperRun = n.taperRun
   }
   return out
 }
