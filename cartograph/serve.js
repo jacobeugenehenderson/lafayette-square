@@ -30,7 +30,7 @@ import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPat
 import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
 import { unionFootprints } from './building-union.mjs'
 import { writeIfChanged } from './io.js'
-import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
+import { splitBoundary, composeBoundary, makeDiscRecord, assertDiscInBox } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
@@ -2082,6 +2082,8 @@ createServer(async (req, res) => {
         ]
         // Timezone still derives from the hood LOCATION (not the frame origin) so
         // weather/TOD are right for any region (Altadena → Pacific, etc.).
+        // ⛔ The disc must lie inside the data that was fetched (EXTENT-DESIGN §4) — refused BEFORE anything is written.
+        assertDiscInBox(geo, discCenter, radius, `[commit-extent] ${scene}`)
         try { geo.timezone = tzLookup(center.lat, center.lon) } catch { /* keep prior tz */ }
         geo._comment = 'Committed extent — frame origin FROZEN at the fetch center (never moves); hood center stored off-origin on the disc. bbox = the fetch extent; timezone from the hood center.'
         writeFileSync(geoPath, JSON.stringify(geo, null, 2))
@@ -2116,12 +2118,10 @@ createServer(async (req, res) => {
         // into the NOW re-centered frame, so a re-commit never drifts the boundary.
         //
         // ⭐ THREE RECORDS. Start from the prior records and replace only what this
-        // gesture addresses; the DISC record carries the fade set forward when it is
-        // authored (`makeDiscRecord`). The old code built a fresh object here, so the
-        // fade set regenerated from constants on every commit with nothing to stop it.
+        // gesture addresses. (The edge's fade is not here — it is the Look's.)
         const priorRecs = readBoundaryRecords(scene)
         const disc = makeDiscRecord({
-          radius, center: discCenter, prior: priorRecs?.disc ?? null,
+          radius, center: discCenter,
           where: `${scene}/neighborhood_boundary.json`,
         })
         // ⚠️ Exclusions are REQUEST-ONLY on this path — omitting the array drops any
@@ -2141,14 +2141,6 @@ createServer(async (req, res) => {
           // No polygon supplied → the record is simply carried, not re-stated.
           membership = priorRecs.membership
           console.log(`[commit-extent] ${scene}: preserved existing inclusion polygon (${membership.polygon.length} pts) — none supplied`)
-        }
-        // ⭐ The band is a WIDTH, so it rides through a rescope untouched and `fade`
-        // re-derives at the new radius. This used to announce "preserved AUTHORED
-        // fade set" over `fade`/`streetFade` — stored copies that kept pointing at
-        // the OLD circle after a radius change. Preserving THOSE was the bug;
-        // carrying the knob is the fix.
-        if (disc.fadeOrigin === 'authored') {
-          console.log(`[commit-extent] ${scene}: carried the authored fadeBand (${disc.fade.fadeBand} m); fade derives from radius`)
         }
         const boundary = composeBoundary({
           disc, membership, exclusions: excl.length ? excl : null,
@@ -2233,34 +2225,6 @@ createServer(async (req, res) => {
     return
   }
 
-  // POST /<scene>/edge-fade — the town's EDGE: the fade band's width (m) and its ruffle (0 straight … 1). Writes only
-  // those two facts into neighborhood_boundary.json through the three records (fadeBand = the disc's fade set,
-  // fadeRuffle = carried). No pipeline: neither moves the clip (it follows the radius); the ground shows them at its
-  // next bake (ground's inputs include the boundary file). Body { fadeBand, fadeRuffle }. (Loupe, Jacob 2026-09-27)
-  const edgeMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/edge-fade$/)
-  if (req.method === 'POST' && edgeMatch && !RESERVED_PREFIXES.has(edgeMatch[1])) {
-    const scene = edgeMatch[1]
-    let body = ''
-    req.on('data', c => body += c)
-    req.on('end', () => {
-      try {
-        const { fadeBand, fadeRuffle } = JSON.parse(body || '{}')
-        if (!Number.isFinite(fadeBand) || fadeBand < 0) throw new Error('fadeBand must be a width in metres, ≥ 0')
-        if (!Number.isFinite(fadeRuffle) || fadeRuffle < 0 || fadeRuffle > 1) throw new Error('fadeRuffle must be 0 … 1')
-        const bPath = mapDataPaths(scene).boundary
-        if (!existsSync(bPath)) throw new Error('no committed boundary — Pour first')
-        const recs = splitBoundary(JSON.parse(readFileSync(bPath, 'utf8')), `${scene}/neighborhood_boundary.json`)
-        recs.disc.fade = { fadeBand }
-        recs.carry.fadeRuffle = fadeRuffle
-        writeFileSync(bPath, JSON.stringify(composeBoundary(recs), null, 2))
-        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, fadeBand, fadeRuffle }))
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: err.message }))
-      }
-    })
-    return
-  }
-
   // POST /<scene>/rescope — live radius re-scope (§4, the §11 living boundary):
   // rewrite neighborhood_boundary.json with a new radius circle — PRESERVING the
   // membership polygon (streets/official boundary unchanged) — then re-clip
@@ -2313,22 +2277,14 @@ createServer(async (req, res) => {
         if (Array.isArray(center) && discCenter !== prev.center) {
           console.log(`[rescope] ${scene}: disc center ${JSON.stringify(prev.center ?? [0, 0])} → ${JSON.stringify(discCenter)} (frame origin untouched)`)
         }
-        // ⭐ THREE RECORDS (EXTENT-DESIGN §5.1). The DISC record carries an AUTHORED
-        // fade set forward instead of regenerating it from constants — the half of D4
-        // that was still live (the `center` half was closed 2026-07-23, just above).
+        // ⭐ THREE RECORDS (EXTENT-DESIGN §5.1). (The edge's fade is not here — it is the Look's.)
+        // ⛔ The disc must lie inside the data that was fetched (EXTENT-DESIGN §4) — refused before anything is written.
+        assertDiscInBox(JSON.parse(readFileSync(mapDataPaths(scene).geography, 'utf8')), discCenter, radius, `[rescope] ${scene}`)
         const priorRecs = splitBoundary(prev, `${scene}/neighborhood_boundary.json`)
         const disc = makeDiscRecord({
-          radius, center: discCenter, prior: priorRecs.disc,
+          radius, center: discCenter,
           where: `${scene}/neighborhood_boundary.json`,
         })
-        // ⭐ The band is a WIDTH, so it rides through a rescope untouched and `fade`
-        // re-derives at the new radius. This used to announce "preserved AUTHORED
-        // fade set" over `fade`/`streetFade` — stored copies that kept pointing at
-        // the OLD circle after a radius change. Preserving THOSE was the bug;
-        // carrying the knob is the fix.
-        if (disc.fadeOrigin === 'authored') {
-          console.log(`[rescope] ${scene}: carried the authored fadeBand (${disc.fade.fadeBand} m); fade derives from radius`)
-        }
         let membership = priorRecs.membership   // preserved unless a gesture says otherwise
         let excl = priorRecs.exclusions
         // The LIGHT re-apply — re-clip + re-bake in the committed frame, no re-center.

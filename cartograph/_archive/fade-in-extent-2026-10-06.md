@@ -16,3 +16,7 @@ Under Radius (once the town is committed): **Fade band** — how wide the soft e
 
 The distance: the Arch or the backdrop where the town has one, and the air between. *(Was "Hero & Horizon"; the
 horizon ground disc is gone — the town's edge is the neighborhood fade, set in Extent: **Fade band** + **Ruffle**.)*
+
+## ROADMAP.md (the ruling's board line, landed)
+
+- **✅ RULED (Jacob, 2026-10-06): the edge's Fade band and Ruffle are STAGE controls, not Extent's.** They live in Extent today (`ExtentApp.jsx#EdgeFadeRows`, stored in `neighborhood_boundary.json` as `fadeBand` / `fadeRuffle`, its own hint saying *"shows in Stage at the next Bake"*). ⇒ move both to Stage as **per-Look** channels; **Ruffle survives and is TOD-animatable**; Extent keeps the **radius** (it cuts the geometry — authoring) and shows the fade as a **read-only** ring. ⭐ The 2026-09-20 one-knob ruling (`ARCHITECTURE` "the circle has one origin") stands: one source, now in the Look. ⚠️ Every reader of `fadeBand` moves with it (MapLayers, AerialTiles, the stencil, the bake). Owner: Flare, after Jackson Heights' bake. S–M.

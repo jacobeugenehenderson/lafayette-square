@@ -30,7 +30,7 @@ import { existsSync, readFileSync, mkdirSync, writeFileSync, rmSync } from 'fs'
 import { join } from 'path'
 import { readdirSync } from 'fs'
 import { tmpdir } from 'os'
-import { deriveFade, DEFAULT_FADE_BAND, classifyFade, FADE_FIELDS, edgeBandOf, lookFade, EDGE_DEFAULT_BAND_FRACTION } from '../cartograph/boundaryRecords.mjs'
+import { deriveFade, RETIRED_FADE_FIELDS, splitBoundary, edgeBandOf, lookFade, EDGE_DEFAULT_BAND_FRACTION } from '../cartograph/boundaryRecords.mjs'
 import { readLookDesign, SEED_STRIPPED_FIELDS, TOWN_SCALED_LOOK_FIELDS } from '../cartograph/lookDesign.mjs'
 import { loadSceneStencil } from '../cartograph/sceneStencil.js'
 
@@ -78,7 +78,8 @@ for (const R of [180, 892, 3539]) {
   ok(f.outer === R, `R=${R}: fade.outer === radius (${f.outer})`)
   ok(f.inner === Math.max(0, R - 200), `R=${R}: fade.inner === radius − band, clamped at 0 (${f.inner})`)
 }
-ok(deriveFade(1000).inner === 1000 - DEFAULT_FADE_BAND, `default band applies when none is given (${DEFAULT_FADE_BAND} m)`)
+let noBand = false; try { deriveFade(1000) } catch { noBand = true }
+ok(noBand, 'deriveFade refuses without a band — the only default is the Look\'s 5% (edgeBandOf), never a width here')
 ok(deriveFade(100, 400).inner === 0, 'a band wider than the radius clamps at 0 rather than going negative')
 
 // ── D. A RADIUS MOVE CANNOT STRAND THE FADE ────────────────────────────────
@@ -109,7 +110,7 @@ try {
     writeFileSync(join(d, 'neighborhood_boundary.json'), JSON.stringify(nb))
   }
   write('plain',     { version: 2, center: [0, 0], radius: R, boundary: ring })
-  write('withband',  { version: 2, center: [0, 0], radius: R, fadeBand: 200, boundary: ring })
+  write('withband',  { version: 2, center: [0, 0], radius: R, fadeBand: 200, boundary: ring })   // a retired field: geometry must ignore it
   const reach = (st) => Math.round(Math.max(...st.clipPolygon.map(([x, z]) => Math.hypot(x, z))))
   for (const sc of ['plain', 'withband']) {
     const st = loadSceneStencil(tmp, sc)
@@ -125,15 +126,17 @@ h('E2. edgeFadeBand is stripped when a Look is seeded from another town\'s')
 ok(TOWN_SCALED_LOOK_FIELDS.includes('edgeFadeBand') && SEED_STRIPPED_FIELDS.includes('edgeFadeBand'),
   'edgeFadeBand is a town-scaled Look field and in the seed strip — LS\'s 200 m never lands on a 5 km town')
 
-// ── F. THE FADE SET IS ONE FIELD ───────────────────────────────────────────
-h('F. the fade set is one field, and classify reads it')
-ok(FADE_FIELDS.length === 1 && FADE_FIELDS[0] === 'fadeBand', `FADE_FIELDS = [${FADE_FIELDS.join(', ')}]`)
-ok(classifyFade({ radius: 892, boundary: [] }).kind === 'absent', 'no fadeBand → absent (legal)')
-ok(classifyFade({ radius: 892, fadeBand: 200 }).kind === 'generated', 'fadeBand === default → generated')
-ok(classifyFade({ radius: 892, fadeBand: 134 }).kind === 'authored', 'fadeBand !== default → authored (the operator turned the knob)')
-let threw = false
-try { classifyFade({ radius: 892, fadeBand: -5 }, 'fixture') } catch { threw = true }
-ok(threw, 'a negative fadeBand throws — it would invert the band (inner past outer)')
+// ── F. THE BOUNDARY FILE CARRIES NO FADE ───────────────────────────────────
+h('F. the boundary file carries no fade — the band and ruffle are retired from it, and refused')
+const DERIVED = ['innerFadeOffset', 'fade', 'streetFade']
+ok(['fadeBand', 'fadeRuffle', ...DERIVED].every(f => RETIRED_FADE_FIELDS.includes(f)), `RETIRED_FADE_FIELDS = [${RETIRED_FADE_FIELDS.join(', ')}]`)
+for (const s of scenes) {
+  const nb = JSON.parse(readFileSync(join(DATA, s, 'neighborhood_boundary.json'), 'utf8'))
+  ok(!('fadeBand' in nb) && !('fadeRuffle' in nb), `${s.padEnd(26)} carries no fadeBand / fadeRuffle`)
+}
+let refused = false
+try { splitBoundary({ version: 2, center: [0, 0], radius: 892, fadeBand: 200, boundary: [[892, 0]] }, 'fixture') } catch (e) { refused = /retired/.test(e.message) }
+ok(refused, 'a boundary still carrying fadeBand is refused by name, never carried as a dead copy')
 
 // ⚠️ A SECTION G LIVED HERE and is deliberately gone. It pinned "if a population
 // fades it must be drawn out to fade.outer" — the precondition of the ADDITIVE band,

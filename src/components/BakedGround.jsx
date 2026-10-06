@@ -228,7 +228,7 @@ function GroundMeshes({ look, manifest, bin, context, coast, scene: bakedScene, 
       `2026-09-20 fade ruling (its manifest still carries streetFade ` +
       `${stencil.streetFade.inner}/${stencil.streetFade.outer} and an INWARD fade ` +
       `${stencil.fade.inner}/${stencil.fade.outer}). It is being rendered under the OLD two-band ` +
-      `model so it looks the way it was baked — it is NOT showing the scene's current fadeBand. ` +
+      `model so it looks the way it was baked — it is NOT showing the Look's current edge fade band. ` +
       `▶ re-bake this look to pick up the current fade. ▶ node checks/claims-no-slab-outlives-its-schema.mjs`)
   }, [stencil, scene])
   // Cache-bust the lightmap URL with the same `?t=` token used for ground.json /

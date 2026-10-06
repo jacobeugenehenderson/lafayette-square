@@ -1421,13 +1421,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // ENCLOSE the silhouette: both consumers map texel→world THROUGH this bbox, so a
   // bbox smaller than the ground mis-maps every texel rather than cropping.
   //
-  // FLOORED at the disc radius (same defect cured in pipeline.js, b54cbaae):
-  // the fade is a LOOK band and nothing stops a scene authoring one narrower than
-  // its own disc, on which the bare `fade.outer` under-sizes the bake.
-  // ⭐ Since 2026-09-20 the band is ADDITIVE — `fade.outer = radius + fadeBand` — so
-  // it can no longer fall below the radius unless `fadeBand` is negative, which
-  // `classifyFade` now rejects outright. The floor stays as a belt-and-braces guard,
-  // not because a live path can trip it.
+  // SIZED FROM THE DISC RADIUS, never the fade (2026-10-06): the fade is the Look's and ends at the radius.
   //
   // ⛔ NO FALLBACK. This read `?? 1000` — presented as "the prior hardcoded default",
   // it was DEAD: loadSceneStencil coerces an absent radius to 1 (`sceneStencil.js:35`

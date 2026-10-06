@@ -17,14 +17,9 @@ import { existsSync, readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 
 const DATA = 'cartograph/data'
-// The local frame: x east, z south (z = −Δlat), metres via the town's own lon/lat scale (geography.json).
-export function discMargin(geo, nb) {
-  const B = geo.bbox
-  const x0 = (B.minLon - geo.lon) * geo.lonToMeters, x1 = (B.maxLon - geo.lon) * geo.lonToMeters
-  const z0 = -(B.maxLat - geo.lat) * geo.latToMeters, z1 = -(B.minLat - geo.lat) * geo.latToMeters
-  const [cx, cz] = nb.center || [0, 0], R = nb.radius
-  return Math.min(cx - R - x0, x1 - (cx + R), cz - R - z0, z1 - (cz + R))
-}
+// One source: the test the Extent routes refuse with (boundaryRecords.mjs#discMargin), read, never restated.
+import { discMargin as _dm } from '../cartograph/boundaryRecords.mjs'
+const discMargin = (geo, nb) => _dm(geo, nb.center, nb.radius)
 
 if (process.argv.includes('--selftest')) {
   const geo = { lat: 0, lon: 0, lonToMeters: 100000, latToMeters: 100000, bbox: { minLat: -0.01, maxLat: 0.01, minLon: -0.01, maxLon: 0.01 } }   // ±1000 m

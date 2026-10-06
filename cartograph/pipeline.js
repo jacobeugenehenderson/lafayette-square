@@ -168,7 +168,7 @@ async function main() {
   // the one step in the chain that DELETED instead. The disc hides; the bb holds.
   //
   // ⭐ ROOT of why it had to invent an extent: the boundary record carries NO bb field
-  // (`radius`, `fadeBand`, `boundary`, `polygon`, `exclusions` — no forever
+  // (`radius`, `boundary`, `polygon`, `exclusions` — no forever
   // zone). With nothing principled to clip to it reached for the fade band — A RENDER
   // KNOB deciding what exists. Jacob: "the edge gets faded but AFTER it's drawn."
   // Measured live on all three kit scenes, `fadeOuter` dominating `radius`: it alone
