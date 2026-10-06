@@ -4717,9 +4717,13 @@ function rampsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, 
       const at = (s) => { let k = 1; while (k < cum.length - 1 && cum[k] < s) k++
         const t = (s - cum[k - 1]) / ((cum[k] - cum[k - 1]) || 1), A = pts[k - 1], B = pts[k]
         return [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t] }
-      const spans = style === 'diagonal' ? [[L / 2 - w / 2, L / 2 + w / 2, 0, L]]
-        : [[0, w, 0, L / 2], [L - w, L, L / 2, L]]
-      for (const [s0r, s1r, lo, hi] of spans) {
+      // ⭐ which crossing each ramp serves — the leg it sits beside (`junctions[].legs` is [arriving, leaving] in
+      // this contour's order). A crosswalk leaves a ramp ACROSS the street that leg fronts.
+      const legs = st.junctions?.[j]?.legs || []
+      const srv = (a2, b2) => (a2 && b2) ? [{ leg: a2, other: b2 }] : []
+      const spans = style === 'diagonal' ? [[L / 2 - w / 2, L / 2 + w / 2, 0, L, [...srv(legs[0], legs[1]), ...srv(legs[1], legs[0])]]]
+        : [[0, w, 0, L / 2, srv(legs[0], legs[1])], [L - w, L, L / 2, L, srv(legs[1], legs[0])]]
+      for (const [s0r, s1r, lo, hi, serves] of spans) {
         const s0 = Math.max(lo, s0r), s1 = Math.min(hi, s1r)
         if (s1 - s0 < w - 1e-6) tally.short++
         if (!(s1 - s0 > 1e-6)) continue
@@ -4733,7 +4737,7 @@ function rampsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, 
         masks.push([...out, ...inn.reverse()])
         const c = at((s0 + s1) / 2)
         recs.push({ si: p.si, arc: st.iaArc[p.si][q], junction: j, node: st.junctions?.[j]?.node ?? null, style, source,
-                    at: c, s0, s1, arcLen: L })
+                    at: c, s0, s1, arcLen: L, serves })
         tally.ramps++
       }
     }
@@ -5448,6 +5452,50 @@ function tileSliceKey(st, blockCustoms) {
 // — no version to bump, nothing to remember, and it cannot drift from the code it identifies.
 const BUILD_NONCE = Math.random().toString(36).slice(2)
 let _staleBandsWarned = false
+// ══ CROSSWALKS — FROM A RAMP TO THE MATCHING RAMP ACROSS THE STREET (`BRIEF-corner-ramps-and-kerb §0a`) ═══════
+// ⭐ PAIRED BY IDENTITY, NEVER BY DISTANCE. A ramp serves the crossing of the leg it sits beside (`serves`). The ramp
+// across that street sits at the SAME junction node, beside the SAME chain, on its OTHER side — both exact,
+// frozen facts (`junctions[].node`, `legs`). Where a chain passes THROUGH the junction it has corners on both
+// sides of the node, so two partners qualify; the one whose OTHER leg matches (same chain, same side) is the one
+// on the same side of the cross street. ⛔ Still more than one, or none, is COUNTED (`ambiguous` / `unpaired` —
+// a T's far kerb has no corner to land on), never resolved by nearness (`A15`).
+// ⭐ The paint is the town's norm (`rampNorm.crosswalks`): `lines` = two lines along the walk, `width` apart;
+// `continental` = bars across it. It is a MARKING ON THE ASPHALT, clipped to it — not part of the ped band.
+// ⛔ No ramps, no crosswalks: a crosswalk is the line between two ramps, so a town with no ramp source has none
+// (`noRamp`), and says so.
+function crosswalksBetweenRamps(recs, norm) {
+  const tally = { pairs: 0, unpaired: 0, ambiguous: 0, noRamp: 0, style: norm?.style ?? null, source: norm?.source ?? null }
+  const rings = [], pairs = []
+  if (!norm || norm.style === 'none') return { rings, pairs, tally }
+  if (!recs.length) { tally.noRamp = 1; return { rings, pairs, tally } }
+  const E = [], byNode = new Map()
+  recs.forEach((r, ri) => { for (const sv of (r.serves || [])) { if (r.node == null) continue
+    const e = { ri, corner: `${r.tile}|${r.si}|${r.arc}`, node: r.node, leg: sv.leg, other: sv.other }
+    E.push(e); (byNode.get(r.node) || byNode.set(r.node, []).get(r.node)).push(e) } })
+  const seen = new Set()
+  for (const e of E) {
+    let c = byNode.get(e.node).filter(x => x.corner !== e.corner && x.leg.skelId === e.leg.skelId && x.leg.side !== e.leg.side)
+    if (!c.length) { tally.unpaired++; continue }
+    // a chain passing THROUGH the node: keep the partner on the same side of the cross street; none or several = ambiguous
+    if (c.length > 1) c = c.filter(x => x.other.skelId === e.other.skelId && x.other.side === e.other.side)
+    if (c.length !== 1) { tally.ambiguous++; continue }
+    const k = e.ri < c[0].ri ? `${e.ri}|${c[0].ri}` : `${c[0].ri}|${e.ri}`
+    if (seen.has(k)) continue
+    seen.add(k); pairs.push([e.ri, c[0].ri, e.leg.skelId]); tally.pairs++
+  }
+  const W = norm.width, ln = norm.line
+  const quad = (X, u, v, a0, a1, b0, b1) => [[X[0] + u[0] * a0 + v[0] * b0, X[1] + u[1] * a0 + v[1] * b0], [X[0] + u[0] * a1 + v[0] * b0, X[1] + u[1] * a1 + v[1] * b0],
+                                            [X[0] + u[0] * a1 + v[0] * b1, X[1] + u[1] * a1 + v[1] * b1], [X[0] + u[0] * a0 + v[0] * b1, X[1] + u[1] * a0 + v[1] * b1]]
+  for (const [a, b] of pairs) {
+    const X = recs[a].at, Y = recs[b].at, dx = Y[0] - X[0], dz = Y[1] - X[1], L = Math.hypot(dx, dz)
+    if (!(L > 1e-6)) continue
+    const u = [dx / L, dz / L], v = [-u[1], u[0]], h = W / 2
+    if (norm.style === 'lines') { rings.push(quad(X, u, v, 0, L, h - ln, h)); rings.push(quad(X, u, v, 0, L, -h, -h + ln)) }
+    else for (let t = 0; t + ln <= L + 1e-9; t += 2 * ln) rings.push(quad(X, u, v, t, t + ln, -h, h))
+  }
+  return { rings, pairs, tally }
+}
+
 export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
   // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
@@ -5572,6 +5620,12 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const out = finish(rest)
   out.selected = sel ? finish(sel) : null
   out.rampRecs = rampRecs; out.rampTally = rampTally
+  // ⭐ CROSSWALKS are cross-tile — a pair's two ramps sit on two blocks — so they are drawn here, over every tile's ramps.
+  const cwNorm = shapeTiles.find(t => t?.rampNorm)?.rampNorm?.crosswalks ?? null
+  const CWK = crosswalksBetweenRamps(rampRecs, cwNorm)
+  const road = [...out.asphalt, ...(out.selected?.asphalt || [])]
+  out.crosswalk = (CWK.rings.length && road.length) ? intersectRings(unionRings(CWK.rings), road) : []
+  out.crosswalkPairs = CWK.pairs; out.crosswalkTally = CWK.tally
   return out
 }
 
@@ -9177,15 +9231,31 @@ export function buildTileGround(ribbons, opts = {}) {
             ...(() => {
               const junctions = [], at = new Map()
               const iaJunction = mine.map(EC => {
-                const jx = EC.jx || [], arc = EC.arc || [], seen = new Set()
+                const jx = EC.jx || [], arc = EC.arc || [], seen = new Set(), n2 = EC.ring.length
+                // ⭐ `legs` IN THIS CONTOUR'S ORDER — [the leg arriving, the leg leaving]. ① classified them in ①'s
+                // ring order, which runs OPPOSITE to ②'s here (measured: 875 of 876 LS corners). So each arc reads
+                // the ① labels on its own flanking edges and orders the pair to match — never assumes a winding.
+                // ⛔ An arc whose flanks name neither leg keeps ①'s order and is counted (`legOrderUnread`).
+                const flank = new Map()
+                for (let i = 0; i < n2; i++) { const u = arc[i]; if (u == null) continue
+                  const f = flank.get(u) || {}; if (arc[(i - 1 + n2) % n2] !== u) f.first = i; if (arc[(i + 1) % n2] !== u) f.last = i; flank.set(u, f) }
+                const own = (k) => { const l = EC.labs?.[(k + n2) % n2]; return l == null ? null : protoOwners[l]?.skelId ?? null }
+                const ordered = (j, u) => { const f = flank.get(u); if (!f || f.first == null || f.last == null) return null
+                  const b = own(f.first - 1), a = own(f.last)
+                  if (b === j.legs[0].skelId && a === j.legs[1].skelId) return j.legs
+                  if (b === j.legs[1].skelId && a === j.legs[0].skelId) return [j.legs[1], j.legs[0]]
+                  return null }
                 return EC.ring.map((_, i) => {
                   const j = jx[i]; if (!j) return null
-                  if (arc[i] != null && !seen.has(arc[i])) { seen.add(arc[i]); protoJxCensus.arcs++; protoJxCensus[j.kind]++
+                  const first = arc[i] != null && !seen.has(arc[i])
+                  if (first) { seen.add(arc[i]); protoJxCensus.arcs++; protoJxCensus[j.kind]++
                     protoJxCensus.why[j.why] = (protoJxCensus.why[j.why] || 0) + 1 }
                   if (j.kind === 'bend') return 'bend'
                   if (j.kind !== 'junction') return null
-                  const key = `${j.node}|${j.legs[0].skelId}|${j.legs[0].side}|${j.legs[1].skelId}|${j.legs[1].side}`
-                  if (!at.has(key)) { at.set(key, junctions.length); junctions.push({ node: j.node, deg: j.deg, legs: j.legs }) }
+                  const legs = ordered(j, arc[i]) || j.legs
+                  if (first && legs === j.legs && !ordered(j, arc[i])) protoJxCensus.legOrderUnread = (protoJxCensus.legOrderUnread || 0) + 1
+                  const key = `${j.node}|${legs[0].skelId}|${legs[0].side}|${legs[1].skelId}|${legs[1].side}`
+                  if (!at.has(key)) { at.set(key, junctions.length); junctions.push({ node: j.node, deg: j.deg, legs }) }
                   return at.get(key)
                 })
               })
@@ -9293,6 +9363,7 @@ export function buildTileGround(ribbons, opts = {}) {
         {
           const J = protoJxCensus, why = Object.entries(J.why).filter(([w]) => !['junction', 'sameChain', 'chainCut'].includes(w)).map(([w, k]) => `${k} ${w}`).join(' · ')
           console.log(`[tileGround][PROTO②] corner junctions: ${J.arcs} arc(s) · ${J.junction} at a JUNCTION (a street meets: ramps + crosswalks) · ${J.bend} BEND (${J.why.sameChain || 0} one street turning · ${J.why.chainCut || 0} chain cut)`)
+          if (J.legOrderUnread) console.warn(`[tileGround][PROTO②] ⛔ ${J.legOrderUnread} junction corner(s) whose flanking edges name neither leg — their legs keep ①'s order, so a crosswalk may leave from the wrong ramp there.`)
           if (J.unknown) console.warn(`[tileGround][PROTO②] ⛔ ${J.unknown} corner(s) do NOT KNOW whether a street meets them (${why}) — they get their pad and NO ramp, and are NOT bends.` +
             (J.why.noDegree ? ' `noDegree` = this ① was frozen before the junction degree: re-pour.' : ''))
         }
@@ -9401,6 +9472,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let sidewalk = unionRings(Wacc)
   // ⭐ the ramps' warning strips + their positions — painted by Section on junction corners (`rampsOnJunctionCorners`)
   let ramp = [], rampRecs = [], rampTally = null
+  let crosswalk = [], crosswalkPairs = [], crosswalkTally = null   // ramp-to-ramp markings on the asphalt (`crosswalksBetweenRamps`)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
     const perimeter = differenceRings([stencil], tileUnion)   // frame: outer(s) + tile-network holes
@@ -9570,6 +9642,14 @@ export function buildTileGround(ribbons, opts = {}) {
     const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms)
     asphalt = S.asphalt; curb = S.curb; sidewalk = S.sidewalk; block = S.block
     ramp = S.ramp || []; rampRecs = S.rampRecs || []; rampTally = S.rampTally || null
+    crosswalk = S.crosswalk || []; crosswalkPairs = S.crosswalkPairs || []; crosswalkTally = S.crosswalkTally || null
+    if (crosswalkTally && crosswalkTally.style && crosswalkTally.style !== 'none') {
+      const C = crosswalkTally
+      console.log(`[tileGround][crosswalks] ${C.pairs} crosswalk(s), ramp to ramp (${C.style}, from ${C.source})`)
+      if (C.noRamp) console.warn(`[tileGround][crosswalks] ⛔ the norm asks for crosswalks but NO ramp is painted — a crosswalk runs between two ramps, so there are none.`)
+      if (C.unpaired) console.warn(`[tileGround][crosswalks] ${C.unpaired} ramp crossing(s) with no ramp across the street (a T's far kerb, or a corner that is not a junction) — no crosswalk drawn.`)
+      if (C.ambiguous) console.warn(`[tileGround][crosswalks] ⛔ ${C.ambiguous} ramp crossing(s) with MORE THAN ONE candidate across the street — not drawn, never picked by nearness.`)
+    } else if (crosswalkTally) console.log(`[tileGround][crosswalks] none — the town's crosswalk norm is 'none' (from ${crosswalkTally.source ?? 'nothing frozen'})`)
     if (rampTally) {
       const T = rampTally, src = Object.entries(T.bySource || {}).map(([k, v]) => `${v} ${k}`).join(' · ')
       console.log(`[tileGround][ramps] ${T.junction || 0} junction corner(s) · ${T.ramps || 0} ramp(s) painted · style from: ${src || 'nothing'}`)
@@ -9613,7 +9693,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, ramp, rampRecs, rampTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, ramp, rampRecs, rampTally, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

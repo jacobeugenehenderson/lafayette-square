@@ -412,7 +412,8 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
   (the walk continuing to the kerb) fills the arc behind it, tangent to tangent. See `§4`.
 - **A junction corner also carries RAMPS** — positions on the arc where the kerb drops, by the town's
   norm or the operator (`rampsOnJunctionCorners`, `cartograph/ramp-norm.mjs`); a bend gets none. The pad
-  is unchanged. ▶ `node checks/claims-every-junction-corner-has-a-ramp-source.mjs <scene>`
+  is unchanged; crosswalks join a ramp to its partner across the street (`crosswalksBetweenRamps`, paired on the
+  junction node + the chain's two sides). ▶ `node checks/claims-every-junction-corner-has-a-ramp-source.mjs <scene>`
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
 - **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.
 

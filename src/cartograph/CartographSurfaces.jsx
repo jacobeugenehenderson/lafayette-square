@@ -91,6 +91,7 @@ const TABS = [
       { id: 'curb',          label: 'Curb',          kind: 'layer' },
       { id: 'sidewalk',      label: 'Sidewalk',      kind: 'layer' },
       { id: 'ramp',          label: 'Curb Ramps',    kind: 'layer' },
+      { id: 'crosswalk',     label: 'Crosswalks',    kind: 'layer' },
       { id: 'treelawn',      label: 'Treelawn',      kind: 'layer' },
       { id: 'building',      label: 'Buildings',     kind: 'layer' },
       { id: 'parking_lot',   label: 'Parking Lots',  kind: 'layer' },

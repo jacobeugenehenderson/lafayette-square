@@ -59,7 +59,7 @@ const FACE_FADE = {
 // Match StreetRibbons' BAND_PRIORITY for the bands V2 renders. Residential
 // block fill sits at face-level (pri 1) — below all street/strip layers.
 // Curb sits between sidewalk and asphalt to match V1's stack order.
-const PRI = { residential: 1, treelawn: 3, sidewalk: 5, ramp: 5.5, curb: 6, asphalt: 8 }
+const PRI = { residential: 1, treelawn: 3, sidewalk: 5, ramp: 5.5, curb: 6, asphalt: 8, crosswalk: 8.5 }
 
 function ringSignedArea(ring) {
   let a = 0
@@ -314,6 +314,7 @@ export default function BlockGeometryV2Debug({
   const curbVisible               = layerVis?.curb      !== false
   const sidewalkVisible           = layerVis?.sidewalk  !== false
   const rampVisible               = layerVis?.ramp      !== false
+  const crosswalkVisible          = layerVis?.crosswalk !== false
   const treelawnVisible           = layerVis?.treelawn  !== false
   const lotVisible                = layerVis?.lot       !== false
   const medianVisible             = layerVis?.median    !== false
@@ -366,6 +367,7 @@ export default function BlockGeometryV2Debug({
   const treelawnCol = colorFor('treelawn')
   const sidewalkCol = colorFor('sidewalk')
   const rampCol     = colorFor('ramp')
+  const crosswalkCol = colorFor('crosswalk')
   const liveRibbons = useMemo(
     () => mergeLiveRibbons(ribbons, liveStreets),
     [ribbons, liveStreets]
@@ -793,6 +795,7 @@ export default function BlockGeometryV2Debug({
       ramp:     __time('ramp',     () => ringsToFlatGeo(sg.ramp,     0.032, true)),   // junction corners' warning strips
       curb:     __time('curb',     () => ringsToFlatGeo(sg.curb,     0.035, true)),
       asphalt:  __time('asphalt',  () => ringsToFlatGeo(sg.asphalt,  0.040, true)),
+      crosswalk: __time('crosswalk', () => ringsToFlatGeo(sg.crosswalk, 0.045, true)),   // ramp-to-ramp markings
       highway:  __time('highway',  () => ringsToFlatGeo(frozenShape.highway, 0.015, true)),   // G1 — frozen grade-sep highways (sibling group, not tile-derived)
       block:    __time('block',    () => ringsToFlatGeo(sg.block, 0.008, true)),   // frozen block silhouette, under the LU paint
       blockRings: sg.block,   // raw iA rings — handle anchoring (one geometry truth)
@@ -877,6 +880,7 @@ export default function BlockGeometryV2Debug({
       treelawn: perLu(tg.treelawnByLu, 0.020),
       sidewalk: ringsToFlatGeo(tg.sidewalk, 0.030, true),
       ramp:     ringsToFlatGeo(tg.ramp,     0.032, true),
+      crosswalk: ringsToFlatGeo(tg.crosswalk, 0.045, true),
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
       groutOutline: GROUT_ON ? ringsToEdgeGeo(tg.grout, 0.060) : null,   // [GROUT] over the curb, so both read at once
@@ -1074,6 +1078,7 @@ export default function BlockGeometryV2Debug({
     })()),
     sidewalk:          makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     ramp:              makeMaterial(rampCol, PRI.ramp, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
+    crosswalk:         makeMaterial(crosswalkCol, PRI.crosswalk, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     sidewalkSelected:  makeMaterial(sidewalkCol, PRI.sidewalk, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
     // Curb is the silhouette STROKE — stays solid even while editing so the
     // hardscape outline reads against the translucent fills (Jacob's "solid
@@ -1086,7 +1091,7 @@ export default function BlockGeometryV2Debug({
     // Median color edit previews live; faceFade + PRI.residential to sit with
     // the LU faces it lives among.
     median:            makeMaterial(medianCol,   PRI.residential, faceFade, { measureActive, surveyActive, editing: surveyEditing }),
-  }), [makeMaterial, asphaltCol, highwayCol, medianCol, treelawnCol, sidewalkCol, rampCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade, faceFade])
+  }), [makeMaterial, asphaltCol, highwayCol, medianCol, treelawnCol, sidewalkCol, rampCol, crosswalkCol, curbCol, luColors, measureActive, surveyActive, surveyEditing, bandFade, faceFade])
 
   // Non-street ribbons (alley/footway/cycleway/steps/path). Pavement-only
   // strips buffered from each ribbon's pavedWidth via the shared helper
@@ -1294,6 +1299,9 @@ export default function BlockGeometryV2Debug({
         {rampVisible && sectionGeos.ramp && (
           <mesh geometry={sectionGeos.ramp} renderOrder={PRI.ramp} receiveShadow material={bandMats.ramp} />
         )}
+        {crosswalkVisible && sectionGeos.crosswalk && (
+          <mesh geometry={sectionGeos.crosswalk} renderOrder={PRI.crosswalk} receiveShadow material={bandMats.crosswalk} />
+        )}
         {curbVisible && sectionGeos.curb && (
           <mesh geometry={sectionGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />
         )}
@@ -1399,6 +1407,9 @@ export default function BlockGeometryV2Debug({
       )}
       {rampVisible && tileGeos?.ramp && (
         <mesh geometry={tileGeos.ramp} renderOrder={PRI.ramp} receiveShadow material={bandMats.ramp} />
+      )}
+      {crosswalkVisible && tileGeos?.crosswalk && (
+        <mesh geometry={tileGeos.crosswalk} renderOrder={PRI.crosswalk} receiveShadow material={bandMats.crosswalk} />
       )}
       {curbVisible && tileGeos?.curb && (
         <mesh geometry={tileGeos.curb} renderOrder={PRI.curb} receiveShadow material={bandMats.curb} />

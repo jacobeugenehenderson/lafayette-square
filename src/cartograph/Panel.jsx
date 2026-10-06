@@ -32,6 +32,7 @@ const BLOCKS_DEFS = [
   { id: 'curb',          label: 'Curb' },
   { id: 'sidewalk',      label: 'Sidewalks' },
   { id: 'ramp',          label: 'Curb Ramps' },
+  { id: 'crosswalk',     label: 'Crosswalks' },
   { id: 'treelawn',      label: 'Treelawn' },
   { id: 'building',      label: 'Buildings' },
   { id: 'parking_lot',   label: 'Parking' },

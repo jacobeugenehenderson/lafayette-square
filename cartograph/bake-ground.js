@@ -229,6 +229,8 @@ const PAINT_ORDER = [
   ['mat', 'ramp'],
   ['mat', 'curb'],
   ['mat', 'asphalt'],
+  // ramp-to-ramp crosswalk paint — on the asphalt, cutting it (`crosswalksBetweenRamps`)
+  ['mat', 'crosswalk'],
   ['mat', 'median'],
   // Alley + path ribbons painted on top of streets where they cross.
   ['mat', 'alley'],
@@ -508,6 +510,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   pushClipperRings('curb',     pr.curb)
   pushClipperRings('sidewalk', pr.sidewalk)
   pushClipperRings('ramp',     pr.ramp)
+  pushClipperRings('crosswalk', pr.crosswalk)
   for (const [lu, rings] of Object.entries(pr.treelawnByLu)) pushClipperRings(`treelawn:${lu}`, rings)
   for (const [lu, rings] of Object.entries(pr.luByClass)) {
     // [G4] The divided median is a derived face in luByClass, but it bakes as a
