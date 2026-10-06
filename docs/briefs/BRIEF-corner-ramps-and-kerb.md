@@ -45,6 +45,34 @@ visible — but this is **kit-general**: every town gets it, evidence or no evid
 3. **The operator overrides any corner** — a Section gesture (ramp style / positions).
 Every ramp carries its source, exactly like widths (`ROADMAP A23`).
 
+## 0a. ✅ RULED after the pre-build report (Jacob, 2026-10-05) — these override §3's sequence where they differ
+
+1. **The ramp override lives on each LEG's existing slot** — `blockCustoms[skelId][side][segOrd]`, e.g.
+   `ramps: { start, end }` ("a ramp at my corner end"). Identity rides `iaStamp`; nothing is recovered.
+   When the two legs disagree, **authored wins**, the same precedence the frontage resolution uses.
+   No new authoring channel, no corner-keyed table, ⛔ never the per-ring arc ordinal.
+2. **+ 3. Stamp ①'s JUNCTION identity onto each corner at freeze.** It answers both flags with carried
+   identity: a corner at a junction (degree ≥ 3) gets ramps and crosswalks; a mid-block BEND keeps its
+   pad and gets no ramp; crosswalks pair by same junction + same crossing road. ⛔ Not the owner-change
+   test, not a ray-and-snap (proximity recovery, A15). ⚠️ It changes the frozen artifact ⇒ it lands with
+   the **next scheduled re-pour** of the towns, coordinated with Boz (another work group re-pours).
+   **First, read-only:** measure per town how many eased corners are bends, and post it.
+   ⛔ This lifts §7's "no change to ①/② construction" bound **for this stamp only** — the shape itself
+   does not move; `a03-curb-identity` / `claims-repour-changes-nothing` must show geometry unchanged.
+4. **The raised kerb lifts the WHOLE BLOCK inboard of the kerb face** (curb, walk, lawn, land use) by an
+   authored height with a neutral default; asphalt stays at 0; a riser along `iA`; each ramp is the walk
+   sloping h → 0. Buildings, trees and lamps ride the lifted ground. ⛔ Not a lip strip, not a
+   riser-only look ("it's only seen from far" is not an available argument). **Measure this option's
+   cost first** (flatten, coplanar check, AO, anchors, phone-lo frame time) and stop with the numbers.
+5. **Default ramp style = NONE, loudly.** No ramp markers without evidence or an authored town/state
+   norm, and every pour prints *"N corners have no ramp source"*. The pad is unchanged regardless.
+6. **Rot found, to fix in the same landing as the code it describes:** `SECTION §6.1`'s "TL↔TL is GRASS
+   AT THE KERB through the whole arc" (contradicts §4) and the painter comment near "THE CORNER — READ,
+   NOT MEASURED" ("AND the owner changes" / "a mid-block BEND is NOT a corner") — both against the code.
+
+**Order:** landing 1 = ramps by evidence/norm as 2D material on junction corners (needs the stamp ⇒
+with the re-pour) · landing 2 = crosswalks (same stamp) · landing 3 = the kerb, after its measurement.
+
 ## 1. Read first — whole, not sampled
 
 - `cartograph/SECTION.md` **§4 entire** (RAMP vs SLOPE, "the legs decide the corner", the TL↔TL blunt end)

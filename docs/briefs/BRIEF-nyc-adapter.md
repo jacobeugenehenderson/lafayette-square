@@ -91,6 +91,21 @@ and a fallback for inspection only. GDAL (`ogr2ogr`) is installed on this machin
 ⛔ **Units.** NYC data is EPSG:2263 (NY State Plane Long Island, **US feet**). Reproject at intake into
 the kit's frame. A metre-assuming constant downstream is Layer 0's Class D trap.
 
+**3.2a ✅ RULED (Jacob, 2026-10-05) — all three in this brief:**
+- **BIN is the building identity** where a well supplies a permanent municipal id; the identity lock
+  keys on it, and falls back to the centroid key only where no such id exists. ⭐ Kit-general: the
+  WELL declares whether it carries a permanent id. Extent's unconditional `fetch-msbf.js` becomes
+  conditional — MSBF only where the town's state lists no building well — and the pour prints which
+  well supplied each building.
+- **A Socrata (NYC Open Data / SoQL) fetcher.** A well declares its protocol; ArcGIS stays as it is.
+  `select.where` becomes protocol-aware. ⛔ The no-fallback throws in `resolveFromState` apply to both.
+- **Trees become a well kind** in the state record — Forestry Tree Points (live) ∪ the 2015 census,
+  deduped by proximity, provenance per tree. It feeds BOTH tree entry points (`tree-bake-inputs.mjs`,
+  `bake-trees.js#SOURCE_BY_BASENAME`). ⭐ St. Louis's one-off `scripts/13` fetch should become MO's
+  tree well by the same mechanism — note it, do not fold it in unasked.
+- `CURB_CUT` is not on Open Data; it is a declared FILE well from the 2022 planimetrics geodatabase
+  (GDAL is installed), acquired here, consumed by `BRIEF-corner-ramps-and-kerb.md`.
+
 **3.3 The city's width enters NATIVELY, as one rung of the curb's own resolver — ✅ RULED (Jacob, 2026-10-05).**
 *(Supersedes "pre-fill as authoring": Kerb's confirm-pass found no home that is per-block, per-scene and
 off the open `segOrd` key — `overlay.json` is per chain-side, `blockCustoms` is per-Look and on the open
