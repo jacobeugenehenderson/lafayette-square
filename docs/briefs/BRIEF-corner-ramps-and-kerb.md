@@ -148,9 +148,10 @@ Jackson Heights bakes tonight.
    - The whole block inboard of the kerb lifts; each curb cut slopes h → 0; asphalt stays at 0.
    - Buildings, trees and lamps RIDE the lifted ground. Today the anchor sampler ignores the mesh's y, so they would
      bury by h; fix the sampler, don't offset the objects.
-   - Height is a jurisdiction value on the same norm ladder (`norms.json` → state → kit **0**). LS = a **square curb,
-     ~6 in (0.15 m)** (Jacob). ⚠️ LS's Look authors `curbWidth: 0.381` — square at 0.15 m does not match it; **the
-     open question is Jacob's, ask Boz before writing either value.**
+   - Height is a jurisdiction value on the same norm ladder (`norms.json` → state → kit **0**); LS = **0.15 m (~6 in)**.
+     ⛔ Height and width are SEPARATE knobs, never coupled: the width is the Look's `curbWidth` slider, authored wider
+     on LS for looks (0.381 m) and left alone (Jacob, 2026-10-06: *"I made the curbs wider for cosmetic reasons"*). A
+     source for a town's height (a state standard, a city's data) is welcome as a rung; record which rung it came from.
    - Measured: AO cannot see a 15 cm step (texel 1.8–10 m). Report what the step looks like at the CLOSE camera;
      ⛔ "it's only seen from far" is not an argument.
 6. **The docs, in the same landings as the code they describe:**
