@@ -91,6 +91,18 @@ and a fallback for inspection only. GDAL (`ogr2ogr`) is installed on this machin
 ⛔ **Units.** NYC data is EPSG:2263 (NY State Plane Long Island, **US feet**). Reproject at intake into
 the kit's frame. A metre-assuming constant downstream is Layer 0's Class D trap.
 
+**3.0 ✅ RULED (Jacob, 2026-10-05) — STEP 0: a town's WEB ADDRESS is its id, stated in Extent.**
+Jackson Heights' id is **`jacksonheights`** (jacksonheights.online); its display name is "Jackson Heights".
+Extent cannot produce that pair today: the scene id is `sceneIdForName(name)` (`src/lib/sceneSlug.js`)
+and the Pour's Look id is `slugify(name)` (`serve.js` POST /looks) — "Jackson Heights" → `jackson-heights`.
+- Add a **web-address field** beside Name in Extent (labelled as the address, e.g. `____.online`),
+  defaulting to `slugifyName(Name)`, editable, validated by `sceneIdForName`'s rules (clean slug, not
+  numeric, not taken) and **refused loudly** — never auto-suffixed. The Fetch rename targets it.
+- The Pour passes it to `createLook`; POST /looks accepts an explicit id (refused if taken; ⛔ no `-2`).
+- Check: extend `checks/claims-a-scene-is-named-not-numbered.mjs` with name ≠ id ⇒ scene id = Look id =
+  the stated address. Mutation-tested.
+- ⛔ **Land before step 3, and before anyone runs Extent on Jackson Heights.**
+
 **3.2a ✅ RULED (Jacob, 2026-10-05) — all three in this brief:**
 - **BIN is the building identity** where a well supplies a permanent municipal id; the identity lock
   keys on it, and falls back to the centroid key only where no such id exists. ⭐ Kit-general: the
