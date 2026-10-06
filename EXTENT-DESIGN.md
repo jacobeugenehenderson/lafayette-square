@@ -281,9 +281,10 @@ legitimate permanent key — there is no second fetch to renumber it. Consequenc
   both ship, or the next reader merges them.
 
 **The cost of the seal, and its mitigation.** Locking makes the soft fetch's *mistakes* permanent, so
-§0.4's padding is now the only future headroom that exists — it must be generous, and the seal gate
-must enforce **`bbox ⊇ disc + padding`** (today violated: LS 226 m, Altadena 981 m — `EXTENT-EXCAVATION
-D1`) and **the frame origin frozen** (R10; D4 finds the code currently forces the two centerpoints
+the padding (`_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md §0.4`: a PERCENTAGE on top of the disc,
+⛔ never quantified) is now the only future headroom that exists — it must be generous, and the seal gate
+must enforce **`bbox ⊇ disc + padding`** — ▶ `node checks/claims-the-disc-stays-inside-the-bb.mjs` (padding
+0 until one is ruled; RED on Altadena, 981 m past its bb, measured 2026-10-06) and **the frame origin frozen** (R10; D4 finds the code currently forces the two centerpoints
 equal — fix in the schema split below).
 
 ### 4.1 The seal mints a SECOND identity — the node stamp
