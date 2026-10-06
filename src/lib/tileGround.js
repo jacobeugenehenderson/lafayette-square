@@ -4657,26 +4657,30 @@ export function classifyCornerLegs(a, b) {
 //   diagonal      — one curb cut centred on the arc
 //   perpendicular — two, one at each tangent, each within its own half of the arc
 // ⛔ A curb cut wider than the room it has takes the room it has and is counted (`short`).
-// ══ THE RECORDED CUTS, LANDED ON THE FROZEN CURB (`cartograph/curb-cut-evidence.mjs`) ══════════════════════════
-// ⭐ Each record's `ray` runs from the crossed road's centreline node out to the recorded kerb point. It is walked, then
-// extended along its OWN last segment, to the FIRST frozen curb edge it meets across every tile — the record's own
-// line, never a nearest-ring search. ⭐ The landing is kept only if the edge lies in a licensed arc (the painter's `inC`
-// rule) of a JUNCTION corner one of whose legs IS the crossed road — ownership, so no reach constant is needed.
-// Stamped on the tile as `curbCutEvidence: [{ si, arc, jx, f, kind, source, osmId, crossed }]`, `f` = position along the arc span
-// (0 → 1 in contour order). Run before the disc cut, so every piece of a cut block carries its block's landings.
-// ⛔ Every record that does not land is counted by cause: noHit · offArc · notJunction · notOwner.
-export function landCurbCutEvidence(tiles, evidence) {
-  const census = { records: 0, landed: 0, noHit: 0, offArc: 0, notJunction: 0, notOwner: 0 }
-  if (!evidence?.fetched) return { census, fetched: false }
-  const G = 20, grid = new Map(), edges = []
+// ══ THE FROZEN CURB, INDEXED — every tile's `iaFull` edge with what it IS (arc span position, junction, owner) ═════
+// ⭐ One index for every question asked of the curb by a LINE: where a recorded cut lands (`landCurbCutEvidence`) and
+// where a square crosswalk meets each kerb (`crosswalksSquareAcross`). `firstHit(P, Q, skipRing)` = the first edge met
+// (`skipRing` = `ringOf(tile, si)`)
+// walking P→Q (never a nearest search); `owned(e, S, notSide)` = the edge fronts chain S on a side other than `notSide`
+// — an arc edge by its junction's legs, a leg edge by its own frozen stamp. `reach` = the drawing's own extent, so
+// "along its own line, unbounded" needs no constant. Memoised per tile array (Section re-merges on every drag).
+const _curbIndexMemo = new WeakMap()
+export function curbEdgeIndex(tiles) {
+  if (_curbIndexMemo.has(tiles)) return _curbIndexMemo.get(tiles)
+  const G = 20, grid = new Map(), edges = [], ringId = new Map()
   let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity
+  // ⛔ The disc cut makes several tiles of one block and every piece carries the SAME uncut `iaFull` (by design — see
+  // the cut). A ring is indexed ONCE, by identity, and a caller skips its own ring by that identity: skipping by tile
+  // index let a line meet its own kerb again on the twin piece, at 0 m.
   tiles.forEach((t, ti) => (t?.iaFull || []).forEach((ring, si) => {
+    if (ringId.has(ring)) return
+    ringId.set(ring, ringId.size)
     const n = ring.length, arc = t.iaArc?.[si], mark = t.iaCorner?.[si]
     const lic = new Set(); if (arc) for (let q = 0; q < n; q++) if (arc[q] != null && mark?.[q]) lic.add(arc[q])
     const inArc = (q) => !!arc && arc[q] != null && arc[q] === arc[(q + 1) % n] && lic.has(arc[q])
     const rec = []
     for (let q = 0; q < n; q++) { const a = ring[q], b = ring[(q + 1) % n]
-      rec.push({ a, b, len: Math.hypot(b[0] - a[0], b[1] - a[1]), inArc: inArc(q), ti, si, q })
+      rec.push({ a, b, len: Math.hypot(b[0] - a[0], b[1] - a[1]), inArc: inArc(q), ti, si, q, ring: ringId.get(ring) })
       minX = Math.min(minX, a[0]); maxX = Math.max(maxX, a[0]); minZ = Math.min(minZ, a[1]); maxZ = Math.max(maxZ, a[1]) }
     for (let q = 0; q < n; q++) {                     // each arc span: running position + total length
       if (!rec[q].inArc || rec[(q - 1 + n) % n].inArc) continue
@@ -4689,21 +4693,44 @@ export function landCurbCutEvidence(tiles, evidence) {
         for (let z = Math.floor(Math.min(e.a[1], e.b[1]) / G); z <= Math.floor(Math.max(e.a[1], e.b[1]) / G); z++)
           (grid.get(`${x},${z}`) || grid.set(`${x},${z}`, []).get(`${x},${z}`)).push(edges.length - 1) }
   }))
-  const firstHit = (P, Q) => {
+  const firstHit = (P, Q, skipRing = null) => {
     const ids = new Set()
     for (let x = Math.floor(Math.min(P[0], Q[0]) / G); x <= Math.floor(Math.max(P[0], Q[0]) / G); x++)
       for (let z = Math.floor(Math.min(P[1], Q[1]) / G); z <= Math.floor(Math.max(P[1], Q[1]) / G); z++)
         for (const id of grid.get(`${x},${z}`) || []) ids.add(id)
     let best = null
     for (const id of ids) { const e = edges[id]
+      if (skipRing != null && e.ring === skipRing) continue
       const r = [Q[0] - P[0], Q[1] - P[1]], s = [e.b[0] - e.a[0], e.b[1] - e.a[1]], den = r[0] * s[1] - r[1] * s[0]
       if (Math.abs(den) < 1e-12) continue
       const d = [e.a[0] - P[0], e.a[1] - P[1]], t = (d[0] * s[1] - d[1] * s[0]) / den, u = (d[0] * r[1] - d[1] * r[0]) / den
-      if (t >= 0 && t <= 1 && u >= 0 && u <= 1 && (!best || t < best.t)) best = { t, u, e } }
+      if (t >= 0 && t <= 1 && u >= 0 && u <= 1 && (!best || t < best.t)) best = { t, u, e, at: [P[0] + r[0] * t, P[1] + r[1] * t] } }
     return best
   }
-  // "unbounded" along its own line = as far as the frozen curb itself reaches: the drawing's own extent
-  const reach = Math.hypot(maxX - minX, maxZ - minZ)
+  const owned = (e, S, notSide) => {
+    const T = tiles[e.ti]
+    if (e.inArc) return Number.isInteger(e.jx) && (T.junctions?.[e.jx]?.legs || []).some(l => l?.skelId === S && l.side !== notSide)
+    const R = T.runs?.[T.iaStamp?.[e.si]?.[e.q]]
+    return !!R && R.skelId === S && R.side !== notSide
+  }
+  const ringOf = (ti, si) => ringId.get(tiles[ti]?.iaFull?.[si])
+  const X = { edges, firstHit, owned, ringOf, reach: Math.hypot(maxX - minX, maxZ - minZ) || 0 }
+  _curbIndexMemo.set(tiles, X)
+  return X
+}
+
+// ══ THE RECORDED CUTS, LANDED ON THE FROZEN CURB (`cartograph/curb-cut-evidence.mjs`) ══════════════════════════
+// ⭐ Each record's `ray` runs from the crossed road's centreline node out to the recorded kerb point. It is walked, then
+// extended along its OWN last segment, to the FIRST frozen curb edge it meets across every tile — the record's own
+// line, never a nearest-ring search. ⭐ The landing is kept only if the edge lies in a licensed arc (the painter's `inC`
+// rule) of a JUNCTION corner one of whose legs IS the crossed road — ownership, so no reach constant is needed.
+// Stamped on the tile as `curbCutEvidence: [{ si, arc, jx, f, kind, source, osmId, crossed }]`, `f` = position along the arc span
+// (0 → 1 in contour order). Run before the disc cut, so every piece of a cut block carries its block's landings.
+// ⛔ Every record that does not land is counted by cause: noHit · offArc · notJunction · notOwner.
+export function landCurbCutEvidence(tiles, evidence) {
+  const census = { records: 0, landed: 0, noHit: 0, offArc: 0, notJunction: 0, notOwner: 0 }
+  if (!evidence?.fetched) return { census, fetched: false }
+  const { firstHit, reach } = curbEdgeIndex(tiles)
   for (const R of evidence.records) {
     census.records++
     const ray = R.ray || []
@@ -4804,10 +4831,13 @@ function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, c
         return [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t] }
       // ⭐ which crossing each curb cut serves — the leg it sits beside (`junctions[].legs` is [arriving, leaving] in
       // this contour's order). A crosswalk leaves a curb cut ACROSS the street that leg fronts.
+      // `dir` — the crossed street's direction HERE, read off that leg's own curb edge beside the arc (the edge
+      // arriving for legs[0], leaving for legs[1]); a crosswalk runs square to it (`crosswalksSquareAcross`).
       const legs = st.junctions?.[j]?.legs || []
-      const srv = (a2, b2) => (a2 && b2) ? [{ leg: a2, other: b2 }] : []
-      const spans = style === 'diagonal' ? [[L / 2 - w / 2, L / 2 + w / 2, 0, L, [...srv(legs[0], legs[1]), ...srv(legs[1], legs[0])]]]
-        : [[0, w, 0, L / 2, srv(legs[0], legs[1])], [L - w, L, L / 2, L, srv(legs[1], legs[0])]]
+      const edgeDir = (i) => { const A = ring[i], B = ring[(i + 1) % n], l = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1; return [(B[0] - A[0]) / l, (B[1] - A[1]) / l] }
+      const srv = (a2, b2, i) => (a2 && b2) ? [{ leg: a2, other: b2, dir: edgeDir(i) }] : []
+      const spans = style === 'diagonal' ? [[L / 2 - w / 2, L / 2 + w / 2, 0, L, [...srv(legs[0], legs[1], before), ...srv(legs[1], legs[0], after)]]]
+        : [[0, w, 0, L / 2, srv(legs[0], legs[1], before)], [L - w, L, L / 2, L, srv(legs[1], legs[0], after)]]
       for (const [s0r, s1r, lo, hi, serves] of spans) {
         const s0 = Math.max(lo, s0r), s1 = Math.min(hi, s1r)
         if (s1 - s0 < w - 1e-6) tally.short++
@@ -5537,49 +5567,95 @@ function tileSliceKey(st, blockCustoms) {
 // — no version to bump, nothing to remember, and it cannot drift from the code it identifies.
 const BUILD_NONCE = Math.random().toString(36).slice(2)
 let _staleBandsWarned = false
-// ══ CROSSWALKS — FROM A CURB CUT TO THE MATCHING CURB CUT ACROSS THE STREET (`BRIEF-corner-ramps-and-kerb §0a`) ═══════
-// ⭐ PAIRED BY IDENTITY, NEVER BY DISTANCE. A curb cut serves the crossing of the leg it sits beside (`serves`). The curb cut
-// across that street sits at the SAME junction node, beside the SAME chain, on its OTHER side — both exact,
-// frozen facts (`junctions[].node`, `legs`). Where a chain passes THROUGH the junction it has corners on both
-// sides of the node, so two partners qualify; the one whose OTHER leg matches (same chain, same side) is the one
-// on the same side of the cross street. ⛔ Still more than one, or none, is COUNTED (`ambiguous` / `unpaired` —
-// a T's far kerb has no corner to land on), never resolved by nearness (`A15`).
-// ⭐ The paint is the town's norm (`curbCutNorm.crosswalks`): `lines` = two lines along the walk, `width` apart;
-// `continental` = bars across it. It is a MARKING ON THE ASPHALT, clipped to it — not part of the ped band.
-// ⛔ No curb cuts, no crosswalks: a crosswalk is the line between two curb cuts, so a town with no curb-cut source has none
-// (`noCurbCut`), and says so.
-function crosswalksBetweenCurbCuts(recs, norm) {
-  const tally = { pairs: 0, unpaired: 0, ambiguous: 0, noNode: 0, noCurbCut: 0, style: norm?.style ?? null, source: norm?.source ?? null }
-  const rings = [], pairs = []
-  if (!norm || norm.style === 'none') return { rings, pairs, tally }
-  if (!recs.length) { tally.noCurbCut = 1; return { rings, pairs, tally } }
-  const E = [], byNode = new Map()
-  recs.forEach((r, ri) => { if (r.node == null) { tally.noNode += (r.serves || []).length; return }
-    for (const sv of (r.serves || [])) {
-    const e = { ri, corner: `${r.tile}|${r.si}|${r.arc}`, node: r.node, leg: sv.leg, other: sv.other }
-    E.push(e); (byNode.get(r.node) || byNode.set(r.node, []).get(r.node)).push(e) } })
+// ══ CROSSWALKS — SQUARE ACROSS THE STREET, CENTRED ON THE CUT THAT SERVES THEM (`BRIEF-corner-ramps-and-kerb §0a` item 9) ═
+// ⭐ A curb cut serves the crossing of the leg it sits beside (`serves`, with `dir` — that street's direction off its
+// own curb edge). Its crosswalk runs SQUARE to that street, from kerb to kerb, and ENDS where it meets each kerb
+// (Jacob, 2026-10-05). Station: centred on the cut (Boz, 2026-10-06), so a diagonal corner's apex cut lands inside
+// it by construction; a PAIR (the cut across the street at the SAME junction node, beside the SAME chain, on its
+// OTHER side — identity, as before) is centred on the mean of the two cuts' stations and drawn once.
+// ⭐ Each end is where the square line meets the frozen curb (`curbEdgeIndex`), kept only if that edge fronts the
+// crossed street on the expected side — ownership, no reach constant.
+// ⭐ A T'S FAR KERB: no corner across the street at this node fronts the crossed chain, so the line lands on a straight
+// kerb. The norm decides (`farKerb`): 'none' ⇒ no crosswalk, counted · 'cut' ⇒ a curb cut there (a slice of the walk,
+// sized by the curb-cut norm) and the crosswalk to it.
+// ⭐ The paint is the norm's: one style for all, or `byCorner` — the paint FOLLOWS THE CORNER's resolved cut style. A
+// pair whose two corners resolved differently is COUNTED (`styleDisagrees`), never picked.
+// `pairs`: [cut, cut across | null (a T's far kerb), chain, near end, far end, street direction].
+// ⛔ Everything that draws nothing is counted by cause; nothing is resolved by nearness (`A15`).
+function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
+  const tally = { crosswalks: 0, pairs: 0, farKerbCut: 0, farKerbNone: 0, farKerbNoDims: 0, farKerbStyleAmbiguous: 0,
+    farCornerNoCut: 0, ambiguous: 0, noNode: 0, noFarKerb: 0, apexesApart: 0, apartAt: [], endsNotOwned: 0, styleDisagrees: 0, noCurbCut: 0, byPaint: {},
+    style: norm?.style ?? null, source: norm?.source ?? null }
+  const rings = [], cuts = [], pairs = []
+  if (!norm || norm.style === 'none') return { rings, cuts, pairs, tally }
+  if (!recs.length) { tally.noCurbCut = 1; return { rings, cuts, pairs, tally } }
+  const X = curbEdgeIndex(tiles), far = X.reach
+  // every corner at a node, by the chain + side it fronts: does a corner exist across the street at all?
+  const cornerAt = new Set()
+  tiles.forEach(t => (t?.junctions || []).forEach(j => { if (j?.node != null) for (const l of j.legs || []) if (l) cornerAt.add(`${j.node}|${l.skelId}|${l.side}`) }))
+  const otherSide = (side) => side === 'left' ? 'right' : side === 'right' ? 'left' : null
+  const E = []
+  recs.forEach((r, ri) => { for (const sv of (r.serves || [])) {
+    if (r.node == null) { tally.noNode++; continue }
+    E.push({ ri, r, sv, S: sv.leg.skelId, side: sv.leg.side }) } })
+  const paintOf = (style) => norm.style === 'byCorner' ? norm.byCorner[style] : norm
+  const quad = (O, u, v, a0, a1, b0, b1) => [[O[0] + u[0] * a0 + v[0] * b0, O[1] + u[1] * a0 + v[1] * b0], [O[0] + u[0] * a1 + v[0] * b0, O[1] + u[1] * a1 + v[1] * b0],
+                                            [O[0] + u[0] * a1 + v[0] * b1, O[1] + u[1] * a1 + v[1] * b1], [O[0] + u[0] * a0 + v[0] * b1, O[1] + u[1] * a0 + v[1] * b1]]
+  const paint = (A, B, P) => {
+    const dx = B[0] - A[0], dz = B[1] - A[1], L = Math.hypot(dx, dz); if (!(L > 1e-6)) return
+    const u = [dx / L, dz / L], v = [-u[1], u[0]], h = P.width / 2, ln = P.line
+    if (P.style === 'lines') { rings.push(quad(A, u, v, 0, L, h - ln, h)); rings.push(quad(A, u, v, 0, L, -h, -h + ln)) }
+    else for (let t = 0; t + ln <= L + 1e-9; t += 2 * ln) rings.push(quad(A, u, v, t, t + ln, -h, h))
+    tally.crosswalks++; tally.byPaint[P.style] = (tally.byPaint[P.style] || 0) + 1
+  }
+  // the street side of a cut: the perpendicular whose first kerb across fronts the crossed chain on its other side
+  const across = (e) => { const P = e.r.at, d = e.sv.dir, own = X.ringOf(e.r.tile, e.r.si)
+    for (const n of [[d[1], -d[0]], [-d[1], d[0]]]) { const h = X.firstHit(P, [P[0] + n[0] * far, P[1] + n[1] * far], own)
+      if (h && X.owned(h.e, e.S, e.side)) return { n, h } }
+    return null }
+  const byNode = new Map(); for (const e of E) (byNode.get(e.r.node) || byNode.set(e.r.node, []).get(e.r.node)).push(e)
   const seen = new Set()
   for (const e of E) {
-    let c = byNode.get(e.node).filter(x => x.corner !== e.corner && x.leg.skelId === e.leg.skelId && x.leg.side !== e.leg.side)
-    if (!c.length) { tally.unpaired++; continue }
-    // a chain passing THROUGH the node: keep the partner on the same side of the cross street; none or several = ambiguous
-    if (c.length > 1) c = c.filter(x => x.other.skelId === e.other.skelId && x.other.side === e.other.side)
-    if (c.length !== 1) { tally.ambiguous++; continue }
-    const k = e.ri < c[0].ri ? `${e.ri}|${c[0].ri}` : `${c[0].ri}|${e.ri}`
-    if (seen.has(k)) continue
-    seen.add(k); pairs.push([e.ri, c[0].ri, e.leg.skelId]); tally.pairs++
+    let c = byNode.get(e.r.node).filter(x => x.S === e.S && x.side !== e.side && x.ri !== e.ri)
+    if (c.length > 1) c = c.filter(x => x.sv.other.skelId === e.sv.other.skelId && x.sv.other.side === e.sv.other.side)
+    if (c.length > 1) { tally.ambiguous++; continue }
+    if (c.length === 1) {
+      const k = e.ri < c[0].ri ? `${e.ri}|${c[0].ri}` : `${c[0].ri}|${e.ri}`
+      if (seen.has(k)) continue
+      seen.add(k)
+      if (norm.style === 'byCorner' && e.r.style !== c[0].r.style) { tally.styleDisagrees++; continue }
+      // centred on the mean of the two cuts' stations along the street, cast both ways to the two kerbs; "across" points
+      // at the partner — known by identity, so it needs no cast of its own
+      const d = e.sv.dir, P1 = e.r.at, P2 = c[0].r.at
+      const n0 = [d[1], -d[0]], n = ((P2[0] - P1[0]) * n0[0] + (P2[1] - P1[1]) * n0[1]) >= 0 ? n0 : [-n0[0], -n0[1]]
+      const a1 = P1[0] * d[0] + P1[1] * d[1], a2 = P2[0] * d[0] + P2[1] * d[1], M0 = [(P1[0] + P2[0]) / 2, (P1[1] + P2[1]) / 2]
+      // ⛔ RULED (Jacob, 2026-10-06): two cuts further apart along the street than the crosswalk is wide cannot both lie
+      // inside ONE square crosswalk (a skewed or jogged crossing) — counted, its corners printed, NOT drawn
+      if (Math.abs(a1 - a2) > paintOf(e.r.style).width) { tally.apexesApart++; tally.apartAt.push({ at: [(P1[0] + P2[0]) / 2, (P1[1] + P2[1]) / 2], street: e.S, gap: Math.round(Math.abs(a1 - a2) * 10) / 10 }); continue }
+      const sh = (a1 + a2) / 2 - (M0[0] * d[0] + M0[1] * d[1]), M = [M0[0] + d[0] * sh, M0[1] + d[1] * sh]
+      const hN = X.firstHit(M, [M[0] - n[0] * far, M[1] - n[1] * far]), hF = X.firstHit(M, [M[0] + n[0] * far, M[1] + n[1] * far])
+      if (!hN || !hF || !X.owned(hN.e, e.S, otherSide(e.side)) || !X.owned(hF.e, e.S, e.side)) { tally.endsNotOwned++; continue }
+      pairs.push([e.ri, c[0].ri, e.S, hN.at, hF.at, d]); tally.pairs++
+      paint(hN.at, hF.at, paintOf(e.r.style))
+      continue
+    }
+    // no cut across: a corner there without one, or a T's far kerb
+    const A = across(e)
+    if (!A) { tally.noFarKerb++; continue }
+    if (cornerAt.has(`${e.r.node}|${e.S}|${otherSide(e.side)}`)) { tally.farCornerNoCut++; continue }
+    if (norm.farKerb !== 'cut') { tally.farKerbNone++; continue }
+    const w = cutNorm?.width, wd = cutNorm?.warningDepth
+    if (!(w > 0 && wd > 0)) { tally.farKerbNoDims++; continue }
+    const F = A.h.at, d = e.sv.dir, n = A.n
+    // the far cut: a slice of the walk — w along the kerb, from the kerb face through the curb and `warningDepth` in
+    const mask = [[F[0] - d[0] * w / 2, F[1] - d[1] * w / 2], [F[0] + d[0] * w / 2, F[1] + d[1] * w / 2],
+                  [F[0] + d[0] * w / 2 + n[0] * (cw + wd), F[1] + d[1] * w / 2 + n[1] * (cw + wd)], [F[0] - d[0] * w / 2 + n[0] * (cw + wd), F[1] - d[1] * w / 2 + n[1] * (cw + wd)]]
+    const strip = walk.length ? intersectRings([mask], walk) : []
+    if (strip.length) cuts.push(...strip)
+    pairs.push([e.ri, null, e.S, e.r.at, F, d]); tally.farKerbCut++
+    paint(e.r.at, F, paintOf(e.r.style))
   }
-  const W = norm.width, ln = norm.line
-  const quad = (X, u, v, a0, a1, b0, b1) => [[X[0] + u[0] * a0 + v[0] * b0, X[1] + u[1] * a0 + v[1] * b0], [X[0] + u[0] * a1 + v[0] * b0, X[1] + u[1] * a1 + v[1] * b0],
-                                            [X[0] + u[0] * a1 + v[0] * b1, X[1] + u[1] * a1 + v[1] * b1], [X[0] + u[0] * a0 + v[0] * b1, X[1] + u[1] * a0 + v[1] * b1]]
-  for (const [a, b] of pairs) {
-    const X = recs[a].at, Y = recs[b].at, dx = Y[0] - X[0], dz = Y[1] - X[1], L = Math.hypot(dx, dz)
-    if (!(L > 1e-6)) continue
-    const u = [dx / L, dz / L], v = [-u[1], u[0]], h = W / 2
-    if (norm.style === 'lines') { rings.push(quad(X, u, v, 0, L, h - ln, h)); rings.push(quad(X, u, v, 0, L, -h, -h + ln)) }
-    else for (let t = 0; t + ln <= L + 1e-9; t += 2 * ln) rings.push(quad(X, u, v, t, t + ln, -h, h))
-  }
-  return { rings, pairs, tally }
+  return { rings, cuts, pairs, tally }
 }
 
 export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null) {
@@ -5708,10 +5784,13 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   out.selected = sel ? finish(sel) : null
   out.curbCutRecs = curbCutRecs; out.curbCutTally = curbCutTally; out.curbCutContradicted = curbCutContradicted
   // ⭐ CROSSWALKS are cross-tile — a pair's two curb cuts sit on two blocks — so they are drawn here, over every tile's curb cuts.
-  const cwNorm = shapeTiles.find(t => t?.curbCutNorm)?.curbCutNorm?.crosswalks ?? null
-  const CWK = crosswalksBetweenCurbCuts(curbCutRecs, cwNorm)
+  const cutNorm = shapeTiles.find(t => t?.curbCutNorm)?.curbCutNorm ?? null
+  const walk = [...out.sidewalk, ...(out.selected?.sidewalk || [])]
+  const CWK = crosswalksSquareAcross(curbCutRecs, shapeTiles, cutNorm?.crosswalks ?? null, cutNorm, cw, walk)
   const road = [...out.asphalt, ...(out.selected?.asphalt || [])]
   out.crosswalk = (CWK.rings.length && road.length) ? intersectRings(unionRings(CWK.rings), road) : []
+  // a T's far-kerb cuts join the curb-cut layer: the same strip, the same class
+  if (CWK.cuts.length) out.curbCut = clip(unionRings([...out.curbCut, ...CWK.cuts]))
   out.crosswalkPairs = CWK.pairs; out.crosswalkTally = CWK.tally
   return out
 }
@@ -9565,7 +9644,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let sidewalk = unionRings(Wacc)
   // ⭐ the curb cuts' warning strips + their positions — painted by Section on junction corners (`curbCutsOnJunctionCorners`)
   let curbCut = [], curbCutRecs = [], curbCutTally = null, curbCutContradicted = []
-  let crosswalk = [], crosswalkPairs = [], crosswalkTally = null   // curb-cut-to-curb-cut markings on the asphalt (`crosswalksBetweenCurbCuts`)
+  let crosswalk = [], crosswalkPairs = [], crosswalkTally = null   // square across the street, kerb to kerb (`crosswalksSquareAcross`)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
     const perimeter = differenceRings([stencil], tileUnion)   // frame: outer(s) + tile-network holes
@@ -9738,11 +9817,18 @@ export function buildTileGround(ribbons, opts = {}) {
     crosswalk = S.crosswalk || []; crosswalkPairs = S.crosswalkPairs || []; crosswalkTally = S.crosswalkTally || null
     if (crosswalkTally && crosswalkTally.style && crosswalkTally.style !== 'none') {
       const C = crosswalkTally
-      console.log(`[tileGround][crosswalks] ${C.pairs} crosswalk(s), curb cut to curb cut (${C.style}, from ${C.source})`)
-      if (C.noCurbCut) console.warn(`[tileGround][crosswalks] ⛔ the norm asks for crosswalks but NO curb cut is painted — a crosswalk runs between two curb cuts, so there are none.`)
-      if (C.unpaired) console.warn(`[tileGround][crosswalks] ${C.unpaired} curb-cut crossing(s) with no curb cut across the street (a T's far kerb, or a corner that is not a junction) — no crosswalk drawn.`)
-      if (C.noNode) console.warn(`[tileGround][crosswalks] ${C.noNode} curb-cut crossing(s) at a junction whose two chains have no frozen shared node — no crosswalk drawn.`)
-      if (C.ambiguous) console.warn(`[tileGround][crosswalks] ⛔ ${C.ambiguous} curb-cut crossing(s) with MORE THAN ONE candidate across the street — not drawn, never picked by nearness.`)
+      console.log(`[tileGround][crosswalks] ${C.crosswalks} crosswalk(s), square across the street (${C.style}${C.style === 'byCorner' ? ': ' + Object.entries(C.byPaint).map(([k, v]) => `${v} ${k}`).join(' · ') : ''}, from ${C.source}) — ${C.pairs} between two cuts · ${C.farKerbCut} to a T's far-kerb cut`)
+      if (C.noCurbCut) console.warn(`[tileGround][crosswalks] ⛔ the norm asks for crosswalks but NO curb cut is painted — a crosswalk is served by a cut, so there are none.`)
+      if (C.farKerbNone) console.warn(`[tileGround][crosswalks] ${C.farKerbNone} crossing(s) land on a T's far kerb and the norm says farKerb 'none' — no crosswalk drawn.`)
+      if (C.farKerbNoDims) console.warn(`[tileGround][crosswalks] ⛔ ${C.farKerbNoDims} far-kerb cut(s) asked for, but the curb-cut norm gives no width/warningDepth — not drawn.`)
+      if (C.farKerbStyleAmbiguous) console.warn(`[tileGround][crosswalks] ⛔ ${C.farKerbStyleAmbiguous} far-kerb crosswalk(s) whose near corners disagree on style — not drawn, never picked.`)
+      if (C.farCornerNoCut) console.warn(`[tileGround][crosswalks] ${C.farCornerNoCut} crossing(s) whose corner across the street has no cut serving it — no crosswalk drawn.`)
+      if (C.styleDisagrees) console.warn(`[tileGround][crosswalks] ⛔ ${C.styleDisagrees} pair(s) whose two corners resolved to DIFFERENT styles — the paint follows the corner, so it is not drawn, never picked.`)
+      if (C.noFarKerb) console.warn(`[tileGround][crosswalks] ⛔ ${C.noFarKerb} crossing(s) whose square line meets no kerb owned by the street it crosses — not drawn.`)
+      if (C.apexesApart) console.warn(`[tileGround][crosswalks] ⛔ ${C.apexesApart} pair(s) whose two cuts sit further apart along the street than one crosswalk is wide — not drawn, awaiting a ruling: ${C.apartAt.slice(0, 12).map(a => `${a.street} (${a.at[0].toFixed(0)}, ${a.at[1].toFixed(0)}) ${a.gap} m`).join(' · ')}${C.apartAt.length > 12 ? ` … +${C.apartAt.length - 12}` : ''}`)
+      if (C.endsNotOwned) console.warn(`[tileGround][crosswalks] ⛔ ${C.endsNotOwned} pair(s) whose centred line does not meet both kerbs of the street it crosses — not drawn.`)
+      if (C.noNode) console.warn(`[tileGround][crosswalks] ${C.noNode} cut crossing(s) at a junction whose two chains have no frozen shared node — no crosswalk drawn.`)
+      if (C.ambiguous) console.warn(`[tileGround][crosswalks] ⛔ ${C.ambiguous} cut crossing(s) with MORE THAN ONE candidate across the street — not drawn, never picked by nearness.`)
     } else if (crosswalkTally) console.log(`[tileGround][crosswalks] none — the town's crosswalk norm is 'none' (from ${crosswalkTally.source ?? 'nothing frozen'})`)
     if (curbCutTally) {
       const T = curbCutTally, src = Object.entries(T.bySource || {}).map(([k, v]) => `${v} ${k}`).join(' · ')

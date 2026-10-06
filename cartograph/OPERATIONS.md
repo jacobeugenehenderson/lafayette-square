@@ -127,9 +127,12 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   norm change needs a **skeleton pour**; the per-leg override is live. Every pour prints *"N corners have no curb-cut
   source"*. ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>` · a town whose frozen norm
   lags its `norms.json` (re-pour owed) ▶ `node checks/claims-the-pour-reads-the-towns-norm.mjs`
-- **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — curb cut to the matching curb cut across the street, so no curb cuts ⇒ none.
-  Same ladder under `crosswalks`: `{"style": "none"|"lines"|"continental", "width", "line"}` (metres). The pour counts
-  crossings with no curb cut across (a T's far kerb) and ambiguous ones — never paired by nearness.
+- **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — square across the street, centred on the cut that serves them,
+  kerb to kerb; no curb cuts ⇒ none. Same ladder under `crosswalks`: `{"style": "lines"|"continental", "width", "line",
+  "farKerb"}` for one paint, or `{"style": "byCorner", "byCorner": {"diagonal": {…}, "perpendicular": {…}}, "farKerb"}` — the
+  paint follows the corner's resolved cut style (metres; a missing size throws). `farKerb` — a T's far kerb: `none` (no
+  crosswalk) or `cut` (a cut there, crossed to); required. The pour counts every crossing it does not draw, by cause
+  (two cuts further apart than one crosswalk is wide · no owned far kerb · ambiguous …) — never paired by nearness.
 - **Edit-row vs edit-block** — author one frontage-edge or a whole block.
 - **Translucency-focus** — the selected element renders translucent / context opaque (by design, `RIBBONS.md §5`).
 - **Revert to Default** — footer button (whole-scene) · **⌃-click a ped handle** = per-edge re-seed to the calculated best-effort (gleaned treelawn-Y/N + ADA defaults). Field-scoped so it never wipes Survey (`SECTION.md §8`). ⭐ **Clears the CAP FLIP too** (fixed 2026-08-06, `d6a95a0b`): `capFlip` inverts the materials at a dead-end cap — a sidewalk↔treelawn swap by another name — and it was in **neither** revert list, so the tool reported success while the flip silently survived and the scene claimed to be at default when it was not. ⚠️ **There is still no PER-CAP revert gesture** — ⌃-click on a cap *is* the flip — so one cap's way back is flipping it twice; the footer button is the only path. Guard: `node checks/claims-revert-field-coverage.mjs` fails if any authored field is missing from both revert lists.

@@ -23,19 +23,41 @@ import { stateRecord } from './states/index.mjs'
 const DATA_ROOT = join(dirname(fileURLToPath(import.meta.url)), 'data')
 
 export const CURB_CUT_STYLES = ['none', 'diagonal', 'perpendicular']
-// ⭐ CROSSWALKS ride the same ladder, resolved on their own (a town may set one and inherit the other). A crosswalk
-// runs from a curb cut to the matching curb cut across the street, so it needs curb cuts; its paint is the jurisdiction's:
+// ⭐ CROSSWALKS ride the same ladder, resolved on their own (a town may set one and inherit the other). A crosswalk runs
+// SQUARE across the street it crosses (§0a item 9), centred on the curb cut that serves it, from kerb to kerb; its
+// paint is the jurisdiction's:
 //   lines       — two transverse lines `line` wide, `width` apart (outer to outer)
 //   continental — bars `line` wide, gaps `line` wide, `width` long, across the street
-export const CROSSWALK_STYLES = ['none', 'lines', 'continental']
+// Two forms, both validated, a missing size THROWS:
+//   { style: 'lines'|'continental', width, line, farKerb }        one paint for every corner
+//   { style: 'byCorner', byCorner: { diagonal: {style, width, line}, perpendicular: {…} }, farKerb }
+//        the paint FOLLOWS THE CORNER's resolved curb-cut style, whatever rung decided it (Jacob, 2026-10-06 — a town's
+//        CHOICE, never a kit rule)
+//   farKerb — a T's far kerb, where the square crosswalk lands on a straight kerb with no corner: 'none' (no crosswalk,
+//        counted) or 'cut' (a curb cut there, sized by the curb-cut norm, crossed to). Required: no default.
+// ⛔ Two paired cuts further apart along the street than the paint's `width` get NO crosswalk — counted and printed by
+//   position (Jacob, 2026-10-06): one square crosswalk cannot hold both.
+export const CROSSWALK_STYLES = ['none', 'lines', 'continental', 'byCorner']
+export const FAR_KERB = ['none', 'cut']
 
-function validateCrosswalk(n, where) {
-  if (!n || typeof n !== 'object') throw new Error(`${where}: a crosswalk norm must be an object { style, width, line }`)
-  if (!CROSSWALK_STYLES.includes(n.style)) throw new Error(`${where}: crosswalk style ${JSON.stringify(n.style)} is not one of ${CROSSWALK_STYLES.join(', ')}`)
-  if (n.style === 'none') return { style: 'none' }
+function validatePaint(n, where) {
+  if (!n || typeof n !== 'object' || !['lines', 'continental'].includes(n.style))
+    throw new Error(`${where}: a crosswalk paint must be { style: 'lines'|'continental', width, line }`)
   for (const k of ['width', 'line']) if (!(Number.isFinite(n[k]) && n[k] > 0))
     throw new Error(`${where}: crosswalk style '${n.style}' needs its own \`${k}\` in metres (> 0) — the jurisdiction's standard, never the kit's`)
   return { style: n.style, width: n.width, line: n.line }
+}
+
+function validateCrosswalk(n, where) {
+  if (!n || typeof n !== 'object') throw new Error(`${where}: a crosswalk norm must be an object { style, … }`)
+  if (!CROSSWALK_STYLES.includes(n.style)) throw new Error(`${where}: crosswalk style ${JSON.stringify(n.style)} is not one of ${CROSSWALK_STYLES.join(', ')}`)
+  if (n.style === 'none') return { style: 'none' }
+  if (!FAR_KERB.includes(n.farKerb)) throw new Error(`${where}: crosswalks need \`farKerb\` — one of ${FAR_KERB.join(', ')} (a T's far kerb: no crosswalk, or a cut crossed to)`)
+  if (n.style !== 'byCorner') return { ...validatePaint(n, where), farKerb: n.farKerb }
+  const bc = n.byCorner || {}
+  for (const k of Object.keys(bc)) if (!['diagonal', 'perpendicular'].includes(k)) throw new Error(`${where}: byCorner key ${JSON.stringify(k)} is not a curb-cut style (diagonal, perpendicular)`)
+  if (!bc.diagonal || !bc.perpendicular) throw new Error(`${where}: byCorner needs a paint for BOTH diagonal and perpendicular corners`)
+  return { style: 'byCorner', byCorner: { diagonal: validatePaint(bc.diagonal, `${where} byCorner.diagonal`), perpendicular: validatePaint(bc.perpendicular, `${where} byCorner.perpendicular`) }, farKerb: n.farKerb }
 }
 
 function validate(n, where) {

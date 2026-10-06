@@ -26,8 +26,10 @@ const live = args.includes('--live')
 const f = feed(scene); if (!f) process.exit(1)
 if (live) delete f.ribbons.protopolygon
 // a crosswalk pair is sound iff both ends are curb cuts at the same node, serving the same chain from its two sides
+// a far-kerb crosswalk (b = null) is sound iff its one end is a cut serving that chain
 const badPairs = (r) => (r.crosswalkPairs || []).filter(([a, b, chain]) => {
-  const A = r.curbCutRecs[a], B = r.curbCutRecs[b]
+  const A = r.curbCutRecs[a], B = b == null ? null : r.curbCutRecs[b]
+  if (b == null) return !A || !(A.serves || []).some(x => x.leg.skelId === chain)
   if (!A || !B || A.node == null || A.node !== B.node) return true
   const sa = (A.serves || []).find(x => x.leg.skelId === chain), sb = (B.serves || []).find(x => x.leg.skelId === chain)
   return !sa || !sb || sa.leg.side === sb.leg.side
@@ -39,7 +41,7 @@ const run = (norm, blockCustoms = f.blockCustoms, evidence) => {
 
 if (args.includes('--selftest')) {
   const dims = { width: 1.5, warningDepth: 0.6 }
-  const cw = { style: 'lines', width: 3, line: 0.3, source: 'trial' }, cwNone = { style: 'none', source: 'kit' }
+  const cw = { style: 'lines', width: 3, line: 0.3, farKerb: 'none', source: 'trial' }, cwNone = { style: 'none', source: 'kit' }
   const K = run({ style: 'none', source: 'kit', crosswalks: cw }).curbCutTally || {}
   const Kc = run({ style: 'none', source: 'kit', crosswalks: cw }).crosswalkTally || {}
   const Dg = run({ style: 'diagonal', ...dims, source: 'trial', crosswalks: cwNone })
@@ -79,7 +81,22 @@ if (args.includes('--selftest')) {
   const Lx = landCurbCutEvidence(tiles2, { ...Elow, records: Elow.records.map(r => ({ ...r, crossed: ['__no_such_road__'] })) }).census
   const owned = tiles.flatMap(t => (t.curbCutEvidence || []).map(x => (t.junctions?.[x.jx]?.legs || []).some(l => x.crossed.includes(l?.skelId))))
   const sfe = (xs) => styleFromEvidence(xs.map(([f2, kind = 'lowered']) => ({ f: f2, kind })))
+  // ⭐ CROSSWALKS: square across the street, centred on the cut, the paint following the corner, a T's far kerb by norm
+  const byCorner = (farKerb) => ({ style: 'byCorner', farKerb, source: 'trial', byCorner: { diagonal: { style: 'lines', width: 3, line: 0.3 }, perpendicular: { style: 'continental', width: 3, line: 0.6 } } })
+  const DgC = run({ style: 'diagonal', ...dims, source: 'trial', crosswalks: byCorner('cut') })
+  const DgN = run({ style: 'diagonal', ...dims, source: 'trial', crosswalks: byCorner('none') })
+  const PpB = run({ style: 'perpendicular', ...dims, source: 'trial', crosswalks: byCorner('none') })
+  const area = (rs) => (rs || []).reduce((t, r) => { let a = 0; for (let i = 0; i < r.length; i++) { const p2 = r[i], q2 = r[(i + 1) % r.length]; a += p2[0] * q2[1] - q2[0] * p2[1] } return t + Math.abs(a) / 2 }, 0)
+  const square = (R) => (R.crosswalkPairs || []).every(([, , , A, B, d]) => { const L = Math.hypot(B[0] - A[0], B[1] - A[1]); return L > 0 && Math.abs((B[0] - A[0]) * d[0] + (B[1] - A[1]) * d[1]) <= 1e-6 * L })
+  const apexInside = (DgC.crosswalkPairs || []).filter(p2 => p2[1] != null).every(([a, b, , A, , d]) =>
+    [DgC.curbCutRecs[a], DgC.curbCutRecs[b]].every(rc => Math.abs((rc.at[0] - A[0]) * d[0] + (rc.at[1] - A[1]) * d[1]) <= 1.5 + 1e-9))
+  const CT = DgC.crosswalkTally || {}, CN = DgN.crosswalkTally || {}, CP = PpB.crosswalkTally || {}
   const rows = [
+    ['crosswalks run square to their street',     (CT.crosswalks || 0) > 0 && square(DgC) && square(PpB) && square(Pp)],
+    ['a diagonal apex lies inside its crosswalk', (CT.pairs || 0) > 0 && apexInside],
+    ['the paint follows the corner',              (CT.byPaint?.lines || 0) > 0 && !CT.byPaint?.continental && (CP.byPaint?.continental || 0) > 0 && !CP.byPaint?.lines],
+    ["a T's far kerb: 'cut' cuts and crosses",    (CT.farKerbCut || 0) > 0 && area(DgC.curbCut) > area(DgN.curbCut)],
+    ["a T's far kerb: 'none' is counted",         (CN.farKerbNone || 0) > 0 && !(CN.farKerbCut) && CN.farKerbNone === CT.farKerbCut],
     ['evidence: a middle drop reads diagonal',     sfe([[0.5]]) === 'diagonal'],
     ['evidence: two end drops read perpendicular', sfe([[0.1], [0.9]]) === 'perpendicular'],
     ['evidence: one end only is unreadable',       sfe([[0.1]]) === 'unreadable' && sfe([[0.5], [0.9]]) === 'unreadable'],
@@ -105,6 +122,7 @@ if (args.includes('--selftest')) {
   ]
   let bad = 0
   for (const [name, ok] of rows) { if (!ok) bad++; console.log(`  ${ok ? '✅' : '⛔'} ${name}`) }
+  console.log(`  (crosswalks, diagonal + byCorner: ${CT.crosswalks} drawn · ${CT.pairs} between two cuts · ${CT.farKerbCut} to a far-kerb cut · ${CT.farCornerNoCut} far corner without a cut · ${CT.noFarKerb} no far kerb · ${CT.endsNotOwned} ends not owned · ${CT.ambiguous} ambiguous · ${CT.styleDisagrees} style disagrees · ${CT.apexesApart} cuts too far apart)`)
   console.log(`  (evidence trial: ${Elow.records.length} record(s) bound · landed ${L.landed}, refused ${L.notOwner} not-owner / ${L.offArc} off-arc / ${L.notJunction} not-junction / ${L.noHit} no-hit · lowered → ${Lo.bySource?.['osm:kerb'] || 0} corner(s) by evidence, ${Lo.unreadable || 0} unreadable (${Lo.contradicted || 0} contradict the norm) · raised → ${Up.curbCuts} cut(s) of ${J})`)
   console.log(`  (${scene}: ${J} junction corners · diagonal ${Dg.curbCutTally?.curbCuts} · perpendicular ${Pp.curbCutTally?.curbCuts} · authored ${authored?.curbCuts ?? '—'} · crosswalks ${Pp.crosswalkTally?.pairs} paired, ${Pp.crosswalkTally?.unpaired} unpaired, ${Pp.crosswalkTally?.ambiguous} ambiguous)`)
   console.log(bad ? `⛔ selftest: ${bad} wrong` : '✅ selftest: the painter places curb cuts by evidence, norm and authoring, on junctions only')
@@ -123,7 +141,7 @@ if (T.noDims) console.log(`  ⛔ ${T.noDims} authored curb cut(s) with no norm d
 if (T.contradicted) console.log(`  ⛔ ${T.contradicted} corner(s) where partial evidence CONTRADICTS the norm — drawn by the norm; override if the record is right: ${(r.curbCutContradicted || []).slice(0, 8).map(c => `(${c.at[0].toFixed(0)}, ${c.at[1].toFixed(0)})`).join(' ')}`)
 if (T.unreadable) console.log(`  ${T.unreadable} corner(s) whose recorded cuts are unreadable — counted, drawn by the norm`)
 const C = r.crosswalkTally || {}, bad = badPairs(r)
-console.log(`  crosswalks : ${C.style && C.style !== 'none' ? `${C.pairs} (${C.style}, from ${C.source}) · ${C.unpaired} crossing(s) with no curb cut across · ${C.ambiguous} ambiguous` : `none (norm ${C.style ?? 'not frozen'})`}`)
+console.log(`  crosswalks : ${C.style && C.style !== 'none' ? `${C.crosswalks} (${C.style}, from ${C.source}) · ${C.pairs} between two cuts · ${C.farKerbCut} to a far-kerb cut · ${C.farKerbNone} far kerb 'none' · ${C.farCornerNoCut} far corner without a cut · ${C.noFarKerb} no far kerb · ${C.ambiguous} ambiguous · ${C.styleDisagrees} style disagrees · ${C.apexesApart} cuts too far apart${C.apexesApart ? ` (${C.apartAt.slice(0, 6).map(a => `${a.street} (${a.at[0].toFixed(0)}, ${a.at[1].toFixed(0)}) ${a.gap} m`).join(' · ')})` : ''}` : `none (norm ${C.style ?? 'not frozen'})`}`)
 if (bad) console.log(`  ⛔ ${bad} crosswalk(s) whose ends are not two curb cuts across one chain at one junction`)
 const fail = offJunction || T.noNorm || T.invalid || bad
 if (offJunction) console.log(`  ⛔ ${offJunction} curb cut(s) on a corner that is not a junction`)
