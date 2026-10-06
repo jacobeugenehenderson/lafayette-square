@@ -117,6 +117,12 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   end to end). ⚠️ Reaches the map only after a **skeleton pour** — a Survey-exit freeze rewrites
   `shape.json`, not the seed.
 - **Strip-material swap** — ctrl-click an LU↔SW strip to flip it.
+- **Curb ramps** *(junction corners only; layer toggle "Curb Ramps", colour `ramp`)* — the style comes from, finest first:
+  the leg's `blockCustoms[…].ramps.{start,end}` (`none`·`diagonal`·`perpendicular`; ⚠️ no gesture writes it yet) →
+  `cartograph/data/<scene>/norms.json` `{"ramps": {"style", "width", "warningDepth"}}` → the state record's `norms.ramps`
+  → the kit's `none`. A style needs its own width + warning depth (metres) or the pour throws. Read at derive, so a
+  norm change needs a **skeleton pour**; the per-leg override is live. Every pour prints *"N corners have no ramp
+  source"*. ▶ `node checks/claims-every-junction-corner-has-a-ramp-source.mjs <scene>`
 - **Edit-row vs edit-block** — author one frontage-edge or a whole block.
 - **Translucency-focus** — the selected element renders translucent / context opaque (by design, `RIBBONS.md §5`).
 - **Revert to Default** — footer button (whole-scene) · **⌃-click a ped handle** = per-edge re-seed to the calculated best-effort (gleaned treelawn-Y/N + ADA defaults). Field-scoped so it never wipes Survey (`SECTION.md §8`). ⭐ **Clears the CAP FLIP too** (fixed 2026-08-06, `d6a95a0b`): `capFlip` inverts the materials at a dead-end cap — a sidewalk↔treelawn swap by another name — and it was in **neither** revert list, so the tool reported success while the flip silently survived and the scene claimed to be at default when it was not. ⚠️ **There is still no PER-CAP revert gesture** — ⌃-click on a cap *is* the flip — so one cap's way back is flipping it twice; the footer button is the only path. Guard: `node checks/claims-revert-field-coverage.mjs` fails if any authored field is missing from both revert lists.

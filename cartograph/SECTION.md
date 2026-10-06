@@ -408,9 +408,11 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 > ⭐ **The RAMP is unconditional and lives in `§4`.** ⛔ Not restated here — one home.
 
 **What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
-- **TL↔TL** (both set back) → ⭐⭐⭐ **the legs' own cross-section, bent: GRASS AT THE KERB through the
-  whole arc, walk behind it.** ⛔ **NOT "all concrete to `c.T`"** — that read was the arc overriding
-  both legs, and it paved every TL↔TL corner as one blanket. See `§4`, THE LEGS DECIDE THE CORNER.
+- **TL↔TL** (both set back) → the lawn runs full width to each tangent and stops **blunt**; the pad
+  (the walk continuing to the kerb) fills the arc behind it, tangent to tangent. See `§4`.
+- **A junction corner also carries RAMPS** — positions on the arc where the kerb drops, by the town's
+  norm or the operator (`rampsOnJunctionCorners`, `cartograph/ramp-norm.mjs`); a bend gets none. The pad
+  is unchanged. ▶ `node checks/claims-every-junction-corner-has-a-ramp-source.mjs <scene>`
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
 - **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.
 

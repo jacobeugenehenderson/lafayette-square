@@ -467,7 +467,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       let bCount = 0
       for (const bl of buildingList) { const fp = bl.footprint; if (fp?.length >= 3) { fillRing(bSeed, fp); bCount++ } }
       // Paving = the ground groups a lawn meets at a hard edge: roadway, lots, walks, paths.
-      const PAVED = new Set(['asphalt', 'highway', 'parking_lot', 'sidewalk', 'footway', 'path', 'park_path', 'cycleway', 'steps', 'alley', 'curb'])
+      const PAVED = new Set(['asphalt', 'highway', 'parking_lot', 'sidewalk', 'ramp', 'footway', 'path', 'park_path', 'cycleway', 'steps', 'alley', 'curb'])
       const aSeed = new Uint8Array(FX_SIZE * FX_SIZE)
       let aTris = 0
       for (const g of manifest.groups) {

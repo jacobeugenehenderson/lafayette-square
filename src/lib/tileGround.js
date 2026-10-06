@@ -4656,6 +4656,95 @@ export function classifyCornerJunction(o1, o2, pairNode, nodeDegree) {
            legs: [{ skelId: o1.skelId, side: o1.side }, { skelId: o2.skelId, side: o2.side }] }
 }
 
+// ══ THE RAMPS — POSITIONS ON A JUNCTION CORNER'S ARC (`BRIEF-corner-ramps-and-kerb §0a`) ══════════════════════
+// ⭐ The pad is unchanged: concrete tangent to tangent, reaching the kerb (`SECTION §4`). A ramp only marks WHERE
+// along that arc the kerb drops, and paints its detectable-warning strip there. ⛔ It is a SLICE of the band the
+// pad already is — `band(ins(cw), ins(cw + warningDepth))`, bounded along the arc and kept on the walk — never a
+// constructed primitive (`RIBBONS §1` invariant 1).
+// ⭐ Only a corner a street MEETS gets one (`iaJunction`); a bend keeps its pad and gets none; an UNKNOWN corner
+// gets none and is counted as unknown, never as a bend.
+// ⭐ The style, finest first: the operator on either LEG's slot (`ramps.end` on the leg arriving, `ramps.start` on
+// the leg leaving, in contour order) — authored wins; two authored legs that disagree are COUNTED and the longer
+// leg wins, the frontage rule — then the town's frozen norm (`st.rampNorm`, `cartograph/ramp-norm.mjs`). The
+// dimensions are always the norm's: an authored style on a town whose norm gives none cannot be drawn, and is
+// counted (`noDims`), never filled in with a kit constant.
+//   diagonal      — one ramp centred on the arc
+//   perpendicular — two, one at each tangent, each within its own half of the arc
+// ⛔ A ramp wider than the room it has takes the room it has and is counted (`short`).
+const RAMP_STYLE_SET = new Set(['none', 'diagonal', 'perpendicular'])
+function rampsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, insAt, band, walk) {
+  const tally = { junction: 0, bend: 0, unknown: 0, ramps: 0, noSource: 0, noNorm: 0, noDims: 0, invalid: 0, conflict: 0, short: 0, bySource: {} }
+  const recs = [], masks = []
+  const norm = st.rampNorm || null
+  let maxD = 0
+  for (const p of parts) {
+    const ring = p.ring, n = ring.length, jxA = st.iaJunction?.[p.si], stp = stamps[p.si] || []
+    if (!st.iaArc?.[p.si]) continue
+    const isC = (i) => inC.has(`${p.ri}|${i}`)
+    const eL = (i) => { const a = ring[i], b = ring[(i + 1) % n]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
+    // a leg's length: the contiguous edges carrying one stamp, walked away from the corner
+    const legLen = (e, dir) => { const r = stp[e]; if (r == null) return 0; let L = 0
+      for (let k = 0, i = e; k < n && stp[i] === r && !isC(i); k++, i = (i + dir + n) % n) L += eL(i); return L }
+    for (let q = 0; q < n; q++) {
+      if (!isC(q) || isC((q - 1 + n) % n)) continue                 // q starts an arc span
+      let e = q; for (let k = 0; k < n && isC((e + 1) % n); k++) e = (e + 1) % n
+      const j = jxA ? jxA[q] : undefined
+      if (j === 'bend') { tally.bend++; continue }
+      if (!Number.isInteger(j)) { tally.unknown++; continue }
+      tally.junction++
+      const before = (q - 1 + n) % n, after = (e + 1) % n
+      const ov = (edge, end) => { const r = stp[edge]; if (r == null) return undefined
+        const R = runs[r]; return blockCustoms?.[R.skelId]?.[R.side]?.[R.segOrd]?.ramps?.[end] }
+      const a = ov(before, 'end'), b = ov(after, 'start')
+      let style, source
+      if (a != null || b != null) {
+        if (a != null && b != null && a !== b) { tally.conflict++; style = legLen(before, -1) >= legLen(after, 1) ? a : b }
+        else style = a ?? b
+        source = 'authored'
+      } else if (norm) { style = norm.style; source = norm.source }
+      else { tally.noNorm++; continue }
+      tally.bySource[source] = (tally.bySource[source] || 0) + 1
+      if (!RAMP_STYLE_SET.has(style)) { tally.invalid++; continue }
+      if (style === 'none') { if (source !== 'authored') tally.noSource++; continue }
+      const w = norm?.width, d = norm?.warningDepth
+      if (!(w > 0 && d > 0)) { tally.noDims++; continue }
+      maxD = Math.max(maxD, d)
+      // the arc as a polyline from tangent to tangent, with its arc length
+      const pts = [], cum = [0]
+      for (let k = 0, i = q; k < n; k++, i = (i + 1) % n) { pts.push(ring[i]); if (i === (e + 1) % n) break
+        cum.push(cum[cum.length - 1] + eL(i)) }
+      const L = cum[cum.length - 1]
+      const at = (s) => { let k = 1; while (k < cum.length - 1 && cum[k] < s) k++
+        const t = (s - cum[k - 1]) / ((cum[k] - cum[k - 1]) || 1), A = pts[k - 1], B = pts[k]
+        return [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t] }
+      const spans = style === 'diagonal' ? [[L / 2 - w / 2, L / 2 + w / 2, 0, L]]
+        : [[0, w, 0, L / 2], [L - w, L, L / 2, L]]
+      for (const [s0r, s1r, lo, hi] of spans) {
+        const s0 = Math.max(lo, s0r), s1 = Math.min(hi, s1r)
+        if (s1 - s0 < w - 1e-6) tally.short++
+        if (!(s1 - s0 > 1e-6)) continue
+        // the slice's bounds along the arc: the sub-polyline, swept both ways along its normals far enough to span
+        // the strip from either side — so the slice is the BAND'S, and a wrong-facing normal cannot lose it
+        const sub = [at(s0)]; for (let k = 1; k < cum.length - 1; k++) if (cum[k] > s0 && cum[k] < s1) sub.push(pts[k]); sub.push(at(s1))
+        const ext = cw + d + 0.5, nrm = (i) => { const A = sub[Math.max(0, i - 1)], B = sub[Math.min(sub.length - 1, i + 1)]
+          const dx = B[0] - A[0], dz = B[1] - A[1], l = Math.hypot(dx, dz) || 1; return [-dz / l, dx / l] }
+        const out = sub.map((P, i) => { const v = nrm(i); return [P[0] + v[0] * ext, P[1] + v[1] * ext] })
+        const inn = sub.map((P, i) => { const v = nrm(i); return [P[0] - v[0] * ext, P[1] - v[1] * ext] })
+        masks.push([...out, ...inn.reverse()])
+        const c = at((s0 + s1) / 2)
+        recs.push({ si: p.si, arc: st.iaArc[p.si][q], junction: j, node: st.junctions?.[j]?.node ?? null, style, source,
+                    at: c, s0, s1, arcLen: L })
+        tally.ramps++
+      }
+    }
+  }
+  if (!masks.length) return { strips: [], recs, tally }
+  // ⚠️ ONE depth for the tile's strips: the norm is the town's, so every ramp on it shares `warningDepth`.
+  const slab = band(insAt(cw), insAt(cw + maxD))
+  const strips = slab.length ? intersectRings(intersectRings(slab, unionRings(masks)), walk) : []
+  return { strips, recs, tally }
+}
+
 export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⭐ TWO CONTOURS, TWO QUESTIONS. `iaFull` + `iaStamp` answer "what depth HERE" — uncut, so the
   // per-point correspondence is intact. The cut `iA` answers "where is the block" after the disc
@@ -5298,7 +5387,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   const luIn = ins((p) => (i) => (bareAt(p, i) ? 0 : WB))
   const env = band(pedOuter, luIn)
   const Wp = env.length && W.length ? intersectRings(W, env) : []
+  const R = rampsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, insAt, band, Wp)
   return {
+    ramp: inBlock(R.strips), rampRecs: R.recs, rampTally: R.tally,
     Wacc:   inBlock(Wp),
     tlByLu: rekeyByPiece(st, { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) }),
     luByLu: rekeyByPiece(st, { [key]: inBlock(luIn) }),
@@ -5430,6 +5521,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     const bundle = {
       key,
       W: r.Wacc, tlByLu: r.tlByLu, luByLu: r.luByLu,
+      R: r.ramp || [], rampRecs: r.rampRecs || [], rampTally: r.rampTally || null,
       A: differenceRings([st.ring], iA),                                       // asphalt = tile − rounded inner
       // ⭐ THE CURB IS PART OF THE SAME LADDER when the stamp inquiry built it: `iA − ins(cw)`,
       // a per-point VARIABLE offset. The concentric fallback below is the walk painter's, and it
@@ -5446,13 +5538,20 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   // indices in the corridor; null/empty → everything is REST (prior behavior,
   // bit-identical). The per-tile bundles are shared (cache), so this only forks
   // the cheap final unions.
-  const mkAcc = () => ({ A: [], C: [], W: [], block: [], tl: {}, lu: {} })
+  const mkAcc = () => ({ A: [], C: [], W: [], R: [], block: [], tl: {}, lu: {} })
+  const rampRecs = [], rampTally = {}
   const rest = mkAcc()
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
   for (let i = 0; i < shapeTiles.length; i++) {
     const b = tileGeo(shapeTiles[i], i)
     const acc = (sel && selectedTileSet.has(i)) ? sel : rest
     acc.A.push(...b.A); acc.C.push(...b.C); acc.W.push(...b.W); acc.block.push(...b.block)
+    if (b.R) acc.R.push(...b.R)
+    for (const rr of (b.rampRecs || [])) rampRecs.push({ tile: i, ...rr })
+    for (const [k, v] of Object.entries(b.rampTally || {})) {
+      if (k === 'bySource') { const o = (rampTally.bySource ||= {}); for (const [s2, m] of Object.entries(v)) o[s2] = (o[s2] || 0) + m }
+      else rampTally[k] = (rampTally[k] || 0) + v
+    }
     for (const k in b.tlByLu) (acc.tl[k] || (acc.tl[k] = [])).push(...b.tlByLu[k])
     for (const k in b.luByLu) (acc.lu[k] || (acc.lu[k] = [])).push(...b.luByLu[k])
   }
@@ -5465,12 +5564,14 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       asphalt:  clip(unionRings(acc.A)),
       curb:     clip(unionRings(acc.C)),
       sidewalk: clip(unionRings(acc.W)),
+      ramp:     clip(unionRings(acc.R)),
       treelawnByLu, luByClass,
       block:    clip(acc.block),
     }
   }
   const out = finish(rest)
   out.selected = sel ? finish(sel) : null
+  out.rampRecs = rampRecs; out.rampTally = rampTally
   return out
 }
 
@@ -9067,6 +9168,8 @@ export function buildTileGround(ribbons, opts = {}) {
             // off the ease that made it rather than matched back onto the contour afterwards.
             runs: runs2, iaStamp, iaCorner, iaFull: mine.map(EC => EC.ring),
             iaArc: mine.map(EC => EC.arc || EC.ring.map(() => null)),
+            // ⭐ the town's ramp norm, frozen with its rung (`cartograph/ramp-norm.mjs`); null = poured before it.
+            rampNorm: ribbons?.rampNorm ?? null,
             // ⭐ `iaJunction` — per contour vertex of a corner arc: an index into `junctions` (a street meets
             // here: the node, its degree, the two legs), 'bend' (one street turning, or a chain cut), or
             // null (not an arc, or UNKNOWN — counted by reason at the pour). Read by the ramp painter;
@@ -9296,6 +9399,8 @@ export function buildTileGround(ribbons, opts = {}) {
   let highway = Hpoly
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
+  // ⭐ the ramps' warning strips + their positions — painted by Section on junction corners (`rampsOnJunctionCorners`)
+  let ramp = [], rampRecs = [], rampTally = null
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
     const perimeter = differenceRings([stencil], tileUnion)   // frame: outer(s) + tile-network holes
@@ -9464,6 +9569,17 @@ export function buildTileGround(ribbons, opts = {}) {
     } else console.warn(`[tileGround][①⇢LIVE] ⛔ ② produced NO corner arcs — the corner handles would ride the LEGACY fillets, which are not on screen. Not swapping; the dial is untrustworthy in this pour.`)
     const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms)
     asphalt = S.asphalt; curb = S.curb; sidewalk = S.sidewalk; block = S.block
+    ramp = S.ramp || []; rampRecs = S.rampRecs || []; rampTally = S.rampTally || null
+    if (rampTally) {
+      const T = rampTally, src = Object.entries(T.bySource || {}).map(([k, v]) => `${v} ${k}`).join(' · ')
+      console.log(`[tileGround][ramps] ${T.junction || 0} junction corner(s) · ${T.ramps || 0} ramp(s) painted · style from: ${src || 'nothing'}`)
+      if (T.noSource) console.warn(`[tileGround][ramps] ⛔ ${T.noSource} corners have no ramp source — the town's norm is 'none' and nothing authored or recorded places one. Their pads stand; no ramp is marked.`)
+      if (T.noNorm) console.warn(`[tileGround][ramps] ⛔ ${T.noNorm} junction corner(s) on tiles poured BEFORE the ramp norm was frozen — re-pour.`)
+      if (T.noDims) console.warn(`[tileGround][ramps] ⛔ ${T.noDims} authored ramp(s) cannot be drawn: the town's norm gives no width/warningDepth (cartograph/data/<scene>/norms.json).`)
+      if (T.invalid) console.warn(`[tileGround][ramps] ⛔ ${T.invalid} authored ramp style(s) are not none/diagonal/perpendicular.`)
+      if (T.conflict) console.warn(`[tileGround][ramps] ${T.conflict} corner(s) authored differently on their two legs — the longer leg's style is drawn.`)
+      if (T.short) console.warn(`[tileGround][ramps] ${T.short} ramp(s) wider than the arc room they have — drawn at the room there is.`)
+    }
     // the LU buckets are objects the caller reads by key — replace the CONTENTS, not the binding
     for (const kk of Object.keys(treelawnByLu)) delete treelawnByLu[kk]
     for (const kk of Object.keys(luByClass)) delete luByClass[kk]
@@ -9497,7 +9613,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, ramp, rampRecs, rampTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

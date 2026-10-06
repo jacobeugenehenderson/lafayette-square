@@ -55,3 +55,16 @@ doctrine — the live form is `SECTION §6.1` and `RIBBONS §1`'s four invariant
 > ⛔ Re-run them; the counts move, and the closure count REWARDS over-painting — a leg painted
 > all-concrete trivially closes. Do not tune against it alone.
 
+
+
+---
+
+## 2026-10-05 — `§6.1` "What each corner type comes out as", TL↔TL line, retired (Flare)
+
+Excised from `SECTION.md §6.1` because it contradicted `§4` ("THE PAD IS THE SIDEWALK CONTINUING TO THE KERB
+ACROSS THE TREELAWN") and the code (`sectionPassProtoTile`: `walkFromD` returns `cw` — the kerb — inside every
+licensed arc). Verbatim:
+
+> - **TL↔TL** (both set back) → ⭐⭐⭐ **the legs' own cross-section, bent: GRASS AT THE KERB through the
+>   whole arc, walk behind it.** ⛔ **NOT "all concrete to `c.T`"** — that read was the arc overriding
+>   both legs, and it paved every TL↔TL corner as one blanket. See `§4`, THE LEGS DECIDE THE CORNER.

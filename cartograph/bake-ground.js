@@ -225,6 +225,8 @@ const PAINT_ORDER = [
   ...TREELAWN_LU_VARIANTS.map(lu => ['mat', `treelawn:${lu}`]),
   ['mat', 'treelawn'],
   ['mat', 'sidewalk'],
+  // the junction corners' ramp warning strips — on the walk, under nothing (`rampsOnJunctionCorners`)
+  ['mat', 'ramp'],
   ['mat', 'curb'],
   ['mat', 'asphalt'],
   ['mat', 'median'],
@@ -505,6 +507,7 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   pushClipperRings('highway',  pr.highway)   // grade-separated highway-class roads → own layer/material
   pushClipperRings('curb',     pr.curb)
   pushClipperRings('sidewalk', pr.sidewalk)
+  pushClipperRings('ramp',     pr.ramp)
   for (const [lu, rings] of Object.entries(pr.treelawnByLu)) pushClipperRings(`treelawn:${lu}`, rings)
   for (const [lu, rings] of Object.entries(pr.luByClass)) {
     // [G4] The divided median is a derived face in luByClass, but it bakes as a
