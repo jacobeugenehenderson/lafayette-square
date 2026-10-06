@@ -608,11 +608,11 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
   buildings **by address**, so a town without one opens nearly empty no matter how good its geometry
   is. OSM `addr:*` carries it in much of the world; in the US the assessor is the well, and it also
   carries what OSM never does — **valuation, zoning, year built, units**.
-  1. **Declare the well** — `data/<scene>/sources.json`. ⭐ **In a state the kit knows (Ohio, Massachusetts,
-     Missouri), take it from the state:** `"state": "MA", "select": { "town_id": 242 }, "parcels": [{ "from": "state",
-     "id": "massgis-l3" }]` — the endpoint, column map, absent fields and code vocabulary come from
-     `cartograph/states/<st>.mjs`; the town says only what it takes and how it selects, and its declared state must be
-     the one its own map votes. Elsewhere, declare the well in full (shape: `cartograph/sources.js`) — or write the
+  1. **Declare the well** — `data/<scene>/sources.json`. ⭐ **In a state the kit knows (OH, MA, MO, NY), take it from
+     the state:** `"state": "MA", "select": { "town_id": 242 }, "parcels": [{ "from": "state", "id": "massgis-l3" }]`
+     — protocol, endpoint, columns and vocabulary come from `cartograph/states/<st>.mjs` (an NYC town:
+     `"nyc-mappluto"`, no select). Its declared state must be the one its own map votes (NOT MEASURED
+     before the first fetch). Elsewhere, declare the well in full (shape: `cartograph/sources.js`) — or write the
      state's record. ▶ `node checks/claims-a-state-gives-its-towns-their-wells.mjs`
      ⭐ **Cropland** (US towns): `"cropland": [{ "id": "usda-cdl", "year": 2024 }]`, then
      `CARTOGRAPH_SCENE=<id> node cartograph/cdl.mjs` — USDA's Cropland Data Layer decides crop rows where OSM maps no

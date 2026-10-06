@@ -39,6 +39,7 @@ export default {
     // MassGIS Standardized Assessors' Parcels (Level 3), statewide, one feature layer. Condominium records arrive
     // STACKED on one polygon; painting unions per class, so they cannot double-paint.
     'massgis-l3': {
+      protocol: 'arcgis',
       jurisdiction: 'town',
       file: 'ma_parcels.json',
       attribution: 'MassGIS (Bureau of Geographic Information) — Massachusetts Property Tax Parcels (Level 3)',

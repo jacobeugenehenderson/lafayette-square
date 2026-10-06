@@ -99,6 +99,9 @@ function fetchSource(src) {
     console.log(`  [${src.id}] no endpoint declared — hand-placed file, nothing to fetch.`)
     return null
   }
+  // ⛔ This reads ArcGIS only. A state well declares its protocol (cartograph/states/index.mjs PROTOCOLS); a well a town
+  // declares in full keeps the original full-declaration schema, which is ArcGIS. Another protocol is refused by name.
+  if ((src.fromState ? src.protocol : (src.protocol ?? 'arcgis')) !== 'arcgis') throw new Error(`[${src.id}] is a ${src.protocol} well — fetch-parcels.mjs reads ArcGIS only`)
   const provided = src.provides || []
   const unmapped = provided.filter(k => !(src.fields || {})[k])
   if (unmapped.length) {

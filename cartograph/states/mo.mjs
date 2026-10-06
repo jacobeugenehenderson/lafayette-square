@@ -9,6 +9,7 @@ export default {
     // ⛔ raw/stl_parcels.json is scripts/03-fetch-stl-parcels.py's output (it folds second columns the button cannot);
     // do not re-fetch through cartograph/fetch-parcels.mjs until the field map grows a fallback-column form.
     'stl-city': {
+    "protocol": "arcgis",
     "jurisdiction": "city",
     "file": "stl_parcels.json",
     "attribution": "City of St. Louis Assessor — Assessor_Public_Parcels",
@@ -53,6 +54,7 @@ export default {
     // St. Louis County — numeric LUCODE, decoded by the assessor's own table (the town's `landUseCodes`).
     // ⛔ Same caveat: raw/stlco_parcels.json is scripts/03b's output.
     'stl-county': {
+    "protocol": "arcgis",
     "jurisdiction": "county",
     "file": "stlco_parcels.json",
     "attribution": "St. Louis County OpenData — Tax Parcels",

@@ -14,14 +14,27 @@
 //   2. in readMaDorCode, read 1xx as commercial                                   → the DOR cases + Provincetown
 //   3. declare huron's state as MO in its sources.json                            → the town-vote leg
 //   4. let stateRecord return OH for an unknown code                              → the unknown-state case
+//   5. in resolveFromState, drop the protocol check                               → the no-protocol case
+//   6. in readNycPlutoLandUse, read 07 as commercial                              → the PLUTO cases
+//   7. in voteState, call a FETCHED town with no osm.json "not measured"          → the vote-state cases
+//
+// ⭐ THREE VERDICTS, NOT TWO (served-parity's pattern, EXTENT-DESIGN §2). A town DECLARED before its first fetch (the
+// designed flow since BRIEF-nyc-adapter §3.0: write sources.json, then Extent) has no map to vote yet. That is
+// ⛔ NOT MEASURED — said, counted apart, exit 2 — never a pass, and never folded into a failure. A town that HAS
+// been fetched (geography.json) and still has no osm.json is RED.
 //
 //   node checks/claims-a-state-gives-its-towns-their-wells.mjs
 import fs from 'fs'
-import { STATES, resolveFromState, LAND_USE_READERS } from '../cartograph/states/index.mjs'
+import { STATES, resolveFromState, LAND_USE_READERS, PROTOCOLS } from '../cartograph/states/index.mjs'
 import { readSources, sourcesPath } from '../cartograph/sources.js'
 import { townState } from '../src/cartograph/streetProfiles.js'
 
-let failed = false
+let failed = false, notMeasured = 0
+// Whether a declared town's state can be voted: by its OWN map (raw/osm.json). Fetched = geography.json exists.
+export function voteState({ fetched, hasOsm }) {
+  if (hasOsm) return 'vote'
+  return fetched ? 'red' : 'not-measured'
+}
 const say = (ok, msg) => { if (!ok) failed = true; console.log(`  ${ok ? '✅' : '⛔'} ${msg}`) }
 const throws = (fn, re) => { try { fn(); return false } catch (e) { return re.test(e.message) } }
 
@@ -33,6 +46,15 @@ say(throws(() => resolveFromState({ from: 'state', id: 'massgis-l3' }, 'parcels'
 say(throws(() => resolveFromState({ from: 'state', id: 'x' }, 'parcels', { state: 'ZZ' }), /NO state adapter/), 'a state with no record THROWS — never another state\'s well')
 say(throws(() => resolveFromState({ from: 'state', id: 'nope' }, 'parcels', ma), /lists no such well/), 'a well the state does not list THROWS')
 say(throws(() => resolveFromState({ from: 'state', id: 'massgis-l3' }, 'parcels', { state: 'MA', select: { town_id: "1 OR 1=1" } }), /not a plain name or number/), 'a selector that is not a plain name or number THROWS (it is spliced into a query)')
+const ny = resolveFromState({ from: 'state', id: 'nyc-mappluto' }, 'parcels', { state: 'NY' })
+say(ny.fromState === `NY@${STATES.NY.version}` && ny.protocol === 'arcgis' && ny.file === 'nyc_parcels.json' && !ny.where,
+  `an NYC town takes MapPLUTO from NY, stamped, selecting nothing (the envelope scopes a citywide layer) — got ${ny.fromState}, ${ny.protocol}, where ${JSON.stringify(ny.where)}`)
+say(Object.values(STATES).every(r => ['parcels', 'addressPoints'].every(k => Object.values(r[k] || {}).every(w => PROTOCOLS.includes(w.protocol)))),
+  'every state well declares its protocol')
+STATES.ZZTEST = { code: 'ZZTEST', version: 0, parcels: { bare: { file: 'x.json' }, odd: { file: 'x.json', protocol: 'ftp' } } }
+say(throws(() => resolveFromState({ from: 'state', id: 'bare' }, 'parcels', { state: 'ZZTEST' }), /must declare one of/), 'a state well with NO protocol THROWS')
+say(throws(() => resolveFromState({ from: 'state', id: 'odd' }, 'parcels', { state: 'ZZTEST' }), /must declare one of/), 'a state well with an unknown protocol THROWS')
+delete STATES.ZZTEST
 const full = { id: 'own', jurisdiction: 'city', file: 'f.json' }
 say(resolveFromState(full, 'parcels', ma) === full, 'a well declared in full by the town passes through untouched')
 
@@ -43,6 +65,18 @@ for (const [code, want] of [['1010', 'residential'], ['1020', 'residential'], ['
   ['6010', 'forest'], ['8050', 'recreation'], ['9300', 'institutional'], ['9320', 'park'], ['9590', 'institutional'], ['5040', 'unknown'], ['', 'unknown']])
   say(R(code).use === want, `USE_CODE ${JSON.stringify(code)} reads as ${want} — got ${R(code).use}`)
 
+console.log('hermetic — NYC PLUTO LandUse:')
+const P = LAND_USE_READERS['nyc-pluto-landuse']
+for (const [code, want] of [['01', 'residential'], ['02', 'residential'], ['03', 'residential'], ['04', 'residential'], ['05', 'commercial'],
+  ['06', 'industrial'], ['07', 'industrial'], ['08', 'institutional'], ['09', 'recreation'], ['10', 'parking'], ['11', 'vacant'],
+  ['12', 'unknown'], ['', 'unknown'], [null, 'unknown'], ['R6', 'unknown']])
+  say(P(code).use === want, `LandUse ${JSON.stringify(code)} reads as ${want} — got ${P(code).use}`)
+
+console.log('hermetic — the three verdicts of a declared town:')
+say(voteState({ fetched: false, hasOsm: false }) === 'not-measured', 'declared, never fetched → NOT MEASURED (the vote is owed at first fetch)')
+say(voteState({ fetched: true, hasOsm: false }) === 'red', 'fetched, but no osm.json → RED, never "not measured"')
+say(voteState({ fetched: true, hasOsm: true }) === 'vote', 'fetched with its map → voted')
+
 console.log('every declared town:')
 for (const town of fs.readdirSync('cartograph/data')) {
   const p = sourcesPath(town); if (!fs.existsSync(p)) continue
@@ -50,7 +84,9 @@ for (const town of fs.readdirSync('cartograph/data')) {
   if (!j.state) { console.log(`  · ${town}: declares its wells in full (no state) — not judged here`); continue }
   let s; try { s = readSources(town) } catch (e) { say(false, `${town}: ${e.message.split('\n')[0]}`); continue }
   const osmP = `cartograph/data/${town}/raw/osm.json`
-  if (!fs.existsSync(osmP)) { say(false, `${town}: no raw/osm.json — its state cannot be voted, so its declared ${j.state} cannot be checked`); continue }
+  const vs = voteState({ fetched: fs.existsSync(`cartograph/data/${town}/geography.json`), hasOsm: fs.existsSync(osmP) })
+  if (vs === 'not-measured') { notMeasured++; console.log(`  ⛔ NOT MEASURED: ${town} is declared (${j.state}), not yet fetched — the vote is owed at first fetch`); continue }
+  if (vs === 'red') { say(false, `${town}: fetched, but no raw/osm.json — its state cannot be voted, so its declared ${j.state} cannot be checked`); continue }
   const v = townState(JSON.parse(fs.readFileSync(osmP, 'utf8')))
   say(v.code === j.state, `${town}: declares ${j.state}; its own map votes ${v.code} (${v.vote})`)
   for (const pw of s.parcels) {
@@ -67,5 +103,7 @@ for (const town of fs.readdirSync('cartograph/data')) {
     }
   }
 }
-console.log(`\n${failed ? '⛔ RED' : '✅ GREEN — every town takes its wells from the state its own map votes, and every well has a vocabulary.'}`)
-process.exit(failed ? 1 : 0)
+if (failed) { console.log('\n⛔ RED'); process.exit(1) }
+if (notMeasured) { console.log(`\n⛔ NOT MEASURED — ${notMeasured} declared town(s) not yet fetched; everything else passed. Not a pass.`); process.exit(2) }
+console.log('\n✅ GREEN — every town takes its wells from the state its own map votes, and every well has a vocabulary.')
+process.exit(0)

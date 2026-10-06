@@ -20,9 +20,17 @@
 import oh from './oh.mjs'
 import ma from './ma.mjs'
 import mo from './mo.mjs'
+import ny from './ny.mjs'
 import { classifyUseFromText } from '../parcel-landuse.mjs'
 
-export const STATES = Object.fromEntries([oh, ma, mo].map(r => [r.code, r]))
+export const STATES = Object.fromEntries([oh, ma, mo, ny].map(r => [r.code, r]))
+
+/** How a well is fetched. ⭐ Every STATE well declares one (BRIEF-nyc-adapter §3.2a): `arcgis` (a FeatureServer/
+ *  MapServer `query`; `select.where` is ArcGIS SQL), `socrata` (NYC Open Data and the like; `select.where` is SoQL),
+ *  `file` (a declared file with no endpoint — read, never fetched). The selector substitution is the same for all
+ *  three; the protocol says which fetcher reads the result. ⛔ A state well with none, or another, THROWS.
+ *  A well a town declares IN FULL keeps the original full-declaration schema, which is ArcGIS. */
+export const PROTOCOLS = ['arcgis', 'socrata', 'file']
 
 export function stateRecord(code, where = '') {
   const r = STATES[code]
@@ -45,6 +53,7 @@ export function resolveFromState(entry, kind, town, where = '') {
   const rec = stateRecord(town.state, where)
   const well = rec[kind]?.[entry.id]
   if (!well) throw new Error(`${where}takes ${kind} "${entry.id}" from ${rec.code}, which lists no such well (${Object.keys(rec[kind] || {}).join(', ') || 'none'})`)
+  if (!PROTOCOLS.includes(well.protocol)) throw new Error(`${where}takes ${kind} "${entry.id}" from ${rec.code}, whose well declares protocol ${JSON.stringify(well.protocol)} — a state well must declare one of ${PROTOCOLS.join(', ')}`)
   const { select, ...rest } = well
   const out = { ...rest, id: entry.id, fromState: `${rec.code}@${rec.version}` }
   if (select?.where) {

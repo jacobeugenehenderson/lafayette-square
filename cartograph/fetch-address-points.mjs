@@ -26,6 +26,8 @@ const r2 = (v) => Math.round(v * 100) / 100, r7 = (v) => Math.round(v * 1e7) / 1
 
 function fetchSource(src) {
   const prov = ADDRESS_POINT_PROVIDERS[src.provider]
+  // ⛔ This reads ArcGIS only; a well of another protocol is refused by name, never queried as ArcGIS.
+  if (prov.protocol !== 'arcgis') throw new Error(`[${src.id}] provider "${src.provider}" is a ${prov.protocol} well — fetch-address-points.mjs reads ArcGIS only (cartograph/states/index.mjs PROTOCOLS)`)
   const endpoint = src.endpoint || prov.endpoint
   const get = (params) => arcgisGet(endpoint, params, join(mapRawDir(SCENE), '._address_points_page.json'))
   for (const k of ['minLon', 'minLat', 'maxLon', 'maxLat']) {
