@@ -91,10 +91,10 @@ if (args.includes('--selftest')) {
   const PpB = run({ style: 'perpendicular', ...dims, source: 'trial', crosswalks: byCorner('none') })
   const area = (rs) => (rs || []).reduce((t, r) => { let a = 0; for (let i = 0; i < r.length; i++) { const p2 = r[i], q2 = r[(i + 1) % r.length]; a += p2[0] * q2[1] - q2[0] * p2[1] } return t + Math.abs(a) / 2 }, 0)
   const square = (R) => (R.crosswalkPairs || []).every(([, , , A, B, d]) => { const L = Math.hypot(B[0] - A[0], B[1] - A[1]); return L > 0 && Math.abs((B[0] - A[0]) * d[0] + (B[1] - A[1]) * d[1]) <= 1e-6 * L })
-  // cut-centred crosswalks hold their apex by construction; a recorded crossing's station is the record's, so it is only counted
+  // EVERY crosswalk holds its apex: cut-centred by construction, a recorded station only when it does (item 9)
   const inside = ([a, b, , A, , d]) => [DgC.curbCutRecs[a], DgC.curbCutRecs[b]].every(rc => Math.abs((rc.at[0] - A[0]) * d[0] + (rc.at[1] - A[1]) * d[1]) <= 1.5 + 1e-9)
   const pairs2 = (DgC.crosswalkPairs || []).filter(p2 => p2[1] != null)
-  const apexInside = pairs2.filter(p2 => p2[6] === 'cut').every(inside), recordedApexOutside = pairs2.filter(p2 => p2[6] === 'crossing' && !inside(p2)).length
+  const apexInside = pairs2.every(inside), recordedApexOutside = (DgC.crosswalkTally || {}).evidenceApexOutside || 0
   const xt = structuredClone(DgC.protoShapeTiles || []).map(t => { delete t.crosswalkEnds; return t }), XL = landCrosswalkEvidence(xt, CX).census
   const xEnds = xt.flatMap(t => t.crosswalkEnds || []), xById = new Map(); for (const x of xEnds) (xById.get(x.osmId) || xById.set(x.osmId, []).get(x.osmId)).push(x)
   const XT = DgX.crosswalkTally || {}
@@ -135,7 +135,7 @@ if (args.includes('--selftest')) {
   ]
   let bad = 0
   for (const [name, ok] of rows) { if (!ok) bad++; console.log(`  ${ok ? '✅' : '⛔'} ${name}`) }
-  console.log(`  (crossings: ${CX.census.records} bound · ${XL.landed} landed on both kerbs (ends ${XL.ends.arc} arc / ${XL.ends.nearTangent} near-tangent / ${XL.ends.leg} leg) · ${XL.noHit} no hit · ${XL.notOwned} not owned · ${XL.sameSide} same side → ${CT.byEvidence} crosswalk(s) placed by a recorded crossing, ${recordedApexOutside} of them with an apex cut outside)`)
+  console.log(`  (crossings: ${CX.census.records} bound · ${XL.landed} landed on both kerbs (ends ${XL.ends.arc} arc / ${XL.ends.nearTangent} near-tangent / ${XL.ends.leg} leg) · ${XL.noHit} no hit · ${XL.notOwned} not owned · ${XL.sameSide} same side → ${CT.byEvidence} crosswalk(s) placed by a recorded crossing · ${recordedApexOutside} refused for leaving the apex outside)`)
   console.log(`  (crosswalks, diagonal + byCorner: ${CT.crosswalks} drawn · ${CT.pairs} between two cuts · ${CT.farKerbCut} to a far-kerb cut · ${CT.farCornerNoCut} far corner without a cut · ${CT.noFarKerb} no far kerb · ${CT.endsNotOwned} ends not owned · ${CT.ambiguous} ambiguous · ${CT.styleDisagrees} style disagrees · ${CT.apexesApart} cuts too far apart)`)
   console.log(`  (evidence trial: ${Elow.records.length} record(s) bound · landed ${L.landed}, refused ${L.notOwner} not-owner / ${L.offArc} off-arc / ${L.notJunction} not-junction / ${L.noHit} no-hit · lowered → ${Lo.bySource?.['osm:kerb'] || 0} corner(s) by evidence, ${Lo.unreadable || 0} unreadable (${Lo.contradicted || 0} contradict the norm) · raised → ${Up.curbCuts} cut(s) of ${J})`)
   console.log(`  (${scene}: ${J} junction corners · diagonal ${Dg.curbCutTally?.curbCuts} · perpendicular ${Pp.curbCutTally?.curbCuts} · authored ${authored?.curbCuts ?? '—'} · crosswalks ${Pp.crosswalkTally?.pairs} paired, ${Pp.crosswalkTally?.unpaired} unpaired, ${Pp.crosswalkTally?.ambiguous} ambiguous)`)

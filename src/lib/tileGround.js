@@ -5636,7 +5636,7 @@ let _staleBandsWarned = false
 // ⛔ Everything that draws nothing is counted by cause; nothing is resolved by nearness (`A15`).
 function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
   const tally = { crosswalks: 0, pairs: 0, farKerbCut: 0, farKerbNone: 0, farKerbNoDims: 0, farKerbStyleAmbiguous: 0,
-    farCornerNoCut: 0, ambiguous: 0, noNode: 0, noFarKerb: 0, apexesApart: 0, apartAt: [], endsNotOwned: 0, byEvidence: 0, evidenceAmbiguous: 0, evidenceEndsNotOwned: 0, styleDisagrees: 0, noCurbCut: 0, byPaint: {},
+    farCornerNoCut: 0, ambiguous: 0, noNode: 0, noFarKerb: 0, apexesApart: 0, apartAt: [], endsNotOwned: 0, byEvidence: 0, evidenceAmbiguous: 0, evidenceEndsNotOwned: 0, evidenceApexOutside: 0, evidenceApexOutsideAt: [], styleDisagrees: 0, noCurbCut: 0, byPaint: {},
     style: norm?.style ?? null, source: norm?.source ?? null }
   const rings = [], cutMasks = [], pairs = []
   let cuts = []
@@ -5680,6 +5680,11 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
       if (mine && theirs && mine.kind === 'arc' && mine.ring === X.ringOf(e.r.tile, e.r.si) && mine.arc === e.r.arc && test(theirs)) r.push([mine.at, theirs.at]) }
     if (r.length > 1) tally.evidenceAmbiguous++
     return r.length === 1 ? r[0] : null }
+  // ⛔ RULED (Jacob's item 9, via Boz 2026-10-06): a recorded station is used only if the crosswalk it centres still
+  // holds the serving cut(s) — "the apex ramp lands inside it". Otherwise cut-centred, counted, its corner printed.
+  const holds = (ev, d, cutsAt, W) => { const a = ((ev[0][0] + ev[1][0]) / 2) * d[0] + ((ev[0][1] + ev[1][1]) / 2) * d[1]
+    return cutsAt.every(P => Math.abs(P[0] * d[0] + P[1] * d[1] - a) <= W / 2) }
+  const refuse = (ev, at, S) => { tally.evidenceApexOutside++; tally.evidenceApexOutsideAt.push({ at, street: S }); return null }
   const seen = new Set()
   for (const e of E) {
     let c = byNode.get(e.r.node).filter(x => x.S === e.S && x.side !== e.side && x.ri !== e.ri)
@@ -5699,7 +5704,8 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
       // inside ONE square crosswalk (a skewed or jogged crossing) — counted, its corners printed, NOT drawn
       if (Math.abs(a1 - a2) > paintOf(e.r.style).width) { tally.apexesApart++; tally.apartAt.push({ at: [(P1[0] + P2[0]) / 2, (P1[1] + P2[1]) / 2], street: e.S, gap: Math.round(Math.abs(a1 - a2) * 10) / 10 }); continue }
       const sh = (a1 + a2) / 2 - (M0[0] * d[0] + M0[1] * d[1])
-      const ev = evOf(e, (x) => x.kind === 'arc' && x.ring === X.ringOf(c[0].r.tile, c[0].r.si) && x.arc === c[0].r.arc)
+      const ev0 = evOf(e, (x) => x.kind === 'arc' && x.ring === X.ringOf(c[0].r.tile, c[0].r.si) && x.arc === c[0].r.arc)
+      const ev = ev0 && (holds(ev0, d, [P1, P2], paintOf(e.r.style).width) ? ev0 : refuse(ev0, P1, e.S))
       const M = ev ? [(ev[0][0] + ev[1][0]) / 2, (ev[0][1] + ev[1][1]) / 2] : [M0[0] + d[0] * sh, M0[1] + d[1] * sh]
       if (ev) tally.byEvidence++
       const hN = X.firstHit(M, [M[0] - n[0] * far, M[1] - n[1] * far]), hF = X.firstHit(M, [M[0] + n[0] * far, M[1] + n[1] * far])
@@ -5717,7 +5723,8 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
     if (!(w > 0 && wd > 0)) { tally.farKerbNoDims++; continue }
     const d = e.sv.dir, n = A.n
     // the recorded crossing, if one leaves this corner's arc for the far kerb, sets the station; else the cut does
-    const ev = evOf(e, (x) => x.kind !== 'arc')
+    const ev0 = evOf(e, (x) => x.kind !== 'arc')
+    const ev = ev0 && (holds(ev0, d, [e.r.at], paintOf(e.r.style).width) ? ev0 : refuse(ev0, e.r.at, e.S))
     let F = A.h.at, N0 = e.r.at
     if (ev) { const M = [(ev[0][0] + ev[1][0]) / 2, (ev[0][1] + ev[1][1]) / 2]
       const hN = X.firstHit(M, [M[0] - n[0] * far, M[1] - n[1] * far]), hF = X.firstHit(M, [M[0] + n[0] * far, M[1] + n[1] * far])
@@ -9901,6 +9908,7 @@ export function buildTileGround(ribbons, opts = {}) {
     if (crosswalkTally && crosswalkTally.style && crosswalkTally.style !== 'none') {
       const C = crosswalkTally
       console.log(`[tileGround][crosswalks] ${C.crosswalks} crosswalk(s), square across the street (${C.style}${C.style === 'byCorner' ? ': ' + Object.entries(C.byPaint).map(([k, v]) => `${v} ${k}`).join(' · ') : ''}, from ${C.source}) — ${C.pairs} between two cuts · ${C.farKerbCut} to a T's far-kerb cut · ${C.byEvidence} placed by a recorded crossing${C.evidenceAmbiguous ? ` · ${C.evidenceAmbiguous} with several recorded crossings (cut-centred instead)` : ''}${C.evidenceEndsNotOwned ? ` · ${C.evidenceEndsNotOwned} recorded station whose line misses the kerbs (cut-centred instead)` : ''}`)
+      if (C.evidenceApexOutside) console.warn(`[tileGround][crosswalks] ${C.evidenceApexOutside} recorded crossing(s) whose station would leave the corner's cut OUTSIDE its crosswalk — cut-centred instead (item 9): ${C.evidenceApexOutsideAt.slice(0, 12).map(a => `${a.street} (${a.at[0].toFixed(0)}, ${a.at[1].toFixed(0)})`).join(' · ')}${C.evidenceApexOutsideAt.length > 12 ? ` … +${C.evidenceApexOutsideAt.length - 12}` : ''}`)
       if (C.noCurbCut) console.warn(`[tileGround][crosswalks] ⛔ the norm asks for crosswalks but NO curb cut is painted — a crosswalk is served by a cut, so there are none.`)
       if (C.farKerbNone) console.warn(`[tileGround][crosswalks] ${C.farKerbNone} crossing(s) land on a T's far kerb and the norm says farKerb 'none' — no crosswalk drawn.`)
       if (C.farKerbNoDims) console.warn(`[tileGround][crosswalks] ⛔ ${C.farKerbNoDims} far-kerb cut(s) asked for, but the curb-cut norm gives no width/warningDepth — not drawn.`)
