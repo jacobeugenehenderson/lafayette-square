@@ -347003,6 +347003,14 @@
       ]
     }
   ],
+  "rampNorm": {
+    "style": "none",
+    "source": "kit",
+    "crosswalks": {
+      "style": "none",
+      "source": "kit"
+    }
+  },
   "protopolygon": {
     "eps": 0.005,
     "rings": [
