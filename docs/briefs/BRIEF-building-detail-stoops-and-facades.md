@@ -8,8 +8,7 @@ Elder", who runs a separate work group).
 contradicts this brief — **stop and flag**.
 
 ⛔ **NOT DISPATCHABLE YET.** It consumes what `BRIEF-nyc-adapter.md` acquires (BIN identity, NYC address
-points, Building Elevation and Subgrade). Dispatch after that adapter lands, and after §2's door-position
-question is answered. ⭐ **Jacob, 2026-10-05: roofs and stoops, with procedural windows and doors, are
+points, Building Elevation and Subgrade). Dispatch after that adapter lands (§2's door question is answered). ⭐ **Jacob, 2026-10-05: roofs and stoops, with procedural windows and doors, are
 WANTED — they sell the shot, and cheaply.**
 
 ---
@@ -35,7 +34,7 @@ never a constant that happens to be right for the first town (`CLAUDE.md` Layer 
 |---|---|---|
 | **the front face** | the town's 911 address points (NYC `uf93-f8nk`; Ohio LBRS in Huron) — the face the point sits behind | ✅ measured: 358/358 points inside their own footprint, ~1.5 m from a wall; 355/358 in the half facing their address street |
 | **how many entrances** | address points per building | ✅ measured (ZIP 11372, 2,863 buildings): 1 point → 2,433 bldgs, 14% commercial ground · several on one street → 129, 53% commercial, neighbours ~5.2 m apart (a storefront) · several on two streets (corner) → 174, 61% commercial |
-| **where along the face** | the address point's position | ⛔ **NOT ESTABLISHED** whether a point marks the door or merely its face — §2 |
+| **where along the face** | the typology rule · OSM `entrance=*` where mapped · override | ✅ §2: the 911 point marks the FACE, not the door |
 | **first-floor height** | NYC Building Elevation and Subgrade (`bsin-59hv`), joined by BIN: `z_floor − z_grade` | ✅ measured; ⚠️ `z_grade` is the LOWEST adjacent grade (an areaway bottom on a stoop-over-stairs house), feet, NAVD88 — **use the difference, never the absolute** |
 | **typology** | the same dataset: `subgrade`, `notes2` (ground-floor use), `notes3` (basement access) | ✅ measured, below |
 | **the sidewalk at the door** | the kit's own drawn ground, sampled at the front face | exists (ground conformance, `ARCHITECTURE §8`) — untested for this use |
@@ -53,11 +52,25 @@ to the garden-level door ≈ 13 risers; at a 7½-inch riser that is 8.1 ft — t
 ⭐ **Retail:** a commercial ground floor sits at grade (678 under 0.5 ft, 467 under 2 ft, only 136 at
 4 ft+) ⇒ the door at the sidewalk, no stoop, stairs inside (Jacob).
 
-## 2. ⛔ OPEN BEFORE BUILD — does an address point mark the DOOR?
+## 2. ✅ ANSWERED — an address point marks the FACE, not the door (Boz, 2026-10-05)
 
-Count and face are solid; the position along the face is not. Being researched separately (Boz,
-2026-10-05). Until answered, door positions along a face come from the RULE (§3), with points used only
-for count and face.
+**Oracle:** OpenStreetMap's mapped entrances (`entrance=*`) in Jackson Heights — 117 nodes, 98 lying on a
+city footprint wall whose building has 911 points (42 tagged `shop`, 10 `main`, 41 `yes`). For each, the
+distance ALONG that wall to the building's nearest 911 point, against two baselines:
+
+| predictor | median along-wall error | within 2 m (of 98) |
+|---|---|---|
+| nearest 911 point | 1.8 m | 56 |
+| centre of the wall | 2.0 m | 49 |
+| a random spot on the wall | 3.3 m | 40 |
+| *single-entrance buildings only (n=51):* 911 point vs wall centre | 1.7 m vs **1.2 m** | — |
+
+⇒ **For door POSITION the 911 point is no better than the wall's centre** (worse on single-entrance
+buildings). It stays the evidence for **which face** and **how many entrances**; the position along the face
+comes from the **typology rule** (§3), from **mapped entrances** (OSM `entrance=*`) where they exist, and
+from the operator's override. ⚠️ Small sample, and OSM entrances are biased toward shops; re-measure on the
+first poured town. A street-imagery door detector (Mapillary is already an intake source) is a possible
+later evidence rung — not in this brief.
 
 ## 3. The typology rules (Jacob's, to be authored per town with neutral defaults)
 
