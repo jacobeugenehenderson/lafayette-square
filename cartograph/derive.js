@@ -5742,9 +5742,6 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       ...(MP.nodes && Object.keys(MP.nodes).length ? {
         nodes: Object.fromEntries(Object.entries(MP.nodes).map(([k, v]) =>
           [k, v ? [Math.round(v[0] * 1e6) / 1e6, Math.round(v[1] * 1e6) / 1e6] : null])),
-        // ⭐ each node's DEGREE, same key — junction (≥ 3) vs chain cut (2). ② stamps it onto every
-        // corner (`iaJunction`), so the FILL can tell a corner a street meets from a bend.
-        nodeDegree: MP.nodeDegree || {},
       } : {}),
       // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.
       ...(MP.boundaryRing ? { boundaryRing: MP.boundaryRing.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6]) } : {}),

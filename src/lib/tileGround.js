@@ -717,30 +717,19 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
   // ⛔ AMBIGUITY IS REFUSED, NOT GUESSED: two chains can share more than one vertex (a loop), and
   // such a pair freezes as `null` so the consumer takes the class seed and COUNTS it. A wrong node
   // hands a corner someone else's authored radius.
-  // ⭐ AND ITS DEGREE — how many street ENDS meet at that node (a chain END counts 1, a chain passing
-  // THROUGH counts 2). It is what tells a JUNCTION (≥ 3: a street meets here, so a corner there gets
-  // ramps and crosswalks) from a chain CUT (2: one road continuing under a new chain or name, so a
-  // corner there is a bend). ⛔ The owner labels cannot tell these apart — the bend count moves with the
-  // road key (`BRIEF-corner-ramps-and-kerb §0a`) — and the mint is the one place a chain may be read.
-  // Same key as `nodes`; a refused (ambiguous) pair has no degree.
-  const nodeDegree = {}
   const nodes = (() => {
-    const at = new Map(), inc = new Map(), pair = {}
+    const at = new Map(), pair = {}
     const qk = (p) => `${Math.round(p[0] * 1e4)},${Math.round(p[1] * 1e4)}`
     for (const { st } of chains) {
       const id = st?.skelId ?? st?.name; if (id == null) continue
-      const P = st.points || [], last = P.length - 1
-      for (let i = 0; i < P.length; i++) { const p = P[i], k = qk(p); let m = at.get(k); if (!m) at.set(k, m = new Map()); if (!m.has(id)) m.set(id, [p[0], p[1]])
-        inc.set(k, (inc.get(k) || 0) + (i === 0 || i === last ? 1 : 2)) }
+      for (const p of st.points || []) { const k = qk(p); let m = at.get(k); if (!m) at.set(k, m = new Map()); if (!m.has(id)) m.set(id, [p[0], p[1]]) }
     }
-    for (const [vk, m] of at) {
+    for (const [, m] of at) {
       if (m.size < 2) continue
       const ids = [...m.keys()]
       for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
         const k = ids[i] < ids[j] ? `${ids[i]}|${ids[j]}` : `${ids[j]}|${ids[i]}`
-        const seen = Object.prototype.hasOwnProperty.call(pair, k)
-        pair[k] = seen ? null : m.get(ids[i])
-        if (seen) delete nodeDegree[k]; else nodeDegree[k] = inc.get(vk)
+        pair[k] = Object.prototype.hasOwnProperty.call(pair, k) ? null : m.get(ids[i])
       }
     }
     return pair
@@ -1044,9 +1033,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
              waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
-             nodes, nodeDegree }
+             nodes }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes, nodeDegree }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
@@ -4633,27 +4622,23 @@ export function stripLadder(m, lim) {
 export const hasStampInquiry = (st) => Array.isArray(st?.iaStamp) && Array.isArray(st?.iaFull)
   && st.iaStamp.length === st.iaFull.length && !!st.runs
 
-// ⭐⭐ IS A STREET MET AT THIS CORNER? — `BRIEF-corner-ramps-and-kerb §0a`. Every ease is a corner and gets
-// its pad (`SECTION §4`); only a corner at a JUNCTION gets ramps and crosswalks. Asked of ①'s two edges
-// either side of the corner's ① vertex, and of the mint's frozen node + degree — never of the owner
-// stamp (`iaStamp`), whose road key moves the answer, and never of geometry.
-//   same chain both sides          → bend (one street turning)
-//   two chains, node degree 2      → bend (a chain cut: the road continues)
-//   two chains, node degree ≥ 3    → junction
-//   ⛔ no owner · a refused (ambiguous) pair · a pour with no frozen degree → UNKNOWN, with its reason.
-//   Never folded into "bend": an unknown corner read as a bend is a missing ramp nobody is told about.
-export function classifyCornerJunction(o1, o2, pairNode, nodeDegree) {
-  if (!o1 || !o2 || o1.skelId == null || o2.skelId == null) return { kind: 'unknown', why: 'noOwner' }
-  if (o1.skelId === o2.skelId) return { kind: 'bend', why: 'sameChain' }
-  const key = o1.skelId < o2.skelId ? `${o1.skelId}|${o2.skelId}` : `${o2.skelId}|${o1.skelId}`
-  const node = pairNode?.[key]
-  if (!node) return { kind: 'unknown', why: 'noNode' }
-  if (!nodeDegree) return { kind: 'unknown', why: 'noDegree' }
-  const deg = nodeDegree[key]
-  if (!Number.isFinite(deg)) return { kind: 'unknown', why: 'noDegree' }
-  if (deg < 3) return { kind: 'bend', why: 'chainCut' }
-  return { kind: 'junction', why: 'junction', node: `${(+node[0]).toFixed(3)},${(+node[1]).toFixed(3)}`, deg,
-           legs: [{ skelId: o1.skelId, side: o1.side }, { skelId: o2.skelId, side: o2.side }] }
+// ⭐⭐ IS A STREET MET AT THIS CORNER? — THE LEGS DECIDE (`BRIEF-corner-ramps-and-kerb §0a`; Jacob, 2026-10-06:
+// "LS was made with a mentality that a corner was a result of the legs which made it"). Every ease is a corner and
+// gets its pad (`SECTION §4`); whether it also gets curb cuts and crosswalks is read off its TWO LEGS — the runs
+// that own the edges either side of its arc, carried on the frozen stamp (`iaStamp` → `runs`):
+//   two DIFFERENT roads  → junction
+//   the SAME road        → bend (pad only)
+//   a flank with no run  → UNKNOWN, with its reason — never folded into "bend"
+// "Same road" is `RIBBONS §3.3`'s ruled test: same iff EITHER `roadId` OR `throughId` agrees. ⛔ Not the name and not
+// the ordinal-stripped skelId — two unnamed streets (`residential-70`, `residential-73`) stay two roads.
+// ⛔ It replaces a junction DEGREE re-derived from the chains in the mint (`3589f711`), which `EXTENT-DESIGN §4.1`
+// forbids ("carry it, never re-derive it") and which counted a divided road's carriageways joining as a junction.
+export function sameRoad(a, b) {
+  return (a?.roadId != null && a.roadId === b?.roadId) || (a?.throughId != null && a.throughId === b?.throughId)
+}
+export function classifyCornerLegs(a, b) {
+  if (!a || !b) return { kind: 'unknown' }
+  return sameRoad(a, b) ? { kind: 'bend' } : { kind: 'junction' }
 }
 
 // ══ THE RAMPS — POSITIONS ON A JUNCTION CORNER'S ARC (`BRIEF-corner-ramps-and-kerb §0a`) ══════════════════════
@@ -5001,7 +4986,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   //                   it (`easeContour`). The one place that knows, asked instead of guessed.
   // ⇒ an arc is a maximal run of one `iaArc` value, and every arc takes the pad — a mid-block BEND
   // where ① turns included. Whether a STREET meets the corner (ramps, crosswalks) is a separate
-  // frozen fact, `iaJunction` (`classifyCornerJunction`), and never decides the pad.
+  // frozen fact, `iaJunction` (`classifyCornerLegs`), and never decides the pad.
   //
   // ⛔⛔ WHAT THIS REPLACES, AND IT WAS THE LAST RECOVERY IN THE PAINTER. The extent came from
   // `st.fillets`' tangent COORDINATES matched back onto the contour through a 1 mm grid hash —
@@ -5464,12 +5449,13 @@ let _staleBandsWarned = false
 // ⛔ No ramps, no crosswalks: a crosswalk is the line between two ramps, so a town with no ramp source has none
 // (`noRamp`), and says so.
 function crosswalksBetweenRamps(recs, norm) {
-  const tally = { pairs: 0, unpaired: 0, ambiguous: 0, noRamp: 0, style: norm?.style ?? null, source: norm?.source ?? null }
+  const tally = { pairs: 0, unpaired: 0, ambiguous: 0, noNode: 0, noRamp: 0, style: norm?.style ?? null, source: norm?.source ?? null }
   const rings = [], pairs = []
   if (!norm || norm.style === 'none') return { rings, pairs, tally }
   if (!recs.length) { tally.noRamp = 1; return { rings, pairs, tally } }
   const E = [], byNode = new Map()
-  recs.forEach((r, ri) => { for (const sv of (r.serves || [])) { if (r.node == null) continue
+  recs.forEach((r, ri) => { if (r.node == null) { tally.noNode += (r.serves || []).length; return }
+    for (const sv of (r.serves || [])) {
     const e = { ri, corner: `${r.tile}|${r.si}|${r.arc}`, node: r.node, leg: sv.leg, other: sv.other }
     E.push(e); (byNode.get(r.node) || byNode.set(r.node, []).get(r.node)).push(e) } })
   const seen = new Set()
@@ -7840,7 +7826,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
-  let protoJunctionCensus = null      // per corner arc: junction · bend · unknown-by-reason (`classifyCornerJunction`)
+  let protoJunctionCensus = null      // per corner arc: junction · bend · unknown-by-reason (`classifyCornerLegs`)
   let protoBoundaryRing = null   // ⭐ the circle, carried out so EVERY consumer can stamp with it
   let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoBandsByBlock = null, protoBlockLabelsOut = null, protoStackCollapse = null, protoAuthoring = null, protoDepthByBlock = null
   // ⭐ ②'s ACHIEVED corner arcs — the handle's ONE truth. Hoisted beside the other proto outputs
@@ -7918,9 +7904,6 @@ export function buildTileGround(ribbons, opts = {}) {
              blockHoles: frozenProto.blockHoles || null, blockHoleLabels: frozenProto.blockHoleLabels || null,
              // ⭐ the corner nodes, frozen — so ② never reaches for a chain to key the authored R
              nodes: frozenProto.nodes || null,
-             // ⛔ NULL, NOT `{}`, when a pour predates it — every corner then stamps UNKNOWN and is counted
-             // as such, never read as "no junctions" (which would be every corner a bend).
-             nodeDegree: frozenProto.nodeDegree || null,
              boundaryRing: frozenProto.boundaryRing || null,
              // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped this would lose its
              // waterfront silently — every other field present, the pour looking complete.
@@ -8465,11 +8448,6 @@ export function buildTileGround(ribbons, opts = {}) {
         // for afterwards, because it eases a 90° turn into ~12 vertices of 7.5° and every one of
         // them looks like a curve sample.
         let outArc = rings2.map((rg, ri) => st.arcMask?.[ri] || rg.map(() => null))
-        // ⭐ AND WHETHER A STREET MEETS AT IT — per arc vertex, off the ① vertex the corner is OF
-        // (`st.labels`, the same carried correspondence the ease reads its radius through).
-        let outJx = rings2.map((rg, ri) => { const src = st.labels?.[ri], A = outArc[ri], n1 = labs.length
-          return rg.map((_, i) => (A?.[i] == null) ? null : (src?.[i] == null) ? { kind: 'unknown', why: 'noSrc' }
-            : classifyCornerJunction(protoOwners[labs[(src[i] - 1 + n1) % n1]], protoOwners[labs[src[i]]], protoPairNode, MP.nodeDegree)) })
         if (holes.length) {
           // ⭐⭐⭐ A FACE'S CURB IS ITS OUTER ERODED INWARD **MINUS** EVERY HOLE DILATED INTO IT.
           // ⛔ Offsetting a hole ring with the ordinary call would SHRINK the hole — the normal is
@@ -8509,7 +8487,6 @@ export function buildTileGround(ribbons, opts = {}) {
             // survive the hole subtraction, so its corners have no extent either. Null, never a
             // guess; the shortfall is already counted as `compoundNoEase`.
             outArc = B.rings.map(rg => rg.map(() => null))
-            outJx = B.rings.map(rg => rg.map(() => null))
           }
           compoundFaces++
         }
@@ -8525,14 +8502,13 @@ export function buildTileGround(ribbons, opts = {}) {
           const hl = hwyLab()
           const B = booleanLabelled(clipperLib.ClipType.ctDifference, outRings, outLabs,
             Hpoly, Hpoly.map(r => r.map(() => hl)), true, false,
-            { subject: outRings.map((rg, ri) => rg.map((_, i) => ({ R: outR[ri]?.[i] || 0, arc: outArc[ri]?.[i] ?? null, jx: outJx[ri]?.[i] ?? null }))),
-              clip: Hpoly.map(r => r.map(() => ({ R: 0, arc: null, jx: null }))) })
+            { subject: outRings.map((rg, ri) => rg.map((_, i) => ({ R: outR[ri]?.[i] || 0, arc: outArc[ri]?.[i] ?? null }))),
+              clip: Hpoly.map(r => r.map(() => ({ R: 0, arc: null }))) })
           if (B.refused) protoHwyRefused++
           outRings = B.rings
           outLabs = B.labels || B.rings.map(rg => rg.map(() => null))
           outR = B.payloads.map(pl => pl.map(v => v?.R || 0))
           outArc = B.payloads.map(pl => pl.map(v => v?.arc ?? null))
-          outJx = B.payloads.map(pl => pl.map(v => v?.jx ?? null))
           protoHwyBlocks++
         }
         for (let ri = 0; ri < outRings.length; ri++) {
@@ -8583,7 +8559,7 @@ export function buildTileGround(ribbons, opts = {}) {
           }
           protoCurb.push(eased.ring); protoCurbGs.push(isGs)
           // ⭐ the curb, with each vertex's ① label — this is what ③ insets FROM
-          ;(easedByBlock[k] ||= []).push({ ring: eased.ring, labs: eased.labs || outLabs[ri], arc: outArc[ri], jx: outJx[ri] })
+          ;(easedByBlock[k] ||= []).push({ ring: eased.ring, labs: eased.labs || outLabs[ri], arc: outArc[ri] })
           ;(depthByBlock[k].curb ||= []).push(eased.ring)
         }
       }
@@ -9224,40 +9200,49 @@ export function buildTileGround(ribbons, opts = {}) {
             iaArc: mine.map(EC => EC.arc || EC.ring.map(() => null)),
             // ⭐ the town's ramp norm, frozen with its rung (`cartograph/ramp-norm.mjs`); null = poured before it.
             rampNorm: ribbons?.rampNorm ?? null,
-            // ⭐ `iaJunction` — per contour vertex of a corner arc: an index into `junctions` (a street meets
-            // here: the node, its degree, the two legs), 'bend' (one street turning, or a chain cut), or
-            // null (not an arc, or UNKNOWN — counted by reason at the pour). Read by the ramp painter;
-            // crosswalks pair on `junctions[].node` + the crossed road. `BRIEF-corner-ramps-and-kerb §0a`.
+            // ⭐ `iaJunction` — per contour vertex of a corner arc: an index into `junctions` (a street meets here:
+            // its two legs, arriving then leaving in this contour's order, and the node they meet at), 'bend' (the
+            // legs are one road), or null (not an arc, or UNKNOWN — counted by reason at the pour).
+            // THE LEGS DECIDE (`classifyCornerLegs`), read off this tile's own frozen stamp. The node is the mint's
+            // frozen chain-pair vertex (`nodes[legA|legB]`, the corner-radius key): the CENTRELINE point the two
+            // chains share, so every corner at one crossing carries the same one and a crosswalk can pair across
+            // the street on it. ⛔ No frozen node (none, or refused as ambiguous) ⇒ `node: null` — the corner keeps
+            // its curb cuts and its crosswalk goes unpaired, counted. `BRIEF-corner-ramps-and-kerb §0a`.
             ...(() => {
               const junctions = [], at = new Map()
-              const iaJunction = mine.map(EC => {
-                const jx = EC.jx || [], arc = EC.arc || [], seen = new Set(), n2 = EC.ring.length
-                // ⭐ `legs` IN THIS CONTOUR'S ORDER — [the leg arriving, the leg leaving]. ① classified them in ①'s
-                // ring order, which runs OPPOSITE to ②'s here (measured: 875 of 876 LS corners). So each arc reads
-                // the ① labels on its own flanking edges and orders the pair to match — never assumes a winding.
-                // ⛔ An arc whose flanks name neither leg keeps ①'s order and is counted (`legOrderUnread`).
-                const flank = new Map()
+              const ring = MP.boundaryRing || null
+              const outsideDisc = (p) => { if (!ring?.length) return false; let inside = false
+                for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]
+                  if ((zi > p[1]) !== (zj > p[1]) && p[0] < (xj - xi) * (p[1] - zi) / (zj - zi) + xi) inside = !inside }
+                return !inside }
+              const iaJunction = mine.map((EC, ri) => {
+                const arc = EC.arc || [], n2 = EC.ring.length, stp = iaStamp[ri] || []
+                const span = new Map()
                 for (let i = 0; i < n2; i++) { const u = arc[i]; if (u == null) continue
-                  const f = flank.get(u) || {}; if (arc[(i - 1 + n2) % n2] !== u) f.first = i; if (arc[(i + 1) % n2] !== u) f.last = i; flank.set(u, f) }
-                const own = (k) => { const l = EC.labs?.[(k + n2) % n2]; return l == null ? null : protoOwners[l]?.skelId ?? null }
-                const ordered = (j, u) => { const f = flank.get(u); if (!f || f.first == null || f.last == null) return null
-                  const b = own(f.first - 1), a = own(f.last)
-                  if (b === j.legs[0].skelId && a === j.legs[1].skelId) return j.legs
-                  if (b === j.legs[1].skelId && a === j.legs[0].skelId) return [j.legs[1], j.legs[0]]
-                  return null }
-                return EC.ring.map((_, i) => {
-                  const j = jx[i]; if (!j) return null
-                  const first = arc[i] != null && !seen.has(arc[i])
-                  if (first) { seen.add(arc[i]); protoJxCensus.arcs++; protoJxCensus[j.kind]++
-                    protoJxCensus.why[j.why] = (protoJxCensus.why[j.why] || 0) + 1 }
-                  if (j.kind === 'bend') return 'bend'
-                  if (j.kind !== 'junction') return null
-                  const legs = ordered(j, arc[i]) || j.legs
-                  if (first && legs === j.legs && !ordered(j, arc[i])) protoJxCensus.legOrderUnread = (protoJxCensus.legOrderUnread || 0) + 1
-                  const key = `${j.node}|${legs[0].skelId}|${legs[0].side}|${legs[1].skelId}|${legs[1].side}`
-                  if (!at.has(key)) { at.set(key, junctions.length); junctions.push({ node: j.node, deg: j.deg, legs }) }
-                  return at.get(key)
-                })
+                  const f = span.get(u) || {}; if (arc[(i - 1 + n2) % n2] !== u) f.first = i; if (arc[(i + 1) % n2] !== u) f.last = i; span.set(u, f) }
+                // a flank with no run: WHY — a dead-end cap edge (ends a run by construction), the rim, or unowned
+                const whyNull = (e) => { const l = EC.labs?.[e], o = l == null ? null : protoOwners[l]
+                  if (o?.cap) return 'capEdge'
+                  const A = EC.ring[e], B = EC.ring[(e + 1) % n2]
+                  if (outsideDisc([(A[0] + B[0]) / 2, (A[1] + B[1]) / 2])) return 'rim'
+                  return l == null ? 'unlabelled' : 'other' }
+                const leg = (r) => r == null ? null : { skelId: runs2[r].skelId, side: runs2[r].side, roadId: runs2[r].roadId ?? null, throughId: runs2[r].throughId ?? null }
+                const byArc = new Map()
+                for (const [u, f] of span) {
+                  if (f.first == null || f.last == null) { byArc.set(u, null); protoJxCensus.arcs++; protoJxCensus.unknown++; protoJxCensus.why.noFlank = (protoJxCensus.why.noFlank || 0) + 1; continue }
+                  const eb = (f.first - 1 + n2) % n2, ea = f.last
+                  const A = leg(stp[eb]), B = leg(stp[ea]), c = classifyCornerLegs(A, B)
+                  protoJxCensus.arcs++; protoJxCensus[c.kind]++
+                  if (c.kind === 'unknown') { for (const w of [A ? null : whyNull(eb), B ? null : whyNull(ea)]) if (w) protoJxCensus.why[w] = (protoJxCensus.why[w] || 0) + 1; byArc.set(u, null); continue }
+                  if (c.kind === 'bend') { byArc.set(u, 'bend'); continue }
+                  const pk = A.skelId < B.skelId ? `${A.skelId}|${B.skelId}` : `${B.skelId}|${A.skelId}`
+                  const P = protoPairNode[pk], node = P ? `${(+P[0]).toFixed(3)},${(+P[1]).toFixed(3)}` : null
+                  if (!node) protoJxCensus.junctionNoNode = (protoJxCensus.junctionNoNode || 0) + 1
+                  const key = `${node}|${A.skelId}|${A.side}|${B.skelId}|${B.side}`
+                  if (!at.has(key)) { at.set(key, junctions.length); junctions.push({ node, legs: [A, B] }) }
+                  byArc.set(u, at.get(key))
+                }
+                return EC.ring.map((_, i) => arc[i] == null ? null : (byArc.get(arc[i]) ?? null))
               })
               return { iaJunction, junctions }
             })(),
@@ -9361,11 +9346,10 @@ export function buildTileGround(ribbons, opts = {}) {
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
         protoJunctionCensus = protoJxCensus
         {
-          const J = protoJxCensus, why = Object.entries(J.why).filter(([w]) => !['junction', 'sameChain', 'chainCut'].includes(w)).map(([w, k]) => `${k} ${w}`).join(' · ')
-          console.log(`[tileGround][PROTO②] corner junctions: ${J.arcs} arc(s) · ${J.junction} at a JUNCTION (a street meets: ramps + crosswalks) · ${J.bend} BEND (${J.why.sameChain || 0} one street turning · ${J.why.chainCut || 0} chain cut)`)
-          if (J.legOrderUnread) console.warn(`[tileGround][PROTO②] ⛔ ${J.legOrderUnread} junction corner(s) whose flanking edges name neither leg — their legs keep ①'s order, so a crosswalk may leave from the wrong ramp there.`)
-          if (J.unknown) console.warn(`[tileGround][PROTO②] ⛔ ${J.unknown} corner(s) do NOT KNOW whether a street meets them (${why}) — they get their pad and NO ramp, and are NOT bends.` +
-            (J.why.noDegree ? ' `noDegree` = this ① was frozen before the junction degree: re-pour.' : ''))
+          const J = protoJxCensus, why = Object.entries(J.why).map(([w, k]) => `${k} ${w}`).join(' · ')
+          console.log(`[tileGround][PROTO②] corner legs: ${J.arcs} arc(s) · ${J.junction} JUNCTION (two roads meet: curb cuts + crosswalks) · ${J.bend} BEND (one road: pad only)`)
+          if (J.junctionNoNode) console.warn(`[tileGround][PROTO②] ${J.junctionNoNode} junction corner(s) whose two chains have no frozen shared node — curb cuts stand, their crosswalks go UNPAIRED.`)
+          if (J.unknown) console.warn(`[tileGround][PROTO②] ⛔ ${J.unknown} corner(s) have a leg with NO run on the stamp (flanks: ${why}) — pad kept, no curb cut, and NOT a bend. \`capEdge\` = the dead-end mouth class (ROADMAP A0/A10).`)
         }
         if (protoNoCurb) console.warn(`[tileGround][PROTO②] ⛔ ${protoNoCurb} block(s) yielded NO curb ring and are ABSENT from the artifact (${protoNoCurbArea.toFixed(0)} m² of ① block area). Their curbs meet, so there is no block between them — RULED CORRECT (\`RIBBONS §1\`), but it is a REAL ABSENCE and it is counted here rather than left to be discovered on a map.`)
       }
@@ -9648,6 +9632,7 @@ export function buildTileGround(ribbons, opts = {}) {
       console.log(`[tileGround][crosswalks] ${C.pairs} crosswalk(s), ramp to ramp (${C.style}, from ${C.source})`)
       if (C.noRamp) console.warn(`[tileGround][crosswalks] ⛔ the norm asks for crosswalks but NO ramp is painted — a crosswalk runs between two ramps, so there are none.`)
       if (C.unpaired) console.warn(`[tileGround][crosswalks] ${C.unpaired} ramp crossing(s) with no ramp across the street (a T's far kerb, or a corner that is not a junction) — no crosswalk drawn.`)
+      if (C.noNode) console.warn(`[tileGround][crosswalks] ${C.noNode} ramp crossing(s) at a junction whose two chains have no frozen shared node — no crosswalk drawn.`)
       if (C.ambiguous) console.warn(`[tileGround][crosswalks] ⛔ ${C.ambiguous} ramp crossing(s) with MORE THAN ONE candidate across the street — not drawn, never picked by nearness.`)
     } else if (crosswalkTally) console.log(`[tileGround][crosswalks] none — the town's crosswalk norm is 'none' (from ${crosswalkTally.source ?? 'nothing frozen'})`)
     if (rampTally) {

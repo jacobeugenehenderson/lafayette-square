@@ -1,49 +1,44 @@
 #!/usr/bin/env node
-// ⭐⭐ EVERY CORNER KNOWS WHETHER A STREET MEETS IT — `BRIEF-corner-ramps-and-kerb §0a`.
-// Every ease gets its pad; only a JUNCTION corner gets ramps and crosswalks. The answer is stamped at
-// freeze (`iaJunction` + `junctions`) from ①'s two edges and the mint's frozen node DEGREE — never the
-// owner stamp, whose road key moves the count. This reads the stamp; it restates no rule.
+// ⭐⭐ EVERY CORNER KNOWS WHETHER A STREET MEETS IT — `BRIEF-corner-ramps-and-kerb §0a`. THE LEGS DECIDE (Jacob,
+// 2026-10-06): a corner whose two legs are DIFFERENT roads is a junction (curb cuts + crosswalks); the SAME road is a
+// bend (pad only); a leg with no run on the frozen stamp is UNKNOWN, by reason. "Same road" = `RIBBONS §3.3`: either
+// `roadId` or `throughId` agrees. Stamped at freeze (`iaJunction` + `junctions`); this reads the stamp, restating no rule.
 //
-//   node checks/claims-every-corner-knows-its-junction.mjs <scene>            the poured artifact (public/baked/<scene>/shape.json)
-//   node checks/claims-every-corner-knows-its-junction.mjs <scene> --build    build it now off the scene's frozen ①
-//   node checks/claims-every-corner-knows-its-junction.mjs <scene> --build --live   …off a LIVE mint (before a re-pour)
-//   node checks/claims-every-corner-knows-its-junction.mjs --selftest         the classifier on known cases
+//   node checks/claims-every-corner-knows-its-junction.mjs <scene>                 the poured artifact (public/baked/<scene>/shape.json)
+//   node checks/claims-every-corner-knows-its-junction.mjs <scene> --build         build it now off the scene's frozen ①
+//   node checks/claims-every-corner-knows-its-junction.mjs <scene> --build --live  …off a live mint (before a re-pour)
+//   node checks/claims-every-corner-knows-its-junction.mjs --selftest              the leg rule on known cases
 //
-// ⛔ FAILS when: the artifact predates the stamp · a corner's class is unknown because the frozen ① has
-// no degree (a re-pour is owed) · the selftest disagrees. An UNKNOWN corner for any other reason is
-// printed by reason and is NOT a pass condition either way — it is a population to read.
+// ⛔ FAILS when: the artifact predates the stamp · an arc's vertices disagree on its class · a junction index points
+// nowhere · the selftest disagrees. UNKNOWN corners are printed by why their leg has no run (`capEdge` = the dead-end
+// mouth class, ROADMAP A0/A10 · `rim` · `unlabelled` · `other`) — a population to read, not a pass condition.
 import fs from 'fs'
-import { classifyCornerJunction } from '../src/lib/tileGround.js'
+import { classifyCornerLegs } from '../src/lib/tileGround.js'
 
 const args = process.argv.slice(2)
 if (args.includes('--selftest')) {
-  const o = (skelId, side = 'left') => ({ skelId, side })
-  const P = { 'a-1|b-1': [1, 2], 'a-1|a-2': [3, 4], 'a-1|c-1': [5, 6] }, D = { 'a-1|b-1': 4, 'a-1|a-2': 2, 'a-1|c-1': 3 }
+  const L = (skelId, roadId, throughId) => ({ skelId, side: 'left', roadId, throughId })
   const cases = [
-    ['one chain turning',            classifyCornerJunction(o('a-1'), o('a-1'), P, D), 'bend'],
-    ['a chain cut (degree 2)',       classifyCornerJunction(o('a-1'), o('a-2'), P, D), 'bend'],
-    ['a cross (degree 4)',           classifyCornerJunction(o('a-1'), o('b-1'), P, D), 'junction'],
-    ['a T (degree 3)',               classifyCornerJunction(o('c-1'), o('a-1'), P, D), 'junction'],
-    ['no shared node',               classifyCornerJunction(o('a-1'), o('z-1'), P, D), 'unknown'],
-    ['① frozen with no degree',      classifyCornerJunction(o('a-1'), o('b-1'), P, null), 'unknown'],
-    ['no owner',                     classifyCornerJunction(null, o('b-1'), P, D), 'unknown'],
+    ['two different named roads',          classifyCornerLegs(L('dolman-street-1', 'dolman-street-1', 'Dolman Street'), L('carroll-street-1', 'carroll-street-1', 'Carroll Street')), 'junction'],
+    ['one road cut into two chains (name)', classifyCornerLegs(L('park-avenue-1', 'park-avenue-1', 'Park Avenue'), L('park-avenue-2', 'park-avenue-2', 'Park Avenue')), 'bend'],
+    ['one road joined by roadId',          classifyCornerLegs(L('a-1', 'corridor-a', 'A'), L('a-2', 'corridor-a', 'B')), 'bend'],
+    ['⭐ two UNNAMED streets stay distinct', classifyCornerLegs(L('residential-70', 'residential-70', 'residential-70'), L('residential-73', 'residential-73', 'residential-73')), 'junction'],
+    ['a leg with no run',                  classifyCornerLegs(null, L('carroll-street-1', 'carroll-street-1', 'Carroll Street')), 'unknown'],
   ]
   let bad = 0
   for (const [name, got, want] of cases) { const ok = got.kind === want; if (!ok) bad++
-    console.log(`  ${ok ? '✅' : '⛔'} ${name.padEnd(28)} → ${got.kind}${got.why ? ` (${got.why})` : ''}${ok ? '' : `  WANTED ${want}`}`) }
-  const j = classifyCornerJunction(o('a-1', 'right'), o('b-1'), P, D)
-  if (!(j.node === '1.000,2.000' && j.deg === 4 && j.legs?.length === 2)) { bad++; console.log('  ⛔ a junction must carry its node, degree and both legs') }
-  console.log(bad ? `⛔ selftest: ${bad} case(s) wrong` : '✅ selftest: the classifier answers every case')
+    console.log(`  ${ok ? '✅' : '⛔'} ${name.padEnd(38)} → ${got.kind}${ok ? '' : `  WANTED ${want}`}`) }
+  console.log(bad ? `⛔ selftest: ${bad} case(s) wrong` : '✅ selftest: the legs decide every case')
   process.exit(bad ? 1 : 0)
 }
 
 const scene = args.find(a => !a.startsWith('--')) || 'lafayette-square'
-let tiles
+let tiles, census = null
 if (args.includes('--build')) {
   const { feed, buildProto } = await import('../scratch/_proto-feed.mjs')
   const f = feed(scene); if (!f) process.exit(1)
   if (args.includes('--live')) delete f.ribbons.protopolygon
-  tiles = buildProto(f, { quiet: true, protoProducer: true }).protoShapeTiles || []
+  const built = buildProto(f, { quiet: true, protoProducer: true }); tiles = built.protoShapeTiles || []; census = built.protoJunctionCensus || null
 } else {
   const p = `public/baked/${scene}/shape.json`
   if (!fs.existsSync(p)) { console.log(`⛔ ${scene}: no ${p} — NOT checked`); process.exit(1) }
@@ -58,7 +53,7 @@ if (stamped.length < T.length) {
 }
 // per ARC: one class each (every vertex of an arc carries its corner's answer)
 let arcs = 0, junction = 0, bend = 0, unknown = 0, mixed = 0, badIndex = 0
-const nodes = new Set(), byDeg = {}
+const nodes = new Set(); let noNode = 0
 for (const t of stamped) for (let si = 0; si < t.iaArc.length; si++) {
   const arc = t.iaArc[si] || [], jx = t.iaJunction[si] || [], seen = new Map()
   for (let q = 0; q < arc.length; q++) { if (arc[q] == null) continue
@@ -67,13 +62,15 @@ for (const t of stamped) for (let si = 0; si < t.iaArc.length; si++) {
   for (const v of seen.values()) { arcs++
     if (v === 'bend') bend++
     else if (Number.isInteger(v)) { const J = t.junctions?.[v]; if (!J) { badIndex++; continue }
-      junction++; nodes.add(J.node); byDeg[J.deg] = (byDeg[J.deg] || 0) + 1 }
+      junction++; if (J.node == null) noNode++; else nodes.add(J.node) }
     else unknown++ }
 }
 console.log(`${scene}${args.includes('--build') ? (args.includes('--live') ? ' (built, live ①)' : ' (built, frozen ①)') : ''}: ${arcs} corner arc(s)`)
-console.log(`  at a JUNCTION : ${junction}  (${nodes.size} distinct node(s); by degree ${Object.entries(byDeg).map(([d, k]) => `${d}:${k}`).join(' ')})`)
+console.log(`  at a JUNCTION : ${junction}  (${nodes.size} distinct node(s)${noNode ? `; ${noNode} with no frozen node — crosswalks unpaired` : ''})`)
 console.log(`  BEND          : ${bend}  (pad, no ramp)`)
 console.log(`  UNKNOWN       : ${unknown}  (pad, no ramp — and NOT a bend)`)
+if (census) console.log(`    why (per leg with no run): ${Object.entries(census.why || {}).map(([w, k]) => `${k} ${w}${w === 'capEdge' ? ' (the dead-end mouth class, ROADMAP A0/A10)' : ''}`).join(' · ') || '—'}`)
+else if (unknown) console.log('    why: read with --build (the reason is the pour\'s, not the artifact\'s)')
 if (mixed) console.log(`  ⛔ ${mixed} arc vertex/vertices disagree with their own arc's class`)
 if (badIndex) console.log(`  ⛔ ${badIndex} junction index(es) point past the tile's junctions list`)
 const fail = mixed || badIndex
