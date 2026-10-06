@@ -75,6 +75,19 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    AT THE KERB through the whole arc" (contradicts §4) and the painter comment near "THE CORNER — READ,
    NOT MEASURED" ("AND the owner changes" / "a mid-block BEND is NOT a corner") — both against the code.
 
+7. ✅ **LS's norm (Jacob, 2026-10-05): the 45° DIAGONAL corner, ramp 1.5 m, warning strip 0.6 m.** (Briefly
+   ruled perpendicular the same evening, then revised.) Written to `cartograph/data/lafayette-square/norms.json`.
+8. ⭐ **Each CORNER's style is its own (Jacob: "our system will need to be able to tell the difference between
+   45 degree corners and perpendicular sets").** A town's norm is only the default. Per corner: **evidence** —
+   curb-cut positions along the arc (NYC `CURB_CUT`; OSM `kerb=lowered` where mapped): one cut at the arc's
+   middle ⇒ diagonal · two near its ends ⇒ perpendicular · none ⇒ no ramp · anything else ⇒ `unreadable`,
+   counted, never guessed → else the **town norm** → **override** on top. The census reports each rung
+   separately. ⛔ Binding a cut to a corner is by containment in the arc's own span, never nearest-arc.
+9. ❓ **Crosswalks at a diagonal corner — proposed, awaiting Jacob:** *a crosswalk always runs square across the
+   street it crosses*; at a perpendicular corner it ends at that leg's ramp, at a diagonal corner it ends where
+   the square crosswalk meets the kerb and the apex ramp lands inside it. (Literal ramp-to-ramp at diagonal
+   corners crosses the intersection box diagonally — Flare, landing 2.) Do not build until ruled.
+
 **Order:** landing 1 = ramps by evidence/norm as 2D material on junction corners (needs the stamp ⇒
 with the re-pour) · landing 2 = crosswalks (same stamp) · landing 3 = the kerb, after its measurement.
 
