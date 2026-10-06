@@ -12,7 +12,7 @@
  */
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
-import { pushFrame as phoneBusPushFrame } from './phoneBus'
+import { pushFrame as phoneBusPushFrame, markFrameEvent } from './phoneBus'
 import { ACTIVE_PROFILE, DEVICE_PROFILES, getActiveProfile, getActiveProfileId, subscribeActiveProfile } from './deviceProfiles'
 import { frameCost, installFrameCost } from './frameCost.js'
 import { useResidency } from './Residency.jsx'
@@ -94,7 +94,7 @@ function snapshotStats() {
 // Inline ticker — runs inside Canvas, polls renderer.info, detects
 // spikes, and publishes to the DOM-side panel via subs.
 export function GpuMonitorTicker() {
-  const { gl } = useThree()
+  const { gl, scene } = useThree()
   const times = useRef([])
   const frameCount = useRef(0)
   const baseline = useRef({ ms: ACTIVE_PROFILE.frameBudgetMs, calls: 0, tris: 0 })
@@ -106,6 +106,9 @@ export function GpuMonitorTicker() {
   // delta-ing against last frame's accumulator gives honest per-frame totals.
   const prevCalls = useRef(0)
   const prevTris = useRef(0)
+  // renderer.info's resident counts last frame: a rise is a program linked or a texture / geometry uploaded on the frame
+  // just drawn, marked on the frame timeline (phoneBus.js) at this tick, the same instant the frame's interval closes.
+  const prevRes = useRef(null)
 
   useEffect(() => {
     gl.info.autoReset = false
@@ -119,8 +122,11 @@ export function GpuMonitorTicker() {
   useEffect(() => {
     const off = installFrameCost(gl)
     window.__previewFrame = () => ({ target: getActiveProfileId(), wallMs: stats.frameMs, calls: stats.calls, tris: stats.tris, ...frameCost })
-    return () => { off(); delete window.__previewFrame }
-  }, [gl])
+    // The renderer, for an inspection probe (which programs a gesture links: renderer.info.programs).
+    window.__previewGl = gl
+    window.__previewScene = scene
+    return () => { off(); delete window.__previewFrame; delete window.__previewGl; delete window.__previewScene }
+  }, [gl, scene])
 
   useFrame(() => {
     const now = performance.now()
@@ -137,11 +143,19 @@ export function GpuMonitorTicker() {
     // rest of the session: every reading after read NaN (seen 2026-10-04 during a cold load; which draw, cause not
     // established). Restart it and COUNT the event, shown on the panel, instead of showing NaN forever.
     if (!Number.isFinite(totalTris)) { gl.info.render.triangles = 0; prevTris.current = 0; totalTris = 0; stats.trisNaN++ }
+    const res = { programs: gl.info.programs?.length || 0, textures: gl.info.memory.textures, geometries: gl.info.memory.geometries }
+    if (prevRes.current) {
+      for (const k of ['programs', 'textures', 'geometries']) {
+        const d = res[k] - prevRes.current[k]
+        if (d > 0) markFrameEvent('compile', `+${d} ${k}`, now)
+      }
+    }
+    prevRes.current = res
     const dCalls = Math.max(0, totalCalls - prevCalls.current)
     const dTris  = Math.max(0, totalTris  - prevTris.current)
     prevCalls.current = totalCalls
     prevTris.current  = totalTris
-    phoneBusPushFrame(now, frameMs, dCalls, dTris, frameCost.gpuMs, frameCost.mainMs)
+    phoneBusPushFrame(now, frameMs, dCalls, dTris, frameCost.gpuMs, frameCost.lastMainMs)
     // Hold the latest per-frame delta so GpuPanel's draws/tris readouts
     // reflect this-frame work, not the renderer's cumulative since init.
     stats.calls = dCalls

@@ -75,6 +75,10 @@ function ForceDaytimeOnMount() {
 
 // ?frameloop=demand — inspect <Town paused> as the Ward runs it (Preview draws "always" by default).
 const PREVIEW_FRAMELOOP = new URLSearchParams(window.location.search).get('frameloop') === 'demand' ? 'demand' : 'always'
+// ?movieAt=<seconds> — the movie enters at that second of its timeline instead of a random one, so a scripted run sees
+// the same camera move every time (the frame timeline's runs, checks/claims-frame-timeline-catches-a-stall.mjs).
+const MOVIE_AT = Number(new URLSearchParams(window.location.search).get('movieAt'))
+const MOVIE_START = new URLSearchParams(window.location.search).has('movieAt') && Number.isFinite(MOVIE_AT) ? () => MOVIE_AT : 'random'
 // ?inset=top,right,bottom,left (CSS px) — inspect <Town viewInset>: the plan frames into what an app's UI leaves free.
 const PREVIEW_INSET = (() => {
   const q = new URLSearchParams(window.location.search).get('inset')
@@ -1230,6 +1234,9 @@ function CanvasContents({ town, layers, shot, quality }) {
   const setPlanHeading = (h) => setPlanHeadingRaw(h === 'follow' ? { follow: followRef } : h)
   const [litIds, setLitIds] = useState(null)
   const [probePaused, setProbePaused] = useState(false)
+  // The movie re-enters (and so re-seeds its phase, ?movieAt) when it stops and plays again: window.__townProbe.restartMovie.
+  const [moviePlaying, setMoviePlaying] = useState(true)
+  const movie = useMemo(() => ({ start: MOVIE_START, playing: moviePlaying }), [moviePlaying])
   const framedLog = useRef([])
   const listingsRef = useRef([])
   // Preview's Street button has no tap: the eye stands at the one stand point, near the town's own centre (shots.js).
@@ -1237,6 +1244,7 @@ function CanvasContents({ town, layers, shot, quality }) {
   useEffect(() => {
     window.__flight = flightRef
     window.__townProbe = { bearingRef, followRef, framed: framedLog.current, setFrameKey, setPlanHeading, setPaused: setProbePaused,
+      restartMovie: () => { setMoviePlaying(false); requestAnimationFrame(() => requestAnimationFrame(() => setMoviePlaying(true))) },
       setLitIds: (ids) => setLitIds(ids ? new Set(ids) : null),
       get listingIds() { return listingsRef.current.map((l) => l.building_id).filter(Boolean) } }
     return () => { if (window.__flight === flightRef) { delete window.__flight; delete window.__townProbe } }
@@ -1264,7 +1272,7 @@ function CanvasContents({ town, layers, shot, quality }) {
         flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={streetAt} viewInset={PREVIEW_INSET} controls
         frameKey={frameKey} planHeading={planHeading} bearingRef={bearingRef} litIds={litIds ?? undefined} paused={probePaused}
         onFramed={(f) => { framedLog.current.push(f); if (framedLog.current.length > 20) framedLog.current.shift() }}
-        movers={PREVIEW_MOVERS} onMovers={PREVIEW_MOVERS ? (m) => { window.__movers = m } : undefined}
+        movie={movie} movers={PREVIEW_MOVERS} onMovers={PREVIEW_MOVERS ? (m) => { window.__movers = m } : undefined}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,

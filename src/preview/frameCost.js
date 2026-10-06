@@ -16,9 +16,11 @@
  * profile — never a phone's.
  */
 import { addAfterEffect, addEffect } from '@react-three/fiber'
+import { markFrameEvent } from './phoneBus.js'
 
 const WINDOW = 30
-export const frameCost = { gpuSupported: null, gpuMs: null, mainMs: 0, loaf: { n: 0, worstMs: 0, scriptMs: 0, last: [] } }
+// mainMs is the 30-frame mean (the panel's); lastMainMs is the frame just drawn (the frame timeline's, per frame).
+export const frameCost = { gpuSupported: null, gpuMs: null, mainMs: 0, lastMainMs: 0, loaf: { n: 0, worstMs: 0, scriptMs: 0, last: [] } }
 // Every resolved frame's own GPU time, timestamped when it resolved: what a bracketed reading averages (gpuWindow).
 const series = []
 const SERIES_MAX = 2000
@@ -58,9 +60,19 @@ export function installFrameCost(renderer) {
     // A test hook for the check (checks/claims-preview-frame-cost-splits.mjs): burn main-thread time inside the frame.
     const burn = typeof window !== 'undefined' && window.__burnMainMs
     if (burn) { const until = performance.now() + burn; while (performance.now() < until) { /* burn */ } }
+    // The frame timeline's mutation test (checks/claims-frame-timeline-catches-a-stall.mjs): ONE stall of a known length
+    // in the next frame, marked, so the check can show the recorder catches it, times it and puts it beside its mark.
+    const stall = typeof window !== 'undefined' && window.__stallOnceMs
+    if (stall) {
+      window.__stallOnceMs = 0
+      const s0 = performance.now(), until = s0 + stall
+      while (performance.now() < until) { /* stall */ }
+      markFrameEvent('main', `injected stall ${stall} ms`, s0, performance.now())
+    }
   })
   const offEnd = addAfterEffect(() => {
-    main.push(performance.now() - t0); if (main.length > WINDOW) main.shift()
+    frameCost.lastMainMs = performance.now() - t0
+    main.push(frameCost.lastMainMs); if (main.length > WINDOW) main.shift()
     frameCost.mainMs = avg(main)
     // A test hook for the check: known GPU work inside the timed window, with no script cost to speak of.
     const loops = typeof window !== 'undefined' && window.__burnGpuLoops
@@ -89,6 +101,10 @@ export function installFrameCost(renderer) {
         L.n++; L.worstMs = Math.max(L.worstMs, e.duration); L.scriptMs += script
         L.last.push({ at: e.startTime, ms: e.duration, scriptMs: script, blockingMs: e.blockingDuration })
         if (L.last.length > 20) L.last.shift()
+        // On the frame timeline: the long frame, and its heaviest scripts by name (sourceFunctionName @ file).
+        const top = [...(e.scripts || [])].sort((a, b) => b.duration - a.duration).slice(0, 3)
+          .map((x) => `${x.sourceFunctionName || x.invoker || '?'}@${(x.sourceURL || '').split('/').pop().split('?')[0]} ${Math.round(x.duration)}ms`)
+        markFrameEvent('main', `long frame ${Math.round(e.duration)} ms (script ${Math.round(script)})${top.length ? ': ' + top.join(', ') : ''}`, e.startTime, e.startTime + e.duration)
       }
     })
     obs.observe({ type: 'long-animation-frame', buffered: false })

@@ -24,6 +24,7 @@
 import * as THREE from 'three'
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js'
 import { kitUrl } from '../lib/kitUrl.js'
+import { markTimeline } from '../lib/startupMarks.js'
 
 let _ktx2 = null
 /**
@@ -70,6 +71,7 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
       tex.magFilter = THREE.LinearFilter
       tex.needsUpdate = true
       tex.onUpdate?.()
+      markTimeline('decode', `RG page ${W}×${H} · ${url.split('/').pop()}`)
     }
     img.onerror = (err) => console.error(`[impostorTexture] ⛔ AO+depth page failed to load — ${url}. This layer will be blank.`, err)
     img.src = url
@@ -98,6 +100,7 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
       tex.wrapS = loaded.wrapS; tex.wrapT = loaded.wrapT
       tex.needsUpdate = true
       loaded.dispose()
+      markTimeline('ktx2', url.split('/').pop().split('?')[0])
     }, undefined, (err) => {
       // ⛔ LOUD. A missing page is a hole in the canopy; it must never read as "thin".
       console.error(`[impostorTexture] ⛔ KTX2 page failed to load — ${url}. `

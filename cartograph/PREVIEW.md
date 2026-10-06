@@ -71,7 +71,7 @@ The bolt-ons over the production render — the only things Preview adds that LS
 | **Time-of-day** | the shared `DawnTimeline` scrub — test the look at dawn / day / dusk / night | `TimeControl` |
 | **Shot picker** | Hero / Browse / Street, gated by production's adjacency graph (Hero ↔ Browse ↔ Street; no Hero↔Street edge) | `SHOT_ADJACENCY`, `ShotCamera` |
 | **Soft-reload** | bumps a React key to remount `CanvasContents`, forcing a fresh fetch of the baked artifacts (the cache-bust escape hatch) | `reloadKey` |
-| **Trigger bar / phoneBus** | shot picker + reload + bracketed span events (e.g. a camera transition) so a spike is attributable to a gesture | `TriggerBar.jsx`, `phoneBus.js` |
+| **Frame timeline** (the strip's recorder) | every presented-frame interval (rAF deltas, no GPU clock) with, on the same clock, the marks a hitch sits on: files, programs / uploads (`renderer.info` growing), KTX2 pages and main-thread decodes (`markTimeline`), slider input, long frames and their scripts; read back as p50 / p95 / max, frames over the target's budget, and each hitch (p50 + one budget) beside its marks (§4a) | `phoneBus.js#frameTimeline`, `TriggerBar.jsx` |
 
 The **Hero shot is the authored bounce**, replayed identically here, in Stage, and in production through the shared `src/preview/heroAnim.js` model — Preview is the QA mirror of exactly the camera the operator tuned (`STAGE.md §1`, `OPERATIONS.md` Stage ▸ Hero shot).
 
@@ -149,6 +149,8 @@ Two caveats that, unstated, would mislead (`PreviewApp.jsx#SceneCaveats`):
   toggle (rest · out · rest; the rests' spread is the row's noise: inside it reads ≈ 0, negative past it reads *unstable*),
   and tris / meshes / memory by share. Each row names its remedy: **deployment** (a switch above), **creative** (Stage),
   **engineering** (a ROADMAP row). Blind spots: off-main-thread work (KTX2), the driver's copies, images the browser holds.
+- **Frame timeline** — three scripted runs (cold into Hero · the Hero move at `?movieAt=` · a slider scrub), removal by `--off=`; an injected 50 ms stall must come back beside its mark. Headless, DPR 1: not the operator's eye.
+  ▶ `node checks/claims-frame-timeline-catches-a-stall.mjs [--town=] [--only=a|stall|c|b]` · `window.__frameTimeline()`
 - ▶ `node checks/claims-startup-marks-fire-in-order.mjs [--town=]` (order; a hidden ground marks nothing and reads 0
   VISIBLE; the ledger counts to the byte) · `node checks/claims-preview-frame-cost-splits.mjs` (each load moves only its
   own number). `window.__startup()` / `__residency()` / `__previewFrame()` return the data.

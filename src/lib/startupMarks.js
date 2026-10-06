@@ -57,3 +57,13 @@ export function readStartupMarks() {
 }
 
 export const isMarked = (id) => hasPerf && performance.getEntriesByName(MARK_PREFIX + id, 'mark').length > 0
+
+/**
+ * A TIMELINE MARK — an instant on Preview's frame timeline (src/preview/phoneBus.js), for work the renderer does that a
+ * hitch may sit on (a KTX2 page transcoded, an image decoded on the main thread). One `performance.mark('tl:<kind>')`,
+ * as cheap as the startup marks and with no Preview import, so the shared renderer can carry it into the Ward.
+ */
+export const TIMELINE_PREFIX = 'tl:'
+export function markTimeline(kind, label) {
+  if (hasPerf) performance.mark(TIMELINE_PREFIX + kind, { detail: label })
+}
