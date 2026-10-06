@@ -88,6 +88,7 @@ if (args.includes('--selftest')) {
     ['kerb nodes bind to crossings by identity',   Elow.records.length > 0 && Elow.census.positionNotRecorded >= 3],
     ['every landing is owned by its crossed road', owned.length > 0 && owned.every(Boolean) && owned.length === L.landed],
     ['a road that is no leg is refused',          Lx.landed === 0 && Lx.notOwner === L.landed + L.notOwner],
+    ['partial evidence against the norm is counted', (Lo.contradicted || 0) > 0 && (Lo.contradicted || 0) <= (Lo.unreadable || 0)],
     ['landed evidence reaches the painter',        ((Lo.bySource?.['osm:kerb'] || 0) + (Lo.unreadable || 0)) > 0],
     ['raised kerbs suppress the norm\'s cut',      (Up.bySource?.['osm:kerb'] || 0) > 0 && (Up.curbCuts || 0) < J],
     ['kit norm paints nothing',           (K.curbCuts || 0) === 0],
@@ -104,7 +105,7 @@ if (args.includes('--selftest')) {
   ]
   let bad = 0
   for (const [name, ok] of rows) { if (!ok) bad++; console.log(`  ${ok ? '✅' : '⛔'} ${name}`) }
-  console.log(`  (evidence trial: ${Elow.records.length} record(s) bound · landed ${L.landed}, refused ${L.notOwner} not-owner / ${L.offArc} off-arc / ${L.notJunction} not-junction / ${L.noHit} no-hit · lowered → ${Lo.bySource?.['osm:kerb'] || 0} corner(s) by evidence, ${Lo.unreadable || 0} unreadable · raised → ${Up.curbCuts} cut(s) of ${J})`)
+  console.log(`  (evidence trial: ${Elow.records.length} record(s) bound · landed ${L.landed}, refused ${L.notOwner} not-owner / ${L.offArc} off-arc / ${L.notJunction} not-junction / ${L.noHit} no-hit · lowered → ${Lo.bySource?.['osm:kerb'] || 0} corner(s) by evidence, ${Lo.unreadable || 0} unreadable (${Lo.contradicted || 0} contradict the norm) · raised → ${Up.curbCuts} cut(s) of ${J})`)
   console.log(`  (${scene}: ${J} junction corners · diagonal ${Dg.curbCutTally?.curbCuts} · perpendicular ${Pp.curbCutTally?.curbCuts} · authored ${authored?.curbCuts ?? '—'} · crosswalks ${Pp.crosswalkTally?.pairs} paired, ${Pp.crosswalkTally?.unpaired} unpaired, ${Pp.crosswalkTally?.ambiguous} ambiguous)`)
   console.log(bad ? `⛔ selftest: ${bad} wrong` : '✅ selftest: the painter places curb cuts by evidence, norm and authoring, on junctions only')
   process.exit(bad ? 1 : 0)
@@ -119,6 +120,7 @@ console.log(`  style from : ${Object.entries(T.bySource || {}).map(([k, v]) => `
 console.log(`  curb cuts  : ${T.curbCuts || 0} painted${T.short ? ` · ${T.short} short of their width` : ''}${T.conflict ? ` · ${T.conflict} legs disagree` : ''}`)
 if (T.noSource) console.log(`  ⛔ ${T.noSource} corners have no curb-cut source (norm 'none') — the ruled default, visible`)
 if (T.noDims) console.log(`  ⛔ ${T.noDims} authored curb cut(s) with no norm dimensions to draw them`)
+if (T.contradicted) console.log(`  ⛔ ${T.contradicted} corner(s) where partial evidence CONTRADICTS the norm — drawn by the norm; override if the record is right: ${(r.curbCutContradicted || []).slice(0, 8).map(c => `(${c.at[0].toFixed(0)}, ${c.at[1].toFixed(0)})`).join(' ')}`)
 if (T.unreadable) console.log(`  ${T.unreadable} corner(s) whose recorded cuts are unreadable — counted, drawn by the norm`)
 const C = r.crosswalkTally || {}, bad = badPairs(r)
 console.log(`  crosswalks : ${C.style && C.style !== 'none' ? `${C.pairs} (${C.style}, from ${C.source}) · ${C.unpaired} crossing(s) with no curb cut across · ${C.ambiguous} ambiguous` : `none (norm ${C.style ?? 'not frozen'})`}`)

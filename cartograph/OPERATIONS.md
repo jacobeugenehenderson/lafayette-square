@@ -120,7 +120,8 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
 - **Curb cuts** *(junction corners only; layer toggle "Curb Cuts", colour `curbCut`)* — the style comes from, finest first:
   the leg's `blockCustoms[…].curbCuts.{start,end}` (`none`·`diagonal`·`perpendicular`; ⚠️ no gesture writes it yet) →
   the town's RECORDED kerbs (`raw/osm_kerbs.json` ▶ `node cartograph/fetch-kerbs.mjs --scene=<scene>`; a drop mid-arc = diagonal,
-  at both ends = perpendicular, raised only = none, else *unreadable* → counted, to the norm; landed at the pour) →
+  at both ends = perpendicular, raised only = none, else *unreadable* → counted, to the norm, and listed by position when
+  it CONTRADICTS the norm, for an override; landed at the pour) →
   `cartograph/data/<scene>/norms.json` `{"curbCuts": {"style", "width", "warningDepth"}}` → the state record's `norms.curbCuts`
   → the kit's `none`. The pour throws on a style without its own width + warning depth (metres), and on a scene with no data directory. Read at derive, so a
   norm change needs a **skeleton pour**; the per-leg override is live. Every pour prints *"N corners have no curb-cut
