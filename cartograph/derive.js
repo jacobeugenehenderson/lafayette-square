@@ -33,7 +33,7 @@ import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mi
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
-import { buildCurbCutEvidence } from './curb-cut-evidence.mjs'
+import { buildCurbCutEvidence, buildCrosswalkEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
 import { coastRings } from './coastline.mjs'
 
@@ -5710,6 +5710,9 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       else { const c = E.census
         console.log(`    [curb cuts] kerb evidence (${E.fetchedAt}): ${c.nodes} kerb node(s) — ${Object.entries(c.byKind).map(([k, v]) => `${v} ${k}`).join(' · ')} → ${c.records} record(s) bound to a crossing`)
         console.log(`    [curb cuts]   unbound: ${c.notOnCrossing} on no crossing · ${c.notOneRoadNode} crossing not on exactly one road node · ${c.positionNotRecorded} on the crossing's road node (lowered, position not recorded) · ${c.roadNotInSkeleton} road in no chain`) }
+      // ⭐ THE RECORDED CROSSINGS — where a crosswalk IS (its station), never a cut's style. From osm.json; nothing to fetch.
+      const CX = ribbonsLayer.crosswalkEvidence = buildCrosswalkEvidence({ osmPath: join(RAW_DIR, 'osm.json'), skeletonPath: join(CLEAN_DIR, 'skeleton.json') })
+      console.log(`    [crosswalks] crossing evidence: ${CX.census.crossings} footway=crossing way(s) → ${CX.census.records} bound to the road they cross · unbound: ${CX.census.notOneRoadNode} not on exactly one road node · ${CX.census.roadNotInSkeleton} road in no chain`)
     }
     ribbonsLayer.protopolygon = {
       eps: 0.005,

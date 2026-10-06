@@ -127,8 +127,9 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   norm change needs a **skeleton pour**; the per-leg override is live. Every pour prints *"N corners have no curb-cut
   source"*. ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>` · a town whose frozen norm
   lags its `norms.json` (re-pour owed) ▶ `node checks/claims-the-pour-reads-the-towns-norm.mjs`
-- **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — square across the street, centred on the cut that serves them,
-  kerb to kerb; no curb cuts ⇒ none. Same ladder under `crosswalks`: `{"style": "lines"|"continental", "width", "line",
+- **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — square across the street, centred on the cut that serves them
+  (or on a recorded OSM crossing whose ends land in that corner's arc — read from `osm.json`, nothing to fetch), kerb to kerb;
+  no curb cuts ⇒ none. Same ladder under `crosswalks`: `{"style": "lines"|"continental", "width", "line",
   "farKerb"}` for one paint, or `{"style": "byCorner", "byCorner": {"diagonal": {…}, "perpendicular": {…}}, "farKerb"}` — the
   paint follows the corner's resolved cut style (metres; a missing size throws). `farKerb` — a T's far kerb: `none` (no
   crosswalk) or `cut` (a cut there, crossed to); required. The pour counts every crossing it does not draw, by cause

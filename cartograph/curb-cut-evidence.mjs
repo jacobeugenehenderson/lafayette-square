@@ -30,15 +30,11 @@ export const ROAD = new Set(['motorway', 'trunk', 'primary', 'secondary', 'terti
   'living_street', 'motorway_link', 'trunk_link', 'primary_link', 'secondary_link', 'tertiary_link', 'road', 'busway'])
 const key = (lon, lat) => `${lon},${lat}`
 
-/** Records + census for one scene. `kerbsPath` absent ⇒ `{ fetched: false }` — loud at the pour, never "none". */
-export function buildCurbCutEvidence({ osmPath, kerbsPath, skeletonPath }) {
-  if (!existsSync(kerbsPath)) return { fetched: false, file: kerbsPath, records: [], census: {} }
-  const K = JSON.parse(readFileSync(kerbsPath, 'utf8'))
-  if (!Array.isArray(K.nodes)) throw new Error(`${kerbsPath} has no \`nodes\` array — re-run fetch-kerbs.mjs`)
+// the raw OSM ways + the skeleton, indexed for identity binding (shared by both rungs)
+function loadOsm(osmPath, skeletonPath) {
   const ways = JSON.parse(readFileSync(osmPath, 'utf8')).ground?.highway
-  if (!Array.isArray(ways)) throw new Error(`${osmPath} has no ground.highway — kerb evidence cannot bind`)
+  if (!Array.isArray(ways)) throw new Error(`${osmPath} has no ground.highway — OSM evidence cannot bind`)
   const streets = JSON.parse(readFileSync(skeletonPath, 'utf8')).streets || []
-
   const roadAt = new Map()           // lon,lat → OSM ids of the road ways through that node
   for (const w of ways) if (ROAD.has(w.tags?.highway)) for (const c of w.coords)
     (roadAt.get(key(c.lon, c.lat)) || roadAt.set(key(c.lon, c.lat), new Set()).get(key(c.lon, c.lat))).add(w.osmId)
@@ -47,6 +43,22 @@ export function buildCurbCutEvidence({ osmPath, kerbsPath, skeletonPath }) {
     (crossingsAt.get(key(c.lon, c.lat)) || crossingsAt.set(key(c.lon, c.lat), []).get(key(c.lon, c.lat))).push({ way: w, i }))
   const skelOf = new Map()           // OSM way id → skeleton chain ids
   for (const s of streets) for (const id of s.sources || []) (skelOf.get(id) || skelOf.set(id, new Set()).get(id)).add(s.id)
+  // a crossing way's ONE interior road vertex and the chains it crosses; null + why when it has none, or several
+  const crossed = (C) => {
+    const inner = C.map((_, j) => j).filter(j => j > 0 && j < C.length - 1 && roadAt.has(key(C[j].lon, C[j].lat)))
+    if (inner.length !== 1) return { why: 'notOneRoadNode' }
+    const m = inner[0], S = [...new Set([...roadAt.get(key(C[m].lon, C[m].lat))].flatMap(id => [...(skelOf.get(id) || [])]))].sort()
+    return S.length ? { m, crossed: S } : { why: 'roadNotInSkeleton' }
+  }
+  return { ways, crossingsAt, crossed }
+}
+
+/** Records + census for one scene. `kerbsPath` absent ⇒ `{ fetched: false }` — loud at the pour, never "none". */
+export function buildCurbCutEvidence({ osmPath, kerbsPath, skeletonPath }) {
+  if (!existsSync(kerbsPath)) return { fetched: false, file: kerbsPath, records: [], census: {} }
+  const K = JSON.parse(readFileSync(kerbsPath, 'utf8'))
+  if (!Array.isArray(K.nodes)) throw new Error(`${kerbsPath} has no \`nodes\` array — re-run fetch-kerbs.mjs`)
+  const { crossingsAt, crossed } = loadOsm(osmPath, skeletonPath)
 
   const census = { nodes: K.nodes.length, byKind: {}, records: 0, notOnCrossing: 0, notOneRoadNode: 0, positionNotRecorded: 0, roadNotInSkeleton: 0 }
   const records = []
@@ -56,17 +68,36 @@ export function buildCurbCutEvidence({ osmPath, kerbsPath, skeletonPath }) {
     const on = crossingsAt.get(key(n.lon, n.lat))
     if (!on) { census.notOnCrossing++; continue }
     for (const { way, i } of on) {
-      const C = way.coords
-      const inner = C.map((_, j) => j).filter(j => j > 0 && j < C.length - 1 && roadAt.has(key(C[j].lon, C[j].lat)))
-      if (inner.length !== 1) { census.notOneRoadNode++; continue }
-      const m = inner[0]
+      const C = way.coords, X = crossed(C)
+      if (X.why) { census[X.why]++; continue }
+      const m = X.m
       if (i === m) { census.positionNotRecorded++; continue }
-      const crossed = [...new Set([...roadAt.get(key(C[m].lon, C[m].lat))].flatMap(id => [...(skelOf.get(id) || [])]))].sort()
-      if (!crossed.length) { census.roadNotInSkeleton++; continue }
       const idx = i > m ? C.slice(m, i + 1) : C.slice(i, m + 1).reverse()
-      records.push({ source: 'osm:kerb', osmId: n.osmId, kind, crossing: way.osmId, crossed, ray: idx.map(c => [c.x, c.z]) })
+      records.push({ source: 'osm:kerb', osmId: n.osmId, kind, crossing: way.osmId, crossed: X.crossed, ray: idx.map(c => [c.x, c.z]) })
     }
   }
   census.records = records.length
   return { fetched: true, file: kerbsPath, fetchedAt: K.fetchedAt ?? null, records, census }
+}
+
+// ⭐ CROSSINGS AS CROSSWALK EVIDENCE (`BRIEF-corner-ramps-and-kerb §3` step 3; Boz, 2026-10-06). A `footway=crossing` way
+// says where a crosswalk IS — its station along the street — never the cut's style (at a diagonal corner a square
+// crosswalk also lands near the arc's end). Each crossing with ONE interior road vertex gives two rays, road node →
+// each end; the freeze lands both on the frozen curb by ownership (`tileGround.js#landCrosswalkEvidence`).
+// ⛔ Counted by cause: notOneRoadNode (a divided road, a stub) · roadNotInSkeleton.
+export function buildCrosswalkEvidence({ osmPath, skeletonPath }) {
+  const { ways, crossed } = loadOsm(osmPath, skeletonPath)
+  const census = { crossings: 0, records: 0, notOneRoadNode: 0, roadNotInSkeleton: 0 }
+  const records = []
+  for (const w of ways) {
+    if (w.tags?.footway !== 'crossing') continue
+    census.crossings++
+    const C = w.coords, X = crossed(C)
+    if (X.why) { census[X.why]++; continue }
+    const xz = (c) => [c.x, c.z]
+    records.push({ source: 'osm:crossing', osmId: w.osmId, crossed: X.crossed,
+                   rays: [C.slice(0, X.m + 1).reverse().map(xz), C.slice(X.m).map(xz)] })
+  }
+  census.records = records.length
+  return { records, census }
 }

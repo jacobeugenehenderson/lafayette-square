@@ -4667,7 +4667,7 @@ export function classifyCornerLegs(a, b) {
 const _curbIndexMemo = new WeakMap()
 export function curbEdgeIndex(tiles) {
   if (_curbIndexMemo.has(tiles)) return _curbIndexMemo.get(tiles)
-  const G = 20, grid = new Map(), edges = [], ringId = new Map()
+  const G = 20, grid = new Map(), edges = [], ringId = new Map(), ringEdges = []
   let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity
   // ⛔ The disc cut makes several tiles of one block and every piece carries the SAME uncut `iaFull` (by design — see
   // the cut). A ring is indexed ONCE, by identity, and a caller skips its own ring by that identity: skipping by tile
@@ -4688,23 +4688,35 @@ export function curbEdgeIndex(tiles) {
       let s = 0; for (const i of span) { rec[i].s0 = s; s += rec[i].len }
       for (const i of span) { rec[i].L = s; rec[i].arc = arc[q]; rec[i].jx = t.iaJunction?.[si]?.[q] }
     }
+    ringEdges.push(rec)
     for (const e of rec) { edges.push(e)
       for (let x = Math.floor(Math.min(e.a[0], e.b[0]) / G); x <= Math.floor(Math.max(e.a[0], e.b[0]) / G); x++)
         for (let z = Math.floor(Math.min(e.a[1], e.b[1]) / G); z <= Math.floor(Math.max(e.a[1], e.b[1]) / G); z++)
           (grid.get(`${x},${z}`) || grid.set(`${x},${z}`, []).get(`${x},${z}`)).push(edges.length - 1) }
   }))
+  // walks the grid cells the segment crosses IN ORDER (Amanatides–Woo) and stops once the best hit lies before the
+  // current cell's exit — so a line extended across the whole drawing costs what its first few cells cost
   const firstHit = (P, Q, skipRing = null) => {
-    const ids = new Set()
-    for (let x = Math.floor(Math.min(P[0], Q[0]) / G); x <= Math.floor(Math.max(P[0], Q[0]) / G); x++)
-      for (let z = Math.floor(Math.min(P[1], Q[1]) / G); z <= Math.floor(Math.max(P[1], Q[1]) / G); z++)
-        for (const id of grid.get(`${x},${z}`) || []) ids.add(id)
+    const r = [Q[0] - P[0], Q[1] - P[1]]
+    let cx = Math.floor(P[0] / G), cz = Math.floor(P[1] / G)
+    const ex = Math.floor(Q[0] / G), ez = Math.floor(Q[1] / G)
+    const sx = Math.sign(r[0]), sz = Math.sign(r[1])
+    const dX = sx ? Math.abs(G / r[0]) : Infinity, dZ = sz ? Math.abs(G / r[1]) : Infinity
+    let tX = sx ? ((sx > 0 ? (cx + 1) * G : cx * G) - P[0]) / r[0] : Infinity
+    let tZ = sz ? ((sz > 0 ? (cz + 1) * G : cz * G) - P[1]) / r[1] : Infinity
     let best = null
-    for (const id of ids) { const e = edges[id]
-      if (skipRing != null && e.ring === skipRing) continue
-      const r = [Q[0] - P[0], Q[1] - P[1]], s = [e.b[0] - e.a[0], e.b[1] - e.a[1]], den = r[0] * s[1] - r[1] * s[0]
-      if (Math.abs(den) < 1e-12) continue
-      const d = [e.a[0] - P[0], e.a[1] - P[1]], t = (d[0] * s[1] - d[1] * s[0]) / den, u = (d[0] * r[1] - d[1] * r[0]) / den
-      if (t >= 0 && t <= 1 && u >= 0 && u <= 1 && (!best || t < best.t)) best = { t, u, e, at: [P[0] + r[0] * t, P[1] + r[1] * t] } }
+    const seen = new Set()
+    for (let guard = 0; guard < 1e7; guard++) {
+      for (const id of grid.get(`${cx},${cz}`) || []) { if (seen.has(id)) continue; seen.add(id); const e = edges[id]
+        if (skipRing != null && e.ring === skipRing) continue
+        const s = [e.b[0] - e.a[0], e.b[1] - e.a[1]], den = r[0] * s[1] - r[1] * s[0]
+        if (Math.abs(den) < 1e-12) continue
+        const d = [e.a[0] - P[0], e.a[1] - P[1]], t = (d[0] * s[1] - d[1] * s[0]) / den, u = (d[0] * r[1] - d[1] * r[0]) / den
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1 && (!best || t < best.t)) best = { t, u, e, at: [P[0] + r[0] * t, P[1] + r[1] * t] } }
+      if (best && best.t <= Math.min(tX, tZ)) break        // nothing in a later cell can be nearer
+      if (cx === ex && cz === ez) break
+      if (tX < tZ) { if (tX > 1) break; cx += sx; tX += dX } else { if (tZ > 1) break; cz += sz; tZ += dZ }
+    }
     return best
   }
   const owned = (e, S, notSide) => {
@@ -4714,7 +4726,7 @@ export function curbEdgeIndex(tiles) {
     return !!R && R.skelId === S && R.side !== notSide
   }
   const ringOf = (ti, si) => ringId.get(tiles[ti]?.iaFull?.[si])
-  const X = { edges, firstHit, owned, ringOf, reach: Math.hypot(maxX - minX, maxZ - minZ) || 0 }
+  const X = { edges, ringEdges, firstHit, owned, ringOf, reach: Math.hypot(maxX - minX, maxZ - minZ) || 0 }
   _curbIndexMemo.set(tiles, X)
   return X
 }
@@ -4749,6 +4761,46 @@ export function landCurbCutEvidence(tiles, evidence) {
     ;(t.curbCutEvidence ||= []).push({ si: e.si, arc: e.arc, jx: e.jx, f: (e.s0 + hit.u * e.len) / e.L, kind: R.kind, source: R.source, osmId: R.osmId, crossed: R.crossed })
   }
   return { census, fetched: true }
+}
+
+// ══ THE RECORDED CROSSINGS, LANDED (`cartograph/curb-cut-evidence.mjs#buildCrosswalkEvidence`) ═════════════════════
+// ⭐ Each crossing's two rays (its road node → each end) walk to the first frozen curb they meet, extended along their
+// own line, and each landing must front the crossed street (ownership). The two must land on OPPOSITE sides of it.
+// Each END is stamped on the tile whose ring it met: `crosswalkEnds: [{ osmId, S, side, si, arc, kind, at }]`, where
+// `kind` is 'arc' (inside a licensed arc span) · 'nearTangent' (the leg edge touching an arc — counted, never widened
+// into the arc, Boz 2026-10-06) · 'leg'. Before the disc cut, so every piece of a block carries its block's ends.
+// ⛔ Counted by cause: noHit · notOwned · sameSide.
+export function landCrosswalkEvidence(tiles, evidence) {
+  const census = { records: 0, landed: 0, noHit: 0, notOwned: 0, sameSide: 0, ends: { arc: 0, nearTangent: 0, leg: 0 } }
+  if (!evidence?.records) return { census }
+  const X = curbEdgeIndex(tiles)
+  const sideOf = (e, S) => { const T = tiles[e.ti]
+    if (e.inArc) return Number.isInteger(e.jx) ? (T.junctions?.[e.jx]?.legs || []).find(l => l?.skelId === S)?.side ?? null : null
+    const R = T.runs?.[T.iaStamp?.[e.si]?.[e.q]]; return R?.skelId === S ? R.side : null }
+  const kindOf = (e) => { if (e.inArc) return 'arc'
+    const R = X.ringEdges[e.ring], n = R.length
+    return (R[(e.q + 1) % n].inArc || R[(e.q - 1 + n) % n].inArc) ? 'nearTangent' : 'leg' }
+  for (const R of evidence.records) {
+    census.records++
+    const ends = []
+    for (const ray of R.rays) {
+      let hit = null
+      for (let i = 0; i + 1 < ray.length && !hit; i++) hit = X.firstHit(ray[i], ray[i + 1])
+      if (!hit && ray.length >= 2) { const A = ray[ray.length - 2], B = ray[ray.length - 1], l = Math.hypot(B[0] - A[0], B[1] - A[1])
+        if (l > 0) hit = X.firstHit(B, [B[0] + (B[0] - A[0]) / l * X.reach, B[1] + (B[1] - A[1]) / l * X.reach]) }
+      if (!hit) break
+      const S = R.crossed.find(c => sideOf(hit.e, c) != null)
+      if (S == null) { ends.push(null); break }
+      ends.push({ e: hit.e, at: hit.at, S, side: sideOf(hit.e, S) })
+    }
+    if (ends.length < 2 && !ends.includes(null)) { census.noHit++; continue }
+    if (ends.includes(null)) { census.notOwned++; continue }
+    if (ends[0].S !== ends[1].S || ends[0].side === ends[1].side) { census.sameSide++; continue }
+    census.landed++
+    for (const x of ends) { const k = kindOf(x.e); census.ends[k]++
+      ;(tiles[x.e.ti].crosswalkEnds ||= []).push({ osmId: R.osmId, S: x.S, side: x.side, si: x.e.si, arc: x.e.inArc ? x.e.arc : null, kind: k, at: x.at }) }
+  }
+  return { census }
 }
 
 // ⭐ ONE CORNER'S STYLE FROM ITS LANDINGS (`§0a` item 8), position as a fraction of the arc's own span:
@@ -5580,13 +5632,14 @@ let _staleBandsWarned = false
 // sized by the curb-cut norm) and the crosswalk to it.
 // ⭐ The paint is the norm's: one style for all, or `byCorner` — the paint FOLLOWS THE CORNER's resolved cut style. A
 // pair whose two corners resolved differently is COUNTED (`styleDisagrees`), never picked.
-// `pairs`: [cut, cut across | null (a T's far kerb), chain, near end, far end, street direction].
+// `pairs`: [cut, cut across | null (a T's far kerb), chain, near end, far end, street direction, station from 'cut' | 'crossing'].
 // ⛔ Everything that draws nothing is counted by cause; nothing is resolved by nearness (`A15`).
 function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
   const tally = { crosswalks: 0, pairs: 0, farKerbCut: 0, farKerbNone: 0, farKerbNoDims: 0, farKerbStyleAmbiguous: 0,
-    farCornerNoCut: 0, ambiguous: 0, noNode: 0, noFarKerb: 0, apexesApart: 0, apartAt: [], endsNotOwned: 0, styleDisagrees: 0, noCurbCut: 0, byPaint: {},
+    farCornerNoCut: 0, ambiguous: 0, noNode: 0, noFarKerb: 0, apexesApart: 0, apartAt: [], endsNotOwned: 0, byEvidence: 0, evidenceAmbiguous: 0, evidenceEndsNotOwned: 0, styleDisagrees: 0, noCurbCut: 0, byPaint: {},
     style: norm?.style ?? null, source: norm?.source ?? null }
-  const rings = [], cuts = [], pairs = []
+  const rings = [], cutMasks = [], pairs = []
+  let cuts = []
   if (!norm || norm.style === 'none') return { rings, cuts, pairs, tally }
   if (!recs.length) { tally.noCurbCut = 1; return { rings, cuts, pairs, tally } }
   const X = curbEdgeIndex(tiles), far = X.reach
@@ -5614,6 +5667,19 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
       if (h && X.owned(h.e, e.S, e.side)) return { n, h } }
     return null }
   const byNode = new Map(); for (const e of E) (byNode.get(e.r.node) || byNode.set(e.r.node, []).get(e.r.node)).push(e)
+  // ⭐ the RECORDED crossings (`landCrosswalkEvidence`): by street, each with its two ends on the frozen curb. A crossing
+  // whose ends sit in the serving corner's arc (and, for a pair, in its partner's) gives the crosswalk's STATION.
+  const crossings = new Map()
+  tiles.forEach((t, ti) => (t?.crosswalkEnds || []).forEach(x => {
+    const c = crossings.get(x.osmId) || crossings.set(x.osmId, { S: x.S, ends: new Map() }).get(x.osmId)
+    c.ends.set(x.side, { ...x, ring: X.ringOf(ti, x.si) }) }))
+  const crossingsOn = new Map(); for (const c of crossings.values()) (crossingsOn.get(c.S) || crossingsOn.set(c.S, []).get(c.S)).push(c)
+  const evOf = (e, test) => { const r = []
+    for (const c of crossingsOn.get(e.S) || []) {
+      const mine = c.ends.get(e.side), theirs = c.ends.get(otherSide(e.side))
+      if (mine && theirs && mine.kind === 'arc' && mine.ring === X.ringOf(e.r.tile, e.r.si) && mine.arc === e.r.arc && test(theirs)) r.push([mine.at, theirs.at]) }
+    if (r.length > 1) tally.evidenceAmbiguous++
+    return r.length === 1 ? r[0] : null }
   const seen = new Set()
   for (const e of E) {
     let c = byNode.get(e.r.node).filter(x => x.S === e.S && x.side !== e.side && x.ri !== e.ri)
@@ -5632,10 +5698,13 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
       // ⛔ RULED (Jacob, 2026-10-06): two cuts further apart along the street than the crosswalk is wide cannot both lie
       // inside ONE square crosswalk (a skewed or jogged crossing) — counted, its corners printed, NOT drawn
       if (Math.abs(a1 - a2) > paintOf(e.r.style).width) { tally.apexesApart++; tally.apartAt.push({ at: [(P1[0] + P2[0]) / 2, (P1[1] + P2[1]) / 2], street: e.S, gap: Math.round(Math.abs(a1 - a2) * 10) / 10 }); continue }
-      const sh = (a1 + a2) / 2 - (M0[0] * d[0] + M0[1] * d[1]), M = [M0[0] + d[0] * sh, M0[1] + d[1] * sh]
+      const sh = (a1 + a2) / 2 - (M0[0] * d[0] + M0[1] * d[1])
+      const ev = evOf(e, (x) => x.kind === 'arc' && x.ring === X.ringOf(c[0].r.tile, c[0].r.si) && x.arc === c[0].r.arc)
+      const M = ev ? [(ev[0][0] + ev[1][0]) / 2, (ev[0][1] + ev[1][1]) / 2] : [M0[0] + d[0] * sh, M0[1] + d[1] * sh]
+      if (ev) tally.byEvidence++
       const hN = X.firstHit(M, [M[0] - n[0] * far, M[1] - n[1] * far]), hF = X.firstHit(M, [M[0] + n[0] * far, M[1] + n[1] * far])
       if (!hN || !hF || !X.owned(hN.e, e.S, otherSide(e.side)) || !X.owned(hF.e, e.S, e.side)) { tally.endsNotOwned++; continue }
-      pairs.push([e.ri, c[0].ri, e.S, hN.at, hF.at, d]); tally.pairs++
+      pairs.push([e.ri, c[0].ri, e.S, hN.at, hF.at, d, ev ? 'crossing' : 'cut']); tally.pairs++
       paint(hN.at, hF.at, paintOf(e.r.style))
       continue
     }
@@ -5646,15 +5715,23 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
     if (norm.farKerb !== 'cut') { tally.farKerbNone++; continue }
     const w = cutNorm?.width, wd = cutNorm?.warningDepth
     if (!(w > 0 && wd > 0)) { tally.farKerbNoDims++; continue }
-    const F = A.h.at, d = e.sv.dir, n = A.n
+    const d = e.sv.dir, n = A.n
+    // the recorded crossing, if one leaves this corner's arc for the far kerb, sets the station; else the cut does
+    const ev = evOf(e, (x) => x.kind !== 'arc')
+    let F = A.h.at, N0 = e.r.at
+    if (ev) { const M = [(ev[0][0] + ev[1][0]) / 2, (ev[0][1] + ev[1][1]) / 2]
+      const hN = X.firstHit(M, [M[0] - n[0] * far, M[1] - n[1] * far]), hF = X.firstHit(M, [M[0] + n[0] * far, M[1] + n[1] * far])
+      if (hN && hF && X.owned(hN.e, e.S, otherSide(e.side)) && X.owned(hF.e, e.S, e.side)) { N0 = hN.at; F = hF.at; tally.byEvidence++ }
+      else tally.evidenceEndsNotOwned++ }
     // the far cut: a slice of the walk — w along the kerb, from the kerb face through the curb and `warningDepth` in
     const mask = [[F[0] - d[0] * w / 2, F[1] - d[1] * w / 2], [F[0] + d[0] * w / 2, F[1] + d[1] * w / 2],
                   [F[0] + d[0] * w / 2 + n[0] * (cw + wd), F[1] + d[1] * w / 2 + n[1] * (cw + wd)], [F[0] - d[0] * w / 2 + n[0] * (cw + wd), F[1] - d[1] * w / 2 + n[1] * (cw + wd)]]
-    const strip = walk.length ? intersectRings([mask], walk) : []
-    if (strip.length) cuts.push(...strip)
-    pairs.push([e.ri, null, e.S, e.r.at, F, d]); tally.farKerbCut++
-    paint(e.r.at, F, paintOf(e.r.style))
+    cutMasks.push(mask)
+    pairs.push([e.ri, null, e.S, N0, F, d, N0 === e.r.at ? 'cut' : 'crossing']); tally.farKerbCut++
+    paint(N0, F, paintOf(e.r.style))
   }
+  // ONE intersection for every far-kerb cut: per-cut against the whole town's walk was most of a pour's Clipper time
+  if (cutMasks.length && walk.length) cuts = intersectRings(unionRings(cutMasks), walk)
   return { rings, cuts, pairs, tally }
 }
 
@@ -9458,6 +9535,12 @@ export function buildTileGround(ribbons, opts = {}) {
           else { const c = landCurbCutEvidence(protoShapeTiles, E).census
             console.log(`[tileGround][curb cuts] kerb evidence: ${c.landed} of ${c.records} record(s) landed on a junction corner owned by the road they cross · ${c.noHit} met no curb · ${c.offArc} landed off any arc · ${c.notJunction} on a bend/unknown corner · ${c.notOwner} on a corner the crossed road is not a leg of`) }
         }
+        {
+          const CX = ribbons?.crosswalkEvidence
+          if (!CX) console.warn(`[tileGround][crosswalks] ⛔ no crossing evidence frozen in this pour (poured before it) — re-pour.`)
+          else { const c = landCrosswalkEvidence(protoShapeTiles, CX).census
+            console.log(`[tileGround][crosswalks] crossing evidence: ${c.landed} of ${c.records} crossing(s) landed on both kerbs of the street they cross (ends: ${c.ends.arc} on a corner arc · ${c.ends.nearTangent} on the leg edge touching an arc · ${c.ends.leg} on a leg) · ${c.noHit} met no curb · ${c.notOwned} met a kerb of another street · ${c.sameSide} both ends on one side`) }
+        }
         // ⭐⭐⭐ AND NOW THE CIRCLE IS STAMPED — LAST, ON THE RESULT. Jacob, 2026-09-06: "I thought
         // the decision was to build the whole grid flat and then stamp out the circle last."
         // Everything above ran on WHOLE blocks: ② offset a full block, ③ struck full bands. Only
@@ -9817,7 +9900,7 @@ export function buildTileGround(ribbons, opts = {}) {
     crosswalk = S.crosswalk || []; crosswalkPairs = S.crosswalkPairs || []; crosswalkTally = S.crosswalkTally || null
     if (crosswalkTally && crosswalkTally.style && crosswalkTally.style !== 'none') {
       const C = crosswalkTally
-      console.log(`[tileGround][crosswalks] ${C.crosswalks} crosswalk(s), square across the street (${C.style}${C.style === 'byCorner' ? ': ' + Object.entries(C.byPaint).map(([k, v]) => `${v} ${k}`).join(' · ') : ''}, from ${C.source}) — ${C.pairs} between two cuts · ${C.farKerbCut} to a T's far-kerb cut`)
+      console.log(`[tileGround][crosswalks] ${C.crosswalks} crosswalk(s), square across the street (${C.style}${C.style === 'byCorner' ? ': ' + Object.entries(C.byPaint).map(([k, v]) => `${v} ${k}`).join(' · ') : ''}, from ${C.source}) — ${C.pairs} between two cuts · ${C.farKerbCut} to a T's far-kerb cut · ${C.byEvidence} placed by a recorded crossing${C.evidenceAmbiguous ? ` · ${C.evidenceAmbiguous} with several recorded crossings (cut-centred instead)` : ''}${C.evidenceEndsNotOwned ? ` · ${C.evidenceEndsNotOwned} recorded station whose line misses the kerbs (cut-centred instead)` : ''}`)
       if (C.noCurbCut) console.warn(`[tileGround][crosswalks] ⛔ the norm asks for crosswalks but NO curb cut is painted — a crosswalk is served by a cut, so there are none.`)
       if (C.farKerbNone) console.warn(`[tileGround][crosswalks] ${C.farKerbNone} crossing(s) land on a T's far kerb and the norm says farKerb 'none' — no crosswalk drawn.`)
       if (C.farKerbNoDims) console.warn(`[tileGround][crosswalks] ⛔ ${C.farKerbNoDims} far-kerb cut(s) asked for, but the curb-cut norm gives no width/warningDepth — not drawn.`)
