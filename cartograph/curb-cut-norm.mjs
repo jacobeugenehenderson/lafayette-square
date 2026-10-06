@@ -6,6 +6,7 @@
 //   3. the TOWN's norm:   cartograph/data/<scene>/norms.json   → { "curbCuts": { … } }
 //   4. the STATE's norm:  cartograph/states/<st>.mjs           → norms.curbCuts
 //   5. the kit:           'none'
+// The same ladder carries the town's CROSSWALKS and its KERB (height + the cut's ramp/flare slopes), each on its own rung.
 // ⛔ The kit default is NONE, never a style: any concrete style is a constant that is right for some town and wrong
 //   for the next (`CLAUDE.md` Layer 0, Class D). It is made LOUD instead — every pour prints how many junction
 //   corners have no curb-cut source.
@@ -60,6 +61,23 @@ function validateCrosswalk(n, where) {
   return { style: 'byCorner', byCorner: { diagonal: validatePaint(bc.diagonal, `${where} byCorner.diagonal`), perpendicular: validatePaint(bc.perpendicular, `${where} byCorner.perpendicular`) }, farKerb: n.farKerb }
 }
 
+// ⭐ THE KERB — its HEIGHT is a jurisdiction value on the same ladder (`BRIEF-corner-ramps-and-kerb §3` step 5, ruled
+// 2026-10-06). Kit = 0: a town that authors nothing stays one flat plane. ⛔ Never coupled to the curb's WIDTH, which is
+// the Look's cosmetic `curbWidth` slider. A cut ramps h → 0: `rampSlope` (along the ramp) and `flareSlope` (its sides)
+// are the jurisdiction's, given as "rise:run" — no kit default; the BAKE throws when a town with h > 0 has cuts and no
+// slopes. ⚠️ GAP: there is no NATIONAL rung (ADA is federal), so a US town names its slopes itself, citing ADA.
+function validateKerb(n, where) {
+  if (!n || typeof n !== 'object') throw new Error(`${where}: a kerb norm must be an object { height, rampSlope, flareSlope }`)
+  if (!(Number.isFinite(n.height) && n.height >= 0)) throw new Error(`${where}: kerb \`height\` must be metres (>= 0)`)
+  const out = { height: n.height }
+  for (const k of ['rampSlope', 'flareSlope']) if (n[k] != null) {
+    const m = /^\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*$/.exec(String(n[k]))
+    if (!m || !(+m[1] > 0 && +m[2] > 0)) throw new Error(`${where}: kerb \`${k}\` must be "rise:run" (e.g. "1:12"), got ${JSON.stringify(n[k])}`)
+    out[k] = +m[1] / +m[2]; out[k + 'Text'] = `${m[1]}:${m[2]}`
+  }
+  return out
+}
+
 function validate(n, where) {
   if (!n || typeof n !== 'object') throw new Error(`${where}: a curb-cut norm must be an object { style, width, warningDepth }`)
   if (!CURB_CUT_STYLES.includes(n.style)) throw new Error(`${where}: curb-cut style ${JSON.stringify(n.style)} is not one of ${CURB_CUT_STYLES.join(', ')}`)
@@ -72,7 +90,7 @@ function validate(n, where) {
   return (n.style === 'none' && !dims.length) ? { style: 'none' } : { style: n.style, width: n.width, warningDepth: n.warningDepth }
 }
 
-function resolveKind(kind, check, scene, state) {
+function resolveKind(kind, check, scene, state, kit = { style: 'none' }) {
   const p = join(DATA_ROOT, scene, 'norms.json')
   if (existsSync(p)) {
     let j; try { j = JSON.parse(readFileSync(p, 'utf8')) } catch (e) { throw new Error(`${p} is not valid JSON: ${e.message}`) }
@@ -82,7 +100,7 @@ function resolveKind(kind, check, scene, state) {
     const rec = stateRecord(state, `${scene}: `)
     if (rec.norms?.[kind]) return { ...check(rec.norms[kind], `cartograph/states/${state.toLowerCase()}.mjs norms.${kind}`), source: `state:${rec.code}@${rec.version}` }
   }
-  return { style: 'none', source: 'kit' }
+  return { ...kit, source: 'kit' }
 }
 
 /** The town's curb-cut norm and the rung it came from (`source`: 'scene' · `state:<CODE>@<version>` · 'kit'), with its
@@ -91,5 +109,6 @@ export function resolveCurbCutNorm(scene, state) {
   // a scene with no data directory is a wrong name or a wrong root — never a town with no norm
   if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveCurbCutNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
   return { ...resolveKind('curbCuts', validate, scene, state),
-           crosswalks: resolveKind('crosswalks', validateCrosswalk, scene, state) }
+           crosswalks: resolveKind('crosswalks', validateCrosswalk, scene, state),
+           kerb: resolveKind('kerb', validateKerb, scene, state, { height: 0 }) }
 }

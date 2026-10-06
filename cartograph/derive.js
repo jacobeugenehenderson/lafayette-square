@@ -5702,6 +5702,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null)
       const N = ribbonsLayer.curbCutNorm
       console.log(`    [curb cuts] norm: ${N.style}${N.style !== 'none' ? ` (width ${N.width} m, warning ${N.warningDepth} m)` : ''} — from ${N.source}`)
+      console.log(`    [kerb] height ${N.kerb.height} m${N.kerb.height > 0 ? ` · ramp ${N.kerb.rampSlopeText ?? '⛔ NOT GIVEN'} · flare ${N.kerb.flareSlopeText ?? '⛔ NOT GIVEN'}` : ' (one flat plane)'} — from ${N.kerb.source}`)
       // ⭐ THE RECORDED CUTS — the rung above the norm (`cartograph/curb-cut-evidence.mjs`), frozen here and landed on
       // the curb at the freeze. ⛔ No kerb file is "not fetched", said out loud — never a town with no kerbs.
       const E = ribbonsLayer.curbCutEvidence = buildCurbCutEvidence({ osmPath: join(RAW_DIR, 'osm.json'),

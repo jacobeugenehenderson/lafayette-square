@@ -127,6 +127,9 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   norm change needs a **skeleton pour**; the per-leg override is live. Every pour prints *"N corners have no curb-cut
   source"*. ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>` · a town whose frozen norm
   lags its `norms.json` (re-pour owed) ▶ `node checks/claims-the-pour-reads-the-towns-norm.mjs`
+- **Kerb height** — `norms.json` → `{"kerb": {"height", "rampSlope", "flareSlope"}}` (metres; slopes as `"rise:run"`, the
+  jurisdiction's — LS: 0.15, ADA 1:12 / 1:10). Kit = 0, one flat plane. Never tied to the Look's `curbWidth`. Read at derive
+  (skeleton pour); drawn by the ground bake. ⚠️ The bake that raises it is not built yet (`BRIEF-corner-ramps-and-kerb` step 5).
 - **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — square across the street, centred on the cut that serves them
   (or on a recorded OSM crossing whose ends land in that corner's arc — read from `osm.json`, nothing to fetch), kerb to kerb;
   no curb cuts ⇒ none. Same ladder under `crosswalks`: `{"style": "lines"|"continental", "width", "line",

@@ -52,10 +52,11 @@ for (const s of scenes) {
   const j = JSON.parse(readFileSync(p, 'utf8'))
   const r = got[s]
   if (r.error) { fail(`${s}: resolver threw — ${r.error}`); continue }
-  for (const [kind, n] of [['curbCuts', r.norm], ['crosswalks', r.norm.crosswalks]]) {
+  for (const [kind, n] of [['curbCuts', r.norm], ['crosswalks', r.norm.crosswalks], ['kerb', r.norm.kerb]]) {
     if (!j[kind]) continue
-    if (n.source !== 'scene' || n.style !== j[kind].style) fail(`${s}: norms.json ${kind} = ${j[kind].style}, the pour reads ${n.style} from ${n.source}`)
-    else console.log(`  ✅ ${s}: ${kind} ${n.style} from scene`)
+    if (!n) { fail(`${s}: norms.json sets ${kind}, the resolver returns none at all`); continue }
+    if (n.source !== 'scene' || (kind === 'kerb' ? n.height !== j[kind].height : n.style !== j[kind].style)) { const v = (o) => kind === 'kerb' ? `${o.height} m` : o.style; fail(`${s}: norms.json ${kind} = ${v(j[kind])}, the pour reads ${v(n)} from ${n.source}`) }
+    else console.log(`  ✅ ${s}: ${kind} ${kind === 'kerb' ? n.height + ' m' : n.style} from scene`)
   }
 }
 
@@ -73,7 +74,7 @@ for (const s of scenes) {
   const frozen = tiles.find(t => t?.curbCutNorm)?.curbCutNorm ?? null
   const now = got[s].norm
   if (!frozen) { stale++; console.log(`  🟥 ${s}: no frozen curbCutNorm — poured before the norm was frozen. STALE: re-pour owed`); continue }
-  const same = strip(frozen) === strip(now) && strip(frozen.crosswalks) === strip(now.crosswalks)
+  const same = strip(frozen) === strip(now) && strip(frozen.crosswalks) === strip(now.crosswalks) && strip(frozen.kerb) === strip(now.kerb)
   if (same) console.log(`  ✅ ${s}: ${frozen.style} (${frozen.source})`)
   else { stale++; console.log(`  🟥 ${s}: frozen ${frozen.style} (${frozen.source}), resolver now ${now.style} (${now.source}). STALE: re-pour owed`) }
 }
