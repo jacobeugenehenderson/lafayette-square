@@ -31,6 +31,7 @@ import { expresswaySpeeds } from './speedContext.mjs'
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon, classifyHighwayBlocks, rampTerminalFlares } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources, undeclaredMessage } from './sources.js'
+import { resolveRampNorm } from './ramp-norm.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
 import { coastRings } from './coastline.mjs'
 
@@ -5692,6 +5693,14 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     })()
     protoWaterRings = MP.waterRings || null
     protoWaterMeta = _coast.meta || null
+    // ⭐ THE TOWN'S RAMP NORM, resolved scene → state → kit ('none') and frozen with its rung, so Section paints a
+    // junction corner's ramps live off the shape without reaching for a state record (`cartograph/ramp-norm.mjs`).
+    {
+      const src = readSources(SCENE)
+      ribbonsLayer.rampNorm = resolveRampNorm(SCENE, src.declared ? src.state : null)
+      const N = ribbonsLayer.rampNorm
+      console.log(`    [ramps] norm: ${N.style}${N.style !== 'none' ? ` (width ${N.width} m, warning ${N.warningDepth} m)` : ''} — from ${N.source}`)
+    }
     ribbonsLayer.protopolygon = {
       eps: 0.005,
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
