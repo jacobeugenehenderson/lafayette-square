@@ -262,7 +262,7 @@ Membership is authored on the Extent tool. **⭐ The POLYGON is the boundary; th
 > **`cartograph/membership.mjs`** — `createMembershipFilter({nb, activate, hide}).decide(id, ring)` — and
 > all three consumers call it (`pipeline.js` pre-clip · `pipeline.js` post-derive → `map.json` · 
 > `bake-buildings.js`). It used to be hand-copied three times under a comment claiming they matched;
-> they didn't (`ROADMAP A08`). ⚠️ **A `<3`-vertex ring is UNDECIDABLE** — no trustworthy centroid, so
+> they didn't (`ROADMAP A08`, closed → `cartograph/_archive/ROADMAP-closed-2026-10-06.md`). ⚠️ **A `<3`-vertex ring is UNDECIDABLE** — no trustworthy centroid, so
 > `hide`/`activate` still apply (id-keyed) and past that the building is **kept, counted, and reported
 > loudly**. Membership is not a data-quality culler; a malformed footprint is an **intake** defect.
 >
