@@ -11,6 +11,16 @@ evict-when: every town with water carries the shore median as a baked, inspectab
 ask Jacob to `/rename`). **Agent: FRESH.** The shore's earlier agents (Strand, Revetment, Loam) are gone, and this brief
 changes the representation they built on, so a warm context would carry the old frame.
 
+> ### STATE 2026-10-05 (Boz, after the final v2 bake): the instrument is built; its first real run is NOT clean
+> Built by Shingle: shore v2 (contour-traced waterline, `1502515e`), sand painted into the ground (`727e69ab`, `5759fea1`),
+> the gap-finder `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs` (`77123e98`). First run on the v2 slab, `--every=4`:
+> - **Huron:** mutation ✓ (1701 views with shore+bed hidden). ⛔ **32 views reach the sky (9,545 px)**; one dominates: 9,125 px
+>   near-from-water at station (-2402.5, -2016.2) → (-2386, -2008.4); a cluster of 20–98 px near (1356…1432, -303…-327).
+> - **Provincetown:** ⛔ **the instrument cannot see this shore**: its mutation found 1142 gap views, NOT more than as drawn (1195);
+>   near-from-water 1070/2523 views reach the sky (20.6M px), which looks systematic (water or tidal flats), so the result says nothing yet.
+> - Not measured: foundation risers. ⇒ **Next agent:** (1) what the 9,125 px Huron gap is; (2) why the Provincetown walk can't see
+>   its own shore. Measure-only first. Also: Provincetown's `ground-shore` costs 88 min (ROADMAP).
+
 ## The ask (Jacob, 2026-10-04, verbatim)
 
 > *"The shoreline is a 2D concept. The protopolygon already splits chains into two sided chains; I am bringing that up so
