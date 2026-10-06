@@ -250,44 +250,23 @@ export const DIRMOON_FIELDS  = [{ key: 'value', label: 'Moon light',  min: 0, ma
 export const DIRMOON_FLAT_DEFAULTS  = { value: 1.0 }
 export const DIRMOON_FIELD_KEYS  = ['value']
 
-// Neon glow (Sky & Light, ATMOSPHERE group) — group of 3 sharing one TOD
-// timeline. Each is a 0–1 float multiplied into the corresponding mask in
-// NeonBands' fragment shader. Hue per place comes from the category color
-// (per-instance attribute, not animated). See HANDOFF-neon.md §"Render
-// model — three coupled emissive layers". Defaults are flat-on (1/1/1)
-// per HANDOFF-neon.md: at Night the canonical curve has all three full.
-// Shipped Looks author 1/1/1 flat and rely on LafayetteScene's `openPlaces` business-hours filter to
-// gate visibility — neon shines all day in the shader, but only the
-// open-this-minute places enter the merged mesh. Operator can still
-// animate a slower warm-up via TOD slots; the flat default matches
-// observed authoring intent rather than the earlier "ship dark" stance.
-// Neon — Gaussian intensity masks (TOD-animatable) + emissive
-// brightness multiplier + tube radius. The shader's three Gaussian
-// widths (core/tube/bleed) paint the realistic neon look authored in
-// the 2026-05-13 work session; `emissive` is the master brightness
-// lever. `tubeRadius` (added 2026-05-18) is operator-authored geometry
-// — animatable too, though each authored slot triggers a merged-mesh
-// rebuild rather than a shader uniform write (see neonState.js + the
-// NeonBands geometry useFrame). Wall offset and roof drop are still
-// physically motivated and live as constants in NeonBands.jsx.
-// `screenFloor`/`screenCeil` (added 2026-07-16) are the SCREEN-RELATIVE size band
-// (radius, device px). The tube is built in world meters, so past street level a
-// 1 m tube goes sub-pixel — the neon vanishes exactly where the browse/overhead
-// shot wants it. The NeonBands vertex shader clamps each tube's on-screen radius
-// to [screenFloor, screenCeil]: never thinner than the floor (kills the sub-pixel
-// strip far away), never fatter than the ceiling (thins the ~physical hero pipe up
-// close), physical in between. Unlike `tubeRadius` these are pure shader uniforms
-// (no merged-mesh rebuild). `screenCeil = 0` disables the ceiling.
+// Neon — two drawings of one sign, handed off by on-screen size (NeonBands.jsx header;
+// BRIEF-neon-reads-at-every-distance). `core`/`tube`/`bleed` are the tube's fresnel masks, `emissive` how fast the
+// sign reaches its full colour (the intensity rolls off along the hue — it never goes white). `tubeCm` is the
+// physical tube, never inflated; `linePx` the far line's on-screen width; `handoffPx` the tube's on-screen diameter
+// at which the two crossfade (the band is NeonBands.jsx#HANDOFF_BAND, a constant); `lineGain` the line's brightness
+// against the tube. Only `tubeCm` rebuilds geometry; the rest are shader uniforms.
 export const NEON_FIELDS = [
-  { key: 'core',        label: 'Hot core',          min: 0,   max: 1,   step: 0.02 },
-  { key: 'tube',        label: 'Tube glow',         min: 0,   max: 1,   step: 0.02 },
-  { key: 'bleed',       label: 'Atmospheric bleed', min: 0,   max: 1,   step: 0.02 },
-  { key: 'emissive',    label: 'Emissive',          min: 0.5, max: 8,   step: 0.1  },
-  { key: 'tubeRadius',  label: 'Tube radius',       min: 0.1, max: 3.0, step: 0.05 },
-  { key: 'screenFloor', label: 'Screen floor (px)', min: 0,   max: 12,  step: 0.5  },
-  { key: 'screenCeil',  label: 'Screen ceiling (px)', min: 0, max: 64,  step: 1    },
+  { key: 'core',      label: 'Hot core',          min: 0,   max: 1,  step: 0.02 },
+  { key: 'tube',      label: 'Tube glow',         min: 0,   max: 1,  step: 0.02 },
+  { key: 'bleed',     label: 'Atmospheric bleed', min: 0,   max: 1,  step: 0.02 },
+  { key: 'emissive',  label: 'Emissive',          min: 0.5, max: 8,  step: 0.1  },
+  { key: 'tubeCm',    label: 'Tube radius (cm)',  min: 0.5, max: 10, step: 0.25 },
+  { key: 'linePx',    label: 'Line width (px)',   min: 1,   max: 16, step: 0.5  },
+  { key: 'handoffPx', label: 'Hand-off (px)',     min: 1,   max: 32, step: 0.5  },
+  { key: 'lineGain',  label: 'Line brightness',   min: 0,   max: 4,  step: 0.05 },
 ]
-export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tubeRadius: 1.0, screenFloor: 2.5, screenCeil: 0 }
+export const NEON_FLAT_DEFAULTS = { core: 1, tube: 1, bleed: 1, emissive: 4, tubeCm: 1.5, linePx: 5, handoffPx: 5, lineGain: 1 }
 export const NEON_FIELD_KEYS = NEON_FIELDS.map(f => f.key)
 
 // Arch (Hero & Horizon card — SC.7) — Gateway Arch placement / transform.
@@ -643,8 +622,8 @@ const DAY = {
   // (Emissive 1 is the colour itself, no bleed); at the blue hour it balances the sky; at night it blazes.
   neon:     { core: [0.3, 0.6, 0.3, 0.7, 0.9, 1, 1, 1], tube: [0.5, 1, 1, 1, 1, 1, 1, 1],
               bleed: [0.3, 0.15, 0, 0.35, 0.6, 0.85, 1, 0.8], emissive: [2, 1.4, 1.0, 2.5, 3.5, 5.0, 7.5, 5.0],
-              tubeRadius: [0.5, 1, 1, 1, 1, 1, 1, 1], screenFloor: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
-              screenCeil: [0, 0, 0, 0, 0, 0, 0, 0] },
+              tubeCm: [0.75, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5], linePx: [5, 5, 5, 5, 5, 5, 5, 5],
+              handoffPx: [5, 5, 5, 5, 5, 5, 5, 5], lineGain: [1, 1, 1, 1, 1, 1, 1, 1] },
   // Lamps × the daylight ramp: on before it is dark (▲ at Sunset), warm gaslamps at Dusk, cold glitter at Night.
   lantern:  { edges: LAMP_EDGES, intensity: [3, 1, null, null, 3, 1.6, 2.4, 2.5], glow: [2, 1, null, null, 2.5, 1.2, 0.9, 0.2],
               glowSize: [1, 1, null, null, 1.25, 0.8, 0.45, 0.2],

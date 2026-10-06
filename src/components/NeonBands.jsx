@@ -11,73 +11,36 @@ import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, kitDayChannel } from '../cartograp
 import { lookOf } from '../lib/lookOf.js'
 
 /**
- * NeonBands — wall-mounted glass-tube signage along the rooftop perimeter
- * of every open place. One merged mesh per scene, one draw, one
- * ShaderMaterial. (Renamed from NeonBandsV2.jsx 2026-05-18 after the
- * V2 rewrite shipped and v1 was excised; see BACKLOG 2026-05-16 entry
- * for the rewrite arc and the five-wrong-diagnoses lesson record.)
+ * NeonBands — the neon of every open place: TWO DRAWINGS of one sign, handed off by on-screen size
+ * (BRIEF-neon-reads-at-every-distance, Jacob 2026-10-06). One merged mesh per drawing per scene.
  *
- * Design rules followed:
- *   - One merged mesh per scene (per HANDOFF-neon Path B + FEATURES §Neon)
- *   - Slab-completeness: intensity from the neon channel, by reference to shared uniforms written EVERY FRAME —
- *     by NeonPump from the live store in Stage, by NeonDriver (below) from scene.json in production and Preview
- *   - Per-vertex terrain lift via the shared `aCentroidY` attribute
- *     (mean of footprint-corner raw elevations, threaded through
- *     openPlaces as `place.groundYRaw`) — matches the canonical
- *     anchor mechanism used by Foundations and Building walls per
- *     FEATURES.md anchor-rule doctrine. NOT a GPU terrain-map
- *     texture sample.
- *   - No operator-authored geometry knobs (radius / drop / offset);
- *     they're physically motivated constants
+ *   - THE TUBE — physical glass, `tubeCm` of the neon channel, swept along the eave. Never inflated: up close it is
+ *     the size a real tube is. Read as the fresnel-shaded round tube (DoubleSide + additive, no front-face flip).
+ *   - THE LINE — a screen-space line along the same axis, `linePx` device pixels wide whatever the distance, so the
+ *     sign reads from the overhead Browse frame to Hero's horizon. At the far extreme a short run is a glowing dash.
+ *   - THE HAND-OFF — per vertex, by the tube's own on-screen diameter against `handoffPx`: below it the line carries
+ *     the sign, above it the tube does, crossfading across HANDOFF_BAND. By on-screen size, never by shot or distance,
+ *     so no camera and no town is special. `lineGain` balances the line's brightness against the tube's.
+ *   - ITS OWN COLOUR — both drawings roll their intensity off along the category hue (`hueRoll`): the brightest channel
+ *     approaches 1 and the others keep their proportion, so the sign reads as its colour, never a white core with the
+ *     colour only in the bloom. `emissive` is how fast it reaches full.
  *
- * Geometry pipeline per building:
- *   1. Walk footprint → ring chain offset OFFSET_OUT outward from wall
- *      (winding detected per-footprint via point-in-polygon probe so
- *      mixed CW/CCW datasets all land outside the wall)
- *   2. Convex corners sweep an arc to keep offset uniform; concave
- *      corners mitre; near-straight bends collapse to one offset point
- *   3. Sweep a FULL circular cross-section (CROSS_SEGS facets) along
- *      the chain. Tube center axis sits at baseY = rooftop − ROOF_DROP
- *      so it reads as wall-fascia signage, not roof-mounted
- *   4. Index winding emits outward-facing triangles; the cross-section
- *      is fully closed so every camera angle sees some part of the tube
- *
- * Material: DoubleSide + AdditiveBlending ShaderMaterial. The fragment
- * shader does NOT flip the normal on back faces — back faces compute
- * dot(N, V) < 0 which clamps to 0, producing a dim bleed-only halo on
- * the camera-far side. That's the physically correct look for an
- * omnidirectional glass emitter: bright on the near side, soft glow on
- * the far side. Earlier prototypes that flipped the normal on the back
- * face made both sides hit coreMask ≈ 1 at the same camera angle and
- * the tube read as a flat ribbon. The <logdepthbuf_*> GLSL chunks are
- * #included so this raw ShaderMaterial can participate in the Canvas's
- * logarithmic depth buffer — but the USE_LOGDEPTHBUF define is gated on the
- * renderer's actual `logarithmicDepthBuffer` capability (Stage/Preview run log
- * depth, production runs linear), so neon always matches the depth encoding the
- * rest of the scene uses and occludes correctly. See
- * feedback_raw_shadermaterial_needs_logdepth_chunks memory + the material below.
+ * Driven every frame from the neon channel by NeonDriver (below), mounted once by <Town> in every app; Stage hands it
+ * its live channel as `neonOverride`. Per-vertex terrain lift via `aCentroidY` (the footprint-corner mean, threaded
+ * through openPlaces as `groundYRaw`), the anchor Foundations and walls use. Raw ShaderMaterials #include the
+ * <logdepthbuf_*> chunks, defined only when the renderer runs a log depth buffer
+ * ([[feedback_raw_shadermaterial_needs_logdepth_chunks]], the material below).
  */
 
 // ── Geometry constants ──────────────────────────────────────────────
-// Tube radius is operator-authored as a TOD-animatable field in the
-// `neon` channel (Sky & Light → Neon → Tube radius slider). It flows
-// through the same module-uniform container as core/tube/bleed/emissive
-// (_neonUniforms.tubeRadiusUniform). In Stage, NeonPump writes it every
-// frame from the resolved channel; in production, the component's
-// useEffect writes the scene.json baseline. Unlike the four shader
-// uniforms, this one drives vertex positions, so the geometry useFrame
-// quantizes and rebuilds the merged BufferGeometry when the value
-// crosses a step boundary. ROOF_DROP is computed inside buildTube as
-// `-tubeRadius` so the tube BOTTOM always lands flush with the rooftop.
-const DEFAULT_TUBE_RADIUS = 1.0
-const TUBE_RADIUS_STEP    = 0.05               // quantize per-frame radius read to this step before triggering rebuild
-// Screen-relative floor (universal neon facelift, 2026-07-16). The tube is built
-// in world meters, so past street level a 1m tube shrinks to a sub-pixel strip —
-// the neon vanishes exactly where the browse/overhead shot most wants it. The
-// vertex shader floors the on-screen tube radius to MIN_SCREEN_PX device pixels:
-// close up (hero) it stays physical; far away it grows just enough to keep a
-// readable, glowing line. Physically-motivated + by-eye tuned, not an operator knob.
-const MIN_SCREEN_PX = 2.5
+// The tube's radius is the channel's `tubeCm` (centimetres). It drives vertex positions, so a change rebuilds the
+// merged geometry: the per-frame read is quantized to TUBE_CM_STEP so a keyed day only rebuilds on a step crossing.
+// The tube's BOTTOM sits flush on the eave (its axis is one radius up).
+const TUBE_CM_STEP = 0.25
+// ⭐ The hand-off's crossfade band, as a RATIO of on-screen sizes — dimensionless and in pixel space, so it means the
+// same on every camera and every town. The tube is fully drawn once its on-screen diameter is handoffPx × BAND and
+// gone below handoffPx ÷ BAND; the line is the complement. A constant by ruling (Jacob via Boz, 2026-10-06).
+const HANDOFF_BAND = 1.5
 const OFFSET_OUT   = 0.5                       // meters past wall face — clears any eave/cornice
 const CROSS_SEGS   = 8                         // facets around the circular cross-section
 const CORNER_SEGS  = 3                         // arc segs per convex corner
@@ -185,6 +148,10 @@ function buildPath(footprint) {
  * gives degenerate-free UV wrap. The closure vertices are positionally
  * identical to their counterparts at i=0 / s=0 — no extra draws since
  * they're index-referenced from neighboring quads.
+ *
+ * The LINE rides the same axis: one quad per ring-to-ring segment (closing included), each vertex carrying both
+ * segment ends (`aA`, `aB`), which end it sits at (`aT`) and which side (`aSide`); the vertex shader widens it to
+ * linePx on screen.
  */
 function buildTube(building, tubeRadius) {
   // Trace the building FOOTPRINT at the eave (the wall/roof joint), so neon hugs
@@ -194,9 +161,8 @@ function buildTube(building, tubeRadius) {
   const fp = building.footprint
   if (!fp || fp.length < 3) return null
   const r = tubeRadius
-  // ROOF_DROP = -r puts tube BOTTOM at rooftop seam (whole tube above
-  // wall geometry, regardless of authored radius).
-  const baseY = (building.baseY ?? building.size?.[1] ?? 0) - (-r)
+  // The axis sits one radius above the eave, so the tube's BOTTOM is flush with it.
+  const baseY = (building.baseY ?? building.size?.[1] ?? 0) + r
   const path = buildPath(fp)
   const m = path.length
   if (m < 2) return null
@@ -237,7 +203,18 @@ function buildTube(building, tubeRadius) {
       indices.push(a + s + 1, b + s + 1, b + s)
     }
   }
-  return { positions, normals, uvs, centroidYs, indices }
+
+  const line = { a: [], b: [], t: [], side: [], centroidYs: [], indices: [] }
+  for (let i = 0; i < m; i++) {
+    const p0 = path[i], p1 = path[(i + 1) % m]
+    const v0 = line.t.length
+    for (const [t, side] of [[0, -1], [0, 1], [1, -1], [1, 1]]) {
+      line.a.push(p0.x, baseY, p0.z); line.b.push(p1.x, baseY, p1.z)
+      line.t.push(t); line.side.push(side); line.centroidYs.push(centroidY)
+    }
+    line.indices.push(v0, v0 + 1, v0 + 2, v0 + 1, v0 + 3, v0 + 2)
+  }
+  return { positions, normals, uvs, centroidYs, indices, line }
 }
 
 // ⛔ `|| '#ff66cc'` used to be the tail here — a debug magenta standing in for any
@@ -256,8 +233,26 @@ function categoryColorVec(category, paletteScene) {
 // "Round tube" look is a SHADER illusion, not pure geometry. The
 // Gaussian masks (core / tube / bleed) are sampled by view-fresnel
 // `r = 1 − dot(N, V)` so the core is hot where the tube faces the
-// camera and fades at the silhouette — bloom turns the bleed term
-// into volumetric glow at zero geometric cost.
+// camera and fades at the silhouette.
+//
+// Both drawings use MAX blending, not additive: the tube's front and back faces, the tube and the line across the
+// hand-off, and a line's overlapping joins never SUM past the hue — summing is how a coloured sign went white.
+
+// The intensity roll-off along the hue: the brightest channel approaches 1, the rest keep their proportion.
+const HUE_ROLL = /* glsl */`
+vec3 hueRoll(vec3 c, float L) {
+  float m = max(max(c.r, c.g), max(c.b, 1e-4));
+  return (c / m) * (1.0 - exp(-max(L, 0.0)));
+}
+`
+const TUBE_PX = /* glsl */`
+// The tube's on-screen diameter (device px) at clip depth w, for a tube of world radius R.
+float tubePx(float R, float w, float viewportH) {
+  // projectionMatrix[1][1] is the y-scale (1/tan(fov/2) perspective, 2/(t-b) ortho); clip.w is -viewZ (perspective)
+  // or 1 (ortho) — so this is pixels per metre at that depth, isotropic.
+  return 2.0 * R * projectionMatrix[1][1] * 0.5 * viewportH / max(w, 1e-4);
+}
+`
 
 const VERT = /* glsl */`
 #include <common>
@@ -265,39 +260,23 @@ const VERT = /* glsl */`
 attribute vec3 aColor;
 attribute float aCentroidY;
 uniform float uExag;
-uniform float uBuiltRadius;   // world radius the merged geometry was swept at (== the live tubeRadius)
-uniform float uMinPx;         // screen-relative floor: tube never renders thinner than this (device px)
-uniform float uMaxPx;         // screen-relative ceiling: tube never renders fatter than this (0 = disabled)
+uniform float uBuiltRadius;   // world radius the merged geometry was swept at (the quantized tubeCm, in metres)
+uniform float uHandoffPx;
+uniform float uBand;
 uniform float uViewportH;     // drawing-buffer height in device px
 varying vec3 vColor;
 varying vec3 vWorldNormal;
 varying vec3 vWorldPos;
+varying float vW;             // the tube's share of the hand-off
+${TUBE_PX}
 void main() {
   vColor = aColor;
-  // Screen-relative floor. Each vertex is axis + uBuiltRadius * normal, where
-  // normal is the unit radial dir of the circular cross-section — so the axis
-  // (tube centerline) recovers exactly as position - uBuiltRadius * normal. We
-  // re-emit the vertex at an EFFECTIVE radius that never falls below uMinPx on
-  // screen: physical when close, floored when far. It still shrinks with distance
-  // down to the floor, then holds — the tube reads as a glowing line at any zoom.
-  float liftY = aCentroidY * uExag;
-  vec3 axis = position - uBuiltRadius * normal;
-  vec4 axisWorld = modelMatrix * vec4(axis + vec3(0.0, liftY, 0.0), 1.0);
-  vec4 clipAxis = projectionMatrix * viewMatrix * axisWorld;
-  // Isotropic pixels-per-meter at this depth. Perspective: clip.w == -viewZ;
-  // ortho: clip.w == 1 (distance-independent). projectionMatrix[1][1] is the
-  // y-scale (1/tan(fov/2) perspective, 2/(t-b) ortho) — both > 0.
-  float pxPerM = projectionMatrix[1][1] * 0.5 * uViewportH / max(clipAxis.w, 1e-4);
-  float invPxPerM = 1.0 / max(pxPerM, 1e-6);
-  // Floor: never thinner than uMinPx on screen.
-  float rEff = max(uBuiltRadius, uMinPx * invPxPerM);
-  // Ceiling: never fatter than uMaxPx on screen (uMaxPx <= 0 disables it).
-  if (uMaxPx > 0.0) rEff = min(rEff, uMaxPx * invPxPerM);
-  vec3 lifted = axis + normal * rEff + vec3(0.0, liftY, 0.0);
+  vec3 lifted = position + vec3(0.0, aCentroidY * uExag, 0.0);
   vec4 wp = modelMatrix * vec4(lifted, 1.0);
   vWorldPos = wp.xyz;
   vWorldNormal = normalize(mat3(modelMatrix) * normal);
   gl_Position = projectionMatrix * viewMatrix * wp;
+  vW = smoothstep(uHandoffPx / uBand, uHandoffPx * uBand, tubePx(uBuiltRadius, gl_Position.w, uViewportH));
   #include <logdepthbuf_vertex>
 }
 `
@@ -314,6 +293,8 @@ uniform float uForceOn;
 varying vec3 vColor;
 varying vec3 vWorldNormal;
 varying vec3 vWorldPos;
+varying float vW;
+${HUE_ROLL}
 void main() {
   #include <logdepthbuf_fragment>
   vec3 N = normalize(vWorldNormal);
@@ -325,16 +306,83 @@ void main() {
   float tubeMask  = exp(-r * r *  4.0);
   float bleedMask = exp(-r * r *  1.0);
 
-  vec3 emissive = vec3(0.0);
-  emissive += mix(vColor, vec3(1.0), 0.7) * coreMask  * uCore;
-  emissive += vColor                       * tubeMask  * uTube;
-  emissive += vColor * 0.4                 * bleedMask * uBleed;
-  emissive *= uEmissive * uForceOn;
+  float L = (coreMask * uCore + tubeMask * uTube + 0.4 * bleedMask * uBleed) * uEmissive;
+  vec3 c = hueRoll(vColor, L) * vW * uForceOn;
+  if (max(c.r, max(c.g, c.b)) < 0.004) discard;
+  gl_FragColor = vec4(c, 1.0);
+}
+`
 
-  float alpha = max(coreMask * uCore, max(tubeMask * uTube, bleedMask * uBleed));
-  alpha *= uForceOn;
-  if (alpha < 0.01) discard;
-  gl_FragColor = vec4(emissive, alpha);
+// The LINE: each vertex is one corner of a segment's quad, widened to uLinePx on screen about the projected axis.
+const LINE_VERT = /* glsl */`
+#include <common>
+#include <logdepthbuf_pars_vertex>
+attribute vec3 aA;
+attribute vec3 aB;
+attribute float aT;
+attribute float aSide;
+attribute vec3 aColor;
+attribute float aCentroidY;
+uniform float uExag;
+uniform float uTubeR;         // the tube's world radius, metres — the hand-off reads the TUBE's on-screen size
+uniform float uLinePx;
+uniform float uHandoffPx;
+uniform float uBand;
+uniform vec2 uViewport;       // drawing buffer, device px
+varying vec3 vColor;
+varying float vSide;
+varying float vW;             // the line's share of the hand-off
+${TUBE_PX}
+void main() {
+  vColor = aColor;
+  vSide = aSide;
+  vec3 lift = vec3(0.0, aCentroidY * uExag, 0.0);
+  mat4 pvm = projectionMatrix * viewMatrix * modelMatrix;
+  vec4 ca = pvm * vec4(aA + lift, 1.0);
+  vec4 cb = pvm * vec4(aB + lift, 1.0);
+  // An end behind the camera is slid along the segment to just in front of it, so the screen direction holds.
+  const float EPS = 1e-3;
+  if (ca.w < EPS && cb.w < EPS) { gl_Position = vec4(0.0, 0.0, 2.0, 1.0); vW = 0.0; return; }
+  if (ca.w < EPS) ca = mix(ca, cb, (EPS - ca.w) / (cb.w - ca.w));
+  if (cb.w < EPS) cb = mix(cb, ca, (EPS - cb.w) / (ca.w - cb.w));
+  vec2 sa = ca.xy / ca.w * 0.5 * uViewport;
+  vec2 sb = cb.xy / cb.w * 0.5 * uViewport;
+  vec2 d = sb - sa;
+  float len = length(d);
+  vec2 dir = len > 1e-4 ? d / len : vec2(1.0, 0.0);
+  vec2 nrm = vec2(-dir.y, dir.x);
+  vec4 c = aT < 0.5 ? ca : cb;
+  // Half a width either side, and half a width past each end so consecutive segments overlap at the joins
+  // (max blending: the overlap does not brighten).
+  float h = 0.5 * uLinePx;
+  vec2 offPx = nrm * aSide * h + dir * (aT * 2.0 - 1.0) * h;
+  c.xy += offPx / (0.5 * uViewport) * c.w;
+  gl_Position = c;
+  vW = 1.0 - smoothstep(uHandoffPx / uBand, uHandoffPx * uBand, tubePx(uTubeR, c.w, uViewport.y));
+  #include <logdepthbuf_vertex>
+}
+`
+
+const LINE_FRAG = /* glsl */`
+precision highp float;
+#include <common>
+#include <logdepthbuf_pars_fragment>
+uniform float uCore;
+uniform float uTube;
+uniform float uEmissive;
+uniform float uLineGain;
+uniform float uForceOn;
+varying vec3 vColor;
+varying float vSide;
+varying float vW;
+${HUE_ROLL}
+void main() {
+  #include <logdepthbuf_fragment>
+  float prof = 1.0 - smoothstep(0.55, 1.0, abs(vSide));   // a solid core with a soft, anti-aliased edge
+  float L = max(uCore, uTube) * uEmissive * uLineGain * prof;
+  vec3 c = hueRoll(vColor, L) * vW * uForceOn;
+  if (max(c.r, max(c.g, c.b)) < 0.004) discard;
+  gl_FragColor = vec4(c, 1.0);
 }
 `
 
@@ -349,48 +397,29 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   const paletteScene = materialColorsOverride ? { materialColors: materialColorsOverride, neonAuthored: [] } : scene
   const neonColorKey = JSON.stringify([Array.isArray(paletteScene?.neonAuthored), Object.entries(materialColors || {}).filter(([k]) => k.startsWith('neon_')).sort()])
 
-  // Match the renderer's ACTUAL depth encoding. The Canvas this neon mounts in
-  // may run linear depth (production Scene.jsx) or logarithmic (Stage / Preview,
-  // which set logarithmicDepthBuffer:true). three only uploads the `logDepthBufFC`
-  // uniform when the renderer was created with logarithmicDepthBuffer:true
-  // (WebGLRenderer.setProgram). Forcing the logdepth chunk on in a LINEAR
-  // renderer therefore runs the vertex transform with logDepthBufFC=0, which
-  // collapses every neon vertex to NDC z=-1 (the near plane) — so the tube draws
-  // over everything, including nearer trees in hero. Gating the define on the
-  // real capability makes neon use whatever depth the rest of the scene uses, so
-  // it occludes correctly in both. See HANDOFF-neon-roof-depth.md Phase 2 and
-  // [[feedback_raw_shadermaterial_needs_logdepth_chunks]].
   const logDepth = useThree((s) => s.gl.capabilities.logarithmicDepthBuffer)
   const invalidate = useThree((s) => s.invalidate)
   const gl = useThree((s) => s.gl)
-  // Production runs frameloop="demand": the uniforms are imperative writes (NeonDriver in production, NeonPump in
-  // Stage) that trigger no render, so request one when the neon mounts or its Look lands — else it stays dark
+  // Production runs frameloop="demand": the uniforms are imperative writes (NeonDriver) that trigger no render, so request one when the neon mounts or its Look lands — else it stays dark
   // until a camera nudge (2026-06-28, the "neon not showing at all" bug).
   useEffect(() => { invalidate() }, [lookId, scene, invalidate])
 
-  // Tube radius — animated like the other four fields, but the value
-  // drives vertex positions (not a shader uniform), so a change must
-  // trigger a merged BufferGeometry rebuild. Poll the shared module
-  // container each frame; quantize to TUBE_RADIUS_STEP so smooth TOD
-  // interpolation between authored slots only rebuilds when the value
-  // actually crosses a step boundary (≤ ~60 rebuilds per full sweep
-  // across the 0.1–3.0 range, not 60/sec). No debounce: now that the
-  // depthbuf bug is fixed and the per-frame quantization is correct,
-  // immediate commit keeps the slider feeling responsive.
-  const [r, setR] = useState(DEFAULT_TUBE_RADIUS)
+  // The tube's radius drives vertex positions, so it is polled each frame and quantized to TUBE_CM_STEP: a keyed day
+  // rebuilds only on a step crossing, a slider drag immediately.
+  const [cm, setCm] = useState(() => _neonUniforms.tubeCmUniform.value)
+  const r = cm / 100
+  const viewport = useRef({ value: new THREE.Vector2(1, 1) }).current
   useFrame(() => {
-    const live = _neonUniforms.tubeRadiusUniform.value || DEFAULT_TUBE_RADIUS
-    const q = Math.round(live / TUBE_RADIUS_STEP) * TUBE_RADIUS_STEP
-    if (Math.abs(q - r) > 1e-6) setR(q)
-    // Keep the screen-relative floor honest: the tube's on-screen radius is
-    // computed against the live drawing-buffer height (device px, DPR-correct).
-    const mat = materialRef.current
-    if (mat) mat.uniforms.uViewportH.value = gl.domElement.height
+    const q = Math.round(_neonUniforms.tubeCmUniform.value / TUBE_CM_STEP) * TUBE_CM_STEP
+    if (Math.abs(q - cm) > 1e-6) setCm(q)
+    // The hand-off and the line's width are in device px of the live drawing buffer (DPR-correct).
+    viewport.value.set(gl.domElement.width, gl.domElement.height)
   })
 
-  const geometry = useMemo(() => {
+  const { tubeGeometry, lineGeometry } = useMemo(() => {
     const positions = [], normals = [], uvs = [], colors = [], centroidYs = [], indices = []
-    let baseVert = 0
+    const la = [], lb = [], lt = [], lside = [], lcolors = [], lcentroidYs = [], lindices = []
+    let baseVert = 0, lineBase = 0
     for (const p of places) {
       // ⛔⛔ THIS USED TO BE `if (!p.neon?.category) continue`, WHICH CONFLATED TWO
       // DIFFERENT THINGS — and only became reachable the day the zoning classifier
@@ -413,6 +442,12 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
       for (let i = 0; i < count; i++) colors.push(rgb[0], rgb[1], rgb[2])
       for (let i = 0; i < tube.indices.length; i++) indices.push(baseVert + tube.indices[i])
       baseVert += count
+
+      const L = tube.line, lcount = L.t.length
+      for (let i = 0; i < L.a.length; i++) { la.push(L.a[i]); lb.push(L.b[i]) }
+      for (let i = 0; i < lcount; i++) { lt.push(L.t[i]); lside.push(L.side[i]); lcentroidYs.push(L.centroidYs[i]); lcolors.push(rgb[0], rgb[1], rgb[2]) }
+      for (let i = 0; i < L.indices.length; i++) lindices.push(lineBase + L.indices[i])
+      lineBase += lcount
     }
     const g = new THREE.BufferGeometry()
     g.setAttribute('position',    new THREE.Float32BufferAttribute(positions, 3))
@@ -421,85 +456,108 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
     g.setAttribute('aColor',      new THREE.Float32BufferAttribute(colors, 3))
     g.setAttribute('aCentroidY', new THREE.Float32BufferAttribute(centroidYs, 1))
     g.setIndex(indices)
-    // Bounding sphere intentionally not computed: vertex shader lifts
-    // every vertex by ~10–25m on LS terrain, so a CPU-fit sphere lies
-    // meters below the rendered geometry and gets frustum-culled at
-    // close range. `frustumCulled={false}` on the mesh instead — one
-    // small draw, trivial cost.
-    return g
+    const lg = new THREE.BufferGeometry()
+    // `position` is required by three for a draw; the line places itself from aA/aB.
+    lg.setAttribute('position',   new THREE.Float32BufferAttribute(la, 3))
+    lg.setAttribute('aA',         new THREE.Float32BufferAttribute(la, 3))
+    lg.setAttribute('aB',         new THREE.Float32BufferAttribute(lb, 3))
+    lg.setAttribute('aT',         new THREE.Float32BufferAttribute(lt, 1))
+    lg.setAttribute('aSide',      new THREE.Float32BufferAttribute(lside, 1))
+    lg.setAttribute('aColor',     new THREE.Float32BufferAttribute(lcolors, 3))
+    lg.setAttribute('aCentroidY', new THREE.Float32BufferAttribute(lcentroidYs, 1))
+    lg.setIndex(lindices)
+    // Bounding spheres intentionally not computed: the vertex shaders lift every vertex by the terrain, so a CPU-fit
+    // sphere lies below what is drawn and gets frustum-culled at close range. `frustumCulled={false}` on the meshes.
+    return { tubeGeometry: g, lineGeometry: lg }
   }, [places, r, neonColorKey])   // materialColors enters through its neon key (the colour lives in the geometry)
 
-  const materialRef = useRef(null)
-  if (!materialRef.current) {
-    materialRef.current = new THREE.ShaderMaterial({
-      // Define ONLY when the renderer actually runs a log-depth buffer (Stage /
-      // Preview). Then three compiles in the <logdepthbuf_*> chunks the VERT/FRAG
-      // strings #include AND uploads logDepthBufFC, so neon shares the log-depth
-      // encoding every standard material uses. In a LINEAR renderer (production
-      // Scene.jsx) the define is dropped → the #ifdef'd chunks compile to no-ops →
-      // neon writes the same standard gl_Position.z as every other material and
-      // depth-tests correctly. Forcing the define unconditionally was the hero
-      // depth bug (logDepthBufFC=0 → near-plane collapse). See FEATURES.md
-      // §"Layering / coplanar stacking / depth precision",
-      // [[feedback_raw_shadermaterial_needs_logdepth_chunks]], and
-      // HANDOFF-neon-roof-depth.md Phase 2.
+  // Match the renderer's ACTUAL depth encoding — define USE_LOGDEPTHBUF only when the renderer runs a log depth buffer
+  // (Stage / Preview); three then compiles the <logdepthbuf_*> chunks AND uploads logDepthBufFC. In a LINEAR renderer
+  // (production Scene.jsx) the chunks compile to no-ops and neon writes the same depth as every other material. Forcing
+  // the define unconditionally was the hero depth bug (logDepthBufFC=0 → near-plane collapse). FEATURES.md §"Layering /
+  // coplanar stacking / depth precision", [[feedback_raw_shadermaterial_needs_logdepth_chunks]],
+  // HANDOFF-neon-roof-depth.md Phase 2.
+  const forceOnU = useRef({ value: 1 }).current
+  forceOnU.value = forceOn ? 1.0 : 0.0
+  const mats = useRef(null)
+  if (!mats.current) {
+    const shared = {
       defines: logDepth ? { USE_LOGDEPTHBUF: '' } : {},
-      vertexShader: VERT,
-      fragmentShader: FRAG,
-      uniforms: {
-        uCore:       _neonUniforms.coreUniform,
-        uTube:       _neonUniforms.tubeUniform,
-        uBleed:      _neonUniforms.bleedUniform,
-        uEmissive:   _neonUniforms.emissiveUniform,
-        uForceOn:    { value: forceOn ? 1.0 : 0.0 },
-        uExag:       TERRAIN_UNIFORMS.uExag,
-        uBuiltRadius:{ value: DEFAULT_TUBE_RADIUS },
-        uMinPx:      _neonUniforms.screenFloorUniform,  // shared ref: NeonPump/production write it live
-        uMaxPx:      _neonUniforms.screenCeilUniform,   // 0 → no ceiling
-        uViewportH:  { value: 1080 },
-      },
       transparent: true,
       depthWrite: false,
       toneMapped: false,
-      // DoubleSide + no normal flip in the fragment: back faces compute
-      // dot(N, V) < 0 which clamps to 0, producing a dim bleed-only
-      // halo on the camera-far side. Full doctrine in the file header.
+      // MAX, not additive: overlaps never sum past the hue (the shader block above).
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.MaxEquation,
+    }
+    const tube = new THREE.ShaderMaterial({
+      ...shared,
+      vertexShader: VERT,
+      fragmentShader: FRAG,
+      uniforms: {
+        uCore:        _neonUniforms.coreUniform,
+        uTube:        _neonUniforms.tubeUniform,
+        uBleed:       _neonUniforms.bleedUniform,
+        uEmissive:    _neonUniforms.emissiveUniform,
+        uHandoffPx:   _neonUniforms.handoffPxUniform,
+        uBand:        { value: HANDOFF_BAND },
+        uForceOn:     forceOnU,
+        uExag:        TERRAIN_UNIFORMS.uExag,
+        uBuiltRadius: { value: r },
+        uViewportH:   { get value() { return viewport.value.y } },
+      },
+      // DoubleSide + no normal flip in the fragment: back faces compute dot(N, V) < 0, which clamps to 0 — a dim
+      // bleed-only glow on the camera-far side, the omnidirectional look ([[feedback_neon_cylinder_doubleside_no_flip]]).
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
     })
-    // Unique key — distinct shader family, do NOT collide with the
-    // terrain-patched program cache. [[feedback_unique_program_cache_key_before_wrappers]]
-    // Encode the logdepth variant: the linear and log builds differ by the
-    // USE_LOGDEPTHBUF define, so they must not share a cached program if both
-    // ever live in one process (e.g. a linear production view + a log preview).
-    materialRef.current.customProgramCacheKey = () => `neon-bands-full-cylinder-${logDepth ? 'logdepth' : 'lineardepth'}`
+    const line = new THREE.ShaderMaterial({
+      ...shared,
+      vertexShader: LINE_VERT,
+      fragmentShader: LINE_FRAG,
+      uniforms: {
+        uCore:      _neonUniforms.coreUniform,
+        uTube:      _neonUniforms.tubeUniform,
+        uEmissive:  _neonUniforms.emissiveUniform,
+        uLineGain:  _neonUniforms.lineGainUniform,
+        uLinePx:    _neonUniforms.linePxUniform,
+        uHandoffPx: _neonUniforms.handoffPxUniform,
+        uBand:      { value: HANDOFF_BAND },
+        uForceOn:   forceOnU,
+        uExag:      TERRAIN_UNIFORMS.uExag,
+        uTubeR:     { value: r },
+        uViewport:  viewport,
+      },
+      side: THREE.DoubleSide,
+    })
+    // Unique keys — distinct shader families, never the terrain-patched program cache
+    // ([[feedback_unique_program_cache_key_before_wrappers]]); the log and linear builds differ by a define.
+    const depthKey = logDepth ? 'logdepth' : 'lineardepth'
+    tube.customProgramCacheKey = () => `neon-bands-tube-${depthKey}`
+    line.customProgramCacheKey = () => `neon-bands-line-${depthKey}`
+    mats.current = { tube, line }
   }
-  materialRef.current.uniforms.uForceOn.value = forceOn ? 1.0 : 0.0
-  // The screen-floor shader recovers each tube's axis as position - uBuiltRadius *
-  // normal, so this MUST equal the radius the merged geometry was actually swept at
-  // (the quantized `r`, which drives the geometry rebuild above). Set every render.
-  materialRef.current.uniforms.uBuiltRadius.value = r
+  // The tube's world radius as the geometry was swept (the quantized `cm`) — the hand-off reads the tube's own size.
+  mats.current.tube.uniforms.uBuiltRadius.value = r
+  mats.current.line.uniforms.uTubeR.value = r
 
-  useEffect(() => () => { geometry.dispose() }, [geometry])
-  useEffect(() => () => { materialRef.current?.dispose() }, [])
+  useEffect(() => () => { tubeGeometry.dispose(); lineGeometry.dispose() }, [tubeGeometry, lineGeometry])
+  useEffect(() => () => { mats.current?.tube.dispose(); mats.current?.line.dispose() }, [])
 
-  // renderOrder above every baked-ground transparent group (bake max is
-  // ~42 — `mat.path` slot in the current LS look — plus StreetLights pool
-  // at 50). Neon is `depthWrite:false`, so if it drew BEFORE the ground,
-  // pixels of neon-against-sky leave the depth buffer at 1.0 and any
-  // later transparent ground fragment (asphalt at street level, ~0.95)
-  // passes its depthTest against that 1.0 and overdraws the neon. Drawing
-  // neon LAST puts the ground's depth in the buffer first; the tube then
-  // depth-tests correctly (against the same depth encoding the renderer uses —
-  // see the logDepth gating on the material). This ordering is about
-  // transparent compositing + depthWrite:false, independent of log vs linear.
-  return <mesh geometry={geometry} material={materialRef.current} renderOrder={100} frustumCulled={false} />
+  // renderOrder above every baked-ground transparent group (bake max is ~42, plus StreetLights pool at 50). Neon is
+  // depthWrite:false, so drawing it LAST puts the ground's depth in the buffer first and the neon depth-tests against
+  // it — else a later transparent ground fragment passes against the sky's 1.0 and overdraws the sign.
+  return (
+    <>
+      <mesh geometry={tubeGeometry} material={mats.current.tube} renderOrder={100} frustumCulled={false} />
+      <mesh geometry={lineGeometry} material={mats.current.line} renderOrder={101} frustumCulled={false} />
+    </>
+  )
 }
 
 // ── NeonDriver — the neon channel, resolved EVERY FRAME, in production and Preview ────────────────────────────
 // Neon rides the day like every other channel (Jacob, 2026-09-27: "it needs to be animatable like everything
 // else"). ⛔ Replaces NeonBands' mount-time resolve, which froze a keyed neon at whatever minute the page loaded.
-// Sibling of PostProcessing.jsx#LampGlowDriver; Stage mounts NeonPump (the live store) instead, never both.
+// Sibling of PostProcessing.jsx#LampGlowDriver. The ONE driver, in every app: Stage hands it its live channel.
 const NEON_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('neon'))
 // `neonOverride`: Stage's live channel (an operator drag shows without a bake); absent, the slab's.
 export function NeonDriver({ lookId, bakeLastMs, neonOverride } = {}) {
@@ -513,9 +571,10 @@ export function NeonDriver({ lookId, bakeLastMs, neonOverride } = {}) {
     _neonUniforms.tubeUniform.value        = v.tube
     _neonUniforms.bleedUniform.value       = v.bleed
     _neonUniforms.emissiveUniform.value    = v.emissive
-    _neonUniforms.tubeRadiusUniform.value  = v.tubeRadius
-    _neonUniforms.screenFloorUniform.value = v.screenFloor
-    _neonUniforms.screenCeilUniform.value  = v.screenCeil
+    _neonUniforms.tubeCmUniform.value      = v.tubeCm
+    _neonUniforms.linePxUniform.value      = v.linePx
+    _neonUniforms.handoffPxUniform.value   = v.handoffPx
+    _neonUniforms.lineGainUniform.value    = v.lineGain
   })
   return null
 }

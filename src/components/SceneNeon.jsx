@@ -94,10 +94,8 @@ function defaultNeonCategoryForZoning(zoning) {
 // ── neonLookup — buildingId → { hex, hours, category } for listings ──
 // Read by openPlaces.
 // Every REAL listing (a business/POI) is included, whether or not it has
-// authored `hours`; the openPlaces gate below decides on/off. A present but
-// null `hours` marks a POI that glows on the default window (dusk→late) so a
-// fresh install looks alive out of the box — an authored `hours` still wins.
-// Synthetic zoning-default listings (`_bare`) are EXCLUDED: a residential house
+// authored `hours`; the openPlaces gate below decides on/off, and null `hours`
+// is dark (there is no default window — see _neonOn). Synthetic zoning-default listings (`_bare`) are EXCLUDED: a residential house
 // with no real POI stays dark, rather than the whole hood lighting up at night.
 // The listings are <Town listings> (townContext.js) — the app's, never the old player's store.
 export function useNeonLookup() {
@@ -169,9 +167,8 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, litIds
       const on = _neonOn({ forceNeonOn, hours, now })
       if (!on || !_densityKeeps(e.id, density) || (litIds && !litIds.has(e.id))) continue
       // baseY + groundYRaw (== centroidY) are baked into the index, so tubes lift in lockstep with their building
-      // on sloped terrain. NeonBands.buildTube traces roofOutline (the true roof edge) and falls back to the
-      // footprint where it's absent/degenerate.
-      places.push({ footprint: e.footprint, roofOutline: e.roofOutline, baseY: e.baseY, groundYRaw: e.centroidY, neon: { category } })
+      // on sloped terrain. NeonBands.buildTube traces the footprint at the eave.
+      places.push({ footprint: e.footprint, baseY: e.baseY, groundYRaw: e.centroidY, neon: { category } })
     }
     return places
   }, [neonLookup, neonTick, forceNeonOn, density, slabIndex, litIds, clockMinute])
