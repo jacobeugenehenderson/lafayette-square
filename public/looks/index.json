@@ -11,7 +11,7 @@
       "name": "Lafayette Square",
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
-      "bakedAt": 1791149978956,
+      "bakedAt": 1791243663111,
       "updatedAt": 1790637026300
     },
     {
@@ -19,7 +19,7 @@
       "name": "HiPointe-DeMun",
       "scene": "hipointedemun",
       "createdAt": 1782000000000,
-      "bakedAt": 1791150260916,
+      "bakedAt": 1791243512875,
       "updatedAt": 1791140775203
     },
     {
@@ -35,7 +35,7 @@
       "name": "huron",
       "scene": "huron",
       "createdAt": 1789875167347,
-      "bakedAt": 1791149944617,
+      "bakedAt": 1791242892731,
       "updatedAt": 1790572253612
     },
     {
@@ -43,7 +43,7 @@
       "name": "Provincetown",
       "scene": "provincetown",
       "createdAt": 1790285800621,
-      "bakedAt": 1791149966489,
+      "bakedAt": 1791254555754,
       "updatedAt": 1790582275495
     }
   ]
