@@ -57,6 +57,11 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    test, not a ray-and-snap (proximity recovery, A15). ⚠️ It changes the frozen artifact ⇒ it lands with
    the **next scheduled re-pour** of the towns, coordinated with Boz (another work group re-pours).
    **First, read-only:** measure per town how many eased corners are bends, and post it.
+   ✅ **Measured (Flare, 2026-10-05, from `public/baked/<town>/shape.json`):** bends are LS 9.2% · HPDM
+   13.1% · huron 10.9% · provincetown 27.9% of arcs — and the count MOVES with the road key (raw skelId
+   vs ordinal-stripped), which is why owner labels cannot decide it. ⭐ **The junction id must be stamped
+   from ① itself, independent of the owner stamp (`iaStamp`)** — arcs with a null-stamped flank (LS 122,
+   huron 338, provincetown 146; cause not established) are otherwise unclassifiable.
    ⛔ This lifts §7's "no change to ①/② construction" bound **for this stamp only** — the shape itself
    does not move; `a03-curb-identity` / `claims-repour-changes-nothing` must show geometry unchanged.
 4. **The raised kerb lifts the WHOLE BLOCK inboard of the kerb face** (curb, walk, lawn, land use) by an
