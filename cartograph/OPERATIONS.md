@@ -120,9 +120,10 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
 - **Curb ramps** *(junction corners only; layer toggle "Curb Ramps", colour `ramp`)* — the style comes from, finest first:
   the leg's `blockCustoms[…].ramps.{start,end}` (`none`·`diagonal`·`perpendicular`; ⚠️ no gesture writes it yet) →
   `cartograph/data/<scene>/norms.json` `{"ramps": {"style", "width", "warningDepth"}}` → the state record's `norms.ramps`
-  → the kit's `none`. A style needs its own width + warning depth (metres) or the pour throws. Read at derive, so a
+  → the kit's `none`. A style needs its own width + warning depth (metres), and a scene with no data directory, or the pour throws. Read at derive, so a
   norm change needs a **skeleton pour**; the per-leg override is live. Every pour prints *"N corners have no ramp
-  source"*. ▶ `node checks/claims-every-junction-corner-has-a-ramp-source.mjs <scene>`
+  source"*. ▶ `node checks/claims-every-junction-corner-has-a-ramp-source.mjs <scene>` · a town whose frozen norm
+  lags its `norms.json` (re-pour owed) ▶ `node checks/claims-the-pour-reads-the-towns-norm.mjs`
 - **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — ramp to the matching ramp across the street, so no ramps ⇒ none.
   Same ladder under `crosswalks`: `{"style": "none"|"lines"|"continental", "width", "line"}` (metres). The pour counts
   crossings with no ramp across (a T's far kerb) and ambiguous ones — never paired by nearness.

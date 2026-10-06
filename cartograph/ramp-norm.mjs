@@ -13,8 +13,14 @@
 //   jurisdiction's standard, not the kit's, so a missing one THROWS rather than being filled in.
 // ▶ node checks/claims-every-junction-corner-has-a-ramp-source.mjs <scene>
 import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 import { stateRecord } from './states/index.mjs'
+
+// ⛔ The scene's data directory is resolved from THIS MODULE, never the caller's working directory: the pour runs
+// derive.js from cartograph/, and a cwd-relative path there found no norms.json and froze 'none (kit)' without a word
+// (`BRIEF-corner-ramps-and-kerb §3` step 0). ▶ node checks/claims-the-pour-reads-the-towns-norm.mjs
+const DATA_ROOT = join(dirname(fileURLToPath(import.meta.url)), 'data')
 
 export const RAMP_STYLES = ['none', 'diagonal', 'perpendicular']
 // ⭐ CROSSWALKS ride the same ladder, resolved on their own (a town may set one and inherit the other). A crosswalk
@@ -44,8 +50,8 @@ function validate(n, where) {
   return (n.style === 'none' && !dims.length) ? { style: 'none' } : { style: n.style, width: n.width, warningDepth: n.warningDepth }
 }
 
-function resolveKind(kind, check, scene, state, dataRoot) {
-  const p = join(dataRoot, scene, 'norms.json')
+function resolveKind(kind, check, scene, state) {
+  const p = join(DATA_ROOT, scene, 'norms.json')
   if (existsSync(p)) {
     let j; try { j = JSON.parse(readFileSync(p, 'utf8')) } catch (e) { throw new Error(`${p} is not valid JSON: ${e.message}`) }
     if (j[kind]) return { ...check(j[kind], `${p} ${kind}`), source: 'scene' }
@@ -59,7 +65,9 @@ function resolveKind(kind, check, scene, state, dataRoot) {
 
 /** The town's ramp norm and the rung it came from (`source`: 'scene' · `state:<CODE>@<version>` · 'kit'), with its
  *  crosswalk norm nested under `crosswalks`, resolved on its own rung. */
-export function resolveRampNorm(scene, state, dataRoot = 'cartograph/data') {
-  return { ...resolveKind('ramps', validate, scene, state, dataRoot),
-           crosswalks: resolveKind('crosswalks', validateCrosswalk, scene, state, dataRoot) }
+export function resolveRampNorm(scene, state) {
+  // a scene with no data directory is a wrong name or a wrong root — never a town with no norm
+  if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveRampNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
+  return { ...resolveKind('ramps', validate, scene, state),
+           crosswalks: resolveKind('crosswalks', validateCrosswalk, scene, state) }
 }
