@@ -20,6 +20,7 @@ import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
 import { createVocabularyGate, unreadableFace } from './osm-vocabulary.mjs'
 import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_MAP, wgs84ToLocal } from './config.js'
+import { footprintWell } from './footprint-well.mjs'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
@@ -5639,7 +5640,7 @@ export function deriveLayers(highways, { cropland = null } = {}) {
     if (MP.blocks?.length) {
       const HWY = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
       const hwySk = new Set(pGradeSep.filter(g => HWY.has(g.highway)).map(g => g.skelId ?? g.name))
-      const msbfPath = join(RAW_DIR, 'msbf.json')
+      const msbfPath = footprintWell(SCENE).path   // the town's footprint geometry well (footprint-well.mjs)
       // ⛔ RAW intake footprints, NEVER the member/shown set (ruling g: a building the operator hid still fronts).
       const centroids = existsSync(msbfPath)
         ? (JSON.parse(readFileSync(msbfPath, 'utf-8')).buildings || []).filter(b => b.coords?.length >= 3)

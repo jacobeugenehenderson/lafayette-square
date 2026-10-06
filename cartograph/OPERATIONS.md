@@ -621,13 +621,15 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
      before the first fetch). Elsewhere, declare the well in full (shape: `cartograph/sources.js`) — or write the
      state's record. ▶ `node checks/claims-a-state-gives-its-towns-their-wells.mjs`
      ⭐ **Cropland** (US towns): `"cropland": [{ "id": "usda-cdl", "year": 2024 }]`, then
-     `CARTOGRAPH_SCENE=<id> node cartograph/cdl.mjs` — USDA's Cropland Data Layer decides crop rows where OSM maps no
+     `CARTOGRAPH_SCENE=<id> node cartograph/cdl.mjs` — USDA's CDL places crop rows where OSM maps no
      field. Outside the US: `"cropland": [], "cropland_absent_reason": "…"`. Undeclared is LOUD at the pour.
-  2. **Fetch** — the Extent's **Fetch this view** now runs it for any town with a declaration, and
+     ⭐ **Buildings:** undeclared = Microsoft's; `"buildings": [{ "from": "state", "id": … }]` swaps in the
+     state's. The pour prints which. ▶ `node checks/claims-one-building-id-minter.mjs`
+  2. **Fetch** — the Extent's **Fetch this view** runs it for any town with a declaration, and
      reports *undeclared* when there is none. By hand: `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
-     (`--dry-run` first: it prints the parcel count and one sample row without writing).
-  3. **Bake** — `node cartograph/bake-content.js --scene=<id>`. It reports the match rate and, now,
-     how much of the town it could **not** classify or address.
+     (`--dry-run` first: count + one row, no write).
+  3. **Bake** — `node cartograph/bake-content.js --scene=<id>`. It reports the match rate and what it
+     could **not** classify or address.
   - ⭐ **Building street addresses** (the Ward's card, "This is my house") come from the town's own record, its declared
     **address points**, then OSM — never guessed, never the nearest point. Declare a town's E-911 address points in the
     same `sources.json` — `"addressPoints": [{ "from": "state", "id": "ohio-lbrs" }]` (Ohio; `select.county`) or `"nyc-addresspoint"` (NYC), or
@@ -636,8 +638,7 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
     parcel it stands on. ▶ `node checks/claims-every-building-has-an-address.mjs`
   - ⛔ **"No parcels" has THREE meanings and the kit keeps them apart.** *Undeclared* (no
     `sources.json`) means **nobody has looked into it** and shouts; *declared-none* is an honest zero
-    with a written reason; *declared* is a real well. ⛔ A town that yields zero because nobody
-    searched must never print the same as a town that genuinely has no assessor.
+    with a written reason; *declared* is a real well.
   - ⛔ **A WELL IS USUALLY PARTIAL, AND YOU MUST SAY SO.** Huron's (Ohio's statewide layer) gives
     address and land use and **no valuation, zoning, year built or units** — those live behind a
     per-parcel county lookup that is not an endpoint. Listing them as `absent` makes the roster emit

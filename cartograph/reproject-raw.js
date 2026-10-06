@@ -25,6 +25,7 @@
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { wgs84ToLocal, mapRawDir, SCENE } from './config.js'
+import { footprintWell } from './footprint-well.mjs'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { declaredParcelPaths } from './sources.js'
@@ -53,7 +54,8 @@ function reprojectDeep(node) {
 
 // Frame-dependent raw files whose coords are {lon,lat,x,z} objects — the deep
 // walker re-derives x/z from lon/lat in place.
-const FRAME_DEPENDENT = ['osm.json', 'msbf.json', 'admin_boundaries.json']
+// The footprint well is the town's own (footprint-well.mjs) — msbf.json unless it declares one.
+const FRAME_DEPENDENT = ['osm.json', footprintWell(SCENE).file, 'admin_boundaries.json']
 
 for (const name of FRAME_DEPENDENT) {
   const path = join(mapRawDir(SCENE), name)

@@ -18,6 +18,7 @@ import { snapAll } from './snap.js'
 import { deriveLayers, deriveBuildings, _lotPaths, registryReadRecord } from './derive.js'
 import { fetchElevationGrid, interpolateElevation } from './elevation.js'
 import { createMembershipFilter, buildingIdOf } from './membership.mjs'
+import { footprintWell } from './footprint-well.mjs'
 import { unionFootprints } from './building-union.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
@@ -46,7 +47,9 @@ async function main() {
   // scene. A non-default scene uses its own msbf.json / OSM buildings.
   const PROJECT_ROOT = join(RAW_DIR, '..', '..', '..', '..')
   const projectBldgPath = join(PROJECT_ROOT, 'src', 'data', 'buildings.json')
-  const msbfPath = join(RAW_DIR, 'msbf.json')
+  // ⭐ The town's footprint GEOMETRY well — MSBF unless it declares one (footprint-well.mjs). SAID either way.
+  const fw = footprintWell(SCENE)
+  const msbfPath = fw.path
   if (SCENE === DEFAULT_MAP && existsSync(projectBldgPath)) {
     const proj = JSON.parse(readFileSync(projectBldgPath, 'utf-8'))
     const list = proj.buildings || []
@@ -75,9 +78,9 @@ async function main() {
     // the footprint where both have one, OSM adds what MSBF missed. Provenance is the id.
     const msbf = JSON.parse(readFileSync(msbfPath, 'utf-8'))
     const u = unionFootprints(msbf.buildings, raw.buildings || [])
-    console.log(`  Buildings: MSBF ${u.report.msbf} ∪ OSM ${u.report.osm} → ${u.report.same} the same building, +${u.report.added} from OSM that MSBF lacks = ${u.buildings.length}`)
+    console.log(`  Buildings: ${fw.label} ${u.report.msbf} ∪ OSM ${u.report.osm} → ${u.report.same} the same building, +${u.report.added} from OSM that it lacks = ${u.buildings.length}`)
     raw.buildings = u.buildings
-    raw.buildingSource = 'microsoft'
+    raw.buildingSource = fw.declared ? fw.wellId : 'microsoft'
   } else {
     raw.buildingSource = 'osm'
   }

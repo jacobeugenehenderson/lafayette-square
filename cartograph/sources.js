@@ -210,6 +210,25 @@ export function readAddressPointSources(scene, providers) {
   return { state: 'declared', path: p, sources: j.addressPoints }
 }
 
+/**
+ * BUILDINGS — the town's footprint GEOMETRY well (BRIEF-nyc-adapter §3.2a, step 3). Two states:
+ *   UNDECLARED — no `buildings` key: the kit's generic global well, Microsoft's ML footprints (raw/msbf.json), and the
+ *                pour SAYS so. ⭐ A broad default is not A00's defect — that was another TOWN's data (Boz, 2026-10-05).
+ *   DECLARED   — [{ "from": "state", "id": … }] — exactly ONE well, taken from the town's state (e.g. NY's NYC
+ *                footprints), which replaces MSBF; OSM still unions in (building-union.mjs).
+ * ⛔ A malformed declaration, more than one well, or a well with no `file` throws; never read as undeclared.
+ */
+export function readBuildingSources(scene) {
+  const p = sourcesPath(scene)
+  if (!existsSync(p)) return { state: 'undeclared', path: p, well: null }
+  const j = JSON.parse(readFileSync(p, 'utf8'))
+  if (!('buildings' in j)) return { state: 'undeclared', path: p, well: null }
+  if (!Array.isArray(j.buildings) || j.buildings.length !== 1) throw new Error(`${p}: \`buildings\` must be an array of exactly one footprint well (it is the town's geometry well)`)
+  const well = resolveFromState(j.buildings[0], 'buildings', j, `${p}: `)
+  for (const req of ['id', 'file']) if (!well[req]) throw new Error(`${p}: buildings well is missing \`${req}\``)
+  return { state: 'declared', path: p, well }
+}
+
 /** The files a town's declared address-point sources land at (absolute); [] when undeclared or declared-none. */
 export function declaredAddressPointPaths(scene) {
   return readAddressPointSources(scene).sources.map((s) => join(mapDir(scene), 'raw', s.file))

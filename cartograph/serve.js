@@ -23,6 +23,8 @@ import { terrainValueReads } from './terrainReads.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
 import { productionDomainFor, askOperations } from './operations-domain.mjs'
 import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
+import { buildingIdOf } from './membership.mjs'
+import { footprintWell } from './footprint-well.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPath } from './sources.js'
 import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
@@ -977,7 +979,7 @@ function buildingFootprintsFor(scene) {
   // ALWAYS writes OSM buildings into osm.json. What the operator sees while
   // framing == what pours (Jacob, 2026-07-18: no indeterminance). The pour's
   // buildingSource fallthrough (pipeline.js curated→msbf→'osm') mirrors this.
-  const msbfPath = join(mapRawDir(scene), 'msbf.json')
+  const msbfPath = footprintWell(scene).path      // the town's footprint geometry well (footprint-well.mjs)
   const osmPath  = join(mapRawDir(scene), 'osm.json')
   const src = existsSync(msbfPath) ? msbfPath : (existsSync(osmPath) ? osmPath : null)
   if (!src) return { buildings: [] }
@@ -994,10 +996,9 @@ function buildingFootprintsFor(scene) {
   for (const b of (raw.buildings || [])) {
     const ring = (b.coords || []).map(c => [c.x, c.z])
     if (ring.length < 3) continue
-    // Source-agnostic id: msbf-<id> where MSBF is present, osm-<id> otherwise.
-    // (The pour/override id-namespace unification is the connected tail.)
-    if (b.msbfId != null) buildings.push({ id: `msbf-${b.msbfId}`, ring })
-    else if (b.osmId != null) buildings.push({ id: `osm-${b.osmId}`, ring })
+    // The one minter (membership.mjs#buildingIdOf) — the id the pour bakes and buildingOverrides key on.
+    const id = buildingIdOf(b)
+    if (id != null) buildings.push({ id, ring })
   }
   const payload = { buildings }
   _footprintCache.set(scene, { mtime, src, payload })
@@ -1757,7 +1758,7 @@ createServer(async (req, res) => {
         // ── Buildings (MSBF — generic ML footprints, works ANY region) ──
         const bR = await runCapture('node fetch-msbf.js', { cwd: here, env, timeout: 240000 })
         sources.buildings = bR.code === 0
-          ? { ok: true, count: countJson(join(raw, 'msbf.json')) }
+          ? { ok: true, count: countJson(footprintWell(scene).path), well: footprintWell(scene).label }
           : { ok: false, error: lastLine(bR) }
         // ── Parcels — the TOWN'S DECLARED wells (`sources.json`), never a named city's.
         //    ⛔ This ran the two St. Louis python scripts until 2026-09-24, so every other

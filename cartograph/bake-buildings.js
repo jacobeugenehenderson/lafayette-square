@@ -29,7 +29,7 @@ import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
 import { requireSceneTerrain } from './terrainLoad.js'
 import { readBakeDesign } from './lookDesign.mjs'
-import { createMembershipFilter } from './membership.mjs'
+import { createMembershipFilter, buildingIdOf } from './membership.mjs'
 import { resolveAddress, addressCensus, addressOfTags, offeredBy, parcelPointsOf } from './building-address.mjs'
 import { loadAddressPoints, loadParcelRings } from './address-points.mjs'
 import { instanceForMap } from '../src/instances/registry.js'
@@ -69,11 +69,9 @@ function adaptMapBuildings(mapBuildings) {
     // (`INTAKE-CATALOGUE §5.2`). parseFloat also handles OSM's "12 m" form.
     const tagH = parseFloat(tags.height)
     const size = Number.isFinite(tagH) && tagH > 0 ? [0, Math.max(tagH, 3), 0] : undefined
-    // Source-agnostic building id: MSBF where present (US pours), else OSM
-    // (foreign/OSM pours). Without this an OSM installation stamps every
-    // building `msbf-undefined` — one non-unique id — breaking content joins,
-    // per-building overrides, selection, and neon. (task: id-namespace unify.)
-    const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
+    // Source-agnostic building id — the one minter (membership.mjs#buildingIdOf). Without one an OSM installation
+    // stamped every building `msbf-undefined`, breaking content joins, overrides, selection and neon.
+    const id = buildingIdOf(b)
     if (!id) continue
     // ⭐ SURVEYED FABRIC — the tags a hand-mapped (European) OSM carries and
     // this adapter used to drop on the floor, leaving every poured building a

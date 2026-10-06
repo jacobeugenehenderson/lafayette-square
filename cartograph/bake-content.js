@@ -52,6 +52,7 @@ import { classifyUseFromText } from './parcel-landuse.mjs'
 import { classifyZoning } from '../src/tokens/categories.js'
 import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { rankRoster } from './prominence.mjs'
+import { buildingIdOf } from './membership.mjs'
 import { registryPath as listingIdPath, loadRegistry as loadListingIds, serializeRegistry as serializeListingIds, assignListingIds, idsThatWouldMove, guardSeal } from './listing-identity.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -150,9 +151,7 @@ function loadBuildingGeom(scene, bakedIds) {
     // hand-curated ground truth was the one town outside the harness. The id is
     // still whatever the baker stamped; we are reading the third stamp, not minting
     // a fourth. (`clean/map.json` carries it as `projectId`.)
-    const id = b.msbfId != null ? `msbf-${b.msbfId}`
-      : (b.osmId != null ? `osm-${b.osmId}`
-      : (b.projectId != null ? b.projectId : null))
+    const id = buildingIdOf(b)
     if (!id) continue
     if (!bakedIds.has(id)) continue
     const ring = (b.ring || []).map(p => [Array.isArray(p) ? p[0] : p.x, Array.isArray(p) ? p[1] : p.z])

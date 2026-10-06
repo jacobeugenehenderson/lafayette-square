@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url'
 import { geographyFor } from './geography.mjs'
 import { mapDir, DEFAULT_MAP } from './scene.js'
 import { declaredParcelPaths, sourcesPath } from './sources.js'
+import { footprintWell } from './footprint-well.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = join(HERE, '..')
@@ -94,7 +95,7 @@ export const pourCodeChanged = (record, files = pourCodeClosure()) => contentCha
 export function pourDataReads(scene) {
   const raw = join(mapDir(scene), 'raw'), clean = join(mapDir(scene), 'clean')
   return [
-    join(raw, 'msbf.json'),                                   // pipeline.js main — the footprint well
+    footprintWell(scene).path,                                // pipeline.js main — the footprint well (footprint-well.mjs)
     join(mapDir(scene), 'neighborhood_boundary.json'),        // pipeline.js — membership
     join(mapDir(scene), 'building-overrides.json'),           // pipeline.js — authored building edits
     join(raw, 'survey.json'),                                 // derive.js — surveyed widths
