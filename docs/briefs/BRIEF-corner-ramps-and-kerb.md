@@ -132,11 +132,13 @@ Jackson Heights bakes tonight.
    |---|---|
    | `ramp-norm.mjs`, `resolveRampNorm`, `RAMP_STYLES` · the frozen `rampNorm` (changes with the re-pour) · `norms.json` key `ramps` (LS's only file) · the leg slot `blockCustoms[…].ramps.{start,end}` (nothing authors it yet — grep all towns to confirm) · `tileGround.js`'s `rampsOnJunctionCorners`, `rampRecs`, `rampTally`, `noRamp`, `crosswalksBetweenRamps` · the ground class `ramp` (`bake-ground.js`, `bake-ground-ao.js`'s `PAVED`) · the layer id/label "Curb Ramps" and colour `ramp` (`Panel.jsx`, `CartographSurfaces.jsx`, `m3Colors.js`) · `checks/claims-every-junction-corner-has-a-ramp-source.mjs` · `OPERATIONS` lines on curb ramps, `FEATURES` | SECTION §4's RAMP (the pad) and SLOPE (`rampLen`) · highway ramps in `derive.js` (`rampedCarriageways`, `rampTerminalFlares`, `rampSign`, the H-3 flare) · `m3Colors.highway`'s comment |
    ⚠️ Judge every hit by its SENSE, not its spelling; list in the commit what was renamed and what was left, and why.
-2. **Each corner's own style from evidence** (§0a item 8). OSM keeps crossings as WAYS in `clean/skeleton.json`
-   `paths` (`footway=crossing`, full tags); `kerb=lowered` is sparse. Verify a crossing's middle vertex is a node
-   SHARED with the road it crosses before binding on it. Binding = containment in the arc's span, never nearest.
-   Build the rung so a city's file well (NYC `CURB_CUT`, `BRIEF-nyc-adapter` step 5) slots in unchanged. The census
-   reports each rung (evidence · town norm · override · unreadable) separately.
+2. **Each corner's own style from evidence** (§0a item 8). ✅ RULED (Boz, 2026-10-06): a crossing's landing is
+   CROSSWALK evidence (step 3), never cut style — at a diagonal corner a square crosswalk also lands near the arc's
+   end. Cut evidence = the physical drop: OSM `barrier=kerb`/`kerb=*` nodes (`fetch-kerbs.mjs` → `raw/osm_kerbs.json`,
+   additive) or a city file. Bind on raw `osm.json`, never `clean/skeleton.json` `paths`: the skeleton simplifies the
+   roads, so only ~20–30% of crossings keep their shared road vertex there (86–96% in raw, by exact lon/lat). A landing
+   is the record's own line to the first frozen curb, kept only if the crossed road is one of the arc's legs.
+   ▶ `cartograph/curb-cut-evidence.mjs` (the record contract a city file fills) · `claims-every-junction-corner-has-a-curb-cut-source --selftest`.
 3. **Square crosswalks + the T's far kerb** (§0a item 9; T ruled 2026-10-06). At a diagonal corner the crosswalk ends
    where the square crosswalk meets the kerb. The far kerb of a T is a NORM on the crosswalk ladder: kit default =
    **no crosswalk** across the through street; **LS = a curb cut on the far kerb, crossed to** (LS 360 such crossings).

@@ -33,6 +33,7 @@ import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mi
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 import { readSources, undeclaredMessage } from './sources.js'
 import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
+import { buildCurbCutEvidence } from './curb-cut-evidence.mjs'
 import { LAND_USE_READERS } from './states/index.mjs'
 import { coastRings } from './coastline.mjs'
 
@@ -5701,6 +5702,14 @@ export function deriveLayers(highways, { cropland = null } = {}) {
       ribbonsLayer.curbCutNorm = resolveCurbCutNorm(SCENE, src.declared ? src.state : null)
       const N = ribbonsLayer.curbCutNorm
       console.log(`    [curb cuts] norm: ${N.style}${N.style !== 'none' ? ` (width ${N.width} m, warning ${N.warningDepth} m)` : ''} — from ${N.source}`)
+      // ⭐ THE RECORDED CUTS — the rung above the norm (`cartograph/curb-cut-evidence.mjs`), frozen here and landed on
+      // the curb at the freeze. ⛔ No kerb file is "not fetched", said out loud — never a town with no kerbs.
+      const E = ribbonsLayer.curbCutEvidence = buildCurbCutEvidence({ osmPath: join(RAW_DIR, 'osm.json'),
+        kerbsPath: join(RAW_DIR, 'osm_kerbs.json'), skeletonPath: join(CLEAN_DIR, 'skeleton.json') })
+      if (!E.fetched) console.warn(`    [curb cuts] ⛔ kerb evidence: NOT FETCHED — no ${E.file}. Every corner falls to the norm. ▶ node fetch-kerbs.mjs --scene=${SCENE}`)
+      else { const c = E.census
+        console.log(`    [curb cuts] kerb evidence (${E.fetchedAt}): ${c.nodes} kerb node(s) — ${Object.entries(c.byKind).map(([k, v]) => `${v} ${k}`).join(' · ')} → ${c.records} record(s) bound to a crossing`)
+        console.log(`    [curb cuts]   unbound: ${c.notOnCrossing} on no crossing · ${c.notOneRoadNode} crossing not on exactly one road node · ${c.positionNotRecorded} on the crossing's road node (lowered, position not recorded) · ${c.roadNotInSkeleton} road in no chain`) }
     }
     ribbonsLayer.protopolygon = {
       eps: 0.005,

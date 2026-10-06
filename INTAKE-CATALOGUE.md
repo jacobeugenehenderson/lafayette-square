@@ -406,7 +406,7 @@ versioned layer name from GetCapabilities, request WMS GetMap as geotiff"* and *
 
 | Button | Source | Licence |
 |---|---|---|
-| OSM landmarks / addresses / trees / lamps | Overpass (⚠️ real User-Agent) | ODbL |
+| OSM landmarks / addresses / trees / lamps / **kerbs** (`raw/osm_kerbs.json`: `node["kerb"]` ∪ `node["barrier"="kerb"]` over `osm.json`'s own bbox — additive, never a re-fetch; read at derive by `curb-cut-evidence.mjs`, the curb-cut evidence rung) | Overpass (⚠️ real User-Agent) | ODbL |
 | Building footprints | MSBF (`fetch-msbf.js`, in the Extent fetch) | CDLA Permissive 2.0 |
 | Canopy raster | MRLC WMS GetMap · ESA WorldCover | public domain · CC BY |
 | Weather year (offline fixture + cloud regime) | Open-Meteo ERA5 archive | **CC BY 4.0, redistributable** |

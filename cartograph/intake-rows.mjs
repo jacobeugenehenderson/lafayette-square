@@ -417,6 +417,19 @@ export const INTAKE_ROWS = [
     doc: 'cartograph/INTAKE.md',
   },
   {
+    id: 'kerbs', domain: 'cartograph', tier: 'elective',
+    label: 'Kerb nodes',
+    path: 'raw/osm_kerbs.json',
+    unlocks: 'each corner\'s own curb cuts where the town recorded them — a diagonal or a perpendicular pair, read off the drop',
+    // ⭐ ADDITIVE: fetched over osm.json's own bbox into its own file, so osm.json never changes (`curb-cut-evidence.mjs`).
+    absent: { kind: ABSENT.FALLBACK, note: 'every corner takes the town\'s curb-cut norm; the pour says "kerb evidence: not fetched"' },
+    acquisition: { kind: ACQUIRE.BUTTON,
+                   command: 'node cartograph/fetch-kerbs.mjs --scene=<scene>',
+                   note: 'Overpass node["kerb"] ∪ node["barrier"="kerb"] — ODbL' },
+    licence: OSM_ODBL,
+    doc: 'INTAKE-CATALOGUE.md',
+  },
+  {
     id: 'lamps', domain: 'cartograph', tier: 'elective',
     label: 'Street lamps',
     path: 'raw/osm_street_lamps.json',

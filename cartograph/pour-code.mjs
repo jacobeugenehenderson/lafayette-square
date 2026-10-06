@@ -103,6 +103,8 @@ export function pourDataReads(scene) {
     scene === DEFAULT_MAP ? join(REPO_ROOT, 'scripts', 'raw', 'osm_street_lamps.json') : join(raw, 'osm_street_lamps.json'),  // derive.js
     join(mapDir(scene), 'content', 'county-land-use-codes.csv'),  // derive.js → parcel-landuse#loadCountyCodeTable
     sourcesPath(scene), ...declaredParcelPaths(scene),        // derive.js → sources.js#readSources, and its parcel wells
+    join(raw, 'osm_kerbs.json'),                              // derive.js → curb-cut-evidence.mjs — the recorded curb cuts
+    join(mapDir(scene), 'norms.json'),                        // derive.js → curb-cut-norm.mjs — the town's curb-cut norm
   ]
 }
 

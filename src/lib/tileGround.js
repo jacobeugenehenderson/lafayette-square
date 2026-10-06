@@ -4650,15 +4650,98 @@ export function classifyCornerLegs(a, b) {
 // gets none and is counted as unknown, never as a bend.
 // ⭐ The style, finest first: the operator on either LEG's slot (`curbCuts.end` on the leg arriving, `curbCuts.start` on
 // the leg leaving, in contour order) — authored wins; two authored legs that disagree are COUNTED and the longer
-// leg wins, the frontage rule — then the town's frozen norm (`st.curbCutNorm`, `cartograph/curb-cut-norm.mjs`). The
+// leg wins, the frontage rule — then the RECORDED cuts landed on the arc (`st.curbCutEvidence`, `styleFromEvidence`;
+// unreadable is counted and falls through) — then the town's frozen norm (`st.curbCutNorm`, `cartograph/curb-cut-norm.mjs`). The
 // dimensions are always the norm's: an authored style on a town whose norm gives none cannot be drawn, and is
 // counted (`noDims`), never filled in with a kit constant.
 //   diagonal      — one curb cut centred on the arc
 //   perpendicular — two, one at each tangent, each within its own half of the arc
 // ⛔ A curb cut wider than the room it has takes the room it has and is counted (`short`).
+// ══ THE RECORDED CUTS, LANDED ON THE FROZEN CURB (`cartograph/curb-cut-evidence.mjs`) ══════════════════════════
+// ⭐ Each record's `ray` runs from the crossed road's centreline node out to the recorded kerb point. It is walked, then
+// extended along its OWN last segment, to the FIRST frozen curb edge it meets across every tile — the record's own
+// line, never a nearest-ring search. ⭐ The landing is kept only if the edge lies in a licensed arc (the painter's `inC`
+// rule) of a JUNCTION corner one of whose legs IS the crossed road — ownership, so no reach constant is needed.
+// Stamped on the tile as `curbCutEvidence: [{ si, arc, jx, f, kind, source, osmId, crossed }]`, `f` = position along the arc span
+// (0 → 1 in contour order). Run before the disc cut, so every piece of a cut block carries its block's landings.
+// ⛔ Every record that does not land is counted by cause: noHit · offArc · notJunction · notOwner.
+export function landCurbCutEvidence(tiles, evidence) {
+  const census = { records: 0, landed: 0, noHit: 0, offArc: 0, notJunction: 0, notOwner: 0 }
+  if (!evidence?.fetched) return { census, fetched: false }
+  const G = 20, grid = new Map(), edges = []
+  let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity
+  tiles.forEach((t, ti) => (t?.iaFull || []).forEach((ring, si) => {
+    const n = ring.length, arc = t.iaArc?.[si], mark = t.iaCorner?.[si]
+    const lic = new Set(); if (arc) for (let q = 0; q < n; q++) if (arc[q] != null && mark?.[q]) lic.add(arc[q])
+    const inArc = (q) => !!arc && arc[q] != null && arc[q] === arc[(q + 1) % n] && lic.has(arc[q])
+    const rec = []
+    for (let q = 0; q < n; q++) { const a = ring[q], b = ring[(q + 1) % n]
+      rec.push({ a, b, len: Math.hypot(b[0] - a[0], b[1] - a[1]), inArc: inArc(q), ti, si, q })
+      minX = Math.min(minX, a[0]); maxX = Math.max(maxX, a[0]); minZ = Math.min(minZ, a[1]); maxZ = Math.max(maxZ, a[1]) }
+    for (let q = 0; q < n; q++) {                     // each arc span: running position + total length
+      if (!rec[q].inArc || rec[(q - 1 + n) % n].inArc) continue
+      const span = []; for (let i = q, c = 0; c < n && rec[i].inArc; c++, i = (i + 1) % n) span.push(i)
+      let s = 0; for (const i of span) { rec[i].s0 = s; s += rec[i].len }
+      for (const i of span) { rec[i].L = s; rec[i].arc = arc[q]; rec[i].jx = t.iaJunction?.[si]?.[q] }
+    }
+    for (const e of rec) { edges.push(e)
+      for (let x = Math.floor(Math.min(e.a[0], e.b[0]) / G); x <= Math.floor(Math.max(e.a[0], e.b[0]) / G); x++)
+        for (let z = Math.floor(Math.min(e.a[1], e.b[1]) / G); z <= Math.floor(Math.max(e.a[1], e.b[1]) / G); z++)
+          (grid.get(`${x},${z}`) || grid.set(`${x},${z}`, []).get(`${x},${z}`)).push(edges.length - 1) }
+  }))
+  const firstHit = (P, Q) => {
+    const ids = new Set()
+    for (let x = Math.floor(Math.min(P[0], Q[0]) / G); x <= Math.floor(Math.max(P[0], Q[0]) / G); x++)
+      for (let z = Math.floor(Math.min(P[1], Q[1]) / G); z <= Math.floor(Math.max(P[1], Q[1]) / G); z++)
+        for (const id of grid.get(`${x},${z}`) || []) ids.add(id)
+    let best = null
+    for (const id of ids) { const e = edges[id]
+      const r = [Q[0] - P[0], Q[1] - P[1]], s = [e.b[0] - e.a[0], e.b[1] - e.a[1]], den = r[0] * s[1] - r[1] * s[0]
+      if (Math.abs(den) < 1e-12) continue
+      const d = [e.a[0] - P[0], e.a[1] - P[1]], t = (d[0] * s[1] - d[1] * s[0]) / den, u = (d[0] * r[1] - d[1] * r[0]) / den
+      if (t >= 0 && t <= 1 && u >= 0 && u <= 1 && (!best || t < best.t)) best = { t, u, e } }
+    return best
+  }
+  // "unbounded" along its own line = as far as the frozen curb itself reaches: the drawing's own extent
+  const reach = Math.hypot(maxX - minX, maxZ - minZ)
+  for (const R of evidence.records) {
+    census.records++
+    const ray = R.ray || []
+    let hit = null
+    for (let i = 0; i + 1 < ray.length && !hit; i++) hit = firstHit(ray[i], ray[i + 1])
+    if (!hit && ray.length >= 2) { const A = ray[ray.length - 2], B = ray[ray.length - 1], l = Math.hypot(B[0] - A[0], B[1] - A[1])
+      if (l > 0) hit = firstHit(B, [B[0] + (B[0] - A[0]) / l * reach, B[1] + (B[1] - A[1]) / l * reach]) }
+    if (!hit) { census.noHit++; continue }
+    const e = hit.e
+    if (!e.inArc) { census.offArc++; continue }
+    if (!Number.isInteger(e.jx)) { census.notJunction++; continue }
+    const legs = tiles[e.ti].junctions?.[e.jx]?.legs || []
+    if (!legs.some(l => R.crossed.includes(l?.skelId))) { census.notOwner++; continue }
+    census.landed++
+    const t = tiles[e.ti]
+    ;(t.curbCutEvidence ||= []).push({ si: e.si, arc: e.arc, jx: e.jx, f: (e.s0 + hit.u * e.len) / e.L, kind: R.kind, source: R.source, osmId: R.osmId, crossed: R.crossed })
+  }
+  return { census, fetched: true }
+}
+
+// ⭐ ONE CORNER'S STYLE FROM ITS LANDINGS (`§0a` item 8), position as a fraction of the arc's own span:
+//   a drop in the middle third only ⇒ diagonal · drops in both outer thirds and none in the middle ⇒ perpendicular ·
+//   only `raised` ⇒ none · anything else (one end only, a drop in the middle AND an end, a kind not on the list)
+//   ⇒ unreadable, counted, never guessed.
+const KERB_DROP = new Set(['lowered', 'flush', 'no']), KERB_UP = new Set(['raised'])
+export function styleFromEvidence(landings) {
+  if (landings.some(x => !KERB_DROP.has(x.kind) && !KERB_UP.has(x.kind))) return 'unreadable'
+  const drops = landings.filter(x => KERB_DROP.has(x.kind))
+  if (!drops.length) return 'none'
+  const mid = drops.filter(x => x.f >= 1 / 3 && x.f <= 2 / 3).length, lo = drops.filter(x => x.f < 1 / 3).length, hi = drops.filter(x => x.f > 2 / 3).length
+  if (mid && !lo && !hi) return 'diagonal'
+  if (!mid && lo && hi) return 'perpendicular'
+  return 'unreadable'
+}
+
 const CURB_CUT_STYLE_SET = new Set(['none', 'diagonal', 'perpendicular'])
 function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, insAt, band, walk) {
-  const tally = { junction: 0, bend: 0, unknown: 0, curbCuts: 0, noSource: 0, noNorm: 0, noDims: 0, invalid: 0, conflict: 0, short: 0, bySource: {} }
+  const tally = { junction: 0, bend: 0, unknown: 0, curbCuts: 0, unreadable: 0, noSource: 0, noNorm: 0, noDims: 0, invalid: 0, conflict: 0, short: 0, bySource: {} }
   const recs = [], masks = []
   const norm = st.curbCutNorm || null
   let maxD = 0
@@ -4686,11 +4769,18 @@ function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, c
         if (a != null && b != null && a !== b) { tally.conflict++; style = legLen(before, -1) >= legLen(after, 1) ? a : b }
         else style = a ?? b
         source = 'authored'
-      } else if (norm) { style = norm.style; source = norm.source }
-      else { tally.noNorm++; continue }
+      } else {
+        // the recorded cuts landed on THIS arc at the freeze (`landCurbCutEvidence`); unreadable ⇒ counted, to the norm
+        const ev = (st.curbCutEvidence || []).filter(x => x.si === p.si && x.arc === st.iaArc[p.si][q])
+        const es = ev.length ? styleFromEvidence(ev) : null
+        if (es === 'unreadable') tally.unreadable++
+        if (es && es !== 'unreadable') { style = es; source = ev[0].source }
+        else if (norm) { style = norm.style; source = norm.source }
+        else { tally.noNorm++; continue }
+      }
       tally.bySource[source] = (tally.bySource[source] || 0) + 1
       if (!CURB_CUT_STYLE_SET.has(style)) { tally.invalid++; continue }
-      if (style === 'none') { if (source !== 'authored') tally.noSource++; continue }
+      if (style === 'none') { if (source === norm?.source && source !== 'authored') tally.noSource++; continue }
       const w = norm?.width, d = norm?.warningDepth
       if (!(w > 0 && d > 0)) { tally.noDims++; continue }
       maxD = Math.max(maxD, d)
@@ -9270,6 +9360,14 @@ export function buildTileGround(ribbons, opts = {}) {
             },
           })
         }
+        // ⭐ THE RECORDED CUTS, LANDED — on WHOLE blocks, before the cut, so every piece carries its block's landings.
+        {
+          const E = ribbons?.curbCutEvidence
+          if (!E) console.warn(`[tileGround][curb cuts] ⛔ no kerb evidence frozen in this pour (poured before the evidence rung) — re-pour.`)
+          else if (!E.fetched) console.warn(`[tileGround][curb cuts] ⛔ kerb evidence NOT FETCHED (${E.file}) — every corner falls to the norm.`)
+          else { const c = landCurbCutEvidence(protoShapeTiles, E).census
+            console.log(`[tileGround][curb cuts] kerb evidence: ${c.landed} of ${c.records} record(s) landed on a junction corner owned by the road they cross · ${c.noHit} met no curb · ${c.offArc} landed off any arc · ${c.notJunction} on a bend/unknown corner · ${c.notOwner} on a corner the crossed road is not a leg of`) }
+        }
         // ⭐⭐⭐ AND NOW THE CIRCLE IS STAMPED — LAST, ON THE RESULT. Jacob, 2026-09-06: "I thought
         // the decision was to build the whole grid flat and then stamp out the circle last."
         // Everything above ran on WHOLE blocks: ② offset a full block, ③ struck full bands. Only
@@ -9644,6 +9742,7 @@ export function buildTileGround(ribbons, opts = {}) {
       if (T.invalid) console.warn(`[tileGround][curb cuts] ⛔ ${T.invalid} authored curb-cut style(s) are not none/diagonal/perpendicular.`)
       if (T.conflict) console.warn(`[tileGround][curb cuts] ${T.conflict} corner(s) authored differently on their two legs — the longer leg's style is drawn.`)
       if (T.short) console.warn(`[tileGround][curb cuts] ${T.short} curb cut(s) wider than the arc room they have — drawn at the room there is.`)
+      if (T.unreadable) console.warn(`[tileGround][curb cuts] ${T.unreadable} corner(s) whose recorded cuts are UNREADABLE (one end only, middle and end, or an unlisted kerb kind) — counted, and drawn by the norm.`)
     }
     // the LU buckets are objects the caller reads by key — replace the CONTENTS, not the binding
     for (const kk of Object.keys(treelawnByLu)) delete treelawnByLu[kk]

@@ -2,7 +2,7 @@
 //
 // A curb cut sits on a JUNCTION corner's arc (`iaJunction`). Its style is, in order — the finest wins:
 //   1. the operator, per corner: `blockCustoms[skelId][side][segOrd].curbCuts.{start,end}` on either leg (live, in Section)
-//   2. evidence — a recorded curb cut / crossing (its own landing, not yet built)
+//   2. evidence — a recorded curb cut, landed on the arc at the freeze (`cartograph/curb-cut-evidence.mjs`)
 //   3. the TOWN's norm:   cartograph/data/<scene>/norms.json   → { "curbCuts": { … } }
 //   4. the STATE's norm:  cartograph/states/<st>.mjs           → norms.curbCuts
 //   5. the kit:           'none'
