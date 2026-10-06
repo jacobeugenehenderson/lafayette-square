@@ -83,10 +83,10 @@ Every ramp carries its source, exactly like widths (`ROADMAP A23`).
    middle ⇒ diagonal · two near its ends ⇒ perpendicular · none ⇒ no ramp · anything else ⇒ `unreadable`,
    counted, never guessed → else the **town norm** → **override** on top. The census reports each rung
    separately. ⛔ Binding a cut to a corner is by containment in the arc's own span, never nearest-arc.
-9. ❓ **Crosswalks at a diagonal corner — proposed, awaiting Jacob:** *a crosswalk always runs square across the
+9. ✅ **RULED (Jacob, 2026-10-05): crosswalks run square across the street.** *a crosswalk always runs square across the
    street it crosses*; at a perpendicular corner it ends at that leg's ramp, at a diagonal corner it ends where
    the square crosswalk meets the kerb and the apex ramp lands inside it. (Literal ramp-to-ramp at diagonal
-   corners crosses the intersection box diagonally — Flare, landing 2.) Do not build until ruled.
+   corners crosses the intersection box diagonally — Flare, landing 2.) Build it with per-corner style (item 8).
 
 **Order:** landing 1 = ramps by evidence/norm as 2D material on junction corners (needs the stamp ⇒
 with the re-pour) · landing 2 = crosswalks (same stamp) · landing 3 = the kerb, after its measurement.
