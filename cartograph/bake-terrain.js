@@ -43,6 +43,7 @@ import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { deriveFade } from './boundaryRecords.mjs'
 import { coastRings } from './coastline.mjs'
+import { ringsInDrawing } from './coast-in-drawing.mjs'
 import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './terrainReads.mjs'
 import { stoneStructures } from './structures.mjs'
 import { waterLevels as levelsOf } from './waterLevel.mjs'
@@ -128,7 +129,12 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
   if (bb) {
     const c = coastRings({ ground, buildings: osm.buildings || [],
                            center: boundary.center, discR: boundary.radius, bb })
-    for (const r of (c.rings || [])) rings.push(r)
+    const { inDrawing, outside } = ringsInDrawing(c.rings || [], bounds)
+    for (const r of inDrawing) rings.push(r)
+    if (outside.length) {
+      const ext = (r) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return `x ${Math.round(x0)}…${Math.round(x1)}, z ${Math.round(z0)}…${Math.round(z1)}` }
+      console.log(`  water datum: ${outside.length} coast ring(s) lie WHOLLY OUTSIDE this town's drawing (grid x ${bounds.minX}…${bounds.maxX}, z ${bounds.minZ}…${bounds.maxZ}) — in the fetch envelope only, NO SHORE for this town: ${outside.map(ext).join(' · ')}`)
+    }
   }
   // ⛔⛔ ONLY THE COAST, AND A POND MUST NOT BE THE DATUM. Caught 2026-09-21 by
   // running this against Lafayette Square before trusting it on huron.
