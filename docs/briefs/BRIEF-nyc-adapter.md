@@ -45,6 +45,11 @@ just do it in extent"*).
 - `ROADMAP.md` **A23** (a machine value in the operator's authoring file must record its author) and
   **A09** (OSM node tags dropped at ingest).
 - `cartograph/BAKE.md` §4.5 (a census is the union of its wells).
+- ⭐ **The state adapters are new (2026-10-05, Sward) — read the commits whole before writing a line:**
+  `git show 09e8ee84` (the state records: wells + vocabularies; a town's state is the one its OWN OSM
+  `addr:state` votes; sub-state wells allowed) and `git show 301da475` (USDA Cropland Data Layer,
+  `cartograph/cdl.mjs`). ⛔ **The NYC adapter is a NEW YORK state record with NYC wells inside it — not a
+  parallel mechanism** (Boz the Elder, 2026-10-05). California is parked (`ROADMAP H2`); do not build it.
 
 ## 2. Code sites (cite symbols; line numbers drift)
 

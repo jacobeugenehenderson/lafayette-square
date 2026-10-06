@@ -28,6 +28,13 @@ visible — but this is **kit-general**: every town gets it, evidence or no evid
    plane; nothing in `bake-ground.js` or `BakedGround.jsx` knows kerb height (grep, 2026-10-05). This is
    the largest part of the brief and is kit-wide.
 
+### ⭐ THE LAYER, NAMED FIRST (`CLAUDE.md` route step 4)
+- **Ramps, warning strips, crosswalks = FILL (Section).** They are slices and materials of the band
+  stroked inward off the frozen curb; they never move the curb. A change that moves `iA` is out of bounds.
+- **The raised kerb = a BAKE attribute of the curb strip, not a SHAPE change.** WHERE the kerb is stays
+  SHAPE (① → ②, Survey, frozen in `shape.json`); this brief gives that frozen strip HEIGHT at the ground
+  bake. ⛔ If raising it appears to need the curb re-drawn, that is a SHAPE question — stop and flag.
+
 ### Where each corner's ramps come from — the same layering as everything else
 1. **Evidence where it exists:** a city curb-cut layer (NYC `CURB_CUT`, acquired by
    `BRIEF-nyc-adapter.md`), or OSM `kerb=lowered` / `highway=crossing` nodes (`ROADMAP A09` — those tags
