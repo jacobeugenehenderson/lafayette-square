@@ -1,0 +1,4 @@
+{
+  "_ruled": "Jacob, 2026-10-05: a perpendicular pair per junction corner, 1.5 m ramps, 0.6 m warning strip. Crosswalks not ruled — left to the ladder (kit 'none', counted loud).",
+  "ramps": { "style": "perpendicular", "width": 1.5, "warningDepth": 0.6 }
+}
