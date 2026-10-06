@@ -10,7 +10,7 @@ evict-when: every hero card writes per-pixel depth from a baked depth channel, e
 > THIS town's roster board). Every placed species carries depth (`claims-hero-cards-write-their-depth` ⑥). Depth-write cost on the
 > M1 at phone tier: within noise; ⛔ a REAL phone GPU is unmeasured (and the GPU gauge reads ~2× high, `7bf82e90`).
 > ✅ **EYE-GATED (Jacob, 2026-10-05): "chopping and wind look great actually, they did a great job."** Still owed: any wrong-coloured leaves on cards captured 2026-10-04 ·
-> **live proof** of `c7a07a03` + `986a0ac4`: one Grove run that switches towns on ONE page, gated by rebake-verify listing every
+> ✅ **PROVEN LIVE 2026-10-05 21:54 (Boz):** HPDM → Huron dropdown switch on ONE page, then ⟳: rebake-verify "✅ all 8 placed species re-shot" (incl. oak_white + linden_american, last night's casualties), 0 `uCaptureMask` warnings, depth 8/8. Was owed: **live proof** of `c7a07a03` + `986a0ac4`: one Grove run that switches towns on ONE page, gated by rebake-verify listing every
 > placed species on the second town and no "uCaptureMask not found". Not established: LS's doubled tick-1 / second "done" report
 > (wrote nothing; needs the page's own logs next time).
 
