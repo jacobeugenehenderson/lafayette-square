@@ -42,7 +42,7 @@
 import { promises as fs } from 'node:fs'
 import { readFileSync, existsSync } from 'node:fs'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
-import { readTownDesign } from '../cartograph/lookDesign.mjs'
+import { readTownDesign, readBakeDesign } from '../cartograph/lookDesign.mjs'
 import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
 import { DEFAULT_MAP, requireExplicitMap } from '../cartograph/config.js'
 import { declaredTreeWellPaths } from '../cartograph/sources.js'
@@ -828,8 +828,10 @@ export async function bakeTrees({
   // honest forbidden-surface without the frozen shape, and the old paint-layer mask
   // it used to fall through to scattered trees into the carriageway. Bake the
   // ground first. (`forbidden-surface.mjs` header — the legacy tester is deleted.)
+  // ⭐ Derived trees thin over the HOME LOOK's edge band (Stage › Horizon › Edge, 2026-10-06) — the band the town's
+  // ground fades on — read through lookDesign.mjs's one reader.
   const membership = boundaryPath
-    ? makeMembership(path.resolve(REPO_ROOT, boundaryPath))
+    ? makeMembership(path.resolve(REPO_ROOT, boundaryPath), { design: readBakeDesign(mapName, mapName, 'bake-trees'), look: mapName })
     : null
   // ⚠️ No zone shape → NO allow-test would run and every tree would land wherever
   // its census row says, roads and rooftops included. Never a legitimate bake: it

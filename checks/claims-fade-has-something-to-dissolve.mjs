@@ -29,7 +29,8 @@
  */
 import { existsSync, readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
-import { deriveFade } from '../cartograph/boundaryRecords.mjs'
+import { lookFade } from '../cartograph/boundaryRecords.mjs'
+import { readBakeDesign, designPath } from '../cartograph/lookDesign.mjs'
 
 const DATA = 'cartograph/data'
 let hardFails = 0
@@ -77,15 +78,14 @@ for (const s of scenes) {
     console.log(`  ·  ${s.padEnd(26)} no clean/block.json — block fill is built at runtime (stencil − ribbons). UNMEASURED.`)
     continue
   }
-  if (!Number.isFinite(nb.fadeBand)) {
-    console.log(`  ·  ${s.padEnd(26)} no fadeBand — no dissolve, nothing to reach`)
-    continue
-  }
+  // ⭐ The band is the town's home Look's (Stage › Horizon › Edge, 2026-10-06).
+  if (!existsSync(designPath(s))) { console.log(`  ⛔ ${s.padEnd(26)} no home Look — NOT measured`); continue }
+  const design = readBakeDesign(s, s, 'claims-fade-has-something-to-dissolve')
   let blocks
   try { blocks = JSON.parse(readFileSync(blockP, 'utf8')) }
   catch { die(`${s}: clean/block.json is unparseable — cannot measure, and silence here is the defect`); continue }
 
-  const { inner, outer } = deriveFade(nb.radius, nb.fadeBand)
+  const { inner, outer } = lookFade(design, nb.radius, 'check', s)
   const bear = reachByBearing(blocks, nb.center[0], nb.center[1])
   const any = bear.filter(v => v > 0).length
   if (!any) { die(`${s}: block.json parsed but yielded NO coordinates — the walker found nothing`); continue }
@@ -95,7 +95,7 @@ for (const s of scenes) {
   const shortOfInner = bear.filter(v => v > 0 && v < inner).length
   const inBand = bear.filter(v => v >= inner && v < outer).length
 
-  console.log(`  ${s}   R=${nb.radius}  band=${nb.fadeBand}  fade ${inner} → ${outer}`)
+  console.log(`  ${s}   R=${nb.radius}  band=${outer - inner}  fade ${inner} → ${outer}`)
   console.log(`      bearings with block geometry : ${any}/360`)
   console.log(`      reaching the rim (${outer})       : ${reachesOuter}/360`)
   console.log(`      ending INSIDE the band          : ${inBand}/360`)

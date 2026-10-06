@@ -41,7 +41,6 @@ import fs from 'fs'
 import { join } from 'path'
 import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
-import { deriveFade } from './boundaryRecords.mjs'
 import { coastRings } from './coastline.mjs'
 import { ringsInDrawing } from './coast-in-drawing.mjs'
 import { terrainValueReads, TERRAIN_WATER_KEYS, TERRAIN_WATER_NAMES } from './terrainReads.mjs'
@@ -602,12 +601,14 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
 
 // ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx
 // are the other two). sceneStencil.js's header claimed it was the only bake-side
-// one; that was false and is now corrected there. All three apply the same rule via
-// `deriveFade`, but they remain three call sites — collapsing them is open work.
+// one; that was false and is now corrected there. They remain three call sites —
+// collapsing them is open work.
+// ⛔ GEOMETRY DOES NOT READ THE FADE (2026-10-06): the terrain's extent is the radius + its buffer for every town.
+// It read `fade.outer + buffer` when a band was set, else the bare radius; `fade.outer` IS the radius, so every
+// fade-carrying town is unchanged, and the band's presence no longer decides how much terrain is baked.
 function deriveStencilBbox(boundary) {
-  const { boundary: poly, center, radius, fadeBand } = boundary
-  const fade = Number.isFinite(fadeBand) ? deriveFade(radius, fadeBand) : null
-  const targetR = fade ? fade.outer + STENCIL_BUFFER_M : radius
+  const { boundary: poly, center, radius } = boundary
+  const targetR = radius + STENCIL_BUFFER_M
   const scale = targetR / radius
   const [cx, cz] = center
   let mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity

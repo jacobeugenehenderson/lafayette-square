@@ -28,7 +28,10 @@
 import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
-import { deriveFade } from '../cartograph/boundaryRecords.mjs'
+import { lookFade, edgeBandOf } from '../cartograph/boundaryRecords.mjs'
+import { readBakeDesign, designPath } from '../cartograph/lookDesign.mjs'
+// ⭐ The band is the town's home LOOK's (Stage › Horizon › Edge, 2026-10-06) — what its lamps bake and its ground fades on.
+const homeDesign = (s) => existsSync(designPath(s)) ? readBakeDesign(s, s, 'claims-objects-dissolve') : null
 import { readFileSync } from 'fs'
 
 let fails = 0
@@ -53,9 +56,10 @@ h('A. where a dissolve can exist at all, it RAMPS')
 for (const s of scenes) {
   const p = join(DATA, s, 'neighborhood_boundary.json')
   const nb = JSON.parse(readFileSync(p, 'utf8'))
-  if (!Number.isFinite(nb.fadeBand)) continue
-  const m = makeMembership(p)
-  const want = deriveFade(nb.radius, nb.fadeBand)
+  const design = homeDesign(s); if (!design) { console.log(`  ⛔ ${s.padEnd(26)} no home Look — NOT checked`); continue }
+  const m = makeMembership(p, { design, look: s })
+  const band = edgeBandOf(design, nb.radius, 'check', s).band
+  const want = lookFade(design, nb.radius, 'check', s)
   // makeMembership measures from the ORIGIN. ⚠️ Probe several bearings, not one:
   // a scene with EXCLUSION loops (staging has them) can have the +X ray land inside
   // one, where isInside is correctly false — a single probe would read that as a
@@ -68,8 +72,8 @@ for (const s of scenes) {
   const at = (r) => Math.max(...BEARINGS.map(d => atBearing(r, d)))
   const mid = (want.inner + want.outer) / 2
 
-  ok(want.outer - want.inner === nb.fadeBand,
-    `${s.padEnd(26)} band width ${want.outer - want.inner} m === fadeBand ${nb.fadeBand}`)
+  ok(want.outer - want.inner === Math.min(band, nb.radius),
+    `${s.padEnd(26)} band width ${want.outer - want.inner} m === the Look's band ${band}`)
   ok(BEARINGS.every(d => atBearing(want.outer + 1, d) === 0), `${s.padEnd(26)} past the rim → 0 on every bearing`)
 
   if (!m.hasPolygon) {
@@ -89,36 +93,27 @@ h('B. ⛔ the band is NOT zero-width — the regression, pinned directly')
 for (const s of scenes) {
   const p = join(DATA, s, 'neighborhood_boundary.json')
   const nb = JSON.parse(readFileSync(p, 'utf8'))
-  if (!Number.isFinite(nb.fadeBand)) continue
-  const f = deriveFade(nb.radius, nb.fadeBand)
-  const live = makeMembership(p).fade
+  const design = homeDesign(s); if (!design) continue
+  const f = lookFade(design, nb.radius, 'check', s)
+  const live = makeMembership(p, { design, look: s }).fade
   ok(live.inner !== live.outer,
     `${s.padEnd(26)} LIVE band ${live.inner}/${live.outer} has width — ⛔ equal means density() is an on/off cut, the ruling this module quotes against`)
   ok(live.inner === f.inner && live.outer === f.outer,
-    `${s.padEnd(26)} …and it equals deriveFade(radius, fadeBand) exactly — one rule, not a second copy`)
+    `${s.padEnd(26)} …and it equals lookFade(the Look, radius) exactly — one rule, not a second copy`)
 }
 
-h('C. ⛔ a scene with NO authored fadeBand gets NO band invented')
-let sawAbsent = false
-for (const s of scenes) {
-  const p = join(DATA, s, 'neighborhood_boundary.json')
-  const nb = JSON.parse(readFileSync(p, 'utf8'))
-  if (Number.isFinite(nb.fadeBand)) continue
-  sawAbsent = true
-  const m = makeMembership(p)
-  ok(m.hasFade === false, `${s.padEnd(26)} hasFade false — the absence is READ, not filled`)
-  // ⛔ ASSERT THE BAND ITSELF, not its behaviour. On a polygon-less scene isInside
-  // covers the whole disc and shadows the band, so an invented one is INVISIBLE to
-  // density() — a probe-only check passes while the bug is present. Measured: that
-  // is exactly what happened to the first draft of this check.
-  ok(m.fade.inner === m.radius && m.fade.outer === m.radius,
-    `${s.padEnd(26)} band is degenerate (${m.fade.inner}/${m.fade.outer}) — ⛔ deriving here would invent ${deriveFade(nb.radius, undefined).inner} → ${deriveFade(nb.radius, undefined).outer}, which density() CANNOT see`)
-  // Just inside the radius must be fully dense; just outside, gone. A hard cut IS
-  // the intended behaviour when no fade is authored.
-  ok(m.density(nb.radius - 1, 0) === 1 && m.density(nb.radius + 1, 0) === 0,
-    `${s.padEnd(26)} hard cut at the radius — ⛔ deriving here would invent a dissolve 0 → ${nb.radius} the author never asked for`)
+h('C. ⛔ no band is invented for a caller that brought no Look — and a Look with none takes the kit default, said')
+{
+  const p = join(DATA, scenes[0], 'neighborhood_boundary.json')
+  const bare = makeMembership(p)
+  let threw = false
+  try { bare.density(0, 0) } catch { threw = true }
+  ok(threw, `${scenes[0].padEnd(26)} density() without a design REFUSES — never a band guessed for it`)
+  ok(bare.fade === null, `${scenes[0].padEnd(26)} …and exposes no fade`)
+  const R = JSON.parse(readFileSync(p, 'utf8')).radius
+  const def = makeMembership(p, { design: {}, look: 'fixture' }).fade
+  ok(def.outer === R && Math.abs((R - def.inner) - 0.05 * R) < 1e-9, `a Look with no edgeFadeBand dissolves over the kit default, 5% of R (${def.inner}/${def.outer})`)
 }
-if (!sawAbsent) console.log('  ·  every scene on disk authors a fadeBand — the absent branch is unexercised')
 
 h('D. every consumer of makeMembership is accounted for')
 // Read the importers from source so a NEW consumer cannot appear unnoticed.

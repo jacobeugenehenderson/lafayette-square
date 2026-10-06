@@ -1,29 +1,21 @@
 // Neighborhood stencil — single source of truth for the silhouette every
-// consumer reads (point-in-poly clipping, face/street radial fades, bake
+// consumer reads (point-in-poly clipping, the radius, bake
 // bbox).
 //
 // v2 schema fields (with v1 fallbacks so older artifacts still load):
 //   center        [x, z]   — shared center for everything below
 //   radius        number   — nominal silhouette radius (the polygon hugs it)
 //   polygon       [[x,z]]  — 256-pt closed boundary
-//   fadeBand      number   — ⭐ THE ONE FADE KNOB: feather width in metres,
-//                            measured INWARD from the rim. `fade` is DERIVED
-//                            from it (radius − fadeBand → radius) and is never
-//                            stored; `streetFade` was deleted 2026-09-20.
-//                            ⛔ The radius CUTS the geometry — intended. More
-//                            content at the edge is an Extent-tool gesture
-//                            (pull the circle out), not a render change.
+//   ⛔ NO FADE HERE. The edge's fade band + ruffle are a LOOK's (Stage › Horizon › Edge, 2026-10-06), read from the
+//   store's design by each faded layer (`boundaryRecords.mjs#lookFade`). This module is the GEOMETRY of the disc: the
+//   radius cuts it — intended; more content at the edge is an Extent gesture (pull the circle out).
 //
 // The module-level named exports below are the DEFAULT installation (Lafayette
 // Square), kept identical for every existing LS-context consumer. `makeBoundary(nb)`
 // is the KIT factory: hand it ANY installation's neighborhood_boundary.json —
-// loaded by id, never imported here — and it returns the same clip/fade bundle.
+// loaded by id, never imported here — and it returns the same clip bundle.
 // No installation but the default is named in this module.
 import boundaryData from '../../cartograph/data/lafayette-square/neighborhood_boundary.json'
-// ⭐ ONE formula, imported — not a second copy. This module used to carry its own
-// `?? 134 / +42 / +108` defaults that disagreed with boundaryRecords' `200/140/160`,
-// which is how one circle came to have three definitions.
-import { deriveFade, DEFAULT_FADE_BAND } from '../../cartograph/boundaryRecords.mjs'
 
 // Clip a polyline to a CIRCLE (center + radius). Scene-agnostic (params only),
 // so it lives at module scope and is shared by every boundary bundle.
@@ -82,17 +74,11 @@ export function clipPolylineToRadius(points, centerXZ, R) {
   return pieces
 }
 
-// Build the full clip/fade bundle for one neighborhood_boundary.json.
+// Build the clip bundle for one neighborhood_boundary.json.
 export function makeBoundary(nb) {
   const boundary = nb?.boundary || []
   const center = nb?.center || [0, 0]
   const radius = nb?.radius || 0
-  // ⛔ The fade is DERIVED, never read from the artifact. `fade.inner`/`fade.outer`
-  // and `streetFade` used to be stored and used to win over any derivation (every
-  // field was `??`), so moving the radius left five numbers pointing at the old
-  // circle. The only stored fade fact is the band WIDTH.
-  const fadeBand = Number.isFinite(nb?.fadeBand) ? nb.fadeBand : DEFAULT_FADE_BAND
-  const { inner: fadeInner, outer: fadeOuter, ruffle: fadeRuffle } = deriveFade(radius, fadeBand, nb?.fadeRuffle)
 
   function pointInBoundary(x, z) {
     if (!boundary.length) return true // no boundary = show everything
@@ -211,7 +197,6 @@ export function makeBoundary(nb) {
   return {
     boundary,
     center, radius,
-    fadeInner, fadeOuter, fadeBand, fadeRuffle,
     boundaryPolygon: boundary,
     pointInBoundary, streetInBoundary, faceInBoundary,
     clipPolylineToBoundary,
@@ -226,10 +211,6 @@ export function makeBoundary(nb) {
 const _ls = makeBoundary(boundaryData)
 export const BOUNDARY_CENTER_XZ = _ls.center
 export const BOUNDARY_RADIUS = _ls.radius
-export const FADE_INNER = _ls.fadeInner
-export const FADE_OUTER = _ls.fadeOuter
-export const FADE_BAND = _ls.fadeBand
-export const FADE_RUFFLE = _ls.fadeRuffle
 export const boundaryPolygon = _ls.boundaryPolygon
 export const pointInBoundary = _ls.pointInBoundary
 export const streetInBoundary = _ls.streetInBoundary

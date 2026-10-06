@@ -38,6 +38,7 @@ import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
 import { WATER_MIST } from './waterMaterial.js'
+import { EDGE_RUFFLE } from '../lib/neighborhoodFade.js'
 import { weatherExposureScale } from '../lib/sky-scalars.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { resolveGroupAtMinute, getTodSlotMinutes, resolveLampGlowAtMinute } from '../cartograph/animatedParam.js'
@@ -45,6 +46,7 @@ import { lampGlow as _lampGlowUniforms } from '../preview/lampGlowState'
 import {
   EXPOSURE_FLAT_DEFAULTS, migrateFill,
   MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS, mistFogDensity,
+  EDGE_RUFFLE_FIELD_KEYS, EDGE_RUFFLE_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
   DOF_FLAT_DEFAULTS, migrateDof, kitDayChannel } from '../cartograph/skyLightChannels.js'
 
@@ -291,6 +293,25 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
     WATER_MIST.value = Math.min(1, Math.max(0, m.water ?? MIST_FLAT_DEFAULTS.water))
   })
 
+  return null
+}
+
+// ── The town edge's ruffle (channel-driven) ─────────────────────────────────
+// Sets the ONE shared ruffle uniform every faded material binds (src/lib/neighborhoodFade.js#EDGE_RUFFLE) from the
+// Look's `edgeRuffle` channel at the current time of day — scene.json in production, Stage's live channel as an
+// override. One town per page: one driver per <Town>. No channel ⇒ the flat default, 0, a straight edge.
+/** Set the shared ruffle from a channel at the current time of day — the one resolution, used by <Town>'s driver
+ *  and by the Designer's map layers (which draw no <Town>). No channel ⇒ 0, a straight edge. */
+export function driveEdgeRuffle(channel) {
+  if (!channel) { EDGE_RUFFLE.value = EDGE_RUFFLE_FLAT_DEFAULTS.ruffle; return }
+  const tod = useTimeOfDay.getState()
+  const m = resolveGroupAtMinute(channel, tod.getMinuteOfDay(), getTodSlotMinutes(tod.currentTime), EDGE_RUFFLE_FIELD_KEYS, EDGE_RUFFLE_FLAT_DEFAULTS)
+  EDGE_RUFFLE.value = Math.min(1, Math.max(0, Number(m.ruffle) || 0))
+}
+export function EdgeRuffleDriver({ lookId, bakeLastMs, ruffleOverride }) {
+  const sceneJson = useSceneJson(lookOf(lookId, 'EdgeRuffleDriver'), bakeLastMs)
+  const channel = ruffleOverride ?? sceneJson?.edgeRuffle ?? null
+  useFrame(() => driveEdgeRuffle(channel))
   return null
 }
 

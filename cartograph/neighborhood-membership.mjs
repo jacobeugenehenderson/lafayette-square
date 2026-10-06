@@ -32,11 +32,11 @@
  * arborist seat 2026-09-20, measured on HPDM: 34 lamps and 1,417 derived trees had
  * stopped thinning.
  *
- * ⛔ NO `??` HERE EVER AGAIN. An absent fade is a MEANINGFUL state, not a hole to
- * plug with a default — see the `fadeBand` gate in `makeMembership`.
+ * ⛔ NO `??` HERE EVER AGAIN. The band is the baked Look's, passed in (`design`); a caller that thins
+ * without one is refused, never handed a guessed band.
  */
 import { readFileSync } from 'node:fs'
-import { deriveFade } from './boundaryRecords.mjs'
+import { lookFade } from './boundaryRecords.mjs'
 
 /** Ray-cast point-in-polygon. Accepts [{x,z}] or [[x,z]]. */
 function pointInPolygon(px, pz, poly) {
@@ -69,28 +69,19 @@ function hash01(x, z, salt) {
  *   radius: number,
  * }}
  */
-export function makeMembership(boundaryPath) {
+export function makeMembership(boundaryPath, { design = null, look = '?' } = {}) {
   const b = JSON.parse(readFileSync(boundaryPath, 'utf-8'))
   const poly = Array.isArray(b.polygon) && b.polygon.length >= 3 ? b.polygon : null
   const excl = (Array.isArray(b.exclusions) ? b.exclusions : []).filter(e => Array.isArray(e) && e.length >= 3)
   const R = b.radius ?? Infinity
-  // The ground's own fade band — DERIVED from the same SSoT the stencil and the
-  // terrain bake use (`deriveFade`), so objects thin over exactly the band the
-  // ground fades on. This is that rule's fourth call site.
-  //
-  // ⛔⛔ THE GATE IS THE POINT: an absent `fadeBand` means the scene authored NO
-  // dissolve, and that absence is LEGAL AND READ elsewhere in the kit
-  // (`classifyFade` → 'absent'; `sceneStencil` → `manifest.stencil = null`). Deriving
-  // unconditionally would INVENT a band for such a scene — a radius-180 disc with
-  // no fadeBand would gain a dissolve across its entire disc, 0 → 180, where the
-  // author asked for none. ⭐ That is a sentinel treated as a value
-  // (`project_a_sentinel_is_not_a_value`). For a scene with no authored fade, a hard
-  // cut AT the radius is the intended behaviour, so fadeIn === fadeOut === R is
-  // correct there — and only there.
-  const hasFade = Number.isFinite(b.fadeBand)
-  const { inner: fadeIn, outer: fadeOut } = hasFade
-    ? deriveFade(R, b.fadeBand)
-    : { inner: R, outer: R }
+  // The ground's own fade band — the BAKED LOOK's (Stage › Horizon › Edge, 2026-10-06), derived by the same rule
+  // the ground bake uses (`boundaryRecords.mjs#lookFade`), so objects thin over exactly the band the ground fades on.
+  // ⭐ No presence gate: every Look has a band (its own, or the kit's 5% of the radius, said). The dissolve is how the
+  // Look RENDERS the edge; membership itself (`isInside`) never reads it.
+  // ⛔ A caller that asks for `density`/`keep` without a design is refused — never a band guessed for it.
+  const fade = design ? lookFade(design, R, 'membership', look) : null
+  const fadeIn = fade?.inner, fadeOut = fade?.outer
+  const needFade = (what) => { if (!fade) throw new Error(`[membership] ⛔ ${what}() needs the baked Look's design for its fade band — makeMembership(path, { design, look })`) }
 
   const isInside = (x, z) => {
     for (const e of excl) if (pointInPolygon(x, z, e)) return false
@@ -103,6 +94,7 @@ export function makeMembership(boundaryPath) {
    * circle dissolves rather than ending at a seam.
    */
   const density = (x, z) => {
+    needFade('density')
     if (isInside(x, z)) return 1
     const r = Math.hypot(x, z)
     if (r >= fadeOut) return 0
@@ -121,5 +113,5 @@ export function makeMembership(boundaryPath) {
   // from density(): on a scene with no boundary-street polygon, isInside covers the
   // whole disc and SHADOWS the band entirely, so an invented band is invisible to
   // every behavioural probe. A check that can only see symptoms cannot pin this.
-  return { isInside, keep, density, hasPolygon: !!poly, hasFade, fade: { inner: fadeIn, outer: fadeOut }, radius: R }
+  return { isInside, keep, density, hasPolygon: !!poly, fade: fade && { inner: fadeIn, outer: fadeOut }, radius: R }
 }

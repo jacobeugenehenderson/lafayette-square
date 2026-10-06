@@ -795,6 +795,7 @@
     "model": "victorian"
   },
   "terrainExag": 1.5,
+  "edgeFadeBand": 200,
   "sky": {
     "overrides": []
   },

@@ -35,26 +35,18 @@ import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colo
 import { LAND_USE_COLORS } from '../lib/ribbonsGeometry.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
 import useCartographStore from './stores/useCartographStore.js'
-import {
-  BOUNDARY_CENTER_XZ,
-  FADE_INNER, FADE_OUTER,
-  makeBoundary,
-} from './boundary.js'
+import { makeBoundary } from './boundary.js'
+import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { slabFetch } from '../lib/slabUrl.js'
 
 // Single source of truth for the soft-circle silhouette in Designer's V2 live
 // render. Mirrors BakedGround.fadeForGroup — which is now ONE band for every kind.
 //
-// ⛔ BAND_FADE is gone. Ribbon-kind layers used the wider `streetFade` so streets
+// ⛔ The separate ribbon band is gone. Ribbon-kind layers used the wider `streetFade` so streets
 // trailed past the dissolved blocks; that second schedule was deleted 2026-09-20
 // and both kinds now read the same band. `bandFade` survives as a NAME in the
 // descriptor below because useSurfaceMaterial's signature takes two — it is handed
 // the same object as `faceFade`, deliberately, not by oversight.
-const FACE_FADE = {
-  center: { x: BOUNDARY_CENTER_XZ[0], z: BOUNDARY_CENTER_XZ[1] },
-  inner:  FADE_INNER,
-  outer:  FADE_OUTER,
-}
 
 // Match StreetRibbons' BAND_PRIORITY for the bands V2 renders. Residential
 // block fill sits at face-level (pri 1) — below all street/strip layers.
@@ -248,11 +240,9 @@ export default function BlockGeometryV2Debug({
 }) {
   // ⭐⭐ THE FEATHER MUST TRACK THE ACTIVE INSTALLATION'S DISC — the same hazard
   // `MapLayers`' injectRadialFade names, and this consumer did not learn it.
-  // `FACE_FADE`/`BAND_FADE` above are the DEFAULT installation's bands, built from
-  // boundary.js's static LS import. Feeding them to a poured town feathers it on
-  // someone else's radius, and past the band the shader drives alpha to 0 — so it
-  // is not a misplaced edge, it is most of the map going missing.
-  // ⛔ So resolve the bands from the ACTIVE installation's own
+  // The LS module constants that stood here fed a poured town LS's radius, and past the band the shader drives
+  // alpha to 0 — not a misplaced edge, most of the map going missing. They are gone (2026-10-06).
+  // ⛔ So resolve the disc from the ACTIVE installation's own
   // neighborhood_boundary.json, BY ID out of the store, via the kit factory
   // `makeBoundary(nb)`. ⛔ Never a static per-installation map: 47e2ca81 removed
   // one precisely to kill cross-installation refs.
@@ -261,18 +251,17 @@ export default function BlockGeometryV2Debug({
   // stencil's CUT and never the FADE.)
   // ▶ node checks/claims-the-fade-tracks-the-active-disc.mjs
   const sceneBoundaryRaw = useCartographStore(s => s.sceneBoundary)
-  const isLS = scene === 'lafayette-square'
+  // ⭐ The ACTIVE LOOK's band (Stage › Horizon › Edge), on this scene's disc — every town alike, LS included.
+  const edgeFadeBand = useCartographStore(s => s.edgeFadeBand)
   const { faceFade, bandFade } = useMemo(() => {
-    // LS keeps the module constants verbatim — byte-identical to before.
-    if (isLS) return { faceFade: FACE_FADE, bandFade: FACE_FADE }
     // ⛔ No boundary → no fade. It used to take LS's constants (the B2b pattern).
     if (!sceneBoundaryRaw) return { faceFade: null, bandFade: null }
     const B = makeBoundary(sceneBoundaryRaw)
     const center = { x: B.center[0], z: B.center[1] }
-    // ⭐ One band, handed to both slots. See the BAND_FADE note above.
-    const one = { center, inner: B.fadeInner, outer: B.fadeOuter }
+    // ⭐ One band, handed to both slots. See the one-band note above.
+    const one = { center, ...lookFade({ edgeFadeBand }, B.radius, 'BlockGeometryV2Debug', scene) }
     return { faceFade: one, bandFade: one }
-  }, [isLS, sceneBoundaryRaw])
+  }, [sceneBoundaryRaw, edgeFadeBand, scene])
   const makeMaterial = useSurfaceMaterial(flat)
   // Read corner-authoring + palette state directly from the store. Keeps
   // the V2 mount simple (just `ribbons` + `stencil` as props) and lets the

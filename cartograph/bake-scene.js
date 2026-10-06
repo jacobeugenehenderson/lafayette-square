@@ -124,6 +124,8 @@ export async function bakeScene({ look } = {}) {
     warmth:   design.warmth   || kitDayChannel('warmth'),
     fill:     design.fill     || kitDayChannel('fill'),
     mist:     design.mist     || kitDayChannel('mist'),
+    // The town edge's ruffle (Stage › Horizon › Edge), a TOD channel; absent ⇒ a straight edge (the driver's flat 0).
+    edgeRuffle: design.edgeRuffle || null,
     halo:     design.halo     || kitDayChannel('halo'),
     // Sky Layer Gain — exposure scoped to the sky dome.
     skyGain:  design.skyGain  || kitDayChannel('skyGain'),

@@ -70,13 +70,35 @@ export const DEFAULT_FADE_BAND = 200
  * 360 bearings, so it rendered at full alpha against a ragged straight-sided edge.
  * ▶ node checks/claims-fade-has-something-to-dissolve.mjs
  */
-export function deriveFade(radius, fadeBand = DEFAULT_FADE_BAND, fadeRuffle) {
+export function deriveFade(radius, fadeBand = DEFAULT_FADE_BAND) {
   const band = Number.isFinite(fadeBand) ? fadeBand : DEFAULT_FADE_BAND
-  // RUFFLE (Jacob, 2026-09-27): how far the edge scallops, 0 (a straight edge — every town before it existed,
-  // and the meaning of an absent `fadeRuffle`) … 1. Drawn by src/lib/neighborhoodFade.js.
-  const ruffle = Number.isFinite(fadeRuffle) ? Math.min(1, Math.max(0, fadeRuffle)) : 0
-  return { inner: Math.max(0, radius - band), outer: radius, ruffle }
+  return { inner: Math.max(0, radius - band), outer: radius }
 }
+
+/**
+ * ⭐ THE BAND'S HOME IS THE LOOK (Jacob, 2026-10-06: the edge's Fade band + Ruffle move from Extent to Stage). A Look
+ * carries `edgeFadeBand` in metres; a Look without one takes the kit's neutral default, 5% of the radius — a fraction,
+ * never a width in metres that is right only for a town of one size (`CLAUDE.md` Layer 0, Class D) — and says so,
+ * ONCE per Look per load (`announce`), never per frame. The ruffle is the Look's `edgeRuffle` channel, read at render.
+ * ⛔ A negative band THROWS: it would put fade.inner past the rim.
+ * ⛔ Geometry does not read this: the clip is the radius exactly (2026-10-06, Jacob's (a)). Only the rendering does.
+ */
+export const EDGE_DEFAULT_BAND_FRACTION = 0.05
+const _announced = new Set()
+export function edgeBandOf(design, radius, who = 'edge', look = '?') {
+  const b = design?.edgeFadeBand
+  if (b != null) {
+    if (!Number.isFinite(b) || b < 0) throw new Error(`[${who}] ⛔ Look "${look}" edgeFadeBand = ${JSON.stringify(b)} — must be a width in metres, ≥ 0`)
+    return { band: b, source: 'look' }
+  }
+  const band = EDGE_DEFAULT_BAND_FRACTION * radius
+  const k = `${who}|${look}|${radius}`
+  if (!_announced.has(k)) { _announced.add(k)
+    console.warn(`[${who}] Look "${look}" authors no edge fade band — using the kit default, 5% of the radius = ${band.toFixed(1)} m (Stage › Horizon › Edge).`) }
+  return { band, source: 'default' }
+}
+/** The Look's edge fade, derived: `{ inner, outer }` from the radius and the Look's band. */
+export const lookFade = (design, radius, who, look) => deriveFade(radius, edgeBandOf(design, radius, who, look).band)
 
 /** The 256-gon render ring. Always derived from radius + center — never authored. */
 export function makeRing(R, cx, cz) {

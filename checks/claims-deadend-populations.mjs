@@ -28,7 +28,6 @@
 import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { deriveFade } from '../cartograph/boundaryRecords.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const scene = process.argv[2] || 'lafayette-square'
@@ -43,11 +42,8 @@ for (const need of ['neighborhood_boundary.json', 'clean/map.json', 'clean/skele
 const nb = JSON.parse(readFileSync(join(D, 'neighborhood_boundary.json'), 'utf8'))
 const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
 const R = nb.radius
-// fade.outer is DERIVED (radius + fadeBand) since 2026-09-20; streetFade is gone.
-const keepR = Math.max(
-  Number.isFinite(nb.fadeBand) ? deriveFade(nb.radius, nb.fadeBand).outer : 0,
-  Number.isFinite(nb.radius) ? nb.radius : 0,
-) + 30
+// The geometry reach is the radius: the fade is a Look's and never moves geometry (sceneStencil.js, 2026-10-06).
+const keepR = (Number.isFinite(nb.radius) ? nb.radius : 0) + 30
 
 const xz = (p) => Array.isArray(p) ? [p[0], p[1]] : [p.x, p.z]
 const rad = (p) => { const [x, z] = xz(p); return Math.hypot(x - cx, z - cz) }

@@ -1,13 +1,16 @@
 /**
  * CLAIM: the circle has ONE origin, and the fade is DERIVED from it.
  *
- *   radius, center, fadeBand     AUTHORED — the only stored circle facts
+ *   radius, center               AUTHORED in Extent — the disc; the radius cuts geometry
+ *   edgeFadeBand                 AUTHORED per LOOK (Stage › Horizon › Edge, 2026-10-06), metres;
+ *                                absent ⇒ 5% of the radius, said
  *   fade.inner = radius − band   DERIVED, never stored
  *   fade.outer = radius          DERIVED, never stored — INWARD
  *   streetFade                   DELETED
  *
  * ⛔ The radius CUTS the geometry, and that is intended. More content at the edge is
- * an Extent-tool gesture — pull the circle out — not a render change.
+ * an Extent-tool gesture — pull the circle out — not a render change. ⛔ And the fade
+ * never moves geometry: the clip is the radius, whatever the Look says (section E).
  *
  * ⭐ WHY THIS CHECK AND NOT A THRESHOLD. Before 2026-09-20 one circle had FOUR
  * definitions — the stored literals, boundary.js's `?? 134/+42/+108` defaults,
@@ -27,7 +30,8 @@ import { existsSync, readFileSync, mkdirSync, writeFileSync, rmSync } from 'fs'
 import { join } from 'path'
 import { readdirSync } from 'fs'
 import { tmpdir } from 'os'
-import { deriveFade, DEFAULT_FADE_BAND, classifyFade, FADE_FIELDS } from '../cartograph/boundaryRecords.mjs'
+import { deriveFade, DEFAULT_FADE_BAND, classifyFade, FADE_FIELDS, edgeBandOf, lookFade, EDGE_DEFAULT_BAND_FRACTION } from '../cartograph/boundaryRecords.mjs'
+import { readLookDesign, SEED_STRIPPED_FIELDS, TOWN_SCALED_LOOK_FIELDS } from '../cartograph/lookDesign.mjs'
 import { loadSceneStencil } from '../cartograph/sceneStencil.js'
 
 let fails = 0
@@ -50,12 +54,21 @@ for (const s of scenes) {
 }
 
 // ── B. THE ONE KNOB IS SANE WHERE PRESENT ──────────────────────────────────
-h('B. fadeBand is the one stored fade fact, finite and non-negative')
-for (const s of scenes) {
-  const nb = JSON.parse(readFileSync(join(DATA, s, 'neighborhood_boundary.json'), 'utf8'))
-  if (nb.fadeBand === undefined) { console.log(`  ·  ${s.padEnd(26)} no fadeBand — absence is LEGAL and READ (no dissolve)`); continue }
-  ok(Number.isFinite(nb.fadeBand) && nb.fadeBand >= 0, `${s.padEnd(26)} fadeBand=${nb.fadeBand}`)
+h('B. the band is the LOOK\'s — finite and non-negative where authored; the kit default where not')
+const looks = JSON.parse(readFileSync('public/looks/index.json', 'utf8')).looks.filter(l => l.scene && scenes.includes(l.scene))
+for (const l of looks) {
+  const d = readLookDesign(l.id, 'claims-fade-derives-from-radius')
+  const R = JSON.parse(readFileSync(join(DATA, l.scene, 'neighborhood_boundary.json'), 'utf8')).radius
+  if (d.edgeFadeBand === undefined) { const e = edgeBandOf(d, R, 'check', l.id); ok(e.source === 'default' && e.band === EDGE_DEFAULT_BAND_FRACTION * R, `${l.id.padEnd(26)} no edgeFadeBand → the kit default, ${e.band} m (5% of R ${R})`); continue }
+  ok(Number.isFinite(d.edgeFadeBand) && d.edgeFadeBand >= 0, `${l.id.padEnd(26)} edgeFadeBand=${d.edgeFadeBand}`)
 }
+let negThrew = false
+try { edgeBandOf({ edgeFadeBand: -5 }, 892, 'fixture') } catch { negThrew = true }
+ok(negThrew, 'a negative edgeFadeBand throws — it would put fade.inner past the rim')
+// ⭐ The kit default is read off the function on a fixture, because a town on disk that authors no band is rare: a
+// FRACTION of the radius, so it scales with the town — never a width in metres right only for a town of one size.
+for (const R of [892, 5290]) { const e = edgeBandOf({}, R, 'fixture', 'fixture')
+  ok(e.source === 'default' && e.band === EDGE_DEFAULT_BAND_FRACTION * R && EDGE_DEFAULT_BAND_FRACTION === 0.05, `no band, R=${R} → the kit default ${e.band} m (5% of R)`) }
 
 // ── C. THE FORMULA IS ADDITIVE ─────────────────────────────────────────────
 // Read off the live function, not restated: the feather starts AT the rim.
@@ -72,45 +85,45 @@ ok(deriveFade(100, 400).inner === 0, 'a band wider than the radius clamps at 0 r
 // The reason the whole arc exists: the radius is live-editable, and five stored
 // numbers used to keep pointing at the old circle after it moved.
 h('D. the fade follows a moved radius (the defect that started this)')
-for (const s of scenes) {
-  const nb = JSON.parse(readFileSync(join(DATA, s, 'neighborhood_boundary.json'), 'utf8'))
-  if (nb.fadeBand === undefined) continue
-  const before = deriveFade(nb.radius, nb.fadeBand)
-  const after = deriveFade(nb.radius + 500, nb.fadeBand)
+for (const l of looks) {
+  const d = readLookDesign(l.id, 'claims-fade-derives-from-radius')
+  if (d.edgeFadeBand === undefined) continue   // a default band is a FRACTION of R, so it scales rather than translates
+  const R = JSON.parse(readFileSync(join(DATA, l.scene, 'neighborhood_boundary.json'), 'utf8')).radius
+  const before = lookFade(d, R, 'check', l.id), after = lookFade(d, R + 500, 'check', l.id)
   ok(after.inner === before.inner + 500 && after.outer === before.outer + 500,
-    `${s.padEnd(26)} radius +500 → fade moves with it (${before.inner}/${before.outer} → ${after.inner}/${after.outer})`)
+    `${l.id.padEnd(26)} radius +500 → fade moves with it (${before.inner}/${before.outer} → ${after.inner}/${after.outer})`)
 }
 
-// ── E. THE UNAUTHORED-FADE BRANCH — NO LOCAL WITNESS, SO A FIXTURE ─────────
-// ⛔ No scene on disk has a boundary and no fadeBand, so this branch CANNOT be
-// eye-gated and is not claimed to be. It is reachable by any town poured before its
-// fade is authored — the kit case. Ruled 2026-09-20: no fade ⇒ no scale-out.
-h('E. unauthored-fade branch: no fade ⇒ targetR = radius, NO +50 (fixture)')
+// ── E. THE FADE NEVER MOVES GEOMETRY — A FIXTURE, BOTH WAYS ──────────────
+// ⛔ Ruled 2026-10-06 (a): the clip is the disc's ring at the radius exactly, whether or not a band exists anywhere.
+// It reached `fade.outer + 50` when a band was set; a Look deciding how far geometry reaches is what this forbids.
+h('E. the clip is the radius exactly, band or no band (fixture)')
 const tmp = join(tmpdir(), `fade-ssot-fixture-${process.pid}`)
 try {
   const R = 300
   const ring = []
   for (let i = 0; i < 256; i++) { const a = (i / 256) * 2 * Math.PI; ring.push([R * Math.cos(a), R * Math.sin(a)]) }
-
   const write = (scene, nb) => {
     const d = join(tmp, 'cartograph', 'data', scene)
     mkdirSync(d, { recursive: true })
     writeFileSync(join(d, 'neighborhood_boundary.json'), JSON.stringify(nb))
   }
-  write('unauthored', { version: 2, center: [0, 0], radius: R, boundary: ring })
-  write('authored',   { version: 2, center: [0, 0], radius: R, fadeBand: 200, boundary: ring })
-
-  const un = loadSceneStencil(tmp, 'unauthored')
-  const au = loadSceneStencil(tmp, 'authored')
-
+  write('plain',     { version: 2, center: [0, 0], radius: R, boundary: ring })
+  write('withband',  { version: 2, center: [0, 0], radius: R, fadeBand: 200, boundary: ring })
   const reach = (st) => Math.round(Math.max(...st.clipPolygon.map(([x, z]) => Math.hypot(x, z))))
-  ok(un.faceFade === null, 'no fadeBand → faceFade null (no dissolve; manifest.stencil stays null)')
-  ok(reach(un) === R, `no fadeBand → clip reaches radius exactly: got ${reach(un)} m, want ${R} (a +50 scale-out here protects a feather that does not exist)`)
-  ok(au.faceFade.outer === R, `fadeBand 200 → fade.outer ${au.faceFade.outer} (the rim)`)
-  ok(reach(au) === R + 50, `fadeBand 200 → clip reaches fade.outer + 50 (${reach(au)} m)`)
+  for (const sc of ['plain', 'withband']) {
+    const st = loadSceneStencil(tmp, sc)
+    ok(reach(st) === R, `${sc.padEnd(9)} clip reaches the radius exactly: ${reach(st)} m (want ${R})`)
+    ok(!('faceFade' in st), `${sc.padEnd(9)} the stencil carries no fade — geometry does not read it`)
+  }
 } finally {
   rmSync(tmp, { recursive: true, force: true })
 }
+
+// ── E2. A TOWN-SIZED BAND DOES NOT TRAVEL ──────────────────────────────────
+h('E2. edgeFadeBand is stripped when a Look is seeded from another town\'s')
+ok(TOWN_SCALED_LOOK_FIELDS.includes('edgeFadeBand') && SEED_STRIPPED_FIELDS.includes('edgeFadeBand'),
+  'edgeFadeBand is a town-scaled Look field and in the seed strip — LS\'s 200 m never lands on a 5 km town')
 
 // ── F. THE FADE SET IS ONE FIELD ───────────────────────────────────────────
 h('F. the fade set is one field, and classify reads it')

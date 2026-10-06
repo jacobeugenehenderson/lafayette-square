@@ -98,7 +98,7 @@ h('D. the two models genuinely disagree — so C is not vacuous')
 if (stale.length) {
   console.log(`\n⚠️  ${stale.length} slab(s) predate the 2026-09-20 fade ruling and are rendered under the OLD model:`)
   for (const s of stale) console.log(`      ${s}`)
-  console.log('   They are NOT showing their scene\'s authored fadeBand. ▶ re-bake each look.')
+  console.log('   They are NOT showing their Look\'s edge fade band. ▶ re-bake each look.')
   console.log('   ⛔ This is not a code failure — it is an artifact that needs re-pouring, and')
   console.log('      the re-bake is the operator\'s call.')
 }

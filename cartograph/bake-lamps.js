@@ -24,7 +24,7 @@ import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
 import { requireSceneTerrain } from './terrainLoad.js'
-import { readTownDesign } from './lookDesign.mjs'
+import { readTownDesign, readBakeDesign } from './lookDesign.mjs'
 import { makeGroundSampler } from './groundSampler.js'
 import { makeMembership } from './neighborhood-membership.mjs'
 import { makeZoneTester } from './forbidden-surface.mjs'
@@ -171,7 +171,8 @@ function loadLampsForMap(scene, look, derivedPath) {
   // ── Bounds: real lamps stop at the rim; invented ones dissolve across the fade band ──
   const bp = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
   if (!existsSync(bp)) throw new Error(`[bake-lamps] no ${bp} — a lamp census has no edge without the neighborhood.`)
-  const m = makeMembership(bp)
+  // ⭐ The dissolve band is the baked Look's (its ground fades on the same one) — lookDesign.mjs's one reader.
+  const m = makeMembership(bp, { design: readBakeDesign(look, scene, 'bake-lamps'), look })
 
   const out = [], tally = { nudged: {}, dropped: {}, dissolved: 0, beyondRim: 0 }
   const bump = (o, k) => { o[k] = (o[k] || 0) + 1 }

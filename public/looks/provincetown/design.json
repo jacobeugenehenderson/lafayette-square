@@ -80,6 +80,7 @@
   },
   "lamps": null,
   "terrainExag": null,
+  "edgeFadeBand": 200,
   "sky": {
     "overrides": []
   },

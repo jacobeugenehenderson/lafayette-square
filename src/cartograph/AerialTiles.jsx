@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { deriveFade } from '../../cartograph/boundaryRecords.mjs'
+import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
 import useCartographStore from './stores/useCartographStore.js'
 
@@ -12,11 +12,11 @@ import useCartographStore from './stores/useCartographStore.js'
 // from the ACTIVE installation's data in the store (fetched by id) — this
 // module names no installation. `makeGeo` turns that raw data into the tile
 // bundle; null until the store has loaded it.
-function makeGeo(g, nb) {
+function makeGeo(g, nb, edgeFadeBand) {
   if (!g || !nb) return null
-  // ⛔ Derived, never read off the artifact — a FOURTH copy of the fade formula
-  // lived here, with its own `?? 134` that matched neither of the other two.
-  const { inner: fadeInner, outer: fadeOuter, ruffle: fadeRuffle } = deriveFade(nb.radius || 0, nb.fadeBand, nb.fadeRuffle)
+  // ⭐ The ACTIVE LOOK's band on this scene's disc (Stage › Horizon › Edge) — the one rule, `lookFade`; the ruffle is
+  // the shared uniform the edge driver sets (src/lib/neighborhoodFade.js).
+  const { inner: fadeInner, outer: fadeOuter } = lookFade({ edgeFadeBand }, nb.radius || 0, 'AerialTiles', 'active')
   const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
   return {
     center: { lat: g.lat, lon: g.lon },
@@ -27,20 +27,20 @@ function makeGeo(g, nb) {
     fadeCenterXZ: [cx, cz],
     fadeInner,
     fadeOuter,
-    fadeRuffle,
     cosLat: Math.cos((g.lat * Math.PI) / 180),
   }
 }
 function useSceneGeo() {
   const g = useCartographStore(s => s.mapGeography)
   const nb = useCartographStore(s => s.sceneBoundary)
-  return useMemo(() => makeGeo(g, nb), [g, nb])
+  const band = useCartographStore(s => s.edgeFadeBand)
+  return useMemo(() => makeGeo(g, nb, band), [g, nb, band])
 }
 
 function injectCircleCrop(mat, geo) {
   mat.transparent = true
   mat.onBeforeCompile = (shader) => {
-    bindNeighborhoodFade(shader.uniforms, { center: geo.fadeCenterXZ, inner: geo.fadeInner, outer: geo.fadeOuter, ruffle: geo.fadeRuffle })
+    bindNeighborhoodFade(shader.uniforms, { center: geo.fadeCenterXZ, inner: geo.fadeInner, outer: geo.fadeOuter })
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vAerialWorldPos;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvAerialWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
@@ -51,7 +51,7 @@ function injectCircleCrop(mat, geo) {
         'gl_FragColor.a *= neighborhoodFade(vAerialWorldPos.xz);\n' +
         'if (gl_FragColor.a < 0.01) discard;')
   }
-  mat.customProgramCacheKey = () => `aerial-crop-${geo.fadeInner.toFixed(0)}-${geo.fadeOuter.toFixed(0)}-r${geo.fadeRuffle}`
+  mat.customProgramCacheKey = () => `aerial-crop-${geo.fadeInner.toFixed(0)}-${geo.fadeOuter.toFixed(0)}`
   return mat
 }
 

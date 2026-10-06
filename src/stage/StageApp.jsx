@@ -33,7 +33,8 @@ import TodChannel from '../cartograph/TodChannel.jsx'
 import { LampGlowEditor } from '../cartograph/CartographSurfaces.jsx'
 import { StoreChannel } from '../cartograph/CartographSkyLight.jsx'
 import { setPieceOf } from '../instance.js'
-import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, MIST_FIELDS, MIST_FLAT_DEFAULTS, HALO_FIELDS, HALO_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { ARCHLIGHT_FIELDS, ARCHLIGHT_FLAT_DEFAULTS, LANTERN_FIELDS, LANTERN_FLAT_DEFAULTS, MIST_FIELDS, MIST_FLAT_DEFAULTS, HALO_FIELDS, HALO_FLAT_DEFAULTS, EDGE_RUFFLE_FIELDS, EDGE_RUFFLE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { EDGE_DEFAULT_BAND_FRACTION } from '../../cartograph/boundaryRecords.mjs'
 import DawnTimeline from '../components/DawnTimeline'
 import { townRanges } from '../lib/townRange.js'
 import { useDiagnostics } from './diagnostics.js'
@@ -207,13 +208,39 @@ function HorizonControls() {
           <SliderRow label="Foot Fade" value={a.footFade} min={0} max={120} step={1}
             onChange={(v) => setArch('footFade', v)} />
         </>) : null}
-        {/* The distance: the Arch or the backdrop above (only where the town has one), then the air between. The
-            town's own edge is the neighborhood fade (Extent › Fade band + Ruffle), not a control here. */}
+        {/* The distance: the Arch or the backdrop above (only where the town has one), then the air between, then
+            the town's own edge. */}
         {(isLandscape || archChannel) && <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />}
         <StoreChannel name="mist" label="Mist" fields={MIST_FIELDS} flatDefaults={MIST_FLAT_DEFAULTS} />
         <StoreChannel name="halo" label="Halo" fields={HALO_FIELDS} flatDefaults={HALO_FLAT_DEFAULTS} />
+        <div style={{ borderTop: '1px solid var(--outline-variant)', margin: '4px 0' }} />
+        <EdgeControls />
       </div>
     </Collapsible>
+  )
+}
+
+// The town's faded edge (moved here from Extent, 2026-10-06): the Fade band in metres and the Ruffle, a TOD channel.
+// The band shows at the next Bake (the ground fades on the baked band); the ruffle is live. Extent keeps the radius,
+// which cuts the geometry, and shows this band as a read-only ring. Unauthored, the band is 5% of the radius — the
+// row says so rather than showing a number that looks chosen.
+function EdgeControls() {
+  const band = useCartographStore(s => s.edgeFadeBand)
+  const setBand = useCartographStore(s => s.setEdgeFadeBand)
+  const radius = useCartographStore(s => s.sceneBoundary?.radius) || 0
+  const shown = band ?? EDGE_DEFAULT_BAND_FRACTION * radius
+  return (
+    <div className="space-y-1">
+      <SliderRow label="Fade band" value={shown} min={0} max={Math.max(1, Math.round(radius))} step={1} suffix=" m"
+        disabled={!(radius > 0)} title={radius > 0 ? 'Width of the fade at the town\'s edge, inward from the radius — shows at the next Bake' : 'No disc yet — author the radius in Extent'}
+        onChange={(v) => setBand(v)} />
+      {band == null && radius > 0 && (
+        <div style={{ fontSize: 11, color: 'var(--on-surface-variant)', paddingLeft: 8 }}>
+          default — {Math.round(EDGE_DEFAULT_BAND_FRACTION * 100)}% of the radius; drag to set this town's own
+        </div>
+      )}
+      <StoreChannel name="edgeRuffle" label="Ruffle" fields={EDGE_RUFFLE_FIELDS} flatDefaults={EDGE_RUFFLE_FLAT_DEFAULTS} />
+    </div>
   )
 }
 

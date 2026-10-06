@@ -233,6 +233,7 @@
   "wallPalettes": null,
   "lamps": null,
   "terrainExag": null,
+  "edgeFadeBand": 200,
   "dof": {
     "animated": "tod",
     "values": {

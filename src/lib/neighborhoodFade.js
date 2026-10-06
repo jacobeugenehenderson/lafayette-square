@@ -5,10 +5,14 @@
  * side was written FIVE times (fadeGroundMaterial, grassMaterial, useSurfaceMaterial, MapLayers, AerialTiles),
  * each its own `smoothstep(uFadeInner, uFadeOuter, r)`. They are this one function now.
  *
- * ⭐ RUFFLE (Jacob, 2026-09-27: "I do like the ability to 'ruffle' the farthest away edge"). Noise pushes the fade
- * in and out along the rim, so the edge is scalloped rather than a perfect circle. 0 = a straight edge (every
- * town before this existed); 1 = the scallops swing a full band either side. Authored per town in Extent, beside
- * Fade band, stored as `fadeRuffle` in neighborhood_boundary.json.
+ * ⭐ RUFFLE (Jacob, 2026-09-27: "I do like the ability to 'ruffle' the farthest away edge"). Noise scallops the edge
+ * rather than leaving a perfect circle. 0 = a straight edge; 1 = the scallops bite a full band deep.
+ * ⛔ INWARD ONLY (`r + |wobble|`): the edge never passes the radius, so the clip at the radius is exact for every
+ * ruffle and no Look decides how far geometry reaches. The same reason the fade itself went inward on 2026-09-20
+ * (`boundaryRecords.mjs#deriveFade`: outward only works if geometry reaches past the edge). To fade further out,
+ * pull the radius out in Extent.
+ * ⭐ A Look channel (`edgeRuffle`, TOD-animatable), so it is ONE shared uniform (`EDGE_RUFFLE`) every faded material
+ * binds and a per-frame driver sets — never a value baked into a program, and never part of its cache key.
  *
  * Use: put NEIGHBORHOOD_FADE_GLSL after `#include <common>` in the fragment shader, call
  * `neighborhoodFade(worldXZ)` for the alpha factor, bind with bindNeighborhoodFade, key with neighborhoodFadeKey.
@@ -32,17 +36,21 @@ float neighborhoodFade(vec2 xz) {
   vec2 d = xz - uFadeCenter;
   float band = max(1.0, uFadeOuter - uFadeInner);
   float wobble = (nbFadeNoise(d / max(uFadeOuter, 1.0) * 9.0) - 0.5) * 2.0 * band * uFadeRuffle;
-  return 1.0 - smoothstep(uFadeInner, uFadeOuter, length(d) + wobble);
+  return 1.0 - smoothstep(uFadeInner, uFadeOuter, length(d) + abs(wobble));
 }
 `
 
-/** Bind the four fade uniforms. `center` is [x, z]; `ruffle` absent means 0 (a straight edge). */
-export function bindNeighborhoodFade(uniforms, { center, inner, outer, ruffle }) {
+/** THE ruffle, shared by every faded material on the page (one town per page), set each frame from the Look's
+ *  `edgeRuffle` channel by the edge driver (`PostProcessing.jsx#EdgeRuffleDriver`). 0 until a driver runs. */
+export const EDGE_RUFFLE = { value: 0 }
+
+/** Bind the fade uniforms. `center` is [x, z]; the ruffle is the shared `EDGE_RUFFLE`. */
+export function bindNeighborhoodFade(uniforms, { center, inner, outer }) {
   uniforms.uFadeCenter = { value: new THREE.Vector2(center[0], center[1]) }
   uniforms.uFadeInner  = { value: inner }
   uniforms.uFadeOuter  = { value: outer }
-  uniforms.uFadeRuffle = { value: Number.isFinite(ruffle) ? ruffle : 0 }
+  uniforms.uFadeRuffle = EDGE_RUFFLE
 }
 
 /** Program cache-key fragment for a fade (materials with different fades must not share a program by accident). */
-export const neighborhoodFadeKey = (f) => `f${f.inner}-${f.outer}-r${Number.isFinite(f.ruffle) ? f.ruffle : 0}`
+export const neighborhoodFadeKey = (f) => `f${f.inner}-${f.outer}`

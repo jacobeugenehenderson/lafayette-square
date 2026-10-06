@@ -42,6 +42,7 @@ import {
   EXPOSURE_FIELD_KEYS, EXPOSURE_FLAT_DEFAULTS,
   AO_FIELD_KEYS, AO_FLAT_DEFAULTS,
   MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS,
+  EDGE_RUFFLE_FIELD_KEYS, EDGE_RUFFLE_FLAT_DEFAULTS,
   HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
   SKY_GAIN_FIELD_KEYS, SKY_GAIN_FLAT_DEFAULTS,
   GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS,
@@ -391,6 +392,10 @@ const DESIGN_FIELDS = [
   _grp('exposure',       EXPOSURE_FIELD_KEYS,       EXPOSURE_FLAT_DEFAULTS),
   _grp('ao',             AO_FIELD_KEYS,             AO_FLAT_DEFAULTS),
   _grp('mist',           MIST_FIELD_KEYS,           MIST_FLAT_DEFAULTS),
+  // The town's faded edge, per Look (was Extent's; moved to Stage 2026-10-06): the band in METRES — absent ⇒ every
+  // reader takes 5% of the radius and says so (boundaryRecords.mjs#edgeBandOf) — and the ruffle, a TOD channel.
+  { key: 'edgeFadeBand', hydrate: (d) => Number.isFinite(d.edgeFadeBand) ? d.edgeFadeBand : null },
+  _grp('edgeRuffle',     EDGE_RUFFLE_FIELD_KEYS,    EDGE_RUFFLE_FLAT_DEFAULTS),
   _grp('halo',           HALO_FIELD_KEYS,           HALO_FLAT_DEFAULTS),
   _grp('skyGain',        SKY_GAIN_FIELD_KEYS,       SKY_GAIN_FLAT_DEFAULTS),
   // stars had channel actions (a Stage control) but no field here, so its edits were never saved.
@@ -584,6 +589,7 @@ const useCartographStore = create((set, get) => ({
   // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
   // operator can dial up/down via the Streets > Curb slider.
   curbWidth: 0.1524,
+  edgeFadeBand: null,
   // [x,z] override for the park title center; null = computed default (LafayettePark).
   parkTitlePos: null,
   // Universal alley end-cap mode. One global dial — every alley in the
@@ -824,6 +830,15 @@ const useCartographStore = create((set, get) => ({
   setCurbWidth: (v) => {
     const n = Math.max(0, Math.min(1.0, Number(v) || 0))
     set({ curbWidth: n })
+    get()._saveDesignDebounced()
+  },
+  // The faded edge's band, metres (Stage › Horizon › Edge). `null` = unauthored: the 5%-of-radius default, said.
+  // ⛔ A negative band would put fade.inner past the rim — refused, not clamped.
+  setEdgeFadeBand: (v) => {
+    if (v === null) { set({ edgeFadeBand: null }); get()._saveDesignDebounced(); return }
+    const n = Number(v)
+    if (!Number.isFinite(n) || n < 0) throw new Error(`[edge] ⛔ fade band must be a width in metres, ≥ 0 — got ${JSON.stringify(v)}`)
+    set({ edgeFadeBand: n })
     get()._saveDesignDebounced()
   },
   // Move the park title. pos = [x,z] world, or null to reset to the default.
@@ -1386,6 +1401,11 @@ const useCartographStore = create((set, get) => ({
     name: 'mist',
     fieldKeys: MIST_FIELD_KEYS,
     flatDefaults: MIST_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'edgeRuffle',
+    fieldKeys: EDGE_RUFFLE_FIELD_KEYS,
+    flatDefaults: EDGE_RUFFLE_FLAT_DEFAULTS,
   }, set, get),
   ...createGroupChannelActions({
     name: 'halo',

@@ -159,6 +159,11 @@ export const MIST_FIELDS = [
 ]
 export const MIST_FLAT_DEFAULTS = { amount: 0.2, color: '#9dc5e0', water: 0.3 }
 export const MIST_FIELD_KEYS = MIST_FIELDS.map(f => f.key)
+// Edge ruffle (Horizon card › Edge) — how far the town's faded edge scallops, 0 (a straight edge) … 1 (a full band
+// deep, inward only — src/lib/neighborhoodFade.js). TOD-animatable; the band width beside it is a plain Look number.
+export const EDGE_RUFFLE_FIELDS = [{ key: 'ruffle', label: 'Ruffle', min: 0, max: 1, step: 0.01 }]
+export const EDGE_RUFFLE_FLAT_DEFAULTS = { ruffle: 0 }
+export const EDGE_RUFFLE_FIELD_KEYS = EDGE_RUFFLE_FIELDS.map(f => f.key)
 /** FogExp2 density (1/m) for a Mist amount in a town of `radius` metres. The one mapping — every fog mount reads it.
  *  FogExp2 keeps exp(−(ρd)²) of the light at distance d; amount 1 is the ρ that keeps half at d = radius. */
 export function mistFogDensity(amount, radius) {

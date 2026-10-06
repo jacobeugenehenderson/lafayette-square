@@ -50,7 +50,13 @@ export const PLACE_DESIGN_FIELDS = ['heroKeyframes', 'shots', 'browseFrame', 'he
  * the Look's (cosmetic) and travels. Declared here, from the two lists above, so a field added to either is stripped
  * the day it is added (Phase 2 C row 5). `serve.js#seedDesignForScene` adds its street-keyed list and its residue refusal.
  */
-export const SEED_STRIPPED_FIELDS = [...new Set([...TOWN_DESIGN_FIELDS, ...PLACE_DESIGN_FIELDS])]
+/**
+ * ⭐ LOOK fields sized to ONE town — cosmetic, so not the town's, but a value authored for one town's size is wrong for
+ * another's. `edgeFadeBand` is metres: Lafayette Square's 200 m seeded into a 5 km town would be a 4% band nobody
+ * chose, and the kit's own default (5% of the radius) would never fire — the bleed Layer 0 names. Stripped on seed.
+ */
+export const TOWN_SCALED_LOOK_FIELDS = ['edgeFadeBand']
+export const SEED_STRIPPED_FIELDS = [...new Set([...TOWN_DESIGN_FIELDS, ...PLACE_DESIGN_FIELDS, ...TOWN_SCALED_LOOK_FIELDS])]
 
 export const designPath = (look) => join(ROOT, 'public', 'looks', look, 'design.json')
 

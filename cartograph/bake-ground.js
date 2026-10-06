@@ -56,6 +56,7 @@ import { waterLevels } from './waterLevel.mjs'
 import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign } from './lookDesign.mjs'
+import { lookFade } from './boundaryRecords.mjs'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 import { SURFACES, resolveClassTable } from './surfaces.mjs'
@@ -882,6 +883,8 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
   const stencil = loadSceneStencil(scene)
+  // ⭐ THE FADE IS THE BAKED LOOK'S (Stage › Horizon › Edge, 2026-10-06), derived from the disc radius and the Look's
+  // band — 5% of the radius, said, where the Look authors none. Geometry never reads it (sceneStencil.js).
 
   const ribbons = JSON.parse(readFileSync(ribbonsPath, 'utf-8'))
   // Raw survey (per-street `source` tag) — drives the glean valley/assessor
@@ -892,6 +895,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   const mapData = existsSync(mapPath) ? JSON.parse(readFileSync(mapPath, 'utf-8')) : { layers: {} }
   // ⛔ No design ⇒ no bake; the town's fields (blockCustoms, corners, land use) from its home Look (lookDesign.mjs).
   const design  = readBakeDesign(look, scene, 'bake-ground')
+  // ⭐ THE FADE IS THE BAKED LOOK'S (Stage › Horizon › Edge, 2026-10-06), derived from the disc radius and the Look's
+  // band — 5% of the radius, said, where the Look authors none. Geometry never reads it (sceneStencil.js).
+  const _hasDisc = Number.isFinite(stencil.radius) && stencil.radius > 1
+  const faceFade = _hasDisc ? lookFade(design, stencil.radius, 'bake-ground', look) : null
   // Park footpaths: the clip polygon + water (the bridge split) for the
   // `park-path` group. Scene-keyed; absent → no park-path group emitted.
   // (Water-overlap bridge detection is a Phase-1 stopgap — Phase 5 carries
@@ -1428,11 +1435,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // baked a 51 m bbox — silently, and looking like a successful bake. That 1 is the
   // absent signal here; a real hood is never 1 m. ⚠️ The coercion itself is the
   // deeper defect and it lives one layer up, in sceneStencil.js.
-  const _fadeOuter = Number.isFinite(stencil.faceFade?.outer) ? stencil.faceFade.outer : null
-  const _discR = Number.isFinite(stencil.radius) && stencil.radius > 1 ? stencil.radius : null
-  if (_fadeOuter === null && _discR === null) {
+  const _discR = _hasDisc ? stencil.radius : null
+  if (_discR === null) {
     console.error(`
-⛔ scene '${scene}' has no authored extent (no fade.outer, no radius > 1)
+⛔ scene '${scene}' has no authored extent (no radius > 1)
    in cartograph/data/${scene}/neighborhood_boundary.json.
 
    The bake bbox anchors the AO texel→world map and BakedGround's UV2. Baking
@@ -1441,7 +1447,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
 `)
     process.exit(1)
   }
-  const _bakeHalf = Math.max(_fadeOuter ?? 0, _discR ?? 0) + 50
+  const _bakeHalf = _discR + 50   // the AO texel map's extent — NOT the clip, which is the radius exactly
   const bx0 = stencil.center[0] - _bakeHalf
   const bx1 = stencil.center[0] + _bakeHalf
   const bz0 = stencil.center[1] - _bakeHalf
@@ -1460,10 +1466,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // shipped looking correct and degraded the Slab later. ⭐ That is CLAUDE.md Layer 0
   // question 2 exactly — a deletion converted into a plausible-looking success.
   // Found while holding at the §7 gate; it is why the gate was worth holding.
-  const manifestStencil = stencil.faceFade ? {
+  const manifestStencil = faceFade ? {
     center: stencil.center,
     radius: stencil.radius,
-    fade: stencil.faceFade,
+    fade: faceFade,
   } : null
   // ⭐ THE HORIZON TAKES THE TOWN'S COVER, not whatever crosses the rim (Jacob, 2026-09-28): per direction, the dominant
   // areal cover over a band just inside the rim, and points on it (groundCover.mjs). HorizonDisc averages the colour map

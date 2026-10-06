@@ -6,7 +6,6 @@ installShadowMaskDebug()  // ?shadowmask=1 — must run before any material comp
 import { PerspectiveCamera } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
 import * as THREE from 'three'
-import { deriveFade } from '../../cartograph/boundaryRecords.mjs'
 
 // Map geometry (rendered in every shot)
 import MapLayers from './MapLayers.jsx'
@@ -688,22 +687,13 @@ function useLoadData() {
 // clip for barriers (clipPolylineToBoundary) or centerlines (clipPolylineToRadius).
 // Shared by every center+radius scene so a new neighborhood is a one-line add.
 //
-// ⛔ THE UNAUTHORED-FADE BRANCH: no fadeBand ⇒ targetR = radius, NO +50. Ruled by
-// Jacob 2026-09-20. This read `(nb?.streetFade?.outer ?? radius) + 50`, which gave
-// a town with no authored fade a 50 m scale-out protecting a feather that does not
-// exist — and disagreed with the bake side's `: radius` by exactly that 50 m.
-// ⚠️ Reachable ONLY at the poured-scene call site below: a town between its pour and
-// its fade.
+// ⛔⛔ GEOMETRY DOES NOT READ THE FADE (Jacob, 2026-10-06, ruling (a)): the mask is the disc's own ring, at the radius
+// exactly — the same as the bake (`cartograph/sceneStencil.js`). It reached `fade.outer + 50` when a band was set; the
+// fade is now a Look's, ends at the radius and ruffles inward only, so nothing past the radius renders.
 function stencilFromBoundary(nb) {
   const poly = nb?.boundary
-  const center = nb?.center
-  const radius = nb?.radius
-  if (!poly?.length || !center || !radius) return null
-  const fade = Number.isFinite(nb?.fadeBand) ? deriveFade(radius, nb.fadeBand) : null
-  const targetR = fade ? fade.outer + 50 : radius
-  const scale = targetR / radius
-  const cx = center[0], cz = center[1]
-  return poly.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
+  if (!poly?.length || !nb?.center || !nb?.radius) return null
+  return poly.map(([x, z]) => [x, z])
 }
 const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
 
@@ -746,7 +736,7 @@ function sceneConfig(scene, sceneBoundary) {
 // shot's fork (the channel-variant cascade). Doctrine: project_authoring_is_live_production_is_static.
 const STAGE_CHANNELS = [
   'buildingPalette', 'wallPalettes', 'materialPhysics', 'materialColors', 'neon', 'lampGlow', 'lantern', 'canopy', 'treeWind', 'arch',
-  'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon',
+  'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'edgeRuffle', 'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon',
   'constellations', 'milkyWay', 'skyGain', 'stars', 'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo',
   'grade', 'grain', 'dof', 'surfaces', 'labels',
 ]

@@ -13,48 +13,34 @@
  * the bake side had only one. Measured 2026-09-20: `stencilFromBoundary` in
  * CartographApp.jsx:783 (Designer) AND `deriveStencilBbox` in bake-terrain.js:76
  * (bake-side, so the "one place" claim above was false). All three now apply the
- * same rule via `deriveFade` — but they are still three call sites, not one
- * function, and collapsing them is unfinished work.
+ * same rule — the clip IS the disc's ring — but they are still three call sites, not
+ * one function, and collapsing them is unfinished work.
  */
 import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
-import { deriveFade } from './boundaryRecords.mjs'
 
 // Reads cartograph/data/<scene>/neighborhood_boundary.json and derives:
 //   - center, radius   — manifest emission + AO bbox anchor
-//   - faceFade         — THE radial fade band, derived from radius + fadeBand.
-//                        ⭐ There is one band now; `streetFade` was deleted.
-//   - clipPolygon      — Clipper mask, scaled outward to faceFade.outer + 50
+//   - clipPolygon      — Clipper mask: the disc's own ring, AT THE RADIUS exactly
 //
-// No-boundary fallback (file absent / no `boundary`): nulls across the board.
-// clipPolygon=null disables stencil clipping; faceFade=null → manifest.stencil=null
-// so BakedGround skips the radial fade shader.
+// ⛔⛔ GEOMETRY DOES NOT READ THE FADE (Jacob, 2026-10-06, ruling (a)). The clip used to reach `fade.outer + 50`
+// when a band was set and the radius when not — so the fade's PRESENCE decided how far geometry reached. The fade
+// is now a Look's (Stage › Horizon › Edge), and a Look varies styling, never geometry. It runs inward and ends at
+// the radius, and the ruffle bites inward only (src/lib/neighborhoodFade.js), so nothing renders past the radius
+// and nothing past it needs keeping. The fade itself is derived by its one reader, the ground bake
+// (`boundaryRecords.mjs#lookFade`). ▶ node checks/claims-the-disc-stays-inside-the-bb.mjs
 //
-// "fade authored?" gate: a `boundary` with no `fadeBand` clips but emits
-// manifest.stencil=null → runtime renders flat (no dissolve).
-//
-// ⛔ THE UNAUTHORED-FADE BRANCH — `targetR = radius`, NO scale-out. Ruled by Jacob
-// 2026-09-20. The +50 exists to protect a feather; with no feather there is nothing
-// to protect and the margin would keep a ring of geometry that nothing fades into.
-// ⚠️ This branch is reachable by ANY town poured before its fade is authored — it is
-// the kit case. No scene on disk exercises it, so it has no eye-gate and is
-// proven by fixture only: `node checks/claims-fade-derives-from-radius.mjs`.
+// No-boundary (file absent / no `boundary`): clipPolygon = null.
+// ⚠️ An absent file still coerces radius to 1 and centre to [0,0] — a stand-in the ground bake refuses
+// (`bake-ground.js`, "no authored extent"). Its own ticket; not this one.
 export function loadSceneStencil(root, scene) {
   const path = join(root, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
-  if (!existsSync(path)) return { center: [0, 0], radius: 1, faceFade: null, clipPolygon: null }
+  if (!existsSync(path)) return { center: [0, 0], radius: 1, clipPolygon: null }
   const s = JSON.parse(readFileSync(path, 'utf-8'))
   const center = s.center || [0, 0]
   const radius = s.radius || 1
-  // ⛔ DERIVED, not read. `s.fade` is no longer stored and is ignored if present.
-  const faceFade = Number.isFinite(s.fadeBand) ? deriveFade(radius, s.fadeBand, s.fadeRuffle) : null
-  let clipPolygon = null
-  if (s.boundary?.length) {
-    const targetR = faceFade ? faceFade.outer + 50 : radius
-    const scale = radius > 0 ? targetR / radius : 1
-    const cx = center[0], cz = center[1]
-    clipPolygon = s.boundary.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
-  }
-  return { center, radius, faceFade, clipPolygon }
+  const clipPolygon = s.boundary?.length ? s.boundary.map(([x, z]) => [x, z]) : null
+  return { center, radius, clipPolygon }
 }
 
 // Even-odd point-in-polygon on the XZ plane.

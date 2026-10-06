@@ -117,7 +117,7 @@ import { lookOf } from '../lib/lookOf.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { rooflessWhy } from '../lib/roofTop.js'
-import { PostProcessing, StageFog, StageShadows, LampGlowDriver } from './PostProcessing.jsx'
+import { PostProcessing, StageFog, StageShadows, LampGlowDriver, EdgeRuffleDriver } from './PostProcessing.jsx'
 import { NeonDriver } from './NeonBands.jsx'
 import CascadedShadows, { CSM_ENABLED } from './CascadedShadows.jsx'
 import { weatherAt } from '../lib/weatherAt.js'
@@ -183,7 +183,7 @@ const DIAGNOSTIC_LAYERS = new Set(['shoreMedian'])
 // override would otherwise do nothing, silently, while the operator drags a slider.
 export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
-  'lantern', 'lampsOn', 'canopy', 'treeWind', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist',
+  'lantern', 'lampsOn', 'canopy', 'treeWind', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'edgeRuffle',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
   'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
 ]
@@ -508,6 +508,7 @@ export default function Town({
           whole map. The movie and the street keep it. The post chain's haze and grain are zeroed there too
           (usePostFxDriver). */}
       <StageFog lookId={lookId} bakeLastMs={bake} mistOverride={o.mist} enabled={on('fog') && shot !== 'plan'} />
+      <EdgeRuffleDriver lookId={lookId} bakeLastMs={bake} ruffleOverride={o.edgeRuffle} />
       <LampGlowDriver lookId={lookId} bakeLastMs={bake} lampGlowOverride={o.lampGlow} />
       <NeonDriver lookId={lookId} bakeLastMs={bake} neonOverride={o.neon} />
       <WeatherPoller mode={weatherMode} />

@@ -30,7 +30,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { ZONE_PAD, squareAroundDisc, minimumEnclosingCircle } from '../../cartograph/discSquare.mjs'
-import { deriveFade, DEFAULT_FADE_BAND } from '../../cartograph/boundaryRecords.mjs'
+import { deriveFade, edgeBandOf } from '../../cartograph/boundaryRecords.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { Text, Line } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
@@ -40,7 +40,7 @@ import {
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
   pourMap, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeMap, rollbackExtent,
-  fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton, renameDraftScene, saveEdgeFade,
+  fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton, renameDraftScene,
   fetchAddressStatus,
 } from './api.js'
 import { sceneIdForName, sceneIdForAddress, suggestedName, slugifyName } from '../lib/sceneSlug.js'
@@ -261,39 +261,9 @@ function circlePts(cx, cz, r, n = 96) {
 // moment it is turned, which is most of why it drifted into four stored copies.
 // ⛔ The radius is also where the geometry is CUT — content past it is not drawn at
 // all. An operator who wants more at the edge pulls this circle out.
-// The town's edge: Fade band + Ruffle. Local draft while dragging; saved 400 ms after the last change, and pushed
-// into the store's sceneBoundary so the 2D map (MapLayers, AerialTiles) follows at once.
-function EdgeFadeRows({ scene, nb }) {
-  const [band, setBand] = useState(Number.isFinite(nb.fadeBand) ? nb.fadeBand : DEFAULT_FADE_BAND)
-  const [ruffle, setRuffle] = useState(Number.isFinite(nb.fadeRuffle) ? nb.fadeRuffle : 0)
-  const [status, setStatus] = useState('')
-  const timer = useRef(null)
-  const save = (b, r) => {
-    setBand(b); setRuffle(r)
-    useCartographStore.setState(s => ({ sceneBoundary: s.sceneBoundary ? { ...s.sceneBoundary, fadeBand: b, fadeRuffle: r } : s.sceneBoundary }))
-    clearTimeout(timer.current)
-    timer.current = setTimeout(async () => {
-      try { await saveEdgeFade(scene, { fadeBand: b, fadeRuffle: r }); setStatus('saved · shows in Stage at the next Bake') }
-      catch (e) { setStatus(`⛔ not saved: ${e.message}`) }
-    }, 400)
-  }
-  const bandMax = Math.max(50, Math.round(nb.radius / 2 / 10) * 10)
-  return (
-    <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
-      <span className="carto-label" style={{ cursor: 'default' }}>Fade band</span>
-      <span className="carto-meta--value">{band} m</span>
-      <input className="carto-range" type="range" style={{ flexBasis: '100%' }} min={0} max={Math.max(bandMax, band)} step={10}
-        value={band} onChange={e => save(+e.target.value, ruffle)} />
-      <span className="carto-label" style={{ cursor: 'default', marginTop: 6 }}>Ruffle</span>
-      <span className="carto-meta--value">{ruffle.toFixed(2)}</span>
-      <input className="carto-range" type="range" style={{ flexBasis: '100%' }} min={0} max={1} step={0.02}
-        value={ruffle} onChange={e => save(band, +e.target.value)} />
-      {status && <span className="carto-extent-status" style={{ flexBasis: '100%', marginTop: 4 }}>{status}</span>}
-    </div>
-  )
-}
-
-function ExtentBoundary({ corners, centroid, radiusM, fadeBand = DEFAULT_FADE_BAND, showVertices = true }) {
+// ⭐ READ-ONLY HERE (2026-10-06): the band is the active Look's, authored in Stage › Horizon › Edge with the Ruffle.
+// Extent keeps the radius because the radius cuts geometry; the fade only renders.
+function ExtentBoundary({ corners, centroid, radiusM, fadeBand = 0, showVertices = true }) {
   const hasPoly = corners?.length >= 2
   // Draw when there's a polygon OR just a circle (a reopened committed hood has
   // no live corners but should still show its circle so radius re-scope isn't blind).
@@ -970,9 +940,10 @@ export default function ExtentApp() {
   const setShot = useCartographStore(s => s.setShot)
   const mapGeography = useCartographStore(s => s.mapGeography)
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
-  // The one fade knob, for the indicator ring. A scene that has not authored one yet
-  // shows the default band — the same value a pour would give it.
-  const fadeBandM = Number.isFinite(sceneBoundary?.fadeBand) ? sceneBoundary.fadeBand : DEFAULT_FADE_BAND
+  // The active Look's band, for the read-only indicator ring (authored in Stage › Horizon › Edge). A Look that has not
+  // authored one shows the kit default, 5% of the radius — the band the ground bake would use, said once.
+  const edgeFadeBand = useCartographStore(s => s.edgeFadeBand)
+  const fadeBandM = sceneBoundary?.radius > 0 ? edgeBandOf({ edgeFadeBand }, sceneBoundary.radius, 'Extent', scene).band : 0
   const geo = useMemo(() => extentGeo(mapGeography), [mapGeography])
   // Persist Extent's own working scene (incl. the blank workspace, null → '') so a
   // cold restart reappears here — never on the LS default.
@@ -2479,7 +2450,6 @@ export default function ExtentApp() {
               {/* The town's EDGE — the fade band (the one fade knob, BRIEF-fade-ssot) and its RUFFLE (Jacob,
                   2026-09-27: the scalloped edge he liked on the old horizon disc). Saved as you drag (no pipeline:
                   neither moves the clip); Stage and production show them at the ground's next bake. */}
-              {committed && sceneBoundary?.radius > 0 && <EdgeFadeRows scene={scene} nb={sceneBoundary} />}
 
               {/* The containment breach, in the operator's terms. Not a blocker —
                   a wide disc over thin data is sometimes deliberate — but it must

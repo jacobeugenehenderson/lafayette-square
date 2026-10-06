@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { driveEdgeRuffle } from '../components/PostProcessing.jsx'
 import * as THREE from 'three'
 import { ParkTitleMesh } from '../components/LafayetteParkBody.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -87,19 +88,17 @@ const PRI = {
 // ▶ node checks/claims-coplanar-ground-has-a-painters-order.mjs
 
 // ── Radial edge fade ──
-// Imported from boundary.js so circle moves are a one-file edit.
-import { BOUNDARY_CENTER_XZ as _BC, FADE_INNER as _FI, FADE_OUTER as _FO, FADE_RUFFLE } from './boundary.js'
+// ⭐ The fade is the ACTIVE LOOK's (Stage › Horizon › Edge, 2026-10-06): the store's `edgeFadeBand` on the scene's own
+// disc, derived by `boundaryRecords.mjs#lookFade` — the same rule the ground bake uses. The disc geometry (centre,
+// radius, polygon) is boundary.js's.
+import { BOUNDARY_CENTER_XZ as _BC, BOUNDARY_RADIUS as _BR } from './boundary.js'
+import { lookFade } from '../../cartograph/boundaryRecords.mjs'
 import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade } from '../lib/neighborhoodFade.js'
-const FADE_CENTER = { x: _BC[0], z: _BC[1] }
-const FADE_INNER = _FI
-const FADE_OUTER = _FO
 
-// Centerlines are stopped here — a bit into the feather band (FADE_INNER→
-// FADE_OUTER) so the bare debug centerlines don't trail past the visibly
-// faded map edge. LineBasicMaterial can't take the radial-fade shader the
-// ground/aerial use (see the barrier-line note below), so we clip tighter
-// instead of fading. Nudge this one value by eye.
-const CENTERLINE_CLIP_R = FADE_INNER + 52   // ≈810m
+// Centerlines are stopped a bit into the feather band (fade.inner + 52) so the bare debug centerlines don't trail
+// past the visibly faded map edge. LineBasicMaterial can't take the radial-fade shader the ground/aerial use (see
+// the barrier-line note below), so we clip tighter instead of fading.
+const CENTERLINE_PAST_INNER_M = 52
 
 // The LS boundary bundle, assembled from the module singletons so a POURED scene
 // can swap in its own via makeBoundary(sceneBoundary) with the SAME shape. For
@@ -107,7 +106,7 @@ const CENTERLINE_CLIP_R = FADE_INNER + 52   // ≈810m
 // resolves to exactly the pre-unification singleton (byte-identical).
 const _LS_BUNDLE = {
   pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius,
-  center: _BC, fadeInner: FADE_INNER, fadeOuter: FADE_OUTER,
+  center: _BC, radius: _BR,
 }
 // Safe empties for a poured scene whose map/ribbons haven't fetched yet.
 const _EMPTY_MAP = { bbox: { minX: 0, maxX: 0, minZ: 0, maxZ: 0 }, buildings: [], layers: {} }
@@ -121,7 +120,7 @@ const _EMPTY_RIBBONS = { streets: [] }
 // interior the way they do with per-vertex sampling across sparse geometry.
 // ⛔⛔ THREE STATES, AND THE DIFFERENCE BETWEEN TWO OF THEM IS A REAL DEFECT WE SHIPPED:
 //   fade = {…}       use this scene's band
-//   fade = undefined use the LS module defaults (the LS path relies on this)
+//   fade = undefined ⛔ REFUSED — there is no default band to fall back to (it was LS's, the B2b bleed)
 //   fade = null      ⭐ NO FADE AT ALL — opt out, and it is a state you must ASK for
 //
 // ⛔ `null` exists because `undefined` could not say "none". Buildings were taken out
@@ -135,19 +134,13 @@ const _EMPTY_RIBBONS = { streets: [] }
 // ⚠️ `null` still injects the TERRAIN displacement — buildings must conform to the
 // elevation field like everything else. Only the alpha multiply is skipped.
 function injectRadialFade(mat, { rigidCentroid = false, fade } = {}) {
+  if (fade === undefined) throw new Error("[MapLayers] ⛔ injectRadialFade needs a fade — the scene's own, or null to opt out. There is no default band.")
   const faded = fade !== null
-  // Per-scene fade (poured scene) or the LS defaults. The feather must track the
-  // ACTIVE scene's disc, or a poured scene's edge content fades at LS's radius.
-  const fInner = fade?.inner ?? FADE_INNER
-  const fOuter = fade?.outer ?? FADE_OUTER
-  const fCx = fade?.center ? fade.center[0] : FADE_CENTER.x
-  const fCz = fade?.center ? fade.center[1] : FADE_CENTER.z
-  const fRuffle = fade?.ruffle ?? FADE_RUFFLE
   if (faded) mat.transparent = true
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
     if (faded) {
-      bindNeighborhoodFade(shader.uniforms, { center: [fCx, fCz], inner: fInner, outer: fOuter, ruffle: fRuffle })
+      bindNeighborhoodFade(shader.uniforms, { center: fade.center, inner: fade.inner, outer: fade.outer })
     }
     const displaceSnippet = rigidCentroid ? TERRAIN_DISPLACE_CENTROID : TERRAIN_DISPLACE
     const commonDecl = '#include <common>\n' + TERRAIN_DECL +
@@ -169,7 +162,7 @@ function injectRadialFade(mat, { rigidCentroid = false, fade } = {}) {
   // ⛔ The cache key must carry the no-fade case, or a faded material and an opted-out
   // one with the same geometry flags share a compiled program.
   mat.customProgramCacheKey = () => faded
-    ? `ml-terrain-fade-${rigidCentroid ? 'c' : 'v'}-${fInner}-${fOuter}-r${fRuffle}`
+    ? `ml-terrain-fade-${rigidCentroid ? "c" : "v"}-${fade.inner}-${fade.outer}`
     : `ml-terrain-nofade-${rigidCentroid ? 'c' : 'v'}`
   return mat
 }
@@ -516,14 +509,18 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   const clipPolylineToBoundary = B.clipPolylineToBoundary
   const clipPolylineToRadius = B.clipPolylineToRadius
   const bcXZ = B.center
-  const clcR = (B === _LS_BUNDLE) ? CENTERLINE_CLIP_R : (B.fadeInner + 52)
-  // Per-scene fade for the flat materials — undefined for LS (→ module defaults,
-  // byte-identical); the scene's disc for a pour so its edge feathers correctly.
-  // Memoized on B so its reference is stable (else the mats memo churns every render).
+  // The fade for the flat materials: the Look's band on THIS scene's disc, for every town. No disc ⇒ no fade (null).
+  // Memoized on its inputs so its reference is stable (else the mats memo churns every render).
+  const edgeFadeBand = useCartographStore(s => s.edgeFadeBand)
   const fade = useMemo(
-    () => (B === _LS_BUNDLE) ? undefined : { inner: B.fadeInner, outer: B.fadeOuter, center: B.center },
-    [B],
+    () => (B.radius > 0) ? { ...lookFade({ edgeFadeBand }, B.radius, 'MapLayers', scene), center: B.center } : null,
+    [B, edgeFadeBand, scene],
   )
+  const clcR = fade ? fade.inner + CENTERLINE_PAST_INNER_M : Infinity
+  // ⭐ In the Designer there is no <Town> to drive the edge's ruffle, so the map layers drive it themselves, off the
+  // store's live channel, through the same resolution (PostProcessing.jsx#driveEdgeRuffle). In a shot <Town> does.
+  const edgeRuffle = useCartographStore(s => s.edgeRuffle)
+  useFrame(() => { if (!inShot) driveEdgeRuffle(edgeRuffle) })
 
   // ── Ground plane ────────────────────────────────────────
   // Segmented so the per-vertex terrain displacement (injected via
@@ -623,7 +620,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   }, [mapData, B])
 
   // ── Centerlines (debug reference, hidden by default, radius-clipped) ─
-  // Per-segment clip to CENTERLINE_CLIP_R (inside the feather band) so chains
+  // Per-segment clip to clcR (inside the feather band) so chains
   // stop at the visible map edge instead of trailing into faded canvas. Uses
   // the circle clip, not clipPolylineToBoundary (the hard 256-gon), which is
   // what left them jutting past where the ground reads as gone.

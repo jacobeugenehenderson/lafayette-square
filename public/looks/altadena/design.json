@@ -1,4 +1,5 @@
 {
+  "edgeFadeBand": 200,
   "layerVis": {
     "street": true,
     "highway": true,

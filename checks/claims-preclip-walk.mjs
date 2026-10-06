@@ -24,7 +24,6 @@
  */
 import fs from 'fs'
 import { loadScene, banner, ARG, H } from '../scratch/_substrate-feed.mjs'
-import { deriveFade } from '../cartograph/boundaryRecords.mjs'
 
 const o = console.log; console.log = () => {}
 const { walkSubstrate } = await import('../src/lib/substrateWalk.js')
@@ -42,8 +41,8 @@ banner(S, o)
 const { ribbons, streets, nb, byId, widthAtSegOrd, outerRing } = S
 const vKey = p => `${p[0].toFixed(3)},${p[1].toFixed(3)}`
 const [cx, cz] = nb.center
-// fade.outer is DERIVED (radius + fadeBand) since 2026-09-20; streetFade is gone.
-const keepR = Math.max(Number.isFinite(nb.fadeBand) ? deriveFade(nb.radius, nb.fadeBand).outer : 0, nb.radius ?? 0) + 30   // pipeline.js:172
+// The geometry reach is the radius: the fade is a Look's and never moves geometry (sceneStencil.js, 2026-10-06).
+const keepR = (nb.radius ?? 0) + 30   // was max(fade.outer, radius) + 30, and fade.outer IS the radius
 const rad = p => Math.hypot(p[0] - cx, p[1] - cz)
 const RIM_EPS = 0.5
 
