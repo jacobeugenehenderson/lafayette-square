@@ -116,6 +116,21 @@ fes".)*
   every edge. Say whether that holds end to end (pour → Survey → Section → bake) and whether any
   consumer reads `protoMeasureOf` somewhere the measured rung must also reach.
 - ⭐ Kit-general: any town whose city publishes a curb layer gets the same rung; NYC is the first.
+- ✅ **Confirmed by Kerb (read-only, 2026-10-05): ①'s labels hold pour → Survey → Section → bake**
+  (`protoOwners = MP.owners` from the frozen artifact; build-time labels only append). Three
+  requirements follow, all already doctrine:
+  1. **Every width reader takes the rung — one resolution everywhere (`SECTION §3.3` step 1).** Section
+     does NOT call `protoMeasureOf`: frozen runs carry `baseMeasure: protoBase.get(skelId)` and Section
+     resolves `stampMeasure` / `edgeDepth(run.baseMeasure…)` as override ?? base, skipping the city.
+     ⇒ the measured value must reach Section's resolution too, so Survey and Section agree.
+     ▶ Gate: `node checks/claims-survey-and-section-agree.mjs` must stay at 0 m² with the rung live.
+  2. **A live re-mint of ① carries no measurement — disclose it.** If the frozen ① is missing / empty /
+     ε-mismatched, tileGround re-mints ① live (`protoSource = 'live: …'`) and every edge falls to base.
+     ⇒ print its own line, *"measured rung ABSENT: ① is live"*, so "no city width" never passes for
+     "the city says base".
+  3. **The Survey/Measure handles' miss fallback** (`SurveyorOverlay` `meas`, `MeasureOverlay` `pavHW`
+     fall back to the chain base on a raycast miss) must fall back to the RESOLVED width, measured
+     rung included — or say so where they cannot.
 
 **3.4 The checks — the deliverable.** Each RED-until-true, mutation-tested:
 - **curb vs city curb** — per ① edge, with authoring LOADED, the distance from our curb to the
