@@ -627,18 +627,19 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
      `CARTOGRAPH_SCENE=<id> node cartograph/cdl.mjs` — USDA's CDL places crop rows where OSM maps no
      field. Outside the US: `"cropland": [], "cropland_absent_reason": "…"`. Undeclared is LOUD at the pour.
      ⭐ **Buildings:** undeclared = Microsoft's; `"buildings": [{ "from": "state", "id": … }]` swaps in the
-     state's. The pour prints which. ▶ `node checks/claims-one-building-id-minter.mjs`
+     state's (ids `bin-<BIN>`). The pour prints which, and each courtyard it can't draw.
+     ▶ `node checks/claims-a-city-building-keeps-its-permanent-id.mjs`
   2. **Fetch** — the Extent's **Fetch this view** runs it for any town with a declaration, and
      reports *undeclared* when there is none. By hand: `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
-     (`--dry-run` first: count + one row, no write).
+     (`--dry-run` first).
   3. **Bake** — `node cartograph/bake-content.js --scene=<id>`. It reports the match rate and what it
      could **not** classify or address.
-  - ⭐ **Building street addresses** (the Ward's card, "This is my house") come from the town's own record, its declared
-    **address points**, then OSM — never guessed, never the nearest point. Declare a town's E-911 address points in the
-    same `sources.json` — `"addressPoints": [{ "from": "state", "id": "ohio-lbrs" }]` (Ohio; `select.county`) or `"nyc-addresspoint"` (NYC), or
-    `"addressPoints": [], "addressPoints_absent_reason": "…"` — then `CARTOGRAPH_SCENE=<id> node cartograph/fetch-address-points.mjs`
-    (`--dry-run` first), then re-bake the town's buildings. Points join a building by standing in its footprint or in the
-    parcel it stands on. ▶ `node checks/claims-every-building-has-an-address.mjs`
+  - ⭐ **Building street addresses** (the Ward's card) come from the town's own record, its declared **address points**,
+    then OSM — never guessed, never the nearest point. Declare them in `sources.json` — `"addressPoints": [{ "from":
+    "state", "id": "ohio-lbrs" }]` (Ohio) or `"nyc-addresspoint"` (NYC), or `[]` + `addressPoints_absent_reason` — then
+    `CARTOGRAPH_SCENE=<id> node cartograph/fetch-address-points.mjs` and re-bake the buildings. A point joins by the id
+    both carry (NYC's BIN; containment then checks it, printed), else by standing in the footprint or its parcel.
+    ▶ `node checks/claims-every-building-has-an-address.mjs`
   - ⛔ **"No parcels" has THREE meanings and the kit keeps them apart.** *Undeclared* (no
     `sources.json`) means **nobody has looked into it** and shouts; *declared-none* is an honest zero
     with a written reason; *declared* is a real well.

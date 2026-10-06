@@ -21,7 +21,7 @@ import { STATES } from './states/index.mjs'
 // lives in states/oh.mjs with its endpoint, fields and `compose`. Another state is a new well in its record, not an
 // edit here (CLAUDE.md Layer 0 q1).
 export const ADDRESS_POINT_PROVIDERS = Object.fromEntries(Object.values(STATES).flatMap(r =>
-  Object.entries(r.addressPoints || {}).map(([, w]) => [w.provider, { protocol: w.protocol, endpoint: w.endpoint, attribution: w.attribution, outFields: w.outFields, geomField: w.geomField, select: w.select, compose: w.compose }])))
+  Object.entries(r.addressPoints || {}).map(([, w]) => [w.provider, { protocol: w.protocol, endpoint: w.endpoint, attribution: w.attribution, outFields: w.outFields, geomField: w.geomField, columns: w.columns, compose: w.compose }])))
 
 /**
  * The town's address points, as the bake reads them: { state, points: [{ address, unit, x, z }], reason? }.
@@ -35,7 +35,7 @@ export function loadAddressPoints(scene) {
     const p = join(mapDir(scene), 'raw', src.file)
     if (!existsSync(p)) throw new Error(`[address-points] "${scene}" declares "${src.id}" → raw/${src.file}, which is not there.\n  Acquire it: CARTOGRAPH_SCENE=${scene} node cartograph/fetch-address-points.mjs`)
     for (const q of JSON.parse(readFileSync(p, 'utf8')).points || []) {
-      if (q.address && Number.isFinite(q.x) && Number.isFinite(q.z)) points.push({ address: q.address, unit: q.unit ?? null, x: q.x, z: q.z })
+      if (q.address && Number.isFinite(q.x) && Number.isFinite(q.z)) points.push({ address: q.address, unit: q.unit ?? null, x: q.x, z: q.z, ...(q.bin != null ? { bin: q.bin } : {}) })
     }
   }
   return { state: 'declared', points }

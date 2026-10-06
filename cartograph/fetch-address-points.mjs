@@ -41,12 +41,12 @@ function fetchSocrata(src, prov) {
   const tmp = join(mapRawDir(SCENE), '._address_points_page.json')
   const label = (count) => console.log(`  [${src.id}] ${count} point(s) in the envelope — ${src.attribution || prov.attribution}`)
   if (dryRun) {
-    const { count, row } = socrataSample({ resource: endpoint, geomField: prov.geomField, where: src.where, select: prov.select, bbox: BBOX, tmpPath: tmp })
+    const { count, row } = socrataSample({ resource: endpoint, geomField: prov.geomField, where: src.where, columns: prov.columns, bbox: BBOX, tmpPath: tmp })
     label(count)
     if (row) console.log(`    sample: ${JSON.stringify(prov.compose(row))}`)
     return null
   }
-  const { rows, count } = socrataFetchAll({ resource: endpoint, geomField: prov.geomField, where: src.where, select: prov.select, bbox: BBOX, tmpPath: tmp, log: label })
+  const { rows, count } = socrataFetchAll({ resource: endpoint, geomField: prov.geomField, where: src.where, columns: prov.columns, bbox: BBOX, tmpPath: tmp, log: label })
   const points = []
   let dropped = 0
   for (const row of rows) {

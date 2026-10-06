@@ -21,8 +21,10 @@ export function keyOf(coords) {
   return (x / n).toFixed(PREC) + ',' + (y / n).toFixed(PREC)
 }
 
-export function registryPath(RAW_DIR) {
-  return join(RAW_DIR, '..', 'identity-registry.json')
+// One registry per geometry well. MSBF's is `identity-registry.json` (unchanged); a declared well's centroid-keyed
+// records (those with no permanent id — e.g. NYC's placeholder BINs) lock in `identity-registry.<well>.json`.
+export function registryPath(RAW_DIR, wellId = null) {
+  return join(RAW_DIR, '..', wellId ? `identity-registry.${wellId}.json` : 'identity-registry.json')
 }
 export function loadRegistry(path) {
   return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null

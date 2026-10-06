@@ -1,0 +1,24 @@
+{
+  "_comment": "Where jacksonheights' data wells are. Shape: cartograph/sources.js; the wells themselves live in the state record (cartograph/states/ny.mjs), where New York City is a sub-state jurisdiction (BRIEF-nyc-adapter). Declared BEFORE the first fetch, so Extent's fetch is NYC-aware from the start: its building identity seals on the city's BIN, not on Microsoft's centroids.",
+  "_jurisdiction": "Jackson Heights, Queens, New York City — Queens Community District 3 (BoroCD 403). Web address jacksonheights (jacksonheights.online; Jacob, 2026-10-05). NYC's wells are citywide; the fetch envelope scopes them, so the town selects nothing.",
+  "state": "NY",
+  "parcels": [
+    { "from": "state", "id": "nyc-mappluto" }
+  ],
+  "landUseCodes": null,
+  "_landUseCodes_why": "PLUTO's LandUse (01–11) is read by the state's own vocabulary (states/ny.mjs#readNycPlutoLandUse); there is no decode table to fetch.",
+  "addressPoints": [
+    { "from": "state", "id": "nyc-addresspoint" }
+  ],
+  "buildings": [
+    { "from": "state", "id": "nyc-buildings" }
+  ],
+  "_buildings_why": "NYC publishes its own building footprints, each with a permanent BIN; on an NYC town they ARE the geometry well and Microsoft's are not fetched (footprint-well.mjs). OSM still unions in.",
+  "buildingAttributes": [
+    { "from": "state", "id": "nyc-bes" }
+  ],
+  "cropland": [
+    { "id": "usda-cdl", "year": 2024 }
+  ],
+  "_cropland_why": "USDA's national Cropland Data Layer (cartograph/cdl.mjs), declared like every US town (what it reads in Queens is not yet measured)."
+}

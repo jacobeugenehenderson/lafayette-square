@@ -226,7 +226,11 @@ export function readBuildingSources(scene) {
   if (!Array.isArray(j.buildings) || j.buildings.length !== 1) throw new Error(`${p}: \`buildings\` must be an array of exactly one footprint well (it is the town's geometry well)`)
   const well = resolveFromState(j.buildings[0], 'buildings', j, `${p}: `)
   for (const req of ['id', 'file']) if (!well[req]) throw new Error(`${p}: buildings well is missing \`${req}\``)
-  return { state: 'declared', path: p, well }
+  // Attribute wells joined onto it by its permanent id (no geometry) — e.g. NYC's BES. Optional; absent = none.
+  if ('buildingAttributes' in j && !Array.isArray(j.buildingAttributes)) throw new Error(`${p}: \`buildingAttributes\` must be an array`)
+  const attributes = (j.buildingAttributes || []).map(e => resolveFromState(e, 'buildingAttributes', j, `${p}: `))
+  for (const a of attributes) if (!a.joinOn || a.joinOn !== well.permanentId?.field) throw new Error(`${p}: buildingAttributes "${a.id}" joins on \`${a.joinOn}\`, but the buildings well's permanent id is \`${well.permanentId?.field ?? 'none'}\``)
+  return { state: 'declared', path: p, well, attributes }
 }
 
 /** The files a town's declared address-point sources land at (absolute); [] when undeclared or declared-none. */

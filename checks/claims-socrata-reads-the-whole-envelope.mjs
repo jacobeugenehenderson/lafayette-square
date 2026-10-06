@@ -38,7 +38,7 @@ const server = (total, serve = total) => {
   const rows = Array.from({ length: serve }, (_, i) => ({ i }))
   return (_r, p) => p.$select === 'count(*)' ? [{ count: String(total) }] : rows.slice(Number(p.$offset), Number(p.$offset) + Number(p.$limit))
 }
-const base = { resource: 'r', geomField: 'g', select: '*', bbox, tmpPath: '/dev/null', page: 4 }
+const base = { resource: 'r', geomField: 'g', columns: '*', bbox, tmpPath: '/dev/null', page: 4 }
 { const r = socrataFetchAll({ ...base, get: server(10) }); check('a whole set over 3 pages is read entire', r.rows.length === 10 && r.count === 10, `${r.rows.length}/${r.count}`) }
 check('a server that returns fewer rows than it counted is REFUSED', throws(() => socrataFetchAll({ ...base, get: server(10, 7) }), /partial set/))
 check('a server that gives no count is REFUSED', throws(() => socrataFetchAll({ ...base, get: () => [{}] }), /no count/))

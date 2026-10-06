@@ -80,7 +80,10 @@ async function main() {
     const u = unionFootprints(msbf.buildings, raw.buildings || [])
     console.log(`  Buildings: ${fw.label} ${u.report.msbf} ∪ OSM ${u.report.osm} → ${u.report.same} the same building, +${u.report.added} from OSM that it lacks = ${u.buildings.length}`)
     raw.buildings = u.buildings
-    raw.buildingSource = fw.declared ? fw.wellId : 'microsoft'
+    raw.buildingSource = fw.declared ? `declared:${fw.wellId}` : 'microsoft'
+    // ⛔ Courtyards the city measured and the kit cannot draw (fetch-buildings.mjs): said at every pour, never filled quietly.
+    const holed = msbf.buildings.filter(b => b.holesUnsupported).length
+    if (holed) console.warn(`  ⛔ HOLED FOOTPRINT UNSUPPORTED: ${holed} ${fw.wellId} footprint(s) carry courtyard holes the pour drops (one-ring footprint) — they ship as the outer ring`)
   } else {
     raw.buildingSource = 'osm'
   }

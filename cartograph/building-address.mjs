@@ -6,6 +6,11 @@
  *
  * WHERE AN ADDRESS COMES FROM — in this order (Jacob, 2026-09-29), and a lower source NEVER overwrites a higher one:
  *   1. `authored`                — the town's own record (its buildings ledger's `address`)
+ *   1b. `address-point-by-id`    — a declared address point carrying the building's PERMANENT id (NYC: the BIN on both;
+ *                                  BRIEF-nyc-adapter §3.2a). IDENTITY first; containment is then the CHECK — a point
+ *                                  that names this building but stands outside it and its parcel, or one inside it
+ *                                  that names another building, is returned in `idContainment` and PRINTED by name,
+ *                                  never re-assigned.
  *   2. `address-point`           — a declared address point (county/state E-911 — cartograph/address-points.mjs) INSIDE
  *                                  the footprint or a twin ring
  *   3. `address-point-in-parcel` — the address points inside the PARCEL the building's centroid stands in (E-911 points
@@ -43,7 +48,7 @@ export function inRing(x, z, ring) {
 const uniq = (xs) => [...new Set(xs.filter(Boolean))]
 
 /**
- * @param b    { authored?: string, ownTags?: object, twinTags?: object[], rings: [{x,z}][] }
+ * @param b    { authored?: string, ownTags?: object, twinTags?: object[], rings: [{x,z}][], keyKind?, permanentId? }
  * @param pois [{ address, x, z }] — the town's OSM points with an address
  * @param ctx  { addressPoints?: [{ address, unit, x, z }], parcelPoints?: (b) => [{ address, unit }] }
  * @returns    { address, addressSource, addressCandidates?, addressUnits?, disagrees: boolean }
@@ -52,24 +57,32 @@ export function resolveAddress(b, pois, ctx = {}) {
   const inside = (pts) => pts.filter((p) => b.rings.some((r) => r.length >= 3 && inRing(p.x, p.z, r)))
   const apIn = inside(ctx.addressPoints || [])
   const apParcel = ctx.parcelPoints ? ctx.parcelPoints(b) : []
+  const k = b.permanentId != null ? b.keyKind : null
+  const byId = k ? (ctx.addressPoints || []).filter((p) => p[k] === b.permanentId) : []
+  const idContainment = k ? {
+    outside: byId.filter((p) => !apIn.includes(p) && !apParcel.includes(p)).map((p) => p.address),
+    foreignInside: apIn.filter((p) => p[k] != null && p[k] !== b.permanentId).map((p) => `${p.address} (${k} ${p[k]})`),
+  } : null
   const own = addressOfTags(b.ownTags)
   // Each level: [source, its distinct addresses, the points it came from (for units)]. ⛔ Order is precedence.
   const levels = [
     ['authored', b.authored ? [tidy(b.authored)] : [], []],
+    ['address-point-by-id', uniq(byId.map((p) => p.address)), byId],
     ['address-point', uniq(apIn.map((p) => p.address)), apIn],
     ['address-point-in-parcel', uniq(apParcel.map((p) => p.address)), apParcel],
     ['osm-building', own ? [own] : [], []],
     ['osm-building', uniq((b.twinTags || []).map(addressOfTags)), []],
     ['osm-poi-in-footprint', uniq(inside(pois).map((p) => p.address)), []],
   ]
+  const idc = idContainment && (idContainment.outside.length || idContainment.foreignInside.length) ? { idContainment } : {}
   const at = levels.findIndex(([, cands]) => cands.length)
-  if (at < 0) return { address: null, addressSource: null, disagrees: false }
+  if (at < 0) return { address: null, addressSource: null, disagrees: false, ...idc }
   const [source, cands, pts] = levels[at]
-  if (cands.length > 1) return { address: null, addressSource: source, addressCandidates: cands, disagrees: false }
+  if (cands.length > 1) return { address: null, addressSource: source, addressCandidates: cands, disagrees: false, ...idc }
   const address = cands[0]
   const units = uniq(pts.filter((p) => p.address === address).map((p) => p.unit)).sort()
   const disagrees = levels.slice(at + 1).some(([, lower]) => lower.some((a) => a !== address))
-  return { address, addressSource: source, ...(units.length && { addressUnits: units }), disagrees }
+  return { address, addressSource: source, ...(units.length && { addressUnits: units }), disagrees, ...idc }
 }
 
 /**

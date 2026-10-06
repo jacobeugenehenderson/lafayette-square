@@ -91,7 +91,8 @@ function adaptMapBuildings(mapBuildings) {
       id, footprint: fp, size,
       // What the address is resolved from (cartograph/building-address.mjs): this building's OWN OSM tags (an OSM-only
       // building), its OSM twins' ids, and its footprint + twin rings (for an address point inside it).
-      addrIn: { ownTags: b.osmId != null ? tags : null, twinOsmIds: b.twinOsmIds || [], rings: [r, ...(b.joinRings || [])] },
+      addrIn: { ownTags: b.osmId != null ? tags : null, twinOsmIds: b.twinOsmIds || [], rings: [r, ...(b.joinRings || [])],
+        ...(b.keyKind && b.keyKind !== 'centroid' && b.permanentId != null ? { keyKind: b.keyKind, permanentId: b.permanentId } : {}) },
       ...(stories !== undefined && { stories }),
       ...(wallMat && { wall_material: wallMat }),
       ...(roofShape && { roof_shape: roofShape }),
@@ -722,6 +723,7 @@ export async function bakeBuildings({ look, scene } = {}) {
     ownTags: b.addrIn?.ownTags ?? null,
     twinTags: (b.addrIn?.twinOsmIds || []).map((id) => osmTagsById.get(id)).filter(Boolean),
     rings: ringsOf(b),
+    ...(b.addrIn?.permanentId != null ? { keyKind: b.addrIn.keyKind, permanentId: b.addrIn.permanentId } : {}),
   }, addrPois, { addressPoints: ap.points, parcelPoints })
   // What the input OFFERS (addressed OSM buildings' centroids + address points), to count what the join LOSES.
   const offerPoints = [
@@ -740,6 +742,18 @@ export async function bakeBuildings({ look, scene } = {}) {
     : null
   if (addressIncomplete) console.error(`[bake-buildings] ⛔ addresses: ${addressIncomplete}`)
   const resolvedAddresses = []
+  // ⭐ Identity vs containment (building-address.mjs `address-point-by-id`): every disagreement PRINTED by name.
+  const idContainmentDisagree = []
+  const sayIdContainment = () => {
+    for (const r of resolvedAddresses) if (r.idContainment) idContainmentDisagree.push(r)
+    if (!idContainmentDisagree.length) return
+    console.error(`[bake-buildings] ⛔ addresses: ${idContainmentDisagree.length} building(s) where an address point's id and its containment disagree (kept by id, never re-assigned):`)
+    for (const r of idContainmentDisagree.slice(0, 40)) {
+      const { outside, foreignInside } = r.idContainment
+      console.error(`    ${r.id}: ${outside.length ? `names it but stands outside it and its parcel — ${outside.join('; ')}` : ''}${outside.length && foreignInside.length ? ' · ' : ''}${foreignInside.length ? `inside it but names another — ${foreignInside.join('; ')}` : ''}`)
+    }
+    if (idContainmentDisagree.length > 40) console.error(`    … and ${idContainmentDisagree.length - 40} more`)
+  }
   const addressFields = (b) => {
     const r = addressOf(b)
     const rings = ringsOf(b)
@@ -1067,6 +1081,7 @@ export async function bakeBuildings({ look, scene } = {}) {
     }
   }
 
+  sayIdContainment()
   const manifest = {
     // v2 (slab bump): adds the render-scoped per-building index (`buildings`)
     // + a footprints section in the .bin. Consumers MUST refuse unknown
@@ -1097,7 +1112,8 @@ export async function bakeBuildings({ look, scene } = {}) {
     buildingCount: buildings.length,
     renderedBuildingCount: buildingIndex.length,
     // What was carried: counts by source, and what has none or is ambiguous (checks/claims-every-building-has-an-address).
-    addressCensus: { ...addressCensus(resolvedAddresses, addressIncomplete), addressPoints: ap.state, ...(ap.reason && { addressPointsAbsentReason: ap.reason }) },
+    addressCensus: { ...addressCensus(resolvedAddresses, addressIncomplete), addressPoints: ap.state, ...(ap.reason && { addressPointsAbsentReason: ap.reason }),
+      ...(idContainmentDisagree.length && { idContainmentDisagree: idContainmentDisagree.length }) },
     buildings: buildingIndex,
     groups,
   }

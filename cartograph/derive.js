@@ -6010,16 +6010,19 @@ function toCompoundFeatures(clipperPaths) {
  * thickness, stairwells, etc., so the target area is not the real
  * footprint area). So we pass MSBF through untouched.
  *
- * The `source` argument is 'microsoft' or 'osm' (from pipeline.js).
+ * The `source` argument is 'project', 'microsoft', 'declared:<well>' (a town's own footprint well,
+ * footprint-well.mjs — measured outlines, passed through like MSBF) or 'osm' (from pipeline.js).
  */
 export function deriveBuildings(buildings, source = 'osm') {
-  // Curated project data / MSBF: pass through, no scaling.
-  if (source === 'project' || source === 'microsoft') {
+  // Curated project data / MSBF / a declared well: pass through, no scaling.
+  if (source === 'project' || source === 'microsoft' || source.startsWith('declared:')) {
     const result = buildings.map(b => ({
       ring: b.coords.map(c => ({ x: c.x, z: c.z })),
       projectId: b.projectId,
       msbfId: b.msbfId,
       osmId: b.osmId,   // an OSM footprint the union added (building-union.mjs)
+      // Who a declared well's footprint is (fetch-buildings.mjs) — minted by membership.mjs#buildingIdOf.
+      ...(b.well ? { well: b.well, keyKind: b.keyKind, keyWhy: b.keyWhy, ...(b.permanentId != null ? { permanentId: b.permanentId } : {}), ...(b.wellN != null ? { wellN: b.wellN } : {}) } : {}),
       // OSM twins' footprints, for containment JOINS only (never drawn): building-union.mjs
       ...(b.joinRings ? { joinRings: b.joinRings.map(r => r.map(c => ({ x: c.x, z: c.z }))), twinOsmIds: b.twinOsmIds } : {}),
       tags: b.tags,

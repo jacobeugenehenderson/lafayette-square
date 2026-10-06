@@ -1755,8 +1755,9 @@ createServer(async (req, res) => {
         if (skelR.code !== 0) throw new Error(`street index build failed — ${lastLine(skelR)}`)
         _streetLookupCache.delete(scene)
         sources.osm = { ok: true, count: countJson(join(raw, 'osm.json')) }
-        // ── Buildings (MSBF — generic ML footprints, works ANY region) ──
-        const bR = await runCapture('node fetch-msbf.js', { cwd: here, env, timeout: 240000 })
+        // ── Buildings — the town's footprint well (footprint-well.mjs): its DECLARED well (NYC's, keyed by BIN) when it
+        //    has one, else Microsoft's ML footprints (any region). ⛔ Never both — a declared well replaces MSBF.
+        const bR = await runCapture(footprintWell(scene).declared ? 'node fetch-buildings.mjs' : 'node fetch-msbf.js', { cwd: here, env, timeout: 240000 })
         sources.buildings = bR.code === 0
           ? { ok: true, count: countJson(footprintWell(scene).path), well: footprintWell(scene).label }
           : { ok: false, error: lastLine(bR) }

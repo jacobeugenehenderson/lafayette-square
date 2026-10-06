@@ -45,12 +45,16 @@ export function withinBox(geomField, bbox) {
 
 export const envelopeClause = (geomField, where, bbox) =>
   [withinBox(geomField, bbox), where && where !== '1=1' ? `(${where})` : null].filter(Boolean).join(' AND ')
+// ⛔ A well must name its columns (`columns`, never `select` — `select` is the town SELECTOR a state well's resolver
+// consumes, cartograph/states/index.mjs). Missing → refused here, by name, before the server is asked.
+const needColumns = (resource, columns) => { if (!columns || typeof columns !== 'string') throw new Error(`${resource}: the well declares no \`columns\``) }
 
 /** The count in the envelope and ONE row — a dry run reads nothing more. */
-export function socrataSample({ resource, geomField, where, select, bbox, tmpPath }) {
+export function socrataSample({ resource, geomField, where, columns, bbox, tmpPath }) {
+  needColumns(resource, columns)
   const clause = envelopeClause(geomField, where, bbox)
   const count = Number(socrataGet(resource, { $select: 'count(*)', $where: clause }, tmpPath)[0]?.count)
-  const row = socrataGet(resource, { $select: select, $where: clause, $order: ':id', $limit: 1 }, tmpPath)[0] || null
+  const row = socrataGet(resource, { $select: columns, $where: clause, $order: ':id', $limit: 1 }, tmpPath)[0] || null
   return { count, row }
 }
 
@@ -58,14 +62,15 @@ export function socrataSample({ resource, geomField, where, select, bbox, tmpPat
  * Every row of `resource` in the envelope (and the well's `where`), paged in a stable order.
  * Returns { rows, count }. Throws if the pages do not add up to the count asked first.
  */
-export function socrataFetchAll({ resource, geomField, where, select, bbox, tmpPath, page = 10000, log = () => {}, get = socrataGet }) {
+export function socrataFetchAll({ resource, geomField, where, columns, bbox, tmpPath, page = 10000, log = () => {}, get = socrataGet }) {
+  needColumns(resource, columns)
   const clause = envelopeClause(geomField, where, bbox)
   const count = Number(get(resource, { $select: 'count(*)', $where: clause }, tmpPath)[0]?.count)
   if (!Number.isFinite(count)) throw new Error(`Socrata gave no count for ${resource}`)
   log(count)
   const rows = []
   for (let offset = 0; offset < count; offset += page) {
-    const got = get(resource, { $select: select, $where: clause, $order: ':id', $limit: page, $offset: offset }, tmpPath)
+    const got = get(resource, { $select: columns, $where: clause, $order: ':id', $limit: page, $offset: offset }, tmpPath)
     rows.push(...got)
     if (got.length < page && rows.length < count) break
   }

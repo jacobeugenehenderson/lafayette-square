@@ -2,8 +2,9 @@
 // ⭐ New York City is a SUB-STATE jurisdiction here, as St. Louis City is in mo.mjs: its wells are the city's own
 // (Department of City Planning, NYC Open Data), citywide across all five boroughs, so an NYC town selects nothing —
 // the fetch envelope scopes them (BRIEF-nyc-adapter §3.1). NYC is the first Ward Group: one adapter, many Wards.
-// More NYC well KINDS (buildings, trees, surfaces) arrive with the fetchers that read them (§3.2).
+// More NYC well KINDS (trees, surfaces) arrive with the fetchers that read them (§3.2).
 import { tidy } from '../building-address.mjs'
+import { normaliseId } from '../permanent-id.mjs'
 const s = (v) => (v == null ? '' : String(v).trim())
 
 /**
@@ -60,6 +61,39 @@ export default {
       absent: ['owner', 'year_built', 'appraised_value', 'zoning', 'land_area', 'vacant'],
     },
   },
+  buildings: {
+    // NYC Building Footprints (DoITT/OTI) — the city's own outlines, each carrying the BIN, the Building Identification
+    // Number the city keeps permanent. ⭐ On an NYC town this well IS the geometry well: Microsoft's is not fetched
+    // (footprint-well.mjs); OSM still unions in. Fetched by cartograph/fetch-buildings.mjs.
+    'nyc-buildings': {
+      protocol: 'socrata',
+      file: 'nyc_buildings.json',
+      attribution: 'NYC Office of Technology and Innovation — Building Footprints (NYC Open Data 5zhs-2jue)',
+      endpoint: 'https://data.cityofnewyork.us/resource/5zhs-2jue.json',
+      geomField: 'the_geom',
+      columns: 'the_geom,bin,height_roof,ground_elevation,construction_year,feature_code',
+      // ⭐ THE PERMANENT ID. Served as a string here and as a NUMBER ("4043753.0") by BES — normalised once, to an
+      // integer string. `placeholder`: the borough "million BINs" (x000000) the city stamps on footprints it has not
+      // numbered — measured citywide 2026-10-05, the ONLY BINs on more than one footprint. Not an identity.
+      permanentId: { field: 'bin', kind: 'bin', placeholder: '^[1-5]000000$' },
+      // Units AS SERVED: NYC's are US feet. `height` is the kit's metres (bake-buildings reads tags.height).
+      fields: { height: { from: 'height_roof', unit: 'ft' }, 'nyc:ground_elevation_ft': { from: 'ground_elevation' },
+                'nyc:construction_year': { from: 'construction_year' }, 'nyc:feature_code': { from: 'feature_code' } },
+    },
+  },
+  buildingAttributes: {
+    // Building Elevation and Subgrade (DCP) — joined by BIN only, no geometry. Feet above sea level, NAVD88.
+    // ⛔ Acquired and joined; nothing in the kit reads it yet (BRIEF-nyc-adapter §3.2a).
+    'nyc-bes': {
+      protocol: 'socrata',
+      attribution: 'NYC Department of City Planning — Building Elevation and Subgrade (NYC Open Data bsin-59hv)',
+      endpoint: 'https://data.cityofnewyork.us/resource/bsin-59hv.json',
+      geomField: 'the_geom',
+      columns: 'bin,z_grade,z_floor,subgrade',
+      joinOn: 'bin',
+      fields: { 'nyc:z_grade_ft_navd88': { from: 'z_grade' }, 'nyc:z_floor_ft_navd88': { from: 'z_floor' }, 'nyc:subgrade': { from: 'subgrade' } },
+    },
+  },
   addressPoints: {
     // NYC AddressPoint — the city's E-911 address layer (DoITT), the same kind as Ohio's LBRS. Every point carries the
     // BIN of the building it addresses, so on a BIN-keyed town the address joins by IDENTITY, containment as the check
@@ -71,14 +105,14 @@ export default {
       attribution: 'NYC Office of Technology and Innovation — AddressPoint (NYC Open Data uf93-f8nk)',
       endpoint: 'https://data.cityofnewyork.us/resource/uf93-f8nk.json',
       geomField: 'the_geom',
-      select: 'the_geom,bin,house_number,house_number_suffix,full_street_name',
+      columns: 'the_geom,bin,house_number,house_number_suffix,full_street_name',
       // ⭐ The address is the city's own: house number (+ suffix) and full street name as served ("37 AVE"), no unit.
       // A record with no house number or street name is not an address. `bin` rides along for the join.
       compose(a) {
         const n = tidy(`${s(a.house_number)}${s(a.house_number_suffix) ? ' ' + s(a.house_number_suffix) : ''}`)
         const street = tidy(s(a.full_street_name))
         if (!s(a.house_number) || !street) return null
-        return { housenumber: n, street, unit: null, address: tidy(`${n} ${street}`), bin: s(a.bin) || null }
+        return { housenumber: n, street, unit: null, address: tidy(`${n} ${street}`), bin: normaliseId(a.bin) }
       },
     },
   },

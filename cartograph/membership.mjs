@@ -137,10 +137,14 @@ export function createMembershipFilter({ nb, activate = new Set(), hide = new Se
 /**
  * ⭐ THE ONE MINTER — the id a building is keyed by EVERYWHERE (the pour, membership, bake-buildings, bake-content,
  * Extent's footprint layer). It replaced four copies that agreed only by copy-paste (BRIEF-nyc-adapter step 3).
- *   a stamped `id` (already minted) · `msbf-<n>` · `osm-<id>` · a curated `projectId` (LS's project data) · else null.
+ *   a stamped `id` · a declared well's `<kind>-<permanent id>` (bin-4029691) or `<well>-<n>` · `msbf-<n>` · `osm-<id>`
+ *   · a curated `projectId` (LS's project data) · else null.
  */
 export function buildingIdOf(b) {
   if (b?.id != null) return b.id
+  // A declared geometry well (footprint-well.mjs): its permanent id (`bin-4029691`), or its centroid-registry number.
+  if (b?.keyKind === 'centroid' && b.well && b.wellN != null) return `${b.well}-${b.wellN}`
+  if (b?.keyKind && b.permanentId != null) return `${b.keyKind}-${b.permanentId}`
   if (b?.msbfId != null) return `msbf-${b.msbfId}`
   if (b?.osmId != null) return `osm-${b.osmId}`
   if (b?.projectId != null) return b.projectId
