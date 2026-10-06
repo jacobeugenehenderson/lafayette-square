@@ -45,6 +45,8 @@ import { LANDSCAPE_OVERLAY_KEYS, horizonRecord } from './groundCover.mjs'   // o
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
+import { kerbRegions, sliceByRegions, makeHeightField, liftBuffer, riserFromEdges } from './kerbLift.mjs'
+import { intersectRings as _ringsIntersect } from '../src/lib/buildBlockGeometryV2.js'
 import { requireExplicitMap } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
@@ -571,7 +573,11 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   console.log(PROTO
     ? `  [①⇢producer] freezing ${pr.protoShapeTiles.length} tile(s) built from ①②③ — NOT the chain curb`
     : `  [①⇢producer] ⛔ --legacy: freezing the CHAIN curb, not ①. This artifact is NOT the current producer.`)
-  return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [] }
+  // ⭐ the raised kerb's inputs (`kerbLift.mjs`): the block silhouettes (the frozen curb rings), every cut's kerb face,
+  // and the town's kerb norm as frozen into the tiles — h = 0 (the kit) keeps one flat plane
+  const kerb = (pr.protoShapeTiles || []).find(t => t?.curbCutNorm)?.curbCutNorm?.kerb ?? null
+  return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [],
+           blockRings: (pr.block || []).filter(r => r?.length >= 3), curbCutRamps: pr.curbCutRamps || [], kerb }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -918,7 +924,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings, blockRings, curbCutRamps, kerb } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -1144,7 +1150,25 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // The slot counts the groups painted before the water — a lower bound on its renderOrder, so the bound holds.
   const bedTol = GROUND_Y_EPS * PAINT_ORDER.slice(0, PAINT_ORDER.findIndex(([k, key]) => k === 'mat' && key === 'water'))
     .filter(([k, key]) => bakeLayerVis[groupLayerId(k, key)] !== false && (k === 'face' ? byFaceUse.get(key) : byMaterial.get(key))?.length).length
+  // ⭐ THE RAISED KERB (`kerbLift.mjs`, BRIEF-corner-ramps-and-kerb §3 step 5). h from the town's frozen kerb norm; 0
+  // (the kit) is one flat plane and nothing below runs. Each cut's ramp + flares are SLICED into every polygon here,
+  // so their crease lines are mesh edges; the lift and the riser run on the conformed mesh further down.
+  const kerbH = kerb?.height > 0 ? kerb.height : 0
+  if (kerbH && curbCutRamps.length && !(kerb.rampSlope > 0 && kerb.flareSlope > 0))
+    throw new Error(`[bake-ground] ⛔ the kerb stands ${kerbH} m and ${curbCutRamps.length} curb cut(s) drop it, but the town's kerb norm gives no rampSlope/flareSlope — the jurisdiction's values, never the kit's (norms.json → kerb).`)
+  const kerbRegs = kerbH ? kerbRegions(curbCutRamps, kerb) : []
+  const sliceForKerb = (polys) => {
+    if (!kerbRegs.length || !polys.length) return polys
+    const rings = polys.flatMap(p => [p.outer, ...(p.holes || [])])
+    return ringsToHoledPolys(sliceByRegions(rings, kerbRegs, { intersect: _ringsIntersect, difference: differenceRings }))
+  }
+  const _planMemo = new Map()
   const planGroup = (kind, key) => {
+    const mk = kind + ':' + key
+    if (!_planMemo.has(mk)) _planMemo.set(mk, planGroupUncached(kind, key))
+    return _planMemo.get(mk)
+  }
+  const planGroupUncached = (kind, key) => {
     if (bakeLayerVis[groupLayerId(kind, key)] === false) return null
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
     // toPolys normalizes both — holes are honored at triangulation
@@ -1252,7 +1276,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // tarmac's hole and the stripe share every edge. Only water, which tints rather
     // than replaces, lies over the ground instead of in it.
     const inPartition = !DOES_NOT_CUT.has(kind + ':' + key)
-    return { polys: toPolys(items), refinePolicy, onGroundPlane, inPartition }
+    return { polys: sliceForKerb(toPolys(items)), refinePolicy, onGroundPlane, inPartition }
   }
 
   // ⭐⭐ THE GROUND STRETCHES, IT DOES NOT BREAK (H-21). Every group on the plane is
@@ -1262,7 +1286,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // thousands of T-junctions per town, each a crack once the DEM lifts the mesh.
   // ⛔ Fails loudly: the result is re-checked and any T-junction throws.
   const planeBuffers = new Map()
-  let groundShape = null
+  let groundShape = null, kerbRiser = null, kerbField = null
   {
     const planeKeys = [], planeSpecs = []
     for (const [kind, key] of PAINT_ORDER) {
@@ -1290,9 +1314,43 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         + `(${tj.within} within a group, ${tj.cross} across groups) — first at (${w.x.toFixed(2)}, ${w.z.toFixed(2)}), `
         + `a ${w.vertexGroup} vertex on a ${w.edgeGroup} edge. Refusing to write a ground that cracks.`)
     }
+    if (kerbH) {
+      const field = makeHeightField(blockRings, kerbRegs, kerbH)
+      const lifted = planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), field) }))
+      lifted.forEach((L, i) => planeBuffers.set(planeKeys[i], { positions: L.positions, indices: L.indices }))
+      kerbRiser = riserFromEdges(lifted, new Set(['curb', 'curbCut']))
+      kerbField = field
+      const bare = Object.entries(kerbRiser.bareM).sort((a, b) => b[1] - a[1])
+      console.log(`  [kerb] the block stands ${kerbH} m (${kerb.source}) · ${curbCutRamps.length} cut(s) ramp it to 0 at ${kerb.rampSlopeText ?? '—'}, flares ${kerb.flareSlopeText ?? '—'} · riser ${kerbRiser.kerbM.toFixed(0)} m · ${lifted.reduce((n, L) => n + L.split, 0)} vertices split at the kerb`)
+      // ⛔ Q1 (curbless edges) is Jacob's to rule: until it is, a lifted edge with no kerb drawn is a hole, so refuse
+      if (bare.length) throw new Error(`[bake-ground] ⛔ ${bare.reduce((n, [, m]) => n + m, 0).toFixed(0)} m of lifted block meets the road with NO kerb drawn — `
+        + bare.slice(0, 8).map(([k, m]) => `${k} ${m.toFixed(0)} m`).join(' · ') + `. What stands there is not ruled yet (BRIEF-corner-ramps-and-kerb §3 step 5, Q1). Refusing to bake a step with no face.`)
+    }
     console.log(`  [bake-ground] ground partition conformed as one mesh: ${planeSpecs.length} groups, `
       + `${cstats.inputTJunctions} input T-junctions closed, ${cstats.closures} refinement closures, ${cstats.refineTJunctions} hairline T-junctions closed after refining (≤${cstats.passes} passes), 0 left `
       + `in ${((Date.now() - _tc) / 1000).toFixed(1)}s`)
+  }
+
+  const colorOf = (kind, key) => {
+    let color
+    if (kind === 'face') {
+      color = designLuColors[key] || DEFAULT_LU_COLORS[key] || LAND_USE_COLORS[key] || LAND_USE_COLORS.unknown
+    } else if (key === 'bed' || key === 'shore') {
+      // The bed is sand (Jacob, 2026-09-26), so it takes sand's colour — and so does the shore median, which is the
+      // same sand above the water (Jacob, 2026-10-04: "supposed to meet with sand, not 'yellow'").
+      color = designLuColors.beach || DEFAULT_LU_COLORS.beach
+    } else if (key.startsWith('treelawn:')) {
+      // Per-LU treelawn variants inherit the adjacent parcel's LU color.
+      const lu = key.slice('treelawn:'.length)
+      color = designLuColors[lu] || DEFAULT_LU_COLORS[lu] || LAND_USE_COLORS[lu] || LAND_USE_COLORS.unknown
+    } else {
+      const layerKey = BAND_TO_LAYER[key] || key
+      color = designLayerColors[layerKey]
+           || DEFAULT_LAYER_COLORS[layerKey]
+           || BAND_COLORS[key]
+           || '#666666'
+    }
+    return color
   }
 
   for (const [kind, key] of PAINT_ORDER) {
@@ -1303,10 +1361,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // A partition layer was conformed with the rest (at Y 0; its slot lift goes on
     // here). Water lies OVER the ground, sharing no edge with it, so it is conformed
     // on its own — which still joins its polygons to each other.
-    const { positions, indices } = inPartition
+    let { positions, indices } = inPartition
       ? planeBuffers.get(kind + ':' + key)
       : conformAndRefine([{ polys: plan.polys, refine: plan.refinePolicy, yLift }])[0]
-    if (inPartition && yLift) for (let i = 1; i < positions.length; i += 3) positions[i] = yLift
+    // water (and anything else off the partition) rides the raised block too, or a pond inside it sinks under the lawn
+    if (!inPartition && kerbField) ({ positions, indices } = liftBuffer({ positions, indices }, kerbField))
+    if (inPartition && yLift) for (let i = 1; i < positions.length; i += 3) positions[i] += yLift   // ADDED: a raised block keeps its kerb height under the slot
     if (indices.length === 0) continue
     let perField = null
     if (kind === 'face' && SURFACES[surfaceTable[key]]?.perField) {
@@ -1329,24 +1389,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // Ribbon-band keys (asphalt, curb, sidewalk, …) route through
     // BAND_TO_LAYER first so a Designer toggle named 'street' (color
     // authored under layerColors.street) reaches the 'asphalt' bake group.
-    let color
-    if (kind === 'face') {
-      color = designLuColors[key] || DEFAULT_LU_COLORS[key] || LAND_USE_COLORS[key] || LAND_USE_COLORS.unknown
-    } else if (key === 'bed' || key === 'shore') {
-      // The bed is sand (Jacob, 2026-09-26), so it takes sand's colour — and so does the shore median, which is the
-      // same sand above the water (Jacob, 2026-10-04: "supposed to meet with sand, not 'yellow'").
-      color = designLuColors.beach || DEFAULT_LU_COLORS.beach
-    } else if (key.startsWith('treelawn:')) {
-      // Per-LU treelawn variants inherit the adjacent parcel's LU color.
-      const lu = key.slice('treelawn:'.length)
-      color = designLuColors[lu] || DEFAULT_LU_COLORS[lu] || LAND_USE_COLORS[lu] || LAND_USE_COLORS.unknown
-    } else {
-      const layerKey = BAND_TO_LAYER[key] || key
-      color = designLayerColors[layerKey]
-           || DEFAULT_LAYER_COLORS[layerKey]
-           || BAND_COLORS[key]
-           || '#666666'
-    }
+    const color = colorOf(kind, key)
 
     groups.push({
       kind,
@@ -1380,6 +1423,19 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       edgeChunks.push(perField.edgeOfVertex); edgeByteOffset += perField.edgeOfVertex.byteLength
     }
   }
+
+  // ⭐ THE RISER — the kerb's face, built from the conformed mesh's own edges (`kerbLift.mjs#riserFromEdges`), so it
+  // shares the ground's vertices and cannot crack. Off the partition (it stands, it does not tile). `vertical` tells
+  // the renderer it is a wall, not ground: ⚠️ BakedGround does not read it yet (step 5 pieces 4–5, after Strobe's
+  // shader work lands) — until then it would be lit like ground. Coloured as the curb it faces.
+  if (kerbRiser?.indices.length) {
+    groups.push({ kind: 'mat', id: 'kerbFace', color: colorOf('mat', 'curb'), renderOrder: renderOrder++, polygonOffsetUnits: -renderOrder,
+      partition: false, vertical: true, vertexCount: kerbRiser.positions.length / 3, vertexByteOffset: posByteOffset,
+      indexCount: kerbRiser.indices.length, indexByteOffset: idxByteOffset })
+    positionChunks.push(kerbRiser.positions); indexChunks.push(kerbRiser.indices)
+    posByteOffset += kerbRiser.positions.byteLength; idxByteOffset += kerbRiser.indices.byteLength
+  }
+  if (groundShape && kerbH) groundShape.kerb = { height: kerbH, source: kerb.source, cuts: curbCutRamps.length, riserM: Math.round(kerbRiser?.kerbM ?? 0) }
 
   // Concatenate positions (all Float32) and indices (all Uint32) into one
   // .bin. Layout: [all positions][all indices][field ids][field-edge distances, perField groups]. Manifest's *ByteOffset

@@ -4903,8 +4903,13 @@ function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, c
         const inn = sub.map((P, i) => { const v = nrm(i); return [P[0] - v[0] * ext, P[1] - v[1] * ext] })
         masks.push([...out, ...inn.reverse()])
         const c = at((s0 + s1) / 2)
+        // ⭐ the kerb face this cut drops along (`face`, its span's chord) and which way the block lies (`inward`) — the
+        // raised kerb's ramp reads both (`bake-ground.js`). Inward = the side of the arc's own midpoint that is block.
+        const A = at(s0), B = at(s1), lAB = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, nn = [-(B[1] - A[1]) / lAB, (B[0] - A[0]) / lAB]
+        const dl = 1e-3 * lAB, inBlock = (P) => pointInRing(P[0], P[1], ring) !== !!p.hole
+        const inward = inBlock([c[0] + nn[0] * dl, c[1] + nn[1] * dl]) ? nn : [-nn[0], -nn[1]]
         recs.push({ si: p.si, arc: st.iaArc[p.si][q], junction: j, node: st.junctions?.[j]?.node ?? null, style, source,
-                    at: c, s0, s1, arcLen: L, serves })
+                    at: c, s0, s1, arcLen: L, serves, face: [A, B], inward })
         tally.curbCuts++
       }
     }
@@ -5638,10 +5643,10 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
   const tally = { crosswalks: 0, pairs: 0, farKerbCut: 0, farKerbNone: 0, farKerbNoDims: 0, farKerbStyleAmbiguous: 0,
     farCornerNoCut: 0, ambiguous: 0, noNode: 0, noFarKerb: 0, apexesApart: 0, apartAt: [], endsNotOwned: 0, byEvidence: 0, evidenceAmbiguous: 0, evidenceEndsNotOwned: 0, evidenceApexOutside: 0, evidenceApexOutsideAt: [], styleDisagrees: 0, noCurbCut: 0, byPaint: {},
     style: norm?.style ?? null, source: norm?.source ?? null }
-  const rings = [], cutMasks = [], pairs = []
+  const rings = [], cutMasks = [], farCuts = [], pairs = []
   let cuts = []
-  if (!norm || norm.style === 'none') return { rings, cuts, pairs, tally }
-  if (!recs.length) { tally.noCurbCut = 1; return { rings, cuts, pairs, tally } }
+  if (!norm || norm.style === 'none') return { rings, cuts, farCuts, pairs, tally }
+  if (!recs.length) { tally.noCurbCut = 1; return { rings, cuts, farCuts, pairs, tally } }
   const X = curbEdgeIndex(tiles), far = X.reach
   // every corner at a node, by the chain + side it fronts: does a corner exist across the street at all?
   const cornerAt = new Set()
@@ -5733,13 +5738,13 @@ function crosswalksSquareAcross(recs, tiles, norm, cutNorm, cw, walk) {
     // the far cut: a slice of the walk — w along the kerb, from the kerb face through the curb and `warningDepth` in
     const mask = [[F[0] - d[0] * w / 2, F[1] - d[1] * w / 2], [F[0] + d[0] * w / 2, F[1] + d[1] * w / 2],
                   [F[0] + d[0] * w / 2 + n[0] * (cw + wd), F[1] + d[1] * w / 2 + n[1] * (cw + wd)], [F[0] - d[0] * w / 2 + n[0] * (cw + wd), F[1] - d[1] * w / 2 + n[1] * (cw + wd)]]
-    cutMasks.push(mask)
+    cutMasks.push(mask); farCuts.push({ face: [[F[0] - d[0] * w / 2, F[1] - d[1] * w / 2], [F[0] + d[0] * w / 2, F[1] + d[1] * w / 2]], inward: n })
     pairs.push([e.ri, null, e.S, N0, F, d, N0 === e.r.at ? 'cut' : 'crossing']); tally.farKerbCut++
     paint(N0, F, paintOf(e.r.style))
   }
   // ONE intersection for every far-kerb cut: per-cut against the whole town's walk was most of a pour's Clipper time
   if (cutMasks.length && walk.length) cuts = intersectRings(unionRings(cutMasks), walk)
-  return { rings, cuts, pairs, tally }
+  return { rings, cuts, farCuts, pairs, tally }
 }
 
 export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null) {
@@ -5875,6 +5880,8 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   out.crosswalk = (CWK.rings.length && road.length) ? intersectRings(unionRings(CWK.rings), road) : []
   // a T's far-kerb cuts join the curb-cut layer: the same strip, the same class
   if (CWK.cuts.length) out.curbCut = clip(unionRings([...out.curbCut, ...CWK.cuts]))
+  // every drop in the kerb — corner cuts and a T's far-kerb cuts — as { face, inward }, for the raised kerb's ramps
+  out.curbCutRamps = [...curbCutRecs.filter(r => r.face).map(r => ({ face: r.face, inward: r.inward })), ...CWK.farCuts]
   out.crosswalkPairs = CWK.pairs; out.crosswalkTally = CWK.tally
   return out
 }
@@ -9733,7 +9740,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
   // ⭐ the curb cuts' warning strips + their positions — painted by Section on junction corners (`curbCutsOnJunctionCorners`)
-  let curbCut = [], curbCutRecs = [], curbCutTally = null, curbCutContradicted = []
+  let curbCut = [], curbCutRecs = [], curbCutTally = null, curbCutContradicted = [], curbCutRamps = []
   let crosswalk = [], crosswalkPairs = [], crosswalkTally = null   // square across the street, kerb to kerb (`crosswalksSquareAcross`)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
@@ -9903,7 +9910,7 @@ export function buildTileGround(ribbons, opts = {}) {
     } else console.warn(`[tileGround][①⇢LIVE] ⛔ ② produced NO corner arcs — the corner handles would ride the LEGACY fillets, which are not on screen. Not swapping; the dial is untrustworthy in this pour.`)
     const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms)
     asphalt = S.asphalt; curb = S.curb; sidewalk = S.sidewalk; block = S.block
-    curbCut = S.curbCut || []; curbCutRecs = S.curbCutRecs || []; curbCutTally = S.curbCutTally || null; curbCutContradicted = S.curbCutContradicted || []
+    curbCut = S.curbCut || []; curbCutRecs = S.curbCutRecs || []; curbCutTally = S.curbCutTally || null; curbCutContradicted = S.curbCutContradicted || []; curbCutRamps = S.curbCutRamps || []
     crosswalk = S.crosswalk || []; crosswalkPairs = S.crosswalkPairs || []; crosswalkTally = S.crosswalkTally || null
     if (crosswalkTally && crosswalkTally.style && crosswalkTally.style !== 'none') {
       const C = crosswalkTally
@@ -9966,7 +9973,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, curbCut, curbCutRecs, curbCutTally, curbCutContradicted, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, curbCut, curbCutRecs, curbCutTally, curbCutContradicted, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
