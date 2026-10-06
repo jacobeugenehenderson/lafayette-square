@@ -26,7 +26,7 @@ import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-addres
 import { buildingIdOf } from './membership.mjs'
 import { footprintWell } from './footprint-well.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
-import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPath } from './sources.js'
+import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPath, readCroplandSources, readAddressPointSources } from './sources.js'
 import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
 import { unionFootprints } from './building-union.mjs'
 import { writeIfChanged } from './io.js'
@@ -1826,6 +1826,22 @@ createServer(async (req, res) => {
         sources.waterDatums = wdR.code === 0 ? { ok: true, count: 1 }
           : wdR.code === 1 ? { ok: true, count: 0, note: 'no tide datum or lake gauge for this town — a coastal town\'s terrain refuses until one is named' }
           : { ok: false, count: 0, error: lastLine(wdR) }
+        // ── Every other DECLARED well the kit can fetch (sources.json). ⛔ A declaration is a promise the fetch keeps:
+        //    jacksonheights declared cropland, Extent never acquired it, and the first pour died at "Pouring map"
+        //    (cdl-2024.tif absent). Undeclared / declared-none is SAID, never run and never read as "none".
+        //    cdl.mjs reads the town's OSM bbox, so this runs after the OSM fetch above.
+        const declaredStep = async (state, absentReason, cmd, countOf, timeout) => {
+          if (state === 'undeclared') return { ok: false, count: 0, undeclared: true, note: 'not declared yet — confirm the well into sources.json' }
+          if (state === 'none') return { ok: true, count: 0, declaredNone: absentReason }
+          const r = await runCapture(cmd, { cwd: here, env, timeout })
+          return r.code === 0 ? { ok: true, count: countOf() } : { ok: false, count: countOf(), error: lastLine(r) }
+        }
+        const crop = readCroplandSources(scene)
+        sources.cropland = await declaredStep(crop.state, crop.absentReason, 'node cdl.mjs',
+          () => crop.sources.filter(s => existsSync(join(raw, `cdl-${s.year}.tif`))).length, 300000)
+        const apDecl = readAddressPointSources(scene)
+        sources.addressPoints = await declaredStep(apDecl.state, apDecl.absentReason, 'node fetch-address-points.mjs',
+          () => declaredAddressPointPaths(scene).reduce((n, p) => n + (existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')).points || []).length : 0), 0), 300000)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox, sources }))
         // ⭐ A fetched town gets its OWN instance module, or it boots wearing Lafayette Square

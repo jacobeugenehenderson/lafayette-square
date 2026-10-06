@@ -2267,7 +2267,8 @@ export default function ExtentApp() {
                 </div>
                 {fetchSources && (
                   <div className="carto-extent-status ok" style={{ fontSize: 11, lineHeight: 1.5 }}>
-                    {[['OSM', fetchSources.osm], ['buildings', fetchSources.buildings], ['parcels', fetchSources.parcels]].map(([label, s]) => (
+                    {[['OSM', fetchSources.osm], ['buildings', fetchSources.buildings], ['parcels', fetchSources.parcels],
+                      ['address points', fetchSources.addressPoints], ['cropland', fetchSources.cropland]].filter(([, s]) => s).map(([label, s]) => (
                       <div key={label}>
                         {s?.ok ? '✓' : '✗'} {label}
                         {s?.ok && Number.isFinite(s.count) ? ` · ${s.count.toLocaleString()}` : ''}
