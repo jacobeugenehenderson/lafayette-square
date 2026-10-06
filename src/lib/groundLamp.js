@@ -31,6 +31,7 @@ export const GROUND_LAMP_DECLS = `
        uniform float uPool; uniform float uShadowStr; uniform vec3 uLampColor;
        uniform float uPoolRadius; // Pool radius knob, 0..1 of the reach (0 = no pool)
        uniform float uPoolCentre; // Pool centre, metres — the dark circle under the lamp
+       uniform float uPoolCentreSoft; // Pool centre softness, 0..1 of the centre's radius either side of its edge
        uniform sampler2D uLampGrid; uniform vec2 uLampGridMin; uniform vec3 uLampGridDims; uniform float uLampGridCell;
        uniform float uCanopyLitter; uniform vec3 uCanopyLitterColor;   // ground rule (surfaces.mjs GROUND_RULES)
        ${POOL_SHAPE_GLSL}
@@ -69,8 +70,8 @@ export const groundLampFragment = (xz) => `
            // (Jacob, 2026-09-26: "edges too hard, too opaque/flat"). One texture read; the lamp grid only near a lamp.
            float dN = gfx.r * uPoolScale;
            float E = poolDisc(dN, uPoolRadius * uPoolScale);
-           float nearBand = uPoolCentre * 1.2 + 2.0 * uPoolSpan.x / float(textureSize(uPoolMap, 0).x);
-           if (E > 0.0 && uPoolCentre > 0.0 && dN < nearBand) E *= poolCentre(nearestLampDist(${xz}), uPoolCentre);
+           float nearBand = uPoolCentre * (1.1 + uPoolCentreSoft) + 2.0 * uPoolSpan.x / float(textureSize(uPoolMap, 0).x);
+           if (E > 0.0 && uPoolCentre > 0.0 && dN < nearBand) E *= poolCentre(nearestLampDist(${xz}), uPoolCentre, uPoolCentreSoft);
            vec3 poolLight = diffuseColor.rgb * uLampColor * E * uPool;
            gl_FragColor.rgb += (1.0 - gl_FragColor.rgb) * (1.0 - exp(-poolLight));
          } }`
@@ -86,6 +87,7 @@ export function bindGroundLamp(uniforms, pool) {
   uniforms.uLampColor = _lampGlow.colorUniform
   uniforms.uPoolRadius = _lampGlow.poolRadiusUniform
   uniforms.uPoolCentre = _lampGlow.poolCentreUniform
+  uniforms.uPoolCentreSoft = _lampGlow.poolCentreSoftUniform
   uniforms.uLampGrid = _lampGrid.uLampGrid; uniforms.uLampGridMin = _lampGrid.uLampGridMin
   uniforms.uLampGridDims = _lampGrid.uLampGridDims; uniforms.uLampGridCell = _lampGrid.uLampGridCell
   uniforms.uCanopyLitter = groundRules.canopyLitter
@@ -107,6 +109,7 @@ export function bindGroundLampShared(uniforms) {
   uniforms.uLampColor = _lampGlow.colorUniform
   uniforms.uPoolRadius = _lampGlow.poolRadiusUniform
   uniforms.uPoolCentre = _lampGlow.poolCentreUniform
+  uniforms.uPoolCentreSoft = _lampGlow.poolCentreSoftUniform
   uniforms.uLampGrid = _lampGrid.uLampGrid; uniforms.uLampGridMin = _lampGrid.uLampGridMin
   uniforms.uLampGridDims = _lampGrid.uLampGridDims; uniforms.uLampGridCell = _lampGrid.uLampGridCell
   uniforms.uCanopyLitter = groundRules.canopyLitter

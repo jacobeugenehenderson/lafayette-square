@@ -98,7 +98,7 @@ const writes = (() => {
   // ⭐ AT 0, EVERY LAMP LIGHT IS EXACTLY 0 (Jacob, 2026-09-26: "even turned all the way to 0 … some glows").
   // A light's write must be a pure product of its field (and t, clamps) — an additive term survives 0.
   // Radius (a wipe threshold) and Glow size (a size) are not light, so they are exempt.
-  const NOT_LIGHT = new Set(['lampGlow.radius', 'lampGlow.centre', 'lantern.glowSize'])
+  const NOT_LIGHT = new Set(['lampGlow.radius', 'lampGlow.centre', 'lampGlow.centreSoft', 'lantern.glowSize'])
   const frameSrc = lights.slice(lights.indexOf('useFrame('))
   for (const m of frameSrc.matchAll(/([\w.?\[\]]+?\.(?:value|opacity|emissiveIntensity))\s*=\s*([^\n]+)/g)) {
     const f = writes.get(m[1].replace(/\?/g, ''))
@@ -125,7 +125,7 @@ for (const { key } of LAMPGLOW_FIELDS) {
 
 console.log('④ THE UNIFORMS HAVE SHADER READERS')
 for (const [u, file] of [['poolUniform', 'src/lib/groundLamp.js'], ['poolUniform', 'src/components/SlabBuildings.jsx'], ['treesUniform', 'src/components/treeAtlasMaterial.js'],
-                          ['poolRadiusUniform', 'src/lib/groundLamp.js'], ['poolCentreUniform', 'src/lib/groundLamp.js'], ['canopyWipeUniform', 'src/components/SlabBuildings.jsx'], ['canopyWipeUniform', 'src/components/treeAtlasMaterial.js']])
+                          ['poolRadiusUniform', 'src/lib/groundLamp.js'], ['poolCentreUniform', 'src/lib/groundLamp.js'], ['poolCentreSoftUniform', 'src/lib/groundLamp.js'], ['canopyWipeUniform', 'src/components/SlabBuildings.jsx'], ['canopyWipeUniform', 'src/components/treeAtlasMaterial.js']])
   src(file).includes(`_lampGlow.${u}`) ? ok(`${u} → ${file}`) : bad(`${u} has no reader in ${file}`)
 
 console.log('⑤ THE WALLS\' GLSL FALLOFF IS THE JS FALLOFF')
@@ -148,16 +148,25 @@ console.log('⑥ POOL RADIUS: MONOTONIC, 0 = OFF, 1 = FULL (through the real GLS
   // Full reach = the last lit sample before the rim, where the profile is exactly 0 (so 0.999, not 1).
   const judge = (xs) => xs[0] === 0 && xs.at(-1) >= 0.99 && xs.every((x, i) => i === 0 || x >= xs[i - 1] - 1e-9)
   // Ground: the circle's reach IS the knob (POOL_SHAPE_GLSL, evaluated as GLSL below) — lit out to k × reach.
-  const disc = new Function('smoothstep', `${POOL_SHAPE_GLSL.replace(/float (poolDisc|poolCentre)\(float d, float (R|c)\)/g, 'function $1(d, $2)')}; return poolDisc`)(smoothstep)
+  // GLSL → JS: drop the parameter types; `max`/`mix` are passed in.
+  const glslAsJs = POOL_SHAPE_GLSL.replace(/float (poolDisc|poolCentre)\(([^)]*)\)/g, (_, n, ps) => `function ${n}(${ps.replace(/float /g, '')})`)
+  const disc = new Function('smoothstep', 'mix', 'max', `${glslAsJs}; return poolDisc`)(smoothstep, (a, b, t) => a + (b - a) * t, Math.max)
   const groundXs = Array.from({ length: 41 }, (_, i) => { const k = i / 40; let r = 0; for (let j = 0; j <= 1000; j++) if (disc(j / 1000, k) > 1e-6) r = j / 1000; return r })
   judge(groundXs) ? ok(`ground: 0 → ${groundXs[1].toFixed(2)} … ${groundXs[20].toFixed(2)} … 1 — never shrinks (the circle is the knob)`) : bad(`ground reach across the knob: ${groundXs.map(x => x.toFixed(2)).join(' ')}`)
   const cx = sweep(canopyWipe, lampFalloff)
   judge(cx) ? ok(`canopy + walls: 0 → ${cx[1].toFixed(2)} … ${cx[20].toFixed(2)} … 1 — never shrinks`) : bad(`canopy reach across the knob: ${cx.map(x => x.toFixed(2)).join(' ')}`)
   // GLSL ↔ JS parity of the pool shape (one model, two languages).
-  const centreG = new Function('smoothstep', 'mix', `${POOL_SHAPE_GLSL.replace(/float (poolDisc|poolCentre)\(float d, float (R|c)\)/g, 'function $1(d, $2)')}; return poolCentre`)(smoothstep, (a, b, t) => a + (b - a) * t)
-  let worst = 0; for (let i = 0; i <= 400; i++) { const d = i / 100; worst = Math.max(worst, Math.abs(disc(d, 3) - poolDisc(d, 3)), Math.abs(centreG(d, 1.2) - poolCentre(d, 1.2))) }
-  worst < 1e-9 ? ok('pool shape GLSL == JS (disc + centre)') : bad(`pool shape GLSL and JS differ by ${worst}`)
-  poolCentre(0, 1.2) < 0.1 && poolCentre(1.5, 1.2) > 0.99 ? ok(`the centre is pronounced: ${poolCentre(0, 1.2).toFixed(2)} of the light inside, full by ${(1.2 * 1.1).toFixed(2)} m`) : bad('the centre is not dark/crisp')
+  const centreG = new Function('smoothstep', 'mix', 'max', `${glslAsJs}; return poolCentre`)(smoothstep, (a, b, t) => a + (b - a) * t, Math.max)
+  let worst = 0
+  for (const soft of [0, 0.1, 0.5, 1]) for (let i = 0; i <= 400; i++) { const d = i / 100; worst = Math.max(worst, Math.abs(disc(d, 3) - poolDisc(d, 3)), Math.abs(centreG(d, 1.2, soft) - poolCentre(d, 1.2, soft))) }
+  worst < 1e-9 ? ok('pool shape GLSL == JS (disc + centre, softness 0 … 1)') : bad(`pool shape GLSL and JS differ by ${worst}`)
+  poolCentre(0, 1.2, 0.1) < 0.1 && poolCentre(1.5, 1.2, 0.1) > 0.99 ? ok(`the centre is pronounced at the kit's softness: ${poolCentre(0, 1.2, 0.1).toFixed(2)} of the light inside, full by ${(1.2 * 1.1).toFixed(2)} m`) : bad('the centre is not dark/crisp at the kit softness')
+  // Softness widens the edge and only the edge: the light at the centre's own radius is the same mid-value at any
+  // softness, the transition gets wider as the knob rises, and the dark core and the full light are unchanged.
+  const width = (soft) => { let a = null, b = null; for (let i = 0; i <= 4000; i++) { const d = i / 1000, v = poolCentre(d, 1.2, soft); if (a === null && v > 0.06) a = d; if (b === null && v > 0.99) b = d } return b - a }
+  const ws = [0, 0.1, 0.5, 1].map(width)
+  ws.every((w, i) => i === 0 || w > ws[i - 1]) && poolCentre(0, 1.2, 1) < 0.1 && poolCentre(2.41, 1.2, 1) > 0.99
+    ? ok(`softness widens the centre's edge: ${ws.map(w => w.toFixed(2)).join(' → ')} m across softness 0 → 1`) : bad(`softness does not widen the edge monotonically: ${ws.map(w => w.toFixed(3)).join(' ')}`)
   // Self-mutation: the first, broken threshold (the pool's own profile, dark at its centre).
   judge(sweep(r => (r >= 1 ? 0 : groundPool(Math.max(0, r))), groundPool)) ? bad('mutation NOT caught — ⑥ is blind') : ok('mutation (threshold = the pool profile itself) is caught')
 }

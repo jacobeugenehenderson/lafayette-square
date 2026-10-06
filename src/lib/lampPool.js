@@ -140,17 +140,24 @@ export const LAMP_WIPE_GLSL = `
 //   · the CIRCLE — its radius is the Pool radius knob × the town's reach; a soft outer edge (the outer POOL_SOFT
 //     of the radius). Overlapping pools are the UNION (nearest-lamp distance), so they merge, never double.
 //   · the CENTRE — an authored radius in metres (Lamp Glow › Pool centre), dark (CENTRE_FLOOR of the light left)
-//     with a tight edge (CENTRE_EDGE of its radius). It does not scale with the circle.
+//     with an authored softness (Lamp Glow › Pool centre softness: the edge runs from (1 − s) to (1 + s) of its
+//     radius, so 0 is crisp and 1 fades over the whole centre). It does not scale with the circle.
 // Unitless shape fractions; the sizes are the knob and the authored centre. JS twins below are for the checks.
 export const POOL_SOFT = 0.4
-export const CENTRE_EDGE = 0.1
 export const CENTRE_FLOOR = 0.05
+// smoothstep needs two distinct edges; softness 0 draws the crispest edge the shader can (a hair, not a step).
+export const CENTRE_SOFT_MIN = 0.005
 const f3 = (v) => v.toFixed(3)
 export const POOL_SHAPE_GLSL = `
   float poolDisc(float d, float R) { return R <= 0.0 ? 0.0 : 1.0 - smoothstep(${f3(1 - POOL_SOFT)} * R, R, d); }
-  float poolCentre(float d, float c) {
-    return c <= 0.0 ? 1.0 : mix(${f3(CENTRE_FLOOR)}, 1.0, smoothstep(c * ${f3(1 - CENTRE_EDGE)}, c * ${f3(1 + CENTRE_EDGE)}, d));
+  float poolCentre(float d, float c, float s) {
+    s = max(s, ${f3(CENTRE_SOFT_MIN)});
+    return c <= 0.0 ? 1.0 : mix(${f3(CENTRE_FLOOR)}, 1.0, smoothstep(c * (1.0 - s), c * (1.0 + s), d));
   }`
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t) }
 export const poolDisc = (d, R) => (R <= 0 ? 0 : 1 - smooth((1 - POOL_SOFT) * R, R, d))
-export const poolCentre = (d, c) => (c <= 0 ? 1 : CENTRE_FLOOR + (1 - CENTRE_FLOOR) * smooth(c * (1 - CENTRE_EDGE), c * (1 + CENTRE_EDGE), d))
+export const poolCentre = (d, c, s) => {
+  if (c <= 0) return 1
+  s = Math.max(s, CENTRE_SOFT_MIN)
+  return CENTRE_FLOOR + (1 - CENTRE_FLOOR) * smooth(c * (1 - s), c * (1 + s), d)
+}

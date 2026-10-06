@@ -428,6 +428,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
     _lampGlow.treesUniform.value = t * Math.max(0, _lampGlow.share.trees)
     _lampGlow.poolRadiusUniform.value = Math.min(1, Math.max(0, _lampGlow.share.radius))   // the ground's circle
     _lampGlow.poolCentreUniform.value = Math.max(0, _lampGlow.share.centre)                 // its dark centre, metres
+    _lampGlow.poolCentreSoftUniform.value = Math.min(1, Math.max(0, _lampGlow.share.centreSoft))   // that centre's edge, 0 crisp … 1 soft
     _lampGlow.canopyWipeUniform.value = canopyWipe(_lampGlow.share.radius)
     if (glowRef.current) glowRef.current.visible = bulb > 0
     if (bulbRef.current) bulbRef.current.visible = bulb > 0

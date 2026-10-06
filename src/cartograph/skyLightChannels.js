@@ -537,9 +537,10 @@ export const LAMPGLOW_FIELDS = [
   { key: 'pool',   label: 'Light pools', min: 0, max: 4,  step: 0.05 },
   { key: 'radius', label: 'Pool radius', min: 0, max: 1,  step: 0.01 },
   { key: 'centre', label: 'Pool centre (m)', min: 0, max: 4, step: 0.05, scale: 'fixture' },   // the dark circle under the lamp: lamp-sized, not town-sized
+  { key: 'centreSoft', label: 'Pool centre softness', min: 0, max: 1, step: 0.01 },   // its edge: 0 crisp … 1 fades across the whole centre
   { key: 'trees',  label: 'Trees',       min: 0, max: 20, step: 0.1 },
 ]
-export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 1, pool: 1.0, radius: 1.0, centre: 1.2 }
+export const LAMPGLOW_FLAT_DEFAULTS = { grass: 0, trees: 1, pool: 1.0, radius: 1.0, centre: 1.2, centreSoft: 0.1 }
 // Pool radius's scale version (animatedParam.js#stampLampGlowRadius): 2 = 0 means off.
 export const LAMPGLOW_RADIUS_V = 2
 export const LAMPGLOW_FIELD_KEYS = LAMPGLOW_FIELDS.map(f => f.key)
@@ -656,6 +657,7 @@ const DAY = {
   treeWind: Object.fromEntries(Object.entries(TREE_WIND_FLAT_DEFAULTS).map(([k, v]) => [k, Array(8).fill(v)])),
   lampGlow: { edges: LAMP_EDGES, grass: [0, 0, null, null, 0, 0, 0, 0], pool: [0.5, 0.5, null, null, 1.25, 1.4, 2.2, 0.25],
               radius: [0.85, 0.75, null, null, 0.75, 1, 1, 1], centre: [1.2, 1.2, null, null, 0.25, 1.2, 1.2, 1.2],
+              centreSoft: [0.1, 0.1, null, null, 0.1, 0.1, 0.1, 0.1],
               trees: [0.3, 0.3, null, null, 0.8, 2, 0.7, 0.3] },
 }
 // The uplights (a town's set-piece, and the Arch where a Look installs one): no daylight ramp, so the day is blank.
