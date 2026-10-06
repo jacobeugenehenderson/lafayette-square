@@ -121,7 +121,17 @@ for (const bad of ['', 'Jackson Heights', 'jacksonheights.online', 'JacksonHeigh
     const d2 = join(T, 'd2'); mkdirSync(d2); writeFileSync(join(d2, 'sources.json'), '{}')
     const decl2 = join(T, 'decl2'); mkdirSync(decl2); writeFileSync(join(decl2, 'sources.json'), '{"state":"NY"}')
     const J2 = planJoin(d2, decl2)
-    check('a file both hold is a CLASH (the move is refused, nothing overwritten)', J2.clash.includes('sources.json'), JSON.stringify(J2))
+    check('a file both hold with DIFFERENT bytes is a CLASH (the move is refused, nothing overwritten)', J2.clash.includes('sources.json'), JSON.stringify(J2))
+    const d3 = join(T, 'd3'), decl3 = join(T, 'decl3'); mkdirSync(d3); mkdirSync(decl3)
+    for (const d of [d3, decl3]) writeFileSync(join(d, 'building-overrides.json'), '{"activate":[],"hide":[]}')
+    writeFileSync(join(decl3, 'sources.json'), '{"state":"NY"}'); writeFileSync(join(d3, 'neighborhood.json'), '{}')
+    const J3 = planJoin(d3, decl3)
+    check('a file both hold BYTE-IDENTICAL is not a clash (the join proceeds)', J3.clash.length === 0 && J3.same.includes('building-overrides.json'), JSON.stringify(J3))
+    executeJoin(d3, J3)
+    check('…and after it the declaration, the draft and one copy of the shared file are there', existsSync(join(decl3, 'sources.json')) && existsSync(join(decl3, 'neighborhood.json')) && existsSync(join(decl3, 'building-overrides.json')) && !existsSync(d3))
+const serveSrc = read('cartograph/serve.js')
+check('opening a town writes nothing: an empty override set with no file is not written', /!activate\.length && !hide\.length && !existsSync\(ovPath\)/.test(serveSrc))
+check('the Extent autosave skips a set equal to what it loaded (a read is never a write)', /if \(k === ovLoaded\.current\) return/.test(read('src/cartograph/ExtentApp.jsx')))
   } finally { rmSync(T, { recursive: true, force: true }) } }
 
 for (const o of ok) console.log(`✓ ${o}`)

@@ -1,7 +1,7 @@
 // scene-address.mjs — a town's WEB ADDRESS becomes its scene id and its Look id (BRIEF-nyc-adapter §3.0).
 // Pure decisions + one filesystem plan, shared by serve.js and checks/claims-a-scene-is-named-not-numbered.mjs,
 // so the check drives the code that runs rather than restating it.
-import { existsSync, readdirSync, statSync, renameSync, rmSync } from 'node:fs'
+import { existsSync, readdirSync, statSync, renameSync, rmSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
 
@@ -25,17 +25,19 @@ export function lookIdFor({ statedId, name, existingIds }) {
 // declarations (sources.json) and nothing fetched or drafted — no geography.json, no neighborhood.json.
 export const isDeclaredOnly = (dir) => existsSync(dir) && !existsSync(join(dir, 'geography.json')) && !existsSync(join(dir, 'neighborhood.json'))
 
-// A draft JOINS a declared-only folder entry by entry. ⛔ Any name both hold as a FILE (or file-vs-folder)
-// refuses the whole move before anything moves. Returns { moves, clash }.
+// A draft JOINS a declared-only folder entry by entry. A file both hold with BYTE-IDENTICAL content is not a clash
+// (one copy stays; the draft's is dropped with the draft). ⛔ Any name both hold with different bytes (or file-vs-folder)
+// refuses the whole move before anything moves. Returns { moves, clash, same }.
 export function planJoin(src, dst) {
-  const moves = [], clash = []
+  const moves = [], clash = [], same = []
   const walk = (a, b) => { for (const e of readdirSync(a)) {
     const pa = join(a, e), pb = join(b, e)
     if (!existsSync(pb)) moves.push([pa, pb])
     else if (statSync(pa).isDirectory() && statSync(pb).isDirectory()) walk(pa, pb)
+    else if (statSync(pa).isFile() && statSync(pb).isFile() && readFileSync(pa).equals(readFileSync(pb))) same.push(pb.slice(dst.length + 1))
     else clash.push(pb.slice(dst.length + 1)) } }
   walk(src, dst)
-  return { moves, clash }
+  return { moves, clash, same }
 }
 export function executeJoin(src, { moves }) {
   for (const [a, b] of moves) renameSync(a, b)

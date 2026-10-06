@@ -1042,19 +1042,24 @@ export default function ExtentApp() {
   const [activate, setActivate] = useState(() => new Set())
   const [hide, setHide] = useState(() => new Set())
   const ovHydrated = useRef(false)
+  // What was LOADED — the autosave writes only when the operator's sets differ from it (never on a mere open).
+  const ovLoaded = useRef('')
+  const ovKey = (a, h) => JSON.stringify({ activate: [...a].sort(), hide: [...h].sort() })
   useEffect(() => {
     let cancelled = false
     ovHydrated.current = false
     setCurating(false); setActivate(new Set()); setHide(new Set())
     if (!scene) return
     fetchBuildingOverrides(scene)
-      .then(r => { if (!cancelled) { setActivate(new Set(r.activate || [])); setHide(new Set(r.hide || [])); ovHydrated.current = true } })
+      .then(r => { if (!cancelled) { const a = new Set(r.activate || []), h = new Set(r.hide || []); ovLoaded.current = ovKey(a, h); setActivate(a); setHide(h); ovHydrated.current = true } })
       .catch(() => { ovHydrated.current = true })
     return () => { cancelled = true }
   }, [scene])
   useEffect(() => {
     if (!ovHydrated.current) return
-    const t = setTimeout(() => { saveBuildingOverrides(scene, { activate: [...activate], hide: [...hide] }).catch(() => {}) }, 400)
+    const k = ovKey(activate, hide)
+    if (k === ovLoaded.current) return          // ⛔ nothing changed — a read is never a write
+    const t = setTimeout(() => { saveBuildingOverrides(scene, { activate: [...activate], hide: [...hide] }).then(() => { ovLoaded.current = k }).catch(() => {}) }, 400)
     return () => clearTimeout(t)
   }, [activate, hide, scene])
 

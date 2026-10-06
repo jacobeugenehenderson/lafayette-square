@@ -1595,6 +1595,9 @@ createServer(async (req, res) => {
           const parsed = JSON.parse(body || '{}')
           const activate = Array.isArray(parsed.activate) ? parsed.activate : []
           const hide = Array.isArray(parsed.hide) ? parsed.hide : []
+          // ⛔ An EMPTY set where no file exists IS the absence (GET serves exactly that): write nothing and create no
+          // folder. Writing it made a mere OPEN of a town — even a search's provisional one — leave a file and a folder.
+          if (!activate.length && !hide.length && !existsSync(ovPath)) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true,"wrote":false}'); return }
           mkdirSync(dirname(ovPath), { recursive: true })
           writeIfChanged(ovPath, JSON.stringify({ activate, hide }, null, 2))
           res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}')
