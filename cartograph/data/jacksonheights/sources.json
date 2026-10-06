@@ -17,6 +17,11 @@
   "buildingAttributes": [
     { "from": "state", "id": "nyc-bes" }
   ],
+  "trees": [
+    { "from": "state", "id": "nyc-forestry" },
+    { "from": "state", "id": "nyc-street-census-2015" }
+  ],
+  "_trees_why": "NYC Parks' live Forestry inventory and the 2015 Street Tree Census, unioned; the live survey's removal records supersede a 2015 tree within DEDUP_M (Jacob, 2026-10-06: 'we want to be most up to date'). Standing dead trees are kept on record, not planted.",
   "tide": {
     "station": "8517251",
     "why": "Worlds Fair Marina, on Flushing Bay — the water this envelope touches; no CO-OPS station lies inside the bbox (Jacob, 2026-10-05)"

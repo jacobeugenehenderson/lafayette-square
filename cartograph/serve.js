@@ -26,7 +26,7 @@ import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-addres
 import { buildingIdOf } from './membership.mjs'
 import { footprintWell } from './footprint-well.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
-import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPath, readCroplandSources, readAddressPointSources } from './sources.js'
+import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPath, readCroplandSources, readAddressPointSources, readTreeSources, declaredTreeWellPaths } from './sources.js'
 import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
 import { unionFootprints } from './building-union.mjs'
 import { writeIfChanged } from './io.js'
@@ -1842,6 +1842,9 @@ createServer(async (req, res) => {
         const apDecl = readAddressPointSources(scene)
         sources.addressPoints = await declaredStep(apDecl.state, apDecl.absentReason, 'node fetch-address-points.mjs',
           () => declaredAddressPointPaths(scene).reduce((n, p) => n + (existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')).points || []).length : 0), 0), 300000)
+        const trDecl = readTreeSources(scene)
+        sources.trees = await declaredStep(trDecl.state, trDecl.absentReason, 'node fetch-trees.mjs',
+          () => declaredTreeWellPaths(scene).reduce((n, p) => n + (existsSync(p) ? (JSON.parse(readFileSync(p, 'utf8')).trees || []).length : 0), 0), 300000)
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ ok: true, center: { lat: geo.lat, lon: geo.lon }, bbox: geo.bbox, sources }))
         // ⭐ A fetched town gets its OWN instance module, or it boots wearing Lafayette Square

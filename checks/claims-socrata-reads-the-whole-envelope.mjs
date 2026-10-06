@@ -13,7 +13,8 @@
  *  3. WHOLE OR NOTHING — a server that returns fewer rows than it counted is REFUSED, never written.
  *  4. NYC's address composition (states/ny.mjs `nyc-addresspoint`): hyphenated Queens numbers kept whole, the BIN rides
  *     along, a record with no number or street is not an address.
- * ⭐ MUTANTS (each RED): swap lat/lon in withinBox · drop the `where` AND · accept a short set · compose without the BIN.
+ * ⭐ MUTANTS (each RED): swap lat/lon in withinBox · drop the `where` AND · accept a short set · compose without the BIN ·
+ *    swap min/max in the lat/lon range form.
  */
 import { withinBox, envelopeClause, socrataFetchAll } from '../cartograph/socrata-fetch.mjs'
 import { STATES } from '../cartograph/states/index.mjs'
@@ -28,6 +29,8 @@ const wb = withinBox('the_geom', bbox)
 check('within_box is (geom, north, west, south, east)', wb === 'within_box(the_geom, 40.762, -73.897, 40.745, -73.868)', wb)
 check('a bbox missing a number THROWS', throws(() => withinBox('the_geom', { ...bbox, maxLat: undefined }), /no numeric `maxLat`/))
 check('a geometry column that is not a plain name THROWS (it is spliced into the query)', throws(() => withinBox('x) OR (1=1', bbox), /not a Socrata column/))
+check('a coordinates-only dataset is scoped by lat/lon ranges', withinBox({ lat: 'latitude', lon: 'longitude' }, bbox) === 'latitude between 40.745 and 40.762 and longitude between -73.897 and -73.868', withinBox({ lat: 'latitude', lon: 'longitude' }, bbox))
+check('a lat/lon column that is not a plain name THROWS', throws(() => withinBox({ lat: 'latitude) or (1=1', lon: 'longitude' }, bbox), /not a Socrata column/))
 
 // 2. the well's where
 check("the well's where is ANDed, parenthesised", envelopeClause('g', "borough = 'QN'", bbox).endsWith(" AND (borough = 'QN')"))

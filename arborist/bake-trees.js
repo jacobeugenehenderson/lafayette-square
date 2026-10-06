@@ -45,6 +45,8 @@ import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 import { readTownDesign } from '../cartograph/lookDesign.mjs'
 import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
 import { DEFAULT_MAP, requireExplicitMap } from '../cartograph/config.js'
+import { declaredTreeWellPaths } from '../cartograph/sources.js'
+import { DEDUP_M } from './census-dedup.mjs'
 import { resolveSpecies } from './vocabulary.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -131,7 +133,6 @@ const SOURCE_RANK = { 'city-inventory': 3, 'forest-park': 3, 'park': 3, 'osm': 2
 // (and a 2D/authoring view sizing trees by trunk width) sees real values, never a
 // placeholder masquerading as data. The rest omit it and a consumer defaults them.
 const REAL_DBH_SOURCES = new Set(['city-inventory', 'forest-park', 'park'])
-const DEDUP_M = 3   // same trunk if within this (matches scripts/14's OSM↔city dedup)
 
 /**
  * The CENSUS: every well unioned, each tree stamped with its well's kind + source,
@@ -625,8 +626,9 @@ export async function bakeTrees({
   // `SOURCE_BY_BASENAME` above is the enumeration; `cartograph/tree-bake-inputs.mjs`
   // must list the same set (it is the other entry point — keep them in lockstep).
   const mapCleanDir = path.join(REPO_ROOT, 'cartograph', 'data', scene, 'clean')
-  const sceneDefaultWells = Object.keys(SOURCE_BY_BASENAME)
-    .map(basename => path.join(mapCleanDir, basename))
+  // ⭐ …plus the town's DECLARED tree wells (sources.json `trees`; cartograph/fetch-trees.mjs) — the same call the other
+  // entry point makes (cartograph/tree-bake-inputs.mjs), so the two cannot drift on what a census is made of.
+  const sceneDefaultWells = [...Object.keys(SOURCE_BY_BASENAME).map(basename => path.join(mapCleanDir, basename)), ...declaredTreeWellPaths(scene)]
     .filter(existsSync)
   const parkPaths = placements
     ? (Array.isArray(placements) ? placements : [placements]).map(p => path.resolve(REPO_ROOT, p))

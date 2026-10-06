@@ -233,6 +233,35 @@ export function readBuildingSources(scene) {
   return { state: 'declared', path: p, well, attributes }
 }
 
+/**
+ * TREES — a town's declared tree-census wells (BRIEF-nyc-adapter §3.2a: "trees become a well kind"). Three states:
+ *   UNDECLARED    — no `trees` key: the town's census is whatever canonical files it holds (arborist/bake-trees.js
+ *                   SOURCE_BY_BASENAME) — the state every town was in before this kind existed.
+ *   DECLARED-NONE — `trees: []` + `trees_absent_reason`.
+ *   DECLARED      — [{ "from": "state", "id" }] — each fetched by cartograph/fetch-trees.mjs into clean/<file>, and READ
+ *                   by both tree entry points (tree-bake-inputs.mjs, bake-trees.js), unioned with the canonical wells.
+ * ⛔ A malformed declaration throws; it is never read as undeclared.
+ */
+export function readTreeSources(scene) {
+  const p = sourcesPath(scene)
+  if (!existsSync(p)) return { state: 'undeclared', path: p, wells: [] }
+  const j = JSON.parse(readFileSync(p, 'utf8'))
+  if (!('trees' in j)) return { state: 'undeclared', path: p, wells: [] }
+  if (!Array.isArray(j.trees)) throw new Error(`${p}: \`trees\` must be an array`)
+  if (!j.trees.length) {
+    if (!j.trees_absent_reason) throw new Error(`${p} declares no tree well but gives no \`trees_absent_reason\` — "none" is a finding; say what was searched.`)
+    return { state: 'none', path: p, wells: [], absentReason: j.trees_absent_reason }
+  }
+  const wells = j.trees.map(e => resolveFromState(e, 'trees', j, `${p}: `))
+  for (const w of wells) for (const req of ['id', 'file']) if (!w[req]) throw new Error(`${p}: tree well "${w.id ?? '?'}" is missing \`${req}\``)
+  return { state: 'declared', path: p, wells }
+}
+
+/** The clean/ files a town's declared tree wells land at (absolute); [] when undeclared or declared-none. */
+export function declaredTreeWellPaths(scene) {
+  return readTreeSources(scene).wells.map((w) => join(mapDir(scene), 'clean', w.file))
+}
+
 /** The files a town's declared address-point sources land at (absolute); [] when undeclared or declared-none. */
 export function declaredAddressPointPaths(scene) {
   return readAddressPointSources(scene).sources.map((s) => join(mapDir(scene), 'raw', s.file))

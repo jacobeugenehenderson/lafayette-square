@@ -623,21 +623,21 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
      `"nyc-mappluto"`, no select). Its declared state must be the one its own map votes (NOT MEASURED
      before the first fetch). Elsewhere, declare the well in full (shape: `cartograph/sources.js`) — or write the
      state's record. ▶ `node checks/claims-a-state-gives-its-towns-their-wells.mjs`
-     ⭐ **Cropland** (US towns): `"cropland": [{ "id": "usda-cdl", "year": 2024 }]`, then
-     `CARTOGRAPH_SCENE=<id> node cartograph/cdl.mjs` — USDA's CDL places crop rows where OSM maps no
+     ⭐ **Cropland** (US towns): `"cropland": [{ "id": "usda-cdl", "year": 2024 }]` (Extent fetches
+     it) — USDA's CDL places crop rows where OSM maps no
      field. Outside the US: `"cropland": [], "cropland_absent_reason": "…"`. Undeclared is LOUD at the pour.
      ⭐ **Buildings:** undeclared = Microsoft's; `"buildings": [{ "from": "state", "id": … }]` swaps in the
      state's (ids `bin-<BIN>`). The pour prints which, and each courtyard it can't draw.
      ▶ `node checks/claims-a-city-building-keeps-its-permanent-id.mjs`
-  2. **Fetch** — the Extent's **Fetch this view** runs it for any town with a declaration, and
-     reports *undeclared* when there is none. By hand: `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
+  2. **Fetch** — Extent's **Fetch** fetches every declared well (parcels, addresses, cropland, trees) and
+     reports *undeclared* when there is none. ▶ `node checks/claims-extent-fetches-every-declared-well.mjs`. By hand: `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
      (`--dry-run` first).
   3. **Bake** — `node cartograph/bake-content.js --scene=<id>`. It reports the match rate and what it
      could **not** classify or address.
   - ⭐ **Building street addresses** (the Ward's card) come from the town's own record, its declared **address points**,
     then OSM — never guessed, never the nearest point. Declare them in `sources.json` — `"addressPoints": [{ "from":
-    "state", "id": "ohio-lbrs" }]` (Ohio) or `"nyc-addresspoint"` (NYC), or `[]` + `addressPoints_absent_reason` — then
-    `CARTOGRAPH_SCENE=<id> node cartograph/fetch-address-points.mjs` and re-bake the buildings. A point joins by the id
+    "state", "id": "ohio-lbrs" }]` (Ohio) or `"nyc-addresspoint"` (NYC), or `[]` + `addressPoints_absent_reason` (Extent
+    fetches them), then re-bake the buildings. A point joins by the id
     both carry (NYC's BIN; containment then checks it, printed), else by standing in the footprint or its parcel.
     ▶ `node checks/claims-every-building-has-an-address.mjs`
   - ⛔ **"No parcels" has THREE meanings and the kit keeps them apart.** *Undeclared* (no

@@ -2,7 +2,7 @@
 // ⭐ New York City is a SUB-STATE jurisdiction here, as St. Louis City is in mo.mjs: its wells are the city's own
 // (Department of City Planning, NYC Open Data), citywide across all five boroughs, so an NYC town selects nothing —
 // the fetch envelope scopes them (BRIEF-nyc-adapter §3.1). NYC is the first Ward Group: one adapter, many Wards.
-// More NYC well KINDS (trees, surfaces) arrive with the fetchers that read them (§3.2).
+// More NYC well KINDS (surfaces) arrive with the fetchers that read them (§3.2).
 import { tidy } from '../building-address.mjs'
 import { normaliseId } from '../permanent-id.mjs'
 const s = (v) => (v == null ? '' : String(v).trim())
@@ -92,6 +92,42 @@ export default {
       columns: 'bin,z_grade,z_floor,subgrade',
       joinOn: 'bin',
       fields: { 'nyc:z_grade_ft_navd88': { from: 'z_grade' }, 'nyc:z_floor_ft_navd88': { from: 'z_floor' }, 'nyc:subgrade': { from: 'subgrade' } },
+    },
+  },
+  trees: {
+    // ⭐ Each tree well READS its own rows into one shape (cartograph/fetch-trees.mjs): { lon, lat, species (Latin, so
+    // both wells name a trunk alike), common, dbh (inches, as served — the unit the city inventories share), condition,
+    // standing } — `standing: false` is a record that the tree is GONE (removed, stump, shaft), never planted.
+    // NYC Forestry Tree Points — the Parks Department's LIVE inventory (updated continuously).
+    'nyc-forestry': {
+      protocol: 'socrata',
+      file: 'nyc_forestry_trees.json',
+      attribution: 'NYC Parks — Forestry Tree Points (NYC Open Data hn5i-inap)',
+      // ⭐ The LATER survey of the same street trees: its removal records drop a 2015 tree within DEDUP_M (fetch-trees).
+      supersedes: ['nyc-street-census-2015'],
+      endpoint: 'https://data.cityofnewyork.us/resource/hn5i-inap.json',
+      geomField: 'location',
+      columns: 'objectid,location,genusspecies,dbh,tpcondition,tpstructure',
+      read(r) {
+        const [lon, lat] = r.location?.coordinates || []
+        const [latin, common] = s(r.genusspecies).split(' - ')
+        return { lon, lat, species: s(latin) || null, common: s(common) || null, dbh: r.dbh != null ? Number(r.dbh) : null,
+                 condition: s(r.tpcondition) || null, standing: s(r.tpstructure) === 'Full', dead: s(r.tpcondition) === 'Dead', recordId: s(r.objectid) }
+      },
+    },
+    // NYC 2015 Street Tree Census — volunteer + staff survey, frozen 2017. No geometry column: scoped by lat/lon.
+    'nyc-street-census-2015': {
+      protocol: 'socrata',
+      file: 'nyc_street_tree_census_2015.json',
+      attribution: 'NYC Parks — 2015 Street Tree Census (NYC Open Data uvpi-gqnh)',
+      endpoint: 'https://data.cityofnewyork.us/resource/uvpi-gqnh.json',
+      geomField: { lat: 'latitude', lon: 'longitude' },
+      columns: 'tree_id,latitude,longitude,spc_latin,spc_common,tree_dbh,status,health',
+      read(r) {
+        return { lon: Number(r.longitude), lat: Number(r.latitude), species: s(r.spc_latin) || null, common: s(r.spc_common) || null,
+                 dbh: r.tree_dbh != null ? Number(r.tree_dbh) : null, condition: s(r.health) || s(r.status) || null,
+                 standing: s(r.status) !== 'Stump', dead: s(r.status) === 'Dead', recordId: s(r.tree_id) }
+      },
     },
   },
   addressPoints: {

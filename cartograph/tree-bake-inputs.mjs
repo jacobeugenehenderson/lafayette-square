@@ -25,6 +25,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mapCleanDir } from './config.js'
+import { declaredTreeWellPaths } from './sources.js'
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const LOOKS_INDEX = join(REPO_ROOT, 'public', 'looks', 'index.json')
@@ -114,6 +115,7 @@ export function treeBakeInputsForMap(scene) {
     join(clean, 'forest_park_trees.json'),  // City Forestry layer 4 (Forest Park, rich species)
     join(clean, 'osm_trees.json'),          // OSM floor (real positions)
     join(clean, 'derived_trees.json'),      // NLCD canopy fill (synthetic; absent when a scene opts real-only)
+    ...declaredTreeWellPaths(scene),        // the town's DECLARED tree wells (sources.json `trees`; fetch-trees.mjs)
   ].filter(existsSync)
   if (!placements.length) return null
 

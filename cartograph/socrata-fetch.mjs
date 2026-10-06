@@ -35,12 +35,17 @@ export function socrataGet(resource, params, tmpPath) {
 }
 
 // The envelope clause for a WGS84 bbox ({minLon,minLat,maxLon,maxLat}). ⛔ A bbox without four numbers throws.
+// `geomField` is the dataset's geometry column (`within_box`), or — for a dataset that publishes only numeric
+// coordinates (NYC's 2015 tree census has no geometry column) — `{ lat, lon }`, scoped by a numeric range instead.
 export function withinBox(geomField, bbox) {
   for (const k of ['minLon', 'minLat', 'maxLon', 'maxLat']) {
     if (!Number.isFinite(bbox?.[k])) throw new Error(`bbox has no numeric \`${k}\` — cannot scope the Socrata fetch.`)
   }
-  if (!/^[a-z_][a-z0-9_]*$/.test(geomField)) throw new Error(`"${geomField}" is not a Socrata column name`)
-  return `within_box(${geomField}, ${bbox.maxLat}, ${bbox.minLon}, ${bbox.minLat}, ${bbox.maxLon})`
+  const col = (c) => { if (typeof c !== 'string' || !/^[a-z_][a-z0-9_]*$/.test(c)) throw new Error(`"${c}" is not a Socrata column name`); return c }
+  if (geomField && typeof geomField === 'object') {
+    return `${col(geomField.lat)} between ${bbox.minLat} and ${bbox.maxLat} and ${col(geomField.lon)} between ${bbox.minLon} and ${bbox.maxLon}`
+  }
+  return `within_box(${col(geomField)}, ${bbox.maxLat}, ${bbox.minLon}, ${bbox.minLat}, ${bbox.maxLon})`
 }
 
 export const envelopeClause = (geomField, where, bbox) =>
