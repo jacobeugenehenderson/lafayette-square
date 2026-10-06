@@ -419,10 +419,10 @@ export const GRAIN_FLAT_DEFAULTS = { scale: 1.0 }
 export const GRAIN_FIELD_KEYS = ['scale']
 
 
-// Shadow (Post card) — SoftShadows parameters.
+// Shadow (Post card) — the PCSS parameters (src/components/pcssShadows.js; Samples' max is its loop's bound).
 // ⭐⭐ `size` IS PENUMBRA IN METRES — a real-world width, not a kernel radius.
-// It was texels until 2026-09-20, and drei's PCSS still consumes texels
-// (softShadows.js: offset = texelSize * 2 * PENUMBRA_FILTER_SIZE), so
+// It was texels until 2026-09-20, and PCSS still consumes texels
+// (pcssShadows.js#findBlocker: offset = texelSize * 2 * size), so
 // StageShadows converts metres → texels using the ACTIVE SCENE's metres-per-
 // texel. ⛔ The old unit only held still because the shadow frustum was
 // hardcoded to ±900 for every town: one fixed 0.4395 m/texel. The moment the

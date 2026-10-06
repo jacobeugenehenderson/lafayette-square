@@ -29,7 +29,7 @@
 
 import { useRef, useEffect, useState, useMemo } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { SoftShadows } from '@react-three/drei'
+import { setPcss, clearPcss } from './pcssShadows.js'
 import { onSceneStencil, getSceneStencil } from './sceneStencilState'
 import { penumbraBudgetTexels, penumbraMetresPerTexel } from '../lib/townRange.js'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
@@ -168,11 +168,9 @@ export function PostProcessing({
 }
 
 // ── Reactive soft shadows (channel-driven) ──────────────────────────────────
-// `shadow` channel resolves to {size, samples} at the current TOD minute.
-// `SoftShadows` reads its props lazily — passing new values triggers a
-// re-bake of the soft-shadow material, so we use React state (driven by
-// useFrame snapshot) rather than ref mutation. Stage retints by passing
-// shadowOverride; production reads scene.shadow.
+// `shadow` channel resolves to {size, samples} at the current TOD minute and is stamped on the shadow-casting lights
+// (pcssShadows.js#setPcss): a new value costs nothing, no material is disposed and no program relinks. Stage retints
+// by passing shadowOverride; production reads scene.shadow.
 
 let _penumbraWarned = false
 export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
@@ -183,8 +181,8 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   const minute = tod.getMinuteOfDay()
   const resolved = resolveGroupAtMinute(channel, minute, slotMins, SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS)
 
-  // ⭐⭐ `resolved.size` IS METRES OF PENUMBRA. drei's PCSS wants TEXELS:
-  // `offset = texelSize * 2 * PENUMBRA_FILTER_SIZE` (softShadows.js), where
+  // ⭐⭐ `resolved.size` IS METRES OF PENUMBRA. PCSS wants TEXELS:
+  // `offset = texelSize * 2 * size` (pcssShadows.js#findBlocker), where
   // texelSize = 1/shadowMapWidth. So a fixed `size` is a fixed number of
   // TEXELS, and a texel's real-world width depends on the shadow frustum —
   // which is now derived per town. Without this conversion huron's authored
@@ -205,14 +203,11 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   // cast-shadow edge even after the box was capped.
   // ⭐ The cap is the right denominator: it is the COARSEST the texel may be, it is
   // authored rather than derived from one town's size, and — unlike the live fitted texel —
-  // it does not change per frame. ⚠️ THAT LAST PART IS LOAD-BEARING: drei's `SoftShadows`
-  // bakes `size`/`samples` into `#define`s via THREE.ShaderChunk and calls `reset()` on
-  // change, which disposes EVERY material in the scene and recompiles it. Feeding it a
-  // per-frame texel would be far worse than the bug it fixes.
+  // it does not change per frame.
   // ⛔ Falls back to the town-wide texel only when no cap is authored, which is the
   // uncapped fit — the one case where the town-wide value IS the real texel.
-  // ⛔⛔ PCSS AND CASCADES CANNOT BOTH OWN THE SHADOW CHUNK. drei's <SoftShadows>
-  // GLOBALLY overwrites `THREE.ShaderChunk.shadowmap_pars_fragment` to install its Vogel-disk
+  // ⛔⛔ PCSS AND CASCADES CANNOT BOTH OWN THE SHADOW CHUNK. PCSS (pcssShadows.js)
+  // GLOBALLY rewrites `THREE.ShaderChunk.shadowmap_pars_fragment` to install its Vogel-disk
   // sampler; three's CSM injects its own cascade selection into that same chunk. Whichever
   // lands second wins and the other's sampling is silently gone — which reads as NO SHADOWS
   // AT ALL, not as a subtle difference. Under `?csm=1` the cascade rig owns shadow sampling
@@ -224,17 +219,16 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   if (mPerTexel == null) return null
 
   // ⛔⛔ THE FILTER RADIUS AND THE SAMPLE COUNT ARE ONE DECISION, NOT TWO.
-  // drei's PCSS takes `samples` points off a Vogel disk of `2 × size` texels,
-  // rotated per fragment (softShadows.js:116). Spread a fixed sample budget
+  // PCSS takes `samples` points off a Vogel disk of `2 × size` texels,
+  // rotated per fragment (pcssShadows.js#findBlocker). Spread a fixed sample budget
   // over a huge radius and the penumbra stops being soft and becomes NOISE.
   // Once the shadow frustum follows the camera, a texel can be 0.03 m — so a
   // world-constant 10 m penumbra is a 345-TEXEL radius sampled 11 times.
   // ⭐ Cap the radius at what the sample budget can actually carry. The
   // authored metres govern whenever they are achievable; this only bites when
   // they are not, and it says so rather than quietly rendering mush.
-  // ⛔ drei writes BOTH into GLSL #defines and recompiles every material when either changes. Tweened between
-  // keys, Samples went fractional (`i < 12.5` doesn't compile) and both changed every frame of a transition.
-  // Whole samples, and the radius on a half-texel grid, so a tween recompiles in steps, not per frame.
+  // Whole samples (the shader loops over a count), and the radius on a half-texel grid as it always was, so the
+  // shadows render exactly as they did.
   const samples = Math.round(resolved.samples)
   const wanted = resolved.size / mPerTexel
   const budget = penumbraBudgetTexels(samples)   // the Penumbra slider's max reads the same budget
@@ -248,7 +242,15 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
       `so a large value here is compensating for a coarse map that no longer exists.`)
   }
 
-  return <SoftShadows size={sizeTexels} samples={samples} focus={0.35} />
+  return <PcssStamp sizeTexels={sizeTexels} samples={samples} />
+}
+
+function PcssStamp({ sizeTexels, samples }) {
+  useEffect(() => {
+    const token = setPcss(sizeTexels, samples)
+    return () => clearPcss(token)
+  }, [sizeTexels, samples])
+  return null
 }
 
 // ── Atmospheric fog (blends ground into sky at horizon) ─────────────────────
