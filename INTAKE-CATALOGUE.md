@@ -485,8 +485,8 @@ from bare building to landmark, and in what order.** Do not introduce "importanc
 | **Harmonic constituents + station datums** (amplitude, Greenwich phase, speed; MSL/MLLW) | `raw/tide.json` → the manifest's `tide` | **NOAA CO-OPS** (`api.tidesandcurrents.noaa.gov` mdapi `harcon` + `datums`) — US-gov public domain, **US stations only** |
 | **NOAA's own predicted highs/lows**, one week | `raw/tide.json#noaaHilo` | CO-OPS `datagetter` `predictions&interval=hilo` — the fixture `claims-tide-matches-noaa` holds `cartograph/tide.mjs` to |
 
-⛔ **A non-US tidal town has no source yet.** The acquisition refuses ("no tide source for this region"); name the regional
-authority here when one arrives. ▶ `node cartograph/fetch-water-datums.mjs --scene=<id> --tide-only`
+⭐ **Station:** inside the bbox, else the town's named one (`sources.json` `"tide": { station, why }`) — never the nearest.
+⛔ Non-US: none yet; refuses. ▶ `node checks/claims-a-tide-station-is-in-the-water-or-named.mjs`
 
 ## 4c. JURISDICTION — which country a town is in (decides which sources are its own)
 | Input | Path | Source |

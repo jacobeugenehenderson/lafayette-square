@@ -17,6 +17,10 @@
   "buildingAttributes": [
     { "from": "state", "id": "nyc-bes" }
   ],
+  "tide": {
+    "station": "8517251",
+    "why": "Worlds Fair Marina, on Flushing Bay — the water this envelope touches; no CO-OPS station lies inside the bbox (Jacob, 2026-10-05)"
+  },
   "cropland": [
     { "id": "usda-cdl", "year": 2024 }
   ],

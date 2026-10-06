@@ -85,6 +85,42 @@ async function stationsNear(bbox, type) {
     .sort((a, b) => a.km - b.km)
 }
 
+/**
+ * A town's NAMED tide station (sources.json `tide`: { station, why }), read straight from the JSON — this file runs
+ * as a subprocess, so it imports nothing the server holds. null when the town names none. ⛔ A malformed one throws.
+ */
+export function namedTideStation(scene) {
+  const p = join(ROOT, 'cartograph', 'data', scene, 'sources.json')
+  if (!existsSync(p)) return null
+  return parseTideDeclaration(JSON.parse(readFileSync(p, 'utf8')).tide, p)
+}
+/** `tide` → { station, why } | null. ⛔ Anything but a 7-digit CO-OPS id WITH a reason throws. */
+export function parseTideDeclaration(t, where = 'sources.json') {
+  if (t == null) return null
+  if (!t || typeof t !== 'object' || !/^\d{7}$/.test(String(t.station ?? '')) || !String(t.why ?? '').trim())
+    throw new Error(`⛔ ${where}: \`tide\` must be { "station": "<7-digit CO-OPS id>", "why": "<why this water>" } — got ${JSON.stringify(t)}`)
+  return { station: String(t.station), why: String(t.why).trim() }
+}
+
+/**
+ * WHICH CO-OPS station times this town's tide (Jacob, 2026-10-05). `stations` = the datum stations (stationsNear).
+ *   1. a station INSIDE the town's bbox — the town's own water;
+ *   2. else the station the town NAMES (sources.json `tide`) — the operator's ruling of which water body it is;
+ *   3. else THROW, as before.
+ * ⛔ NEVER nearest-by-distance: the nearest gauge can sit on a different water body (a river, the other side of a
+ * spit), and a plausible tide from the wrong water is the worst answer. Returns { station, why }.
+ */
+export function chooseTideStation(stations, named, scene) {
+  const inside = stations.find(s => s.inBbox)
+  if (inside) return { station: inside, why: 'inside the town\'s bbox' }
+  if (named) {
+    const st = stations.find(s => String(s.id) === named.station)
+    if (!st) throw new Error(`⛔ ${scene}: names tide station ${named.station}, which CO-OPS does not list among stations with published datums`)
+    return { station: st, why: `named in sources.json (${st.km != null ? st.km.toFixed(1) + ' km from centre — ' : ''}${named.why})` }
+  }
+  throw new Error(`⛔ ${scene}: tidal, but no CO-OPS station in the bbox and none named — name the town's water in sources.json \`tide\` { station, why } (outside the US? name one in INTAKE-CATALOGUE)`)
+}
+
 /** The tide clock for a CO-OPS station: constituents, MSL above MLLW, and a week of NOAA's highs/lows. ⛔ Throws on any gap. */
 export async function tideClock(stationId, now = new Date()) {
   const hc = await json(`${COOPS_MD}/stations/${stationId}/harcon.json?units=metric`)
@@ -160,15 +196,17 @@ async function main() {
   const covered = t.high.filter(v => v != null).length
   if (covered) {
     const hs = t.high.filter(v => v != null), ls = t.low.filter(v => v != null)
-    const tideSt = (await stationsNear(bbox, 'datums')).find(s => s.inBbox)          // every station with published datums
+    const chosen = chooseTideStation(await stationsNear(bbox, 'datums'), namedTideStation(scene), scene)   // every station with published datums
+    const tideSt = chosen.station
+    console.log(`  tide station: CO-OPS ${tideSt.id} ${tideSt.name} — ${chosen.why}`)
     let station = null
-    if (tideSt) {
+    {                                                   // the chosen station's cross-check
       const d = await json(`${COOPS_MD}/stations/${tideSt.id}/datums.json?units=metric`)
       const g = n => d.datums?.find(x => x.name === n)?.value
       const range = g('MHW') != null && g('MLLW') != null ? +(g('MHW') - g('MLLW')).toFixed(3) : null
       const at = { high: await datumInNavd88(tideSt.lng, tideSt.lat, 'MHW'), low: await datumInNavd88(tideSt.lng, tideSt.lat, 'MLLW') }
       const vd = at.high.value != null && at.low.value != null ? +(at.high.value - at.low.value).toFixed(3) : null
-      station = { id: tideSt.id, name: tideSt.name, lat: tideSt.lat, lon: tideSt.lng, mhwMinusMllwM: range, vdatumMhwMinusMllwM: vd,
+      station = { id: tideSt.id, name: tideSt.name, lat: tideSt.lat, lon: tideSt.lng, chosen: chosen.why, mhwMinusMllwM: range, vdatumMhwMinusMllwM: vd,
         url: `https://tidesandcurrents.noaa.gov/datums.html?id=${tideSt.id}` }
       console.log(`  cross-check: CO-OPS ${tideSt.id} ${tideSt.name} MHW − MLLW = ${range} m · VDatum there ${vd} m`)
     }
@@ -176,8 +214,7 @@ async function main() {
       fetchedOn: new Date().toISOString().slice(0, 10), grid: { lons: t.lons, lats: t.lats, rowsFrom: 'north' },
       high: { datum: 'MHW', navd88M: t.high }, low: { datum: 'MLLW', navd88M: t.low }, uncertaintyM: t.uncertaintyM,
       covered, of: GRID_N * GRID_N, station }
-    if (station) tideOut = await tideClock(station.id)
-    else throw new Error(`⛔ ${scene}: tidal, but no CO-OPS station in the bbox — no tide source for this town (outside the US? name one in INTAKE-CATALOGUE)`)
+    tideOut = await tideClock(station.id)
     console.log(`  TIDAL: ${covered}/${GRID_N * GRID_N} points covered · MHW ${Math.min(...hs).toFixed(3)}…${Math.max(...hs).toFixed(3)} m NAVD88 · MLLW ${Math.min(...ls).toFixed(3)}…${Math.max(...ls).toFixed(3)} m · ±${t.uncertaintyM} m`)
   } else {
     const gl = (await stationsNear(bbox, 'historicwl'))                                // the Great Lakes gauges are here, not under `datums`
