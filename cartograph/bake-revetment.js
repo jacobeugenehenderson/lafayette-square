@@ -44,7 +44,7 @@ import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { shoreArmourFor, wetSideOf, drawnWaterTest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG, TAG_REACH_M, d50For } from './shore-armour.mjs'
-import { waterRuns, WATER_EDGE_SKEL, resample, clipTraceToDisc, coastAgreement } from './shoreRuns.mjs'
+import { waterRuns, WATER_EDGE_SKEL, resample, clipTraceToDisc, coastVerdict } from './shoreRuns.mjs'
 import { stoneStructures } from './structures.mjs'
 import { waterLevels } from './waterLevel.mjs'
 // The toe berm's size in stones, read from references/registry.json (f-cem-toe-berm-size): the low end of each range.
@@ -123,7 +123,9 @@ export function bakeRevetment({ scene, look, outDir: outDirArg = null, terrainDi
   // no reason — the plausible-looking success this kit rates worst.
   //
   // ⭐ So the two artifacts are read TOGETHER and there are three outcomes, not two:
-  const agree = coastAgreement(tm.datum, raw.length)
+  const cv = coastVerdict(tm, shape)
+  if (cv.said) console.log(`[bake-revetment] scene=${scene}: ${cv.said}`)
+  const agree = cv.agree
   if (agree === 'inland') {
     // Both agree: no water datum, no shoreline in the slab. A genuinely inland town.
     // ⭐ Quiet is correct here and ONLY here — nothing is missing and nothing is stale.

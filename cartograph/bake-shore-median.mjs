@@ -47,7 +47,7 @@ import clipperLib from 'clipper-lib'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { wetSideOf, drawnWaterTest } from './shore-armour.mjs'
-import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastAgreement, resample, shoreFingerprint } from './shoreRuns.mjs'
+import { waterRuns, WATER_EDGE_SKEL, clipTraceToDisc, coastVerdict, resample, shoreFingerprint } from './shoreRuns.mjs'
 import { elevationSpecs, openRasters, readWindow, sampleSources, ABOVE_WATER_M } from './elevationSources.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -162,7 +162,9 @@ export async function bakeShoreMedian({ scene, look, outDir: outDirArg = null, w
   const runs = waterRuns(shape)
 
   // ⭐ The same three outcomes as the revetment, for the same reason: the slab and the terrain must agree about the coast.
-  const agree = coastAgreement(tm.datum, runs.length)
+  const cv = coastVerdict(tm, shape)
+  if (cv.said) console.log(`[bake-shore-median] scene=${scene}: ${cv.said}`)
+  const agree = cv.agree
   if (agree === 'inland') {
     console.log(`[bake-shore-median] scene=${scene}: terrain datum "${tm.datum ?? 'unset'}" and no ${WATER_EDGE_SKEL} runs — inland. No median.`)
     return { regions: null, reason: 'no-coast' }

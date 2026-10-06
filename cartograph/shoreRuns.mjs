@@ -7,6 +7,8 @@
  * artifact number tiles differently.
  * ▶ node checks/claims-coast-distance-is-the-coast.mjs
  */
+import { polylineTouchesRect } from './coast-in-drawing.mjs'
+
 export const WATER_EDGE_SKEL = '__water__'   // tileGround.js's id for the stroked coast
 
 /** @returns {Array<Array<[number, number]>>} one polyline per distinct run */
@@ -123,6 +125,22 @@ export function clipTraceToDisc(trace, center, R) {
   }
   if (cur) inside.push(cur)
   return { inside: inside.filter(r => r.length >= 2), outsideM }
+}
+
+/**
+ * ⭐ THE COAST VERDICT, decided ONCE for every shore step (revetment, shore-median, coast-distance, ground).
+ * Only shoreline runs that reach the town's DRAWING — the terrain grid, `terrain.json#bounds`, the same region
+ * bake-terrain#waterDatum asks (coast-in-drawing.mjs) — count toward the agreement. A run wholly outside it is in the
+ * fetch envelope only: NO SHORE for this town, set aside and NAMED (Jacob, 2026-10-06; Jackson Heights' Flushing Bay).
+ * ⛔ The stale-terrain refusal is untouched for every run that DOES reach the drawing.
+ * ⛔ A terrain.json with no `bounds` throws: the verdict cannot be asked without the drawing.
+ */
+export function coastVerdict(tm, shape) {
+  if (!tm?.bounds) throw new Error('coastVerdict: terrain.json carries no `bounds` — the coast cannot be judged against the drawing. ▶ re-bake the terrain')
+  const runs = waterRuns(shape), inDrawing = [], outside = []
+  for (const r of runs) (polylineTouchesRect(r, tm.bounds) ? inDrawing : outside).push(r)
+  return { agree: coastAgreement(tm.datum, inDrawing.length), runs, inDrawing, outside,
+    said: outside.length ? `${outside.length} ${WATER_EDGE_SKEL} run(s) lie WHOLLY OUTSIDE this town's drawing (terrain grid) — in the fetch envelope only, NO SHORE from them` : null }
 }
 
 export function coastAgreement(datum, waterRunCount) {

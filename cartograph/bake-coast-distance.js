@@ -22,7 +22,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
-import { waterRuns } from './shoreRuns.mjs'
+import { waterRuns, coastVerdict } from './shoreRuns.mjs'
 import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
 import { townState } from '../src/cartograph/streetProfiles.js'
@@ -101,7 +101,12 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
   const resolved = bands.filter(b => b.value != null)
   let channel
   let derivedSand = { beachBandM: { absent: true, why: 'no coastline (coastDist absent)' }, beachSlopeDeg: { absent: true, why: 'no coastline (coastDist absent)' } }
-  if (!runs.length) {
+  // ⭐ The coast verdict (shoreRuns.mjs): an inland town whose only runs lie wholly outside its drawing has NO SHORE.
+  const cv = coastVerdict(tm, shape)
+  if (cv.agree === 'inland' && cv.outside.length) {
+    channel = { absent: true, why: `no shoreline in this town's drawing — ${cv.said}`, refused }
+    console.log(`[bake-coast-distance] ${lookId}: ⛔ coastDist ABSENT — ${channel.why}`)
+  } else if (!runs.length) {
     channel = { absent: true, why: all.length ? `all ${all.length} __water__ run(s) refused` : 'no __water__ runs in shape.json — this town has no shoreline', refused }
     console.log(`[bake-coast-distance] ${lookId}: ⛔ coastDist ABSENT — ${channel.why}`)
   } else {

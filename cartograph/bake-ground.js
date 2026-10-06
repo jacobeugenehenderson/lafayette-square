@@ -53,7 +53,7 @@ import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoot
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
 import { waterLevels } from './waterLevel.mjs'
-import { waterRuns, shoreFingerprint } from './shoreRuns.mjs'
+import { waterRuns, shoreFingerprint, coastVerdict } from './shoreRuns.mjs'
 import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { readBakeDesign } from './lookDesign.mjs'
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
@@ -981,7 +981,9 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         byMaterial.get('shore').push(...s.items)
         console.log(`  ⭐ SHORE: the median painted as sand — ${(s.areaM2 / 1e4).toFixed(2)} ha in ${s.items.length} polygon(s), between the drawn shoreline and the traced lidar waterline`)
       }
-    } else if (waterRuns(shapeNow).length) {
+    } else if (waterRuns(shapeNow).length && !(() => {   // ⭐ an INLAND town (coastVerdict) owes no median — no warning
+      const tp = join(ROOT, 'cartograph', 'data', scene, 'clean', 'terrain.json')
+      return existsSync(tp) && coastVerdict(JSON.parse(readFileSync(tp, 'utf-8')), shapeNow).agree === 'inland' })()) {
       console.warn(`  ⛔ SHORE: this town has a drawn shoreline but no shore-median.json — NO shore sand painted. ▶ the 'shore-median' step, then 'ground-shore'.`)
     }
   }
