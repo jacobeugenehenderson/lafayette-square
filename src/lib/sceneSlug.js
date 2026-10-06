@@ -1,5 +1,6 @@
-// A neighborhood's scene id is a deterministic slug of its NAME — the display name
-// the operator types in Extent, kept verbatim in neighborhood.json. Never of the
+// A neighborhood's scene id is its WEB ADDRESS (`sceneIdForAddress`), which defaults to a
+// deterministic slug of its NAME — the display name the operator types in Extent, kept
+// verbatim in neighborhood.json. Never of the
 // search text, which is often a ZIP or a list of them ("02657", "44839, 44870").
 // Jacob: "Naming the scene from the ZIP isn't acceptable."
 //
@@ -39,6 +40,20 @@ export function sceneIdForName(name) {
   if (!id) return { error: `"${display}" has no letters or digits to name a scene with.` }
   if (isNumericId(id)) return { error: `"${display}" is a number, not a place name — a scene is named after the place, never a ZIP.` }
   return { id }
+}
+
+// The scene id for a stated WEB ADDRESS — the name before the dot of the town's Ward Domain
+// (theward-operations README, "A town's name is its address": jacksonheights.online → jacksonheights).
+// It defaults to slugifyName(display name) in Extent, and the operator may state another
+// ("Jackson Heights" → jacksonheights, not jackson-heights). ⛔ Refused, never corrected: an
+// address that is not already its own slug is the operator's to fix, so the error names the slug.
+export function sceneIdForAddress(address) {
+  const a = String(address ?? '').trim()
+  if (!a) return { error: 'Give this neighborhood its web address — the scene is named after it.' }
+  const slug = slugifyName(a)
+  if (a !== slug) return { error: `"${a}" is not a web-address name — lowercase letters, digits and hyphens only${slug ? ` (did you mean "${slug}"?)` : ''}.` }
+  if (isNumericId(a)) return { error: `"${a}" is a number, not a place name — a scene is named after the place, never a ZIP.` }
+  return { id: a }
 }
 
 // Suggest a display name from a geocode: the first part of each match's

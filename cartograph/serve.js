@@ -21,7 +21,8 @@ import { importClosure, pourCodeClosure, pourCodeChanged, geographyReadChanged, 
 import { treeBakeInputsForMap, treeLibraryFiles } from './tree-bake-inputs.mjs'
 import { terrainValueReads } from './terrainReads.mjs'
 import { readBakeDesign, SEED_STRIPPED_FIELDS } from './lookDesign.mjs'
-import { productionDomainFor } from './operations-domain.mjs'
+import { productionDomainFor, askOperations } from './operations-domain.mjs'
+import { lookIdFor, isDeclaredOnly, planJoin, executeJoin } from './scene-address.mjs'
 import { intakeStatusForMap, addAltSource, hasElevationInput, pourPolicyFor } from './intake-rows.mjs'
 import { readSources, declaredParcelPaths, declaredAddressPointPaths, sourcesPath } from './sources.js'
 import { snapshotApply, restoreApply, clearApplySnapshot } from './applySnapshot.mjs'
@@ -1095,16 +1096,8 @@ function readLooksIndex() {
   }
 }
 function saveLooksIndex(idx) { writeJson(LOOKS_INDEX, idx) }
-// The same slug as a scene id (src/lib/sceneSlug.js), so a town's Look and its scene
-// agree — and "Księży Młyn" is ksiezy-mlyn here too, not ksi-y-m-yn.
-function slugify(name) {
-  return slugifyName(name) || 'look'
-}
-function uniqueLookId(base, existingIds) {
-  let id = base, n = 2
-  while (existingIds.includes(id)) { id = `${base}-${n}`; n++ }
-  return id
-}
+// A Look's id: cartograph/scene-address.mjs#lookIdFor — the same slug as a scene id (src/lib/sceneSlug.js),
+// so a town's Look and its scene agree, or the town's stated web address (BRIEF-nyc-adapter §3.0).
 
 // ── ⛔ Scene-keyed authoring may not cross a scene boundary (A11, 2026-08-07) ──
 // A Look is seeded from another Look (POST /looks). Most of a design.json is
@@ -1637,6 +1630,26 @@ createServer(async (req, res) => {
     return
   }
 
+  // GET /address/<name> — what Operations says about a town's WEB ADDRESS (BRIEF-nyc-adapter §3.0).
+  // ⭐ Operations owns the address: a town's name is the part of its Ward's Domain before the dot. Extent's
+  // address field shows this beside itself. Three answers, each said as itself:
+  //   found       — { asked, found: true, ward, domain, owned, zoneStatus, zoneCheckedAt }
+  //   not found   — { asked, found: false, note } — NOT an error: the pour proceeds; only Promote cannot ship
+  //   not asked   — { asked: false, why } — ⛔ never reported as "none"
+  const addressMatch = path.match(/^\/address\/([^/]+)$/)
+  if (req.method === 'GET' && addressMatch) {
+    const name = decodeURIComponent(addressMatch[1])
+    const send = (o) => { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(o)) }
+    askOperations(name).then((r) => {
+      if (!r.asked) return send({ asked: false, why: r.why })
+      const a = r.answer || {}
+      if (a.error) return send({ asked: true, found: false, note: a.error })
+      send({ asked: true, found: true, ward: a.ward ?? null, domain: a.domain ?? null, owned: !!a.owned,
+             zoneStatus: a.zoneStatus ?? null, zoneCheckedAt: a.zoneCheckedAt ?? null })
+    }).catch((e) => send({ asked: false, why: e.message }))
+    return
+  }
+
   // POST /geocode — body { q } → { bbox, anchors, official }. The Extent search
   // box: '+'-joined anchors unioned to a framing bbox (frames the aerial; the
   // carve-out reads the viewport, not this bbox). A single named place also
@@ -1908,13 +1921,25 @@ createServer(async (req, res) => {
           catch { return fail(409, `'${scene}' has an unreadable neighborhood.json — refusing to rename a scene whose committed state cannot be read.`) }
         }
         if (committed) return fail(409, `'${scene}' is a committed neighborhood — its id cannot change here.`)
-        if (existsSync(dst)) return fail(409, `A neighborhood '${to}' already exists — open it from the picker, or choose another name.`)
+        // ⭐ A town may be DECLARED before it is fetched (OPERATIONS "Declare the well"): its folder holds
+        // its declarations (sources.json) and nothing fetched or drafted — no geography.json, no
+        // neighborhood.json. The draft JOINS that folder, entry by entry; ⛔ any name both hold as a FILE
+        // refuses the whole move before anything moves. Any other existing folder is a neighborhood.
+        const declaredOnly = isDeclaredOnly(dst)
+        if (existsSync(dst) && !declaredOnly) return fail(409, `A neighborhood '${to}' already exists — open it from the picker, or choose another name.`)
         const idx = readLooksIndex()
         if ((idx.looks || []).some(l => l.scene === scene || l.id === to || l.scene === to)) {
           return fail(409, `A Look already uses '${scene}' or '${to}' — renaming a scene with a Look is not supported here.`)
         }
-        renameSync(src, dst)
-        console.log(`[scenes] renamed draft '${scene}' → '${to}'`)
+        if (declaredOnly) {
+          const J = planJoin(src, dst), { moves, clash } = J
+          if (clash.length) return fail(409, `'${to}' is declared but not fetched, and the draft '${scene}' holds the same file(s): ${clash.join(', ')} — refusing to overwrite either.`)
+          executeJoin(src, J)
+          console.log(`[scenes] draft '${scene}' joined declared '${to}' (${moves.length} entr${moves.length === 1 ? 'y' : 'ies'})`)
+        } else {
+          renameSync(src, dst)
+          console.log(`[scenes] renamed draft '${scene}' → '${to}'`)
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: true, id: to }))
       } catch (err) { fail(400, err.message) }
     })
@@ -3590,7 +3615,7 @@ createServer(async (req, res) => {
     return
   }
 
-  // POST /looks — create a new Look. Body: { name, fromLookId?, scene? }.
+  // POST /looks — create a new Look. Body: { name, fromLookId?, scene?, id? }.
   // Seeds the new Look's design.json from `fromLookId` (defaults to the
   // currently-active or default Look). The new Look's scene defaults to
   // the seed Look's scene — cloning a Look keeps you in its scene unless
@@ -3600,7 +3625,7 @@ createServer(async (req, res) => {
     req.on('data', c => body += c)
     req.on('end', () => {
       try {
-        const { name, fromLookId, scene } = JSON.parse(body || '{}')
+        const { name, fromLookId, scene, id: statedId } = JSON.parse(body || '{}')
         if (!name || !String(name).trim()) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'name required' }))
@@ -3623,7 +3648,14 @@ createServer(async (req, res) => {
             `"${seedEntry?.id ?? idx.default}" has none to inherit. Pass { scene }.` }))
           return
         }
-        const id = uniqueLookId(slugify(name), idx.looks.map(l => l.id))
+        // A STATED id (Extent's Pour passes the town's web address, §3.0) is used or refused, never suffixed.
+        const L = lookIdFor({ statedId, name, existingIds: idx.looks.map(l => l.id) })
+        if (L.error) {
+          res.writeHead(L.status, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: L.error }))
+          return
+        }
+        const id = L.id
         const seedScene = seedEntry?.scene || null
         // ⛔ A11 — the seed's STYLE travels, its scene-keyed AUTHORING does not.
         // Throws 409 if an undeclared scene-keyed field survives the strip.

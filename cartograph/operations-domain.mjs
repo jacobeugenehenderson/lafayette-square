@@ -24,10 +24,18 @@ const OPERATIONS_URL = (process.env.OPERATIONS_URL || 'https://operations.thewar
 import { decideProductionDomain } from '../src/lib/productionDomain.js'
 export { decideProductionDomain }
 
-export async function productionDomainFor(mapId) {
+/**
+ * askOperations(mapId) — the ONE read of `GET /api/production-domain/<mapId>`, undecided.
+ * ⭐ Two readers, one fetch: Promote decides on it (`productionDomainFor`, below), and Extent's
+ * web-address field shows it (serve.js GET /address/<name>, BRIEF-nyc-adapter §3.0).
+ *   { asked: false, why }            — Operations could not be ASKED (no token, unreachable, refused)
+ *   { asked: true, status, answer }  — Operations answered; `answer` is its body ({ … } or { error })
+ * ⛔ "Could not ask" is never folded into "no Ward" — they are different facts, and the field says which.
+ */
+export async function askOperations(mapId) {
   const id = process.env.OPS_ACCESS_CLIENT_ID, secret = process.env.OPS_ACCESS_CLIENT_SECRET
   if (!id || !secret) {
-    return { domain: null, why: 'the dev server has no Operations service token (OPS_ACCESS_CLIENT_ID / '
+    return { asked: false, why: 'the dev server has no Operations service token (OPS_ACCESS_CLIENT_ID / '
       + 'OPS_ACCESS_CLIENT_SECRET), so it cannot ask which domain this town owns — OPERATIONS.md § Production sites' }
   }
   let res
@@ -35,10 +43,16 @@ export async function productionDomainFor(mapId) {
     res = await fetch(`${OPERATIONS_URL}/api/production-domain/${encodeURIComponent(mapId)}`, {
       headers: { 'CF-Access-Client-Id': id, 'CF-Access-Client-Secret': secret }, cache: 'no-store' })
   } catch (e) {
-    return { domain: null, why: `could not reach Operations: ${e.message}` }
+    return { asked: false, why: `could not reach Operations: ${e.message}` }
   }
   let body = null
   try { body = await res.json() } catch { /* Access answers a refused token with HTML */ }
-  if (!res.ok && !body?.error) return { domain: null, why: `Operations answered ${res.status}${res.status === 403 ? ' — the service token was refused' : ''}` }
-  return decideProductionDomain(mapId, body)
+  if (!res.ok && !body?.error) return { asked: false, why: `Operations answered ${res.status}${res.status === 403 ? ' — the service token was refused' : ''}` }
+  return { asked: true, status: res.status, answer: body }
+}
+
+export async function productionDomainFor(mapId) {
+  const r = await askOperations(mapId)
+  if (!r.asked) return { domain: null, why: r.why }
+  return decideProductionDomain(mapId, r.answer)
 }

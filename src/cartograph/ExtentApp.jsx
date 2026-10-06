@@ -41,8 +41,9 @@ import {
   pourMap, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
   fetchBuildingOverrides, saveBuildingOverrides, rescopeMap, rollbackExtent,
   fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton, renameDraftScene, saveEdgeFade,
+  fetchAddressStatus,
 } from './api.js'
-import { sceneIdForName, suggestedName, slugifyName } from '../lib/sceneSlug.js'
+import { sceneIdForName, sceneIdForAddress, suggestedName, slugifyName } from '../lib/sceneSlug.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
 import SourcesPanel from './SourcesPanel.jsx'
@@ -848,6 +849,30 @@ function provisionalSceneId(suggestion, query) {
   return sceneIdForName(suggestion).id || `draft-${slugifyName(query) || 'search'}`
 }
 
+// What Operations says about a web address (BRIEF-nyc-adapter §3.0) — shown beside the field.
+// ⭐ "No Ward has this address yet" is NOT an error: plain text, nothing blocks the pour (only Promote
+// cannot ship, and Promote already refuses on it). ⛔ "Could not ask" is said as itself, never as "none".
+function AddressStatus({ address }) {
+  const [st, setSt] = useState(null)
+  useEffect(() => {
+    setSt(null)
+    if (sceneIdForAddress(address).error) return
+    let live = true
+    const t = setTimeout(() => {
+      fetchAddressStatus(address).then(r => { if (live) setSt(r) })
+        .catch(e => { if (live) setSt({ asked: false, why: e.message }) })
+    }, 400)
+    return () => { live = false; clearTimeout(t) }
+  }, [address])
+  const v = sceneIdForAddress(address)
+  const line = (text, style) => <div style={{ fontSize: 11, lineHeight: 1.4, marginTop: 2, ...style }}>{text}</div>
+  if (address && v.error) return line(v.error, { color: '#e07a5f' })
+  if (!st) return null
+  if (!st.asked) return line(`Couldn't ask Operations about this address — ${st.why}`, { opacity: 0.8 })
+  if (!st.found) return line(`No Ward has this address yet${st.note ? ` (Operations: ${st.note})` : ''}.`, { opacity: 0.7 })
+  return line(`Ward ${st.ward} · ${st.domain} · ${st.owned ? 'owned' : 'not owned'} · ${st.zoneStatus ? `zone ${st.zoneStatus}` : 'no zone'}`, { opacity: 0.8 })
+}
+
 // Neighborhood selector — the persistent switcher at the top of the Extent panel.
 // Neighborhoods (not Looks) live HERE (the Look pulldown is per-neighborhood presets).
 // Same chrome as the Look pulldown (carto-looks-*) for visual consistency: the current
@@ -1150,6 +1175,12 @@ export default function ExtentApp() {
   // Descriptive metadata — name + short blurb (the blurb doubles as SEO/description).
   const [name, setName] = useState('')
   const [blurb, setBlurb] = useState('')
+  // The WEB ADDRESS — the scene id (BRIEF-nyc-adapter §3.0): the name before the dot of the town's
+  // Ward Domain. `null` = follow the Name's slug; the operator may state another (Jackson Heights →
+  // jacksonheights). ⭐ PINNED to the scene id once the town is fetched, so a later Name edit can never
+  // re-target a fetched town to another folder.
+  const [addressEdit, setAddressEdit] = useState(null)
+  const address = addressEdit ?? slugifyName(name)
   // Browser tab = the authored Neighborhood Name (verbatim), or the prettified slug
   // while a hood is still un-named, or the tool name on the empty workspace.
   useEffect(() => {
@@ -1458,7 +1489,7 @@ export default function ExtentApp() {
     if (!scene) return
     setSeedError(null); setFetchSources(null)
     setSides([]); setStreetCorners(null); setPreviewStreet(null)
-    setName(''); setBlurb(''); setRadiusM(0); setRadiusTouched(false)
+    setName(''); setBlurb(''); setRadiusM(0); setRadiusTouched(false); setAddressEdit(null)
     setCenterLL(null)
     setAppliedRadius(0)
     setExclusionsLL([]); setPenActive(false); setSelAnchor(null)
@@ -1502,11 +1533,14 @@ export default function ExtentApp() {
       // SEARCH the store geo is already set (disk has none yet) → we keep it and
       // don't touch `located`, so the aerial the operator just framed isn't blanked.
       const st = useCartographStore.getState()
-      const [g, b] = await Promise.all([
-        st.mapGeography ? Promise.resolve(st.mapGeography) : fetchGeography(scene).catch(() => null),
+      const [disk, b] = await Promise.all([
+        fetchGeography(scene).catch(() => null),
         fetchBoundary(scene).catch(() => null),
       ])
       if (cancelled) return
+      const g = st.mapGeography || disk
+      // A town fetched before (its geography is on disk) has its address: the scene id.
+      if (Number.isFinite(disk?.lat)) setAddressEdit(scene)
       const upd = {}
       if (g && !st.mapGeography) upd.mapGeography = g
       if (b) upd.sceneBoundary = b
@@ -1614,6 +1648,7 @@ export default function ExtentApp() {
     setPolygonLL(null); setPolygonSource(null); setHintRing(null); setCoverage(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setName(''); setBlurb(''); setRadiusM(0); setQuery(''); setFetchSources(null); setCurating(false)
+    setAddressEdit(null)
   }
 
   // A frame (geography) spanning a bbox — used to re-frame the aerial on a search.
@@ -1765,13 +1800,13 @@ export default function ExtentApp() {
       // A committed hood keeps its id; renaming it is not this button's job.
       let target = scene
       if (!committed) {
-        const want = sceneIdForName(name)
+        const named = sceneIdForName(name)              // a display name is still required
+        if (named.error) { setSeedError(named.error); return }
+        const want = sceneIdForAddress(address)         // ⭐ the scene id is the WEB ADDRESS (§3.0)
         if (want.error) { setSeedError(want.error); return }
         if (want.id !== scene) {
-          if (scenesList.some(x => x.id === want.id)) {
-            setSeedError(`A neighborhood '${want.id}' already exists — open it from the picker, or choose another name.`)
-            return
-          }
+          // ⛔ No client-side "already exists" pre-check: the server decides (a folder that is only
+          // DECLARED — sources.json, never fetched — is joined, not refused) and says why when it refuses.
           await saveNeighborhood(scene, buildDraft())   // the move must carry the latest draft
           await renameDraftScene(scene, want.id)
           target = want.id
@@ -1786,6 +1821,7 @@ export default function ExtentApp() {
         }
       }
       const r = await fetchExtent(target, bbox)
+      setAddressEdit(target)                            // fetched: the address is pinned to the scene id
       setFetchSources(r?.sources || null)
       const g = await fetchGeography(target).catch(() => null)
       if (g) useCartographStore.setState({ mapGeography: g })
@@ -1849,7 +1885,7 @@ export default function ExtentApp() {
         // existed, or by a script. The FIRST bake out of Extent MUST create one, else
         // bakeLook falls back to the default (lafayette-square) Look and the new hood's
         // slab clobbers LS (Altadena-as-LS, 2026-07-14). Mirrors the first-pour path.
-        if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene }); lookId = r.id }
+        if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene, id: scene }); lookId = r.id }
         await bakeLook(lookId, { force: true })
         // Switch the Designer to THIS hood's Look — else the pulldown/scene stay on
         // the previous (default LS) Look. Mirrors the first-pour path.
@@ -1910,7 +1946,7 @@ export default function ExtentApp() {
       const pr = await pourMap(scene)
       const idx = await fetchLooks().catch(() => null)
       let lookId = idx?.looks?.find(l => l.scene === scene)?.id
-      if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene }); lookId = r.id }
+      if (!lookId) { const r = await createLook({ name: name.trim() || scene, scene, id: scene }); lookId = r.id }
       const store = useCartographStore.getState()
       if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
       stageTo({ label: 'Baking slab', i: 3, n: 3 })
@@ -2205,10 +2241,19 @@ export default function ExtentApp() {
                     over once there are buildings. */}
                 {located && !(keptFit.count > 0 || committed) && (
                   <div className="carto-row" style={{ marginTop: 6 }}>
-                    <input className="carto-input" value={name} placeholder="neighborhood name (names the scene)" spellCheck={false}
+                    <input className="carto-input" value={name} placeholder="neighborhood name" spellCheck={false}
                       onChange={e => setName(e.target.value)} />
                   </div>
                 )}
+                {located && !(keptFit.count > 0 || committed) && (
+                  <div className="carto-row" style={{ marginTop: 4, alignItems: 'center', gap: 4 }}>
+                    <input className="carto-input" value={address} placeholder="web address (names the scene)" spellCheck={false}
+                      title="The town's web address — the name before the dot of its Ward's domain (jacksonheights.online → jacksonheights). It names the scene and its Look. Defaults to the name."
+                      onChange={e => setAddressEdit(e.target.value)} />
+                    <span style={{ fontSize: 11, opacity: 0.7, whiteSpace: 'nowrap' }}>.online</span>
+                  </div>
+                )}
+                {located && !(keptFit.count > 0 || committed) && <AddressStatus address={address} />}
                 <div className="carto-row" style={{ marginTop: 6 }}>
                   <button className="carto-btn carto-btn--grow" disabled={!located || !geo || seeding} onClick={onFetchView}
                     title="Fetch the full data bundle (OSM + buildings + parcels). Sized to the searched place (+ margin) when there is one, otherwise the framed view.">
@@ -2460,6 +2505,8 @@ export default function ExtentApp() {
                   <input className="carto-input" value={name} placeholder="neighborhood name" spellCheck={false}
                     onChange={e => setName(e.target.value)} />
                 </div>
+                <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>web address: <b>{scene}</b></div>
+                <AddressStatus address={scene} />
                 <div className="carto-row" style={{ marginTop: 6 }}>
                   <textarea className="carto-input" value={blurb} placeholder="short SEO blurb"
                     rows={2} spellCheck={false} style={{ resize: 'vertical', minHeight: 44 }}

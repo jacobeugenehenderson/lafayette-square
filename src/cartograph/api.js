@@ -433,16 +433,29 @@ export async function cancelBake(lookId) {
   return res.json()
 }
 
-// Create a new Look. Body: { name, fromLookId? } — fromLookId seeds the new
-// Look's design.json (defaults to the active/default Look). Returns { id }.
-export async function createLook({ name, fromLookId, scene }) {
+// Create a new Look. Body: { name, fromLookId?, scene?, id? } — fromLookId seeds the new
+// Look's design.json (defaults to the active/default Look); a stated `id` (the town's web
+// address, from Extent's Pour) is used as given or refused, never suffixed. Returns { id }.
+export async function createLook({ name, fromLookId, scene, id }) {
   const res = await fetch(`${BASE}/looks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, fromLookId, scene }),
+    body: JSON.stringify({ name, fromLookId, scene, id }),
   })
-  if (!res.ok) throw new Error(`create look failed: ${res.status}`)
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}))
+    throw new Error(j.error || `create look failed: ${res.status}`)
+  }
   return res.json()
+}
+
+// Extent's web-address field: what Operations says about a town's address (serve.js GET /address/<name>).
+// { asked:false, why } | { asked:true, found:false, note } | { asked:true, found:true, ward, domain, owned, zoneStatus }
+export async function fetchAddressStatus(name) {
+  const res = await fetch(`${BASE}/address/${encodeURIComponent(name)}`)
+  const j = await res.json().catch(() => null)
+  if (!res.ok || !j) return { asked: false, why: `the kit server answered ${res.status}` }
+  return j
 }
 
 export async function deleteLook(lookId) {
