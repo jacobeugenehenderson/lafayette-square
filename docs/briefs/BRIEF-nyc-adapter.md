@@ -1,0 +1,147 @@
+# BRIEF — the NYC adapter: a city's measured record feeds the one pipeline
+
+**You are the dispatched agent. Name yourself** — one word, yours, not one a RUNNING session holds
+(`ListAgents`, then `/rename`). **Agent: FRESH** — this is a new subsystem on a new town; nothing an
+existing window holds is load-bearing, and the state-adapter pattern you extend is fully in the code.
+
+**Instruction: confirm-then-build.** Read the canon and the code sites below, tell Boz what you found,
+and if the code contradicts this brief — **stop and flag**. The stop is the deliverable, not a failure.
+
+---
+
+## 0. What this is (Jacob, 2026-10-05)
+
+Jackson Heights (Queens Community District 3) is the next town, and NYC is the first **Ward Group**:
+one shared adapter, many Wards (`The Ward Punchlist`, Jacob's dossier: *"one NYC building source is
+better than forty downloads"* · *"replication without dilution"*). NYC publishes a record far richer
+than OSM — measured curbs, medians, curb cuts, footprints with BIN and roof height, a tree inventory.
+Jacob's concern: **do not throw away superior modeling.**
+
+### ✅ RULED — how superior data enters (Jacob, 2026-10-05: "b")
+The city's data enters the kit in **three ways only**, never as a second producer:
+1. **As AUTHORING, pre-filled.** Measure the city's `CURB` against our centerline per block-side and
+   write it as that frontage's width — as if an operator had surveyed every block. The kit then builds
+   its curb exactly as it does for every town. The operator can override any of it.
+2. **As EVIDENCE for checks.** The city's curb, median and curb-cut geometry become the ground truth a
+   check measures our construction against. This is the first town where the kit can be graded.
+3. **As SOURCES** in the existing union-of-wells sense — footprints, trees, parcels/land use.
+
+⛔ **Never** draw a town's blocks from city polygons. That is a second construction path: NYC would be
+built differently from every other town, and it would prove nothing about town #3 (`CLAUDE.md` Layer 0;
+`ORIENTATION` "every scene routes through the same pipeline").
+
+⛔ **The operator runs Extent.** The adapter makes Extent's fetch NYC-aware; it never fetches beside it.
+No hand-picked envelopes, no side downloads into a scene (Jacob: *"if you're doing extent work I should
+just do it in extent"*).
+
+---
+
+## 1. Read first (canon, by section)
+
+- `ORIENTATION.md` — whole; `CLAUDE.md` Layer 0 (all three questions).
+- `cartograph/PIPELINE.md` steps 0–4 and §5 (the Wall).
+- `EXTENT-DESIGN.md` §1, §3.3, §4 (the seal = the identity registry).
+- `cartograph/SURVEY.md` §4 (the authoring panel — what a width write IS).
+- `ROADMAP.md` **A23** (a machine value in the operator's authoring file must record its author) and
+  **A09** (OSM node tags dropped at ingest).
+- `cartograph/BAKE.md` §4.5 (a census is the union of its wells).
+
+## 2. Code sites (cite symbols; line numbers drift)
+
+| what | where |
+|---|---|
+| the state-adapter resolver — `resolveFromState`, `STATES`, `LAND_USE_READERS` | `cartograph/states/index.mjs` |
+| a sub-state well (an independent city's assessor) — the precedent for NYC | `cartograph/states/mo.mjs` (`stl-city`) |
+| where wells are resolved for a town | `cartograph/sources.js#readSources` (parcels), `#readAddressPoints…` (address points) |
+| the footprint fetch + the identity lock | `cartograph/fetch-msbf.js`, `cartograph/msbf-identity.js` |
+| Extent's fetch, run from the server | `cartograph/serve.js` (grep `fetch-msbf.js`) |
+| tree census wells (two entry points — add to BOTH) | `cartograph/tree-bake-inputs.mjs`, `arborist/bake-trees.js` |
+| the street-level authoring prebake reads | `cartograph/derive.js` (`overlayById` / `overlayLoops`) ← `clean/overlay.json` |
+| the per-frontage width the curb is built from | `src/lib/tileGround.js` `edgeDepth`, `freezeCurbEdgeFacts`, `runMeasure` |
+
+## 3. The shape
+
+**3.1 The adapter is a state adapter with a sub-state city.** `cartograph/states/ny.mjs`, NYC as a
+sub-state jurisdiction exactly as St. Louis City sits in `mo.mjs`. A Jackson Heights `sources.json`
+declares `"state": "NY"` and takes its wells `{ "from": "state", "id": … }`. ⛔ The resolver's
+no-fallback rules stand: unknown well / missing selector THROWS.
+
+**3.2 New KINDS of well.** Today a state carries `parcels` and `addressPoints` only. NYC needs:
+- **`buildings`** — NYC Building Footprints (NYC Open Data `5zhs-2jue`: `bin`, `base_bbl`,
+  `height_roof`, `ground_elevation`, `construction_year`, `feature_code`). ⭐ **BIN is a municipal
+  permanent id** — decide with Boz whether the identity lock keys on it (a stable id the city
+  maintains) rather than on a centroid. MSBF stays the fallback the kit already uses elsewhere; on an
+  NYC town the city's footprints are the well, and the pour must SAY which supplied each building.
+- **`trees`** — NYC Forestry Tree Points (`hn5i-inap`, live: `genusspecies`, `dbh`, `tpcondition`)
+  and the 2015 Street Tree Census (`uvpi-gqnh`). Union, dedupe by proximity, never one-wins.
+- **`parcels` / land use** — MapPLUTO, through `LAND_USE_READERS` with an NYC vocabulary.
+- **`surfaces`** — the planimetric layers: `CURB`, `CURB_CUT`, `MEDIAN`, `SIDEWALK`, `ROADBED`,
+  `PAVEMENT_EDGE`, `PLAZA` (2022 planimetrics; layer list read from the geodatabase catalog).
+
+⚠️ **Prefer fetching per envelope from NYC Open Data** over reading the 415 MB local geodatabase —
+that is the kit shape (Extent fetches what the envelope needs, for any NYC town). Verify each layer's
+Open Data id before relying on it. The local copies in `~/Desktop/dev.nosync/NYC_Ward/` are reference
+and a fallback for inspection only. GDAL (`ogr2ogr`) is installed on this machine (2026-10-05).
+
+⛔ **Units.** NYC data is EPSG:2263 (NY State Plane Long Island, **US feet**). Reproject at intake into
+the kit's frame. A metre-assuming constant downstream is Layer 0's Class D trap.
+
+**3.3 Width pre-fill (ruled "b").** After the skeleton exists (skelIds are minted there), measure the
+city's `CURB` line's perpendicular distance from each chain, per side, per segment, and write it as
+that frontage's half-width.
+- ❓ **Where it is written is the one open design question — bring it to Boz before writing code.**
+  It is a fact about the TOWN, not a Look's styling, which argues for the scene-level
+  `clean/overlay.json` (prebake reads it) over the per-Look `design.json#blockCustoms`. Read both
+  paths and say which can carry a per-segment value today.
+- ⭐ **Every pre-filled value is stamped with its source** (`source: "nyc-planimetrics-2022"` or
+  similar) — `ROADMAP A23`. An operator edit replaces the stamp. A value with no stamp is the operator's.
+- Where the city has no curb (or the measurement is degenerate), write nothing and **count it loudly**.
+
+**3.4 The checks — the deliverable.** Each RED-until-true, mutation-tested:
+- **curb vs city curb** — per block-side, with authoring LOADED, the distance from our curb to the
+  city's `CURB`. Reports which blocks disagree and by how much. ⛔ Never run with authoring off
+  (`POLYGON-FIRST §5` Rule 1); an unmeasurable block is its own failing class (Rule 2).
+- **median vs city median** — our median blocks against `MEDIAN`.
+- **every building sourced** — each building names its well (city / MSBF / OSM).
+⭐ These generalize: any town whose city publishes a curb layer gets graded the same way.
+
+**3.5 Out of scope here.** Corner ramps / crosswalks / raised kerb → `BRIEF-corner-ramps-and-kerb.md`
+(`CURB_CUT` is consumed THERE; this brief only acquires it). Elevated surfaces (the 7-train viaduct,
+piers) → their own current item. Roofs from the 2014 3D model (`NYC_3DModel_QN03.3dm`, unjoined
+LOD1.5/2 pieces) → later; heights come from footprints first. Transit / 311 / live feeds → the Ward.
+
+## 4. The chain — what this trusts, what trusts this
+
+- **Trusts:** the Extent seal (frame origin frozen — reprojection must land in THAT frame) · the
+  skeleton's skelIds (the pre-fill is keyed on them) · the resolver's no-fallback contract.
+- **Trusted by:** prebake (reads overlay) → the curb (`edgeDepth`) → Section → the bake. A wrong
+  pre-fill freezes into every downstream artifact (`PIPELINE` Law 2). Hence the check in 3.4 runs
+  BEFORE anyone trusts the pour.
+
+## 5. Can the instrument see the change?
+
+The curb check must read the curb the operator SEES — Survey renders live, Section renders the frozen
+`shape.json`, and `shape.json` is written on Survey-exit (`PIPELINE §5`, "who writes the frozen
+file"). State which artifact your check reads and confirm it carries the pre-filled widths.
+
+## 6. Validation surface
+
+The production path, through **Extent → Survey** on Jackson Heights. ⛔ No parallel SVG/scratch
+renderer. Eye-gate: Jacob in Survey over the aerial, scene recorded.
+
+## 7. Bounds
+
+- Writes: `cartograph/states/ny.mjs`, the wells' fetch/ingest code, the checks under `checks/`.
+- ⛔ Canon is off-limits except the registers your landing reaches (`OPERATIONS` "Declare the well",
+  `FEATURES`) — name them in the commit, or say "reaches no register."
+- ⛔ **Another work group is active (Boz the Elder).** Before saving anything under `cartograph/` or
+  `src/`, confirm with Boz that their bake freeze is lifted — a save restarts `serve.js` under
+  `--watch` and kills a running bake.
+- Commit through explicit paths only (`git commit -- <paths>`), never the shared index (`BOZ §3.7`).
+- Surface scope drift; don't absorb it.
+
+## 8. Done when
+
+`ny.mjs` resolves Jackson Heights' wells; Jacob runs Extent on Jackson Heights and the pour prints
+what each well supplied; Survey opens with stamped, city-measured widths; the 3.4 checks run and are
+mutation-tested; Jacob's eye in Survey.
