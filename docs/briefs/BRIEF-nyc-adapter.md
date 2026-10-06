@@ -101,6 +101,15 @@ and the Pour's Look id is `slugify(name)` (`serve.js` POST /looks) — "Jackson 
 - The Pour passes it to `createLook`; POST /looks accepts an explicit id (refused if taken; ⛔ no `-2`).
 - Check: extend `checks/claims-a-scene-is-named-not-numbered.mjs` with name ≠ id ⇒ scene id = Look id =
   the stated address. Mutation-tested.
+- ⭐ **The address is OPERATIONS' (Jacob, 2026-10-05).** A town's name is the part of its Ward's Domain
+  before the dot (`theward-operations` README "A town's name is its address"). The field asks Operations
+  through the call Promote already makes — `cartograph/operations-domain.mjs` →
+  `GET /api/production-domain/<name>` — and shows the answer beside it (Ward found · domain · owned ·
+  zone status). No new Operations permission.
+- ✅ **No Ward yet is NOT an error and NOT loud (Jacob):** the pour proceeds, and the field simply says
+  no Ward has that address yet. Its only consequence is that Promote cannot ship to production without a
+  production location — and Promote already refuses on that. ⛔ Do not add a warning, banner or block.
+  ⚠️ Operations unreachable is different from "no Ward": say it could not be asked, never "none".
 - ⛔ **Land before step 3, and before anyone runs Extent on Jackson Heights.**
 
 **3.2a ✅ RULED (Jacob, 2026-10-05) — all three in this brief:**
