@@ -624,7 +624,7 @@ ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
      how much of the town it could **not** classify or address.
   - ⭐ **Building street addresses** (the Ward's card, "This is my house") come from the town's own record, its declared
     **address points**, then OSM — never guessed, never the nearest point. Declare a town's E-911 address points in the
-    same `sources.json` — `"addressPoints": [{ "from": "state", "id": "ohio-lbrs" }]` for an Ohio town (its `select.county` picks the county), or
+    same `sources.json` — `"addressPoints": [{ "from": "state", "id": "ohio-lbrs" }]` (Ohio; `select.county`) or `"nyc-addresspoint"` (NYC), or
     `"addressPoints": [], "addressPoints_absent_reason": "…"` — then `CARTOGRAPH_SCENE=<id> node cartograph/fetch-address-points.mjs`
     (`--dry-run` first), then re-bake the town's buildings. Points join a building by standing in its footprint or in the
     parcel it stands on. ▶ `node checks/claims-every-building-has-an-address.mjs`

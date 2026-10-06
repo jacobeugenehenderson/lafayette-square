@@ -21,7 +21,7 @@ import { STATES } from './states/index.mjs'
 // lives in states/oh.mjs with its endpoint, fields and `compose`. Another state is a new well in its record, not an
 // edit here (CLAUDE.md Layer 0 q1).
 export const ADDRESS_POINT_PROVIDERS = Object.fromEntries(Object.values(STATES).flatMap(r =>
-  Object.entries(r.addressPoints || {}).map(([, w]) => [w.provider, { protocol: w.protocol, endpoint: w.endpoint, attribution: w.attribution, outFields: w.outFields, compose: w.compose }])))
+  Object.entries(r.addressPoints || {}).map(([, w]) => [w.provider, { protocol: w.protocol, endpoint: w.endpoint, attribution: w.attribution, outFields: w.outFields, geomField: w.geomField, select: w.select, compose: w.compose }])))
 
 /**
  * The town's address points, as the bake reads them: { state, points: [{ address, unit, x, z }], reason? }.

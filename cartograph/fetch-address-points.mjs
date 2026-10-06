@@ -9,7 +9,8 @@
  * and field composition (cartograph/address-points.mjs). Scoped to the town's geography bbox — the same envelope as
  * fetch-parcels.mjs. Each point is written with its composed address (no unit), its unit, local x/z and WGS84 lon/lat
  * (so a re-centre can re-derive x/z). ⛔ A partial set is refused, never written: a town with half its addresses looks
- * finished. Sibling of fetch-parcels.mjs; the ArcGIS GET is cartograph/arcgis-fetch.mjs.
+ * finished. Sibling of fetch-parcels.mjs. ⭐ The well's PROTOCOL picks the reader: ArcGIS (cartograph/arcgis-fetch.mjs) or
+ * Socrata (cartograph/socrata-fetch.mjs); any other is refused by name.
  */
 import { writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
@@ -18,6 +19,7 @@ import { requireExplicitMap } from './scene.js'
 import { readAddressPointSources, sourcesPath } from './sources.js'
 import { ADDRESS_POINT_PROVIDERS } from './address-points.mjs'
 import { arcgisGet } from './arcgis-fetch.mjs'
+import { socrataFetchAll, socrataSample } from './socrata-fetch.mjs'
 
 requireExplicitMap('fetch-address-points')
 const dryRun = process.argv.includes('--dry-run')
@@ -26,8 +28,38 @@ const r2 = (v) => Math.round(v * 100) / 100, r7 = (v) => Math.round(v * 1e7) / 1
 
 function fetchSource(src) {
   const prov = ADDRESS_POINT_PROVIDERS[src.provider]
-  // ⛔ This reads ArcGIS only; a well of another protocol is refused by name, never queried as ArcGIS.
-  if (prov.protocol !== 'arcgis') throw new Error(`[${src.id}] provider "${src.provider}" is a ${prov.protocol} well — fetch-address-points.mjs reads ArcGIS only (cartograph/states/index.mjs PROTOCOLS)`)
+  if (prov.protocol === 'arcgis') return fetchArcgis(src, prov)
+  if (prov.protocol === 'socrata') return fetchSocrata(src, prov)
+  throw new Error(`[${src.id}] provider "${src.provider}" is a ${prov.protocol} well — fetch-address-points.mjs reads arcgis and socrata (cartograph/states/index.mjs PROTOCOLS)`)
+}
+
+// One point, written the same way whichever protocol served it.
+const toPoint = (c, lon, lat) => { const [x, z] = wgs84ToLocal(lon, lat); return { ...c, x: r2(x), z: r2(z), lon: r7(lon), lat: r7(lat) } }
+
+function fetchSocrata(src, prov) {
+  const endpoint = src.endpoint || prov.endpoint
+  const tmp = join(mapRawDir(SCENE), '._address_points_page.json')
+  const label = (count) => console.log(`  [${src.id}] ${count} point(s) in the envelope — ${src.attribution || prov.attribution}`)
+  if (dryRun) {
+    const { count, row } = socrataSample({ resource: endpoint, geomField: prov.geomField, where: src.where, select: prov.select, bbox: BBOX, tmpPath: tmp })
+    label(count)
+    if (row) console.log(`    sample: ${JSON.stringify(prov.compose(row))}`)
+    return null
+  }
+  const { rows, count } = socrataFetchAll({ resource: endpoint, geomField: prov.geomField, where: src.where, select: prov.select, bbox: BBOX, tmpPath: tmp, log: label })
+  const points = []
+  let dropped = 0
+  for (const row of rows) {
+    const c = prov.compose(row)
+    const [lon, lat] = row[prov.geomField]?.coordinates || []
+    if (!c || !Number.isFinite(lon) || !Number.isFinite(lat)) { dropped++; continue }
+    points.push(toPoint(c, lon, lat))
+  }
+  if (dropped) console.log(`    ⚠️ ${dropped} record(s) had no house number, no street name or no geometry — not addresses; dropped`)
+  return { points, count, endpoint, attribution: src.attribution || prov.attribution }
+}
+
+function fetchArcgis(src, prov) {
   const endpoint = src.endpoint || prov.endpoint
   const get = (params) => arcgisGet(endpoint, params, join(mapRawDir(SCENE), '._address_points_page.json'))
   for (const k of ['minLon', 'minLat', 'maxLon', 'maxLat']) {
@@ -54,8 +86,7 @@ function fetchSource(src) {
       const c = prov.compose(ft.attributes)
       const { x: lon, y: lat } = ft.geometry || {}
       if (!c || !Number.isFinite(lon) || !Number.isFinite(lat)) { dropped++; continue }
-      const [x, z] = wgs84ToLocal(lon, lat)
-      points.push({ ...c, x: r2(x), z: r2(z), lon: r7(lon), lat: r7(lat) })
+      points.push(toPoint(c, lon, lat))
     }
   }
   if (points.length + dropped !== count) {

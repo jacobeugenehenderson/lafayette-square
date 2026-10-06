@@ -2,7 +2,9 @@
 // ⭐ New York City is a SUB-STATE jurisdiction here, as St. Louis City is in mo.mjs: its wells are the city's own
 // (Department of City Planning, NYC Open Data), citywide across all five boroughs, so an NYC town selects nothing —
 // the fetch envelope scopes them (BRIEF-nyc-adapter §3.1). NYC is the first Ward Group: one adapter, many Wards.
-// More NYC well KINDS (buildings, trees, address points, surfaces) arrive with the fetchers that read them (§3.2).
+// More NYC well KINDS (buildings, trees, surfaces) arrive with the fetchers that read them (§3.2).
+import { tidy } from '../building-address.mjs'
+const s = (v) => (v == null ? '' : String(v).trim())
 
 /**
  * ⭐ PLUTO `LandUse` — the Department of City Planning's 11 land-use categories, the same in all five boroughs
@@ -58,6 +60,27 @@ export default {
       absent: ['owner', 'year_built', 'appraised_value', 'zoning', 'land_area', 'vacant'],
     },
   },
-  addressPoints: {},
+  addressPoints: {
+    // NYC AddressPoint — the city's E-911 address layer (DoITT), the same kind as Ohio's LBRS. Every point carries the
+    // BIN of the building it addresses, so on a BIN-keyed town the address joins by IDENTITY, containment as the check
+    // (BRIEF-nyc-adapter §3.2a). Queens house numbers are hyphenated ("81-11") and are kept whole.
+    'nyc-addresspoint': {
+      protocol: 'socrata',
+      provider: 'nyc-addresspoint',
+      file: 'nyc_address_points.json',
+      attribution: 'NYC Office of Technology and Innovation — AddressPoint (NYC Open Data uf93-f8nk)',
+      endpoint: 'https://data.cityofnewyork.us/resource/uf93-f8nk.json',
+      geomField: 'the_geom',
+      select: 'the_geom,bin,house_number,house_number_suffix,full_street_name',
+      // ⭐ The address is the city's own: house number (+ suffix) and full street name as served ("37 AVE"), no unit.
+      // A record with no house number or street name is not an address. `bin` rides along for the join.
+      compose(a) {
+        const n = tidy(`${s(a.house_number)}${s(a.house_number_suffix) ? ' ' + s(a.house_number_suffix) : ''}`)
+        const street = tidy(s(a.full_street_name))
+        if (!s(a.house_number) || !street) return null
+        return { housenumber: n, street, unit: null, address: tidy(`${n} ${street}`), bin: s(a.bin) || null }
+      },
+    },
+  },
   vocabularies: { 'nyc-pluto-landuse': readNycPlutoLandUse },
 }
