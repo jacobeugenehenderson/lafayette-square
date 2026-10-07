@@ -27,8 +27,8 @@
  *
  * Scene-generic. TWO guards, because a re-bake here can DESTROY hand-authored
  * content rather than merely regenerate it:
- *   · LS — content is hand-curated + conflated into src/data/buildings.json;
- *     the step refuses LS unless --force.
+ *   · a town that declares its base `hand-curated` (meta.baseSource in its own listings.overrides.json — LS today)
+ *     keeps its listings by hand: the step skips it unless --force.
  *   · EXTERNAL BASE — a scene whose listings base did NOT come from OSM POIs
  *     declares `meta.baseSource` in listings.overrides.json (Łódź: "overture").
  *     This step can only derive an OSM base, so for those scenes it writes
@@ -1119,8 +1119,13 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
 
 export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   if (!scene) throw new Error('bakeContent: scene is required')
-  if (scene === 'lafayette-square' && !force) {
-    console.log('[bake-content] LS content is hand-curated (src/data/buildings.json) — skipping. Use --force to override.')
+  // ⭐ THE BASE IS THE TOWN'S DECLARATION (meta.baseSource in its own listings.overrides.json), read first: a town whose
+  // listings are curated by hand declares `hand-curated` and is not baked at all. ⛔ It was a test of the town's NAME
+  // (LS), the kit deciding a town's content by who it is (G4, 2026-10-07).
+  const listingOverrides = loadJsonOr(join(contentDir(scene), 'listings.overrides.json'), { adds: [], patches: {} })
+  const declaredBase = listingOverrides?.meta?.baseSource || 'osm'
+  if (declaredBase === 'hand-curated' && !force) {
+    console.log(`[bake-content] ${scene} declares its listings hand-curated (meta.baseSource) — skipping. Use --force to regenerate from OSM.`)
     return { skipped: true }
   }
   const t0 = Date.now()
@@ -1177,8 +1182,6 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   // what did not exist was anywhere to send a protected town. Now there is.
   // (`checks/claims-an-external-base-survives-a-bake.mjs` pins that regression.)
   let skipListings = false
-  const listingOverrides = loadJsonOr(join(contentDir(scene), 'listings.overrides.json'), { adds: [], patches: {} })
-  const declaredBase = listingOverrides?.meta?.baseSource || 'osm'
 
   let baseListings, producer, producerReason
   if (declaredBase === 'osm') {
@@ -1227,7 +1230,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     // answered with a plausible-looking default.
     throw new Error(
       `scene "${scene}" declares meta.baseSource "${declaredBase}" and this step has no producer for it.\n` +
-      `   Known producers: 'osm' (raw/osm.json) · 'overture' (raw/overture-places.json).\n` +
+      `   Known producers: 'osm' (raw/osm.json) · 'overture' (raw/overture-places.json) · and 'hand-curated', which bakes nothing.\n` +
       `   ⛔ Refusing to fall back to the OSM base: the OSM join yields ~0 on a town whose base is\n` +
       `     external, so the write would keep only hand-authored adds and DESTROY the rest.\n` +
       `   ▶ Add a producer, fix the spelling, or --force to deliberately regenerate from OSM and lose it.`)

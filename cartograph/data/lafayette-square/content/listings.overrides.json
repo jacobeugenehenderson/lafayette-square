@@ -1,0 +1,8 @@
+{
+ "meta": {
+  "baseSource": "hand-curated",
+  "note": "Lafayette Square's listings are curated by hand (content/listings.json, with the conflated src/data/buildings.json), not produced from a base: bake-content skips this town's content step unless --force, which regenerates from OSM and says so. Declared here, in the town's own data, so the bake never decides it by the town's name (G4, 2026-10-07)."
+ },
+ "adds": [],
+ "patches": {}
+}

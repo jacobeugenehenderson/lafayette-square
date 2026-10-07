@@ -30,7 +30,6 @@ try { for (const l of JSON.parse(readFileSync(join(ROOT, 'public/looks/index.jso
 const HELD = {
   'cartograph/scene.js':        [{ match: "export const DEFAULT_MAP = 'lafayette-square'", why: 'the default map id itself (the held name every alias below compares with)' },
                                  { match: 'scene === DEFAULT_MAP ?', why: "ribbonsPathOf's one case: LS's ribbons ship in src/data — G2(b) Phase 0e, Jacob's call" }],
-  'cartograph/bake-content.js': [{ match: "scene === 'lafayette-square' && !force", why: "G4: LS's hand-curated content — is it a different producer, or baked like every town's? awaiting Jacob" }],
   'cartograph/serve.js':        [{ match: 'const isDefaultMap = bakeScene === DEFAULT_MAP', why: "G5: LS's elevation cache + its HELD status (ruling Q3) + G4's content step, awaiting Jacob" },
                                  { match: "const LEGACY_LS_LOOK_ID = 'lafayette-square'", why: 'a one-time boot migration naming the Look it creates from a pre-Looks overlay; never a fallback target' }],
   'cartograph/derive.js':       [{ match: 'const lampSourcePath = SCENE === DEFAULT_MAP', why: "found 2026-10-07: LS's lamp export lives in scripts/raw/ — unruled" }],
