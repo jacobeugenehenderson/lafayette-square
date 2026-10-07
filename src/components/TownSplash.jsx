@@ -32,6 +32,7 @@ const STARS = (() => {
   }))
 })()
 const css = (c) => `rgb(${Math.round(c[0] * 255)}, ${Math.round(c[1] * 255)}, ${Math.round(c[2] * 255)})`
+const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
 
 /** @param {{ title?: string, fadeSeconds: number, skyAt: ((minute: number, dayOfYear: number) => object) | null }} props */
 export default function TownSplash({ title, fadeSeconds, skyAt }) {
@@ -51,21 +52,28 @@ export default function TownSplash({ title, fadeSeconds, skyAt }) {
   }, [fadeSeconds, skyAt])
   const { opacity, sky, stars } = frame
   if (opacity <= 0) return null
+  // The title's shadow: the sky's OWN darker tone (whichever of its zenith and horizon is darker), so it reads on any sky.
+  const shade = sky ? css(lum(sky.high) < lum(sky.horizon) ? sky.high : sky.horizon) : 'transparent'
   return (
     <div style={{
       position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      // Until the town's sky channel has loaded there is nothing to draw it from: black, never a borrowed sky.
-      background: sky ? `radial-gradient(ellipse at 50% 100%, ${css(sky.horizon)}, ${css(sky.high)} 70%)` : '#000',
       opacity, pointerEvents: opacity > 0.5 ? 'auto' : 'none', zIndex: 300,
     }}>
+      {/* The sky FADES IN over the page as the town's sky channel loads (Jacob, 2026-10-07): transparent until then —
+          never black-then-snap, never a borrowed sky. Over the Look's `reveal.fade`. */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: sky ? `radial-gradient(ellipse at 50% 100%, ${css(sky.horizon)}, ${css(sky.high)} 70%)` : 'transparent',
+        opacity: sky ? 1 : 0, transition: `opacity ${Math.max(0, fadeSeconds) * 1000}ms ease-in-out`,
+      }} />
       <style>{'@keyframes town-splash-breathe { 0%, 100% { filter: drop-shadow(0 0 4px var(--mark, rgba(255,255,255,0.35))); opacity: 0.88 } 50% { filter: drop-shadow(0 0 16px var(--mark, rgba(255,255,255,0.55))); opacity: 1 } }'}</style>
       {stars > 0 && STARS.map((s, i) => (
-        <div key={i} style={{ position: 'absolute', left: s.left, top: s.top, width: s.size, height: s.size, borderRadius: '9999px', background: '#fff', opacity: s.opacity * stars }} />
+        <div key={i} style={{ position: 'absolute', zIndex: 1, left: s.left, top: s.top, width: s.size, height: s.size, borderRadius: '9999px', background: '#fff', opacity: s.opacity * stars }} />
       ))}
-      <div style={{ animation: 'town-splash-breathe 4.8s ease-in-out infinite' }}>
+      <div style={{ animation: 'town-splash-breathe 4.8s ease-in-out infinite', position: 'relative' }}>
         <TownMarkGlyph size={72} badge />
       </div>
-      {title ? <div style={{ marginTop: 18, fontFamily: 'var(--f-display)', fontVariationSettings: 'var(--display-axes)', fontWeight: 400, fontSize: '1.875rem', lineHeight: 1.1, color: 'var(--mark, rgba(255,255,255,0.85))' }}>{title}</div> : null}
+      {title ? <div style={{ marginTop: 18, fontFamily: 'var(--f-display)', fontVariationSettings: 'var(--display-axes)', fontWeight: 400, fontSize: '1.875rem', lineHeight: 1.1, color: 'var(--mark, rgba(255,255,255,0.85))', textShadow: `0 0 14px ${shade}, 0 1px 3px ${shade}`, position: 'relative' }}>{title}</div> : null}
     </div>
   )
 }
