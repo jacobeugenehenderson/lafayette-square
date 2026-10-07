@@ -551,6 +551,17 @@ appended row and updated cell passes through one helper, `safeCell`, which write
 In theward `backend/apps-script-2026-10-07.patch` (v2). ⛔ **Not deployed:** a second review, then Jacob's deploy
 (Ward OPERATIONS "Waiting on the backend"). Before deploying, check that the live sheet's keys are all 16 hex.
 
+### F-25 · HIGH · `listing-staff` hands every staff member's device key to a Guardian  *(new, 2026-10-07; EXISTING on live)*
+`apps-script/Code.js` `getListingStaff` returns `device_hash` for every Guardians row of a listing. A device key is the
+credential, so any full Guardian holds every keyholder's identity, permanently. Found by the Ward's second security
+review (shared-terminal patch), which makes it worse: a signed-in shop screen would hand out its person's phone key.
+**Fix:** `listing-staff` returns an opaque staff id; the staff actions take that id, never a device key. In theward
+`backend/apps-script-2026-10-07.patch` (v3, in progress). ⛔ Not deployed.
+
+### F-26 · UNRATED · `savedesign` has no authorisation  *(new, 2026-10-07; EXISTING on live)*
+The Ward's second security review noted that the Apps Script `savedesign` action checks no caller. Not yet read or
+rated here: cause, reach and fix not established. ⛔ Owed: a read of what it writes and who calls it.
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
