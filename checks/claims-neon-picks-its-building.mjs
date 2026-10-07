@@ -75,9 +75,13 @@ for (let i = 0; i < 120 && !entry; i++) { await sleep(500); entry = await js(`(a
   // not drawn, so the slab's faces alone do not say where a sign is
   let line = null; window.__scene.traverse(o => { if (o.isMesh && String(o.material?.customProgramCacheKey?.() || '').startsWith('neon-bands-line')) line = o })
   if (!line) return null
-  const A = line.geometry.attributes.aA.array
+  // the drawn segments' midpoints, bucketed once (a town has thousands of buildings and segments)
+  const A = line.geometry.attributes.aA.array, CELL = 50, grid = new Map()
+  for (let v = 0; v < A.length / 3; v += 4) { const k = Math.floor(A[v*3] / CELL) + ',' + Math.floor(A[v*3+2] / CELL); if (!grid.has(k)) grid.set(k, []); grid.get(k).push([A[v*3], A[v*3+2]]) }
   const drawnNear = (f) => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const [x, z] of f) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) }
-    for (let v = 0; v < A.length / 3; v += 4) if (A[v*3] > x0 - 1.5 && A[v*3] < x1 + 1.5 && A[v*3+2] > z0 - 1.5 && A[v*3+2] < z1 + 1.5) return true; return false }
+    for (let i = Math.floor((x0 - 1.5) / CELL); i <= Math.floor((x1 + 1.5) / CELL); i++) for (let j = Math.floor((z0 - 1.5) / CELL); j <= Math.floor((z1 + 1.5) / CELL); j++)
+      for (const [x, z] of grid.get(i + ',' + j) || []) if (x > x0 - 1.5 && x < x1 + 1.5 && z > z0 - 1.5 && z < z1 + 1.5) return true
+    return false }
   const e = ${JSON.stringify(ON)} ? idx.byId.get(${JSON.stringify(ON)}) : idx.byNum.find((e) => e.ranges?.wall && e.footprint && per(e.footprint) > 60 && drawnNear(e.footprint))
   return e ? { id: e.id, footprint: e.footprint, baseY: e.baseY, centroidY: e.centroidY, neon: e.neon } : null })()`) }
 ON = entry?.id ?? ON
@@ -186,6 +190,15 @@ if (MODE === 'clicks') {
       return null })()`)
     if (process.env.NEON_DEBUG) console.log('seg', [sx, sy, sz].map(Math.round), '→', xy, await js(`JSON.stringify(window.__dbgHit || null)`))
     if (!xy) continue
+    if (process.env.NEON_DEBUG) console.log('raycast at the target:', await js(`(() => {
+      const st = window.__scene.__r3f.root.getState(), cam = window.__camera, c = window.__renderer.domElement, rect = c.getBoundingClientRect()
+      let line = null; window.__scene.traverse(o => { if (o.isMesh && String(o.material?.customProgramCacheKey?.() || '').startsWith('neon-bands-line')) line = o })
+      const px = [(${xy[0]} - rect.left) * c.width / rect.width, (${xy[1]} - rect.top) * c.height / rect.height]
+      st.raycaster.setFromCamera({ x: px[0] / c.width * 2 - 1, y: -(px[1] / c.height * 2 - 1) }, cam)
+      const hits = []; line.raycast(st.raycaster, hits)
+      const all = st.raycaster.intersectObjects(window.__scene.children, true).slice(0, 3).map(h => (h.object.material?.customProgramCacheKey?.() || h.object.type) + '@' + h.distance.toFixed(1))
+      return JSON.stringify({ customRaycast: String(line.raycast).includes('PICK_SLOP') || String(line.raycast).includes('reach'), handlers: Object.keys(line.__r3f?.handlers || {}), lineHits: hits.length, firstHits: all, exag: window.__terrainExag.value, rcCamera: !!st.raycaster.camera })
+    })()`))
     await sel(null)
     for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) await cdp('Input.dispatchMouseEvent', { type, x: xy[0], y: xy[1], button: 'left', clickCount: type === 'mouseMoved' ? 0 : 1 }, S)
     await sleep(600)
