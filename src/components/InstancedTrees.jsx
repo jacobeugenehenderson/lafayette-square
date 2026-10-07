@@ -33,7 +33,7 @@ import {
 import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
-import { getElevationRaw, slabYIsUnstamped } from '../utils/elevation'
+import { getElevationRaw, slabYIsUnstamped, groundPairs } from '../utils/elevation'
 import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
@@ -281,13 +281,9 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
   // The raw field where the DRAWN ground sits under each tree → the trunk lands
   // exactly on the rendered surface (no float), via patchTerrainInstancedBaked.
   // Falls back to the smooth field for any instance missing an anchor.
+  // `aGround` = (raw anchor, the drawn ground's own y) per instance — `elevation.js#groundPairs`
   const groundRaws = useMemo(() => {
-    const arr = new Float32Array(instances.length)
-    for (let i = 0; i < instances.length; i++) {
-      const g = instances[i].groundRaw
-      arr[i] = typeof g === 'number' ? g : getElevationRaw(instances[i].x, instances[i].z)
-    }
-    return arr
+    const arr = groundPairs(instances, t => (typeof t.groundRaw === 'number' ? t.groundRaw : getElevationRaw(t.x, t.z)))
   }, [instances])
 
   // One log per (url × tile) saying how many submeshes we ended up with.
@@ -350,7 +346,7 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
     if (!geometry) return
     if (lampGlows) geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
     if (heroTiers) geometry.setAttribute('aHeroTier', new THREE.InstancedBufferAttribute(heroTiers, 1))
-    if (groundRaws) geometry.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(groundRaws, 1))
+    if (groundRaws) geometry.setAttribute('aGround', new THREE.InstancedBufferAttribute(groundRaws, 2))
     invalidate()
   }, [geometry, lampGlows, heroTiers, groundRaws, invalidate])
   useEffect(() => {
@@ -468,11 +464,7 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
     return a
   }, [instances])
   const groundRaws = useMemo(() => {
-    const a = new Float32Array(instances.length)
-    for (let i = 0; i < instances.length; i++) {
-      const g = instances[i].groundRaw
-      a[i] = typeof g === 'number' ? g : getElevationRaw(instances[i].x, instances[i].z)
-    }
+    const a = groundPairs(instances, t => (typeof t.groundRaw === 'number' ? t.groundRaw : getElevationRaw(t.x, t.z)))
     return a
   }, [instances])
 
@@ -480,7 +472,7 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
     if (!geometry) return
     geometry.setAttribute('aLampGlow', new THREE.InstancedBufferAttribute(lampGlows, 1))
     geometry.setAttribute('aHeroTier', new THREE.InstancedBufferAttribute(heroTiers, 1))
-    geometry.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(groundRaws, 1))
+    geometry.setAttribute('aGround', new THREE.InstancedBufferAttribute(groundRaws, 2))
     invalidate()
   }, [geometry, lampGlows, heroTiers, groundRaws, invalidate])
 
@@ -604,7 +596,9 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
           }
         }
         if (j?.instances && Array.isArray(anchors) && keyOk && anchors.length === j.instances.length) {
-          for (let i = 0; i < j.instances.length; i++) j.instances[i].groundRaw = anchors[i]
+          // `groundY` (v4): the drawn ground's own height under each tree, index-parallel; absent ⇒ 0 (seats on the field)
+          const gy = Array.isArray(anchorsDoc?.groundY) && anchorsDoc.groundY.length === anchors.length ? anchorsDoc.groundY : null
+          for (let i = 0; i < j.instances.length; i++) { j.instances[i].groundRaw = anchors[i]; if (gy) j.instances[i].groundY = gy[i] }
         } else if (j?.instances && Array.isArray(anchors)) {
           // ⛔⛔ ALL-OR-NOTHING, AND IT WAS SILENT. A length mismatch discards EVERY anchor
           // and drops the whole scene onto the smooth field — a real degradation of the

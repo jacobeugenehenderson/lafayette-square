@@ -51,7 +51,7 @@ export default function BakedLamps({ lookId, bakeLastMs, lanternOverride, lampsO
             console.error(`[BakedLamps] ⛔ lamps.json for "${resolvedLookId}" was anchored on a DIFFERENT heightfield `
               + `(terrain ${j.terrain.key}, baseElev ${j.terrain.baseElev}) than this slab's (${live}). `
               + `Anchors REFUSED — lamps fall back to the smooth terrain field. ▶ re-bake lamps (node cartograph/bake-lamps.js --scene=<scene> --look=${resolvedLookId})`)
-            j = { ...j, lamps: j.lamps.map(({ groundRaw, ...l }) => l) }
+            j = { ...j, lamps: j.lamps.map(({ groundRaw, groundY, ...l }) => l) }
           }
         }
         setData(j)

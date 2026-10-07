@@ -27,7 +27,7 @@ import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
 import { OVERHEAD_ALPHA_TEST } from './overheadCore.js'
 import { injectOverheadStamp, overheadLightUniforms, litCards, treeWindUniforms } from './treeAtlasMaterial.js'
-import { treeGroundRaw } from '../utils/elevation'
+import { treeGroundRaw, groundPairs } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useSkyState from '../hooks/useSkyState.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -355,9 +355,7 @@ export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
       im.instanceMatrix.needsUpdate = true
       // The RAW ground under each disc (pre-exag); the shader lifts by the live uExag, so the
       // discs ride the ground down when Browse tweens it flat instead of hanging in the air.
-      const raw = new Float32Array(instances.length)
-      for (let i = 0; i < instances.length; i++) raw[i] = treeGroundRaw(instances[i])
-      discs[d].geo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(raw, 1))
+      discs[d].geo.setAttribute('aGround', new THREE.InstancedBufferAttribute(groundPairs(instances, treeGroundRaw), 2))
       // The per-tree lamp light the bake stamped (`lampGlow`, src/lib/lampPool.js) — the same value the mesh path reads.
       const glow = new Float32Array(instances.length)
       for (let i = 0; i < instances.length; i++) glow[i] = Number(instances[i].lampGlow) || 0

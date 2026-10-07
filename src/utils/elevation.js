@@ -72,7 +72,7 @@ export function treeGroundRaw(inst) {
   // everywhere else — up to 52 m adrift in Browse, ~12 m in Street. A constant cannot
   // follow a tween.
   // ⭐ SO THE LIFT BELONGS IN THE SHADER, exactly where the mesh path has always put it
-  // (`terrainShader.js:345`: `transformed.y += aGroundRaw * uExag / _instYScale`). This
+  // (`terrainShader.js#patchTerrainInstancedBaked`: `(aGround.x * uExag + aGround.y) / _instYScale`). This
   // returns the RAW anchor; the carrier multiplies by the live uExag per frame, and the
   // trees ride the ground down when a shot flattens it. Placement matrices sit at y = 0.
   if (typeof inst.groundRaw === 'number') return inst.groundRaw
@@ -80,6 +80,19 @@ export function treeGroundRaw(inst) {
   // stamps this column (see `slabYIsUnstamped`); confirm the units the day one does.
   if (typeof inst.y === 'number' && inst.y !== 0) return inst.y
   return getElevationRaw(inst.x, inst.z)
+}
+
+// ⭐ THE DRAWN GROUND'S OWN HEIGHT under an anchored object (2026-10-06, the raised kerb): `groundY`, baked beside the
+// raw anchor (`groundSampler#groundAt`), UNEXAGGERATED — 0 on a flat town, the kerb height on a raised block. Absent
+// (an anchor baked before it, or none) is 0: the object then seats on the field, exactly as before.
+export function groundYOf(o) { return typeof o?.groundY === 'number' ? o.groundY : 0 }
+
+// The `aGround` attribute payload (itemSize 2) for a list of anchored objects: [raw, y] each — the one packing every
+// instanced consumer uses (`terrainShader.js#patchTerrainInstancedBaked`). `rawOf` resolves the raw anchor.
+export function groundPairs(list, rawOf) {
+  const a = new Float32Array(list.length * 2)
+  for (let i = 0; i < list.length; i++) { a[2 * i] = rawOf(list[i]); a[2 * i + 1] = groundYOf(list[i]) }
+  return a
 }
 
 // ⭐ THE DETECTOR, not a patch. Answers "is this slab's y column stamped at all?" for a

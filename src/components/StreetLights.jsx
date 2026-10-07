@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { patchTerrainInstancedBaked, UNIFORMS as TERRAIN_UNIFORMS, TERRAIN_DECL } from '../utils/terrainShader'
-import { getElevationRaw } from '../utils/elevation'
+import { getElevationRaw, groundPairs } from '../utils/elevation'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { LANTERN_FLAT_DEFAULTS, LANTERN_FIELD_KEYS, LANTERN_FIELDS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
@@ -80,8 +80,8 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
   // ground sits under each lamp → rigid-lift onto the rendered surface, no float
   // (the buildings/foundations regime for point objects). Falls back to the
   // smooth field for any lamp that predates the bake.
-  const aGroundRaw = useMemo(
-    () => new Float32Array(allLamps.map(l => (typeof l.groundRaw === 'number' ? l.groundRaw : getElevationRaw(l.x, l.z)))),
+  const aGround = useMemo(
+    () => groundPairs(allLamps, l => (typeof l.groundRaw === 'number' ? l.groundRaw : getElevationRaw(l.x, l.z))),
     [allLamps],
   )
 
@@ -106,7 +106,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
   const BILLBOARD_VS_INC = /*glsl*/`
     vec4 _bbCenter = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
     // Baked ground anchor (matches the lamp post) — no live terrain sample.
-    _bbCenter.y += aGroundRaw * uExag;
+    _bbCenter.y += aGround.x * uExag + aGround.y;
     vec4 _bbCenterView = viewMatrix * _bbCenter;
     // Scale recovered from instanceMatrix's first column (uniform scale).
     float _bbScale = length(vec3(instanceMatrix[0].xyz));
@@ -133,7 +133,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
         #include <common>
         #include <logdepthbuf_pars_vertex>
         ${TERRAIN_DECL}
-        attribute float aGroundRaw;
+        attribute vec2 aGround;
         varying vec2 vUv;
         void main() {
           vUv = uv;
@@ -178,7 +178,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
         #include <common>
         #include <logdepthbuf_pars_vertex>
         ${TERRAIN_DECL}
-        attribute float aGroundRaw;
+        attribute vec2 aGround;
         uniform float uHaloSize;
         uniform float uPush;
         varying vec2 vUv;
@@ -330,9 +330,9 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
       lampRef.current.setMatrixAt(i, combined)
     })
     lampRef.current.instanceMatrix.needsUpdate = true
-    lampModel.geometry.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
+    lampModel.geometry.setAttribute('aGround', new THREE.InstancedBufferAttribute(aGround, 2))
     invalidate()   // demand-mode: paint the just-filled matrices
-  }, [allLamps, lampModel, aGroundRaw, invalidate])
+  }, [allLamps, lampModel, aGround, invalidate])
 
   // ── Instance transforms — glow orbs (tight glass halo) ────────────────────
   useEffect(() => {
@@ -346,9 +346,9 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
       glowRef.current.setMatrixAt(i, d.matrix)
     })
     glowRef.current.instanceMatrix.needsUpdate = true
-    glowGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
+    glowGeo.setAttribute('aGround', new THREE.InstancedBufferAttribute(aGround, 2))
     invalidate()
-  }, [allLamps, lampModel, aGroundRaw, glowGeo, invalidate, glowRadius, GLOW_Y])
+  }, [allLamps, lampModel, aGround, glowGeo, invalidate, glowRadius, GLOW_Y])
 
   // ── Instance transforms — sharp bulb dot ───────────────────────────────────
   useEffect(() => {
@@ -362,9 +362,9 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
       bulbRef.current.setMatrixAt(i, d.matrix)
     })
     bulbRef.current.instanceMatrix.needsUpdate = true
-    bulbGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
+    bulbGeo.setAttribute('aGround', new THREE.InstancedBufferAttribute(aGround, 2))
     invalidate()
-  }, [allLamps, lampModel, aGroundRaw, bulbGeo, invalidate, GLOW_Y])
+  }, [allLamps, lampModel, aGround, bulbGeo, invalidate, GLOW_Y])
 
   // ── Instance transforms — the soft GLOW around each lantern (restored 2026-09-26: haloMat was
   //    defined and never mounted). Depth-TESTED (three's default), so what stands in front hides it.
@@ -379,9 +379,9 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
       haloRef.current.setMatrixAt(i, d.matrix)
     })
     haloRef.current.instanceMatrix.needsUpdate = true
-    haloGeo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(aGroundRaw, 1))
+    haloGeo.setAttribute('aGround', new THREE.InstancedBufferAttribute(aGround, 2))
     invalidate()
-  }, [allLamps, lampModel, aGroundRaw, haloGeo, invalidate, GLOW_Y])
+  }, [allLamps, lampModel, aGround, haloGeo, invalidate, GLOW_Y])
 
   // (Lamp base-ring instance transforms removed — the contact shadow is baked
   // into the ground FX map now, not a per-lamp disc.)

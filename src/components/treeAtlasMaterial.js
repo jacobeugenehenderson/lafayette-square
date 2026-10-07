@@ -621,9 +621,10 @@ export function injectFoliageSway(material) {
            // ⛔ DERIVED, NOT STAMPED. This was an attribute (aWindRadialNorm) for
            // one commit and it blew the vertex-attribute budget: the tree shader
            // already sat at exactly MAX_VERTEX_ATTRIBS=16 (position/normal/uv +
-           // instanceMatrix's FOUR slots + 9 custom + aGroundRaw), so a 10th
+           // instanceMatrix's FOUR slots + 9 custom + the ground anchor), so a 10th
            // custom attribute failed the program link — "Too many attributes
            // (aGroundRaw)", VALIDATE_STATUS false — and every tree vanished.
+           // ⭐ Which is why the raised kerb's ground height rides the SAME slot (aGround, a vec2), never a new one.
            // The trunk sits at X=Z=0 in the chassis-bake frame (the same
            // assumption stampWindTier makes), so radial distance is just
            // length(position.xz) and costs nothing.
@@ -1715,7 +1716,7 @@ const CARD_WIND_COMMON = WIND_SHEET_GLSL + WIND_SHEET_VERTEX_GLSL + TREE_WIND_GL
          attribute float aLampGlow;   // per-tree lamp light (src/lib/lampPool.js) — absent ⇒ 0
          varying float vLampGlow;
          uniform float uExag;
-         attribute float aGroundRaw;
+         attribute vec2 aGround;      // (raw anchor, the drawn ground's own y) — one slot, see the budget note
          attribute float aOverhead;
          attribute float aTreeHeightNorm;
          attribute float aLeafBody;   // 0 at the glued stem → 1 at the blade tip
@@ -1796,7 +1797,7 @@ const OVERHEAD_GROUND_LIFT = `
          #ifdef USE_INSTANCING
          {
            float _ovYScale = length(instanceMatrix[1].xyz);
-           transformed.y += aGroundRaw * uExag / max(_ovYScale, 0.0001);
+           transformed.y += (aGround.x * uExag + aGround.y) / max(_ovYScale, 0.0001);
          }
          #endif
          vLampGlow = aLampGlow;`

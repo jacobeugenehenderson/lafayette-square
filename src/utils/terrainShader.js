@@ -418,20 +418,21 @@ export function patchTerrainInstanced(mat) {
 
 /**
  * INSTANCED rigid lift by a BAKED per-instance ground anchor — `groundSampler`'s
- * `groundRawAt`, the raw field where the DRAWN ground sits under the instance —
+ * `groundAt`, where the DRAWN ground sits under the instance —
  * instead of a live texture sample. So the instance lands exactly on the
  * rendered ground (no coarse-mesh float); the buildings/foundations `aCentroidY`
- * regime generalized to point objects. The geometry must carry an `aGroundRaw`
- * InstancedBufferAttribute (raw, pre-uExag). Lift = aGroundRaw × uExag, divided
- * by the instance Y-scale so it lands as meters in world space (same as
- * patchTerrainInstanced). Replaces #include <begin_vertex>.
+ * regime generalized to point objects. The geometry must carry an `aGround`
+ * InstancedBufferAttribute, itemSize 2: (raw, pre-uExag · the drawn mesh's own y, UNexaggerated — a raised kerb's
+ * block, `kerbLift.mjs`). Lift = aGround.x × uExag + aGround.y, divided by the instance Y-scale so it lands as meters
+ * in world space (same as patchTerrainInstanced). One slot, not two: the tree shaders sit at the attribute budget
+ * (`treeAtlasMaterial.js`, VALIDATE_STATUS). Pack it with `elevation.js#groundPairs`. Replaces #include <begin_vertex>.
  */
 export const TERRAIN_DISPLACE_INSTANCED_BAKED = `
 #include <begin_vertex>
 #ifdef USE_INSTANCING
 {
   float _instYScale = length(instanceMatrix[1].xyz);
-  transformed.y += aGroundRaw * uExag / max(_instYScale, 0.0001);
+  transformed.y += (aGround.x * uExag + aGround.y) / max(_instYScale, 0.0001);
 }
 #endif`
 
@@ -440,7 +441,7 @@ export function patchTerrainInstancedBaked(mat) {
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uExag = terrainExag
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n attribute float aGroundRaw;\n uniform float uExag;')
+      .replace('#include <common>', '#include <common>\n attribute vec2 aGround;\n uniform float uExag;')
       .replace('#include <begin_vertex>', TERRAIN_DISPLACE_INSTANCED_BAKED)
     if (prev) prev(shader)
   }
