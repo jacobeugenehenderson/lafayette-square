@@ -966,5 +966,9 @@
       "species": "platanus_acerifolia",
       "variantId": 4
     }
-  ]
+  ],
+  "pour": {
+    "held": "Lafayette Square's pour is held (Boz's ruling Q3, 2026-09-24): no re-pour, and nothing rewrites its committed runtime files unasked",
+    "elevation": true
+  }
 }

@@ -36,6 +36,8 @@ export const TOWN_DESIGN_FIELDS = [
   'groveThreshold',                // which species the grove admits
   'water',                         // the town's water levels and bed
   'lamps',                         // whether lamps are derived
+  'pour',                          // how the Bake treats the town's pour: { held: "<why>" — a re-promote asks first ·
+                                   // elevation: true — the pipeline reads the town's elevation cache } (G5, 2026-10-07)
 ]
 
 /**

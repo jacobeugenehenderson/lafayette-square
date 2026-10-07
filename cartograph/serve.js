@@ -10,7 +10,7 @@
 //     works at all; do not guard serve.js itself.
 import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync } from 'fs'
-import { join, extname, dirname } from 'path'
+import { join, extname, dirname, relative } from 'path'
 import { spawn } from 'child_process'
 import { DEFAULT_MAP, mapRawDir, mapCleanDir, ribbonsPathOf } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
@@ -2454,7 +2454,7 @@ createServer(async (req, res) => {
         // water level and bed values, authored in the file (no Stage control), read by the terrain bake.
         // ▶ checks/claims-autosave-keeps-what-bakes-read.mjs
         const merged = { ...parsed }
-        for (const k of ['trees', 'groveThreshold', 'water']) {
+        for (const k of ['trees', 'groveThreshold', 'water', 'pour']) {
           if (!(k in parsed) && k in existing) merged[k] = existing[k]
         }
         mkdirSync(lookDir(id), { recursive: true })
@@ -2667,7 +2667,6 @@ createServer(async (req, res) => {
         res.end(JSON.stringify({ error: msg }))
         return
       }
-      const isDefaultMap = bakeScene === DEFAULT_MAP
       const bakePaths = mapDataPaths(bakeScene)
       // overlay.json + skeleton.json are operator-edited / derived
       // (Survey/Measure write to /overlay → clean/overlay.json; skeleton
@@ -2764,7 +2763,7 @@ createServer(async (req, res) => {
       // does (`--skip-elevation`); only LS reads its elevation cache here. Without
       // the flag a town with no cache FETCHES from USGS — never inside a Bake.
       // Whether poured towns should carry pipeline elevation is its own decision.
-      const elevFlag = isDefaultMap ? '' : ' --skip-elevation'
+      const elevFlag = bakeDesign.pour?.elevation === true ? '' : ' --skip-elevation'   // the town's declaration (design.json pour.elevation)
       if (hasOsm) {
         // ⛔⛔ A CODE CHANGE RE-POURS THE TOWN — SAY SO BEFORE DOING IT (Boz's ruling (d), 2026-09-24). The pour's code
         // inputs are its import closure, so a change to the ① mint, the coastline or the section builder makes every
@@ -2795,8 +2794,8 @@ createServer(async (req, res) => {
                            ...regChanged.map(i => `references/registry.json → ${i}`)]
         // ⛔ LS is HELD (no LS re-pour, and nothing rewrites its committed runtime files unasked — Boz's ruling Q3).
         // promote-ribbons writes LS's src/data/ribbons.json; with no record of what it last read it would run, so ask.
-        const lsAsks = isDefaultMap && !bakeReads[`${id}:promote-ribbons`]
-          ? ['src/data/ribbons.json → promote-ribbons has no record yet, so this Bake would re-promote LS\'s committed ribbons'] : []
+        const lsAsks = bakeDesign.pour?.held && !bakeReads[`${id}:promote-ribbons`]
+          ? [`${relative(REPO_ROOT, RIBBONS)} → promote-ribbons has no record yet, so this Bake would re-promote ${bakeScene}'s committed ribbons (its pour is held: ${bakeDesign.pour.held})`] : []
         if (P.plan && (codeNewer.length || lsAsks.length)) P.plan.stale.push({ step: 'pipeline', repour: true, why: [...codeNewer, ...lsAsks] })
         else if ((codeNewer.length || lsAsks.length) && !repourConfirmed) {
           res.writeHead(428, { 'Content-Type': 'application/json' })
@@ -3006,10 +3005,10 @@ createServer(async (req, res) => {
       // sources (OSM POIs · assessor parcels · NR survey) onto the just-baked
       // building set → content/{roster,listings}.json, so content MEMBERSHIP ==
       // slab membership by construction (0 orphans). Runs AFTER buildings (needs
-      // the baked id set). LS is guarded (its content is hand-curated) — the step
-      // + bake-content both skip the default scene. Hand-authoring survives via
-      // the committed override sidecars (listings.overrides.json).
-      if (!isDefaultMap) {
+      // the baked id set). A town that declares its listings hand-curated (meta.baseSource, LS) is skipped by
+      // bake-content itself, from its own data. Hand-authoring survives via the committed override sidecars
+      // (listings.overrides.json).
+      {
         const SCENE_BAKED_BUILDINGS = join(REPO_ROOT, 'public', 'baked', bakeScene, 'buildings.json')
         const CONTENT_DIR = join(bakePaths.raw, '..', 'content')
         // not-inputs: listing-identity.json (its own output: the id registry it maintains)
@@ -3023,8 +3022,6 @@ createServer(async (req, res) => {
           [join(CONTENT_DIR, 'roster.json'), join(CONTENT_DIR, 'listings.json')],
           `node bake-content.js ${sceneFlag}`,
           { cwd: here, timeout: 180000 })
-      } else {
-        skip('content (LS content is hand-curated — not regenerated)')
       }
       if (layerOn('lamp')) {
         // lamps = surveyed (raw/osm.json pois + osm_street_lamps.json) ∪ derived (clean/derived_lamps.json) ∪ authored;
