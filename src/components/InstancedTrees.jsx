@@ -14,7 +14,7 @@
  * one InstancedMesh per submesh per variant. No picker, no overrides,
  * no index.json. Same shape Stage / mobile would consume.
  */
-import { Suspense, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -33,6 +33,8 @@ import {
 import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
+import { whenArrived } from './impostorTexture.js'
+import { markPrepared, markFailed, markUnprepared } from '../lib/reveal.js'
 import { getElevationRaw, slabYIsUnstamped, groundPairs } from '../utils/elevation'
 import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -78,8 +80,9 @@ function pumpFramesAfterLoad(invalidate, frames = 15) {
   return () => { if (id) cancelAnimationFrame(id) }
 }
 
-function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, deformerRange, leafFace }) {
+function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, deformerRange, leafFace, onLoaded }) {
   const { scene } = useGLTF(url)
+  useEffect(() => { onLoaded?.() }, [])   // mounted ⇔ its GLB resolved (inside <Suspense>): the reveal counts it
   // This component only mounts AFTER useGLTF resolves (it's inside <Suspense>),
   // so this effect runs exactly when the GLB has loaded — the moment we must
   // wake the demand loop. See pumpFramesAfterLoad above.
@@ -1045,6 +1048,39 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   )
   const heroAssets = useHeroImpostorAssets({ enabled: heroFoundationEnabled, lookName, heroImpostorBySpecies: heroImpostorRecords, species: heroSpeciesList })
 
+  // ⭐ THE REVEAL (src/lib/reveal.js): the trees are PREPARED when every card page has ARRIVED and every model tree's
+  // GLB has loaded. A card without its page draws nothing, so its page is part of the physical tree (Jacob: physical
+  // arrives at once). ⛔ Arrival, never `onUpdate` (the GPU upload): held hidden, a tree never draws, so never uploads.
+  const meshKeys = useMemo(() => {
+    const k = []
+    if (groups) for (const [url, byTile] of groups.meshGroups) for (const tid of byTile.keys()) k.push(`${url}#${tid}`)
+    return k
+  }, [groups])
+  const [meshLoaded, setMeshLoaded] = useState(() => new Set())
+  const onMeshLoaded = useCallback((key) => setMeshLoaded((s) => (s.has(key) ? s : new Set(s).add(key))), [])
+  const [pagesIn, setPagesIn] = useState(false)
+  useEffect(() => {
+    setPagesIn(false)
+    if (!heroFoundationEnabled || !heroSpeciesList.length) { setPagesIn(true); return }
+    if (!heroAssets) return
+    let live = true
+    const texes = []
+    for (const a of heroAssets.values()) for (const set of a.azSets) for (const l of set.layers) texes.push(l.albedoTex, l.aoTex)
+    Promise.all(texes.map(whenArrived)).then(
+      () => { if (live) setPagesIn(true) },
+      (e) => { if (live) markFailed('trees', `a hero card page did not arrive (${e?.message || e})`) })
+    return () => { live = false }
+  }, [heroAssets, heroFoundationEnabled, heroSpeciesList])
+  const drawsNoTrees = scene?.layerVis?.tree === false || treeDbg('noTrees')
+  useEffect(() => {
+    if (drawsNoTrees) { markPrepared('trees'); return }
+    if (!groups || atlas.status !== 'ready') return
+    if ((groups.meshGroups.size > 0 || groups.impostors.size > 0) && mats.status !== 'ready') return
+    if (!pagesIn || meshKeys.some((k) => !meshLoaded.has(k))) return
+    markPrepared('trees')
+  }, [drawsNoTrees, groups, atlas.status, mats.status, pagesIn, meshKeys, meshLoaded])
+  useEffect(() => () => markUnprepared('trees'), [])
+
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null
 
@@ -1090,6 +1126,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
               <group visible={!overheadMode || !(overheadAssets && species && overheadAssets.has(species))}>
               <VariantInstances
                 url={url}
+                onLoaded={() => onMeshLoaded(`${url}#${tileId}`)}
                 instances={instances}
                 treeMaterial={mats.treeMaterial}
                 barkSettings={barkSettings}

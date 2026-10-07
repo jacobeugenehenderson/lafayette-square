@@ -39,6 +39,7 @@ import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { setSceneStencil, setSceneStencilMissing } from './sceneStencilState'
 import DrawnAnchor from './DrawnAnchor.jsx'
 import { markTimeline } from '../lib/startupMarks.js'
+import { markPrepared, markUnprepared } from '../lib/reveal.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { slabUrl, slabFetch, slabStamped } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
@@ -447,6 +448,10 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
       return { group: g, geometry: geom, bodyExtent }
     })
   }, [manifest, bin])
+
+  // ⭐ THE REVEAL (src/lib/reveal.js): the ground surfaces are physical; they are PREPARED once their geometry exists.
+  // Their maps are a look layer and arrive after (useArrivingTexture).
+  useEffect(() => { markPrepared('ground'); return () => markUnprepared('ground') }, [meshes])
 
   // ⭐ THE WATER AT HIGH FLOODS UP THE BEACH (bake-terrain `water.flood`): the ground below the high level connected to
   // the drawn water, drawn as more of the same sheet beside the body that reaches the rim. Its polygons exclude the drawn

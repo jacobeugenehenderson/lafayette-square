@@ -43,6 +43,27 @@ function ktx2Loader(gl) {
 
 const _cache = new Map()   // url → THREE.Texture
 
+// ⭐ ARRIVAL, not upload: a page is a placeholder until its image lands (the reveal gate waits on this, src/lib/reveal.js).
+// ⛔ Never wait on `texture.onUpdate` for that: it fires on the GPU UPLOAD, and a class held hidden for the reveal never
+// draws, so it never uploads — that wait would never end.
+function arrived(tex) {
+  tex.userData.arrived = true
+  for (const w of tex.userData._waiters || []) w.resolve()
+  tex.userData._waiters = null
+}
+function failed(tex, err) {
+  tex.userData.failed = err || true
+  for (const w of tex.userData._waiters || []) w.reject(err)
+  tex.userData._waiters = null
+}
+/** Resolves when the page's image has arrived; rejects if it failed (loud at the load site already). */
+export function whenArrived(tex) {
+  if (!tex) return Promise.reject(new Error('no texture'))
+  if (tex.userData.arrived) return Promise.resolve()
+  if (tex.userData.failed) return Promise.reject(tex.userData.failed)
+  return new Promise((resolve, reject) => (tex.userData._waiters ||= []).push({ resolve, reject }))
+}
+
 // The AO+depth decoder (rgPageWorker.js): one worker for the page, made on the first RG page, answering by id.
 let _rgWorker = null, _rgSeq = 0
 const _rgPending = new Map()
@@ -82,9 +103,10 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
         tex.magFilter = THREE.LinearFilter
         tex.needsUpdate = true
         tex.onUpdate?.()
+        arrived(tex)
         markTimeline('decode', `RG page ${W}×${H} · ${url.split('?')[0].split('/').slice(-2).join('/')}`)   // species/page: 8 species share page names
       })
-      .catch((err) => console.error(`[impostorTexture] ⛔ AO+depth page failed to load — ${url}. This layer will be blank.`, err))
+      .catch((err) => { console.error(`[impostorTexture] ⛔ AO+depth page failed to load — ${url}. This layer will be blank.`, err); failed(tex, err) })
     return tex
   }
   const space = srgb ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace
@@ -110,17 +132,20 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
       tex.wrapS = loaded.wrapS; tex.wrapT = loaded.wrapT
       tex.needsUpdate = true
       loaded.dispose()
+      arrived(tex)
       markTimeline('ktx2', url.split('?')[0].split('/').slice(-2).join('/'))
     }, undefined, (err) => {
       // ⛔ LOUD. A missing page is a hole in the canopy; it must never read as "thin".
       console.error(`[impostorTexture] ⛔ KTX2 page failed to load — ${url}. `
         + `This species' layer will be blank. Re-run arborist/pack-impostor-ktx2.mjs for this look.`, err)
+      failed(tex, err)
     })
     return tex
   }
 
-  const t = new THREE.TextureLoader().load(url, undefined, undefined, (err) => {
+  const t = new THREE.TextureLoader().load(url, () => arrived(t), undefined, (err) => {
     console.error(`[impostorTexture] ⛔ PNG page failed to load — ${url}. This layer will be blank.`, err)
+    failed(t, err)
   })
   t.colorSpace = space
   t.anisotropy = 4

@@ -49,6 +49,7 @@ import { slabFetch, slabStamped } from '../lib/slabUrl.js'
 import { lampGlow as _lampGlow, lampGrid as _lampGrid } from '../preview/lampGlowState'
 import { LAMP_FALLOFF_GLSL, LAMP_WIPE_GLSL } from '../lib/lampPool.js'
 import { kitUrl } from '../lib/kitUrl.js'
+import { markPrepared, markUnprepared } from '../lib/reveal.js'
 
 // ── Camera x-ray — always on (2026-06-28) ─────────────────────────────────
 // When the camera passes THROUGH a building (its body within DIST metres of the
@@ -431,6 +432,10 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
   const selectedId = givenSel
   const indexForRing = useSlabBuildingIndex((s) => s.index)
   const selectedEntry = (selectedId && indexForRing) ? indexForRing.byId.get(selectedId) : null
+
+  // ⭐ THE REVEAL (src/lib/reveal.js): the buildings are PREPARED once the slab's geometry is built. ⚠️ Index-only mode
+  // (a city model draws instead) marks too: the city model is not gated yet.
+  useEffect(() => { if (meshes) markPrepared('buildings'); return () => markUnprepared('buildings') }, [meshes])
 
   if (!meshes) return null
   if (scene?.layerVis?.building === false) return null
