@@ -1,5 +1,12 @@
 # BRIEF — corners carry ramps and crosswalks, and the kerb is raised
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: Sill
+written: 2026-10-05
+evict-when: RULING: Jacob passes the corners on Huron by eye (curb cuts, perpendicular landings, crosswalks, the per-corner Survey and Section controls) AND LS's raised-kerb ground bakes without refusal (§9 Open — the snap-rounding mesh cut) or that item is re-boarded to ROADMAP by his call.
+-->
+
 **You are the dispatched agent. Name yourself** — one word, yours, not one a RUNNING session holds
 (`ListAgents`, then `/rename`). **Agent: FRESH** — the corner canon is long and hard-won and must be read
 whole, with no assumptions carried in from another window.
