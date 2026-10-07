@@ -19,7 +19,7 @@ import { attachCSM } from './CascadedShadows.jsx'
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGroundSurfaceMaterial, CROP_UNIFORMS } from './grassMaterial'
 import useCalendar from '../hooks/useCalendar'
@@ -204,6 +204,7 @@ function fadeForGroup(group, stencil) {
 // plain — loud, never a quiet plain patch. Each landing is a mark on Preview's frame timeline.
 function useArrivingTexture(url, configure, what, look) {
   const [tex, setTex] = useState(null)
+  const gl = useThree((s) => s.gl)
   useEffect(() => {
     setTex(null)
     if (!url) return
@@ -212,6 +213,7 @@ function useArrivingTexture(url, configure, what, look) {
       if (!live) return
       configure(t)
       t.needsUpdate = true
+      gl.initTexture(t)   // upload NOW, on arrival — not in whichever frame first draws it (the reveal's, on huron)
       markTimeline('ground-map', what)
       setTex(t)
     }, undefined, (e) => console.error(`[BakedGround] ⛔ "${look}": ${what} did not arrive (${url}) — the ground draws without it.`, e))
@@ -221,9 +223,10 @@ function useArrivingTexture(url, configure, what, look) {
 }
 
 // The AO: ONE texture, bound to the materials from their first compile (so no material compiles twice), white until
-// the lightmap lands (white AO = no occlusion = the plain ground). On arrival it takes a NEW Source: three r160 sizes
-// a texture's GPU storage once per source (texStorage2D), so a 1×1 source cannot take the full image in place.
+// the lightmap lands (white AO = no occlusion = the plain ground). On arrival it is disposed and takes a NEW Source:
+// three r160 sizes a texture's GPU storage once (texStorage2D) and keeps its GL texture per texture, not per source.
 function useArrivingAo(url, what, look) {
+  const gl = useThree((s) => s.gl)
   const tex = useMemo(() => {
     if (!url) return null
     const c = document.createElement('canvas'); c.width = c.height = 1
@@ -239,8 +242,14 @@ function useArrivingAo(url, what, look) {
     let live = true
     new THREE.ImageLoader().load(url, (img) => {
       if (!live) return
+      // ⛔ DISPOSE FIRST. three keeps the GL texture it made for the 1×1 source (the texture's cache key ignores the
+      // source), so a swap alone never lands: measured, the ground drew with NO AO (48,734 of 65,536 px off, ±12).
+      // Disposed, the same texture object re-creates its GL texture for the new source on the next use — and the
+      // materials keep it bound, so nothing recompiles. ▶ scratch/frame-timeline/ground-id.html (0 px differ).
+      tex.dispose()
       tex.source = new THREE.Source(img)
       tex.needsUpdate = true
+      gl.initTexture(tex)   // upload now, on arrival
       markTimeline('ground-map', what)
     }, undefined, (e) => console.error(`[BakedGround] ⛔ "${look}": ${what} did not arrive (${url}) — the ground draws without its AO.`, e))
     return () => { live = false }
