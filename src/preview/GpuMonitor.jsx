@@ -94,7 +94,7 @@ function snapshotStats() {
 // Inline ticker — runs inside Canvas, polls renderer.info, detects
 // spikes, and publishes to the DOM-side panel via subs.
 export function GpuMonitorTicker() {
-  const { gl, scene } = useThree()
+  const { gl, scene, camera } = useThree()
   const times = useRef([])
   const frameCount = useRef(0)
   const baseline = useRef({ ms: ACTIVE_PROFILE.frameBudgetMs, calls: 0, tris: 0 })
@@ -125,8 +125,9 @@ export function GpuMonitorTicker() {
     // The renderer, for an inspection probe (which programs a gesture links: renderer.info.programs).
     window.__previewGl = gl
     window.__previewScene = scene
-    return () => { off(); delete window.__previewFrame; delete window.__previewGl; delete window.__previewScene }
-  }, [gl, scene])
+    window.__previewCamera = camera   // the shot's camera, for a motion probe (per-frame position)
+    return () => { off(); delete window.__previewFrame; delete window.__previewGl; delete window.__previewScene; delete window.__previewCamera }
+  }, [gl, scene, camera])
 
   useFrame(() => {
     const now = performance.now()
