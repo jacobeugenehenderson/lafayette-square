@@ -10,7 +10,9 @@
  * - the stars follow the town's sun altitude (the renderer's own, useTimeOfDay#getLightingPhase), from the old splash's
  *   twilight thresholds (radians below the horizon);
  * - it is driven by the startup marks, not timers: shown while the gate is armed, faded over the Look's `reveal.fade`
- *   from `ward:reveal`, then gone.
+ *   from `ward:reveal`, then gone;
+ * - THE MARK IS THE TOWN'S LOOK'S (`identity.mark` + `markStyle`, handed in by Town from its scene.json) — the one
+ *   source the Ward reads too. It read the page's boot instance (the OLD LS player's branding) until 2026-10-07.
  * ⭐ THE HOST'S TYPE AND COLOUR, READ, NEVER COPIED: the splash is DOM inside the host page, so its title takes the
  * host's own tokens — the Ward's display face `--f-display` + `--display-axes` and the town's accent `--mark` (theward
  * src/styles/tokens.css; `--mark` set at boot from the town's manifest), exactly as the Ward's place card sets a name.
@@ -20,6 +22,7 @@
  */
 import { useEffect, useState } from 'react'
 import TownMarkGlyph from './TownMarkGlyph'
+import { IDENTITY_NEUTRAL } from '../lib/townIdentity.js'   // an unchosen style draws as the Ward's ◉ draws it
 import { revealProgress } from '../lib/startupMarks.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCalendar from '../hooks/useCalendar'
@@ -35,8 +38,19 @@ const css = (c) => `rgb(${Math.round(c[0] * 255)}, ${Math.round(c[1] * 255)}, ${
 const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
 const SHADE_DEPTH = 0.4   // the shadow's depth below the sky's darker tone; the one value to change
 
-/** @param {{ title?: string, fadeSeconds: number, skyAt: ((minute: number, dayOfYear: number) => object) | null }} props */
-export default function TownSplash({ title, fadeSeconds, skyAt }) {
+// The mark, from the town's OWN Look (`identity`, baked into its scene.json; Jacob, 2026-10-07: "supposed to be a fleur de
+// lis"): its emoji in its style, or — unauthored — the town's initial, said once. `identity` undefined = the scene is not
+// read yet: no glyph, never a guess.
+let _saidNoMark = false
+function markOf(identity, title) {
+  if (identity === undefined) return null
+  if (identity?.mark) return { kind: 'emoji', value: identity.mark }
+  if (!_saidNoMark) { _saidNoMark = true; console.info(`[splash] "${title}" has no mark in its Look (identity.mark) — the splash shows its initial`) }
+  return { kind: 'initial', value: ((title || '').trim()[0] || '·').toUpperCase() }
+}
+
+/** @param {{ title?: string, fadeSeconds: number, skyAt: ((minute: number, dayOfYear: number) => object) | null, identity?: object | null }} props */
+export default function TownSplash({ title, fadeSeconds, skyAt, identity }) {
   const [frame, setFrame] = useState({ opacity: 1, sky: null, stars: 0 })
   useEffect(() => {
     let id
@@ -74,7 +88,7 @@ export default function TownSplash({ title, fadeSeconds, skyAt }) {
         <div key={i} style={{ position: 'absolute', zIndex: 1, left: s.left, top: s.top, width: s.size, height: s.size, borderRadius: '9999px', background: '#fff', opacity: s.opacity * stars }} />
       ))}
       <div style={{ animation: 'town-splash-breathe 4.8s ease-in-out infinite', position: 'relative' }}>
-        <TownMarkGlyph size={72} badge />
+        {(() => { const mark = markOf(identity, title); return mark ? <TownMarkGlyph mark={mark} markStyle={identity?.markStyle ?? IDENTITY_NEUTRAL.markStyle} size={72} badge /> : null })()}
       </div>
       {title ? <div style={{ marginTop: 18, fontFamily: 'var(--f-display)', fontVariationSettings: 'var(--display-axes)', fontWeight: 400, fontSize: '1.875rem', lineHeight: 1.1, color: 'var(--mark, rgba(255,255,255,0.85))', textShadow: `0 0 14px ${shade}, 0 1px 3px ${shade}`, position: 'relative' }}>{title}</div> : null}
     </div>

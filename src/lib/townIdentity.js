@@ -39,6 +39,9 @@ export const IDENTITY_NEUTRAL = {
 const HEX = /^#[0-9a-f]{6}$/i
 /** How the mark may be drawn in the Ward's ◉. ⛔ A new value is a ruling (Jacob), and the Ward must draw it. */
 export const MARK_STYLES = ['regular', 'engraved', 'colored']
+/** Each style, drawn: the CSS filter on the glyph — the Ward's ◉ (theward src/styles/band.css) and the kit's splash
+ *  (TownSplash) draw a mark the same way. ⚠️ band.css carries the same three today; this is their home in the kit. */
+export const MARK_STYLE_FILTER = { regular: 'brightness(0) invert(1)', engraved: 'grayscale(1) contrast(0.45) brightness(1.7)', colored: 'none' }
 const oneEmoji = (s) => typeof s === 'string'
   && [...new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(s)].length === 1
   && /\p{Extended_Pictographic}/u.test(s)

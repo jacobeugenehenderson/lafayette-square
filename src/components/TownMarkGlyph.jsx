@@ -1,14 +1,13 @@
 /**
- * The town's mark, drawn. One component so every badge agrees.
- *
- * ⛔ Three kinds, and the third is the point: `emoji` (authored), `svg` (a town that owns
- * a real mark — today only Lafayette Square's arch), and `initial` for a town that has
- * authored nothing. ⛔ There is deliberately no fourth case that borrows someone else's
- * mark; an unauthored town must LOOK unauthored. (`src/lib/townMark.js`.)
+ * The town's mark, drawn: `mark` is handed in — the town's own Look's (`identity.mark`, baked into its scene.json),
+ * never read here from the page's boot instance. Two kinds: `emoji` (authored) and `initial` (a town that has authored
+ * nothing — it must LOOK unauthored; there is no case that borrows someone else's mark). `markStyle` draws it as the
+ * Ward's ◉ does (`townIdentity.js#MARK_STYLE_FILTER`).
+ * REMOVED 2026-10-07: reading `townMark()` (INSTANCE.branding, the OLD LS player's record) and its drawn-arch branch —
+ * the splash drew Lafayette Square's arch for HPDM, and for LS itself, whose Ward mark is ⚜️.
  */
 import React from 'react'
-import { townMark } from '../lib/townMark.js'
-import RoleBadge from './RoleBadge'
+import { MARK_STYLE_FILTER } from '../lib/townIdentity.js'
 
 /**
  * ⭐ THE BADGE IS THE KIT'S EXISTING ONE, NOT A NEW MOTIF. `RoleBadge` already seats a mark
@@ -26,12 +25,8 @@ const GLASS = {
   borderRadius: '9999px',
 }
 
-export default function TownMarkGlyph({ size = 32, style, className = '', badge = false }) {
-  const mark = townMark()
-  if (mark.kind === 'svg') {
-    // Today the only authored SVG mark is LS's arch, which RoleBadge already draws.
-    return <RoleBadge role="visitor" size={Math.round(size / 4)} className={className} />
-  }
+/** @param {{ mark: {kind:'emoji'|'initial', value:string}, markStyle?: string, size?: number, badge?: boolean }} props */
+export default function TownMarkGlyph({ mark, markStyle, size = 32, style, className = '', badge = false }) {
   const glyph = (
     <span
       role="img"
@@ -48,6 +43,7 @@ export default function TownMarkGlyph({ size = 32, style, className = '', badge 
         // An initial is a placeholder and should read as one — no colour of its own.
         fontWeight: mark.kind === 'initial' ? 600 : 400,
         opacity: mark.kind === 'initial' ? 0.55 : 1,
+        filter: mark.kind === 'emoji' ? (MARK_STYLE_FILTER[markStyle] ?? 'none') : 'none',
       }}
     >
       {mark.value}

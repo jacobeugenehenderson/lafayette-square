@@ -22,6 +22,14 @@
  * ⭐ LS KEEPS ITS ARCH, and that is the override working rather than an exception: it
  * authors `markSvg: 'arch'`, so production is byte-identical. The arch is Lafayette
  * Square's mark; it was never the kit's.
+ *
+ * ⛔⛔ THIS IS THE OLD LS PLAYER'S READER ONLY (lafayette-square.com: App.jsx's favicon and title, RoleBadge's
+ * avatar). The town's ONE mark is its Look's `identity.mark` (+ `markStyle`), baked into scene.json — what the Ward
+ * reads (theward src/you/townMark.js, manifest.look.mark) and what <Town>'s splash reads (TownSplash, 2026-10-07: it
+ * read THIS, and drew Lafayette Square's arch for HPDM and for LS, whose Ward mark is ⚜️). ⛔ Never call it from
+ * the kit's renderer.
+ * ASPIRATION, tied to LS's cutover to the Ward: delete INSTANCE.branding.mark / markSvg / faviconUrl and this reader
+ * with the old player. Until then each instance's `mark` is a COPY of its Look's (▶ checks/claims-a-towns-identity-is-its-own.mjs).
  */
 import { titleOf } from './townRecord.js'
 import { INSTANCE } from '../instance.js'

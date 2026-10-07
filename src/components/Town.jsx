@@ -597,7 +597,7 @@ export default function Town({
   useEffect(() => { warmImpostorLoader(glForWarm) }, [glForWarm])   // the KTX2 transcoder ready before the first page
   const skyAt = useTownSky(lookId)
   const revealTiming = resolveGroupAtMinute(scene?.reveal, 0, null, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS)
-  const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} /></CanvasOverlay>
+  const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} identity={scene ? (scene.identity ?? null) : undefined} /></CanvasOverlay>
   const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
   if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} />{splash}</>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
