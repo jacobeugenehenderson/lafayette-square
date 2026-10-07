@@ -9,6 +9,8 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
 import { lookOf } from '../lib/lookOf.js'
+import { useTownContext } from './townContext.js'
+import useTownHover from './townHover.js'
 
 /**
  * NeonBands — the neon of every open place: TWO DRAWINGS of one sign, handed off by on-screen size
@@ -45,6 +47,9 @@ const OFFSET_OUT   = 0.5                       // meters past wall face — clea
 const CROSS_SEGS   = 8                         // facets around the circular cross-section
 const CORNER_SEGS  = 3                         // arc segs per convex corner
 const CORNER_MIN   = 15 * Math.PI / 180        // turns smaller than this collapse to one mitred point
+// ⭐ A click within this many device pixels of a sign's drawn edge picks it — pixel space, so the same reach at any
+// distance, on any town (a 5 px line is otherwise a 2.5 px target).
+export const PICK_SLOP_PX = 4
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
@@ -412,9 +417,10 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
     viewport.value.set(gl.domElement.width, gl.domElement.height)
   })
 
-  const { tubeGeometry, lineGeometry } = useMemo(() => {
+  const { tubeGeometry, lineGeometry, pick } = useMemo(() => {
     const positions = [], normals = [], uvs = [], colors = [], centroidYs = [], indices = []
     const la = [], lb = [], lt = [], lside = [], lcolors = [], lcentroidYs = [], lindices = []
+    const pick = { segs: [], ids: [] }   // per line segment: [ax, ay, az, bx, by, bz, centroidY] and its building id
     let baseVert = 0, lineBase = 0
     for (const p of places) {
       // ⛔⛔ THIS USED TO BE `if (!p.neon?.category) continue`, WHICH CONFLATED TWO
@@ -444,6 +450,10 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
       for (let i = 0; i < lcount; i++) { lt.push(L.t[i]); lside.push(L.side[i]); lcentroidYs.push(L.centroidYs[i]); lcolors.push(rgb[0], rgb[1], rgb[2]) }
       for (let i = 0; i < L.indices.length; i++) lindices.push(lineBase + L.indices[i])
       lineBase += lcount
+      for (let v = 0; v < lcount; v += 4) {   // four vertices per segment, each carrying both ends
+        pick.segs.push(L.a[v * 3], L.a[v * 3 + 1], L.a[v * 3 + 2], L.b[v * 3], L.b[v * 3 + 1], L.b[v * 3 + 2], L.centroidYs[v])
+        pick.ids.push(p.buildingId ?? null)
+      }
     }
     const g = new THREE.BufferGeometry()
     g.setAttribute('position',    new THREE.Float32BufferAttribute(positions, 3))
@@ -464,7 +474,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
     lg.setIndex(lindices)
     // Bounding spheres intentionally not computed: the vertex shaders lift every vertex by the terrain, so a CPU-fit
     // sphere lies below what is drawn and gets frustum-culled at close range. `frustumCulled={false}` on the meshes.
-    return { tubeGeometry: g, lineGeometry: lg }
+    return { tubeGeometry: g, lineGeometry: lg, pick }
   }, [places, r, neonColorKey])   // materialColors enters through its neon key (the colour lives in the geometry)
 
   // Match the renderer's ACTUAL depth encoding — define USE_LOGDEPTHBUF only when the renderer runs a log depth buffer
@@ -537,6 +547,54 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   mats.current.line.uniforms.uTubeR.value = r
 
   useEffect(() => () => { tubeGeometry.dispose(); lineGeometry.dispose() }, [tubeGeometry, lineGeometry])
+
+  // ── THE SIGN PICKS ITS BUILDING (BRIEF-neon-reads-at-every-distance §3.4). A click or hover on a sign resolves to the
+  // building it is on, exactly as a wall or roof does (SlabBuildings.jsx#idAtFace) — through <Town select> and the
+  // shared hover. The line is drawn in screen space, so it is picked in screen space too: a ray passing within the
+  // sign's on-screen half-width (+ PICK_SLOP_PX) of a stretch hits it, at that stretch's depth, so a nearer wall or
+  // tree still wins.
+  const townSelect = useTownContext().select
+  const setHovered = useTownHover((s) => s.setHovered)
+  const clearHovered = useTownHover((s) => s.clearHovered)
+  const lineRef = useRef(null)
+  const down = useRef([0, 0])
+  useEffect(() => {
+    const mesh = lineRef.current
+    if (!mesh) return
+    const v0 = new THREE.Vector3(), v1 = new THREE.Vector3(), onRay = new THREE.Vector3(), onSeg = new THREE.Vector3()
+    mesh.raycast = (raycaster, hits) => {
+      const cam = raycaster.camera
+      if (!cam?.isPerspectiveCamera || !pick.ids.length) return
+      const exag = TERRAIN_UNIFORMS.uExag.value
+      const halfLinePx = _neonUniforms.linePxUniform.value / 2
+      // metres per drawing-buffer pixel at unit depth (linePx and the slop are drawing-buffer px)
+      const mPerPxAt1 = 2 * Math.tan((cam.fov * Math.PI / 180) / 2) / Math.max(1, viewport.value.y)
+      for (let i = 0; i < pick.ids.length; i++) {
+        const k = i * 7, lift = pick.segs[k + 6] * exag
+        v0.set(pick.segs[k], pick.segs[k + 1] + lift, pick.segs[k + 2])
+        v1.set(pick.segs[k + 3], pick.segs[k + 4] + lift, pick.segs[k + 5])
+        const d2 = raycaster.ray.distanceSqToSegment(v0, v1, onRay, onSeg)
+        const t = onRay.distanceTo(raycaster.ray.origin)
+        // the drawn sign's half-width at that depth — the line's, or the real tube's once it is the larger — plus the slop
+        const reach = Math.max(halfLinePx * mPerPxAt1 * t, r) + PICK_SLOP_PX * mPerPxAt1 * t
+        if (d2 <= reach * reach && t >= raycaster.near && t <= raycaster.far) {
+          hits.push({ distance: t, point: onSeg.clone(), object: mesh, buildingId: pick.ids[i] })
+        }
+      }
+    }
+  }, [pick, r, viewport])
+  const pickHandlers = townSelect ? {
+    onPointerDown: (e) => { down.current = [e.clientX, e.clientY] },
+    onPointerMove: (e) => { if (!e.buildingId) return; e.stopPropagation(); setHovered(e.buildingId); document.body.style.cursor = 'pointer' },
+    onPointerOut: () => { clearHovered(); document.body.style.cursor = 'auto' },
+    onClick: (e) => {
+      if (!e.buildingId) return
+      e.stopPropagation()
+      const dx = e.clientX - down.current[0], dy = e.clientY - down.current[1]
+      if (dx * dx + dy * dy > 36) return   // a drag, not a click (SlabBuildings.jsx#isDrag)
+      townSelect(e.buildingId)
+    },
+  } : {}
   useEffect(() => () => { mats.current?.tube.dispose(); mats.current?.line.dispose() }, [])
 
   // renderOrder above every baked-ground transparent group (bake max is ~42, plus StreetLights pool at 50). Neon is
@@ -545,7 +603,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   return (
     <>
       <mesh geometry={tubeGeometry} material={mats.current.tube} renderOrder={100} frustumCulled={false} />
-      <mesh geometry={lineGeometry} material={mats.current.line} renderOrder={101} frustumCulled={false} />
+      <mesh ref={lineRef} geometry={lineGeometry} material={mats.current.line} renderOrder={101} frustumCulled={false} {...pickHandlers} />
     </>
   )
 }

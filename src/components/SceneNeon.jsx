@@ -117,7 +117,7 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, litIds
   }, [darkKey])   // eslint-disable-line react-hooks/exhaustive-deps
 
   // NeonBands draws open stretches: the wall points, the outward side from the building's footprint, the eave.
-  const openPlaces = useMemo(() => stretches.map((s) => ({ pts: s.pts, footprint: s.footprint, baseY: s.y, groundYRaw: s.groundYRaw, neon: { category: s.category } })), [stretches])
+  const openPlaces = useMemo(() => stretches.map((s) => ({ pts: s.pts, footprint: s.footprint, baseY: s.y, groundYRaw: s.groundYRaw, buildingId: s.buildingId, neon: { category: s.category } })), [stretches])
 
   // Cold-load reconcile flush — the same frameloop="demand" issue that hid the
   // trees (see InstancedTrees ParkPopulation). On a cold load the neon mesh and
