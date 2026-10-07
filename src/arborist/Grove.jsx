@@ -42,6 +42,7 @@ import { computeDominantTrunk } from './SpecimenViewport.jsx'
 import { slabUrl, slabFetch, suspendSlabUrl } from '../lib/slabUrl.js'
 import WindSheet from '../components/WindSheet.jsx'
 import { QualityProvider, authoringQuality } from '../lib/qualityProfile.js'
+import { lodsOf } from '../lib/treeGeometry.js'
 
 const EMPTY = Object.freeze([])   // one identity for "nothing loaded yet" — see rosterSpecies
 
@@ -108,7 +109,7 @@ export default function Grove() {
         // atlas-rewritten GLB; the other 12 the slab places are loaded by the runtime
         // straight from /trees/<species>/, and that file is what must be captured — a
         // pool that can only name baked GLBs can never reach them.
-        out.push({ species: i.species, variantId: i.variantId, runtimeUrl: i.lods?.lod1 || i.url || null })
+        out.push({ species: i.species, variantId: i.variantId, runtimeUrl: lodsOf(j, i)?.lod1 || i.url || null })
       }
       setSlabSpecies(out)
     } catch (err) {

@@ -449,47 +449,32 @@ Produced by `arborist/bake-trees.js` → `public/baked/<scene>/trees.json`. **On
 >
 > 🗄️ **Retired 2026-07-15 — `default.json`.** LS's placements used to ship as `public/baked/default.json`, and this section used to call them "cross-look." They never were. The file was LS's census named after `public/looks/index.json`'s opening `"default": "lafayette-square"` pointer — its mother map under a fossil name — and "cross-look" was that fossil rationalized after the fact. It was invisible only because every Look's `scene` equals its `id` today (history, not a constraint). The fossil is what let the Grove's Bake→Slab write to a phantom for months. Full trail: `HANDOFF-grove-neighborhood-axis.md`.
 
+**FORMAT 2** (2026-10-07; `arborist/treesFormat.mjs` packs it, `src/lib/treeGeometry.js#lodsOf` reads it). A reader tells
+the formats apart by `format` (absent = 1), never by a missing field; a kit that reads only format 1 must never be served
+format 2 (the kit ships first, then the re-baked slab). Format 1 (pretty-printed, a `tiles.instancesByTile` copy of every
+placement, `lods` on every placement) is in `cartograph/_archive/SLAB-CONTRACT-trees-format1-2026-10-07.md`.
+
 ```jsonc
-{
-  "generatedAt": 1778618272484,
-  "scene": "lafayette-square",
-  "lod": "lod2",
-  "activeStyles": ["realistic"],
-  "count": 745,
-  "unmatched": 0,
-  "uniqueVariants": 25,
-  "tiles": {
-    "cols": 4, "rows": 4,
-    "minX": -203.2, "minZ": -200.4,
-    "tileW": 102.85, "tileD": 101.25,
-    "instancesByTile": [
-      {
-        "tileX": 0, "tileZ": 0,
-        "instances": [
-          {
-            "x": -116.5, "y": 0, "z": -184.6,
-            "url": "/trees/magnolia_sp/skeleton-2-lod2.glb",
-            "rotY": -0.5479,
-            "species": "magnolia_sp",
-            "variantId": 2,
-            "category": "broadleaf",
-            "lampGlow": 1.4777
-          },
-          …
-        ]
-      }
-    ]
-  }
+{                                                   // written minified
+  "format": 2,
+  "generatedAt": 1778618272484, "scene": "huron", "lod": "lod2", "activeStyles": ["realistic"],
+  "meshTierStamped": true, "count": 19102, "unmatched": 0, "uniqueVariants": 8, "heroTierMeta": { … },
+  "variants": { "blackgum:1": { "lods": { "lod0": "/trees/blackgum/skeleton-1-lod0.glb", "lod1": "…", "lod2": "…", "lod1far": "…" } } },
+  "instances": [
+    { "x": -116.5, "y": 0, "z": -184.6, "url": "/trees/blackgum/skeleton-1-lod2.glb", "rotY": -0.5479, "species": "blackgum",
+      "variantId": 1, "category": "broadleaf", "scale": 1.12, "lampGlow": 1.4777, "heroTier": "mesh", "meshTier": false }
+  ]
 }
 ```
 
 | Field | Meaning |
 |---|---|
-| `count` | Total instance count across all tiles |
-| `unmatched` | Instances whose species couldn't match a roster entry (should be 0 in production) |
+| `format` | `2`. Absent = format 1. An unknown format throws in the reader |
+| `count` | Total placement count |
+| `unmatched` | Placements whose species couldn't match a roster entry (should be 0 in production) |
 | `uniqueVariants` | Number of distinct GLB skeletons referenced |
-| `tiles` | Spatial bin index — consumers can frustum-cull at the tile level |
-| `instances[].url` | Path to a GLB at `/trees/<species>/skeleton-N-lod2.glb`, served from `public/trees/` |
+| `variants["<species>:<variantId>"].lods` | The variant's LOD urls (`lod0` / `lod1` / `lod2` / `lod1far`), once per variant |
+| `instances[].url` | The variant's default-shipped LOD (`/trees/<species>/skeleton-N-lod2.glb`) |
 | `instances[].lampGlow` | Per-tree multiplier evaluated by `bake-trees.js` against `street_lamps.json` (gaussian falloff); drives the warm-glow blend |
 | `instances[].rotY` | Y-axis rotation in radians |
 

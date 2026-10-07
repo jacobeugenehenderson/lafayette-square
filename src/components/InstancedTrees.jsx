@@ -19,7 +19,7 @@ import { useGLTF } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { drawsThroughAtlas } from '../lib/treeGeometry.js'
+import { drawsThroughAtlas, lodsOf } from '../lib/treeGeometry.js'
 import {
   useTreeManifest,
   useTreeMaterials,
@@ -725,7 +725,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
       seenRosterKeys.add(key)
       const cat = inst.category || 'broadleaf'
       if (!byCategory.has(cat)) byCategory.set(cat, [])
-      byCategory.get(cat).push({ key, species: inst.species, variantId: inst.variantId, url: inst.url, lods: inst.lods })
+      byCategory.get(cat).push({ key, species: inst.species, variantId: inst.variantId, url: inst.url, lods: lodsOf(bake, inst) })
     }
     // Flat fallback pool used when no same-category roster entry exists.
     const flatPool = []
@@ -755,13 +755,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     // EXCISED 2026-06-27 (see line ~356) — so today it is pure cost, zero
     // benefit. Collapsing to ONE bucket per url merges each GLB's geometry
     // EXACTLY ONCE and instances it across all its placements: visually
-    // identical, FEWER draws, ~400–650 MB reclaimed. `tileMeta` is retained
-    // only for the diagnostic log below.
+    // identical, FEWER draws, ~400–650 MB reclaimed. The bake no longer writes its tiles (trees.json format 2).
     // ⚠️ If a real per-tile visibility cull is ever wanted, it must be a MANUAL
     // world-space `.visible` pass with generous STATIC AABBs — NOT a return to
     // this clone-per-tile split (which costs resident memory, not just draws).
     // [[tree-building-frustum-culling]]
-    const tileMeta = bake.tiles
     const tileOf = () => 0
 
     // Geometry by BAKED ROLE (heroTier: mesh|impostor|cull from
@@ -793,7 +791,8 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
       console.warn(`[InstancedTrees] ?meshLod=${meshLodParam} is not a value I know (1 | far). Using lod1.`)
       return 'lod1'
     }
-    const lodUrlOf = (o) => (o && o.lods && o.lods[lodForRole()]) || (o && o.url)
+    // A placement's LODs by the census's format (treeGeometry.js#lodsOf); a substitute (`sub`) already carries its own.
+    const lodUrlOf = (o) => { const l = o && (o.lods !== undefined ? o.lods : lodsOf(bake, o)); return (l && l[lodForRole()]) || (o && o.url) }
 
     const m = new Map()  // lookUrl -> Map<tileId, instances[]>  (mesh role)
     const impostors = new Map()  // species -> instances[]  (impostor role)
@@ -944,7 +943,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
         `reproduce them). ⛔ Never widen the cull — it is retired, not a density lever.`
       )
     }
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp) mesh=${meshSpecified}specified+${meshNoRecord}leaked impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp) mesh=${meshSpecified}specified+${meshNoRecord}leaked impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp`)
     return { meshGroups: m, impostors, bySpecies, heroImpostors }
   }, [bake, maxVariants, atlas, lookName, impostorRecords, heroImpostorRecords, heroFoundationEnabled])
 
