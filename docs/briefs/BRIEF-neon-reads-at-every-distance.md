@@ -7,6 +7,18 @@ already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/
 **Instruction: confirm-then-build.** Read the canon and code below and tell Boz what you found. If the code
 contradicts this brief, **stop and flag**. **Town: Huron**, along its Hero camera move. Then Lafayette Square.
 
+> ### ✅ STATE (2026-10-06, Argon) — DONE, two things open
+> - **Two drawings, own colour** — `585df69b`. ▶ `node checks/claims-neon-two-drawings.mjs`
+> - **Neon per place** — `9f6eb3a9` (slab `neon` faces + frontage; `src/lib/neonPlaces.js`; `src/lib/addressKey.js`).
+>   ▶ `node checks/claims-neon-per-place.mjs --town=<id>`
+> - **The sign selects its building** — `24068d5e`. ▶ `node checks/claims-neon-picks-its-building.mjs`
+> - **The whole building selects** — the premise was wrong (the in-shader whole-mass tint already existed); Jacob ruled
+>   the defect was the **clickable surface**, not the highlight: the raycast tested un-lifted geometry. Fixed by one lift
+>   definition read by the shader and a pick copy — `ee21bedc` (`src/lib/buildingLift.js`); BVH `9e8571b8`.
+>   ▶ `node checks/claims-a-click-hits-what-is-drawn.mjs`. Highlight and ring stay as they are (Jacob).
+> - ⏳ **OPEN:** the Ward confirmation after the next Publish (Boz schedules) · every other town's **dark neon** until
+>   its buildings re-bake (the tranche; `node cartograph/bake-buildings.js --scene=<id> --look=<id>`).
+
 ---
 
 ## 0. What this is (Jacob, 2026-10-06)
@@ -50,11 +62,11 @@ part of the selectable surface."*
 
 | what | where |
 |---|---|
-| the tube: geometry, the 2.5 px floor that inflates it (`MIN_SCREEN_PX`, `uMinPx`/`uMaxPx`), `DEFAULT_TUBE_RADIUS` | `src/components/NeonBands.jsx` |
-| which places are lit, and their building | `src/components/SceneNeon.jsx`, `src/lib/openNow.js` |
-| the neon channel (core · tube · bleed · emissive · tubeRadius · screenFloor · screenCeil) | `src/cartograph/skyLightChannels.js` (`NEON_FIELD_KEYS`), `src/preview/neonState.js` |
-| the building index + pick + highlight | `src/components/SlabBuildings.jsx` (`idAtFace`, `SlabSelectionRing`), `src/hooks/useSlabBuildingIndex` |
-| the buildings bake (where per-place points would be written) | `cartograph/bake-buildings.js` |
+| the tube + line, the hand-off (`HANDOFF_BAND`), the sign's pick (`PICK_SLOP_PX`) | `src/components/NeonBands.jsx` |
+| which places are lit, and on which stretch | `src/components/SceneNeon.jsx`, `src/lib/neonPlaces.js`, `src/lib/openNow.js` |
+| the neon channel (core · tube · bleed · emissive · tubeCm · linePx · handoffPx · lineGain) | `src/cartograph/skyLightChannels.js` (`NEON_FIELD_KEYS`), `src/preview/neonState.js` |
+| the building index + pick + highlight; the lift the pick reads | `src/components/SlabBuildings.jsx` (`idAtFace`, the pick copy, `SlabSelectionRing`), `src/lib/buildingLift.js` |
+| the per-place stretches the bake writes | `cartograph/bake-buildings.js` → `cartograph/neon-faces.mjs` |
 
 ## 3. Sequence (each landing alone, measured, eye-gated)
 
