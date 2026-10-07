@@ -4649,8 +4649,8 @@ export function classifyCornerLegs(a, b) {
 // ⭐ Only a corner a street MEETS gets one (`iaJunction`); a bend keeps its pad and gets none; an UNKNOWN corner
 // gets none and is counted as unknown, never as a bend.
 // ⭐ The style, finest first: the operator on either LEG's slot (`curbCuts.end` on the leg arriving, `curbCuts.start` on
-// the leg leaving, in contour order) — authored wins; two authored legs that disagree are COUNTED and the longer
-// leg wins, the frontage rule — then the RECORDED cuts landed on the arc (`st.curbCutEvidence`, `styleFromEvidence`;
+// the leg leaving, in contour order) — authored wins; two authored legs that DISAGREE draw what the corner draws
+// unauthored and are counted (Jacob, 2026-10-06) — then the RECORDED cuts landed on the arc (`st.curbCutEvidence`, `styleFromEvidence`;
 // unreadable is counted and falls through) — then the town's frozen norm (`st.curbCutNorm`, `cartograph/curb-cut-norm.mjs`). The
 // dimensions are always the norm's: an authored style on a town whose norm gives none cannot be drawn, and is
 // counted (`noDims`), never filled in with a kit constant.
@@ -4821,7 +4821,7 @@ export function styleFromEvidence(landings) {
 const CURB_CUT_STYLE_SET = new Set(['none', 'diagonal', 'perpendicular'])
 function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, insAt, band, walk) {
   const tally = { junction: 0, bend: 0, unknown: 0, curbCuts: 0, unreadable: 0, contradicted: 0, noSource: 0, noNorm: 0, noDims: 0, invalid: 0, conflict: 0, short: 0, bySource: {} }
-  const recs = [], masks = [], contradicted = []
+  const recs = [], masks = [], contradicted = [], conflicts = [], corners = []
   const norm = st.curbCutNorm || null
   let maxD = 0
   for (const p of parts) {
@@ -4829,9 +4829,6 @@ function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, c
     if (!st.iaArc?.[p.si]) continue
     const isC = (i) => inC.has(`${p.ri}|${i}`)
     const eL = (i) => { const a = ring[i], b = ring[(i + 1) % n]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
-    // a leg's length: the contiguous edges carrying one stamp, walked away from the corner
-    const legLen = (e, dir) => { const r = stp[e]; if (r == null) return 0; let L = 0
-      for (let k = 0, i = e; k < n && stp[i] === r && !isC(i); k++, i = (i + dir + n) % n) L += eL(i); return L }
     for (let q = 0; q < n; q++) {
       if (!isC(q) || isC((q - 1 + n) % n)) continue                 // q starts an arc span
       let e = q; for (let k = 0; k < n && isC((e + 1) % n); k++) e = (e + 1) % n
@@ -4840,32 +4837,43 @@ function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, c
       if (!Number.isInteger(j)) { tally.unknown++; continue }
       tally.junction++
       const before = (q - 1 + n) % n, after = (e + 1) % n
-      const ov = (edge, end) => { const r = stp[edge]; if (r == null) return undefined
-        const R = runs[r]; return blockCustoms?.[R.skelId]?.[R.side]?.[R.segOrd]?.curbCuts?.[end] }
-      const a = ov(before, 'end'), b = ov(after, 'start')
-      let style, source
-      if (a != null || b != null) {
-        if (a != null && b != null && a !== b) { tally.conflict++; style = legLen(before, -1) >= legLen(after, 1) ? a : b }
-        else style = a ?? b
-        source = 'authored'
-      } else {
-        // the recorded cuts landed on THIS arc at the freeze (`landCurbCutEvidence`); unreadable ⇒ counted, to the norm
-        const ev = (st.curbCutEvidence || []).filter(x => x.si === p.si && x.arc === st.iaArc[p.si][q])
+      const arcId = st.iaArc[p.si][q], mid = ring[(q + Math.floor(((e - q + n) % n + 1) / 2)) % n]
+      // the two legs' slots, read off the frozen stamp: the arriving run's `curbCuts.end`, the leaving run's `.start`
+      const slot = (edge, end) => { const r = stp[edge]; if (r == null) return null
+        const R = runs[r]; return { skelId: R.skelId, side: R.side, segOrd: R.segOrd, end } }
+      const slots = [slot(before, 'end'), slot(after, 'start')]
+      const ov = (s2) => s2 ? blockCustoms?.[s2.skelId]?.[s2.side]?.[s2.segOrd]?.curbCuts?.[s2.end] : undefined
+      const a = ov(slots[0]), b = ov(slots[1])
+      // ⭐ WHAT THE CORNER DRAWS UNAUTHORED — the recorded cuts landed on THIS arc at the freeze (`landCurbCutEvidence`),
+      // else the town's norm; unreadable evidence falls to the norm. No side effects: the corner record shows it either way.
+      const unauthored = (() => {
+        const ev = (st.curbCutEvidence || []).filter(x => x.si === p.si && x.arc === arcId)
         const es = ev.length ? styleFromEvidence(ev) : null
+        let contra = null
         if (es === 'unreadable') {
-          tally.unreadable++
-          // ⭐ PARTIAL EVIDENCE THAT CONTRADICTS THE NORM (Boz, 2026-10-06): its own bucket, its corners printed — the norm
-          // is drawn all the same. A signal for the operator to override, never a licence to guess.
-          const drops = ev.filter(x => KERB_DROP.has(x.kind)), mid = drops.some(x => x.f >= 1 / 3 && x.f <= 2 / 3), end = drops.some(x => x.f < 1 / 3 || x.f > 2 / 3)
+          // ⭐ PARTIAL EVIDENCE THAT CONTRADICTS THE NORM (Boz, 2026-10-06): its own bucket, its corners printed — the
+          // norm is drawn all the same. A signal for the operator to override, never a licence to guess.
+          const drops = ev.filter(x => KERB_DROP.has(x.kind)), mi = drops.some(x => x.f >= 1 / 3 && x.f <= 2 / 3), en = drops.some(x => x.f < 1 / 3 || x.f > 2 / 3)
           const ns = norm?.style
-          if ((ns === 'diagonal' && end) || (ns === 'perpendicular' && mid && !end) || (ns === 'none' && drops.length)) {
-            tally.contradicted++
-            contradicted.push({ si: p.si, arc: st.iaArc[p.si][q], at: ring[(q + Math.floor(((e - q + n) % n + 1) / 2)) % n], norm: ns, drops: drops.map(x => Math.round(x.f * 100) / 100) })
-          }
+          if ((ns === 'diagonal' && en) || (ns === 'perpendicular' && mi && !en) || (ns === 'none' && drops.length)) contra = { norm: ns, drops: drops.map(x => Math.round(x.f * 100) / 100) }
         }
-        if (es && es !== 'unreadable') { style = es; source = ev[0].source }
-        else if (norm) { style = norm.style; source = norm.source }
-        else { tally.noNorm++; continue }
+        if (es && es !== 'unreadable') return { style: es, source: ev[0].source, unreadable: false, contra }
+        if (norm) return { style: norm.style, source: norm.source, unreadable: es === 'unreadable', contra }
+        return null
+      })()
+      // ⛔ RULED (Jacob, 2026-10-06): two legs authored DIFFERENTLY draw what the corner draws unauthored, and the
+      // conflict is counted and listed — never resolved by picking a leg (the "longer leg wins" rule is gone).
+      const conflict = a != null && b != null && a !== b
+      corners.push({ si: p.si, arc: arcId, junction: j, at: mid, slots, authored: conflict ? null : (a ?? b ?? null),
+                     conflict, unauthored: unauthored && { style: unauthored.style, source: unauthored.source }, contradicted: unauthored?.contra ?? null })
+      let style, source
+      if (conflict) { tally.conflict++; conflicts.push({ si: p.si, arc: arcId, at: mid, legs: [a, b] }) }
+      if (!conflict && (a != null || b != null)) { style = a ?? b; source = 'authored' }
+      else {
+        if (!unauthored) { tally.noNorm++; continue }
+        if (unauthored.unreadable) tally.unreadable++
+        if (unauthored.contra) { tally.contradicted++; contradicted.push({ si: p.si, arc: arcId, at: mid, ...unauthored.contra }) }
+        style = unauthored.style; source = unauthored.source
       }
       tally.bySource[source] = (tally.bySource[source] || 0) + 1
       if (!CURB_CUT_STYLE_SET.has(style)) { tally.invalid++; continue }
@@ -4914,11 +4922,11 @@ function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, c
       }
     }
   }
-  if (!masks.length) return { strips: [], recs, tally, contradicted }
+  if (!masks.length) return { strips: [], recs, tally, contradicted, conflicts, corners }
   // ⚠️ ONE depth for the tile's strips: the norm is the town's, so every curb cut on it shares `warningDepth`.
   const slab = band(insAt(cw), insAt(cw + maxD))
   const strips = slab.length ? intersectRings(intersectRings(slab, unionRings(masks)), walk) : []
-  return { strips, recs, tally, contradicted }
+  return { strips, recs, tally, contradicted, conflicts, corners }
 }
 
 export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
@@ -5565,7 +5573,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   const Wp = env.length && W.length ? intersectRings(W, env) : []
   const R = curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, insAt, band, Wp)
   return {
-    curbCut: inBlock(R.strips), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted,
+    curbCut: inBlock(R.strips), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutConflicts: R.conflicts, curbCutCorners: R.corners,
     Wacc:   inBlock(Wp),
     tlByLu: rekeyByPiece(st, { [key]: inBlock(Wp.length ? differenceRings(env, Wp) : env) }),
     luByLu: rekeyByPiece(st, { [key]: inBlock(luIn) }),
@@ -5821,6 +5829,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       key,
       W: r.Wacc, tlByLu: r.tlByLu, luByLu: r.luByLu,
       R: r.curbCut || [], curbCutRecs: r.curbCutRecs || [], curbCutTally: r.curbCutTally || null, curbCutContradicted: r.curbCutContradicted || [],
+      curbCutConflicts: r.curbCutConflicts || [], curbCutCorners: r.curbCutCorners || [],
       A: differenceRings([st.ring], iA),                                       // asphalt = tile − rounded inner
       // ⭐ THE CURB IS PART OF THE SAME LADDER when the stamp inquiry built it: `iA − ins(cw)`,
       // a per-point VARIABLE offset. The concentric fallback below is the walk painter's, and it
@@ -5838,7 +5847,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   // bit-identical). The per-tile bundles are shared (cache), so this only forks
   // the cheap final unions.
   const mkAcc = () => ({ A: [], C: [], W: [], R: [], block: [], tl: {}, lu: {} })
-  const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = []
+  const curbCutRecs = [], curbCutTally = {}, curbCutContradicted = [], curbCutConflicts = [], curbCutCorners = []
   const rest = mkAcc()
   const sel = (selectedTileSet && selectedTileSet.size) ? mkAcc() : null
   for (let i = 0; i < shapeTiles.length; i++) {
@@ -5848,6 +5857,8 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     if (b.R) acc.R.push(...b.R)
     for (const rr of (b.curbCutRecs || [])) curbCutRecs.push({ tile: i, ...rr })
     for (const c of (b.curbCutContradicted || [])) curbCutContradicted.push({ tile: i, ...c })
+    for (const c of (b.curbCutConflicts || [])) curbCutConflicts.push({ tile: i, ...c })
+    for (const c of (b.curbCutCorners || [])) curbCutCorners.push({ tile: i, ...c })
     for (const [k, v] of Object.entries(b.curbCutTally || {})) {
       if (k === 'bySource') { const o = (curbCutTally.bySource ||= {}); for (const [s2, m] of Object.entries(v)) o[s2] = (o[s2] || 0) + m }
       else curbCutTally[k] = (curbCutTally[k] || 0) + v
@@ -5872,6 +5883,7 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const out = finish(rest)
   out.selected = sel ? finish(sel) : null
   out.curbCutRecs = curbCutRecs; out.curbCutTally = curbCutTally; out.curbCutContradicted = curbCutContradicted
+  out.curbCutConflicts = curbCutConflicts; out.curbCutCorners = curbCutCorners   // every junction corner, authorable in Section
   // ⭐ CROSSWALKS are cross-tile — a pair's two curb cuts sit on two blocks — so they are drawn here, over every tile's curb cuts.
   const cutNorm = shapeTiles.find(t => t?.curbCutNorm)?.curbCutNorm ?? null
   const walk = [...out.sidewalk, ...(out.selected?.sidewalk || [])]
@@ -9740,7 +9752,7 @@ export function buildTileGround(ribbons, opts = {}) {
   let curb    = unionRings(Cacc)
   let sidewalk = unionRings(Wacc)
   // ⭐ the curb cuts' warning strips + their positions — painted by Section on junction corners (`curbCutsOnJunctionCorners`)
-  let curbCut = [], curbCutRecs = [], curbCutTally = null, curbCutContradicted = [], curbCutRamps = []
+  let curbCut = [], curbCutRecs = [], curbCutTally = null, curbCutContradicted = [], curbCutConflicts = [], curbCutCorners = [], curbCutRamps = []
   let crosswalk = [], crosswalkPairs = [], crosswalkTally = null   // square across the street, kerb to kerb (`crosswalksSquareAcross`)
   if (stencil) {
     const tileUnion = unionRings(tiles.map(t => t.ring))
@@ -9910,7 +9922,7 @@ export function buildTileGround(ribbons, opts = {}) {
     } else console.warn(`[tileGround][①⇢LIVE] ⛔ ② produced NO corner arcs — the corner handles would ride the LEGACY fillets, which are not on screen. Not swapping; the dial is untrustworthy in this pour.`)
     const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms)
     asphalt = S.asphalt; curb = S.curb; sidewalk = S.sidewalk; block = S.block
-    curbCut = S.curbCut || []; curbCutRecs = S.curbCutRecs || []; curbCutTally = S.curbCutTally || null; curbCutContradicted = S.curbCutContradicted || []; curbCutRamps = S.curbCutRamps || []
+    curbCut = S.curbCut || []; curbCutRecs = S.curbCutRecs || []; curbCutTally = S.curbCutTally || null; curbCutContradicted = S.curbCutContradicted || []; curbCutConflicts = S.curbCutConflicts || []; curbCutCorners = S.curbCutCorners || []; curbCutRamps = S.curbCutRamps || []
     crosswalk = S.crosswalk || []; crosswalkPairs = S.crosswalkPairs || []; crosswalkTally = S.crosswalkTally || null
     if (crosswalkTally && crosswalkTally.style && crosswalkTally.style !== 'none') {
       const C = crosswalkTally
@@ -9935,7 +9947,7 @@ export function buildTileGround(ribbons, opts = {}) {
       if (T.noNorm) console.warn(`[tileGround][curb cuts] ⛔ ${T.noNorm} junction corner(s) on tiles poured BEFORE the curb-cut norm was frozen — re-pour.`)
       if (T.noDims) console.warn(`[tileGround][curb cuts] ⛔ ${T.noDims} authored curb cut(s) cannot be drawn: the town's norm gives no width/warningDepth (cartograph/data/<scene>/norms.json).`)
       if (T.invalid) console.warn(`[tileGround][curb cuts] ⛔ ${T.invalid} authored curb-cut style(s) are not none/diagonal/perpendicular.`)
-      if (T.conflict) console.warn(`[tileGround][curb cuts] ${T.conflict} corner(s) authored differently on their two legs — the longer leg's style is drawn.`)
+      if (T.conflict) console.warn(`[tileGround][curb cuts] ⛔ ${T.conflict} corner(s) authored DIFFERENTLY on their two legs — drawn as unauthored, never picked: ${curbCutConflicts.slice(0, 12).map(c => `(${c.at[0].toFixed(0)}, ${c.at[1].toFixed(0)}) ${c.legs.join('/')}`).join(' · ')}${curbCutConflicts.length > 12 ? ` … +${curbCutConflicts.length - 12}` : ''}`)
       if (T.short) console.warn(`[tileGround][curb cuts] ${T.short} curb cut(s) wider than the arc room they have — drawn at the room there is.`)
       if (T.contradicted) console.warn(`[tileGround][curb cuts] ⛔ ${T.contradicted} corner(s): the NORM IS CONTRADICTED BY PARTIAL EVIDENCE — drawn by the norm; override them in Section if the record is right: ${curbCutContradicted.slice(0, 12).map(c => `(${c.at[0].toFixed(0)}, ${c.at[1].toFixed(0)}) norm ${c.norm}, drops at ${c.drops.join('/')}`).join(' · ')}${curbCutContradicted.length > 12 ? ` … +${curbCutContradicted.length - 12}` : ''}`)
       if (T.unreadable) console.warn(`[tileGround][curb cuts] ${T.unreadable} corner(s) whose recorded cuts are UNREADABLE (one end only, middle and end, or an unlisted kerb kind) — counted, and drawn by the norm.`)
@@ -9973,7 +9985,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, curbCut, curbCutRecs, curbCutTally, curbCutContradicted, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, hwyDisclosure, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoDepthByBlock, protoShapeTiles, protoJunctionCensus, curbCut, curbCutRecs, curbCutTally, curbCutContradicted, curbCutConflicts, curbCutCorners, curbCutRamps, crosswalk, crosswalkPairs, crosswalkTally, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

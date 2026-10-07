@@ -119,6 +119,48 @@ function SideBlock({ sideKey, side, onChange, single }) {
   )
 }
 
+// ⭐ ONE CORNER'S CURB CUT (`BRIEF-corner-ramps-and-kerb §3` step 4; Jacob, 2026-10-06: a popover). Opened by a marker
+// click in MeasureOverlay; the record is the painter's own (`curbCutCorners`). Choosing writes BOTH legs at once
+// (`setCornerCurbCut`); "Town default" clears them back to what the corner draws unauthored.
+const SOURCE_LABEL = (src) => src === 'osm:kerb' ? 'recorded kerbs (OSM)' : src === 'scene' ? "the town's norm"
+  : src?.startsWith('state:') ? "the state's norm" : src === 'kit' ? 'the kit (none)' : (src || '—')
+function CurbCornerPopover() {
+  const sel = useCartographStore(s => s.selectedCurbCorner)
+  const corners = useCartographStore(s => s.curbCutCorners)
+  const setCornerCurbCut = useCartographStore(s => s.setCornerCurbCut)
+  const selectCurbCorner = useCartographStore(s => s.selectCurbCorner)
+  if (!sel) return null
+  const c = corners.find(x => x.tile === sel.tile && x.si === sel.si && x.arc === sel.arc)
+  if (!c) return (
+    <div className="carto-section">
+      <h2 className="carto-measure-header"><span>Curb cut</span><button className="carto-btn-sm" onClick={() => selectCurbCorner(null)}>✕</button></h2>
+      <div className="carto-meta">⛔ This corner is no longer in the painted map (the shape was re-poured). Pick it again.</div>
+    </div>)
+  const def = c.unauthored
+  const current = c.authored ?? null
+  const opt = (label, style, title) => (
+    <button key={label} className={`carto-btn-sm${current === style ? ' active' : ''}`} title={title}
+      onClick={() => setCornerCurbCut(c, style)}>{label}</button>)
+  return (
+    <div className="carto-section">
+      <h2 className="carto-measure-header"><span>Curb cut — this corner</span>
+        <button className="carto-btn-sm" title="Close" onClick={() => selectCurbCorner(null)}>✕</button></h2>
+      <div className="carto-actions">
+        {opt(`Town default — ${def ? def.style : 'no norm frozen'}${def ? `, from ${SOURCE_LABEL(def.source)}` : ''}`, null,
+          'Clear this corner on both legs: it draws what it would unauthored')}
+        {opt('Diagonal', 'diagonal', 'One cut at the apex')}
+        {opt('Perpendicular', 'perpendicular', 'Two cuts, one facing each crossing')}
+        {opt('None', 'none', 'No cut at this corner (the pad is unchanged)')}
+      </div>
+      {c.conflict && <div className="carto-meta">⚠️ Its two legs were authored differently, so it draws the town default.
+        Choose one here to write both legs.</div>}
+      {c.contradicted && <div className="carto-meta">⚠️ Recorded kerbs here contradict the town's norm ({c.contradicted.norm}):
+        drops at {c.contradicted.drops.join(', ')} of the arc. Override if the record is right.</div>}
+      <div className="carto-meta">⌃-click the marker to clear it.</div>
+    </div>
+  )
+}
+
 export default function MeasurePanel() {
   const selectedStreet     = useCartographStore(s => s.selectedStreet)
   const selectedOrdinal    = useCartographStore(s => s.selectedSegmentOrdinal)
@@ -132,9 +174,12 @@ export default function MeasurePanel() {
 
   if (selectedStreet === null) {
     return (
-      <div className="carto-section">
-        <h2>Cross-Section</h2>
-      </div>
+      <>
+        <CurbCornerPopover />
+        <div className="carto-section">
+          <h2>Cross-Section</h2>
+        </div>
+      </>
     )
   }
 
@@ -183,6 +228,8 @@ export default function MeasurePanel() {
   }
 
   return (
+    <>
+    <CurbCornerPopover />
     <div className="carto-section">
       <h2 className="carto-measure-header">
         <span>{st.name || 'Unnamed'}</span>
@@ -223,13 +270,14 @@ export default function MeasurePanel() {
         <button className="carto-btn-sm"
           disabled={(sectionOverrideCount?.() || 0) === 0}
           onClick={() => {
-            if (confirm('Revert ALL Section ped (treelawn/sidewalk depths + materials) to Default? The calculation re-seeds (gleaned treelawn + ADA). Survey widths + corners are kept.')) revertSectionToDefault()
+            if (confirm('Revert ALL Section edits (treelawn/sidewalk depths, materials, cap flips, curb cuts) to Default? The calculation re-seeds (gleaned treelawn + ADA; each corner its town default). Survey widths + corners are kept.')) revertSectionToDefault()
           }}
-          title="Clear every authored Section ped depth + material → the calculated default (gleaned treelawn + ADA). Survey widths + corners are kept.">
+          title="Clear every authored Section edit (ped depths, materials, cap flips, curb cuts) → the calculated default. Survey widths + corners are kept.">
           ↺ Revert to Default
         </button>
       </div>
     </div>
+    </>
   )
 }
 

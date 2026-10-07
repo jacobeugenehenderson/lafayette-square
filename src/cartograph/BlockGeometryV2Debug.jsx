@@ -792,6 +792,7 @@ export default function BlockGeometryV2Debug({
       sidewalkRings: sg.sidewalk || [],
       treelawnRings: Object.values(sg.treelawnByLu || {}).flat(),
       parkRings: (sg.luByClass && sg.luByClass.park) || [],
+      curbCutCorners: sg.curbCutCorners || [],   // every junction corner — the curb-cut markers (MeasureOverlay)
       // The selected corridor (selected block + neighbours), composed separately so
       // the render branch paints it translucent (opacity 0.55 → the aerial reads
       // through). null when nothing is selected. Same yLifts as the opaque set —
@@ -953,6 +954,9 @@ export default function BlockGeometryV2Debug({
   }, [tileGeos, setTileCornerFillets])
   // Publish the injective corner SET so CornerEditHandles sources its corner LIST
   // from the corners actually drawn (the tile graph), not legacy ribbons.intersections.
+  // ⭐ the curb-cut markers ARE the painter's corner records (`sectionOpen().curbCutCorners`) — published like tile corners
+  const setCurbCutCorners = useCartographStore(s => s.setCurbCutCorners)
+  useEffect(() => { setCurbCutCorners(sectionGeos?.curbCutCorners || []) }, [sectionGeos, setCurbCutCorners])
   const setTileCorners = useCartographStore(s => s.setTileCorners)
   useEffect(() => {
     setTileCorners(tileGeos?.cornerSet || [])

@@ -211,6 +211,14 @@ const RAY_CURB_MARGIN = 8   // m
 const HANDLE_LONG = 5.0
 const HANDLE_SHORT = 1.2
 const HANDLE_BORDER = 0.35
+// Curb-cut corner marker (meters), sized like the handles. A click INSIDE one marker selects that corner's record;
+// two markers under one click is refused (zoom in), never resolved by nearness.
+const CUT_MARKER_R = 1.0
+
+// the corners whose marker disc holds p — `hits.length === 1` is a selection, more is ambiguous
+function cornersUnder(p, corners) {
+  return corners.filter(c => Math.hypot(p.x - c.at[0], p.z - c.at[1]) <= CUT_MARKER_R)
+}
 
 // Compute which natural-segment ordinal contains a polyline-segment
 // index. Natural segments are the stretches of chain between IX
@@ -252,6 +260,10 @@ export default function MeasureOverlay() {
   const selectStreet = useCartographStore(s => s.selectStreet)
   const deselectStreet = useCartographStore(s => s.deselectStreet)
   const blockCustoms = useCartographStore(s => s.blockCustoms)
+  // ⭐ CURB-CUT CORNERS (`BRIEF-corner-ramps-and-kerb §3` step 4) — the painter's own records, one per junction corner
+  const curbCutCorners = useCartographStore(s => s.curbCutCorners)
+  const selectedCurbCorner = useCartographStore(s => s.selectedCurbCorner)
+  const curbCutLayerOn = useCartographStore(s => s.layerVis?.curbCut !== false)
   // D.5/D.6: frontageEdges from the V2 build — used to resolve a
   // (chainIdx, segOrd, sideKey) tuple to its containing block-edge
   // (blockKey + edgeOrd) for per-block-edge customs authoring.
@@ -315,6 +327,7 @@ export default function MeasureOverlay() {
 
   const { camera, gl } = useThree()
   const active = tool === 'measure'
+  const cutMarkersOn = active && curbCutLayerOn && curbCutCorners.length > 0
   const dragRef = useRef(null)
   // rAF-throttle the store commit during a handle drag. The pointermove
   // handler fires 60-120Hz, and each store write triggers a full V2
@@ -547,6 +560,13 @@ export default function MeasureOverlay() {
     const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
     const thresh = 5 / (camera.zoom || 1)
 
+    // Priority 0: a curb-cut corner marker → open that corner's popover (MeasurePanel)
+    if (cutMarkersOn) {
+      const hits = cornersUnder(p, curbCutCorners)
+      if (hits.length === 1) { useCartographStore.getState().selectCurbCorner(hits[0]); e.stopPropagation(); return }
+      if (hits.length > 1) { useCartographStore.setState({ status: `${hits.length} curb-cut corners under the cursor — zoom in to pick one` }); e.stopPropagation(); return }
+    }
+
     // Priority 1: start dragging an existing handle. Hit-test in the handle's
     // local frame (long axis = along street, short axis = perpendicular = ruler).
     if (selection) {
@@ -585,7 +605,7 @@ export default function MeasureOverlay() {
     // Empty click does NOT deselect — operators pan the map constantly and
     // the gesture used to silently throw away their selection. Accept
     // explicitly via double-click (handler below), Enter, or Escape.
-  }, [active, spaceDown, camera, gl, selection, streetData, selectStreet, findFeForSide])
+  }, [active, spaceDown, camera, gl, selection, streetData, selectStreet, findFeForSide, cutMarkersOn, curbCutCorners])
 
   const onPointerMove = useCallback((e) => {
     if (dragRef.current) {
@@ -833,6 +853,12 @@ export default function MeasureOverlay() {
     // strip body = flip that strip's material. All return true so the context menu
     // is suppressed.
     const handleCtrlOrRight = (e) => {
+      // ⌃/right-click a curb-cut marker = that corner back to what it draws unauthored (both leg slots cleared)
+      if (cutMarkersOn) {
+        const hits = cornersUnder(screenToWorld(e.clientX, e.clientY, camera, gl.domElement), curbCutCorners)
+        if (hits.length === 1) { useCartographStore.getState().setCornerCurbCut(hits[0], null); return true }
+        if (hits.length > 1) return true
+      }
       if (!selection) return false
       const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
       const h = hitHandle(p)
@@ -892,7 +918,7 @@ export default function MeasureOverlay() {
       dom.removeEventListener('dblclick', onDblClick, opts)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, centerlineData, findFeForSide, blockCustoms, ixByChain])
+  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, centerlineData, findFeForSide, blockCustoms, ixByChain, cutMarkersOn, curbCutCorners])
 
   if (!active) return null
 
@@ -913,6 +939,24 @@ export default function MeasureOverlay() {
             depthTest={false} depthWrite={false} />
         </mesh>
       ))}
+      {/* Curb-cut corner markers: blue = authored · amber = the legs conflict or recorded kerbs contradict the norm ·
+          white = what the corner draws unauthored. The open corner gets a thicker ring. */}
+      {cutMarkersOn && curbCutCorners.map((c, i) => {
+        const open = selectedCurbCorner && selectedCurbCorner.tile === c.tile && selectedCurbCorner.si === c.si && selectedCurbCorner.arc === c.arc
+        const fill = c.authored ? ROYAL_BLUE : (c.conflict || c.contradicted) ? '#E8A21B' : '#ffffff'
+        return (
+          <group key={`cc-${c.tile}-${c.si}-${c.arc}-${i}`} position={[c.at[0], 0, c.at[1]]} rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh renderOrder={151}>
+              <circleGeometry args={[CUT_MARKER_R + (open ? 0.45 : 0.2), 24]} />
+              <meshBasicMaterial color="#000000" side={THREE.DoubleSide} depthTest={false} transparent opacity={1} />
+            </mesh>
+            <mesh renderOrder={152}>
+              <circleGeometry args={[CUT_MARKER_R, 24]} />
+              <meshBasicMaterial color={fill} side={THREE.DoubleSide} depthTest={false} transparent opacity={1} />
+            </mesh>
+          </group>
+        )
+      })}
       {selection && selection.handles.map((h, i) => (
         <group key={i} position={[h.x, 0, h.z]} rotation={[0, h.rotY, 0]}>
           {/* Black outline (slightly larger) — transparent flag puts it

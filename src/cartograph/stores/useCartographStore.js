@@ -29,6 +29,7 @@ const feSegOrds = (fe, k) => {
   if (!key) return []
   return (fe?.segOrds && fe.segOrds.length) ? [...new Set(fe.segOrds)] : [key[2]]
 }
+import { writeCornerCurbCut } from '../../lib/curbCutSlots.js'
 import {
   migrateLampGlow, resolveLampGlowAtMinute,
   resolveGroupAtMinute, migrateGroupChannel,
@@ -696,6 +697,22 @@ const useCartographStore = create((set, get) => ({
   // persisted — derived geometry, rebuilt every tile build.
   tileCorners: [],
   setTileCorners: (c) => set({ tileCorners: c || [] }),
+  // Every JUNCTION corner Section painted, with what it draws and the two leg slots that author it
+  // (`tileGround.js#curbCutsOnJunctionCorners` → `sectionOpen().curbCutCorners`). Published by BlockGeometryV2Debug so
+  // the curb-cut markers ARE the painter's records — a click selects the corner by identity, never by nearness.
+  // Not persisted — derived, rebuilt every Section pass. `selectedCurbCorner` = { tile, si, arc } of the open popover.
+  curbCutCorners: [],
+  setCurbCutCorners: (c) => set({ curbCutCorners: c || [] }),
+  selectedCurbCorner: null,
+  selectCurbCorner: (c) => set({ selectedCurbCorner: c ? { tile: c.tile, si: c.si, arc: c.arc } : null }),
+  // ⭐ AUTHOR ONE CORNER'S CURB CUT (`BRIEF-corner-ramps-and-kerb §3` step 4; Jacob, 2026-10-06): writes BOTH legs at
+  // once — the arriving run's `curbCuts.end`, the leaving run's `curbCuts.start` — so the gesture can never make them
+  // disagree. `style` null = back to what the corner draws unauthored. One definition: `src/lib/curbCutSlots.js`.
+  setCornerCurbCut: (corner, style) => {
+    if (!corner?.slots?.length) return
+    set({ blockCustoms: writeCornerCurbCut(get().blockCustoms, corner, style) })
+    get()._saveDesignDebounced()
+  },
   // The frozen curb (iA) rings the Section FILL strokes off — published so the
   // Measure handles anchor to the SAME geometry the FILL uses (one *geometry*
   // truth, SECTION.md §5), not a centreline ruler. Empty outside frozen Section.
@@ -1001,7 +1018,7 @@ const useCartographStore = create((set, get) => ({
   // list governs the whole-scene revert, which is the path that was lying.
   // Guard: `node checks/claims-revert-field-coverage.mjs` fails if any authored
   // blockCustoms field is absent from BOTH lists (the class, not this instance).
-  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials', 'capFlip'],
+  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials', 'capFlip', 'curbCuts'],
   // blockCustoms with `fields` stripped from every fe slot (empty slots pruned).
   _blockCustomsStripped: (fields) => {
     const cur = get().blockCustoms || {}
