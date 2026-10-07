@@ -150,7 +150,7 @@ import { WATER_PLAN } from './waterMaterial.js'
 import PlanRim from './PlanRim.jsx'
 import MountainBackdrop from './MountainBackdrop'
 import DrawnAnchor from './DrawnAnchor.jsx'
-import { markStartup, markTime, isPrepared, failureOf, isRevealed, subscribeStartup } from '../lib/startupMarks.js'
+import { markStartup, markTime, markTimeline, isPrepared, failureOf, isRevealed, subscribeStartup } from '../lib/startupMarks.js'
 import { getSceneStencil } from './sceneStencilState'
 import { buildingLiftY } from '../lib/buildingLift.js'
 
@@ -229,10 +229,11 @@ function RevealGate({ need, lingerMs, skyAt }) {
     // 1. Compile ahead, in parallel (KHR_parallel_shader_compile).
     const was = groups.map((g) => g.visible)
     let compiled
+    markTimeline('gate', 'compile ahead: start')
     try { for (const g of groups) g.visible = true; compiled = gl.compileAsync(scene, camera) }
     finally { groups.forEach((g, i) => { g.visible = was[i] }) }
     phase.current = { name: 'compile', groups }
-    const next = () => { phase.current = { name: 'prep', groups, i: 0 } }
+    const next = () => { markTimeline('gate', 'compile ahead: done'); phase.current = { name: 'prep', groups, i: 0 } }
     compiled.then(next, (e) => { console.error('[reveal] ⛔ compiling the town ahead failed:', e); next() })
   }, [state, need.join(',')])
   // 2. PREPARE BY DRAWING: one hidden group a frame, drawn into a 1×1 target by a top-down camera that holds the whole
@@ -255,8 +256,10 @@ function RevealGate({ need, lingerMs, skyAt }) {
     const prevTarget = gl.getRenderTarget()
     const wasVisible = g.visible
     g.visible = true
+    const t0 = performance.now()
     try { gl.setRenderTarget(rt); gl.render(scene, cam) }
     finally { g.visible = wasVisible; gl.setRenderTarget(prevTarget) }
+    markTimeline('gate', `prepare draw ${g.name}: ${Math.round(performance.now() - t0)} ms`)
   })
   return null
 }
