@@ -1,5 +1,12 @@
 # BRIEF — neon reads at every distance, belongs to its place, and the whole building selects
 
+<!-- BRIEF-STATE
+status: UNVERIFIED
+dispatched: Argon
+written: 2026-10-06
+evict-when: RULING: Jacob confirms neon and the whole-building click in the Ward after the next Publish, and every town's buildings are re-baked (node checks/claims-neon-per-place.mjs --town=<id> passes for each)
+-->
+
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
 already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/rename`). **Agent: FRESH.**
 **Report to the session `Boz the Younger`.**

@@ -1,5 +1,12 @@
 # BRIEF — the shot into Hero is smooth: measure frame by frame, then fix
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: Strobe
+written: 2026-10-06
+evict-when: RULING: Jacob calls the arrival into Hero, and Hero→Browse, smooth on Huron in the Ward on staging
+-->
+
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
 already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/rename`). **Agent: FRESH, a
 performance specialist.** **Report to the session `Boz the Younger`.**

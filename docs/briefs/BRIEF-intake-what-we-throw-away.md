@@ -1,5 +1,12 @@
 # BRIEF — what the intake throws away, and what it never asks for
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-10-06
+evict-when: RULING: Jacob has ruled on the list of what the intake drops and never asks for
+-->
+
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
 already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/rename`). **Agent: FRESH.**
 **Report to the session `Boz the Younger`** (or whichever Boz Jacob names when he dispatches you).

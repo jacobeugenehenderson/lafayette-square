@@ -1,5 +1,12 @@
 # BRIEF — the Ward's interface grammar: cards own their depth, search is global
 
+<!-- BRIEF-STATE
+status: UNVERIFIED
+dispatched: Hinge
+written: 2026-10-07
+evict-when: RULING: on staging at phone size, Jacob confirms every card carries its own exit and search restores the room (theward: node checks/interface-grammar.mjs passes)
+-->
+
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
 already uses (`ListAgents`, then `git log --format=%s | grep -i <name>` in both repos, then `/rename`). **Agent: FRESH.**
 **Report to the session `Boz the Younger`.**

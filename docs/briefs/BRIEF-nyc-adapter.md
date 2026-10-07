@@ -1,5 +1,12 @@
 # BRIEF — the NYC adapter: a city's measured record feeds the one pipeline
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-10-05
+evict-when: RULING: Jackson Heights pours from the NYC adapter's measured record (Jacob rested JH 2026-10-07)
+-->
+
 **You are the dispatched agent. Name yourself** — one word, yours, not one a RUNNING session holds
 (`ListAgents`, then `/rename`). **Agent: FRESH** — this is a new subsystem on a new town; nothing an
 existing window holds is load-bearing, and the state-adapter pattern you extend is fully in the code.

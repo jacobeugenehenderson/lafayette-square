@@ -1,5 +1,6 @@
 <!-- BRIEF-STATE
-status: BUILT — awaiting Jacob's eye on Provincetown
+status: UNVERIFIED
+note: built; awaiting Jacob's eye on Provincetown
 dispatched: built in e456051e (band-spread per-tree scale); PT + Huron re-baked 2026-09-29 (Jacob's go)
 note: the near, far and overhead drawings all multiply by the instance's `scale` (InstancedTrees, HeroImpostorTrees,
   OverheadTrees). NOT re-measured here: defect 2's per-species base heights (impostorBySpecies vs

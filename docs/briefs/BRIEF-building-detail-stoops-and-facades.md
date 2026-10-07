@@ -1,5 +1,12 @@
 # BRIEF — building detail: stoops from evidence, doors and windows as material
 
+<!-- BRIEF-STATE
+status: HOLD
+dispatched: no
+written: 2026-10-05
+evict-when: RULING: dispatchable once BRIEF-nyc-adapter lands; done when Jacob's eye accepts stoops and facades on a poured town
+-->
+
 **You are the dispatched agent. Name yourself** — one word, yours, not one a RUNNING session holds
 (`ListAgents`, then `/rename`). **Agent: FRESH.** **Report to the session `Boz the Younger`** (not "Boz the
 Elder", who runs a separate work group).

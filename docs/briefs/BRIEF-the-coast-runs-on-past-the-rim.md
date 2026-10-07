@@ -1,5 +1,12 @@
 # BRIEF — past the town's rim, the water ends where the real coast does
 
+<!-- BRIEF-STATE
+status: UNVERIFIED
+dispatched: Argon
+written: 2026-10-06
+evict-when: RULING: Jacob's eye on Huron's and Provincetown's Hero: the water past the rim follows the real coast, with no straight radial edge
+-->
+
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
 already uses (`ListAgents`, then `git log --format=%s | grep -i <name>`, then `/rename`). **Agent: FRESH.**
 **Report to the session `Boz the Younger`.**
