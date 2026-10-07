@@ -10,7 +10,13 @@
  * - the stars follow the town's sun altitude (the renderer's own, useTimeOfDay#getLightingPhase), from the old splash's
  *   twilight thresholds (radians below the horizon);
  * - it is driven by the startup marks, not timers: shown while the gate is armed, faded over the Look's `reveal.fade`
- *   from `ward:reveal`, then gone. The pulse on the badge is PROVISIONAL (Jacob): one keyframe, easy to change.
+ *   from `ward:reveal`, then gone.
+ * ⭐ THE HOST'S TYPE AND COLOUR, READ, NEVER COPIED: the splash is DOM inside the host page, so its title takes the
+ * host's own tokens — the Ward's display face `--f-display` + `--display-axes` and the town's accent `--mark` (theward
+ * src/styles/tokens.css; `--mark` set at boot from the town's manifest), exactly as the Ward's place card sets a name.
+ * A host without them (the LS player, Preview) falls through to its own inherited type. No font name lives here.
+ * The pulse is a calm breath — a slow ease-in-out glow in the town's accent, no scaling (Jacob, 2026-10-07: "easing,
+ * maybe a concordant glow, slow down").
  */
 import { useEffect, useState } from 'react'
 import TownMarkGlyph from './TownMarkGlyph'
@@ -52,14 +58,14 @@ export default function TownSplash({ title, fadeSeconds, skyAt }) {
       background: sky ? `radial-gradient(ellipse at 50% 100%, ${css(sky.horizon)}, ${css(sky.high)} 70%)` : '#000',
       opacity, pointerEvents: opacity > 0.5 ? 'auto' : 'none', zIndex: 300,
     }}>
-      <style>{'@keyframes town-splash-pulse { 0%, 100% { opacity: 0.85; transform: scale(1) } 50% { opacity: 0.55; transform: scale(0.96) } }'}</style>
+      <style>{'@keyframes town-splash-breathe { 0%, 100% { filter: drop-shadow(0 0 4px var(--mark, rgba(255,255,255,0.35))); opacity: 0.88 } 50% { filter: drop-shadow(0 0 16px var(--mark, rgba(255,255,255,0.55))); opacity: 1 } }'}</style>
       {stars > 0 && STARS.map((s, i) => (
         <div key={i} style={{ position: 'absolute', left: s.left, top: s.top, width: s.size, height: s.size, borderRadius: '9999px', background: '#fff', opacity: s.opacity * stars }} />
       ))}
-      <div style={{ animation: 'town-splash-pulse 1.6s ease-in-out infinite' }}>
+      <div style={{ animation: 'town-splash-breathe 4.8s ease-in-out infinite' }}>
         <TownMarkGlyph size={72} badge />
       </div>
-      {title ? <div style={{ marginTop: 16, color: 'rgba(255,255,255,0.75)', font: '500 15px/1.2 system-ui, sans-serif', letterSpacing: '0.04em' }}>{title}</div> : null}
+      {title ? <div style={{ marginTop: 18, fontFamily: 'var(--f-display)', fontVariationSettings: 'var(--display-axes)', fontWeight: 400, fontSize: '1.875rem', lineHeight: 1.1, color: 'var(--mark, rgba(255,255,255,0.85))' }}>{title}</div> : null}
     </div>
   )
 }
