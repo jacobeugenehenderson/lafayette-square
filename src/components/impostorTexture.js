@@ -43,26 +43,20 @@ function ktx2Loader(gl) {
 
 const _cache = new Map()   // url → THREE.Texture
 
-// ⭐ ARRIVAL, not upload: a page is a placeholder until its image lands (the reveal gate waits on this, src/lib/reveal.js).
-// ⛔ Never wait on `texture.onUpdate` for that: it fires on the GPU UPLOAD, and a class held hidden for the reveal never
-// draws, so it never uploads — that wait would never end.
-function arrived(tex) {
-  tex.userData.arrived = true
-  for (const w of tex.userData._waiters || []) w.resolve()
-  tex.userData._waiters = null
+// A page that failed to load (said loud at the load site): the reveal reads it (pageFailed) and holds the town, by name.
+function failed(tex, err) { tex.userData.failed = err || true }
+
+/** Has the page's image landed? Read off the texture itself: a KTX2 page has mipmaps only once transcoded; an AO+depth
+ *  page is a 1×1 placeholder until the worker's bytes land; a PNG has an image only once loaded. */
+export function pageArrived(tex) {
+  if (!tex) return false
+  if (tex.isCompressedTexture) return (tex.mipmaps?.length || 0) > 0
+  if (tex.isDataTexture) return (tex.image?.width || 0) > 1
+  return (tex.image?.width || 0) > 0
 }
-function failed(tex, err) {
-  tex.userData.failed = err || true
-  for (const w of tex.userData._waiters || []) w.reject(err)
-  tex.userData._waiters = null
-}
-/** Resolves when the page's image has arrived; rejects if it failed (loud at the load site already). */
-export function whenArrived(tex) {
-  if (!tex) return Promise.reject(new Error('no texture'))
-  if (tex.userData.arrived) return Promise.resolve()
-  if (tex.userData.failed) return Promise.reject(tex.userData.failed)
-  return new Promise((resolve, reject) => (tex.userData._waiters ||= []).push({ resolve, reject }))
-}
+/** Did the page fail to load (said loud at the load site)? */
+export const pageFailed = (tex) => !!tex?.userData?.failed
+
 
 // The AO+depth decoder (rgPageWorker.js): one worker for the page, made on the first RG page, answering by id.
 let _rgWorker = null, _rgSeq = 0
@@ -103,7 +97,6 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
         tex.magFilter = THREE.LinearFilter
         tex.needsUpdate = true
         tex.onUpdate?.()
-        arrived(tex)
         markTimeline('decode', `RG page ${W}×${H} · ${url.split('?')[0].split('/').slice(-2).join('/')}`)   // species/page: 8 species share page names
       })
       .catch((err) => { console.error(`[impostorTexture] ⛔ AO+depth page failed to load — ${url}. This layer will be blank.`, err); failed(tex, err) })
@@ -132,7 +125,6 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
       tex.wrapS = loaded.wrapS; tex.wrapT = loaded.wrapT
       tex.needsUpdate = true
       loaded.dispose()
-      arrived(tex)
       markTimeline('ktx2', url.split('?')[0].split('/').slice(-2).join('/'))
     }, undefined, (err) => {
       // ⛔ LOUD. A missing page is a hole in the canopy; it must never read as "thin".
@@ -143,7 +135,7 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
     return tex
   }
 
-  const t = new THREE.TextureLoader().load(url, () => arrived(t), undefined, (err) => {
+  const t = new THREE.TextureLoader().load(url, undefined, undefined, (err) => {
     console.error(`[impostorTexture] ⛔ PNG page failed to load — ${url}. This layer will be blank.`, err)
     failed(t, err)
   })

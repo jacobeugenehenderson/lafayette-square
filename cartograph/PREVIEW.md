@@ -135,9 +135,9 @@ Two caveats that, unstated, would mislead (`PreviewApp.jsx#SceneCaveats`):
 - **The sequence** (spec, *Cold Start / Time to Ward*): HTML → runtime → manifest → ground · buildings · trees
   **PREPARED** out of sight → **THE REVEAL = FIRST TRUTHFUL FRAME = WARD USABLE** (Jacob, 2026-10-06: the physical town
   arrives at once; it was "ground + buildings", 2026-10-04) → look layers fade in. **TIME TO WARD** = that mark from
-  navigation start. The gate (`src/lib/reveal.js`, `Town.jsx#RevealGate`) compiles each class ahead and draws it once
-  offscreen before the reveal, so the reveal frame pays no compile or upload; `ward:reveal`'s companion `tl:reveal`
-  sits on the frame timeline. Pieces mark on their first **visitor** draw (`DrawnAnchor`; the gate's prepare draws do
+  navigation start. The gate (`Town.jsx#RevealGate`, reading the `prepared:<class>` startup marks) compiles each class ahead and draws it once
+  offscreen before the reveal, so the reveal frame pays no compile or upload; `ward:reveal` marks the gate opening.
+  Pieces mark on their first **visitor** draw (`DrawnAnchor`; the gate's prepare draws do
   not mark), so a hidden layer never marks; the Ward carries the same marks. Once per page: reload for a cold number.
 - **Source and target.** Locally the slab comes off disk and the code is Vite's unbundled modules, so fetch times and
   the `code` row are not a visitor's (the panel prints its source). Every number is this desktop's GPU running the

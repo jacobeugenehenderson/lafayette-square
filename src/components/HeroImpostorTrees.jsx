@@ -19,7 +19,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { loadImpostorTexture } from './impostorTexture.js'
+import { loadImpostorTexture, pageArrived, pageFailed } from './impostorTexture.js'
+import { markFailed } from '../lib/startupMarks.js'
 import * as THREE from 'three'
 import { buildHeroImpostorCard, HERO_FRAME_VERSION } from './impostorGeometry.js'
 import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
@@ -130,17 +131,22 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, lookName, heroImpostorBySpecies, species, gl])
 
-  // Re-render once textures finish decoding (async upload lands after the map builds).
-  useEffect(() => {
-    if (!assets) return
-    let live = true
-    const texes = []
-    for (const a of assets.values()) for (const s of a.azSets) for (const l of s.layers) { texes.push(l.albedoTex, l.aoTex) }
-    Promise.all(texes.map(t => t.image ? Promise.resolve() : new Promise(r => { t.onUpdate = r }))).then(() => { if (live) setReady(x => x + 1) })
-    return () => { live = false }
-  }, [assets])
+  // ⭐ ARRIVED = every page's image has landed (impostorTexture.js#pageArrived, read off the texture itself). It
+  // re-renders the consumer once, and it is what the reveal reads for the trees (InstancedTrees → `prepared:trees`).
+  // ⛔ It waited on `texture.onUpdate` — the GPU UPLOAD — which a tree held hidden for the reveal never does.
+  const [arrived, setArrived] = useState(false)
+  useEffect(() => { setArrived(false) }, [assets])
+  useFrame(() => {
+    if (!assets || arrived) return
+    let all = true
+    for (const a of assets.values()) for (const s of a.azSets) for (const l of s.layers) for (const t of [l.albedoTex, l.aoTex]) {
+      if (pageFailed(t)) markFailed('trees', `a hero card page did not arrive (${a.heightM != null ? 'species page' : 'page'})`)
+      if (!pageArrived(t)) all = false
+    }
+    if (all) { setArrived(true); setReady((x) => x + 1) }
+  })
 
-  return assets
+  return { assets, arrived }
 }
 
 // Deterministic per-instance hash → [0, n) for azimuth variety assignment. World-XZ

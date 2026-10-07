@@ -18,16 +18,21 @@
  * Module-scope + subscriber set, mirroring onTerrainReload / groundColorState.
  */
 let _stencil = null
-let _missing = null   // why no stencil is coming (setSceneStencilMissing), or null
+let _missing = null   // why no stencil is coming (setSceneStencil's second argument), or null
 const _subs = new Set()
 
-/** @param {{center:[number,number], radius:number}|null} s */
-export function setSceneStencil(s) {
+/**
+ * @param {{center:[number,number], radius:number}|null} s
+ * @param {string} [missing] with no stencil: WHY none is coming (BakedGround's loader: the ground failed, or its
+ *   ground.json carries none). Subscribers get it as their second argument and say so on the event, never on a timer.
+ */
+export function setSceneStencil(s, missing = null) {
   const next = (s && Number.isFinite(s.radius) && s.radius > 0) ? s : null
-  if (next === _stencil) return
+  const why = next ? null : (missing || null)
+  if (next === _stencil && why === _missing) return
   _stencil = next
-  if (next) _missing = null
-  for (const cb of _subs) cb(_stencil)
+  _missing = why
+  for (const cb of _subs) cb(_stencil, _missing)
 }
 
 export function getSceneStencil() { return _stencil }
@@ -35,25 +40,10 @@ export function getSceneStencil() { return _stencil }
 /** Subscribe; fires immediately with the current value. Returns an unsubscribe. */
 export function onSceneStencil(cb) {
   _subs.add(cb)
-  cb(_stencil)
+  cb(_stencil, _missing)
   return () => _subs.delete(cb)
 }
 
-// ⛔ THE STENCIL WILL NOT COME, said by the one that knows (BakedGround's loader): the ground fetch failed, or its
-// ground.json carries no stencil. A consumer that needs the size (the sun's shadows) reports it then, on the event.
-// It used to guess with a 5 s timer, which cried wolf on every healthy boot slower than 5 s (huron under load).
-const _missSubs = new Set()
-/** @param {string} reason why this scene will publish no stencil */
-export function setSceneStencilMissing(reason) {
-  _missing = reason
-  for (const cb of _missSubs) cb(reason)
-}
-/** Subscribe to "no stencil is coming"; fires immediately if it is already known. Returns an unsubscribe. */
-export function onSceneStencilMissing(cb) {
-  _missSubs.add(cb)
-  if (_missing) cb(_missing)
-  return () => _missSubs.delete(cb)
-}
 
 // ── Shadow-frustum geometry — ONE definition, two consumers ────────────────
 // CelestialBodies sizes the sun's shadow camera from this; StageShadows uses

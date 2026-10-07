@@ -145,9 +145,8 @@ import { WATER_PLAN } from './waterMaterial.js'
 import PlanRim from './PlanRim.jsx'
 import MountainBackdrop from './MountainBackdrop'
 import DrawnAnchor from './DrawnAnchor.jsx'
-import { markStartup, markTimeline } from '../lib/startupMarks.js'
+import { markStartup, isPrepared, failureOf, isRevealed, subscribeStartup } from '../lib/startupMarks.js'
 import { getSceneStencil } from './sceneStencilState'
-import { isPrepared, failureOf, isRevealed, setRevealed, subscribeReveal } from '../lib/reveal.js'
 import { buildingLiftY } from '../lib/buildingLift.js'
 
 // The application runtime has arrived: the renderer's module is evaluated (src/lib/startupMarks.js).
@@ -197,19 +196,19 @@ const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
 // Under a demand frameloop nothing renders unless invalidated. The movie shot on a profile that
 // asks for it renders every frame; everything else every other frame, a third while idle. Never
 // zero while unpaused: going idle is what makes Chrome drop the WebGL surface.
-// ── THE REVEAL (src/lib/reveal.js) — ground, buildings and trees arrive at once (Jacob, 2026-10-06; WARD USABLE = THE
+// ── THE REVEAL (startup marks: `prepared:<class>`, `failed:<class>`, `reveal` — src/lib/startupMarks.js) — ground, buildings and trees arrive at once (Jacob, 2026-10-06; WARD USABLE = THE
 // REVEAL). The physical groups render hidden (`visible={… && revealed}`) until every class `need`s has said it is
 // PREPARED. Then, while only the sky shows, the gate COMPILES them ahead (renderer.compileAsync: parallel shader
 // compile; three walks VISIBLE objects only, so the groups are shown for the synchronous part of the call and hidden
 // again before any frame draws them) and UPLOADS their textures (renderer.initTexture); when the compile resolves, the
-// town is revealed on one frame and the terrain swells. A class that fails says so (reveal.js#markFailed); the gate
+// town is revealed on one frame and the terrain swells. A class that fails says so (startupMarks.js#markFailed); the gate
 // names what it waits on, once, at that failure — never a timer.
 const PHYSICAL = ['ground', 'buildings', 'trees']
 const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:park', 'town:lamps'])
 function RevealGate({ need }) {
   const { gl, scene, camera } = useThree()
   const phase = useRef({ name: 'wait' })
-  const state = useSyncExternalStore(subscribeReveal, () => need.map((k) => (isPrepared(k) ? 'p' : failureOf(k) ? 'f' : '-')).join('') + isRevealed())
+  const state = useSyncExternalStore(subscribeStartup, () => need.map((k) => (isPrepared(k) ? 'p' : failureOf(k) ? 'f' : '-')).join('') + isRevealed())
   useEffect(() => {
     if (isRevealed() || phase.current.name !== 'wait') return
     const failed = need.filter((k) => failureOf(k))
@@ -235,7 +234,7 @@ function RevealGate({ need }) {
   useFrame(() => {
     const p = phase.current
     if (p.name !== 'prep') return
-    if (p.i >= p.groups.length) { phase.current = { name: 'done' }; markTimeline('reveal', 'the town is shown'); setRevealed(); return }
+    if (p.i >= p.groups.length) { phase.current = { name: 'done' }; markStartup('reveal'); return }
     const g = p.groups[p.i++]
     if (!g.visible && !gatedOn(g)) return   // a layer switched off stays off
     const st = getSceneStencil()
@@ -534,7 +533,7 @@ export default function Town({
   const movieHold = useMemo(() => () => flightHold.current() || !!movie?.hold?.(), [movie])
   // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
   const loaded = useTownLoaded(lookId)
-  const revealed = useSyncExternalStore(subscribeReveal, isRevealed)
+  const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
   if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} /></>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // ⭐ THE SWELL (Jacob, 2026-10-06): the town is prepared FLAT and the terrain swells to the shot's height as the

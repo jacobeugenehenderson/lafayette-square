@@ -33,8 +33,7 @@ import {
 import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
-import { whenArrived } from './impostorTexture.js'
-import { markPrepared, markFailed, markUnprepared } from '../lib/reveal.js'
+import { markPrepared } from '../lib/startupMarks.js'
 import { getElevationRaw, slabYIsUnstamped, groundPairs } from '../utils/elevation'
 import { currentTerrainIdentity } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -1046,10 +1045,10 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     () => (groups?.heroImpostors ? Array.from(groups.heroImpostors.keys()) : []),
     [groups],
   )
-  const heroAssets = useHeroImpostorAssets({ enabled: heroFoundationEnabled, lookName, heroImpostorBySpecies: heroImpostorRecords, species: heroSpeciesList })
+  const { assets: heroAssets, arrived: heroPagesArrived } = useHeroImpostorAssets({ enabled: heroFoundationEnabled, lookName, heroImpostorBySpecies: heroImpostorRecords, species: heroSpeciesList })
 
-  // ⭐ THE REVEAL (src/lib/reveal.js): the trees are PREPARED when every card page has ARRIVED and every model tree's
-  // GLB has loaded. A card without its page draws nothing, so its page is part of the physical tree (Jacob: physical
+  // ⭐ THE REVEAL (a `prepared:trees` startup mark, src/lib/startupMarks.js): the trees are PREPARED when every card
+  // page has ARRIVED (useHeroImpostorAssets' own readiness) and every model tree's GLB has loaded. A card without its page draws nothing, so its page is part of the physical tree (Jacob: physical
   // arrives at once). ⛔ Arrival, never `onUpdate` (the GPU upload): held hidden, a tree never draws, so never uploads.
   const meshKeys = useMemo(() => {
     const k = []
@@ -1058,19 +1057,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   }, [groups])
   const [meshLoaded, setMeshLoaded] = useState(() => new Set())
   const onMeshLoaded = useCallback((key) => setMeshLoaded((s) => (s.has(key) ? s : new Set(s).add(key))), [])
-  const [pagesIn, setPagesIn] = useState(false)
-  useEffect(() => {
-    setPagesIn(false)
-    if (!heroFoundationEnabled || !heroSpeciesList.length) { setPagesIn(true); return }
-    if (!heroAssets) return
-    let live = true
-    const texes = []
-    for (const a of heroAssets.values()) for (const set of a.azSets) for (const l of set.layers) texes.push(l.albedoTex, l.aoTex)
-    Promise.all(texes.map(whenArrived)).then(
-      () => { if (live) setPagesIn(true) },
-      (e) => { if (live) markFailed('trees', `a hero card page did not arrive (${e?.message || e})`) })
-    return () => { live = false }
-  }, [heroAssets, heroFoundationEnabled, heroSpeciesList])
+  const pagesIn = !heroFoundationEnabled || !heroSpeciesList.length || heroPagesArrived
   const drawsNoTrees = scene?.layerVis?.tree === false || treeDbg('noTrees')
   useEffect(() => {
     if (drawsNoTrees) { markPrepared('trees'); return }
@@ -1079,7 +1066,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     if (!pagesIn || meshKeys.some((k) => !meshLoaded.has(k))) return
     markPrepared('trees')
   }, [drawsNoTrees, groups, atlas.status, mats.status, pagesIn, meshKeys, meshLoaded])
-  useEffect(() => () => markUnprepared('trees'), [])
 
   if (!groups || atlas.status !== 'ready') return null
   if (scene?.layerVis?.tree === false) return null

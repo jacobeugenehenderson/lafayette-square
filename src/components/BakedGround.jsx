@@ -36,10 +36,9 @@ import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag, terrainWater } from '../utils/terrainShader'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
-import { setSceneStencil, setSceneStencilMissing } from './sceneStencilState'
+import { setSceneStencil } from './sceneStencilState'
 import DrawnAnchor from './DrawnAnchor.jsx'
-import { markTimeline } from '../lib/startupMarks.js'
-import { markPrepared, markUnprepared } from '../lib/reveal.js'
+import { markTimeline, markPrepared } from '../lib/startupMarks.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { slabUrl, slabFetch, slabStamped } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
@@ -459,9 +458,9 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
     })
   }, [manifest, bin])
 
-  // ⭐ THE REVEAL (src/lib/reveal.js): the ground surfaces are physical; they are PREPARED once their geometry exists.
-  // Their maps are a look layer and arrive after (useArrivingTexture).
-  useEffect(() => { markPrepared('ground'); return () => markUnprepared('ground') }, [meshes])
+  // ⭐ THE REVEAL (a `prepared:ground` startup mark): the ground surfaces are physical; they are PREPARED once their
+  // geometry exists. Their maps are a look layer and arrive after (useArrivingTexture).
+  useEffect(() => { markPrepared('ground') }, [meshes])
 
   // ⭐ THE WATER AT HIGH FLOODS UP THE BEACH (bake-terrain `water.flood`): the ground below the high level connected to
   // the drawn water, drawn as more of the same sheet beside the body that reaches the rim. Its polygons exclude the drawn
@@ -874,7 +873,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
         // waited on every map PNG (huron: published at 3.7 s, ~2 s after ground.json). The sun's frustum waits on it.
         if (!cancelled) {
           if (m.stencil?.radius > 0) setSceneStencil(m.stencil)
-          else setSceneStencilMissing(`"${look}"'s ground.json carries no stencil — re-bake the ground`)
+          else setSceneStencil(null, `"${look}"'s ground.json carries no stencil — re-bake the ground`)
         }
         const bin = await slabFetch(look, m.bin, undefined, bake)
           .then(r => r.arrayBuffer())
@@ -890,7 +889,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
         if (!cancelled) setData({ manifest: m, bin, context, coast, outer })
       } catch (e) {
         console.error('[BakedGround] ⛔ the ground is not drawn:', e)
-        if (!cancelled) setSceneStencilMissing(`the ground of "${resolvedLookId}" did not load (${e?.message || e})`)
+        if (!cancelled) setSceneStencil(null, `the ground of "${resolvedLookId}" did not load (${e?.message || e})`)
       }
     })()
     return () => { cancelled = true }

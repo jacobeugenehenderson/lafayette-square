@@ -44,7 +44,7 @@ import { bvToRGB } from '../lib/starColor'
 import { townPlace, useTownPlace } from '../lib/townPlace.js'
 import { bodyLights, celestialToPosition, LIGHT_RADIUS, SUN_VISUAL_RADIUS, MOON_RADIUS, moonSky, moonSunDir3D } from './celestialLights.js'
 import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
-import { onSceneStencil, onSceneStencilMissing, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
+import { onSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
 import { lookOf } from '../lib/lookOf.js'
 import { kitUrl } from '../lib/kitUrl.js'
@@ -186,9 +186,9 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
       // ▶ node scratch/frame-timeline/link-owners.mjs (each lit material holds one program after load).
       holdShadowEmpty(light, gl)
       // ⛔ AND IF IT WILL NEVER COME, SAY SO — on the event, not on a timer. BakedGround's loader reports a failed
-      // ground or a ground.json with no stencil (sceneStencilState.js#setSceneStencilMissing). A 5 s timer stood here
+      // ground or a ground.json with no stencil (setSceneStencil's second argument). A 5 s timer stood here
       // and cried wolf on every healthy boot slower than 5 s (huron under load, 2026-10-06).
-      return onSceneStencilMissing((why) => console.error(`[CelestialBodies] no scene stencil — sun shadows are held EMPTY (nothing is shadowed): ${why}`))
+      return onSceneStencil((st, why) => { if (!st && why) console.error(`[CelestialBodies] no scene stencil — sun shadows are held EMPTY (nothing is shadowed): ${why}`) })
     }
     const half = shadowHalfExtent(stencil)
     if (half == null) return

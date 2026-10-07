@@ -12,7 +12,7 @@
  * so it never marks: the mark says what the GPU was asked to draw, nothing else.
  *
  * WARD USABLE = THE REVEAL (Jacob, 2026-10-06; it was "ground + buildings", 2026-10-04): ground, buildings and trees
- * with their pages are prepared out of sight and shown on ONE frame (src/lib/reveal.js, Town.jsx#RevealGate), so the
+ * with their pages are prepared out of sight and shown on ONE frame (the `prepared:<class>` marks below, Town.jsx#RevealGate), so the
  * FIRST TRUTHFUL FRAME is the first frame that has drawn all three. TIME TO WARD is that mark's time from navigation start.
  * ▶ node checks/claims-startup-marks-fire-in-order.mjs
  */
@@ -26,11 +26,12 @@ export const STARTUP_SEQUENCE = [
   { id: 'ground', label: 'minimum ground', short: 'ground', blocking: true },
   { id: 'buildings', label: 'minimum buildings', short: 'buildings', blocking: true },
   { id: 'trees', label: 'trees (with their card pages)', short: 'trees', blocking: true },
+  { id: 'reveal', label: 'the reveal (the gate opens)', short: 'reveal', blocking: true },
   { id: 'first-truthful-frame', label: 'THE REVEAL = WARD USABLE', short: 'USABLE', blocking: true },
 ]
 
 // The pieces a truthful frame needs; when all have drawn, the frame is marked. Jacob ruled WARD USABLE = THE REVEAL
-// (2026-10-06): ground, buildings and trees, prepared and shown together (src/lib/reveal.js), so the trees are in it.
+// (2026-10-06): ground, buildings and trees, prepared and shown together (the `prepared:` marks below), so the trees are in it.
 const TRUTHFUL = ['ground', 'buildings', 'trees']
 
 export const hasPerf = typeof performance !== 'undefined' && typeof performance.mark === 'function'
@@ -67,4 +68,28 @@ export const isMarked = (id) => hasPerf && performance.getEntriesByName(MARK_PRE
 export const TIMELINE_PREFIX = 'tl:'
 export function markTimeline(kind, label) {
   if (hasPerf) performance.mark(TIMELINE_PREFIX + kind, { detail: label })
+}
+
+// ── THE REVEAL rides on these marks (Jacob, 2026-10-06; WARD USABLE = THE REVEAL; Town.jsx#RevealGate) ──────────────
+// A physical class says it is PREPARED (its geometry built, the textures its first look needs arrived) with a mark,
+// `ward:prepared:<class>`; one that will not arrive marks `ward:failed:<class>` with its reason, said loud; the gate
+// opening is `ward:reveal`. The startup record is the one record: no second registry (Jacob: no new sources of truth).
+export const markPrepared = (id) => markStartup('prepared:' + id)
+export const isPrepared = (id) => isMarked('prepared:' + id)
+export const isRevealed = () => isMarked('reveal')
+export function markFailed(id, reason) {
+  if (!hasPerf || isMarked('failed:' + id)) return
+  console.error(`[reveal] ⛔ "${id}" will not arrive: ${reason}. The town stays hidden rather than revealed with a hole.`)
+  performance.mark(MARK_PREFIX + 'failed:' + id, { detail: String(reason) })
+}
+export function failureOf(id) {
+  if (!hasPerf) return null
+  return performance.getEntriesByName(MARK_PREFIX + 'failed:' + id, 'mark')[0]?.detail ?? null
+}
+/** Called after every new `ward:` mark (a PerformanceObserver, as Preview's cold start reads them). Returns an unsubscribe. */
+export function subscribeStartup(fn) {
+  if (typeof PerformanceObserver === 'undefined') return () => {}
+  const obs = new PerformanceObserver((list) => { if (list.getEntries().some((e) => e.name.startsWith(MARK_PREFIX))) fn() })
+  try { obs.observe({ type: 'mark' }) } catch { return () => {} }
+  return () => obs.disconnect()
 }
