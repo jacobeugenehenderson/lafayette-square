@@ -309,7 +309,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-one-shot-flight.mjs` | "IS THE FLIGHT BETWEEN SHOTS ONE MOTION, OWNED BY THE TOWN?" |
 | `checks/claims-open-now-has-one-home-and-handles-midnight.mjs` | one predicate, and it survives a |
 | `checks/claims-opting-out-of-the-fade-is-explicit.mjs` | CLAIM: a population that does not fade says so EXPLICITLY, and buildings are one. |
-| `checks/claims-orphaned-customs.mjs` | It reported "27 of 76 authored leg slots are never read" (commit c430f4e9). |
+| `checks/claims-orphaned-customs.mjs` | every authored blockCustoms slot is PRESENT in its town's own baked shape.json (`tile.runs`); no shape ⇒ FAIL. `--selftest` mutates. |
 | `checks/claims-osm-ground-has-no-duplicates.mjs` | duplicates.mjs |
 | `checks/claims-override-provenance.mjs` | "WHOSE TOWN DOES THIS OVERRIDE BELONG TO?" — A11, the provenance classifier. |
 | `checks/claims-preclip-walk.mjs` | DOES THE PUNCH-OUT EVER SEE A CLIPPED VERTEX? |

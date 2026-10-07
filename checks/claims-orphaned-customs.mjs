@@ -1,113 +1,85 @@
-// ⛔⛔ RETRACTED 2026-08-06 — THIS PROBE'S HEADLINE RESULT IS VOID. DO NOT CITE IT.
-//
-// It reported "27 of 76 authored leg slots are never read" (commit c430f4e9).
-// That number is void for TWO independent reasons, either one fatal:
-//
-//   1. IT WAS MEASURED AGAINST A FILE THAT CHANGED UNDER IT. Jacob was authoring
-//      and reverting in the live app while this read design.json from disk. HEAD
-//      had 49 Section-field slots; the working tree had 0 minutes later. The
-//      number has no timestamp and cannot be reproduced.
-//      → Snapshot an operator-authored artifact, measure the COPY, report "as of".
-//
-//   2. ITS PREMISE WAS WRONG. It assumed the write key is feCustomKey's
-//      min(segOrds) while the read key is run.segOrd — a mismatch. But the store
-//      FANS a write across every segOrd the fe owns (`feSegOrds`,
-//      useCartographStore.js:26; RIBBONS §2, SECTION §5). There is no min-only
-//      write. And RIBBONS §5 already names the harness for this exact question:
-//      `scratch/t4-fe-parity.mjs`. Both facts were in the canon, unread.
-//
-// ⛔ AND THE FIX IT WAS HUNTING IS FORBIDDEN. SECTION §6.3, on this defect class:
-//    "Do not fan the write across the leg range, do not restore the mouth on the
-//     9, do not key differently. Answer the hole, not the cover." The addressing
-//    fix was built, gated, and RETIRED — naming a leg does not give it edges. The
-//    root is the missing second mouth corner (POLYGON-FIRST §2.1 Check 5).
-//
-// Kept, not deleted, because the earlier VERSION of this file was worse: it read
-// `frontageEdges` off buildTileGround (which returns none) and reported the
-// operator's entire authored corpus orphaned, off an empty array. That near-miss
-// is the reason the rule exists: a probe whose result would be catastrophic if
-// true is BROKEN until proven otherwise — print the denominator.
-//
-// The live, trustworthy sibling from that day is `claims-revert-field-coverage.mjs`.
-//
-// ─────────────────────────────────────────────────────────────────────────────
+#!/usr/bin/env node
 // claims-orphaned-customs.mjs — DOES EVERY AUTHORED CUSTOM HAVE SOMETHING TO READ IT?
 //
-// The operator's override is the product. A custom written to a slot that no
-// frontage edge resolves to is a gesture that was accepted, stored, and is never
-// read — silently. That is Layer 0 q2 (no silent substitution) applied to
-// authoring, and it is kit-general: it fires on any town, needs no prior
-// knowledge of the street, and its absence is provable.
+// The operator's override is the product. A custom written to a slot that nothing resolves is a gesture that was
+// accepted, stored, and never read — silently. Layer 0 q2 applied to authoring: kit-general, fires on any town.
 //
-// Cross-references every blockCustoms slot against the feCustomKey of every real
-// frontage edge, plus the synthetic cap fes.
+// ⭐ ONE SOURCE: the town's own frozen shape (`public/baked/<town>/shape.json`). The live painter reads a leg custom at
+// `blockCustoms[run.skelId][run.side][run.segOrd]` for every run of `tile.runs` (`tileGround.js` `runCustom`), and a cap
+// custom through `readCapCustom` for each frozen `tile.roundTips` entry. So a slot is PRESENT exactly when the shape
+// carries a run (or round tip) with its key, and nothing else is asked. ⛔ A town with authored slots and no shape.json
+// FAILS — never a skip. (Replaced 2026-10-07: the old version read LS's ribbons for every scene and modelled frontage
+// with buildBlockGeometryV2, not the ① producer; its history is in `cartograph/_archive/orphaned-customs-retraction-2026-10-07.md`.)
 //
-//   node checks/claims-orphaned-customs.mjs [scene]
-// Read-only. No pour, no bake.
-import fs from 'fs'
-import { feCustomKey, makeCapFe, CAP_SEGORD, isCapSegOrd } from '../src/lib/feCustomKey.js'
+//   node checks/claims-orphaned-customs.mjs [town ...]     (default: every Look with authored blockCustoms)
+//   node checks/claims-orphaned-customs.mjs --selftest      (mutations: another town's shape · a dropped run — each must FAIL)
+// Read-only.
+import { readFileSync, existsSync, readdirSync } from 'fs'
+import { capCustomKey, isCapSegOrd } from '../src/lib/feCustomKey.js'
 
-const scene = process.argv[2] || 'lafayette-square'
-const ribbons = JSON.parse(fs.readFileSync('src/data/ribbons.json', 'utf8'))
-const design = JSON.parse(fs.readFileSync(`public/looks/${scene}/design.json`, 'utf8'))
-const bc = design.blockCustoms || {}
-
-const nb = JSON.parse(fs.readFileSync(`cartograph/data/${scene}/neighborhood_boundary.json`, 'utf8'))
-// The geometry reach is the radius: the fade is a Look's and never moves geometry (sceneStencil.js, 2026-10-06).
-const sc0 = 1   // the stencil IS the disc's ring
-const [cx, cz] = nb.center
-const stencil = nb.boundary.map(([x, z]) => [cx + (x - cx) * sc0, cz + (z - cz) * sc0])
-
-const orig = console.log; console.log = () => {}
-const { buildBlockGeometryV2 } = await import('../src/lib/buildBlockGeometryV2.js')
-const v2 = buildBlockGeometryV2(ribbons, {
-  stencil, blockCustoms: bc,
-  curbWidth: design.curbWidth ?? 0.15, blockLandUse: design.blockLandUse,
-})
-console.log = orig
-
-// The key a custom is READ under is feCustomKey = [skel, side, MIN(segOrds)].
-const feKeys = new Set()
-let feTotal = 0, feNoKey = 0
-for (const fe of (v2.frontageEdges || [])) {
-  feTotal++
-  const k = feCustomKey(fe)
-  if (!k) { feNoKey++; continue }
-  feKeys.add(k.join('|'))
+const R0 = new URL('../', import.meta.url).pathname
+const argv = process.argv.slice(2), selftest = argv.includes('--selftest')
+const customsOf = (town) => {
+  const p = `${R0}public/looks/${town}/design.json`
+  if (!existsSync(p)) throw new Error(`⛔ ${town}: no Look at public/looks/${town}/design.json`)
+  return JSON.parse(readFileSync(p, 'utf8')).blockCustoms || {}
 }
-
-// every CAP key the frozen faces can resolve
-const capKeys = new Set()
-for (const t of ribbons.tiles || []) for (const c of (t.caps || [])) {
-  const fe = makeCapFe(c.skelId, c.capEnd)
-  const k = fe && feCustomKey(fe)
-  if (k) capKeys.add(k.join('|'))
+const slotsOf = (bc) => Object.entries(bc).flatMap(([skel, sides]) => Object.entries(sides || {}).flatMap(([side, ords]) =>
+  Object.keys(ords || {}).map(o => ({ key: `${skel}|${side}|${o}`, cap: isCapSegOrd(Number(o)) }))))
+const shapeOf = (town) => {
+  const p = `${R0}public/baked/${town}/shape.json`
+  if (!existsSync(p)) return null
+  const s = JSON.parse(readFileSync(p, 'utf8'))
+  if (!Array.isArray(s.tiles)) throw new Error(`⛔ ${town}: public/baked/${town}/shape.json has no .tiles array`)
+  return s
 }
-
-console.log(`scene: ${scene}`)
-console.log(`frontage edges: ${feTotal}  (resolvable to a custom slot: ${feTotal - feNoKey}, NO KEY: ${feNoKey})`)
-console.log(`cap slots available (frozen faces): ${capKeys.size}`)
-
-// ── walk the authored customs ──
-const orphans = [], live = []
-for (const [skelId, sides] of Object.entries(bc)) {
-  for (const [side, ords] of Object.entries(sides)) {
-    for (const ord of Object.keys(ords)) {
-      const seg = Number(ord)
-      const key = [skelId, side, seg].join('|')
-      const isCap = isCapSegOrd(seg)
-      const found = isCap ? capKeys.has(key) : feKeys.has(key)
-      const rec = { key, skelId, side, seg, isCap, kinds: Object.keys(ords[ord]) }
-      ;(found ? live : orphans).push(rec)
-    }
+// every key the shape's readers resolve: one per run, one per round cap
+const readKeys = (shape) => {
+  const keys = new Set()
+  for (const t of shape.tiles) {
+    for (const r of t?.runs || []) keys.add(`${r.skelId}|${r.side}|${r.segOrd}`)
+    for (const tip of t?.roundTips || []) { const k = capCustomKey(tip.skelId, tip.capEnd); if (k) keys.add(k.join('|')) }
   }
+  return keys
+}
+const audit = (slots, keys) => ({ present: slots.filter(s => keys.has(s.key)), absent: slots.filter(s => !keys.has(s.key)) })
+
+if (selftest) {
+  // a town with authored slots, measured against its own shape (control), another town's, and its own less one run
+  const towns = readdirSync(`${R0}public/looks`).filter(t => existsSync(`${R0}public/baked/${t}/shape.json`) && existsSync(`${R0}public/looks/${t}/design.json`))
+  const subj = argv.find(a => !a.startsWith('--')) || towns.find(t => slotsOf(customsOf(t)).length)
+  const other = towns.find(t => t !== subj && !t.startsWith(subj) && !subj.startsWith(t))
+  const slots = slotsOf(customsOf(subj)), own = shapeOf(subj)
+  const ctl = audit(slots, readKeys(own))
+  const foreign = audit(slots, readKeys(shapeOf(other)))
+  const victim = ctl.present[0]?.key
+  const dropped = { tiles: own.tiles.map(t => t && { ...t, runs: (t.runs || []).filter(r => `${r.skelId}|${r.side}|${r.segOrd}` !== victim) }) }
+  const drop = audit(slots, readKeys(dropped))
+  const rows = [
+    [`control: ${subj} against its own shape resolves at least one slot`, ctl.present.length > 0],
+    [`another town's shape (${other}) leaves ${subj}'s slots absent`, foreign.absent.length > ctl.absent.length],
+    [`dropping the run ${victim} makes exactly that slot absent`, drop.absent.length === ctl.absent.length + 1 && drop.absent.some(s => s.key === victim)],
+  ]
+  for (const [n, ok] of rows) console.log(`  ${ok ? '✅' : '⛔'} ${n}`)
+  console.log(`  (${subj}: ${slots.length} slots · own ${ctl.present.length} present · foreign ${foreign.present.length} present · dropped ${drop.present.length} present)`)
+  const bad = rows.filter(r => !r[1]).length
+  console.log(bad ? `⛔ selftest: ${bad} wrong` : '✅ selftest: the check fails on a wrong shape and on a missing run')
+  process.exit(bad ? 1 : 0)
 }
 
-console.log(`\nauthored slots: ${live.length + orphans.length}   live: ${live.length}   ⛔ ORPHANED: ${orphans.length}`)
-if (orphans.length) {
-  console.log(`\n⛔ ORPHANED — the operator authored these and NOTHING reads them:`)
-  for (const o of orphans.sort((a, b) => a.key.localeCompare(b.key)))
-    console.log(`   ${o.isCap ? 'CAP ' : 'LEG '}${o.skelId} [${o.side}][${o.seg}]  {${o.kinds.join(',')}}`)
-} else {
-  console.log(`\n✅ every authored slot resolves to something that reads it.`)
+const named = argv.filter(a => !a.startsWith('--'))
+const towns = named.length ? named : readdirSync(`${R0}public/looks`).filter(t => existsSync(`${R0}public/looks/${t}/design.json`) && slotsOf(customsOf(t)).length)
+let bad = 0
+for (const town of towns) {
+  const slots = slotsOf(customsOf(town)), shape = shapeOf(town)
+  if (!shape) {
+    if (slots.length) { bad++; console.log(`⛔ ${town}: ${slots.length} authored slot(s) and NO public/baked/${town}/shape.json — nothing to resolve them against (bake the town)`) }
+    else console.log(`   ${town}: 0 authored slots, no shape`)
+    continue
+  }
+  const { present, absent } = audit(slots, readKeys(shape))
+  if (absent.length) bad++
+  console.log(`${absent.length ? '⛔' : '✅'} ${town}: ${present.length}/${slots.length} authored slot(s) present in the shape${absent.length ? ` · ABSENT ${absent.length}:` : ''}`)
+  for (const s of absent) console.log(`     ${s.cap ? 'CAP' : 'LEG'} ${s.key}`)
 }
+process.exit(bad ? 1 : 0)
