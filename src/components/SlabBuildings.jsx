@@ -31,7 +31,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
-import { terrainExag, terrainFloorRaw, RISER_LIFT_GLSL } from '../utils/terrainShader'
+import { terrainExag, terrainFloorRaw } from '../utils/terrainShader'
+import { buildingLiftGLSL, buildingLiftY } from '../lib/buildingLift.js'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useTownContext } from './townContext.js'
@@ -350,10 +351,6 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       if (d.uvs) geom.setAttribute('uv', new THREE.Float32BufferAttribute(d.uvs, 2))
       geom.setIndex(new THREE.Uint32BufferAttribute(d.indices, 1))
       geom.computeVertexNormals()
-      // BVH — R3F raycasts every mesh carrying a pointer handler on EVERY pointermove. Brute-forcing a town's merged
-      // groups measured 13.2–13.4 ms per move on Huron (2026-10-06, 200k vertices) — a whole 60 Hz frame. Built once per
-      // slab; `indirect` leaves the index (the draw order every range reads) untouched. CityModel.jsx does the same.
-      geom.boundsTree = new MeshBVH(geom, { indirect: true })
       return { group: d.group, geometry: geom, texId: textureIdFor(d.group, scene) }
     })
   }, [data, scene, cityCoveredIds])
@@ -615,7 +612,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          vBId = aBuildingId;
          vCovered = aCovered;
          ${isWall ? 'vNightCol = aNightColor;' : ''}
-         ${isFoundation ? RISER_LIFT_GLSL : 'transformed.y += aCentroidY * uExag;'}`
+         ${buildingLiftGLSL(isFoundation)}`
       )
 
       // ── Fragment: declarations ──
@@ -811,7 +808,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
          varying float vCoveredD;`)
         .replace('#include <begin_vertex>', `#include <begin_vertex>
          vCoveredD = aCovered;
-         ${isFoundation ? RISER_LIFT_GLSL : 'transformed.y += aCentroidY * uExag;'}`)
+         ${buildingLiftGLSL(isFoundation)}`)
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', `#include <common>
          varying float vCoveredD;`)
@@ -822,6 +819,41 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
     dm.customProgramCacheKey = () => `slab-bldg-depth-centroidlift-v2-${isFoundation ? 'riser' : 'rigid'}`
     return dm
   }, [isFoundation])
+
+  // ── THE PICK COPY: what you click is what you SEE. The shader lifts every vertex onto the terrain
+  // (src/lib/buildingLift.js); the raycast used to test the UN-lifted geometry, so the clickable building sat
+  // aCentroidY × uExag below the drawn one (Ward, Huron, Hero: a drawn roof selected nothing, empty ground under the
+  // building selected it). The copy shares the index and carries the drawn positions — the same lift, by the one
+  // definition — and a BVH (R3F raycasts every handler mesh on every pointermove: brute force was 13 ms a move on
+  // Huron). Re-lifted and REFIT lazily, on the first raycast after anything the lift reads has changed (uExag, the
+  // floor, the geometry) — nothing runs per frame. `indirect` leaves the shared index (every range's draw order) as is.
+  const pick = useMemo(() => {
+    const raw = geometry.attributes.position.array, cy = geometry.attributes.aCentroidY.array
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(raw.length), 3))
+    g.setIndex(geometry.index)
+    const state = { exag: NaN, floor: NaN, bvh: null }
+    const relift = () => {
+      const exag = terrainExag.value, floor = terrainFloorRaw.value
+      if (exag === state.exag && floor === state.floor && state.bvh) return
+      const out = g.attributes.position.array
+      for (let i = 0, v = 0; i < raw.length; i += 3, v++) {
+        out[i] = raw[i]; out[i + 2] = raw[i + 2]
+        out[i + 1] = buildingLiftY(raw[i + 1], cy[v], exag, floor, isFoundation)
+      }
+      g.attributes.position.needsUpdate = true
+      if (state.bvh) state.bvh.refit(); else { state.bvh = new MeshBVH(g, { indirect: true }); g.boundsTree = state.bvh }
+      state.exag = exag; state.floor = floor
+    }
+    return { geometry: g, relift }
+  }, [geometry, isFoundation])
+  useEffect(() => () => { pick.geometry.boundsTree = null; pick.geometry.dispose() }, [pick])
+  const raycastDrawn = useMemo(() => function (raycaster, intersects) {
+    pick.relift()
+    const shown = this.geometry
+    this.geometry = pick.geometry
+    try { acceleratedRaycast.call(this, raycaster, intersects) } finally { this.geometry = shown }
+  }, [pick])
 
   // Resolve a raycast hit to a building id via the aBuildingId attribute.
   // A DISCARDED fragment still raycasts, so an extrusion hidden behind a city
@@ -846,7 +878,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       castShadow
       receiveShadow
       frustumCulled={false}
-      raycast={acceleratedRaycast}
+      raycast={raycastDrawn}
       onPointerMove={interactive ? (e) => { e.stopPropagation(); const id = idAtFace(e); if (id) { setHovered(id); document.body.style.cursor = 'pointer' } } : undefined}
       onPointerOut={interactive ? () => { clearHovered(); document.body.style.cursor = 'auto' } : undefined}
       onClick={interactive ? (e) => { e.stopPropagation(); if (isDrag(e)) return; const id = idAtFace(e); if (id) select(id) } : undefined}

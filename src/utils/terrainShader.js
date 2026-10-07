@@ -156,12 +156,7 @@ if (typeof window !== 'undefined') window.__terrainExag = terrainExag
 // water-datum town's land can dip below it (provincetown −1.14 m, huron −0.11 m).
 function lowestGround(d) { let m = 0; for (let i = 0; i < d.length; i++) if (d[i] < m) m = d[i]; return m }
 export const terrainFloorRaw = { value: lowestGround(_terrain.data) }
-// ONE rule, four consumers: foundation render + depth materials, slab (SlabBuildings) + Stage
-// (LafayetteScene Foundations). Needs `aCentroidY`, `uExag`, `uRiserFloor` (= terrainFloorRaw).
-// The baked riser's below-grade ring is the only geometry with y < 0; its baked depth is a
-// MARKER, not a size — the ring is placed on the town floor here, and the rest lifts rigidly.
-export const RISER_LIFT_GLSL = `
-         transformed.y = position.y < 0.0 ? uRiserFloor * uExag : transformed.y + aCentroidY * uExag;`
+// The floor a foundation's below-grade ring is seated on: src/lib/buildingLift.js (the one definition of the lift).
 
 // ── Shared uniform objects ───────────────────────────────────────
 // The wrapper objects here are Object.assign'd into every patched shader by

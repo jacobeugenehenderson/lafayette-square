@@ -11,8 +11,8 @@
 //
 // ⭐ The riser runs from the building's floor down to THE TOWN'S FLOOR — the
 // lowest ground the town can draw, min(0, heightfield min) × uExag (Jacob,
-// 2026-09-26). That is placed in the vertex shader (`RISER_LIFT_GLSL`,
-// src/utils/terrainShader.js), so no footprint corner can sit below it at any
+// 2026-09-26). That is placed in the vertex shader (src/lib/buildingLift.js, the one
+// definition of the lift), so no footprint corner can sit below it at any
 // exaggeration. ⛔ FOUNDATION_BELOW_GRADE_M is therefore only a MARKER for the
 // below-grade ring (any y < 0); its value sizes nothing. It was 8 m sized from
 // LS's worst slope — a constant true for town #1 only — and is kept only so the
