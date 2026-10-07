@@ -40,6 +40,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { ribbonsPath } from './_scenes.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '..')
@@ -50,9 +51,7 @@ const STEP = 10          // m — station spacing along each chain
 const { buildTileGround, ringRunOwners, bandSpans } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
 
 const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'))
-const ribbons = rd(SCENE === 'lafayette-square'
-  ? 'src/data/ribbons.json'
-  : `cartograph/data/${SCENE}/clean/ribbons.json`)
+const ribbons = rd(ribbonsPath(SCENE))   // the town's own declared ribbons (cartograph/scene.js#ribbonsPathOf)
 const design = (() => { try { return rd(`public/looks/${SCENE}/design.json`) } catch { return {} } })()
 // ⭐ TWO polygons, and using the wrong one is a denominator defect this check
 // already committed: the STENCIL is the fade-extended envelope (radius + fade +

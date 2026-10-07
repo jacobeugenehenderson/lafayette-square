@@ -37,12 +37,13 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const scene = process.argv.includes('--scene') ? process.argv[process.argv.indexOf('--scene') + 1] : 'lafayette-square'
 
 const shapeP = path.join(ROOT, 'public/baked', scene, 'shape.json')
-const ribP = path.join(ROOT, 'src/data/ribbons.json')          // LS's frame (the promoted one)
+const ribP = ribbonsPathOf(scene)                               // the town's OWN ribbons — never LS's for every town
 const designP = path.join(ROOT, 'public/looks', scene, 'design.json')
 for (const p of [shapeP, ribP]) {
   if (!fs.existsSync(p)) { console.error(`⛔ missing input: ${p} — NOT MEASURED`); process.exit(2) }

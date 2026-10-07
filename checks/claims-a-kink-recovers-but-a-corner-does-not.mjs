@@ -49,6 +49,7 @@
 // ▶ node checks/claims-a-kink-recovers-but-a-corner-does-not.mjs [scene ...] [--list]
 import fs from 'fs'
 import { feed, feedScenes } from '../scratch/_proto-feed.mjs'
+import { ribbonsPath } from './_scenes.mjs'
 
 const src = fs.readFileSync(new URL('../src/lib/tileGround.js', import.meta.url), 'utf8')
 const m = src.match(/const FILLET_TURN_TOL\s*=\s*([0-9.]+)\s*\*\s*Math\.PI\s*\/\s*180/)
@@ -70,7 +71,7 @@ for (const scene of scenes) {
   const f = feed(scene); if (!f) continue
   const P = f.ribbons.protopolygon
   if (!P?.rings?.length || !P.owners?.length) {
-    console.log(`⛔ ${scene}: no frozen protopolygon in ${scene === 'lafayette-square' ? 'src/data/ribbons.json' : 'its ribbons'} — SKIPPED LOUDLY. This scene has not been poured since ① landed; it was NOT checked.`)
+    console.log(`⛔ ${scene}: no frozen protopolygon in ${ribbonsPath(scene)} — SKIPPED LOUDLY. This scene has not been poured since ① landed; it was NOT checked.`)
     continue
   }
   const nodePts = Object.values(P.nodes || {}).filter(Array.isArray)

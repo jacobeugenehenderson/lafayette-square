@@ -17,6 +17,7 @@
 import fs from 'fs'
 import path from 'path'
 import { ribbonScenes } from './_scenes.mjs'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname)
 const argv = process.argv.slice(2)
@@ -24,13 +25,10 @@ const WANT = (argv.find(a => /^--scene=/.test(a)) || '').split('=')[1]
 const ALL = argv.includes('--all')
 const CUSTOMS = argv.includes('--customs')
 
-// LS's ribbons artifact is PROMOTED to src/data/ribbons.json (cartograph/serve.js
-// slabPathspecs); every other scene keeps it in its own clean/ dir.
+// the town's OWN declared ribbons (cartograph/scene.js#ribbonsPathOf — one answer kit-wide), or null when absent
 function ribbonsPathFor(scene) {
-  const own = path.join(ROOT, 'cartograph/data', scene, 'clean/ribbons.json')
-  if (fs.existsSync(own)) return own
-  const promoted = path.join(ROOT, 'src/data/ribbons.json')
-  return scene === 'lafayette-square' && fs.existsSync(promoted) ? promoted : null
+  const p = ribbonsPathOf(scene)
+  return fs.existsSync(p) ? p : null
 }
 
 function scenes() {

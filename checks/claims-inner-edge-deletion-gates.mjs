@@ -7,6 +7,8 @@
 // BEFORE state. ⛔ It is not a spare copy to restore from — see streetProfiles.js.
 import fs from 'fs'
 import path from 'path'
+import { ribbonScenes } from './_scenes.mjs'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname)
 const CUSTOMS = process.argv.includes('--customs')
@@ -38,11 +40,8 @@ function customsFor(scene) {
   return fs.existsSync(p) ? (JSON.parse(fs.readFileSync(p)).blockCustoms || {}) : null
 }
 
-const paths = [['lafayette-square', path.join(ROOT, 'src/data/ribbons.json')]]
-for (const s of fs.readdirSync(path.join(ROOT, 'cartograph/data'))) {
-  const p = path.join(ROOT, 'cartograph/data', s, 'clean/ribbons.json')
-  if (fs.existsSync(p)) paths.push([s, p])
-}
+// the towns: the registry's, each with its OWN declared ribbons (`ribbonScenes` prints any NOT CHECKED)
+const paths = ribbonScenes().map(s => [s, ribbonsPathOf(s)])
 
 let fail = 0
 const line = (ok, msg) => { if (!ok) fail++; console.log(`  ${ok ? 'PASS' : '⛔ FAIL'}  ${msg}`) }
