@@ -196,7 +196,7 @@ function fadeForGroup(group, stencil) {
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
 
-function GroundMeshes({ look, manifest, bin, context, coast, scene: bakedScene, bakeLastMs, surfacesOverride }) {
+function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: bakedScene, bakeLastMs, surfacesOverride }) {
   // ⭐ `surfacesOverride` is the live-authoring layer, the same pattern PostProcessing's
   // *Override props follow: it sits over the baked `scene.surfaces`, never beside it.
   const scene = useMemo(() => (surfacesOverride
@@ -350,20 +350,21 @@ function GroundMeshes({ look, manifest, bin, context, coast, scene: bakedScene, 
     const bbox = manifest.bbox
     const W = bbox.max[0] - bbox.min[0]
     const H = bbox.max[2] - bbox.min[2]
-    return manifest.groups.map(g => {
+    const outerByGroup = assignOuterWater(manifest, bin, outer, look)
+    return manifest.groups.map((g, gi) => {
       const positions = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)
       const indices   = new Uint32Array(bin,  g.indexByteOffset,  g.indexCount)
       // Planar UV (and identical UV2): u = (x - minX)/W, v = (z - minZ)/H.
       // Matches the AO baker's texel→world mapping exactly.
 
-      // ⭐ THE WATER GOES TO THE HORIZON (Jacob, 2026-09-27). Where the town's rim is water, the water body's own mesh
-      // runs on out past it to the horizon's reach (HorizonDisc horizonFor), so the same surface — glitter, sky, depth —
-      // carries on and thins into the haze, with no line where the drawn water stops. The body's extent is kept for its
-      // wave scale. Directions whose rim is land are left to the horizon disc.
+      // ⭐ THE WATER GOES TO THE HORIZON (Jacob, 2026-09-27), ALONG THE REAL COAST (2026-10-06, BRIEF-the-coast-runs-on-
+      // past-the-rim): the water body's own mesh carries on past the rim as the baked outer-coast polygons it continues,
+      // so the same surface — glitter, sky, depth — thins into the haze, and the water/land edge past the rim is the
+      // real coast and its headings, never a radial line. The body's extent is kept for its wave scale.
       let posUse = positions, idxUse = indices, bodyExtent = null
       if (g.kind !== 'face' && isWaterGroupId(g.id) && manifest.stencil?.radius > 0) {
-        const ext = extendWaterToHorizon(positions, indices, manifest.stencil)
-        if (ext) { posUse = ext.positions; idxUse = ext.indices; bodyExtent = ext.bodyExtent }
+        const ext = withOuterWater(positions, indices, outerByGroup.get(gi) || [])
+        posUse = ext.positions; idxUse = ext.indices; bodyExtent = ext.bodyExtent
       }
       const geom = new THREE.BufferGeometry()
       geom.setAttribute('position', new THREE.BufferAttribute(posUse, 3))
@@ -699,9 +700,6 @@ function TerrainExagDriver({ target }) {
 // ⛔ Default is the TOWN's authored ceiling, resolved at call time — not a module constant
 // captured at import, which would pin every look to whatever loaded first (site 15).
 
-// The water body's mesh, run on past the town's rim to the horizon's reach wherever the rim is water. 256 directions
-// around the rim: a direction whose rim point lies in the body's own triangles gets a sector from the rim out to the
-// horizon's fade (horizonFor), at the body's own level. Returns null when no direction is water.
 // The active town's water levels. ⛔ A terrain with no `water` record was baked before the levels existed: the water
 // stands at the terrain's zero (the survey flight's level, which no one chose), and that is SAID, once.
 let _saidNoLevels = false
@@ -712,22 +710,19 @@ function waterLevelsOrSay() {
   }
 }
 
-// The water past the rim: its haze fade (horizonFor) and the drawing's own rim fade. ⛔ A stencil with no fade band is
+// The water past the rim: its alpha fade (horizonFor radius → fadeOuter), its haze into the sky on the horizon disc's own
+// fade (fadeInner → fadeOuter, waterMaterial uHazeIn) and the drawing's own rim fade. ⛔ A stencil with no fade band is
 // said once; its rim is then its radius — the drawing's edge, with no band to fade across.
 let _saidNoFade = false
 function waterHorizon(stencil) {
   const h = horizonFor(stencil.radius), f = stencil.fade
   if (!(f?.outer > 0) && !_saidNoFade) { _saidNoFade = true; console.error('[BakedGround] ⛔ ground.json stencil carries no fade band — the water turns deep AT the rim, with no fade. ▶ re-bake the ground') }
-  return { center: stencil.center, inner: h.radius, outer: h.fadeOuter, rimIn: f?.inner ?? stencil.radius, rimOut: f?.outer ?? stencil.radius }
+  return { center: stencil.center, inner: h.radius, outer: h.fadeOuter, hazeIn: h.fadeInner, rimIn: f?.inner ?? stencil.radius, rimOut: f?.outer ?? stencil.radius }
 }
 
-const HORIZON_SECTORS = 256
-function extendWaterToHorizon(positions, indices, stencil) {
-  const [cx, cz] = stencil.center, R = stencil.radius, Y = positions[1]
-  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
-  for (let i = 0; i < positions.length; i += 3) { const x = positions[i], z = positions[i + 2]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z }
-  const bodyExtent = Math.hypot(x1 - x0, z1 - z0)
-  const inBody = (x, z) => {
+// Is (x, z) inside this mesh's triangles? (the rim test: which body continues past the rim in a direction)
+function bodyTester(positions, indices) {
+  return (x, z) => {
     for (let t = 0; t < indices.length; t += 3) {
       const a = indices[t] * 3, b = indices[t + 1] * 3, c = indices[t + 2] * 3
       const d = (positions[b + 2] - positions[c + 2]) * (positions[a] - positions[c]) + (positions[c] - positions[b]) * (positions[a + 2] - positions[c + 2])
@@ -738,16 +733,57 @@ function extendWaterToHorizon(positions, indices, stencil) {
     }
     return false
   }
-  const outer = horizonFor(R).fadeOuter
-  const wet = []
-  for (let k = 0; k < HORIZON_SECTORS; k++) { const a = ((k + 0.5) / HORIZON_SECTORS) * Math.PI * 2; wet.push(inBody(cx + Math.cos(a) * R * 0.995, cz + Math.sin(a) * R * 0.995)) }
-  if (!wet.some(Boolean)) return null
+}
+
+// Which water group each outer-coast polygon continues: the body that is wet just inside the rim where the polygon
+// meets the rim; a piece that does not touch the rim (water past a land point of the rim) goes with its ring's other
+// pieces. ⛔ No guess: a wet rim with no record, or a piece no body continues, is SAID — rim water only, counted.
+const _saidOuter = new Set()
+function assignOuterWater(manifest, bin, outer, look) {
+  const out = new Map(), st = manifest.stencil
+  if (!(st?.radius > 0)) return out
+  const [cx, cz] = st.center, R = st.radius
+  const bodies = manifest.groups.map((g, gi) => ({ g, gi })).filter(({ g }) => g.kind !== 'face' && isWaterGroupId(g.id))
+    .map(({ g, gi }) => ({ gi, inBody: bodyTester(new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3), new Uint32Array(bin, g.indexByteOffset, g.indexCount)) }))
+  if (!bodies.length) return out
+  const say = (msg) => { if (_saidOuter.has(look + msg)) return; _saidOuter.add(look + msg); console.error(`[BakedGround] ⛔ ${look}: ${msg}`) }
+  const wetAt = (a) => bodies.find((b) => b.inBody(cx + Math.cos(a) * R * 0.995, cz + Math.sin(a) * R * 0.995))
+  if (!outer || outer.absent || !Array.isArray(outer.polygons)) {
+    const wet = Array.from({ length: 64 }, (_, k) => wetAt((k + 0.5) / 64 * Math.PI * 2)).filter(Boolean).length
+    if (wet) say(`the rim is water in ${wet}/64 directions but the slab carries no outer coast (${outer?.why ?? 'no outer-coast.json'}) — the water stops at the rim. ▶ node cartograph/bake-coast-distance.js --scene=${look}`)
+    return out
+  }
+  const owner = outer.polygons.map((p) => {
+    const rim = p.outer.filter(([x, z]) => Math.abs(Math.hypot(x - cx, z - cz) - R) < 2)
+    const stride = Math.max(1, Math.floor(rim.length / 64))
+    for (let i = 0; i < rim.length; i += stride) { const b = wetAt(Math.atan2(rim[i][1] - cz, rim[i][0] - cx)); if (b) return b.gi }
+    return null
+  })
+  outer.polygons.forEach((p, i) => { if (owner[i] == null) { const j = outer.polygons.findIndex((q, k) => q.ring === p.ring && owner[k] != null); if (j >= 0) owner[i] = owner[j] } })
+  const lost = owner.filter((o) => o == null).length
+  if (lost) say(`${lost} outer-coast piece(s) continue no water body at the rim — not drawn`)
+  outer.polygons.forEach((p, i) => { if (owner[i] != null) { if (!out.has(owner[i])) out.set(owner[i], []); out.get(owner[i]).push(p) } })
+  return out
+}
+
+// The body's own mesh plus its outer-coast polygons, triangulated at the body's level, wound as the body's own
+// triangles are. Returns the body's extent (its wave scale) from its own vertices.
+function withOuterWater(positions, indices, polys) {
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+  for (let i = 0; i < positions.length; i += 3) { const x = positions[i], z = positions[i + 2]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z }
+  const bodyExtent = Math.hypot(x1 - x0, z1 - z0)
+  if (!polys.length) return { positions, indices, bodyExtent }
+  const Y = positions[1]
+  const area2 = (P, a, b, c) => (P[b * 3] - P[a * 3]) * (P[c * 3 + 2] - P[a * 3 + 2]) - (P[c * 3] - P[a * 3]) * (P[b * 3 + 2] - P[a * 3 + 2])
+  let wind = 0; for (let t = 0; t < indices.length && !wind; t += 3) wind = Math.sign(area2(positions, indices[t], indices[t + 1], indices[t + 2]))
   const P = Array.from(positions), I = Array.from(indices)
-  for (let k = 0; k < HORIZON_SECTORS; k++) {
-    if (!wet[k]) continue
-    const a0 = (k / HORIZON_SECTORS) * Math.PI * 2, a1 = ((k + 1) / HORIZON_SECTORS) * Math.PI * 2, v = P.length / 3
-    for (const [a, r] of [[a0, R], [a1, R], [a1, outer], [a0, outer]]) P.push(cx + Math.cos(a) * r, Y, cz + Math.sin(a) * r)
-    I.push(v, v + 2, v + 1, v, v + 3, v + 2)
+  for (const poly of polys) {
+    const contour = poly.outer.map(([x, z]) => new THREE.Vector2(x, z)), holes = poly.holes.map((h) => h.map(([x, z]) => new THREE.Vector2(x, z)))
+    const v0 = P.length / 3
+    for (const q of [contour, ...holes].flat()) P.push(q.x, Y, q.y)
+    for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(contour, holes)) {
+      if (wind && Math.sign(area2(P, v0 + a, v0 + b, v0 + c)) !== wind) I.push(v0 + a, v0 + c, v0 + b); else I.push(v0 + a, v0 + b, v0 + c)
+    }
   }
   return { positions: new Float32Array(P), indices: new Uint32Array(I), bodyExtent }
 }
@@ -783,7 +819,11 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
         const context = await slabFetch(look, 'context.json', undefined, bake)
           .then(r => (r.ok ? r.json() : null)).catch(() => null)
         const coast = await loadCoastDist(look, context, bake)
-        if (!cancelled) setData({ manifest: m, bin, context, coast })
+        // The water past the rim, along the real coast (bake-coast-distance → outer-coast.mjs). Absent file → null,
+        // and GroundMeshes says so where the rim is wet; never a guessed run-on.
+        const outer = await slabFetch(look, 'outer-coast.json', undefined, bake)
+          .then(r => (r.ok ? r.json() : null)).catch(() => null)
+        if (!cancelled) setData({ manifest: m, bin, context, coast, outer })
       } catch (e) {
         console.error('[BakedGround] ⛔ the ground is not drawn:', e)
       }
@@ -799,7 +839,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
           manifest (poolmap may flip absent→present across a bake), and a bare
           re-render would change hook order and crash. Remount is fine: the
           geometry already rebuilds on manifest change. */}
-      {data && scene && <GroundMeshes key={bake ?? 'static'} look={resolvedLookId} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} scene={scene} bakeLastMs={bake} surfacesOverride={surfacesOverride} />}
+      {data && scene && <GroundMeshes key={bake ?? 'static'} look={resolvedLookId} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} outer={data.outer} scene={scene} bakeLastMs={bake} surfacesOverride={surfacesOverride} />}
     </>
   )
 }

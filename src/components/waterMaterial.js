@@ -371,6 +371,12 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uHorizonC:      { value: new THREE.Vector2() },
     uHorizonIn:     { value: 0 },
     uHorizonOut:    { value: 0 },
+    // ⭐ THE FAR WATER HAZES INTO THE SKY ON THE HORIZON DISC'S OWN FADE (Argon, 2026-10-06, BRIEF-the-coast-runs-on-past-
+    // the-rim; Jacob: the water "doesn't fade into the haze" while the land beside it does). From uHazeIn (horizonFor's
+    // fadeInner — where the disc's land starts thinning) to uHorizonOut, the finished water colour is mixed toward the
+    // SKY'S OWN COLOUR along the view (skyDomeColor), so far water and far land dissolve into the same haze. ⛔ Not a wider
+    // alpha fade: the disc beneath fills water directions with its nearest LAND colour, and would show through. 0 = off.
+    uHazeIn:        { value: 0 },
     // The drawing's own rim fade (ground.json stencil.fade): past it the bed is past the drawing, so it reads as deep.
     uRimIn:         { value: 0 },
     // Surfaces › Water › Deep see-through (WaterSurface writes it): 0 = opaque past the visibility depth, 1 = the sheet's
@@ -430,6 +436,15 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
          #endif
          gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, wFog * uWaterMist );
        #endif`)
+      // The far water's haze (uHazeIn, above) — at the very end, where gl_FragColor is the encoded colour the sky dome
+      // also writes, so the mix lands on exactly the colour that shows behind the fading land.
+      .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+       if (uHazeIn > 0.0 && uHorizonOut > uHazeIn) {
+         float hzT = smoothstep(0.0, 1.0, smoothstep(uHazeIn, uHorizonOut, length(vWaterWorld.xz - uHorizonC)));
+         vec3 hzD = normalize(vWaterWorld - cameraPosition); hzD.y = max(hzD.y, 0.0); hzD = normalize(hzD + vec3(0.0, 1e-4, 0.0));
+         gl_FragColor.rgb = mix(gl_FragColor.rgb, skyDomeColor(hzD, uBandHorizon, uBandLow, uBandMid, uBandHigh,
+                                                               uTurbidity, uSunDir, uSunAltitude, uSkyGlow), hzT);
+       }`)
 
     // Vertex: pass world position to fragment
     shader.vertexShader = shader.vertexShader.replace(
@@ -480,6 +495,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform vec2  uHorizonC;
        uniform float uHorizonIn;
        uniform float uHorizonOut;
+       uniform float uHazeIn;
        uniform float uRimIn;
        uniform float uRimOut;
        uniform float uDeepSee;

@@ -48,6 +48,7 @@ public/baked/
 │   ├── labels.json                  ← street-label geometry + the town's whole label style (§5.1)
 │   ├── context.json                 ← context channels manifest (§3.3)
 │   ├── context.coastDist.bin        ← metres to the nearest shoreline, uint16 (§3.3)
+│   ├── outer-coast.json             ← the water PAST the rim, along the real coast (§3.4)
 │   ├── sources.json                 ← this town's data credits + licences, and what is still owed one
 │   ├── buildings.json               ← geometry manifest (foundation + wall + roof groups)
 │   ├── buildings.bin                ← binary positions + colors + UVs + centroidY + indices
@@ -204,6 +205,15 @@ Per-texel measures of the scene for surfaces to read (`BRIEF-surface-lab §3`). 
 - `coastDist` — unsigned metres to the nearest `__water__` run (`bake-coast-distance.js`; shoreline = `shoreRuns.mjs`).
 - `resolved.<surface>` = `{ values, absent }` — each surface's parameters resolved against `references/registry.json` at bake (the runtime never reads the registry). `crop`'s findings are keyed by the town's state, voted from its own OSM addresses.
 ▶ `node checks/claims-coast-distance-is-the-coast.mjs`
+
+## 3.4. `outer-coast.json` — the water past the rim (2026-10-06)
+
+Written by `bake-coast-distance.js` (`bakeOuterCoast` → `cartograph/outer-coast.mjs`). `{ version, look, center, radius,
+bb, fadeOuter, polygons: [{ ring, outer: [[x,z]…], holes }], exits: [{ ring, at, heading }], rings: [{ ring, reachesSquare,
+closed }], refused }`, or `{ absent: true, why }` for a town whose rim is land all round. The polygons are the coast rings
+inside the fetched square (`bb`), carried on past it along each exit's heading, minus the town's disc, inside
+`horizonFor(radius).fadeOuter` (src/lib/horizonReach.js); a ring closed inside the square ends at its own shore. BakedGround
+appends each polygon to the water body it continues at the rim. ▶ `node checks/claims-the-coast-runs-on-past-the-rim.mjs`
 
 ---
 

@@ -6,6 +6,7 @@
  *           cartograph/data/<scene>/clean/terrain.json  (the grid: bounds + sample count)
  *   writes  public/baked/<look>/context.json            { version, look, channels: { coastDist } }
  *           public/baked/<look>/context.coastDist.bin   Uint16, row-major, metres = v × mPerUnit
+ *           public/baked/<look>/outer-coast.json        the water PAST the rim, along the real coast (outer-coast.mjs)
  *
  * UNSIGNED metres to the nearest run — land and water alike; a consumer masks by its own
  * surface. Surfaces read it through their declared band parameters (cartograph/surfaces.mjs).
@@ -27,6 +28,8 @@ import { SURFACES, resolveSurfaceParams } from './surfaces.mjs'
 import { requireExplicitMap } from './scene.js'
 import { townState } from '../src/cartograph/streetProfiles.js'
 import { edt1d } from './distanceField.mjs'
+import { coastRings } from './coastline.mjs'
+import { outerCoast } from './outer-coast.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -160,7 +163,42 @@ export function bakeCoastDistance({ scene, look, dataRoot = ROOT, outRoot = ROOT
     derived: { ...(prev.derived || {}), sand: derivedSand },
     resolved: { ...(prev.resolved || {}), sand: resolvedSand, crop: resolvedCrop } }
   writeFileSync(manifestPath, JSON.stringify(out, null, 1))
+  bakeOuterCoast({ scene, lookId, dataRoot, outDir })
   return out
+}
+
+/**
+ * THE WATER PAST THE RIM (BRIEF-the-coast-runs-on-past-the-rim): the coast rings inside the fetched square — the bake's
+ * own coast, closed against the square exactly as bake-terrain.js closes it — carried on past the rim along the real
+ * coast and its headings (outer-coast.mjs). Written beside the slab's ground; the runtime draws it in place of the old
+ * pie-slice run-on. A town with no water writes a NAMED absence.
+ */
+export function bakeOuterCoast({ scene, lookId, dataRoot = ROOT, outDir }) {
+  const groundPath = join(dataRoot, 'public', 'baked', lookId, 'ground.json')
+  const osmPath = join(dataRoot, 'cartograph', 'data', scene, 'raw', 'osm.json')
+  const geoPath = join(dataRoot, 'cartograph', 'data', scene, 'geography.json')
+  for (const [p, what] of [[groundPath, 'ground.json (the stencil: centre + radius)'], [osmPath, 'raw/osm.json'], [geoPath, 'geography.json']])
+    if (!existsSync(p)) throw new Error(`bake-coast-distance (outer coast): ${scene} has no ${what} (${p}).`)
+  const stencil = JSON.parse(readFileSync(groundPath, 'utf8')).stencil
+  if (!(stencil?.radius > 0)) throw new Error(`bake-coast-distance (outer coast): ${lookId}'s ground.json has no stencil radius`)
+  const osm = JSON.parse(readFileSync(osmPath, 'utf8')), geo = JSON.parse(readFileSync(geoPath, 'utf8'))
+  const local = (lon, lat) => [(lon - geo.lon) * geo.lonToMeters, (geo.lat - lat) * geo.latToMeters]   // bake-terrain.js#wgs84ToLocal
+  const bx = osm.bbox
+  if (!bx) throw new Error(`bake-coast-distance (outer coast): ${scene}'s raw/osm.json has no bbox — the fetched square is unknown`)
+  const a = local(bx.minLon, bx.maxLat), b = local(bx.maxLon, bx.minLat)
+  const bb = { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }
+  const t0 = Date.now()
+  const rings = coastRings({ ground: osm.ground || {}, buildings: osm.buildings || [], center: stencil.center, discR: stencil.radius, bb }).rings || []
+  const outPath = join(outDir, 'outer-coast.json')
+  let rec
+  if (!rings.length) rec = { version: 1, look: lookId, absent: true, why: 'no coast rings inside the fetched square — the rim is land all round' }
+  else {
+    const oc = outerCoast({ rings, bb, center: stencil.center, R: stencil.radius })
+    rec = { version: 1, look: lookId, center: stencil.center, radius: stencil.radius, bb, ...oc }
+  }
+  writeFileSync(outPath, JSON.stringify(rec))
+  console.log(`[bake-coast-distance] ${lookId}: outer coast — ${rec.absent ? '⛔ ABSENT — ' + rec.why : `${rec.polygons.length} polygon(s), ${rec.exits.length} exit(s) from the fetched square, ${rec.rings.filter(r => r.closed).length} closed bod(ies) cut by the rim`}${rec.refused?.length ? ` · ⛔ ${rec.refused.length} REFUSED: ${rec.refused.map(r => r.why).join('; ')}` : ''} (${Date.now() - t0} ms)`)
+  return rec
 }
 
 /**

@@ -15,13 +15,12 @@ import * as THREE from 'three'
 import useSkyState from '../hooks/useSkyState'
 import { lookOf } from '../lib/lookOf.js'
 import { slabUrl, slabFetch } from '../lib/slabUrl.js'
+import { horizonFor } from '../lib/horizonReach.js'
 
 const _warned = new Set()
 
-// The horizon's reach, in multiples of the town's own radius (what 65b273dd derived from LS's authored horizon over
-// its radius, so LS renders as it did): the disc out to 2.8 R, fading from 1.05 R to 3.53 R.
-const DISC_R = 2.8, FADE_IN_R = 1.05, FADE_OUT_R = 3.53
-export const horizonFor = (townRadius) => ({ radius: DISC_R * townRadius, fadeInner: FADE_IN_R * townRadius, fadeOuter: FADE_OUT_R * townRadius })
+// The horizon's reach, in multiples of the town's own radius — one definition, shared with the bake.
+export { horizonFor }
 
 // The horizon's colour strip: one texel per direction of the bake's `horizon` record. The colormap's pixels are read
 // once; each direction averages them (in linear light) at its points; a direction with none takes its nearest covered
