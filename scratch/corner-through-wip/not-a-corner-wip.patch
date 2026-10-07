@@ -1,0 +1,342 @@
+diff --git a/cartograph/OPERATIONS.md b/cartograph/OPERATIONS.md
+index c6d42d2b..f4c25e9c 100644
+--- a/cartograph/OPERATIONS.md
++++ b/cartograph/OPERATIONS.md
+@@ -118,7 +118,7 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
+   `shape.json`, not the seed.
+ - **Strip-material swap** — ctrl-click an LU↔SW strip to flip it.
+ - **Curb cuts** *(junction corners only; layer toggle "Curb Cuts", colour `curbCut`)* — the style comes from, finest first:
+-  the operator (Section: click a corner's marker → popover; it writes both legs' `blockCustoms[…].curbCuts.{start,end}` at once;
++  the operator (Section: click a corner's marker → popover; it writes both legs' `blockCustoms[…].corner.{start,end}` at once;
+   ⌃-click clears; two legs authored differently draw the town default and are counted) →
+   the town's RECORDED kerbs (`raw/osm_kerbs.json` ▶ `node cartograph/fetch-kerbs.mjs --scene=<scene>`; a drop mid-arc = diagonal,
+   at both ends = perpendicular, raised only = none, else *unreadable* → counted, to the norm, and listed by position when
+diff --git a/cartograph/SECTION.md b/cartograph/SECTION.md
+index 7cf5bfaa..4626cb23 100644
+--- a/cartograph/SECTION.md
++++ b/cartograph/SECTION.md
+@@ -320,9 +320,9 @@ Section authors a thin per-block-edge overlay keyed to Skeleton identities. Surf
+ | **Treelawn-outer** handle | drags the **divider** (treelawn depth) | per-fe `blockCustoms[…].treelawn` |
+ | **Property-line** handle | drags the sidewalk depth | per-fe `…sidewalk` |
+ | **Strip-swap** (⌃ / right-click in a strip) | flips that strip's material **LU ↔ SW** | `…materials.{outer|inner}` |
+-| **↺ Revert to Default** (footer button) | clears **every** Section override → the calculation re-seeds | strips `treelawn`/`sidewalk`/`materials`/`capFlip`/`curbCuts` from `blockCustoms` |
++| **↺ Revert to Default** (footer button) | clears **every** Section override → the calculation re-seeds | strips `treelawn`/`sidewalk`/`materials`/`capFlip`/`corner` from `blockCustoms` |
+ | **⌃-click / right-click a ped handle** | reverts **that one edge** to the calculated default | strips the Section fields off that fe's slot |
+-| **Curb-cut marker** (a disc per junction corner; Curb Cuts layer on) | click → popover: town default (with its source) · diagonal · perpendicular · none; ⌃/right-click → back to the town default | both legs' `blockCustoms[…].curbCuts.{end,start}` at once (`src/lib/curbCutSlots.js`) |
++| **Curb-cut marker** (a disc per junction corner; Curb Cuts layer on) | click → popover: town default (with its source) · diagonal · perpendicular · none; ⌃/right-click → back to the town default | both legs' `blockCustoms[…].corner.{end,start}` at once (`src/lib/curbCutSlots.js`) |
+ 
+ > **⭐ Section edits are ALWAYS per-fe, one side (excised the modes 2026-07-18).** The **whole-chain** and **symmetric-mirror** modes were removed from Section: the ribbon is inherently per-side (every fe its own node), so those modes fought the model and dragged the *wrong* segments into an edit (the venn-overlap that produced the "flip hits the neighbor, not the leg" bug). The **"whole street" head-start comes from the automatic survey best-guess** — real OSM sidewalk presence feeding `gleanTreelawn` — **not a manual batch mode**; per-fe override handles the exceptions. If a manual batch is ever wanted it returns as an *explicit action* button, never a persistent mode. **fe resolution is by NEAREST FRONTAGE POLYLINE** (`nearestFeForSide`, both the flip/drag and the selection ordinal) — corner-safe, replacing `naturalSegmentOrdinal(frame.segI)`, which misprojected an offset click across a bend's vertex to the neighbor segment. Storage fans one arrangement across the fe's owned segOrds at write time (`feSegOrds`, `useCartographStore`) so the fes-less **bake** reads it raw. *(Survey keeps its own whole-chain + symmetric knobs for street **widths** — untouched.)*
+ 
+diff --git a/cartograph/curb-cut-norm.mjs b/cartograph/curb-cut-norm.mjs
+index 43fa90c5..965cbf3a 100644
+--- a/cartograph/curb-cut-norm.mjs
++++ b/cartograph/curb-cut-norm.mjs
+@@ -1,7 +1,8 @@
+ // curb-cut-norm.mjs — WHERE A TOWN'S CURB CUTS COME FROM WHEN NOTHING RECORDS THEM (`BRIEF-corner-ramps-and-kerb §0a`).
+ //
+ // A curb cut sits on a JUNCTION corner's arc (`iaJunction`). Its style is, in order — the finest wins:
+-//   1. the operator, per corner: `blockCustoms[skelId][side][segOrd].curbCuts.{start,end}` on either leg (live, in Section)
++//   1. the operator, per corner: `blockCustoms[skelId][side][segOrd].corner.{start,end}` on either leg (live, in Section;
++//      'through' there = "not a corner" — no pad, no cut, the bands run through)
+ //   2. evidence — a recorded curb cut, landed on the arc at the freeze (`cartograph/curb-cut-evidence.mjs`)
+ //   3. the TOWN's norm:   cartograph/data/<scene>/norms.json   → { "curbCuts": { … } }
+ //   4. the STATE's norm:  cartograph/states/<st>.mjs           → norms.curbCuts
+diff --git a/checks/claims-every-junction-corner-has-a-curb-cut-source.mjs b/checks/claims-every-junction-corner-has-a-curb-cut-source.mjs
+index ea882e92..42035381 100644
+--- a/checks/claims-every-junction-corner-has-a-curb-cut-source.mjs
++++ b/checks/claims-every-junction-corner-has-a-curb-cut-source.mjs
+@@ -57,7 +57,7 @@ if (args.includes('--selftest')) {
+   if (jx) {
+     const leg = jx.legs[0], runs = st.runs.filter(r => r.skelId === leg.skelId && r.side === leg.side)
+     const bc = structuredClone(f.blockCustoms || {})
+-    for (const r of runs) { const s = ((bc[r.skelId] ||= {})[r.side] ||= {}); s[r.segOrd] = { ...(s[r.segOrd] || {}), curbCuts: { start: 'diagonal', end: 'diagonal' } } }
++    for (const r of runs) { const s = ((bc[r.skelId] ||= {})[r.side] ||= {}); s[r.segOrd] = { ...(s[r.segOrd] || {}), corner: { start: 'diagonal', end: 'diagonal' } } }
+     authored = run({ style: 'none', ...dims, source: 'trial' }, bc).curbCutTally || {}
+   }
+   // ⭐ THE EVIDENCE RUNG, on this town's real crossings: trial kerb nodes at both END vertices of every crossing way
+@@ -112,8 +112,20 @@ if (args.includes('--selftest')) {
+   const Same = c0 ? run(noneDims, bcP) : null
+   const bcX = c0 ? (() => { let b = writeCornerCurbCut(f.blockCustoms, { slots: [c0.slots[0]] }, 'diagonal'); return writeCornerCurbCut(b, { slots: [c0.slots[1]] }, 'perpendicular') })() : null
+   const Clash = c0 ? run(noneDims, bcX) : null
++  // ⭐ "NOT A CORNER" — `corner = 'through'`: no pad, no cut, no crosswalk; a record on every licensed arc so it can be undone
++  const KT = K || {}
++  const thruOne = c0 ? run({ style: 'diagonal', ...dims, source: 'trial', crosswalks: cwNone }, writeCornerCurbCut(f.blockCustoms, c0, 'through')) : null
++  let bcAll = f.blockCustoms; for (const c of corners.filter(c => c.kind === 'junction')) bcAll = writeCornerCurbCut(bcAll, c, 'through')
++  const thruAll = run({ style: 'diagonal', ...dims, source: 'trial', crosswalks: cwNone }, bcAll)
++  const swArea = (R) => (R.sidewalk || []).reduce((t, r) => { let a2 = 0; for (let i = 0; i < r.length; i++) { const p2 = r[i], q2 = r[(i + 1) % r.length]; a2 += p2[0] * q2[1] - q2[0] * p2[1] } return t + a2 / 2 }, 0)
++  const bcMix = c0 ? writeCornerCurbCut(writeCornerCurbCut(f.blockCustoms, { slots: [c0.slots[0]] }, 'through'), { slots: [c0.slots[1]] }, 'diagonal') : null
++  const Mix = c0 ? run(noneDims, bcMix) : null
+   const rows = [
+-    ['every junction corner has a record + two leg slots', corners.length === J && corners.every(c => c.slots?.length === 2 && c.slots[0] && c.slots[1])],
++    ['every junction corner has a record + two leg slots', corners.filter(c => c.kind === 'junction').length === J && corners.filter(c => c.kind === 'junction').every(c => c.slots?.length === 2 && c.slots[0] && c.slots[1])],
++    ['a marker record on EVERY licensed arc',      corners.length === (KT.junction || 0) + (KT.bend || 0) + (KT.unknown || 0) && corners.some(c => c.kind !== 'junction')],
++    ['"not a corner" draws no cut there, counted', !!thruOne && recsAt(thruOne, c0) === 0 && thruOne.curbCutTally?.through === 1 && (thruOne.curbCutCorners || []).some(c => c.si === c0.si && c.arc === c0.arc && c.authored === 'through')],
++    ['…and takes the pads away',                   (thruAll.curbCutTally?.curbCuts || 0) === 0 && Math.abs(swArea(thruAll) - swArea(Dg)) > 1],
++    ['"through" on one leg vs a style is a conflict', !!Mix && Mix.curbCutTally?.conflict === 1 && (Mix.curbCutTally?.through || 0) === 0],
+     ['a corner write touches exactly its two leg slots', !!c0 && changedSlots(f.blockCustoms, bcP) === 2],
+     ['clearing it returns the slots as they were',  !!c0 && changedSlots(f.blockCustoms, writeCornerCurbCut(bcP, c0, null)) === 0],
+     ['two legs authored alike draw that style',     !!Same && recsAt(Same, c0) === 2 && (Same.curbCutTally?.conflict || 0) === 0],
+@@ -151,6 +163,7 @@ if (args.includes('--selftest')) {
+   ]
+   let bad = 0
+   for (const [name, ok] of rows) { if (!ok) bad++; console.log(`  ${ok ? '✅' : '⛔'} ${name}`) }
++  console.log(`  (not a corner: all ${corners.filter(c => c.kind === 'junction').length} junction corners 'through' → sidewalk ${swArea(thruAll).toFixed(0)} m² vs ${swArea(Dg).toFixed(0)} m² with pads · ${corners.length} corner records: ${KT.junction} junction / ${KT.bend} bend / ${KT.unknown} unknown)`)
+   console.log(`  (crossings: ${CX.census.records} bound · ${XL.landed} landed on both kerbs (ends ${XL.ends.arc} arc / ${XL.ends.nearTangent} near-tangent / ${XL.ends.leg} leg) · ${XL.noHit} no hit · ${XL.notOwned} not owned · ${XL.sameSide} same side → ${CT.byEvidence} crosswalk(s) placed by a recorded crossing · ${recordedApexOutside} refused for leaving the apex outside)`)
+   console.log(`  (crosswalks, diagonal + byCorner: ${CT.crosswalks} drawn · ${CT.pairs} between two cuts · ${CT.farKerbCut} to a far-kerb cut · ${CT.farCornerNoCut} far corner without a cut · ${CT.noFarKerb} no far kerb · ${CT.endsNotOwned} ends not owned · ${CT.ambiguous} ambiguous · ${CT.styleDisagrees} style disagrees · ${CT.apexesApart} cuts too far apart)`)
+   console.log(`  (evidence trial: ${Elow.records.length} record(s) bound · landed ${L.landed}, refused ${L.notOwner} not-owner / ${L.offArc} off-arc / ${L.notJunction} not-junction / ${L.noHit} no-hit · lowered → ${Lo.bySource?.['osm:kerb'] || 0} corner(s) by evidence, ${Lo.unreadable || 0} unreadable (${Lo.contradicted || 0} contradict the norm) · raised → ${Up.curbCuts} cut(s) of ${J})`)
+diff --git a/src/cartograph/MeasureOverlay.jsx b/src/cartograph/MeasureOverlay.jsx
+index d0ac1f07..bfe0e751 100644
+--- a/src/cartograph/MeasureOverlay.jsx
++++ b/src/cartograph/MeasureOverlay.jsx
+@@ -939,11 +939,12 @@ export default function MeasureOverlay() {
+             depthTest={false} depthWrite={false} />
+         </mesh>
+       ))}
+-      {/* Curb-cut corner markers: blue = authored · amber = the legs conflict or recorded kerbs contradict the norm ·
+-          white = what the corner draws unauthored. The open corner gets a thicker ring. */}
++      {/* Corner markers, on EVERY licensed arc: blue = authored · grey = authored "not a corner" · amber = the legs
++          conflict or recorded kerbs contradict the norm · white = what the corner draws unauthored. The open corner
++          gets a thicker ring. */}
+       {cutMarkersOn && curbCutCorners.map((c, i) => {
+         const open = selectedCurbCorner && selectedCurbCorner.tile === c.tile && selectedCurbCorner.si === c.si && selectedCurbCorner.arc === c.arc
+-        const fill = c.authored ? ROYAL_BLUE : (c.conflict || c.contradicted) ? '#E8A21B' : '#ffffff'
++        const fill = c.authored === 'through' ? '#8A8A8A' : c.authored ? ROYAL_BLUE : (c.conflict || c.contradicted) ? '#E8A21B' : '#ffffff'
+         return (
+           <group key={`cc-${c.tile}-${c.si}-${c.arc}-${i}`} position={[c.at[0], 0, c.at[1]]} rotation={[-Math.PI / 2, 0, 0]}>
+             <mesh renderOrder={151}>
+diff --git a/src/cartograph/MeasurePanel.jsx b/src/cartograph/MeasurePanel.jsx
+index 263c754c..b4f11e43 100644
+--- a/src/cartograph/MeasurePanel.jsx
++++ b/src/cartograph/MeasurePanel.jsx
+@@ -134,19 +134,23 @@ function CurbCornerPopover() {
+     </div>)
+   const def = c.unauthored
+   const current = c.authored ?? null
++  const isJunction = c.kind === 'junction'
+   const opt = (label, style, title) => (
+     <button key={label} className={`carto-btn-sm${current === style ? ' active' : ''}`} title={title}
+       onClick={() => setCornerCurbCut(c, style)}>{label}</button>)
+   return (
+     <div className="carto-section">
+-      <h2 className="carto-measure-header"><span>Curb cut — this corner</span>
++      <h2 className="carto-measure-header"><span>{isJunction ? 'Corner — curb cut' : `Corner — ${c.kind === 'bend' ? 'a bend in one street' : 'legs unknown'}`}</span>
+         <button className="carto-btn-sm" title="Close" onClick={() => selectCurbCorner(null)}>✕</button></h2>
+       <div className="carto-actions">
+-        {opt(`Town default — ${def ? def.style : 'no norm frozen'}${def ? `, from ${SOURCE_LABEL(def.source)}` : ''}`, null,
+-          'Clear this corner on both legs: it draws what it would unauthored')}
+-        {opt('Diagonal', 'diagonal', 'One cut at the apex')}
+-        {opt('Perpendicular', 'perpendicular', 'Two cuts, one facing each crossing')}
+-        {opt('None', 'none', 'No cut at this corner (the pad is unchanged)')}
++        {isJunction
++          ? opt(`Town default — ${def ? def.style : 'no norm frozen'}${def ? `, from ${SOURCE_LABEL(def.source)}` : ''}`, null,
++              'Clear this corner on both legs: it draws what it would unauthored')
++          : opt('Default — the corner pad', null, 'Clear this corner on both legs: it keeps its pad (no cut: a street does not meet it)')}
++        {isJunction && opt('Diagonal', 'diagonal', 'One cut at the apex')}
++        {isJunction && opt('Perpendicular', 'perpendicular', 'Two cuts, one facing each crossing')}
++        {isJunction && opt('None', 'none', 'No cut at this corner (the pad is unchanged)')}
++        {opt('Not a corner', 'through', 'The walk and lawn run straight through this arc: no pad, no cut, no crosswalk')}
+       </div>
+       {c.conflict && <div className="carto-meta">⚠️ Its two legs were authored differently, so it draws the town default.
+         Choose one here to write both legs.</div>}
+diff --git a/src/cartograph/stores/useCartographStore.js b/src/cartograph/stores/useCartographStore.js
+index d225ec2f..e1d24f16 100644
+--- a/src/cartograph/stores/useCartographStore.js
++++ b/src/cartograph/stores/useCartographStore.js
+@@ -707,7 +707,7 @@ const useCartographStore = create((set, get) => ({
+   selectedCurbCorner: null,
+   selectCurbCorner: (c) => set({ selectedCurbCorner: c ? { tile: c.tile, si: c.si, arc: c.arc } : null }),
+   // ⭐ AUTHOR ONE CORNER'S CURB CUT (`BRIEF-corner-ramps-and-kerb §3` step 4; Jacob, 2026-10-06): writes BOTH legs at
+-  // once — the arriving run's `curbCuts.end`, the leaving run's `curbCuts.start` — so the gesture can never make them
++  // once — the arriving run's `corner.end`, the leaving run's `corner.start` — so the gesture can never make them
+   // disagree. `style` null = back to what the corner draws unauthored. One definition: `src/lib/curbCutSlots.js`.
+   setCornerCurbCut: (corner, style) => {
+     if (!corner?.slots?.length) return
+@@ -1021,7 +1021,7 @@ const useCartographStore = create((set, get) => ({
+   // list governs the whole-scene revert, which is the path that was lying.
+   // Guard: `node checks/claims-revert-field-coverage.mjs` fails if any authored
+   // blockCustoms field is absent from BOTH lists (the class, not this instance).
+-  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials', 'capFlip', 'curbCuts'],
++  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials', 'capFlip', 'corner'],
+   // blockCustoms with `fields` stripped from every fe slot (empty slots pruned).
+   _blockCustomsStripped: (fields) => {
+     const cur = get().blockCustoms || {}
+diff --git a/src/lib/curbCutSlots.js b/src/lib/curbCutSlots.js
+index 37da7cc4..2e4fb67e 100644
+--- a/src/lib/curbCutSlots.js
++++ b/src/lib/curbCutSlots.js
+@@ -1,5 +1,5 @@
+ // curbCutSlots.js — the ONE write of a corner's curb cut into `blockCustoms` (`BRIEF-corner-ramps-and-kerb §3` step 4).
+-// A corner is authored on BOTH legs at once — the arriving run's `curbCuts.end`, the leaving run's `curbCuts.start` —
++// A corner is authored on BOTH legs at once — the arriving run's `corner.end`, the leaving run's `corner.start` —
+ // exactly the two slots the painter reads (`tileGround.js#curbCutsOnJunctionCorners`), so the gesture can never make
+ // them disagree. `style` null removes both keys (the corner draws what it would unauthored); empty slots are pruned.
+ // Pure (returns a new object); the store calls it, and the check calls the same function.
+@@ -9,9 +9,9 @@ export function writeCornerCurbCut(blockCustoms, corner, style) {
+     if (!sl) continue
+     const { skelId, side, segOrd, end } = sl
+     next[skelId] = { ...(next[skelId] || {}) }; next[skelId][side] = { ...(next[skelId][side] || {}) }
+-    const slot = { ...(next[skelId][side][segOrd] || {}) }, cc = { ...(slot.curbCuts || {}) }
++    const slot = { ...(next[skelId][side][segOrd] || {}) }, cc = { ...(slot.corner || {}) }
+     if (style == null) delete cc[end]; else cc[end] = style
+-    if (Object.keys(cc).length) slot.curbCuts = cc; else delete slot.curbCuts
++    if (Object.keys(cc).length) slot.corner = cc; else delete slot.corner
+     if (Object.keys(slot).length) next[skelId][side][segOrd] = slot; else delete next[skelId][side][segOrd]
+     if (!Object.keys(next[skelId][side]).length) delete next[skelId][side]
+     if (!Object.keys(next[skelId]).length) delete next[skelId]
+diff --git a/src/lib/tileGround.js b/src/lib/tileGround.js
+index 5d5e2da1..7c74e470 100644
+--- a/src/lib/tileGround.js
++++ b/src/lib/tileGround.js
+@@ -4648,7 +4648,7 @@ export function classifyCornerLegs(a, b) {
+ // constructed primitive (`RIBBONS §1` invariant 1).
+ // ⭐ Only a corner a street MEETS gets one (`iaJunction`); a bend keeps its pad and gets none; an UNKNOWN corner
+ // gets none and is counted as unknown, never as a bend.
+-// ⭐ The style, finest first: the operator on either LEG's slot (`curbCuts.end` on the leg arriving, `curbCuts.start` on
++// ⭐ The style, finest first: the operator on either LEG's slot (`corner.end` on the leg arriving, `corner.start` on
+ // the leg leaving, in contour order) — authored wins; two authored legs that DISAGREE draw what the corner draws
+ // unauthored and are counted (Jacob, 2026-10-06) — then the RECORDED cuts landed on the arc (`st.curbCutEvidence`, `styleFromEvidence`;
+ // unreadable is counted and falls through) — then the town's frozen norm (`st.curbCutNorm`, `cartograph/curb-cut-norm.mjs`). The
+@@ -4819,31 +4819,57 @@ export function styleFromEvidence(landings) {
+ }
+ 
+ const CURB_CUT_STYLE_SET = new Set(['none', 'diagonal', 'perpendicular'])
+-function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, insAt, band, walk) {
+-  const tally = { junction: 0, bend: 0, unknown: 0, curbCuts: 0, unreadable: 0, contradicted: 0, noSource: 0, noNorm: 0, noDims: 0, invalid: 0, conflict: 0, short: 0, bySource: {} }
+-  const recs = [], masks = [], contradicted = [], conflicts = [], corners = []
+-  const norm = st.curbCutNorm || null
+-  let maxD = 0
++
++// ══ EVERY CORNER THE OPERATOR CAN AUTHOR — one record per LICENSED arc (junction, bend or unknown) ════════════════
++// The arc spans the ease stamped (`iaArc`, licensed by `iaCorner`), read BEFORE the pad licence (`inC`) is built,
++// because the operator may say an arc is NOT a corner (Jacob, 2026-10-06: "just join/connect the sidewalk/tree lawn
++// there without the ADA allowances"): `corner.{end,start} = 'through'` on its legs, and then the arc gets no pad, no
++// cut, no crosswalk — its edges are painted as leg, and the owner change mid-arc is an ordinary frontage change.
++// Each record carries its two leg slots (the arriving run's `.end`, the leaving run's `.start`, off the frozen stamp —
++// identity, never recovered), both legs' authored values and the conflict rule's verdict.
++// ⛔ Two legs authored DIFFERENTLY: no authored value (the corner draws as unauthored), `conflict` set — counted.
++function licensedArcRecords(st, parts, stamps, runs, blockCustoms) {
++  const out = []
+   for (const p of parts) {
+-    const ring = p.ring, n = ring.length, jxA = st.iaJunction?.[p.si], stp = stamps[p.si] || []
+-    if (!st.iaArc?.[p.si]) continue
+-    const isC = (i) => inC.has(`${p.ri}|${i}`)
+-    const eL = (i) => { const a = ring[i], b = ring[(i + 1) % n]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
++    const ring = p.ring, n = ring.length, arc = st.iaArc?.[p.si], mark = st.iaCorner?.[p.si], stp = stamps[p.si] || []
++    if (!arc) continue
++    const lic = new Set(); for (let q = 0; q < n; q++) if (arc[q] != null && mark?.[q]) lic.add(arc[q])
++    const inArc = (i) => arc[i] != null && arc[i] === arc[(i + 1) % n] && lic.has(arc[i])
+     for (let q = 0; q < n; q++) {
+-      if (!isC(q) || isC((q - 1 + n) % n)) continue                 // q starts an arc span
+-      let e = q; for (let k = 0; k < n && isC((e + 1) % n); k++) e = (e + 1) % n
+-      const j = jxA ? jxA[q] : undefined
+-      if (j === 'bend') { tally.bend++; continue }
+-      if (!Number.isInteger(j)) { tally.unknown++; continue }
+-      tally.junction++
++      if (!inArc(q) || (inArc((q - 1 + n) % n) && arc[(q - 1 + n) % n] === arc[q])) continue   // q starts an arc span
++      let e = q; for (let k = 0; k < n && inArc((e + 1) % n) && arc[(e + 1) % n] === arc[q]; k++) e = (e + 1) % n
++      const j = st.iaJunction?.[p.si]?.[q]
+       const before = (q - 1 + n) % n, after = (e + 1) % n
+-      const arcId = st.iaArc[p.si][q], mid = ring[(q + Math.floor(((e - q + n) % n + 1) / 2)) % n]
+-      // the two legs' slots, read off the frozen stamp: the arriving run's `curbCuts.end`, the leaving run's `.start`
+       const slot = (edge, end) => { const r = stp[edge]; if (r == null) return null
+         const R = runs[r]; return { skelId: R.skelId, side: R.side, segOrd: R.segOrd, end } }
+       const slots = [slot(before, 'end'), slot(after, 'start')]
+-      const ov = (s2) => s2 ? blockCustoms?.[s2.skelId]?.[s2.side]?.[s2.segOrd]?.curbCuts?.[s2.end] : undefined
+-      const a = ov(slots[0]), b = ov(slots[1])
++      const ov = (s2) => s2 ? blockCustoms?.[s2.skelId]?.[s2.side]?.[s2.segOrd]?.corner?.[s2.end] : undefined
++      const a = ov(slots[0]), b = ov(slots[1]), conflict = a != null && b != null && a !== b
++      out.push({ p, q, e, si: p.si, arc: arc[q], kind: Number.isInteger(j) ? 'junction' : j === 'bend' ? 'bend' : 'unknown',
++                 junction: Number.isInteger(j) ? j : null, at: ring[(q + Math.floor(((e - q + n) % n + 1) / 2)) % n],
++                 slots, a, b, conflict, authored: conflict ? null : (a ?? b ?? null) })
++    }
++  }
++  return out
++}
++
++function curbCutsOnJunctionCorners(st, arcRecs, stamps, runs, blockCustoms, cw, insAt, band, walk) {
++  const tally = { junction: 0, bend: 0, unknown: 0, through: 0, curbCuts: 0, unreadable: 0, contradicted: 0, noSource: 0, noNorm: 0, noDims: 0, invalid: 0, conflict: 0, short: 0, bySource: {} }
++  const recs = [], masks = [], contradicted = [], conflicts = [], corners = []
++  const norm = st.curbCutNorm || null
++  let maxD = 0
++  for (const R0 of arcRecs) {
++    const p = R0.p, ring = p.ring, n = ring.length, { q, e, slots, a, b, conflict } = R0, j = R0.junction
++    const before = (q - 1 + n) % n, after = (e + 1) % n   // the legs' edges either side of the arc (their directions)
++    const eL = (i) => { const a2 = ring[i], b2 = ring[(i + 1) % n]; return Math.hypot(b2[0] - a2[0], b2[1] - a2[1]) }
++    const arcId = R0.arc, mid = R0.at
++    const record = (extra) => corners.push({ si: p.si, arc: arcId, kind: R0.kind, junction: j, at: mid, slots, authored: R0.authored, conflict, ...extra })
++    // ⭐ "NOT A CORNER": no pad (not in `inC`), no cut, no crosswalk — recorded so the operator can see and undo it
++    if (R0.authored === 'through') { tally.through++; record({ unauthored: null, contradicted: null }); continue }
++    if (R0.kind === 'bend') { tally.bend++; record({ unauthored: null, contradicted: null }); continue }
++    if (R0.kind === 'unknown') { tally.unknown++; record({ unauthored: null, contradicted: null }); continue }
++    {
++      tally.junction++
+       // ⭐ WHAT THE CORNER DRAWS UNAUTHORED — the recorded cuts landed on THIS arc at the freeze (`landCurbCutEvidence`),
+       // else the town's norm; unreadable evidence falls to the norm. No side effects: the corner record shows it either way.
+       const unauthored = (() => {
+@@ -4862,10 +4888,8 @@ function curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, c
+         return null
+       })()
+       // ⛔ RULED (Jacob, 2026-10-06): two legs authored DIFFERENTLY draw what the corner draws unauthored, and the
+-      // conflict is counted and listed — never resolved by picking a leg (the "longer leg wins" rule is gone).
+-      const conflict = a != null && b != null && a !== b
+-      corners.push({ si: p.si, arc: arcId, junction: j, at: mid, slots, authored: conflict ? null : (a ?? b ?? null),
+-                     conflict, unauthored: unauthored && { style: unauthored.style, source: unauthored.source }, contradicted: unauthored?.contra ?? null })
++      // conflict is counted and listed — never resolved by picking a leg (`licensedArcRecords`).
++      record({ unauthored: unauthored && { style: unauthored.style, source: unauthored.source }, contradicted: unauthored?.contra ?? null })
+       let style, source
+       if (conflict) { tally.conflict++; conflicts.push({ si: p.si, arc: arcId, at: mid, legs: [a, b] }) }
+       if (!conflict && (a != null || b != null)) { style = a ?? b; source = 'authored' }
+@@ -5199,17 +5223,14 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
+   // separately-constructed primitive… same materials, SAME DEPTHS, bent around an arc"). All this
+   // map carries is WHERE the corner is. It comes out flush concrete because the leg's grass has
+   // already gone to zero by the time it arrives — an OUTCOME, not a rule about the corner.
+-  const inC = new Map()                  // `${ri}|${edge}` → this edge lies inside a licensed arc
+-  for (const p of parts) {
+-    const n = p.ring.length
+-    const arc = st.iaArc?.[p.si], mark = st.iaCorner?.[p.si]
+-    if (!arc) continue                   // no ease on this ring (a square corner, or a lost stamp)
+-    const licensed = new Set()
+-    for (let q = 0; q < n; q++) if (arc[q] != null && mark?.[q]) licensed.add(arc[q])
+-    for (let q = 0; q < n; q++) {
+-      const u = arc[q], v = arc[(q + 1) % n]
+-      if (u != null && u === v && licensed.has(u)) inC.set(`${p.ri}|${q}`, true)
+-    }
++  // ⭐ every corner the operator can author, and which of them they said are NOT corners (`licensedArcRecords`)
++  const arcRecs = licensedArcRecords(st, parts, stamps, runs, blockCustoms)
++  const throughArc = new Set(arcRecs.filter(r => r.authored === 'through').map(r => `${r.si}|${r.arc}`))
++  const inC = new Map()                  // `${ri}|${edge}` → this edge lies inside a licensed arc (a 'through' arc is not)
++  for (const r of arcRecs) {
++    if (throughArc.has(`${r.si}|${r.arc}`)) continue
++    const n = r.p.ring.length
++    for (let k = 0, i = r.q; k < n; k++, i = (i + 1) % n) { inC.set(`${r.p.ri}|${i}`, true); if (i === r.e) break }
+   }
+ 
+   // ══ ONE ARC, ONE DEPTH — `§6.1` step 4's `cMin`, restored as a STAMP ═════════════════════════
+@@ -5303,7 +5324,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
+       const back = (v - 1 + n) % n
+       if (isC(back) !== isC(v)) return true                          // the arc's tangent
+       if (isC(v)) return false                                       // inside it, nothing ends
+-      return !!(st.iaCorner?.[p.si]?.[v]) || M(p.ri, back) !== M(p.ri, v)
++      // a 'through' arc's vertices are NOT corner marks: the arc paints as leg, and only its owner change ends one
++      return (!!(st.iaCorner?.[p.si]?.[v]) && !throughArc.has(`${p.si}|${st.iaArc?.[p.si]?.[v]}`)) || M(p.ri, back) !== M(p.ri, v)
+     }
+     // ⭐⭐⭐ WHICH ARC IS THIS LEG RAMPING INTO — and it is the piece the port dropped.
+     // `§6.1` step 5's slid quad ends at `pt(0, cMin)`: the inner edge's TARGET is the arc's own
+@@ -5571,7 +5593,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
+   const luIn = ins((p) => (i) => (bareAt(p, i) ? 0 : WB))
+   const env = band(pedOuter, luIn)
+   const Wp = env.length && W.length ? intersectRings(W, env) : []
+-  const R = curbCutsOnJunctionCorners(st, parts, inC, stamps, runs, blockCustoms, cw, insAt, band, Wp)
++  const R = curbCutsOnJunctionCorners(st, arcRecs, stamps, runs, blockCustoms, cw, insAt, band, Wp)
+   return {
+     curbCut: inBlock(R.strips), curbCutRecs: R.recs, curbCutTally: R.tally, curbCutContradicted: R.contradicted, curbCutConflicts: R.conflicts, curbCutCorners: R.corners,
+     Wacc:   inBlock(Wp),
+@@ -9942,7 +9964,7 @@ export function buildTileGround(ribbons, opts = {}) {
+     } else if (crosswalkTally) console.log(`[tileGround][crosswalks] none — the town's crosswalk norm is 'none' (from ${crosswalkTally.source ?? 'nothing frozen'})`)
+     if (curbCutTally) {
+       const T = curbCutTally, src = Object.entries(T.bySource || {}).map(([k, v]) => `${v} ${k}`).join(' · ')
+-      console.log(`[tileGround][curb cuts] ${T.junction || 0} junction corner(s) · ${T.curbCuts || 0} curb cut(s) painted · style from: ${src || 'nothing'}`)
++      console.log(`[tileGround][curb cuts] ${T.junction || 0} junction corner(s) · ${T.curbCuts || 0} curb cut(s) painted · style from: ${src || 'nothing'}${T.through ? ` · ${T.through} arc(s) authored NOT A CORNER (no pad, no cut)` : ''}`)
+       if (T.noSource) console.warn(`[tileGround][curb cuts] ⛔ ${T.noSource} corners have no curb-cut source — the town's norm is 'none' and nothing authored or recorded places one. Their pads stand; no curb cut is marked.`)
+       if (T.noNorm) console.warn(`[tileGround][curb cuts] ⛔ ${T.noNorm} junction corner(s) on tiles poured BEFORE the curb-cut norm was frozen — re-pour.`)
+       if (T.noDims) console.warn(`[tileGround][curb cuts] ⛔ ${T.noDims} authored curb cut(s) cannot be drawn: the town's norm gives no width/warningDepth (cartograph/data/<scene>/norms.json).`)
