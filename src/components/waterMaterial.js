@@ -377,6 +377,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     // SKY'S OWN COLOUR along the view (skyDomeColor), so far water and far land dissolve into the same haze. ⛔ Not a wider
     // alpha fade: the disc beneath fills water directions with its nearest LAND colour, and would show through. 0 = off.
     uHazeIn:        { value: 0 },
+    // 1 when the geometry carries `aFeather` (BakedGround's water past the rim): its per-vertex strength multiplies the
+    // alpha, fading the coast's feather out. 0 = no such attribute — a geometry without it would otherwise read 0.
+    uHasFeather:    { value: 0 },
     // The drawing's own rim fade (ground.json stencil.fade): past it the bed is past the drawing, so it reads as deep.
     uRimIn:         { value: 0 },
     // Surfaces › Water › Deep see-through (WaterSurface writes it): 0 = opaque past the visibility depth, 1 = the sheet's
@@ -452,15 +455,18 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
       `#include <common>
        attribute float aLevelLow;
        attribute float aLevelHigh;
+       attribute float aFeather;
        uniform float uPhase;
        varying vec3 vWaterWorld;
        varying float vLevel;
+       varying float vFeather;
        ${terrain ? 'uniform float uExag;' : 'const float uExag = 1.0;'}`
     )
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `#include <begin_vertex>
        vLevel = mix(aLevelLow, aLevelHigh, uPhase);
+       vFeather = aFeather;
        transformed.y += vLevel * uExag;           // the ground is draped at terrain × exag, so the level is too
        vWaterWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`
     )
@@ -496,6 +502,8 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform float uHorizonIn;
        uniform float uHorizonOut;
        uniform float uHazeIn;
+       uniform float uHasFeather;
+       varying float vFeather;
        uniform float uRimIn;
        uniform float uRimOut;
        uniform float uDeepSee;
@@ -743,6 +751,8 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          diffuseColor.a = mix(wDeepA, diffuseColor.a * clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
        }
 ` : ''}       if (uHorizonOut > 0.0) diffuseColor.a *= 1.0 - smoothstep(uHorizonIn, uHorizonOut, length(vWaterWorld.xz - uHorizonC));
+       // The coast's FEATHER past the fetched square (outer-coast.mjs): the water's own strength there, 1 → 0 across it.
+       if (uHasFeather > 0.5) diffuseColor.a *= vFeather;
        // ⭐⭐ THE WAVE NORMAL — THE SUN AND MOON PATH LIVES HERE, and it is the
        // only thing that turns "a lit plane" into water. Two contributions:
        //   · the GLITTER stack, world-constant metres, which supplies the fine

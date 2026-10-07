@@ -209,10 +209,10 @@ Per-texel measures of the scene for surfaces to read (`BRIEF-surface-lab §3`). 
 ## 3.4. `outer-coast.json` — the water past the rim (2026-10-06)
 
 Written by `bake-coast-distance.js` (`bakeOuterCoast` → `cartograph/outer-coast.mjs`). `{ version, look, center, radius,
-bb, fadeOuter, polygons: [{ ring, outer: [[x,z]…], holes }], exits: [{ ring, at, heading }], rings: [{ ring, reachesSquare,
-closed }], refused }`, or `{ absent: true, why }` for a town whose rim is land all round. The polygons are the coast rings
+bb, fadeOuter, polygons: [{ ring, outer: [[x,z]…], holes }], feathers: [{ ring, strip }], exits: [{ ring, at, heading,
+featherDeg }], rings: [{ ring, reachesSquare, closed }], refused }`, or `{ absent: true, why }` for a town whose rim is land all round. The polygons are the coast rings
 inside the fetched square (`bb`), carried on past it along each exit's heading, minus the town's disc, inside
-`horizonFor(radius).fadeOuter` (src/lib/horizonReach.js); a ring closed inside the square ends at its own shore. BakedGround
+`horizonFor(radius).fadeOuter` (src/lib/horizonReach.js); a ring closed inside the square ends at its own shore. Past each exit a `feather` strip (alternating water-side, land-side points; the water's strength 1 → 0 across it) widens at ±`featherDeg` — the coast's own heading spread over its last town-radius (`outer-coast.mjs#headingSpread`). BakedGround
 appends each polygon to the water body it continues at the rim. ▶ `node checks/claims-the-coast-runs-on-past-the-rim.mjs`
 
 ---

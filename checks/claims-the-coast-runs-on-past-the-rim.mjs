@@ -15,6 +15,8 @@
  *   2. THE REAL COAST — inside the fetched square, past the rim, wherever the outer water and the real coast disagree,
  *      the disagreement lies within one sector's width (2πr/256) of the real shore.
  *   3. A CLOSED BODY (synthetic: a lake wholly inside the square, cut by the rim) ends at its own shore — never run on.
+ *   4. THE FEATHER past each exit is the coast's OWN uncertainty: its angle equals the length-weighted heading spread
+ *      over the coast's last town-radius (outer-coast.mjs#headingSpread), bounded only by the square's edge — no constant.
  * ⭐ Each is proven against a BAD CONTROL in the same run: the old pie-slice construction must FAIL 1–2, and an
  *    outerCoast that runs every ring on must FAIL 3 — a check seen only green proves nothing.
  *
@@ -27,7 +29,7 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1] ?? d
 const { coastRings } = await import(join(ROOT, 'cartograph/coastline.mjs'))
-const { outerCoast } = await import(join(ROOT, 'cartograph/outer-coast.mjs'))
+const { outerCoast, headingSpread } = await import(join(ROOT, 'cartograph/outer-coast.mjs'))
 const { isWaterGroupId } = await import(join(ROOT, 'src/components/waterMaterial.js'))
 const { horizonFor } = await import(join(ROOT, 'src/lib/horizonReach.js'))
 
@@ -98,6 +100,20 @@ for (const town of arg('town', 'huron,provincetown').split(',')) {
   const ctx = { wetAt, rings, bb: rec.bb, cx, cz, R }
   judge(town, rec.polygons, ctx)
   check((rec.refused || []).length === 0, `${town}: no coast heading was refused`, (rec.refused || []).map((r) => r.why).join('; '))
+  // 4. each exit's feather angle = the coast's own heading spread there (recomputed from the coast, not read from the record)
+  const isEdge = ([x, z]) => Math.min(Math.abs(x - rec.bb.x0), Math.abs(x - rec.bb.x1), Math.abs(z - rec.bb.z0), Math.abs(z - rec.bb.z1)) < 0.5
+  const outN = ([x, z]) => Math.abs(x - rec.bb.x0) < 0.5 ? [-1, 0] : Math.abs(x - rec.bb.x1) < 0.5 ? [1, 0] : Math.abs(z - rec.bb.z0) < 0.5 ? [0, -1] : [0, 1]
+  const featherOff = (exits) => exits.map((ex) => {
+    const ring = rings[ex.ring]; if (!ring) return `ring ${ex.ring} missing`
+    const i = ring.findIndex(([x, z]) => Math.hypot(x - ex.at[0], z - ex.at[1]) < 0.2); if (i < 0) return `exit ${ex.at} not on its ring`
+    const n = ring.length, arriving = !isEdge(ring[(i - 1 + n) % n])   // the coast arrives before the edge run (ps) or leaves after it (pe)
+    const h = [Math.cos(ex.heading * Math.PI / 180), Math.sin(ex.heading * Math.PI / 180)], o = outN(ring[i])
+    const want = Math.min(headingSpread(ring, i, arriving ? -1 : +1, R, isEdge), Math.asin(Math.min(1, h[0] * o[0] + h[1] * o[1])) * 0.999) * 180 / Math.PI
+    return Math.abs(want - ex.featherDeg) < 0.05 ? null : `exit ${ex.at}: feather ${ex.featherDeg}° but the coast's spread there is ${want.toFixed(2)}°`
+  }).filter(Boolean)
+  const fo = featherOff(rec.exits || [])
+  check((rec.exits || []).every((e) => Number.isFinite(e.featherDeg)) && fo.length === 0, `${town}: each exit's feather is the coast's own heading spread (${(rec.exits || []).map((e) => e.featherDeg + '°').join(', ')})`, fo.join('; ') || 'an exit carries no featherDeg')
+  check(featherOff((rec.exits || []).map((e) => ({ ...e, featherDeg: 10 }))).length > 0, `${town}: the feather assertion REJECTS a fixed 10° (bad control)`, 'it accepted a constant')
   // the bad control: the old pie slices must fail at least one of the two
   const bad = judge(`${town} (old pie slices)`, pieSlices(wetAt, cx, cz, R), { ...ctx, quiet: true })
   check(bad.seamBad + bad.coastBad > 0, `${town}: the check REJECTS the old pie-slice construction (bad control)`, 'it passed the pie slices — the check cannot tell the defect from the fix')

@@ -400,10 +400,10 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
       // past-the-rim): the water body's own mesh carries on past the rim as the baked outer-coast polygons it continues,
       // so the same surface — glitter, sky, depth — thins into the haze, and the water/land edge past the rim is the
       // real coast and its headings, never a radial line. The body's extent is kept for its wave scale.
-      let posUse = positions, idxUse = indices, bodyExtent = null
+      let posUse = positions, idxUse = indices, bodyExtent = null, featherUse = null
       if (g.kind !== 'face' && isWaterGroupId(g.id) && manifest.stencil?.radius > 0) {
-        const ext = withOuterWater(positions, indices, outerByGroup.get(gi) || [])
-        posUse = ext.positions; idxUse = ext.indices; bodyExtent = ext.bodyExtent
+        const ext = withOuterWater(positions, indices, outerByGroup.get(gi))
+        posUse = ext.positions; idxUse = ext.indices; bodyExtent = ext.bodyExtent; featherUse = ext.feather
       }
       const geom = new THREE.BufferGeometry()
       geom.setAttribute('position', new THREE.BufferAttribute(posUse, 3))
@@ -416,6 +416,7 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
       geom.setAttribute('uv',  new THREE.BufferAttribute(uv, 2))
       geom.setAttribute('uv2', new THREE.BufferAttribute(uv, 2))  // aoMap slot
       geom.setIndex(new THREE.BufferAttribute(idxUse, 1))
+      if (featherUse) geom.setAttribute('aFeather', new THREE.BufferAttribute(featherUse, 1))   // the coast's feather (waterMaterial uHasFeather)
       // ⭐ WHERE THE WATER STANDS (cartograph/waterLevel.mjs): each vertex carries the town's low and high level there;
       // the shader stands the sheet between them at the tide's phase. The mesh itself stays where it was baked.
       if (g.kind !== 'face' && isWaterGroupId(g.id)) {
@@ -796,17 +797,21 @@ function assignOuterWater(manifest, bin, outer, look) {
   outer.polygons.forEach((p, i) => { if (owner[i] == null) { const j = outer.polygons.findIndex((q, k) => q.ring === p.ring && owner[k] != null); if (j >= 0) owner[i] = owner[j] } })
   const lost = owner.filter((o) => o == null).length
   if (lost) say(`${lost} outer-coast piece(s) continue no water body at the rim — not drawn`)
-  outer.polygons.forEach((p, i) => { if (owner[i] != null) { if (!out.has(owner[i])) out.set(owner[i], []); out.get(owner[i]).push(p) } })
+  const slot = (gi) => { if (!out.has(gi)) out.set(gi, { polys: [], feathers: [] }); return out.get(gi) }
+  outer.polygons.forEach((p, i) => { if (owner[i] != null) slot(owner[i]).polys.push(p) })
+  // a feather goes with its ring's water (the coast it softens)
+  for (const f of outer.feathers || []) { const j = outer.polygons.findIndex((q, k) => q.ring === f.ring && owner[k] != null); if (j >= 0) slot(owner[j]).feathers.push(f) }
   return out
 }
 
 // The body's own mesh plus its outer-coast polygons, triangulated at the body's level, wound as the body's own
-// triangles are. Returns the body's extent (its wave scale) from its own vertices.
-function withOuterWater(positions, indices, polys) {
+// triangles are, and the coast's FEATHERS — triangle strips whose per-vertex `feather` fades the water out across them
+// (1 water side → 0 land side; everything else 1). Returns the body's extent (its wave scale) from its own vertices.
+function withOuterWater(positions, indices, { polys = [], feathers = [] } = {}) {
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
   for (let i = 0; i < positions.length; i += 3) { const x = positions[i], z = positions[i + 2]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z }
   const bodyExtent = Math.hypot(x1 - x0, z1 - z0)
-  if (!polys.length) return { positions, indices, bodyExtent }
+  if (!polys.length && !feathers.length) return { positions, indices, bodyExtent, feather: null }
   const Y = positions[1]
   const area2 = (P, a, b, c) => (P[b * 3] - P[a * 3]) * (P[c * 3 + 2] - P[a * 3 + 2]) - (P[c * 3] - P[a * 3]) * (P[b * 3 + 2] - P[a * 3 + 2])
   let wind = 0; for (let t = 0; t < indices.length && !wind; t += 3) wind = Math.sign(area2(positions, indices[t], indices[t + 1], indices[t + 2]))
@@ -819,7 +824,17 @@ function withOuterWater(positions, indices, polys) {
       if (wind && Math.sign(area2(P, v0 + a, v0 + b, v0 + c)) !== wind) I.push(v0 + a, v0 + c, v0 + b); else I.push(v0 + a, v0 + b, v0 + c)
     }
   }
-  return { positions: new Float32Array(P), indices: new Uint32Array(I), bodyExtent }
+  const solid = P.length / 3
+  const F = []
+  for (const f of feathers) {
+    const v0 = P.length / 3
+    f.strip.forEach(([x, z], i) => { P.push(x, Y, z); F.push(i % 2 ? 0 : 1) })
+    for (let q = 0; q + 3 < f.strip.length; q += 2) for (const [a, b, c] of [[q, q + 1, q + 2], [q + 1, q + 3, q + 2]]) {
+      if (wind && Math.sign(area2(P, v0 + a, v0 + b, v0 + c)) !== wind) I.push(v0 + a, v0 + c, v0 + b); else I.push(v0 + a, v0 + b, v0 + c)
+    }
+  }
+  const feather = new Float32Array(P.length / 3).fill(1); feather.set(F, solid)
+  return { positions: new Float32Array(P), indices: new Uint32Array(I), bodyExtent, feather }
 }
 
 export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag(), surfacesOverride } = {}) {

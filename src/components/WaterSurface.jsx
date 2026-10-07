@@ -52,7 +52,7 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
   useFrame((_, delta) => {
     uniforms.uTime.value += delta
     uniforms.uPhase.value = phaseNow()
-    if (horizon) { uniforms.uHorizonC.value.set(horizon.center[0], horizon.center[1]); uniforms.uHorizonIn.value = horizon.inner; uniforms.uHorizonOut.value = horizon.outer; uniforms.uHazeIn.value = horizon.hazeIn ?? 0
+    if (horizon) { uniforms.uHorizonC.value.set(horizon.center[0], horizon.center[1]); uniforms.uHorizonIn.value = horizon.inner; uniforms.uHorizonOut.value = horizon.outer; uniforms.uHazeIn.value = horizon.hazeIn ?? 0; uniforms.uHasFeather.value = geometry.attributes.aFeather ? 1 : 0
       uniforms.uRimIn.value = horizon.rimIn; uniforms.uRimOut.value = horizon.rimOut }
     // ⭐ The town's visibility depth, read off its terrain's bed record (bake-terrain). ⛔ A town whose terrain has
     // no bed draws the water flat-shaded and SAYS so — it was baked before the bed existed.

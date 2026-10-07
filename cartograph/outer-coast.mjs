@@ -25,6 +25,13 @@ import clipperLib from 'clipper-lib'
 import { horizonFor } from '../src/lib/horizonReach.js'
 
 const C = clipperLib
+// ⭐ THE FEATHER (Jacob via Boz, 2026-10-06: past the fetched square "the water/land boundary must not read as a ruled
+// line"): from each exit the coast's heading fans into a wedge ±θ — the water runs solid to the edge turned θ toward the
+// water, and across the wedge fades out to the edge turned θ toward the land. Zero width at the exit, widening with
+// distance, so the far coast dissolves. θ IS THE COAST'S OWN UNCERTAINTY (Boz's ruling (A), no constant): the
+// LENGTH-WEIGHTED HEADING SPREAD over the coast's last town-radius before the exit (headingSpread, below) — how far
+// the coast's direction wanders as it leaves, so a straight shore gets a narrow feather and a marsh a wide one.
+// Bounded only by geometry: never past the square's own edge (the land side would turn back into the square).
 const S = 100   // clipper works in integers: centimetres
 const toC = (pts) => pts.map(([x, z]) => ({ X: Math.round(x * S), Y: Math.round(z * S) }))
 const fromC = (path) => path.map((p) => [+(p.X / S).toFixed(2), +(p.Y / S).toFixed(2)])
@@ -32,6 +39,27 @@ const circle = (cx, cz, r, n) => Array.from({ length: n }, (_, i) => { const a =
 
 /** The vertices of `ring` that lie on the square's edge (within `eps` metres). */
 const onEdge = (bb, eps) => ([x, z]) => Math.min(Math.abs(x - bb.x0), Math.abs(x - bb.x1), Math.abs(z - bb.z0), Math.abs(z - bb.z1)) < eps
+
+/**
+ * THE COAST'S HEADING SPREAD at an exit (radians): walking the coast from the exit inward for one town-radius, the
+ * length-weighted standard deviation of its segments' headings about their (circular) mean. Scale-free; the coast's own.
+ */
+export function headingSpread(ring, i, dir, len, isEdge) {
+  const n = ring.length, hs = []
+  let acc = 0, k = i
+  for (let step = 0; step < n && acc < len; step++) {
+    const k2 = (k + dir + n) % n, p = ring[k], q = ring[k2]
+    if (isEdge(q) && step > 0) break
+    const L = Math.hypot(q[0] - p[0], q[1] - p[1])
+    if (L > 0) hs.push([Math.atan2(p[1] - q[1], p[0] - q[0]), L])
+    acc += L; k = k2
+  }
+  const W = hs.reduce((a, h) => a + h[1], 0)
+  if (!W) return 0
+  const mx = hs.reduce((a, [h, L]) => a + Math.cos(h) * L, 0) / W, mz = hs.reduce((a, [h, L]) => a + Math.sin(h) * L, 0) / W
+  const mean = Math.atan2(mz, mx)
+  return Math.sqrt(hs.reduce((a, [h, L]) => { const d = Math.atan2(Math.sin(h - mean), Math.cos(h - mean)); return a + d * d * L }, 0) / W)
+}
 
 /** Walk `ring` from index `i` in direction `dir` (±1) along non-edge vertices until `len` metres; return that point. */
 function backAlong(ring, i, dir, len, isEdge) {
@@ -51,14 +79,16 @@ function backAlong(ring, i, dir, len, isEdge) {
  * rings  — [[[x, z], …], …] water rings inside the fetched square (coastRings().rings)
  * bb     — { x0, x1, z0, z1 } the fetched square, town metres
  * center — [x, z]; R — the town's radius
- * Returns { polygons: [{ outer, holes, ring }], exits, rings, refused, fadeOuter }.
+ * Returns { polygons: [{ outer, holes, ring }], feathers: [{ ring, strip }], exits, rings, refused, fadeOuter }.
+ * A feather's `strip` alternates [water-side point, land-side point] from the exit outward: the water's strength is 1 on
+ * the first of each pair and 0 on the second (a triangle strip, faded across).
  */
 export function outerCoast({ rings, bb, center, R, rimSegments = 512 }) {
   const [cx, cz] = center
   const { fadeOuter } = horizonFor(R)
   const FAR = fadeOuter * 2 + Math.hypot(bb.x1 - bb.x0, bb.z1 - bb.z0)   // past the horizon from anywhere in the square
   const isEdge = onEdge(bb, 0.5)
-  const exits = [], refused = [], ringInfo = [], subjects = []
+  const exits = [], refused = [], ringInfo = [], subjects = [], feathers = []
   rings.forEach((ring, ri) => {
     const n = ring.length
     const edge = ring.map(isEdge)
@@ -87,11 +117,27 @@ export function outerCoast({ rings, bb, center, R, rimSegments = 512 }) {
       exits.push({ ring: ri, at: ps.map((v) => +v.toFixed(1)), heading: +(Math.atan2(hs[1], hs[0]) * 180 / Math.PI).toFixed(1) },
                  { ring: ri, at: pe.map((v) => +v.toFixed(1)), heading: +(Math.atan2(he[1], he[0]) * 180 / Math.PI).toFixed(1) })
       if (bad.length) { refused.push({ ring: ri, at: bad.map(([p]) => p.map((v) => +v.toFixed(1))), why: 'the coast\'s heading at the square\'s edge turns back into the square — not carried on past it' }); continue }
-      // the region past the square: ps → out along hs → round the far side → back along he → pe → the edge run back
-      const A = [ps[0] + hs[0] * FAR, ps[1] + hs[1] * FAR], B = [pe[0] + he[0] * FAR, pe[1] + he[1] * FAR]
+      const run = []; for (let k = s; ; k = (k + 1) % n) { run.push(ring[k]); if (k === e) break }
+      // each heading turned θ toward the water (the run along the square's edge is the water side at an exit) for the
+      // solid water's edge, and as far toward the land for the feather's outer edge
+      const turn = (h, rad) => [h[0] * Math.cos(rad) - h[1] * Math.sin(rad), h[0] * Math.sin(rad) + h[1] * Math.cos(rad)]
+      const toward = (h, p, q) => { const v = [q[0] - p[0], q[1] - p[1]]; return Math.sign(h[0] * v[1] - h[1] * v[0]) || 1 }
+      const sgS = toward(hs, ps, run[Math.min(1, run.length - 1)]), sgE = toward(he, pe, run[Math.max(0, run.length - 2)])
+      // θ per exit: the coast's own heading spread, bounded by the square's edge (the heading's angle to it, less a hair)
+      const bound = (p, h) => { const o = outN(p); return Math.asin(Math.min(1, h[0] * o[0] + h[1] * o[1])) * 0.999 }
+      const thS = Math.min(headingSpread(ring, s, -1, R, isEdge), bound(ps, hs)), thE = Math.min(headingSpread(ring, e, +1, R, isEdge), bound(pe, he))
+      const hsW = turn(hs, sgS * thS), hsL = turn(hs, -sgS * thS)
+      const heW = turn(he, sgE * thE), heL = turn(he, -sgE * thE)
+      exits[exits.length - 2].featherDeg = +(thS * 180 / Math.PI).toFixed(2); exits[exits.length - 1].featherDeg = +(thE * 180 / Math.PI).toFixed(2)
+      for (const [p, hW, hL] of [[ps, hsW, hsL], [pe, heW, heL]]) {
+        const T = fadeOuter + Math.hypot(p[0] - cx, p[1] - cz), K = 24, strip = []
+        for (let i = 0; i <= K; i++) { const t = T * i / K; strip.push([+(p[0] + hW[0] * t).toFixed(2), +(p[1] + hW[1] * t).toFixed(2)], [+(p[0] + hL[0] * t).toFixed(2), +(p[1] + hL[1] * t).toFixed(2)]) }
+        feathers.push({ ring: ri, strip })
+      }
+      // the region past the square: ps → out along the water-side heading → round the far side → back → pe → the run back
+      const A = [ps[0] + hsW[0] * FAR, ps[1] + hsW[1] * FAR], B = [pe[0] + heW[0] * FAR, pe[1] + heW[1] * FAR]
       const ang = (p) => Math.atan2(p[1] - cz, p[0] - cx)
       // sweep from A to B on the side that passes OUTSIDE the edge run (through the run's own direction from the centre)
-      const run = []; for (let k = s; ; k = (k + 1) % n) { run.push(ring[k]); if (k === e) break }
       const mid = run[Math.floor(run.length / 2)]
       const a0 = ang(A), a1 = ang(B), am = ang(mid)
       const norm = (a) => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)
@@ -122,5 +168,5 @@ export function outerCoast({ rings, bb, center, R, rimSegments = 512 }) {
       for (const h of ch.Childs()) walk(h) } }
     walk(tree)
   }
-  return { fadeOuter, polygons, exits, rings: ringInfo, refused }
+  return { fadeOuter, polygons, feathers, exits, rings: ringInfo, refused }
 }
