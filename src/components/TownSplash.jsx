@@ -33,6 +33,7 @@ const STARS = (() => {
 })()
 const css = (c) => `rgb(${Math.round(c[0] * 255)}, ${Math.round(c[1] * 255)}, ${Math.round(c[2] * 255)})`
 const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+const SHADE_DEPTH = 0.4   // the shadow's depth below the sky's darker tone; the one value to change
 
 /** @param {{ title?: string, fadeSeconds: number, skyAt: ((minute: number, dayOfYear: number) => object) | null }} props */
 export default function TownSplash({ title, fadeSeconds, skyAt }) {
@@ -52,8 +53,10 @@ export default function TownSplash({ title, fadeSeconds, skyAt }) {
   }, [fadeSeconds, skyAt])
   const { opacity, sky, stars } = frame
   if (opacity <= 0) return null
-  // The title's shadow: the sky's OWN darker tone (whichever of its zenith and horizon is darker), so it reads on any sky.
-  const shade = sky ? css(lum(sky.high) < lum(sky.horizon) ? sky.high : sky.horizon) : 'transparent'
+  // The title's shadow: the sky's OWN darker tone (whichever of its zenith and horizon is darker), DEEPENED (same hue,
+  // × SHADE_DEPTH) so it reads on a noon sky too, where the darker tone is itself a mid-blue (Boz, 2026-10-07).
+  const deeper = sky ? (lum(sky.high) < lum(sky.horizon) ? sky.high : sky.horizon).map((v) => v * SHADE_DEPTH) : null
+  const shade = deeper ? css(deeper) : 'transparent'
   return (
     <div style={{
       position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
