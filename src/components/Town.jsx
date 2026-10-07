@@ -107,6 +107,7 @@ import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
 import { SHOTS_FLAT_DEFAULTS, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
 import { createRoot } from 'react-dom/client'
+import { warmImpostorLoader } from './impostorTexture.js'
 import TownSplash from './TownSplash.jsx'
 import useCalendar from '../hooks/useCalendar'
 import { titleOf as _titleOf } from '../lib/townRecord.js'
@@ -582,6 +583,8 @@ export default function Town({
   // The reveal: the gate ARMS at mount (`ward:gate`), so the emblem shows from the town's first frame; its timings are
   // the Look's `reveal` channel (skyLightChannels.js#REVEAL_FIELDS), seconds; the splash draws the town's own sky.
   useEffect(() => { markStartup('gate') }, [])
+  const glForWarm = useThree((s) => s.gl)
+  useEffect(() => { warmImpostorLoader(glForWarm) }, [glForWarm])   // the KTX2 transcoder ready before the first page
   const skyAt = useTownSky(lookId)
   const revealTiming = resolveGroupAtMinute(scene?.reveal, 0, null, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS)
   const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} /></CanvasOverlay>

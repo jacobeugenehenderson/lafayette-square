@@ -43,6 +43,13 @@ function ktx2Loader(gl) {
 
 const _cache = new Map()   // url → THREE.Texture
 
+/**
+ * Warm the KTX2 loader the moment a renderer exists (Town.jsx), with its own init(): the basis transcoder and its worker
+ * pool. ⛔ It loaded lazily on the FIRST page, so on huron the transcoder landed at 6.0 s and no page could transcode
+ * before it, though the pages were in by 5.96 s (Strobe, 2026-10-07).
+ */
+export function warmImpostorLoader(gl) { ktx2Loader(gl)?.init() }
+
 // A page that failed to load (said loud at the load site): the reveal reads it (pageFailed) and holds the town, by name.
 function failed(tex, err) { tex.userData.failed = err || true }
 

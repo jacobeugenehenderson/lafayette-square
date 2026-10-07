@@ -1045,7 +1045,15 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     () => (groups?.heroImpostors ? Array.from(groups.heroImpostors.keys()) : []),
     [groups],
   )
-  const { assets: heroAssets, arrived: heroPagesArrived } = useHeroImpostorAssets({ enabled: heroFoundationEnabled, lookName, heroImpostorBySpecies: heroImpostorRecords, species: heroSpeciesList })
+  // ⭐ The pages are REQUESTED off the atlas manifest (it lands ~2 s before trees.json on huron), for every hero species
+  // it lists, and narrowed to the placed species once trees.json is in: the same textures (cached by URL), so nothing
+  // loads twice. ⚠️ An atlas carrying species the town never places (HPDM: 2) fetches their pages for nothing until the
+  // bake trims it (a bake question, with trees.json's size). The reveal still waits on the PLACED species only (pagesIn).
+  const heroLoadSpecies = useMemo(
+    () => (groups ? heroSpeciesList : Object.keys(heroImpostorRecords || {})),
+    [groups, heroSpeciesList, heroImpostorRecords],
+  )
+  const { assets: heroAssets, arrived: heroPagesArrived } = useHeroImpostorAssets({ enabled: heroFoundationEnabled, lookName, heroImpostorBySpecies: heroImpostorRecords, species: heroLoadSpecies })
 
   // ⭐ THE REVEAL (a `prepared:trees` startup mark, src/lib/startupMarks.js): the trees are PREPARED when every card
   // page has ARRIVED (useHeroImpostorAssets' own readiness) and every model tree's GLB has loaded. A card without its page draws nothing, so its page is part of the physical tree (Jacob: physical
