@@ -117,8 +117,15 @@ if (!CSM_ENABLED) {
     .replace('#ifdef USE_SHADOWMAP', '#ifdef USE_SHADOWMAP\n' + pcss)
     .replace(PCF, `if ( shadowRadius >= ${TAG}.0 ) return PCSS( shadowMap, shadowCoord, shadowRadius );\n${PCF}`)
   // three does not export LightShadow; every light's shadow (directional, spot) is a subclass of it.
+  // ⛔ STRUCTURAL, NEVER BY NAME: a production build minifies class names, so `constructor.name === 'LightShadow'` held
+  // in the dev server and threw on every town in the Ward's bundle (staging, 2026-10-07). The base both a directional
+  // and a spot light's shadow inherit from, and which carries LightShadow's own methods, is LightShadow.prototype.
   const lightShadow = Object.getPrototypeOf(Object.getPrototypeOf(new THREE.DirectionalLight().shadow))
-  if (lightShadow?.constructor?.name !== 'LightShadow') throw new Error('[pcssShadows] ⛔ could not reach three\'s LightShadow prototype to stamp the penumbra on.')
+  const viaSpot = Object.getPrototypeOf(Object.getPrototypeOf(new THREE.SpotLight().shadow))
+  const own = (k) => Object.prototype.hasOwnProperty.call(lightShadow, k) && typeof lightShadow[k] === 'function'
+  if (!lightShadow || lightShadow !== viaSpot || !own('getFrustum') || !own('updateMatrices') || !own('copy')) {
+    throw new Error('[pcssShadows] ⛔ could not reach three\'s LightShadow prototype to stamp the penumbra on.')
+  }
   Object.defineProperty(lightShadow, 'radius', {
     configurable: true,
     get() { return stamp ? stamp.radius : this._ownRadius },
