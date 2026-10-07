@@ -72,7 +72,7 @@ export function treeGroundRaw(inst) {
   // everywhere else — up to 52 m adrift in Browse, ~12 m in Street. A constant cannot
   // follow a tween.
   // ⭐ SO THE LIFT BELONGS IN THE SHADER, exactly where the mesh path has always put it
-  // (`terrainShader.js#patchTerrainInstancedBaked`: `(aGround.x * uExag + aGround.y) / _instYScale`). This
+  // (`terrainShader.js#patchTerrainInstancedBaked`: `aGround.x * uExag + aGround.y`, world-up). This
   // returns the RAW anchor; the carrier multiplies by the live uExag per frame, and the
   // trees ride the ground down when a shot flattens it. Placement matrices sit at y = 0.
   if (typeof inst.groundRaw === 'number') return inst.groundRaw

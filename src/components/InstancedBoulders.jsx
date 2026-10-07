@@ -25,13 +25,17 @@
 import { useRef, useEffect, useMemo } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { groundPairs } from '../utils/elevation'
 
 /**
  * @param palette    BufferGeometry[] — from `boulderPalette()`. One draw call each.
- * @param instances  [{ p:[x,y,z], q:[x,y,z,w], s:[sx,sy,sz], i:paletteIndex, c:[r,g,b] }]
- * @param material   a shared THREE.Material (the caller owns it)
+ * @param instances  [{ p:[x,y,z], q:[x,y,z,w], s:[sx,sy,sz], i:paletteIndex, c:[r,g,b], ground }] — `p` GROUND-RELATIVE
+ *                   and `ground` the raw ground under the stone: the material lifts it by ground × the live uExag
+ *                   (`terrainShader.js#patchTerrainInstancedBaked`, the `aGround` the lamps and trees carry).
+ * @param material   a shared THREE.Material (the caller owns it), patched with patchTerrainInstancedBaked
+ * @param depthMaterial  the same lift for the shadow pass (the caller owns it)
  */
-export default function InstancedBoulders({ palette, instances, material, castShadow = true, receiveShadow = true }) {
+export default function InstancedBoulders({ palette, instances, material, depthMaterial, castShadow = true, receiveShadow = true }) {
   // Bucket by palette index once. ⛔ Doing this per frame would be the whole
   // point of instancing thrown away.
   const buckets = useMemo(() => {
@@ -48,11 +52,11 @@ export default function InstancedBoulders({ palette, instances, material, castSh
   }, [palette, instances])
 
   return palette.map((geo, k) => (
-    <Bucket key={k} geometry={geo} material={material} items={buckets[k]} castShadow={castShadow} receiveShadow={receiveShadow} />
+    <Bucket key={k} geometry={geo} material={material} depthMaterial={depthMaterial} items={buckets[k]} castShadow={castShadow} receiveShadow={receiveShadow} />
   ))
 }
 
-function Bucket({ geometry, material, items, castShadow, receiveShadow }) {
+function Bucket({ geometry, material, depthMaterial, items, castShadow, receiveShadow }) {
   const ref = useRef(null)
   const invalidate = useThree(s => s.invalidate)
 
@@ -74,6 +78,11 @@ function Bucket({ geometry, material, items, castShadow, receiveShadow }) {
       // rotation×scale. Shear would break it; we never compose shear.
       if (it.c) im.setColorAt(i, c.setRGB(it.c[0], it.c[1], it.c[2]))
     }
+    // ⛔ Loud: a stone with no raw ground would be drawn at the datum, under the shore it belongs on.
+    geometry.setAttribute('aGround', new THREE.InstancedBufferAttribute(groundPairs(items, (it) => {
+      if (!Number.isFinite(it.ground)) throw new Error('InstancedBoulders: a stone carries no raw ground (`ground`) — it would draw at the datum')
+      return it.ground
+    }), 2))
     im.instanceMatrix.needsUpdate = true
     if (im.instanceColor) im.instanceColor.needsUpdate = true
     im.computeBoundingSphere()
@@ -85,6 +94,7 @@ function Bucket({ geometry, material, items, castShadow, receiveShadow }) {
     <instancedMesh
       ref={ref}
       args={[geometry, material, items.length]}
+      customDepthMaterial={depthMaterial}
       castShadow={castShadow}
       receiveShadow={receiveShadow}
       frustumCulled={false}

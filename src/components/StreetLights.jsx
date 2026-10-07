@@ -101,7 +101,7 @@ function StreetLights({ lamps: lampsProp, reach, lantern: lanternChannel, model:
   //
   // Terrain lift is added directly to _bbCenter.y in world space (the
   // billboard custom shader bypasses three's standard project_vertex
-  // chain, so patchTerrainInstanced can't see it). Uniforms come from
+  // chain, so patchTerrainInstancedBaked can't see it). Uniforms come from
   // TERRAIN_UNIFORMS on each ShaderMaterial that consumes this snippet.
   const BILLBOARD_VS_INC = /*glsl*/`
     vec4 _bbCenter = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);

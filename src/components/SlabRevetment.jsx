@@ -40,7 +40,7 @@ import { revetmentDrape, drapeGlobals } from '../lib/revetmentDrape.js'
 import { shoreContext, chunkStones, CHUNK_M } from '../lib/shoreChunks.js'
 import { revetmentFaces, revetmentResponseKind, toeFor } from '../lib/revetmentFromSlab.js'
 import { getElevationRaw } from '../utils/elevation'
-import { terrainBed, terrainWater } from '../utils/terrainShader'
+import { terrainBed, terrainWater, patchTerrain, patchTerrainInstancedBaked } from '../utils/terrainShader'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { phaseNow } from './WaterSurface.jsx'
 import { MIN_ARMOUR_D50_M } from '../../cartograph/shore-armour.mjs'
@@ -80,6 +80,20 @@ const FAR_BUILD_MS_PER_FRAME = 4
 /** Rebuild only after the camera has moved this far. ⛔ Without it every frame
  *  re-selects chunks on a 26 km shore for a camera that has not moved. */
 const RESELECT_M = 6
+
+/** ⭐ THE DRAPE, GROUND-RELATIVE (Argon, 2026-10-07). Each vertex's raw ground moves out of the geometry and into the
+ *  shader's lift (patchTerrain perVertex — the ground's own, whose texture sample is reconciled to this sampler), so the
+ *  stone rides the live exaggeration like the ground beneath it. The bounds are taken first, from the drawn exag-1
+ *  positions. `revetmentDrape` itself stays absolute: the checks that build drapes read real heights. */
+function groundRelative(built) {
+  const g = built?.geometry
+  if (!g) return built
+  g.computeBoundingSphere(); g.computeBoundingBox()
+  const p = g.attributes.position
+  for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) - getElevationRaw(p.getX(i), p.getZ(i)))
+  p.needsUpdate = true
+  return built
+}
 
 export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   const camera = useThree(s => s.camera)
@@ -121,7 +135,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
     return () => { dead = true }
   }, [lookId, bakeLastMs])
 
-  // ── one palette + one material for the whole shore ─────────────────────────
+  // ── one palette + the materials for the whole shore ────────────────────────
   // ⭐ Seeded from the slab so two towns do not wear the same rocks and a re-bake
   // does not reshuffle a shore the operator has already looked at.
   const palette = useMemo(() => (doc ? boulderPalette({ seed: doc.seed }) : null), [doc])
@@ -131,15 +145,26 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
   // nothing — with the artifact loaded and every station correct. ⭐ It failed on the
   // CLEANUP path, so the first frame looked fine and the failure only appeared once
   // something remounted: a stone wall that is missing for no visible reason.
-  const { material, uniforms: revU } = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
+  // ⭐⭐ THE STONE RIDES THE KIT'S TERRAIN LIFT, like the ground, the lamps and the trees (Argon, 2026-10-07). It was
+  // draped ONCE at raw height (getElevationRaw = exag 1), so in Plan (exag 0), through the reveal's swell, and on any town
+  // authored at another exaggeration it floated or sank against the drawn shore. Its geometry is now GROUND-RELATIVE and
+  // the shader adds ground × the live uExag: the drape through the ground's own per-vertex lift, the boulders through the
+  // lamps' and trees' instanced one (aGround). TWO materials, because one cannot carry both: the per-vertex lift ignores
+  // instanceMatrix. ⛔ The shadow pass repeats each lift (checks/claims-displaced-casters-have-a-depth-material.mjs).
+  const drape = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
+  const stone = useMemo(() => makeRevetmentMaterial({ waterY: 0 }), [])
+  const drapeMaterial = useMemo(() => { patchTerrain(drape.material, { perVertex: true }); return drape.material }, [drape])
+  const stoneMaterial = useMemo(() => { patchTerrainInstancedBaked(stone.material); return stone.material }, [stone])
+  const drapeDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrain(d, { perVertex: true }); return d }, [])
+  const stoneDepth = useMemo(() => { const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }); patchTerrainInstancedBaked(d); return d }, [])
   // ⭐ The wetted band stands at the LIVE level where the camera is (cartograph/waterLevel.mjs), so it moves with the tide.
   // ⛔ Not swallowed (BRIEF-tide finding): a town whose water record cannot be read SAYS so, once, and its wetted band
   // stays unlit — never a quiet dry band.
   const levels = useMemo(() => { try { return waterLevels(terrainWater()) } catch (e) {
     if (!_saidNoLevels) { _saidNoLevels = true; console.error(`[SlabRevetment] ⛔ ${e.message} — the stone's wetted band has no level to stand at`) }
     return null } }, [doc])
-  useFrame(({ camera: cam }) => { if (levels) revU.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, phaseNow()) })
-  useEffect(() => () => material.dispose?.(), [material])
+  useFrame(({ camera: cam }) => { if (levels) drape.uniforms.uWaterY.value = stone.uniforms.uWaterY.value = levels.levelAt(cam.position.x, cam.position.z, phaseNow()) })
+  useEffect(() => () => { drapeMaterial.dispose(); stoneMaterial.dispose(); drapeDepth.dispose(); stoneDepth.dispose() }, [drapeMaterial, stoneMaterial, drapeDepth, stoneDepth])
   useEffect(() => () => { palette?.forEach(g => g.dispose()) }, [palette])
 
   // ── the buildable faces, and their chunk lattices ──────────────────────────
@@ -200,7 +225,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
       try {
         const G = drapeGlobals({ poly: f.poly, crestAt: f.crestAt, octaves: FAR_OCTAVES })
         const d = revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: FAR_OCTAVES, globals: G })
-        if (d?.stats?.tris) made.push({ key: f.key, geometry: d.geometry })
+        if (d?.stats?.tris) made.push({ key: f.key, geometry: groundRelative(d).geometry })
       } catch (e) {
         // ⛔ Loud. A face that cannot build its far layer is a stretch of shore that
         // will be empty at distance, which is exactly the defect being fixed here.
@@ -224,7 +249,7 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         if (Math.hypot(p.x - c.x, p.z - c.z) > NEAR_RADIUS_M) continue
         if (!f.cache.has(k)) {
           try {
-            f.cache.set(k, revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: 3, globals: f.G, stations: f.ranges[k] }))
+            f.cache.set(k, groundRelative(revetmentDrape({ poly: f.poly, crestAt: f.crestAt, toeAt: f.toeAt, berm: f.berm, groundAt: f.groundAt, waterY: f.waterY, octaves: 3, globals: f.G, stations: f.ranges[k] })))
           } catch (e) { console.error(`[revetment] drape chunk ${f.key}#${k} failed —`, e); continue }
         }
         const built = f.cache.get(k)
@@ -237,7 +262,8 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         const t = (ci + 0.5) / n
         const p = f.poly[Math.min(f.poly.length - 1, Math.round(t * (f.poly.length - 1)))]
         if (Math.hypot(p.x - c.x, p.z - c.z) > NEAR_RADIUS_M) continue
-        stones.push(...chunkStones(f.ctx, ci, 2))
+        // ground-relative, like the drape: the raw ground rides along as `ground` (the lift's aGround)
+        for (const st of chunkStones(f.ctx, ci, 2)) { const g = getElevationRaw(st.p[0], st.p[2]); stones.push({ ...st, p: [st.p[0], st.p[1] - g, st.p[2]], ground: g }) }
       }
     }
     setBuilt({ drape, stones, nearKeys })
@@ -255,16 +281,16 @@ export default function SlabRevetment({ lookId, bakeLastMs, visible = true }) {
         <mesh
           key={`far-${m.key}`}
           geometry={m.geometry}
-          material={material}
+          material={drapeMaterial}
           visible={!built.nearKeys?.has(m.key)}
           receiveShadow
         />
       ))}
       {built.drape.map((d, i) => (
-        <mesh key={i} geometry={d.geometry} material={material} castShadow receiveShadow />
+        <mesh key={i} geometry={d.geometry} material={drapeMaterial} customDepthMaterial={drapeDepth} castShadow receiveShadow />
       ))}
       {!!built.stones.length && (
-        <InstancedBoulders palette={palette} instances={built.stones} material={material} />
+        <InstancedBoulders palette={palette} instances={built.stones} material={stoneMaterial} depthMaterial={stoneDepth} />
       )}
     </group>
   )

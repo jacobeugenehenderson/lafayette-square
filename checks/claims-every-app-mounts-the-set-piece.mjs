@@ -16,6 +16,7 @@
  *   · an app does not import and render `<SlabRevetment` with `lookId` and `bakeLastMs`
  *   · any file other than SetPiece.jsx imports a set-piece renderer directly (the hand-mount)
  *   · a town declares a `setPiece.kind` that SetPiece.jsx has no renderer for
+ *   · the revetment draws with a material no kit terrain lift patches (it would ignore the live exaggeration)
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-every-app-mounts-the-set-piece.mjs [--self-test]
  */
@@ -79,6 +80,18 @@ export function audit(files, mountSrc, declaredKinds) {
     if (!new RegExp(`${r.comp}\\.extent\\s*=\\s*\\{[^}]*topM[^}]*halfWidthM`).test(src)) f.push(`${r.comp} declares no ${r.comp}.extent = { topM, halfWidthM } — the slot's uplights cannot aim at it`)
     if (!/\{\s*children\b/.test(src)) f.push(`${r.comp} does not draw {children} — the slot's lighting never reaches its base frame`)
   }
+  // ⭐ THE STONE RIDES THE TERRAIN LIFT (Argon, 2026-10-07): every material SlabRevetment draws with is patched by a kit
+  // lift (terrainShader.js patchTerrain*), so it follows the live exaggeration like the ground. It was draped once at
+  // exag 1 and floated or sank in Plan, through the reveal's swell, and on any town authored at another exaggeration.
+  const rev = files.find(x => x.path.endsWith('components/SlabRevetment.jsx'))
+  if (rev) {
+    const c = code(rev.src), used = [...new Set([...c.matchAll(/\bmaterial=\{(\w+)\}/g)].map(m => m[1]))]
+    if (!used.length) f.push('SlabRevetment.jsx draws with no material={…} this check can read — cannot verify the stone rides the terrain lift')
+    for (const id of used) {
+      const d = c.match(new RegExp(`const ${id}\\s*=\\s*([^\\n]*)`))
+      if (!d || !/patchTerrain\w*\(/.test(d[1])) f.push(`SlabRevetment.jsx draws with ${id}, which no kit terrain lift patches — the stone ignores the live exaggeration`)
+    }
+  }
   for (const k of declaredKinds) if (!R.some(r => r.kind === k.kind)) f.push(`${k.town} declares set-piece kind "${k.kind}"; SetPiece.jsx has no renderer for it`)
   return { f, info }
 }
@@ -102,6 +115,8 @@ if (process.argv.includes('--self-test')) {
     ['a new app with no mount', () => audit([...files, { path: 'src/fake/NewApp.jsx', src: '<Canvas><BakedGround /></Canvas>' }], mountSrc, declaredKinds).f.length],
     ['a kind with no renderer', () => audit(files, mountSrc, [...declaredKinds, { town: 'town-2', kind: 'lighthouse' }]).f.length],
     ['a renderer declares no extent', () => audit(files.map(x => /PilgrimMonument\.jsx$/.test(x.path) ? { ...x, src: x.src.replace(/PilgrimMonument\.extent\s*=/, 'PilgrimMonument.nothing =') } : x), mountSrc, declaredKinds).f.length],
+    ['the revetment drape skips the terrain lift', () => audit(files.map(x => /SlabRevetment\.jsx$/.test(x.path) ? { ...x, src: x.src.replace('patchTerrain(drape.material, { perVertex: true }); ', '') } : x), mountSrc, declaredKinds).f.length],
+    ['the revetment stones skip the terrain lift', () => audit(files.map(x => /SlabRevetment\.jsx$/.test(x.path) ? { ...x, src: x.src.replace('patchTerrainInstancedBaked(stone.material); ', '') } : x), mountSrc, declaredKinds).f.length],
     ['a renderer drops the slot\'s children', () => audit(files.map(x => /PilgrimMonument\.jsx$/.test(x.path) ? { ...x, src: x.src.replace(/\{\s*children\b/g, '{ kids') } : x), mountSrc, declaredKinds).f.length],
   ]
   let bad = 0
@@ -113,4 +128,4 @@ const { f, info } = audit(files, mountSrc, declaredKinds)
 console.log(info.join('\n'))
 console.log(`declared set-pieces: ${declaredKinds.map(k => `${k.town}:${k.kind}`).join(', ') || 'none'}`)
 if (f.length) { console.log(`⛔ FAIL\n   ${f.join('\n   ')}`); process.exit(1) }
-console.log('✅ every app that draws a town mounts <SetPiece> and <SlabRevetment>; no hand-mounts; every declared kind has a renderer')
+console.log('✅ every app that draws a town mounts <SetPiece> and <SlabRevetment>; no hand-mounts; every declared kind has a renderer; the stone rides the terrain lift')

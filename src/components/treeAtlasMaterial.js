@@ -1366,7 +1366,7 @@ export function invalidateTreeAtlas(lookName) {
 // The workstage preview mounts the SAME material the LS runtime mounts. The
 // only differences are: (a) the atlas is a per-composition preview atlas
 // (one bark + one leaf + optional gradient LUT + optional detail), and
-// (b) preview isn't on terrain, so patchTerrainInstanced is skipped. Every
+// (b) preview isn't on terrain, so patchTerrainInstancedBaked is skipped. Every
 // shader-side feature — bark gradient luminance REPLACE, detail Overlay
 // composite, region split, lamp glow, sway — runs through the SAME
 // injectFoliageSway path. Birch's interim chunk-replication in
@@ -1432,7 +1432,7 @@ async function buildPreviewMaterials(manifestUrl) {
   treeMaterial.name = `tree-atlas:salon-preview`
   setBarkTileTable(treeMaterial, atlas.barkTileRects)
   injectFoliageSway(treeMaterial)
-  // NB: NO patchTerrainInstanced — workstage preview is a flat-ground
+  // NB: NO patchTerrainInstancedBaked — workstage preview is a flat-ground
   // single-tree composition; LS-runtime terrain lift isn't applicable.
   return { manifest, treeMaterial }
 }

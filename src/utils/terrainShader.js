@@ -375,64 +375,32 @@ const TERRAIN_DISPLACE_PERVERTEX = `
  * @param {boolean} [opts.perVertex=false] — per-vertex sampling (for merged geometry like foundations)
  */
 /**
- * Vertex displacement snippet for INSTANCED meshes — samples terrain at the
- * instance's world origin (modelMatrix * instanceMatrix * (0,0,0)) and lifts
- * every vertex of that instance uniformly. Preserves per-instance rotation
- * and scale. Replaces #include <begin_vertex>.
- */
-export const TERRAIN_DISPLACE_INSTANCED = `
-#include <begin_vertex>
-#ifdef USE_INSTANCING
-{
-  vec4 _iw = modelMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-  vec2 _tuv = _terrainUV(vec2(
-    (_iw.x - uBMinX) / uSpanX,
-    (_iw.z - uBMinZ) / uSpanZ
-  ));
-  // Divide by the instance's Y-axis scale so the lift lands as
-  // sample*uExag METERS in world space after instanceMatrix scaling
-  // (otherwise a lamp with LAMP_SCALE=1.38 lifts about 38% too far,
-  // and tree instances at authored scale amplify by their own factor).
-  float _instYScale = length(instanceMatrix[1].xyz);
-  transformed.y += texture2D(uTerrainMap, _tuv).r * uExag / max(_instYScale, 0.0001);
-}
-#endif`
-
-/**
- * Patch a material for INSTANCED terrain displacement. Each instance is
- * lifted uniformly to its terrain height. Chains safely with existing
- * onBeforeCompile.
- */
-export function patchTerrainInstanced(mat) {
-  const prev = mat.onBeforeCompile
-  mat.onBeforeCompile = (shader) => {
-    assignTerrainUniforms(shader)
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL)
-      .replace('#include <begin_vertex>', TERRAIN_DISPLACE_INSTANCED)
-    if (prev) prev(shader)
-  }
-  const prevKey = mat.customProgramCacheKey?.bind(mat)
-  mat.customProgramCacheKey = () => `terrain-inst-${prevKey ? prevKey() : 'std'}`
-}
-
-/**
  * INSTANCED rigid lift by a BAKED per-instance ground anchor — `groundSampler`'s
  * `groundAt`, where the DRAWN ground sits under the instance —
  * instead of a live texture sample. So the instance lands exactly on the
  * rendered ground (no coarse-mesh float); the buildings/foundations `aCentroid`
  * regime generalized to point objects. The geometry must carry an `aGround`
  * InstancedBufferAttribute, itemSize 2: (raw, pre-uExag · the drawn mesh's own y, UNexaggerated — a raised kerb's
- * block, `kerbLift.mjs`). Lift = aGround.x × uExag + aGround.y, divided by the instance Y-scale so it lands as meters
- * in world space (same as patchTerrainInstanced). One slot, not two: the tree shaders sit at the attribute budget
- * (`treeAtlasMaterial.js`, VALIDATE_STATUS). Pack it with `elevation.js#groundPairs`. Replaces #include <begin_vertex>.
+ * block, `kerbLift.mjs`). Lift L = aGround.x × uExag + aGround.y metres, straight UP in world space. One slot, not
+ * two: the tree shaders sit at the attribute budget (`treeAtlasMaterial.js`, VALIDATE_STATUS). Pack it with
+ * `elevation.js#groundPairs`. Replaces #include <begin_vertex>.
+ * ⭐ WORLD-UP FOR ANY ROTATION (Argon, 2026-10-07): the lift is added in the instance's own frame BEFORE instanceMatrix
+ * applies, so it is inverse(basis)·(0, L, 0) — column i of the basis contributes colᵢ.y / |colᵢ|². It was L / |col₁|
+ * along local Y, which is world-up only for an instance turned about Y: the revetment's tumbled boulders would have been
+ * lifted sideways. For every lamp and tree (Y rotation × uniform scale) the two are identical to float32 — 127,734
+ * matrices on huron, provincetown and LS, max 1.8e-7 of the lift (▶ `node scratch/shore-jag/lift-proof.mjs`).
+ * ⛔ Assumes the basis is ROTATION × SCALE (Matrix4.compose's T·R·S, or that times a node matrix of the same form):
+ * a non-uniform scale multiplied in AFTER a rotation shears the columns and the lift goes silently wrong.
  */
 export const TERRAIN_DISPLACE_INSTANCED_BAKED = `
 #include <begin_vertex>
 #ifdef USE_INSTANCING
 {
-  float _instYScale = length(instanceMatrix[1].xyz);
-  transformed.y += (aGround.x * uExag + aGround.y) / max(_instYScale, 0.0001);
+  float _L = aGround.x * uExag + aGround.y;
+  mat3 _ib = mat3(instanceMatrix);
+  transformed += _L * vec3(_ib[0].y / max(dot(_ib[0], _ib[0]), 1e-8),
+                           _ib[1].y / max(dot(_ib[1], _ib[1]), 1e-8),
+                           _ib[2].y / max(dot(_ib[2], _ib[2]), 1e-8));
 }
 #endif`
 
