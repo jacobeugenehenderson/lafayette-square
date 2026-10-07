@@ -33,6 +33,17 @@ const survey = listOf('_SURVEY_FE_FIELDS')
 const section = listOf('_SECTION_FE_FIELDS')
 const covered = new Set([...survey, ...section])
 
+// ⭐ AND THE WRITE SIDE OF THE SAME INVARIANT (2026-10-06): a field no revert clears, the tool may not WRITE. Both
+// blockCustoms writers filter through `keepAuthorable` over these same lists — so a derived field riding in on a merged
+// side (`tlClamped`, from the chain) never lands. Proved on the function the store calls, with the lists parsed above.
+const { keepAuthorable } = await import('../src/lib/authorableSlot.js')
+const merged = { pavementHW: 4, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk', tlClamped: true, curb: 0.2, materials: { outer: 'LU' } }
+const kept = keepAuthorable(merged, [...survey, ...section])
+const writers = ['setBlockEdgeCustom', 'writeBlockEdgeCustoms'].map(w => { const i = src.indexOf(`  ${w}: (`); const j = src.indexOf('\n  },\n', i); return [w, i >= 0 && src.slice(i, j).includes('keepAuthorable(')] })
+const writeOk = !('tlClamped' in kept) && !('curb' in kept) && ['pavementHW', 'treelawn', 'sidewalk', 'terminal', 'materials'].every(f => f in kept)
+console.log(`  write filter: ${writeOk ? '✅' : '⛔'} a merged side keeps ${Object.keys(kept).join(', ')} (derived tlClamped / dead curb dropped) · writers filtered: ${writers.map(([w, ok]) => `${ok ? '✅' : '⛔'} ${w}`).join(' · ')}`)
+if (!writeOk || writers.some(([, ok]) => !ok)) { console.log('⛔ FAIL — a blockCustoms writer can persist a field no revert clears'); process.exit(1) }
+
 console.log(`revert scopes, parsed from ${STORE}:`)
 console.log(`  SURVEY : ${survey.join(', ')}`)
 console.log(`  SECTION: ${section.join(', ')}`)

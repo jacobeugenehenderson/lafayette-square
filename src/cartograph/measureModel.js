@@ -12,7 +12,7 @@
 // ("keep the two in sync until extracted"); the authoring redesign extracts
 // them here so the two consumers share one definition.
 
-import { defaultMeasure, CURB_WIDTH } from './streetProfiles.js'
+import { defaultMeasure } from './streetProfiles.js'
 
 // Drag clamps — a handle dragged very far must not explode ribbon geometry
 // (subdivideGeo can request a multi-million-vert buffer). 30m past any real
@@ -112,9 +112,10 @@ export function feesForChainSide(v2FrontageEdges, st, sideKey) {
 // from centerline); `kind` names the dragged boundary. Returns a NEW measure
 // (seed is not mutated). Pure — identical math for per-block and whole-chain
 // writes, so both seed per-fe and call this.
-export function applyKindToMeasure(seed, kind, r) {
+export function applyKindToMeasure(seed, kind, r, cw) {
   const next = { ...seed }
-  const cw = Number.isFinite(next.curb) ? next.curb : CURB_WIDTH
+  // `cw` = the Look's curb width (the kerb is one cosmetic value per Look, never per edge — Jacob, 2026-10-06)
+  if (!Number.isFinite(cw)) throw new Error('applyKindToMeasure: pass the Look\'s curbWidth — the kerb width is not per edge')
   if (kind === 'pavementHW') {
     next.pavementHW = Math.min(MAX_PAVEMENT_HW, Math.max(0.5, r))
   } else if (kind === 'treelawnOuter') {

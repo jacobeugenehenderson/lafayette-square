@@ -2,7 +2,7 @@ import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
-import { CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline } from './streetProfiles.js'
+import { segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline } from './streetProfiles.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
@@ -155,12 +155,11 @@ function midAndPerp(pts) {
 // `r` is absolute from centerline (curbEnd = pavementHW + cw), matching
 // applyKindToMeasure's drag math. pavementHW (the asphalt edge) is Survey's,
 // kept read-only as the reference the ped boundaries position off.
-function sideBoundaries(side) {
+function sideBoundaries(side, cw) {
   if (!side || !(side.pavementHW > 0)) return []
   const tl = Math.max(0, side.treelawn || 0)
   const sw = Math.max(0, side.sidewalk || 0)
   if (tl <= 0 && sw <= 0) return []   // median / zero-ped side → no ped handles
-  const cw = Number.isFinite(side.curb) ? side.curb : CURB_WIDTH
   const curbEnd = Math.max(0, side.pavementHW) + cw
   return [
     { r: curbEnd + tl,      kind: 'treelawnOuter' },   // the divider (treelawn depth)
@@ -261,6 +260,9 @@ export default function MeasureOverlay() {
   const deselectStreet = useCartographStore(s => s.deselectStreet)
   const blockCustoms = useCartographStore(s => s.blockCustoms)
   // ⭐ CURB-CUT CORNERS (`BRIEF-corner-ramps-and-kerb §3` step 4) — the painter's own records, one per junction corner
+  // ⭐ the kerb's width is the LOOK's (`curbWidth`, the cosmetic slider) — one value for every handle, the one the map
+  // draws with. The per-edge `side.curb` it once read was a control the map never honoured (removed, Jacob 2026-10-06).
+  const curbWidth = useCartographStore(s => s.curbWidth)
   const curbCutCorners = useCartographStore(s => s.curbCutCorners)
   const selectedCurbCorner = useCartographStore(s => s.selectedCurbCorner)
   const curbCutLayerOn = useCartographStore(s => s.layerVis?.curbCut !== false)
@@ -454,14 +456,14 @@ export default function MeasureOverlay() {
     const rotY = Math.atan2(ax, az)   // rotation for a plane geometry aligned XZ
     const handles = []
     for (const [sideKey, sign] of [['left', -1], ['right', +1]]) {
-      const bounds = sideBoundaries(measure[sideKey])
+      const bounds = sideBoundaries(measure[sideKey], curbWidth)
       const pavHW = Math.max(0, measure[sideKey]?.pavementHW || 0)
       // ⭐ One GEOMETRY truth (Plumb fix): anchor to the REAL frozen curb (iA)
       // along this side's perpendicular, then offset inward by the PED depth
       // (b.r − pavementHW). This rides the rounded iA at corners and uses the
       // actual curb position, not the chainMeasure ruler. Falls back to the
       // centreline ruler when no frozen curb is published (non-Section modes).
-      const cwSide = Number.isFinite(measure[sideKey]?.curb) ? measure[sideKey].curb : CURB_WIDTH
+      const cwSide = curbWidth
       const curb = sectionCurbRings.length
         ? rayHitCurb(cx, cz, sign * nx, sign * nz, sectionCurbRings, pavHW + cwSide + RAY_CURB_MARGIN)
         : null
@@ -505,7 +507,7 @@ export default function MeasureOverlay() {
       }
     }
     return { streetIdx: selectedStreet, measure, ordinal, mid: { cx, cz, nx, nz }, handles }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, nearestFeForSide, ixByChain, sectionCurbRings])
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, nearestFeForSide, ixByChain, sectionCurbRings, curbWidth])
 
   // Mirror selection.ordinal to the store so MeasurePanel shows the right segment.
   useEffect(() => {
@@ -552,7 +554,7 @@ export default function MeasureOverlay() {
     const existing = readFeCustom(blockCustoms, fe)
     const ped = resolvePedDepths(chainSeed, side, existing)
     const seed = { ...(chainSeed[side] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-    store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r) }])
+    store.writeBlockEdgeCustoms([{ fe, measure: applyKindToMeasure(seed, kind, r, store.curbWidth) }])
   }, [nearestFeForSide])
 
   const onPointerDown = useCallback((e) => {
@@ -727,8 +729,7 @@ export default function MeasureOverlay() {
       const ped = resolvePedDepths(chainM, side, existing)
       const sd = { ...(chainSide || {}), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
       if (sd.terminal !== 'sidewalk') return null
-      const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
-      const curbEnd = (sd.pavementHW || 0) + cw
+      const curbEnd = (sd.pavementHW || 0) + curbWidth
       const oD = ped.hasTL ? ped.tl : ped.sw     // outer (curb-side) slot depth
       const iD = ped.hasTL ? ped.sw : ped.tl     // inner slot depth
       const oEnd = curbEnd + oD
@@ -825,8 +826,7 @@ export default function MeasureOverlay() {
       // Cap-disc hit radius = curb + both ped strips (+1 m margin), max over sides.
       const rFor = (side, ped) => {
         const m = chainM?.[side] || {}
-        const cw = Number.isFinite(m.curb) ? m.curb : CURB_WIDTH
-        return (m.pavementHW || 0) + cw + ped.tl + ped.sw + 1
+        return (m.pavementHW || 0) + curbWidth + ped.tl + ped.sw + 1
       }
       const hitR = Math.max(rFor('left', pedL), rFor('right', pedR))
       let hit = null, bestD = Infinity
@@ -918,7 +918,7 @@ export default function MeasureOverlay() {
       dom.removeEventListener('dblclick', onDblClick, opts)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, centerlineData, findFeForSide, blockCustoms, ixByChain, cutMarkersOn, curbCutCorners])
+  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, centerlineData, findFeForSide, blockCustoms, ixByChain, cutMarkersOn, curbCutCorners, curbWidth])
 
   if (!active) return null
 

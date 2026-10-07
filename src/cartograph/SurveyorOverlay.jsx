@@ -295,7 +295,7 @@ export default function SurveyorOverlay() {
       const existing = readFeCustom(store.blockCustoms, fe)
       const ped = resolvePedDepths(chainSeed, s, existing)
       const seed = { ...(chainSeed[s] || FALLBACK), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-      const measure = applyKindToMeasure(seed, 'pavementHW', r)
+      const measure = applyKindToMeasure(seed, 'pavementHW', r, store.curbWidth)
       // One entry per owned segOrd — each shim carries a single-segOrd fe so
       // feCustomKey stores it under (skelId, side, THAT segOrd), not just min().
       for (const seg of runSegOrds) entries.push({ fe: { ...fe, segOrds: [seg] }, measure })

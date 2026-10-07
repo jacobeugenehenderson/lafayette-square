@@ -372,10 +372,10 @@ export function sideToStripes(side) {
     out.push({ material: asphMat, innerR: r, outerR: r + side.pavementHW })
     r += side.pavementHW
   }
-  // curb — always present unless pavement is zero. Per-side `side.curb`
-  // overrides the constant; absent → use CURB_WIDTH default.
+  // curb — always present unless pavement is zero, at the kit's reference width (there is no per-side curb width:
+  // the kerb is the Look's cosmetic `curbWidth`, Jacob 2026-10-06)
   if (side.pavementHW > 0 && side.terminal !== undefined) {
-    const cw = Number.isFinite(side.curb) ? side.curb : CURB_WIDTH
+    const cw = CURB_WIDTH
     out.push({ material: 'curb', innerR: r, outerR: r + cw })
     r += cw
   }

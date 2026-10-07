@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
-import { CURB_WIDTH, BAND_COLORS } from './streetProfiles.js'
+import { BAND_COLORS } from './streetProfiles.js'
 import { chainMeasure, findFeForSide } from './measureModel.js'
 import { readFeCustom, feCustomKey } from '../lib/feCustomKey.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
@@ -89,7 +89,6 @@ function NumberRow({ label, swatch, valueM, onCommit, readOnly }) {
 }
 
 function SideBlock({ sideKey, side, onChange, single }) {
-  const cw = Number.isFinite(side.curb) ? side.curb : CURB_WIDTH
   const set = (patch) => {
     const next = { ...side, ...patch }
     next.terminal = inferTerminal(next)
@@ -106,9 +105,6 @@ function SideBlock({ sideKey, side, onChange, single }) {
       {/* Asphalt width is authored in Survey (the asphalt-edge handle), not here
           — Measure (→ Section) owns the ped profile. pavementHW stays in the
           measure as the reference the ped bands position off; just no editor. */}
-      <NumberRow label="Curb" swatch={BAND_COLORS.curb}
-        valueM={cw}
-        onCommit={v => set({ curb: v })} />
       <NumberRow label="Treelawn" swatch={BAND_COLORS.treelawn}
         valueM={side.treelawn || 0}
         onCommit={v => set({ treelawn: v })} />

@@ -316,7 +316,7 @@ Section authors a thin per-block-edge overlay keyed to Skeleton identities. Surf
 
 | Control | What it does | Writes |
 |---|---|---|
-| **Curb / Treelawn / Sidewalk** entry fields | hand-type a depth in ft; commits on blur / Enter | per-fe `blockCustoms[…].{curb,treelawn,sidewalk}` |
+| **Treelawn / Sidewalk** entry fields | hand-type a depth in ft; commits on blur / Enter | per-fe `blockCustoms[…].{treelawn,sidewalk}` — a writer keeps only the revert-listed fields (`src/lib/authorableSlot.js`). ⛔ No Curb field: the kerb's width is the Look's `curbWidth` slider (Jacob, 2026-10-06); a per-edge curb *paint* channel is on the ROADMAP |
 | **Treelawn-outer** handle | drags the **divider** (treelawn depth) | per-fe `blockCustoms[…].treelawn` |
 | **Property-line** handle | drags the sidewalk depth | per-fe `…sidewalk` |
 | **Strip-swap** (⌃ / right-click in a strip) | flips that strip's material **LU ↔ SW** | `…materials.{outer|inner}` |

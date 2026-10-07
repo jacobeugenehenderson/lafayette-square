@@ -30,6 +30,7 @@ const feSegOrds = (fe, k) => {
   return (fe?.segOrds && fe.segOrds.length) ? [...new Set(fe.segOrds)] : [key[2]]
 }
 import { writeCornerCurbCut } from '../../lib/curbCutSlots.js'
+import { keepAuthorable } from '../../lib/authorableSlot.js'
 import {
   migrateLampGlow, resolveLampGlowAtMinute,
   resolveGroupAtMinute, migrateGroupChannel,
@@ -912,7 +913,8 @@ const useCartographStore = create((set, get) => ({
     const next = { ...(get().blockCustoms || {}) }
     next[skel] = { ...(next[skel] || {}) }
     next[skel][side] = { ...(next[skel][side] || {}) }
-    for (const so of feSegOrds(fe, k)) next[skel][side][so] = { ...measure }
+    const kept = keepAuthorable(measure, [...get()._SURVEY_FE_FIELDS, ...get()._SECTION_FE_FIELDS])   // never a derived field
+    for (const so of feSegOrds(fe, k)) next[skel][side][so] = { ...kept }
     set({ blockCustoms: next })
     get()._saveDesignDebounced()
   },
@@ -932,7 +934,8 @@ const useCartographStore = create((set, get) => ({
       const [skel, side] = k
       next[skel] = { ...(next[skel] || {}) }
       next[skel][side] = { ...(next[skel][side] || {}) }
-      for (const so of feSegOrds(fe, k)) next[skel][side][so] = { ...measure }   // fan (see feSegOrds)
+      const kept = keepAuthorable(measure, [...get()._SURVEY_FE_FIELDS, ...get()._SECTION_FE_FIELDS])   // never a derived field
+      for (const so of feSegOrds(fe, k)) next[skel][side][so] = { ...kept }   // fan (see feSegOrds)
       changed = true
     }
     if (!changed) return
