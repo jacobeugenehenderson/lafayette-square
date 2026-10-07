@@ -71,7 +71,7 @@ The bolt-ons over the production render — the only things Preview adds that LS
 | **Time-of-day** | the shared `DawnTimeline` scrub — test the look at dawn / day / dusk / night | `TimeControl` |
 | **Shot picker** | Hero / Browse / Street, gated by production's adjacency graph (Hero ↔ Browse ↔ Street; no Hero↔Street edge) | `SHOT_ADJACENCY`, `ShotCamera` |
 | **Soft-reload** | bumps a React key to remount `CanvasContents`, forcing a fresh fetch of the baked artifacts (the cache-bust escape hatch) | `reloadKey` |
-| **Frame timeline** (the strip's recorder) | every presented-frame interval (rAF deltas, no GPU clock) with, on the same clock, the marks a hitch sits on: files, programs / uploads (`renderer.info` growing), KTX2 pages and main-thread decodes (`markTimeline`), slider input, long frames and their scripts; read back as p50 / p95 / max, frames over the target's budget, and each hitch (p50 + one budget) beside its marks (§4a) | `phoneBus.js#frameTimeline`, `TriggerBar.jsx` |
+| **Frame timeline** (the strip's recorder) | every presented-frame interval (rAF deltas, no GPU clock) with, on the same clock, the marks a hitch sits on: files, programs / uploads (`renderer.info` growing), KTX2 pages transcoded and AO+depth pages decoded (`markTimeline`), slider input, long frames and their scripts; read back as p50 / p95 / max, frames over the target's budget, and each hitch (p50 + one budget) beside its marks (§4a) | `phoneBus.js#frameTimeline`, `TriggerBar.jsx` |
 
 The **Hero shot is the authored bounce**, replayed identically here, in Stage, and in production through the shared `src/preview/heroAnim.js` model — Preview is the QA mirror of exactly the camera the operator tuned (`STAGE.md §1`, `OPERATIONS.md` Stage ▸ Hero shot).
 

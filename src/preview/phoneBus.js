@@ -265,7 +265,7 @@ function stopPerfObserver() {
 
 // ── Marks: the instants a hitch may sit on (the frame timeline) ───────
 const TIMELINE_PREFIX = 'tl:'                          // src/lib/startupMarks.js#markTimeline
-const MARK_LANE = { ktx2: 'assets', decode: 'main' }   // a `tl:` kind → its lane
+const MARK_LANE = { ktx2: 'assets', decode: 'assets' }   // a `tl:` kind → its lane (decode: the worker's bytes back)
 const MARK_COLOR = { compile: '#f472b6', input: '#34d399', main: '#f87171', assets: '#c4b5fd', camera: '#7dd3fc' }
 
 function pushMark(target, lane, label, t0, t1 = t0) {

@@ -87,7 +87,7 @@ const LANES = [
   { id: 'assets',  label: 'assets',  hint: 'fetch / texture / GLB' },
   { id: 'compile', label: 'compile', hint: 'a program linked · a texture / geometry uploaded (renderer.info growing)' },
   { id: 'input',   label: 'input',   hint: 'time slider drag' },
-  { id: 'main',    label: 'main',    hint: 'long animation frame (its scripts) · main-thread image decode' },
+  { id: 'main',    label: 'main',    hint: 'long animation frame (its scripts)' },
 ]
 
 const COLOR_BG = '#0d0d0f'

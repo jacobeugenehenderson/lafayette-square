@@ -43,6 +43,22 @@ function ktx2Loader(gl) {
 
 const _cache = new Map()   // url → THREE.Texture
 
+// The AO+depth decoder (rgPageWorker.js): one worker for the page, made on the first RG page, answering by id.
+let _rgWorker = null, _rgSeq = 0
+const _rgPending = new Map()
+function decodeRG(blob) {
+  if (!_rgWorker) {
+    _rgWorker = new Worker(new URL('./rgPageWorker.js', import.meta.url), { type: 'module' })
+    _rgWorker.onmessage = ({ data }) => {
+      const p = _rgPending.get(data.id); _rgPending.delete(data.id)
+      if (data.error) p.reject(new Error(data.error)); else p.resolve(data)
+    }
+    _rgWorker.onerror = (e) => { for (const p of _rgPending.values()) p.reject(e); _rgPending.clear() }
+  }
+  const id = ++_rgSeq
+  return new Promise((resolve, reject) => { _rgPending.set(id, { resolve, reject }); _rgWorker.postMessage({ id, blob }) })
+}
+
 export function loadImpostorTexture(url, { srgb = true, gl = null, channels = null } = {}) {
   const key = channels ? `${url}#${channels}` : url
   if (_cache.has(key)) return _cache.get(key)
@@ -54,27 +70,21 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
     tex.colorSpace = THREE.NoColorSpace
     tex.needsUpdate = true
     _cache.set(key, tex)
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const c = document.createElement('canvas'); c.width = img.width; c.height = img.height
-      const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0)
-      const px = g.getImageData(0, 0, img.width, img.height).data, W = img.width, H = img.height
-      const rg = new Uint8Array(W * H * 2)
-      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {   // image rows are top-down; a DataTexture's are bottom-up
-        const i = ((H - 1 - y) * W + x) * 4, o = (y * W + x) * 2
-        rg[o] = px[i]; rg[o + 1] = px[i + 1]
-      }
-      tex.image = { data: rg, width: W, height: H }
-      tex.generateMipmaps = true
-      tex.minFilter = THREE.LinearMipmapLinearFilter
-      tex.magFilter = THREE.LinearFilter
-      tex.needsUpdate = true
-      tex.onUpdate?.()
-      markTimeline('decode', `RG page ${W}×${H} · ${url.split('/').pop()}`)
-    }
-    img.onerror = (err) => console.error(`[impostorTexture] ⛔ AO+depth page failed to load — ${url}. This layer will be blank.`, err)
-    img.src = url
+    // The page is fetched HERE (its Resource Timing entry stays the page's) and decoded in rgPageWorker.js, off the
+    // main thread: 144 of these decoding at once was a 289 ms arrival stall on huron.
+    fetch(url)
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob() })
+      .then((blob) => decodeRG(blob))
+      .then(({ width: W, height: H, rg }) => {
+        tex.image = { data: rg, width: W, height: H }
+        tex.generateMipmaps = true
+        tex.minFilter = THREE.LinearMipmapLinearFilter
+        tex.magFilter = THREE.LinearFilter
+        tex.needsUpdate = true
+        tex.onUpdate?.()
+        markTimeline('decode', `RG page ${W}×${H} · ${url.split('?')[0].split('/').slice(-2).join('/')}`)   // species/page: 8 species share page names
+      })
+      .catch((err) => console.error(`[impostorTexture] ⛔ AO+depth page failed to load — ${url}. This layer will be blank.`, err))
     return tex
   }
   const space = srgb ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace
@@ -100,7 +110,7 @@ export function loadImpostorTexture(url, { srgb = true, gl = null, channels = nu
       tex.wrapS = loaded.wrapS; tex.wrapT = loaded.wrapT
       tex.needsUpdate = true
       loaded.dispose()
-      markTimeline('ktx2', url.split('/').pop().split('?')[0])
+      markTimeline('ktx2', url.split('?')[0].split('/').slice(-2).join('/'))
     }, undefined, (err) => {
       // ⛔ LOUD. A missing page is a hole in the canopy; it must never read as "thin".
       console.error(`[impostorTexture] ⛔ KTX2 page failed to load — ${url}. `
