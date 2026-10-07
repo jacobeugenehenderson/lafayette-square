@@ -44,8 +44,10 @@
  *     ⇒ A writer does not parse `--scene` itself. It imports `SCENE` from here and
  *       calls `requireExplicitMap()`. One resolver, both channels, no seed.
  */
-import { dirname, join } from 'path'
+import { dirname, join, isAbsolute, normalize } from 'path'
 import { fileURLToPath } from 'url'
+import { existsSync } from 'fs'
+import { designPath, readTownDesign } from './lookDesign.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -91,15 +93,32 @@ export function mapDir(scene)      { return join(__dirname, 'data', scene) }
 export function mapRawDir(scene)   { return join(__dirname, 'data', scene, 'raw') }
 export function mapCleanDir(scene) { return join(__dirname, 'data', scene, 'clean') }
 /**
+ * WHERE A TOWN DECLARES ITS PROMOTED RIBBONS LIVE, or null: `pour.ribbons` in its home Look's design.json — a repo-relative
+ * path, for a town whose ribbons are COMMITTED where a shipped build imports them (Lafayette Square's production player
+ * reads src/data/ribbons.json). The declaration replaced a test of the town's NAME (G2(b), 2026-10-07). A town with no
+ * home Look, or none declared, declares nothing. ⛔ A declaration that is not a plain path inside the repo, or names a file
+ * that does not exist, THROWS — clean/ is only ever the path of a town that declares nothing.
+ */
+export function declaredRibbonsOf(scene) {
+  if (!scene) throw new Error('declaredRibbonsOf: no scene')
+  if (!existsSync(designPath(scene))) return null
+  const d = readTownDesign(scene, 'declaredRibbonsOf').pour?.ribbons
+  if (d == null) return null
+  if (typeof d !== 'string' || !d || isAbsolute(d) || normalize(d).startsWith('..')) throw new Error(`[scene] ⛔ "${scene}" declares pour.ribbons ${JSON.stringify(d)} — a repo-relative path inside the repo`)
+  // ⛔ DECLARED AND ABSENT IS A FAILURE, never a quiet drop to clean/: clean/ is for a town that declares nothing.
+  if (!existsSync(join(__dirname, '..', normalize(d)))) throw new Error(`[scene] ⛔ "${scene}" declares its ribbons at ${d}, and there is no such file — refusing to read or publish another path in its place`)
+  return normalize(d)
+}
+
+/**
  * WHERE A TOWN'S RIBBONS LIVE — the ONE answer (bake-ground, bake-labels, serve, applySnapshot, promote-ribbons, the
- * checks via checks/_scenes.mjs). Every town's are `data/<scene>/clean/ribbons.json`; ⚠️ ONE HELD EXCEPTION, named
- * here and nowhere else: Lafayette Square's still ship as the bundled `src/data/ribbons.json` (promote-ribbons writes
- * there). Moving them is Jacob's call (BRIEF-ls-bleed-excision, G2(b) "Phase 0e"); when it lands this case goes.
+ * checks via checks/_scenes.mjs): the town's DECLARED path (declaredRibbonsOf), else `data/<scene>/clean/ribbons.json`.
  * ⛔ No fallback: a town whose file is missing is told so by its caller — never handed another town's.
  */
 export function ribbonsPathOf(scene) {
   if (!scene) throw new Error('ribbonsPathOf: no scene')
-  return scene === DEFAULT_MAP ? join(__dirname, '..', 'src', 'data', 'ribbons.json') : join(mapCleanDir(scene), 'ribbons.json')
+  const declared = declaredRibbonsOf(scene)
+  return declared ? join(__dirname, '..', declared) : join(mapCleanDir(scene), 'ribbons.json')
 }
 export const RAW_DIR   = mapRawDir(SCENE)
 export const CLEAN_DIR = mapCleanDir(SCENE)

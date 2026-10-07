@@ -12,7 +12,7 @@ import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync } from 'fs'
 import { join, extname, dirname, relative } from 'path'
 import { spawn } from 'child_process'
-import { DEFAULT_MAP, mapRawDir, mapCleanDir, ribbonsPathOf } from './config.js'
+import { DEFAULT_MAP, mapRawDir, mapCleanDir, ribbonsPathOf, declaredRibbonsOf } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
@@ -270,6 +270,11 @@ async function siteUrlsForLook(lookId) {
 // SCOPED git pathspecs — a publish NEVER sweeps unrelated dirty files (e.g.
 // in-flight authoring code under src/cartograph or src/components).
 function slabPathspecs(id) {
+  // ⭐ A town's COMMITTED ribbons ride ITS OWN Look's publish (declaredRibbonsOf — the town's pour.ribbons): every other
+  // town's are generated and gitignored. ⛔ It listed src/data/ribbons.json for EVERY Look — Lafayette Square's ribbons
+  // on a Huron publish, by name (G2(b), 2026-10-07).
+  const scene = readLooksIndex().looks.find((l) => l.id === id)?.scene
+  const ribbons = scene ? declaredRibbonsOf(scene) : null
   return [
     // ⛔ `public/baked/${id}` is DELIBERATELY ABSENT (2026-09-01). The baked tree
     // now lives in R2 and is gitignored; a publish uploads it (the upload step of
@@ -281,7 +286,7 @@ function slabPathspecs(id) {
     // That is the exact silent success this whole arc exists to prevent.
     `public/looks/${id}/design.json`,
     `public/looks/index.json`,
-    `src/data/ribbons.json`,
+    ...(ribbons ? [ribbons] : []),
     `public/photos/og-preview.jpg`,   // the link-preview image (captured from Preview)
   ]
 }

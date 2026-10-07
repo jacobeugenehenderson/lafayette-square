@@ -28,8 +28,7 @@ try { for (const l of JSON.parse(readFileSync(join(ROOT, 'public/looks/index.jso
 
 // file → [{ match: a substring of the line, why }]. Remove an entry when its gate goes.
 const HELD = {
-  'cartograph/scene.js':        [{ match: "export const DEFAULT_MAP = 'lafayette-square'", why: 'the default map id itself (the held name every alias below compares with)' },
-                                 { match: 'scene === DEFAULT_MAP ?', why: "ribbonsPathOf's one case: LS's ribbons ship in src/data — G2(b) Phase 0e, Jacob's call" }],
+  'cartograph/scene.js':        [{ match: "export const DEFAULT_MAP = 'lafayette-square'", why: 'the default map id itself (the held name every alias below compares with)' }],
   'cartograph/serve.js':        [{ match: "const LEGACY_LS_LOOK_ID = 'lafayette-square'", why: 'a one-time boot migration naming the Look it creates from a pre-Looks overlay; never a fallback target' }],
   'cartograph/derive.js':       [{ match: 'const lampSourcePath = SCENE === DEFAULT_MAP', why: "found 2026-10-07: LS's lamp export lives in scripts/raw/ — unruled" }],
   'cartograph/pour-code.mjs':   [{ match: "scene === DEFAULT_MAP ? join(REPO_ROOT, 'scripts', 'raw', 'osm_street_lamps.json')", why: "found 2026-10-07: the same LS lamp export, as a pour input — unruled" }],
@@ -40,9 +39,7 @@ const HELD = {
 }
 // lines reading one town's bundled data (src/data/…) — the same gate without the name; each awaits a ruling
 const HELD_BUNDLED = {
-  'cartograph/serve.js':          [                      // G5 (the message)
-                                   "join(REPO_ROOT, 'src', 'data', 'buildings.json'),",                                  // LS content (G4) as a dirty input
-                                   "`src/data/ribbons.json`,"],                                                          // G2(b)
+  'cartograph/serve.js':          ["join(REPO_ROOT, 'src', 'data', 'buildings.json'),"],                                  // LS content (G4) as a dirty input
   'cartograph/derive.js':         ["join(CARTOGRAPH_DIR, '..', 'src', 'data', 'buildings.json'), 'utf-8'"],            // LS's content buildings (G4)
   'cartograph/pipeline.js':       ["const projectBldgPath = join(PROJECT_ROOT, 'src', 'data', 'buildings.json')"],     // LS's project buildings
   'cartograph/survey.js':         ["const assessorPath = join(PROJECT_DIR, 'src', 'data', 'blocks_clean.json')"],      // LS's assessor blocks
