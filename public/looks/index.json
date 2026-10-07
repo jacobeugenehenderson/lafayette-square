@@ -19,7 +19,7 @@
       "name": "HiPointe-DeMun",
       "scene": "hipointedemun",
       "createdAt": 1782000000000,
-      "bakedAt": 1791273531575,
+      "bakedAt": 1791356074283,
       "updatedAt": 1791140775203
     },
     {
@@ -35,15 +35,15 @@
       "name": "huron",
       "scene": "huron",
       "createdAt": 1789875167347,
-      "bakedAt": 1791295552718,
-      "updatedAt": 1790572253612
+      "bakedAt": 1791379421454,
+      "updatedAt": 1791338792887
     },
     {
       "id": "provincetown",
       "name": "Provincetown",
       "scene": "provincetown",
       "createdAt": 1790285800621,
-      "bakedAt": 1791284463680,
+      "bakedAt": 1791367109010,
       "updatedAt": 1790582275495
     },
     {
