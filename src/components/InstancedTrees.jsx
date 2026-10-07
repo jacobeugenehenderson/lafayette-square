@@ -745,22 +745,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
       return pool[(h >>> 0) % pool.length]
     }
 
-    // Tile bucketing — COLLAPSED 2026-06-30 (the de-dup fix). VariantInstances
-    // above clones + merges a GLB's geometry into its OWN resident
-    // BufferGeometry per bucket. When trees were split per-(url × tile), 14
-    // unique GLBs spread across the 16-tile grid produced ~173 resident
-    // geometry copies (~400–650 MB) for 14 GLBs' worth of distinct mesh — the
-    // mobile OOM (iOS "page cannot be opened" WebKit kill). The split ONLY ever
-    // existed to scope per-tile bounding spheres for a frustum cull that was
-    // EXCISED 2026-06-27 (see line ~356) — so today it is pure cost, zero
-    // benefit. Collapsing to ONE bucket per url merges each GLB's geometry
-    // EXACTLY ONCE and instances it across all its placements: visually
-    // identical, FEWER draws, ~400–650 MB reclaimed. The bake no longer writes its tiles (trees.json format 2).
-    // ⚠️ If a real per-tile visibility cull is ever wanted, it must be a MANUAL
-    // world-space `.visible` pass with generous STATIC AABBs — NOT a return to
-    // this clone-per-tile split (which costs resident memory, not just draws).
+    // ONE bucket per GLB url: each GLB's geometry merges exactly once (VariantInstances clones + merges per bucket),
+    // instanced across all its placements. ⛔ Not per tile: the per-(url × tile) split made ~173 resident geometry copies
+    // (~400–650 MB, the iOS WebKit kill — 6b123a8e) and existed only for a per-tile frustum cull excised for culling
+    // visible trees (fe3f88c7). A real cull, if ever wanted, is a manual world-space `.visible` pass, never a re-split.
     // [[tree-building-frustum-culling]]
-    const tileOf = () => 0
 
     // Geometry by BAKED ROLE (heroTier: mesh|impostor|cull from
     // bake-trees#classifyHeroTiers), NOT live camera distance.
@@ -794,7 +783,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
     // A placement's LODs by the census's format (treeGeometry.js#lodsOf); a substitute (`sub`) already carries its own.
     const lodUrlOf = (o) => { const l = o && (o.lods !== undefined ? o.lods : lodsOf(bake, o)); return (l && l[lodForRole()]) || (o && o.url) }
 
-    const m = new Map()  // lookUrl -> Map<tileId, instances[]>  (mesh role)
+    const m = new Map()  // lookUrl -> instances[]  (mesh role)
     const impostors = new Map()  // species -> instances[]  (impostor role)
     const heroImpostors = new Map()  // species -> instances[]  (hero canopy foundation)
     let heroFoundationCount = 0
@@ -878,30 +867,16 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
       // The atlas manifest's generatedAt is the GLBs' re-read key: an open Stage tab picks up
       // rewritten UVs after a rebake instead of holding drei's useGLTF cache for the same path.
       const lookUrl = url.startsWith('/trees/') ? slabUrl(lookName, url, generatedAt) : url
-      let byTile = m.get(lookUrl)
-      if (!byTile) {
+      let list = m.get(lookUrl)
+      if (!list) {
         if (maxVariants && m.size >= maxVariants) {
-          const fallbackKey = m.keys().next().value
-          if (fallbackKey) {
-            const fb = m.get(fallbackKey)
-            const tid = tileOf(inst.x, inst.z)
-            if (!fb.has(tid)) fb.set(tid, [])
-            fb.get(tid).push(inst)
-          }
+          m.values().next().value?.push(inst)
           return
         }
-        byTile = new Map(); m.set(lookUrl, byTile)
+        list = []; m.set(lookUrl, list)
       }
-      const tid = tileOf(inst.x, inst.z)
-      if (!byTile.has(tid)) byTile.set(tid, [])
-      byTile.get(tid).push(inst)
+      list.push(inst)
     })
-    let meshCount = 0
-    let tileSet = new Set()
-    for (const byTile of m.values()) {
-      meshCount += byTile.size
-      for (const tid of byTile.keys()) tileSet.add(tid)
-    }
     const overheadTotal = [...bySpecies.values()].reduce((n, a) => n + a.length, 0)
     const heroFoundationTotal = [...heroImpostors.values()].reduce((n, a) => n + a.length, 0)
     // ⛔ THE LEAK, SAID OUT LOUD. A species with no baked hero impostor falls
@@ -943,7 +918,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
         `reproduce them). ⛔ Never widen the cull — it is retired, not a density lever.`
       )
     }
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp) mesh=${meshSpecified}specified+${meshNoRecord}leaked impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp`)
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp) mesh=${meshSpecified}specified+${meshNoRecord}leaked impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} overhead=${overheadTotal}/${bySpecies.size}sp`)
     return { meshGroups: m, impostors, bySpecies, heroImpostors }
   }, [bake, maxVariants, atlas, lookName, impostorRecords, heroImpostorRecords, heroFoundationEnabled])
 
@@ -1035,7 +1010,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   // arrives at once). ⛔ Arrival, never `onUpdate` (the GPU upload): held hidden, a tree never draws, so never uploads.
   const meshKeys = useMemo(() => {
     const k = []
-    if (groups) for (const [url, byTile] of groups.meshGroups) for (const tid of byTile.keys()) k.push(`${url}#${tid}`)
+    if (groups) for (const url of groups.meshGroups.keys()) k.push(url)
     return k
   }, [groups])
   const [meshLoaded, setMeshLoaded] = useState(() => new Set())
@@ -1077,8 +1052,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
           : null
       })}
       {/* Mesh-role trees: real 3D geometry (lod1). */}
-      {mats.status === 'ready' && !treeDbg('noMesh') && !treeDbg('noTrees') && Array.from(meshGroups.entries()).flatMap(([url, byTile]) =>
-        Array.from(byTile.entries()).map(([tileId, instances]) => {
+      {mats.status === 'ready' && !treeDbg('noMesh') && !treeDbg('noTrees') && Array.from(meshGroups.entries()).map(([url, instances]) => {
           const species = urlToSpecies(url)
           const variantId = urlToVariantId(url)
           const barkSettings = species ? barkBySpeciesEffective[species] : null
@@ -1088,14 +1062,14 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
           const deformerRange = species ? (deformerBySpecies[species]?.range || null) : null
           const leafFace = species ? (leafFaceBySpecies[species] || null) : null
           return (
-            <Suspense key={`${url}#${tileId}`} fallback={null}>
+            <Suspense key={url} fallback={null}>
               {/* ⭐ THE "NEVER BLANK" PROMISE, KEPT. Visible in the hero shot as always —
                   and ALSO in Browse when this species has no overhead snapshot, which is
                   the fallback the overhead group's comment has been claiming all along. */}
               <group visible={!overheadMode || !(overheadAssets && species && overheadAssets.has(species))}>
               <VariantInstances
                 url={url}
-                onLoaded={() => onMeshLoaded(`${url}#${tileId}`)}
+                onLoaded={() => onMeshLoaded(url)}
                 instances={instances}
                 treeMaterial={mats.treeMaterial}
                 barkSettings={barkSettings}
@@ -1106,8 +1080,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
               </group>
             </Suspense>
           )
-        }),
-      )}
+        })}
       {/* Impostor-role trees: cheap stamped-2D layer cards (Arc 2, Phase 1).
           One geometry per rendered species, instanced across placements. Rides
           the SAME shared atlas material → full optical parity (DoF/fog/bloom). */}
