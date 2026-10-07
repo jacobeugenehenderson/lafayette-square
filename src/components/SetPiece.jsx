@@ -67,7 +67,7 @@ export default function SetPiece({ town, lookId, lightOverride, ...props }) {
       onPointerMove={(e) => { e.stopPropagation(); setHovered(id); document.body.style.cursor = 'pointer' }}
       onPointerOut={() => { clearHovered(); document.body.style.cursor = 'auto' }}
       onClick={(e) => { e.stopPropagation(); if (e.delta > 6) return; select(id) }}>
-      <R town={town} lookId={lookId} footprint={b.footprint} {...props}>
+      <R town={town} lookId={lookId} footprint={b.footprint} groundY={b.groundY} {...props}>
         <SetPieceUplights channel={lightOverride ?? scene?.setPieceLight ?? null} topM={R.extent?.topM} halfWidthM={R.extent?.halfWidthM} />
       </R>
     </group>

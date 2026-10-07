@@ -12,7 +12,8 @@
  * is `groundRaw × terrainExag.value`, re-read every frame, because the exaggeration is a
  * live, tweened, per-shot uniform (flat in Browse, 1 in Street, the town's value in Hero;
  * see `treeGroundRaw` in `src/utils/elevation.js`). The tower's HEIGHT is never exaggerated.
- * That matches how SlabBuildings lifts by `aCentroidY × uExag`.
+ * That matches how SlabBuildings lifts (src/lib/buildingLift.js), plus its building's `groundY` — the drawn ground's
+ * own height, a raised kerb's block, unexaggerated.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
@@ -125,8 +126,9 @@ function Model({ path }) {
   return scene ? <primitive object={scene} /> : null
 }
 
-export default function PilgrimMonument({ town, lookId, footprint, graniteOverride, children } = {}) {
+export default function PilgrimMonument({ town, lookId, footprint, groundY, graniteOverride, children } = {}) {
   if (!town || !footprint) throw new Error('[PilgrimMonument] ⛔ no town or footprint — mount <SetPiece>, which passes both')
+  if (!Number.isFinite(groundY)) throw new Error('[PilgrimMonument] ⛔ no groundY — <SetPiece> passes its building\'s (the drawn ground\'s own height; 0 on a flat town)')
   const sp = town.setPiece
   // The operator's layer (`scene.surfaces.params['pilgrim-granite']`); the lab may override it for a preview.
   const scene = useSceneJson(lookId)
@@ -161,13 +163,13 @@ export default function PilgrimMonument({ town, lookId, footprint, graniteOverri
   const ref = useRef(), labelRef = useRef()
   useFrame(() => {
     const e = terrainExag.value
-    if (ref.current) ref.current.position.y = groundRaw * e
+    if (ref.current) ref.current.position.y = groundRaw * e + groundY
     if (labelRef.current && label) labelRef.current.position.y = label.dRaw * e
   })
 
   if (!site) return null
   return (
-    <group ref={ref} name="pilgrim-monument" position={[site.x, groundRaw * terrainExag.value, site.z]}
+    <group ref={ref} name="pilgrim-monument" position={[site.x, groundRaw * terrainExag.value + groundY, site.z]}
            rotation={[0, southFacingYaw(site), 0]}>
       {sp.model ? <Model path={sp.model} /> : <Placeholder authored={authored} lookId={lookId} />}
       {children /* the slot's lighting, in the tower's base frame (SetPiece.jsx) */}

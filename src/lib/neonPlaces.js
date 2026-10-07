@@ -81,7 +81,7 @@ export function placeNeon({ entries, places, isLit, keep = () => true }) {
       const L = polyLen(s.pts)
       on.forEach((p, i) => {
         const pts = on.length === 1 ? s.pts : slice(s.pts, L * i / on.length, L * (i + 1) / on.length)
-        if (pts.length >= 2) stretches.push({ id: p.id, buildingId: e.id, pts, y: s.y, footprint: e.footprint, groundYRaw: e.centroidY, category: p.category ?? null })
+        if (pts.length >= 2) stretches.push({ id: p.id, buildingId: e.id, pts, y: s.y, footprint: e.footprint, groundYRaw: e.centroidY, groundY: e.groundY, category: p.category ?? null })
       })
     }
   }

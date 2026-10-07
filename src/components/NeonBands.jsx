@@ -5,6 +5,7 @@ import { categoryNeon } from '../lib/categoryColor.js'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
+import { buildingLiftY } from '../lib/buildingLift.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
 import { NEON_FIELD_KEYS, NEON_FLAT_DEFAULTS, kitDayChannel } from '../cartograph/skyLightChannels.js'
@@ -28,7 +29,7 @@ import useTownHover from './townHover.js'
  *     colour only in the bloom. `emissive` is how fast it reaches full.
  *
  * Driven every frame from the neon channel by NeonDriver (below), mounted once by <Town> in every app; Stage hands it
- * its live channel as `neonOverride`. Per-vertex terrain lift via `aCentroidY` (the footprint-corner mean, threaded
+ * its live channel as `neonOverride`. Per-vertex terrain lift via `aCentroid` (the footprint-corner mean + the drawn ground's own height, threaded
  * through openPlaces as `groundYRaw`), the anchor Foundations and walls use. Raw ShaderMaterials #include the
  * <logdepthbuf_*> chunks, defined only when the renderer runs a log depth buffer
  * ([[feedback_raw_shadermaterial_needs_logdepth_chunks]], the material below).
@@ -170,8 +171,10 @@ function buildTube(place, tubeRadius) {
   if (m < 2) return null
 
   // The building's terrain anchor (the slab index's centroidY: mean of footprint-corner raw elevations), the one
-  // Foundations and walls lift by.
+  // Foundations and walls lift by — and the drawn ground's own height under it (`groundY`, a raised kerb's block):
+  // the sign rides its wall exactly as the wall is lifted (src/lib/buildingLift.js).
   const centroidY = place.groundYRaw ?? 0
+  const groundY = place.groundY
 
   const VPR = CROSS_SEGS + 1
   const positions = []
@@ -191,7 +194,7 @@ function buildTube(place, tubeRadius) {
       )
       normals.push(sn * ring.nx, cs, sn * ring.nz)
       uvs.push(u, s / CROSS_SEGS)
-      centroidYs.push(centroidY)
+      centroidYs.push(centroidY, groundY)
     }
   }
 
@@ -211,7 +214,7 @@ function buildTube(place, tubeRadius) {
     const v0 = line.t.length
     for (const [t, side] of [[0, -1], [0, 1], [1, -1], [1, 1]]) {
       line.a.push(p0.x, baseY, p0.z); line.b.push(p1.x, baseY, p1.z)
-      line.t.push(t); line.side.push(side); line.centroidYs.push(centroidY)
+      line.t.push(t); line.side.push(side); line.centroidYs.push(centroidY, groundY)
     }
     line.indices.push(v0, v0 + 1, v0 + 2, v0 + 1, v0 + 3, v0 + 2)
   }
@@ -259,7 +262,7 @@ const VERT = /* glsl */`
 #include <common>
 #include <logdepthbuf_pars_vertex>
 attribute vec3 aColor;
-attribute float aCentroidY;
+attribute vec2 aCentroid;
 uniform float uExag;
 uniform float uBuiltRadius;   // world radius the merged geometry was swept at (the quantized tubeCm, in metres)
 uniform float uHandoffPx;
@@ -272,7 +275,7 @@ varying float vW;             // the tube's share of the hand-off
 ${TUBE_PX}
 void main() {
   vColor = aColor;
-  vec3 lifted = position + vec3(0.0, aCentroidY * uExag, 0.0);
+  vec3 lifted = position + vec3(0.0, aCentroid.x * uExag + aCentroid.y, 0.0);   // = buildingLiftGLSL's rigid lift
   vec4 wp = modelMatrix * vec4(lifted, 1.0);
   vWorldPos = wp.xyz;
   vWorldNormal = normalize(mat3(modelMatrix) * normal);
@@ -323,7 +326,7 @@ attribute vec3 aB;
 attribute float aT;
 attribute float aSide;
 attribute vec3 aColor;
-attribute float aCentroidY;
+attribute vec2 aCentroid;
 uniform float uExag;
 uniform float uTubeR;         // the tube's world radius, metres — the hand-off reads the TUBE's on-screen size
 uniform float uLinePx;
@@ -337,7 +340,7 @@ ${TUBE_PX}
 void main() {
   vColor = aColor;
   vSide = aSide;
-  vec3 lift = vec3(0.0, aCentroidY * uExag, 0.0);
+  vec3 lift = vec3(0.0, aCentroid.x * uExag + aCentroid.y, 0.0);   // = buildingLiftGLSL's rigid lift
   mat4 pvm = projectionMatrix * viewMatrix * modelMatrix;
   vec4 ca = pvm * vec4(aA + lift, 1.0);
   vec4 cb = pvm * vec4(aB + lift, 1.0);
@@ -420,7 +423,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
   const { tubeGeometry, lineGeometry, pick } = useMemo(() => {
     const positions = [], normals = [], uvs = [], colors = [], centroidYs = [], indices = []
     const la = [], lb = [], lt = [], lside = [], lcolors = [], lcentroidYs = [], lindices = []
-    const pick = { segs: [], ids: [] }   // per line segment: [ax, ay, az, bx, by, bz, centroidY] and its building id
+    const pick = { segs: [], ids: [] }   // per line segment: [ax, ay, az, bx, by, bz, centroidY, groundY] and its building id
     let baseVert = 0, lineBase = 0
     for (const p of places) {
       // ⛔⛔ THIS USED TO BE `if (!p.neon?.category) continue`, WHICH CONFLATED TWO
@@ -447,11 +450,11 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
 
       const L = tube.line, lcount = L.t.length
       for (let i = 0; i < L.a.length; i++) { la.push(L.a[i]); lb.push(L.b[i]) }
-      for (let i = 0; i < lcount; i++) { lt.push(L.t[i]); lside.push(L.side[i]); lcentroidYs.push(L.centroidYs[i]); lcolors.push(rgb[0], rgb[1], rgb[2]) }
+      for (let i = 0; i < lcount; i++) { lt.push(L.t[i]); lside.push(L.side[i]); lcentroidYs.push(L.centroidYs[2 * i], L.centroidYs[2 * i + 1]); lcolors.push(rgb[0], rgb[1], rgb[2]) }
       for (let i = 0; i < L.indices.length; i++) lindices.push(lineBase + L.indices[i])
       lineBase += lcount
       for (let v = 0; v < lcount; v += 4) {   // four vertices per segment, each carrying both ends
-        pick.segs.push(L.a[v * 3], L.a[v * 3 + 1], L.a[v * 3 + 2], L.b[v * 3], L.b[v * 3 + 1], L.b[v * 3 + 2], L.centroidYs[v])
+        pick.segs.push(L.a[v * 3], L.a[v * 3 + 1], L.a[v * 3 + 2], L.b[v * 3], L.b[v * 3 + 1], L.b[v * 3 + 2], L.centroidYs[2 * v], L.centroidYs[2 * v + 1])
         pick.ids.push(p.buildingId ?? null)
       }
     }
@@ -460,7 +463,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
     g.setAttribute('normal',      new THREE.Float32BufferAttribute(normals, 3))
     g.setAttribute('uv',          new THREE.Float32BufferAttribute(uvs, 2))
     g.setAttribute('aColor',      new THREE.Float32BufferAttribute(colors, 3))
-    g.setAttribute('aCentroidY', new THREE.Float32BufferAttribute(centroidYs, 1))
+    g.setAttribute('aCentroid', new THREE.Float32BufferAttribute(centroidYs, 2))
     g.setIndex(indices)
     const lg = new THREE.BufferGeometry()
     // `position` is required by three for a draw; the line places itself from aA/aB.
@@ -470,7 +473,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
     lg.setAttribute('aT',         new THREE.Float32BufferAttribute(lt, 1))
     lg.setAttribute('aSide',      new THREE.Float32BufferAttribute(lside, 1))
     lg.setAttribute('aColor',     new THREE.Float32BufferAttribute(lcolors, 3))
-    lg.setAttribute('aCentroidY', new THREE.Float32BufferAttribute(lcentroidYs, 1))
+    lg.setAttribute('aCentroid', new THREE.Float32BufferAttribute(lcentroidYs, 2))
     lg.setIndex(lindices)
     // Bounding spheres intentionally not computed: the vertex shaders lift every vertex by the terrain, so a CPU-fit
     // sphere lies below what is drawn and gets frustum-culled at close range. `frustumCulled={false}` on the meshes.
@@ -570,7 +573,7 @@ export default function NeonBands({ places, forceOn = true, lookId, materialColo
       // metres per drawing-buffer pixel at unit depth (linePx and the slop are drawing-buffer px)
       const mPerPxAt1 = 2 * Math.tan((cam.fov * Math.PI / 180) / 2) / Math.max(1, viewport.value.y)
       for (let i = 0; i < pick.ids.length; i++) {
-        const k = i * 7, lift = pick.segs[k + 6] * exag
+        const k = i * 8, lift = buildingLiftY(0, pick.segs[k + 6], exag, 0, false, pick.segs[k + 7])
         v0.set(pick.segs[k], pick.segs[k + 1] + lift, pick.segs[k + 2])
         v1.set(pick.segs[k + 3], pick.segs[k + 4] + lift, pick.segs[k + 5])
         const d2 = raycaster.ray.distanceSqToSegment(v0, v1, onRay, onSeg)

@@ -10,7 +10,8 @@
  * ⭐ Changing the lift is an edit HERE, both halves at once. ▶ node checks/claims-a-click-hits-what-is-drawn.mjs
  *    fails if what is clicked is not what is drawn.
  *
- * Reads: `aCentroidY` (the building's terrain anchor, raw), `uExag` (the shared exaggeration, terrainShader's
+ * Reads: `aCentroid` (vec2: .x the building's terrain anchor, raw — × uExag; .y the DRAWN ground's own height under it,
+ * UNexaggerated — a raised kerb's block, `kerbLift.mjs`, 0 on a flat town), `uExag` (the shared exaggeration, terrainShader's
  * `terrainExag`), and for foundations `uRiserFloor` (terrainShader's `terrainFloorRaw`). The baked riser's below-grade
  * ring is the only geometry with y < 0; its baked depth is a MARKER, not a size — the ring is seated on the town's
  * floor, and the rest lifts rigidly with the anchor.
@@ -19,11 +20,12 @@
 /** The vertex-shader lift, after `#include <begin_vertex>` (operates on `transformed`). */
 export function buildingLiftGLSL(isFoundation) {
   return isFoundation
-    ? 'transformed.y = position.y < 0.0 ? uRiserFloor * uExag : transformed.y + aCentroidY * uExag;'
-    : 'transformed.y += aCentroidY * uExag;'
+    ? 'transformed.y = position.y < 0.0 ? uRiserFloor * uExag : transformed.y + aCentroid.x * uExag + aCentroid.y;'
+    : 'transformed.y += aCentroid.x * uExag + aCentroid.y;'
 }
 
-/** The same lift on the CPU, for one vertex: its raw y, its anchor, the exaggeration, the floor (foundations only). */
-export function buildingLiftY(y, centroidY, exag, riserFloor, isFoundation) {
-  return isFoundation && y < 0 ? riserFloor * exag : y + centroidY * exag
+/** The same lift on the CPU, for one vertex: its raw y, its anchor, the exaggeration, the floor (foundations only), and
+ *  the drawn ground's own height under it (`groundY`, unexaggerated — required: pass 0 for a flat town, never omit). */
+export function buildingLiftY(y, centroidY, exag, riserFloor, isFoundation, groundY) {
+  return isFoundation && y < 0 ? riserFloor * exag : y + centroidY * exag + groundY
 }

@@ -22,7 +22,7 @@ import { attachCSM } from './CascadedShadows.jsx'
  *     ×(1 − darkFactor·0.75); foundation lerp tan→#3d3530.
  *   - desktop triplanar wall texture + roof texture overlay; mobile untextured.
  *   - weather (wet/snow) via applyWeatherToShader on walls + roofs.
- *   - terrain lift via the baked aCentroidY × shared uExag.
+ *   - terrain lift via the baked aCentroid (.x × shared uExag + .y, the drawn ground's own height) — src/lib/buildingLift.js.
  * Selection / hover highlight in-shader (uSelectedId / uHoveredId vs the
  * per-vertex aBuildingId) since one shared material can't set per-building
  * emissive. Raycast resolves a hit to a building id via aBuildingId.
@@ -284,6 +284,8 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       }
       return {
         id: b.id, footprint, roofOutline, centroidY: b.centroidY, baseY: b.baseY, roofTopY: tops[bi],
+        // the drawn ground's own height under it (a raised kerb) — keyed on the slab's format: a pre-kerb slab's IS 0
+        groundY: (manifest.centroidYsPerVertex ?? 1) === 2 ? b.groundY : 0,
         wallMaterial: b.wallMaterial, roofMaterial: b.roofMaterial, zoning: b.zoning,
         // The street address as the slab carries it (cartograph/building-address.mjs); undefined on a slab baked before it.
         address: b.address, addressSource: b.addressSource, addressCandidates: b.addressCandidates,
@@ -301,13 +303,22 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
   const meshes = useMemo(() => {
     if (!data) return null
     const { manifest, bin } = data
+    if ((manifest.centroidYsPerVertex ?? 1) === 1) console.warn(`[SlabBuildings] '${manifest.look}' buildings.json predates the raised kerb (one anchor per vertex) — drawn with groundY 0, as it was baked. ▶ re-bake: node cartograph/bake-buildings.js --look=${manifest.look} --scene=<scene>`)
     const groupData = manifest.groups.map((g) => {
       const positions = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3).slice()
       const srcColors = new Float32Array(bin, g.colorByteOffset, g.vertexCount * 3)
       const uvs = g.uvByteOffset != null ? new Float32Array(bin, g.uvByteOffset, g.vertexCount * 2).slice() : null
-      const centroidYs = g.centroidYByteOffset != null
-        ? new Float32Array(bin, g.centroidYByteOffset, g.vertexCount).slice()
-        : new Float32Array(g.vertexCount)
+      // `aCentroid` (itemSize 2): [centroidY, groundY] per vertex. ⭐ Keyed on the slab's OWN FORMAT: a slab that declares
+      // one value per vertex (`centroidYsPerVertex` 1, or absent — baked before the raised kerb) was drawn with no
+      // ground height, so its groundY IS 0 — a true statement about that file, not a guess at a missing value. It keeps
+      // every published town drawing until its next bake, and says so.
+      const perV = manifest.centroidYsPerVertex ?? 1
+      const centroidYs = new Float32Array(g.vertexCount * 2)
+      if (g.centroidYByteOffset != null) {
+        const src = new Float32Array(bin, g.centroidYByteOffset, g.vertexCount * perV)
+        if (perV === 2) centroidYs.set(src)
+        else for (let v = 0; v < g.vertexCount; v++) centroidYs[2 * v] = src[v]
+      }
       const indices = new Uint32Array(bin, g.indexByteOffset, g.indexCount).slice()
 
       const isFlatRoof = g.kind === 'roof' && g.id === 'flat'
@@ -344,7 +355,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       const geom = new THREE.BufferGeometry()
       geom.setAttribute('position', new THREE.Float32BufferAttribute(d.positions, 3))
       geom.setAttribute('color', new THREE.Float32BufferAttribute(d.colors, 3))
-      geom.setAttribute('aCentroidY', new THREE.Float32BufferAttribute(d.centroidYs, 1))
+      geom.setAttribute('aCentroid', new THREE.Float32BufferAttribute(d.centroidYs, 2))
       geom.setAttribute('aBuildingId', new THREE.Float32BufferAttribute(d.aBuildingId, 1))
       geom.setAttribute('aCovered', new THREE.Float32BufferAttribute(d.aCovered, 1))
       if (d.nightColors) geom.setAttribute('aNightColor', new THREE.Float32BufferAttribute(d.nightColors, 3))
@@ -591,7 +602,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       shader.vertexShader = shader.vertexShader.replace(
         '#include <common>',
         `#include <common>
-         attribute float aCentroidY;
+         attribute vec2 aCentroid;
          attribute float aBuildingId;
          attribute float aCovered;
          varying float vCovered;
@@ -773,10 +784,10 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
   }, [tex, isRoof, isWall, isFoundation, texStrength, texScale, group.kind, group.id])
 
   // ── customDepthMaterial — THE SHADOW PASS MUST REPEAT THE VERTEX LIFT ──────
-  // ⛔⛔ A building's height off the ground is the ATTRIBUTE `aCentroidY` (the
+  // ⛔⛔ A building's height off the ground is the ATTRIBUTE `aCentroid` (the
   // foundation riser), added to `transformed.y` in the render material above.
   // The shadow pass does NOT use that material: three substitutes its own
-  // MeshDepthMaterial, which knows nothing about aCentroidY or uExag. Without
+  // MeshDepthMaterial, which knows nothing about aCentroid or uExag. Without
   // this, every building is rendered into the shadow map DROPPED BACK ONTO THE
   // BASELINE — measured on huron 2026-09-20: aCentroidY spans 1.41–13.40 m, so
   // at uExag 1.5 the shadow copies sat 2.11–20.10 m BELOW the drawn buildings,
@@ -787,7 +798,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
   // ground's 0.25).
   //
   // ⭐ Two things must match the render material, and one must NOT:
-  //   ✓ the aCentroidY × uExag lift — or the shadow is in the wrong place
+  //   ✓ the aCentroid lift (buildingLiftGLSL) — or the shadow is in the wrong place
   //   ✓ the `vCovered` discard — geometry hidden behind the CityModel LOD2 is
   //     discarded when drawn, so it must be discarded here too or it casts a
   //     PHANTOM shadow the operator can see but whose caster is invisible
@@ -801,7 +812,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       if (isFoundation) shader.uniforms.uRiserFloor = terrainFloorRaw
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', `#include <common>
-         attribute float aCentroidY;
+         attribute vec2 aCentroid;
          attribute float aCovered;
          uniform float uExag;
          ${isFoundation ? 'uniform float uRiserFloor;' : ''}
@@ -822,13 +833,13 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
 
   // ── THE PICK COPY: what you click is what you SEE. The shader lifts every vertex onto the terrain
   // (src/lib/buildingLift.js); the raycast used to test the UN-lifted geometry, so the clickable building sat
-  // aCentroidY × uExag below the drawn one (Ward, Huron, Hero: a drawn roof selected nothing, empty ground under the
+  // aCentroid × uExag below the drawn one (Ward, Huron, Hero: a drawn roof selected nothing, empty ground under the
   // building selected it). The copy shares the index and carries the drawn positions — the same lift, by the one
   // definition — and a BVH (R3F raycasts every handler mesh on every pointermove: brute force was 13 ms a move on
   // Huron). Re-lifted and REFIT lazily, on the first raycast after anything the lift reads has changed (uExag, the
   // floor, the geometry) — nothing runs per frame. `indirect` leaves the shared index (every range's draw order) as is.
   const pick = useMemo(() => {
-    const raw = geometry.attributes.position.array, cy = geometry.attributes.aCentroidY.array
+    const raw = geometry.attributes.position.array, A = geometry.attributes.aCentroid, cy = A.array, k = A.itemSize
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(raw.length), 3))
     g.setIndex(geometry.index)
@@ -839,7 +850,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       const out = g.attributes.position.array
       for (let i = 0, v = 0; i < raw.length; i += 3, v++) {
         out[i] = raw[i]; out[i + 2] = raw[i + 2]
-        out[i + 1] = buildingLiftY(raw[i + 1], cy[v], exag, floor, isFoundation)
+        out[i + 1] = buildingLiftY(raw[i + 1], cy[v * k], exag, floor, isFoundation, cy[v * k + 1])
       }
       g.attributes.position.needsUpdate = true
       if (state.bvh) state.bvh.refit(); else { state.bvh = new MeshBVH(g, { indirect: true }); g.boundsTree = state.bvh }

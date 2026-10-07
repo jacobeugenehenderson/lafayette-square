@@ -28,6 +28,8 @@ import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
 import { SCENE, requireExplicitMap } from './scene.js'
 import { requireSceneTerrain } from './terrainLoad.js'
+import { makeGroundSampler } from './groundSampler.js'
+import { resolveCurbCutNorm } from './curb-cut-norm.mjs'
 import { readBakeDesign } from './lookDesign.mjs'
 import { createMembershipFilter, buildingIdOf } from './membership.mjs'
 import { resolveAddress, addressCensus, addressOfTags, offeredBy, parcelPointsOf, inRing } from './building-address.mjs'
@@ -631,6 +633,23 @@ export async function bakeBuildings({ look, scene } = {}) {
   // otherwise a missing terrain refuses (terrainLoad.js#requireSceneTerrain) rather than sitting a hilly town at y = 0.
   const terrain = requireSceneTerrain(scene, 'bake-buildings')
   const getElevationRaw = (x, z) => terrain.getElevationRaw(x, z)
+  // ⭐ THE DRAWN GROUND'S OWN HEIGHT under each building (2026-10-06, the raised kerb): a block lifted by the town's
+  // kerb height carries it in the ground mesh's y, UNEXAGGERATED (`kerbLift.mjs`), so a building seats at
+  // `centroidY × uExag + groundY` (`src/lib/buildingLift.js`). Sampled off THIS look's baked ground (bake-ground runs
+  // first in the chain), averaged over the footprint corners exactly as `centroidY` is.
+  // ⛔ No ground bake: on a town whose kerb norm stands it (h > 0) that would sink every building by h — REFUSED;
+  // on a flat town 0 is the true value, and the log says where it came from.
+  const gjP = join(outDir, 'ground.json'), gbP = join(outDir, 'ground.bin')
+  let groundYAt = null
+  if (existsSync(gjP) && existsSync(gbP)) {
+    const gb = readFileSync(gbP)
+    const gs = makeGroundSampler(JSON.parse(readFileSync(gjP, 'utf-8')), gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength), terrain)
+    groundYAt = (x, z) => gs.groundAt(x, z).y
+  } else {
+    const kerbH = resolveCurbCutNorm(scene, null).kerb?.height || 0
+    if (kerbH > 0) throw new Error(`[bake-buildings] ⛔ ${scene}'s kerb stands ${kerbH} m but '${look}' has no ground bake to seat the buildings on — run bake-ground first (node bake-ground.js --look=${look} --scene=${scene})`)
+    console.warn(`[bake-buildings] no ground bake for '${look}' — every building's groundY is 0 (true on a flat town: the kerb norm is 0)`)
+  }
   // Per-building overrides (roof shape, foundation height, colour) are the TOWN's own: the `overrides` map in
   // cartograph/data/<town>/building-overrides.json. ⛔ They used to be read from src/data/buildingOverrides.json — one
   // legacy file (Lafayette Square's) for every town (BRIEF-live-building-palette; empty when retired, 2026-09-28).
@@ -671,14 +690,14 @@ export async function bakeBuildings({ look, scene } = {}) {
   const roofs = new Map()
   const founds = new Map()
   const ensure = (m, mat) => {
-    if (!m.has(mat)) m.set(mat, { positions: [], indices: [], colors: [], uvs: [], centroidYs: [], vCount: 0 })
+    if (!m.has(mat)) m.set(mat, { positions: [], indices: [], colors: [], uvs: [], centroidYs: [], vCount: 0 })   // centroidYs: [centroidY, groundY] per vertex
     return m.get(mat)
   }
   const pushColors = (bucket, count, rgb) => {
     for (let i = 0; i < count; i++) bucket.colors.push(rgb[0], rgb[1], rgb[2])
   }
-  const pushCentroidY = (bucket, count, value) => {
-    for (let i = 0; i < count; i++) bucket.centroidYs.push(value)
+  const pushCentroidY = (bucket, count, value, groundY) => {
+    for (let i = 0; i < count; i++) bucket.centroidYs.push(value, groundY)
   }
 
   // ── Per-building RENDER-SCOPED index (slab v2) ──────────────────────
@@ -834,9 +853,9 @@ export async function bakeBuildings({ look, scene } = {}) {
     // Per-building centroid elevation (raw, no exag). Each vertex of this
     // building carries the same centroidY so the runtime can lift the
     // whole building rigidly via `position.y += aCentroidY * uExag`.
-    let centroidY = 0
-    for (let i = 0; i < fp.length; i++) centroidY += getElevationRaw(fp[i][0], fp[i][1])
-    centroidY /= fp.length
+    let centroidY = 0, groundY = 0
+    for (let i = 0; i < fp.length; i++) { centroidY += getElevationRaw(fp[i][0], fp[i][1]); if (groundYAt) groundY += groundYAt(fp[i][0], fp[i][1]) }
+    centroidY /= fp.length; groundY /= fp.length
 
     // The set-piece's building: its record, no geometry (see setPieceId above).
     const built = b.id !== setPieceId
@@ -850,7 +869,7 @@ export async function bakeBuildings({ look, scene } = {}) {
       for (let i = 0; i < wallUVs.length;        i++) bucket.uvs.push(wallUVs[i])
       for (let i = 0; i < wallIndices.length;    i++) bucket.indices.push(wallIndices[i] + base)
       pushColors(bucket, vAdded, wallRgb)
-      pushCentroidY(bucket, vAdded, centroidY)
+      pushCentroidY(bucket, vAdded, centroidY, groundY)
       wallRange = [base, vAdded]
       bucket.vCount += vAdded
     }
@@ -862,7 +881,7 @@ export async function bakeBuildings({ look, scene } = {}) {
       for (let i = 0; i < foundUVs.length;        i++) bucket.uvs.push(foundUVs[i])
       for (let i = 0; i < foundIndices.length;    i++) bucket.indices.push(foundIndices[i] + base)
       pushColors(bucket, vAdded, foundRgb)
-      pushCentroidY(bucket, vAdded, centroidY)
+      pushCentroidY(bucket, vAdded, centroidY, groundY)
       foundRange = [base, vAdded]
       bucket.vCount += vAdded
     }
@@ -874,7 +893,7 @@ export async function bakeBuildings({ look, scene } = {}) {
       for (let i = 0; i < roofUVs.length;        i++) bucket.uvs.push(roofUVs[i])
       for (let i = 0; i < roofIndices.length;    i++) bucket.indices.push(roofIndices[i] + base)
       pushColors(bucket, vAdded, roofRgb)
-      pushCentroidY(bucket, vAdded, centroidY)
+      pushCentroidY(bucket, vAdded, centroidY, groundY)
       roofRange = [base, vAdded]
       bucket.vCount += vAdded
     }
@@ -907,6 +926,7 @@ export async function bakeBuildings({ look, scene } = {}) {
       footprintRange: [ptStart, fp.length],
       roofOutlineRange: [roofPtStart, ring.length],
       centroidY,
+      groundY,   // the drawn ground's own height under it (a raised kerb's block), unexaggerated
       baseY,
       wallMaterial: wallMat,
       roofMaterial: roofMat,
@@ -1134,7 +1154,7 @@ export async function bakeBuildings({ look, scene } = {}) {
     componentsPerVertex: 3,
     colorsPerVertex: 3,
     uvsPerVertex: 2,
-    centroidYsPerVertex: 1,
+    centroidYsPerVertex: 2,   // [centroidY (raw, × uExag), groundY (the drawn mesh's own height, unexaggerated)]
     footprintComponentsPerPoint: 2,
     footprintByteOffset,
     footprintPointCount: footprintData.length / 2,

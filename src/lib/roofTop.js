@@ -1,6 +1,6 @@
 /**
  * roofTop — each building's ROOF PEAK: the highest vertex of its own roof range (local Y, before the terrain lift
- * `centroidY × exaggeration`), read from the roof group it was baked into (buildings.json groups are keyed kind:material).
+ * `centroidY × exaggeration + groundY`, src/lib/buildingLift.js), read from the roof group it was baked into (buildings.json groups are keyed kind:material).
  * What `<TownPoint building>` seats on. One home: SlabBuildings reads it at load, the census check reads it off disk.
  *
  * A building with no roof range has no roof top (null), for one of two reasons the census tells apart:

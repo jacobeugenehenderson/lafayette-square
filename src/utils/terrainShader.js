@@ -420,7 +420,7 @@ export function patchTerrainInstanced(mat) {
  * INSTANCED rigid lift by a BAKED per-instance ground anchor — `groundSampler`'s
  * `groundAt`, where the DRAWN ground sits under the instance —
  * instead of a live texture sample. So the instance lands exactly on the
- * rendered ground (no coarse-mesh float); the buildings/foundations `aCentroidY`
+ * rendered ground (no coarse-mesh float); the buildings/foundations `aCentroid`
  * regime generalized to point objects. The geometry must carry an `aGround`
  * InstancedBufferAttribute, itemSize 2: (raw, pre-uExag · the drawn mesh's own y, UNexaggerated — a raised kerb's
  * block, `kerbLift.mjs`). Lift = aGround.x × uExag + aGround.y, divided by the instance Y-scale so it lands as meters

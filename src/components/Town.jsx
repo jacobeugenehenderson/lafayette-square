@@ -145,6 +145,7 @@ import PlanRim from './PlanRim.jsx'
 import MountainBackdrop from './MountainBackdrop'
 import DrawnAnchor from './DrawnAnchor.jsx'
 import { markStartup } from '../lib/startupMarks.js'
+import { buildingLiftY } from '../lib/buildingLift.js'
 
 // The application runtime has arrived: the renderer's module is evaluated (src/lib/startupMarks.js).
 markStartup('runtime')
@@ -341,7 +342,7 @@ export function useBuildingAddress(id) {
  * projected through the town's own place (lib/townPlace.js). `lift` raises them above the ground.
  * The ground's height follows the terrain exaggeration of the shot, every frame.
  * ⭐ `building={id}` instead seats them ON THAT BUILDING'S ROOF — its highest point, over its footprint's centre, lifted
- * exactly as the building is drawn (`roofTopY + centroidY × exaggeration`), every frame; `lift` is then metres above
+ * exactly as the building is drawn (`buildingLiftY` — roofTopY + centroidY × exaggeration + groundY), every frame; `lift` is then metres above
  * the roof. The one home for "on the roof". Draws nothing until the town's buildings load.
  * ⛔ An id the town does not have, or a building with no roof (a set piece's building — Provincetown's monument — or one
  * left open), seats NOTHING and says so by name: console.error, and `onError(message)` if given. ⛔ It never throws: the
@@ -371,7 +372,7 @@ function RoofPoint({ building, lift = 0, onError, children, ...props }) {
     for (const [px, pz] of e.footprint) { x += px; z += pz }
     return { x: x / e.footprint.length, z: z / e.footprint.length }
   }, [e])
-  const y = () => e.roofTopY + e.centroidY * terrainExag.value + lift
+  const y = () => buildingLiftY(e.roofTopY, e.centroidY, terrainExag.value, 0, false, e.groundY) + lift
   useFrame(() => { if (ref.current && e) ref.current.position.y = y() })
   if (!e) return null
   return <group ref={ref} position={[at.x, y(), at.z]} {...props}>{children}</group>
