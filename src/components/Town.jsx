@@ -244,9 +244,10 @@ function RevealGate({ need }) {
     cam.position.set(cx, 20000, cz); cam.up.set(0, 0, -1); cam.lookAt(cx, 0, cz); cam.updateMatrixWorld()
     cam.userData.prepare = true   // DrawnAnchor ignores this draw: the visitor does not see it
     const prevTarget = gl.getRenderTarget()
+    const wasVisible = g.visible
     g.visible = true
     try { gl.setRenderTarget(rt); gl.render(scene, cam) }
-    finally { g.visible = false; gl.setRenderTarget(prevTarget) }
+    finally { g.visible = wasVisible; gl.setRenderTarget(prevTarget) }
   })
   return null
 }
