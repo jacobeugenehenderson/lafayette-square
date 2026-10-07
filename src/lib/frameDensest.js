@@ -33,10 +33,25 @@ function partition(places, ids, stencil, who) {
   return { pts, disclosure: { placed: pts.length, of: all.length, outside, unplaced } }
 }
 
-/** The circle about [x, z] that holds `chosen` (each with its footprint radius), moved and shrunk to lie inside the Extent. */
-function circleIn(chosen, stencil, [x, z]) {
+/**
+ * ⭐ THE SMALLEST FRAME (Boz for the Ward's pin, 2026-10-07): a set this small still shows WHERE it is, not one roof filling
+ * the map. The circle about [x, z] that holds the k = ⌈√N⌉ nearest of the town's N placed buildings, footprints and all —
+ * the same k-NN rule the densest cluster is sized by, read off the buildings the frame already receives. No metre value,
+ * no set-size threshold: a set wider than this floor is simply wider. ▶ node checks/claims-the-plan-opens-on-its-places.mjs
+ */
+function floorAt(town, [x, z]) {
+  const d = []
+  for (const p of town.values()) d.push(Math.hypot(p.x - x, p.z - z) + p.radius)
+  if (!d.length) return 0
+  d.sort((a, b) => a - b)
+  return d[Math.min(d.length, Math.ceil(Math.sqrt(d.length))) - 1]
+}
+
+/** The circle about [x, z] that holds `chosen` (each with its footprint radius) and never less than the town's floor, moved
+ *  and shrunk to lie inside the Extent. */
+function circleIn(chosen, stencil, [x, z], town) {
   const [cx, cz] = stencil.center, R = stencil.radius
-  let radius = Math.max(...chosen.map((p) => Math.hypot(p.x - x, p.z - z) + p.radius))
+  let radius = Math.max(floorAt(town, [x, z]), ...chosen.map((p) => Math.hypot(p.x - x, p.z - z) + p.radius))
   if (radius >= R) { x = cx; z = cz; radius = R }
   else {
     const d = Math.hypot(x - cx, z - cz)
@@ -57,7 +72,7 @@ export function frameAll(places, ids, stencil) {
   // Centred on the members' extent (footprints included), so the circle is as tight as it simply can be.
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
   for (const p of pts) { x0 = Math.min(x0, p.x - p.radius); x1 = Math.max(x1, p.x + p.radius); z0 = Math.min(z0, p.z - p.radius); z1 = Math.max(z1, p.z + p.radius) }
-  return { ...circleIn(pts, stencil, [(x0 + x1) / 2, (z0 + z1) / 2]), count: pts.length, ...disclosure }
+  return { ...circleIn(pts, stencil, [(x0 + x1) / 2, (z0 + z1) / 2], places), count: pts.length, ...disclosure }
 }
 
 /** The one switch Town's `frameMode` names: 'densest' (the default) | 'all'. ⛔ Anything else throws by name. */
@@ -86,5 +101,5 @@ export function frameDensest(places, ids, stencil) {
 
   // Centred on the cluster's mean (unchanged since Jacob chose this frame, 2026-09-28).
   const mean = [chosen.reduce((a, p) => a + p.x, 0) / chosen.length, chosen.reduce((a, p) => a + p.z, 0) / chosen.length]
-  return { ...circleIn(chosen, stencil, mean), count: chosen.length, ...disclosure }
+  return { ...circleIn(chosen, stencil, mean, places), count: chosen.length, ...disclosure }
 }

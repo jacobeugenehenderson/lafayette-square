@@ -13,7 +13,9 @@
  *   · it holds `count` of the framed places, count ≥ 1;
  *   · nothing vanishes: count ≤ placed, and placed + outside + unplaced = of — a listing with no building, or a
  *     building the slab does not have, or a place beyond the rim, is DISCLOSED by name (ids), never dropped;
- *   · the module carries no metre value (no numeric literal but 0, 1 and 2).
+ *   · the module carries no metre value (no numeric literal but 0, 1 and 2);
+ *   · ⭐ A PIN SHOWS WHERE IT IS (2026-10-07): a frame on ONE building holds at least k = ⌈√N⌉ of the town's N buildings
+ *     (the floor the frame is sized to), unless the Extent bounds it — never one roof filling the map.
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-the-plan-opens-on-its-places.mjs [--self-test] [--table]
  */
@@ -59,6 +61,7 @@ export function cases() {
     out.push({ town, places: placesOf(town), stencil: stencilOf(town), sets: {
       [`largest: ${top}`]: L.filter(l => l.category === top).map(l => l.building_id ?? null),
       'cold start (all listed)': L.map(l => l.building_id ?? null),
+      'one place (a pin)': [L.map(l => l.building_id).find(id => id != null && placesOf(town).has(id))].filter(Boolean),
     } })
   }
   // A fixture no real town has yet: a place beyond the rim, a listing with no building, an id the slab lacks — so the
@@ -82,6 +85,11 @@ export function audit(frameDensest, src, all) {
     if (d + r.radius > c.stencil.radius * (1 + 1e-9)) f.push(`${tag}: the frame reaches ${(d + r.radius - c.stencil.radius).toFixed(1)} m beyond the Extent`)
     if (!(r.count >= 1) || r.count > r.placed) f.push(`${tag}: frames ${r.count} of ${r.placed} placed`)
     if (r.placed + r.outside.length + r.unplaced.length !== r.of || r.of !== ids.length) f.push(`${tag}: ${r.of} asked, ${r.placed} placed + ${r.outside.length} outside + ${r.unplaced.length} unplaced — something vanished`)
+    if (set.startsWith('one place')) {
+      const k = Math.ceil(Math.sqrt(c.places.size)), held = [...c.places.values()].filter(p => Math.hypot(p.x - r.x, p.z - r.z) + p.radius <= r.radius * (1 + 1e-9)).length
+      const bounded = d + r.radius >= c.stencil.radius * (1 - 1e-9)
+      if (held < k && !bounded) f.push(`${tag}: a one-building frame holds ${held} of the town's buildings, under its floor k = ${k} — the map shows the roof, not where it is`)
+    }
     rows.push({ town: c.town, set, ...r, R: c.stencil.radius })
   }
   return { f, rows }
@@ -101,6 +109,7 @@ if (process.argv.includes('--self-test')) {
     ['the Extent bound is dropped', wrap(r => r && ({ ...r, radius: r.radius + 1e5 }))],
     ['an unplaced listing vanishes', wrap(r => r && ({ ...r, unplaced: r.unplaced.slice(1), of: r.of }))],
     ['a place outside is dropped silently', (p, ids, st) => { const r = frameDensest(p, ids, st); return r && { ...r, outside: [], placed: r.placed } }],
+    ['a pin frames only its own roof (the floor sees no town)', (p, ids, st) => frameDensest(new Map([...ids].filter(id => p.has(id)).map(id => [id, p.get(id)])), ids, st)],
     ['a metre constant creeps in', null],
   ]
   let bad = 0
