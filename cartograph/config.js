@@ -28,12 +28,12 @@
 import { geographyFor } from './geography.mjs'
 import {
   DEFAULT_MAP, SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
-  CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR,
+  CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR, ribbonsPathOf,
 } from './scene.js'
 
 export {
   DEFAULT_MAP, SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
-  CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR,
+  CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR, ribbonsPathOf,
 }
 
 // Geography resolver — `geography.mjs` is the single answer (a non-default scene's

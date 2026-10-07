@@ -29,7 +29,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeMembership } from './neighborhood-membership.mjs'
-import { requireExplicitMap } from './scene.js'
+import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { authoredLabelStyle, LABELS_FULL_STYLE_VERSION } from '../src/lib/labelStyle.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -134,12 +134,11 @@ function main() {
   // --scene= flag AND CARTOGRAPH_SCENE, and refuses when neither names a scene.
   const scene = requireExplicitMap('bake-labels')
   const look = args.look || scene   // read from data/<scene>; write to baked/<look>
-  // Poured scenes carry clean/ribbons.json; the legacy LS default scene keeps its
-  // ribbons at src/data/ribbons.json (predates the per-scene convention).
-  let ribbonsPath = join(ROOT, 'cartograph', 'data', scene, 'clean', 'ribbons.json')
-  if (!existsSync(ribbonsPath)) ribbonsPath = join(ROOT, 'src', 'data', 'ribbons.json')
+  // The town's own ribbons (scene.js#ribbonsPathOf, the one answer). ⛔ No fallback: this used to fall back to
+  // src/data/ribbons.json when a town's file was missing — handing ANY town Lafayette Square's streets to label.
+  const ribbonsPath = ribbonsPathOf(scene)
   const boundaryPath = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
-  if (!existsSync(ribbonsPath)) { console.error(`[bake-labels] no ribbons for scene ${scene}`); process.exit(1) }
+  if (!existsSync(ribbonsPath)) { console.error(`[bake-labels] ⛔ no ribbons for scene ${scene} (${ribbonsPath}) — run its pipeline + promote-ribbons; never another town's`); process.exit(1) }
   const ribbons = JSON.parse(readFileSync(ribbonsPath, 'utf-8'))
 
   // Gate to the neighborhood proper (the SAME boundary trees + lamps test) —

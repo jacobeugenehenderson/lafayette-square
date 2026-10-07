@@ -40,7 +40,8 @@
  *   node checks/claims-<name>.mjs --scene=altadena       # same thing
  */
 import { readdirSync, existsSync, readFileSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { join, dirname, relative } from 'node:path'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 import { fileURLToPath } from 'node:url'
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -148,15 +149,11 @@ export function scenes(need, opt = {}) {
 //    `cartograph/ARCHITECTURE.md §180` forbids by name — "a scene is a different DATASET, not a
 //    different code path" — reproduced thirteen times. Thirteen copies is also why the LS special
 //    case cannot be retired: retiring it means finding all thirteen.
-// ⚠️ The special case is REAL and is not fixed here: LS's ribbons are the bundled
-//    `src/data/ribbons.json` while every other town's are under `cartograph/data/<scene>/`. That
-//    asymmetry is `ORIENTATION`'s palimpsest warning (LS lives at the shared default paths) and
-//    retiring it is its own ticket. Naming it once is the prerequisite.
+// ⭐ It is now ONE answer kit-wide: cartograph/scene.js#ribbonsPathOf (LS's bundled file is its one held exception,
+//    named there). This is that answer as a repo-relative path, for the checks.
 
 /** Where a town's ribbons live. ⛔ Import this; never re-derive it locally. */
-export const ribbonsPath = (scene) => scene === 'lafayette-square'
-  ? 'src/data/ribbons.json'
-  : `cartograph/data/${scene}/clean/ribbons.json`
+export const ribbonsPath = (scene) => relative(join(dirname(fileURLToPath(import.meta.url)), '..'), ribbonsPathOf(scene))
 
 // ⛔ THERE IS NO CHILLERED SET ANY MORE, AND THERE MUST NOT BE ANOTHER (2026-09-19).
 //    `centrum` and `ksi-y-m-yn` were excised — out of the list, the app and the git — so the two

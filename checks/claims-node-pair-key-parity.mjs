@@ -41,7 +41,7 @@ import { buildBlockGeometryV2 } from '../src/lib/buildBlockGeometryV2.js'
 // ▶ the live home: git grep -n "export function resolveChainSegmentation"
 import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 import { feCustomKey, CAP_SEGORD, isCapSegOrd } from '../src/lib/feCustomKey.js'
-import { ribbonScenes } from './_scenes.mjs'
+import { ribbonScenes, ribbonsPath } from './_scenes.mjs'
 import { ROOT as MAPS_ROOT } from './_scenes.mjs'
 
 // ⛔ WAS AN ABSOLUTE PATH TO ONE LAPTOP. This check could only ever run on Jacob's machine — not
@@ -77,7 +77,7 @@ export const naturalSegments = new Function(`${extractFn(V2_SRC, 'naturalSegment
 // This guard is worth more than any one measurement — it is the rule as a check.
 const SOURCES = {
   pour:   scene => `cartograph/data/${scene}/clean/map.json`,
-  bundle: scene => scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`,
+  bundle: scene => ribbonsPath(scene),
 }
 export function loadScene(scene, source) {
   if (!source || !SOURCES[source]) {

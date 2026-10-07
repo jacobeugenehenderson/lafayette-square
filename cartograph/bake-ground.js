@@ -47,7 +47,7 @@ import { assertBakeTarget } from './bake-target.js'
 import { conformAndRefine, findTJunctions } from './groundConformity.js'
 import { kerbRegions, curblessSegments, taperRegions, sliceByRegions, blockInside, makeHeightField, liftBuffer, riserFromEdges } from './kerbLift.mjs'
 import { intersectRings as _ringsIntersect } from '../src/lib/buildBlockGeometryV2.js'
-import { requireExplicitMap } from './scene.js'
+import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
@@ -880,9 +880,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // Default installation keeps the bundled src/data/ribbons.json; every other
   // installation reads the scene-scoped ribbons promote-ribbons.js writes (and
   // serve.js serves) under cartograph/data/<scene>/clean/.
-  const ribbonsPath = scene === 'lafayette-square'
-    ? join(ROOT, 'src', 'data', 'ribbons.json')
-    : join(ROOT, 'cartograph', 'data', scene, 'clean', 'ribbons.json')
+  const ribbonsPath = ribbonsPathOf(scene)   // the one answer (scene.js) — LS's bundled file is its one held exception
   const mapPath     = join(ROOT, 'cartograph', 'data', scene, 'clean', 'map.json')
   // outDir: write the slab elsewhere (a scratch A/B) instead of over the live one.
   const outDir      = outDirOpt || join(ROOT, 'public', 'baked', look)

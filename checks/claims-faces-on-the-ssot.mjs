@@ -14,9 +14,10 @@
 // A hypothesis, not a finding — the probe prints which chains bound each mover so it can be read.
 // ▶ node checks/claims-faces-on-the-ssot.mjs [scene]
 import fs from 'fs'
+import { ribbonsPath } from './_scenes.mjs'
 import { extractFaces } from '../src/lib/tileGround.js'
 const scene = process.argv[2] || 'lafayette-square'
-const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
+const RIB = ribbonsPath(scene)
 const SK  = `cartograph/data/${scene}/clean/skeleton.json`
 if (!fs.existsSync(RIB) || !fs.existsSync(SK)) { console.log(`⛔ ${scene}: missing artifact — SKIPPED LOUDLY`); process.exit(1) }
 const rb = JSON.parse(fs.readFileSync(RIB, 'utf8')), sk = JSON.parse(fs.readFileSync(SK, 'utf8'))

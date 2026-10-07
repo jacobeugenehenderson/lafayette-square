@@ -90,5 +90,16 @@ export const CARTOGRAPH_DIR = __dirname
 export function mapDir(scene)      { return join(__dirname, 'data', scene) }
 export function mapRawDir(scene)   { return join(__dirname, 'data', scene, 'raw') }
 export function mapCleanDir(scene) { return join(__dirname, 'data', scene, 'clean') }
+/**
+ * WHERE A TOWN'S RIBBONS LIVE — the ONE answer (bake-ground, bake-labels, serve, applySnapshot, promote-ribbons, the
+ * checks via checks/_scenes.mjs). Every town's are `data/<scene>/clean/ribbons.json`; ⚠️ ONE HELD EXCEPTION, named
+ * here and nowhere else: Lafayette Square's still ship as the bundled `src/data/ribbons.json` (promote-ribbons writes
+ * there). Moving them is Jacob's call (BRIEF-ls-bleed-excision, G2(b) "Phase 0e"); when it lands this case goes.
+ * ⛔ No fallback: a town whose file is missing is told so by its caller — never handed another town's.
+ */
+export function ribbonsPathOf(scene) {
+  if (!scene) throw new Error('ribbonsPathOf: no scene')
+  return scene === DEFAULT_MAP ? join(__dirname, '..', 'src', 'data', 'ribbons.json') : join(mapCleanDir(scene), 'ribbons.json')
+}
 export const RAW_DIR   = mapRawDir(SCENE)
 export const CLEAN_DIR = mapCleanDir(SCENE)

@@ -595,11 +595,12 @@ export async function bakeBuildings({ look, scene } = {}) {
   // one OUT. Keep if (centroid-in-polygon OR activated) AND NOT hidden. Falls back
   // to the boundary CIRCLE if no polygon was persisted (older scenes).
   //
-  // The `scene !== 'lafayette-square'` gate is a HARDWIRE, twin of the source-select
-  // at :62 — LS is the one legacy install on a hand-curated buildings.json, so the
-  // poured-path membership cull doesn't apply. Both retire when LS becomes poured.
+  // ⭐ A town whose buildings come from its own LEDGER (data/<scene>/buildings.json — the same question loadBuildings
+  // asks) already declares its membership there, so the boundary cull does not apply. Asked of the town's data, never
+  // its name (was `scene !== 'lafayette-square'`, BRIEF-ls-bleed-excision).
   const nbP = join(ROOT, 'cartograph', 'data', scene, 'neighborhood_boundary.json')
-  if (scene !== 'lafayette-square' && existsSync(nbP)) {
+  const hasLedger = existsSync(join(ROOT, 'cartograph', 'data', scene, 'buildings.json'))
+  if (!hasLedger && existsSync(nbP)) {
     const nb = JSON.parse(readFileSync(nbP, 'utf-8'))
     let activate = new Set(), hide = new Set()
     const ovP = join(ROOT, 'cartograph', 'data', scene, 'building-overrides.json')

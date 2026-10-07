@@ -13,23 +13,16 @@
  */
 import { existsSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
-import { mapDir, mapCleanDir, DEFAULT_MAP } from './config.js'
+import { mapDir, mapCleanDir, ribbonsPathOf } from './config.js'
 
-const REPO_ROOT = join(import.meta.dirname, '..')
 
-/** Where promote-ribbons writes this scene's ribbons — the ONE answer (promote-ribbons reads it too). */
-export function promotedRibbonsPath(scene) {
-  return scene === DEFAULT_MAP
-    ? join(REPO_ROOT, 'src', 'data', 'ribbons.json')
-    : join(mapCleanDir(scene), 'ribbons.json')
-}
 
 /** Every file an apply writes: the disc and its draft, the frame, and the pour's outputs. */
 export function applySnapshotPaths(scene) {
   const dir = mapDir(scene)
   return [
     join(dir, 'geography.json'), join(dir, 'neighborhood_boundary.json'), join(dir, 'neighborhood.json'),
-    join(mapCleanDir(scene), 'map.json'), promotedRibbonsPath(scene),
+    join(mapCleanDir(scene), 'map.json'), ribbonsPathOf(scene),
   ]
 }
 

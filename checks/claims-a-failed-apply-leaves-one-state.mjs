@@ -60,7 +60,7 @@ function run(S) {
   const wrong = behaviour(S)
   assert('apply/restore-is-exact', wrong.length === 0, `after snapshot → half-pour → restore, these did not return to their prior state: ${wrong.join(', ')}`)
   const pathsFn = /export function applySnapshotPaths[\s\S]*?\n}/.exec(S.module)?.[0] || ''
-  assert('apply/covers-the-pour', /'map\.json'/.test(pathsFn) && /promotedRibbonsPath\(scene\)/.test(pathsFn) && /neighborhood_boundary\.json/.test(pathsFn),
+  assert('apply/covers-the-pour', /'map\.json'/.test(pathsFn) && /ribbonsPathOf\(scene\)/.test(pathsFn) && /neighborhood_boundary\.json/.test(pathsFn),
     'applySnapshotPaths no longer covers map.json, the promoted ribbons and the boundary')
   assert('apply/commit-rollback-rescope',
     /snapshotApply\(scene, 'prebak'\)/.test(S.serve) && /restoreApply\(scene, 'prebak'\)/.test(S.serve) &&

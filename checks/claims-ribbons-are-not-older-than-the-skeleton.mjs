@@ -22,7 +22,7 @@ const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
 const skelOverride = process.argv.find(a => a.startsWith('--skeleton='))?.slice('--skeleton='.length)
 
 // promote-ribbons.js's own rule, which lives in applySnapshot.mjs — CALLED, not re-parsed.
-const { promotedRibbonsPath: ribbonsOf } = await import(join(ROOT, 'cartograph/applySnapshot.mjs'))
+const { ribbonsPathOf: ribbonsOf } = await import(join(ROOT, 'cartograph/scene.js'))
 
 let red = false
 for (const scene of scenes('cartograph/data/<scene>/raw/osm.json')) {

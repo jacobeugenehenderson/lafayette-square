@@ -25,6 +25,7 @@
 // MUTATIONS (each must go red): nudge one highway endpoint 1 m in a temp ribbons (--ribbons) · delete one entry
 // of `protopolygon.flares` in a temp ribbons · judge a flared ribbons against a shape baked WITHOUT the flare (--shape).
 import { readFileSync, existsSync } from 'node:fs'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
 import { loadSceneStencil } from '../cartograph/sceneStencil.js'
@@ -35,7 +36,7 @@ const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.leng
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
 const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
-const ribbonsOf = (s) => s === DEFAULT_MAP ? join(ROOT, 'src/data/ribbons.json') : join(ROOT, 'cartograph/data', s, 'clean/ribbons.json')
+const ribbonsOf = (s) => ribbonsPathOf(s)
 const HW = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
 const XY = (p) => Array.isArray(p) ? p : [p.x, p.z]
 const K = (p) => { const q = XY(p); return `${(+q[0]).toFixed(3)},${(+q[1]).toFixed(3)}` }

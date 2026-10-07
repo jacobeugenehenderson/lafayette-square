@@ -15,9 +15,10 @@
 // ⛔ Do not run the convergence until this reports 0 in BOTH columns, or until a re-key is built.
 // ▶ node checks/claims-simplify-preserves-authoring.mjs [scene]
 import fs from 'fs'
+import { ribbonsPath } from './_scenes.mjs'
 import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 const scene = process.argv[2] || 'lafayette-square'
-const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
+const RIB = ribbonsPath(scene)
 const SK = `cartograph/data/${scene}/clean/skeleton.json`
 const idx = JSON.parse(fs.readFileSync('public/looks/index.json', 'utf8'))
 const look = ((idx.looks || []).find(l => l.id === scene) || (idx.looks || []).find(l => l.scene === scene) || {}).id

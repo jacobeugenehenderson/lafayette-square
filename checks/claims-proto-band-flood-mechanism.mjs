@@ -22,6 +22,7 @@
 //
 // ▶ node checks/claims-proto-band-flood-mechanism.mjs [scene ...]
 import fs from 'fs'
+import { ribbonsPath } from './_scenes.mjs'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 // ⛔⛔ THIS PROBE NAMES PRODUCER STAGES BY STRING and therefore rots the moment they are renamed.
 // It did: `PROTO_DUMP`'s stages moved from `hw / hw+cw / WB` (measured from ①) to
@@ -32,7 +33,7 @@ import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
 process.env.PROTO_DUMP = '1'
 const scenes = feedScenes()
-const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
+const RIB = (s) => ribbonsPath(s)
 
 let verdictAll = []
 for (const scene of scenes) {

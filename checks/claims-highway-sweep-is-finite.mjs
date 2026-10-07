@@ -15,6 +15,7 @@
 //
 // MUTATION (must go red): remove the micron merge of the taper stations in `sweepHighway`.
 import { readFileSync, existsSync } from 'node:fs'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
 
@@ -40,7 +41,7 @@ let red = false
 }
 
 const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
-const ribbonsOf = (s) => s === DEFAULT_MAP ? join(ROOT, 'src/data/ribbons.json') : join(ROOT, 'cartograph/data', s, 'clean/ribbons.json')
+const ribbonsOf = (s) => ribbonsPathOf(s)
 const H = /^(motorway|motorway_link|trunk|trunk_link)$/
 for (const scene of scenes('cartograph/data/<scene>/raw/osm.json')) {
   const p = ribbonsOf(scene)

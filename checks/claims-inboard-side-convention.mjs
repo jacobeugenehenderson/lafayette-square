@@ -20,13 +20,13 @@
  *   node checks/claims-inboard-side-convention.mjs [scene ...]
  */
 import fs from 'fs'
-import { ribbonScenes } from './_scenes.mjs'
+import { ribbonScenes, ribbonsPath } from './_scenes.mjs'
 const scenes = ribbonScenes()
 const o = console.log
 const mid = p => p[Math.floor(p.length / 2)]
 
 for (const scene of scenes) {
-  const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
+  const RIB = ribbonsPath(scene)
   const SHP = `public/baked/${scene}/shape.json`
   if (!fs.existsSync(RIB) || !fs.existsSync(SHP)) { o(`\n${scene}: missing artifact — SKIPPED LOUDLY`); continue }
   const rb = JSON.parse(fs.readFileSync(RIB, 'utf8')), sh = JSON.parse(fs.readFileSync(SHP, 'utf8'))

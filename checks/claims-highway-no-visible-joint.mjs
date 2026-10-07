@@ -32,7 +32,7 @@ const skelOverride = arg('skeleton'), ribOverride = arg('ribbons')
 const skelSrc = readFileSync(join(ROOT, 'cartograph/skeleton.js'), 'utf8')
 const la = skelSrc.match(/const LIMITED_ACCESS = new Set\(\[([^\]]+)\]\)/)
 // The ribbons path is promote-ribbons.js's rule, which lives in applySnapshot.mjs — CALLED, not re-parsed.
-const { promotedRibbonsPath: ribbonsOf } = await import(join(ROOT, 'cartograph/applySnapshot.mjs'))
+const { ribbonsPathOf: ribbonsOf } = await import(join(ROOT, 'cartograph/scene.js'))
 if (!la) {
   console.error('⛔ NOT CHECKED — could not read LIMITED_ACCESS from skeleton.js')
   process.exit(2)

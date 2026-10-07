@@ -8,7 +8,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { SCENE, mapCleanDir, requireExplicitMap } from './config.js'
 import { writeIfChanged } from './io.js'
-import { promotedRibbonsPath } from './applySnapshot.mjs'
+import { ribbonsPathOf } from './scene.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('promote-ribbons.js (writes the runtime ribbons bundle)')
@@ -25,7 +25,7 @@ for (const arg of process.argv.slice(2)) {
   if (m) scene = m[1]
 }
 const MAP_PATH = join(mapCleanDir(scene), 'map.json')
-const BUNDLED_PATH = promotedRibbonsPath(scene)   // one answer, shared with the apply snapshot
+const BUNDLED_PATH = ribbonsPathOf(scene)   // the one answer (scene.js), shared with the apply snapshot and every reader
 
 const map = JSON.parse(readFileSync(MAP_PATH, 'utf-8'))
 const ribbons = map.layers?.ribbons

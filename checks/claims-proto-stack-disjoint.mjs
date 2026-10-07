@@ -17,10 +17,11 @@
 // ⛔ Runs on every scene given, WITH the scene's authored state loaded (Layer 0 q3).
 // ▶ node checks/claims-proto-stack-disjoint.mjs [scene ...]
 import fs from 'fs'
+import { ribbonsPath } from './_scenes.mjs'
 import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
 const scenes = feedScenes()
-const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
+const RIB = (s) => ribbonsPath(s)
 
 const signedArea = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] + r[i][0]) * (r[j][1] - r[i][1]); return a / 2 }
 const inRing = (rg, x, y) => { let c = false; for (let i = 0, j = rg.length - 1; i < rg.length; j = i++) { const [a, b] = rg[i], [e, f] = rg[j]; if ((b > y) !== (f > y) && x < (e - a) * (y - b) / (f - b) + a) c = !c } return c }

@@ -13,12 +13,13 @@
 // Reports per cap: the ray-marched half-width per side vs the authored set.
 // Writes nothing.
 import fs from 'fs'
+import { ribbonsPath } from './_scenes.mjs'
 import crypto from 'crypto'
 
 const scene = process.argv[2] && !process.argv[2].startsWith('-') ? process.argv[2] : 'lafayette-square'
 const ONLY = process.argv[3] || null
 const SHAPE = `public/baked/${scene}/shape.json`
-const RIBBONS = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
+const RIBBONS = ribbonsPath(scene)
 const o = console.log
 if (!fs.existsSync(SHAPE)) { o(`no ${SHAPE}`); process.exit(1) }
 const RAW = fs.readFileSync(SHAPE)

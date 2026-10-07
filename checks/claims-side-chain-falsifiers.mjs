@@ -17,7 +17,7 @@
  *   node checks/claims-side-chain-falsifiers.mjs [scene ...]
  */
 import fs from 'fs'
-import { ribbonScenes } from './_scenes.mjs'
+import { ribbonScenes, ribbonsPath } from './_scenes.mjs'
 const scenes = ribbonScenes()
 const o = console.log
 
@@ -41,7 +41,7 @@ if (!anchored) process.exit(1)
 let totIE = 0, totFallback = 0, totGate = 0, totAgree = 0, totDisagree = 0
 let totZeroed = 0, totInbPedNonZero = 0, totSym = 0, totStomp = 0, totStompable = 0
 for (const scene of scenes) {
-  const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
+  const RIB = ribbonsPath(scene)
   const DES = `public/looks/${scene}/design.json`
   if (!fs.existsSync(RIB)) { o(`${scene}: missing ${RIB} — SKIPPED LOUDLY`); continue }
   const rb = JSON.parse(fs.readFileSync(RIB, 'utf8'))

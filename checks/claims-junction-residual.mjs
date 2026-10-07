@@ -20,6 +20,7 @@
 // MUTATIONS (each must go red): --msbf=<a copy with a building moved into a JR> · --msbf=/nonexistent
 // (drop the building layer) · --strip-gradeend (the stamp removed).
 import { readFileSync, existsSync } from 'node:fs'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
 import { classifyHighwayBlocks, sectionPassProtoTile, tilePieceLus } from '../src/lib/tileGround.js'
@@ -29,7 +30,7 @@ const strip = process.argv.includes('--strip-gradeend')
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
 const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
-const ribbonsOf = (s) => s === DEFAULT_MAP ? join(ROOT, 'src/data/ribbons.json') : join(ROOT, 'cartograph/data', s, 'clean/ribbons.json')
+const ribbonsOf = (s) => ribbonsPathOf(s)
 const HWY = new Set(['motorway', 'motorway_link', 'trunk', 'trunk_link'])
 const area = (r) => { let a = 0; for (let i = 0; i < r.length; i++) { const p = r[i], q = r[(i + 1) % r.length]; a += p[0] * q[1] - q[0] * p[1] } return Math.abs(a / 2) }
 let red = false

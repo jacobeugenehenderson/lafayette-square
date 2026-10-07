@@ -12,7 +12,7 @@ import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync, renameSync } from 'fs'
 import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
-import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
+import { DEFAULT_MAP, mapRawDir, mapCleanDir, ribbonsPathOf } from './config.js'
 import { instanceForMap } from '../src/instances/registry.js'
 import { readDeployment } from '../src/lib/deployment.js'
 import { slugifyName, isNumericId } from '../src/lib/sceneSlug.js'
@@ -2692,7 +2692,7 @@ createServer(async (req, res) => {
       // The scene's OWN ribbons: LS's live in the runtime bundle, every other
       // town's in its clean/ (promote-ribbons.js's rule). ⛔ Comparing a poured
       // town's map.json against LS's bundle would skip or force it on LS's clock.
-      const RIBBONS    = isDefaultMap ? join(REPO_ROOT, 'src', 'data', 'ribbons.json') : bakePaths.ribbons
+      const RIBBONS    = ribbonsPathOf(bakeScene)   // the one answer (scene.js)
       const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')
       const DESIGN    = join(REPO_ROOT, 'public', 'looks', id, 'design.json')
       // The TOWN's design fields (cartograph/lookDesign.mjs#TOWN_DESIGN_FIELDS) are read from the town's home Look for

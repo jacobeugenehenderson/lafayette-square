@@ -27,6 +27,7 @@
 // MUTATIONS (each must go red, on a temp ribbons via --ribbons): swap two block labels · add 1 to one owner's
 // `segOrd` (span) · set `cap: true` on one leg edge's owner (cap).
 import { readFileSync, existsSync } from 'node:fs'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
 import { loadSceneStencil } from '../cartograph/sceneStencil.js'
@@ -39,7 +40,7 @@ const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const SCALE = +readFileSync(join(ROOT, 'src/lib/tileGround.js'), 'utf8').match(/^const SCALE = (\d+)/m)?.[1]
 if (!SCALE) { console.error('⛔ NOT CHECKED — SCALE not found in tileGround.js'); process.exit(2) }
 const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
-const ribbonsOf = (s) => s === DEFAULT_MAP ? join(ROOT, 'src/data/ribbons.json') : join(ROOT, 'cartograph/data', s, 'clean/ribbons.json')
+const ribbonsOf = (s) => ribbonsPathOf(s)
 const XY = (q) => Array.isArray(q) ? q : [q.x, q.z]
 const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
 const segD = (x, z, a, b) => { const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz; const t = L2 ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2)) : 0; return Math.hypot(x - a[0] - t * dx, z - a[1] - t * dz) }

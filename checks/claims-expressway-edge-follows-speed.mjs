@@ -16,6 +16,7 @@
 // MUTATION (must go red): `--expect=shoulder` on huron — its spans are drawn curbed, so claiming they should be
 // shouldered must fail on every span. (The reverse, a shouldered span drawn curbed, is the construction's fixture.)
 import { readFileSync, existsSync } from 'node:fs'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
 import { expresswaySpeeds } from '../cartograph/speedContext.mjs'
@@ -26,7 +27,7 @@ const arg = (k) => process.argv.find(a => a.startsWith(`--${k}=`))?.slice(k.leng
 const named = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'))
 const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
-const ribbonsOf = (s) => s === DEFAULT_MAP ? join(ROOT, 'src/data/ribbons.json') : join(ROOT, 'cartograph/data', s, 'clean/ribbons.json')
+const ribbonsOf = (s) => ribbonsPathOf(s)
 const pip = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
 const quiet = (f) => { const o = console.log, w = console.warn; console.log = console.warn = () => {}; try { return f() } finally { console.log = o; console.warn = w } }
 let red = false

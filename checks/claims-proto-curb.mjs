@@ -5,9 +5,10 @@
 // applied and ② does not (R lives in the node's handles, unbuilt), so a corner miss is
 // EXPECTED and must be reported apart from a leg miss, which would be a real defect.
 import fs from 'fs'
+import { ribbonsPath } from './_scenes.mjs'
 import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
-const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
+const RIB = ribbonsPath(scene)
 const rb = JSON.parse(fs.readFileSync(RIB, 'utf8'))
 // ⛔ THE BASELINE MUST COME FROM THE SAME RUN. `public/baked/<scene>/shape.json` was frozen
 // before today's frame change (the curve fit now reads the raw trace, so every curved chain's

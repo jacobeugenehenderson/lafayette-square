@@ -24,11 +24,12 @@
  * Sibling (the ray-march form of the same question, per station): claims-deadend-notch-standoff.mjs
  */
 import fs from 'fs'
+import { ribbonsPath } from './_scenes.mjs'
 import crypto from 'crypto'
 
 const scene = process.argv[2] || 'lafayette-square'
 const SHAPE = `public/baked/${scene}/shape.json`
-const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
+const RIB = ribbonsPath(scene)
 const o = console.log
 if (!fs.existsSync(SHAPE) || !fs.existsSync(RIB)) { o(`missing artifact: ${!fs.existsSync(SHAPE) ? SHAPE : RIB}`); process.exit(1) }
 const RAW = fs.readFileSync(SHAPE)

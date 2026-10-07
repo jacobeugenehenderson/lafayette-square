@@ -23,6 +23,7 @@
 // `lanes` in a temp ribbons copy while it still says `osm` · strip
 // `d-interstate-std-on-non-interstate` from a non-Interstate side in a temp ribbons copy.
 import { readFileSync, existsSync } from 'node:fs'
+import { ribbonsPathOf } from '../cartograph/scene.js'
 import { join } from 'node:path'
 import { ROOT, scenes } from './_scenes.mjs'
 
@@ -53,7 +54,7 @@ console.log(`TYPE_PAVEMENT_HW highway keys: ${survivors.length ? '⛔ ' + surviv
 if (survivors.length) red = true
 
 const DEFAULT_MAP = readFileSync(join(ROOT, 'cartograph/scene.js'), 'utf8').match(/export const DEFAULT_MAP = '([^']+)'/)?.[1]
-const ribbonsOf = (scene) => scene === DEFAULT_MAP ? join(ROOT, 'src/data/ribbons.json') : join(ROOT, 'cartograph/data', scene, 'clean/ribbons.json')
+const ribbonsOf = (scene) => ribbonsPathOf(scene)
 const isInterstate = (ref) => typeof ref === 'string' && /(^|;)\s*I[\s-]?\d/.test(ref)
 const MAIN = new Set(['motorway', 'trunk']), RAMP = new Set(['motorway_link', 'trunk_link'])
 const stateOf = (osm) => {
