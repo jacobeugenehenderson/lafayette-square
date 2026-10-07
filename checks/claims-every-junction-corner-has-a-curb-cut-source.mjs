@@ -44,10 +44,17 @@ const run = (norm, blockCustoms = f.blockCustoms, evidence, crossings) => {
 if (args.includes('--selftest')) {
   const dims = { width: 1.5, warningDepth: 0.6 }
   const cw = { style: 'lines', width: 3, line: 0.3, farKerb: 'none', source: 'trial' }, cwNone = { style: 'none', source: 'kit' }
-  const K = run({ style: 'none', source: 'kit', crosswalks: cw }).curbCutTally || {}
-  const Kc = run({ style: 'none', source: 'kit', crosswalks: cw }).crosswalkTally || {}
-  const Dg = run({ style: 'diagonal', ...dims, source: 'trial', crosswalks: cwNone })
-  const Pp = run({ style: 'perpendicular', ...dims, source: 'trial', crosswalks: cw })
+  // the NORM trials run with fetched-but-empty kerb evidence: a town whose real kerb records decide some corners would
+  // otherwise move every per-junction count below by however many it decides — those trials measure the norm alone
+  // — and with the town's AUTHORED curb cuts lifted out (every other authored value kept): an authored corner is the
+  // product, not noise, but it is not the norm, and these rows count the norm
+  const noKerbs = { fetched: true, records: [] }
+  const unCut = structuredClone(f.blockCustoms || {})
+  for (const a of Object.values(unCut)) for (const b of Object.values(a)) for (const v of Object.values(b)) if (v && typeof v === 'object') delete v.curbCuts
+  const K = run({ style: 'none', source: 'kit', crosswalks: cw }, unCut, noKerbs).curbCutTally || {}
+  const Kc = run({ style: 'none', source: 'kit', crosswalks: cw }, unCut, noKerbs).crosswalkTally || {}
+  const Dg = run({ style: 'diagonal', ...dims, source: 'trial', crosswalks: cwNone }, unCut, noKerbs)
+  const Pp = run({ style: 'perpendicular', ...dims, source: 'trial', crosswalks: cw }, unCut, noKerbs)
   const J = K.junction || 0
   // an authored leg on a town whose norm is 'none' but carries the jurisdiction's sizes: exactly that corner gets curb cuts
   const one = Pp.curbCutRecs[0]
@@ -56,9 +63,9 @@ if (args.includes('--selftest')) {
   let authored = null
   if (jx) {
     const leg = jx.legs[0], runs = st.runs.filter(r => r.skelId === leg.skelId && r.side === leg.side)
-    const bc = structuredClone(f.blockCustoms || {})
+    const bc = structuredClone(unCut)
     for (const r of runs) { const s = ((bc[r.skelId] ||= {})[r.side] ||= {}); s[r.segOrd] = { ...(s[r.segOrd] || {}), curbCuts: { start: 'diagonal', end: 'diagonal' } } }
-    authored = run({ style: 'none', ...dims, source: 'trial' }, bc).curbCutTally || {}
+    authored = run({ style: 'none', ...dims, source: 'trial' }, bc, noKerbs).curbCutTally || {}
   }
   // ⭐ THE EVIDENCE RUNG, on this town's real crossings: trial kerb nodes at both END vertices of every crossing way
   // (and three on a crossing's road node), bound and landed by the real code. Written to a temp file, never the town.
@@ -106,16 +113,36 @@ if (args.includes('--selftest')) {
   const corners = Dg.curbCutCorners || [], c0 = corners.find(c => c.slots?.[0] && c.slots?.[1])
   const slotJSON = (bc) => { const m = new Map(); for (const [k1, a] of Object.entries(bc || {})) for (const [k2, b] of Object.entries(a)) for (const [k3, v] of Object.entries(b)) m.set(`${k1}|${k2}|${k3}`, JSON.stringify(v)); return m }
   const changedSlots = (A, B) => { const a = slotJSON(A), b = slotJSON(B); let n = 0; for (const k of new Set([...a.keys(), ...b.keys()])) if (a.get(k) !== b.get(k)) n++; return n }
-  const bcP = c0 ? writeCornerCurbCut(f.blockCustoms, c0, 'perpendicular') : null
+  const bcP = c0 ? writeCornerCurbCut(unCut, c0, 'perpendicular') : null
   const recsAt = (R, c) => (R.curbCutRecs || []).filter(r => r.tile === c.tile && r.si === c.si && r.arc === c.arc).length
   const noneDims = { style: 'none', ...dims, source: 'trial', crosswalks: cwNone }
   const Same = c0 ? run(noneDims, bcP) : null
-  const bcX = c0 ? (() => { let b = writeCornerCurbCut(f.blockCustoms, { slots: [c0.slots[0]] }, 'diagonal'); return writeCornerCurbCut(b, { slots: [c0.slots[1]] }, 'perpendicular') })() : null
+  const bcX = c0 ? (() => { let b = writeCornerCurbCut(unCut, { slots: [c0.slots[0]] }, 'diagonal'); return writeCornerCurbCut(b, { slots: [c0.slots[1]] }, 'perpendicular') })() : null
   const Clash = c0 ? run(noneDims, bcX) : null
+  // ⭐ THE PERPENDICULAR FILL, read off what was painted: just behind each cut, up its landing past the curb and the cut's
+  // own depth, is WALK — the landing reaches the kerb — never lawn; and at each corner's wedge (`wedgeAt`, where the
+  // corner has room for one) is lawn where the wedge is lawn and walk where it is concrete. A point painted neither is
+  // off the drawing (the disc, or the curb) and skipped.
+  const cwOf = JSON.parse(readFileSync(`public/looks/${f.look}/design.json`, 'utf8')).curbWidth
+  const paintAt = (R) => { const idx = (rs) => (rs || []).map(r => { let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+      for (const [x, z] of r) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z) } return { r, x0, x1, z0, z1 } })
+    const pin = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c } return c }
+    const inAny = (I, [x, z]) => I.some(b => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1 && pin(x, z, b.r))
+    const W = idx(R.sidewalk), T = idx(Object.values(R.treelawnByLu || {}).flat())
+    return (P) => inAny(W, P) ? 'walk' : inAny(T, P) ? 'lawn' : null }
+  const ppAt = paintAt(Pp), behind = [], behindBad = []
+  for (const r of Pp.curbCutRecs || []) { if (r.style !== 'perpendicular') continue
+    const k = cwOf + dims.warningDepth + 0.15, v = r.along; if (!v) { behind.push('no landing direction'); continue }
+    const m = ppAt([r.at[0] + v[0] * k, r.at[1] + v[1] * k]); if (m) behind.push(m); if (m && m !== 'walk') behindBad.push(r.at) }
+  const apex = { lawn: [], concrete: [] }
+  for (const c of Pp.curbCutCorners || []) { if (!c.wedge || !c.wedgeAt) continue
+    const m = ppAt(c.wedgeAt); if (m) apex[c.wedge].push(m) }
   const rows = [
+    ['every perpendicular cut has walk behind it',  behind.length > 0 && behind.every(m => m === 'walk')],
+    ['a lawn wedge is lawn at the apex, a concrete one walk', apex.lawn.length > 0 && apex.lawn.every(m => m === 'lawn') && apex.concrete.every(m => m === 'walk')],
     ['every junction corner has a record + two leg slots', corners.length === J && corners.every(c => c.slots?.length === 2 && c.slots[0] && c.slots[1])],
-    ['a corner write touches exactly its two leg slots', !!c0 && changedSlots(f.blockCustoms, bcP) === 2],
-    ['clearing it returns the slots as they were',  !!c0 && changedSlots(f.blockCustoms, writeCornerCurbCut(bcP, c0, null)) === 0],
+    ['a corner write touches exactly its two leg slots', !!c0 && changedSlots(unCut, bcP) === 2],
+    ['clearing it returns the slots as they were',  !!c0 && changedSlots(unCut, writeCornerCurbCut(bcP, c0, null)) === 0],
     ['two legs authored alike draw that style',     !!Same && recsAt(Same, c0) === 2 && (Same.curbCutTally?.conflict || 0) === 0],
     ['two legs that disagree draw the unauthored style, counted', !!Clash && recsAt(Clash, c0) === 0 && Clash.curbCutTally?.conflict === 1 && (Clash.curbCutConflicts || []).length === 1],
     ['recorded crossings land on both kerbs, opposite sides', XL.landed > 0 && [...xById.values()].every(v => v.length === 2 && v[0].S === v[1].S && v[0].side !== v[1].side)],
@@ -140,7 +167,8 @@ if (args.includes('--selftest')) {
     ['kit norm paints nothing',           (K.curbCuts || 0) === 0],
     ['…and every junction is noSource',   J > 0 && K.noSource === J],
     ['diagonal: one curb cut per junction',   (Dg.curbCutTally?.curbCuts || 0) === J],
-    ['perpendicular: two per junction',   (Pp.curbCutTally?.curbCuts || 0) === 2 * J],
+    ['perpendicular: two per junction, but each missing landing counted', (Pp.curbCutTally?.curbCuts || 0) + (Pp.curbCutTally?.perpNoLanding || 0) === 2 * J
+      && (Pp.curbCutCorners || []).reduce((n, c) => n + (c.noLanding || 0), 0) === (Pp.curbCutTally?.perpNoLanding || 0)],
     ['every curb cut is on a junction',       [...Dg.curbCutRecs, ...Pp.curbCutRecs].every(r => Number.isInteger(r.junction))],
     ['strips are painted',                (Dg.curbCut?.length || 0) > 0 && (Pp.curbCut?.length || 0) > (Dg.curbCut?.length || 0)],
     ['an authored leg places curb cuts',      !!authored && authored.curbCuts > 0 && authored.curbCuts < J && (authored.bySource?.authored || 0) > 0],
@@ -154,6 +182,7 @@ if (args.includes('--selftest')) {
   console.log(`  (crossings: ${CX.census.records} bound · ${XL.landed} landed on both kerbs (ends ${XL.ends.arc} arc / ${XL.ends.nearTangent} near-tangent / ${XL.ends.leg} leg) · ${XL.noHit} no hit · ${XL.notOwned} not owned · ${XL.sameSide} same side → ${CT.byEvidence} crosswalk(s) placed by a recorded crossing · ${recordedApexOutside} refused for leaving the apex outside)`)
   console.log(`  (crosswalks, diagonal + byCorner: ${CT.crosswalks} drawn · ${CT.pairs} between two cuts · ${CT.farKerbCut} to a far-kerb cut · ${CT.farCornerNoCut} far corner without a cut · ${CT.noFarKerb} no far kerb · ${CT.endsNotOwned} ends not owned · ${CT.ambiguous} ambiguous · ${CT.styleDisagrees} style disagrees · ${CT.apexesApart} cuts too far apart)`)
   console.log(`  (evidence trial: ${Elow.records.length} record(s) bound · landed ${L.landed}, refused ${L.notOwner} not-owner / ${L.offArc} off-arc / ${L.notJunction} not-junction / ${L.noHit} no-hit · lowered → ${Lo.bySource?.['osm:kerb'] || 0} corner(s) by evidence, ${Lo.unreadable || 0} unreadable (${Lo.contradicted || 0} contradict the norm) · raised → ${Up.curbCuts} cut(s) of ${J})`)
+  console.log(`  (perpendicular fill: behind ${behind.length} drawn cut(s): ${behind.filter(m => m === 'walk').length} walk${behindBad.length ? ` (not: ${behindBad.slice(0, 8).map(a => `(${a[0].toFixed(0)}, ${a[1].toFixed(0)})`).join(' ')})` : ''} · apex ${apex.lawn.length} lawn wedge(s): ${apex.lawn.filter(m => m === 'lawn').length} lawn · ${apex.concrete.length} concrete: ${apex.concrete.filter(m => m === 'walk').length} walk · ${Pp.curbCutTally?.perpNoLanding} leg(s) with no landing)`)
   console.log(`  (${scene}: ${J} junction corners · diagonal ${Dg.curbCutTally?.curbCuts} · perpendicular ${Pp.curbCutTally?.curbCuts} · authored ${authored?.curbCuts ?? '—'} · perpendicular crosswalks ${Pp.crosswalkTally?.pairs} paired, ${Pp.crosswalkTally?.farKerbNone} far-kerb none, ${Pp.crosswalkTally?.ambiguous} ambiguous)`)
   console.log(bad ? `⛔ selftest: ${bad} wrong` : '✅ selftest: the painter places curb cuts by evidence, norm and authoring, on junctions only')
   process.exit(bad ? 1 : 0)

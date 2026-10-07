@@ -836,7 +836,10 @@
 > notes the standard has no `innerSign` at all: "which side faces the median" **falls out of the block walk.**
 > ⛔ Still gated on the eye below; a cure for an inversion nobody has confirmed is a guess.
 > ▶ `node checks/claims-inboard-side-convention.mjs` · **the gate is the EYE: on a divided road in the lit
-> app, is the treelawn at the CURB or in the MEDIAN?** A consistent inversion renders as a planted median,
+> app, is the treelawn at the CURB or in the MEDIAN?** ⭐ **First evidence, 2026-10-07 (Sill): Section's own
+> output PAINTS walk + lawn on Huron's median noses** — (1695, 666) · (1027, 600) · (1016, 600), seen as perpendicular
+> curb cuts with lawn behind them (▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs huron --live --selftest`,
+> row *"every perpendicular cut has walk behind it"*). Painted, not yet seen in the lit app. A consistent inversion renders as a planted median,
 > which on a boulevard is plausible-looking — Layer 0 q2, which is how it could survive an eye gate. ⭐ **So it
 > is not a discriminator we lack — it is one that the `side` labels cannot currently support**, and it waits
 > on the walk's directed sides, which is the same root as the inverted `side` law on the list below.

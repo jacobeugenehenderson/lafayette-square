@@ -412,8 +412,10 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 - **TL↔TL** (both set back) → the lawn runs full width to each tangent and stops **blunt**; the pad
   (the walk continuing to the kerb) fills the arc behind it, tangent to tangent. See `§4`.
 - **A junction corner also carries CURB CUTS** — positions on the arc where the kerb drops, by the town's
-  norm or the operator (`curbCutsOnJunctionCorners`, `cartograph/curb-cut-norm.mjs`); a bend gets none. The pad
-  is unchanged; crosswalks run square across the street, centred on the cut that serves them, kerb to kerb
+  norm or the operator (`curbCutsOnJunctionCorners`, `cartograph/curb-cut-norm.mjs`); a bend gets none. A diagonal
+  corner keeps the pad; a **perpendicular** one runs each leg's walk straight on to the kerb in its own landing, a cut
+  where each lands, and a lawn wedge between at the apex — the whole corner walk when a leg has no lawn (`perpGeom`); a
+  walk that never meets the kerb gets no landing, counted. Crosswalks run square across the street, centred on the cut that serves them, kerb to kerb
   (`crosswalksSquareAcross`; a pair is matched on the junction node + the chain's two sides). ▶ `node checks/claims-every-junction-corner-has-a-curb-cut-source.mjs <scene>`
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
 - **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.
