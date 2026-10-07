@@ -26,7 +26,7 @@ const VERBOSE = argv.includes('--verbose')
 //    on two dead maps and on no town poured after the list was written. The bundled-LS difference
 //    the old comment preserved is real and still visible — `ribbonsPath` is where it now lives,
 //    once, instead of in a table per check.
-const SCENES = ribbonScenes(argv).map(s => [s === 'lafayette-square' ? `${s} (bundled)` : s, ribbonsPath(s)])
+const SCENES = ribbonScenes(argv).map(s => [s, ribbonsPath(s)])
 
 const vKey = (p) => p[0].toFixed(3) + ',' + p[1].toFixed(3)
 const curbed = (s) => !s.gradeSeparated && !s.disabled

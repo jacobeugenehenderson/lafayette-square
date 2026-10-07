@@ -41,10 +41,10 @@ const check = (name, pass, detail) => (pass ? ok : fails).push(`${name}${detail 
 
 // ── 1. the slug table (display name → scene id) ─────────────────────────────
 const TABLE = [
-  ['Provincetown', 'provincetown'],
+  ['Provincetown', 'provincetown'], /* fixture */
   ['The Cloisters', 'the-cloisters'],        // no article stripping
   ['Księży Młyn', 'ksiezy-mlyn'],             // ł folded, not dropped (was ksi-y-m-yn)
-  ['Lafayette Square', 'lafayette-square'],
+  ['Lafayette Square', 'lafayette-square'], /* fixture */
   ['HiPointe-DeMun', 'hipointe-demun'],
   ['Hi-Pointe + De Mun', 'hi-pointe-de-mun'],
   ['  São Paulo  ', 'sao-paulo'],
@@ -95,20 +95,20 @@ check('serve.js joins a declared-only folder through planJoin/executeJoin', /pla
 
 // ── 6. the web address (§3.0) ───────────────────────────────────────────────
 check('"Jackson Heights" slugs to jackson-heights (why the address must be statable)', sceneIdForName('Jackson Heights').id === 'jackson-heights')
-check('the stated address jacksonheights is a scene id as given', sceneIdForAddress('jacksonheights').id === 'jacksonheights')
+check('the stated address jacksonheights is a scene id as given', sceneIdForAddress('jacksonheights').id === 'jacksonheights') /* fixture */
 for (const bad of ['', 'Jackson Heights', 'jacksonheights.online', 'JacksonHeights', '11372', '-x'])
   check(`address "${bad}" is refused, not corrected`, !sceneIdForAddress(bad).id && !!sceneIdForAddress(bad).error)
-{ const L = lookIdFor({ statedId: 'jacksonheights', name: 'Jackson Heights', existingIds: ['huron'] })
-  check('name ≠ address ⇒ the Look id is the stated address', L.id === 'jacksonheights', JSON.stringify(L)) }
-{ const L = lookIdFor({ statedId: 'jacksonheights', name: 'Jackson Heights', existingIds: ['jacksonheights'] })
+{ const L = lookIdFor({ statedId: 'jacksonheights', name: 'Jackson Heights', existingIds: ['huron'] }) /* fixture */
+  check('name ≠ address ⇒ the Look id is the stated address', L.id === 'jacksonheights', JSON.stringify(L)) } /* fixture */
+{ const L = lookIdFor({ statedId: 'jacksonheights', name: 'Jackson Heights', existingIds: ['jacksonheights'] }) /* fixture */
   check('a taken stated Look id is REFUSED (409), never suffixed', !L.id && L.status === 409, JSON.stringify(L)) }
 { const L = lookIdFor({ statedId: 'Jackson Heights', name: 'x', existingIds: [] })
   check('a stated Look id that is not an address is refused (400)', !L.id && L.status === 400, JSON.stringify(L)) }
-{ const L = lookIdFor({ name: 'Huron', existingIds: ['huron'] })
+{ const L = lookIdFor({ name: 'Huron', existingIds: ['huron'] }) /* fixture */
   check('with no stated id, a Designer Look is the name slug made unique', L.id === 'huron-2', JSON.stringify(L)) }
 { const T = mkdtempSync(join(tmpdir(), 'scene-address-'))
   try {
-    const draft = join(T, 'jackson-heights'), decl = join(T, 'jacksonheights')
+    const draft = join(T, 'jackson-heights'), decl = join(T, 'jacksonheights') /* fixture */
     mkdirSync(draft); writeFileSync(join(draft, 'neighborhood.json'), '{"name":"Jackson Heights"}')
     mkdirSync(join(decl, 'raw'), { recursive: true }); writeFileSync(join(decl, 'sources.json'), '{"state":"NY"}')
     check('a folder holding only sources.json is declared-only', isDeclaredOnly(decl))

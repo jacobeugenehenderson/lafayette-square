@@ -100,8 +100,8 @@ check('every look with landmarks has a manifest entry of its OWN (none inherits 
   for (const [lookId, p] of paths) {
     const scene = sceneOf.get(lookId)
     if (!scene) { bad.push(`${lookId}: manifest entry but no scene in index.json`); continue }
-    // the path must live under this look's own data, or be LS's shared root for LS itself
-    if (!p.includes(`/${scene}/`) && lookId !== 'lafayette-square') {
+    // the path must live under this look's own data — every town's, Lafayette Square's included
+    if (!p.includes(`/${scene}/`)) {
       bad.push(`${lookId} → ${p} (not under its own scene dir)`)
     }
   }

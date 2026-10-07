@@ -82,8 +82,8 @@ check('the 2026-07-14 regression cannot recur — LS authoring does not reach a 
   if (!slotCount(lsAuthored.blockCustoms)) return 'the replay fixture carries no authoring; test is vacuous'
   // Target names only — `seedDesignForScene` is pure, so these need not be real towns. One that
   // does not exist is deliberate: the stripping must be scene-generic, i.e. correct for town #2.
-  for (const target of ['altadena', 'hipointedemun', 'a-town-nobody-has-poured-yet']) {
-    const { design: d, stripped } = seedDesignForScene(lsAuthored, 'lafayette-square', target)
+  for (const target of ['altadena', 'hipointedemun', 'a-town-nobody-has-poured-yet']) { /* fixture */
+    const { design: d, stripped } = seedDesignForScene(lsAuthored, 'lafayette-square', target) /* fixture */
     if (slotCount(d.blockCustoms)) return `${target} still received ${slotCount(d.blockCustoms)} blockCustoms slots`
     if (!stripped.length) return `${target}: nothing reported stripped — the drop was silent`
   }
@@ -93,7 +93,7 @@ check('the 2026-07-14 regression cannot recur — LS authoring does not reach a 
 // 2. Every declared field is actually dropped, not just blockCustoms.
 check('every declared scene-keyed field is dropped on a cross-scene seed', () => {
   const seed = { ...lsAuthored, cornerRadiusOverrides: { a: 1 }, cornerCornerRadiusOverrides: { b: 2 }, blockLandUse: { c: 3 } }
-  const { design: d } = seedDesignForScene(seed, 'lafayette-square', 'altadena')
+  const { design: d } = seedDesignForScene(seed, 'lafayette-square', 'altadena') /* fixture */
   const left = SCENE_KEYED_DESIGN_FIELDS.filter(f => d[f] != null)
   return left.length ? `survived the strip: ${left.join(', ')}` : null
 })
@@ -102,8 +102,8 @@ check('every declared scene-keyed field is dropped on a cross-scene seed', () =>
 //    ⛔ `trees` is NOT style: a roster holds only its own town's species (Jacob, 2026-09-25;
 //    claims-a-look-holds-only-its-towns-grove), so it is a town field and is stripped (check 3b).
 check('style still travels (palette / exposure / labels survive)', () => {
-  const { design: d } = seedDesignForScene(design('hipointedemun'), 'hipointedemun', 'altadena')
-  const src = design('hipointedemun')
+  const { design: d } = seedDesignForScene(design('hipointedemun'), 'hipointedemun', 'altadena') /* fixture */
+  const src = design('hipointedemun') /* fixture */
   const styled = ['luColors', 'materialColors', 'labels', 'exposure', 'bloom'].filter(f => src[f] != null)
   if (!styled.length) return 'fixture carries no style fields; test is vacuous'
   const lost = styled.filter(f => JSON.stringify(d[f]) !== JSON.stringify(src[f]))
@@ -113,8 +113,8 @@ check('style still travels (palette / exposure / labels survive)', () => {
 // 3b. The town's fields and its places never cross towns (lookDesign.mjs#SEED_STRIPPED_FIELDS) — Huron's copy of LS's
 //     parkTitlePos is the instance this closes.
 check("a cross-town seed carries none of the seed town's fields or places", () => {
-  const src = { ...design('lafayette-square'), parkTitlePos: [-22.48, -97.31], trees: [{ species: 'x' }], terrainExag: 1.5 }
-  const { design: d } = seedDesignForScene(src, 'lafayette-square', 'altadena')
+  const src = { ...design('lafayette-square'), parkTitlePos: [-22.48, -97.31], trees: [{ species: 'x' }], terrainExag: 1.5 } /* fixture */
+  const { design: d } = seedDesignForScene(src, 'lafayette-square', 'altadena') /* fixture */
   const left = SEED_STRIPPED_FIELDS.filter(f => d[f] != null)
   return left.length ? `travelled to another town: ${left.join(', ')}` : null
 })
@@ -122,9 +122,9 @@ check("a cross-town seed carries none of the seed town's fields or places", () =
 // 4. Same-scene cloning is untouched — duplicating a Look inside one town must
 //    keep that town's authoring. (`hipointedemun` has 17 real slots.)
 check('a SAME-scene clone keeps its own authoring', () => {
-  const src = design('hipointedemun')
+  const src = design('hipointedemun') /* fixture */
   if (!slotCount(src.blockCustoms)) return 'fixture carries no authoring; test is vacuous'
-  const { design: d, stripped } = seedDesignForScene(src, 'hipointedemun', 'hipointedemun')
+  const { design: d, stripped } = seedDesignForScene(src, 'hipointedemun', 'hipointedemun') /* fixture */
   if (slotCount(d.blockCustoms) !== slotCount(src.blockCustoms)) return `lost ${slotCount(src.blockCustoms) - slotCount(d.blockCustoms)} slots`
   return stripped.length ? `reported a strip on a same-scene clone: ${stripped.join(', ')}` : null
 })
@@ -133,11 +133,11 @@ check('a SAME-scene clone keeps its own authoring', () => {
 //    scene-keyed field must refuse, not travel. Synthesised with a real street
 //    name from the seed scene's own bake, so it is the genuine failure shape.
 check('an UNDECLARED scene-keyed field REFUSES (409) instead of travelling', () => {
-  const names = bakedStreetNames('lafayette-square')
+  const names = bakedStreetNames('lafayette-square') /* fixture */
   if (!names?.size) return 'lafayette-square has no bake; cannot synthesise the case'
   const street = [...names][0]
   const seed = { ...lsAuthored, someFutureFieldNobodyDeclared: { [`${street}|left|0`]: 42 } }
-  try { seedDesignForScene(seed, 'lafayette-square', 'altadena') }
+  try { seedDesignForScene(seed, 'lafayette-square', 'altadena') } /* fixture */
   catch (err) {
     if (err.statusCode !== 409) return `refused with statusCode ${err.statusCode}, expected 409`
     if (!/someFutureFieldNobodyDeclared/.test(err.message)) return `the refusal does not name the offending field: ${err.message}`

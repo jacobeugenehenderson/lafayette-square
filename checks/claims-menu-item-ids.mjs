@@ -25,9 +25,7 @@ import { ensureMenuIds, auditMenuIds, indexMenuItems } from '../src/lib/menuIden
 // ⛔ The pair was typed here, so a town onboarded with a menu was simply not audited — silently,
 //    which is the worst shape for a check about identity. Discovered now; LS's bundled location is
 //    the same palimpsest asymmetry as its ribbons (`ORIENTATION`, the shared-default paths).
-const menusPath = (s) => s === 'lafayette-square'
-  ? 'cartograph/data/lafayette-square/content/menus.json'
-  : `cartograph/data/${s}/content/menus.json`
+const menusPath = (s) => `cartograph/data/${s}/content/menus.json`
 const PAYLOADS = scenes('<scene>', {
   has: (s) => existsSync(new URL(`../${menusPath(s)}`, import.meta.url)),
   label: 'menus.json',

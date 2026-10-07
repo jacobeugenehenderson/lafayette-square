@@ -29,12 +29,13 @@
 // Read-only. Exits 1 when a poured installation would feather on someone else's disc.
 import fs from 'fs'
 import path from 'path'
+import { DEFAULT_MAP } from '../cartograph/scene.js'
 
 const APP = 'src/cartograph/CartographApp.jsx'
 const V2 = 'src/cartograph/BlockGeometryV2Debug.jsx'
 const BOUNDARY = 'src/cartograph/boundary.js'
 const DATA = 'cartograph/data'
-const DEFAULT_INSTALLATION = 'lafayette-square'
+const DEFAULT_INSTALLATION = DEFAULT_MAP   // the one held default-map name (cartograph/scene.js), never retyped
 
 const read = (p) => {
   if (!fs.existsSync(p)) throw new Error(`⛔ ${p} is gone — the guard is blind; fix the path before trusting a PASS`)

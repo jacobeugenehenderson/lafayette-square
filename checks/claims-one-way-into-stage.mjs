@@ -63,7 +63,7 @@ for (const scene of towns) for (const shot of STAGE) {
   else trips++
 }
 const planted = A.parseStagePath('/stage/huron/browse')
-if (planted?.scene !== 'huron' || planted?.shot !== 'browse') bad('parseStagePath does not read a planted /stage/huron/browse — the round-trip above means nothing')
+if (planted?.scene !== 'huron' || planted?.shot !== 'browse') bad('parseStagePath does not read a planted /stage/huron/browse — the round-trip above means nothing') /* fixture */
 else ok(`/stage/<town>/<shot> round-trips ${trips} town × shot pairs; a bare /stage/<town> opens on ${A.parseStagePath('/stage/huron').shot}`)
 const stageUrl = A.addressUrl('http://x/cartograph?scene=huron&debug=1', looks, { scene: 'huron', lookId: A.lookForScene(looks, 'huron', null), shot: 'browse', stage: true })
 const designerUrl = A.addressUrl('http://x/stage/huron/browse?debug=1', looks, { scene: 'huron', lookId: A.lookForScene(looks, 'huron', null), shot: 'designer', stage: false })

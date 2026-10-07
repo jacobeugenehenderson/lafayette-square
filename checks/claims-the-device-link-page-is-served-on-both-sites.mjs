@@ -42,7 +42,7 @@ await expect('staging  /huron/link/AbC123 → the player page',
   await staging.fetch(new Request('https://staging.theward.online/huron/link/AbC123'), stgEnv), 'STAGING-INDEX')
 
 const prodEnv = { ASSETS: bucket({
-  'hosts/provincetown.online.json': JSON.stringify({ v: 2, app: 'legacy', map: 'provincetown', look: 'provincetown', domain: 'provincetown.online' }),
+  'hosts/provincetown.online.json': JSON.stringify({ v: 2, app: 'legacy', map: 'provincetown', look: 'provincetown', domain: 'provincetown.online' }), /* fixture */
   'player/provincetown/index.html': 'PROD-INDEX', 'baked/provincetown/manifest.json': '{}' }) }
 await expect('prod     provincetown.online/link/AbC123 → the player page',
   await production.fetch(new Request('https://provincetown.online/link/AbC123'), prodEnv), 'PROD-INDEX')

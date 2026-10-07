@@ -308,7 +308,7 @@ if (fail.length || noReason.length) {
   console.log(`\n⛔ FAIL — ${fail.length + noReason.length} in-domain writer(s) can be run without naming the town.`)
   for (const [f, how] of fail) console.log(`   ${f}  (writes ${how}; signals: ${signalsFor(f).join(', ')})`)
   for (const f of noReason) console.log(`   ${f}  (@scene-independent with no reason given)`)
-  console.log(`\n   Each will silently target 'lafayette-square' when the operator forgets, overwriting`)
+  console.log(`\n   Each will silently target the default map (cartograph/scene.js DEFAULT_MAP) when the operator forgets, overwriting`)
   console.log(`   a real build with another town's run. Either call ${GUARD}('<name>') from`)
   console.log(`   ${GUARD_MODULE} — the ONE resolver, which reads --scene= AND CARTOGRAPH_SCENE — or, if the`)
   console.log(`   writer genuinely has no scene, say so IN THE FILE with a reason:`)

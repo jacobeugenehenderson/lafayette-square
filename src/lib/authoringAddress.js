@@ -68,7 +68,6 @@ export function readAddress() {
   } catch { /* no window: a node importer */ }
   try {
     for (const [k, key] of Object.entries(ADDRESS_STORAGE)) stored[k] = localStorage.getItem(key) || null
-    if (stored.scene === 'neighborhood') stored.scene = 'lafayette-square'   // the legacy stored name of that one town
   } catch { /* no storage */ }
   return { url, stored }
 }

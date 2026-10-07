@@ -12,15 +12,16 @@
  *   3. GPU LOAD: a fullscreen shader looping 8,000 times per pixel, drawn inside the timed window (window.__burnGpuLoops),
  *      raises GPU ms past both 25% and twice the rest noise, and main ms by < 5.
  *
- * ⛔ READ-ONLY. Usage: node checks/claims-preview-frame-cost-splits.mjs [--town=lafayette-square] [--base=http://localhost:5173]
+ * ⛔ READ-ONLY. Usage: node checks/claims-preview-frame-cost-splits.mjs --town=<town> [--base=http://localhost:5173]
  */
 import { spawn, execSync } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1]
-const TOWN = arg('town') || 'lafayette-square'
+const TOWN = requiredTown('town')
 const BASE = arg('base') || 'http://localhost:5173'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 

@@ -33,10 +33,11 @@
 // Read-only. Exits 1 when a town has overlapping coplanar polygons that could fight.
 import fs from 'fs'
 import path from 'path'
+import { DEFAULT_MAP } from '../cartograph/scene.js'
 
 const SRC = 'src/cartograph/MapLayers.jsx'
 const DATA = 'cartograph/data'
-const DEFAULT_INSTALLATION = 'lafayette-square'
+const DEFAULT_INSTALLATION = DEFAULT_MAP   // the one held default-map name (cartograph/scene.js), never retyped
 
 const src = fs.existsSync(SRC) ? fs.readFileSync(SRC, 'utf8') : null
 if (src === null) throw new Error(`⛔ ${SRC} is gone — the guard is blind; fix the path before trusting a PASS`)
