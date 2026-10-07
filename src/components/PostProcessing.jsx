@@ -266,15 +266,19 @@ export function StageFog({ lookId, bakeLastMs, mistOverride, enabled = true }) {
   const sceneJson = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const mistChannel = mistOverride ?? sceneJson?.mist ?? MIST_DEFAULT_CHANNEL
 
+  // ⛔ THE FOG IS NEVER REMOVED, ONLY ZEROED. Fog is part of every material's program key (USE_FOG), so taking
+  // `scene.fog` away — as entering Browse did (Town: off in plan) — relinked the whole town on the first Browse flight:
+  // ground, buildings, lamps, the revetment, every tree card (measured on huron, the 761 + 652 ms freeze, 2026-10-07).
+  // Off is density 0, a uniform: the same picture (exp(-0) leaves every fragment unfogged) and nothing recompiles.
   useEffect(() => {
-    if (!enabled) { threeScene.fog = null; fogRef.current = null; return }
     threeScene.fog = new THREE.FogExp2(MIST_FLAT_DEFAULTS.color, 0)
     fogRef.current = threeScene.fog
     return () => { threeScene.fog = null; fogRef.current = null }
-  }, [threeScene, enabled])
+  }, [threeScene])
 
   useFrame(() => {
     if (!fogRef.current) return
+    if (!enabled) { fogRef.current.density = 0; return }
     const tod = useTimeOfDay.getState()
     const slotMins = getTodSlotMinutes(tod.currentTime)
     const m = resolveGroupAtMinute(mistChannel, tod.getMinuteOfDay(), slotMins, MIST_FIELD_KEYS, MIST_FLAT_DEFAULTS)

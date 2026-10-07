@@ -231,8 +231,12 @@ function RevealGate({ need, lingerMs, skyAt }) {
     const was = groups.map((g) => g.visible)
     let compiled
     markTimeline('gate', 'compile ahead: start')
-    try { for (const g of groups) g.visible = true; compiled = gl.compileAsync(scene, camera) }
-    finally { groups.forEach((g, i) => { g.visible = was[i] }) }
+    // Compiled AS DRAWN: into a render target, as the post composer draws the town (three keys a program on its output
+    // colour space: linear into a target, sRGB to the screen). Compiled against the screen, every program here was the
+    // WRONG variant — work wasted, the right one linked again in the prepare draw (measured, huron, 2026-10-07).
+    const prevTarget = gl.getRenderTarget()
+    try { for (const g of groups) g.visible = true; gl.setRenderTarget(rt); compiled = gl.compileAsync(scene, camera) }
+    finally { groups.forEach((g, i) => { g.visible = was[i] }); gl.setRenderTarget(prevTarget) }
     phase.current = { name: 'compile', groups }
     const next = () => { markTimeline('gate', 'compile ahead: done'); phase.current = { name: 'prep', groups, i: 0 } }
     compiled.then(next, (e) => { console.error('[reveal] ⛔ compiling the town ahead failed:', e); next() })
