@@ -626,9 +626,10 @@ const DAY = {
   bloom:    { intensity: [1.2, 0.9, 0.5, 2.5, 1.5, 1.0, 1.1, 0.5], threshold: [0.45, 0.55, 0.05, 0.2, 0.4, 0.4, 0.35, 0.5],
               spread: [0.45, 0.6, 0.5, 0.95, 0.8, 0.5, 0.2, 0.1], warmCool: [0.35, 0.65, 0.5, 0.85, 0.8, 0.45, 0.5, 0.3] },
   // Depth of field, relative to the focus point (Focus › Focus on): none at Noon (Jacob's call, a crisp dollhouse),
-  // a narrow window at Golden, none at night so the lights and stars stay points.
+  // a narrow window at Golden, none at night so the lights and stars stay points. What is in focus is sharp at every
+  // slot (heroBlur 0; Jacob 2026-10-07: the monument must never go blurry).
   dof:      { blur: [0.2, 0.15, 0, 0.2, 0.08, 0.1, 0, 0],
-              heroBlur: [0, 0, 0, 0.02, 0, 0, 0, 0], softness: [0.5, 0.5, 0.4, 0.2, 0.5, 0.5, 0.5, 0.5],
+              heroBlur: [0, 0, 0, 0, 0, 0, 0, 0], softness: [0.5, 0.5, 0.4, 0.2, 0.5, 0.5, 0.5, 0.5],
               melt: [0.56, 0.56, 0, 0.1, 0.56, 0.56, 0.56, 0.56] },
   grain:    { scale: [0.9, 0.7, 0.4, 0.7, 0.8, 1.0, 1.3, 1.1] },
   // Neon: which buildings light is their HOURS' business; this is how they read. At noon a solid colour band
