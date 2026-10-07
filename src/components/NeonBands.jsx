@@ -175,6 +175,9 @@ function buildTube(place, tubeRadius) {
   // the sign rides its wall exactly as the wall is lifted (src/lib/buildingLift.js).
   const centroidY = place.groundYRaw ?? 0
   const groundY = place.groundY
+  // ⛔ A sign with no groundY lifts by NaN: neither drawn nor pickable, and silent — every sign vanished that way once
+  // (2026-10-06, SceneNeon not passing it). Refused, by name.
+  if (!Number.isFinite(groundY)) { console.error(`[NeonBands] ⛔ a sign on ${place.buildingId ?? 'a building'} has no groundY (${groundY}) — not drawn. The place must carry the building's groundY (SceneNeon → neonPlaces).`); return null }
 
   const VPR = CROSS_SEGS + 1
   const positions = []
