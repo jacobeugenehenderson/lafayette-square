@@ -44,9 +44,8 @@ import { writeIfChanged } from './io.js'
 import { LANDSCAPE_OVERLAY_KEYS, horizonRecord } from './groundCover.mjs'   // one definition of areal cover (the horizon, its check)
 import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
-import { conformAndRefine, findTJunctions } from './groundConformity.js'
-import { kerbRegions, curblessSegments, taperRegions, sliceByRegions, blockInside, makeHeightField, liftBuffer, riserFromEdges } from './kerbLift.mjs'
-import { intersectRings as _ringsIntersect } from '../src/lib/buildBlockGeometryV2.js'
+import { conformAndRefine, findTJunctions, cutAlong } from './groundConformity.js'
+import { kerbPlan, makeHeightField, liftBuffer, riserFromEdges } from './kerbLift.mjs'
 import { requireExplicitMap, ribbonsPathOf } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
@@ -291,6 +290,7 @@ const PAINT_ORDER = [
 // only what nothing else covers. The bed is one — a shore ribbon or a pier over the water
 // keeps its shape and the bed loses the overlap.
 const FLOOR_KEYS = new Set(['mat:bed'])
+
 
 // Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
 // MapLayers.jsx's stripeRibbonGeo widths so the bake matches the live render.
@@ -1156,18 +1156,10 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     throw new Error(`[bake-ground] ⛔ the kerb stands ${kerbH} m and ${curbCutRamps.length} curb cut(s) drop it, but the town's kerb norm gives no rampSlope/flareSlope — the jurisdiction's values, never the kit's (norms.json → kerb).`)
   // ⭐ Where no curb is drawn the block slopes down flush (Jacob, 2026-10-06, Q1): the curbless stretches of every block
   // edge, read off the POST-PAINT curb (an alley painted over the curb makes its mouth curbless), each carry a taper.
-  const kerbInside = kerbH ? blockInside(blockRings) : null
   const ringsOf = (items) => (items || []).flatMap(it => Array.isArray(it) ? [it] : [it.outer, ...(it.holes || [])])
-  const curbless = kerbH ? curblessSegments(blockRings, [...ringsOf(flattened.get('mat:curb')), ...ringsOf(flattened.get('mat:curbCut'))]) : []
-  const curblessM = curbless.reduce((n, [a, b]) => n + Math.hypot(b[0] - a[0], b[1] - a[1]), 0)
-  if (kerbH && curbless.length && !(kerb.taperRun > 0))
-    throw new Error(`[bake-ground] ⛔ the kerb stands ${kerbH} m and ${curblessM.toFixed(0)} m of block edge has NO curb drawn (alleys, shoulders, land meeting the road), where the block slopes down flush — but the town's kerb norm gives no taperRun, the town's value, never the kit's (norms.json → kerb.taperRun, metres).`)
-  const kerbRegs = kerbH ? [...kerbRegions(curbCutRamps, kerb), ...taperRegions(curbless, kerb.taperRun, kerbInside)] : []
-  const sliceForKerb = (polys) => {
-    if (!kerbRegs.length || !polys.length) return polys
-    const rings = polys.flatMap(p => [p.outer, ...(p.holes || [])])
-    return ringsToHoledPolys(sliceByRegions(rings, kerbRegs, { intersect: _ringsIntersect, difference: differenceRings }))
-  }
+  const { inBlock: kerbInside, curblessM, regions: kerbRegs } = kerbH
+    ? kerbPlan({ blockRings, curbRings: [...ringsOf(flattened.get('mat:curb')), ...ringsOf(flattened.get('mat:curbCut'))], ramps: curbCutRamps, kerb })
+    : { inBlock: null, curblessM: 0, regions: [] }
   const _planMemo = new Map()
   const planGroup = (kind, key) => {
     const mk = kind + ':' + key
@@ -1282,7 +1274,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // tarmac's hole and the stripe share every edge. Only water, which tints rather
     // than replaces, lies over the ground instead of in it.
     const inPartition = !DOES_NOT_CUT.has(kind + ':' + key)
-    return { polys: sliceForKerb(toPolys(items)), refinePolicy, onGroundPlane, inPartition }
+    return { polys: toPolys(items), refinePolicy, onGroundPlane, inPartition }
   }
 
   // ⭐⭐ THE GROUND STRETCHES, IT DOES NOT BREAK (H-21). Every group on the plane is
@@ -1303,7 +1295,14 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     }
     const _tc = Date.now()
     const cstats = {}
-    const bufs = conformAndRefine(planeSpecs, cstats)
+    let bufs = conformAndRefine(planeSpecs, cstats)
+    // ⭐ THE KERB'S CREASES ARE CUT INTO THE CONFORMED MESH, never into the paint (`groundConformity.js#cutAlong`): every
+    // ramp, flare and taper outline becomes mesh edges, so the height on it is exact; the polygons stay as pressed.
+    if (kerbRegs.length) {
+      const cut = {}
+      bufs = cutAlong(bufs, kerbRegs.flatMap(g => g.poly.map((p, i) => [p, g.poly[(i + 1) % g.poly.length]])), cut)
+      console.log(`  [kerb] creases cut into the conformed ground: ${cut.segments} segment(s) · ${cut.crossed} triangle(s) crossed · ${cut.inserted} point(s) inserted · ${cut.edgeSplits} edge split(s) · ${cut.trisBefore} → ${cut.trisAfter} triangles in ${(cut.ms / 1000).toFixed(1)}s`)
+    }
     groundShape = { terrain: hasTerrain, groups: Object.fromEntries(planeKeys.map((k, i) => [k, {
       refine: planeSpecs[i].refine?.mode ?? 'none',
       ...(planeSpecs[i].refine?.maxEdge ? { maxEdgeM: planeSpecs[i].refine.maxEdge } : {}),
@@ -1321,17 +1320,17 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
         + `a ${w.vertexGroup} vertex on a ${w.edgeGroup} edge. Refusing to write a ground that cracks.`)
     }
     if (kerbH) {
-      const field = makeHeightField(kerbInside, kerbRegs, kerbH)
-      const lifted = planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), field) }))
+      const field = makeHeightField(kerbRegs, kerbH)
+      const lifted = planeKeys.map(k => ({ key: k.slice(k.indexOf(':') + 1), ...liftBuffer(planeBuffers.get(k), field, kerbInside) }))
       lifted.forEach((L, i) => planeBuffers.set(planeKeys[i], { positions: L.positions, indices: L.indices }))
       kerbRiser = riserFromEdges(lifted, new Set(['curb', 'curbCut']))
       kerbField = field
       const bare = Object.entries(kerbRiser.bareM).sort((a, b) => b[1] - a[1])
       console.log(`  [kerb] the block stands ${kerbH} m (${kerb.source}) · ${curbCutRamps.length} cut(s) ramp it to 0 at ${kerb.rampSlopeText ?? '—'}, flares ${kerb.flareSlopeText ?? '—'} · ${curblessM.toFixed(0)} m of curbless edge tapers flush over ${kerb.taperRun ?? '—'} m · riser ${kerbRiser.kerbM.toFixed(0)} m · ${lifted.reduce((n, L) => n + L.split, 0)} vertices split at the kerb`)
       // ⛔ After the tapers, a lifted edge meeting the road with neither a kerb nor a taper is a DEFECT of this construction
-      // (a curbless stretch the segment finder missed) — refused by name, never baked as a step with no face.
+      // (a curbless edge the finder missed) — refused by name, never baked as a step with no face.
       if (bare.length) throw new Error(`[bake-ground] ⛔ ${bare.reduce((n, [, m]) => n + m, 0).toFixed(0)} m of lifted block still meets the road as a STEP with no kerb face and no taper — `
-        + bare.slice(0, 8).map(([k, m]) => `${k} ${m.toFixed(0)} m`).join(' · ') + `. The curbless finder missed it (kerbLift.mjs#curblessSegments). Refusing to bake a step with no face.`)
+        + bare.slice(0, 8).map(([k, m]) => `${k} ${m.toFixed(0)} m (at ${kerbRiser.bareAt[k].map(([x, z]) => `(${x.toFixed(0)}, ${z.toFixed(0)})`).join(' ')})`).join(' · ') + `. The curbless finder missed it (kerbLift.mjs#curblessEdges). Refusing to bake a step with no face.`)
     }
     console.log(`  [bake-ground] ground partition conformed as one mesh: ${planeSpecs.length} groups, `
       + `${cstats.inputTJunctions} input T-junctions closed, ${cstats.closures} refinement closures, ${cstats.refineTJunctions} hairline T-junctions closed after refining (≤${cstats.passes} passes), 0 left `
@@ -1372,7 +1371,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
       ? planeBuffers.get(kind + ':' + key)
       : conformAndRefine([{ polys: plan.polys, refine: plan.refinePolicy, yLift }])[0]
     // water (and anything else off the partition) rides the raised block too, or a pond inside it sinks under the lawn
-    if (!inPartition && kerbField) ({ positions, indices } = liftBuffer({ positions, indices }, kerbField))
+    if (!inPartition && kerbField) ({ positions, indices } = liftBuffer({ positions, indices }, kerbField, kerbInside))
     if (inPartition && yLift) for (let i = 1; i < positions.length; i += 3) positions[i] += yLift   // ADDED: a raised block keeps its kerb height under the slot
     if (indices.length === 0) continue
     let perField = null

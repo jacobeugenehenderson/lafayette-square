@@ -1,54 +1,93 @@
 // kerbLift.mjs — THE RAISED KERB, as geometry the ground bake applies (`BRIEF-corner-ramps-and-kerb §3` step 5).
 //
 // ⭐ RULED (2026-10-06): the WHOLE block inboard of the kerb face lifts by the town's authored height h (curb, walk, lawn,
-// land use — everything inside the frozen curb ring `iA`, alleys and paths painted inside it included); the asphalt —
-// everything outside `iA` — stays at 0. A RISER stands where the kerb is drawn; each curb cut slopes h → 0.
+// land use — alleys and paths painted inside it included); the road stays at 0. A RISER stands where the kerb is drawn;
+// each curb cut slopes h → 0.
+// ⭐ WHAT LIFTS is the painter's own block (`pr.block`, the partition Section paints into: every land use, lawn, walk and
+// curb lies inside it and no road does — measured LS + Huron, 2026-10-07). One source; never a second list of groups.
 // ⭐ h lives in the mesh's own y, UNEXAGGERATED: the runtime adds terrain × uExag on top (`terrainShader.js`), and a
 // 15 cm kerb that grew with the town's exaggeration would be a Class D constant in disguise.
 //
 // The construction reads the mesh, never snaps to it:
 //   · a cut is a RAMP (the cut's kerb-face span × the ramp run h/rampSlope, inward) and two FLARE triangles (run
-//     h/flareSlope along the kerb). Their outlines are SLICED into every ground polygon before triangulation, so their
-//     crease lines are mesh edges and the height on them is exact (`sliceByRegions`).
-//   · each triangle is inside or outside the block by its centroid; a vertex both sides use is split in two, and an
-//     inside vertex takes the height field (`liftBuffer`).
+//     h/flareSlope along the kerb). Their outlines are CUT INTO THE CONFORMED MESH (`groundConformity.js#cutAlong`), so
+//     their crease lines are mesh edges — the paint is never sliced.
+//   · each triangle lifts by its group's class; a vertex both a lifted and an unlifted triangle use is split in two,
+//     and a lifted vertex takes the height field (`liftBuffer`).
 //   · the riser is every mesh edge with a lifted triangle on one side and an unlifted one on the other — built from
 //     the conformed mesh itself, so it shares the ground's vertices and cannot crack (`riserFromEdges`).
 // ⭐ WHERE NO CURB IS DRAWN, THE BLOCK SLOPES DOWN FLUSH (Jacob, 2026-10-06, Q1): a highway shoulder, an alley mouth, land
-//   that just meets the road. Each curbless stretch of the block's edge (`curblessSegments`) carries a TAPER — a slice
-//   `taperRun` deep (the town's value, `kerb.taperRun`), 0 at the road to h at the run — so it has no step and no riser.
-//   Raised where a curb is, flush where none is. ⛔ A step left without a riser after that is a defect, and is counted.
-import clipperLib from 'clipper-lib'
+//   that just meets the road. Every stretch of a block ring's OWN edge with no curb drawn inboard of it (`curblessEdges`
+//   — split exactly where the post-paint curb starts and stops, never a rounded copy) carries a TAPER `taperRun` deep
+//   (the town's value), 0 at the road to h at the run. ⛔ A step left without a riser after that is a defect, counted.
+// ⚠️ A region claims a point within `TOL` of it: the partition sits on Clipper's 1 mm grid, so a curbless edge's own
+//   vertices can sit half a millimetre off the taper base drawn along it, and the clamp then puts them exactly on it.
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1]], dot = (a, b) => a[0] * b[0] + a[1] * b[1]
-const SCALE = 1000                                  // clipper integer units per metre → 1 mm, as the rest of the bake
 
-/** The stretches of the block edge with NO curb drawn: the block rings' outlines, as open paths, less the drawn curb
- *  (the post-paint curb + cut strips, grown by 1 mm so a shared edge reads as covered). Returns [[A, B], …] segments. */
-export function curblessSegments(blockRings, curbRings) {
-  const { Clipper, ClipperOffset, PolyTree, ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
-  const toP = (r) => r.map(([x, z]) => ({ X: Math.round(x * SCALE), Y: Math.round(z * SCALE) }))
-  const co = new ClipperOffset()
-  for (const r of curbRings) if (r?.length >= 3) co.AddPath(toP(r), JoinType.jtMiter, EndType.etClosedPolygon)
-  const grown = []; co.Execute(grown, 1)              // 1 clipper unit = 1 mm
-  const c = new Clipper()
-  for (const r of blockRings) if (r?.length >= 3) c.AddPath([...toP(r), toP(r)[0]], PolyType.ptSubject, false)
-  for (const g of grown) c.AddPath(g, PolyType.ptClip, true)
-  const tree = new PolyTree()
-  c.Execute(ClipType.ctDifference, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
-  const segs = []
-  for (const path of Clipper.OpenPathsFromPolyTree(tree))
-    for (let i = 0; i + 1 < path.length; i++) segs.push([[path[i].X / SCALE, path[i].Y / SCALE], [path[i + 1].X / SCALE, path[i + 1].Y / SCALE]])
-  return segs.filter(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1]) > 1e-3)
+/** A point-in-rings test over many rings (even-odd), bucketed by z rows so a point costs one row. */
+export function ringsInside(rings) {
+  const ROW = 8, rows = new Map()
+  for (const r of rings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+    const a = r[j], b = r[i]; if (a[1] === b[1]) continue
+    for (let k = Math.floor(Math.min(a[1], b[1]) / ROW); k <= Math.floor(Math.max(a[1], b[1]) / ROW); k++)
+      (rows.get(k) || rows.set(k, []).get(k)).push([a, b])
+  }
+  return (P) => { let c = false
+    for (const [a, b] of rows.get(Math.floor(P[1] / ROW)) || [])
+      if ((a[1] > P[1]) !== (b[1] > P[1]) && P[0] < (b[0] - a[0]) * (P[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c
+    return c }
 }
 
-/** A TAPER per curbless segment: the segment × `taperRun` inward (the block side, by `inside`), 0 → h linearly. */
-export function taperRegions(segments, taperRun, inside) {
+/** The stretches of the block rings' own edges with NO curb drawn inboard of them. `blockRings` (the painter's block),
+ *  `curbRings` (the post-paint curb + cut strips: an alley painted over the curb makes its mouth curbless). Each edge is
+ *  split where a line 1 mm inboard of it crosses the curb, and each piece kept when its middle lies on no curb. Returns
+ *  [{ A, B, inward }] on the block edge's own line, `inward` toward the block. */
+export function curblessEdges(blockRings, curbRings) {
+  const inBlock = ringsInside(blockRings), inCurb = ringsInside(curbRings), E = 1e-3, CELL = 8, cells = new Map()
+  for (const r of curbRings) for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]
+    for (let x = Math.floor(Math.min(a[0], b[0]) / CELL); x <= Math.floor(Math.max(a[0], b[0]) / CELL); x++)
+      for (let z = Math.floor(Math.min(a[1], b[1]) / CELL); z <= Math.floor(Math.max(a[1], b[1]) / CELL); z++)
+        (cells.get(`${x},${z}`) || cells.set(`${x},${z}`, []).get(`${x},${z}`)).push([a, b]) }
   const out = []
-  for (const [A, B] of segments) {
+  for (const r of blockRings) for (let i = 0; i < r.length; i++) {
+    const A = r[i], B = r[(i + 1) % r.length], L = Math.hypot(B[0] - A[0], B[1] - A[1]); if (L < 1e-6) continue
+    const u = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2]
+    let n = [-u[1], u[0]]; if (!inBlock([M[0] + n[0] * E, M[1] + n[1] * E])) n = [-n[0], -n[1]]
+    const P0 = [A[0] + n[0] * E, A[1] + n[1] * E], d = [B[0] - A[0], B[1] - A[1]]
+    // where the inboard line crosses a curb edge, as fractions of the edge
+    const ts = [0, 1], seen = new Set()
+    for (let x = Math.floor(Math.min(A[0], B[0]) / CELL) - 1; x <= Math.floor(Math.max(A[0], B[0]) / CELL) + 1; x++)
+      for (let z = Math.floor(Math.min(A[1], B[1]) / CELL) - 1; z <= Math.floor(Math.max(A[1], B[1]) / CELL) + 1; z++)
+        for (const s2 of cells.get(`${x},${z}`) || []) { if (seen.has(s2)) continue; seen.add(s2)
+          const [c, e] = s2, f = [e[0] - c[0], e[1] - c[1]], den = d[0] * f[1] - d[1] * f[0]; if (Math.abs(den) < 1e-12) continue
+          const w = [c[0] - P0[0], c[1] - P0[1]], t = (w[0] * f[1] - w[1] * f[0]) / den, v = (w[0] * d[1] - w[1] * d[0]) / den
+          if (t > 0 && t < 1 && v >= 0 && v <= 1) ts.push(t) }
+    ts.sort((a, b) => a - b)
+    for (let k = 0; k + 1 < ts.length; k++) { const t0 = ts[k], t1 = ts[k + 1]; if ((t1 - t0) * L < 1e-6) continue
+      const tm = (t0 + t1) / 2; if (inCurb([P0[0] + d[0] * tm, P0[1] + d[1] * tm])) continue
+      const at = (t) => t === 0 ? A : t === 1 ? B : [A[0] + d[0] * t, A[1] + d[1] * t]
+      out.push({ A: at(t0), B: at(t1), inward: n }) }
+  }
+  return out
+}
+
+/** Everything the bake needs to lift its ground: `blockRings` (the painter's block — what lifts), `curbRings` (the
+ *  post-paint curb + cut strips), the curb cuts' `ramps`, the town's `kerb`. Returns { inBlock, curbless, curblessM,
+ *  regions }. Throws when the block has curbless edges and the town's kerb norm gives no taperRun. */
+export function kerbPlan({ blockRings, curbRings, ramps, kerb }) {
+  const curbless = curblessEdges(blockRings, curbRings)
+  const curblessM = curbless.reduce((n, { A, B }) => n + Math.hypot(B[0] - A[0], B[1] - A[1]), 0)
+  if (curbless.length && !(kerb.taperRun > 0))
+    throw new Error(`[kerbLift] ⛔ the kerb stands ${kerb.height} m and ${curblessM.toFixed(0)} m of block edge has NO curb drawn (alleys, shoulders, land meeting the road), where the block slopes down flush — but the town's kerb norm gives no taperRun, the town's value, never the kit's (norms.json → kerb.taperRun, metres).`)
+  return { inBlock: ringsInside(blockRings), curbless, curblessM, regions: [...kerbRegions(ramps, kerb), ...taperRegions(curbless, kerb.taperRun)] }
+}
+
+/** A TAPER per curbless edge: the edge × `taperRun` inward (toward the lifted group), 0 → h linearly. */
+export function taperRegions(edges, taperRun) {
+  const out = []
+  for (const { A, B, inward: n } of edges) {
     const w = Math.hypot(B[0] - A[0], B[1] - A[1]), u = [(B[0] - A[0]) / w, (B[1] - A[1]) / w]
-    const M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], n0 = [-u[1], u[0]], dl = 1e-3 * w
-    const n = inside([M[0] + n0[0] * dl, M[1] + n0[1] * dl]) ? n0 : [-n0[0], -n0[1]]
     const at = (s, t) => [A[0] + u[0] * s + n[0] * t, A[1] + u[1] * s + n[1] * t]
     out.push({ kind: 'ramp', taper: true, A, u, inward: n, w, R: taperRun, F: null, poly: [at(0, 0), at(w, 0), at(w, taperRun), at(0, taperRun)] })
   }
@@ -70,93 +109,42 @@ export function kerbRegions(ramps, { height: h, rampSlope, flareSlope }) {
   return out
 }
 
-// the height a region asks for at P (h where it does not reach)
-function regionY(g, P, h) {
-  const d = sub(P, g.A), s = dot(d, g.u), t = Math.max(0, Math.min(g.R, dot(d, g.inward)))
-  if (g.kind === 'ramp') return h * t / g.R
-  const ds = g.kind === 'flareA' ? -s : s - g.w
-  return Math.min(h, h * (t / g.R + Math.max(0, ds) / g.F))
-}
+const TOL = 2e-3                                    // a region claims a point within 2 mm of it (Clipper's 1 mm slices)
 
-function inPoly(P, poly) {
-  let c = false
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const [xi, zi] = poly[i], [xj, zj] = poly[j]
-    if ((zi > P[1]) !== (zj > P[1]) && P[0] < (xj - xi) * (P[1] - zi) / (zj - zi) + xi) c = !c
-  }
-  return c
+// whether P lies on region g, in g's own frame (s along the face, t inward), and the height g asks for there
+function regionAt(g, P, h) {
+  const d = sub(P, g.A), s = dot(d, g.u), t = dot(d, g.inward)
+  if (t < -TOL || t > g.R + TOL) return null
+  const tc = Math.max(0, Math.min(g.R, t))
+  if (g.kind === 'ramp') return s < -TOL || s > g.w + TOL ? null : h * tc / g.R
+  const ds = g.kind === 'flareA' ? -s : s - g.w                      // distance past the ramp's end, along the kerb
+  if (ds < -TOL || ds > g.F * (1 - tc / g.R) + TOL) return null
+  return Math.min(h, h * (tc / g.R + Math.max(0, ds) / g.F))
 }
 
 const bboxOf = (rings) => { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity
   for (const r of rings) for (const [x, z] of r) { if (x < a) a = x; if (z < b) b = z; if (x > c) c = x; if (z > d) d = z } return [a, b, c, d] }
-const overlaps = (p, q) => p[0] <= q[2] && q[0] <= p[2] && p[1] <= q[3] && q[1] <= p[3]
 
-/** Split rings by every region they overlap, so each region's outline becomes edges. `ops` = { intersect, difference }
- *  over rings (even-odd). Returns rings. A ring set no region touches is returned as is. */
-export function sliceByRegions(rings, regions, ops) {
-  if (!regions.length || !rings.length) return rings
-  const bb = bboxOf(rings), hit = regions.filter(g => overlaps(bb, bboxOf([g.poly])))
-  if (!hit.length) return rings
-  let rest = rings
-  const pieces = []
-  for (const g of hit) {
-    if (!rest.length) break
-    const inside = ops.intersect(rest, [g.poly])
-    if (!inside.length) continue
-    pieces.push(...inside)
-    rest = ops.difference(rest, [g.poly])
-  }
-  return [...rest, ...pieces]
-}
-
-/** `inside(P)` = within the block union (even-odd over the curb rings), bucketed by z rows so a point costs one row. */
-export function blockInside(blockRings) {
-  const ROW = 8, rows = new Map()
-  for (const r of blockRings) for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
-    const a = r[j], b = r[i]; if (a[1] === b[1]) continue
-    for (let k = Math.floor(Math.min(a[1], b[1]) / ROW); k <= Math.floor(Math.max(a[1], b[1]) / ROW); k++)
-      (rows.get(k) || rows.set(k, []).get(k)).push([a, b])
-  }
-  const inside = (P) => { let c = false
-    for (const [a, b] of rows.get(Math.floor(P[1] / ROW)) || [])
-      if ((a[1] > P[1]) !== (b[1] > P[1]) && P[0] < (b[0] - a[0]) * (P[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c
-    return c }
-  return inside
-}
-
-/** The height field: `inside` (from `blockInside`), and `y(P)` = h, or less inside a cut's ramp/flares or a curbless
- *  taper (the lowest region wins). */
-export function makeHeightField(inside, regions, h) {
+/** The height field: `y(P)` = h, or less on a cut's ramp/flares or a curbless taper (the lowest region wins). */
+export function makeHeightField(regions, h) {
   const CELL = 16, cells = new Map()
   regions.forEach((g, gi) => { const [a, b, c, d] = bboxOf([g.poly])
-    for (let x = Math.floor(a / CELL); x <= Math.floor(c / CELL); x++) for (let z = Math.floor(b / CELL); z <= Math.floor(d / CELL); z++)
+    for (let x = Math.floor((a - TOL) / CELL); x <= Math.floor((c + TOL) / CELL); x++) for (let z = Math.floor((b - TOL) / CELL); z <= Math.floor((d + TOL) / CELL); z++)
       (cells.get(`${x},${z}`) || cells.set(`${x},${z}`, []).get(`${x},${z}`)).push(gi) })
   const y = (P) => { let v = h
     for (const gi of cells.get(`${Math.floor(P[0] / CELL)},${Math.floor(P[1] / CELL)}`) || []) {
-      const g = regions[gi]
-      // on or inside the region (its own edges included: a vertex ON a crease belongs to both, and both agree there)
-      if (inPoly(P, g.poly) || onEdge(P, g.poly)) v = Math.min(v, regionY(g, P, h))
-    }
+      const r = regionAt(regions[gi], P, h); if (r != null) v = Math.min(v, r) }
     return v }
-  return { inside, y }
+  return { y }
 }
 
-function onEdge(P, poly) {
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const a = poly[j], b = poly[i], ab = sub(b, a), L2 = dot(ab, ab); if (!L2) continue
-    const t = dot(sub(P, a), ab) / L2; if (t < -1e-9 || t > 1 + 1e-9) continue
-    const q = [a[0] + ab[0] * t, a[1] + ab[1] * t]; if (Math.hypot(P[0] - q[0], P[1] - q[1]) <= 1e-6 * Math.sqrt(L2)) return true
-  }
-  return false
-}
-
-/** Lift one group's buffer: each triangle inside the block takes the field's height at its vertices (added to the y it
- *  already has); a vertex used by an inside AND an outside triangle is split. Returns new buffers + per-triangle side. */
-export function liftBuffer({ positions, indices }, field) {
+/** Lift one group's buffer: each triangle `liftAt` its centroid takes the field's height at its vertices (added to the y
+ *  it already has); a vertex used by a lifted AND an unlifted triangle is split. Returns new buffers + per-triangle side. */
+export function liftBuffer({ positions, indices }, field, liftAt) {
   const nt = indices.length / 3, side = new Uint8Array(nt)
   for (let t = 0; t < nt; t++) {
     const a = indices[3 * t] * 3, b = indices[3 * t + 1] * 3, c = indices[3 * t + 2] * 3
-    side[t] = field.inside([(positions[a] + positions[b] + positions[c]) / 3, (positions[a + 2] + positions[b + 2] + positions[c + 2]) / 3]) ? 1 : 0
+    side[t] = liftAt([(positions[a] + positions[b] + positions[c]) / 3, (positions[a + 2] + positions[b + 2] + positions[c + 2]) / 3]) ? 1 : 0
   }
   const nv = positions.length / 3, usedIn = new Uint8Array(nv), usedOut = new Uint8Array(nv)
   for (let t = 0; t < nt; t++) for (let k = 0; k < 3; k++) (side[t] ? usedIn : usedOut)[indices[3 * t + k]] = 1
@@ -188,12 +176,13 @@ export function riserFromEdges(groups, kerbKeys) {
       if (side[t]) rec.in = rec.in || v; else rec.out = rec.out || v
     }
   }
-  const pos = [], idx = [], bareM = {}
+  const pos = [], idx = [], bareM = {}, bareAt = {}
   let kerbM = 0
   for (const { in: I, out: O } of edges.values()) {
     if (!I || !O) continue
     const L = Math.hypot(I.b[0] - I.a[0], I.b[2] - I.a[2])
-    if (!kerbKeys.has(I.key)) { if (I.a[1] > 1e-6 || I.b[1] > 1e-6) { const k = `${I.key}|${O.key}`; bareM[k] = (bareM[k] || 0) + L } continue }
+    if (!kerbKeys.has(I.key)) { if (I.a[1] > 1e-6 || I.b[1] > 1e-6) { const k = `${I.key}|${O.key}`; bareM[k] = (bareM[k] || 0) + L
+      const at = (bareAt[k] ||= []); if (at.length < 6) at.push([(I.a[0] + I.b[0]) / 2, (I.a[2] + I.b[2]) / 2]) } continue }
     // bottom = the unlifted side's own vertices at the same xz (their y), top = the lifted side's
     const bot = (p) => (Math.abs(O.a[0] - p[0]) + Math.abs(O.a[2] - p[2]) < 1e-9 ? O.a : O.b)
     const ta = I.a, tb = I.b, ba = bot(ta), bb = bot(tb)
@@ -203,5 +192,5 @@ export function riserFromEdges(groups, kerbKeys) {
     idx.push(o, o + 1, o + 2, o, o + 2, o + 3)
     kerbM += L
   }
-  return { positions: new Float32Array(pos), indices: new Uint32Array(idx), kerbM, bareM }
+  return { positions: new Float32Array(pos), indices: new Uint32Array(idx), kerbM, bareM, bareAt }
 }

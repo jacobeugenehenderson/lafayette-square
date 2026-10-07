@@ -485,3 +485,122 @@ export function findTJunctions(groups, lift = null) {
   }
   return { total: within + cross, within, cross, pairs, found, boundaryEdges: edges.length }
 }
+
+/**
+ * Cut a conformed ground along straight segments, so each becomes mesh edges — without touching the paint.
+ * The raised kerb's creases (a cut's ramp and flares, a curbless edge's taper: `kerbLift.mjs`) must be mesh edges
+ * for the height on them to be exact, and earcut takes no constraint edges; so the finished, conformed mesh is cut,
+ * never the polygons it was triangulated from (Jacob, 2026-10-07: the kerb takes the partition's structure, it never
+ * recovers it).
+ *   1. each segment's ends are put into the mesh: within ON_EDGE_M of a vertex → that vertex; of an edge → the edge
+ *      splits in EVERY triangle that uses it; inside a triangle → it splits in three;
+ *   2. every triangle the segment crosses (vertices more than ON_EDGE_M on BOTH sides of it) is split along the chord.
+ *      The triangle across a crossed edge is crossed too, by the same line, and its crossing point welds to the same
+ *      vertex. A segment lying along an existing edge cuts nothing.
+ * Works on the union of the groups (welded on the lattice, as conformAndRefine does) and hands back per-group buffers.
+ * @param groups [{ positions, indices }] — each group one plane (its y is kept)
+ * @param segments [[[x, z], [x, z]], …]
+ */
+export function cutAlong(groups, segments, stats = {}) {
+  const t0 = Date.now(), EPS = ON_EDGE_M, CELL = 8
+  const PX = [], PZ = [], weld = new ShardedMap()
+  const vid = (x, z) => { const k = weldKey(x, z); let i = weld.get(k); if (i === undefined) { i = PX.length; PX.push(x); PZ.push(z); weld.set(k, i) } return i }
+  const T = [], TG = [], alive = [], ys = groups.map(g => g.positions.length ? g.positions[1] : 0)
+  const byEdge = new ShardedMap(), grid = new Map()
+  const ek = (a, b) => edgeKey(a, b)
+  const cellsOf = (x0, z0, x1, z1, f) => { for (let x = Math.floor(x0 / CELL); x <= Math.floor(x1 / CELL); x++) for (let z = Math.floor(z0 / CELL); z <= Math.floor(z1 / CELL); z++) f(x * 1e6 + z) }
+  const addTri = (a, b, c, g) => {
+    const t = TG.length; T.push(a, b, c); TG.push(g); alive.push(1)
+    for (const [u, v] of [[a, b], [b, c], [c, a]]) { const k = ek(u, v); const l = byEdge.get(k); if (l) l.push(t); else byEdge.set(k, [t]) }
+    cellsOf(Math.min(PX[a], PX[b], PX[c]), Math.min(PZ[a], PZ[b], PZ[c]), Math.max(PX[a], PX[b], PX[c]), Math.max(PZ[a], PZ[b], PZ[c]),
+      (ck) => { const l = grid.get(ck); if (l) l.push(t); else grid.set(ck, [t]) })
+    return t
+  }
+  groups.forEach((g, gi) => {
+    const P = g.positions, I = g.indices, local = new Int32Array(P.length / 3)
+    for (let i = 0; i < local.length; i++) local[i] = vid(P[i * 3], P[i * 3 + 2])
+    for (let t = 0; t < I.length; t += 3) addTri(local[I[t]], local[I[t + 1]], local[I[t + 2]], gi)
+  })
+  const nBefore = TG.length
+  let inserted = 0, edgeSplits = 0, crossed = 0
+  const candidates = (x0, z0, x1, z1) => { const s = new Set(); cellsOf(x0, z0, x1, z1, (ck) => { for (const t of grid.get(ck) || []) if (alive[t]) s.add(t) }); return s }
+  // split edge (u, v) at vertex m in every live triangle using it, keeping each triangle's winding
+  const splitEdge = (u, v, m) => {
+    for (const t of [...(byEdge.get(ek(u, v)) || [])]) { if (!alive[t]) continue
+      const a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2], g = TG[t]
+      const tri = [a, b, c], k = [0, 1, 2].find(i => (tri[i] === u && tri[(i + 1) % 3] === v) || (tri[i] === v && tri[(i + 1) % 3] === u))
+      if (k === undefined) continue
+      const p = tri[k], q = tri[(k + 1) % 3], w = tri[(k + 2) % 3]
+      alive[t] = 0; addTri(p, m, w, g); addTri(m, q, w, g); edgeSplits++ }
+  }
+  // the point where the line (P, n) crosses edge (a, b) — or, when that lands within ON_EDGE_M of a vertex of a triangle
+  // on the edge, THAT vertex. Both triangles on the edge see the same neighbourhood, so they decide alike; a crossing a
+  // hair from a vertex is never a second vertex beside it.
+  const crossAt = (a, b, P, n) => {
+    const da = (PX[a] - P[0]) * n[0] + (PZ[a] - P[1]) * n[1], db = (PX[b] - P[0]) * n[0] + (PZ[b] - P[1]) * n[1], s = da / (da - db)
+    const x = PX[a] + (PX[b] - PX[a]) * s, z = PZ[a] + (PZ[b] - PZ[a]) * s
+    let best = -1, bd = EPS
+    for (const t of byEdge.get(ek(a, b)) || []) if (alive[t]) for (let k = 0; k < 3; k++) { const v = T[t * 3 + k], dv = Math.hypot(PX[v] - x, PZ[v] - z); if (dv <= bd) { bd = dv; best = v } }
+    return best >= 0 ? best : vid(x, z)
+  }
+  const insertPoint = ([x, z]) => {
+    const C = [...candidates(x, z, x, z)]
+    for (const t of C) for (let k = 0; k < 3; k++) { const v = T[t * 3 + k]; if (Math.hypot(PX[v] - x, PZ[v] - z) <= EPS) return v }
+    for (const t of C) for (let k = 0; k < 3; k++) {
+      const u = T[t * 3 + k], v = T[t * 3 + (k + 1) % 3], dx = PX[v] - PX[u], dz = PZ[v] - PZ[u], L2 = dx * dx + dz * dz; if (!L2) continue
+      const s = ((x - PX[u]) * dx + (z - PZ[u]) * dz) / L2; if (s <= 0 || s >= 1) continue
+      if (Math.hypot(PX[u] + dx * s - x, PZ[u] + dz * s - z) <= EPS) { const m = vid(x, z); splitEdge(u, v, m); inserted++; return m } }
+    for (const t of C) { const a = T[t * 3], b = T[t * 3 + 1], c = T[t * 3 + 2]
+      const cr = (p, q) => (PX[q] - PX[p]) * (z - PZ[p]) - (PZ[q] - PZ[p]) * (x - PX[p]), s1 = cr(a, b), s2 = cr(b, c), s3 = cr(c, a)
+      if ((s1 > 0 && s2 > 0 && s3 > 0) || (s1 < 0 && s2 < 0 && s3 < 0)) { const m = vid(x, z), g = TG[t]; alive[t] = 0; addTri(a, b, m, g); addTri(b, c, m, g); addTri(c, a, m, g); inserted++; return m } }
+    return null                                                     // off the ground (beyond the rim): nothing to put it in
+  }
+  let oddHits = 0
+  for (const [P0, Q0] of segments) {
+    if (Math.hypot(Q0[0] - P0[0], Q0[1] - P0[1]) <= EPS) continue
+    // the segment runs between the VERTICES its ends became (a snap moves an end up to ON_EDGE_M), so no triangle is
+    // ever left half-crossed at an end while its neighbour is split
+    const vp = insertPoint(P0), vq = insertPoint(Q0)
+    const P = vp == null ? P0 : [PX[vp], PZ[vp]], Q = vq == null ? Q0 : [PX[vq], PZ[vq]]
+    const L = Math.hypot(Q[0] - P[0], Q[1] - P[1]); if (L <= EPS) continue
+    const u = [(Q[0] - P[0]) / L, (Q[1] - P[1]) / L], n = [-u[1], u[0]]
+    for (const t of candidates(Math.min(P[0], Q[0]), Math.min(P[1], Q[1]), Math.max(P[0], Q[0]), Math.max(P[1], Q[1]))) {
+      if (!alive[t]) continue
+      const tri = [T[t * 3], T[t * 3 + 1], T[t * 3 + 2]]
+      const d = tri.map(v => (PX[v] - P[0]) * n[0] + (PZ[v] - P[1]) * n[1]), s = tri.map(v => (PX[v] - P[0]) * u[0] + (PZ[v] - P[1]) * u[1])
+      if (Math.max(...d) <= EPS || Math.min(...d) >= -EPS) continue
+      // the chord: a vertex ON the line, or an edge whose ends lie on opposite sides
+      const hits = []
+      for (let k = 0; k < 3; k++) {
+        if (Math.abs(d[k]) <= EPS) hits.push({ k, s: s[k] })
+        const j = (k + 1) % 3
+        if ((d[k] > EPS && d[j] < -EPS) || (d[k] < -EPS && d[j] > EPS)) hits.push({ e: k, s: s[k] + (s[j] - s[k]) * d[k] / (d[k] - d[j]) })
+      }
+      if (hits.length !== 2) { oddHits++; continue }
+      if (Math.min(hits[0].s, hits[1].s) < -EPS || Math.max(hits[0].s, hits[1].s) > L + EPS) continue
+      const g = TG[t], [h0, h1] = hits
+      let parts
+      if (h0.k !== undefined || h1.k !== undefined) {                // a vertex and the edge across from it
+        const hv = h0.k !== undefined ? h0 : h1, he = h0.k !== undefined ? h1 : h0
+        const w = tri[hv.k], a = tri[he.e], b = tri[(he.e + 1) % 3], m = crossAt(a, b, P, n)
+        parts = [[w, a, m], [w, m, b]]
+      } else {                                                         // two edges, sharing the vertex between them
+        const [e0, e1] = [h0.e, h1.e], shared = (e0 + 1) % 3 === e1 ? e1 : e0, first = shared === e1 ? e0 : e1
+        const a = tri[first], b = tri[shared], c = tri[(shared + 1) % 3]
+        const X = crossAt(a, b, P, n), Y = crossAt(b, c, P, n)
+        parts = [[X, b, Y], [a, X, Y], [a, Y, c]]
+      }
+      // ⚠️ OPEN (2026-10-07): a part that repeats a vertex (a crossing snapped onto one) is kept as a zero-area closer;
+      // LS still carries 266 T-junctions after the cut, where several creases meet within a millimetre (snap rounding)
+      alive[t] = 0; crossed++
+      for (const [x, y, z] of parts) addTri(x, y, z, g)
+      for (const [x, y] of [[0, 1], [1, 2], [2, 0]]) { const l = byEdge.get(ek(tri[x], tri[y])); if (l) { const i = l.indexOf(t); if (i >= 0) l.splice(i, 1) } }
+    }
+  }
+  const out = groups.map(() => ({ local: new Map(), pos: [], idx: [] }))
+  for (let t = 0; t < TG.length; t++) { if (!alive[t]) continue
+    const r = out[TG[t]], y = ys[TG[t]]
+    for (let k = 0; k < 3; k++) { const v = T[t * 3 + k]; let li = r.local.get(v); if (li === undefined) { li = r.pos.length / 3; r.pos.push(PX[v], y, PZ[v]); r.local.set(v, li) } r.idx.push(li) } }
+  Object.assign(stats, { segments: segments.length, trisBefore: nBefore, trisAfter: alive.reduce((n, a) => n + a, 0), inserted, edgeSplits, crossed, oddHits, ms: Date.now() - t0 })
+  return out.map(r => ({ positions: new Float32Array(r.pos), indices: new Uint32Array(r.idx) }))
+}

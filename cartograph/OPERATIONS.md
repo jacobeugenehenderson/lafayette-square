@@ -132,8 +132,8 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   `"rise:run"`, the jurisdiction's — LS: 0.15, ADA 1:12 / 1:10, taper 1.0). Kit = 0, one flat plane. Never tied to the Look's
   `curbWidth`. Read at derive (skeleton pour); raised by the ground bake (`kerbLift.mjs`): a kerb face where the curb is
   drawn, each cut ramped, and where NO curb is drawn (alleys, shoulders) the block slopes flush over `taperRun`. A town with
-  h > 0 and cuts or curbless frontage but no slopes/run THROWS. ⚠️ The renderer does not yet light the kerb face or seat
-  anchors on the raised ground (`BRIEF-corner-ramps-and-kerb` step 5, pieces 4–5).
+  h > 0 and cuts or curbless frontage but no slopes/run THROWS, and so does any step left with neither face nor taper
+  (named by place). ⚠️ The renderer does not yet light the kerb face (`BRIEF-corner-ramps-and-kerb` step 5, piece 5).
   ▶ `node checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs`
 - **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — square across the street, centred on the cut that serves them
   (or on a recorded OSM crossing whose ends land in that corner's arc — read from `osm.json`, nothing to fetch), kerb to kerb;

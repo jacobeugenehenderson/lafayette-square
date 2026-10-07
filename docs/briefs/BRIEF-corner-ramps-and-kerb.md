@@ -208,8 +208,18 @@ scene recorded.
 - Not this brief's, done the same night: the edge fade moved from Extent to the Look, and the clip to the radius —
   `62955496` + `66547bfb` (Boz's task; `ROADMAP` carries the one open line, Altadena's disc past its bbox).
 
-**Open:** → §3 (the sequence). The RIBBONS conformance findings that sat here landed with step 6 (Sill, 2026-10-06; the
-commit names each).
+**Open:** → §3 (the sequence), and:
+- ⛔ **LS's raised-kerb ground is REFUSED (2026-10-07, Sill): 266 T-junctions after the creases are cut.** The kerb no
+  longer slices the paint (that regrouped holes by winding and meshed 97,808 m² of asphalt over LS's blocks); its ramp,
+  flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the
+  cut takes ~2 s). What is left is **snap rounding**: where several creases meet within a millimetre (a cut's ramp +
+  flare corners — worst at (-414.857, 684.746)), on a mesh that already carries mm slivers, crossings 1 mm apart fall in
+  different weld buckets and the zero-area closers get re-cut into degenerate fans. Fix shape: snap every segment end
+  and every crossing ONCE (lattice + vertices within `ON_EDGE_M`) before cutting. ▶ offline, seconds per try:
+  `node scratch/kerb-cut/dump.mjs <dir>` → the printed bake command → `node scratch/kerb-cut/harness.mjs <dir>/mesh [x z]`.
+  ⭐ The alternative to weigh with Jacob — a triangulator swap, not a patch: a CONSTRAINED triangulation that takes the
+  creases as edges up front (earcut takes none), so nothing is cut afterwards. Until one of them lands, LS bakes only
+  flat (kerb height 0), Boz's offer to Jacob.
 
 **Traps a fresh agent will hit:**
 - ⭐ **② contour runs OPPOSITE to ①'s block ring** (875 of 876 LS corners). Read a corner's arriving / leaving leg off
