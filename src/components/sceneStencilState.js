@@ -18,6 +18,7 @@
  * Module-scope + subscriber set, mirroring onTerrainReload / groundColorState.
  */
 let _stencil = null
+let _missing = null   // why no stencil is coming (setSceneStencilMissing), or null
 const _subs = new Set()
 
 /** @param {{center:[number,number], radius:number}|null} s */
@@ -25,6 +26,7 @@ export function setSceneStencil(s) {
   const next = (s && Number.isFinite(s.radius) && s.radius > 0) ? s : null
   if (next === _stencil) return
   _stencil = next
+  if (next) _missing = null
   for (const cb of _subs) cb(_stencil)
 }
 
@@ -35,6 +37,22 @@ export function onSceneStencil(cb) {
   _subs.add(cb)
   cb(_stencil)
   return () => _subs.delete(cb)
+}
+
+// ⛔ THE STENCIL WILL NOT COME, said by the one that knows (BakedGround's loader): the ground fetch failed, or its
+// ground.json carries no stencil. A consumer that needs the size (the sun's shadows) reports it then, on the event.
+// It used to guess with a 5 s timer, which cried wolf on every healthy boot slower than 5 s (huron under load).
+const _missSubs = new Set()
+/** @param {string} reason why this scene will publish no stencil */
+export function setSceneStencilMissing(reason) {
+  _missing = reason
+  for (const cb of _missSubs) cb(reason)
+}
+/** Subscribe to "no stencil is coming"; fires immediately if it is already known. Returns an unsubscribe. */
+export function onSceneStencilMissing(cb) {
+  _missSubs.add(cb)
+  if (_missing) cb(_missing)
+  return () => _missSubs.delete(cb)
 }
 
 // ── Shadow-frustum geometry — ONE definition, two consumers ────────────────

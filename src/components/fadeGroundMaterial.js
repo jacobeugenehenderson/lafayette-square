@@ -6,15 +6,17 @@
  * `checks/claims-every-ground-surface-takes-the-lamp.mjs` can compile the real thing.
  * The caller adds cascades (attachCSM) and terrain (patchTerrain) — both wrap this material's hook.
  *
- * `pool` = { map, min, span, scale } (ground.json#poolmap + its texture) or null.
+ * `pool` = { map, min, span, scale } (ground.json#poolmap + its texture), or `{ shared: true }` (the map BakedGround
+ * publishes, read through the shared uniforms: the material compiles once and the map fills in when it lands — an
+ * unbound map samples 0, no pool), or null (this ground has no poolmap).
  */
 import { NEIGHBORHOOD_FADE_GLSL, bindNeighborhoodFade, neighborhoodFadeKey } from '../lib/neighborhoodFade.js'
 import * as THREE from 'three'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
-import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp } from '../lib/groundLamp.js'
+import { GROUND_LAMP_DECLS, groundLampFragment, bindGroundLamp, bindGroundLampShared } from '../lib/groundLamp.js'
 
 export function makeFadeGroundMaterial({ color, fade = null, pool = null }) {
-  const hasPool = !!pool?.map
+  const hasPool = !!(pool?.map || pool?.shared)
   const mat = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.95,
@@ -42,7 +44,7 @@ export function makeFadeGroundMaterial({ color, fade = null, pool = null }) {
       if (fade) {
         bindNeighborhoodFade(shader.uniforms, fade)
       }
-      if (hasPool) bindGroundLamp(shader.uniforms, pool)
+      if (hasPool) { if (pool.shared) bindGroundLampShared(shader.uniforms); else bindGroundLamp(shader.uniforms, pool) }
       let post = '#include <dithering_fragment>\n'
       if (hasPool) post += groundLampFragment('vGndPos.xz') + '\n'
       if (fade) post +=

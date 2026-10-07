@@ -539,7 +539,8 @@ export default function Town({
           {/* The shore median diagnostic shows the region with every treatment OFF, so the revetment hides while it is on. */}
           <group visible={!on('shoreMedian')}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary></group>
           {on('shoreMedian') && <R3FErrorBoundary name="ShoreMedian"><ShoreMedian lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
-          <DrawnAnchor id="ground" />
+          {/* "minimum ground" is marked by the ground SURFACES (BakedGround's GroundMeshes), not by any mesh here: the
+              revetment drew first and marked WARD USABLE ~2 s early on huron. */}
         </group>
         {/* Neon, street labels and the park title. Its live buildings stay hidden: the slab draws them. */}
         <R3FErrorBoundary name="LafayetteScene">

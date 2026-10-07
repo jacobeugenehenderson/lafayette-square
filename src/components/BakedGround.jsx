@@ -19,7 +19,7 @@ import { attachCSM } from './CascadedShadows.jsx'
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useLoader, useFrame } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGroundSurfaceMaterial, CROP_UNIFORMS } from './grassMaterial'
 import useCalendar from '../hooks/useCalendar'
@@ -36,7 +36,9 @@ import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag, terrainWater } from '../utils/terrainShader'
 import { waterLevels } from '../../cartograph/waterLevel.mjs'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
-import { setSceneStencil } from './sceneStencilState'
+import { setSceneStencil, setSceneStencilMissing } from './sceneStencilState'
+import DrawnAnchor from './DrawnAnchor.jsx'
+import { markTimeline } from '../lib/startupMarks.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { slabUrl, slabFetch, slabStamped } from '../lib/slabUrl.js'
 import { lookOf } from '../lib/lookOf.js'
@@ -196,6 +198,55 @@ function fadeForGroup(group, stencil) {
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
 
+// ── Maps that ARRIVE instead of suspending (Jacob, 2026-10-06: "ground first with plain colors") ─────────────────
+// A map loads on its own; the ground has already drawn without it. A failed map is said by name and the ground stays
+// plain — loud, never a quiet plain patch. Each landing is a mark on Preview's frame timeline.
+function useArrivingTexture(url, configure, what, look) {
+  const [tex, setTex] = useState(null)
+  useEffect(() => {
+    setTex(null)
+    if (!url) return
+    let live = true
+    new THREE.TextureLoader().load(url, (t) => {
+      if (!live) return
+      configure(t)
+      t.needsUpdate = true
+      markTimeline('ground-map', what)
+      setTex(t)
+    }, undefined, (e) => console.error(`[BakedGround] ⛔ "${look}": ${what} did not arrive (${url}) — the ground draws without it.`, e))
+    return () => { live = false }
+  }, [url])
+  return tex
+}
+
+// The AO: ONE texture, bound to the materials from their first compile (so no material compiles twice), white until
+// the lightmap lands (white AO = no occlusion = the plain ground). On arrival it takes a NEW Source: three r160 sizes
+// a texture's GPU storage once per source (texStorage2D), so a 1×1 source cannot take the full image in place.
+function useArrivingAo(url, what, look) {
+  const tex = useMemo(() => {
+    if (!url) return null
+    const c = document.createElement('canvas'); c.width = c.height = 1
+    const g = c.getContext('2d'); g.fillStyle = '#ffffff'; g.fillRect(0, 0, 1, 1)
+    const t = new THREE.Texture(c)
+    t.colorSpace = THREE.NoColorSpace
+    t.flipY = false
+    t.needsUpdate = true
+    return t
+  }, [url])
+  useEffect(() => {
+    if (!tex) return
+    let live = true
+    new THREE.ImageLoader().load(url, (img) => {
+      if (!live) return
+      tex.source = new THREE.Source(img)
+      tex.needsUpdate = true
+      markTimeline('ground-map', what)
+    }, undefined, (e) => console.error(`[BakedGround] ⛔ "${look}": ${what} did not arrive (${url}) — the ground draws without its AO.`, e))
+    return () => { live = false }
+  }, [tex, url])
+  return tex
+}
+
 function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: bakedScene, bakeLastMs, surfacesOverride }) {
   // ⭐ `surfacesOverride` is the live-authoring layer, the same pattern PostProcessing's
   // *Override props follow: it sits over the baked `scene.surfaces`, never beside it.
@@ -213,10 +264,6 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
   const layerVis = scene?.layerVis
   const surfaceTable = useMemo(() => resolveClassTable(scene?.surfaces?.classes), [scene?.surfaces?.classes])
   const stencil = manifest.stencil || null
-  // Publish the disc so size-dependent consumers stop hardcoding one town's
-  // radius. The sun's shadow frustum is the one that mattered: it shipped ±900,
-  // i.e. Lafayette Square's 892 m radius, and clipped every larger town.
-  useEffect(() => { setSceneStencil(stencil) }, [stencil])
   // ⛔ LOUD, not silent. A stale slab renders its OWN model correctly (above) but it
   // does NOT show the scene's authored fade, so the operator is looking at a picture
   // that cannot reflect the current record. Silence here is the defect — the whole
@@ -269,15 +316,12 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
   const lightmapUrl = (manifest.lightmap && lmOk)
     ? slabUrl(look, manifest.lightmap.image, bakeLastMs || null)
     : null
-  const lightmap = lightmapUrl ? useLoader(THREE.TextureLoader, lightmapUrl) : null
-
-  useEffect(() => {
-    if (lightmap) {
-      lightmap.colorSpace = THREE.NoColorSpace
-      lightmap.flipY = false
-      lightmap.needsUpdate = true
-    }
-  }, [lightmap])
+  // ⭐ THE GROUND DRAWS FIRST, IN ITS PLAIN COLOURS; ITS MAPS FILL IN AS THEY LAND (Jacob, 2026-10-06). These four were
+  // `useLoader`, which SUSPENDED the whole ground until the slowest PNG landed (huron: the surfaces first existed at
+  // 4.7 s; the 3.6 MB rulemap was the last in). Now each arrives on its own and nothing recompiles when it does: the AO
+  // is bound from the first compile (useArrivingAo); the pool / rule / colour maps are SHARED uniforms gated by their
+  // own has-flags (unbound = no pool, no rule, no colour).
+  const lightmap = useArrivingAo(lightmapUrl, 'ground.lightmap.png', look)
 
   // Lamp light-pool map — baked additive ring profile, sampled by the
   // ground shaders (grass + FadeMesh) at world-XZ × the TOD Pool value.
@@ -285,44 +329,40 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
   const poolmapUrl = poolMeta
     ? slabUrl(look, poolMeta.image, bakeLastMs || null)
     : null
-  const poolmap = poolmapUrl ? useLoader(THREE.TextureLoader, poolmapUrl) : null
+  const poolmap = useArrivingTexture(poolmapUrl, (t) => {
+    t.colorSpace = THREE.NoColorSpace
+    t.flipY = false
+    // ⭐ NO MIPMAPS — measured, not assumed. This map is sized to ~1.6 m/texel
+    // (bake-ground-ao derives it from the town span), and at hero/browse
+    // distances a screen pixel covers ~0.22 m of ground: the texture is
+    // MAGNIFIED, so the mip chain is never sampled and is pure memory. On huron
+    // it went 4096² = 64 MB → 85 MB with mips, and the FX map alone was 60% of
+    // the ground bundle.
+    // ⚠️ THE ONE CASE IT COSTS: framing the ENTIRE town at once puts a pixel at
+    // ~2.4 m against a 1.64 m texel — mild minification, where mips would have
+    // helped. LinearFilter keeps that a soft blur rather than sparkle. If a
+    // whole-town shot ever shimmers on the ground, this is the line.
+    t.generateMipmaps = false
+    t.minFilter = THREE.LinearFilter
+    t.magFilter = THREE.LinearFilter
+  }, 'ground.poolmap.png', look)
   useEffect(() => {
-    if (poolmap) {
-      poolmap.colorSpace = THREE.NoColorSpace
-      poolmap.flipY = false
-      // ⭐ NO MIPMAPS — measured, not assumed. This map is sized to ~1.6 m/texel
-      // (bake-ground-ao derives it from the town span), and at hero/browse
-      // distances a screen pixel covers ~0.22 m of ground: the texture is
-      // MAGNIFIED, so the mip chain is never sampled and is pure memory. On huron
-      // it went 4096² = 64 MB → 85 MB with mips, and the FX map alone was 60% of
-      // the ground bundle.
-      // ⚠️ THE ONE CASE IT COSTS: framing the ENTIRE town at once puts a pixel at
-      // ~2.4 m against a 1.64 m texel — mild minification, where mips would have
-      // helped. LinearFilter keeps that a soft blur rather than sparkle. If a
-      // whole-town shot ever shimmers on the ground, this is the line.
-      poolmap.generateMipmaps = false
-      poolmap.minFilter = THREE.LinearFilter
-      poolmap.magFilter = THREE.LinearFilter
-      poolmap.needsUpdate = true
-      // Share the FX map (G shadow / R pool) so the tree trunk blend can take
-      // the combined effective ground colour, matching grassMaterial.
-      setGroundFxMap(poolmap, poolMeta?.min, poolMeta?.span, poolScaleOf(poolMeta))
-    }
+    // The FX map (G contact shadow / R lamp pool), shared: every ground surface reads it (bindGroundLampShared), and
+    // the tree trunk blend takes the combined ground colour from it.
+    if (poolmap) setGroundFxMap(poolmap, poolMeta?.min, poolMeta?.span, poolScaleOf(poolMeta))
     return () => setGroundFxMap(null)
   }, [poolmap])
 
   // The ground rules' baked distances (ground.rulemap.png, bake-ground-ao): R = to a building, G = to paving.
   const ruleMeta = manifest.rulemap || null
   const rulemapUrl = ruleMeta ? slabUrl(look, ruleMeta.image, bakeLastMs || null) : null
-  const rulemap = rulemapUrl ? useLoader(THREE.TextureLoader, rulemapUrl) : null
+  const rulemap = useArrivingTexture(rulemapUrl, (t) => {
+    t.colorSpace = THREE.NoColorSpace
+    t.flipY = false
+    t.generateMipmaps = false
+    t.minFilter = t.magFilter = THREE.LinearFilter
+  }, 'ground.rulemap.png', look)
   useEffect(() => {
-    if (rulemap) {
-      rulemap.colorSpace = THREE.NoColorSpace
-      rulemap.flipY = false
-      rulemap.generateMipmaps = false
-      rulemap.minFilter = rulemap.magFilter = THREE.LinearFilter
-      rulemap.needsUpdate = true
-    }
     setGroundRuleMap(rulemap, ruleMeta)
     return () => setGroundRuleMap(null)
   }, [rulemap])
@@ -335,14 +375,12 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
   const colormapUrl = colorMeta
     ? slabUrl(look, colorMeta.image, bakeLastMs || null)
     : null
-  const colormap = colormapUrl ? useLoader(THREE.TextureLoader, colormapUrl) : null
+  const colormap = useArrivingTexture(colormapUrl, (t) => {
+    t.colorSpace = THREE.SRGBColorSpace
+    t.flipY = false
+  }, 'ground.colormap.png', look)
   useEffect(() => {
-    if (colormap) {
-      colormap.colorSpace = THREE.SRGBColorSpace
-      colormap.flipY = false
-      colormap.needsUpdate = true
-      setGroundColorMap(colormap, colorMeta.min, colorMeta.span)
-    }
+    if (colormap) setGroundColorMap(colormap, colorMeta.min, colorMeta.span)
     return () => setGroundColorMap(null)
   }, [colormap])
 
@@ -438,6 +476,9 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
 
   return (
     <group>
+      {/* "minimum ground" = the first draw of a ground SURFACE. It sat on town:ground, which also holds the revetment,
+          so it marked the stone and declared WARD USABLE ~2 s before any ground drew on huron (Strobe, 2026-10-06). */}
+      <DrawnAnchor id="ground" />
       {flood && isGroupVisible(flood.body.group, layerVis) && (
         <WaterSurface key="water:flood" geometry={flood.geometry} renderOrder={flood.body.group.renderOrder} extentDiag={flood.body.bodyExtent}
           horizon={manifest.stencil ? waterHorizon(manifest.stencil) : null} look={scene?.surfaces?.params?.water} />
@@ -459,25 +500,30 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
         // run: said once, and drawn in the class's flat colour (what a class with no generator gets).
         if (draw.noFields) {
           reportNoFields(look, group.id, surface)
-          return <FadeMesh key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+          return <FadeMesh key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} hasPool={!!poolMeta} />
         }
         if (surface && SURFACES[surface].perField && !geometry.attributes.aFieldEdge) reportNoEdge(look, group.id)
         return draw.kind === 'surface'
-          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} coast={surface === 'sand' ? coast : null} />
-          : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} poolmap={poolmap} poolMeta={poolMeta} />
+          ? <SurfaceMesh key={key} surface={surface} params={scene?.surfaces?.params?.[surface]} resolved={context ? (context.resolved?.[surface] || null) : undefined} look={look} group={group} geometry={geometry} lightmap={lightmap} fade={fade} coast={surface === 'sand' ? coast : null} />
+          : <FadeMesh  key={key} group={group} geometry={geometry} lightmap={lightmap} fade={fade} hasPool={!!poolMeta} />
       })}
     </group>
   )
 }
 
-function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
-  const hasPool = !!poolmap
+function FadeMesh({ group, geometry, lightmap, fade, hasPool }) {
   const material = useMemo(() => {
     const mat = makeFadeGroundMaterial({
       color: treatAlbedo(group.color),   // desaturate + value-lift (Surface treatment)
       fade,
-      pool: hasPool ? { map: poolmap, min: poolMeta?.min, span: poolMeta?.span, scale: poolScaleOf(poolMeta) } : null,
+      // The pool through the SHARED uniforms BakedGround publishes when the map lands: compiled in from the start
+      // whenever this ground HAS a poolmap, so its arrival is a uniform, not a new material (and a relink).
+      pool: hasPool ? { shared: true } : null,
     })
+    // The AO is bound at build (white until the lightmap lands — the same texture, its image swapped in), so the
+    // first compile is the only one. It was set in an effect after the first frame, a second link per material.
+    mat.aoMap = lightmap || null
+    mat.aoMapIntensity = 1
     // Cascades wrap the material's hook — attached AFTER it exists. (Before 2026-09-26 this ran first
     // and the hook assigned after it replaced the wrapper, so `?csm=1` never reached flat ground.)
     attachCSM(mat)
@@ -487,13 +533,7 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
     // ⭐ terrainNormals: the ground is lit by the hill it is draped on (Jacob, 2026-09-24).
     patchTerrain(mat, { perVertex: true, terrainNormals: true })
     return mat
-  }, [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, hasPool, poolmap, geometry])
-
-  useEffect(() => {
-    material.aoMap = lightmap || null
-    material.aoMapIntensity = 1
-    material.needsUpdate = true
-  }, [material, lightmap])
+  }, [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, hasPool, lightmap, geometry])
 
   return (
     <mesh
@@ -505,7 +545,7 @@ function FadeMesh({ group, geometry, lightmap, fade, poolmap, poolMeta }) {
   )
 }
 
-function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightmap, fade, poolmap, poolMeta, coast }) {
+function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightmap, fade, coast }) {
   useEffect(() => { reportAbsentParams(look, surface, params, resolved) }, [look, surface, params, resolved])
   useEffect(() => {
     if (surface !== 'sand' || !coast?.absent || _saidAbsent.has(look + '|coast')) return
@@ -529,10 +569,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
         // class keeps its value step when it gains a generator.
         color: surface === 'grass' ? group.color : treatAlbedo(group.color),
         fade,
-        poolMap: poolmap || null,
-        poolMin: poolMeta?.min,
-        poolSpan: poolMeta?.span,
-        poolScale: poolMeta?.scale ?? 1,
+        // No poolMap: the surface reads the SHARED pool BakedGround publishes when it lands (bindGroundLampShared).
         surfaceParams,
         fieldEdge: !!geometry.attributes.aFieldEdge,
         coast,
@@ -545,16 +582,11 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
       // Same parity move as FadeMesh — every BakedGround material rises
       // with the shared terrain displacement.
       patchTerrain(built.material, { perVertex: true, terrainNormals: true })
+      built.material.aoMap = lightmap || null   // bound at build: one compile (FadeMesh says why)
       return built
     },
-    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, poolmap, surfaceParams, geometry, coast]
+    [surface, group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, lightmap, surfaceParams, geometry, coast]
   )
-  useEffect(() => {
-    if (lightmap) {
-      material.aoMap = lightmap
-      material.needsUpdate = true
-    }
-  }, [material, lightmap])
   useFrame(() => {
     const s = shaderRef.current
     if (!s) return
@@ -577,15 +609,12 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
 // time-of-day uniform. Phase 3 promotes the look-tunable bits to a scene-
 // driven Stage material card.
 function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
-  const { material, shaderRef } = useMemo(
-    () => makeGravelPathMaterial({ tintHex, roughness, scale }),
-    [tintHex, roughness, scale]
-  )
-  useEffect(() => {
-    material.aoMap = lightmap || null
-    material.aoMapIntensity = 1
-    material.needsUpdate = true
-  }, [material, lightmap])
+  const { material, shaderRef } = useMemo(() => {
+    const built = makeGravelPathMaterial({ tintHex, roughness, scale })
+    built.material.aoMap = lightmap || null   // bound at build: one compile (FadeMesh says why)
+    built.material.aoMapIntensity = 1
+    return built
+  }, [tintHex, roughness, scale, lightmap])
   useFrame(() => {
     if (shaderRef.current) {
       shaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
@@ -812,6 +841,12 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
         // Every file is addressed by the look it was fetched under; the stamp must agree (slabStamped).
         const look = resolvedLookId
         const m = slabStamped(look, await slabFetch(look, 'ground.json', undefined, bake).then(r => r.json()), 'ground.json')
+        // ⭐ The town's size is published the moment ground.json is read — not from inside the ground's meshes, which
+        // waited on every map PNG (huron: published at 3.7 s, ~2 s after ground.json). The sun's frustum waits on it.
+        if (!cancelled) {
+          if (m.stencil?.radius > 0) setSceneStencil(m.stencil)
+          else setSceneStencilMissing(`"${look}"'s ground.json carries no stencil — re-bake the ground`)
+        }
         const bin = await slabFetch(look, m.bin, undefined, bake)
           .then(r => r.arrayBuffer())
         // The context bake's RESOLVED surface params (physics + this town's derived values).
@@ -826,6 +861,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
         if (!cancelled) setData({ manifest: m, bin, context, coast, outer })
       } catch (e) {
         console.error('[BakedGround] ⛔ the ground is not drawn:', e)
+        if (!cancelled) setSceneStencilMissing(`the ground of "${resolvedLookId}" did not load (${e?.message || e})`)
       }
     })()
     return () => { cancelled = true }
@@ -835,10 +871,8 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
     <>
       <TerrainExagDriver target={targetExag} />
       {/* Keyed by the bake so a re-bake REMOUNTS GroundMeshes with a fresh
-          hook order — the lightmap/poolmap useLoaders are conditional on the
-          manifest (poolmap may flip absent→present across a bake), and a bare
-          re-render would change hook order and crash. Remount is fine: the
-          geometry already rebuilds on manifest change. */}
+          map loads (each URL is the manifest's; poolmap may flip absent→present across a bake) and its materials. Remount
+          is fine: the geometry already rebuilds on manifest change. */}
       {data && scene && <GroundMeshes key={bake ?? 'static'} look={resolvedLookId} manifest={data.manifest} bin={data.bin} context={data.context} coast={data.coast} outer={data.outer} scene={scene} bakeLastMs={bake} surfacesOverride={surfacesOverride} />}
     </>
   )

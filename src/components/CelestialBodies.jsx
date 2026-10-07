@@ -44,7 +44,7 @@ import { bvToRGB } from '../lib/starColor'
 import { townPlace, useTownPlace } from '../lib/townPlace.js'
 import { bodyLights, celestialToPosition, LIGHT_RADIUS, SUN_VISUAL_RADIUS, MOON_RADIUS, moonSky, moonSunDir3D } from './celestialLights.js'
 import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
-import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
+import { onSceneStencil, onSceneStencilMissing, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 import { CSM_ENABLED } from './CascadedShadows.jsx'
 import { lookOf } from '../lib/lookOf.js'
 import { kitUrl } from '../lib/kitUrl.js'
@@ -185,22 +185,10 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
       // FULLY SHADOWED wherever the identity shadow matrix lands (the town's origin).
       // ▶ node scratch/frame-timeline/link-owners.mjs (each lit material holds one program after load).
       holdShadowEmpty(light, gl)
-      // ⚠️ BUT DO NOT CRY WOLF ON STARTUP. `stencil` is null for the first frames
-      // of EVERY normal load, until BakedGround fetches ground.json and publishes
-      // it — so logging here immediately made an error-level line appear on every
-      // healthy boot. A parity auditor read that line against a live
-      // `castShadow === true` and reported the two as contradictory; they were not,
-      // they were from different moments. An alarm that fires when nothing is wrong
-      // costs more than no alarm: the next reader discounts it.
-      // ⇒ Only shout if it is STILL missing after the bundle has had time to land.
-      const t = setTimeout(() => {
-        if (!getSceneStencil()) {
-          console.error('[CelestialBodies] no scene stencil after 5s — sun shadows are held EMPTY (nothing is shadowed). '
-            + 'ground.json#stencil is the source and nothing has published it; BakedGround '
-            + 'may not be mounted in this view, or its slab fetch failed.')
-        }
-      }, 5000)
-      return () => clearTimeout(t)
+      // ⛔ AND IF IT WILL NEVER COME, SAY SO — on the event, not on a timer. BakedGround's loader reports a failed
+      // ground or a ground.json with no stencil (sceneStencilState.js#setSceneStencilMissing). A 5 s timer stood here
+      // and cried wolf on every healthy boot slower than 5 s (huron under load, 2026-10-06).
+      return onSceneStencilMissing((why) => console.error(`[CelestialBodies] no scene stencil — sun shadows are held EMPTY (nothing is shadowed): ${why}`))
     }
     const half = shadowHalfExtent(stencil)
     if (half == null) return
