@@ -211,10 +211,11 @@ const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
 // names what it waits on, once, at that failure — never a timer.
 const PHYSICAL = ['ground', 'buildings', 'trees']
 // What only BROWSE draws is prepared here too, behind the emblem, so the first flight to Browse links and uploads nothing
-// (crutch ①, Boz's go, 2026-10-07): `town:overhead`, its tree discs (InstancedTrees, part of the trees class), and
-// `town:planRim`, its rim (PlanRim). Prepared after the reveal instead, the discs' first draw was a 145–160 ms frame in the
-// dawn; on the first Browse flight, 173–215 ms (huron).
-const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:overhead', 'town:park', 'town:lamps', 'town:planRim'])
+// (crutch ①, Boz's go, 2026-10-07): `town:overhead`, its tree discs (InstancedTrees, part of the trees class),
+// `town:planRim`, its rim (PlanRim), and `town:labels`, the street labels (LafayetteScene) — those as far as their font
+// has arrived: the reveal never waits on a label. Prepared after the reveal instead, the discs' first draw was a
+// 145–160 ms frame in the dawn; on the first Browse flight, 173–215 ms (huron).
+const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:overhead', 'town:park', 'town:lamps', 'town:planRim', 'town:labels'])
 function RevealGate({ need, lingerMs, skyAt }) {
   const { gl, scene, camera } = useThree()
   const phase = useRef({ name: 'wait' })

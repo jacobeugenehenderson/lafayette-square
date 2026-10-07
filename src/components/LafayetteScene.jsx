@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useTownContext } from './townContext.js'
 import { useLabelPlacements } from '../lib/useLabelPlacements.js'
 import StreetLabels from './StreetLabels.jsx'
@@ -7,7 +7,6 @@ import { ParkTitle } from './LafayettePark'
 import { periodPedestalFor } from '../lib/foundationGeometry.js'
 import SceneNeon from './SceneNeon.jsx'
 
-import { useQuality } from '../lib/qualityProfile.js'
 let _pdx = 0, _pdy = 0
 const _onPointerDown = (e) => { _pdx = e.clientX; _pdy = e.clientY }
 function isDrag(e) {
@@ -120,8 +119,6 @@ function LafayetteScene({ town, lookId, bakeLastMs, materialColorsOverride, forc
   // The browse-only street labels follow the shot the town is drawn in (<Town shot>), which
   // <Town> passes as labelViewMode. Authoring surfaces pass forceContentReady instead.
   if (!labelViewMode && !forceContentReady) throw new Error('[LafayetteScene] ⛔ needs labelViewMode (the shot) or forceContentReady')
-  const labelGateMode = labelViewMode
-  const quality = useQuality()
 
   // Register drag-guard listener with cleanup (avoids stacking on HMR)
   useEffect(() => {
@@ -129,9 +126,10 @@ function LafayetteScene({ town, lookId, bakeLastMs, materialColorsOverride, forc
     return () => document.removeEventListener('pointerdown', _onPointerDown)
   }, [])
 
-  // Street labels are browse-only content. The phone profile staggers them in so the GPU compiles
-  // in batches (the markers, the player's overlay, stagger the same way in LandmarkMarkers.jsx).
-  const labelsReady = useBrowseContentReady(labelGateMode, forceContentReady, quality.staggerLabels ? 2000 : 0)
+  // Street labels are Browse content (every shot but the hero). MOUNTED ALWAYS and SHOWN off the hero, so the reveal
+  // gate prepares them with the town (Town.jsx#RevealGate, `town:labels`) and no flight to Browse mounts, lays out or
+  // links them (crutch ①, 2026-10-07). REMOVED: mounting them on each Browse entry, and the phone's 2 s stagger.
+  const showLabels = !!forceContentReady || labelViewMode !== 'hero'
 
   // Street labels — shared with Cartograph's MapLayers via the same pipeline
   // (streetLabels.js polylines → useLabelPlacements layout → StreetLabels
@@ -162,7 +160,12 @@ function LafayetteScene({ town, lookId, bakeLastMs, materialColorsOverride, forc
           Designer mounts, so they never drift): repeat + size k × widthM +
           fit/abbrev from labelLayout.js, thinned by the runtime zoom-LOD
           (labelLod.js) as the camera pulls out / in. */}
-      {labelsReady && !hide.labels && <StreetLabels placements={labelPlacements} y={0.08} style={labelStyle} />}
+      {/* Their own Suspense: drei's Text suspends on its font, which must never hold the town. */}
+      {!hide.labels && (
+        <group name="town:labels" visible={showLabels}>
+          <Suspense fallback={null}><StreetLabels placements={labelPlacements} y={0.08} style={labelStyle} active={showLabels} /></Suspense>
+        </group>
+      )}
 
       {/* Park title — the "LAFAYETTE PARK" landmark label. Has its OWN
           `parkTitle` toggle in the Labels panel (separate from `labels` =

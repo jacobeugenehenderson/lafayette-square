@@ -10,7 +10,9 @@ import { prepareLabelLod, assignLabelLod, metersPerPixel, SCREEN_LABEL_SPACING_P
 // (Designer, ortho) and LafayetteScene (player, perspective) so they never drift
 // ([[project_preview_equals_ls_literally]]). `.visible` is toggled imperatively
 // on the wrapping group — no React re-render, no geometry churn.
-export default function StreetLabels({ placements, y = 0, style }) {
+// `active` (default true): run the zoom-LOD. A caller that keeps the labels mounted but hidden (LafayetteScene, off
+// Browse) passes false, so a hidden set costs no per-frame work and stays whole for the reveal gate's prepare draw.
+export default function StreetLabels({ placements, y = 0, style, active = true }) {
   const camera = useThree(s => s.camera)
   const heightPx = useThree(s => s.size.height)
   const refs = useRef([])
@@ -23,6 +25,7 @@ export default function StreetLabels({ placements, y = 0, style }) {
   const groups = useMemo(() => prepareLabelLod(items), [items])
 
   useFrame(() => {
+    if (!active) return
     const targetSpacing = SCREEN_LABEL_SPACING_PX * metersPerPixel(camera, heightPx)
     assignLabelLod(items, groups, targetSpacing, (i, vis) => {
       const g = refs.current[i]
