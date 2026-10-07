@@ -31,7 +31,9 @@ import {
   HALO_FIELD_KEYS, HALO_FLAT_DEFAULTS,
   GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS,
   GRAIN_FLAT_DEFAULTS,
+  REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
+import { revealProgress, markDetail } from '../lib/startupMarks.js'
 import { applyDofFrame } from './dofDriver.js'
 
 // ── Module-level driving refs ────────────────────────────────────────────────
@@ -41,6 +43,28 @@ import { applyDofFrame } from './dofDriver.js'
 // identical to the SC.1 sky/lighting consumer pattern.
 export const _fillToeRef         = { current: 1 - FILL_FLAT_DEFAULTS.crush }
 export const _exposureRef        = { current: EXPOSURE_FLAT_DEFAULTS.value }
+
+/**
+ * THE exposure, the one expression both writers use (this driver, PostProcessing.jsx#ExposureTicker): the Look's
+ * authored exposure × the weather's neutral density (one stop down at full storm) × THE DAWN — rising to 1 over the
+ * Look's `reveal.dawn` seconds from the splash sky's level (Jacob, 2026-10-07: "the light fades up too, like the
+ * world is coming alive"). A uniform: nothing recompiles. On a page with no reveal gate the dawn is 1.
+ */
+export function townExposure(exposureChannel, revealChannel, minute, slotMins) {
+  const dawn = resolveGroupAtMinute(revealChannel, minute, slotMins, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS).dawn
+  return resolveGroupAtMinute(exposureChannel, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
+    * weatherExposureScale(useSkyState.getState().storminess)
+    * dawnLevel(dawn)
+}
+// The dawn rises FROM THE SPLASH'S SKY (Jacob, 2026-10-07): the reveal mark carries `from`, the town sky's brightness
+// at that moment against its brightest that day (Town.jsx#RevealGate) — near 0 at night (a true dawn out of the dark),
+// near 1 at noon (a gentle brightening). 1 on a page with no gate.
+function dawnLevel(seconds) {
+  const p = revealProgress(seconds)
+  if (p >= 1) return 1
+  const from = markDetail('reveal')?.from ?? 0
+  return from + (1 - from) * p
+}
 export const _warmthRef          = { current: WARMTH_FLAT_DEFAULTS.value }
 export const _tintRef            = { current: WARMTH_FLAT_DEFAULTS.tint }
 export const _gradeContrastRef   = { current: GRADE_FLAT_DEFAULTS.contrast }
@@ -66,7 +90,7 @@ export const _haloColorRef       = { current: new THREE.Color(HALO_FLAT_DEFAULTS
  */
 export function usePostFxDriver({
   bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
-  haloChannel, gradeChannel, grainChannel, dofChannel, dofOn, dofFocus,
+  haloChannel, gradeChannel, grainChannel, dofChannel, revealChannel, dofOn, dofFocus,
   viewMode, aoRef, bloomRef,
 }) {
   const { gl, camera } = useThree()
@@ -77,11 +101,8 @@ export function usePostFxDriver({
     const minute = tod.getMinuteOfDay()
     const slotMins = getTodSlotMinutes(tod.currentTime)
 
-    // Exposure / Warmth / Fill → module refs consumed by FilmGrade.update().
-    // × the weather's neutral density (`lib/sky-scalars.js`): the town's authored exposure,
-    // one stop down at full storm, from the same directive the rain reads.
-    _exposureRef.current = resolveGroupAtMinute(exposureChannel, minute, slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
-      * weatherExposureScale(useSkyState.getState().storminess)
+    // Exposure / Warmth / Fill → module refs consumed by FilmGrade.update(). The exposure is townExposure (above).
+    _exposureRef.current = townExposure(exposureChannel, revealChannel, minute, slotMins)
     const wb = resolveGroupAtMinute(warmthChannel, minute, slotMins, WARMTH_FIELD_KEYS, WARMTH_FLAT_DEFAULTS)
     _warmthRef.current   = wb.value
     _tintRef.current     = wb.tint

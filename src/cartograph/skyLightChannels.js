@@ -134,6 +134,19 @@ export const EXPOSURE_FIELDS = [
 export const EXPOSURE_FLAT_DEFAULTS = { value: 0.95 }
 export const EXPOSURE_FIELD_KEYS = ['value']
 
+// The reveal (Jacob, 2026-10-06: the town arrives at once; "the light fades up too, like the world is coming alive";
+// the emblem "lingers there for a moment"): how long each part of the arrival takes, seconds. One knob each, authored
+// per Look like every channel here; flat. ⛔ Never constants in the renderer. Read by Town.jsx#RevealGate (linger,
+// swell, fade) and usePostFxDriver (dawn: the exposure rising from black at the reveal).
+export const REVEAL_FIELDS = [
+  { key: 'linger', label: 'Emblem linger', unit: 's', min: 0, max: 6, step: 0.1 },
+  { key: 'dawn',   label: 'Dawn',          unit: 's', min: 0, max: 6, step: 0.1 },
+  { key: 'swell',  label: 'Terrain swell', unit: 's', min: 0, max: 6, step: 0.1 },
+  { key: 'fade',   label: 'Emblem fade',   unit: 's', min: 0, max: 6, step: 0.1 },
+]
+export const REVEAL_FLAT_DEFAULTS = { linger: 1.5, dawn: 1, swell: 1, fade: 1 }
+export const REVEAL_FIELD_KEYS = REVEAL_FIELDS.map((f) => f.key)
+
 // AO: three knobs on the existing N8AO post effect. Defaults match the
 // legacy Environment > Ambient Occlusion sliders.
 export const AO_FIELDS = [

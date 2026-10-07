@@ -57,7 +57,7 @@ import {
 // Preview (PreviewApp.jsx via `inspect`) mount THIS file — the "ONE consumer"
 // doctrine made structural (PreviewPostFx's forked composer + driver retired
 // 2026-06-30). ExposureTicker still writes _exposureRef.
-import { usePostFxDriver, _exposureRef } from './usePostFxDriver.js'
+import { usePostFxDriver, _exposureRef, townExposure } from './usePostFxDriver.js'
 import { RenderPipeline } from './renderPipeline.jsx'
 import { lookOf } from '../lib/lookOf.js'
 
@@ -87,15 +87,14 @@ const DOF_DEFAULT_CHANNEL = Object.freeze(kitDayChannel('dof'))
 // (2026-05-13). Preview mounts both this and PostProcessing (inspect); both
 // resolve the same exposure channel → same value, harmless double-write.
 
-export function ExposureTicker({ lookId, bakeLastMs, exposureOverride }) {
+export function ExposureTicker({ lookId, bakeLastMs, exposureOverride, revealOverride }) {
   const { gl } = useThree()
   const scene = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const channel = exposureOverride ?? scene?.exposure ?? EXPOSURE_DEFAULT_CHANNEL
+  const reveal = revealOverride ?? scene?.reveal ?? null
   useFrame(() => {
     const tod = useTimeOfDay.getState()
-    const slotMins = getTodSlotMinutes(tod.currentTime)
-    const v = resolveGroupAtMinute(channel, tod.getMinuteOfDay(), slotMins, ['value'], EXPOSURE_FLAT_DEFAULTS).value
-      * weatherExposureScale(useSkyState.getState().storminess)
+    const v = townExposure(channel, reveal, tod.getMinuteOfDay(), getTodSlotMinutes(tod.currentTime))
     gl.toneMappingExposure = v
     _exposureRef.current = v
   })
@@ -109,7 +108,7 @@ const _tmpHorizon = new THREE.Color()
 
 export function PostProcessing({
   lookId, bakeLastMs, viewMode,
-  bloomOverride, aoOverride, exposureOverride, warmthOverride,
+  bloomOverride, aoOverride, exposureOverride, warmthOverride, revealOverride,
   fillOverride, haloOverride, gradeOverride, grainOverride, dofOverride, dofFocusOverride,
   inspect,   // Preview only: { toggles } — per-pass visibility matrix (see RenderPipeline).
 }) {
@@ -147,7 +146,7 @@ export function PostProcessing({
   // scene.json-baked channels (Preview = no overrides) — no behavior fork.
   usePostFxDriver({
     bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
-    haloChannel, gradeChannel, grainChannel, dofChannel, dofOn: dofMounted,
+    haloChannel, gradeChannel, grainChannel, dofChannel, revealChannel: revealOverride ?? scene?.reveal ?? null, dofOn: dofMounted,
     dofFocus: dofFocusOverride !== undefined ? dofFocusOverride : (scene?.dofFocus ?? null),
     viewMode, aoRef, bloomRef,
   })

@@ -698,20 +698,26 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 // camera lands, at any framerate. (2026-06-28 — Browse terrain Y-fight on
 // return + late flatten.)
 const EXAG_EASE_MS = 1200
-function TerrainExagDriver({ target }) {
+function TerrainExagDriver({ target, swellMs }) {
   const from = useRef(terrainExag.value)
   const lastTarget = useRef(target)
   const elapsed = useRef(0)
+  // ⭐ THE SWELL (Jacob, 2026-10-06): the page's FIRST ease — the town prepared flat, raised to the shot's height at the
+  // reveal — takes the Look's authored `reveal.swell` (Town.jsx); a view change after it keeps EXAG_EASE_MS.
+  const duration = useRef(EXAG_EASE_MS)
+  const swelled = useRef(false)
   useFrame((state, delta) => {
     // View change → re-anchor the ease at wherever the value is right now.
     if (target !== lastTarget.current) {
       from.current = terrainExag.value
       lastTarget.current = target
       elapsed.current = 0
+      duration.current = !swelled.current && Number.isFinite(swellMs) ? swellMs : EXAG_EASE_MS
+      swelled.current = true
     }
     if (terrainExag.value === target) return
     elapsed.current += delta * 1000
-    const p = Math.min(elapsed.current / EXAG_EASE_MS, 1)
+    const p = duration.current > 0 ? Math.min(elapsed.current / duration.current, 1) : 1
     const e = p * p * (3 - 2 * p)   // smoothstep
     terrainExag.value = from.current + (target - from.current) * e
     if (p >= 1) { terrainExag.value = target; return }
@@ -845,7 +851,7 @@ function withOuterWater(positions, indices, { polys = [], feathers = [] } = {}) 
   return { positions: new Float32Array(P), indices: new Uint32Array(I), bodyExtent, feather }
 }
 
-export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag(), surfacesOverride } = {}) {
+export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag(), swellMs, surfacesOverride } = {}) {
   const [data, setData] = useState(null)
   const resolvedLookId = lookOf(lookId, 'BakedGround')
 
@@ -897,7 +903,7 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag
 
   return (
     <>
-      <TerrainExagDriver target={targetExag} />
+      <TerrainExagDriver target={targetExag} swellMs={swellMs} />
       {/* Keyed by the bake so a re-bake REMOUNTS GroundMeshes with a fresh
           map loads (each URL is the manifest's; poolmap may flip absent→present across a bake) and its materials. Remount
           is fine: the geometry already rebuilds on manifest change. */}

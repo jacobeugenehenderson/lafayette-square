@@ -104,7 +104,12 @@ import ShotFlight from '../camera/ShotFlight.jsx'
 import Movers from './Movers.jsx'
 import RegimeControls from './RegimeControls.jsx'
 import { resolveHeroKeyframes, useSceneStencil } from '../lib/cameraRegimes.js'
-import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { SHOTS_FLAT_DEFAULTS, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
+import { createRoot } from 'react-dom/client'
+import TownSplash from './TownSplash.jsx'
+import useCalendar from '../hooks/useCalendar'
+import { titleOf as _titleOf } from '../lib/townRecord.js'
 import { skyModeOf } from '../lib/skyMode'
 import { ShaderLinkGuard } from '../lib/shaderLinkGuard.jsx'
 import WindSheet from './WindSheet.jsx'
@@ -145,7 +150,7 @@ import { WATER_PLAN } from './waterMaterial.js'
 import PlanRim from './PlanRim.jsx'
 import MountainBackdrop from './MountainBackdrop'
 import DrawnAnchor from './DrawnAnchor.jsx'
-import { markStartup, isPrepared, failureOf, isRevealed, subscribeStartup } from '../lib/startupMarks.js'
+import { markStartup, markTime, isPrepared, failureOf, isRevealed, subscribeStartup } from '../lib/startupMarks.js'
 import { getSceneStencil } from './sceneStencilState'
 import { buildingLiftY } from '../lib/buildingLift.js'
 
@@ -205,15 +210,20 @@ const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
 // names what it waits on, once, at that failure — never a timer.
 const PHYSICAL = ['ground', 'buildings', 'trees']
 const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:park', 'town:lamps'])
-function RevealGate({ need }) {
+function RevealGate({ need, lingerMs, skyAt }) {
   const { gl, scene, camera } = useThree()
   const phase = useRef({ name: 'wait' })
+  const [, wake] = useState(0)
   const state = useSyncExternalStore(subscribeStartup, () => need.map((k) => (isPrepared(k) ? 'p' : failureOf(k) ? 'f' : '-')).join('') + isRevealed())
   useEffect(() => {
     if (isRevealed() || phase.current.name !== 'wait') return
     const failed = need.filter((k) => failureOf(k))
     if (failed.length) { console.error(`[reveal] ⛔ the town is held hidden: ${failed.map((k) => `${k} (${failureOf(k)})`).join(', ')}`); return }
     if (!need.every(isPrepared)) return
+    // The emblem LINGERS at least the Look's `reveal.linger` from the gate arming (Jacob, ~1.5 s): a town that is
+    // ready sooner waits for it, so the emblem never flashes.
+    const wait = (markTime('gate') ?? 0) + lingerMs - performance.now()
+    if (wait > 0) { const t = setTimeout(() => wake((n) => n + 1), wait); return () => clearTimeout(t) }
     const groups = []
     scene.traverse((o) => { if (REVEAL_GROUPS.has(o.name)) groups.push(o) })
     // 1. Compile ahead, in parallel (KHR_parallel_shader_compile).
@@ -234,7 +244,7 @@ function RevealGate({ need }) {
   useFrame(() => {
     const p = phase.current
     if (p.name !== 'prep') return
-    if (p.i >= p.groups.length) { phase.current = { name: 'done' }; markStartup('reveal'); return }
+    if (p.i >= p.groups.length) { phase.current = { name: 'done' }; markStartup('reveal', { from: skyLevelNow(skyAt) }); return }
     const g = p.groups[p.i++]
     if (!g.visible && !gatedOn(g)) return   // a layer switched off stays off
     const st = getSceneStencil()
@@ -250,6 +260,39 @@ function RevealGate({ need }) {
   })
   return null
 }
+// DOM over the canvas, filling the canvas's own box in every app (the Ward, Preview, Stage, the LS player): a div in
+// the canvas's container with its own root. ⛔ Not drei's <Html fullscreen>: it still positions by projecting a 3D
+// point, and in the LS player's layout it put the splash 971 px off-screen.
+function CanvasOverlay({ children }) {
+  const gl = useThree((s) => s.gl)
+  const root = useRef(null)
+  useEffect(() => {
+    const host = gl.domElement.parentElement
+    if (!host) return
+    const div = document.createElement('div')
+    Object.assign(div.style, { position: 'absolute', inset: '0', pointerEvents: 'none', zIndex: '300' })
+    if (getComputedStyle(host).position === 'static') host.style.position = 'relative'
+    host.appendChild(div)
+    root.current = createRoot(div)
+    return () => { const r = root.current; root.current = null; setTimeout(() => r.unmount(), 0); div.remove() }
+  }, [gl])
+  useEffect(() => { root.current?.render(children) })
+  return null
+}
+
+// The dawn rises FROM THE SPLASH'S SKY (Jacob, 2026-10-07): the town sky's brightness now, against its brightest that
+// day, both from the town's own sky model (the splash draws the same one). Carried on the `ward:reveal` mark's detail,
+// read by usePostFxDriver#townExposure. No sky model yet → 0 (a full dawn), never a guess.
+function skyLevelNow(skyAt) {
+  if (!skyAt) return 0
+  const doy = useCalendar.getState().dayOfYear()
+  const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+  const L = (m) => { const k = skyAt(m, doy); return (lum(k.high) + lum(k.horizon)) / 2 }
+  let max = 0
+  for (let m = 0; m < 1440; m += 30) max = Math.max(max, L(m))
+  return max > 0 ? Math.min(1, L(useTimeOfDay.getState().getMinuteOfDay()) / max) : 0
+}
+
 // A gated group that its layer switch wants drawn (Town sets `userData.gatedOn` beside `visible`).
 const gatedOn = (g) => g.userData?.gatedOn !== false
 
@@ -533,8 +576,14 @@ export default function Town({
   const movieHold = useMemo(() => () => flightHold.current() || !!movie?.hold?.(), [movie])
   // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
   const loaded = useTownLoaded(lookId)
+  // The reveal: the gate ARMS at mount (`ward:gate`), so the emblem shows from the town's first frame; its timings are
+  // the Look's `reveal` channel (skyLightChannels.js#REVEAL_FIELDS), seconds; the splash draws the town's own sky.
+  useEffect(() => { markStartup('gate') }, [])
+  const skyAt = useTownSky(lookId)
+  const revealTiming = resolveGroupAtMinute(scene?.reveal, 0, null, REVEAL_FIELD_KEYS, REVEAL_FLAT_DEFAULTS)
+  const splash = <CanvasOverlay><TownSplash title={_titleOf(town)} fadeSeconds={revealTiming.fade} skyAt={skyAt} /></CanvasOverlay>
   const revealed = useSyncExternalStore(subscribeStartup, isRevealed)
-  if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} /></>
+  if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} />{splash}</>
   const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
   // ⭐ THE SWELL (Jacob, 2026-10-06): the town is prepared FLAT and the terrain swells to the shot's height as the
   // reveal's gesture, through the one terrain driver (BakedGround#TerrainExagDriver). A gesture, not a perf lever.
@@ -597,9 +646,10 @@ export default function Town({
       </group>
 
       <Suspense fallback={null}>
-        <RevealGate need={PHYSICAL.filter((k) => on(k))} />
+        <RevealGate need={PHYSICAL.filter((k) => on(k))} lingerMs={revealTiming.linger * 1000} skyAt={skyAt} />
+        {splash}
         <group name="town:ground" visible={on('ground') && revealed} userData={{ gatedOn: on('ground') }}>
-          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} swellMs={revealTiming.swell * 1000} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
           {/* The shore median diagnostic shows the region with every treatment OFF, so the revetment hides while it is on. */}
           <group visible={!on('shoreMedian')}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary></group>
           {on('shoreMedian') && <R3FErrorBoundary name="ShoreMedian"><ShoreMedian lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}

@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { townClockOf, townDateAtMinute } from './lib/townClock.js'
-import SunCalc from 'suncalc'
-import { INSTANCE, moduleOn, TOWN_PATH_PREFIX } from './instance.js'
+import { moduleOn, TOWN_PATH_PREFIX } from './instance.js'
 import { currentSiteUrl } from './lib/townOrigin.js'
 import Scene from './components/Scene'
 import SceneBoundary from './components/SceneBoundary'
@@ -19,7 +18,6 @@ import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import SmsInbox, { useSmsInbox } from './components/SmsInbox'
 import ChatModal from './components/ChatModal'
 import EventTicker from './components/EventTicker'
-import TownMarkGlyph from './components/TownMarkGlyph'
 import { applyTownBranding } from './lib/townMark.js'
 import BrowseHeader from './components/BrowseHeader'
 import FeatureBoundary from './components/FeatureBoundary'
@@ -468,149 +466,8 @@ function CaryStandalone() {
   )
 }
 
-// ── Splash: time-pegged sky gradient + arch mark ─────────────────────
-const SPLASH_LAT = INSTANCE.geography.lat, SPLASH_LON = INSTANCE.geography.lon
-
-function splashSkyColors() {
-  const now = new Date()
-  const pos = SunCalc.getPosition(now, SPLASH_LAT, SPLASH_LON)
-  const alt = pos.altitude // radians
-
-  // Determine dawn vs dusk: sun azimuth < π means morning
-  const isDawn = pos.azimuth < Math.PI
-
-  const lerp = (a, b, t) => {
-    t = Math.max(0, Math.min(1, t))
-    const parse = (hex) => [
-      parseInt(hex.slice(1, 3), 16),
-      parseInt(hex.slice(3, 5), 16),
-      parseInt(hex.slice(5, 7), 16),
-    ]
-    const [ar, ag, ab] = parse(a)
-    const [br, bg, bb] = parse(b)
-    const r = Math.round(ar + (br - ar) * t)
-    const g = Math.round(ag + (bg - ag) * t)
-    const b2 = Math.round(ab + (bb - ab) * t)
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b2.toString(16).padStart(2, '0')}`
-  }
-
-  // Keyframes matching CelestialBodies GradientSky (horizon, zenith pairs)
-  const night   = { h: '#1a1525', z: '#050508' }
-  const deep    = isDawn ? { h: '#3a2838', z: '#0a0c1a' } : { h: '#7a3828', z: '#0a0c1a' }
-  const peak    = isDawn ? { h: '#c07050', z: '#141838' } : { h: '#cc6030', z: '#141835' }
-  const early   = isDawn ? { h: '#dda065', z: '#223060' } : { h: '#dd8840', z: '#1a2555' }
-  const golden  = isDawn ? { h: '#d0b888', z: '#3a6aaa' } : { h: '#ccaa70', z: '#3a68a8' }
-  const day     = { h: '#9dc5e0', z: '#4a90e0' }
-
-  let horizon, zenith
-  if (alt < -0.12) {
-    horizon = night.h; zenith = night.z
-  } else if (alt < -0.02) {
-    const t = (alt + 0.12) / 0.10
-    horizon = lerp(night.h, deep.h, t); zenith = lerp(night.z, deep.z, t)
-  } else if (alt < 0.03) {
-    const t = (alt + 0.02) / 0.05
-    horizon = lerp(deep.h, peak.h, t); zenith = lerp(deep.z, peak.z, t)
-  } else if (alt < 0.08) {
-    const t = (alt - 0.03) / 0.05
-    horizon = lerp(peak.h, early.h, t); zenith = lerp(peak.z, early.z, t)
-  } else if (alt < 0.22) {
-    const t = (alt - 0.08) / 0.14
-    horizon = lerp(early.h, golden.h, t); zenith = lerp(early.z, golden.z, t)
-  } else if (alt < 0.35) {
-    const t = (alt - 0.22) / 0.13
-    horizon = lerp(golden.h, day.h, t); zenith = lerp(golden.z, day.z, t)
-  } else {
-    horizon = day.h; zenith = day.z
-  }
-
-  return { horizon, zenith }
-}
-
-const _splashColors = splashSkyColors()
-
-// Generate static star dots for night splashes
-const _splashStars = (() => {
-  const pos = SunCalc.getPosition(new Date(), SPLASH_LAT, SPLASH_LON)
-  if (pos.altitude > -0.02) return [] // no stars during day/golden hour
-  // Fade in stars as it gets darker
-  const baseOpacity = Math.min(1, (-pos.altitude - 0.02) / 0.10)
-  const stars = []
-  // Seeded pseudo-random for consistent layout
-  let seed = 12345
-  const rand = () => { seed = (seed * 16807 + 0) % 2147483647; return seed / 2147483647 }
-  const count = 60
-  for (let i = 0; i < count; i++) {
-    stars.push({
-      left: `${rand() * 100}%`,
-      top: `${rand() * 85}%`, // keep above horizon
-      size: 1 + rand() * 1.5,
-      opacity: (0.3 + rand() * 0.7) * baseOpacity,
-    })
-  }
-  return stars
-})()
-
-// Signal that splash hold period is over and Scene can mount
-let _splashReady = false
-const _splashListeners = new Set()
-function onSplashReady(fn) { if (_splashReady) fn(); else _splashListeners.add(fn) }
-function _fireSplashReady() { _splashReady = true; _splashListeners.forEach(fn => fn()); _splashListeners.clear() }
-
-function useSplashReady() {
-  const [ready, setReady] = useState(_splashReady)
-  useEffect(() => { if (!ready) onSplashReady(() => setReady(true)) }, [ready])
-  return ready
-}
-
-function Splash() {
-  const [visible, setVisible] = useState(true)
-  const [fading, setFading] = useState(false)
-  const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
-
-  useEffect(() => {
-    // Hold splash while admin prompt is open — don't load 3D scene
-    if (adminPromptOpen) return
-    // Allow Scene to mount after hold period, before fade begins
-    const t0 = setTimeout(() => _fireSplashReady(), 1500)
-    const t1 = setTimeout(() => setFading(true), 2500)
-    const t2 = setTimeout(() => setVisible(false), 3300)
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2) }
-  }, [adminPromptOpen])
-
-  if (!visible) return null
-
-  return (
-    <div
-      className="fixed inset-0 z-[300] flex items-center justify-center"
-      style={{
-        background: `radial-gradient(ellipse at 50% 100%, ${_splashColors.horizon}, ${_splashColors.zenith} 70%)`,
-        opacity: fading ? 0 : 1,
-        transition: 'opacity 800ms ease-out',
-        pointerEvents: fading ? 'none' : 'auto',
-      }}
-    >
-      {_splashStars.map((s, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: s.left,
-            top: s.top,
-            width: s.size,
-            height: s.size,
-            opacity: s.opacity,
-          }}
-        />
-      ))}
-      {/* ⛔ THE LOAD SCREEN IS THE FIRST THING A PARTNER SEES, and it used to be ONE shared
-          `favicon.svg` — Lafayette Square's arch — on every town's own address. It is now
-          the town's authored mark: its emoji, its own SVG, or its initial. ⛔ Never
-          another town's. (`src/lib/townMark.js`.) */}
-      <TownMarkGlyph size={72} badge style={{ opacity: 0.85 }} />
-    </div>
-  )
-}
+// The load screen moved INTO THE KIT (src/components/TownSplash.jsx, drawn by <Town> while the town prepares out of
+// sight; 2026-10-07): it ran on timers here, held the 3D scene's mount for 1.5 s, and painted a hand-copied sky.
 
 /**
  * Unread count on the SMS Inbox menu item.
@@ -865,7 +722,6 @@ function App() {
   // whole. Do not merge the two.
   const isGround = window.location.search.includes('ground') || layer === 'slab'
   const adminPromptOpen = useGuardianStatus(s => s.adminPromptOpen)
-  const splashReady = useSplashReady()
 
   return (
     <div className="w-full h-full relative">
@@ -885,7 +741,7 @@ function App() {
           not a dev artifact. The slab therefore keeps rendering and the sheet
           below is laid OVER it. Staying mounted also keeps WeatherPoller
           alive, so the Player's Almanac has a temperature. */}
-      {!adminPromptOpen && splashReady && (
+      {!adminPromptOpen && (
         <SceneBoundary><Scene sheeted={layer === 'player'} ground={ground} /></SceneBoundary>
       )}
 
@@ -910,7 +766,6 @@ function App() {
       {!isGround && moduleOn('info') && <FeatureBoundary name="Info"><InfoModal /></FeatureBoundary>}
       {moduleOn('delivery') && <FeatureBoundary name="Delivery"><CourierDashboard /></FeatureBoundary>}
       <AdminPrompt />
-      <Splash />
     </div>
   )
 }

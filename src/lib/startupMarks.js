@@ -36,11 +36,11 @@ const TRUTHFUL = ['ground', 'buildings', 'trees']
 
 export const hasPerf = typeof performance !== 'undefined' && typeof performance.mark === 'function'
 
-export function markStartup(id) {
+export function markStartup(id, detail) {
   if (!hasPerf) return
   const name = MARK_PREFIX + id
   if (performance.getEntriesByName(name, 'mark').length) return
-  performance.mark(name)
+  performance.mark(name, detail === undefined ? undefined : { detail })
   if (TRUTHFUL.includes(id) && TRUTHFUL.every((t) => performance.getEntriesByName(MARK_PREFIX + t, 'mark').length)) {
     markStartup('first-truthful-frame')
   }
@@ -92,4 +92,26 @@ export function subscribeStartup(fn) {
   const obs = new PerformanceObserver((list) => { if (list.getEntries().some((e) => e.name.startsWith(MARK_PREFIX))) fn() })
   try { obs.observe({ type: 'mark' }) } catch { return () => {} }
   return () => obs.disconnect()
+}
+
+/** A mark's detail (what it was marked with), or null. */
+export function markDetail(id) {
+  if (!hasPerf) return null
+  return performance.getEntriesByName(MARK_PREFIX + id, 'mark')[0]?.detail ?? null
+}
+/** A mark's time (ms since navigation start), or null. */
+export function markTime(id) {
+  if (!hasPerf) return null
+  return performance.getEntriesByName(MARK_PREFIX + id, 'mark')[0]?.startTime ?? null
+}
+/**
+ * How far into the reveal this frame is, 0→1 over `seconds` from `ward:reveal`. 0 before it; 1 on a page whose gate
+ * never armed (`ward:gate`, Town.jsx#RevealGate) — a canvas with no town (the Grove's diorama) is never held dark.
+ */
+export function revealProgress(seconds) {
+  if (!isMarked('gate')) return 1
+  const t = markTime('reveal')
+  if (t == null) return 0
+  if (!(seconds > 0)) return 1
+  return Math.min(1, Math.max(0, (performance.now() - t) / (seconds * 1000)))
 }
