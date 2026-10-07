@@ -14,7 +14,7 @@
  * one InstancedMesh per submesh per variant. No picker, no overrides,
  * no index.json. Same shape Stage / mobile would consume.
  */
-import { Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -953,29 +953,6 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   const needsMaterials = !!groups && (groups.meshGroups.size > 0 || groups.impostors.size > 0)
   const mats = useTreeMaterials(lookName, needsMaterials)
 
-  // ── Cold-load reconcile flush (the REAL fix) ───────────────────────────
-  // The Canvas runs frameloop="demand". On a COLD load each per-variant
-  // <Suspense> useGLTF resolves and React commits the VariantInstances fiber,
-  // but R3F does NOT attach the new instancedMesh to the three.scene until the
-  // NEXT reconcile pass. So the trees sit committed-but-UNATTACHED and stay
-  // invisible until ANY state change triggers a reconcile — confirmed by the
-  // operator: navigating Browse↔Hero, or nudging Exposure and back, makes them
-  // appear. It is NOT a missing frame: continuous invalidate() does nothing, and
-  // it also failed under frameloop="always" (Preview/Stage). Rendering ≠
-  // reconciling. So we self-poke: force a few re-renders across the cold-load
-  // window so each variant flushes/attaches as its GLB resolves, then stop. This
-  // is the automated equivalent of the operator's Exposure-nudge. The visible
-  // result is the sub-second shimmer-fill. (2026-06-28 — the hero "trees don't
-  // relieve until a poke" bug.)
-  const [, forceReconcile] = useReducer(x => (x + 1) & 0xffff, 0)
-  useEffect(() => {
-    if (!groups) return
-    let id, n = 0
-    const KICKS = 20            // ~8s of flushes (every 400ms), then stop
-    const tick = () => { forceReconcile(); if (++n < KICKS) id = setTimeout(tick, 400) }
-    id = setTimeout(tick, 400)
-    return () => clearTimeout(id)
-  }, [groups])
 
   // Phase B (2026-05-15): per-species bark settings carried in the atlas
   // manifest, with per-Look palette override (scene.materialColors[<species>])
