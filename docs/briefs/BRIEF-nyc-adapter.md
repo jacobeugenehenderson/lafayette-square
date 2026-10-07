@@ -250,7 +250,13 @@ mutation-tested; Jacob's eye in Survey.
 
 **Open:** step 5 surfaces (CURB `5xvt-8cbk`, MEDIAN `ees7-4ufv` on Socrata; CURB_CUT a FILE well from the 2022 gdb) ·
 step 6 the §3.3 measured rung (incl. Section's own resolver, the live-mint disclosure, the handle fallbacks) · step 7
-the curb/median checks (§3.4). Jackson Heights owes a re-bake (its `clean/map.json` is gone after the last rollback).
+the curb/median checks (§3.4). Jackson Heights re-baking overnight 2026-10-06 (Boz).
+**⭐ NYC is a FLEET, not a town** (Jacob, 2026-10-06: *"the entire NYC map system … is all the same, so once we figure out the
+specifics we'll be golden. We can put this in the adapter."*). Every NYC ward draws on the same wells, the same Socrata
+protocol and the same city density, so whatever JH teaches is learned once. ⇒ **JH's ground bake is the first fleet
+question:** 1 h 51 min last night against Huron's ~6 min, cause not established. Profile it, then put the fix where it
+belongs: in this adapter if it's NYC-specific (data density, planimetric detail), in the bake if it's kit-general (Layer
+0: never an NYC special case in kit code). Whatever is found, write it here so every NYC ward inherits it.
 **Not this brief's, handed to Boz:** a JH tree-species-map (arborist; absent resolves EMPTY) · holed footprints
 unsupported end to end, OSM's too (Jacob) · 598 BINs with several city addresses → null + candidates (Jacob) ·
 `land_area` has no unit (ROADMAP) · huron's ArcGIS address `--dry-run` sample query 400s (pre-existing).
