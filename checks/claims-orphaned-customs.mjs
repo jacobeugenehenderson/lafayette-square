@@ -11,7 +11,7 @@
 // FAILS — never a skip. (Replaced 2026-10-07: the old version read LS's ribbons for every scene and modelled frontage
 // with buildBlockGeometryV2, not the ① producer; its history is in `cartograph/_archive/orphaned-customs-retraction-2026-10-07.md`.)
 //
-//   node checks/claims-orphaned-customs.mjs [town ...]     (default: every Look with authored blockCustoms)
+//   node checks/claims-orphaned-customs.mjs [town ...]     (default: every Look in public/looks/index.json with authored blockCustoms)
 //   node checks/claims-orphaned-customs.mjs --selftest      (mutations: another town's shape · a dropped run — each must FAIL)
 // Read-only.
 import { readFileSync, existsSync, readdirSync } from 'fs'
@@ -68,7 +68,9 @@ if (selftest) {
 }
 
 const named = argv.filter(a => !a.startsWith('--'))
-const towns = named.length ? named : readdirSync(`${R0}public/looks`).filter(t => existsSync(`${R0}public/looks/${t}/design.json`) && slotsOf(customsOf(t)).length)
+// the towns are the REGISTRY's Looks (`public/looks/index.json`), never the directories — a retired Look's leftovers are not a town
+const registry = JSON.parse(readFileSync(`${R0}public/looks/index.json`, 'utf8')).looks.map(l => l.id)
+const towns = named.length ? named : registry.filter(t => existsSync(`${R0}public/looks/${t}/design.json`) && slotsOf(customsOf(t)).length)
 let bad = 0
 for (const town of towns) {
   const slots = slotsOf(customsOf(town)), shape = shapeOf(town)
