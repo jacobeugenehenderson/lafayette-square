@@ -56,6 +56,7 @@ import { fileURLToPath } from 'node:url'
 // with what Scene/Preview/Stage actually render. Node-safe ESM.
 import { heroPathPose, assertKeyframesAimed, assertHeroMotion } from '../src/preview/heroAnim.js'
 import { canopyLightAt } from '../src/lib/lampPool.js'
+import { packTrees } from './treesFormat.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
@@ -1231,7 +1232,8 @@ export async function bakeTrees({
     ? path.resolve(REPO_ROOT, output)
     : path.join(REPO_ROOT, 'public', 'baked', mapName, 'trees.json')
   await fs.mkdir(path.dirname(outPath), { recursive: true })
-  await fs.writeFile(outPath, JSON.stringify(out, null, 2))
+  // FORMAT 2 (arborist/treesFormat.mjs): minified, no tiles copy, no unread fields, LODs once per variant.
+  await fs.writeFile(outPath, JSON.stringify(packTrees(out)))
 
   const totalForbidden = Object.values(forbiddenCounts).reduce((a, b) => a + b, 0)
   const totalNudged = Object.values(nudged).reduce((a, b) => a + b, 0)
