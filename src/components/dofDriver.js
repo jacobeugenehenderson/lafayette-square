@@ -21,12 +21,14 @@
  */
 import * as THREE from 'three'
 import { _dofRefs } from './RomanceDoF.jsx'
+import { isMarked, isRevealed } from '../lib/startupMarks.js'
 import { resolveGroupAtMinute } from '../cartograph/animatedParam.js'
 import { DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
 
 const _camDir  = new THREE.Vector3()  // reused for the browse (look-down) gate
 const _heroVec = new THREE.Vector3()  // reused for the focus-pocket view-Z depth
 let _warnedNoFocus = false
+let _framesSeen = 0
 // Read-only inspection (as terrainShader's window.__terrainExag): this frame's focus — what probes and Preview read.
 const _inspect = { focus: null, dA: null, dB: null, dist: null }
 if (typeof window !== 'undefined') window.__dof = _inspect
@@ -90,7 +92,10 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   // space; −z is its forward depth. ⛔ No target ⇒ no depth of field, said once — never a guessed distance.
   const aim = focusPoint ? _aim.copy(focusPoint) : null
   if (!aim && !(focus?.a && focus?.b)) {
-    if (!_warnedNoFocus) { _warnedNoFocus = true; console.error('[dof] no focus point (no controls target) — depth of field is off') }
+    // Said on the EVENT that a town is shown with nothing to focus on — the reveal (startupMarks.js) — never on the
+    // frames before it, while the app's controls are still mounting; a canvas with no gate is shown from its second frame.
+    const shown = isMarked('gate') ? isRevealed() : _framesSeen++ > 0
+    if (shown && !_warnedNoFocus) { _warnedNoFocus = true; console.error('[dof] no focus point (no controls target, no focus object) — depth of field is off') }
     _dofRefs.maxBlur.current = 0
     _dofRefs.heroBlur.current = 0
     return
