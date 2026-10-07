@@ -8,7 +8,7 @@
  * the shared rung and divides out the coverage: (shared − hero.rgb) / (1 − hero.a) is the background alone. Exact —
  * the same 13-tap kernel and the SAME Karis weights as the shared ladder (they are read off the shared image), so the
  * subtraction cancels to rounding, and a multicoloured hero cancels as cleanly as the granite monument.
- * ⭐ The hero's pixels: inside its projected box (dofFocus.box) AND in focus (the same blur law) — a tree standing in
+ * ⭐ The hero's pixels: inside its projected box (the focus object's, derived each frame — src/lib/focusObject.js) AND in focus (the same blur law) — a tree standing in
  * front of it is out of focus and stays out. Each level is scissored to that box grown by the level's reach, so the
  * cost is the hero's patch of the screen, not the screen. Desktop-only and mounted only when DoF is on, like DoF.
  * Bloom keeps reading the shared ladder unchanged, so the hero still glows.

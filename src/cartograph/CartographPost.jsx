@@ -24,24 +24,10 @@ import useTownRanges from './useTownRanges.js'
 // Generic store-bound TodChannel mount. Reads channel + 6 actions by
 // name. Same shape as the one in CartographSkyLight; lifted here too
 // to keep this file self-contained.
-// Where the blur focuses: the camera's aim (it slides with the move) or a point PICKED in the view — the monument, a
-// building — held through the whole move (store#dofFocus; dofDriver.js).
-function DofFocusRow() {
-  const focus = useCartographStore(s => s.dofFocus)
-  const picking = useCartographStore(s => s.dofPicking)
-  const setPicking = useCartographStore(s => s.setDofPicking)
-  const setFocus = useCartographStore(s => s.setDofFocus)
-  const btn = { fontSize: 11, padding: '2px 8px', borderRadius: 6, border: '1px solid var(--outline-variant)', background: picking ? 'var(--primary)' : 'transparent', color: picking ? 'var(--on-primary)' : 'var(--on-surface)', cursor: 'pointer' }
-  return (
-    <div className="flex items-center gap-2" style={{ fontSize: 12, color: 'var(--on-surface)' }}>
-      <span style={{ color: 'var(--on-surface-subtle)' }}>Focus on</span>
-      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {picking ? 'click the view…' : focus ? focus.label : 'what the camera aims at'}
-      </span>
-      <button type="button" style={btn} onClick={() => setPicking(!picking)}>{picking ? 'Cancel' : 'Pick'}</button>
-      {focus && !picking && <button type="button" style={{ ...btn, background: 'transparent', color: 'var(--on-surface)' }} title="Focus on what the camera aims at" onClick={() => setFocus(null)}>✕</button>}
-    </div>
-  )
+// Where the blur focuses is not set here: it is an OBJECT, per hero keyframe (the town's hero unless a key names another;
+// src/lib/focusObject.js). REMOVED (Jacob, 2026-10-07): the free picked point and its Pick / ✕ row.
+function DofFocusNote() {
+  return <div style={{ fontSize: 12, color: 'var(--on-surface-subtle)' }}>Focus: per keyframe — Hero camera (the town's hero unless a key names another)</div>
 }
 
 function StoreChannel({ name, label, fields, flatDefaults, children }) {
@@ -110,7 +96,7 @@ export default function CartographPost() {
       <SectionLabel label="Lens & Film" />
       <StoreChannel name="dof" label="Focus (DoF)"
         fields={withRanges(DOF_FIELDS, ranges)} flatDefaults={DOF_FLAT_DEFAULTS}>
-        <DofFocusRow />
+        <DofFocusNote />
       </StoreChannel>
       <StoreChannel name="grain" label="Grain"
         fields={GRAIN_FIELDS} flatDefaults={GRAIN_FLAT_DEFAULTS} />

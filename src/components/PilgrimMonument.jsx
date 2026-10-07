@@ -126,7 +126,7 @@ function Model({ path }) {
   return scene ? <primitive object={scene} /> : null
 }
 
-export default function PilgrimMonument({ town, lookId, footprint, groundY, graniteOverride, children } = {}) {
+export default function PilgrimMonument({ town, lookId, footprint, groundY, graniteOverride, focusName, children } = {}) {
   if (!town || !footprint) throw new Error('[PilgrimMonument] ⛔ no town or footprint — mount <SetPiece>, which passes both')
   if (!Number.isFinite(groundY)) throw new Error('[PilgrimMonument] ⛔ no groundY — <SetPiece> passes its building\'s (the drawn ground\'s own height; 0 on a flat town)')
   const sp = town.setPiece
@@ -169,7 +169,7 @@ export default function PilgrimMonument({ town, lookId, footprint, groundY, gran
 
   if (!site) return null
   return (
-    <group ref={ref} name="pilgrim-monument" position={[site.x, groundRaw * terrainExag.value + groundY, site.z]}
+    <group ref={ref} name={focusName} userData={{ extent: PilgrimMonument.extent }} position={[site.x, groundRaw * terrainExag.value + groundY, site.z]}
            rotation={[0, southFacingYaw(site), 0]}>
       {sp.model ? <Model path={sp.model} /> : <Placeholder authored={authored} lookId={lookId} />}
       {children /* the slot's lighting, in the tower's base frame (SetPiece.jsx) */}

@@ -155,7 +155,6 @@ export async function bakeScene({ look } = {}) {
     // town's own disc. ⛔ No kit default (it would be one town's place in another's frame).
     browseFrame:   design.browseFrame || null,
     heroSubject:   design.heroSubject   || null,
-    dofFocus:      design.dofFocus      || null,   // the picked focus point, or null = the camera's aim
     // ⭐ THE HERO SHOT — keys `{ position, target, fov, t }` (t = a fraction of
     // the length; the first at 0) and, for 2+ keys, motion `{ length (s), mode:
     // 'bounce' | 'loop' }`. Every key carries its own aim and its own time, and

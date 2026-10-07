@@ -35,6 +35,9 @@ import {
 } from '../cartograph/skyLightChannels.js'
 import { revealProgress, markDetail } from '../lib/startupMarks.js'
 import { applyDofFrame } from './dofDriver.js'
+import { movieFocus, resolveFocusId, focusBox } from '../lib/focusObject.js'
+import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex.js'
+import { terrainExag } from '../utils/terrainShader.js'
 
 // ── Module-level driving refs ────────────────────────────────────────────────
 // All operator-authored params flow through these; the hook's useFrame populates
@@ -85,15 +88,16 @@ export const _haloColorRef       = { current: new THREE.Color(HALO_FLAT_DEFAULTS
  *
  * @param resolved  the already-resolved channels + drive targets:
  *   { bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
- *     haloChannel, gradeChannel, grainChannel, dofChannel, dofOn, viewMode,
+ *     haloChannel, gradeChannel, grainChannel, dofChannel, dofOn, heroSubject (the town's hero — what a keyframe's
+ *     'hero' focus names; src/lib/focusObject.js), viewMode,
  *     aoRef, bloomRef }
  */
 export function usePostFxDriver({
   bloomChannel, aoChannel, exposureChannel, warmthChannel, fillChannel,
-  haloChannel, gradeChannel, grainChannel, dofChannel, revealChannel, dofOn, dofFocus,
+  haloChannel, gradeChannel, grainChannel, dofChannel, revealChannel, dofOn, heroSubject,
   viewMode, aoRef, bloomRef,
 }) {
-  const { gl, camera } = useThree()
+  const { gl, camera, scene } = useThree()
   const controls = useThree((s) => s.controls)
 
   useFrame(() => {
@@ -175,11 +179,18 @@ export function usePostFxDriver({
     // DoF / Focus — the ONE shared per-frame driver (./dofDriver.js). Since all
     // three surfaces drive through this hook, the hero-pocket VIEW-Z anchor + the
     // browse look-down gate cannot drift between production and the publish gate.
-    // Focus = the default controls' target (the keyframe target in playback,
-    // the orbit pivot when flying). Cheap;
-    // only meaningful when dofOn (i.e. the DoF pass is mounted).
+    // Focus = the movie's focus OBJECTS (src/lib/focusObject.js — the keyframes' `focus`, the hero by default), boxed
+    // from what is drawn this frame; else the default controls' target (the orbit pivot, the street's aim).
+    // Only meaningful when dofOn (i.e. the DoF pass is mounted).
     if (dofOn) {
-      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, pickedFocus: dofFocus?.point, heroBox: dofFocus?.box })
+      let focus = null
+      if (movieFocus.on) {
+        const ctx = { scene, index: useSlabBuildingIndex.getState().index, exag: terrainExag.value }
+        const box = (id) => { const r = resolveFocusId(id, heroSubject); return r ? focusBox(r, ctx) : null }
+        const a = box(movieFocus.from), b = movieFocus.to === movieFocus.from ? a : box(movieFocus.to)
+        if (a || b) focus = { a, b, lam: movieFocus.lam }
+      }
+      applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint: controls?.target, focus })
     }
   })
 }

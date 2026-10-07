@@ -5,7 +5,6 @@ import { installShadowMaskDebug } from '../utils/shadowMaskDebug.js'
 installShadowMaskDebug()  // ?shadowmask=1 — must run before any material compiles
 import { PerspectiveCamera } from '@react-three/drei'
 import RegimeControls from '../components/RegimeControls.jsx'
-import * as THREE from 'three'
 
 // Map geometry (rendered in every shot)
 import MapLayers from './MapLayers.jsx'
@@ -68,7 +67,6 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import useCamera from '../hooks/useCamera'
 import useListings from '../hooks/useListings'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
-import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 
 const CAM_KEY = 'cartograph-camera'
 
@@ -562,84 +560,6 @@ function Controls({ controlsRef, heroPlaying = false }) {
   return <RegimeControls key="persp" regime={heroPlaying ? 'playback' : 'orbit'} controlsRef={controlsRef} />
 }
 
-// ── Focus › Pick — the next click in the view sets where depth of field focuses ──────────────────────────
-// (Jacob, 2026-09-27: "it's the monument. The buildings are clickable … put a picker/selector in the blur panel").
-// The hit POINT is stored (store#dofFocus); the camera-move no longer drags the focus with it.
-// The focus point's name, as the town knows the place: the building whose footprint holds it (the set-piece is a
-// slab building too), named by its listing — never the mesh part the ray happened to hit ("shaft").
-function placeNameAt(x, z) {
-  const inside = (fp) => {
-    let c = false
-    for (let i = 0, j = fp.length - 1; i < fp.length; j = i++) {
-      const [xi, zi] = fp[i], [xj, zj] = fp[j]
-      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) c = !c
-    }
-    return c
-  }
-  for (const [id, e] of useSlabBuildingIndex.getState().index?.byId ?? []) {
-    if (!e?.footprint || e.footprint.length < 3 || !inside(e.footprint)) continue
-    const l = useListings.getState().listings.find(l => l.building_id === id || l.id === id)
-    return l?.name || 'a building'
-  }
-  return 'the ground here'
-}
-
-// The hero's world box, for the hero ladder (HeroLadder.jsx): the picked thing's own extent. A merged slab mesh is
-// the whole town, so a slab building takes its footprint; anything else (the set-piece) its own group, the largest
-// ancestor still smaller than a town block.
-const _box = new THREE.Box3(), _sz = new THREE.Vector3()
-function heroBoxOf(hit) {
-  // Padded a little all round (and 5% of its height on top) so the hero's crown is never clipped off its own box.
-  const r = (b) => { b.getSize(_sz); const p = 1 + 0.05 * Math.max(_sz.x, _sz.y, _sz.z); return [b.min.x - p, b.min.y - p, b.min.z - p, b.max.x + p, b.max.y + p, b.max.z + p].map(v => +v.toFixed(2)) }
-  if (hit.object.geometry?.attributes?.aBuildingId && hit.face) {
-    const num = hit.object.geometry.attributes.aBuildingId.getX(hit.face.a)
-    const e = useSlabBuildingIndex.getState().index?.byNum?.[num]
-    if (e?.footprint?.length) {
-      _box.makeEmpty()
-      for (const [x, z] of e.footprint) _box.expandByPoint(_sz.set(x, hit.point.y, z))
-      _box.expandByPoint(_sz.set(hit.point.x, (e.centroidY ?? hit.point.y) - 5, hit.point.z))
-      _box.expandByPoint(_sz.set(hit.point.x, Math.max(e.baseY ?? hit.point.y, hit.point.y) + 5, hit.point.z))
-      return r(_box)
-    }
-  }
-  let o = hit.object, best = null
-  while (o && o.parent) {
-    _box.setFromObject(o); _box.getSize(_sz)
-    if (Math.max(_sz.x, _sz.y, _sz.z) > 400) break
-    best = r(_box); o = o.parent
-  }
-  return best
-}
-
-function DofFocusPicker() {
-  const picking = useCartographStore(s => s.dofPicking)
-  const { gl, camera, scene } = useThree()
-  useEffect(() => {
-    if (!picking) return
-    const el = gl.domElement
-    const ray = new THREE.Raycaster(), ndc = new THREE.Vector2()
-    const onDown = (e) => {
-      e.preventDefault(); e.stopPropagation()
-      const r = el.getBoundingClientRect()
-      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
-      ray.setFromCamera(ndc, camera)
-      // The first real surface: skip the sky dome and star field (far, depth-write off, points).
-      const hit = ray.intersectObjects(scene.children, true).find(h =>
-        h.object.visible && !h.object.isPoints && h.object.material?.depthWrite !== false && h.distance < 20000)
-      if (!hit) { console.error('[Focus] nothing under the click to focus on — pick a building or the ground'); return }
-      useCartographStore.getState().setDofFocus({
-        point: hit.point.toArray().map(v => +v.toFixed(2)),
-        label: placeNameAt(hit.point.x, hit.point.z),
-        box: heroBoxOf(hit),
-      })
-    }
-    el.style.cursor = 'crosshair'
-    el.addEventListener('pointerdown', onDown, true)
-    return () => { el.removeEventListener('pointerdown', onDown, true); el.style.cursor = '' }
-  }, [picking, gl, camera, scene])
-  return null
-}
-
 // ── Environment tickers (shot-only) ────────────────────────────────────────
 // ⭐ A SCRUBBED CLOCK STANDS STILL (Jacob, 2026-09-27: "When we're in a time slot, the time needs to stop. I have
 // been editing against an hour in the future"). The ticker ran on after a chip click or a drag, so the scene drifted
@@ -745,7 +665,8 @@ function useStageOverrides(heroKeyframes, heroMotion) {
   const neonForceOn = useCartographStore(s => s.neonForceOn)
   const neonDensity = useCartographStore(s => s.neonDensity)
   const lampsOn = useCartographStore(s => s.layerVis?.lamp !== false)
-  const dofFocus = useCartographStore(s => s.dofFocus)
+  // The Survey's hero, live: what a keyframe's 'hero' focus names (src/lib/focusObject.js).
+  const heroSubject = useCartographStore(s => s.heroSubject)
   // The Identity panel's lit tint, live (the Look's identity.litTint; unchosen → the renderer's neutral).
   const litTint = useCartographStore(s => s.identity?.litTint)
   // Force Neon On OFF means "not forced" — neon follows each place's hours, as it ships. A literal `false`
@@ -753,8 +674,8 @@ function useStageOverrides(heroKeyframes, heroMotion) {
   // The park title's live position (Designer's drag handle) — that set-piece's own entry, as labels.json bakes it.
   const parkTitlePos = useCartographStore(s => s.parkTitlePos)
   const setPieceTitles = useMemo(() => (parkTitlePos ? { 'lafayette-park': parkTitlePos } : undefined), [parkTitlePos])
-  return useMemo(() => ({ ...channels, neonForceOn: neonForceOn || undefined, neonDensity, lampsOn, dofFocus, setPieceTitles, heroKeyframes, heroMotion, litTint }),
-    [channels, neonForceOn, neonDensity, lampsOn, dofFocus, setPieceTitles, heroKeyframes, heroMotion, litTint])
+  return useMemo(() => ({ ...channels, neonForceOn: neonForceOn || undefined, neonDensity, lampsOn, heroSubject, setPieceTitles, heroKeyframes, heroMotion, litTint }),
+    [channels, neonForceOn, neonDensity, lampsOn, heroSubject, setPieceTitles, heroKeyframes, heroMotion, litTint])
 }
 // Stage's shots → the shot <Town> draws (Designer draws no <Town>).
 const TOWN_SHOT = { hero: 'movie', browse: 'plan', street: 'street' }
@@ -1120,7 +1041,6 @@ export default function CartographApp() {
           </>}
 
           {/* ── Shot-only (environment paint — must exactly mirror runtime) ── */}
-          {!inDesigner && <DofFocusPicker />}
           {/* SC.2 (2026-05-13): the duplicate `<PreviewPostFx>` mount that
               used to live here was a workaround for the StageApp-vs-Scene
               PostProcessing fork — Stage doubled up the chain so its

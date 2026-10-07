@@ -1132,7 +1132,6 @@ const SCENE_KEYED_DESIGN_FIELDS = [
   'cornerCornerRadiusOverrides',   // "x,z|skelId:end|skelId:end"
   'blockLandUse',                  // blockKey
   'browseFrame',                   // {center:[x,z], altitude} — a PLACE in the seed scene's frame
-  'dofFocus',                      // {point:[x,y,z]} — where the blur focuses, a PLACE in the seed scene's frame
 ]
 
 // Street names (skelId) a scene's frozen bake actually contains. Read from

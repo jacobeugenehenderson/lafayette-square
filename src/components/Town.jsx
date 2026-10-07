@@ -199,7 +199,7 @@ export const OVERRIDE_KEYS = [
   'buildingPalette', 'materialPhysics', 'materialColors', 'neonForceOn', 'neonDensity', 'neon', 'lampGlow',
   'lantern', 'lampsOn', 'canopy', 'treeWind', 'arch', 'archLight', 'setPieceLight', 'landscape', 'shadow', 'mist', 'edgeRuffle',
   'sky', 'ambient', 'hemi', 'dirSun', 'dirMoon', 'constellations', 'milkyWay', 'skyGain', 'stars',
-  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'dofFocus', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
+  'bloom', 'ao', 'exposure', 'warmth', 'fill', 'halo', 'grade', 'grain', 'dof', 'heroSubject', 'litTint', 'wallPalettes', 'surfaces', 'labels', 'setPieceTitles', 'heroKeyframes', 'heroMotion',
 ]
 // PostProcessing's view vocabulary (half-res AO off the movie shot, the street-level bloom bump).
 const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
@@ -626,7 +626,7 @@ export default function Town({
           it switches; it plays only in the movie shot. ▶ node checks/claims-one-movie-driver.mjs */}
       <MovieCamera keyframes={heroKeyframes} motion={heroMotion} quality={quality}
         active={shot === 'movie' && (movie?.playing ?? true)}
-        start={movie?.start ?? 'random'} onTime={movie?.onTime} hold={movieHold} handle={movieHandle} />
+        start={movie?.start ?? 'random'} onTime={movie?.onTime} hold={movieHold} handle={movieHandle} framing={shot === 'movie'} />
       {/* ⭐ A SHOT CHANGE FLIES (BRIEF-town-shot-flight): the town knows where each shot puts the camera and flies
           there with the one tween, holding the movie while it does. ▶ node checks/claims-one-shot-flight.mjs */}
       <ShotFlight shot={shot} flight={flight} streetAt={streetAt} viewInset={viewInset} flightRef={flightRef}
@@ -722,7 +722,7 @@ export default function Town({
       {on('post') && <PostProcessing lookId={lookId} bakeLastMs={bake} viewMode={POST_VIEW[shot]} inspect={postFx}
         bloomOverride={o.bloom} aoOverride={o.ao} exposureOverride={o.exposure} warmthOverride={o.warmth}
         fillOverride={o.fill} haloOverride={o.halo} gradeOverride={o.grade} grainOverride={o.grain}
-        dofOverride={o.dof} dofFocusOverride={o.dofFocus} />}
+        dofOverride={o.dof} heroSubjectOverride={o.heroSubject} />}
       {/* The town's live dots — the visitor, couriers — positioned by the app, placed and drawn by the town.
           ▶ node checks/claims-a-mover-stands-where-it-is.mjs */}
       {movers ? <Movers movers={movers} shot={shot} onMovers={onMovers} /> : null}

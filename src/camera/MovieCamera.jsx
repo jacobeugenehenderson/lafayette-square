@@ -19,21 +19,31 @@
  *   onTime             (seconds on the timeline) => void, each played frame (Stage's scrub readout)
  *   controlsRef        the app's controls; defaults to R3F's default controls
  *   handle             a ref filled with { pose(outPos, outTgt) → { fov, time } }
+ *   framing            true while the town is drawn in the movie shot: the movie's FOCUS is published then
+ *                      (src/lib/focusObject.js#movieFocus) — while it plays, and while an app holds it paused on the path
+ *                      (Stage's playhead, `start` as a function). Outside the movie shot the depth of field takes the aim.
  */
 import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { heroKeyframeAnim, heroCycleSec, heroClockAt } from '../preview/heroAnim.js'
+import { heroKeyframeAnim, heroCycleSec, heroClockAt, heroPoseAtTime } from '../preview/heroAnim.js'
+import { movieFocus, keyframeFocusIds } from '../lib/focusObject.js'
 
 const _pos = new THREE.Vector3()
 const _tgt = new THREE.Vector3()
+const _fp = [0, 0, 0], _ft = [0, 0, 0]
+// The focus over segment `seg` at path parameter `lam`: the two keys' objects (src/lib/focusObject.js).
+function publishFocus(keyframes, seg, lam) {
+  const ids = keyframeFocusIds(keyframes), n = ids.length
+  movieFocus.on = true; movieFocus.from = ids[seg % n]; movieFocus.to = ids[(seg + 1) % n]; movieFocus.lam = n > 1 ? lam : 0
+}
 
-export default function MovieCamera({ keyframes, motion, quality, active, start = 'random', hold, onTime, controlsRef, handle }) {
+export default function MovieCamera({ keyframes, motion, quality, active, start = 'random', hold, onTime, controlsRef, handle, framing }) {
   if (!Number.isFinite(quality?.movieNear)) throw new Error('[MovieCamera] ⛔ needs `quality` — a profile from src/lib/qualityProfile.js with a movieNear')
   const { camera } = useThree()
   const defaultControls = useThree((s) => s.controls)
   const live = useRef({})
-  live.current = { keyframes, motion, active, start, hold, onTime }
+  live.current = { keyframes, motion, active, start, hold, onTime, framing }
   const clock = useRef(0)
   const entered = useRef(false)
   const priorNear = useRef(null)
@@ -76,12 +86,25 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
     if (priorNear.current != null) { camera.near = priorNear.current; camera.updateProjectionMatrix() }
   }, [camera])
 
+  // Leaving by unmount, or the town out of the movie shot: no movie focus.
+  useEffect(() => () => { movieFocus.on = false }, [])
+
   useFrame((_, delta) => {
     sync()
-    if (!entered.current) return
+    if (!entered.current) {
+      // Held paused on the path (Stage's playhead): the focus is the path's at that time.
+      const p = path(), s = live.current.start
+      if (live.current.framing && p && typeof s === 'function' && Number.isFinite(s())) {
+        const { seg, lam } = heroPoseAtTime(p.k, p.m, s(), _fp, _ft)
+        publishFocus(p.k, seg, lam)
+      } else movieFocus.on = false
+      return
+    }
     clock.current += delta * (live.current.motion?.speed || 1)
     const r = sample(_pos, _tgt)
-    if (!r) return
+    if (!r) { movieFocus.on = false; return }
+    if (live.current.framing) publishFocus(path().k, r.seg, r.lam)
+    else movieFocus.on = false
     live.current.onTime?.(r.time)
     if (live.current.hold?.()) return
     camera.position.copy(_pos)

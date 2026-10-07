@@ -43,7 +43,7 @@ export const TOWN_DESIGN_FIELDS = [
  * inherited this way (Huron's `parkTitlePos`, 2026-10-04). Jacob, 2026-09-19: "the camera motion is not something that
  * carries realistically from hood to hood" ⇒ the kit stores no camera.
  */
-export const PLACE_DESIGN_FIELDS = ['heroKeyframes', 'shots', 'browseFrame', 'heroSubject', 'parkTitlePos', 'dofFocus']
+export const PLACE_DESIGN_FIELDS = ['heroKeyframes', 'shots', 'browseFrame', 'heroSubject', 'parkTitlePos']
 
 /**
  * ⭐ WHAT A LOOK SEEDED FROM ANOTHER TOWN'S LOOK MAY NOT CARRY: the town's own fields and its places. Everything else is

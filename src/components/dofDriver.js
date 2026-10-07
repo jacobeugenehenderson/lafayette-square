@@ -27,6 +27,9 @@ import { DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS } from '../cartograph/skyLightChannel
 const _camDir  = new THREE.Vector3()  // reused for the browse (look-down) gate
 const _heroVec = new THREE.Vector3()  // reused for the focus-pocket view-Z depth
 let _warnedNoFocus = false
+// Read-only inspection (as terrainShader's window.__terrainExag): this frame's focus — what probes and Preview read.
+const _inspect = { focus: null, dA: null, dB: null, dist: null }
+if (typeof window !== 'undefined') window.__dof = _inspect
 
 /**
  * Populate RomanceDoF's `_dofRefs` from the resolved `dof` channel + live
@@ -37,12 +40,16 @@ let _warnedNoFocus = false
  * @param dofChannel  the resolved `dof` channel (override ?? scene.dof ?? default)
  * @param minute      current TOD minute-of-day
  * @param slotMins    TOD slot minutes for the resolver
- * @param focusPoint  where the camera is looking — the controls' target, which in
- *                    playback IS the interpolated keyframe target (Jacob,
- *                    2026-09-26: DoF focuses on the keyframe's authored target).
- *                    ⛔ Never a hero subject (BRIEF-camera-regimes).
+ * @param focusPoint  where the camera is looking — the controls' target (the interpolated keyframe target in
+ *                    playback, the orbit pivot when flying). The focus when there is no focus OBJECT.
+ * @param focus       the movie's focus OBJECTS (src/lib/focusObject.js), or null: { a, b, lam } — `a` and `b` the
+ *                    segment's two objects' world boxes [x0,y0,z0,x1,y1,z1] (either null where it names nothing: that
+ *                    end is the aim), `lam` how far the segment has come. The focal distance RACKS from a's to b's on
+ *                    the camera's own timing; the hero ladder's box is the object the focus is nearer.
+ *                    REMOVED (Jacob, 2026-10-07): a free picked point and a box stored at pick time.
  */
-const _picked = new THREE.Vector3()
+const _aim = new THREE.Vector3()
+const _boxC = new THREE.Vector3()
 const _corner = new THREE.Vector3()
 /** The hero's box on screen, uv (x0, y0, x1, y1), or null when there is no box or it is behind the camera. */
 function heroRectOnScreen(box, camera) {
@@ -58,11 +65,11 @@ function heroRectOnScreen(box, camera) {
   if (x1 < 0 || y1 < 0 || x0 > 1 || y0 > 1) return null                     // off screen
   return [Math.max(0, x0), Math.max(0, y0), Math.min(1, x1), Math.min(1, y1)]
 }
-export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint, pickedFocus, heroBox }) {
+const centreOf = (box, out) => out.set((box[0] + box[3]) / 2, (box[1] + box[4]) / 2, (box[2] + box[5]) / 2)
+export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint, focus }) {
   _dofRefs.near.current = camera.near; _dofRefs.far.current = camera.far
-  _dofRefs.heroRect.current = heroRectOnScreen(heroBox, camera)
-  // A picked focus (the Focus card's Pick) holds through the whole move; else the camera's aim.
-  if (pickedFocus) focusPoint = _picked.fromArray(pickedFocus)
+  const lam = focus ? Math.min(1, Math.max(0, focus.lam || 0)) : 0
+  _dofRefs.heroRect.current = focus ? heroRectOnScreen(lam < 0.5 ? focus.a : focus.b, camera) : null
   const d = resolveGroupAtMinute(dofChannel, minute, slotMins, DOF_FIELD_KEYS, DOF_FLAT_DEFAULTS)
 
   // Browse (overhead) camera: kill DoF — from above, the scene sits at ~one
@@ -81,7 +88,8 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   // ⭐ THE FOCAL PLANE IS RELATIVE: `focus` × the view depth of what the camera looks at (the controls' target —
   // in playback, the interpolated keyframe target). The shader decodes `dist` as VIEW-Z, so the point goes to view
   // space; −z is its forward depth. ⛔ No target ⇒ no depth of field, said once — never a guessed distance.
-  if (!focusPoint) {
+  const aim = focusPoint ? _aim.copy(focusPoint) : null
+  if (!aim && !(focus?.a && focus?.b)) {
     if (!_warnedNoFocus) { _warnedNoFocus = true; console.error('[dof] no focus point (no controls target) — depth of field is off') }
     _dofRefs.maxBlur.current = 0
     _dofRefs.heroBlur.current = 0
@@ -91,7 +99,12 @@ export function applyDofFrame({ camera, dofChannel, minute, slotMins, focusPoint
   const tanY = Math.tan(THREE.MathUtils.degToRad(camera.fov ?? 45) / 2)
   _dofRefs.tanHalf.current.set(tanY * (camera.aspect ?? 1), tanY)
   _dofRefs.upView.current.set(0, 1, 0).transformDirection(camera.matrixWorldInverse)
-  _heroVec.copy(focusPoint).applyMatrix4(camera.matrixWorldInverse)
   const up = _dofRefs.upView.current
-  _dofRefs.focusDist.current = Math.max(1, _heroVec.clone().addScaledVector(up, -_heroVec.dot(up)).length())
+  // A point's focal distance: along the ground, in view space (the shader measures every pixel the same way).
+  const distOf = (p) => { _heroVec.copy(p).applyMatrix4(camera.matrixWorldInverse); return _heroVec.addScaledVector(up, -_heroVec.dot(up)).length() }
+  const endDist = (box) => (box ? distOf(centreOf(box, _boxC)) : aim ? distOf(aim) : null)
+  const dA = focus ? endDist(focus.a) : distOf(aim), dB = focus ? endDist(focus.b) : dA   // both set: checked above
+  _dofRefs.focusDist.current = Math.max(1, dA + (dB - dA) * lam)
+  _inspect.focus = focus; _inspect.dA = dA; _inspect.dB = dB; _inspect.dist = _dofRefs.focusDist.current
+  _inspect.heroRect = _dofRefs.heroRect.current
 }

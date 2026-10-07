@@ -162,7 +162,7 @@ export function heroPoseAtTime(keyframes, motion, sec, outPos, outTgt) {
   if (n === 1) {
     const k = keyframes[0]
     for (let i = 0; i < 3; i++) { outPos[i] = k.position[i]; outTgt[i] = k.target[i] }
-    return { fov: k.fov }
+    return { fov: k.fov, seg: 0, lam: 0 }
   }
   const shot = shotFor(keyframes, motion)
   const { T, S, h, m, cum, segs } = shot
@@ -183,7 +183,9 @@ export function heroPoseAtTime(keyframes, motion, sec, outPos, outTgt) {
     const c0 = cum[base + lo - 1], c1 = cum[base + lo]
     lam = (lo - 1 + (c1 > c0 ? (s - c0) / (c1 - c0) : 0)) / SUB
   }
-  return { fov: _poseSeg(shot, keyframes, seg, lam, outPos, outTgt) }
+  // `seg` and `lam`: the segment (from key seg % n to key (seg + 1) % n) and the path parameter along it — what the fov
+  // interpolates on, and what the depth of field's focus racks on (src/lib/focusObject.js).
+  return { fov: _poseSeg(shot, keyframes, seg, lam, outPos, outTgt), seg, lam }
 }
 
 /**
@@ -263,8 +265,8 @@ const _poseP = [0, 0, 0], _poseT = [0, 0, 0]
 export function heroKeyframeAnim(clockSec, keyframes, motion, outPos, outTgt) {
   let time = 0
   if (keyframes.length > 1) time = _playhead(clockSec, motion)
-  const { fov } = heroPoseAtTime(keyframes, motion, time, _poseP, _poseT)
+  const { fov, seg, lam } = heroPoseAtTime(keyframes, motion, time, _poseP, _poseT)
   outPos.set(_poseP[0], _poseP[1], _poseP[2])
   if (outTgt) outTgt.set(_poseT[0], _poseT[1], _poseT[2])
-  return { fov, time }
+  return { fov, time, seg, lam }
 }

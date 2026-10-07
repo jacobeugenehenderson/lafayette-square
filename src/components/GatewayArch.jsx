@@ -433,6 +433,7 @@ export default function GatewayArch({
   return (
     <mesh
       ref={meshRef}
+      name="focus:arch"   // what depth of field focuses on, by identity (src/lib/focusObject.js)
       geometry={geometry}
       material={material}
       frustumCulled={false}
