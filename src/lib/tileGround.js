@@ -5228,9 +5228,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null, corn
     const licensed = new Set(), marked = new Map()
     for (let q = 0; q < n; q++) if (arc[q] != null && mark?.[q] && !marked.has(arc[q])) marked.set(arc[q], q)
     for (const [u, q] of marked) {
-      const jx = st.iaJunction?.[p.si]?.[q], kind = Number.isInteger(jx) ? 'junction' : jx === 'bend' ? 'bend' : 'unknown'
+      const jx = st.iaJunction?.[p.si]?.[q], kind = Number.isInteger(jx) ? 'junction' : (jx === 'bend' || jx === 'nostreet') ? jx : 'unknown'
       const key = st.iaArcKey?.[p.si]?.[u] ?? null, flag = key ? cornerFlagOf(cornerOverrides?.[key]) : null
-      const pad = flag ?? (kind !== 'bend')
+      const pad = flag ?? (kind === 'junction' || kind === 'unknown')      // a bend or a no-street corner: none by default
       if (pad) licensed.add(u)
       cornerArcs.push({ si: p.si, arc: u, kind, key, flag, pad, at: p.ring[q] })
     }
@@ -8514,11 +8514,15 @@ export function buildTileGround(ribbons, opts = {}) {
     // chain-pair key (`ix|skelA|skelB`) collapsed into one: a radius dragged on one corner wrote them all.
     // null = not a street corner (the shore, the rim: no skeleton chain) — never authorable, never keyed.
     const protoStreetBySkel = new Map((ribbons?.streets || []).map(s2 => [s2.skelId ?? s2.name, s2]))   // the FROZEN chains `srcIdx` indexes
+    // ⭐ IS THIS LEG A STREET — a skeleton chain. The shore (`__water__`) and the disc's rim (`__boundary__`) own curb
+    // edges but are no street: a corner they flank is no corner a pedestrian crosses at, and it carries no key.
+    const isStreetLeg = (skelId) => protoStreetBySkel.has(skelId)
     const protoCornerOf = (o1, o2) => {
       if (!o1 || !o2) return null
       const pa = `${o1.skelId}:${o1.side}`, pb = `${o2.skelId}:${o2.side}`, [ka, kb] = pa <= pb ? [pa, pb] : [pb, pa]
       const [la, lb] = o1.skelId <= o2.skelId ? [o1.skelId, o2.skelId] : [o2.skelId, o1.skelId]
       // the node two chains share — or, a bend or two chains with no frozen shared node, the leaving leg's own skeleton vertex
+      if (!isStreetLeg(o1.skelId) || !isStreetLeg(o2.skelId)) return null
       const ix = (o1.skelId !== o2.skelId && protoPairNode[`${la}|${lb}`]) || protoStreetBySkel.get(o2.skelId)?.points?.[o2.srcIdx]
       return ix ? { key: `${ixKeyOf(ix)}|${ka}|${kb}`, ix, legA: ka, legB: kb } : null
     }
@@ -8537,7 +8541,7 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     let protoCornerN = 0, protoCornerNoNode = 0, protoCornerBend = 0
     // ⭐ per corner ARC (not per vertex): junction · bend · unknown-by-reason. Printed per pour, and on the result.
-    const protoJxCensus = { arcs: 0, junction: 0, bend: 0, unknown: 0, why: {} }
+    const protoJxCensus = { arcs: 0, junction: 0, bend: 0, nostreet: 0, unknown: 0, why: {} }
     let protoTipRound = 0, protoTipBlunt = 0
     // ⛔⛔ "THE LEGS RUN STRAIGHT THROUGH THE INTERSECTION" — BUILT TWICE, REVERTED TWICE, 2026-09-06.
     // The instruction is right (`SURVEY §6`: the intersection interior is variable, the streets
@@ -9643,7 +9647,8 @@ export function buildTileGround(ribbons, opts = {}) {
             curbCutNorm: ribbons?.curbCutNorm ?? null,
             // ⭐ `iaJunction` — per contour vertex of a corner arc: an index into `junctions` (a street meets here:
             // its two legs, arriving then leaving in this contour's order, and the node they meet at), 'bend' (the
-            // legs are one road), or null (not an arc, or UNKNOWN — counted by reason at the pour).
+            // legs are one road), 'nostreet' (a flank is the shore or the rim — no street, so no pad and no cut), or null
+            // (not an arc, or UNKNOWN — counted by reason at the pour).
             // THE LEGS DECIDE (`classifyCornerLegs`), read off this tile's own frozen stamp. The node is the mint's
             // frozen chain-pair vertex (`nodes[legA|legB]`, the corner-radius key): the CENTRELINE point the two
             // chains share, so every corner at one crossing carries the same one and a crosswalk can pair across
@@ -9676,7 +9681,10 @@ export function buildTileGround(ribbons, opts = {}) {
                   const kk = protoArcKeyByBlock[k]?.get(u); if (kk) keyOf[u] = kk
                   if (f.first == null || f.last == null) { byArc.set(u, null); protoJxCensus.arcs++; protoJxCensus.unknown++; protoJxCensus.why.noFlank = (protoJxCensus.why.noFlank || 0) + 1; continue }
                   const eb = (f.first - 1 + n2) % n2, ea = f.last
-                  const A = leg(stp[eb]), B = leg(stp[ea]), c = classifyCornerLegs(A, B)
+                  const A = leg(stp[eb]), B = leg(stp[ea])
+                  // ⛔ a flank that is no STREET (the shore, the rim) makes no junction and no bend: 'nostreet' — no pad, no cut
+                  if ((A && !isStreetLeg(A.skelId)) || (B && !isStreetLeg(B.skelId))) { protoJxCensus.arcs++; protoJxCensus.nostreet = (protoJxCensus.nostreet || 0) + 1; byArc.set(u, 'nostreet'); continue }
+                  const c = classifyCornerLegs(A, B)
                   protoJxCensus.arcs++; protoJxCensus[c.kind]++
                   if (c.kind === 'unknown') { for (const w of [A ? null : whyNull(eb), B ? null : whyNull(ea)]) if (w) protoJxCensus.why[w] = (protoJxCensus.why[w] || 0) + 1; byArc.set(u, null); continue }
                   if (c.kind === 'bend') { byArc.set(u, 'bend'); continue }
@@ -9806,7 +9814,7 @@ export function buildTileGround(ribbons, opts = {}) {
         protoJunctionCensus = protoJxCensus
         {
           const J = protoJxCensus, why = Object.entries(J.why).map(([w, k]) => `${k} ${w}`).join(' · ')
-          console.log(`[tileGround][PROTO②] corner legs: ${J.arcs} arc(s) · ${J.junction} JUNCTION (two roads meet: curb cuts + crosswalks) · ${J.bend} BEND (one road: pad only)`)
+          console.log(`[tileGround][PROTO②] corner legs: ${J.arcs} arc(s) · ${J.junction} JUNCTION (two roads meet: curb cuts + crosswalks) · ${J.bend} BEND (one road: no pad unless authored) · ${J.nostreet || 0} NO STREET (a shore or rim flank: no pad, no cut)`)
           if (J.junctionNoNode) console.warn(`[tileGround][PROTO②] ${J.junctionNoNode} junction corner(s) whose two chains have no frozen shared node — curb cuts stand, their crosswalks go UNPAIRED.`)
           if (J.unknown) console.warn(`[tileGround][PROTO②] ⛔ ${J.unknown} corner(s) have a leg with NO run on the stamp (flanks: ${why}) — pad kept, no curb cut, and NOT a bend. \`capEdge\` = the dead-end mouth class (ROADMAP A0/A10).`)
         }

@@ -182,6 +182,11 @@ if (args.includes('--selftest')) {
 }
 
 const r = run(undefined)
+// an arc's two flank legs (skelId) off the tile's own stamp — the class is checked against them, not trusted
+function legsOfArc(R, a) { const t = R.protoShapeTiles?.[a.tile], arc = t?.iaArc?.[a.si], stp = t?.iaStamp?.[a.si] || []; if (!arc) return []
+  const n = arc.length, q = arc.findIndex((u, i) => u === a.arc && arc[(i - 1 + n) % n] !== a.arc); if (q < 0) return []
+  let e = q; for (let k = 0; k < n && arc[(e + 1) % n] === a.arc; k++) e = (e + 1) % n
+  return [stp[(q - 1 + n) % n], stp[e]].filter(x => x != null).map(x => t.runs[x].skelId) }
 const T = r.curbCutTally
 if (!T) { console.log(`⛔ ${scene}: the painter returned no curb-cut tally — NOT checked`); process.exit(1) }
 const offJunction = (r.curbCutRecs || []).filter(x => !Number.isInteger(x.junction)).length
@@ -195,7 +200,14 @@ if (T.unreadable) console.log(`  ${T.unreadable} corner(s) whose recorded cuts a
 const C = r.crosswalkTally || {}, bad = badPairs(r)
 console.log(`  crosswalks : ${C.style && C.style !== 'none' ? `${C.crosswalks} (${C.style}, from ${C.source}) · ${C.pairs} between two cuts · ${C.farKerbCut} to a far-kerb cut · ${C.farKerbNone} far kerb 'none' · ${C.farCornerNoCut} far corner without a cut · ${C.noFarKerb} no far kerb · ${C.ambiguous} ambiguous · ${C.styleDisagrees} style disagrees · ${C.apexesApart} cuts too far apart${C.apexesApart ? ` (${C.apartAt.slice(0, 6).map(a => `${a.street} (${a.at[0].toFixed(0)}, ${a.at[1].toFixed(0)}) ${a.gap} m`).join(' · ')})` : ''}` : `none (norm ${C.style ?? 'not frozen'})`}`)
 if (bad) console.log(`  ⛔ ${bad} crosswalk(s) whose ends are not two curb cuts across one chain at one junction`)
-const fail = offJunction || T.noNorm || T.invalid || bad
+// ⛔ A SHORE OR RIM CORNER IS NO STREET CORNER: no pad, no curb cut. Read off what was painted — the corner records' own
+// class (`nostreet`) and every cut's own legs — against the scene's own street list, never a list of names.
+const streetIds = new Set((f.ribbons.streets || []).map(st2 => st2.skelId))
+const shorePads = (r.cornerArcs || []).filter(a => a.pad && legsOfArc(r, a).some(l => !streetIds.has(l))).length
+const shoreCuts = (r.curbCutRecs || []).filter(x => (r.protoShapeTiles?.[x.tile]?.junctions?.[x.junction]?.legs || []).some(l => l && !streetIds.has(l.skelId))).length
+console.log(`  no street  : ${(r.cornerArcs || []).filter(a => a.kind === 'nostreet').length} shore/rim corner arc(s) · ${shorePads} padded · ${shoreCuts} curb cut(s) on one`)
+const fail = offJunction || T.noNorm || T.invalid || bad || shorePads || shoreCuts
+if (shorePads || shoreCuts) console.log(`  ⛔ a shore or rim corner carries ${shorePads} pad(s) and ${shoreCuts} curb cut(s) — it is no street corner`)
 if (offJunction) console.log(`  ⛔ ${offJunction} curb cut(s) on a corner that is not a junction`)
 if (T.noNorm) console.log(`  ⛔ ${T.noNorm} junction corner(s) on tiles poured before the curb-cut norm — re-pour`)
 if (T.invalid) console.log(`  ⛔ ${T.invalid} authored style(s) invalid`)

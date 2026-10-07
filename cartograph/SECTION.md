@@ -412,7 +412,8 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 - **TL↔TL** (both set back) → the lawn runs full width to each tangent and stops **blunt**; the pad
   (the walk continuing to the kerb) fills the arc behind it, tangent to tangent. See `§4`.
 - **A junction corner also carries CURB CUTS** — positions on the arc where the kerb drops, by the town's
-  norm or the operator (`curbCutsOnJunctionCorners`, `cartograph/curb-cut-norm.mjs`). A BEND carries no pad and no cut —
+  norm or the operator (`curbCutsOnJunctionCorners`, `cartograph/curb-cut-norm.mjs`). A corner a SHORE or RIM edge flanks
+  (`__water__`/`__boundary__` — no street) is no corner at all: no pad, no cut. A BEND carries no pad and no cut —
   the walk and lawn bend through — unless Survey makes it a corner, and a junction Survey calls "not a corner" loses both
   (the corner's `corner` flag, read by the pad licence; Jacob, 2026-10-07). A diagonal
   corner keeps the pad; a **perpendicular** one runs each leg's walk straight on to the kerb in its own landing, a cut
