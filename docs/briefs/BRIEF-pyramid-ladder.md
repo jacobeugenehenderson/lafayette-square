@@ -49,6 +49,11 @@ stack is ~16 of ~36 ms; confirmed in code that no reduced rung runs anywhere). *
 - **Every phone gets phone-lo's policy until a device classifier exists** (Jacob, option 1). Phone-hi stays authorable.
 - **Rank by measurement** (F's rules): every ms is this desktop's GPU; the "phone-hi" buffer is this M1 at phone size, not a phone.
 - **No manufactured knobs** (spec): the dial exists because it changes measured cost.
+- **The rung may MOVE at run time** (Jacob, 2026-10-06: *"perhaps we even end up animating the pyramid (even if it means it clicks
+  from state rather than blending) to maximize"*): e.g. a cheaper rung while the camera moves or a transition plays, the full rung at
+  rest. A discrete switch is acceptable; a switch that HITCHES is not. ⇒ Step 1 also measures **what one rung switch costs** (a frame
+  that reallocates targets vs one that samples fewer rungs of targets already allocated), and step 2 keeps a switch cheap by design.
+  What drives the switch (motion, shot, time of day) is Jacob's call once the cost is known.
 
 ## The work, in order
 
