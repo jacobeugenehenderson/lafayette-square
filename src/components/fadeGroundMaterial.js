@@ -4,7 +4,7 @@
  * the rim, the weather socket, and the lamp's light the one way every ground surface takes it
  * (src/lib/groundLamp.js). Extracted from BakedGround.jsx's FadeMesh so
  * `checks/claims-every-ground-surface-takes-the-lamp.mjs` can compile the real thing.
- * The caller adds cascades (attachCSM) and terrain (patchTerrain) — both wrap this material's hook.
+ * The caller adds terrain (patchTerrain), which wraps this material's hook.
  *
  * `pool` = { map, min, span, scale } (ground.json#poolmap + its texture), or `{ shared: true }` (the map BakedGround
  * publishes, read through the shared uniforms: the material compiles once and the map fills in when it lands — an

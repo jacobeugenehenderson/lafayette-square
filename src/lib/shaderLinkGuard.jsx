@@ -22,7 +22,7 @@
  * The reason is structural — shader injection crosses files (`applyWeatherToShader`
  * declares its own samplers into someone else's program) and `onBeforeCompile`
  * composes conditionally at runtime, so no static reader can know which branches a
- * given program took. ▶ docs/briefs/BRIEF-texture-unit-headroom.md §4.
+ * given program took. ▶ cartograph/_archive/BRIEF-texture-unit-headroom-2026-10-07.md §4.
  *
  * Two jobs, and they need different evidence:
  *

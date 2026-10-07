@@ -32,7 +32,6 @@ import { useThree, useFrame } from '@react-three/fiber'
 import { setPcss, clearPcss } from './pcssShadows.js'
 import { onSceneStencil, getSceneStencil } from './sceneStencilState'
 import { penumbraBudgetTexels, penumbraMetresPerTexel } from '../lib/townRange.js'
-import { CSM_ENABLED } from './CascadedShadows.jsx'
 import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -211,15 +210,6 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride, pcss = true }
   // it does not change per frame.
   // ⛔ Falls back to the town-wide texel only when no cap is authored, which is the
   // uncapped fit — the one case where the town-wide value IS the real texel.
-  // ⛔⛔ PCSS AND CASCADES CANNOT BOTH OWN THE SHADOW CHUNK. PCSS (pcssShadows.js)
-  // GLOBALLY rewrites `THREE.ShaderChunk.shadowmap_pars_fragment` to install its Vogel-disk
-  // sampler; three's CSM injects its own cascade selection into that same chunk. Whichever
-  // lands second wins and the other's sampling is silently gone — which reads as NO SHADOWS
-  // AT ALL, not as a subtle difference. Under `?csm=1` the cascade rig owns shadow sampling
-  // and this component stands down; the authored penumbra then rides CSM's own filtering.
-  // ⚠️ OWED: cascades currently give up contact-hardening. Restoring it means a PCSS
-  // sampler written INTO the cascade path, not two libraries fighting over one chunk.
-  if (CSM_ENABLED) return null
   if (!pcss) return null   // plain PCF in this shot (above): no stamp, the light's own radius
   const mPerTexel = penumbraMetresPerTexel(stencil)
   if (mPerTexel == null) return null

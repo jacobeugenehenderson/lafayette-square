@@ -41,7 +41,7 @@ later need a second wind: the duplicate-authority failure Phase 2 removes. So th
    motion. Re-derive the full consumer list with `git grep`; don't trust this one.
 3. **The town's extent:** `src/components/sceneStencilState.js` (`ground.json#stencil`, *"NO FALLBACK BY DESIGN"*: an unset stencil
    means the size is unknown).
-4. **The texture-unit ceiling:** `docs/briefs/BRIEF-texture-unit-headroom.md` and `ROADMAP H-24`: receivers already sit near the
+4. **The texture-unit ceiling:** `cartograph/_archive/BRIEF-texture-unit-headroom-2026-10-07.md` (archived: cascades ruled out; its texture-unit census stands) and `ROADMAP H-24`: receivers already sit near the
    16-sampler limit (`MAX_TEXTURE_IMAGE_UNITS`); one sampler too many is `VALIDATE_STATUS false` and **nothing draws, silently**
    (`AGENT-VALIDATION-SURFACES §0`).
 5. **The ladder and the deployment layer:** `cartograph/ARCHITECTURE.md §8` (the shared `DownsamplePyramid`), `src/lib/qualityProfile.js`

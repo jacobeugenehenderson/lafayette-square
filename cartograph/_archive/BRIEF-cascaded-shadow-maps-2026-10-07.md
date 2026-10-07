@@ -1,9 +1,17 @@
 <!-- BRIEF-STATE
 written: 2026-09-21
-status: PARKED
+status: ARCHIVED 2026-10-07 (ruled)
 dispatched: yes
-evict-when: H-24 closes; this brief's live remnant is `docs/briefs/BRIEF-texture-unit-headroom.md`
+evict-when: H-24 closes; this brief's live remnant is `cartograph/_archive/BRIEF-texture-unit-headroom-2026-10-07.md`
 -->
+
+> **ARCHIVED 2026-10-07 — RULING (Jacob): cascades are not the answer; the rig is deleted.** Superseded by the capped,
+> camera-fitted, texel-snapped single shadow frustum (CelestialBodies; `__maxMPerTexel` 0.25 m/texel): the staircase this
+> work set out to fix is gone. Measured the same day (Strobe, scratch/shadow-plan/probe.mjs): cascades drew 10 shadow
+> draws/frame against 5, gave up PCSS's contact hardening, were capped at 2 by texture units, and carried a town-#1
+> constant (`maxFar = 1200`). ⭐ **Still LIVE from this brief:** §7's single-map fade toward the box edge (the boundary
+> wipe — `ROADMAP H-24`), and the texture-unit census (`src/lib/shaderLinkGuard.jsx`) — every new sampler still spends a
+> unit on every receiver.
 
 > *State, as the header carried it until 2026-09-28:* SUPERSEDED 2026-09-22 — read the correction below before anything else
 
@@ -24,7 +32,7 @@ evict-when: H-24 closes; this brief's live remnant is `docs/briefs/BRIEF-texture
   instinct and the wrong unit: 512 m is a third of LS and a seventh of huron.
 - ⛔ **CASCADES ARE BLOCKED**, and not on cost: 3 cascades = 3 extra fragment samplers on every
   receiver ⇒ `MAX_TEXTURE_IMAGE_UNITS(16)` exceeded ⇒ the program does not link ⇒
-  **nothing draws**. ▶ **`BRIEF-texture-unit-headroom.md`** is the live successor.
+  **nothing draws**. ▶ **`cartograph/_archive/BRIEF-texture-unit-headroom-2026-10-07.md`** was its successor.
 - ⚠️ **§3's frame-rate warning was aimed at the wrong thing too.** The frame rate was
   9–13 FPS and it was the TREES — the hero impostor card was 800 tris ×3 layers = 42.18 M
   tris/frame. The shadow pass costs **0.00 FPS** (measured: 77 full 4096² passes suppressed,

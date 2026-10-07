@@ -17,8 +17,7 @@
  * coursing runs continuously across every mesh.
  *
  * THE ENVIRONMENT IS IMPORTED, never re-implemented: the scene's own lights light it, wet
- * and snow come from `applyWeatherToShader` (the socket SlabBuildings uses), and cascaded
- * shadows compose through `attachCSM`.
+ * and snow come from `applyWeatherToShader` (the socket SlabBuildings uses).
  *
  * ⭐ The joints and seams are drawn from the sourced geometry at EVERY authored value: the
  * neutral (relief 0, tone 0) hides the look (split-face roughness, stone tones), never the
@@ -27,7 +26,6 @@
  */
 import * as THREE from 'three'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
-import { attachCSM } from './CascadedShadows.jsx'
 import { SURFACE_NOISE_GLSL } from './grassMaterial.js'
 
 export function makeGraniteMasonryMaterial({ beds, jointM, jointShade, bond = null, reliefM = 0, toneVar = 0, color }) {
@@ -140,6 +138,5 @@ export function makeGraniteMasonryMaterial({ beds, jointM, jointShade, bond = nu
     if (sh) { sh.uniforms.uReliefM.value = r; sh.uniforms.uToneVar.value = t }
   }
   mat.customProgramCacheKey = () => `granite-masonry-${beds.length}`
-  attachCSM(mat)   // last: it composes onto whatever onBeforeCompile is in place
   return mat
 }

@@ -45,7 +45,6 @@ import { townPlace, useTownPlace } from '../lib/townPlace.js'
 import { bodyLights, celestialToPosition, LIGHT_RADIUS, SUN_VISUAL_RADIUS, MOON_RADIUS, moonSky, moonSunDir3D } from './celestialLights.js'
 import { MILKY_WAY_GLSL, SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
-import { CSM_ENABLED } from './CascadedShadows.jsx'
 import { lookOf } from '../lib/lookOf.js'
 import { kitUrl } from '../lib/kitUrl.js'
 
@@ -170,10 +169,6 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   useEffect(() => {
     const light = lightRef.current
     if (!light) return
-    // ⛔ CASCADES OWN THE SHADOW WHEN THEY ARE ON. Two casters would double-darken every
-    // shadow and fight over the same receivers; `CascadedShadows` mounts its own lights.
-    // This light keeps SHADING (it is still the key) and stops CASTING.
-    if (CSM_ENABLED) { light.castShadow = false; return }
     if (!stencil) {
       // ⛔ NO SHADOWS UNTIL THE SCENE'S SIZE IS KNOWN — no fallback, by design: no frustum is invented.
       // ⭐ BUT THE SUN KEEPS CASTING (Strobe, 2026-10-06, BRIEF-hero-arrival-perf). Switching castShadow off and back
@@ -239,7 +234,6 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   useFrame(() => {
     const light = lightRef.current
     const townHalf = townHalfRef.current
-    if (CSM_ENABLED) return   // the cascade rig owns the shadow frusta
     if (!light || !light.castShadow || townHalf == null) return
 
     // Ground point the camera is looking at (ray → y=0).
@@ -444,16 +438,9 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     // TOD-driven sun-light intensity multiplier (Sky&Light · Sun light).
     // Stage threads the operator's live dirSun channel via `dirSunOverride`;
     // production resolves from scene.json. Default 1.0 leaves today behavior.
-    // ⛔ Under cascades this light STILL PUBLISHES the key direction but must not shade:
-    // the cascade rig carries the key, and two keys is two suns. Publish `__csmKey` so the
-    // rig can take the exact intensity this light would have had, rather than re-deriving it.
-    const _keyI = intensity * (intensityMulRef?.current ?? 1)
-    if (CSM_ENABLED) {
-      if (typeof window !== 'undefined') window.__csmKey = { intensity: _keyI, color }
-      lightRef.current.intensity = 0
-    } else lightRef.current.intensity = _keyI
+    lightRef.current.intensity = intensity * (intensityMulRef?.current ?? 1)
 
-    if (CSM_ENABLED || townHalfRef.current == null) return   // no size yet: the map stays held empty
+    if (townHalfRef.current == null) return   // no size yet: the map stays held empty
     // Let autoUpdate run for a few frames so the shadow map captures
     // the full scene, then switch to manual updates.
     if (_framesSinceSizeRef.current < 4) {

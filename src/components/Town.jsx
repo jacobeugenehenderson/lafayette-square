@@ -131,7 +131,6 @@ import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { rooflessWhy } from '../lib/roofTop.js'
 import { PostProcessing, StageFog, StageShadows, LampGlowDriver, EdgeRuffleDriver } from './PostProcessing.jsx'
 import { NeonDriver } from './NeonBands.jsx'
-import CascadedShadows, { CSM_ENABLED } from './CascadedShadows.jsx'
 import { weatherAt } from '../lib/weatherAt.js'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
@@ -347,14 +346,6 @@ function FrameLimiter({ paused, idle, everyFrame, flying }) {
   return null
 }
 
-// The shadow cascades (`?csm=1`), keyed to the light CelestialBodies publishes — never a second sun.
-export function Cascades() {
-  const keyDirection = useSkyState(st => st.keyDirection)
-  const keyColor = useSkyState(st => st.keyColor)
-  const [key, setKey] = useState({ intensity: 1 })
-  useFrame(() => { const k = window.__csmKey; if (k && k.intensity !== key.intensity) setKey({ intensity: k.intensity }) })
-  return <CascadedShadows lightDirection={keyDirection} keyIntensity={key.intensity} keyColor={keyColor} />
-}
 
 /**
  * The town's weather as the renderer reads it — ONE reading, the live feed WeatherPoller fetches for the placed
@@ -640,7 +631,6 @@ export default function Town({
       <Suspense fallback={null}><TownMoonPainter /></Suspense>
       {/* Names the material when a program fails to link — the failure that draws nothing and says nothing. */}
       <ShaderLinkGuard />
-      {CSM_ENABLED && <R3FErrorBoundary name="CascadedShadows"><Cascades /></R3FErrorBoundary>}
       {on('shadows') && quality.shadows && <StageShadows lookId={lookId} bakeLastMs={bake} shadowOverride={o.shadow} pcss={shot !== 'movie'} />}
       {/* No fog in the overhead plan, ever (Jacob, 2026-09-29): from the plan camera's height the town's mist veils the
           whole map. The movie and the street keep it. The post chain's haze and grain are zeroed there too

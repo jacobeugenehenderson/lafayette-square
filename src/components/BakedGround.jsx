@@ -1,4 +1,3 @@
-import { attachCSM } from './CascadedShadows.jsx'
 /**
  * BakedGround — the shared ground-bake consumer used by both Stage shots
  * and Preview. Reads the per-Look bundle (manifest + binary + AO lightmap)
@@ -538,9 +537,6 @@ function FadeMesh({ group, geometry, lightmap, fade, hasPool }) {
     // first compile is the only one. It was set in an effect after the first frame, a second link per material.
     mat.aoMap = lightmap || null
     mat.aoMapIntensity = 1
-    // Cascades wrap the material's hook — attached AFTER it exists. (Before 2026-09-26 this ran first
-    // and the hook assigned after it replaced the wrapper, so `?csm=1` never reached flat ground.)
-    attachCSM(mat)
     // Terrain displacement applied last so its onBeforeCompile wraps any
     // earlier ones (fade, etc.) — patchTerrain runs first, then calls prev.
     // Drives off the shared terrainExag uniform.

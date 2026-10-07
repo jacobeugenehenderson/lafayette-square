@@ -1,5 +1,5 @@
 <!-- BRIEF-STATE
-status: OPEN
+status: ARCHIVED 2026-10-07 (ruled)
 dispatched: no
 written: 2026-09-22
 evict-when: RULING — Jacob's eye on the hero pan with cascades on. (The other two
@@ -7,6 +7,14 @@ evict conditions were MET 2026-09-22: cascades link+draw at N=2 and N=3 on huron
 a link failure names its material. What is left is the eye, and §7's open question of
 whether cascades are the right answer at all.)
 -->
+
+> **ARCHIVED 2026-10-07 — RULING (Jacob): cascades are not the answer; the rig is deleted.** Superseded by the capped,
+> camera-fitted, texel-snapped single shadow frustum (CelestialBodies; `__maxMPerTexel` 0.25 m/texel): the staircase this
+> work set out to fix is gone. Measured the same day (Strobe, scratch/shadow-plan/probe.mjs): cascades drew 10 shadow
+> draws/frame against 5, gave up PCSS's contact hardening, were capped at 2 by texture units, and carried a town-#1
+> constant (`maxFar = 1200`). ⭐ **Still LIVE from this brief:** §7's single-map fade toward the box edge (the boundary
+> wipe — `ROADMAP H-24`), and the texture-unit census (`src/lib/shaderLinkGuard.jsx`) — every new sampler still spends a
+> unit on every receiver.
 
 # Every shadow receiver is one texture away from drawing nothing
 

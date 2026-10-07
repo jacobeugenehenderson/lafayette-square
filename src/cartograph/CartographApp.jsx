@@ -70,7 +70,6 @@ import useSelectedBuilding from '../hooks/useSelectedBuilding'
 
 const CAM_KEY = 'cartograph-camera'
 
-// Feeds the cascade rig the SAME key vector CelestialBodies publishes.
 // ⭐ STAGE KEEPS THE OPERATOR'S PLACE ACROSS A RELOAD (Jacob, 2026-09-27: editing a Night key, a code change
 // reloaded Stage, it came back at Noon, and the place was lost). The moment — date and time, so the season and
 // the keyframe the playhead is parked on come back too — and whether time is live or paused ride sessionStorage:

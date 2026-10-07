@@ -1031,7 +1031,6 @@ function Row({ k, v, warn }) {
   )
 }
 
-// Feeds CascadedShadows the SAME key vector CelestialBodies publishes — never re-derived.
 // ⭐ NO TOWN, NO DRAWING (BRIEF-no-default-town, 2026-09-28). Preview with no ?look= and no town open drew Lafayette
 // Square; it now offers the towns. ▶ node checks/claims-a-look-link-opens-that-town.mjs
 function TownChooser() {

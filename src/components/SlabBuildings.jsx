@@ -1,4 +1,3 @@
-import { attachCSM } from './CascadedShadows.jsx'
 /**
  * SlabBuildings — the slab buildings consumer (slab v2).
  *
@@ -783,7 +782,6 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
 
       registerShader(shader)
     }
-    attachCSM(mat)   // cascades, when `?csm=1` — composes, never replaces onBeforeCompile
     mat.customProgramCacheKey = () => `slab-bldg-${group.kind}-${group.id}-${tex ? 'tex' : 'flat'}-skyvis1-riser1-lamps1`
     return mat
   }, [tex, isRoof, isWall, isFoundation, texStrength, texScale, group.kind, group.id])

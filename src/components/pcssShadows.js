@@ -19,10 +19,8 @@
  * whenever it is made, with no scene walk and nothing per frame. It is global, as drei's chunk was.
  * Samples run as a loop to the authored maximum (the Samples slider's own max, skyLightChannels.js#SHADOW_FIELDS)
  * and break at the stamped count: the same samples, in the same order, as drei's unrolled loop.
- * ⛔ Under `?csm=1` none of this installs: the cascades own the shadow chunk (PostProcessing.jsx#StageShadows).
  */
 import * as THREE from 'three'
-import { CSM_ENABLED } from './CascadedShadows.jsx'
 import { SHADOW_FIELDS } from '../cartograph/skyLightChannels.js'
 
 const TAG = 256
@@ -107,7 +105,7 @@ float PCSS (sampler2D shadowMap, vec4 coords, float radius) {
 
 // The stamp: while a <StageShadows> holds one, every LightShadow reads it as its radius; otherwise its own.
 let stamp = null
-if (!CSM_ENABLED) {
+{
   const chunk = THREE.ShaderChunk.shadowmap_pars_fragment
   const PCF = '#if defined( SHADOWMAP_TYPE_PCF )'
   if (!chunk.includes('#ifdef USE_SHADOWMAP') || !chunk.includes(PCF) || !chunk.includes('float shadowRadius')) {
@@ -137,7 +135,6 @@ if (!CSM_ENABLED) {
 let warned = false
 /** Stamp the penumbra (texels) and sample count on every shadow-casting light. Returns the token `clearPcss` takes. */
 export function setPcss(sizeTexels, samples) {
-  if (CSM_ENABLED) return null
   if (!(samples >= 1 && samples <= PCSS_MAX_SAMPLES) || !(sizeTexels > 0 && sizeTexels < TAG)) {
     if (!warned) { warned = true; console.error(`[pcssShadows] ⛔ penumbra ${sizeTexels} texels × ${samples} samples is outside what the shader carries (samples 1–${PCSS_MAX_SAMPLES}, penumbra under ${TAG} texels). Shadows fall back to three's own filter until it is in range.`) }
     stamp = null
