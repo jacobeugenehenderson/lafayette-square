@@ -1678,6 +1678,10 @@ const useCartographStore = create((set, get) => ({
     set({ heroKeyframes: keyframes })
     get()._saveDesignDebounced()
   },
+  // Hero › Focus › Pick: the key whose focus OBJECT the next building click sets (session only; null = not picking).
+  // The click arrives as Stage's building selection (CartographApp#onSelectBuilding), not as a raycast of its own.
+  focusPick: null,
+  setFocusPick: (i) => set({ focusPick: i ?? null }),
   // Keys + motion in ONE write, for an edit that changes both (the Loop toggle
   // redistributes the keys' times): the runtime refuses a shot whose last key
   // disagrees with its mode, so the two must never be seen apart.

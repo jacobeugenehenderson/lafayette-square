@@ -841,7 +841,18 @@ export default function CartographApp() {
   const selectedId = useSelectedBuilding((s) => s.selectedId)
   const selectStore = useSelectedBuilding((s) => s.select)
   const deselectStore = useSelectedBuilding((s) => s.deselect)
-  const onSelectBuilding = useCallback((id) => (id ? selectStore(id) : deselectStore()), [selectStore, deselectStore])
+  // While Hero › Focus › Pick is armed, a building click (a set-piece is one too) names that key's focus OBJECT
+  // (src/lib/focusObject.js) instead of selecting it. Anything else clicked is not an object: said, and still armed.
+  const onSelectBuilding = useCallback((id) => {
+    const st = useCartographStore.getState()
+    if (st.focusPick != null) {
+      if (!id) { console.warn('[Focus] not an object — click a building or the set-piece (the Arch: choose it in the list)'); return }
+      st.setHeroKeyframes(st.heroKeyframes.map((k, i) => (i === st.focusPick ? { ...k, focus: id } : k)))
+      st.setFocusPick(null)
+      return
+    }
+    return id ? selectStore(id) : deselectStore()
+  }, [selectStore, deselectStore])
   const listings = useListings((s) => s.listings)
   // Stage's live path rides into <Town>'s movie driver as overrides (the keys, and the motion with Stage's speed);
   // the playhead and Play come through <Town movie>.
