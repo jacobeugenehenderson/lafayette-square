@@ -74,14 +74,14 @@ const LS_PROBES = {
 // an entry whose file no longer carries the literal FAILS (stale) until it is removed, and a new single-town check is
 // not admitted here — it fails above. ROADMAP carries the line.
 const TO_WALK = [
-  'alley-stub-pairs', 'band-is-one-ring', 'band-vs-partition-state', 'curvature-vs-band', 'deadend-notch-standoff',
+  'band-is-one-ring', 'band-vs-partition-state', 'curvature-vs-band', 'deadend-notch-standoff',
   'deadend-populations', 'divided-seam-step', 'every-corner-knows-its-junction', 'every-junction-corner-has-a-curb-cut-source',
   'every-turn-in-the-protopolygon-gets-an-arc', 'faces-on-the-ssot', 'grout-is-a-valid-polygon', 'handle-rides-its-arc',
-  'intersections-are-over-described', 'live-palette-equals-the-bake', 'marked-corners', 'neon-per-place',
+  'live-palette-equals-the-bake', 'marked-corners', 'neon-per-place',
   'one-corner-write-moves-one-corner', 'preclip-walk', 'producer-does-not-decide-partition', 'proto-curb-is-parallel',
-  'proto-curb', 'proto-identity', 'proto-thin-curb-runs', 'repour-changes-nothing', 'simplify-preserves-authoring',
+  'proto-curb', 'proto-thin-curb-runs', 'repour-changes-nothing', 'simplify-preserves-authoring',
   'spur-leg-offset', 'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-corner-extent-is-carried',
-  'the-ease-is-the-corner', 'the-light-follows-the-weather', 'the-slope-is-on-the-leg', 'the-survey-reaches-the-measure',
+  'the-light-follows-the-weather', 'the-slope-is-on-the-leg', 'the-survey-reaches-the-measure',
   'through-node-width-step', 'uturn-outer-edge-walk',
 ].map(n => `checks/claims-${n}.mjs`)
 const fileHeld = new Map([...Object.entries(LS_PROBES), ...TO_WALK.map(f => [f, 'TO WALK the towns (Jacob 2026-10-07, shrink-only)'])])
