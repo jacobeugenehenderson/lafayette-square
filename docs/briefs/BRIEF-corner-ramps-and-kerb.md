@@ -218,6 +218,17 @@ scene recorded.
 **Open:** → §3 (the sequence), and:
 - ⏸ **PARKED by Jacob's call, 2026-10-07 ("not right now"): a click-to-open corner popover in Survey** (radius slider ·
   Corner / Not a corner · Revert), replacing ⌥-click. Nothing built; today's controls are the handle's drag + ⌥-click.
+- ⏸ **SHELVED 2026-10-07 for the bakes (Sill, via Boz): the perpendicular fill's slivers.** Diagnosis: committed
+  `a9b5e80d` re-fills each perpendicular corner with a SECTOR built beside the contour, and its seams leave 12 mm × ~1.5 m
+  wedges of walk across the lawn. Thin walks on Huron: 342 perpendicular vs 5 diagonal. Plan (2), built and unshipped,
+  diff at `scratch/perp-corner/radial-landings-SHELVED-2026-10-07.diff`: no re-fill and no pad on a both-lawn corner. Each
+  leg's landing is a DEPTH on the one inset (`dland`, the ring split at the landing's t-bounds). Diagonal stays
+  byte-identical (Provincetown; Huron with its authored corner set aside). Open reds on Huron, built with (2): thin walk
+  10 vs 5 · walk behind a cut 1216/1299 · lawn apex 479/481 · concrete wedge walk 1/2. These rows were not measured at
+  HEAD. One cause measured: on a one-lawn corner (tile 114, Brunswick × Cleveland Rd W) the pad's inner edge is
+  `arcMin` = min(conD) = the shallow leg's 1.5 m, so a lawn ring is painted behind it and the lawn leg's walk
+  (1.5–3 m) breaks at the arc. HEAD's sector hid this. The other reds: cause not established. Radial vs parallel
+  landings is Jacob's look call.
 - ⛔ **LS's raised-kerb ground is REFUSED (2026-10-07, Sill): 266 T-junctions after the creases are cut.** The kerb no
   longer slices the paint (that regrouped holes by winding and meshed 97,808 m² of asphalt over LS's blocks); its ramp,
   flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the
