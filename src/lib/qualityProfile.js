@@ -28,7 +28,10 @@ import { RUNTIME_PHONE_SURFACE, surfacePolicy } from './deployment.js'
 export const QUALITY = {
   desktop: {
     id: 'desktop',
-    antialias: true,
+    // ⛔ No canvas MSAA: the canvas only ever receives the composer's final full-screen draw, which MSAA leaves
+    // identical (0 of 11.5 M values differ, scratch/msaa/probe.mjs --quad); ~1 ms/frame on huron at 2268×1270. The
+    // scene's anti-aliasing is the composer's (its multisampling + SMAA). With the post layer off, nothing smooths edges.
+    antialias: false,
     logDepth: true,
     // The movie shot's near plane (MovieCamera): log depth keeps precision at near 1 to the horizon.
     movieNear: 1,
