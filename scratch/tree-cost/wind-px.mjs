@@ -10,7 +10,7 @@ import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3) ?? d
-const TOWN = arg('town', 'lafayette-square'), SHOT = arg('shot', 'browse'), MODE = arg('mode', 'desktop')
+const TOWN = arg('town', 'lafayette-square'), SHOT = arg('shot', 'browse'), MODE = arg('mode', 'desktop'), Q = arg('q', '')   // --q=treeWind=k:v,… — Preview's inspection override
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const profile = mkdtempSync(join(tmpdir(), 'tree-cost-'))
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--window-size=1600,1000', 'about:blank'], { stdio: 'ignore' })
@@ -27,7 +27,7 @@ const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' })
 const { sessionId: S } = await cdp('Target.attachToTarget', { targetId, flatten: true })
 await cdp('Page.enable', {}, S); await cdp('Runtime.enable', {}, S)
 await cdp('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('preview.mode.v1', '${MODE}'); localStorage.setItem('cartograph-last-stage-shot', '${SHOT}')` }, S)
-await cdp('Page.navigate', { url: `http://localhost:5173/preview.html?look=${TOWN}` }, S)
+await cdp('Page.navigate', { url: `http://localhost:5173/preview.html?look=${TOWN}${Q ? '&' + Q : ''}` }, S)
 await sleep(24000)
 if (errs.some((x) => /SHADER DID NOT LINK/.test(x))) { console.log('⛔ a shader did not link — no reading'); cleanup(); process.exit(1) }
 const r = await cdp('Runtime.evaluate', { returnByValue: true, awaitPromise: true, expression: `(async () => {
@@ -55,17 +55,23 @@ const r = await cdp('Runtime.evaluate', { returnByValue: true, awaitPromise: tru
       const calm = crown(base, 0, floorM), peak = crown(base + gustAmp, 1, floorM)
       // crown lean shows as ≈1.7× its amp (lean 0.7 + hula 1); flutter at its amp
       const shown = (c) => 1.7 * c[0] + c[1]
-      out.push({ steady: px(shown(calm.steady)), windRest: px(shown(calm.wind)), gustPeak: px(shown(peak.wind)), mPerPx })
+      out.push({ steady: px(shown(calm.steady)), windRest: px(shown(calm.wind)), gustPeak: px(shown(peak.wind)), mPerPx,
+        // the two motions apart (Argon, 2026-10-07): the whole-canopy sideways sway (lean 0.7 + hula 1) and the leaf flutter
+        leanRest: px(1.7 * (calm.steady[0] + calm.wind[0])), flutRest: px(calm.steady[1] + calm.wind[1]), leanGust: px(1.7 * (calm.steady[0] + peak.wind[0])), flutGust: px(calm.steady[1] + peak.wind[1]) })
     } }
   const q = (arr, k) => { const s = arr.slice().sort((x, y) => x - y); return +s[Math.min(s.length - 1, Math.floor(k * s.length))].toFixed(2) }
   const by = (f) => [q(out.map(f), 0.1), q(out.map(f), 0.5), q(out.map(f), 0.9)]
   return { n: out.length, buffer: [size.x, size.y], live: { floorPx: v('uTreeWindFloorPx'), base: +base.toFixed(2), gustAmp: +gustAmp.toFixed(2) },
-    steadyPx: by((o) => o.steady), windAtRestPx: by((o) => o.windRest), gustPeakWindPx: by((o) => o.gustPeak), mPerPx: by((o) => o.mPerPx) }
+    steadyPx: by((o) => o.steady), windAtRestPx: by((o) => o.windRest), gustPeakWindPx: by((o) => o.gustPeak), mPerPx: by((o) => o.mPerPx),
+    leanRestPx: by((o) => o.leanRest), flutRestPx: by((o) => o.flutRest), leanGustPx: by((o) => o.leanGust), flutGustPx: by((o) => o.flutGust),
+    figures: Object.fromEntries(['uTreeWindLeanRefM', 'uTreeWindLeanPerMps', 'uTreeWindFlutRefM', 'uTreeWindFlutPerMps'].map((k) => [k, +v(k).toFixed(4)])) }
 })()` }, S)
 const v = r.result?.value
 if (!v || v.error) { console.log('⛔', v?.error || JSON.stringify(r).slice(0, 300)); cleanup(); process.exit(1) }
 const f = (a) => `${a[1]} px [${a[0]}–${a[2]}]`
 console.log(`${TOWN} · ${SHOT} · ${MODE} · ${v.n} crowns · buffer ${v.buffer.join('×')} · live ${JSON.stringify(v.live)}`)
+console.log(`  live figures ${JSON.stringify(v.figures)}`)
+console.log(`  ⭐ SIDEWAYS SWAY (lean+hula) at rest ${f(v.leanRestPx)} · at a gust peak ${f(v.leanGustPx)}  ·  FLUTTER at rest ${f(v.flutRestPx)} · at a gust peak ${f(v.flutGustPx)}`)
 console.log(`  steady sway ${f(v.steadyPx)} · wind's part at rest ${f(v.windAtRestPx)} · wind's part at a GUST PEAK ${f(v.gustPeakWindPx)} · m/px ${f(v.mPerPx)}`)
 const ok = v.gustPeakWindPx[0] >= v.live.floorPx - 0.01 || v.live.gustAmp < 1e-3
 console.log(v.live.gustAmp < 1e-3 ? '  (the reading carries no gusts — the floor cannot fire, by design)' : ok ? `  ✅ gust peak ≥ ${v.live.floorPx} px on every sampled crown (p10)` : `  ⛔ gust peak below ${v.live.floorPx} px at p10`)

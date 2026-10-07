@@ -8,6 +8,7 @@
  */
 import { Canvas, useFrame } from '@react-three/fiber'
 import Town from '../components/Town.jsx'
+import { kitDayChannel, TREE_WIND_FIELD_KEYS } from '../cartograph/skyLightChannels.js'
 import { surfaceQuality, townCanvasProps } from '../lib/qualityProfile.js'
 import DeploymentPanel, { liveDeployment, useDeployment } from './DeploymentPanel.jsx'
 import DiagnosisPanel from './DiagnosisPanel.jsx'
@@ -86,6 +87,20 @@ const PREVIEW_INSET = (() => {
   const [top, right, bottom, left] = q.split(',').map(Number)
   if (![top, right, bottom, left].every(Number.isFinite)) throw new Error(`[Preview] ?inset=${q} — four numbers: top,right,bottom,left (CSS px)`)
   return { top, right, bottom, left }
+})()
+// ?treeWind=leanRefM:0.3,flutterRefM:0.02 — feel <Town overrides.treeWind> before anything is committed: the kit's Tree
+// Wind figures (skyLightChannels TREE_WIND_FLAT_DEFAULTS) with the named ones replaced, flat across the day. An unknown
+// field or a non-number throws. Inspection only: nothing is saved, and without the parameter Preview draws the town's own.
+const PREVIEW_OVERRIDES = (() => {
+  const q = new URLSearchParams(window.location.search).get('treeWind')
+  if (!q) return undefined
+  const ch = kitDayChannel('treeWind')
+  for (const pair of q.split(',')) {
+    const [k, v] = pair.split(':')
+    if (!TREE_WIND_FIELD_KEYS.includes(k) || !Number.isFinite(Number(v))) throw new Error(`[Preview] ?treeWind=${q} — "${pair}": one of ${TREE_WIND_FIELD_KEYS.join(' · ')}, a number each`)
+    for (const slot of Object.values(ch.values)) slot[k] = Number(v)
+  }
+  return { treeWind: ch }
 })()
 // ?movers=you@lat,lon;courier@lat,lon,active|idle — inspect <Town movers>: each kind's look on this town's ground.
 const PREVIEW_MOVERS = (() => {
@@ -1271,7 +1286,7 @@ function CanvasContents({ town, layers, shot, quality }) {
         flightRef={flightRef} onFlightEnd={onFlightEnd} streetAt={streetAt} viewInset={PREVIEW_INSET} controls
         frameKey={frameKey} planHeading={planHeading} bearingRef={bearingRef} litIds={litIds ?? undefined} paused={probePaused}
         onFramed={(f) => { framedLog.current.push(f); if (framedLog.current.length > 20) framedLog.current.shift() }}
-        movie={movie} movers={PREVIEW_MOVERS} onMovers={PREVIEW_MOVERS ? (m) => { window.__movers = m } : undefined}
+        movie={movie} movers={PREVIEW_MOVERS} overrides={PREVIEW_OVERRIDES} onMovers={PREVIEW_MOVERS ? (m) => { window.__movers = m } : undefined}
         layers={{
           ground: layers.ground, buildings: layers.buildings, trees: layers.trees, park: layers.park,
           lamps: layers.lights, setPieces: layers.arch, neon: layers.neon, sky: layers.celestial,
