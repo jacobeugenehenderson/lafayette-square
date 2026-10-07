@@ -650,11 +650,11 @@ function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const movieHooks = useMemo(() => ({ handle: movieLink.handle, hold: () => movieLink.hold() }), [movieLink])
   const listings = useListings((s) => s.listings)
 
-  // The movie shot needs CONTINUOUS rendering where the profile asks for it: under
-  // frameloop="demand" the R3F clock advances in coarse steps, so the authored pan
-  // (MovieCamera's clock steps by the frame delta) reads ~2 fps even though <Town> pumps invalidate
-  // every frame. Every other shot stays "demand" (<Town> paces it). Confirmed by the
-  // window.__frameloop A/B test, 2026-06-29 (H1).
+  // The movie shot renders "always" where the profile asks for every frame, everything else "demand" (<Town> paces it).
+  // ⚠️ NO LONGER LOAD-BEARING: this switch rested on "under demand the pan reads ~2 fps" (an A/B of 2026-06-29). Measured
+  // 2026-10-07 on today's <Town> (scratch/frame-timeline/motion-probe.mjs, huron, desktop): under demand the movie's
+  // camera moves on every frame, as evenly as under always — the Ward runs demand in every shot. Kept only until this
+  // legacy player retires at the LS cutover.
   const frameloop = (QUALITY.movieEveryFrame && shot === 'movie') ? 'always' : 'demand'
 
   return (

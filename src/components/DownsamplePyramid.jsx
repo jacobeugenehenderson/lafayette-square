@@ -200,8 +200,7 @@ export { DownsamplePyramidPass }
 // React mount — a raw Pass child of <EffectComposer> (r3f adds any
 // `instanceof Pass` child standalone, in JSX order). Place AFTER the scene
 // render (and N8AO) and BEFORE the consumers (DoF, bloom) that sample it.
-// Accepts (and ignores) legacy levels/radius/resolutionScale props so existing
-// mount sites don't break; the ladder height is fixed at PYRAMID_LEVELS.
+// It takes no props: the ladder height is fixed at PYRAMID_LEVELS (renderPipeline.jsx mounts it bare).
 export const DownsamplePyramid = forwardRef(function DownsamplePyramid(_props, ref) {
   const pass = useMemo(() => new DownsamplePyramidPass(), [])
   return <primitive ref={ref} object={pass} dispose={null} />

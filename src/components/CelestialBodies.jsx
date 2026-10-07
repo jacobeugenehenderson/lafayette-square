@@ -437,7 +437,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const _framesSinceSizeRef = useRef(0)
   const _shadowExagRef = useRef(NaN)   // the terrain exaggeration the shadow map was last drawn at
 
-  // Re-render shadow map only when light position shifts enough (~2° of sky movement)
+  // Re-render shadow map only when light position shifts enough (~10 m on the ~600 m light radius ≈ 1° of sky; below)
   useFrame(() => {
     if (!lightRef.current) return
 

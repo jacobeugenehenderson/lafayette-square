@@ -454,7 +454,7 @@ function FxCaveats() {
 
 // Pyramid tuner — edits the ACTIVE environment's blur bracket (meta phase 2).
 // ⛔ UNFINISHED: IT REACHES NOTHING YET. The degree it edits is never handed to the
-// renderer, DownsamplePyramid ignores levels/radius/resolutionScale, and phones do
+// renderer, DownsamplePyramid ignores levels/radius, and phones do
 // not run the pyramid at all. Kept on purpose (Jacob, 2026-10-04): it is the intent
 // that phones run every effect at a lower rung — renderTiers.js says why and where.
 function PyramidTuner({ envId, degree, onChange }) {
@@ -486,7 +486,6 @@ function PyramidTuner({ envId, degree, onChange }) {
       {expanded && (
         <>
           {row('levels', 'Levels', 1, 8, 1, 0)}
-          {row('resolutionScale', 'Resolution', 0.1, 1, 0.05, 2)}
           {row('radius', 'Radius', 0, 1, 0.05, 2)}
           <div className="glass-text-dim" style={{ fontSize: 9, lineHeight: 1.4 }}>
             Unfinished — these values do not reach the render yet. They are the planned
