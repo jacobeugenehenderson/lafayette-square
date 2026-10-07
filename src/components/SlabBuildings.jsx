@@ -30,6 +30,7 @@ import { attachCSM } from './CascadedShadows.jsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { terrainExag, terrainFloorRaw, RISER_LIFT_GLSL } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -349,6 +350,10 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
       if (d.uvs) geom.setAttribute('uv', new THREE.Float32BufferAttribute(d.uvs, 2))
       geom.setIndex(new THREE.Uint32BufferAttribute(d.indices, 1))
       geom.computeVertexNormals()
+      // BVH — R3F raycasts every mesh carrying a pointer handler on EVERY pointermove. Brute-forcing a town's merged
+      // groups measured 13.2–13.4 ms per move on Huron (2026-10-06, 200k vertices) — a whole 60 Hz frame. Built once per
+      // slab; `indirect` leaves the index (the draw order every range reads) untouched. CityModel.jsx does the same.
+      geom.boundsTree = new MeshBVH(geom, { indirect: true })
       return { group: d.group, geometry: geom, texId: textureIdFor(d.group, scene) }
     })
   }, [data, scene, cityCoveredIds])
@@ -841,6 +846,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
       castShadow
       receiveShadow
       frustumCulled={false}
+      raycast={acceleratedRaycast}
       onPointerMove={interactive ? (e) => { e.stopPropagation(); const id = idAtFace(e); if (id) { setHovered(id); document.body.style.cursor = 'pointer' } } : undefined}
       onPointerOut={interactive ? () => { clearHovered(); document.body.style.cursor = 'auto' } : undefined}
       onClick={interactive ? (e) => { e.stopPropagation(); if (isDrag(e)) return; const id = idAtFace(e); if (id) select(id) } : undefined}
