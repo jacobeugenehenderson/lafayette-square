@@ -210,11 +210,17 @@ const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
 // town is revealed on one frame and the terrain swells. A class that fails says so (startupMarks.js#markFailed); the gate
 // names what it waits on, once, at that failure — never a timer.
 const PHYSICAL = ['ground', 'buildings', 'trees']
-const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:park', 'town:lamps'])
+// What only BROWSE draws is prepared here too, behind the emblem, so the first flight to Browse links and uploads nothing
+// (crutch ①, Boz's go, 2026-10-07): `town:overhead`, its tree discs (InstancedTrees, part of the trees class), and
+// `town:planRim`, its rim (PlanRim). Prepared after the reveal instead, the discs' first draw was a 145–160 ms frame in the
+// dawn; on the first Browse flight, 173–215 ms (huron).
+const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:overhead', 'town:park', 'town:lamps', 'town:planRim'])
 function RevealGate({ need, lingerMs, skyAt }) {
   const { gl, scene, camera } = useThree()
   const phase = useRef({ name: 'wait' })
   const [, wake] = useState(0)
+  const rt = useMemo(() => new THREE.WebGLRenderTarget(1, 1), [])
+  useEffect(() => () => rt.dispose(), [rt])
   const state = useSyncExternalStore(subscribeStartup, () => need.map((k) => (isPrepared(k) ? 'p' : failureOf(k) ? 'f' : '-')).join('') + isRevealed())
   useEffect(() => {
     if (isRevealed() || phase.current.name !== 'wait') return
@@ -245,8 +251,6 @@ function RevealGate({ need, lingerMs, skyAt }) {
   //    town (so no culling skips anything). A draw is the only thing that uploads every geometry and texture and links
   //    every program — measured: compile + initTexture alone left +217 geometries, +161 textures and +21 programs to
   //    the reveal frame (615 ms on huron). Here that cost lands while only the sky shows. 3. Then reveal, on one frame.
-  const rt = useMemo(() => new THREE.WebGLRenderTarget(1, 1), [])
-  useEffect(() => () => rt.dispose(), [rt])
   useFrame(() => {
     const p = phase.current
     if (p.name !== 'prep') return
@@ -259,14 +263,28 @@ function RevealGate({ need, lingerMs, skyAt }) {
     cam.position.set(cx, 20000, cz); cam.up.set(0, 0, -1); cam.lookAt(cx, 0, cz); cam.updateMatrixWorld()
     cam.userData.prepare = true   // DrawnAnchor ignores this draw: the visitor does not see it
     const prevTarget = gl.getRenderTarget()
-    const wasVisible = g.visible
-    g.visible = true
+    const restore = isolate(g)
+    if (!restore) return   // under a layer switched off
     const t0 = performance.now()
     try { gl.setRenderTarget(rt); gl.render(scene, cam) }
-    finally { g.visible = wasVisible; gl.setRenderTarget(prevTarget) }
+    finally { restore(); gl.setRenderTarget(prevTarget) }
     markTimeline('gate', `prepare draw ${g.name}: ${Math.round(performance.now() - t0)} ms`)
   })
   return null
+}
+// Show ONE group for its prepare draw: the group, and any hidden group above it, with everything else under those hidden
+// groups kept hidden — so a group nested in another (the overhead discs, in the trees) draws alone. Returns the undo, or
+// null when an ancestor is a layer switched off.
+function isolate(g) {
+  const undo = [[g, g.visible]]
+  g.visible = true
+  for (let c = g, p = g.parent; p; c = p, p = p.parent) {
+    if (p.visible) continue
+    if (!gatedOn(p)) { for (const [o, v] of undo) o.visible = v; return null }
+    undo.push([p, p.visible]); p.visible = true
+    for (const o of p.children) if (o !== c && o.visible) { undo.push([o, true]); o.visible = false }
+  }
+  return () => { for (const [o, v] of undo) o.visible = v }
 }
 // DOM over the canvas, filling the canvas's own box in every app (the Ward, Preview, Stage, the LS player): a div in
 // the canvas's container with its own root. ⛔ Not drei's <Html fullscreen>: it still positions by projecting a 3D
@@ -697,8 +715,9 @@ export default function Town({
         {/* The ground past the rim, out to the horizon — the movie and the street only. In PLAN the town is one closed
             circle ending at its soft rim (Jacob, 2026-09-28; ▶ claims-the-plan-shot-ends-at-the-rim). */}
         {heavy && shot !== 'plan' && <R3FErrorBoundary name="HorizonDisc"><HorizonDisc lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>}
-        {/* …and the plan's clean circle at that same one radius: land to the rim, the page's ink past it (PlanRim). */}
-        {shot === 'plan' && <R3FErrorBoundary name="PlanRim"><PlanRim /></R3FErrorBoundary>}
+        {/* …and the plan's clean circle at that same one radius: land to the rim, the page's ink past it (PlanRim). Always
+            mounted, SHOWN in plan only, so the gate prepares it with the town and the first Browse flight links nothing. */}
+        <group name="town:planRim" visible={shot === 'plan'}><R3FErrorBoundary name="PlanRim"><PlanRim /></R3FErrorBoundary></group>
         {/* A mesh behind everything, at its true geo spot; nothing unless the Look ships a landscape. */}
         <R3FErrorBoundary name="MountainBackdrop"><MountainBackdrop lookId={lookId} bakeLastMs={bake} landscapeOverride={o.landscape} /></R3FErrorBoundary>
       </Suspense>

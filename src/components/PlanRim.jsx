@@ -10,12 +10,13 @@
  *   · the SURROUND: from the rim outward, in the page's ink (the player chrome's GROUNDS.ink, the Ward's --ground),
  *     unlit, fading in across the SAME band the ground fades out on (fade.inner → fade.outer) and opaque beyond, drawn
  *     over everything — so past the rim there is only the page, never the sky's underside.
- * Mounted by Town.jsx for shot 'plan' only; the movie and the street keep the horizon (HorizonDisc).
+ * Mounted by Town.jsx always and SHOWN for shot 'plan' only (so the reveal prepares it); the movie and the street keep
+ * the horizon (HorizonDisc).
  * Must never: take a radius of its own. No stencil ⇒ it draws nothing, and says so once.
  */
 import { useEffect, useMemo, useState } from 'react'
 import * as THREE from 'three'
-import { onSceneStencil } from './sceneStencilState'
+import { onSceneStencil, getSceneStencil } from './sceneStencilState'
 import { GROUNDS } from '../tokens/playerChrome.js'
 
 const SEGMENTS = 256
@@ -35,11 +36,13 @@ function surroundMaterial(inner, outer) {
 }
 
 export default function PlanRim() {
-  const [stencil, setStencil] = useState(null)
-  useEffect(() => onSceneStencil(setStencil), [])
-  useEffect(() => {
-    if (!stencil && !_saidNoStencil) { _saidNoStencil = true; console.error('[PlanRim] the scene disc has no radius yet — the plan draws no rim until the ground publishes one') }
-  }, [stencil])
+  const [stencil, setStencil] = useState(getSceneStencil)
+  // Said on the EVENT that no disc is coming (sceneStencilState's `missing`), never on a null that is only "not yet":
+  // mounted at startup, before the ground publishes, a null-check said so on every load.
+  useEffect(() => onSceneStencil((s, missing) => {
+    setStencil(s)
+    if (!s && missing && !_saidNoStencil) { _saidNoStencil = true; console.error(`[PlanRim] the scene has no disc (${missing}) — the plan draws no rim`) }
+  }), [])
 
   const shapes = useMemo(() => {
     if (!stencil) return null

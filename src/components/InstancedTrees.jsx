@@ -31,7 +31,7 @@ import {
   measureChassisRadius,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
-import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
+import { useOverheadMode, useOverheadAssets, OverheadSpecies, OverheadLightDriver, TreeWindDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
 import { markPrepared } from '../lib/startupMarks.js'
 import { getElevationRaw, slabYIsUnstamped, groundPairs } from '../utils/elevation'
@@ -1004,15 +1004,14 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   const overheadBySpecies = useMemo(() => atlas?.manifest?.overheadBySpecies || null, [atlas?.manifest?.overheadBySpecies])
   const overheadEnabled = !!overheadBySpecies && scene?.overheadImpostor !== false
   const overheadMode = useOverheadMode(overheadEnabled)
-  // Load-gate: defer the overhead disc PNGs past the hero-frame startup path
-  // (idle-warm or on Browse-entry), so they don't compete with the mesh GLBs +
-  // atlas the first frame needs. The SWAP still keys on overheadMode above.
-  const overheadWarm = useOverheadWarm(overheadEnabled)
   const overheadSpeciesList = useMemo(
     () => (groups?.bySpecies ? Array.from(groups.bySpecies.keys()) : []),
     [groups],
   )
-  const overheadAssets = useOverheadAssets({ enabled: overheadWarm, lookName, overheadBySpecies, species: overheadSpeciesList })
+  // The discs are part of the trees: loaded with them and prepared behind the emblem (`prepared:trees` below), so the
+  // first Browse flight draws nothing new. REMOVED: the idle-callback warm that loaded them after the hero settled —
+  // loaded, never uploaded, so that flight still linked and uploaded them (173–215 ms on huron, 2026-10-07).
+  const { assets: overheadAssets, arrived: overheadArrived } = useOverheadAssets({ enabled: overheadEnabled, lookName, overheadBySpecies, species: overheadSpeciesList })
 
   // HERO canopy-impostor foundation assets — the side-on variety pool, loaded for
   // every species that has foundation instances. Eager (it's hero-critical, not a
@@ -1032,7 +1031,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   const { assets: heroAssets, arrived: heroPagesArrived } = useHeroImpostorAssets({ enabled: heroFoundationEnabled, lookName, heroImpostorBySpecies: heroImpostorRecords, species: heroLoadSpecies })
 
   // ⭐ THE REVEAL (a `prepared:trees` startup mark, src/lib/startupMarks.js): the trees are PREPARED when every card
-  // page has ARRIVED (useHeroImpostorAssets' own readiness) and every model tree's GLB has loaded. A card without its page draws nothing, so its page is part of the physical tree (Jacob: physical
+  // page and Browse disc page has ARRIVED (useHeroImpostorAssets' and useOverheadAssets' own readiness) and every model tree's GLB has loaded. A card without its page draws nothing, so its page is part of the physical tree (Jacob: physical
   // arrives at once). ⛔ Arrival, never `onUpdate` (the GPU upload): held hidden, a tree never draws, so never uploads.
   const meshKeys = useMemo(() => {
     const k = []
@@ -1041,7 +1040,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
   }, [groups])
   const [meshLoaded, setMeshLoaded] = useState(() => new Set())
   const onMeshLoaded = useCallback((key) => setMeshLoaded((s) => (s.has(key) ? s : new Set(s).add(key))), [])
-  const pagesIn = !heroFoundationEnabled || !heroSpeciesList.length || heroPagesArrived
+  const pagesIn = (!heroFoundationEnabled || !heroSpeciesList.length || heroPagesArrived) && (!overheadAssets || overheadArrived)
   const drawsNoTrees = scene?.layerVis?.tree === false || treeDbg('noTrees')
   useEffect(() => {
     if (drawsNoTrees) { markPrepared('trees'); return }
@@ -1138,11 +1137,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, canopyOve
           a group when the camera is at plan height. Lazy-loaded behind the hero
           shot; a species with no baked asset simply stays on mesh (never blank). */}
       {overheadAssets && (
-        <group visible={overheadMode && !treeDbg('noOverhead') && !treeDbg('noTrees')}>
+        <group name="town:overhead" visible={overheadMode && !treeDbg('noOverhead') && !treeDbg('noTrees')}>
           {Array.from(bySpecies.entries()).map(([species, instances]) => {
             const asset = overheadAssets.get(species)
             return asset
-              ? <OverheadSpecies key={`overhead#${species}`} asset={asset} instances={instances} visible={overheadMode} />
+              ? <OverheadSpecies key={`overhead#${species}`} asset={asset} instances={instances} />
               : null
           })}
         </group>

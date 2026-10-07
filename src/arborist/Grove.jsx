@@ -1116,7 +1116,7 @@ function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered,
   const atlas = useTreeAtlas(lookId)
   const overheadBySpecies = atlas?.manifest?.overheadBySpecies || null
   const speciesList = useMemo(() => species.map(v => v.speciesId), [species])
-  const assets = useOverheadAssets({
+  const { assets } = useOverheadAssets({
     enabled: !!overheadBySpecies,
     lookName: lookId,
     overheadBySpecies,
@@ -1134,7 +1134,7 @@ function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered,
         const inL = inLook(v)
         return (
           <group key={v.speciesId}>
-            <OverheadSpecies asset={asset} instances={[{ x, y: 0, z, rotY: 0, scale: 1 }]} visible opacity={opacity} />
+            <OverheadSpecies asset={asset} instances={[{ x, y: 0, z, rotY: 0, scale: 1 }]} opacity={opacity} />
             {/* Base plate — the SAME quality circle + selection ring as the Hero
                 Tile (same size / colour / opacity logic / GROUND position). The
                 overhead discs disable raycast (below) so top-down clicks reach this

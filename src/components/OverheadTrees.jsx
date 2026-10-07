@@ -22,7 +22,8 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
-import { loadImpostorTexture } from './impostorTexture.js'
+import { loadImpostorTexture, pageArrived, pageFailed } from './impostorTexture.js'
+import { markFailed } from '../lib/startupMarks.js'
 import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
 import { OVERHEAD_ALPHA_TEST } from './overheadCore.js'
@@ -181,46 +182,15 @@ export function useOverheadMode(enabled) {
   return enabled && viewMode === 'browse'
 }
 
-// ── Load gate: keep overhead OFF the startup critical path ─────────────────────
-// The overhead disc PNGs (60 for LS) only ever render in Browse, but the asset
-// load used to be gated on CAPABILITY (does the slab have overhead) — so all of
-// them fetched + decoded during the HERO shot, competing with the mesh GLBs +
-// atlas the first frame actually needs (the density-stress load-in). This gate
-// defers the overhead pull past startup WITHOUT inventing a parallel height
-// heuristic (the swap doctrine forbids that — see useOverheadMode): it latches
-// true on whichever comes first —
-//   (a) the browser goes idle after the hero has settled (requestIdleCallback,
-//       so the hero frame is never blocked but discs are warm before you pull up), or
-//   (b) Browse is actually entered (belt-and-suspenders; if you dive to plan view
-//       before idle fires, load immediately).
-// Once warm it stays warm (no thrash). enabled=false → never warms (LS looks with
-// no overhead pay nothing).
-export function useOverheadWarm(enabled) {
-  const inBrowse = useOverheadMode(enabled)
-  const [warm, setWarm] = useState(false)
-  useEffect(() => {
-    if (!enabled || warm) return
-    const w = () => setWarm(true)
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(w, { timeout: 4000 })
-      return () => window.cancelIdleCallback?.(id)
-    }
-    const id = setTimeout(w, 3000)
-    return () => clearTimeout(id)
-  }, [enabled, warm])
-  useEffect(() => { if (inBrowse) setWarm(true) }, [inBrowse])
-  return enabled && warm
-}
-
-// ── Lazy asset load (behind the hero shot) ───────────────────────────────────
+// ── Asset load (prepared with the trees, behind the emblem) ─────────────────
 // Page loading lives in `impostorTexture.js` — shared with the hero cards, because
 // the baked pages are KTX2/ETC1S now and the two consumers must not diverge.
 
 /**
- * useOverheadAssets — resolve + lazy-load the baked overhead layers for every
- * species present in the scene. Returns Map<species, { heightM, canopyRadiusM,
+ * useOverheadAssets — resolve + load the baked overhead layers for every
+ * species present in the scene. Returns { assets: Map<species, { heightM, canopyRadiusM,
  * bands:[{key, albedoTex, aoTex, yLoNorm, yHiNorm}] }> (only species with a full
- * manifest record + resolved textures). `enabled` gates the whole load so LS looks
+ * manifest record + resolved textures), arrived }. `enabled` gates the whole load so LS looks
  * without the asset pay nothing.
  */
 export function useOverheadAssets({ enabled, lookName, overheadBySpecies, species }) {
@@ -254,18 +224,23 @@ export function useOverheadAssets({ enabled, lookName, overheadBySpecies, specie
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, lookName, overheadBySpecies, species, gl])
 
-  // Re-render once the textures finish decoding (they load async; the map is
-  // stable but the GPU upload lands later — poke a paint when any resolves).
-  useEffect(() => {
-    if (!assets) return
-    let live = true
-    const texes = []
-    for (const a of assets.values()) for (const b of a.bands) { texes.push(b.albedoTex, b.aoTex) }
-    Promise.all(texes.map(t => t.image ? Promise.resolve() : new Promise(r => { t.onUpdate = r }))).then(() => { if (live) setReady(x => x + 1) })
-    return () => { live = false }
-  }, [assets])
+  // ⭐ ARRIVED = every page's image has landed (impostorTexture.js#pageArrived, read off the texture itself), as the
+  // hero cards do. It re-renders the consumer once, and it is part of what the reveal reads for the trees
+  // (InstancedTrees → `prepared:trees`): the discs are uploaded behind the emblem, so the first Browse flight draws
+  // nothing new. ⛔ It waited on `texture.onUpdate` — the GPU upload — which a disc held hidden in the hero shot never does.
+  const [arrived, setArrived] = useState(false)
+  useEffect(() => { setArrived(false) }, [assets])
+  useFrame(() => {
+    if (!assets || arrived) return
+    let all = true
+    for (const a of assets.values()) for (const b of a.bands) for (const t of [b.albedoTex, b.aoTex]) {
+      if (pageFailed(t)) markFailed('trees', 'an overhead disc page did not arrive')
+      if (!pageArrived(t)) all = false
+    }
+    if (all) { setArrived(true); setReady((x) => x + 1) }
+  })
 
-  return assets
+  return { assets, arrived }
 }
 
 // ── Per-species instanced disc-stack ─────────────────────────────────────────
@@ -274,7 +249,7 @@ export function useOverheadAssets({ enabled, lookName, overheadBySpecies, specie
 // rotY + scale (the pour treatment). Bands bottom→top get a brightness ramp
 // (0.3→1.0) so the crown-shadowed lower layers read as depth through the top's
 // gaps. Materials relight from the shared atmosphere (injectOverheadStamp).
-export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
+export function OverheadSpecies({ asset, instances, opacity = 1 }) {
   const refs = useRef([])
   const invalidate = useThree(s => s.invalidate)
 
@@ -372,7 +347,7 @@ export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
           key={d.key}
           ref={(el) => { refs.current[i] = el }}
           args={[d.geo, d.mat, instances.length]}
-          visible={visible && !treeDbg((['noBranch', 'noMid', 'noCanopy'])[i])}
+          visible={!treeDbg((['noBranch', 'noMid', 'noCanopy'])[i])}
           renderOrder={i}
           frustumCulled={false}
           castShadow={false}
