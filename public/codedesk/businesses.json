@@ -39,7 +39,6 @@
     { "id": "bldg-1546", "name": "Berea Presbyterian Church", "category": "community", "building_id": "bldg-1546" },
     { "id": "bldg-0976", "name": "Seib House", "category": "historic", "building_id": "bldg-0976" },
     { "id": "bldg-0822", "name": "Ros\u00e9 By Peno", "category": "dining", "building_id": "bldg-0822" },
-    { "id": "bldg-0720", "name": "KIPP Wisdom Academy", "category": "community", "building_id": "bldg-0720" },
-    { "id": "bldg-1295", "name": "Holy Trinity Serbian Eastern Orthodox Church", "category": "community", "building_id": "bldg-1295" }
+    { "id": "bldg-0720", "name": "KIPP Wisdom Academy", "category": "community", "building_id": "bldg-0720" }
   ]
 }

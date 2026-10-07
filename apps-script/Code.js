@@ -2385,7 +2385,6 @@ function seedListings() {
     row('lmk-024', 'bldg-1366', 'McKinley Classical Leadership Academy', 'Russell Boulevard', 'community', 'schools'),
     row('lmk-026', 'bldg-1244', 'Quoba Masjid', 'Allen Avenue', 'community', 'churches'),
     row('lmk-040', 'bldg-0720', 'KIPP Wisdom Academy', '', 'community', 'schools'),
-    row('lmk-041', 'bldg-1295', 'Holy Trinity Serbian Eastern Orthodox Church', '', 'community', 'churches'),
     row('lmk-018', 'bldg-0752', 'A. T. Still University - MOSDOH', 'Park Avenue', 'services', 'medical'),
     row('lmk-019', 'bldg-0682', 'Kritique Designs', 'Chouteau Avenue', 'services', 'beauty', { phone: '+13142293002' }),
     row('lmk-020', 'bldg-0682', 'Salama Supermarket', 'Chouteau Avenue', 'shopping', 'grocery', { phone: '+13144367704' }),
