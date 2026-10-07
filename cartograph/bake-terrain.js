@@ -517,25 +517,25 @@ function floodExtent(normalized, mask, width, height, bounds, water) {
 
 function writeBed(normalized, mask, width, height, bounds, floor = null, water = null) {
   const stepX = (bounds.maxX - bounds.minX) / (width - 1), stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
-  // The town's HIGH tide above y = 0 at a cell: its datum field (waterLevels), bilinear on the field's own grid.
-  const highAt = (k) => {
-    if (!water) throw new Error('⛔ writeBed: a floor above y = 0 is capped at the town\'s HIGH level, and none was given')
-    const f = water.datums[water.high], g = water.datums.grid
-    if (g.w === 1 && g.h === 1) return f[0]
-    const x = bounds.minX + stepX * (k % width), z = bounds.minZ + stepZ * Math.floor(k / width)
-    const fx = Math.min(g.w - 1, Math.max(0, (x - g.min[0]) / g.step[0])), fz = Math.min(g.h - 1, Math.max(0, (z - g.min[1]) / g.step[1]))
-    const i = Math.min(g.w - 2, Math.floor(fx)), j = Math.min(g.h - 2, Math.floor(fz)), tx = fx - i, tz = fz - j
-    const v = (a, b) => f[b * g.w + a]
-    return (v(i, j) * (1 - tx) + v(i + 1, j) * tx) * (1 - tz) + (v(i, j + 1) * (1 - tx) + v(i + 1, j + 1) * tx) * tz
-  }
+  // The town's levels at a cell, from the ONE reader (waterLevel.mjs) the checks and the player use — not a copy of it.
+  if (!water) throw new Error('⛔ writeBed: the bed is measured from the town\'s water levels (its LOW for the depth cap, its HIGH for a floor above y = 0), and none was given')
+  const levels = levelsOf(water)
+  const cellXZ = (k) => [bounds.minX + stepX * (k % width), bounds.minZ + stepZ * Math.floor(k / width)]
+  const highAt = (k) => levels.highAt(...cellXZ(k))
   const auth = waterAuthoring()
   const sand = auth.sandD50Mm ?? { value: finding('f-cem-nj-beach-d50').value.d50_mm, from: 'f-cem-nj-beach-d50 (the kit default — no town value authored)' }
   const vis = auth.secchiM ?? (() => { const r = finding('r-bottom-visibility-default').value
     return { value: r.visibleToM, fade: r.fadeOverM, from: 'r-bottom-visibility-default (Jacob\'s 8 ft) — ⚠️ NO measured clarity for this town (q-water-clarity-per-town)' } })()
   const A = deanA(sand.value)
+  // ⭐ THE DEEPEST THE BOTTOM IS EVER SEEN, as a depth below y = 0: the visibility depth below the town's LOW level, where
+  // the water is shallowest over it (Jacob, 2026-10-07, ruling (a)). Deeper than that, no tide shows it. ⛔ It was the
+  // visibility depth below y = 0 — "y = 0 is the level", true until the 09-27 ruling stood the water between LOW and
+  // HIGH. Provincetown's LOW is 0.4–0.7 m below y = 0, so at low tide no water in the town reached its own colour and a
+  // sand floor showed through the whole harbour. ▶ node checks/claims-the-bed-is-seen-to-depth-at-low-water.mjs
+  const deepestAt = (k) => vis.value - levels.lowAt(...cellXZ(k))
   const dist = shoreDistance(mask, width, height, stepX, stepZ)
   const rock = rockCells(normalized, mask, width, height, bounds)
-  // ⭐ Where the floor is known it REPLACES the profile, down to the visibility depth (deeper does not show); it is
+  // ⭐ Where the floor is known it REPLACES the profile, down to the deepest the bottom is seen (deepestAt); it is
   // feathered into the profile over one of its own cells where its coverage ends inside the water. A floor that
   // stands ABOVE y = 0 (the survey's water — the flats) stands where it was MEASURED, capped at the town's HIGH tide
   // there (`water.high`): the water at high tide covers it, and the dry beach beside it meets it without a cliff.
@@ -552,16 +552,17 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
   let n = 0, capped = 0, maxD = 0, nFloor = 0, above = 0, atHigh = 0
   for (let k = 0; k < mask.length; k++) {
     if (!mask[k] || rock.has(k)) continue
-    let h = Math.min(A * Math.pow(dist[k], 2 / 3), vis.value)
+    const deep = deepestAt(k)
+    let h = Math.min(A * Math.pow(dist[k], 2 / 3), deep)
     if (known && Number.isFinite(known.depth[k])) {
       const d = known.depth[k], hp = h
-      let hf = Math.min(d, vis.value)                                    // depth below y = 0; negative = above it
+      let hf = Math.min(d, deep)                                         // depth below y = 0; negative = above it
       if (d < 0) { above++; const cap = highAt(k); if (-d > cap) { hf = -cap; atHigh++ } }
       const w = Math.min(1, wFloor[k] / known.cellM)
       h = w * hf + (1 - w) * hp
       if (w > 0) { fromFloor[k] = 1; nFloor++ }
     }
-    if (h >= vis.value) capped++
+    if (h >= deep - 1e-6) capped++
     normalized[k] = -h; n++; if (dist[k] > maxD) maxD = dist[k]
   }
   // Cells as row runs [row, firstCol, lastCol, …] — the check scopes its rules by them.
@@ -581,7 +582,7 @@ function writeBed(normalized, mask, width, height, bounds, floor = null, water =
   const fade = vis.fade ?? finding('r-bottom-visibility-default').value.fadeOverM
   console.log(`  BED: ${n.toLocaleString()} cells under the water · h = ${A.toFixed(3)}·y^(2/3) (sand ${sand.value} mm — ${sand.from})`)
   console.log(`    visible to ${vis.value.toFixed(2)} m, fading over the last ${fade.toFixed(2)} m — ${vis.from}`)
-  console.log(`    the profile reaches that depth ${(Math.pow(vis.value / A, 1.5)).toFixed(0)} m from the shore · ${(100 * capped / Math.max(1, n)).toFixed(1)}% of the water is past it`)
+  console.log(`    below the town's LOW level (${levels.lowName}, ${levels.range.low.map(v => v.toFixed(2)).join('…')} m): the bed is cut at ${(vis.value - levels.range.low[1]).toFixed(2)}…${(vis.value - levels.range.low[0]).toFixed(2)} m below y = 0 · ${(100 * capped / Math.max(1, n)).toFixed(1)}% of the water reaches it`)
   const cellHa = stepX * stepZ / 1e4
   if (known) {
     console.log(`  FLOOR: ${known.tiles} bathymetry tile(s), ${known.datum} (DEM: ${known.demDatumFrom})`)

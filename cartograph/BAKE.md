@@ -73,15 +73,17 @@ On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks i
 > - ⭐ **THEN IT WRITES THE BED UNDER THE WATER — the REAL floor where there is one.** `fetch-bathymetry.mjs` lists
 >   the town's bathymetry tiles (`raw/bathymetry-sources.txt`, by coordinates: NOAA BlueTopo today; USACE NCMP and
 >   NCEI CUDEM are named rungs not yet built, so a town they would cover is **not** verified-absent). Under the water
->   the floor's depth below the level replaces the stand-in, down to the depth the bottom stops showing (the town's
->   `design.json#water`, else the kit's recorded defaults — and it says which), so the edge where the bottom
+>   the floor's depth below the level replaces the stand-in, down to the depth the bottom stops showing **at the town's
+>   LOW water** (the visibility depth below `water.low` — the town's `design.json#water`, else the kit's recorded
+>   defaults, and it says which; it was cut below y = 0, so a town whose LOW sits under y = 0 never reached its own
+>   water colour at low tide, ruled 2026-10-07), so the edge where the bottom
 >   disappears follows the real bars, flats and channels. Where no floor is known the stand-in is the USACE
 >   equilibrium beach profile (h = A·y^⅔, A read from `references/` at the town's sand size) — which, alone, puts that
 >   edge the same distance off every shore. ⛔ Two vertical datums are never mixed (no conversion is built: a
 >   non-NAVD88 pair refuses). The floor runs right to the drawn shore: where the water
 >   meets the land is decided at the town's level (`water.high`, and its flood), not by the bed. Which cells the floor drew is recorded in `terrain.json#bed.floor`
 >   with its seam against the DEM. A town with no coast comes out byte-identical.
->   ▶ `node cartograph/fetch-bathymetry.mjs --scene=<id>` · `node checks/claims-the-shore-is-closed.mjs`
+>   ▶ `node cartograph/fetch-bathymetry.mjs --scene=<id>` · `node checks/claims-the-shore-is-closed.mjs` · `node checks/claims-the-bed-is-seen-to-depth-at-low-water.mjs`
 > - ⭐ **AND IT NAMES WHERE THE WATER STANDS** (`terrain.json#water`). y = 0 stays the lidar's water — the tide the survey
 >   flew at, which no one chose — and the town's named levels are heights above it: a **low** and a **high** tide (MLLW
 >   and MHW unless the town's `design.json#water.low/high` names others it has), as a coarse grid because the datums
