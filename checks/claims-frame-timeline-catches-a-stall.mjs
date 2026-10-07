@@ -18,16 +18,17 @@
  *
  * ⛔ HEADLESS IS NOT THE OPERATOR'S EYE: this is the desktop target on this Mac's GPU, 1280×800 at DPR 1 by default, no vsync
  * guarantee. Every number it prints says so. Jacob's browser is the gate.
- * ⛔ READ-ONLY. Usage: node checks/claims-frame-timeline-catches-a-stall.mjs [--town=huron] [--base=http://localhost:5173]
+ * ⛔ READ-ONLY. Usage: node checks/claims-frame-timeline-catches-a-stall.mjs --town=<town> [--base=http://localhost:5173]
  *   [--window=1280x800] [--dpr=1] [--movieAt=0] [--hold=30000] [--runMs=8000] [--off=] [--json] [--raw (run a's every frame + mark)] [--only=a|stall|c|b]
  */
 import { spawn, execSync } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir, loadavg } from 'node:os'
 import { join } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1] ?? d
-const TOWN = arg('town', 'huron')
+const TOWN = requiredTown('town')
 const BASE = arg('base', 'http://localhost:5173')
 const MOVIE_AT = Number(arg('movieAt', '0'))
 const HOLD = Number(arg('hold', '30000'))

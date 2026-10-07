@@ -171,6 +171,19 @@ export function ribbonScenes(argv = process.argv.slice(2)) {
   return scenes('<scene>', { argv, has: (s) => existsSync(join(ROOT, ribbonsPath(s))), label: 'ribbons' })
 }
 
+// ── A LIVE check's one town ──────────────────────────────────────────────────────────────────
+// ⛔ NO DEFAULT TOWN. A check that drives a browser cannot walk every town (a browser per town), so it takes ONE —
+//    and a default (`|| 'huron'`) made a town the silent subject of every run that forgot to say which (Layer 0:
+//    no fallbacks; Jacob 2026-10-07). No town named ⇒ exit 2 and the words, naming the registry's towns.
+//   const TOWN = requiredTown('town')            // --town=<id>
+export function requiredTown(flag = 'town', argv = process.argv.slice(2)) {
+  const v = argv.find(a => a.startsWith(`--${flag}=`))?.slice(flag.length + 3)
+  if (v) return v
+  console.error(`⛔ NOT CHECKED — this check drives a browser on ONE town and takes no default: pass --${flag}=<town>.`)
+  console.error(`   Towns: ${declaredScenes().join(', ')}. This is a failure to check, not a pass.`)
+  process.exit(2)
+}
+
 // ── "I have nothing to measure" ──────────────────────────────────────────────────────────────
 // ⛔ EXIT 2 AND SAY SO. The corpus already converged on this: 88 checks call `process.exit(2)` and
 //    their messages read "NOT MEASURED" / "nothing to check" / "could not run", and

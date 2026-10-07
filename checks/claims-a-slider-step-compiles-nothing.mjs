@@ -15,16 +15,17 @@
  * a recompile, so it does not fail here; it is printed, because it is still a one-off hitch the slider can hit.
  * Mutation, run when the fix landed (a temporary `?pcssOld=1` that remounted drei's <SoftShadows>): LS failed with
  * 4,426 disposes · 315 programs released · 10 compile calls over 6 steps; the fixed path passed with 0 · 0 · 0.
- * ⛔ READ-ONLY. Usage: node checks/claims-a-slider-step-compiles-nothing.mjs [--town=huron] [--steps=6]
+ * ⛔ READ-ONLY. Usage: node checks/claims-a-slider-step-compiles-nothing.mjs --town=<town> [--steps=6]
  *   [--base=http://localhost:5173] [--query=k=v&…]
  */
 import { spawn, execSync } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3) ?? d
-const TOWN = arg('town', 'huron'), BASE = arg('base', 'http://localhost:5173'), STEPS = +arg('steps', '6')
+const TOWN = requiredTown('town'), BASE = arg('base', 'http://localhost:5173'), STEPS = +arg('steps', '6')
 const QUERY = arg('query', '')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const profile = mkdtempSync(join(tmpdir(), 'slider-compiles-'))

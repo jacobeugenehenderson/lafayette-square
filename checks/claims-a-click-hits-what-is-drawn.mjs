@@ -16,14 +16,15 @@
  *   - the GHOST — where the wall would be with no lift — selects nothing wherever the lift is ≥ 2 px on screen.
  * ⛔ It reads what the dev server SERVES (the main tree).
  *
- *   node checks/claims-a-click-hits-what-is-drawn.mjs [--town=huron] [--on=<id>,<id>] [--shots=hero,browse]
+ *   node checks/claims-a-click-hits-what-is-drawn.mjs --town=<town> [--on=<id>,<id>] [--shots=hero,browse]
  */
 import { spawn, execSync } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1] ?? d
-const TOWN = arg('town', 'huron'), WHEN = arg('when', '2026-10-10T12:00:00Z'), SHOTS = arg('shots', 'hero,browse').split(',')
+const TOWN = requiredTown('town'), WHEN = arg('when', '2026-10-10T12:00:00Z'), SHOTS = arg('shots', 'hero,browse').split(',')
 let ONS = arg('on', null)?.split(',') ?? null
 const BASE = arg('base', 'http://localhost:5173'), DIST = Number(arg('dist', '60')), UP = Number(arg('up', '35'))
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

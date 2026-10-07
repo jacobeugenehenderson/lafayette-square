@@ -13,14 +13,15 @@
  * to /api/cartograph/*, and names each one with the stack that started it. ▶ the static half:
  * node checks/claims-the-town-reads-no-player-store.mjs (no renderer file reaches src/cartograph/stores/*).
  *
- * Usage: node checks/claims-a-town-page-fetches-no-authoring.mjs [--look=huron]
+ * Usage: node checks/claims-a-town-page-fetches-no-authoring.mjs --look=<town>
  */
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 const BASE = 'http://localhost:5173'
-const look = process.argv.find(a => a.startsWith('--look='))?.split('=')[1] || 'huron'
+const look = requiredTown('look')
 const PAGES = [['the player', `/?look=${look}`], ['the legibility harness (<Town> alone)', `/legibility.html?look=${look}&at=noon`]]
 const sleep = (ms) => new Promise(r => setTimeout(r, ms))
 const profile = mkdtempSync(join(tmpdir(), 'no-authoring-'))

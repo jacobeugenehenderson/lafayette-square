@@ -14,15 +14,16 @@
  * 9,504 renderer passes a minute behind a full page.)
  * On a red, it NAMES who kept asking for frames: R3F's invalidate is traced while paused.
  *
- * ⛔ READ-ONLY. Usage: node checks/claims-a-paused-town-draws-nothing.mjs [--town=huron] [--base=http://localhost:5173]
+ * ⛔ READ-ONLY. Usage: node checks/claims-a-paused-town-draws-nothing.mjs --town=<town> [--base=http://localhost:5173]
  */
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1]
-const TOWN = arg('town') || 'huron'
+const TOWN = requiredTown('town')
 const BASE = arg('base') || 'http://localhost:5173'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)

@@ -12,13 +12,14 @@
  * design save; and that an ⌥-drag on a middle key DOES retime it (so the check can tell the two apart).
  * ⛔ It reads what the dev server SERVES (the main tree). Needs a town whose hero path has ≥ 2 keys.
  *
- * Usage: node checks/claims-a-scrub-never-writes-the-keys.mjs [--look=huron]
+ * Usage: node checks/claims-a-scrub-never-writes-the-keys.mjs --look=<town>
  */
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-const look = process.argv.find(a => a.startsWith('--look='))?.split('=')[1] || 'huron'
+import { requiredTown } from './_scenes.mjs'
+const look = requiredTown('look')
 const BASE = 'http://localhost:5173'
 const profile = mkdtempSync(join(tmpdir(), 'hero-scrub-'))
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--no-first-run', '--window-size=1400,900', '--enable-gpu', 'about:blank'], { stdio: 'ignore' })

@@ -14,14 +14,15 @@
  * scene's own raycast — selects nothing.
  * ⛔ It reads what the dev server SERVES (the main tree).
  *
- *   node checks/claims-neon-picks-its-building.mjs [--town=huron] [--on=<building id>]
+ *   node checks/claims-neon-picks-its-building.mjs --town=<town> [--on=<building id>]
  */
 import { spawn, execSync } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 const arg = (n, d) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1] ?? d
-const TOWN = arg('town', 'huron'), MODE = 'clicks', WHEN = arg('when', '2026-10-10T01:00:00Z')
+const TOWN = requiredTown('town'), MODE = 'clicks', WHEN = arg('when', '2026-10-10T01:00:00Z')
 let ON = arg('on', null)
 const BASE = arg('base', 'http://localhost:5173'), DIST = Number(arg('dist', '60')), UP = Number(arg('up', '35'))
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))

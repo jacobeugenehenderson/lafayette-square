@@ -17,12 +17,13 @@
  * drew UNKNOWN slate. Asserted: under ?scene=<town>, INSTANCE is that town's Look and the listings' buildings exist in
  * that town's slab; a cold Stage has INSTANCE null.
  *
- * Usage: node checks/claims-a-look-link-opens-that-town.mjs
+ * Usage: node checks/claims-a-look-link-opens-that-town.mjs --town=<town>   (the ?scene= and cold-picker subject)
  */
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 const BASE = 'http://localhost:5173'
 
 // ⭐ ONE RESOLVER (Phase 2 A, 2026-10-04): the store and src/instance.js answer "which town is this page" by the same
@@ -106,6 +107,9 @@ for (const l of towns) {
   if (!ok) fails.push(`?look=${l.id} opened look "${st?.activeLookId}" scene "${st?.scene}" — expected "${l.id}" / "${l.scene}"`)
   console.log(`${ok ? '✅' : '⛔'} ?look=${l.id} → look ${st?.activeLookId} · scene ${st?.scene}`)
 }
+// the ?scene= and cold-picker subject: the town the caller NAMED (no default — `requiredTown`), one the index serves
+const SUBJ = requiredTown('town')
+if (!towns.some(x => x.id === SUBJ)) { console.error(`⛔ NOT CHECKED — --town=${SUBJ} is not a Look the served index lists (${towns.map(x => x.id).join(', ')})`); process.exit(2) }
 // The refusals: no town, and an error that names what was asked.
 const other = towns.find(t => t.scene !== towns[0].scene)
 const refusals = [['look=no-such-look', ['no-such-look']]]
@@ -119,7 +123,7 @@ for (const [q, names] of refusals) {
 }
 // ⭐ ?scene=<town>: the page's INSTANCE is that town, and so are the listings Stage draws with.
 {
-  const t = towns.find(x => x.id === 'huron') || towns.find(x => x.scene !== 'lafayette-square')
+  const t = towns.find(x => x.id === SUBJ)
   const { st, instance, buildingIds } = await open(`scene=${t.scene}`)
   const slab = new Set(JSON.parse(await (await fetch(`${BASE}/baked/${t.id}/buildings.json`)).text()).buildings.map(b => b.id))
   const inSlab = buildingIds.filter(id => slab.has(id)).length
@@ -136,7 +140,7 @@ for (const [q, names] of refusals) {
   if (!ok) fails.push(`a cold Stage (no link, nothing stored) opened look "${st?.activeLookId}" scene "${st?.scene}" with INSTANCE "${instance}", fetched ${fetched.length ? fetched.join(', ') + "'s data" : 'no town'}, picker shows ${shown.length} of ${towns.length} towns — it must open none and offer them all`)
   console.log(`${ok ? '✅' : '⛔'} cold Stage → look ${st?.activeLookId} · scene ${st?.scene} · INSTANCE ${instance} · fetched [${fetched.join(', ')}] · picker ${shown.length}/${towns.length}`)
   // ...and choosing a town from that picker opens it.
-  const t = towns.find(x => x.scene !== 'lafayette-square') || towns[0]
+  const t = towns.find(x => x.id === SUBJ)
   const { picked, errors, exceptions } = await open('', t.name || t.id)
   const ok2 = picked?.activeLookId === t.id && picked?.scene === t.scene
   if (!ok2) fails.push(`choosing "${t.name || t.id}" from the cold picker opened look "${picked?.activeLookId}" scene "${picked?.scene}"`)

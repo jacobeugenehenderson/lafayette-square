@@ -21,17 +21,18 @@
  * Mutation-tested 2026-10-04: a planted consumer with `float ovFbm(` → red; a changed constant in WIND_FIELD_GLSL's
  * hash → live red (GPU ≠ CPU).
  *
- * Run: node checks/claims-the-wind-has-one-authority.mjs [--static] [--town=huron] [--base=http://localhost:5173]
+ * Run: node checks/claims-the-wind-has-one-authority.mjs --static | --town=<town> [--base=http://localhost:5173]
  */
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, relative } from 'node:path'
+import { requiredTown } from './_scenes.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1]
 const STATIC_ONLY = process.argv.includes('--static')
-const TOWN = arg('town') || 'huron'
+const TOWN = STATIC_ONLY ? null : requiredTown('town')   // --static reads the source only: no town
 const BASE = arg('base') || 'http://localhost:5173'
 const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
 const walk = (dir, out = []) => { for (const e of readdirSync(dir)) { const p = join(dir, e); if (statSync(p).isDirectory()) walk(p, out); else if (/\.(jsx?|mjs)$/.test(e)) out.push(p) } return out }

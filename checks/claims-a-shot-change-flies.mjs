@@ -28,16 +28,17 @@
  *      heading and follows a change within 2 frames (no flight), holding north up while the heading is null; under prefers-reduced-motion a shot change is a cut (no frame
  *      with 0 < t < 1). (Pausing is its own check: claims-a-paused-town-draws-nothing.)
  *
- * ⛔ READ-ONLY. Usage: node checks/claims-a-shot-change-flies.mjs [--town=huron] [--base=http://localhost:5173]
+ * ⛔ READ-ONLY. Usage: node checks/claims-a-shot-change-flies.mjs --town=<town> [--base=http://localhost:5173]
  */
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { SHOT_TRANSITION_MS } from '../src/camera/transitions.js'
+import { requiredTown } from './_scenes.mjs'
 
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1]
-const TOWN = arg('town') || 'huron'
+const TOWN = requiredTown('town')
 const BASE = arg('base') || 'http://localhost:5173'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)

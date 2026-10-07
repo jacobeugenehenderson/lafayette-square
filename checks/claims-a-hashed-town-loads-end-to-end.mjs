@@ -20,7 +20,7 @@
  * exceptions. Requests outside baked/ (live/, setpieces/) and non-GETs are listed, not judged. Writes a screenshot beside the build for the eye.
  *
  * ⛔ READ-ONLY (writes a temp build + profile). Usage:
- *   node checks/claims-a-hashed-town-loads-end-to-end.mjs [--town=huron] [--dist=<a runtime build>]
+ *   node checks/claims-a-hashed-town-loads-end-to-end.mjs --town=<town> [--dist=<a runtime build>]
  * Without --dist it builds one (public/ excluded — it is served from disk by interception).
  */
 import { spawn, execFileSync } from 'node:child_process'
@@ -28,10 +28,11 @@ import { mkdtempSync, rmSync, readFileSync, existsSync, writeFileSync, statSync 
 import { tmpdir } from 'node:os'
 import { join, extname } from 'node:path'
 import { HASHED, contentName } from '../src/lib/slabNames.js'
+import { requiredTown } from './_scenes.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const arg = (n) => process.argv.find((a) => a.startsWith(`--${n}=`))?.split('=')[1]
-const TOWN = arg('town') || 'huron'
+const TOWN = requiredTown('town')
 // --names=plain lays the town out as it is in R2 TODAY (plain names, unstamped manifest): the
 // before/after comparison, and the proof that a resolver player still draws a town not yet re-uploaded.
 const PLAIN = arg('names') === 'plain'
