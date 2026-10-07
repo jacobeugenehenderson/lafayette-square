@@ -734,6 +734,8 @@ sentence; a function can be deployed at any time:
 supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
 ```
 
+0. **F-24** (2026-10-07) — formula injection, LIVE on the Apps Script backend (any caller can become a Guardian).
+   The fix waits in the Ward's backend patch v2: a second review, then Jacob's deploy.
 1. ~~**F-2**~~ ✅ closed + deployed 2026-08-24.
 2. ~~**F-5 (Twilio half)** + **F-9**~~ ✅ closed + deployed 2026-08-24. ▶ Owed: send a real text and
    confirm it lands — the accept path could not be verified from here.
