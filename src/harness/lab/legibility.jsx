@@ -33,7 +33,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Canvas, useThree, advance } from '@react-three/fiber'
 import SunCalc from 'suncalc'
-import Town, { useBuildingPlaces, frameBuildings } from '../../components/Town.jsx'
+import Town, { useBuildingPlaces } from '../../components/Town.jsx'
+import { framePlaces } from '../../lib/frameDensest.js'
 import { QUALITY } from '../../lib/qualityProfile.js'
 import { SCREEN_W, SCREEN_H } from '../../preview/PhoneFrame.jsx'
 import { browseSquareAltitude } from '../../camera/browseFrame.js'
@@ -56,8 +57,8 @@ window.__legTick = setInterval(() => { if (document.hidden) advance(realNow()) }
 const params = new URLSearchParams(window.location.search)
 const LOOK = INSTANCE.lookId
 const AT = params.get('at') || 'noon'
-// `frame=disc` fits the town's whole disc; `frame=lit` frames the lit set's circle as the Ward's Society does
-// (Town's own useBuildingPlaces + frameBuildings — the helpers the Ward's PlanCamera uses).
+// `frame=disc` fits the town's whole disc; `frame=lit` frames the lit set as the Ward does: Town's own plan framing,
+// frameMode 'all' (framePlaces — the Extent bound and the town's floor included; the Ward's Scene passes frameMode="all").
 const FRAME = params.get('frame') === 'lit' ? 'lit' : 'disc'
 const W = SCREEN_W, H = Math.round(SCREEN_H / 2)
 const FOV = 40
@@ -169,7 +170,7 @@ function FitCamera({ stencil, litIds, onFramed }) {
   const places = useBuildingPlaces()
   // The circle to fit: the whole disc, or the lit set's circle (null until the buildings have loaded).
   const circle = FRAME === 'lit'
-    ? (places && litIds?.size ? frameBuildings(places, litIds) : null)
+    ? (places && litIds?.size ? framePlaces(places, litIds, stencil, 'all') : null)
     : { x: stencil.center[0], z: stencil.center[1], radius: stencil.radius }
   useEffect(() => {
     if (!circle) return

@@ -440,15 +440,6 @@ export function useBuildingPlaces() {
 // bounded by the Extent, with every unplaced or outside id disclosed. Pure; ▶ checks/claims-the-plan-opens-on-its-places.mjs
 export { frameDensest } from '../lib/frameDensest.js'
 
-/** The circle that holds a set of buildings: { x, z, radius }, or null when none of `ids` has a place. */
-export function frameBuildings(places, ids) {
-  const ps = [...ids].map((id) => places?.get(id)).filter(Boolean)
-  if (!ps.length) return null
-  const x = ps.reduce((a, p) => a + p.x, 0) / ps.length
-  const z = ps.reduce((a, p) => a + p.z, 0) / ps.length
-  return { x, z, radius: Math.max(...ps.map((p) => Math.hypot(p.x - x, p.z - z) + p.radius)) }
-}
-
 /**
  * A building's street address, as the town's slab carries it (SLAB-CONTRACT §6.3, cartograph/building-address.mjs):
  *   null                                   the buildings have not loaded yet
