@@ -2,12 +2,13 @@
 """Process OSM street lamp data for Lafayette Square.
 
 Input:  scripts/raw/osm_street_lamps.json (Overpass API export)
-Output: src/data/street_lamps.json
+Output: cartograph/data/lafayette-square/authored_lamps.json (LS's authored lamp well; was src/data/street_lamps.json until 2026-10-07)
 
 Converts GPS coordinates to local meters.
 """
 
 import json
+import os
 from config import wgs84_to_local, DATA_DIR, RAW_DIR, ensure_dirs
 
 
@@ -41,7 +42,7 @@ def main():
         'lamps': lamps,
     }
 
-    out_path = f'{DATA_DIR}/street_lamps.json'
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'cartograph', 'data', 'lafayette-square', 'authored_lamps.json')
     with open(out_path, 'w') as f:
         json.dump(output, f, separators=(',', ':'))
 

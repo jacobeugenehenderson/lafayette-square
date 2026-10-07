@@ -113,8 +113,8 @@ into looking settled; it is step 5 below and it is open.
 ### 2.1 ⭐ The root — LS is not a scene; it is the mold the kit was cast around
 
 Every other hood is a scene under `clean/<scene>/`. **LS's artifacts live at the shared default
-paths** — `src/data/ribbons.json`, `src/data/buildings.json`, `src/data/street_lamps.json`,
-`src/data/park-feature-elev.json` — **imported by literal name** (its listings left on 2026-09-24 for `cartograph/data/lafayette-square/content/listings.json`) across the
+paths** — `src/data/ribbons.json`, `src/data/buildings.json`,
+`src/data/park-feature-elev.json` — **imported by literal name** (its listings left on 2026-09-24 for `cartograph/data/lafayette-square/content/listings.json`, its authored lamps on 2026-10-07 for `cartograph/data/lafayette-square/authored_lamps.json`) across the
 app (`loadInstanceData.js` even hands LS `import('./ribbons.json')` = the shared root). So
 `src/data/*` is simultaneously *"the shared default"* **and** *"LS's own render data"*.
 

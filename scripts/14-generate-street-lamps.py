@@ -5,7 +5,7 @@ Preserves 33 OSM-sourced lamps inside Lafayette Park.
 Adds lamps evenly around the park perimeter rectangle (rotated -9.2°).
 Street lamps are not generated — procedural placement was unreliable.
 
-Output: src/data/street_lamps.json
+Output: cartograph/data/lafayette-square/authored_lamps.json (LS's authored lamp well; was src/data/street_lamps.json until 2026-10-07)
 """
 
 import json
@@ -57,7 +57,7 @@ def generate_perimeter_lamps(spacing=25):
 
 
 def main():
-    with open(os.path.join(DATA_DIR, 'street_lamps.json')) as f:
+    with open(os.path.join(PROJECT_DIR, 'cartograph', 'data', 'lafayette-square', 'authored_lamps.json')) as f:
         existing = json.load(f)
 
     # Preserve OSM interior park lamps
@@ -95,7 +95,7 @@ def main():
         'lamps': all_lamps,
     }
 
-    out_path = os.path.join(DATA_DIR, 'street_lamps.json')
+    out_path = os.path.join(PROJECT_DIR, 'cartograph', 'data', 'lafayette-square', 'authored_lamps.json')
     with open(out_path, 'w') as f:
         json.dump(output, f, separators=(',', ':'))
 

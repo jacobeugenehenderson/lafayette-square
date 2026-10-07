@@ -30,7 +30,6 @@ try { for (const l of JSON.parse(readFileSync(join(ROOT, 'public/looks/index.jso
 const HELD = {
   'cartograph/scene.js':        [{ match: "export const DEFAULT_MAP = 'lafayette-square'", why: 'the default map id itself (the held name every alias below compares with)' },
                                  { match: 'scene === DEFAULT_MAP ?', why: "ribbonsPathOf's one case: LS's ribbons ship in src/data — G2(b) Phase 0e, Jacob's call" }],
-  'cartograph/bake-lamps.js':   [{ match: "scene === 'lafayette-square'", why: "G1: LS's authored lamps at src/data/street_lamps.json → data/<scene>/authored_lamps.json, awaiting Jacob" }],
   'cartograph/bake-content.js': [{ match: "scene === 'lafayette-square' && !force", why: "G4: LS's hand-curated content — is it a different producer, or baked like every town's? awaiting Jacob" }],
   'cartograph/serve.js':        [{ match: 'const isDefaultMap = bakeScene === DEFAULT_MAP', why: "G5: LS's elevation cache + its HELD status (ruling Q3) + G4's content step, awaiting Jacob" },
                                  { match: "const LEGACY_LS_LOOK_ID = 'lafayette-square'", why: 'a one-time boot migration naming the Look it creates from a pre-Looks overlay; never a fallback target' }],
@@ -43,9 +42,7 @@ const HELD = {
 }
 // lines reading one town's bundled data (src/data/…) — the same gate without the name; each awaits a ruling
 const HELD_BUNDLED = {
-  'cartograph/bake-lamps.js':     ["const p = join(ROOT, 'src', 'data', 'street_lamps.json')"],                       // G1
-  'cartograph/serve.js':          ["const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')",         // G1
-                                   "? ['src/data/ribbons.json → promote-ribbons has no record yet",                      // G5 (the message)
+  'cartograph/serve.js':          ["? ['src/data/ribbons.json → promote-ribbons has no record yet",                      // G5 (the message)
                                    "join(REPO_ROOT, 'src', 'data', 'buildings.json'),",                                  // LS content (G4) as a dirty input
                                    "`src/data/ribbons.json`,"],                                                          // G2(b)
   'cartograph/derive.js':         ["join(CARTOGRAPH_DIR, '..', 'src', 'data', 'buildings.json'), 'utf-8'"],            // LS's content buildings (G4)

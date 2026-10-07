@@ -55,7 +55,7 @@ streetlamps."* **Go on the streetlamp brief.**
   `loadSceneTerrain(scene) || { getElevationRaw: () => 0 }`. A hilly town missing its terrain would bake every
   lamp at 0 with no warning. Make it **fail loudly** unless the town is declared flat. (`bake-tree-anchors` has
   the same fallback; fix both, and say so.)
-- **Altadena shows LS's 80 park lamps** (Plumb, 2026-09-26: an exact position match with `src/data/street_lamps.json`,
+- **Altadena shows LS's 80 park lamps** (Plumb, 2026-09-26: an exact position match with `cartograph/data/lafayette-square/authored_lamps.json`,
   all anchored at 0). Find how they got there. The code's own guard says that file is read only for
   lafayette-square. Report it; `BRIEF-ls-bleed-excision.md` site 1 is the home.
 

@@ -49,7 +49,7 @@ const MANIFESTS = {
     // Installation #1's listings, consolidated 2026-09-24 into its own content dir like every other town.
     landmarks:        () => import('../../cartograph/data/lafayette-square/content/listings.json'),
     ribbons:          () => import('./ribbons.json'),
-    streetLamps:      () => import('./street_lamps.json'),
+    streetLamps:      () => import('../../cartograph/data/lafayette-square/authored_lamps.json'),
     parkWater:        () => import('./lafayette-square/park_water.json'),
     parkFeatureElev:  () => import('./park-feature-elev.json'),
     facadeMapping:    () => import('./facade_mapping.json'),

@@ -5,7 +5,7 @@
  * ⭐ REAL WHERE REAL, DERIVED WHERE NECESSARY (Jacob, 2026-09-21; ROADMAP H-17) — the
  * tree pattern (`arborist/bake-trees.js`), copied rather than reinvented:
  *   · THREE WELLS, provenance per lamp — `SOURCE_BY_WELL`:
- *       authored  `data/<scene>/authored_lamps.json` (+ LS's legacy path)  the operator's
+ *       authored  `data/<scene>/authored_lamps.json`                    the operator's
  *       osm       `raw/osm.json#pois` + `raw/osm_street_lamps.json`         surveyed reality
  *       derived   `clean/derived_lamps.json` (cartograph/derive-lamps.mjs)  invented fill
  *   · CROSS-WELL DEDUP KEEPS THE RICHEST — authored > osm > derived. A derived lamp within
@@ -71,32 +71,14 @@ function anchorLampsToGround(lamps, outDir, scene) {
   return { count: lamps.length, terrain: { key: terrain.identity ?? 'none', baseElev: terrain.baseElev ?? null } }
 }
 
-// The AUTHORED lamp well — hand-placed lamps OSM doesn't carry, per scene.
-//
-// ⚠️ LS's authored well still lives at the shared default path
-// `src/data/street_lamps.json` (80 lamps, all inside Lafayette Park). That path
-// is the LS-bleed root: it is simultaneously "the shared default" and "LS's own
-// data" (`EXTENT-DESIGN §2.1`). It is read here ONLY for lafayette-square and
-// never as a fallback for anyone else — absence must render nothing, never
-// another installation's lamps (`docs/briefs/BRIEF-ls-bleed-excision.md` site 1; before that
-// guard, any lampless town baked LS's 80 under its own name, in its own frame).
-//
-// ▶ The clean end-state is a per-scene `data/<scene>/authored_lamps.json`; moving
-// LS's file there retires one of the 13 name-imports and this special case with
-// it. Kept as-is for now so the move is one deliberate commit, not a side effect.
+// The AUTHORED lamp well — hand-placed lamps OSM doesn't carry, in the town's own data (`data/<scene>/authored_lamps.json`).
+// Absent → none: never another town's lamps (BRIEF-ls-bleed-excision site 1 — before that guard, a lampless town baked
+// LS's 80 under its own name). LS's moved here from the shared src/data/street_lamps.json, byte-identical (G1, 2026-10-07).
 function loadAuthoredLamps(scene) {
   const perScene = join(ROOT, 'cartograph', 'data', scene, 'authored_lamps.json')
-  if (existsSync(perScene)) {
-    const raw = JSON.parse(readFileSync(perScene, 'utf-8'))
-    return raw.lamps || raw
-  }
-  if (scene === 'lafayette-square') {
-    const p = join(ROOT, 'src', 'data', 'street_lamps.json')
-    if (!existsSync(p)) return []
-    const raw = JSON.parse(readFileSync(p, 'utf-8'))
-    return raw.lamps || raw
-  }
-  return []
+  if (!existsSync(perScene)) return []
+  const raw = JSON.parse(readFileSync(perScene, 'utf-8'))
+  return raw.lamps || raw
 }
 
 /** The derived well, as derive-lamps wrote it. Absent → zero derived lamps, and the bake says so. */

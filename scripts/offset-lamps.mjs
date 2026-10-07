@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync } from 'fs'
 
 const blockData = JSON.parse(readFileSync('src/data/block_shapes.json', 'utf-8'))
-const lampData = JSON.parse(readFileSync('src/data/street_lamps.json', 'utf-8'))
+const lampData = JSON.parse(readFileSync('cartograph/data/lafayette-square/authored_lamps.json', 'utf-8'))
 
 // Park check — don't offset lamps deep inside the park.
 // Use a tight threshold (160m) so lamps on park-perimeter streets get offset.
@@ -145,5 +145,5 @@ for (const lamp of lampData.lamps) {
 }
 console.log(`Validation pass: fixed ${fixCount} lamps that landed inside a road`)
 
-writeFileSync('src/data/street_lamps.json', JSON.stringify(lampData))
-console.log('Written to src/data/street_lamps.json')
+writeFileSync('cartograph/data/lafayette-square/authored_lamps.json', JSON.stringify(lampData))
+console.log('Written to cartograph/data/lafayette-square/authored_lamps.json')

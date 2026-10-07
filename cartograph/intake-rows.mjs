@@ -438,10 +438,8 @@ export const INTAKE_ROWS = [
     // an authored well is read only for its OWN scene. A lampless town bakes
     // ZERO lamps and says so — it never inherits LS's.
     //
-    // ⚠️ Still a bleed *site* only in that LS's authored well lives at the shared
-    // default `src/data/street_lamps.json` (80 park lamps) rather than a per-scene
-    // `data/lafayette-square/authored_lamps.json`. Moving it retires one of the 13
-    // name-imports and the last scene-name special case in bake-lamps.
+    // Every town's authored well is its own `data/<scene>/authored_lamps.json` (LS's moved there from the shared
+    // src/data/street_lamps.json on 2026-10-07, retiring bake-lamps' last scene-name special case).
     //
     // NOTE this row tracks the OSM well only. Lamps bake as the UNION of
     // OSM ∪ authored, deduped at 4 m (`BAKE.md §4.5`) — so a filled row does not

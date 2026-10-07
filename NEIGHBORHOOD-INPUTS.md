@@ -71,7 +71,7 @@ Prior canon (`cartograph/INTAKE.md §6.1`, `cartograph/SKELETON.md §6`) framed 
 | Input | Gives | LS source | File | Tier | Mode |
 |---|---|---|---|---|---|
 | **Municipal tree census** | real placements (species + DBH + condition) | **City of St. Louis Forestry** ArcGIS | ⚠️ **separate wells, never merged** — `cartograph/data/<scene>/clean/{park_census,park_trees,forest_park_trees,osm_trees,derived_trees}.json`. The union-of-wells doctrine (`BAKE §4.5`) turns on these staying separate layers. | **②** | automated (re-point per town) |
-| Street-lamp positions | 80 lamps (drive tree glow + ground pools) | OSM interior + procedural perimeter ring | `src/data/street_lamps.json` | ②/① | automated + procedural |
+| Street-lamp positions | 80 lamps (drive tree glow + ground pools) | OSM interior + procedural perimeter ring | `cartograph/data/lafayette-square/authored_lamps.json` | ②/① | automated + procedural |
 | Species roster + dossiers | canonical IDs, botanical spec per species | authored (Hortus + operator, from botanical refs) | `arborist/species-map.json`, `arborist/dossiers/*` | ③ (schema ①) | authored / LLM-assistable |
 | Rubric vocabulary | the botanical axes (▶ `node checks/claims-reference-credits.mjs`) | authored, species-agnostic | `arborist/rubric.json` | ① | — (universal) |
 | Chassis GLB library | 241 de-leafed skeletons | vendor (Whittle) + LiDAR + procedural (SCA) | `public/trees/_chassis/` | ① | reuse or commission |

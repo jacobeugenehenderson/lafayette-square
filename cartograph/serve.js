@@ -2692,7 +2692,6 @@ createServer(async (req, res) => {
       // town's in its clean/ (promote-ribbons.js's rule). ⛔ Comparing a poured
       // town's map.json against LS's bundle would skip or force it on LS's clock.
       const RIBBONS    = ribbonsPathOf(bakeScene)   // the one answer (scene.js)
-      const STREET_LAMPS = join(REPO_ROOT, 'src', 'data', 'street_lamps.json')
       const DESIGN    = join(REPO_ROOT, 'public', 'looks', id, 'design.json')
       // The TOWN's design fields (cartograph/lookDesign.mjs#TOWN_DESIGN_FIELDS) are read from the town's home Look for
       // every Look of it, so a step that reads them declares this file. Declared because it is READ.
@@ -3043,7 +3042,7 @@ createServer(async (req, res) => {
         await runIfDirty('lamps',
           // traced today (2026-09-26) ∪ Wick's H-17 list (surveyed POIs, derived lamps, the zone tester) — declared ahead
           // of Wick's bake-lamps change so the step already re-runs when those land
-          [STREET_LAMPS, join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'osm_street_lamps.json'), join(bakePaths.clean, 'derived_lamps.json'),
+          [join(bakePaths.raw, 'osm.json'), join(bakePaths.raw, 'osm_street_lamps.json'), join(bakePaths.clean, 'derived_lamps.json'),
            join(SCENE_DIR, 'authored_lamps.json'), bakePaths.geography, bakePaths.boundary,
            join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'shape.json'), MAP_JSON, DESIGN,
            SCENE_TERRAIN_JSON, SCENE_TERRAIN_BIN, SCENE_DESIGN, join(SCENE_DIR, 'lu-policy.json'), join(here, 'lamp-spacing-prior.json'),
@@ -3166,7 +3165,7 @@ createServer(async (req, res) => {
       // not-inputs: index.json (guard: assertBakeTarget passes or throws; shapes no output) · ground.poolmap.png (its own output) · ground.colormap.png (its own output)
       await runIfDirty('ground-ao',
         [MAP_JSON, join(SCENE_DIR, 'buildings.json'), join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'),
-         join(LOOK_DIR, 'lamps.json'), STREET_LAMPS, join(LOOK_DIR, 'trees.json'), join(LOOK_DIR, 'trees-atlas.json'),
+         join(LOOK_DIR, 'lamps.json'), join(LOOK_DIR, 'trees.json'), join(LOOK_DIR, 'trees-atlas.json'),
          join(here, 'bake-ground-ao.js')],
         [join(LOOK_DIR, 'ground.lightmap.png')],
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,

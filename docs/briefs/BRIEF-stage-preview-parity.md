@@ -158,7 +158,7 @@ the Designer for the Stage at all** (the transition runs a bake; `cartograph-sho
    between the two shot surfaces.
 2. **"dpr unset in Stage" — NO.** Both report `getPixelRatio() === 1.5`.
 3. **"Preview draws the slab alone" — NOT quite.** Preview fetches and draws live source too:
-   `src/data/street_lamps.json`, `park_water.json`, `ribbons.json`, `buildingOverrides.json`,
+   `cartograph/data/lafayette-square/authored_lamps.json`, `park_water.json`, `ribbons.json`, `buildingOverrides.json`,
    `clean/park-polygon.json`. The slab/live split is per-population, not per-view — the table
    above is the real split.
 4. **Tone mapping: NOT ESTABLISHED as a divergence.** One early read had Preview at
