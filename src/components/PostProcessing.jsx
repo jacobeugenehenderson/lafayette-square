@@ -172,9 +172,13 @@ export function PostProcessing({
 // `shadow` channel resolves to {size, samples} at the current TOD minute and is stamped on the shadow-casting lights
 // (pcssShadows.js#setPcss): a new value costs nothing, no material is disposed and no program relinks. Stage retints
 // by passing shadowOverride; production reads scene.shadow.
+// ⭐ PER SHOT (Jacob, 2026-10-07): `pcss={false}` draws three's plain PCF instead — the Hero shot, where the depth of
+// field blurs the shadowed town and PCSS's contact-hardening is invisible (PCSS 16 vs PCF: ~7 ms huron, ~12 ms
+// provincetown per frame at 2268×1270, scratch/shadow-plan/probe.mjs). Street keeps PCSS: close and sharp, it shows.
+// The switch is the light's radius — the stamp off, radius back to the light's own — a uniform: nothing relinks.
 
 let _penumbraWarned = false
-export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
+export function StageShadows({ lookId, bakeLastMs, shadowOverride, pcss = true }) {
   const sceneJson = useSceneJson(lookOf(lookId, 'PostProcessing'), bakeLastMs)
   const channel = shadowOverride ?? sceneJson?.shadow ?? SHADOW_DEFAULT_CHANNEL
   const tod = useTimeOfDay()
@@ -216,6 +220,7 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   // ⚠️ OWED: cascades currently give up contact-hardening. Restoring it means a PCSS
   // sampler written INTO the cascade path, not two libraries fighting over one chunk.
   if (CSM_ENABLED) return null
+  if (!pcss) return null   // plain PCF in this shot (above): no stamp, the light's own radius
   const mPerTexel = penumbraMetresPerTexel(stencil)
   if (mPerTexel == null) return null
 
