@@ -65,7 +65,8 @@ function anchorLampsToGround(lamps, outDir, scene) {
   // ⛔ No flat fallback: a hilly town missing its terrain fails here, loudly (flat only on the record).
   const terrain = requireSceneTerrain(scene, 'bake-lamps')
   const sampler = makeGroundSampler(gj, gAB, terrain)
-  for (const l of lamps) l.groundRaw = sampler.groundRawAt(l.x, l.z)
+  // `groundY` = the drawn mesh's own height there (a raised kerb's block), added UNexaggerated at runtime
+  for (const l of lamps) { const g = sampler.groundAt(l.x, l.z); l.groundRaw = g.raw; l.groundY = g.y }
   // The heightfield these anchors were sampled from; the runtime refuses them against any other.
   return { count: lamps.length, terrain: { key: terrain.identity ?? 'none', baseElev: terrain.baseElev ?? null } }
 }

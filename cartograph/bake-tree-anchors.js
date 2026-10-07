@@ -53,7 +53,10 @@ export async function bakeTreeAnchors({ look, scene } = {}) {
   const sampler = makeGroundSampler(gj, gAB, terrain)
 
   const trees = (JSON.parse(readFileSync(treesPath, 'utf-8')).instances) || []
-  const anchors = trees.map(t => sampler.groundRawAt(t.x, t.z))
+  const at = trees.map(t => sampler.groundAt(t.x, t.z))
+  const anchors = at.map(g => g.raw)
+  // ⭐ index-parallel to `anchors`: the drawn mesh's own height (a raised kerb's block), added UNexaggerated at runtime
+  const groundY = at.map(g => g.y)
 
   // ⛔⛔ BIND THE ANCHORS TO THE PLACEMENTS THEY WERE SAMPLED FROM. The runtime gated
   // only on `anchors.length === instances.length`, which cannot tell a good file from a
@@ -73,7 +76,7 @@ export async function bakeTreeAnchors({ look, scene } = {}) {
   const placementKey = h.toString(16).padStart(8, '0')
   // The heightfield these anchors were sampled from; the runtime refuses them against any other.
   const terrainStamp = { key: terrain.identity ?? 'none', baseElev: terrain.baseElev ?? null }
-  const out = { version: 3, look, count: anchors.length, placementKey, terrain: terrainStamp, anchors }
+  const out = { version: 4, look, count: anchors.length, placementKey, terrain: terrainStamp, anchors, groundY }
   const outPath = join(outDir, 'tree-anchors.json')
   const wrote = writeIfChanged(outPath, JSON.stringify(out))
   console.log(`[bake-tree-anchors] ${wrote ? 'wrote' : 'unchanged'} ${outPath} (${anchors.length} tree anchors)`)

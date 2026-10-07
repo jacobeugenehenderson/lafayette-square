@@ -5,7 +5,7 @@
 // smooth terrain field (which the coarse ground mesh only approximates between
 // its vertices → the "nothing sits on the ground" float). This is the
 // buildings/foundations `aCentroidY` regime, generalized: a consumer bakes a
-// per-object anchor `groundRawAt(x,z)` and rigid-lifts by `anchor × uExag` at
+// per-object anchor `groundAt(x,z)` and rigid-lifts by `raw × uExag + y` at
 // runtime, so it sits exactly on the drawn ground at every exaggeration.
 //
 // Returns the RAW field value (pre-uExag), barycentric-interpolated over the
@@ -13,6 +13,10 @@
 // (what you visually stand on). After the 2026-06-29 CPU↔GPU reconcile the CPU
 // `getElevationRaw` used here equals what the GPU renders per vertex, so the
 // interpolation matches the drawn surface exactly. (2026-06-29)
+//
+// ⭐ AND THE DRAWN MESH'S OWN y (2026-10-06, the raised kerb — `kerbLift.mjs`): a block lifted by the town's kerb height
+// carries that height in the mesh's y, UNEXAGGERATED, and the runtime adds terrain × uExag on top. So an object seats at
+// `raw × uExag + y`. `groundAt(x, z)` returns both; `y` is 0 on a flat town and h on a raised block.
 
 const CELL_M = 8   // spatial-grid cell size for the triangle lookup
 
@@ -25,7 +29,7 @@ export function makeGroundSampler(groundJson, groundAB, elevationSampler) {
 
   // Flatten every ground triangle, tagged with its group's renderOrder, with
   // the raw field precomputed at each vertex (the per-vertex lift the GPU draws).
-  const tris = []  // flat: [ax,az,ra, bx,bz,rb, cx,cz,rc, renderOrder] × N
+  const tris = []  // flat: [ax,az,ra, bx,bz,rb, cx,cz,rc, renderOrder, ya,yb,yc] × N
   for (const g of groups) {
     const positions = new Float32Array(groundAB, g.vertexByteOffset, g.vertexCount * 3)
     const indices   = new Uint32Array(groundAB, g.indexByteOffset, g.indexCount)
@@ -38,10 +42,11 @@ export function makeGroundSampler(groundJson, groundAB, elevationSampler) {
         positions[i1 * 3], positions[i1 * 3 + 2], vraw[i1],
         positions[i2 * 3], positions[i2 * 3 + 2], vraw[i2],
         g.renderOrder,
+        positions[i0 * 3 + 1], positions[i1 * 3 + 1], positions[i2 * 3 + 1],
       )
     }
   }
-  const STRIDE = 10
+  const STRIDE = 13
   const triCount = tris.length / STRIDE
 
   // Uniform grid: bucket each triangle into every cell its XZ-bbox overlaps.
@@ -78,12 +83,12 @@ export function makeGroundSampler(groundJson, groundAB, elevationSampler) {
     const wa = 1 - wc - wb
     const EPS = 1e-4
     if (wa < -EPS || wb < -EPS || wc < -EPS) return null
-    return ra * wa + rb * wb + rc * wc
+    return { raw: ra * wa + rb * wb + rc * wc, y: tris[o + 10] * wa + tris[o + 11] * wb + tris[o + 12] * wc }
   }
 
-  // Raw drawn-ground field at (x,z): the top-most group's triangle wins; if the
-  // point is off the mesh, fall back to the smooth field so a caller never NaNs.
-  function groundRawAt(x, z) {
+  // The drawn ground at (x,z): the top-most group's triangle wins → { raw, y }. If the point is off the mesh, the smooth
+  // field with y 0 so a caller never NaNs — and `offMesh` says so (a disc-rim object, not a seated one).
+  function groundAt(x, z) {
     const cell = grid[cz(z) * nx + cx(x)]
     let best = null, bestRO = -Infinity
     for (const t of cell) {
@@ -92,8 +97,8 @@ export function makeGroundSampler(groundJson, groundAB, elevationSampler) {
       const r = sampleTri(x, z, t)
       if (r !== null) { best = r; bestRO = ro }
     }
-    return best !== null ? best : getRaw(x, z)
+    return best !== null ? best : { raw: getRaw(x, z), y: 0, offMesh: true }
   }
 
-  return { groundRawAt, triCount }
+  return { groundAt, triCount }
 }
