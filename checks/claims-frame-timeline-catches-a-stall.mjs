@@ -16,10 +16,10 @@
  * --query=k=v&…  extra Preview URL parameters (e.g. frameloop=demand: the Ward's frame loop).
  * --eval=<js>  runs once after the cold run, 3 s before the timed runs (e.g. `__previewGl.shadowMap.enabled=false`).
  *
- * ⛔ HEADLESS IS NOT THE OPERATOR'S EYE: this is the desktop target on this Mac's GPU, 1280×800 at DPR 1, no vsync
+ * ⛔ HEADLESS IS NOT THE OPERATOR'S EYE: this is the desktop target on this Mac's GPU, 1280×800 at DPR 1 by default, no vsync
  * guarantee. Every number it prints says so. Jacob's browser is the gate.
  * ⛔ READ-ONLY. Usage: node checks/claims-frame-timeline-catches-a-stall.mjs [--town=huron] [--base=http://localhost:5173]
- *   [--movieAt=0] [--hold=30000] [--runMs=8000] [--off=] [--json] [--raw (run a's every frame + mark)] [--only=a|stall|c|b]
+ *   [--window=1280x800] [--dpr=1] [--movieAt=0] [--hold=30000] [--runMs=8000] [--off=] [--json] [--raw (run a's every frame + mark)] [--only=a|stall|c|b]
  */
 import { spawn, execSync } from 'node:child_process'
 import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs'
@@ -38,11 +38,13 @@ const QUERY = process.argv.find((a) => a.startsWith('--query='))?.slice(8) || ''
 const EVAL = process.argv.find((a) => a.startsWith('--eval='))?.slice(7) || null
 const JSON_OUT = process.argv.includes('--json')
 const STALL = 50
+// --window=WxH and --dpr=N: a surface's own pixel count (the operator's screen), since full-screen passes scale with it.
+const WIN = arg('window', '1280,800').replace('x', ','), DPR = arg('dpr', '1')
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 const profile = mkdtempSync(join(tmpdir(), 'frame-timeline-'))
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--remote-debugging-port=0',
-  `--user-data-dir=${profile}`, '--no-first-run', '--window-size=1280,800', 'about:blank'], { stdio: 'ignore' })
+  `--user-data-dir=${profile}`, '--no-first-run', `--window-size=${WIN}`, `--force-device-scale-factor=${DPR}`, 'about:blank'], { stdio: 'ignore' })
 // chrome.kill reaches only the launcher pid; the browser's own processes are killed by profile too.
 const cleanup = () => { try { chrome.kill('SIGKILL') } catch {} ; try { execSync(`pkill -9 -f 'user-data-dir=${profile}'`) } catch {} ; try { rmSync(profile, { recursive: true, force: true }) } catch {} }
 process.on('uncaughtException', (e) => { console.error(e); cleanup(); process.exit(2) })
@@ -71,7 +73,7 @@ const js = async (expr) => {
   return r.result?.value
 }
 const fails = []
-const out = { town: TOWN, surface: 'headless Chrome · desktop target · 1280×800 DPR 1 · this Mac', movieAt: MOVIE_AT, off: OFF, runs: {} }
+const out = { town: TOWN, surface: `headless Chrome · desktop target · window ${WIN.replace(',', '×')} DPR ${DPR} · this Mac`, movieAt: MOVIE_AT, off: OFF, runs: {} }
 
 // The machine's 1-minute load beside every run: a frame series taken on a busy machine is not the town's.
 const load = () => +loadavg()[0].toFixed(1)
@@ -93,6 +95,8 @@ await cdp('Page.navigate', { url: `${BASE}/preview.html?look=${TOWN}&movieAt=${M
 let ready = false
 for (let i = 0; i < 120 && !ready; i++) { await sleep(1000); ready = await js("!!window.__frameTimeline && !!window.__townProbe?.restartMovie").catch(() => false) }
 if (!ready) { console.error('⛔ Preview never exposed the frame timeline'); done(1) }
+out.buffer = await js("window.__previewGl ? __previewGl.domElement.width + '×' + __previewGl.domElement.height + ' @ glPR ' + __previewGl.getPixelRatio() : null")
+out.surface += ` · buffer ${out.buffer}`
 let cold = null
 for (let i = 0; i < Math.ceil(HOLD / 1000) + 60; i++) {
   await sleep(1000)
