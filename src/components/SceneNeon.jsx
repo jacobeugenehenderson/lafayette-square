@@ -9,7 +9,7 @@
  *   - `forceNeonOn` undefined (production / Preview): a place's authored hours are the sole gate. A place without
  *     hours stays dark.
  */
-import { useMemo, useState, useEffect, useReducer } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { isOpenAt } from '../lib/openNow.js'
 import { useTownContext } from './townContext.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
@@ -120,23 +120,6 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, litIds
   // ⛔ groundY travels with groundYRaw: the sign rides its wall's whole lift (src/lib/buildingLift.js), and a sign handed no
   // groundY lifts by NaN — neither drawn nor pickable (every sign, 2026-10-06, until this field was passed).
   const openPlaces = useMemo(() => stretches.map((s) => ({ pts: s.pts, footprint: s.footprint, baseY: s.y, groundYRaw: s.groundYRaw, groundY: s.groundY, buildingId: s.buildingId, neon: { category: s.category } })), [stretches])
-
-  // Cold-load reconcile flush — the same frameloop="demand" issue that hid the
-  // trees (see InstancedTrees ParkPopulation). On a cold load the neon mesh and
-  // its scene.json-driven brightness uniforms settle in while the loop is idle,
-  // so neon stays dark until a state-change "poke" (navigating Browse↔Hero,
-  // nudging a knob). Rendering ≠ reconciling, so a frame alone doesn't fix it.
-  // Self-poke: once there are open places, force a few re-renders across the
-  // load window so the mesh attaches + paints with its resolved uniforms, then
-  // stop. (2026-06-28 — the "neon not showing at all" bug.)
-  const [, forceReconcile] = useReducer(x => (x + 1) & 0xffff, 0)
-  useEffect(() => {
-    if (openPlaces.length === 0) return
-    let id, n = 0
-    const tick = () => { forceReconcile(); if (++n < 20) id = setTimeout(tick, 400) }  // ~8s
-    id = setTimeout(tick, 400)
-    return () => clearTimeout(id)
-  }, [openPlaces.length])
 
   if (openPlaces.length === 0) return null
   return <NeonBands places={openPlaces} lookId={lookId} materialColors={materialColors} />
