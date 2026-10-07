@@ -132,11 +132,13 @@ Two caveats that, unstated, would mislead (`PreviewApp.jsx#SceneCaveats`):
 
 ## 4a. Startup, residency and frame cost — what each gauge reads, and what it cannot
 
-- **The sequence** (spec, *Cold Start / Time to Ward*): HTML → runtime → manifest → minimum ground → minimum buildings
-  → **FIRST TRUTHFUL FRAME = WARD USABLE** (Jacob, 2026-10-04: ground and buildings on screen, the visitor can move and
-  tap) → progressive. **TIME TO WARD** = that mark from navigation start. Pieces mark on their first **draw**
-  (`DrawnAnchor`), so a hidden layer never marks; the marks are the shared renderer's, so the Ward carries them too.
-  Once per page: ↻ does not re-mark, reload the page for a cold number.
+- **The sequence** (spec, *Cold Start / Time to Ward*): HTML → runtime → manifest → ground · buildings · trees
+  **PREPARED** out of sight → **THE REVEAL = FIRST TRUTHFUL FRAME = WARD USABLE** (Jacob, 2026-10-06: the physical town
+  arrives at once; it was "ground + buildings", 2026-10-04) → look layers fade in. **TIME TO WARD** = that mark from
+  navigation start. The gate (`src/lib/reveal.js`, `Town.jsx#RevealGate`) compiles each class ahead and draws it once
+  offscreen before the reveal, so the reveal frame pays no compile or upload; `ward:reveal`'s companion `tl:reveal`
+  sits on the frame timeline. Pieces mark on their first **visitor** draw (`DrawnAnchor`; the gate's prepare draws do
+  not mark), so a hidden layer never marks; the Ward carries the same marks. Once per page: reload for a cold number.
 - **Source and target.** Locally the slab comes off disk and the code is Vite's unbundled modules, so fetch times and
   the `code` row are not a visitor's (the panel prints its source). Every number is this desktop's GPU running the
   target's profile; phone-hi and phone-lo draw the same frame (§0.1).

@@ -86,9 +86,10 @@
  *                    (a ref filled with { pose() }) }. The Ward passes none: shot='movie' plays the town's own path.
  *   children         the app's overlays, drawn in the town's frame (see <TownPoint>)
  */
-import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { TownMoonPainter } from './TownMoon.jsx'
 import { useFrame, useThree } from '@react-three/fiber'
+import * as THREE from 'three'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { TownPlace, useTownLoaded } from './TownPlace.jsx'
 import { TownScope, SHOT_KEY } from './townContext.js'
@@ -144,7 +145,9 @@ import { WATER_PLAN } from './waterMaterial.js'
 import PlanRim from './PlanRim.jsx'
 import MountainBackdrop from './MountainBackdrop'
 import DrawnAnchor from './DrawnAnchor.jsx'
-import { markStartup } from '../lib/startupMarks.js'
+import { markStartup, markTimeline } from '../lib/startupMarks.js'
+import { getSceneStencil } from './sceneStencilState'
+import { isPrepared, failureOf, isRevealed, setRevealed, subscribeReveal } from '../lib/reveal.js'
 import { buildingLiftY } from '../lib/buildingLift.js'
 
 // The application runtime has arrived: the renderer's module is evaluated (src/lib/startupMarks.js).
@@ -194,6 +197,62 @@ const POST_VIEW = { movie: 'hero', plan: 'browse', street: 'planetarium' }
 // Under a demand frameloop nothing renders unless invalidated. The movie shot on a profile that
 // asks for it renders every frame; everything else every other frame, a third while idle. Never
 // zero while unpaused: going idle is what makes Chrome drop the WebGL surface.
+// ── THE REVEAL (src/lib/reveal.js) — ground, buildings and trees arrive at once (Jacob, 2026-10-06; WARD USABLE = THE
+// REVEAL). The physical groups render hidden (`visible={… && revealed}`) until every class `need`s has said it is
+// PREPARED. Then, while only the sky shows, the gate COMPILES them ahead (renderer.compileAsync: parallel shader
+// compile; three walks VISIBLE objects only, so the groups are shown for the synchronous part of the call and hidden
+// again before any frame draws them) and UPLOADS their textures (renderer.initTexture); when the compile resolves, the
+// town is revealed on one frame and the terrain swells. A class that fails says so (reveal.js#markFailed); the gate
+// names what it waits on, once, at that failure — never a timer.
+const PHYSICAL = ['ground', 'buildings', 'trees']
+const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 'town:park', 'town:lamps'])
+function RevealGate({ need }) {
+  const { gl, scene, camera } = useThree()
+  const phase = useRef({ name: 'wait' })
+  const state = useSyncExternalStore(subscribeReveal, () => need.map((k) => (isPrepared(k) ? 'p' : failureOf(k) ? 'f' : '-')).join('') + isRevealed())
+  useEffect(() => {
+    if (isRevealed() || phase.current.name !== 'wait') return
+    const failed = need.filter((k) => failureOf(k))
+    if (failed.length) { console.error(`[reveal] ⛔ the town is held hidden: ${failed.map((k) => `${k} (${failureOf(k)})`).join(', ')}`); return }
+    if (!need.every(isPrepared)) return
+    const groups = []
+    scene.traverse((o) => { if (REVEAL_GROUPS.has(o.name)) groups.push(o) })
+    // 1. Compile ahead, in parallel (KHR_parallel_shader_compile).
+    const was = groups.map((g) => g.visible)
+    let compiled
+    try { for (const g of groups) g.visible = true; compiled = gl.compileAsync(scene, camera) }
+    finally { groups.forEach((g, i) => { g.visible = was[i] }) }
+    phase.current = { name: 'compile', groups }
+    const next = () => { phase.current = { name: 'prep', groups, i: 0 } }
+    compiled.then(next, (e) => { console.error('[reveal] ⛔ compiling the town ahead failed:', e); next() })
+  }, [state, need.join(',')])
+  // 2. PREPARE BY DRAWING: one hidden group a frame, drawn into a 1×1 target by a top-down camera that holds the whole
+  //    town (so no culling skips anything). A draw is the only thing that uploads every geometry and texture and links
+  //    every program — measured: compile + initTexture alone left +217 geometries, +161 textures and +21 programs to
+  //    the reveal frame (615 ms on huron). Here that cost lands while only the sky shows. 3. Then reveal, on one frame.
+  const rt = useMemo(() => new THREE.WebGLRenderTarget(1, 1), [])
+  useEffect(() => () => rt.dispose(), [rt])
+  useFrame(() => {
+    const p = phase.current
+    if (p.name !== 'prep') return
+    if (p.i >= p.groups.length) { phase.current = { name: 'done' }; markTimeline('reveal', 'the town is shown'); setRevealed(); return }
+    const g = p.groups[p.i++]
+    if (!g.visible && !gatedOn(g)) return   // a layer switched off stays off
+    const st = getSceneStencil()
+    const r = st?.radius || 1, cx = st?.center?.[0] || 0, cz = st?.center?.[1] || 0
+    const cam = new THREE.OrthographicCamera(-r, r, r, -r, 1, 40000)
+    cam.position.set(cx, 20000, cz); cam.up.set(0, 0, -1); cam.lookAt(cx, 0, cz); cam.updateMatrixWorld()
+    cam.userData.prepare = true   // DrawnAnchor ignores this draw: the visitor does not see it
+    const prevTarget = gl.getRenderTarget()
+    g.visible = true
+    try { gl.setRenderTarget(rt); gl.render(scene, cam) }
+    finally { g.visible = false; gl.setRenderTarget(prevTarget) }
+  })
+  return null
+}
+// A gated group that its layer switch wants drawn (Town sets `userData.gatedOn` beside `visible`).
+const gatedOn = (g) => g.userData?.gatedOn !== false
+
 function FrameLimiter({ paused, idle, everyFrame, flying }) {
   const invalidate = useThree((s) => s.invalidate)
   const now = useRef(null)
@@ -474,8 +533,12 @@ export default function Town({
   const movieHold = useMemo(() => () => flightHold.current() || !!movie?.hold?.(), [movie])
   // ⛔ Nothing draws until THIS town's place and terrain are in: a piece built on the wrong ground stays wrong.
   const loaded = useTownLoaded(lookId)
+  const revealed = useSyncExternalStore(subscribeReveal, isRevealed)
   if (!loaded) return <><TownOptics quality={quality} /><TownPlace town={town} lookId={lookId} time={time} /></>
-  const targetExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
+  const shotExag = shot === 'plan' ? 0 : shot === 'street' ? 1 : sceneExag()
+  // ⭐ THE SWELL (Jacob, 2026-10-06): the town is prepared FLAT and the terrain swells to the shot's height as the
+  // reveal's gesture, through the one terrain driver (BakedGround#TerrainExagDriver). A gesture, not a perf lever.
+  const targetExag = revealed ? shotExag : 0
   // The phone profile mounts the arch and the horizon in the movie shot only (its budget).
   const heavy = !quality.heroOnlyPieces || shot === 'movie'
 
@@ -534,7 +597,8 @@ export default function Town({
       </group>
 
       <Suspense fallback={null}>
-        <group name="town:ground" visible={on('ground')}>
+        <RevealGate need={PHYSICAL.filter((k) => on(k))} />
+        <group name="town:ground" visible={on('ground') && revealed} userData={{ gatedOn: on('ground') }}>
           <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bake} targetExag={targetExag} surfacesOverride={o.surfaces} /></R3FErrorBoundary>
           {/* The shore median diagnostic shows the region with every treatment OFF, so the revetment hides while it is on. */}
           <group visible={!on('shoreMedian')}><R3FErrorBoundary name="SlabRevetment"><SlabRevetment lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary></group>
@@ -549,21 +613,21 @@ export default function Town({
             materialColorsOverride={o.materialColors}
             hiddenLayers={{ building: true, neon: !on('neon'), labels: !on('labels'), parkTitle: scene?.layerVis?.parkTitle === false }} />
         </R3FErrorBoundary>
-        <group name="town:buildings" visible={on('buildings')}>
+        <group name="town:buildings" visible={on('buildings') && revealed} userData={{ gatedOn: on('buildings') }}>
           <R3FErrorBoundary name="SlabBuildings"><SlabBuildings key={`slab-${bake || 0}`} lookId={lookId} interactive={interactive}
             materialPhysicsOverride={o.materialPhysics} paletteOverride={o.buildingPalette} wallPalettesOverride={o.wallPalettes}
             litIds={litIds} litTintOverride={o.litTint} /></R3FErrorBoundary>
           <R3FErrorBoundary name="CityModel"><CityModel key={`city-${bake || 0}`} lookId={lookId} interactive={interactive} /></R3FErrorBoundary>
           <DrawnAnchor id="buildings" />
         </group>
-        <group name="town:trees" visible={on('trees')}>
+        <group name="town:trees" visible={on('trees') && revealed} userData={{ gatedOn: on('trees') }}>
           <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bake} canopyOverride={o.canopy} treeWindOverride={o.treeWind} /></R3FErrorBoundary>
           <DrawnAnchor id="trees" />
         </group>
-        <group name="town:park" visible={on('park')}>
+        <group name="town:park" visible={on('park') && revealed} userData={{ gatedOn: on('park') }}>
           <R3FErrorBoundary name="LafayettePark"><LafayettePark town={town} lookId={lookId} bakeLastMs={bake} /></R3FErrorBoundary>
         </group>
-        <group name="town:lamps" visible={on('lamps')}>
+        <group name="town:lamps" visible={on('lamps') && revealed} userData={{ gatedOn: on('lamps') }}>
           <R3FErrorBoundary name="BakedLamps"><BakedLamps lookId={lookId} bakeLastMs={bake} lanternOverride={o.lantern} lampsOnOverride={o.lampsOn} /></R3FErrorBoundary>
         </group>
         <group name="town:setPieces" visible={on('setPieces')}>

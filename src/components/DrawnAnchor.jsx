@@ -33,7 +33,9 @@ export default function DrawnAnchor({ id }) {
       hooked.current.set(o, own)
       o.onAfterRender = function (...a) {
         base.apply(this, a)
-        markStartup(id)
+        // (renderer, scene, camera, …): the reveal gate's offscreen PREPARE draw (Town.jsx#RevealGate) is not a draw the
+        // visitor sees, so it does not mark.
+        if (!a[2]?.userData?.prepare) markStartup(id)
       }
     })
   })
