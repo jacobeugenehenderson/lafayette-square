@@ -216,6 +216,8 @@ scene recorded.
   `62955496` + `66547bfb` (Boz's task; `ROADMAP` carries the one open line, Altadena's disc past its bbox).
 
 **Open:** → §3 (the sequence), and:
+- ⏸ **PARKED by Jacob's call, 2026-10-07 ("not right now"): a click-to-open corner popover in Survey** (radius slider ·
+  Corner / Not a corner · Revert), replacing ⌥-click. Nothing built; today's controls are the handle's drag + ⌥-click.
 - ⛔ **LS's raised-kerb ground is REFUSED (2026-10-07, Sill): 266 T-junctions after the creases are cut.** The kerb no
   longer slices the paint (that regrouped holes by winding and meshed 97,808 m² of asphalt over LS's blocks); its ramp,
   flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the
