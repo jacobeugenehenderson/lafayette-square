@@ -170,7 +170,6 @@ function makeRng(seed) {
 export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
                                      rays = RAYS_PER_TEXEL, scene, outDir = null } = {}) {
   assertBakeTarget('bake-ground-ao', look, scene)
-  const isDefaultMap = scene === 'lafayette-square'
   const lookDir = join(ROOT, 'public', 'baked', look)
   const manifestPath = join(lookDir, 'ground.json')
   const binPath = join(lookDir, 'ground.bin')
@@ -314,19 +313,13 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       `Re-bake lamps first (node cartograph/bake-lamps.js --scene=${scene} --look=${look}). Refusing to guess a reach.`)
   const POOL_REACH = lampsDoc?.reach ?? 0
   try {
-    // Contact-shadow sources are per-installation. The Look's own lamps.json /
-    // the scene's own tree placements — NEVER LS's when this is a poured
-    // installation, or HiPointe's ground bakes LS's tree + lamp shadows (the
-    // vestigial-ghost bug). The LS-global fallbacks apply ONLY to the default
-    // scene; a poured scene with no lamp/tree data bakes NO contact shadows.
+    // Contact-shadow sources are the Look's own: its lamps.json (the same file the pools and the drawn lamps
+    // read) and its own tree placements. ⛔ No other town's file, and no global file, for ANY town, Lafayette
+    // Square included (Layer 0: the LS-only fallback to src/data/street_lamps.json was removed 2026-10-07). A Look
+    // with no lamps.json bakes no lamp shadows, and says so.
     let lamps = []
-    const lampsPath = join(lookDir, 'lamps.json')
-    if (existsSync(lampsPath)) {
-      lamps = JSON.parse(readFileSync(lampsPath, 'utf-8')).lamps || []
-    } else if (isDefaultMap) {
-      const sp = join(ROOT, 'src', 'data', 'street_lamps.json')
-      if (existsSync(sp)) lamps = JSON.parse(readFileSync(sp, 'utf-8')).lamps || []
-    }
+    if (lampsDoc) lamps = lampsDoc.lamps || []
+    else console.warn(`[bake-ao] ${lampsDocPath} does not exist — no lamp contact shadows and no pools for '${look}'. Bake lamps first if this town has lamps.`)
     let trees = []
     // Every neighbourhood bakes its census to a LOOK-SCOPED trees.json (mirrors
     // lamps.json above) — LS included, since 2026-07-15; it used to be the one
