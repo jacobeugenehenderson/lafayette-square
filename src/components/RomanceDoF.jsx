@@ -17,7 +17,9 @@
  * softness AT the focal plane) · softness (how deep the sharp zone is, and how gently it melts).
  */
 
-import { useMemo, forwardRef } from 'react'
+import { useMemo, forwardRef, useContext } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { EffectComposerContext } from '@react-three/postprocessing'
 import { Effect, EffectAttribute } from 'postprocessing'
 import * as THREE from 'three'
 
@@ -240,5 +242,17 @@ class RomanceDoFEffect extends Effect {
 
 export const RomanceDoF = forwardRef((_, ref) => {
   const effect = useMemo(() => new RomanceDoFEffect(), [])
+  // ⭐ NO BLUR ⇒ THE PASS DOES NOT RUN. With uMaxBlur 0 the blur amount is 0 everywhere (blurAmount: mix(min(uHeroBlur,
+  // uMaxBlur), uMaxBlur, …) = 0), so the output IS the input — and in Browse the driver sets it 0 every frame (the
+  // look-down gate, dofDriver.js), yet the pass ran at full cost: 9.8 ms on huron at 2268×1270 (Preview's Diagnosis,
+  // 2026-10-07). Its EffectPass holds it alone (a CONVOLUTION effect is never merged), so it is switched off while the
+  // blur is 0: the composer skips a disabled pass without swapping buffers — no rebuild, no relink, the same pixels.
+  // Runs before the composer's own frame (priority 0 < its render priority), after the driver set this frame's blur.
+  const { composer } = useContext(EffectComposerContext)
+  useFrame(() => {
+    const pass = composer?.passes.find((p) => p.effects?.includes(effect))
+    if (pass) pass.enabled = _dofRefs.maxBlur.current > 0 || _dofRefs.debug.current > 0
+    if (pass && typeof window !== 'undefined' && window.__dof) window.__dof.pass = pass   // read-only inspection (dofDriver)
+  })
   return <primitive ref={ref} object={effect} dispose={null} />
 })
