@@ -53,23 +53,31 @@ ws.addEventListener('message', (e) => { const m = JSON.parse(e.data); if (m.meth
   else cdp('Fetch.continueRequest', { requestId: m.params.requestId }, S).catch(() => {}) })
 const js = async (expr) => { const r = await cdp('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }, S); if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 800)); return r.result?.value }
 
+// ⭐ IMPORT WHAT THE PAGE IMPORTED. Vite serves a module edited during the dev server's session as `…?t=<stamp>`, and a
+// bare `import('/src/…')` from here then gets a SECOND, empty instance of a store — the index read null on Huron while
+// the page had it (2026-10-06, after useSlabBuildingIndex.js was touched). `window.__imp` resolves the URL the page loaded.
+const IMP = `window.__imp = (p) => { const u = performance.getEntriesByType('resource').map((r) => r.name).find((n) => { try { return new URL(n).pathname === p } catch { return false } }); return import(u ?? p) }; true`
+
 
 const results = {}
 for (const SHOT of SHOTS) {
   await cdp('Page.navigate', { url: `${BASE}/cartograph.html?scene=${TOWN}&look=${TOWN}&shot=${SHOT}` }, S)
   let ok = false
   for (let i = 0; i < 240 && !ok; i++) { await sleep(500); ok = await js(`!!(window.__scene && window.__camera && window.__scene.__r3f)`).catch(() => false) }
-  if (!ok) throw new Error(`Stage (${SHOT}) never appeared: ` + pageErrors.join(' | '))
-  await js(`(async () => { const tod = (await import('/src/hooks/useTimeOfDay.js')).default.getState(); tod.setTime(new Date(${JSON.stringify(WHEN)})); tod.setPaused?.(true); return true })()`)
+  if (!ok) { console.log(`  ❌ FAIL  Stage (${SHOT}) never drew (${pageErrors.join(' | ') || 'no page error'})`); cleanup(); process.exit(1) }
+  await js(IMP)
+  await js(`(async () => { const tod = (await window.__imp('/src/hooks/useTimeOfDay.js')).default.getState(); tod.setTime(new Date(${JSON.stringify(WHEN)})); tod.setPaused?.(true); return true })()`)
   // the shot's exag tween settles before anything is measured
   let prev = null, exag = null
   for (let i = 0; i < 60; i++) { await sleep(500); exag = await js(`window.__terrainExag.value`); if (prev != null && Math.abs(exag - prev) < 1e-5 && i > 6) break; prev = exag }
-  const ents = await js(`(async () => { let idx = null; for (let i = 0; i < 120 && !idx; i++) { idx = (await import('/src/hooks/useSlabBuildingIndex.js')).default.getState().index; if (!idx) await new Promise(r => setTimeout(r, 500)) }
+  const ents = await js(`(async () => { let idx = null; for (let i = 0; i < 120 && !idx; i++) { idx = (await window.__imp('/src/hooks/useSlabBuildingIndex.js')).default.getState().index; if (!idx) await new Promise(r => setTimeout(r, 500)) }
+    if (!idx) return null
     const per = (f) => f.reduce((a, p, i) => a + Math.hypot(f[(i + 1) % f.length][0] - p[0], f[(i + 1) % f.length][1] - p[1]), 0)
     const want = ${JSON.stringify(ONS)}
     const pickd = want ? want.map(id => idx.byId.get(id)).filter(Boolean)
       : idx.byNum.filter(e => e.ranges?.wall && e.footprint && per(e.footprint) > 40).sort((a, b) => b.centroidY - a.centroidY).slice(0, 2)
     return pickd.map(e => ({ id: e.id, footprint: e.footprint, baseY: e.baseY, centroidY: e.centroidY })) })()`)
+  if (!ents || !ents.length) { console.log(`  ❌ FAIL  ${SHOT}: the slab building index never arrived, or holds none of ${JSON.stringify(ONS) ?? 'the walled buildings'} — the check has no subject. Page errors: ${pageErrors.join(' | ') || 'none'}`); cleanup(); process.exit(1) }
   ONS = ents.map(e => e.id)
   results[SHOT] = { exag }
   for (const e of ents) {
@@ -99,12 +107,12 @@ for (const SHOT of SHOTS) {
     }
     const r = { lift: +lift.toFixed(2) }
     for (const [what, p] of Object.entries(targets)) {
-      await js(`(async () => { (await import('/src/hooks/useSelectedBuilding.js')).default.getState().deselect(); return true })()`)
+      await js(`(async () => { (await window.__imp('/src/hooks/useSelectedBuilding.js')).default.getState().deselect(); return true })()`)
       const xy = await js(`(() => { const cam = window.__camera, V = cam.position.constructor, c = window.__renderer.domElement, rc = c.getBoundingClientRect()
         const v = new V(${p[0]}, ${p[1]}, ${p[2]}).project(cam); return [rc.left + (v.x + 1) / 2 * rc.width, rc.top + (1 - v.y) / 2 * rc.height] })()`)
       for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) await cdp('Input.dispatchMouseEvent', { type, x: xy[0], y: xy[1], button: 'left', clickCount: type === 'mouseMoved' ? 0 : 1 }, S)
       await sleep(500)
-      r[what] = await js(`(async () => (await import('/src/hooks/useSelectedBuilding.js')).default.getState().selectedId)()`)
+      r[what] = await js(`(async () => (await window.__imp('/src/hooks/useSelectedBuilding.js')).default.getState().selectedId)()`)
     }
     // the lift on screen, in px, at the wall: is the ghost distinguishable from the wall here?
     r.liftPx = await js(`(() => { const cam = window.__camera, V = cam.position.constructor, c = window.__renderer.domElement

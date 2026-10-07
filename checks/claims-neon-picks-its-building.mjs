@@ -51,18 +51,24 @@ ws.addEventListener('message', (e) => { const m = JSON.parse(e.data); if (m.meth
   else cdp('Fetch.continueRequest', { requestId: m.params.requestId }, S).catch(() => {}) })
 const js = async (expr) => { const r = await cdp('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }, S); if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 800)); return r.result?.value }
 
+// ⭐ IMPORT WHAT THE PAGE IMPORTED. Vite serves a module edited during the dev server's session as `…?t=<stamp>`, and a
+// bare `import('/src/…')` from here then gets a SECOND, empty instance of a store — the index read null on Huron while
+// the page had it (2026-10-06, after useSlabBuildingIndex.js was touched). `window.__imp` resolves the URL the page loaded.
+const IMP = `window.__imp = (p) => { const u = performance.getEntriesByType('resource').map((r) => r.name).find((n) => { try { return new URL(n).pathname === p } catch { return false } }); return import(u ?? p) }; true`
+
 await cdp('Page.navigate', { url: `${BASE}/cartograph.html?scene=${TOWN}&look=${TOWN}&shot=browse` }, S)
 let ok = false
 for (let i = 0; i < 240 && !ok; i++) { await sleep(500); ok = await js(`!!(window.__scene && window.__camera)`).catch(() => false) }
-if (!ok) throw new Error('Stage renderer never appeared: ' + pageErrors.join(' | '))
+if (!ok) { console.log(`  ❌ FAIL  Stage never drew (${pageErrors.join(' | ') || 'no page error'})`); cleanup(); process.exit(1) }
+await js(IMP)
 await js(`(async () => {
-  const tod = (await import('/src/hooks/useTimeOfDay.js')).default.getState(); tod.setTime(new Date(${JSON.stringify(WHEN)})); tod.setPaused?.(true)
-  const st = (await import('/src/cartograph/stores/useCartographStore.js')).default.getState(); st.setNeonForceOn(true)
+  const tod = (await window.__imp('/src/hooks/useTimeOfDay.js')).default.getState(); tod.setTime(new Date(${JSON.stringify(WHEN)})); tod.setPaused?.(true)
+  const st = (await window.__imp('/src/cartograph/stores/useCartographStore.js')).default.getState(); st.setNeonForceOn(true)
   return true })()`)
 await sleep(4000)
 // The building, from the slab index the page itself built.
 let entry = null
-for (let i = 0; i < 120 && !entry; i++) { await sleep(500); entry = await js(`(async () => { const m = await import('/src/hooks/useSlabBuildingIndex.js'); const idx = m.default.getState().index; if (!idx) return null
+for (let i = 0; i < 120 && !entry; i++) { await sleep(500); entry = await js(`(async () => { const m = await window.__imp('/src/hooks/useSlabBuildingIndex.js'); const idx = m.default.getState().index; if (!idx) return null
   // --on, else the first building that carries an address face and a wall long enough to aim at
   const per = (f) => f.reduce((a, p, i) => a + Math.hypot(f[(i + 1) % f.length][0] - p[0], f[(i + 1) % f.length][1] - p[1]), 0)
   // --on, else the first building with a long enough wall that carries DRAWN neon — a stretch with no place on it is
@@ -75,7 +81,7 @@ for (let i = 0; i < 120 && !entry; i++) { await sleep(500); entry = await js(`(a
   const e = ${JSON.stringify(ON)} ? idx.byId.get(${JSON.stringify(ON)}) : idx.byNum.find((e) => e.ranges?.wall && e.footprint && per(e.footprint) > 60 && drawnNear(e.footprint))
   return e ? { id: e.id, footprint: e.footprint, baseY: e.baseY, centroidY: e.centroidY, neon: e.neon } : null })()`) }
 ON = entry?.id ?? ON
-if (!entry) throw new Error(`${ON} never appeared in the slab index`)
+if (!entry) { console.log(`  ❌ FAIL  the slab building index never arrived${ON ? ` (or has no ${ON})` : ' (or no building carries drawn neon)'} — the check has no subject. Page errors: ${pageErrors.join(' | ') || 'none'}`); cleanup(); process.exit(1) }
 
 // Pin an oblique view: out from the building's longest wall, looking at its middle.
 const fp = entry.footprint
@@ -99,8 +105,8 @@ const pose = await js(`(async () => {
 })()`)
 await sleep(1500)
 const frames = `(n) => new Promise(r => { let k = 0; const f = () => (++k >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f) })`
-const sel = (id) => js(`(async () => { const s = (await import('/src/hooks/useSelectedBuilding.js')).default.getState(); ${id ? `s.select(${JSON.stringify(id)})` : 's.deselect()'}; await (${frames})(20); return true })()`)
-const selected = () => js(`(async () => (await import('/src/hooks/useSelectedBuilding.js')).default.getState().selectedId)()`)
+const sel = (id) => js(`(async () => { const s = (await window.__imp('/src/hooks/useSelectedBuilding.js')).default.getState(); ${id ? `s.select(${JSON.stringify(id)})` : 's.deselect()'}; await (${frames})(20); return true })()`)
+const selected = () => js(`(async () => (await window.__imp('/src/hooks/useSelectedBuilding.js')).default.getState().selectedId)()`)
 
 if (MODE === 'clicks') {
   // Screen points: a wall (the long wall's middle, half height), the roof (centroid, at the eave), the neon (its first
@@ -164,8 +170,8 @@ if (MODE === 'clicks') {
     if (!clear) continue
     await sleep(800)
     const xy = await js(`(async () => {
-      const { PICK_SLOP_PX } = await import('/src/components/NeonBands.jsx')
-      const { neon: U } = await import('/src/preview/neonState.js')
+      const { PICK_SLOP_PX } = await window.__imp('/src/components/NeonBands.jsx')
+      const { neon: U } = await window.__imp('/src/preview/neonState.js')
       const st = window.__scene.__r3f.root.getState(), cam = window.__camera, V = cam.position.constructor, c = window.__renderer.domElement, rect = c.getBoundingClientRect()
       const bld = []; window.__scene.traverse(o => { if (o.isMesh && String(o.material?.customProgramCacheKey?.() || '').startsWith('slab-bldg')) bld.push(o) })
       const v = new V(${sx}, ${sy}, ${sz}).project(cam), a = [(v.x + 1) / 2 * c.width, (1 - v.y) / 2 * c.height]
