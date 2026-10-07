@@ -1,7 +1,7 @@
 // curb-cut-norm.mjs — WHERE A TOWN'S CURB CUTS COME FROM WHEN NOTHING RECORDS THEM (`BRIEF-corner-ramps-and-kerb §0a`).
 //
 // A curb cut sits on a JUNCTION corner's arc (`iaJunction`). Its style is, in order — the finest wins:
-//   1. the operator, per corner: `blockCustoms[skelId][side][segOrd].curbCuts.{start,end}` on either leg (live, in Section)
+//   1. the operator, per corner: `cut` in its one entry of `cornerCornerRadiusOverrides` (live, in Section's popover)
 //   2. evidence — a recorded curb cut, landed on the arc at the freeze (`cartograph/curb-cut-evidence.mjs`)
 //   3. the TOWN's norm:   cartograph/data/<scene>/norms.json   → { "curbCuts": { … } }
 //   4. the STATE's norm:  cartograph/states/<st>.mjs           → norms.curbCuts

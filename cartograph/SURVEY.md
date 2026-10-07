@@ -71,7 +71,7 @@ Survey authors a thin **fortification overlay** keyed to Skeleton identities (`s
 
 | Control | What it does | Writes |
 |---|---|---|
-| **Corner radius** — 3-tier (`CornersSubsection :67`) | global **scale** slider (× 4.5 m baseline); **Edit** mode → each corner is a magenta handle on the achieved curb arc (drag = radius, to-centre = square R=0, right-click reverts one); **Revert** clears all | `design.cornerRadiusScale` · `cornerRadiusOverrides[ixKey]` · `cornerCornerRadiusOverrides[ixKey|legA|legB]` |
+| **Corner radius** — 3-tier (`CornersSubsection :67`) | global **scale** slider (× 4.5 m baseline); **Edit** mode → each corner is a magenta handle on the achieved curb arc (drag = radius, to-centre = square R=0, ⌥-click = not a corner / a corner here (a bend has no pad unless made one), right-click reverts one); **Revert** clears all (the radius and existence; Section's curb-cut style stays) | `design.cornerRadiusScale` · `cornerRadiusOverrides[ixKey]` · `cornerCornerRadiusOverrides[ix|skel:side|skel:side]` = a radius, or `{ r?, corner?, cut? }` — ONE corner per key (`tileGround.js#protoCornerKey`) ▶ `node checks/claims-one-corner-write-moves-one-corner.mjs` |
 | **Asphalt-edge** drag (on-canvas) | strokes per-side pavement half-width outward; the block (curb line) follows | per-fe `blockCustoms[skelId][side][segOrd].pavementHW` |
 | **Cap** Start/End (`:300`) | None (connected) / Round (cul-de-sac) / Blunt (flat) | `overlay` `capStart` / `capEnd` |
 | **Anchor** = ribbon propagation (`:286`) | **Center** (grow symmetric) vs **Inner-edge** (grow outward from the median-facing edge → median falls out). Auto-detected from corridor pairing; disabled when no pair | `overlay.anchor` (pair-mirrored) |

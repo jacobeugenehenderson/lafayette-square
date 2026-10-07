@@ -257,7 +257,11 @@
       function moved to `chainSegmentation.js`, so nobody who tried could reproduce the evidence.
       Repaired 2026-09-08; this is why `scratch/claims-doc-pointers-resolve.mjs --run` exists.
   - ⚠️ **Two named candidates, and ⛔ neither is a diagnosis.** The `fe↔span` credit in `assignSegOrdsToFes` (`buildBlockGeometryV2.js:1026`) is **LS 0/3 — measured absent on the town Jacob is clicking**, so it cannot be this on LS. The `feCustomKey` re-key (`C4`/T3) is untested against this symptom. **S to measure** · → `A15`, `MEMORY §C` 🔑.
-  - ⏸ **SHELVED 2026-10-06 (Jacob: *"if it doesn't work as intended, there's no point"*) — "NOT A CORNER" needs a PER-ARC identity.** A corner's authoring slots (`blockCustoms[…].curbCuts.{end,start}`) are keyed by RUN, and every arc on that run reads them — on Huron one write flipped four arcs, and a mid-block bend's two slots are the junctions at its block's ends. Blocked on the open key (`EXTENT-DESIGN §4.1`). Built and parked, not applied: `scratch/corner-through-wip/not-a-corner-wip.patch` (applies onto `6b9785fe`).
+  - ✅ **2026-10-07 — ONE CORNER, ONE KEY.** Every corner is authored in its own entry of `cornerCornerRadiusOverrides`,
+    keyed `ix|skel:side|skel:side` (`tileGround.js#protoCornerKey`; `ix` = the node, or a bend's own skeleton vertex):
+    radius + existence (Survey, ⌥-click "not a corner / a corner here") and curb-cut style (Section). The run-keyed
+    `curbCuts` slots are retired. ▶ `node checks/claims-one-corner-write-moves-one-corner.mjs`. ⛔ Not this key's: the
+    run key (`skelId`+`segOrd`) the ped fields still use stays OPEN (`EXTENT-DESIGN §4.1`).
 
 - **⛔ A23 · A MACHINE VALUE CAN SIT IN THE OPERATOR'S AUTHORING FILE, AND NOTHING CAN TELL** *(NEW 2026-09-23, Boz; surfaced by the highway review)* — `clean/overlay.json` is the operator's authoring, and everything downstream lets it WIN; ⛔ **its entries record no author.** So a value from the retired legacy tier reads as an operator decision — and Boz and the review agent each called one "Jacob's authoring" before tracing it.
   - **The instance, measured:** commit `e14f17f9` (2026-09-06, agent-written) **added 14 LS overlay entries, every one on a chain id the previous overlay did not have** (a re-split had minted new ids). ▶ `git show e14f17f9 -- cartograph/data/lafayette-square/clean/overlay.json`

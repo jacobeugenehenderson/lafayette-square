@@ -320,9 +320,9 @@ Section authors a thin per-block-edge overlay keyed to Skeleton identities. Surf
 | **Treelawn-outer** handle | drags the **divider** (treelawn depth) | per-fe `blockCustoms[…].treelawn` |
 | **Property-line** handle | drags the sidewalk depth | per-fe `…sidewalk` |
 | **Strip-swap** (⌃ / right-click in a strip) | flips that strip's material **LU ↔ SW** | `…materials.{outer|inner}` |
-| **↺ Revert to Default** (footer button) | clears **every** Section override → the calculation re-seeds | strips `treelawn`/`sidewalk`/`materials`/`capFlip`/`curbCuts` from `blockCustoms` |
+| **↺ Revert to Default** (footer button) | clears **every** Section override → the calculation re-seeds | strips `treelawn`/`sidewalk`/`materials`/`capFlip` from `blockCustoms` and `cut` from the corner map |
 | **⌃-click / right-click a ped handle** | reverts **that one edge** to the calculated default | strips the Section fields off that fe's slot |
-| **Curb-cut marker** (a disc per junction corner; Curb Cuts layer on) | click → popover: Town default (with its source) · Corner · Perpendicular · No cut (keys `diagonal`/`perpendicular`/`none`); ⌃/right-click → back to the town default | both legs' `blockCustoms[…].curbCuts.{end,start}` at once (`src/lib/curbCutSlots.js`) |
+| **Curb-cut marker** (a disc per junction corner; Curb Cuts layer on) | click → popover: Town default (with its source) · Corner · Perpendicular · No cut (keys `diagonal`/`perpendicular`/`none`); ⌃/right-click → back to the town default | `cut` in the corner's ONE entry of `cornerCornerRadiusOverrides` (its key, `iaArcKey`; radius and existence there are Survey's) |
 
 > **⭐ Section edits are ALWAYS per-fe, one side (excised the modes 2026-07-18).** The **whole-chain** and **symmetric-mirror** modes were removed from Section: the ribbon is inherently per-side (every fe its own node), so those modes fought the model and dragged the *wrong* segments into an edit (the venn-overlap that produced the "flip hits the neighbor, not the leg" bug). The **"whole street" head-start comes from the automatic survey best-guess** — real OSM sidewalk presence feeding `gleanTreelawn` — **not a manual batch mode**; per-fe override handles the exceptions. If a manual batch is ever wanted it returns as an *explicit action* button, never a persistent mode. **fe resolution is by NEAREST FRONTAGE POLYLINE** (`nearestFeForSide`, both the flip/drag and the selection ordinal) — corner-safe, replacing `naturalSegmentOrdinal(frame.segI)`, which misprojected an offset click across a bend's vertex to the neighbor segment. Storage fans one arrangement across the fe's owned segOrds at write time (`feSegOrds`, `useCartographStore`) so the fes-less **bake** reads it raw. *(Survey keeps its own whole-chain + symmetric knobs for street **widths** — untouched.)*
 
@@ -412,7 +412,9 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 - **TL↔TL** (both set back) → the lawn runs full width to each tangent and stops **blunt**; the pad
   (the walk continuing to the kerb) fills the arc behind it, tangent to tangent. See `§4`.
 - **A junction corner also carries CURB CUTS** — positions on the arc where the kerb drops, by the town's
-  norm or the operator (`curbCutsOnJunctionCorners`, `cartograph/curb-cut-norm.mjs`); a bend gets none. A diagonal
+  norm or the operator (`curbCutsOnJunctionCorners`, `cartograph/curb-cut-norm.mjs`). A BEND carries no pad and no cut —
+  the walk and lawn bend through — unless Survey makes it a corner, and a junction Survey calls "not a corner" loses both
+  (the corner's `corner` flag, read by the pad licence; Jacob, 2026-10-07). A diagonal
   corner keeps the pad; a **perpendicular** one runs each leg's walk straight on to the kerb in its own landing, a cut
   where each lands, and a lawn wedge between at the apex — the whole corner walk when a leg has no lawn (`perpGeom`); a
   walk that never meets the kerb gets no landing, counted. Crosswalks run square across the street, centred on the cut that serves them, kerb to kerb

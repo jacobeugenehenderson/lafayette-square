@@ -116,8 +116,8 @@ function SideBlock({ sideKey, side, onChange, single }) {
 }
 
 // ⭐ ONE CORNER'S CURB CUT (`BRIEF-corner-ramps-and-kerb §3` step 4; Jacob, 2026-10-06: a popover). Opened by a marker
-// click in MeasureOverlay; the record is the painter's own (`curbCutCorners`). Choosing writes BOTH legs at once
-// (`setCornerCurbCut`); "Town default" clears them back to what the corner draws unauthored.
+// click in MeasureOverlay; the record is the painter's own (`curbCutCorners`). Choosing writes the corner's own entry
+// (`setCornerCurbCut`, by its key); "Town default" clears it back to what the corner draws unauthored.
 const SOURCE_LABEL = (src) => src === 'osm:kerb' ? 'recorded kerbs (OSM)' : src === 'scene' ? "the town's norm"
   : src?.startsWith('state:') ? "the state's norm" : src === 'kit' ? 'the kit (none)' : (src || '—')
 // the data keys stay (`diagonal`/`perpendicular`/`none`); only the operator's words change (Jacob, 2026-10-07)
@@ -145,13 +145,11 @@ function CurbCornerPopover() {
         <button className="carto-btn-sm" title="Close" onClick={() => selectCurbCorner(null)}>✕</button></h2>
       <div className="carto-actions">
         {opt(`Town default — ${def ? STYLE_LABEL[def.style] ?? def.style : 'no norm frozen'}${def ? `, from ${SOURCE_LABEL(def.source)}` : ''}`, null,
-          'Clear this corner on both legs: it draws what it would unauthored')}
+          'Clear this corner: it draws what it would unauthored')}
         {opt('Corner', 'diagonal', 'One cut at the apex, facing both crossings')}
         {opt('Perpendicular', 'perpendicular', "Each leg's walk runs straight to the kerb: two cuts, one facing each crossing")}
         {opt('No cut', 'none', 'No cut at this corner')}
       </div>
-      {c.conflict && <div className="carto-meta">⚠️ Its two legs were authored differently, so it draws the town default.
-        Choose one here to write both legs.</div>}
       {c.contradicted && <div className="carto-meta">⚠️ Recorded kerbs here contradict the town's norm ({STYLE_LABEL[c.contradicted.norm] ?? c.contradicted.norm}):
         drops at {c.contradicted.drops.join(', ')} of the arc. Override if the record is right.</div>}
       <div className="carto-meta">⌃-click the marker to clear it.</div>

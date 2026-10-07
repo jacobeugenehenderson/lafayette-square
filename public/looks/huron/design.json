@@ -85,7 +85,11 @@
   },
   "cornerRadiusScale": 1,
   "cornerRadiusOverrides": {},
-  "cornerCornerRadiusOverrides": {},
+  "cornerCornerRadiusOverrides": {
+    "423.580,-130.300|cleveland-road-west-1:left|ohio-street:left": {
+      "cut": "perpendicular"
+    }
+  },
   "curbWidth": 0.381,
   "parkTitlePos": null,
   "alleyCap": "square",
@@ -100,26 +104,7 @@
     "fontFamily": "",
     "sizeK": 0.7
   },
-  "blockCustoms": {
-    "cleveland-road-west-1": {
-      "left": {
-        "61": {
-          "curbCuts": {
-            "end": "perpendicular"
-          }
-        }
-      }
-    },
-    "ohio-street": {
-      "left": {
-        "2": {
-          "curbCuts": {
-            "start": "perpendicular"
-          }
-        }
-      }
-    }
-  },
+  "blockCustoms": {},
   "surveyDefault": null,
   "blockLandUse": {},
   "materialColors": {},

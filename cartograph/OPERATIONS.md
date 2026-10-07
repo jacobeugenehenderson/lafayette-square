@@ -118,8 +118,8 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   `shape.json`, not the seed.
 - **Strip-material swap** — ctrl-click an LU↔SW strip to flip it.
 - **Curb cuts** *(junction corners only; layer toggle "Curb Cuts", colour `curbCut`)* — the style comes from, finest first:
-  the operator (Section: click a corner's marker → popover; it writes both legs' `blockCustoms[…].curbCuts.{start,end}` at once;
-  ⌃-click clears; two legs authored differently draw the town default and are counted) →
+  the operator (Section: click a corner's marker → popover; it writes `cut` in that corner's one entry of
+  `cornerCornerRadiusOverrides`, beside Survey's radius and existence; ⌃-click clears) →
   the town's RECORDED kerbs (`raw/osm_kerbs.json` ▶ `node cartograph/fetch-kerbs.mjs --scene=<scene>`; a drop mid-arc = diagonal,
   at both ends = perpendicular, raised only = none, else *unreadable* → counted, to the norm, and listed by position when
   it CONTRADICTS the norm, for an override; landed at the pour) →

@@ -853,7 +853,7 @@ export default function MeasureOverlay() {
     // strip body = flip that strip's material. All return true so the context menu
     // is suppressed.
     const handleCtrlOrRight = (e) => {
-      // ⌃/right-click a curb-cut marker = that corner back to what it draws unauthored (both leg slots cleared)
+      // ⌃/right-click a curb-cut marker = that corner back to what it draws unauthored (its `cut` cleared)
       if (cutMarkersOn) {
         const hits = cornersUnder(screenToWorld(e.clientX, e.clientY, camera, gl.domElement), curbCutCorners)
         if (hits.length === 1) { useCartographStore.getState().setCornerCurbCut(hits[0], null); return true }
@@ -939,11 +939,11 @@ export default function MeasureOverlay() {
             depthTest={false} depthWrite={false} />
         </mesh>
       ))}
-      {/* Curb-cut corner markers: blue = authored · amber = the legs conflict or recorded kerbs contradict the norm ·
+      {/* Curb-cut corner markers: blue = authored · amber = recorded kerbs contradict the norm ·
           white = what the corner draws unauthored. The open corner gets a thicker ring. */}
       {cutMarkersOn && curbCutCorners.map((c, i) => {
         const open = selectedCurbCorner && selectedCurbCorner.tile === c.tile && selectedCurbCorner.si === c.si && selectedCurbCorner.arc === c.arc
-        const fill = c.authored ? ROYAL_BLUE : (c.conflict || c.contradicted) ? '#E8A21B' : '#ffffff'
+        const fill = c.authored ? ROYAL_BLUE : c.contradicted ? '#E8A21B' : '#ffffff'
         return (
           <group key={`cc-${c.tile}-${c.si}-${c.arc}-${i}`} position={[c.at[0], 0, c.at[1]]} rotation={[-Math.PI / 2, 0, 0]}>
             <mesh renderOrder={151}>

@@ -15,6 +15,9 @@
  *   - **Unfilleted corner (R=0)** → a small SQUARE marker at the sharp vertex,
  *     so square corners are visible AND un-squarable (drag out to author a radius).
  *
+ * ⌥-click a corner → toggle whether it IS a corner (a junction: not a corner; a bend: a corner here) — the corner's
+ * existence beside its radius, one entry in `cornerCornerRadiusOverrides` (`{ r?, corner? }`).
+ *
  * Gesture: world-space distance from cursor to the corner vertex V sets the
  * effective radius. The handle tracks the cursor during drag (Illustrator
  * pattern); dragging within SNAP_R of V commits R=0. Color coding: magenta =
@@ -42,6 +45,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
+import { radiusOf, cornerFlagOf } from '../lib/tileGround.js'
 
 const raycaster = new THREE.Raycaster()
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
@@ -75,6 +79,8 @@ const Y_DOTS = 0.05
 const COLOR_CORNER_DEFAULT = '#ff3df0'  // magenta = editable, default radius
 const COLOR_OVERRIDE = '#ffaa00'        // gold = operator-authored radius
 const COLOR_DRAG = '#ffffff'            // white
+const COLOR_NOT_CORNER = '#8a8a8a'      // grey = the operator said NOT a corner (⌥-click): the walk and lawn run through
+const COLOR_BEND_DEFAULT = '#c9c9c9'    // faint grey = a bend — not a corner unless ⌥-clicked into one
 // Side (world meters) of the marker drawn at an UNFILLETED (R=0) corner — a small
 // square so a sharp corner is visible AND grabbable (drag out to author a radius).
 const SQUARE_SIZE = 1.2
@@ -126,7 +132,7 @@ function computeCornerLayout(tileCorners) {
     const gk = ixKey(tc.V)
     let g = groups.get(gk)
     if (!g) { g = { ixKey: gk, V: tc.V, corners: [] }; groups.set(gk, g) }
-    g.corners.push({ key: tc.key, V: tc.V, legKeyA: tc.legA, legKeyB: tc.legB, fillet: tc.fillet || null })
+    g.corners.push({ key: tc.key, V: tc.V, legKeyA: tc.legA, legKeyB: tc.legB, kind: tc.kind || 'junction', fillet: tc.fillet || null })
   }
   return [...groups.values()]
 }
@@ -143,6 +149,7 @@ export default function CornerEditHandles() {
   const setCornerCornerRadius = useCartographStore(s => s.setCornerCornerRadius)
   const setIxCornerRadius = useCartographStore(s => s.setIxCornerRadius)
   const revertCornerToDefault = useCartographStore(s => s.revertCornerToDefault)
+  const setCornerExists = useCartographStore(s => s.setCornerExists)
   // The TILE corner set from the live build — the handle's corner LIST AND each
   // corner's achieved curb arc (`fillet`), one corner truth. The live drag commits
   // to the store each frame, so this whole array is rebuilt every frame mid-drag;
@@ -222,6 +229,15 @@ export default function CornerEditHandles() {
       // just THAT corner to the blessed Default (or AASHTO if none is set).
       if (e.button === 2 || (e.button === 0 && (e.ctrlKey || e.metaKey))) {
         revertCornerToDefault(hit.entry.V, hit.c.legKeyA, hit.c.legKeyB)
+        e.preventDefault(); e.stopPropagation()
+        return
+      }
+      // ⌥-click a corner → toggle whether it IS a corner (Jacob, 2026-10-07: the corner's existence is Survey's, beside its
+      // radius). Against the class default — a junction is a corner, a bend is not — so toggling back clears the flag.
+      if (e.button === 0 && e.altKey) {
+        const isDefault = hit.c.kind !== 'bend'
+        const now = cornerFlagOf(useCartographStore.getState().cornerCornerRadiusOverrides?.[hit.c.key]) ?? isDefault
+        setCornerExists(hit.entry.V, hit.c.legKeyA, hit.c.legKeyB, !now === isDefault ? null : !now)
         e.preventDefault(); e.stopPropagation()
         return
       }
@@ -394,7 +410,7 @@ export default function CornerEditHandles() {
     // aren't torn down mid-drag. `hasLayout` (empty→non-empty) is the only
     // layout-shaped dep, so the effect re-binds once when corners first arrive.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tool, cornerEditMode, hasLayout, camera, gl, setCornerCornerRadius, setIxCornerRadius, revertCornerToDefault, cornerRadiusScale])
+  }, [tool, cornerEditMode, hasLayout, camera, gl, setCornerCornerRadius, setIxCornerRadius, revertCornerToDefault, setCornerExists, cornerRadiusScale])
 
   if (tool !== 'surveyor') return null
   if (!cornerEditMode) return null
@@ -408,9 +424,12 @@ export default function CornerEditHandles() {
           <group key={gKey}>
             {corners.map((c) => {
               const ck = c.key
-              const hasOverride = Number.isFinite(cornerOverrides[ck])
+              const hasOverride = radiusOf(cornerOverrides[ck]) != null
               const draggingCorner = dragState?.kind === 'corner' && dragState.cornerKey === ck
-              const color = draggingCorner ? COLOR_DRAG : hasOverride ? COLOR_OVERRIDE : COLOR_CORNER_DEFAULT
+              // the corner's existence: grey = the operator said NOT a corner; faint grey = a bend, not a corner by default
+              const flag = cornerFlagOf(cornerOverrides[ck]), exists = flag ?? (c.kind !== 'bend')
+              const color = draggingCorner ? COLOR_DRAG : !exists ? (flag === false ? COLOR_NOT_CORNER : COLOR_BEND_DEFAULT) : hasOverride ? COLOR_OVERRIDE : COLOR_CORNER_DEFAULT
+              const alpha = draggingCorner ? 1.0 : exists ? 0.85 : 0.55
               const fit = c.fillet
               // FILLETED corner: the corner IS the handle — paint just the CURB ARC,
               // the ACHIEVED fillet the construction produced (one corner truth — the
@@ -427,7 +446,7 @@ export default function CornerEditHandles() {
                 return (
                   <mesh key={ck} position={[C[0], Y_DOTS, C[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
                     <ringGeometry args={[inner, outer, 48, 1, thetaStart, thetaLength]} />
-                    <meshBasicMaterial color={color} transparent opacity={draggingCorner ? 1.0 : 0.85}
+                    <meshBasicMaterial color={color} transparent opacity={alpha}
                       side={THREE.DoubleSide} depthTest={false} depthWrite={false} />
                   </mesh>
                 )
@@ -439,7 +458,7 @@ export default function CornerEditHandles() {
               return (
                 <mesh key={ck} position={[V[0], Y_DOTS, V[1]]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={204}>
                   <planeGeometry args={[SQUARE_SIZE, SQUARE_SIZE]} />
-                  <meshBasicMaterial color={color} transparent opacity={draggingCorner ? 1.0 : 0.85}
+                  <meshBasicMaterial color={color} transparent opacity={alpha}
                     side={THREE.DoubleSide} depthTest={false} depthWrite={false} />
                 </mesh>
               )

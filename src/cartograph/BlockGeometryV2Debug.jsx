@@ -753,7 +753,7 @@ export default function BlockGeometryV2Debug({
     // [LOAD-FORENSIC 2026-07-14] see the note at buildBlockGeometryV2 above.
     console.log(`[LOAD] ▶ sectionGeos rebuilding — trigger: ${__whyRerun()}`)
     console.time(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`)
-    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustomsX, sectionCacheRef.current.map, selSet) }
+    try { sg = sectionOpen(frozenShape.tiles, curbWidth, { outer: 'LU', inner: 'SW' }, stencil, blockCustomsX, sectionCacheRef.current.map, selSet, cornerCornerRadiusOverrides) }
     catch (e) { console.error('[BlockGeometryV2Debug] sectionOpen failed:', e); return null }
     finally { console.timeEnd(`[LOAD] sectionOpen (${frozenShape.tiles.length} tiles)`) }
     // [LOAD-FORENSIC 2026-07-15] The 19.8s frozen-shape task = sectionOpen (timed
@@ -813,7 +813,7 @@ export default function BlockGeometryV2Debug({
     __composeDoneRef.current = performance.now()
     __composeVertsRef.current = __verts
     return __out
-  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, blockCustomsX, selSkel, designHydrated])
+  }, [sectionFrozen, frozenShape, curbWidth, stencil, blockCustoms, blockCustomsX, selSkel, designHydrated, cornerCornerRadiusOverrides])
 
   // [LOAD-FORENSIC 2026-07-15] throwaway — closes the 19.8s task's accounting.
   // sectionOpen + compose are timed inside the memo; this catches the two stages

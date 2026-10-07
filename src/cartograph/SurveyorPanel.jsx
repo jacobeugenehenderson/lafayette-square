@@ -219,6 +219,7 @@ function CornersSubsection() {
           <span className="carto-btn-text">Revert{overrideCount ? ` (${overrideCount})` : ''}</span>
         </button>
       </div>
+      {cornerEditMode && <div className="carto-meta">⌥-click a corner: not a corner / corner here (bends start without a corner pad).</div>}
       {/* SURVEY revert. Skeleton = clear all your edits → surveyed
           widths + AASHTO radii (the frame as delivered). Default = the state you
           blessed with Set Default. ⌃-click any handle reverts just that one to

@@ -52,6 +52,11 @@ export function feed(scene) {
     //    painted with the operator's `blockLandUse` switched off (Layer 0 q3), invisible only because
     //    no town had authored one yet.
     blockLandUse: design.blockLandUse || null,
+    // ⛔ AND THE CORNER AUTHORING — the radius dial and the corner flags (not a corner / a corner here) live in
+    //    `cornerCornerRadiusOverrides`; without them every probe drew the corners un-authored (Layer 0 q3, 2026-10-07).
+    cornerCornerRadiusOverrides: design.cornerCornerRadiusOverrides || null,
+    cornerRadiusOverrides: design.cornerRadiusOverrides || null,
+    cornerRadiusScale: Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1,
     // ⛔ NO DEFAULT. The curb width is AUTHORED (Jacob, 2026-09-06) — it is a per-Look value in
     // `design.json`, and every downstream distance depends on it: the ped setback, and whether two
     // curbs TOUCH, which is what severs a block. Substituting 0.381 for a scene that authored
@@ -73,7 +78,9 @@ export function buildProto(f, { bare = false, quiet = true, ...rest } = {}) {
   try {
     return buildTileGround(f.ribbons, {
       grout: 'proto', smooth: 0, curbWidth: f.curbWidth,
-      blockCustoms: bare ? null : f.blockCustoms, blockLandUse: bare ? null : f.blockLandUse, ...rest,
+      blockCustoms: bare ? null : f.blockCustoms, blockLandUse: bare ? null : f.blockLandUse,
+      cornerCornerRadiusOverrides: bare ? null : f.cornerCornerRadiusOverrides, cornerRadiusOverrides: bare ? null : f.cornerRadiusOverrides,
+      cornerRadiusScale: f.cornerRadiusScale ?? 1, ...rest,
     })
   } finally { console.log = prev }
 }

@@ -29,7 +29,6 @@ const feSegOrds = (fe, k) => {
   if (!key) return []
   return (fe?.segOrds && fe.segOrds.length) ? [...new Set(fe.segOrds)] : [key[2]]
 }
-import { writeCornerCurbCut } from '../../lib/curbCutSlots.js'
 import { keepAuthorable } from '../../lib/authorableSlot.js'
 import {
   migrateLampGlow, resolveLampGlowAtMinute,
@@ -698,7 +697,7 @@ const useCartographStore = create((set, get) => ({
   // persisted — derived geometry, rebuilt every tile build.
   tileCorners: [],
   setTileCorners: (c) => set({ tileCorners: c || [] }),
-  // Every JUNCTION corner Section painted, with what it draws and the two leg slots that author it
+  // Every JUNCTION corner Section painted, with what it draws and its corner key (where its curb cut is authored)
   // (`tileGround.js#curbCutsOnJunctionCorners` → `sectionOpen().curbCutCorners`). Published by BlockGeometryV2Debug so
   // the curb-cut markers ARE the painter's records — a click selects the corner by identity, never by nearness.
   // Not persisted — derived, rebuilt every Section pass. `selectedCurbCorner` = { tile, si, arc } of the open popover.
@@ -706,13 +705,28 @@ const useCartographStore = create((set, get) => ({
   setCurbCutCorners: (c) => set({ curbCutCorners: c || [] }),
   selectedCurbCorner: null,
   selectCurbCorner: (c) => set({ selectedCurbCorner: c ? { tile: c.tile, si: c.si, arc: c.arc } : null }),
-  // ⭐ AUTHOR ONE CORNER'S CURB CUT (`BRIEF-corner-ramps-and-kerb §3` step 4; Jacob, 2026-10-06): writes BOTH legs at
-  // once — the arriving run's `curbCuts.end`, the leaving run's `curbCuts.start` — so the gesture can never make them
-  // disagree. `style` null = back to what the corner draws unauthored. One definition: `src/lib/curbCutSlots.js`.
+  // ⭐ AUTHOR ONE CORNER'S CURB CUT (Jacob, 2026-10-07: "every corner should be authorable on its own"): `cut` in the
+  // corner's ONE entry of `cornerCornerRadiusOverrides`, by its own key — beside the radius and the corner's existence
+  // Survey writes there. `style` null = back to what the corner draws unauthored.
   setCornerCurbCut: (corner, style) => {
-    if (!corner?.slots?.length) return
-    set({ blockCustoms: writeCornerCurbCut(get().blockCustoms, corner, style) })
-    get()._saveDesignDebounced()
+    if (!corner?.key) return
+    get()._writeCornerEntry(corner.key, { cut: style ?? null })
+  },
+  // ⭐ ONE MAP, THREE FIELDS, TWO OWNERS — each tool's revert touches only its own: SURVEY draws the corner (its radius
+  // `r`, whether it is one `corner`), SECTION paints it (`cut`).
+  _CORNER_SURVEY_FIELDS: ['r', 'corner'],
+  _CORNER_SECTION_FIELDS: ['cut'],
+  // the corner map with `fields` taken from `from` (a map, or null = cleared) and every other field kept as it is
+  _cornerMapWith: (fields, from = null) => {
+    const asObj = (v) => v == null ? {} : (typeof v === 'object' ? { ...v } : { r: v })
+    const cur = get().cornerCornerRadiusOverrides || {}, out = {}
+    for (const k of new Set([...Object.keys(cur), ...Object.keys(from || {})])) {
+      const e = asObj(cur[k]), d = asObj(from?.[k])
+      for (const f of fields) { if (d[f] != null) e[f] = d[f]; else delete e[f] }
+      const ks = Object.keys(e); if (!ks.length) continue
+      out[k] = ks.length === 1 && ks[0] === 'r' ? e.r : e
+    }
+    return out
   },
   // The frozen curb (iA) rings the Section FILL strokes off — published so the
   // Measure handles anchor to the SAME geometry the FILL uses (one *geometry*
@@ -1021,7 +1035,7 @@ const useCartographStore = create((set, get) => ({
   // list governs the whole-scene revert, which is the path that was lying.
   // Guard: `node checks/claims-revert-field-coverage.mjs` fails if any authored
   // blockCustoms field is absent from BOTH lists (the class, not this instance).
-  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials', 'capFlip', 'curbCuts'],
+  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials', 'capFlip'],
   // blockCustoms with `fields` stripped from every fe slot (empty slots pruned).
   _blockCustomsStripped: (fields) => {
     const cur = get().blockCustoms || {}
@@ -1077,12 +1091,12 @@ const useCartographStore = create((set, get) => ({
   // SURVEY · Revert to Default — restore the blessed surveyDefault (Survey fields only).
   revertSurveyToDefault: () => {
     const b = get().surveyDefault; if (!b) return
-    set({ blockCustoms: get()._blockCustomsFieldsFromDefault(get()._SURVEY_FE_FIELDS), cornerRadiusOverrides: { ...b.cornerRadiusOverrides }, cornerCornerRadiusOverrides: { ...b.cornerCornerRadiusOverrides }, cornerRadiusScale: b.cornerRadiusScale })
+    set({ blockCustoms: get()._blockCustomsFieldsFromDefault(get()._SURVEY_FE_FIELDS), cornerRadiusOverrides: { ...b.cornerRadiusOverrides }, cornerCornerRadiusOverrides: get()._cornerMapWith(get()._CORNER_SURVEY_FIELDS, b.cornerCornerRadiusOverrides), cornerRadiusScale: b.cornerRadiusScale })
     get()._saveDesignDebounced()
   },
   // SECTION · Revert to Default — clear the ped overrides → the calculation re-seeds.
   revertSectionToDefault: () => {
-    set({ blockCustoms: get()._blockCustomsStripped(get()._SECTION_FE_FIELDS) })
+    set({ blockCustoms: get()._blockCustomsStripped(get()._SECTION_FE_FIELDS), cornerCornerRadiusOverrides: get()._cornerMapWith(get()._CORNER_SECTION_FIELDS) })
     get()._saveDesignDebounced()
   },
   // ── per-element revert to Default (⌃-click a handle) ──────────────────────
@@ -1109,14 +1123,18 @@ const useCartographStore = create((set, get) => ({
   revertFeSectionToDefault: (fe) => get()._revertFeFields(fe, get()._SECTION_FE_FIELDS, false),
   // Corner → surveyDefault's radius (or cleared → AASHTO). Reuses the setters.
   revertIxToDefault: (point) => { const d = get().surveyDefault?.cornerRadiusOverrides?.[get().ixPointKey(point)]; get().setIxCornerRadius(point, d != null ? d : null) },
-  revertCornerToDefault: (point, legKeyA, legKeyB) => { const d = get().surveyDefault?.cornerCornerRadiusOverrides?.[get().cornerKey(point, legKeyA, legKeyB)]; get().setCornerCornerRadius(point, legKeyA, legKeyB, d != null ? d : null) },
+  // the corner's WHOLE entry (radius and existence) back to the blessed Default
+  // the corner's SURVEY fields (radius, existence) back to the blessed Default; its curb-cut style is Section's and stays
+  revertCornerToDefault: (point, legKeyA, legKeyB) => { const key = get().cornerKey(point, legKeyA, legKeyB), d = get().surveyDefault?.cornerCornerRadiusOverrides?.[key]
+    const asObj = (v) => v == null ? {} : (typeof v === 'object' ? v : { r: v })
+    get()._writeCornerEntry(key, { r: asObj(d).r ?? null, corner: asObj(d).corner ?? null }) },
   // Counts for button enable/label (how much there is to revert).
   surveyOverrideCount: () => {
     const bc = get().blockCustoms || {}; let n = 0
     for (const skel of Object.keys(bc)) for (const side of Object.keys(bc[skel])) for (const seg of Object.keys(bc[skel][side])) {
       const m = bc[skel][side][seg]; if (get()._SURVEY_FE_FIELDS.some(f => m[f] !== undefined)) n++
     }
-    n += Object.keys(get().cornerRadiusOverrides || {}).length + Object.keys(get().cornerCornerRadiusOverrides || {}).length
+    n += Object.keys(get().cornerRadiusOverrides || {}).length + Object.values(get().cornerCornerRadiusOverrides || {}).filter(v => v != null && (typeof v !== 'object' || v.r != null || v.corner != null)).length
     // global-mode width edits live on the chain measure (centerlineData → overlay),
     // not blockCustoms — count them too so Revert to Skeleton enables.
     n += (get().centerlineData?.streets || []).filter(s => s.measure || s.segmentMeasures).length
@@ -1127,6 +1145,7 @@ const useCartographStore = create((set, get) => ({
     for (const skel of Object.keys(bc)) for (const side of Object.keys(bc[skel])) for (const seg of Object.keys(bc[skel][side])) {
       const m = bc[skel][side][seg]; if (get()._SECTION_FE_FIELDS.some(f => m[f] !== undefined)) n++
     }
+    for (const v of Object.values(get().cornerCornerRadiusOverrides || {})) if (v != null && typeof v === 'object' && v.cut != null) n++
     return n
   },
   // Look-level corner-radius multiplier. Clamp at 0 (square) and a
@@ -1191,7 +1210,7 @@ const useCartographStore = create((set, get) => ({
     set({
       cornerRadiusScale: 1,
       cornerRadiusOverrides: {},
-      cornerCornerRadiusOverrides: {},
+      cornerCornerRadiusOverrides: get()._cornerMapWith(get()._CORNER_SURVEY_FIELDS),   // Section's curb-cut styles stay
     })
     get()._saveDesignDebounced()
   },
@@ -1208,20 +1227,31 @@ const useCartographStore = create((set, get) => ({
     const [a, b] = (legKeyA <= legKeyB) ? [legKeyA, legKeyB] : [legKeyB, legKeyA]
     return `${pk}|${a}|${b}`
   },
-  // Write a per-corner override. Pass null/undefined for r to clear.
-  setCornerCornerRadius: (point, legKeyA, legKeyB, r) => {
-    const key = get().cornerKey(point, legKeyA, legKeyB)
-    if (!key) return
+  // One corner's entry is a radius (a number) or `{ r?, corner? }` — the corner's existence rides the same entry
+  // (Jacob, 2026-10-07: Survey owns whether a corner is one). Writing one part keeps the other; an empty entry is removed.
+  _writeCornerEntry: (key, patch) => {
     set(s => {
-      const next = { ...s.cornerCornerRadiusOverrides }
-      if (r == null || !Number.isFinite(r)) {
-        delete next[key]
-      } else {
-        next[key] = Math.max(0, Math.min(50, +r))
-      }
+      const next = { ...s.cornerCornerRadiusOverrides }, cur = next[key]
+      const e = { ...(cur != null && typeof cur === 'object' ? cur : (cur != null ? { r: cur } : {})), ...patch }
+      for (const k of Object.keys(e)) if (e[k] == null) delete e[k]
+      if (!Object.keys(e).length) delete next[key]
+      else next[key] = Object.keys(e).length === 1 && 'r' in e ? e.r : e      // a bare radius stays a number
       return { cornerCornerRadiusOverrides: next }
     })
     get()._saveDesignDebounced()
+  },
+  // Write a per-corner radius. Pass null/undefined for r to clear it (the corner's flag, if any, stays).
+  setCornerCornerRadius: (point, legKeyA, legKeyB, r) => {
+    const key = get().cornerKey(point, legKeyA, legKeyB)
+    if (!key) return
+    get()._writeCornerEntry(key, { r: (r == null || !Number.isFinite(r)) ? null : Math.max(0, Math.min(50, +r)) })
+  },
+  // Say whether this arc IS a corner: false = not a corner (the walk and lawn run through), true = a corner here (a
+  // bend's pad), null = the default (junction yes, bend no). Survey's corner handle writes it.
+  setCornerExists: (point, legKeyA, legKeyB, corner) => {
+    const key = get().cornerKey(point, legKeyA, legKeyB)
+    if (!key) return
+    get()._writeCornerEntry(key, { corner: typeof corner === 'boolean' ? corner : null })
   },
   // A category's colour — its neon and its Ward chips (src/lib/categoryColor.js), chosen in the Identity panel. Stored
   // where it always was, materialColors.neon_<category>; `null` un-chooses it (the kit's neutral hue shows).

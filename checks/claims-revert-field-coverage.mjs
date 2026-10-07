@@ -31,6 +31,9 @@ const listOf = (name) => {
 
 const survey = listOf('_SURVEY_FE_FIELDS')
 const section = listOf('_SECTION_FE_FIELDS')
+// ⭐ and the corner map (`cornerCornerRadiusOverrides`, one entry per corner): its fields' owners, parsed the same way
+const cornerSurvey = listOf('_CORNER_SURVEY_FIELDS')
+const cornerSection = listOf('_CORNER_SECTION_FIELDS')
 const covered = new Set([...survey, ...section])
 
 // ⭐ AND THE WRITE SIDE OF THE SAME INVARIANT (2026-10-06): a field no revert clears, the tool may not WRITE. Both
@@ -45,8 +48,8 @@ console.log(`  write filter: ${writeOk ? '✅' : '⛔'} a merged side keeps ${Ob
 if (!writeOk || writers.some(([, ok]) => !ok)) { console.log('⛔ FAIL — a blockCustoms writer can persist a field no revert clears'); process.exit(1) }
 
 console.log(`revert scopes, parsed from ${STORE}:`)
-console.log(`  SURVEY : ${survey.join(', ')}`)
-console.log(`  SECTION: ${section.join(', ')}`)
+console.log(`  SURVEY : ${survey.join(', ')}  · corner: ${cornerSurvey.join(', ')}`)
+console.log(`  SECTION: ${section.join(', ')}  · corner: ${cornerSection.join(', ')}`)
 
 // Every field actually present in any scene's authored state.
 const looks = fs.readdirSync('public/looks').filter(d => fs.existsSync(path.join('public/looks', d, 'design.json')))
@@ -57,6 +60,9 @@ for (const look of looks) {
   const local = new Map()
   for (const sides of Object.values(bc)) for (const ords of Object.values(sides)) for (const slot of Object.values(ords))
     for (const f of Object.keys(slot)) local.set(f, (local.get(f) || 0) + 1)
+  // a corner entry is a radius (a bare number = `r`) or `{ r?, corner?, cut? }`
+  for (const v of Object.values(d.cornerCornerRadiusOverrides || {})) for (const f of (v != null && typeof v === 'object' ? Object.keys(v) : ['r']))
+    local.set(`corner.${f}`, (local.get(`corner.${f}`) || 0) + 1)
   for (const [f, n] of local) {
     if (!seen.has(f)) seen.set(f, [])
     seen.get(f).push(`${look}×${n}`)
@@ -66,7 +72,9 @@ for (const look of looks) {
 console.log(`\nfields found in authored state across ${looks.length} scenes:`)
 const orphans = []
 for (const [f, where] of [...seen].sort()) {
-  const scope = section.includes(f) ? 'SECTION' : survey.includes(f) ? 'SURVEY' : null
+  const cf = f.startsWith('corner.') ? f.slice(7) : null
+  const scope = cf != null ? (cornerSection.includes(cf) ? 'SECTION' : cornerSurvey.includes(cf) ? 'SURVEY' : null)
+    : section.includes(f) ? 'SECTION' : survey.includes(f) ? 'SURVEY' : null
   console.log(`  ${scope ? '✅ ' + scope.padEnd(7) : '⛔ ORPHAN'}  ${f.padEnd(14)} ${where.join('  ')}`)
   if (!scope) orphans.push({ f, where })
 }
