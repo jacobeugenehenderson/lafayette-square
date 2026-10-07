@@ -291,15 +291,6 @@
     "overrides": []
   },
   "heroSubject": null,
-  "dofFocus": {
-    "point": [
-      -123.56,
-      15.63,
-      -81.06
-    ],
-    "label": "the ground here",
-    "box": null
-  },
   "heroKeyframes": [],
   "heroMotion": {
     "length": 360,

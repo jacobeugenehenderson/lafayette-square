@@ -84,14 +84,9 @@
   "sky": {
     "overrides": []
   },
-  "heroSubject": null,
-  "dofFocus": {
-    "point": [
-      -164.98,
-      73.36,
-      -56.41
-    ],
-    "label": "Pilgrim Monument"
+  "heroSubject": {
+    "kind": "landmark",
+    "id": "osm-164024699"
   },
   "heroKeyframes": [
     {
