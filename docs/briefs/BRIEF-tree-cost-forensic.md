@@ -37,8 +37,8 @@ draw and why. That's this forensic. Each verdict points at a different remedy, a
 - Hero cards are hidden in Browse (`HeroImpostorSpecies … visible={!overheadMode}`).
 - **Mesh trees are deliberately SHOWN in Browse for any species whose overhead asset hasn't arrived**
   (`visible={!overheadMode || !(overheadAssets && species && overheadAssets.has(species))}`, the "never blank" promise).
-- **The overhead assets load lazily, off the startup path** (`src/components/OverheadTrees.jsx#useOverheadWarm`, "Load gate: keep
-  overhead OFF the startup critical path").
+- **The overhead assets load WITH the trees** and are prepared behind the emblem (`Town.jsx#RevealGate`, 4e860c43); the lazy
+  idle warm (`useOverheadWarm`) was deleted 2026-10-07 — its upload still landed on the first Browse flight.
 
 ⇒ **A cold load straight into Browse may draw full MESH trees until the discs arrive.** If so, 25M tris is an *arrival-time* cost, or a
 reading taken mid-arrival, not the steady state. ⭐ **Measure Browse twice: during arrival, and after the overhead assets are

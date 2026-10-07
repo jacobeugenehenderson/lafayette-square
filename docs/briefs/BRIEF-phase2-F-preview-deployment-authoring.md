@@ -89,8 +89,8 @@ wheel or pointer listener in `PreviewApp.jsx`.
 On E's startup strip (the marks through FIRST TRUTHFUL FRAME = WARD USABLE), the operator **drags each asset class across that line,
 per surface**: left means it must be there before the Ward is usable, right means it arrives afterwards. Where the markers are left is
 what bakes, into `deployment.json`. It is the spec's *Residency / Activation* made into authoring (BAKED → VISIBLE → SELECTED →
-OPENED). ⛔ **Dependency:** the runtime must first be able to defer each asset class. Today only fragments exist (the overhead discs
-warm on entering Browse, `useOverheadWarm`); there is no general mechanism. Board the engineering and v2 on ROADMAP as one item; ⛔ don't
+OPENED). ⛔ **Dependency:** the runtime must first be able to defer each asset class. Today the startup marks NAME each class (`prepared:<class>`,
+`Town.jsx#RevealGate`) but nothing defers one (the overhead discs' idle warm was deleted 2026-10-07; they load with the trees). Board the engineering and v2 on ROADMAP as one item; ⛔ don't
 build a control that defers nothing.
 
 ## ⭐ The goal this serves, and where the cost is (Jacob, 2026-10-04)
