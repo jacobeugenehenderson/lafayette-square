@@ -562,6 +562,15 @@ review (shared-terminal patch), which makes it worse: a signed-in shop screen wo
 The Ward's second security review noted that the Apps Script `savedesign` action checks no caller. Not yet read or
 rated here: cause, reach and fix not established. ⛔ Owed: a read of what it writes and who calls it.
 
+### F-27 · CRITICAL · Device keys are served publicly in events and reviews  *(new, 2026-10-07; EXISTING on live)*
+`apps-script/Code.js` `fetchEventsData` (GET `events`, and `init`) and `getReviews` (GET `reviews`) return whole sheet
+rows, `device_hash` included, to any caller. Events are posted by staff, so every Guardian or Keyholder who ever posted
+one has a public key (usually their phone's); every reviewer's key is public too. A key is the credential: read one,
+act as that person. Found by the Ward's third security review (shared-terminal patch); not exercised against live.
+**Fix:** neither response carries `device_hash` (an `is_mine` flag if a client needs one). In theward
+`backend/apps-script-2026-10-07.patch` (v4, in progress). ⛔ Not deployed. After deploy, any key already read is
+still valid: rotating exposed keys is owed.
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
@@ -745,6 +754,7 @@ sentence; a function can be deployed at any time:
 supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
 ```
 
+0. **F-27** (2026-10-07) — device keys public in GET events / reviews, LIVE. Same patch as F-24.
 0. **F-24** (2026-10-07) — formula injection, LIVE on the Apps Script backend (any caller can become a Guardian).
    The fix waits in the Ward's backend patch v2: a second review, then Jacob's deploy.
 1. ~~**F-2**~~ ✅ closed + deployed 2026-08-24.
