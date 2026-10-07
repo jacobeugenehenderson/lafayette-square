@@ -2,6 +2,7 @@ import { useRef, useMemo, useEffect, useState, Suspense } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
+import { terrainExag } from '../utils/terrainShader'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { useTownShot } from './townContext.js'
@@ -446,6 +447,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   // Frames since the scene's size fitted the shadow frustum (the effect above resets it); until then, no shadow
   // update of any kind: the map is held empty.
   const _framesSinceSizeRef = useRef(0)
+  const _shadowExagRef = useRef(NaN)   // the terrain exaggeration the shadow map was last drawn at
 
   // Re-render shadow map only when light position shifts enough (~2° of sky movement)
   useFrame(() => {
@@ -485,6 +487,13 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     if (dist2 > 100) {
       lightRef.current.shadow.needsUpdate = true
       _prevShadowPos.copy(lightPosition)
+    }
+    // ⛔ The casters rise and fall with the terrain exaggeration (a Browse↔Hero ease, a swell), and nothing above
+    // re-rendered the map for it: the shadows stayed the OLD terrain's until the sun next moved. Re-render on every
+    // frame the exaggeration has changed since the map was last drawn (Strobe, 2026-10-06).
+    if (terrainExag.value !== _shadowExagRef.current) {
+      lightRef.current.shadow.needsUpdate = true
+      _shadowExagRef.current = terrainExag.value
     }
   })
 
