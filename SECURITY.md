@@ -538,6 +538,19 @@ building cards."* ⇒ both verifiers stay; building cards carry a secret. ⛔ **
 neighbour verifies without the target device's key, and how the card's secret and the Host's verification fit
 together. The fix above is not built until that lands, and no building card prints before it.
 
+### F-24 · CRITICAL · Request values are written to the sheet as formulas  *(new, 2026-10-07; EXISTING on live)*
+`apps-script/Code.js` writes request values straight into rows (`appendRow`) and cells (`setValue`), with no check
+that a device key is one and no guard on text. Sheets evaluates a string beginning `=`, `+`, `-` or `@` as a FORMULA.
+A `device_hash` of `='Guardians__<tenant>'!B2` writes a row whose key IS another person's key, so the caller becomes
+that Guardian (or resident, or handle). An avatar, bulletin, review or comment beginning `=` runs too
+(IMPORTRANGE/HYPERLINK exfiltration). Proven in Node against an in-memory sheet, not against live: the unpatched script
+accepts `device_hash: "='Guardians'!B2"` and stores `=HYPERLINK(` as an avatar (▶ theward
+`backend/apps-script-harness.mjs`). Found by the Ward's security review of the shared-terminal patch.
+**Fix:** every request's device keys (`dh`, `*_hash`) must match `^[0-9a-f]{16}$` before any action runs, and every
+appended row and updated cell passes through one helper, `safeCell`, which writes a formula-shaped string as text.
+In theward `backend/apps-script-2026-10-07.patch` (v2). ⛔ **Not deployed:** a second review, then Jacob's deploy
+(Ward OPERATIONS "Waiting on the backend"). Before deploying, check that the live sheet's keys are all 16 hex.
+
 ### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
 `fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
 per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
