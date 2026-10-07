@@ -16,8 +16,20 @@
  *
  * Pure (no three.js, no React): places = Map(id → { x, z, radius }) (Town's useBuildingPlaces), ids = iterable of
  * ids (null/undefined allowed and disclosed), stencil = { center: [x, z], radius }. Returns
- * { x, z, radius, count, placed, of, outside: [ids], unplaced: [ids] }, or null when no id has a place in the disc.
+ * { x, z, radius, count, placed, of, outside: [ids], unplaced: [ids], also }, or null when no id has a place in the disc.
+ *
+ * ⭐ `also` — points framed WITH the set (Jacob, 2026-10-07: "if the person has an 'active dot' in the neighborhood
+ * already, the map could move to frame them AND the place"): [{ x, z }], e.g. the reader's own dot. Same floor, same
+ * Extent bound. A point outside the Extent is not in the neighbourhood and is left out without a word — the place is
+ * framed alone (`also` in the result counts the points that were framed). They never stand in for the set: no placed id,
+ * no frame.
  */
+/** The `also` points inside the Extent, as zero-footprint places. */
+function alsoIn(also, stencil) {
+  const [cx, cz] = stencil.center
+  return (also || []).filter((p) => Number.isFinite(p?.x) && Number.isFinite(p?.z) && Math.hypot(p.x - cx, p.z - cz) <= stencil.radius)
+    .map((p) => ({ x: p.x, z: p.z, radius: 0 }))
+}
 /** The partition every frame shares: placed inside the Extent, beyond it, or with no place. */
 function partition(places, ids, stencil, who) {
   if (!(stencil?.radius > 0) || !Array.isArray(stencil.center)) throw new Error(`[${who}] ⛔ needs the Extent — the slab's stencil { center, radius }`)
@@ -66,23 +78,24 @@ function circleIn(chosen, stencil, [x, z], town) {
  * bound as frameDensest; bounded by the Extent, so a set wider than the town frames the whole town and says which
  * members lie beyond it (`outside`). Same return shape.
  */
-export function frameAll(places, ids, stencil) {
+export function frameAll(places, ids, stencil, also) {
   const { pts, disclosure } = partition(places, ids, stencil, 'frameAll')
   if (!pts.length) return null
+  const extra = alsoIn(also, stencil), held = [...pts, ...extra]
   // Centred on the members' extent (footprints included), so the circle is as tight as it simply can be.
   let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
-  for (const p of pts) { x0 = Math.min(x0, p.x - p.radius); x1 = Math.max(x1, p.x + p.radius); z0 = Math.min(z0, p.z - p.radius); z1 = Math.max(z1, p.z + p.radius) }
-  return { ...circleIn(pts, stencil, [(x0 + x1) / 2, (z0 + z1) / 2], places), count: pts.length, ...disclosure }
+  for (const p of held) { x0 = Math.min(x0, p.x - p.radius); x1 = Math.max(x1, p.x + p.radius); z0 = Math.min(z0, p.z - p.radius); z1 = Math.max(z1, p.z + p.radius) }
+  return { ...circleIn(held, stencil, [(x0 + x1) / 2, (z0 + z1) / 2], places), count: pts.length, ...disclosure, also: extra.length }
 }
 
 /** The one switch Town's `frameMode` names: 'densest' (the default) | 'all'. ⛔ Anything else throws by name. */
-export function framePlaces(places, ids, stencil, mode = 'densest') {
-  if (mode === 'all') return frameAll(places, ids, stencil)
-  if (mode === 'densest') return frameDensest(places, ids, stencil)
+export function framePlaces(places, ids, stencil, mode = 'densest', also) {
+  if (mode === 'all') return frameAll(places, ids, stencil, also)
+  if (mode === 'densest') return frameDensest(places, ids, stencil, also)
   throw new Error(`[framePlaces] ⛔ frameMode "${mode}" — the plan frames 'densest' or 'all'`)
 }
 
-export function frameDensest(places, ids, stencil) {
+export function frameDensest(places, ids, stencil, also) {
   const { pts, disclosure } = partition(places, ids, stencil, 'frameDensest')
   const n = pts.length
   if (!n) return null
@@ -99,7 +112,8 @@ export function frameDensest(places, ids, stencil) {
     chosen = pts.filter((q) => Math.hypot(q.x - o.x, q.z - o.z) <= reach)
   }
 
-  // Centred on the cluster's mean (unchanged since Jacob chose this frame, 2026-09-28).
-  const mean = [chosen.reduce((a, p) => a + p.x, 0) / chosen.length, chosen.reduce((a, p) => a + p.z, 0) / chosen.length]
-  return { ...circleIn(chosen, stencil, mean, places), count: chosen.length, ...disclosure }
+  // Centred on the cluster's mean (unchanged since Jacob chose this frame, 2026-09-28), with any `also` point in it.
+  const extra = alsoIn(also, stencil), held = [...chosen, ...extra]
+  const mean = [held.reduce((a, p) => a + p.x, 0) / held.length, held.reduce((a, p) => a + p.z, 0) / held.length]
+  return { ...circleIn(held, stencil, mean, places), count: chosen.length, ...disclosure, also: extra.length }
 }

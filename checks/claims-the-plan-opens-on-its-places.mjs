@@ -15,7 +15,10 @@
  *     building the slab does not have, or a place beyond the rim, is DISCLOSED by name (ids), never dropped;
  *   · the module carries no metre value (no numeric literal but 0, 1 and 2);
  *   · ⭐ A PIN SHOWS WHERE IT IS (2026-10-07): a frame on ONE building holds at least k = ⌈√N⌉ of the town's N buildings
- *     (the floor the frame is sized to), unless the Extent bounds it — never one roof filling the map.
+ *     (the floor the frame is sized to), unless the Extent bounds it — never one roof filling the map;
+ *   · ⭐ THE READER'S DOT (Town frameMover, 2026-10-07), under both frame modes: a dot inside the town is framed WITH the pin
+ *     (inside the frame, unless the Extent bounds it); a dot beyond the Extent changes nothing (the pin alone, silently);
+ *     a dot never frames on its own (no placed id → no frame).
  *
  * ⛔ READ-ONLY. Usage: node checks/claims-the-plan-opens-on-its-places.mjs [--self-test] [--table]
  */
@@ -95,10 +98,36 @@ export function audit(frameDensest, src, all) {
   return { f, rows }
 }
 
+/** The reader's dot, through framePlaces (the function Town's plan calls), on each real town's pin. */
+export function auditMover(framePlaces, all) {
+  const f = []
+  for (const c of all) {
+    const pin = c.sets['one place (a pin)']?.[0]; if (!pin) continue
+    const P = c.places.get(pin)
+    // the dot: the building at the median distance from the pin — a place in the town, chosen without a metre value
+    const others = [...c.places.values()].filter(q => Math.hypot(q.x - c.stencil.center[0], q.z - c.stencil.center[1]) <= c.stencil.radius)
+      .map(q => ({ q, d: Math.hypot(q.x - P.x, q.z - P.z) })).sort((a, b) => a.d - b.d)
+    const dot = others[Math.floor(others.length / 2)].q
+    const away = { x: c.stencil.center[0] + c.stencil.radius * 2, z: c.stencil.center[1] }
+    for (const mode of ['all', 'densest']) {
+      const tag = `${c.town} · pin + dot (${mode})`
+      const alone = framePlaces(c.places, [pin], c.stencil, mode), both = framePlaces(c.places, [pin], c.stencil, mode, [{ x: dot.x, z: dot.z }])
+      const out = framePlaces(c.places, [pin], c.stencil, mode, [away]), none = framePlaces(c.places, [], c.stencil, mode, [{ x: dot.x, z: dot.z }])
+      const inF = (r, p, rad = 0) => Math.hypot(p.x - r.x, p.z - r.z) + rad <= r.radius * (1 + 1e-9)
+      const bounded = (r) => Math.hypot(r.x - c.stencil.center[0], r.z - c.stencil.center[1]) + r.radius >= c.stencil.radius * (1 - 1e-9)
+      if (!both || both.also !== 1) f.push(`${tag}: the dot inside the town was not framed (also ${both?.also})`)
+      else if (!bounded(both) && !(inF(both, dot) && inF(both, P, P.radius))) f.push(`${tag}: the frame does not hold both the dot and the pin`)
+      if (!out || out.also !== 0 || Math.abs(out.radius - alone.radius) > 1e-6 || Math.abs(out.x - alone.x) > 1e-6 || Math.abs(out.z - alone.z) > 1e-6) f.push(`${tag}: a dot beyond the Extent changed the frame — the pin should be framed alone`)
+      if (none) f.push(`${tag}: a dot with no place framed on its own`)
+    }
+  }
+  return f
+}
+
 const IS_MAIN = import.meta.url === `file://${process.argv[1]}`
 if (IS_MAIN) {
 if (!existsSync(MOD)) { console.log(`⛔ FAIL — ${MOD.replace(ROOT, '')} does not exist: there is no densest-cluster frame`); process.exit(1) }
-const { frameDensest } = await import(MOD)
+const { frameDensest, framePlaces } = await import(MOD)
 const SRC = readFileSync(MOD, 'utf8')
 const ALL = cases()
 
@@ -113,6 +142,12 @@ if (process.argv.includes('--self-test')) {
     ['a metre constant creeps in', null],
   ]
   let bad = 0
+  const mb = auditMover(framePlaces, ALL).length
+  for (const [n, fn] of [
+    ['the dot is ignored', (p, ids, st, mode) => framePlaces(p, ids, st, mode)],
+    ['a dot beyond the Extent is framed anyway', (p, ids, st, mode, also) => { const r = framePlaces(p, ids, st, mode); if (!r || !also?.length) return r; const a = also[0]; const R = Math.max(r.radius, Math.hypot(a.x - r.x, a.z - r.z)); return { ...r, radius: R, also: also.length } }],
+    ['a dot frames on its own', (p, ids, st, mode, also) => framePlaces(p, ids, st, mode, also) ?? (also?.length ? { x: also[0].x, z: also[0].z, radius: 1, also: 1 } : null)],
+  ]) { const caught = auditMover(fn, ALL).length > mb; if (!caught) bad++; console.log(`${caught ? '✅ caught' : '⛔ MISSED'} — ${n}`) }
   for (const [n, fn] of mutations) {
     const caught = fn ? audit(fn, SRC, ALL).f.length > base : audit(frameDensest, SRC + '\nconst CLUSTER_M = 150', ALL).f.length > base
     if (!caught) bad++
@@ -122,10 +157,11 @@ if (process.argv.includes('--self-test')) {
 }
 
 const { f, rows } = audit(frameDensest, SRC, ALL)
+f.push(...auditMover(framePlaces, ALL))
 if (process.argv.includes('--table')) {
   console.log('town | set | framed / placed (of) | radius m | radius/R | outside | unplaced')
   for (const r of rows) console.log(`${r.town} | ${r.set} | ${r.count} / ${r.placed} (${r.of}) | ${r.radius.toFixed(0)} | ${(r.radius / r.R).toFixed(3)} | ${r.outside.join(' ') || '—'} | ${r.unplaced.map(String).join(' ') || '—'}`)
 }
 if (f.length) { console.log(`⛔ FAIL — ${f.length}\n   ${f.join('\n   ')}`); process.exit(1) }
-console.log(`✅ ${rows.length} frames on ${ALL.length} towns: each inside the Extent, each on its densest cluster, nothing vanished`)
+console.log(`✅ ${rows.length} frames on ${ALL.length} towns: each inside the Extent, each on its densest cluster, nothing vanished; a pin is never one roof; the reader's dot is framed with it inside the town, never beyond, never alone`)
 }

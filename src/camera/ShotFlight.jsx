@@ -38,6 +38,8 @@ import * as THREE from 'three'
 import { createCameraTween } from './cameraTween.js'
 import { transitionMs } from './transitions.js'
 import { framePlaces } from '../lib/frameDensest.js'
+import { placeMovers } from '../lib/movers.js'
+import { townPlace } from '../lib/townPlace.js'
 import { planAltitude, insetOffset } from './planPose.js'
 import { browseUpFromHeading, bearingOf } from '../lib/browseHeading.js'
 import { getSceneStencil } from '../components/sceneStencilState.js'
@@ -56,7 +58,7 @@ const _p = new THREE.Vector3(), _t = new THREE.Vector3(), _fwd = new THREE.Vecto
 const _warned = new Set()
 
 export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds, frameMode = 'densest',
-  frameKey, onFramed, planHeading = 'town', bearingRef }) {
+  frameKey, onFramed, planHeading = 'town', bearingRef, movers, frameMover = null }) {
   if (flight !== true && flight !== false && flight !== 'cut') throw new Error(`[Town] ⛔ flight must be true, 'cut' or false (got ${flight})`)
   const following = planHeading && typeof planHeading === 'object'
   if (following ? !(planHeading.follow && 'current' in planHeading.follow) : planHeading !== 'town' && planHeading !== 'north') {
@@ -74,7 +76,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const tween = useRef(null)
   if (!tween.current) tween.current = createCameraTween()
   const live = useRef({})
-  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, size, onFramed, planHeading }
+  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, size, onFramed, planHeading, movers, frameMover }
   const prev = useRef(null)            // the last shot this component saw
   const pending = useRef(null)         // { shot, landed }: a cut whose destination is not known yet — landed when placed
   const flying = useRef(null)          // { from, to, toUp, fromOff, toOff }
@@ -133,7 +135,12 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
       if (!stencil) return null
       const pad = v.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding
       const ids = live.current.placeIds || []
-      const frame = live.current.places ? framePlaces(live.current.places, ids, stencil, live.current.frameMode) : null
+      // The app's named mover (the reader's dot), where it stands NOW, framed with the places when it is inside the town;
+      // absent from the movers (no dot shown) or outside the disc, the places are framed alone (Town's frameMover).
+      const fm = live.current.frameMover
+      const you = fm == null ? null : placeMovers(live.current.movers || [], townPlace(), stencil).find((m) => m.id === fm && m.inside)
+      const frame = live.current.places ? framePlaces(live.current.places, ids, stencil, live.current.frameMode, you ? [you] : []) : null
+      if (frame) frame.mover = you ? fm : null
       if (!frame) {
         const why = `${stencil.center}:${ids.length}`
         if (!_warned.has(why)) { _warned.add(why); console.warn(`[Town] plan: no listed place has a building in this town (${ids.length} ids) — the plan goes back to its Browse frame`) }

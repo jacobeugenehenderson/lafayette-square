@@ -42,7 +42,12 @@
  *                    padding (frameAll; Jacob, 2026-09-29: "Dining should frame all the bars and restaurants"). Bounded
  *                    by the Extent either way; members beyond it come back in onFramed.outside. Anything else throws.
  *                    ▶ node checks/claims-the-plan-frames-all-it-is-given.mjs
- *   onFramed         ({ x, z, radius, placed, of, outside, unplaced }) => void, each time the plan frames places — the frame's
+ *   frameMover       a mover's id (e.g. the reader's 'you' dot in `movers`) the plan frames WITH its places, where it stands
+ *                    at that moment (Jacob, 2026-10-07: "frame them AND the place"). Same floor and Extent bound. Absent from
+ *                    `movers` (no dot shown) or outside the town's disc: the places are framed alone, without a word — it is
+ *                    never a place of its own. onFramed.mover says which (the id, or null). Default null.
+ *                    ▶ node checks/claims-the-plan-opens-on-its-places.mjs
+ *   onFramed         ({ x, z, radius, placed, of, outside, unplaced, also, mover }) => void, each time the plan frames places — the frame's
  *                    disclosure of the places it could not put down (frameIds / litIds may carry nulls; they come back unplaced)
  *   planHeading      'town' (default: the town's authored browseHeading) | 'north' | { follow: headingRef } — the
  *                    reader's TRUE heading (degrees, the direction they face; the app's compass, already smoothed),
@@ -547,7 +552,7 @@ function TownOptics({ quality }) {
 export default function Town({
   town, lookId, quality, shot, paused = false, idle = false, selectedId = null, onSelectBuilding, litIds, liveIds, listings,
   interactive = true, bakeLastMs, layers, postFx, overrides = {}, weatherMode = 'live',
-  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', onFramed, planHeading = 'town', bearingRef,
+  holdScrubbedTime = false, time, movie, flight = true, streetAt, viewInset, flightRef, onFlightEnd, frameKey, frameIds, frameMode = 'densest', frameMover = null, onFramed, planHeading = 'town', bearingRef,
   controls = false, movers, onMovers, children,
 }) {
   if (time !== undefined && holdScrubbedTime) throw new Error('[Town] ⛔ `time` and `holdScrubbedTime` both drive the clock — pass one (the app owns its time, or Stage holds a scrub)')
@@ -626,7 +631,7 @@ export default function Town({
           there with the one tween, holding the movie while it does. ▶ node checks/claims-one-shot-flight.mjs */}
       <ShotFlight shot={shot} flight={flight} streetAt={streetAt} viewInset={viewInset} flightRef={flightRef}
         onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} frameMode={frameMode}
-        frameKey={frameKey} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} />
+        frameKey={frameKey} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} movers={movers} frameMover={frameMover} />
       {controls && <RegimeControls regime={shot === 'plan' ? 'plan' : shot === 'street' ? 'street' : 'playback'} />}
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} flying={flightHold} />
       {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} paused={paused} />}
