@@ -119,6 +119,25 @@ if (typeof window !== 'undefined') {
   })
 }
 
+// The sun's shadow map, held EMPTY until the scene's size is known (PrimaryOrb): three's own render target for this
+// light (same size, same filters, so three reuses it once it renders), cleared to the far depth, and no updates.
+function holdShadowEmpty(light, gl) {
+  light.castShadow = true
+  light.shadow.autoUpdate = false
+  light.shadow.needsUpdate = false
+  const { x: w, y: h } = light.shadow.mapSize
+  if (!light.shadow.map) {
+    light.shadow.map = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter })
+    light.shadow.map.texture.name = light.name + '.shadowMap'
+  }
+  const prev = gl.getRenderTarget(), prevColor = gl.getClearColor(new THREE.Color()), prevAlpha = gl.getClearAlpha()
+  gl.setRenderTarget(light.shadow.map)
+  gl.setClearColor(0xffffff, 1)   // RGBA-packed depth 1.0 = the far plane = nothing in front of anything
+  gl.clear(true, true, false)
+  gl.setRenderTarget(prev)
+  gl.setClearColor(prevColor, prevAlpha)
+}
+
 function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const lightRef = useRef()
 
@@ -146,6 +165,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   // failure this whole bug was.
   const [stencil, setStencil] = useState(null)
   useEffect(() => onSceneStencil(setStencil), [])
+  const gl = useThree((s) => s.gl)
   useEffect(() => {
     const light = lightRef.current
     if (!light) return
@@ -154,8 +174,16 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     // This light keeps SHADING (it is still the key) and stops CASTING.
     if (CSM_ENABLED) { light.castShadow = false; return }
     if (!stencil) {
-      // ⛔ SHADOWS OFF UNTIL THE SCENE'S SIZE IS KNOWN — no fallback, by design.
-      light.castShadow = false
+      // ⛔ NO SHADOWS UNTIL THE SCENE'S SIZE IS KNOWN — no fallback, by design: no frustum is invented.
+      // ⭐ BUT THE SUN KEEPS CASTING (Strobe, 2026-10-06, BRIEF-hero-arrival-perf). Switching castShadow off and back
+      // on changes every lit material's program (three keys on the shadow-casting light count), so when the size
+      // landed about 2 s into arrival, about 40 already-drawn materials relinked at once on huron — the 3–4.5 s freeze.
+      // So the light casts from its first frame and its map is held EMPTY: allocated at its real size, cleared to the
+      // far depth (reads "lit" everywhere), never re-rendered until the size fits a frustum below.
+      // ⛔ The map must exist: three binds a 1×1 black texture for a never-rendered shadow map, which reads as
+      // FULLY SHADOWED wherever the identity shadow matrix lands (the town's origin).
+      // ▶ node scratch/frame-timeline/link-owners.mjs (each lit material holds one program after load).
+      holdShadowEmpty(light, gl)
       // ⚠️ BUT DO NOT CRY WOLF ON STARTUP. `stencil` is null for the first frames
       // of EVERY normal load, until BakedGround fetches ground.json and publishes
       // it — so logging here immediately made an error-level line appear on every
@@ -166,7 +194,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
       // ⇒ Only shout if it is STILL missing after the bundle has had time to land.
       const t = setTimeout(() => {
         if (!getSceneStencil()) {
-          console.error('[CelestialBodies] no scene stencil after 5s — sun shadows are OFF. '
+          console.error('[CelestialBodies] no scene stencil after 5s — sun shadows are held EMPTY (nothing is shadowed). '
             + 'ground.json#stencil is the source and nothing has published it; BakedGround '
             + 'may not be mounted in this view, or its slab fetch failed.')
         }
@@ -195,9 +223,13 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     light.shadow.bias = -(0.5 / (2 * depth))           // 0.5 m, in NDC depth
 
     light.castShadow = true
+    // The size is known: the map renders again. autoUpdate runs a few frames so it captures the whole scene, then
+    // switches to manual (the useFrame below counts those frames from HERE, not from mount).
+    light.shadow.autoUpdate = true
     light.shadow.needsUpdate = true
+    _framesSinceSizeRef.current = 0
     townHalfRef.current = half
-  }, [stencil])
+  }, [stencil, gl])
 
   // ── CAMERA-FITTED FRUSTUM — spend the texels where the operator is looking ─
   // ⛔ Sizing the box to the whole disc is correct but ruinous: huron's 7.4 km
@@ -411,10 +443,9 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     light.shadow.needsUpdate = true
   })
 
-  const _framesSinceMountRef = useRef(0)
-  useEffect(() => {
-    _framesSinceMountRef.current = 0
-  }, [])
+  // Frames since the scene's size fitted the shadow frustum (the effect above resets it); until then, no shadow
+  // update of any kind: the map is held empty.
+  const _framesSinceSizeRef = useRef(0)
 
   // Re-render shadow map only when light position shifts enough (~2° of sky movement)
   useFrame(() => {
@@ -432,11 +463,12 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
       lightRef.current.intensity = 0
     } else lightRef.current.intensity = _keyI
 
+    if (CSM_ENABLED || townHalfRef.current == null) return   // no size yet: the map stays held empty
     // Let autoUpdate run for a few frames so the shadow map captures
     // the full scene, then switch to manual updates.
-    if (_framesSinceMountRef.current < 4) {
-      _framesSinceMountRef.current++
-      if (_framesSinceMountRef.current === 4) {
+    if (_framesSinceSizeRef.current < 4) {
+      _framesSinceSizeRef.current++
+      if (_framesSinceSizeRef.current === 4) {
         lightRef.current.shadow.autoUpdate = false
         lightRef.current.shadow.needsUpdate = true
         _prevShadowPos.copy(lightPosition)
@@ -464,6 +496,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
         intensity={intensity}
         color={color}
         castShadow
+        shadow-autoUpdate={false}
         shadow-mapSize-width={SHADOW_MAP_SIZE}
         shadow-mapSize-height={SHADOW_MAP_SIZE}
       />

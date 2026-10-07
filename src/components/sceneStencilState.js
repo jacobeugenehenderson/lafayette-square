@@ -40,7 +40,7 @@ export function onSceneStencil(cb) {
 // ── Shadow-frustum geometry — ONE definition, two consumers ────────────────
 // CelestialBodies sizes the sun's shadow camera from this; StageShadows uses
 // the same numbers to convert the operator's PENUMBRA IN METRES into the
-// texels drei's PCSS actually consumes. ⛔ If these two ever disagree the
+// texels PCSS actually consumes (pcssShadows.js). ⛔ If these two ever disagree the
 // softness silently stops meaning metres, so they read the same function.
 export const SHADOW_MAP_SIZE = 4096
 
