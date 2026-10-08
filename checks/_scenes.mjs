@@ -43,6 +43,7 @@ import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import { join, dirname, relative } from 'node:path'
 import { ribbonsPathOf } from '../cartograph/scene.js'
 import { fileURLToPath } from 'node:url'
+import { spawnSync } from 'node:child_process'
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -170,6 +171,38 @@ export const ribbonsPath = (scene) => relative(join(dirname(fileURLToPath(import
 export function ribbonScenes(argv = process.argv.slice(2)) {
   return scenes('<scene>', { argv, has: (s) => existsSync(join(ROOT, ribbonsPath(s))), label: 'ribbons' })
 }
+
+// ── One town per run, every town when none is named ──────────────────────────────────────────
+// A check whose body exits mid-way (a verdict, a refusal) cannot simply be looped. `eachTown` keeps that body as it is:
+// a town NAMED ⇒ that town is returned; NONE named ⇒ this same script is re-run once per town that has `need` (each a
+// child process, its output inline, the other flags passed through) and the process exits HERE with the worst verdict —
+// 1 if any town found something, 2 only if EVERY town was unmeasurable, else 0. ⛔ No default town: the walk IS the
+// default (Jacob 2026-10-07: no town is the silent subject).
+//   const scene = eachTown('public/baked/<scene>/shape.json')
+export function eachTown(need, opt = {}) {
+  const argv = opt.argv ?? process.argv.slice(2)
+  const asked = requestedScenes(argv)
+  const towns = scenes(need, opt)
+  if (asked.length === 1) return towns[0]
+  const named = new Set(asked), flags = []
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--scene') { i++; continue }
+    if (argv[i].startsWith('--scene=') || named.has(argv[i])) continue
+    flags.push(argv[i])
+  }
+  const codes = []
+  for (const t of towns) {
+    console.log(`\n━━━━━━━━ ${t} ━━━━━━━━`)
+    const r = spawnSync(process.execPath, [...process.execArgv, process.argv[1], t, ...flags], { stdio: 'inherit', env: process.env })
+    codes.push([t, r.status ?? 1])
+  }
+  const worst = codes.some(([, c]) => c !== 0 && c !== 2) ? 1 : codes.every(([, c]) => c === 2) ? 2 : 0
+  console.log(`\n━━━━━━━━ per town: ${codes.map(([t, c]) => `${t} ${c === 0 ? '✅' : c === 2 ? 'NOT MEASURED' : '⛔'}`).join(' · ')}`)
+  process.exit(worst)
+}
+
+/** `eachTown` over the towns whose ribbons can be measured (the feed-built checks). */
+export const eachRibbonsTown = (opt = {}) => eachTown('<scene>', { ...opt, has: (s) => existsSync(join(ROOT, ribbonsPath(s))), label: 'ribbons' })
 
 // ── A LIVE check's one town ──────────────────────────────────────────────────────────────────
 // ⛔ NO DEFAULT TOWN. A check that drives a browser cannot walk every town (a browser per town), so it takes ONE —

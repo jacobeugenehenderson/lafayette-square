@@ -14,6 +14,7 @@
 // mouth class, ROADMAP A0/A10 · `rim` · `unlabelled` · `other`) — a population to read, not a pass condition.
 import fs from 'fs'
 import { classifyCornerLegs } from '../src/lib/tileGround.js'
+import { eachTown, eachRibbonsTown } from './_scenes.mjs'
 
 const args = process.argv.slice(2)
 if (args.includes('--selftest')) {
@@ -32,7 +33,8 @@ if (args.includes('--selftest')) {
   process.exit(bad ? 1 : 0)
 }
 
-const scene = args.find(a => !a.startsWith('--')) || 'lafayette-square'
+// no town named ⇒ every town, each its own run (`eachTown`): the poured shape, or the ribbons it is built from (--build)
+const scene = args.includes('--build') ? eachRibbonsTown() : eachTown('public/baked/<scene>/shape.json')
 let tiles, census = null
 if (args.includes('--build')) {
   const { feed, buildProto } = await import('../scratch/_proto-feed.mjs')

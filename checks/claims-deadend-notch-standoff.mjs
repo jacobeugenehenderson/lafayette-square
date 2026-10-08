@@ -8,16 +8,16 @@
 // the defect. (Layer 0 q3: the only honest test is a DISTANCE one, run WITH
 // authoring loaded. shape.json IS the authored bake.)
 //
-//   node checks/claims-deadend-notch-standoff.mjs [scene] [skelId]
+//   node checks/claims-deadend-notch-standoff.mjs [town] [--only=<skelId>]   (no town ⇒ every town with a shape)
 //
 // Reports per cap: the ray-marched half-width per side vs the authored set.
 // Writes nothing.
 import fs from 'fs'
-import { ribbonsPath } from './_scenes.mjs'
+import { ribbonsPath, eachTown } from './_scenes.mjs'
 import crypto from 'crypto'
 
-const scene = process.argv[2] && !process.argv[2].startsWith('-') ? process.argv[2] : 'lafayette-square'
-const ONLY = process.argv[3] || null
+const scene = eachTown('public/baked/<scene>/shape.json')   // no town named ⇒ every town with a shape, each its own run
+const ONLY = process.argv.find(a => a.startsWith('--only='))?.slice(7) || null
 const SHAPE = `public/baked/${scene}/shape.json`
 const RIBBONS = ribbonsPath(scene)
 const o = console.log

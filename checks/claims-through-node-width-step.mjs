@@ -12,17 +12,15 @@
 // PASSES; a CORNER (different roadId) changing width PASSES — that is the
 // product. Only same-road-different-depth is reported.
 //
-//   node checks/claims-through-node-width-step.mjs [scene|--all]
+//   node checks/claims-through-node-width-step.mjs [town ...]   (no town ⇒ every registered town with a shape)
 //
 // Writes nothing. Exit 1 if any step exceeds TOL.
 import fs from 'fs'
 import crypto from 'crypto'
+import { scenes as registeredScenes } from './_scenes.mjs'
 
 const TOL = 0.01                       // metres; below this is float noise
-const arg = process.argv[2] || 'lafayette-square'
-const scenes = arg === '--all'
-  ? fs.readdirSync('public/baked').filter(s => fs.existsSync(`public/baked/${s}/shape.json`))
-  : [arg]
+const scenes = registeredScenes('public/baked/<scene>/shape.json')   // no town named ⇒ every registered town with a shape
 const o = console.log
 
 let bad = 0

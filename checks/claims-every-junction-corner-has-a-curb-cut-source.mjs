@@ -14,6 +14,7 @@
 // frozen (`noNorm` — re-pour) · an authored style is invalid · the selftest disagrees. `noSource` (norm 'none', nothing
 // authored or recorded) is printed loud and is NOT a failure — it is the ruled default, made visible.
 import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { eachRibbonsTown } from './_scenes.mjs'
 import { buildCurbCutEvidence, buildCrosswalkEvidence, ROAD } from '../cartograph/curb-cut-evidence.mjs'
 import { styleFromEvidence, landCurbCutEvidence, landCrosswalkEvidence } from '../src/lib/tileGround.js'
 import { mkdtempSync, writeFileSync, readFileSync } from 'fs'
@@ -21,7 +22,7 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 
 const args = process.argv.slice(2)
-const scene = args.find(a => !a.startsWith('--')) || 'lafayette-square'
+const scene = eachRibbonsTown()   // no town named ⇒ every town with ribbons, each its own run
 const live = args.includes('--live')
 const f = feed(scene); if (!f) process.exit(1)
 if (live) delete f.ribbons.protopolygon

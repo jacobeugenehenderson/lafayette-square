@@ -19,15 +19,15 @@
  * ⛔ Stops sampling at an AUTHORED width change rather than averaging across it.
  * ⭐ No cap-style branch: the cap is not measured, so `round` vs `blunt` never arises here.
  *
- *   node checks/claims-spur-leg-offset.mjs [scene]
+ *   node checks/claims-spur-leg-offset.mjs [town]   (no town ⇒ every town with a shape + ribbons, each its own run)
  *
  * Sibling (the ray-march form of the same question, per station): claims-deadend-notch-standoff.mjs
  */
 import fs from 'fs'
-import { ribbonsPath } from './_scenes.mjs'
+import { ribbonsPath, eachTown } from './_scenes.mjs'
 import crypto from 'crypto'
 
-const scene = process.argv[2] || 'lafayette-square'
+const scene = eachTown('public/baked/<scene>/shape.json', { has: (s) => fs.existsSync(`public/baked/${s}/shape.json`) && fs.existsSync(ribbonsPath(s)), label: 'shape.json + ribbons' })
 const SHAPE = `public/baked/${scene}/shape.json`
 const RIB = ribbonsPath(scene)
 const o = console.log

@@ -74,11 +74,9 @@ const LS_PROBES = {
 // an entry whose file no longer carries the literal FAILS (stale) until it is removed, and a new single-town check is
 // not admitted here — it fails above. ROADMAP carries the line.
 const TO_WALK = [
-  'band-is-one-ring', 'band-vs-partition-state', 'curvature-vs-band', 'deadend-notch-standoff',
-  'deadend-populations', 'divided-seam-step', 'every-corner-knows-its-junction', 'every-junction-corner-has-a-curb-cut-source',
-  'handle-rides-its-arc',
+  'band-is-one-ring', 'band-vs-partition-state', 'curvature-vs-band', 'deadend-populations', 'divided-seam-step', 'handle-rides-its-arc',
   'live-palette-equals-the-bake', 'neon-per-place',
-  'one-corner-write-moves-one-corner', 'preclip-walk', 'proto-curb', 'spur-leg-offset', 'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-light-follows-the-weather', 'through-node-width-step', 'uturn-outer-edge-walk',
+  'preclip-walk', 'proto-curb', 'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-light-follows-the-weather', 'uturn-outer-edge-walk',
 ].map(n => `checks/claims-${n}.mjs`)
 const fileHeld = new Map([...Object.entries(LS_PROBES), ...TO_WALK.map(f => [f, 'TO WALK the towns (Jacob 2026-10-07, shrink-only)'])])
 

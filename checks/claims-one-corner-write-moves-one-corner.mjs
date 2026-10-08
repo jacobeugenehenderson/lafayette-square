@@ -5,10 +5,11 @@
 // (Section's popover). This writes each field once, on one corner, and reads what the build drew — every arc that moved
 // must carry THAT key, and at least one must move. ⛔ The key it replaced (`ix|skelA|skelB`, no side) was shared by two
 // to four corners at a node, so one radius drag wrote them all — the defect this check exists to catch.
-//   node checks/claims-one-corner-write-moves-one-corner.mjs [scene]        (default huron)
+//   node checks/claims-one-corner-write-moves-one-corner.mjs [town]        (no town ⇒ every town with ribbons)
 import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { eachRibbonsTown } from './_scenes.mjs'
 
-const scene = process.argv.slice(2).find(a => !a.startsWith('--')) || 'huron'
+const scene = eachRibbonsTown()   // no town named ⇒ every town with ribbons, each its own run
 const f = feed(scene); if (!f) process.exit(1)
 const base = f.cornerCornerRadiusOverrides || {}
 const build = (map, norm) => buildProto({ ...f, cornerCornerRadiusOverrides: map, ...(norm ? { ribbons: { ...f.ribbons, curbCutNorm: norm } } : {}) },
