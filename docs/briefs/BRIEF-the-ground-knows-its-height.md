@@ -26,7 +26,7 @@ Two defects that turned out to be one design question.
 **(a) The stretched sidewalk.** *"We currently paint then stretch. That is usually fine; unfortunately many times it
 means a stretched sidewalk. I think we need to do terrain sometime -during- ribbons; like: stamp id fes, terrain, then
 ribbons."* Asked what the defect looks like, he confirmed it is the walk tilting and warping across hills, **frequent in
-HPDM**. HPDM's `terrainExag` is `null`, which means the kit default 1× (`terrainCommon.js#DEFAULT_V_EXAG`: "draw the ground at the height the ground actually is"; 1× is 100% of real, and 0 is flat). So this is the real slope, not exaggeration. ⚠️ The value is a per-shot CEILING the view eases toward (Hero → the town's value, Browse → 0), so the tilt shows at Hero and Street, never in Browse. Measure and eye-gate there.
+HPDM**. HPDM's `terrainExag` is `null`, which means the kit default 1× (`terrainCommon.js#DEFAULT_V_EXAG`: "draw the ground at the height the ground actually is"; 1× is 100% of real, and 0 is flat). So this is the real slope, not exaggeration. ⚠️ The value is a per-shot CEILING the view eases toward (Hero → the town's value, Browse → 0), so today the tilt shows at Hero and Street, not in Browse. Measure and eye-gate there. ⛔ But don't build on Browse being flat: Jacob may re-add depth to Browse (2026-10-08), so every check here must hold at ANY exaggeration, not just today's per-shot values.
 
 **(b) LS's raised kerb.** LS's ground bake is REFUSED with its authored kerb (0.15 m, Jacob 2026-10-06): 266
 T-junctions after the kerb's creases are cut into the conformed mesh (`BRIEF-corner-ramps-and-kerb §9`). The proposed
