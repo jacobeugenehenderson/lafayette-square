@@ -19,10 +19,24 @@
 import { CATEGORY_HEX as PRE_PALETTE_HEX, UNKNOWN_HEX } from '../tokens/categories.js'
 import { parseHex, rgbToHsl, hslToRgb } from './buildingTint.js'
 
-/** The kit's neutral hue (degrees) per category: 11 evenly spaced — a town that authored none. Not any town's. */
+/**
+ * The kit's DEFAULT hue (degrees) per category — what a town that authored none draws (Jacob, 2026-10-08: the default
+ * palette should MEAN its places, not be a placeholder). Each hue is chosen for what its category evokes, kept ≥ 18° from
+ * its neighbours so categories are still told apart; NOT any town's authored palette (a town's own is materialColors).
+ * ⛔ It was 11 hues evenly spaced around the wheel — distinct, but saying nothing: arts yellow, community blue.
+ */
 export const NEUTRAL_CATEGORY_HUE = {
-  dining: 0, historic: 33, arts: 65, parks: 98, shopping: 131, services: 164,
-  hospitality: 196, community: 229, residential: 262, commercial: 295, industrial: 327,
+  dining: 350,       // rose-red: appetite, the diner sign
+  community: 15,     // terracotta: civic brick
+  historic: 40,      // gold: brass plaques
+  commercial: 62,    // yellow: shop signage
+  residential: 90,   // lime-sage: home, gardens
+  parks: 135,        // leaf green
+  industrial: 180,   // cyan: steel, utility light
+  services: 205,     // steel blue: trades, offices
+  hospitality: 245,  // indigo: night, hotels, bars
+  arts: 285,         // violet: the theatre
+  shopping: 318,     // magenta-pink: retail
 }
 // The two forms (HSL, 0..1). Neon: the hue at full saturation. Detail: a pastel — Jacob asked for "a few % more
 // saturated" than the first proposal (0.22) — never more saturated than its source (a grey stays grey).
