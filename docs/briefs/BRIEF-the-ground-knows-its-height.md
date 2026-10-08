@@ -38,8 +38,9 @@ a smooth line and extruded into a plane WHICH MEETS a smoothed ground plane simi
 just searching for the closest points, that explains our jags. This may be also an issue with sequence; and perhaps this
 is related to WHEN we do the terrain extrusion."* And: **① is the single source of truth for anything that began as a
 chain and has two sides**. There is a resolution mismatch with the lidar, probably on both sides of the first offset
-chains. He ruled that **no more measuring is needed** to establish the shape of the problem. Argon's measurements
-(2026-10-07/08, facts only):
+chains. ⚠️ He did NOT rule out measuring: he questioned one step, more hole-hunting, when he had a clearer idea of the
+underlying thesis. So measure to TEST THE THESIS (one shape source or two, heights before or after the flatten), not
+to hunt more holes. Argon's measurements so far (2026-10-07/08, facts only):
 - The shore-median sand edge is the lidar waterline traced by marching squares at 1 m, UNSMOOTHED
   (`bake-shore-median.mjs` → `bake-ground`'s `shore` group). It zigzags p50 0.16 · p90 0.73 · p99 2.24 m off its own
   ±3 m chord. Meanwhile the coast is ALSO a chain in ① (`ROADMAP H-4`: "stroke the coast as a two-sided chain"). So the
@@ -151,10 +152,12 @@ and its ramps, flares and tapers are pieces built in the same chain, as the corn
    what it samples (the field, or the drawn mesh). A height law per piece changes the drawn ground, and every one of
    these must still sit on it.
 
-6. **The shore needs no new measuring** (Jacob's ruling; facts in §0(c)). Two exceptions, both instrument work:
-   FIX the gap walk's camera so it never lands under the far bank (derive its standoff from the local water width, never
-   the 20 m constant), and re-run it to get a true baseline. Then say whether the ~1417–1430 crack cluster survives on
-   the fixed instrument.
+6. **The shore: test the thesis, don't hunt holes** (§0(c)). Measure whether the waterline has one shape source or
+   two (the coast chain in ① vs the shore median's lidar trace: the distance between them along every shore, per town),
+   and whether the jags sit where the 2D edges place vertices on the 5 m terrain (per-vertex render sampling). Fix the gap
+   walk's camera first, so it never lands under the far bank (derive its standoff from the local water width, never the
+   20 m constant). Re-run it for a true baseline, then say whether the ~1417–1430 crack cluster survives on the fixed
+   instrument.
 
 Report counts per town, plus screenshots of HPDM's worst stretch from the street camera, then **STOP**.
 
