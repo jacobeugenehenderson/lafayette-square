@@ -113,13 +113,13 @@ export default function SceneNeon({ forceNeonOn, density, materialColors, litIds
   useEffect(() => {
     if (!census || !Object.keys(census.dark).length) return
     const n = Object.values(census.dark).reduce((a, b) => a + b, 0)
-    console.warn(`[neon] ${n} of ${census.lit} lit places are dark (by address ${census.address} · by street frontage ${census.frontage}):`, census.dark)
+    console.warn(`[neon] ${n} of ${census.lit} lit places are dark (${census.ringed} ring their building's roofline):`, census.dark)
   }, [darkKey])   // eslint-disable-line react-hooks/exhaustive-deps
 
   // NeonBands draws open stretches: the wall points, the outward side from the building's footprint, the eave.
   // ⛔ groundY travels with groundYRaw: the sign rides its wall's whole lift (src/lib/buildingLift.js), and a sign handed no
   // groundY lifts by NaN — neither drawn nor pickable (every sign, 2026-10-06, until this field was passed).
-  const openPlaces = useMemo(() => stretches.map((s) => ({ pts: s.pts, footprint: s.footprint, baseY: s.y, groundYRaw: s.groundYRaw, groundY: s.groundY, buildingId: s.buildingId, neon: { category: s.category } })), [stretches])
+  const openPlaces = useMemo(() => stretches.map((s) => ({ pts: s.pts, pre: s.pre, post: s.post, footprint: s.footprint, baseY: s.y, groundYRaw: s.groundYRaw, groundY: s.groundY, buildingId: s.buildingId, neon: { category: s.category } })), [stretches])
 
   if (openPlaces.length === 0) return null
   return <NeonBands places={openPlaces} lookId={lookId} materialColors={materialColors} />

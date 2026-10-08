@@ -1,25 +1,21 @@
 /**
- * neonPlaces — which stretch of which building each open PLACE's neon lights (BRIEF-neon-reads-at-every-distance §3.3).
- * Pure: SceneNeon draws what it returns, checks/claims-neon-per-place.mjs proves it on the baked slab.
+ * neonPlaces — the neon each open PLACE lights (BRIEF-neon-reads-at-every-distance §3.3). Pure: SceneNeon draws what it
+ * returns, checks/claims-neon-per-place.mjs proves it on the baked slab.
  *
- * ⭐ NEON BELONGS TO A PLACE, NOT A BUILDING (Jacob, 2026-10-06). A building carries several addresses, so each lit place
- * gets its own stretch of wall from the slab's per-building `neon` (cartograph/neon-faces.mjs), joined by ADDRESS
- * (src/lib/addressKey.js — one canonical form for the bake and the player; within the building's own streets a loose
- * form also matches — spacing and a direction word one source carries and the other doesn't, addressKey#streetLoose):
- *   1. its address's face — the face its address point marks;
- *   2. else its own street's frontage — the building's face toward that street — COUNTED as such;
- *   3. else it stays dark, COUNTED BY CAUSE. ⛔ Never a whole-roofline fallback: a ring round the building would
- *      read as "placed" and hide that the place has no face.
- * Places claiming the same stretch share it, split along it in id order. A building none of whose places is lit
- * stays dark.
+ * ⭐ A RING ROUND THE ROOFLINE, LIT BY ITS PLACES (Jacob, 2026-10-08: "the building must be very visible from different
+ * angles"). A building with any lit place draws its whole footprint at the eave — visible from every side — and the ring is
+ * the PLACES', not the building's: one lit place takes the whole ring in its category's colour; several share it in equal
+ * arcs, in id order, each in its own colour. A building none of whose places is lit stays dark.
+ * ⛔ It was a stretch of wall toward the place's street (its address's face, else its street frontage) — a band across the
+ * front that vanished from behind and the side. The per-place rule that replaced a ring keyed by ONE listing (the last write
+ * won, so a closed listing darkened a building whose other place was open, 2026-10-06) stays: any lit place lights the ring.
+ * The ring's height is the eave the slab's per-building `neon` record carries (cartograph/neon-faces.mjs).
  */
-import { addressParts, streetLoose } from './addressKey.js'
 
 /** The reasons a lit place could not be placed — the census keys, so a reader can count them. */
 export const UNPLACED = Object.freeze({
-  slab: 'its building carries no neon stretches (a slab baked before them — re-bake buildings)',
-  address: 'it has no address',
-  street: 'its street is not one its building fronts',
+  slab: 'its building carries no neon record (no eave height — a slab baked before it; re-bake buildings)',
+  footprint: 'its building has no footprint ring to trace',
 })
 
 const polyLen = (pts) => { let L = 0; for (let i = 0; i < pts.length - 1; i++) L += Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]); return L }
@@ -53,37 +49,36 @@ export function placeNeon({ entries, places, isLit, keep = () => true }) {
     if (!byBuilding.has(p.building_id)) byBuilding.set(p.building_id, [])
     byBuilding.get(p.building_id).push(p)
   }
-  const census = { lit: 0, address: 0, frontage: 0, dark: {} }
-  const dark = (why) => { census.dark[why] = (census.dark[why] || 0) + 1 }
+  const census = { lit: 0, ringed: 0, dark: {} }
+  const dark = (why, n) => { census.dark[why] = (census.dark[why] || 0) + n }
   const stretches = []
   for (const e of entries) {
-    // A record the slab built no walls for (a set-piece's building, SetPiece.jsx) has no wall to carry a sign.
+    // A record the slab built no walls for (a set-piece's building, SetPiece.jsx) has no roofline to carry a sign.
     if (!e.ranges?.wall) continue
     const lit = (byBuilding.get(e.id) || []).filter(isLit)
     if (!lit.length || !keep(e.id)) continue
     lit.sort((a, b) => String(a.id).localeCompare(String(b.id)))
-    const claims = new Map()   // a stretch → the places on it
-    for (const p of lit) {
-      census.lit++
-      if (!e.neon) { dark(UNPLACED.slab); continue }
-      const { house, street } = addressParts(p.address)
-      if (!street) { dark(UNPLACED.address); continue }
-      const loose = streetLoose(street)
-      const sameStreet = (s) => s === street || streetLoose(s) === loose
-      const faces = house ? (e.neon.faces || []).filter((f) => f.key.startsWith(`${house} `) && sameStreet(f.key.slice(house.length + 1))) : []
-      const front = faces.length ? [] : (e.neon.frontage || []).filter((f) => sameStreet(f.street))
-      if (faces.length) census.address++
-      else if (front.length) census.frontage++
-      else { dark(UNPLACED.street); continue }
-      for (const s of faces.length ? faces : front) { if (!claims.has(s)) claims.set(s, []); claims.get(s).push(p) }
-    }
-    for (const [s, on] of claims) {
-      const L = polyLen(s.pts)
-      on.forEach((p, i) => {
-        const pts = on.length === 1 ? s.pts : slice(s.pts, L * i / on.length, L * (i + 1) / on.length)
-        if (pts.length >= 2) stretches.push({ id: p.id, buildingId: e.id, pts, y: s.y, footprint: e.footprint, groundYRaw: e.centroidY, groundY: e.groundY, category: p.category ?? null })
-      })
-    }
+    census.lit += lit.length
+    // The eave: the height the slab's neon record carries for this building's walls (the highest, if they differ).
+    const ys = e.neon ? [...(e.neon.faces || []), ...(e.neon.frontage || [])].map((f) => f.y).filter(Number.isFinite) : []
+    if (!ys.length) { dark(UNPLACED.slab, lit.length); continue }
+    const fp = (e.footprint || []).filter((q) => Array.isArray(q) && Number.isFinite(q[0]) && Number.isFinite(q[1]))
+    if (fp.length < 3) { dark(UNPLACED.footprint, lit.length); continue }
+    const closed = fp[0][0] === fp[fp.length - 1][0] && fp[0][1] === fp[fp.length - 1][1]
+    const ring = closed ? fp : [...fp, fp[0]]
+    const y = Math.max(...ys), L = polyLen(ring)
+    census.ringed += lit.length
+    // Each stretch carries its RING NEIGHBOURS — the ring vertex before its first point and after its last — so the drawing
+    // joins its ends like any other corner: the whole ring closes on itself, and arcs meeting at a corner meet cleanly.
+    const cum = [0]; for (let k = 1; k < ring.length; k++) cum.push(cum[k - 1] + Math.hypot(ring[k][0] - ring[k - 1][0], ring[k][1] - ring[k - 1][1]))
+    const vBefore = (s) => { let k = 0; while (k + 1 < ring.length && cum[k + 1] < s - 1e-6) k++; return cum[k] < s - 1e-6 ? ring[k] : ring[(k - 1 + ring.length - 1) % (ring.length - 1)] }
+    const vAfter = (s) => { let k = ring.length - 1; while (k - 1 >= 0 && cum[k - 1] > s + 1e-6) k--; return cum[k] > s + 1e-6 ? ring[k] : ring[(k + 1) % (ring.length - 1)] }
+    lit.forEach((p, i) => {
+      const s0 = L * i / lit.length, s1 = L * (i + 1) / lit.length
+      const pts = lit.length === 1 ? ring : slice(ring, s0, s1)
+      const pre = lit.length === 1 ? ring[ring.length - 2] : vBefore(s0), post = lit.length === 1 ? ring[1] : vAfter(s1 >= L - 1e-6 ? 0 : s1)
+      if (pts.length >= 2) stretches.push({ id: p.id, buildingId: e.id, pts, pre, post, y, footprint: e.footprint, groundYRaw: e.centroidY, groundY: e.groundY, category: p.category ?? null, ring: lit.length === 1 })
+    })
   }
   return { stretches, census }
 }

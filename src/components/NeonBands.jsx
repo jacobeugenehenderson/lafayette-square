@@ -92,14 +92,15 @@ function detectOutwardSign(footprint) {
  * The outward direction is needed downstream to orient the tube's
  * cross-section.
  */
-function buildPath(pts, ws) {
+function buildPath(pts, ws, pre = null, post = null) {
   const n = pts.length
   const rings = []
   for (let i = 0; i < n; i++) {
     const cur  = pts[i]
-    // An end has one edge: use it on both sides, so the end ring takes that edge's normal.
-    const prev = i > 0 ? pts[i - 1] : [2 * cur[0] - pts[i + 1][0], 2 * cur[1] - pts[i + 1][1]]
-    const next = i < n - 1 ? pts[i + 1] : [2 * cur[0] - pts[i - 1][0], 2 * cur[1] - pts[i - 1][1]]
+    // An end joins its RING NEIGHBOUR when the stretch carries one (neonPlaces: `pre` / `post`), so a closed ring meets
+    // itself and arcs meet at a corner; an end with none has one edge, used on both sides (its normal).
+    const prev = i > 0 ? pts[i - 1] : (pre || [2 * cur[0] - pts[i + 1][0], 2 * cur[1] - pts[i + 1][1]])
+    const next = i < n - 1 ? pts[i + 1] : (post || [2 * cur[0] - pts[i - 1][0], 2 * cur[1] - pts[i - 1][1]])
     const e1x = cur[0] - prev[0], e1z = cur[1] - prev[1]
     const e2x = next[0] - cur[0], e2z = next[1] - cur[1]
     const l1 = Math.hypot(e1x, e1z) || 1
@@ -159,14 +160,14 @@ function buildPath(pts, ws) {
  * linePx on screen.
  */
 function buildTube(place, tubeRadius) {
-  // A place's stretch at the eave (the wall/roof joint) its slab entry names; the building's footprint gives the
-  // outward side. (Neon used to ring the whole footprint — one sign per building, whatever it held.)
+  // A place's ring — or its arc of a shared ring — at the eave (the wall/roof joint); the building's footprint gives the
+  // outward side (src/lib/neonPlaces.js).
   const fp = place.footprint
   if (!place.pts || place.pts.length < 2 || !fp || fp.length < 3) return null
   const r = tubeRadius
   // The axis sits one radius above the eave, so the tube's BOTTOM is flush with it.
   const baseY = place.baseY + r
-  const path = buildPath(place.pts, detectOutwardSign(fp))
+  const path = buildPath(place.pts, detectOutwardSign(fp), place.pre, place.post)
   const m = path.length
   if (m < 2) return null
 

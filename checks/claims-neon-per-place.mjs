@@ -4,8 +4,9 @@
  *
  * WHY THIS EXISTS (2026-10-06). Neon was one ring per building, keyed by ONE listing per building (last write won), so
  * a closed listing darkened a building where another place was open: on Huron at 21:00, 6 of 22 lit buildings had no
- * neon at all. Neon now belongs to a PLACE: each lit place gets its own stretch of wall (its address's face, else its
- * own street's frontage) or stays dark, counted by cause — never a ring round the roofline.
+ * neon at all. Neon belongs to its PLACES: a building with any lit place rings its whole roofline (Jacob, 2026-10-08: "the
+ * building must be very visible from different angles"), one lit place the whole ring, several in equal arcs, each in its
+ * own colour — or the place is counted dark by a named cause.
  *
  * ⭐ READS THE SLAB AND RUNS THE PLAYER'S OWN CODE: public/baked/<town>/buildings.{json,bin} and content/listings.json,
  * through src/lib/neonPlaces.js#placeNeon and src/lib/openNow.js — what the player draws, not a restatement of it.
@@ -13,7 +14,7 @@
  * Asserts, per town:
  *   - the slab carries the per-place stretches (a slab baked before them puts every place in the dark);
  *   - across a whole week, hourly, every lit place is placed or counted dark by a named cause (none vanish);
- *   - no stretch is a whole roofline (a stretch is shorter than its building's perimeter);
+ *   - a lit building's arcs, together, are its WHOLE roofline (their lengths sum to its footprint's perimeter);
  *   - the REGRESSION receipts below: those buildings light at every hour any of their places is open.
  * Prints the census at --at (default: Friday 21:00 in the town's time zone).
  *
@@ -64,7 +65,7 @@ const atWhen = new Date(arg('at', '2026-10-10T01:00:00Z'))
 const c = at(atWhen).census
 const darkN = Object.values(c.dark).reduce((a, b) => a + b, 0)
 console.log(`\n  at ${atWhen.toISOString()} (${new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(atWhen)} local): ${c.lit} open places`)
-console.log(`    lit by address point ${c.address} · by street frontage ${c.frontage} · dark ${darkN}`)
+console.log(`    ringed ${c.ringed} · dark ${darkN}`)
 for (const [why, n] of Object.entries(c.dark)) console.log(`      dark ${n}: ${why}`)
 console.log('')
 
@@ -74,10 +75,11 @@ const miss = new Map()
 for (let h = 0; h < 7 * 24; h++) {
   const when = new Date(atWhen.getTime() + h * 3600e3)
   const { stretches, census } = at(when)
-  const counted = census.address + census.frontage + Object.values(census.dark).reduce((a, b) => a + b, 0)
+  const counted = census.ringed + Object.values(census.dark).reduce((a, b) => a + b, 0)
   if (counted !== census.lit) vanished++
   const byB = new Map(entries.map((e) => [e.id, e]))
-  for (const s of stretches) if (length(s.pts) >= perimeter(byB.get(s.buildingId).footprint) - 1e-6) roofline++
+  const sum = new Map(); for (const s of stretches) sum.set(s.buildingId, (sum.get(s.buildingId) || 0) + length(s.pts))
+  for (const [id, L] of sum) if (Math.abs(L - perimeter(byB.get(id).footprint)) > 1e-3 * Math.max(1, L)) roofline++
   const litB = new Set(stretches.map((s) => s.buildingId))
   for (const id of REGRESSION[town] || []) {
     const open = places.filter((p) => p.building_id === id && isOpenAt(p.hours || null, when, tz))
@@ -85,7 +87,7 @@ for (let h = 0; h < 7 * 24; h++) {
   }
 }
 check(vanished === 0, 'every lit place, every hour of a week, is placed or counted dark by a named cause', `${vanished} hours where the counts don't add up`)
-check(roofline === 0, 'no stretch is a whole roofline', `${roofline} stretches as long as their building's perimeter`)
+check(roofline === 0, "every lit building's arcs together are its whole roofline", `${roofline} building-hours whose neon is not its whole perimeter`)
 for (const id of REGRESSION[town] || []) {
   const any = places.some((p) => p.building_id === id && p.hours)
   check(any && !miss.has(id), `${id} lights at every hour one of its places is open`,
