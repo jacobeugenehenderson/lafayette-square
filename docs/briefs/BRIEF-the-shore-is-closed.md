@@ -121,6 +121,9 @@ has a name**, which the rulings above now forbid. Re-run all five yourself; don'
    foundation riser**, each with its coordinate and which of (a)/(b)/(c) it is. Jacob already sees gaps, so a green first
    run means the instrument is wrong. Mutation-test it: remove one treatment and watch it go red. Derive the walk step
    from the terrain grid, not a constant.
+⭐ *2026-10-08:* the waterline's SHAPE (one smoothed coast chain in ①, never the unsmoothed 1 m lidar trace beside it) and
+its HEIGHT (built before the flatten) moved to `BRIEF-the-ground-knows-its-height.md`. This brief keeps the material.
+
 3. **The treatment rules, on paper, to Jacob — before any build.** Grain as a function of local median width; the
    boulder → rock → gravel → sand handoffs; where placed objects hand off to a surface material (that seam is the
    still-open "revetment bottom edge" item from 2026-09-27, which this absorbs); how the regime bounds the range; the

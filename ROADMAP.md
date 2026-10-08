@@ -87,7 +87,7 @@
 - **HPDM's authored width `south-seminary-terrace-3|left|0` resolves to no run** in the poured shape, before and after the 10-07 re-bake. Cause not established. ▶ `node checks/claims-orphaned-customs.mjs hipointedemun`
 
 **Shore**
-- **Huron's shore gaps**: 9,212 px at (−2386, −2008) plus a cluster at (1356–1432, −305…−327) reach the sky. Attribution is owed via a `gaps.html` `at=`/`keep=` param; the sand edge is the 1 m marching-squares waterline. Cause not established. ▶ `node checks/claims-no-view-reaches-the-sky-at-the-shore.mjs --town=huron --every=4`
+- **Huron's shore jags and gaps** → `BRIEF-the-ground-knows-its-height.md` (Jacob, 2026-10-08: smooth the waterline into one chain, extrude it to meet a smoothed ground, before the flatten). The biggest "hole" was the gap walk's camera sitting under the far bank of a narrow channel (an instrument defect); one real crack cluster remains near (1417–1430, −320…−326), mechanism not established.
 
 **Perf (approved by Jacob 2026-10-07, not built)**
 - **Composer AA 2×**: the composer inherits multisampling 8, which M1 clamps to 4. Huron Browse 59.9 → 48.8 ms, Hero 73.8 → 59.7. Build: multisampling named per surface (phones stay 0); eye-gate thin features. ▶ `node scratch/msaa/probe.mjs --tiers`
