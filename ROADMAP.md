@@ -104,7 +104,7 @@
 - **`INSTANCE.branding.mark/markSvg/faviconUrl`**: delete at LS's cutover. Only the old LS player reads them (`townMark.js` header).
 
 **Kit hygiene**
-- **TO_WALK**: 36 checks measure one town picked by name. They sit on a shrink-only list in `checks/claims-no-town-name-gates-the-kit.mjs` (Jacob: "fix this or add it to the other things marked to eliminate"). Convert each to `checks/_scenes.mjs` `scenes(<artifact>)`; the gate fails on a stale entry.
+- **TO_WALK**: 14 checks (down from 36 tonight; 22 converted by Sill) measure one town picked by name. They sit on a shrink-only list in `checks/claims-no-town-name-gates-the-kit.mjs` (Jacob: "fix this or add it to the other things marked to eliminate"). Convert each with `checks/_scenes.mjs` `eachTown(...)` (most are one line); the gate fails on a stale entry. Not one-liners: `curvature-vs-band` hardcodes LS's design/shape paths and a `?? 0.1524` curb-width fallback (a Class D constant); `preclip-walk` silently ignores a positional town; `swap-reaches-the-paint` is heavy per town. Also seen: `proto-identity` reports `refused: false` on every town but altadena (cause not established).
 - **`DEFAULT_MAP`**: a read-only importer without `--scene` silently gets LS (`cartograph/scene.js` warns; writers are refused). The last town-as-default in the kit: readers must name the scene too.
 - **`src/cartograph/CartographApp.jsx`'s per-town `'lafayette-square'` sceneConfig block** (runtime, outside the gate's scope).
 - **The bake's false "stale" banner**: `bake-ground-ao.js` rewrites `ground.json` AFTER buildings/lamps/tree-anchors read it, so those three report stale after every full bake. Fix: ground-ao writes its own record file (one writer per file). ⛔ Not mid-bake-night: it re-stales every town.
