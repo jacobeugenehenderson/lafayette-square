@@ -40,6 +40,11 @@ const LOOK = INSTANCE.lookId
 const W = +(params.get('w') || 240), H = +(params.get('h') || 135), FOV = 60
 const EVERY = Math.max(1, +(params.get('every') || 1))
 const HIDE = (params.get('hide') || '').split(',').filter(Boolean)
+// INSPECTION (2026-10-08, BRIEF-the-ground-knows-its-height §0(c)): at=x,z keeps only the station nearest that point ·
+// keep=1 keeps each view's frame (window.__gapsFrames, data URLs, magenta = a ray that hit nothing) and up to 400 hole
+// rays (window.__gapsPts: view, landing x/z, camera origin, ray direction). Absent, the walk runs exactly as before.
+const AT = params.get('at') ? params.get('at').split(',').map(Number) : null
+const KEEP = params.get('keep') === '1'
 const QP = { ...QUALITY.desktop, dpr: 1 }
 const KEY = [1, 0, 1]                     // the background: pure magenta, which no town material is drawn in
 const LAYERS = { sky: false, clouds: false, fog: false, post: false, labels: false }
@@ -100,7 +105,9 @@ function Walker({ stencil, groups }) {
       let hidden = 0
       const ground = scene.getObjectByName('town:ground')
       ground?.traverse(o => { if (o.isMesh && hideOrders.has(o.renderOrder) && !isWater(o)) { o.visible = false; hidden++ } })
-      const { list, gridM } = await stations(stencil)
+      const all = await stations(stencil), gridM = all.gridM
+      const list = AT ? [all.list.reduce((b, s) => (Math.hypot(s.x - AT[0], s.z - AT[1]) < Math.hypot(b.x - AT[0], b.z - AT[1]) ? s : b))] : all.list
+      if (KEEP) window.__gapsFrames = {}
       camera.fov = FOV; camera.near = 0.3; camera.far = 2e5; camera.aspect = W / H; camera.updateProjectionMatrix()
       const px = new Uint8Array(W * H * 4), ray = new THREE.Vector3(), glc = gl.getContext()
       const exag = terrainExag.value, R2 = stencil.radius ** 2
@@ -121,6 +128,9 @@ function Walker({ stencil, groups }) {
           camera.updateMatrixWorld()
           await rafs(2)
           glc.readPixels(0, 0, W, H, glc.RGBA, glc.UNSIGNED_BYTE, px)
+          if (KEEP) { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const cx2 = cv.getContext('2d'), id = cx2.createImageData(W, H)
+            for (let y = 0; y < H; y++) id.data.set(px.subarray((H - 1 - y) * W * 4, (H - y) * W * 4), y * W * 4)   // readPixels' row 0 is the bottom
+            cx2.putImageData(id, 0, 0); window.__gapsFrames[v.id] = { url: cv.toDataURL('image/png'), station: [s.x, s.z], normal: [s.nx, s.nz] } }
           let n = 0, first = null
           for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
             const i = (y * W + x) * 4
@@ -132,6 +142,7 @@ function Walker({ stencil, groups }) {
             if ((hx - stencil.center[0]) ** 2 + (hz - stencil.center[1]) ** 2 > R2) continue
             if (getElevationRaw(hx, hz) <= -bed.visibleToM) { deep++; continue }
             n++; if (!first) first = [+hx.toFixed(1), +hz.toFixed(1)]
+            if (KEEP && (window.__gapsPts ||= []).length < 400) window.__gapsPts.push([v.id, +hx.toFixed(2), +hz.toFixed(2), ...camera.position.toArray().map((q) => +q.toFixed(3)), ...ray.toArray().map((q) => +q.toFixed(5))])
           }
           const pv = perView[v.id]; pv.views++
           if (n) { pv.withGap++; pv.pixels += n; gaps.push({ view: v.id, station: [+s.x.toFixed(1), +s.z.toFixed(1)], pixels: n, at: first }) }
