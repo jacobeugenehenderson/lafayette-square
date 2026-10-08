@@ -145,10 +145,148 @@
   },
   "lamps": null,
   "terrainExag": null,
+  "lampGlow": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "grass": 0,
+        "pool": 0.5,
+        "radius": 0.85,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.3
+      },
+      "sunrise": {
+        "grass": 0,
+        "pool": 0.5,
+        "radius": 0.75,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 0.3
+      },
+      "sunset": {
+        "grass": 0,
+        "pool": 0.5,
+        "radius": 0.75,
+        "centre": 0.25,
+        "centreSoft": 0.1,
+        "trees": 0.8
+      },
+      "dusk": {
+        "grass": 0,
+        "pool": 1.4,
+        "radius": 1,
+        "centre": 1.2,
+        "centreSoft": 0.1,
+        "trees": 2
+      },
+      "night": {
+        "grass": 0,
+        "pool": 0.3,
+        "radius": 0.56,
+        "centre": 2.65,
+        "centreSoft": 0.44,
+        "trees": 0.2
+      },
+      "deep": {
+        "grass": 0,
+        "trees": 0.1,
+        "pool": 0.25,
+        "radius": 0.5,
+        "centre": 1.999137450569283,
+        "centreSoft": 0.67
+      }
+    },
+    "edges": {
+      "sunset": {
+        "fade": "up",
+        "minutes": 30
+      },
+      "sunrise": {
+        "fade": "down",
+        "minutes": 30
+      }
+    },
+    "radiusV": 2
+  },
   "edgeFadeBand": 200,
   "edgeRuffle": {
     "values": {
       "ruffle": 0
+    }
+  },
+  "stars": {
+    "animated": "tod",
+    "values": {
+      "sunset": {
+        "brightness": 1
+      },
+      "deep": {
+        "brightness": 1.5
+      }
+    },
+    "edges": {
+      "sunset": {
+        "fade": "up",
+        "minutes": 30
+      },
+      "deep": {
+        "fade": "down",
+        "minutes": 30
+      }
+    }
+  },
+  "dof": {
+    "animated": "tod",
+    "values": {
+      "dawn": {
+        "blur": 0.2,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "sunrise": {
+        "blur": 0.15,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "noon": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.4,
+        "melt": 0
+      },
+      "golden": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.2,
+        "melt": 0.1
+      },
+      "sunset": {
+        "blur": 0.08,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "dusk": {
+        "blur": 0.1,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "night": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      },
+      "deep": {
+        "blur": 0,
+        "heroBlur": 0,
+        "softness": 0.5,
+        "melt": 0.56
+      }
     }
   },
   "sky": {
@@ -172,14 +310,14 @@
     },
     {
       "position": [
-        700,
-        42,
-        -637
+        741,
+        78,
+        -698
       ],
       "target": [
-        0,
-        40,
-        0
+        452,
+        2,
+        -415
       ],
       "fov": 32,
       "t": 0.507127
