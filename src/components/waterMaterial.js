@@ -748,7 +748,19 @@ ${terrain ? `       if (uVisibleM > 0.0) {
          // the town's water measured mean alpha 0.93 against that look's 0.71). ⛔ Past the drawing's rim there is no
          // bed, only the horizon disc beneath: there it stays opaque, or the disc shows as a second, darker sea.
          float wDeepA = mix(mix(1.0, diffuseColor.a, clamp(uDeepSee, 0.0, 1.0)), 1.0, wPast);
-         diffuseColor.a = mix(wDeepA, diffuseColor.a * clamp(wDepth / uVisibleM, 0.0, 1.0), wSeen);
+         // How much of the sheet's colour the shallows carry: BEER–LAMBERT over the light's path down and back up (2 × depth),
+         // attenuation from the town's own visibility (Poole–Atkins: k ≈ 1.7 / Secchi depth). ⛔ It was depth/visibility,
+         // linear — 6% of the sheet at 0.3 m, so the near shallows read as dry sand; this is ~18% there, ~46% at 1 m.
+         float wTint = 1.0 - exp(-2.0 * (1.7 / uVisibleM) * wDepth);
+         diffuseColor.a = mix(wDeepA, diffuseColor.a * wTint, wSeen);
+         // ⭐ THE WATER IS THERE TO THE WATERLINE (Jacob, 2026-10-08: "even if faint, the water should be the blue gray of
+         // seawater all the way up to the waterline"). However shallow, the surface itself reflects: Fresnel (Schlick, water
+         // n = 1.333 → F0 = ((n−1)/(n+1))² ≈ 0.02) at this fragment's view angle is the least the sheet can be — faint seen
+         // from above, a sheen at a grazing look, as real shallows read. ⛔ It was depth/visibility alone, so at depth 0 the
+         // sheet vanished and the bed read as dry sand up to the line.
+         float wCosV = clamp(dot(normalize(vViewPosition), normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz)), 0.0, 1.0);
+         float wF0 = pow((1.333 - 1.0) / (1.333 + 1.0), 2.0);
+         diffuseColor.a = max(diffuseColor.a, wF0 + (1.0 - wF0) * pow(1.0 - wCosV, 5.0));
        }
 ` : ''}       if (uHorizonOut > 0.0) diffuseColor.a *= 1.0 - smoothstep(uHorizonIn, uHorizonOut, length(vWaterWorld.xz - uHorizonC));
        // The coast's FEATHER past the fetched square (outer-coast.mjs): the water's own strength there, 1 → 0 across it.
@@ -1038,4 +1050,73 @@ export function ringExtentDiag(ring) {
   }
   if (!isFinite(x0)) return 0
   return Math.hypot(x1 - x0, z1 - z0)
+}
+
+/**
+ * ⭐ THE WATER'S COLOUR ABSORPTION — what the bed looks like THROUGH the water (Jacob, 2026-10-08: "the blue gray of seawater
+ * … all the way up to the waterline"). A second, cheap pass over the water's own geometry, drawn just before the sheet with
+ * MULTIPLY blending: it multiplies the already-lit bed by the water's per-colour transmittance over the light's path down and
+ * back up, T = exp(−2 · k · depth), RELATIVE TO GREEN — the colour shift only (red goes first, so a little water turns sand
+ * toward blue-grey). The brightness is the sheet's (Beer–Lambert alpha + Fresnel, makeWaterMaterial), drawn just after.
+ * k per channel = the town's colour-flat turbidity + PURE WATER's absorption at ~650 / 550 / 450 nm (Pope & Fry 1997:
+ * 0.34 · 0.0565 · 0.0092 /m). The flat part is the town's own visibility (Poole–Atkins k ≈ 1.7 / Secchi depth) less pure
+ * water's green, so the green channel attenuates exactly as the sheet's tint does. No town value is typed here.
+ * Shares the water material's uniform OBJECTS (the tide level, the terrain, the visibility, the rim), so it never drifts.
+ * Past the drawing's rim there is no bed (the sheet is opaque there): it multiplies by 1.
+ */
+const PURE_WATER_ABSORPTION = '0.34, 0.0565, 0.0092'   // /m at ~650, 550, 450 nm (Pope & Fry 1997)
+export function makeWaterAbsorption(waterUniforms, terrain) {
+  if (!terrain) throw new Error('[waterAbsorption] needs the terrain (its heights are the bed the light crosses)')
+  const uniforms = {
+    uPhase: waterUniforms.uPhase, uVisibleM: waterUniforms.uVisibleM,
+    uRimIn: waterUniforms.uRimIn, uRimOut: waterUniforms.uRimOut, uHorizonC: waterUniforms.uHorizonC,
+  }
+  terrain.assign({ uniforms })   // uTerrainMap, the bounds, uExag — the same objects every terrain-draped surface reads
+  return new THREE.ShaderMaterial({
+    uniforms,
+    transparent: true, depthWrite: false, depthTest: true,
+    blending: THREE.MultiplyBlending, premultipliedAlpha: true,
+    vertexShader: `
+      #include <common>
+      #include <logdepthbuf_pars_vertex>
+      attribute float aLevelLow;
+      attribute float aLevelHigh;
+      uniform float uPhase;
+      uniform float uExag;
+      varying vec3 vAbsWorld;
+      varying float vAbsLevel;
+      void main() {
+        vAbsLevel = mix(aLevelLow, aLevelHigh, uPhase);
+        vec3 p = position; p.y += vAbsLevel * uExag;            // the sheet's own level, as makeWaterMaterial draws it
+        vec4 w = modelMatrix * vec4(p, 1.0);
+        vAbsWorld = w.xyz;
+        gl_Position = projectionMatrix * viewMatrix * w;
+        #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader: `
+      #include <common>
+      #include <logdepthbuf_pars_fragment>
+      ${terrain.decl}
+      uniform float uVisibleM;
+      uniform float uRimIn;
+      uniform float uRimOut;
+      uniform vec2 uHorizonC;
+      varying vec3 vAbsWorld;
+      varying float vAbsLevel;
+      void main() {
+        #include <logdepthbuf_fragment>
+        if (uVisibleM <= 0.0) { gl_FragColor = vec4(1.0); return; }   // no bed record: the sheet says so; nothing to absorb
+        vec2 uv = vec2((vAbsWorld.x - uBMinX) / uSpanX, (vAbsWorld.z - uBMinZ) / uSpanZ);
+        float depth = max(0.0, vAbsLevel - texture2D(uTerrainMap, _terrainUV(uv)).r);
+        vec3 aw = vec3(${PURE_WATER_ABSORPTION});
+        vec3 k = max(0.0, 1.7 / uVisibleM - aw.g) + aw;
+        vec3 T = exp(-2.0 * k * depth);
+        // ⛔ ONE OWNER PER EFFECT: the sheet's alpha (Beer–Lambert on the green channel) already takes the bed's brightness;
+        // multiplying by T as well attenuated it twice (near-black teal at 2.5 m). This pass takes only the COLOUR SHIFT —
+        // each channel relative to green — so red falls away with depth (×0.85 at 0.3 m, ×0.57 at 1 m) and nothing darkens twice.
+        T = min(vec3(1.0), T / T.g);
+        float past = uRimOut > uRimIn ? smoothstep(uRimIn, uRimOut, length(vAbsWorld.xz - uHorizonC)) : 0.0;
+        gl_FragColor = vec4(mix(T, vec3(1.0), past), 1.0);
+      }`,
+  })
 }

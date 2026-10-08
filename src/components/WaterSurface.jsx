@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
-import { makeWaterMaterial, WATER_LOOK_DEFAULTS, slopeScaleForWind, maxRoughnessForWind,
+import { makeWaterMaterial, makeWaterAbsorption, WATER_LOOK_DEFAULTS, slopeScaleForWind, maxRoughnessForWind,
          coxMunkSlopeVariance, WIND_FLOOR_MPS } from './waterMaterial'
 import { TERRAIN_DECL, assignTerrainUniforms, terrainBed, terrainWater, terrainTide } from '../utils/terrainShader'
 import { tidePhase } from '../../cartograph/waterLevel.mjs'
@@ -49,6 +49,9 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
     // On a body kilometres across it is one sine wave crossing the map.
     return makeWaterMaterial({ extentDiag, terrain: { decl: TERRAIN_DECL, assign: assignTerrainUniforms } })
   }, [geometry, extentOverride])
+  // The water's colour absorption over the bed (makeWaterAbsorption): the same geometry, drawn just before the sheet.
+  const absorption = useMemo(() => makeWaterAbsorption(uniforms, { decl: TERRAIN_DECL, assign: assignTerrainUniforms }), [uniforms])
+  useEffect(() => () => { absorption.dispose() }, [absorption])
   useFrame((_, delta) => {
     uniforms.uTime.value += delta
     uniforms.uPhase.value = phaseNow()
@@ -113,12 +116,15 @@ function WaterSurface({ geometry, renderOrder = 0, extentDiag: extentOverride = 
     uniforms.uKeyUp.value = Math.max(0, Math.min(1, sky.keyDirection.y * 6))
   })
     return (
-    <mesh
-      geometry={geometry}
-      material={material}
-      renderOrder={renderOrder}
-      receiveShadow
-    />
+    <>
+      <mesh geometry={geometry} material={absorption} renderOrder={renderOrder - 0.5} />
+      <mesh
+        geometry={geometry}
+        material={material}
+        renderOrder={renderOrder}
+        receiveShadow
+      />
+    </>
   )
 }
 
