@@ -1,10 +1,10 @@
-# BRIEF — each piece of the ground knows its own height: terrain before ribbons, the kerb built from the shape chain
+# BRIEF — each piece of the ground knows its own height: terrain before ribbons, the kerb and the shore built from the shape chain
 
 <!-- BRIEF-STATE
 status: OPEN
 dispatched: no
 written: 2026-10-08
-evict-when: RULING: Jacob passes, by eye at street level, (1) HPDM's sidewalks on its hills: level across, following the street's grade along, with no stretched or tilted walk, and (2) LS baked WITH its raised kerb (0.15 m) and no ground refusal. Both towns re-baked from one pour each. node checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs is green on every town.
+evict-when: RULING: Jacob passes, by eye at street level, (1) HPDM's sidewalks on its hills: level across, following the street's grade along, with no stretched or tilted walk, (2) LS baked WITH its raised kerb (0.15 m) and no ground refusal, and (3) Huron's and Provincetown's shorelines smooth where land meets water, with no jags and no cracks (the shore gap walk at zero after its instrument fix). Both towns re-baked from one pour each. node checks/claims-the-ground-has-no-cross-polygon-t-junctions.mjs is green on every town.
 -->
 
 **You are the dispatched agent. Name yourself:** one word, yours, not one a running session holds or the record
@@ -21,7 +21,7 @@ interruption.
 
 ## 0. What this is (Jacob, 2026-10-07/08)
 
-Two defects that turned out to be one design question.
+Three defects that turned out to be one design question.
 
 **(a) The stretched sidewalk.** *"We currently paint then stretch. That is usually fine; unfortunately many times it
 means a stretched sidewalk. I think we need to do terrain sometime -during- ribbons; like: stamp id fes, terrain, then
@@ -33,11 +33,34 @@ T-junctions after the kerb's creases are cut into the conformed mesh (`BRIEF-cor
 patch (snap rounding inside `cutAlong`) was **ruled out**: *"I don't understand how this fits with the protopolygon; it
 exists for exactly this reason."*
 
+**(c) The jagged shore** (Jacob, 2026-10-08, after Argon's hole hunt): *"If we aren't smoothing the lidar points into
+a smooth line and extruded into a plane WHICH MEETS a smoothed ground plane similarly extruded, and instead the system is
+just searching for the closest points, that explains our jags. This may be also an issue with sequence; and perhaps this
+is related to WHEN we do the terrain extrusion."* And: **① is the single source of truth for anything that began as a
+chain and has two sides**. There is a resolution mismatch with the lidar, probably on both sides of the first offset
+chains. He ruled that **no more measuring is needed** to establish the shape of the problem. Argon's measurements
+(2026-10-07/08, facts only):
+- The shore-median sand edge is the lidar waterline traced by marching squares at 1 m, UNSMOOTHED
+  (`bake-shore-median.mjs` → `bake-ground`'s `shore` group). It zigzags p50 0.16 · p90 0.73 · p99 2.24 m off its own
+  ±3 m chord. Meanwhile the coast is ALSO a chain in ① (`ROADMAP H-4`: "stroke the coast as a two-sided chain"). So the
+  waterline has two shape sources at two resolutions.
+- The ground is pressed flat into the 2D partition at bake and lifted per VERTEX at render from the 5 m terrain texture
+  (`terrainShader.js#patchTerrain`, perVertex). The extrusion happens LAST and samples the terrain only where the 2D
+  edges happen to put vertices. The bed raster is the same 5 m grid.
+- The cracks: Huron's biggest "hole" (9,212 px at −2386, −2008) is the INSTRUMENT. The gap walk's near-from-water camera
+  sits 20 m out along the normal, which on a ~12 m channel puts it under the far bank. One real crack cluster (~785
+  px/station near 1417–1430, −320…−326): two thin lines along the shoreline where rays pass under a `face:beach` drawn at
+  ~0.31 m, with open edges on `mat:shore` nearby. Down-facing triangles and T-junctions are ruled out; the mechanism is not
+  established.
+
 **The reopening:** *"Yes this reopens design but we have to solve it, so too bad."* Not built tonight; this brief is so
 an agent with directed context can do it soon.
 
 ⭐ **The shared root, Boz's reading (confirm it, §4):** today every piece of the ground is painted FLAT, then draped
 over the terrain, and the kerb is then CUT into the draped mesh. Both defects come from deciding height AFTER shape.
+
+⭐ The shore is the same root: its SHAPE comes from a second, unsmoothed source beside its chain in ①, and its HEIGHT
+is decided last, per vertex, at render.
 
 ⛔ **Keep the stages apart (Jacob, 2026-10-08; `RIBBONS.md` "① the protopolygon … ② the curb polygons"):** ① the
 protopolygon is the literal first corrected offset of the chains: width-free, sharp, never seen, never authored, one
@@ -78,6 +101,10 @@ and its ramps, flares and tapers are pieces built in the same chain, as the corn
   (the 266 T-junctions, the shelved radial landings, and snap rounding ruled out).
 - `docs/briefs/BRIEF-ground-cross-polygon-conformity.md`: "the ground must stretch, not break". That is the conformity
   this must not regress.
+- **The shore:** `ROADMAP H-4` (the coast as a two-sided chain, the lake face as its own ring, the bb as the frame),
+  `RIBBONS §1` (how a coast arrives), and `docs/briefs/BRIEF-the-shore-is-closed.md` (the shore median; its step 3 treatment
+  rules are MATERIAL, grain and handoffs, and stay there; the SHAPE and HEIGHT of the waterline are this brief's).
+  "Smoothing is skeleton, rounding is Survey" (`RIBBONS`, on ①): a waterline's smoothing belongs at the chain, before ①.
 - Memory: `project_terrain_doctrine_2026_05_14` (uExag is the single dial; the mesh carries terrain × uExag at runtime).
 
 ## 3. Code sites (confirm each; line numbers drift, so cite symbols)
@@ -91,6 +118,10 @@ and its ramps, flares and tapers are pieces built in the same chain, as the corn
 | the raised kerb, as cut-then-lift | `cartograph/kerbLift.mjs` (`ringsInside`, `liftBuffer`, `riserFromEdges`, `curblessEdges`), its guard at `bake-ground.js` (`kerbH`) |
 | the runtime drape | `src/utils/terrainShader.js` (`patchTerrain`, perVertex) · `src/lib/terrainCommon.js` (`makeElevationSampler`, `DEFAULT_V_EXAG`) |
 | objects that sit on the drawn ground | `cartograph/bake-tree-anchors.js`, `bake-buildings.js` (centroid y), `bake-lamps.js` |
+| the coast chain and its water side | `cartograph/coastline.mjs` (`weldCoastlines`), the pour's coast stroke (`RIBBONS §1`) |
+| the shore median's sand edge (lidar marching squares, 1 m) | `cartograph/bake-shore-median.mjs` → `bake-ground.js`'s `shore` group |
+| the water level and the bed | `bake-terrain.js` (`terrain.json#water`, `#bed`), the 5 m raster |
+| the shore gap instrument | `checks/claims-no-view-reaches-the-sky-at-the-shore.mjs`, gaps.html (`at=` / `keep=` / hole-ray params, Argon 2026-10-08) |
 | the shelved corner rework (the same seam) | `scratch/perp-corner/radial-landings-SHELVED-2026-10-07.diff` |
 | the kerb-cut harness | `scratch/kerb-cut/dump.mjs`, `scratch/kerb-cut/harness.mjs` |
 
@@ -120,6 +151,11 @@ and its ramps, flares and tapers are pieces built in the same chain, as the corn
    what it samples (the field, or the drawn mesh). A height law per piece changes the drawn ground, and every one of
    these must still sit on it.
 
+6. **The shore needs no new measuring** (Jacob's ruling; facts in §0(c)). Two exceptions, both instrument work:
+   FIX the gap walk's camera so it never lands under the far bank (derive its standoff from the local water width, never
+   the 20 m constant), and re-run it to get a true baseline. Then say whether the ~1417–1430 crack cluster survives on
+   the fixed instrument.
+
 Report counts per town, plus screenshots of HPDM's worst stretch from the street camera, then **STOP**.
 
 ## 5. The proposed design (a PROPOSAL; confirm or replace it with numbers, then Boz and Jacob rule)
@@ -140,6 +176,12 @@ read off what already exists:
 - **Lawn, land use and lots:** drape the terrain, and ABSORB the difference between the planes the street makes and the
   ground behind, as a slope. Where the difference can't be absorbed within the town's tolerance, that is a counted
   failure (a retaining wall is the honest answer, and drawing one is out of scope here; count them).
+- **The shore:** the waterline's SHAPE is one chain. Smooth the coast at the skeleton stage (where streets are already
+  smoothed) and feed it to ① as the two-sided chain `H-4` rules. The lidar waterline then REFINES or VALIDATES that chain
+  (with measured agreement), never as a second, unsmoothed outline painted beside it. Say which, with numbers. Its HEIGHT
+  law: the water is a level plane at the town's water level (`terrain.json#water`); the beach / shore piece is a smooth
+  surface that MEETS that plane along the smoothed waterline and meets the draped land behind it. Both are built before
+  the flatten, not sampled per vertex at render. The bed below follows `BRIEF-the-shore-is-closed`'s treatment.
 - **Medians and islands:** follow their own carriageway rule (no sidewalk or tree lawn in a median; `RIBBONS §3.5`).
 
 **What it replaces (deleted in the same change):** the flat-paint-then-conform path for the street pieces, `cutAlong`
@@ -168,6 +210,9 @@ across-height is constant, but prove it.
 - **The kerb has a face:** wherever the town's kerb is drawn, the height step between road and curb pieces is a mesh
   face, with no T-junction (`claims-the-ground-has-no-cross-polygon-t-junctions` green on every town, LS included).
   Mutation: drop the face → red.
+- **The shore meets:** the water plane and the shore piece share the smoothed waterline as an edge. The fixed gap walk
+  finds zero views reaching the sky along every shore, from water and land, near and far. Mutation: today's unsmoothed
+  marching-squares edge → red (jags), and a removed shore piece → red (holes).
 - **Objects still sit on the drawn ground:** the existing anchor checks (trees, buildings, lamps) stay green.
 - **Flat towns don't move:** on a town with flat terrain and a flat kerb, the new ground is byte-identical to today's,
   or every difference is explained.
@@ -191,7 +236,7 @@ across-height is constant, but prove it.
 
 ## 8. Done when
 
-On HPDM's hills, from the street camera, the sidewalks are level across and follow the street's grade along, with no
+On Huron's and Provincetown's shores the land meets the water along a smooth line, with no jags or cracks, at Hero and at street level. On HPDM's hills, from the street camera, the sidewalks are level across and follow the street's grade along, with no
 stretch, and the lawns take up the slope. LS bakes with its 0.15 m kerb, its curb cuts sloping to the road, and no
 refusal. Huron and Provincetown are no worse (byte-identical where flat). Every check in §6 is green, each seen red
 first. Jacob's eye on HPDM and LS at street level, with the scene and shot recorded.
