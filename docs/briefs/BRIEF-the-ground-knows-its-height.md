@@ -161,50 +161,68 @@ and its ramps, flares and tapers are pieces built in the same chain, as the corn
 
 Report counts per town, plus screenshots of HPDM's worst stretch from the street camera, then **STOP**.
 
-## 5. The proposed design (a PROPOSAL; confirm or replace it with numbers, then Boz and Jacob rule)
+## 5. The design: heights along ①, then ONE deformer that acts like curb geometry (Jacob, 2026-10-08)
 
-**The order:** stamp the feature edges (the pour) → terrain → ribbons and paint WITH the terrain known → the ground
-meshed from pieces that each carry their height law. Terrain still depends only on the coast and lidar, so this is a
-reorder, not a loop (§4.1 confirms it).
+*Jacob: "Why not calculate the correct terrain heights for the protopolygon … maybe what we're wanting is a deformer,
+that acts like curb geometry."* This REPLACES an earlier draft of this section (one height law per painted piece). That
+draft multiplied the sources (one rule per piece type) and is retired. Confirm the premises with numbers, then Boz and
+Jacob rule on the details below.
 
-**A height law per painted piece** (the partition built from ① through ②; ① itself stays width-free and height-free),
-read off what already exists:
-- **Road (carriageway):** follows the street's own grade along its centreline, level across (or the town's authored
-  crown, if one exists in the norms; ⛔ never a constant).
-- **Curb and sidewalk:** a plane per segment: the street's grade along, level or the town's cross-fall across, sitting
-  h above the road's edge (h = the town's kerb height, 0 for a flat-kerb town).
-- **The kerb face:** not cut. It is the shared edge between a road piece and a curb piece whose heights differ, so the
-  mesher emits a vertical (or battered) face there. Ramps, flares and tapers are PIECES with their own planes (h → 0),
-  so curb cuts come from the same construction.
-- **Lawn, land use and lots:** drape the terrain, and ABSORB the difference between the planes the street makes and the
-  ground behind, as a slope. Where the difference can't be absorbed within the town's tolerance, that is a counted
-  failure (a retaining wall is the honest answer, and drawing one is out of scope here; count them).
-- **The shore:** the waterline's SHAPE is one chain. Smooth the coast at the skeleton stage (where streets are already
-  smoothed) and feed it to ① as the two-sided chain `H-4` rules. The lidar waterline then REFINES or VALIDATES that chain
-  (with measured agreement), never as a second, unsmoothed outline painted beside it. Say which, with numbers. Its HEIGHT
-  law: the water is a level plane at the town's water level (`terrain.json#water`); the beach / shore piece is a smooth
-  surface that MEETS that plane along the smoothed waterline and meets the draped land behind it. Both are built before
-  the flatten, not sampled per vertex at render. The bed below follows `BRIEF-the-shore-is-closed`'s treatment.
-- **Medians and islands:** follow their own carriageway rule (no sidewalk or tree lawn in a median; `RIBBONS §3.5`).
+**① stays clean.** ① is two back-to-back offsets of each chain, width-free and sharp. The heights are DERIVED along it,
+the same way Section's bands are derived from it. They are not part of ①.
 
-**What it replaces (deleted in the same change):** the flat-paint-then-conform path for the street pieces, `cutAlong`
-as the kerb's mechanism, and `kerbLift.mjs`'s cut-then-lift. Whether `conformAndRefine` survives for the draped pieces
-is yours to measure. The mesher likely needs a CONSTRAINED triangulation that takes the pieces' shared edges as edges
-(earcut takes none); name the library or algorithm and its cost before adopting it.
+**Step 1: the correct height along ①, once.** For every edge of ①, compute its height: the terrain sampled along the
+line and SMOOTHED along it ("smoothing is skeleton": the smoothing happens at the line, before anything is built from
+it). A street's edge gets its grade; a coast's edge gets the water level (`terrain.json#water`). One computation, one
+record, read by everything after it. This replaces the raw 5 m sampling at the edges, which is the resolution mismatch
+behind the jagged shore and the warped walks.
 
-**Exaggeration:** a piece's own height law is in true metres in the mesh. The runtime multiplies terrain by `uExag`
-on top (as `kerbLift.mjs` already rules for h: *"a 15 cm kerb that grew with the town's exaggeration would be a Class D
-constant in disguise"*). Say how a level-across plane stays level under exaggeration. It should, if the plane's
-across-height is constant, but prove it.
+**Step 2: one deformer, swept across ① like curb geometry.** A height PROFILE, keyed to the distance from ① and the
+side, swept along every edge, the way Section already sweeps the width profile (① → ② → the bands):
+- **Road side:** the line's height across the carriageway (flat, or the town's authored crown if the norms carry one;
+  ⛔ never a constant).
+- **At ② (the curb line):** the kerb step, h = the town's kerb height (0 for a flat-kerb town).
+- **Curb and walk:** the line's height + h, level across (or the town's authored cross-fall).
+- **Curb cuts:** the same profile with h → 0 over the ramp, flare and taper, so the cuts come from the deformer, not from
+  cutting a mesh.
+- **Lawn and land behind:** ease from the walk's height back into the raw terrain over a blend distance.
+- **The shore:** the line's height IS the water level; the land eases down to meet it along the smoothed waterline. The
+  waterline's SHAPE is the one smoothed coast chain in ① (`ROADMAP H-4`). The lidar trace refines or validates it, with
+  measured agreement, never as a second outline beside it.
+- **Medians:** the carriageway profile on both sides (no sidewalk or tree lawn in a median; `RIBBONS §3.5`).
 
-**Open questions you must answer with numbers before Boz and Jacob rule:**
-1. Does the street's grade come from the terrain sampled along the centreline, or from the skeleton's own heights, if
-   it has any? (One source.)
-2. What is the tolerance a lawn may absorb, and whose value is it (an authored norm with a neutral default)?
-3. Bake cost: HPDM's and Provincetown's ground steps are already the long poles (Provincetown's ground + ground-shore
-   took ~160 min on 2026-10-07). Estimate the new mesher's cost.
-4. The shelved perpendicular-landings rework (`BRIEF-corner-ramps-and-kerb §9`, the radial landings): does this design
-   subsume it (landings as pieces with their own plane)? If so, say so, and that brief's open item retires into this one.
+**Step 3: the ground mesh is deformed by that field near ①, and by the plain terrain elsewhere.** The kerb face is
+where the profile steps, so the mesher keeps that line as an edge; nothing is cut afterwards. Name the mechanism (a
+constrained triangulation that takes the profile's step lines as edges, or vertices placed along them) and its cost
+before adopting it.
+
+**Exaggeration: two parts, applied separately.** The terrain part of the deformer (the line's height, the ease into the
+land) scales with the town's exaggeration like all terrain. The kerb step h does NOT: a 15 cm kerb stays 15 cm at any
+exaggeration (`kerbLift.mjs`'s own rule: *"a 15 cm kerb that grew with the town's exaggeration would be a Class D
+constant in disguise"*). Show how the runtime applies the two parts separately, and prove that a walk stays level across
+at ANY exaggeration (Browse may regain depth).
+
+**Where two lines come close (overlap), in plain words:** a spot can be near two DIFFERENT lines at once, e.g. a thin
+strip of land between two parallel streets, or a median between two carriageways. (One street never overlaps itself:
+its two sides are back to back.) Both profiles then reach that spot. Default: **the nearer line decides**. It may rarely
+matter if the lawn eases back into the terrain quickly. ⏳ Confirm the rule once the blend distance is known.
+
+**Blend distance:** how far the lawn takes to ease back into the terrain. ⏳ **Deferred by Jacob** ("will have to wait
+to determine"). Build it as the town's value with a neutral default; measure what each candidate does on HPDM, but
+don't settle it.
+
+**What it replaces (deleted in the same change):** the flat-paint-then-drape path near ①, `cutAlong` as the kerb's
+mechanism, `kerbLift.mjs`'s cut-then-lift, and the shore median's unsmoothed marching-squares outline as a shape
+source. Whether `conformAndRefine` survives away from ① is yours to measure.
+
+**Open questions to answer with numbers before Boz and Jacob rule:**
+1. The line's height: terrain sampled along ① and smoothed. What window, and what does each candidate do to HPDM's grades
+   and Huron's shore? (A town value with a neutral default, never a constant.)
+2. Where the deformer's height is stored, so it stays one record that every consumer reads (the ground, trees,
+   buildings, lamps, the shore band). Prefer riding an existing artifact (`shape.json` carries ①'s runs) over a new file.
+3. Bake cost against today's long poles (Provincetown's ground + ground-shore took ~160 min on 2026-10-07).
+4. The shelved perpendicular landings (`BRIEF-corner-ramps-and-kerb §9`): do they become simply the profile's h → 0 at a
+   cut? If so, that brief's open item retires into this one.
 
 ## 6. Checks (each must be seen to FAIL before it passes; mutation-test every one)
 
