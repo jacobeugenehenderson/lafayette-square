@@ -237,8 +237,8 @@ scene recorded.
   different weld buckets and the zero-area closers get re-cut into degenerate fans. ⛔ **Snap rounding is RULED OUT as the fix (Jacob, 2026-10-08: "I don't
   understand how this fits with the protopolygon; it exists for exactly this reason").** Cutting creases into a conformed
   mesh is the after-the-fact path the protopolygon replaces: the ramp, flare and taper outlines become pieces of the
-  protopolygon, and the ground is meshed from them, with nothing cut afterwards. First question, unmeasured: does the
-  protopolygon already carry the ramp outlines? ▶ offline, seconds per try:
+  protopolygon, and the ground is meshed from them, with nothing cut afterwards. This item now lives in
+  `BRIEF-the-ground-knows-its-height.md` (with the stretched-sidewalk defect: one design). ▶ offline, seconds per try:
   `node scratch/kerb-cut/dump.mjs <dir>` → the printed bake command → `node scratch/kerb-cut/harness.mjs <dir>/mesh [x z]`.
   (A constrained triangulation that takes the creases as edges up front, since earcut takes none, is the mechanism that
   meshing FROM the protopolygon may need.) Until one of them lands, LS bakes only
