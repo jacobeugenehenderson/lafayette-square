@@ -11,13 +11,14 @@
  * claim holds when, after the town is up, Town's onFramed has reported a frame of PLACES (placed ≥ 1) — the frame the key
  * asked for. ⭐ SEEN TO FAIL: on the code before the fix this check reports no frame (the key was consumed early).
  *
- *   node checks/claims-an-early-frame-key-is-held.mjs [--town=huron] [--base=http://localhost:5173]
+ *   node checks/claims-an-early-frame-key-is-held.mjs --town=<town> [--base=http://localhost:5173]
  * Needs the dev server. Read-only: non-GET requests are failed in the page.
  */
 import { launch, sleep } from '../scripts/lib/headless.mjs'
+import { requiredTown } from './_scenes.mjs'
 
 const arg = (k, d) => process.argv.find((a) => a.startsWith(`--${k}=`))?.slice(k.length + 3) ?? d
-const TOWN = arg('town', 'huron'), BASE = arg('base', process.env.DEV_URL || 'http://localhost:5173')
+const TOWN = requiredTown('town'), BASE = arg('base', process.env.DEV_URL || 'http://localhost:5173')
 // --after=<ms>: bump the key that long after the probe appears instead (the control: a key with the town already up)
 const AFTER = +arg('after', '0')
 
