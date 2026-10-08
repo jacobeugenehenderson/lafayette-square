@@ -76,12 +76,11 @@ const LS_PROBES = {
 const TO_WALK = [
   'band-is-one-ring', 'band-vs-partition-state', 'curvature-vs-band', 'deadend-notch-standoff',
   'deadend-populations', 'divided-seam-step', 'every-corner-knows-its-junction', 'every-junction-corner-has-a-curb-cut-source',
-  'every-turn-in-the-protopolygon-gets-an-arc', 'faces-on-the-ssot', 'grout-is-a-valid-polygon', 'handle-rides-its-arc',
-  'live-palette-equals-the-bake', 'marked-corners', 'neon-per-place',
+  'every-turn-in-the-protopolygon-gets-an-arc', 'grout-is-a-valid-polygon', 'handle-rides-its-arc',
+  'live-palette-equals-the-bake', 'neon-per-place',
   'one-corner-write-moves-one-corner', 'preclip-walk', 'producer-does-not-decide-partition', 'proto-curb-is-parallel',
-  'proto-curb', 'proto-thin-curb-runs', 'repour-changes-nothing', 'simplify-preserves-authoring',
-  'spur-leg-offset', 'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-corner-extent-is-carried',
-  'the-light-follows-the-weather', 'the-slope-is-on-the-leg', 'the-survey-reaches-the-measure',
+  'proto-curb', 'repour-changes-nothing', 'simplify-preserves-authoring',
+  'spur-leg-offset', 'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-light-follows-the-weather', 'the-slope-is-on-the-leg', 'the-survey-reaches-the-measure',
   'through-node-width-step', 'uturn-outer-edge-walk',
 ].map(n => `checks/claims-${n}.mjs`)
 const fileHeld = new Map([...Object.entries(LS_PROBES), ...TO_WALK.map(f => [f, 'TO WALK the towns (Jacob 2026-10-07, shrink-only)'])])
