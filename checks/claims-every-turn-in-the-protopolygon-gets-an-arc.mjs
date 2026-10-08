@@ -38,9 +38,9 @@
 // ⛔ NO SILENT SKIP (`POLYGON-FIRST §5` RULE 2): a tile with no curb ring or no arc stamp is its own
 // counted class. The 25 blocks that legitimately yield no curb are a REAL ABSENCE, reported, not
 // dropped into a percentage.
-// ▶ node checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs [scene] [--list]
+// ▶ node checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs [town ...] [--list]   (no town ⇒ every town with ribbons)
 import fs from 'fs'
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { tilePieceLus } from '../src/lib/tileGround.js'
 
 const src = fs.readFileSync(new URL('../src/lib/tileGround.js', import.meta.url), 'utf8')
@@ -49,76 +49,79 @@ if (!m) { console.log('⛔ LOUD FAIL: cannot read FILLET_TURN_TOL out of tileGro
 const TOL = Number(m[1])
 
 const LIST = process.argv.includes('--list')
-const scene = process.argv.slice(2).find(a => !a.startsWith('--')) || 'lafayette-square'
-const f = feed(scene); if (!f) process.exit(1)
-const prev = console.log; console.log = () => {}
-const R = buildProto(f, { quiet: true, protoArtifact: true }); console.log = prev
+let bad = 0
+for (const scene of feedScenes()) {   // no town named ⇒ every town with ribbons (checks/_scenes.mjs)
+  const f = feed(scene); if (!f) { bad++; continue }
+  const prev = console.log; console.log = () => {}
+  const R = buildProto(f, { quiet: true, protoArtifact: true }); console.log = prev
 
-const ang = (a, b, c) => {
-  const u = [b[0]-a[0], b[1]-a[1]], v = [c[0]-b[0], c[1]-b[1]]
-  const lu = Math.hypot(...u), lv = Math.hypot(...v)
-  if (lu < 1e-9 || lv < 1e-9) return null
-  return Math.acos(Math.max(-1, Math.min(1, (u[0]*v[0]+u[1]*v[1])/(lu*lv)))) * 180/Math.PI
-}
+  const ang = (a, b, c) => {
+    const u = [b[0]-a[0], b[1]-a[1]], v = [c[0]-b[0], c[1]-b[1]]
+    const lu = Math.hypot(...u), lv = Math.hypot(...v)
+    if (lu < 1e-9 || lv < 1e-9) return null
+    return Math.acos(Math.max(-1, Math.min(1, (u[0]*v[0]+u[1]*v[1])/(lu*lv)))) * 180/Math.PI
+  }
 
-const FAR = 20   // m — beyond this there is no curb near the vertex at all; the block collapsed.
-// ⛔ Not a tuning knob: the REACHED control sits at p25 5.48 / median 7.79 / p75 11.21 m, so 20 m is
-// well outside the offset population rather than a line drawn through it. Re-derive the control
-// before moving it.
-let turns = 0, withArc = 0, dropped = [], lostStamp = [], absent = [], noCurb = 0, noStamp = 0
-for (const st of R.protoShapeTiles) {
-  const ring = st.ring || []
-  if (ring.length < 3) continue
-  const arcs = st.iaArc
-  if (!(st.iaFull?.length)) { noCurb++; continue }            // ⛔ counted, never skipped
-  if (!arcs?.length)        { noStamp++; continue }
-  const stamps = st.iaStamp
-  if (!stamps?.length) { noStamp++; continue }
-  // ① vertex index → was any contour point struck from it inside an arc?
-  const eased = new Map()                                      // ① index → true/false (seen at all)
-  for (let ri = 0; ri < stamps.length; ri++) {
-    const S = stamps[ri] || [], A = arcs[ri] || []
-    for (let j = 0; j < S.length; j++) {
-      const i = S[j]; if (i == null) continue
-      eased.set(i, (eased.get(i) || false) || (A[j] != null))
+  const FAR = 20   // m — beyond this there is no curb near the vertex at all; the block collapsed.
+  // ⛔ Not a tuning knob: the REACHED control sits at p25 5.48 / median 7.79 / p75 11.21 m, so 20 m is
+  // well outside the offset population rather than a line drawn through it. Re-derive the control
+  // before moving it.
+  let turns = 0, withArc = 0, dropped = [], lostStamp = [], absent = [], noCurb = 0, noStamp = 0
+  for (const st of R.protoShapeTiles) {
+    const ring = st.ring || []
+    if (ring.length < 3) continue
+    const arcs = st.iaArc
+    if (!(st.iaFull?.length)) { noCurb++; continue }            // ⛔ counted, never skipped
+    if (!arcs?.length)        { noStamp++; continue }
+    const stamps = st.iaStamp
+    if (!stamps?.length) { noStamp++; continue }
+    // ① vertex index → was any contour point struck from it inside an arc?
+    const eased = new Map()                                      // ① index → true/false (seen at all)
+    for (let ri = 0; ri < stamps.length; ri++) {
+      const S = stamps[ri] || [], A = arcs[ri] || []
+      for (let j = 0; j < S.length; j++) {
+        const i = S[j]; if (i == null) continue
+        eased.set(i, (eased.get(i) || false) || (A[j] != null))
+      }
+    }
+    const n = ring.length
+    for (let i = 0; i < n; i++) {
+      const t = ang(ring[(i-1+n)%n], ring[i], ring[(i+1)%n])
+      if (t === null || t <= TOL) continue                       // curve sample — ① makes no corner
+      turns++
+      if (eased.get(i)) { withArc++; continue }
+      // ⛔⛔ "UNREACHED" IS NOT ONE THING, AND REPORTING IT AS ONE OVERSTATES BY 5×. Establish which:
+      // is there an arc at the expected offset (⇒ the corner WAS built and only its ① provenance was
+      // lost in the union) or is there none (⇒ a corner genuinely absent)? Measured, not assumed.
+      let d = Infinity, nearArc = null
+      for (let ri = 0; ri < st.iaFull.length; ri++) {
+        const Rg = st.iaFull[ri] || [], Ar = arcs[ri] || []
+        for (let j = 0; j < Rg.length; j++) {
+          const dd = Math.hypot(Rg[j][0]-ring[i][0], Rg[j][1]-ring[i][1])
+          if (dd < d) { d = dd; nearArc = Ar[j] } } }
+      if (!eased.has(i) && nearArc != null) { lostStamp.push({ turn: t, at: ring[i] }); continue }
+      if (d > FAR) { absent.push({ turn: t, at: ring[i], d }); continue }
+      dropped.push({ tile: st, i, turn: t, at: ring[i], d })
     }
   }
-  const n = ring.length
-  for (let i = 0; i < n; i++) {
-    const t = ang(ring[(i-1+n)%n], ring[i], ring[(i+1)%n])
-    if (t === null || t <= TOL) continue                       // curve sample — ① makes no corner
-    turns++
-    if (eased.get(i)) { withArc++; continue }
-    // ⛔⛔ "UNREACHED" IS NOT ONE THING, AND REPORTING IT AS ONE OVERSTATES BY 5×. Establish which:
-    // is there an arc at the expected offset (⇒ the corner WAS built and only its ① provenance was
-    // lost in the union) or is there none (⇒ a corner genuinely absent)? Measured, not assumed.
-    let d = Infinity, nearArc = null
-    for (let ri = 0; ri < st.iaFull.length; ri++) {
-      const Rg = st.iaFull[ri] || [], Ar = arcs[ri] || []
-      for (let j = 0; j < Rg.length; j++) {
-        const dd = Math.hypot(Rg[j][0]-ring[i][0], Rg[j][1]-ring[i][1])
-        if (dd < d) { d = dd; nearArc = Ar[j] } } }
-    if (!eased.has(i) && nearArc != null) { lostStamp.push({ turn: t, at: ring[i] }); continue }
-    if (d > FAR) { absent.push({ turn: t, at: ring[i], d }); continue }
-    dropped.push({ tile: st, i, turn: t, at: ring[i], d })
-  }
-}
 
-const pct = (a, b) => b ? (100*a/b).toFixed(1) + '%' : '—'
-console.log(`\n${scene} — every vertex where ① TURNS past ${TOL}°, did ② make an arc?`)
-console.log(`  ① turning vertices (⇒ a corner, by the ruling) : ${turns}`)
-console.log(`    ✅ an arc was made                            : ${withArc}  (${pct(withArc, turns)})`)
-console.log(`    ◐ arc EXISTS at the offset, ① stamp lost in the union : ${lostStamp.length}  (${pct(lostStamp.length, turns)})`)
-console.log(`       ⇒ the corner was BUILT. A traceability gap, ⛔ NOT a missing corner.`)
-console.log(`    ⛔ NO ARC, and a curb is right there  ⬅ THE DEFECT   : ${dropped.length}  (${pct(dropped.length, turns)})`)
-console.log(`    · no curb within ${FAR} m (block collapsed — legitimate)      : ${absent.length}  (${pct(absent.length, turns)})`)
-console.log(`  ⛔ tiles with NO curb ring (a real absence)      : ${noCurb}`)
-console.log(`  ⛔ tiles with a curb but NO arc stamp            : ${noStamp}`)
-if (dropped.length && LIST) {
-  console.log(`\n  the dropped corners, sharpest first — ⭐ each is a place the operator gets no ADA pad:`)
-  for (const d of [...dropped].sort((a,b) => b.turn - a.turn).slice(0, 25))
-    console.log(`    turn ${d.turn.toFixed(0).padStart(3)}°  ①v${String(d.i).padStart(3)}  lu=${[...new Set(tilePieceLus(d.tile).filter(Boolean))].join('+').padEnd(12)} @ ${d.at[0].toFixed(1)},${d.at[1].toFixed(1)}`)
+  const pct = (a, b) => b ? (100*a/b).toFixed(1) + '%' : '—'
+  console.log(`\n${scene} — every vertex where ① TURNS past ${TOL}°, did ② make an arc?`)
+  console.log(`  ① turning vertices (⇒ a corner, by the ruling) : ${turns}`)
+  console.log(`    ✅ an arc was made                            : ${withArc}  (${pct(withArc, turns)})`)
+  console.log(`    ◐ arc EXISTS at the offset, ① stamp lost in the union : ${lostStamp.length}  (${pct(lostStamp.length, turns)})`)
+  console.log(`       ⇒ the corner was BUILT. A traceability gap, ⛔ NOT a missing corner.`)
+  console.log(`    ⛔ NO ARC, and a curb is right there  ⬅ THE DEFECT   : ${dropped.length}  (${pct(dropped.length, turns)})`)
+  console.log(`    · no curb within ${FAR} m (block collapsed — legitimate)      : ${absent.length}  (${pct(absent.length, turns)})`)
+  console.log(`  ⛔ tiles with NO curb ring (a real absence)      : ${noCurb}`)
+  console.log(`  ⛔ tiles with a curb but NO arc stamp            : ${noStamp}`)
+  if (dropped.length && LIST) {
+    console.log(`\n  the dropped corners, sharpest first — ⭐ each is a place the operator gets no ADA pad:`)
+    for (const d of [...dropped].sort((a,b) => b.turn - a.turn).slice(0, 25))
+      console.log(`    turn ${d.turn.toFixed(0).padStart(3)}°  ①v${String(d.i).padStart(3)}  lu=${[...new Set(tilePieceLus(d.tile).filter(Boolean))].join('+').padEnd(12)} @ ${d.at[0].toFixed(1)},${d.at[1].toFixed(1)}`)
+  }
+  console.log(`\n  ⛔ THIS GATE IS RED WHILE A CORNER IS DROPPED. Its complement, \`claims-the-ease-is-the-corner\`,`)
+  console.log(`     reads 100% through exactly the same map — it can only see arcs that EXIST. Run BOTH.\n`)
+  if (dropped.length) bad++
 }
-console.log(`\n  ⛔ THIS GATE IS RED WHILE A CORNER IS DROPPED. Its complement, \`claims-the-ease-is-the-corner\`,`)
-console.log(`     reads 100% through exactly the same map — it can only see arcs that EXIST. Run BOTH.\n`)
-process.exit(dropped.length ? 1 : 0)
+process.exit(bad ? 1 : 0)
