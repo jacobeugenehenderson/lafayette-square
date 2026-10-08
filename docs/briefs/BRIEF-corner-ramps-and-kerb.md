@@ -234,11 +234,14 @@ scene recorded.
   flare and taper outlines are cut into the CONFORMED mesh (`groundConformity.js#cutAlong`; Huron byte-identical, the
   cut takes ~2 s). What is left is **snap rounding**: where several creases meet within a millimetre (a cut's ramp +
   flare corners — worst at (-414.857, 684.746)), on a mesh that already carries mm slivers, crossings 1 mm apart fall in
-  different weld buckets and the zero-area closers get re-cut into degenerate fans. Fix shape: snap every segment end
-  and every crossing ONCE (lattice + vertices within `ON_EDGE_M`) before cutting. ▶ offline, seconds per try:
+  different weld buckets and the zero-area closers get re-cut into degenerate fans. ⛔ **Snap rounding is RULED OUT as the fix (Jacob, 2026-10-08: "I don't
+  understand how this fits with the protopolygon; it exists for exactly this reason").** Cutting creases into a conformed
+  mesh is the after-the-fact path the protopolygon replaces: the ramp, flare and taper outlines become pieces of the
+  protopolygon, and the ground is meshed from them, with nothing cut afterwards. First question, unmeasured: does the
+  protopolygon already carry the ramp outlines? ▶ offline, seconds per try:
   `node scratch/kerb-cut/dump.mjs <dir>` → the printed bake command → `node scratch/kerb-cut/harness.mjs <dir>/mesh [x z]`.
-  ⭐ The alternative to weigh with Jacob — a triangulator swap, not a patch: a CONSTRAINED triangulation that takes the
-  creases as edges up front (earcut takes none), so nothing is cut afterwards. Until one of them lands, LS bakes only
+  (A constrained triangulation that takes the creases as edges up front, since earcut takes none, is the mechanism that
+  meshing FROM the protopolygon may need.) Until one of them lands, LS bakes only
   flat (kerb height 0), Boz's offer to Jacob.
 
 **Traps a fresh agent will hit:**
