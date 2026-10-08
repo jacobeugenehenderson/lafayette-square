@@ -76,11 +76,9 @@ const LS_PROBES = {
 const TO_WALK = [
   'band-is-one-ring', 'band-vs-partition-state', 'curvature-vs-band', 'deadend-notch-standoff',
   'deadend-populations', 'divided-seam-step', 'every-corner-knows-its-junction', 'every-junction-corner-has-a-curb-cut-source',
-  'grout-is-a-valid-polygon', 'handle-rides-its-arc',
+  'handle-rides-its-arc',
   'live-palette-equals-the-bake', 'neon-per-place',
-  'one-corner-write-moves-one-corner', 'preclip-walk', 'producer-does-not-decide-partition', 'proto-curb-is-parallel',
-  'proto-curb', 'repour-changes-nothing', 'simplify-preserves-authoring',
-  'spur-leg-offset', 'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-light-follows-the-weather', 'through-node-width-step', 'uturn-outer-edge-walk',
+  'one-corner-write-moves-one-corner', 'preclip-walk', 'proto-curb', 'spur-leg-offset', 'swap-reaches-the-paint', 'the-beach-band-is-the-towns-own', 'the-light-follows-the-weather', 'through-node-width-step', 'uturn-outer-edge-walk',
 ].map(n => `checks/claims-${n}.mjs`)
 const fileHeld = new Map([...Object.entries(LS_PROBES), ...TO_WALK.map(f => [f, 'TO WALK the towns (Jacob 2026-10-07, shrink-only)'])])
 
