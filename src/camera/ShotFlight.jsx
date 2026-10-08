@@ -58,7 +58,7 @@ const _p = new THREE.Vector3(), _t = new THREE.Vector3(), _fwd = new THREE.Vecto
 const _warned = new Set()
 
 export default function ShotFlight({ shot, flight = true, streetAt, viewInset, flightRef, onFlightEnd, movieHandle, holdRef, scene, places, placeIds, frameMode = 'densest',
-  frameKey, onFramed, planHeading = 'town', bearingRef, movers, frameMover = null }) {
+  frameKey, frameKeyAtMount = frameKey, onFramed, planHeading = 'town', bearingRef, movers, frameMover = null }) {
   if (flight !== true && flight !== false && flight !== 'cut') throw new Error(`[Town] ⛔ flight must be true, 'cut' or false (got ${flight})`)
   const following = planHeading && typeof planHeading === 'object'
   if (following ? !(planHeading.follow && 'current' in planHeading.follow) : planHeading !== 'town' && planHeading !== 'north') {
@@ -76,7 +76,7 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   const tween = useRef(null)
   if (!tween.current) tween.current = createCameraTween()
   const live = useRef({})
-  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, size, onFramed, planHeading, movers, frameMover }
+  live.current = { shot, flight, streetAt, viewInset, flightRef, onFlightEnd, scene, places, placeIds, frameMode, size, onFramed, planHeading, movers, frameMover, frameKey }
   const prev = useRef(null)            // the last shot this component saw
   const pending = useRef(null)         // { shot, landed }: a cut whose destination is not known yet — landed when placed
   const flying = useRef(null)          // { from, to, toUp, fromOff, toOff }
@@ -257,17 +257,31 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
   }, [shot])
 
   // ── the plan's ONE move: re-frame on a frameKey change (never on litIds alone — typing never moves the camera) ──
-  const lastKey = useRef(frameKey)
-  useLayoutEffect(() => {
-    if (Object.is(lastKey.current, frameKey)) return
-    lastKey.current = frameKey
-    if (shot !== 'plan' || live.current.flight === false) return
+  // ⭐ A KEY IS HELD UNTIL IT HAS FLOWN (Hinge, 2026-10-07: a Ward pin link opened COLD never zoomed). A key that arrives
+  // before the plan can fly it — not the plan shot yet, the places or the disc not landed, a cut still pending — waits in
+  // `heldKey`, and the per-frame step that already places a pending cut flies it ONCE, the first frame the plan is live.
+  // `lastKey` names the last key FLOWN; a newer key replaces a held one. ⛔ It was marked done before the plan could fly
+  // it, so the link's one frame was swallowed (and the not-yet-loaded places fell through to the home frame).
+  // From the key as of <Town>'s first render (frameKeyAtMount): a key that changed while the town loaded is a change too.
+  const lastKey = useRef(frameKeyAtMount)
+  const heldKey = useRef(false)
+  const frameIfLive = (cancelFlight) => {
+    const L = live.current
+    if (L.shot !== 'plan' || L.flight === false || !L.places || !getSceneStencil() || pending.current) return false
+    if (flying.current && !cancelFlight) return false
     planOn.current = 'places'
     const d = destination('plan')
-    if (!d) return
+    if (!d) return false
     if (tween.current.isActive()) tween.current.cancel()
     flying.current = null
     fly('plan', 'plan', d, transitionMs('frame'))
+    return true
+  }
+  useLayoutEffect(() => {
+    if (Object.is(lastKey.current, frameKey)) return
+    if (live.current.flight === false) { lastKey.current = frameKey; heldKey.current = false; return }   // no flights: nothing is owed
+    heldKey.current = true
+    if (frameIfLive(true)) { lastKey.current = frameKey; heldKey.current = false }
   }, [frameKey])
 
   // ── the rose: turn the plan to the town's heading or to north, keeping what the reader is looking at ──
@@ -317,6 +331,8 @@ export default function ShotFlight({ shot, flight = true, streetAt, viewInset, f
 
   useFrame(() => {
     if (pending.current && !flying.current) cut(pending.current.shot, pending.current.landed)
+    // a frameKey that arrived before the plan was live flies now, once (the frameKey effect above)
+    if (heldKey.current && frameIfLive(false)) { lastKey.current = live.current.frameKey; heldKey.current = false }
     // FOLLOWING: screen-up is the reader's heading every frame — no flight (the app's heading is already smoothed; a
     // live follow must not ease). Entering and leaving follow are flights (the planHeading effect).
     if (following && shot === 'plan' && !flying.current && live.current.flight !== false) {

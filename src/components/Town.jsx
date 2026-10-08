@@ -582,6 +582,9 @@ export default function Town({
   const places = useBuildingPlaces()
   // Listings with no building are kept (as null): the plan's disclosure names them unplaced, never drops them.
   // What the plan FRAMES — never what it lights (frameIds, header). Absent: the lit set, else every listing.
+  // The frameKey as of Town's FIRST render: the plan flies a key that changed while the town was still loading (a Ward
+  // pin link opened cold — Hinge, 2026-10-07), which ShotFlight, mounted only once the town has loaded, cannot see itself.
+  const frameKeyAtMount = useRef(frameKey).current
   const placeIds = useMemo(() => (frameIds != null ? [...frameIds]
     : litIds?.size ? [...litIds] : listings.map((l) => l.building_id ?? null)), [frameIds, litIds, listings])
   const ownHandle = useRef(null)
@@ -622,7 +625,7 @@ export default function Town({
           there with the one tween, holding the movie while it does. ▶ node checks/claims-one-shot-flight.mjs */}
       <ShotFlight shot={shot} flight={flight} streetAt={streetAt} viewInset={viewInset} flightRef={flightRef}
         onFlightEnd={onFlightEnd} movieHandle={movieHandle} holdRef={flightHold} scene={scene} places={places} placeIds={placeIds} frameMode={frameMode}
-        frameKey={frameKey} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} movers={movers} frameMover={frameMover} />
+        frameKey={frameKey} frameKeyAtMount={frameKeyAtMount} onFramed={onFramed} planHeading={planHeading} bearingRef={bearingRef} movers={movers} frameMover={frameMover} />
       {controls && <RegimeControls regime={shot === 'plan' ? 'plan' : shot === 'street' ? 'street' : 'playback'} />}
       <FrameLimiter paused={paused} idle={idle} everyFrame={quality.movieEveryFrame && shot === 'movie'} flying={flightHold} />
       {!(time instanceof Date) && <TimeTicker holdScrubbedTime={holdScrubbedTime} paused={paused} />}
