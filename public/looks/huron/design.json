@@ -88,6 +88,12 @@
   "cornerCornerRadiusOverrides": {
     "423.580,-130.300|cleveland-road-west-1:left|ohio-street:left": {
       "cut": "perpendicular"
+    },
+    "-40.750,-62.160|liberty-drive-0:right|liberty-drive-0:right": {
+      "corner": true
+    },
+    "-60.420,11.870|liberty-drive-0:left|liberty-drive-0:left": {
+      "corner": true
     }
   },
   "curbWidth": 0.381,
