@@ -236,8 +236,8 @@ scene recorded.
   flare corners — worst at (-414.857, 684.746)), on a mesh that already carries mm slivers, crossings 1 mm apart fall in
   different weld buckets and the zero-area closers get re-cut into degenerate fans. ⛔ **Snap rounding is RULED OUT as the fix (Jacob, 2026-10-08: "I don't
   understand how this fits with the protopolygon; it exists for exactly this reason").** Cutting creases into a conformed
-  mesh is the after-the-fact path the protopolygon replaces: the ramp, flare and taper outlines become pieces of the
-  protopolygon, and the ground is meshed from them, with nothing cut afterwards. This item now lives in
+  mesh is the after-the-fact path the protopolygon replaces: the ramp, flare and taper outlines are pieces built from the
+  shape chain (① → ② → the bands; ① stays width-free), and the ground is meshed from them, with nothing cut afterwards. This item now lives in
   `BRIEF-the-ground-knows-its-height.md` (with the stretched-sidewalk defect: one design). ▶ offline, seconds per try:
   `node scratch/kerb-cut/dump.mjs <dir>` → the printed bake command → `node scratch/kerb-cut/harness.mjs <dir>/mesh [x z]`.
   (A constrained triangulation that takes the creases as edges up front, since earcut takes none, is the mechanism that

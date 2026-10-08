@@ -1,4 +1,4 @@
-# BRIEF — each piece of the ground knows its own height: terrain before ribbons, the kerb in the protopolygon
+# BRIEF — each piece of the ground knows its own height: terrain before ribbons, the kerb built from the shape chain
 
 <!-- BRIEF-STATE
 status: OPEN
@@ -37,9 +37,16 @@ exists for exactly this reason."*
 an agent with directed context can do it soon.
 
 ⭐ **The shared root, Boz's reading (confirm it, §4):** today every piece of the ground is painted FLAT, then draped
-over the terrain, and the kerb is then CUT into the draped mesh. Both defects come from deciding height AFTER shape. The
-protopolygon is meant to be the one place a surface's shape is decided; the fix is that it also says how each of its
-pieces takes its height, and the ground is meshed from pieces that already know it.
+over the terrain, and the kerb is then CUT into the draped mesh. Both defects come from deciding height AFTER shape.
+
+⛔ **Keep the stages apart (Jacob, 2026-10-08; `RIBBONS.md` "① the protopolygon … ② the curb polygons"):** ① the
+protopolygon is the literal first corrected offset of the chains: width-free, sharp, never seen, never authored, one
+closed path. **It gets no heights and no pieces.** The pieces are DOWNSTREAM of it: ② the curb polygons offset from ①,
+then Section's bands painted into them (the partition). The canon warns that conflating ① with what is built from it
+"put the wrong construction in `src/`". So the fix is not "the protopolygon carries heights". It is: **the painted
+pieces, each derived from ① through ②, carry their own height law, and the ground is meshed from those pieces.** The
+kerb isn't cut into a mesh afterwards. Its face is the edge where a road piece meets a curb piece (② gives that edge),
+and its ramps, flares and tapers are pieces built in the same chain, as the corners and bands already are.
 
 ## 1. The rule this must keep (`CLAUDE.md` Layer 0)
 
@@ -51,7 +58,7 @@ pieces takes its height, and the ground is meshed from pieces that already know 
 - **The override is the product.** Authored widths, corners and the kerb height (`norms.json#kerb`) are inputs. Measure
   with each town's `blockCustoms` and `design.json` loaded.
 - **Never add a source of truth** (`feedback_never_add_a_source_of_truth`). The terrain (`terrain.bin`), the partition
-  (the protopolygon, `shape.json`) and the kerb norm already exist. The height law is read off them, never a parallel
+  (① and ② and the painted partition, `shape.json`) and the kerb norm already exist. The height law is read off them, never a parallel
   list. Replacing today's drape-then-cut with the new construction is a SWAP: the old path is deleted in the same
   change.
 
@@ -106,7 +113,8 @@ pieces takes its height, and the ground is meshed from pieces that already know 
    itself, the mesh's coarseness (`triangulateAndRefine`'s max edge), or both. Cause measured, or "cause not
    established".
 4. **The kerb, re-read in this light.** Confirm §9's 266 and where they sit. Then answer the first question Jacob's
-   ruling raised: **does the protopolygon already carry the ramp, flare and taper outlines, or only their records?**
+   ruling raised: **is each ramp, flare and taper outline already a piece of the painted partition (derived through
+   ① → ② → the bands), or only a record that `kerbLift.mjs` turns into a cut afterwards?**
    Name the producer of each outline (`kerbLift.mjs` today) and whether it could be emitted as partition pieces instead.
 5. **Who else reads a ground height** (trees, buildings, lamps, the revetment, the shore band, labels): list each and
    what it samples (the field, or the drawn mesh). A height law per piece changes the drawn ground, and every one of
@@ -120,7 +128,8 @@ Report counts per town, plus screenshots of HPDM's worst stretch from the street
 meshed from pieces that each carry their height law. Terrain still depends only on the coast and lidar, so this is a
 reorder, not a loop (§4.1 confirms it).
 
-**A height law per piece of the protopolygon**, read off what already exists:
+**A height law per painted piece** (the partition built from ① through ②; ① itself stays width-free and height-free),
+read off what already exists:
 - **Road (carriageway):** follows the street's own grade along its centreline, level across (or the town's authored
   crown, if one exists in the norms; ⛔ never a constant).
 - **Curb and sidewalk:** a plane per segment: the street's grade along, level or the town's cross-fall across, sitting
