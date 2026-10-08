@@ -67,22 +67,22 @@ is decided last, per vertex, at render.
 protopolygon is the literal first corrected offset of the chains: width-free, sharp, never seen, never authored, one
 closed path. **It gets no heights and no pieces.** The pieces are DOWNSTREAM of it: ② the curb polygons offset from ①,
 then Section's bands painted into them (the partition). The canon warns that conflating ① with what is built from it
-"put the wrong construction in `src/`". So the fix is not "the protopolygon carries heights". It is: **the painted
-pieces, each derived from ① through ②, carry their own height law, and the ground is meshed from those pieces.** The
+"put the wrong construction in `src/`". So the fix is not "① carries heights". It is: **heights computed ALONG ① (derived, like the bands), then one
+deformer swept across it like curb geometry (§5), and the ground is shaped by it.** The
 kerb isn't cut into a mesh afterwards. Its face is the edge where a road piece meets a curb piece (② gives that edge),
-and its ramps, flares and tapers are pieces built in the same chain, as the corners and bands already are.
+and its ramps, flares and tapers are the same profile easing h → 0, not cuts.
 
 ## 1. The rule this must keep (`CLAUDE.md` Layer 0)
 
 - **A kit, not HPDM.** The method must hold on a town nobody has looked at: flat (Huron), hilly (HPDM), coastal
   (Provincetown), heavily authored (LS). No per-town or per-street exception, and no constant tuned to HPDM's slopes.
   Every tolerance is the town's authored value with a neutral default, or derived from the scene.
-- **Fails loudly.** A piece whose height law can't be satisfied (a walk that can't stay level within its tolerance, a
+- **Fails loudly.** A place where the deformer can't be satisfied (a walk that can't stay level within its tolerance, a
   kerb step with no face) is a COUNTED, NAMED failure, never a silent drape.
 - **The override is the product.** Authored widths, corners and the kerb height (`norms.json#kerb`) are inputs. Measure
   with each town's `blockCustoms` and `design.json` loaded.
 - **Never add a source of truth** (`feedback_never_add_a_source_of_truth`). The terrain (`terrain.bin`), the partition
-  (① and ② and the painted partition, `shape.json`) and the kerb norm already exist. The height law is read off them, never a parallel
+  (① and ② and the painted partition, `shape.json`) and the kerb norm already exist. The deformer's heights are read off them, never a parallel
   list. Replacing today's drape-then-cut with the new construction is a SWAP: the old path is deleted in the same
   change.
 
@@ -149,7 +149,7 @@ and its ramps, flares and tapers are pieces built in the same chain, as the corn
    ① → ② → the bands), or only a record that `kerbLift.mjs` turns into a cut afterwards?**
    Name the producer of each outline (`kerbLift.mjs` today) and whether it could be emitted as partition pieces instead.
 5. **Who else reads a ground height** (trees, buildings, lamps, the revetment, the shore band, labels): list each and
-   what it samples (the field, or the drawn mesh). A height law per piece changes the drawn ground, and every one of
+   what it samples (the field, or the drawn mesh). The deformer changes the drawn ground, and every one of
    these must still sit on it.
 
 6. **The shore: test the thesis, don't hunt holes** (§0(c)). Measure whether the waterline has one shape source or
@@ -243,14 +243,14 @@ source. Whether `conformAndRefine` survives away from ① is yours to measure.
 ## 7. Bounds
 
 - **Writes:** `cartograph/bake-ground.js`, `cartograph/groundConformity.js`, `cartograph/kerbLift.mjs` (to delete or
-  replace), the pour or ribbon producer only if §4 shows the height law must be known there, `src/lib/tileGround.js`
+  replace), the pour or ribbon producer only if §4 shows the heights along ① must be known there, `src/lib/tileGround.js`
   only through the shared painter (Survey and Section must still agree: ① is one producer), `checks/`.
 - ⛔ **No bake without Boz's clear, one bake at a time on the machine, load-gated.** LS's pour is HELD by its own
   declaration: re-pouring it is Jacob's call. Never put an old version of a served file on disk.
 - ⛔ No Publish or Promote.
 - Commit through explicit pathspecs only, checking each commit's name-status.
 - **Registers:** `ARCHITECTURE` "Ground conformance" and "Terrain doctrine", rewritten in place · `BAKE.md` (the step
-  order) · `SECTION` / `RIBBONS` (the height law per piece) · `FEATURES` (sidewalks that stay level on hills; the kerb
+  order) · `SECTION` / `RIBBONS` (the heights along ① and the deformer's profile) · `FEATURES` (sidewalks that stay level on hills; the kerb
   as built) · `OPERATIONS` (any new authored tolerance).
 - **Superseded text goes to the Diary** (`cartograph/_archive/`, dated). `BRIEF-corner-ramps-and-kerb §9`'s kerb item
   is re-pointed here.
