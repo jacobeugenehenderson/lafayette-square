@@ -10,7 +10,9 @@
  *    pick another date. A set is all slots or nothing.
  * ⛔ ONE CAMERA, EIGHT TIMES — never eight camera spots. Capture refuses while the Hero shot plays, and every image is
  *    read only if the camera's pose is the one the press started on; any move (a tween, damping, a hand) aborts the set.
- * The clock is paused for the capture and put back after it, live or scrubbed, as it was.
+ * ⭐ ALWAYS CLEAR WEATHER (Jacob, 2026-10-11): Capture stands the scene in Stage's Clear for the whole run, whatever
+ *    the operator has chosen, and waits for it to land. The clock is paused for the capture; afterwards the operator's
+ *    own weather and time come back, live or scrubbed, as they were.
  */
 import { useState } from 'react'
 import { addAfterEffect, useThree } from '@react-three/fiber'
@@ -23,6 +25,8 @@ import { TOD_SLOT_IDS } from '../lib/todSlots.js'
 import { townDateAtMinute, townClockOf, townMinuteOf } from '../lib/townClock.js'
 
 const SIZE = 1200   // px, square — the share image
+// The weather every share image is taken in: Stage's Weather switch's Clear (Jacob's ruling, 2026-10-11).
+const SHARE_WEATHER = 'clear'
 // ⛔ A signal that never comes is a failure, never a picture: past this the capture stops and says which slot and which state.
 const SETTLE_TIMEOUT_MS = 15000
 
@@ -71,7 +75,7 @@ function frameAfter(n, pose) {
  *     the commit (`setCelestial` → `sunElevation`); the store moving is the commit having landed.
  *   · the WEATHER — a time change re-selects the directive and would EASE to it over 45 s
  *     (AtmosphereDirectiveDriver). A snap is requested, so it lands at once; landed = the published (tweened)
- *     directive IS the new raw one. ⚠️ A snap also resets accumulated weather (wetness, snow, cloud drift).
+ *     directive IS the new raw one. Under Clear there is no wetness or snow for the snap to reset.
  *   · the SHADOW MAP — redrawn on the first frame after the light moves (CelestialBodies' >10 m rule; slots are
  *     hours apart), so that frame draws it and the NEXT one is read.
  * Everything else the clock drives (sky colour, exposure, bloom, lamps, neon, uplights) is a function of the clock
@@ -97,9 +101,20 @@ async function captureSet() {
   const mins = getTodSlotMinutes(was.time)
   const absent = TOD_SLOT_IDS.filter((id) => mins[id] == null)
   if (absent.length) throw new Error(`${absent.map(getTodSlotLabel).join(', ')} does not happen on ${townClockOf(was.time).date} here — pick another date`)
+  const cart = useCartographStore.getState()
+  const wasWeather = cart.weatherMode
   tod.setPaused(true)
   const images = {}
   try {
+    if (wasWeather !== SHARE_WEATHER) {
+      // Stage's switch stands the preset with a snap (WeatherPoller); landed = the feed paused on it and its directive published.
+      const raw0 = useAtmosphere.getState().rawDirective
+      cart.setWeatherMode(SHARE_WEATHER)
+      await until(() => {
+        const a = useAtmosphere.getState()
+        return useSkyState.getState().feedPaused && a.rawDirective !== raw0 && !a.snapPending && a.tweenedDirective === a.rawDirective
+      }, 'Clear weather', pose)
+    }
     for (const id of TOD_SLOT_IDS) {
       const when = townDateAtMinute(was.time, mins[id])
       // Already on this minute, the clock would not move and nothing would re-land: step off it first.
@@ -110,6 +125,7 @@ async function captureSet() {
       images[id] = await frameAfter(2, pose)
     }
   } finally {
+    if (wasWeather !== SHARE_WEATHER) useCartographStore.getState().setWeatherMode(wasWeather)
     const t = useTimeOfDay.getState()
     useAtmosphere.getState().requestSnap()   // the operator's own sky lands at once, as it was
     if (was.live) t.returnToLive(); else t.setTime(was.time)
