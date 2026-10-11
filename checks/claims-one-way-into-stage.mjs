@@ -16,11 +16,14 @@
  *   4. live: /stage/<town>/<shot> serves the SAME cartograph.html as /cartograph (one app, not a second Stage page);
  *   5. live: no town's plan names a step for the bake's own bakedAt stamp, for revetment.json on a town whose last
  *      revetment run wrote none, or for another town's record (the registry's town-id.json / modules).
+ *   6. every link into Stage in src/ (an <a> whose label says Stage, or any `/stage/` or `/cartograph` address
+ *      literal) is built by authoringAddress.js#stagePath — Preview's "← Stage" was `href="/cartograph"`, which
+ *      lands in the Designer and skips Stage. Mutation: that old href, planted, is caught.
  *
  * ⭐ Reads the source and asks the running dev server; it never bakes and writes nothing.
  *   node checks/claims-one-way-into-stage.mjs
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const ROOT = process.env.KIT_ROOT || join(import.meta.dirname, '..')   // KIT_ROOT: a scratch copy, for mutation tests
@@ -108,6 +111,39 @@ if (live) {
     }
   }
   if (seen && !wolves) ok(`${seen} towns' plans: no step stale for the bake's own stamp, an absent revetment, or another town's record`)
+}
+
+// ── 6 ─────────────────────────────────────────────────────────────────────────
+// A Stage link is an <a> whose label says Stage, or any literal address into the authoring app. Only stagePath
+// (and addressUrl beside it, in authoringAddress.js) may build one.
+// Comments are prose about addresses, not links: block comments and line comments (`//` after whitespace) are dropped.
+const code = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')
+function stageLinkFaults(raw) {
+  const text = code(raw), faults = []
+  for (const m of text.matchAll(/<a\b([^>]*)>([^<]*Stage[^<]*)<\/a>/g)) {
+    if (!/href=\{\s*stagePath\(/.test(m[1])) faults.push(`<a${m[1].replace(/\s+/g, ' ').slice(0, 60)}>${m[2].trim()}</a>`)
+  }
+  for (const m of text.matchAll(/(['"`])\/(?:stage\/|cartograph(?=['"`?#]))/g)) faults.push(`address literal ${text.slice(m.index, m.index + 24).split('\n')[0]}…`)
+  return faults
+}
+function* srcFiles(rel) {
+  for (const name of readdirSync(join(ROOT, rel))) {
+    const r = `${rel}/${name}`
+    if (statSync(join(ROOT, r)).isDirectory()) yield* srcFiles(r)
+    else if (/\.(jsx?|mjs)$/.test(name) && r !== 'src/lib/authoringAddress.js') yield r
+  }
+}
+let linkFiles = 0, linkFaults = 0
+for (const f of srcFiles('src')) {
+  linkFiles++
+  for (const fault of stageLinkFaults(src(f))) { linkFaults++; bad(`${f}: a Stage link not built by stagePath — ${fault}`) }
+}
+if (!/href=\{stagePath\(/.test(src('src/preview/PreviewApp.jsx'))) bad('Preview\'s "← Stage" is not built by stagePath')
+else if (!linkFaults) ok(`${linkFiles} src files: every Stage link is built by stagePath (Preview's "← Stage" among them)`)
+{ // mutation: Preview's old link
+  const planted = stageLinkFaults(`<a href="/cartograph" className="x"\n  style={{ fontSize: 13 }}>← Stage</a>`)
+  if (planted.length) ok(`mutation (the old href="/cartograph") is caught: ${planted[0]}`)
+  else bad('mutation (the old href="/cartograph") passed — this section cannot see a Stage link that skips stagePath')
 }
 
 console.log(failed ? `\n⛔ ${failed} failed\n` : '\nall held\n')

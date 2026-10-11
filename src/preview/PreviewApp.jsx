@@ -21,7 +21,9 @@ import { invalidateTreeAtlas } from '../components/treeAtlasMaterial'
 import { shotReachable, SHOT_LABELS, streetStandOf } from '../camera/shots.js'
 import { useSceneStencil } from '../lib/cameraRegimes.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { INSTANCE } from '../instance.js'
+import { INSTANCE, mapForLook } from '../instance.js'
+import { stagePath } from '../lib/authoringAddress.js'
+import looksIndex from '../../public/looks/index.json' with { type: 'json' }
 import { slabManifest } from '../lib/slabUrl.js'
 import DawnTimeline from '../components/DawnTimeline'
 import { RENDER_TIERS } from '../lib/renderTiers.js'
@@ -128,6 +130,7 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
         opacity: disabled ? 0.35 : 1,
       }}>{label}</button>
   )
+  const stageScene = INSTANCE?.lookId ? mapForLook(INSTANCE.lookId) : null
   const divider = (key) => (
     <span key={key} style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.12)', margin: '0 8px' }} />
   )
@@ -140,8 +143,13 @@ function TopAppBar({ shot, setShot, mode, setMode }) {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
         backdropFilter: 'blur(8px)',
       }}>
-      <a href="/cartograph" className="rounded-lg px-3 py-1 cursor-pointer glass-text-secondary"
-        style={{ fontSize: 13, textDecoration: 'none' }}>← Stage</a>
+      {/* Back to this town's Stage, on this shot and Look: the one address builder (authoringAddress.js#stagePath).
+          No town open → no Stage to go back to. ▶ node checks/claims-one-way-into-stage.mjs */}
+      {stageScene
+        ? <a href={stagePath(looksIndex.looks || [], { scene: stageScene, lookId: INSTANCE.lookId, shot })}
+            className="rounded-lg px-3 py-1 cursor-pointer glass-text-secondary"
+            style={{ fontSize: 13, textDecoration: 'none' }}>← Stage</a>
+        : <span className="rounded-lg px-3 py-1 glass-text-dim" style={{ fontSize: 13 }} title="No town open">← Stage</span>}
       {divider('d1')}
       <span className="rounded-lg px-3 py-1 glass-text-dim"
         style={{ fontSize: 13, background: 'rgba(255,255,255,0.04)' }}>{INSTANCE?.name ?? 'Choose a town'} ▼</span>
