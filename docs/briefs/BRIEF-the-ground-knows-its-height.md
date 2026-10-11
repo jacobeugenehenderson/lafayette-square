@@ -207,6 +207,16 @@ strip of land between two parallel streets, or a median between two carriageways
 its two sides are back to back.) Both profiles then reach that spot. Default: **the nearer line decides**. It may rarely
 matter if the lawn eases back into the terrain quickly. ⏳ Confirm the rule once the blend distance is known.
 
+**THE CASE THAT STARTED THIS, a block on a mound** (Jacob, 2026-10-10; common, and frequent in HPDM): *"a lot is never
+a smooth inflated bubble meeting at an apex; in HPDM there's lots of ~1.5 m rises over .75 m so the sidewalk is very
+distorted there."* Today the 5 m terrain grid can't represent that rise, so it is smeared across the walk and the block
+drapes as a bubble. In the real street the walk follows the street, and the rise happens right BEHIND it, steeply (a
+berm or low wall), with the lot a terrace on top. In this design that is the lawn-and-land step: the walk stays on the
+line's height and the rise lives behind it. So the blend is often SHORT and STEEP (~0.75 m on HPDM), and ideally comes
+from where the real rise is in the lidar, finer than the 5 m grid. ⚠️ `BRIEF-terrain-resolution.md` ("the good elevation
+exists and the pipeline cannot read it") is directly relevant: read it, and say whether the rise can be located at the
+lidar's own resolution. Measure HPDM's mounds: the rise height, its run, and how far it sits behind the walk.
+
 **Blend distance:** how far the lawn takes to ease back into the terrain. ⏳ **Deferred by Jacob** ("will have to wait
 to determine"). Build it as the town's value with a neutral default; measure what each candidate does on HPDM, but
 don't settle it.
