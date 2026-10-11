@@ -232,8 +232,11 @@ at ANY exaggeration (Browse may regain depth).
 
 **Where two lines come close (overlap), in plain words:** a spot can be near two DIFFERENT lines at once, e.g. a thin
 strip of land between two parallel streets, or a median between two carriageways. (One street never overlaps itself:
-its two sides are back to back.) Both profiles then reach that spot. Default: **the nearer line decides**. It may rarely
-matter if the lawn eases back into the terrain quickly. ⏳ Confirm the rule once the blend distance is known.
+its two sides are back to back.) Both profiles then reach that spot. **RULED (Jacob, 2026-10-11): the painted band
+decides.** Ownership comes from ① (the partition), never from the nearer line, and never from a blend across the strip.
+Where two owners' bands meet at a height gap, the gap is a vertical retaining-wall face on that partition edge. A
+station with no painted owner fails loudly, as its own class. **Tolerance RULED the same day: 7.8 mm** (×3.8 ground
+triangles accepted).
 
 **THE CASE THAT STARTED THIS, a block on a mound** (Jacob, 2026-10-10; common, and frequent in HPDM): *"a lot is never
 a smooth inflated bubble meeting at an apex; in HPDM there's lots of ~1.5 m rises over .75 m so the sidewalk is very
