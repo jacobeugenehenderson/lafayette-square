@@ -1,5 +1,5 @@
 {
-  "_ruled": "Jacob, 2026-10-06: \"I honestly have no idea! Let's say perpendicular\" — a perpendicular pair of curb cuts per junction corner, at ADA's dimensions (1.5 m wide, 0.6 m warning strip). Jacob, 2026-10-06: crosswalks have NO MARKINGS (so no far-kerb crossing either). The kerb stays flat — much of Huron has no curbs — so no kerb key: kit 0.",
+  "_ruled": "Jacob, 2026-10-06: \"I honestly have no idea! Let's say perpendicular\" — a perpendicular pair of curb cuts per junction corner, at ADA's dimensions (1.5 m wide, 0.6 m warning strip). Jacob, 2026-10-06: crosswalks have NO MARKINGS (so no far-kerb crossing either). The kerb stays flat — much of Huron has no curbs — so no kerb key: kit 0. Jacob, 2026-10-10 (BRIEF-the-ground-knows-its-height §5): a walk or curb falls no more than 1:48 across its run — ADA's cross-slope limit, a town norm beside the kerb.",
   "curbCuts": {
     "style": "perpendicular",
     "width": 1.5,
@@ -8,5 +8,8 @@
   "crosswalks": {
     "style": "none",
     "farKerb": "none"
+  },
+  "walk": {
+    "crossSlopeMax": "1:48"
   }
 }

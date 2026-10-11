@@ -68,15 +68,18 @@ function validateCrosswalk(n, where) {
 // slopes. ⭐ Where no curb is drawn the block slopes down FLUSH over `taperRun` (metres, the town's; Jacob 2026-10-06);
 // the bake throws when a town with h > 0 has curbless frontage and no run. ⚠️ GAP: there is no NATIONAL rung (ADA is
 // federal), so a US town names its slopes itself, citing ADA.
+// a "rise:run" slope → { [k]: rise/run, [k + 'Text']: "rise:run" }
+function ratio(v, k, where) {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*$/.exec(String(v))
+  if (!m || !(+m[1] > 0 && +m[2] > 0)) throw new Error(`${where} \`${k}\` must be "rise:run" (e.g. "1:12"), got ${JSON.stringify(v)}`)
+  return { [k]: +m[1] / +m[2], [k + 'Text']: `${m[1]}:${m[2]}` }
+}
+
 function validateKerb(n, where) {
   if (!n || typeof n !== 'object') throw new Error(`${where}: a kerb norm must be an object { height, rampSlope, flareSlope }`)
   if (!(Number.isFinite(n.height) && n.height >= 0)) throw new Error(`${where}: kerb \`height\` must be metres (>= 0)`)
   const out = { height: n.height }
-  for (const k of ['rampSlope', 'flareSlope']) if (n[k] != null) {
-    const m = /^\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*$/.exec(String(n[k]))
-    if (!m || !(+m[1] > 0 && +m[2] > 0)) throw new Error(`${where}: kerb \`${k}\` must be "rise:run" (e.g. "1:12"), got ${JSON.stringify(n[k])}`)
-    out[k] = +m[1] / +m[2]; out[k + 'Text'] = `${m[1]}:${m[2]}`
-  }
+  for (const k of ['rampSlope', 'flareSlope']) if (n[k] != null) Object.assign(out, ratio(n[k], k, `${where}: kerb`))
   if (n.taperRun != null) {
     if (!(Number.isFinite(n.taperRun) && n.taperRun > 0)) throw new Error(`${where}: kerb \`taperRun\` must be metres (> 0) — where no curb is drawn the block slopes flush over it`)
     out.taperRun = n.taperRun
@@ -117,4 +120,19 @@ export function resolveCurbCutNorm(scene, state) {
   return { ...resolveKind('curbCuts', validate, scene, state),
            crosswalks: resolveKind('crosswalks', validateCrosswalk, scene, state),
            kerb: resolveKind('kerb', validateKerb, scene, state, { height: 0 }) }
+}
+
+// ⭐ THE WALK — the steepest a walk or curb may fall ACROSS its run (`crossSlopeMax`, "rise:run"; Jacob 2026-10-10: ADA's
+// 1:48, a town norm beside the kerb). Kit = no limit: a town that names none is MEASURED and said to be ungated, never
+// held to a number the kit chose. ⛔ NOT frozen into the pour: Section paints nothing from it — the ground bake and its
+// check read it here, so authoring it needs no re-pour. ▶ node checks/claims-the-walk-is-level-across.mjs
+function validateWalk(n, where) {
+  if (!n || typeof n !== 'object') throw new Error(`${where}: a walk norm must be an object { crossSlopeMax }`)
+  return n.crossSlopeMax != null ? ratio(n.crossSlopeMax, 'crossSlopeMax', `${where}: walk`) : {}
+}
+
+/** The town's walk norm and its rung (`source`). `crossSlopeMax` absent ⇒ the town names no limit. */
+export function resolveWalkNorm(scene, state) {
+  if (!existsSync(join(DATA_ROOT, scene))) throw new Error(`resolveWalkNorm: no scene data directory ${join(DATA_ROOT, scene)}`)
+  return resolveKind('walk', validateWalk, scene, state, {})
 }

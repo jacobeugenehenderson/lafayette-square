@@ -135,6 +135,9 @@ The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the r
   h > 0 and cuts or curbless frontage but no slopes/run THROWS, and so does any step left with neither face nor taper
   (named by place). ⚠️ The renderer does not yet light the kerb face (`BRIEF-corner-ramps-and-kerb` step 5, piece 5).
   ▶ `node checks/claims-the-kerb-stands-and-drops-at-each-cut.mjs`
+- **Walk cross-slope limit** — `norms.json` → `{"walk": {"crossSlopeMax": "1:48"}}` (ADA; the four US towns carry it).
+  Kit = no limit (measured, said to be ungated). Read at bake time, never frozen, so authoring it needs no re-pour.
+  ▶ `node checks/claims-the-walk-is-level-across.mjs` (every walk and curb, at the town's exaggeration ceiling)
 - **Crosswalks** *(layer "Crosswalks", colour `crosswalk`)* — square across the street, centred on the cut that serves them
   (or on a recorded OSM crossing whose ends land in that corner's arc — read from `osm.json`, nothing to fetch), kerb to kerb;
   no curb cuts ⇒ none. Same ladder under `crosswalks`: `{"style": "lines"|"continental", "width", "line",
