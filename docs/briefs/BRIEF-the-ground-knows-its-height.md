@@ -217,6 +217,19 @@ from where the real rise is in the lidar, finer than the 5 m grid. ⚠️ `BRIEF
 exists and the pipeline cannot read it") is directly relevant: read it, and say whether the rise can be located at the
 lidar's own resolution. Measure HPDM's mounds: the rise height, its run, and how far it sits behind the walk.
 
+**THE SHORE'S GUSSET** (Jacob, 2026-10-10, the shore's mechanism in his words): *"The protopolygon has two sides; the
+shore side and the water side. In plan view, they look like the same line, they are the same shape. However, when looked
+at from the side the elevation splits the ground and you can see thru to the sky layer behind. This also makes a
+'gusset' shaped opening: a flat bottom (water) and the contoured lip at shoreside. It is both contoured on the ground
+plane *and* the terrain elevation plane. I think what has to happen is an averaging step where we look at the elevation
+and average the gusset-plugged and turn it from a block shape to an s-curve."* So the shore profile is: the land side
+at the line's terrain height, the water side at the water level, and the deformer's averaging step fills the gap
+between them, turning the step into an S-curve that rolls the land down to the water. Measure the gusset (the height
+gap across the shore edge, per town, and where it opens to the sky), and say how the shore median's two lines (Jacob's
+2026-10-04 ruling, `bake-shore-median.mjs`) relate to the S-curve. ⛔ Don't retire that ruling without asking him.
+
+**Cross-slope limit: RULED** (Jacob, 2026-10-10): ADA's 1:48, as a town norm beside `kerb` in `norms.json`.
+
 **Blend distance:** how far the lawn takes to ease back into the terrain. ⏳ **Deferred by Jacob** ("will have to wait
 to determine"). Build it as the town's value with a neutral default; measure what each candidate does on HPDM, but
 don't settle it.
