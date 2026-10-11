@@ -1,0 +1,13 @@
+# hipointedemun — USGS 3DEP 1 m lidar-derived DEM — what a dune needs
+# dataset: Digital Elevation Model (DEM) 1 meter (1 m) · 2 tile(s), ONE survey: MO_SaintLouis_2017
+# covers 100% of the town's bbox · newest tile 2020-03-30
+# ⛔ 2 other survey(s) overlap this town and were NOT mixed in — butting
+#    two vintages together seams where the ground genuinely changed between them:
+#      IL_MadisonCo_2014 — 1 tile(s), 65% coverage, 2020-03-30
+#      IL_HicksDome_FluorsparDistrict_2019_D19 — 1 tile(s), 43% coverage, 2022-03-19
+# Acquired by cartograph/fetch-dem.mjs. Read by HTTP RANGE REQUEST in
+# bake-terrain.js: nothing is downloaded, only the window the grid needs.
+# ⛔ Re-derive rather than trusting this list — the count here has been wrong before:
+#   node cartograph/fetch-dem.mjs --scene=hipointedemun
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MO_SaintLouis_2017/TIFF/USGS_one_meter_x73y428_MO_SaintLouis_2017.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MO_SaintLouis_2017/TIFF/USGS_one_meter_x73y429_MO_SaintLouis_2017.tif

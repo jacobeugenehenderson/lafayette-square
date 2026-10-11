@@ -112,6 +112,7 @@ cartograph/data/*/raw/*
 !cartograph/data/*/raw/admin_boundaries.json
 !cartograph/data/*/raw/survey.json
 !cartograph/data/*/raw/elevation.json
+!cartograph/data/*/raw/elevation-sources.txt
 !cartograph/data/*/raw/centerlines.json
 !cartograph/data/*/raw/measurements.json
 !cartograph/data/*/raw/stl_parcels.json

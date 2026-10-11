@@ -1,0 +1,18 @@
+# provincetown — USGS 3DEP 1 m lidar-derived DEM — what a dune needs
+# dataset: Digital Elevation Model (DEM) 1 meter (1 m) · 7 tile(s), ONE survey: MA_CentralEastern_2021_B21
+# covers 93% of the town's bbox · newest tile 2023-01-15
+# ⛔ 2 other survey(s) overlap this town and were NOT mixed in — butting
+#    two vintages together seams where the ground genuinely changed between them:
+#      MA_NE_CMGP_Sandy_Z19_A3_2015 — 4 tile(s), 57% coverage, 2020-03-30
+#      MA_NE_CMGP_Sandy_Z19_2013 — 4 tile(s), 57% coverage, 2019-12-16
+# Acquired by cartograph/fetch-dem.mjs. Read by HTTP RANGE REQUEST in
+# bake-terrain.js: nothing is downloaded, only the window the grid needs.
+# ⛔ Re-derive rather than trusting this list — the count here has been wrong before:
+#   node cartograph/fetch-dem.mjs --scene=provincetown
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MA_CentralEastern_2021_B21/TIFF/USGS_1M_19_x39y466_MA_CentralEastern_2021_B21.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MA_CentralEastern_2021_B21/TIFF/USGS_1M_19_x39y467_MA_CentralEastern_2021_B21.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MA_CentralEastern_2021_B21/TIFF/USGS_1M_19_x40y465_MA_CentralEastern_2021_B21.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MA_CentralEastern_2021_B21/TIFF/USGS_1M_19_x40y466_MA_CentralEastern_2021_B21.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MA_CentralEastern_2021_B21/TIFF/USGS_1M_19_x40y467_MA_CentralEastern_2021_B21.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MA_CentralEastern_2021_B21/TIFF/USGS_1M_19_x41y465_MA_CentralEastern_2021_B21.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/MA_CentralEastern_2021_B21/TIFF/USGS_1M_19_x41y466_MA_CentralEastern_2021_B21.tif

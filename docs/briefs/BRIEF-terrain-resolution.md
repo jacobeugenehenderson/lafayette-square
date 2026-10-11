@@ -155,8 +155,10 @@ acquisition step · `cartograph/intake-rows.mjs` (the row AND the audit) · `car
 wrong when the source carries the body at more than one elevation.
 ⛔ **OUT:** the boulder revetment (`BRIEF-boulder-revetment.md` — it WAITS on your answer) · the water
 shader · `V_EXAG`/`terrainExag` (that is `BRIEF-ls-bleed-excision` site 15).
-⚠️ **huron is the only safe town to re-bake terrain on.** ⛔ LS, HPDM and altadena have working
-terrain from the coarse source; **re-fetching theirs is a separate decision and not yours.**
+⭐ **2026-10-10 (Jacob: "go, upgrade both"; towns don't share things):** LS and HPDM now carry their own 1 m lists
+(`fetch-dem.mjs`, MO_SaintLouis_2017; HPDM's terrain had been LS's 1/3″ tile through a symlink, now deleted).
+⏳ **LS's `raw/elevation.tif` (475 MB, untracked) is deleted when LS's terrain has baked successfully from its
+`raw/elevation-sources.txt` at LS's next bake** — a trigger, not a date. altadena's source is not yet re-fetched.
 ⛔ **SURFACE SCOPE DRIFT, DO NOT ABSORB IT.**
 
 ---

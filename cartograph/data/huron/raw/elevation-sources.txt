@@ -1,0 +1,9 @@
+# huron — USGS 1 m lidar, OH_Statewide_Phase1_2019_B19 (EPSG:26917, NAD83/UTM 17N).
+# Read by HTTP RANGE REQUEST: nothing is downloaded. ~940 MB of source, and the
+# bake pulls only the window it needs, at the overview level matching the grid.
+# Re-derive this list rather than trusting it (the count here has been wrong before):
+#   curl "https://tnmaccess.nationalmap.gov/api/v1/products?datasets=Digital%20Elevation%20Model%20(DEM)%201%20meter&bbox=-82.62165,41.35042,-82.50322,41.43952&max=50"
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/OH_Statewide_Phase1_2019_B19/TIFF/USGS_1M_17_x36y458_OH_Statewide_Phase1_2019_B19.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/OH_Statewide_Phase1_2019_B19/TIFF/USGS_1M_17_x36y459_OH_Statewide_Phase1_2019_B19.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/OH_Statewide_Phase1_2019_B19/TIFF/USGS_1M_17_x37y458_OH_Statewide_Phase1_2019_B19.tif
+https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/1m/Projects/OH_Statewide_Phase1_2019_B19/TIFF/USGS_1M_17_x37y459_OH_Statewide_Phase1_2019_B19.tif

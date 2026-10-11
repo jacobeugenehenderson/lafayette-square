@@ -719,6 +719,14 @@ async function main() {
     }
   }
 
+  // ⛔⛔ A SOURCE WITH NO VALUE ANYWHERE OVER THE TOWN REFUSES (2026-10-10). Every sample missed, so the fill below found
+  // no neighbour and wrote 0 everywhere: a FLAT town, normalised to its own "local minimum", with one warning line —
+  // the plausible-looking success Layer 0 forbids. It is reachable: fetch-dem once chose a survey whose tile boxes
+  // reached the town but held no data over it (Lafayette Square: IL_HicksDome_FluorsparDistrict_2019, 0%).
+  // ▶ node checks/claims-a-dem-is-chosen-by-its-data.mjs
+  if (misses === total) {
+    throw new Error(`[bake-terrain] ⛔ ${SCENE}: the elevation source holds NO value anywhere over the town (${total.toLocaleString()} of ${total.toLocaleString()} samples missed: ${sources.map(s => s.label).join(', ') || 'no source opened'}). Refusing to bake a flat town. ▶ node cartograph/fetch-dem.mjs --scene=${SCENE}`)
+  }
   if (misses) {
     // Nearest grid-neighbor fill (rare; should never happen for LS).
     for (let idx = 0; idx < total; idx++) {

@@ -47,6 +47,7 @@ import { requireExplicitMap } from './scene.js'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { writeIfChanged } from './io.js'
+import { openRasters, readWindow, sampleSources } from './elevationSources.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const API = 'https://tnmaccess.nationalmap.gov/api/v1/products'
@@ -123,6 +124,36 @@ export function bestProject(items, bbox) {
   return scored
 }
 
+/**
+ * ⭐⭐ COVERAGE IS MEASURED IN DATA, NOT IN TILE BOXES (2026-10-10, BRIEF-the-ground-knows-its-height §4).
+ * A tile's bounding box is its grid, not its survey: USGS cuts every project into 10 km UTM tiles, and a project flown
+ * east of a river still owns tiles reaching west across it. For Lafayette Square the bbox score chose
+ * IL_HicksDome_FluorsparDistrict_2019 ("100%", the newest of two 100% surveys), which holds NO DATA over the town — 0.0%
+ * on a range-read grid, against MO_SaintLouis_2017's 100% (▶ scratch/ground-height/dem-coverage.mjs). The list it
+ * would have written bakes as a flat town (bake-terrain filled every miss with 0, until that too refused).
+ * ⇒ Each project the bbox prefilter keeps is RANGE-READ on an N×N grid over the town's square, at its finest level, and
+ * ranked by the share of points that carry a value; ties by bbox share, then by the newest publication.
+ * ▶ node checks/claims-a-dem-is-chosen-by-its-data.mjs (mutation: --coverage-by=bbox chooses LS's empty survey → red)
+ */
+export async function byData(scored, bbox, { gridN = 12, quiet = false } = {}) {
+  for (const p of scored) {
+    const opened = await openRasters(p.tiles.map(t => ({ kind: 'url', ref: t.downloadURL })), { cacheMB: 64 })
+    const dLat = 10 / 111000, dLon = dLat / Math.max(0.1, Math.cos(((bbox.minLat + bbox.maxLat) / 2) * Math.PI / 180))
+    let hit = 0
+    for (let i = 0; i < gridN; i++) for (let j = 0; j < gridN; j++) {
+      const lon = bbox.minLon + ((i + 0.5) / gridN) * (bbox.maxLon - bbox.minLon)
+      const lat = bbox.minLat + ((j + 0.5) / gridN) * (bbox.maxLat - bbox.minLat)
+      const W = await readWindow(opened, { cornersLL: [[lon - dLon, lat - dLat], [lon + dLon, lat - dLat], [lon + dLon, lat + dLat], [lon - dLon, lat + dLat]], stepM: null, quiet: true })
+      if (Number.isFinite(sampleSources(W, lon, lat, { nanIsNodata: true }))) hit++
+    }
+    p.bboxCoverage = p.coverage
+    p.data = hit / (gridN * gridN)
+    if (!quiet) console.log(`    ${p.project}: data over ${(100 * p.data).toFixed(0)}% of the town's square (tile boxes ${(100 * p.bboxCoverage).toFixed(0)}%)`)
+  }
+  scored.sort((a, b) => (b.data - a.data) || (b.bboxCoverage - a.bboxCoverage) || (a.newest < b.newest ? 1 : -1))
+  return scored
+}
+
 /** The whole ladder, stopping at the first dataset with coverage. */
 export async function findDem(bbox, opts = {}) {
   const tried = []
@@ -132,7 +163,9 @@ export async function findDem(bbox, opts = {}) {
     catch (e) { tried.push({ ...rung, error: e.message, n: 0 }); continue }
     tried.push({ ...rung, n: res.items.length, url: res.url })
     if (res.items.length) {
-      const scored = bestProject(res.items, bbox)
+      const scored = opts.coverageBy === 'bbox' ? bestProject(res.items, bbox) : await byData(bestProject(res.items, bbox), bbox, opts)
+      // ⛔ A RUNG WHOSE BEST SURVEY HOLDS NO DATA OVER THE TOWN IS NOT COVERAGE — say so and try the next rung.
+      if (opts.coverageBy !== 'bbox' && !(scored[0].data > 0)) { tried.at(-1).noData = scored.map(p => p.project); continue }
       return { rung, items: scored[0].tiles, projects: scored, tried, queryUrl: res.url }
     }
   }
@@ -145,11 +178,11 @@ function render({ scene, bbox, rung, items, tried, projects = [] }) {
     L.push(`# ${scene} — ${rung.note}`)
     const best = projects[0]
     L.push(`# dataset: ${rung.name} (${rung.gsd}) · ${items.length} tile(s), ONE survey: ${best?.project ?? '?'}`)
-    if (best) L.push(`# covers ${(100 * best.coverage).toFixed(0)}% of the town's bbox · newest tile ${best.newest || '?'}`)
+    if (best) L.push(`# DATA over ${best.data != null ? (100 * best.data).toFixed(0) + '%' : '(not measured)'} of the town's square (tile boxes ${(100 * best.coverage).toFixed(0)}%) · newest tile ${best.newest || '?'}`)
     if (projects.length > 1) {
       L.push(`# ⛔ ${projects.length - 1} other survey(s) overlap this town and were NOT mixed in — butting`)
       L.push(`#    two vintages together seams where the ground genuinely changed between them:`)
-      for (const p of projects.slice(1)) L.push(`#      ${p.project} — ${p.tiles.length} tile(s), ${(100 * p.coverage).toFixed(0)}% coverage, ${p.newest || '?'}`)
+      for (const p of projects.slice(1)) L.push(`#      ${p.project} — ${p.tiles.length} tile(s), data ${p.data != null ? (100 * p.data).toFixed(0) + '%' : '?'} (boxes ${(100 * p.coverage).toFixed(0)}%), ${p.newest || '?'}`)
     }
     L.push(`# Acquired by cartograph/fetch-dem.mjs. Read by HTTP RANGE REQUEST in`)
     L.push(`# bake-terrain.js: nothing is downloaded, only the window the grid needs.`)
@@ -161,7 +194,7 @@ function render({ scene, bbox, rung, items, tried, projects = [] }) {
     // town nobody has poured; a file recording the refusal is evidence.
     L.push(`# ${scene} — NO DEM COVERAGE FOUND. This town has no terrain.`)
     L.push(`# bbox ${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
-    for (const t of tried) L.push(`#   tried ${t.name} (${t.gsd}) → ${t.error ? 'ERROR ' + t.error : t.n + ' tiles'}`)
+    for (const t of tried) L.push(`#   tried ${t.name} (${t.gsd}) → ${t.error ? 'ERROR ' + t.error : t.n + ' tiles'}${t.noData ? ` — NO DATA over the town (${t.noData.join(', ')})` : ''}`)
     L.push(`# ⭐ Recorded as verified-absent in this town's intake.json — searched, nothing`)
     L.push(`# exists. That is the kit's THIRD state and it is INFORMATION: without it the next`)
     L.push(`# operator re-spends the hours rediscovering that this town has no DEM.`)
@@ -190,7 +223,7 @@ function markVerifiedAbsent(scene, tried) {
     verifiedAbsent: true,
     verifiedOn: new Date().toISOString().slice(0, 10),
     verifiedBy: 'cartograph/fetch-dem.mjs',
-    note: `no coverage on the National Map: ${tried.map(t => `${t.name} → ${t.error ? 'ERROR' : t.n + ' tiles'}`).join(' · ')}`,
+    note: `no coverage on the National Map: ${tried.map(t => `${t.name} → ${t.error ? 'ERROR' : t.n + ' tiles'}${t.noData ? ' (no data over the town)' : ''}`).join(' · ')}`,
   }
   mkdirSync(mapDirOf(scene), { recursive: true })
   writeIfChanged(p, JSON.stringify(doc, null, 2) + '\n')
@@ -218,7 +251,7 @@ async function main() {
 
   console.log(`[fetch-dem] ${scene}  bbox ${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
   const { rung, items, tried, projects } = await findDem(bbox)
-  for (const t of tried) console.log(`    ${t.n ? '✅' : '⛔'} ${t.name} (${t.gsd}) → ${t.error ? 'ERROR ' + t.error : t.n + ' tile(s)'}`)
+  for (const t of tried) console.log(`    ${t.n && !t.noData ? '✅' : '⛔'} ${t.name} (${t.gsd}) → ${t.error ? 'ERROR ' + t.error : t.n + ' tile(s)'}${t.noData ? ' — none holds data over the town' : ''}`)
 
   const body = render({ scene, bbox, rung, items, tried, projects })
   const outPath = join(rawDir, 'elevation-sources.txt')
@@ -237,7 +270,7 @@ async function main() {
     console.error(`      that refuses to pour. The pour must treat this as a decision, not a default.`)
     process.exit(1)
   }
-  for (const p of (projects || [])) console.log(`    ${p === projects[0] ? '→ CHOSEN' : '  skipped'}  ${p.project}  ${p.tiles.length} tile(s)  ${(100 * p.coverage).toFixed(0)}% coverage  ${p.newest || '?'}`)
+  for (const p of (projects || [])) console.log(`    ${p === projects[0] ? '→ CHOSEN' : '  skipped'}  ${p.project}  ${p.tiles.length} tile(s)  data ${(100 * p.data).toFixed(0)}% (boxes ${(100 * p.coverage).toFixed(0)}%)  ${p.newest || '?'}`)
   console.log(`\n✅ ${items.length} tile(s), ${rung.name} (${rung.gsd}), one survey → ${outPath}`)
   console.log(`   Nothing downloaded; bake-terrain range-reads them.`)
 }
