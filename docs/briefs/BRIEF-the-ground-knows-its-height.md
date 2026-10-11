@@ -226,7 +226,10 @@ and average the gusset-plugged and turn it from a block shape to an s-curve."* S
 at the line's terrain height, the water side at the water level, and the deformer's averaging step fills the gap
 between them, turning the step into an S-curve that rolls the land down to the water. Measure the gusset (the height
 gap across the shore edge, per town, and where it opens to the sky), and say how the shore median's two lines (Jacob's
-2026-10-04 ruling, `bake-shore-median.mjs`) relate to the S-curve. ⛔ Don't retire that ruling without asking him.
+2026-10-04 ruling, `bake-shore-median.mjs`) relate to the S-curve. ⛔ Don't retire that ruling without asking him. ⭐ **The gusset's SHAPE is data, not just a hole to fill** (Jacob, 2026-10-10: *"The gusset shape itself is
+important because it would determine particulate/fill size."*): its height gap and run at each point decide the grain of
+what fills it (boulder → rock → gravel → sand; `BRIEF-the-shore-is-closed`'s treatment rules). So the averaging step must
+RECORD the gusset's dimensions along the shore (one record, read by the treatment), not only smooth them away.
 
 **Cross-slope limit: RULED** (Jacob, 2026-10-10): ADA's 1:48, as a town norm beside `kerb` in `norms.json`.
 
