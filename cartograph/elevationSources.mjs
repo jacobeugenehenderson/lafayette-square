@@ -118,16 +118,29 @@ async function withNetRetry(label, read) {
   }
 }
 
+/**
+ * ⛔ A TILE THE TOWN'S LIST NAMES THAT CANNOT BE OPENED REFUSES BY NAME (2026-10-10). NOAA and USGS re-version their
+ * tiles, so a list goes stale: Provincetown's bake stopped on BlueTopo_BF2JL2MC_20260709.tiff (HTTP 404, replaced by
+ * _20260930) with geotiff's bare "Error fetching data", naming neither the tile nor the fix.
+ * Asks the server for the tile's status (one-byte range request) and throws with the tile, its URL, that status and
+ * the command that re-derives the list. ▶ node checks/claims-a-dead-tile-is-named.mjs
+ */
+export async function deadTile(url, label, cause, refetch) {
+  let status = 'no answer'
+  try { const r = await fetch(url, { headers: { Range: 'bytes=0-0' } }); status = `HTTP ${r.status}` } catch (e) { status = `unreachable (${e?.cause?.code || e.message})` }
+  throw new Error(`⛔ ${label} could not be opened (${status}): ${url}\n   The town's list names a tile that is gone or has moved (sources re-version their tiles). Re-derive the list${refetch ? `: ▶ ${refetch}` : ' with the acquirer that wrote it'}.\n   (underlying: ${cause?.message || cause})`)
+}
+
 /** Open every source's headers (no pixels). @returns [{ label, ref, tiff, base, proj, levels }]
  *  @param cacheMB  a URL source keeps this many MB of fetched blocks, so a bake reading many overlapping windows
  *                  fetches each block once. Transport only — the same bytes either way. Off (0) for one-window reads. */
-export async function openRasters(specs, { cacheMB = 0 } = {}) {
+export async function openRasters(specs, { cacheMB = 0, refetch = null } = {}) {
   const out = []
   for (const spec of specs) {
     const label = spec.ref.split('/').pop()
     const BLOCK = 65536
     const tiff = spec.kind === 'url'
-      ? await fromUrl(spec.ref, cacheMB > 0 ? { blockSize: BLOCK, cacheSize: Math.ceil(cacheMB * 1048576 / BLOCK) } : {})
+      ? await fromUrl(spec.ref, cacheMB > 0 ? { blockSize: BLOCK, cacheSize: Math.ceil(cacheMB * 1048576 / BLOCK) } : {}).catch(e => deadTile(spec.ref, label, e, refetch))
       : await fromFile(spec.ref)
     // ⭐ And the DECODED tiles: a tile shared by overlapping windows is decompressed once (LZW was 90% of the shore
     // median's time). Per image instance, so it covers level 0 — the one image object kept here as `base`.
@@ -217,7 +230,7 @@ export async function readWindow(opened, { cornersLL, stepM = null, atLL = null,
 
 /** Open and read one window — what a bake reading a single window wants. Same options as `readWindow`. */
 export async function openSources(specs, opts) {
-  return readWindow(await openRasters(specs), opts)
+  return readWindow(await openRasters(specs, { refetch: opts?.refetch ?? null }), opts)
 }
 
 /** Bilinear sample of the first source that holds all four neighbours of (lon, lat); NaN if none does. */

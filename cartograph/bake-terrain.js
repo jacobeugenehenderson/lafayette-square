@@ -372,7 +372,7 @@ async function readFloor({ bounds, width, height, cornersLL, mask, raw, baseElev
   if (!fs.existsSync(BATHY_LIST)) return { none: `no raw/bathymetry-sources.txt — ▶ node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` }
   const urls = fs.readFileSync(BATHY_LIST, 'utf8').split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'))
   if (!urls.length) return { none: 'fetch-bathymetry found no tiles on its built rungs (raw/bathymetry-sources.txt says which rungs ran) — NOT verified-absent' }
-  const src = await openSources(urls.map(ref => ({ kind: 'url', ref })), { ...gridWindow({ bounds, width, height, cornersLL }), elevationBandOnly: true })
+  const src = await openSources(urls.map(ref => ({ kind: 'url', ref })), { ...gridWindow({ bounds, width, height, cornersLL }), elevationBandOnly: true, refetch: `node cartograph/fetch-bathymetry.mjs --scene=${SCENE}` })
   if (!src.length) throw new Error(`⛔ the floor: none of the ${urls.length} tile(s) in ${BATHY_LIST} overlap scene '${SCENE}' — the list is for another place`)
   src.sort((a, b) => Math.abs(a.rx) - Math.abs(b.rx))                      // finest first
   const bad = src.filter(S => S.geoKeys?.VerticalDatumGeoKey !== NAVD88 && !/navd\s*88/i.test(S.geoKeys?.VerticalCitationGeoKey || ''))
@@ -692,7 +692,7 @@ async function main() {
   }
 
   const t0 = Date.now()
-  const sources = await openSources(specs, gridWindow({ bounds, width, height, cornersLL: _cornersLL }))
+  const sources = await openSources(specs, { ...gridWindow({ bounds, width, height, cornersLL: _cornersLL }), refetch: `node cartograph/fetch-dem.mjs --scene=${SCENE}` })
 
   // ⛔⛔ DOES THE UNION ACTUALLY COVER THE SCENE? REFUSE IF NOT.
   // The window clamps are Math.max(0,…)/Math.min(w,…), so a tile from the wrong
