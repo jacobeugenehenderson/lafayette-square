@@ -81,13 +81,46 @@ function _crSeg(points, n, closed, seg, local, out) {
   }
   return out
 }
+// Its derivative in `local` — the path's velocity per unit parameter.
+function _crSegD(points, n, closed, seg, local, out) {
+  const at = (j) => points[closed ? ((j % n) + n) % n : Math.max(0, Math.min(n - 1, j))]
+  const p0 = at(seg - 1), p1 = at(seg), p2 = at(seg + 1), p3 = at(seg + 2)
+  const t0 = local, t2 = t0 * t0
+  const a = 6 * t2 - 6 * t0, b = 3 * t2 - 4 * t0 + 1, c = -6 * t2 + 6 * t0, d = 3 * t2 - 2 * t0
+  for (let i = 0; i < 3; i++) {
+    const m1 = TENSION * (p2[i] - p0[i]), m2 = TENSION * (p3[i] - p1[i])
+    out[i] = a * p1[i] + b * m1 + c * p2[i] + d * m2
+  }
+  return out
+}
 
 // ── The built shot (cached per keyframes array + motion) ────────────────────
 // Distance along the path is measured over position AND aim together, so a
 // camera that only turns (a lighthouse keeper's pan: the eye stays put, the
 // target sweeps) still has a distance to pace by. A segment with no travel at
 // all (a hold, or a FOV-only change) is paced by time.
+//
+// ⭐ THE PACE IS SOLVED, NOT LOOKED UP (BRIEF-the-movie-is-continuous). Distance is the
+// exact arc length (Gauss–Legendre over the path's own velocity), and the parameter at
+// a distance is found by Newton's method on it. The SUB cells only bracket the root; a
+// linear read inside a cell made the speed jump at every cell edge (up to 10% on
+// Huron). ▶ node checks/claims-the-movie-is-continuous.mjs
 const SUB = 64
+const _GX = [-0.9061798459386640, -0.5384693101056831, 0, 0.5384693101056831, 0.9061798459386640]
+const _GW = [0.2369268850561891, 0.4786286704993665, 0.5688888888888889, 0.4786286704993665, 0.2369268850561891]
+const _dp = [0, 0, 0], _dt = [0, 0, 0]
+// |d(position, aim)/d local| at `local` on segment `seg`.
+function _speed(pos, tgt, n, loop, seg, local) {
+  _crSegD(pos, n, loop, seg, local, _dp); _crSegD(tgt, n, loop, seg, local, _dt)
+  return Math.hypot(_dp[0], _dp[1], _dp[2], _dt[0], _dt[1], _dt[2])
+}
+// Arc length from `a` to `b` on segment `seg` (5-point Gauss–Legendre; the span is one cell or less).
+function _arc(pos, tgt, n, loop, seg, a, b) {
+  const h = (b - a) / 2, mid = (a + b) / 2
+  let s = 0
+  for (let i = 0; i < 5; i++) s += _GW[i] * _speed(pos, tgt, n, loop, seg, mid + h * _GX[i])
+  return s * h
+}
 function buildShot(keyframes, motion) {
   const n = keyframes.length
   const loop = motion.mode === 'loop'
@@ -99,19 +132,15 @@ function buildShot(keyframes, motion) {
   for (let i = 0; i < n; i++) T[i] = keyframes[i].t * L
   if (loop) T[n] = L
 
-  // Per-segment cumulative distance at SUB+1 samples.
+  // Per-segment arc length at the SUB+1 cell edges (the brackets for the solve).
   const cum = new Float64Array(segs * (SUB + 1))
   const S = new Float64Array(knots)
-  const pa = [0, 0, 0], pb = [0, 0, 0], ta = [0, 0, 0], tb = [0, 0, 0]
   for (let s = 0; s < segs; s++) {
-    _crSeg(pos, n, loop, s, 0, pa); _crSeg(tgt, n, loop, s, 0, ta)
     let c = 0
     cum[s * (SUB + 1)] = 0
     for (let k = 1; k <= SUB; k++) {
-      _crSeg(pos, n, loop, s, k / SUB, pb); _crSeg(tgt, n, loop, s, k / SUB, tb)
-      c += Math.hypot(pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2], tb[0] - ta[0], tb[1] - ta[1], tb[2] - ta[2])
+      c += _arc(pos, tgt, n, loop, s, (k - 1) / SUB, k / SUB)
       cum[s * (SUB + 1) + k] = c
-      pa[0] = pb[0]; pa[1] = pb[1]; pa[2] = pb[2]; ta[0] = tb[0]; ta[1] = tb[1]; ta[2] = tb[2]
     }
     S[s + 1] = S[s] + c
   }
@@ -129,7 +158,18 @@ function buildShot(keyframes, motion) {
   if (loop) m[0] = m[segs] = blend(d[segs - 1], d[0], h[segs - 1], h[0])
   else { m[0] = d[0]; m[segs] = d[segs - 1] }
 
-  return { n, loop, L, segs, pos, tgt, T, S, cum, h, m }
+  // The lens: a monotone cubic through every key's fov on the path's own parameter (one unit per segment), so the
+  // zoom's rate is continuous through a key and never overshoots a key it passes (Jacob, 2026-10-11, through Boz).
+  // A key's slope is 0 where the zoom turns or holds on either side — a hold stays a hold.
+  const fov = new Float64Array(knots), fm = new Float64Array(knots)
+  for (let i = 0; i < knots; i++) fov[i] = keyframes[i % n].fov
+  const fd = (s) => fov[s + 1] - fov[s]
+  const mono = (d0, d1) => (d0 * d1 > 0 ? 2 / (1 / d0 + 1 / d1) : 0)
+  for (let k = 1; k < segs; k++) fm[k] = mono(fd(k - 1), fd(k))
+  if (loop) fm[0] = fm[segs] = mono(fd(segs - 1), fd(0))
+  else { fm[0] = fd(0); fm[segs] = fd(segs - 1) }
+
+  return { n, loop, L, segs, pos, tgt, T, S, cum, h, m, fov, fm }
 }
 
 const _shots = new WeakMap()
@@ -144,12 +184,37 @@ function shotFor(keyframes, motion) {
   return shot
 }
 
-// Pose at segment `seg`, local path parameter `lam` ∈ [0,1].
-function _poseSeg(shot, keyframes, seg, lam, outPos, outTgt) {
+// Pose at segment `seg`, local path parameter `lam` ∈ [0,1]. Returns the fov.
+function _poseSeg(shot, seg, lam, outPos, outTgt) {
   _crSeg(shot.pos, shot.n, shot.loop, seg, lam, outPos)
   _crSeg(shot.tgt, shot.n, shot.loop, seg, lam, outTgt)
-  const f0 = keyframes[seg % shot.n].fov, f1 = keyframes[(seg + 1) % shot.n].fov
-  return f0 + lam * (f1 - f0)
+  const { fov, fm } = shot, a = seg, b = seg + 1
+  // fov:begin
+  const u = lam, u2 = u * u, u3 = u2 * u
+  return (2 * u3 - 3 * u2 + 1) * fov[a] + (u3 - 2 * u2 + u) * fm[a] + (-2 * u3 + 3 * u2) * fov[b] + (u3 - u2) * fm[b]
+  // fov:end
+}
+
+// The path parameter at arc length `s` on segment `seg`, inside cell `k`: Newton on the arc length, kept inside the
+// cell by bisection (a velocity of zero, a cusp, cannot throw it out). The cell's linear read is only the first guess.
+function _lamAt(shot, seg, k, s) {
+  const { pos, tgt, n, loop, cum } = shot
+  const c0 = cum[seg * (SUB + 1) + k], c1 = cum[seg * (SUB + 1) + k + 1]
+  const a = k / SUB
+  let lo = a, hi = (k + 1) / SUB
+  let lam = a + (c1 > c0 ? (s - c0) / (c1 - c0) : 0) / SUB
+  // solve:begin
+  for (let it = 0; it < 12; it++) {
+    const f = c0 + _arc(pos, tgt, n, loop, seg, a, lam) - s
+    if (Math.abs(f) <= 1e-9 * (1 + c1)) break
+    if (f > 0) hi = lam; else lo = lam
+    const d = _speed(pos, tgt, n, loop, seg, lam)
+    let next = d > 0 ? lam - f / d : NaN
+    if (!(next > lo && next < hi)) next = (lo + hi) / 2
+    lam = next
+  }
+  // solve:end
+  return lam
 }
 
 /**
@@ -180,12 +245,11 @@ export function heroPoseAtTime(keyframes, motion, sec, outPos, outTgt) {
     const base = seg * (SUB + 1)
     let lo = 1, hi = SUB
     while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[base + mid] < s) lo = mid + 1; else hi = mid }
-    const c0 = cum[base + lo - 1], c1 = cum[base + lo]
-    lam = (lo - 1 + (c1 > c0 ? (s - c0) / (c1 - c0) : 0)) / SUB
+    lam = _lamAt(shot, seg, lo - 1, s)
   }
   // `seg` and `lam`: the segment (from key seg % n to key (seg + 1) % n) and the path parameter along it — what the fov
   // interpolates on, and what the depth of field's focus racks on (src/lib/focusObject.js).
-  return { fov: _poseSeg(shot, keyframes, seg, lam, outPos, outTgt), seg, lam }
+  return { fov: _poseSeg(shot, seg, lam, outPos, outTgt), seg, lam }
 }
 
 /**
@@ -201,7 +265,7 @@ export function heroPathPose(keyframes, motion, f, outPos = [0, 0, 0], outTgt = 
   const shot = shotFor(keyframes, motion)
   const g = Math.max(0, Math.min(1, f)) * shot.segs
   const seg = Math.min(Math.floor(g), shot.segs - 1)
-  const fov = _poseSeg(shot, keyframes, seg, g - seg, outPos, outTgt)
+  const fov = _poseSeg(shot, seg, g - seg, outPos, outTgt)
   return { position: outPos, target: outTgt, fov }
 }
 

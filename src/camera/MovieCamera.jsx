@@ -38,6 +38,14 @@ function publishFocus(keyframes, seg, lam) {
   movieFocus.on = true; movieFocus.from = ids[seg % n]; movieFocus.to = ids[(seg + 1) % n]; movieFocus.lam = n > 1 ? lam : 0
 }
 
+// The lens, written on every frame the path's fov changes — never behind a threshold: a 0.1° write gate stood here
+// and stepped every slow zoom (~418 notches a cycle on Huron). ▶ node checks/claims-the-movie-is-continuous.mjs
+export function writeLens(camera, fov) {
+  if (camera.fov === fov) return
+  camera.fov = fov
+  camera.updateProjectionMatrix()
+}
+
 export default function MovieCamera({ keyframes, motion, quality, active, start = 'random', hold, onTime, controlsRef, handle, framing }) {
   if (!Number.isFinite(quality?.movieNear)) throw new Error('[MovieCamera] ⛔ needs `quality` — a profile from src/lib/qualityProfile.js with a movieNear')
   const { camera } = useThree()
@@ -108,7 +116,7 @@ export default function MovieCamera({ keyframes, motion, quality, active, start 
     live.current.onTime?.(r.time)
     if (live.current.hold?.()) return
     camera.position.copy(_pos)
-    if (Math.abs(camera.fov - r.fov) > 0.1) { camera.fov = r.fov; camera.updateProjectionMatrix() }
+    writeLens(camera, r.fov)
     const ctl = controlsRef?.current ?? defaultControls
     if (ctl) {
       ctl.target.copy(_tgt)
