@@ -115,6 +115,10 @@ async function captureSet() {
         return useSkyState.getState().feedPaused && a.rawDirective !== raw0 && !a.snapPending && a.tweenedDirective === a.rawDirective
       }, 'Clear weather', pose)
     }
+    // Clear stands in still air from the town's wind tendency; on a page with no forecast read yet that is fetched,
+    // and re-targets the weather when it lands. Wait for it (or its failure, which the poller says), so nothing
+    // re-targets the weather mid-run. The per-slot settle then lands each slot's weather.
+    await until(() => !useSkyState.getState().presetWindPending, "Clear weather: the town's wind tendency", pose)
     for (const id of TOD_SLOT_IDS) {
       const when = townDateAtMinute(was.time, mins[id])
       // Already on this minute, the clock would not move and nothing would re-land: step off it first.

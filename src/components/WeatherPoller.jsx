@@ -22,15 +22,19 @@ function WeatherPoller({ mode = 'live' }) {
       sky.setWeatherTargets(withStillAir(preset, fromDeg))
       // No reading on this page yet (Stage OPENS in Clear): fetch the town's forecast for its tendency alone, then stand
       // the preset in still air from it — unless the switch has moved on. Until then it is calm, and that is said.
+      // `presetWindPending` says so while it is in flight, so a reader that must not see the weather re-targeted
+      // (Stage's share capture) can wait for it; it clears when the tendency lands, fails, or the switch moves on.
       let live = true
       if (fromDeg == null) {
+        useSkyState.getState().setPresetWindPending(true)
         fetchWindTendencyFromDeg().then((d) => {
           if (!live) return
-          if (d == null) { console.warn(`[weather] '${mode}' stands in CALM: no wind tendency for this town could be read.`); return }
-          useSkyState.getState().setWeatherTargets(withStillAir(preset, d))
+          if (d == null) console.warn(`[weather] '${mode}' stands in CALM: no wind tendency for this town could be read.`)
+          else useSkyState.getState().setWeatherTargets(withStillAir(preset, d))
+          useSkyState.getState().setPresetWindPending(false)
         })
       }
-      return () => { live = false }
+      return () => { live = false; useSkyState.getState().setPresetWindPending(false) }
       return
     }
     useSkyState.getState().setFeedPaused(false)
