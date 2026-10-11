@@ -170,7 +170,7 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    17,183 (133 km). ~55% of sampled seams have nothing 1 mm to one side. Mostly ~10 mm strips down the street
    centrelines: ①'s two back-to-back offsets at ε = `PROTO_HW` (0.005 m, `tileGround.js`), with nothing painted
    between them. On the lattice; a topology gap, not drift. Whether it shows at street level is NOT measured.
-   ❓ **For Jacob:** the road's two halves must close over the centreline while ① stays width-free. Who paints the 2ε?
+   **Ruled 2026-10-11: ① is painted first** (§5).
    ⭐ **Huron's shore crack (§4.6) is the same class**: its sand vertices sit 5.5–5.7 mm (ε) off the beach edge where
    the median meets ①'s two-sided coast stroke. Re-baked offline with the median on the 1 mm lattice, it is unchanged
    (0.40 m step). Not the median's rounding. ▶ `crack-site.mjs <slab dir> huron 1416.8 -320.5`
@@ -182,12 +182,22 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
 ## 5. The design: heights along ①, then ONE deformer that acts like curb geometry (Jacob, 2026-10-08)
 
 *Jacob: "Why not calculate the correct terrain heights for the protopolygon … maybe what we're wanting is a deformer,
-that acts like curb geometry."* This REPLACES an earlier draft of this section (one height law per painted piece). That
-draft multiplied the sources (one rule per piece type) and is retired. Confirm the premises with numbers, then Boz and
-Jacob rule on the details below.
+that acts like curb geometry."* Confirm the premises with numbers, then Boz and Jacob rule on the details below.
 
 **① stays clean.** ① is two back-to-back offsets of each chain, width-free and sharp. The heights are DERIVED along it,
 the same way Section's bands are derived from it. They are not part of ①.
+
+**① is painted FIRST** (Jacob, 2026-10-11, ruling the slit in §4.9: *"we should paint it in the first step, not
+last"*). `mintProtopolygon` unions the ε strokes into one filled shape, so ① already HAS area: a 2ε band over every
+chain, every edge owned. Today nothing paints that area, because every band offsets outward from ①'s edge (the road
+band at `hw − PROTO_HW`), and ① shows through as the slit. ⇒ ① becomes the ground's first piece:
+- **A street's ①** takes that street's road surface. The bands then paint from ①'s edge out exactly as today; the two
+  halves close against ①, not against each other. Crossings are already one shape (the union).
+- **The coast's ①** takes the LAND's shore surface (Jacob: option (a), not a split down the middle). The water starts
+  at its water-side edge. This is where the S-curve and the gusset's record start.
+- **Where strokes join** (a slipway T-ing into the coast), the joined shape is split by its edges' owners, which ①
+  carries. ⛔ Never by proximity.
+- `PROTO_HW` is unchanged, and ① stays width-free: painting it adds a piece, not a width.
 
 **Step 1: the correct height along ①, once.** For every edge of ①, compute its height: the terrain sampled along the
 line and SMOOTHED along it ("smoothing is skeleton": the smoothing happens at the line, before anything is built from
@@ -278,6 +288,8 @@ source. Whether `conformAndRefine` survives away from ① is yours to measure.
 - **The shore meets:** the water plane and the shore piece share the smoothed waterline as an edge. The fixed gap walk
   finds zero views reaching the sky along every shore, from water and land, near and far. Mutation: today's unsmoothed
   marching-squares edge → red (jags), and a removed shore piece → red (holes).
+- **The ground tiles:** `claims-the-ground-tiles-without-a-gap` goes green on every town once ① is painted (the
+  centreline slits and the ε shore crack close). Mutation: leave ① unpainted → red with today's counts.
 - **Objects still sit on the drawn ground:** the existing anchor checks (trees, buildings, lamps) stay green.
 - **Flat towns don't move:** on a town with flat terrain and a flat kerb, the new ground is byte-identical to today's,
   or every difference is explained.
