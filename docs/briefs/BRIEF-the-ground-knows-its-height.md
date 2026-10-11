@@ -167,6 +167,11 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    list. `fetch-dem` had chosen surveys by tile box: for LS that picked a survey with 0% data over the town, and
    `bake-terrain` would have baked it flat. Both now refuse. ▶ `checks/claims-a-dem-is-chosen-by-its-data.mjs` ·
    `checks/claims-a-town-owns-its-raw-inputs.mjs`
+9. **⛔ KNOWN RED: the ground does not tile.** Partition edges used once inside the disc: Huron 24,610 (296 km), HPDM
+   17,183 (133 km). ~55% of sampled seams have nothing 1 mm to one side. Mostly ~10 mm strips down the street
+   centrelines: ①'s two back-to-back offsets at ε = `PROTO_HW` (0.005 m, `tileGround.js`), with nothing painted
+   between them. On the lattice; a topology gap, not drift. Fix not ruled.
+   ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` · `slit-producer.mjs <town>`
 
 ## 5. The design: heights along ①, then ONE deformer that acts like curb geometry (Jacob, 2026-10-08)
 
