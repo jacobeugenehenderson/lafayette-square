@@ -397,6 +397,12 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
     const W = bbox.max[0] - bbox.min[0]
     const H = bbox.max[2] - bbox.min[2]
     const outerByGroup = assignOuterWater(manifest, bin, outer, look)
+    // ⭐ WHICH HEIGHT PATH THIS TOWN IS ON, said once (Boz, 2026-10-11): the bake's own terrain part (the deformer), or
+    // the 5 m texture under a slab baked before it. The texture path is a MIGRATION path while towns are un-rebaked, and
+    // is deleted once every slab carries the sections — never a silent second way to draw the ground.
+    { const ground = manifest.groups.filter(g => !isWaterGroupId(g.id)), baked = ground.filter(g => g.rawByteOffset != null).length
+      if (baked === ground.length) console.info(`[BakedGround] ${look}: the ground's height is BAKED (the deformer) on all ${baked} ground group(s)`)
+      else console.warn(`[BakedGround] ⛔ ${look}: ${ground.length - baked} of ${ground.length} ground group(s) are draped on the 5 m TEXTURE — this slab predates the ground deformer (BRIEF-the-ground-knows-its-height). Re-bake the ground.`) }
     return manifest.groups.map((g, gi) => {
       const positions = new Float32Array(bin, g.vertexByteOffset, g.vertexCount * 3)
       const indices   = new Uint32Array(bin,  g.indexByteOffset,  g.indexCount)
