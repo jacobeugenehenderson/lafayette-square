@@ -1892,6 +1892,7 @@ const useCartographStore = create((set, get) => ({
   // modal. After a successful bake we hand off to Hero.
   bakeRunning: false,
   bakeStale: true,           // true on app boot, until _measureSlabAge answers
+  designSaveError: null,     // { lookId, message, at } while the Look's last autosave failed; Toolbar says so
   // ⭐ THE SLAB'S AGE, MEASURED (Phase 2 A): null = not yet measured · { stale: [{ step, why }], bakedAt } = the bake
   // route's own plan (serve.js GET /looks/<id>/bake) · { error }. It was `bakeStale = !entry.bakedAt` — "ever baked",
   // so a slab older than an overlay, skeleton or code edit opened in Stage as current. StatusBar alarms on it in Stage.
@@ -2683,8 +2684,14 @@ const useCartographStore = create((set, get) => ({
       if (!id) return Promise.resolve()
       if (!get().bakeStale) set({ bakeStale: true })
       const design = serializeDesign(s)
-      return saveLookDesign(id, design).catch(err =>
-        console.warn('[looks] design save failed:', err))
+      // ⛔ A FAILED SAVE IS SAID ON THE PANEL, never only in the console (Jacob, 2026-10-11): the dials keep showing
+      // the edit, so a console warning let a whole session's values look saved and be lost (Toolbar's ⛔ Not saved).
+      return saveLookDesign(id, design).then(
+        () => { if (get().designSaveError) set({ designSaveError: null }) },
+        (err) => {
+          console.error('[looks] ⛔ design save failed — the edits are only on this screen:', err)
+          set({ designSaveError: { lookId: id, message: err?.message || String(err), at: Date.now() } })
+        })
     }
     const fn = () => {
       if (t) clearTimeout(t)

@@ -18,6 +18,7 @@ export default function Toolbar() {
   const setAerialVisible = useCartographStore(s => s.setAerialVisible)
   const bakeRunning = useCartographStore(s => s.bakeRunning)
   const bakeStale = useCartographStore(s => s.bakeStale)
+  const designSaveError = useCartographStore(s => s.designSaveError)
   const runBake = useCartographStore(s => s.runBake)
   const activeLookId = useCartographStore(s => s.activeLookId)
   const scene = useCartographStore(s => s.scene)
@@ -157,6 +158,16 @@ export default function Toolbar() {
         </>
       )}
 
+      {/* ⛔ Outside the mode switch: a failed save is said in every mode, Designer and Stage alike. */}
+      {designSaveError && (
+        <div className="carto-toolgroup" role="alert"
+          style={{ background: '#7f1d1d', color: '#fff', borderRadius: 6, padding: '2px 8px', fontSize: 12, fontWeight: 600, display: 'flex', gap: 8, alignItems: 'center' }}
+          title={`${designSaveError.lookId}: ${designSaveError.message}`}>
+          ⛔ Not saved: your last edits to “{designSaveError.lookId}” are only on this screen ({designSaveError.message})
+          <button onClick={() => useCartographStore.getState()._saveDesignDebounced()}
+            style={{ background: '#fff', color: '#7f1d1d', border: 0, borderRadius: 4, padding: '1px 8px', fontWeight: 700, cursor: 'pointer' }}>Retry</button>
+        </div>
+      )}
       {sourcesOpen && <SourcesPanel scene={scene} onClose={() => setSourcesOpen(false)}
         onOpenIdentity={() => { setSourcesOpen(false); setIdentityOpen(true) }} />}
       {identityOpen && <IdentityPanel onClose={() => setIdentityOpen(false)} />}
