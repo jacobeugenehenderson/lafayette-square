@@ -2,7 +2,7 @@
 
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: Glide, 2026-10-11 (FRESH)
 written: 2026-10-11
 evict-when: RULING: Jacob calls every town's authored shots smooth from start to end (no notch, step, pop or hitch), with the town and shot recorded; the continuity check in §5 is green on every town after being seen red.
 -->
