@@ -2,7 +2,7 @@
 /**
  * claims-a-district-is-the-towns-own.mjs — DOES A TOWN'S ROSTER NAME ITS OWN HISTORIC DISTRICT, OR HI-POINTE–DEMUN'S?
  *
- * ⛔ Found 2026-10-11 (BRIEF-a-district-is-the-towns-own): bake-content.js wrote HPDM's district name, nomination
+ * ⛔ Found 2026-10-11 (cartograph/_archive/BRIEF-a-district-is-the-towns-own-DELIVERED-2026-10-11.md): bake-content.js wrote HPDM's district name, nomination
  *    streets and county exclusion into every town, so 695 Jackson Heights buildings in Queens read "Hi-Pointe–DeMun
  *    Historic District" while the town's own well (MapPLUTO HistDist) carried the real name and the fetch threw it
  *    away. And a town with no district source at all wrote `in_historic_district: false`: "not in a district",

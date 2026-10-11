@@ -1,7 +1,7 @@
 # BRIEF — a historic district is the town's own: its name from the source, never Hi-Pointe–DeMun's
 
 <!-- BRIEF-STATE
-status: OPEN
+status: DELIVERED 2026-10-11 (Cairn, 266d3505)
 dispatched: Cairn, 2026-10-11 (FRESH)
 written: 2026-10-11
 evict-when: The check in §5 is green on every town on disk, after it was seen red on jacksonheights; no town's roster names a district its own data does not declare; huron and provincetown carry null, not false, for in_historic_district; HPDM's 598 district buildings are unchanged.

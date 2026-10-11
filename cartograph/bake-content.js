@@ -558,7 +558,7 @@ function buildNrIndex(nr) {
 // ──────────────────────────────────────────────────────────────────────────
 // Historic-district membership (LS `architecture.district` convention), read from the TOWN'S OWN sources —
 // ⛔ never a district name, street list or municipality in this file (HPDM's lived here and was written into
-// every town, BRIEF-a-district-is-the-towns-own):
+// every town, cartograph/_archive/BRIEF-a-district-is-the-towns-own-DELIVERED-2026-10-11.md):
 //   · the parcel well's own NAME, when its column holds one → that district;
 //   · else the town's declared district (sources.json `historicDistricts`): the well's code/flag, an NR
 //     inventory match, or a declared nomination street, outside its excluded municipalities → its name;
