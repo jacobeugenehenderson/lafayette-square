@@ -223,7 +223,9 @@ const REVEAL_GROUPS = new Set(['town:ground', 'town:buildings', 'town:trees', 't
 function RevealGate({ need, lingerMs, skyAt }) {
   const { gl, scene, camera } = useThree()
   const phase = useRef({ name: 'wait' })
-  const [, wake] = useState(0)
+  // `woke` is a dependency of the gate's effect: the linger's timer wakes the EFFECT, not just a render. Without it, a
+  // town prepared inside the linger set its timer, re-rendered, and never looked again (HPDM held on its emblem, 2026-10-11).
+  const [woke, wake] = useState(0)
   const rt = useMemo(() => new THREE.WebGLRenderTarget(1, 1), [])
   useEffect(() => () => rt.dispose(), [rt])
   const state = useSyncExternalStore(subscribeStartup, () => need.map((k) => (isPrepared(k) ? 'p' : failureOf(k) ? 'f' : '-')).join('') + isRevealed())
@@ -251,7 +253,7 @@ function RevealGate({ need, lingerMs, skyAt }) {
     phase.current = { name: 'compile', groups }
     const next = () => { markTimeline('gate', 'compile ahead: done'); phase.current = { name: 'prep', groups, i: 0 } }
     compiled.then(next, (e) => { console.error('[reveal] ⛔ compiling the town ahead failed:', e); next() })
-  }, [state, need.join(',')])
+  }, [state, need.join(','), woke])
   // 2. PREPARE BY DRAWING: one hidden group a frame, drawn into a 1×1 target by a top-down camera that holds the whole
   //    town (so no culling skips anything). A draw is the only thing that uploads every geometry and texture and links
   //    every program — measured: compile + initTexture alone left +217 geometries, +161 textures and +21 programs to
