@@ -33,8 +33,12 @@ export function makeGroundSampler(groundJson, groundAB, elevationSampler) {
   for (const g of groups) {
     const positions = new Float32Array(groundAB, g.vertexByteOffset, g.vertexCount * 3)
     const indices   = new Uint32Array(groundAB, g.indexByteOffset, g.indexCount)
-    const vraw = new Float32Array(g.vertexCount)
-    for (let v = 0; v < g.vertexCount; v++) vraw[v] = getRaw(positions[v * 3], positions[v * 3 + 2])
+    // ⭐ a group that carries the ground bake's own terrain part (`rawByteOffset`, the deformer: BRIEF-the-ground-knows-its-
+    // height) is drawn from it, so the anchor reads it too — the field at the vertex only where the bake wrote none,
+    // which is exactly what the runtime draws there (patchTerrain without `baked`)
+    let vraw
+    if (g.rawByteOffset != null) vraw = new Float32Array(groundAB, g.rawByteOffset, g.vertexCount)
+    else { vraw = new Float32Array(g.vertexCount); for (let v = 0; v < g.vertexCount; v++) vraw[v] = getRaw(positions[v * 3], positions[v * 3 + 2]) }
     for (let i = 0; i < indices.length; i += 3) {
       const i0 = indices[i], i1 = indices[i + 1], i2 = indices[i + 2]
       tris.push(

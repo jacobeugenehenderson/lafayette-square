@@ -641,11 +641,14 @@ export async function bakeBuildings({ look, scene } = {}) {
   // ⛔ No ground bake: on a town whose kerb norm stands it (h > 0) that would sink every building by h — REFUSED;
   // on a flat town 0 is the true value, and the log says where it came from.
   const gjP = join(outDir, 'ground.json'), gbP = join(outDir, 'ground.bin')
-  let groundYAt = null
+  let groundYAt = null, groundRawAt = null
   if (existsSync(gjP) && existsSync(gbP)) {
     const gb = readFileSync(gbP)
     const gs = makeGroundSampler(JSON.parse(readFileSync(gjP, 'utf-8')), gb.buffer.slice(gb.byteOffset, gb.byteOffset + gb.byteLength), terrain)
     groundYAt = (x, z) => gs.groundAt(x, z).y
+    // ⭐ the TERRAIN part is the drawn ground's too where the bake deformed it (a lot's ease behind the walk): a building
+    // seats on the ground as drawn, never on the raw field under it (BRIEF-the-ground-knows-its-height §4.5)
+    groundRawAt = (x, z) => gs.groundAt(x, z).raw
   } else {
     const kerbH = resolveCurbCutNorm(scene, null).kerb?.height || 0
     if (kerbH > 0) throw new Error(`[bake-buildings] ⛔ ${scene}'s kerb stands ${kerbH} m but '${look}' has no ground bake to seat the buildings on — run bake-ground first (node bake-ground.js --look=${look} --scene=${scene})`)
@@ -855,7 +858,7 @@ export async function bakeBuildings({ look, scene } = {}) {
     // building carries the same centroidY so the runtime can lift the
     // whole building rigidly via `position.y += aCentroidY * uExag`.
     let centroidY = 0, groundY = 0
-    for (let i = 0; i < fp.length; i++) { centroidY += getElevationRaw(fp[i][0], fp[i][1]); if (groundYAt) groundY += groundYAt(fp[i][0], fp[i][1]) }
+    for (let i = 0; i < fp.length; i++) { centroidY += groundRawAt ? groundRawAt(fp[i][0], fp[i][1]) : getElevationRaw(fp[i][0], fp[i][1]); if (groundYAt) groundY += groundYAt(fp[i][0], fp[i][1]) }
     centroidY /= fp.length; groundY /= fp.length
 
     // The set-piece's building: its record, no geometry (see setPieceId above).

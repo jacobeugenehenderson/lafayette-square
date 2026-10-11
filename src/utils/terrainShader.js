@@ -345,6 +345,28 @@ if (uExag > 0.01) {
 }`
 
 /**
+ * THE BAKED GROUND'S OWN HEIGHT (BRIEF-the-ground-knows-its-height §5) — replaces #include <project_vertex>.
+ * The ground bake decides the terrain part per vertex (`groundDeformer.mjs`: the street's line, the level walk, the lawn,
+ * the ease into the lot) and ships it as `aRaw`, raw metres; the drawn height is aRaw × uExag + the mesh's own y (the
+ * kerb, unexaggerated). ⛔ No texture lookup: the 5 m texture cannot carry a level walk or a lawn's rise.
+ */
+const TERRAIN_DISPLACE_BAKED = `
+transformed.y += aRaw * uExag;
+#include <project_vertex>`
+
+/**
+ * The baked ground's normal — replaces #include <beginnormal_vertex>. `aGrad` = (∂aRaw/∂x, ∂aRaw/∂z, ∂y/∂x, ∂y/∂z), so the
+ * drawn surface's gradient is aGrad.xy × uExag + aGrad.zw and its normal is exact at EVERY exaggeration (Boz, 2026-10-11:
+ * not flat per face — a faceted lawn is a visible regression).
+ */
+export const TERRAIN_NORMAL_BAKED = `
+#include <beginnormal_vertex>
+{
+  vec2 _g = aGrad.xy * uExag + aGrad.zw;
+  objectNormal = normalize(mix(objectNormal, normalize(vec3(-_g.x, 1.0, -_g.y)), uTerrainNormals));
+}`
+
+/**
  * Per-vertex displacement — replaces #include <project_vertex>.
  * Samples terrain at each vertex's WORLD position (via modelMatrix).
  * Use for merged geometry (foundations) where modelMatrix[3] is origin.
@@ -453,13 +475,14 @@ export function patchTerrainAtCentroidRaw(mat, centroidRaw) {
   mat.customProgramCacheKey = () => `terrain-centroid-${prevKey ? prevKey() : 'std'}`
 }
 
-export function patchTerrain(mat, { terrainNormals = false, perVertex = false } = {}) {
-  const displaceSnippet = perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
+export function patchTerrain(mat, { terrainNormals = false, perVertex = false, baked = false } = {}) {
+  // `baked`: the geometry carries the ground bake's own height (aRaw, aGrad) — read it, never the texture
+  const displaceSnippet = baked ? TERRAIN_DISPLACE_BAKED : perVertex ? TERRAIN_DISPLACE_PERVERTEX : TERRAIN_DISPLACE_RIGID
   const prev = mat.onBeforeCompile
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL)
+      .replace('#include <common>', '#include <common>\n' + TERRAIN_DECL + (baked ? '\nattribute float aRaw;\nattribute vec4 aGrad;' : ''))
       .replace('#include <project_vertex>', displaceSnippet)
     if (prev) prev(shader)
     // ⛔ AFTER prev, deliberately. `applyWeatherToShader` (called inside prev) appends
@@ -469,11 +492,11 @@ export function patchTerrain(mat, { terrainNormals = false, perVertex = false } 
     // geometry normal and the terrain override landed after it.
     if (terrainNormals) {
       shader.vertexShader = shader.vertexShader
-        .replace('#include <beginnormal_vertex>', TERRAIN_NORMAL)
+        .replace('#include <beginnormal_vertex>', baked ? TERRAIN_NORMAL_BAKED : TERRAIN_NORMAL)
     }
   }
   const prevKey = mat.customProgramCacheKey?.bind(mat)
-  const mode = perVertex ? 'v' : 'r'
+  const mode = baked ? 'b' : perVertex ? 'v' : 'r'
   mat.customProgramCacheKey = () =>
     `terrain-${mode}${terrainNormals ? 'n' : 'p'}-${prevKey ? prevKey() : 'std'}`
 }

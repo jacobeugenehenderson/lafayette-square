@@ -452,6 +452,13 @@ function GroundMeshes({ look, manifest, bin, context, coast, outer, scene: baked
         // has none: the crop is then drawn with NO headland, and says so (reportNoEdge).
         if (g.fieldEdgeByteOffset != null) geom.setAttribute('aFieldEdge', new THREE.BufferAttribute(new Float32Array(bin, g.fieldEdgeByteOffset, g.vertexCount), 1))
       }
+      // ⭐ THE GROUND'S OWN HEIGHT (BRIEF-the-ground-knows-its-height): the bake's terrain part per vertex and its gradient
+      // pair. A group that carries them is lifted and lit from them (patchTerrain `baked`), never from the 5 m texture.
+      if (g.rawByteOffset != null) {
+        if (posUse !== positions || g.gradByteOffset == null) throw new Error(`[BakedGround] ⛔ group ${g.id} carries a baked height but its geometry was extended, or it has no gradient — the two would not line up`)
+        geom.setAttribute('aRaw', new THREE.BufferAttribute(new Float32Array(bin, g.rawByteOffset, g.vertexCount), 1))
+        geom.setAttribute('aGrad', new THREE.BufferAttribute(new Float32Array(bin, g.gradByteOffset, g.vertexCount * 4), 4))
+      }
       geom.computeVertexNormals()
       return { group: g, geometry: geom, bodyExtent }
     })
@@ -541,7 +548,7 @@ function FadeMesh({ group, geometry, lightmap, fade, hasPool }) {
     // earlier ones (fade, etc.) — patchTerrain runs first, then calls prev.
     // Drives off the shared terrainExag uniform.
     // ⭐ terrainNormals: the ground is lit by the hill it is draped on (Jacob, 2026-09-24).
-    patchTerrain(mat, { perVertex: true, terrainNormals: true })
+    patchTerrain(mat, { perVertex: true, terrainNormals: true, baked: !!geometry.attributes.aRaw })
     return mat
   }, [group.color, group.polygonOffsetUnits, fade?.center?.[0], fade?.center?.[1], fade?.inner, fade?.outer, hasPool, lightmap, geometry])
 
@@ -591,7 +598,7 @@ function SurfaceMesh({ surface, params, resolved, look, group, geometry, lightma
       // Y stack. (z-fight fix 2026-06-17, ARCHITECTURE §8.)
       // Same parity move as FadeMesh — every BakedGround material rises
       // with the shared terrain displacement.
-      patchTerrain(built.material, { perVertex: true, terrainNormals: true })
+      patchTerrain(built.material, { perVertex: true, terrainNormals: true, baked: !!geometry.attributes.aRaw })
       built.material.aoMap = lightmap || null   // bound at build: one compile (FadeMesh says why)
       return built
     },

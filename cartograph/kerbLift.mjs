@@ -8,14 +8,17 @@
 // ⭐ h lives in the mesh's own y, UNEXAGGERATED: the runtime adds terrain × uExag on top (`terrainShader.js`), and a
 // 15 cm kerb that grew with the town's exaggeration would be a Class D constant in disguise.
 //
-// The construction reads the mesh, never snaps to it:
+// The construction reads the mesh, never snaps to it, and NOTHING IS CUT (BRIEF-the-ground-knows-its-height §5):
 //   · a cut is a RAMP (the cut's kerb-face span × the ramp run h/rampSlope, inward) and two FLARE triangles (run
-//     h/flareSlope along the kerb). Their outlines are CUT INTO THE CONFORMED MESH (`groundConformity.js#cutAlong`), so
-//     their crease lines are mesh edges — the paint is never sliced.
+//     h/flareSlope along the kerb) — regions of the height field, h → 0, CONTINUOUS inside the lifted block, evaluated
+//     at every shared vertex. They need vertex density, never crease edges: the creases that were cut into the mesh
+//     here (`cutAlong`) left 287 T-junctions on LS and were deleted.
 //   · each triangle lifts by its group's class; a vertex both a lifted and an unlifted triangle use is split in two,
-//     and a lifted vertex takes the height field (`liftBuffer`).
+//     and a lifted vertex takes the height field (`liftBuffer`). The only step is the kerb face: a partition edge.
 //   · the riser is every mesh edge with a lifted triangle on one side and an unlifted one on the other — built from
 //     the conformed mesh itself, so it shares the ground's vertices and cannot crack (`riserFromEdges`).
+// ⭐ This is the KERB part of the ground's height (the mesh's own y, unexaggerated); the TERRAIN part is the deformer's
+//   (`groundDeformer.mjs`), and the runtime draws D × uExag + y.
 // ⭐ WHERE NO CURB IS DRAWN, THE BLOCK SLOPES DOWN FLUSH (Jacob, 2026-10-06, Q1): a highway shoulder, an alley mouth, land
 //   that just meets the road. Every stretch of a block ring's OWN edge with no curb drawn inboard of it (`curblessEdges`
 //   — split exactly where the post-paint curb starts and stops, never a rounded copy) carries a TAPER `taperRun` deep
