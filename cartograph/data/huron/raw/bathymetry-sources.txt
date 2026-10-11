@@ -1,0 +1,8 @@
+# huron — the floor under the water (cartograph/fetch-bathymetry.mjs). Read by HTTP RANGE REQUEST
+# in bake-terrain.js, only where the bed is shallower than the town's visibility depth.
+# bbox -82.62165,41.35042,-82.50322,41.43952
+#   ⛔ NOAA OCS BlueTopo → 0 delivered tile(s), 4 in the scheme NOT YET DELIVERED (BlueTopo_Tile_Scheme_20260924_191855.gpkg)
+#   ⏸ USACE NCMP topobathy lidar → rung not built yet — not asked
+#   ⏸ NOAA NCEI CUDEM → rung not built yet — not asked
+# ⛔ NO TILES from the built rungs. NOT verified-absent: the rungs marked ⏸ were never asked.
+# The bed stays the profile for this town, and bake-terrain says so.

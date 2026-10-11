@@ -1,0 +1,21 @@
+# provincetown — the floor under the water (cartograph/fetch-bathymetry.mjs). Read by HTTP RANGE REQUEST
+# in bake-terrain.js, only where the bed is shallower than the town's visibility depth.
+# bbox -70.29349,41.97211,-70.07982,42.13123
+#   ✅ NOAA OCS BlueTopo → 13 delivered tile(s) (BlueTopo_Tile_Scheme_20261009_081553.gpkg)
+#   ⏸ USACE NCMP topobathy lidar → rung not built yet — not asked
+#   ⏸ NOAA NCEI CUDEM → rung not built yet — not asked
+# rung: NOAA OCS BlueTopo · 13 tile(s) · resolutions 8m, 4m
+# ⛔ Re-derive rather than trusting this list:  node cartograph/fetch-bathymetry.mjs --scene=provincetown
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BF2JL2MC/BlueTopo_BF2JL2MC_20260930.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5295G7/BlueTopo_BH5295G7_20260922.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH52B5G7/BlueTopo_BH52B5G7_20260709.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5275G7/BlueTopo_BH5275G7_20260617.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5285G7/BlueTopo_BH5285G7_20260922.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5275G8/BlueTopo_BH5275G8_20260417.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5285G8/BlueTopo_BH5285G8_20260922.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH52B5G8/BlueTopo_BH52B5G8_20260921.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5275G9/BlueTopo_BH5275G9_20260417.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH52B5G9/BlueTopo_BH52B5G9_20250923.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5295G8/BlueTopo_BH5295G8_20260921.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5285G9/BlueTopo_BH5285G9_20260709.tiff
+https://noaa-ocs-nationalbathymetry-pds.s3.amazonaws.com/BlueTopo/BH5295G9/BlueTopo_BH5295G9_20250923.tiff
