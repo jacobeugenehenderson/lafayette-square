@@ -153,8 +153,7 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
    ▶ `gusset.mjs <scene>` → `gusset-<scene>.json`
    The median's two lines are the S-curve's two ends in plan: the ① stroke, where the flat sheet meets the ground,
    and the lidar waterline, where the real ground reaches the level.
-   Huron's shore carries near-coincident vertices 4.5 mm apart (shore vs residential at (2694.87, 586.40)), under the
-   5 mm on-edge tolerance: a lead for Argon's thin lines, not established.
+   The crack's mechanism: §4 item 9.
    Gap walk: standoff now derived (`gaps.jsx`). Its Huron baseline (2026-10-10) came back BLIND: 7,018 of
    7,086 views reached the sky, the unchanged `far` view included, and the mutation found the same, so the check
    voided itself. Cause not established; a one-station look comes before any re-run.
@@ -170,7 +169,11 @@ Probes: `scratch/ground-height/`. Measured on the shipped slabs (baked with each
 9. **⛔ KNOWN RED: the ground does not tile.** Partition edges used once inside the disc: Huron 24,610 (296 km), HPDM
    17,183 (133 km). ~55% of sampled seams have nothing 1 mm to one side. Mostly ~10 mm strips down the street
    centrelines: ①'s two back-to-back offsets at ε = `PROTO_HW` (0.005 m, `tileGround.js`), with nothing painted
-   between them. On the lattice; a topology gap, not drift. Fix not ruled.
+   between them. On the lattice; a topology gap, not drift. Whether it shows at street level is NOT measured.
+   ❓ **For Jacob:** the road's two halves must close over the centreline while ① stays width-free. Who paints the 2ε?
+   ⭐ **Huron's shore crack (§4.6) is the same class**: its sand vertices sit 5.5–5.7 mm (ε) off the beach edge where
+   the median meets ①'s two-sided coast stroke. Re-baked offline with the median on the 1 mm lattice, it is unchanged
+   (0.40 m step). Not the median's rounding. ▶ `crack-site.mjs <slab dir> huron 1416.8 -320.5`
    ▶ `checks/claims-the-ground-tiles-without-a-gap.mjs` · `slit-producer.mjs <town>`
 
 ## 5. The design: heights along ①, then ONE deformer that acts like curb geometry (Jacob, 2026-10-08)
